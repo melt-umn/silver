@@ -14,6 +14,11 @@ imports silver:util:raw:treemap;
 
 synthesized attribute highlighting_lexer_class :: String;
 attribute highlighting_lexer_class occurs on SyntaxTerminalModifiers, SyntaxTerminalModifier;
+synthesized attribute lexer_classes :: [String] 
+attribute lexer_classes occurs on SyntaxTerminalModifiers, SyntaxTerminalModifier, SyntaxDcl;
+
+synthesized attribute atom_name :: String;
+attribute atom_name occurs on SyntaxLexerClassModifiers, SyntaxLexerClassModifiers;
 
 synthesized attribute ts_lhs :: String occurs on SyntaxDcl;
 {--
@@ -35,7 +40,7 @@ synthesized attribute ts_production_inputs :: [String] occurs on SyntaxDcl;
 -- the list of productions that can be used to create a nonterminal
 synthesized attribute ts_nonterminal_rules_rhs :: [[String]];
 attribute ts_nonterminal_rules_rhs occurs on Syntax, SyntaxDcl;
-synthesized attribute atom_scope :: String occurs on SyntaxDcl;
+synthesized attribute atom_name :: String occurs on SyntaxDcl;
 
 -- A list of ts_prec_assoc_entrys
 synthesized attribute ts_prec_assoc_env :: [Pair<String Pair<Integer String>>] occurs on Syntax;
@@ -43,8 +48,11 @@ synthesized attribute ts_extras :: String occurs on Syntax;
 synthesized attribute ts_conflicts :: String occurs on Syntax;
 synthesized attribute ts_terminal_rules :: String occurs on Syntax;
 synthesized attribute ts_nonterminal_rules :: [Pair<String [[String]]>] occurs on Syntax;
-synthesized attribute atom_scopes :: [String] occurs on Syntax;
 
+synthesized attribute atom_scopes :: [String] occurs on Syntax;
+-- these two are combined to get terminal/atom names for the scopes of the atom package
+synthesized attribute lexerClassesWithAtomName :: [Pair<String String>] occurs on Syntax;
+synthesized attribute terminalLexerClassesEnv :: [Pair<String String>] occurs on Syntax;
 {-- ATOM HIGHLIGHTING LEXER CLASSES --}
 lexer class atom_comment;
 lexer class atom_comment_line;
@@ -123,6 +131,35 @@ lexer class atom_variable_parameter;
 lexer class atom_variable_language;
 lexer class atom_variable_other;
 
+function getAtomNamesForTerminals
+[Pair<String String>] ::= lexerClassAtomNameEnv::[Pair<String String>] terminalLexerClassesEnv::[Pair<String String>]
+{
+  local attribute atomNamesForAllTerminals :: [Pair<String Maybe<String>>] =
+    map(getAtomNameForTerminal(lexerClassAtomNameEnv, _), terminalLexerClassesEnv);
+
+  return filter(lookupKeyHasValue, atomNamesForAllTerminals);
+}
+
+function lookupKeyHasValue
+Boolean ::= keyValPair::Pair<a Maybe<b>>
+{
+  return snd(keyValPair).isJust;
+}
+
+function getAtomNameForTerminal
+Maybe<String> ::= lexerClassAtomNameEnv::[Pair<String String>] terminalAndLexerClass::Pair<String String>
+{
+  return pair(
+    terminalAndLexerClass.fst, 
+    lookupBy(stringEq, terminalAndLexerClass.snd, lexerClassAtomNameEnv))
+}
+
+function getAtomScopeName
+String ::= terminalAndAtomName::Pair<String String>
+{
+  return s"""'${terminalAndAtomName.fst}': '${terminalAndAtomName.snd}'""";
+}
+
 {-- ASPECT PRODUCTIONS --}
 aspect production cstRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
@@ -138,13 +175,18 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   -- The environment is a list of nonterminal rule, true/false pairs where
   -- true means the nonterminal can produce the emptty string.
 
-  -- add precedence and associativity information
-  -- this function also collapses the list of input elements for the production
-  -- into a valid treesitter string
+  local attribute terminalAtomScopeEnv :: [Pair<String String>] =
+    getAtomNamesForTerminals(s2.lexerClassesWithAtomName, s2.terminalLexerClassEnv);
+
+  -- transform the grammar to remove nonterminals that can produce the empty string
   local attribute transformed_nts :: [Pair<String [[String]]>] =
     transformEmptyStringRules(s2.ts_nonterminal_rules);
 
   local attribute ts_startnt :: String = toTsDeclaration(startnt);
+
+  -- add precedence and associativity information
+  -- this function also collapses the list of input elements for the production
+  -- into a valid treesitter string
   local attribute nonterminal_rules :: [String] =
     map(nonterminal_to_TS_string(s2.ts_prec_assoc_env, _), transformed_nts);
 
@@ -191,7 +233,10 @@ fileTypes: [
   '${top.lang}'
 ]
 scopes:
+  // scopes specified by using the lexer classes defined in this extension on terminals
   ${implode("\n  ", s2.atom_scopes)}
+  // scopes specified by using lexer class modifiers on lexer classes already in the grammar
+  ${implode("\n  ", map(getAtomScopeName, terminalAtomScopeEnv))}
 """;
 
 }
@@ -213,6 +258,8 @@ top::Syntax ::=
   top.ts_conflicts = "";
   top.ts_prec_assoc_env = [];
   top.atom_scopes = [];
+  top.lexerClassesWithAtomName = [];
+  top.terminalLexerClassesEnv = [];
 }
 
 aspect production consSyntax
@@ -220,6 +267,18 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {
   -- consider an inherited attribute as the string used instead of "\n"
   -- six spaces of indentation after newline
+  top.terminalLexerClassesEnv =
+    if (isTerminal(s1) && !null(s1.lexer_classes)) then
+      append(map(pair(s1.ts_lhs, _), s1.lexer_classes),
+             s2.terminalLexerClassesEnv)
+    else
+      s2.terminalLexerClassesEnv;
+
+  top.lexerClassesWithAtomName =
+    if (isLexerClass(s1) && s1.atom_name != "") then
+      pair(s1.ts_lhs, s1.atom_name) :: s2.lexerClassesWithAtomName
+    else
+      s2.lexerClassesWithAtomName;
 
   -- only used for terminals for now
   top.ts_prec_assoc_env =
@@ -263,8 +322,8 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
       s2.ts_conflicts;
 
   top.atom_scopes =
-    if (isTerminal(s1)) then
-      cons(s1.atom_scope, s2.atom_scopes)
+    if (isTerminal(s1) && s1.atom_name != "") then
+      s"""'${s1.ts_lhs}': '${s1.atom_name}'""" :: s2.atom_scopes;
     else
       s2.atom_scopes;
 }
@@ -277,7 +336,8 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifie
   top.ts_terminal_regex = "";
   top.ts_production_inputs = [];
   top.ts_prec_assoc_entry = pair("", pair(0, "none"));
-  top.atom_scope = "";
+  top.atom_name = "";
+  top.lexer_classes = [];
 
   -- relevant attributes
   top.ts_lhs = toTsDeclaration(t.typeName);
@@ -299,13 +359,14 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
       toTsIgnoreDeclaration(n)
     else
       treesitter_name;
+  top.lexer_classes = modifiers.lexer_classes;
   top.ts_terminal_regex = s"""/${regex.regString}/""";
   top.ts_prec_assoc_entry = pair(top.ts_lhs, getPrecAssocInfo(modifiers));
-  top.atom_scope =
+  top.atom_name =
     if modifiers.highlighting_lexer_class == "" then
       ""
     else
-      s"""'${treesitter_name}': '${toAtomScope(modifiers.highlighting_lexer_class)}.${treesitter_name}'""";
+      toAtomName(modifiers.highlighting_lexer_class)
 }
 
 aspect production syntaxProduction
@@ -314,8 +375,9 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   -- irrelevant attributes
   top.ts_terminal_regex = "";
   top.ts_nonterminal_rules_rhs = [];
-  top.atom_scope = "";
+  top.atom_name = "";
   top.ts_prec_assoc_entry = pair("", pair(0, "none"));
+  top.lexer_classes = [];
 
   -- relevant attributes
   top.ts_lhs = toTsDeclaration(ns.outputElement.typerep.typeName);
@@ -325,26 +387,33 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 aspect production syntaxLexerClass
 top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 {
+  -- relevant attributes
+  top.ts_lhs = n;
+  top.atom_name = modifiers.atomName;
   -- irrelevant attributes
-  top.ts_lhs = "";
   top.ts_terminal_regex = "";
   top.ts_production_inputs = [];
   top.ts_nonterminal_rules_rhs = [];
   top.ts_prec_assoc_entry = pair("", pair(0, "none"));
-  top.atom_scope = "";
+  top.lexer_classes = [];
 }
 
 
 aspect production syntaxDisambiguationGroup
 top::SyntaxDcl ::= n::String terms::[String] acode::String
 {
-  -- irrelevant attributes
+  -- relevant attributes
+
+  -- used for the conflicts array to handle ambiguities
   top.ts_lhs = s"""[${implode(",", map(toTsIdentifier, terms))}]""";
+
+  -- irrelevant attributes
   top.ts_terminal_regex = "";
   top.ts_production_inputs = [];
   top.ts_nonterminal_rules_rhs = [];
   top.ts_prec_assoc_entry = pair("", pair(0, "none"));
-  top.atom_scope = "";
+  top.atom_name = "";
+  top.lexer_classes = [];
 }
 
 {-- SYNTAX TERMINAL MODIFIERS PRODUCTIONS --}
@@ -352,23 +421,32 @@ aspect production nilTerminalMod
 top::SyntaxTerminalModifiers ::=
 {
   top.highlighting_lexer_class = "";
+  top.lexer_classes = [];
 }
 
 aspect production consTerminalMod
 top::SyntaxTerminalModifiers ::= h::SyntaxTerminalModifier  t::SyntaxTerminalModifiers
 {
   top.highlighting_lexer_class = h.highlighting_lexer_class ++ t.highlighting_lexer_class;
+  -- only one syntax terminal modifier should have the lexer classes
+  -- specifically the termClasses production
+  top.lexer_classes = 
+    if (!null(h.lexer_classes)) 
+    then h.lexer_classes 
+    else t.lexer_classes;
 }
 
 aspect default production
 top::SyntaxTerminalModifier ::=
 {
   top.highlighting_lexer_class = "";
+  top.lexer_classes = [];
 }
 
 aspect production termClasses
 top::SyntaxTerminalModifier ::= cls::[String]
 {
+  top.lexer_classes = cls;
   local attribute atomClasses :: [String] =
     filter(isAtomHighlightingLexerClass, cls);
 
@@ -379,6 +457,47 @@ top::SyntaxTerminalModifier ::= cls::[String]
   else
     "";
 }
+
+{-- SYNTAX LEXER CLASS MODIFIERS PRODUCTIONS --}
+aspect production consLexerClassMod
+top::SyntaxLexerClassModifiers ::= h::SyntaxLexerClassModifier  t::SyntaxLexerClassModifiers
+{
+  -- only the first non-zero font declaration is effective
+  top.atomName =
+    if h.atomName != ""
+    then h.atomName
+    else t.atomName;
+}
+
+aspect production nilLexerClassMod
+top::SyntaxLexerClassModifiers ::=
+{
+  top.atomName = "";
+}
+
+aspect default production
+top::SyntaxLexerClassModifier ::=
+{
+  top.atomName = "";
+}
+
+abstract production lexerClassAtomName
+top::SyntaxLexerClassModifier ::= atomName::String
+{
+  top.atomName = atomName;
+}
+
+-- Allows atomName on lexer classes
+concrete production lexerClassModifierFont
+top::LexerClassModifier ::= 'atomName' '=' '"' id::AtomNameId_t '"'
+{
+  top.unparse = "atomName = " ++ id.name;
+
+  top.lexerClassModifiers = [lexerClassFont(id.lookupFont.fullName)];
+  top.errors := id.lookupFont.errors;
+}
+
+terminal AtomNameId_t /[a-z]+(\.[a-z-]+)*/
 
 {--
  - The name of the language specified by this Tree-sitter grammar.
@@ -729,7 +848,7 @@ String ::= str::String
   return "$." ++ substitute(":", "_", str);
 }
 
-function toAtomScope
+function toAtomName
 String ::= str::String
 {
   -- replaces all _ with . and all camel camel case words with a dash and lowercase
