@@ -6,19 +6,13 @@ imports silver:definition:type;
 imports silver:definition:concrete_syntax;
 imports silver:definition:concrete_syntax:ast;
 imports silver:definition:regex;
-imports silver:util:raw:treemap;
 
 {-- Throughout the code the following abbreviations mean
   ts : Treesitter
 --}
 
-synthesized attribute highlighting_lexer_class :: String;
-attribute highlighting_lexer_class occurs on SyntaxTerminalModifiers, SyntaxTerminalModifier;
-synthesized attribute lexer_classes :: [String] 
+synthesized attribute lexer_classes :: [String];
 attribute lexer_classes occurs on SyntaxTerminalModifiers, SyntaxTerminalModifier, SyntaxDcl;
-
-synthesized attribute atom_name :: String;
-attribute atom_name occurs on SyntaxLexerClassModifiers, SyntaxLexerClassModifiers;
 
 synthesized attribute ts_lhs :: String occurs on SyntaxDcl;
 {--
@@ -40,7 +34,6 @@ synthesized attribute ts_production_inputs :: [String] occurs on SyntaxDcl;
 -- the list of productions that can be used to create a nonterminal
 synthesized attribute ts_nonterminal_rules_rhs :: [[String]];
 attribute ts_nonterminal_rules_rhs occurs on Syntax, SyntaxDcl;
-synthesized attribute atom_name :: String occurs on SyntaxDcl;
 
 -- A list of ts_prec_assoc_entrys
 synthesized attribute ts_prec_assoc_env :: [Pair<String Pair<Integer String>>] occurs on Syntax;
@@ -49,87 +42,11 @@ synthesized attribute ts_conflicts :: String occurs on Syntax;
 synthesized attribute ts_terminal_rules :: String occurs on Syntax;
 synthesized attribute ts_nonterminal_rules :: [Pair<String [[String]]>] occurs on Syntax;
 
+synthesized attribute atom_name :: String occurs on SyntaxDcl;
 synthesized attribute atom_scopes :: [String] occurs on Syntax;
 -- these two are combined to get terminal/atom names for the scopes of the atom package
 synthesized attribute lexerClassesWithAtomName :: [Pair<String String>] occurs on Syntax;
 synthesized attribute terminalLexerClassesEnv :: [Pair<String String>] occurs on Syntax;
-{-- ATOM HIGHLIGHTING LEXER CLASSES --}
-lexer class atom_comment;
-lexer class atom_comment_line;
-lexer class atom_comment_line_doubleSlash;
-lexer class atom_comment_line_doubleDash;
-lexer class atom_comment_line_numberSign;
-lexer class atom_comment_line_percentage;
-lexer class atom_comment_block;
-lexer class atom_comment_block_documentation;
-
-lexer class atom_constant;
-lexer class atom_constant_numeric;
-lexer class atom_constant_character;
-lexer class atom_constant_character_escape;
-lexer class atom_constant_language;
-lexer class atom_constant_other;
-
-lexer class atom_entity;
-lexer class atom_entity_name;
-lexer class atom_entity_name_function;
-lexer class atom_entity_name_type;
-lexer class atom_entity_name_tag;
-lexer class atom_entity_name_section;
-lexer class atom_entity_other;
-lexer class atom_entity_other_inheritedClass;
-lexer class atom_entity_other_attributeName;
-
-lexer class atom_invalid;
-lexer class atom_invalid_illegal;
-lexer class atom_invalid_deprecated;
-
-lexer class atom_keyword;
-lexer class atom_keyword_control;
-lexer class atom_keyword_operator;
-lexer class atom_keyword_other;
-
-lexer class atom_markup;
-lexer class atom_markup_underline;
-
-lexer class atom_markup_heading;
-lexer class atom_markup_italic;
-lexer class atom_markup_list;
-lexer class atom_markup_list_numbered;
-lexer class atom_markup_list_unnumbered;
-lexer class atom_markup_quote;
-lexer class atom_markup_raw;
-lexer class atom_markup_other;
-
-lexer class atom_meta;
-
-lexer class atom_storage;
-lexer class atom_storage_type;
-lexer class atom_storage_modifier;
-
-lexer class atom_string;
-lexer class atom_string_quoted;
-lexer class atom_string_quoted_single;
-lexer class atom_string_quoted_double;
-lexer class atom_string_quoted_triple;
-lexer class atom_string_quoted_other;
-lexer class atom_string_unquoted;
-lexer class atom_string_interpolated;
-lexer class atom_string_regexp;
-lexer class atom_string_other;
-
-lexer class atom_support;
-lexer class atom_support_function;
-lexer class atom_support_class;
-lexer class atom_support_type;
-lexer class atom_support_constant;
-lexer class atom_support_variable;
-lexer class atom_support_other;
-
-lexer class atom_variable;
-lexer class atom_variable_parameter;
-lexer class atom_variable_language;
-lexer class atom_variable_other;
 
 function getAtomNamesForTerminals
 [Pair<String String>] ::= lexerClassAtomNameEnv::[Pair<String String>] terminalLexerClassesEnv::[Pair<String String>]
@@ -137,7 +54,13 @@ function getAtomNamesForTerminals
   local attribute atomNamesForAllTerminals :: [Pair<String Maybe<String>>] =
     map(getAtomNameForTerminal(lexerClassAtomNameEnv, _), terminalLexerClassesEnv);
 
-  return filter(lookupKeyHasValue, atomNamesForAllTerminals);
+  return map(getJustFromSnd, filter(lookupKeyHasValue, atomNamesForAllTerminals));
+}
+
+function getJustFromSnd
+Pair<a b> ::= p::Pair<a Maybe<b>>
+{
+  return pair(p.fst, p.snd.fromJust);
 }
 
 function lookupKeyHasValue
@@ -147,11 +70,11 @@ Boolean ::= keyValPair::Pair<a Maybe<b>>
 }
 
 function getAtomNameForTerminal
-Maybe<String> ::= lexerClassAtomNameEnv::[Pair<String String>] terminalAndLexerClass::Pair<String String>
+Pair<String Maybe<String>> ::= lexerClassAtomNameEnv::[Pair<String String>] terminalAndLexerClass::Pair<String String>
 {
   return pair(
     terminalAndLexerClass.fst, 
-    lookupBy(stringEq, terminalAndLexerClass.snd, lexerClassAtomNameEnv))
+    lookupBy(stringEq, terminalAndLexerClass.snd, lexerClassAtomNameEnv));
 }
 
 function getAtomScopeName
@@ -176,7 +99,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   -- true means the nonterminal can produce the emptty string.
 
   local attribute terminalAtomScopeEnv :: [Pair<String String>] =
-    getAtomNamesForTerminals(s2.lexerClassesWithAtomName, s2.terminalLexerClassEnv);
+    getAtomNamesForTerminals(s2.lexerClassesWithAtomName, s2.terminalLexerClassesEnv);
 
   -- transform the grammar to remove nonterminals that can produce the empty string
   local attribute transformed_nts :: [Pair<String [[String]]>] =
@@ -233,9 +156,9 @@ fileTypes: [
   '${top.lang}'
 ]
 scopes:
-  // scopes specified by using the lexer classes defined in this extension on terminals
+  // scopes specified by using the terminal modifiers 
   ${implode("\n  ", s2.atom_scopes)}
-  // scopes specified by using lexer class modifiers on lexer classes already in the grammar
+  // scopes specified by using lexer class modifiers 
   ${implode("\n  ", map(getAtomScopeName, terminalAtomScopeEnv))}
 """;
 
@@ -323,7 +246,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 
   top.atom_scopes =
     if (isTerminal(s1) && s1.atom_name != "") then
-      s"""'${s1.ts_lhs}': '${s1.atom_name}'""" :: s2.atom_scopes;
+      (s"""'${s1.ts_lhs}': '${s1.atom_name}'""") :: s2.atom_scopes
     else
       s2.atom_scopes;
 }
@@ -355,18 +278,14 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   local attribute treesitter_name :: String = toTsDeclaration(n);
   top.ts_lhs =
     -- if we can add a leading _ to not put ignore terminals in the syntax tree that do not need to be there
-    if modifiers.ignored && modifiers.highlighting_lexer_class == "" then
+    if modifiers.ignored && modifiers.atomName == "" then
       toTsIgnoreDeclaration(n)
     else
       treesitter_name;
   top.lexer_classes = modifiers.lexer_classes;
   top.ts_terminal_regex = s"""/${regex.regString}/""";
   top.ts_prec_assoc_entry = pair(top.ts_lhs, getPrecAssocInfo(modifiers));
-  top.atom_name =
-    if modifiers.highlighting_lexer_class == "" then
-      ""
-    else
-      toAtomName(modifiers.highlighting_lexer_class)
+  top.atom_name = modifiers.atomName;
 }
 
 aspect production syntaxProduction
@@ -400,7 +319,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 
 
 aspect production syntaxDisambiguationGroup
-top::SyntaxDcl ::= n::String terms::[String] acode::String
+top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode::String
 {
   -- relevant attributes
 
@@ -420,14 +339,12 @@ top::SyntaxDcl ::= n::String terms::[String] acode::String
 aspect production nilTerminalMod
 top::SyntaxTerminalModifiers ::=
 {
-  top.highlighting_lexer_class = "";
   top.lexer_classes = [];
 }
 
 aspect production consTerminalMod
 top::SyntaxTerminalModifiers ::= h::SyntaxTerminalModifier  t::SyntaxTerminalModifiers
 {
-  top.highlighting_lexer_class = h.highlighting_lexer_class ++ t.highlighting_lexer_class;
   -- only one syntax terminal modifier should have the lexer classes
   -- specifically the termClasses production
   top.lexer_classes = 
@@ -439,7 +356,6 @@ top::SyntaxTerminalModifiers ::= h::SyntaxTerminalModifier  t::SyntaxTerminalMod
 aspect default production
 top::SyntaxTerminalModifier ::=
 {
-  top.highlighting_lexer_class = "";
   top.lexer_classes = [];
 }
 
@@ -449,55 +365,7 @@ top::SyntaxTerminalModifier ::= cls::[String]
   top.lexer_classes = cls;
   local attribute atomClasses :: [String] =
     filter(isAtomHighlightingLexerClass, cls);
-
-  -- TODO: should we error if there is more than one?
-  top.highlighting_lexer_class =
-  if (length(atomClasses) >= 1) then
-    stripAtomLexerClassPrefix(head(atomClasses))
-  else
-    "";
 }
-
-{-- SYNTAX LEXER CLASS MODIFIERS PRODUCTIONS --}
-aspect production consLexerClassMod
-top::SyntaxLexerClassModifiers ::= h::SyntaxLexerClassModifier  t::SyntaxLexerClassModifiers
-{
-  -- only the first non-zero font declaration is effective
-  top.atomName =
-    if h.atomName != ""
-    then h.atomName
-    else t.atomName;
-}
-
-aspect production nilLexerClassMod
-top::SyntaxLexerClassModifiers ::=
-{
-  top.atomName = "";
-}
-
-aspect default production
-top::SyntaxLexerClassModifier ::=
-{
-  top.atomName = "";
-}
-
-abstract production lexerClassAtomName
-top::SyntaxLexerClassModifier ::= atomName::String
-{
-  top.atomName = atomName;
-}
-
--- Allows atomName on lexer classes
-concrete production lexerClassModifierFont
-top::LexerClassModifier ::= 'atomName' '=' '"' id::AtomNameId_t '"'
-{
-  top.unparse = "atomName = " ++ id.name;
-
-  top.lexerClassModifiers = [lexerClassFont(id.lookupFont.fullName)];
-  top.errors := id.lookupFont.errors;
-}
-
-terminal AtomNameId_t /[a-z]+(\.[a-z-]+)*/
 
 {--
  - The name of the language specified by this Tree-sitter grammar.
@@ -803,7 +671,7 @@ function isSyntaxDisambiguationGroup
 Boolean ::= declaration::Decorated SyntaxDcl
 {
   return case declaration of
-  | syntaxDisambiguationGroup(_, _, _) -> true
+  | syntaxDisambiguationGroup(_, _, _, _) -> true
   | _ -> false
   end;
 }
