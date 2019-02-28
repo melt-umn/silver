@@ -131,9 +131,10 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
 }
 
 abstract production globalExprContext
-top::BlockContext ::=
+top::BlockContext ::= g::ProductionGraph
 {
   top.fullName = "_NULL_"; -- maybe we should actually error?
   top.signature = bogusNamedSignature(); -- TODO: do something about this?
+  top.prodFlowGraph = just(g);
 }
 

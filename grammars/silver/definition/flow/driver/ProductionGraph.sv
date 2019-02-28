@@ -198,8 +198,10 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
 }
 
 {--
- - Constructs a function flow graph. NOTE: Not used as part of inference.
- - Instead, only used as part of error checking.
+ - Constructs a function flow graph.
+ -
+ - NOTE: Not used as part of inference. Instead, only used as part of error checking.
+ -
  - @param ns  The function signature
  - @param flowEnv  The LOCAL flow env where the function is. (n.b. for productions involved in inference, we get a global flow env)
  - @param realEnv  The LOCAL environment
@@ -230,6 +232,38 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv  realEnv::Dec
 
   local g :: ProductionGraph =
     productionGraph(ns.fullName, "::nolhs", [], initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+
+  return updateGraph(g, prodEnv, ntEnv);
+}
+
+{--
+ - An anonymous graph is for a location where we have all `flowDefs` locally available,
+ - and they're actually not propagated into an environment anywhere. (e.g. globals)
+ -
+ - NOTE: Not used as part of inference. Instead, only used as part of error checking.
+ -
+ -}
+function constructAnonymousGraph
+ProductionGraph ::= defs::[FlowDef]  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
+{
+  -- Normal edges!
+  local normalEdges :: [Pair<FlowVertex FlowVertex>] =
+    flatMap((.flowEdges), defs);
+  
+  -- suspectEdges should always be empty! (No "aspects" where they could arise.)
+    
+  local initialGraph :: g:Graph<FlowVertex> =
+    createFlowGraph(normalEdges);
+
+  -- There can still be anonEq, but there's no RHS anymore
+  local stitchPoints :: [StitchPoint] =
+    localStitchPoints(error("anon/functions have no LHS, no forwarding defs"), defs) ++
+    patternStitchPoints(realEnv, defs);
+
+  -- Actually very unclear to me right now if these dummy names matter.
+  -- Presently duplicating what appears in BlockContext
+  local g :: ProductionGraph =
+    productionGraph("_NULL_", "::nolhs", [], initialGraph, [], stitchPoints).transitiveClosure;
 
   return updateGraph(g, prodEnv, ntEnv);
 }
