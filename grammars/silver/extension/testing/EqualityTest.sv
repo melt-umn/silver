@@ -9,7 +9,7 @@ import silver:modification:collection;
 import silver:extension:list;
 
 import silver:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph; -- for the "oh no again!" hack below
-import silver:driver:util only RootSpec;
+import silver:driver:util only RootSpec; -- ditto
 
 --import silver:analysis:typechecking:core;
 

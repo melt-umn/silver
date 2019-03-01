@@ -73,7 +73,7 @@ aspect default production
 top::BlockContext ::=
 {
   top.lhsNtName = error("LHS NT accessed for non-production");
-  top.sourceGrammar = error("sourceGrammar accessed for non-production/fuction");
+  top.sourceGrammar = error("sourceGrammar accessed for non-production/function");
   top.prodFlowGraph = nothing();
   -- most restrictive possible
   top.permitReturn = false;
@@ -83,6 +83,8 @@ top::BlockContext ::=
   top.lazyApplication = true;
   top.hasPartialSignature = false;
   top.hasFullSignature = false;
+  
+  -- always required: fullName, signature
 }
 
 abstract production functionContext
