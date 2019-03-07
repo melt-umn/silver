@@ -85,7 +85,14 @@ top::LexerClassModifier ::= 'disambiguate' acode::ActionCode_c
   top.lexerClassModifiers = [lexerClassDisambiguate(acode.actionCode)];
   top.errors := acode.errors;
   
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = 
+    constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
+
   acode.env = newScopeEnv(disambiguationClassActionVars ++ acode.defs, top.env);
-  acode.frame = disambiguationContext();
+  acode.frame = disambiguationContext(myFlowGraph);
 }
 

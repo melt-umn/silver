@@ -14,8 +14,15 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
       foldr(consProductionMod, nilProductionMod(), 
         prodAction(acode.actionCode) :: pm.productionModifiers))];
 
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = 
+    constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
+
   ns.signatureName = fName;
-  acode.frame = reduceActionContext(ns.namedSignature);
+  acode.frame = reduceActionContext(ns.namedSignature, myFlowGraph);
   acode.env = newScopeEnv(productionActionVars ++ acode.defs ++ ns.actionDefs, top.env);
 
   top.errors <- acode.errors;
@@ -27,7 +34,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 }
 
 
-nonterminal ActionCode_c with location,config,unparse,actionCode,env,defs,grammarName,errors,frame, compiledGrammars, flowEnv;
+nonterminal ActionCode_c with location,config,unparse,actionCode,env,defs,grammarName,errors,frame, compiledGrammars, flowEnv, flowDefs;
 
 synthesized attribute actionCode :: String;
 
@@ -36,6 +43,7 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 {
   top.unparse = "{\n" ++ stmts.unparse ++ "}\n";
   top.defs = flatMap(hackTransformLocals, stmts.defs);
+  top.flowDefs = stmts.flowDefs;
 
   top.actionCode = sflatMap(hacklocaldeclarations, stmts.defs) ++ stmts.translation;
 

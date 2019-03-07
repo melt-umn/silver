@@ -63,7 +63,14 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
 
   top.terminalModifiers = [termAction(acode.actionCode)];
 
-  acode.frame = actionContext();
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = 
+    constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
+
+  acode.frame = actionContext(myFlowGraph);
   acode.env = newScopeEnv(terminalActionVars ++ acode.defs, top.env);
   
   top.errors := acode.errors;
