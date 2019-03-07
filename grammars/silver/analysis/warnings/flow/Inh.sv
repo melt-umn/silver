@@ -181,7 +181,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
   local transitiveDeps :: [FlowVertex] =
-    expandGraph(e.flowDeps, top.frame.prodFlowGraph.fromJust);
+    expandGraph(e.flowDeps, top.frame.flowGraph);
   
   local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
   local lhsInhExceedsFlowType :: [String] = set:toList(set:difference(lhsInhDeps, inhDepsForSyn(attr.attrDcl.fullName, top.frame.lhsNtName, myFlow)));
@@ -189,7 +189,6 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors <-
     if dl.found && attr.found
     && (top.config.warnAll || top.config.warnMissingInh)
-    && top.frame.prodFlowGraph.isJust -- Default synthesized equations have no production graph to use
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
       if null(lhsInhExceedsFlowType) then []
       else [wrn(top.location, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
@@ -200,13 +199,13 @@ aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   local transitiveDeps :: [FlowVertex] = 
-    expandGraph(e.flowDeps, top.frame.prodFlowGraph.fromJust);
+    expandGraph(e.flowDeps, top.frame.flowGraph);
   
   -- TODO: if LHS is forward, we have to check that we aren't exceeding flow type!! (BUG)
   
   -- check transitive deps only. Nothing to check for flow types
   top.errors <-
-    if (top.config.warnAll || top.config.warnMissingInh) && top.frame.prodFlowGraph.isJust
+    if (top.config.warnAll || top.config.warnMissingInh)
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
     else [];
 }
@@ -219,7 +218,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
   local transitiveDeps :: [FlowVertex] =
-    expandGraph(e.flowDeps, top.frame.prodFlowGraph.fromJust);
+    expandGraph(e.flowDeps, top.frame.flowGraph);
   
   local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
   local lhsInhExceedsFlowType :: [String] = set:toList(set:difference(lhsInhDeps, inhDepsForSyn(attr.attrDcl.fullName, top.frame.lhsNtName, myFlow)));
@@ -227,7 +226,6 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors <-
     if dl.found && attr.found
     && (top.config.warnAll || top.config.warnMissingInh)
-    && top.frame.prodFlowGraph.isJust
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
       if null(lhsInhExceedsFlowType) then []
       else [wrn(top.location, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
@@ -240,7 +238,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
   local transitiveDeps :: [FlowVertex] =
-    expandGraph(e.flowDeps, top.frame.prodFlowGraph.fromJust);
+    expandGraph(e.flowDeps, top.frame.flowGraph);
   
   local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
   local lhsInhExceedsFlowType :: [String] = set:toList(set:difference(lhsInhDeps, inhDepsForSyn(attr.attrDcl.fullName, top.frame.lhsNtName, myFlow)));
@@ -248,7 +246,6 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors <-
     if dl.found && attr.found
     && (top.config.warnAll || top.config.warnMissingInh)
-    && top.frame.prodFlowGraph.isJust
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
       if null(lhsInhExceedsFlowType) then []
       else [wrn(top.location, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
@@ -258,11 +255,11 @@ aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   local transitiveDeps :: [FlowVertex] =
-    expandGraph(e.flowDeps, top.frame.prodFlowGraph.fromJust);
+    expandGraph(e.flowDeps, top.frame.flowGraph);
   
   -- check transitive deps only. Nothing to be done for flow types
   top.errors <-
-    if (top.config.warnAll || top.config.warnMissingInh) && top.frame.prodFlowGraph.isJust
+    if (top.config.warnAll || top.config.warnMissingInh)
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
     else [];
 }
@@ -270,11 +267,11 @@ aspect production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   local transitiveDeps :: [FlowVertex] = 
-    expandGraph(e.flowDeps, top.frame.prodFlowGraph.fromJust);
+    expandGraph(e.flowDeps, top.frame.flowGraph);
   
   -- check transitive deps only. Nothing to be done for flow types
   top.errors <-
-    if (top.config.warnAll || top.config.warnMissingInh) && top.frame.prodFlowGraph.isJust
+    if (top.config.warnAll || top.config.warnMissingInh)
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
     else [];
 }
@@ -287,13 +284,13 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
   local transitiveDeps :: [FlowVertex] =
-    expandGraph(e.flowDeps, top.frame.prodFlowGraph.fromJust);
+    expandGraph(e.flowDeps, top.frame.flowGraph);
   
   local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
   local lhsInhExceedsFlowType :: [String] = set:toList(set:difference(lhsInhDeps, inhDepsForSyn("forward", top.frame.lhsNtName, myFlow)));
 
   top.errors <-
-    if (top.config.warnAll || top.config.warnMissingInh) && top.frame.prodFlowGraph.isJust
+    if (top.config.warnAll || top.config.warnMissingInh)
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
          if null(lhsInhExceedsFlowType) then []
          else [wrn(top.location, "Forward equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
@@ -306,7 +303,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
   local transitiveDeps :: [FlowVertex] =
-    expandGraph(e.flowDeps, top.frame.prodFlowGraph.fromJust);
+    expandGraph(e.flowDeps, top.frame.flowGraph);
   
   local lhsInhDeps :: set:Set<String> = onlyLhsInh(transitiveDeps);
   -- problem = lhsinh deps - fwd flow type - this inh attribute
@@ -321,7 +318,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
         inhDepsForSyn("forward", top.frame.lhsNtName, myFlow))));
 
   top.errors <-
-    if (top.config.warnAll || top.config.warnMissingInh) && top.frame.prodFlowGraph.isJust
+    if (top.config.warnAll || top.config.warnMissingInh)
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
          if null(lhsInhExceedsFlowType) then []
          else [wrn(top.location, "Forward inherited equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType))]
@@ -332,11 +329,11 @@ aspect production localValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   local transitiveDeps :: [FlowVertex] =
-    expandGraph(e.flowDeps, top.frame.prodFlowGraph.fromJust);
+    expandGraph(e.flowDeps, top.frame.flowGraph);
   
   -- check transitive deps only. No worries about flow types.
   top.errors <-
-    if (top.config.warnAll || top.config.warnMissingInh) && top.frame.prodFlowGraph.isJust
+    if (top.config.warnAll || top.config.warnMissingInh)
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
     else [];
 }
@@ -345,10 +342,10 @@ aspect production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {
   local transitiveDeps :: [FlowVertex] =
-    expandGraph(e.flowDeps, top.frame.prodFlowGraph.fromJust);
+    expandGraph(e.flowDeps, top.frame.flowGraph);
 
   top.errors <-
-    if (top.config.warnAll || top.config.warnMissingInh) && top.frame.prodFlowGraph.isJust
+    if (top.config.warnAll || top.config.warnMissingInh)
     then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
     else [];
 }
@@ -359,7 +356,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  local productionFlowGraph :: ProductionGraph = top.frame.prodFlowGraph.fromJust;
+  local productionFlowGraph :: ProductionGraph = top.frame.flowGraph;
   local transitiveDeps :: [FlowVertex] = expandGraph(e.flowDeps, productionFlowGraph);
   
   local originalEqDeps :: [FlowVertex] = 
@@ -375,7 +372,6 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
     if (top.config.warnAll || top.config.warnMissingInh)
        -- We can ignore functions. We're checking LHS inhs here... functions don't have any!
     && top.frame.hasFullSignature
-    && top.frame.prodFlowGraph.isJust
     then if null(lhsInhExceedsFlowType) then []
          else [wrn(top.location, "Local contribution (" ++ val.name ++ " <-) equation exceeds flow dependencies with: " ++ implode(", ", lhsInhExceedsFlowType))]
     else [];
@@ -543,16 +539,9 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     | _, _ -> nothing()
     end;
 
-  -- TODO bug: expressions in globals don't have flow graphs. That's a mistake.
-  -- We need to add edges due to flow types and 'flowDefs' from subexpressions
-  -- to accurately raise errors. We need to fix this by ensuring ALL contexts get
-  -- flow graphs built for them.
-
   -- These should be the only ones that can reference our anon sink
   local transitiveDeps :: [FlowVertex] =
-    if top.frame.prodFlowGraph.isJust
-    then expandGraph(top.flowDeps, top.frame.prodFlowGraph.fromJust)
-    else top.flowDeps;
+    expandGraph(top.flowDeps, top.frame.flowGraph);
   
   pr.receivedDeps = transitiveDeps;
 
@@ -623,5 +612,13 @@ Boolean ::= prod::DclInfo  sigName::String  attrName::String  realEnv::Decorated
     ignoreIfAutoCopyOnLhs(prod.namedSignature.outputElement.typerep.typeName, realEnv, attrName); -- not autocopy (and on lhs)
 }
 
+--------------------------------------------------------------------------------
+
+-- TODO: There are a few final places where we need to `checkEqDeps` for the sake of `anonVertex`s
+
+-- global declarations, action blocks (production, terminal, disam, etc)
+
+-- But we don't create flowEnv information for these locations so they can't be checked... oops
+-- (e.g. `checkEqDeps` wants a production fName to look things up about.)
 
 

@@ -94,6 +94,6 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
   top.fullName = sig.fullName;
   top.lhsNtName = sig.outputElement.typerep.typeName;
   top.signature = sig;
-  top.prodFlowGraph = just(g);
+  top.flowGraph = g;
 }
 
