@@ -32,7 +32,7 @@ top::IOVal<a> ::= i::IO v::a
 {--
  - IO is the IO Token used to sequence actions.
  -}
-type IO foreign;
+type IO foreign = "common.IOToken";
 
 ------ IO Actions:
 
