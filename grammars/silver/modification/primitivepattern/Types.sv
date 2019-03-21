@@ -201,11 +201,11 @@ top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 }
 
 aspect production foreignType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String  transType::String  params::[Type]
 {
   top.refine = 
     case top.refineWith of
-    | foreignType(ofn, op) -> 
+    | foreignType(ofn, _, op) -> 
         if fn == ofn
         then refineAll( params, op )
         else errorSubst("Tried to refine conflicting foreign types " ++ fn ++ " and " ++ ofn)

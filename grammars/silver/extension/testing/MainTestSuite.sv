@@ -70,7 +70,7 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
       productionRHSCons(
        productionRHSElem(
         name("mainIO", top.location),
-        '::', typerepTypeExpr(foreignType("core:IO", []), location=top.location), location=top.location),
+        '::', typerepTypeExpr(ioForeignType, location=top.location), location=top.location),
        productionRHSNil(location=top.location),
       location=top.location),
      location=top.location),
