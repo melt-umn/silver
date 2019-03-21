@@ -196,7 +196,7 @@ public final class IOToken {
 	/**
 	 * <pre>IOVal<[String]> ::= s::String i::IO</pre>
 	 */
-	public NIOVal listContents(String filename) {
+	public NIOVal listContents(StringCatter filename) {
 		try {
 			File f = new File(filename.toString());
 			String[] files = f.list();
