@@ -311,8 +311,8 @@ IO ::= s::String  i::IO
 {--
  - Copy a file from src to dst.
  -
- - @param src  The path to read
- - @param dst  The path to write
+ - @param src  The path of the file to copy.
+ - @param dst  The path of the file to write, or the directory to copy the file to.
  - @return  the IO token. Errors are fatal.
  -}
 function copyFile
