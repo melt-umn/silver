@@ -45,6 +45,13 @@ public final class IOToken {
 	private NIOVal wrap(Object arg) {
 		return new Pioval(this, arg);
 	}
+	
+	/**
+	 * Used for `unsafeTrace`
+	 */
+	public Object identity(Object arg) {
+		return arg;
+	}
 
 	/**
 	 * <pre>IO ::= val::Integer i::IO</pre>
