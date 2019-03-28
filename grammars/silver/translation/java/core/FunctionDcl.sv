@@ -1,6 +1,6 @@
 grammar silver:translation:java:core;
 
-import silver:modification:ffi only foreignType; -- for main type check only
+import silver:modification:ffi only ioForeignType; -- for main type check only
 import silver:util;
 
 aspect production functionDcl
@@ -34,7 +34,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
        unify(namedSig.typerep,
          functionType(nonterminalType("core:IOVal", [intType()]), [
            decoratedType(nonterminalType("core:List", [stringType()])),
-           foreignType("core:IO", [])], [])).failure
+           ioForeignType], [])).failure
     then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IO). Instead it has type " ++ prettyType(namedSig.typerep))]
     else [];
 }
