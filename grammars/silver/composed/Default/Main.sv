@@ -8,6 +8,8 @@ import silver:extension:doc;
 import silver:analysis:warnings:flow;
 import silver:analysis:warnings:exporting;
 
+import silver:term;
+
 parser svParse::Root {
   silver:host;
 

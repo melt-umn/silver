@@ -96,6 +96,11 @@ concrete productions top::AST_c
     top.ast = booleanAST(false);
     top.errors := [];
   }
+| n::Id_t
+  {
+    top.ast = varAST(n.lexeme);
+    top.errors := [];
+  }
 
 nonterminal ASTs_c with ast<[AST]>, errors;
 

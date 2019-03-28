@@ -1,11 +1,9 @@
 package common;
 
-import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 
 import common.exceptions.*;
-
 import core.*;
 import core.reflect.*;
 
@@ -181,8 +179,9 @@ public final class Reflection {
 			path[path.length - 1] = "P" + path[path.length - 1];
 			final String className = String.join(".", path);
 			try {
+				@SuppressWarnings("unchecked")
 				Method prodReify =
-						((Class<Node>)Class.forName(className)).getMethod("reify", TypeRep.class, NAST[].class, String[].class, NAST[].class);
+					((Class<Node>)Class.forName(className)).getMethod("reify", TypeRep.class, NAST[].class, String[].class, NAST[].class);
 				return prodReify.invoke(null, resultType, childASTs, annotationNames, annotationASTs);
 			} catch (ClassNotFoundException e) {
 				throw new SilverError("Undefined production " + prodName);
@@ -211,8 +210,9 @@ public final class Reflection {
 			path[path.length - 1] = "T" + path[path.length - 1];
 			final String className = String.join(".", path);
 			try {
+				@SuppressWarnings("unchecked")
 				Constructor<Terminal> terminalConstructor =
-						((Class<Terminal>)Class.forName(className)).getConstructor(StringCatter.class, NLocation.class);
+					((Class<Terminal>)Class.forName(className)).getConstructor(StringCatter.class, NLocation.class);
 				return terminalConstructor.newInstance(lexeme, location);
 			} catch (ClassNotFoundException e) {
 				throw new SilverError("Undefined terminal " + terminalName);
@@ -246,6 +246,8 @@ public final class Reflection {
 				givenType = new BaseTypeRep("Boolean");
 			} else if (ast.getName().equals("core:reflect:anyAST")) {
 				givenType = getType(givenObject);
+			} else if (ast.getName().equals("core:reflect:varAST")) {
+				throw new SilverError("var AST cannot be reified.");
 			} else {
 				throw new SilverInternalError("Unexpected AST production " + ast.getName());
 			}

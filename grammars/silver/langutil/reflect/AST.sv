@@ -58,6 +58,12 @@ top::AST ::= x::a
     end;
 }
 
+aspect production varAST
+top::AST ::= n::String
+{
+  top.pp = text(n);
+}
+
 attribute pps occurs on ASTs;
 
 aspect production consAST

@@ -37,6 +37,10 @@ abstract production anyAST
 top::AST ::= x::a
 {}
 
+abstract production varAST
+top::AST ::= n::String
+{}
+
 nonterminal ASTs;
 
 abstract production consAST

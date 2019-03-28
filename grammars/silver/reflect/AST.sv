@@ -74,6 +74,12 @@ top::AST ::= x::a
     end;
 }
 
+aspect production varAST
+top::AST ::= n::String
+{
+  top.serialize = right(n);
+}
+
 attribute serialize<[String]> occurs on ASTs;
 
 aspect production consAST
