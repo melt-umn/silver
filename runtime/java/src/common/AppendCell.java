@@ -99,7 +99,7 @@ public class AppendCell extends ConsCell {
 				// We MUST grab the tail of leftap now. If we do not, then it may mutate (becomeLiteralConsCell) before we
 				// evaluate the thunk! If that happens, we get duplication.
 				final Object leftaptail = leftap.tail;
-				return append(leftap.head, new Thunk(() -> append(leftaptail, rightap)));
+				return append(leftap.head, new Thunk<ConsCell>(() -> append(leftaptail, rightap)));
 			}
 		}
 		// Okay, we're a real append of a real, literal ConsCell on the LHS.
@@ -112,7 +112,7 @@ public class AppendCell extends ConsCell {
 		final ConsCell left = (ConsCell)head;
 		head = left.head();
 		final Object oldtail = tail;
-		tail = new Thunk(() -> append(left.tail(), oldtail));
+		tail = new Thunk<ConsCell>(() -> append(left.tail(), oldtail));
 		literalConsCell = true;
 	}
 	
