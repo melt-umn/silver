@@ -171,8 +171,8 @@ top::IdeStmt ::=
 -- Helpers for writing expected types
 global t_iomsgs :: Type = nonterminalType("core:IOVal", [listType(nonterminalType("silver:langutil:Message", []))]);
 global t_props :: Type = listType(nonterminalType("ide:IdeProperty", []));
-global t_io :: Type = foreignType("core:IO", []);
-global t_proj :: Type = foreignType("ide:IdeProject", []);
+global t_io :: Type = ioForeignType;
+global t_proj :: Type = foreignType("ide:IdeProject", "Object", []);
 global t_loc :: Type = nonterminalType("core:Location", []);
 
 concrete production makeIdeStmt_Builder

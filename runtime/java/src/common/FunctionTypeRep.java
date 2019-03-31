@@ -1,7 +1,5 @@
 package common;
 
-import java.util.*;
-
 /**
  * Representation of a (possibly parametric) basic Silver type, used for run-time type checking in reification.  
  * 

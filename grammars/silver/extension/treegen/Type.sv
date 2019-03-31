@@ -84,7 +84,7 @@ top::Type ::= el::Type
   top.idNameForGenArb = "List" ++ el.idNameForGenArb;
 }
 aspect production foreignType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String  transType::String  params::[Type]
 {
   -- err, shouldn't happen?
   top.idNameForGenArb = "FOREIGN";
