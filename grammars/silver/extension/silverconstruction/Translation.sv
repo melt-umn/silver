@@ -1,7 +1,7 @@
 grammar silver:extension:silverconstruction;
 
 imports silver:reflect;
-imports silver:langutil:hostEmbedding;
+imports silver:hostEmbedding;
 
 aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs

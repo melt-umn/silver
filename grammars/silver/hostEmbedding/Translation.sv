@@ -1,4 +1,4 @@
-grammar silver:langutil:hostEmbedding;
+grammar silver:hostEmbedding;
 
 imports silver:reflect;
 imports silver:langutil:pp;
