@@ -41,6 +41,10 @@ abstract production varAST
 top::AST ::= n::String
 {}
 
+abstract production wildAST
+top::AST ::=
+{}
+
 nonterminal ASTs;
 
 abstract production consAST

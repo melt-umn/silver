@@ -12,6 +12,7 @@ terminal LSqr_t        '[';
 terminal RSqr_t        ']';
 
 terminal Id_t /[A-Za-z][A-Za-z0-9\_]*/;
+terminal WildCard_t '_';
 
 terminal Terminal_kwd 'terminal' dominates {Id_t};
 
@@ -99,6 +100,11 @@ concrete productions top::AST_c
 | n::Id_t
   {
     top.ast = varAST(n.lexeme);
+    top.errors := [];
+  }
+| '_'
+  {
+    top.ast = wildAST();
     top.errors := [];
   }
 

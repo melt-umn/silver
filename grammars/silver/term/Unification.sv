@@ -59,6 +59,7 @@ attribute substituted<AST> occurs on AST;
 aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
+  propagate substituted;
   children.otherTerm = case top.otherTerm of nonterminalAST(_, a, _) -> a end;
   annotations.otherTerm = case top.otherTerm of nonterminalAST(_, _, a) -> a end;
   top.subs =
@@ -74,6 +75,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         unifySubs(childrenSubs, annotationSubs);
       }
     | varAST(n) -> just([pair(n, top)])
+    | wildAST() -> just([])
     | _ -> nothing()
     end;
 }
@@ -81,6 +83,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 aspect production terminalAST
 top::AST ::= terminalName::String lexeme::String location::Location
 {
+  propagate substituted;
   top.subs =
     case top.otherTerm of
     | terminalAST(otherTerminalName, otherLexeme, otherLocation) ->
@@ -92,6 +95,7 @@ top::AST ::= terminalName::String lexeme::String location::Location
       then just([])
       else nothing()
     | varAST(n) -> just([pair(n, top)])
+    | wildAST() -> just([])
     | _ -> nothing()
     end;
 }
@@ -99,11 +103,13 @@ top::AST ::= terminalName::String lexeme::String location::Location
 aspect production listAST
 top::AST ::= vals::ASTs
 {
+  propagate substituted;
   vals.otherTerm = case top.otherTerm of listAST(a) -> a end;
   top.subs =
     case top.otherTerm of
     | listAST(_) -> vals.subs
     | varAST(n) -> just([pair(n, top)])
+    | wildAST() -> just([])
     | _ -> nothing()
     end;
 }
@@ -111,10 +117,12 @@ top::AST ::= vals::ASTs
 aspect production stringAST
 top::AST ::= s::String
 {
+  propagate substituted;
   top.subs =
     case top.otherTerm of
     | stringAST(otherS) -> if s == otherS then just([]) else nothing()
     | varAST(n) -> just([pair(n, top)])
+    | wildAST() -> just([])
     | _ -> nothing()
     end;
 }
@@ -122,10 +130,12 @@ top::AST ::= s::String
 aspect production integerAST
 top::AST ::= i::Integer
 {
+  propagate substituted;
   top.subs =
     case top.otherTerm of
     | integerAST(otherI) -> if i == otherI then just([]) else nothing()
     | varAST(n) -> just([pair(n, top)])
+    | wildAST() -> just([])
     | _ -> nothing()
     end;
 }
@@ -133,10 +143,12 @@ top::AST ::= i::Integer
 aspect production floatAST
 top::AST ::= f::Float
 {
+  propagate substituted;
   top.subs =
     case top.otherTerm of
     | floatAST(otherF) -> if f == otherF then just([]) else nothing()
     | varAST(n) -> just([pair(n, top)])
+    | wildAST() -> just([])
     | _ -> nothing()
     end;
 }
@@ -144,10 +156,12 @@ top::AST ::= f::Float
 aspect production booleanAST
 top::AST ::= b::Boolean
 {
+  propagate substituted;
   top.subs =
     case top.otherTerm of
     | booleanAST(otherB) -> if b == otherB then just([]) else nothing()
     | varAST(n) -> just([pair(n, top)])
+    | wildAST() -> just([])
     | _ -> nothing()
     end;
 }
@@ -155,14 +169,31 @@ top::AST ::= b::Boolean
 aspect production anyAST
 top::AST ::= x::a
 {
-  -- TODO: better handling?
-  top.subs = error("Can't unify anyAST");
+  propagate substituted;
+  top.subs =
+    case top.otherTerm of
+    | varAST(n) -> just([pair(n, top)])
+    | wildAST() -> just([])
+    | _ -> error("Can't unify anyAST")
+    end;
 }
 
 aspect production varAST
 top::AST ::= n::String
 {
-  top.subs = just([pair(n, top.otherTerm)]);
+  top.subs =
+    case top.otherTerm of
+    | wildAST() -> nothing()
+    | t -> just([pair(n, t)])
+    end;
+  top.substituted = fromMaybe(top, lookupBy(stringEq, n, top.appliedSubs));
+}
+
+aspect production wildAST
+top::AST ::=
+{
+  propagate substituted;
+  top.subs = just([]);
 }
 
 attribute otherTerm<ASTs> occurs on ASTs;
@@ -171,6 +202,7 @@ attribute substituted<ASTs> occurs on ASTs;
 aspect production consAST
 top::ASTs ::= h::AST t::ASTs
 {
+  propagate substituted;
   h.otherTerm = case top.otherTerm of consAST(a, _) -> a end;
   t.otherTerm = case top.otherTerm of consAST(_, a) -> a end;
   top.subs =
@@ -188,6 +220,7 @@ top::ASTs ::= h::AST t::ASTs
 aspect production nilAST
 top::ASTs ::=
 {
+  propagate substituted;
   top.subs =
     case top.otherTerm of
     | consAST(_, _) -> nothing()
@@ -202,6 +235,7 @@ attribute substituted<NamedASTs> occurs on NamedASTs;
 aspect production consNamedAST
 top::NamedASTs ::= h::NamedAST t::NamedASTs
 {
+  propagate substituted;
   h.otherTerm = case top.otherTerm of consNamedAST(a, _) -> a end;
   t.otherTerm = case top.otherTerm of consNamedAST(_, a) -> a end;
   top.subs =
@@ -219,6 +253,7 @@ top::NamedASTs ::= h::NamedAST t::NamedASTs
 aspect production nilNamedAST
 top::NamedASTs ::=
 {
+  propagate substituted;
   top.subs =
     case top.otherTerm of
     | consNamedAST(_, _) -> nothing()
@@ -232,6 +267,7 @@ attribute substituted<NamedAST> occurs on NamedAST;
 aspect production namedAST
 top::NamedAST ::= n::String v::AST
 {
+  propagate substituted;
   v.otherTerm = case top.otherTerm of namedAST(_, a) -> a end;
   top.subs =
     case top.otherTerm of

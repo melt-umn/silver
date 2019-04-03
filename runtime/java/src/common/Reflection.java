@@ -247,9 +247,12 @@ public final class Reflection {
 			} else if (ast.getName().equals("core:reflect:anyAST")) {
 				givenType = getType(givenObject);
 			} else if (ast.getName().equals("core:reflect:varAST")) {
-				throw new SilverError("var AST cannot be reified.");
+				throw new SilverError("variable AST cannot be reified.");
+			} else if (ast.getName().equals("core:reflect:wildAST")) {
+				throw new SilverError("wildcard AST cannot be reified.");
 			} else {
-				throw new SilverInternalError("Unexpected AST production " + ast.getName());
+				// Not an internal error, someone *could* mistakenly write another forwarding AST production
+				throw new SilverError("Unexpected AST production " + ast.getName());
 			}
 			// Perform unification with the expected type
 			if (!TypeRep.unify(resultType, givenType)) {

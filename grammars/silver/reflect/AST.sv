@@ -80,6 +80,12 @@ top::AST ::= n::String
   top.serialize = right(n);
 }
 
+aspect production wildAST
+top::AST ::=
+{
+  top.serialize = right("_");
+}
+
 attribute serialize<[String]> occurs on ASTs;
 
 aspect production consAST

@@ -64,6 +64,12 @@ top::AST ::= n::String
   top.pp = text(n);
 }
 
+aspect production wildAST
+top::AST ::=
+{
+  top.pp = text("_");
+}
+
 attribute pps occurs on ASTs;
 
 aspect production consAST
