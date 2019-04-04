@@ -68,7 +68,7 @@ public class FFI {
 	}
 	private static <T, U> Pair<T, U> PairFromNPair(NPair pair) {
 		DecoratedNode dn = pair.decorate();
-		return new Pair(
+		return new Pair<T, U>(
 			(T) dn.synthesized(core.Init.core_fst__ON__core_Pair),
 			(U) dn.synthesized(core.Init.core_snd__ON__core_Pair));
 	}
@@ -88,13 +88,13 @@ public class FFI {
 			return new PjsonNull();
 		} else if(el.isJsonArray()) {
 			JsonArray arr = el.getAsJsonArray();
-			List<JsonElement> list = new ArrayList();
+			List<JsonElement> list = new ArrayList<JsonElement>();
 			arr.forEach(list::add);
 			ConsCell cc = ConsCellFromList(FFI::NJsonFromJsonElement, list);
 			return new PjsonArray(cc);
 		} else if(el.isJsonObject()) {
 			JsonObject obj = el.getAsJsonObject();
-			List<NPair> list = new ArrayList();
+			List<NPair> list = new ArrayList<NPair>();
 			obj.entrySet().iterator().forEachRemaining(e -> {
 				String k = e.getKey();
 				JsonElement v = e.getValue();

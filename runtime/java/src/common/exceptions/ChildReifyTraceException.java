@@ -5,6 +5,7 @@ package common.exceptions;
  * 
  * @author krame505
  */
+@SuppressWarnings("serial")
 public class ChildReifyTraceException extends ReifyTraceException {
 	public final String prodName;
 	public final String childName;

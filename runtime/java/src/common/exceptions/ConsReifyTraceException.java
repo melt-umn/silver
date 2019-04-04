@@ -5,6 +5,7 @@ package common.exceptions;
  * 
  * @author krame505
  */
+@SuppressWarnings("serial")
 public class ConsReifyTraceException extends ReifyTraceException {
 	public final boolean isHead;
 	
