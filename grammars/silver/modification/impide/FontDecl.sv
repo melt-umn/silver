@@ -20,7 +20,7 @@ top::AGDcl ::= 'temp_imp_ide_font' id::Name 'color' '(' r::Int_t ',' g::Int_t ',
 
   top.syntaxAst = [syntaxFont(
                    fName, 
-                   font(makeColor(toInt(r.lexeme),toInt(g.lexeme),toInt(b.lexeme)), 
+                   font(makeColor(toInteger(r.lexeme),toInteger(g.lexeme),toInteger(b.lexeme)), 
                         fontStyles.isBold, 
                         fontStyles.isItalic)
 		  )];

@@ -1,11 +1,21 @@
 
 To edit the Silver runtime from an Eclipse IDE,
 
-1. Run a successful `./deep-rebuild` at project root.
-   This is necessary to build generate translations for Silver standard library
+1. Run a successful `./deep-rebuild` at Silver project root.
+   This is necessary to generate translations for the Silver standard library
    and other things referenced by the runtime.
-2. Add `silver/runtime/java` as a project to your Eclipse workspace.
-3. `Window -> Preferences` and `Java -> Build Path -> Classpath Variables`
-   Then set `SILVER_HOME` to where you have checked out Silver.
-   (e.g. `/home/tedinski/repos/silver`)
+   (Failure to do this, or later having run clean, will result in errors related
+   to not finding classes from `core` and `lib`.)
+
+2. In Eclipse, `File -> Import`, `General -> Existing Projects into Workspace`.
+   Give it the path to `silver/runtime/java`.
+
+3. Go to `Window -> Preferences` (NOTE: **WINDOW** preferences, other
+   ways to get to preferences may not show this option! Confusingly.)
+   and navigate to `Java -> Build Path -> Classpath Variables`.
+   Then create a new `SILVER_HOME` variable, set to where you have checked out
+   Silver. (e.g. `/home/tedinski/repos/silver`)
+
+   (The purpose of this is to ensure the eclipse project configuration that's
+   checked into version control does not need to change from person to person.)
 

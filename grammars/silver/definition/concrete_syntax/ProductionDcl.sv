@@ -71,7 +71,7 @@ top::ProductionModifier ::= 'precedence' '=' i::Int_t
 {
   top.unparse = "precedence = " ++ i.lexeme;
 
-  top.productionModifiers = [prodPrecedence(toInt(i.lexeme))];
+  top.productionModifiers = [prodPrecedence(toInteger(i.lexeme))];
   top.errors := [];
 }
 
