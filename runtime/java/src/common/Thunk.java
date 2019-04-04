@@ -31,7 +31,7 @@ public class Thunk<T> {
 	}
 	
 	public static Thunk<Object> fromLazy(Lazy l, DecoratedNode ctx) {
-		return new Thunk(() -> l.eval(ctx));
+		return new Thunk<Object>(() -> l.eval(ctx));
 	}
 	
 	/**
@@ -50,7 +50,7 @@ public class Thunk<T> {
 	private static Object transformUndecorateThunk(final Thunk<DecoratedNode> t) {
 		// Unevaluated Thunk
 		if(t.o instanceof Evaluable)
-			return new Thunk(() -> t.eval().undecorate());
+			return new Thunk<Object>(() -> t.eval().undecorate());
 		// Evaluated Thunk, eagerly undecorate:
 		return t.eval().undecorate();
 	}

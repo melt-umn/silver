@@ -413,7 +413,7 @@ public final class Util {
 	 * This is a "private" method for the Silver compiler to use to determine
 	 * where it is installed. We can figure out how to generalize this later.
 	 */
-	public static StringCatter determineSilverHomePath(Class clazz) {
+	public static StringCatter determineSilverHomePath(Class<?> clazz) {
 		URI jarLocation;
 		try {
 			jarLocation = clazz.getProtectionDomain().getCodeSource().getLocation().toURI();
