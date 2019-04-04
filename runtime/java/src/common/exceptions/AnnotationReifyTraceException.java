@@ -5,6 +5,7 @@ package common.exceptions;
  * 
  * @author krame505
  */
+@SuppressWarnings("serial")
 public class AnnotationReifyTraceException extends ReifyTraceException {
 	public final String prodName;
 	public final String annoName;

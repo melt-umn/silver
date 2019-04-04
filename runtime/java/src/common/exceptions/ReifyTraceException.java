@@ -6,6 +6,7 @@ package common.exceptions;
  * 
  * @author krame505
  */
+@SuppressWarnings("serial")
 public abstract class ReifyTraceException extends TraceException {
 	public ReifyTraceException(String s, Throwable t) {
 		super(s, t);
