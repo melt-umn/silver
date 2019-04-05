@@ -86,7 +86,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   errCheck1 = check(e.typerep, val.lookupValue.typerep);
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
+       then [err(top.location, "Parser attribute " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
        else [];
 }
 
@@ -216,7 +216,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   errCheck1 = check(e.typerep, val.lookupValue.typerep);
   top.errors <-
     if errCheck1.typeerror
-    then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
+    then [err(top.location, "Terminal attribute " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
     else [];
 }
 

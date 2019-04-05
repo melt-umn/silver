@@ -31,6 +31,16 @@ top::Type ::=
   top.appendDispatcher = errorPlusPlus(_, _, location=_);
 }
 
+aspect production errorType
+top::Type ::=
+{
+  -- Allow these, to suppress raising additional unnecessary errors.
+  top.instanceEq = true;
+  top.instanceOrd = true;
+  top.instanceNum = true;
+  top.instanceConvertible = true;
+}
+
 aspect production intType
 top::Type ::=
 {

@@ -78,7 +78,7 @@ concrete productions top::AST_c
   }
 | i::Int_t
   {
-    top.ast = integerAST(toInt(i.lexeme));
+    top.ast = integerAST(toInteger(i.lexeme));
     top.errors := [];
   }
 | f::Float_t

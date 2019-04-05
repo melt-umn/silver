@@ -36,7 +36,7 @@ top::Expr ::= 'toInteger' '(' e::Expr ')'
                     | intType() -> e.translation
                     | floatType() -> s"Integer.valueOf(((Float)${e.translation}).intValue())"
                     | stringType() -> s"Integer.valueOf(${e.translation}.toString())"
-                    | t -> error("INTERNAL ERROR: no toInt translation for type " ++ prettyType(t))
+                    | t -> error("INTERNAL ERROR: no toInteger translation for type " ++ prettyType(t))
                     end;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);

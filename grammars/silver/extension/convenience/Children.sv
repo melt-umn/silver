@@ -15,7 +15,7 @@ top::Expr ::= '$' e::Int_t
       if top.frame.signature.outputElement.elementName == "__SV_BOGUS_ELEM" -- TODO hack!
       then nothing()
       else
-        findChild(toInt(e.lexeme), 
+        findChild(toInteger(e.lexeme),
           [top.frame.signature.outputElement.elementName] ++ top.frame.signature.inputNames));
 
   forwards to baseExpr(qName(top.location, ref), location=top.location);

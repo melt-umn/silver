@@ -60,8 +60,8 @@ Json ::= i::Integer
 abstract production jsonFloat
 top::Json ::= float::Float
 {
-  top.jsonString = if float == toFloat(toInt(float))
-                   then toString(toInt(float))
+  top.jsonString = if float == toFloat(toInteger(float))
+                   then toString(toInteger(float))
                    else toString(float);
 }
 

@@ -13,39 +13,42 @@ abstract production check
 top::TypeCheck ::= l::Type r::Type
 {
   top.upSubst = unifyCheck(l, r, top.downSubst);
-  
+
   top.typeerror = top.upSubst.failure;
-  
-  local attribute finleft :: Type;
-  finleft = performSubstitution(l, top.finalSubst);
-  
-  local attribute finright :: Type;
-  finright = performSubstitution(r, top.finalSubst);
-  
-  local attribute fv :: [TyVar];
-  fv = setUnionTyVars(finleft.freeVariables, finright.freeVariables);
-  
+
+  local finleft :: Type = performSubstitution(l, top.finalSubst);
+
+  local finright :: Type = performSubstitution(r, top.finalSubst);
+
+  local fv :: [TyVar] = setUnionTyVars(finleft.freeVariables, finright.freeVariables);
+
   top.leftpp = prettyTypeWith(finleft, fv);
-  top.rightpp = prettyTypeWith(finright, fv); 
+  top.rightpp = prettyTypeWith(finright, fv);
 }
 
 abstract production checkNonterminal
 top::TypeCheck ::= l::Type
 {
-  top.upSubst = composeSubst(ignoreFailure(top.downSubst), performSubstitution(l, top.downSubst).unifyInstanceNonterminal);
-  
-  top.typeerror = top.upSubst.failure;
-  
+  local refined :: Type =
+    performSubstitution(l, top.downSubst);
+
+  top.upSubst = composeSubst(ignoreFailure(top.downSubst), refined.unifyInstanceNonterminal);
+
+  top.typeerror = top.upSubst.failure && !refined.isError;
+
   top.leftpp = prettyType(performSubstitution(l, top.finalSubst));
   top.rightpp = "a nonterminal";
 }
 abstract production checkDecorated
 top::TypeCheck ::= l::Type
 {
-  top.upSubst = composeSubst(ignoreFailure(top.downSubst), performSubstitution(l, top.downSubst).unifyInstanceDecorated);
-  
-  top.typeerror = top.upSubst.failure;
-  
+  local refined :: Type =
+    performSubstitution(l, top.downSubst);
+
+  top.upSubst = composeSubst(ignoreFailure(top.downSubst), refined.unifyInstanceDecorated);
+
+  top.typeerror = top.upSubst.failure && !refined.isError;
+
   top.leftpp = prettyType(performSubstitution(l, top.finalSubst));
   top.rightpp = "a decorated nonterminal";
 }
