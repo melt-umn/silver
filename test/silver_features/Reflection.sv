@@ -212,7 +212,11 @@ equalityTest(
 terminal Foo_t 'foo';
 terminal Bar_t /bar[0-9]+/;
 
-global terminalTestValue::Pair<[Foo_t] Maybe<Bar_t>> = pair(['foo', 'foo'], just(terminal(Bar_t, "bar42", loc("a", 1, 2, 3, 4, 5, 6))));
+-- make this test independent of how `'foo'` translates
+global terminal_foo_value :: Foo_t =
+  terminal(Foo_t, "foo", loc("??", -1, -1, -1, -1, -1, -1));
+
+global terminalTestValue::Pair<[Foo_t] Maybe<Bar_t>> = pair([terminal_foo_value, terminal_foo_value], just(terminal(Bar_t, "bar42", loc("a", 1, 2, 3, 4, 5, 6))));
 global terminalSerializeRes::Either<String String> = reflect(terminalTestValue).serialize;
 global terminalDeserializeRes::Either<String AST> = deserializeAST(lessHackyUnparse(terminalTestValue), case terminalSerializeRes of left(msg) -> msg | right(a) -> a end);
 global terminalReifyRes::Either<String Pair<[Foo_t] Maybe<Bar_t>>> = reify(case terminalDeserializeRes of left(msg) -> integerAST(37) | right(a) -> a end);
