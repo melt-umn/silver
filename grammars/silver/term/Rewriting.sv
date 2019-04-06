@@ -3,6 +3,13 @@ grammar silver:term;
 imports core hiding all;
 import core:monad;
 
+function rewrite
+Maybe<AST> ::= s::Strategy term::AST
+{
+  s.givenTerm = term;
+  return s.rewriteResult;
+}
+
 inherited attribute givenTerm::AST;
 synthesized attribute rewriteResult::Maybe<AST>;
 
@@ -78,5 +85,123 @@ top::Strategy ::= a::AST b::AST
     do (bindMaybe, returnMaybe) {
       subs::[Sub] <- unify(top.givenTerm, a);
       return applySubs(subs, b);
+    };
+}
+
+autocopy attribute givenStrategy::Strategy occurs on AST, ASTs, NamedASTs, NamedAST;
+synthesized attribute rewriteOne<a>::Maybe<a>;
+synthesized attribute rewriteAll<a>::Maybe<a>;
+
+attribute rewriteOne<AST> occurs on AST;
+attribute rewriteAll<AST> occurs on AST;
+
+aspect default production
+top::AST ::=
+{
+  top.rewriteOne = nothing();
+  top.rewriteAll = just(top);
+}
+
+aspect production nonterminalAST
+top::AST ::= prodName::String children::ASTs annotations::NamedASTs
+{
+  top.rewriteOne =
+    case children.rewriteAll, annotations.rewriteAll of
+    | just(childRes), _ -> just(nonterminalAST(prodName, childRes, annotations))
+    | _, just(annotationRes) -> just(nonterminalAST(prodName, children, annotationRes))
+    | _, _ -> nothing()
+    end;
+  top.rewriteAll =
+    do (bindMaybe, returnMaybe) {
+      childRes::ASTs <- children.rewriteAll;
+      annotationRes::NamedASTs <- annotations.rewriteAll;
+      return nonterminalAST(prodName, childRes, annotationRes);
+    };
+}
+
+aspect production listAST
+top::AST ::= vals::ASTs
+{
+  top.rewriteOne =
+    do (bindMaybe, returnMaybe) {
+      valRes::ASTs <- vals.rewriteOne;
+      return listAST(valRes);
+    };
+  top.rewriteAll =
+    do (bindMaybe, returnMaybe) {
+      valRes::ASTs <- vals.rewriteAll;
+      return listAST(valRes);
+    };
+}
+
+attribute rewriteOne<ASTs> occurs on ASTs;
+attribute rewriteAll<ASTs> occurs on ASTs;
+
+aspect production consAST
+top::ASTs ::= h::AST t::ASTs
+{
+  top.rewriteOne =
+    case rewrite(top.givenStrategy, h), t.rewriteAll of
+    | just(hRes), _ -> just(consAST(hRes, t))
+    | _, just(tRes) -> just(consAST(h, tRes))
+    | _, _ -> nothing()
+    end;
+  top.rewriteAll =
+    do (bindMaybe, returnMaybe) {
+      hRes::AST <- rewrite(top.givenStrategy, h);
+      tRes::ASTs <- t.rewriteAll;
+      return consAST(hRes, tRes);
+    };
+}
+
+aspect production nilAST
+top::ASTs ::=
+{
+  top.rewriteOne = nothing();
+  top.rewriteAll = just(top);
+}
+
+attribute rewriteOne<NamedASTs> occurs on NamedASTs;
+attribute rewriteAll<NamedASTs> occurs on NamedASTs;
+
+aspect production consNamedAST
+top::NamedASTs ::= h::NamedAST t::NamedASTs
+{
+  top.rewriteOne =
+    case h.rewriteAll, t.rewriteAll of
+    | just(hRes), _ -> just(consNamedAST(hRes, t))
+    | _, just(tRes) -> just(consNamedAST(h, tRes))
+    | _, _ -> nothing()
+    end;
+  top.rewriteAll =
+    do (bindMaybe, returnMaybe) {
+      hRes::NamedAST <- h.rewriteAll;
+      tRes::NamedASTs <- t.rewriteAll;
+      return consNamedAST(hRes, tRes);
+    };
+}
+
+aspect production nilNamedAST
+top::NamedASTs ::=
+{
+  top.rewriteOne = nothing();
+  top.rewriteAll = just(top);
+}
+
+attribute rewriteOne<NamedAST> occurs on NamedAST;
+attribute rewriteAll<NamedAST> occurs on NamedAST;
+
+aspect production namedAST
+top::NamedAST ::= n::String v::AST
+{
+  top.rewriteOne =
+    do (bindMaybe, returnMaybe) {
+      res::AST <- rewrite(top.givenStrategy, v);
+      return namedAST(n, res);
+    };
+  top.rewriteAll =
+    do (bindMaybe, returnMaybe) {
+      res::AST <- rewrite(top.givenStrategy, v);
+      return namedAST(n, res);
     };
 }
