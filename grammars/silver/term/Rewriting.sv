@@ -61,13 +61,17 @@ top::Strategy ::= s::Strategy
 abstract production one
 top::Strategy ::= s::Strategy
 {
-  
+  local term::AST = top.givenTerm;
+  term.givenStrategy = s;
+  top.rewriteResult = term.rewriteOne;
 }
 
 abstract production all
 top::Strategy ::= s::Strategy
 {
-  
+  local term::AST = top.givenTerm;
+  term.givenStrategy = s;
+  top.rewriteResult = term.rewriteAll;
 }
 
 abstract production rec
@@ -76,6 +80,13 @@ top::Strategy ::= f::(Strategy ::= Strategy)
   production s::Strategy = f(top);
   s.givenTerm = top.givenTerm;
   top.rewriteResult = s.rewriteResult;
+}
+
+abstract production require
+top::Strategy ::= c::(Boolean ::= AST)
+{
+  top.rewriteResult =
+    if c(top.givenTerm) then just(top.givenTerm) else nothing();
 }
 
 abstract production rule
@@ -204,4 +215,52 @@ top::NamedAST ::= n::String v::AST
       res::AST <- rewrite(top.givenStrategy, v);
       return namedAST(n, res);
     };
+}
+
+-- Strategy construction helpers
+global foldSeq::(Strategy ::= [Strategy]) = foldr(seq, id(), _);
+global foldChoice::(Strategy ::= [Strategy]) = foldr(choice, fail(), _);
+
+global try::(Strategy ::= Strategy) = choice(_, id());
+
+function repeat
+Strategy ::= s::Strategy
+{
+  return rec(\ self::Strategy -> try(seq(s, self)));
+}
+
+function bottomUp
+Strategy ::= s::Strategy
+{
+  return rec(\ self::Strategy -> seq(all(self), s));
+}
+
+function topDown
+Strategy ::= s::Strategy
+{
+  return rec(\ self::Strategy -> seq(s, all(self)));
+}
+
+function onceBottomUp
+Strategy ::= s::Strategy
+{
+  return rec(\ self::Strategy -> choice(one(self), s));
+}
+
+function onceTopDown
+Strategy ::= s::Strategy
+{
+  return rec(\ self::Strategy -> choice(s, one(self)));
+}
+
+function innermost
+Strategy ::= s::Strategy
+{
+  return repeat(onceBottomUp(s));
+}
+
+function outerrmost
+Strategy ::= s::Strategy
+{
+  return repeat(onceTopDown(s));
 }
