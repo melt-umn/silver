@@ -8,7 +8,7 @@ import silver:extension:doc;
 import silver:analysis:warnings:flow;
 import silver:analysis:warnings:exporting;
 
-import silver:term;
+import silver:term; -- Temp import to get errors while developing this, TODO remove
 
 parser svParse::Root {
   silver:host;
@@ -27,6 +27,7 @@ parser svParse::Root {
   silver:extension:monad;
   silver:extension:reflection;
   silver:extension:silverconstruction;
+  silver:extension:astconstruction;
   silver:extension:constructparser;
 --  silver:extension:concreteSyntaxForTrees ;
 
