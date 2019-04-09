@@ -82,20 +82,19 @@ top::Strategy ::= f::(Strategy ::= Strategy)
   top.rewriteResult = s.rewriteResult;
 }
 
-abstract production require
-top::Strategy ::= c::(Boolean ::= AST)
-{
-  top.rewriteResult =
-    if c(top.givenTerm) then just(top.givenTerm) else nothing();
-}
-
 abstract production rule
-top::Strategy ::= a::AST b::AST
+top::Strategy ::= a::AST cond::(Boolean ::= [Sub]) fresh::[String] b::AST
 {
   top.rewriteResult =
     do (bindMaybe, returnMaybe) {
       subs::[Sub] <- unify(top.givenTerm, a);
-      return applySubs(subs, b);
+      if cond(subs) then
+        return unit();
+      else
+        nothing();
+      freshSubs::[Sub] =
+        map(\ n::String -> pair(n, stringAST("_" ++ toString(genInt()))), fresh);
+      return applySubs(subs ++ freshSubs, b);
     };
 }
 
@@ -217,16 +216,18 @@ top::NamedAST ::= n::String v::AST
     };
 }
 
--- Strategy construction helpers
+-- Strategy construction helpers/combinators
+global directFreshRule::(Strategy ::= AST [String] AST) = rule(_, \ [Sub] -> true, _, _);
+global directRule::(Strategy ::= AST AST) = directFreshRule(_, [], _);
 global foldSeq::(Strategy ::= [Strategy]) = foldr(seq, id(), _);
 global foldChoice::(Strategy ::= [Strategy]) = foldr(choice, fail(), _);
 
-global try::(Strategy ::= Strategy) = choice(_, id());
+global tryS::(Strategy ::= Strategy) = choice(_, id()); -- TODO: Silver doesn't like globals named 'try'
 
 function repeat
 Strategy ::= s::Strategy
 {
-  return rec(\ self::Strategy -> try(seq(s, self)));
+  return rec(\ self::Strategy -> tryS(seq(s, self)));
 }
 
 function bottomUp
@@ -259,7 +260,7 @@ Strategy ::= s::Strategy
   return repeat(onceBottomUp(s));
 }
 
-function outerrmost
+function outermost
 Strategy ::= s::Strategy
 {
   return repeat(onceTopDown(s));

@@ -48,6 +48,12 @@ AST ::= s::[Sub] a::AST
   return a.substituted;
 }
 
+function getSub
+AST ::= a::String s::[Sub]
+{
+  return lookupBy(stringEq, a, s).fromJust;
+}
+
 inherited attribute otherTerm<a>::a;
 attribute otherTerm<AST> occurs on AST;
 synthesized attribute subs::Maybe<[Sub]> occurs on AST, ASTs, NamedASTs, NamedAST;
