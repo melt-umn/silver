@@ -10,15 +10,22 @@ imports silver:extension:list;
 exports silver:reflect:concretesyntax;
 
 concrete production silverExprLiteral
-top::Expr ::= 'AST' LCurly_t ast::AST_c RCurly_t
+top::Expr ::= 'AST' '{' ast::AST_c '}'
 {
   top.unparse = s"AST {${ast.unparse}}";
-  forwards to translate(top.location, reflect(new(ast)));
+  forwards to translate(top.location, reflect(ast.ast));
 }
 
-concrete production escapeAST
-top::AST_c ::= '${' e::Expr silver:definition:core:RCurly_t
+concrete production escapeAST_c
+top::AST_c ::= '$' '{' e::Expr '}'
 {
   top.unparse = s"$${${e.unparse}}";
+  top.ast = escapeAST(e);
+  top.errors := [];
+}
+
+abstract production escapeAST
+top::AST ::= e::Expr
+{
   forwards to error("forward shouldn't be needed here");
 }

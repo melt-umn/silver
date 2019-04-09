@@ -7,5 +7,5 @@ aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   directEscapeProductions <-
-    ["silver:extension:silverconstruction:escapeAST"];
+    ["silver:extension:astconstruction:escapeAST"];
 }
