@@ -116,7 +116,7 @@ aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   top.rewriteOne =
-    case children.rewriteAll, annotations.rewriteAll of
+    case children.rewriteOne, annotations.rewriteOne of
     | just(childRes), _ -> just(nonterminalAST(prodName, childRes, annotations))
     | _, just(annotationRes) -> just(nonterminalAST(prodName, children, annotationRes))
     | _, _ -> nothing()
@@ -151,7 +151,7 @@ aspect production consAST
 top::ASTs ::= h::AST t::ASTs
 {
   top.rewriteOne =
-    case rewrite(top.givenStrategy, h), t.rewriteAll of
+    case rewrite(top.givenStrategy, h), t.rewriteOne of
     | just(hRes), _ -> just(consAST(hRes, t))
     | _, just(tRes) -> just(consAST(h, tRes))
     | _, _ -> nothing()
@@ -178,7 +178,7 @@ aspect production consNamedAST
 top::NamedASTs ::= h::NamedAST t::NamedASTs
 {
   top.rewriteOne =
-    case h.rewriteAll, t.rewriteAll of
+    case h.rewriteOne, t.rewriteOne of
     | just(hRes), _ -> just(consNamedAST(hRes, t))
     | _, just(tRes) -> just(consNamedAST(h, tRes))
     | _, _ -> nothing()
