@@ -116,16 +116,19 @@ Expr ::= index::Integer  lst::[DclInfo]  total::Integer  l::Location
 function deriveGenerateOn
 Expr ::= id::DclInfo  l::Location
 {
-  local callid :: Expr = baseExpr(qName(l, id.fullName), location=l);
-  local es :: [Expr] = map(callGenArb(_, l), id.typerep.inputTypes);
-  local annos :: AnnoAppExprs =
+  local annos :: [Pair<String Expr>] =
     if null(id.typerep.namedTypes) then
-      emptyAnnoAppExprs(location=l)
+      []
     else
-      -- erroneously assume it's location for now. just supply location=bogusLoc()
-      oneAnnoAppExprs(annoExpr(qName(l, "location"), '=', presentAppExpr(mkStrFunctionInvocation(l, "bogusLoc", []), location=l), location=l),location=l);
+      -- we just erroneously assume the annotation must be location, for now
+      [pair("location", mkStrFunctionInvocation(l, "bogusLoc", []))];
+
   return
-    application(callid, '(', foldAppExprs(l, reverse(es)), ',', annos, ')', location=l);
+    mkFullFunctionInvocation(
+      l,
+      baseExpr(qName(l, id.fullName), location=l),
+      map(callGenArb(_, l), id.typerep.inputTypes),
+      annos);
 }
 
 -- Call generateArbitraryID
