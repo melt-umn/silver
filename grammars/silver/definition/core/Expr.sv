@@ -1057,20 +1057,29 @@ Boolean ::= l::Pair<Integer Decorated Expr>  r::Pair<Integer Decorated Expr> { r
 function mkStrFunctionInvocation
 Expr ::= l::Location  e::String  es::[Expr]
 {
-  return mkFunctionInvocation(l, baseExpr(qName(l, e), location=l), es);
+  return mkFullFunctionInvocation(l, baseExpr(qName(l, e), location=l), es, []);
 }
 function mkFunctionInvocation
 Expr ::= l::Location  e::Expr  es::[Expr]
 {
-  return application(e, '(', foldAppExprs(l, reverse(es)), ',', emptyAnnoAppExprs(location=l), ')', location=l);
+  return mkFullFunctionInvocation(l, e, es, []);
 }
--- WARNING: NOTE THAT YOU NEED TO REVERSE THE EXPR LIST BEFORE CALLING THIS:
-function foldAppExprs
-AppExprs ::= l::Location  e::[Expr]
+function mkFullFunctionInvocation
+Expr ::= l::Location  e::Expr  es::[Expr]  ans::[Pair<String Expr>]
 {
-  return if null(e) then emptyAppExprs(location=l)
-         else if null(tail(e)) then oneAppExprs(presentAppExpr(head(e), location=l), location=l)
-         else snocAppExprs(foldAppExprs(l, tail(e)), ',', presentAppExpr(head(e), location=l), location=l);
+  return application(e, '(',
+    foldl(snocAppExprs(_, ',', _, location=l), emptyAppExprs(location=l),
+      map(presentAppExpr(_, location=l), es)),
+    ',',
+    foldl(snocAnnoAppExprs(_, ',', _, location=l), emptyAnnoAppExprs(location=l),
+      map(mkAnnoExpr, ans)),
+    ')', location=l);
+}
+-- Internal helper function
+function mkAnnoExpr
+AnnoExpr ::= p::Pair<String Expr>
+{
+  return annoExpr(qName(p.snd.location, p.fst), '=', presentAppExpr(p.snd, location=p.snd.location), location=p.snd.location);
 }
 
 {--

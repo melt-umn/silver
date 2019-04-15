@@ -97,16 +97,11 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     
   top.translation =
     fromMaybe(
-      application(
-        baseExpr(makeQName(prodName, givenLocation), location=givenLocation),
-        '(',
-        foldAppExprs(givenLocation, reverse(children.translation)),
-        ',',
-        foldl(
-          snocAnnoAppExprs(_, ',', _, location=givenLocation),
-          emptyAnnoAppExprs(location=givenLocation),
-          reverse(annotations.translation)),
-        ')', location=givenLocation),
+      mkFullFunctionInvocation(
+        givenLocation,
+        baseExpr(qName(givenLocation, prodName), location=givenLocation),
+        children.translation,
+        annotations.translation),
       escapeTranslation);
   
   children.givenLocation = givenLocation;
@@ -215,7 +210,7 @@ top::ASTs ::=
   top.foundLocation = nothing();
 }
 
-attribute givenLocation, translation<[AnnoExpr]>, foundLocation occurs on NamedASTs;
+attribute givenLocation, translation<[Pair<String Expr>]>, foundLocation occurs on NamedASTs;
 
 aspect production consNamedAST
 top::NamedASTs ::= h::NamedAST t::NamedASTs
@@ -231,17 +226,14 @@ top::NamedASTs ::=
   top.foundLocation = nothing();
 }
 
-attribute givenLocation, translation<AnnoExpr>, foundLocation occurs on NamedAST;
+attribute givenLocation, translation<Pair<String Expr>>, foundLocation occurs on NamedAST;
 
 aspect production namedAST
 top::NamedAST ::= n::String v::AST
 {
   top.translation =
-    annoExpr(
-      qNameId(makeName(last(explode(":", n)), top.givenLocation), location=top.givenLocation),
-      '=',
-      presentAppExpr(v.translation, location=top.givenLocation),
-      location=top.givenLocation);
+    -- hack to get annotation shortname
+    pair(last(explode(":", n)), v.translation);
   top.foundLocation =
     if n == "core:location"
     then
@@ -251,6 +243,9 @@ top::NamedAST ::= n::String v::AST
       end
     else nothing();
 }
+
+-- the functions below are directly referenced in reflection code in silver:extensions:silverconstruction
+-- so make sure you grep for that if you change/move them.
 
 function makeName
 Name ::= n::String loc::Location
