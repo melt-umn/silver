@@ -20,13 +20,11 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         case reify(a) of
         | right(e) ->
           just(
-            applicationExpr(
-              baseExpr(
-                makeQName("silver:extension:silverconstruction:makeQName", givenLocation),
-                location=givenLocation),
-              '(',
-              foldAppExprs(givenLocation, [e, locAST.translation]),
-              ')', location=givenLocation))
+            mkFullFunctionInvocation(
+              givenLocation,
+              baseExpr(qName(givenLocation, "silver:hostEmbedding:makeQName"), location=givenLocation),
+              [e, locAST.translation],
+              []))
         | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
         end
     | "silver:extension:silverconstruction:escape_qName", _, _ ->
@@ -36,13 +34,11 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         case reify(a) of
         | right(e) ->
           just(
-            applicationExpr(
-              baseExpr(
-                makeQName("silver:extension:silverconstruction:makeName", givenLocation),
-                location=givenLocation),
-              '(',
-              foldAppExprs(givenLocation, [e, locAST.translation]),
-              ')', location=givenLocation))
+            mkFullFunctionInvocation(
+              givenLocation,
+              baseExpr(qName(givenLocation, "silver:hostEmbedding:makeName"), location=givenLocation),
+              [e, locAST.translation],
+              []))
         | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
         end
     | "silver:extension:silverconstruction:escape_name", _, _ ->

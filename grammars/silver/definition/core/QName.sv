@@ -146,14 +146,19 @@ synthesized attribute attrDcl :: DclInfo;
  -}
 synthesized attribute found :: Boolean;
 
+{--
+ - Used like `x.<this>`.
+ - @param  at       the name of an attribute
+ - @inh    attrFor  the type this attribute should be on
+ -}
 concrete production qNameAttrOccur
 top::QNameAttrOccur ::= at::QName
 {
   top.name = at.name;
   top.unparse = at.unparse;
   
-  -- Start with `at.lookupAttribute.dcls`
-  -- Occurrence lookups for each attribute dcl on `top.attrFor`
+  -- We start with all attributes we find with the name `at`:
+  -- Then we filter to just those that appear to have an occurrence on `top.attrFor`:
   local narrowed :: [[DclInfo]] = 
     -- The occurs dcls on this nonterminal for
     map(getOccursDcl(_, top.attrFor.typeName, top.env),
@@ -176,20 +181,26 @@ top::QNameAttrOccur ::= at::QName
       length(attrsNarrowed) != 1);
   
   top.errors :=
+    -- If we fail to look up the attribute, just report that.
     if null(at.lookupAttribute.dcls) then
       at.lookupAttribute.errors
+    -- If we're looking up an attribute on `errorType`, an error is already raised, don't create noise
     else if top.attrFor.isError then
-      -- suppress further errors
       []
-    else if null(dclsNarrowed) then 
-      -- Note we're using the short name of the attribute... there may be more than one attribute Dcl
-      -- But, none of them occur so this error quite suffices!
-      [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Looked at:\n" ++ printPossibilities(at.lookupAttribute.dcls))]
+    -- If no attribute occurs on this type, raise that error
+    else if null(dclsNarrowed) then
+      -- This is a heuristic error message for the situation where you have a type, but haven't imported
+      -- the grammar declaring that type.
+      (if top.attrFor.typeName != "" && null(getTypeDcl(top.attrFor.typeName, top.env)) then
+         [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Perhaps import '" ++ substring(0, lastIndexOf(":", top.attrFor.typeName), top.attrFor.typeName)  ++ "'?")]
+       else
+         [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Looked at:\n" ++ printPossibilities(at.lookupAttribute.dcls))]
+      )
+    -- If more than one attribute on the same _short name_ occurs, raise ambiguity
     else if length(attrsNarrowed) > 1 then
-      -- Here we've found multiple attributes that occur here!
       [err(at.location, "Ambiguous reference to attribute occurring on '" ++ at.name ++ "'. Possibilities are:\n" ++ printPossibilities(attrsNarrowed))]
+    -- If this same attribute has multiple occurences (must be due to orphaned occurs)
     else []; {-if length(dclsNarrowed) > 1 then
-      -- This should be essentially impossible! (Requires "orphaned occurs" which are currently allowed...)
       [err(at.location, "There are erroneously multiple attribute occurrences for '" ++ at.name ++ "'. Possibilities are:\n" ++ printPossibilities(dclsNarrowed))]
     else [];-}
     -- TODO: This last bit is disabled because we have problems with importing grammars multiple times.
