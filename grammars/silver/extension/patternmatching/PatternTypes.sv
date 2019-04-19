@@ -116,6 +116,16 @@ top::Pattern ::= num::Int_t
   top.patternSortKey = num.lexeme;
 }
 
+concrete production fltPattern
+top::Pattern ::= num::Float_t
+{
+  top.unparse = num.lexeme;
+  top.errors := [];
+  
+  top.patternSubPatternList = [];
+  top.patternSortKey = num.lexeme;
+}
+
 concrete production strPattern
 top::Pattern ::= str::String_t
 {
