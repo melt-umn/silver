@@ -94,6 +94,21 @@ top::Pattern ::= v::Name
   top.patternSortKey = "~var";
 }
 
+{--
+ - For other extensions to pattern matching.  Basically acts like a wildcard.
+ -}
+abstract production errorPattern
+top::Pattern ::= msg::[Message]
+{
+  top.unparse = s"{-${messagesToString(msg)}-}";
+  top.errors := msg;
+
+  top.patternIsVariable = true;
+  top.patternVariableName = nothing();
+  top.patternSubPatternList = [];
+  top.patternSortKey = "error";
+}
+
 aspect default production
 top::Pattern ::=
 {

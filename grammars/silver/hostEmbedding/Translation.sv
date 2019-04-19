@@ -8,6 +8,7 @@ imports silver:definition:core;
 imports silver:definition:env;
 imports silver:definition:type:syntax;
 imports silver:extension:list;
+imports silver:extension:patternmatching;
 
 function translate
 Expr ::= loc::Location ast::AST
@@ -17,10 +18,11 @@ Expr ::= loc::Location ast::AST
 }
 
 synthesized attribute translation<a>::a;
+synthesized attribute patternTranslation<a>::a;
 synthesized attribute foundLocation::Maybe<Location>;
 autocopy attribute givenLocation::Location;
 
-attribute givenLocation, translation<Expr> occurs on AST;
+attribute givenLocation, translation<Expr>, patternTranslation<Pattern> occurs on AST;
 
 aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
@@ -94,7 +96,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
       return
         errorExpr([err(givenLocation, s"$$${trans.fst} may only occur as a member of ${trans.fst}")], location=givenLocation);
     };
-    
+  
   top.translation =
     fromMaybe(
       mkFullFunctionInvocation(
@@ -103,6 +105,50 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         children.translation,
         annotations.translation),
       escapeTranslation);
+  
+  production attribute patternEscapeTranslation::Maybe<Pattern> with orElse;
+  patternEscapeTranslation := nothing();
+  
+  production attribute varPatternProductions::[String] with ++;
+  varPatternProductions := [];
+  patternEscapeTranslation <-
+    if containsBy(stringEq, prodName, varPatternProductions)
+    then
+      let wrapped::AST = 
+        case children of
+        | consAST(a, nilAST()) -> a
+        | consAST(terminalAST(_, _, _), consAST(a, nilAST())) -> a
+        | _ -> error(s"Unexpected escape production arguments: ${show(80, top.pp)}")
+        end
+      in
+        case reify(wrapped) of
+        | right(n) -> just(varPattern(n, location=givenLocation))
+        | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
+        end
+      end
+    else nothing();
+  
+  production attribute wildPatternProductions::[String] with ++;
+  wildPatternProductions := [];
+  patternEscapeTranslation <-
+    if containsBy(stringEq, prodName, varPatternProductions)
+    then
+      case children of
+      | nilAST() -> just(wildcPattern('_', location=givenLocation))
+      | consAST(terminalAST(_, _, _), nilAST()) -> just(wildcPattern('_', location=givenLocation))
+      | _ -> error(s"Unexpected escape production arguments: ${show(80, top.pp)}")
+      end
+    else nothing();
+  
+  top.patternTranslation =
+    fromMaybe(
+      prodAppPattern(
+        qName(givenLocation, prodName),
+        '(',
+        children.patternTranslation,
+        ')',
+        location=givenLocation),
+      patternEscapeTranslation);
   
   children.givenLocation = givenLocation;
   annotations.givenLocation = givenLocation;
@@ -127,6 +173,10 @@ top::AST ::= terminalName::String lexeme::String location::Location
       ',',
       locationAST.translation,
       ')', location=top.givenLocation);
+  
+  -- TODO: What to do here- warn about this maybe?
+  -- Shouldn't really be an issue unless matching against concrete syntax containing non-fixed terminals
+  top.patternTranslation = wildcPattern('_', location=top.givenLocation);
 }
 
 aspect production listAST
@@ -141,6 +191,8 @@ top::AST ::= vals::ASTs
         vals.translation),
       ']',
       location=top.givenLocation);
+  top.patternTranslation =
+    listPattern('[', vals.patternTranslation, ']', location=top.givenLocation);
 }
 
 aspect production stringAST
@@ -150,6 +202,10 @@ top::AST ::= s::String
     stringConst(
       terminal(String_t, s"\"${escapeString(s)}\"", top.givenLocation),
       location=top.givenLocation);
+  top.patternTranslation =
+    strPattern(
+      terminal(String_t, s"\"${escapeString(s)}\"", top.givenLocation),
+      location=top.givenLocation);
 }
 
 aspect production integerAST
@@ -157,6 +213,8 @@ top::AST ::= i::Integer
 {
   top.translation =
     intConst(terminal(Int_t, toString(i), top.givenLocation), location=top.givenLocation);
+  top.patternTranslation =
+    intPattern(terminal(Int_t, toString(i), top.givenLocation), location=top.givenLocation);
 }
 
 aspect production floatAST
@@ -164,6 +222,8 @@ top::AST ::= f::Float
 {
   top.translation =
     floatConst(terminal(Float_t, toString(f), top.givenLocation), location=top.givenLocation);
+  top.patternTranslation =
+    fltPattern(terminal(Float_t, toString(f), top.givenLocation), location=top.givenLocation);
 }
 
 aspect production booleanAST
@@ -173,6 +233,10 @@ top::AST ::= b::Boolean
     if b
     then trueConst('true', location=top.givenLocation)
     else falseConst('false', location=top.givenLocation);
+  top.patternTranslation =
+    if b
+    then truePattern('true', location=top.givenLocation)
+    else falsePattern('false', location=top.givenLocation);
 }
 
 aspect production anyAST
@@ -183,14 +247,21 @@ top::AST ::= x::a
       just(n) -> error(s"Can't translate anyAST (type ${n})")
     | nothing() -> error("Can't translate anyAST")
     end;
+  top.patternTranslation =
+    case reflectTypeName(x) of
+      just(n) -> error(s"Can't translate anyAST (type ${n})")
+    | nothing() -> error("Can't translate anyAST")
+    end;
 }
 
-attribute givenLocation, translation<[Expr]>, foundLocation occurs on ASTs;
+attribute givenLocation, translation<[Expr]>, patternTranslation<PatternList>, foundLocation occurs on ASTs;
 
 aspect production consAST
 top::ASTs ::= h::AST t::ASTs
 {
   top.translation = h.translation :: t.translation;
+  top.patternTranslation =
+    patternList_more(h.patternTranslation, ',', t.patternTranslation, location=top.givenLocation);
   top.foundLocation =
     -- Try to reify the last child as a location
     case t of
@@ -207,6 +278,7 @@ aspect production nilAST
 top::ASTs ::=
 {
   top.translation = [];
+  top.patternTranslation = patternList_nil(location=top.givenLocation);
   top.foundLocation = nothing();
 }
 
