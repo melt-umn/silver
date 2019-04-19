@@ -17,6 +17,13 @@ top::Expr ::= 'AST' '{' ast::AST_c '}'
   forwards to translate(top.location, reflect(ast.ast));
 }
 
+concrete production silverPatternLiteral
+top::Pattern ::= 'AST' '{' ast::AST_c '}'
+{
+  top.unparse = s"AST {${ast.unparse}}";
+  forwards to translatePattern(top.location, reflect(ast.ast));
+}
+
 concrete production escapeAST_c
 top::AST_c ::= '$' '{' e::Expr '}'
 {
@@ -26,17 +33,17 @@ top::AST_c ::= '$' '{' e::Expr '}'
 }
 
 concrete production varAST_c
-top::AST_c ::= '$' n::Name
+top::AST_c ::= n::Id_t
 {
-  top.unparse = s"$${${n.unparse}}";
-  top.ast = varAST(n);
+  top.unparse = n.lexeme;
+  top.ast = varAST(name(n.lexeme, n.location));
   top.errors := [];
 }
 
 concrete production wildAST_c
-top::AST_c ::= '$' '_'
+top::AST_c ::= '_'
 {
-  top.unparse = s"$$_";
+  top.unparse = "_";
   top.ast = wildAST();
   top.errors := [];
 }
@@ -60,11 +67,11 @@ top::AST ::= n::Name
 {
   top.translation =
     errorExpr(
-      [err(top.givenLocation, "$<name> should only occur inside AST { } pattern")],
+      [err(top.givenLocation, "Variable patterns should only occur inside AST { } pattern")],
       location=top.givenLocation);
   top.patternTranslation =
     errorPattern(
-      [err(top.givenLocation, "$<name> should only occur inside AST { } pattern")],
+      [err(top.givenLocation, "Variable patterns should only occur inside AST { } pattern")],
       location=top.givenLocation);
   forwards to error("forward shouldn't be needed here");
 }
@@ -74,11 +81,11 @@ top::AST ::=
 {
   top.translation =
     errorExpr(
-      [err(top.givenLocation, "$_ should only occur inside AST { } pattern")],
+      [err(top.givenLocation, "_ should only occur inside AST { } pattern")],
       location=top.givenLocation);
   top.patternTranslation =
     errorPattern(
-      [err(top.givenLocation, "$_ should only occur inside AST { } pattern")],
+      [err(top.givenLocation, "_ should only occur inside AST { } pattern")],
       location=top.givenLocation);
   forwards to error("forward shouldn't be needed here");
 }

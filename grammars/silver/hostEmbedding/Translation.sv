@@ -17,6 +17,13 @@ Expr ::= loc::Location ast::AST
   return ast.translation;
 }
 
+function translatePattern
+Pattern ::= loc::Location ast::AST
+{
+  ast.givenLocation = loc;
+  return ast.patternTranslation;
+}
+
 synthesized attribute translation<a>::a;
 synthesized attribute patternTranslation<a>::a;
 synthesized attribute foundLocation::Maybe<Location>;
@@ -131,7 +138,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   production attribute wildPatternProductions::[String] with ++;
   wildPatternProductions := [];
   patternEscapeTranslation <-
-    if containsBy(stringEq, prodName, varPatternProductions)
+    if containsBy(stringEq, prodName, wildPatternProductions)
     then
       case children of
       | nilAST() -> just(wildcPattern('_', location=givenLocation))
