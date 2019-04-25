@@ -272,6 +272,7 @@ PrimPattern ::= restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[Abstract
     | prodAppPattern(qn,_,_,_) -> 
         prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', '->', subcase, location=l)
     | intPattern(it) -> integerPattern(it, '->', subcase, location=l)
+    | fltPattern(it) -> floatPattern(it, '->', subcase, location=l)
     | strPattern(it) -> stringPattern(it, '->', subcase, location=l)
     | truePattern(_) -> booleanPattern("true", '->', subcase, location=l)
     | falsePattern(_) -> booleanPattern("false", '->', subcase, location=l)

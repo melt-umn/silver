@@ -756,6 +756,12 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
   top.flowDeps = e.flowDeps;
   top.flowDefs = e.flowDefs;
 }
+aspect production floatPattern
+top::PrimPattern ::= f::Float_t '->' e::Expr
+{
+  top.flowDeps = e.flowDeps;
+  top.flowDefs = e.flowDefs;
+}
 aspect production stringPattern
 top::PrimPattern ::= i::String_t '->' e::Expr
 {

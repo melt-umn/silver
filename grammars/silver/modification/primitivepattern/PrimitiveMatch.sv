@@ -307,6 +307,34 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
   top.translation = "if(scrutinee == " ++ i.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
 }
+abstract production floatPattern
+top::PrimPattern ::= f::Float_t '->' e::Expr
+{
+  top.unparse = f.lexeme ++ " -> " ++ e.unparse;
+  
+  top.errors := e.errors;
+  
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
+  
+  errCheck1 = check(floatType(), top.scrutineeType);
+  top.errors <- if errCheck1.typeerror
+                then [err(top.location, f.lexeme ++ " is a " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                else [];
+  
+  errCheck2 = check(e.typerep, top.returnType);
+  top.errors <- if errCheck2.typeerror
+                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                else [];
+  
+  errCheck1.downSubst = top.downSubst;
+  e.downSubst = errCheck1.upSubst;
+  errCheck2.downSubst = e.upSubst;
+  top.upSubst = errCheck2.upSubst;
+
+  top.translation = "if(scrutinee == " ++ f.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
+                         e.translation ++ "; }";
+}
 abstract production stringPattern
 top::PrimPattern ::= i::String_t '->' e::Expr
 {
