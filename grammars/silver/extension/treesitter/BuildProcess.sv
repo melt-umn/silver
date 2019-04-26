@@ -1,4 +1,5 @@
 grammar silver:extension:treesitter;
+exports silver:extension:treesitter:atom;
 
 import silver:driver;
 import silver:util;
@@ -6,6 +7,7 @@ import silver:util:cmdargs;
 
 import silver:translation:java:driver;
 import silver:modification:copper;
+
 
 synthesized attribute treesitterLangOption :: [String] occurs on CmdArgs;
 
@@ -45,7 +47,8 @@ abstract production genTreesitterSpec
 top::DriverAction ::= specs::[ParserSpec]  cg::EnvTree<Decorated RootSpec>  lang::String
 {
   local treesitter_file :: String = "grammar.js";
-  local atom_package_file :: String = s"${lang}.cson";
+  local conflicts_file :: String = "modified_copper.xml";
+  local atom_package_file :: String = s"${lang}.json";
 
   local spec::ParserSpec = head(specs);
   spec.compiledGrammars = cg;
@@ -54,7 +57,8 @@ top::DriverAction ::= specs::[ParserSpec]  cg::EnvTree<Decorated RootSpec>  lang
   specCst.lang = lang;
   
   local treesitterSpec :: String = specCst.jsTreesitter;
-  local atomSpec :: String = specCst.csonAtomPackage;
+  local conflictsSpec :: String = specCst.modifiedXMLCopper;
+  local atomSpec :: String = specCst.jsonAtom;
 
   local err :: IO = 
     print("CST Errors while Generating Tree-sitter Grammar for Parser " ++ spec.fullName ++ ":\n" ++
@@ -62,8 +66,9 @@ top::DriverAction ::= specs::[ParserSpec]  cg::EnvTree<Decorated RootSpec>  lang
   
   local doWR :: IO =
     writeFile(treesitter_file, treesitterSpec,
-      writeFile(atom_package_file, atomSpec,
-      print(s"Generating Tree-sitter Grammar for ${lang} from Parser " ++ spec.fullName ++ ".\n", top.ioIn)));
+      writeFile(conflicts_file, conflictsSpec,
+        writeFile(atom_package_file, atomSpec,
+      print(s"Generating Tree-sitter Grammar for ${lang} from Parser " ++ spec.fullName ++ ".\n", top.ioIn))));
 
   top.io =
     if null(specs)

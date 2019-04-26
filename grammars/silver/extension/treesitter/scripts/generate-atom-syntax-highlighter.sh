@@ -47,6 +47,16 @@ generate_treesitter_parser()
   echo Tree-sitter parser generated
 }
 
+validate_version_number()
+{
+  echo $version_num | grep -e "[[:digit:]].[[:digit:]].[[:digit:]]" > /dev/null
+  if [ $? -ne 0 ]; then
+    echo "${use_red_color}Invalid version number specified: $version_num.${reset_color}"
+    exit 1
+  fi
+  echo Version number $version_num is valid
+}
+
 check_if_parser_already_exists()
 {
   old_dir=$(pwd)
@@ -61,7 +71,6 @@ check_if_parser_already_exists()
   fi
   cd $old_dir # restore directory from before check
 }
-
 generate_atom_package()
 {
   cd ~
@@ -96,16 +105,6 @@ generate_atom_package()
     fi
   fi
   echo Atom language package generated
-}
-
-validate_version_number()
-{
-  echo $version_num | grep -e "[[:digit:]].[[:digit:]].[[:digit:]]" > /dev/null
-  if [ $? -ne 0 ]; then
-    echo "${use_red_color}Invalid version number specified: $version_num.${reset_color}"
-    exit 1
-  fi
-  echo Version number $version_num is valid
 }
 
 original_dir=$(pwd)
