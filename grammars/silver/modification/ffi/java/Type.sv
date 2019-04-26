@@ -7,10 +7,10 @@ import silver:translation:java:type;
 import silver:modification:ffi;
 
 aspect production foreignType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String  transType::String  params::[Type]
 {
-  top.transType = "Object";
-  top.transClassType = "Object";
+  top.transType = transType;
+  top.transClassType = transType;
   top.transTypeRep =
     s"new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}})";
   top.transFreshTypeRep =

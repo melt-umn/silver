@@ -721,11 +721,27 @@ top::Expr ::= e1::Expr '++' e2::Expr
 {
   top.unparse = e1.unparse ++ " ++ " ++ e2.unparse;
 
-  top.typerep = performSubstitution(e1.typerep, errCheck1.upSubst); -- TODO: a bit silly we depend on errCheck, which isn't here...
-
   top.errors := e1.errors ++ e2.errors ++ forward.errors;
+  top.typerep = if errCheck1.typeerror then errorType() else result_type;
 
-  forwards to top.typerep.appendDispatcher(e1, e2, top.location);
+  local result_type :: Type = performSubstitution(e1.typerep, errCheck1.upSubst);
+
+  -- Moved from 'analysis:typechecking' because we want to use this stuff here now
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  e1.downSubst = top.downSubst;
+  e2.downSubst = e1.upSubst;
+  errCheck1.downSubst = e2.upSubst;
+  forward.downSubst = errCheck1.upSubst;
+  -- upSubst defined via forward :D
+
+  errCheck1 = check(e1.typerep, e2.typerep);
+
+  forwards to
+    -- if the types disagree, forward to an error production instead.
+    if errCheck1.typeerror
+    then errorExpr([err(top.location, "Operands to ++ must be the same concatenable type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)], location=top.location)
+    else top.typerep.appendDispatcher(e1, e2, top.location);
 }
 
 abstract production stringPlusPlus
@@ -742,8 +758,11 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
   top.unparse = e1.unparse ++ " ++ " ++ e2.unparse;
 
-  -- TODO perhaps suppress this error is isError
-  top.errors := [err(e1.location, prettyType(performSubstitution(e1.typerep, e1.upSubst)) ++ " is not a concatenable type.")];
+  local result_type :: Type = performSubstitution(e1.typerep, top.downSubst);
+
+  top.errors :=
+    if result_type.isError then []
+    else [err(e1.location, prettyType(result_type) ++ " is not a concatenable type.")];
   top.typerep = errorType();
 }
 
@@ -1038,20 +1057,29 @@ Boolean ::= l::Pair<Integer Decorated Expr>  r::Pair<Integer Decorated Expr> { r
 function mkStrFunctionInvocation
 Expr ::= l::Location  e::String  es::[Expr]
 {
-  return mkFunctionInvocation(l, baseExpr(qName(l, e), location=l), es);
+  return mkFullFunctionInvocation(l, baseExpr(qName(l, e), location=l), es, []);
 }
 function mkFunctionInvocation
 Expr ::= l::Location  e::Expr  es::[Expr]
 {
-  return application(e, '(', foldAppExprs(l, reverse(es)), ',', emptyAnnoAppExprs(location=l), ')', location=l);
+  return mkFullFunctionInvocation(l, e, es, []);
 }
--- WARNING: NOTE THAT YOU NEED TO REVERSE THE EXPR LIST BEFORE CALLING THIS:
-function foldAppExprs
-AppExprs ::= l::Location  e::[Expr]
+function mkFullFunctionInvocation
+Expr ::= l::Location  e::Expr  es::[Expr]  ans::[Pair<String Expr>]
 {
-  return if null(e) then emptyAppExprs(location=l)
-         else if null(tail(e)) then oneAppExprs(presentAppExpr(head(e), location=l), location=l)
-         else snocAppExprs(foldAppExprs(l, tail(e)), ',', presentAppExpr(head(e), location=l), location=l);
+  return application(e, '(',
+    foldl(snocAppExprs(_, ',', _, location=l), emptyAppExprs(location=l),
+      map(presentAppExpr(_, location=l), es)),
+    ',',
+    foldl(snocAnnoAppExprs(_, ',', _, location=l), emptyAnnoAppExprs(location=l),
+      map(mkAnnoExpr, ans)),
+    ')', location=l);
+}
+-- Internal helper function
+function mkAnnoExpr
+AnnoExpr ::= p::Pair<String Expr>
+{
+  return annoExpr(qName(p.snd.location, p.fst), '=', presentAppExpr(p.snd, location=p.snd.location), location=p.snd.location);
 }
 
 {--

@@ -315,7 +315,7 @@ function sortByHelp -- do not use
   back_half = sortByHelp(lte, drop(middle, lst), upTo - middle);
 
   local attribute middle :: Integer;
-  middle = toInt(toFloat(upTo) / 2.0);
+  middle = toInteger(toFloat(upTo) / 2.0);
 }
 function mergeBy -- do not use
 [a] ::= lte::(Boolean ::= a a) l1::[a] l2::[a]

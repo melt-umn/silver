@@ -25,6 +25,7 @@ parser svParse::Root {
   silver:extension:monad;
   silver:extension:reflection;
   silver:extension:silverconstruction;
+  silver:extension:astconstruction;
   silver:extension:constructparser;
   silver:extension:treesitter;
 --  silver:extension:concreteSyntaxForTrees ;

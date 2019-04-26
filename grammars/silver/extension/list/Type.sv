@@ -8,11 +8,12 @@ top::Type ::= el::Type
   top.flatRenamed = listType(el.flatRenamed);
   top.typepp = "[" ++ el.typepp ++ "]";
 
-  top.unify = case top.unifyWith of
-               listType(fel) -> unify(el,fel)
-             | decoratedType(nonterminalType("core:List", ftes)) -> unify(el, head(ftes))
-             | _ -> errorSubst("Tried to unify list with " ++ prettyType(top.unifyWith))
-              end;
+  top.unify =
+    case top.unifyWith of
+    | listType(fel) -> unify(el,fel)
+    | decoratedType(nonterminalType("core:List", ftes)) -> unify(el, head(ftes))
+    | _ -> errorSubst("Tried to unify list with " ++ prettyType(top.unifyWith))
+    end;
   
   -- Suppress its "nonterminal"ness
   top.isDecorable = false;

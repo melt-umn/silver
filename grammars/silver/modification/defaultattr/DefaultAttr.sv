@@ -7,6 +7,8 @@ import silver:definition:type:syntax;
 --import silver:analysis:typechecking:core;
 import silver:translation:java;
 
+import silver:definition:flow:driver only ProductionGraph, FlowType, constructDefaultProductionGraph; -- for the "oh no again!" hack below
+import silver:driver:util only RootSpec; -- ditto
 
 terminal Default_kwd 'default' lexer classes {KEYWORD, RESERVED};
 
@@ -31,8 +33,16 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   local sigDefs :: [Def] =
     addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, te.lexicalTypeVariables);
 
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = 
+    constructDefaultProductionGraph(namedSig, body.flowDefs, top.env, myProds, myFlow);
+
+
   body.env = newScopeEnv(fakedDefs ++ sigDefs, top.env);
-  body.frame = defaultAspectContext(namedSig);
+  body.frame = defaultAspectContext(namedSig, myFlowGraph);
 
   body.downSubst = emptySubst();
 
@@ -79,10 +89,11 @@ top::DefLHS ::= q::Decorated QName
 }
 
 abstract production defaultAspectContext
-top::BlockContext ::= sig::NamedSignature  -- okay, sorta has a sig?
+top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
 {
   top.fullName = sig.fullName;
   top.lhsNtName = sig.outputElement.typerep.typeName;
   top.signature = sig;
+  top.flowGraph = g;
 }
 

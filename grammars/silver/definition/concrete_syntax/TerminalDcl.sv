@@ -152,7 +152,7 @@ top::TerminalModifier ::= 'precedence' '=' i::Int_t
 {
   top.unparse = "precedence = " ++ i.lexeme;
 
-  top.terminalModifiers = [termPrecedence(toInt(i.lexeme))];
+  top.terminalModifiers = [termPrecedence(toInteger(i.lexeme))];
   top.errors := [];
 }
 

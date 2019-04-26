@@ -2,13 +2,6 @@ package common;
 
 import java.io.*;
 import java.lang.reflect.*;
-import java.nio.channels.FileChannel;
-import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.net.URI;
@@ -64,18 +57,6 @@ public final class Util {
 			result[idx[i]] = val[i];
 		}
 		return result;
-	}
-
-	/**
-	 * Exit, of course!
-	 *
-	 * <p>This is here because it has to return Object to be used in expressions.
-	 *
-	 * @param status the exit status code
-	 * @return Does not return.
-	 */
-	public static IOToken exit(int status) {
-		throw new SilverExit(status);
 	}
 
 	/**
@@ -135,290 +116,6 @@ public final class Util {
 			result = Character.isLowerCase(sb.charAt(i));
 		}
 		return result;
-	}
-
-	public static int fileTime(String sb) {
-		return (int) ((new File(sb).lastModified()) / 1000);
-	}
-
-	public static IOToken touchFile(String sb) {
-		setFileTime(sb, currentTime());
-		return IOToken.singleton;
-	}
-
-	public static void setFileTime(String sb, int time) {
-		new File(sb).setLastModified(((long)time) * 1000);
-	}
-
-	public static IOToken touchFiles(ConsCell files) {
-		while(!files.nil()) {
-			setFileTime(files.head().toString(), currentTime());
-			files = files.tail();
-		}
-		return IOToken.singleton;
-	}
-
-	public static int currentTime() {
-		return (int)(System.currentTimeMillis() / 1000);
-	}
-
-	public static boolean isFile(String sb) {
-		return new File(sb).isFile();
-	}
-
-	public static boolean isDirectory(String sb) {
-		return new File(sb).isDirectory();
-	}
-
-	public static boolean mkdir(String sb) {
-		return new File(sb).mkdirs();
-	}
-
-	public static boolean deleteFile(String sb) {
-		return new File(sb).delete();
-	}
-
-	public static boolean deleteFiles(ConsCell files) {
-		boolean result = true;
-		while(!files.nil()) {
-			StringCatter f = (StringCatter)files.head();
-			result = result && new File(f.toString()).delete();
-			files = files.tail();
-		}
-		return result;
-	}
-
-	public static boolean deleteDirFiles(String dir) {
-		try {
-			File dirf = new File(dir);
-			String[] files = dirf.list();
-
-			boolean result = true;
-
-			if(files == null) return result;
-
-			for(String filename : files) {
-				File file = new File(dirf, filename);
-				// Only files, no directories
-				if(file.isFile()) {
-					result = result && file.delete();
-				}
-
-			}
-
-			return result;
-
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	public static IOToken deleteTree(String path) {
-		// We should consider using walkFileTree, in the future
-		deleteTreeRecursive(Paths.get(path));
-		return IOToken.singleton;
-	}
-	private static void deleteTreeRecursive(Path f) {
-		if(!Files.exists(f, LinkOption.NOFOLLOW_LINKS)) {
-			// If the file doesn't exist, ignore it silently. Disk changed underneath us or something?
-			// NOFOLLOW because we care if the symlink exists, not what the symlink points to.
-			return;
-		}
-		// Juuuust in case, we should never be trying to delete "/" or "/home" or "c:/users" etc.
-		if(f.toAbsolutePath().normalize().toString().length() < 9)
-			throw new RuntimeException("Canary against deleting things we shouldn't. Tried to delete path: " + f);
-		try {
-			// Need to handle: symlinks, directories, and normal files.
-			if(Files.isSymbolicLink(f)) {
-				// Deletes symlink, without traversing into it.
-				Files.delete(f);
-			} else if(Files.isDirectory(f)) {
-				// Recursively delete files, then the directory itself.
-				try (DirectoryStream<Path> stream = Files.newDirectoryStream(f)) {
-					for (Path child : stream) {
-						deleteTreeRecursive(child);
-					}
-				}
-			} else {
-				Files.delete(f);
-			}
-		} catch (IOException e) {
-			// If we encounter an IO error anywhere, we immediately stop and raise an exception
-			// Safety valve if we try to delete something we shouldn't.
-			throw new RuntimeException(e);
-		}
-	}
-
-	private static BufferedReader our_stdin = null;
-	public static StringCatter getStr() {
-		try {
-			if(our_stdin == null) {
-				// We should persist this, since it's buffered, we might buffer bytes for the NEXT line
-				our_stdin = new BufferedReader(new InputStreamReader(System.in));
-			}
-			return new StringCatter(our_stdin.readLine()) ;
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	/**
-	 * Copy a file from 'from' to 'to'.
-	 *
-	 * @param from A path to the file to copy
-	 * @param to A path to where the file should be copied. May be a directory.
-	 * @return singleton IO token.
-	 */
-	public static IOToken copyFile(String from, String to) {
-		Path src = Paths.get(from);
-		Path dst = Paths.get(to);
-		try {
-			// copy x.java into src. create the file src/x.java. Works even if dst is symlink.
-			if(Files.isDirectory(dst)) {
-				dst = dst.resolve(dst.getFileName());
-			}
-			Files.copy(src, dst);
-		} catch (IOException io) {
-			// Unfortunately, we still don't have a better way.
-			throw new RuntimeException(io);
-		}
-		return IOToken.singleton;
-	}
-
-	/**
-	 * Slurps the contents of a file into a string.  May cause IO exceptions.
-	 *
-	 * @param sb  The filename
-	 * @return  The file contents.
-	 */
-	public static StringCatter readFile(String filename) {
-		try {
-			byte[] b = Files.readAllBytes(Paths.get(filename));
-			return new StringCatter(new String(b));
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	public static StringCatter cwd() {
-		// This is a typical approach because JVMs don't change the working directory.
-		// However, this is an alternative if there's ever a reason to suspect that this no longer works
-		// Paths.get(".").toAbsolutePath().normalize().toString()
-		return new StringCatter(System.getProperty("user.dir"));
-	}
-
-	/**
-	 * We have a (public) copy of the environment because RunSilver may need to modify it.
-	 *
-	 * Sadly, there does not appear to be any way to do with without making our own copy
-	 * of the entire environment.
-	 */
-	public static Map<String, String> environment = new TreeMap<String, String>(System.getenv());
-
-	public static StringCatter env(String sb) {
-		String result = environment.get(sb);
-		if (result == null)
-			return new StringCatter(""); // Is this the right reply?
-		else
-			return new StringCatter(result);
-	}
-
-	/**
-	 * Invokes an external command, channeling all stdin/out/err to the console normally.
-	 *
-	 * N.B. uses 'bash' to invoke the command. There are two major reasons:
-	 * (1) allows redirects and such, which is useful
-	 * (2) because this command takes just a single string, we must somehow deal with spaces.
-	 * e.g. 'touch "abc 123"' bash take care of interpreting the quotes for us.
-	 *
-	 * Unfortunately platform dependency though.
-	 *
-	 * @param sb A string for back to interpret and execute.
-	 * @return The exit status of the process.
-	 */
-	public static int system(String sb) {
-		try {
-			ProcessBuilder pb = new ProcessBuilder("bash", "-c", sb);
-			pb.inheritIO();
-			Process p = pb.start();
-			p.waitFor();
-			return p.exitValue();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	/**
-	 * Write to a file, truncating anything there already. Used by 'writeFile' in silver.
-	 *
-	 * <p>Avoids demanding a StringCatter.
-	 *
-	 * @param file The filename
-	 * @param content A {@link StringCatter} object.
-	 * @return singleton IO token.
-	 */
-	public static IOToken writeFile(String file, Object content) {
-		try {
-			Writer fout = new BufferedWriter(new FileWriter(file));
-			((StringCatter)content).write(fout);
-			fout.close();
-			return IOToken.singleton;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	/**
-	 * Write to a file, appending onto the end of anything there already. Used by 'appendFile' in silver.
-	 *
-	 * <p>Avoids demanding a StringCatter.
-	 *
-	 * @param file The filename
-	 * @param content A {@link StringCatter} object.
-	 * @return singleton IO token.
-	 */
-	public static IOToken appendFile(String file, Object content) { // TODO: merge with above!
-		try {
-			Writer fout = new BufferedWriter(new FileWriter(file, true));
-			((StringCatter)content).write(fout);
-			fout.close();
-			return IOToken.singleton;
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	public static IOToken print(String sb) {
-		// TODO: should we avoid demanding stringcatter objects?
-		System.out.print(sb);
-		return IOToken.singleton;
-	}
-
-	/**
-	 * Lists the contents of a directory.
-	 *
-	 * @param sb The directory to list the contents of.
-	 * @return A list of Strings
-	 */
-	public static ConsCell listContents(String sb) {
-		try {
-			File f = new File(sb);
-			String[] files = f.list();
-
-			ConsCell result = ConsCell.nil;
-
-			if(files == null)
-				return result;
-
-			for (String file : files) {
-				result = new ConsCell(new StringCatter(file), result);
-			}
-
-			return result;
-
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
 	}
 
 	/**
@@ -676,11 +373,11 @@ public final class Util {
 	 * Returns the terminals from a parser.
 	 */
 	private static <ROOT> Object getTerminals(CopperParser<ROOT, CopperParserException> parser) {
-		Class parserClass = parser.getClass();
+		Class<? extends CopperParser> parserClass = parser.getClass();
 		try {
 			Method getTokens = parserClass.getMethod("getTokens");
-			List<common.Terminal> tokens = (List) getTokens.invoke(parser);
-			return new Thunk(() -> {
+			List<Terminal> tokens = (List<Terminal>) getTokens.invoke(parser);
+			return new Thunk<ConsCell>(() -> {
 				List<NTerminalDescriptor> tds = tokens
 					.stream()
 					.map(Util::terminalToTerminalDescriptor)
@@ -716,7 +413,7 @@ public final class Util {
 	 * This is a "private" method for the Silver compiler to use to determine
 	 * where it is installed. We can figure out how to generalize this later.
 	 */
-	public static StringCatter determineSilverHomePath(Class clazz) {
+	public static StringCatter determineSilverHomePath(Class<?> clazz) {
 		URI jarLocation;
 		try {
 			jarLocation = clazz.getProtectionDomain().getCodeSource().getLocation().toURI();

@@ -16,7 +16,14 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::Ac
 
   top.errors := te.errors ++ acode.errors;
   
-  acode.frame = actionContext();
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = 
+    constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
+
+  acode.frame = actionContext(myFlowGraph);
   acode.env = newScopeEnv(acode.defs, top.env);
   
   top.syntaxAst = [syntaxParserAttribute(fName, te.typerep, acode.actionCode)];
@@ -38,7 +45,14 @@ top::AGDcl ::= 'aspect' 'parser' 'attribute' a::QName 'action' acode::ActionCode
 
   top.errors := acode.errors;
   
-  acode.frame = actionContext();
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = 
+    constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
+
+  acode.frame = actionContext(myFlowGraph);
   acode.env = newScopeEnv(acode.defs, top.env);
   
   top.syntaxAst = [syntaxParserAttributeAspect(fName, acode.actionCode)];
