@@ -105,7 +105,6 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifie
   top.ts_production_inputs = [];
   top.ts_prec_assoc_entry = pair("", pair(0, "none"));
   top.lexer_classes = [];
-
   -- relevant attributes
   top.ts_lhs = toTsDeclaration(t.typeName);
   top.ts_nonterminal_rules_rhs = subdcls.ts_nonterminal_rules_rhs;
@@ -229,6 +228,17 @@ Boolean ::= declaration::Decorated SyntaxDcl
 {
   return case declaration of
   | syntaxDisambiguationGroup(_, _, _, _) -> true
+  | _ -> false
+  end;
+}
+
+function hasDisambiguationFunction
+Boolean ::= declaration::Decorated SyntaxDcl
+{
+  return 
+  case declaration of
+  | syntaxDisambiguationGroup(_, _, _, _) -> true
+  | syntaxLexerClass(_, mods) -> length(mods.disambiguationClasses) > 0
   | _ -> false
   end;
 }

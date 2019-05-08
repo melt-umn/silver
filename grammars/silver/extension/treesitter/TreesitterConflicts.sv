@@ -8,6 +8,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
   top.terminalConflicts =
     case s1 of
     | syntaxDisambiguationGroup(name, terms, _, _) -> pair(name, terms) :: s2.terminalConflicts
+    | syntaxLexerClass(_, mods) -> append(mods.terminalConflicts, s2.terminalConflicts) 
     | _ -> s2.terminalConflicts
     end;
 }

@@ -39,6 +39,14 @@ String ::= terminalAndAtomName::Pair<String String>
   return s"""'${terminalAndAtomName.fst}': '${terminalAndAtomName.snd}'""";
 }
 
+function getModifiedCopperXML
+String ::= parsername::String startnt::String s::Syntax conflicts::[Pair<String [String]>] terminalPrefixes::[Pair<String String>]
+{
+  local modifiedGrammarForConflicts :: Syntax = createModifiedGrammar(s, conflicts);
+  local modRoot :: SyntaxRoot = cstRoot("ModifiedGrammarForTreesitter", startnt, modifiedGrammarForConflicts, terminalPrefixes);
+  return modRoot.xmlCopper;
+}
+
 {-- ASPECT PRODUCTIONS --}
 aspect production cstRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
@@ -49,10 +57,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
     if stringEq(parsername, "ModifiedGrammarForTreesitter") then
       ""
     else
-     --local modifiedGrammarForConflicts :: Syntax = createModifiedGrammar(s, s.terminalConflicts);
-     --local modRoot :: SyntaxRoot = cstRoot("ModifiedGrammarForTreesitter", startnt, modifiedGrammarForConflicts, terminalPrefixes);
-     --modRoot.xmlCopper;
-     "";
+      getModifiedCopperXML(parsername, startnt, s2, s2.terminalConflicts, terminalPrefixes);
 
   -- the 'normalized' version from production attribute 's2'.  This groups productions with
   -- the same left hand side together as subdcls on nonterminals.
@@ -88,6 +93,9 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
 
 s"""
 module.exports = grammar({
+  ${implode("\n", map(implode(",", _), (map(snd, s2.terminalConflicts))))}
+
+
   name: '${top.lang}',
 
   extras: $$ => [
