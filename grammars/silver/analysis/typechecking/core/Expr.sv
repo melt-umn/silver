@@ -216,201 +216,67 @@ top::Expr ::= 'false'
 aspect production and
 top::Expr ::= e1::Expr '&&' e2::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
-
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  errCheck2.downSubst = errCheck1.upSubst;
-  top.upSubst = errCheck2.upSubst;
-  
-  errCheck1 = check(e1.typerep, boolType());
-  errCheck2 = check(e2.typerep, boolType());
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(e1.location, "First operand to && must be type bool. Got instead type " ++ errCheck1.leftpp)]
-       else [];
-  top.errors <-
-       if errCheck2.typeerror
-       then [err(e2.location, "First operand to && must be type bool. Got instead type " ++ errCheck2.leftpp)]
-       else [];
 }
 
 aspect production or
 top::Expr ::= e1::Expr '||' e2::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
-
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  errCheck2.downSubst = errCheck1.upSubst;
-  top.upSubst = errCheck2.upSubst;
-  
-  errCheck1 = check(e1.typerep, boolType());
-  errCheck2 = check(e2.typerep, boolType());
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(e1.location, "First operand to || must be type bool. Got instead type " ++ errCheck1.leftpp)]
-       else [];
-  top.errors <-
-       if errCheck2.typeerror
-       then [err(e2.location, "First operand to || must be type bool. Got instead type " ++ errCheck2.leftpp)]
-       else [];
 }
 
 aspect production not
 top::Expr ::= '!' e1::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
   e1.downSubst = top.downSubst;
-  errCheck1.downSubst = e1.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e1.typerep, boolType());
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(e1.location, "Operand to ! must be type bool. Got instead type " ++ errCheck1.leftpp)]
-       else [];
 }
 
 aspect production gt
 top::Expr ::= e1::Expr '>' e2::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to > must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
-       then []
-       else [err(top.location, "Operands to > must be concrete types Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 aspect production lt
 top::Expr ::= e1::Expr '<' e2::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to < must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
-       then []
-       else [err(top.location, "Operands to < must be concrete types Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 
 aspect production gteq
 top::Expr ::= e1::Expr '>=' e2::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to >= must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
-       then []
-       else [err(top.location, "Operands to >= must be concrete types Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 
 aspect production lteq
 top::Expr ::= e1::Expr '<=' e2::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to <= must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
-       then []
-       else [err(top.location, "Operands to <= must be concrete types Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 
 aspect production eqeq
 top::Expr ::= e1::Expr '==' e2::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to == must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceEq
-       then []
-       else [err(top.location, "Operands to == must be concrete types Boolean, Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 
 aspect production neq
 top::Expr ::= e1::Expr '!=' e2::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to != must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceEq
-       then []
-       else [err(top.location, "Operands to != must be concrete types Boolean, Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 
@@ -454,119 +320,39 @@ top::Expr ::= f::Float_t
 aspect production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to + must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
-       then []
-       else [err(top.location, "Operands to + must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 aspect production minus
 top::Expr ::= e1::Expr '-' e2::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to - must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
-       then []
-       else [err(top.location, "Operands to - must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to * must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
-       then []
-       else [err(top.location, "Operands to * must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 aspect production divide
 top::Expr ::= e1::Expr '/' e2::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to / must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
-       then []
-       else [err(top.location, "Operands to / must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 aspect production modulus
 top::Expr ::= e1::Expr '%' e2::Expr
 {
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  top.upSubst = errCheck1.upSubst;
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to % must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-
-  top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
-       then []
-       else [err(top.location, "Operands to % must be concrete types Integer or Float.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 aspect production neg
 top::Expr ::= '-' e1::Expr
 {
   e1.downSubst = top.downSubst;
   top.upSubst = e1.upSubst;
-  
-  top.errors <-
-       if performSubstitution(e1.typerep, top.finalSubst).instanceNum
-       then []
-       else [err(top.location, "Operand to unary - must be concrete types Integer or Float.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 aspect production stringConst
