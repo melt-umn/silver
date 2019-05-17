@@ -218,6 +218,37 @@ top::Expr ::= e1::Expr '&&' e2::Expr
 {
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
+
+  local matchAndSubst::Pair<Boolean Substitution> =
+                  if isMonad(e1.typerep) && isMonad(e2.typerep)
+                  then monadsMatch(e1.typerep, e2.typerep,
+                                   e2.upSubst)
+                  else pair(true, e2.upSubst);
+  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
+                                     then monadInnerType(e1.typerep)
+                                     else e1.typerep, boolType());
+  local errCheck2::TypeCheck = check(if isMonad(e2.typerep)
+                                     then monadInnerType(e2.typerep)
+                                     else e2.typerep, boolType());
+
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(e1.location, "First operand to && must be type bool or Monad(bool).  Got instead type " ++ errCheck1.leftpp)]
+       else [];
+  top.errors <-
+       if errCheck2.typeerror
+       then [err(e2.location, "First operand to && must be type bool or Monad(bool).  Got instead type " ++ errCheck2.leftpp)]
+       else [];
+  top.errors <-
+       if matchAndSubst.fst
+       then []
+       else [err(top.location, "Two monad operands to && must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck2.leftpp)];
+
+  errCheck1.finalSubst = top.finalSubst;
+  errCheck2.finalSubst = top.finalSubst;
+  errCheck1.downSubst = matchAndSubst.snd;
+  errCheck2.downSubst = errCheck1.upSubst;
+  top.upSubst = errCheck2.upSubst;
 }
 
 aspect production or
@@ -225,12 +256,56 @@ top::Expr ::= e1::Expr '||' e2::Expr
 {
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
+
+  local matchAndSubst::Pair<Boolean Substitution> =
+                  if isMonad(e1.typerep) && isMonad(e2.typerep)
+                  then monadsMatch(e1.typerep, e2.typerep,
+                                   e2.upSubst)
+                  else pair(true, e2.upSubst);
+  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
+                                     then monadInnerType(e1.typerep)
+                                     else e1.typerep, boolType());
+  local errCheck2::TypeCheck = check(if isMonad(e2.typerep)
+                                     then monadInnerType(e2.typerep)
+                                     else e2.typerep, boolType());
+
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(e1.location, "First operand to || must be type bool or Monad(bool).  Got instead type " ++ errCheck1.leftpp)]
+       else [];
+  top.errors <-
+       if errCheck2.typeerror
+       then [err(e2.location, "First operand to || must be type bool or Monad(bool).  Got instead type " ++ errCheck2.leftpp)]
+       else [];
+  top.errors <-
+       if matchAndSubst.fst
+       then []
+       else [err(top.location, "Two monad operands to || must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck2.leftpp)];
+
+  errCheck1.finalSubst = top.finalSubst;
+  errCheck2.finalSubst = top.finalSubst;
+  errCheck1.downSubst = matchAndSubst.snd;
+  errCheck2.downSubst = errCheck1.upSubst;
+  top.upSubst = errCheck2.upSubst;
 }
 
 aspect production not
-top::Expr ::= '!' e1::Expr
+top::Expr ::= '!' e::Expr
 {
-  e1.downSubst = top.downSubst;
+  e.downSubst = top.downSubst;
+
+  local errCheck::TypeCheck = check(if isMonad(e.typerep)
+                                    then monadInnerType(e.typerep)
+                                    else e.typerep, boolType());
+
+  top.errors <-
+       if errCheck.typeerror
+       then [err(e.location, "Operand to ! must be type bool or Monad(bool).  Got instead type " ++ errCheck.leftpp)]
+       else [];
+
+  errCheck.finalSubst = top.finalSubst;
+  errCheck.downSubst = e.upSubst;
+  top.upSubst = errCheck.upSubst;
 }
 
 aspect production gt
@@ -238,6 +313,39 @@ top::Expr ::= e1::Expr '>' e2::Expr
 {
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
+
+  local matchAndSubst::Pair<Boolean Substitution> =
+                  if isMonad(e1.typerep) && isMonad(e2.typerep)
+                  then monadsMatch(e1.typerep, e2.typerep,
+                                   e2.upSubst)
+                  else pair(true, e2.upSubst);
+  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
+                                     then monadInnerType(e1.typerep)
+                                     else e1.typerep,
+                                     if isMonad(e2.typerep)
+                                     then monadInnerType(e2.typerep)
+                                     else e2.typerep);
+
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operands to > must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+       else [];
+  top.errors <-
+       if isMonad(e1.typerep)
+       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceOrd
+            then []
+            else [err(top.location, "Operands to > must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
+       else if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
+            then []
+            else [err(top.location, "Operands to > must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+  top.errors <-
+       if matchAndSubst.fst
+       then []
+       else [err(top.location, "Two monad operands to > must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
+
+  errCheck1.finalSubst = top.finalSubst;
+  errCheck1.downSubst = matchAndSubst.snd;
+  top.upSubst = errCheck1.upSubst;
 }
 
 aspect production lt
@@ -245,6 +353,39 @@ top::Expr ::= e1::Expr '<' e2::Expr
 {
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
+
+  local matchAndSubst::Pair<Boolean Substitution> =
+                  if isMonad(e1.typerep) && isMonad(e2.typerep)
+                  then monadsMatch(e1.typerep, e2.typerep,
+                                   e2.upSubst)
+                  else pair(true, e2.upSubst);
+  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
+                                     then monadInnerType(e1.typerep)
+                                     else e1.typerep,
+                                     if isMonad(e2.typerep)
+                                     then monadInnerType(e2.typerep)
+                                     else e2.typerep);
+
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operands to < must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+       else [];
+  top.errors <-
+       if isMonad(e1.typerep)
+       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceOrd
+            then []
+            else [err(top.location, "Operands to < must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
+       else if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
+            then []
+            else [err(top.location, "Operands to < must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+  top.errors <-
+       if matchAndSubst.fst
+       then []
+       else [err(top.location, "Two monad operands to < must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
+
+  errCheck1.finalSubst = top.finalSubst;
+  errCheck1.downSubst = matchAndSubst.snd;
+  top.upSubst = errCheck1.upSubst;
 }
 
 
@@ -253,6 +394,39 @@ top::Expr ::= e1::Expr '>=' e2::Expr
 {
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
+
+  local matchAndSubst::Pair<Boolean Substitution> =
+                  if isMonad(e1.typerep) && isMonad(e2.typerep)
+                  then monadsMatch(e1.typerep, e2.typerep,
+                                   e2.upSubst)
+                  else pair(true, e2.upSubst);
+  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
+                                     then monadInnerType(e1.typerep)
+                                     else e1.typerep,
+                                     if isMonad(e2.typerep)
+                                     then monadInnerType(e2.typerep)
+                                     else e2.typerep);
+
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operands to >= must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+       else [];
+  top.errors <-
+       if isMonad(e1.typerep)
+       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceOrd
+            then []
+            else [err(top.location, "Operands to >= must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
+       else if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
+            then []
+            else [err(top.location, "Operands to >= must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+  top.errors <-
+       if matchAndSubst.fst
+       then []
+       else [err(top.location, "Two monad operands to >= must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
+
+  errCheck1.finalSubst = top.finalSubst;
+  errCheck1.downSubst = matchAndSubst.snd;
+  top.upSubst = errCheck1.upSubst;
 }
 
 
@@ -261,6 +435,39 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 {
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
+
+  local matchAndSubst::Pair<Boolean Substitution> =
+                  if isMonad(e1.typerep) && isMonad(e2.typerep)
+                  then monadsMatch(e1.typerep, e2.typerep,
+                                   e2.upSubst)
+                  else pair(true, e2.upSubst);
+  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
+                                     then monadInnerType(e1.typerep)
+                                     else e1.typerep,
+                                     if isMonad(e2.typerep)
+                                     then monadInnerType(e2.typerep)
+                                     else e2.typerep);
+
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operands to <= must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+       else [];
+  top.errors <-
+       if isMonad(e1.typerep)
+       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceOrd
+            then []
+            else [err(top.location, "Operands to <= must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
+       else if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
+            then []
+            else [err(top.location, "Operands to <= must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+  top.errors <-
+       if matchAndSubst.fst
+       then []
+       else [err(top.location, "Two monad operands to <= must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
+
+  errCheck1.finalSubst = top.finalSubst;
+  errCheck1.downSubst = matchAndSubst.snd;
+  top.upSubst = errCheck1.upSubst;
 }
 
 
@@ -269,6 +476,39 @@ top::Expr ::= e1::Expr '==' e2::Expr
 {
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
+
+  local matchAndSubst::Pair<Boolean Substitution> =
+                  if isMonad(e1.typerep) && isMonad(e2.typerep)
+                  then monadsMatch(e1.typerep, e2.typerep,
+                                   e2.upSubst)
+                  else pair(true, e2.upSubst);
+  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
+                                     then monadInnerType(e1.typerep)
+                                     else e1.typerep,
+                                     if isMonad(e2.typerep)
+                                     then monadInnerType(e2.typerep)
+                                     else e2.typerep);
+
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operands to > must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+       else [];
+  top.errors <-
+       if isMonad(e1.typerep)
+       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceOrd
+            then []
+            else [err(top.location, "Operands to > must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
+       else if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
+            then []
+            else [err(top.location, "Operands to > must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+  top.errors <-
+       if matchAndSubst.fst
+       then []
+       else [err(top.location, "Two monad operands to > must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
+
+  errCheck1.finalSubst = top.finalSubst;
+  errCheck1.downSubst = matchAndSubst.snd;
+  top.upSubst = errCheck1.upSubst;
 }
 
 
@@ -277,6 +517,39 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 {
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
+
+  local matchAndSubst::Pair<Boolean Substitution> =
+                  if isMonad(e1.typerep) && isMonad(e2.typerep)
+                  then monadsMatch(e1.typerep, e2.typerep,
+                                   e2.upSubst)
+                  else pair(true, e2.upSubst);
+  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
+                                     then monadInnerType(e1.typerep)
+                                     else e1.typerep,
+                                     if isMonad(e2.typerep)
+                                     then monadInnerType(e2.typerep)
+                                     else e2.typerep);
+
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operands to > must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+       else [];
+  top.errors <-
+       if isMonad(e1.typerep)
+       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceOrd
+            then []
+            else [err(top.location, "Operands to > must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
+       else if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
+            then []
+            else [err(top.location, "Operands to > must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+  top.errors <-
+       if matchAndSubst.fst
+       then []
+       else [err(top.location, "Two monad operands to > must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
+
+  errCheck1.finalSubst = top.finalSubst;
+  errCheck1.downSubst = matchAndSubst.snd;
+  top.upSubst = errCheck1.upSubst;
 }
 
 
@@ -291,18 +564,49 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
   e3.downSubst = e2.upSubst;
   errCheck1.downSubst = e3.upSubst;
   errCheck2.downSubst = errCheck1.upSubst;
-  top.upSubst = errCheck2.upSubst;
-  
-  errCheck1 = check(e2.typerep, e3.typerep);
-  errCheck2 = check(e1.typerep, boolType());
+  top.upSubst = pairMonadsMatch2.snd;
+  local attribute pairMonadsMatch1::Pair<Boolean Substitution>;
+  pairMonadsMatch1 = if isMonad(e1.typerep) && isMonad(e2.typerep)
+                     then monadsMatch(e1.typerep, e2.typerep, errCheck2.upSubst)
+                     else pair(true, errCheck2.upSubst);
+  local attribute pairMonadsMatch2::Pair<Boolean Substitution>;
+  pairMonadsMatch2 = if isMonad(e2.typerep) && isMonad(e3.typerep)
+                     then monadsMatch(e2.typerep, e3.typerep, pairMonadsMatch1.snd)
+                     else pair(true, pairMonadsMatch1.snd);
+  local attribute pairMonadsMatch3::Pair<Boolean Substitution>;
+  pairMonadsMatch3 = if isMonad(e1.typerep) && isMonad(e3.typerep)
+                     then monadsMatch(e1.typerep, e3.typerep, pairMonadsMatch2.snd)
+                     else pair(true, pairMonadsMatch2.snd);
+
+  errCheck1 = check(if isMonad(e2.typerep)
+                    then monadInnerType(e2.typerep)
+                    else e2.typerep,
+                    if isMonad(e3.typerep)
+                    then monadInnerType(e3.typerep)
+                    else e3.typerep);
+  errCheck2 = check(if isMonad(e1.typerep)
+                    then monadInnerType(e1.typerep)
+                    else e1.typerep, boolType());
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Then and else branch must have the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+       then [err(top.location, "Then and else branch must have the same type or have one be a monad of the type of the other. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
        else [];
   top.errors <-
        if errCheck2.typeerror
-       then [err(e1.location, "Condition must have the type Boolean. Instead it is " ++ errCheck2.leftpp)]
+       then [err(e1.location, "Condition must have the type Boolean or be a monad of Boolean. Instead it is " ++ errCheck2.leftpp)]
        else [];
+  top.errors <-
+       if pairMonadsMatch1.fst
+       then []
+       else [err(top.location, "Condition and then branch have different monad types, but they must be the same.  They are " ++ errCheck2.leftpp ++ " and " ++ errCheck1.leftpp)];
+  top.errors <-
+       if pairMonadsMatch2.fst
+       then []
+       else [err(top.location, "Then and else branches have different monad types, but they must be the same.  They are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
+  top.errors <-
+       if pairMonadsMatch3.fst
+       then []
+       else [err(top.location, "Condition and else branch have different monad types, but they must be the same.  They are " ++ errCheck2.leftpp ++ " and " ++ errCheck1.rightpp)];
 }
 
 aspect production intConst
@@ -322,6 +626,39 @@ top::Expr ::= e1::Expr '+' e2::Expr
 {
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
+
+  local matchAndSubst::Pair<Boolean Substitution> =
+                  if isMonad(e1.typerep) && isMonad(e2.typerep)
+                  then monadsMatch(e1.typerep, e2.typerep,
+                                   e2.upSubst)
+                  else pair(true, e2.upSubst);
+  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
+                                     then monadInnerType(e1.typerep)
+                                     else e1.typerep,
+                                     if isMonad(e2.typerep)
+                                     then monadInnerType(e2.typerep)
+                                     else e2.typerep);
+
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operands to + must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+       else [];
+  top.errors <-
+       if isMonad(e1.typerep)
+       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceNum
+            then []
+            else [err(top.location, "Operands to + must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
+       else if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+            then []
+            else [err(top.location, "Operands to + must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+  top.errors <-
+       if matchAndSubst.fst
+       then []
+       else [err(top.location, "Two monad operands to + must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
+
+  errCheck1.finalSubst = top.finalSubst;
+  errCheck1.downSubst = matchAndSubst.snd;
+  top.upSubst = errCheck1.upSubst;
 }
 
 aspect production minus
@@ -329,30 +666,171 @@ top::Expr ::= e1::Expr '-' e2::Expr
 {
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
+
+  local matchAndSubst::Pair<Boolean Substitution> =
+                  if isMonad(e1.typerep) && isMonad(e2.typerep)
+                  then monadsMatch(e1.typerep, e2.typerep,
+                                   e2.upSubst)
+                  else pair(true, e2.upSubst);
+  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
+                                     then monadInnerType(e1.typerep)
+                                     else e1.typerep,
+                                     if isMonad(e2.typerep)
+                                     then monadInnerType(e2.typerep)
+                                     else e2.typerep);
+
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operands to - must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+       else [];
+  top.errors <-
+       if isMonad(e1.typerep)
+       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceNum
+            then []
+            else [err(top.location, "Operands to - must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
+       else if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+            then []
+            else [err(top.location, "Operands to - must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+  top.errors <-
+       if matchAndSubst.fst
+       then []
+       else [err(top.location, "Two monad operands to - must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
+
+  errCheck1.finalSubst = top.finalSubst;
+  errCheck1.downSubst = matchAndSubst.snd;
+  top.upSubst = errCheck1.upSubst;
 }
 aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
+
+  local matchAndSubst::Pair<Boolean Substitution> =
+                  if isMonad(e1.typerep) && isMonad(e2.typerep)
+                  then monadsMatch(e1.typerep, e2.typerep,
+                                   e2.upSubst)
+                  else pair(true, e2.upSubst);
+  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
+                                     then monadInnerType(e1.typerep)
+                                     else e1.typerep,
+                                     if isMonad(e2.typerep)
+                                     then monadInnerType(e2.typerep)
+                                     else e2.typerep);
+
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operands to * must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+       else [];
+  top.errors <-
+       if isMonad(e1.typerep)
+       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceNum
+            then []
+            else [err(top.location, "Operands to * must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
+       else if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+            then []
+            else [err(top.location, "Operands to * must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+  top.errors <-
+       if matchAndSubst.fst
+       then []
+       else [err(top.location, "Two monad operands to * must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
+
+  errCheck1.finalSubst = top.finalSubst;
+  errCheck1.downSubst = matchAndSubst.snd;
+  top.upSubst = errCheck1.upSubst;
 }
 aspect production divide
 top::Expr ::= e1::Expr '/' e2::Expr
 {
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
+
+  local matchAndSubst::Pair<Boolean Substitution> =
+                  if isMonad(e1.typerep) && isMonad(e2.typerep)
+                  then monadsMatch(e1.typerep, e2.typerep,
+                                   e2.upSubst)
+                  else pair(true, e2.upSubst);
+  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
+                                     then monadInnerType(e1.typerep)
+                                     else e1.typerep,
+                                     if isMonad(e2.typerep)
+                                     then monadInnerType(e2.typerep)
+                                     else e2.typerep);
+
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operands to / must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+       else [];
+  top.errors <-
+       if isMonad(e1.typerep)
+       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceNum
+            then []
+            else [err(top.location, "Operands to / must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
+       else if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+            then []
+            else [err(top.location, "Operands to / must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+  top.errors <-
+       if matchAndSubst.fst
+       then []
+       else [err(top.location, "Two monad operands to / must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
+
+  errCheck1.finalSubst = top.finalSubst;
+  errCheck1.downSubst = matchAndSubst.snd;
+  top.upSubst = errCheck1.upSubst;
 }
 aspect production modulus
 top::Expr ::= e1::Expr '%' e2::Expr
 {
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
+
+  local matchAndSubst::Pair<Boolean Substitution> =
+                  if isMonad(e1.typerep) && isMonad(e2.typerep)
+                  then monadsMatch(e1.typerep, e2.typerep,
+                                   e2.upSubst)
+                  else pair(true, e2.upSubst);
+  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
+                                     then monadInnerType(e1.typerep)
+                                     else e1.typerep,
+                                     if isMonad(e2.typerep)
+                                     then monadInnerType(e2.typerep)
+                                     else e2.typerep);
+
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operands to % must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+       else [];
+  top.errors <-
+       if isMonad(e1.typerep)
+       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceNum
+            then []
+            else [err(top.location, "Operands to % must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
+       else if performSubstitution(e1.typerep, top.finalSubst).instanceNum
+            then []
+            else [err(top.location, "Operands to % must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+  top.errors <-
+       if matchAndSubst.fst
+       then []
+       else [err(top.location, "Two monad operands to % must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
+
+  errCheck1.finalSubst = top.finalSubst;
+  errCheck1.downSubst = matchAndSubst.snd;
+  top.upSubst = errCheck1.upSubst;
 }
 aspect production neg
-top::Expr ::= '-' e1::Expr
+top::Expr ::= '-' e::Expr
 {
-  e1.downSubst = top.downSubst;
-  top.upSubst = e1.upSubst;
+  e.downSubst = top.downSubst;
+  top.upSubst = e.upSubst;
+
+  top.errors <-
+       if isMonad(e.typerep)
+       then if performSubstitution(monadInnerType(e.typerep), top.finalSubst).instanceNum
+            then [err(e.location, "Operand to unary - must be concrete types Integer or Float or a monad of these.  Got instead type " ++ prettyType(performSubstitution(monadInnerType(e.typerep), top.finalSubst)))]
+            else []
+       else if performSubstitution(e.typerep, top.finalSubst).instanceNum
+            then [err(e.location, "Operand to unary - must be concrete types Integer or Float or a monad of these.  Got instead type " ++ prettyType(performSubstitution(e.typerep, top.finalSubst)))]
+            else [];
 }
 
 aspect production stringConst

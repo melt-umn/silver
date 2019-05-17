@@ -1,6 +1,7 @@
 grammar silver:definition:core;
 
 --import silver:analysis:typechecking:core;
+import silver:modification:lambda_fn;
 
 nonterminal Expr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, typerep, monadRewritten<Expr>;
@@ -86,6 +87,8 @@ top::Expr ::= q::Decorated QName
   top.typerep = if q.lookupValue.typerep.isDecorable
                 then ntOrDecType(q.lookupValue.typerep, freshType())
                 else q.lookupValue.typerep;
+
+  top.monadRewritten = top;
 }
 
 abstract production lhsReference
@@ -96,6 +99,8 @@ top::Expr ::= q::Decorated QName
   top.errors := [];
   -- An LHS is *always* a decorable (nonterminal) type.
   top.typerep = ntOrDecType(q.lookupValue.typerep, freshType());
+
+  top.monadRewritten = top;
 }
 
 abstract production localReference
@@ -117,6 +122,8 @@ top::Expr ::= q::Decorated QName
   top.errors := [];
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
   top.typerep = ntOrDecType(q.lookupValue.typerep, freshType());
+
+  top.monadRewritten = top;
 }
 
 -- Note here that production and function *references* are distinguished.
@@ -131,6 +138,8 @@ top::Expr ::= q::Decorated QName
 
   -- TODO: the freshening should probably be the responsibility of the thing in the environment, not here?
   top.typerep = freshenCompletely(q.lookupValue.typerep);
+
+  top.monadRewritten = top;
 }
 
 abstract production functionReference
@@ -141,6 +150,8 @@ top::Expr ::= q::Decorated QName
   top.errors := [];
 
   top.typerep = freshenCompletely(q.lookupValue.typerep); -- TODO see above
+
+  top.monadRewritten = top;
 }
 
 abstract production globalValueReference
@@ -151,6 +162,8 @@ top::Expr ::= q::Decorated QName
   top.errors := [];
 
   top.typerep = freshenCompletely(q.lookupValue.typerep); -- TODO see above
+
+  top.monadRewritten = top;
 }
 
 concrete production concreteForwardExpr
@@ -209,6 +222,8 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
   anns.appExprApplied = e.unparse;
   anns.remainingFuncAnnotations = [];
   anns.funcAnnotations = [];
+
+  top.monadRewritten = top;
 }
 
 -- Note that this applies to both function and productions.
@@ -293,6 +308,8 @@ top::Expr ::= '(' '.' q::QName ')'
   occursCheck = occursCheckQName(q, if inputType.isDecorated then inputType.decoratedType else inputType);
 
   top.errors <- occursCheck.errors;
+
+  top.monadRewritten = top;
 }
 
 -- NOTE: this is not intended to be used normally.
@@ -339,6 +356,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
             if length(e.unparse) < 12 then "'" ++ e.unparse ++ "' has" else "LHS of '.' is"
        in [err(top.location, ref ++ " type " ++ prettyType(q.attrFor) ++ " and cannot have attributes.")]
       end;
+
+  top.monadRewritten = top;
 }
 
 abstract production annoAccessHandler
@@ -352,6 +371,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.typerep = q.typerep;
   
   top.errors := q.errors;
+
+  top.monadRewritten = top;
 }
 
 abstract production terminalAccessHandler
@@ -443,6 +464,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   
   top.typerep = q.typerep;
   top.errors := []; -- already included?
+
+  top.monadRewritten = top;
 }
 
 abstract production inhDecoratedAccessHandler
@@ -452,6 +475,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   
   top.typerep = q.typerep;
   top.errors := []; -- already included?
+
+  top.monadRewritten = top;
 }
 
 -- TODO: change name. really "unknownDclAccessHandler"
@@ -463,6 +488,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.errors := []; -- empty because we only ever get here if lookup failed. see above.
 
   top.typerep = errorType();
+
+  top.monadRewritten = top;
 }
 
 
@@ -563,52 +590,50 @@ top::Expr ::= e1::Expr '&&' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
 
-  {-
-  if isMonad(e1.typerep)
-  then if isMonad(e2.typerep)
-       then if monadsMatch(e1.typerep, e2.typerep, top.downSubst)
-            then type is e1.typerep, no errors if inner is bool
-            else reject it to avoid nested monads
-       else check if e2 is bool
-  else if isMonad(e2.typerep)
-       then check if e1 is bool and e2 inner is bool
-  -}
-  local matchAndSubst::Pair<Boolean Substitution> =
-                  if isMonad(e1.typerep) && isMonad(e2.typerep)
-                  then monadsMatch(e1.typerep, e2.typerep,
-                                   e2.upSubst)
-                  else pair(true, e2.upSubst);
-  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
-                                     then monadInnerType(e1.typerep)
-                                     else e1.typerep, boolType());
-  local errCheck2::TypeCheck = check(if isMonad(e2.typerep)
-                                     then monadInnerType(e2.typerep)
-                                     else e2.typerep, boolType());
-
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(e1.location, "First operand to && must be type bool or Monad(bool).  Got instead type " ++ errCheck1.leftpp)]
-       else [];
-  top.errors <-
-       if errCheck2.typeerror
-       then [err(e2.location, "First operand to && must be type bool or Monad(bool).  Got instead type " ++ errCheck2.leftpp)]
-       else [];
-  top.errors <-
-       if matchAndSubst.fst
-       then []
-       else [err(top.location, "Two monad operands to && must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck2.leftpp)];
-
-  errCheck1.finalSubst = top.finalSubst;
-  errCheck2.finalSubst = top.finalSubst;
-  errCheck1.downSubst = matchAndSubst.snd;
-  errCheck2.downSubst = errCheck1.upSubst;
-  top.upSubst = errCheck2.upSubst;
-
   top.typerep = if isMonad(e1.typerep)
                 then e1.typerep --assume it will be well-typed
                 else if isMonad(e2.typerep)
                      then e2.typerep
                      else boolType();
+
+  --we assume both have the same monad, so we only need one return
+  --e1 >>= ( (\x::Bool y::M(Bool). y >>= (\z::Bool. Return(x && z))) (_, e2) )
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\ x::Boolean y::Boolean ->
+        $Expr {monadBind(e1.typerep, top.location)}
+        (y,
+         \ z::Boolean ->
+          $Expr {monadReturn(e1.typerep, top.location)}
+          (x && z)))(_, $Expr {e2}))
+    };
+  --e1 >>= ( (\x::Bool y::Bool. Return(x && y))(_, e2) )
+  local bind1::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\ x::Boolean y::Boolean -> 
+          $Expr {monadReturn(e1.typerep, top.location)}
+         (x && y))(_, $Expr {e2}))
+    };
+  --e2 >>= ( (\x::Bool y::Bool. Return(x && y))(e1, _) )
+  local bind2::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e2},
+       (\ x::Boolean y::Boolean -> 
+          $Expr {monadReturn(e2.typerep, top.location)}
+         (x && y))($Expr {e1}, _))
+    };
+  top.monadRewritten = if isMonad(e1.typerep)
+                       then if isMonad(e2.typerep)
+                            then bindBoth
+                            else bind1
+                       else if isMonad(e2.typerep)
+                            then bind2
+                            else top;
 }
 
 concrete production or
@@ -618,42 +643,50 @@ top::Expr ::= e1::Expr '||' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
 
-  local matchAndSubst::Pair<Boolean Substitution> =
-                  if isMonad(e1.typerep) && isMonad(e2.typerep)
-                  then monadsMatch(e1.typerep, e2.typerep,
-                                   e2.upSubst)
-                  else pair(true, e2.upSubst);
-  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
-                                     then monadInnerType(e1.typerep)
-                                     else e1.typerep, boolType());
-  local errCheck2::TypeCheck = check(if isMonad(e2.typerep)
-                                     then monadInnerType(e2.typerep)
-                                     else e2.typerep, boolType());
-
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(e1.location, "First operand to || must be type bool or Monad(bool).  Got instead type " ++ errCheck1.leftpp)]
-       else [];
-  top.errors <-
-       if errCheck2.typeerror
-       then [err(e2.location, "First operand to || must be type bool or Monad(bool).  Got instead type " ++ errCheck2.leftpp)]
-       else [];
-  top.errors <-
-       if matchAndSubst.fst
-       then []
-       else [err(top.location, "Two monad operands to || must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck2.leftpp)];
-
-  errCheck1.finalSubst = top.finalSubst;
-  errCheck2.finalSubst = top.finalSubst;
-  errCheck1.downSubst = matchAndSubst.snd;
-  errCheck2.downSubst = errCheck1.upSubst;
-  top.upSubst = errCheck2.upSubst;
-
   top.typerep = if isMonad(e1.typerep)
                 then e1.typerep --assume it will be well-typed
                 else if isMonad(e2.typerep)
                      then e2.typerep
                      else boolType();
+
+  --we assume both have the same monad, so we only need one return
+  --e1 >>= ( (\x::Bool y::M(Bool). y >>= (\z::Bool. Return(x || z))) (_, e2) )
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\ x::Boolean y::Boolean ->
+        $Expr {monadBind(e1.typerep, top.location)}
+        (y,
+         \ z::Boolean ->
+          $Expr {monadReturn(e1.typerep, top.location)}
+          (x || z)))(_, $Expr {e2}))
+    };
+  --e1 >>= ( (\x::Bool y::Bool. Return(x || y))(_, e2) )
+  local bind1::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\ x::Boolean y::Boolean -> 
+          $Expr {monadReturn(e1.typerep, top.location)}
+         (x || y))(_, $Expr {e2}))
+    };
+  --e2 >>= ( (\x::Bool y::Bool. Return(x || y))(e1, _) )
+  local bind2::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e2},
+       (\ x::Boolean y::Boolean -> 
+          $Expr {monadReturn(e2.typerep, top.location)}
+         (x || y))($Expr {e1}, _))
+    };
+  top.monadRewritten = if isMonad(e1.typerep)
+                       then if isMonad(e2.typerep)
+                            then bindBoth
+                            else bind1
+                       else if isMonad(e2.typerep)
+                            then bind2
+                            else top;
 }
 
 concrete production not
@@ -663,22 +696,19 @@ top::Expr ::= '!' e::Expr
 
   top.errors := e.errors;
 
-  local errCheck::TypeCheck = check(if isMonad(e.typerep)
-                                    then monadInnerType(e.typerep)
-                                    else e.typerep, boolType());
-
-  top.errors <-
-       if errCheck.typeerror
-       then [err(e.location, "Operand to ! must be type bool or Monad(bool).  Got instead type " ++ errCheck.leftpp)]
-       else [];
-
-  errCheck.finalSubst = top.finalSubst;
-  errCheck.downSubst = e.upSubst;
-  top.upSubst = errCheck.upSubst;
-
   top.typerep = if isMonad(e.typerep)
                 then e.typerep --assume it will be well-typed
                 else boolType();
+
+  top.monadRewritten =
+    if isMonad(e.typerep)
+    then Silver_Expr {
+           $Expr {monadBind(e.typerep, top.location)}
+            ($Expr {e},
+             \x::Boolean -> 
+              $Expr {monadReturn(e.typerep, top.location)}(!x))
+         }
+    else top;
 }
 
 concrete production gt
@@ -688,44 +718,53 @@ top::Expr ::= e1::Expr '>' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
 
-  local matchAndSubst::Pair<Boolean Substitution> =
-                  if isMonad(e1.typerep) && isMonad(e2.typerep)
-                  then monadsMatch(e1.typerep, e2.typerep,
-                                   e2.upSubst)
-                  else pair(true, e2.upSubst);
-  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
-                                     then monadInnerType(e1.typerep)
-                                     else e1.typerep,
-                                     if isMonad(e2.typerep)
-                                     then monadInnerType(e2.typerep)
-                                     else e2.typerep);
-
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to > must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-  top.errors <-
-       if isMonad(e1.typerep)
-       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceOrd
-            then []
-            else [err(top.location, "Operands to > must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
-       else if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
-            then []
-            else [err(top.location, "Operands to > must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
-  top.errors <-
-       if matchAndSubst.fst
-       then []
-       else [err(top.location, "Two monad operands to > must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
-
-  errCheck1.finalSubst = top.finalSubst;
-  errCheck1.downSubst = matchAndSubst.snd;
-  top.upSubst = errCheck1.upSubst;
-
   top.typerep = if isMonad(e1.typerep)
                 then monadOfType(e1.typerep, boolType())
                 else if isMonad(e2.typerep)
                      then monadOfType(e2.typerep, boolType())
                      else boolType();
+
+  --we assume both have the same monad, so we only need one return
+  --e1 >>= ( (\x y -> y >>= \z -> Return(x > z))(_, e2) )
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+          $Expr {monadBind(e2.typerep, top.location)}
+          (y,
+           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+            $Expr {monadReturn(e2.typerep, top.location)}
+            (x > z))) (_, $Expr {e2}))
+    };
+  --e1 >>= ( (\x y -> Return(x > y))(_, e2) )
+  local bind1::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+        $Expr {monadReturn(e1.typerep, top.location)}
+        (x > y))(_, $Expr {e2}))
+    };
+  --e2 >>= ( (\x y -> Return(x > y))(e1, _) )
+  local bind2::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e2},
+       (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+        $Expr {monadReturn(e2.typerep, top.location)}
+        (x > y))($Expr {e1}, _))
+    };
+  top.monadRewritten = if isMonad(e1.typerep)
+                       then if isMonad(e2.typerep)
+                            then bindBoth
+                            else bind1
+                       else if isMonad(e2.typerep)
+                            then bind2
+                            else top;
 }
 
 concrete production lt
@@ -735,44 +774,53 @@ top::Expr ::= e1::Expr '<' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
 
-  local matchAndSubst::Pair<Boolean Substitution> =
-                  if isMonad(e1.typerep) && isMonad(e2.typerep)
-                  then monadsMatch(e1.typerep, e2.typerep,
-                                   e2.upSubst)
-                  else pair(true, e2.upSubst);
-  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
-                                     then monadInnerType(e1.typerep)
-                                     else e1.typerep,
-                                     if isMonad(e2.typerep)
-                                     then monadInnerType(e2.typerep)
-                                     else e2.typerep);
-
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to < must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-  top.errors <-
-       if isMonad(e1.typerep)
-       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceOrd
-            then []
-            else [err(top.location, "Operands to < must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
-       else if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
-            then []
-            else [err(top.location, "Operands to < must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
-  top.errors <-
-       if matchAndSubst.fst
-       then []
-       else [err(top.location, "Two monad operands to < must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
-
-  errCheck1.finalSubst = top.finalSubst;
-  errCheck1.downSubst = matchAndSubst.snd;
-  top.upSubst = errCheck1.upSubst;
-
   top.typerep = if isMonad(e1.typerep)
                 then monadOfType(e1.typerep, boolType())
                 else if isMonad(e2.typerep)
                      then monadOfType(e2.typerep, boolType())
                      else boolType();
+
+  --we assume both have the same monad, so we only need one return
+  --e1 >>= ( (\x y -> y >>= \z -> Return(x < z))(_, e2) )
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+          $Expr {monadBind(e2.typerep, top.location)}
+          (y,
+           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+            $Expr {monadReturn(e2.typerep, top.location)}
+            (x < z))) (_, $Expr {e2}))
+    };
+  --e1 >>= ( (\x y -> Return(x < y))(_, e2) )
+  local bind1::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+        $Expr {monadReturn(e1.typerep, top.location)}
+        (x < y))(_, $Expr {e2}))
+    };
+  --e2 >>= ( (\x y -> Return(x < y))(e1, _) )
+  local bind2::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e2},
+       (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+        $Expr {monadReturn(e2.typerep, top.location)}
+        (x < y))($Expr {e1}, _))
+    };
+  top.monadRewritten = if isMonad(e1.typerep)
+                       then if isMonad(e2.typerep)
+                            then bindBoth
+                            else bind1
+                       else if isMonad(e2.typerep)
+                            then bind2
+                            else top;
 }
 
 concrete production gteq
@@ -782,44 +830,53 @@ top::Expr ::= e1::Expr '>=' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
 
-  local matchAndSubst::Pair<Boolean Substitution> =
-                  if isMonad(e1.typerep) && isMonad(e2.typerep)
-                  then monadsMatch(e1.typerep, e2.typerep,
-                                   e2.upSubst)
-                  else pair(true, e2.upSubst);
-  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
-                                     then monadInnerType(e1.typerep)
-                                     else e1.typerep,
-                                     if isMonad(e2.typerep)
-                                     then monadInnerType(e2.typerep)
-                                     else e2.typerep);
-
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to >= must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-  top.errors <-
-       if isMonad(e1.typerep)
-       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceOrd
-            then []
-            else [err(top.location, "Operands to >= must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
-       else if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
-            then []
-            else [err(top.location, "Operands to >= must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
-  top.errors <-
-       if matchAndSubst.fst
-       then []
-       else [err(top.location, "Two monad operands to >= must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
-
-  errCheck1.finalSubst = top.finalSubst;
-  errCheck1.downSubst = matchAndSubst.snd;
-  top.upSubst = errCheck1.upSubst;
-
   top.typerep = if isMonad(e1.typerep)
                 then monadOfType(e1.typerep, boolType())
                 else if isMonad(e2.typerep)
                      then monadOfType(e2.typerep, boolType())
                      else boolType();
+
+  --we assume both have the same monad, so we only need one return
+  --e1 >>= ( (\x y -> y >>= \z -> Return(x >= z))(_, e2) )
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+          $Expr {monadBind(e2.typerep, top.location)}
+          (y,
+           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+            $Expr {monadReturn(e2.typerep, top.location)}
+            (x >= z))) (_, $Expr {e2}))
+    };
+  --e1 >>= ( (\x y -> Return(x >= y))(_, e2) )
+  local bind1::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+        $Expr {monadReturn(e1.typerep, top.location)}
+        (x >= y))(_, $Expr {e2}))
+    };
+  --e2 >>= ( (\x y -> Return(x >= y))(e1, _) )
+  local bind2::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e2},
+       (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+        $Expr {monadReturn(e2.typerep, top.location)}
+        (x >= y))($Expr {e1}, _))
+    };
+  top.monadRewritten = if isMonad(e1.typerep)
+                       then if isMonad(e2.typerep)
+                            then bindBoth
+                            else bind1
+                       else if isMonad(e2.typerep)
+                            then bind2
+                            else top;
 }
 
 concrete production lteq
@@ -829,44 +886,53 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
 
-  local matchAndSubst::Pair<Boolean Substitution> =
-                  if isMonad(e1.typerep) && isMonad(e2.typerep)
-                  then monadsMatch(e1.typerep, e2.typerep,
-                                   e2.upSubst)
-                  else pair(true, e2.upSubst);
-  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
-                                     then monadInnerType(e1.typerep)
-                                     else e1.typerep,
-                                     if isMonad(e2.typerep)
-                                     then monadInnerType(e2.typerep)
-                                     else e2.typerep);
-
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to <= must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-  top.errors <-
-       if isMonad(e1.typerep)
-       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceOrd
-            then []
-            else [err(top.location, "Operands to <= must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
-       else if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
-            then []
-            else [err(top.location, "Operands to <= must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
-  top.errors <-
-       if matchAndSubst.fst
-       then []
-       else [err(top.location, "Two monad operands to <= must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
-
-  errCheck1.finalSubst = top.finalSubst;
-  errCheck1.downSubst = matchAndSubst.snd;
-  top.upSubst = errCheck1.upSubst;
-
   top.typerep = if isMonad(e1.typerep)
                 then monadOfType(e1.typerep, boolType())
                 else if isMonad(e2.typerep)
                      then monadOfType(e2.typerep, boolType())
                      else boolType();
+
+  --we assume both have the same monad, so we only need one return
+  --e1 >>= ( (\x y -> y >>= \z -> Return(x <= z))(_, e2) )
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+          $Expr {monadBind(e2.typerep, top.location)}
+          (y,
+           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+            $Expr {monadReturn(e2.typerep, top.location)}
+            (x <= z))) (_, $Expr {e2}))
+    };
+  --e1 >>= ( (\x y -> Return(x <= y))(_, e2) )
+  local bind1::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+        $Expr {monadReturn(e1.typerep, top.location)}
+        (x <= y))(_, $Expr {e2}))
+    };
+  --e2 >>= ( (\x y -> Return(x <= y))(e1, _) )
+  local bind2::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e2},
+       (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+        $Expr {monadReturn(e2.typerep, top.location)}
+        (x <= y))($Expr {e1}, _))
+    };
+  top.monadRewritten = if isMonad(e1.typerep)
+                       then if isMonad(e2.typerep)
+                            then bindBoth
+                            else bind1
+                       else if isMonad(e2.typerep)
+                            then bind2
+                            else top;
 }
 
 concrete production eqeq
@@ -876,44 +942,53 @@ top::Expr ::= e1::Expr '==' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
 
-  local matchAndSubst::Pair<Boolean Substitution> =
-                  if isMonad(e1.typerep) && isMonad(e2.typerep)
-                  then monadsMatch(e1.typerep, e2.typerep,
-                                   e2.upSubst)
-                  else pair(true, e2.upSubst);
-  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
-                                     then monadInnerType(e1.typerep)
-                                     else e1.typerep,
-                                     if isMonad(e2.typerep)
-                                     then monadInnerType(e2.typerep)
-                                     else e2.typerep);
-
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to > must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-  top.errors <-
-       if isMonad(e1.typerep)
-       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceOrd
-            then []
-            else [err(top.location, "Operands to > must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
-       else if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
-            then []
-            else [err(top.location, "Operands to > must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
-  top.errors <-
-       if matchAndSubst.fst
-       then []
-       else [err(top.location, "Two monad operands to > must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
-
-  errCheck1.finalSubst = top.finalSubst;
-  errCheck1.downSubst = matchAndSubst.snd;
-  top.upSubst = errCheck1.upSubst;
-
   top.typerep = if isMonad(e1.typerep)
                 then monadOfType(e1.typerep, boolType())
                 else if isMonad(e2.typerep)
                      then monadOfType(e2.typerep, boolType())
                      else boolType();
+
+  --we assume both have the same monad, so we only need one return
+  --e1 >>= ( (\x y -> y >>= \z -> Return(x == z))(_, e2) )
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+          $Expr {monadBind(e2.typerep, top.location)}
+          (y,
+           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+            $Expr {monadReturn(e2.typerep, top.location)}
+            (x == z))) (_, $Expr {e2}))
+    };
+  --e1 >>= ( (\x y -> Return(x == y))(_, e2) )
+  local bind1::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+        $Expr {monadReturn(e1.typerep, top.location)}
+        (x == y))(_, $Expr {e2}))
+    };
+  --e2 >>= ( (\x y -> Return(x == y))(e1, _) )
+  local bind2::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e2},
+       (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+        $Expr {monadReturn(e2.typerep, top.location)}
+        (x == y))($Expr {e1}, _))
+    };
+  top.monadRewritten = if isMonad(e1.typerep)
+                       then if isMonad(e2.typerep)
+                            then bindBoth
+                            else bind1
+                       else if isMonad(e2.typerep)
+                            then bind2
+                            else top;
 }
 
 concrete production neq
@@ -923,44 +998,53 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
 
-  local matchAndSubst::Pair<Boolean Substitution> =
-                  if isMonad(e1.typerep) && isMonad(e2.typerep)
-                  then monadsMatch(e1.typerep, e2.typerep,
-                                   e2.upSubst)
-                  else pair(true, e2.upSubst);
-  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
-                                     then monadInnerType(e1.typerep)
-                                     else e1.typerep,
-                                     if isMonad(e2.typerep)
-                                     then monadInnerType(e2.typerep)
-                                     else e2.typerep);
-
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to > must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-  top.errors <-
-       if isMonad(e1.typerep)
-       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceOrd
-            then []
-            else [err(top.location, "Operands to > must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
-       else if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
-            then []
-            else [err(top.location, "Operands to > must be concrete types Integer, Float, String, or TerminalId, or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
-  top.errors <-
-       if matchAndSubst.fst
-       then []
-       else [err(top.location, "Two monad operands to > must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
-
-  errCheck1.finalSubst = top.finalSubst;
-  errCheck1.downSubst = matchAndSubst.snd;
-  top.upSubst = errCheck1.upSubst;
-
   top.typerep = if isMonad(e1.typerep)
                 then monadOfType(e1.typerep, boolType())
                 else if isMonad(e2.typerep)
                      then monadOfType(e2.typerep, boolType())
                      else boolType();
+
+  --we assume both have the same monad, so we only need one return
+  --e1 >>= ( (\x y -> y >>= \z -> Return(x != z))(_, e2) )
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+          $Expr {monadBind(e2.typerep, top.location)}
+          (y,
+           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+            $Expr {monadReturn(e2.typerep, top.location)}
+            (x != z))) (_, $Expr {e2}))
+    };
+  --e1 >>= ( (\x y -> Return(x != y))(_, e2) )
+  local bind1::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+        $Expr {monadReturn(e1.typerep, top.location)}
+        (x != y))(_, $Expr {e2}))
+    };
+  --e2 >>= ( (\x y -> Return(x != y))(e1, _) )
+  local bind2::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e2},
+       (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+        $Expr {monadReturn(e2.typerep, top.location)}
+        (x != y))($Expr {e1}, _))
+    };
+  top.monadRewritten = if isMonad(e1.typerep)
+                       then if isMonad(e2.typerep)
+                            then bindBoth
+                            else bind1
+                       else if isMonad(e2.typerep)
+                            then bind2
+                            else top;
 }
 
 concrete production ifThenElse
@@ -970,7 +1054,51 @@ precedence = 0
   top.unparse = "if " ++ e1.unparse ++ " then " ++ e2.unparse ++ " else " ++ e3.unparse;
 
   top.errors := e1.errors ++ e2.errors ++ e3.errors;
-  top.typerep = e2.typerep;
+  top.typerep = if isMonad(e1.typerep)
+                then if isMonad(e2.typerep)
+                     then e2.typerep
+                     else if isMonad(e3.typerep)
+                          then e3.typerep
+                          else monadOfType(e1.typerep, e3.typerep)
+                else if isMonad(e2.typerep)
+                     then e2.typerep
+                     else e3.typerep;
+
+  --We assume that if e2 or e3 are monads, they are the same as e1 if that is a
+  --   monad and we don't allow monads to become nested.
+  local cMonad::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\c::Boolean
+         x::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e3.typerep, location=top.location)} ->
+         if c
+         then $Expr { if isMonad(e2.typerep)
+                      then Silver_Expr {x}
+                      else Silver_Expr {$Expr {monadReturn(e1.typerep, top.location)}(x)} }
+         else $Expr { if isMonad(e3.typerep)
+                      then Silver_Expr {x}
+                      else Silver_Expr {$Expr {monadReturn(e1.typerep, top.location)}(x)} })
+       (_, $Expr {e2}, $Expr {e3}))
+    };
+  local cBool::Expr =
+    Silver_Expr {
+      if $Expr {e1}
+      then $Expr {if isMonad(e2.typerep)
+                  then e2
+                  else if isMonad(e3.typerep)
+                       then Silver_Expr { $Expr {monadReturn(e3.typerep, top.location)}($Expr {e2}) }
+                       else e2}
+      else $Expr {if isMonad(e3.typerep)
+                  then e3
+                  else if isMonad(e2.typerep)
+                       then Silver_Expr { $Expr {monadReturn(e2.typerep, top.location)}($Expr {e3}) }
+                       else e3}
+    };
+  top.monadRewritten = if isMonad(e1.typerep)
+                       then cMonad
+                       else cBool;
 }
 
 concrete production intConst
@@ -980,6 +1108,8 @@ top::Expr ::= i::Int_t
 
   top.errors := [];
   top.typerep = intType();
+
+  top.monadRewritten = intConst(i, location=top.location);
 }
 
 concrete production floatConst
@@ -989,6 +1119,8 @@ top::Expr ::= f::Float_t
 
   top.errors := [];
   top.typerep = floatType();
+
+  top.monadRewritten = floatConst(f, location=top.location);
 } 
 
 concrete production plus
@@ -998,42 +1130,51 @@ top::Expr ::= e1::Expr '+' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
 
-  local matchAndSubst::Pair<Boolean Substitution> =
-                  if isMonad(e1.typerep) && isMonad(e2.typerep)
-                  then monadsMatch(e1.typerep, e2.typerep,
-                                   e2.upSubst)
-                  else pair(true, e2.upSubst);
-  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
-                                     then monadInnerType(e1.typerep)
-                                     else e1.typerep,
-                                     if isMonad(e2.typerep)
-                                     then monadInnerType(e2.typerep)
-                                     else e2.typerep);
-
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to + must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-  top.errors <-
-       if isMonad(e1.typerep)
-       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceNum
-            then []
-            else [err(top.location, "Operands to + must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
-       else if performSubstitution(e1.typerep, top.finalSubst).instanceNum
-            then []
-            else [err(top.location, "Operands to + must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
-  top.errors <-
-       if matchAndSubst.fst
-       then []
-       else [err(top.location, "Two monad operands to + must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
-
-  errCheck1.finalSubst = top.finalSubst;
-  errCheck1.downSubst = matchAndSubst.snd;
-  top.upSubst = errCheck1.upSubst;
-
   top.typerep = if isMonad(e1.typerep)
                 then e1.typerep
                 else e2.typerep;
+
+  --we assume both have the same monad, so we only need one return
+  --e1 >>= ( (\x y -> y >>= \z -> Return(x + z))(_, e2) )
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+          $Expr {monadBind(e2.typerep, top.location)}
+          (y,
+           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+            $Expr {monadReturn(e2.typerep, top.location)}
+            (x + z))) (_, $Expr {e2}))
+    };
+  --e1 >>= ( (\x y -> Return(x + y))(_, e2) )
+  local bind1::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+        $Expr {monadReturn(e1.typerep, top.location)}
+        (x + y))(_, $Expr {e2}))
+    };
+  --e2 >>= ( (\x y -> Return(x + y))(e1, _) )
+  local bind2::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e2},
+       (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+        $Expr {monadReturn(e2.typerep, top.location)}
+        (x + y))($Expr {e1}, _))
+    };
+  top.monadRewritten = if isMonad(e1.typerep)
+                       then if isMonad(e2.typerep)
+                            then bindBoth
+                            else bind1
+                       else if isMonad(e2.typerep)
+                            then bind2
+                            else top;
 }
 
 concrete production minus
@@ -1043,42 +1184,51 @@ top::Expr ::= e1::Expr '-' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
 
-  local matchAndSubst::Pair<Boolean Substitution> =
-                  if isMonad(e1.typerep) && isMonad(e2.typerep)
-                  then monadsMatch(e1.typerep, e2.typerep,
-                                   e2.upSubst)
-                  else pair(true, e2.upSubst);
-  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
-                                     then monadInnerType(e1.typerep)
-                                     else e1.typerep,
-                                     if isMonad(e2.typerep)
-                                     then monadInnerType(e2.typerep)
-                                     else e2.typerep);
-
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to - must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-  top.errors <-
-       if isMonad(e1.typerep)
-       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceNum
-            then []
-            else [err(top.location, "Operands to - must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
-       else if performSubstitution(e1.typerep, top.finalSubst).instanceNum
-            then []
-            else [err(top.location, "Operands to - must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
-  top.errors <-
-       if matchAndSubst.fst
-       then []
-       else [err(top.location, "Two monad operands to - must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
-
-  errCheck1.finalSubst = top.finalSubst;
-  errCheck1.downSubst = matchAndSubst.snd;
-  top.upSubst = errCheck1.upSubst;
-
   top.typerep = if isMonad(e1.typerep)
                 then e1.typerep
                 else e2.typerep;
+
+  --we assume both have the same monad, so we only need one return
+  --e1 >>= ( (\x y -> y >>= \z -> Return(x - z))(_, e2) )
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+          $Expr {monadBind(e2.typerep, top.location)}
+          (y,
+           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+            $Expr {monadReturn(e2.typerep, top.location)}
+            (x - z))) (_, $Expr {e2}))
+    };
+  --e1 >>= ( (\x y -> Return(x - y))(_, e2) )
+  local bind1::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+        $Expr {monadReturn(e1.typerep, top.location)}
+        (x - y))(_, $Expr {e2}))
+    };
+  --e2 >>= ( (\x y -> Return(x - y))(e1, _) )
+  local bind2::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e2},
+       (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+        $Expr {monadReturn(e2.typerep, top.location)}
+        (x - y))($Expr {e1}, _))
+    };
+  top.monadRewritten = if isMonad(e1.typerep)
+                       then if isMonad(e2.typerep)
+                            then bindBoth
+                            else bind1
+                       else if isMonad(e2.typerep)
+                            then bind2
+                            else top;
 }
 
 concrete production multiply
@@ -1088,42 +1238,51 @@ top::Expr ::= e1::Expr '*' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
 
-  local matchAndSubst::Pair<Boolean Substitution> =
-                  if isMonad(e1.typerep) && isMonad(e2.typerep)
-                  then monadsMatch(e1.typerep, e2.typerep,
-                                   e2.upSubst)
-                  else pair(true, e2.upSubst);
-  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
-                                     then monadInnerType(e1.typerep)
-                                     else e1.typerep,
-                                     if isMonad(e2.typerep)
-                                     then monadInnerType(e2.typerep)
-                                     else e2.typerep);
-
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to * must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-  top.errors <-
-       if isMonad(e1.typerep)
-       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceNum
-            then []
-            else [err(top.location, "Operands to * must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
-       else if performSubstitution(e1.typerep, top.finalSubst).instanceNum
-            then []
-            else [err(top.location, "Operands to * must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
-  top.errors <-
-       if matchAndSubst.fst
-       then []
-       else [err(top.location, "Two monad operands to * must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
-
-  errCheck1.finalSubst = top.finalSubst;
-  errCheck1.downSubst = matchAndSubst.snd;
-  top.upSubst = errCheck1.upSubst;
-
   top.typerep = if isMonad(e1.typerep)
                 then e1.typerep
                 else e2.typerep;
+
+  --we assume both have the same monad, so we only need one return
+  --e1 >>= ( (\x y -> y >>= \z -> Return(x * z))(_, e2) )
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+          $Expr {monadBind(e2.typerep, top.location)}
+          (y,
+           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+            $Expr {monadReturn(e2.typerep, top.location)}
+            (x * z))) (_, $Expr {e2}))
+    };
+  --e1 >>= ( (\x y -> Return(x * y))(_, e2) )
+  local bind1::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+        $Expr {monadReturn(e1.typerep, top.location)}
+        (x * y))(_, $Expr {e2}))
+    };
+  --e2 >>= ( (\x y -> Return(x * y))(e1, _) )
+  local bind2::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e2},
+       (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+        $Expr {monadReturn(e2.typerep, top.location)}
+        (x * y))($Expr {e1}, _))
+    };
+  top.monadRewritten = if isMonad(e1.typerep)
+                       then if isMonad(e2.typerep)
+                            then bindBoth
+                            else bind1
+                       else if isMonad(e2.typerep)
+                            then bind2
+                            else top;
 }
 
 concrete production divide
@@ -1133,42 +1292,51 @@ top::Expr ::= e1::Expr '/' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
 
-  local matchAndSubst::Pair<Boolean Substitution> =
-                  if isMonad(e1.typerep) && isMonad(e2.typerep)
-                  then monadsMatch(e1.typerep, e2.typerep,
-                                   e2.upSubst)
-                  else pair(true, e2.upSubst);
-  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
-                                     then monadInnerType(e1.typerep)
-                                     else e1.typerep,
-                                     if isMonad(e2.typerep)
-                                     then monadInnerType(e2.typerep)
-                                     else e2.typerep);
-
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to / must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-  top.errors <-
-       if isMonad(e1.typerep)
-       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceNum
-            then []
-            else [err(top.location, "Operands to / must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
-       else if performSubstitution(e1.typerep, top.finalSubst).instanceNum
-            then []
-            else [err(top.location, "Operands to / must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
-  top.errors <-
-       if matchAndSubst.fst
-       then []
-       else [err(top.location, "Two monad operands to / must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
-
-  errCheck1.finalSubst = top.finalSubst;
-  errCheck1.downSubst = matchAndSubst.snd;
-  top.upSubst = errCheck1.upSubst;
-
   top.typerep = if isMonad(e1.typerep)
                 then e1.typerep
                 else e2.typerep;
+
+  --we assume both have the same monad, so we only need one return
+  --e1 >>= ( (\x y -> y >>= \z -> Return(x / z))(_, e2) )
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+          $Expr {monadBind(e2.typerep, top.location)}
+          (y,
+           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+            $Expr {monadReturn(e2.typerep, top.location)}
+            (x / z))) (_, $Expr {e2}))
+    };
+  --e1 >>= ( (\x y -> Return(x / y))(_, e2) )
+  local bind1::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+        $Expr {monadReturn(e1.typerep, top.location)}
+        (x / y))(_, $Expr {e2}))
+    };
+  --e2 >>= ( (\x y -> Return(x / y))(e1, _) )
+  local bind2::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e2},
+       (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+        $Expr {monadReturn(e2.typerep, top.location)}
+        (x / y))($Expr {e1}, _))
+    };
+  top.monadRewritten = if isMonad(e1.typerep)
+                       then if isMonad(e2.typerep)
+                            then bindBoth
+                            else bind1
+                       else if isMonad(e2.typerep)
+                            then bind2
+                            else top;
 }
 
 concrete production modulus
@@ -1178,42 +1346,51 @@ top::Expr ::= e1::Expr '%' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
 
-  local matchAndSubst::Pair<Boolean Substitution> =
-                  if isMonad(e1.typerep) && isMonad(e2.typerep)
-                  then monadsMatch(e1.typerep, e2.typerep,
-                                   e2.upSubst)
-                  else pair(true, e2.upSubst);
-  local errCheck1::TypeCheck = check(if isMonad(e1.typerep)
-                                     then monadInnerType(e1.typerep)
-                                     else e1.typerep,
-                                     if isMonad(e2.typerep)
-                                     then monadInnerType(e2.typerep)
-                                     else e2.typerep);
-
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to % must be either the same type or monads of the same type.  Got instead type " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-  top.errors <-
-       if isMonad(e1.typerep)
-       then if performSubstitution(monadInnerType(e1.typerep), top.finalSubst).instanceNum
-            then []
-            else [err(top.location, "Operands to % must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(monadInnerType(e1.typerep), top.finalSubst)))]
-       else if performSubstitution(e1.typerep, top.finalSubst).instanceNum
-            then []
-            else [err(top.location, "Operands to % must be concrete types Integer or Float or monads of these.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
-  top.errors <-
-       if matchAndSubst.fst
-       then []
-       else [err(top.location, "Two monad operands to % must have the same monad.  Got instead " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
-
-  errCheck1.finalSubst = top.finalSubst;
-  errCheck1.downSubst = matchAndSubst.snd;
-  top.upSubst = errCheck1.upSubst;
-
   top.typerep = if isMonad(e1.typerep)
                 then e1.typerep
                 else e2.typerep;
+
+  --we assume both have the same monad, so we only need one return
+  --e1 >>= ( (\x y -> y >>= \z -> Return(x % z))(_, e2) )
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+          $Expr {monadBind(e2.typerep, top.location)}
+          (y,
+           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+            $Expr {monadReturn(e2.typerep, top.location)}
+            (x % z))) (_, $Expr {e2}))
+    };
+  --e1 >>= ( (\x y -> Return(x % y))(_, e2) )
+  local bind1::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.typerep, top.location)}
+      ($Expr {e1},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
+        $Expr {monadReturn(e1.typerep, top.location)}
+        (x % y))(_, $Expr {e2}))
+    };
+  --e2 >>= ( (\x y -> Return(x % y))(e1, _) )
+  local bind2::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.typerep, top.location)}
+      ($Expr {e2},
+       (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
+        $Expr {monadReturn(e2.typerep, top.location)}
+        (x % y))($Expr {e1}, _))
+    };
+  top.monadRewritten = if isMonad(e1.typerep)
+                       then if isMonad(e2.typerep)
+                            then bindBoth
+                            else bind1
+                       else if isMonad(e2.typerep)
+                            then bind2
+                            else top;
 }
 
 concrete production neg
@@ -1224,16 +1401,17 @@ precedence = 13
 
   top.errors := e.errors;
 
-  top.errors <-
-       if isMonad(e.typerep)
-       then if performSubstitution(monadInnerType(e.typerep), top.finalSubst).instanceNum
-            then [err(e.location, "Operand to unary - must be concrete types Integer or Float or a monad of these.  Got instead type " ++ prettyType(performSubstitution(monadInnerType(e.typerep), top.finalSubst)))]
-            else []
-       else if performSubstitution(e.typerep, top.finalSubst).instanceNum
-            then [err(e.location, "Operand to unary - must be concrete types Integer or Float or a monad of these.  Got instead type " ++ prettyType(performSubstitution(e.typerep, top.finalSubst)))]
-            else [];
-
   top.typerep = e.typerep;
+
+  top.monadRewritten =
+    if isMonad(e.typerep)
+    then Silver_Expr {
+           $Expr {monadBind(e.typerep, top.location)}
+            ($Expr {e},
+             \x::$TypeExpr {typerepTypeExpr(monadInnerType(e.typerep), location=top.location)} ->
+              $Expr {monadReturn(e.typerep, top.location)}(-x))
+         }
+    else top;
 }
 
 concrete production stringConst
@@ -1243,6 +1421,8 @@ top::Expr ::= s::String_t
 
   top.errors := [];
   top.typerep = stringType();
+
+  top.monadRewritten = stringConst(s, location=top.location);
 }
 
 concrete production plusPlus
@@ -1253,7 +1433,9 @@ top::Expr ::= e1::Expr '++' e2::Expr
   top.errors := e1.errors ++ e2.errors ++ forward.errors;
   top.typerep = if errCheck1.typeerror then errorType() else result_type;
 
-  local result_type :: Type = performSubstitution(e1.typerep, errCheck1.upSubst);
+  local result_type :: Type = if isMonad(e1.typerep)
+                              then performSubstitution(e1.typerep, errCheck1.upSubst)
+                              else performSubstitution(e2.typerep, errCheck1.upSubst);
 
   -- Moved from 'analysis:typechecking' because we want to use this stuff here now
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
@@ -1261,16 +1443,33 @@ top::Expr ::= e1::Expr '++' e2::Expr
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
   errCheck1.downSubst = e2.upSubst;
-  forward.downSubst = errCheck1.upSubst;
+  forward.downSubst = monadMatchAndSubst.snd;
   -- upSubst defined via forward :D
+  local attribute monadMatchAndSubst::Pair<Boolean Substitution>;
+  monadMatchAndSubst = if isMonad(e1.typerep) && isMonad(e2.typerep)
+                       then monadsMatch(e1.typerep, e2.typerep, errCheck1.upSubst)
+                       else pair(true, errCheck1.upSubst);
 
-  errCheck1 = check(e1.typerep, e2.typerep);
+  errCheck1 = check(if isMonad(e1.typerep)
+                    then monadInnerType(e1.typerep)
+                    else e1.typerep,
+                    if isMonad(e2.typerep)
+                    then monadInnerType(e2.typerep)
+                    else e2.typerep);
+  local errors::[Message] = (if errCheck1.typeerror
+                             then [err(top.location, "Operands to ++ must be the same concatenable type or monads of the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
+                             else []) ++
+                            if monadMatchAndSubst.fst
+                            then []
+                            else [err(top.location, "Two monad operands to ++ must be the same monad.  Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
 
   forwards to
     -- if the types disagree, forward to an error production instead.
     if errCheck1.typeerror
-    then errorExpr([err(top.location, "Operands to ++ must be the same concatenable type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)], location=top.location)
-    else top.typerep.appendDispatcher(e1, e2, top.location);
+    then errorExpr(errors, location=top.location)
+    else if isMonad(top.typerep)
+         then monadInnerType(top.typerep).appendDispatcher(e1, e2, top.location)
+         else top.typerep.appendDispatcher(e1, e2, top.location);
 }
 
 abstract production stringPlusPlus
@@ -1279,7 +1478,12 @@ top::Expr ::= e1::Decorated Expr   e2::Decorated Expr
   top.unparse = e1.unparse ++ " ++ " ++ e2.unparse;
 
   top.errors := [];
-  top.typerep = stringType();
+
+  --we assume both types will be compatible (any other case would have
+  --   been caught in plusPlus dispatching to this)
+  top.typerep = if isMonad(e1.typerep)
+                then e1.typerep
+                else e2.typerep;
 }
 
 abstract production errorPlusPlus
@@ -1293,6 +1497,8 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
     if result_type.isError then []
     else [err(e1.location, prettyType(result_type) ++ " is not a concatenable type.")];
   top.typerep = errorType();
+
+  top.monadRewritten = top;
 }
 
 -- These sorta seem obsolete, but there are some important differences from AppExprs.

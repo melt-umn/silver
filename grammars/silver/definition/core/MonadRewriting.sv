@@ -94,3 +94,41 @@ Type ::= mty::Type newInner::Type
                       "type to apply")
          end;
 }
+
+
+{-find the name of the bind/return for a given monad to use to build
+  the rewritten term-}
+function monadBind
+Expr ::= ty::Type l::Location
+{
+  return case ty of
+         | nonterminalType("Maybe", _) ->
+           baseExpr(qNameId(name("bindMaybe", l), location=l), location=l)
+         | nonterminalType("Either", _) -> 
+           baseExpr(qNameId(name("bindEither", l), location=l), location=l)
+         | nonterminalType("IOMonad", _) -> 
+           baseExpr(qNameId(name("bindIO", l), location=l), location=l)
+         | nonterminalType("State", _) -> 
+           baseExpr(qNameId(name("bindState", l), location=l), location=l)
+         | nonterminalType("List", _) -> 
+           baseExpr(qNameId(name("bindList", l), location=l), location=l)
+         | _ -> error("Tried to get the bind for a non-monadic type")
+         end;
+}
+function monadReturn
+Expr ::= ty::Type l::Location
+{
+  return case ty of
+         | nonterminalType("Maybe", _) ->
+           baseExpr(qNameId(name("returnMaybe", l), location=l), location=l)
+         | nonterminalType("Either", _) -> 
+           baseExpr(qNameId(name("returnEither", l), location=l), location=l)
+         | nonterminalType("IOMonad", _) -> 
+           baseExpr(qNameId(name("returnIO", l), location=l), location=l)
+         | nonterminalType("State", _) -> 
+           baseExpr(qNameId(name("returnState", l), location=l), location=l)
+         | nonterminalType("List", _) -> 
+           baseExpr(qNameId(name("returnList", l), location=l), location=l)
+         | _ -> error("Tried to get the return for a non-monadic type")
+         end;
+}
