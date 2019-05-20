@@ -61,6 +61,8 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
   body.frame = productionContext(namedSig, myFlowGraph); -- graph from flow:env
+
+  top.monadRewritten = productionDcl('abstract', 'production', id, ns, body.monadRewritten, location=top.location);
 }
 
 concrete production productionSignature

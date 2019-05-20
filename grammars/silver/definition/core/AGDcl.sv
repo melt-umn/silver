@@ -3,8 +3,8 @@ grammar silver:definition:core;
 {--
  - Top-level declarations of a Silver grammar. The "meat" of a file.
  -}
-nonterminal AGDcls with config, grammarName, env, location, unparse, errors, defs, moduleNames, compiledGrammars, grammarDependencies, jarName;
-nonterminal AGDcl  with config, grammarName, env, location, unparse, errors, defs, moduleNames, compiledGrammars, grammarDependencies, jarName;
+nonterminal AGDcls with config, grammarName, env, location, unparse, errors, defs, moduleNames, compiledGrammars, grammarDependencies, jarName, monadRewritten<AGDcls>;
+nonterminal AGDcl  with config, grammarName, env, location, unparse, errors, defs, moduleNames, compiledGrammars, grammarDependencies, jarName, monadRewritten<AGDcl>;
 
 flowtype forward {grammarName, env} on AGDcl;
 
@@ -17,6 +17,8 @@ top::AGDcls ::=
   top.errors := [];
   top.moduleNames = [];
   top.jarName = nothing();
+
+  top.monadRewritten = top;
 }
 
 concrete production consAGDcls
@@ -28,6 +30,8 @@ top::AGDcls ::= h::AGDcl t::AGDcls
   top.errors := h.errors ++ t.errors ++ warnIfMultJarName(h.jarName, t.jarName, top.location);
   top.moduleNames = h.moduleNames ++ t.moduleNames;
   top.jarName = orElse(h.jarName, t.jarName);
+
+  top.monadRewritten = consAGDcls(h.monadRewritten, t.monadRewritten, location=top.location);
 }
 
 --------
@@ -86,6 +90,8 @@ top::AGDcl ::=
   top.defs = [];
   top.jarName = nothing();
   --top.errors := []; -- should never be omitted, really.
+
+  top.monadRewritten = top;
 }
 
 function warnIfMultJarName

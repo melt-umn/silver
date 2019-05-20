@@ -59,6 +59,7 @@ IOVal<Maybe<RootSpec>> ::=
 function foldRoot
 Grammar ::= l::[Root]
 {
+  --return foldr(\r::Root rest::Grammar -> consGrammar(r.monadRewritten, rest), nilGrammar(), l);
   return foldr(consGrammar, nilGrammar(), l);
 }
 
