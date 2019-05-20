@@ -31,11 +31,11 @@ Boolean ::= ty::Type
 {
   return case ty of
          | nonterminalType(name, params) ->
-           (name == "Maybe" && length(params) == 1) ||
-           (name == "Either" && length(params) == 2) ||
-           (name == "IOMonad" && length(params) == 1) ||
-           (name == "State" && length(params) == 2) ||
-           (name == "List" && length(params) == 1)
+           (name == "core:Maybe" && length(params) == 1) ||
+           (name == "core:Either" && length(params) == 2) ||
+           (name == "core:IOMonad" && length(params) == 1) ||
+           (name == "core:State" && length(params) == 2) ||
+           (name == "core:List" && length(params) == 1)
          | _ -> false
          end;
 }
