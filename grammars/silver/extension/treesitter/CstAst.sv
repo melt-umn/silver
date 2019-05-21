@@ -10,34 +10,6 @@ imports silver:definition:regex;
 {-- Throughout the code the following abbreviations mean
   ts : Treesitter
 --}
-synthesized attribute lexer_classes :: [String];
-attribute lexer_classes occurs on SyntaxTerminalModifiers, SyntaxTerminalModifier, SyntaxDcl;
-
--- these two are combined to get terminal/atom names for the scopes of the atom package
-synthesized attribute terminalLexerClassesEnv :: [Pair<String String>] occurs on Syntax;
-
-function getAtomNamesForTerminals
-[Pair<String String>] ::= lexerClassAtomNameEnv::[Pair<String String>] terminalLexerClassesEnv::[Pair<String String>]
-{
-  local attribute atomNamesForAllTerminals :: [Pair<String Maybe<String>>] =
-    map(getAtomNameForTerminal(lexerClassAtomNameEnv, _), terminalLexerClassesEnv);
-
-  return map(getJustFromSnd, filter(lookupKeyHasValue, atomNamesForAllTerminals));
-}
-
-function getAtomNameForTerminal
-Pair<String Maybe<String>> ::= lexerClassAtomNameEnv::[Pair<String String>] terminalAndLexerClass::Pair<String String>
-{
-  return pair(
-    terminalAndLexerClass.fst, 
-    lookupBy(stringEq, terminalAndLexerClass.snd, lexerClassAtomNameEnv));
-}
-
-function getAtomScopeName
-String ::= terminalAndAtomName::Pair<String String>
-{
-  return s"""'${terminalAndAtomName.fst}': '${terminalAndAtomName.snd}'""";
-}
 
 function getModifiedCopperXML
 String ::= parsername::String startnt::String s::Syntax conflicts::[Pair<String [String]>] terminalPrefixes::[Pair<String String>]
@@ -52,6 +24,7 @@ aspect production cstRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
 {
 
+  
   top.modifiedXMLCopper = 
     -- used so we don't infinitely recurse
     if stringEq(parsername, "ModifiedGrammarForTreesitter") then
@@ -69,53 +42,17 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   -- The environment is a list of nonterminal rule, true/false pairs where
   -- true means the nonterminal can produce the emptty string.
 
-  -- transform the grammar to remove nonterminals that can produce the empty string
-  local attribute transformed_nts :: [Pair<String [[String]]>] =
-    transformEmptyStringRules(s2.ts_nonterminal_rules);
+  -- transform the grammar to remove productions that can produce the empty string
+  local attribute transformed_grammar :: TreesitterRules =
+    transformEmptyStringRules(s2.tsDcls, 1);
 
-  local attribute ts_startnt :: String = toTsDeclaration(startnt);
-
-  -- add precedence and associativity information
-  -- this function also collapses the list of input elements for the production
-  -- into a valid treesitter string
-  local attribute nonterminal_rules :: [String] =
-    map(nonterminal_to_TS_string(s2.ts_prec_assoc_env, _), transformed_nts);
-
-  -- partition the grammar rules so that the start nonterminal is the first rule
-  -- listed in the tree-sitter grammar as needed.
-  local attribute nonterminals_split :: Pair<[String] [String]> =
-    partition(isStartNonTerminalRule(ts_startnt, _), nonterminal_rules);
-  local attribute start_rule :: [String] = nonterminals_split.fst;
-  local attribute rest_rules :: [String] = nonterminals_split.snd;
+  top.tsRoot = 
+    treesitterRoot(top.lang, transformed_grammar);
 
   -- The tree sitter grammar.
-  top.jsTreesitter =
-
-s"""
-module.exports = grammar({
-  ${implode("\n", map(implode(",", _), (map(snd, s2.terminalConflicts))))}
-
-
-  name: '${top.lang}',
-
-  extras: $$ => [
-    ${s2.ts_extras}
-  ],
-
-  conflicts: $$ => [
-    ${s2.ts_conflicts}
-  ],
-
-  rules: {
-    ${implode(",\n    ", start_rule)},
-
-    ${implode(",\n    ", rest_rules)},
-
-    ${s2.ts_terminal_rules}
-  }
-});
-""" ;
-
+  top.jsTreesitter = decorate top.tsRoot 
+    with {startNt = toTsDeclaration(startnt); 
+          cstEnv = s2.cstEnv;}.treesitterGrammarJs;
   -- The atom package file
   {--
   top.csonAtomPackage =
@@ -152,12 +89,45 @@ synthesized attribute modifiedXMLCopper :: String occurs on SyntaxRoot;
 aspect default production
 top::SyntaxRoot ::=
 {
+  top.tsRoot = error("Shouldn't happen");
   top.jsTreesitter = error("Shouldn't happen");
   top.modifiedXMLCopper = error("Shouldn't happen");
 }
 
 
 {-- EMPTY STRING NONTERMINALS GRAMMAR MODIFICATION FUNCTIONS --}
+function computeEmptyStringRules
+[String] ::= gram::TreesitterRules
+{
+  return
+  case gram of 
+  | nilTreesitterRules() -> []
+  | consTreesitterRules(rule, rest) ->
+    case rule of
+    | treesitterNonterminal(name, prods, _) ->
+        if canNonterminalProduceEmptyString(prods) then
+          name :: computeEmptyStringRules(rest)
+        else
+          computeEmptyStringRules(rest)
+    | _ -> computeEmptyStringRules(rest)
+    end
+  end;
+}
+
+function canNonterminalProduceEmptyString
+Boolean ::= prods::TreesitterRules
+{
+  return
+  case prods of
+  | nilTreesitterRules() -> false
+  | consTreesitterRules(rule, rest) ->
+    case rule of
+    | treesitterProduction(_, inputs, _) -> 
+        length(inputs) == 0 || canNonterminalProduceEmptyString(rest)
+    | _ -> canNonterminalProduceEmptyString(rest)
+    end
+  end;
+}
 
 {--
   Transforms the grammar so that no nonterminals can produce the empty string
@@ -165,19 +135,18 @@ top::SyntaxRoot ::=
   @return the new grammar with no nonterminals that can produce the empty string
 --}
 function transformEmptyStringRules
-[Pair<String [[String]]>] ::= oldGrammar::[Pair<String [[String]]>]
+TreesitterRules ::= oldGrammar::TreesitterRules count::Integer
 {
-  local attribute emptyStringEnv :: [Pair<String Boolean>] =
-    map(buildEmptyStringEnvEntry, oldGrammar);
-  local attribute emptyStringRule::Maybe<String> =
-    getFirstEmptyStringRule(emptyStringEnv);
-  return
-    -- if any nonterminal can produce the empty string
-    if emptyStringRule.isJust then
-        transformEmptyStringRules(
-          emptyStringGrammarModification(emptyStringRule.fromJust, oldGrammar))
-    else oldGrammar;
+  local attribute emptyStringNonterminals :: [String] = computeEmptyStringRules(oldGrammar);
+  return 
+  -- no rules can produce the empty string except maybe the start rule
+  if count > 20 || null(emptyStringNonterminals) then oldGrammar
+  else
+    -- call to transform the next rule
+    transformEmptyStringRules(
+      emptyStringGrammarModification(head(emptyStringNonterminals), oldGrammar), count+1);
 }
+
 
 {--
   Modifies the oldGrammar so that the emptyRule can no longer produce the empty
@@ -187,17 +156,51 @@ function transformEmptyStringRules
   @return the modified grammar. 
 --}
 function emptyStringGrammarModification
-[Pair<String [[String]]>] ::= emptyRule::String oldGrammar::[Pair<String [[String]]>]
+TreesitterRules ::= emptyRule::String oldGrammar::TreesitterRules
 {
   return
-    if (null(oldGrammar)) then []
-    -- remove the empty productions from the rule
-    else if stringEq(fst(head(oldGrammar)), emptyRule) then
-      pair(emptyRule, refactorEmptyRule(TsDeclarationToIdentifier(emptyRule), removeEmptyLists(snd(head(oldGrammar)))))
-      :: emptyStringGrammarModification(emptyRule, tail(oldGrammar))
-    else
-      pair(fst(head(oldGrammar)), refactorEmptyRule(TsDeclarationToIdentifier(emptyRule), snd(head(oldGrammar))))
-      :: emptyStringGrammarModification(emptyRule, tail(oldGrammar));
+  case oldGrammar of
+  | nilTreesitterRules() -> nilTreesitterRules()
+  | consTreesitterRules(rule, rest) ->
+    case rule of
+    -- rule that produced the empty string remove all empty productions
+    | treesitterNonterminal(name, _, _) -> 
+      if stringEq(name, emptyRule) then
+        consTreesitterRules(refactorForEmptyRule(
+          TsDeclToIdentifier(emptyRule), removeEmptyProductions(rule)),
+          emptyStringGrammarModification(emptyRule, rest))
+      else
+        consTreesitterRules(refactorForEmptyRule(TsDeclToIdentifier(emptyRule), rule), 
+                            emptyStringGrammarModification(emptyRule, rest))
+    | _ -> consTreesitterRules(rule, emptyStringGrammarModification(emptyRule, rest))
+    end
+  end;
+}
+
+function removeEmptyProductions
+TreesitterRule ::= nt::TreesitterRule
+{
+  return case nt of
+  | treesitterNonterminal(name ,subdcls, mods) ->
+      treesitterNonterminal(name, filterOutEmptyProductions(subdcls), mods)
+  | _ -> error("Shouldn't happen")
+  end;
+}
+
+function filterOutEmptyProductions
+TreesitterRules ::= prods::TreesitterRules
+{
+  return
+  case prods of
+  | nilTreesitterRules() -> nilTreesitterRules()
+  | consTreesitterRules(prod, rest) ->
+      case prod of
+      | treesitterProduction(_, inputs, _) ->
+          if length(inputs) == 0 then filterOutEmptyProductions(rest)
+          else consTreesitterRules(prod, filterOutEmptyProductions(rest))
+      | _ -> error("Shouldn't happen")
+      end
+  end;
 }
 
 {--
@@ -211,16 +214,39 @@ function emptyStringGrammarModification
     e.g. if old productions were [ [$.notEmpty, $.canBeEmpty] ] the function
       would return [ [$.notEmpty], [$.notEmpty, $.canBeEmpty] ]
 --}
-function refactorEmptyRule
-[[String]] ::= emptyRule::String oldProductions::[[String]]
+function refactorForEmptyRule
+TreesitterRule ::= emptyRule::String nt::TreesitterRule
 {
   return
-    if null(oldProductions) then []
-    else if containsBy(stringEq, emptyRule, head(oldProductions)) then
-      append(
-        accountForEmptyRuleWithinProd(emptyRule, head(oldProductions)),
-        refactorEmptyRule(emptyRule, tail(oldProductions)))
-    else head(oldProductions) :: refactorEmptyRule(emptyRule, tail(oldProductions));
+    case nt of
+    | treesitterNonterminal(name, subdcls, mods) -> 
+        treesitterNonterminal(name, refactorProductions(emptyRule, subdcls), mods)
+    | _ -> error("Shouldn't happen")
+    end;
+}
+
+function refactorProductions
+TreesitterRules ::= emptyRule::String prods::TreesitterRules
+{
+  return case prods of
+  | nilTreesitterRules() -> nilTreesitterRules()
+  | consTreesitterRules(rule, rest) -> 
+      foldr(consTreesitterRules, refactorProductions(emptyRule, rest), refactorProduction(emptyRule, rule))
+  end;
+}
+
+function refactorProduction
+[TreesitterRule] ::= emptyRule::String prod::TreesitterRule
+{
+  return 
+  case prod of
+  | treesitterProduction(_, inputs, _) ->
+      if containsBy(stringEq, emptyRule, inputs) then
+        accountForEmptyRuleWithinProd(emptyRule, prod)
+      else
+        [prod]
+  | _ -> error("Shouldn't happen")
+  end;
 }
 
 {--
@@ -233,73 +259,44 @@ function refactorEmptyRule
   assuming the rule that used to be able to produce the empty string no longer can.
 --}
 function accountForEmptyRuleWithinProd
-[[String]] ::= emptyRule::String prod::[String]
+[TreesitterRule] ::= emptyRule::String prod::TreesitterRule
 {
   return
-    if null(prod) then [ [] ]
-    else if (stringEq(emptyRule, head(prod))) then
-      -- split by including the empty rule and excluding the empty rule
-      append(
-        consToAll(head(prod), accountForEmptyRuleWithinProd(emptyRule, tail(prod))),
-        accountForEmptyRuleWithinProd(emptyRule, tail(prod)))
-    else
-      consToAll(head(prod), accountForEmptyRuleWithinProd(emptyRule, tail(prod)));
-}
-{--
-  - Builds an entry in the empty string environment.
-  @param non_terminal The nonterminal for which the entry in the environment corresponds to
-  @return A pair specifying the nonterminal name and a Boolean indicating if
-    it can produce the empty string.
---}
-function buildEmptyStringEnvEntry
-Pair<String Boolean> ::= non_terminal::Pair<String [[String]]>
-{
-  -- emptyListWithinListOfLists is equivalent to determining if a nonterminal
-  -- can produce the empty string
-  return pair(fst(non_terminal), emptyListWithinListOfLists(snd(non_terminal)));
+    case prod of
+    | treesitterProduction(output, inputs, mods) ->
+        map(treesitterProduction(output, _, mods), buildDifferentInputElements(emptyRule, inputs))
+    | _ -> error("Shouldn't happen")
+    end;
 }
 
-{--
-  Checks if any nonterminal can produce the empty string
-  @param emptyStringEnv The empty string environment
-  @return true if any nonterminal
---}
-function hasEmptyStringRules
-Boolean ::= emptyStringEnv::[Pair<String Boolean>]
+function buildDifferentInputElements
+[[String]] ::= emptyRule::String originalInputs::[String]
 {
-  return any(map(snd, emptyStringEnv));
-}
-
-{--
-  Gets the first nonterminal in the empty string environment list that can produce
-  the empty string if one exists.
-  @param emptyStringEnv The empty string environment
-  @return The first nonterminal in the empty string environment that produces
-    the empty string if it exists.
---}
-function getFirstEmptyStringRule
-Maybe<String> ::= emptyStringEnv::[Pair<String Boolean>]
-{
-  return
-    if null(emptyStringEnv) then nothing()
-    else if snd(head(emptyStringEnv)) then just(fst(head(emptyStringEnv)))
-    else getFirstEmptyStringRule(tail(emptyStringEnv));
+  return 
+  if null(originalInputs) then [ [] ]
+  else if (stringEq(emptyRule, head(originalInputs))) then
+    -- split by including the empty rule and excluding the empty rule
+    append(
+      consToAll(head(originalInputs), buildDifferentInputElements(emptyRule, tail(originalInputs))),
+      buildDifferentInputElements(emptyRule, tail(originalInputs)))
+  else
+    consToAll(head(originalInputs), buildDifferentInputElements(emptyRule, tail(originalInputs)));
 }
 
 {-- GETTER FUNCTIONS --}
 -- creates a pair of the precedence and associativity from the terminal modifiers
 function getPrecAssocInfo
-Pair<Integer String> ::= modifiers::SyntaxTerminalModifiers
+Maybe<Pair<Integer String>> ::= modifiers::SyntaxTerminalModifiers
 {
   return
   if (modifiers.opAssociation.isJust && modifiers.opPrecedence.isJust) then
-    pair(modifiers.opPrecedence.fromJust, modifiers.opAssociation.fromJust)
+    just(pair(modifiers.opPrecedence.fromJust, modifiers.opAssociation.fromJust))
   else if modifiers.opAssociation.isJust then -- no precedence specified
-    pair(0, modifiers.opAssociation.fromJust)
+    just(pair(0, modifiers.opAssociation.fromJust))
   else if modifiers.opPrecedence.isJust then -- no associativity specified
-    pair(modifiers.opPrecedence.fromJust, "none")
+    just(pair(modifiers.opPrecedence.fromJust, "none"))
   else  -- no precedence or associativity specified
-    pair(0, "none");
+    nothing();
 }
 
 

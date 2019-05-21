@@ -29,7 +29,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
       s2.jsonTerminalList;
 
   top.jsonNonterminalList =
-    if isNonTerminal(s1) then
+    if isNonterminal(s1) then
       s1.jsonAtom :: s2.jsonNonterminalList
     else
       s2.jsonNonterminalList;
@@ -81,7 +81,7 @@ top::SyntaxDcl ::= ns::NamedSignature modifiers::SyntaxProductionModifiers
 {
   top.jsonAtom = s"""
   {
-    "input_elements": [ ${implode(",", map(addQuotes, map(productionElementToString, ns.inputElements)))} ],
+    "input_elements": [ ${implode(",", map(addQuotes, map(productionElemToTsIdentifier, ns.inputElements)))} ],
     "output_element": "${ns.outputElement.typerep.typeName}",
     "modifiers": {${modifiers.jsonAtom}}
   }""";

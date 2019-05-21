@@ -1,4 +1,4 @@
-function productionElementToString
+function productionElemToTsIdentifier
 String ::= prod::NamedSignatureElement
 {
   return toTsIdentifier(prod.typerep.typeName);
@@ -25,6 +25,12 @@ String ::= str::String
   return "_" ++ toTsDeclaration(str);
 }
 
+function TsDeclToIgnoreDecl
+String ::= str::String
+{
+  return "_" ++ str;
+}
+
 {-- When identifying a tree sitter terminal or nonterminal it must be begin with
   $.
 -}
@@ -34,16 +40,31 @@ String ::= str::String
   return "$." ++ substitute(":", "_", str);
 }
 
-function TsDeclarationToIdentifier
+function TsDeclToIdentifier
 String ::= str::String
 {
   return "$." ++ str;
 }
 
-function TsIdentifierToDeclaration
+function TsIdentifierToDecl
 String ::= str::String
 {
   -- remove the $.
   return substring(2, length(str), str);
 }
 
+function removeAllEscapesForStringLiteral
+String ::= str::String
+{
+  -- 4 \ necessary because 2 are escaped here leading to 1 when escaped
+  -- in java
+  return substituteRegex("\\\\(.)", "$1", str);
+}
+
+function removeEscapesNotNecessaryForTreesitterRegexs
+String ::= str::String
+{
+  -- most regex regStrings don't need the escapes for some characters 
+  -- namely spaces.
+  return substitute("\\ ", " ", str);
+}

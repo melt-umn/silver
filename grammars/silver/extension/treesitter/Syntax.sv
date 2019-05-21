@@ -1,6 +1,224 @@
 grammar silver:extension:treesitter;
 
-synthesized attribute ts_lhs :: String occurs on SyntaxDcl;
+import silver:modification:impide:cstast; -- used so we can aspect syntaxFont
+import silver:modification:impide:spec; -- used so we can aspect syntaxFont
+
+nonterminal TreesitterRoot with cstEnv;
+nonterminal TreesitterRules with cstEnv;
+nonterminal TreesitterRule with cstEnv;
+
+synthesized attribute treesitterGrammarJs :: String occurs on TreesitterRoot;
+synthesized attribute emptyStringNonterminals :: [String] occurs on TreesitterRules;
+synthesized attribute tsExtras :: [String] occurs on TreesitterRules;
+
+synthesized attribute precAssocEntries :: [Pair<String Pair<Integer String>>] occurs on TreesitterRules, TreesitterRule;
+synthesized attribute modifiedProdsForEmptyString :: TreesitterRule;
+autocopy attribute precAssocEnv :: [Pair<String Pair<Integer String>>] occurs on TreesitterRules, TreesitterRule;
+synthesized attribute tsRoot :: TreesitterRoot occurs on SyntaxRoot;
+synthesized attribute tsDcls :: TreesitterRules occurs on Syntax;
+synthesized attribute tsDcl :: TreesitterRule occurs on SyntaxDcl;
+synthesized attribute numRules :: Integer occurs on TreesitterRules;
+
+synthesized attribute tsRep :: String occurs on TreesitterRule, TreesitterRules;
+-- necessary because the first "rule" in the grammar.js file is assumed to be
+-- the start rule
+synthesized attribute startNtRep :: String occurs on TreesitterRules;
+autocopy attribute startNt :: String occurs on TreesitterRules, TreesitterRoot;
+
+function getTreesitterRulesBy
+TreesitterRules ::= func::(Boolean ::= TreesitterRule) rules::TreesitterRules
+{
+  return
+  case rules of
+  | nilTreesitterRules() -> nilTreesitterRules()
+  | consTreesitterRules(rule, rest) ->
+      if func(rule) then
+        consTreesitterRules(rule, getTreesitterRulesBy(func, rest))
+      else
+        getTreesitterRulesBy(func, rest)
+  end;
+}
+
+function isTreesitterNonterminal
+Boolean ::= rule::TreesitterRule
+{
+  return
+  case rule of
+  | treesitterNonterminal(_, _, _) -> true
+  | _ -> false
+  end;
+}
+
+function isTreesitterTerminal
+Boolean ::= rule::TreesitterRule
+{
+  return
+  case rule of
+  | treesitterTerminal(_, _, _) -> true
+  | _ -> false
+  end;
+}
+
+abstract production treesitterRoot
+top::TreesitterRoot ::= name::String rules::TreesitterRules
+{
+  rules.precAssocEnv = rules.precAssocEntries;
+  top.treesitterGrammarJs = 
+s"""
+module.exports = grammar({
+    name: "${name}",
+    extras: $$ => [
+      ${implode(",\n      ", rules.tsExtras)}
+    ],
+
+  // conflicts will be added by another program.
+  // for that program to work it assumes the line is exactly this.
+  // DO NOT MODIFY
+  conflicts: $$ => 
+
+  rules: {
+    // start rule for the grammar
+    ${rules.startNtRep},
+
+    ${rules.tsRep}
+  }
+});""";
+}
+
+function isStartNonterminal
+Boolean ::= rule::TreesitterRule startNt::String
+{
+  return 
+  case rule of
+  | treesitterNonterminal(name, _, _) -> stringEq(name, startNt)
+  | _ -> false
+  end;
+}
+
+abstract production consTreesitterRules
+top::TreesitterRules ::= hd::TreesitterRule tl::TreesitterRules
+{
+  -- may need to separate nonterminals and terminals
+  top.tsRep = 
+    if isStartNonterminal(hd, top.startNt) then tl.tsRep
+    else
+      case tl of
+      | nilTreesitterRules() -> hd.tsRep
+      | _ -> hd.tsRep ++ ",\n\n" ++ tl.tsRep
+      end;
+
+  top.startNtRep =
+    if isStartNonterminal(hd, top.startNt) 
+    then hd.tsRep
+    else tl.startNtRep;
+
+  top.numRules = 1 + tl.numRules;
+  top.emptyStringNonterminals =
+    case hd of
+    | treesitterNonterminal(name, _, mods) -> 
+      if mods.canProduceEmptyString then
+        name :: tl.emptyStringNonterminals
+      else
+        tl.emptyStringNonterminals
+    | _ -> tl.emptyStringNonterminals
+    end;
+
+  top.tsExtras = 
+    case hd of
+    | treesitterTerminal(name, _, mods) ->
+      if mods.ignored then TsDeclToIdentifier(TsDeclToIgnoreDecl(name))::tl.tsExtras
+      else tl.tsExtras
+    | _ -> tl.tsExtras
+    end;
+  top.precAssocEntries = append(hd.precAssocEntries, tl.precAssocEntries);
+}
+
+abstract production nilTreesitterRules
+top::TreesitterRules ::=
+{
+  top.tsRep = "";
+  top.startNtRep = "";
+  top.numRules = 0;
+  top.emptyStringNonterminals = [];
+  top.precAssocEntries = [];
+  top.tsExtras = [];
+}
+
+abstract production noEquivalentTreesitterDcl
+top::TreesitterRule ::= 
+{
+  top.tsRep = "";
+  top.precAssocEntries = [];
+}
+
+abstract production treesitterTerminal
+top::TreesitterRule ::= name::String r::Regex mods::SyntaxTerminalModifiers 
+{
+  local attribute ts_lhs :: String = 
+    if mods.ignored then -- TODO: do we want to ignore these?
+      TsDeclToIgnoreDecl(name)
+    else
+      name;
+  local attribute ts_rhs :: String =
+    if r.stringLiteral then
+      s""" "${removeAllEscapesForStringLiteral(r.regString)}" """
+    else 
+    -- treesitter does not escape spaces unlike silver
+      s"""/${removeEscapesNotNecessaryForTreesitterRegexs(r.regString)}/""";
+  top.tsRep = s"""${ts_lhs}: $$ => ${ts_rhs}""";
+  local attribute precAssoc :: Maybe<Pair<Integer String>> = getPrecAssocInfo(mods);
+  top.precAssocEntries = 
+    if precAssoc.isJust then
+      [pair(ts_lhs, precAssoc.fromJust)]
+    else
+      [];
+}
+
+-- inputs should be tressiter identifiers
+abstract production treesitterProduction
+top::TreesitterRule ::= outputNT::String inputs::[String] mods::SyntaxProductionModifiers
+{
+  top.precAssocEntries = [];
+  local attribute precAssocFromTerminal :: Maybe<Pair<Integer String>> = 
+    lookupByList(stringEq, top.precAssocEnv, map(TsIdentifierToDecl, inputs));
+  local attribute prec :: Maybe<Integer> = 
+    orElse(mods.treesitterProductionPrec, fstFromMaybe(precAssocFromTerminal));
+  local attribute assoc :: Maybe<String> =
+    sndFromMaybe(precAssocFromTerminal);
+  local attribute prodBeforePrec :: String = 
+    if length(inputs) > 1 then
+      s"""seq(${implode(", ", inputs)})"""
+    else
+      s"""${implode(", ", inputs)}""";
+  local attribute prodBeforeSpacing :: String = 
+    -- if both precedence and associativity are specified
+    if prec.isJust && prec.fromJust != 0 && assoc.isJust && !stringEq(assoc.fromJust, "none") then 
+      s"""prec.${assoc.fromJust}(${toString(prec.fromJust)}, ${prodBeforePrec})"""
+    -- just precedence is specified and associativty is not
+    else if prec.isJust && prec.fromJust != 0 then 
+      s"""prec(${toString(prec.fromJust)}, ${prodBeforePrec})"""
+    -- just associativty is specified
+    else if assoc.isJust && !stringEq(assoc.fromJust, "none") then
+      s"""prec.${assoc.fromJust}(${prodBeforePrec})"""
+    else
+      prodBeforePrec;
+
+  top.tsRep = prodBeforeSpacing;
+}
+
+abstract production treesitterNonterminal
+top::TreesitterRule ::= name::String prods::TreesitterRules mods::TreesitterNonterminalModifiers
+{
+  top.precAssocEntries = [];
+  local attribute ts_rhs :: String = 
+    if prods.numRules > 1 then
+      s"""choice(${prods.tsRep})"""
+    else
+      prods.tsRep;
+  top.tsRep =
+    s"""${name}: $$ => ${ts_rhs}""";
+}
+
 {--
   info for precedence and associativity of terminals for treesitter. This exists
   because we need to transfer precedence of terminals such as '+' to rules that
@@ -13,169 +231,92 @@ synthesized attribute ts_lhs :: String occurs on SyntaxDcl;
   'left', 'right', 'none' so the above example would be
     ("Plus_t", (3, "left"))
 --}
-synthesized attribute ts_prec_assoc_entry :: Pair<String Pair<Integer String>> occurs on SyntaxDcl;
-
--- A list of ts_prec_assoc_entrys
-synthesized attribute ts_prec_assoc_env :: [Pair<String Pair<Integer String>>] occurs on Syntax;
-
-synthesized attribute ts_extras :: String occurs on Syntax;
-synthesized attribute ts_conflicts :: String occurs on Syntax;
-synthesized attribute ts_terminal_rules :: String occurs on Syntax;
-synthesized attribute ts_nonterminal_rules :: [Pair<String [[String]]>] occurs on Syntax;
-synthesized attribute ts_terminal_regex :: String occurs on SyntaxDcl;
--- the list of treesitter strings for production inputs
-synthesized attribute ts_production_inputs :: [String] occurs on SyntaxDcl;
--- the list of productions that can be used to create a nonterminal
-synthesized attribute ts_nonterminal_rules_rhs :: [[String]];
-attribute ts_nonterminal_rules_rhs occurs on Syntax, SyntaxDcl;
 
 {-- SYNTAX PRODUCTIONS --}
 aspect production nilSyntax
 top::Syntax ::=
 {
-  top.ts_terminal_rules = "";
-  top.ts_nonterminal_rules = [];
-  top.ts_nonterminal_rules_rhs = [];
-  top.ts_extras = "";
-  top.ts_conflicts = "";
-  top.ts_prec_assoc_env = [];
-  top.terminalLexerClassesEnv = [];
+  top.tsDcls = nilTreesitterRules();
 }
 
 aspect production consSyntax
 top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {
-  -- consider an inherited attribute as the string used instead of "\n"
-  -- six spaces of indentation after newline
-  top.terminalLexerClassesEnv =
-    if (isTerminal(s1) && !null(s1.lexer_classes)) then
-      append(map(pair(s1.ts_lhs, _), s1.lexer_classes),
-             s2.terminalLexerClassesEnv)
-    else
-      s2.terminalLexerClassesEnv;
-
-  -- only used for terminals for now
-  top.ts_prec_assoc_env =
-    if (isTerminal(s1) && hasUsefulPrecAssocInfo(s1.ts_prec_assoc_entry.snd)) then
-      cons(s1.ts_prec_assoc_entry, s2.ts_prec_assoc_env)
-    else
-      s2.ts_prec_assoc_env;
-
-  top.ts_nonterminal_rules =
-    if (isNonTerminal(s1)) then
-      pair(s1.ts_lhs, s1.ts_nonterminal_rules_rhs) :: s2.ts_nonterminal_rules
-    else
-      s2.ts_nonterminal_rules;
-
-  -- this is used mainly for the Syntax nodes that group the productions
-  -- underneath the nonterminals.
-  top.ts_nonterminal_rules_rhs =
-    -- treesitter should now work with empty productions
-    if (isProduction(s1)) then
-      s1.ts_production_inputs :: s2.ts_nonterminal_rules_rhs
-    else
-      s2.ts_nonterminal_rules_rhs;
-
-  top.ts_terminal_rules =
-     -- don't include empty terminals since those exist in some places in ableC for some reason
-    if (isTerminal(s1) && s1.ts_terminal_regex != "//") then
-      s1.ts_lhs ++ ": $ => " ++ s1.ts_terminal_regex ++ ",\n    " ++ s2.ts_terminal_rules
-    else
-      s2.ts_terminal_rules;
-
-  top.ts_extras =
-    if (isIgnoreTerminal(s1)) then
-      TsDeclarationToIdentifier(s1.ts_lhs) ++ ",\n    " ++ s2.ts_extras
-    else
-      s2.ts_extras;
-
-  top.ts_conflicts =
-    if (isSyntaxDisambiguationGroup(s1)) then
-      s1.ts_lhs ++ ",\n    " ++ s2.ts_conflicts
-    else
-      s2.ts_conflicts;
+  top.tsDcls = 
+    case s1.tsDcl of
+    | noEquivalentTreesitterDcl() -> s2.tsDcls
+    | _ -> consTreesitterRules(s1.tsDcl, s2.tsDcls)
+    end;
 }
 
 {-- SYNTAX DCL PRODUCTIONS --}
 aspect production syntaxNonterminal
 top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifiers
 {
-  -- irrelevant attributes
-  top.ts_terminal_regex = "";
-  top.ts_production_inputs = [];
-  top.ts_prec_assoc_entry = pair("", pair(0, "none"));
-  top.lexer_classes = [];
-  -- relevant attributes
-  top.ts_lhs = toTsDeclaration(t.typeName);
-  top.ts_nonterminal_rules_rhs = subdcls.ts_nonterminal_rules_rhs;
+  local attribute mods :: TreesitterNonterminalModifiers = 
+    if canProduceEmptyString(subdcls) then 
+      consTSNonterminalMod(ntProducesEmptyStringMod(), nilTSNonterminalMod())
+    else
+      nilTSNonterminalMod();
+  top.tsDcl = treesitterNonterminal(toTsDeclaration(t.typeName), subdcls.tsDcls, mods);
 }
 
 aspect production syntaxTerminal
 top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
 {
-  --irrelevant attributes
-  top.ts_production_inputs = [];
-  top.ts_nonterminal_rules_rhs = [];
-
-  -- relevant attributes
-  -- top.jsonAtom = TODO;
-  local attribute treesitter_name :: String = toTsDeclaration(n);
-  top.ts_lhs =
-    -- if we can add a leading _ to not put ignore terminals in the syntax tree that do not need to be there
-    if modifiers.ignored then -- TODO: do we want to ignore these?
-      toTsIgnoreDeclaration(n)
-    else
-      treesitter_name;
-  top.lexer_classes = modifiers.lexer_classes;
-  top.ts_terminal_regex = s"""/${regex.regString}/""";
-  top.ts_prec_assoc_entry = pair(top.ts_lhs, getPrecAssocInfo(modifiers));
+  top.tsDcl = treesitterTerminal(toTsDeclaration(n), regex, modifiers);
 }
 
 aspect production syntaxProduction
 top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 {
-  -- irrelevant attributes
-  top.ts_terminal_regex = "";
-  top.ts_nonterminal_rules_rhs = [];
-  top.ts_prec_assoc_entry = pair("", pair(0, "none"));
-  top.lexer_classes = [];
-
-  -- relevant attributes
-  top.ts_lhs = toTsDeclaration(ns.outputElement.typerep.typeName);
-  top.ts_production_inputs = map(productionElementToString, ns.inputElements);
+  top.tsDcl = treesitterProduction(ns.outputElement.typerep.typeName,
+    map(productionElemToTsIdentifier, ns.inputElements), modifiers);
 }
 
 aspect production syntaxLexerClass
 top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 {
-  -- relevant attributes
-  top.ts_lhs = n;
-  --top.jsonAtom = 
-  -- irrelevant attributes
-  top.ts_terminal_regex = "";
-  top.ts_production_inputs = [];
-  top.ts_nonterminal_rules_rhs = [];
-  top.ts_prec_assoc_entry = pair("", pair(0, "none"));
-  top.lexer_classes = [];
+  top.tsDcl = noEquivalentTreesitterDcl();
 }
 
 aspect production syntaxDisambiguationGroup
 top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode::String
 {
-  -- relevant attributes
-
-  -- used for the conflicts array to handle ambiguities
-  top.ts_lhs = s"""[${implode(",", map(toTsIdentifier, terms))}]""";
-
-  -- irrelevant attributes
-  top.ts_terminal_regex = "";
-  top.ts_production_inputs = [];
-  top.ts_nonterminal_rules_rhs = [];
-  top.ts_prec_assoc_entry = pair("", pair(0, "none"));
-  top.lexer_classes = [];
+  top.tsDcl = noEquivalentTreesitterDcl();
 }
 
+function canProduceEmptyString
+Boolean ::= prods::Syntax
+{
+  return case prods of 
+  | nilSyntax() -> false
+  | consSyntax(prod, rest) ->
+      case prod of
+      | syntaxProduction(ns, _) -> if length(ns.inputElements) == 0 then true
+                                   else canProduceEmptyString(rest)
+      | _ -> canProduceEmptyString(rest)
+      end
+  end;
+}
 
+aspect production syntaxFont
+top::SyntaxDcl ::= fontName::String fnt::Font -- this will likely eventually need to be removed
+{
+  top.tsDcl = noEquivalentTreesitterDcl();
+}
+
+aspect production syntaxParserAttribute
+top::SyntaxDcl ::= n::String ty::Type acode::String
+{
+  top.tsDcl = noEquivalentTreesitterDcl();
+}
+
+aspect production syntaxParserAttributeAspect
+top::SyntaxDcl ::= n::String acode::String
+{
+  top.tsDcl = noEquivalentTreesitterDcl();
+}
 {-- IS/HAS FUNCTIONS --}
 
 function isTerminal
@@ -196,7 +337,7 @@ Boolean ::= declaration::Decorated SyntaxDcl
   end;
 }
 
-function isNonTerminal
+function isNonterminal
 Boolean ::= declaration::Decorated SyntaxDcl
 {
   return case declaration of

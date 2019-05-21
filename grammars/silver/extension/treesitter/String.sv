@@ -41,7 +41,7 @@ function production_to_TS_string
 String ::= env::[Pair<String Pair<Integer String>>] prod_inputs::[String]
 {
   local attribute prec_assoc_info :: Maybe<Pair<Integer String>> =
-    lookupByList(stringEq, env, map(TsIdentifierToDeclaration, prod_inputs));
+    lookupByList(stringEq, env, map(TsIdentifierToDecl, prod_inputs));
   return
     if prec_assoc_info.isJust then
       prec_assoc_info_as_TS_string(prec_assoc_info.fromJust) ++
