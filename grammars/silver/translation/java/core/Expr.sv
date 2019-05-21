@@ -416,7 +416,11 @@ top::Expr ::= '!' e::Expr
 function comparisonTranslation
 String ::= e1::Decorated Expr  op::String  e2::Decorated Expr
 {
-  return case finalType(e1) of
+  local ty::Type = finalType(e1);
+  local matchty::Type = if isMonad(ty)
+                        then monadInnerType(ty)
+                        else ty;
+  return case matchty of
   | intType() -> s"(${e1.translation} ${op} (int)${e2.translation})"
   | floatType() -> s"(${e1.translation} ${op} (float)${e2.translation})"
   | boolType() -> s"(${e1.translation} ${op} (boolean)${e2.translation})"
