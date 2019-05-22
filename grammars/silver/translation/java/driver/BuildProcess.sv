@@ -79,7 +79,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   
   top.postOps <-
     [genBuild(buildXmlLocation, buildXml)] ++
-    (if top.config.noJavaGeneration then [] else [genJava(top.config, grammarsForFinalTranslation, benv.silverGen)]);
+    (if top.config.noJavaGeneration then [] else [genJava(top.config, grammarsToTranslate, benv.silverGen)]);
 
   -- From here on, it's all build.xml stuff:
 

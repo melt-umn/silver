@@ -132,3 +132,128 @@ Expr ::= ty::Type l::Location
          | _ -> error("Tried to get the return for a non-monadic type " ++ l.filename ++ " " ++ toString(l.line) ++ ":" ++ toString(l.column))
          end;
 }
+
+
+
+aspect production compilation
+top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
+{
+  top.postOps <- [genOut(grammarsForFinalTranslation)];
+}
+
+abstract production genOut
+top::DriverAction ::= specs::[Decorated RootSpec]
+{
+  local file :: String = "monad/monad_out.sv";
+
+  local str :: String = case head(specs) of
+                        | grammarRootSpec(consGrammar(r, _), _, _, _, _) -> r.unparse
+                        end;
+
+  local str2 :: String =
+  s"""
+grammar monad;
+
+function bindEither
+Either<a c> ::= m::Either<a b> fn::(Either<a c> ::= b)
+{
+  return case m of
+    left(x) -> left(x)
+  | right(x) -> fn(x)
+  end;
+}
+
+function returnEither
+Either<a b> ::= x::b
+{
+  return right(x);
+}
+
+{- Need to figure out what to do with this since this is a production
+abstract production bindIO
+top::IOMonad<b> ::= st::IOMonad<a> fn::(IOMonad<b> ::= a)
+{
+  st.stateIn = top.stateIn;
+  local newState::IOMonad<b> = fn(st.stateVal);
+  newState.stateIn = st.stateOut;
+  local stateOut::IO = newState.stateOut;
+  local stateVal::b = newState.stateVal;
+  
+  -- Using unsafeTrace here to demand st is evaluated before evaluating fn
+  top.stateOut = unsafeTrace(stateOut, st.stateOut);
+  top.stateVal = unsafeTrace(stateVal, st.stateOut);
+}
+
+abstract production returnIO
+top::IOMonad<a> ::= x::a
+{
+  top.stateOut = top.stateIn;
+  top.stateVal = x;
+}-}
+
+
+function bindList
+[b] ::= l::[a] fn::([b] ::= a)
+{
+  return flatMap(fn, l); --Do we need to add flatMap in?
+}
+
+function returnList
+[a] ::= x::a
+{
+  return [x];
+}
+
+
+function bindMaybe
+Maybe<b> ::= m::Maybe<a> fn::(Maybe<b> ::= a)
+{
+  return case m of
+    just(x) -> fn(x)
+  | nothing() -> nothing()
+  end;
+}
+
+--global returnMaybe::(Maybe<a> ::= a) = just; -- TODO: Why doesn't this work?
+function returnMaybe
+Maybe<a> ::= x::a
+{
+  return just(x);
+}
+
+{- Need to figure out what to do with this since this is a production
+abstract production bindState
+top::State<s b> ::= st::State<s a> fn::(State<s b> ::= a)
+{
+  st.stateIn = top.stateIn;
+  local newState::State<s b> = fn(st.stateVal);
+  newState.stateIn = st.stateOut;
+  top.stateOut = newState.stateOut;
+  
+  top.stateVal = newState.stateVal;
+}
+
+abstract production returnState
+top::State<s a> ::= x::a
+{
+  top.stateOut = top.stateIn;
+  top.stateVal = x;
+}-}
+--""" ++ str;
+
+  local err :: IO =
+    print("Errors while Generating Monad Out " ++ "\n", top.ioIn);
+
+  local doWR :: IO =
+    writeFile(file, str2,
+      print(s"Generating Monad Out.\n", top.ioIn));
+
+  top.io =
+    if null(specs)
+    then print("Did not find a grammar for which to generate Monad Out.\n", top.ioIn)
+    else doWR;
+
+  top.code = 1;
+  top.order = 10;
+}
+

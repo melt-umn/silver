@@ -35,7 +35,7 @@ top::AGDcl ::= 'mabstract' 'production' id::Name ns::ProductionSignature body::P
 concrete production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
-  top.unparse = "abstract production " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse; 
+  top.unparse = "abstract production " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n{" ++ body.unparse ++ "\n}\n"; 
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;

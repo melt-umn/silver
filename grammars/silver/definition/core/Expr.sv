@@ -36,7 +36,7 @@ synthesized attribute rawExprs :: [Expr];
 aspect default production
 top::Expr ::=
 {
-  top.monadRewritten = error("Attribute monadRewritten must be defined on all productions");
+  top.monadRewritten = top;--error("Attribute monadRewritten must be defined on all productions");
 }
 
 
@@ -601,31 +601,31 @@ top::Expr ::= e1::Expr '&&' e2::Expr
   local bindBoth::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\ x::Boolean y::Boolean ->
         $Expr {monadBind(e1.typerep, top.location)}
         (y,
          \ z::Boolean ->
           $Expr {monadReturn(e1.typerep, top.location)}
-          (x && z)))(_, $Expr {e2}))
+          (x && z)))(_, $Expr {e2.monadRewritten}))
     };
   --e1 >>= ( (\x::Bool y::Bool. Return(x && y))(_, e2) )
   local bind1::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\ x::Boolean y::Boolean -> 
           $Expr {monadReturn(e1.typerep, top.location)}
-         (x && y))(_, $Expr {e2}))
+         (x && y))(_, $Expr {e2.monadRewritten}))
     };
   --e2 >>= ( (\x::Bool y::Bool. Return(x && y))(e1, _) )
   local bind2::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e2},
+      ($Expr {e2.monadRewritten},
        (\ x::Boolean y::Boolean -> 
           $Expr {monadReturn(e2.typerep, top.location)}
-         (x && y))($Expr {e1}, _))
+         (x && y))($Expr {e1.monadRewritten}, _))
     };
   top.monadRewritten = if isMonad(e1.typerep)
                        then if isMonad(e2.typerep)
@@ -633,7 +633,7 @@ top::Expr ::= e1::Expr '&&' e2::Expr
                             else bind1
                        else if isMonad(e2.typerep)
                             then bind2
-                            else top;
+                            else and(e1.monadRewritten, '&&', e2.monadRewritten, location=top.location);
 }
 
 concrete production or
@@ -654,31 +654,31 @@ top::Expr ::= e1::Expr '||' e2::Expr
   local bindBoth::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\ x::Boolean y::Boolean ->
         $Expr {monadBind(e1.typerep, top.location)}
         (y,
          \ z::Boolean ->
           $Expr {monadReturn(e1.typerep, top.location)}
-          (x || z)))(_, $Expr {e2}))
+          (x || z)))(_, $Expr {e2.monadRewritten}))
     };
   --e1 >>= ( (\x::Bool y::Bool. Return(x || y))(_, e2) )
   local bind1::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\ x::Boolean y::Boolean -> 
           $Expr {monadReturn(e1.typerep, top.location)}
-         (x || y))(_, $Expr {e2}))
+         (x || y))(_, $Expr {e2.monadRewritten}))
     };
   --e2 >>= ( (\x::Bool y::Bool. Return(x || y))(e1, _) )
   local bind2::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e2},
+      ($Expr {e2.monadRewritten},
        (\ x::Boolean y::Boolean -> 
           $Expr {monadReturn(e2.typerep, top.location)}
-         (x || y))($Expr {e1}, _))
+         (x || y))($Expr {e1.monadRewritten}, _))
     };
   top.monadRewritten = if isMonad(e1.typerep)
                        then if isMonad(e2.typerep)
@@ -686,7 +686,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
                             else bind1
                        else if isMonad(e2.typerep)
                             then bind2
-                            else top;
+                            else or(e1.monadRewritten, '||', e2.monadRewritten, location=top.location);
 }
 
 concrete production not
@@ -704,11 +704,11 @@ top::Expr ::= '!' e::Expr
     if isMonad(e.typerep)
     then Silver_Expr {
            $Expr {monadBind(e.typerep, top.location)}
-            ($Expr {e},
+            ($Expr {e.monadRewritten},
              \x::Boolean -> 
               $Expr {monadReturn(e.typerep, top.location)}(!x))
          }
-    else top;
+    else not('!', e.monadRewritten, location=top.location);
 }
 
 concrete production gt
@@ -729,34 +729,34 @@ top::Expr ::= e1::Expr '>' e2::Expr
   local bindBoth::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
           $Expr {monadBind(e2.typerep, top.location)}
           (y,
            \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
             $Expr {monadReturn(e2.typerep, top.location)}
-            (x > z))) (_, $Expr {e2}))
+            (x > z))) (_, $Expr {e2.monadRewritten}))
     };
   --e1 >>= ( (\x y -> Return(x > y))(_, e2) )
   local bind1::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
         $Expr {monadReturn(e1.typerep, top.location)}
-        (x > y))(_, $Expr {e2}))
+        (x > y))(_, $Expr {e2.monadRewritten}))
     };
   --e2 >>= ( (\x y -> Return(x > y))(e1, _) )
   local bind2::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e2},
+      ($Expr {e2.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
          y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
         $Expr {monadReturn(e2.typerep, top.location)}
-        (x > y))($Expr {e1}, _))
+        (x > y))($Expr {e1.monadRewritten}, _))
     };
   top.monadRewritten = if isMonad(e1.typerep)
                        then if isMonad(e2.typerep)
@@ -764,7 +764,7 @@ top::Expr ::= e1::Expr '>' e2::Expr
                             else bind1
                        else if isMonad(e2.typerep)
                             then bind2
-                            else top;
+                            else gt(e1.monadRewritten, '>', e2.monadRewritten, location=top.location);
 }
 
 concrete production lt
@@ -785,34 +785,34 @@ top::Expr ::= e1::Expr '<' e2::Expr
   local bindBoth::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
           $Expr {monadBind(e2.typerep, top.location)}
           (y,
            \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
             $Expr {monadReturn(e2.typerep, top.location)}
-            (x < z))) (_, $Expr {e2}))
+            (x < z))) (_, $Expr {e2.monadRewritten}))
     };
   --e1 >>= ( (\x y -> Return(x < y))(_, e2) )
   local bind1::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
         $Expr {monadReturn(e1.typerep, top.location)}
-        (x < y))(_, $Expr {e2}))
+        (x < y))(_, $Expr {e2.monadRewritten}))
     };
   --e2 >>= ( (\x y -> Return(x < y))(e1, _) )
   local bind2::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e2},
+      ($Expr {e2.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
          y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
         $Expr {monadReturn(e2.typerep, top.location)}
-        (x < y))($Expr {e1}, _))
+        (x < y))($Expr {e1.monadRewritten}, _))
     };
   top.monadRewritten = if isMonad(e1.typerep)
                        then if isMonad(e2.typerep)
@@ -820,7 +820,7 @@ top::Expr ::= e1::Expr '<' e2::Expr
                             else bind1
                        else if isMonad(e2.typerep)
                             then bind2
-                            else top;
+                            else lt(e1.monadRewritten, '<', e2.monadRewritten, location=top.location);
 }
 
 concrete production gteq
@@ -841,34 +841,34 @@ top::Expr ::= e1::Expr '>=' e2::Expr
   local bindBoth::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
           $Expr {monadBind(e2.typerep, top.location)}
           (y,
            \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
             $Expr {monadReturn(e2.typerep, top.location)}
-            (x >= z))) (_, $Expr {e2}))
+            (x >= z))) (_, $Expr {e2.monadRewritten}))
     };
   --e1 >>= ( (\x y -> Return(x >= y))(_, e2) )
   local bind1::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
         $Expr {monadReturn(e1.typerep, top.location)}
-        (x >= y))(_, $Expr {e2}))
+        (x >= y))(_, $Expr {e2.monadRewritten}))
     };
   --e2 >>= ( (\x y -> Return(x >= y))(e1, _) )
   local bind2::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e2},
+      ($Expr {e2.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
          y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
         $Expr {monadReturn(e2.typerep, top.location)}
-        (x >= y))($Expr {e1}, _))
+        (x >= y))($Expr {e1.monadRewritten}, _))
     };
   top.monadRewritten = if isMonad(e1.typerep)
                        then if isMonad(e2.typerep)
@@ -876,7 +876,7 @@ top::Expr ::= e1::Expr '>=' e2::Expr
                             else bind1
                        else if isMonad(e2.typerep)
                             then bind2
-                            else top;
+                            else gteq(e1.monadRewritten, '>=', e2.monadRewritten, location=top.location);
 }
 
 concrete production lteq
@@ -897,34 +897,34 @@ top::Expr ::= e1::Expr '<=' e2::Expr
   local bindBoth::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
           $Expr {monadBind(e2.typerep, top.location)}
           (y,
            \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
             $Expr {monadReturn(e2.typerep, top.location)}
-            (x <= z))) (_, $Expr {e2}))
+            (x <= z))) (_, $Expr {e2.monadRewritten}))
     };
   --e1 >>= ( (\x y -> Return(x <= y))(_, e2) )
   local bind1::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
         $Expr {monadReturn(e1.typerep, top.location)}
-        (x <= y))(_, $Expr {e2}))
+        (x <= y))(_, $Expr {e2.monadRewritten}))
     };
   --e2 >>= ( (\x y -> Return(x <= y))(e1, _) )
   local bind2::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e2},
+      ($Expr {e2.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
          y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
         $Expr {monadReturn(e2.typerep, top.location)}
-        (x <= y))($Expr {e1}, _))
+        (x <= y))($Expr {e1.monadRewritten}, _))
     };
   top.monadRewritten = if isMonad(e1.typerep)
                        then if isMonad(e2.typerep)
@@ -932,7 +932,7 @@ top::Expr ::= e1::Expr '<=' e2::Expr
                             else bind1
                        else if isMonad(e2.typerep)
                             then bind2
-                            else top;
+                            else lteq(e1.monadRewritten, '<=', e2.monadRewritten, location=top.location);
 }
 
 concrete production eqeq
@@ -953,34 +953,34 @@ top::Expr ::= e1::Expr '==' e2::Expr
   local bindBoth::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
           $Expr {monadBind(e2.typerep, top.location)}
           (y,
            \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
             $Expr {monadReturn(e2.typerep, top.location)}
-            (x == z))) (_, $Expr {e2}))
+            (x == z))) (_, $Expr {e2.monadRewritten}))
     };
   --e1 >>= ( (\x y -> Return(x == y))(_, e2) )
   local bind1::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
         $Expr {monadReturn(e1.typerep, top.location)}
-        (x == y))(_, $Expr {e2}))
+        (x == y))(_, $Expr {e2.monadRewritten}))
     };
   --e2 >>= ( (\x y -> Return(x == y))(e1, _) )
   local bind2::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e2},
+      ($Expr {e2.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
          y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
         $Expr {monadReturn(e2.typerep, top.location)}
-        (x == y))($Expr {e1}, _))
+        (x == y))($Expr {e1.monadRewritten}, _))
     };
   top.monadRewritten = if isMonad(e1.typerep)
                        then if isMonad(e2.typerep)
@@ -988,7 +988,7 @@ top::Expr ::= e1::Expr '==' e2::Expr
                             else bind1
                        else if isMonad(e2.typerep)
                             then bind2
-                            else top;
+                            else eqeq(e1.monadRewritten, '==', e2.monadRewritten, location=top.location);
 }
 
 concrete production neq
@@ -1009,34 +1009,34 @@ top::Expr ::= e1::Expr '!=' e2::Expr
   local bindBoth::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
           $Expr {monadBind(e2.typerep, top.location)}
           (y,
            \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
             $Expr {monadReturn(e2.typerep, top.location)}
-            (x != z))) (_, $Expr {e2}))
+            (x != z))) (_, $Expr {e2.monadRewritten}))
     };
   --e1 >>= ( (\x y -> Return(x != y))(_, e2) )
   local bind1::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
         $Expr {monadReturn(e1.typerep, top.location)}
-        (x != y))(_, $Expr {e2}))
+        (x != y))(_, $Expr {e2.monadRewritten}))
     };
   --e2 >>= ( (\x y -> Return(x != y))(e1, _) )
   local bind2::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e2},
+      ($Expr {e2.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
          y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
         $Expr {monadReturn(e2.typerep, top.location)}
-        (x != y))($Expr {e1}, _))
+        (x != y))($Expr {e1.monadRewritten}, _))
     };
   top.monadRewritten = if isMonad(e1.typerep)
                        then if isMonad(e2.typerep)
@@ -1044,7 +1044,7 @@ top::Expr ::= e1::Expr '!=' e2::Expr
                             else bind1
                        else if isMonad(e2.typerep)
                             then bind2
-                            else top;
+                            else neq(e1.monadRewritten, '!=', e2.monadRewritten, location=top.location);
 }
 
 concrete production ifThenElse
@@ -1069,7 +1069,7 @@ precedence = 0
   local cMonad::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\c::Boolean
          x::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e3.typerep, location=top.location)} ->
@@ -1078,23 +1078,23 @@ precedence = 0
                       then Silver_Expr {x}
                       else Silver_Expr {$Expr {monadReturn(e1.typerep, top.location)}(x)} }
          else $Expr { if isMonad(e3.typerep)
-                      then Silver_Expr {x}
-                      else Silver_Expr {$Expr {monadReturn(e1.typerep, top.location)}(x)} })
-       (_, $Expr {e2}, $Expr {e3}))
+                      then Silver_Expr {y}
+                      else Silver_Expr {$Expr {monadReturn(e1.typerep, top.location)}(y)} })
+       (_, $Expr {e2.monadRewritten}, $Expr {e3.monadRewritten}))
     };
   local cBool::Expr =
     Silver_Expr {
-      if $Expr {e1}
+      if $Expr {e1.monadRewritten}
       then $Expr {if isMonad(e2.typerep)
-                  then e2
+                  then e2.monadRewritten
                   else if isMonad(e3.typerep)
-                       then Silver_Expr { $Expr {monadReturn(e3.typerep, top.location)}($Expr {e2}) }
-                       else e2}
+                       then Silver_Expr { $Expr {monadReturn(e3.typerep, top.location)}($Expr {e2.monadRewritten}) }
+                       else e2.monadRewritten}
       else $Expr {if isMonad(e3.typerep)
-                  then e3
+                  then e3.monadRewritten
                   else if isMonad(e2.typerep)
-                       then Silver_Expr { $Expr {monadReturn(e2.typerep, top.location)}($Expr {e3}) }
-                       else e3}
+                       then Silver_Expr { $Expr {monadReturn(e2.typerep, top.location)}($Expr {e3.monadRewritten}) }
+                       else e3.monadRewritten}
     };
   top.monadRewritten = if isMonad(e1.typerep)
                        then cMonad
@@ -1139,34 +1139,34 @@ top::Expr ::= e1::Expr '+' e2::Expr
   local bindBoth::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
           $Expr {monadBind(e2.typerep, top.location)}
           (y,
            \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
             $Expr {monadReturn(e2.typerep, top.location)}
-            (x + z))) (_, $Expr {e2}))
+            (x + z))) (_, $Expr {e2.monadRewritten}))
     };
   --e1 >>= ( (\x y -> Return(x + y))(_, e2) )
   local bind1::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
         $Expr {monadReturn(e1.typerep, top.location)}
-        (x + y))(_, $Expr {e2}))
+        (x + y))(_, $Expr {e2.monadRewritten}))
     };
   --e2 >>= ( (\x y -> Return(x + y))(e1, _) )
   local bind2::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e2},
+      ($Expr {e2.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
          y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
         $Expr {monadReturn(e2.typerep, top.location)}
-        (x + y))($Expr {e1}, _))
+        (x + y))($Expr {e1.monadRewritten}, _))
     };
   top.monadRewritten = if isMonad(e1.typerep)
                        then if isMonad(e2.typerep)
@@ -1174,7 +1174,7 @@ top::Expr ::= e1::Expr '+' e2::Expr
                             else bind1
                        else if isMonad(e2.typerep)
                             then bind2
-                            else top;
+                            else plus(e1.monadRewritten, '+', e2.monadRewritten, location=top.location);
 }
 
 concrete production minus
@@ -1193,34 +1193,34 @@ top::Expr ::= e1::Expr '-' e2::Expr
   local bindBoth::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
           $Expr {monadBind(e2.typerep, top.location)}
           (y,
            \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
             $Expr {monadReturn(e2.typerep, top.location)}
-            (x - z))) (_, $Expr {e2}))
+            (x - z))) (_, $Expr {e2.monadRewritten}))
     };
   --e1 >>= ( (\x y -> Return(x - y))(_, e2) )
   local bind1::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
         $Expr {monadReturn(e1.typerep, top.location)}
-        (x - y))(_, $Expr {e2}))
+        (x - y))(_, $Expr {e2.monadRewritten}))
     };
   --e2 >>= ( (\x y -> Return(x - y))(e1, _) )
   local bind2::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e2},
+      ($Expr {e2.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
          y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
         $Expr {monadReturn(e2.typerep, top.location)}
-        (x - y))($Expr {e1}, _))
+        (x - y))($Expr {e1.monadRewritten}, _))
     };
   top.monadRewritten = if isMonad(e1.typerep)
                        then if isMonad(e2.typerep)
@@ -1228,7 +1228,7 @@ top::Expr ::= e1::Expr '-' e2::Expr
                             else bind1
                        else if isMonad(e2.typerep)
                             then bind2
-                            else top;
+                            else minus(e1.monadRewritten, '-', e2.monadRewritten, location=top.location);
 }
 
 concrete production multiply
@@ -1247,34 +1247,34 @@ top::Expr ::= e1::Expr '*' e2::Expr
   local bindBoth::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
           $Expr {monadBind(e2.typerep, top.location)}
           (y,
            \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
             $Expr {monadReturn(e2.typerep, top.location)}
-            (x * z))) (_, $Expr {e2}))
+            (x * z))) (_, $Expr {e2.monadRewritten}))
     };
   --e1 >>= ( (\x y -> Return(x * y))(_, e2) )
   local bind1::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
         $Expr {monadReturn(e1.typerep, top.location)}
-        (x * y))(_, $Expr {e2}))
+        (x * y))(_, $Expr {e2.monadRewritten}))
     };
   --e2 >>= ( (\x y -> Return(x * y))(e1, _) )
   local bind2::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e2},
+      ($Expr {e2.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
          y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
         $Expr {monadReturn(e2.typerep, top.location)}
-        (x * y))($Expr {e1}, _))
+        (x * y))($Expr {e1.monadRewritten}, _))
     };
   top.monadRewritten = if isMonad(e1.typerep)
                        then if isMonad(e2.typerep)
@@ -1282,7 +1282,7 @@ top::Expr ::= e1::Expr '*' e2::Expr
                             else bind1
                        else if isMonad(e2.typerep)
                             then bind2
-                            else top;
+                            else multiply(e1.monadRewritten, '*', e2.monadRewritten, location=top.location);
 }
 
 concrete production divide
@@ -1301,34 +1301,34 @@ top::Expr ::= e1::Expr '/' e2::Expr
   local bindBoth::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
           $Expr {monadBind(e2.typerep, top.location)}
           (y,
            \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
             $Expr {monadReturn(e2.typerep, top.location)}
-            (x / z))) (_, $Expr {e2}))
+            (x / z))) (_, $Expr {e2.monadRewritten}))
     };
   --e1 >>= ( (\x y -> Return(x / y))(_, e2) )
   local bind1::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
         $Expr {monadReturn(e1.typerep, top.location)}
-        (x / y))(_, $Expr {e2}))
+        (x / y))(_, $Expr {e2.monadRewritten}))
     };
   --e2 >>= ( (\x y -> Return(x / y))(e1, _) )
   local bind2::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e2},
+      ($Expr {e2.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
          y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
         $Expr {monadReturn(e2.typerep, top.location)}
-        (x / y))($Expr {e1}, _))
+        (x / y))($Expr {e1.monadRewritten}, _))
     };
   top.monadRewritten = if isMonad(e1.typerep)
                        then if isMonad(e2.typerep)
@@ -1336,7 +1336,7 @@ top::Expr ::= e1::Expr '/' e2::Expr
                             else bind1
                        else if isMonad(e2.typerep)
                             then bind2
-                            else top;
+                            else divide(e1.monadRewritten, '/', e2.monadRewritten, location=top.location);
 }
 
 concrete production modulus
@@ -1355,34 +1355,34 @@ top::Expr ::= e1::Expr '%' e2::Expr
   local bindBoth::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
           $Expr {monadBind(e2.typerep, top.location)}
           (y,
            \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
             $Expr {monadReturn(e2.typerep, top.location)}
-            (x % z))) (_, $Expr {e2}))
+            (x % z))) (_, $Expr {e2.monadRewritten}))
     };
   --e1 >>= ( (\x y -> Return(x % y))(_, e2) )
   local bind1::Expr =
     Silver_Expr {
       $Expr {monadBind(e1.typerep, top.location)}
-      ($Expr {e1},
+      ($Expr {e1.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.typerep), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)} ->
         $Expr {monadReturn(e1.typerep, top.location)}
-        (x % y))(_, $Expr {e2}))
+        (x % y))(_, $Expr {e2.monadRewritten}))
     };
   --e2 >>= ( (\x y -> Return(x % y))(e1, _) )
   local bind2::Expr =
     Silver_Expr {
       $Expr {monadBind(e2.typerep, top.location)}
-      ($Expr {e2},
+      ($Expr {e2.monadRewritten},
        (\x::$TypeExpr {typerepTypeExpr(e1.typerep, location=top.location)}
          y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.typerep), location=top.location)} ->
         $Expr {monadReturn(e2.typerep, top.location)}
-        (x % y))($Expr {e1}, _))
+        (x % y))($Expr {e1.monadRewritten}, _))
     };
   top.monadRewritten = if isMonad(e1.typerep)
                        then if isMonad(e2.typerep)
@@ -1390,7 +1390,7 @@ top::Expr ::= e1::Expr '%' e2::Expr
                             else bind1
                        else if isMonad(e2.typerep)
                             then bind2
-                            else top;
+                            else modulus(e1.monadRewritten, '%', e2.monadRewritten, location=top.location);
 }
 
 concrete production neg
@@ -1407,11 +1407,11 @@ precedence = 13
     if isMonad(e.typerep)
     then Silver_Expr {
            $Expr {monadBind(e.typerep, top.location)}
-            ($Expr {e},
+            ($Expr {e.monadRewritten},
              \x::$TypeExpr {typerepTypeExpr(monadInnerType(e.typerep), location=top.location)} ->
               $Expr {monadReturn(e.typerep, top.location)}(-x))
          }
-    else top;
+    else neg('-', e.monadRewritten, location=top.location);
 }
 
 concrete production stringConst
