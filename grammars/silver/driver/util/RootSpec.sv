@@ -83,7 +83,7 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   top.parsingErrors = [];
 
   top.jarName = g.jarName;
-  local mRewrite :: RootSpec = grammarRootSpec(g, grammarName, grammarSource, grammarTime, generateLocation);
+  local mRewrite :: RootSpec = grammarRootSpec(g.monadRewritten, grammarName, grammarSource, grammarTime, generateLocation);
   mRewrite.config = top.config;
   mRewrite.compiledGrammars = top.compiledGrammars;
   mRewrite.productionFlowGraphs = top.productionFlowGraphs;

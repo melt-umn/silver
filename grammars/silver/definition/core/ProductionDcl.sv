@@ -18,6 +18,20 @@ inherited attribute deterministicCount :: Integer;
  -}
 inherited attribute signatureName :: String;
 
+{-
+terminal MAbstract_kwd    'mabstract'     lexer classes {KEYWORD,RESERVED};
+concrete production productionMonadDcl
+top::AGDcl ::= 'mabstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+{
+  body.downSubst = emptySubst();
+  ns.signatureName = fName;
+--  ns.env = newScopeEnv(sigDefs, top.env);
+  production fName :: String = top.grammarName ++ ":" ++ id.name;
+  production namedSig :: NamedSignature = ns.namedSignature;
+  body.frame = productionContext(namedSig, myFlowGraph); -- graph from flow:env
+  forwards to productionDcl('abstract', 'production', id, ns, body.monadRewritten, location=top.location);
+}
+-}
 concrete production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
