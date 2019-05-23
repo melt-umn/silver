@@ -179,8 +179,12 @@ top::Expr ::= q::'forward'
 concrete production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
-  -- TODO: fix comma when one or the other is empty
-  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  top.unparse = e.unparse ++ "(" ++
+                case es, anns of
+                | emptyAppExprs(), _ -> anns.unparse
+                | _, emptyAnnoAppExprs() -> es.unparse
+                | _, _ -> es.unparse ++ ", " ++ anns.unparse
+                end ++ ")";
   
   -- TODO: You know, since the rule is we can't access .typerep without "first" supplying
   -- .downSubst, perhaps we should just... report .typerep after substitution in the first place!
@@ -206,7 +210,12 @@ top::Expr ::= e::Expr '(' ')'
 abstract production errorApplication
 top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
-  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  top.unparse = e.unparse ++ "(" ++
+                case es, anns of
+                | emptyAppExprs(), _ -> anns.unparse
+                | _, emptyAnnoAppExprs() -> es.unparse
+                | _, _ -> es.unparse ++ ", " ++ anns.unparse
+                end ++ ")";
   
   top.errors := e.errors ++
     (if e.typerep.isError then [] else  
@@ -232,8 +241,13 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 abstract production functionApplication
 top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
-  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
-  
+  top.unparse = e.unparse ++ "(" ++
+                case es, anns of
+                | emptyAppExprs(), _ -> anns.unparse
+                | _, emptyAnnoAppExprs() -> es.unparse
+                | _, _ -> es.unparse ++ ", " ++ anns.unparse
+                end ++ ")";
+
   -- NOTE: REVERSED ORDER
   -- We may need to resolve e's type to get at the actual 'function type'
   local t :: Type = performSubstitution(e.typerep, e.upSubst);
@@ -256,8 +270,13 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 abstract production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
-  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
-  
+  top.unparse = e.unparse ++ "(" ++
+                case es, anns of
+                | emptyAppExprs(), _ -> anns.unparse
+                | _, emptyAnnoAppExprs() -> es.unparse
+                | _, _ -> es.unparse ++ ", " ++ anns.unparse
+                end ++ ")";
+
   top.errors := e.errors ++ es.errors ++ anns.errors;
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
@@ -268,8 +287,13 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
 abstract production partialApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
-  top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
-  
+  --top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  top.unparse = e.unparse ++ "(" ++ es.unparse ++
+                case anns of
+                | emptyAnnoAppExprs() -> ""
+                | _ -> "," ++ anns.unparse
+                end ++ ")";
+
   top.errors := e.errors ++ es.errors ++ anns.errors;
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
