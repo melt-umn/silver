@@ -1457,7 +1457,26 @@ top::Expr ::= e1::Expr '++' e2::Expr
   top.errors := e1.errors ++ e2.errors ++ forward.errors;
   top.typerep = if errCheck1.typeerror then errorType() else result_type;
 
-  local result_type :: Type = if isMonad(e1.typerep)
+  local result_type :: Type = performSubstitution(e1.typerep, errCheck1.upSubst);
+
+  -- Moved from 'analysis:typechecking' because we want to use this stuff here now
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  e1.downSubst = top.downSubst;
+  e2.downSubst = e1.upSubst;
+  errCheck1.downSubst = e2.upSubst;
+  forward.downSubst = errCheck1.upSubst;
+  -- upSubst defined via forward :D
+
+  errCheck1 = check(e1.typerep, e2.typerep);
+
+  forwards to
+    -- if the types disagree, forward to an error production instead.
+    if errCheck1.typeerror
+    then errorExpr([err(top.location, "Operands to ++ must be the same concatenable type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)], location=top.location)
+    else top.typerep.appendDispatcher(e1, e2, top.location);
+
+{-  local result_type :: Type = if isMonad(e1.typerep)
                               then performSubstitution(e1.typerep, errCheck1.upSubst)
                               else performSubstitution(e2.typerep, errCheck1.upSubst);
 
@@ -1494,6 +1513,7 @@ top::Expr ::= e1::Expr '++' e2::Expr
     else if isMonad(top.typerep)
          then monadInnerType(top.typerep).appendDispatcher(e1, e2, top.location)
          else top.typerep.appendDispatcher(e1, e2, top.location);
+-}
 }
 
 abstract production stringPlusPlus

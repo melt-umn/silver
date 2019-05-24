@@ -23,6 +23,9 @@ grammar silver:definition:core;
 -}
 
 
+imports silver:extension:list;
+
+
 synthesized attribute monadRewritten<a>::a;
 
 
@@ -34,8 +37,9 @@ Boolean ::= ty::Type
            (name == "core:Maybe" && length(params) == 1) ||
            (name == "core:Either" && length(params) == 2) ||
            (name == "core:IOMonad" && length(params) == 1) ||
-           (name == "core:State" && length(params) == 2) ||
-           (name == "core:List" && length(params) == 1)
+           (name == "core:State" && length(params) == 2) --||
+           --(name == "listType" && length(params) == 1)
+         | listType(_) -> true
          | _ -> false
          end;
 }
@@ -51,6 +55,7 @@ Pair<Boolean Substitution> ::= ty1::Type ty2::Type subst::Substitution
            if name1 == name2 && length(params1) == length(params2)
            then tyListMatch(init(params1), init(params2), subst)
            else pair(false, subst)
+         | listType(_), listType(_) -> pair(true, subst)
          | _, _ -> pair(false, subst)
          end;
 }
@@ -76,6 +81,7 @@ Type ::= mty::Type
   return case mty of
          | nonterminalType(name1, params1) ->
            last(params1)
+         | listType(ty) -> ty
          | _ -> error("The monadInnerType function should only be called " ++
                       "once a type has been verified to be a monad")
          end;
@@ -90,6 +96,7 @@ Type ::= mty::Type newInner::Type
   return case mty of
          | nonterminalType(name, params) ->
            nonterminalType(name, append(init(params), [newInner]))
+         | listType(_) -> listType(newInner)
          | _ -> error("Tried to take a monad out of a non-monadic " ++
                       "type to apply")
          end;
@@ -110,7 +117,7 @@ Expr ::= ty::Type l::Location
            baseExpr(qNameId(name("bindIO", l), location=l), location=l)
          | nonterminalType("core:State", _) -> 
            baseExpr(qNameId(name("bindState", l), location=l), location=l)
-         | nonterminalType("core:List", _) -> 
+         | listType(_) -> 
            baseExpr(qNameId(name("bindList", l), location=l), location=l)
          | _ -> error("Tried to get the bind for a non-monadic type")
          end;
@@ -127,7 +134,7 @@ Expr ::= ty::Type l::Location
            baseExpr(qNameId(name("returnIO", l), location=l), location=l)
          | nonterminalType("core:State", _) -> 
            baseExpr(qNameId(name("returnState", l), location=l), location=l)
-         | nonterminalType("core:List", _) -> 
+         | listType(_) ->
            baseExpr(qNameId(name("returnList", l), location=l), location=l)
          | _ -> error("Tried to get the return for a non-monadic type " ++ l.filename ++ " " ++ toString(l.line) ++ ":" ++ toString(l.column))
          end;
