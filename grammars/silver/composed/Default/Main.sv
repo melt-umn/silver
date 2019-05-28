@@ -4,6 +4,9 @@ import silver:host;
 import silver:translation:java;
 import silver:driver;
 
+import silver:extension:treesitter;
+import silver:extension:ideinterface;
+
 import silver:extension:doc;
 import silver:analysis:warnings:flow;
 import silver:analysis:warnings:exporting;
@@ -27,7 +30,6 @@ parser svParse::Root {
   silver:extension:silverconstruction;
   silver:extension:astconstruction;
   silver:extension:constructparser;
-  silver:extension:treesitter;
 --  silver:extension:concreteSyntaxForTrees ;
 
   silver:modification:let_fix;
