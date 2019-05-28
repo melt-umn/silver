@@ -179,7 +179,7 @@ top::Expr ::= q::'forward'
 concrete production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
-  top.unparse = e.unparse ++ "(" ++
+  top.unparse = "(" ++ e.unparse ++ ")(" ++
                 case es, anns of
                 | emptyAppExprs(), _ -> anns.unparse
                 | _, emptyAnnoAppExprs() -> es.unparse
@@ -210,7 +210,7 @@ top::Expr ::= e::Expr '(' ')'
 abstract production errorApplication
 top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
-  top.unparse = e.unparse ++ "(" ++
+  top.unparse = "(" ++ e.unparse ++ ")(" ++
                 case es, anns of
                 | emptyAppExprs(), _ -> anns.unparse
                 | _, emptyAnnoAppExprs() -> es.unparse
@@ -241,7 +241,7 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 abstract production functionApplication
 top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
-  top.unparse = e.unparse ++ "(" ++
+  top.unparse = "(" ++ e.unparse ++ ")(" ++
                 case es, anns of
                 | emptyAppExprs(), _ -> anns.unparse
                 | _, emptyAnnoAppExprs() -> es.unparse
@@ -270,7 +270,7 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 abstract production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
-  top.unparse = e.unparse ++ "(" ++
+  top.unparse = "(" ++ e.unparse ++ ")(" ++
                 case es, anns of
                 | emptyAppExprs(), _ -> anns.unparse
                 | _, emptyAnnoAppExprs() -> es.unparse
@@ -278,17 +278,146 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
                 end ++ ")";
 
   top.errors := e.errors ++ es.errors ++ anns.errors;
+  local mty::Type = head(es.monadTypesLocations).fst;
+  --need to check that all our monads match
+  top.errors <- if null(es.monadTypesLocations) ||
+                   foldr(\x::Pair<Type Integer> b::Boolean -> b && monadsMatch(mty, x.fst, e.upSubst).fst, 
+                         true, tail(es.monadTypesLocations))
+                then []
+                else [err(top.location,
+                      "All monad types used monadically in a function application must match")];
+  --need to check it is compatible with the function return type
+  top.errors <- if isMonad(ety.outputType)
+                then if null(es.monadTypesLocations)
+                     then []
+                     else if monadsMatch(ety.outputType, mty, e.upSubst).fst
+                          then []
+                          else [err(top.location,
+                                    "Return type of function is a monad which doesn't " ++
+                                     "match the monads used for arguments")]
+                else [];
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
 
-  top.typerep = ety.outputType;
-}
+  --needs to change based on whether there are monads or not
+  top.typerep = if null(es.monadTypesLocations)
+                then ety.outputType
+                else monadOfType(head(es.monadTypesLocations).fst, ety.outputType);
 
+  --whether we need to wrap the ultimate function call in monadRewritten in a Return
+  local wrapReturn::Boolean = !isMonad(ety.outputType) && !null(es.monadTypesLocations);
+
+  {-
+    Monad translation creates a lambda to apply to all the arguments
+    plus the function (to get fresh names for everything), then
+    creates a body that binds all the monadic arguments into the final
+    function application.
+
+    For example, if we have
+       fun(a, b, c, d)
+    where a and d are monadic, then we translate into
+       (\a1 a2 a3 a4 f. a1 >>= (\a1. a4 >>= (\a4. f(a1, a2, a3, a4))))(a, b, c, d, fun)
+    Reusing ai in the bind for the ith argument simplifies doing the
+    application inside all the binds.
+  -}
+  --TODO also needs to deal with the case where the function is a monad
+  local lambda_fun::Expr = buildMonadApplicationLambda(es.realTypes, es.monadTypesLocations, ety, wrapReturn);
+  local expanded_args::AppExprs = snocAppExprs(new(es), ',', presentAppExpr(new(e), location=bogusLoc()),
+                                               location=bogusLoc());
+  top.monadRewritten = if null(es.monadTypesLocations)
+                       then top
+                       else
+                         case anns of
+                         | emptyAnnoAppExprs() ->
+                           applicationExpr(lambda_fun, '(', expanded_args, ')', location=bogusLoc())
+                         | _ -> 
+                           error("Monad Rewriting not defined with annotated " ++
+                                 "expressions in a function application")
+                         end;
+}
+--build the lambda to apply to all the original arguments plus the function
+--we're going to assume this is only called if monadTysLocs is non-empty
+function buildMonadApplicationLambda
+Expr ::= realtys::[Type] monadTysLocs::[Pair<Type Integer>] funType::Type wrapReturn::Boolean
+{
+  local funargs::AppExprs = buildFunArgs(length(realtys));
+  local params::ProductionRHS = buildMonadApplicationParams(realtys, 1, funType);
+  local body::Expr = buildMonadApplicationBody(monadTysLocs, funargs, head(monadTysLocs).fst, wrapReturn);
+  return lambdap(params, body, location=bogusLoc());
+}
+--build the parameters for the lambda applied to all the original arguments plus the function
+function buildMonadApplicationParams
+ProductionRHS ::= realtys::[Type] currentLoc::Integer funType::Type
+{
+  return if null(realtys)
+         then productionRHSCons(productionRHSElem(name("f", bogusLoc()),
+                                                  '::',
+                                                  typerepTypeExpr(funType, location=bogusLoc()),
+                                                  location=bogusLoc()),
+                                productionRHSNil(location=bogusLoc()),
+                                location=bogusLoc())
+         else productionRHSCons(productionRHSElem(name("a"++toString(currentLoc), bogusLoc()),
+                                                  '::',
+                                                  typerepTypeExpr(head(realtys), location=bogusLoc()),
+                                                  location=bogusLoc()),
+                                buildMonadApplicationParams(tail(realtys), currentLoc+1, funType),
+                                location=bogusLoc());
+}
+--build the arguments for the application inside all the binds
+function buildFunArgs
+AppExprs ::= currentIndex::Integer
+{
+  return if currentIndex == 0
+         then emptyAppExprs(location=bogusLoc())
+         else snocAppExprs(buildFunArgs(currentIndex - 1), ',',
+                           presentAppExpr(baseExpr(qName(bogusLoc(),
+                                                         "a"++toString(currentIndex)),
+                                                   location=bogusLoc()),
+                                          location=bogusLoc()), location=bogusLoc());
+}
+--build the body of the lambda which includes all the binds
+function buildMonadApplicationBody
+Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs monadType::Type wrapReturn::Boolean
+{
+  local sub::Expr = buildMonadApplicationBody(tail(monadTysLocs), funargs, monadType, wrapReturn);
+  local argty::Type = head(monadTysLocs).fst;
+  local bind::Expr = monadBind(argty, bogusLoc());
+  local binding::ProductionRHS = productionRHSCons(productionRHSElem(name("a"++toString(head(monadTysLocs).snd),
+                                                                          bogusLoc()),
+                                                                     '::', 
+                                                                     typerepTypeExpr(monadInnerType(argty),
+                                                                                     location=bogusLoc()),
+                                                                     location=bogusLoc()),
+                                                   productionRHSNil(location=bogusLoc()),
+                                                   location=bogusLoc());
+  local bindargs::AppExprs = snocAppExprs(
+                             oneAppExprs(presentAppExpr(
+                                            baseExpr(qName(bogusLoc(),"a"++toString(head(monadTysLocs).snd)),
+                                                     location=bogusLoc()),
+                                            location=bogusLoc()),
+                                         location=bogusLoc()),
+                             ',',
+                              presentAppExpr(lambdap(binding, sub, location=bogusLoc()),
+                                             location=bogusLoc()),
+                              location=bogusLoc());
+
+  local step::Expr = applicationExpr(bind, '(', bindargs, ')', location=bogusLoc());
+
+  --the function is always going to be bound into the name "f", so we hard code that here
+  local baseapp::Expr = applicationExpr(baseExpr(qName(bogusLoc(), "f"), location=bogusLoc()),
+                                        '(', funargs, ')', location=bogusLoc());
+  local funapp::Expr = if wrapReturn
+                       then Silver_Expr { $Expr {monadReturn(monadType, bogusLoc())}($Expr {baseapp}) }
+                       else baseapp;
+
+  return if null(monadTysLocs)
+         then funapp
+         else step;
+}
 abstract production partialApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
-  --top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
-  top.unparse = e.unparse ++ "(" ++ es.unparse ++
+  top.unparse = "(" ++ e.unparse ++ ")(" ++ es.unparse ++
                 case anns of
                 | emptyAnnoAppExprs() -> ""
                 | _ -> "," ++ anns.unparse
@@ -1583,11 +1712,13 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
  -}
 nonterminal AppExprs with 
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied;
+  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied,
+  realTypes, monadTypesLocations;
 
 nonterminal AppExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied;
+  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied,
+  realTypes, monadTypesLocations;
 
 synthesized attribute isPartial :: Boolean;
 synthesized attribute missingTypereps :: [Type];
@@ -1597,6 +1728,12 @@ inherited attribute appExprIndex :: Integer;
 inherited attribute appExprTypereps :: [Type];
 inherited attribute appExprTyperep :: Type;
 autocopy attribute appExprApplied :: String;
+
+--pass up both the real types of expressions and the expressions themselves
+synthesized attribute realTypes::[Type];
+--get the actual monad types (not inner types) and their indices
+synthesized attribute monadTypesLocations::[Pair<Type Integer>];
+
 
 -- These are the "new" Exprs syntax. This allows missing (_) arguments, to indicate partial application.
 concrete production missingAppExpr
@@ -1612,6 +1749,9 @@ top::AppExpr ::= '_'
   top.appExprIndicies = [];
   
   top.errors := [];
+
+  top.realTypes = [top.appExprTyperep];
+  top.monadTypesLocations = [];
 }
 concrete production presentAppExpr
 top::AppExpr ::= e::Expr
@@ -1626,12 +1766,57 @@ top::AppExpr ::= e::Expr
   top.appExprIndicies = [top.appExprIndex];
   
   top.errors := e.errors;
+
+  top.realTypes = [e.typerep];
+  top.monadTypesLocations = if isMonadic
+                            then [pair(e.typerep, top.appExprIndex+1)] --not sure if that's the right index
+                            else [];
+
+  --Doing typechecking here because we need it to determine if it is a monad
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
+
+  e.downSubst = top.downSubst;
+  errCheck1.downSubst = e.upSubst;
+  errCheck2.downSubst = e.upSubst;
+  top.upSubst = if isMonadic
+                then errCheck2.upSubst
+                else errCheck1.upSubst;
+  --determine whether it appears that this is supposed to take
+  --   advantage of implicit monads based on types matching the
+  --   expected and being monads
+  local isMonadic::Boolean = if errCheck1.typeerror
+                             then if isMonad(e.typerep)
+                                  then true
+                                  else false
+                             else false;
+
+  errCheck1 = check(e.typerep, top.appExprTyperep);
+  errCheck2 = check(monadInnerType(e.typerep), top.appExprTyperep);
+  top.errors <-
+    if isMonadic
+    then if !errCheck2.typeerror
+         then []
+         else [err(top.location, "Argument " ++ toString(top.appExprIndex+1) ++ " of function '" ++
+                top.appExprApplied ++ "' expected " ++ errCheck1.rightpp ++
+                " or a monad of " ++ errCheck1.rightpp ++
+                " but argument is of type " ++ errCheck1.leftpp)]
+    else
+      if !errCheck1.typeerror
+      then []
+      else [err(top.location, "Argument " ++ toString(top.appExprIndex+1) ++ " of function '" ++
+                top.appExprApplied ++ "' expected " ++ errCheck1.rightpp ++
+                " or a monad of " ++ errCheck1.rightpp ++
+                " but argument is of type " ++ errCheck1.leftpp)];
 }
 
 concrete production snocAppExprs
 top::AppExprs ::= es::AppExprs ',' e::AppExpr
 {
-  top.unparse = es.unparse ++ ", " ++ e.unparse;
+  top.unparse = case es of
+                | emptyAppExprs() -> e.unparse
+                | _ -> es.unparse ++ ", " ++ e.unparse
+                end;
 
   top.isPartial = es.isPartial || e.isPartial;
   top.missingTypereps = es.missingTypereps ++ e.missingTypereps;
@@ -1649,6 +1834,9 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
                      else head(top.appExprTypereps);
 
   es.appExprTypereps = if null(top.appExprTypereps) then [] else tail(top.appExprTypereps);
+
+  top.realTypes = es.realTypes ++ e.realTypes;
+  top.monadTypesLocations = es.monadTypesLocations ++ e.monadTypesLocations;
 }
 concrete production oneAppExprs
 top::AppExprs ::= e::AppExpr
@@ -1674,6 +1862,9 @@ top::AppExprs ::= e::AppExpr
   e.appExprTyperep = if null(top.appExprTypereps)
                      then errorType()
                      else head(top.appExprTypereps);
+
+  top.realTypes = e.realTypes;
+  top.monadTypesLocations = e.monadTypesLocations;
 }
 abstract production emptyAppExprs
 top::AppExprs ::=
@@ -1692,6 +1883,9 @@ top::AppExprs ::=
   -- i.e. we can't ever have 'too many' provided error
   top.errors := if null(top.appExprTypereps) then []
                 else [err(top.location, "Too few arguments provided to function '" ++ top.appExprApplied ++ "'")];
+
+  top.realTypes = [];
+  top.monadTypesLocations = [];
 }
 
 
