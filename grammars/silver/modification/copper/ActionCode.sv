@@ -63,10 +63,11 @@ synthesized attribute containsPluck :: Boolean occurs on ProductionStmts;
 aspect production productionStmtsSnoc
 top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 {
-  local immediateChildIsPluck :: Boolean = case t of
+  local immediateChildIsPluck :: Boolean =
+    case t of
     | pluckDef(_, _, _) -> true
     | _ -> false
-  end;
+    end;
 
   top.containsPluck = immediateChildIsPluck || h.containsPluck;
 
