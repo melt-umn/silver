@@ -14,6 +14,9 @@ imports silver:definition:regex;
 function getModifiedCopperXML
 String ::= parsername::String startnt::String s::Syntax conflicts::[Pair<String [String]>] terminalPrefixes::[Pair<String String>]
 {
+  -- remove empty string terminals just as we do in Treesitter and also
+  -- removes disambigaution functions and moves terminals involved into
+  -- nonterminals to bring ambiguity to parse level instead of lexer level
   local modifiedGrammarForConflicts :: Syntax = createModifiedGrammar(s, conflicts);
   local modRoot :: SyntaxRoot = cstRoot("ModifiedGrammarForTreesitter", startnt, modifiedGrammarForConflicts, terminalPrefixes);
   return modRoot.xmlCopper;
@@ -44,7 +47,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
 
   -- transform the grammar to remove productions that can produce the empty string
   local attribute transformed_grammar :: TreesitterRules =
-    transformEmptyStringRules(s2.tsDcls, 1);
+    transformEmptyStringRules(s2.tsDcls);
 
   top.tsRoot = 
     treesitterRoot(top.lang, transformed_grammar);
@@ -52,21 +55,9 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   -- The tree sitter grammar.
   top.jsTreesitter = decorate top.tsRoot 
     with {startNt = toTsDeclaration(startnt); 
-          cstEnv = s2.cstEnv;}.treesitterGrammarJs;
-  -- The atom package file
-  {--
-  top.csonAtomPackage =
-s"""
-name: '${top.lang}'
-scopeName: 'source.${top.lang}'
-type: 'tree-sitter'
-parser: 'tree-sitter-${top.lang}'
-fileTypes: [
-  '${top.lang}'
-]
-scopes:
-""";
---}
+          cstEnv = s2.cstEnv;
+          emptyStringTerminals = s2.tsDcls.emptyStringTerminalContribs;
+         }.treesitterGrammarJs;
 }
 
 function isStartNonTerminalRule
@@ -75,6 +66,44 @@ Boolean ::= startnt::String rule::String
   return startsWith(startnt, rule);
 }
 
+function removeEmptyStringTerminals
+TreesitterRules ::= gram::TreesitterRules emptyStrTerminals::[String]
+{
+  return 
+  case gram of
+  | nilTreesitterRules() -> gram
+  | consTreesitterRules(rule, rest) ->
+    case rule of
+    | treesitterTerminal(_, regex, _) ->
+      if stringEq(regex.regString, "")
+      then removeEmptyStringTerminals(rest, emptyStrTerminals)
+      else consTreesitterRules(rule, removeEmptyStringTerminals(rest, emptyStrTerminals))
+    | treesitterNonterminal(name, prods, mods)  -> 
+        consTreesitterRules(
+          treesitterNonterminal(name, removeEmptyStringTerminalsFromProductions(prods, emptyStrTerminals), mods),
+          removeEmptyStringTerminals(rest, emptyStrTerminals))
+    end
+  end;
+}
+
+
+function removeEmptyStringTerminalsFromProductions
+TreesitterRules ::= prods::TreesitterRules emptyStrRules::[String]
+{
+  return
+  case prods of 
+  | nilTreesitterRules() -> prods
+  | consTreesitterRules(rule, rest) ->
+    case rule of 
+    | treesitterProduction(out, input, mods) ->
+        consTreesitterRules(
+          treesitterProduction(out, filter(isNotInEmptyStringList(emptyStrRules, _), input), mods),
+          removeEmptyStringTerminalsFromProductions(rest, emptyStrRules))
+    | _ -> 
+      consTreesitterRules(rule, removeEmptyStringTerminalsFromProductions(rest, emptyStrRules))
+    end
+  end;
+}
 {--
  - The name of the language specified by this Tree-sitter grammar.
  -}
@@ -135,16 +164,16 @@ Boolean ::= prods::TreesitterRules
   @return the new grammar with no nonterminals that can produce the empty string
 --}
 function transformEmptyStringRules
-TreesitterRules ::= oldGrammar::TreesitterRules count::Integer
+TreesitterRules ::= oldGrammar::TreesitterRules
 {
   local attribute emptyStringNonterminals :: [String] = computeEmptyStringRules(oldGrammar);
   return 
   -- no rules can produce the empty string except maybe the start rule
-  if count > 20 || null(emptyStringNonterminals) then oldGrammar
+  if null(emptyStringNonterminals) then oldGrammar
   else
     -- call to transform the next rule
     transformEmptyStringRules(
-      emptyStringGrammarModification(head(emptyStringNonterminals), oldGrammar), count+1);
+      emptyStringGrammarModification(head(emptyStringNonterminals), oldGrammar));
 }
 
 

@@ -25,6 +25,9 @@ synthesized attribute tsRep :: String occurs on TreesitterRule, TreesitterRules;
 synthesized attribute startNtRep :: String occurs on TreesitterRules;
 autocopy attribute startNt :: String occurs on TreesitterRules, TreesitterRoot;
 
+autocopy attribute emptyStringTerminals :: [String] occurs on TreesitterRoot, TreesitterRules, TreesitterRule;
+synthesized attribute emptyStringTerminalContribs :: [String] occurs on TreesitterRules;
+
 function getTreesitterRulesBy
 TreesitterRules ::= func::(Boolean ::= TreesitterRule) rules::TreesitterRules
 {
@@ -101,9 +104,10 @@ top::TreesitterRules ::= hd::TreesitterRule tl::TreesitterRules
   -- may need to separate nonterminals and terminals
   top.tsRep = 
     if isStartNonterminal(hd, top.startNt) then tl.tsRep
+    else if stringEq(hd.tsRep, "") then tl.tsRep
     else
       case tl of
-      | nilTreesitterRules() -> hd.tsRep
+      | nilTreesitterRules() -> hd.tsRep -- no trailing comma
       | _ -> hd.tsRep ++ ",\n\n" ++ tl.tsRep
       end;
 
@@ -123,6 +127,16 @@ top::TreesitterRules ::= hd::TreesitterRule tl::TreesitterRules
     | _ -> tl.emptyStringNonterminals
     end;
 
+  top.emptyStringTerminalContribs =
+    case hd of
+    | treesitterTerminal(name, regex, _) ->
+      if stringEq(regex.regString, "") then
+        name :: tl.emptyStringTerminalContribs
+      else
+        tl.emptyStringTerminalContribs
+    | _ -> tl.emptyStringTerminalContribs
+    end;
+
   top.tsExtras = 
     case hd of
     | treesitterTerminal(name, _, mods) ->
@@ -140,6 +154,7 @@ top::TreesitterRules ::=
   top.startNtRep = "";
   top.numRules = 0;
   top.emptyStringNonterminals = [];
+  top.emptyStringTerminalContribs = [];
   top.precAssocEntries = [];
   top.tsExtras = [];
 }
@@ -165,7 +180,11 @@ top::TreesitterRule ::= name::String r::Regex mods::SyntaxTerminalModifiers
     else 
     -- treesitter does not escape spaces unlike silver
       s"""/${removeEscapesNotNecessaryForTreesitterRegexs(r.regString)}/""";
-  top.tsRep = s"""${ts_lhs}: $$ => ${ts_rhs}""";
+  top.tsRep =
+    if containsBy(stringEq, name, top.emptyStringTerminals) then
+      ""
+    else 
+      s"""${ts_lhs}: $$ => ${ts_rhs}""";
   local attribute precAssoc :: Maybe<Pair<Integer String>> = getPrecAssocInfo(mods);
   top.precAssocEntries = 
     if precAssoc.isJust then
@@ -174,10 +193,20 @@ top::TreesitterRule ::= name::String r::Regex mods::SyntaxTerminalModifiers
       [];
 }
 
+function isNotInEmptyStringList
+Boolean ::= emptyStrList :: [String] input::String
+{
+  return !containsBy(stringEq, input, emptyStrList);
+}
+
 -- inputs should be tressiter identifiers
 abstract production treesitterProduction
 top::TreesitterRule ::= outputNT::String inputs::[String] mods::SyntaxProductionModifiers
-{
+{ 
+  local attribute emptyTerminalIdentifiers :: [String] = map(TsDeclToIdentifier, top.emptyStringTerminals);
+  local attribute inputNoEmptyTerminals :: [String] =
+    filter(isNotInEmptyStringList(emptyTerminalIdentifiers, _), inputs);
+
   top.precAssocEntries = [];
   local attribute precAssocFromTerminal :: Maybe<Pair<Integer String>> = 
     lookupByList(stringEq, top.precAssocEnv, map(TsIdentifierToDecl, inputs));
@@ -186,10 +215,10 @@ top::TreesitterRule ::= outputNT::String inputs::[String] mods::SyntaxProduction
   local attribute assoc :: Maybe<String> =
     sndFromMaybe(precAssocFromTerminal);
   local attribute prodBeforePrec :: String = 
-    if length(inputs) > 1 then
-      s"""seq(${implode(", ", inputs)})"""
+    if length(inputNoEmptyTerminals) > 1 then
+      s"""seq(${implode(", ", inputNoEmptyTerminals)})"""
     else
-      s"""${implode(", ", inputs)}""";
+      s"""${implode(", ", inputNoEmptyTerminals)}""";
   local attribute prodBeforeSpacing :: String = 
     -- if both precedence and associativity are specified
     if prec.isJust && prec.fromJust != 0 && assoc.isJust && !stringEq(assoc.fromJust, "none") then 

@@ -22,6 +22,94 @@ top::Syntax ::=
 function createModifiedGrammar
 Syntax ::= oldGrammar::Syntax terminalConflicts :: [Pair<String [String]>]
 {
+  -- determine which strings have regexs ""
+  local attribute emptyStringTerms :: [String] = determineEmptyStringTerminals(oldGrammar);
+  -- remove productions RHS elements that have regex ""
+  local attribute grammarNoEmptyStrTermsInProds :: Syntax = 
+    modifyProductionsForEmptyStringTerminals(oldGrammar, emptyStringTerms);
+  -- remove terminals that have regex ""
+  local attribute grammarNoEmptyStrTerminals :: Syntax = 
+    modifyTerminalsForEmptyStringTerminals(grammarNoEmptyStrTermsInProds, emptyStringTerms);
+  -- remove disambiguation functions 
+  return modifyGrammarForConflicts(grammarNoEmptyStrTerminals, terminalConflicts);
+}
+
+function modifyTerminalsForEmptyStringTerminals
+Syntax ::= s::Syntax emptyStrTerms::[String]
+{
+  return 
+  case s of
+  | nilSyntax() -> nilSyntax()
+  | consSyntax(s1, s2) ->
+    case s1 of
+    -- remove the terminal if it is in the empty string terminals
+    | syntaxTerminal(name, _, _) -> 
+      if containsBy(stringEq, name, emptyStrTerms) 
+      then consSyntax(s1, modifyTerminalsForEmptyStringTerminals(s2, emptyStrTerms))
+      else consSyntax(s1, modifyTerminalsForEmptyStringTerminals(s2, emptyStrTerms))
+      -- remove all terminals with the empty string from the named signature of the production
+    | _ -> 
+      consSyntax(s1, modifyTerminalsForEmptyStringTerminals(s2, emptyStrTerms))
+    end
+  end;
+}
+
+function modifyProductionsForEmptyStringTerminals
+Syntax ::= s::Syntax emptyStrTerms::[String]
+{
+  return 
+  case s of
+  | nilSyntax() -> nilSyntax()
+  | consSyntax(s1, s2) ->
+    case s1 of
+    | syntaxNonterminal(n, subdcls) -> 
+        consSyntax(syntaxNonterminal(n, modifyProductionsForEmptyStringTerminals(subdcls, emptyStrTerms)),
+          modifyProductionsForEmptyStringTerminals(s2, emptyStrTerms))
+     -- remove all terminals with the empty string from the named signature of the production
+    | syntaxProduction(ns, mods) ->
+        consSyntax(
+          syntaxProduction(removeEmptyStringTermsFromRHS(ns, emptyStrTerms), mods),
+          modifyProductionsForEmptyStringTerminals(s2, emptyStrTerms))
+    | _ -> 
+      consSyntax(s1, modifyProductionsForEmptyStringTerminals(s2, emptyStrTerms))
+    end
+  end;
+}
+
+function removeEmptyStringTermsFromRHS
+NamedSignature ::= prod::NamedSignature emptyStrTerms::[String]
+{
+  return 
+  namedSignature(prod.fullName, 
+    filter(isNotNamedSigElemOfEmptyTerminal(emptyStrTerms, _), prod.inputElements), 
+    prod.outputElement, prod.namedInputElements);
+}
+
+function determineEmptyStringTerminals
+[String] ::= s::Syntax
+{
+  return
+  case s of 
+  | nilSyntax() -> []
+  | consSyntax(s1, s2) -> 
+    case s1 of
+    | syntaxTerminal(name, regex, _) -> 
+      if stringEq(regex.regString, "") then name :: determineEmptyStringTerminals(s2)
+      else determineEmptyStringTerminals(s2)
+    | _ -> determineEmptyStringTerminals(s2)
+    end
+  end;
+}
+
+function isNotNamedSigElemOfEmptyTerminal
+Boolean ::= emptyStrTerms::[String] name::NamedSignatureElement
+{
+  return !containsBy(stringEq, name.typerep.typeName, emptyStrTerms);
+}
+
+function modifyGrammarForConflicts
+Syntax ::= oldGrammar::Syntax terminalConflicts :: [Pair<String [String]>]
+{
   return
   case terminalConflicts of
   | [] -> oldGrammar
