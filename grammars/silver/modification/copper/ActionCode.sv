@@ -48,10 +48,36 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
   top.actionCode = sflatMap(hacklocaldeclarations, stmts.defs) ++ stmts.translation;
 
   top.errors := stmts.errors;
+  top.errors <- if top.frame.permitPluck && !stmts.containsPluck then
+    [err(top.location, "Disambiguation function without pluck")] else [];
   
   stmts.downSubst = emptySubst();
 }
 
+
+-- Support code to check the validity of disambiguation blocks. True if any elements
+-- contained in the snoc-list (so this statement or before) are a pluck. Handles
+-- raising errors if there are statements after a pluck.
+synthesized attribute containsPluck :: Boolean occurs on ProductionStmts;
+
+aspect production productionStmtsSnoc
+top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
+{
+  local immediateChildIsPluck :: Boolean = case t of
+    | pluckDef(_, _, _) -> true
+    | _ -> false
+  end;
+
+  top.containsPluck = immediateChildIsPluck || h.containsPluck;
+
+  top.errors <- if top.frame.permitPluck && h.containsPluck then [err(t.location, "Statement after pluck")] else [];
+}
+
+aspect production productionStmtsNil
+top::ProductionStmts ::=
+{
+  top.containsPluck = false;
+}
 
 -- TODO hacky. ideally we'd do this where local attributes are declared, not here.
 function hacklocaldeclarations
