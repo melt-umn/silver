@@ -139,6 +139,25 @@ Expr ::= ty::Type l::Location
          | _ -> error("Tried to get the return for a non-monadic type " ++ l.filename ++ " " ++ toString(l.line) ++ ":" ++ toString(l.column))
          end;
 }
+function monadFail
+Expr ::= ty::Type l::Location
+{
+  return case ty of
+         | nonterminalType("core:Maybe", _) ->
+           baseExpr(qNameId(name("failMaybe", l), location=l), location=l)
+         | nonterminalType("core:Either", _) -> 
+           baseExpr(qNameId(name("failEither", l), location=l), location=l)
+         | nonterminalType("core:IOMonad", _) -> 
+           error("Fail undefined for IOMonad")
+         | nonterminalType("core:State", _) -> 
+           error("Fail undefined for State monad")
+         | listType(_) ->
+           baseExpr(qNameId(name("failList", l), location=l), location=l)
+         | _ -> 
+           error("Tried to get the return for a non-monadic type " ++ l.filename ++
+                 " " ++ toString(l.line) ++ ":" ++ toString(l.column))
+         end;
+}
 
 
 
@@ -176,6 +195,12 @@ Either<a b> ::= x::b
   return right(x);
 }
 
+function failEither
+Either<a b> ::= x::a
+{
+  return left(x);
+}
+
 {- Need to figure out what to do with this since this is a production
 abstract production bindIO
 top::IOMonad<b> ::= st::IOMonad<a> fn::(IOMonad<b> ::= a)
@@ -211,6 +236,12 @@ function returnList
   return [x];
 }
 
+function failList
+[a] ::= x::b
+{
+  return [];
+}
+
 
 function bindMaybe
 Maybe<b> ::= m::Maybe<a> fn::(Maybe<b> ::= a)
@@ -221,11 +252,16 @@ Maybe<b> ::= m::Maybe<a> fn::(Maybe<b> ::= a)
   end;
 }
 
---global returnMaybe::(Maybe<a> ::= a) = just; -- TODO: Why doesn't this work?
 function returnMaybe
 Maybe<a> ::= x::a
 {
   return just(x);
+}
+
+function failMaybe
+Maybe<a> ::= x::b
+{
+  return nothing();
 }
 
 {- Need to figure out what to do with this since this is a production

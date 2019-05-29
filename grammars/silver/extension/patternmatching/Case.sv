@@ -24,7 +24,7 @@ autocopy attribute matchRulePatternSize :: Integer;
 
 -- P -> E
 nonterminal MatchRule with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize;
-nonterminal AbstractMatchRule with location, headPattern, isVarMatchRule, expandHeadPattern;
+nonterminal AbstractMatchRule with location, headPattern, isVarMatchRule, expandHeadPattern, typerep;
 
 -- The head pattern of a match rule
 synthesized attribute headPattern :: Decorated Pattern;
@@ -60,14 +60,68 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 
   ml.matchRulePatternSize = length(es.rawExprs);
   top.errors <- ml.errors;
-  
+
+  --This doesn't work because it doesn't check the type of the patterns to see if
+  --   they are monadic (maybe we're trying to get something out of a monad--second
+  --   check (monad in output types) is fine
+  local monadInExprs::Pair<Boolean Type> =
+    foldl((\p::Pair<Boolean Type> e::Expr ->
+            if p.fst
+            then p
+            else if isMonad(e.typerep)
+                 then pair(true, e.typerep)
+                 else p),
+          pair(false, errorType()), --error as filler; won't be used
+          es.rawExprs);
+  local monadInClauses::Pair<Boolean Type> =
+    foldl((\p::Pair<Boolean Type> a::AbstractMatchRule ->
+            if p.fst
+            then p
+            else if isMonad(a.typerep)
+                 then pair(true, a.typerep)
+                 else p),
+          pair(false, errorType()), --error as filler; won't be used
+          ml.matchRuleList);
+  {-
+    This will add in a Fail() for an appropriate monad (if the
+    expression is well-typed) whenever we are matching against a monad
+    or any clause returns a monad.  This does not cover the case where
+    a monad type is expected out and the clauses are incomplete.  That
+    one will still fail, but I think that will be a rare case.
+  -}
+  local failure::Expr = if monadInExprs.fst
+                             {-
+                               inserting fails breaks down if the current monad's fail is
+                               expecting something other than a string (e.g. Either<Int T>),
+                               but trying to "do better" would break down by us needing to
+                               generate an item of a random type (we could easily do string,
+                               int, float, or list, but what about UserDefinedTree?)
+
+                               TODO consider making a function to generate an argument of the
+                               right type for Fail() based on the monad being Fail()'ed for
+                               for the basic types listed above--use it to get an argument to
+                               insert below rather than just the string
+                             -}
+                        then Silver_Expr {
+                               $Expr {monadFail(monadInExprs.snd, top.location)}
+                                 ("automatically-inserted fail")
+                             }
+                        else if monadInClauses.fst
+                             then Silver_Expr {
+                                    $Expr {monadFail(monadInClauses.snd, top.location)}
+                                      ("automatically-inserted fail")
+                                  }
+                             else mkStrFunctionInvocation(top.location, "core:error",
+                                    [stringConst(terminal(String_t, 
+                                       "\"Error: pattern match failed at " ++ top.grammarName ++
+                                       " " ++ top.location.unparse ++ "\\n\""),
+                                     location=top.location)]);
+
   -- TODO: this is the only use of .rawExprs. FIXME
   -- introduce the failure case here.
   forwards to 
     caseExpr(es.rawExprs, ml.matchRuleList, 
-      mkStrFunctionInvocation(top.location, "core:error",
-        [stringConst(terminal(String_t, 
-          "\"Error: pattern match failed at " ++ top.grammarName ++ " " ++ top.location.unparse ++ "\\n\""), location=top.location)]),
+      failure,
       freshType(), location=top.location);
 }
 
@@ -181,6 +235,8 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern] e::Expr
   -- For this, we safely know that pl is not null:
   top.expandHeadPattern = 
     matchRule(head(pl).patternSubPatternList ++ tail(pl), e, location=top.location);
+
+  top.typerep = e.typerep;
 }
 
 concrete production patternList_one

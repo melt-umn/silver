@@ -22,15 +22,25 @@ nonterminal PrimPatterns with
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors,
   downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation;
+  scrutineeType, returnType, translation,
+  typerep, --the returned type from the patterns
+  monadRewritten<PrimPatterns>,
+  returnFun, returnify<PrimPatterns>;
 nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors,
   downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation;
+  scrutineeType, returnType, translation,
+  typerep, --the returned type from the patterns
+  monadRewritten<PrimPattern>,
+  returnFun, returnify<PrimPattern>;
 
 autocopy attribute scrutineeType :: Type;
 autocopy attribute returnType :: Type;
+
+--returnFun is the monad's defined Return for returnify
+inherited attribute returnFun::Expr;
+synthesized attribute returnify<a>::a;
 
 
 concrete production matchPrimitiveConcrete
@@ -64,9 +74,12 @@ abstract production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
-  
-  top.typerep = t.typerep;
-  
+
+  --top.typerep = t.typerep;
+  top.typerep = if isMonad(f.typerep)
+                then f.typerep
+                else t.typerep;
+
   top.errors := e.errors ++ t.errors ++ pr.errors ++ f.errors;
   
   {--
@@ -81,7 +94,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   errCheck2 = check(f.typerep, t.typerep);
   top.errors <-
     if errCheck2.typeerror
-    then [err(top.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+    then [err(top.location, "pattern expression should have type " ++ errCheck2.rightpp ++
+              " instead it has type " ++ errCheck2.leftpp)]
     else [];
 
   -- ordinary threading: e, pr, f, errCheck2
@@ -134,6 +148,12 @@ top::PrimPatterns ::= p::PrimPattern
   
   p.downSubst = top.downSubst;
   top.upSubst = p.upSubst;
+
+  top.typerep = p.typerep;
+
+  p.returnFun = top.returnFun;
+  top.returnify = onePattern(p.returnify, location=top.location);
+  top.monadRewritten = onePattern(p.monadRewritten, location=top.location);
 }
 concrete production consPattern
 top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
@@ -143,9 +163,25 @@ top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
   top.errors := p.errors ++ ps.errors;
   top.translation = p.translation ++ "\nelse " ++ ps.translation;
 
-  p.downSubst = top.downSubst;
-  ps.downSubst = p.upSubst;
-  top.upSubst = ps.upSubst;
+  --p.downSubst = top.downSubst;
+  --ps.downSubst = p.upSubst;
+  --top.upSubst = ps.upSubst;
+  ps.downSubst = top.downSubst;
+  p.downSubst = ps.upSubst;
+  top.upSubst = p.upSubst;
+
+  top.typerep = if isMonad(p.typerep)
+                then if isMonad(ps.typerep)
+                     then ps.typerep
+                     else p.typerep
+                else ps.typerep;
+
+  p.returnFun = top.returnFun;
+  ps.returnFun = top.returnFun;
+  top.returnify = consPattern(p.returnify, '|', ps.returnify, location=top.location);
+  --this needs to change--this is where we might introduce something returnified
+  top.monadRewritten = consPattern(p.monadRewritten, '|', ps.monadRewritten,
+                                   location=top.location);
 }
 
 -- TODO: Long term, I'd like to switch to having a PrimRule and rename PrimPatterns PrimRules.
@@ -222,6 +258,13 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   top.translation = "if(scrutineeNode instanceof " ++ makeClassName(qn.lookupValue.fullName) ++
     ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
+
+  top.typerep = e.typerep;
+
+  top.returnify = prodPatternNormal(qn, ns,
+                                    Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
+                                    location=top.location);
+  top.monadRewritten = prodPatternNormal(qn, ns, e.monadRewritten, location=top.location);
 }
 
 abstract production prodPatternGadt
@@ -274,6 +317,13 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   top.translation = "if(scrutineeNode instanceof " ++ makeClassName(qn.lookupValue.fullName) ++
     ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
+
+  top.typerep = e.typerep;
+
+  top.returnify = prodPatternGadt(qn, ns,
+                                  Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
+                                  location=top.location);
+  top.monadRewritten = prodPatternGadt(qn, ns, e.monadRewritten, location=top.location);
 }
 
 -- TODO: We currently provide the below for ease of translation from complex case exprs, but
@@ -306,6 +356,13 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
 
   top.translation = "if(scrutinee == " ++ i.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
+
+  top.typerep = e.typerep;
+
+  top.returnify = integerPattern(i, '->', 
+                                 Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
+                                 location=top.location);
+  top.monadRewritten = integerPattern(i, '->', e.monadRewritten, location=top.location);
 }
 abstract production floatPattern
 top::PrimPattern ::= f::Float_t '->' e::Expr
@@ -334,6 +391,13 @@ top::PrimPattern ::= f::Float_t '->' e::Expr
 
   top.translation = "if(scrutinee == " ++ f.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
+
+  top.typerep = e.typerep;
+
+  top.returnify = floatPattern(f, '->', 
+                               Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
+                               location=top.location);
+  top.monadRewritten = floatPattern(f, '->', e.monadRewritten, location=top.location);
 }
 abstract production stringPattern
 top::PrimPattern ::= i::String_t '->' e::Expr
@@ -362,6 +426,13 @@ top::PrimPattern ::= i::String_t '->' e::Expr
 
   top.translation = "if(scrutinee.equals(" ++ i.lexeme ++ ")) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
+
+  top.typerep = e.typerep;
+
+  top.returnify = stringPattern(i, '->', 
+                                Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
+                                location=top.location);
+  top.monadRewritten = stringPattern(i, '->', e.monadRewritten, location=top.location);
 }
 abstract production booleanPattern
 top::PrimPattern ::= i::String '->' e::Expr
@@ -390,6 +461,13 @@ top::PrimPattern ::= i::String '->' e::Expr
 
   top.translation = "if(scrutinee == " ++ i ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
+
+  top.typerep = e.typerep;
+
+  top.returnify = booleanPattern(i, '->', 
+                                 Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
+                                 location=top.location);
+  top.monadRewritten = booleanPattern(i, '->', e.monadRewritten, location=top.location);
 }
 abstract production nilPattern
 top::PrimPattern ::= e::Expr
@@ -418,6 +496,12 @@ top::PrimPattern ::= e::Expr
 
   top.translation = "if(scrutinee.nil()) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
+
+  top.typerep = e.typerep;
+
+  top.returnify = nilPattern(Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
+                             location=top.location);
+  top.monadRewritten = nilPattern(e.monadRewritten, location=top.location);
 }
 abstract production conslstPattern
 top::PrimPattern ::= h::Name t::Name e::Expr
@@ -463,6 +547,12 @@ top::PrimPattern ::= h::Name t::Name e::Expr
       makeSpecialLocalBinding(t_fName, s"(${listTrans})scrutinee.tail()", listTrans) ++
       "return " ++ e.translation ++ "; }"
     end;
+
+  top.typerep = e.typerep;
+
+  top.returnify = conslstPattern(h, t, Silver_Expr { $Expr{top.returnFun}($Expr{e}) },
+                                 location=top.location);
+  top.monadRewritten = conslstPattern(h, t, e.monadRewritten, location=top.location);
 }
 
 
