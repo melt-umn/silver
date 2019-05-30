@@ -50,14 +50,10 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
     transformEmptyStringRules(s2.tsDcls);
 
   top.tsRoot = 
-    treesitterRoot(top.lang, transformed_grammar);
+    treesitterRoot(top.lang, toTsDeclaration(startnt), transformed_grammar);
 
   -- The tree sitter grammar.
-  top.jsTreesitter = decorate top.tsRoot 
-    with {startNt = toTsDeclaration(startnt); 
-          cstEnv = s2.cstEnv;
-          emptyStringTerminals = s2.tsDcls.emptyStringTerminalContribs;
-         }.treesitterGrammarJs;
+  top.jsTreesitter = top.tsRoot.treesitterGrammarJs;
 }
 
 function isStartNonTerminalRule
@@ -114,11 +110,13 @@ inherited attribute lang :: String occurs on SyntaxRoot;
  -}
 synthesized attribute jsTreesitter :: String occurs on SyntaxRoot;
 synthesized attribute modifiedXMLCopper :: String occurs on SyntaxRoot;
+synthesized attribute serializedTsRoot :: String occurs on SyntaxRoot;
 -- TODO: Why is SyntaxRoot closed?  Needs a default.
 aspect default production
 top::SyntaxRoot ::=
 {
   top.tsRoot = error("Shouldn't happen");
+  top.serializedTsRoot = error("Shouldn't happen");
   top.jsTreesitter = error("Shouldn't happen");
   top.modifiedXMLCopper = error("Shouldn't happen");
 }

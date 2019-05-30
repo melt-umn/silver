@@ -3,9 +3,9 @@ grammar silver:extension:treesitter;
 import silver:modification:impide:cstast; -- used so we can aspect syntaxFont
 import silver:modification:impide:spec; -- used so we can aspect syntaxFont
 
-nonterminal TreesitterRoot with cstEnv;
-nonterminal TreesitterRules with cstEnv;
-nonterminal TreesitterRule with cstEnv;
+nonterminal TreesitterRoot;
+nonterminal TreesitterRules;
+nonterminal TreesitterRule;
 
 synthesized attribute treesitterGrammarJs :: String occurs on TreesitterRoot;
 synthesized attribute emptyStringNonterminals :: [String] occurs on TreesitterRules;
@@ -23,9 +23,9 @@ synthesized attribute tsRep :: String occurs on TreesitterRule, TreesitterRules;
 -- necessary because the first "rule" in the grammar.js file is assumed to be
 -- the start rule
 synthesized attribute startNtRep :: String occurs on TreesitterRules;
-autocopy attribute startNt :: String occurs on TreesitterRules, TreesitterRoot;
+autocopy attribute startNt :: String occurs on TreesitterRules;
 
-autocopy attribute emptyStringTerminals :: [String] occurs on TreesitterRoot, TreesitterRules, TreesitterRule;
+autocopy attribute emptyStringTerminals :: [String] occurs on TreesitterRules, TreesitterRule;
 synthesized attribute emptyStringTerminalContribs :: [String] occurs on TreesitterRules;
 
 function getTreesitterRulesBy
@@ -63,8 +63,10 @@ Boolean ::= rule::TreesitterRule
 }
 
 abstract production treesitterRoot
-top::TreesitterRoot ::= name::String rules::TreesitterRules
+top::TreesitterRoot ::= name::String startnt::String rules::TreesitterRules
 {
+  rules.startNt = startnt;
+  rules.emptyStringTerminals = rules.emptyStringTerminalContribs;
   rules.precAssocEnv = rules.precAssocEntries;
   top.treesitterGrammarJs = 
 s"""
@@ -201,7 +203,7 @@ Boolean ::= emptyStrList :: [String] input::String
 
 -- inputs should be tressiter identifiers
 abstract production treesitterProduction
-top::TreesitterRule ::= outputNT::String inputs::[String] mods::SyntaxProductionModifiers
+top::TreesitterRule ::= outputNT::String inputs::[String] mods::Decorated SyntaxProductionModifiers
 { 
   local attribute emptyTerminalIdentifiers :: [String] = map(TsDeclToIdentifier, top.emptyStringTerminals);
   local attribute inputNoEmptyTerminals :: [String] =
@@ -300,7 +302,8 @@ aspect production syntaxProduction
 top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 {
   top.tsDcl = treesitterProduction(ns.outputElement.typerep.typeName,
-    map(productionElemToTsIdentifier, ns.inputElements), modifiers);
+    map(productionElemToTsIdentifier, ns.inputElements), 
+      decorate modifiers with {cstEnv = top.cstEnv;});
 }
 
 aspect production syntaxLexerClass

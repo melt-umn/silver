@@ -48,7 +48,6 @@ top::DriverAction ::= specs::[ParserSpec]  cg::EnvTree<Decorated RootSpec>  lang
 {
   local treesitter_file :: String = "grammar.js";
   local conflicts_file :: String = "modified_copper.xml";
-  local atom_package_file :: String = s"${lang}.json";
 
   local spec::ParserSpec = head(specs);
   spec.compiledGrammars = cg;
@@ -58,7 +57,6 @@ top::DriverAction ::= specs::[ParserSpec]  cg::EnvTree<Decorated RootSpec>  lang
   
   local treesitterSpec :: String = specCst.jsTreesitter;
   local conflictsSpec :: String = specCst.modifiedXMLCopper;
-  local atomSpec :: String = specCst.jsonAtom;
 
   local err :: IO = 
     print("CST Errors while Generating Tree-sitter Grammar for Parser " ++ spec.fullName ++ ":\n" ++
@@ -67,8 +65,7 @@ top::DriverAction ::= specs::[ParserSpec]  cg::EnvTree<Decorated RootSpec>  lang
   local doWR :: IO =
     writeFile(treesitter_file, treesitterSpec,
       writeFile(conflicts_file, conflictsSpec,
-        writeFile(atom_package_file, atomSpec,
-      print(s"Generating Tree-sitter Grammar for ${lang} from Parser " ++ spec.fullName ++ ".\n", top.ioIn))));
+      print(s"Generating Tree-sitter Grammar for ${lang} from Parser " ++ spec.fullName ++ ".\n", top.ioIn)));
 
   top.io =
     if null(specs)
