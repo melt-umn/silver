@@ -16,3 +16,9 @@ Either<a b> ::= x::b
 {
   return right(x);
 }
+
+function failEither
+Either<a b> ::= x::a
+{
+  return left(x);
+}

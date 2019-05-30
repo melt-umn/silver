@@ -15,7 +15,7 @@ terminal Vbar_kwd '|' lexer classes {SPECOP};
 terminal Opt_Vbar_t /\|?/ lexer classes {SPECOP}; -- optional Coq-style vbar.
 
 -- MR | ...
-nonterminal MRuleList with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize;
+nonterminal MRuleList with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize, patternTypeList;
 
 -- Turns MRuleList (of MatchRules) into [AbstractMatchRule]
 synthesized attribute matchRuleList :: [AbstractMatchRule];
@@ -23,8 +23,8 @@ synthesized attribute matchRuleList :: [AbstractMatchRule];
 autocopy attribute matchRulePatternSize :: Integer;
 
 -- P -> E
-nonterminal MatchRule with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize;
-nonterminal AbstractMatchRule with location, headPattern, isVarMatchRule, expandHeadPattern, typerep;
+nonterminal MatchRule with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize, patternTypeList;
+nonterminal AbstractMatchRule with location, headPattern, isVarMatchRule, expandHeadPattern, typerep, env, downSubst;
 
 -- The head pattern of a match rule
 synthesized attribute headPattern :: Decorated Pattern;
@@ -34,10 +34,14 @@ synthesized attribute isVarMatchRule :: Boolean;
 synthesized attribute expandHeadPattern :: AbstractMatchRule;
 
 -- P , ...
-nonterminal PatternList with location, config, unparse, patternList, env, errors;
+nonterminal PatternList with location, config, unparse, patternList, env, errors, patternTypeList;
 
 -- Turns PatternList into [Pattern]
 synthesized attribute patternList :: [Decorated Pattern];
+
+-- List of the types of patterns in a single rule for comparing to
+--    determine if we are monadically matching something
+synthesized attribute patternTypeList::[Type];
 
 
 {- NOTE ON ERRORS: #HACK2012
@@ -61,24 +65,22 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
   ml.matchRulePatternSize = length(es.rawExprs);
   top.errors <- ml.errors;
 
-  --This doesn't work because it doesn't check the type of the patterns to see if
-  --   they are monadic (maybe we're trying to get something out of a monad--second
-  --   check (monad in output types) is fine
+  {-
+    We just need to take the type off the first pattern to compare for
+    things used monadically in matching--if this type doesn't match
+    the other types, we'll have an error, so we won't output anything,
+    and if this type doesn't have any structure, none of them have any
+    structure, since unstructured ones only come from unstructured
+    patterns.
+  -}
   local monadInExprs::Pair<Boolean Type> =
-    foldl((\p::Pair<Boolean Type> e::Expr ->
-            if p.fst
-            then p
-            else if isMonad(e.typerep)
-                 then pair(true, e.typerep)
-                 else p),
-          pair(false, errorType()), --error as filler; won't be used
-          es.rawExprs);
+    monadicallyUsedExpr(es.rawExprs, ml.patternTypeList, top.env, top.downSubst);
   local monadInClauses::Pair<Boolean Type> =
     foldl((\p::Pair<Boolean Type> a::AbstractMatchRule ->
             if p.fst
             then p
-            else if isMonad(a.typerep)
-                 then pair(true, a.typerep)
+            else if isMonad(decorate a with {env=top.env; downSubst=top.downSubst;}.typerep)
+                 then pair(true, decorate a with {env=top.env; downSubst=top.downSubst;}.typerep)
                  else p),
           pair(false, errorType()), --error as filler; won't be used
           ml.matchRuleList);
@@ -87,7 +89,9 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
     expression is well-typed) whenever we are matching against a monad
     or any clause returns a monad.  This does not cover the case where
     a monad type is expected out and the clauses are incomplete.  That
-    one will still fail, but I think that will be a rare case.
+    one will still fail, but I think that will be a rare case.  We
+    would need to pass down an expected type for that to work, and we
+    haven't done that here.
   -}
   local failure::Expr = if monadInExprs.fst
                              {-
@@ -123,6 +127,20 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
     caseExpr(es.rawExprs, ml.matchRuleList, 
       failure,
       freshType(), location=top.location);
+}
+--find if any of the expressions are being matched as their inner type
+--if returns (true, ty), ty will be used to find the correct Fail()
+function monadicallyUsedExpr
+Pair<Boolean Type> ::= elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution
+{
+  return case elst, tylst of
+              | [], _ -> pair(false, errorType())
+              | _, [] -> pair(false, errorType())
+              | e::etl, t::ttl ->
+                if isMonad(decorate e with {env=env; downSubst=sub;}.typerep) && !isMonad(t)
+                then pair(true, decorate e with {env=env; downSubst=sub;}.typerep)
+                else monadicallyUsedExpr(etl, ttl, env, sub)
+              end;
 }
 
 abstract production caseExpr
@@ -202,6 +220,8 @@ top::MRuleList ::= m::MatchRule
   top.errors := m.errors;  
 
   top.matchRuleList = m.matchRuleList;
+
+  top.patternTypeList = m.patternTypeList;
 }
 
 concrete production mRuleList_cons
@@ -211,6 +231,8 @@ top::MRuleList ::= h::MatchRule '|' t::MRuleList
   top.errors := h.errors ++ t.errors;
   
   top.matchRuleList = h.matchRuleList ++ t.matchRuleList;
+
+  top.patternTypeList = h.patternTypeList;
 }
 
 concrete production matchRule_c
@@ -224,6 +246,8 @@ top::MatchRule ::= pt::PatternList '->' e::Expr
     else [err(pt.location, "case expression matching against " ++ toString(top.matchRulePatternSize) ++ " values, but this rule has " ++ toString(length(pt.patternList)) ++ " patterns")];
 
   top.matchRuleList = [matchRule(pt.patternList, e, location=top.location)];
+
+  top.patternTypeList = pt.patternTypeList;
 }
 
 abstract production matchRule
@@ -236,6 +260,8 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern] e::Expr
   top.expandHeadPattern = 
     matchRule(head(pl).patternSubPatternList ++ tail(pl), e, location=top.location);
 
+  e.env = top.env;
+  e.downSubst = top.downSubst;
   top.typerep = e.typerep;
 }
 
@@ -246,6 +272,8 @@ top::PatternList ::= p::Pattern
   top.errors := p.errors;
 
   top.patternList = [p];
+
+  top.patternTypeList = [p.patternType];
 }
 concrete production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
@@ -254,6 +282,8 @@ top::PatternList ::= p::Pattern ',' ps1::PatternList
   top.errors := p.errors ++ ps1.errors;
 
   top.patternList = p :: ps1.patternList;
+
+  top.patternTypeList = p.patternType :: ps1.patternTypeList;
 }
 
 -- lol, dangling comma bug TODO
@@ -264,6 +294,8 @@ top::PatternList ::=
   top.errors := [];
 
   top.patternList = [];
+
+  top.patternTypeList = [];
 }
 
 ----------------------------------------------------

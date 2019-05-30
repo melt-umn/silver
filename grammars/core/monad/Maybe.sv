@@ -15,3 +15,9 @@ Maybe<a> ::= x::a
 {
   return just(x);
 }
+
+function failMaybe
+Maybe<a> ::= x::b
+{
+  return nothing();
+}

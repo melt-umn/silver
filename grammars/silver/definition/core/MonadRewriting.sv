@@ -37,9 +37,9 @@ Boolean ::= ty::Type
            (name == "core:Maybe" && length(params) == 1) ||
            (name == "core:Either" && length(params) == 2) ||
            (name == "core:IOMonad" && length(params) == 1) ||
-           (name == "core:State" && length(params) == 2) --||
-           --(name == "listType" && length(params) == 1)
+           (name == "core:State" && length(params) == 2)
          | listType(_) -> true
+         | decoratedType(t) -> isMonad(t)
          | _ -> false
          end;
 }
@@ -56,6 +56,8 @@ Pair<Boolean Substitution> ::= ty1::Type ty2::Type subst::Substitution
            then tyListMatch(init(params1), init(params2), subst)
            else pair(false, subst)
          | listType(_), listType(_) -> pair(true, subst)
+         | decoratedType(t), _ -> monadsMatch(t, ty2, subst)
+         | _, decoratedType(t) -> monadsMatch(ty1, t, subst)
          | _, _ -> pair(false, subst)
          end;
 }
@@ -82,6 +84,7 @@ Type ::= mty::Type
          | nonterminalType(name1, params1) ->
            last(params1)
          | listType(ty) -> ty
+         | decoratedType(t) -> monadInnerType(t)
          | _ -> error("The monadInnerType function should only be called " ++
                       "once a type has been verified to be a monad")
          end;
@@ -97,8 +100,8 @@ Type ::= mty::Type newInner::Type
          | nonterminalType(name, params) ->
            nonterminalType(name, append(init(params), [newInner]))
          | listType(_) -> listType(newInner)
-         | _ -> error("Tried to take a monad out of a non-monadic " ++
-                      "type to apply")
+         | decoratedType(t) -> monadOfType(t, newInner)
+         | _ -> error("Tried to take a monad out of a non-monadic type to apply")
          end;
 }
 
@@ -111,15 +114,17 @@ Expr ::= ty::Type l::Location
   return case ty of
          | nonterminalType("core:Maybe", _) ->
            baseExpr(qNameId(name("bindMaybe", l), location=l), location=l)
-         | nonterminalType("core:Either", _) -> 
+         | nonterminalType("core:Either", _) ->
            baseExpr(qNameId(name("bindEither", l), location=l), location=l)
-         | nonterminalType("core:IOMonad", _) -> 
+         | nonterminalType("core:IOMonad", _) ->
            baseExpr(qNameId(name("bindIO", l), location=l), location=l)
-         | nonterminalType("core:State", _) -> 
+         | nonterminalType("core:State", _) ->
            baseExpr(qNameId(name("bindState", l), location=l), location=l)
-         | listType(_) -> 
+         | listType(_) ->
            baseExpr(qNameId(name("bindList", l), location=l), location=l)
-         | _ -> error("Tried to get the bind for a non-monadic type")
+         | decoratedType(t) -> monadBind(t, l)
+         | _ -> error("Tried to get the bind for a non-monadic type " ++ 
+                      l.filename ++ " " ++ toString(l.line) ++ ":" ++ toString(l.column))
          end;
 }
 function monadReturn
@@ -128,15 +133,17 @@ Expr ::= ty::Type l::Location
   return case ty of
          | nonterminalType("core:Maybe", _) ->
            baseExpr(qNameId(name("returnMaybe", l), location=l), location=l)
-         | nonterminalType("core:Either", _) -> 
+         | nonterminalType("core:Either", _) ->
            baseExpr(qNameId(name("returnEither", l), location=l), location=l)
-         | nonterminalType("core:IOMonad", _) -> 
+         | nonterminalType("core:IOMonad", _) ->
            baseExpr(qNameId(name("returnIO", l), location=l), location=l)
-         | nonterminalType("core:State", _) -> 
+         | nonterminalType("core:State", _) ->
            baseExpr(qNameId(name("returnState", l), location=l), location=l)
          | listType(_) ->
            baseExpr(qNameId(name("returnList", l), location=l), location=l)
-         | _ -> error("Tried to get the return for a non-monadic type " ++ l.filename ++ " " ++ toString(l.line) ++ ":" ++ toString(l.column))
+         | decoratedType(t) -> monadReturn(t, l)
+         | _ -> error("Tried to get the return for a non-monadic type " ++ 
+                      l.filename ++ " " ++ toString(l.line) ++ ":" ++ toString(l.column))
          end;
 }
 function monadFail
@@ -145,16 +152,17 @@ Expr ::= ty::Type l::Location
   return case ty of
          | nonterminalType("core:Maybe", _) ->
            baseExpr(qNameId(name("failMaybe", l), location=l), location=l)
-         | nonterminalType("core:Either", _) -> 
+         | nonterminalType("core:Either", _) ->
            baseExpr(qNameId(name("failEither", l), location=l), location=l)
-         | nonterminalType("core:IOMonad", _) -> 
+         | nonterminalType("core:IOMonad", _) ->
            error("Fail undefined for IOMonad")
-         | nonterminalType("core:State", _) -> 
+         | nonterminalType("core:State", _) ->
            error("Fail undefined for State monad")
          | listType(_) ->
            baseExpr(qNameId(name("failList", l), location=l), location=l)
-         | _ -> 
-           error("Tried to get the return for a non-monadic type " ++ l.filename ++
+         | decoratedType(t) -> monadFail(t, l)
+         | _ ->
+           error("Tried to get the fail for a non-monadic type " ++ l.filename ++
                  " " ++ toString(l.line) ++ ":" ++ toString(l.column))
          end;
 }

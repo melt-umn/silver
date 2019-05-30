@@ -1,11 +1,11 @@
 grammar silver:extension:patternmatching;
 
-import silver:extension:list only LSqr_t, RSqr_t;
+import silver:extension:list only LSqr_t, RSqr_t, listType;
 
 {--
  - The forms of syntactic patterns that are permissible in (nested) case expresssions.
  -}
-nonterminal Pattern with location, config, unparse, env, errors, patternIsVariable, patternVariableName, patternSubPatternList, patternSortKey;
+nonterminal Pattern with location, config, unparse, env, errors, patternIsVariable, patternVariableName, patternSubPatternList, patternSortKey, patternType;
 
 {--
  - False if it actually matches anything specific, true if it's a variable/wildcard.
@@ -51,6 +51,13 @@ top::Pattern ::= prod::QName '(' ps::PatternList ')'
   top.patternVariableName = nothing();
   top.patternSubPatternList = ps.patternList;
   top.patternSortKey = prod.lookupValue.fullName;
+
+  --not sure this is right; taken from PrimitiveMatch.sv, line 387
+  --top.patternType = skolemizeProductionType(prod.lookupValue.typerep);
+  top.patternType = case prod.lookupValue.typerep of
+                    | functionType(out, _, _) -> out
+                    | _ -> prod.lookupValue.typerep
+                    end;
 } 
 
 {--
@@ -66,6 +73,8 @@ top::Pattern ::= '_'
   top.patternVariableName = nothing();
   top.patternSubPatternList = [];
   top.patternSortKey = "~var";
+
+  top.patternType = freshType();
 }
 
 {--
@@ -92,6 +101,8 @@ top::Pattern ::= v::Name
   top.patternVariableName = just(v.name);
   top.patternSubPatternList = [];
   top.patternSortKey = "~var";
+
+  top.patternType = freshType();
 }
 
 {--
@@ -107,6 +118,8 @@ top::Pattern ::= msg::[Message]
   top.patternVariableName = nothing();
   top.patternSubPatternList = [];
   top.patternSortKey = "error";
+
+  top.patternType = errorType();
 }
 
 aspect default production
@@ -129,6 +142,8 @@ top::Pattern ::= num::Int_t
   
   top.patternSubPatternList = [];
   top.patternSortKey = num.lexeme;
+
+  top.patternType = intType();
 }
 
 concrete production fltPattern
@@ -139,6 +154,8 @@ top::Pattern ::= num::Float_t
   
   top.patternSubPatternList = [];
   top.patternSortKey = num.lexeme;
+
+  top.patternType = floatType();
 }
 
 concrete production strPattern
@@ -149,6 +166,8 @@ top::Pattern ::= str::String_t
   
   top.patternSubPatternList = [];
   top.patternSortKey = str.lexeme;
+
+  top.patternType = stringType();
 }
 
 concrete production truePattern
@@ -159,6 +178,8 @@ top::Pattern ::= 'true'
   
   top.patternSubPatternList = [];
   top.patternSortKey = "true";
+
+  top.patternType = boolType();
 }
 
 concrete production falsePattern
@@ -169,6 +190,8 @@ top::Pattern ::= 'false'
   
   top.patternSubPatternList = [];
   top.patternSortKey = "false";
+
+  top.patternType = boolType();
 }
 
 abstract production nilListPattern
@@ -179,6 +202,8 @@ top::Pattern ::= '[' ']'
   
   top.patternSubPatternList = [];
   top.patternSortKey = "core:nil";
+
+  top.patternType = listType(freshType());
 }
 
 concrete production consListPattern
@@ -189,6 +214,8 @@ top::Pattern ::= hp::Pattern '::' tp::Pattern
   
   top.patternSubPatternList = [hp, tp];
   top.patternSortKey = "core:cons";
+
+  top.patternType = listType(hp.patternType);
 }
 
 -- List literal patterns

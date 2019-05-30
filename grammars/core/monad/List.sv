@@ -11,3 +11,9 @@ function returnList
 {
   return [x];
 }
+
+function failList
+[a] ::= x::b
+{
+  return [];
+}
