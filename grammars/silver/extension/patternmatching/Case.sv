@@ -60,7 +60,7 @@ synthesized attribute patternTypeList::[Type];
 concrete production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
-  top.unparse = "case " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
+--  top.unparse = "case " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
 
   ml.matchRulePatternSize = length(es.rawExprs);
   top.errors <- ml.errors;
@@ -84,6 +84,12 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
                  else p),
           pair(false, errorType()), --error as filler; won't be used
           ml.matchRuleList);
+
+  local basicFailure::Expr = mkStrFunctionInvocation(top.location, "core:error",
+                               [stringConst(terminal(String_t, 
+                                  "\"Error: pattern match failed at " ++ top.grammarName ++
+                                  " " ++ top.location.unparse ++ "\\n\""),
+                                location=top.location)]);
   {-
     This will add in a Fail() for an appropriate monad (if the
     expression is well-typed) whenever we are matching against a monad
@@ -106,20 +112,22 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
                                for the basic types listed above--use it to get an argument to
                                insert below rather than just the string
                              -}
-                        then Silver_Expr {
-                               $Expr {monadFail(monadInExprs.snd, top.location)}
-                                 ("automatically-inserted fail")
-                             }
+                        then case monadFailArgument(monadInExprs.snd) of
+                             | just(x) ->
+                               Silver_Expr {
+                                 $Expr{monadFail(monadInExprs.snd, top.location)}($Expr{x})
+                               }
+                             | nothing() -> basicFailure
+                             end
                         else if monadInClauses.fst
-                             then Silver_Expr {
-                                    $Expr {monadFail(monadInClauses.snd, top.location)}
-                                      ("automatically-inserted fail")
-                                  }
-                             else mkStrFunctionInvocation(top.location, "core:error",
-                                    [stringConst(terminal(String_t, 
-                                       "\"Error: pattern match failed at " ++ top.grammarName ++
-                                       " " ++ top.location.unparse ++ "\\n\""),
-                                     location=top.location)]);
+                             then case monadFailArgument(monadInClauses.snd) of
+                                  | just(x) ->
+                                    Silver_Expr {
+                                      $Expr{monadFail(monadInClauses.snd, top.location)}($Expr{x})
+                                    }
+                                  | nothing() -> basicFailure
+                                  end
+                             else basicFailure;
 
   -- TODO: this is the only use of .rawExprs. FIXME
   -- introduce the failure case here.
@@ -146,7 +154,8 @@ Pair<Boolean Type> ::= elst::[Expr] tylst::[Type] env::Decorated Env sub::Substi
 abstract production caseExpr
 top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
 {
-  top.unparse = error("Internal error: pretty of intermediate data structure");
+  --Why is unparse defined here if its point is just to fail?  Why not just let it forward anyway?
+  --top.unparse = error("Internal error: pretty of intermediate data structure");
 
   -- 4 cases: no patterns left, all constructors, all variables, or mixed con/var.
   -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules

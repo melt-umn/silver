@@ -53,17 +53,22 @@ synthesized attribute patternType::Type;
 concrete production matchPrimitiveConcrete
 top::Expr ::= 'match' e::Expr 'return' t::TypeExpr 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
 {
-  top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
+  --top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
+  e.downSubst = top.downSubst;
+  pr.downSubst = top.downSubst;
+  f.downSubst = top.downSubst;
 
   forwards to matchPrimitive(e, t, pr, f, location=top.location);
 }
 abstract production matchPrimitive
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
-  top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
+  --top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
 
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
+  pr.downSubst = top.downSubst;
+  f.downSubst = top.downSubst;
   
   -- ensureDecoratedExpr is currently wrapping 'e' in 'exprRef' which suppresses errors
   -- TODO: the use of 'exprRef' should be reviewed, given that this error slipped through...
@@ -80,11 +85,31 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 abstract production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
-  top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
+  --top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
+  {-
+    This ought to be using top.finalSubst, but, somewhere unknown, the
+    substitution from pr seems to be getting lost, so I'm putting this in.
+  -}
+  local unparseType::String = prettyType(performSubstitution(top.typerep, top.upSubst));
+  top.unparse = "match " ++ e.unparse ++ " return " ++ unparseType ++ " with " ++
+  pr.unparse ++ " else -> " ++ f.unparse ++ "end {-" ++
+  "pr:  " ++ prettyType(pr.typerep) ++ ", " ++ prettyType(performSubstitution(pr.typerep, top.finalSubst)) ++
+  ", " ++ prettyType(performSubstitution(pr.typerep, pr.upSubst)) ++
+  ", " ++ prettyType(performSubstitution(pr.typerep, top.upSubst)) ++
+  "; " ++
+  " f:  " ++ prettyType(f.typerep) ++ ", " ++ prettyType(performSubstitution(f.typerep, top.finalSubst)) ++
+  ", " ++ prettyType(performSubstitution(f.typerep, f.upSubst)) ++
+  "-}\n";
 
-  top.typerep = if isMonad(f.typerep)
-                then f.typerep
-                else pr.typerep;
+  top.typerep = if isMonad(e.typerep) && !isMonad(pr.patternType)
+                then if isMonad(pr.typerep)
+                     then pr.typerep
+                     else if isMonad(f.typerep)
+                          then f.typerep
+                          else monadOfType(e.typerep, pr.typerep)
+                else if isMonad(pr.typerep)
+                     then pr.typerep
+                     else f.typerep;
 
   top.errors := e.errors ++ t.errors ++ pr.errors ++ f.errors;
   
@@ -96,11 +121,10 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   local attribute scrutineeType :: Type;
   scrutineeType = performSubstitution(e.typerep, e.upSubst);
 
-   --check the type coming up with the type that's supposed to be
-   --   coming out, which should, for case expressions (since nobody
-   --   uses just this), be just a variable(?)
+  --check the type coming up with the type that's supposed to be
+  --   coming out, which should, for case expressions (since nobody
+  --   uses just this), be just a variable(?)
   local attribute errCheck1::TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  --errCheck1 = check(t.typerep, pr.typerep);
   errCheck1 = if isMonad(pr.typerep)
               then if isMonad(f.typerep)
                    then check(pr.typerep, f.typerep)
@@ -110,40 +134,17 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                    else check(pr.typerep, f.typerep);
   top.errors <-
     if errCheck1.typeerror
-    then [err(top.location, "1 pattern expression should have type " ++ errCheck1.rightpp ++
+    then [err(top.location, " pattern expression should have type " ++ errCheck1.rightpp ++
               " instead it has type " ++ errCheck1.leftpp)]
     else [];
-  {-
-  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
-  errCheck2 = check(f.typerep, t.typerep);
-  top.errors <-
-    if errCheck2.typeerror
-    then [err(top.location, "2 pattern expression should have type " ++ errCheck2.rightpp ++
-              " instead it has type " ++ errCheck2.leftpp)]
-    else [];
-  -}
-  {-
-  local attribute errCheck3::TypeCheck; errCheck3.finalSubst = top.finalSubst;
-  errCheck3 = if isMonad(scrutineeType) && !isMonad(pr.patternType)
-              then check(monadInnerType(scrutineeType), pr.patternType)
-              else check(scrutineeType, pr.patternType);
-  top.errors <-
-    if errCheck3.typeerror
-    then [err(top.location, "Patterns have type " ++ errCheck3.rightpp ++
-                            " but we're trying to match against " ++
-                            errCheck3.leftpp)]
-    else [];
-  -}
 
-  -- ordinary threading: e, pr, f, errCheck1, errCheck2, errCheck3
+  -- ordinary threading: e, pr, f, errCheck1
   e.downSubst = top.downSubst;
   pr.downSubst = e.upSubst;
   f.downSubst = pr.upSubst;
   errCheck1.downSubst = f.upSubst;
-  --errCheck2.downSubst = errCheck1.upSubst;
-  --errCheck3.downSubst = errCheck2.upSubst;
   top.upSubst = errCheck1.upSubst;
-  
+
   pr.scrutineeType = if isMonad(scrutineeType) && !isMonad(pr.patternType)
                      then monadInnerType(scrutineeType)
                      else scrutineeType;
@@ -161,15 +162,16 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -}
   local eBind::Expr = monadBind(e.typerep, top.location);
   local eInnerType::TypeExpr = typerepTypeExpr(monadInnerType(e.typerep), location=bogusLoc());
-  --bind e, just do the rest
   local binde_lambdaparams::ProductionRHS =
         productionRHSCons(productionRHSElem(name("bindingInAMatchExpression", bogusLoc()), '::',
                                             eInnerType, location=bogusLoc()),
                           productionRHSNil(location=bogusLoc()), location=bogusLoc());
+  local outty::TypeExpr = typerepTypeExpr(top.typerep, location=bogusLoc());
+  --bind e, just do the rest
   local justBind_e::Expr =
     applicationExpr(eBind,
                     '(',
-                    snocAppExprs(oneAppExprs(presentAppExpr(e, location=bogusLoc()),
+                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=bogusLoc()),
                                              location=bogusLoc()),
                                  ',',
                                  presentAppExpr(
@@ -177,7 +179,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                                            matchPrimitiveReal(baseExpr(qName(bogusLoc(),
                                                                              "bindingInAMatchExpression"),
                                                                        location=bogusLoc()),
-                                                              t, pr, f, location=top.location),
+                                                              outty, pr.monadRewritten, f.monadRewritten,
+                                                              location=top.location),
                                            location=bogusLoc()),
                                    location=bogusLoc()),
                                  location=bogusLoc()),
@@ -187,7 +190,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   local bind_e_return_f::Expr =
     applicationExpr(eBind,
                     '(',
-                    snocAppExprs(oneAppExprs(presentAppExpr(e, location=bogusLoc()),
+                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=bogusLoc()),
                                              location=bogusLoc()),
                                  ',',
                                  presentAppExpr(
@@ -195,7 +198,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                                            matchPrimitiveReal(baseExpr(qName(bogusLoc(),
                                                                              "bindingInAMatchExpression"),
                                                                        location=bogusLoc()),
-                                                              t, pr,
+                                                              outty, pr.monadRewritten,
                                                               Silver_Expr {
                                                                 $Expr{monadReturn(e.typerep, bogusLoc())}
                                                                  ($Expr{f})
@@ -212,7 +215,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   local bind_e_returnify_pr::Expr =
     applicationExpr(eBind,
                     '(',
-                    snocAppExprs(oneAppExprs(presentAppExpr(e, location=bogusLoc()),
+                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=bogusLoc()),
                                              location=bogusLoc()),
                                  ',',
                                  presentAppExpr(
@@ -220,8 +223,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                                            matchPrimitiveReal(baseExpr(qName(bogusLoc(),
                                                                              "bindingInAMatchExpression"),
                                                                        location=bogusLoc()),
-                                                              t, prReturnify.returnify,
-                                                              f, location=top.location),
+                                                              outty, prReturnify.returnify,
+                                                              f.monadRewritten, location=top.location),
                                            location=bogusLoc()),
                                    location=bogusLoc()),
                                  location=bogusLoc()),
@@ -231,7 +234,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   local bind_e_returnify_pr_return_f::Expr =
     applicationExpr(eBind,
                     '(',
-                    snocAppExprs(oneAppExprs(presentAppExpr(e, location=bogusLoc()),
+                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=bogusLoc()),
                                              location=bogusLoc()),
                                  ',',
                                  presentAppExpr(
@@ -239,10 +242,10 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                                            matchPrimitiveReal(baseExpr(qName(bogusLoc(),
                                                                              "bindingInAMatchExpression"),
                                                                        location=bogusLoc()),
-                                                              t, prReturnify.returnify,
+                                                              outty, prReturnify.returnify,
                                                               Silver_Expr {
                                                                 $Expr{monadReturn(e.typerep, bogusLoc())}
-                                                                 ($Expr{f})
+                                                                 ($Expr{f.monadRewritten})
                                                               },
                                                               location=top.location),
                                            location=bogusLoc()),
@@ -252,15 +255,16 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                     location=top.location);
   --return f from pr's return type
   local return_f::Expr =
-    matchPrimitiveReal(e, t, pr,
+    matchPrimitiveReal(e.monadRewritten, outty, pr.monadRewritten,
                        Silver_Expr {
-                         $Expr{monadReturn(pr.typerep, bogusLoc())}($Expr{f})
+                         $Expr{monadReturn(pr.typerep, bogusLoc())}($Expr{f.monadRewritten})
                        },
                        location=top.location);
   --returnify pr from f's type
   local ret_pr_from_f::PrimPatterns = pr.monadRewritten;
   ret_pr_from_f.returnFun = monadReturn(f.typerep, bogusLoc());
-  local returnify_pr::Expr = matchPrimitiveReal(e, t, ret_pr_from_f.returnify, f, location=top.location);
+  local returnify_pr::Expr = matchPrimitiveReal(e.monadRewritten, outty, ret_pr_from_f.returnify,
+                                                f.monadRewritten, location=top.location);
   --pick the right rewriting
   top.monadRewritten = if isMonad(e.typerep) && !isMonad(pr.patternType)
                        then if isMonad(pr.typerep)
@@ -407,6 +411,7 @@ concrete production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
+  e.downSubst = top.downSubst;
 
   local isGadt :: Boolean =
     case qn.lookupValue.typerep.outputType of
@@ -430,8 +435,11 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 abstract production prodPatternNormal
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
-  top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
-  
+  top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse ++
+  " {- e:  " ++ prettyType(e.typerep) ++ ", " ++
+  prettyType(performSubstitution(e.typerep, top.finalSubst)) ++
+  ", " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ "-}\n";
+
   local chk :: [Message] =
     if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
     else [err(qn.location, qn.name ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
@@ -452,7 +460,11 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   --local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
 
-  errCheck1 = check(decoratedType(prod_type.outputType), top.scrutineeType);
+  --errCheck1 = check(decoratedType(prod_type.outputType), top.scrutineeType);
+  errCheck1 = case top.scrutineeType of
+              | decoratedType(t) -> check(decoratedType(prod_type.outputType), top.scrutineeType)
+              | _ -> check(prod_type.outputType, top.scrutineeType)
+              end;
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -571,10 +583,10 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
                 else [];
   -}
 
-  --errCheck1.downSubst = top.downSubst;
-  e.downSubst = top.downSubst;--errCheck1.upSubst;
+  errCheck1.downSubst = top.downSubst;
+  e.downSubst = errCheck1.upSubst;
   --errCheck2.downSubst = e.upSubst;
-  top.upSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst;
 
   top.translation = "if(scrutinee == " ++ i.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";

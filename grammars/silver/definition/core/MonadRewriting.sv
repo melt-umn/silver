@@ -166,6 +166,29 @@ Expr ::= ty::Type l::Location
                  " " ++ toString(l.line) ++ ":" ++ toString(l.column))
          end;
 }
+--come up with a "generic" argument for the call to Fail() if it is one of
+--   a small set of basic types
+function monadFailArgument
+Maybe<Expr> ::= ty::Type
+{
+  local string::Expr = Silver_Expr { "automatically-inserted fail" };
+  local int::Expr = Silver_Expr { 0 };
+  local float::Expr = Silver_Expr { 0.0 };
+  local list::Expr = Silver_Expr { [] };
+  return case ty of
+         | nonterminalType("core:Maybe", _) -> just(string)
+         | nonterminalType("core:Either", [a, b]) ->
+           case a of
+           | stringType() -> just(string)
+           | intType() -> just(int)
+           | floatType() -> just(float)
+           | listType(_) -> just(list)
+           | _ -> nothing()
+           end
+         | listType(_) -> just(string)
+         | _ -> nothing()
+         end;
+}
 
 
 
@@ -187,109 +210,6 @@ top::DriverAction ::= specs::[Decorated RootSpec]
   local str2 :: String =
   s"""
 grammar monad;
-
-function bindEither
-Either<a c> ::= m::Either<a b> fn::(Either<a c> ::= b)
-{
-  return case m of
-    left(x) -> left(x)
-  | right(x) -> fn(x)
-  end;
-}
-
-function returnEither
-Either<a b> ::= x::b
-{
-  return right(x);
-}
-
-function failEither
-Either<a b> ::= x::a
-{
-  return left(x);
-}
-
-{- Need to figure out what to do with this since this is a production
-abstract production bindIO
-top::IOMonad<b> ::= st::IOMonad<a> fn::(IOMonad<b> ::= a)
-{
-  st.stateIn = top.stateIn;
-  local newState::IOMonad<b> = fn(st.stateVal);
-  newState.stateIn = st.stateOut;
-  local stateOut::IO = newState.stateOut;
-  local stateVal::b = newState.stateVal;
-  
-  -- Using unsafeTrace here to demand st is evaluated before evaluating fn
-  top.stateOut = unsafeTrace(stateOut, st.stateOut);
-  top.stateVal = unsafeTrace(stateVal, st.stateOut);
-}
-
-abstract production returnIO
-top::IOMonad<a> ::= x::a
-{
-  top.stateOut = top.stateIn;
-  top.stateVal = x;
-}-}
-
-
-function bindList
-[b] ::= l::[a] fn::([b] ::= a)
-{
-  return flatMap(fn, l); --Do we need to add flatMap in?
-}
-
-function returnList
-[a] ::= x::a
-{
-  return [x];
-}
-
-function failList
-[a] ::= x::b
-{
-  return [];
-}
-
-
-function bindMaybe
-Maybe<b> ::= m::Maybe<a> fn::(Maybe<b> ::= a)
-{
-  return case m of
-    just(x) -> fn(x)
-  | nothing() -> nothing()
-  end;
-}
-
-function returnMaybe
-Maybe<a> ::= x::a
-{
-  return just(x);
-}
-
-function failMaybe
-Maybe<a> ::= x::b
-{
-  return nothing();
-}
-
-{- Need to figure out what to do with this since this is a production
-abstract production bindState
-top::State<s b> ::= st::State<s a> fn::(State<s b> ::= a)
-{
-  st.stateIn = top.stateIn;
-  local newState::State<s b> = fn(st.stateVal);
-  newState.stateIn = st.stateOut;
-  top.stateOut = newState.stateOut;
-  
-  top.stateVal = newState.stateVal;
-}
-
-abstract production returnState
-top::State<s a> ::= x::a
-{
-  top.stateOut = top.stateIn;
-  top.stateVal = x;
-}-}
 --""" ++ str;
 
   local err :: IO =

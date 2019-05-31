@@ -207,6 +207,9 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' 
 {
   top.unparse = "\tforwards to " ++ e.unparse ++ " with {" ++ inh.unparse ++ "};";
 
+  e.downSubst = top.downSubst;
+  inh.downSubst = top.downSubst;
+
   forwards to productionStmtAppend(
     forwardsTo($1, $2, $3, $8, location=top.location),
     forwardingWith('forwarding', $4, $5, inh, $7, $8, location=top.location),
@@ -270,6 +273,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
+  e.downSubst = top.downSubst;
+
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes = [];
   top.defs = [];
@@ -305,7 +310,8 @@ top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNa
 abstract production synthesizedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";" ++ --;
+  "{-" ++ prettyType(e.typerep) ++ ", " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ "-}";
 
   top.errors := e.errors;
 
@@ -439,6 +445,8 @@ concrete production valueEq
 top::ProductionStmt ::= val::QName '=' e::Expr ';'
 {
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
+
+  e.downSubst = top.downSubst;
 
   top.errors <- val.lookupValue.errors;
 

@@ -54,7 +54,9 @@ concrete production nestedExpr
 top::Expr ::= '(' e::Expr ')'
 {
   top.unparse = "(" ++ e.unparse ++ ")";
-  
+
+  e.downSubst = top.downSubst;
+
   forwards to e;
 }
 
@@ -185,7 +187,12 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
                 | _, emptyAnnoAppExprs() -> es.unparse
                 | _, _ -> es.unparse ++ ", " ++ anns.unparse
                 end ++ ")";
-  
+
+  es.downSubst = top.downSubst;
+  local t :: Type = performSubstitution(e.typerep, e.upSubst);
+  es.appExprTypereps = reverse(t.inputTypes);
+  anns.downSubst = top.downSubst;
+
   -- TODO: You know, since the rule is we can't access .typerep without "first" supplying
   -- .downSubst, perhaps we should just... report .typerep after substitution in the first place!
   forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es, anns, top.location);
@@ -650,6 +657,7 @@ concrete production decorateExprWithEmpty
 top::Expr ::= 'decorate' e::Expr 'with' '{' '}'
 {
   top.unparse = "decorate " ++ e.unparse ++ " with {}";
+  e.downSubst = top.downSubst;
 
   forwards to decorateExprWith($1, e, $3, $4, exprInhsEmpty(location=top.location), $5, location=top.location);
 }
@@ -1217,6 +1225,10 @@ precedence = 0
                      then e2.typerep
                      else e3.typerep;
 
+  --To deal with the case where one type or the other might be "generic" (e.g. Maybe<a>),
+  --   we want to do substitution on the types before putting them into the monadRewritten
+  local e2Type::Type = performSubstitution(e2.typerep, top.finalSubst);
+  local e3Type::Type = performSubstitution(e3.typerep, top.finalSubst);
   --We assume that if e2 or e3 are monads, they are the same as e1 if that is a
   --   monad and we don't allow monads to become nested.
   local cMonad::Expr =
@@ -1224,8 +1236,8 @@ precedence = 0
       $Expr {monadBind(e1.typerep, top.location)}
       ($Expr {e1.monadRewritten},
        (\c::Boolean
-         x::$TypeExpr {typerepTypeExpr(e2.typerep, location=top.location)}
-         y::$TypeExpr {typerepTypeExpr(e3.typerep, location=top.location)} ->
+         x::$TypeExpr {typerepTypeExpr(e2Type, location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e3Type, location=top.location)} ->
          if c
          then $Expr { if isMonad(e2.typerep)
                       then Silver_Expr {x}
@@ -1718,7 +1730,7 @@ nonterminal AppExprs with
 nonterminal AppExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied,
-  realTypes, monadTypesLocations;
+  realTypes, monadTypesLocations, typerep;
 
 synthesized attribute isPartial :: Boolean;
 synthesized attribute missingTypereps :: [Type];
@@ -1739,6 +1751,8 @@ synthesized attribute monadTypesLocations::[Pair<Type Integer>];
 concrete production missingAppExpr
 top::AppExpr ::= '_'
 {
+  top.typerep = errorType();
+
   top.unparse = "_";
   
   top.isPartial = true;
@@ -1756,6 +1770,8 @@ top::AppExpr ::= '_'
 concrete production presentAppExpr
 top::AppExpr ::= e::Expr
 {
+  top.typerep = e.typerep;
+
   top.unparse = e.unparse;
   
   top.isPartial = false;
@@ -1814,8 +1830,8 @@ concrete production snocAppExprs
 top::AppExprs ::= es::AppExprs ',' e::AppExpr
 {
   top.unparse = case es of
-                | emptyAppExprs() -> e.unparse
-                | _ -> es.unparse ++ ", " ++ e.unparse
+                | emptyAppExprs() -> e.unparse ++ "{-" ++ prettyType(e.typerep) ++ "-}"
+                | _ -> es.unparse ++ ", " ++ e.unparse ++ "{-" ++ prettyType(e.typerep) ++ "-}"
                 end;
 
   top.isPartial = es.isPartial || e.isPartial;
@@ -1841,7 +1857,7 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
 concrete production oneAppExprs
 top::AppExprs ::= e::AppExpr
 {
-  top.unparse = e.unparse;
+  top.unparse = e.unparse ++ "{-" ++ prettyType(e.typerep) ++ "-}";
 
   top.isPartial = e.isPartial;
   top.missingTypereps = e.missingTypereps;

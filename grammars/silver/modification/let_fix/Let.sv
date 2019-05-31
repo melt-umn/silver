@@ -12,7 +12,7 @@ terminal End_kwd 'end' lexer classes {KEYWORD,RESERVED};
 concrete production letp_c
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
-  top.unparse = "let " ++ la.unparse ++ " in " ++ e.unparse ++ " end";
+  --top.unparse = "let " ++ la.unparse ++ " in " ++ e.unparse ++ " end";
 
   forwards to letp(la.letAssignExprs, e, location=top.location);
 }
@@ -81,8 +81,10 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 concrete production assignExpr
 top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
-  top.unparse = id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse;
-  
+  local unparseType::String = prettyType(performSubstitution(t.typerep, top.upSubst));
+  top.unparse = id.unparse ++ " :: " ++ unparseType ++ " = " ++ e.unparse;
+  --top.unparse = id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse;
+
   top.errors := t.errors ++ e.errors;
   
   -- Right now some things (pattern matching) abuse us by giving type variables

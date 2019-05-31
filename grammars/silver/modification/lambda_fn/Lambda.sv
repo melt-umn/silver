@@ -12,6 +12,7 @@ concrete production lambda_c
 top::Expr ::= '\' params::ProductionRHS '->' e::Expr
 {
   top.unparse = "\\ " ++ params.unparse ++ " -> " ++ e.unparse;
+  e.downSubst = top.downSubst;
 
   forwards to lambdap(params, e, location=top.location);
 }
