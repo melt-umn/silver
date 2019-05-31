@@ -7,6 +7,9 @@ import silver:util:cmdargs;
 import silver:translation:java:driver; 
 import silver:modification:copper;
 
+-- needed for determining if treesitter demo flag provided
+import silver:extension:treesitter;
+
 synthesized attribute genIDEInterface :: Boolean occurs on CmdArgs;
 
 aspect production endCmdArgs 
@@ -36,13 +39,13 @@ top::Compilation ::= g::Grammars _ buildGrammar::String benv::BuildEnv
   local buildParsers::[ParserSpec] = obtainParserSpecs(head(keepGrammars([buildGrammar], g.grammarList)), benv);
   top.postOps <- 
     if top.config.genIDEInterface then
-      [genIdeInterfaceFile(buildParsers, g.compiledGrammars)]
+      [genIdeInterfaceFile(buildParsers, g.compiledGrammars, top.config.treesitterDemo)]
     else
       [];
 }
 
 abstract production genIdeInterfaceFile
-top::DriverAction ::= specs::[ParserSpec] compiledGrammars::EnvTree<Decorated RootSpec>
+top::DriverAction ::= specs::[ParserSpec] compiledGrammars::EnvTree<Decorated RootSpec> demo::Boolean
 {
   local ide_interface_file :: String = "ideInterface.txt";
 
@@ -50,6 +53,7 @@ top::DriverAction ::= specs::[ParserSpec] compiledGrammars::EnvTree<Decorated Ro
   spec.compiledGrammars = compiledGrammars;
 
   local specCst :: SyntaxRoot = spec.cstAst;
+  specCst.demoSpec = demo;
 
   local ideInterface :: String = specCst.ideSyntaxRoot.serializedInterface;
 

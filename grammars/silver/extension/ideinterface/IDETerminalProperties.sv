@@ -3,31 +3,44 @@ grammar silver:extension:ideinterface;
 synthesized attribute lexerClasses :: [String];
 attribute lexerClasses occurs on SyntaxTerminalModifiers, SyntaxTerminalModifier;
 
-nonterminal IDEInterfaceTerminalProperties with lexerClasses;
-nonterminal IDEInterfaceTerminalProperty with lexerClasses;
+nonterminal IDEInterfaceTerminalProperties with 
+  ignored, lexerClasses;
+nonterminal IDEInterfaceTerminalProperty with 
+  ignored, lexerClasses;
 
 abstract production nilIDETerminalProperties
 top::IDEInterfaceTerminalProperties ::=
 {
   top.lexerClasses = [];
+  top.ignored = false;
 }
 
 abstract production consIDETerminalProperties
 top::IDEInterfaceTerminalProperties ::= hd::IDEInterfaceTerminalProperty tl::IDEInterfaceTerminalProperties
 {
   top.lexerClasses = hd.lexerClasses ++ tl.lexerClasses;
+  top.ignored = hd.ignored || tl.ignored;
 }
 
 aspect default production
 top::IDEInterfaceTerminalProperty ::=
 {
   top.lexerClasses = [];
+  top.ignored = false;
 }
 
 abstract production ideTermClasses
 top::IDEInterfaceTerminalProperty ::= lexClasses::[String]
 {
   top.lexerClasses = lexClasses;
+}
+
+abstract production ideIgnored
+top::IDEInterfaceTerminalProperty ::= i::Boolean
+{
+  -- passed in so we can automatically construct these from SyntaxTerminalModifiers
+  -- without having conditionals 
+  top.ignored = i;
 }
 
 {-- SYNTAX TERMINAL MODIFIERS PRODUCTIONS --}
@@ -66,6 +79,9 @@ IDEInterfaceTerminalProperties ::= modifiers::SyntaxTerminalModifiers
   return 
   consIDETerminalProperties(
     ideTermClasses(modifiers.lexerClasses), 
-    nilIDETerminalProperties());
+  consIDETerminalProperties(
+    ideIgnored(modifiers.ignored),
+    nilIDETerminalProperties()
+  ));
 }
 

@@ -27,13 +27,20 @@ aspect production cstRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
 {
 
-  
+  production grammar_to_use :: Syntax = 
+    if top.demoSpec then
+      newNonterminalsForBridgeProductions(s2, s2.cstEnv) 
+    else s2;
+  -- transform the grammar to remove productions that can produce the empty string
+  grammar_to_use.classTerminals = s2.classTerminals;
+  grammar_to_use.cstEnv = s2.cstEnv;
+
   top.modifiedXMLCopper = 
     -- used so we don't infinitely recurse
     if stringEq(parsername, "ModifiedGrammarForTreesitter") then
       ""
     else
-      getModifiedCopperXML(parsername, startnt, s2, s2.terminalConflicts, terminalPrefixes);
+      getModifiedCopperXML(parsername, startnt, grammar_to_use, grammar_to_use.terminalConflicts, terminalPrefixes);
 
   -- the 'normalized' version from production attribute 's2'.  This groups productions with
   -- the same left hand side together as subdcls on nonterminals.
@@ -44,10 +51,8 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   -- This is required for Treesitter grammars.
   -- The environment is a list of nonterminal rule, true/false pairs where
   -- true means the nonterminal can produce the emptty string.
-
-  -- transform the grammar to remove productions that can produce the empty string
   local attribute transformed_grammar :: TreesitterRules =
-    transformEmptyStringRules(s2.tsDcls);
+    transformEmptyStringRules(grammar_to_use.tsDcls);
 
   top.tsRoot = 
     treesitterRoot(top.lang, toTsDeclaration(startnt), transformed_grammar);
@@ -104,7 +109,7 @@ TreesitterRules ::= prods::TreesitterRules emptyStrRules::[String]
  - The name of the language specified by this Tree-sitter grammar.
  -}
 inherited attribute lang :: String occurs on SyntaxRoot;
-
+inherited attribute demoSpec :: Boolean occurs on SyntaxRoot;
 {--
  - Translation of a CST AST to Tree-sitter Javascript.
  -}

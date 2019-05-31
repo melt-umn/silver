@@ -10,11 +10,13 @@ import silver:modification:copper;
 
 
 synthesized attribute treesitterLangOption :: [String] occurs on CmdArgs;
+synthesized attribute treesitterDemo :: Boolean occurs on CmdArgs;
 
 aspect production endCmdArgs
 top::CmdArgs ::= _
 {
   top.treesitterLangOption = [];
+  top.treesitterDemo = false;
 }
 
 abstract production treesitterLangFlag
@@ -25,11 +27,23 @@ top::CmdArgs ::= loc::String rest::CmdArgs
   forwards to rest;
 }
 
+abstract production treesitterDemoFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.treesitterDemo = true;
+  forwards to rest;
+}
+
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--treesitter-spec", option(treesitterLangFlag))];
-  flagdescs <- ["\t--treesitter-spec : the name of the language for which to generate a Tree-sitter spec"];
+  flags <- [
+    pair("--treesitter-spec", option(treesitterLangFlag)),
+    pair("--treesitter-demo", flag(treesitterDemoFlag))
+   ];
+  flagdescs <- [
+    "\t--treesitter-spec : the name of the language for which to generate a Tree-sitter spec",
+    "\t--treesitter-demo : build a Treesitter parser specifically for demos"];
 }
 
 aspect production compilation
@@ -39,12 +53,12 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   local buildParsers::[ParserSpec] = obtainParserSpecs(head(keepGrammars([buildGrammar], g.grammarList)), benv);
   top.postOps <-
     if !null(top.config.treesitterLangOption)
-    then [genTreesitterSpec(buildParsers, g.compiledGrammars, lang)]
+    then [genTreesitterSpec(buildParsers, g.compiledGrammars, lang, top.config.treesitterDemo)]
     else [];
 }
 
 abstract production genTreesitterSpec
-top::DriverAction ::= specs::[ParserSpec]  cg::EnvTree<Decorated RootSpec>  lang::String
+top::DriverAction ::= specs::[ParserSpec]  cg::EnvTree<Decorated RootSpec>  lang::String demo::Boolean
 {
   local treesitter_file :: String = "grammar.js";
   local conflicts_file :: String = "modified_copper.xml";
@@ -54,6 +68,7 @@ top::DriverAction ::= specs::[ParserSpec]  cg::EnvTree<Decorated RootSpec>  lang
 
   local specCst :: SyntaxRoot = spec.cstAst;
   specCst.lang = lang;
+  specCst.demoSpec = demo;
   
   local treesitterSpec :: String = specCst.jsTreesitter;
   local conflictsSpec :: String = specCst.modifiedXMLCopper;

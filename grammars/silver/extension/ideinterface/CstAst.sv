@@ -3,6 +3,9 @@ grammar silver:extension:ideinterface;
 import silver:reflect; -- for serialization
 import silver:reflect:concretesyntax;
 
+-- needed to give different interface if demo flag given
+import silver:extension:treesitter;
+
 synthesized attribute serializedInterface :: String;
 nonterminal IDEInterfaceSyntaxRoot with serializedInterface;
 synthesized attribute ideSyntaxRoot :: IDEInterfaceSyntaxRoot occurs on SyntaxRoot;
@@ -20,8 +23,8 @@ top::IDEInterfaceSyntaxRoot ::= s::IDEInterfaceSyntax
 aspect production cstRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
 {
-  -- use s2 the normalized syntax
-  top.ideSyntaxRoot = ideSyntaxRoot(s2.ideSyntax);
+  -- use grammar_to_use which modifies the grammar if the demo flag is provided
+  top.ideSyntaxRoot = ideSyntaxRoot(grammar_to_use.ideSyntax);
 }
 
 aspect default production
