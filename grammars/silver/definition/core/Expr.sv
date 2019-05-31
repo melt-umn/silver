@@ -1783,7 +1783,9 @@ top::AppExpr ::= e::Expr
   
   top.errors := e.errors;
 
-  top.realTypes = [e.typerep];
+  --need to drop the "Decorated" from the type here if the expected type is not decorated
+  --   because Silver won't do that inside the lambda
+  top.realTypes = [dropDecorated(e.typerep, top.appExprTyperep)];
   top.monadTypesLocations = if isMonadic
                             then [pair(e.typerep, top.appExprIndex+1)] --not sure if that's the right index
                             else [];

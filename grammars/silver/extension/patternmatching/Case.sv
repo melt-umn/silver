@@ -8,6 +8,8 @@ imports silver:modification:primitivepattern;
 import silver:definition:type:syntax only typerepTypeExpr;
 import silver:modification:let_fix;
 
+import silver:modification:lambda_fn only lambdap; --for monad stuff
+
 terminal Case_kwd 'case' lexer classes {KEYWORD,RESERVED};
 terminal Of_kwd 'of' lexer classes {KEYWORD,RESERVED};
 terminal Arrow_kwd '->' lexer classes {SPECOP};
@@ -131,10 +133,20 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 
   -- TODO: this is the only use of .rawExprs. FIXME
   -- introduce the failure case here.
-  forwards to 
+  {-
+    forwards to 
     caseExpr(es.rawExprs, ml.matchRuleList, 
       failure,
       freshType(), location=top.location);
+  -}
+  --read the comment on the function below if you want to know what it is
+  local attribute monadStuff::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
+  monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, top.downSubst, 1);
+  forwards to
+    buildMonadicBinds(monadStuff.fst,
+                      caseExpr(monadStuff.snd,
+                               ml.matchRuleList, failure,
+                               freshType(), location=top.location));
 }
 --find if any of the expressions are being matched as their inner type
 --if returns (true, ty), ty will be used to find the correct Fail()
@@ -149,6 +161,50 @@ Pair<Boolean Type> ::= elst::[Expr] tylst::[Type] env::Decorated Env sub::Substi
                 then pair(true, decorate e with {env=env; downSubst=sub;}.typerep)
                 else monadicallyUsedExpr(etl, ttl, env, sub)
               end;
+}
+--make a list of the expression types, expressions and names for binding them as
+--   well as a new list of expressions for the forward to use
+function monadicMatchTypesNames
+Pair<[Pair<Type Pair<Expr String>>] [Expr]> ::=
+elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution index::Integer
+{
+  local attribute subcall::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
+  subcall = case elst, tylst of
+            | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, env, sub, index+1)
+            end;
+  local newName::String = "binding_matched_expression_in_case" ++ toString(index);
+  return case elst, tylst of
+         | [], _ -> pair([], [])
+         | _, [] -> pair([], elst)
+         | e::etl, t::ttl ->
+           if isMonad(decorate e with {env=env; downSubst=sub;}.typerep) && !isMonad(t)
+           then pair(pair(decorate e with {env=env; downSubst=sub;}.typerep, pair(e, newName)) :: subcall.fst,
+                     baseExpr(qName(bogusLoc(), newName), location=bogusLoc()) :: subcall.snd)
+           else pair(subcall.fst, e::subcall.snd)
+         end;
+}
+--take a list of things to bind and the name to use in binding them, as well as
+--   a base for the binding, and create an expression with all of them bound
+function buildMonadicBinds
+Expr ::= bindlst::[Pair<Type Pair<Expr String>>] base::Expr
+{
+  return case bindlst of
+         | [] -> base
+         | pair(ty,pair(e,n))::rest ->
+           Silver_Expr{ $Expr{monadBind(ty, bogusLoc())}
+            ($Expr{e},
+             $Expr{
+               lambdap(
+                 productionRHSCons(productionRHSElem(name(n, bogusLoc()),
+                                                     '::',
+                                                     typerepTypeExpr(monadInnerType(ty),
+                                                                     location=bogusLoc()),
+                                                     location=bogusLoc()),
+                                   productionRHSNil(location=bogusLoc()),
+                                   location=bogusLoc()),
+                 buildMonadicBinds(rest, base),
+                 location=bogusLoc())})}
+         end;
 }
 
 abstract production caseExpr

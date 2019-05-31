@@ -191,6 +191,22 @@ Maybe<Expr> ::= ty::Type
 }
 
 
+{-
+  When doing function applications, we might have something decorated
+  that we don't want decorated inside the lambda (used for fresh
+  names), so we want to drop the decoration if the given type is
+  decorated and the expected type isn't
+-}
+function dropDecorated
+Type ::= possible_drop::Type try_match::Type
+{
+  return case possible_drop, try_match of
+              | decoratedType(_), decoratedType(_) -> possible_drop
+              | decoratedType(t), _ -> t
+              | _, _ -> possible_drop
+              end;
+}
+
 
 aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
