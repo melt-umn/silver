@@ -100,19 +100,28 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
    --   coming out, which should, for case expressions (since nobody
    --   uses just this), be just a variable(?)
   local attribute errCheck1::TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  errCheck1 = check(t.typerep, pr.typerep);
+  --errCheck1 = check(t.typerep, pr.typerep);
+  errCheck1 = if isMonad(pr.typerep)
+              then if isMonad(f.typerep)
+                   then check(pr.typerep, f.typerep)
+                   else check(monadInnerType(pr.typerep), f.typerep)
+              else if isMonad(f.typerep)
+                   then check(pr.typerep, monadInnerType(f.typerep))
+                   else check(pr.typerep, f.typerep);
   top.errors <-
     if errCheck1.typeerror
-    then [err(top.location, "pattern expression should have type " ++ errCheck1.rightpp ++
+    then [err(top.location, "1 pattern expression should have type " ++ errCheck1.rightpp ++
               " instead it has type " ++ errCheck1.leftpp)]
     else [];
+  {-
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   errCheck2 = check(f.typerep, t.typerep);
   top.errors <-
     if errCheck2.typeerror
-    then [err(top.location, "pattern expression should have type " ++ errCheck2.rightpp ++
+    then [err(top.location, "2 pattern expression should have type " ++ errCheck2.rightpp ++
               " instead it has type " ++ errCheck2.leftpp)]
     else [];
+  -}
   {-
   local attribute errCheck3::TypeCheck; errCheck3.finalSubst = top.finalSubst;
   errCheck3 = if isMonad(scrutineeType) && !isMonad(pr.patternType)
@@ -131,9 +140,9 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   pr.downSubst = e.upSubst;
   f.downSubst = pr.upSubst;
   errCheck1.downSubst = f.upSubst;
-  errCheck2.downSubst = errCheck1.upSubst;
+  --errCheck2.downSubst = errCheck1.upSubst;
   --errCheck3.downSubst = errCheck2.upSubst;
-  top.upSubst = errCheck2.upSubst;
+  top.upSubst = errCheck1.upSubst;
   
   pr.scrutineeType = if isMonad(scrutineeType) && !isMonad(pr.patternType)
                      then monadInnerType(scrutineeType)
