@@ -10,6 +10,22 @@ imports silver:definition:type:syntax;
 imports silver:extension:list;
 imports silver:extension:patternmatching;
 
+function srcPP
+String ::= loc::Location ast::AST
+{
+  ast.givenLocation = loc;
+  return show(80, ast.srcPP);
+}
+
+function baseName
+String ::= n::String
+{
+  return
+    if n == ""
+    then n
+    else last(explode(":", n));
+}
+
 function translate
 Expr ::= loc::Location ast::AST
 {
@@ -24,12 +40,13 @@ Pattern ::= loc::Location ast::AST
   return ast.patternTranslation;
 }
 
+synthesized attribute srcPP::Document; -- pp for the equivalent plain-Silver source code
 synthesized attribute translation<a>::a;
 synthesized attribute patternTranslation<a>::a;
 synthesized attribute foundLocation::Maybe<Location>;
 autocopy attribute givenLocation::Location;
 
-attribute givenLocation, translation<Expr>, patternTranslation<Pattern> occurs on AST;
+attribute givenLocation, srcPP, translation<Expr>, patternTranslation<Pattern> occurs on AST;
 
 aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
@@ -104,6 +121,31 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         errorExpr([err(givenLocation, s"$$${trans.fst} may only occur as a member of ${trans.fst}")], location=givenLocation);
     };
   
+  top.srcPP =
+    case escapeTranslation of
+    | just(e) ->
+      text(substitute("( ", "(", substitute(",,", ",", substitute("(,", "(",
+        case indexOf("(", e.unparse), lastIndexOf("core:loc", e.unparse) of
+        | -1, _ -> e.unparse
+        | i, -1 ->
+          baseName(substring(0, i, e.unparse)) ++
+          substring(i, length(e.unparse), e.unparse)
+        | i, j ->
+          baseName(substring(0, i, e.unparse)) ++
+          substring(i, j, e.unparse) ++
+          "builtin)"
+        end))))
+    | nothing() ->
+      cat(
+        text(baseName(prodName)),
+        parens(
+          groupnest(
+            2,
+            ppImplode(
+              cat(comma(), line()),
+              children.srcPPs ++ annotations.srcPPs))))
+    end;
+  
   top.translation =
     fromMaybe(
       mkFullFunctionInvocation(
@@ -166,6 +208,8 @@ top::AST ::= terminalName::String lexeme::String location::Location
 {
   local locationAST::AST = reflect(new(location));
   locationAST.givenLocation = top.givenLocation;
+  
+  top.srcPP = pp"terminal(${text(terminalName)}, \"${text(escapeString(lexeme))}\", ${text(location.unparse)}";
 
   top.translation =
     terminalConstructor(
@@ -189,6 +233,7 @@ top::AST ::= terminalName::String lexeme::String location::Location
 aspect production listAST
 top::AST ::= vals::ASTs
 {
+  top.srcPP = brackets(groupnest(2, cat(line(), ppImplode(cat(comma(), line()), vals.srcPPs))));
   top.translation =
     fullList(
       '[',
@@ -205,6 +250,7 @@ top::AST ::= vals::ASTs
 aspect production stringAST
 top::AST ::= s::String
 {
+  top.srcPP = text(s"\"${escapeString(s)}\"");
   top.translation =
     stringConst(
       terminal(String_t, s"\"${escapeString(s)}\"", top.givenLocation),
@@ -218,6 +264,7 @@ top::AST ::= s::String
 aspect production integerAST
 top::AST ::= i::Integer
 {
+  top.srcPP = text(toString(i));
   top.translation =
     intConst(terminal(Int_t, toString(i), top.givenLocation), location=top.givenLocation);
   top.patternTranslation =
@@ -227,6 +274,7 @@ top::AST ::= i::Integer
 aspect production floatAST
 top::AST ::= f::Float
 {
+  top.srcPP = text(toString(f));
   top.translation =
     floatConst(terminal(Float_t, toString(f), top.givenLocation), location=top.givenLocation);
   top.patternTranslation =
@@ -236,6 +284,7 @@ top::AST ::= f::Float
 aspect production booleanAST
 top::AST ::= b::Boolean
 {
+  top.srcPP = text(toString(b));
   top.translation =
     if b
     then trueConst('true', location=top.givenLocation)
@@ -249,6 +298,7 @@ top::AST ::= b::Boolean
 aspect production anyAST
 top::AST ::= x::a
 {
+  top.srcPP = error("Can't srcPP anyAST");
   top.translation =
     case reflectTypeName(x) of
       just(n) -> error(s"Can't translate anyAST (type ${n})")
@@ -261,11 +311,14 @@ top::AST ::= x::a
     end;
 }
 
-attribute givenLocation, translation<[Expr]>, patternTranslation<PatternList>, foundLocation occurs on ASTs;
+synthesized attribute srcPPs::[Document];
+
+attribute givenLocation, srcPPs, translation<[Expr]>, patternTranslation<PatternList>, foundLocation occurs on ASTs;
 
 aspect production consAST
 top::ASTs ::= h::AST t::ASTs
 {
+  top.srcPPs = h.srcPP :: t.srcPPs;
   top.translation = h.translation :: t.translation;
   top.patternTranslation =
     patternList_more(h.patternTranslation, ',', t.patternTranslation, location=top.givenLocation);
@@ -284,16 +337,18 @@ top::ASTs ::= h::AST t::ASTs
 aspect production nilAST
 top::ASTs ::=
 {
+  top.srcPPs = [];
   top.translation = [];
   top.patternTranslation = patternList_nil(location=top.givenLocation);
   top.foundLocation = nothing();
 }
 
-attribute givenLocation, translation<[Pair<String Expr>]>, foundLocation occurs on NamedASTs;
+attribute givenLocation, srcPPs, translation<[Pair<String Expr>]>, foundLocation occurs on NamedASTs;
 
 aspect production consNamedAST
 top::NamedASTs ::= h::NamedAST t::NamedASTs
 {
+  top.srcPPs = h.srcPP :: t.srcPPs;
   top.translation = h.translation :: t.translation;
   top.foundLocation = orElse(h.foundLocation, t.foundLocation);
 }
@@ -301,15 +356,20 @@ top::NamedASTs ::= h::NamedAST t::NamedASTs
 aspect production nilNamedAST
 top::NamedASTs ::=
 {
+  top.srcPPs = [];
   top.translation = [];
   top.foundLocation = nothing();
 }
 
-attribute givenLocation, translation<Pair<String Expr>>, foundLocation occurs on NamedAST;
+attribute givenLocation, srcPP, translation<Pair<String Expr>>, foundLocation occurs on NamedAST;
 
 aspect production namedAST
 top::NamedAST ::= n::String v::AST
 {
+  top.srcPP = 
+    if n == "core:location"
+    then pp"location=builtin" -- For computing the actual source character count this is more accurate
+    else pp"${text(baseName(n))}=${v.srcPP}";
   top.translation =
     -- hack to get annotation shortname
     pair(last(explode(":", n)), v.translation);
