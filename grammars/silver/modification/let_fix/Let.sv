@@ -83,7 +83,6 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
   local unparseType::String = prettyType(performSubstitution(t.typerep, top.upSubst));
   top.unparse = id.unparse ++ " :: " ++ unparseType ++ " = " ++ e.unparse;
-  --top.unparse = id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse;
 
   top.errors := t.errors ++ e.errors;
   

@@ -211,11 +211,11 @@ Type ::= possible_drop::Type try_match::Type
 aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
-  top.postOps <- [genOut(grammarsForFinalTranslation)];
+  top.postOps <- [genOut(grammarsForFinalTranslation, grammarsToTranslate)];
 }
 
 abstract production genOut
-top::DriverAction ::= specs::[Decorated RootSpec]
+top::DriverAction ::= specs::[Decorated RootSpec] specsOriginal::[Decorated RootSpec]
 {
   local file :: String = "monad/monad_out.sv";
 
@@ -223,10 +223,7 @@ top::DriverAction ::= specs::[Decorated RootSpec]
                         | grammarRootSpec(consGrammar(r, _), _, _, _, _) -> r.unparse
                         end;
 
-  local str2 :: String =
-  s"""
-grammar monad;
---""" ++ str;
+  local str2 :: String = "grammar monad;\n" ++ "-" ++ "-" ++ str;
 
   local err :: IO =
     print("Errors while Generating Monad Out " ++ "\n", top.ioIn);

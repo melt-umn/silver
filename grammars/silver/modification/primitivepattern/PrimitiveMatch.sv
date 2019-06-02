@@ -85,21 +85,13 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 abstract production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
-  --top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
   {-
     This ought to be using top.finalSubst, but, somewhere unknown, the
     substitution from pr seems to be getting lost, so I'm putting this in.
   -}
   local unparseType::String = prettyType(performSubstitution(top.typerep, top.upSubst));
   top.unparse = "match " ++ e.unparse ++ " return " ++ unparseType ++ " with " ++
-  pr.unparse ++ " else -> " ++ f.unparse ++ "end {-" ++
-  "pr:  " ++ prettyType(pr.typerep) ++ ", " ++ prettyType(performSubstitution(pr.typerep, top.finalSubst)) ++
-  ", " ++ prettyType(performSubstitution(pr.typerep, pr.upSubst)) ++
-  ", " ++ prettyType(performSubstitution(pr.typerep, top.upSubst)) ++
-  "; " ++
-  " f:  " ++ prettyType(f.typerep) ++ ", " ++ prettyType(performSubstitution(f.typerep, top.finalSubst)) ++
-  ", " ++ prettyType(performSubstitution(f.typerep, f.upSubst)) ++
-  "-}\n";
+                pr.unparse ++ " else -> " ++ f.unparse ++ "end";
 
   top.typerep = if isMonad(e.typerep) && !isMonad(pr.patternType)
                 then if isMonad(pr.typerep)
@@ -410,7 +402,7 @@ top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
 concrete production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 {
-  top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
+  --top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
   e.downSubst = top.downSubst;
 
   local isGadt :: Boolean =
@@ -435,10 +427,7 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 abstract production prodPatternNormal
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
-  top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse ++
-  " {- e:  " ++ prettyType(e.typerep) ++ ", " ++
-  prettyType(performSubstitution(e.typerep, top.finalSubst)) ++
-  ", " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++ "-}\n";
+  top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
 
   local chk :: [Message] =
     if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []

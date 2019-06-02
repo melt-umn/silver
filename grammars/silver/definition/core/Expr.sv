@@ -1832,8 +1832,8 @@ concrete production snocAppExprs
 top::AppExprs ::= es::AppExprs ',' e::AppExpr
 {
   top.unparse = case es of
-                | emptyAppExprs() -> e.unparse ++ "{-" ++ prettyType(e.typerep) ++ "-}"
-                | _ -> es.unparse ++ ", " ++ e.unparse ++ "{-" ++ prettyType(e.typerep) ++ "-}"
+                | emptyAppExprs() -> e.unparse 
+                | _ -> es.unparse ++ ", " ++ e.unparse
                 end;
 
   top.isPartial = es.isPartial || e.isPartial;
@@ -1859,7 +1859,7 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
 concrete production oneAppExprs
 top::AppExprs ::= e::AppExpr
 {
-  top.unparse = e.unparse ++ "{-" ++ prettyType(e.typerep) ++ "-}";
+  top.unparse = e.unparse;
 
   top.isPartial = e.isPartial;
   top.missingTypereps = e.missingTypereps;
