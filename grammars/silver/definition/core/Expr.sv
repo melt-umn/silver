@@ -181,13 +181,13 @@ top::Expr ::= q::'forward'
 concrete production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
-  top.unparse = "(" ++ e.unparse ++ ")(" ++
+{-  top.unparse = "(" ++ e.unparse ++ ")(" ++
                 case es, anns of
                 | emptyAppExprs(), _ -> anns.unparse
                 | _, emptyAnnoAppExprs() -> es.unparse
                 | _, _ -> es.unparse ++ ", " ++ anns.unparse
                 end ++ ")";
-
+-}
   es.downSubst = top.downSubst;
   local t :: Type = performSubstitution(e.typerep, e.upSubst);
   es.appExprTypereps = reverse(t.inputTypes);
@@ -331,8 +331,9 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   local lambda_fun::Expr = buildMonadApplicationLambda(es.realTypes, es.monadTypesLocations, ety, wrapReturn);
   local expanded_args::AppExprs = snocAppExprs(new(es), ',', presentAppExpr(new(e), location=bogusLoc()),
                                                location=bogusLoc());
+  --haven't done monadRewritten on annotated ones, so ignore them
   top.monadRewritten = if null(es.monadTypesLocations)
-                       then top
+                       then applicationExpr(e.monadRewritten, '(', es.monadRewritten, ')', location=bogusLoc())
                        else
                          case anns of
                          | emptyAnnoAppExprs() ->
@@ -1725,12 +1726,14 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 nonterminal AppExprs with 
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied,
-  realTypes, monadTypesLocations;
+  realTypes, monadTypesLocations,
+  monadRewritten<AppExprs>; --just to rewrite the arguments when we don't need to bind any in
 
 nonterminal AppExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied,
-  realTypes, monadTypesLocations, typerep;
+  realTypes, monadTypesLocations, typerep,
+  monadRewritten<AppExpr>; --just to rewrite the arguments when we don't need to bind any in
 
 synthesized attribute isPartial :: Boolean;
 synthesized attribute missingTypereps :: [Type];
@@ -1766,6 +1769,8 @@ top::AppExpr ::= '_'
 
   top.realTypes = [top.appExprTyperep];
   top.monadTypesLocations = [];
+
+  top.monadRewritten = top;
 }
 concrete production presentAppExpr
 top::AppExpr ::= e::Expr
@@ -1826,6 +1831,8 @@ top::AppExpr ::= e::Expr
                 top.appExprApplied ++ "' expected " ++ errCheck1.rightpp ++
                 " or a monad of " ++ errCheck1.rightpp ++
                 " but argument is of type " ++ errCheck1.leftpp)];
+
+  top.monadRewritten = presentAppExpr(e.monadRewritten, location=top.location);
 }
 
 concrete production snocAppExprs
@@ -1855,6 +1862,8 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
 
   top.realTypes = es.realTypes ++ e.realTypes;
   top.monadTypesLocations = es.monadTypesLocations ++ e.monadTypesLocations;
+
+  top.monadRewritten = snocAppExprs(es.monadRewritten, ',', e.monadRewritten, location=top.location);
 }
 concrete production oneAppExprs
 top::AppExprs ::= e::AppExpr
@@ -1883,6 +1892,8 @@ top::AppExprs ::= e::AppExpr
 
   top.realTypes = e.realTypes;
   top.monadTypesLocations = e.monadTypesLocations;
+
+  top.monadRewritten = oneAppExprs(e.monadRewritten, location=top.location);
 }
 abstract production emptyAppExprs
 top::AppExprs ::=
@@ -1904,6 +1915,8 @@ top::AppExprs ::=
 
   top.realTypes = [];
   top.monadTypesLocations = [];
+
+  top.monadRewritten = top;
 }
 
 

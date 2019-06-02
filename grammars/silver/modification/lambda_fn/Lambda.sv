@@ -11,7 +11,7 @@ terminal Arrow_t '->' precedence = 0, lexer classes {SPECOP};
 concrete production lambda_c
 top::Expr ::= '\' params::ProductionRHS '->' e::Expr
 {
-  top.unparse = "\\ " ++ params.unparse ++ " -> " ++ e.unparse;
+  --top.unparse = "\\ " ++ params.unparse ++ " -> " ++ e.unparse;
   e.downSubst = top.downSubst;
 
   forwards to lambdap(params, e, location=top.location);
@@ -38,6 +38,8 @@ top::Expr ::= params::ProductionRHS e::Expr
   top.flowDefs = e.flowDefs;
   
   e.env = newScopeEnv(params.lambdaDefs, top.env);
+
+  top.monadRewritten = lambdap(params, e.monadRewritten, location=top.location);
 }
 
 synthesized attribute lambdaDefs::[Def] occurs on ProductionRHS, ProductionRHSElem;

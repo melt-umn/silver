@@ -257,6 +257,9 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   ret_pr_from_f.returnFun = monadReturn(f.typerep, bogusLoc());
   local returnify_pr::Expr = matchPrimitiveReal(e.monadRewritten, outty, ret_pr_from_f.returnify,
                                                 f.monadRewritten, location=top.location);
+  --just use monadRewritten
+  local just_rewrite::Expr = matchPrimitiveReal(e.monadRewritten, outty, pr.monadRewritten,
+                                                f.monadRewritten, location=top.location);
   --pick the right rewriting
   top.monadRewritten = if isMonad(e.typerep) && !isMonad(pr.patternType)
                        then if isMonad(pr.typerep)
@@ -268,11 +271,11 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                                  else bind_e_returnify_pr_return_f
                        else if isMonad(pr.typerep)
                             then if isMonad(f.typerep)
-                                 then top
+                                 then just_rewrite
                                  else return_f
                             else if isMonad(f.typerep)
                                  then returnify_pr
-                                 else top;
+                                 else just_rewrite;
 
 
   local resultTransType :: String = performSubstitution(t.typerep, top.finalSubst).transType;
