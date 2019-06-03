@@ -11,6 +11,7 @@ import silver:modification:let_fix;
 import silver:modification:lambda_fn only lambdap; --for monad stuff
 
 terminal Case_kwd 'case' lexer classes {KEYWORD,RESERVED};
+terminal MCase_kwd 'mcase' lexer classes {KEYWORD, RESERVED};
 terminal Of_kwd 'of' lexer classes {KEYWORD,RESERVED};
 terminal Arrow_kwd '->' lexer classes {SPECOP};
 terminal Vbar_kwd '|' lexer classes {SPECOP};
@@ -62,7 +63,7 @@ synthesized attribute patternTypeList::[Type];
 concrete production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
---  top.unparse = "case " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
+  top.unparse = "case " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
 
   ml.matchRulePatternSize = length(es.rawExprs);
   top.errors <- ml.errors;
@@ -100,20 +101,13 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
     one will still fail, but I think that will be a rare case.  We
     would need to pass down an expected type for that to work, and we
     haven't done that here.
+
+    Inserting fails breaks down if the current monad's fail is
+    expecting something other than a string, integer, float, or list,
+    as we don't really have ways to come up with basic fail arguments
+    for anything more complex.
   -}
   local failure::Expr = if monadInExprs.fst
-                             {-
-                               inserting fails breaks down if the current monad's fail is
-                               expecting something other than a string (e.g. Either<Int T>),
-                               but trying to "do better" would break down by us needing to
-                               generate an item of a random type (we could easily do string,
-                               int, float, or list, but what about UserDefinedTree?)
-
-                               TODO consider making a function to generate an argument of the
-                               right type for Fail() based on the monad being Fail()'ed for
-                               for the basic types listed above--use it to get an argument to
-                               insert below rather than just the string
-                             -}
                         then case monadFailArgument(monadInExprs.snd) of
                              | just(x) ->
                                Silver_Expr {
@@ -205,6 +199,64 @@ Expr ::= bindlst::[Pair<Type Pair<Expr String>>] base::Expr
                  buildMonadicBinds(rest, base),
                  location=bogusLoc())})}
          end;
+}
+--case expression that expands, using mplus, to possibly take multiple cases
+concrete production mcaseExpr_c
+top::Expr ::= 'mcase' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
+{
+  top.unparse = "mcase " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
+
+  {-
+    This will fail if we don't have a monad type somewhere, even if
+    the output type is expected to be a monad.  For example, if the
+    expected output type is [a], we might expect mcase to map over all
+    the patterns and give us all the ones that match in a list, which
+    we won't do if there wasn't a list somewhere here in the first
+    place.
+  -}
+  local monadInExprs::Pair<Boolean Type> =
+    monadicallyUsedExpr(es.rawExprs, ml.patternTypeList, top.env, top.downSubst);
+  local monadInClauses::Pair<Boolean Type> =
+    foldl((\p::Pair<Boolean Type> a::AbstractMatchRule ->
+            if p.fst
+            then p
+            else if isMonad(decorate a with {env=top.env; downSubst=top.downSubst;}.typerep)
+                 then pair(true, decorate a with {env=top.env; downSubst=top.downSubst;}.typerep)
+                 else p),
+          pair(false, errorType()), --error as filler; won't be used
+          ml.matchRuleList);
+  local monad::Type = if monadInExprs.fst
+                      then monadInExprs.snd
+                      else monadInClauses.snd;
+  local mplus::Expr = monadPlus(monad, bogusLoc());
+  local mzero::Expr = monadZero(monad, bogusLoc());
+
+  --new names for using lets to bind the incoming expressions
+  local newNames::[String] = map(\x::Expr -> "__mcase_var_" ++ toString(genInt()), es.rawExprs);
+  local nameExprs::[Expr] = map(\x::String -> baseExpr(qName(bogusLoc(), x), location=bogusLoc()),
+                                newNames);
+  local caseExprs::[Expr] = map(\x::AbstractMatchRule -> 
+                                 caseExpr(nameExprs, [x], mzero, freshType(), location=bogusLoc()),
+                                ml.matchRuleList);
+  local mplused::Expr = foldr(\current::Expr rest::Expr -> 
+                               Silver_Expr{
+                                 $Expr{mplus}($Expr{current}, $Expr{rest})
+                               },
+                              head(caseExprs), tail(caseExprs));
+  local letBound::Expr = foldr(\p::Pair<Expr String> rest::Expr ->
+                                makeLet(bogusLoc(), p.snd, freshType(), p.fst, rest),
+                               mplused, zipWith(pair, es.rawExprs, newNames));
+
+  forwards to if isMonad(monad)
+              then if canBeMCased(monad)
+                   then letBound
+                   else errorExpr([err(top.location, "Monad type " ++
+                                   prettyType(performSubstitution(monad, top.finalSubst)) ++
+                                   " cannot be used in an mcase as it does not have " ++
+                                   "MPlus/MZero defined")], location=top.location)
+              else errorExpr([err(top.location, "Need a monad type somewhere in " ++
+                                                "an mcase, but did not find one")],
+                             location=top.location);
 }
 
 abstract production caseExpr

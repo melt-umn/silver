@@ -17,3 +17,9 @@ function failList
 {
   return [];
 }
+
+function mplusList
+[a] ::= l1::[a] l2::[a]
+{
+  return l1 ++ l2;
+}

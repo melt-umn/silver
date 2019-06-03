@@ -22,3 +22,14 @@ Either<a b> ::= x::a
 {
   return left(x);
 }
+
+function mplusEither
+Either<a b> ::= e1::Either<a b> e2::Either<a b>
+{
+  return case e1, e2 of
+         | right(x), _ -> right(x)
+         | _, right(x) -> right(x)
+         --if they're both left, arbitrarily take the first one
+         | _, _ -> e1
+         end;
+}

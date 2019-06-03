@@ -52,8 +52,6 @@ top::Pattern ::= prod::QName '(' ps::PatternList ')'
   top.patternSubPatternList = ps.patternList;
   top.patternSortKey = prod.lookupValue.fullName;
 
-  --not sure this is right; taken from PrimitiveMatch.sv, line 387
-  --top.patternType = skolemizeProductionType(prod.lookupValue.typerep);
   top.patternType = case prod.lookupValue.typerep of
                     | functionType(out, _, _) -> out
                     | _ -> prod.lookupValue.typerep

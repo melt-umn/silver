@@ -189,6 +189,67 @@ Maybe<Expr> ::= ty::Type
          | _ -> nothing()
          end;
 }
+function monadPlus
+Expr ::= ty::Type l::Location
+{
+  return case ty of
+         | nonterminalType("core:Maybe", _) ->
+           baseExpr(qNameId(name("mplusMaybe", l), location=l), location=l)
+         | nonterminalType("core:Either", _) ->
+           baseExpr(qNameId(name("mplusEither", l), location=l), location=l)
+         | nonterminalType("core:IOMonad", _) ->
+           error("MPlus undefined for IOMonad")
+         | nonterminalType("core:State", _) ->
+           error("MPlus undefined for State monad")
+         | listType(_) ->
+           baseExpr(qNameId(name("mplusList", l), location=l), location=l)
+         | decoratedType(t) -> monadPlus(t, l)
+         | _ ->
+           error("Tried to get MPlus for a non-monadic type " ++ l.filename ++
+                 " " ++ toString(l.line) ++ ":" ++ toString(l.column))
+         end;
+}
+function monadZero
+Expr ::= ty::Type l::Location
+{
+  return case ty of
+         | nonterminalType("core:Maybe", _) ->
+           Silver_Expr { nothing() }
+         | nonterminalType("core:Either", [a, b]) ->
+           case a of
+           | stringType() -> Silver_Expr{ $Expr{monadFail(ty, l)}("mzero") }
+           | intType() -> Silver_Expr{ $Expr{monadFail(ty, l)}(0) }
+           | floatType() -> Silver_Expr{ $Expr{monadFail(ty, l)}(0.0) }
+           | listType(_) -> Silver_Expr{ $Expr{monadFail(ty, l)}([]) }
+           | _ ->
+             error("Tried to get MZero for Either with too complex an argument type")
+           end
+         | nonterminalType("core:IOMonad", _) ->
+           error("MZero undefined for IOMonad")
+         | nonterminalType("core:State", _) ->
+           error("MZero undefined for State monad")
+         | listType(_) ->
+           Silver_Expr { [] }
+         | decoratedType(t) -> monadZero(t, l)
+         | _ ->
+           error("Tried to get MZero for a non-monadic type " ++ l.filename ++
+                 " " ++ toString(l.line) ++ ":" ++ toString(l.column))
+         end;
+}
+
+--We can't do mcase when we don't have mplus/mzero defined, so check if something
+--   of a given type can be expanded with these
+function canBeMCased
+Boolean ::= mty::Type
+{
+  return case mty of
+         | nonterminalType("core:Maybe", _) -> true
+         | nonterminalType("core:Either", _) -> true
+         | listType(_) -> true
+         | decoratedType(t) -> canBeMCased(t)
+         | _ -> false
+         end;
+}
 
 
 {-
