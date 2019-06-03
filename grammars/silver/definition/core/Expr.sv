@@ -2,6 +2,7 @@ grammar silver:definition:core;
 
 --import silver:analysis:typechecking:core;
 import silver:modification:lambda_fn;
+import silver:modification:let_fix;
 
 nonterminal Expr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, typerep, monadRewritten<Expr>;
@@ -1207,6 +1208,49 @@ top::Expr ::= e1::Expr '!=' e2::Expr
                        else if isMonad(e2.typerep)
                             then bind2
                             else neq(e1.monadRewritten, '!=', e2.monadRewritten, location=top.location);
+}
+
+concrete production ifThen
+top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything else to do
+{
+  top.unparse = "if " ++ e1.unparse ++ " then " ++ e2.unparse;
+
+  e1.downSubst = top.downSubst;
+  e2.downSubst = e1.upSubst;
+  top.upSubst = e2.upSubst;
+
+  local bind::Expr = if isMonad(e1.typerep)
+                     then monadFail(e1.typerep, bogusLoc())
+                     else monadFail(e2.typerep, bogusLoc());
+  local attribute arg::Maybe<Expr>;
+  arg = case monadFailArgument(e1.typerep),
+             monadFailArgument(e2.typerep) of
+        | just(x), _ -> just(x)
+        | _, just(x) -> just(x)
+        | _, _ -> nothing()
+        end;
+  local fail::Expr = Silver_Expr {
+                       $Expr{bind}($Expr{case arg of | just(a) -> a end})
+                     };
+
+  forwards to if isMonad(e1.typerep) || isMonad(e2.typerep)
+              then case arg of
+                   | just(_) -> ifThenElse('if', e1, 'then', e2, 'else', fail, location=top.location)
+                   | nothing() -> 
+                     errorExpr([err(top.location, "The monad used in an if-then " ++
+                                "must be able to have a Fail argument generated (the " ++
+                                "argument must be Integer, Float, String, or List), which" ++
+                                " is not true for " ++
+                                prettyType(performSubstitution(if isMonad(e1.typerep)
+                                                               then e1.typerep
+                                                               else e2.typerep, top.finalSubst)))],
+                                location=top.location)
+                   end
+              else errorExpr([err(top.location, "One of the expressions in " ++
+                              "an if-then has to have a monad type--instead, have " ++
+                              prettyType(performSubstitution(e1.typerep, top.finalSubst)) ++
+                              " and " ++ prettyType(performSubstitution(e2.typerep, top.finalSubst)))],
+                              location=top.location);
 }
 
 concrete production ifThenElse

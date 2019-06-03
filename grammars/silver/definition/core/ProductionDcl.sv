@@ -1,9 +1,12 @@
 grammar silver:definition:core;
 
-nonterminal ProductionSignature with config, grammarName, env, location, unparse, errors, defs, namedSignature, signatureName;
+nonterminal ProductionSignature with config, grammarName, env, location, unparse, errors, defs, namedSignature, signatureName,
+    finalSubst; --for filling in types to print them out in generated monad code
 nonterminal ProductionLHS with config, grammarName, env, location, unparse, errors, defs, outputElement;
-nonterminal ProductionRHS with config, grammarName, env, location, unparse, errors, defs, inputElements;
-nonterminal ProductionRHSElem with config, grammarName, env, location, unparse, errors, defs, inputElements, deterministicCount;
+nonterminal ProductionRHS with config, grammarName, env, location, unparse, errors, defs, inputElements,
+    finalSubst; --for filling in types to print them out in generated monad code
+nonterminal ProductionRHSElem with config, grammarName, env, location, unparse, errors, defs, inputElements, deterministicCount,
+    finalSubst; --for filling in types to print them out in generated monad code
 
 flowtype forward {env} on ProductionSignature, ProductionLHS, ProductionRHS;
 flowtype forward {deterministicCount, env} on ProductionRHSElem;
@@ -76,6 +79,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
   body.frame = productionContext(namedSig, myFlowGraph); -- graph from flow:env
 
+  ns.finalSubst = emptySubst();
   top.monadRewritten = productionDcl('abstract', 'production', id, ns, body.monadRewritten, location=top.location);
 }
 
@@ -88,6 +92,8 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
   top.errors := lhs.errors ++ rhs.errors;
 
   top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement, annotationsForNonterminal(lhs.outputElement.typerep, top.env));
+
+  rhs.finalSubst = top.finalSubst;
 }
 
 concrete production productionLHS
@@ -128,12 +134,16 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 
   top.inputElements = h.inputElements ++ t.inputElements;
   h.deterministicCount = length(t.inputElements);
+
+  h.finalSubst = top.finalSubst;
+  t.finalSubst = top.finalSubst;
 }
 
 concrete production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
-  top.unparse = id.unparse ++ "::" ++ t.unparse;
+  --top.unparse = id.unparse ++ "::" ++ t.unparse;
+  top.unparse = id.unparse ++ "::" ++ prettyType(performSubstitution(t.typerep, top.finalSubst));
 
   top.inputElements = [namedSignatureElement(id.name, t.typerep)];
 

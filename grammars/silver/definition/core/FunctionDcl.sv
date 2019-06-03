@@ -52,6 +52,8 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
 
   -- For the moment, functions do not have named parameters (hence, [])
   top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement, []);
+
+  rhs.finalSubst = emptySubst();
 }
 
 concrete production functionLHS
