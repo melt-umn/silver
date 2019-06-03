@@ -27,7 +27,8 @@ top::DclInfo ::= sg::String sl::Location fn::String
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = freshType(); -- no appropriate type to use...
+  top.typerep = terminalIdType(); -- TODO: Still needs work to prevent returning terminals
+                                  -- that are not part of the disambiguation set.
   
   top.refDispatcher = pluckTerminalReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);

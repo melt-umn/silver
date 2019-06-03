@@ -28,7 +28,16 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
                else [])
                ++ e.errors;
 
-  -- TODO: figure out wtf is going on with type here! (needs to be a terminal, plus one of the ones in the disgroup)
+  local tyCk :: TypeCheck = check(e.typerep, terminalIdType());
+  tyCk.downSubst = e.upSubst;
+  top.errors <-
+    if tyCk.typeerror
+    then [err(top.location, "'pluck' expects one of the terminals it is disambiguating between. Instead it received "++tyCk.leftpp)]
+    else [];
+
+
+  -- TODO: Enforce that the plucked terminal is one of those that are being disambiguated between.
+  -- Currently all that is checked is that it is a terminal.
 
   e.downSubst = top.downSubst;
   top.upSubst = e.upSubst;
