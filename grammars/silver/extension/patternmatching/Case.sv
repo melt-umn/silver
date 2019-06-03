@@ -217,14 +217,15 @@ top::Expr ::= 'mcase' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
     we won't do if there wasn't a list somewhere here in the first
     place.
   -}
+  ml.downSubst = top.downSubst;
   local monadInExprs::Pair<Boolean Type> =
-    monadicallyUsedExpr(es.rawExprs, ml.patternTypeList, top.env, top.downSubst);
+    monadicallyUsedExpr(es.rawExprs, ml.patternTypeList, top.env, ml.upSubst);
   local monadInClauses::Pair<Boolean Type> =
     foldl((\p::Pair<Boolean Type> a::AbstractMatchRule ->
             if p.fst
             then p
-            else if isMonad(decorate a with {env=top.env; downSubst=top.downSubst;}.typerep)
-                 then pair(true, decorate a with {env=top.env; downSubst=top.downSubst;}.typerep)
+            else if isMonad(decorate a with {env=top.env; downSubst=ml.upSubst;}.typerep)
+                 then pair(true, decorate a with {env=top.env; downSubst=ml.upSubst;}.typerep)
                  else p),
           pair(false, errorType()), --error as filler; won't be used
           ml.matchRuleList);
@@ -241,9 +242,9 @@ top::Expr ::= 'mcase' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
   local caseExprs::[Expr] = map(\x::AbstractMatchRule -> 
                                  caseExpr(nameExprs, [x], mzero, freshType(), location=bogusLoc()),
                                 ml.matchRuleList);
-  local mplused::Expr = foldr(\current::Expr rest::Expr -> 
+  local mplused::Expr = foldl(\rest::Expr current::Expr -> 
                                Silver_Expr{
-                                 $Expr{mplus}($Expr{current}, $Expr{rest})
+                                 $Expr{mplus}($Expr{rest}, $Expr{current})
                                },
                               head(caseExprs), tail(caseExprs));
   local letBound::Expr = foldr(\p::Pair<Expr String> rest::Expr ->
