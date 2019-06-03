@@ -19,6 +19,8 @@ synthesized attribute tsDcls :: TreesitterRules occurs on Syntax;
 synthesized attribute tsDcl :: TreesitterRule occurs on SyntaxDcl;
 synthesized attribute numRules :: Integer occurs on TreesitterRules;
 
+synthesized attribute dclName :: String occurs on SyntaxDcl;
+
 synthesized attribute tsRep :: String occurs on TreesitterRule, TreesitterRules;
 -- necessary because the first "rule" in the grammar.js file is assumed to be
 -- the start rule
@@ -284,6 +286,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 aspect production syntaxNonterminal
 top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifiers
 {
+  top.dclName = t.typeName;
   local attribute mods :: TreesitterNonterminalModifiers = 
     if canProduceEmptyString(subdcls) then 
       consTSNonterminalMod(ntProducesEmptyStringMod(), nilTSNonterminalMod())
@@ -295,12 +298,14 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifie
 aspect production syntaxTerminal
 top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
 {
+  top.dclName = n;
   top.tsDcl = treesitterTerminal(toTsDeclaration(n), regex, modifiers);
 }
 
 aspect production syntaxProduction
 top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 {
+  top.dclName = ns.fullName;
   top.tsDcl = treesitterProduction(ns.outputElement.typerep.typeName,
     map(productionElemToTsIdentifier, ns.inputElements), 
       decorate modifiers with {cstEnv = top.cstEnv;});
@@ -309,12 +314,14 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 aspect production syntaxLexerClass
 top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 {
+  top.dclName = n;
   top.tsDcl = noEquivalentTreesitterDcl();
 }
 
 aspect production syntaxDisambiguationGroup
 top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode::String
 {
+  top.dclName = n;
   top.tsDcl = noEquivalentTreesitterDcl();
 }
 
@@ -335,20 +342,49 @@ Boolean ::= prods::Syntax
 aspect production syntaxFont
 top::SyntaxDcl ::= fontName::String fnt::Font -- this will likely eventually need to be removed
 {
+  top.dclName = fontName;
   top.tsDcl = noEquivalentTreesitterDcl();
 }
 
 aspect production syntaxParserAttribute
 top::SyntaxDcl ::= n::String ty::Type acode::String
 {
+  top.dclName = n;
   top.tsDcl = noEquivalentTreesitterDcl();
 }
 
 aspect production syntaxParserAttributeAspect
 top::SyntaxDcl ::= n::String acode::String
 {
+  top.dclName = n;
   top.tsDcl = noEquivalentTreesitterDcl();
 }
+
+function syntaxToDclList
+[SyntaxDcl] ::= s::Syntax
+{
+  return case s of
+  | nilSyntax() -> []
+  | consSyntax(dcl, rest) -> dcl :: syntaxToDclList(rest)
+  end;
+}
+
+function dclListToSyntax
+Syntax ::= dcls::[SyntaxDcl]
+{
+  return foldr(consSyntax, nilSyntax(), dcls);
+}
+
+function appendSyntax
+Syntax ::= s1::Syntax s2::Syntax
+{
+  return
+  case s1 of 
+  | nilSyntax() -> s2
+  | consSyntax(dcl, rest) -> appendSyntax(rest, consSyntax(dcl, s2))
+  end;
+}
+
 {-- IS/HAS FUNCTIONS --}
 
 function isTerminal
@@ -414,4 +450,10 @@ Boolean ::= declaration::Decorated SyntaxDcl
   | syntaxLexerClass(_, mods) -> length(mods.disambiguationClasses) > 0
   | _ -> false
   end;
+}
+
+function dclsHaveSameName
+Boolean ::= dcl1::SyntaxDcl dcl2::SyntaxDcl
+{
+  return stringEq(dcl1.dclName, dcl2.dclName);
 }

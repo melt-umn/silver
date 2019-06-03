@@ -3,6 +3,56 @@ grammar silver:extension:treesitter;
 function newNonterminalsForBridgeProductions
 Syntax ::= s::Syntax env::EnvTree<Decorated SyntaxDcl>
 {
+  local attribute modifiedSyntax :: Syntax = modifyNonterminalsForBridgeProductions(s, env);
+  return mergeDuplicateNonterminalsCreated(syntaxToDclList(modifiedSyntax));
+}
+
+-- this currently leaves redundancy in the RHS of the original productions that
+-- can produce the same nonterminal.
+function mergeDuplicateNonterminalsCreated
+Syntax ::= dcls::[SyntaxDcl]
+{
+  local attribute dcl :: SyntaxDcl = head(dcls);
+  local attribute splitDcls :: Pair<[SyntaxDcl] [SyntaxDcl]> = partition(dclsHaveSameName(dcl, _), dcls);
+  local attribute matchingDcls :: [SyntaxDcl] = splitDcls.fst;
+  local attribute restDcls :: [SyntaxDcl] = splitDcls.snd;
+
+  return
+  if null(dcls) 
+  then nilSyntax()
+  else consSyntax(mergeDcls(matchingDcls), mergeDuplicateNonterminalsCreated(restDcls));
+}
+
+function mergeDcls
+SyntaxDcl ::= dcls::[SyntaxDcl]
+{
+  -- if 0 dcls error. if 1 dcl return that otherwise merge the first two
+  -- declarations then merge the rest
+  return
+  if null(dcls) then error("Cannot merge together 0 declarations")
+  else if null(tail(dcls)) then head(dcls)
+  else
+    mergeDcls(mergeTwoDcls(head(dcls), head(tail(dcls))) :: tail(tail(dcls)));
+}
+
+function mergeTwoDcls
+SyntaxDcl ::= dcl1::SyntaxDcl dcl2::SyntaxDcl
+{
+  return
+  case dcl1 of
+  | syntaxNonterminal(n1, prods1) ->
+    case dcl2 of
+    -- names are the same
+    | syntaxNonterminal(n2, prods2) -> syntaxNonterminal(n1, appendSyntax(prods1, prods2))
+    | _ -> error("Syntax declaration merging only can occur on nonterminals")
+    end
+  | _ -> error("Syntax declaration merging only can occur on nonterminals")
+  end;
+}
+
+function modifyNonterminalsForBridgeProductions
+Syntax ::= s::Syntax env::EnvTree<Decorated SyntaxDcl>
+{
   return
   case s of
   | nilSyntax() -> s
