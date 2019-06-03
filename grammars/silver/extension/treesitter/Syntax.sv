@@ -21,6 +21,7 @@ synthesized attribute numRules :: Integer occurs on TreesitterRules;
 
 synthesized attribute dclName :: String occurs on SyntaxDcl;
 
+autocopy attribute prefixEnv :: [Pair<String String>] occurs on TreesitterRule, TreesitterRules;
 synthesized attribute tsRep :: String occurs on TreesitterRule, TreesitterRules;
 -- necessary because the first "rule" in the grammar.js file is assumed to be
 -- the start rule
@@ -65,11 +66,12 @@ Boolean ::= rule::TreesitterRule
 }
 
 abstract production treesitterRoot
-top::TreesitterRoot ::= name::String startnt::String rules::TreesitterRules
+top::TreesitterRoot ::= name::String startnt::String rules::TreesitterRules prefixes::[Pair<String String>]
 {
   rules.startNt = startnt;
   rules.emptyStringTerminals = rules.emptyStringTerminalContribs;
   rules.precAssocEnv = rules.precAssocEntries;
+  rules.prefixEnv = map(prefixToUseTreesitterName, prefixes);
   top.treesitterGrammarJs = 
 s"""
 module.exports = grammar({
@@ -173,17 +175,26 @@ top::TreesitterRule ::=
 abstract production treesitterTerminal
 top::TreesitterRule ::= name::String r::Regex mods::SyntaxTerminalModifiers 
 {
+  local attribute prefixMaybe :: Maybe<String> = lookupBy(stringEq, name, top.prefixEnv);
   local attribute ts_lhs :: String = 
     if mods.ignored then -- TODO: do we want to ignore these?
       TsDeclToIgnoreDecl(name)
     else
       name;
-  local attribute ts_rhs :: String =
+  local attribute ts_rhs_no_prefix :: String =
     if r.stringLiteral then
       s""" "${removeAllEscapesForStringLiteral(r.regString)}" """
     else 
     -- treesitter does not escape spaces unlike silver
       s"""/${removeEscapesNotNecessaryForTreesitterRegexs(r.regString)}/""";
+
+  local attribute ts_rhs :: String =
+    if prefixMaybe.isJust then
+      s"""choice(seq(${toTsIdentifier(prefixMaybe.fromJust)}, ${ts_rhs_no_prefix}),
+                 ${ts_rhs_no_prefix})"""
+    else
+      ts_rhs_no_prefix;
+
   top.tsRep =
     if containsBy(stringEq, name, top.emptyStringTerminals) then
       ""

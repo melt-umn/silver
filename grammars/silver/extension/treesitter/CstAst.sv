@@ -55,7 +55,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
     transformEmptyStringRules(grammar_to_use.tsDcls);
 
   top.tsRoot = 
-    treesitterRoot(top.lang, toTsDeclaration(startnt), transformed_grammar);
+    treesitterRoot(top.lang, toTsDeclaration(startnt), transformed_grammar, terminalPrefixes);
 
   -- The tree sitter grammar.
   top.jsTreesitter = top.tsRoot.treesitterGrammarJs;
