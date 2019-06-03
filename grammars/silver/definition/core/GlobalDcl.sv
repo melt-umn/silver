@@ -5,7 +5,7 @@ import silver:definition:flow:driver only ProductionGraph, FlowType, constructAn
 concrete production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
 {
-  top.unparse = "global " ++ id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse ++ "\n"; 
+  top.unparse = "global " ++ id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse ++ ";\n";
   top.errors := t.errors ++ e.errors;
 
   production attribute fName :: String;
