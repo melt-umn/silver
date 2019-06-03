@@ -91,7 +91,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -}
   local unparseType::String = prettyType(performSubstitution(top.typerep, top.upSubst));
   top.unparse = "match " ++ e.unparse ++ " return " ++ unparseType ++ " with " ++
-                pr.unparse ++ " else -> " ++ f.unparse ++ "end";
+                pr.unparse ++ " else -> " ++ f.unparse ++ " end";
 
   top.typerep = if isMonad(e.typerep) && !isMonad(pr.patternType)
                 then if isMonad(pr.typerep)
