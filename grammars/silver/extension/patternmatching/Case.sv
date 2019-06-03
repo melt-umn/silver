@@ -18,7 +18,7 @@ terminal Vbar_kwd '|' lexer classes {SPECOP};
 terminal Opt_Vbar_t /\|?/ lexer classes {SPECOP}; -- optional Coq-style vbar.
 
 -- MR | ...
-nonterminal MRuleList with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize, patternTypeList;
+nonterminal MRuleList with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize, patternTypeList, upSubst, downSubst;
 
 -- Turns MRuleList (of MatchRules) into [AbstractMatchRule]
 synthesized attribute matchRuleList :: [AbstractMatchRule];
@@ -76,14 +76,15 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
     structure, since unstructured ones only come from unstructured
     patterns.
   -}
+  ml.downSubst = top.downSubst;
   local monadInExprs::Pair<Boolean Type> =
-    monadicallyUsedExpr(es.rawExprs, ml.patternTypeList, top.env, top.downSubst);
+    monadicallyUsedExpr(es.rawExprs, ml.patternTypeList, top.env, ml.upSubst);
   local monadInClauses::Pair<Boolean Type> =
     foldl((\p::Pair<Boolean Type> a::AbstractMatchRule ->
             if p.fst
             then p
-            else if isMonad(decorate a with {env=top.env; downSubst=top.downSubst;}.typerep)
-                 then pair(true, decorate a with {env=top.env; downSubst=top.downSubst;}.typerep)
+            else if isMonad(decorate a with {env=top.env; downSubst=ml.upSubst;}.typerep)
+                 then pair(true, decorate a with {env=top.env; downSubst=ml.upSubst;}.typerep)
                  else p),
           pair(false, errorType()), --error as filler; won't be used
           ml.matchRuleList);
@@ -135,7 +136,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
   -}
   --read the comment on the function below if you want to know what it is
   local attribute monadStuff::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
-  monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, top.downSubst, 1);
+  monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.upSubst, 1);
   forwards to
     buildMonadicBinds(monadStuff.fst,
                       caseExpr(monadStuff.snd,
@@ -151,7 +152,8 @@ Pair<Boolean Type> ::= elst::[Expr] tylst::[Type] env::Decorated Env sub::Substi
               | [], _ -> pair(false, errorType())
               | _, [] -> pair(false, errorType())
               | e::etl, t::ttl ->
-                if isMonad(decorate e with {env=env; downSubst=sub;}.typerep) && !isMonad(t)
+                if isMonad(decorate e with {env=env; downSubst=sub;}.typerep) &&
+                  !isMonad(performSubstitution(t, sub))
                 then pair(true, decorate e with {env=env; downSubst=sub;}.typerep)
                 else monadicallyUsedExpr(etl, ttl, env, sub)
               end;
@@ -171,7 +173,8 @@ elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution index::Integer
          | [], _ -> pair([], [])
          | _, [] -> pair([], elst)
          | e::etl, t::ttl ->
-           if isMonad(decorate e with {env=env; downSubst=sub;}.typerep) && !isMonad(t)
+           if isMonad(decorate e with {env=env; downSubst=sub;}.typerep) &&
+             !isMonad(performSubstitution(t, sub))
            then pair(pair(decorate e with {env=env; downSubst=sub;}.typerep, pair(e, newName)) :: subcall.fst,
                      baseExpr(qName(bogusLoc(), newName), location=bogusLoc()) :: subcall.snd)
            else pair(subcall.fst, e::subcall.snd)
@@ -339,6 +342,7 @@ top::MRuleList ::= m::MatchRule
   top.matchRuleList = m.matchRuleList;
 
   top.patternTypeList = m.patternTypeList;
+  top.upSubst = top.downSubst;
 }
 
 concrete production mRuleList_cons
@@ -350,6 +354,13 @@ top::MRuleList ::= h::MatchRule '|' t::MRuleList
   top.matchRuleList = h.matchRuleList ++ t.matchRuleList;
 
   top.patternTypeList = h.patternTypeList;
+  --need to unify here with t.patternTypeList so, when we reach the case, if there is a
+  --   monad pattern farther down where the first one is a wildcard/variable, we'll find
+  --   it and not incorrectly identify something as being used non-monadically
+  top.upSubst = foldl(\s::Substitution p::Pair<Type Type> ->
+                       decorate check(p.fst, p.snd) with {downSubst=s;}.upSubst,
+                      t.upSubst, zipWith(pair, h.patternTypeList, t.patternTypeList));
+  t.downSubst = top.downSubst;
 }
 
 concrete production matchRule_c
