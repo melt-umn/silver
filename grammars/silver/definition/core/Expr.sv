@@ -1223,8 +1223,8 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything
                      then monadFail(e1.typerep, bogusLoc())
                      else monadFail(e2.typerep, bogusLoc());
   local attribute arg::Maybe<Expr>;
-  arg = case monadFailArgument(e1.typerep),
-             monadFailArgument(e2.typerep) of
+  arg = case monadFailArgument(e1.typerep, top.location),
+             monadFailArgument(e2.typerep, top.location) of
         | just(x), _ -> just(x)
         | _, just(x) -> just(x)
         | _, _ -> nothing()

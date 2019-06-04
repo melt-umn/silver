@@ -109,7 +109,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
     for anything more complex.
   -}
   local failure::Expr = if monadInExprs.fst
-                        then case monadFailArgument(monadInExprs.snd) of
+                        then case monadFailArgument(monadInExprs.snd, top.location) of
                              | just(x) ->
                                Silver_Expr {
                                  $Expr{monadFail(monadInExprs.snd, top.location)}($Expr{x})
@@ -117,7 +117,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
                              | nothing() -> basicFailure
                              end
                         else if monadInClauses.fst
-                             then case monadFailArgument(monadInClauses.snd) of
+                             then case monadFailArgument(monadInClauses.snd, top.location) of
                                   | just(x) ->
                                     Silver_Expr {
                                       $Expr{monadFail(monadInClauses.snd, top.location)}($Expr{x})

@@ -169,9 +169,13 @@ Expr ::= ty::Type l::Location
 --come up with a "generic" argument for the call to Fail() if it is one of
 --   a small set of basic types
 function monadFailArgument
-Maybe<Expr> ::= ty::Type
+Maybe<Expr> ::= ty::Type l::Location
 {
-  local string::Expr = Silver_Expr { "automatically-inserted fail" };
+  local string::Expr = stringConst(terminal(String_t,
+                                           "\"automatically-inserted fail at " ++
+                                           l.filename ++ " " ++ toString(l.line) ++
+                                           ":" ++ toString(l.column) ++ "\""),
+                                   location=bogusLoc());
   local int::Expr = Silver_Expr { 0 };
   local float::Expr = Silver_Expr { 0.0 };
   local list::Expr = Silver_Expr { [] };
