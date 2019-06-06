@@ -1,5 +1,6 @@
 grammar silver:extension:ideinterface;
 
+import silver:extension:treesitter; -- for string helper function only
 
 nonterminal IDEInterfaceSyntax;
 nonterminal IDEInterfaceSyntaxDcl;
@@ -44,7 +45,17 @@ top::IDEInterfaceSyntaxDcl ::= name::String properties::IDEInterfaceTerminalProp
 aspect production syntaxTerminal
 top::SyntaxDcl ::= name::String regex::Regex modifiers::SyntaxTerminalModifiers
 {
-  top.ideSyntaxDcl = ideSyntaxTerminal(name, syntaxTerminalModifiersToIDEProperties(modifiers));
+  local localTermName :: String = substring(lastIndexOf(":", name)+1, length(name), name);
+  
+
+  local properties :: IDEInterfaceTerminalProperties = 
+    consIDETerminalProperties(
+      ideIsPrefix(matches("_Prefix[0-9]+", localTermName)),
+    consIDETerminalProperties(
+      ideTerminalRegex(removeAllEscapesForStringLiteral(regex.regString)),
+    syntaxTerminalModifiersToIDEProperties(modifiers)));
+
+  top.ideSyntaxDcl = ideSyntaxTerminal(name, properties);
 }
 
 abstract production ideSyntaxNonterminal

@@ -3,16 +3,20 @@ grammar silver:extension:ideinterface;
 synthesized attribute lexerClasses :: [String];
 attribute lexerClasses occurs on SyntaxTerminalModifiers, SyntaxTerminalModifier;
 
+synthesized attribute isPrefix :: Boolean;
+synthesized attribute regexString :: String;
 nonterminal IDEInterfaceTerminalProperties with 
-  ignored, lexerClasses;
+  isPrefix, ignored, lexerClasses, regexString;
 nonterminal IDEInterfaceTerminalProperty with 
-  ignored, lexerClasses;
+  isPrefix, ignored, lexerClasses, regexString;
 
 abstract production nilIDETerminalProperties
 top::IDEInterfaceTerminalProperties ::=
 {
   top.lexerClasses = [];
   top.ignored = false;
+  top.isPrefix = false;
+  top.regexString = "";
 }
 
 abstract production consIDETerminalProperties
@@ -20,6 +24,8 @@ top::IDEInterfaceTerminalProperties ::= hd::IDEInterfaceTerminalProperty tl::IDE
 {
   top.lexerClasses = hd.lexerClasses ++ tl.lexerClasses;
   top.ignored = hd.ignored || tl.ignored;
+  top.isPrefix = hd.isPrefix || tl.isPrefix;
+  top.regexString = if stringEq("", tl.regexString) then hd.regexString else tl.regexString;
 }
 
 aspect default production
@@ -27,6 +33,8 @@ top::IDEInterfaceTerminalProperty ::=
 {
   top.lexerClasses = [];
   top.ignored = false;
+  top.isPrefix = false;
+  top.regexString = "";
 }
 
 abstract production ideTermClasses
@@ -41,6 +49,18 @@ top::IDEInterfaceTerminalProperty ::= i::Boolean
   -- passed in so we can automatically construct these from SyntaxTerminalModifiers
   -- without having conditionals 
   top.ignored = i;
+}
+
+abstract production ideIsPrefix
+top::IDEInterfaceTerminalProperty ::= i::Boolean
+{
+  top.isPrefix = i;
+}
+
+abstract production ideTerminalRegex
+top::IDEInterfaceTerminalProperty ::= reg::String
+{
+  top.regexString = reg;
 }
 
 {-- SYNTAX TERMINAL MODIFIERS PRODUCTIONS --}
