@@ -104,6 +104,11 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         errorExpr([err(givenLocation, s"$$${trans.fst} may only occur as a member of ${trans.fst}")], location=givenLocation);
     };
   
+  escapeTranslation <-
+    if containsBy(stringEq, prodName, varPatternProductions ++ wildPatternProductions)
+    then just(errorExpr([err(givenLocation, "Pattern antiquote is invalid in expression context")], location=givenLocation))
+    else nothing();
+  
   top.translation =
     fromMaybe(
       mkFullFunctionInvocation(
@@ -145,6 +150,11 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
       | consAST(terminalAST(_, _, _), nilAST()) -> just(wildcPattern('_', location=givenLocation))
       | _ -> error(s"Unexpected escape production arguments: ${show(80, top.pp)}")
       end
+    else nothing();
+  
+  patternEscapeTranslation <-
+    if containsBy(stringEq, prodName, directEscapeProductions ++ map(fst, collectionEscapeProductions))
+    then just(errorPattern([err(givenLocation, "Expression antiquote is invalid in pattern context")], location=givenLocation))
     else nothing();
   
   top.patternTranslation =
