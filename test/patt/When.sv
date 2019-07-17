@@ -35,9 +35,9 @@ top::Nonsense ::=
 {}
 
 function testNonterminalMatches
-Integer ::= n1::Nonsense n2::Nonsense
+Integer ::= nn1::Nonsense nn2::Nonsense
 {
-  return  case n1, n2 of
+  return  case nn1, nn2 of
           | n3(n1(), i1), n3(_, i2) when i1 == i2 -> 0
           | n3(_, i1), n3(_, i2) when i1 <= i2 -> 1
           | n2(a, n3(b, i)), _ when i > 5 -> 2
