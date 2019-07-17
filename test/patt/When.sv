@@ -5,9 +5,9 @@ function testVariableMatches
 Integer ::= input::Integer
 {
   return  case input of
-          | a when a > 3 -> 0
-          | b when b < 0 -> 1
-          | c -> 2
+          | vara when vara > 3 -> 0
+          | varb when varb < 0 -> 1
+          | varc -> 2
           end;
 }
 
@@ -40,7 +40,7 @@ Integer ::= nn1::Nonsense nn2::Nonsense
   return  case nn1, nn2 of
           | n3(n1(), i1), n3(_, i2) when i1 == i2 -> 0
           | n3(_, i1), n3(_, i2) when i1 <= i2 -> 1
-          | n2(a, n3(b, i)), _ when i > 5 -> 2
+          | n2(vara, n3(varb, i)), _ when i > 5 -> 2
           | n1(), n1() -> 3
           | n2(_, n1()), n2(_, n1()) -> 4
           | _, _ -> 5
@@ -67,8 +67,8 @@ function testMultipleVars
 Boolean ::= p1::Pair<Integer Integer> p2::Pair<Integer Integer>
 {
   return  case p1, p2 of
-          | pair(a,b), pair(c,d) when a + b == c + d -> true
-          | pair(a,b), pair(c,d) -> false
+          | pair(vara,varb), pair(varc,vard) when vara + varb == varc + vard -> true
+          | pair(vara,varb), pair(varc,vard) -> false
           end;
 }
 
