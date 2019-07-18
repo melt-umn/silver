@@ -23,12 +23,12 @@ top::Expr ::= prod::Expr '^(' args::AppExprs ')'
 }
 
 
-terminal CopyBuiltin  'copy^';
+terminal OTXDebugBuiltin  'otxdebug^';
 
-concrete production copyTest
-top::Expr ::= 'copy^' '(' a1::Expr ',' a2::Expr ')'
+concrete production otxDebug
+top::Expr ::= 'otxdebug^' '(' a::Expr ')'
 {
-  top.unparse = "copy^(" ++ a1.unparse ++ ", " ++ a2.unparse ++ ")";
+  top.unparse = "otxdebug^(" ++ a.unparse ++ ")";
 
-  forwards to copyFunctionImpl(a1, a2, location=top.location);
+  forwards to otxDebugImpl(a, location=top.location);
 }

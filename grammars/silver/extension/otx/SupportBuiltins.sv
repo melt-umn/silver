@@ -1,20 +1,19 @@
-abstract production copyFunctionImpl
-top::Expr ::= redex::Expr node::Expr
+abstract production otxDebugImpl
+top::Expr ::= arg::Expr
 {
-  top.unparse = "<copy>";
+  top.unparse = "<otxDebugImpl>";
 
-  top.errors := redex.errors ++ node.errors;
+  top.errors := arg.errors;
 
-  top.typerep = node.typerep;
+  top.typerep = arg.typerep;
 
-  top.flowDefs = redex.flowDefs ++ node.flowDefs;
-  top.flowDeps = redex.flowDeps ++ node.flowDeps;
+  top.flowDefs = arg.flowDefs;
+  top.flowDeps = arg.flowDeps;
 
-  redex.downSubst = top.downSubst;
-  node.downSubst = redex.upSubst;
-  top.upSubst = node.upSubst;
+  arg.downSubst = top.downSubst;
+  top.upSubst = arg.upSubst;
 
-  top.translation = s"((${finalType(node).transType})common.Origins.copy(${redex.translation}, ${node.translation}))";
+  top.translation = s"((${finalType(arg).transType})common.Origins.debug(${arg.translation}))";
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }

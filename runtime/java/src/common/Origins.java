@@ -9,8 +9,10 @@ import core.*;
  * @author louisg
  */
 public final class Origins {
-	public static Node copy(final Object redex, final Node tree) {
-		System.out.println("Look ma, a side effect!\n");
-		return tree;
+	public static Object debug(final Object arg) {
+		System.out.println("\n----- OTX DEBUG -----\n");
+		System.out.println("arg = " + arg + "\n");
+		System.out.println("----- OTX DEBUG -----\n\n");
+		return arg;
 	}
 }
