@@ -27,6 +27,7 @@ parser svParse::Root {
   silver:extension:silverconstruction;
   silver:extension:astconstruction;
   silver:extension:constructparser;
+  silver:extension:otx;
 --  silver:extension:concreteSyntaxForTrees ;
 
   silver:modification:let_fix;
