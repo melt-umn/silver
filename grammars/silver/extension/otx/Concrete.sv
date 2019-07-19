@@ -45,7 +45,7 @@ top::Expr ::= 'new^' '(' e::Expr ')^' label::Expr
 {
   local shucked :: Expr = otxShuckValueImpl(e, location=top.location);
   shucked.downSubst = top.downSubst;
-  local app :: Expr = Silver_Expr {otxAssertReifyOk(reify(duplicateAST($Expr{label}, reflect($Expr{shucked}))))};
+  local app :: Expr = Silver_Expr {silver:extension:otx:childruntime:otxAssertReifyOk(reify(silver:extension:otx:childruntime:duplicateAST($Expr{label}, silver:reflect:reflect($Expr{shucked}))))};
   forwards to app;
 }
 
