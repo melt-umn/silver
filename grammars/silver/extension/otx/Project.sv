@@ -7,3 +7,5 @@ imports silver:definition:core;
 
 imports silver:translation:java:core;
 imports silver:translation:java:type;
+
+-- imports silver:extension:otx:childruntime; -- So we can make sure it builds

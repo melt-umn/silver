@@ -1,4 +1,5 @@
 
+--TODO: These precedence numbers are pulled from a magician's hat
 terminal OriginLParen  '^('      precedence = 24;
 terminal OriginNew     'new^'    precedence = 24;
 terminal OriginRParen  ')^'      precedence = 24;
@@ -23,7 +24,7 @@ top::Expr ::= prod::Expr '^(' args::AppExprs ')^' label::Expr
         name(sig.outputElement.elementName,
       top.location), location=top.location), location=top.location);
   
-  local attribute computedAnnos :: AnnoAppExprs = oneAnnoAppExprs(
+  local computedAnnos :: AnnoAppExprs = oneAnnoAppExprs(
     mkAnnoExpr(pair("origin",
       Silver_Expr {just(pair($Expr{lhsexpr}, $Expr{label}))})),
     location=top.location);
@@ -42,7 +43,10 @@ top::Expr ::= 'new^' '(' e::Expr ')'
 concrete production originNew
 top::Expr ::= 'new^' '(' e::Expr ')^' label::Expr
 {
-  forwards to otxDuplicateImpl(label, e, location=top.location);
+  local shucked :: Expr = otxShuckValueImpl(e, location=top.location);
+  shucked.downSubst = top.downSubst;
+  local app :: Expr = Silver_Expr {otxAssertReifyOk(reify(duplicateAST($Expr{label}, reflect($Expr{shucked}))))};
+  forwards to app;
 }
 
 
@@ -54,4 +58,15 @@ top::Expr ::= 'otxdebug^' '(' a::Expr ')'
   top.unparse = "otxdebug^(" ++ a.unparse ++ ")";
 
   forwards to otxDebugImpl(a, location=top.location);
+}
+
+
+terminal OriginsKwd    'origins' precedence = 24;
+
+concrete production originsOnDcl
+top::AGDcl ::= 'origins' 'on' nt::QName ';'
+{
+  top.unparse = "origins on " ++ nt.unparse;
+
+  forwards to makeDuplicateImpls(top.env, nt);
 }

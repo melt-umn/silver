@@ -15,12 +15,4 @@ public final class Origins {
 		System.out.println("----- / OTX DEBUG -----\n\n");
 		return arg;
 	}
-
-	public static Node duplicate(final String rule, final Node arg) {
-		System.out.println("\n-----  OTX DUPLICATE  -----\n");
-		System.out.println("rule = " + rule + "\n");
-		System.out.println("arg = " + arg + "\n");
-		System.out.println("----- / OTX DUPLICATE -----\n\n");
-		return arg;
-	}
 }
