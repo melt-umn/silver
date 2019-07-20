@@ -32,10 +32,10 @@ class NT:
 	def __repr__(self):
 		return self.name.split(":")[-1] + "(" + ",".join(map(repr, self.children)) + ")"
 
-while not input().startswith("origin:"): pass
+while not input().startswith("origin"): pass
 
 sxstart = translate(eval(input().replace("sxstart: ","",1)))
-sxres   = translate(eval(input().replace("sxres:   ","",1)))
+sxres   = translate(eval(input().replace("sxres  : ","",1)))
 
 os.chdir("/home/louis/School/melt/origintracking/silver/support/otx/svdraw")
 
@@ -47,7 +47,12 @@ with open("out.dot", 'w') as fd:
 		if (isinstance(v, NT) and any(map(lambda x:x in v.name, ('just', 'nothing', 'pair')))) or isinstance(v, str):
 			continue
 
-		w("n"+str(k)+" [label=\""+repr(v)+"\"")
+		if isinstance(v, NT):
+			name = v.name.split(":")[-1]
+		else:
+			name = repr(v)
+
+		w("n"+str(k)+" [label=\""+name+"\"")
 		if v is sxstart:
 			w(" color=red ")
 		if v is sxres:

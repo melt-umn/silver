@@ -1,6 +1,7 @@
 
 --TODO: These precedence numbers are pulled from a magician's hat
 terminal OriginLParen  '^('      precedence = 24;
+terminal NoOriginLParen  '^^('      precedence = 23;
 terminal OriginNew     'new^'    precedence = 24;
 terminal OriginRParen  ')^'      precedence = 24;
 
@@ -33,6 +34,19 @@ top::Expr ::= prod::Expr '^(' args::AppExprs ')^' label::Expr
   local computedAnnos :: AnnoAppExprs = oneAnnoAppExprs(
     mkAnnoExpr(pair("origin",
       Silver_Expr {just(pair($Expr{lhsexpr}, $Expr{label}))})),
+    location=top.location);
+
+  forwards to application(prod, '(', args, ',', computedAnnos, ')', location=top.location);
+}
+
+concrete production noOriginApplicationExpr
+top::Expr ::= prod::Expr '^^(' args::AppExprs ')'
+{
+  top.unparse = prod.unparse ++ "^^(" ++ args.unparse ++ ")";
+
+  local computedAnnos :: AnnoAppExprs = oneAnnoAppExprs(
+    mkAnnoExpr(pair("origin",
+      Silver_Expr {nothing()})),
     location=top.location);
 
   forwards to application(prod, '(', args, ',', computedAnnos, ')', location=top.location);
