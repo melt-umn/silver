@@ -23,38 +23,40 @@ public final class Origins {
 	private static String sexprifyObj(Object arg) {
 		if (arg instanceof DecoratedNode) arg = ((DecoratedNode)arg).undecorate();
 
-		String r = "(" + ids(arg) + " ";
+		String r = "[" + ids(arg) + ", ";
 		if (arg instanceof Integer)
-			r += "!Integer " + arg.toString();
+			r += "'!Integer', " + arg.toString();
 		else if (arg instanceof Float)
-			r += "!Float " + arg.toString();
+			r += "'!Float', " + arg.toString();
 		else if (arg instanceof Boolean)
-			r += "!Boolean " + arg.toString();
+			r += "'!Boolean', " + arg.toString();
 		else if (arg instanceof StringCatter)
-			r += "!String \""+arg.toString()+"\"";
+			r += "'!String', \""+arg.toString()+"\"";
 		else if (arg instanceof Terminal){
 			Terminal t = (Terminal) arg;
-			r += "!Terminal "+t.getName()+" \""+t.lexeme+"\" "+t.location;
+			r += "'!Terminal', '"+t.getName()+"', \""+t.lexeme+"\" "+t.location;
 		} else if (arg instanceof Node) {
 			Node n = (Node) arg;
-			r += n.getName() + " (";
+			r += "'" + n.getName() + "', [";
 			for (int i=0; i<n.getNumberOfChildren(); i++){
-				r += sexprifyObj(n.getChild(i)) + " ";
+				r += sexprifyObj(n.getChild(i));
+				if (i!=n.getNumberOfChildren()-1) r+=", ";
 			}
-			r+=")(";
+			r+="],[";
 
 			String[] annotationNames = n.getAnnoNames();
 			for (int i = 0; i < annotationNames.length; i++) {
 				String name = annotationNames[i];
 				Object value = n.getAnno(name);
-				r += "("+name+" "+sexprifyObj(value)+")";
+				r += "('"+name+"', "+sexprifyObj(value)+")";
+				if (i!=annotationNames.length-1) r+=",";
 			}
-			r += ")";
+			r += "]";
 		} else {
-			r += "??? \""+arg.toString()+"\"";
+			r += "'???', \""+arg.toString()+"\"";
 		}
 
-		r += ")";
+		r += "]";
 
 		return r;
 	}
