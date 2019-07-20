@@ -18,6 +18,26 @@ top::Expr ::= arg::Expr
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
+abstract production otxSexprifyImpl
+top::Expr ::= arg::Expr
+{
+  top.unparse = "<otxSexprifyImpl>";
+
+  top.errors := arg.errors;
+
+  top.typerep = stringType();
+
+  top.flowDefs = arg.flowDefs;
+  top.flowDeps = arg.flowDeps;
+
+  arg.downSubst = top.downSubst;
+  top.upSubst = arg.upSubst;
+
+  top.translation = s"(common.Origins.sexprify(${arg.translation}))";
+
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+
 abstract production otxShuckValueImpl
 top::Expr ::= arg::Expr
 {

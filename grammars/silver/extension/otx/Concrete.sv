@@ -11,6 +11,12 @@ top::Expr ::= prod::Expr '^(' args::AppExprs ')'
   forwards to originApplicationExpr(prod, '^(', args, ')^', bogonLabel, location=top.location);
 }
 
+concrete production originApplicationExprNoArgs
+top::Expr ::= prod::Expr '^(' ')^' label::Expr
+{
+  forwards to originApplicationExpr(prod, '^(', emptyAppExprs(location=top.location), ')^', label, location=top.location);
+}
+
 concrete production originApplicationExpr
 top::Expr ::= prod::Expr '^(' args::AppExprs ')^' label::Expr
 {
