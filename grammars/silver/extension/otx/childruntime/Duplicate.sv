@@ -25,7 +25,7 @@ AST ::= rule::String h::AST
         | nonterminalAST(prodName, children, annos) ->
             nonterminalAST(prodName,
                 mapASTs(duplicateAST(rule, _), children),
-                setAnnoByName("test:origin",
+                setAnnoByName("example_elision:origin",
                     AST {core:just(core:pair(${h}, ${stringAST(rule)}))}, annos))
         | x -> x
     end;

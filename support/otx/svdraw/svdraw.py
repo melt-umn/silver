@@ -21,6 +21,8 @@ class NT:
 		self.name = record[1]
 		self.children = list(map(translate, record[2]))
 		self.childids = list(map(lambda x:x[0], record[2]))
+		self.children_all_primitive = all(map(lambda x:not isinstance(x, NT), self.children))\
+		 and 1 #Change to show/hide primitives
 
 		self.origin = None
 		o = list(filter(lambda x:x[0].endswith("origin"), record[3]))
@@ -44,11 +46,14 @@ with open("out.dot", 'w') as fd:
 	w("digraph{")
 	for k, v in cache.items():
 		#TODO: FIX
-		if (isinstance(v, NT) and any(map(lambda x:x in v.name, ('just', 'nothing', 'pair')))) or isinstance(v, str):
+		if (isinstance(v, NT) and any(map(lambda x:x in v.name, ('just', 'nothing', 'pair')))) or isinstance(v, str) or isinstance(v, int):
 			continue
 
 		if isinstance(v, NT):
-			name = v.name.split(":")[-1]
+			if v.children_all_primitive:
+				name = repr(v)
+			else:
+				name = v.name.split(":")[-1]
 		else:
 			name = repr(v)
 
@@ -62,8 +67,10 @@ with open("out.dot", 'w') as fd:
 		if isinstance(v, NT):
 			if v.origin:
 				w("n"+str(k)+" -> n"+str(v.origin.ids)+" [style=dashed, label=\""+v.originlabel+"\"];")
-			for i in range(len(v.children)):
-				w("n"+str(k)+" -> n"+str(v.childids[i])+";")
+
+			if not v.children_all_primitive:
+				for i in range(len(v.children)):
+					w("n"+str(k)+" -> n"+str(v.childids[i])+";")
 	w("}")
 
 os.system("dot -Tpng -o out.png out.dot")
