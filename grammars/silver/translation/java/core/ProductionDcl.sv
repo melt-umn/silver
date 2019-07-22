@@ -18,6 +18,23 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local ntName :: String = namedSig.outputElement.typerep.typeName;
   local fnnt :: String = makeNTClassName(ntName);
 
+  local dupChild :: (String ::= NamedSignatureElement) =
+  	(\x::NamedSignatureElement -> 
+  		"getChild_"++x.elementName++"()" ++
+  			(if x.typerep.isPrimitiveForDuplicate then "" else ".duplicate(rule)"));
+
+  local dupimpl :: String = if length(namedSig.namedInputElements)==1 &&
+  	head(namedSig.namedInputElements).elementName == "example_elision:origin" then
+  		s"""
+@Override
+
+public ${fnnt} duplicate(Object rule) {
+	return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))},
+  			new core.Pjust(new core.Ppair(this, rule)));
+}"""
+  	else "";
+
+
   top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
 
@@ -122,6 +139,8 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 	public String getName() {
 		return "${fName}";
 	}
+
+	${dupimpl}
 	
 	@Override
 	public final common.BaseTypeRep getType() {

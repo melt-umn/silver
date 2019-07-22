@@ -121,6 +121,10 @@ public abstract class Node implements Typed {
 	 */
 	public abstract String getName();
 
+	public Object duplicate(Object rule){
+		return this;
+	}
+
 	/**
 	 * Returns the number of children, same way array length does.
 	 * 
