@@ -1,3 +1,4 @@
+-- imports silver:langutil;
 
 --TODO: These precedence numbers are pulled from a magician's hat
 terminal OriginLParen  '^('      precedence = 24;
@@ -32,8 +33,11 @@ top::Expr ::= prod::Expr '^(' args::AppExprs ')^' label::Expr
       top.location), location=top.location), location=top.location);
   
   local computedAnnos :: AnnoAppExprs = oneAnnoAppExprs(
-    mkAnnoExpr(pair("origin",
-      Silver_Expr {just(pair($Expr{lhsexpr}, $Expr{label}))})),
+    mkAnnoExpr(pair("otxinfo",
+      Silver_Expr {silver:extension:otx:childruntime:linkOtxInfo(
+        just(pair(otxLinkExpr($Expr{lhsexpr}),
+          cons(silver:extension:otx:childruntime:debugStringRule($Expr{label}), nil()))),
+        nothing(), false)})),
     location=top.location);
 
   forwards to application(prod, '(', args, ',', computedAnnos, ')', location=top.location);
@@ -45,8 +49,9 @@ top::Expr ::= prod::Expr '^^(' args::AppExprs ')'
   top.unparse = prod.unparse ++ "^^(" ++ args.unparse ++ ")";
 
   local computedAnnos :: AnnoAppExprs = oneAnnoAppExprs(
-    mkAnnoExpr(pair("origin",
-      Silver_Expr {nothing()})),
+    mkAnnoExpr(pair("otxinfo",
+      Silver_Expr {silver:extension:otx:childruntime:otherOtxInfo("noOriginApplicationExpr",
+        cons(silver:extension:otx:childruntime:builtinNoOriginsConstructorRule($Expr{stringConst(terminal(String_t, "\"" ++ top.location.unparse ++ "\"", top.location), location=top.location)}), nil()))})),
     location=top.location);
 
   forwards to application(prod, '(', args, ',', computedAnnos, ')', location=top.location);

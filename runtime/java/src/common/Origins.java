@@ -2,6 +2,7 @@ package common;
 
 
 import core.*;
+import common.exceptions.*;
 
 /**
  * Implementation of helper functions on Nonterminals used by Origin-tracking code
@@ -52,6 +53,25 @@ public final class Origins {
 				if (i!=annotationNames.length-1) r+=",";
 			}
 			r += "]";
+		} else if (arg instanceof ConsCell){
+			ConsCell cc = (ConsCell) arg;
+			if (cc.nil()) {
+				r += "'!List', []";
+			}else{
+				Object next;
+				r += "'!List', [";
+				while (!cc.nil()) {
+					r += sexprifyObj(cc.head());
+					r += ",";
+					next = cc.tail();
+					if (next instanceof DecoratedNode) next = ((DecoratedNode)next).undecorate();
+					if (!(next instanceof ConsCell)) {
+						throw new SilverInternalError("ConsCell.tail() evalued to not a ConsCell");
+					}
+					cc=(ConsCell)next;
+				}
+				r += "]";
+			}
 		} else {
 			r += "'???', \""+arg.toString()+"\"";
 		}

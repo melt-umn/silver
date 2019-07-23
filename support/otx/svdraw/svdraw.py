@@ -2,11 +2,15 @@ import os
 
 cache = {}
 
+print('\n\n\n')
+
 def translate(x):
 	# print(x)
 	def _translate(x):
 		if x[1] in ("!Integer", "!String", "!Float", "!Boolean"):
 			return x[2]
+		if x[1] == "!List":
+			return list(map(translate, x[2]))
 		return NT(x)
 	if x[0] in cache:
 		return cache[x[0]]
@@ -25,17 +29,19 @@ class NT:
 		 and 1 #Change to show/hide primitives
 
 		self.origin = None
-		o = list(filter(lambda x:x[0].endswith("origin"), record[3]))
+		o = list(filter(lambda x:x[0].endswith("otxinfo"), record[3]))
 		if o != []:
+			print(o[0][1])
 			o = translate(o[0][1])
-			if o.name.endswith("just"):
-				self.origin, self.originlabel = o.children[0].children
+			self.origin, self.originlabel = o, ""
 
 	def __repr__(self):
 		return self.name.split(":")[-1] + "(" + ",".join(map(repr, self.children)) + ")"
 
 while not input().startswith("origin"): pass
 
+false = False
+true = True
 sxstart = translate(eval(input().replace("sxstart: ","",1)))
 sxres   = translate(eval(input().replace("sxres  : ","",1)))
 
@@ -46,8 +52,8 @@ with open("out.dot", 'w') as fd:
 	w("digraph{")
 	for k, v in cache.items():
 		#TODO: FIX
-		if (isinstance(v, NT) and any(map(lambda x:x in v.name, ('just', 'nothing', 'pair')))) or isinstance(v, str) or isinstance(v, int):
-			continue
+		# if (isinstance(v, NT) and any(map(lambda x:x in v.name, ('just', 'nothing', 'pair')))) or isinstance(v, str) or isinstance(v, int):
+		# 	continue
 
 		if isinstance(v, NT):
 			if v.children_all_primitive:
