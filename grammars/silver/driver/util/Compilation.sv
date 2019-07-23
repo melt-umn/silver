@@ -1,6 +1,6 @@
 grammar silver:driver:util;
 
-import silver:definition:core only jarName, monadRewritten;
+import silver:definition:core only jarName;
 
 nonterminal Compilation with config, postOps, grammarList, recheckGrammars, allGrammars;
 
@@ -52,10 +52,6 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   -- JUST the grammars read from source, that are relevant, ignoring rechecked grammars
   production grammarsToTranslate :: [Decorated RootSpec] =
     keepGrammars(grammarsDependedUpon, g.translateGrammars);
-
-  -- grammarsToTranslate translated into their explicitly-monadic form
-  production grammarsForFinalTranslation :: [Decorated RootSpec] =
-    map(\x::Decorated RootSpec -> x.monadRewritten, grammarsToTranslate);
   
   top.allGrammars = g.grammarList ++ r.grammarList;
 

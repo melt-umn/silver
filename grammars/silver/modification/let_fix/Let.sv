@@ -12,7 +12,7 @@ terminal End_kwd 'end' lexer classes {KEYWORD,RESERVED};
 concrete production letp_c
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
-  --top.unparse = "let " ++ la.unparse ++ " in " ++ e.unparse ++ " end";
+  top.unparse = "let " ++ la.unparse ++ " in " ++ e.unparse ++ " end";
 
   forwards to letp(la.letAssignExprs, e, location=top.location);
 }
@@ -54,14 +54,11 @@ top::Expr ::= la::AssignExpr  e::Expr
   -- Semantics for the moment is these are not mutually recursive,
   -- so la does NOT get new environment, only e. Thus, la.defs can depend on downSubst...
   e.env = newScopeEnv(la.defs, top.env);
-
-  top.monadRewritten = letp(la.monadRewritten, e.monadRewritten, location=top.location);
 }
 
 nonterminal AssignExpr with location, config, grammarName, env, compiledGrammars, 
                             unparse, defs, errors, upSubst, 
-                            downSubst, finalSubst, frame,
-                            monadRewritten<AssignExpr>;
+                            downSubst, finalSubst, frame;
 
 abstract production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
@@ -73,17 +70,14 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
   a1.downSubst = top.downSubst;
   a2.downSubst = a1.upSubst;
   top.upSubst = a2.upSubst;
-
-  top.monadRewritten = appendAssignExpr(a1.monadRewritten, a2.monadRewritten, location=top.location);
 }
 
 -- TODO: Well, okay, so this isn't really abstract syntax...
 concrete production assignExpr
 top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
-  local unparseType::String = prettyType(performSubstitution(t.typerep, top.upSubst));
-  top.unparse = id.unparse ++ " :: " ++ unparseType ++ " = " ++ e.unparse;
-
+  top.unparse = id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse;
+  
   top.errors := t.errors ++ e.errors;
   
   -- Right now some things (pattern matching) abuse us by giving type variables
@@ -114,15 +108,11 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  errCheck1 = if isMonad(e.typerep) && !isMonad(t.typerep)
-              then check(monadInnerType(e.typerep), t.typerep)
-              else check(e.typerep, t.typerep);
+  errCheck1 = check(e.typerep, t.typerep);
   top.errors <-
     if errCheck1.typeerror
     then [err(id.location, "Value " ++ id.name ++ " declared with type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
     else [];
-
-  top.monadRewritten = assignExpr(id, '::', t, '=', e.monadRewritten, location=top.location);
 }
 
 abstract production lexicalLocalReference

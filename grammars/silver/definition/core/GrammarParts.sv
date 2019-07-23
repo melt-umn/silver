@@ -7,7 +7,7 @@ nonterminal Grammar with
   grammarName, env, globalImports, grammarDependencies,
   -- Synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild,
-  defs, importedDefs, grammarErrors, jarName, monadRewritten<Grammar>;
+  defs, importedDefs, grammarErrors, jarName;
 
 {--
 - A list of grammars that this grammar depends upon,
@@ -47,8 +47,6 @@ top::Grammar ::=
   top.grammarErrors = [];
 
   top.jarName = nothing();
-
-  top.monadRewritten = top;
 }
 
 abstract production consGrammar
@@ -69,6 +67,4 @@ top::Grammar ::= h::Root  t::Grammar
   local jarNameErrors :: [Message] = warnIfMultJarName(h.jarName, t.jarName, h.location);
 
   top.jarName = orElse(h.jarName, t.jarName);
-
-  top.monadRewritten = consGrammar(h.monadRewritten, t.monadRewritten);
 }

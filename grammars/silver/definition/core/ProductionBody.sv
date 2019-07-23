@@ -2,16 +2,13 @@ grammar silver:definition:core;
 
 nonterminal ProductionBody with
   config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, uniqueSignificantExpression,
-  monadRewritten<ProductionBody>;
+  productionAttributes, uniqueSignificantExpression;
 nonterminal ProductionStmts with 
   config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, uniqueSignificantExpression,
-  monadRewritten<ProductionStmts>;
+  productionAttributes, uniqueSignificantExpression;
 nonterminal ProductionStmt with
   config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, uniqueSignificantExpression,
-  monadRewritten<ProductionStmt>;
+  productionAttributes, uniqueSignificantExpression;
 
 nonterminal DefLHS with 
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found;
@@ -55,8 +52,6 @@ top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 
   top.defs = stmts.defs;
   top.errors := stmts.errors;
-
-  top.monadRewritten = productionBody('{', stmts.monadRewritten, '}', location=top.location);
 }
 
 concrete production productionStmtsNil
@@ -69,8 +64,6 @@ top::ProductionStmts ::=
 
   top.defs = [];
   top.errors := [];
-
-  top.monadRewritten = top;
 }
 
 concrete production productionStmtsSnoc
@@ -83,8 +76,6 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 
   top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
-
-  top.monadRewritten = productionStmtsSnoc(h.monadRewritten, t.monadRewritten, location=top.location);
 }
 
 ----------
@@ -99,8 +90,6 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 
   top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
-
-  top.monadRewritten = productionStmtAppend(h.monadRewritten, t.monadRewritten, location=top.location);
 }
 
 abstract production errorProductionStmt
@@ -112,8 +101,6 @@ top::ProductionStmt ::= e::[Message]
   top.productionAttributes = [];
   top.uniqueSignificantExpression = [];
   top.defs = [];
-
-  top.monadRewritten = top;
 }
 
 --------------------------------------------------------------------------------
@@ -141,8 +128,6 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   top.errors <- if !top.frame.permitReturn
                 then [err(top.location, "Return is not valid in this context. (They are only permitted in function declarations.)")]
                 else [];
-
-  top.monadRewritten = returnDef('return', e.monadRewritten, ';', location=top.location);
 }
 
 concrete production localAttributeDcl
@@ -165,8 +150,6 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   top.errors <- if !top.frame.permitLocalAttributes
                 then [err(top.location, "Local attributes are not valid in this context.")]
                 else [];
-
-  top.monadRewritten = localAttributeDcl('local', 'attribute', a, '::', te, ';', location=top.location);
 }
 
 concrete production productionAttributeDcl
@@ -198,17 +181,12 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   top.errors <- if !top.frame.permitForward
                 then [err(top.location, "Forwarding is not permitted in this context. (Only permitted in non-aspect productions.)")]
                 else [];
-
-  top.monadRewritten = forwardsTo('forwards', 'to', e.monadRewritten, ';', location=top.location);
 }
 
 concrete production forwardsToWith
 top::ProductionStmt ::= 'forwards' 'to' e::Expr 'with' '{' inh::ForwardInhs '}' ';'
 {
   top.unparse = "\tforwards to " ++ e.unparse ++ " with {" ++ inh.unparse ++ "};";
-
-  e.downSubst = top.downSubst;
-  inh.downSubst = top.downSubst;
 
   forwards to productionStmtAppend(
     forwardsTo($1, $2, $3, $8, location=top.location),
@@ -229,8 +207,6 @@ top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
   top.errors <- if null(fwdDcls)
                 then [err(top.location, "'forwarding with' clause for a production that does not forward!")]
                 else [];
-
-  top.monadRewritten = top;
 }
 
 -- TODO eliminate these (/ combine with the ones for decorate expression)
@@ -273,8 +249,6 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
-  e.downSubst = top.downSubst;
-
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes = [];
   top.defs = [];
@@ -313,16 +287,6 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   top.errors := e.errors;
-
-  top.monadRewritten = if isMonad(attr.typerep)
-                       then if isMonad(e.typerep)
-                            then synthesizedAttributeDef(dl, attr, e.monadRewritten, location=top.location)
-                            else synthesizedAttributeDef(dl, attr,
-                                   Silver_Expr {
-                                     $Expr {monadReturn(attr.typerep, top.location)}
-                                      ($Expr {e.monadRewritten})
-                                   }, location=top.location)
-                       else synthesizedAttributeDef(dl, attr, e.monadRewritten, location=top.location);
 }
 
 abstract production inheritedAttributeDef
@@ -331,16 +295,6 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   top.errors := e.errors;
-
-  top.monadRewritten = if isMonad(attr.typerep)
-                       then if isMonad(e.typerep)
-                            then inheritedAttributeDef(dl, attr, e.monadRewritten, location=top.location)
-                            else inheritedAttributeDef(dl, attr,
-                                   Silver_Expr {
-                                     $Expr {monadReturn(attr.typerep, top.location)}
-                                      ($Expr {e.monadRewritten})
-                                   }, location=top.location)
-                       else inheritedAttributeDef(dl, attr, e.monadRewritten, location=top.location);
 }
 
 concrete production concreteDefLHS
@@ -445,8 +399,6 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
 {
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
-  e.downSubst = top.downSubst;
-
   top.errors <- val.lookupValue.errors;
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
@@ -468,8 +420,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   local assignError :: [Message] =
     if val.lookupValue.typerep.isError then []
     else [err(val.location, val.name ++ " cannot be assigned to.")];
-
-  top.monadRewritten = errorValueDef(val, e.monadRewritten, location=top.location);
+     
 }
 
 abstract production localValueDef
@@ -481,15 +432,5 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   top.errors := e.errors;
 
   -- TODO: missing redefinition check
-
-  top.monadRewritten = if isMonad(val.lookupValue.typerep)
-                       then if isMonad(e.typerep)
-                            then localValueDef(val, e.monadRewritten, location=top.location)
-                            else localValueDef(val,
-                                   Silver_Expr {
-                                     $Expr {monadReturn(val.lookupValue.typerep, top.location)}
-                                      ($Expr {e.monadRewritten})
-                                   }, location=top.location)
-                       else localValueDef(val, e.monadRewritten, location=top.location);
 }
 

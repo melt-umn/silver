@@ -8,17 +8,15 @@ imports silver:modification:primitivepattern;
 import silver:definition:type:syntax only typerepTypeExpr;
 import silver:modification:let_fix;
 
-import silver:modification:lambda_fn only lambdap; --for monad stuff
-
 terminal Case_kwd 'case' lexer classes {KEYWORD,RESERVED};
-terminal MCase_kwd 'mcase' lexer classes {KEYWORD, RESERVED};
 terminal Of_kwd 'of' lexer classes {KEYWORD,RESERVED};
 terminal Arrow_kwd '->' lexer classes {SPECOP};
 terminal Vbar_kwd '|' lexer classes {SPECOP};
 terminal Opt_Vbar_t /\|?/ lexer classes {SPECOP}; -- optional Coq-style vbar.
+terminal When_kwd 'when' lexer classes {KEYWORD,RESERVED};
 
 -- MR | ...
-nonterminal MRuleList with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize, patternTypeList, upSubst, downSubst;
+nonterminal MRuleList with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize;
 
 -- Turns MRuleList (of MatchRules) into [AbstractMatchRule]
 synthesized attribute matchRuleList :: [AbstractMatchRule];
@@ -26,8 +24,8 @@ synthesized attribute matchRuleList :: [AbstractMatchRule];
 autocopy attribute matchRulePatternSize :: Integer;
 
 -- P -> E
-nonterminal MatchRule with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize, patternTypeList;
-nonterminal AbstractMatchRule with location, headPattern, isVarMatchRule, expandHeadPattern, typerep, env, downSubst;
+nonterminal MatchRule with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize;
+nonterminal AbstractMatchRule with location, headPattern, isVarMatchRule, expandHeadPattern;
 
 -- The head pattern of a match rule
 synthesized attribute headPattern :: Decorated Pattern;
@@ -37,14 +35,10 @@ synthesized attribute isVarMatchRule :: Boolean;
 synthesized attribute expandHeadPattern :: AbstractMatchRule;
 
 -- P , ...
-nonterminal PatternList with location, config, unparse, patternList, env, errors, patternTypeList;
+nonterminal PatternList with location, config, unparse, patternList, env, errors;
 
 -- Turns PatternList into [Pattern]
 synthesized attribute patternList :: [Decorated Pattern];
-
--- List of the types of patterns in a single rule for comparing to
---    determine if we are monadically matching something
-synthesized attribute patternTypeList::[Type];
 
 
 {- NOTE ON ERRORS: #HACK2012
@@ -67,213 +61,27 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 
   ml.matchRulePatternSize = length(es.rawExprs);
   top.errors <- ml.errors;
-
-  {-
-    We just need to take the type off the first pattern to compare for
-    things used monadically in matching--if this type doesn't match
-    the other types, we'll have an error, so we won't output anything,
-    and if this type doesn't have any structure, none of them have any
-    structure, since unstructured ones only come from unstructured
-    patterns.
-  -}
-  ml.downSubst = top.downSubst;
-  local monadInExprs::Pair<Boolean Type> =
-    monadicallyUsedExpr(es.rawExprs, ml.patternTypeList, top.env, ml.upSubst);
-  local monadInClauses::Pair<Boolean Type> =
-    foldl((\p::Pair<Boolean Type> a::AbstractMatchRule ->
-            if p.fst
-            then p
-            else if isMonad(decorate a with {env=top.env; downSubst=ml.upSubst;}.typerep)
-                 then pair(true, decorate a with {env=top.env; downSubst=ml.upSubst;}.typerep)
-                 else p),
-          pair(false, errorType()), --error as filler; won't be used
-          ml.matchRuleList);
-
-  local basicFailure::Expr = mkStrFunctionInvocation(top.location, "core:error",
-                               [stringConst(terminal(String_t, 
-                                  "\"Error: pattern match failed at " ++ top.grammarName ++
-                                  " " ++ top.location.unparse ++ "\\n\""),
-                                location=top.location)]);
-  {-
-    This will add in a Fail() for an appropriate monad (if the
-    expression is well-typed) whenever we are matching against a monad
-    or any clause returns a monad.  This does not cover the case where
-    a monad type is expected out and the clauses are incomplete.  That
-    one will still fail, but I think that will be a rare case.  We
-    would need to pass down an expected type for that to work, and we
-    haven't done that here.
-
-    Inserting fails breaks down if the current monad's fail is
-    expecting something other than a string, integer, float, or list,
-    as we don't really have ways to come up with basic fail arguments
-    for anything more complex.
-  -}
-  local failure::Expr = if monadInExprs.fst
-                        then case monadFailArgument(monadInExprs.snd, top.location) of
-                             | just(x) ->
-                               Silver_Expr {
-                                 $Expr{monadFail(monadInExprs.snd, top.location)}($Expr{x})
-                               }
-                             | nothing() -> basicFailure
-                             end
-                        else if monadInClauses.fst
-                             then case monadFailArgument(monadInClauses.snd, top.location) of
-                                  | just(x) ->
-                                    Silver_Expr {
-                                      $Expr{monadFail(monadInClauses.snd, top.location)}($Expr{x})
-                                    }
-                                  | nothing() -> basicFailure
-                                  end
-                             else basicFailure;
-
+  
   -- TODO: this is the only use of .rawExprs. FIXME
   -- introduce the failure case here.
-  {-
-    forwards to 
+  forwards to 
     caseExpr(es.rawExprs, ml.matchRuleList, 
-      failure,
+      mkStrFunctionInvocation(top.location, "core:error",
+        [stringConst(terminal(String_t, 
+          "\"Error: pattern match failed at " ++ top.grammarName ++ " " ++ top.location.unparse ++ "\\n\""), location=top.location)]),
       freshType(), location=top.location);
-  -}
-  --read the comment on the function below if you want to know what it is
-  local attribute monadStuff::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
-  monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.upSubst, 1);
-  forwards to
-    buildMonadicBinds(monadStuff.fst,
-                      caseExpr(monadStuff.snd,
-                               ml.matchRuleList, failure,
-                               freshType(), location=top.location));
-}
---find if any of the expressions are being matched as their inner type
---if returns (true, ty), ty will be used to find the correct Fail()
-function monadicallyUsedExpr
-Pair<Boolean Type> ::= elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution
-{
-  return case elst, tylst of
-              | [], _ -> pair(false, errorType())
-              | _, [] -> pair(false, errorType())
-              | e::etl, t::ttl ->
-                if isMonad(decorate e with {env=env; downSubst=sub;}.typerep) &&
-                  !isMonad(performSubstitution(t, sub))
-                then pair(true, decorate e with {env=env; downSubst=sub;}.typerep)
-                else monadicallyUsedExpr(etl, ttl, env, sub)
-              end;
-}
---make a list of the expression types, expressions and names for binding them as
---   well as a new list of expressions for the forward to use
-function monadicMatchTypesNames
-Pair<[Pair<Type Pair<Expr String>>] [Expr]> ::=
-elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution index::Integer
-{
-  local attribute subcall::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
-  subcall = case elst, tylst of
-            | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, env, sub, index+1)
-            end;
-  local newName::String = "binding_matched_expression_in_case" ++ toString(index);
-  return case elst, tylst of
-         | [], _ -> pair([], [])
-         | _, [] -> pair([], elst)
-         | e::etl, t::ttl ->
-           if isMonad(decorate e with {env=env; downSubst=sub;}.typerep) &&
-             !isMonad(performSubstitution(t, sub))
-           then pair(pair(decorate e with {env=env; downSubst=sub;}.typerep, pair(e, newName)) :: subcall.fst,
-                     baseExpr(qName(bogusLoc(), newName), location=bogusLoc()) :: subcall.snd)
-           else pair(subcall.fst, e::subcall.snd)
-         end;
-}
---take a list of things to bind and the name to use in binding them, as well as
---   a base for the binding, and create an expression with all of them bound
-function buildMonadicBinds
-Expr ::= bindlst::[Pair<Type Pair<Expr String>>] base::Expr
-{
-  return case bindlst of
-         | [] -> base
-         | pair(ty,pair(e,n))::rest ->
-           Silver_Expr{ $Expr{monadBind(ty, bogusLoc())}
-            ($Expr{e},
-             $Expr{
-               lambdap(
-                 productionRHSCons(productionRHSElem(name(n, bogusLoc()),
-                                                     '::',
-                                                     typerepTypeExpr(monadInnerType(ty),
-                                                                     location=bogusLoc()),
-                                                     location=bogusLoc()),
-                                   productionRHSNil(location=bogusLoc()),
-                                   location=bogusLoc()),
-                 buildMonadicBinds(rest, base),
-                 location=bogusLoc())})}
-         end;
-}
---case expression that expands, using mplus, to possibly take multiple cases
-concrete production mcaseExpr_c
-top::Expr ::= 'mcase' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
-{
-  top.unparse = "mcase " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
-
-  {-
-    This will fail if we don't have a monad type somewhere, even if
-    the output type is expected to be a monad.  For example, if the
-    expected output type is [a], we might expect mcase to map over all
-    the patterns and give us all the ones that match in a list, which
-    we won't do if there wasn't a list somewhere here in the first
-    place.
-  -}
-  ml.downSubst = top.downSubst;
-  local monadInExprs::Pair<Boolean Type> =
-    monadicallyUsedExpr(es.rawExprs, ml.patternTypeList, top.env, ml.upSubst);
-  local monadInClauses::Pair<Boolean Type> =
-    foldl((\p::Pair<Boolean Type> a::AbstractMatchRule ->
-            if p.fst
-            then p
-            else if isMonad(decorate a with {env=top.env; downSubst=ml.upSubst;}.typerep)
-                 then pair(true, decorate a with {env=top.env; downSubst=ml.upSubst;}.typerep)
-                 else p),
-          pair(false, errorType()), --error as filler; won't be used
-          ml.matchRuleList);
-  local monad::Type = if monadInExprs.fst
-                      then monadInExprs.snd
-                      else monadInClauses.snd;
-  local mplus::Expr = monadPlus(monad, bogusLoc());
-  local mzero::Expr = monadZero(monad, bogusLoc());
-
-  --new names for using lets to bind the incoming expressions
-  local newNames::[String] = map(\x::Expr -> "__mcase_var_" ++ toString(genInt()), es.rawExprs);
-  local nameExprs::[Expr] = map(\x::String -> baseExpr(qName(bogusLoc(), x), location=bogusLoc()),
-                                newNames);
-  local caseExprs::[Expr] = map(\x::AbstractMatchRule -> 
-                                 caseExpr(nameExprs, [x], mzero, freshType(), location=bogusLoc()),
-                                ml.matchRuleList);
-  local mplused::Expr = foldl(\rest::Expr current::Expr -> 
-                               Silver_Expr{
-                                 $Expr{mplus}($Expr{rest}, $Expr{current})
-                               },
-                              head(caseExprs), tail(caseExprs));
-  local letBound::Expr = foldr(\p::Pair<Expr String> rest::Expr ->
-                                makeLet(bogusLoc(), p.snd, freshType(), p.fst, rest),
-                               mplused, zipWith(pair, es.rawExprs, newNames));
-
-  forwards to if isMonad(monad)
-              then if canBeMCased(monad)
-                   then letBound
-                   else errorExpr([err(top.location, "Monad type " ++
-                                   prettyType(performSubstitution(monad, top.finalSubst)) ++
-                                   " cannot be used in an mcase as it does not have " ++
-                                   "MPlus/MZero defined")], location=top.location)
-              else errorExpr([err(top.location, "Need a monad type somewhere in " ++
-                                                "an mcase, but did not find one")],
-                             location=top.location);
 }
 
 abstract production caseExpr
 top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
 {
-  --Why is unparse defined here if its point is just to fail?  Why not just let it forward anyway?
-  --top.unparse = error("Internal error: pretty of intermediate data structure");
+  top.unparse = error("Internal error: pretty of intermediate data structure");
 
   -- 4 cases: no patterns left, all constructors, all variables, or mixed con/var.
   -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules
   forwards to
     case ml of
-    | matchRule([], e) :: _ -> e -- valid or error case
+    | matchRule([], c, e) :: _ -> buildMatchWhenConditionals(ml, failExpr) -- valid or error case
     | _ -> if null(es) then failExpr -- error case
            else if null(varRules) then allConCase
            else if null(prodRules) then allVarCase
@@ -286,8 +94,11 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
   
   top.errors <-
     case ml of
-    -- are there multiple match rules, with no patterns left in them to distinguish between them?
-    | matchRule([], e) :: _ :: _ -> [err(top.location, "Pattern has overlapping cases!")]
+    -- are there multiple match rules, with no patterns/conditions left in them to distinguish between them?
+    | matchRule([], _, e) :: _ :: _ ->
+      if areUselessPatterns(ml)
+      then [err(top.location, "Pattern has overlapping cases!")]
+      else []
     | _ -> []
     end;
        
@@ -341,9 +152,6 @@ top::MRuleList ::= m::MatchRule
   top.errors := m.errors;  
 
   top.matchRuleList = m.matchRuleList;
-
-  top.patternTypeList = m.patternTypeList;
-  top.upSubst = top.downSubst;
 }
 
 concrete production mRuleList_cons
@@ -353,45 +161,43 @@ top::MRuleList ::= h::MatchRule '|' t::MRuleList
   top.errors := h.errors ++ t.errors;
   
   top.matchRuleList = h.matchRuleList ++ t.matchRuleList;
-
-  top.patternTypeList = h.patternTypeList;
-  --need to unify here with t.patternTypeList so, when we reach the case, if there is a
-  --   monad pattern farther down where the first one is a wildcard/variable, we'll find
-  --   it and not incorrectly identify something as being used non-monadically
-  top.upSubst = foldl(\s::Substitution p::Pair<Type Type> ->
-                       decorate check(p.fst, p.snd) with {downSubst=s;}.upSubst,
-                      t.upSubst, zipWith(pair, h.patternTypeList, t.patternTypeList));
-  t.downSubst = top.downSubst;
 }
 
 concrete production matchRule_c
 top::MatchRule ::= pt::PatternList '->' e::Expr
 {
   top.unparse = pt.unparse ++ " -> " ++ e.unparse;
-  top.errors := pt.errors; -- e.errors is examine later, after transformation.
+  top.errors := pt.errors; -- e.errors is examined later, after transformation.
   
   top.errors <-
     if length(pt.patternList) == top.matchRulePatternSize then []
     else [err(pt.location, "case expression matching against " ++ toString(top.matchRulePatternSize) ++ " values, but this rule has " ++ toString(length(pt.patternList)) ++ " patterns")];
 
-  top.matchRuleList = [matchRule(pt.patternList, e, location=top.location)];
+  top.matchRuleList = [matchRule(pt.patternList, nothing(), e, location=top.location)];
+}
 
-  top.patternTypeList = pt.patternTypeList;
+concrete production matchRuleWhen_c
+top::MatchRule ::= pt::PatternList 'when' cond::Expr '->' e::Expr
+{
+  top.unparse = pt.unparse ++ " when " ++ cond.unparse ++ " -> " ++ e.unparse;
+  top.errors := pt.errors; -- e.errors is examined later, after transformation, as is cond.errors
+  
+  top.errors <-
+    if length(pt.patternList) == top.matchRulePatternSize then []
+    else [err(pt.location, "case expression matching against " ++ toString(top.matchRulePatternSize) ++ " values, but this rule has " ++ toString(length(pt.patternList)) ++ " patterns")];
+
+  top.matchRuleList = [matchRule(pt.patternList, just(cond), e, location=top.location)];
 }
 
 abstract production matchRule
-top::AbstractMatchRule ::= pl::[Decorated Pattern] e::Expr
+top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Expr> e::Expr
 {
   top.headPattern = head(pl);
   -- If pl is null, and we're consulted, then we're missing patterns, pretend they're _
   top.isVarMatchRule = null(pl) || head(pl).patternIsVariable;
   -- For this, we safely know that pl is not null:
   top.expandHeadPattern = 
-    matchRule(head(pl).patternSubPatternList ++ tail(pl), e, location=top.location);
-
-  e.env = top.env;
-  e.downSubst = top.downSubst;
-  top.typerep = e.typerep;
+    matchRule(head(pl).patternSubPatternList ++ tail(pl), cond, e, location=top.location);
 }
 
 concrete production patternList_one
@@ -401,8 +207,6 @@ top::PatternList ::= p::Pattern
   top.errors := p.errors;
 
   top.patternList = [p];
-
-  top.patternTypeList = [p.patternType];
 }
 concrete production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
@@ -411,8 +215,6 @@ top::PatternList ::= p::Pattern ',' ps1::PatternList
   top.errors := p.errors ++ ps1.errors;
 
   top.patternList = p :: ps1.patternList;
-
-  top.patternTypeList = p.patternType :: ps1.patternTypeList;
 }
 
 -- lol, dangling comma bug TODO
@@ -423,8 +225,6 @@ top::PatternList ::=
   top.errors := [];
 
   top.patternList = [];
-
-  top.patternTypeList = [];
 }
 
 ----------------------------------------------------
@@ -519,8 +319,12 @@ AbstractMatchRule ::= headExpr::Expr  headType::Type  rule::AbstractMatchRule
 {
   -- If it's '_' we do nothing, otherwise, bind away!
   return case rule of
-  | matchRule(headPat :: restPat, e) ->
-      matchRule(restPat, 
+  | matchRule(headPat :: restPat, cond, e) ->
+      matchRule(restPat,
+        case headPat.patternVariableName, cond of
+        | just(pvn), just(c) -> just(makeLet(rule.location, pvn, headType, headExpr, c))
+        | _, _ -> cond
+        end,
         case headPat.patternVariableName of
         | just(pvn) -> makeLet(rule.location, pvn, headType, headExpr, e)
         | nothing() -> e
@@ -567,6 +371,50 @@ function groupMRules
 [[AbstractMatchRule]] ::= l::[AbstractMatchRule]
 {
   return groupBy(mruleEqForGrouping, sortBy(mruleLTEForSorting, l));
+}
+
+{--
+ - Given a list of match rules, which are presumed to match empty
+ - patterns (this is not checked), turn them into nested
+ - conditionals.
+ -}
+function buildMatchWhenConditionals
+Expr ::= ml::[AbstractMatchRule] failExpr::Expr
+{
+  return
+    case ml of
+    | matchRule(_, just(c), e) :: tl ->
+      Silver_Expr {
+        if $Expr {c}
+        then $Expr {e}
+        else $Expr {buildMatchWhenConditionals(tl, failExpr)}
+      }
+    | matchRule(_, nothing(), e) :: tl -> e
+    | [] -> failExpr
+    end;
+}
+
+{--
+ - Check whether there are patterns that overlap in a list of match
+ - rules which are presumed to match empty patterns (this is not
+ - checked here).
+ -
+ - An answer of true definitively means there are useless patterns.
+ - An answer of false means there may be, but it would require
+ - analysis of the conditions on the patterns to determine whether
+ - they are actually useless.  We do not do that.
+ -}
+function areUselessPatterns
+Boolean ::= ml::[AbstractMatchRule]
+{
+  return
+    case ml of
+    | matchRule(_, just(_), _) :: tl ->
+      areUselessPatterns(tl)
+    | matchRule(_, nothing(), _) :: _ :: _ -> true
+    | matchRule(_, nothing(), _) :: [] -> false
+    | [] -> false
+    end;
 }
 
 

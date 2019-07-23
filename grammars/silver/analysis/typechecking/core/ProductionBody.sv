@@ -150,12 +150,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst; 
 
-  --allow the attribute to be a monad but the assigned value to be the inner type
-  errCheck1 = if isMonad(attr.typerep)
-              then if isMonad(e.typerep)
-                   then check(attr.typerep, e.typerep)
-                   else check(monadInnerType(attr.typerep), e.typerep)
-              else check(attr.typerep, e.typerep);
+  errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror
     then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
@@ -171,12 +166,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst; 
 
-  --allow the attribute to be a monad but the assigned value to be the inner type
-  errCheck1 = if isMonad(attr.typerep)
-              then if isMonad(e.typerep)
-                   then check(attr.typerep, e.typerep)
-                   else check(monadInnerType(attr.typerep), e.typerep)
-              else check(attr.typerep, e.typerep);
+  errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror
     then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
@@ -206,12 +196,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
 
-  --allow the value to be a monad but the assigned expression to be the inner type
-  errCheck1 = if isMonad(val.lookupValue.typerep)
-              then if isMonad(e.typerep)
-                   then check(val.lookupValue.typerep, e.typerep)
-                   else check(monadInnerType(val.lookupValue.typerep), e.typerep)
-              else check(val.lookupValue.typerep, e.typerep);
+  errCheck1 = check(e.typerep, val.lookupValue.typerep);
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Local " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]

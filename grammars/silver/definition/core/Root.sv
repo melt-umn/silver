@@ -11,8 +11,7 @@ nonterminal Root with
   -- File-level inherited attributes
   -- Synthesized attributes
   declaredName, unparse, location, errors, defs, moduleNames, importedDefs,
-  exportedGrammars, optionalGrammars, condBuild, jarName,
-  monadRewritten<Root>;
+  exportedGrammars, optionalGrammars, condBuild, jarName;
 
 nonterminal GrammarDcl with 
   declaredName, grammarName, location, unparse, errors;
@@ -46,8 +45,6 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   --  THEN, we have the grammar-wide definitions, from the whole grammr. That's top.env here.
   -- So we're kind of injecting local imports in between two grammar-wide things there.
   ags.env = appendEnv(top.env, newScopeEnv(ims.defs, top.globalImports));
-
-  top.monadRewritten = root(gdcl, ms, ims, ags.monadRewritten, location=top.location);
 }
 
 concrete production noGrammarDcl

@@ -6,7 +6,7 @@ nonterminal FunctionLHS with config, grammarName, env, location, unparse, errors
 concrete production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 
 {
-  top.unparse = "function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n{" ++ body.unparse ++ "\n}\n"; 
+  top.unparse = "function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse; 
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
@@ -52,8 +52,6 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
 
   -- For the moment, functions do not have named parameters (hence, [])
   top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement, []);
-
-  rhs.finalSubst = emptySubst();
 }
 
 concrete production functionLHS

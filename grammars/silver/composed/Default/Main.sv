@@ -28,6 +28,7 @@ parser svParse::Root {
   silver:extension:astconstruction;
   silver:extension:constructparser;
 --  silver:extension:concreteSyntaxForTrees ;
+  silver:extension:implicit_monads;
 
   silver:modification:let_fix;
   silver:modification:lambda_fn;

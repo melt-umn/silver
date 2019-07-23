@@ -8,7 +8,7 @@ import silver:definition:core only Grammar, grammarErrors, grammarName, imported
 import silver:definition:flow:env only flowEnv, flowDefs, fromFlowDefs;
 import silver:definition:flow:ast only nilFlow, consFlow, FlowDef;
 
-import silver:definition:core only jarName, monadRewritten;
+import silver:definition:core only jarName;
 
 {--
  - A representation of a grammar, from an unknown source. TODO: rename GrammarSpec
@@ -19,7 +19,7 @@ nonterminal RootSpec with
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
   defs, grammarErrors, grammarSource, grammarTime, interfaceTime, recheckGrammars, translateGrammars,
-  parsingErrors, jarName, generateLocation, monadRewritten<Decorated RootSpec>;
+  parsingErrors, jarName, generateLocation;
 
 
 {--
@@ -83,12 +83,6 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   top.parsingErrors = [];
 
   top.jarName = g.jarName;
-  local mRewrite :: RootSpec = grammarRootSpec(g.monadRewritten, grammarName, grammarSource, grammarTime, generateLocation);
-  mRewrite.config = top.config;
-  mRewrite.compiledGrammars = top.compiledGrammars;
-  mRewrite.productionFlowGraphs = top.productionFlowGraphs;
-  mRewrite.grammarFlowTypes = top.grammarFlowTypes;
-  top.monadRewritten = mRewrite;
 }
 
 {--
@@ -118,7 +112,6 @@ top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer  generateLocation
   top.parsingErrors = [];
 
   top.jarName = nothing();
-  top.monadRewritten = top;
 }
 
 {--
@@ -147,7 +140,6 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
   top.parsingErrors = map(parseErrorToMessage(grammarSource, _), e);
 
   top.jarName = nothing();
-  top.monadRewritten = top;
 }
 
 function parseErrorToMessage
