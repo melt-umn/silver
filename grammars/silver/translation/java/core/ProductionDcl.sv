@@ -24,13 +24,13 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   			(if x.typerep.isPrimitiveForDuplicate then "" else ".duplicate(rule)"));
 
   local dupimpl :: String = if length(namedSig.namedInputElements)==1 &&
-  	head(namedSig.namedInputElements).elementName == "example_elision:origin" then
+  	head(namedSig.namedInputElements).elementName == "silver:extension:otx:childruntime:otxinfo" then
   		s"""
 @Override
 
 public ${fnnt} duplicate(Object rule) {
 	return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))},
-  			new core.Pjust(new core.Ppair(this, rule)));
+  			new silver.extension.otx.childruntime.PoriginOtxInfo(new example_elision.PotxLinkExpr(this), rule, false));
 }"""
   	else "";
 

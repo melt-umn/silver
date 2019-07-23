@@ -34,10 +34,8 @@ top::Expr ::= prod::Expr '^(' args::AppExprs ')^' label::Expr
   
   local computedAnnos :: AnnoAppExprs = oneAnnoAppExprs(
     mkAnnoExpr(pair("otxinfo",
-      Silver_Expr {silver:extension:otx:childruntime:linkOtxInfo(
-        just(pair(otxLinkExpr($Expr{lhsexpr}),
-          cons(silver:extension:otx:childruntime:debugStringRule($Expr{label}), nil()))),
-        nothing(), false)})),
+      Silver_Expr {silver:extension:otx:childruntime:originOtxInfo(
+        otxLinkExpr($Expr{lhsexpr}), $Expr{label}, false)})),
     location=top.location);
 
   forwards to application(prod, '(', args, ',', computedAnnos, ')', location=top.location);

@@ -19,10 +19,20 @@ top::OtxInfo ::= source::String rules::[OtxRule]
 	
 }
 
-abstract production linkOtxInfo
-top::OtxInfo ::= origin::Maybe<Pair<OtxLink [OtxRule]>>
-                 redex::Maybe<Pair<OtxLink [OtxRule]>>
-                 isContractum::Boolean
+abstract production originOtxInfo
+top::OtxInfo ::= origin :: OtxLink
+				 originRules :: [OtxRule]
+				 newlyConstructed :: Boolean
+{
+	
+}
+
+abstract production originAndRedexOtxInfo
+top::OtxInfo ::= origin :: OtxLink
+				 originRules :: [OtxRule]
+				 redex :: OtxLink
+				 redexrules :: [OtxRule]
+				 newlyConstructed :: Boolean
 {
 	
 }
@@ -33,7 +43,7 @@ top::OtxRule ::=
 	top.pp = "<<" ++ hackUnparse(top) ++ ">>";
 }
 
-abstract production debugStringRule
+abstract production noteRule
 top::OtxRule ::= string::String
 {
 	
