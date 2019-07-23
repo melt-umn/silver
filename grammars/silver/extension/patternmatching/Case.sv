@@ -13,6 +13,7 @@ terminal Of_kwd 'of' lexer classes {KEYWORD,RESERVED};
 terminal Arrow_kwd '->' lexer classes {SPECOP};
 terminal Vbar_kwd '|' lexer classes {SPECOP};
 terminal Opt_Vbar_t /\|?/ lexer classes {SPECOP}; -- optional Coq-style vbar.
+terminal When_kwd 'when' lexer classes {KEYWORD,RESERVED};
 
 -- MR | ...
 nonterminal MRuleList with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize;
@@ -80,7 +81,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
   -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules
   forwards to
     case ml of
-    | matchRule([], e) :: _ -> e -- valid or error case
+    | matchRule([], c, e) :: _ -> buildMatchWhenConditionals(ml, failExpr) -- valid or error case
     | _ -> if null(es) then failExpr -- error case
            else if null(varRules) then allConCase
            else if null(prodRules) then allVarCase
@@ -93,8 +94,11 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
   
   top.errors <-
     case ml of
-    -- are there multiple match rules, with no patterns left in them to distinguish between them?
-    | matchRule([], e) :: _ :: _ -> [err(top.location, "Pattern has overlapping cases!")]
+    -- are there multiple match rules, with no patterns/conditions left in them to distinguish between them?
+    | matchRule([], _, e) :: _ :: _ ->
+      if areUselessPatterns(ml)
+      then [err(top.location, "Pattern has overlapping cases!")]
+      else []
     | _ -> []
     end;
        
@@ -163,24 +167,37 @@ concrete production matchRule_c
 top::MatchRule ::= pt::PatternList '->' e::Expr
 {
   top.unparse = pt.unparse ++ " -> " ++ e.unparse;
-  top.errors := pt.errors; -- e.errors is examine later, after transformation.
+  top.errors := pt.errors; -- e.errors is examined later, after transformation.
   
   top.errors <-
     if length(pt.patternList) == top.matchRulePatternSize then []
     else [err(pt.location, "case expression matching against " ++ toString(top.matchRulePatternSize) ++ " values, but this rule has " ++ toString(length(pt.patternList)) ++ " patterns")];
 
-  top.matchRuleList = [matchRule(pt.patternList, e, location=top.location)];
+  top.matchRuleList = [matchRule(pt.patternList, nothing(), e, location=top.location)];
+}
+
+concrete production matchRuleWhen_c
+top::MatchRule ::= pt::PatternList 'when' cond::Expr '->' e::Expr
+{
+  top.unparse = pt.unparse ++ " when " ++ cond.unparse ++ " -> " ++ e.unparse;
+  top.errors := pt.errors; -- e.errors is examined later, after transformation, as is cond.errors
+  
+  top.errors <-
+    if length(pt.patternList) == top.matchRulePatternSize then []
+    else [err(pt.location, "case expression matching against " ++ toString(top.matchRulePatternSize) ++ " values, but this rule has " ++ toString(length(pt.patternList)) ++ " patterns")];
+
+  top.matchRuleList = [matchRule(pt.patternList, just(cond), e, location=top.location)];
 }
 
 abstract production matchRule
-top::AbstractMatchRule ::= pl::[Decorated Pattern] e::Expr
+top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Expr> e::Expr
 {
   top.headPattern = head(pl);
   -- If pl is null, and we're consulted, then we're missing patterns, pretend they're _
   top.isVarMatchRule = null(pl) || head(pl).patternIsVariable;
   -- For this, we safely know that pl is not null:
   top.expandHeadPattern = 
-    matchRule(head(pl).patternSubPatternList ++ tail(pl), e, location=top.location);
+    matchRule(head(pl).patternSubPatternList ++ tail(pl), cond, e, location=top.location);
 }
 
 concrete production patternList_one
@@ -302,8 +319,12 @@ AbstractMatchRule ::= headExpr::Expr  headType::Type  rule::AbstractMatchRule
 {
   -- If it's '_' we do nothing, otherwise, bind away!
   return case rule of
-  | matchRule(headPat :: restPat, e) ->
-      matchRule(restPat, 
+  | matchRule(headPat :: restPat, cond, e) ->
+      matchRule(restPat,
+        case headPat.patternVariableName, cond of
+        | just(pvn), just(c) -> just(makeLet(rule.location, pvn, headType, headExpr, c))
+        | _, _ -> cond
+        end,
         case headPat.patternVariableName of
         | just(pvn) -> makeLet(rule.location, pvn, headType, headExpr, e)
         | nothing() -> e
@@ -350,6 +371,50 @@ function groupMRules
 [[AbstractMatchRule]] ::= l::[AbstractMatchRule]
 {
   return groupBy(mruleEqForGrouping, sortBy(mruleLTEForSorting, l));
+}
+
+{--
+ - Given a list of match rules, which are presumed to match empty
+ - patterns (this is not checked), turn them into nested
+ - conditionals.
+ -}
+function buildMatchWhenConditionals
+Expr ::= ml::[AbstractMatchRule] failExpr::Expr
+{
+  return
+    case ml of
+    | matchRule(_, just(c), e) :: tl ->
+      Silver_Expr {
+        if $Expr {c}
+        then $Expr {e}
+        else $Expr {buildMatchWhenConditionals(tl, failExpr)}
+      }
+    | matchRule(_, nothing(), e) :: tl -> e
+    | [] -> failExpr
+    end;
+}
+
+{--
+ - Check whether there are patterns that overlap in a list of match
+ - rules which are presumed to match empty patterns (this is not
+ - checked here).
+ -
+ - An answer of true definitively means there are useless patterns.
+ - An answer of false means there may be, but it would require
+ - analysis of the conditions on the patterns to determine whether
+ - they are actually useless.  We do not do that.
+ -}
+function areUselessPatterns
+Boolean ::= ml::[AbstractMatchRule]
+{
+  return
+    case ml of
+    | matchRule(_, just(_), _) :: tl ->
+      areUselessPatterns(tl)
+    | matchRule(_, nothing(), _) :: _ :: _ -> true
+    | matchRule(_, nothing(), _) :: [] -> false
+    | [] -> false
+    end;
 }
 
 
