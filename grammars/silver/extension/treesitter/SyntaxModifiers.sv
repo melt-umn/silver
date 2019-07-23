@@ -56,8 +56,17 @@ top::SyntaxProductionModifier ::= term::String
   local termRef :: [Decorated SyntaxDcl] = searchEnvTree(term, top.cstEnv);
   top.treesitterProductionPrec = 
     case head(termRef) of 
-    | syntaxTerminal(_, _, mods) -> just( (mods.opPrecedence).fromJust )
+    | syntaxTerminal(_, _, mods) -> 
+        if (mods.opPrecedence).isJust then
+          mods.opPrecedence
+        else
+          nothing()
     | _ -> nothing()
     end;
+}
 
+aspect production prodPrecedence
+top::SyntaxProductionModifier ::= lvl::Integer
+{
+  top.treesitterProductionPrec = just(lvl);
 }

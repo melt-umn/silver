@@ -19,10 +19,11 @@ top::CmdArgs ::= _
   top.treesitterDemo = false;
 }
 
+
 abstract production treesitterLangFlag
-top::CmdArgs ::= loc::String rest::CmdArgs
+top::CmdArgs ::= langName::String rest::CmdArgs
 {
-  top.treesitterLangOption = loc :: rest.treesitterLangOption;
+  top.treesitterLangOption = langName :: rest.treesitterLangOption;
   top.noJavaGeneration = true;
   forwards to rest;
 }

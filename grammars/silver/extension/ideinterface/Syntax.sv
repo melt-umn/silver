@@ -52,7 +52,7 @@ top::SyntaxDcl ::= name::String regex::Regex modifiers::SyntaxTerminalModifiers
     consIDETerminalProperties(
       ideIsPrefix(matches("_Prefix[0-9]+", localTermName)),
     consIDETerminalProperties(
-      ideTerminalRegex(removeAllEscapesForStringLiteral(regex.regString)),
+      ideTerminalRegex(removeEscapesForStringLiteral(regex.regString)),
     syntaxTerminalModifiersToIDEProperties(modifiers)));
 
   top.ideSyntaxDcl = ideSyntaxTerminal(name, properties);

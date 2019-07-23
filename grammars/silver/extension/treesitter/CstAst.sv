@@ -339,16 +339,3 @@ Boolean ::= info::Pair<Integer String>
 }
 
 
-{--
-  Returns the value associated with a key from the key list. It returns the
-  first match found by the earliest key in the key list. If no key matches
-  then nothing is returned.
---}
-function lookupByList
-Maybe<b> ::= eq::(Boolean ::= a a) dict::[Pair<a b>] keyList::[a]
-{
-  return
-  if null(keyList) then nothing()
-  else
-    orElse(lookupBy(eq, head(keyList), dict), lookupByList(eq, dict, tail(keyList)));
-}

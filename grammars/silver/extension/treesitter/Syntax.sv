@@ -26,7 +26,7 @@ synthesized attribute tsRep :: String occurs on TreesitterRule, TreesitterRules;
 -- necessary because the first "rule" in the grammar.js file is assumed to be
 -- the start rule
 synthesized attribute startNtRep :: String occurs on TreesitterRules;
-autocopy attribute startNt :: String occurs on TreesitterRules;
+autocopy attribute startNt :: String occurs on TreesitterRules, TreesitterRule;
 
 autocopy attribute emptyStringTerminals :: [String] occurs on TreesitterRules, TreesitterRule;
 synthesized attribute emptyStringTerminalContribs :: [String] occurs on TreesitterRules;
@@ -183,7 +183,7 @@ top::TreesitterRule ::= name::String r::Regex mods::SyntaxTerminalModifiers
       name;
   local attribute ts_rhs_no_prefix :: String =
     if r.stringLiteral then
-      s""" "${removeAllEscapesForStringLiteral(r.regString)}" """
+      s""" "${removeEscapesForStringLiteral(r.regString)}" """
     else 
     -- treesitter does not escape spaces unlike silver
       s"""/${removeEscapesNotNecessaryForTreesitterRegexs(r.regString)}/""";
@@ -223,33 +223,65 @@ top::TreesitterRule ::= outputNT::String inputs::[String] mods::Decorated Syntax
     filter(isNotInEmptyStringList(emptyTerminalIdentifiers, _), inputs);
 
   top.precAssocEntries = [];
+
+  -- this has a bug of deciding the precedence from the first terminal in the
+  -- production. This does not seem to give accurate results.
+  -- See issue #372 in the treesitter repo about how precedence and associativty
+  -- are assigned to fix this
   local attribute precAssocFromTerminal :: Maybe<Pair<Integer String>> = 
     lookupByList(stringEq, top.precAssocEnv, map(TsIdentifierToDecl, inputs));
-  local attribute prec :: Maybe<Integer> = 
-    orElse(mods.treesitterProductionPrec, fstFromMaybe(precAssocFromTerminal));
-  local attribute assoc :: Maybe<String> =
-    sndFromMaybe(precAssocFromTerminal);
-  local attribute prodBeforePrec :: String = 
+
+  local attribute prodAssocPrec :: Maybe<Pair<Integer String>> = 
+    if mods.treesitterProductionPrec.isJust 
+    then just(pair(mods.treesitterProductionPrec.fromJust, "none"))
+    else precAssocFromTerminal;
+
+  local attribute prodBeforePrec :: String =
     if length(inputNoEmptyTerminals) > 1 then
       s"""seq(${implode(", ", inputNoEmptyTerminals)})"""
     else
       s"""${implode(", ", inputNoEmptyTerminals)}""";
+
   local attribute prodBeforeSpacing :: String = 
-    -- if both precedence and associativity are specified
-    if prec.isJust && prec.fromJust != 0 && assoc.isJust && !stringEq(assoc.fromJust, "none") then 
-      s"""prec.${assoc.fromJust}(${toString(prec.fromJust)}, ${prodBeforePrec})"""
-    -- just precedence is specified and associativty is not
-    else if prec.isJust && prec.fromJust != 0 then 
-      s"""prec(${toString(prec.fromJust)}, ${prodBeforePrec})"""
-    -- just associativty is specified
-    else if assoc.isJust && !stringEq(assoc.fromJust, "none") then
-      s"""prec.${assoc.fromJust}(${prodBeforePrec})"""
-    else
-      prodBeforePrec;
+    addPrecAssocToTreesitterProduction(prodAssocPrec, prodBeforePrec);
 
   top.tsRep = prodBeforeSpacing;
 }
 
+function addPrecAssocToTreesitterProduction
+String ::= precAssoc::Maybe<Pair<Integer String>> prod::String
+{
+  local attribute prec :: Maybe<Integer> = fstFromMaybe(precAssoc);
+  local attribute assoc :: Maybe<String> = sndFromMaybe(precAssoc);
+  return
+  if prec.isJust && prec.fromJust != 0 && assoc.isJust && !stringEq(assoc.fromJust, "none") then 
+    s"""prec.${assoc.fromJust}(${toString(prec.fromJust)}, ${prod})"""
+  -- just precedence is specified and associativty is not
+  else if prec.isJust && prec.fromJust != 0 then 
+    s"""prec(${toString(prec.fromJust)}, ${prod})"""
+  -- just associativty is specified
+  else if assoc.isJust && !stringEq(assoc.fromJust, "none") then
+    s"""prec.${assoc.fromJust}(${prod})"""
+  else
+    prod;
+
+}
+{--
+This function was written as an experiment to see how the precedence and
+associativty works in Treesitter.
+function addPrecAssocOnInputElems
+String ::= precAssocEnv::[Pair<String Pair<Integer String>>] input::String
+{
+  local precAssoc :: Maybe<Pair<Integer String>> =
+    lookupBy(stringEq, TsDeclToIdentifier(input), precAssocEnv);
+
+  return
+  if precAssoc.isJust
+  then addPrecAssocToTreesitterProduction(precAssoc, input)
+  else input;
+
+}
+--}
 abstract production treesitterNonterminal
 top::TreesitterRule ::= name::String prods::TreesitterRules mods::TreesitterNonterminalModifiers
 {
@@ -259,6 +291,7 @@ top::TreesitterRule ::= name::String prods::TreesitterRules mods::TreesitterNont
       s"""choice(${prods.tsRep})"""
     else
       prods.tsRep;
+
   top.tsRep =
     s"""${name}: $$ => ${ts_rhs}""";
 }
@@ -319,7 +352,10 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   top.dclName = ns.fullName;
   top.tsDcl = treesitterProduction(ns.outputElement.typerep.typeName,
     map(productionElemToTsIdentifier, ns.inputElements), 
-      decorate modifiers with {cstEnv = top.cstEnv;});
+      decorate modifiers with {
+        cstEnv = top.cstEnv;
+        productionName = ns.fullName;
+      });
 }
 
 aspect production syntaxLexerClass

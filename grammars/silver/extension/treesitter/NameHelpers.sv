@@ -28,13 +28,17 @@ Pair<String String> ::= pre::Pair<String String>
 function toTsIgnoreDeclaration
 String ::= str::String
 {
-  return "_" ++ toTsDeclaration(str);
+  -- include ignore declarations in the parse tree
+  -- return "_" ++ toTsDeclaration(str)
+  return toTsDeclaration(str);
 }
 
 function TsDeclToIgnoreDecl
 String ::= str::String
 {
-  return "_" ++ str;
+  -- include ignore declarations in the parse tree
+  -- return "_" ++ str
+  return str;
 }
 
 {-- When identifying a tree sitter terminal or nonterminal it must be begin with
@@ -59,18 +63,23 @@ String ::= str::String
   return substring(2, length(str), str);
 }
 
-function removeAllEscapesForStringLiteral
+function removeEscapesForStringLiteral
 String ::= str::String
 {
   -- 4 \ necessary because 2 are escaped here leading to 1 when escaped
   -- in java
-  return substituteRegex("\\\\(.)", "$1", str);
+  -- remove all escapes then add back in escapes for backslashes and double quotes.
+  return substitute("\"", "\\\"", 
+         substitute("\\", "\\\\", 
+         substituteRegex("\\\\(.)", "$1", str)));
 }
 
 function removeEscapesNotNecessaryForTreesitterRegexs
 String ::= str::String
 {
   -- most regex regStrings don't need the escapes for some characters 
-  -- namely spaces.
-  return substitute("\\ ", " ", str);
+  -- namely so far spaces and underscores and @ signs.
+  return substitute("\\_", "_", 
+         substitute("\\@", "@", 
+         substitute("\\ ", " ", str)));
 }
