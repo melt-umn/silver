@@ -1,4 +1,5 @@
 -- imports silver:langutil;
+imports silver:extension:list;
 
 --TODO: These precedence numbers are pulled from a magician's hat
 terminal OriginLParen  '^('      precedence = 24;
@@ -49,7 +50,7 @@ top::Expr ::= prod::Expr '^^(' args::AppExprs ')'
   local computedAnnos :: AnnoAppExprs = oneAnnoAppExprs(
     mkAnnoExpr(pair("otxinfo",
       Silver_Expr {silver:extension:otx:childruntime:otherOtxInfo("noOriginApplicationExpr",
-        cons(silver:extension:otx:childruntime:builtinNoOriginsConstructorRule($Expr{stringConst(terminal(String_t, "\"" ++ top.location.unparse ++ "\"", top.location), location=top.location)}), nil()))})),
+        [silver:extension:otx:childruntime:builtinNoOriginsConstructorRule($Expr{stringConst(terminal(String_t, "\"" ++ top.location.unparse ++ "\"", top.location), location=top.location)})])})),
     location=top.location);
 
   forwards to application(prod, '(', args, ',', computedAnnos, ')', location=top.location);

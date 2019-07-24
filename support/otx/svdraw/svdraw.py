@@ -2,7 +2,7 @@ import os
 
 cache = {}
 
-print('\n\n\n')
+print('\n\n\nDrawing...')
 
 def translate(x):
 	# print(x)
@@ -31,7 +31,6 @@ class NT:
 		self.origin = None
 		o = list(filter(lambda x:x[0].endswith("otxinfo"), record[3]))
 		if o != []:
-			print(o[0][1])
 			o = translate(o[0][1])
 			self.origin, self.originlabel = o, ""
 
