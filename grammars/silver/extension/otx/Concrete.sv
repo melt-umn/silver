@@ -6,11 +6,12 @@ terminal OriginLParen  '^('      precedence = 24;
 terminal NoOriginLParen  '^^('      precedence = 23;
 terminal OriginNew     'new^'    precedence = 24;
 terminal OriginRParen  ')^'      precedence = 24;
+terminal TokOriginRParen  ')^^'      precedence = 24;
 
 concrete production originApplicationExprNoComment
 top::Expr ::= prod::Expr '^(' args::AppExprs ')'
 {
-  local bogonLabel :: Expr = stringConst(terminal(String_t, "\"\"", top.location), location=top.location);
+  local bogonLabel :: Expr = Silver_Expr{[]};
   forwards to originApplicationExpr(prod, '^(', args, ')^', bogonLabel, location=top.location);
 }
 
@@ -32,11 +33,19 @@ top::Expr ::= prod::Expr '^(' args::AppExprs ')^' label::Expr
       qNameId(
         name(sig.outputElement.elementName,
       top.location), location=top.location), location=top.location);
+
+  local typeNameSnipped :: String = sig.outputElement.typerep.typeName;
+  local ntWapperRefExpr :: Expr = baseExpr(qNameId(name(
+    "otxLink" ++ last(explode(":", typeNameSnipped)),
+    top.location), location=top.location), location=top.location);
   
   local computedAnnos :: AnnoAppExprs = oneAnnoAppExprs(
     mkAnnoExpr(pair("otxinfo",
       Silver_Expr {silver:extension:otx:childruntime:originOtxInfo(
-        otxLinkExpr($Expr{lhsexpr}), $Expr{label}, false)})),
+        $Expr{ntWapperRefExpr}($Expr{lhsexpr}),
+          $Expr{label} ++ [
+           silver:extension:otx:childruntime:ruleLocNote($Expr{stringConst(terminal(String_t, "\"" ++ top.location.unparse ++ "\"", top.location), location=top.location)})],
+         false)})),
     location=top.location);
 
   forwards to application(prod, '(', args, ',', computedAnnos, ')', location=top.location);
@@ -50,7 +59,8 @@ top::Expr ::= prod::Expr '^^(' args::AppExprs ')'
   local computedAnnos :: AnnoAppExprs = oneAnnoAppExprs(
     mkAnnoExpr(pair("otxinfo",
       Silver_Expr {silver:extension:otx:childruntime:otherOtxInfo("noOriginApplicationExpr",
-        [silver:extension:otx:childruntime:builtinNoOriginsConstructorRule($Expr{stringConst(terminal(String_t, "\"" ++ top.location.unparse ++ "\"", top.location), location=top.location)})])})),
+        [silver:extension:otx:childruntime:dbgNote("From ^^-expr"),
+        silver:extension:otx:childruntime:ruleLocNote($Expr{stringConst(terminal(String_t, "\"" ++ top.location.unparse ++ "\"", top.location), location=top.location)})])})),
     location=top.location);
 
   forwards to application(prod, '(', args, ',', computedAnnos, ')', location=top.location);
@@ -60,7 +70,7 @@ top::Expr ::= prod::Expr '^^(' args::AppExprs ')'
 concrete production originNewNoComment
 top::Expr ::= 'new^' '(' e::Expr ')'
 {
-  local bogonLabel :: Expr = stringConst(terminal(String_t, "\"<new>\"", top.location), location=top.location);
+  local bogonLabel :: Expr = Silver_Expr{[silver:extension:otx:childruntime:dbgNote("New^")]};
   forwards to originNew('new^', '(', e, ')^', bogonLabel, location=top.location);
 }
 
@@ -69,7 +79,9 @@ top::Expr ::= 'new^' '(' e::Expr ')^' label::Expr
 {
   local shucked :: Expr = otxShuckValueImpl(e, location=top.location);
   shucked.downSubst = top.downSubst;
-  local app :: Expr = Silver_Expr {silver:extension:otx:childruntime:javaDup($Expr{shucked}, $Expr{label})};
+
+  local app :: Expr = Silver_Expr {silver:extension:otx:childruntime:javaDup($Expr{shucked}, $Expr{label} ++
+    [silver:extension:otx:childruntime:ruleLocNote($Expr{stringConst(terminal(String_t, "\"" ++ top.location.unparse ++ "\"", top.location), location=top.location)})])};
   forwards to app;
 }
 

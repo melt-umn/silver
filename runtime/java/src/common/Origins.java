@@ -35,7 +35,7 @@ public final class Origins {
 			r += "'!String', \""+arg.toString()+"\"";
 		else if (arg instanceof Terminal){
 			Terminal t = (Terminal) arg;
-			r += "'!Terminal', '"+t.getName()+"', \""+t.lexeme+"\" "+t.location;
+			r += "'!Terminal', '"+t.getName()+"', \""+t.lexeme+"\", "+sexprifyObj(t.location);
 		} else if (arg instanceof Node) {
 			Node n = (Node) arg;
 			r += "'" + n.getName() + "', [";

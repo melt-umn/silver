@@ -1,6 +1,6 @@
 
 function javaDup
-a ::= arg::a rules::[OtxRule]
+a ::= arg::a rules::[OtxNote]
 {
   return error("Not impl");
 } foreign {

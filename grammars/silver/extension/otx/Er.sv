@@ -14,22 +14,6 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
   -- autocopy to e1 and e2
 }
 
-aspect production returnDef
-top::ProductionStmt ::= 'return' e::Expr ';'
-{
-  e.isRuleRoot = true;
-}
-
-aspect production localAttributeDcl
-top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
-{
-}
-
-aspect production productionAttributeDcl
-top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
-{
-}
-
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {

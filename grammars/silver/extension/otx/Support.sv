@@ -41,6 +41,7 @@ top::Expr ::= arg::Expr
 abstract production otxShuckValueImpl
 top::Expr ::= arg::Expr
 {
+  top.unparse = "otxShuckValueImpl(" ++ arg.unparse ++ ")";
   arg.downSubst = top.downSubst; --Needs to be provided here so we can ask it's typerep to forward to
 
   forwards to case arg.typerep of

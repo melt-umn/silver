@@ -18,6 +18,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local ntName :: String = namedSig.outputElement.typerep.typeName;
   local fnnt :: String = makeNTClassName(ntName);
 
+  local typeNameSnipped :: String = last(explode(":", namedSig.outputElement.typerep.typeName));
   local dupChild :: (String ::= NamedSignatureElement) =
   	(\x::NamedSignatureElement -> 
   		"getChild_"++x.elementName++"()" ++
@@ -30,7 +31,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
 public ${fnnt} duplicate(Object rule) {
 	return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))},
-  			new silver.extension.otx.childruntime.PoriginOtxInfo(new example_elision.PotxLinkExpr(this), rule, false));
+  			new silver.extension.otx.childruntime.PoriginOtxInfo(new PotxLink${typeNameSnipped}(this), rule, false));
 }"""
   	else "";
 

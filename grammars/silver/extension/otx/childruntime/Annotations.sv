@@ -2,26 +2,20 @@
 annotation otxinfo :: OtxInfo;
 
 nonterminal OtxInfo;
-nonterminal OtxRule;
+nonterminal OtxNote;
 nonterminal OtxLink;
 
-synthesized attribute pp :: String occurs on OtxRule;
-
-abstract production locOtxInfo
-top::OtxInfo ::= loc::Location rules::[OtxRule]
-{
-	
-}
+synthesized attribute pp :: String occurs on OtxNote;
 
 abstract production otherOtxInfo
-top::OtxInfo ::= source::String rules::[OtxRule]
+top::OtxInfo ::= source::String notes::[OtxNote]
 {
 	
 }
 
 abstract production originOtxInfo
 top::OtxInfo ::= origin :: OtxLink
-				 originRules :: [OtxRule]
+				 originNotes :: [OtxNote]
 				 newlyConstructed :: Boolean
 {
 	
@@ -29,28 +23,28 @@ top::OtxInfo ::= origin :: OtxLink
 
 abstract production originAndRedexOtxInfo
 top::OtxInfo ::= origin :: OtxLink
-				 originRules :: [OtxRule]
+				 originNotes :: [OtxNote]
 				 redex :: OtxLink
-				 redexrules :: [OtxRule]
+				 redexNotes :: [OtxNote]
 				 newlyConstructed :: Boolean
 {
 	
 }
 
 aspect default production
-top::OtxRule ::=
+top::OtxNote ::=
 {
 	top.pp = "<<" ++ hackUnparse(top) ++ ">>";
 }
 
-abstract production noteRule
-top::OtxRule ::= string::String
+abstract production dbgNote
+top::OtxNote ::= string::String
 {
 	
 }
 
-abstract production builtinNoOriginsConstructorRule
-top::OtxRule ::= exprLoc::String
+abstract production ruleLocNote
+top::OtxNote ::= exprLoc::String
 {
 	
 }
