@@ -46,7 +46,7 @@ class NT:
 		return self.name.split(":")[-1] + "(" + ",".join(map(repr, self.children)) + ")"
 
 	def smartrepr(self):
-		return self.name.split(":")[-1] + "(" + ",".join(map(lambda x: repr(x) if type(x)!=NT else "_", self.children)) + ")"
+		return self.name.split(":")[-1] + "(" + ",".join(map(lambda x: ("\n["+"\n".join(map(repr, x))+"]" if type(x)==list else repr(x)) if type(x)!=NT else "_", self.children)) + ")"
 
 while not input().startswith("origin"): pass
 

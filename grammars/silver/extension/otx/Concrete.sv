@@ -2,11 +2,11 @@
 imports silver:extension:list;
 
 --TODO: These precedence numbers are pulled from a magician's hat
-terminal OriginLParen  '^('      precedence = 24;
-terminal NoOriginLParen  '^^('      precedence = 23;
-terminal OriginNew     'new^'    precedence = 24;
-terminal OriginRParen  ')^'      precedence = 24;
-terminal TokOriginRParen  ')^^'      precedence = 24;
+terminal OriginLParen_t  '^('      precedence = 24;
+terminal NoOriginLParen_t  '^^('      precedence = 23;
+terminal OriginNew_t     'new^'    precedence = 24;
+terminal OriginRParen_t  ')^'      precedence = 24;
+terminal TokOriginRParen_t  ')^^'      precedence = 24;
 
 concrete production originApplicationExprNoComment
 top::Expr ::= prod::Expr '^(' args::AppExprs ')'
@@ -59,7 +59,7 @@ top::Expr ::= prod::Expr '^^(' args::AppExprs ')'
   local computedAnnos :: AnnoAppExprs = oneAnnoAppExprs(
     mkAnnoExpr(pair("otxinfo",
       Silver_Expr {silver:extension:otx:childruntime:otherOtxInfo("noOriginApplicationExpr",
-        [silver:extension:otx:childruntime:dbgNote("From ^^-expr"),
+        [silver:extension:otx:childruntime:otxDbgNote("From ^^-expr"),
         silver:extension:otx:childruntime:ruleLocNote($Expr{stringConst(terminal(String_t, "\"" ++ top.location.unparse ++ "\"", top.location), location=top.location)})])})),
     location=top.location);
 
@@ -70,7 +70,7 @@ top::Expr ::= prod::Expr '^^(' args::AppExprs ')'
 concrete production originNewNoComment
 top::Expr ::= 'new^' '(' e::Expr ')'
 {
-  local bogonLabel :: Expr = Silver_Expr{[silver:extension:otx:childruntime:dbgNote("New^")]};
+  local bogonLabel :: Expr = Silver_Expr{[]};
   forwards to originNew('new^', '(', e, ')^', bogonLabel, location=top.location);
 }
 
@@ -81,7 +81,8 @@ top::Expr ::= 'new^' '(' e::Expr ')^' label::Expr
   shucked.downSubst = top.downSubst;
 
   local app :: Expr = Silver_Expr {silver:extension:otx:childruntime:javaDup($Expr{shucked}, $Expr{label} ++
-    [silver:extension:otx:childruntime:ruleLocNote($Expr{stringConst(terminal(String_t, "\"" ++ top.location.unparse ++ "\"", top.location), location=top.location)})])};
+    [silver:extension:otx:childruntime:otxDbgNote("new"),
+     silver:extension:otx:childruntime:ruleLocNote($Expr{stringConst(terminal(String_t, "\"" ++ top.location.unparse ++ "\"", top.location), location=top.location)})])};
   forwards to app;
 }
 

@@ -37,6 +37,12 @@ top::OtxNote ::=
 	top.pp = "<<" ++ hackUnparse(top) ++ ">>";
 }
 
+abstract production otxDbgNote
+top::OtxNote ::= string::String
+{
+	
+}
+
 abstract production dbgNote
 top::OtxNote ::= string::String
 {

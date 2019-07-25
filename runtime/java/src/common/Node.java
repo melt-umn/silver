@@ -125,6 +125,10 @@ public abstract class Node implements Typed {
 		return this;
 	}
 
+	public Object copy(Object redex, Object rule){
+		return this;
+	}
+
 	/**
 	 * Returns the number of children, same way array length does.
 	 * 
