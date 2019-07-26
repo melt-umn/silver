@@ -72,6 +72,8 @@ public final class Origins {
 				}
 				r += "]";
 			}
+		} else if (arg == null){
+			r += "'!Null'";
 		} else {
 			r += "'???', \""+arg.toString()+"\"";
 		}

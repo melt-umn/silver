@@ -11,6 +11,8 @@ def translate(x):
 			return x[2]
 		if x[1] == "!List":
 			return list(map(translate, x[2]))
+		if x[1] == "!Null":
+			return None
 		if x[1] == "!Terminal":
 			locnt = translate(x[4])
 			fakent = NT([x[0], x[2].split(":")[-1]+"<"+x[3]+">", [], []])

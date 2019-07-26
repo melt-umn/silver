@@ -69,10 +69,12 @@ public ${fnnt} copy(Object newRedex, Object newRule) {
 		if (newRedex instanceof common.DecoratedNode) newRedex = ((common.DecoratedNode)newRedex).undecorate();
 		redex = ((common.Node)newRedex).wrapInLink();
 		redexNotes = newRule;
-	}
-
-	return new ${className}(${implode(", ", map(copyChild, namedSig.inputElements))},
+		return new ${className}(${implode(", ", map(copyChild, namedSig.inputElements))},
 	 		new silver.extension.otx.childruntime.PoriginAndRedexOtxInfo(origin, originNotes, redex, redexNotes, newlyConstructed));
+	} else {
+		return new ${className}(${implode(", ", map(copyChild, namedSig.inputElements))},
+	 		new silver.extension.otx.childruntime.PoriginOtxInfo(origin, originNotes, newlyConstructed));
+	}
 }
 
 @Override

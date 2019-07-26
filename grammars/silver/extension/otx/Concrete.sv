@@ -1,5 +1,8 @@
 -- imports silver:langutil;
+
+-- Needed to be able to use their respective extensions in Silver_Expr blocks :/
 imports silver:extension:list;
+imports silver:modification:let_fix;
 
 --TODO: These precedence numbers are pulled from a magician's hat
 terminal OriginLParen_t    '^('    precedence = 50;
@@ -52,10 +55,11 @@ top::Expr ::= prod::Expr '^(' args::AppExprs ')^' label::Expr
   local allNotes :: Expr = Silver_Expr{$Expr{label} ++ $Expr{listExprOfExprList(top.originsRules)}};
 
   local originValue :: Expr = if (!sameProd) && top.isRuleRoot then
-    Silver_Expr {silver:extension:otx:childruntime:originAndRedexOtxInfo(
-        $Expr{ntWapperRefExpr}($Expr{lhsexpr}), $Expr{allNotes},
-        $Expr{ntWapperRefExpr}($Expr{lhsexpr}), $Expr{allNotes},
-        $Expr{boolExprOfBool(isContractum)})}
+    Silver_Expr {let cx :: OtxLink = $Expr{ntWapperRefExpr}($Expr{lhsexpr}) in
+        silver:extension:otx:childruntime:originAndRedexOtxInfo(
+        cx, $Expr{allNotes},
+        cx, $Expr{allNotes},
+        $Expr{boolExprOfBool(isContractum)}) end}
     else Silver_Expr {silver:extension:otx:childruntime:originOtxInfo(
         $Expr{ntWapperRefExpr}($Expr{lhsexpr}), $Expr{allNotes},
         $Expr{boolExprOfBool(isContractum)})};
