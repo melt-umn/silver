@@ -5,16 +5,6 @@ attribute monadRewritten<ProductionStmts>, merrors occurs on ProductionStmts;
 attribute monadRewritten<ProductionStmt>, merrors occurs on ProductionStmt;
 
 
-attribute monadRewritten<Expr>, merrors, mtyperep occurs on Expr;
-aspect default production
-top::Expr ::=
-{
-  top.merrors := [];
-  top.mtyperep = errorType();
-  top.monadRewritten = top;
-}
-
-
 
 aspect production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
