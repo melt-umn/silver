@@ -24,15 +24,58 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   		"getChild_"++x.elementName++"()" ++
   			(if x.typerep.isPrimitiveForDuplicate then "" else ".duplicate(rule)"));
 
+  local copyChild :: (String ::= NamedSignatureElement) =
+  	(\x::NamedSignatureElement -> 
+  		"getChild_"++x.elementName++"()" ++
+  			(if x.typerep.isPrimitiveForDuplicate then "" else ".copy(null, newRule)"));
+
   local dupimpl :: String = if length(namedSig.namedInputElements)==1 &&
   	head(namedSig.namedInputElements).elementName == "silver:extension:otx:childruntime:otxinfo" then
   		s"""
 @Override
-
 public ${fnnt} duplicate(Object rule) {
 	return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))},
-  			new silver.extension.otx.childruntime.PoriginOtxInfo(new PotxLink${typeNameSnipped}(this), rule, false));
-}"""
+  			new silver.extension.otx.childruntime.PoriginOtxInfo(this.wrapInLink(), rule, false));
+}
+
+@Override
+public ${fnnt} copy(Object newRedex, Object newRule) {
+    Object origin, originNotes, newlyConstructed, redex, redexNotes;
+    Object roi = this.getAnno_silver_extension_otx_childruntime_otxinfo();
+	if (roi instanceof silver.extension.otx.childruntime.PoriginOtxInfo) {
+		silver.extension.otx.childruntime.PoriginOtxInfo oi = (silver.extension.otx.childruntime.PoriginOtxInfo)roi;
+		origin = oi.getChild_origin();
+		originNotes = oi.getChild_originNotes();
+		newlyConstructed = oi.getChild_newlyConstructed();
+		redex = null;
+		redexNotes = null;
+	} else if (roi instanceof silver.extension.otx.childruntime.PoriginAndRedexOtxInfo) {
+		silver.extension.otx.childruntime.PoriginAndRedexOtxInfo oi = (silver.extension.otx.childruntime.PoriginAndRedexOtxInfo)roi;
+		origin = oi.getChild_origin();
+		originNotes = oi.getChild_originNotes();
+		newlyConstructed = oi.getChild_newlyConstructed();
+		redex = oi.getChild_redex();
+		redexNotes = oi.getChild_redexNotes();
+	} else {
+		return this;
+	}
+
+	if (newRedex != null) {
+		if (newRedex instanceof common.DecoratedNode) newRedex = ((common.DecoratedNode)newRedex).undecorate();
+		redex = ((common.Node)newRedex).wrapInLink();
+		redexNotes = newRule;
+	}
+
+	return new ${className}(${implode(", ", map(copyChild, namedSig.inputElements))},
+	 		new silver.extension.otx.childruntime.PoriginAndRedexOtxInfo(origin, originNotes, redex, redexNotes, newlyConstructed));
+}
+
+@Override
+public PotxLink${typeNameSnipped} wrapInLink(){
+	return new PotxLink${typeNameSnipped}(this);
+}
+
+"""
   	else "";
 
 

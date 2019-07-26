@@ -32,7 +32,7 @@ public final class Origins {
 		else if (arg instanceof Boolean)
 			r += "'!Boolean', " + arg.toString();
 		else if (arg instanceof StringCatter)
-			r += "'!String', \""+arg.toString()+"\"";
+			r += "'!String', \""+arg.toString().replace("\"", "\\\"")+"\"";
 		else if (arg instanceof Terminal){
 			Terminal t = (Terminal) arg;
 			r += "'!Terminal', '"+t.getName()+"', \""+t.lexeme+"\", "+sexprifyObj(t.location);

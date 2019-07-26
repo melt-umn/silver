@@ -2,7 +2,7 @@ import os
 
 cache = {}
 
-print('\n\n\nDrawing...')
+print('\n\nComputing...')
 
 def translate(x):
 	# print(x)
@@ -74,7 +74,7 @@ with open("out.dot", 'w') as fd:
 		else:
 			name = repr(v)
 
-		w("n"+str(k)+" [label=\""+name+"\"")
+		w("n"+str(k)+" [label=\""+name.replace("\"", "\\\"")+"\"")
 		if v is sxstart and not v is sxres:
 			w(" color=red penwidth=3")
 		if v is sxres and not v is sxstart:
@@ -91,5 +91,7 @@ with open("out.dot", 'w') as fd:
 				if type(v.children[i]) not in [int, bool, str, list]:
 					w("n"+str(k)+" -> n"+str(v.childids[i])+" [label=\""+str(i)+"\"];")
 	w("}")
+
+print("Drawing...")
 
 os.system("dot -Tpng -o out.png out.dot")

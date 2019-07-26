@@ -2,17 +2,26 @@
 imports silver:extension:list;
 
 --TODO: These precedence numbers are pulled from a magician's hat
-terminal OriginLParen_t  '^('      precedence = 24;
-terminal NoOriginLParen_t  '^^('      precedence = 23;
-terminal OriginNew_t     'new^'    precedence = 24;
-terminal OriginRParen_t  ')^'      precedence = 24;
-terminal TokOriginRParen_t  ')^^'      precedence = 24;
+terminal OriginLParen_t    '^('    precedence = 50;
+terminal NoOriginLParen_t  '^^('   precedence = 23;
+terminal OriginNew_t       'new^'  precedence = 24;
+terminal OriginRParen_t    ')^'    precedence = 24;
+terminal TokOriginRParen_t ')^^'   precedence = 24;
+terminal OriginNote_t      'note^' precedence = 24;
+terminal OriginNoteFor_t   'for^'  precedence = 24;
+terminal OriginDot_t       '^.'    precedence = 50;
 
 concrete production originApplicationExprNoComment
 top::Expr ::= prod::Expr '^(' args::AppExprs ')'
 {
   local bogonLabel :: Expr = Silver_Expr{[]};
   forwards to originApplicationExpr(prod, '^(', args, ')^', bogonLabel, location=top.location);
+}
+
+concrete production originNote
+top::Expr ::= 'note^' n::Expr 'for^' e::Expr
+{
+  forwards to e with {originsRules = n::top.originsRules;};
 }
 
 concrete production originApplicationExprNoArgs
@@ -43,8 +52,7 @@ top::Expr ::= prod::Expr '^(' args::AppExprs ')^' label::Expr
     mkAnnoExpr(pair("otxinfo",
       Silver_Expr {silver:extension:otx:childruntime:originOtxInfo(
         $Expr{ntWapperRefExpr}($Expr{lhsexpr}),
-          $Expr{label} ++ [
-           silver:extension:otx:childruntime:ruleLocNote($Expr{stringConst(terminal(String_t, "\"" ++ top.location.unparse ++ "\"", top.location), location=top.location)})],
+          $Expr{label} ++ $Expr{listExprOfExprList(top.originsRules)},
          false)})),
     location=top.location);
 
@@ -59,8 +67,7 @@ top::Expr ::= prod::Expr '^^(' args::AppExprs ')'
   local computedAnnos :: AnnoAppExprs = oneAnnoAppExprs(
     mkAnnoExpr(pair("otxinfo",
       Silver_Expr {silver:extension:otx:childruntime:otherOtxInfo("noOriginApplicationExpr",
-        [silver:extension:otx:childruntime:otxDbgNote("From ^^-expr"),
-        silver:extension:otx:childruntime:ruleLocNote($Expr{stringConst(terminal(String_t, "\"" ++ top.location.unparse ++ "\"", top.location), location=top.location)})])})),
+        [silver:extension:otx:childruntime:otxDbgNote("From ^^-expr")] ++ $Expr{listExprOfExprList(top.originsRules)})})),
     location=top.location);
 
   forwards to application(prod, '(', args, ',', computedAnnos, ')', location=top.location);
@@ -81,29 +88,35 @@ top::Expr ::= 'new^' '(' e::Expr ')^' label::Expr
   shucked.downSubst = top.downSubst;
 
   local app :: Expr = Silver_Expr {silver:extension:otx:childruntime:javaDup($Expr{shucked}, $Expr{label} ++
-    [silver:extension:otx:childruntime:otxDbgNote("new"),
-     silver:extension:otx:childruntime:ruleLocNote($Expr{stringConst(terminal(String_t, "\"" ++ top.location.unparse ++ "\"", top.location), location=top.location)})])};
+    [silver:extension:otx:childruntime:otxDbgNote("new")] ++ $Expr{listExprOfExprList(top.originsRules)})};
   forwards to app;
 }
 
 
-terminal OTXDebugBuiltin  'otxdebug^';
-
-concrete production otxDebugManual
-top::Expr ::= 'otxdebug^' '(' a::Expr ')'
+concrete production originAccess
+top::Expr ::= e::Expr '^.' q::QNameAttrOccur
 {
-  top.unparse = "otxdebug^(" ++ a.unparse ++ ")";
+  local accessexp :: Expr = access(e, '.', q, location=top.location);
+  local shucked :: Expr = otxShuckValueImpl(accessexp, location=top.location);
+  local lhsexpr :: Expr = baseExpr(
+      qNameId(
+        name(top.frame.signature.outputElement.elementName,
+      top.location), location=top.location), location=top.location);
 
-  forwards to otxDebugImpl(a, location=top.location);
+  accessexp.downSubst = top.downSubst;
+  shucked.downSubst = accessexp.upSubst;
+
+  local fwd :: Expr = Silver_Expr{silver:extension:otx:childruntime:javaCopy($Expr{shucked}, $Expr{lhsexpr},
+    [silver:extension:otx:childruntime:otxDbgNote("^.")] ++ $Expr{listExprOfExprList(top.originsRules)})};
+  forwards to fwd;
 }
 
+-- terminal OriginsKwd    'origins' precedence = 24;
 
-terminal OriginsKwd    'origins' precedence = 24;
+-- concrete production originsOnDcl
+-- top::AGDcl ::= 'origins' 'on' nt::QName ';'
+-- {
+--   top.unparse = "origins on " ++ nt.unparse;
 
-concrete production originsOnDcl
-top::AGDcl ::= 'origins' 'on' nt::QName ';'
-{
-  top.unparse = "origins on " ++ nt.unparse;
-
-  forwards to makeDuplicateImpls(top.env, nt);
-}
+--   forwards to makeDuplicateImpls(top.env, nt);
+-- }

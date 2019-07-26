@@ -1,5 +1,7 @@
 package common;
 
+import common.exceptions.*;
+
 /**
  * Node represents undecorated nodes.  That is, we have children, but no inherited attributes, yet.
  * 
@@ -127,6 +129,10 @@ public abstract class Node implements Typed {
 
 	public Object copy(Object redex, Object rule){
 		return this;
+	}
+
+	public Object wrapInLink(){
+		throw new SilverInternalError("wrapInLink not overridden");
 	}
 
 	/**

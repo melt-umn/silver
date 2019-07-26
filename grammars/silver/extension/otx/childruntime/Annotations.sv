@@ -50,7 +50,7 @@ top::OtxNote ::= string::String
 }
 
 abstract production ruleLocNote
-top::OtxNote ::= exprLoc::String
+top::OtxNote ::= attributeName::String sourceLocation::String
 {
 	
 }
