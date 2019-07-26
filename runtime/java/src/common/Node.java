@@ -123,7 +123,7 @@ public abstract class Node implements Typed {
 	 */
 	public abstract String getName();
 
-	public Object duplicate(Object rule){
+	public Object duplicate(Object redex, Object rule){
 		return this;
 	}
 

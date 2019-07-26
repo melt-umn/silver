@@ -25,3 +25,12 @@ Expr ::= xs::[Expr]
     | x::rest -> Silver_Expr{$Expr{x}::$Expr{listExprOfExprList(rest)}}
   end;
 }
+
+function boolExprOfBool
+Expr ::= x::Boolean
+{
+  return case x of
+    | true -> Silver_Expr{true}
+    | false -> Silver_Expr{false}
+  end;
+}

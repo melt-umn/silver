@@ -35,25 +35,33 @@ top::Expr ::= prod::Expr '^(' args::AppExprs ')^' label::Expr
 {
   top.unparse = prod.unparse ++ "^(" ++ args.unparse ++ ")^" ++ label.unparse;
 
-  local frame :: BlockContext = top.frame;
-  local sig :: NamedSignature = frame.signature;
+  local lhsexpr :: Expr = mkLhsRef(top);
 
-  local lhsexpr :: Expr = baseExpr(
-      qNameId(
-        name(sig.outputElement.elementName,
-      top.location), location=top.location), location=top.location);
-
-  local typeNameSnipped :: String = sig.outputElement.typerep.typeName;
+  local typeNameSnipped :: String = top.frame.signature.outputElement.typerep.typeName;
   local ntWapperRefExpr :: Expr = baseExpr(qNameId(name(
     "otxLink" ++ last(explode(":", typeNameSnipped)),
     top.location), location=top.location), location=top.location);
+
+  local sameProd :: Boolean = case prod of
+    | baseExpr(qn) -> qn.name == last(explode(":", top.frame.fullName))
+    | _ -> false
+  end;
+
+  local isContractum :: Boolean = !(sameProd && top.isRuleRoot);
+
+  local allNotes :: Expr = Silver_Expr{$Expr{label} ++ $Expr{listExprOfExprList(top.originsRules)}};
+
+  local originValue :: Expr = if (!sameProd) && top.isRuleRoot then
+    Silver_Expr {silver:extension:otx:childruntime:originAndRedexOtxInfo(
+        $Expr{ntWapperRefExpr}($Expr{lhsexpr}), $Expr{allNotes},
+        $Expr{ntWapperRefExpr}($Expr{lhsexpr}), $Expr{allNotes},
+        $Expr{boolExprOfBool(isContractum)})}
+    else Silver_Expr {silver:extension:otx:childruntime:originOtxInfo(
+        $Expr{ntWapperRefExpr}($Expr{lhsexpr}), $Expr{allNotes},
+        $Expr{boolExprOfBool(isContractum)})};
   
   local computedAnnos :: AnnoAppExprs = oneAnnoAppExprs(
-    mkAnnoExpr(pair("otxinfo",
-      Silver_Expr {silver:extension:otx:childruntime:originOtxInfo(
-        $Expr{ntWapperRefExpr}($Expr{lhsexpr}),
-          $Expr{label} ++ $Expr{listExprOfExprList(top.originsRules)},
-         false)})),
+    mkAnnoExpr(pair("otxinfo", originValue)),
     location=top.location);
 
   forwards to application(prod, '(', args, ',', computedAnnos, ')', location=top.location);
@@ -87,8 +95,15 @@ top::Expr ::= 'new^' '(' e::Expr ')^' label::Expr
   local shucked :: Expr = otxShuckValueImpl(e, location=top.location);
   shucked.downSubst = top.downSubst;
 
-  local app :: Expr = Silver_Expr {silver:extension:otx:childruntime:javaDup($Expr{shucked}, $Expr{label} ++
-    [silver:extension:otx:childruntime:otxDbgNote("new")] ++ $Expr{listExprOfExprList(top.originsRules)})};
+  local notes :: Expr = Silver_Expr {$Expr{label} ++
+    [silver:extension:otx:childruntime:otxDbgNote("new")] ++ $Expr{listExprOfExprList(top.originsRules)}};
+
+  local shuckedLhs :: Expr = otxShuckValueImpl(mkLhsRef(top), location=top.location);
+
+  local app :: Expr = if top.isRuleRoot then 
+    Silver_Expr {silver:extension:otx:childruntime:javaDup($Expr{shucked}, $Expr{shuckedLhs}, $Expr{notes})}
+    else
+    Silver_Expr {silver:extension:otx:childruntime:javaDupNullRedex($Expr{shucked}, $Expr{notes})};
   forwards to app;
 }
 
@@ -98,10 +113,7 @@ top::Expr ::= e::Expr '^.' q::QNameAttrOccur
 {
   local accessexp :: Expr = access(e, '.', q, location=top.location);
   local shucked :: Expr = otxShuckValueImpl(accessexp, location=top.location);
-  local lhsexpr :: Expr = baseExpr(
-      qNameId(
-        name(top.frame.signature.outputElement.elementName,
-      top.location), location=top.location), location=top.location);
+  local lhsexpr :: Expr = mkLhsRef(top);
 
   accessexp.downSubst = top.downSubst;
   shucked.downSubst = accessexp.upSubst;
@@ -120,3 +132,13 @@ top::Expr ::= e::Expr '^.' q::QNameAttrOccur
 
 --   forwards to makeDuplicateImpls(top.env, nt);
 -- }
+
+
+function mkLhsRef
+Expr ::= top::Decorated Expr --need .frame anno
+{
+  return baseExpr(
+      qNameId(
+        name(top.frame.signature.outputElement.elementName,
+      top.location), location=top.location), location=top.location);
+}

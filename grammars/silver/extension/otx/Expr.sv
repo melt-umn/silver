@@ -1,6 +1,6 @@
 
-autocopy attribute isRuleRoot :: Boolean occurs on Expr;
-autocopy attribute originsRules :: [Expr] occurs on Expr, AppExprs, AppExpr;
+autocopy attribute isRuleRoot :: Boolean occurs on Expr, AppExprs, AppExpr, AnnoAppExprs;
+autocopy attribute originsRules :: [Expr] occurs on Expr, AppExprs, AppExpr, AnnoAppExprs;
  -- ^Needs to occur on anything that can "come between" a ProdStmt and an Expr
 
 function makeRuleLocNote
@@ -38,14 +38,22 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
   -- autocopy to e1 and e2
 }
 
-
-
 aspect production plusPlus
 top::Expr ::= e1::Expr '++' e2::Expr
 {
 	e1.isRuleRoot = false;
 	e2.isRuleRoot = false;
 }
+
+aspect production functionApplication 
+top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
+{
+	es.isRuleRoot = false;
+	anns.isRuleRoot = false;
+}
+--is also production application
+--TODO: deal with setting it on the LHS
+
 
 terminal ErDebug_t  'erdebug^' precedence=50;
 

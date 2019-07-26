@@ -22,7 +22,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local dupChild :: (String ::= NamedSignatureElement) =
   	(\x::NamedSignatureElement -> 
   		"getChild_"++x.elementName++"()" ++
-  			(if x.typerep.isPrimitiveForDuplicate then "" else ".duplicate(rule)"));
+  			(if x.typerep.isPrimitiveForDuplicate then "" else ".duplicate(null, notes)"));
 
   local copyChild :: (String ::= NamedSignatureElement) =
   	(\x::NamedSignatureElement -> 
@@ -33,9 +33,14 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   	head(namedSig.namedInputElements).elementName == "silver:extension:otx:childruntime:otxinfo" then
   		s"""
 @Override
-public ${fnnt} duplicate(Object rule) {
-	return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))},
-  			new silver.extension.otx.childruntime.PoriginOtxInfo(this.wrapInLink(), rule, false));
+public ${fnnt} duplicate(Object redex, Object notes) {
+	if (redex == null) {
+		return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))},
+  			new silver.extension.otx.childruntime.PoriginOtxInfo(this.wrapInLink(), notes, false));
+	} else {
+		return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))},
+  			new silver.extension.otx.childruntime.PoriginAndRedexOtxInfo(this.wrapInLink(), notes, ((common.Node)redex).wrapInLink(), notes, false));
+	}
 }
 
 @Override
