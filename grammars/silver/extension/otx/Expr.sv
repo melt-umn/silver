@@ -1,7 +1,18 @@
 
+imports silver:modification:primitivepattern only PrimPattern, PrimPatterns;
+imports silver:extension:patternmatching only MatchRule, AbstractMatchRule, PatternList, MRuleList;
+
 autocopy attribute isRuleRoot :: Boolean occurs on Expr, AppExprs, AppExpr, AnnoAppExprs;
 autocopy attribute originsRules :: [Expr] occurs on Expr, AppExprs, AppExpr, AnnoAppExprs;
  -- ^Needs to occur on anything that can "come between" a ProdStmt and an Expr
+
+
+
+attribute isRuleRoot, originsRules occurs on
+	PrimPattern, PrimPatterns, AssignExpr, MatchRule, AbstractMatchRule, PatternList, MRuleList;
+attribute frame occurs on MatchRule, AbstractMatchRule, PatternList, MRuleList;
+ -- AssignExpr is from let_fix, Patterns stuff from primitivepatters
+
 
 function makeRuleLocNote
 Expr ::= attr::Decorated QNameAttrOccur
