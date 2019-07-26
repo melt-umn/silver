@@ -3,6 +3,7 @@ grammar silver:extension:implicit_monads;
 imports silver:definition:core;
 imports silver:definition:type:syntax;
 imports silver:definition:flow:driver;
+imports silver:definition:flow:ast;
 imports silver:driver:util;
 
 imports silver:definition:env;

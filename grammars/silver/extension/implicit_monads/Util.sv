@@ -41,6 +41,22 @@ Boolean ::= ty::Type
 }
 
 
+{-
+  Since we're translating before doing most error checking, we want to
+  avoid translating if we have an error type to make errors easier to
+  trace back to their original location, so we need a way to check for
+  that.
+-}
+function isError
+Boolean ::= ty::Type
+{
+  return case ty of
+         | errorType() -> true
+         | _ -> false
+         end;
+}
+
+
 {-this checks two types are the same monad, (assuming they are monads)
   though not necessarily the same monadic type (see discussion above)-}
 function monadsMatch
