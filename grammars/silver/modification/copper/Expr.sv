@@ -24,7 +24,7 @@ top::Expr ::= q::Decorated QName
 
   -- We... don't actually have a type we can use here TODO. Maybe we could cheat with a skolem type?
   -- Or maybe these should just be TerminalId, see below.
-  top.typerep = freshType();
+  top.typerep = terminalIdType();
   
   top.translation = makeCopperName(q.lookupValue.fullName); -- Value right here?
   top.lazyTranslation = top.translation; -- never, but okay!

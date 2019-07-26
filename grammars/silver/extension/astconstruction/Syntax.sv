@@ -33,11 +33,14 @@ top::AST_c ::= '$' '{' e::Expr '}'
 }
 
 concrete production varAST_c
-top::AST_c ::= n::Id_t
+top::AST_c ::= n::QName_t
 {
   top.unparse = n.lexeme;
   top.ast = varAST(name(n.lexeme, n.location));
-  top.errors := [];
+  top.errors :=
+    if indexOf(":", n.lexeme) != -1
+    then [err(n.location, "Pattern variable name must be unqualified")]
+    else [];
 }
 
 concrete production wildAST_c

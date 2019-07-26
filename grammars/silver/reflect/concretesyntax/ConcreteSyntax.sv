@@ -11,12 +11,13 @@ terminal RParen_t      ')';
 terminal LSqr_t        '[';
 terminal RSqr_t        ']';
 
-terminal Id_t /[A-Za-z][A-Za-z0-9\_]*/;
+terminal QName_t /[A-Za-z][A-Za-z0-9\_:]*/ submits to {ASTkwd};
 
-terminal Terminal_kwd 'terminal' dominates {Id_t};
+lexer class ASTkwd;
+terminal Terminal_kwd 'terminal' lexer classes {ASTkwd};
 
-terminal True_kwd  'true' dominates {Id_t};
-terminal False_kwd 'false' dominates {Id_t};
+terminal True_kwd  'true' lexer classes {ASTkwd};
+terminal False_kwd 'false' lexer classes {ASTkwd};
 terminal Int_t     /[\-]?[0-9]+/;
 terminal Float_t   /[\-]?[0-9]+[\.][0-9]+/;
 terminal String_t  /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]n|[\\]r|[\\]f|[\\]t)*[\"]/;
@@ -26,38 +27,38 @@ ignore terminal WhiteSpace /[\r\n\t\ ]+/;
 nonterminal AST_c with unparse, ast<AST>, errors, location;
 
 concrete productions top::AST_c
-| prodName::QName_c '(' children::ASTs_c ',' annotations::NamedASTs_c ')'
+| prodName::QName_t '(' children::ASTs_c ',' annotations::NamedASTs_c ')'
   {
-    top.unparse = s"${prodName.ast}(${children.unparse}, ${annotations.unparse})";
+    top.unparse = s"${prodName.lexeme}(${children.unparse}, ${annotations.unparse})";
     top.ast =
-      nonterminalAST(prodName.ast, foldr(consAST, nilAST(), children.ast), foldr(consNamedAST, nilNamedAST(), annotations.ast));
+      nonterminalAST(prodName.lexeme, foldr(consAST, nilAST(), children.ast), foldr(consNamedAST, nilNamedAST(), annotations.ast));
     top.errors := children.errors ++ annotations.errors;
   }
-| prodName::QName_c '(' children::ASTs_c ')'
+| prodName::QName_t '(' children::ASTs_c ')'
   {
-    top.unparse = s"${prodName.ast}(${children.unparse})";
-    top.ast = nonterminalAST(prodName.ast, foldr(consAST, nilAST(), children.ast), nilNamedAST());
+    top.unparse = s"${prodName.lexeme}(${children.unparse})";
+    top.ast = nonterminalAST(prodName.lexeme, foldr(consAST, nilAST(), children.ast), nilNamedAST());
     top.errors := children.errors;
   }
-| prodName::QName_c '(' annotations::NamedASTs_c ')'
+| prodName::QName_t '(' annotations::NamedASTs_c ')'
   {
-    top.unparse = s"${prodName.ast}(${annotations.unparse})";
-    top.ast = nonterminalAST(prodName.ast, nilAST(), foldr(consNamedAST, nilNamedAST(), annotations.ast));
+    top.unparse = s"${prodName.lexeme}(${annotations.unparse})";
+    top.ast = nonterminalAST(prodName.lexeme, nilAST(), foldr(consNamedAST, nilNamedAST(), annotations.ast));
     top.errors := annotations.errors;
   }
-| prodName::QName_c '(' ')'
+| prodName::QName_t '(' ')'
   {
-    top.unparse = s"${prodName.ast}()";
-    top.ast = nonterminalAST(prodName.ast, nilAST(), nilNamedAST());
+    top.unparse = s"${prodName.lexeme}()";
+    top.ast = nonterminalAST(prodName.lexeme, nilAST(), nilNamedAST());
     top.errors := [];
   }
-| 'terminal' '(' terminalName::QName_c ',' lexeme::String_t ',' location::AST_c ')'
+| 'terminal' '(' terminalName::QName_t ',' lexeme::String_t ',' location::AST_c ')'
   {
-    top.unparse = s"terminal(${terminalName.ast}, ${lexeme.lexeme}, ${location.unparse})";
+    top.unparse = s"terminal(${terminalName.lexeme}, ${lexeme.lexeme}, ${location.unparse})";
     local locReifyRes::Either<String Location> = reify(location.ast);
     top.ast =
       terminalAST(
-        terminalName.ast,
+        terminalName.lexeme,
         unescapeString(substring(1, length(lexeme.lexeme) - 1, lexeme.lexeme)),
         fromRight(locReifyRes, bogusLoc()));
     top.errors :=
@@ -144,17 +145,9 @@ concrete productions top::NamedASTs_c
 nonterminal NamedAST_c with unparse, ast<NamedAST>, errors, location;
 
 concrete productions top::NamedAST_c
-| n::QName_c '=' v::AST_c
+| n::QName_t '=' v::AST_c
   {
-    top.unparse = s"${n.ast} = ${v.unparse}";
-    top.ast = namedAST(n.ast, v.ast);
+    top.unparse = s"${n.lexeme} = ${v.unparse}";
+    top.ast = namedAST(n.lexeme, v.ast);
     top.errors := v.errors;
   }
-
-nonterminal QName_c with ast<String>, location;
-
-concrete productions top::QName_c
-| id::Id_t
-  { top.ast = id.lexeme; }
-| id::Id_t ':' qn::QName_c
-  { top.ast = id.lexeme ++ ":" ++ qn.ast; }
