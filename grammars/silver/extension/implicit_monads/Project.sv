@@ -11,6 +11,8 @@ imports silver:definition:type;
 
 imports silver:extension:convenience;
 imports silver:extension:patternmatching;
+imports silver:extension:list;
 
 imports silver:modification:lambda_fn;
 imports silver:modification:let_fix;
+imports silver:modification:primitivepattern;

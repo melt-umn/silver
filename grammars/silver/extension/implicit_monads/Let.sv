@@ -1,6 +1,6 @@
 grammar silver:extension:implicit_monads;
 
-import silver:definition:flow:ast only ExprVertexInfo, FlowVertex;
+--import silver:definition:flow:ast only ExprVertexInfo, FlowVertex;
 
 --- Concrete Syntax for lets
 --------------------------------------------------------------------------------

@@ -1,8 +1,8 @@
 grammar silver:extension:implicit_monads;
 
 --import silver:analysis:typechecking:core;
-import silver:modification:lambda_fn;
-import silver:modification:let_fix;
+--import silver:modification:lambda_fn;
+--import silver:modification:let_fix;
 
 
 attribute monadRewritten<Expr>, merrors, mtyperep occurs on Expr;

@@ -17,7 +17,7 @@ grammar silver:extension:implicit_monads;
 -}
 
 
-imports silver:extension:list;
+--imports silver:extension:list;
 
 
 synthesized attribute monadRewritten<a>::a;
