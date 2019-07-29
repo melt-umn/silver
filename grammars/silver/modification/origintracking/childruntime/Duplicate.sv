@@ -1,6 +1,6 @@
 
 function javaDup
-a ::= arg::a redex::b rules::[OtxNote]
+a ::= arg::a redex::b rules::[OriginNote]
 {
   return error("Not impl");
 } foreign {
@@ -8,7 +8,7 @@ a ::= arg::a redex::b rules::[OtxNote]
 }
 
 function javaDupNullRedex
-a ::= arg::a rules::[OtxNote]
+a ::= arg::a rules::[OriginNote]
 {
   return error("Not impl");
 } foreign {
@@ -16,7 +16,7 @@ a ::= arg::a rules::[OtxNote]
 }
 
 function javaCopy
-a ::= arg::a redex::b rules::[OtxNote]
+a ::= arg::a redex::b rules::[OriginNote]
 {
   return error("Not impl");
 } foreign {

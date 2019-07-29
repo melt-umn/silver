@@ -16,7 +16,7 @@ attribute isRuleRoot, originsRules occurs on
 function makeRuleLocNote
 Expr ::= attr::Decorated QNameAttrOccur
 {
-	return Silver_Expr{silver:extension:otx:childruntime:ruleLocNote(
+	return Silver_Expr{silver:modification:origintracking:childruntime:ruleLocNote(
 		$Expr{makeStringExpr(attr.name, attr.location)},
 		$Expr{makeStringExpr(hackUnparse(attr.location), attr.location)})};
 }

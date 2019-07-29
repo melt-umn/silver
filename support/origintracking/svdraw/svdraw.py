@@ -39,7 +39,7 @@ class NT:
 		 and 1 #Change to show/hide primitives
 
 		self.origin = None
-		o = list(filter(lambda x:x[0].endswith("otxinfo"), record[3]))
+		o = list(filter(lambda x:x[0].endswith("origininfo"), record[3]))
 		if o != []:
 			o = translate(o[0][1])
 			self.origin, self.originlabel = o, ""
@@ -57,7 +57,7 @@ true = True
 sxstart = translate(eval(input().replace("sxstart: ","",1)))
 sxres   = translate(eval(input().replace("sxres  : ","",1)))
 
-os.chdir("/home/louis/School/melt/origintracking/silver/support/otx/svdraw")
+os.chdir("/home/louis/School/melt/origintracking/silver/support/origintracking/svdraw")
 
 with open("out.dot", 'w') as fd:
 	w = lambda x: fd.write(x+"\n")

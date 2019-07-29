@@ -27,7 +27,6 @@ parser svParse::Root {
   silver:extension:silverconstruction;
   silver:extension:astconstruction;
   silver:extension:constructparser;
-  silver:extension:otx;
 --  silver:extension:concreteSyntaxForTrees ;
 
   silver:modification:let_fix;
@@ -39,6 +38,7 @@ parser svParse::Root {
   silver:modification:typedecl;
   silver:modification:copper;
   silver:modification:defaultattr;
+  silver:modification:origintracking;
   
   -- slight hacks, for the moment
   silver:modification:copper_mda;

@@ -1,4 +1,4 @@
-grammar silver:extension:otx;
+grammar silver:modification:origintracking;
 
 imports silver:definition:type;
 imports silver:definition:type:syntax;
