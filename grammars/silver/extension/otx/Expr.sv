@@ -10,7 +10,6 @@ autocopy attribute originsRules :: [Expr] occurs on Expr, AppExprs, AppExpr, Ann
 
 attribute isRuleRoot, originsRules occurs on
 	PrimPattern, PrimPatterns, AssignExpr, MatchRule, AbstractMatchRule, PatternList, MRuleList;
-attribute frame occurs on MatchRule, AbstractMatchRule, PatternList, MRuleList;
  -- AssignExpr is from let_fix, Patterns stuff from primitivepatters
 
 

@@ -115,6 +115,7 @@ top::Expr ::= 'new^' '(' e::Expr ')^' label::Expr
 concrete production originAccess
 top::Expr ::= e::Expr '^.' q::QNameAttrOccur
 {
+  top.unparse = e.unparse ++ "^." ++ q.unparse;
   local accessexp :: Expr = access(e, '.', q, location=top.location);
   local shucked :: Expr = otxShuckValueImpl(accessexp, location=top.location);
   local lhsexpr :: Expr = mkLhsRef(top);
