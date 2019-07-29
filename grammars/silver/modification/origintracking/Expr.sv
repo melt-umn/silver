@@ -14,25 +14,26 @@ attribute isRuleRoot, originsRules occurs on
 
 
 function makeRuleLocNote
-Expr ::= attr::Decorated QNameAttrOccur
+Expr ::= lhs::Decorated DefLHS attr::Decorated QNameAttrOccur
 {
 	return Silver_Expr{silver:modification:origintracking:childruntime:ruleLocNote(
 		$Expr{makeStringExpr(attr.name, attr.location)},
-		$Expr{makeStringExpr(hackUnparse(attr.location), attr.location)})};
+		$Expr{makeStringExpr(lhs.unparse, attr.location)},
+		$Expr{locationExprOfLocation(attr.location)})};
 }
 
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= lhs::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   e.isRuleRoot = true;
-  e.originsRules = [makeRuleLocNote(attr)];
+  e.originsRules = [makeRuleLocNote(lhs, attr)];
 }
 
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= lhs::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   e.isRuleRoot = true;
-  e.originsRules = [makeRuleLocNote(attr)];
+  e.originsRules = [makeRuleLocNote(lhs, attr)];
 }
 
 -- aspect default production

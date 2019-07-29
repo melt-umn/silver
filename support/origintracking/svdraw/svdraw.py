@@ -4,6 +4,12 @@ cache = {}
 
 print('\n\nComputing...')
 
+def isBoring(v):
+	return (isinstance(v, NT) and any(map(lambda x:x in v.name, ('loc', 'just', 'nothing', 'pair', 'Note')))) or type(v) in [str, int, bool, list]
+
+def varsx(x):
+	return vars(x) if '__dict__' in dir(x) else {}
+
 def translate(x):
 	# print(x)
 	def _translate(x):
@@ -64,7 +70,7 @@ with open("out.dot", 'w') as fd:
 	w("digraph{")
 	for k, v in cache.items():
 		# TODO: FIX
-		if (isinstance(v, NT) and any(map(lambda x:x in v.name, ('just', 'nothing', 'pair', 'Note')))) or type(v) in [str, int, bool, list]:
+		if isBoring(v) and not any(v is varsx(x).get('origin') for x in cache):
 			continue
 
 		if isinstance(v, NT):
