@@ -840,13 +840,13 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything
                                 " is not true for " ++
                                 prettyType(performSubstitution(if isMonad(e1.mtyperep)
                                                                then e1.mtyperep
-                                                               else e2.mtyperep, top.finalSubst)))],
+                                                               else e2.mtyperep, top.upSubst)))],
                                 location=top.location)
                    end
               else errorExpr([err(top.location, "One of the expressions in " ++
                               "an if-then has to have a monad type--instead, have " ++
-                              prettyType(performSubstitution(e1.mtyperep, top.finalSubst)) ++
-                              " and " ++ prettyType(performSubstitution(e2.mtyperep, top.finalSubst)))],
+                              prettyType(performSubstitution(e1.mtyperep, top.upSubst)) ++
+                              " and " ++ prettyType(performSubstitution(e2.mtyperep, top.upSubst)))],
                               location=top.location);
 }
 
@@ -866,8 +866,8 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 
   --To deal with the case where one type or the other might be "generic" (e.g. Maybe<a>),
   --   we want to do substitution on the types before putting them into the monadRewritten
-  local e2Type::Type = performSubstitution(e2.mtyperep, top.finalSubst);
-  local e3Type::Type = performSubstitution(e3.mtyperep, top.finalSubst);
+  local e2Type::Type = performSubstitution(e2.mtyperep, top.upSubst);
+  local e3Type::Type = performSubstitution(e3.mtyperep, top.upSubst);
   --We assume that if e2 or e3 are monads, they are the same as e1 if that is a
   --   monad and we don't allow monads to become nested.
   local cMonad::Expr =
@@ -1216,7 +1216,7 @@ top::Expr ::= e1::Expr '++' e2::Expr
                               else performSubstitution(e2.mtyperep, errCheck1.upSubst);
 
   -- Moved from 'analysis:typechecking' because we want to use this stuff here now
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.upSubst;
 
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
@@ -1297,16 +1297,14 @@ top::AppExpr ::= e::Expr
 {
   top.merrors := e.merrors;
 
-  --need to drop the "Decorated" from the type here if the expected type is not decorated
-  --   because Silver won't do that inside the lambda
-  top.realTypes = [dropDecorated(e.mtyperep, top.appExprTyperep)];
+  top.realTypes = [e.mtyperep];
   top.monadTypesLocations = if isMonadic
                             then [pair(e.mtyperep, top.appExprIndex+1)] --not sure if that's the right index
                             else [];
 
   --these have an 'a' at the end of their names because of a bug where local names are not local to their grammars
-  local attribute errCheck1a :: TypeCheck; errCheck1a.finalSubst = top.finalSubst;
-  local attribute errCheck2a :: TypeCheck; errCheck2a.finalSubst = top.finalSubst;
+  local attribute errCheck1a :: TypeCheck; errCheck1a.finalSubst = top.upSubst;
+  local attribute errCheck2a :: TypeCheck; errCheck2a.finalSubst = top.upSubst;
 
   errCheck1a.downSubst = e.upSubst;
   errCheck2a.downSubst = e.upSubst;
