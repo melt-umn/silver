@@ -131,6 +131,8 @@ start = eval(input())
 end = eval(input())
 assert input()=="---SVDRAW2 END---"
 
+print("\n"*3)
+
 print("evaling pexprs...")
 start = translate(start)
 end = translate(end)
@@ -145,7 +147,7 @@ w("graph [compound=true")
 w("rankdir=TB")
 w("splines=spline];")
 
-print("drawing object graphs...")
+print("finding roots...")
 # roots = list(filter(lambda x:all(map(lambda o:not o.has_as_child(x), cache.values())) and not x.is_origins_impl_value(),
 # 	cache.values()))
 roots = []
@@ -158,9 +160,6 @@ for v in cache.values():
 		else:
 			if isinstance(v, ComplexValue) and (allow_c or not v.name.endswith("_c")):
 				roots.append(v)
-				print(v.name)
-print(len(roots))
-# roots = cache.values()
 
 def draw_only_children(node, color=None):
 	if node is start: color="#bbbbff"
@@ -174,11 +173,17 @@ def draw_only_children(node, color=None):
 	w("];")
 	if not isinstance(node, NT): return
 	w("subgraph children"+str(node.ids)+"{")
-	for child in node.get_real_children():
+	kids = node.get_real_children()
+	for child in kids:
 		if not (allow_c or not node.name.endswith("_c")): continue
 		draw_only_children(child, color)
 		w("n"+str(node.ids)+" -> n"+str(child.ids)+" [label="+str(node.children.index(child))+" arrowhead=none];")
+		if child!=kids[-1]:
+			next = kids[kids.index(child)+1]
+			w("n"+str(node.ids)+" -> n"+str(child.ids)+" [style=invisible arrowhead=none];")
 	w("}")
+
+print("drawing object graph...")
 
 for thing in filter(lambda x:isinstance(x, ComplexValue), roots):
 	w("subgraph cluster"+str(thing.ids)+"{")
@@ -192,6 +197,8 @@ def propogate_redex(node, redex_haver, root=True):
 		for x in node.get_real_children():
 			if x.redex is None or allow_multiredex:
 				propogate_redex(x, redex_haver, False)
+
+print("adding origin information...")
 
 for thing in cache.values():
 	if thing.origin:
@@ -207,6 +214,6 @@ w("}")
 
 fd.close()
 
-print("drawing...")
+print("rendering...")
 
 os.system("dot -Tpng -o out.png out.dot")
