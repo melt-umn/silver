@@ -50,7 +50,7 @@ top::OriginNote ::= string::String
 }
 
 abstract production ruleLocNote
-top::OriginNote ::= attributeName::String lhsDesc::String sourceLocation::Location
+top::OriginNote ::= attributeName::String sourceLocation::Location
 {
 	
 }
