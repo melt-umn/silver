@@ -27,16 +27,18 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local copyChild :: (String ::= NamedSignatureElement) =
   	(\x::NamedSignatureElement -> "getChild_"++x.elementName++"()");
 
+  local commaIfKids :: String = if length(namedSig.inputElements)!=0 then "," else "";
+
   local dupimpl :: String = if length(namedSig.namedInputElements)==1 &&
   	head(namedSig.namedInputElements).elementName == "silver:modification:origintracking:childruntime:origininfo" then
   		s"""
 @Override
 public ${fnnt} duplicate(Object redex, Object notes) {
 	if (redex == null) {
-		return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))},
+		return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfKids}
   			new silver.modification.origintracking.childruntime.PoriginOriginInfo(this.wrapInLink(), notes, false));
 	} else {
-		return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))},
+		return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfKids}
   			new silver.modification.origintracking.childruntime.PoriginAndRedexOriginInfo(this.wrapInLink(), notes, ((common.Node)redex).wrapInLink(), notes, false));
 	}
 }
@@ -63,7 +65,7 @@ public ${fnnt} copy(Object newRedex, Object newRule) {
 
 	Object redex = ((common.Node)newRedex).wrapInLink();
 	Object redexNotes = newRule;
-	return new ${className}(${implode(", ", map(copyChild, namedSig.inputElements))},
+	return new ${className}(${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfKids}
  		new silver.modification.origintracking.childruntime.PoriginAndRedexOriginInfo(origin, originNotes, redex, redexNotes, newlyConstructed));
 }
 

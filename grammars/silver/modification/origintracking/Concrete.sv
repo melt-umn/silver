@@ -17,8 +17,13 @@ terminal OriginDot_t       '^.'    precedence = 50;
 concrete production originApplicationExprNoComment
 top::Expr ::= prod::Expr '^(' args::AppExprs ')'
 {
-  local bogonLabel :: Expr = Silver_Expr{[]};
-  forwards to originApplicationExpr(prod, '^(', args, ')^', bogonLabel, location=top.location);
+  forwards to originApplicationExpr(prod, '^(', args, ')^', Silver_Expr{[]}, location=top.location);
+}
+
+concrete production originApplicationExprNoArgsNoComment
+top::Expr ::= prod::Expr '^(' ')'
+{
+  forwards to originApplicationExpr(prod, '^(', emptyAppExprs(location=top.location), ')^', Silver_Expr{[]}, location=top.location);
 }
 
 concrete production originNote
