@@ -1,19 +1,7 @@
 grammar silver:extension:implicit_monads;
 
-{-nonterminal PrimPatterns with 
-  config, grammarName, env, compiledGrammars, frame,
-  location, unparse, errors,
-  downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation,
-  typerep, --the returned type from the patterns-}
 attribute mtyperep, merrors, patternType, monadRewritten<PrimPatterns>,
           returnFun, returnify<PrimPatterns> occurs on PrimPatterns;
-{-nonterminal PrimPattern with 
-  config, grammarName, env, compiledGrammars, frame,
-  location, unparse, errors,
-  downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation,
-  typerep, --the returned type from the patterns-}
 attribute mtyperep, merrors, patternType, monadRewritten<PrimPattern>,
           returnFun, returnify<PrimPattern> occurs on PrimPattern;
 
@@ -51,7 +39,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   --check the type coming up with the type that's supposed to be
   --   coming out, which should, for case expressions (since nobody
   --   uses just this), be just a variable(?)
-  local attribute errCheck1::TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  local attribute errCheck1::TypeCheck; errCheck1.finalSubst = top.upSubst;
   errCheck1 = if isMonad(pr.mtyperep)
               then if isMonad(f.mtyperep)
                    then check(pr.mtyperep, f.mtyperep)
@@ -115,6 +103,9 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   --bind e, returnify pr based on e's type
   local prReturnify::PrimPatterns = pr.monadRewritten;
   prReturnify.returnFun = monadReturn(e.mtyperep, bogusLoc());
+  prReturnify.grammarName = top.grammarName;
+  prReturnify.env = top.env;
+  prReturnify.config = top.config;
   local bind_e_returnify_pr::Expr =
     applicationExpr(eBind,
                     '(',
@@ -166,6 +157,9 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   --returnify pr from f's type
   local ret_pr_from_f::PrimPatterns = pr.monadRewritten;
   ret_pr_from_f.returnFun = monadReturn(f.mtyperep, bogusLoc());
+  ret_pr_from_f.grammarName = top.grammarName;
+  ret_pr_from_f.env = top.env;
+  ret_pr_from_f.config = top.config;
   local returnify_pr::Expr = matchPrimitiveReal(e.monadRewritten, outty, ret_pr_from_f.returnify,
                                                 f.monadRewritten, location=top.location);
   --just use monadRewritten
@@ -187,9 +181,6 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                             else if isMonad(f.mtyperep)
                                  then returnify_pr
                                  else just_rewrite;
-
-
---  local resultTransType :: String = performSubstitution(t.typerep, top.finalSubst).transType;
 }
 
 aspect production onePattern
@@ -210,7 +201,7 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
   top.merrors := p.merrors ++ ps.merrors;
 
   errCheck1.downSubst = ps.upSubst;
-
+  errCheck1.finalSubst = errCheck1.upSubst;
   local errCheck1::TypeCheck = if isMonad(p.mtyperep)
                                then if isMonad(ps.mtyperep)
                                     then check(p.mtyperep, ps.mtyperep)
@@ -243,12 +234,18 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
   --when the current clause is a monad but the rest aren't, wrap all of them in Return()
   local psReturnify::PrimPatterns = ps.monadRewritten;
   psReturnify.returnFun = monadReturn(p.mtyperep, bogusLoc());
+  psReturnify.env = top.env;
+  psReturnify.config = top.config;
+  psReturnify.grammarName = top.grammarName;
   local returnifyRewritten::PrimPatterns = consPattern(p.monadRewritten, terminal(Vbar_kwd, "|"),
                                                        psReturnify.returnify,
                                                        location=top.location);
   --when the current clause is not a monad but the rest are, wrap the current one in Return()
   local pReturnify::PrimPattern = p.monadRewritten;
   pReturnify.returnFun = monadReturn(ps.mtyperep, bogusLoc());
+  pReturnify.grammarName = top.grammarName;
+  pReturnify.config = top.config;
+  pReturnify.env = top.env;
   local returnRewritten::PrimPatterns = consPattern(pReturnify.returnify, terminal(Vbar_kwd, "|"),
                                                     ps.monadRewritten,
                                                     location=top.location);

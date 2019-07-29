@@ -9,6 +9,8 @@ imports silver:driver:util;
 imports silver:definition:env;
 imports silver:definition:type;
 
+imports silver:util:cmdargs;
+
 imports silver:extension:convenience;
 imports silver:extension:patternmatching;
 imports silver:extension:list;
