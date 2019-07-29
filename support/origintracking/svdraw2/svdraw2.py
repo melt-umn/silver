@@ -187,7 +187,7 @@ for thing in filter(lambda x:isinstance(x, ComplexValue), roots):
 
 def propogate_redex(node, redex_haver, root=True):
 	w("n"+str(node.ids)+" -> n"+str(redex_haver.ids)+" [style=dotted penwidth=6 arrowsize=0.25 ];")
-	w("n"+str(node.ids)+" -> n"+str(redex_haver.redex.ids)+" [style=dotted, label=\""+(redex_haver.redexlabel if root else "")+"\"];")
+	w("n"+str(node.ids)+" -> n"+str(redex_haver.redex.ids)+" [style=dotted, label=\""+(redex_haver.redexlabel if root or allow_multiredex else "")+"\"];")
 	if isinstance(node, NT):
 		for x in node.get_real_children():
 			if x.redex is None or allow_multiredex:
