@@ -80,7 +80,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   --read the comment on the function below if you want to know what it is
   local attribute monadStuff::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
   monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.upSubst, top.frame,
-                                      top.grammarName, top.compiledGrammars, top.config, top.flowEnv, 1);
+                                      top.grammarName, top.compiledGrammars, top.config, top.flowEnv, [], 1);
   local monadLocal::Expr =
     buildMonadicBinds(monadStuff.fst,
                       caseExpr(monadStuff.snd,
@@ -114,16 +114,20 @@ Pair<Boolean Type> ::= elst::[Expr] tylst::[Type] env::Decorated Env sub::Substi
 }
 --make a list of the expression types, expressions and names for binding them as
 --   well as a new list of expressions for the forward to use
+--use a name from names when that is not empty; when empty, use a new name
 function monadicMatchTypesNames
 Pair<[Pair<Type Pair<Expr String>>] [Expr]> ::=
 elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext gn::String
-  cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::Decorated FlowEnv index::Integer
+  cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::Decorated FlowEnv names::[String] index::Integer
 {
   local attribute subcall::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
   subcall = case elst, tylst of
-            | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, env, sub, f, gn, cg, c, fe, index+1)
+            | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, env, sub, f, gn, cg, c, fe, ntail, index+1)
             end;
-  local newName::String = "binding_matched_expression_in_case" ++ toString(index);
+  local ntail::[String] = if null(names) then [] else tail(names);
+  local newName::String = if null(names)
+                          then "__sv_expression_in_case" ++ toString(index) ++ "_" ++ toString(genInt())
+                          else head(names);
   return case elst, tylst of
          | [], _ -> pair([], [])
          | _, [] -> pair([], elst)
@@ -199,10 +203,10 @@ top::Expr ::= 'mcase' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   local mzero::Expr = monadZero(monad, bogusLoc());
 
   --new names for using lets to bind the incoming expressions
-  local newNames::[String] = map(\x::Expr -> "__mcase_var_" ++ toString(genInt()), es.rawExprs);
+  local newNames::[String] = map(\x::Expr -> "__sv_mcase_var_" ++ toString(genInt()), es.rawExprs);
   local nameExprs::[Expr] = map(\x::String -> baseExpr(qName(bogusLoc(), x), location=bogusLoc()),
                                 newNames);
-  local caseExprs::[Expr] = map(\x::AbstractMatchRule -> 
+  local caseExprs::[Expr] = map(\x::AbstractMatchRule ->
                                  caseExpr(nameExprs, [x], mzero, freshType(), location=bogusLoc()),
                                 ml.matchRuleList);
   local mplused::Expr = foldl(\rest::Expr current::Expr -> 
@@ -210,9 +214,17 @@ top::Expr ::= 'mcase' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                  $Expr{mplus}($Expr{rest}, $Expr{current})
                                },
                               head(caseExprs), tail(caseExprs));
+  --figure out which ones need to get bound in
+  local attribute monadStuff::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
+  monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.upSubst, top.frame,
+                                      top.grammarName, top.compiledGrammars, top.config, top.flowEnv,
+                                      newNames, 1);
+  --bind those ones in over the mpluses
+  local monadLocal::Expr = buildMonadicBinds(monadStuff.fst, mplused);
+  --put lets for all the names over the top (the binds will overwrite some)
   local letBound::Expr = foldr(\p::Pair<Expr String> rest::Expr ->
                                 makeLet(bogusLoc(), p.snd, freshType(), p.fst, rest),
-                               mplused, zipWith(pair, es.rawExprs, newNames));
+                               monadLocal, zipWith(pair, es.rawExprs, newNames));
 
   forwards to if isMonad(monad)
               then if canBeMCased(monad)

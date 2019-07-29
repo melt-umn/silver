@@ -1,7 +1,5 @@
 grammar silver:extension:implicit_monads;
 
---import silver:extension:list only LSqr_t, RSqr_t, listType;
-
 aspect production prodAppPattern
 top::Pattern ::= prod::QName '(' ps::PatternList ')'
 {

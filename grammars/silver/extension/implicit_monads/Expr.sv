@@ -261,14 +261,12 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
   top.monadRewritten = top;
 }
 
-
+{-
 aspect production attributeSection
 top::Expr ::= '(' '.' q::QName ')'
 {
-  top.mtyperep = top.typerep;
-  top.merrors := [];
-  top.monadRewritten = top;
 }
+-}
 
 aspect production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
