@@ -25,9 +25,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   			(if x.typerep.isPrimitiveForDuplicate then "" else ".duplicate(null, notes)"));
 
   local copyChild :: (String ::= NamedSignatureElement) =
-  	(\x::NamedSignatureElement -> 
-  		"getChild_"++x.elementName++"()" ++
-  			(if x.typerep.isPrimitiveForDuplicate then "" else ".copy(null, newRule)"));
+  	(\x::NamedSignatureElement -> "getChild_"++x.elementName++"()");
 
   local dupimpl :: String = if length(namedSig.namedInputElements)==1 &&
   	head(namedSig.namedInputElements).elementName == "silver:modification:origintracking:childruntime:origininfo" then
@@ -45,36 +43,28 @@ public ${fnnt} duplicate(Object redex, Object notes) {
 
 @Override
 public ${fnnt} copy(Object newRedex, Object newRule) {
-    Object origin, originNotes, newlyConstructed, redex, redexNotes;
+    Object origin, originNotes, newlyConstructed;
     Object roi = this.getAnno_silver_modification_origintracking_childruntime_origininfo();
 	if (roi instanceof silver.modification.origintracking.childruntime.PoriginOriginInfo) {
 		silver.modification.origintracking.childruntime.PoriginOriginInfo oi = (silver.modification.origintracking.childruntime.PoriginOriginInfo)roi;
 		origin = oi.getChild_origin();
 		originNotes = oi.getChild_originNotes();
 		newlyConstructed = oi.getChild_newlyConstructed();
-		redex = null;
-		redexNotes = null;
 	} else if (roi instanceof silver.modification.origintracking.childruntime.PoriginAndRedexOriginInfo) {
 		silver.modification.origintracking.childruntime.PoriginAndRedexOriginInfo oi = (silver.modification.origintracking.childruntime.PoriginAndRedexOriginInfo)roi;
 		origin = oi.getChild_origin();
 		originNotes = oi.getChild_originNotes();
 		newlyConstructed = oi.getChild_newlyConstructed();
-		redex = oi.getChild_redex();
-		redexNotes = oi.getChild_redexNotes();
 	} else {
 		return this;
 	}
 
-	if (newRedex != null) {
-		if (newRedex instanceof common.DecoratedNode) newRedex = ((common.DecoratedNode)newRedex).undecorate();
-		redex = ((common.Node)newRedex).wrapInLink();
-		redexNotes = newRule;
-		return new ${className}(${implode(", ", map(copyChild, namedSig.inputElements))},
-	 		new silver.modification.origintracking.childruntime.PoriginAndRedexOriginInfo(origin, originNotes, redex, redexNotes, newlyConstructed));
-	} else {
-		return new ${className}(${implode(", ", map(copyChild, namedSig.inputElements))},
-	 		new silver.modification.origintracking.childruntime.PoriginOriginInfo(origin, originNotes, newlyConstructed));
-	}
+	if (newRedex instanceof common.DecoratedNode) newRedex = ((common.DecoratedNode)newRedex).undecorate();
+
+	Object redex = ((common.Node)newRedex).wrapInLink();
+	Object redexNotes = newRule;
+	return new ${className}(${implode(", ", map(copyChild, namedSig.inputElements))},
+ 		new silver.modification.origintracking.childruntime.PoriginAndRedexOriginInfo(origin, originNotes, redex, redexNotes, newlyConstructed));
 }
 
 @Override
