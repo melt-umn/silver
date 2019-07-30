@@ -62,3 +62,12 @@ Expr ::= x::Location
       Silver_Expr{bogusLoc()}
   end;
 }
+
+function mkLhsRef
+Expr ::= top::Decorated Expr --need .frame anno
+{
+  return baseExpr(
+      qNameId(
+        name(top.frame.signature.outputElement.elementName,
+      top.location), location=top.location), location=top.location);
+}

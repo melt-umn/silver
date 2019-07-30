@@ -80,7 +80,7 @@ class NT(ComplexValue):
 
 class LocationNT(NT):
 	def node_text(self):
-		return "loc("+":".join(map(lambda x:str(x.value), self.children[:3]))+")"
+		return "loc("+":".join(map(lambda x:str(x.value), self.children[:2]))+")"
 
 class Token(ComplexValue):
 	def __init__(self, pexpr):

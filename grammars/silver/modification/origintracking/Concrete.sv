@@ -13,6 +13,7 @@ terminal TokOriginRParen_t ')^^'   precedence = 24;
 terminal OriginNote_t      'note^' precedence = 24;
 terminal OriginNoteFor_t   'for^'  precedence = 24;
 terminal OriginDot_t       '^.'    precedence = 50;
+terminal OriginNonterminal_t       'nonterminal^'  precedence = 24;
 
 concrete production originApplicationExprNoComment
 top::Expr ::= prod::Expr '^(' args::AppExprs ')'
@@ -133,22 +134,46 @@ top::Expr ::= e::Expr '^.' q::QNameAttrOccur
   forwards to fwd;
 }
 
--- terminal OriginsKwd    'origins' precedence = 24;
+terminal OriginsKwd    'origins' precedence = 24;
 
--- concrete production originsOnDcl
--- top::AGDcl ::= 'origins' 'on' nt::QName ';'
--- {
---   top.unparse = "origins on " ++ nt.unparse;
-
---   forwards to makeDuplicateImpls(top.env, nt);
--- }
-
-
-function mkLhsRef
-Expr ::= top::Decorated Expr --need .frame anno
+concrete production originsOnDcl
+top::AGDcl ::= 'origins' 'on' nt::QName ';'
 {
-  return baseExpr(
-      qNameId(
-        name(top.frame.signature.outputElement.elementName,
-      top.location), location=top.location), location=top.location);
+  top.unparse = "origins on " ++ nt.unparse;
+
+  local l :: Location = top.location;
+
+  forwards to annotateDcl('annotation', qName(l, "origininfo"), botlNone(location=l),
+    'occurs', 'on', nt, botlNone(location=l), ';', location=l);
+}
+
+concrete production originNonterminalDcl
+top::AGDcl ::= cl::ClosedOrNot 'nonterminal^' id::Name tl::BracketedOptTypeExprs ';'
+{
+  top.unparse = "nonterminal^ " ++ id.unparse ++ tl.unparse ++ ";";
+
+  local l :: Location = top.location;
+
+  local originLinkTE :: TypeExpr = nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "OriginLink", l),
+    location=l), botlNone(location=l), location=l);
+  local ntTE :: TypeExpr = nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, id.name, l),
+    location=l), botlNone(location=l), location=l);
+
+  local nextLinkNothingImpl :: Expr = Silver_Expr{nothing()};
+  local nextLinkSomethingImpl :: Expr = Silver_Expr{just(n.origininfo)};
+  local hasOrigins :: Boolean = findNamedSigElem("silver:modification:origintracking:childruntime:origininfo",
+      annotationsForNonterminal(nonterminalType(top.grammarName ++ ":" ++ id.name, []), top.env), 0) != -1;
+  local selectedImpl :: Expr = if hasOrigins then nextLinkSomethingImpl else nextLinkNothingImpl;
+  local implStmt :: ProductionStmt = attributeDef(concreteDefLHS(qName(l, "top"), location=l),
+    '.', qNameAttrOccur(qName(l, "nextOrigin"), location=l), '=', selectedImpl, ';', location=l);
+
+  local newdcl :: AGDcl = productionDcl('abstract', 'production', name("originLink" ++ id.name, l),
+    productionSignature(productionLHS(name("top", l), '::', originLinkTE, location=l), '::=',
+      productionRHSCons(productionRHSElem(name("n", l), '::', ntTE, location=l), productionRHSNil(location=l),
+        location=l), location=l), productionBody('{',
+          productionStmtsSnoc(productionStmtsNil(location=l), implStmt, location=l), '}', location=l), location=l);
+
+  forwards to appendAGDcl(
+    nonterminalDcl(cl, 'nonterminal', id, tl, ';', location=l),
+    newdcl, location=l);
 }
