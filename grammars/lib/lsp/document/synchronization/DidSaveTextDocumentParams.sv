@@ -1,4 +1,4 @@
-nonterminal DidSaveTextDocumentParams with jsonValue, textDocumentId, contentWhenSaved;
+nonterminal DidSaveTextDocumentParams with jsonValue, documentId, contentWhenSaved;
 
 synthesized attribute contentWhenSaved :: Maybe<String>;
 
@@ -6,7 +6,7 @@ abstract production didSaveTextDocumentParams
 top::DidSaveTextDocumentParams::=
   textDocument::TextDocumentIdentifier text::Maybe<String>
 {
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.contentWhenSaved = text;
   top.jsonValue =
     addKeyValuePairToJSONObject("textDocument", textDocument.jsonValue, 

@@ -1,4 +1,4 @@
-nonterminal CodeActionParams with jsonValue, textDocumentId, range, codeActionContext;
+nonterminal CodeActionParams with jsonValue, documentId, range, codeActionContext;
 
 synthesized attribute codeActionContext :: CodeActionContext;
 
@@ -6,7 +6,7 @@ abstract production codeActionParams
 top::CodeActionParams::=
   textDocument::TextDocumentIdentifier range::Range context::CodeActionContext
 {
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.range = range;
   top.codeActionContext = context;
   top.jsonValue =

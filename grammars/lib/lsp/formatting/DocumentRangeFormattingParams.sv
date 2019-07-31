@@ -1,11 +1,11 @@
-nonterminal DocumentRangeFormattingParams with jsonValue, textDocumentId, range, formattingOptions;
+nonterminal DocumentRangeFormattingParams with jsonValue, documentId, range, formattingOptions;
 
 
 abstract production documentRangeFormattingParams
 top::DocumentRangeFormattingParams::=
   textDocument::TextDocumentIdentifier range::Range options::FormattingOptions
 {
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.range = range;
   top.formattingOptions = options;
   top.jsonValue =

@@ -1,11 +1,11 @@
-nonterminal DocumentLinkParams with jsonValue, textDocumentId;
+nonterminal DocumentLinkParams with jsonValue, documentId;
 
 
 abstract production documentLinkParams
 top::DocumentLinkParams::=
   textDocument::TextDocumentIdentifier
 {
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.jsonValue =
     addKeyValuePairToJSONObject("textDocument", textDocument.jsonValue, 
     jsonObject([]));

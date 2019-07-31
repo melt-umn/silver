@@ -1,14 +1,13 @@
-nonterminal ReferenceParams with jsonValue, referenceContext, textDocumentId, position;
+nonterminal ReferenceParams with jsonValue, referenceContext, documentId, position;
 
 synthesized attribute referenceContext :: ReferenceContext;
-synthesized attribute textDocumentId :: TextDocumentIdentifier;
 
 abstract production referenceParams
 top::ReferenceParams::=
   context::ReferenceContext textDocument::TextDocumentIdentifier position::Position
 {
   top.referenceContext = context;
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.position = position;
   top.jsonValue =
     addKeyValuePairToJSONObject("context", context.jsonValue, 

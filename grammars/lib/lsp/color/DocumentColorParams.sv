@@ -1,11 +1,11 @@
-nonterminal DocumentColorParams with jsonValue, textDocumentId;
+nonterminal DocumentColorParams with jsonValue, documentId;
 
 
 abstract production documentColorParams
 top::DocumentColorParams::=
   textDocument::TextDocumentIdentifier
 {
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.jsonValue =
     addKeyValuePairToJSONObject("textDocument", textDocument.jsonValue, 
     jsonObject([]));

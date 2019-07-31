@@ -1,4 +1,4 @@
-nonterminal DocumentOnTypeFormattingParams with jsonValue, textDocumentId, position, typedCharacter, formattingOptions;
+nonterminal DocumentOnTypeFormattingParams with jsonValue, documentId, position, typedCharacter, formattingOptions;
 
 synthesized attribute typedCharacter :: String;
 
@@ -6,7 +6,7 @@ abstract production documentOnTypeFormattingParams
 top::DocumentOnTypeFormattingParams::=
   textDocument::TextDocumentIdentifier position::Position ch::String options::FormattingOptions
 {
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.position = position;
   top.typedCharacter = ch;
   top.formattingOptions = options;

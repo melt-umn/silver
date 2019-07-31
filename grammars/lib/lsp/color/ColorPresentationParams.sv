@@ -1,11 +1,11 @@
-nonterminal ColorPresentationParams with jsonValue, textDocumentId, colorValue, range;
+nonterminal ColorPresentationParams with jsonValue, documentId, colorValue, range;
 
 
 abstract production colorPresentationParams
 top::ColorPresentationParams::=
   textDocument::TextDocumentIdentifier color::Color range::Range
 {
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.colorValue = color;
   top.range = range;
   top.jsonValue =

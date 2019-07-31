@@ -1,11 +1,11 @@
-nonterminal DocumentFormattingParams with jsonValue, textDocumentId, formattingOptions;
+nonterminal DocumentFormattingParams with jsonValue, documentId, formattingOptions;
 
 
 abstract production documentFormattingParams
 top::DocumentFormattingParams::=
   textDocument::TextDocumentIdentifier options::FormattingOptions
 {
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.formattingOptions = options;
   top.jsonValue =
     addKeyValuePairToJSONObject("textDocument", textDocument.jsonValue, 

@@ -1,24 +1,24 @@
-  nonterminal Location with jsonValue, uri, range;
+nonterminal Location with jsonValue, uri, range;
 
 
-  abstract production location
-  top::Location::=
-    uri::DocumentUri range::Range
-  {
-    top.uri = uri;
-    top.range = range;
-    top.jsonValue =
-      addKeyValuePairToJSONObject("uri", jsonString(uri), 
-      addKeyValuePairToJSONObject("range", range.jsonValue, 
-      jsonObject([])));
-  }
+abstract production location
+top::Location::=
+  uri::DocumentUri range::Range
+{
+  top.uri = uri;
+  top.range = range;
+  top.jsonValue =
+    addKeyValuePairToJSONObject("uri", jsonString(uri), 
+    addKeyValuePairToJSONObject("range", range.jsonValue, 
+    jsonObject([])));
+}
 
-  function parseLocation
-  Either<ResponseError Location> ::= val::JSONValue
-  {
-    local uri :: Maybe<DocumentUri>
-      = mapMaybe(jsonToString, getValueWithKey("uri", val));
-    local range :: Maybe<Either<ResponseError Range>>
+function parseLocation
+Either<ResponseError Location> ::= val::JSONValue
+{
+  local uri :: Maybe<DocumentUri>
+    = mapMaybe(jsonToString, getValueWithKey("uri", val));
+  local range :: Maybe<Either<ResponseError Range>>
     = mapMaybe(parseRange, getValueWithKey("range", val));
 
   local err :: Maybe<ResponseError> = 

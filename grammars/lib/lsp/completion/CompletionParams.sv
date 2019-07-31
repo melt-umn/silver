@@ -1,13 +1,12 @@
-nonterminal CompletionParams with jsonValue, textDocumentId, position, completionContext;
+nonterminal CompletionParams with jsonValue, documentId, position, completionContext;
 
-synthesized attribute textDocumentId :: TextDocumentIdentifier;
 synthesized attribute completionContext :: Maybe<CompletionContext>;
 
 abstract production completionParams
 top::CompletionParams::=
   textDocument::TextDocumentIdentifier position::Position context::Maybe<CompletionContext>
 {
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.position = position;
   top.completionContext = context;
   top.jsonValue =

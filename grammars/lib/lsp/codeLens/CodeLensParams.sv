@@ -1,11 +1,11 @@
-nonterminal CodeLensParams with jsonValue, textDocumentId;
+nonterminal CodeLensParams with jsonValue, documentId;
 
 
 abstract production codeLensParams
 top::CodeLensParams::=
   textDocument::TextDocumentIdentifier
 {
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.jsonValue =
     addKeyValuePairToJSONObject("textDocument", textDocument.jsonValue, 
     jsonObject([]));

@@ -1,4 +1,4 @@
-nonterminal RenameParams with jsonValue, textDocumentId, position, renameToString;
+nonterminal RenameParams with jsonValue, documentId, position, renameToString;
 
 synthesized attribute renameToString :: String;
 
@@ -6,7 +6,7 @@ abstract production renameParams
 top::RenameParams::=
   textDocument::TextDocumentIdentifier position::Position newName::String
 {
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.position = position;
   top.renameToString = newName;
   top.jsonValue =

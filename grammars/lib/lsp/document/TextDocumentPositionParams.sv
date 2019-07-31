@@ -1,12 +1,11 @@
-nonterminal TextDocumentPositionParams with jsonValue, textDocumentId, position;
+nonterminal TextDocumentPositionParams with jsonValue, documentId, position;
 
-synthesized attribute textDocumentId :: TextDocumentIdentifier;
 
 abstract production textDocumentPositionParams
 top::TextDocumentPositionParams::=
   textDocument::TextDocumentIdentifier position::Position
 {
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.position = position;
   top.jsonValue =
     addKeyValuePairToJSONObject("textDocument", textDocument.jsonValue, 

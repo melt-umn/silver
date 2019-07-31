@@ -1,12 +1,11 @@
-nonterminal DocumentSymbolParams with jsonValue, textDocumentId;
+nonterminal DocumentSymbolParams with jsonValue, documentId;
 
-synthesized attribute textDocumentId :: TextDocumentIdentifier;
 
 abstract production documentSymbolParams
 top::DocumentSymbolParams::=
   textDocument::TextDocumentIdentifier
 {
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.jsonValue =
     addKeyValuePairToJSONObject("textDocument", textDocument.jsonValue, 
     jsonObject([]));

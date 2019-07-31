@@ -1,11 +1,11 @@
-nonterminal FoldingRangeParams with jsonValue, textDocumentId;
+nonterminal FoldingRangeParams with jsonValue, documentId;
 
 
 abstract production foldingRangeParams
 top::FoldingRangeParams::=
   textDocument::TextDocumentIdentifier
 {
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.jsonValue =
     addKeyValuePairToJSONObject("textDocument", textDocument.jsonValue, 
     jsonObject([]));

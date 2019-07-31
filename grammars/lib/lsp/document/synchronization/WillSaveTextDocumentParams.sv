@@ -1,4 +1,4 @@
-nonterminal WillSaveTextDocumentParams with jsonValue, textDocumentId, reasonForSave;
+nonterminal WillSaveTextDocumentParams with jsonValue, documentId, reasonForSave;
 
 synthesized attribute reasonForSave :: TextDocumentSaveReason;
 
@@ -6,7 +6,7 @@ abstract production willSaveTextDocumentParams
 top::WillSaveTextDocumentParams::=
   textDocument::TextDocumentIdentifier reason::TextDocumentSaveReason
 {
-  top.textDocumentId = textDocument;
+  top.documentId = textDocument;
   top.reasonForSave = reason;
   top.jsonValue =
     addKeyValuePairToJSONObject("textDocument", textDocument.jsonValue, 
