@@ -23,6 +23,8 @@ grammar silver:extension:implicit_monads;
 synthesized attribute monadRewritten<a>::a;
 synthesized attribute merrors::[Message] with ++;
 synthesized attribute mtyperep::Type;
+autocopy attribute mDownSubst::Substitution;
+synthesized attribute mUpSubst::Substitution;
 
 
 function isMonad

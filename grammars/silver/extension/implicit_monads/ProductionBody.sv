@@ -1,8 +1,8 @@
 grammar silver:extension:implicit_monads;
 
-attribute monadRewritten<ProductionBody>, merrors occurs on ProductionBody;
-attribute monadRewritten<ProductionStmts>, merrors occurs on ProductionStmts;
-attribute monadRewritten<ProductionStmt>, merrors occurs on ProductionStmt;
+attribute monadRewritten<ProductionBody>, merrors, mDownSubst occurs on ProductionBody;
+attribute monadRewritten<ProductionStmts>, merrors, mDownSubst occurs on ProductionStmts;
+attribute monadRewritten<ProductionStmt>, merrors, mDownSubst occurs on ProductionStmt;
 
 
 
@@ -117,34 +117,15 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
 aspect production attributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
-  {-
-  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
-
-  -- defs must stay here explicitly, because we dispatch on types in the forward here!
-  top.productionAttributes = [];
-  top.defs = [];
-  
-  dl.defLHSattr = attr;
-  attr.attrFor = dl.typerep;
-  
-  local problems :: [Message] =
-    if attr.found && attr.attrDcl.isAnnotation
-    then [err(attr.location, attr.name ++ " is an annotation, which are supplied to productions as arguments, not defined as equations.")]
-    else dl.errors ++ attr.errors;
-
-  forwards to
-    -- oddly enough we may have no errors and need to forward to error production:
-    -- consider "production foo  top::DoesNotExist ::= { top.errors = ...; }"
-    -- where top is a valid reference to a type that is an error type
-    -- so there is an error elsewhere
-    if !dl.found || !attr.found || !null(problems)
-    then errorAttributeDef(problems, dl, attr, e, location=top.location)
-    else attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location);
-  -}
   e.downSubst = top.downSubst;
   top.merrors := e.merrors;
 
-  top.monadRewritten = if isMonad(attr.typerep)
+  local emr::Expr = e.monadRewritten;
+  emr.env = top.env; emr.frame = top.frame; emr.grammarName = top.grammarName;
+  emr.config = top.config; emr.compiledGrammars = top.compiledGrammars;
+  emr.downSubst = top.downSubst;
+  --top.monadRewritten =
+  local mr::ProductionStmt = if isMonad(attr.typerep)
                        then if isMonad(e.mtyperep) || isError(e.mtyperep)
                             then attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location)
                             else attributeDef(dl, '.', attr, '=',
@@ -153,6 +134,10 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
                                       ($Expr {e.monadRewritten})
                                    }, ';', location=top.location)
                        else attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location);
+  top.monadRewritten = mr; --unsafeTrace(mr, print("\n\n\n" ++ prettyType(attr.typerep) ++ "; " ++
+                           --          prettyType(performSubstitution(e.mtyperep, emr.upSubst)) ++ "; " ++
+                           --          prettyType(performSubstitution(emr.typerep, emr.upSubst)) ++ "\n\n" ++
+                           --          mr.unparse ++ "\n\n\n", unsafeIO()));
 }
 
 aspect production errorAttributeDef
@@ -200,7 +185,8 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   -- val is already valid here
   top.merrors := e.merrors;
 
-  top.monadRewritten = if isMonad(val.lookupValue.typerep)
+  --top.monadRewritten =
+  local mr::ProductionStmt = if isMonad(val.lookupValue.typerep)
                        then if isMonad(e.mtyperep) || isError(e.mtyperep)
                             then localValueDef(val, e.monadRewritten, location=top.location)
                             else localValueDef(val,
@@ -209,5 +195,6 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
                                       ($Expr {e.monadRewritten})
                                    }, location=top.location)
                        else localValueDef(val, e.monadRewritten, location=top.location);
+  top.monadRewritten = mr; --unsafeTrace(mr, print("\n\n\n" ++ mr.unparse ++ "\n\n\n", unsafeIO()));
 }
 

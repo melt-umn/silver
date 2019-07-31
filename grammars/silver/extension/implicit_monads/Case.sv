@@ -77,22 +77,50 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                   | nothing() -> basicFailure
                                   end
                              else basicFailure;
+  {-
+    This sets up the actual output type.  If there's a monad, the
+    return type given to the case expression is M(freshtype); if not,
+    the return type is just a fresh type.
+  -}
+  local outty::Type = if monadInExprs.fst
+                      then monadOfType(monadInExprs.snd, freshType())
+                      else if monadInClauses.fst
+                           then monadOfType(monadInClauses.snd, freshType())
+                           else freshType();
   --read the comment on the function below if you want to know what it is
   local attribute monadStuff::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
   monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.upSubst, top.frame,
                                       top.grammarName, top.compiledGrammars, top.config, top.flowEnv, [], 1);
+
   local monadLocal::Expr =
     buildMonadicBinds(monadStuff.fst,
                       caseExpr(monadStuff.snd,
                                ml.matchRuleList, failure,
-                               freshType(), location=top.location));
-  monadLocal.downSubst = ml.upSubst; monadLocal.frame = top.frame;
+                               outty, location=top.location));
+  monadLocal.downSubst = ml.upSubst;
+  monadLocal.frame = top.frame;
   monadLocal.grammarName = top.grammarName;
   monadLocal.compiledGrammars = top.compiledGrammars;
   monadLocal.config = top.config;
   monadLocal.env = top.env;
   monadLocal.flowEnv = top.flowEnv;
+  monadLocal.finalSubst = top.downSubst;
   top.monadRewritten = monadLocal.monadRewritten;
+  top.mtyperep = monadLocal.mtyperep;
+  {-
+  local innercase::Expr = caseExpr(monadStuff.snd,
+                                   ml.matchRuleList, failure,
+                                   outty, location=top.location);
+  innercase.downSubst = ml.upSubst;
+  innercase.frame = top.frame;
+  innercase.grammarName = top.grammarName;
+  innercase.compiledGrammars = top.compiledGrammars;
+  innercase.config = top.config;
+  innercase.env = top.env;
+  innercase.flowEnv = top.flowEnv;
+  innercase.finalSubst = top.downSubst;
+  top.monadRewritten = buildMonadicBinds(monadStuff.fst, innercase.monadRewritten);
+  -}
 }
 --find if any of the expressions are being matched as their inner type
 --if returns (true, ty), ty will be used to find the correct Fail()
