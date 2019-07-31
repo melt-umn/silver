@@ -32,3 +32,14 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   top.merrors := e.merrors;
   top.monadRewritten = assignExpr(id, '::', t, '=', e.monadRewritten, location=top.location);
 }
+
+
+
+
+aspect production lexicalLocalReference
+top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
+{
+  top.merrors := [];
+  top.mtyperep = q.lookupValue.typerep;
+  top.monadRewritten = baseExpr(new(q), location=top.location);
+}

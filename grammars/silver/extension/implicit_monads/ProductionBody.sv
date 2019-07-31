@@ -19,7 +19,7 @@ aspect default production
 top::ProductionStmts ::=
 {
   top.merrors := [];
-  top.monadRewritten = top;
+  top.monadRewritten = error("monadRewritten must be defined on all ProductionStmts");
 }
 
 aspect production productionStmtsSnoc
@@ -35,7 +35,14 @@ aspect default production
 top::ProductionStmt ::=
 {
   top.merrors := [];
-  top.monadRewritten = top;
+  top.monadRewritten = error("monadRewritten must be defined on all ProductionStmt");
+}
+
+aspect production productionStmtsNil
+top::ProductionStmts ::= 
+{
+  top.merrors := [];
+  top.monadRewritten = productionStmtsNil(location=top.location);
 }
 
 aspect production productionStmtAppend
@@ -58,14 +65,14 @@ aspect production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 {
   top.merrors := [];
-  top.monadRewritten = top;
+  top.monadRewritten = localAttributeDcl('local', 'attribute', a, '::', te, ';', location=top.location);
 }
 
 aspect production productionAttributeDcl
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
 {
   top.merrors := [];
-  top.monadRewritten = top;
+  top.monadRewritten = productionAttributeDcl('production', 'attribute', a, '::', te, ';', location=top.location);
 }
 
 aspect production forwardsTo
@@ -82,7 +89,7 @@ aspect production forwardingWith
 top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {
   top.merrors := [];
-  top.monadRewritten = top;
+  top.monadRewritten = forwardingWith('forwarding', 'with', '{', inh, '}', ';', location=top.location);
 }
 
 -- TODO This one should probably have the actual monadRewritten like
@@ -144,7 +151,7 @@ aspect production errorAttributeDef
 top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.merrors := msg;
-  top.monadRewritten = top;
+  top.monadRewritten = errorAttributeDef(msg, dl, attr, e, location=top.location);
 }
 
 aspect production synthesizedAttributeDef

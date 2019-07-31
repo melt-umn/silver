@@ -15,3 +15,12 @@ top::Expr ::= params::ProductionRHS e::Expr
   top.monadRewritten = lambdap(params, e.monadRewritten, location=top.location);
 }
 
+
+
+aspect production lambdaParamReference
+top::Expr ::= q::Decorated QName
+{
+  top.merrors := [];
+  top.mtyperep = q.lookupValue.typerep;
+  top.monadRewritten = baseExpr(new(q), location=top.location);
+}

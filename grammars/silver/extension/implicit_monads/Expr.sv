@@ -12,7 +12,7 @@ aspect default production
 top::Expr ::=
 {
   top.merrors := [];
-  top.monadRewritten = top;--error("Attribute monadRewritten must be defined on all productions");
+  top.monadRewritten = error("Attribute monadRewritten must be defined on all productions");
   top.mtyperep = errorType();
 }
 
@@ -22,7 +22,7 @@ top::Expr ::= e::[Message]
 {
   top.merrors := e;
   top.mtyperep = errorType();
-  top.monadRewritten = top;
+  top.monadRewritten = errorExpr(e, location=top.location);
 }
 
 aspect production errorReference
@@ -30,7 +30,7 @@ top::Expr ::= msg::[Message]  q::Decorated QName
 {
   top.merrors := msg;
   top.mtyperep = errorType();
-  top.monadRewritten = top;
+  top.monadRewritten = errorReference(msg, q, location=top.location);
 }
 
 aspect production childReference
@@ -40,7 +40,7 @@ top::Expr ::= q::Decorated QName
   top.mtyperep = if q.lookupValue.typerep.isDecorable
                  then ntOrDecType(q.lookupValue.typerep, freshType())
                  else q.lookupValue.typerep;
-  top.monadRewritten = top;
+  top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
 aspect production lhsReference
@@ -49,7 +49,7 @@ top::Expr ::= q::Decorated QName
   top.merrors := [];
   -- An LHS is *always* a decorable (nonterminal) type.
   top.mtyperep = ntOrDecType(q.lookupValue.typerep, freshType());
-  top.monadRewritten = top;
+  top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
 aspect production localReference
@@ -59,7 +59,7 @@ top::Expr ::= q::Decorated QName
   top.mtyperep = if q.lookupValue.typerep.isDecorable
                  then ntOrDecType(q.lookupValue.typerep, freshType())
                  else q.lookupValue.typerep;
-  top.monadRewritten = top;
+  top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
 aspect production forwardReference
@@ -68,7 +68,7 @@ top::Expr ::= q::Decorated QName
   top.merrors := [];
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
   top.mtyperep = ntOrDecType(q.lookupValue.typerep, freshType());
-  top.monadRewritten = top;
+  top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
 aspect production productionReference
@@ -76,7 +76,7 @@ top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
   top.mtyperep = freshenCompletely(q.lookupValue.typerep);
-  top.monadRewritten = top;
+  top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
 aspect production functionReference
@@ -84,7 +84,7 @@ top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
   top.mtyperep = freshenCompletely(q.lookupValue.typerep);
-  top.monadRewritten = top;
+  top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
 aspect production globalValueReference
@@ -92,7 +92,7 @@ top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
   top.mtyperep = freshenCompletely(q.lookupValue.typerep);
-  top.monadRewritten = top;
+  top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
 
@@ -253,7 +253,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   local ety :: Type = performSubstitution(e.mtyperep, e.upSubst);
 
   top.mtyperep = functionType(ety.outputType, es.missingTypereps ++ anns.partialAnnoTypereps, anns.missingAnnotations);
-  --TODO:  Should define monadRewritten here as well
+  top.monadRewritten = error("monadRewritten not defined on partial applications, but should be in the future");
 }
 
 aspect production errorApplication
@@ -266,7 +266,7 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
     es.errors ++ anns.errors;
 
   top.mtyperep = errorType();
-  top.monadRewritten = top;
+  top.monadRewritten = application(new(e), '(', es, ',', anns, ')', location=top.location);
 }
 
 {-
@@ -295,7 +295,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.mtyperep = errorType();
   top.merrors := [];
-  top.monadRewritten = top;
+  top.monadRewritten = access(new(e), '.', new(q), location=top.location);
 }
 
 aspect production annoAccessHandler
@@ -353,6 +353,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.mtyperep = decoratedType(performSubstitution(e.mtyperep, e.upSubst)); -- .decoratedForm?
   top.merrors := e.merrors;
+  top.monadRewritten = decorateExprWith('decorate', e.monadRewritten, 'with',
+                                        '{', inh, '}', location=top.location);
 }
 
 
@@ -361,6 +363,7 @@ top::Expr ::= 'true'
 {
   top.mtyperep = boolType();
   top.merrors := [];
+  top.monadRewritten = trueConst('true', location=top.location);
 }
 
 aspect production falseConst
@@ -368,6 +371,7 @@ top::Expr ::= 'false'
 {
   top.mtyperep = boolType();
   top.merrors := [];
+  top.monadRewritten = falseConst('false', location=top.location);
 }
 
 aspect production and
@@ -916,7 +920,7 @@ top::Expr ::= i::Int_t
 {
   top.merrors := [];
   top.mtyperep = intType();
-  top.monadRewritten = top;
+  top.monadRewritten = intConst(i, location=top.location);
 }
 
 aspect production floatConst
@@ -924,7 +928,7 @@ top::Expr ::= f::Float_t
 {
   top.merrors := [];
   top.mtyperep = floatType();
-  top.monadRewritten = top;
+  top.monadRewritten = floatConst(f, location=top.location);
 } 
 
 aspect production plus
@@ -1211,7 +1215,7 @@ top::Expr ::= s::String_t
   top.merrors := [];
   top.mtyperep = stringType();
 
-  top.monadRewritten = top;
+  top.monadRewritten = stringConst(s, location=top.location);
 }
 
 aspect production plusPlus
@@ -1267,6 +1271,7 @@ top::Expr ::= e1::Decorated Expr   e2::Decorated Expr
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
+  top.monadRewritten = plusPlus(new(e1), '++', new(e2), location=top.location);
 }
 
 aspect production errorPlusPlus
@@ -1279,7 +1284,7 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
     else [err(e1.location, prettyType(result_type) ++ " is not a concatenable type.")];
   top.mtyperep = errorType();
 
-  top.monadRewritten = top;
+  top.monadRewritten = plusPlus(new(e1), '++', new(e2), location=top.location);
 }
 
 
@@ -1294,7 +1299,7 @@ aspect production missingAppExpr
 top::AppExpr ::= '_'
 {
   top.merrors := [];
-  top.monadRewritten = top;
+  top.monadRewritten = missingAppExpr('_', location=top.location);
   top.realTypes = [];
   top.monadTypesLocations = [];
 }
@@ -1387,6 +1392,13 @@ top::AppExprs ::=
 
   top.monadTypesLocations = [];
 
-  top.monadRewritten = top;
+  top.monadRewritten = emptyAppExprs(location=top.location);
 }
 
+
+aspect production exprRef
+top::Expr ::= e::Decorated Expr
+{
+  top.merrors := e.merrors;
+  top.monadRewritten = e.monadRewritten;
+}
