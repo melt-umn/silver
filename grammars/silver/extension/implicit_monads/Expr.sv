@@ -12,8 +12,8 @@ aspect default production
 top::Expr ::=
 {
   top.merrors := [];
-  top.monadRewritten = error("Attribute monadRewritten must be defined on all productions");
-  top.mtyperep = errorType();
+  --top.monadRewritten = error("Attribute monadRewritten must be defined on all productions");
+  --top.mtyperep = errorType();
 }
 
 
@@ -269,12 +269,13 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
   top.monadRewritten = application(new(e), '(', es, ',', anns, ')', location=top.location);
 }
 
-{-
 aspect production attributeSection
 top::Expr ::= '(' '.' q::QName ')'
 {
+  top.merrors := [];
+  top.mtyperep = functionType(freshenCompletely(q.lookupAttribute.typerep), [freshType()], []);
+  top.monadRewritten = attributeSection('(', '.', q, ')', location=top.location);
 }
--}
 
 aspect production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
@@ -1400,5 +1401,6 @@ aspect production exprRef
 top::Expr ::= e::Decorated Expr
 {
   top.merrors := e.merrors;
+  top.mtyperep = e.mtyperep;
   top.monadRewritten = e.monadRewritten;
 }
