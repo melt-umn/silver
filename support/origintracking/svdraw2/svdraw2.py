@@ -50,6 +50,8 @@ class NT(ComplexValue):
 		o = list(filter(lambda x:x[0].endswith("origininfo"), pexpr[3]))
 		if o != []:
 			o = translate(o[0][1])
+			if o.name=="silver:modification:origintracking:childruntime:otherOriginInfo":
+				return
 			self.origin, self.originlabel = o.children[0].children[0],\
 				"\n".join(map(lambda x:x.node_text(), o.children[1].value))
 			if len(o.children)>3:

@@ -14,25 +14,44 @@ attribute isRuleRoot, originsRules occurs on
 
 
 function makeRuleLocNote
-Expr ::= attr::Decorated QNameAttrOccur
+Expr ::= dec::Decorated ProductionStmt name::String loc::Location
 {
+	local prod :: String = dec.frame.fullName;
+	local ntType :: String = dec.frame.lhsNtName;
 	return Silver_Expr{silver:modification:origintracking:childruntime:ruleLocNote(
-		$Expr{makeStringExpr(attr.name, attr.location)},
-		$Expr{locationExprOfLocation(attr.location)})};
+		$Expr{makeStringExpr(name, loc)},
+		$Expr{makeStringExpr(prod, loc)},
+		$Expr{makeStringExpr(ntType, loc)},
+		$Expr{makeStringExpr(dec.grammarName, dec.location)},
+		$Expr{locationExprOfLocation(loc)})};
 }
 
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= lhs::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   e.isRuleRoot = true;
-  e.originsRules = [makeRuleLocNote(attr)];
+  e.originsRules = [makeRuleLocNote(top, attr.name, attr.location)];
 }
 
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= lhs::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   e.isRuleRoot = true;
-  e.originsRules = [makeRuleLocNote(attr)];
+  e.originsRules = [makeRuleLocNote(top, attr.name, attr.location)];
+}
+
+aspect production localValueDef
+top::ProductionStmt ::= val::Decorated QName e::Expr
+{
+  e.isRuleRoot = true;
+  e.originsRules = [makeRuleLocNote(top, "(local) "++val.name, val.location)];
+}
+
+aspect production returnDef
+top::ProductionStmt ::= 'return' e::Expr ';'
+{
+  e.isRuleRoot = true;
+  e.originsRules = [makeRuleLocNote(top, "(return-value)", e.location)];
 }
 
 -- aspect default production

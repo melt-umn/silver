@@ -47,6 +47,7 @@ top::Expr ::= prod::Expr '^(' args::AppExprs ')^' label::Expr
   local lhsexpr :: Expr = mkLhsRef(top);
 
   local typeNameSnipped :: String = top.frame.signature.outputElement.typerep.typeName;
+  -- TODO: Deal with this in functions.
   local ntWapperRefExpr :: Expr = baseExpr(qNameId(name(
     "originLink" ++ last(explode(":", typeNameSnipped)),
     top.location), location=top.location), location=top.location);
@@ -131,6 +132,10 @@ top::Expr ::= e::Expr '^.' q::QNameAttrOccur
 
   local fwd :: Expr = Silver_Expr{silver:modification:origintracking:childruntime:javaCopy($Expr{shucked}, $Expr{lhsexpr},
     [silver:modification:origintracking:childruntime:originDbgNote("^.")] ++ $Expr{listExprOfExprList(top.originsRules)})};
+
+  --TODO: Need to redecorate?
+  -- collection attribute of lambdas to wrap host lang production with?
+
   forwards to fwd;
 }
 
@@ -172,6 +177,8 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal^' id::Name tl::BracketedOptTypeExprs
       productionRHSCons(productionRHSElem(name("n", l), '::', ntTE, location=l), productionRHSNil(location=l),
         location=l), location=l), productionBody('{',
           productionStmtsSnoc(productionStmtsNil(location=l), implStmt, location=l), '}', location=l), location=l);
+
+  -- collection attribute of extra dcls?
 
   forwards to appendAGDcl(
     nonterminalDcl(cl, 'nonterminal', id, tl, ';', location=l),
