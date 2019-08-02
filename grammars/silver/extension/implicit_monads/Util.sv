@@ -249,7 +249,7 @@ Expr ::= ty::Type l::Location
            | floatType() -> Silver_Expr{ $Expr{monadFail(ty, l)}(0.0) }
            | listType(_) -> Silver_Expr{ $Expr{monadFail(ty, l)}([]) }
            | _ ->
-             error("Tried to get MZero for Either with too complex an argument type")
+             error("Tried to get MZero for Either with too complex an argument type (" ++ prettyType(a) ++ ")")
            end
          | nonterminalType("core:IOMonad", _) ->
            error("MZero undefined for IOMonad")

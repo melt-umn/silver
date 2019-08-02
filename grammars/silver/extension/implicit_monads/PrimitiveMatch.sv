@@ -179,8 +179,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   local just_rewrite::Expr = matchPrimitiveReal(e.monadRewritten, outty, pr.monadRewritten,
                                                 f.monadRewritten, location=top.location);
   --pick the right rewriting
-  --top.monadRewritten
-  local foo::Expr    = if isMonad(e.mtyperep) && !isMonad(pr.patternType)
+  top.monadRewritten = if isMonad(e.mtyperep) && !isMonad(pr.patternType)
                        then if isMonad(pr.mtyperep)
                             then if isMonad(f.mtyperep)
                                  then justBind_e
@@ -195,27 +194,6 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                             else if isMonad(f.mtyperep)
                                  then returnify_pr
                                  else just_rewrite;
-  top.monadRewritten = foo; {-unsafeTrace(foo,
-                     print("Type of rewrite:  " ++
-                      (if isMonad(e.mtyperep) && !isMonad(pr.patternType)
-                       then if isMonad(pr.mtyperep)
-                            then if isMonad(f.mtyperep)
-                                 then "just bind e"
-                                 else "bind e return f"
-                            else if isMonad(f.mtyperep)
-                                 then "bind_e_returnify_pr"
-                                 else "bind_e_returnify_pr_return_f"
-                       else if isMonad(pr.mtyperep)
-                            then if isMonad(f.mtyperep)
-                                 then "just_rewrite"
-                                 else "return_f"
-                            else if isMonad(f.mtyperep)
-                                 then "returnify_pr"
-                                 else "just_rewrite") ++ "; " ++ e.unparse ++ "; e type: " ++ prettyType(e.mtyperep) ++ "; patt type: " ++ prettyType(pr.patternType) ++ "; return type: " ++ prettyType(pr.mtyperep) ++ "; fail type: " ++ prettyType(f.mtyperep) ++ "; " ++ top.location.unparse ++ "\n" ++ "Environment Search Result:  " ++
-                 --(if null(getValueDcl("bindMaybe", top.env)) then "nothing" else "found something") ++
-      let x::DclInfo = head(getValueDcl("bindMaybe", top.env)) in x.sourceGrammar ++ ", " ++ x.fullName end ++
-     "; Environment type search result:  " ++ (if null(getTypeDcl("bindMaybe", top.env)) then "nothing" else "found something") ++ "\n\n", unsafeIO()));
--}
 }
 
 aspect production onePattern

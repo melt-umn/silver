@@ -189,8 +189,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   -- val is already valid here
   top.merrors := e.merrors;
 
-  --top.monadRewritten =
-  local mr::ProductionStmt = if isMonad(val.lookupValue.typerep)
+  top.monadRewritten = if isMonad(val.lookupValue.typerep)
                        then if isMonad(e.mtyperep) || isError(e.mtyperep)
                             then localValueDef(val, e.monadRewritten, location=top.location)
                             else localValueDef(val,
@@ -199,6 +198,5 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
                                       ($Expr {e.monadRewritten})
                                    }, location=top.location)
                        else localValueDef(val, e.monadRewritten, location=top.location);
-  top.monadRewritten = mr; --unsafeTrace(mr, print("\n\n\n" ++ mr.unparse ++ "\n\n\n", unsafeIO()));
 }
 

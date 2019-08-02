@@ -117,17 +117,11 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   local ety :: Type = e.mtyperep; --performSubstitution(e.mtyperep, e.upSubst);
 
   --needs to change based on whether there are monads or not
-  top.mtyperep = --unsafeTrace(
-                 if null(es.monadTypesLocations)
+  top.mtyperep = if null(es.monadTypesLocations)
                  then ety.outputType
                  else if isMonad(ety.outputType)
                       then ety.outputType
                       else monadOfType(head(es.monadTypesLocations).fst, ety.outputType);--,
-  --print("Function Invocation:  f: " ++ e.unparse ++ "; output type: " ++ prettyType(ety.outputType) ++ "; " ++
-  --                   "full type: " ++ prettyType(ety) ++ "; " ++
-  --                   (if null(es.monadTypesLocations)
-  --                    then "no monadic arguments"
-  --                    else "monadic arguments") ++ "; " ++ top.location.unparse ++ "\n", unsafeIO()));
 
   --whether we need to wrap the ultimate function call in monadRewritten in a Return
   local wrapReturn::Boolean = !isMonad(ety.outputType) && !null(es.monadTypesLocations);
@@ -184,7 +178,6 @@ ProductionRHS ::= realtys::[Type] currentLoc::Integer funType::Type
                                 location=bogusLoc())
          else productionRHSCons(productionRHSElem(name("a"++toString(currentLoc), bogusLoc()),
                                                   '::',
-                                                  --typerepTypeExpr(head(realtys), location=bogusLoc()),
                                                   typerepTypeExpr(dropDecorated(head(realtys)), location=bogusLoc()),
                                                   location=bogusLoc()),
                                 buildMonadApplicationParams(tail(realtys), currentLoc+1, funType),
