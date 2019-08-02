@@ -1,10 +1,5 @@
 grammar silver:extension:implicit_monads;
 
---import silver:analysis:typechecking:core;
---import silver:modification:lambda_fn;
---import silver:modification:let_fix;
-
-
 attribute monadRewritten<Expr>, merrors, mtyperep occurs on Expr;
 
 
@@ -189,7 +184,8 @@ ProductionRHS ::= realtys::[Type] currentLoc::Integer funType::Type
                                 location=bogusLoc())
          else productionRHSCons(productionRHSElem(name("a"++toString(currentLoc), bogusLoc()),
                                                   '::',
-                                                  typerepTypeExpr(head(realtys), location=bogusLoc()),
+                                                  --typerepTypeExpr(head(realtys), location=bogusLoc()),
+                                                  typerepTypeExpr(dropDecorated(head(realtys)), location=bogusLoc()),
                                                   location=bogusLoc()),
                                 buildMonadApplicationParams(tail(realtys), currentLoc+1, funType),
                                 location=bogusLoc());
@@ -886,8 +882,8 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
       $Expr {monadBind(e1.mtyperep, top.location)}
       ($Expr {e1.monadRewritten},
        (\c::Boolean
-         x::$TypeExpr {typerepTypeExpr(e2Type, location=top.location)}
-         y::$TypeExpr {typerepTypeExpr(e3Type, location=top.location)} ->
+         x::$TypeExpr {typerepTypeExpr(dropDecorated(e2Type), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(dropDecorated(e3Type), location=top.location)} ->
          if c
          then $Expr { if isMonad(e2.mtyperep)
                       then Silver_Expr {x}

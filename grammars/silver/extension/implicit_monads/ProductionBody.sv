@@ -141,10 +141,7 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
                                       ($Expr {e.monadRewritten})
                                    }, ';', location=top.location)
                        else attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location);
-  top.monadRewritten = mr; --unsafeTrace(mr, print("\n\n\n" ++ prettyType(attr.typerep) ++ "; " ++
-                           --          prettyType(performSubstitution(e.mtyperep, emr.upSubst)) ++ "; " ++
-                           --          prettyType(performSubstitution(emr.typerep, emr.upSubst)) ++ "\n\n" ++
-                           --          mr.unparse ++ "\n\n\n", unsafeIO()));
+  top.monadRewritten = mr;
 }
 
 aspect production errorAttributeDef

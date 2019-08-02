@@ -58,6 +58,15 @@ Boolean ::= ty::Type
          end;
 }
 
+function dropDecorated
+Type ::= ty::Type
+{
+  return case ty of
+         | decoratedType(t) -> t
+         | t -> t
+         end;
+}
+
 
 {-this checks two types are the same monad, (assuming they are monads)
   though not necessarily the same monadic type (see discussion above)-}
