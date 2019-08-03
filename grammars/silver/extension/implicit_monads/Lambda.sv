@@ -9,6 +9,8 @@ aspect production lambdap
 top::Expr ::= params::ProductionRHS e::Expr
 {
   top.merrors := e.merrors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
 
   top.mtyperep = functionType(e.mtyperep, map((.typerep), params.inputElements), []);
 
@@ -21,6 +23,7 @@ aspect production lambdaParamReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.lookupValue.typerep;
   top.monadRewritten = baseExpr(new(q), location=top.location);
 }

@@ -1,8 +1,10 @@
 grammar silver:extension:implicit_monads;
 
 attribute mtyperep, merrors, patternType, monadRewritten<PrimPatterns>,
+          mDownSubst, mUpSubst,
           returnFun, returnify<PrimPatterns> occurs on PrimPatterns;
 attribute mtyperep, merrors, patternType, monadRewritten<PrimPattern>,
+          mDownSubst, mUpSubst,
           returnFun, returnify<PrimPattern> occurs on PrimPattern;
 
 --returnFun is the monad's defined Return for returnify
@@ -24,15 +26,6 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
-{-  top.mtyperep = if isMonad(e.mtyperep) && !isMonad(pr.patternType)
-                 then if isMonad(pr.mtyperep)
-                      then pr.mtyperep
-                      else if isMonad(f.mtyperep)
-                           then f.mtyperep
-                           else monadOfType(e.mtyperep, pr.mtyperep)
-                 else if isMonad(pr.mtyperep)
-                      then pr.mtyperep
-                      else f.mtyperep;-}
   top.mtyperep = if isMonad(e.mtyperep) && !isMonad(pr.patternType)
                  then if isMonad(f.mtyperep)
                       then f.mtyperep
@@ -52,7 +45,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   --check the type coming up with the type that's supposed to be
   --   coming out, which should, for case expressions (since nobody
   --   uses just this), be just a variable(?)
-  local attribute errCheck1::TypeCheck; errCheck1.finalSubst = top.upSubst;
+  local attribute errCheck1::TypeCheck; errCheck1.finalSubst = top.finalSubst;
   errCheck1 = if isMonad(pr.mtyperep)
               then if isMonad(f.mtyperep)
                    then check(pr.mtyperep, f.mtyperep)
@@ -61,7 +54,11 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                    then check(pr.mtyperep, monadInnerType(f.mtyperep))
                    else check(pr.mtyperep, f.mtyperep);
 
-  errCheck1.downSubst = f.upSubst;
+  e.mDownSubst = top.mDownSubst;
+  pr.mDownSubst = e.mUpSubst;
+  f.mDownSubst = pr.mUpSubst;
+  errCheck1.downSubst = f.mUpSubst;
+  top.mUpSubst = errCheck1.upSubst;
 
   local freshname::String = "__sv_bindingInAMatchExpression_" ++ toString(genInt());
   local eBind::Expr = monadBind(e.mtyperep, top.location);
@@ -179,8 +176,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   local just_rewrite::Expr = matchPrimitiveReal(e.monadRewritten, outty, pr.monadRewritten,
                                                 f.monadRewritten, location=top.location);
   --pick the right rewriting
-  --top.monadRewritten
-  local foo::Expr    = if isMonad(e.mtyperep) && !isMonad(pr.patternType)
+  top.monadRewritten = if isMonad(e.mtyperep) && !isMonad(pr.patternType)
                        then if isMonad(pr.mtyperep)
                             then if isMonad(f.mtyperep)
                                  then justBind_e
@@ -195,33 +191,15 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                             else if isMonad(f.mtyperep)
                                  then returnify_pr
                                  else just_rewrite;
-  top.monadRewritten = foo; {-unsafeTrace(foo,
-                     print("Type of rewrite:  " ++
-                      (if isMonad(e.mtyperep) && !isMonad(pr.patternType)
-                       then if isMonad(pr.mtyperep)
-                            then if isMonad(f.mtyperep)
-                                 then "just bind e"
-                                 else "bind e return f"
-                            else if isMonad(f.mtyperep)
-                                 then "bind_e_returnify_pr"
-                                 else "bind_e_returnify_pr_return_f"
-                       else if isMonad(pr.mtyperep)
-                            then if isMonad(f.mtyperep)
-                                 then "just_rewrite"
-                                 else "return_f"
-                            else if isMonad(f.mtyperep)
-                                 then "returnify_pr"
-                                 else "just_rewrite") ++ "; " ++ e.unparse ++ "; e type: " ++ prettyType(e.mtyperep) ++ "; patt type: " ++ prettyType(pr.patternType) ++ "; return type: " ++ prettyType(pr.mtyperep) ++ "; fail type: " ++ prettyType(f.mtyperep) ++ "; " ++ top.location.unparse ++ "\n" ++ "Environment Search Result:  " ++
-                 --(if null(getValueDcl("bindMaybe", top.env)) then "nothing" else "found something") ++
-      let x::DclInfo = head(getValueDcl("bindMaybe", top.env)) in x.sourceGrammar ++ ", " ++ x.fullName end ++
-     "; Environment type search result:  " ++ (if null(getTypeDcl("bindMaybe", top.env)) then "nothing" else "found something") ++ "\n\n", unsafeIO()));
--}
 }
 
 aspect production onePattern
 top::PrimPatterns ::= p::PrimPattern
 {
   top.merrors := p.merrors;
+
+  p.mDownSubst = top.mDownSubst;
+  top.mUpSubst = p.mUpSubst;
 
   top.mtyperep = p.mtyperep;
   top.patternType = p.patternType;
@@ -235,8 +213,11 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
 {
   top.merrors := p.merrors ++ ps.merrors;
 
-  errCheck1.downSubst = ps.upSubst;
-  errCheck1.finalSubst = errCheck1.upSubst;
+  p.mDownSubst = top.mDownSubst;
+  ps.mDownSubst = p.mUpSubst;
+  errCheck1.downSubst = ps.mUpSubst;
+  top.mUpSubst = errCheck1.upSubst;
+  errCheck1.finalSubst = top.finalSubst;
   local errCheck1::TypeCheck = if isMonad(p.mtyperep)
                                then if isMonad(ps.mtyperep)
                                     then check(p.mtyperep, ps.mtyperep)
@@ -296,11 +277,16 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
 aspect production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' arr::Arrow_kwd e::Expr
 {
+  e.mDownSubst = top.mDownSubst;
+  e.downSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
 }
 aspect production prodPatternNormal
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.merrors := e.merrors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
 
   top.mtyperep = e.mtyperep;
   -- Turns the existential variables existential
@@ -318,6 +304,8 @@ aspect production prodPatternGadt
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.merrors := e.merrors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
 
   top.mtyperep = e.mtyperep;
   local prod_type :: Type =
@@ -335,6 +323,8 @@ aspect production integerPattern
 top::PrimPattern ::= i::Int_t arr::Arrow_kwd e::Expr
 {
   top.merrors := e.merrors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
 
   top.mtyperep = e.mtyperep;
   top.patternType = intType();
@@ -348,6 +338,8 @@ aspect production floatPattern
 top::PrimPattern ::= f::Float_t arr::Arrow_kwd e::Expr
 {
   top.merrors := e.merrors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
   
   top.mtyperep = e.mtyperep;
   top.patternType = floatType();
@@ -361,6 +353,8 @@ aspect production stringPattern
 top::PrimPattern ::= i::String_t arr::Arrow_kwd e::Expr
 {
   top.merrors := e.merrors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
   
   top.mtyperep = e.mtyperep;
   top.patternType = stringType();
@@ -374,6 +368,8 @@ aspect production booleanPattern
 top::PrimPattern ::= i::String arr::Arrow_kwd e::Expr
 {
   top.merrors := e.merrors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
 
   top.mtyperep = e.mtyperep;
   top.patternType = stringType();
@@ -387,6 +383,8 @@ aspect production nilPattern
 top::PrimPattern ::= e::Expr
 {
   top.merrors := e.merrors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
 
   top.mtyperep = e.mtyperep;
   local attribute thisListType::Type = listType(freshType());
@@ -400,6 +398,8 @@ aspect production conslstPattern
 top::PrimPattern ::= h::Name t::Name e::Expr
 {
   top.merrors := e.merrors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
 
   top.mtyperep = e.mtyperep;
   local elemType :: Type = freshType();

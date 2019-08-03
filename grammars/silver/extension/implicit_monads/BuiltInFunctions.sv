@@ -8,6 +8,8 @@ aspect production lengthFunction
 top::Expr ::= 'length' '(' e::Expr ')'
 {
   top.merrors := e.merrors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
   top.mtyperep = if isMonad(e.mtyperep)
                  then monadOfType(e.mtyperep, intType())
                  else intType();
@@ -24,7 +26,18 @@ top::Expr ::= 'length' '(' e::Expr ')'
 aspect production errorLength
 top::Expr ::= e::Decorated Expr
 {
-  top.merrors := e.merrors;
+  local ne::Expr = new(e);
+  ne.mDownSubst = top.mDownSubst;
+  ne.env = top.env;
+  ne.flowEnv = top.flowEnv;
+  ne.config = top.config;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.downSubst;
+  top.merrors := ne.merrors;
+  top.mUpSubst = ne.mUpSubst;
   top.mtyperep = intType();
   top.monadRewritten = lengthFunction('length', '(', new(e), ')', location=top.location);
 }
@@ -32,24 +45,37 @@ top::Expr ::= e::Decorated Expr
 aspect production stringLength
 top::Expr ::= e::Decorated Expr
 {
-  top.merrors := e.merrors;
-  top.mtyperep = if isMonad(e.mtyperep)
-                 then monadOfType(e.mtyperep, intType())
+  local ne::Expr = new(e);
+  ne.mDownSubst = top.mDownSubst;
+  ne.env = top.env;
+  ne.flowEnv = top.flowEnv;
+  ne.config = top.config;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.downSubst;
+  top.merrors := ne.merrors;
+  top.mUpSubst = ne.mUpSubst;
+  top.mtyperep = if isMonad(ne.mtyperep)
+                 then monadOfType(ne.mtyperep, intType())
                  else intType();
-  top.monadRewritten = if isMonad(e.mtyperep)
+  top.monadRewritten = if isMonad(ne.mtyperep)
                        then Silver_Expr {
-                              $Expr {monadBind(e.mtyperep, top.location)}
-                              ($Expr {e.monadRewritten},
-                              \x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location)} ->
-                                  $Expr {monadReturn(e.mtyperep, top.location)} (length(x)))
+                              $Expr {monadBind(ne.mtyperep, top.location)}
+                              ($Expr {ne.monadRewritten},
+                              \x::$TypeExpr {typerepTypeExpr(monadInnerType(ne.mtyperep), location=top.location)} ->
+                                  $Expr {monadReturn(ne.mtyperep, top.location)} (length(x)))
                             }
-                       else lengthFunction('length', '(', e.monadRewritten, ')', location=top.location);
+                       else lengthFunction('length', '(', ne.monadRewritten, ')', location=top.location);
 }
 
 aspect production toIntegerFunction
 top::Expr ::= 'toInteger' '(' e::Expr ')'
 {
   top.merrors := e.merrors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
   top.mtyperep = if isMonad(e.mtyperep)
                  then monadOfType(e.mtyperep, intType())
                  else intType();
@@ -67,6 +93,8 @@ aspect production toBooleanFunction
 top::Expr ::= 'toBoolean' '(' e::Expr ')'
 {
   top.merrors := e.merrors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
   top.mtyperep = if isMonad(e.mtyperep)
                  then monadOfType(e.mtyperep, boolType())
                  else boolType();
@@ -84,6 +112,8 @@ aspect production toFloatFunction
 top::Expr ::= 'toFloat' '(' e::Expr ')'
 {
   top.merrors := e.merrors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
   top.mtyperep = if isMonad(e.mtyperep)
                  then monadOfType(e.mtyperep, floatType())
                  else floatType();
@@ -104,6 +134,8 @@ aspect production toStringFunction
 top::Expr ::= 'toString' '(' e::Expr ')'
 {
   top.merrors := e.merrors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
   top.mtyperep = if isMonad(e.mtyperep)
                  then monadOfType(e.mtyperep, stringType())
                  else stringType();
@@ -121,6 +153,7 @@ aspect production reifyFunctionLiteral
 top::Expr ::= 'reify'
 {
   top.merrors := [];
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep =
     functionType(nonterminalType("core:Either", [stringType(), varType(freshTyVar())]), [nonterminalType("core:reflect:AST", [])], []);
   top.monadRewritten = reifyFunctionLiteral('reify', location=top.location);
@@ -130,6 +163,8 @@ aspect production newFunction
 top::Expr ::= 'new' '(' e::Expr ')'
 {
   top.merrors := e.merrors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
   top.mtyperep = e.mtyperep;
   top.monadRewritten = newFunction('new', '(', e.monadRewritten, ')', location=top.location);
 }
@@ -141,6 +176,7 @@ aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
   top.merrors := es.merrors ++ el.merrors;
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = t.typerep;
   top.monadRewritten = error("terminalConstructor monadRewritten not defined");
 }

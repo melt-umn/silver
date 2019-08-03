@@ -1,6 +1,6 @@
 grammar silver:extension:implicit_monads;
 
-attribute monadRewritten<Expr>, merrors, mtyperep occurs on Expr;
+attribute monadRewritten<Expr>, merrors, mtyperep, mDownSubst, mUpSubst occurs on Expr;
 
 
 aspect default production
@@ -16,6 +16,7 @@ aspect production errorExpr
 top::Expr ::= e::[Message]
 {
   top.merrors := e;
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = errorType();
   top.monadRewritten = errorExpr(e, location=top.location);
 }
@@ -24,6 +25,7 @@ aspect production errorReference
 top::Expr ::= msg::[Message]  q::Decorated QName
 {
   top.merrors := msg;
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = errorType();
   top.monadRewritten = errorReference(msg, q, location=top.location);
 }
@@ -32,6 +34,7 @@ aspect production childReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = if q.lookupValue.typerep.isDecorable
                  then ntOrDecType(q.lookupValue.typerep, freshType())
                  else q.lookupValue.typerep;
@@ -42,6 +45,7 @@ aspect production lhsReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
+  top.mUpSubst = top.mDownSubst;
   -- An LHS is *always* a decorable (nonterminal) type.
   top.mtyperep = ntOrDecType(q.lookupValue.typerep, freshType());
   top.monadRewritten = baseExpr(new(q), location=top.location);
@@ -51,6 +55,7 @@ aspect production localReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = if q.lookupValue.typerep.isDecorable
                  then ntOrDecType(q.lookupValue.typerep, freshType())
                  else q.lookupValue.typerep;
@@ -61,6 +66,7 @@ aspect production forwardReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
+  top.mUpSubst = top.mDownSubst;
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
   top.mtyperep = ntOrDecType(q.lookupValue.typerep, freshType());
   top.monadRewritten = baseExpr(new(q), location=top.location);
@@ -70,6 +76,7 @@ aspect production productionReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = freshenCompletely(q.lookupValue.typerep);
   top.monadRewritten = baseExpr(new(q), location=top.location);
 }
@@ -78,6 +85,7 @@ aspect production functionReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = freshenCompletely(q.lookupValue.typerep);
   top.monadRewritten = baseExpr(new(q), location=top.location);
 }
@@ -86,6 +94,7 @@ aspect production globalValueReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = freshenCompletely(q.lookupValue.typerep);
   top.monadRewritten = baseExpr(new(q), location=top.location);
 }
@@ -94,43 +103,62 @@ top::Expr ::= q::Decorated QName
 aspect production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
-  top.merrors := e.merrors ++ es.merrors;
-  local mty::Type = head(es.monadTypesLocations).fst;
+  local ne::Expr = new(e);
+  ne.mDownSubst = top.mDownSubst;
+  ne.env = top.env;
+  ne.flowEnv = top.flowEnv;
+  ne.config = top.config;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.downSubst;
+  local nes::AppExprs = new(es);
+  nes.mDownSubst = top.mDownSubst;
+  nes.flowEnv = top.flowEnv;
+  nes.env = top.env;
+  nes.config = top.config;
+  nes.compiledGrammars = top.compiledGrammars;
+  nes.grammarName = top.grammarName;
+  nes.frame = top.frame;
+  nes.finalSubst = top.finalSubst;
+  nes.downSubst = top.downSubst;
+  nes.appExprTypereps = es.appExprTypereps;
+  nes.appExprApplied = es.appExprApplied;
+
+  top.merrors := ne.merrors ++ nes.merrors;
+  top.mUpSubst = ne.mUpSubst;
+
+  local mty::Type = head(nes.monadTypesLocations).fst;
   --need to check that all our monads match
-  top.merrors <- if null(es.monadTypesLocations) ||
-                   foldr(\x::Pair<Type Integer> b::Boolean -> b && monadsMatch(mty, x.fst, e.upSubst).fst, 
-                         true, tail(es.monadTypesLocations))
+  top.merrors <- if null(nes.monadTypesLocations) ||
+                   foldr(\x::Pair<Type Integer> b::Boolean -> b && monadsMatch(mty, x.fst, ne.mUpSubst).fst, 
+                         true, tail(nes.monadTypesLocations))
                 then []
                 else [err(top.location,
                       "All monad types used monadically in a function application must match")];
   --need to check it is compatible with the function return type
   top.merrors <- if isMonad(ety.outputType)
-                then if null(es.monadTypesLocations)
+                then if null(nes.monadTypesLocations)
                      then []
-                     else if monadsMatch(ety.outputType, mty, e.upSubst).fst
+                     else if monadsMatch(ety.outputType, mty, ne.mUpSubst).fst
                           then []
                           else [err(top.location,
                                     "Return type of function is a monad which doesn't " ++
                                      "match the monads used for arguments")]
                 else [];
 
-  local ety :: Type = e.mtyperep; --performSubstitution(e.mtyperep, e.upSubst);
+  local ety :: Type = performSubstitution(ne.mtyperep, ne.mUpSubst);
 
   --needs to change based on whether there are monads or not
-  top.mtyperep = --unsafeTrace(
-                 if null(es.monadTypesLocations)
+  top.mtyperep = if null(nes.monadTypesLocations)
                  then ety.outputType
                  else if isMonad(ety.outputType)
                       then ety.outputType
-                      else monadOfType(head(es.monadTypesLocations).fst, ety.outputType);--,
-  --print("Function Invocation:  f: " ++ e.unparse ++ "; output type: " ++ prettyType(ety.outputType) ++ "; " ++
-  --                   "full type: " ++ prettyType(ety) ++ "; " ++
-  --                   (if null(es.monadTypesLocations)
-  --                    then "no monadic arguments"
-  --                    else "monadic arguments") ++ "; " ++ top.location.unparse ++ "\n", unsafeIO()));
+                      else monadOfType(head(nes.monadTypesLocations).fst, ety.outputType);
 
   --whether we need to wrap the ultimate function call in monadRewritten in a Return
-  local wrapReturn::Boolean = !isMonad(ety.outputType) && !null(es.monadTypesLocations);
+  local wrapReturn::Boolean = !isMonad(ety.outputType) && !null(nes.monadTypesLocations);
 
   {-
     Monad translation creates a lambda to apply to all the arguments
@@ -146,17 +174,17 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
     application inside all the binds.
   -}
   --TODO also needs to deal with the case where the function is a monad
-  local lambda_fun::Expr = buildMonadApplicationLambda(es.realTypes, es.monadTypesLocations, ety, wrapReturn);
+  local lambda_fun::Expr = buildMonadApplicationLambda(nes.realTypes, nes.monadTypesLocations, ety, wrapReturn);
   local expanded_args::AppExprs = snocAppExprs(new(es), ',', presentAppExpr(new(e), location=bogusLoc()),
                                                location=bogusLoc());
   --haven't done monadRewritten on annotated ones, so ignore them
-  top.monadRewritten = if null(es.monadTypesLocations)
-                       then applicationExpr(e.monadRewritten, '(', es.monadRewritten, ')', location=bogusLoc())
+  top.monadRewritten = if null(nes.monadTypesLocations)
+                       then applicationExpr(ne.monadRewritten, '(', nes.monadRewritten, ')', location=bogusLoc())
                        else
                          case anns of
                          | emptyAnnoAppExprs() ->
                            applicationExpr(lambda_fun, '(', expanded_args, ')', location=bogusLoc())
-                         | _ -> 
+                         | _ ->
                            error("Monad Rewriting not defined with annotated " ++
                                  "expressions in a function application")
                          end;
@@ -244,23 +272,55 @@ Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs monadType::Type wr
 aspect production partialApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
-  top.merrors := e.merrors ++ es.merrors;
+  local ne::Expr = new(e);
+  ne.mDownSubst = top.mDownSubst;
+  ne.env = top.env;
+  ne.flowEnv = top.flowEnv;
+  ne.config = top.config;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.downSubst;
+  local nes::AppExprs = new(es);
+  nes.mDownSubst = top.mDownSubst;
+  nes.flowEnv = top.flowEnv;
+  nes.env = top.env;
+  nes.config = top.config;
+  nes.compiledGrammars = top.compiledGrammars;
+  nes.grammarName = top.grammarName;
+  nes.frame = top.frame;
+  nes.finalSubst = top.finalSubst;
+  nes.downSubst = top.downSubst;
+  nes.appExprTypereps = es.appExprTypereps;
+  nes.appExprApplied = es.appExprApplied;
 
-  local ety :: Type = performSubstitution(e.mtyperep, e.upSubst);
+  top.merrors := ne.merrors ++ nes.merrors;
+  top.mUpSubst = ne.mUpSubst;
 
-  top.mtyperep = functionType(ety.outputType, es.missingTypereps ++ anns.partialAnnoTypereps, anns.missingAnnotations);
+  local ety :: Type = performSubstitution(ne.mtyperep, ne.mUpSubst);
+
+  top.mtyperep = functionType(ety.outputType, nes.missingTypereps ++ anns.partialAnnoTypereps, anns.missingAnnotations);
   top.monadRewritten = error("monadRewritten not defined on partial applications, but should be in the future");
 }
 
 aspect production errorApplication
 top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
-  top.merrors := e.merrors ++
-    (if e.typerep.isError then [] else  
-    [err(top.location, e.unparse ++ " has type " ++ prettyType(performSubstitution(e.mtyperep, e.upSubst)) ++
-      " and cannot be invoked as a function.")]) ++
-    es.errors ++ anns.errors;
+  local ne::Expr = new(e);
+  ne.mDownSubst = top.mDownSubst;
+  ne.env = top.env;
+  ne.flowEnv = top.flowEnv;
+  ne.config = top.config;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.downSubst;
 
+  top.merrors := ne.merrors;
+
+  top.mUpSubst = ne.mUpSubst;
   top.mtyperep = errorType();
   top.monadRewritten = application(new(e), '(', es, ',', anns, ')', location=top.location);
 }
@@ -269,6 +329,7 @@ aspect production attributeSection
 top::Expr ::= '(' '.' q::QName ')'
 {
   top.merrors := [];
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = functionType(freshenCompletely(q.lookupAttribute.typerep), [freshType()], []);
   top.monadRewritten = attributeSection('(', '.', q, ')', location=top.location);
 }
@@ -277,6 +338,8 @@ aspect production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
 {
   top.merrors := e.errors;
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
   top.mtyperep = e.mtyperep;
   top.monadRewritten = forwardAccess(e.monadRewritten, '.', 'forward', location=top.location);
 }
@@ -284,13 +347,17 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
+  e.mDownSubst = top.mDownSubst;
+  forward.mDownSubst = e.mUpSubst;
   top.merrors := e.merrors ++ forward.merrors;
+  top.monadRewritten = access(e.monadRewritten, '.', q, location=top.location);
 }
 
 aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.mtyperep = errorType();
+  top.mUpSubst = top.mDownSubst;
   top.merrors := [];
   top.monadRewritten = access(new(e), '.', new(q), location=top.location);
 }
@@ -298,15 +365,39 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production annoAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
+  local ne::Expr = new(e);
+  ne.mDownSubst = top.mDownSubst;
+  ne.env = top.env;
+  ne.flowEnv = top.flowEnv;
+  ne.config = top.config;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.downSubst;
+
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.typerep;
   top.merrors := [];
-  top.monadRewritten = access(e.monadRewritten, '.', new(q), location=top.location);
+  top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
 }
 
 aspect production terminalAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.merrors := [];
+  local ne::Expr = new(e);
+  ne.mDownSubst = top.mDownSubst;
+  ne.env = top.env;
+  ne.flowEnv = top.flowEnv;
+  ne.config = top.config;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.downSubst;
+
+  top.merrors := ne.merrors;
+  top.mUpSubst = top.mDownSubst;
 
   top.mtyperep =
     if q.name == "lexeme" || q.name == "filename"
@@ -317,38 +408,76 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     then nonterminalType("core:Location", [])
     else errorType();
 
-  top.monadRewritten = access(e.monadRewritten, '.', new(q), location=top.location);
+  top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
 }
 
 aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
+  local ne::Expr = new(e);
+  ne.mDownSubst = top.mDownSubst;
+  ne.env = top.env;
+  ne.flowEnv = top.flowEnv;
+  ne.config = top.config;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.downSubst;
+
   top.mtyperep = q.typerep;
-  top.merrors := [];
-  top.monadRewritten = access(e.monadRewritten, '.', new(q), location=top.location);
+  top.mUpSubst = top.mDownSubst;
+  top.merrors := ne.merrors;
+  top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
 }
 
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
+  local ne::Expr = new(e);
+  ne.mDownSubst = top.mDownSubst;
+  ne.env = top.env;
+  ne.flowEnv = top.flowEnv;
+  ne.config = top.config;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.downSubst;
+
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.typerep;
-  top.merrors := [];
-  top.monadRewritten = access(e.monadRewritten, '.', new(q), location=top.location);
+  top.merrors := ne.merrors;
+  top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
 }
 
 aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.merrors := [];
+  local ne::Expr = new(e);
+  ne.mDownSubst = top.mDownSubst;
+  ne.env = top.env;
+  ne.flowEnv = top.flowEnv;
+  ne.config = top.config;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.downSubst;
+
+  top.merrors := ne.merrors;
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = errorType();
-  top.monadRewritten = access(e.monadRewritten, '.', new(q), location=top.location);
+  top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
 }
 
 
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
-  top.mtyperep = decoratedType(performSubstitution(e.mtyperep, e.upSubst)); -- .decoratedForm?
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
+  top.mtyperep = decoratedType(performSubstitution(e.mtyperep, e.mUpSubst));
   top.merrors := e.merrors;
   top.monadRewritten = decorateExprWith('decorate', e.monadRewritten, 'with',
                                         '{', inh, '}', location=top.location);
@@ -358,6 +487,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 aspect production trueConst
 top::Expr ::= 'true'
 {
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = boolType();
   top.merrors := [];
   top.monadRewritten = trueConst('true', location=top.location);
@@ -366,6 +496,7 @@ top::Expr ::= 'true'
 aspect production falseConst
 top::Expr ::= 'false'
 {
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = boolType();
   top.merrors := [];
   top.monadRewritten = falseConst('false', location=top.location);
@@ -376,6 +507,9 @@ top::Expr ::= e1::Expr '&&' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  top.mUpSubst = e2.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep --assume it will be well-typed
                 else if isMonad(e2.mtyperep)
@@ -427,6 +561,9 @@ top::Expr ::= e1::Expr '||' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  top.mUpSubst = e2.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep --assume it will be well-typed
                 else if isMonad(e2.mtyperep)
@@ -478,6 +615,8 @@ top::Expr ::= '!' e::Expr
 {
   top.merrors := e.merrors;
 
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
   top.mtyperep = e.mtyperep; --assume it will be well-typed
 
   top.monadRewritten =
@@ -496,6 +635,9 @@ top::Expr ::= e1::Expr '>' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  top.mUpSubst = e2.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -550,6 +692,9 @@ top::Expr ::= e1::Expr '<' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  top.mUpSubst = e2.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -604,6 +749,9 @@ top::Expr ::= e1::Expr '>=' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  top.mUpSubst = e2.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -658,6 +806,9 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  top.mUpSubst = e2.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -712,6 +863,9 @@ top::Expr ::= e1::Expr '==' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  top.mUpSubst = e2.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -766,6 +920,9 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  top.mUpSubst = e2.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -822,6 +979,9 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
   top.upSubst = e2.upSubst;
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  top.mUpSubst = e2.mUpSubst;
 
   local bind::Expr = if isMonad(e1.mtyperep)
                      then monadFail(e1.mtyperep, bogusLoc())
@@ -847,13 +1007,13 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything
                                 " is not true for " ++
                                 prettyType(performSubstitution(if isMonad(e1.mtyperep)
                                                                then e1.mtyperep
-                                                               else e2.mtyperep, top.upSubst)))],
+                                                               else e2.mtyperep, top.finalSubst)))],
                                 location=top.location)
                    end
               else errorExpr([err(top.location, "One of the expressions in " ++
                               "an if-then has to have a monad type--instead, have " ++
-                              prettyType(performSubstitution(e1.mtyperep, top.upSubst)) ++
-                              " and " ++ prettyType(performSubstitution(e2.mtyperep, top.upSubst)))],
+                              prettyType(performSubstitution(e1.mtyperep, top.finalSubst)) ++
+                              " and " ++ prettyType(performSubstitution(e2.mtyperep, top.finalSubst)))],
                               location=top.location);
 }
 
@@ -861,6 +1021,10 @@ aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors ++ e3.merrors;
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  e3.mDownSubst = e2.mUpSubst;
+  top.mUpSubst = e3.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then if isMonad(e2.mtyperep)
                      then e2.mtyperep
@@ -873,8 +1037,8 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 
   --To deal with the case where one type or the other might be "generic" (e.g. Maybe<a>),
   --   we want to do substitution on the types before putting them into the monadRewritten
-  local e2Type::Type = performSubstitution(e2.mtyperep, top.upSubst);
-  local e3Type::Type = performSubstitution(e3.mtyperep, top.upSubst);
+  local e2Type::Type = performSubstitution(e2.mtyperep, top.finalSubst);
+  local e3Type::Type = performSubstitution(e3.mtyperep, top.finalSubst);
   --We assume that if e2 or e3 are monads, they are the same as e1 if that is a
   --   monad and we don't allow monads to become nested.
   local cMonad::Expr =
@@ -916,6 +1080,7 @@ aspect production intConst
 top::Expr ::= i::Int_t
 {
   top.merrors := [];
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = intType();
   top.monadRewritten = intConst(i, location=top.location);
 }
@@ -924,6 +1089,7 @@ aspect production floatConst
 top::Expr ::= f::Float_t
 {
   top.merrors := [];
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = floatType();
   top.monadRewritten = floatConst(f, location=top.location);
 } 
@@ -933,6 +1099,9 @@ top::Expr ::= e1::Expr '+' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  top.mUpSubst = e2.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
@@ -985,6 +1154,9 @@ top::Expr ::= e1::Expr '-' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  top.mUpSubst = e2.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
@@ -1037,6 +1209,9 @@ top::Expr ::= e1::Expr '*' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  top.mUpSubst = e2.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
@@ -1089,6 +1264,9 @@ top::Expr ::= e1::Expr '/' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  top.mUpSubst = e2.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
@@ -1141,6 +1319,9 @@ top::Expr ::= e1::Expr '%' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  top.mUpSubst = e2.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
@@ -1195,6 +1376,8 @@ top::Expr ::= '-' e::Expr
 
   top.mtyperep = e.mtyperep;
 
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
   top.monadRewritten =
     if isMonad(e.mtyperep)
     then Silver_Expr {
@@ -1210,6 +1393,7 @@ aspect production stringConst
 top::Expr ::= s::String_t
 {
   top.merrors := [];
+  top.mUpSubst = top.mDownSubst;
   top.mtyperep = stringType();
 
   top.monadRewritten = stringConst(s, location=top.location);
@@ -1218,6 +1402,9 @@ top::Expr ::= s::String_t
 aspect production plusPlus
 top::Expr ::= e1::Expr '++' e2::Expr
 {
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  top.mUpSubst = e2.mUpSubst;
 {-  local result_type :: Type = if isMonad(e1.mtyperep)
                               then performSubstitution(e1.mtyperep, errCheck1.upSubst)
                               else performSubstitution(e2.mtyperep, errCheck1.upSubst);
@@ -1261,24 +1448,48 @@ top::Expr ::= e1::Expr '++' e2::Expr
 aspect production stringPlusPlus
 top::Expr ::= e1::Decorated Expr   e2::Decorated Expr
 {
-  top.merrors := [];
+  local ne1::Expr = new(e1);
+  ne1.mDownSubst = top.mDownSubst;
+  ne1.env = top.env;
+  ne1.flowEnv = top.flowEnv;
+  ne1.config = top.config;
+  ne1.compiledGrammars = top.compiledGrammars;
+  ne1.grammarName = top.grammarName;
+  ne1.frame = top.frame;
+  ne1.finalSubst = top.finalSubst;
+  ne1.downSubst = top.downSubst;
+
+  local ne2::Expr = new(e2);
+  ne2.mDownSubst = ne1.mUpSubst;
+  ne2.env = top.env;
+  ne2.flowEnv = top.flowEnv;
+  ne2.config = top.config;
+  ne2.compiledGrammars = top.compiledGrammars;
+  ne2.grammarName = top.grammarName;
+  ne2.frame = top.frame;
+  ne2.finalSubst = top.finalSubst;
+  ne2.downSubst = ne1.upSubst;
+
+  top.merrors := ne1.merrors ++ ne2.merrors;
+  top.mUpSubst = ne2.mUpSubst;
 
   --we assume both types will be compatible (any other case would have
   --   been caught in plusPlus dispatching to this)
-  top.mtyperep = if isMonad(e1.mtyperep)
-                then e1.mtyperep
-                else e2.mtyperep;
+  top.mtyperep = if isMonad(ne1.mtyperep)
+                then ne1.mtyperep
+                else ne2.mtyperep;
   top.monadRewritten = plusPlus(new(e1), '++', new(e2), location=top.location);
 }
 
 aspect production errorPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
-  local result_type :: Type = performSubstitution(e1.mtyperep, top.downSubst);
+  --local result_type :: Type = performSubstitution(e1.mtyperep, top.mDownSubst);
+  top.mUpSubst = top.mDownSubst;
 
-  top.merrors :=
-    if result_type.isError then []
-    else [err(e1.location, prettyType(result_type) ++ " is not a concatenable type.")];
+  top.merrors := [];
+  --  if result_type.isError then []
+  --  else [err(e1.location, prettyType(result_type) ++ " is not a concatenable type.")];
   top.mtyperep = errorType();
 
   top.monadRewritten = plusPlus(new(e1), '++', new(e2), location=top.location);
@@ -1288,14 +1499,15 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 
 synthesized attribute monadTypesLocations::[Pair<Type Integer>] occurs on AppExpr, AppExprs;
 synthesized attribute realTypes::[Type] occurs on AppExpr, AppExprs;
-attribute monadRewritten<AppExpr>, merrors occurs on AppExpr;
-attribute monadRewritten<AppExprs>, merrors occurs on AppExprs;
+attribute monadRewritten<AppExpr>, merrors, mDownSubst, mUpSubst occurs on AppExpr;
+attribute monadRewritten<AppExprs>, merrors, mDownSubst, mUpSubst occurs on AppExprs;
 
 -- These are the "new" Exprs syntax. This allows missing (_) arguments, to indicate partial application.
 aspect production missingAppExpr
 top::AppExpr ::= '_'
 {
   top.merrors := [];
+  top.mUpSubst = top.mDownSubst;
   top.monadRewritten = missingAppExpr('_', location=top.location);
   top.realTypes = [];
   top.monadTypesLocations = [];
@@ -1311,15 +1523,15 @@ top::AppExpr ::= e::Expr
                             else [];
 
   --these have an 'a' at the end of their names because of a bug where local names are not local to their grammars
-  local attribute errCheck1a :: TypeCheck; errCheck1a.finalSubst = top.upSubst;
-  local attribute errCheck2a :: TypeCheck; errCheck2a.finalSubst = top.upSubst;
+  local attribute errCheck1a :: TypeCheck; errCheck1a.finalSubst = top.finalSubst;
+  local attribute errCheck2a :: TypeCheck; errCheck2a.finalSubst = top.finalSubst;
 
-  errCheck1a.downSubst = e.upSubst;
-  errCheck2a.downSubst = e.upSubst;
-  --TODO:  Do I want to be able to use upSubst with monad stuff?
-  --top.upSubst = if isMonadic
-  --              then errCheck2a.upSubst
-  --              else errCheck1a.upSubst;
+  e.mDownSubst = top.mDownSubst;
+  errCheck1a.downSubst = e.mUpSubst;
+  errCheck2a.downSubst = e.mUpSubst;
+  top.mUpSubst = if isMonadic
+                 then errCheck2a.upSubst
+                 else errCheck1a.upSubst;
   --determine whether it appears that this is supposed to take
   --   advantage of implicit monads based on types matching the
   --   expected and being monads
@@ -1355,6 +1567,10 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
 {
   top.merrors := es.merrors ++ e.merrors;
 
+  es.mDownSubst = top.mDownSubst;
+  e.mDownSubst = es.mUpSubst;
+  top.mUpSubst = e.mUpSubst;
+
   top.realTypes = es.realTypes ++ e.realTypes;
 
   top.monadTypesLocations = es.monadTypesLocations ++ e.monadTypesLocations;
@@ -1364,12 +1580,10 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
 aspect production oneAppExprs
 top::AppExprs ::= e::AppExpr
 {
-  top.merrors := if null(top.appExprTypereps)
-                 then [err(top.location, "Too many arguments provided to function '" ++ top.appExprApplied ++ "'")]
-                 else if length(top.appExprTypereps) > 1
-                 then [err(top.location, "Too few arguments provided to function '" ++ top.appExprApplied ++ "'")]
-                 else [];
-  top.merrors <- e.merrors;
+  top.merrors := e.merrors;
+
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
 
   top.realTypes = e.realTypes;
 
@@ -1380,10 +1594,9 @@ top::AppExprs ::= e::AppExpr
 aspect production emptyAppExprs
 top::AppExprs ::=
 {
-  -- Assumption: We only get here when we're looking at ()
-  -- i.e. we can't ever have 'too many' provided error
-  top.merrors := if null(top.appExprTypereps) then []
-                 else [err(top.location, "Too few arguments provided to function '" ++ top.appExprApplied ++ "'")];
+  top.merrors := [];
+
+  top.mUpSubst = top.mDownSubst;
 
   top.realTypes = [];
 
@@ -1396,7 +1609,19 @@ top::AppExprs ::=
 aspect production exprRef
 top::Expr ::= e::Decorated Expr
 {
-  top.merrors := e.merrors;
-  top.mtyperep = e.mtyperep;
-  top.monadRewritten = e.monadRewritten;
+  local ne::Expr = new(e);
+  ne.mDownSubst = top.mDownSubst;
+  ne.env = top.env;
+  ne.flowEnv = top.flowEnv;
+  ne.config = top.config;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.downSubst;
+
+  top.merrors := ne.merrors;
+  top.mUpSubst = ne.mUpSubst;
+  top.mtyperep = ne.mtyperep;
+  top.monadRewritten = ne.monadRewritten;
 }
