@@ -8,7 +8,7 @@ terminal MCase_kwd 'mcase' lexer classes {KEYWORD, RESERVED};
 synthesized attribute patternType::Type occurs on Pattern;
 synthesized attribute patternTypeList::[Type] occurs on PatternList;
 
-attribute patternTypeList, upSubst, downSubst occurs on MRuleList;
+attribute patternTypeList, mUpSubst, mDownSubst occurs on MRuleList;
 attribute patternTypeList occurs on MatchRule;
 
 
@@ -23,18 +23,18 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
     structure, since unstructured ones only come from unstructured
     patterns.
   -}
-  ml.downSubst = top.downSubst;
+  ml.mDownSubst = top.mDownSubst;
   local monadInExprs::Pair<Boolean Type> =
-    monadicallyUsedExpr(es.rawExprs, ml.patternTypeList, top.env, ml.upSubst, top.frame,
+    monadicallyUsedExpr(es.rawExprs, ml.patternTypeList, top.env, ml.mUpSubst, top.frame,
                         top.grammarName, top.compiledGrammars, top.config, top.flowEnv);
   local monadInClauses::Pair<Boolean Type> =
     foldl((\p::Pair<Boolean Type> a::AbstractMatchRule ->
             if p.fst
             then p
-            else if isMonad(decorate a with {env=top.env; downSubst=ml.upSubst; frame=top.frame;
+            else if isMonad(decorate a with {env=top.env; mDownSubst=ml.mUpSubst; frame=top.frame;
                                    grammarName=top.grammarName; compiledGrammars=top.compiledGrammars;
                                    config=top.config; flowEnv=top.flowEnv;}.mtyperep)
-                 then pair(true, decorate a with {env=top.env; downSubst=ml.upSubst; frame=top.frame;
+                 then pair(true, decorate a with {env=top.env; mDownSubst=ml.mUpSubst; frame=top.frame;
                                    grammarName=top.grammarName; compiledGrammars=top.compiledGrammars;
                                    config=top.config; flowEnv=top.flowEnv;}.mtyperep)
                  else p),
@@ -89,38 +89,26 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                            else freshType();
   --read the comment on the function below if you want to know what it is
   local attribute monadStuff::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
-  monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.upSubst, top.frame,
-                                      top.grammarName, top.compiledGrammars, top.config, top.flowEnv, [], 1);
+  monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.mUpSubst, top.frame,
+                                      top.grammarName, top.compiledGrammars, top.config, top.flowEnv, [], top.location, 1);
 
   local monadLocal::Expr =
     buildMonadicBinds(monadStuff.fst,
                       caseExpr(monadStuff.snd,
                                ml.matchRuleList, failure,
-                               outty, location=top.location));
-  monadLocal.downSubst = ml.upSubst;
+                               outty, location=top.location), top.location);
+  monadLocal.mDownSubst = ml.mUpSubst;
   monadLocal.frame = top.frame;
   monadLocal.grammarName = top.grammarName;
   monadLocal.compiledGrammars = top.compiledGrammars;
   monadLocal.config = top.config;
   monadLocal.env = top.env;
   monadLocal.flowEnv = top.flowEnv;
-  monadLocal.finalSubst = top.downSubst;
+  monadLocal.downSubst = ml.mUpSubst;
+  monadLocal.finalSubst = top.finalSubst;
   top.monadRewritten = monadLocal.monadRewritten;
   top.mtyperep = monadLocal.mtyperep;
-  {-
-  local innercase::Expr = caseExpr(monadStuff.snd,
-                                   ml.matchRuleList, failure,
-                                   outty, location=top.location);
-  innercase.downSubst = ml.upSubst;
-  innercase.frame = top.frame;
-  innercase.grammarName = top.grammarName;
-  innercase.compiledGrammars = top.compiledGrammars;
-  innercase.config = top.config;
-  innercase.env = top.env;
-  innercase.flowEnv = top.flowEnv;
-  innercase.finalSubst = top.downSubst;
-  top.monadRewritten = buildMonadicBinds(monadStuff.fst, innercase.monadRewritten);
-  -}
+  top.mUpSubst = monadLocal.mUpSubst;
 }
 --find if any of the expressions are being matched as their inner type
 --if returns (true, ty), ty will be used to find the correct Fail()
@@ -132,10 +120,12 @@ Pair<Boolean Type> ::= elst::[Expr] tylst::[Type] env::Decorated Env sub::Substi
               | [], _ -> pair(false, errorType())
               | _, [] -> pair(false, errorType())
               | e::etl, t::ttl ->
-                if isMonad(decorate e with {env=env; downSubst=sub; frame=f; grammarName=gn;
+                if isMonad(decorate e with {env=env; mDownSubst=sub; frame=f; grammarName=gn;
+                                       downSubst=sub; finalSubst=sub;
                                        compiledGrammars=cg; config=c; flowEnv=fe;}.mtyperep) &&
                   !isMonad(performSubstitution(t, sub))
-                then pair(true, decorate e with {env=env; downSubst=sub; frame=f; grammarName=gn;
+                then pair(true, decorate e with {env=env; mDownSubst=sub; frame=f; grammarName=gn;
+                                       downSubst=sub; finalSubst=sub;
                                        compiledGrammars=cg; config=c; flowEnv=fe;}.mtyperep)
                 else monadicallyUsedExpr(etl, ttl, env, sub, f, gn, cg, c, fe)
               end;
@@ -146,11 +136,12 @@ Pair<Boolean Type> ::= elst::[Expr] tylst::[Type] env::Decorated Env sub::Substi
 function monadicMatchTypesNames
 Pair<[Pair<Type Pair<Expr String>>] [Expr]> ::=
 elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext gn::String
-  cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::Decorated FlowEnv names::[String] index::Integer
+  cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::Decorated FlowEnv names::[String]
+  loc::Location index::Integer
 {
   local attribute subcall::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
   subcall = case elst, tylst of
-            | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, env, sub, f, gn, cg, c, fe, ntail, index+1)
+            | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, env, sub, f, gn, cg, c, fe, ntail, loc, index+1)
             end;
   local ntail::[String] = if null(names) then [] else tail(names);
   local newName::String = if null(names)
@@ -160,37 +151,39 @@ elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext 
          | [], _ -> pair([], [])
          | _, [] -> pair([], elst)
          | e::etl, t::ttl ->
-           if isMonad(decorate e with {env=env; downSubst=sub; frame=f; grammarName=gn;
+           if isMonad(decorate e with {env=env; mDownSubst=sub; frame=f; grammarName=gn;
+                                       downSubst=sub; finalSubst=sub;
                                        compiledGrammars=cg; config=c; flowEnv=fe;}.mtyperep) &&
              !isMonad(performSubstitution(t, sub))
-           then pair(pair(decorate e with {env=env; downSubst=sub; frame=f; grammarName=gn;
+           then pair(pair(decorate e with {env=env; mDownSubst=sub; frame=f; grammarName=gn;
+                                           downSubst=sub; finalSubst=sub;
                                            compiledGrammars=cg; config=c; flowEnv=fe;}.mtyperep,
                           pair(e, newName)) :: subcall.fst,
-                     baseExpr(qName(bogusLoc(), newName), location=bogusLoc()) :: subcall.snd)
+                     baseExpr(qName(loc, newName), location=loc) :: subcall.snd)
            else pair(subcall.fst, e::subcall.snd)
          end;
 }
 --take a list of things to bind and the name to use in binding them, as well as
 --   a base for the binding, and create an expression with all of them bound
 function buildMonadicBinds
-Expr ::= bindlst::[Pair<Type Pair<Expr String>>] base::Expr
+Expr ::= bindlst::[Pair<Type Pair<Expr String>>] base::Expr loc::Location
 {
   return case bindlst of
          | [] -> base
          | pair(ty,pair(e,n))::rest ->
-           Silver_Expr{ $Expr{monadBind(ty, bogusLoc())}
+           Silver_Expr{ $Expr{monadBind(ty, loc)}
             ($Expr{e},
              $Expr{
                lambdap(
-                 productionRHSCons(productionRHSElem(name(n, bogusLoc()),
+                 productionRHSCons(productionRHSElem(name(n, loc),
                                                      '::',
                                                      typerepTypeExpr(monadInnerType(ty),
-                                                                     location=bogusLoc()),
-                                                     location=bogusLoc()),
-                                   productionRHSNil(location=bogusLoc()),
-                                   location=bogusLoc()),
-                 buildMonadicBinds(rest, base),
-                 location=bogusLoc())})}
+                                                                     location=loc),
+                                                     location=loc),
+                                   productionRHSNil(location=loc),
+                                   location=loc),
+                 buildMonadicBinds(rest, base, loc),
+                 location=loc)})}
          end;
 }
 --case expression that expands, using mplus, to possibly take multiple cases
@@ -207,35 +200,35 @@ top::Expr ::= 'mcase' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
     we won't do if there wasn't a list somewhere here in the first
     place.
   -}
-  ml.downSubst = top.downSubst;
+  ml.mDownSubst = top.mDownSubst;
   local monadInExprs::Pair<Boolean Type> =
-    monadicallyUsedExpr(es.rawExprs, ml.patternTypeList, top.env, ml.upSubst, top.frame,
+    monadicallyUsedExpr(es.rawExprs, ml.patternTypeList, top.env, ml.mUpSubst, top.frame,
                         top.grammarName, top.compiledGrammars, top.config, top.flowEnv);
   local monadInClauses::Pair<Boolean Type> =
     foldl((\p::Pair<Boolean Type> a::AbstractMatchRule ->
             if p.fst
             then p
-            else if isMonad(decorate a with {env=top.env; downSubst=ml.upSubst; frame=top.frame;
+            else if isMonad(decorate a with {env=top.env; mDownSubst=ml.mUpSubst; frame=top.frame;
                                   grammarName=top.grammarName; compiledGrammars=top.compiledGrammars;
                                   config=top.config; flowEnv=top.flowEnv;}.mtyperep)
-                 then pair(true, decorate a with {env=top.env; downSubst=ml.upSubst; frame=top.frame;
+                 then pair(true, decorate a with {env=top.env; mDownSubst=ml.mUpSubst; frame=top.frame;
                                   grammarName=top.grammarName; compiledGrammars=top.compiledGrammars;
                                   config=top.config; flowEnv=top.flowEnv;}.mtyperep)
                  else p),
           pair(false, errorType()), --error as filler; won't be used
           ml.matchRuleList);
   local monad::Type = if monadInExprs.fst
-                      then monadInExprs.snd
-                      else monadInClauses.snd;
-  local mplus::Expr = monadPlus(monad, bogusLoc());
-  local mzero::Expr = monadZero(monad, bogusLoc());
+                      then performSubstitution(monadInExprs.snd, top.mUpSubst)
+                      else performSubstitution(monadInClauses.snd, top.mUpSubst);
+  local mplus::Expr = monadPlus(monad, top.location);
+  local mzero::Expr = monadZero(monad, top.location);
 
   --new names for using lets to bind the incoming expressions
   local newNames::[String] = map(\x::Expr -> "__sv_mcase_var_" ++ toString(genInt()), es.rawExprs);
-  local nameExprs::[Expr] = map(\x::String -> baseExpr(qName(bogusLoc(), x), location=bogusLoc()),
+  local nameExprs::[Expr] = map(\x::String -> baseExpr(qName(top.location, x), location=top.location),
                                 newNames);
   local caseExprs::[Expr] = map(\x::AbstractMatchRule ->
-                                 caseExpr(nameExprs, [x], mzero, freshType(), location=bogusLoc()),
+                                 caseExpr(nameExprs, [x], mzero, freshType(), location=top.location),
                                 ml.matchRuleList);
   local mplused::Expr = foldl(\rest::Expr current::Expr -> 
                                Silver_Expr{
@@ -244,22 +237,21 @@ top::Expr ::= 'mcase' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                               head(caseExprs), tail(caseExprs));
   --figure out which ones need to get bound in
   local attribute monadStuff::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
-  monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.upSubst, top.frame,
+  monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.mUpSubst, top.frame,
                                       top.grammarName, top.compiledGrammars, top.config, top.flowEnv,
-                                      newNames, 1);
+                                      newNames, top.location, 1);
   --bind those ones in over the mpluses
-  local monadLocal::Expr = buildMonadicBinds(monadStuff.fst, mplused);
+  local monadLocal::Expr = buildMonadicBinds(monadStuff.fst, mplused, top.location);
   --put lets for all the names over the top (the binds will overwrite some)
   local letBound::Expr = foldr(\p::Pair<Expr String> rest::Expr ->
-                                makeLet(bogusLoc(), p.snd, freshType(), p.fst, rest),
+                                makeLet(top.location, p.snd, freshType(), p.fst, rest),
                                monadLocal, zipWith(pair, es.rawExprs, newNames));
 
   forwards to if isMonad(monad)
               then if canBeMCased(monad)
                    then letBound
                    else errorExpr([err(top.location, "Monad type " ++
-                                   --use top.upsubst rather than finalSubst because we don't give finalSubst
-                                   prettyType(performSubstitution(monad, top.upSubst)) ++
+                                   prettyType(performSubstitution(monad, top.finalSubst)) ++
                                    " cannot be used in an mcase as it does not have " ++
                                    "MPlus/MZero defined")], location=top.location)
               else errorExpr([err(top.location, "Need a monad type somewhere in " ++
@@ -271,7 +263,7 @@ aspect production mRuleList_one
 top::MRuleList ::= m::MatchRule
 {
   top.patternTypeList = m.patternTypeList;
-  top.upSubst = top.downSubst;
+  top.mUpSubst = top.mDownSubst;
 }
 
 aspect production mRuleList_cons
@@ -281,10 +273,10 @@ top::MRuleList ::= h::MatchRule vbar::Vbar_kwd t::MRuleList
   --need to unify here with t.patternTypeList so, when we reach the case, if there is a
   --   monad pattern farther down where the first one is a wildcard/variable, we'll find
   --   it and not incorrectly identify something as being used non-monadically
-  top.upSubst = foldl(\s::Substitution p::Pair<Type Type> ->
+  top.mUpSubst = foldl(\s::Substitution p::Pair<Type Type> ->
                        decorate check(p.fst, p.snd) with {downSubst=s;}.upSubst,
-                      t.upSubst, zipWith(pair, h.patternTypeList, t.patternTypeList));
-  t.downSubst = top.downSubst;
+                      t.mUpSubst, zipWith(pair, h.patternTypeList, t.patternTypeList));
+  t.mDownSubst = top.mDownSubst;
 }
 
 aspect production matchRule_c
@@ -324,18 +316,20 @@ top::PatternList ::=
 
 
 
-attribute env, downSubst, merrors, mtyperep, frame, grammarName, compiledGrammars, config, flowEnv occurs on AbstractMatchRule;
+attribute env, mDownSubst, merrors, mtyperep, frame, grammarName, compiledGrammars, config, flowEnv occurs on AbstractMatchRule;
 
 aspect production matchRule
 top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Expr> e::Expr
 {
   e.env = top.env;
-  e.downSubst = top.downSubst;
+  e.mDownSubst = top.mDownSubst;
   e.frame = top.frame;
   e.grammarName = top.grammarName;
   e.compiledGrammars = top.compiledGrammars;
   e.config = top.config;
   e.flowEnv = top.flowEnv;
+  e.downSubst = top.mDownSubst;
+  e.finalSubst = top.mDownSubst;
   top.merrors := []; --merrors from e should be picked up in primitive matching
   top.mtyperep = e.mtyperep;
 }

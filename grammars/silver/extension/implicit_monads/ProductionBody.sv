@@ -124,24 +124,26 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
 aspect production attributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
-  e.downSubst = top.downSubst;
-  top.merrors := e.merrors;
+--  e.downSubst = top.downSubst;
+--  e.mDownSubst = top.mDownSubst;
+--  e.finalSubst = e.mUpSubst;
+--  top.merrors := e.merrors;
 
-  local emr::Expr = e.monadRewritten;
-  emr.env = top.env; emr.frame = top.frame; emr.grammarName = top.grammarName;
-  emr.config = top.config; emr.compiledGrammars = top.compiledGrammars;
-  emr.downSubst = top.downSubst;
+--  local emr::Expr = e.monadRewritten;
+--  emr.env = top.env; emr.frame = top.frame; emr.grammarName = top.grammarName;
+--  emr.config = top.config; emr.compiledGrammars = top.compiledGrammars;
+--  emr.mDownSubst = top.mDownSubst;
   --top.monadRewritten =
-  local mr::ProductionStmt = if isMonad(attr.typerep)
-                       then if isMonad(e.mtyperep) || isError(e.mtyperep)
-                            then attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location)
-                            else attributeDef(dl, '.', attr, '=',
-                                   Silver_Expr {
-                                     $Expr {monadReturn(attr.typerep, top.location)}
-                                      ($Expr {e.monadRewritten})
-                                   }, ';', location=top.location)
-                       else attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location);
-  top.monadRewritten = mr;
+--  local mr::ProductionStmt = if isMonad(attr.typerep)
+--                       then if isMonad(e.mtyperep) || isError(e.mtyperep)
+--                            then attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location)
+--                            else attributeDef(dl, '.', attr, '=',
+--                                   Silver_Expr {
+--                                     $Expr {monadReturn(attr.typerep, top.location)}
+--                                      ($Expr {e.monadRewritten})
+--                                   }, ';', location=top.location)
+--                       else attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location);
+--  top.monadRewritten = mr;
 }
 
 aspect production errorAttributeDef
@@ -156,6 +158,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 {
   top.merrors := e.merrors;
 
+  e.mDownSubst = top.mDownSubst;
+--  e.finalSubst = e.mUpSubst;
   top.monadRewritten = if isMonad(attr.typerep)
                        then if isMonad(e.mtyperep) || isError(e.mtyperep)
                             then synthesizedAttributeDef(dl, attr, e.monadRewritten, location=top.location)
@@ -172,6 +176,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 {
   top.merrors := e.merrors;
 
+  e.mDownSubst = top.mDownSubst;
+--  e.finalSubst = e.mUpSubst;
   top.monadRewritten = if isMonad(attr.typerep)
                        then if isMonad(e.mtyperep) || isError(e.mtyperep)
                             then inheritedAttributeDef(dl, attr, e.monadRewritten, location=top.location)
@@ -189,6 +195,8 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   -- val is already valid here
   top.merrors := e.merrors;
 
+  e.mDownSubst = top.mDownSubst;
+--  e.finalSubst = e.mUpSubst;
   top.monadRewritten = if isMonad(val.lookupValue.typerep)
                        then if isMonad(e.mtyperep) || isError(e.mtyperep)
                             then localValueDef(val, e.monadRewritten, location=top.location)

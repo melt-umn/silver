@@ -32,6 +32,7 @@ top::AGDcl ::= 'monadic' 'abstract' 'production' id::Name ns::ProductionSignatur
   body.frame = productionContext(namedSig, myFlowGraph);
 
   body.downSubst = emptySubst();
+  body.mDownSubst = emptySubst();
 
 
   --This block is copied from silver:definition:flow:env for a regular abstract production
