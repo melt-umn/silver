@@ -146,8 +146,7 @@ Expr ::= ty::Type l::Location
          | listType(_) ->
            baseExpr(qNameId(name("bindList", l), location=l), location=l)
          | decoratedType(t) -> monadBind(t, l)
-         | _ -> error("Tried to get the bind for a non-monadic type " ++ 
-                      l.filename ++ " " ++ toString(l.line) ++ ":" ++ toString(l.column))
+         | _ -> error("Tried to get the bind for a non-monadic type at " ++ l.unparse)
          end;
 }
 function monadReturn
@@ -165,8 +164,7 @@ Expr ::= ty::Type l::Location
          | listType(_) ->
            baseExpr(qNameId(name("returnList", l), location=l), location=l)
          | decoratedType(t) -> monadReturn(t, l)
-         | _ -> error("Tried to get the return for a non-monadic type " ++ 
-                      l.filename ++ " " ++ toString(l.line) ++ ":" ++ toString(l.column))
+         | _ -> error("Tried to get the return for a non-monadic type at " ++ l.unparse)
          end;
 }
 function monadFail
@@ -185,8 +183,7 @@ Expr ::= ty::Type l::Location
            baseExpr(qNameId(name("failList", l), location=l), location=l)
          | decoratedType(t) -> monadFail(t, l)
          | _ ->
-           error("Tried to get the fail for a non-monadic type " ++ l.filename ++
-                 " " ++ toString(l.line) ++ ":" ++ toString(l.column))
+           error("Tried to get the fail for a non-monadic type at " ++ l.unparse)
          end;
 }
 --come up with a "generic" argument for the call to Fail() if it is one of
@@ -194,11 +191,10 @@ Expr ::= ty::Type l::Location
 function monadFailArgument
 Maybe<Expr> ::= ty::Type l::Location
 {
-  local string::Expr = stringConst(terminal(String_t,
-                                           "\"automatically-inserted fail at " ++
-                                           l.filename ++ " " ++ toString(l.line) ++
-                                           ":" ++ toString(l.column) ++ "\""),
-                                   location=bogusLoc());
+  local string::Expr =
+     stringConst(terminal(String_t,
+             "\"automatically-inserted fail at " ++ l.unparse ++ "\""),
+             location=l);
   local int::Expr = Silver_Expr { 0 };
   local float::Expr = Silver_Expr { 0.0 };
   local list::Expr = Silver_Expr { [] };
@@ -232,8 +228,7 @@ Expr ::= ty::Type l::Location
            baseExpr(qNameId(name("mplusList", l), location=l), location=l)
          | decoratedType(t) -> monadPlus(t, l)
          | _ ->
-           error("Tried to get MPlus for a non-monadic type " ++ l.filename ++
-                 " " ++ toString(l.line) ++ ":" ++ toString(l.column))
+           error("Tried to get MPlus for a non-monadic type at " ++ l.unparse)
          end;
 }
 function monadZero
@@ -249,7 +244,8 @@ Expr ::= ty::Type l::Location
            | floatType() -> Silver_Expr{ $Expr{monadFail(ty, l)}(0.0) }
            | listType(_) -> Silver_Expr{ $Expr{monadFail(ty, l)}([]) }
            | _ ->
-             error("Tried to get MZero for Either with too complex an argument type")
+             error("Tried to get MZero for Either with too complex or too generic argument type (" ++
+                   prettyType(ty) ++ ") at " ++ l.unparse)
            end
          | nonterminalType("core:IOMonad", _) ->
            error("MZero undefined for IOMonad")
@@ -259,8 +255,7 @@ Expr ::= ty::Type l::Location
            Silver_Expr { [] }
          | decoratedType(t) -> monadZero(t, l)
          | _ ->
-           error("Tried to get MZero for a non-monadic type " ++ l.filename ++
-                 " " ++ toString(l.line) ++ ":" ++ toString(l.column))
+           error("Tried to get MZero for a non-monadic type at " ++ l.unparse)
          end;
 }
 

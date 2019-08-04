@@ -62,111 +62,111 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   local freshname::String = "__sv_bindingInAMatchExpression_" ++ toString(genInt());
   local eBind::Expr = monadBind(e.mtyperep, top.location);
-  local eInnerType::TypeExpr = typerepTypeExpr(monadInnerType(e.mtyperep), location=bogusLoc());
+  local eInnerType::TypeExpr = typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location);
   local binde_lambdaparams::ProductionRHS =
-        productionRHSCons(productionRHSElem(name(freshname, bogusLoc()), '::',
-                                            eInnerType, location=bogusLoc()),
-                          productionRHSNil(location=bogusLoc()), location=bogusLoc());
-  local outty::TypeExpr = typerepTypeExpr(top.mtyperep, location=bogusLoc());
+        productionRHSCons(productionRHSElem(name(freshname, top.location), '::',
+                                            eInnerType, location=top.location),
+                          productionRHSNil(location=top.location), location=top.location);
+  local outty::TypeExpr = typerepTypeExpr(top.mtyperep, location=top.location);
   --bind e, just do the rest
   local justBind_e::Expr =
     applicationExpr(eBind,
                     '(',
-                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=bogusLoc()),
-                                             location=bogusLoc()),
+                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=top.location),
+                                             location=top.location),
                                  ',',
                                  presentAppExpr(
                                    lambdap(binde_lambdaparams,
-                                           matchPrimitiveReal(baseExpr(qName(bogusLoc(),
+                                           matchPrimitiveReal(baseExpr(qName(top.location,
                                                                              freshname),
-                                                                       location=bogusLoc()),
+                                                                       location=top.location),
                                                               outty, pr.monadRewritten, f.monadRewritten,
                                                               location=top.location),
-                                           location=bogusLoc()),
-                                   location=bogusLoc()),
-                                 location=bogusLoc()),
+                                           location=top.location),
+                                   location=top.location),
+                                 location=top.location),
                     ')',
                     location=top.location);
   --bind e, return f based on e's type
   local bind_e_return_f::Expr =
     applicationExpr(eBind,
                     '(',
-                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=bogusLoc()),
-                                             location=bogusLoc()),
+                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=top.location),
+                                             location=top.location),
                                  ',',
                                  presentAppExpr(
                                    lambdap(binde_lambdaparams,
-                                           matchPrimitiveReal(baseExpr(qName(bogusLoc(),
+                                           matchPrimitiveReal(baseExpr(qName(top.location,
                                                                              freshname),
-                                                                       location=bogusLoc()),
+                                                                       location=top.location),
                                                               outty, pr.monadRewritten,
                                                               Silver_Expr {
-                                                                $Expr{monadReturn(e.mtyperep, bogusLoc())}
+                                                                $Expr{monadReturn(e.mtyperep, top.location)}
                                                                  ($Expr{f})
                                                               },
                                                               location=top.location),
-                                           location=bogusLoc()),
-                                   location=bogusLoc()),
-                                 location=bogusLoc()),
+                                           location=top.location),
+                                   location=top.location),
+                                 location=top.location),
                     ')',
                     location=top.location);
   --bind e, returnify pr based on e's type
   local prReturnify::PrimPatterns = pr.monadRewritten;
-  prReturnify.returnFun = monadReturn(e.mtyperep, bogusLoc());
+  prReturnify.returnFun = monadReturn(e.mtyperep, top.location);
   prReturnify.grammarName = top.grammarName;
   prReturnify.env = top.env;
   prReturnify.config = top.config;
   local bind_e_returnify_pr::Expr =
     applicationExpr(eBind,
                     '(',
-                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=bogusLoc()),
-                                             location=bogusLoc()),
+                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=top.location),
+                                             location=top.location),
                                  ',',
                                  presentAppExpr(
                                    lambdap(binde_lambdaparams,
-                                           matchPrimitiveReal(baseExpr(qName(bogusLoc(),
+                                           matchPrimitiveReal(baseExpr(qName(top.location,
                                                                              freshname),
-                                                                       location=bogusLoc()),
+                                                                       location=top.location),
                                                               outty, prReturnify.returnify,
                                                               f.monadRewritten, location=top.location),
-                                           location=bogusLoc()),
-                                   location=bogusLoc()),
-                                 location=bogusLoc()),
+                                           location=top.location),
+                                   location=top.location),
+                                 location=top.location),
                     ')',
                     location=top.location);
   --bind e, returnify pr, return f based on e's type
   local bind_e_returnify_pr_return_f::Expr =
     applicationExpr(eBind,
                     '(',
-                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=bogusLoc()),
-                                             location=bogusLoc()),
+                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=top.location),
+                                             location=top.location),
                                  ',',
                                  presentAppExpr(
                                    lambdap(binde_lambdaparams,
-                                           matchPrimitiveReal(baseExpr(qName(bogusLoc(),
+                                           matchPrimitiveReal(baseExpr(qName(top.location,
                                                                              freshname),
-                                                                       location=bogusLoc()),
+                                                                       location=top.location),
                                                               outty, prReturnify.returnify,
                                                               Silver_Expr {
-                                                                $Expr{monadReturn(e.mtyperep, bogusLoc())}
+                                                                $Expr{monadReturn(e.mtyperep, top.location)}
                                                                  ($Expr{f.monadRewritten})
                                                               },
                                                               location=top.location),
-                                           location=bogusLoc()),
-                                   location=bogusLoc()),
-                                 location=bogusLoc()),
+                                           location=top.location),
+                                   location=top.location),
+                                 location=top.location),
                     ')',
                     location=top.location);
   --return f from pr's return type
   local return_f::Expr =
     matchPrimitiveReal(e.monadRewritten, outty, pr.monadRewritten,
                        Silver_Expr {
-                         $Expr{monadReturn(pr.mtyperep, bogusLoc())}($Expr{f.monadRewritten})
+                         $Expr{monadReturn(pr.mtyperep, top.location)}($Expr{f.monadRewritten})
                        },
                        location=top.location);
   --returnify pr from f's type
   local ret_pr_from_f::PrimPatterns = pr.monadRewritten;
-  ret_pr_from_f.returnFun = monadReturn(f.mtyperep, bogusLoc());
+  ret_pr_from_f.returnFun = monadReturn(f.mtyperep, top.location);
   ret_pr_from_f.grammarName = top.grammarName;
   ret_pr_from_f.env = top.env;
   ret_pr_from_f.config = top.config;
@@ -249,7 +249,7 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
                                                    location=top.location);
   --when the current clause is a monad but the rest aren't, wrap all of them in Return()
   local psReturnify::PrimPatterns = ps.monadRewritten;
-  psReturnify.returnFun = monadReturn(p.mtyperep, bogusLoc());
+  psReturnify.returnFun = monadReturn(p.mtyperep, top.location);
   psReturnify.env = top.env;
   psReturnify.config = top.config;
   psReturnify.grammarName = top.grammarName;
@@ -258,7 +258,7 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
                                                        location=top.location);
   --when the current clause is not a monad but the rest are, wrap the current one in Return()
   local pReturnify::PrimPattern = p.monadRewritten;
-  pReturnify.returnFun = monadReturn(ps.mtyperep, bogusLoc());
+  pReturnify.returnFun = monadReturn(ps.mtyperep, top.location);
   pReturnify.grammarName = top.grammarName;
   pReturnify.config = top.config;
   pReturnify.env = top.env;

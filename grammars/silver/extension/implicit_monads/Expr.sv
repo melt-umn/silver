@@ -114,7 +114,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
   local nes::AppExprs = new(es);
-  nes.mDownSubst = top.mDownSubst;
+  nes.mDownSubst = ne.mUpSubst;
   nes.flowEnv = top.flowEnv;
   nes.env = top.env;
   nes.config = top.config;
@@ -127,7 +127,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   nes.appExprApplied = es.appExprApplied;
 
   top.merrors := ne.merrors ++ nes.merrors;
-  top.mUpSubst = ne.mUpSubst;
+  top.mUpSubst = nes.mUpSubst;
 
   local mty::Type = head(nes.monadTypesLocations).fst;
   --need to check that all our monads match
@@ -174,16 +174,16 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
     application inside all the binds.
   -}
   --TODO also needs to deal with the case where the function is a monad
-  local lambda_fun::Expr = buildMonadApplicationLambda(nes.realTypes, nes.monadTypesLocations, ety, wrapReturn);
-  local expanded_args::AppExprs = snocAppExprs(new(es), ',', presentAppExpr(new(e), location=bogusLoc()),
-                                               location=bogusLoc());
+  local lambda_fun::Expr = buildMonadApplicationLambda(nes.realTypes, nes.monadTypesLocations, ety, wrapReturn, top.location);
+  local expanded_args::AppExprs = snocAppExprs(new(es), ',', presentAppExpr(new(e), location=top.location),
+                                               location=top.location);
   --haven't done monadRewritten on annotated ones, so ignore them
   top.monadRewritten = if null(nes.monadTypesLocations)
-                       then applicationExpr(ne.monadRewritten, '(', nes.monadRewritten, ')', location=bogusLoc())
+                       then applicationExpr(ne.monadRewritten, '(', nes.monadRewritten, ')', location=top.location)
                        else
                          case anns of
                          | emptyAnnoAppExprs() ->
-                           applicationExpr(lambda_fun, '(', expanded_args, ')', location=bogusLoc())
+                           applicationExpr(lambda_fun, '(', expanded_args, ')', location=top.location)
                          | _ ->
                            error("Monad Rewriting not defined with annotated " ++
                                  "expressions in a function application")
@@ -192,77 +192,77 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
 --build the lambda to apply to all the original arguments plus the function
 --we're going to assume this is only called if monadTysLocs is non-empty
 function buildMonadApplicationLambda
-Expr ::= realtys::[Type] monadTysLocs::[Pair<Type Integer>] funType::Type wrapReturn::Boolean
+Expr ::= realtys::[Type] monadTysLocs::[Pair<Type Integer>] funType::Type wrapReturn::Boolean loc::Location
 {
-  local funargs::AppExprs = buildFunArgs(length(realtys));
-  local params::ProductionRHS = buildMonadApplicationParams(realtys, 1, funType);
-  local body::Expr = buildMonadApplicationBody(monadTysLocs, funargs, head(monadTysLocs).fst, wrapReturn);
-  return lambdap(params, body, location=bogusLoc());
+  local funargs::AppExprs = buildFunArgs(length(realtys), loc);
+  local params::ProductionRHS = buildMonadApplicationParams(realtys, 1, funType, loc);
+  local body::Expr = buildMonadApplicationBody(monadTysLocs, funargs, head(monadTysLocs).fst, wrapReturn, loc);
+  return lambdap(params, body, location=loc);
 }
 --build the parameters for the lambda applied to all the original arguments plus the function
 function buildMonadApplicationParams
-ProductionRHS ::= realtys::[Type] currentLoc::Integer funType::Type
+ProductionRHS ::= realtys::[Type] currentLoc::Integer funType::Type loc::Location
 {
   return if null(realtys)
-         then productionRHSCons(productionRHSElem(name("f", bogusLoc()),
+         then productionRHSCons(productionRHSElem(name("f", loc),
                                                   '::',
-                                                  typerepTypeExpr(funType, location=bogusLoc()),
-                                                  location=bogusLoc()),
-                                productionRHSNil(location=bogusLoc()),
-                                location=bogusLoc())
-         else productionRHSCons(productionRHSElem(name("a"++toString(currentLoc), bogusLoc()),
+                                                  typerepTypeExpr(funType, location=loc),
+                                                  location=loc),
+                                productionRHSNil(location=loc),
+                                location=loc)
+         else productionRHSCons(productionRHSElem(name("a"++toString(currentLoc), loc),
                                                   '::',
-                                                  --typerepTypeExpr(head(realtys), location=bogusLoc()),
-                                                  typerepTypeExpr(dropDecorated(head(realtys)), location=bogusLoc()),
-                                                  location=bogusLoc()),
-                                buildMonadApplicationParams(tail(realtys), currentLoc+1, funType),
-                                location=bogusLoc());
+                                                  --typerepTypeExpr(head(realtys), location=top.location),
+                                                  typerepTypeExpr(dropDecorated(head(realtys)), location=loc),
+                                                  location=loc),
+                                buildMonadApplicationParams(tail(realtys), currentLoc+1, funType, loc),
+                                location=loc);
 }
 --build the arguments for the application inside all the binds
 function buildFunArgs
-AppExprs ::= currentIndex::Integer
+AppExprs ::= currentIndex::Integer loc::Location
 {
   return if currentIndex == 0
-         then emptyAppExprs(location=bogusLoc())
-         else snocAppExprs(buildFunArgs(currentIndex - 1), ',',
-                           presentAppExpr(baseExpr(qName(bogusLoc(),
+         then emptyAppExprs(location=loc)
+         else snocAppExprs(buildFunArgs(currentIndex - 1, loc), ',',
+                           presentAppExpr(baseExpr(qName(loc,
                                                          "a"++toString(currentIndex)),
-                                                   location=bogusLoc()),
-                                          location=bogusLoc()), location=bogusLoc());
+                                                   location=loc),
+                                          location=loc), location=loc);
 }
 --build the body of the lambda which includes all the binds
 function buildMonadApplicationBody
-Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs monadType::Type wrapReturn::Boolean
+Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs monadType::Type wrapReturn::Boolean loc::Location
 {
-  local sub::Expr = buildMonadApplicationBody(tail(monadTysLocs), funargs, monadType, wrapReturn);
+  local sub::Expr = buildMonadApplicationBody(tail(monadTysLocs), funargs, monadType, wrapReturn, loc);
   local argty::Type = head(monadTysLocs).fst;
-  local bind::Expr = monadBind(argty, bogusLoc());
+  local bind::Expr = monadBind(argty, loc);
   local binding::ProductionRHS = productionRHSCons(productionRHSElem(name("a"++toString(head(monadTysLocs).snd),
-                                                                          bogusLoc()),
+                                                                          loc),
                                                                      '::', 
                                                                      typerepTypeExpr(monadInnerType(argty),
-                                                                                     location=bogusLoc()),
-                                                                     location=bogusLoc()),
-                                                   productionRHSNil(location=bogusLoc()),
-                                                   location=bogusLoc());
+                                                                                     location=loc),
+                                                                     location=loc),
+                                                   productionRHSNil(location=loc),
+                                                   location=loc);
   local bindargs::AppExprs = snocAppExprs(
                              oneAppExprs(presentAppExpr(
-                                            baseExpr(qName(bogusLoc(),"a"++toString(head(monadTysLocs).snd)),
-                                                     location=bogusLoc()),
-                                            location=bogusLoc()),
-                                         location=bogusLoc()),
+                                            baseExpr(qName(loc,"a"++toString(head(monadTysLocs).snd)),
+                                                     location=loc),
+                                            location=loc),
+                                         location=loc),
                              ',',
-                              presentAppExpr(lambdap(binding, sub, location=bogusLoc()),
-                                             location=bogusLoc()),
-                              location=bogusLoc());
+                              presentAppExpr(lambdap(binding, sub, location=loc),
+                                             location=loc),
+                              location=loc);
 
-  local step::Expr = applicationExpr(bind, '(', bindargs, ')', location=bogusLoc());
+  local step::Expr = applicationExpr(bind, '(', bindargs, ')', location=loc);
 
   --the function is always going to be bound into the name "f", so we hard code that here
-  local baseapp::Expr = applicationExpr(baseExpr(qName(bogusLoc(), "f"), location=bogusLoc()),
-                                        '(', funargs, ')', location=bogusLoc());
+  local baseapp::Expr = applicationExpr(baseExpr(qName(loc, "f"), location=loc),
+                                        '(', funargs, ')', location=loc);
   local funapp::Expr = if wrapReturn
-                       then Silver_Expr { $Expr {monadReturn(monadType, bogusLoc())}($Expr {baseapp}) }
+                       then Silver_Expr { $Expr {monadReturn(monadType, loc)}($Expr {baseapp}) }
                        else baseapp;
 
   return if null(monadTysLocs)
@@ -507,9 +507,19 @@ top::Expr ::= e1::Expr '&&' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  local ec1::TypeCheck = if isMonad(e1.mtyperep)
+                         then check(monadInnerType(e1.mtyperep), boolType())
+                         else check(e1.mtyperep, boolType());
+  local ec2::TypeCheck = if isMonad(e2.mtyperep)
+                         then check(monadInnerType(e2.mtyperep), boolType())
+                         else check(e2.mtyperep, boolType());
+  ec1.finalSubst = top.finalSubst;
+  ec2.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  top.mUpSubst = e2.mUpSubst;
+  ec1.downSubst = e2.mUpSubst;
+  ec2.downSubst = ec1.upSubst;
+  top.mUpSubst = ec2.upSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep --assume it will be well-typed
                 else if isMonad(e2.mtyperep)
@@ -561,9 +571,19 @@ top::Expr ::= e1::Expr '||' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  local ec1::TypeCheck = if isMonad(e1.mtyperep)
+                         then check(monadInnerType(e1.mtyperep), boolType())
+                         else check(e1.mtyperep, boolType());
+  local ec2::TypeCheck = if isMonad(e2.mtyperep)
+                         then check(monadInnerType(e2.mtyperep), boolType())
+                         else check(e2.mtyperep, boolType());
+  ec1.finalSubst = top.finalSubst;
+  ec2.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  top.mUpSubst = e2.mUpSubst;
+  ec1.downSubst = e2.mUpSubst;
+  ec2.downSubst = ec1.upSubst;
+  top.mUpSubst = ec2.upSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep --assume it will be well-typed
                 else if isMonad(e2.mtyperep)
@@ -615,8 +635,13 @@ top::Expr ::= '!' e::Expr
 {
   top.merrors := e.merrors;
 
+  local ec::TypeCheck = if isMonad(e.mtyperep)
+                        then check(monadInnerType(e.mtyperep), boolType())
+                        else check(e.mtyperep, boolType());
   e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
+  ec.downSubst = e.mUpSubst;
+  top.mUpSubst = ec.upSubst;
+  ec.finalSubst = top.finalSubst;
   top.mtyperep = e.mtyperep; --assume it will be well-typed
 
   top.monadRewritten =
@@ -635,9 +660,18 @@ top::Expr ::= e1::Expr '>' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  local ec::TypeCheck = if isMonad(e1.mtyperep)
+                        then if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, e2.mtyperep)
+                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
+                        else if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
+                             else check(e1.mtyperep, e2.mtyperep);
+  ec.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  top.mUpSubst = e2.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -692,9 +726,18 @@ top::Expr ::= e1::Expr '<' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  local ec::TypeCheck = if isMonad(e1.mtyperep)
+                        then if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, e2.mtyperep)
+                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
+                        else if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
+                             else check(e1.mtyperep, e2.mtyperep);
+  ec.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  top.mUpSubst = e2.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -749,9 +792,18 @@ top::Expr ::= e1::Expr '>=' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  local ec::TypeCheck = if isMonad(e1.mtyperep)
+                        then if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, e2.mtyperep)
+                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
+                        else if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
+                             else check(e1.mtyperep, e2.mtyperep);
+  ec.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  top.mUpSubst = e2.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -806,9 +858,18 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  local ec::TypeCheck = if isMonad(e1.mtyperep)
+                        then if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, e2.mtyperep)
+                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
+                        else if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
+                             else check(e1.mtyperep, e2.mtyperep);
+  ec.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  top.mUpSubst = e2.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -863,9 +924,18 @@ top::Expr ::= e1::Expr '==' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  local ec::TypeCheck = if isMonad(e1.mtyperep)
+                        then if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, e2.mtyperep)
+                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
+                        else if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
+                             else check(e1.mtyperep, e2.mtyperep);
+  ec.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  top.mUpSubst = e2.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -920,9 +990,18 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  local ec::TypeCheck = if isMonad(e1.mtyperep)
+                        then if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, e2.mtyperep)
+                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
+                        else if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
+                             else check(e1.mtyperep, e2.mtyperep);
+  ec.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  top.mUpSubst = e2.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -976,16 +1055,23 @@ concrete production ifThen
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything else to do
 {
   top.unparse = "if " ++ e1.unparse  ++ " then " ++ e2.unparse ++ " end";
+
+  local ec::TypeCheck = if isMonad(e1.mtyperep)
+                        then check(monadInnerType(e1.mtyperep), boolType())
+                        else check(e1.mtyperep, boolType());
+  ec.finalSubst = top.finalSubst;
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
+
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
   top.upSubst = e2.upSubst;
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  top.mUpSubst = e2.mUpSubst;
 
   local bind::Expr = if isMonad(e1.mtyperep)
-                     then monadFail(e1.mtyperep, bogusLoc())
-                     else monadFail(e2.mtyperep, bogusLoc());
+                     then monadFail(e1.mtyperep, top.location)
+                     else monadFail(e2.mtyperep, top.location);
   local attribute arg::Maybe<Expr>;
   arg = case monadFailArgument(e1.mtyperep, top.location),
              monadFailArgument(e2.mtyperep, top.location) of
@@ -1021,10 +1107,25 @@ aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors ++ e3.merrors;
+
+  local ec1::TypeCheck = if isMonad(e1.mtyperep)
+                         then check(monadInnerType(e1.mtyperep), boolType())
+                         else check(e1.mtyperep, boolType());
+  local ec2::TypeCheck = if isMonad(e3.mtyperep)
+                        then if isMonad(e2.mtyperep)
+                             then check(e3.mtyperep, e2.mtyperep)
+                             else check(monadInnerType(e3.mtyperep), e2.mtyperep)
+                        else if isMonad(e2.mtyperep)
+                             then check(e3.mtyperep, monadInnerType(e2.mtyperep))
+                             else check(e3.mtyperep, e2.mtyperep);
+  ec1.finalSubst = top.finalSubst;
+  ec2.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  e3.mDownSubst = e2.mUpSubst;
-  top.mUpSubst = e3.mUpSubst;
+  ec1.downSubst = e2.mUpSubst;
+  ec2.downSubst = ec1.upSubst;
+  top.mUpSubst = ec2.upSubst;
+
   top.mtyperep = if isMonad(e1.mtyperep)
                 then if isMonad(e2.mtyperep)
                      then e2.mtyperep
@@ -1099,9 +1200,18 @@ top::Expr ::= e1::Expr '+' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  local ec::TypeCheck = if isMonad(e1.mtyperep)
+                        then if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, e2.mtyperep)
+                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
+                        else if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
+                             else check(e1.mtyperep, e2.mtyperep);
+  ec.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  top.mUpSubst = e2.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
@@ -1154,9 +1264,18 @@ top::Expr ::= e1::Expr '-' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  local ec::TypeCheck = if isMonad(e1.mtyperep)
+                        then if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, e2.mtyperep)
+                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
+                        else if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
+                             else check(e1.mtyperep, e2.mtyperep);
+  ec.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  top.mUpSubst = e2.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
@@ -1209,9 +1328,18 @@ top::Expr ::= e1::Expr '*' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  local ec::TypeCheck = if isMonad(e1.mtyperep)
+                        then if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, e2.mtyperep)
+                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
+                        else if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
+                             else check(e1.mtyperep, e2.mtyperep);
+  ec.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  top.mUpSubst = e2.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
@@ -1264,9 +1392,18 @@ top::Expr ::= e1::Expr '/' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  local ec::TypeCheck = if isMonad(e1.mtyperep)
+                        then if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, e2.mtyperep)
+                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
+                        else if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
+                             else check(e1.mtyperep, e2.mtyperep);
+  ec.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  top.mUpSubst = e2.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
@@ -1319,9 +1456,18 @@ top::Expr ::= e1::Expr '%' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
 
+  local ec::TypeCheck = if isMonad(e1.mtyperep)
+                        then if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, e2.mtyperep)
+                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
+                        else if isMonad(e2.mtyperep)
+                             then check(e1.mtyperep, monadInnerType(e2.mtyperep))
+                             else check(e1.mtyperep, e2.mtyperep);
+  ec.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  top.mUpSubst = e2.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
