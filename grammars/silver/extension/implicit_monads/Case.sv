@@ -2,7 +2,7 @@ grammar silver:extension:implicit_monads;
 
 --import silver:definition:type:syntax only typerepTypeExpr;
 
-terminal MCase_kwd 'mcase' lexer classes {KEYWORD, RESERVED};
+terminal MCase_kwd 'case_all' lexer classes {KEYWORD, RESERVED};
 
 
 synthesized attribute patternType::Type occurs on Pattern;
@@ -188,9 +188,9 @@ Expr ::= bindlst::[Pair<Type Pair<Expr String>>] base::Expr loc::Location
 }
 --case expression that expands, using mplus, to possibly take multiple cases
 concrete production mcaseExpr_c
-top::Expr ::= 'mcase' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
+top::Expr ::= 'case_all' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
 {
-  top.unparse = "mcase " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
+  top.unparse = "case_all " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
 
   {-
     This will fail if we don't have a monad type somewhere, even if
