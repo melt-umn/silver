@@ -213,6 +213,7 @@ ProductionRHS ::= realtys::[Type] currentLoc::Integer funType::Type loc::Locatio
          else productionRHSCons(productionRHSElem(name("a"++toString(currentLoc), loc),
                                                   '::',
                                                   typerepTypeExpr(dropDecorated(head(realtys)), location=loc),
+                                                  --typerepTypeExpr(head(realtys), location=loc),
                                                   location=loc),
                                 buildMonadApplicationParams(tail(realtys), currentLoc+1, funType, loc),
                                 location=loc);
@@ -1148,6 +1149,8 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
        (\c::Boolean
          x::$TypeExpr {typerepTypeExpr(dropDecorated(e2Type), location=top.location)}
          y::$TypeExpr {typerepTypeExpr(dropDecorated(e3Type), location=top.location)} ->
+         --x::$TypeExpr {typerepTypeExpr(e2Type, location=top.location)}
+         --y::$TypeExpr {typerepTypeExpr(e3Type, location=top.location)} ->
          if c
          then $Expr { if isMonad(e2.mtyperep)
                       then Silver_Expr {x}

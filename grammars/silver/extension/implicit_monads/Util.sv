@@ -63,6 +63,7 @@ Type ::= ty::Type
 {
   return case ty of
          | decoratedType(t) -> t
+         | listType(t) -> listType(t)
          | t -> t
          end;
 }
