@@ -217,11 +217,38 @@ top::Expr ::= 'mcase' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                  else p),
           pair(false, errorType()), --error as filler; won't be used
           ml.matchRuleList);
+  --local monad::Type = if monadInExprs.fst
+  --                    then performSubstitution(monadInExprs.snd, fakeforward.mUpSubst)
+  --                    else performSubstitution(monadInClauses.snd, fakeforward.mUpSubst);
   local monad::Type = if monadInExprs.fst
-                      then performSubstitution(monadInExprs.snd, top.mUpSubst)
-                      else performSubstitution(monadInClauses.snd, top.mUpSubst);
+                      then monadInExprs.snd
+                      else monadInClauses.snd;
   local mplus::Expr = monadPlus(monad, top.location);
   local mzero::Expr = monadZero(monad, top.location);
+  {-
+  --use a fake forward to get a good up substitution to make the type specific enough to get mzero
+  local ffcaseExprs::[Expr] = map(\x::AbstractMatchRule ->
+                                   caseExpr(nameExprs, [x], Silver_Expr{error("fake forward")}, freshType(),
+                                            location=top.location),
+                                  ml.matchRuleList);
+  local ffmplused::Expr = foldl(\rest::Expr current::Expr -> 
+                                 Silver_Expr{
+                                   $Expr{mplus}($Expr{rest}, $Expr{current})
+                                 },
+                                head(ffcaseExprs), tail(ffcaseExprs));
+  local fakeforward::Expr = foldr(\p::Pair<Expr String> rest::Expr ->
+                                makeLet(top.location, p.snd, freshType(), p.fst, rest),
+                               buildMonadicBinds(monadStuff.fst, ffmplused, top.location),
+                                       zipWith(pair, es.rawExprs, newNames));
+  fakeforward.downSubst = ml.mUpSubst;
+  fakeforward.mDownSubst = ml.mUpSubst;
+  fakeforward.env = top.env;
+  fakeforward.frame = top.frame;
+  fakeforward.grammarName = top.grammarName;
+  fakeforward.compiledGrammars = top.compiledGrammars;
+  fakeforward.config = top.config;
+  fakeforward.flowEnv = top.flowEnv;
+  -}
 
   --new names for using lets to bind the incoming expressions
   local newNames::[String] = map(\x::Expr -> "__sv_mcase_var_" ++ toString(genInt()), es.rawExprs);

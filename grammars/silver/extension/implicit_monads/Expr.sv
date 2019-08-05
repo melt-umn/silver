@@ -123,8 +123,8 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   nes.frame = top.frame;
   nes.finalSubst = top.finalSubst;
   nes.downSubst = top.downSubst;
-  nes.appExprTypereps = es.appExprTypereps;
-  nes.appExprApplied = es.appExprApplied;
+  nes.appExprTypereps = reverse(performSubstitution(ne.mtyperep, ne.mUpSubst).inputTypes);
+  nes.appExprApplied = ne.unparse;
 
   top.merrors := ne.merrors ++ nes.merrors;
   top.mUpSubst = nes.mUpSubst;
@@ -148,7 +148,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
                                      "match the monads used for arguments")]
                 else [];
 
-  local ety :: Type = performSubstitution(ne.mtyperep, ne.mUpSubst);
+  local ety :: Type = performSubstitution(ne.mtyperep, top.mUpSubst);
 
   --needs to change based on whether there are monads or not
   top.mtyperep = if null(nes.monadTypesLocations)
@@ -212,18 +212,10 @@ ProductionRHS ::= realtys::[Type] currentLoc::Integer funType::Type loc::Locatio
                                 location=loc)
          else productionRHSCons(productionRHSElem(name("a"++toString(currentLoc), loc),
                                                   '::',
-<<<<<<< HEAD
-                                                  typerepTypeExpr(dropDecorated(head(realtys)), location=bogusLoc()),
-                                                  location=bogusLoc()),
-                                buildMonadApplicationParams(tail(realtys), currentLoc+1, funType),
-                                location=bogusLoc());
-=======
-                                                  --typerepTypeExpr(head(realtys), location=top.location),
                                                   typerepTypeExpr(dropDecorated(head(realtys)), location=loc),
                                                   location=loc),
                                 buildMonadApplicationParams(tail(realtys), currentLoc+1, funType, loc),
                                 location=loc);
->>>>>>> cffd88b18bfe3cd9048fc8060986634b88b95c30
 }
 --build the arguments for the application inside all the binds
 function buildFunArgs
@@ -1655,7 +1647,6 @@ synthesized attribute realTypes::[Type] occurs on AppExpr, AppExprs;
 attribute monadRewritten<AppExpr>, merrors, mDownSubst, mUpSubst occurs on AppExpr;
 attribute monadRewritten<AppExprs>, merrors, mDownSubst, mUpSubst occurs on AppExprs;
 
--- These are the "new" Exprs syntax. This allows missing (_) arguments, to indicate partial application.
 aspect production missingAppExpr
 top::AppExpr ::= '_'
 {
@@ -1672,12 +1663,12 @@ top::AppExpr ::= e::Expr
 
   top.realTypes = [e.mtyperep];
   top.monadTypesLocations = if isMonadic
-                            then [pair(e.mtyperep, top.appExprIndex+1)] --not sure if that's the right index
+                            then [pair(e.mtyperep, top.appExprIndex+1)]
                             else [];
 
   --these have an 'a' at the end of their names because of a bug where local names are not local to their grammars
-  local attribute errCheck1a :: TypeCheck; errCheck1a.finalSubst = top.finalSubst;
-  local attribute errCheck2a :: TypeCheck; errCheck2a.finalSubst = top.finalSubst;
+  local attribute errCheck1a :: TypeCheck; errCheck1a.finalSubst = top.mUpSubst;
+  local attribute errCheck2a :: TypeCheck; errCheck2a.finalSubst = top.mUpSubst;
 
   e.mDownSubst = top.mDownSubst;
   errCheck1a.downSubst = e.mUpSubst;
@@ -1688,11 +1679,7 @@ top::AppExpr ::= e::Expr
   --determine whether it appears that this is supposed to take
   --   advantage of implicit monads based on types matching the
   --   expected and being monads
-  local isMonadic::Boolean = if errCheck1a.typeerror
-                             then if isMonad(e.mtyperep)
-                                  then true
-                                  else false
-                             else false;
+  local isMonadic::Boolean = isMonad(e.mtyperep) && !isMonad(top.appExprTyperep);
 
   errCheck1a = check(e.mtyperep, top.appExprTyperep);
   errCheck2a = check(monadInnerType(e.mtyperep), top.appExprTyperep);

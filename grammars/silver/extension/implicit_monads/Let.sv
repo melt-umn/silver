@@ -36,8 +36,10 @@ aspect production assignExpr
 top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
   top.merrors := e.merrors;
+  local errCheck::TypeCheck = check(t.typerep, e.mtyperep);
   e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
+  errCheck.downSubst = e.mUpSubst;
+  top.mUpSubst = errCheck.upSubst;
   top.monadRewritten = assignExpr(id, '::', t, '=', e.monadRewritten, location=top.location);
 }
 

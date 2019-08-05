@@ -43,8 +43,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   top.merrors := e.merrors ++ pr.merrors ++ f.merrors;
 
   --check the type coming up with the type that's supposed to be
-  --   coming out, which should, for case expressions (since nobody
-  --   uses just this), be just a variable(?)
+  --   coming out
   local attribute errCheck1::TypeCheck; errCheck1.finalSubst = top.finalSubst;
   errCheck1 = if isMonad(pr.mtyperep)
               then if isMonad(f.mtyperep)
