@@ -7,13 +7,17 @@ grammar silver:extension:implicit_monads;
 aspect production lengthFunction
 top::Expr ::= 'length' '(' e::Expr ')'
 {
+  local isList::Boolean = case e.mtyperep of
+                          | listType(_) -> true
+                          | _ -> false
+                          end;
   top.merrors := e.merrors;
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
-  top.mtyperep = if isMonad(e.mtyperep)
+  top.mtyperep = if !isList && isMonad(e.mtyperep)
                  then monadOfType(e.mtyperep, intType())
                  else intType();
-  top.monadRewritten = if isMonad(e.mtyperep)
+  top.monadRewritten = if !isList && isMonad(e.mtyperep)
                        then Silver_Expr {
                               $Expr {monadBind(e.mtyperep, top.location)}
                               ($Expr {e.monadRewritten},
@@ -60,14 +64,15 @@ top::Expr ::= e::Decorated Expr
   top.mtyperep = if isMonad(ne.mtyperep)
                  then monadOfType(ne.mtyperep, intType())
                  else intType();
-  top.monadRewritten = if isMonad(ne.mtyperep)
-                       then Silver_Expr {
-                              $Expr {monadBind(ne.mtyperep, top.location)}
-                              ($Expr {ne.monadRewritten},
-                              \x::$TypeExpr {typerepTypeExpr(monadInnerType(ne.mtyperep), location=top.location)} ->
-                                  $Expr {monadReturn(ne.mtyperep, top.location)} (length(x)))
-                            }
-                       else lengthFunction('length', '(', ne.monadRewritten, ')', location=top.location);
+  top.monadRewritten =
+     if isMonad(ne.mtyperep)
+     then Silver_Expr {
+            $Expr {monadBind(ne.mtyperep, top.location)}
+             ($Expr {ne.monadRewritten},
+               \x::$TypeExpr {typerepTypeExpr(monadInnerType(ne.mtyperep), location=top.location)} ->
+                     $Expr {monadReturn(ne.mtyperep, top.location)} (length(x)))
+                   }
+     else lengthFunction('length', '(', ne.monadRewritten, ')', location=top.location);
 }
 
 aspect production toIntegerFunction
@@ -127,9 +132,6 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
                        else toFloatFunction('toFloat', '(', e.monadRewritten, ')', location=top.location);
 }
 
-{-
-  TODO-Should this have special behavior for any monads?  Depends on whether it "works" on any of them.  Same with the above functions, I guess.
--}
 aspect production toStringFunction
 top::Expr ::= 'toString' '(' e::Expr ')'
 {
