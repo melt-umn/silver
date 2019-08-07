@@ -476,12 +476,61 @@ aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
+  inh.mDownSubst = e.mUpSubst;
+  top.mUpSubst = inh.mUpSubst;
   top.mtyperep = decoratedType(performSubstitution(e.mtyperep, e.mUpSubst));
   top.merrors := e.merrors;
   top.monadRewritten = decorateExprWith('decorate', e.monadRewritten, 'with',
-                                        '{', inh, '}', location=top.location);
+                                        '{', inh.monadRewritten, '}', location=top.location);
 }
+
+attribute monadRewritten<ExprInhs>, merrors, mDownSubst, mUpSubst occurs on ExprInhs;
+attribute monadRewritten<ExprInh>, merrors, mDownSubst, mUpSubst occurs on ExprInh;
+
+aspect production exprInhsEmpty
+top::ExprInhs ::= 
+{
+  top.merrors := [];
+  top.mUpSubst = top.mDownSubst;
+
+  top.monadRewritten = exprInhsEmpty(location=top.location);
+}
+
+aspect production exprInhsOne
+top::ExprInhs ::= lhs::ExprInh
+{
+  top.merrors := lhs.merrors;
+
+  lhs.mDownSubst = top.mDownSubst;
+  top.mUpSubst = lhs.mUpSubst;
+
+  top.monadRewritten = exprInhsOne(lhs.monadRewritten, location=top.location);
+}
+
+aspect production exprInhsCons
+top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
+{
+  top.merrors := lhs.merrors ++ inh.merrors;
+
+  lhs.mDownSubst = top.mDownSubst;
+  inh.mDownSubst = lhs.mUpSubst;
+  top.mUpSubst = inh.mUpSubst;
+
+  top.monadRewritten = exprInhsCons(lhs.monadRewritten, inh.monadRewritten, location=top.location);
+}
+
+aspect production exprInh
+top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
+{
+  top.merrors := e.merrors;
+
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
+
+  top.monadRewritten = exprInh(lhs, '=', e.monadRewritten, ';', location=top.location);
+}
+
+
 
 
 aspect production trueConst
@@ -659,6 +708,16 @@ aspect production gt
 top::Expr ::= e1::Expr '>' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
+  top.merrors <- if isMonad(e1.mtyperep) && isMonad(e2.mtyperep) &&
+                    !monadsMatch(e1.mtyperep, e2.mtyperep, top.mDownSubst).fst
+                 then [err(top.location, "Both monads in a '>' must be the same (got " ++
+                                          ec.rightpp ++ " and " ++ ec.leftpp ++ ")")]
+                 else [];
+
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -667,11 +726,7 @@ top::Expr ::= e1::Expr '>' e2::Expr
                         else if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, monadInnerType(e2.mtyperep))
                              else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.finalSubst;
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
+  ec.finalSubst = top.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -725,6 +780,16 @@ aspect production lt
 top::Expr ::= e1::Expr '<' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
+  top.merrors <- if isMonad(e1.mtyperep) && isMonad(e2.mtyperep) &&
+                    !monadsMatch(e1.mtyperep, e2.mtyperep, top.mDownSubst).fst
+                 then [err(top.location, "Both monads in a '<' must be the same (got " ++
+                                          ec.rightpp ++ " and " ++ ec.leftpp ++ ")")]
+                 else [];
+
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -733,11 +798,7 @@ top::Expr ::= e1::Expr '<' e2::Expr
                         else if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, monadInnerType(e2.mtyperep))
                              else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.finalSubst;
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
+  ec.finalSubst = top.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -791,6 +852,16 @@ aspect production gteq
 top::Expr ::= e1::Expr '>=' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
+  top.merrors <- if isMonad(e1.mtyperep) && isMonad(e2.mtyperep) &&
+                    !monadsMatch(e1.mtyperep, e2.mtyperep, top.mDownSubst).fst
+                 then [err(top.location, "Both monads in a '>=' must be the same (got " ++
+                                          ec.rightpp ++ " and " ++ ec.leftpp ++ ")")]
+                 else [];
+
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -799,11 +870,7 @@ top::Expr ::= e1::Expr '>=' e2::Expr
                         else if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, monadInnerType(e2.mtyperep))
                              else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.finalSubst;
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
+  ec.finalSubst = top.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -857,6 +924,16 @@ aspect production lteq
 top::Expr ::= e1::Expr '<=' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
+  top.merrors <- if isMonad(e1.mtyperep) && isMonad(e2.mtyperep) &&
+                    !monadsMatch(e1.mtyperep, e2.mtyperep, top.mDownSubst).fst
+                 then [err(top.location, "Both monads in a '<=' must be the same (got " ++
+                                          ec.rightpp ++ " and " ++ ec.leftpp ++ ")")]
+                 else [];
+
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -865,11 +942,7 @@ top::Expr ::= e1::Expr '<=' e2::Expr
                         else if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, monadInnerType(e2.mtyperep))
                              else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.finalSubst;
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
+  ec.finalSubst = top.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -923,6 +996,16 @@ aspect production eqeq
 top::Expr ::= e1::Expr '==' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
+  top.merrors <- if isMonad(e1.mtyperep) && isMonad(e2.mtyperep) &&
+                    !monadsMatch(e1.mtyperep, e2.mtyperep, top.mDownSubst).fst
+                 then [err(top.location, "Both monads in a '==' must be the same (got " ++
+                                          ec.rightpp ++ " and " ++ ec.leftpp ++ ")")]
+                 else [];
+
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -931,11 +1014,7 @@ top::Expr ::= e1::Expr '==' e2::Expr
                         else if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, monadInnerType(e2.mtyperep))
                              else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.finalSubst;
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
+  ec.finalSubst = top.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -989,6 +1068,16 @@ aspect production neq
 top::Expr ::= e1::Expr '!=' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
+  top.merrors <- if isMonad(e1.mtyperep) && isMonad(e2.mtyperep) &&
+                    !monadsMatch(e1.mtyperep, e2.mtyperep, top.mDownSubst).fst
+                 then [err(top.location, "Both monads in a '!=' must be the same (got " ++
+                                          ec.rightpp ++ " and " ++ ec.leftpp ++ ")")]
+                 else [];
+
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -997,11 +1086,7 @@ top::Expr ::= e1::Expr '!=' e2::Expr
                         else if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, monadInnerType(e2.mtyperep))
                              else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.finalSubst;
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
+  ec.finalSubst = top.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then monadOfType(e1.mtyperep, boolType())
                 else if isMonad(e2.mtyperep)
@@ -1201,6 +1286,16 @@ aspect production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
+  top.merrors <- if isMonad(e1.mtyperep) && isMonad(e2.mtyperep) &&
+                    !monadsMatch(e1.mtyperep, e2.mtyperep, top.mDownSubst).fst
+                 then [err(top.location, "Both monads in a '+' must be the same (got " ++
+                                          ec.rightpp ++ " and " ++ ec.leftpp ++ ")")]
+                 else [];
+
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -1209,11 +1304,7 @@ top::Expr ::= e1::Expr '+' e2::Expr
                         else if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, monadInnerType(e2.mtyperep))
                              else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.finalSubst;
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
+  ec.finalSubst = top.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
@@ -1265,6 +1356,16 @@ aspect production minus
 top::Expr ::= e1::Expr '-' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
+  top.merrors <- if isMonad(e1.mtyperep) && isMonad(e2.mtyperep) &&
+                    !monadsMatch(e1.mtyperep, e2.mtyperep, top.mDownSubst).fst
+                 then [err(top.location, "Both monads in a '-' must be the same (got " ++
+                                          ec.rightpp ++ " and " ++ ec.leftpp ++ ")")]
+                 else [];
+
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -1273,11 +1374,7 @@ top::Expr ::= e1::Expr '-' e2::Expr
                         else if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, monadInnerType(e2.mtyperep))
                              else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.finalSubst;
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
+  ec.finalSubst = top.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
@@ -1329,6 +1426,16 @@ aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
+  top.merrors <- if isMonad(e1.mtyperep) && isMonad(e2.mtyperep) &&
+                    !monadsMatch(e1.mtyperep, e2.mtyperep, top.mDownSubst).fst
+                 then [err(top.location, "Both monads in a '*' must be the same (got " ++
+                                          ec.rightpp ++ " and " ++ ec.leftpp ++ ")")]
+                 else [];
+
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -1337,11 +1444,7 @@ top::Expr ::= e1::Expr '*' e2::Expr
                         else if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, monadInnerType(e2.mtyperep))
                              else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.finalSubst;
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
+  ec.finalSubst = top.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
@@ -1393,6 +1496,16 @@ aspect production divide
 top::Expr ::= e1::Expr '/' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
+  top.merrors <- if isMonad(e1.mtyperep) && isMonad(e2.mtyperep) &&
+                    !monadsMatch(e1.mtyperep, e2.mtyperep, top.mDownSubst).fst
+                 then [err(top.location, "Both monads in a '/' must be the same (got " ++
+                                          ec.rightpp ++ " and " ++ ec.leftpp ++ ")")]
+                 else [];
+
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -1401,11 +1514,7 @@ top::Expr ::= e1::Expr '/' e2::Expr
                         else if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, monadInnerType(e2.mtyperep))
                              else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.finalSubst;
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
+  ec.finalSubst = top.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
@@ -1457,6 +1566,16 @@ aspect production modulus
 top::Expr ::= e1::Expr '%' e2::Expr
 {
   top.merrors := e1.merrors ++ e2.merrors;
+  top.merrors <- if isMonad(e1.mtyperep) && isMonad(e2.mtyperep) &&
+                    !monadsMatch(e1.mtyperep, e2.mtyperep, top.mDownSubst).fst
+                 then [err(top.location, "Both monads in a '%' must be the same (got " ++
+                                          ec.rightpp ++ " and " ++ ec.leftpp ++ ")")]
+                 else [];
+
+  e1.mDownSubst = top.mDownSubst;
+  e2.mDownSubst = e1.mUpSubst;
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -1465,11 +1584,7 @@ top::Expr ::= e1::Expr '%' e2::Expr
                         else if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, monadInnerType(e2.mtyperep))
                              else check(e1.mtyperep, e2.mtyperep);
-  ec.finalSubst = top.finalSubst;
-  e1.mDownSubst = top.mDownSubst;
-  e2.mDownSubst = e1.mUpSubst;
-  ec.downSubst = e2.mUpSubst;
-  top.mUpSubst = ec.upSubst;
+  ec.finalSubst = top.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
@@ -1550,47 +1665,110 @@ top::Expr ::= s::String_t
 aspect production plusPlus
 top::Expr ::= e1::Expr '++' e2::Expr
 {
+  {-
+    If they're both lists, just treat them as lists
+    If one is a list and the other isn't,
+       If the other is a monad, bind it in
+       If the other is not a monad, it's an error, but leave it alone (rewrite to itself)
+    Other values can be treated like we do in other places (bind or not for monads)
+  -}
+  local isList1::Boolean = case e1.mtyperep of
+                           | listType(_) -> true
+                           | _ -> false
+                           end;
+  local isList2::Boolean = case e2.mtyperep of
+                           | listType(_) -> true
+                           | _ -> false
+                           end;
+  top.merrors := e1.merrors ++ e2.merrors;
+  top.merrors <- if isMonad(e1.mtyperep) && isMonad(e2.mtyperep) &&
+                    !isList1 && !isList2 && !monadsMatch(e1.mtyperep, e2.mtyperep, top.mDownSubst).fst
+                 then [err(top.location, "Both monads in a '++' must be the same (got " ++
+                                          ec.rightpp ++ " and " ++ ec.leftpp ++ ")")]
+                 else [];
+
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  top.mUpSubst = e2.mUpSubst;
-{-  local result_type :: Type = if isMonad(e1.mtyperep)
-                              then performSubstitution(e1.mtyperep, errCheck1.upSubst)
-                              else performSubstitution(e2.mtyperep, errCheck1.upSubst);
+  ec.downSubst = e2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
+  top.mtyperep = if isList1
+                 then e2.mtyperep --could be a monad or not, but e1 isn't a monad, so e2 determines type
+                 else if isList2
+                      then e1.mtyperep
+                      else if isMonad(e1.mtyperep)
+                           then e1.mtyperep
+                           else e2.mtyperep;
 
-  -- Moved from 'analysis:typechecking' because we want to use this stuff here now
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.upSubst;
+  local ec::TypeCheck = if isList1
+                        then if isList2
+                             then check(e1.mtyperep, e2.mtyperep)
+                             else if isMonad(e2.mtyperep)
+                                  then check(e1.mtyperep, monadInnerType(e2.mtyperep))
+                                  else check(e1.mtyperep, e2.mtyperep)
+                        else if isList2
+                             then if isMonad(e1.mtyperep)
+                                  then check(monadInnerType(e1.mtyperep), e2.mtyperep)
+                                  else check(e1.mtyperep, e2.mtyperep)
+                             else if isMonad(e1.mtyperep)
+                                  then if isMonad(e2.mtyperep)
+                                       then check(e1.mtyperep, e2.mtyperep)
+                                       else check(monadInnerType(e1.mtyperep), e2.mtyperep)
+                                  else if isMonad(e2.mtyperep)
+                                       then check(e1.mtyperep, monadInnerType(e2.mtyperep))
+                                       else check(e1.mtyperep, e2.mtyperep);
+  ec.finalSubst = top.mUpSubst;
 
-  e1.downSubst = top.downSubst;
-  e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  forward.downSubst = monadMatchAndSubst.snd;
-  -- upSubst defined via forward :D
-  local attribute monadMatchAndSubst::Pair<Boolean Substitution>;
-  monadMatchAndSubst = if isMonad(e1.mtyperep) && isMonad(e2.mtyperep)
-                       then monadsMatch(e1.mtyperep, e2.mtyperep, errCheck1.upSubst)
-                       else pair(true, errCheck1.upSubst);
-
-  errCheck1 = check(if isMonad(e1.mtyperep)
-                    then monadInnerType(e1.mtyperep)
-                    else e1.mtyperep,
-                    if isMonad(e2.mtyperep)
-                    then monadInnerType(e2.mtyperep)
-                    else e2.mtyperep);
-  local errors::[Message] = (if errCheck1.typeerror
-                             then [err(top.location, "Operands to ++ must be the same concatenable type or monads of the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-                             else []) ++
-                            if monadMatchAndSubst.fst
-                            then []
-                            else [err(top.location, "Two monad operands to ++ must be the same monad.  Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
-
-  forwards to
-    -- if the types disagree, forward to an error production instead.
-    if errCheck1.typeerror
-    then errorExpr(errors, location=top.location)
-    else if isMonad(top.mtyperep)
-         then monadInnerType(top.mtyperep).appendDispatcher(e1, e2, top.location)
-         else top.mtyperep.appendDispatcher(e1, e2, top.location);
--}
+  --we assume both have the same monad, so we only need one return
+  --e1 >>= ( (\x y -> y >>= \z -> Return(x % z))(_, e2) )
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.mtyperep, top.location)}
+      ($Expr {e1.monadRewritten},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.mtyperep, location=top.location)} ->
+          $Expr {monadBind(e2.mtyperep, top.location)}
+          (y,
+           \z::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep), location=top.location)} ->
+            $Expr {monadReturn(e2.mtyperep, top.location)}
+            (x ++ z))) (_, $Expr {e2.monadRewritten}))
+    };
+  --e1 >>= ( (\x y -> Return(x % y))(_, e2) )
+  local bind1::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e1.mtyperep, top.location)}
+      ($Expr {e1.monadRewritten},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e1.mtyperep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(e2.mtyperep, location=top.location)} ->
+        $Expr {monadReturn(e1.mtyperep, top.location)}
+        (x ++ y))(_, $Expr {e2.monadRewritten}))
+    };
+  --e2 >>= ( (\x y -> Return(x % y))(e1, _) )
+  local bind2::Expr =
+    Silver_Expr {
+      $Expr {monadBind(e2.mtyperep, top.location)}
+      ($Expr {e2.monadRewritten},
+       (\x::$TypeExpr {typerepTypeExpr(e1.mtyperep, location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(monadInnerType(e2.mtyperep), location=top.location)} ->
+        $Expr {monadReturn(e2.mtyperep, top.location)}
+        (x ++ y))($Expr {e1.monadRewritten}, _))
+    };
+  top.monadRewritten = if isList1
+                        then if isList2
+                             then plusPlus(e1.monadRewritten, '++', e2.monadRewritten, location=top.location)
+                             else if isMonad(e2.mtyperep)
+                                  then bind2
+                                  else plusPlus(e1.monadRewritten, '++', e2.monadRewritten, location=top.location)
+                        else if isList2
+                             then if isMonad(e1.mtyperep)
+                                  then bind1
+                                  else plusPlus(e1.monadRewritten, '++', e2.monadRewritten, location=top.location)
+                             else if isMonad(e1.mtyperep)
+                                  then if isMonad(e2.mtyperep)
+                                       then bindBoth
+                                       else bind1
+                                  else if isMonad(e2.mtyperep)
+                                       then bind2
+                                       else plusPlus(e1.monadRewritten, '++', e2.monadRewritten, location=top.location);
 }
 
 aspect production stringPlusPlus
@@ -1619,14 +1797,68 @@ top::Expr ::= e1::Decorated Expr   e2::Decorated Expr
   ne2.downSubst = ne1.upSubst;
 
   top.merrors := ne1.merrors ++ ne2.merrors;
-  top.mUpSubst = ne2.mUpSubst;
+  top.merrors <- if isMonad(ne1.mtyperep) && isMonad(ne2.mtyperep) &&
+                    !monadsMatch(e1.mtyperep, e2.mtyperep, top.mDownSubst).fst
+                 then [err(top.location, "Both monads in a '++' must be the same (got " ++
+                                          ec.rightpp ++ " and " ++ ec.leftpp ++ ")")]
+                 else [];
 
-  --we assume both types will be compatible (any other case would have
-  --   been caught in plusPlus dispatching to this)
+  ec.downSubst = ne2.mUpSubst;
+  top.mUpSubst = ec.upSubst;
   top.mtyperep = if isMonad(ne1.mtyperep)
-                then ne1.mtyperep
-                else ne2.mtyperep;
-  top.monadRewritten = plusPlus(new(e1), '++', new(e2), location=top.location);
+                 then ne1.mtyperep
+                 else ne2.mtyperep;
+
+  local ec::TypeCheck = if isMonad(ne1.mtyperep)
+                        then if isMonad(ne2.mtyperep)
+                             then check(ne1.mtyperep, ne2.mtyperep)
+                             else check(monadInnerType(ne1.mtyperep), ne2.mtyperep)
+                        else if isMonad(ne2.mtyperep)
+                             then check(ne1.mtyperep, monadInnerType(ne2.mtyperep))
+                             else check(ne1.mtyperep, ne2.mtyperep);
+  ec.finalSubst = top.mUpSubst;
+
+  --we assume both have the same monad, so we only need one return
+  --e1 >>= ( (\x y -> y >>= \z -> Return(x % z))(_, e2) )
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {monadBind(ne2.mtyperep, top.location)}
+      ($Expr {ne1.monadRewritten},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne2.mtyperep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(ne2.mtyperep, location=top.location)} ->
+          $Expr {monadBind(ne2.mtyperep, top.location)}
+          (y,
+           \z::$TypeExpr {typerepTypeExpr(monadInnerType(ne2.mtyperep), location=top.location)} ->
+            $Expr {monadReturn(ne2.mtyperep, top.location)}
+            (x ++ z))) (_, $Expr {ne2.monadRewritten}))
+    };
+  --e1 >>= ( (\x y -> Return(x % y))(_, e2) )
+  local bind1::Expr =
+    Silver_Expr {
+      $Expr {monadBind(ne1.mtyperep, top.location)}
+      ($Expr {ne1.monadRewritten},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne1.mtyperep), location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(ne2.mtyperep, location=top.location)} ->
+        $Expr {monadReturn(ne1.mtyperep, top.location)}
+        (x ++ y))(_, $Expr {ne2.monadRewritten}))
+    };
+  --e2 >>= ( (\x y -> Return(x % y))(e1, _) )
+  local bind2::Expr =
+    Silver_Expr {
+      $Expr {monadBind(ne2.mtyperep, top.location)}
+      ($Expr {ne2.monadRewritten},
+       (\x::$TypeExpr {typerepTypeExpr(ne1.mtyperep, location=top.location)}
+         y::$TypeExpr {typerepTypeExpr(monadInnerType(ne2.mtyperep), location=top.location)} ->
+        $Expr {monadReturn(ne2.mtyperep, top.location)}
+        (x ++ y))($Expr {ne1.monadRewritten}, _))
+    };
+  top.monadRewritten = if isMonad(ne1.mtyperep)
+                       then if isMonad(ne2.mtyperep)
+                            then bindBoth
+                            else bind1
+                       else if isMonad(ne2.mtyperep)
+                            then bind2
+                            else plusPlus(ne1.monadRewritten, '++', ne2.monadRewritten, location=top.location);
 }
 
 aspect production errorPlusPlus

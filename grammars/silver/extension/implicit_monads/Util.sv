@@ -168,6 +168,25 @@ Expr ::= ty::Type l::Location
          | _ -> error("Tried to get the return for a non-monadic type at " ++ l.unparse)
          end;
 }
+function monadFailExists
+Boolean ::= ty::Type
+{
+  return case ty of
+         | nonterminalType("core:Maybe", _) -> true
+         | nonterminalType("core:Either", _) -> true
+         | nonterminalType("core:IOMonad", _) -> false
+         | nonterminalType("core:State", _) -> false
+         | listType(_) -> true
+         | decoratedType(t) -> monadFailExists(t)
+         | _ -> false
+         end;
+}
+{-
+  TODO monadFailExists, monadFail, and monadFailArgument should combine into a
+  single function return type Maybe<Expr> that returns nothing() if there is no
+  fail and just(fail(arg)) if the fail is defined.  This is not happening now
+  due to time constraints.
+-}
 function monadFail
 Expr ::= ty::Type l::Location
 {
@@ -198,6 +217,7 @@ Maybe<Expr> ::= ty::Type l::Location
              location=l);
   local int::Expr = Silver_Expr { 0 };
   local float::Expr = Silver_Expr { 0.0 };
+  local bool::Expr = Silver_Expr { false };
   local list::Expr = Silver_Expr { [] };
   return case ty of
          | nonterminalType("core:Maybe", _) -> just(string)
@@ -206,6 +226,7 @@ Maybe<Expr> ::= ty::Type l::Location
            | stringType() -> just(string)
            | intType() -> just(int)
            | floatType() -> just(float)
+           | boolType() -> just(bool)
            | listType(_) -> just(list)
            | _ -> nothing()
            end
@@ -213,6 +234,12 @@ Maybe<Expr> ::= ty::Type l::Location
          | _ -> nothing()
          end;
 }
+
+{-
+  TODO these should probably return Maybe<Expr> rather than erroring on monads
+  for which it's undefined, then let the places calling them create errors to
+  go in merrors
+-}
 function monadPlus
 Expr ::= ty::Type l::Location
 {

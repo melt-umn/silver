@@ -121,6 +121,47 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
   top.monadRewritten = top;
 }-}
 
+--Write an empty equation filled in by an appropriate fail
+concrete production emptyAttributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
+{
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
+
+  top.productionAttributes = [];
+  top.defs = [];
+
+  top.merrors := [];
+  top.merrors <-
+    if isMonad(attr.typerep) && !monadFailExists(attr.typerep)
+    then [err(top.location, "Fail is not defined for monad " ++ prettyType(attr.typerep) ++
+                            " and thus cannot be defined with an empty equation")]
+    else [];
+  top.merrors <- if isMonad(attr.typerep) && monadFailExists(attr.typerep)
+                 then case mfailarg of
+                      | just(_) -> []
+                      | nothing() ->
+                        [err(top.location, "Too complicated an argument type for fail in monad " ++
+                                           prettyType(attr.typerep))]
+                      end
+                 else [];
+  top.merrors <- if !isMonad(attr.typerep)
+                 then [err(top.location, "Empty equations can only be used for " ++
+                                            "monad-typed attributes, not attributes of type " ++
+                                            prettyType(attr.typerep))]
+                 else [];
+
+  dl.defLHSattr = attr;
+  attr.attrFor = dl.typerep;
+
+  local mfailarg::Maybe<Expr> = monadFailArgument(attr.typerep, top.location);
+  forwards to if null(top.merrors)
+              then attributeDef(dl, '.', attr, '=',
+                                Silver_Expr { $Expr{monadFail(attr.typerep, top.location)}
+                                               ($Expr{case mfailarg of just(a) -> a end}) },
+                                ';', location=top.location)
+              else errorProductionStmt(top.merrors, location=top.location);
+}
+
 aspect production attributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
