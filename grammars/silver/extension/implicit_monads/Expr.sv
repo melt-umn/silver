@@ -99,6 +99,59 @@ top::Expr ::= q::Decorated QName
   top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
+aspect production application
+top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
+{
+  {-
+    We bind e in here because this would otherwise forward to an error.
+    Everything else will work out fine by rewriting in a forward other than this.
+    Errors might not be great if we have different monads here and in arguments;
+       once partial application works, we could just do the whole rewriting here
+  -}
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = if isMonad(e.mtyperep)
+                 then rewrite.mUpSubst
+                 else forward.mUpSubst;
+  top.mtyperep = if isMonad(e.mtyperep)
+                 then rewrite.mtyperep
+                 else forward.mtyperep;
+
+  top.merrors := e.merrors;
+
+  local newname::String = "__sv_monad_function_" ++ toString(genInt());
+  local param::ProductionRHS = productionRHSCons(productionRHSElem(name(newname, top.location),
+                                                  '::',
+                                                  typerepTypeExpr(monadInnerType(e.mtyperep),
+                                                                  location=top.location),
+                                                  location=top.location),
+                                productionRHSNil(location=top.location),
+                                location=top.location);
+  -- e >>= \x. x(es, anns)
+  --we might need a return--depends on return type of e's inner type
+  --it also depends on whether we have monadic arguments, because that will make the application inside here return a monad rather than the return type of e's inner type
+  local rewrite::Expr =
+          Silver_Expr { $Expr{monadBind(e.mtyperep, top.location)}
+                          ($Expr{e.monadRewritten},
+                           $Expr{lambdap(param,
+                                 application(baseExpr(qName(top.location, newname),
+                                                      location=top.location),
+                                             '(', es, ',', anns, ')',
+                                             location=top.location),
+                                 location=top.location)}) };
+  rewrite.mDownSubst = e.mUpSubst;
+  rewrite.env = top.env;
+  rewrite.flowEnv = top.flowEnv;
+  rewrite.config = top.config;
+  rewrite.compiledGrammars = top.compiledGrammars;
+  rewrite.grammarName = top.grammarName;
+  rewrite.frame = top.frame;
+  rewrite.finalSubst = top.mUpSubst;
+  rewrite.downSubst = e.mUpSubst;
+
+  top.monadRewritten = if isMonad(e.mtyperep)
+                       then rewrite.monadRewritten
+                       else forward.monadRewritten;
+}
 
 aspect production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
@@ -1798,7 +1851,7 @@ top::Expr ::= e1::Decorated Expr   e2::Decorated Expr
 
   top.merrors := ne1.merrors ++ ne2.merrors;
   top.merrors <- if isMonad(ne1.mtyperep) && isMonad(ne2.mtyperep) &&
-                    !monadsMatch(e1.mtyperep, e2.mtyperep, top.mDownSubst).fst
+                    !monadsMatch(ne1.mtyperep, ne2.mtyperep, top.mDownSubst).fst
                  then [err(top.location, "Both monads in a '++' must be the same (got " ++
                                           ec.rightpp ++ " and " ++ ec.leftpp ++ ")")]
                  else [];
