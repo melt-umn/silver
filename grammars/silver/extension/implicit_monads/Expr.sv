@@ -109,6 +109,22 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
        once partial application works, we could just do the whole rewriting here
   -}
   e.mDownSubst = top.mDownSubst;
+  --we need a new copy to be able to set appExprTypereps
+  local nes::AppExprs = es;
+  nes.mDownSubst = e.mUpSubst;
+  nes.flowEnv = top.flowEnv;
+  nes.env = top.env;
+  nes.config = top.config;
+  nes.compiledGrammars = top.compiledGrammars;
+  nes.grammarName = top.grammarName;
+  nes.frame = top.frame;
+  nes.finalSubst = top.finalSubst;
+  nes.downSubst = top.downSubst;
+  nes.appExprTypereps = reverse(performSubstitution(if isMonad(e.mtyperep)
+                                                   then monadInnerType(e.mtyperep)
+                                                   else e.mtyperep, e.mUpSubst).inputTypes);
+  nes.appExprApplied = e.unparse;
+
   top.mUpSubst = if isMonad(e.mtyperep)
                  then rewrite.mUpSubst
                  else forward.mUpSubst;
@@ -118,6 +134,10 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 
   top.merrors := e.merrors;
 
+  local ety :: Type = performSubstitution(monadInnerType(e.mtyperep), e.mUpSubst);
+  --whether we need to wrap the ultimate function call in monadRewritten in a Return
+  local wrapReturn::Boolean = !isMonad(ety.outputType) && null(nes.monadTypesLocations);
+
   local newname::String = "__sv_monad_function_" ++ toString(genInt());
   local param::ProductionRHS = productionRHSCons(productionRHSElem(name(newname, top.location),
                                                   '::',
@@ -126,17 +146,25 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
                                                   location=top.location),
                                 productionRHSNil(location=top.location),
                                 location=top.location);
-  -- e >>= \x. x(es, anns)
-  --we might need a return--depends on return type of e's inner type
-  --it also depends on whether we have monadic arguments, because that will make the application inside here return a monad rather than the return type of e's inner type
+  local inside::Expr =
+     if wrapReturn
+     then Silver_Expr { $Expr{monadReturn(e.mtyperep, top.location)}
+                          ($Expr{application(baseExpr(qName(top.location, newname),
+                                                      location=top.location),
+                                             '(', es, ',', anns, ')',
+                                             location=top.location)}) }
+     else application(baseExpr(qName(top.location, newname),
+                               location=top.location),
+                      '(', es, ',', anns, ')',
+                      location=top.location);
+  -- e >>= \x. x(es, anns)   OR   e >>= \x. return(x(es, anns))
+  --we might need a return--depends on return type of e's inner type and whether
+  --   there are monadic arguments, which will be taken care of by further rewriting
   local rewrite::Expr =
           Silver_Expr { $Expr{monadBind(e.mtyperep, top.location)}
                           ($Expr{e.monadRewritten},
                            $Expr{lambdap(param,
-                                 application(baseExpr(qName(top.location, newname),
-                                                      location=top.location),
-                                             '(', es, ',', anns, ')',
-                                             location=top.location),
+                                 inside,
                                  location=top.location)}) };
   rewrite.mDownSubst = e.mUpSubst;
   rewrite.env = top.env;
