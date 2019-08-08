@@ -19,17 +19,25 @@ top::Expr ::= la::AssignExpr  e::Expr
   top.merrors := la.merrors ++ e.merrors;
   -- TODO do some error checking for the monads all matching
 
+  local ne::Expr = e;
+  ne.config = top.config;
+  ne.grammarName = top.grammarName;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.flowEnv = top.flowEnv; --this should be okay?
+  ne.frame = top.frame;
+  ne.downSubst = top.mDownSubst;
+  ne.finalSubst = top.mUpSubst;
+  ne.env = newScopeEnv(la.mdefs, top.env);
+
   la.mDownSubst = top.mDownSubst;
-  e.mDownSubst = la.mUpSubst;
-  top.mUpSubst = e.mUpSubst;
+  ne.mDownSubst = la.mUpSubst;
+  top.mUpSubst = ne.mUpSubst;
 
-  top.mtyperep = if isMonad(e.mtyperep) || null(la.bindInList)
-                 then e.mtyperep
+  top.mtyperep = if isMonad(ne.mtyperep) || null(la.bindInList)
+                 then ne.mtyperep
                  else case la.monadUsed of
-                      | just(ty) -> monadOfType(ty, e.mtyperep)
+                      | just(ty) -> monadOfType(ty, ne.mtyperep)
                       end;
-
-  --top.monadRewritten = letp(la.monadRewritten, e.monadRewritten, location=top.location);
 
   local mreturn::Expr = case la.monadUsed of
                         | just(ty) -> monadReturn(ty, top.location)
@@ -49,13 +57,14 @@ top::Expr ::= la::AssignExpr  e::Expr
     expressions to names at once in a let; after that, we are free to use the
     names to create binds.
   -}
-  local rewrittenLets::Expr =
-     letp(la.fixedAssigns,
-          if isMonad(e.mtyperep) || null(la.bindInList)
-          then e.monadRewritten
-          else Silver_Expr { $Expr{mreturn}($Expr{e.monadRewritten}) },
-          location=top.location);
   top.monadRewritten =
+     letp(la.fixedAssigns,
+          boundIn,
+          location=top.location);
+  local inside::Expr = if isMonad(e.mtyperep) || null(la.bindInList)
+                       then e.monadRewritten
+                       else Silver_Expr { $Expr{mreturn}($Expr{e.monadRewritten}) };
+  local boundIn::Expr =
          foldr(\x::Pair<Name TypeExpr> y::Expr ->
                  Silver_Expr {
                   $Expr{mbind}
@@ -64,7 +73,7 @@ top::Expr ::= la::AssignExpr  e::Expr
                                                   location=top.location),
                                     productionRHSNil(location=top.location),
                                     location=top.location), y, location=top.location)}) },
-                  rewrittenLets, la.bindInList);
+                  inside, la.bindInList);
 }
 
 
@@ -72,6 +81,8 @@ synthesized attribute fixedAssigns::AssignExpr occurs on AssignExpr;
 synthesized attribute bindInList::[Pair<Name TypeExpr>] occurs on AssignExpr;
 --if bindInList is not empty, monadUsed must be just(ty) where ty is a monad type
 synthesized attribute monadUsed::Maybe<Type> occurs on AssignExpr;
+--definitions, but ones that won't cause errors with monad type mismatches in let definitions
+synthesized attribute mdefs::[Def] occurs on AssignExpr;
 
 attribute merrors, monadRewritten<AssignExpr>, mDownSubst, mUpSubst occurs on AssignExpr;
 
@@ -82,6 +93,8 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
   a1.mDownSubst = top.mDownSubst;
   a2.mDownSubst = a1.mUpSubst;
   top.mUpSubst = monadCheck.snd;
+
+  top.mdefs = a1.mdefs ++ a2.mdefs;
 
   top.bindInList = a1.bindInList ++ a2.bindInList;
 
@@ -111,6 +124,10 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   e.mDownSubst = top.mDownSubst;
   errCheck.downSubst = e.mUpSubst;
   top.mUpSubst = errCheck.upSubst;
+
+  top.mdefs = [lexicalLocalDef(top.grammarName, id.location, fName,
+                               performSubstitution(t.typerep, top.mUpSubst),
+                               e.flowVertexInfo, e.flowDeps)];
 
   top.monadUsed = if isMonad(e.mtyperep) && !isMonad(t.typerep)
                   then just(e.mtyperep)
