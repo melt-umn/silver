@@ -130,6 +130,26 @@ Type ::= mty::Type newInner::Type
 }
 
 
+function monadToString
+String ::= ty::Type
+{
+  return case ty of
+         | nonterminalType("core:Maybe", _) ->
+           "Maybe<a>"
+         | nonterminalType("core:Either", [p, a]) ->
+           "Either<" ++ prettyType(p) ++ " a>"
+         | nonterminalType("core:IOMonad", _) ->
+           "IOMonad<a>"
+         | nonterminalType("core:State", [p, a]) ->
+           "State<" ++ prettyType(p) ++ " a>"
+         | listType(_) ->
+           "[a]"
+         | decoratedType(t) -> monadToString(t)
+         | _ -> error("Tried to get monadToString for a non-monadic type")
+         end;
+}
+
+
 {-find the name of the bind/return for a given monad to use to build
   the rewritten term-}
 function monadBind

@@ -16,14 +16,25 @@ grammar silver:extension:implicit_monads;
 aspect production letp
 top::Expr ::= la::AssignExpr  e::Expr
 {
-  top.merrors := la.merrors ++ e.merrors;
-  -- TODO do some error checking for the monads all matching
+  top.merrors := la.merrors ++ ne.merrors;
+  top.merrors <- if isMonad(ne.mtyperep)
+                 then case la.monadUsed of
+                      | just(ty) ->
+                        if monadsMatch(ty, ne.mtyperep, top.mUpSubst).fst
+                        then []
+                        else [err(top.location,
+                                  "The monad returned from the body of a let (" ++ monadToString(ne.mtyperep) ++
+                                  ") must match the monad of expressions bound from that let (" ++
+                                  monadToString(ty) ++ ")")]
+                      | nothing() -> []
+                      end
+                 else [];
 
   local ne::Expr = e;
   ne.config = top.config;
   ne.grammarName = top.grammarName;
   ne.compiledGrammars = top.compiledGrammars;
-  ne.flowEnv = top.flowEnv; --this should be okay?
+  ne.flowEnv = top.flowEnv;
   ne.frame = top.frame;
   ne.downSubst = top.mDownSubst;
   ne.finalSubst = top.mUpSubst;
@@ -84,12 +95,22 @@ synthesized attribute monadUsed::Maybe<Type> occurs on AssignExpr;
 --definitions, but ones that won't cause errors with monad type mismatches in let definitions
 synthesized attribute mdefs::[Def] occurs on AssignExpr;
 
-attribute merrors, monadRewritten<AssignExpr>, mDownSubst, mUpSubst occurs on AssignExpr;
+attribute merrors, mDownSubst, mUpSubst occurs on AssignExpr;
 
 aspect production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 {
   top.merrors := a1.merrors ++ a2.merrors;
+  top.merrors <- case a1.monadUsed, a2.monadUsed of
+                 | just(ty1), just(ty2) -> 
+                   if monadCheck.fst
+                   then []
+                   else [err(top.location, "Multiple monads to be bound from the same let must " ++
+                                           "have the same type; instead, have " ++ monadToString(ty1) ++
+                                           " and " ++ monadToString(ty2))]
+                 | _, _ -> []
+                 end;
+
   a1.mDownSubst = top.mDownSubst;
   a2.mDownSubst = a1.mUpSubst;
   top.mUpSubst = monadCheck.snd;
@@ -109,7 +130,6 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
                   end;
 
   top.fixedAssigns = appendAssignExpr(a1.fixedAssigns, a2.fixedAssigns, location=top.location);
-  top.monadRewritten = appendAssignExpr(a1.monadRewritten, a2.monadRewritten, location=top.location);
 }
 
 aspect production assignExpr
@@ -143,7 +163,6 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
                                                                location=top.location),
                                      '=', e.monadRewritten, location=top.location)
                      else assignExpr(id, '::', t, '=', e.monadRewritten, location=top.location);
-  top.monadRewritten = assignExpr(id, '::', t, '=', e.monadRewritten, location=top.location);
 }
 
 
