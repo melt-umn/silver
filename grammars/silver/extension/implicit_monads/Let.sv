@@ -23,9 +23,13 @@ top::Expr ::= la::AssignExpr  e::Expr
   e.mDownSubst = la.mUpSubst;
   top.mUpSubst = e.mUpSubst;
 
-  top.mtyperep = e.mtyperep;
+  top.mtyperep = if isMonad(e.mtyperep) || null(la.bindInList)
+                 then e.mtyperep
+                 else case la.monadUsed of
+                      | just(ty) -> monadOfType(ty, e.mtyperep)
+                      end;
 
-  top.monadRewritten = letp(la.monadRewritten, e.monadRewritten, location=top.location);
+  --top.monadRewritten = letp(la.monadRewritten, e.monadRewritten, location=top.location);
 
   local mreturn::Expr = case la.monadUsed of
                         | just(ty) -> monadReturn(ty, top.location)
@@ -34,34 +38,38 @@ top::Expr ::= la::AssignExpr  e::Expr
                       | just(ty) -> monadBind(ty, top.location)
                       end;
 
-  --because of the semantics of lets where the names can't be used in other
-  --definitions in the same let, it doesn't matter whether we bind over the let
-  --or under the let, nor does it matter that we might change the order
-  --The order matters because they might be redefining names, so this needs to be rethought
-  local keepLets::Expr =
-     if null(la.keepLetList)
-     then e.monadRewritten
-     else letp(foldr(\x::AssignExpr y::AssignExpr -> appendAssignExpr(x, y, location=top.location),
-                     head(la.keepLetList), tail(la.keepLetList)),
-               e.monadRewritten, location=top.location);
-  local makeBinds::Expr =
-     if null(la.bindInList)
-     then keepLets
-     else foldr(\x::Pair<Name Pair<TypeExpr Expr>> y::Expr ->
+  {-
+    Our rewriting here binds in anything after the let to keep names from
+    interfering with each other.  For example, if we have
+        let a::Ta = ea; b::Tb = eb; c::Tc = ec in d
+    where a and c are monadic, we rewrite to
+        let a::M<Ta> = ea; b::Tb = eb; c::M<Tc> = ec in a >>= \a::Ta. c >>= \c::Tc. d
+    This ensures our names do not interfere with prevous ones.  For example, ec
+    might reference an a that existed before the let, so we need to bind all the
+    expressions to names at once in a let; after that, we are free to use the
+    names to create binds.
+  -}
+  local rewrittenLets::Expr =
+     letp(la.fixedAssigns,
+          if isMonad(e.mtyperep) || null(la.bindInList)
+          then e.monadRewritten
+          else Silver_Expr { $Expr{mreturn}($Expr{e.monadRewritten}) },
+          location=top.location);
+  top.monadRewritten =
+         foldr(\x::Pair<Name TypeExpr> y::Expr ->
                  Silver_Expr {
                   $Expr{mbind}
-                   ($Expr{x.snd.snd},
-                    $Expr{lambdap(productionRHSCons(productionRHSElem(x.fst, '::', x.snd.fst,
+                   ($Expr{baseExpr(qName(top.location, x.fst.name), location=top.location)},
+                    $Expr{lambdap(productionRHSCons(productionRHSElem(x.fst, '::', x.snd,
                                                   location=top.location),
                                     productionRHSNil(location=top.location),
                                     location=top.location), y, location=top.location)}) },
-                  if isMonad(e.mtyperep) then keepLets else Silver_Expr{$Expr{mreturn}($Expr{keepLets})},
-                  la.bindInList);
+                  rewrittenLets, la.bindInList);
 }
 
 
-synthesized attribute bindInList::[Pair<Name Pair<TypeExpr Expr>>] occurs on AssignExpr;
-synthesized attribute keepLetList::[AssignExpr] occurs on AssignExpr;
+synthesized attribute fixedAssigns::AssignExpr occurs on AssignExpr;
+synthesized attribute bindInList::[Pair<Name TypeExpr>] occurs on AssignExpr;
 --if bindInList is not empty, monadUsed must be just(ty) where ty is a monad type
 synthesized attribute monadUsed::Maybe<Type> occurs on AssignExpr;
 
@@ -76,7 +84,6 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
   top.mUpSubst = monadCheck.snd;
 
   top.bindInList = a1.bindInList ++ a2.bindInList;
-  top.keepLetList = a1.keepLetList ++ a2.keepLetList;
 
   local monadCheck::Pair<Boolean Substitution> =
      case a1.monadUsed, a2.monadUsed of
@@ -88,6 +95,7 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
                   | t, _ -> t
                   end;
 
+  top.fixedAssigns = appendAssignExpr(a1.fixedAssigns, a2.fixedAssigns, location=top.location);
   top.monadRewritten = appendAssignExpr(a1.monadRewritten, a2.monadRewritten, location=top.location);
 }
 
@@ -108,14 +116,16 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
                   then just(e.mtyperep)
                   else nothing();
 
-  --note that these two lists ought to be disjoint
   top.bindInList = if isMonad(e.mtyperep) && !isMonad(t.typerep)
-                   then [pair(id, pair(t, e.monadRewritten))]
+                   then [pair(id, t)]
                    else [];
-  top.keepLetList = if isMonad(e.mtyperep) && !isMonad(t.typerep)
-                    then []
-                    else [assignExpr(id, '::', t, '=', e.monadRewritten, location=top.location)];
 
+  top.fixedAssigns = if isMonad(e.mtyperep) && !isMonad(t.typerep)
+                     --use t.typerep to get typechecking when we create the ultimate monadRewritten
+                     then assignExpr(id, '::', typerepTypeExpr(monadOfType(e.mtyperep, t.typerep),
+                                                               location=top.location),
+                                     '=', e.monadRewritten, location=top.location)
+                     else assignExpr(id, '::', t, '=', e.monadRewritten, location=top.location);
   top.monadRewritten = assignExpr(id, '::', t, '=', e.monadRewritten, location=top.location);
 }
 
