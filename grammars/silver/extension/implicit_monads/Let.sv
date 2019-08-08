@@ -30,6 +30,7 @@ top::Expr ::= la::AssignExpr  e::Expr
                       end
                  else [];
 
+  --We needed to provide our own environment.
   local ne::Expr = e;
   ne.config = top.config;
   ne.grammarName = top.grammarName;
@@ -49,6 +50,12 @@ top::Expr ::= la::AssignExpr  e::Expr
                  else case la.monadUsed of
                       | just(ty) -> monadOfType(ty, ne.mtyperep)
                       end;
+
+  --I'm not entirely sure if this should be false.  It might be that it should
+  --be based on top.monadicallyUsed and whether other things become binds or
+  --something.
+  ne.monadicallyUsed = false;
+  top.monadicNames = la.monadicNames ++ ne.monadicNames;
 
   local mreturn::Expr = case la.monadUsed of
                         | just(ty) -> monadReturn(ty, top.location)
@@ -95,7 +102,7 @@ synthesized attribute monadUsed::Maybe<Type> occurs on AssignExpr;
 --definitions, but ones that won't cause errors with monad type mismatches in let definitions
 synthesized attribute mdefs::[Def] occurs on AssignExpr;
 
-attribute merrors, mDownSubst, mUpSubst occurs on AssignExpr;
+attribute merrors, mDownSubst, mUpSubst, monadicNames occurs on AssignExpr;
 
 aspect production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
@@ -114,6 +121,8 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
   a1.mDownSubst = top.mDownSubst;
   a2.mDownSubst = a1.mUpSubst;
   top.mUpSubst = monadCheck.snd;
+
+  top.monadicNames = a1.monadicNames ++ a2.monadicNames;
 
   top.mdefs = a1.mdefs ++ a2.mdefs;
 
@@ -145,6 +154,14 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   errCheck.downSubst = e.mUpSubst;
   top.mUpSubst = errCheck.upSubst;
 
+  --I'm not entirely sure about this vs. false--it should only matter if we are
+  --directly redefining a name (doing x::T=y), which would be weird for a person
+  --to write (?), and redfining it monadically.  This would happen if the person
+  --was putting in a let after let insertion failed, but then this should be the
+  --only place where the name occurs, so it wouldn't affect anything then either.
+  e.monadicallyUsed = isMonad(e.mtyperep) && !isMonad(t.typerep);
+  top.monadicNames = e.monadicNames;
+
   top.mdefs = [lexicalLocalDef(top.grammarName, id.location, fName,
                                performSubstitution(t.typerep, top.mUpSubst),
                                e.flowVertexInfo, e.flowDeps)];
@@ -174,5 +191,8 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.lookupValue.typerep;
+  top.monadicNames = if top.monadicallyUsed
+                     then [baseExpr(new(q), location=top.location)]
+                     else [];
   top.monadRewritten = baseExpr(new(q), location=top.location);
 }

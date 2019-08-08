@@ -1,5 +1,11 @@
 grammar silver:extension:implicit_monads;
 
+--whether an expression needs to be bound into its immediate parent
+inherited attribute monadicallyUsed::Boolean occurs on Expr;
+--a collection of names/attribute accesses that are monadically used
+--it's a list of expressions for attribute accesses
+synthesized attribute monadicNames::[Expr] occurs on Expr, AppExpr, AppExprs;
+
 attribute monadRewritten<Expr>, merrors, mtyperep, mDownSubst, mUpSubst occurs on Expr;
 
 
@@ -7,8 +13,6 @@ aspect default production
 top::Expr ::=
 {
   top.merrors := [];
-  --top.monadRewritten = error("Attribute monadRewritten must be defined on all productions");
-  --top.mtyperep = errorType();
 }
 
 
@@ -18,6 +22,7 @@ top::Expr ::= e::[Message]
   top.merrors := e;
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = errorType();
+  top.monadicNames = [];
   top.monadRewritten = errorExpr(e, location=top.location);
 }
 
@@ -27,6 +32,7 @@ top::Expr ::= msg::[Message]  q::Decorated QName
   top.merrors := msg;
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = errorType();
+  top.monadicNames = [];
   top.monadRewritten = errorReference(msg, q, location=top.location);
 }
 
@@ -38,6 +44,9 @@ top::Expr ::= q::Decorated QName
   top.mtyperep = if q.lookupValue.typerep.isDecorable
                  then ntOrDecType(q.lookupValue.typerep, freshType())
                  else q.lookupValue.typerep;
+  top.monadicNames = if top.monadicallyUsed
+                     then [baseExpr(new(q), location=top.location)]
+                     else [];
   top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
@@ -46,8 +55,10 @@ top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
-  -- An LHS is *always* a decorable (nonterminal) type.
   top.mtyperep = ntOrDecType(q.lookupValue.typerep, freshType());
+  top.monadicNames = if top.monadicallyUsed
+                     then [baseExpr(new(q), location=top.location)]
+                     else [];
   top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
@@ -59,6 +70,9 @@ top::Expr ::= q::Decorated QName
   top.mtyperep = if q.lookupValue.typerep.isDecorable
                  then ntOrDecType(q.lookupValue.typerep, freshType())
                  else q.lookupValue.typerep;
+  top.monadicNames = if top.monadicallyUsed
+                     then [baseExpr(new(q), location=top.location)]
+                     else [];
   top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
@@ -69,6 +83,9 @@ top::Expr ::= q::Decorated QName
   top.mUpSubst = top.mDownSubst;
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
   top.mtyperep = ntOrDecType(q.lookupValue.typerep, freshType());
+  top.monadicNames = if top.monadicallyUsed
+                     then [baseExpr(new(q), location=top.location)]
+                     else [];
   top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
@@ -78,6 +95,9 @@ top::Expr ::= q::Decorated QName
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = freshenCompletely(q.lookupValue.typerep);
+  top.monadicNames = if top.monadicallyUsed
+                     then [baseExpr(new(q), location=top.location)]
+                     else [];
   top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
@@ -87,6 +107,9 @@ top::Expr ::= q::Decorated QName
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = freshenCompletely(q.lookupValue.typerep);
+  top.monadicNames = if top.monadicallyUsed
+                     then [baseExpr(new(q), location=top.location)]
+                     else [];
   top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
@@ -96,6 +119,9 @@ top::Expr ::= q::Decorated QName
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = freshenCompletely(q.lookupValue.typerep);
+  top.monadicNames = if top.monadicallyUsed
+                     then [baseExpr(new(q), location=top.location)]
+                     else [];
   top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
@@ -132,7 +158,12 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
                  then rewrite.mtyperep
                  else forward.mtyperep;
 
-  top.merrors := e.merrors;
+  e.monadicallyUsed = if isMonad(e.mtyperep)
+                      then true
+                      else false;
+  top.monadicNames = e.monadicNames ++ nes.monadicNames;
+
+  top.merrors := e.merrors ++ nes.merrors;
 
   local ety :: Type = performSubstitution(monadInnerType(e.mtyperep), e.mUpSubst);
   --whether we need to wrap the ultimate function call in monadRewritten in a Return
@@ -237,6 +268,9 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
                  else if isMonad(ety.outputType)
                       then ety.outputType
                       else monadOfType(head(nes.monadTypesLocations).fst, ety.outputType);
+
+  ne.monadicallyUsed = false; --we aren't dealing with monad-typed functions here
+  top.monadicNames = ne.monadicNames ++ nes.monadicNames;
 
   --whether we need to wrap the ultimate function call in monadRewritten in a Return
   local wrapReturn::Boolean = !isMonad(ety.outputType) && !null(nes.monadTypesLocations);
@@ -379,6 +413,9 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   top.merrors := ne.merrors ++ nes.merrors;
   top.mUpSubst = ne.mUpSubst;
 
+  ne.monadicallyUsed = false; --we aren't dealing with anything here, actually
+  top.monadicNames = error("monadicNames not defined on partial applications");
+
   local ety :: Type = performSubstitution(ne.mtyperep, ne.mUpSubst);
 
   top.mtyperep = functionType(ety.outputType, nes.missingTypereps ++ anns.partialAnnoTypereps, anns.missingAnnotations);
@@ -401,6 +438,8 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 
   top.merrors := ne.merrors;
 
+  top.monadicNames = [];
+
   top.mUpSubst = ne.mUpSubst;
   top.mtyperep = errorType();
   top.monadRewritten = application(new(e), '(', es, ',', anns, ')', location=top.location);
@@ -412,6 +451,7 @@ top::Expr ::= '(' '.' q::QName ')'
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = functionType(freshenCompletely(q.lookupAttribute.typerep), [freshType()], []);
+  top.monadicNames = [];
   top.monadRewritten = attributeSection('(', '.', q, ')', location=top.location);
 }
 
@@ -422,6 +462,8 @@ top::Expr ::= e::Expr '.' 'forward'
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
   top.mtyperep = e.mtyperep;
+  e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
+  top.monadicNames = e.monadicNames;
   top.monadRewritten = forwardAccess(e.monadRewritten, '.', 'forward', location=top.location);
 }
 
@@ -431,6 +473,10 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   e.mDownSubst = top.mDownSubst;
   forward.mDownSubst = e.mUpSubst;
   top.merrors := e.merrors ++ forward.merrors;
+  e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
+  top.monadicNames = if top.monadicallyUsed
+                     then [top] ++ e.monadicNames
+                     else e.monadicNames;
   top.monadRewritten = access(e.monadRewritten, '.', q, location=top.location);
 }
 
@@ -440,6 +486,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.mtyperep = errorType();
   top.mUpSubst = top.mDownSubst;
   top.merrors := [];
+  top.monadicNames = [];
   top.monadRewritten = access(new(e), '.', new(q), location=top.location);
 }
 
@@ -456,6 +503,11 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+
+  ne.monadicallyUsed = false; --this needs to change when we decorate monadic trees
+  top.monadicNames = if top.monadicallyUsed
+                     then [access(new(e), '.', new(q), location=top.location)] ++ ne.monadicNames
+                     else ne.monadicNames;
 
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.typerep;
@@ -479,6 +531,11 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 
   top.merrors := ne.merrors;
   top.mUpSubst = top.mDownSubst;
+
+  ne.monadicallyUsed = false; --this needs to change when we decorate monadic trees
+  top.monadicNames = if top.monadicallyUsed
+                     then [access(new(e), '.', new(q), location=top.location)] ++ ne.monadicNames
+                     else ne.monadicNames;
 
   top.mtyperep =
     if q.name == "lexeme" || q.name == "filename"
@@ -506,6 +563,11 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
 
+  ne.monadicallyUsed = false; --this needs to change when we decorate monadic trees
+  top.monadicNames = if top.monadicallyUsed
+                     then [access(new(e), '.', new(q), location=top.location)] ++ ne.monadicNames
+                     else ne.monadicNames;
+
   top.mtyperep = q.typerep;
   top.mUpSubst = top.mDownSubst;
   top.merrors := ne.merrors;
@@ -525,6 +587,11 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+
+  ne.monadicallyUsed = false; --this needs to change when we decorate monadic trees
+  top.monadicNames = if top.monadicallyUsed
+                     then [access(new(e), '.', new(q), location=top.location)] ++ ne.monadicNames
+                     else ne.monadicNames;
 
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.typerep;
@@ -546,6 +613,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
 
+  top.monadicNames = [];
+
   top.merrors := ne.merrors;
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = errorType();
@@ -556,23 +625,62 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
+  {-
+    We assume no one is both using monadic stuff and explicitly decorating
+    monads, so anything that is a monad gets bound in to have its insides
+    decorated.
+  -}
   e.mDownSubst = top.mDownSubst;
   inh.mDownSubst = e.mUpSubst;
   top.mUpSubst = inh.mUpSubst;
-  top.mtyperep = decoratedType(performSubstitution(e.mtyperep, e.mUpSubst));
   top.merrors := e.merrors;
-  top.monadRewritten = decorateExprWith('decorate', e.monadRewritten, 'with',
-                                        '{', inh.monadRewritten, '}', location=top.location);
+
+  e.monadicallyUsed = if isMonad(e.mtyperep)
+                      then true
+                      else false;
+  top.monadicNames = e.monadicNames ++ inh.monadicNames;
+
+  top.mtyperep = if isMonad(e.mtyperep)
+                 then monadOfType(e.mtyperep,
+                                  decoratedType(performSubstitution(monadInnerType(e.mtyperep),
+                                                                    e.mUpSubst)))
+                 else decoratedType(performSubstitution(e.mtyperep, e.mUpSubst));
+
+  local newname::String = "__sv_bind_" ++ toString(genInt());
+  local params::ProductionRHS =
+     productionRHSCons(productionRHSElem(name(newname, top.location),
+                                         '::',
+                                         typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location),
+                                         location=top.location),
+                       productionRHSNil(location=top.location),
+                       location=top.location);
+  top.monadRewritten =
+     if isMonad(e.mtyperep)
+     then Silver_Expr {
+            $Expr{monadBind(e.mtyperep, top.location)}
+              ($Expr{e.monadRewritten},
+               $Expr{lambdap(params,
+                      Silver_Expr{
+                        $Expr{monadReturn(e.mtyperep, top.location)}
+                        ($Expr{decorateExprWith('decorate',
+                               baseExpr(qName(top.location, newname), location=top.location),
+                               'with', '{', inh.monadRewritten, '}', location=top.location)})
+                      }, location=top.location)})
+          }
+     else decorateExprWith('decorate', e.monadRewritten, 'with',
+                           '{', inh.monadRewritten, '}', location=top.location);
 }
 
-attribute monadRewritten<ExprInhs>, merrors, mDownSubst, mUpSubst occurs on ExprInhs;
-attribute monadRewritten<ExprInh>, merrors, mDownSubst, mUpSubst occurs on ExprInh;
+attribute monadRewritten<ExprInhs>, merrors, mDownSubst, mUpSubst, monadicNames occurs on ExprInhs;
+attribute monadRewritten<ExprInh>, merrors, mDownSubst, mUpSubst, monadicNames occurs on ExprInh;
 
 aspect production exprInhsEmpty
 top::ExprInhs ::= 
 {
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
+
+  top.monadicNames = [];
 
   top.monadRewritten = exprInhsEmpty(location=top.location);
 }
@@ -584,6 +692,8 @@ top::ExprInhs ::= lhs::ExprInh
 
   lhs.mDownSubst = top.mDownSubst;
   top.mUpSubst = lhs.mUpSubst;
+
+  top.monadicNames = lhs.monadicNames;
 
   top.monadRewritten = exprInhsOne(lhs.monadRewritten, location=top.location);
 }
@@ -597,6 +707,8 @@ top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
   inh.mDownSubst = lhs.mUpSubst;
   top.mUpSubst = inh.mUpSubst;
 
+  top.monadicNames = lhs.monadicNames ++ inh.monadicNames;
+
   top.monadRewritten = exprInhsCons(lhs.monadRewritten, inh.monadRewritten, location=top.location);
 }
 
@@ -607,6 +719,9 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
+
+  e.monadicallyUsed = false;
+  top.monadicNames = e.monadicNames;
 
   top.monadRewritten = exprInh(lhs, '=', e.monadRewritten, ';', location=top.location);
 }
@@ -620,6 +735,7 @@ top::Expr ::= 'true'
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = boolType();
   top.merrors := [];
+  top.monadicNames = [];
   top.monadRewritten = trueConst('true', location=top.location);
 }
 
@@ -629,6 +745,7 @@ top::Expr ::= 'false'
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = boolType();
   top.merrors := [];
+  top.monadicNames = [];
   top.monadRewritten = falseConst('false', location=top.location);
 }
 
@@ -651,10 +768,14 @@ top::Expr ::= e1::Expr '&&' e2::Expr
   ec2.downSubst = ec1.upSubst;
   top.mUpSubst = ec2.upSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
-                then e1.mtyperep --assume it will be well-typed
-                else if isMonad(e2.mtyperep)
-                     then e2.mtyperep
-                     else boolType();
+                 then e1.mtyperep --assume it will be well-typed
+                 else if isMonad(e2.mtyperep)
+                      then e2.mtyperep
+                      else boolType();
+
+  e1.monadicallyUsed = isMonad(e1.mtyperep);
+  e2.monadicallyUsed = isMonad(e2.mtyperep);
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   --we assume both have the same monad, so we only need one return
   --e1 >>= ( (\x::Bool y::M(Bool). y >>= (\z::Bool. Return(x && z))) (_, e2) )
@@ -720,6 +841,10 @@ top::Expr ::= e1::Expr '||' e2::Expr
                      then e2.mtyperep
                      else boolType();
 
+  e1.monadicallyUsed = isMonad(e1.mtyperep);
+  e2.monadicallyUsed = isMonad(e2.mtyperep);
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
+
   --we assume both have the same monad, so we only need one return
   --e1 >>= ( (\x::Bool y::M(Bool). y >>= (\z::Bool. Return(x || z))) (_, e2) )
   local bindBoth::Expr =
@@ -774,6 +899,9 @@ top::Expr ::= '!' e::Expr
   ec.finalSubst = top.finalSubst;
   top.mtyperep = e.mtyperep; --assume it will be well-typed
 
+  e.monadicallyUsed = isMonad(e.mtyperep);
+  top.monadicNames = e.monadicNames;
+
   top.monadRewritten =
     if isMonad(e.mtyperep)
     then Silver_Expr {
@@ -813,6 +941,10 @@ top::Expr ::= e1::Expr '>' e2::Expr
                 else if isMonad(e2.mtyperep)
                      then monadOfType(e2.mtyperep, boolType())
                      else boolType();
+
+  e1.monadicallyUsed = isMonad(e1.mtyperep);
+  e2.monadicallyUsed = isMonad(e2.mtyperep);
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   --we assume both have the same monad, so we only need one return
   --e1 >>= ( (\x y -> y >>= \z -> Return(x > z))(_, e2) )
@@ -886,6 +1018,10 @@ top::Expr ::= e1::Expr '<' e2::Expr
                      then monadOfType(e2.mtyperep, boolType())
                      else boolType();
 
+  e1.monadicallyUsed = isMonad(e1.mtyperep);
+  e2.monadicallyUsed = isMonad(e2.mtyperep);
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
+
   --we assume both have the same monad, so we only need one return
   --e1 >>= ( (\x y -> y >>= \z -> Return(x < z))(_, e2) )
   local bindBoth::Expr =
@@ -957,6 +1093,10 @@ top::Expr ::= e1::Expr '>=' e2::Expr
                 else if isMonad(e2.mtyperep)
                      then monadOfType(e2.mtyperep, boolType())
                      else boolType();
+
+  e1.monadicallyUsed = isMonad(e1.mtyperep);
+  e2.monadicallyUsed = isMonad(e2.mtyperep);
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   --we assume both have the same monad, so we only need one return
   --e1 >>= ( (\x y -> y >>= \z -> Return(x >= z))(_, e2) )
@@ -1030,6 +1170,10 @@ top::Expr ::= e1::Expr '<=' e2::Expr
                      then monadOfType(e2.mtyperep, boolType())
                      else boolType();
 
+  e1.monadicallyUsed = isMonad(e1.mtyperep);
+  e2.monadicallyUsed = isMonad(e2.mtyperep);
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
+
   --we assume both have the same monad, so we only need one return
   --e1 >>= ( (\x y -> y >>= \z -> Return(x <= z))(_, e2) )
   local bindBoth::Expr =
@@ -1101,6 +1245,10 @@ top::Expr ::= e1::Expr '==' e2::Expr
                 else if isMonad(e2.mtyperep)
                      then monadOfType(e2.mtyperep, boolType())
                      else boolType();
+
+  e1.monadicallyUsed = isMonad(e1.mtyperep);
+  e2.monadicallyUsed = isMonad(e2.mtyperep);
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   --we assume both have the same monad, so we only need one return
   --e1 >>= ( (\x y -> y >>= \z -> Return(x == z))(_, e2) )
@@ -1174,6 +1322,10 @@ top::Expr ::= e1::Expr '!=' e2::Expr
                      then monadOfType(e2.mtyperep, boolType())
                      else boolType();
 
+  e1.monadicallyUsed = isMonad(e1.mtyperep);
+  e2.monadicallyUsed = isMonad(e2.mtyperep);
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
+
   --we assume both have the same monad, so we only need one return
   --e1 >>= ( (\x y -> y >>= \z -> Return(x != z))(_, e2) )
   local bindBoth::Expr =
@@ -1234,6 +1386,16 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything
   e1.downSubst = top.downSubst;
   e2.downSubst = e1.upSubst;
   top.upSubst = e2.upSubst;
+
+  top.mtyperep = if isMonad(e2.mtyperep)
+                 then e2.mtyperep
+                 else if isMonad(e1.mtyperep)
+                      then monadOfType(e1.mtyperep, e2.mtyperep)
+                      else errorType(); --we need a monad to be able to actually type this
+
+  e1.monadicallyUsed = isMonad(e1.mtyperep);
+  e2.monadicallyUsed = false;
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   local bind::Expr = if isMonad(e1.mtyperep)
                      then monadFail(e1.mtyperep, top.location)
@@ -1302,6 +1464,11 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
                      then e2.mtyperep
                      else e3.mtyperep;
 
+  e1.monadicallyUsed = isMonad(e1.mtyperep);
+  e2.monadicallyUsed = false;
+  e3.monadicallyUsed = false;
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames ++ e3.monadicNames;
+
   --To deal with the case where one type or the other might be "generic" (e.g. Maybe<a>),
   --   we want to do substitution on the types before putting them into the monadRewritten
   local e2Type::Type = performSubstitution(e2.mtyperep, top.finalSubst);
@@ -1351,6 +1518,7 @@ top::Expr ::= i::Int_t
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = intType();
+  top.monadicNames = [];
   top.monadRewritten = intConst(i, location=top.location);
 }
 
@@ -1360,6 +1528,7 @@ top::Expr ::= f::Float_t
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = floatType();
+  top.monadicNames = [];
   top.monadRewritten = floatConst(f, location=top.location);
 } 
 
@@ -1389,6 +1558,10 @@ top::Expr ::= e1::Expr '+' e2::Expr
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
+
+  e1.monadicallyUsed = isMonad(e1.mtyperep);
+  e2.monadicallyUsed = isMonad(e2.mtyperep);
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   --we assume both have the same monad, so we only need one return
   --e1 >>= ( (\x y -> y >>= \z -> Return(x + z))(_, e2) )
@@ -1460,6 +1633,10 @@ top::Expr ::= e1::Expr '-' e2::Expr
                 then e1.mtyperep
                 else e2.mtyperep;
 
+  e1.monadicallyUsed = isMonad(e1.mtyperep);
+  e2.monadicallyUsed = isMonad(e2.mtyperep);
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
+
   --we assume both have the same monad, so we only need one return
   --e1 >>= ( (\x y -> y >>= \z -> Return(x - z))(_, e2) )
   local bindBoth::Expr =
@@ -1529,6 +1706,10 @@ top::Expr ::= e1::Expr '*' e2::Expr
   top.mtyperep = if isMonad(e1.mtyperep)
                 then e1.mtyperep
                 else e2.mtyperep;
+
+  e1.monadicallyUsed = isMonad(e1.mtyperep);
+  e2.monadicallyUsed = isMonad(e2.mtyperep);
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   --we assume both have the same monad, so we only need one return
   --e1 >>= ( (\x y -> y >>= \z -> Return(x * z))(_, e2) )
@@ -1600,6 +1781,10 @@ top::Expr ::= e1::Expr '/' e2::Expr
                 then e1.mtyperep
                 else e2.mtyperep;
 
+  e1.monadicallyUsed = isMonad(e1.mtyperep);
+  e2.monadicallyUsed = isMonad(e2.mtyperep);
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
+
   --we assume both have the same monad, so we only need one return
   --e1 >>= ( (\x y -> y >>= \z -> Return(x / z))(_, e2) )
   local bindBoth::Expr =
@@ -1667,8 +1852,12 @@ top::Expr ::= e1::Expr '%' e2::Expr
                              else check(e1.mtyperep, e2.mtyperep);
   ec.finalSubst = top.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
-                then e1.mtyperep
-                else e2.mtyperep;
+                 then e1.mtyperep
+                 else e2.mtyperep;
+
+  e1.monadicallyUsed = isMonad(e1.mtyperep);
+  e2.monadicallyUsed = isMonad(e2.mtyperep);
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   --we assume both have the same monad, so we only need one return
   --e1 >>= ( (\x y -> y >>= \z -> Return(x % z))(_, e2) )
@@ -1720,6 +1909,9 @@ top::Expr ::= '-' e::Expr
 
   top.mtyperep = e.mtyperep;
 
+  e.monadicallyUsed = isMonad(e.mtyperep);
+  top.monadicNames = e.monadicNames;
+
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
   top.monadRewritten =
@@ -1739,6 +1931,7 @@ top::Expr ::= s::String_t
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = stringType();
+  top.monadicNames = [];
 
   top.monadRewritten = stringConst(s, location=top.location);
 }
@@ -1798,6 +1991,10 @@ top::Expr ::= e1::Expr '++' e2::Expr
                                        then check(e1.mtyperep, monadInnerType(e2.mtyperep))
                                        else check(e1.mtyperep, e2.mtyperep);
   ec.finalSubst = top.mUpSubst;
+
+  e1.monadicallyUsed = (isList1 && !isList2) || (isMonad(e1.mtyperep) && !isList1);
+  e2.monadicallyUsed = (isList2 && !isList1) || (isMonad(e2.mtyperep) && !isList2);
+  top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   --we assume both have the same monad, so we only need one return
   --e1 >>= ( (\x y -> y >>= \z -> Return(x % z))(_, e2) )
@@ -1890,6 +2087,10 @@ top::Expr ::= e1::Decorated Expr   e2::Decorated Expr
                  then ne1.mtyperep
                  else ne2.mtyperep;
 
+  ne1.monadicallyUsed = isMonad(ne1.mtyperep);
+  ne2.monadicallyUsed = isMonad(ne2.mtyperep);
+  top.monadicNames = ne1.monadicNames ++ ne2.monadicNames;
+
   local ec::TypeCheck = if isMonad(ne1.mtyperep)
                         then if isMonad(ne2.mtyperep)
                              then check(ne1.mtyperep, ne2.mtyperep)
@@ -1953,6 +2154,8 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
   --  else [err(e1.location, prettyType(result_type) ++ " is not a concatenable type.")];
   top.mtyperep = errorType();
 
+  top.monadicNames = [];
+
   top.monadRewritten = plusPlus(new(e1), '++', new(e2), location=top.location);
 }
 
@@ -1971,6 +2174,7 @@ top::AppExpr ::= '_'
   top.monadRewritten = missingAppExpr('_', location=top.location);
   top.realTypes = [];
   top.monadTypesLocations = [];
+  top.monadicNames = [];
 }
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
@@ -1981,6 +2185,8 @@ top::AppExpr ::= e::Expr
   top.monadTypesLocations = if isMonadic
                             then [pair(e.mtyperep, top.appExprIndex+1)]
                             else [];
+  e.monadicallyUsed = isMonadic;
+  top.monadicNames = e.monadicNames;
 
   --these have an 'a' at the end of their names because of a bug where local names are not local to their grammars
   local attribute errCheck1a :: TypeCheck; errCheck1a.finalSubst = top.mUpSubst;
@@ -2031,6 +2237,8 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
 
   top.monadTypesLocations = es.monadTypesLocations ++ e.monadTypesLocations;
 
+  top.monadicNames = es.monadicNames ++ e.monadicNames;
+
   top.monadRewritten = snocAppExprs(es.monadRewritten, ',', e.monadRewritten, location=top.location);
 }
 aspect production oneAppExprs
@@ -2045,6 +2253,8 @@ top::AppExprs ::= e::AppExpr
 
   top.monadTypesLocations = e.monadTypesLocations;
 
+  top.monadicNames = e.monadicNames;
+
   top.monadRewritten = oneAppExprs(e.monadRewritten, location=top.location);
 }
 aspect production emptyAppExprs
@@ -2057,6 +2267,8 @@ top::AppExprs ::=
   top.realTypes = [];
 
   top.monadTypesLocations = [];
+
+  top.monadicNames = [];
 
   top.monadRewritten = emptyAppExprs(location=top.location);
 }
@@ -2079,5 +2291,7 @@ top::Expr ::= e::Decorated Expr
   top.merrors := ne.merrors;
   top.mUpSubst = ne.mUpSubst;
   top.mtyperep = ne.mtyperep;
+  ne.monadicallyUsed = top.monadicallyUsed;
+  top.monadicNames = ne.monadicNames;
   top.monadRewritten = ne.monadRewritten;
 }

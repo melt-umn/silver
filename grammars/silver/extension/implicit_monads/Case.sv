@@ -109,6 +109,23 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   top.monadRewritten = monadLocal.monadRewritten;
   top.mtyperep = monadLocal.mtyperep;
   top.mUpSubst = monadLocal.mUpSubst;
+
+  monadLocal.monadicallyUsed = false;
+  --We get the monadic names out of the expressions bound in here and the rest off the fake forward (monadLocal)
+  top.monadicNames =
+     foldr(\x::Pair<Expr Type> l::[Expr] ->
+             let a::Decorated Expr = decorate x.fst with {env=top.env; mDownSubst=top.mDownSubst;
+                                     frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
+                                     finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
+                                     config=top.config; flowEnv=top.flowEnv;}
+             in if isMonad(a.mtyperep) && !isMonad(performSubstitution(x.snd, top.mDownSubst))
+                then decorate x.fst with {env=top.env; mDownSubst=top.mDownSubst;
+                                     frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
+                                     finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
+                                     config=top.config; flowEnv=top.flowEnv; monadicallyUsed=true;}.monadicNames
+                else []
+             end ++ l,
+           monadLocal.monadicNames, zipWith(\x::Expr y::Type -> pair(x,y), es.rawExprs, ml.patternTypeList));
 }
 --find if any of the expressions are being matched as their inner type
 --if returns (true, ty), ty will be used to find the correct Fail()

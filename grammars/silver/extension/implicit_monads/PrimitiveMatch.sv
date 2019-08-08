@@ -1,10 +1,10 @@
 grammar silver:extension:implicit_monads;
 
 attribute mtyperep, merrors, patternType, monadRewritten<PrimPatterns>,
-          mDownSubst, mUpSubst,
+          mDownSubst, mUpSubst, monadicNames,
           returnFun, returnify<PrimPatterns> occurs on PrimPatterns;
 attribute mtyperep, merrors, patternType, monadRewritten<PrimPattern>,
-          mDownSubst, mUpSubst,
+          mDownSubst, mUpSubst, monadicNames,
           returnFun, returnify<PrimPattern> occurs on PrimPattern;
 
 --returnFun is the monad's defined Return for returnify
@@ -58,6 +58,10 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   f.mDownSubst = pr.mUpSubst;
   errCheck1.downSubst = f.mUpSubst;
   top.mUpSubst = errCheck1.upSubst;
+
+  e.monadicallyUsed = isMonad(e.mtyperep) && !isMonad(pr.patternType);
+  f.monadicallyUsed = false;
+  top.monadicNames = e.monadicNames ++ pr.monadicNames ++ f.monadicNames;
 
   local freshname::String = "__sv_bindingInAMatchExpression_" ++ toString(genInt());
   local eBind::Expr = monadBind(e.mtyperep, top.location);
@@ -203,6 +207,8 @@ top::PrimPatterns ::= p::PrimPattern
   top.mtyperep = p.mtyperep;
   top.patternType = p.patternType;
 
+  top.monadicNames = p.monadicNames;
+
   p.returnFun = top.returnFun;
   top.returnify = onePattern(p.returnify, location=top.location);
   top.monadRewritten = onePattern(p.monadRewritten, location=top.location);
@@ -211,6 +217,8 @@ aspect production consPattern
 top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
 {
   top.merrors := p.merrors ++ ps.merrors;
+
+  top.monadicNames = p.monadicNames ++ ps.monadicNames;
 
   p.mDownSubst = top.mDownSubst;
   ps.mDownSubst = p.mUpSubst;
@@ -279,6 +287,9 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' arr::Arrow_kwd e::Expr
   e.mDownSubst = top.mDownSubst;
   e.downSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
+
+  e.monadicallyUsed = false;
+  top.monadicNames = e.monadicNames;
 }
 aspect production prodPatternNormal
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
@@ -286,6 +297,9 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.merrors := e.merrors;
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
+
+  e.monadicallyUsed = false;
+  top.monadicNames = e.monadicNames;
 
   top.mtyperep = e.mtyperep;
   -- Turns the existential variables existential
@@ -306,6 +320,9 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
 
+  e.monadicallyUsed = false;
+  top.monadicNames = e.monadicNames;
+
   top.mtyperep = e.mtyperep;
   local prod_type :: Type =
     fullySkolemizeProductionType(qn.lookupValue.typerep); -- that says FULLY. See the comments on that function.
@@ -325,6 +342,9 @@ top::PrimPattern ::= i::Int_t arr::Arrow_kwd e::Expr
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
 
+  e.monadicallyUsed = false;
+  top.monadicNames = e.monadicNames;
+
   top.mtyperep = e.mtyperep;
   top.patternType = intType();
 
@@ -339,6 +359,9 @@ top::PrimPattern ::= f::Float_t arr::Arrow_kwd e::Expr
   top.merrors := e.merrors;
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
+
+  e.monadicallyUsed = false;
+  top.monadicNames = e.monadicNames;
   
   top.mtyperep = e.mtyperep;
   top.patternType = floatType();
@@ -354,6 +377,9 @@ top::PrimPattern ::= i::String_t arr::Arrow_kwd e::Expr
   top.merrors := e.merrors;
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
+
+  e.monadicallyUsed = false;
+  top.monadicNames = e.monadicNames;
   
   top.mtyperep = e.mtyperep;
   top.patternType = stringType();
@@ -370,6 +396,9 @@ top::PrimPattern ::= i::String arr::Arrow_kwd e::Expr
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
 
+  e.monadicallyUsed = false;
+  top.monadicNames = e.monadicNames;
+
   top.mtyperep = e.mtyperep;
   top.patternType = stringType();
 
@@ -385,6 +414,9 @@ top::PrimPattern ::= e::Expr
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
 
+  e.monadicallyUsed = false;
+  top.monadicNames = e.monadicNames;
+
   top.mtyperep = e.mtyperep;
   local attribute thisListType::Type = listType(freshType());
   top.patternType = thisListType;
@@ -399,6 +431,9 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   top.merrors := e.merrors;
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
+
+  e.monadicallyUsed = false;
+  top.monadicNames = e.monadicNames;
 
   top.mtyperep = e.mtyperep;
   local elemType :: Type = freshType();

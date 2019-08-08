@@ -59,6 +59,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 {
   top.merrors := e.merrors;
   top.monadRewritten = returnDef('return', e.monadRewritten, ';', location=top.location);
+  e.monadicallyUsed = false;
 }
 
 aspect production localAttributeDcl
@@ -80,6 +81,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
   top.merrors := e.merrors;
   top.monadRewritten = forwardsTo('forwards', 'to', e.monadRewritten, ';', location=top.location);
+  e.monadicallyUsed = false;
 }
 
 -- explicitly leaving out forwardsToWith here because it should be fine for forwarding here
@@ -210,6 +212,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
                                       ($Expr {e.monadRewritten})
                                    }, location=top.location)
                        else synthesizedAttributeDef(dl, attr, e.monadRewritten, location=top.location);
+  e.monadicallyUsed = false;
 }
 
 aspect production inheritedAttributeDef
@@ -228,6 +231,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
                                       ($Expr {e.monadRewritten})
                                    }, location=top.location)
                        else inheritedAttributeDef(dl, attr, e.monadRewritten, location=top.location);
+  e.monadicallyUsed = false;
 }
 
 aspect production localValueDef
@@ -247,5 +251,6 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
                                       ($Expr {e.monadRewritten})
                                    }, location=top.location)
                        else localValueDef(val, e.monadRewritten, location=top.location);
+  e.monadicallyUsed = false;
 }
 

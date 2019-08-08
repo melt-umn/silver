@@ -17,6 +17,10 @@ top::Expr ::= 'length' '(' e::Expr ')'
   top.mtyperep = if !isList && isMonad(e.mtyperep)
                  then monadOfType(e.mtyperep, intType())
                  else intType();
+
+  e.monadicallyUsed = !isList && isMonad(e.mtyperep);
+  top.monadicNames = e.monadicNames;
+
   top.monadRewritten = if !isList && isMonad(e.mtyperep)
                        then Silver_Expr {
                               $Expr {monadBind(e.mtyperep, top.location)}
@@ -43,6 +47,7 @@ top::Expr ::= e::Decorated Expr
   top.merrors := ne.merrors;
   top.mUpSubst = ne.mUpSubst;
   top.mtyperep = intType();
+  top.monadicNames = [];
   top.monadRewritten = lengthFunction('length', '(', new(e), ')', location=top.location);
 }
 
@@ -64,6 +69,8 @@ top::Expr ::= e::Decorated Expr
   top.mtyperep = if isMonad(ne.mtyperep)
                  then monadOfType(ne.mtyperep, intType())
                  else intType();
+  ne.monadicallyUsed = isMonad(ne.mtyperep);
+  top.monadicNames = ne.monadicNames;
   top.monadRewritten =
      if isMonad(ne.mtyperep)
      then Silver_Expr {
@@ -84,6 +91,8 @@ top::Expr ::= 'toInteger' '(' e::Expr ')'
   top.mtyperep = if isMonad(e.mtyperep)
                  then monadOfType(e.mtyperep, intType())
                  else intType();
+  e.monadicallyUsed = isMonad(e.mtyperep);
+  top.monadicNames = e.monadicNames;
   top.monadRewritten = if isMonad(e.mtyperep)
                        then Silver_Expr {
                               $Expr {monadBind(e.mtyperep, top.location)}
@@ -103,6 +112,8 @@ top::Expr ::= 'toBoolean' '(' e::Expr ')'
   top.mtyperep = if isMonad(e.mtyperep)
                  then monadOfType(e.mtyperep, boolType())
                  else boolType();
+  e.monadicallyUsed = isMonad(e.mtyperep);
+  top.monadicNames = e.monadicNames;
   top.monadRewritten = if isMonad(e.mtyperep)
                        then Silver_Expr {
                               $Expr {monadBind(e.mtyperep, top.location)}
@@ -122,6 +133,8 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
   top.mtyperep = if isMonad(e.mtyperep)
                  then monadOfType(e.mtyperep, floatType())
                  else floatType();
+  e.monadicallyUsed = isMonad(e.mtyperep);
+  top.monadicNames = e.monadicNames;
   top.monadRewritten = if isMonad(e.mtyperep)
                        then Silver_Expr {
                               $Expr {monadBind(e.mtyperep, top.location)}
@@ -141,6 +154,8 @@ top::Expr ::= 'toString' '(' e::Expr ')'
   top.mtyperep = if isMonad(e.mtyperep)
                  then monadOfType(e.mtyperep, stringType())
                  else stringType();
+  e.monadicallyUsed = isMonad(e.mtyperep);
+  top.monadicNames = e.monadicNames;
   top.monadRewritten = if isMonad(e.mtyperep)
                        then Silver_Expr {
                               $Expr {monadBind(e.mtyperep, top.location)}
@@ -158,6 +173,7 @@ top::Expr ::= 'reify'
   top.mUpSubst = top.mDownSubst;
   top.mtyperep =
     functionType(nonterminalType("core:Either", [stringType(), varType(freshTyVar())]), [nonterminalType("core:reflect:AST", [])], []);
+  top.monadicNames = [];
   top.monadRewritten = reifyFunctionLiteral('reify', location=top.location);
 }
 
@@ -168,6 +184,8 @@ top::Expr ::= 'new' '(' e::Expr ')'
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
   top.mtyperep = e.mtyperep;
+  e.monadicallyUsed = false;
+  top.monadicNames = e.monadicNames;
   top.monadRewritten = newFunction('new', '(', e.monadRewritten, ')', location=top.location);
 }
 
@@ -180,6 +198,7 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
   top.merrors := es.merrors ++ el.merrors;
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = t.typerep;
+  top.monadicNames = [];
   top.monadRewritten = error("terminalConstructor monadRewritten not defined");
 }
 
