@@ -52,6 +52,13 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   top.monadRewritten = productionStmtAppend(h.monadRewritten, t.monadRewritten, location=top.location);
 }
 
+aspect production errorProductionStmt
+top::ProductionStmt ::= e::[Message]
+{
+  top.monadRewritten = errorProductionStmt(e, location=top.location);
+}
+
+
 --------------------------------------------------------------------------------
 
 aspect production returnDef
