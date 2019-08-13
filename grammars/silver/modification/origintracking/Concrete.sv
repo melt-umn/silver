@@ -57,12 +57,14 @@ top::Expr ::= prod::Expr '^(' args::AppExprs ')^' label::Expr
     | _ -> false
   end;
 
+  local originLinkExpr :: Expr = Silver_Expr{$Expr{ntWapperRefExpr}($Expr{lhsexpr})};
+
   local isContractum :: Boolean = !(sameProd && top.isRuleRoot);
 
   local allNotes :: Expr = Silver_Expr{$Expr{label} ++ $Expr{listExprOfExprList(top.originsRules)}};
 
-  local originValue :: Expr = if (!sameProd) && top.isRuleRoot then
-    Silver_Expr {let cx :: OriginLink = $Expr{ntWapperRefExpr}($Expr{lhsexpr}) in
+  local prodOriginValue :: Expr = if (!sameProd) && top.isRuleRoot then
+    Silver_Expr {let cx :: OriginLink = $Expr{originLinkExpr} in
         silver:modification:origintracking:childruntime:originAndRedexOriginInfo(
         cx, $Expr{allNotes},
         cx, $Expr{allNotes},
@@ -70,6 +72,10 @@ top::Expr ::= prod::Expr '^(' args::AppExprs ')^' label::Expr
     else Silver_Expr {silver:modification:origintracking:childruntime:originOriginInfo(
         $Expr{ntWapperRefExpr}($Expr{lhsexpr}), $Expr{allNotes},
         $Expr{boolExprOfBool(isContractum)})};
+
+  local funcOriginValue :: Expr = oiCtxRef(location=top.location);
+
+  local originValue :: Expr = if top.frame.permitReturn then funcOriginValue else prodOriginValue;
   
   local computedAnnos :: AnnoAppExprs = oneAnnoAppExprs(
     mkAnnoExpr(pair("origininfo", originValue)),

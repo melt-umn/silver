@@ -28,7 +28,8 @@
     <javac debug='on' classpathref='compile.classpath' srcdir='${src}:${grammars}' destdir='${bin}' includeantruntime='false'>
       <include name='common/**/*.java' />
       <include name='core/*.java' />
-      <include name='monto/*.java' />
+      <!-- <include name='monto/*.java' /> -->
+      <exclude name='common/rawlib/*' />
       <include name='lib/xml/ast/*.java' />
     </javac>
   </target>

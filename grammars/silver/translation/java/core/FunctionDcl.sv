@@ -47,8 +47,12 @@ String ::= whatGrammar::String whatName::String whatSig::NamedSignature whatResu
   local localVar :: String = 
     s"count_local__ON__${makeIdName(whatGrammar)}_${whatName}";
 
+  local commaIfArgs :: String = if length(whatSig.inputElements) != 0 then "," else "";
+
   return s"""
 package ${makeName(whatGrammar)};
+
+import silver.modification.origintracking.childruntime.NOriginInfo;
 
 public final class ${className} extends common.FunctionNode {
 
@@ -125,7 +129,7 @@ ${implode("", map(makeChildAccessCaseLazy, whatSig.inputElements))}
 		return "${whatSig.fullName}";
 	}
 
-	public static ${whatSig.outputElement.typerep.transType} invoke(${whatSig.javaSignature}) {
+	public static ${whatSig.outputElement.typerep.transType} invoke(final NOriginInfo originCtx ${commaIfArgs} ${whatSig.javaSignature}) {
 		try {
 ${whatResult}
 		} catch(Throwable t) {
@@ -138,8 +142,8 @@ ${whatResult}
 
 	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transType}> {
 		@Override
-		public final ${whatSig.outputElement.typerep.transType} invoke(final Object[] children, final Object[] namedNotApplicable) {
-			return ${className}.invoke(${implode(", ", unpackChildren(0, whatSig.inputElements))});
+		public final ${whatSig.outputElement.typerep.transType} invoke(final NOriginInfo originCtx, final Object[] children, final Object[] namedNotApplicable) {
+			return ${className}.invoke(originCtx ${commaIfArgs} ${implode(", ", unpackChildren(0, whatSig.inputElements))});
 		}
 		
 		@Override
@@ -166,7 +170,7 @@ public class Main {
 		${package}.Init.init();
 		${package}.Init.postInit();
 		try {
-			common.Node rv = (common.Node) ${package}.Pmain.invoke(cvargs(args), common.IOToken.singleton);
+			common.Node rv = (common.Node) ${package}.Pmain.invoke(null, cvargs(args), common.IOToken.singleton);
 			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
 			drv.synthesized(core.Init.core_io__ON__core_IOVal); // demand the io token
 			System.exit( (Integer)drv.synthesized(core.Init.core_iovalue__ON__core_IOVal) );

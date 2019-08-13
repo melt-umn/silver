@@ -81,7 +81,8 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 	anns.isRuleRoot = false;
 }
 --is also production application
---TODO: deal with setting it on the LHS
+--Setting isRuleRoot on LHS (e) shouldn't ever matter since it should never
+-- be exposed in a manner that would let you inspect it's origins info
 
 
 terminal ErDebug_t  'erdebug^' precedence=50;

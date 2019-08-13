@@ -1,6 +1,7 @@
 package common.javainterop;
 
 import java.util.Comparator;
+import silver.modification.origintracking.childruntime.NOriginInfo;
 
 import common.NodeFactory;
 
@@ -16,14 +17,16 @@ import common.NodeFactory;
 public class SilverComparator<T> implements Comparator<T> {
 
 	private NodeFactory<Integer> cmpFunction;
+	private NOriginInfo originCtx;
 	
-	public SilverComparator(NodeFactory<Integer> cmp) {
+	public SilverComparator(final NOriginInfo originCtx, NodeFactory<Integer> cmp) {
 		this.cmpFunction = cmp;
+		this.originCtx = originCtx;
 	}
 	
 	@Override
 	public int compare(T arg0, T arg1) {
-		return cmpFunction.invoke(new Object[] { arg0, arg1 }, null);
+		return cmpFunction.invoke(originCtx, new Object[] { arg0, arg1 }, null);
 	}
 
 }

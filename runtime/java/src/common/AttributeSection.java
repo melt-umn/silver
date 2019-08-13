@@ -1,5 +1,8 @@
 package common;
 
+import silver.modification.origintracking.childruntime.NOriginInfo;
+
+
 /**
  * Returns a function reference (a NodeFactory) that accesses the attribute
  * provided to the constructor.  Used to implement attribute sections (.pp)
@@ -21,7 +24,7 @@ public class AttributeSection<T> extends NodeFactory<T> {
 	}
 	
 	@Override
-	public T invoke(final Object[] args, final Object[] notApplicable) {
+	public T invoke(final NOriginInfo originCtx, final Object[] args, final Object[] notApplicable) {
 		DecoratedNode context = (DecoratedNode) Util.demand(args[0]);
 		return (T)context.synthesized(index);
 	}
@@ -64,7 +67,7 @@ public class AttributeSection<T> extends NodeFactory<T> {
 		}
 		
 		@Override
-		public T invoke(final Object[] args, final Object[] notApplicable) {
+		public T invoke(final NOriginInfo originCtx, final Object[] args, final Object[] notApplicable) {
 			DecoratedNode context = ((Node) Util.demand(args[0])).decorate(trueParent, (common.Lazy[])null);
 			return (T)context.synthesized(index);
 		}

@@ -71,3 +71,15 @@ Expr ::= top::Decorated Expr --need .frame anno
         name(top.frame.signature.outputElement.elementName,
       top.location), location=top.location), location=top.location);
 }
+
+abstract production oiCtxRef
+top::Expr ::=
+{
+  top.translation = "originCtx";
+  top.lazyTranslation = top.translation;
+  top.upSubst = top.downSubst;
+  top.flowDeps = [];
+  top.flowDefs = [];
+  top.typerep = nonterminalType("silver:modification:origintracking:childruntime:OriginInfo", []);
+  top.errors := [];
+}

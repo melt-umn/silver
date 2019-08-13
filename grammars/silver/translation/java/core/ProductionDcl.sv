@@ -36,10 +36,10 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 public ${fnnt} duplicate(Object redex, Object notes) {
 	if (redex == null) {
 		return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfKids}
-  			new silver.modification.origintracking.childruntime.PoriginOriginInfo(this.wrapInLink(), notes, false));
+  			new PoriginOriginInfo(this.wrapInLink(), notes, false));
 	} else {
 		return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfKids}
-  			new silver.modification.origintracking.childruntime.PoriginAndRedexOriginInfo(this.wrapInLink(), notes, ((common.Node)redex).wrapInLink(), notes, false));
+  			new PoriginAndRedexOriginInfo(this.wrapInLink(), notes, ((common.Node)redex).wrapInLink(), notes, false));
 	}
 }
 
@@ -47,13 +47,13 @@ public ${fnnt} duplicate(Object redex, Object notes) {
 public ${fnnt} copy(Object newRedex, Object newRule) {
     Object origin, originNotes, newlyConstructed;
     Object roi = this.getAnno_silver_modification_origintracking_childruntime_origininfo();
-	if (roi instanceof silver.modification.origintracking.childruntime.PoriginOriginInfo) {
-		silver.modification.origintracking.childruntime.PoriginOriginInfo oi = (silver.modification.origintracking.childruntime.PoriginOriginInfo)roi;
+	if (roi instanceof PoriginOriginInfo) {
+		PoriginOriginInfo oi = (PoriginOriginInfo)roi;
 		origin = oi.getChild_origin();
 		originNotes = oi.getChild_originNotes();
 		newlyConstructed = oi.getChild_newlyConstructed();
-	} else if (roi instanceof silver.modification.origintracking.childruntime.PoriginAndRedexOriginInfo) {
-		silver.modification.origintracking.childruntime.PoriginAndRedexOriginInfo oi = (silver.modification.origintracking.childruntime.PoriginAndRedexOriginInfo)roi;
+	} else if (roi instanceof PoriginAndRedexOriginInfo) {
+		PoriginAndRedexOriginInfo oi = (PoriginAndRedexOriginInfo)roi;
 		origin = oi.getChild_origin();
 		originNotes = oi.getChild_originNotes();
 		newlyConstructed = oi.getChild_newlyConstructed();
@@ -66,7 +66,7 @@ public ${fnnt} copy(Object newRedex, Object newRule) {
 	Object redex = ((common.Node)newRedex).wrapInLink();
 	Object redexNotes = newRule;
 	return new ${className}(${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfKids}
- 		new silver.modification.origintracking.childruntime.PoriginAndRedexOriginInfo(origin, originNotes, redex, redexNotes, newlyConstructed));
+ 		new PoriginAndRedexOriginInfo(origin, originNotes, redex, redexNotes, newlyConstructed));
 }
 
 @Override
@@ -80,6 +80,8 @@ public PoriginLink${typeNameSnipped} wrapInLink(){
 
   top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
+
+import silver.modification.origintracking.childruntime.*;
 
 // ${ns.unparse}
 public final class ${className} extends ${fnnt} {
@@ -231,7 +233,7 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 
 	public static final class Factory extends common.NodeFactory<${fnnt}> {
 		@Override
-		public final ${fnnt} invoke(final Object[] children, final Object[] annotations) {
+		public final ${fnnt} invoke(final NOriginInfo originCtx, final Object[] children, final Object[] annotations) {
 			return new ${className}(${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
 		}
 		
