@@ -1,6 +1,7 @@
 package common;
 
 import common.exceptions.*;
+import silver.modification.origintracking.childruntime.NOriginInfo;
 
 /**
  * Node represents undecorated nodes.  That is, we have children, but no inherited attributes, yet.
@@ -13,6 +14,12 @@ import common.exceptions.*;
  * @see DecoratedNode
  */
 public abstract class Node implements Typed {
+
+	public final NOriginInfo origin;
+
+	public Node (NOriginInfo origin) {
+		this.origin = origin;
+	}
 	
 	// Common manipulators of Node objects.
 	

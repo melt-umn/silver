@@ -10,6 +10,8 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
   
   local myAnnos :: [NamedSignatureElement] =
     annotationsForNonterminal(nonterminalType(fName, tl.types), top.env);
+
+  local commaIfAnnos :: String = if length(myAnnos)!=0 then "," else "";
   
   top.initWeaving := s"""
 	public static int ${inhVar} = 0;
@@ -19,6 +21,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
 package ${makeName(top.grammarName)};
 
 import java.util.*;
+import silver.modification.origintracking.childruntime.*;
 
 public abstract class ${className} extends common.Node${
   (if null(myAnnos) then "" else 
@@ -34,7 +37,8 @@ public abstract class ${className} extends common.Node${
 
 	public static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];
 
-	protected ${className}(${implode(", ", map((.annoSigElem), myAnnos))}) {
+	protected ${className}(final NOriginInfo origin ${commaIfAnnos} ${implode(", ", map((.annoSigElem), myAnnos))}) {
+		super(origin);
 ${implode("", map(makeAnnoAssign, myAnnos))}
 	}
 

@@ -17,8 +17,10 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   local argsAccess :: String =
     implode(", ", map((.childRefElem), namedSig.inputElements));
 
+  local commaIfArgs :: String = if length(namedSig.inputElements)!=0 then "," else "";
+
   local funBody :: String =
-s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate();
+s"""			final common.DecoratedNode context = new P${id.name}(originCtx ${commaIfArgs} ${argsAccess}).decorate();
 			//${head(body.uniqueSignificantExpression).unparse}
 			return (${namedSig.outputElement.typerep.transType})(${head(body.uniqueSignificantExpression).translation});
 """;
@@ -72,7 +74,8 @@ ${makeIndexDcls(0, whatSig.inputElements)}
 ${implode("", map((.childStaticElem), whatSig.inputElements))}
 	}
 
-	public ${className}(${whatSig.javaSignature}) {
+	public ${className}(final NOriginInfo origin ${commaIfArgs} ${whatSig.javaSignature}) {
+		super(origin);
 ${implode("", map(makeChildAssign, whatSig.inputElements))}
 	}
 
@@ -164,13 +167,16 @@ String ::= whatGrammar::String
   return s"""
 package ${package};
 
+import silver.modification.origintracking.childruntime.*;
+
 public class Main {
 	public static void main(String[] args) {
 		${package}.Init.initAllStatics();
 		${package}.Init.init();
 		${package}.Init.postInit();
 		try {
-			common.Node rv = (common.Node) ${package}.Pmain.invoke(null, cvargs(args), common.IOToken.singleton);
+			NOriginInfo origin = new PotherOriginInfo(null, "Main Function", common.ConsCell.nil);
+			common.Node rv = (common.Node) ${package}.Pmain.invoke(origin, cvargs(args), common.IOToken.singleton);
 			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
 			drv.synthesized(core.Init.core_io__ON__core_IOVal); // demand the io token
 			System.exit( (Integer)drv.synthesized(core.Init.core_iovalue__ON__core_IOVal) );

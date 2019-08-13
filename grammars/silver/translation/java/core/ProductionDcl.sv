@@ -28,6 +28,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   	(\x::NamedSignatureElement -> "getChild_"++x.elementName++"()");
 
   local commaIfKids :: String = if length(namedSig.inputElements)!=0 then "," else "";
+  local commaIfAnnos :: String = if length(namedSig.namedInputElements)!=0 then "," else "";
 
   local dupimpl :: String = if length(namedSig.namedInputElements)==1 &&
   	head(namedSig.namedInputElements).elementName == "silver:modification:origintracking:childruntime:origininfo" then
@@ -36,10 +37,10 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 public ${fnnt} duplicate(Object redex, Object notes) {
 	if (redex == null) {
 		return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfKids}
-  			new PoriginOriginInfo(this.wrapInLink(), notes, false));
+  			new PoriginOriginInfo(null, this.wrapInLink(), notes, false));
 	} else {
 		return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfKids}
-  			new PoriginAndRedexOriginInfo(this.wrapInLink(), notes, ((common.Node)redex).wrapInLink(), notes, false));
+  			new PoriginAndRedexOriginInfo(null, this.wrapInLink(), notes, ((common.Node)redex).wrapInLink(), notes, false));
 	}
 }
 
@@ -66,12 +67,12 @@ public ${fnnt} copy(Object newRedex, Object newRule) {
 	Object redex = ((common.Node)newRedex).wrapInLink();
 	Object redexNotes = newRule;
 	return new ${className}(${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfKids}
- 		new PoriginAndRedexOriginInfo(origin, originNotes, redex, redexNotes, newlyConstructed));
+ 		new PoriginAndRedexOriginInfo(null, origin, originNotes, redex, redexNotes, newlyConstructed));
 }
 
 @Override
 public PoriginLink${typeNameSnipped} wrapInLink(){
-	return new PoriginLink${typeNameSnipped}(this);
+	return new PoriginLink${typeNameSnipped}(null, this);
 }
 
 """
@@ -105,8 +106,8 @@ ${makeIndexDcls(0, namedSig.inputElements)}
 ${implode("", map((.childStaticElem), namedSig.inputElements))}
 	}
 
-	public ${className}(${namedSig.javaSignature}) {
-		super(${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
+	public ${className}(final NOriginInfo origin ${commaIfKids} ${namedSig.javaSignature}) {
+		super(origin ${commaIfAnnos} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
 	}
 
@@ -226,7 +227,7 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 		${implode("\n\t\t", map(makeChildReify(fName, length(namedSig.inputElements), _), namedSig.inputElements))}
 		${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
 		
-		return new ${className}(${namedSig.refInvokeTrans});
+		return new ${className}(null ${commaIfKids} ${namedSig.refInvokeTrans});
 	}
 
 	public static final common.NodeFactory<${fnnt}> factory = new Factory();
@@ -234,7 +235,7 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 	public static final class Factory extends common.NodeFactory<${fnnt}> {
 		@Override
 		public final ${fnnt} invoke(final NOriginInfo originCtx, final Object[] children, final Object[] annotations) {
-			return new ${className}(${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+			return new ${className}(originCtx ${commaIfKids} ${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
 		}
 		
 		@Override

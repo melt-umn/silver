@@ -215,7 +215,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     "    <Code><![CDATA[\n" ++
     -- Annoying workaround for if a lambda in an action block needs to capture RESULT when accessing a child.
     -- Java complains when we capture something that is non-final.
-    "final " ++ makeClassName(ns.fullName) ++ " RESULTfinal = new " ++ makeClassName(ns.fullName) ++ "(" ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
+    "final " ++ makeClassName(ns.fullName) ++ " RESULTfinal = new " ++ makeClassName(ns.fullName) ++ "(new silver.modification.origintracking.childruntime.PotherOriginInfo(null, \"Parsed by Copper\", common.ConsCell.nil), " ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
     "RESULT = RESULTfinal;\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++

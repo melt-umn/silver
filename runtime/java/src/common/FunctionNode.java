@@ -1,6 +1,7 @@
 package common;
 
 import common.exceptions.SilverInternalError;
+import silver.modification.origintracking.childruntime.*;
 
 /**
  * FunctionNode is a Node, but with a few methods "removed".
@@ -16,6 +17,10 @@ import common.exceptions.SilverInternalError;
  * @see Node
  */
 public abstract class FunctionNode extends Node {
+
+	public FunctionNode (final NOriginInfo origin) {
+		super(origin);
+	}
 
 	/**
 	 * The normal way of decorating a function node. 

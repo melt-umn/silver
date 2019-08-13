@@ -22,7 +22,7 @@ top::Expr ::= params::ProductionRHS e::Expr
   top.translation = 
 s"""(new common.NodeFactory<${finTy.outputType.transType}>() {
 				@Override
-				public final ${finTy.outputType.transType} invoke(final NOriginInfo originCtx, final Object[] args, final Object[] namedArgs) {
+				public final ${finTy.outputType.transType} invoke(final silver.modification.origintracking.childruntime.NOriginInfo originCtx, final Object[] args, final Object[] namedArgs) {
 ${params.lambdaTranslation}
 					return ${e.translation};
 				}
