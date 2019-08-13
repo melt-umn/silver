@@ -31,23 +31,23 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local commaIfAnnos :: String = if length(namedSig.namedInputElements)!=0 then "," else "";
 
   local dupimpl :: String = if length(namedSig.namedInputElements)==1 &&
-  	head(namedSig.namedInputElements).elementName == "silver:modification:origintracking:childruntime:origininfo" then
+  	head(namedSig.namedInputElements).elementName == "silver:definition:origins:runtime:origininfo" then
   		s"""
 @Override
 public ${fnnt} duplicate(Object redex, Object notes) {
 	if (redex == null) {
-		return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfKids}
-  			new PoriginOriginInfo(null, this.wrapInLink(), notes, false));
+		return new ${className}(new PoriginOriginInfo(null, this.wrapInLink(), notes, false) ${commaIfKids}
+			${implode(", ", map(dupChild, namedSig.inputElements))});
 	} else {
-		return new ${className}(${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfKids}
-  			new PoriginAndRedexOriginInfo(null, this.wrapInLink(), notes, ((common.Node)redex).wrapInLink(), notes, false));
+		return new ${className}(new PoriginAndRedexOriginInfo(null, this.wrapInLink(), notes, ((common.Node)redex).wrapInLink(), notes, false) ${commaIfKids}
+  			${implode(", ", map(dupChild, namedSig.inputElements))});
 	}
 }
 
 @Override
 public ${fnnt} copy(Object newRedex, Object newRule) {
     Object origin, originNotes, newlyConstructed;
-    Object roi = this.getAnno_silver_modification_origintracking_childruntime_origininfo();
+    Object roi = this.origin;
 	if (roi instanceof PoriginOriginInfo) {
 		PoriginOriginInfo oi = (PoriginOriginInfo)roi;
 		origin = oi.getChild_origin();
@@ -66,8 +66,8 @@ public ${fnnt} copy(Object newRedex, Object newRule) {
 
 	Object redex = ((common.Node)newRedex).wrapInLink();
 	Object redexNotes = newRule;
-	return new ${className}(${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfKids}
- 		new PoriginAndRedexOriginInfo(null, origin, originNotes, redex, redexNotes, newlyConstructed));
+	return new ${className}(new PoriginAndRedexOriginInfo(null, origin, originNotes, redex, redexNotes, newlyConstructed) ${commaIfKids}
+		${implode(", ", map(copyChild, namedSig.inputElements))});
 }
 
 @Override
@@ -82,7 +82,7 @@ public PoriginLink${typeNameSnipped} wrapInLink(){
   top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
 
-import silver.modification.origintracking.childruntime.*;
+import silver.definition.origins.runtime.*;
 
 // ${ns.unparse}
 public final class ${className} extends ${fnnt} {

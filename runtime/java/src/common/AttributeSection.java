@@ -1,6 +1,6 @@
 package common;
 
-import silver.modification.origintracking.childruntime.NOriginInfo;
+import silver.definition.origins.runtime.NOriginInfo;
 
 
 /**

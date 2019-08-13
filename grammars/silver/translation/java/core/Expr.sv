@@ -146,7 +146,7 @@ top::Expr ::= e::Decorated Expr es::AppExprs annos::AnnoAppExprs
 function mkCtxRef
 String ::= top::Decorated Expr --need .frame anno
 {
-  return if top.frame.permitReturn then "originCtx" else "new silver.modification.origintracking.childruntime.PoriginOriginInfo(null, context.undecorate().wrapInLink(), common.ConsCell.nil, false)";
+  return if top.frame.permitReturn then "originCtx" else "new silver.definition.origins.runtime.PoriginOriginInfo(null, context.undecorate().wrapInLink(), common.ConsCell.nil, false)";
 }
 
 aspect production functionInvocation
@@ -604,6 +604,6 @@ String ::= e::Decorated Expr
   -- We're *unlikely* to be close to hitting the 64K method limit, but
   -- we have hit the 64K bytecode limit in the past, which is why `Init` farms
   -- initialization code out across each production. So who knows.
-  return s"new common.Lazy() { public final Object eval(final common.DecoratedNode context) { final silver.modification.origintracking.childruntime.NOriginInfo originCtx = context.undecorate().origin; return ${e.translation}; } }";
+  return s"new common.Lazy() { public final Object eval(final common.DecoratedNode context) { final silver.definition.origins.runtime.NOriginInfo originCtx = context.undecorate().origin; return ${e.translation}; } }";
 }
 

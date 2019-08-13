@@ -1,7 +1,7 @@
 package common.javainterop;
 
 import java.util.Comparator;
-import silver.modification.origintracking.childruntime.NOriginInfo;
+import silver.definition.origins.runtime.NOriginInfo;
 
 import common.NodeFactory;
 

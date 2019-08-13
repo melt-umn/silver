@@ -21,7 +21,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
 package ${makeName(top.grammarName)};
 
 import java.util.*;
-import silver.modification.origintracking.childruntime.*;
+import silver.definition.origins.runtime.*;
 
 public abstract class ${className} extends common.Node${
   (if null(myAnnos) then "" else 

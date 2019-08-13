@@ -54,7 +54,7 @@ String ::= whatGrammar::String whatName::String whatSig::NamedSignature whatResu
   return s"""
 package ${makeName(whatGrammar)};
 
-import silver.modification.origintracking.childruntime.NOriginInfo;
+import silver.definition.origins.runtime.NOriginInfo;
 
 public final class ${className} extends common.FunctionNode {
 
@@ -167,7 +167,7 @@ String ::= whatGrammar::String
   return s"""
 package ${package};
 
-import silver.modification.origintracking.childruntime.*;
+import silver.definition.origins.runtime.*;
 
 public class Main {
 	public static void main(String[] args) {

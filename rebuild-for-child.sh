@@ -6,7 +6,7 @@ echo    === DEEP CLEAN ===
 echo    === COMPILE WITH OLD SILVER ===
 ./old-compile --clean --one-jar
 echo    === BUILD CHILDRUNTIME ===
-support/bin/silver silver:modification:origintracking:childruntime
+support/bin/silver silver:definition:origins:runtime
 echo    === BUILD JAVA RUNTIME ===
 cd runtime/java
 ant

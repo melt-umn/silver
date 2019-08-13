@@ -1,10 +1,8 @@
+grammar silver:definition:origins:runtime;
 
 nonterminal OriginInfo;
 nonterminal OriginNote;
 nonterminal OriginLink;
-
-annotation origininfo :: OriginInfo;
- -- This is *the* blessed annotation used for origin tracking!
 
 synthesized attribute pp :: String occurs on OriginNote;
 
@@ -24,6 +22,16 @@ top::OriginInfo ::= source::String notes::[OriginNote]
 {
 	top.isNewlyConstructed = true;
 	top.originNotes = notes;
+	top.mOriginLink = nothing();
+	top.mOwnRedexLink = nothing();
+	top.mOwnRedexNotes = nothing();
+}
+
+abstract production bogusOriginInfo
+top::OriginInfo ::=
+{
+	top.isNewlyConstructed = true;
+	top.originNotes = [];
 	top.mOriginLink = nothing();
 	top.mOwnRedexLink = nothing();
 	top.mOwnRedexNotes = nothing();
@@ -79,14 +87,3 @@ top::OriginNote ::= attributeName::String sourceGrammar::String prod::String nt:
 	
 }
 
-function getOriginChain
-[OriginInfo] ::= l::OriginInfo
-{
-	return case l.mOriginLink of
-		| just(o) -> case o.nextOrigin of
-			| just(n) -> n :: getOriginChain(n)
-			| nothing() -> []
-		end
-		| nothing() -> []
-	end;
-}

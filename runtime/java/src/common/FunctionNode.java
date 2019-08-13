@@ -1,7 +1,7 @@
 package common;
 
 import common.exceptions.SilverInternalError;
-import silver.modification.origintracking.childruntime.*;
+import silver.definition.origins.runtime.*;
 
 /**
  * FunctionNode is a Node, but with a few methods "removed".

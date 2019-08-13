@@ -1,7 +1,7 @@
 package common;
 
 import common.exceptions.*;
-import silver.modification.origintracking.childruntime.NOriginInfo;
+import silver.definition.origins.runtime.NOriginInfo;
 
 /**
  * Node represents undecorated nodes.  That is, we have children, but no inherited attributes, yet.
