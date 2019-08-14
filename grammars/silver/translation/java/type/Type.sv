@@ -2,6 +2,7 @@ grammar silver:translation:java:type;
 
 import silver:definition:type;
 import silver:translation:java:core only makeNTClassName, makeTerminalName;
+import silver:modification:ffi;
 
 -- The Java type corresponding to the Silver Type
 synthesized attribute transType :: String;
@@ -161,3 +162,8 @@ top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
       s"new common.TypeRep[] {${implode(", ", map((.transFreshTypeRep), map((.argType), namedParams)))}})";
 }
 
+aspect production foreignType
+top::Type ::= fn::String  transType::String  params::[Type]
+{
+  top.isPrimitiveForDuplicate = true;
+}

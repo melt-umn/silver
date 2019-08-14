@@ -54,7 +54,7 @@ String ::= whatGrammar::String whatName::String whatSig::NamedSignature whatResu
   return s"""
 package ${makeName(whatGrammar)};
 
-import silver.definition.origins.runtime.NOriginInfo;
+import core.NOriginInfo;
 
 public final class ${className} extends common.FunctionNode {
 
@@ -167,7 +167,7 @@ String ::= whatGrammar::String
   return s"""
 package ${package};
 
-import silver.definition.origins.runtime.*;
+import core.*;
 
 public class Main {
 	public static void main(String[] args) {
@@ -175,7 +175,7 @@ public class Main {
 		${package}.Init.init();
 		${package}.Init.postInit();
 		try {
-			NOriginInfo origin = new PotherOriginInfo(null, "Main Function", common.ConsCell.nil);
+			NOriginInfo origin = new PotherOriginInfo(null, new common.StringCatter("Main Function"), common.ConsCell.nil);
 			common.Node rv = (common.Node) ${package}.Pmain.invoke(origin, cvargs(args), common.IOToken.singleton);
 			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
 			drv.synthesized(core.Init.core_io__ON__core_IOVal); // demand the io token

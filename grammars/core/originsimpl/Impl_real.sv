@@ -1,5 +1,4 @@
-grammar silver:definition:origins:runtime:impl;
-import silver:definition:origins:runtime;
+grammar core:originsimpl;
 
 function sexprify
 String ::= nt::a

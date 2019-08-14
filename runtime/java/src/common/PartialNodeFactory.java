@@ -1,6 +1,6 @@
 package common;
 
-import silver.definition.origins.runtime.NOriginInfo;
+import core.NOriginInfo;
 
 
 /**

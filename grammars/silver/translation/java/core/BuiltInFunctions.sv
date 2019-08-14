@@ -77,7 +77,7 @@ top::Expr ::= 'reify'
   top.translation =
 s"""(new common.NodeFactory<core.NEither>() {
 				@Override
-				public final core.NEither invoke(final silver.definition.origins.runtime.NOriginInfo originCtx, final Object[] args, final Object[] namedArgs) {
+				public final core.NEither invoke(final core.NOriginInfo originCtx, final Object[] args, final Object[] namedArgs) {
 					assert args != null && args.length == 1;
 					assert namedArgs == null || namedArgs.length == 0;
 					

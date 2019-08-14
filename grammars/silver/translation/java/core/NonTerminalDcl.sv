@@ -1,6 +1,6 @@
 grammar silver:translation:java:core;
 
-aspect production nonterminalDcl
+aspect production noWrapperNonterminalDcl
 top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs ';'
 {
   local className :: String = "N" ++ id.name;
@@ -21,7 +21,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
 package ${makeName(top.grammarName)};
 
 import java.util.*;
-import silver.definition.origins.runtime.*;
+import core.*;
 
 public abstract class ${className} extends common.Node${
   (if null(myAnnos) then "" else 

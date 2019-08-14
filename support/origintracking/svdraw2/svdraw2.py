@@ -47,17 +47,18 @@ class NT(ComplexValue):
 		self.origin = None
 		self.redex = None
 		self.newly_introduced = True
-		o = list(filter(lambda x:x[0].endswith("origininfo"), pexpr[3]))
-		if o != []:
-			o = translate(o[0][1])
-			if o.name=="silver:modification:origintracking:childruntime:otherOriginInfo":
-				return
-			self.origin, self.originlabel = o.children[0].children[0],\
-				"\n".join(map(lambda x:x.node_text(), o.children[1].value))
-			if len(o.children)>3:
-				self.redex, self.redexlabel = o.children[2].children[0],\
-					"\n".join(map(lambda x:x.node_text(), o.children[3].value))
-			self.newly_introduced = o.children[-1].value
+		o = translate(pexpr[4])
+		self.comment = o.node_text(False)
+		if o is None or (isinstance(o, PrimitiveValue) and o.value is None):
+			return
+		if o.name=="core:otherOriginInfo":
+			return
+		self.origin, self.originlabel = o.children[0].children[0],\
+			"\n".join(map(lambda x:x.node_text(), o.children[1].value))
+		if len(o.children)>3:
+			self.redex, self.redexlabel = o.children[2].children[0],\
+				"\n".join(map(lambda x:x.node_text(), o.children[3].value))
+		self.newly_introduced = o.children[-1].value
 
 	def get_real_children(self):
 		return list(filter(lambda x:not isinstance(x, PrimitiveValue), self.children))
@@ -65,7 +66,7 @@ class NT(ComplexValue):
 	def has_as_child(self, x):
 		return x in self.children or any(map(lambda c:c.has_as_child(x), self.children))
 
-	def node_text(self):
+	def node_text(self, inclo=True):
 		r=self.name.split(":")[-1]+"("
 		for c in self.children:
 			if isinstance(c, PrimitiveValue) or isinstance(c, LocationNT):
@@ -75,13 +76,14 @@ class NT(ComplexValue):
 			if c!=self.children[-1]:
 				r += ","
 		r+=")"
+		if inclo: r+="\\n"+self.comment
 		return r
 
 	def is_origins_impl_value(self):
 		return any(x in self.name for x in ["OriginInfo", "loc", "originLink"])
 
 class LocationNT(NT):
-	def node_text(self):
+	def node_text(self, inclo=True):
 		return "loc("+":".join(map(lambda x:str(x.value), self.children[:2]))+")"
 
 class Token(ComplexValue):
@@ -94,7 +96,7 @@ class Token(ComplexValue):
 		self.redex = None
 		self.newly_introduced = True
 
-	def node_text(self):
+	def node_text(self, inclo=True):
 		return self.name.split(":")[-1]+"<"+self.lexeme+">\n"+self.loc.node_text()
 
 	def node_color(self):
@@ -108,14 +110,14 @@ class PrimitiveValue(SilverValue):
 		self.redex = None
 		self.newly_introduced = False
 
-	def node_text(self):
+	def node_text(self, inclo=True):
 		return repr(self.value)
 
 class PrimitiveList(PrimitiveValue):
 	def has_as_child(self, x):
 		return x in self.value or any(map(lambda c:c.has_as_child(x), self.value))
 
-	def node_text(self):
+	def node_text(self, inclo=True):
 		return "["+", ".join(map(lambda x:x.node_text(), self.value))+"]"
 
 def primitive(x):

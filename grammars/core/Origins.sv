@@ -1,10 +1,11 @@
-grammar silver:definition:origins:runtime;
+grammar core;
+import core:originsimpl;
 
 nonterminal OriginInfo;
 nonterminal OriginNote;
 nonterminal OriginLink;
 
-synthesized attribute pp :: String occurs on OriginNote;
+synthesized attribute notepp :: String occurs on OriginNote;
 
 synthesized attribute nextOrigin :: Maybe<OriginInfo> occurs on OriginLink;
  -- ^This attribute's implementation is generated automatically. For nonterminals with origins
@@ -66,7 +67,7 @@ top::OriginInfo ::= origin :: OriginLink
 aspect default production
 top::OriginNote ::=
 {
-	top.pp = "<" ++ hackUnparse(top) ++ ">";
+	top.notepp = "<" ++ hackUnparse(top) ++ ">";
 }
 
 abstract production originDbgNote
@@ -87,3 +88,33 @@ top::OriginNote ::= attributeName::String sourceGrammar::String prod::String nt:
 	
 }
 
+function getOriginChain
+[OriginInfo] ::= l::OriginInfo
+{
+	return case l.mOriginLink of
+		| just(o) -> case o.nextOrigin of
+			| just(n) -> n :: getOriginChain(n)
+			| nothing() -> []
+		end
+		| nothing() -> []
+	end;
+}
+
+function getOrigin
+OriginInfo ::= arg::a
+{
+	return case javaGetOrigin(arg) of
+		| just(x) -> x
+		| nothing() -> bogusOriginInfo()
+	end;
+}
+
+function printObjectPairForOriginsViz
+IO ::= start::a stop::b io::IO
+{
+	return print(
+		"\n\n\n---SVDRAW2 START---" ++
+		"\n" ++ sexprify(start) ++
+        "\n" ++ sexprify(stop) ++
+        "\n" ++ "---SVDRAW2 END---\n\n\n", io);
+}

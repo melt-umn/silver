@@ -1,0 +1,31 @@
+grammar core:originsimpl;
+
+function sexprify
+String ::= nt::a
+{
+  return error("Not impl");
+}
+
+function javaDup
+a ::= arg::a redex::b rules::[OriginNote]
+{
+  return error("Not impl");
+}
+
+function javaDupNullRedex
+a ::= arg::a rules::[OriginNote]
+{
+  return error("Not impl");
+}
+
+function javaCopy
+a ::= arg::a redex::b rules::[OriginNote]
+{
+  return error("Not impl");
+}
+
+function javaGetOrigin
+Maybe<OriginInfo> ::= arg::a
+{
+  return error("Not impl");
+}

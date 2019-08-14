@@ -3,7 +3,7 @@ grammar silver:definition:flow:env;
 import silver:definition:type:syntax only BracketedOptTypeExprs;
 import silver:driver:util only isStrictlyExportedBy;
 
-aspect production nonterminalDcl
+aspect production noWrapperNonterminalDcl
 top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs ';'
 {
   -- Normally the flow analysis consider options to be the same as exports.

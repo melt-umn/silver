@@ -52,7 +52,8 @@ public final class Origins {
 				r += "('"+name+"', "+sexprifyObj(value)+")";
 				if (i!=annotationNames.length-1) r+=",";
 			}
-			r += "]";
+			r += "],";
+			r += sexprifyObj(n.origin);
 		} else if (arg instanceof ConsCell){
 			ConsCell cc = (ConsCell) arg;
 			if (cc.nil()) {
@@ -66,7 +67,7 @@ public final class Origins {
 					next = cc.tail();
 					if (next instanceof DecoratedNode) next = ((DecoratedNode)next).undecorate();
 					if (!(next instanceof ConsCell)) {
-						throw new SilverInternalError("ConsCell.tail() evalued to not a ConsCell");
+						throw new SilverInternalError("ConsCell.tail() evaluated to not a ConsCell");
 					}
 					cc=(ConsCell)next;
 				}
