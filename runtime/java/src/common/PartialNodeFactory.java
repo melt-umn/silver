@@ -45,7 +45,7 @@ public class PartialNodeFactory<T> extends NodeFactory<T> {
 	}
 	
 	@Override
-	public T invoke(final NOriginInfo originCtx, final Object[] restargs, final Object[] namedArgs) {
+	public T invoke(final common.OriginContext originCtx, final Object[] restargs, final Object[] namedArgs) {
 		final int fullsize = args.length + restargs.length;
 		final Object[] fullargs = new Object[fullsize];
 		

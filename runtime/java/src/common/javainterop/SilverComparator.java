@@ -17,9 +17,9 @@ import common.NodeFactory;
 public class SilverComparator<T> implements Comparator<T> {
 
 	private NodeFactory<Integer> cmpFunction;
-	private NOriginInfo originCtx;
+	private common.OriginContext originCtx;
 	
-	public SilverComparator(final NOriginInfo originCtx, NodeFactory<Integer> cmp) {
+	public SilverComparator(final common.OriginContext originCtx, NodeFactory<Integer> cmp) {
 		this.cmpFunction = cmp;
 		this.originCtx = originCtx;
 	}

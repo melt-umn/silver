@@ -65,6 +65,13 @@ public abstract class Node implements Typed {
 		return decorate(TopNode.singleton, (Lazy[])null);
 	}
 
+	// Used only when needing origins info on lazily evaluated locals in functions :/
+	public DecoratedNode decorate(OriginContext originCtx) {
+		DecoratedNode tmp = decorate();
+		tmp.originCtx = originCtx;
+		return tmp;
+	}
+
 	// These methods are to be provided by the *nonterminal*
 	
 	/**

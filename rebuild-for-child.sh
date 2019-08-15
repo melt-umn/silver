@@ -9,7 +9,8 @@ echo    === DEEP CLEAN ===
 echo    === COMPILE WITH OLD SILVER ===
 ./old-compile --clean --one-jar
 echo    === BUILD CHILDRUNTIME ===
-support/bin/silver core
+rm -rf generated/*/core
+support/bin/silver-custom build/silver.composed.Default.jar core
 echo    === BUILD JAVA RUNTIME ===
 cd runtime/java
 ant

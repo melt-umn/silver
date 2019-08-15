@@ -27,6 +27,8 @@ public class DecoratedNode implements Typed {
 	// don't exist (syn#15 when there's only 10)
 	// We only try to nicely report errors that are the fault of the user writing
 	// broken code. (e.g. "no equation for syn")
+
+	public OriginContext originCtx; //OriginContext of the "invocation" this is
 	
 	/**
 	 * The "undecorated" form of this DecoratedNode. (Never null)

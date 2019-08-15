@@ -64,6 +64,11 @@ ${implode("", map((.childStaticElem), namedSig.inputElements))}
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
     }
 
+    public ${className}(${namedSig.javaSignature}) { //TODO: Ugly compat hack
+        super(null ${commaIfAnnos} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
+${implode("", map(makeChildAssign, namedSig.inputElements))}
+    }
+
 ${implode("", map((.childDeclElem), namedSig.inputElements))}
 
     @Override
@@ -227,8 +232,8 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 
     public static final class Factory extends common.NodeFactory<${fnnt}> {
         @Override
-        public final ${fnnt} invoke(final NOriginInfo originCtx, final Object[] children, final Object[] annotations) {
-            return new ${className}(originCtx ${commaIfKids} ${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+        public final ${fnnt} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] annotations) {
+            return new ${className}(${newConstructionOriginUsingCtxRef} ${commaIfKids} ${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
         }
         
         @Override

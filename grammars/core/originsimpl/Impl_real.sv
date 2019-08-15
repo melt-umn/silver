@@ -5,7 +5,7 @@ String ::= nt::a
 {
   return error("Not impl");
 } foreign {
-  "java" : return "(common.Origins.sexprify(%nt%))";
+  "java" : return "(common.OriginsUtil.sexprify(%nt%))";
 }
 
 function javaDup
