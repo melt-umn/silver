@@ -257,7 +257,13 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.translation = s"((${finalType(top).transType})${e.translation}.synthesized(${q.dcl.attrOccursIndex}))";
+  -- top.translation = if finalType(top).transType == "Object"
+  --   then s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${e.translation}.synthesized(${q.dcl.attrOccursIndex})))"
+  --   else if !finalType(top).isPrimitiveForDuplicate
+  --   then s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopy(${e.translation}.synthesized(${q.dcl.attrOccursIndex})))"
+  --   else s"((${finalType(top).transType})${e.translation}.synthesized(${q.dcl.attrOccursIndex}))";
+
+  top.translation = s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${e.translation}.synthesized(${q.dcl.attrOccursIndex})))";
 
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of
@@ -276,7 +282,13 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.translation = s"((${finalType(top).transType})${e.translation}.inherited(${q.dcl.attrOccursIndex}))";
+  -- top.translation = if finalType(top).transType == "Object"
+  --   then s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${e.translation}.inherited(${q.dcl.attrOccursIndex})))"
+  --   else if !finalType(top).isPrimitiveForDuplicate
+  --   then s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopy(${e.translation}.inherited(${q.dcl.attrOccursIndex})))"
+  --   else s"((${finalType(top).transType})${e.translation}.inherited(${q.dcl.attrOccursIndex}))";
+
+  top.translation = s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${e.translation}.inherited(${q.dcl.attrOccursIndex})))";
 
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of
@@ -598,8 +610,9 @@ String ::= e::Decorated Expr
   -- we have hit the 64K bytecode limit in the past, which is why `Init` farms
   -- initialization code out across each production. So who knows.
   return s"new common.Lazy() { public final Object eval(final common.DecoratedNode context) { final common.OriginContext originCtx = context.originCtx; return ${e.translation}; } }";
-  -- ORIGINS TODO: final common.OriginContext originCtx = context.undecorate().origin; 
-  -- need to get rules into this too. can capture whole thing? just rules? put OriginContext into decnode?
-  --  (it's available at construction time FucntionDecl.sv:23)
+  -- ORIGINS TODO: this is an ugly hack
+  --  alternative: construct context for fns with origins, and pull info off context.undecorate().origin?
+  -- Bigger Q: could we do the whole thing by attacking OC info to DecNodes? Would require major 
+  --  refactoring, but might be a better solution
 }
 

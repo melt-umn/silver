@@ -100,7 +100,8 @@ ${makeTyVarDecls(5, finalType(top).freeVariables)}
 aspect production newFunction
 top::Expr ::= 'new' '(' e::Expr ')'
 {
-  top.translation = s"((${finalType(top).transType})${e.translation}.undecorate())";
+  top.translation = s"((${finalType(top).transType})${e.translation}.undecorate().duplicate(false, common.ConsCell.nil))";
+  -- ORIGINS TODO: Need 1) real er info 2) notes
   
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }

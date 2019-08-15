@@ -88,17 +88,17 @@ top::OriginNote ::= attributeName::String sourceGrammar::String prod::String nt:
 	
 }
 
-function getOriginChain
-[OriginInfo] ::= l::OriginInfo
-{
-	return case l.mOriginLink of
-		| just(o) -> case o.nextOrigin of
-			| just(n) -> n :: getOriginChain(n)
-			| nothing() -> []
-		end
-		| nothing() -> []
-	end;
-}
+-- function getOriginChain
+-- [OriginInfo] ::= l::OriginInfo
+-- {
+-- 	return case l.mOriginLink of
+-- 		| just(o) -> case o.nextOrigin of
+-- 			| just(n) -> n :: getOriginChain(n)
+-- 			| nothing() -> []
+-- 		end
+-- 		| nothing() -> []
+-- 	end;
+-- }
 
 function getOrigin
 OriginInfo ::= arg::a

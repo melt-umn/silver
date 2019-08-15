@@ -60,4 +60,19 @@ public final class OriginContext {
 				return new core.PbogusOriginInfo(null);
 		}
 	}
+
+	public <T extends Node> T attrAccessCopy(T arg) {
+		switch (this.variety) {
+			case NORMAL:
+				return (T)arg.copy(this.lhs, ConsCell.nil);
+
+			default:
+				return arg;
+		}
+	}
+
+	public Object attrAccessCopyPoly(Object arg) {
+		if (arg instanceof Node) return attrAccessCopy((Node)arg);
+		return arg;
+	}
 }
