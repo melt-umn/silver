@@ -57,7 +57,7 @@ public final class RawTreeSet {
 		
 		Iterator<Object> x = ret.iterator();
 		while(x.hasNext()) {
-			if(!cmp.invoke(new Object[]{x.next()}, null)) {
+			if(!cmp.invoke(OriginContext.FFI_CONTEXT, new Object[]{x.next()}, null)) {
 				x.remove();
 			}
 		}

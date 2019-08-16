@@ -23,6 +23,7 @@ IO ::= args::[String]
   local r_ast :: ast:Root = r_cst.ast;
 
   local print_success :: IO = 
+    printObjectPairForOriginsViz(r_cst, r_ast,
     print( "Command line arguments: " ++ filename ++
            "\n\n" ++
            "CST pretty print: \n" ++ r_cst.unparse ++
@@ -34,7 +35,7 @@ IO ::= args::[String]
             else "\n" ++
                  messagesToString(r_ast.errors) ++ "\n"
            )
-           , text.io );
+           , text.io ));
 
   local write_success :: IO =
     writeFile("output.c", r_ast.ast:c_code, print_success);

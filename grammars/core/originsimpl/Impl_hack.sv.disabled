@@ -29,3 +29,9 @@ Maybe<OriginInfo> ::= arg::a
 {
   return error("Not impl");
 }
+
+function javaGetNextOrigin
+Maybe<OriginInfo> ::= arg::OriginLink
+{
+  return error("Not impl");
+}

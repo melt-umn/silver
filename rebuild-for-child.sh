@@ -11,6 +11,7 @@ echo    === COMPILE WITH OLD SILVER ===
 echo    === BUILD CHILDRUNTIME ===
 rm -rf generated/*/core
 support/bin/silver-custom build/silver.composed.Default.jar core
+support/bin/silver-custom build/silver.composed.Default.jar lib:xml:ast
 echo    === BUILD JAVA RUNTIME ===
 cd runtime/java
 ant

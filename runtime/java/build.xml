@@ -29,7 +29,7 @@
       <include name='common/**/*.java' />
       <include name='core/*.java' />
       <!-- <include name='monto/*.java' /> -->
-      <exclude name='common/rawlib/*' />
+      <!-- <exclude name='common/rawlib/*' /> -->
       <include name='lib/xml/ast/*.java' />
     </javac>
   </target>

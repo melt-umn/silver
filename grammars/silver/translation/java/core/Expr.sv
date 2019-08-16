@@ -147,12 +147,13 @@ aspect production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
 {
   local commaIfArgs :: String = if length(es.exprs) != 0 then "," else "";
+  local commaIfArgsOrAnnos :: String = if length(annos.exprs) + length(es.exprs)!= 0 then "," else "";
   top.translation = 
     case e of 
     | functionReference(q) -> -- static method invocation
         s"((${finalType(top).transType})${makeClassName(q.lookupValue.fullName)}.invoke(${makeOriginContextRef(e)} ${commaIfArgs} ${argsTranslation(es)}))"
     | productionReference(q) -> -- static constructor invocation
-        s"((${finalType(top).transType})new ${makeClassName(q.lookupValue.fullName)}(${makeNewConstructionOrigin(e)} ${commaIfArgs} ${implode(", ", map((.lazyTranslation), es.exprs ++ reorderedAnnoAppExprs(annos)))}))"
+        s"((${finalType(top).transType})new ${makeClassName(q.lookupValue.fullName)}(${makeNewConstructionOrigin(e)} ${commaIfArgsOrAnnos} ${implode(", ", map((.lazyTranslation), es.exprs ++ reorderedAnnoAppExprs(annos)))}))"
     | _ -> -- dynamic method invocation
         s"((${finalType(top).transType})${e.translation}.invoke(${makeOriginContextRef(e)}, new Object[]{${argsTranslation(es)}}, ${namedargsTranslation(annos)}))" 
     end ;
@@ -263,7 +264,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   --   then s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopy(${e.translation}.synthesized(${q.dcl.attrOccursIndex})))"
   --   else s"((${finalType(top).transType})${e.translation}.synthesized(${q.dcl.attrOccursIndex}))";
 
-  top.translation = s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${e.translation}.synthesized(${q.dcl.attrOccursIndex})))";
+  top.translation = if top.frame.permitPluck then s"((${finalType(top).transType})${e.translation}.synthesized(${q.dcl.attrOccursIndex}))"
+    else s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${e.translation}.synthesized(${q.dcl.attrOccursIndex})))";
 
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of
@@ -288,7 +290,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   --   then s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopy(${e.translation}.inherited(${q.dcl.attrOccursIndex})))"
   --   else s"((${finalType(top).transType})${e.translation}.inherited(${q.dcl.attrOccursIndex}))";
 
-  top.translation = s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${e.translation}.inherited(${q.dcl.attrOccursIndex})))";
+  top.translation = if top.frame.permitPluck then s"((${finalType(top).transType})${e.translation}.inherited(${q.dcl.attrOccursIndex}))"
+    else s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${e.translation}.inherited(${q.dcl.attrOccursIndex})))";
 
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of

@@ -8,6 +8,8 @@ def translate(x):
 	def _translate(x):
 		if x[1] in ("!Integer", "!String", "!Float", "!Boolean"):
 			return PrimitiveValue(x[0], x[2])
+		if x[1] == "???":
+			return PrimitiveValue(x[0], "?"+repr(x[2:])+"?")
 		if x[1] == "!List":
 			return PrimitiveList(x[0], list(map(translate, x[2])))
 		if x[1] == "!Null":
@@ -16,6 +18,8 @@ def translate(x):
 			return Token(x)
 		if x[1] == "core:loc":
 			return LocationNT(x)
+		if x[1].endswith("OIT"):
+			return PrimitiveValue(x[0], "<"+x[1]+">")
 		return NT(x)
 
 	if x[0] in cache:
@@ -51,13 +55,13 @@ class NT(ComplexValue):
 		self.comment = o.node_text(False)
 		if o is None or (isinstance(o, PrimitiveValue) and o.value is None):
 			return
-		if o.name=="core:otherOriginInfo":
+		if o.name=="core:otherOriginInfo" or o.name=="core:parsedOriginInfo":
 			return
-		self.origin, self.originlabel = o.children[0].children[0],\
-			"\n".join(map(lambda x:x.node_text(), o.children[1].value))
-		if len(o.children)>3:
-			self.redex, self.redexlabel = o.children[2].children[0],\
-				"\n".join(map(lambda x:x.node_text(), o.children[3].value))
+		self.origin, self.originlabel = o.children[1].children[0],\
+			"\n".join(map(lambda x:x.node_text(), o.children[2].value))
+		if len(o.children)>4:
+			self.redex, self.redexlabel = o.children[3].children[0],\
+				"\n".join(map(lambda x:x.node_text(), o.children[4].value))
 		self.newly_introduced = o.children[-1].value
 
 	def get_real_children(self):
@@ -67,7 +71,8 @@ class NT(ComplexValue):
 		return x in self.children or any(map(lambda c:c.has_as_child(x), self.children))
 
 	def node_text(self, inclo=True):
-		r=self.name.split(":")[-1]+"("
+		# r=self.name.split(":")[-1]+"("
+		r=self.name+"("
 		for c in self.children:
 			if isinstance(c, PrimitiveValue) or isinstance(c, LocationNT):
 				r+=c.node_text()
@@ -97,7 +102,7 @@ class Token(ComplexValue):
 		self.newly_introduced = True
 
 	def node_text(self, inclo=True):
-		return self.name.split(":")[-1]+"<"+self.lexeme+">\n"+self.loc.node_text()
+		return self.name.split(":")[-1]+"<"+repr(self.lexeme).replace("\"","\\\"")+">\n"+self.loc.node_text()
 
 	def node_color(self):
 		return "grey"
@@ -111,7 +116,7 @@ class PrimitiveValue(SilverValue):
 		self.newly_introduced = False
 
 	def node_text(self, inclo=True):
-		return repr(self.value)
+		return repr(self.value).replace("\"","\\\"")
 
 class PrimitiveList(PrimitiveValue):
 	def has_as_child(self, x):
@@ -141,7 +146,7 @@ print("evaling pexprs...")
 start = translate(start)
 end = translate(end)
 
-os.chdir("/home/louis/School/melt/origintracking/silver/support/origintracking/svdraw2")
+os.chdir("/home/louis/School/melt/origintracking/silver-jctx/support/origintracking/svdraw2")
 
 fd = open("out.dot", 'w')
 w = lambda x: fd.write(x+"\n")
@@ -220,4 +225,4 @@ fd.close()
 
 print("rendering...")
 
-os.system("dot -Tpng -o out.png out.dot")
+os.system("dot -Tsvg -o out.svg out.dot")

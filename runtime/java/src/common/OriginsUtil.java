@@ -14,7 +14,12 @@ public final class OriginsUtil {
 		return Integer.toString(System.identityHashCode(arg));
 	}
 
+	private static String pySanitize(String arg) {
+		return arg.replace("\\","\\\\").replace("\"", "\\\"").replace("\n","\\n");
+	}
+
 	private static String sexprifyObj(Object arg) {
+
 		if (arg instanceof DecoratedNode) arg = ((DecoratedNode)arg).undecorate();
 
 		String r = "[" + ids(arg) + ", ";
@@ -25,16 +30,16 @@ public final class OriginsUtil {
 		else if (arg instanceof Boolean)
 			r += "'!Boolean', " + arg.toString();
 		else if (arg instanceof StringCatter)
-			r += "'!String', \""+arg.toString().replace("\"", "\\\"")+"\"";
+			r += "'!String', \""+pySanitize(arg.toString())+"\"";
 		else if (arg instanceof Terminal){
 			Terminal t = (Terminal) arg;
-			r += "'!Terminal', '"+t.getName()+"', \""+t.lexeme+"\", "+sexprifyObj(t.location);
+			r += "'!Terminal', '"+pySanitize(t.getName())+"', \""+pySanitize(t.lexeme.toString())+"\", "+sexprifyObj(t.location);
 		} else if (arg instanceof Node) {
 			Node n = (Node) arg;
-			r += "'" + n.getName() + "', [";
+			r += "'" + pySanitize(n.getName()) + "', [";
 			for (int i=0; i<n.getNumberOfChildren(); i++){
 				r += sexprifyObj(n.getChild(i));
-				if (i!=n.getNumberOfChildren()-1) r+=", ";
+				if (i!=n.getNumberOfChildren()-1) r+=",";
 			}
 			r+="],[";
 
@@ -42,7 +47,7 @@ public final class OriginsUtil {
 			for (int i = 0; i < annotationNames.length; i++) {
 				String name = annotationNames[i];
 				Object value = n.getAnno(name);
-				r += "('"+name+"', "+sexprifyObj(value)+")";
+				r += "('"+pySanitize(name)+"', "+sexprifyObj(value)+")";
 				if (i!=annotationNames.length-1) r+=",";
 			}
 			r += "],";
@@ -69,7 +74,7 @@ public final class OriginsUtil {
 		} else if (arg == null){
 			r += "'!Null'";
 		} else {
-			r += "'???', \""+arg.toString()+"\"";
+			r += "'???', \""+pySanitize(arg.toString())+"\"";
 		}
 
 		r += "]";
@@ -79,5 +84,17 @@ public final class OriginsUtil {
 
 	public static StringCatter sexprify(final Object arg) {
 		return new StringCatter(sexprifyObj(arg));
+	}
+
+	public static core.NMaybe polyGetOrigin(Object o) {
+		if (o instanceof DecoratedNode) o = ((DecoratedNode)o).undecorate();
+		if (!(o instanceof Node)) return new core.Pnothing(null);
+		Node n = (Node)o;
+		if (n.origin == null) return new core.Pnothing(null);
+		return new core.Pjust(null, n.origin);
+	}
+
+	public static core.NMaybe polyGetNextOrigin(core.NOriginLink o) {
+		return polyGetOrigin(o.getChild(0));
 	}
 }

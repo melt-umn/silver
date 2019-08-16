@@ -18,19 +18,30 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local ntName :: String = namedSig.outputElement.typerep.typeName;
   local fnnt :: String = makeNTClassName(ntName);
 
+  local ntDeclPackage :: String = implode(".", init(explode(".", fnnt)));
   local typeNameSnipped :: String = last(explode(":", namedSig.outputElement.typerep.typeName));
+
+  local dupX :: (String ::= NamedSignatureElement String) =
+    (\x::NamedSignatureElement gc::String -> 
+        (if x.typerep.transType == "Object" then s"(${gc} instanceof common.Node?((common.Node)${gc}).duplicate(null, notes):${gc})"
+            else if x.typerep.isPrimitiveForDuplicate then gc
+            else gc++".duplicate(null, notes)"));
+
   local dupChild :: (String ::= NamedSignatureElement) =
-    (\x::NamedSignatureElement -> 
-        let gc :: String = "getChild_"++x.elementName++"()" in
-            (if x.typerep.transType == "Object" then s"(${gc} instanceof common.Node?((common.Node)${gc}).duplicate(null, notes):${gc})"
-                else if x.typerep.isPrimitiveForDuplicate then gc
-                else gc++".duplicate(null, notes)") end);
+    (\x::NamedSignatureElement -> dupX(x, s"getChild_${x.elementName}()"));
+
+  local dupAnno :: (String ::= NamedSignatureElement) =
+    (\x::NamedSignatureElement -> dupX(x, s"getAnno_${makeIdName(x.elementName)}()"));
 
   local copyChild :: (String ::= NamedSignatureElement) =
-    (\x::NamedSignatureElement -> "getChild_"++x.elementName++"()");
+    (\x::NamedSignatureElement -> s"getChild_${x.elementName}()");
+
+  local copyAnno :: (String ::= NamedSignatureElement) =
+    (\x::NamedSignatureElement -> s"getAnno_${makeIdName(x.elementName)}()");
 
   local commaIfKids :: String = if length(namedSig.inputElements)!=0 then "," else "";
   local commaIfAnnos :: String = if length(namedSig.namedInputElements)!=0 then "," else "";
+  local commaIfKidsOrAnnos :: String = if length(namedSig.inputElements)!=0 || length(namedSig.namedInputElements)!=0 then "," else "";
 
   top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
@@ -59,7 +70,7 @@ ${makeIndexDcls(0, namedSig.inputElements)}
 ${implode("", map((.childStaticElem), namedSig.inputElements))}
     }
 
-    public ${className}(final NOriginInfo origin ${commaIfKids} ${namedSig.javaSignature}) {
+    public ${className}(final NOriginInfo origin ${commaIfKidsOrAnnos} ${namedSig.javaSignature}) {
         super(origin ${commaIfAnnos} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
     }
@@ -147,11 +158,11 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
     @Override
     public ${fnnt} duplicate(Object redex, Object notes) {
         if (redex == null) {
-            return new ${className}(new PoriginOriginInfo(null, this.wrapInLink(), notes, false) ${commaIfKids}
-                ${implode(", ", map(dupChild, namedSig.inputElements))});
+            return new ${className}(new PoriginOriginInfo(null, new core.PsetAtNewOIT(null), this.wrapInLink(), notes, false) ${commaIfKids}
+                ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
         } else {
-            return new ${className}(new PoriginAndRedexOriginInfo(null, this.wrapInLink(), notes, ((common.Node)redex).wrapInLink(), notes, false) ${commaIfKids}
-                ${implode(", ", map(dupChild, namedSig.inputElements))});
+            return new ${className}(new PoriginAndRedexOriginInfo(null, new core.PsetAtNewOIT(null), this.wrapInLink(), notes, ((common.Node)redex).wrapInLink(), notes, false) ${commaIfKids}
+                ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
         }
     }
 
@@ -177,13 +188,13 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 
         Object redex = ((common.Node)newRedex).wrapInLink();
         Object redexNotes = newRule;
-        return new ${className}(new PoriginAndRedexOriginInfo(null, origin, originNotes, redex, redexNotes, newlyConstructed) ${commaIfKids}
-            ${implode(", ", map(copyChild, namedSig.inputElements))});
+        return new ${className}(new PoriginAndRedexOriginInfo(null, new PsetAtAccessOIT(null), origin, originNotes, redex, redexNotes, newlyConstructed) ${commaIfKids}
+            ${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(copyAnno, namedSig.namedInputElements))});
     }
 
     @Override
-    public PoriginLink${typeNameSnipped} wrapInLink(){
-        return new PoriginLink${typeNameSnipped}(null, this);
+    public ${ntDeclPackage}.PoriginLink${typeNameSnipped} wrapInLink(){
+        return new ${ntDeclPackage}.PoriginLink${typeNameSnipped}(null, this);
     }
     
     @Override
@@ -225,7 +236,7 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
         ${implode("\n\t\t", map(makeChildReify(fName, length(namedSig.inputElements), _), namedSig.inputElements))}
         ${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
         
-        return new ${className}(null ${commaIfKids} ${namedSig.refInvokeTrans});
+        return new ${className}(common.OriginContext.REFLECTION_CONTEXT.makeNewConstructionOrigin(false) ${commaIfKidsOrAnnos} ${namedSig.refInvokeTrans});
     }
 
     public static final common.NodeFactory<${fnnt}> factory = new Factory();
@@ -233,7 +244,7 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
     public static final class Factory extends common.NodeFactory<${fnnt}> {
         @Override
         public final ${fnnt} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] annotations) {
-            return new ${className}(${newConstructionOriginUsingCtxRef} ${commaIfKids} ${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+            return new ${className}(${newConstructionOriginUsingCtxRef} ${commaIfKidsOrAnnos} ${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
         }
         
         @Override

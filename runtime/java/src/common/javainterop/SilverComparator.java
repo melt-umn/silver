@@ -1,7 +1,7 @@
 package common.javainterop;
 
 import java.util.Comparator;
-import core.NOriginInfo;
+import common.OriginContext;
 
 import common.NodeFactory;
 
@@ -17,16 +17,14 @@ import common.NodeFactory;
 public class SilverComparator<T> implements Comparator<T> {
 
 	private NodeFactory<Integer> cmpFunction;
-	private common.OriginContext originCtx;
 	
-	public SilverComparator(final common.OriginContext originCtx, NodeFactory<Integer> cmp) {
+	public SilverComparator(NodeFactory<Integer> cmp) {
 		this.cmpFunction = cmp;
-		this.originCtx = originCtx;
 	}
 	
 	@Override
 	public int compare(T arg0, T arg1) {
-		return cmpFunction.invoke(originCtx, new Object[] { arg0, arg1 }, null);
+		return cmpFunction.invoke(OriginContext.FFI_CONTEXT, new Object[] { arg0, arg1 }, null);
 	}
 
 }

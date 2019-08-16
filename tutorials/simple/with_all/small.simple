@@ -1,0 +1,5 @@
+
+main () {
+  Integer x ;
+  x = 1 ; 
+}

@@ -1,45 +1,117 @@
 grammar core;
 import core:originsimpl;
 
+-- WARNING: Many of the nonterminals and productions in this file are runtime- and/or compiler-blessed.
+--  Don't change their names, grammar locations, or parameters unless you know what your doing
+--  (and have made the appropriate runtime and compiler changes!)
+
 nonterminal OriginInfo;
+nonterminal OriginInfoType;
 nonterminal OriginNote;
 nonterminal OriginLink;
 
 synthesized attribute notepp :: String occurs on OriginNote;
-
-synthesized attribute nextOrigin :: Maybe<OriginInfo> occurs on OriginLink;
- -- ^This attribute's implementation is generated automatically. For nonterminals with origins
- -- information it's just(their-origininfo-annotation's-value), for nonterminals without
- -- origins information it's nothing().
 
 synthesized attribute isNewlyConstructed :: Boolean occurs on OriginInfo;
 synthesized attribute originNotes :: [OriginNote] occurs on OriginInfo;
 synthesized attribute mOriginLink :: Maybe<OriginLink> occurs on OriginInfo;
 synthesized attribute mOwnRedexLink :: Maybe<OriginLink> occurs on OriginInfo;
 synthesized attribute mOwnRedexNotes :: Maybe<[OriginNote]> occurs on OriginInfo;
+synthesized attribute originType :: OriginInfoType occurs on OriginInfo;
+
+synthesized attribute isBogus :: Boolean occurs on OriginInfoType;
+
+abstract production setAtConstructionOIT
+top::OriginInfoType ::=
+{
+	top.isBogus = false;
+}
+
+abstract production setAtNewOIT
+top::OriginInfoType ::=
+{
+	top.isBogus = false;
+}
+
+abstract production setAtForwardingConstructionOIT
+top::OriginInfoType ::=
+{
+	top.isBogus = false;
+}
+
+abstract production setAtAccessOIT
+top::OriginInfoType ::=
+{
+	top.isBogus = false;
+}
+
+abstract production setFromParserOIT
+top::OriginInfoType ::=
+{
+	top.isBogus = false;
+}
+
+abstract production setFromParserActionOIT
+top::OriginInfoType ::=
+{
+	top.isBogus = true;
+}
+
+abstract production setFromFFIOIT
+top::OriginInfoType ::=
+{
+	top.isBogus = true;
+}
+
+abstract production setFromReflectionOIT
+top::OriginInfoType ::=
+{
+	top.isBogus = true;
+}
+
+abstract production setFromEntryOIT
+top::OriginInfoType ::=
+{
+	top.isBogus = false;
+}
+
+abstract production otherBogusOIT
+top::OriginInfoType ::=
+{
+	top.isBogus = true;
+}
+
+abstract production noOriginsAvailableOIT
+top::OriginInfoType ::=
+{
+	top.isBogus = true;
+}
 
 abstract production otherOriginInfo
-top::OriginInfo ::= source::String notes::[OriginNote]
+top::OriginInfo ::= typ::OriginInfoType source::String notes::[OriginNote]
 {
 	top.isNewlyConstructed = true;
 	top.originNotes = notes;
 	top.mOriginLink = nothing();
 	top.mOwnRedexLink = nothing();
 	top.mOwnRedexNotes = nothing();
+	top.originType = typ;
 }
 
-abstract production bogusOriginInfo
-top::OriginInfo ::=
+abstract production parsedOriginInfo
+top::OriginInfo ::= typ::OriginInfoType source::Location notes::[OriginNote]
 {
 	top.isNewlyConstructed = true;
-	top.originNotes = [];
+	top.originNotes = notes;
 	top.mOriginLink = nothing();
 	top.mOwnRedexLink = nothing();
 	top.mOwnRedexNotes = nothing();
+	top.originType = typ;
 }
 
 abstract production originOriginInfo
-top::OriginInfo ::= origin :: OriginLink
+top::OriginInfo ::= typ::OriginInfoType 
+				 origin :: OriginLink
 				 originNotes :: [OriginNote]
 				 newlyConstructed :: Boolean
 {
@@ -48,10 +120,12 @@ top::OriginInfo ::= origin :: OriginLink
 	top.mOriginLink = just(origin);
 	top.mOwnRedexLink = nothing();
 	top.mOwnRedexNotes = nothing();
+	top.originType = typ;
 }
 
 abstract production originAndRedexOriginInfo
-top::OriginInfo ::= origin :: OriginLink
+top::OriginInfo ::= typ::OriginInfoType 
+				 origin :: OriginLink
 				 originNotes :: [OriginNote]
 				 redex :: OriginLink
 				 redexNotes :: [OriginNote]
@@ -62,6 +136,7 @@ top::OriginInfo ::= origin :: OriginLink
 	top.mOriginLink = just(origin);
 	top.mOwnRedexLink = just(redex);
 	top.mOwnRedexNotes = just(redexNotes);
+	top.originType = typ;
 }
 
 aspect default production
@@ -88,24 +163,42 @@ top::OriginNote ::= attributeName::String sourceGrammar::String prod::String nt:
 	
 }
 
--- function getOriginChain
--- [OriginInfo] ::= l::OriginInfo
--- {
--- 	return case l.mOriginLink of
--- 		| just(o) -> case o.nextOrigin of
--- 			| just(n) -> n :: getOriginChain(n)
--- 			| nothing() -> []
--- 		end
--- 		| nothing() -> []
--- 	end;
--- }
+function getOriginChain
+[OriginInfo] ::= l::OriginInfo
+{
+	return case l.mOriginLink of
+		| just(o) -> case javaGetNextOrigin(o) of
+			| just(n) -> n :: getOriginChain(n)
+			| nothing() -> []
+		end
+		| nothing() -> []
+	end;
+}
 
 function getOrigin
-OriginInfo ::= arg::a
+Maybe<OriginInfo> ::= arg::a
 {
-	return case javaGetOrigin(arg) of
-		| just(x) -> x
-		| nothing() -> bogusOriginInfo()
+	return javaGetOrigin(arg);
+}
+
+function getUrOrigin
+Maybe<OriginInfo> ::= arg::a
+{
+	return case getOrigin(arg) of
+		| just(o) -> case getOriginChain(o) of
+			| [] -> nothing()
+			| l -> just(last(l))
+		end
+		| nothing() -> nothing()
+	end;
+}
+
+function getParsedOriginLocation
+Maybe<Location> ::= arg::a
+{
+	return case getUrOrigin(arg) of
+		| just(parsedOriginInfo(_, l, _)) -> just(l)
+		| _ -> nothing()
 	end;
 }
 

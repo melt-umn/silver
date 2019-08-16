@@ -77,7 +77,7 @@ top::Expr ::= 'reify'
   top.translation =
 s"""(new common.NodeFactory<core.NEither>() {
 				@Override
-				public final core.NEither invoke(final core.common.OriginContext originCtx, final Object[] args, final Object[] namedArgs) {
+				public final core.NEither invoke(final common.OriginContext originCtx, final Object[] args, final Object[] namedArgs) {
 					assert args != null && args.length == 1;
 					assert namedArgs == null || namedArgs.length == 0;
 					
@@ -100,8 +100,8 @@ ${makeTyVarDecls(5, finalType(top).freeVariables)}
 aspect production newFunction
 top::Expr ::= 'new' '(' e::Expr ')'
 {
-  top.translation = s"((${finalType(top).transType})${e.translation}.undecorate().duplicate(false, common.ConsCell.nil))";
-  -- ORIGINS TODO: Need 1) real er info 2) notes
+  top.translation = s"((${finalType(top).transType})${e.translation}.undecorate().duplicate(${makeOriginContextRef(top)}.lhs, common.ConsCell.nil))";
+  -- ORIGINS TODO: Need notes
   
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }

@@ -14,7 +14,7 @@ import java.util.ArrayList;
  */
 public final class OriginContext {
 	public enum Variety {
-	    NORMAL, MAINFUNCTION, FFI, OTHER
+	    NORMAL, MAINFUNCTION, FFI, REFLECTIVE, PARSERACTION, OTHER
 	}
 
 	public final Variety variety;
@@ -29,6 +29,15 @@ public final class OriginContext {
 
 	public static final OriginContext ENTRY_CONTEXT =
 		new OriginContext(Variety.MAINFUNCTION, null, new ArrayList<NOriginLink>());
+
+	public static final OriginContext FFI_CONTEXT =
+		new OriginContext(Variety.FFI, null, new ArrayList<NOriginLink>());
+
+	public static final OriginContext REFLECTION_CONTEXT =
+		new OriginContext(Variety.REFLECTIVE, null, new ArrayList<NOriginLink>());
+
+	public static final OriginContext PARSERACTION_CONTEXT =
+		new OriginContext(Variety.PARSERACTION, null, new ArrayList<NOriginLink>());
 
 	public OriginContext(Node lhs, List<NOriginLink> rules) {
 		this.variety = Variety.NORMAL;
@@ -51,19 +60,44 @@ public final class OriginContext {
 	public NOriginInfo makeNewConstructionOrigin(boolean isContractum) {
 		switch (this.variety) {
 			case NORMAL:
-				return new core.PoriginOriginInfo(null, this.lhs.wrapInLink(), this.rulesAsSilverList(), false);
+				if (this.lhs == null) {
+					System.err.println("Origins Warn: makeNewConstructionOrigin: variety == NORMAL but lhs == null!");
+					return new core.PotherOriginInfo(null, new core.PotherBogusOIT(null), new common.StringCatter("??? variety == NORMAL but lhs == null!"), ConsCell.nil);
+				}
+				if (!(this.lhs instanceof Node)) {
+					System.err.println("Origins Warn: attrAccessCopy: lhs not instanceof Node!");
+					return new core.PotherOriginInfo(null, new core.PotherBogusOIT(null), new common.StringCatter("??? lhs not instanceof Node!"), ConsCell.nil);
+				}
+				return new core.PoriginOriginInfo(null, new core.PsetAtConstructionOIT(null), this.lhs.wrapInLink(), this.rulesAsSilverList(), false);
 
 			case MAINFUNCTION:
-				return new core.PotherOriginInfo(null, new common.StringCatter("Main Function"), ConsCell.nil);
+				return new core.PotherOriginInfo(null, new core.PsetFromEntryOIT(null), new common.StringCatter("Main Function"), ConsCell.nil);
+			
+			case FFI:
+				return new core.PotherOriginInfo(null, new core.PsetFromFFIOIT(null), new common.StringCatter("Called from FFI"), ConsCell.nil);
+
+			case REFLECTIVE:
+				return new core.PotherOriginInfo(null, new core.PsetFromReflectionOIT(null), new common.StringCatter("Called from Reflection"), ConsCell.nil);
+
+			case PARSERACTION:
+				return new core.PotherOriginInfo(null, new core.PsetFromParserActionOIT(null), new common.StringCatter("Called inside a parser action block"), ConsCell.nil);
 
 			default:
-				return new core.PbogusOriginInfo(null);
+				return new core.PotherOriginInfo(null, new core.PotherBogusOIT(null), new common.StringCatter("??? Unknown variety in OriginContext.makeNewConstructionOrigin: "+this.variety.toString()), ConsCell.nil);
 		}
 	}
 
 	public <T extends Node> T attrAccessCopy(T arg) {
 		switch (this.variety) {
 			case NORMAL:
+				if (this.lhs == null) {
+					System.err.println("Origins Warn: attrAccessCopy: variety == NORMAL but lhs == null!");
+					return arg;
+				}
+				if (!(this.lhs instanceof Node)) {
+					System.err.println("Origins Warn: attrAccessCopy: lhs not instanceof Node!");
+					return arg;
+				}
 				return (T)arg.copy(this.lhs, ConsCell.nil);
 
 			default:

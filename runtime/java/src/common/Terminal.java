@@ -91,9 +91,13 @@ public abstract class Terminal implements Typed {
 			return ((Terminal)o).location;
 		} else if(o instanceof Alocation) {
 			return (NLocation) ((Alocation)o).getAnno_core_location();
+		} else if(o instanceof Node) {
+			if (((Node)o).origin instanceof core.PparsedOriginInfo) {
+				return ((core.PparsedOriginInfo)((Node)o).origin).getChild_source();
+			}
 		}
 		// TODO: a better error, maybe? Eh, it should never happen.
-		throw new RuntimeException("Attempting to extract location from locationless object");
+		throw new RuntimeException("Attempting to extract location from locationless object: "+o.toString());
 	}
 
 	/**

@@ -37,5 +37,13 @@ Maybe<OriginInfo> ::= arg::a
 {
   return error("Not impl");
 } foreign {
-  "java" : return "(((common.Node)%arg%).origin==null?new core.Pnothing(null):new core.Pjust(null, ((common.Node)%arg%).origin))";
+  "java" : return "common.OriginsUtil.polyGetOrigin(%arg%)";
+}
+
+function javaGetNextOrigin
+Maybe<OriginInfo> ::= arg::OriginLink
+{
+  return error("Not impl");
+} foreign {
+  "java" : return "common.OriginsUtil.polyGetNextOrigin(%arg%)";
 }

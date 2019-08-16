@@ -206,6 +206,8 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   top.cstProds = [pair(ns.outputElement.typerep.typeName, top)];
   top.cstNormalize = [];
 
+  local commaIfArgsOrAnnos :: String = if length(ns.inputElements) + length(ns.namedInputElements)!= 0 then "," else "";
+
   top.xmlCopper =
     "  <Production id=\"" ++ makeCopperName(ns.fullName) ++ "\">\n" ++
     (if modifiers.productionPrecedence.isJust then
@@ -215,7 +217,8 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     "    <Code><![CDATA[\n" ++
     -- Annoying workaround for if a lambda in an action block needs to capture RESULT when accessing a child.
     -- Java complains when we capture something that is non-final.
-    "final " ++ makeClassName(ns.fullName) ++ " RESULTfinal = new " ++ makeClassName(ns.fullName) ++ "(new core.PotherOriginInfo(null, new common.StringCatter(\"Parsed by Copper\"), common.ConsCell.nil), " ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
+    
+    "final " ++ makeClassName(ns.fullName) ++ " RESULTfinal = new " ++ makeClassName(ns.fullName) ++ "(new core.PparsedOriginInfo(null, new core.PsetFromParserOIT(null), common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos()), common.ConsCell.nil) " ++ commaIfArgsOrAnnos ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
     "RESULT = RESULTfinal;\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++

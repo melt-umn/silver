@@ -18,13 +18,13 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
       annotationsForNonterminal(nonterminalType(top.grammarName ++ ":" ++ id.name, tl.types), top.env), 0) != -1;
   local selectedImpl :: Expr = if hasOrigins then nextLinkSomethingImpl else nextLinkNothingImpl;
   local implStmt :: ProductionStmt = attributeDef(concreteDefLHS(qName(l, "top"), location=l),
-    '.', qNameAttrOccur(qName(l, "nextOrigin"), location=l), '=', selectedImpl, ';', location=l);
+    '.', qNameAttrOccur(qName(l, "nextOrigin"), location=l), '=', nextLinkSomethingImpl, ';', location=l);
 
   local newdcl :: AGDcl = productionDcl('abstract', 'production', name("originLink" ++ id.name, l),
     productionSignature(productionLHS(name("top", l), '::', originLinkTE, location=l), '::=',
       productionRHSCons(productionRHSElem(name("n", l), '::', ntTE, location=l), productionRHSNil(location=l),
         location=l), location=l), productionBody('{',
-          productionStmtsSnoc(productionStmtsNil(location=l), implStmt, location=l), '}', location=l), location=l);
+          productionStmtsNil(location=l), '}', location=l), location=l);
 
   forwards to appendAGDcl(
     noWrapperNonterminalDcl(cl, 'nonterminal', id, tl, ';', location=l),
