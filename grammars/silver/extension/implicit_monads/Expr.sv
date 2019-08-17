@@ -781,14 +781,15 @@ top::Expr ::= e1::Expr '&&' e2::Expr
   --e1 >>= ( (\x::Bool y::M(Bool). y >>= (\z::Bool. Return(x && z))) (_, e2) )
   local bindBoth::Expr =
     Silver_Expr {
-      $Expr {monadBind(e1.mtyperep, top.location)}
+      $Expr {monadBind(e2.mtyperep, top.location)}
       ($Expr {e1.monadRewritten},
-       (\ x::Boolean y::Boolean ->
-        $Expr {monadBind(e1.mtyperep, top.location)}
-        (y,
-         \ z::Boolean ->
-          $Expr {monadReturn(e1.mtyperep, top.location)}
-          (x && z)))(_, $Expr {e2.monadRewritten}))
+       (\x::Boolean
+         y::$TypeExpr {typerepTypeExpr(e2.mtyperep, location=top.location)} ->
+          $Expr {monadBind(e2.mtyperep, top.location)}
+          (y,
+           \z::Boolean ->
+            $Expr {monadReturn(e2.mtyperep, top.location)}
+            (x && z))) (_, $Expr {e2.monadRewritten}))
     };
   --e1 >>= ( (\x::Bool y::Bool. Return(x && y))(_, e2) )
   local bind1::Expr =
@@ -849,14 +850,15 @@ top::Expr ::= e1::Expr '||' e2::Expr
   --e1 >>= ( (\x::Bool y::M(Bool). y >>= (\z::Bool. Return(x || z))) (_, e2) )
   local bindBoth::Expr =
     Silver_Expr {
-      $Expr {monadBind(e1.mtyperep, top.location)}
+      $Expr {monadBind(e2.mtyperep, top.location)}
       ($Expr {e1.monadRewritten},
-       (\ x::Boolean y::Boolean ->
-        $Expr {monadBind(e1.mtyperep, top.location)}
-        (y,
-         \ z::Boolean ->
-          $Expr {monadReturn(e1.mtyperep, top.location)}
-          (x || z)))(_, $Expr {e2.monadRewritten}))
+       (\x::Boolean
+         y::$TypeExpr {typerepTypeExpr(e2.mtyperep, location=top.location)} ->
+          $Expr {monadBind(e2.mtyperep, top.location)}
+          (y,
+           \z::Boolean ->
+            $Expr {monadReturn(e2.mtyperep, top.location)}
+            (x || z))) (_, $Expr {e2.monadRewritten}))
     };
   --e1 >>= ( (\x::Bool y::Bool. Return(x || y))(_, e2) )
   local bind1::Expr =
