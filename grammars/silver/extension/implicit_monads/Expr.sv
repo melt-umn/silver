@@ -1399,35 +1399,17 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything
   e2.monadicallyUsed = false;
   top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
-  local bind::Expr = if isMonad(e1.mtyperep)
-                     then monadFail(e1.mtyperep, top.location)
-                     else monadFail(e2.mtyperep, top.location);
-  local attribute arg::Maybe<Expr>;
-  arg = case monadFailArgument(e1.mtyperep, top.location),
-             monadFailArgument(e2.mtyperep, top.location) of
-        | just(x), _ -> just(x)
-        | _, just(x) -> just(x)
-        | _, _ -> nothing()
-        end;
-  local fail::Expr = Silver_Expr {
-                       $Expr{bind}($Expr{case arg of | just(a) -> a end})
-                     };
+  local fail::Either<String Expr> = if isMonad(e1.mtyperep)
+                                    then monadFail(e1.mtyperep, top.location)
+                                    else monadFail(e2.mtyperep, top.location);
 
   forwards to if isMonad(e1.mtyperep) || isMonad(e2.mtyperep)
-              then case arg of
-                   | just(_) -> ifThenElse('if', e1, 'then', e2, 'else', fail, location=top.location)
-                   | nothing() -> 
-                     errorExpr([err(top.location, "The monad used in an if-then " ++
-                                "must be able to have a Fail argument generated (the " ++
-                                "argument must be Integer, Float, String, or List), which" ++
-                                " is not true for " ++
-                                prettyType(performSubstitution(if isMonad(e1.mtyperep)
-                                                               then e1.mtyperep
-                                                               else e2.mtyperep, top.finalSubst)))],
-                                location=top.location)
+              then case fail of
+                   | right(f) -> ifThenElse('if', e1, 'then', e2, 'else', f, location=top.location)
+                   | left(e) -> errorExpr([err(top.location, e)], location=top.location)
                    end
-              else errorExpr([err(top.location, "One of the expressions in " ++
-                              "an if-then has to have a monad type--instead, have " ++
+              else errorExpr([err(top.location, "Could not identify the monad for " ++
+                              "if-then; have non-monad types " ++
                               prettyType(performSubstitution(e1.mtyperep, top.finalSubst)) ++
                               " and " ++ prettyType(performSubstitution(e2.mtyperep, top.finalSubst)))],
                               location=top.location);

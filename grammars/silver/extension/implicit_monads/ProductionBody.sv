@@ -139,20 +139,16 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
   top.productionAttributes = [];
   top.defs = [];
 
+  local fail::Either<String Expr> = monadFail(attr.typerep, top.location);
+
   top.merrors := [];
   top.merrors <-
-    if isMonad(attr.typerep) && !monadFailExists(attr.typerep)
-    then [err(top.location, "Fail is not defined for monad " ++ prettyType(attr.typerep) ++
-                            " and thus cannot be defined with an empty equation")]
+    if isMonad(attr.typerep)
+    then case fail of
+         | right(_) -> []
+         | left(e) -> [err(top.location, e ++ "; this monad cannot be used in an empty equation")]
+         end
     else [];
-  top.merrors <- if isMonad(attr.typerep) && monadFailExists(attr.typerep)
-                 then case mfailarg of
-                      | just(_) -> []
-                      | nothing() ->
-                        [err(top.location, "Too complicated an argument type for fail in monad " ++
-                                           prettyType(attr.typerep))]
-                      end
-                 else [];
   top.merrors <- if !isMonad(attr.typerep)
                  then [err(top.location, "Empty equations can only be used for " ++
                                             "monad-typed attributes, not attributes of type " ++
@@ -162,11 +158,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
 
-  local mfailarg::Maybe<Expr> = monadFailArgument(attr.typerep, top.location);
   forwards to if null(top.merrors)
               then attributeDef(dl, '.', attr, '=',
-                                Silver_Expr { $Expr{monadFail(attr.typerep, top.location)}
-                                               ($Expr{case mfailarg of just(a) -> a end}) },
+                                case fail of | right(e) -> e end,
                                 ';', location=top.location)
               else errorProductionStmt(top.merrors, location=top.location);
 }

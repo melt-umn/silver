@@ -130,6 +130,7 @@ Type ::= mty::Type newInner::Type
 }
 
 
+--Print out the monad nicely rather than filled in with some other type
 function monadToString
 String ::= ty::Type
 {
@@ -188,48 +189,11 @@ Expr ::= ty::Type l::Location
          | _ -> error("Tried to get the return for a non-monadic type at " ++ l.unparse)
          end;
 }
-function monadFailExists
-Boolean ::= ty::Type
-{
-  return case ty of
-         | nonterminalType("core:Maybe", _) -> true
-         | nonterminalType("core:Either", _) -> true
-         | nonterminalType("core:monad:IOMonad", _) -> false
-         | nonterminalType("core:monad:State", _) -> false
-         | listType(_) -> true
-         | decoratedType(t) -> monadFailExists(t)
-         | _ -> false
-         end;
-}
-{-
-  TODO monadFailExists, monadFail, and monadFailArgument should combine into a
-  single function return type Maybe<Expr> that returns nothing() if there is no
-  fail and just(fail(arg)) if the fail is defined.  This is not happening now
-  due to time constraints.
--}
+
+--Return right of an expression suitable for monad fail for the given type if
+--   it exists or left of an error message if it fails
 function monadFail
-Expr ::= ty::Type l::Location
-{
-  return case ty of
-         | nonterminalType("core:Maybe", _) ->
-           baseExpr(qNameId(name("failMaybe", l), location=l), location=l)
-         | nonterminalType("core:Either", _) ->
-           baseExpr(qNameId(name("failEither", l), location=l), location=l)
-         | nonterminalType("core:monad:IOMonad", _) ->
-           error("Fail undefined for IOMonad")
-         | nonterminalType("core:monad:State", _) ->
-           error("Fail undefined for State monad")
-         | listType(_) ->
-           baseExpr(qNameId(name("failList", l), location=l), location=l)
-         | decoratedType(t) -> monadFail(t, l)
-         | _ ->
-           error("Tried to get the fail for a non-monadic type at " ++ l.unparse)
-         end;
-}
---come up with a "generic" argument for the call to Fail() if it is one of
---   a small set of basic types
-function monadFailArgument
-Maybe<Expr> ::= ty::Type l::Location
+Either<String Expr> ::= ty::Type l::Location
 {
   local string::Expr =
      stringConst(terminal(String_t,
@@ -241,85 +205,83 @@ Maybe<Expr> ::= ty::Type l::Location
   local list::Expr = Silver_Expr { [] };
   local unit::Expr = Silver_Expr { unit() };
   return case ty of
-         | nonterminalType("core:Maybe", _) -> just(string)
+         | nonterminalType("core:Maybe", _) ->
+           right(Silver_Expr { core:monad:failMaybe($Expr{string}) })
+           --baseExpr(qNameId(name("failMaybe", l), location=l), location=l)
          | nonterminalType("core:Either", [a, b]) ->
            case a of
-           | stringType() -> just(string)
-           | intType() -> just(int)
-           | floatType() -> just(float)
-           | boolType() -> just(bool)
-           | listType(_) -> just(list)
-           | nonterminalType("core:Unit", _) -> just(unit)
-           | _ -> nothing()
+           | stringType() -> right(Silver_Expr { core:monad:failEither($Expr{string}) })
+           | intType() -> right(Silver_Expr { core:monad:failEither($Expr{int}) })
+           | floatType() -> right(Silver_Expr { core:monad:failEither($Expr{float}) })
+           | boolType() -> right(Silver_Expr { core:monad:failEither($Expr{bool}) })
+           | listType(_) -> right(Silver_Expr { core:monad:failEither($Expr{list}) })
+           | nonterminalType("core:Unit", _) ->
+             right(Silver_Expr { core:monad:failEither($Expr{unit}) })
+           | _ -> left("Tried to get monadFail for too complex or generic an " ++
+                       "argument type for Either (type " ++ prettyType(a) ++ "given; " ++
+                       "must be int, float, bool, list, or unit)")
            end
-         | listType(_) -> just(string)
-         | _ -> nothing()
+           --baseExpr(qNameId(name("failEither", l), location=l), location=l)
+         | nonterminalType("core:monad:IOMonad", _) ->
+           left("Fail undefined for IOMonad")
+           --error("Fail undefined for IOMonad")
+         | nonterminalType("core:monad:State", _) ->
+           left("Fail undefined for State monad")
+           --error("Fail undefined for State monad")
+         | listType(_) ->
+           right(Silver_Expr { core:monad:failList($Expr{string}) })
+           --baseExpr(qNameId(name("failList", l), location=l), location=l)
+         | decoratedType(t) -> monadFail(t, l)
+         | _ ->
+           error("Tried to get the fail for a non-monadic type at " ++ l.unparse)
          end;
 }
 
-{-
-  TODO these should probably return Maybe<Expr> rather than erroring on monads
-  for which it's undefined, then let the places calling them create errors to
-  go in merrors
--}
+
 function monadPlus
-Expr ::= ty::Type l::Location
+Either<String Expr> ::= ty::Type l::Location
 {
   return case ty of
          | nonterminalType("core:Maybe", _) ->
-           baseExpr(qNameId(name("mplusMaybe", l), location=l), location=l)
+           right(baseExpr(qNameId(name("mplusMaybe", l), location=l), location=l))
          | nonterminalType("core:Either", _) ->
-           baseExpr(qNameId(name("mplusEither", l), location=l), location=l)
+           right(baseExpr(qNameId(name("mplusEither", l), location=l), location=l))
          | nonterminalType("core:monad:IOMonad", _) ->
-           error("MPlus undefined for IOMonad")
+           left("MPlus undefined for IOMonad")
          | nonterminalType("core:monad:State", _) ->
-           error("MPlus undefined for State monad")
+           left("MPlus undefined for State monad")
          | listType(_) ->
-           baseExpr(qNameId(name("mplusList", l), location=l), location=l)
+           right(baseExpr(qNameId(name("mplusList", l), location=l), location=l))
          | decoratedType(t) -> monadPlus(t, l)
          | _ ->
            error("Tried to get MPlus for a non-monadic type at " ++ l.unparse)
          end;
 }
 function monadZero
-Expr ::= ty::Type l::Location
+Either<String Expr> ::= ty::Type l::Location
 {
   return case ty of
          | nonterminalType("core:Maybe", _) ->
-           Silver_Expr { nothing() }
+           right(Silver_Expr { core:monad:nothing() })
          | nonterminalType("core:Either", [a, b]) ->
            case a of
-           | stringType() -> Silver_Expr{ $Expr{monadFail(ty, l)}("mzero") }
-           | intType() -> Silver_Expr{ $Expr{monadFail(ty, l)}(0) }
-           | floatType() -> Silver_Expr{ $Expr{monadFail(ty, l)}(0.0) }
-           | listType(_) -> Silver_Expr{ $Expr{monadFail(ty, l)}([]) }
+           | stringType() -> right(Silver_Expr{ core:monad:left("mzero") })
+           | intType() -> right(Silver_Expr{ core:monad:left(0) })
+           | floatType() -> right(Silver_Expr{ core:monad:left(0.0) })
+           | listType(_) -> right(Silver_Expr{ core:monad:left([]) })
            | _ ->
-             error("Tried to get MZero for Either with too complex or too generic argument type (" ++
-                   prettyType(ty) ++ ") at " ++ l.unparse)
+             left("Cannot get MZero for Either with too complex or too generic argument type (" ++
+                   prettyType(ty) ++ ")")
            end
          | nonterminalType("core:monad:IOMonad", _) ->
-           error("MZero undefined for IOMonad")
+           left("MZero undefined for IOMonad")
          | nonterminalType("core:monad:State", _) ->
-           error("MZero undefined for State monad")
+           left("MZero undefined for State monad")
          | listType(_) ->
-           Silver_Expr { [] }
+           right(Silver_Expr { [] })
          | decoratedType(t) -> monadZero(t, l)
          | _ ->
            error("Tried to get MZero for a non-monadic type at " ++ l.unparse)
-         end;
-}
-
---We can't do mcase when we don't have mplus/mzero defined, so check if something
---   of a given type can be expanded with these
-function canBeMCased
-Boolean ::= mty::Type
-{
-  return case mty of
-         | nonterminalType("core:Maybe", _) -> true
-         | nonterminalType("core:Either", _) -> true
-         | listType(_) -> true
-         | decoratedType(t) -> canBeMCased(t)
-         | _ -> false
          end;
 }
 

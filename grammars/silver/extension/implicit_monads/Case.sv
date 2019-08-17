@@ -61,20 +61,14 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
     for anything more complex.
   -}
   local failure::Expr = if monadInExprs.fst
-                        then case monadFailArgument(monadInExprs.snd, top.location) of
-                             | just(x) ->
-                               Silver_Expr {
-                                 $Expr{monadFail(monadInExprs.snd, top.location)}($Expr{x})
-                               }
-                             | nothing() -> basicFailure
+                        then case monadFail(monadInExprs.snd, top.location) of
+                             | right(e) -> e
+                             | left(e) -> basicFailure
                              end
                         else if monadInClauses.fst
-                             then case monadFailArgument(monadInClauses.snd, top.location) of
-                                  | just(x) ->
-                                    Silver_Expr {
-                                      $Expr{monadFail(monadInClauses.snd, top.location)}($Expr{x})
-                                    }
-                                  | nothing() -> basicFailure
+                             then case monadFail(monadInClauses.snd, top.location) of
+                                  | right(e) -> e
+                                  | left(e) -> basicFailure
                                   end
                              else basicFailure;
   {-
@@ -234,38 +228,15 @@ top::Expr ::= 'case_all' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                  else p),
           pair(false, errorType()), --error as filler; won't be used
           ml.matchRuleList);
-  --local monad::Type = if monadInExprs.fst
-  --                    then performSubstitution(monadInExprs.snd, fakeforward.mUpSubst)
-  --                    else performSubstitution(monadInClauses.snd, fakeforward.mUpSubst);
   local monad::Type = if monadInExprs.fst
                       then monadInExprs.snd
                       else monadInClauses.snd;
-  local mplus::Expr = monadPlus(monad, top.location);
-  local mzero::Expr = monadZero(monad, top.location);
-  {-
-  --use a fake forward to get a good up substitution to make the type specific enough to get mzero
-  local ffcaseExprs::[Expr] = map(\x::AbstractMatchRule ->
-                                   caseExpr(nameExprs, [x], Silver_Expr{error("fake forward")}, freshType(),
-                                            location=top.location),
-                                  ml.matchRuleList);
-  local ffmplused::Expr = foldl(\rest::Expr current::Expr -> 
-                                 Silver_Expr{
-                                   $Expr{mplus}($Expr{rest}, $Expr{current})
-                                 },
-                                head(ffcaseExprs), tail(ffcaseExprs));
-  local fakeforward::Expr = foldr(\p::Pair<Expr String> rest::Expr ->
-                                makeLet(top.location, p.snd, freshType(), p.fst, rest),
-                               buildMonadicBinds(monadStuff.fst, ffmplused, top.location),
-                                       zipWith(pair, es.rawExprs, newNames));
-  fakeforward.downSubst = ml.mUpSubst;
-  fakeforward.mDownSubst = ml.mUpSubst;
-  fakeforward.env = top.env;
-  fakeforward.frame = top.frame;
-  fakeforward.grammarName = top.grammarName;
-  fakeforward.compiledGrammars = top.compiledGrammars;
-  fakeforward.config = top.config;
-  fakeforward.flowEnv = top.flowEnv;
-  -}
+  local mplus::Expr = case monadPlus(monad, top.location) of
+                      | right(e) -> e
+                      end;
+  local mzero::Expr = case monadZero(monad, top.location) of
+                      | right(e) -> e
+                      end;
 
   --new names for using lets to bind the incoming expressions
   local newNames::[String] = map(\x::Expr -> "__sv_mcase_var_" ++ toString(genInt()), es.rawExprs);
@@ -292,14 +263,11 @@ top::Expr ::= 'case_all' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                monadLocal, zipWith(pair, es.rawExprs, newNames));
 
   forwards to if isMonad(monad)
-              then if canBeMCased(monad)
-                   then letBound
-                   else errorExpr([err(top.location, "Monad type " ++
-                                   prettyType(performSubstitution(monad, top.finalSubst)) ++
-                                   " cannot be used in an mcase as it does not have " ++
-                                   "MPlus/MZero defined")], location=top.location)
-              else errorExpr([err(top.location, "Need a monad type somewhere in " ++
-                                                "an mcase, but did not find one")],
+              then case monadPlus(monad, top.location) of
+                   | right(_) -> letBound
+                   | left(e) -> errorExpr([err(top.location, e)], location=top.location)
+                   end
+              else errorExpr([err(top.location, "Could not determine the monad for case_all")],
                              location=top.location);
 }
 
