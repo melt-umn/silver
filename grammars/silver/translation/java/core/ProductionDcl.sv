@@ -158,10 +158,10 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
     @Override
     public ${fnnt} duplicate(Object redex, Object notes) {
         if (redex == null) {
-            return new ${className}(new PoriginOriginInfo(null, new core.PsetAtNewOIT(null), this.wrapInLink(), notes, false) ${commaIfKids}
+            return new ${className}(new PoriginOriginInfo(null, common.OriginsUtil.SET_AT_NEW_OIT, this.wrapInLink(), notes, false) ${commaIfKids}
                 ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
         } else {
-            return new ${className}(new PoriginAndRedexOriginInfo(null, new core.PsetAtNewOIT(null), this.wrapInLink(), notes, ((common.Node)redex).wrapInLink(), notes, false) ${commaIfKids}
+            return new ${className}(new PoriginAndRedexOriginInfo(null, common.OriginsUtil.SET_AT_NEW_OIT, this.wrapInLink(), notes, ((common.Node)redex).wrapInLink(), notes, false) ${commaIfKids}
                 ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
         }
     }
@@ -188,7 +188,7 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 
         Object redex = ((common.Node)newRedex).wrapInLink();
         Object redexNotes = newRule;
-        return new ${className}(new PoriginAndRedexOriginInfo(null, new PsetAtAccessOIT(null), origin, originNotes, redex, redexNotes, newlyConstructed) ${commaIfKids}
+        return new ${className}(new PoriginAndRedexOriginInfo(null, common.OriginsUtil.SET_AT_ACCESS_OIT, origin, originNotes, redex, redexNotes, newlyConstructed) ${commaIfKids}
             ${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(copyAnno, namedSig.namedInputElements))});
     }
 

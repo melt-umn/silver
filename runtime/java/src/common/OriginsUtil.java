@@ -10,6 +10,18 @@ import common.exceptions.*;
  * @author louisg
  */
 public final class OriginsUtil {
+
+	public static PsetAtConstructionOIT SET_AT_CONSTRUCTION_OIT = new PsetAtConstructionOIT(null);
+	public static PsetAtNewOIT SET_AT_NEW_OIT = new PsetAtNewOIT(null);
+	public static PsetAtForwardingOIT SET_AT_FORWARDING_OIT = new PsetAtForwardingOIT(null);
+	public static PsetAtAccessOIT SET_AT_ACCESS_OIT = new PsetAtAccessOIT(null);
+	public static PsetFromParserOIT SET_FROM_PARSER_OIT = new PsetFromParserOIT(null);
+	public static PsetFromParserActionOIT SET_FROM_PARSER_ACTION_OIT = new PsetFromParserActionOIT(null);
+	public static PsetFromFFIOIT SET_FROM_FFI_OIT = new PsetFromFFIOIT(null);
+	public static PsetFromReflectionOIT SET_FROM_REFLECTION_OIT = new PsetFromReflectionOIT(null);
+	public static PsetFromEntryOIT SET_FROM_ENTRY_OIT = new PsetFromEntryOIT(null);
+	public static PotherBogusOIT OTHER_BOGUS_OIT = new PotherBogusOIT(null);
+
 	private static String ids(final Object arg){
 		return Integer.toString(System.identityHashCode(arg));
 	}

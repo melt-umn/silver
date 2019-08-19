@@ -218,7 +218,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     -- Annoying workaround for if a lambda in an action block needs to capture RESULT when accessing a child.
     -- Java complains when we capture something that is non-final.
     
-    "final " ++ makeClassName(ns.fullName) ++ " RESULTfinal = new " ++ makeClassName(ns.fullName) ++ "(new core.PparsedOriginInfo(null, new core.PsetFromParserOIT(null), common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos()), common.ConsCell.nil) " ++ commaIfArgsOrAnnos ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
+    "final " ++ makeClassName(ns.fullName) ++ " RESULTfinal = new " ++ makeClassName(ns.fullName) ++ "(new core.PparsedOriginInfo(null, common.OriginsUtil.SET_FROM_PARSER_OIT, common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos()), common.ConsCell.nil) " ++ commaIfArgsOrAnnos ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
     "RESULT = RESULTfinal;\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++

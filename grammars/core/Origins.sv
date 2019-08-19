@@ -33,7 +33,7 @@ top::OriginInfoType ::=
 	top.isBogus = false;
 }
 
-abstract production setAtForwardingConstructionOIT
+abstract production setAtForwardingOIT
 top::OriginInfoType ::=
 {
 	top.isBogus = false;
@@ -76,12 +76,6 @@ top::OriginInfoType ::=
 }
 
 abstract production otherBogusOIT
-top::OriginInfoType ::=
-{
-	top.isBogus = true;
-}
-
-abstract production noOriginsAvailableOIT
 top::OriginInfoType ::=
 {
 	top.isBogus = true;

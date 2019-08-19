@@ -62,28 +62,28 @@ public final class OriginContext {
 			case NORMAL:
 				if (this.lhs == null) {
 					System.err.println("Origins Warn: makeNewConstructionOrigin: variety == NORMAL but lhs == null!");
-					return new core.PotherOriginInfo(null, new core.PotherBogusOIT(null), new common.StringCatter("??? variety == NORMAL but lhs == null!"), ConsCell.nil);
+					return new core.PotherOriginInfo(null, OriginsUtil.OTHER_BOGUS_OIT, new common.StringCatter("??? variety == NORMAL but lhs == null!"), ConsCell.nil);
 				}
 				if (!(this.lhs instanceof Node)) {
 					System.err.println("Origins Warn: attrAccessCopy: lhs not instanceof Node!");
-					return new core.PotherOriginInfo(null, new core.PotherBogusOIT(null), new common.StringCatter("??? lhs not instanceof Node!"), ConsCell.nil);
+					return new core.PotherOriginInfo(null, OriginsUtil.OTHER_BOGUS_OIT, new common.StringCatter("??? lhs not instanceof Node!"), ConsCell.nil);
 				}
-				return new core.PoriginOriginInfo(null, new core.PsetAtConstructionOIT(null), this.lhs.wrapInLink(), this.rulesAsSilverList(), false);
+				return new core.PoriginOriginInfo(null, OriginsUtil.SET_AT_CONSTRUCTION_OIT, this.lhs.wrapInLink(), this.rulesAsSilverList(), false);
 
 			case MAINFUNCTION:
-				return new core.PotherOriginInfo(null, new core.PsetFromEntryOIT(null), new common.StringCatter("Main Function"), ConsCell.nil);
+				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_ENTRY_OIT, new common.StringCatter("Main Function"), ConsCell.nil);
 			
 			case FFI:
-				return new core.PotherOriginInfo(null, new core.PsetFromFFIOIT(null), new common.StringCatter("Called from FFI"), ConsCell.nil);
+				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_FFI_OIT, new common.StringCatter("Called from FFI"), ConsCell.nil);
 
 			case REFLECTIVE:
-				return new core.PotherOriginInfo(null, new core.PsetFromReflectionOIT(null), new common.StringCatter("Called from Reflection"), ConsCell.nil);
+				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_REFLECTION_OIT, new common.StringCatter("Called from Reflection"), ConsCell.nil);
 
 			case PARSERACTION:
-				return new core.PotherOriginInfo(null, new core.PsetFromParserActionOIT(null), new common.StringCatter("Called inside a parser action block"), ConsCell.nil);
+				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_PARSER_ACTION_OIT, new common.StringCatter("Called inside a parser action block"), ConsCell.nil);
 
 			default:
-				return new core.PotherOriginInfo(null, new core.PotherBogusOIT(null), new common.StringCatter("??? Unknown variety in OriginContext.makeNewConstructionOrigin: "+this.variety.toString()), ConsCell.nil);
+				return new core.PotherOriginInfo(null, OriginsUtil.OTHER_BOGUS_OIT, new common.StringCatter("??? Unknown variety in OriginContext.makeNewConstructionOrigin: "+this.variety.toString()), ConsCell.nil);
 		}
 	}
 
