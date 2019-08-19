@@ -24,7 +24,7 @@ top::ContextOriginInfoSource ::=
 }
 
 abstract production useBogusInfo
-top::ContextOriginInfoSource ::= note::String
+top::ContextOriginInfoSource ::= name::String
 {
 	
 }
@@ -44,5 +44,5 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
 aspect production globalExprContext
 top::BlockContext ::= g::ProductionGraph
 {
-	top.originsContextSource = useBogusInfo("globalExprContext");
+	top.originsContextSource = useBogusInfo("GLOBAL_CONTEXT");
 }

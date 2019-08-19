@@ -146,9 +146,7 @@ public abstract class Node implements Typed {
 	}
 
 	public Object wrapInLink(){
-		System.err.println("Origins Warn: wrapInLink: wrapInLink not overridden on "+this.toString()+" :: "+this.getClass());
-		return null;
-		// throw new SilverInternalError("wrapInLink not overridden");
+		throw new SilverInternalError("wrapInLink not overridden");
 	}
 
 	/**

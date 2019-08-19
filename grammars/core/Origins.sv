@@ -75,6 +75,12 @@ top::OriginInfoType ::=
 	top.isBogus = false;
 }
 
+abstract production setInGlobalOIT
+top::OriginInfoType ::=
+{
+	top.isBogus = false;
+}
+
 abstract production otherBogusOIT
 top::OriginInfoType ::=
 {

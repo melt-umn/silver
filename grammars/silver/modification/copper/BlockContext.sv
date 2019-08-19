@@ -33,7 +33,7 @@ top::BlockContext ::= g::ProductionGraph
   --top.permitProductionAttributes = false; -- denied by default
   top.permitLocalAttributes = true;
   -- TODO: signature? We DO have such info, but unclear what answer should be given...
-  top.originsContextSource = useBogusInfo("actionContext");
+  top.originsContextSource = useBogusInfo("PARSERACTION_CONTEXT");
 }
 
 {-- Disambiguation groups -}
@@ -41,7 +41,7 @@ abstract production disambiguationContext
 top::BlockContext ::= g::ProductionGraph
 {
   top.permitPluck = true;
-  top.originsContextSource = useBogusInfo("disambiguationContext");
+  top.originsContextSource = useBogusInfo("PARSERACTION_CONTEXT");
   forwards to actionContext(g);
 }
 
@@ -52,7 +52,7 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
   top.fullName = sig.fullName;
   top.signature = sig; -- TODO: figure out if this is ever used for actions?
   top.className = makeClassName(top.fullName); -- child references in production actions use it
-  top.originsContextSource = useBogusInfo("reduceActionContext");
+  top.originsContextSource = useBogusInfo("PARSERACTION_CONTEXT");
 
   forwards to actionContext(g);
 }

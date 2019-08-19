@@ -3,6 +3,7 @@ package common;
 import core.*;
 import java.util.List;
 import java.util.ArrayList;
+import common.exceptions.*;
 
 
 /**
@@ -14,7 +15,7 @@ import java.util.ArrayList;
  */
 public final class OriginContext {
 	public enum Variety {
-	    NORMAL, MAINFUNCTION, FFI, REFLECTIVE, PARSERACTION, OTHER
+	    NORMAL, MAINFUNCTION, FFI, REFLECTIVE, PARSERACTION, GLOBAL, OTHER
 	}
 
 	public final Variety variety;
@@ -22,6 +23,10 @@ public final class OriginContext {
 	public final List<NOriginLink> rules;
 
 	private OriginContext(Variety variety, Node lhs, List<NOriginLink> rules) {
+		if ((variety==Variety.NORMAL) && (lhs==null)) {
+			System.err.println("Origins Fail: OriginsContext/3: Just constructed an OriginContext with variety=NORMAL and lhs=null; rules="+rules);
+			throw new SilverInternalError("wrapInLink not overridden"); 
+		}
 		this.variety = variety;
 		this.lhs = lhs;
 		this.rules = rules;
@@ -39,18 +44,25 @@ public final class OriginContext {
 	public static final OriginContext PARSERACTION_CONTEXT =
 		new OriginContext(Variety.PARSERACTION, null, new ArrayList<NOriginLink>());
 
+	public static final OriginContext GLOBAL_CONTEXT =
+		new OriginContext(Variety.GLOBAL, null, new ArrayList<NOriginLink>());
+
 	public OriginContext(Node lhs, List<NOriginLink> rules) {
-		this.variety = Variety.NORMAL;
-		this.lhs = lhs;
-		this.rules = rules;
+		this(Variety.NORMAL, lhs, rules);
 	}
 
+
+
+
 	public OriginContext(OriginContext old, List<NOriginLink> newRules) {
-		this.variety = old.variety;
-		this.lhs = old.lhs;
-		this.rules = new ArrayList<NOriginLink>();
-		this.rules.addAll(old.rules);
-		this.rules.addAll(newRules);
+		this(old.variety, old.lhs, mergeRules(old.rules, newRules));
+	}
+
+	private static List<NOriginLink> mergeRules(List<NOriginLink> a, List<NOriginLink> b) {
+		List<NOriginLink> rules = new ArrayList<NOriginLink>();
+		rules.addAll(a);
+		rules.addAll(b);
+		return rules;
 	}
 
 	public ConsCell rulesAsSilverList() {
@@ -81,6 +93,9 @@ public final class OriginContext {
 
 			case PARSERACTION:
 				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_PARSER_ACTION_OIT, new common.StringCatter("Called inside a parser action block"), ConsCell.nil);
+
+			case GLOBAL:
+				return new core.PotherOriginInfo(null, OriginsUtil.SET_IN_GLOBAL_OIT, new common.StringCatter("Built in a global"), ConsCell.nil);
 
 			default:
 				return new core.PotherOriginInfo(null, OriginsUtil.OTHER_BOGUS_OIT, new common.StringCatter("??? Unknown variety in OriginContext.makeNewConstructionOrigin: "+this.variety.toString()), ConsCell.nil);
