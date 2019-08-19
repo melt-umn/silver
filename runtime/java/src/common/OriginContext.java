@@ -124,4 +124,11 @@ public final class OriginContext {
 		if (arg instanceof Node) return attrAccessCopy((Node)arg);
 		return arg;
 	}
+
+	public Object attrAccessCopyPolyThunk(final Object t) {
+		if (t instanceof Thunk)
+			return new Thunk<Object>(() -> attrAccessCopyPoly(((Thunk<Object>)t).eval()));
+		else
+			return attrAccessCopyPoly(t);
+	}
 }

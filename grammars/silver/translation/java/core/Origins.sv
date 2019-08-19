@@ -39,3 +39,17 @@ String ::= top::Decorated Expr --need .frame anno
   -- 	else if willUseOriginCtxRef(top) then newConstructionOriginUsingCtxRef else
   -- 	s"new core.PoriginOriginInfo(null, common.OriginsUtil.SET_AT_CONSTRUCTION_OIT, context.undecorate().wrapInLink(), common.ConsCell.nil, false)";
 }
+
+function wrapAccessWithOT
+String ::= top::Decorated Expr expr::String
+{
+  local ty :: Type = finalType(top);
+  return if ty.transType == "Object"
+    then s"((${ty.transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${expr}))"
+    else if !ty.isPrimitiveForDuplicate
+    then s"((${ty.transType})${makeOriginContextRef(top)}.attrAccessCopy((common.Node)${expr}))"
+    else s"((${ty.transType})${expr})";
+
+  -- The extra (common.Node) cast in the non-generic non-primitive case is sometimes required for reasons I don't fully understand.
+
+}
