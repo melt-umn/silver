@@ -146,7 +146,7 @@ print("evaling pexprs...")
 start = translate(start)
 end = translate(end)
 
-os.chdir("/home/louis/School/melt/origintracking/silver-jctx/support/origintracking/svdraw2")
+os.chdir(os.path.dirname(__file__))
 
 fd = open("out.dot", 'w')
 w = lambda x: fd.write(x+"\n")

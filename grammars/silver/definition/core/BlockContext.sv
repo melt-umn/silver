@@ -6,7 +6,9 @@ import silver:definition:flow:driver only ProductionGraph;
  - Permissions management information for certain features that can appear in production
  - statements, etc.  i.e. "can forward/return/pluck?"
  -}
-nonterminal BlockContext with permitReturn, permitForward, permitProductionAttributes, permitLocalAttributes, lazyApplication, hasFullSignature, hasPartialSignature, fullName, lhsNtName, signature, sourceGrammar, flowGraph;
+nonterminal BlockContext with permitReturn, permitForward, permitProductionAttributes,
+  permitLocalAttributes, lazyApplication, hasFullSignature, hasPartialSignature,
+  fullName, lhsNtName, signature, sourceGrammar, flowGraph;
 
 
 {-- Are 'return' equations allowed in this context? -}
@@ -83,7 +85,7 @@ top::BlockContext ::=
   top.hasPartialSignature = false;
   top.hasFullSignature = false;
   
-  -- always required: fullName, signature, flowGraph
+  -- always required: fullName, signature, flowGraph, usePassedOriginsContext
 }
 
 abstract production functionContext

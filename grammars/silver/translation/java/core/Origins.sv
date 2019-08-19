@@ -1,7 +1,12 @@
+import silver:definition:origins;
+
 function willUseOriginCtxRef
 Boolean ::= top::Decorated Expr
 {
-	return top.frame.permitReturn;
+	return case top.frame.originsContextSource of
+		| useRuntimePassedInfo() -> true
+		| _ -> false
+	end;
 }
 
 function makeOriginContextRef
