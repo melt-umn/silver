@@ -241,7 +241,7 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
         ${implode("\n\t\t", map(makeChildReify(fName, length(namedSig.inputElements), _), namedSig.inputElements))}
         ${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
         
-        return new ${className}(common.OriginContext.REFLECTION_CONTEXT.makeNewConstructionOrigin(false) ${commaIfKidsOrAnnos} ${namedSig.refInvokeTrans});
+        return new ${className}(${if wantsTracking then "common.OriginContext.REFLECTION_CONTEXT.makeNewConstructionOrigin(false)" else "null"} ${commaIfKidsOrAnnos} ${namedSig.refInvokeTrans});
     }
 
     public static final common.NodeFactory<${fnnt}> factory = new Factory();
