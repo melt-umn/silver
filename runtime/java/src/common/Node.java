@@ -145,10 +145,6 @@ public abstract class Node implements Typed {
 		return this;
 	}
 
-	public Object wrapInLink(){
-		throw new SilverInternalError("wrapInLink not overridden");
-	}
-
 	/**
 	 * Returns the number of children, same way array length does.
 	 * 

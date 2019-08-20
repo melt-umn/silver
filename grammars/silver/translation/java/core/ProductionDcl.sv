@@ -128,7 +128,7 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
     public common.Node evalForward(final common.DecoratedNode context) {
         ${if null(body.uniqueSignificantExpression) 
           then s"throw new common.exceptions.SilverInternalError(\"Production ${fName} erroneously claimed to forward\")"
-          else "return " ++ head(body.uniqueSignificantExpression).translation};
+          else s"return ${head(body.uniqueSignificantExpression).translation}"};
     }
 
     @Override
@@ -156,51 +156,7 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
         return "${fName}";
     }
 
-    @Override
-    public ${fnnt} duplicate(Object redex, Object notes) {
-        if (${if !wantsTracking then "true" else "false"}) return this;
-
-        if (redex == null) {
-            return new ${className}(new PoriginOriginInfo(null, common.OriginsUtil.SET_AT_NEW_OIT, this.wrapInLink(), notes, false) ${commaIfKids}
-                ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
-        } else {
-            return new ${className}(new PoriginAndRedexOriginInfo(null, common.OriginsUtil.SET_AT_NEW_OIT, this.wrapInLink(), notes, ((common.Node)redex).wrapInLink(), notes, false) ${commaIfKids}
-                ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
-        }
-    }
-
-    @Override
-    public ${fnnt} copy(Object newRedex, Object newRule) {
-        if (${if !wantsTracking then "true" else "false"}) return this;
-
-        Object origin, originNotes, newlyConstructed;
-        Object roi = this.origin;
-        if (roi instanceof PoriginOriginInfo) {
-            PoriginOriginInfo oi = (PoriginOriginInfo)roi;
-            origin = oi.getChild_origin();
-            originNotes = oi.getChild_originNotes();
-            newlyConstructed = oi.getChild_newlyConstructed();
-        } else if (roi instanceof PoriginAndRedexOriginInfo) {
-            PoriginAndRedexOriginInfo oi = (PoriginAndRedexOriginInfo)roi;
-            origin = oi.getChild_origin();
-            originNotes = oi.getChild_originNotes();
-            newlyConstructed = oi.getChild_newlyConstructed();
-        } else {
-            return this;
-        }
-
-        if (newRedex instanceof common.DecoratedNode) newRedex = ((common.DecoratedNode)newRedex).undecorate();
-
-        Object redex = ((common.Node)newRedex).wrapInLink();
-        Object redexNotes = newRule;
-        return new ${className}(new PoriginAndRedexOriginInfo(null, common.OriginsUtil.SET_AT_ACCESS_OIT, origin, originNotes, redex, redexNotes, newlyConstructed) ${commaIfKids}
-            ${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(copyAnno, namedSig.namedInputElements))});
-    }
-
-    @Override
-    public Object wrapInLink(){
-        return this;
-    }
+    ${otImpl}
     
     @Override
     public final common.BaseTypeRep getType() {
@@ -261,6 +217,46 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
 
 }
 """)];
+
+  local otImpl :: String = if wantsTracking then s"""
+    @Override
+    public ${fnnt} duplicate(Object redex, Object notes) {
+        if (redex == null) {
+            return new ${className}(new PoriginOriginInfo(null, common.OriginsUtil.SET_AT_NEW_OIT, this, notes, false) ${commaIfKids}
+                ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
+        } else {
+            return new ${className}(new PoriginAndRedexOriginInfo(null, common.OriginsUtil.SET_AT_NEW_OIT, this, notes, redex, notes, false) ${commaIfKids}
+                ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
+        }
+    }
+
+    @Override
+    public ${fnnt} copy(Object newRedex, Object newRule) {
+        Object origin, originNotes, newlyConstructed;
+        Object roi = this.origin;
+        if (roi instanceof PoriginOriginInfo) {
+            PoriginOriginInfo oi = (PoriginOriginInfo)roi;
+            origin = oi.getChild_origin();
+            originNotes = oi.getChild_originNotes();
+            newlyConstructed = oi.getChild_newlyConstructed();
+        } else if (roi instanceof PoriginAndRedexOriginInfo) {
+            PoriginAndRedexOriginInfo oi = (PoriginAndRedexOriginInfo)roi;
+            origin = oi.getChild_origin();
+            originNotes = oi.getChild_originNotes();
+            newlyConstructed = oi.getChild_newlyConstructed();
+        } else {
+            return this;
+        }
+
+        if (newRedex instanceof common.DecoratedNode) newRedex = ((common.DecoratedNode)newRedex).undecorate();
+
+        Object redex = ((common.Node)newRedex);
+        Object redexNotes = newRule;
+        return new ${className}(new PoriginAndRedexOriginInfo(null, common.OriginsUtil.SET_AT_ACCESS_OIT, origin, originNotes, redex, redexNotes, newlyConstructed) ${commaIfKids}
+            ${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(copyAnno, namedSig.namedInputElements))});
+    }
+
+    """ else "";
 
   -- main function signature check TODO: this should probably be elsewhere!
   top.errors <-

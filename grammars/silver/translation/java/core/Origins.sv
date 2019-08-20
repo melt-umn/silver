@@ -54,7 +54,7 @@ Boolean ::= fn::String env::Decorated Env
 
   return case getTypeDclAll(fn, env) of
     | ntDcl(_, _, _, _, _, _, t)::_ -> t
-    | [] -> unsafeTracePrint(true, "Origins Warn: no ntDcl for type "++fn++"\n")--error("Internal Error: no ntDcl for type "++fn)
+    | [] -> true
   end;
 }
 
