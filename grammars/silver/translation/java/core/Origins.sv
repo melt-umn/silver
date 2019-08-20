@@ -35,9 +35,6 @@ String ::= top::Decorated Expr --need .frame anno
 {
   -- ORIGINS TODO: rules ref from top.originRules, er from top.isRoot
   return makeOriginContextRef(top)++".makeNewConstructionOrigin(false)";
-  -- return if top.frame.permitPluck then "common.OriginContext.PARSERACTION_CONTEXT.makeNewConstructionOrigin(false)"
-  -- 	else if willUseOriginCtxRef(top) then newConstructionOriginUsingCtxRef else
-  -- 	s"new core.PoriginOriginInfo(null, common.OriginsUtil.SET_AT_CONSTRUCTION_OIT, context.undecorate().wrapInLink(), common.ConsCell.nil, false)";
 }
 
 function wrapAccessWithOT

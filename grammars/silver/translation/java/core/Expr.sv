@@ -258,13 +258,6 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  -- top.translation = if finalType(top).transType == "Object"
-  --   then s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${e.translation}.synthesized(${q.dcl.attrOccursIndex})))"
-  --   else if !finalType(top).isPrimitiveForDuplicate
-  --   then s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopy(${e.translation}.synthesized(${q.dcl.attrOccursIndex})))"
-  --   else s"((${finalType(top).transType})${e.translation}.synthesized(${q.dcl.attrOccursIndex}))";
-
-  -- top.translation = s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${e.translation}.synthesized(${q.dcl.attrOccursIndex})))";
   top.translation = wrapAccessWithOT(top, s"${e.translation}.synthesized(${q.dcl.attrOccursIndex})");
 
   top.lazyTranslation = 
@@ -284,10 +277,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  -- top.translation = s"((${finalType(top).transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${e.translation}.inherited(${q.dcl.attrOccursIndex})))";
-
   top.translation = wrapAccessWithOT(top, s"${e.translation}.inherited(${q.dcl.attrOccursIndex})");
-
 
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of
