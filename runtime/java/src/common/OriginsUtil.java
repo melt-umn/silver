@@ -107,7 +107,13 @@ public final class OriginsUtil {
 		return new core.Pjust(null, n.origin);
 	}
 
-	public static core.NMaybe polyGetNextOrigin(core.NOriginLink o) {
-		return polyGetOrigin(o.getChild(0));
+	public static core.NMaybe getOriginLink(core.NOriginInfo o) {
+		if (o instanceof PoriginOriginInfo)
+			return new core.Pjust(null, ((PoriginOriginInfo)o).getChild_origin());
+
+		if (o instanceof PoriginAndRedexOriginInfo)
+			return new core.Pjust(null, ((PoriginAndRedexOriginInfo)o).getChild_origin());
+
+		return new core.Pnothing(null);
 	}
 }

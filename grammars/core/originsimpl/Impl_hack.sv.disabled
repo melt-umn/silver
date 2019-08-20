@@ -12,8 +12,8 @@ Maybe<OriginInfo> ::= arg::a
   return nothing();
 }
 
-function javaGetNextOrigin
-Maybe<OriginInfo> ::= arg::OriginLink
+function javaGetOriginLink
+Maybe<a> ::= arg::OriginInfo
 {
   return nothing();
 }

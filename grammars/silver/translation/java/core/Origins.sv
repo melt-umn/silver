@@ -5,7 +5,7 @@ synthesized attribute contextRef :: String occurs on ContextOriginInfoSource;
 aspect production useContextLhsAndRules
 top::ContextOriginInfoSource ::=
 {
-  top.contextRef = "new common.OriginContext(context.undecorate(), new java.util.ArrayList<core.NOriginLink>())";
+  top.contextRef = "new common.OriginContext(context.undecorate(), new java.util.ArrayList<core.NOriginNote>())";
 }
 
 aspect production useRuntimePassedInfo

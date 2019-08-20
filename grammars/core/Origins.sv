@@ -8,14 +8,11 @@ import core:originsimpl;
 nonterminal OriginInfo;
 nonterminal OriginInfoType;
 nonterminal OriginNote;
-nonterminal OriginLink;
 
 synthesized attribute notepp :: String occurs on OriginNote;
 
 synthesized attribute isNewlyConstructed :: Boolean occurs on OriginInfo;
 synthesized attribute originNotes :: [OriginNote] occurs on OriginInfo;
-synthesized attribute mOriginLink :: Maybe<OriginLink> occurs on OriginInfo;
-synthesized attribute mOwnRedexLink :: Maybe<OriginLink> occurs on OriginInfo;
 synthesized attribute mOwnRedexNotes :: Maybe<[OriginNote]> occurs on OriginInfo;
 synthesized attribute originType :: OriginInfoType occurs on OriginInfo;
 
@@ -92,8 +89,6 @@ top::OriginInfo ::= typ::OriginInfoType source::String notes::[OriginNote]
 {
 	top.isNewlyConstructed = true;
 	top.originNotes = notes;
-	top.mOriginLink = nothing();
-	top.mOwnRedexLink = nothing();
 	top.mOwnRedexNotes = nothing();
 	top.originType = typ;
 }
@@ -103,41 +98,54 @@ top::OriginInfo ::= typ::OriginInfoType source::Location notes::[OriginNote]
 {
 	top.isNewlyConstructed = true;
 	top.originNotes = notes;
-	top.mOriginLink = nothing();
-	top.mOwnRedexLink = nothing();
 	top.mOwnRedexNotes = nothing();
 	top.originType = typ;
 }
 
 abstract production originOriginInfo
 top::OriginInfo ::= typ::OriginInfoType 
-				 origin :: OriginLink
+				 origin :: a
 				 originNotes :: [OriginNote]
 				 newlyConstructed :: Boolean
 {
 	top.isNewlyConstructed = newlyConstructed;
 	top.originNotes = originNotes;
-	top.mOriginLink = just(origin);
-	top.mOwnRedexLink = nothing();
 	top.mOwnRedexNotes = nothing();
 	top.originType = typ;
 }
 
 abstract production originAndRedexOriginInfo
 top::OriginInfo ::= typ::OriginInfoType 
-				 origin :: OriginLink
+				 origin :: a
 				 originNotes :: [OriginNote]
-				 redex :: OriginLink
+				 redex :: a
 				 redexNotes :: [OriginNote]
 				 newlyConstructed :: Boolean
 {
 	top.isNewlyConstructed = newlyConstructed;
 	top.originNotes = originNotes;
-	top.mOriginLink = just(origin);
-	top.mOwnRedexLink = just(redex);
 	top.mOwnRedexNotes = just(redexNotes);
 	top.originType = typ;
 }
+
+-- function getOriginLink
+-- Maybe<a> ::= oi::OriginInfo
+-- {
+-- 	return case oi of
+-- 		| originOriginInfo(_, o, _, _) -> just(o)
+-- 		| originAndRedexOriginInfo(_, o, _, _, _, _) -> just(o)
+-- 		| _ -> nothing()
+-- 	end;
+-- }
+
+-- function getRedexLink
+-- Maybe<a> ::= oi::OriginInfo
+-- {
+-- 	return case oi of
+-- 		| originAndRedexOriginInfo(_, _, _, r, _, _) -> just(r)
+-- 		| _ -> nothing()
+-- 	end;
+-- }
 
 aspect default production
 top::OriginNote ::=
@@ -166,8 +174,8 @@ top::OriginNote ::= attributeName::String sourceGrammar::String prod::String nt:
 function getOriginChain
 [OriginInfo] ::= l::OriginInfo
 {
-	return case l.mOriginLink of
-		| just(o) -> case javaGetNextOrigin(o) of
+	return case javaGetOriginLink(l) of
+		| just(o) -> case javaGetOrigin(o) of
 			| just(n) -> n :: getOriginChain(n)
 			| nothing() -> []
 		end

@@ -4,7 +4,7 @@ grammar silver:langutil;
 {--
  - A Message represents a compiler output message (error/warning)
  -}
-nonterminal Message with message, where, output, severity;
+tracked nonterminal Message with message, where, output, severity;
 
 {--
  - The location of an error message.

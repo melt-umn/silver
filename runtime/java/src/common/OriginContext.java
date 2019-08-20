@@ -20,9 +20,9 @@ public final class OriginContext {
 
 	public final Variety variety;
 	public final Node lhs;
-	public final List<NOriginLink> rules;
+	public final List<NOriginNote> rules;
 
-	private OriginContext(Variety variety, Node lhs, List<NOriginLink> rules) {
+	private OriginContext(Variety variety, Node lhs, List<NOriginNote> rules) {
 		if ((variety==Variety.NORMAL) && (lhs==null)) {
 			System.err.println("Origins Fail: OriginsContext/3: Just constructed an OriginContext with variety=NORMAL and lhs=null; rules="+rules);
 			throw new SilverInternalError("wrapInLink not overridden"); 
@@ -33,33 +33,33 @@ public final class OriginContext {
 	}
 
 	public static final OriginContext ENTRY_CONTEXT =
-		new OriginContext(Variety.MAINFUNCTION, null, new ArrayList<NOriginLink>());
+		new OriginContext(Variety.MAINFUNCTION, null, new ArrayList<NOriginNote>());
 
 	public static final OriginContext FFI_CONTEXT =
-		new OriginContext(Variety.FFI, null, new ArrayList<NOriginLink>());
+		new OriginContext(Variety.FFI, null, new ArrayList<NOriginNote>());
 
 	public static final OriginContext REFLECTION_CONTEXT =
-		new OriginContext(Variety.REFLECTIVE, null, new ArrayList<NOriginLink>());
+		new OriginContext(Variety.REFLECTIVE, null, new ArrayList<NOriginNote>());
 
 	public static final OriginContext PARSERACTION_CONTEXT =
-		new OriginContext(Variety.PARSERACTION, null, new ArrayList<NOriginLink>());
+		new OriginContext(Variety.PARSERACTION, null, new ArrayList<NOriginNote>());
 
 	public static final OriginContext GLOBAL_CONTEXT =
-		new OriginContext(Variety.GLOBAL, null, new ArrayList<NOriginLink>());
+		new OriginContext(Variety.GLOBAL, null, new ArrayList<NOriginNote>());
 
-	public OriginContext(Node lhs, List<NOriginLink> rules) {
+	public OriginContext(Node lhs, List<NOriginNote> rules) {
 		this(Variety.NORMAL, lhs, rules);
 	}
 
 
 
 
-	public OriginContext(OriginContext old, List<NOriginLink> newRules) {
+	public OriginContext(OriginContext old, List<NOriginNote> newRules) {
 		this(old.variety, old.lhs, mergeRules(old.rules, newRules));
 	}
 
-	private static List<NOriginLink> mergeRules(List<NOriginLink> a, List<NOriginLink> b) {
-		List<NOriginLink> rules = new ArrayList<NOriginLink>();
+	private static List<NOriginNote> mergeRules(List<NOriginNote> a, List<NOriginNote> b) {
+		List<NOriginNote> rules = new ArrayList<NOriginNote>();
 		rules.addAll(a);
 		rules.addAll(b);
 		return rules;

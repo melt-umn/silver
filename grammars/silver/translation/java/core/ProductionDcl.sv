@@ -198,8 +198,8 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
     }
 
     @Override
-    public ${ntDeclPackage}.PoriginLink${typeNameSnipped} wrapInLink(){
-        return new ${ntDeclPackage}.PoriginLink${typeNameSnipped}(null, this);
+    public Object wrapInLink(){
+        return this;
     }
     
     @Override

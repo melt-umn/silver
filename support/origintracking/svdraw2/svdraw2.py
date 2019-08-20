@@ -57,10 +57,10 @@ class NT(ComplexValue):
 			return
 		if o.name=="core:otherOriginInfo" or o.name=="core:parsedOriginInfo":
 			return
-		self.origin, self.originlabel = o.children[1].children[0],\
+		self.origin, self.originlabel = o.children[1],\
 			"\n".join(map(lambda x:x.node_text(), o.children[2].value))
 		if len(o.children)>4:
-			self.redex, self.redexlabel = o.children[3].children[0],\
+			self.redex, self.redexlabel = o.children[3],\
 				"\n".join(map(lambda x:x.node_text(), o.children[4].value))
 		self.newly_introduced = o.children[-1].value
 

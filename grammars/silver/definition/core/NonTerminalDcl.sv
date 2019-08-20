@@ -3,32 +3,34 @@ grammar silver:definition:core;
 concrete production nonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs ';'
 {
-  top.unparse = "nonterminal^ " ++ id.unparse ++ tl.unparse ++ ";";
+  -- top.unparse = "nonterminal^ " ++ id.unparse ++ tl.unparse ++ ";";
 
-  local l :: Location = top.location;
+  -- local l :: Location = top.location;
 
-  local originLinkTE :: TypeExpr = nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "OriginLink", l),
-    location=l), botlNone(location=l), location=l);
-  local ntTE :: TypeExpr = nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, id.name, l),
-    location=l), tl, location=l);
+  -- local originLinkTE :: TypeExpr = nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "OriginLink", l),
+  --   location=l), botlNone(location=l), location=l);
+  -- local ntTE :: TypeExpr = nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, id.name, l),
+  --   location=l), tl, location=l);
 
-  local nextLinkNothingImpl :: Expr = Silver_Expr{nothing()};
-  local nextLinkSomethingImpl :: Expr = Silver_Expr{just(n.origininfo)};
-  local hasOrigins :: Boolean = findNamedSigElem("silver:modification:origintracking:childruntime:origininfo",
-      annotationsForNonterminal(nonterminalType(top.grammarName ++ ":" ++ id.name, tl.types), top.env), 0) != -1;
-  local selectedImpl :: Expr = if hasOrigins then nextLinkSomethingImpl else nextLinkNothingImpl;
-  local implStmt :: ProductionStmt = attributeDef(concreteDefLHS(qName(l, "top"), location=l),
-    '.', qNameAttrOccur(qName(l, "nextOrigin"), location=l), '=', nextLinkSomethingImpl, ';', location=l);
+  -- local nextLinkNothingImpl :: Expr = Silver_Expr{nothing()};
+  -- local nextLinkSomethingImpl :: Expr = Silver_Expr{just(n.origininfo)};
+  -- local hasOrigins :: Boolean = findNamedSigElem("silver:modification:origintracking:childruntime:origininfo",
+  --     annotationsForNonterminal(nonterminalType(top.grammarName ++ ":" ++ id.name, tl.types), top.env), 0) != -1;
+  -- local selectedImpl :: Expr = if hasOrigins then nextLinkSomethingImpl else nextLinkNothingImpl;
+  -- local implStmt :: ProductionStmt = attributeDef(concreteDefLHS(qName(l, "top"), location=l),
+  --   '.', qNameAttrOccur(qName(l, "nextOrigin"), location=l), '=', nextLinkSomethingImpl, ';', location=l);
 
-  local newdcl :: AGDcl = productionDcl('abstract', 'production', name("originLink" ++ id.name, l),
-    productionSignature(productionLHS(name("top", l), '::', originLinkTE, location=l), '::=',
-      productionRHSCons(productionRHSElem(name("n", l), '::', ntTE, location=l), productionRHSNil(location=l),
-        location=l), location=l), productionBody('{',
-          productionStmtsNil(location=l), '}', location=l), location=l);
+  -- local newdcl :: AGDcl = productionDcl('abstract', 'production', name("originLink" ++ id.name, l),
+  --   productionSignature(productionLHS(name("top", l), '::', originLinkTE, location=l), '::=',
+  --     productionRHSCons(productionRHSElem(name("n", l), '::', ntTE, location=l), productionRHSNil(location=l),
+  --       location=l), location=l), productionBody('{',
+  --         productionStmtsNil(location=l), '}', location=l), location=l);
 
-  forwards to appendAGDcl(
-    noWrapperNonterminalDcl(quals, 'nonterminal', id, tl, ';', location=l),
-    newdcl, location=l);
+  -- forwards to appendAGDcl(
+  --   noWrapperNonterminalDcl(quals, 'nonterminal', id, tl, ';', location=l),
+  --   newdcl, location=l);
+
+  forwards to noWrapperNonterminalDcl(quals, 'nonterminal', id, tl, ';', location=top.location);
 }
 
 abstract production noWrapperNonterminalDcl

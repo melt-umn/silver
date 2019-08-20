@@ -16,10 +16,10 @@ Maybe<OriginInfo> ::= arg::a
   "java" : return "common.OriginsUtil.polyGetOrigin(%arg%)";
 }
 
-function javaGetNextOrigin
-Maybe<OriginInfo> ::= arg::OriginLink
+function javaGetOriginLink
+Maybe<a> ::= arg::OriginInfo
 {
   return error("Not impl");
 } foreign {
-  "java" : return "common.OriginsUtil.polyGetNextOrigin(%arg%)";
+  "java" : return "common.OriginsUtil.getOriginLink(%arg%)";
 }
