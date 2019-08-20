@@ -67,12 +67,20 @@ String ::= top::Decorated Expr expr::String
               if nonterminalWantsTracking(fn, top.env) then directCopy else noop
             | _ -> noop
           end;
-  -- return if ty.transType == "Object"
-  --   then s"((${ty.transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${expr}))"
-  --   else if !ty.isPrimitiveForDuplicate
-  --   then s"((${ty.transType})${makeOriginContextRef(top)}.attrAccessCopy((common.Node)${expr}))"
-  --   else s"((${ty.transType})${expr})";
-
   -- The extra (common.Node) cast in the non-generic non-primitive case is sometimes required for reasons I don't fully understand.
 
+}
+
+function wrapNewWithOT
+String ::= top::Decorated Expr expr::String
+{
+  local ty :: Type = finalType(top);
+
+  local directDup :: String = s"${expr}.duplicate(${makeOriginContextRef(top)}.lhs, common.ConsCell.nil)";
+
+  return case ty of
+            | nonterminalType(fn, _) ->
+              if nonterminalWantsTracking(fn, top.env) then directDup else expr
+            | _ -> expr
+          end;
 }
