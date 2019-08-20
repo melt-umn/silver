@@ -137,14 +137,9 @@ Def ::= sg::String  sl::Location  fn::String  ty::Type
   return valueDef(defaultEnvItem(globalValueDcl(sg,sl,fn,ty)));
 }
 function ntDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type  closed::Boolean  originTracked::Boolean
 {
-  return typeDef(defaultEnvItem(ntDcl(sg,sl,fn,bound,ty,false)));
-}
-function closedNtDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
-{
-  return typeDef(defaultEnvItem(ntDcl(sg,sl,fn,bound,ty,true)));
+  return typeDef(defaultEnvItem(ntDcl(sg,sl,fn,bound,ty,closed,originTracked)));
 }
 function termDef
 Def ::= sg::String  sl::Location  fn::String  regex::Regex

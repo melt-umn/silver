@@ -171,7 +171,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 
 -- TypeDclInfos
 abstract production ntDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type closed::Boolean
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type closed::Boolean originTracked::Boolean
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
