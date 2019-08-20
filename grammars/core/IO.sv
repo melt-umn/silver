@@ -427,6 +427,13 @@ a ::= val::a act::IO
 }
 
 
+function unsafeTracePrint
+a ::= val::a s::String
+{
+  return unsafeTrace(val, print(s, unsafeIO()));
+}
+
+
 
 -- Function for manipulating strings representing file and directory names.
 

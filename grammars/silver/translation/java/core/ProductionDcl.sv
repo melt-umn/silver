@@ -17,6 +17,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local localVar :: String = "count_local__ON__" ++ makeIdName(fName);
   local ntName :: String = namedSig.outputElement.typerep.typeName;
   local fnnt :: String = makeNTClassName(ntName);
+  local wantsTracking :: Boolean = nonterminalWantsTracking(ntName, top.env);
 
   local ntDeclPackage :: String = implode(".", init(explode(".", fnnt)));
   local typeNameSnipped :: String = last(explode(":", namedSig.outputElement.typerep.typeName));
@@ -71,7 +72,7 @@ ${implode("", map((.childStaticElem), namedSig.inputElements))}
     }
 
     public ${className}(final NOriginInfo origin ${commaIfKidsOrAnnos} ${namedSig.javaSignature}) {
-        super(origin ${commaIfAnnos} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
+        super(${if wantsTracking then "origin" else "null"} ${commaIfAnnos} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
     }
 
@@ -157,6 +158,8 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 
     @Override
     public ${fnnt} duplicate(Object redex, Object notes) {
+        if (${if !wantsTracking then "true" else "false"}) return this;
+
         if (redex == null) {
             return new ${className}(new PoriginOriginInfo(null, common.OriginsUtil.SET_AT_NEW_OIT, this.wrapInLink(), notes, false) ${commaIfKids}
                 ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
@@ -168,6 +171,8 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 
     @Override
     public ${fnnt} copy(Object newRedex, Object newRule) {
+        if (${if !wantsTracking then "true" else "false"}) return this;
+
         Object origin, originNotes, newlyConstructed;
         Object roi = this.origin;
         if (roi instanceof PoriginOriginInfo) {
@@ -244,7 +249,7 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
     public static final class Factory extends common.NodeFactory<${fnnt}> {
         @Override
         public final ${fnnt} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] annotations) {
-            return new ${className}(${newConstructionOriginUsingCtxRef} ${commaIfKidsOrAnnos} ${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+            return new ${className}(${if wantsTracking then newConstructionOriginUsingCtxRef else "null"} ${commaIfKidsOrAnnos} ${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
         }
         
         @Override

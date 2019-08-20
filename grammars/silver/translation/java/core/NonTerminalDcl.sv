@@ -12,6 +12,8 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
     annotationsForNonterminal(nonterminalType(fName, tl.types), top.env);
 
   local commaIfAnnos :: String = if length(myAnnos)!=0 then "," else "";
+  local wantsTracking :: Boolean = nonterminalWantsTracking(top.grammarName++":"++id.name, top.env);
+  -- Origins TODO: ^this probably shouldn't be required; c/f the fallback to tracking-mode
   
   top.initWeaving := s"""
 	public static int ${inhVar} = 0;
@@ -38,7 +40,7 @@ public abstract class ${className} extends common.Node${
 	public static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];
 
 	protected ${className}(final NOriginInfo origin ${commaIfAnnos} ${implode(", ", map((.annoSigElem), myAnnos))}) {
-		super(origin);
+		super(${if wantsTracking then "origin" else "null"});
 ${implode("", map(makeAnnoAssign, myAnnos))}
 	}
 
