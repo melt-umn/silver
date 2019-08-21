@@ -148,12 +148,18 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
 {
   local commaIfArgs :: String = if length(es.exprs) != 0 then "," else "";
   local commaIfArgsOrAnnos :: String = if length(annos.exprs) + length(es.exprs)!= 0 then "," else "";
+
+  local sameProd :: Boolean = case e of
+    | baseExpr(qn) -> qn.name == last(explode(":", top.frame.fullName))
+    | _ -> false
+  end;
+
   top.translation = 
     case e of 
     | functionReference(q) -> -- static method invocation
         s"((${finalType(top).transType})${makeClassName(q.lookupValue.fullName)}.invoke(${makeOriginContextRef(e)} ${commaIfArgs} ${argsTranslation(es)}))"
     | productionReference(q) -> -- static constructor invocation
-        s"((${finalType(top).transType})new ${makeClassName(q.lookupValue.fullName)}(${makeNewConstructionOrigin(top)} ${commaIfArgsOrAnnos} ${implode(", ", map((.lazyTranslation), es.exprs ++ reorderedAnnoAppExprs(annos)))}))"
+        s"((${finalType(top).transType})new ${makeClassName(q.lookupValue.fullName)}(${makeNewConstructionOrigin(top, !sameProd)} ${commaIfArgsOrAnnos} ${implode(", ", map((.lazyTranslation), es.exprs ++ reorderedAnnoAppExprs(annos)))}))"
     | _ -> -- dynamic method invocation
         s"((${finalType(top).transType})${e.translation}.invoke(${makeOriginContextRef(e)}, new Object[]{${argsTranslation(es)}}, ${namedargsTranslation(annos)}))" 
     end ;

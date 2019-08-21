@@ -1,8 +1,7 @@
 package common;
 
 import core.*;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 import common.exceptions.*;
 
 
@@ -58,10 +57,32 @@ public final class OriginContext {
 		this(old.variety, old.lhs, mergeRules(old.rules, newRules));
 	}
 
+	public OriginContext(OriginContext old, NOriginNote newRule) {
+		this(old.variety, old.lhs, mergeRule(old.rules, newRule));
+	}
+
+	public OriginContext(OriginContext old, NOriginNote[] newRules) {
+		this(old.variety, old.lhs, mergeRulesArr(old.rules, newRules));
+	}
+
 	private static List<NOriginNote> mergeRules(List<NOriginNote> a, List<NOriginNote> b) {
 		List<NOriginNote> rules = new ArrayList<NOriginNote>();
 		rules.addAll(a);
 		rules.addAll(b);
+		return rules;
+	}
+
+	private static List<NOriginNote> mergeRulesArr(List<NOriginNote> a, NOriginNote[] b) {
+		List<NOriginNote> rules = new ArrayList<NOriginNote>();
+		rules.addAll(a);
+		Collections.addAll(rules, b);
+		return rules;
+	}
+
+	private static List<NOriginNote> mergeRule(List<NOriginNote> a, NOriginNote b) {
+		List<NOriginNote> rules = new ArrayList<NOriginNote>();
+		rules.addAll(a);
+		rules.add(b);
 		return rules;
 	}
 
@@ -80,7 +101,7 @@ public final class OriginContext {
 				// 	System.err.println("Origins Warn: attrAccessCopy: lhs not instanceof Node!");
 				// 	return new core.PotherOriginInfo(null, OriginsUtil.OTHER_BOGUS_OIT, new common.StringCatter("??? lhs not instanceof Node!"), ConsCell.nil);
 				// }
-				return new core.PoriginOriginInfo(null, OriginsUtil.SET_AT_CONSTRUCTION_OIT, this.lhs, this.rulesAsSilverList(), false);
+				return new core.PoriginOriginInfo(null, OriginsUtil.SET_AT_CONSTRUCTION_OIT, this.lhs, this.rulesAsSilverList(), isContractum);
 
 			case MAINFUNCTION:
 				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_ENTRY_OIT, new common.StringCatter("Main Function"), ConsCell.nil);
@@ -113,7 +134,7 @@ public final class OriginContext {
 				// 	System.err.println("Origins Warn: attrAccessCopy: lhs not instanceof Node!");
 				// 	return arg;
 				// }
-				return (T)arg.copy(this.lhs, ConsCell.nil);
+				return (T)arg.copy(this.lhs, this.rulesAsSilverList());
 
 			default:
 				return arg;

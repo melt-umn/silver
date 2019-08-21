@@ -1,44 +1,58 @@
 import silver:definition:origins;
 
 synthesized attribute contextRef :: String occurs on ContextOriginInfoSource;
+synthesized attribute contextRefAddingRules :: (String ::= String) occurs on ContextOriginInfoSource;
+synthesized attribute alwaysConsideredInteresting :: Boolean occurs on ContextOriginInfoSource;
 
 aspect production useContextLhsAndRules
 top::ContextOriginInfoSource ::=
 {
   top.contextRef = "new common.OriginContext(context.undecorate(), new java.util.ArrayList<core.NOriginNote>())";
+  top.contextRefAddingRules = (\x::String -> s"new common.OriginContext(context.undecorate(), common.OriginsUtil.arrayListOfArray(${x}))");
+  top.alwaysConsideredInteresting = false;
 }
 
 aspect production useRuntimePassedInfo
 top::ContextOriginInfoSource ::=
 {
   top.contextRef = "originCtx";
+  top.contextRefAddingRules = (\x::String -> s"new common.OriginContext(${top.contextRef}, ${x})");
+  top.alwaysConsideredInteresting = true;
 }
 
 aspect production useBogusInfo
 top::ContextOriginInfoSource ::= name::String
 {
   top.contextRef = "common.OriginContext."++name;
+  top.contextRefAddingRules = (\x::String -> s"new common.OriginContext(${top.contextRef}, ${x})");
+  top.alwaysConsideredInteresting = true;
 }
 
 function makeOriginContextRef
 String ::= top::Decorated Expr --need .frame anno
 {
-  return top.frame.originsContextSource.contextRef;
+  -- local localRules :: [Expr] = [];
+  -- return top.frame.originsContextSource.contextRef;
+
+  return top.frame.originsContextSource.contextRefAddingRules(s"new core.NOriginNote[]{new core.PoriginDbgNote(null, new common.StringCatter(\"${substitute("\"", "\\\"", hackUnparse(top.location))}\"))}");
+
   -- ORIGINS TODO: rules ref from top.originRules
 }
 
 global newConstructionOriginUsingCtxRef :: String =
-	"originCtx.makeNewConstructionOrigin(false)";
+	"originCtx.makeNewConstructionOrigin(true)";
 
 function makeNewConstructionOrigin
-String ::= top::Decorated Expr --need .frame anno
+String ::= top::Decorated Expr  inInteresting::Boolean --need .frame anno
 {
   -- ORIGINS TODO: rules ref from top.originRules, er from top.isRoot
   local ty :: Type = finalType(top);
+  local interesting :: Boolean = top.frame.originsContextSource.alwaysConsideredInteresting || !top.isRoot || inInteresting;
+
   return case ty of
     | nonterminalType(fn, _) ->
               if nonterminalWantsTracking(fn, top.env)
-              then makeOriginContextRef(top)++".makeNewConstructionOrigin(false)" else "null"
+              then makeOriginContextRef(top)++s".makeNewConstructionOrigin(${if interesting then "true" else "false"})" else "null"
     | _ -> "null"
   end;
 }
@@ -95,7 +109,7 @@ String ::= top::Decorated Expr expr::String
   -- Similar logic to wrapAccessWithOT. Since nonterminalWantsTracking is a liberal estimate it's possible
   --  calling this is a waste of time (in which case .duplicate will simple be a noop.)
 
-  local directDup :: String = s"${expr}.duplicate(${makeOriginContextRef(top)}.lhs, common.ConsCell.nil)";
+  local directDup :: String = s"${expr}.duplicate(${makeOriginContextRef(top)})";
 
   return case ty of
             | nonterminalType(fn, _) ->

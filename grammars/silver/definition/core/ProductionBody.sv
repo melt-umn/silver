@@ -128,6 +128,8 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   top.errors <- if !top.frame.permitReturn
                 then [err(top.location, "Return is not valid in this context. (They are only permitted in function declarations.)")]
                 else [];
+
+  e.isRoot = true;
 }
 
 concrete production localAttributeDcl
@@ -176,6 +178,8 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   top.productionAttributes = [forwardDef(top.grammarName, top.location, top.frame.signature.outputElement.typerep)];
   top.uniqueSignificantExpression = [e];
 
+  e.isRoot = true;
+
   top.errors := e.errors;
 
   top.errors <- if !top.frame.permitForward
@@ -216,6 +220,8 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
   top.unparse = lhs.unparse ++ " = " ++ e.unparse ++ ";";
 
   top.errors := lhs.errors ++ e.errors;
+
+  e.isRoot = true;
 }
 
 concrete production forwardInhsOne
@@ -287,6 +293,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   top.errors := e.errors;
+
+  e.isRoot = true;
 }
 
 abstract production inheritedAttributeDef
@@ -295,6 +303,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   top.errors := e.errors;
+
+  e.isRoot = true;
 }
 
 concrete production concreteDefLHS
@@ -430,6 +440,8 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 
   -- val is already valid here
   top.errors := e.errors;
+
+  e.isRoot = true;
 
   -- TODO: missing redefinition check
 }

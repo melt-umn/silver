@@ -222,12 +222,17 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
     @Override
     public ${fnnt} duplicate(Object redex, Object notes) {
         if (redex == null) {
-            return new ${className}(new PoriginOriginInfo(null, common.OriginsUtil.SET_AT_NEW_OIT, this, notes, false) ${commaIfKids}
+            return new ${className}(new PoriginOriginInfo(null, common.OriginsUtil.SET_AT_NEW_OIT, this, notes, true) ${commaIfKids}
                 ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
         } else {
-            return new ${className}(new PoriginAndRedexOriginInfo(null, common.OriginsUtil.SET_AT_NEW_OIT, this, notes, redex, notes, false) ${commaIfKids}
+            return new ${className}(new PoriginAndRedexOriginInfo(null, common.OriginsUtil.SET_AT_NEW_OIT, this, notes, redex, notes, true) ${commaIfKids}
                 ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
         }
+    }
+
+    @Override
+    public ${fnnt} duplicate(common.OriginContext oc) {
+        return this.duplicate(oc.lhs, oc.rulesAsSilverList());
     }
 
     @Override

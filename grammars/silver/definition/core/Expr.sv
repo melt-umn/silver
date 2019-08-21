@@ -3,16 +3,16 @@ grammar silver:definition:core;
 --import silver:analysis:typechecking:core;
 
 nonterminal Expr with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, typerep;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, typerep, isRoot;
 nonterminal Exprs with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs, isRoot;
 
 nonterminal ExprInhs with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, decoratingnt, suppliedInhs;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, decoratingnt, suppliedInhs, isRoot;
 nonterminal ExprInh with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, decoratingnt, suppliedInhs;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, decoratingnt, suppliedInhs, isRoot;
 nonterminal ExprLHSExpr with
-  config, grammarName, env, location, unparse, errors, name, typerep, decoratingnt, suppliedInhs;
+  config, grammarName, env, location, unparse, errors, name, typerep, decoratingnt, suppliedInhs, isRoot;
 
 {--
  - The nonterminal being decorated. (Used for 'decorate with {}')
@@ -30,6 +30,10 @@ synthesized attribute exprs :: [Decorated Expr];
  - Get each individual Expr, without decorating them.
  -}
 synthesized attribute rawExprs :: [Expr];
+
+-- Is this Expr the logical "root" of the expression? That is, will it's value be the value computed
+--  for the attribute/return value/etc that it is part of?
+autocopy attribute isRoot :: Boolean;
 
 
 abstract production errorExpr
@@ -218,6 +222,9 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
   anns.appExprApplied = e.unparse;
   anns.remainingFuncAnnotations = t.namedTypes;
   anns.funcAnnotations = anns.remainingFuncAnnotations;
+
+  es.isRoot = false;
+  anns.isRoot = false;
   
   -- TODO: we have an ambiguity here in the longer term.
   -- How to distinguish between
@@ -472,6 +479,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 
   top.typerep = decoratedType(performSubstitution(e.typerep, e.upSubst)); -- .decoratedForm?
   top.errors := e.errors ++ inh.errors;
+
+  e.isRoot = false;
   
   inh.decoratingnt = performSubstitution(e.typerep, e.upSubst);
 }
@@ -550,6 +559,9 @@ top::Expr ::= e1::Expr '&&' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
+
+  e1.isRoot = false;
+  e2.isRoot = false;
 }
 
 concrete production or
@@ -559,6 +571,9 @@ top::Expr ::= e1::Expr '||' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
+
+  e1.isRoot = false;
+  e2.isRoot = false;
 }
 
 concrete production not
@@ -568,6 +583,8 @@ top::Expr ::= '!' e::Expr
 
   top.typerep = boolType();
   top.errors := e.errors;
+
+  e.isRoot = false;
 }
 
 concrete production gt
@@ -577,6 +594,9 @@ top::Expr ::= e1::Expr '>' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production lt
@@ -586,6 +606,9 @@ top::Expr ::= e1::Expr '<' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production gteq
@@ -595,6 +618,9 @@ top::Expr ::= e1::Expr '>=' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production lteq
@@ -604,6 +630,9 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production eqeq
@@ -613,6 +642,9 @@ top::Expr ::= e1::Expr '==' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production neq
@@ -622,6 +654,9 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production ifThenElse
@@ -659,6 +694,9 @@ top::Expr ::= e1::Expr '+' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production minus
@@ -668,6 +706,9 @@ top::Expr ::= e1::Expr '-' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production multiply
@@ -677,6 +718,9 @@ top::Expr ::= e1::Expr '*' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production divide
@@ -686,6 +730,9 @@ top::Expr ::= e1::Expr '/' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production modulus
@@ -695,6 +742,9 @@ top::Expr ::= e1::Expr '%' e2::Expr
 
   top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production neg
@@ -705,6 +755,8 @@ precedence = 13
 
   top.errors := e.errors;
   top.typerep = e.typerep;
+
+  e.isRoot=false;
 }
 
 concrete production stringConst
@@ -736,6 +788,9 @@ top::Expr ::= e1::Expr '++' e2::Expr
   -- upSubst defined via forward :D
 
   errCheck1 = check(e1.typerep, e2.typerep);
+
+  e1.isRoot = false;
+  e2.isRoot = false;
 
   forwards to
     -- if the types disagree, forward to an error production instead.
@@ -804,11 +859,11 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
  -}
 nonterminal AppExprs with 
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied;
+  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied, isRoot;
 
 nonterminal AppExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied;
+  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied, isRoot;
 
 synthesized attribute isPartial :: Boolean;
 synthesized attribute missingTypereps :: [Type];
@@ -920,12 +975,12 @@ nonterminal AnnoAppExprs with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
-  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied;
+  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot;
 nonterminal AnnoExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
-  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied;
+  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot;
 
 {--
  - Annotations that have not yet been supplied

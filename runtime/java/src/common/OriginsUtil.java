@@ -3,6 +3,7 @@ package common;
 
 import core.*;
 import common.exceptions.*;
+import java.util.*;
 
 /**
  * Implementation of helper functions on Nonterminals used by Origin-tracking code
@@ -115,5 +116,11 @@ public final class OriginsUtil {
 			return new core.Pjust(null, ((PoriginAndRedexOriginInfo)o).getChild_origin());
 
 		return new core.Pnothing(null);
+	}
+
+	public static<T> ArrayList<T> arrayListOfArray(T[] a) {
+		ArrayList<T> l = new ArrayList<T>();
+		Collections.addAll(l, a);
+		return l;
 	}
 }

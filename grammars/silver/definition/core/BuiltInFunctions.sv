@@ -5,6 +5,8 @@ top::Expr ::= 'length' '(' e::Expr ')'
 {
   top.unparse = "length(" ++ e.unparse ++ ")";
 
+  e.isRoot = false;
+
   top.typerep = intType(); -- is this necessary? for flowtype reasons?
 
   forwards to performSubstitution(e.typerep, e.upSubst).lengthDispatcher(e, top.location);
@@ -43,6 +45,8 @@ top::Expr ::= 'toInteger' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.typerep = intType();
+
+  e.isRoot = false;
 }
 
 concrete production toBooleanFunction
@@ -52,6 +56,8 @@ top::Expr ::= 'toBoolean' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.typerep = boolType();
+
+  e.isRoot = false;
 }
 
 concrete production toFloatFunction
@@ -61,6 +67,8 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.typerep = floatType();
+
+  e.isRoot = false;
 }
 
 concrete production toStringFunction
@@ -70,6 +78,8 @@ top::Expr ::= 'toString' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.typerep = stringType();
+
+  e.isRoot = false;
 }
 
 concrete production reifyFunctionLiteral
@@ -89,6 +99,8 @@ top::Expr ::= 'new' '(' e::Expr ')'
 
   top.errors := e.errors;
   top.typerep = performSubstitution(e.typerep, top.upSubst).decoratedType;
+
+  e.isRoot = false;
 }
 
 {--
@@ -103,6 +115,9 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 
   top.errors := t.errors ++ es.errors ++ el.errors;
   top.typerep = t.typerep;
+
+  es.isRoot = false;
+  el.isRoot = false;
 }
 
 

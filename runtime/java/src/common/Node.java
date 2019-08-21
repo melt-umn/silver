@@ -141,6 +141,12 @@ public abstract class Node implements Typed {
 		return this;
 	}
 
+	public Object duplicate(OriginContext oc) {
+		// This is overridden in addition to duplicate/1 (instead of just forwarding) to avoid
+		//  calling oc.rulesAsSilverList() when we don't need to build it. 
+		return this;
+	}
+
 	public Object copy(Object redex, Object rule){
 		return this;
 	}

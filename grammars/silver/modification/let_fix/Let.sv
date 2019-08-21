@@ -58,7 +58,7 @@ top::Expr ::= la::AssignExpr  e::Expr
 
 nonterminal AssignExpr with location, config, grammarName, env, compiledGrammars, 
                             unparse, defs, errors, upSubst, 
-                            downSubst, finalSubst, frame;
+                            downSubst, finalSubst, frame, isRoot;
 
 abstract production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
