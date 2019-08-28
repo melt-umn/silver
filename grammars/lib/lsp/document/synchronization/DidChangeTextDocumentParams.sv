@@ -1,14 +1,14 @@
-nonterminal DidChangeTextDocumentParams with jsonValue, versionedTextDocumentId, documentContentChanges;
+nonterminal DidChangeTextDocumentParams with jsonValue, versionedTextDocumentId, contentChanges;
 
 synthesized attribute versionedTextDocumentId :: VersionedTextDocumentIdentifier;
-synthesized attribute documentContentChanges :: [TextDocumentContentChangeEvent];
+synthesized attribute contentChanges :: [TextDocumentContentChangeEvent];
 
 abstract production didChangeTextDocumentParams
 top::DidChangeTextDocumentParams::=
   textDocument::VersionedTextDocumentIdentifier contentChanges::[TextDocumentContentChangeEvent]
 {
   top.versionedTextDocumentId = textDocument;
-  top.documentContentChanges = contentChanges;
+  top.contentChanges = contentChanges;
   top.jsonValue =
     addKeyValuePairToJSONObject("textDocument", textDocument.jsonValue, 
     addKeyValuePairToJSONObject("contentChanges", jsonArray(map((.jsonValue), contentChanges)), 

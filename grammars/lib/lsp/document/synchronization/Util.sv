@@ -1,7 +1,7 @@
 
 import silver:util:raw:treemap as rtm;
 
-function modifyStringForContentChange
+function modifyTextForContentChange
 String ::= s::String change::TextDocumentContentChangeEvent
 {
   return

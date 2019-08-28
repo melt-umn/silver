@@ -1,5 +1,3 @@
-
-
 import silver:langutil;
 
 synthesized attribute associatedDiagnostic :: Diagnostic;

@@ -28,17 +28,17 @@ Pair<String String> ::= pre::Pair<String String>
 function toTsIgnoreDeclaration
 String ::= str::String
 {
-  -- include ignore declarations in the parse tree
-  -- return "_" ++ toTsDeclaration(str)
-  return toTsDeclaration(str);
+  -- do not include ignore declarations in the parse tree
+  return "_" ++ toTsDeclaration(str);
+  -- return toTsDeclaration(str);
 }
 
 function TsDeclToIgnoreDecl
 String ::= str::String
 {
-  -- include ignore declarations in the parse tree
-  -- return "_" ++ str
-  return str;
+  -- do not include ignore declarations in the parse tree
+  return "_" ++ str;
+  --return str;
 }
 
 {-- When identifying a tree sitter terminal or nonterminal it must be begin with

@@ -74,6 +74,12 @@ Boolean ::= loc1::Location loc2::Location
   return stringEq(loc1.uri, loc2.uri) && rangeEq(loc1.range, loc2.range);
 }
 
+function coreLocationEq
+Boolean ::= loc1::CoreLocation loc2::CoreLocation
+{
+  return locationEq(silverLocationToLSPLocation(loc1), silverLocationToLSPLocation(loc2));
+}
+
 function locationToString
 String ::= loc::CoreLocation
 {
