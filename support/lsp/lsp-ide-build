@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -eu
+
+silver -I grammars lib:lsp
+cp lib.lsp.jar ../../jars
