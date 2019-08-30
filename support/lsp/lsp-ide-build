@@ -2,5 +2,26 @@
 
 set -eu
 
+# find where to put the jar
+case `uname` in
+*Darwin*)
+  READLINK=greadlink
+  if [ ! -f `which greadlink` ]; then
+    echo "Missing greadlink. Please install coreutils:"
+    echo -e "\tbrew install coreutils"
+    exit 4
+  fi
+  ;;
+*)
+  READLINK=readlink
+  ;;
+esac
+
+# ~/bin/silver should be a link to somewhere, find out where!
+ME=$(${READLINK} -f "${BASH_SOURCE}")
+
+# Set our home
+SILVER_HOME=${ME/support\/lsp\/lsp-ide-build/}
+
 silver -I grammars lib:lsp
-cp lib.lsp.jar ../../jars
+mv $(pwd)/lib.lsp.jar $SILVER_HOME/jars/

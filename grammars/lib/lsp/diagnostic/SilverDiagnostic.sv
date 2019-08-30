@@ -39,6 +39,15 @@ function silverDiagnosticsToServerInitiatedMessages
   return map(serverInitiatedDiagnosticNotification, silverDiagnosticsToPublishNotification(diagnostics));
 }
 
+function noErrorsMessageForUris
+[ServerInitiatedMessage] ::= uris::[DocumentUri]
+{
+  return
+  map(serverInitiatedDiagnosticNotification, 
+    map(publishDiagnosticsNotification,
+      map(publishDiagnosticsParams(_, []), uris)));
+}
+
 function silverDiagnosticsToPublishNotification
 [PublishDiagnosticsNotification] ::= diagnostics::[SilverDiagnostic]
 {
