@@ -3,7 +3,7 @@ grammar silver:modification:copper;
 concrete production attributeDclParser
 top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::ActionCode_c ';'
 {
-  top.unparse = "parser attribute " ++ a.name ++ " :: " ++ te.unparse ++ " action " ++ acode.unparse ++ " ;" ;
+  top.pp = "parser attribute " ++ a.name ++ " :: " ++ te.pp ++ " action " ++ acode.pp ++ " ;" ;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -16,45 +16,9 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::Ac
 
   top.errors := te.errors ++ acode.errors;
   
-  -- oh no again!
-  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
-  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
-
-  local myFlowGraph :: ProductionGraph = 
-    constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
-
-  acode.frame = actionContext(myFlowGraph);
+  acode.frame = actionContext();
   acode.env = newScopeEnv(acode.defs, top.env);
   
   top.syntaxAst = [syntaxParserAttribute(fName, te.typerep, acode.actionCode)];
-}
-
-concrete production attributeAspectParser
-top::AGDcl ::= 'aspect' 'parser' 'attribute' a::QName 'action' acode::ActionCode_c ';'
-{
-  top.unparse = "aspect parser attribute " ++ a.name ++ " action " ++ acode.unparse ++ " ;" ;
-
-  production attribute fName :: String;
-  fName = a.lookupValue.dcl.fullName;
-
-  top.defs = [];
-
-  top.errors <- if null(a.lookupValue.dcls)
-                then [err(a.location, "Undefined attribute '" ++ a.name ++ "'.")]
-                else [];
-
-  top.errors := acode.errors;
-  
-  -- oh no again!
-  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
-  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
-
-  local myFlowGraph :: ProductionGraph = 
-    constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
-
-  acode.frame = actionContext(myFlowGraph);
-  acode.env = newScopeEnv(acode.defs, top.env);
-  
-  top.syntaxAst = [syntaxParserAttributeAspect(fName, acode.actionCode)];
 }
 

@@ -55,10 +55,6 @@ parser attribute knownlist :: [String]  action {
   knownlist = [];
 };
 
-aspect parser attribute knownlist  action {
-  knownlist = "quix" :: knownlist;
-};
-
 -- THE TESTS
 
 equalityTest ( PAparse("!foo foo", "asdf").parseSuccess, true, Boolean, copper_tests ) ;
@@ -74,5 +70,3 @@ equalityTest ( PAparse("!foo !bar foo bar foo", "").parseTree.unknownsused, [], 
 equalityTest ( PAparse("!foo !bar foo foo", "").parseTree.unknownsused, [], [String], copper_tests ) ;
 equalityTest ( PAparse("!foo !bar foo bar foo baz", "").parseTree.unknownsused, ["baz"], [String], copper_tests ) ;
 
-equalityTest ( PAparse("quix", "").parseSuccess, true, Boolean, copper_tests ) ;
-equalityTest ( PAparse("quix", "").parseTree.unknownsused, [], [String], copper_tests ) ;

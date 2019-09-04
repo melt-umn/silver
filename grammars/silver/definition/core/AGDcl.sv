@@ -3,31 +3,29 @@ grammar silver:definition:core;
 {--
  - Top-level declarations of a Silver grammar. The "meat" of a file.
  -}
-nonterminal AGDcls with config, grammarName, env, location, unparse, errors, defs, moduleNames, compiledGrammars, grammarDependencies, jarName;
-nonterminal AGDcl  with config, grammarName, env, location, unparse, errors, defs, moduleNames, compiledGrammars, grammarDependencies, jarName;
+nonterminal AGDcls with config, grammarName, env, location, pp, errors, defs, moduleNames, compiledGrammars, grammarDependencies;
+nonterminal AGDcl  with config, grammarName, env, location, pp, errors, defs, moduleNames, compiledGrammars, grammarDependencies;
 
 flowtype forward {grammarName, env} on AGDcl;
 
 concrete production nilAGDcls
 top::AGDcls ::=
 {
-  top.unparse = "";
+  top.pp = "";
 
   top.defs = [];
   top.errors := [];
   top.moduleNames = [];
-  top.jarName = nothing();
 }
 
 concrete production consAGDcls
 top::AGDcls ::= h::AGDcl t::AGDcls
 {
-  top.unparse = h.unparse ++ "\n" ++ t.unparse;
+  top.pp = h.pp ++ "\n" ++ t.pp;
 
   top.defs = h.defs ++ t.defs;
-  top.errors := h.errors ++ t.errors ++ warnIfMultJarName(h.jarName, t.jarName, top.location);
+  top.errors := h.errors ++ t.errors;
   top.moduleNames = h.moduleNames ++ t.moduleNames;
-  top.jarName = orElse(h.jarName, t.jarName);
 }
 
 --------
@@ -40,18 +38,16 @@ top::AGDcls ::= h::AGDcl t::AGDcls
 abstract production emptyAGDcl
 top::AGDcl ::=
 {
-  top.unparse = "";
+  top.pp = "";
 
   top.errors := [];
-  top.jarName = nothing();
 }
 
 abstract production errorAGDcl
 top::AGDcl ::= e::[Message]
 {
-  top.unparse = s"{- Errors:\n${messagesToString(e)} -}";
+  top.pp = s"{- Errors:\n${foldMessages(e)} -}";
   top.errors := e;
-  top.jarName = nothing();
 }
 
 {--
@@ -60,41 +56,20 @@ top::AGDcl ::= e::[Message]
 abstract production appendAGDcl
 top::AGDcl ::= h::AGDcl t::AGDcl
 {
-  top.unparse = h.unparse ++ "\n" ++ t.unparse;
+  top.pp = h.pp ++ "\n" ++ t.pp;
 
   top.defs = h.defs ++ t.defs;
-  top.errors := h.errors ++ t.errors ++ warnIfMultJarName(h.jarName, t.jarName, top.location);
+  top.errors := h.errors ++ t.errors;
   top.moduleNames = h.moduleNames ++ t.moduleNames;
-  top.jarName = orElse(h.jarName, t.jarName);
-}
-
-abstract production jarNameDcl
-top::AGDcl ::= n::Name
-{
-  top.unparse = "jarName " ++ n.unparse;
-  top.errors := [];
-  top.moduleNames = [];
-  top.defs = [];
-  top.jarName = just(n.name);
 }
 
 aspect default production
 top::AGDcl ::=
 {
-  -- can't provide unparse or location!
+  -- can't provide pp or location!
   top.moduleNames = [];
   top.defs = [];
-  top.jarName = nothing();
   --top.errors := []; -- should never be omitted, really.
-}
-
-function warnIfMultJarName
-[Message] ::= n1::Maybe<String>  n2::Maybe<String>  loc::Location
-{
-  return if n1.isJust && n2.isJust
-         then [wrn(loc, "Duplicate specification of jar name: " ++
-               n1.fromJust ++ " and " ++ n2.fromJust)]
-         else [];
 }
 
 -- All AGDcls have their own file, or modification. None here.

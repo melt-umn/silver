@@ -9,7 +9,7 @@ import silver:definition:type;
 concrete production autoAstDcl
 top::ProductionStmt ::= 'abstract' v::QName ';'
 {
-  top.unparse = "abstract " ++ v.unparse ++ ";";
+  top.pp = "abstract " ++ v.pp ++ ";";
 
   local vty :: Type =
     freshenCompletely(v.lookupValue.typerep);
@@ -59,18 +59,30 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
       '.',
       astQName,
       '=',
-      mkFullFunctionInvocation(
-        top.location,
+      application(
         baseExpr(v, location=v.location),
-        map(accessAst(_, top.location), elems),
-        if hasLoc then
-         [pair("location", 
-            access(
-              baseExpr(lhsQName, location=top.location),
-              '.',
-              qNameAttrOccur(qName(top.location, "location"), location=top.location),
-              location=top.location))]
-        else []),
+        '(',
+        -- just a note here that 'foldAppExprs' needs the exprs reversed...
+        -- sort of using an internal function here.
+        foldAppExprs(top.location, reverse(map(accessAst(_, top.location), elems))),
+        ',',
+        if hasLoc
+        then oneAnnoAppExprs(
+          annoExpr(
+            qName(top.location, "location"),
+            '=',
+            presentAppExpr(
+              access(
+                baseExpr(lhsQName, location=top.location),
+                '.',
+                qNameAttrOccur(qName(top.location, "location"), location=top.location),
+                location=top.location),
+              location=top.location),
+            location=top.location),
+          location=top.location)
+        else emptyAnnoAppExprs(location=top.location),
+        ')',
+        location=top.location),
       ';',
       location=top.location);
 }

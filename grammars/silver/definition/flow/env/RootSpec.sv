@@ -2,56 +2,26 @@ grammar silver:definition:flow:env;
 
 import silver:driver:util;
 
-attribute flowDefs occurs on RootSpec, GrammarProperties;
-
-aspect production consGrammarProperties
-top::GrammarProperties ::= h::GrammarProperty t::GrammarProperties
-{
-  top.flowDefs = fromMaybe(t.flowDefs, h.maybeFlowDefs);
-}
-
-aspect production nilGrammarProperties
-top::GrammarProperties ::=
-{
-  top.flowDefs = error("Grammar property flowDefs missing from interface file");
-}
-
-synthesized attribute maybeFlowDefs::Maybe<[FlowDef]> occurs on GrammarProperty;
-
-aspect default production
-top::GrammarProperty ::=
-{
-  top.maybeFlowDefs = nothing();
-}
-
-abstract production flowDefsGrammarProperty
-top::GrammarProperty ::= val::[FlowDef]
-{
-  top.maybeFlowDefs = just(val);
-}
+attribute flowDefs occurs on RootSpec;
 
 aspect function unparseRootSpec
 String ::= r::Decorated RootSpec
 {
-  grammarProperties <- [flowDefsGrammarProperty(r.flowDefs)];
+  
+  unparses <- ["flow [" ++ implode(",\n ", foldr(consFlow, nilFlow(), r.flowDefs).unparses) ++ "]"];
+  
 }
 
 aspect production errorRootSpec
-top::RootSpec ::= _ _ _ _ _
+top::RootSpec ::= _ _ _ _
 {
   top.flowDefs = [];
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar  _ _ _ _
+top::RootSpec ::= g::Grammar  _ _ _
 {
   top.flowDefs = g.flowDefs;
-}
-
-aspect production interfaceRootSpec
-top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer _
-{
-  top.flowDefs = p.flowDefs;
 }
 
 aspect production nilGrammar

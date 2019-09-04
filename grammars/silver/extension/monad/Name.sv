@@ -4,7 +4,7 @@
 -- Using MName instead creates a reduce/reduce conflict with QName/Name which is resolved by setting
 -- the production precedence.  
 
-nonterminal MName with config, grammarName, location, unparse, name;
+nonterminal MName with config, grammarName, location, pp, name;
 
 synthesized attribute name :: String;
 
@@ -13,14 +13,14 @@ top::MName ::= id::IdLower_t
 precedence=2
 {
   top.name = id.lexeme;
-  top.unparse = id.lexeme;
+  top.pp = id.lexeme;
 }
 concrete production mNameIdUpper
 top::MName ::= id::IdUpper_t
 precedence=2
 {
   top.name = id.lexeme;
-  top.unparse = id.lexeme;
+  top.pp = id.lexeme;
 }
 
 function nameFromMName

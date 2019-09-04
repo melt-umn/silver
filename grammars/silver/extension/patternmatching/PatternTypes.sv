@@ -5,7 +5,7 @@ import silver:extension:list only LSqr_t, RSqr_t;
 {--
  - The forms of syntactic patterns that are permissible in (nested) case expresssions.
  -}
-nonterminal Pattern with location, config, unparse, env, errors, patternIsVariable, patternVariableName, patternSubPatternList, patternSortKey;
+nonterminal Pattern with location, config, pp, env, errors, patternIsVariable, patternVariableName, patternSubPatternList, patternSortKey;
 
 {--
  - False if it actually matches anything specific, true if it's a variable/wildcard.
@@ -38,14 +38,14 @@ synthesized attribute patternSortKey :: String;
 concrete production prodAppPattern
 top::Pattern ::= prod::QName '(' ps::PatternList ')'
 {
-  top.unparse = prod.unparse ++ "(" ++ ps.unparse ++ ")";
+  top.pp = prod.pp ++ "(" ++ ps.pp ++ ")";
   top.errors := ps.errors;
 
   local parms :: Integer = length(prod.lookupValue.typerep.inputTypes);
 
   top.errors <-
     if null(prod.lookupValue.dcls) || length(ps.patternList) == parms then []
-    else [err(prod.location, prod.name ++ " has " ++ toString(parms) ++ " parameters but " ++ toString(length(ps.patternList)) ++ " patterns were provided")];
+    else [err(prod.location, prod.pp ++ " has " ++ toString(parms) ++ " parameters but " ++ toString(length(ps.patternList)) ++ " patterns were provided")];
 
   top.patternIsVariable = false;
   top.patternVariableName = nothing();
@@ -59,7 +59,7 @@ top::Pattern ::= prod::QName '(' ps::PatternList ')'
 concrete production wildcPattern
 top::Pattern ::= '_'
 {
-  top.unparse = "_";
+  top.pp = "_";
   top.errors := [];
 
   top.patternIsVariable = true;
@@ -77,7 +77,7 @@ top::Pattern ::= '_'
 concrete production varPattern
 top::Pattern ::= v::Name
 {
-  top.unparse = v.name;
+  top.pp = v.name;
   top.errors := 
     (if isUpper(substring(0,1,v.name))
      then [err(v.location, "Pattern variable names start with a lower case letter")]
@@ -92,21 +92,6 @@ top::Pattern ::= v::Name
   top.patternVariableName = just(v.name);
   top.patternSubPatternList = [];
   top.patternSortKey = "~var";
-}
-
-{--
- - For other extensions to pattern matching.  Basically acts like a wildcard.
- -}
-abstract production errorPattern
-top::Pattern ::= msg::[Message]
-{
-  top.unparse = s"{-${messagesToString(msg)}-}";
-  top.errors := msg;
-
-  top.patternIsVariable = true;
-  top.patternVariableName = nothing();
-  top.patternSubPatternList = [];
-  top.patternSortKey = "error";
 }
 
 aspect default production
@@ -124,17 +109,7 @@ top::Pattern ::=
 concrete production intPattern
 top::Pattern ::= num::Int_t
 {
-  top.unparse = num.lexeme;
-  top.errors := [];
-  
-  top.patternSubPatternList = [];
-  top.patternSortKey = num.lexeme;
-}
-
-concrete production fltPattern
-top::Pattern ::= num::Float_t
-{
-  top.unparse = num.lexeme;
+  top.pp = num.lexeme;
   top.errors := [];
   
   top.patternSubPatternList = [];
@@ -144,7 +119,7 @@ top::Pattern ::= num::Float_t
 concrete production strPattern
 top::Pattern ::= str::String_t
 {
-  top.unparse = str.lexeme;
+  top.pp = str.lexeme;
   top.errors := [];
   
   top.patternSubPatternList = [];
@@ -154,7 +129,7 @@ top::Pattern ::= str::String_t
 concrete production truePattern
 top::Pattern ::= 'true'
 {
-  top.unparse = "true";
+  top.pp = "true";
   top.errors := [];
   
   top.patternSubPatternList = [];
@@ -164,7 +139,7 @@ top::Pattern ::= 'true'
 concrete production falsePattern
 top::Pattern ::= 'false'
 {
-  top.unparse = "false";
+  top.pp = "false";
   top.errors := [];
   
   top.patternSubPatternList = [];
@@ -174,7 +149,7 @@ top::Pattern ::= 'false'
 abstract production nilListPattern
 top::Pattern ::= '[' ']'
 {
-  top.unparse = "[]";
+  top.pp = "[]";
   top.errors := [];
   
   top.patternSubPatternList = [];
@@ -184,7 +159,7 @@ top::Pattern ::= '[' ']'
 concrete production consListPattern
 top::Pattern ::= hp::Pattern '::' tp::Pattern
 {
-  top.unparse = hp.unparse ++ "::" ++ tp.unparse;
+  top.pp = hp.pp ++ "::" ++ tp.pp;
   top.errors := hp.errors ++ tp.errors;
   
   top.patternSubPatternList = [hp, tp];
@@ -195,7 +170,7 @@ top::Pattern ::= hp::Pattern '::' tp::Pattern
 concrete production listPattern
 top::Pattern ::= '[' ps::PatternList ']'
 {
-  top.unparse = s"[${ps.unparse}]";
+  top.pp = s"[${ps.pp}]";
   forwards to ps.asListPattern;
 }
 

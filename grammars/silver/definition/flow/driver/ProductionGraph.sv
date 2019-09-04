@@ -1,9 +1,9 @@
 grammar silver:definition:flow:driver;
 
-import silver:util only contains, rem;
+import silver:util only contains;
 import silver:definition:type only isDecorable;
 
-nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, suspectEdgeMap, cullSuspect, flowTypeVertexes, prodGraphs;
+nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, cullSuspect, flowTypeVertexes, prodGraphs;
 
 inherited attribute flowTypes :: EnvTree<FlowType>;
 inherited attribute prodGraphs :: EnvTree<ProductionGraph>;
@@ -22,7 +22,6 @@ synthesized attribute transitiveClosure :: ProductionGraph;
  - Edge mapper
  -}
 synthesized attribute edgeMap :: (set:Set<FlowVertex> ::= FlowVertex);
-synthesized attribute suspectEdgeMap :: ([FlowVertex] ::= FlowVertex);
 
 synthesized attribute cullSuspect :: ProductionGraph;
 
@@ -78,7 +77,6 @@ top::ProductionGraph ::=
       productionGraph(prod, lhsNt, flowTypeVertexes, transitiveClosure, suspectEdges, stitchPoints) end;
     
   top.edgeMap = g:edgesFrom(_, graph);
-  top.suspectEdgeMap = lookupAllBy(equalFlowVertex, _, suspectEdges);
   
   top.cullSuspect = 
     -- this potentially introduces the same edge twice, but that's a nonissue
@@ -114,26 +112,6 @@ function computeAllProductionGraphs
   else constructProductionGraph(head(prods), searchEnvTree(head(prods).fullName, prodTree), flowEnv, realEnv) ::
     computeAllProductionGraphs(tail(prods), prodTree, flowEnv, realEnv);
 }
-
-
---------------------------------------------------------------------------------
--- Below, we have various means of constructing a production graph.
--- Two types are used as part of inference:
---  1. `constructProductionGraph` builds a graph for a normal production.
---  2. `constructPhantomProductionGraph` builds a "phantom graph" to guide inference.
---
--- There are more types of "production" graphs, used NOT for inference, but
--- for error checking behaviors:
---  1. `constructFunctionGraph` builds a graph for a function.
---       (the key here: `aspect function` contributions `<-` needs to be handled.)
---  2. `constructAnonymousGraph` builds a graph for a global expression. (also action blocks)
---       (key: decorate/patterns create stitch points and things that need to be handled.)
---  3. `constructDefaultProductionGraph` builds a graph used locally in a default production.
---       (key: like phantom, LHS is stitch point, to make dependencies clear.)
---
--- This latter type should always call `updateGraph` to fill in all edges after construction.
---------------------------------------------------------------------------------
-
 
 {--
  - Produces a ProductionGraph in some special way. Fixes up implicit equations,
@@ -218,10 +196,8 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
 }
 
 {--
- - Constructs a function flow graph.
- -
- - NOTE: Not used as part of inference. Instead, only used as part of error checking.
- -
+ - Constructs a function flow graph. NOTE: Not used as part of inference.
+ - Instead, only used as part of error checking.
  - @param ns  The function signature
  - @param flowEnv  The LOCAL flow env where the function is. (n.b. for productions involved in inference, we get a global flow env)
  - @param realEnv  The LOCAL environment
@@ -231,14 +207,13 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
 function constructFunctionGraph
 ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
 {
-  local prod :: String = ns.fullName;
-  local nt :: NtName = "::nolhs"; -- the same hack we use elsewhere
-  local defs :: [FlowDef] = getGraphContribsFor(prod, flowEnv);
+  local defs :: [FlowDef] = getGraphContribsFor(ns.fullName, flowEnv);
 
+  -- Normal edges!
   local normalEdges :: [Pair<FlowVertex FlowVertex>] =
     flatMap((.flowEdges), defs);
   
-  -- In functions, this is just `<-` contributions to local collections from aspects.
+  -- Basicaly just <- to local collections...
   local suspectEdges :: [Pair<FlowVertex FlowVertex>] =
     flatMap((.suspectFlowEdges), defs);
     
@@ -248,90 +223,14 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv  realEnv::Dec
   -- RHS and locals and forward.
   local stitchPoints :: [StitchPoint] =
     rhsStitchPoints(ns.inputElements) ++
-    localStitchPoints(error("functions shouldn't have a forwarding equation?"), defs) ++
+    localStitchPoints(error("functions have no LHS, no forwarding defs"), defs) ++
     patternStitchPoints(realEnv, defs);
 
-  local flowTypeVertexes :: [FlowVertex] = []; -- Not used as part of inference.
-
   local g :: ProductionGraph =
-    productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
+    productionGraph(ns.fullName, "::nolhs", [], initialGraph, suspectEdges, stitchPoints).transitiveClosure;
 
   return updateGraph(g, prodEnv, ntEnv);
 }
-
-{--
- - An anonymous graph is for a location where we have all `flowDefs` locally available,
- - and they're actually not propagated into an environment anywhere. (e.g. globals)
- -
- - NOTE: Not used as part of inference. Instead, only used as part of error checking.
- -
- -}
-function constructAnonymousGraph
-ProductionGraph ::= defs::[FlowDef]  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
-{
-  -- Actually very unclear to me right now if these dummy names matter.
-  -- Presently duplicating what appears in BlockContext
-  local prod :: String = "_NULL_";
-  local nt :: NtName = "::nolhs"; -- the same hack we use elsewhere
-
-  local normalEdges :: [Pair<FlowVertex FlowVertex>] =
-    flatMap((.flowEdges), defs);
-  
-  -- suspectEdges should always be empty! (No "aspects" where they could arise.)
-  local suspectEdges :: [Pair<FlowVertex FlowVertex>] = [];
-
-  local initialGraph :: g:Graph<FlowVertex> =
-    createFlowGraph(normalEdges);
-
-  -- There can still be anonEq, but there's no RHS anymore
-  local stitchPoints :: [StitchPoint] =
-    localStitchPoints(error("global expressions shouldn't have a forwarding equation?"), defs) ++
-    patternStitchPoints(realEnv, defs);
-
-  local flowTypeVertexes :: [FlowVertex] = []; -- Not used as part of inference.
-  
-  local g :: ProductionGraph =
-    productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
-
-  return updateGraph(g, prodEnv, ntEnv);
-}
-
-{--
- - An graph for checking dependencies in default equations.
- -
- - NOTE: Not used as part of inference. Instead, only used as part of error checking.
- -
- -}
-function constructDefaultProductionGraph
-ProductionGraph ::= ns::NamedSignature  defs::[FlowDef]  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
-{
-  local prod :: String = ns.fullName;
-  local nt :: NtName = ns.outputElement.typerep.typeName;
-  
-  local normalEdges :: [Pair<FlowVertex FlowVertex>] =
-    flatMap((.flowEdges), defs);
-  
-  -- suspectEdges should always be empty! (No "aspects" where they could arise.)
-  local suspectEdges :: [Pair<FlowVertex FlowVertex>] = [];
-    
-  local initialGraph :: g:Graph<FlowVertex> =
-    createFlowGraph(normalEdges);
-
-  -- There can still be anonEq, but there's no RHS anymore
-  -- However, we do behave like phantom graphs and create an LHS stitch point!
-  local stitchPoints :: [StitchPoint] =
-    [nonterminalStitchPoint(nt, lhsVertexType)] ++ 
-    localStitchPoints(error("default production shouldn't have a forwarding equation?"), defs) ++
-    patternStitchPoints(realEnv, defs);
-
-  local flowTypeVertexes :: [FlowVertex] = []; -- Not used as part of inference.
-
-  local g :: ProductionGraph =
-    productionGraph(prod, nt, flowTypeVertexes, initialGraph, suspectEdges, stitchPoints).transitiveClosure;
-
-  return updateGraph(g, prodEnv, ntEnv);
-}
-
 
 
 {--
@@ -349,14 +248,12 @@ ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated E
   local attrs :: [DclInfo] = getAttrsOn(nt, realEnv);
   -- Just synthesized attributes.
   local syns :: [String] = map((.attrOccurring), filter(isOccursSynthesized(_, realEnv), attrs));
-  -- Those syns that are not part of the host, and so should have edges to fwdeq
-  local extSyns :: [String] = rem(syns, getHostSynsFor(nt, flowEnv));
 
   -- The phantom edges: ext syn -> fwd.eq
   local phantomEdges :: [Pair<FlowVertex FlowVertex>] =
     -- apparently this alias may sometimes be used. we should get rid of this by making good use of vertex types
     pair(lhsSynVertex("forward"), forwardEqVertex()) ::
-    map(getPhantomEdge, extSyns);
+    map(getPhantomEdge, getExtSynsFor(nt, flowEnv));
   
   -- The stitch point: oddball. LHS stitch point. Normally, the LHS is not.
   local stitchPoints :: [StitchPoint] = [nonterminalStitchPoint(nt, lhsVertexType)];
@@ -369,9 +266,11 @@ ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated E
 }
 
 function getPhantomEdge
-Pair<FlowVertex FlowVertex> ::= at::String
+Pair<FlowVertex FlowVertex> ::= f::FlowDef
 {
-  return pair(lhsSynVertex(at), forwardEqVertex());
+  return case f of
+  | extSynFlowDef(_, at) -> pair(lhsSynVertex(at), forwardEqVertex())
+  end;
 }
 
 ---- Begin helpers for fixing up graphs ----------------------------------------

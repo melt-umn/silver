@@ -1,8 +1,5 @@
 grammar silver:modification:copper;
 
-{--
- - Reference to something declared as "parser attribute foo ..."
- -}
 abstract production parserAttrDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 {
@@ -10,6 +7,9 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
+  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't
+  top.unparse = "parse_attr(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
+  
   top.typerep = ty;
   
   top.refDispatcher = parserAttributeReference(_, location=_);
@@ -17,9 +17,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.defLHSDispatcher = parserAttributeDefLHS(_, location=_);
 }
 
-{--
- - The names of possible pluckable terminals are jammed in the environment using this dcl.
- -}
 abstract production pluckTermDcl
 top::DclInfo ::= sg::String sl::Location fn::String
 {
@@ -27,17 +24,32 @@ top::DclInfo ::= sg::String sl::Location fn::String
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = terminalIdType(); -- TODO: Still needs work to prevent returning terminals
-                                  -- that are not part of the disambiguation set.
+  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
+  
+  --top.typerep = errorType();
+  top.typerep = freshType(); -- #HACK2012 Issue 4
   
   top.refDispatcher = pluckTerminalReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);
   top.defLHSDispatcher = errorDefLHS(_, location=_);
 }
 
-{--
- - Reference to a lexer class declaration. Has its own namespace in the environment, for now.
- -}
+abstract production disambigLexemeDcl
+top::DclInfo ::= sg::String sl::Location
+{
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = "lexeme";
+
+  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
+  
+  top.typerep = stringType();
+  
+  top.refDispatcher = disambigLexemeReference(_, location=_);
+  top.defDispatcher = errorValueDef(_, _, location=_);
+  top.defLHSDispatcher = errorDefLHS(_, location=_);
+}
+
 abstract production lexerClassDcl
 top::DclInfo ::= sg::String sl::Location fn::String
 {
@@ -45,14 +57,11 @@ top::DclInfo ::= sg::String sl::Location fn::String
   top.sourceLocation = sl;
   top.fullName = fn;
   
-  -- If we made lexer classes types, it might simplify a lot of code.
-  -- We wouldn't need a separate namespace, they could just be in the type namespace.
   top.typerep = error("Internal compiler error: lexer classes do not have types");
+
+  top.unparse = "lexer_class(" ++ sl.unparse ++ ", '" ++ fn ++ "')";
 }
 
-{--
- - lexeme/filename/line/column. Used in terminal and production action code.
- -}
 abstract production termAttrValueDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 {
@@ -60,6 +69,8 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
+  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
+  
   top.typerep = ty;
   
   top.refDispatcher = termAttrValueReference(_, location=_);
@@ -67,9 +78,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.defLHSDispatcher = errorDefLHS(_, location=_);
 }
 
-{--
- - Reference to production's children from production action code.
- -}
 abstract production actionChildDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 {
@@ -77,6 +85,8 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
+  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
+  
   top.typerep = ty;
   
   top.refDispatcher = actionChildReference(_, location=_);
@@ -84,9 +94,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.defLHSDispatcher = parserAttributeDefLHS(_, location=_); -- TODO: specialize this
 }
 
-{--
- - Reference to a local variable ("local foo :: Type = ...") inside an action block.
- -}
 abstract production parserLocalDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 {
@@ -94,6 +101,8 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
+  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
+  
   top.typerep = ty;
   
   -- TODO: use specialized ones that give better errors messages!
@@ -110,6 +119,7 @@ top::DclInfo ::= sg::String sl::Location sep::String
   top.sourceLocation = sl;
   top.fullName = "_prefix_seperator";
 
+  top.unparse = "prefix_seperator(" ++ sl.unparse ++ ", \"" ++ escapeString(sep) ++ "\")";
+
   top.typerep = error("_prefix_seperator does not have a type");
 }
-

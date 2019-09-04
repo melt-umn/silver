@@ -57,6 +57,7 @@ abstract production termFont
 top::SyntaxTerminalModifier ::= fontName::String
 {
   top.cstErrors := [];
+  top.unparses = ["font('" ++ fontName ++ "')"];
 
   top.fontAttr = makeCopperName(fontName);
 }

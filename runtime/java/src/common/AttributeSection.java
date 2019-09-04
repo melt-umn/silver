@@ -25,12 +25,6 @@ public class AttributeSection<T> extends NodeFactory<T> {
 		DecoratedNode context = (DecoratedNode) Util.demand(args[0]);
 		return (T)context.synthesized(index);
 	}
-	
-	@Override
-	public final FunctionTypeRep getType() {
-		// TODO: I have no idea how to make this work
-		throw new common.exceptions.SilverError("Runtime type checking of attribute sections is not supported");
-	}
 
 	/**
 	 * Identical to AttributeSection, but operates on an undecorated argument instead.
@@ -67,12 +61,6 @@ public class AttributeSection<T> extends NodeFactory<T> {
 		public T invoke(final Object[] args, final Object[] notApplicable) {
 			DecoratedNode context = ((Node) Util.demand(args[0])).decorate(trueParent, (common.Lazy[])null);
 			return (T)context.synthesized(index);
-		}
-		
-		@Override
-		public final FunctionTypeRep getType() {
-			// TODO: I have no idea how to make this work
-			throw new common.exceptions.SilverError("Runtime type checking of attribute sections is not supported");
 		}
 		
 	}

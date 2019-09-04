@@ -9,9 +9,11 @@ import silver:util:cmdargs;
 import silver:definition:core;
 import silver:definition:env;
 
+import ide;
+
 -- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
 function ideAnalyze
-IOVal<[Message]> ::= args::[String]  svParser::SVParser ioin::IO
+IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser ioin::IO
 {
   -- Figure out arguments
   local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
@@ -30,19 +32,19 @@ IOVal<[Message]> ::= args::[String]  svParser::SVParser ioin::IO
 
   -- Build!
   local buildrun :: IOVal<Decorated Compilation> =
-    buildRun(svParser, a, benv, buildGrammar, checkbuild.io);
+    buildRun(svParser, sviParser, a, benv, buildGrammar, checkbuild.io);
   local unit :: Decorated Compilation = buildrun.iovalue;
 
   ---- DIFFERENCE: We do *not* run the actions in the functions. Only check for errors.
 
-  local messages :: [Message] = flatMap(rewriteMessages, unit.allGrammars);
+  local messages :: [IdeMessage] = getAllBindingErrors(unit.allGrammars);
 
   return if !null(argErrors) then
-    ioval(ioin, [err(system_location, "Parsing failed during build. If source code/resources are changed outside IDE, refresh and rebuild is needed.")])
+    ioval(ioin, [makeSysIdeMessage(ideMsgLvError, "Parsing failed during build. If source code/resources are changed outside IDE, refresh and rebuild is needed.")])
   else if !null(envErrors) then
     ioval(benvResult.io, getSysMessages(envErrors))
   else if null(unit.grammarList) then
-    ioval(buildrun.io, [err(system_location, 
+    ioval(buildrun.io, [makeSysIdeMessage(ideMsgLvError, 
             (if buildGrammar=="" 
              then "No grammar is specified for compilation. Check configuration for this project." 
              else ("The specified grammar \"" ++ buildGrammar ++ "\" could not be found. Check configuration for this project."))
@@ -52,7 +54,7 @@ IOVal<[Message]> ::= args::[String]  svParser::SVParser ioin::IO
 
 -- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
 function ideGenerate
-IOVal<[Message]> ::= args::[String]  svParser::SVParser  ioin::IO
+IOVal<[IdeMessage]> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
 {
   -- Figure out arguments
   local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
@@ -71,7 +73,7 @@ IOVal<[Message]> ::= args::[String]  svParser::SVParser  ioin::IO
 
   -- Build!
   local buildrun :: IOVal<Decorated Compilation> =
-    buildRun(svParser, a, benv, buildGrammar, checkbuild.io);
+    buildRun(svParser, sviParser, a, benv, buildGrammar, checkbuild.io);
   local unit :: Decorated Compilation = buildrun.iovalue;
 
   -- Run the resulting build actions
@@ -82,30 +84,35 @@ IOVal<[Message]> ::= args::[String]  svParser::SVParser  ioin::IO
 }
 
 function getSysMessages
-[Message] ::= es::[String]
+[IdeMessage] ::= es::[String]
 {
   return if null(es)
          then []
-         else [err(system_location, head(es))] ++ getSysMessages(tail(es));
+         else [makeSysIdeMessage(ideMsgLvError, head(es))] ++ getSysMessages(tail(es));
 }
 
-function rewriteMessages
-[Message] ::= spec::Decorated RootSpec
+function getAllBindingErrors
+[IdeMessage] ::= specs::[Decorated RootSpec]
 {
-  return map(rewriteMessage(spec.grammarSource, _), 
+  local spec :: Decorated RootSpec = head(specs);
+  local grmPath :: String = spec.grammarSource;
+
+  return if null(specs) then []
+  else getIdeMessages(grmPath, spec) ++ getAllBindingErrors(tail(specs));
+}
+
+function getIdeMessages
+[IdeMessage] ::= path::String spec::Decorated RootSpec
+{
+  return map(rewriteMessage(path, _), 
     if !null(spec.parsingErrors)
     then flatMap(snd, spec.parsingErrors)
     else flatMap(snd, spec.grammarErrors));
 }
 
--- Message for the IDE require full paths.
 function rewriteMessage
-Message ::= path::String m::Message
+IdeMessage ::= path::String m::Message
 {
-  return case m of
-  | err(loc(file, a, b, c, d, e, f), g) -> err(loc(path ++ "/" ++ file, a, b, c, d, e, f), g)
-  | wrn(loc(file, a, b, c, d, e, f), g) -> wrn(loc(path ++ "/" ++ file, a, b, c, d, e, f), g)
-  | info(loc(file, a, b, c, d, e, f), g) -> info(loc(path ++ "/" ++ file, a, b, c, d, e, f), g)
-  end;
+  return makeIdeMessage(path, m.loc, m.severity, m.msg);
 }
 

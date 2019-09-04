@@ -3,15 +3,13 @@ grammar silver:extension:doc:core;
 aspect production annotationDcl
 top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
-  top.docs := [ bodilessDclCommentItem("annotation", a.name ++ tl.unparse, te.unparse, 
-                                       a.location.filename) ];
+  top.docs := [bodilessDclCommentItem("annotation", a.name ++ tl.pp, te.pp, a.location.filename)];
 }
 
 concrete production docAnnotationDcl
 top::AGDcl ::= comment::DclComment 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
-  top.docs := [ dclCommentItem("annotation ", a.name ++ tl.unparse, te.unparse, 
-                               a.location.filename, comment) ];
+  top.docs := [dclCommentItem("annotation ", a.name ++ tl.pp, te.pp, a.location.filename, comment)];
 
   forwards to annotationDcl('annotation', a, tl, '::', te, ';', location=top.location);
 }

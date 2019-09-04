@@ -24,7 +24,7 @@ terminal Terminal_t /\'[^\'\r\n]*\'/ lexer classes {LITERAL};
 concrete production regExprEasyTerm
 top::RegExpr ::= t::Terminal_t
 {
-  top.unparse = t.lexeme;
+  top.pp = t.lexeme;
   
   top.terminalRegExprSpec = regexLiteral(substring(1, length(t.lexeme) - 1, t.lexeme));
   
@@ -32,7 +32,7 @@ top::RegExpr ::= t::Terminal_t
 }
 
 {-- Abstracts away looking up terminals in the environment -}
-nonterminal EasyTerminalRef with config, location, grammarName, unparse, errors, typerep, easyString, env, dcls;
+nonterminal EasyTerminalRef with config, location, grammarName, pp, errors, typerep, easyString, env, dcls;
 
 {-- String literal between quotes. e.g. 'hi"' is hi" -}
 synthesized attribute easyString :: String;
@@ -40,7 +40,7 @@ synthesized attribute easyString :: String;
 concrete production easyTerminalRef
 top::EasyTerminalRef ::= t::Terminal_t
 {
-  top.unparse = t.lexeme;
+  top.pp = t.lexeme;
   top.easyString = substring(1, length(t.lexeme) - 1, t.lexeme);
 
   -- TODO: This is necessary because the environment is still populated using the regex, so we have to look up the corresponding regex.
@@ -62,7 +62,7 @@ top::EasyTerminalRef ::= t::Terminal_t
 concrete production productionRhsElemEasyReg
 top::ProductionRHSElem ::= id::Name '::' reg::EasyTerminalRef
 {
-  top.unparse = id.unparse ++ "::" ++ reg.unparse;
+  top.pp = id.pp ++ "::" ++ reg.pp;
   top.errors <- reg.errors;
 
   forwards to productionRHSElem(id, $2, typerepTypeExpr(reg.typerep, location=reg.location), location=top.location);
@@ -71,7 +71,7 @@ top::ProductionRHSElem ::= id::Name '::' reg::EasyTerminalRef
 concrete production productionRhsElemTypeEasyReg
 top::ProductionRHSElem ::= reg::EasyTerminalRef
 {
-  top.unparse = reg.unparse;
+  top.pp = reg.pp;
   top.errors <- reg.errors;
 
   forwards to productionRHSElemType(typerepTypeExpr(reg.typerep, location=top.location), location=top.location);
@@ -80,7 +80,7 @@ top::ProductionRHSElem ::= reg::EasyTerminalRef
 concrete production aspectRHSElemEasyReg
 top::AspectRHSElem ::= reg::EasyTerminalRef
 {
-  top.unparse = reg.unparse;
+  top.pp = reg.pp;
   top.errors <- reg.errors;
 
   forwards to aspectRHSElemNone('_', location=reg.location); -- TODO This isn't checking if the type is right!!
@@ -89,7 +89,7 @@ top::AspectRHSElem ::= reg::EasyTerminalRef
 concrete production aspectRHSElemTypedEasyReg
 top::AspectRHSElem ::= id::Name '::' reg::EasyTerminalRef
 {
-  top.unparse = id.unparse ++ " :: " ++ reg.unparse;
+  top.pp = id.pp ++ " :: " ++ reg.pp;
   top.errors <- reg.errors;
 
   forwards to aspectRHSElemTyped(id, $2, typerepTypeExpr(reg.typerep, location=reg.location), location=top.location);
@@ -99,7 +99,7 @@ top::AspectRHSElem ::= id::Name '::' reg::EasyTerminalRef
 concrete production terminalExprReg
 top::Expr ::= reg::EasyTerminalRef
 {
-  top.unparse = reg.unparse;
+  top.pp = reg.pp;
   top.errors <- reg.errors;
   
   local escapedName :: String = escapeString(reg.easyString);

@@ -59,23 +59,5 @@ public class PartialNodeFactory<T> extends NodeFactory<T> {
 		// We pass through namedArgs unchanged here.
 		return ref.invoke(fullargs, namedArgs);
 	}
-	
-	@Override
-	public final FunctionTypeRep getType() {
-		final FunctionTypeRep baseType = ref.getType();
-		
-		final TypeRep[] newParams = new TypeRep[baseType.params.length - indices.length];
-		int i = 0, j = 0;
-		while (j < newParams.length) {
-			if (i < indices.length && indices[i] == i + j) {
-				i++;
-			} else {
-				newParams[j] = baseType.params[i + j];
-				j++;
-			}
-		}
-		// We pass through namedParams unchanged here.
-		return new FunctionTypeRep(baseType.result, newParams, baseType.namedParamNames, baseType.namedParamTypes);
-	}
 
 }

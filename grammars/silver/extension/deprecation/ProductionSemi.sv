@@ -3,7 +3,7 @@ grammar silver:extension:deprecation;
 concrete production emptyProductionBodySemi
 top::ProductionBody ::= ';'
 {
-  top.unparse = ";";
+  top.pp = ";";
   
   top.errors <- [wrn(top.location, "Terminating a production declaration with a semicolon is deprecated. Use {}.")];
 

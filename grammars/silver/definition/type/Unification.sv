@@ -32,12 +32,6 @@ top::Type ::= tv::TyVar
     end;
 }
 
-aspect production errorType
-top::Type ::=
-{
-  top.unify = emptySubst(); -- report no additional errors
-}
-
 aspect production intType
 top::Type ::=
 {
@@ -75,16 +69,6 @@ top::Type ::=
     case top.unifyWith of
     | stringType() -> emptySubst()
     | _ -> errorSubst("Tried to unify Boolean with " ++ prettyType(top.unifyWith))
-    end;
-}
-
-aspect production terminalIdType
-top::Type ::=
-{
-  top.unify = 
-    case top.unifyWith of
-    | terminalIdType() -> emptySubst()
-    | _ -> errorSubst("Tried to unify TerminalId with " ++ prettyType(top.unifyWith))
     end;
 }
 
@@ -182,14 +166,6 @@ Substitution ::= te1::Type te2::Type s::Substitution
   return composeSubst(ignoreFailure(s), unify(performSubstitution(te1, s), performSubstitution(te2, s)));
 }
 
--- This function is meant to produce a simple rewriting FROM `fromte` to `tote`
--- suitable for use with `performRenaming` (vs `performSubstitution`).
--- Basically, it's supposed to structurally rewrite type variables from
--- stale variables in the environment, to contextually valid variables/types.
--- e.g. (v1 ::= v1 v2) U (int ::= int v1)
--- should yield: v1 -> int, v2 -> v1.
--- Rewriting should apply this without `v2` becoming `int`. (As normal subst would do.)
--- TODO this code is obviously implemented in a fragile way.
 function unifyDirectional
 Substitution ::= fromte::Type tote::Type
 {

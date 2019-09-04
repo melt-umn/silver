@@ -12,7 +12,7 @@ top::AGDcl ::= 'lexer' 'class' id::Name ';'
 concrete production lexerClassDecl
 top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
 {
-  top.unparse = "lexer class " ++ id.name ++ modifiers.unparse ++ ";";
+  top.pp = "lexer class " ++ id.name ++ modifiers.pp ++ ";";
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
@@ -29,15 +29,15 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
     foldr(consLexerClassMod, nilLexerClassMod(), modifiers.lexerClassModifiers))];
 }
 
-nonterminal LexerClassModifiers with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
-nonterminal LexerClassModifier with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+nonterminal LexerClassModifiers with config, location, pp, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+nonterminal LexerClassModifier with config, location, pp, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
 
 synthesized attribute lexerClassModifiers :: [SyntaxLexerClassModifier];
 
 abstract production lexerClassModifiersNone
 top::LexerClassModifiers ::= 
 {
-  top.unparse = "";
+  top.pp = "";
 
   top.lexerClassModifiers = [];
   top.errors := [];
@@ -45,7 +45,7 @@ top::LexerClassModifiers ::=
 concrete production lexerClassModifierSingle
 top::LexerClassModifiers ::= tm::LexerClassModifier
 {
-  top.unparse = tm.unparse;
+  top.pp = tm.pp;
 
   top.lexerClassModifiers = tm.lexerClassModifiers;
   top.errors := tm.errors; 
@@ -53,7 +53,7 @@ top::LexerClassModifiers ::= tm::LexerClassModifier
 concrete production lexerClassModifiersCons
 top::LexerClassModifiers ::= h::LexerClassModifier  t::LexerClassModifiers
 {
-  top.unparse = h.unparse ++ " " ++ t.unparse;
+  top.pp = h.pp ++ " " ++ t.pp;
 
   top.lexerClassModifiers = h.lexerClassModifiers ++ t.lexerClassModifiers;
   top.errors := h.errors ++ t.errors;
@@ -62,7 +62,7 @@ top::LexerClassModifiers ::= h::LexerClassModifier  t::LexerClassModifiers
 concrete production lexerClassModifierDominates
 top::LexerClassModifier ::= 'dominates' terms::TermPrecList
 {
-  top.unparse = "dominates " ++ terms.unparse;
+  top.pp = "dominates " ++ terms.pp;
 
   top.lexerClassModifiers = [lexerClassDominates(terms.precTermList)];
   top.errors := terms.errors;
@@ -71,28 +71,9 @@ top::LexerClassModifier ::= 'dominates' terms::TermPrecList
 concrete production lexerClassModifierSubmitsTo
 top::LexerClassModifier ::= 'submits' 'to' terms::TermPrecList
 {
-  top.unparse = "submits to " ++ terms.unparse;
+  top.pp = "submits to " ++ terms.pp;
 
   top.lexerClassModifiers = [lexerClassSubmits(terms.precTermList)];
   top.errors := terms.errors;
-}
-
-concrete production lexerClassModifierDisambiguate
-top::LexerClassModifier ::= 'disambiguate' acode::ActionCode_c
-{
-  top.unparse = "disambiguate " ++ acode.unparse;
-
-  top.lexerClassModifiers = [lexerClassDisambiguate(acode.actionCode)];
-  top.errors := acode.errors;
-  
-  -- oh no again!
-  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
-  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
-
-  local myFlowGraph :: ProductionGraph = 
-    constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
-
-  acode.env = newScopeEnv(disambiguationClassActionVars ++ acode.defs, top.env);
-  acode.frame = disambiguationContext(myFlowGraph);
 }
 

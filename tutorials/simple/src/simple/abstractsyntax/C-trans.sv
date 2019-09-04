@@ -1,9 +1,5 @@
 grammar simple:abstractsyntax;
 
--- Again as a preview of what extensions look like, we choose to separate
--- this c_code attribute into its own file, and instead aspect the
--- rest of the productions in this grammar to add its equations.
-
 synthesized attribute c_code :: String
   occurs on Root, Stmt, Decl, Expr, TypeExpr;
 
@@ -12,13 +8,10 @@ synthesized attribute c_code :: String
 aspect production rootStmt
 r::Root ::= s::Stmt
 {
-  r.c_code = s"""
-#include <stdio.h>
-
-int main() {
-${s.c_code}
-}
-""";
+  r.c_code = "#include <stdio.h>\n\n" ++
+             "int main() {\n " ++
+             s.c_code ++
+             "}\n\n";
 }
 
 ---------------------------------------------------------------------------
@@ -32,7 +25,7 @@ s::Stmt ::= d::Decl
 aspect production block
 s::Stmt ::= body::Stmt 
 {
-  s.c_code = s"{\n${body.c_code}}\n";
+  s.c_code = "{\n" ++ body.c_code ++ "}\n";
 }
 
 aspect production seq
@@ -44,14 +37,14 @@ s::Stmt ::= s1::Stmt s2::Stmt
 aspect production printStmt
 s::Stmt ::= e::Expr 
 {
-  local print_code :: String =
-    case e.type of
-    | integerType() -> "%d"
-    | floatType()   -> "%f"
-    | booleanType() -> "%d"
-    | stringType()  -> "%s"
-    end;
-  s.c_code = s"printf(\"${print_code}\", ${e.c_code}); \n";
+  s.c_code = "printf (\"" ++ 
+             case e.type of
+               integerType() -> "%d"
+             | floatType()   -> "%f"
+             | booleanType() -> "%d"
+             | stringType()  -> "%s"
+             end ++
+             "\", " ++ e.c_code ++ "); \n";
 }
 
 aspect production skip
@@ -63,25 +56,26 @@ s::Stmt ::=
 aspect production while
 s::Stmt ::= c::Expr b::Stmt 
 {
-  s.c_code = s"while ( ${c.c_code} )\n${b.c_code}";
+  s.c_code = "while ( " ++ c.c_code ++ " )\n" ++ b.c_code;
 }
 
 aspect production ifthen
 s::Stmt ::= c::Expr t::Stmt 
 {
-  s.c_code = s"if ( ${c.c_code} )\n${t.c_code}";
+  s.c_code = "if ( " ++ c.c_code ++ " )\n" ++ t.c_code;
 }
 
 aspect production ifelse
 s::Stmt ::= c::Expr t::Stmt e::Stmt 
 {
-  s.c_code = s"if ( ${c.c_code} )\n${t.c_code}else \n${e.c_code}";
+  s.c_code = "if ( " ++ c.c_code ++ " )\n" ++ t.c_code ++ 
+             "else \n" ++ e.c_code;
 }
 
 aspect production assignment
 s::Stmt ::= id::Name e::Expr 
 {
-  s.c_code = s"${id.name} = ${e.c_code}; \n";
+  s.c_code = id.name ++ " = " ++ e.c_code ++ "; \n";
 }
 
 ---------------------------------------------------------------------------
@@ -89,7 +83,7 @@ s::Stmt ::= id::Name e::Expr
 aspect production decl
 d::Decl ::= t::TypeExpr id::Name 
 {
-  d.c_code = s"${t.c_code} ${id.name}; \n";
+  d.c_code = t.c_code ++ " " ++ id.name ++ "; \n";
 }
 
 aspect production typeExprInteger
@@ -149,44 +143,44 @@ e::Expr ::= id::Name
 aspect production add
 e::Expr ::= l::Expr r::Expr 
 {
-  e.c_code = s"(${l.c_code} + ${r.c_code})";
+  e.c_code = "(" ++  l.c_code ++ " + " ++ r.c_code ++ ")";  
 }
 aspect production sub
 e::Expr ::= l::Expr r::Expr 
 {
-  e.c_code = s"(${l.c_code} - ${r.c_code})";
+  e.c_code = "(" ++  l.c_code ++ " - " ++ r.c_code ++ ")";  
 }
 aspect production mul
 e::Expr ::= l::Expr r::Expr 
 {
-  e.c_code = s"(${l.c_code} * ${r.c_code})";  
+  e.c_code = "(" ++  l.c_code ++ " * " ++ r.c_code ++ ")";  
 }
 aspect production div
 e::Expr ::= l::Expr r::Expr 
 {
-  e.c_code = s"(${l.c_code} / ${r.c_code})";  
+  e.c_code = "(" ++  l.c_code ++ " / " ++ r.c_code ++ ")";  
 }
 
 aspect production eq
 e::Expr ::= l::Expr r::Expr 
 {
-  e.c_code = s"(${l.c_code} == ${r.c_code})";  
+  e.c_code = "(" ++  l.c_code ++ " == " ++ r.c_code ++ ")";  
 }
 aspect production lt
 e::Expr ::= l::Expr r::Expr 
 {
-  e.c_code = s"(${l.c_code} < ${r.c_code})";  
+  e.c_code = "(" ++  l.c_code ++ " < " ++ r.c_code ++ ")";  
 }
 
 aspect production and
 e::Expr ::= l::Expr r::Expr 
 {
-  e.c_code = s"(${l.c_code} && ${r.c_code})";  
+  e.c_code = "(" ++  l.c_code ++ " && " ++ r.c_code ++ ")";  
 }
 aspect production not
 e::Expr ::= ne::Expr 
 {
-  e.c_code = s"(!${ne.c_code})";  
+  e.c_code = "( !" ++  ne.c_code ++ ")";  
 }
 
 

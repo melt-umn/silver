@@ -5,7 +5,7 @@ import silver:testing;
 ---- Move thest to the testing library ----
 
 abstract production parseOnlyTestAfterCPP
-t::Test ::= fn::String parseF::(ParseResult<a> ::= String String)
+t::Test ::= fn::String parseF::Function(ParseResult<a> ::= String String)
 {
  local exists::IOVal<Boolean> = isFile(fn, t.ioIn);
  local cppCommand :: String
@@ -38,7 +38,7 @@ t::Test ::= fn::String parseF::(ParseResult<a> ::= String String)
 
 
 abstract production parseOnlyTest
-t::Test ::= fn::String parseF::(ParseResult<a> ::= String String)
+t::Test ::= fn::String parseF::Function(ParseResult<a> ::= String String)
 {
  local exists::IOVal<Boolean> = isFile(fn, t.ioIn);
  local text::IOVal<String> = readFile(fn, exists.io);
@@ -67,7 +67,7 @@ t::Test ::= fn::String parseF::(ParseResult<a> ::= String String)
 }
 
 abstract production parseFailTest
-t::Test ::= fn::String parseF::(ParseResult<a> ::= String String)
+t::Test ::= fn::String parseF::Function(ParseResult<a> ::= String String)
 {
  local exists::IOVal<Boolean> = isFile(fn, t.ioIn);
  local text::IOVal<String> = readFile(fn, exists.io);

@@ -3,13 +3,13 @@ grammar silver:extension:doc:core;
 aspect production nonterminalDcl
 top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs ';'
 {
-  top.docs := [bodilessDclCommentItem("nonterminal", id.name ++ tl.unparse, "", id.location.filename)];
+  top.docs := [bodilessDclCommentItem("nonterminal", id.name ++ tl.pp, "", id.location.filename)];
 }
 
 concrete production docNonterminalDcl
 top::AGDcl ::= comment::DclComment cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs ';'
 {
-  top.docs := [dclCommentItem("nonterminal", id.name ++ tl.unparse, "", id.location.filename, comment)];
+  top.docs := [dclCommentItem("nonterminal", id.name ++ tl.pp, "", id.location.filename, comment)];
 
   forwards to nonterminalDcl(cl, 'nonterminal', id, tl, ';', location=top.location);
 }
@@ -25,13 +25,13 @@ top::AGDcl ::= noDoc::NoDclComment_t cl::ClosedOrNot 'nonterminal' id::Name tl::
 aspect production nonterminalWithDcl
 top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 'with' attrs::QNames ';'
 {
-  top.docs := [bodilessDclCommentItem("nonterminal", id.name ++ tl.unparse, "", id.location.filename)];
+  top.docs := [bodilessDclCommentItem("nonterminal", id.name ++ tl.pp, "", id.location.filename)];
 }
 
 concrete production docNonterminalWithDcl
 top::AGDcl ::= comment::DclComment cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 'with' attrs::QNames ';'
 {
-  top.docs := [dclCommentItem("nonterminal", id.name ++ tl.unparse, "", id.location.filename, comment)];
+  top.docs := [dclCommentItem("nonterminal", id.name ++ tl.pp, "", id.location.filename, comment)];
 
   forwards to nonterminalWithDcl(cl, 'nonterminal', id, tl, 'with', attrs, ';', location=top.location);
 }

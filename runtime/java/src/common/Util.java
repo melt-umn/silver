@@ -2,9 +2,15 @@ package common;
 
 import java.io.*;
 import java.lang.reflect.*;
+import java.nio.channels.FileChannel;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.net.URI;
 
 import common.exceptions.*;
 import common.javainterop.ConsCellCollection;
@@ -29,7 +35,7 @@ import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
  * <p>The most common justification is the need to do several statements, while being in the middle
  * of an expression.
  * 
- * @author tedinski, bodin, krame505
+ * @author tedinski, bodin
  */
 public final class Util {
 	/**
@@ -48,7 +54,7 @@ public final class Util {
 
 	/**
 	 * Turns a list of names and values into a map.
-	 *
+	 * 
 	 * <p>Used by the 'decorate ... with { THIS PART }' syntax.
 	 */
 	public static Lazy[] populateInh(final int size, final int[] idx, final Lazy[] val) {
@@ -60,8 +66,20 @@ public final class Util {
 	}
 
 	/**
+	 * Exit, of course!
+	 * 
+	 * <p>This is here because it has to return Object to be used in expressions.
+	 * 
+	 * @param status the exit status code
+	 * @return Does not return.
+	 */
+	public static IOToken exit(int status) {
+		throw new SilverExit(status);
+	}
+	
+	/**
 	 * Used by the 'error("wat")' syntax in Silver.
-	 *
+	 * 
 	 * @param o the "wat"
 	 * @return Does not return.
 	 */
@@ -69,7 +87,7 @@ public final class Util {
 		System.err.print(o);
 		throw new SilverError(o.toString());
 	}
-
+	
 	public static core.NMaybe safetoInt(String s) {
 		try {
 			return new core.Pjust( Integer.valueOf(s) );
@@ -118,13 +136,305 @@ public final class Util {
 		return result;
 	}
 
+	public static int fileTime(String sb) {
+		return (int) ((new File(sb).lastModified()) / 1000);
+	}
+	
+	public static IOToken touchFile(String sb) {
+		setFileTime(sb, currentTime());
+		return IOToken.singleton;
+	}
+
+	public static void setFileTime(String sb, int time) {
+		new File(sb).setLastModified(((long)time) * 1000);
+	}
+
+	public static IOToken touchFiles(ConsCell files) {
+		while(!files.nil()) {
+			setFileTime(files.head().toString(), currentTime());
+			files = files.tail();
+		}
+		return IOToken.singleton;
+	}
+
+	public static int currentTime() {
+		return (int)(System.currentTimeMillis() / 1000);
+	}
+
+	public static boolean isFile(String sb) {
+		return new File(sb).isFile();
+	}
+
+	public static boolean isDirectory(String sb) {
+		return new File(sb).isDirectory();
+	}
+	
+	public static boolean mkdir(String sb) {
+		return new File(sb).mkdirs();
+	}
+
+	public static boolean deleteFile(String sb) {
+		return new File(sb).delete();
+	}
+
+	public static boolean deleteFiles(ConsCell files) {
+		boolean result = true;
+		while(!files.nil()) {
+			StringCatter f = (StringCatter)files.head();
+			result = result && new File(f.toString()).delete();
+			files = files.tail();
+		}
+		return result;
+	}
+
+	public static boolean deleteDirFiles(String dir) {
+		try {
+			File dirf = new File(dir);
+			String[] files = dirf.list();
+
+			boolean result = true;
+			
+			if(files == null) return result;
+			
+			for(String filename : files) {
+				File file = new File(dirf, filename);
+				// Only files, no directories
+				if(file.isFile()) {
+					result = result && file.delete();
+				}
+					
+			}
+			
+			return result;
+			
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public static IOToken deleteTree(String path) {
+		// We should consider using walkFileTree, in the future
+		deleteTreeRecursive(Paths.get(path));
+		return IOToken.singleton;
+	}
+	private static void deleteTreeRecursive(Path f) {
+		if(!Files.exists(f, LinkOption.NOFOLLOW_LINKS)) {
+			// If the file doesn't exist, ignore it silently. Disk changed underneath us or something?
+			// NOFOLLOW because we care if the symlink exists, not what the symlink points to.
+			return;
+		}
+		// Juuuust in case, we should never be trying to delete "/" or "/home" or "c:/users" etc.
+		if(f.toAbsolutePath().normalize().toString().length() < 9)
+			throw new RuntimeException("Canary against deleting things we shouldn't. Tried to delete path: " + f);
+		try {
+			// Need to handle: symlinks, directories, and normal files.
+			if(Files.isSymbolicLink(f)) {
+				// Deletes symlink, without traversing into it.
+				Files.delete(f);
+			} else if(Files.isDirectory(f)) {
+				// Recursively delete files, then the directory itself.
+				try (DirectoryStream<Path> stream = Files.newDirectoryStream(f)) {
+					for (Path child : stream) {
+						deleteTreeRecursive(child);
+					}
+				}
+			} else {
+				Files.delete(f);
+			}
+		} catch (IOException e) {
+			// If we encounter an IO error anywhere, we immediately stop and raise an exception
+			// Safety valve if we try to delete something we shouldn't.
+			throw new RuntimeException(e);
+		}
+	}
+	
+	private static BufferedReader our_stdin = null;
+	public static StringCatter getStr() {
+		try {
+			if(our_stdin == null) {
+				// We should persist this, since it's buffered, we might buffer bytes for the NEXT line
+				our_stdin = new BufferedReader(new InputStreamReader(System.in));
+			}
+			return new StringCatter(our_stdin.readLine()) ;
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Copy a file from 'from' to 'to'.
+	 * 
+	 * @param from A path to the file to copy
+	 * @param to A path to where the file should be copied. May be a directory.
+	 * @return singleton IO token.
+	 */
+	public static IOToken copyFile(String from, String to) {
+		Path src = Paths.get(from);
+		Path dst = Paths.get(to);
+		try {
+			// copy x.java into src. create the file src/x.java. Works even if dst is symlink.
+			if(Files.isDirectory(dst)) {
+				dst = dst.resolve(dst.getFileName());
+			}
+			Files.copy(src, dst);
+		} catch (IOException io) {
+			// Unfortunately, we still don't have a better way.
+			throw new RuntimeException(io);
+		}
+		return IOToken.singleton;
+	}
+	
+	/**
+	 * Slurps the contents of a file into a string.  May cause IO exceptions.
+	 * 
+	 * @param sb  The filename
+	 * @return  The file contents.
+	 */
+	public static StringCatter readFile(String filename) {
+		try {
+			byte[] b = Files.readAllBytes(Paths.get(filename));
+			return new StringCatter(new String(b));
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public static StringCatter cwd() {
+		// This is a typical approach because JVMs don't change the working directory.
+		// However, this is an alternative if there's ever a reason to suspect that this no longer works
+		// Paths.get(".").toAbsolutePath().normalize().toString()
+		return new StringCatter(System.getProperty("user.dir"));
+	}
+	
+	/**
+	 * We have a (public) copy of the environment because RunSilver may need to modify it.
+	 * 
+	 * Sadly, there does not appear to be any way to do with without making our own copy
+	 * of the entire environment.
+	 */
+	public static Map<String, String> environment = new TreeMap<String, String>(System.getenv());
+
+	public static StringCatter env(String sb) {
+		String result = environment.get(sb);
+		if (result == null)
+			return new StringCatter(""); // Is this the right reply?
+		else
+			return new StringCatter(result);
+	}
+
+	/**
+	 * Invokes an external command, channeling all stdin/out/err to the console normally.
+	 * 
+	 * N.B. uses 'bash' to invoke the command. There are two major reasons:
+	 * (1) allows redirects and such, which is useful
+	 * (2) because this command takes just a single string, we must somehow deal with spaces.
+	 * e.g. 'touch "abc 123"' bash take care of interpreting the quotes for us.
+	 * 
+	 * Unfortunately platform dependency though.
+	 * 
+	 * @param sb A string for back to interpret and execute.
+	 * @return The exit status of the process.
+	 */
+	public static int system(String sb) {
+		try {
+			ProcessBuilder pb = new ProcessBuilder("bash", "-c", sb);
+			pb.inheritIO();
+			Process p = pb.start();
+			p.waitFor();
+			return p.exitValue();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Write to a file, truncating anything there already. Used by 'writeFile' in silver.
+	 * 
+	 * <p>Avoids demanding a StringCatter.
+	 * 
+	 * @param file The filename
+	 * @param content Either a String or {@link StringCatter} object.
+	 * @return singleton IO token.
+	 */
+	public static IOToken writeFile(String file, Object content) {
+		try {
+			Writer fout = new FileWriter(file); // already buffered
+			if(content instanceof StringCatter)
+				((StringCatter)content).write(fout);
+			else
+				fout.write(content.toString());
+			fout.flush();
+			fout.close();
+			return IOToken.singleton;
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Write to a file, appending onto the end of anything there already. Used by 'appendFile' in silver.
+	 * 
+	 * <p>Avoids demanding a StringCatter.
+	 * 
+	 * @param file The filename
+	 * @param content Either a String or {@link StringCatter} object.
+	 * @return singleton IO token.
+	 */
+	public static IOToken appendFile(String file, Object content) { // TODO: merge with above!
+		try {
+			Writer fout = new FileWriter(file, true); // already buffered
+			if(content instanceof StringCatter)
+				((StringCatter)content).write(fout);
+			else
+				fout.write(content.toString());
+			fout.flush();
+			fout.close();
+			return IOToken.singleton;
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public static IOToken print(String sb) {
+		// TODO: should we avoid demanding stringcatter objects?
+		System.out.print(sb);
+		return IOToken.singleton;
+	}
+
+	/**
+	 * Lists the contents of a directory.
+	 * 
+	 * @param sb The directory to list the contents of.
+	 * @return A list of Strings
+	 */
+	public static ConsCell listContents(String sb) {
+		try {
+			File f = new File(sb);
+			String[] files = f.list();
+
+			ConsCell result = ConsCell.nil;
+			
+			if(files == null)
+				return result;
+			
+			for (String file : files) {
+				result = new ConsCell(new StringCatter(file), result);
+			}
+			
+			return result;
+			
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	/**
 	 * This exists only because some things like {@link Util#writeFile} don't take an IO object, so
 	 * we use this to demand the io object, then call writeFile.
-	 *
+	 * 
 	 * <p>In other cases, we're actually returning something, like system, and the call to the IOInteger
 	 * nonterminal constructor takes care of demanding the old IO object.
-	 *
+	 * 
 	 * @param i First thing to do
 	 * @param o Second thing to do
 	 * @return o, the second thing given, which is intended to be the
@@ -138,19 +448,19 @@ public final class Util {
 	public static int genInt() {
 		return i++;
 	}
-
+	
 	public static void printStackCauses(Throwable e) {
 		System.err.println("\nAn error occured.  Silver stack trace follows. (To see full traces including java elements, SILVERTRACE=1)\n");
-
+		
 		if(! "1".equals(System.getenv("SILVERTRACE"))) {
 			Throwable t = e;
 			while(t != null) {
 				StackTraceElement st[] = t.getStackTrace();
-
+				
 				String msg = t.getLocalizedMessage();
 				if(msg == null) // Some exceptions have no message... apparently.
 					msg = t.toString();
-
+				
 				if(st.length == 0) {
 					// Some exceptions don't seem to occur anywhere... somehow.
 					System.err.println("(??): " + msg);
@@ -166,7 +476,7 @@ public final class Util {
 							System.err.println("\t2 up: " + st[2].getClassName() + " in " + st[2].getFileName() + ":" + st[2].getLineNumber());
 					}
 				}
-
+				
 				String lastCause = t.getLocalizedMessage();
 				int repeats = 0;
 				t = t.getCause();
@@ -178,111 +488,23 @@ public final class Util {
 					System.err.println("\t(last line repeats " + repeats + " more times)");
 				}
 			}
-
-			System.exit(-2);
+			
+			System.exit(-2);		
 		} else {
 			// Displaying it by rethrowing it.
 			throw new RuntimeException(e);
 		}
 	}
-
-	public static String namesToString(final String[] names, final String none) {
-		String result = names.length > 0? names[0] : none;
-		for (int i = 1; i < names.length; i++) {
-			result += ", " + names[i];
-		}
-		return result;
-	}
-
-	public static StringCatter escapeString(final StringCatter s) {
-		return new StringCatter(escapeString(s.toString()));
-	}
-	public static String escapeString(final String s) {
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < s.length(); i++) {
-			char c = s.charAt(i);
-			switch (c) {
-			case '\t':
-				sb.append("\\t");
-				break;
-			case '\b':
-				sb.append("\\b");
-				break;
-			case '\n':
-				sb.append("\\n");
-				break;
-			case '\r':
-				sb.append("\\r");
-				break;
-			case '\f':
-				sb.append("\\f");
-				break;
-			case '\"':
-				sb.append("\\\"");
-				break;
-			case '\\':
-				sb.append("\\\\");
-				break;
-			default:
-				sb.append(c);
-			}
-		}
-		return sb.toString();
-	}
-
-	public static StringCatter unescapeString(final StringCatter s) {
-		return new StringCatter(unescapeString(s.toString()));
-	}
-	public static String unescapeString(final String s) {
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < s.length(); i++) {
-			char c = s.charAt(i);
-			if (c == '\\') {
-				i++;
-				if (i < s.length()) {
-					char c1 = s.charAt(i);
-					switch (c1) {
-					case 't':
-						sb.append("\t");
-						break;
-					case 'b':
-						sb.append("\b");
-						break;
-					case 'n':
-						sb.append("\n");
-						break;
-					case 'r':
-						sb.append("\r");
-						break;
-					case 'f':
-						sb.append("\f");
-						break;
-					case '\"':
-						sb.append("\"");
-						break;
-					case '\\':
-						sb.append("\\");
-						break;
-					default:
-						sb.append(c1);
-					}
-				}
-			} else {
-				sb.append(c);
-			}
-		}
-		return sb.toString();
-	}
-
+	
 	// These are written un-ideally so that they're all confined in one place.
 	public static StringCatter hackyhackyUnparse(Object o) {
 		StringBuilder sb = new StringBuilder();
-
+		
 		hackyhackyUnparseObject(o, sb);
-
+		
 		return new StringCatter(sb.toString());
 	}
-
+	
 	private static void hackyhackyUnparseObject(Object o, StringBuilder sb) {
 		if(o instanceof Node) {
 			hackyhackyUnparseNode((Node)o, sb);
@@ -327,10 +549,10 @@ public final class Util {
 		}
 		sb.append("]");
 	}
-
+	
 	/**
 	 * Calls a Copper parser, and returns a ParseResult<ROOT> object.
-	 *
+	 * 
 	 * @param parser The Copper parser to call
 	 * @param string The string to parse.
 	 * @param file The filename to report to the parser (filling in location information)
@@ -345,14 +567,7 @@ public final class Util {
 			return new core.PparseSucceeded(tree, terminals);
 		} catch(CopperSyntaxError e) {
 			// To create a space, we increment the ending columns and indexes by 1.
-			NLocation loc = new Ploc(
-				new StringCatter(e.getVirtualFileName()),
-				e.getVirtualLine(),
-				e.getVirtualColumn(),
-				e.getVirtualLine(),
-				e.getVirtualColumn() + 1,
-				(int)(e.getRealCharIndex()),
-				(int)(e.getRealCharIndex()) + 1);
+			NLocation loc = new Ploc(new StringCatter(e.getVirtualFileName()), e.getVirtualLine(), e.getVirtualColumn(), e.getVirtualColumn(), e.getVirtualColumn() + 1, (int)(e.getRealCharIndex()), (int)(e.getRealCharIndex()) + 1);
 			NParseError err = new PsyntaxError(
 					new common.StringCatter(e.getMessage()),
 					loc,
@@ -373,17 +588,19 @@ public final class Util {
 	 * Returns the terminals from a parser.
 	 */
 	private static <ROOT> Object getTerminals(CopperParser<ROOT, CopperParserException> parser) {
-		Class<? extends CopperParser> parserClass = parser.getClass();
+		Class parserClass = parser.getClass();
 		try {
 			Method getTokens = parserClass.getMethod("getTokens");
-			List<Terminal> tokens = (List<Terminal>) getTokens.invoke(parser);
-			return new Thunk<ConsCell>(() -> {
-				List<NTerminalDescriptor> tds = tokens
-					.stream()
-					.map(Util::terminalToTerminalDescriptor)
-					.collect(Collectors.toList());
-				return ConsCellCollection.fromList(tds);
-			});
+			List<common.Terminal> tokens = (List) getTokens.invoke(parser);
+			return new Thunk<Object>(TopNode.singleton) {
+				public final Object doEval(final DecoratedNode context) {
+					List<NTerminalDescriptor> tds = tokens
+						.stream()
+						.map(Util::terminalToTerminalDescriptor)
+						.collect(Collectors.toList());
+					return ConsCellCollection.fromList(tds);
+				}
+			};
 		} catch(Throwable t) {
 			throw new TraceException("Failed to reflect to getTokens()", t);
 		}
@@ -399,7 +616,7 @@ public final class Util {
             new StringCatter(t.getName()),
             Terminal.extractLocation(t));
 	}
-
+	
 	/**
 	 * Like javainterop.ConsCellCollection.fromIterator, but also converts String to StringCatter.
 	 */
@@ -409,27 +626,4 @@ public final class Util {
 		return new ConsCell(new StringCatter(i.next()), convertStrings(i));
 	}
 
-	/**
-	 * This is a "private" method for the Silver compiler to use to determine
-	 * where it is installed. We can figure out how to generalize this later.
-	 */
-	public static StringCatter determineSilverHomePath(Class<?> clazz) {
-		URI jarLocation;
-		try {
-			jarLocation = clazz.getProtectionDomain().getCodeSource().getLocation().toURI();
-		} catch(Throwable t) {
-			throw new RuntimeException("Failed to find install location of Silver runtime.", t);
-		}
-		// HOME/jars/file.jar to HOME
-		File home = new File(jarLocation).getParentFile().getParentFile();
-		return new StringCatter(home.getPath());
-	}
-	
-	public static ConsCell bitSetToList(BitSet b) {
-		ConsCell result = ConsCell.nil;
-		for (int i = b.nextSetBit(0); i >= 0; i = b.nextSetBit(i+1)) {
-			result = new ConsCell(i, result);
-		}
-		return result;
-	}
 }

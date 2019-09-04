@@ -19,9 +19,11 @@ parser parse :: cst:Root {
 } 
 
 function main 
-IOVal<Integer> ::= args::[String] io_in::IO
+IOVal<Integer> ::= largs::[String] io_in::IO
 {
+  local attribute args :: String;
+  args = implode(" ", largs);
+
   return ioval(driver(args, io_in, parse), 0);
 }
-
 

@@ -1,13 +1,13 @@
 grammar simple:terminals;
 
 {- Ignore terminals define the whitespace for the grammar, as a whole.
- - We also typically include comments.
+ - We also typically include comments
  -}
 ignore terminal WhiteSpace /[\t\r\n\ ]+/;
 ignore terminal LineComment /\/\/.*/;
 
 -- Operator precedence and associativity can be specified directly.
--- Higher values indicate more tightly binding operators.
+-- Higher values indicate higher precedence operators.
 -- Associativity can be set to "left" or "right", default is none.
 
 terminal Not    '!'   precedence = 14;
@@ -62,6 +62,11 @@ terminal Integer_t 'Integer' lexer classes { KEYWORDS };
 terminal Float_t   'Float'   lexer classes { KEYWORDS }; 
 terminal Boolean_t 'Boolean' lexer classes { KEYWORDS }; 
 
+{- Alternatively, we could avoid the keywords lexer class and put the
+   clause "dominates { Id_t}" on each keyword.  But the use of the
+   lexer class makes our intention more clear.  
+-}
+
 -- Expressions
 
 {- Here we're using the 'submits to' relation to tell the lexer anything
@@ -69,12 +74,10 @@ terminal Boolean_t 'Boolean' lexer classes { KEYWORDS };
  -}
 terminal Id  /[a-zA-Z][a-zA-Z0-9_]*/  submits to { KEYWORDS };
 
--- Literals
-
 terminal IntegerLiteral /[0-9]+/; 
 terminal FloatLiteral   /[0-9]+\.[0-9]+/; 
 terminal BooleanLiteral /(True)|(False)/ lexer classes { KEYWORDS };
 
-terminal StringLiteral /"([^"\n\\]|\\"|\\\\|\\n|\\r|\\t)*"/;
+terminal StringLiteral /\"([^\n\"\\]|\\\"|\\\\|\\n|\\r|\\t)*\"/;
 
 

@@ -10,7 +10,7 @@ package common;
  * @author tedinski
  * @see DecoratedNode
  */
-public abstract class Node implements Typed {
+public abstract class Node {
 	
 	// Common manipulators of Node objects.
 	
@@ -95,21 +95,6 @@ public abstract class Node implements Typed {
 	 * @return The name of the inherited attribute at this index
 	 */
 	public abstract String getNameOfInhAttr(final int index);
-	
-	/**
-	 * Used for reflection.
-	 * 
-	 * @return An array of the names of all annotations.
-	 */
-	public abstract String[] getAnnoNames();
-
-	/**
-	 * Used for reflection.
-	 * 
-	 * @param name The name of any annotation returned by <code>getAnnoNames()</code>
-	 * @return The annotation object. (Thunk already evaluated)
-	 */
-	public abstract Object getAnno(final String name);
 	
 	
 	// These methods are to be provided by the *production*
@@ -207,8 +192,4 @@ public abstract class Node implements Typed {
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of the attribute
 	 */
 	public abstract Lazy getSynthesized(final int index);
-	
-	// Override with a more specific return type
-	@Override
-	public abstract BaseTypeRep getType();
 }

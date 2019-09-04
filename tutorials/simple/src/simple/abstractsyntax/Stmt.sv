@@ -83,12 +83,10 @@ s::Stmt ::= id::Name e::Expr
 {
   s.pp = pp"${id.pp} = ${e.pp};";
   s.defs = [];
-  s.errors :=
-    case id.lookup of
-    | just(_)   -> []
-    | nothing() ->
-        [err(id.location, s"variable \"${id.name}\" was not declared.")] 
-    end;
+  s.errors := case id.lookup of
+                just(_)   -> []
+              | nothing() -> [err(id.location, "variable \"" ++ id.name ++ "\" was not declared.")] 
+              end;
   s.errors <- e.errors;
 }
 

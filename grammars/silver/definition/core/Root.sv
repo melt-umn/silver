@@ -10,11 +10,11 @@ nonterminal Root with
   grammarName, env, globalImports, grammarDependencies,
   -- File-level inherited attributes
   -- Synthesized attributes
-  declaredName, unparse, location, errors, defs, moduleNames, importedDefs,
-  exportedGrammars, optionalGrammars, condBuild, jarName;
+  declaredName, pp, location, errors, defs, moduleNames, importedDefs,
+  exportedGrammars, optionalGrammars, condBuild;
 
 nonterminal GrammarDcl with 
-  declaredName, grammarName, location, unparse, errors;
+  declaredName, grammarName, location, pp, errors;
 
 concrete production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
@@ -24,7 +24,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   ims.grammarName = top.grammarName;
   ims.config = top.config;
 
-  top.unparse = gdcl.unparse ++ "\n\n" ++ ms.unparse ++ "\n\n" ++ ims.unparse ++ "\n\n" ++ ags.unparse;
+  top.pp = gdcl.pp ++ "\n\n" ++ ms.pp ++ "\n\n" ++ ims.pp ++ "\n\n" ++ ags.pp;
   top.declaredName = gdcl.declaredName;
 
   top.moduleNames = ims.moduleNames ++ ms.moduleNames ++ ags.moduleNames;
@@ -35,7 +35,6 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.exportedGrammars = ms.exportedGrammars;
   top.optionalGrammars = ms.optionalGrammars;
   top.condBuild = ms.condBuild;
-  top.jarName = ags.jarName;
 
   top.errors := gdcl.errors ++ ms.errors ++ ims.errors ++ ags.errors;
   
@@ -50,7 +49,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 concrete production noGrammarDcl
 top::GrammarDcl ::=
 {
-  top.unparse = "";
+  top.pp = "";
   top.declaredName = top.grammarName;
   top.errors := [];
 }
@@ -58,7 +57,7 @@ top::GrammarDcl ::=
 concrete production grammarDcl_c
 top::GrammarDcl ::= 'grammar' qn::QName ';'
 {
-  top.unparse = "grammar " ++ qn.unparse ++ ";";
+  top.pp = "grammar " ++ qn.pp ++ ";";
 
   top.declaredName = qn.name;
   top.errors := 

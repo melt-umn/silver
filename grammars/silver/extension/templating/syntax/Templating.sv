@@ -5,7 +5,7 @@ import silver:definition:core only Expr, RCurly_t, LITERAL;
 terminal TripleQuote /\"\"\"/ lexer classes {LITERAL};
 terminal DoubleDollar '$$' lexer classes {LITERAL};
 terminal QuoteWater /[^$\r\n\t\"\\]+/ lexer classes {LITERAL};
-terminal SingleLineQuoteWater /([^$\r\n\t\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]n|[\\]r|[\\]f|[\\]t)+/ lexer classes {LITERAL};
+terminal SingleLineQuoteWater /([^$\r\n\t\"\\]|[\\][\"]|[\\][\\]|[\\]n|[\\]r|[\\]t)+/ lexer classes {LITERAL};
 terminal LiteralNewline /(\n|\r\n)/ lexer classes {LITERAL};
 terminal LiteralTab /\t/ lexer classes {LITERAL};
 terminal LiteralQuote /\"/ lexer classes {LITERAL};

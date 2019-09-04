@@ -6,18 +6,29 @@ top::Expr ::= n::Name t::TypeExpr e::Expr rest::Expr bindFn::QName
   rest.downSubst = e.upSubst;
   forward.downSubst = rest.upSubst;-}
 
-  local cont :: Expr =
-    lambdap(
-      productionRHSCons(
-        productionRHSElem(
-          n, '::', t, location=top.location),
-        productionRHSNil(location=top.location),
-        location=top.location),
-      rest,
-      location=top.location);
-
   forwards to
-    mkFunctionInvocation(top.location, baseExpr(bindFn, location=top.location), [e, cont]);
+    applicationExpr(
+      baseExpr(bindFn, location=top.location),
+      '(',
+      snocAppExprs(
+        oneAppExprs(
+          presentAppExpr(e, location=top.location),
+          location=top.location),
+        ',',
+        presentAppExpr(
+          lambdap(
+            productionRHSCons(
+              productionRHSElem(
+                n, '::', t,
+                location=top.location),
+              productionRHSNil(location=top.location),
+              location=top.location),
+            rest,
+            location=top.location),
+          location=top.location),
+        location=top.location),
+      ')',
+      location=top.location);
 }
 
 abstract production returnExpr
@@ -30,7 +41,11 @@ top::Expr ::= e::Expr isFinalVal::Boolean returnFn::QName
     else [];
 
   forwards to
-    mkFunctionInvocation(top.location, baseExpr(returnFn, location=top.location), [e]);
+    applicationExpr(
+      baseExpr(returnFn, location=top.location), '(',
+      oneAppExprs(presentAppExpr(e, location=top.location), location=top.location),
+      ')',
+      location=top.location);
 }
 
 abstract production returnUnitExpr
@@ -38,6 +53,8 @@ top::Expr ::= returnFn::QName
 {
   forwards to
     returnExpr(
-      mkStrFunctionInvocation(top.location, "core:unit", []),
+      applicationEmpty(
+        baseExpr(qName(top.location, "unit"), location=top.location), '(', ')',
+        location=top.location),
       true, returnFn, location=top.location);
 }

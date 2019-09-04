@@ -8,16 +8,12 @@ package common;
  * @param <T>  The return type of the function
  * @author tedinski
  */
-public abstract class NodeFactory<T> implements Typed {
+public abstract class NodeFactory<T> {
 	/**
 	 * Invoke a function or production.
 	 * @return The return value (or node constructed.)
 	 */
 	public abstract T invoke(final Object[] args, final Object[] namedArgs);
-	
-	// Override with a more specific return type
-	@Override
-	public abstract FunctionTypeRep getType();
 	
 	// Below are just utilities
 	

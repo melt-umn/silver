@@ -13,13 +13,13 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
     if at.lookupAttribute.dcl.isAnnotation then
       ""
     else
-      s"\t\t${makeNTClassName(ntfn)}.occurs_${occursType}[${head(occursCheck).attrOccursIndex}] = \"${at.lookupAttribute.fullName}\";\n";
+      "\t\t" ++ makeNTClassName(ntfn) ++ ".occurs_" ++ occursType ++ "[" ++ head(occursCheck).attrOccursIndex ++ "] = \"" ++ at.lookupAttribute.fullName ++ "\";\n";
 
   top.valueWeaving :=
     if at.lookupAttribute.dcl.isAnnotation then
       ""
     else
-      s"public static final int ${head(occursCheck).attrOccursIndexName} = " ++
-      s"${makeName(ntgrammar)}.Init.count_${occursType}__ON__${ntname}++;\n";
+      "public static final int " ++ head(occursCheck).attrOccursIndexName ++ " = " ++
+      makeName(ntgrammar) ++ ".Init.count_" ++ occursType ++ "__ON__" ++ ntname ++ "++;\n";
 }
 

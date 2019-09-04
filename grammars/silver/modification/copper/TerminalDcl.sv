@@ -4,34 +4,10 @@ terminal Dominates_t 'dominates' lexer classes {KEYWORD};
 terminal Submits_t   'submits'   lexer classes {KEYWORD};
 terminal Classes_kwd 'classes'   lexer classes {KEYWORD};
 
-synthesized attribute lexerClasses :: [String] occurs on TerminalModifier, TerminalModifiers;
-
-aspect production terminalModifiersNone
-top::TerminalModifiers ::=
-{
-  top.lexerClasses = [];
-}
-aspect production terminalModifierSingle
-top::TerminalModifiers ::= tm::TerminalModifier
-{
-  top.lexerClasses = tm.lexerClasses;
-}
-aspect production terminalModifiersCons
-top::TerminalModifiers ::= h::TerminalModifier ',' t::TerminalModifiers
-{
-  top.lexerClasses = h.lexerClasses ++ t.lexerClasses;
-}
-
-aspect default production
-top::TerminalModifier ::=
-{
-  top.lexerClasses = [];
-}
-
 concrete production terminalModifierDominates
 top::TerminalModifier ::= 'dominates' '{' terms::TermPrecList '}'
 {
-  top.unparse = "dominates { " ++ terms.unparse ++ " } ";
+  top.pp = "dominates { " ++ terms.pp ++ " } ";
 
   top.terminalModifiers = [termDominates(terms.precTermList)];
   top.errors := terms.errors;
@@ -40,7 +16,7 @@ top::TerminalModifier ::= 'dominates' '{' terms::TermPrecList '}'
 concrete production terminalModifierSubmitsTo
 top::TerminalModifier ::= 'submits' 'to' '{' terms::TermPrecList  '}'
 {
-  top.unparse = "submits to { " ++ terms.unparse ++ " } " ;
+  top.pp = "submits to { " ++ terms.pp ++ " } " ;
 
   top.terminalModifiers = [termSubmits(terms.precTermList)];
   top.errors := terms.errors;
@@ -49,7 +25,7 @@ top::TerminalModifier ::= 'submits' 'to' '{' terms::TermPrecList  '}'
 concrete production terminalModifierClassSpec
 top::TerminalModifier ::= 'lexer' 'classes' '{' cl::ClassList '}'
 {
-  top.unparse = "lexer classes { " ++ cl.unparse ++ " } " ;
+  top.pp = "lexer classes { " ++ cl.pp ++ " } " ;
 
   top.terminalModifiers = [termClasses(cl.lexerClasses)];
   top.lexerClasses = cl.lexerClasses;
@@ -59,26 +35,27 @@ top::TerminalModifier ::= 'lexer' 'classes' '{' cl::ClassList '}'
 concrete production terminalModifierActionCode
 top::TerminalModifier ::= 'action' acode::ActionCode_c
 {
-  top.unparse = "action " ++ acode.unparse;
+  top.pp = "action " ++ acode.pp;
 
   top.terminalModifiers = [termAction(acode.actionCode)];
 
-  -- oh no again!
-  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
-  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
-
-  local myFlowGraph :: ProductionGraph = 
-    constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
-
-  acode.frame = actionContext(myFlowGraph);
-  acode.env = newScopeEnv(terminalActionVars ++ acode.defs, top.env);
+  acode.frame = actionContext();
+  acode.env = newScopeEnv(addTerminalAttrDefs(acode.defs), top.env);
   
   top.errors := acode.errors;
 }
 
-nonterminal TermPrecList with config, grammarName, unparse, location, precTermList, errors, env;
+aspect default production
+top::TerminalModifier ::=
+{
+  top.lexerClasses = [];
+}
+
+nonterminal TermPrecList with config, grammarName, pp, location, precTermList, errors, env;
 
 synthesized attribute precTermList :: [String];
+
+-- The rest of this file is written quite sillily. It'll be automatically fixed when we get a proper ast/cst split
 
 concrete production termPrecListOne
 terms::TermPrecList ::= t::QName
@@ -92,12 +69,13 @@ terms::TermPrecList ::= t::QName ',' terms_tail::TermPrecList
    forwards to termPrecList(t,terms_tail,location=terms.location);
 }
 
+
 abstract production termPrecList
 top::TermPrecList ::= h::QName t::TermPrecList
 {
-  top.unparse = if t.unparse == ""
-             then h.unparse
-             else h.unparse ++ ", " ++ t.unparse;
+  top.pp = if t.pp == ""
+             then h.pp
+             else h.pp ++ ", " ++ t.pp;
 
   production fName::String = if null(h.lookupType.dcls) then h.lookupLexerClass.dcl.fullName else h.lookupType.dcl.fullName;
 
@@ -117,11 +95,27 @@ abstract production termPrecListNull
 top::TermPrecList ::=
 {
   top.precTermList = [];
-  top.unparse = "";
+  top.pp = "";
   top.errors := [];
 }
 
-nonterminal ClassList with location, config, unparse, lexerClasses, errors, env;
+
+-- TODO this should probably be a global or something now...
+function addTerminalAttrDefs
+[Def] ::= moredefs::[Def]
+{
+  -- TODO: no grammar or location? how to deal with this?
+  return [termAttrValueDef("DBGtav", bogusLocation(), "lexeme", stringType()),
+          termAttrValueDef("DBGtav", bogusLocation(), "filename", stringType()),
+          termAttrValueDef("DBGtav", bogusLocation(), "line", intType()),
+          termAttrValueDef("DBGtav", bogusLocation(), "column", intType())] ++
+           moredefs;
+}
+
+
+nonterminal ClassList with location, config, pp, lexerClasses, errors, env;
+
+synthesized attribute lexerClasses :: [String] occurs on TerminalModifier, TerminalModifiers;
 
 concrete production lexerClassesOne
 top::ClassList ::= n::QName
@@ -139,9 +133,9 @@ top::ClassList ::= n::QName ',' cl_tail::ClassList
 abstract production lexerClassesMain
 top::ClassList ::= n::QName t::ClassList
 {
-  top.unparse = if t.unparse == ""
-          then n.unparse
-          else n.unparse ++ ", " ++ t.unparse;
+  top.pp = if t.pp == ""
+          then n.pp
+          else n.pp ++ ", " ++ t.pp;
 
   top.errors := n.lookupLexerClass.errors ++ t.errors;
 
@@ -151,8 +145,32 @@ top::ClassList ::= n::QName t::ClassList
 abstract production lexerClassesNull
 cl::ClassList ::=
 {
-  cl.unparse = "";
+  cl.pp = "";
   cl.errors := [];
   cl.lexerClasses = [];
+}
+
+aspect production terminalModifiersNone
+top::TerminalModifiers ::=
+{
+  top.lexerClasses = [];
+}
+
+aspect production terminalModifierSingle
+top::TerminalModifiers ::= tm::TerminalModifier
+{
+  top.lexerClasses = tm.lexerClasses;
+}
+
+aspect production terminalModifiersCons
+top::TerminalModifiers ::= h::TerminalModifier ',' t::TerminalModifiers
+{
+  top.lexerClasses = h.lexerClasses ++ t.lexerClasses;
+}
+
+function quote
+String ::= s::String
+{
+  return "\"" ++ s ++ "\"";
 }
 

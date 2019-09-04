@@ -106,7 +106,7 @@
    <!-- trick: to recognize regexs, first recognize terminal declarations, but don't color them -->
    <context id="regex-terminal" end-at-line-end="false">
       <!-- the lookbehind/ahead here is to ensure we don't match e.g. 'easyterminal;' i.e. its a keyword -->
-      <start>(?&lt;![A-Za-z0-9_])terminal(?![A-Za-z0-9_\(])</start>
+      <start>(?&lt;![A-Za-z0-9_])terminal(?![A-Za-z0-9_])</start>
       <end>;</end>
       <include>
         <!-- do color 'terminal' as a keyword though. our match above precludes normal hightlighting -->

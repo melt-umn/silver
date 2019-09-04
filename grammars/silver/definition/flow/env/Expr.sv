@@ -539,15 +539,8 @@ top::Expr ::= e::Decorated Expr
   top.flowDefs = e.flowDefs;
 }
 
-aspect production toBooleanFunction
-top::Expr ::= 'toBoolean' '(' e1::Expr ')'
-{
-  top.flowDeps = e1.flowDeps;
-  top.flowDefs = e1.flowDefs;
-}
-
-aspect production toIntegerFunction
-top::Expr ::= 'toInteger' '(' e1::Expr ')'
+aspect production toIntFunction
+top::Expr ::= 'toInt' '(' e1::Expr ')'
 {
   top.flowDeps = e1.flowDeps;
   top.flowDefs = e1.flowDefs;
@@ -565,13 +558,6 @@ top::Expr ::= 'toString' '(' e1::Expr ')'
 {
   top.flowDeps = e1.flowDeps;
   top.flowDefs = e1.flowDefs;
-}
-
-aspect production reifyFunctionLiteral
-top::Expr ::= 'reify'
-{
-  top.flowDeps = [];
-  top.flowDefs = [];
 }
 
 aspect production newFunction
@@ -614,7 +600,7 @@ top::Expr ::= q::Decorated QName
   top.flowDefs = [];
 }
 
-aspect production terminalIdReference
+aspect production disambigLexemeReference
 top::Expr ::= q::Decorated QName
 {
   top.flowDeps = [];
@@ -752,12 +738,6 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 }
 aspect production integerPattern
 top::PrimPattern ::= i::Int_t '->' e::Expr
-{
-  top.flowDeps = e.flowDeps;
-  top.flowDefs = e.flowDefs;
-}
-aspect production floatPattern
-top::PrimPattern ::= f::Float_t '->' e::Expr
 {
   top.flowDeps = e.flowDeps;
   top.flowDefs = e.flowDefs;

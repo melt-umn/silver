@@ -16,10 +16,10 @@ top::DclInfo ::=
 {
   top.attrBaseDefDispatcher =
     \ dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr  l::Location ->
-      errorAttributeDef([err(l, "The ':=' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e, location=l);
+      errorAttributeDef([err(l, "The ':=' operator can only be used for collections. " ++ attr.pp ++ " is not a collection.")], dl, attr, e, location=l);
   top.attrAppendDefDispatcher =
     \ dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr  l::Location ->
-      errorAttributeDef([err(l, "The '<-' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e, location=l);
+      errorAttributeDef([err(l, "The '<-' operator can only be used for collections. " ++ attr.pp ++ " is not a collection.")], dl, attr, e, location=l);
 
   top.baseDefDispatcher = errorCollectionValueDef(_, _, location=_);
   top.appendDefDispatcher = errorCollectionValueDef(_, _, location=_);
@@ -32,6 +32,9 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
   top.sourceLocation = sl;
   top.fullName = fn;
 
+  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
+  top.unparse = "syncol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ", " ++ o.unparse ++ ")";
+  
   top.typerep = ty;
   top.dclBoundVars = bound;
 
@@ -39,7 +42,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attrDefDispatcher = 
     \ dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr  l::Location ->
-      errorAttributeDef([err(l, attr.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);
+      errorAttributeDef([err(l, attr.pp ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);
 
   top.attrBaseDefDispatcher = synBaseColAttributeDef(_, _, _, location=_);
   top.attrAppendDefDispatcher = synAppendColAttributeDef(_, _, _, location=_);
@@ -53,6 +56,9 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
   top.sourceLocation = sl;
   top.fullName = fn;
 
+  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
+  top.unparse = "inhcol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ", " ++ o.unparse ++ ")";
+  
   top.typerep = ty;
   top.dclBoundVars = bound;
 
@@ -60,7 +66,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: above should probably be an error handler!
   top.attrDefDispatcher =
     \ dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr  l::Location ->
-      errorAttributeDef([err(l, attr.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);
+      errorAttributeDef([err(l, attr.pp ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);
 
   top.attrBaseDefDispatcher = inhBaseColAttributeDef(_, _, _, location=_);
   top.attrAppendDefDispatcher = inhAppendColAttributeDef(_, _, _, location=_);
@@ -75,6 +81,9 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type o::Operation
   top.sourceLocation = sl;
   top.fullName = fn;
 
+  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't
+  top.unparse = "loccol(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ", " ++ o.unparse ++ ")";
+  
   top.typerep = ty;
   
   top.refDispatcher = localReference(_, location=_);
@@ -86,7 +95,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type o::Operation
 
   forwards to localDcl(sg,sl,fn,ty);
   
-  top.substitutedDclInfo = localCollectionDcl(sg,sl,fn, performRenaming(ty, top.givenSubstitution), o);
+  top.substitutedDclInfo = localCollectionDcl(sg,sl,fn, performSubstitution(ty, top.givenSubstitution), o);
 }
 
 

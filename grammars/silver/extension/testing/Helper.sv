@@ -22,7 +22,7 @@ function foldStringExprs
 Expr ::= es::[Expr]
 {
  return if null(es)
-        then stringConst(terminal(String_t, "\"\""), location=bogusLoc())
+        then stringConst(terminal(String_t, "\"\""), location=bogusLocation())
         else plusPlus(head(es), '++', foldStringExprs(tail(es)), location=head(es).location);
 }
 
@@ -30,7 +30,7 @@ Expr ::= es::[Expr]
 function strCnst
 Expr ::= s::String
 {
-  return stringConst(terminal(String_t, "\"" ++ stringifyString(s) ++ "\""), location=bogusLoc());
+  return stringConst(terminal(String_t, "\"" ++ stringifyString(s) ++ "\""), location=bogusLocation());
 }
 
 -- Create an attribute reference from two names. as in "n.a"

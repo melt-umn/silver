@@ -42,41 +42,37 @@ case `uname` in
   ;;
 esac
 
-for SCRIPT_NAME in silver silver-custom
-do
 
-    if [ -f $SCRIPT_NAME ]; then
-        REPO=$("$READLINK" -f ../..)
-        SCRIPT=$SCRIPT_NAME
-    elif [ -f support/bin/$SCRIPT_NAME ]; then
-        REPO=$("$READLINK" -f .)
-        SCRIPT=support/bin/$SCRIPT_NAME
-    else
-        echo "Couldn't find the Silver jars!"
-        echo "(if this is a fresh checkout, run fetch-jars before this script.)"
-        exit 2
-    fi
-    
-    echo "Found $REPO"
+if [ -f silver ]; then
+  REPO=$("$READLINK" -f ../..)
+  SCRIPT=silver
+elif [ -f support/bin/silver ]; then
+  REPO=$("$READLINK" -f .)
+  SCRIPT=support/bin/silver
+else
+  echo "Couldn't find the Silver jars!"
+  echo "(if this is a fresh checkout, run fetch-jars before this script.)"
+  exit 2
+fi
+  
+echo "Found $REPO"
 
-    if [ -a ~/bin/$SCRIPT_NAME ]; then
-        rm ~/bin/$SCRIPT_NAME
-        echo "Removed old(?) ~/bin/$SCRIPT_NAME file."
-    fi
+if [ -a ~/bin/silver ]; then
+  rm ~/bin/silver
+  echo "Removed old(?) ~/bin/silver file."
+fi
 
-    ln -s "$("$READLINK" -f "$SCRIPT")" ~/bin/
+ln -s "$("$READLINK" -f "$SCRIPT")" ~/bin/
 
-    if [ ! $? ]; then
-        echo "Install failed!!"
-        exit 3
-    fi
+if [ ! $? ]; then
+  echo "Install failed!!"
+  exit 3
+fi
 
-    echo "Created ~/bin/$SCRIPT_NAME"
+echo "Created ~/bin/silver"
 
-    # Just in case
-    chmod +x "$SCRIPT"
-
-done
+# Just in case
+chmod +x "$SCRIPT"
 
 echo "Install finished."
 

@@ -84,7 +84,7 @@ concrete production integerConstant_c
 ic::Factor_c ::= i::IntLit_t
 {
  ic.pp = i.lexeme ;
- ic.ast_Expr = integerConstant(toInteger(i.lexeme));
+ ic.ast_Expr = integerConstant(toInt(i.lexeme));
 }
 
 

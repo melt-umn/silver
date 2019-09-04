@@ -1,8 +1,5 @@
 grammar ide;
 
--- Temporary hack to add dependency in builds
-import silver:langutil;
-
 {--
   Call IDE-embedded ant against a build file.
 

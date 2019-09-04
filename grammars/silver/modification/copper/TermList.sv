@@ -5,7 +5,7 @@ grammar silver:modification:copper;
 -- specifically with refernce how abstract / concrete is deliniated.
 -- if TermPrecList has its structure refactored, so should TermList.
 
-nonterminal TermList with config, grammarName, unparse, location, termList, defs, errors, env;
+nonterminal TermList with config, grammarName, pp, location, termList, defs, errors, env;
 
 synthesized attribute termList :: [String];
 
@@ -25,9 +25,9 @@ terms::TermList ::= t::QName ',' terms_tail::TermList
 abstract production termList
 top::TermList ::= h::QName t::TermList
 {
-  top.unparse = if t.unparse == ""
-             then h.unparse
-             else h.unparse ++ ", " ++ t.unparse;
+  top.pp = if t.pp == ""
+             then h.pp
+             else h.pp ++ ", " ++ t.pp;
 
   production fName::String = h.lookupType.dcl.fullName;
 
@@ -53,6 +53,6 @@ top::TermList ::=
 {
   top.termList = [];
   top.defs = [];
-  top.unparse = "";
+  top.pp = "";
   top.errors := [];
 }

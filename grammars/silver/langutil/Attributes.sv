@@ -1,8 +1,6 @@
 {- A Universal set of common attributes for use in language descriptions -}
 grammar silver:langutil;
 
-exports silver:langutil:reflect with core:reflect; -- Contains pp definitions for AST
-
 import silver:langutil:pp;
 
 {-
@@ -24,11 +22,6 @@ synthesized attribute unparse :: String;
  - The pretty print of a syntax tree.
  -}
 synthesized attribute pp :: Document;
-
-{--
- - The pretty prints of a 'list' syntax tree.
- -}
-synthesized attribute pps :: [Document];
 
 {--
  - For computing the abstract syntax tree from a concrete syntax tree

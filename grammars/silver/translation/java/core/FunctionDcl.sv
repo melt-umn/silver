@@ -1,30 +1,29 @@
 grammar silver:translation:java:core;
 
-import silver:modification:ffi only ioForeignType; -- for main type check only
+import silver:modification:ffi only foreignType; -- for main type check only
 import silver:util;
 
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
   top.setupInh := body.setupInh;
-  top.initProd := s"\t\t//FUNCTION ${id.name} ${ns.unparse}\n" ++ body.translation;
+  top.initProd := "\t\t//FUNCTION " ++ id.name ++ " " ++ ns.pp ++ "\n" ++ body.translation;
 
   local localVar :: String = "count_local__ON__" ++ makeIdName(fName);
 
-  top.initWeaving := s"\tpublic static int ${localVar} = 0;\n";
+  top.initWeaving := "\tpublic static int " ++ localVar ++ " = 0;\n";
   top.valueWeaving := body.valueWeaving;
 
   local argsAccess :: String =
     implode(", ", map((.childRefElem), namedSig.inputElements));
 
   local funBody :: String =
-s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate();
-			//${head(body.uniqueSignificantExpression).unparse}
-			return (${namedSig.outputElement.typerep.transType})(${head(body.uniqueSignificantExpression).translation});
-""";
+    "final common.DecoratedNode context = new P" ++ id.name ++ "(" ++ argsAccess ++ ").decorate();\n" ++
+    "\t\t//" ++ head(body.uniqueSignificantExpression).pp ++ "\n" ++
+    "\t\treturn (" ++ namedSig.outputElement.typerep.transType ++ ")(" ++ head(body.uniqueSignificantExpression).translation ++ ");\n";
 
   top.genFiles :=
-    [pair(s"P${id.name}.java", generateFunctionClassString(top.grammarName, id.name, namedSig, funBody))] ++
+    [pair("P" ++ id.name ++ ".java", generateFunctionClassString(top.grammarName, id.name, namedSig, funBody))] ++
     if id.name == "main" then [pair("Main.java", generateMainClassString(top.grammarName))]
     else [];
 
@@ -34,7 +33,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
        unify(namedSig.typerep,
          functionType(nonterminalType("core:IOVal", [intType()]), [
            decoratedType(nonterminalType("core:List", [stringType()])),
-           ioForeignType], [])).failure
+           foreignType("core:IO", [])], [])).failure
     then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IO). Instead it has type " ++ prettyType(namedSig.typerep))]
     else [];
 }
@@ -45,7 +44,7 @@ String ::= whatGrammar::String whatName::String whatSig::NamedSignature whatResu
   local className :: String = "P" ++ whatName;
 
   local localVar :: String = 
-    s"count_local__ON__${makeIdName(whatGrammar)}_${whatName}";
+    "count_local__ON__" ++ makeIdName(whatGrammar) ++ "_" ++ whatName;
 
   return s"""
 package ${makeName(whatGrammar)};
@@ -64,7 +63,7 @@ ${makeIndexDcls(0, whatSig.inputElements)}
 	public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
 	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
 
-	static {
+	static{
 ${implode("", map((.childStaticElem), whatSig.inputElements))}
 	}
 
@@ -127,25 +126,18 @@ ${implode("", map(makeChildAccessCaseLazy, whatSig.inputElements))}
 
 	public static ${whatSig.outputElement.typerep.transType} invoke(${whatSig.javaSignature}) {
 		try {
-${whatResult}
+		${whatResult}
 		} catch(Throwable t) {
 			throw new common.exceptions.TraceException("Error while evaluating function ${whatSig.fullName}", t);
 		}
 	}
 
-	// Use of ? to permit casting to more specific types
-	public static final common.NodeFactory<? extends ${whatSig.outputElement.typerep.transType}> factory = new Factory();
+	public static final common.NodeFactory<${whatSig.outputElement.typerep.transType}> factory = new Factory();
 
 	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transType}> {
 		@Override
-		public final ${whatSig.outputElement.typerep.transType} invoke(final Object[] children, final Object[] namedNotApplicable) {
+		public ${whatSig.outputElement.typerep.transType} invoke(final Object[] children, final Object[] namedNotApplicable) {
 			return ${className}.invoke(${implode(", ", unpackChildren(0, whatSig.inputElements))});
-		}
-		
-		@Override
-		public final common.FunctionTypeRep getType() {
-${makeTyVarDecls(3, whatSig.typerep.freeVariables)}
-			return ${whatSig.typerep.transFreshTypeRep};
 		}
 	};
 }""";

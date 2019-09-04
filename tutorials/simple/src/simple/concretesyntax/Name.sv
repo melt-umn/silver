@@ -4,6 +4,7 @@ grammar simple:concretesyntax;
  - This is simply a helper function to convert terminals into ast names.
  -}
 
+
 function name
 ast:Name ::= id::Id
 {

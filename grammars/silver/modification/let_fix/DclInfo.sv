@@ -9,6 +9,8 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type fi::ExprVertexInfo 
   top.sourceLocation = sl;
   top.fullName = fn;
 
+  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
+  
   top.typerep = ty;
 
   top.refDispatcher = lexicalLocalReference(_, fi, fd, location=_);

@@ -1,6 +1,6 @@
 package common;
 
-import java.util.*;
+import java.util.Arrays;
 
 /**
  * Here we are concerning ONLY with partially applying named arguments.
@@ -43,15 +43,15 @@ public class PartialNameNodeFactory<T> extends NodeFactory<T> {
 			                      final int[] iSuppliedHere,
 			                      final Object[] args) {
 		this.ref = ref;
-		this.iConvertedToOrdered = (iConvertedToOrdered == null) ? new int[0] : iConvertedToOrdered;
-		this.iSuppliedHere = (iSuppliedHere == null) ? new int[0] : iSuppliedHere;
+		this.iConvertedToOrdered = iConvertedToOrdered;
+		this.iSuppliedHere = iSuppliedHere;
 		this.args = args;
 	}
 	
 	@Override
 	public T invoke(final Object[] restargs, final Object[] namedArgs) {
 		// STEP 1 : cut 'args' down to the true args we'll be supplying to 'ref'
-		final int numConverted = iConvertedToOrdered.length;
+		final int numConverted = (iConvertedToOrdered == null) ? 0 : iConvertedToOrdered.length;
 		final int newArgsLength = restargs.length - numConverted;
 		
 		// Here's what we should give ref, as the first parameter:
@@ -84,41 +84,6 @@ public class PartialNameNodeFactory<T> extends NodeFactory<T> {
 		}
 		
 		return ref.invoke(finalArgs, fullNamedArgs);
-	}
-	
-	@Override
-	public final FunctionTypeRep getType() {
-		FunctionTypeRep baseType = ref.getType();
-		
-		// Construct new parameter array by copying params and appending named parameters converted to ordered params
-		final TypeRep[] newParams = new TypeRep[baseType.params.length + iConvertedToOrdered.length];
-		System.arraycopy(baseType.params, 0, newParams, 0, baseType.params.length);
-		for (int i = 0; i < iConvertedToOrdered.length; i++) {
-			newParams[baseType.params.length + i] = baseType.namedParamTypes[iConvertedToOrdered[i]];
-		}
-
-		// Build a set of converted parameter indices
-	    final Set<Integer> iConvertedToOrderedSet = new HashSet<Integer>(iConvertedToOrdered.length);
-	    for (int i : iConvertedToOrdered) {
-	    	iConvertedToOrderedSet.add(i);
-	    }
-	    // Construct new named parameter arrays by copying items not supplied or converted
-		final String[] newNamedParamNames = new String[baseType.namedParamNames.length - (iConvertedToOrdered.length + iSuppliedHere.length)];
-		final TypeRep[] newNamedParamTypes = new TypeRep[newNamedParamNames.length];
-		int i = 0, j = 0, k = 0;
-		while (k < newNamedParamNames.length) {
-			if (i < iSuppliedHere.length && i + j + k == iSuppliedHere[i]) {
-				i++;
-			} else if (iConvertedToOrderedSet.contains(j)) {
-				j++;
-			} else {
-				newNamedParamNames[k] = baseType.namedParamNames[i + j + k];
-				newNamedParamTypes[k] = baseType.namedParamTypes[i + j + k];
-				k++;
-			}
-		}
-		
-		return new FunctionTypeRep(baseType.result, newParams, newNamedParamNames, newNamedParamTypes);
 	}
 
 }

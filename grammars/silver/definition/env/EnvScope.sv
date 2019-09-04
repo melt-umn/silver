@@ -10,42 +10,47 @@ nonterminal EnvScope<a> with envTrees<a>;
  - to accomodate any situation where we might need to add to an
  - existing scope, rather than create a new one.
  -}
-synthesized attribute envTrees<a> :: [EnvTree<a>];
+inherited attribute envTrees<a> :: [EnvTree<a>];
 
-abstract production envScope
-top::EnvScope<a> ::= trees::[EnvTree<a>]
+abstract production i_envScope_dummy_record
+top::EnvScope<a> ::=
 {
-  top.envTrees = trees;
 }
 
-
 function emptyEnvScope
-EnvScope<a> ::=
+Decorated EnvScope<a> ::=
 {
-  return envScope([]);
+  return decorate i_envScope_dummy_record() with {envTrees = [];};
 }
 
 function oneEnvScope
-EnvScope<a> ::= eis::EnvTree<a>
+Decorated EnvScope<a> ::= eis::EnvTree<a>
 {
-  return envScope([eis]);
+  return decorate i_envScope_dummy_record() with {envTrees = [eis];};
 }
 
 function appendEnvScope
-EnvScope<a> ::= l::EnvScope<a> r::EnvScope<a>
+Decorated EnvScope<a> ::= l::Decorated EnvScope<a> r::Decorated EnvScope<a>
 {
-  return envScope(l.envTrees ++ r.envTrees);
+  return decorate i_envScope_dummy_record() with {envTrees = l.envTrees ++ r.envTrees;};
 }
 
 function consEnvScope
-EnvScope<a> ::= l::EnvTree<a> r::EnvScope<a>
+Decorated EnvScope<a> ::= l::EnvTree<a> r::Decorated EnvScope<a>
 {
-  return envScope(l :: r.envTrees);
+  return decorate i_envScope_dummy_record() with {envTrees = l :: r.envTrees;};
 }
 
 function searchEnvScope
-[a] ::= search::String e::EnvScope<a>
+[a] ::= search::String e::Decorated EnvScope<a>
 {
-  return flatMap(searchEnvTree(search, _), e.envTrees);
+  return searchEnvScopeHelp(search, e.envTrees);
+}
+function searchEnvScopeHelp
+[a] ::= search::String e::[EnvTree<a>]
+{
+  return if null(e)
+         then []
+         else searchEnvTree(search, head(e)) ++ searchEnvScopeHelp(search, tail(e));
 }
 

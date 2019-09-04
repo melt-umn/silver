@@ -1,15 +1,10 @@
 grammar silver:driver:util;
 
-nonterminal BuildEnv with silverHome, silverGen, grammarPath, silverHostGen, defaultSilverGen, defaultGrammarPath;
+nonterminal BuildEnv with silverHome, silverGen, grammarPath, defaultSilverGen, defaultGrammarPath;
 
-{-- Find jars, standard library -}
 synthesized attribute silverHome :: String;
-{-- Write files, look for already built grammars -}
 synthesized attribute silverGen :: String;
-{-- Search for source files -}
 synthesized attribute grammarPath :: [String];
-{-- Search for already built grammars. **Always includes silverGen!** -}
-synthesized attribute silverHostGen :: [String];
 
 synthesized attribute defaultSilverGen :: String;
 synthesized attribute defaultGrammarPath :: String; -- Just the stdlib, so not actually just the default value
@@ -17,16 +12,15 @@ synthesized attribute defaultGrammarPath :: String; -- Just the stdlib, so not a
 {--
  - Build environment information.
  - Note: each of these paths always terminates with /
- - TODO: consider moving svParser, args to this structure too? (e.g. clean flag, build grammar)
+ - TODO: consider moving svParser, sviParser, args to this structure too?
  - maybe also buildGrammar?
  -}
 abstract production buildEnv
-top::BuildEnv ::= silverHome::String  silverGen::String  grammarPath::[String]  silverHostGen::[String]
+top::BuildEnv ::= silverHome::String  silverGen::String  grammarPath::[String]
 {
   top.silverHome = silverHome;
   top.silverGen = silverGen;
   top.grammarPath = grammarPath;
-  top.silverHostGen = silverHostGen;
   
   -- So that this exists in exactly one location:
   top.defaultSilverGen = silverHome ++ "generated/";
@@ -39,7 +33,6 @@ BuildEnv ::=
   SILVER_HOME::String -- empty string or value
   SILVER_GEN::String -- empty string or value
   GRAMMAR_PATH::[String] -- any number of values
-  SILVER_HOST_GEN::[String] -- any number of values
   homeArg::[String] -- empty list or one value
   genArg::[String] -- empty list or one value
   pathArg::[String] -- any number of values
@@ -59,12 +52,8 @@ BuildEnv ::=
       GRAMMAR_PATH ++
       [benv.defaultGrammarPath] ++
       ["."]);
-  
-  -- Always search generated first, and what the environment provides us with.
-  local silverHostGen :: [String] =
-    silverGen :: map(endWithSlash, SILVER_HOST_GEN);
 
-  local benv :: BuildEnv = buildEnv(silverHome, silverGen, grammarPath, silverHostGen);
+  local benv :: BuildEnv = buildEnv(silverHome, silverGen, grammarPath);
   
   return benv;
 }

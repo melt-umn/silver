@@ -12,25 +12,25 @@ terminal End_kwd 'end' lexer classes {KEYWORD,RESERVED};
 concrete production letp_c
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
 {
-  top.unparse = "let " ++ la.unparse ++ " in " ++ e.unparse ++ " end";
+  top.pp = "let " ++ la.pp ++ " in " ++ e.pp ++ " end";
 
   forwards to letp(la.letAssignExprs, e, location=top.location);
 }
 
-nonterminal LetAssigns with unparse, location, letAssignExprs;
+nonterminal LetAssigns with pp, location, letAssignExprs;
 
 synthesized attribute letAssignExprs :: AssignExpr;
 
 concrete production assignsListCons
 top::LetAssigns ::= ae::AssignExpr ',' list::LetAssigns
 {
-  top.unparse = ae.unparse ++ ", " ++ list.unparse;
+  top.pp = ae.pp ++ ", " ++ list.pp;
   top.letAssignExprs = appendAssignExpr(ae, list.letAssignExprs, location=top.location);
 }
 concrete production assignListSingle 
 top::LetAssigns ::= ae::AssignExpr
 {
-  top.unparse = ae.unparse;
+  top.pp = ae.pp;
   top.letAssignExprs = ae;
 }
 
@@ -41,7 +41,7 @@ top::LetAssigns ::= ae::AssignExpr
 abstract production letp
 top::Expr ::= la::AssignExpr  e::Expr
 {
-  top.unparse = "let " ++ la.unparse ++ " in " ++ e.unparse ++ " end";
+  top.pp = "let " ++ la.pp ++ " in " ++ e.pp ++ " end";
   
   top.errors := la.errors ++ e.errors;
   
@@ -57,13 +57,13 @@ top::Expr ::= la::AssignExpr  e::Expr
 }
 
 nonterminal AssignExpr with location, config, grammarName, env, compiledGrammars, 
-                            unparse, defs, errors, upSubst, 
+                            pp, defs, errors, upSubst, 
                             downSubst, finalSubst, frame;
 
 abstract production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 {
-  top.unparse = a1.unparse ++ ", " ++ a2.unparse;
+  top.pp = a1.pp ++ ", " ++ a2.pp;
   top.defs = a1.defs ++ a2.defs;
   top.errors := a1.errors ++ a2.errors;
   
@@ -76,16 +76,11 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 concrete production assignExpr
 top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
-  top.unparse = id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse;
+  top.pp = id.pp ++ " :: " ++ t.pp ++ " = " ++ e.pp;
   
   top.errors := t.errors ++ e.errors;
   
-  -- Right now some things (pattern matching) abuse us by giving type variables
-  -- for `t`. So we want to do a little inference before we stuff this into
-  -- our DclInfo in `defs` because we expect variables in the env to have
-  -- explicit types. We can't use `finalSubst` here because that requires
-  -- having completed type inference which requires `defs` which we're defining.
-  local semiTy :: Type = performSubstitution(t.typerep, top.upSubst);
+  production finalTy :: Type = performSubstitution(t.typerep, errCheck1.upSubst);
   production fName :: String = toString(genInt()) ++ ":" ++ id.name;
 
   -- Using finalTy here, so our defs requires we have downSubst...
@@ -93,7 +88,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   -- auto-undecorate feature, so that's why we bother substituting.
   -- (er, except that we're starting with t, which is a Type... must be because we fake these
   -- in e.g. the pattern matching code, so type variables might appear there?)
-  top.defs = [lexicalLocalDef(top.grammarName, id.location, fName, semiTy, e.flowVertexInfo, e.flowDeps)];
+  top.defs = [lexicalLocalDef(top.grammarName, id.location, fName, finalTy, e.flowVertexInfo, e.flowDeps)];
   
   -- TODO: At present, this isn't working properly, because the local scope is
   -- whatever scope encloses the real local scope... hrmm!
@@ -118,7 +113,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 abstract production lexicalLocalReference
 top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
-  top.unparse = q.unparse;
+  top.pp = q.pp;
   top.errors := [];
   
   -- We're adding the "unusual" behavior that types like "Decorated Foo" in LETs

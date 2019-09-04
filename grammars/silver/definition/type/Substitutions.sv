@@ -82,8 +82,6 @@ Maybe<Type> ::= tv::TyVar s::Substitution
 -- These are for ordinary tyvar substitutions.
 autocopy attribute substitution :: Substitution occurs on Type;
 synthesized attribute substituted :: Type occurs on Type;
--- These are for flat, non-recursive replacement of tyvars with something else directly
-synthesized attribute flatRenamed :: Type occurs on Type;
 
 aspect production varType
 top::Type ::= tv::TyVar
@@ -95,14 +93,9 @@ top::Type ::= tv::TyVar
   local partialsubst :: Maybe<Type> = findSubst(tv, top.substitution);
   
   -- recursively substitute only if we changed!
-  top.substituted =
-    if partialsubst.isJust
-    then performSubstitution(partialsubst.fromJust, top.substitution)
-    else top;
-  top.flatRenamed =
-    if partialsubst.isJust
-    then partialsubst.fromJust
-    else top;
+  top.substituted = if partialsubst.isJust
+                    then performSubstitution(partialsubst.fromJust, top.substitution)
+                    else top;
 }
 
 aspect production skolemType
@@ -125,77 +118,51 @@ top::Type ::= tv::TyVar
   local partialsubst :: Maybe<Type> = findSubst(tv, top.substitution);
   
   -- recursively substitute only if we changed!
-  top.substituted =
-    if partialsubst.isJust
-    then performSubstitution(partialsubst.fromJust, top.substitution)
-    else top;
-  top.flatRenamed =
-    if partialsubst.isJust
-    then partialsubst.fromJust
-    else top;
-}
-
-aspect production errorType
-top::Type ::=
-{
-  top.substituted = top;
-  top.flatRenamed = top;
+  top.substituted = if partialsubst.isJust
+                    then performSubstitution(partialsubst.fromJust, top.substitution)
+                    else top;
 }
 
 aspect production intType
 top::Type ::=
 {
   top.substituted = top;
-  top.flatRenamed = top;
 }
 
 aspect production boolType
 top::Type ::=
 {
   top.substituted = top;
-  top.flatRenamed = top;
 }
 
 aspect production floatType
 top::Type ::=
 {
   top.substituted = top;
-  top.flatRenamed = top;
 }
 
 aspect production stringType
 top::Type ::=
 {
   top.substituted = top;
-  top.flatRenamed = top;
-}
-
-aspect production terminalIdType
-top::Type ::=
-{
-  top.substituted = top;
-  top.flatRenamed = top;
 }
 
 aspect production nonterminalType
 top::Type ::= fn::String params::[Type]
 {
   top.substituted = nonterminalType(fn, mapSubst(params, top.substitution));
-  top.flatRenamed = nonterminalType(fn, mapRenameSubst(params, top.substitution));
 }
 
 aspect production terminalType
 top::Type ::= fn::String
 {
   top.substituted = top;
-  top.flatRenamed = top;
 }
 
 aspect production decoratedType
 top::Type ::= te::Type
 {
   top.substituted = decoratedType(te.substituted);
-  top.flatRenamed = decoratedType(te.flatRenamed);
 }
 
 aspect production ntOrDecType
@@ -206,25 +173,14 @@ top::Type ::= nt::Type  hidden::Type
   top.substituted =
     case hidden.substituted of
     | varType(_) -> ntOrDecType(nt.substituted, hidden.substituted)
-    | _          -> hidden.substituted
+    | _             -> hidden.substituted
     end;
-  -- For a renaming, we don't need to specialize.
-  top.flatRenamed = ntOrDecType(nt.flatRenamed, hidden.flatRenamed);
 }
 
 aspect production functionType
 top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
-  top.substituted = 
-    functionType(
-      out.substituted,
-      mapSubst(params, top.substitution),
-      mapNamedSubst(namedParams, top.substitution));
-  top.flatRenamed = 
-    functionType(
-      out.flatRenamed,
-      mapRenameSubst(params, top.substitution),
-      mapNamedRenameSubst(namedParams, top.substitution));
+  top.substituted = functionType(out.substituted, mapSubst(params, top.substitution), mapNamedSubst(namedParams, top.substitution));
 }
 
 --------------------------------------------------------------------------------
@@ -239,44 +195,18 @@ Type ::= te::Type s::Substitution
 function mapSubst
 [Type] ::= tes::[Type] s::Substitution
 {
-  return map(performSubstitution(_, s), tes);
+  return if null(tes) then []
+         else performSubstitution(head(tes), s) :: mapSubst(tail(tes), s);
 }
 
 function mapNamedSubst
 [NamedArgType] ::= np::[NamedArgType] s::Substitution
 {
-  return map(mapNamedArgType(performSubstitution(_, s), _), np);
-}
-
-----
-
-function performRenaming
-Type ::= te::Type s::Substitution
-{
-  te.substitution = s;
-  return te.flatRenamed;
-}
-
-function mapRenameSubst
-[Type] ::= tes::[Type] s::Substitution
-{
-  return map(performRenaming(_, s), tes);
-}
-
-function mapNamedRenameSubst
-[NamedArgType] ::= np::[NamedArgType] s::Substitution
-{
-  return map(mapNamedArgType(performRenaming(_, s), _), np);
-}
-
-----
-
-function mapNamedArgType
-NamedArgType ::= f::(Type ::= Type) nat::NamedArgType
-{
-  return case nat of
-  | namedArgType(n, t) -> namedArgType(n, f(t))
-  end;
+  return case np of
+         | [] -> []
+         | namedArgType(n, t) :: rest ->
+             namedArgType(n, performSubstitution(t, s)) :: mapNamedSubst(rest, s)
+         end;
 }
 
 --------------------------------------------------------------------------------
@@ -324,8 +254,7 @@ Type ::= te::Type tvs::[TyVar]
 function freshenTypeWith
 Type ::= te::Type tvs::[TyVar] ntvs::[TyVar]
 {
-  -- Freshening just straight replaces variables, not deeply substituting them.
-  return performRenaming(te, zipVarsIntoSubstitution(tvs, ntvs));
+  return performSubstitution(te, zipVarsIntoSubstitution(tvs, ntvs));
 }
 
 -- This function is an artifact of the fact that we ONLY do generalization at the top level, so we don't have (un)bound variables.
@@ -335,8 +264,3 @@ Type ::= te::Type
   return freshenType(te, te.freeVariables);
 }
 
-function errorSubstitution
-Substitution ::= t::Type
-{
-  return zipVarsAndTypesIntoSubstitution(t.freeVariables, repeat(errorType(), length(t.freeVariables)));
-}

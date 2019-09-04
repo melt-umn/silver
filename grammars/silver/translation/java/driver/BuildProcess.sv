@@ -77,25 +77,21 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     if null(top.config.buildXmlLocation) then "build.xml"
     else head(top.config.buildXmlLocation);
   
-  top.postOps <-
-    [genBuild(buildXmlLocation, buildXml)] ++
-    (if top.config.noJavaGeneration then [] else [genJava(top.config, grammarsToTranslate, benv.silverGen)]);
+  top.postOps <- if top.config.noJavaGeneration then [] else 
+    [genJava(top.config, grammarsToTranslate, benv.silverGen), 
+     genBuild(buildXmlLocation, buildXml)]; 
 
   -- From here on, it's all build.xml stuff:
 
-  -- Presently, copper, copper_mda, and impide all contribute new targets into build.xml:
   production attribute extraTopLevelDecls :: [String] with ++;
   extraTopLevelDecls := [];
 
-  -- Presently, impide and copper_mda introduce a new top-level goal:
   production attribute extraDistDeps :: [String] with ++;
-  extraDistDeps := if top.config.noJavaGeneration then [] else ["jars"];
+  extraDistDeps := ["jars"];
   
-  -- Presently, unused?
   production attribute extraJarsDeps :: [String] with ++;
   extraJarsDeps := ["grammars"];
 
-  -- Presently, copper and copper_mda
   production attribute extraGrammarsDeps :: [String] with ++;
   extraGrammarsDeps := ["init"];
   
@@ -119,8 +115,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
     else ["<attribute name='Class-Path' value='${man.classpath}' />"];
   
   local attribute outputFile :: String;
-  outputFile = if !null(top.config.outName) then head(top.config.outName)
-    else (if g.jarName.isJust then g.jarName.fromJust else makeName(buildGrammar)) ++ ".jar";
+  outputFile = if !null(top.config.outName) then head(top.config.outName) else makeName(buildGrammar) ++ ".jar";
 
   local attribute buildXml :: String;
   buildXml =    
@@ -134,14 +129,13 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 "  <property name='src' location='${jg}/src'/>\n\n" ++
 
 "  <path id='lib.classpath'>\n" ++
-    sflatMap(pathLocation, classpathRuntime) ++
+    implode("", map(pathLocation, classpathRuntime)) ++
 "  </path>\n\n" ++
 
 "  <path id='compile.classpath'>\n" ++
 "    <pathelement location='${src}' />\n" ++
 "    <path refid='lib.classpath'/>\n" ++
-    sflatMap(pathLocation, classpathCompiler) ++
-    sflatMap(pathLocation, map(\s::String -> s ++ "bin/", benv.silverHostGen)) ++
+    implode("", map(pathLocation, classpathCompiler)) ++
 "  </path>\n\n" ++
 
 implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
@@ -170,8 +164,8 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 "      <filtermapper><replacestring from=' ' to='%20' /></filtermapper>\n"
 ) ++
 "    </pathconvert>\n" ++
-"    <jar destfile='" ++ outputFile ++ "' zip64Mode='as-needed'>\n" ++
-    sflatMap(includeClassFiles, grammarsRelevant) ++
+"    <jar destfile='" ++ outputFile ++ "' basedir='${bin}'>\n" ++
+    implode("", map(includeName(_, "*.class"), grammarsDependedUpon)) ++ 
 "      <manifest>\n" ++
 "        " ++ implode("\n        ", extraManifestAttributes) ++ "\n" ++
 "      </manifest>\n" ++
@@ -184,7 +178,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 
 "  <target name='grammars' depends='" ++ implode(", ", extraGrammarsDeps) ++ "'>\n" ++
 "    <javac debug='on' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false'>\n" ++
-    sflatMap(includeJavaFiles, grammarsDependedUpon) ++
+    implode("", map(includeName(_, "*.java"), grammarsDependedUpon)) ++ 
 "    </javac>\n" ++
 "  </target>\n" ++
 "</project>\n";
@@ -258,14 +252,9 @@ String ::= s::String
 {
   return "    <pathelement location='" ++ s ++ "' />\n";
 }
-function includeJavaFiles
-String ::= gram::String
+function includeName
+String ::= gram::String suffix::String
 {
-  return s"      <include name='${grammarToPath(gram)}*.java' />\n";
-}
-function includeClassFiles
-String ::= gram::Decorated RootSpec
-{
-  return s"      <fileset dir='${gram.generateLocation}bin/' includes='${grammarToPath(gram.declaredName)}*.class' />\n";
+  return "      <include name='" ++ grammarToPath(gram) ++ suffix ++ "' />\n";
 }
 

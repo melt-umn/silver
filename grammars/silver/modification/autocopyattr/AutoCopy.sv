@@ -7,7 +7,7 @@ terminal AutoCopy_kwd 'autocopy' lexer classes {KEYWORD};
 concrete production attributeDclAuto
 top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
-  top.unparse = "autocopy attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
+  top.pp = "autocopy attribute " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;

@@ -1,10 +1,13 @@
 #!/bin/bash
 
-set -eu
-silver() { "../../support/bin/silver" "$@"; }
+# This silver-compile script is just like all the others.
+# There is not specific here to deal with testing
+# (other than ensuring that the testing extension has been
+#  compiled into Silver).
 
-SRC=..
-GRAMMAR=silver_features
+export SILVER_HOME=../..
 
-silver -I $SRC $@ -o test.jar $GRAMMAR
+java -Xss4M -jar $SILVER_HOME/jars/RunSilver.jar $@  -o test.jar \
+     -I .. silver_features \
+     && ant
 

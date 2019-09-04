@@ -5,7 +5,7 @@ terminal Annotation_kwd 'annotation' lexer classes {KEYWORD};
 concrete production annotationDcl
 top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
-  top.unparse = "annotation " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
+  top.pp = "annotation " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
 
   production fName :: String = top.grammarName ++ ":" ++ a.name;
 

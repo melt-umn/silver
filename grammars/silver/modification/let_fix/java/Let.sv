@@ -18,12 +18,13 @@ top::Expr ::= la::AssignExpr  e::Expr
   local finTy :: Type = finalType(top);
 
   -- We need to create these nested locals, so we have no choice but to create a thunk object so we can declare these things.
+  -- TODO: more specific types here would be nice!
   local closureExpr :: String =
-    s"new common.Thunk<${finTy.transType}>(new common.Thunk.Evaluable() { public final ${finTy.transType} eval() { ${la.let_translation} return ${e.translation}; } })";
-    --TODO: java lambdas are bugged
-    --s"new common.Thunk<${finTy.transType}>(() -> { ${la.let_translation} return ${e.translation};\n})";
+    "new common.Thunk<Object>(context) { public final Object doEval(final common.DecoratedNode context) { " ++
+    la.let_translation ++
+    "return " ++ e.translation ++ "; } }";
   
-  top.translation = s"${closureExpr}.eval()";
+  top.translation = "((" ++ finTy.transType ++ ")(" ++ closureExpr ++ ").eval())";
 
   top.lazyTranslation = 
     if top.frame.lazyApplication
@@ -48,18 +49,14 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 aspect production assignExpr
 top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
-  -- We must use `finalSubst` in translation.
-  -- "let abuse" means type variables can appear in `t`, and if we don't
-  -- use `finalSubst` we get confusion with `ntOrDecType` not knowing
-  -- it's being used undecorated later.
-  local finalTy :: Type = performSubstitution(t.typerep, top.finalSubst);
   top.let_translation = makeSpecialLocalBinding(fName, e.translation, finalTy.transType);
 }
 
 function makeSpecialLocalBinding
 String ::= fn::String  et::String  ty::String
 {
-  return s"final common.Thunk<${ty}> ${makeLocalValueName(fn)} = ${wrapThunkText(et, ty)};\n";
+  -- TODO: more specific types here would be nice!
+  return "final common.Thunk<Object> " ++ makeLocalValueName(fn) ++ " = " ++ wrapThunkText("context", et, "Object") ++ ";\n";
 }
 
 aspect production lexicalLocalReference

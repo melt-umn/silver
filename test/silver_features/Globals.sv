@@ -28,13 +28,13 @@ equalityTest ( globalbool2, false, Boolean, silver_tests ) ;
 nonterminal Tglob with strGlob;
 synthesized attribute strGlob :: String;
 
-abstract production tfoo
+abstract production Tfoo
 t::Tglob ::=
 {
   t.strGlob = globstring1;
 }
 
-global unT :: Tglob = tfoo();
+global unT :: Tglob = Tfoo();
 
 equalityTest ( unT.strGlob, "Hi", String, silver_tests ) ;
 
@@ -43,10 +43,10 @@ global deT :: Decorated Tglob = decorate unT with {};
 equalityTest ( deT.strGlob, "Hi", String, silver_tests ) ;
 
 wrongCode "initialization expression with type" {
-  global badT :: Decorated Tglob = tfoo();
+  global badT :: Decorated Tglob = Tfoo();
 }
 
-wrongCode "is not a production" {
+wrongCode "does not have the right signature." { -- TODO: this error message should be improved!!
   aspect production unT
   t::Tglob ::=
   {

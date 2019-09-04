@@ -182,7 +182,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   -- for locals, the CA object was created already
   top.translation =
-        "\t\t// " ++ val.unparse ++ " := " ++ e.unparse ++ "\n" ++
+        "\t\t// " ++ val.pp ++ " := " ++ e.pp ++ "\n" ++
         "\t\t((common.CollectionAttribute)" ++ top.frame.className ++ ".localAttributes[" ++ val.lookupValue.dcl.attrOccursIndex ++ "]).setBase(" ++ wrapLazy(e) ++ ");\n";
 }
 aspect production appendCollectionValueDef
@@ -190,7 +190,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   -- for locals, the CA object was created already
   top.translation = 
-        "\t\t// " ++ val.unparse ++ " <- " ++ e.unparse ++ "\n" ++
+        "\t\t// " ++ val.pp ++ " <- " ++ e.pp ++ "\n" ++
         "\t\t((common.CollectionAttribute)" ++ top.frame.className ++ ".localAttributes[" ++ val.lookupValue.dcl.attrOccursIndex ++ "]).addPiece(" ++ wrapLazy(e) ++ ");\n";
 }
 
@@ -199,7 +199,7 @@ aspect production synBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- := -} e::Expr
 {
   top.translation =
-        "\t\t// " ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ "\n" ++
+        "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ "\n" ++
         "\t\tif(" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] == null)\n" ++
         "\t\t\t" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.attrDcl.fullName) ++"(" ++ attr.dcl.attrOccursIndex ++ ");\n" ++
         "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "]).setBase(" ++ wrapLazy(e) ++ ");\n";
@@ -208,7 +208,7 @@ aspect production synAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- <- -} e::Expr
 {
   top.translation = 
-	"\t\t// " ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ "\n" ++
+	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ "\n" ++
         "\t\tif(" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] == null)\n" ++
         "\t\t\t" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.attrDcl.fullName) ++"(" ++ attr.dcl.attrOccursIndex ++ ");\n" ++
         "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "]).addPiece(" ++ wrapLazy(e) ++ ");\n";
@@ -219,7 +219,7 @@ aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- := -} e::Expr
 {
   top.translation =
-        "\t\t// " ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ "\n" ++
+        "\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " := " ++ e.pp ++ "\n" ++
         "\t\tif(" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] == null)\n" ++
         "\t\t\t" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.attrDcl.fullName) ++ "();\n" ++
         "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "]).setBase(" ++ wrapLazy(e) ++ ");\n";
@@ -228,7 +228,7 @@ aspect production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- <- -} e::Expr
 {
   top.translation = 
-	"\t\t// " ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ "\n" ++
+	"\t\t// " ++ dl.pp ++ "." ++ attr.pp ++ " <- " ++ e.pp ++ "\n" ++
         "\t\tif(" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] == null)\n" ++
         "\t\t\t" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.attrDcl.fullName) ++ "();\n" ++
         "\t\t((common.CollectionAttribute)" ++ dl.translation ++"[" ++ attr.dcl.attrOccursIndex ++ "]).addPiece(" ++ wrapLazy(e) ++ ");\n";

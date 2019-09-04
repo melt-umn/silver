@@ -84,17 +84,3 @@ Maybe<b> ::= f::(b ::= a) m::Maybe<a>
   | nothing() -> nothing()
   end;
 }
-
-{--
- - Finds the first value matching a predicate.
- -}
-function find
-Maybe<a> ::= f::(Boolean ::= a) l::[a]
-{
-  return if null(l) then
-    nothing()
-  else if f(head(l)) then
-    just(head(l))
-  else
-    find(f, tail(l));
-}

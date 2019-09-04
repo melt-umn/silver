@@ -1,10 +1,5 @@
 grammar core;
 
-synthesized attribute fromLeft<a> :: a;
-synthesized attribute fromRight<a> :: a;
-synthesized attribute isLeft :: Boolean;
-synthesized attribute isRight :: Boolean;
-
 {--
  - The basic sum type, counterpart to Pair.
  -
@@ -13,24 +8,17 @@ synthesized attribute isRight :: Boolean;
  - expected return value is the second.
  - e.g. Either<String Tree>
  -}
-nonterminal Either<a b> with fromLeft<a>, fromRight<b>, isLeft, isRight;
+nonterminal Either<a b>;
+
 
 abstract production left
 top::Either<a b> ::= value::a
 {
-  top.fromLeft = value;
-  top.fromRight = error("fromRight accessed on a Either that was actually left!");
-  top.isLeft = true;
-  top.isRight = false;
 }
 
 abstract production right
 top::Either<a b> ::= value::b
 {
-  top.fromLeft = error("fromRight accessed on a Either that was actually left!");
-  top.fromRight = value;
-  top.isLeft = false;
-  top.isRight = true;
 }
 
 

@@ -138,25 +138,16 @@ IOVal<Either<BuildEnv [String]>> ::= a::Decorated CmdArgs  ioin::IO
   -- Let's locally set up and verify the environment
   local envSH :: IOVal<String> = envVar("SILVER_HOME", ioin);
   local envGP :: IOVal<String> = envVar("GRAMMAR_PATH", envSH.io);
-  local envSHG :: IOVal<String> = envVar("SILVER_HOST_GEN", envGP.io);
-  local envSG :: IOVal<String> = envVar("SILVER_GEN", envSHG.io);
+  local envSG :: IOVal<String> = envVar("SILVER_GEN", envGP.io);
   
-  -- If SILVER_HOME isn't set, determine it from where this jar is
-  local derivedSH :: IOVal<String> =
-    if envSH.iovalue == "" then
-      determineDefaultSilverHome(envSG.io)
-    else
-      ioval(envSG.io, envSH.iovalue);
-
   local benv :: BuildEnv = 
     fromArgsAndEnv(
       -- TODO: maybe we should use the java platform separator here?
-      derivedSH.iovalue, envSG.iovalue,
-      explode(":", envGP.iovalue), explode(":", envSHG.iovalue),
+      envSH.iovalue, envSG.iovalue, explode(":", envGP.iovalue),
       a.silverHomeOption, a.genLocation, a.searchPath);
 
   -- Let's do some checks on the environment
-  local checkenv :: IOVal<[String]> = checkEnvironment(benv, derivedSH.io);
+  local checkenv :: IOVal<[String]> = checkEnvironment(benv, envSG.io);
   
   return if null(checkenv.iovalue) then
     ioval(checkenv.io, left(benv))
@@ -203,19 +194,5 @@ IOVal<[String]> ::=
   -- TODO: presently, we check whether we find this grammar elsewhere. Maybe it should be here? not sure.
 
   return ioval(ioin, errors);
-}
-
--- This code has to live in the generated jar for the program, as putting it in the
--- standard library may someday return the location of the standard library jar instead
--- of us
-function determineDefaultSilverHome
-IOVal<String> ::=  i::IO
-{
-  return error("NYI");
-} foreign {
-  -- This grabs the path to this jar (using Init.class as the thing to find the path to)
-  -- Then goes up two levels (HOME/jars/file.jar to HOME) and returns that.
-  -- If anything goes wrong, we crash.
-  "java" : return "new core.Pioval(%i%, common.Util.determineSilverHomePath(Init.class))";
 }
 

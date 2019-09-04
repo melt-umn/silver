@@ -4,9 +4,8 @@ grammar silver:definition:core;
  - The grammar containing this tree.
  -}
 autocopy attribute grammarName :: String;
-
 {--
- - The name to use for the generated .jar if not overridden by -o command-line option.
+ - Errors that should stop compilation from succeeding.
  -}
-synthesized attribute jarName :: Maybe<String>;
+synthesized attribute errors :: [Message] with ++;
 

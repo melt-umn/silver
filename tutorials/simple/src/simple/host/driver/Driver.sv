@@ -6,46 +6,54 @@ import simple:concretesyntax as cst;
 import simple:abstractsyntax as ast;
 
 function driver
-IO ::= args::[String]
-       io_in::IO 
-       the_parser::(ParseResult<cst:Root> ::= String String)
+IO ::= args::String io_in::IO 
+       the_parser::(ParseResult<cst:Root>::=String String)
 {
-  local filename :: String = if null(args) then "" else head(args);
-  
-  local isF :: IOVal<Boolean> = isFile(filename, io_in);
+  production attribute isF :: IOVal<Boolean>;
+  isF = isFile(args, io_in);
    
-  local text :: IOVal<String> = readFile(filename, isF.io);
+  production attribute text :: IOVal<String>;
+  text = readFile(args, isF.io);
 
-  local result :: ParseResult<cst:Root> = the_parser(text.iovalue, filename);
+  local attribute result :: ParseResult<cst:Root>;
+  result = the_parser(text.iovalue, args);
 
-  local r_cst :: cst:Root = result.parseTree;
+  local attribute r_cst :: cst:Root;
+  r_cst = result.parseTree;
 
-  local r_ast :: ast:Root = r_cst.ast;
+-- local attribute write_c_io :: IO;
+-- write_c_io = writeFile("output.c", r_cst.c_code, text.io );
 
-  local print_success :: IO = 
-    print( "Command line arguments: " ++ filename ++
+  local attribute r_ast :: ast:Root;
+  r_ast = r_cst.ast;
+
+  local attribute print_success :: IO;
+  print_success = 
+    print( "Command line arguments: " ++ args ++
            "\n\n" ++
            "CST pretty print: \n" ++ r_cst.unparse ++
            "\n\n" ++ 
            "AST pretty print: \n" ++ pp:show(100, r_ast.pp) ++
            "\n\n" ++
            "Errors: " ++
-           (if null(r_ast.errors) then " No semantic errors!\n" 
+           (if null(r_ast.errors)  then " No semantic errors!\n" 
             else "\n" ++
                  messagesToString(r_ast.errors) ++ "\n"
            )
            , text.io );
 
-  local write_success :: IO =
-    writeFile("output.c", r_ast.ast:c_code, print_success);
+  local attribute write_success :: IO;
+  write_success =
+    writeFile ( "output.c", r_ast.ast:c_code, print_success );
 
-  local print_failure :: IO =
+  local attribute print_failure :: IO;
+  print_failure =
     print("Encountered a parse error:\n" ++ result.parseErrors ++ "\n", text.io);
 
-  return if !isF.iovalue 
-         then error("\n\nFile \"" ++ filename ++ "\" not found.\n")
+  return if   ! isF.iovalue 
+         then error ("\n\nFile \"" ++ args ++ "\" not found.\n")
          else
-         if result.parseSuccess 
+         if   result.parseSuccess 
          then write_success 
          else print_failure;
 }

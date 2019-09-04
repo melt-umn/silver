@@ -9,7 +9,7 @@ terminal Parser_kwd 'parser' lexer classes {KEYWORD}; -- not RESERVED?
 concrete production parserDcl
 top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
 {
-  top.unparse = "parser " ++ m.unparse ++ ";"; -- TODO?
+  top.pp = "parser " ++ m.pp ++ ";"; -- TODO?
   
   top.moduleNames = m.moduleNames;
 
@@ -58,12 +58,12 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
 
 synthesized attribute liftedAGDcls::AGDcl;
 
-nonterminal ParserComponents with config, env, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls;
+nonterminal ParserComponents with config, env, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls;
 
 concrete production nilParserComponent
 top::ParserComponents ::=
 {
-  top.unparse = "";
+  top.pp = "";
   top.moduleNames = [];
   top.errors := [];
   top.terminalPrefixes = [];
@@ -73,19 +73,19 @@ top::ParserComponents ::=
 concrete production consParserComponent
 top::ParserComponents ::= c1::ParserComponent  c2::ParserComponents
 {
-  top.unparse = c1.unparse ++ ", " ++ c2.unparse;
+  top.pp = c1.pp ++ ", " ++ c2.pp;
   top.moduleNames = c1.moduleNames ++ c2.moduleNames;
   top.errors := c1.errors ++ c2.errors;
   top.terminalPrefixes = c1.terminalPrefixes ++ c2.terminalPrefixes;
   top.liftedAGDcls = appendAGDcl(c1.liftedAGDcls, c2.liftedAGDcls, location=top.location);
 }
 
-nonterminal ParserComponent with config, env, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls;
+nonterminal ParserComponent with config, env, grammarName, location, pp, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls;
 
 concrete production parserComponent
 top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
 {
-  top.unparse = m.unparse;
+  top.pp = m.pp;
   top.moduleNames = m.moduleNames;
   top.errors := m.errors ++ mods.errors;
   top.terminalPrefixes = mods.terminalPrefixes;
@@ -97,12 +97,12 @@ top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
 autocopy attribute componentGrammarName::String;
 
 {-- Have special env built from just this parser component and the global env -}
-nonterminal ParserComponentModifiers with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, liftedAGDcls;
+nonterminal ParserComponentModifiers with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, pp, errors, terminalPrefixes, liftedAGDcls;
 
 concrete production nilParserComponentModifier
 top::ParserComponentModifiers ::=
 {
-  top.unparse = "";
+  top.pp = "";
   top.errors := [];
   top.terminalPrefixes = [];
   top.liftedAGDcls = emptyAGDcl(location=top.location);
@@ -111,13 +111,13 @@ top::ParserComponentModifiers ::=
 concrete production consParserComponentModifier
 top::ParserComponentModifiers ::= h::ParserComponentModifier t::ParserComponentModifiers
 {
-  top.unparse = h.unparse ++ t.unparse;
+  top.pp = h.pp ++ t.pp;
   top.errors := h.errors ++ t.errors;
   top.terminalPrefixes = h.terminalPrefixes ++ t.terminalPrefixes;
   top.liftedAGDcls = appendAGDcl(h.liftedAGDcls, t.liftedAGDcls, location=top.location);
 }
 
-nonterminal ParserComponentModifier with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, liftedAGDcls;
+nonterminal ParserComponentModifier with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, pp, errors, terminalPrefixes, liftedAGDcls;
 
 -- Separate bit translating the parser declaration.
 aspect production parserDcl

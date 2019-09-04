@@ -20,25 +20,23 @@ top::AGDcl ::= '{@config' items::DocConfigs '@}'
 concrete production consConfigs
 top::DocConfigs ::= c::DocConfig rest::DocConfigs
 {
-  local headerWarnings :: String = 
-    if c.header != "" && rest.header != ""
-    then "Multiple header definitions in documentation configuration."
-    else "";
+  local headerWarnings :: String = if c.header != "" && rest.header != ""
+								   then "Multiple header definitions in documentation configuration."
+								   else "";
 
-  local splitFilesWarnings :: String = 
-    if c.header != "" && rest.header != ""
-    then "Multpile split-files definitions in documentation configuration."
-    else "";
+  local splitFilesWarnings :: String = if c.header != "" && rest.header != ""
+								   then "Multpile split-files definitions in documentation configuration."
+								   else "";
 
-  top.header = case c.header, rest.header of
-               | "", h -> h
-               | h, _  -> h
-               end;
+  top.header = case pair(c.header, rest.header) of
+				| pair("", h) -> h
+				| pair(h, _) -> h
+			   end;
 
-  top.splitFiles = case c.splitFiles, rest.splitFiles of
-                   | "", s -> s
-                   | s, _  -> s
-                   end;
+  top.splitFiles = case pair(c.splitFiles, rest.splitFiles) of
+					| pair("", s) -> s
+					| pair(s, _) -> s
+				   end;
 
   top.noDoc = c.noDoc || rest.noDoc;
   top.warnings = headerWarnings ++ splitFilesWarnings ++ rest.warnings;
@@ -74,8 +72,8 @@ top::DocConfig ::= 'no-doc' ':' value::ConfigValue_t
   top.header = "";
   top.splitFiles = "";
   top.noDoc = if "true" == value.lexeme
-              then true
-              else false;
+			  then true
+			  else false;
 }
 
 function cleanDocValue

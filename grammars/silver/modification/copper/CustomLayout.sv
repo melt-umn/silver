@@ -6,7 +6,7 @@ terminal Layout_kwd 'layout' lexer classes {KEYWORD,RESERVED};
 concrete production productionModifierLayout
 top::ProductionModifier ::= 'layout' '{' terms::TermPrecList '}'
 {
-  top.unparse = "layout {" ++ terms.unparse ++ "}";
+  top.pp = "layout {" ++ terms.pp ++ "}";
 
   top.productionModifiers = [prodLayout(terms.precTermList)];
   top.errors := terms.errors;
@@ -15,7 +15,7 @@ top::ProductionModifier ::= 'layout' '{' terms::TermPrecList '}'
 concrete production productionModifierLayoutNone
 top::ProductionModifier ::= 'layout' '{' '}'
 {
-  top.unparse = "layout {}";
+  top.pp = "layout {}";
 
   top.productionModifiers = [prodLayout([])];
   top.errors := [];

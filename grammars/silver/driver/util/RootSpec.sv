@@ -1,14 +1,9 @@
 grammar silver:driver:util;
 
-import silver:reflect;
-import silver:langutil only pp;
-import silver:langutil:pp only show;
-
 import silver:definition:core only Grammar, grammarErrors, grammarName, importedDefs, grammarDependencies, globalImports, Message, err;
+import silver:definition:env:env_parser only IRoot;
 import silver:definition:flow:env only flowEnv, flowDefs, fromFlowDefs;
 import silver:definition:flow:ast only nilFlow, consFlow, FlowDef;
-
-import silver:definition:core only jarName;
 
 {--
  - A representation of a grammar, from an unknown source. TODO: rename GrammarSpec
@@ -18,9 +13,7 @@ nonterminal RootSpec with
   config, compiledGrammars, productionFlowGraphs, grammarFlowTypes,
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
-  defs, grammarErrors, grammarSource, grammarTime, interfaceTime, recheckGrammars, translateGrammars,
-  parsingErrors, jarName, generateLocation;
-
+  defs, grammarErrors, grammarSource, grammarTime, interfaceTime, recheckGrammars, translateGrammars, parsingErrors;
 
 {--
  - Grammars that were read from source.
@@ -32,14 +25,11 @@ synthesized attribute translateGrammars :: [Decorated RootSpec];
  -}
 synthesized attribute parsingErrors :: [Pair<String [Message]>];
 
-{-- Where generated files are or should be created -}
-synthesized attribute generateLocation :: String;
-
 {--
  - Create a RootSpec from a real grammar, a set of .sv files.
  -}
 abstract production grammarRootSpec
-top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  grammarTime::Integer  generateLocation::String
+top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  grammarTime::Integer
 {
   g.grammarName = grammarName;
   
@@ -67,7 +57,6 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   top.grammarSource = grammarSource;
   top.grammarTime = grammarTime;
   top.interfaceTime = grammarTime;
-  top.generateLocation = generateLocation;
   top.recheckGrammars = [];
   top.translateGrammars = [top];
 
@@ -81,23 +70,22 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   top.defs = g.defs;
   top.grammarErrors = g.grammarErrors;
   top.parsingErrors = [];
-
-  top.jarName = g.jarName;
 }
 
 {--
  - Create a RootSpec from an interface file, representing a grammar.
  -}
 abstract production interfaceRootSpec
-top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer  generateLocation::String
+top::RootSpec ::= p::IRoot  interfaceTime::Integer
 {
+  p.grammarName = p.declaredName;
+
   top.grammarSource = p.grammarSource;
   top.grammarTime = p.grammarTime;
   top.interfaceTime = interfaceTime;
-  top.generateLocation = generateLocation;
   
   local ood :: Boolean = isOutOfDate(interfaceTime, top.allGrammarDependencies, top.compiledGrammars);
-  top.recheckGrammars = if ood then [p.declaredName] else [];
+  top.recheckGrammars = if ood then [p.grammarName] else [];
   top.translateGrammars = [];
 
   top.declaredName = p.declaredName; 
@@ -110,20 +98,17 @@ top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer  generateLocation
   top.defs = p.defs;
   top.grammarErrors = []; -- TODO: consider getting grammarName and comparing against declaredName?
   top.parsingErrors = [];
-
-  top.jarName = nothing();
 }
 
 {--
  - A RootSpec that represents a failure to parse (part) of a grammar.
  -}
 abstract production errorRootSpec
-top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  grammarTime::Integer  generateLocation::String
+top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  grammarTime::Integer
 {
   top.grammarSource = grammarSource;
   top.grammarTime = grammarTime;
   top.interfaceTime = grammarTime;
-  top.generateLocation = generateLocation;
   
   top.recheckGrammars = [];
   top.translateGrammars = [];
@@ -138,8 +123,6 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
   top.defs = [];
   top.grammarErrors = [];
   top.parsingErrors = map(parseErrorToMessage(grammarSource, _), e);
-
-  top.jarName = nothing();
 }
 
 function parseErrorToMessage
@@ -158,120 +141,6 @@ Pair<String [Message]> ::= grammarSource::String  e::ParseError
 }
 
 {--
- - Representation of all properties of a grammar, to be serialized/deserialize to/from an interface
- - file.
- -}
-nonterminal GrammarProperties with declaredName, grammarSource, grammarTime, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies, defs;
-
-abstract production consGrammarProperties
-top::GrammarProperties ::= h::GrammarProperty t::GrammarProperties
-{
-  top.grammarSource = fromMaybe(t.grammarSource, h.maybeGrammarSource);
-  top.grammarTime = fromMaybe(t.grammarTime, h.maybeGrammarTime);
-  top.declaredName = fromMaybe(t.declaredName, h.maybeDeclaredName);
-  top.moduleNames = fromMaybe(t.moduleNames, h.maybeModuleNames);
-  top.exportedGrammars = fromMaybe(t.exportedGrammars, h.maybeExportedGrammars);
-  top.optionalGrammars = fromMaybe(t.optionalGrammars, h.maybeOptionalGrammars);
-  top.condBuild = fromMaybe(t.condBuild, h.maybeCondBuild);
-  top.allGrammarDependencies = fromMaybe(t.allGrammarDependencies, h.maybeAllGrammarDependencies);
-  top.defs = fromMaybe(t.defs, h.maybeDefs);
-}
-
-abstract production nilGrammarProperties
-top::GrammarProperties ::=
-{
-  top.grammarSource = error("Grammar property grammarSource missing from interface file");
-  top.grammarTime = error("Grammar property grammarTime missing from interface file");
-  top.declaredName = error("Grammar property declaredName missing from interface file");
-  top.moduleNames = error("Grammar property moduleNames missing from interface file");
-  top.exportedGrammars = error("Grammar property exportedGrammars missing from interface file");
-  top.optionalGrammars = error("Grammar property optionalGrammars missing from interface file");
-  top.condBuild = error("Grammar property condBuild missing from interface file");
-  top.allGrammarDependencies = error("Grammar property allGrammarDependencies missing from interface file");
-  top.defs = error("Grammar property defs missing from interface file");
-}
-
-synthesized attribute maybeGrammarSource::Maybe<String>;
-synthesized attribute maybeGrammarTime::Maybe<Integer>;
-synthesized attribute maybeDeclaredName::Maybe<String>;
-synthesized attribute maybeModuleNames::Maybe<[String]>;
-synthesized attribute maybeExportedGrammars::Maybe<[String]>;
-synthesized attribute maybeOptionalGrammars::Maybe<[String]>;
-synthesized attribute maybeCondBuild::Maybe<[[String]]>;
-synthesized attribute maybeAllGrammarDependencies::Maybe<[String]>;
-synthesized attribute maybeDefs::Maybe<[Def]>;
-
-closed nonterminal GrammarProperty with maybeGrammarSource, maybeGrammarTime, maybeDeclaredName, maybeModuleNames, maybeExportedGrammars, maybeOptionalGrammars, maybeCondBuild, maybeAllGrammarDependencies, maybeDefs;
-
-aspect default production
-top::GrammarProperty ::=
-{
-  top.maybeGrammarSource = nothing();
-  top.maybeGrammarTime = nothing();
-  top.maybeDeclaredName = nothing();
-  top.maybeModuleNames = nothing();
-  top.maybeExportedGrammars = nothing();
-  top.maybeOptionalGrammars = nothing();
-  top.maybeCondBuild = nothing();
-  top.maybeAllGrammarDependencies = nothing();
-  top.maybeDefs = nothing();
-}
-
-abstract production grammarSourceGrammarProperty
-top::GrammarProperty ::= val::String
-{
-  top.maybeGrammarSource = just(val);
-}
-
-abstract production grammarTimeGrammarProperty
-top::GrammarProperty ::= val::Integer
-{
-  top.maybeGrammarTime = just(val);
-}
-
-abstract production declaredNameGrammarProperty
-top::GrammarProperty ::= val::String
-{
-  top.maybeDeclaredName = just(val);
-}
-
-abstract production moduleNamesGrammarProperty
-top::GrammarProperty ::= val::[String]
-{
-  top.maybeModuleNames = just(val);
-}
-
-abstract production exportedGrammarsGrammarProperty
-top::GrammarProperty ::= val::[String]
-{
-  top.maybeExportedGrammars = just(val);
-}
-
-abstract production optionalGrammarsGrammarProperty
-top::GrammarProperty ::= val::[String]
-{
-  top.maybeOptionalGrammars = just(val);
-}
-
-abstract production condBuildGrammarProperty
-top::GrammarProperty ::= val::[[String]]
-{
-  top.maybeCondBuild = just(val);
-}
-
-abstract production allDepsGrammarProperty
-top::GrammarProperty ::= val::[String]
-{
-  top.maybeAllGrammarDependencies = just(val);
-}
-
-abstract production defsGrammarProperty
-top::GrammarProperty ::= val::[Def]
-{
-  top.maybeDefs = just(val);
-}
-
-{--
  - How RootSpecs are turned into interface files shouldn't change
  - depending on what the source it, so we give this function externally
  - to the productions, instead of as an attribute.
@@ -279,24 +148,20 @@ top::GrammarProperty ::= val::[Def]
 function unparseRootSpec
 String ::= r::Decorated RootSpec
 {
-  production attribute grammarProperties :: [GrammarProperty] with ++;
-  grammarProperties := [
-   	grammarSourceGrammarProperty(r.grammarSource),
-   	grammarTimeGrammarProperty(r.grammarTime),
-    declaredNameGrammarProperty(r.declaredName),
-   	moduleNamesGrammarProperty(r.moduleNames),
-    exportedGrammarsGrammarProperty(r.exportedGrammars),
-    optionalGrammarsGrammarProperty(r.optionalGrammars),
-    condBuildGrammarProperty(r.condBuild),
-   	allDepsGrammarProperty(r.allGrammarDependencies),
-    defsGrammarProperty(r.defs)
-  ];
-  
-  return
-    case serialize(foldr(consGrammarProperties, nilGrammarProperties(), grammarProperties)) of
-    | left(msg) -> error("Fatal internal error generating interface file: \n" ++ show(80, reflect(foldr(consGrammarProperties, nilGrammarProperties(), grammarProperties)).pp) ++ "\n" ++ msg)
-    | right(txt) -> txt
-    end;
+  production attribute unparses :: [String] with ++;
+  unparses := [
+		"declaredName " ++ quoteString(r.declaredName),
+		"grammarTime " ++ toString(r.grammarTime),
+		"grammarSource \"" ++ escapeString(r.grammarSource) ++ "\"",
+		"moduleNames " ++ unparseStrings(r.moduleNames),
+		"allDeps " ++ unparseStrings(r.allGrammarDependencies),
+	       	"exportedGrammars " ++ unparseStrings(r.exportedGrammars),
+	       	"optionalGrammars " ++ unparseStrings(r.optionalGrammars),
+	       	"condBuild " ++ unparseStrings(concat(r.condBuild)),
+	       	"defs " ++ unparseDefs(r.defs, [])
+	      ];
+
+  return implode("\n", unparses);
 }
 
 {--

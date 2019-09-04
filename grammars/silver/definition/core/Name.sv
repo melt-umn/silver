@@ -1,6 +1,6 @@
 grammar silver:definition:core;
 
-nonterminal Name with config, grammarName, location, unparse, name;
+nonterminal Name with config, grammarName, location, pp, name;
 
 {--
  - An identifier's (possibly qualified) name.
@@ -11,13 +11,13 @@ concrete production nameIdLower
 top::Name ::= id::IdLower_t
 {
   top.name = id.lexeme;
-  top.unparse = id.lexeme;
+  top.pp = id.lexeme;
 }
 concrete production nameIdUpper
 top::Name ::= id::IdUpper_t
 {
   top.name = id.lexeme;
-  top.unparse = id.lexeme;
+  top.pp = id.lexeme;
 }
 
 function name

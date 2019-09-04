@@ -2,8 +2,8 @@ grammar silver:extension:convenience;
 
 import silver:modification:copper;
 
-nonterminal ProductionDclStmts with unparse, location, proddcls, lhsdcl, grammarName;
-nonterminal ProductionDclStmt with unparse, location, proddcls, lhsdcl, grammarName;
+nonterminal ProductionDclStmts with pp, location, proddcls, lhsdcl, grammarName;
+nonterminal ProductionDclStmt with pp, location, proddcls, lhsdcl, grammarName;
 
 synthesized attribute proddcls :: AGDcl;
 autocopy attribute lhsdcl :: ProductionLHS;
@@ -14,7 +14,7 @@ terminal ProdVBar '|';
 concrete production productionDclC
 top::AGDcl ::= 'concrete' 'productions' lhs::ProductionLHS stmts::ProductionDclStmts 
 {
-  top.unparse = "concrete productions " ++ lhs.unparse ++ stmts.unparse;
+  top.pp = "concrete productions " ++ lhs.pp ++ stmts.pp;
   top.moduleNames = [];
   
   stmts.lhsdcl = lhs;
@@ -25,13 +25,13 @@ top::AGDcl ::= 'concrete' 'productions' lhs::ProductionLHS stmts::ProductionDclS
 concrete production productionDclStmtsOne
 top::ProductionDclStmts ::= s::ProductionDclStmt
 {
-  top.unparse = s.unparse;
+  top.pp = s.pp;
   top.proddcls = s.proddcls;
 }
 concrete production productionDclStmtsCons
 top::ProductionDclStmts ::= s::ProductionDclStmt ss::ProductionDclStmts
 {
-  top.unparse = s.unparse ++ ss.unparse;
+  top.pp = s.pp ++ ss.pp;
   top.proddcls = appendAGDcl(s.proddcls, ss.proddcls, location=top.location);
 }
 
@@ -42,7 +42,7 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
                            body::ProductionBody
                            opta::OptionalAction
 {
-  top.unparse = "| " ++ rhs.unparse ++ mods.unparse ++ body.unparse; -- TODO missing some here...
+  top.pp = "| " ++ rhs.pp ++ mods.pp ++ body.pp; -- TODO missing some here...
   -- Either we have a name, or we generate an appropriate one.
   local nme :: Name =
     case optn of

@@ -1,15 +1,18 @@
 grammar silver:driver;
 
 {--
- - Eat the stream `need` and produce the output stream of (maybe, if found) `RootSpec`s.
+ - Beginning with those in 'need', chase down and compile all grammars necessary to build those grammars in 'need'
  -
- - @param benv   The compiler configuration, including search paths
- - @param need   A **stream** of grammars to compile.
- - @param clean  If true, ignore interface files entirely.
+ - @param grammarPath   The search path (i.e. grammar path)
+ - @param needStream    The list of needed grammars.
+ - @param seen    The list of already compiled grammars. (initially [], most likely.)
+ - @param clean   If true, ignore interface files entirely.
+ - @param silverGen The generated directory path. (i.e. where src/ and bin/ are)
  -}
 function compileGrammars
 IOVal<[Maybe<RootSpec>]> ::=
   svParser::SVParser
+  sviParser::SVIParser
   benv::BuildEnv
   need::[String]
   clean::Boolean
@@ -19,11 +22,11 @@ IOVal<[Maybe<RootSpec>]> ::=
   
   -- Build the first gramamr in the need list.
   local now :: IOVal<Maybe<RootSpec>> =
-    compileGrammar(svParser, benv, grammarName, clean, ioin);
+    compileGrammar(svParser, sviParser, benv, grammarName, clean, ioin);
 
   -- Recurse for the rest of the grammars needed.
   local recurse :: IOVal<[Maybe<RootSpec>]> =
-    compileGrammars(svParser, benv, tail(need), clean, now.io);
+    compileGrammars(svParser, sviParser, benv, tail(need), clean, now.io);
 
   return 
     if null(need) then

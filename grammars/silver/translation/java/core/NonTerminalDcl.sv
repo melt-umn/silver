@@ -11,72 +11,61 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
   local myAnnos :: [NamedSignatureElement] =
     annotationsForNonterminal(nonterminalType(fName, tl.types), top.env);
   
-  top.initWeaving := s"""
-	public static int ${inhVar} = 0;
-	public static int ${synVar} = 0;""";
+  top.initWeaving := "\tpublic static int " ++ inhVar ++ " = 0;\n"
+                  ++ "\tpublic static int " ++ synVar ++ " = 0;\n";
   
-  top.genFiles := [pair(className ++ ".java", s"""
-package ${makeName(top.grammarName)};
+  top.genFiles := [pair(className ++ ".java",
+		
+"package " ++ makeName(top.grammarName) ++ ";\n\n" ++
 
-import java.util.*;
+"import java.util.*;\n\n" ++
 
-public abstract class ${className} extends common.Node${
+"public abstract class " ++ className ++ " extends common.Node" ++ 
   (if null(myAnnos) then "" else 
     " implements " ++ implode(", ", map(makeAnnoClassName, map((.elementName), myAnnos)))
-  )} {
+  ) ++ " {\n\n" ++
 
-	public static final int num_inh_attrs = Init.${inhVar};
-	public static final int num_syn_attrs = Init.${synVar};
+"\tpublic static final int num_inh_attrs = Init." ++ inhVar ++ ";\n" ++
+"\tpublic static final int num_syn_attrs = Init." ++ synVar ++ ";\n\n" ++
 
-	public static final String[] occurs_inh = new String[num_inh_attrs];
-	public static final String[] occurs_syn = new String[num_syn_attrs];
-	public static final LinkedList<common.Decorator> decorators = new LinkedList<common.Decorator>();
+"\tpublic static final String[] occurs_inh = new String[num_inh_attrs];\n" ++
+"\tpublic static final String[] occurs_syn = new String[num_syn_attrs];\n" ++
+"\tpublic static final LinkedList<common.Decorator> decorators = new LinkedList<common.Decorator>();\n\n" ++
 
-	public static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];
+"\tpublic static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];\n\n" ++
 
-	protected ${className}(${implode(", ", map((.annoSigElem), myAnnos))}) {
-${implode("", map(makeAnnoAssign, myAnnos))}
-	}
+"\tprotected " ++ className ++ "(" ++ implode(", ", map((.annoSigElem), myAnnos)) ++ ") {\n" ++
+implode("", map(makeAnnoAssign, myAnnos)) ++
+"\t}\n\n" ++
 
-${implode("", map((.annoDeclElem), myAnnos))}
+implode("", map((.annoDeclElem), myAnnos)) ++ "\n" ++
 
-	@Override
-	public final int getNumberOfInhAttrs() {
-		return num_inh_attrs;
-	}
+"\t@Override\n" ++
+"\tpublic final int getNumberOfInhAttrs() {\n" ++
+"\t\treturn num_inh_attrs;\n" ++
+"\t}\n\n" ++
 
-	@Override
-	public final int getNumberOfSynAttrs() {
-		return num_syn_attrs;
-	}
+"\t@Override\n" ++
+"\tpublic final int getNumberOfSynAttrs() {\n" ++
+"\t\treturn num_syn_attrs;\n" ++
+"\t}\n\n" ++
 
-	@Override
-	public final common.Lazy getDefaultSynthesized(final int index) {
-		return defaultSynthesizedAttributes[index];
-	}
+"\t@Override\n" ++
+"\tpublic final common.Lazy getDefaultSynthesized(final int index) {\n" ++
+"\t\treturn defaultSynthesizedAttributes[index];\n" ++
+"\t}\n\n" ++
 
-	@Override
-	public final String getNameOfInhAttr(final int index) {
-		return occurs_inh[index];
-	}
+"\t@Override\n" ++
+"\tpublic final String getNameOfInhAttr(final int index) {\n" ++
+"\t\treturn occurs_inh[index];\n" ++
+"\t}\n\n" ++
 	
-	@Override
-	public final String getNameOfSynAttr(final int index) {
-		return occurs_syn[index];
-	}
+"\t@Override\n" ++
+"\tpublic final String getNameOfSynAttr(final int index) {\n" ++
+"\t\treturn occurs_syn[index];\n" ++
+"\t}\n\n" ++
 
-	@Override
-	public final String[] getAnnoNames() {
-		return new String[]{${implode(", ", map((.annoNameElem), myAnnos))}};
-	}
-	
-	@Override
-	public final Object getAnno(final String name) {
-		${sconcat(map((.annoLookupElem), myAnnos))}{
-			throw new common.exceptions.SilverInternalError("Invalid annotation " + name);
-		}
-	}
-}
-""")];
+"}\n")];
 
 }
+

@@ -29,16 +29,6 @@ top::Type ::= tv::TyVar
 }
 
 {--
- - When an error message has **already** been reported, and we must supply a type,
- - and we wish to suppress further error messages, use errorType.
- -}
-abstract production errorType
-top::Type ::=
-{
-  top.freeVariables = [];
-}
-
-{--
  - Integer type.
  -}
 abstract production intType
@@ -69,17 +59,6 @@ top::Type ::=
  - String type.
  -}
 abstract production stringType
-top::Type ::=
-{
-  top.freeVariables = [];
-}
-
-{--
- - Terminal identifier type.
- - This isn't a foreign type, since we want equality checking.
- - TODO: Revisit this once we have type classes.
- -}
-abstract production terminalIdType
 top::Type ::=
 {
   top.freeVariables = [];
@@ -217,6 +196,12 @@ function tyVarEqual
 Boolean ::= tv1::TyVar tv2::TyVar
 {
   return tv1.extractTyVarRep == tv2.extractTyVarRep;
+}
+
+function errorType
+Type ::=
+{
+  return varType(freshTyVar());
 }
 
 function freshType

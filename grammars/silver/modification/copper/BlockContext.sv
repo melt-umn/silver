@@ -1,9 +1,5 @@
 grammar silver:modification:copper;
 
--- hack for all uses of this stuff in this grammar. note s on imports
-imports silver:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph;
-imports silver:driver:util only RootSpec;
-
 attribute permitActions, permitPluck occurs on BlockContext;
 
 {--
@@ -21,11 +17,10 @@ top::BlockContext ::=
 
 {-- Terminal shift, parser attribute initialization -}
 abstract production actionContext
-top::BlockContext ::= g::ProductionGraph
+top::BlockContext ::=
 {
   top.fullName = "__action__"; -- Used as part of naming locals... maybe we should fix that? TODO
   top.signature = bogusNamedSignature();
-  top.flowGraph = g;
   
   top.lazyApplication = false;
   top.permitActions = true;
@@ -36,20 +31,20 @@ top::BlockContext ::= g::ProductionGraph
 
 {-- Disambiguation groups -}
 abstract production disambiguationContext
-top::BlockContext ::= g::ProductionGraph
+top::BlockContext ::=
 {
   top.permitPluck = true;
-  forwards to actionContext(g);
+  forwards to actionContext();
 }
 
 {-- Production reduce actions -}
 abstract production reduceActionContext
-top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
+top::BlockContext ::= sig::NamedSignature
 {
   top.fullName = sig.fullName;
   top.signature = sig; -- TODO: figure out if this is ever used for actions?
   top.className = makeClassName(top.fullName); -- child references in production actions use it
 
-  forwards to actionContext(g);
+  forwards to actionContext();
 }
 

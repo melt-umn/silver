@@ -53,11 +53,11 @@ top::AGDcls ::= h::AGDcl t::AGDcls
 {
   top.docs := h.docs ++ t.docs;
   top.docsHeader = if "" == h.docsHeader
-                   then t.docsHeader
-                   else h.docsHeader;
+				   then t.docsHeader
+				   else h.docsHeader;
   top.docsSplit = if "" == h.docsSplit
-                  then t.docsSplit
-                  else h.docsSplit;
+				  then t.docsSplit
+				  else h.docsSplit;
   top.docsNoDoc = h.docsNoDoc || t.docsNoDoc;
   top.docDcls := h.docDcls ++ t.docDcls;
 }
@@ -77,12 +77,12 @@ top::AGDcl ::= h::AGDcl t::AGDcl
 {
   top.docs := h.docs ++ t.docs;
   top.docsHeader = if "" == h.docsHeader
-                   then t.docsHeader
-                   else h.docsHeader;
+				   then t.docsHeader
+				   else h.docsHeader;
 
   top.docsSplit = if "" == h.docsSplit
-                  then t.docsSplit
-                  else h.docsSplit;
+				  then t.docsSplit
+				  else h.docsSplit;
 
   top.docsNoDoc = h.docsNoDoc || t.docsNoDoc;
   top.docDcls := h.docDcls ++ t.docDcls;
@@ -103,12 +103,12 @@ top::Grammar ::= c1::Root  c2::Grammar
 {
   top.docs := c1.docs ++ c2.docs;
   top.docsHeader = if "" == c1.docsHeader
-                   then c2.docsHeader
-                   else c1.docsHeader;
+				   then c2.docsHeader
+				   else c1.docsHeader;
 
   top.docsSplit = if "" == c1.docsSplit
-                  then c2.docsSplit
-                  else c1.docsSplit;
+				  then c2.docsSplit
+				  else c1.docsSplit;
 
   top.docsNoDoc = c1.docsNoDoc || c2.docsNoDoc;
   top.docDcls := c1.docDcls ++ c2.docDcls;

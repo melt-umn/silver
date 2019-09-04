@@ -55,6 +55,10 @@ synthesized attribute allGrammarDependencies :: [String];
 --
 
 {--
+ - The pretty pretty of a syntax tree.
+ -}
+synthesized attribute pp :: String;
+{--
  - A list of definitions exported by this particular grammar.
  -}
 synthesized attribute defs :: [Def];

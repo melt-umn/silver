@@ -106,7 +106,7 @@ Map<b> ::= collected::[[Pair<String b>]] upTo::Integer
   right_list = drop(middle,collected);
  
   local attribute middle :: Integer;
-  middle = toInteger(toFloat(upTo) / 2.0);
+  middle = toInt(toFloat(upTo) / 2.0);
 }
 
 function getSnd

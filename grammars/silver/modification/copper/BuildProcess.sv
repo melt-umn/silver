@@ -29,29 +29,16 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
   classpathCompiler <- ["${sh}/jars/CopperCompiler.jar"];
   classpathRuntime <- ["${sh}/jars/CopperRuntime.jar"];
-
-  -- Get the parsers
-  production allParsers :: [ParserSpec] =
-    flatMap(obtainParserSpecs(_, benv), grammarsRelevant);
-  
-  -- Have them get compiled by copper
-  extraGrammarsDeps <- ["copper"];
   extraTopLevelDecls <- [
     "  <taskdef name='copper' classname='edu.umn.cs.melt.copper.ant.CopperAntTask' classpathref='compile.classpath'/>",
-    "  <target name='copper'>\n" ++ sflatMap(buildAntParserPart(_, top.config), allParsers) ++ "  </target>"];
+    "  <target name='copper'>\n" ++ implode("", map(buildAntParserPart(_, top.config), allParsers)) ++ "  </target>"];
+  extraGrammarsDeps <- ["copper"];
 
-  -- Generate the .copper files
+  production allParsers :: [ParserSpec] =
+    flatMap((.parserSpecs), grammarsRelevant);
+  
   top.postOps <-
     map(parserSpecUnit(_, g.compiledGrammars, benv.silverGen), allParsers);
-}
-
--- Skips parser specs from SILVER_HOST_GEN
--- The way that feature works, they shouldn't need regeneration.
-function obtainParserSpecs
-[ParserSpec] ::= g::Decorated RootSpec  benv::BuildEnv
-{
-  return if g.generateLocation != benv.silverGen then []
-         else g.parserSpecs;
 }
 
 function buildAntParserPart
@@ -90,10 +77,8 @@ String ::= p::ParserSpec  a::Decorated CmdArgs
 abstract production parserSpecUnit
 top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverGen::String
 {
-  local dir :: String =
-    silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar);
   local file :: String =
-    dir ++ makeParserName(spec.fullName) ++ ".copper";
+    silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar) ++ makeParserName(spec.fullName) ++ ".copper";
 
   spec.compiledGrammars = cg;
   local newSpec :: String =
@@ -115,9 +100,7 @@ top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverG
   
   local doWR :: IO =
     writeFile(file, newSpec,
-      print("Generating Parser " ++ spec.fullName ++ ".\n",
-        -- hack to ensure directory exists (for --dont-translate)
-        mkdir(dir, join).io));
+      print("Generating Parser " ++ spec.fullName ++ ".\n", join));
 
   top.io = if null(specCst.cstErrors) then 
              if ex.iovalue && oldSpec.iovalue == newSpec then doUTD 

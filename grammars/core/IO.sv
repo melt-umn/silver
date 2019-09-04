@@ -32,7 +32,7 @@ top::IOVal<a> ::= i::IO v::a
 {--
  - IO is the IO Token used to sequence actions.
  -}
-type IO foreign = "common.IOToken";
+type IO foreign;
 
 ------ IO Actions:
 
@@ -48,7 +48,7 @@ IO ::= s::String i::IO
 {
   return error("Not Yet Implemented: print");
 } foreign {
-  "java" : return "%i%.print(%s%)";
+  "java" : return "common.Util.io(%i%, common.Util.print(%s%.toString()))";
 }
 
 function readLineStdin
@@ -56,7 +56,7 @@ IOVal<String> ::= i::IO
 {
   return error ("Not Yet Implemented: getStr");
 } foreign {
-  "java" : return "%i%.readLineStdin()";
+  "java" : return "new core.Pioval(%i%, common.Util.getStr() )";
 }
 
 {--
@@ -71,7 +71,7 @@ IO ::= val::Integer i::IO
 {
   return error("Not Yet Implemented: exit");
 } foreign {
-  "java" : return "%i%.exit(%val%)";
+  "java" : return "common.Util.io(%i%, common.Util.exit(%val%.intValue()))";
 }
 
 {--
@@ -87,7 +87,7 @@ IOVal<Boolean> ::= s::String i::IO
 {
   return error("Not Yet Implemented: mkdir");
 } foreign {
-  "java" : return "%i%.mkdir(%s%)";
+  "java" : return "new core.Pioval(%i%, common.Util.mkdir(%s%.toString()))";
 }
 
 {--
@@ -107,7 +107,7 @@ IOVal<Integer> ::= s::String i::IO
 {
   return error("Not Yet Implemented: system");
 } foreign {
-  "java" : return "%i%.system(%s%)";
+  "java" : return "new core.Pioval(%i%, common.Util.system(%s%.toString()))";
 }
 
 {--
@@ -123,7 +123,7 @@ IO ::= file::String contents::String i::IO
 {
   return error("Not Yet Implemented: writeFile");
 } foreign {
-  "java" : return "%i%.writeFile(%file%, %contents%)";
+  "java" : return "common.Util.io(%i%, common.Util.writeFile(%file%.toString(), %contents%))";
 }
 
 {--
@@ -139,7 +139,7 @@ IO ::= file::String contents::String i::IO
 {
   return error("Not Yet Implemented: appendFile");
 } foreign {
-  "java" : return "%i%.appendFile(%file%, %contents%)";
+  "java" : return "common.Util.io(%i%, common.Util.appendFile(%file%.toString(), %contents%))";
 }
 
 ------- IO Read Actions:
@@ -156,7 +156,7 @@ IOVal<Integer> ::= s::String i::IO
 {
   return error("Not Yet Implemented: fileTime");
 } foreign {
-  "java" : return "%i%.fileTime(%s%)";
+  "java" : return "new core.Pioval(%i%, common.Util.fileTime(%s%.toString()))";
 }
 
 {--
@@ -171,7 +171,7 @@ IOVal<Boolean> ::= s::String i::IO
 {
   return error("Not Yet Implemented: isFile");
 } foreign {
-  "java" : return "%i%.isFile(%s%)";
+  "java" : return "new core.Pioval(%i%, common.Util.isFile(%s%.toString()))";
 }
 
 {--
@@ -186,7 +186,7 @@ IOVal<Boolean> ::= s::String i::IO
 {
   return error("Not Yet Implemented: isDirectory");
 } foreign {
-  "java" : return "%i%.isDirectory(%s%)";
+  "java" : return "new core.Pioval(%i%, common.Util.isDirectory(%s%.toString()))";
 }
 
 {--
@@ -202,7 +202,7 @@ IOVal<String> ::= s::String i::IO
 {
   return error("Not Yet Implemented: readFile");
 } foreign {
-  "java" : return "%i%.readFile(%s%)";
+  "java" : return "new core.Pioval(%i%, common.Util.readFile(%s%.toString()))";
 }
 
 {--
@@ -216,7 +216,7 @@ IOVal<String> ::= i::IO
 {
   return error("Not Yet Implemented: cwd");
 } foreign {
-  "java" : return "%i%.cwd()";
+  "java" : return "new core.Pioval(%i%, common.Util.cwd())";
 }
 
 {--
@@ -231,7 +231,7 @@ IOVal<String> ::= s::String i::IO
 {
   return error("Not Yet Implemented: envVar");
 } foreign {
-  "java" : return "%i%.envVar(%s%)";
+  "java" : return "new core.Pioval(%i%, common.Util.env(%s%.toString()))";
 }
 
 {--
@@ -247,7 +247,7 @@ IOVal<[String]> ::= s::String i::IO
 {
   return error("Not Yet Implemented: listContents");
 } foreign {
-  "java" : return "%i%.listContents(%s%)";
+  "java" : return "new core.Pioval(%i%, common.Util.listContents(%s%.toString()))";
 }
 
 {--
@@ -262,7 +262,7 @@ IOVal<Boolean> ::= s::String i::IO
 {
   return error("Not Yet Implemented: deleteFile");
 } foreign {
-  "java" : return "%i%.deleteFile(%s%)";
+  "java" : return "new core.Pioval(%i%, common.Util.deleteFile(%s%.toString()))";
 }
 {--
  - Delete a set of files.
@@ -276,7 +276,7 @@ IOVal<Boolean> ::= s::[String] i::IO
 {
   return error("Not Yet Implemented: deleteFiles");
 } foreign {
-  "java" : return "%i%.deleteFiles(%s%)";
+  "java" : return "new core.Pioval(%i%, common.Util.deleteFiles(%s%))";
 }
 {--
  - Empty a directory of all normal files (i.e. leaving subdirectories alone)
@@ -290,7 +290,7 @@ IOVal<Boolean> ::= s::String i::IO
 {
   return error("Not Yet Implemented: deleteDirFiles");
 } foreign {
-  "java" : return "%i%.deleteDirFiles(%s%)";
+  "java" : return "new core.Pioval(%i%, common.Util.deleteDirFiles(%s%.toString()))";
 }
 
 {--
@@ -305,14 +305,14 @@ IO ::= s::String  i::IO
 {
   return error("Not Yet Implemented: deleteTree");
 } foreign {
-  "java" : return "%i%.deleteTree(%s%)";
+  "java" : return "common.Util.io(%i%, common.Util.deleteTree(%s%.toString()))";
 }
 
 {--
  - Copy a file from src to dst.
  -
- - @param src  The path of the file to copy.
- - @param dst  The path of the file to write, or the directory to copy the file to.
+ - @param src  The path to read
+ - @param dst  The path to write
  - @return  the IO token. Errors are fatal.
  -}
 function copyFile
@@ -320,7 +320,7 @@ IO ::= src::String  dst::String  i::IO
 {
   return error("Not Yet Implemented: copyFile");
 } foreign {
-  "java" : return "%i%.copyFile(%src%, %dst%)";
+  "java" : return "common.Util.io(%i%, common.Util.copyFile(%src%.toString(), %dst%.toString()))";
 }
 
 {--
@@ -335,7 +335,7 @@ IO ::= file::String i::IO
 {
   return error("Not Yet Implemented: touchFile");
 } foreign {
-  "java" : return "%i%.touchFile(%file%)";
+  "java" : return "common.Util.io(%i%, common.Util.touchFile(%file%.toString()))";
 }
 {--
  - Update a set of files' modification time to the current time.
@@ -349,7 +349,7 @@ IO ::= files::[String] i::IO
 {
   return error("Not Yet Implemented: touchFiles");
 } foreign {
-  "java" : return "%i%.touchFiles(%files%)";
+  "java" : return "common.Util.io(%i%, common.Util.touchFiles(%files%))";
 }
 
 ------ IO Misc.

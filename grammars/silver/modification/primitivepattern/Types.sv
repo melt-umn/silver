@@ -20,7 +20,7 @@ Type ::= te::Type
     zipVarsIntoSkolemizedSubstitution(existentialVars, freshTyVars(length(existentialVars))),
     zipVarsIntoSubstitution(te.outputType.freeVariables, freshTyVars(length(te.outputType.freeVariables))));
   
-  return performRenaming(te, skolemize);
+  return performSubstitution(te, skolemize);
 }
 
 {--
@@ -58,7 +58,7 @@ Type ::= te::Type
   local attribute skolemize :: Substitution;
   skolemize = zipVarsIntoSkolemizedSubstitution(te.freeVariables, freshTyVars(length(te.freeVariables)));
   
-  return performRenaming(te, skolemize);
+  return performSubstitution(te, skolemize);
 }
 
 
@@ -98,12 +98,6 @@ top::Type ::= tv::TyVar
     end;
 }
  
-aspect production errorType
-top::Type ::=
-{
-  top.refine = emptySubst();
-}
-
 aspect production intType
 top::Type ::=
 {
@@ -141,16 +135,6 @@ top::Type ::=
     case top.refineWith of
     | stringType() -> emptySubst()
     | _ -> errorSubst("Tried to refine Boolean with " ++ prettyType(top.refineWith))
-    end;
-}
-
-aspect production terminalIdType
-top::Type ::=
-{
-  top.refine = 
-    case top.refineWith of
-    | terminalIdType() -> emptySubst()
-    | _ -> errorSubst("Tried to refine TerminalId with " ++ prettyType(top.refineWith))
     end;
 }
 
@@ -201,11 +185,11 @@ top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 }
 
 aspect production foreignType
-top::Type ::= fn::String  transType::String  params::[Type]
+top::Type ::= fn::String params::[Type]
 {
   top.refine = 
     case top.refineWith of
-    | foreignType(ofn, _, op) -> 
+    | foreignType(ofn, op) -> 
         if fn == ofn
         then refineAll( params, op )
         else errorSubst("Tried to refine conflicting foreign types " ++ fn ++ " and " ++ ofn)

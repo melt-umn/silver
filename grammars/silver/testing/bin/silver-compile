@@ -9,7 +9,7 @@
 ##export GRAMMAR_PATH="../../../../../../grammars"
 export  SILVER_HOME="../../../.."
 
-java -Xss8M -Xmx1000M -jar $SILVER_HOME/jars/silver.composed.Default.jar \
+java -Xss8M -Xmx1000M -jar $SILVER_HOME/jars/RunSilver.jar \
      $@ \
      silver:testing:bin \
      && ant

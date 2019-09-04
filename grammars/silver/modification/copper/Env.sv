@@ -1,7 +1,5 @@
 grammar silver:modification:copper;
 
-import silver:extension:list;
-
 --------------------------------------------------------------------------------
 -- Defs.sv
 
@@ -46,6 +44,12 @@ Def ::= sg::String sl::Location fn::String
   return valueDef(defaultEnvItem(pluckTermDcl(sg,sl,fn)));
 }
 
+function disambigLexemeDef
+Def ::= sg::String sl::Location
+{
+  return valueDef(defaultEnvItem(disambigLexemeDcl(sg,sl)));
+}
+
 function lexerClassDef
 Def ::= sg::String sl::Location fn::String
 {
@@ -79,7 +83,7 @@ Def ::= sg::String sl::Location s::String
 --------------------------------------------------------------------------------
 -- Env.sv
 
-synthesized attribute lexerClassTree :: EnvScope<DclInfo> occurs on Env;
+synthesized attribute lexerClassTree :: Decorated EnvScope<DclInfo> occurs on Env;
 
 aspect production i_emptyEnv
 top::Env ::=
@@ -108,8 +112,6 @@ function getLexerClassDcl
 --------------------------------------------------------------------------------
 -- QName.sv
 
-synthesized attribute lookupLexerClass :: Decorated QNameLookup occurs on QName;
-
 aspect production qNameId
 top::QName ::= id::Name
 {
@@ -122,22 +124,5 @@ top::QName ::= id::Name ':' qn::QName
   top.lookupLexerClass = decorate customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name, top.location) with {};
 }
 
-
---------------------------------------------------------------------------------
-
--- Some pre-defined variables in certain contexts
-
-global i_lexemeVariable :: [Def] =
-  [termAttrValueDef("DBGtav", bogusLoc(), "lexeme", stringType())];
-global i_shiftableVariable :: [Def] =
-  [termAttrValueDef("DBGtav", bogusLoc(), "shiftable", listType(terminalIdType()))];
-global i_locVariables :: [Def] = [
-  termAttrValueDef("DBGtav", bogusLoc(), "filename", stringType()),
-  termAttrValueDef("DBGtav", bogusLoc(), "line", intType()),
-  termAttrValueDef("DBGtav", bogusLoc(), "column", intType())];
-
-global terminalActionVars :: [Def] = i_lexemeVariable ++ i_locVariables;
-global productionActionVars :: [Def] = i_locVariables;
-global disambiguationActionVars :: [Def] = i_lexemeVariable;
-global disambiguationClassActionVars :: [Def] = i_lexemeVariable ++ i_shiftableVariable;
+synthesized attribute lookupLexerClass :: Decorated QNameLookup occurs on QName;
 
