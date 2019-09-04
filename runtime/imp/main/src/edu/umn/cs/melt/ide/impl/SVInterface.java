@@ -12,7 +12,6 @@ import common.StringCatter;
 import core.NIOVal;
 
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
-import edu.umn.cs.melt.ide.copper.coloring.ITokenClassifier;
 import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
 import edu.umn.cs.melt.ide.imp.services.IdeParseResult;
 import edu.umn.cs.melt.ide.silver.property.ui.IPropertyControlsProvider;
@@ -60,58 +59,6 @@ public interface SVInterface {
 	public String fileExtension();
 	
 	/**
-	 * IOVal<[IdeMessage]> ::= IdeProject [IdeProperty] IO
-	 * 
-	 * Run when a build action is requested. e.g. a file is saved, if auto-build is on.
-	 * 
-	 * @param project  The project being built
-	 * @param properties  The IDE project properties.
-	 * @param iotoken  An input IO token.
-	 * @return An IO object that contains a list of error messages to raise.
-	 */
-	public NIOVal build(IProject project, ConsCell properties, IOToken iotoken); 
-
-	/**
-	 * IOVal<[IdeMessage]> ::= IdeProject [IdeProperty] IO
-	 * 
-	 * <p>Run when a build action *has succeeded without errors*.
-	 * 
-	 * <p>Why do we bother with this? In order to report errors to the user faster.
-	 * 'build' can return empty list, the user's red-squigglies are updated, then this is run to
-	 * actually accomplish longer running stuff in the build.
-	 * 
-	 * <p>An entirely valid implementation does nothing.
-	 * 
-	 * @param project  The project being built
-	 * @param properties  The IDE project properties.
-	 * @param iotoken  An input IO token.
-	 * @return An IO object that contains a list of *additional* error messages to raise.
-	 */
-	public NIOVal postbuild(IProject project, ConsCell properties, IOToken iotoken);
-	
-	/**
-	 * IOVal<[IdeMessage]> ::= IdeProject [IdeProperty] IO
-	 * 
-	 * Run when the user requests an export? (TODO: uh, figure some stuff out here)
-	 * 
-	 * @param project  The project being built
-	 * @param properties  The IDE project properties.
-	 * @param iotoken  An input IO token.
-	 * @return  Any additional errors to raise (usually sys errors, rather than for files)
-	 */
-	public NIOVal export(IProject project, ConsCell properties, IOToken iotoken);
-	
-	/**
-	 * [Location] ::= <<CST root's type>>
-	 * 
-	 * Given a tree from parsing, return a list of locations that can be folded.
-	 * 
-	 * @param root  The CST tree
-	 * @return  A list of extents that should fold.
-	 */
-	public ConsCell getFolds(Node root);
-	
-	/**
 	 * Obtains a list of properties to request in order to create a new file via wizard.
 	 */
 	public IPropertyControlsProvider getNewFileProperties();
@@ -137,6 +84,4 @@ public interface SVInterface {
 	 * Get a set of tabs for the project's properties page.
 	 */
 	public IPropertyPageTab[] getPropertyTabs();
-	public ITokenClassifier getTokenClassifier();
-	public IdeParseResult<Node> parse(Reader input, String filename) throws CopperParserException, IOException;
 }

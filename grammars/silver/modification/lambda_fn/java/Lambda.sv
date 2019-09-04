@@ -17,13 +17,22 @@ top::Expr ::= params::ProductionRHS e::Expr
 {
   local finTy :: Type = finalType(top);
   
+  -- If the type somehow contains a skolem (e.g. through scoped type variables), then there isn't
+  -- any better we can do with the result type, so leave it unfreshened.
   top.translation = 
-s"""(new common.NodeFactory<${e.typerep.transType}>() {
-  public final ${e.typerep.transType} invoke(final Object[] args, final Object[] namedArgs) {
-    ${params.lambdaTranslation}
-    return ${e.translation};
-  }
-})""";
+s"""(new common.NodeFactory<${finTy.outputType.transType}>() {
+				@Override
+				public final ${finTy.outputType.transType} invoke(final Object[] args, final Object[] namedArgs) {
+${params.lambdaTranslation}
+					return ${e.translation};
+				}
+	
+				@Override
+				public final common.FunctionTypeRep getType() {
+${makeTyVarDecls(5, finTy.freeVariables)}
+					return ${finTy.transTypeRep};
+				}
+			})""";
   top.lazyTranslation = top.translation;
   
   params.accessIndex = 0;
@@ -51,13 +60,13 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
   -- Args are unpacked as objects, they can either be an actual value or a Thunk.
   -- We don't know which staticly, so they are just stored as Objects until use.
   -- They are then demanded and converted to the correct type where they are needed.
-  top.lambdaTranslation = s"final Object ${makeLambdaParamValueName(fName)} = args[${toString(top.accessIndex)}];\n";
+  top.lambdaTranslation = s"\t\t\t\t\tfinal Object ${makeLambdaParamValueName(fName)} = args[${toString(top.accessIndex)}];\n";
 }
 
 function makeLambdaParamValueName
 String ::= s::String
 {
-  return "__SV_LAMBDA_PARAM_" ++ makeIdName(s);
+  return "lambdaParam_" ++ makeIdName(s);
 }
 
 aspect production lambdaParamReference

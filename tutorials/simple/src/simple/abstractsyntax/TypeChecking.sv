@@ -66,7 +66,7 @@ aspect production varRef
 e::Expr ::= id::Name
 {
   e.type = case id.lookup of
-             just(dte) -> dte.type 
+           | just(dte) -> dte.type 
            | nothing() -> errorType() 
            end;
 }
@@ -128,7 +128,7 @@ Type ::= lType::Type rType::Type
 {
   return
     case lType, rType of
-      integerType(), integerType() -> integerType()
+    | integerType(), integerType() -> integerType()
     | integerType(), floatType()   -> floatType()
     | floatType(),   integerType() -> floatType()
     | floatType(),   floatType()   -> floatType()
@@ -140,7 +140,7 @@ function isNumeric
 Boolean ::= t::Type
 {
   return case t of
-           integerType() -> true
+         | integerType() -> true
          | floatType() -> true
          | _ -> false
          end;

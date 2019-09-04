@@ -10,11 +10,11 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   local isHost :: Boolean = isExportedBy(top.grammarName, [nt.lookupType.dcl.sourceGrammar], top.compiledGrammars);
   local isSyn :: Boolean = at.lookupAttribute.dcl.isSynthesized;
 
-  -- Rule: non-host synthesized attributes' flow type must be a super set of that for the forward.
+  -- We must be able to identify host-language synthesized attributes from the flow environment
   top.flowDefs = 
-    if !null(at.lookupAttribute.errors ++ nt.lookupType.errors) || isHost || !isSyn then 
+    if !at.lookupAttribute.found || !nt.lookupType.found || !isHost || !isSyn then 
       []
     else
-      [extSynFlowDef(nt.lookupType.fullName, at.lookupAttribute.fullName)];
+      [hostSynFlowDef(nt.lookupType.fullName, at.lookupAttribute.fullName)];
 }
 

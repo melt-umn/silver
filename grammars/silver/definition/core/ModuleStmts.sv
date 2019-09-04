@@ -2,19 +2,19 @@ grammar silver:definition:core;
 
 imports silver:driver:util;
 
-nonterminal ModuleStmts with config, grammarName, location, pp, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
-nonterminal ModuleStmt with config, grammarName, location, pp, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
+nonterminal ModuleStmts with config, grammarName, location, unparse, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
+nonterminal ModuleStmt with config, grammarName, location, unparse, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
 
-nonterminal ImportStmt with config, grammarName, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
-nonterminal ImportStmts with config, grammarName, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
+nonterminal ImportStmt with config, grammarName, location, unparse, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
+nonterminal ImportStmts with config, grammarName, location, unparse, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
 
-nonterminal ModuleExpr with config, grammarName, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
-nonterminal ModuleName with config, grammarName, location, pp, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
+nonterminal ModuleExpr with config, grammarName, location, unparse, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
+nonterminal ModuleName with config, grammarName, location, unparse, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
 
-nonterminal NameList with config, grammarName, location, pp, names;
+nonterminal NameList with config, grammarName, location, unparse, names;
 
-nonterminal WithElems with config, grammarName, location, pp, envMaps;
-nonterminal WithElem with config, grammarName, location, pp, envMaps;
+nonterminal WithElems with config, grammarName, location, unparse, envMaps;
+nonterminal WithElem with config, grammarName, location, unparse, envMaps;
 
 {--
  - A list of QName strings. Used for 'only' and 'hiding'.
@@ -121,7 +121,7 @@ function triggeredGrammars
 concrete production importStmt
 top::ImportStmt ::= 'import' m::ModuleExpr ';'
 {
-  top.pp = "import " ++ m.pp ++ ";";
+  top.unparse = "import " ++ m.unparse ++ ";";
 
   top.errors := m.errors;
   top.moduleNames = m.moduleNames;
@@ -131,7 +131,7 @@ top::ImportStmt ::= 'import' m::ModuleExpr ';'
 concrete production nilImportStmts
 top::ImportStmts ::=
 {
-  top.pp = "";
+  top.unparse = "";
 
   top.errors := [];
 
@@ -142,7 +142,7 @@ top::ImportStmts ::=
 concrete production consImportStmts
 top::ImportStmts ::= h::ImportStmt t::ImportStmts
 {
-  top.pp = h.pp ++ "\n" ++ t.pp;
+  top.unparse = h.unparse ++ "\n" ++ t.unparse;
 
   top.errors := h.errors ++ t.errors;
 
@@ -153,7 +153,7 @@ top::ImportStmts ::= h::ImportStmt t::ImportStmts
 abstract production appendImportStmts
 top::ImportStmts ::= h::ImportStmts t::ImportStmts
 {
-  top.pp = h.pp ++ "\n" ++ t.pp;
+  top.unparse = h.unparse ++ "\n" ++ t.unparse;
 
   top.errors := h.errors ++ t.errors;
 
@@ -167,7 +167,7 @@ top::ImportStmts ::= h::ImportStmts t::ImportStmts
 concrete production nilModuleStmts 
 top::ModuleStmts ::=
 {
-  top.pp = "";
+  top.unparse = "";
 
   top.errors := [];
 
@@ -181,7 +181,7 @@ top::ModuleStmts ::=
 concrete production consModulesStmts
 top::ModuleStmts ::= h::ModuleStmt t::ModuleStmts
 {
-  top.pp = h.pp ++ "\n" ++ t.pp;
+  top.unparse = h.unparse ++ "\n" ++ t.unparse;
 
   top.errors := h.errors ++ t.errors;
 
@@ -195,7 +195,7 @@ top::ModuleStmts ::= h::ModuleStmt t::ModuleStmts
 concrete production importsStmt
 top::ModuleStmt ::= 'imports' m::ModuleExpr ';'
 {
-  top.pp = "imports " ++ m.pp ++ ";";
+  top.unparse = "imports " ++ m.unparse ++ ";";
 
   top.errors := m.errors;
 
@@ -209,7 +209,7 @@ top::ModuleStmt ::= 'imports' m::ModuleExpr ';'
 concrete production exportsStmt
 top::ModuleStmt ::= 'exports' m::ModuleName ';'
 {
-  top.pp = "exports " ++ m.pp ++ ";";
+  top.unparse = "exports " ++ m.unparse ++ ";";
 
   top.errors := m.errors;
 
@@ -223,7 +223,7 @@ top::ModuleStmt ::= 'exports' m::ModuleName ';'
 concrete production exportsWithStmt
 top::ModuleStmt ::= 'exports' m::QName 'with' c::QName ';'
 {
-  top.pp = "exports " ++ m.pp ++ " with " ++ c.pp ++ ";";
+  top.unparse = "exports " ++ m.unparse ++ " with " ++ c.unparse ++ ";";
 
   top.errors := [];
   
@@ -244,7 +244,7 @@ top::ModuleStmt ::= 'exports' m::QName 'with' c::QName ';'
 concrete production optionalStmt
 top::ModuleStmt ::= 'option' m::QName ';'
 {
-  top.pp = "option " ++ m.pp ++ ";";
+  top.unparse = "option " ++ m.unparse ++ ";";
 
   top.errors := [];
 
@@ -266,7 +266,7 @@ top::ModuleStmt ::= 'option' m::QName ';'
 concrete production moduleName
 top::ModuleName ::= pkg::QName
 {
-  top.pp = pkg.pp;
+  top.unparse = pkg.unparse;
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
@@ -282,7 +282,7 @@ top::ModuleName ::= pkg::QName
 concrete production moduleAll
 top::ModuleExpr ::= pkg::QName
 {
-  top.pp = pkg.pp;
+  top.unparse = pkg.unparse;
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
@@ -295,7 +295,7 @@ top::ModuleExpr ::= pkg::QName
 concrete production moduleAllWith
 top::ModuleExpr ::= pkg::QName 'with' wc::WithElems
 {
-  top.pp = pkg.pp ++ " with " ++ wc.pp;
+  top.unparse = pkg.unparse ++ " with " ++ wc.unparse;
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
@@ -308,7 +308,7 @@ top::ModuleExpr ::= pkg::QName 'with' wc::WithElems
 concrete production moduleOnly
 top::ModuleExpr ::= pkg::QName 'only' ns::NameList
 {
-  top.pp = pkg.pp ++ " only " ++ ns.pp;
+  top.unparse = pkg.unparse ++ " only " ++ ns.unparse;
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
@@ -321,7 +321,7 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList
 concrete production moduleOnlyWith
 top::ModuleExpr ::= pkg::QName 'only' ns::NameList 'with' wc::WithElems
 {
-  top.pp = pkg.pp ++ " only " ++ ns.pp ++ " with " ++ wc.pp;
+  top.unparse = pkg.unparse ++ " only " ++ ns.unparse ++ " with " ++ wc.unparse;
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
@@ -334,7 +334,7 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList 'with' wc::WithElems
 concrete production moduleHiding
 top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList
 {
-  top.pp = pkg.pp ++ " hiding " ++ ns.pp;
+  top.unparse = pkg.unparse ++ " hiding " ++ ns.unparse;
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
@@ -347,7 +347,7 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList
 concrete production moduleHidingWith
 top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList 'with' wc::WithElems 
 {
-  top.pp = pkg.pp ++ " hiding " ++ ns.pp ++ " with " ++ wc.pp;
+  top.unparse = pkg.unparse ++ " hiding " ++ ns.unparse ++ " with " ++ wc.unparse;
   top.moduleNames = [pkg.name];
 
   production attribute m :: Module;
@@ -360,7 +360,7 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList 'with' wc::WithElems
 concrete production moduleAs
 top::ModuleExpr ::= pkg1::QName 'as' pkg2::QName
 {
-  top.pp = pkg1.pp ++ " as " ++ pkg2.pp;
+  top.unparse = pkg1.unparse ++ " as " ++ pkg2.unparse;
   top.moduleNames = [pkg1.name];
 
   production attribute m :: Module;
@@ -376,14 +376,14 @@ top::ModuleExpr ::= pkg1::QName 'as' pkg2::QName
 concrete production withElemsOne
 top::WithElems ::= we::WithElem
 {
-  top.pp = we.pp;
+  top.unparse = we.unparse;
   top.envMaps = we.envMaps;
 }
 
 concrete production withElemsCons
 top::WithElems  ::= h::WithElem ',' t::WithElems
 {
-  top.pp = h.pp ++ ", " ++ t.pp;
+  top.unparse = h.unparse ++ ", " ++ t.unparse;
   top.envMaps = h.envMaps ++ t.envMaps;
 }
 
@@ -391,7 +391,7 @@ top::WithElems  ::= h::WithElem ',' t::WithElems
 concrete production withElement
 top::WithElem ::= n::QName 'as' newname::QName 
 {
-  top.pp = n.pp ++ " as " ++ newname.pp;
+  top.unparse = n.unparse ++ " as " ++ newname.unparse;
   top.envMaps = [pair(n.name, newname.name)];
 }
 
@@ -401,14 +401,14 @@ top::WithElem ::= n::QName 'as' newname::QName
 concrete production nameListOne
 top::NameList ::= n::QName
 {
-  top.pp = n.pp;
+  top.unparse = n.unparse;
   top.names = [n.name];
 }
 
 concrete production nameListCons
 top::NameList ::= h::QName ',' t::NameList
 {
-  top.pp = h.pp ++ ", " ++ t.pp;
+  top.unparse = h.unparse ++ ", " ++ t.unparse;
   top.names = [h.name] ++ t.names;
 }
 

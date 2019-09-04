@@ -1,98 +1,63 @@
 package monto;
 
-import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import common.ConsCell;
 import common.DecoratedNode;
-import common.IOToken;
 import common.NodeFactory;
 import common.StringCatter;
 import core.NMaybe;
-import core.NIOVal;
+import core.NPair;
 import core.Pjust;
 import core.Pnothing;
+import core.Ppair;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
-import lib.json.NJson;
-import lib.monto.Init;
-import lib.monto.NConfig;
-import lib.monto.NDependency;
-import lib.monto.NMontoMessage;
-import lib.monto.NProduct;
-import lib.monto.NProductDescription;
-import lib.monto.NRequest;
-import lib.monto.NRequirement;
-import lib.monto.NSource;
-import lib.monto.PproductDependency;
-import lib.monto.Prequest;
-import lib.monto.Prequirement;
-import lib.monto.Psource;
-import lib.monto.PsourceDependency;
+import silver.json.NJson;
+import silver.json.PjsonArray;
+import silver.json.PjsonBoolean;
+import silver.json.PjsonFloat;
+import silver.json.PjsonNull;
+import silver.json.PjsonObject;
+import silver.json.PjsonString;
+import silver.support.monto.Init;
+import silver.support.monto.NService;
+import silver.support.monto.negotiation.NProtocolVersion;
+import silver.support.monto.negotiation.NServiceBrokerNegotiation;
+import silver.support.monto.negotiation.NSoftwareVersion;
+import silver.support.monto.negotiation.PprotocolVersion;
+import silver.support.monto.negotiation.PserviceBrokerNegotiation;
+import silver.support.monto.negotiation.PsoftwareVersion;
+import silver.support.monto.products.NMetaItem;
+import silver.support.monto.products.PmetaItem;
+import silver.support.monto.products.Pproduct;
+import silver.support.monto.products.PproductIdentifier;
+import silver.support.monto.products.PproductValue;
 
+/**
+ * FFI Helpers.
+ */
 public class FFI {
-	private static Gson gson = new Gson();
-
-	public static List<String> runCallback(NodeFactory<NIOVal> callback, Request req) {
-		NRequest nReq = NRequestFromRequest(req);
-		NIOVal messageIOVal = callback.invoke(new Object[] {
-			nReq,
-			IOToken.singleton,
-		}, new Object[] {});
-		return toIOVal(cons -> ConsCellToList(FFI::NMontoMessageToString, (ConsCell) cons), messageIOVal);
+	public static Pair<StringCatter, Integer> onRequest(NService service, ProductIdentifier ident, List<Product> depList) {
+		DecoratedNode dn = service.decorate();
+		NodeFactory<NPair> onRequest = (NodeFactory<NPair>) dn.synthesized(Init.silver_support_monto_onRequest__ON__silver_support_monto_Service);
+		return PairFromNPair(onRequest.invoke(new Object[] {
+			new PproductIdentifier(
+				new StringCatter(ident.name),
+				new StringCatter(ident.language),
+				new StringCatter(ident.path)),
+			ConsCellFromList(FFI::PproductFromProduct, depList),
+		}, new Object[] {}));
 	}
 
-	private static <S, T> List<T> ConsCellToList(Function<S, T> convert, ConsCell cons) {
-		List<T> list = new ArrayList<T>();
-		while(!cons.nil()) {
-			list.add(convert.apply((S) cons.head()));
-			cons = cons.tail();
-		}
-		return list;
-	}
-	public static Config NConfigToConfig(NConfig config) {
-		DecoratedNode dn = config.decorate();
-		return new Config(
-			StringCatterToString((StringCatter) dn.synthesized(Init.lib_monto_brokerAddr__ON__lib_monto_Config)),
-			StringCatterToString((StringCatter) dn.synthesized(Init.lib_monto_description__ON__lib_monto_Config)),
-			StringCatterToString((StringCatter) dn.synthesized(Init.lib_monto_serviceId__ON__lib_monto_Config)),
-			StringCatterToString((StringCatter) dn.synthesized(Init.lib_monto_label__ON__lib_monto_Config)),
-			ConsCellToList(FFI::NProductDescriptionToProductDescription, (ConsCell) dn.synthesized(Init.lib_monto_products__ON__lib_monto_Config)),
-			ConsCellToList(FFI::NDependencyToProductDependency, (ConsCell) dn.synthesized(Init.lib_monto_dependencies__ON__lib_monto_Config)));
-	}
-	private static String NMontoMessageToString(NMontoMessage message) {
-		NJson json = (NJson) message.decorate().synthesized(Init.lib_monto_json__ON__lib_monto_MontoMessage);
-		StringCatter str = (StringCatter) json.decorate().synthesized(lib.json.Init.lib_json_json__ON__lib_json_Json);
-		return StringCatterToString(str);
-	}
-	private static ProductDependency NDependencyToProductDependency(NDependency dep) {
-		DecoratedNode dn = dep.decorate();
-		if(dep instanceof PsourceDependency) {
-			return new ProductDependency(
-				StringCatterToString((StringCatter) dn.synthesized(Init.lib_monto_language__ON__lib_monto_Dependency)));
-		} else if(dep instanceof PproductDependency) {
-			return new ProductDependency(
-				StringCatterToString((StringCatter) dn.synthesized(Init.lib_monto_serviceId__ON__lib_monto_Dependency)),
-				StringCatterToString((StringCatter) dn.synthesized(Init.lib_monto_product__ON__lib_monto_Dependency)),
-				StringCatterToString((StringCatter) dn.synthesized(Init.lib_monto_language__ON__lib_monto_Dependency)));
-		} else {
-			throw new RuntimeException("ProductDependency must be created with either the lib:monto:sourceDependency or lib:monto:productDependency productions!");
-		}
-	}
-	private static ProductDescription NProductDescriptionToProductDescription(NProductDescription dsc) {
-		DecoratedNode dn = dsc.decorate();
-		return new ProductDescription(
-			StringCatterToString((StringCatter) dn.synthesized(Init.lib_monto_product__ON__lib_monto_ProductDescription)),
-			StringCatterToString((StringCatter) dn.synthesized(Init.lib_monto_language__ON__lib_monto_ProductDescription)));
-	}
-	private static String StringCatterToString(StringCatter string) {
-		return string.toString();
-	}
-	private static <S, T> T toIOVal(Function<S, T> convert, NIOVal io) {
-		DecoratedNode dn = io.decorate();
-		return convert.apply((S) dn.synthesized(core.Init.core_iovalue__ON__core_IOVal));
+	public static Pair<StringCatter, Boolean> doNegotiation(NService service, ServiceBrokerNegotiation sbn) {
+		DecoratedNode dn = service.decorate();
+		NodeFactory<NPair> doNegotiation = (NodeFactory<NPair>) dn.synthesized(Init.silver_support_monto_doNegotiation__ON__silver_support_monto_Service);
+		NServiceBrokerNegotiation sbn2 = NServiceBrokerNegotiationFromServiceBrokerNegotiation(sbn);
+		return PairFromNPair(doNegotiation.invoke(new Object[] {sbn2}, new Object[] {}));
 	}
 
 	private static <T, U> ConsCell ConsCellFromList(Function<T, U> convert, List<T> list) {
@@ -101,30 +66,84 @@ public class FFI {
 			cons = new ConsCell(convert.apply(list.remove(i)), cons);
 		return cons;
 	}
-	private static NRequest NRequestFromRequest(Request req) {
-		return new Prequest(
-			StringCatterFromString(req.getServiceId()),
-			NSourceFromSource(req.getSource()),
-			ConsCellFromList(FFI::NRequirementFromRequirement, req.getRequirements()));
+	private static <T, U> Pair<T, U> PairFromNPair(NPair pair) {
+		DecoratedNode dn = pair.decorate();
+		return new Pair<T, U>(
+			(T) dn.synthesized(core.Init.core_fst__ON__core_Pair),
+			(U) dn.synthesized(core.Init.core_snd__ON__core_Pair));
 	}
-	private static NRequirement NRequirementFromRequirement(Requirement req) {
-		return new Prequirement(
-			new Integer(req.getId()),
-			StringCatterFromString(req.getContents()),
-			StringCatterFromString(req.getLanguage()),
-			NSourceFromSource(req.getSource()));
+	private static Pproduct PproductFromProduct(Product product) {
+		NJson json = NJsonFromJsonElement(product.contents);
+		PproductValue value = new PproductValue(new StringCatter(product.name), json);
+		List<MetaItem> metaList = product.meta;
+		if(metaList == null)
+			metaList = new ArrayList<>();
+		ConsCell metas = ConsCellFromList(FFI::NMetaItemFromMetaItem, metaList);
+		return new Pproduct(value, metas,
+			new StringCatter(product.language),
+			new StringCatter(product.path));
 	}
-	private static NSource NSourceFromSource(Source src) {
-		NMaybe logicalName;
-		if(src.getLogicalName() != null)
-			logicalName = new Pjust(StringCatterFromString(src.getLogicalName()));
+	private static NJson NJsonFromJsonElement(JsonElement el) {
+		if(el.isJsonNull()) {
+			return new PjsonNull();
+		} else if(el.isJsonArray()) {
+			JsonArray arr = el.getAsJsonArray();
+			List<JsonElement> list = new ArrayList<JsonElement>();
+			arr.forEach(list::add);
+			ConsCell cc = ConsCellFromList(FFI::NJsonFromJsonElement, list);
+			return new PjsonArray(cc);
+		} else if(el.isJsonObject()) {
+			JsonObject obj = el.getAsJsonObject();
+			List<NPair> list = new ArrayList<NPair>();
+			obj.entrySet().iterator().forEachRemaining(e -> {
+				String k = e.getKey();
+				JsonElement v = e.getValue();
+				list.add(new Ppair(new StringCatter(k), NJsonFromJsonElement(v)));
+			});
+			ConsCell cc = ConsCellFromList(x -> x, list);
+			return new PjsonObject(cc);
+		} else {
+			JsonPrimitive prim = el.getAsJsonPrimitive();
+			if(prim.isBoolean()) {
+				return new PjsonBoolean(prim.getAsBoolean());
+			} else if(prim.isNumber()) {
+				return new PjsonFloat(prim.getAsNumber().doubleValue());
+			} else if(prim.isString()) {
+				return new PjsonString(new StringCatter(prim.getAsString()));
+			} else {
+				throw new RuntimeException("TODO NJsonFromJsonElement(" + prim + ")");
+			}
+		}
+	}
+	private static NMetaItem NMetaItemFromMetaItem(MetaItem meta) {
+		return new PmetaItem(new StringCatter(meta.service),
+			new StringCatter(meta.type),
+			new StringCatter(meta.value));
+	}
+	private static NProtocolVersion NProtocolVersionFromProtocolVersion(ProtocolVersion v) {
+		return new PprotocolVersion(v.major, v.minor, v.patch);
+	}
+	private static NSoftwareVersion NSoftwareVersionFromSoftwareVersion(SoftwareVersion v) {
+		return new PsoftwareVersion(new StringCatter(v.id),
+			MaybeFromNullable(StringCatter::new, v.name),
+			MaybeFromNullable(StringCatter::new, v.vendor),
+			MaybeFromNullable(x -> x, v.major),
+			MaybeFromNullable(x -> x, v.minor),
+			MaybeFromNullable(x -> x, v.patch));
+	}
+	private static NServiceBrokerNegotiation NServiceBrokerNegotiationFromServiceBrokerNegotiation(ServiceBrokerNegotiation sbn) {
+		List<String> extensions = sbn.extensions;
+		if(extensions == null)
+			extensions = new ArrayList<>();
+		return new PserviceBrokerNegotiation(
+			NProtocolVersionFromProtocolVersion(sbn.monto),
+			NSoftwareVersionFromSoftwareVersion(sbn.broker),
+			ConsCellFromList(StringCatter::new, extensions));
+	}
+	private static <T, U> NMaybe MaybeFromNullable(Function<T, U> f, T t) {
+		if(t == null)
+			return new Pnothing();
 		else
-			logicalName = new Pnothing();
-		return new Psource(
-			StringCatterFromString(src.getPhysicalName()),
-			logicalName);
-	}
-	private static StringCatter StringCatterFromString(String string) {
-		return new StringCatter(string);
+			return new Pjust(f.apply(t));
 	}
 }

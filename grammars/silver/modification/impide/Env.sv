@@ -13,8 +13,6 @@ top::DclInfo ::= sg::String sl::Location fn::String
   top.fullName = fn;
   
   top.typerep = error("Internal compiler error: font style do not have types");
-
-  top.unparse = "font(" ++ sl.unparse ++ ", '" ++ fn ++ "')";
 }
 
 --------------------------------------------------------------------------------
@@ -58,7 +56,7 @@ Def ::= sg::String sl::Location fn::String
 --------------------------------------------------------------------------------
 -- Env.sv
 
-synthesized attribute fontDefTree :: Decorated EnvScope<DclInfo> occurs on Env;
+synthesized attribute fontDefTree :: EnvScope<DclInfo> occurs on Env;
 
 aspect production i_emptyEnv
 top::Env ::=

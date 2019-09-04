@@ -279,10 +279,20 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.flowDefs = e.flowDefs;
 }
-aspect production pushTokenIfStmt
-top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' 'if' condition::Expr ';'
+aspect production blockStmt
+top::ProductionStmt ::= '{' stmts::ProductionStmts '}'
 {
-  top.flowDefs = lexeme.flowDefs ++ condition.flowDefs;
+  top.flowDefs = stmts.flowDefs;
+}
+aspect production ifElseStmt
+top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' el::ProductionStmt
+{
+  top.flowDefs = condition.flowDefs ++ th.flowDefs ++ el.flowDefs;
+}
+aspect production pushTokenStmt
+top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
+{
+  top.flowDefs = lexeme.flowDefs;
 }
 
 
@@ -305,12 +315,12 @@ String ::= s::String
 function hackGramFromDcl
 String ::= qn::Decorated QNameAttrOccur
 {
-  return if null(qn.errors) then qn.dcl.sourceGrammar else "";
+  return if qn.found then qn.dcl.sourceGrammar else "";
 }
 -- Source grammar of a lookup of a local dcl
 function hackGramFromQName
 String ::= qn::Decorated QNameLookup
 {
-  return if null(qn.errors) then qn.dcl.sourceGrammar else "";
+  return if qn.found then qn.dcl.sourceGrammar else "";
 }
 

@@ -1,6 +1,6 @@
 grammar core;
 
-{- @comment
+{@comment
   Applies a function to each element of the list.
 
   This is a list of links.
@@ -10,7 +10,7 @@ grammar core;
   param f  The function to apply
   param l  The list to map over
   return  The list containing the results of applying the function to l
-@ -}
+@}
 function map
 [b] ::= f::(b ::= a)  l::[a]
 {
@@ -173,6 +173,20 @@ function removeAllBy
 }
 
 {--
+ - Returns the initial elements of a list.
+ -
+ - @param lst  The list to examine
+ - @return  The initial elements of 'lst'. If 'lst' is empty, crash.
+ -}
+function init
+[a] ::= lst::[a]
+{
+  return if null(tail(lst))
+         then []
+         else head(lst)::init(tail(lst));
+}
+
+{--
  - Returns the last element of a list.
  -
  - @param lst  The list to examine
@@ -301,7 +315,7 @@ function sortByHelp -- do not use
   back_half = sortByHelp(lte, drop(middle, lst), upTo - middle);
 
   local attribute middle :: Integer;
-  middle = toInt(toFloat(upTo) / 2.0);
+  middle = toInteger(toFloat(upTo) / 2.0);
 }
 function mergeBy -- do not use
 [a] ::= lte::(Boolean ::= a a) l1::[a] l2::[a]
@@ -374,6 +388,20 @@ function unionsBy
 [a] ::= eq::(Boolean ::= a a) ss::[[a]]
 {
   return nubBy(eq, concat(ss));
+}
+
+
+-- Boolean list operations
+function all
+Boolean ::= l::[Boolean]
+{
+  return foldr(\ a::Boolean b::Boolean -> a && b, true, l);
+}
+
+function any
+Boolean ::= l::[Boolean]
+{
+  return foldr(\ a::Boolean b::Boolean -> a || b, false, l);
 }
 
 --------------------------------------------------------------------------------

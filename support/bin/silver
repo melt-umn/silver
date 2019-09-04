@@ -18,10 +18,10 @@ esac
 ME=$(${READLINK} -f "${BASH_SOURCE}")
 
 # Set our home
-export SILVER_HOME=${ME/support\/bin\/silver//}
+export SILVER_HOME=${ME/support\/bin\/silver/}
 
 # Find the silver jar
-SILVER="$SILVER_HOME/jars/RunSilver.jar"
+SILVER="$SILVER_HOME/jars/silver.composed.Default.jar"
 
 if [ ! -f "$SILVER" ]; then
   echo "Couldn't find the Silver jars to execute, aborting."
@@ -29,8 +29,6 @@ if [ ! -f "$SILVER" ]; then
 fi
 
 # Set flags if not overriden in environment
-SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx2000M -Xss8M"}
+SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx3000M -Xss20M"}
 
 java $SVJVM_FLAGS -jar "$SILVER" "$@" && ant
-
-

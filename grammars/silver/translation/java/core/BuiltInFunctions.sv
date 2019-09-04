@@ -10,19 +10,33 @@ top::Expr ::= e::Decorated Expr
 aspect production stringLength
 top::Expr ::= e::Decorated Expr
 {
-  top.translation = "Integer.valueOf(((common.StringCatter)" ++ e.translation ++ ").length())";
+  top.translation = s"Integer.valueOf(((common.StringCatter)${e.translation}).length())";
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
-aspect production toIntFunction
-top::Expr ::= 'toInt' '(' e::Expr ')'
+aspect production toBooleanFunction
+top::Expr ::= 'toBoolean' '(' e::Expr ')'
 {
   top.translation = case finalType(e) of
+                    | boolType() -> e.translation
+                    | intType() -> s"Boolean.valueOf(${e.translation} != 0)"
+                    | floatType() -> s"Boolean.valueOf(${e.translation} != 0.0)"
+                    | stringType() -> s"Boolean.valueOf(${e.translation}.toString())"
+                    | t -> error("INTERNAL ERROR: no toBoolean translation for type " ++ prettyType(t))
+                    end;
+
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+aspect production toIntegerFunction
+top::Expr ::= 'toInteger' '(' e::Expr ')'
+{
+  top.translation = case finalType(e) of
+                    | boolType() -> s"Integer.valueOf(${e.translation}? 1 : 0)"
                     | intType() -> e.translation
-                    | floatType() -> "Integer.valueOf(((Float)" ++ e.translation ++ ").intValue())"
-                    | stringType() -> "Integer.valueOf(" ++ e.translation ++ ".toString())"
-                    | t -> error("INTERNAL ERROR: no toInt translation for type " ++ prettyType(t))
+                    | floatType() -> s"Integer.valueOf(((Float)${e.translation}).intValue())"
+                    | stringType() -> s"Integer.valueOf(${e.translation}.toString())"
+                    | t -> error("INTERNAL ERROR: no toInteger translation for type " ++ prettyType(t))
                     end;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
@@ -31,9 +45,10 @@ aspect production toFloatFunction
 top::Expr ::= 'toFloat' '(' e::Expr ')'
 {
   top.translation = case finalType(e) of
-                    | intType() -> "Float.valueOf(((Integer)" ++ e.translation ++ ").floatValue())"
+                    | boolType() -> s"Float.valueOf(${e.translation}? 1.0f : 0.0f)"
+                    | intType() -> s"Float.valueOf(((Integer)${e.translation}).floatValue())"
                     | floatType() -> e.translation
-                    | stringType() -> "Float.valueOf(" ++ e.translation ++ ".toString())"
+                    | stringType() -> s"Float.valueOf(${e.translation}.toString())"
                     | t -> error("INTERNAL ERROR: no toFloat translation for type " ++ prettyType(t))
                     end;
 
@@ -42,15 +57,50 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
 aspect production toStringFunction
 top::Expr ::= 'toString' '(' e::Expr ')'
 {
-  top.translation = "new common.StringCatter(String.valueOf(" ++ e.translation ++ "))";
+  top.translation = s"new common.StringCatter(String.valueOf(${e.translation}))";
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+
+aspect production reifyFunctionLiteral
+top::Expr ::= 'reify'
+{
+  local resultType::Type =
+    case finalType(top).outputType of
+      nonterminalType("core:Either", [stringType(), a]) -> a
+    | _ -> error("Unexpected final type for reify!")
+    end;
+  
+  -- In the unusual case that we have a skolems in the result type, we can't generalize them, but
+  -- we also can't do any better, so leave the runtime result TypeRep unfreshened.
+  -- There is a similar problem with lambdas.
+  top.translation =
+s"""(new common.NodeFactory<core.NEither>() {
+				@Override
+				public final core.NEither invoke(final Object[] args, final Object[] namedArgs) {
+					assert args != null && args.length == 1;
+					assert namedArgs == null || namedArgs.length == 0;
+					
+${makeTyVarDecls(5, resultType.freeVariables)}
+					common.TypeRep resultType = ${resultType.transTypeRep};
+					
+					return common.Reflection.reifyChecked(resultType, (core.reflect.NAST)common.Util.demand(args[0]));
+				}
+				
+				@Override
+				public final common.FunctionTypeRep getType() {
+${makeTyVarDecls(5, finalType(top).freeVariables)}
+					return ${finalType(top).transTypeRep};
+				}
+			})""";
+  
+  top.lazyTranslation = top.translation;
 }
 
 aspect production newFunction
 top::Expr ::= 'new' '(' e::Expr ')'
 {
-  top.translation = "((" ++ finalType(top).transType ++ ")" ++ e.translation ++ ".undecorate())";
+  top.translation = s"((${finalType(top).transType})${e.translation}.undecorate())";
   
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
@@ -58,7 +108,7 @@ top::Expr ::= 'new' '(' e::Expr ')'
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
-  top.translation = "new " ++ makeTerminalName(t.typerep.typeName) ++ "(" ++ es.translation ++ ", (core.NLocation)" ++ el.translation ++ ")";
+  top.translation = s"new ${makeTerminalName(t.typerep.typeName)}(${es.translation}, (core.NLocation)${el.translation})";
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }

@@ -11,7 +11,7 @@ import common.exceptions.TraceException;
  * @author tedinski
  * @see Node
  */
-public class DecoratedNode {
+public class DecoratedNode implements Typed {
 	// TODO list:
 	// - Delete parent / forwardParent. Or coalesce them (only NEED for debugging purposes, if inh become thunks!)
 	// - Delete forwardValue (make it a local/production attribute)
@@ -477,12 +477,7 @@ public class DecoratedNode {
 		if(childrenValues[child] != null)
 			return childrenValues[child];
 		
-		return new Thunk<Object>(this) {
-			@Override
-			public final Object doEval(final DecoratedNode context) {
-				return context.childDecorated(child);
-			}
-		};
+		return new Thunk<Object>(() -> this.childDecorated(child));
 	}
 	public final Object childAsIsLazy(final int child) {
 		// childAsIs does not store in the childrenValues array, so...
@@ -493,23 +488,13 @@ public class DecoratedNode {
 		if(localValues[index] != null)
 			return localValues[index];
 		
-		return new Thunk<Object>(this) {
-			@Override
-			public final Object doEval(final DecoratedNode context) {
-				return context.localDecorated(index);
-			}
-		};
+		return new Thunk<Object>(() -> this.localDecorated(index));
 	}
 	public final Object localAsIsLazy(final int index) {
 		if(localValues[index] != null)
 			return localValues[index];
 
-		return new Thunk<Object>(this) {
-			@Override
-			public final Object doEval(final DecoratedNode context) {
-				return context.localAsIs(index);
-			}
-		};
+		return new Thunk<Object>(() -> this.localAsIs(index));
 	}
 	public final Object childDecoratedSynthesizedLazy(final int child, final int index) {
 		Object v = childrenValues[child];
@@ -517,12 +502,7 @@ public class DecoratedNode {
 			return ((DecoratedNode)v).contextSynthesizedLazy(index);
 		}
 
-		return new Thunk<Object>(this) {
-			@Override
-			public final Object doEval(final DecoratedNode context) {
-				return context.childDecorated(child).synthesized(index);
-			}
-		};
+		return new Thunk<Object>(() -> this.childDecorated(child).synthesized(index));
 	}
 	public final Object childAsIsSynthesizedLazy(final int child, final int index) {
 		// For as-is children, we do not store in childrenValues
@@ -531,35 +511,26 @@ public class DecoratedNode {
 			return ((DecoratedNode)v).contextSynthesizedLazy(index);
 		}
 
-		return new Thunk<Object>(this) {
-			@Override
-			public final Object doEval(final DecoratedNode context) {
-				return ((DecoratedNode)context.childAsIs(child)).synthesized(index);
-			}
-		};
+		return new Thunk<Object>(() -> ((DecoratedNode)this.childAsIs(child)).synthesized(index));
 	}
 	public final Object contextSynthesizedLazy(final int index) {
 		if(synthesizedValues[index] != null) {
 			return synthesizedValues[index];
 		}
 		
-		return new Thunk<Object>(this) {
-			@Override
-			public final Object doEval(final DecoratedNode context) {
-				return context.synthesized(index);
-			}
-		};
+		return new Thunk<Object>(() -> this.synthesized(index));
 	}
 	public final Object contextInheritedLazy(final int index) {
 		if(inheritedValues[index] != null)
 			return inheritedValues[index];
 		
-		return new Thunk<Object>(this) {
-			@Override
-			public final Object doEval(final DecoratedNode context) {
-				return context.inherited(index);
-			}
-		};
+		return new Thunk<Object>(() -> this.inherited(index));
+	}
+	
+	@Override
+	public final BaseTypeRep getType() {
+		final BaseTypeRep selfTypeRep = self.getType();
+		return new BaseTypeRep("Decorated " + selfTypeRep.baseName, selfTypeRep.params);
 	}
 	
 	/**
@@ -581,5 +552,9 @@ public class DecoratedNode {
 			qualifier = "";
 		}
 		return "'" + self.getName() + "' (" + Integer.toHexString(System.identityHashCode(this)) + qualifier + ")";
+	}
+	
+	public final String toString() {
+		return getDebugID();
 	}
 }

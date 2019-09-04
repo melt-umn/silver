@@ -20,12 +20,12 @@ terminal Match_kwd 'match' lexer classes {KEYWORD,RESERVED}; -- temporary!!!
 
 nonterminal PrimPatterns with 
   config, grammarName, env, compiledGrammars, frame,
-  location, pp, errors,
+  location, unparse, errors,
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation;
 nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
-  location, pp, errors,
+  location, unparse, errors,
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation;
 
@@ -36,21 +36,21 @@ autocopy attribute returnType :: Type;
 concrete production matchPrimitiveConcrete
 top::Expr ::= 'match' e::Expr 'return' t::TypeExpr 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
 {
-  top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
+  top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
 
   forwards to matchPrimitive(e, t, pr, f, location=top.location);
 }
 abstract production matchPrimitive
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
-  top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
+  top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
 
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
   
   -- ensureDecoratedExpr is currently wrapping 'e' in 'exprRef' which suppresses errors
   -- TODO: the use of 'exprRef' should be reviewed, given that this error slipped through...
-  top.errors <- e.errors;
+  top.errors := e.errors ++ forward.errors;
   
   forwards to matchPrimitiveReal(ensureDecoratedExpr(e), t, pr, f, location=top.location);
 }
@@ -63,7 +63,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 abstract production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
-  top.pp = "match " ++ e.pp ++ " return " ++ t.pp ++ " with " ++ pr.pp ++ " else -> " ++ f.pp ++ "end";
+  top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
   
   top.typerep = t.typerep;
   
@@ -127,7 +127,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 concrete production onePattern
 top::PrimPatterns ::= p::PrimPattern
 {
-  top.pp = p.pp;
+  top.unparse = p.unparse;
   
   top.errors := p.errors;
   top.translation = p.translation;
@@ -138,7 +138,7 @@ top::PrimPatterns ::= p::PrimPattern
 concrete production consPattern
 top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
 {
-  top.pp = p.pp ++ " | " ++ ps.pp;
+  top.unparse = p.unparse ++ " | " ++ ps.unparse;
   
   top.errors := p.errors ++ ps.errors;
   top.translation = p.translation ++ "\nelse " ++ ps.translation;
@@ -156,7 +156,7 @@ top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
 concrete production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 {
-  top.pp = qn.pp ++ "(" ++ ns.pp ++ ") -> " ++ e.pp;
+  top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
 
   local isGadt :: Boolean =
     case qn.lookupValue.typerep.outputType of
@@ -180,11 +180,11 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 abstract production prodPatternNormal
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
-  top.pp = qn.pp ++ "(" ++ ns.pp ++ ") -> " ++ e.pp;
+  top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
   
   local chk :: [Message] =
     if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
-    else [err(qn.location, qn.pp ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+    else [err(qn.location, qn.name ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
   top.errors := qn.lookupValue.errors ++ ns.errors ++ chk ++ e.errors;
 
@@ -204,7 +204,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   errCheck1 = check(decoratedType(prod_type.outputType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, qn.pp ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
@@ -227,11 +227,11 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 abstract production prodPatternGadt
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
-  top.pp = qn.pp ++ "(" ++ ns.pp ++ ") -> " ++ e.pp;
+  top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
   
   local chk :: [Message] =
     if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
-    else [err(qn.location, qn.pp ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+    else [err(qn.location, qn.name ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
   top.errors := qn.lookupValue.errors ++ ns.errors ++ chk ++ e.errors;
 
@@ -248,7 +248,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   errCheck1 = check(decoratedType(prod_type.outputType), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
-                then [err(top.location, qn.pp ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
   
   errCheck2 = check(e.typerep, top.returnType);
@@ -282,7 +282,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 abstract production integerPattern
 top::PrimPattern ::= i::Int_t '->' e::Expr
 {
-  top.pp = i.lexeme ++ " -> " ++ e.pp;
+  top.unparse = i.lexeme ++ " -> " ++ e.unparse;
   
   top.errors := e.errors;
   
@@ -307,10 +307,38 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
   top.translation = "if(scrutinee == " ++ i.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
 }
+abstract production floatPattern
+top::PrimPattern ::= f::Float_t '->' e::Expr
+{
+  top.unparse = f.lexeme ++ " -> " ++ e.unparse;
+  
+  top.errors := e.errors;
+  
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
+  
+  errCheck1 = check(floatType(), top.scrutineeType);
+  top.errors <- if errCheck1.typeerror
+                then [err(top.location, f.lexeme ++ " is a " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
+                else [];
+  
+  errCheck2 = check(e.typerep, top.returnType);
+  top.errors <- if errCheck2.typeerror
+                then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
+                else [];
+  
+  errCheck1.downSubst = top.downSubst;
+  e.downSubst = errCheck1.upSubst;
+  errCheck2.downSubst = e.upSubst;
+  top.upSubst = errCheck2.upSubst;
+
+  top.translation = "if(scrutinee == " ++ f.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
+                         e.translation ++ "; }";
+}
 abstract production stringPattern
 top::PrimPattern ::= i::String_t '->' e::Expr
 {
-  top.pp = i.lexeme ++ " -> " ++ e.pp;
+  top.unparse = i.lexeme ++ " -> " ++ e.unparse;
   
   top.errors := e.errors;
   
@@ -338,7 +366,7 @@ top::PrimPattern ::= i::String_t '->' e::Expr
 abstract production booleanPattern
 top::PrimPattern ::= i::String '->' e::Expr
 {
-  top.pp = i ++ " -> " ++ e.pp;
+  top.unparse = i ++ " -> " ++ e.unparse;
   
   top.errors := e.errors;
   
@@ -366,7 +394,7 @@ top::PrimPattern ::= i::String '->' e::Expr
 abstract production nilPattern
 top::PrimPattern ::= e::Expr
 {
-  top.pp = "nil() -> " ++ e.pp;
+  top.unparse = "nil() -> " ++ e.unparse;
   
   top.errors := e.errors;
   
@@ -394,7 +422,7 @@ top::PrimPattern ::= e::Expr
 abstract production conslstPattern
 top::PrimPattern ::= h::Name t::Name e::Expr
 {
-  top.pp = "cons(" ++ h.pp ++ ", " ++ t.pp ++ ") -> " ++ e.pp;
+  top.unparse = "cons(" ++ h.unparse ++ ", " ++ t.unparse ++ ") -> " ++ e.unparse;
   
   top.errors := e.errors;
 
@@ -425,10 +453,16 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   
   e.env = newScopeEnv(consdefs, top.env);
   
-  top.translation = "if(!scrutineeIter.nil()) {" ++
-  makeSpecialLocalBinding(h_fName, "scrutinee.head()", performSubstitution(elemType, top.finalSubst).transType) ++
-  makeSpecialLocalBinding(t_fName, "scrutinee.tail()", performSubstitution(top.scrutineeType, top.finalSubst).transType) ++
-  "return " ++ e.translation ++ "; }";
+  top.translation =
+    let
+      elemTrans :: String = performSubstitution(elemType, top.finalSubst).transType,
+      listTrans :: String = performSubstitution(top.scrutineeType, top.finalSubst).transType
+    in
+      "if(!scrutineeIter.nil()) {" ++
+      makeSpecialLocalBinding(h_fName, s"(${elemTrans})scrutinee.head()", elemTrans) ++
+      makeSpecialLocalBinding(t_fName, s"(${listTrans})scrutinee.tail()", listTrans) ++
+      "return " ++ e.translation ++ "; }"
+    end;
 }
 
 

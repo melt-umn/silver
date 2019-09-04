@@ -8,13 +8,9 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr
 tm::TerminalModifiers
 {
   local className :: String = "T" ++ id.name;
-
---  local fName :: String = top.grammarName ++ ":" ++ id.name;
-
   local lexerClassesStr :: String = implode(", ", map(quote, tm.lexerClasses));
 
-  top.genFiles := [pair(className ++ ".java",
-s"""
+  top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
 
 import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;
@@ -45,5 +41,11 @@ public class ${className} extends common.Terminal {
 
 """)];
 
+}
+
+function quote
+String ::= s::String
+{
+  return "\"" ++ s ++ "\"";
 }
 

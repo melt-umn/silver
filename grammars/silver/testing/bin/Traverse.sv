@@ -2,8 +2,8 @@ grammar silver:testing:bin ;
 
 function traverseDirectoriesAndPerform
 IOVal<a> ::= startDir::String paths::[String] 
-                f::Function(IOVal<a> ::= String IOVal<a>) 
-                skipDir::Function(IOVal<Boolean> ::= String IO)
+                f::(IOVal<a> ::= String IOVal<a>) 
+                skipDir::(IOVal<Boolean> ::= String IO)
                 ioIn::IOVal<a>
 {
  return

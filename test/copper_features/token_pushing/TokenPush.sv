@@ -9,8 +9,9 @@ nonterminal Contents;
 
 terminal A 'A';
 terminal B 'B' 
-action{ 
-   pushToken(C, "C") if (1==1);
+action{
+   if (1==1)
+     pushToken(C, "C");
 };
 terminal C 'C';
 

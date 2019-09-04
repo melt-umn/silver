@@ -5,7 +5,7 @@ terminal Action_kwd 'action' lexer classes {KEYWORD};
 concrete production concreteProductionDclAction
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody 'action' acode::ActionCode_c
 {
-  top.pp = forward.pp ++ "action " ++ acode.pp;
+  top.unparse = forward.unparse ++ "action " ++ acode.unparse;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
 
@@ -14,11 +14,16 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
       foldr(consProductionMod, nilProductionMod(), 
         prodAction(acode.actionCode) :: pm.productionModifiers))];
 
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = 
+    constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
+
   ns.signatureName = fName;
-  acode.frame = reduceActionContext(ns.namedSignature);
-  acode.env = newScopeEnv(
-                addTerminalAttrDefs(
-                 acode.defs ++ ns.actionDefs), top.env);
+  acode.frame = reduceActionContext(ns.namedSignature, myFlowGraph);
+  acode.env = newScopeEnv(productionActionVars ++ acode.defs ++ ns.actionDefs, top.env);
 
   top.errors <- acode.errors;
 
@@ -29,23 +34,51 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 }
 
 
-nonterminal ActionCode_c with location,config,pp,actionCode,env,defs,grammarName,errors,frame, compiledGrammars, flowEnv;
+nonterminal ActionCode_c with location,config,unparse,actionCode,env,defs,grammarName,errors,frame, compiledGrammars, flowEnv, flowDefs;
 
 synthesized attribute actionCode :: String;
 
 concrete production actionCode_c
 top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 {
-  top.pp = "{\n" ++ stmts.pp ++ "}\n";
+  top.unparse = "{\n" ++ stmts.unparse ++ "}\n";
   top.defs = flatMap(hackTransformLocals, stmts.defs);
+  top.flowDefs = stmts.flowDefs;
 
   top.actionCode = sflatMap(hacklocaldeclarations, stmts.defs) ++ stmts.translation;
 
   top.errors := stmts.errors;
+  top.errors <- if top.frame.permitPluck && !stmts.containsPluck then
+    [err(top.location, "Disambiguation function without pluck")] else [];
   
   stmts.downSubst = emptySubst();
 }
 
+
+-- Support code to check the validity of disambiguation blocks. True if any elements
+-- contained in the snoc-list (so this statement or before) are a pluck. Handles
+-- raising errors if there are statements after a pluck.
+synthesized attribute containsPluck :: Boolean occurs on ProductionStmts;
+
+aspect production productionStmtsSnoc
+top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
+{
+  local immediateChildIsPluck :: Boolean =
+    case t of
+    | pluckDef(_, _, _) -> true
+    | _ -> false
+    end;
+
+  top.containsPluck = immediateChildIsPluck || h.containsPluck;
+
+  top.errors <- if top.frame.permitPluck && h.containsPluck then [err(t.location, "Statement after pluck")] else [];
+}
+
+aspect production productionStmtsNil
+top::ProductionStmts ::=
+{
+  top.containsPluck = false;
+}
 
 -- TODO hacky. ideally we'd do this where local attributes are declared, not here.
 function hacklocaldeclarations

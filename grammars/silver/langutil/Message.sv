@@ -20,7 +20,7 @@ synthesized attribute message :: String;
 synthesized attribute output :: String;
 {--
  - A convention for determining message severity.
- - Lower is more severe.
+ - err=2, wrn=1, info=0
  -}
 synthesized attribute severity :: Integer;
 
@@ -33,7 +33,7 @@ top::Message ::= l::Location m::String
 {
   top.where = l;
   top.message = m;
-  top.output = l.unparse ++ ": error: " ++ m;
+  top.output = s"${l.unparse}: error: ${m}";
   top.severity = 2;
 }
 
@@ -46,7 +46,7 @@ top::Message ::= l::Location m::String
 {
   top.where = l;
   top.message = m;
-  top.output = l.unparse ++ ": warning: " ++ m;
+  top.output = s"${l.unparse}: warning: ${m}";
   top.severity = 1;
 }
 
@@ -59,7 +59,7 @@ top::Message ::= l::Location m::String
 {
   top.where = l;
   top.message = m;
-  top.output = l.unparse ++ ": info: " ++ m;
+  top.output = s"${l.unparse}: info: ${m}";
   top.severity = 0;
 }
 
@@ -71,18 +71,8 @@ top::Message ::= l::Location m::String others::[Message]
 {
   top.where = l;
   top.message = m;
-  local header :: String = l.unparse ++ ": " ++ m ++ "\n";
-  top.output = header ++ implode("\n", map(nestedOutputHelper(header, _), others));
+  top.output = s"${l.unparse}: ${m}\n${messagesToString(others)}\n";
   top.severity = foldr(max, 0, map((.severity), others));
-}
-
-function nestedOutputHelper
-String ::= header::String msg::Message
-{
-  return case msg of
-    | nested(_, _, _) -> header ++ "\n"
-    | _ -> ""
-    end ++ msg.output;
 }
 
 -- Users can extend Message with more messages (e.g. dbg) as they desire

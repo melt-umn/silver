@@ -31,6 +31,12 @@ top::Type ::= tv::TyVar
   top.typepp = findAbbrevFor(tv, top.boundVariables);
 }
 
+aspect production errorType
+top::Type ::=
+{
+  top.typepp = "<err>"; -- probably shouldn't ever get printed?
+}
+
 aspect production intType
 top::Type ::=
 {
@@ -53,6 +59,12 @@ aspect production stringType
 top::Type ::=
 {
   top.typepp = "String";
+}
+
+aspect production terminalIdType
+top::Type ::=
+{
+  top.typepp = "TerminalId";
 }
 
 aspect production nonterminalType

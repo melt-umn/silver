@@ -99,7 +99,7 @@ public class AppendCell extends ConsCell {
 				// We MUST grab the tail of leftap now. If we do not, then it may mutate (becomeLiteralConsCell) before we
 				// evaluate the thunk! If that happens, we get duplication.
 				final Object leftaptail = leftap.tail;
-				return append(leftap.head, new Thunk<Object>(TopNode.singleton) { public final Object doEval(final DecoratedNode context) { return append(leftaptail, rightap); }});
+				return append(leftap.head, new Thunk<ConsCell>(() -> append(leftaptail, rightap)));
 			}
 		}
 		// Okay, we're a real append of a real, literal ConsCell on the LHS.
@@ -111,14 +111,8 @@ public class AppendCell extends ConsCell {
 		// By invariants, head is ConsCell
 		final ConsCell left = (ConsCell)head;
 		head = left.head();
-		// append is strict in its LHS, so calling left.tail() is okay.
-		// STRICTLY SPEAKING, however, this whole assignment to tail a bug:
-		// we should be creating this as a CLOSURE.
-		// TODO: investigate what consequences appear here?
-		// TODO: depends on fixing the bug that makes all FFI calls strict anyway!
-		//tail = append(left.tail(), tail);
 		final Object oldtail = tail;
-		tail = new Thunk<Object>(TopNode.singleton) { public final Object doEval(final DecoratedNode context) { return append(left.tail(), oldtail); } };
+		tail = new Thunk<ConsCell>(() -> append(left.tail(), oldtail));
 		literalConsCell = true;
 	}
 	

@@ -35,7 +35,7 @@ terminal Attribute_kwd   'attribute'    lexer classes {KEYWORD,RESERVED};
 terminal Closed_kwd      'closed'       lexer classes {KEYWORD};
 terminal Concrete_kwd    'concrete'     lexer classes {KEYWORD,RESERVED};
 terminal Decorate_kwd    'decorate'     lexer classes {KEYWORD,RESERVED};
-terminal Else_kwd        'else'         lexer classes {KEYWORD,RESERVED}, precedence = 4;
+terminal Else_kwd        'else'         lexer classes {KEYWORD,RESERVED}, precedence = 4, association = left; -- Association needed for dangling else in action code.
 terminal Forwarding_kwd  'forwarding'   lexer classes {KEYWORD,RESERVED};
 terminal Forward_kwd     'forward'      lexer classes {KEYWORD,RESERVED};
 terminal Forwards_kwd    'forwards'     lexer classes {KEYWORD,RESERVED};
@@ -57,9 +57,12 @@ terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED};
 terminal Global_kwd      'global'       lexer classes {KEYWORD,RESERVED};
 
 terminal Length_kwd    'length'    lexer classes {BUILTIN,RESERVED};
+terminal ToBoolean_kwd 'toBoolean' lexer classes {BUILTIN,RESERVED};
 terminal ToFloat_kwd   'toFloat'   lexer classes {BUILTIN,RESERVED};
-terminal ToInt_kwd     'toInt'     lexer classes {BUILTIN,RESERVED};
+terminal ToInt_kwd     'toInt'     lexer classes {BUILTIN,RESERVED}; -- Legacy
+terminal ToInteger_kwd 'toInteger' lexer classes {BUILTIN,RESERVED};
 terminal ToString_kwd  'toString'  lexer classes {BUILTIN,RESERVED};
+terminal Reify_kwd     'reify'     lexer classes {BUILTIN,RESERVED};
 
 terminal Comma_t       ','  precedence = 4;
 terminal Or_t          '||' precedence = 5, association = left;
@@ -79,7 +82,7 @@ terminal Divide_t      '/'  precedence = 12, association = left;
 terminal Modulus_t     '%'  precedence = 12, association = left;
 terminal ColonColon_t  '::' precedence = 14, association = right; -- HasType AND cons. right due to cons.
 terminal LParen_t      '('  precedence = 24;
-terminal RParen_t      ')'  ;
+terminal RParen_t      ')'  precedence = 1, association = left; -- Precedence and association eeded for dangling else in action code.
 terminal LCurly_t      '{'  ;
 terminal RCurly_t      '}'  ;
 terminal Dot_t         '.'  precedence = 25, association = left;
@@ -107,5 +110,5 @@ terminal True_kwd  'true'   lexer classes {LITERAL,RESERVED};
 terminal False_kwd 'false'  lexer classes {LITERAL,RESERVED};
 terminal Int_t     /[\-]?[0-9]+/ lexer classes {LITERAL};
 terminal Float_t   /[\-]?[0-9]+[\.][0-9]+/ lexer classes {LITERAL};
-terminal String_t  /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]n|[\\]r|[\\]t)*[\"]/ lexer classes {LITERAL};
+terminal String_t  /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]n|[\\]r|[\\]f|[\\]t)*[\"]/ lexer classes {LITERAL};
 

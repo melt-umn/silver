@@ -10,12 +10,12 @@ import silver:definition:flow:ast only hasVertex, noVertex, PatternVarProjection
 
 nonterminal VarBinders with 
   config, grammarName, env, compiledGrammars, frame,
-  location, pp, errors, defs,
+  location, unparse, errors, defs,
   bindingTypes, bindingIndex, translation, varBinderCount,
   finalSubst, flowProjections, bindingNames, flowEnv, matchingAgainst;
 nonterminal VarBinder with
   config, grammarName, env, compiledGrammars, frame,
-  location, pp, errors, defs,
+  location, unparse, errors, defs,
   bindingType, bindingIndex, translation,
   finalSubst, flowProjections, bindingName, flowEnv, matchingAgainst;
 
@@ -39,7 +39,7 @@ synthesized attribute varBinderCount :: Integer;
 concrete production oneVarBinder
 top::VarBinders ::= v::VarBinder
 {
-  top.pp = v.pp;
+  top.unparse = v.unparse;
   top.defs = v.defs;
   top.errors := v.errors;
 
@@ -60,7 +60,7 @@ top::VarBinders ::= v::VarBinder
 concrete production consVarBinder
 top::VarBinders ::= v::VarBinder ',' vs::VarBinders
 {
-  top.pp = v.pp ++ ", " ++ vs.pp;
+  top.unparse = v.unparse ++ ", " ++ vs.unparse;
   top.defs = v.defs ++ vs.defs;
   top.errors := v.errors ++ vs.errors;
 
@@ -91,7 +91,7 @@ top::VarBinders ::= v::VarBinder ',' vs::VarBinders
 concrete production nilVarBinder
 top::VarBinders ::=
 {
-  top.pp = "";
+  top.unparse = "";
   top.defs = [];
   top.errors := [];
   
@@ -103,7 +103,7 @@ top::VarBinders ::=
 concrete production varVarBinder
 top::VarBinder ::= n::Name
 {
-  top.pp = n.pp;
+  top.unparse = n.unparse;
   
   -- top.bindingType comes straight from the type in the production signature.
   -- Consequently, the child is only auto-decorated if
@@ -175,7 +175,7 @@ top::VarBinder ::= n::Name
 concrete production ignoreVarBinder
 top::VarBinder ::= '_'
 {
-  top.pp = "_";
+  top.unparse = "_";
   top.defs = [];
   top.errors := [];
   top.flowProjections = [];

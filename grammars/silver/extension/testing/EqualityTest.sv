@@ -8,6 +8,9 @@ import silver:definition:type:syntax;
 import silver:modification:collection;
 import silver:extension:list;
 
+import silver:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph; -- for the "oh no again!" hack below
+import silver:driver:util only RootSpec; -- ditto
+
 --import silver:analysis:typechecking:core;
 
 import lib:extcore;
@@ -19,13 +22,13 @@ ag::AGDcl ::= kwd::'equalityTest'
               '(' value::Expr ',' expected::Expr ',' 
                   valueType::TypeExpr ',' testSuite::Name ')' ';'
 {
-  ag.pp = "equalityTest (" ++ value.pp ++ "," ++ expected.pp ++ ",\n" ++ 
-          "              " ++ valueType.pp ++ ", " ++ testSuite.pp ++ ");\n";
+  ag.unparse = "equalityTest (" ++ value.unparse ++ "," ++ expected.unparse ++ ",\n" ++ 
+          "              " ++ valueType.unparse ++ ", " ++ testSuite.unparse ++ ");\n";
 
   ag.errors := case equalityTestExpr of
                | just(_) -> []
                | nothing() -> 
-                   [err(valueType.location, "Type \"" ++ valueType.pp ++ "\" not suported on equality tests.")]
+                   [err(valueType.location, "Type \"" ++ valueType.unparse ++ "\" not suported on equality tests.")]
                end;
 
   local attribute errCheck1 :: TypeCheck; 
@@ -40,14 +43,12 @@ ag::AGDcl ::= kwd::'equalityTest'
     else [err(value.location, "Type of first and second expressions in equalityTest do not match. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
 
   ag.errors <-
-    if !errCheck1.typeerror then []
-    else [err(value.location, "Type of initial expression does not match specified type (3rd argument). Instead they are " ++
-                               errCheck2.leftpp ++ " and " ++ errCheck2.rightpp)];
+    if !errCheck2.typeerror then []
+    else [err(value.location, "Type of initial expression does not match specified type (3rd argument). Instead they are " ++ errCheck2.leftpp ++ " and " ++ errCheck2.rightpp)];
 
   ag.errors <-
-    if !errCheck1.typeerror then []
-    else [err(value.location, "Type of second expression does not match specified type (3rd argument). Instead they are " ++
-                               errCheck3.leftpp ++ " and " ++ errCheck3.rightpp)];
+    if !errCheck3.typeerror then []
+    else [err(value.location, "Type of second expression does not match specified type (3rd argument). Instead they are " ++ errCheck3.leftpp ++ " and " ++ errCheck3.rightpp)];
 
   value.downSubst = emptySubst();
   expected.downSubst = value.upSubst;
@@ -63,8 +64,12 @@ ag::AGDcl ::= kwd::'equalityTest'
 
   -- TODO: one of those type error checks above is redundant
 
-  value.frame = globalExprContext();
-  expected.frame = globalExprContext();
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(ag.grammarName, ag.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(ag.grammarName, ag.compiledGrammars)).productionFlowGraphs;
+
+  value.frame = globalExprContext(constructAnonymousGraph(value.flowDefs, ag.env, myProds, myFlow));
+  expected.frame = globalExprContext(constructAnonymousGraph(expected.flowDefs, ag.env, myProds, myFlow));
   
 
   ag.errors <- forward.errors;
@@ -88,9 +93,9 @@ ag::AGDcl ::= kwd::'equalityTest'
    "  expected = %%%Expr expected; \n"  ++
    "  t.msg = \"Test at " ++ ag.location.unparse ++ " failed. \\n\" ++ \n" ++ 
    "          \"Checking that expression \\n\" ++ \n" ++
-   "          \"   " ++ stringifyString(value.pp) ++ "\" ++ \n" ++
+   "          \"   " ++ stringifyString(value.unparse) ++ "\" ++ \n" ++
    "          \"\\nshould be same as expression \\n\" ++ \n" ++
-   "          \"   " ++ stringifyString(expected.pp) ++ "\\n\" ++ \n" ++
+   "          \"   " ++ stringifyString(expected.unparse) ++ "\\n\" ++ \n" ++
    "          \"Actual value: \\n   \" ++ \n" ++
    "          %%%Expr toStringValueExpr ++ \"\\n\" ++ \n" ++
    "          \"Expected value: \\n   \" ++ \n" ++
@@ -134,8 +139,8 @@ ag::AGDcl ::= kwd::'equalityTest'
         attributeDef(concreteDefLHS(qNameId(tref, location=tref.location), location=tref.location), '.', qNameAttrOccur(qNameId(msgref, location=msgref.location), location=ag.location), '=',
           foldStringExprs([
             strCnst("Test at " ++ ag.location.unparse ++ " failed.\nChecking that expression\n   " ++
-              stringifyString(value.pp) ++ "\nshould be same as expression\n   " ++
-              stringifyString(expected.pp) ++ "\nActual value:\n   "),
+              stringifyString(value.unparse) ++ "\nshould be same as expression\n   " ++
+              stringifyString(expected.unparse) ++ "\nActual value:\n   "),
             toStringValueExpr.fromJust,
             strCnst("\nExpected value: \n   "),
             toStringExpectedExpr.fromJust,

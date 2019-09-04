@@ -3,7 +3,6 @@ grammar silver:definition:env;
 import silver:definition:regex; -- soley for Terminals. TODO : perhaps this shouldn't be here!
 
 nonterminal Defs with typeList, valueList, attrList, prodOccursList, occursList, prodDclList;
-closed nonterminal Def with typeList, valueList, attrList, prodOccursList, occursList, prodDclList, dcl;
 
 -- The standard namespaces
 synthesized attribute typeList :: [EnvItem];
@@ -46,6 +45,8 @@ top::Defs ::= e1::Def e2::Defs
 
 --------------------------------------------------------------------------------
 
+closed nonterminal Def with typeList, valueList, attrList, prodOccursList, occursList, prodDclList, dcl;
+
 aspect default production
 top::Def ::=
 {
@@ -70,6 +71,13 @@ top::Def ::= d::EnvItem
   top.dcl = d.dcl;
   top.valueList = [d];
 }
+abstract production typeValueDef
+top::Def ::= d::EnvItem
+{
+  top.dcl = d.dcl;
+  top.typeList = [d];
+  top.valueList = [d];
+}
 abstract production attrDef
 top::Def ::= d::EnvItem
 {
@@ -81,9 +89,9 @@ top::Def ::= d::EnvItem
 {
   top.dcl = d.dcl;
   top.valueList = [d];
+  -- unlike normal valueDef, also affect production lookups:
   top.prodDclList = [d.dcl];
 }
-
 abstract production paDef
 top::Def ::= d::DclInfo
 {
@@ -96,7 +104,6 @@ top::Def ::= d::DclInfo
   top.dcl = d;
   top.occursList = [d];
 }
-
 
 
 function childDef
@@ -142,7 +149,8 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 function termDef
 Def ::= sg::String  sl::Location  fn::String  regex::Regex
 {
-  return typeDef(defaultEnvItem(termDcl(sg,sl,fn,regex)));
+  -- Terminals are also in the value namespace as terminal identifiers
+  return typeValueDef(defaultEnvItem(termDcl(sg,sl,fn,regex)));
 }
 function lexTyVarDef
 Def ::= sg::String  sl::Location  fn::String  ty::Type
@@ -198,26 +206,9 @@ Def ::= sg::String  sl::Location  fnnt::String  fnat::String  ntty::Type  atty::
 --Defsironment creation functions--------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------
 
-function unparseDefs
-String ::= d::[Def] bv::[TyVar]
-{
-  return "[\n " ++ implode(",\n ", mapUnparseDcls(map((.dcl), d), bv)) ++ "]";
-}
-
-function mapUnparseDcls
-[String] ::= d::[DclInfo] bv::[TyVar]
-{
-  local h :: DclInfo = head(d);
-  h.boundVariables = bv;
-
-  return if null(d) then [] else h.unparse :: mapUnparseDcls(tail(d), bv);
-}
-
---
-
 {--
- - Used only to substitute defs from paDcls...
- - And so we screw up a few things:
+ - Used only on what we get from production attributes.
+ - We encode those assumptions:
  - 1. We expect ONLY valueDefs.
  - 2. We expect ONLY 'defaultEnvItems'
  -}
@@ -227,13 +218,13 @@ Def ::= d::Def  s::Substitution
   return valueDef(defaultEnvItem(performSubstitutionDclInfo(d.dcl, s)));
 }
 
--- TODO: these are non-extensible. Fixme.
 function filterDefOnEnvItem
 Boolean ::= fn::(Boolean ::= EnvItem)  d::Def
 {
   return case d of
   | valueDef(ei) -> fn(ei)
   | typeDef(ei) -> fn(ei)
+  | typeValueDef(ei) -> fn(ei)
   | attrDef(ei) -> fn(ei)
   | prodDclDef(ei) -> fn(ei)
   | _ -> true -- preserve all others for now (legit don't consider occurs, pa)
@@ -245,54 +236,10 @@ Def ::= fn::(EnvItem ::= EnvItem)  d::Def
   return case d of
   | valueDef(ei) -> valueDef(fn(ei))
   | typeDef(ei) -> typeDef(fn(ei))
+  | typeValueDef(ei) -> typeValueDef(fn(ei))
   | attrDef(ei) -> attrDef(fn(ei))
   | prodDclDef(ei) -> prodDclDef(fn(ei))
   | _ -> d -- ditto
   end;
 }
-
-
-{- TODO
-abstract production filterDefsInclude
-top::Defs ::= d::Defs incl::[String]
-{
-  top.typeList = filterEnvItemsInclude(forward.typeList, incl);
-  top.attrList = filterEnvItemsInclude(forward.attrList, incl);
-  top.valueList = filterEnvItemsInclude(forward.valueList, incl);
-  
-  forwards to d;
-}
-abstract production filterDefsExclude
-top::Defs ::= d::Defs excl::[String]
-{
-  top.typeList = filterEnvItemsExclude(forward.typeList, excl);
-  top.attrList = filterEnvItemsExclude(forward.attrList, excl);
-  top.valueList = filterEnvItemsExclude(forward.valueList, excl);
-  
-  forwards to d;
-}
-abstract production mapPrependDefs
-top::Defs ::= d::Defs pfx::String
-{
-  top.typeList = mapPrependEnvItems(forward.typeList, pfx);
-  top.attrList = mapPrependEnvItems(forward.attrList, pfx);
-  top.valueList = mapPrependEnvItems(forward.valueList, pfx);
-  
-  forwards to d;
-}
-abstract production mapRenameDefs
-top::Defs ::= d::Defs rns::[Pair<String String>]
-{
-  top.typeList = mapRenameEnvItems(forward.typeList, rns);
-  top.attrList = mapRenameEnvItems(forward.attrList, rns);
-  top.valueList = mapRenameEnvItems(forward.valueList, rns);
-  
-  forwards to d;
-}
--}
-
-----------------------------------------------------------------------------------------------------
---Defs Helper Functions------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------
-
 

@@ -3,7 +3,7 @@ grammar silver:extension:doc:core;
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
-  top.docs := [bodilessDclCommentItem("function", id.name, ns.pp, id.location.filename)];
+  top.docs := [bodilessDclCommentItem("function", id.name, ns.unparse, id.location.filename)];
 
   top.docDcls := [pair(top.grammarName ++ ":" ++ id.name, functionDocDclInfoP(id.name, id.location.filename, nameToPath(top.grammarName ++ ":" ++ id.name)))];
 }
@@ -11,7 +11,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 concrete production docFunctionDcl
 top::AGDcl ::= comment::DclComment 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
-  top.docs := [dclCommentItem("function", id.name, ns.pp, id.location.filename, comment)];
+  top.docs := [dclCommentItem("function", id.name, ns.unparse, id.location.filename, comment)];
 
   top.docDcls := [pair(top.grammarName ++ ":" ++ id.name, functionDocDclInfoP(id.name, id.location.filename, nameToPath(top.grammarName ++ ":" ++ id.name)))];
 

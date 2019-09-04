@@ -8,7 +8,7 @@ terminal Italic_kwd 'italic' lexer classes {KEYWORD};
 concrete production fontDecl
 top::AGDcl ::= 'temp_imp_ide_font' id::Name 'color' '(' r::Int_t ',' g::Int_t ',' b::Int_t ')' fontStyles::FontStyles ';'
 {
-  top.pp = "temp_imp_ide_font " ++ id.name ++ " color(" ++ r.lexeme ++ ", " ++ g.lexeme ++ ", " ++ b.lexeme ++ ")" ++ fontStyles.pp ++ ";\n";
+  top.unparse = "temp_imp_ide_font " ++ id.name ++ " color(" ++ r.lexeme ++ ", " ++ g.lexeme ++ ", " ++ b.lexeme ++ ")" ++ fontStyles.unparse ++ ";\n";
   
   production fName :: String = top.grammarName ++ ":" ++ id.name;
 
@@ -20,7 +20,7 @@ top::AGDcl ::= 'temp_imp_ide_font' id::Name 'color' '(' r::Int_t ',' g::Int_t ',
 
   top.syntaxAst = [syntaxFont(
                    fName, 
-                   font(makeColor(toInt(r.lexeme),toInt(g.lexeme),toInt(b.lexeme)), 
+                   font(makeColor(toInteger(r.lexeme),toInteger(g.lexeme),toInteger(b.lexeme)), 
                         fontStyles.isBold, 
                         fontStyles.isItalic)
 		  )];
@@ -29,7 +29,7 @@ top::AGDcl ::= 'temp_imp_ide_font' id::Name 'color' '(' r::Int_t ',' g::Int_t ',
   forwards to emptyAGDcl(location=top.location);
 }
 
-nonterminal FontStyles with isBold, isItalic, pp;
+nonterminal FontStyles with isBold, isItalic, unparse;
 
 synthesized attribute isBold :: Boolean;
 synthesized attribute isItalic :: Boolean;
@@ -37,31 +37,31 @@ synthesized attribute isItalic :: Boolean;
 concrete production consFontStylesDcl
 top::FontStyles ::= h::FontStyle t::FontStyles
 {
-  top.pp = h.pp ++ t.pp;
+  top.unparse = h.unparse ++ t.unparse;
   top.isBold = h.isBold || t.isBold;
   top.isItalic = h.isItalic || t.isItalic;
 }
 concrete production nilFontStylesDcl
 top::FontStyles ::= 
 {
-  top.pp = "";
+  top.unparse = "";
   top.isBold = false;
   top.isItalic = false;
 }
 
-nonterminal FontStyle with pp, isBold, isItalic;
+nonterminal FontStyle with unparse, isBold, isItalic;
 
 concrete production fontStyleBoldDcl
 top::FontStyle ::= 'bold'
 {
-  top.pp = " bold";
+  top.unparse = " bold";
   top.isBold = true;
   top.isItalic = false;
 }
 concrete production fontStyleItalicDcl
 top::FontStyle ::= 'italic'
 {
-  top.pp = " italic";
+  top.unparse = " italic";
   top.isBold = false;
   top.isItalic = true;
 }

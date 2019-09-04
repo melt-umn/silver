@@ -39,12 +39,11 @@ inherited attribute givenSubstitution :: Substitution;
  -
  - The reason it's not is we lack the ability to abstract over different types
  - with "the same" interface (need typeclasses tia): this is necessary for some
- - things that make use of e.g. fullName, unparse, etc.
+ - things that make use of e.g. fullName.
  -
  - hmm, unparsing could probably be fixed...
  -}
 closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
-                         unparse, boundVariables, -- unparsing to interface files
                          typerep, givenNonterminalType, -- types (gNT for occurs)
                          namedSignature, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
@@ -59,8 +58,6 @@ top::DclInfo ::=
 {
   -- All dcls must provide sourceGrammar, sourceLocation, fullName
 
-  -- All dcls that appear in interface files must provide unparse
-  
   -- All values must provide typerep.
   -- All attributes must provide typerep, bound.
   -- All types must provide typerep, bound.
@@ -101,8 +98,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
-  
   top.typerep = ty;
 }
 abstract production lhsDcl
@@ -112,8 +107,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
-  
   top.typerep = ty;
 }
 
@@ -125,12 +118,9 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
   
-  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't
-  top.unparse = "loc(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
-  
   top.typerep = ty;
   
-  top.substitutedDclInfo = localDcl(sg,sl, fn, performSubstitution(ty, top.givenSubstitution));
+  top.substitutedDclInfo = localDcl(sg,sl, fn, performRenaming(ty, top.givenSubstitution));
 }
 abstract production forwardDcl
 top::DclInfo ::= sg::String sl::Location ty::Type
@@ -139,12 +129,9 @@ top::DclInfo ::= sg::String sl::Location ty::Type
   top.sourceLocation = sl;
   top.fullName = "forward";
   
-  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't  
-  top.unparse = "fwd(" ++ sl.unparse ++ ", " ++ ty.unparse ++ ")";
-  
   top.typerep = ty;
   
-  top.substitutedDclInfo = forwardDcl(sg,sl, performSubstitution(ty, top.givenSubstitution));
+  top.substitutedDclInfo = forwardDcl(sg,sl, performRenaming(ty, top.givenSubstitution));
 }
 
 -- ValueDclInfos that DO appear in interface files:
@@ -157,10 +144,6 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature
 
   local boundvars :: [TyVar] = top.typerep.freeVariables;
   
-  ns.boundVariables = top.boundVariables ++ boundvars;
-  
-  top.unparse = "prod(" ++ sl.unparse ++ ", " ++ unparseTyVars(boundvars, ns.boundVariables) ++ ", " ++ ns.unparse ++ ")";
-
   top.namedSignature = ns;  
   top.typerep = ns.typerep;
 }
@@ -173,10 +156,6 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature
   
   local boundvars :: [TyVar] = top.typerep.freeVariables;
   
-  ns.boundVariables = top.boundVariables ++ boundvars;
-  
-  top.unparse = "fun(" ++ sl.unparse ++ ", " ++ unparseTyVars(boundvars, ns.boundVariables) ++ ", " ++ ns.unparse ++ ")";
-
   top.namedSignature = ns;  
   top.typerep = ns.typerep;
 }
@@ -186,9 +165,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
   top.fullName = fn;
-
-  ty.boundVariables = top.boundVariables; -- explicit to make sure it errors if we can't
-  top.unparse = "glob(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ ty.unparse ++ ")";
 
   top.typerep = ty;
 }
@@ -201,10 +177,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type clos
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
-  top.unparse = "nt(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ", " ++ 
-    (if closed then "t" else "f") ++ ")";
-  
   top.typerep = ty;
   top.dclBoundVars = bound;
 }
@@ -215,8 +187,6 @@ top::DclInfo ::= sg::String sl::Location fn::String regex::Regex
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = "term(" ++ sl.unparse ++ ", '" ++ fn ++ "', /" ++ regex.regString ++ "/)";
-  
   top.typerep = terminalType(fn);
   top.dclBoundVars = [];
 }
@@ -227,8 +197,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
-  
   top.typerep = ty;
   top.dclBoundVars = [];
 }
@@ -241,9 +209,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
-  top.unparse = "syn(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ")";
-  
   top.typerep = ty;
   top.dclBoundVars = bound;
   top.isSynthesized = true;
@@ -255,9 +220,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
-  top.unparse = "inh(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ")";
-  
   top.typerep = ty;
   top.dclBoundVars = bound;
   top.isInherited = true;
@@ -269,9 +231,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
-  top.unparse = "anno(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ")";
-  
   top.typerep = ty;
   top.dclBoundVars = bound;
   top.isAnnotation = true;
@@ -286,10 +245,6 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature{-fn::String outty::T
   top.fullName = ns.fullName;
 
   local boundvars :: [TyVar] = top.typerep.freeVariables;
-  
-  ns.boundVariables = top.boundVariables ++ boundvars;
-
-  top.unparse = "p@(" ++ sl.unparse ++ ", " ++ unparseTyVars(boundvars, ns.boundVariables) ++ ", " ++ ns.unparse ++ ", " ++ unparseDefs(dcls, boundvars) ++ ")";
   
   top.prodDefs = dcls;
   
@@ -307,13 +262,6 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type at
   top.sourceLocation = sl;
   top.fullName = fnnt;
   
-  ntty.boundVariables = top.boundVariables ++ ntty.freeVariables;
-  atty.boundVariables = ntty.boundVariables;
-  top.unparse = "@(" ++ sl.unparse ++ ", '" ++ fnnt ++ "', '" ++ fnat ++ "', " ++ 
-                       unparseTyVars(ntty.freeVariables, ntty.boundVariables) ++ ", " ++
-                       ntty.unparse ++ ", " ++ 
-                       atty.unparse ++ ")";
-
   -- There should be no type variables in atty that aren't in ntty. (Important constraint!)
   -- that's why we only use ntty.FV above.
   
@@ -326,7 +274,7 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type at
   top.typerep = if subst.failure
                 then -- We didn't get a sensible type for givenNonterminalType. Let's do our best? (This error should already be caught!)
                      freshenCompletely(atty)
-                else performSubstitution(atty, subst);
+                else performRenaming(atty, subst);
   
   top.attrOccurring = fnat;
 }
@@ -338,13 +286,6 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type at
   top.sourceLocation = sl;
   top.fullName = fnnt;
   
-  ntty.boundVariables = top.boundVariables ++ ntty.freeVariables;
-  atty.boundVariables = ntty.boundVariables;
-  top.unparse = "anno@(" ++ sl.unparse ++ ", '" ++ fnnt ++ "', '" ++ fnat ++ "', " ++ 
-                       unparseTyVars(ntty.freeVariables, ntty.boundVariables) ++ ", " ++
-                       ntty.unparse ++ ", " ++ 
-                       atty.unparse ++ ")";
-
   -- There should be no type variables in atty that aren't in ntty. (Important constraint!)
   -- that's why we only use ntty.FV above.
   
@@ -357,7 +298,7 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type at
   top.typerep = if subst.failure
                 then -- We didn't get a sensible type for givenNonterminalType. Let's do our best? (This error should already be caught!)
                      freshenCompletely(atty)
-                else performSubstitution(atty, subst);
+                else performRenaming(atty, subst);
   
   top.attrOccurring = fnat;
 
@@ -386,12 +327,14 @@ function defsFromPADcls
 [Def] ::= valueDclInfos::[DclInfo] s::NamedSignature
 {
   -- We want to rewrite FROM the sig these PAs were declared with, TO the given sig
-  local attribute subst :: Substitution;
-  subst = unifyDirectional(head(valueDclInfos).typerep, s.typerep);
+  local subst :: Substitution =
+    unifyDirectional(head(valueDclInfos).typerep, s.typerep);
+  
+  local useSubst :: Substitution =
+    if !subst.failure then subst
+    else errorSubstitution(head(valueDclInfos).typerep);
   
   return if null(valueDclInfos) then []
-         else if subst.failure
-              then defsFromPADcls(tail(valueDclInfos), s) -- this can happen if the aspect sig is wrong. Error already reported. error("INTERNAL ERROR: PA subst unify error")
-              else map(performSubstitutionDef(_, subst), head(valueDclInfos).prodDefs) ++ defsFromPADcls(tail(valueDclInfos), s);
+         else map(performSubstitutionDef(_, useSubst), head(valueDclInfos).prodDefs) ++ defsFromPADcls(tail(valueDclInfos), s);
 }
 

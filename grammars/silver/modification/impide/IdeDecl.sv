@@ -33,7 +33,7 @@ terminal ImpIde_Wizard_NewFile 'new file' lexer classes {KEYWORD};
 concrete production ideDcl
 top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmts::IdeStmts
 {
-  top.pp = "temp_imp_ide_dcl " ++ parsername.pp ++ " " ++ fileextension.lexeme ++ "\n"; -- TODO not finished
+  top.unparse = "temp_imp_ide_dcl " ++ parsername.unparse ++ " " ++ fileextension.lexeme ++ "\n"; -- TODO not finished
 
   top.defs = [];
 
@@ -58,7 +58,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmt
 
   -- If there were errors looking up the name, do nothing. If we couldn't find the
   -- parser, then raise the error message noting that the name isn't a parser!
-  top.errors <- if !null(parsername.lookupValue.errors) || !null(spec) then []
+  top.errors <- if !parsername.lookupValue.found || !null(spec) then []
                 else [err(parsername.location, parsername.name ++ " is not a parser.")];
   
   -- Strip off the quotes AND the initial dot
@@ -169,10 +169,10 @@ top::IdeStmt ::=
 }
 
 -- Helpers for writing expected types
-global t_iomsgs :: Type = nonterminalType("core:IOVal", [listType(nonterminalType("ide:IdeMessage", []))]);
+global t_iomsgs :: Type = nonterminalType("core:IOVal", [listType(nonterminalType("silver:langutil:Message", []))]);
 global t_props :: Type = listType(nonterminalType("ide:IdeProperty", []));
-global t_io :: Type = foreignType("core:IO", []);
-global t_proj :: Type = foreignType("ide:IdeProject", []);
+global t_io :: Type = ioForeignType;
+global t_proj :: Type = foreignType("ide:IdeProject", "Object", []);
 global t_loc :: Type = nonterminalType("core:Location", []);
 
 concrete production makeIdeStmt_Builder
@@ -181,7 +181,7 @@ top::IdeStmt ::= 'builder' builderName::QName ';'
   top.ideFunctions = [builderFunction(builderName.lookupValue.fullName)];
   top.errors := builderName.lookupValue.errors;
   
-  -- IOVal<[IdeMessage]> ::= IdeProject  [IdeProperty]  IO
+  -- IOVal<[Message]> ::= IdeProject  [IdeProperty]  IO
   local expectedType :: Type =
     functionType(t_iomsgs, [t_proj, t_props, t_io], []);
   
@@ -201,7 +201,7 @@ top::IdeStmt ::= 'postbuilder' postbuilderName::QName ';'
   top.ideFunctions = [postbuilderFunction(postbuilderName.lookupValue.fullName)];
   top.errors := postbuilderName.lookupValue.errors;
   
-  -- IOVal<[IdeMessage]> ::= IdeProject  [IdeProperty]  IO
+  -- IOVal<[Message]> ::= IdeProject  [IdeProperty]  IO
   local expectedType :: Type =
     functionType(t_iomsgs, [t_proj, t_props, t_io], []);
   
@@ -221,7 +221,7 @@ top::IdeStmt ::= 'exporter' exporterName::QName ';'
   top.ideFunctions = [exporterFunction(exporterName.lookupValue.fullName)];
   top.errors := exporterName.lookupValue.errors;
   
-  -- IOVal<[IdeMessage]> ::= IdeProject  [IdeProperty]  IO
+  -- IOVal<[Message]> ::= IdeProject  [IdeProperty]  IO
   local expectedType :: Type =
     functionType(t_iomsgs, [t_proj, t_props, t_io], []);
   

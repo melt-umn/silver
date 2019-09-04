@@ -6,13 +6,13 @@
 concrete production propagateAttrDcl
 top::ProductionStmt ::= 'propagate' ns::NameList ';'
 {
-  top.pp = s"propagate ${ns.pp};";
+  top.unparse = s"propagate ${ns.unparse};";
   
   -- Forwards to productionStmtAppend of propagating the first element in ns
   -- and propagateAttrDcl containing the remaining names
   forwards to
     case ns of
-      nameListOne(n) -> 
+    | nameListOne(n) -> 
         propagateOne(n, location=top.location)
     | nameListCons(n, _, rest) ->
         productionStmtAppend(
@@ -23,84 +23,68 @@ top::ProductionStmt ::= 'propagate' ns::NameList ';'
 }
 
 {--
- - Generates the list of AppExprs used in calling the constructor
+ - Generates the expression we should use for an argument
  - @param loc      The parent location to use in construction
  - @param env      The environment
  - @param attrName The name of the attribute being propagated
- - @param inputs   The NamedSignatureElements being propagated
- - @return A list of AppExprs to be used to build the arguments
+ - @param input    The NamedSignatureElement being propagated
+ - @return Either this the child, or accessing `attrName` on the child
  -}
-function makeArgs
-[AppExpr] ::= loc::Location env::Decorated Env attrName::QName inputs::[NamedSignatureElement]
+function makeArg
+Expr ::= loc::Location env::Decorated Env attrName::QName input::NamedSignatureElement
 {
   attrName.env = env;
   
-  local at::QName = qName(loc, head(inputs).elementName);
+  local at::QName = qName(loc, input.elementName);
   at.env = env;
   
   -- Check if the attribute occurs on the first child
   local attrOccursOnHead :: Boolean = 
     !null(
-        -- The occurs dcls on this nonterminal for
-      flatMap(getOccursDcl(_, head(inputs).typerep.typeName, env),
+      -- The occurs dcls on this nonterminal for
+      flatMap(getOccursDcl(_, input.typerep.typeName, env),
           -- the full names of each candidate
           map((.fullName), attrName.lookupAttribute.dcls)));
-  local validTypeHead :: Boolean = head(inputs).typerep.isDecorable;
+  local validTypeHead :: Boolean = input.typerep.isDecorable;
   
   return
-    case inputs of
-      [] -> []
-    | h :: rest -> 
-        (if validTypeHead && attrOccursOnHead
-         then presentAppExpr(
-                access(
-                  baseExpr(at, location=loc), '.',
-                  qNameAttrOccur(attrName, location=loc),
-                  location=loc),
-                location=loc)
-         else presentAppExpr(
-                baseExpr(at, location=loc),
-                location=loc)) :: makeArgs(loc, env, attrName, rest)
-    end;
+    if validTypeHead && attrOccursOnHead
+    then access(
+           baseExpr(at, location=loc), '.',
+           qNameAttrOccur(attrName, location=loc),
+           location=loc)
+    else baseExpr(at, location=loc);
 }
 
 {--
  - Generates the list of AnnoExprs used in calling the constructor
  - @param loc      The parent location to use in construction
  - @param baseName The name of the parent from the signature
- - @param inputs   The NamedSignatureElements for the annotations
+ - @param input   The NamedSignatureElement for an annotation
  - @return A list of AnnoExprs to be used to build the named arguments
  -}
-function makeAnnoArgs
-[AnnoExpr] ::= loc::Location baseName::QName inputs::[NamedSignatureElement]
+function makeAnnoArg
+Pair<String Expr> ::= loc::Location baseName::QName input::NamedSignatureElement
 {
   -- TODO: This is a hacky way of getting the base name, not sure if correct
-  local annoName::QName = qName(loc, last(explode(":", head(inputs).elementName)));
+  -- trouble is the annotations are listed as fullnames, but have to be supplied as shortnames. weird.
+  local annoName :: String = last(explode(":", input.elementName));
 
   return
-    case inputs of
-      [] -> []
-    | h :: rest -> 
-      annoExpr(
-        annoName,
-        '=',
-        presentAppExpr(
-          access(
-            baseExpr(baseName, location=loc), '.',
-              qNameAttrOccur(annoName, location=loc),
-              location=loc),
-            location=loc),
-          location=loc) :: makeAnnoArgs(loc, baseName, rest)
-    end;
+    pair(annoName,
+      access(
+        baseExpr(baseName, location=loc), '.',
+        qNameAttrOccur(qName(loc, annoName), location=loc),
+        location=loc));
 }
 
 -- In the future, this should maybe be dispatch for different types of attributes (e.g. monoid)
 {--
  - Propagate a functor attribute on the enclosing production
- - @param a  The name of the attribute to propagate
+ - @param attr  The name of the attribute to propagate
  -}
 abstract production propagateOne
-top::ProductionStmt ::= a::QName
+top::ProductionStmt ::= attr::QName
 {
   -- No explicit errors, for now.  The only conceivable issue is the attribute not
   -- occuring on the LHS but this should be caught by the forward errors.  
@@ -111,26 +95,24 @@ top::ProductionStmt ::= a::QName
   prodName.grammarName = top.grammarName;
   prodName.config = top.config;
   prodName.env = top.env;
-  local inputs::AppExprs = 
-    foldl(snocAppExprs(_, ',', _, location=top.location),
-          emptyAppExprs(location=top.location),
-          makeArgs(top.location, top.env, a, top.frame.signature.inputElements));
-  local annotations::AnnoAppExprs = 
-    foldl(snocAnnoAppExprs(_, ',', _, location=top.location),
-          emptyAnnoAppExprs(location=top.location),
-          makeAnnoArgs(top.location, topName, top.frame.signature.namedInputElements));
+
+  local inputs :: [Expr] = 
+    map(makeArg(top.location, top.env, attr, _), top.frame.signature.inputElements);
+  local annotations :: [Pair<String Expr>] = 
+    map(makeAnnoArg(top.location, topName, _), top.frame.signature.namedInputElements);
 
   -- Construct an attribute def and call with the generated arguments
   forwards to 
     attributeDef(
       concreteDefLHS(topName, location=top.location),
       '.',
-      qNameAttrOccur(a, location=top.location),
+      qNameAttrOccur(attr, location=top.location),
       '=',
-      application(
+      mkFullFunctionInvocation(
+        top.location,
         baseExpr(prodName, location=top.location),
-        '(', inputs, ',', annotations, ')',
-        location=top.location),
+        inputs,
+        annotations),
       ';',
       location=top.location);
 }

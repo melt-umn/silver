@@ -1,3 +1,4 @@
 grammar core;
 
-exports core:monad;
+imports core:monad;
+imports core:reflect;

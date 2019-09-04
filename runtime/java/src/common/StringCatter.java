@@ -20,7 +20,7 @@ import java.io.IOException;
  * @see Util#writeFile
  * @see Util#appendFile
  */
-public final class StringCatter {
+public final class StringCatter implements Typed {
 	
 	private Object fst; // Either String or StringCatter
 	private StringCatter snd; // If non-null, then we're an append!
@@ -135,4 +135,9 @@ public final class StringCatter {
 		}
 		return out;
 	}
+    
+    @Override
+    public BaseTypeRep getType() {
+    	return new BaseTypeRep("String");
+    }
 }

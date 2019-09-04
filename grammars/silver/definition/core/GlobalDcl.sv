@@ -1,9 +1,11 @@
 grammar silver:definition:core;
 
+import silver:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph;
+
 concrete production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
 {
-  top.pp = "global " ++ id.pp ++ " :: " ++ t.pp ++ " = " ++ e.pp ++ "\n"; 
+  top.unparse = "global " ++ id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse ++ "\n"; 
   top.errors := t.errors ++ e.errors;
 
   production attribute fName :: String;
@@ -16,5 +18,12 @@ top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
     then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
     else [];
 
-  e.frame = globalExprContext();
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = 
+    constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
+
+  e.frame = globalExprContext(myFlowGraph);
 }

@@ -11,10 +11,14 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   host.cstEnv = directBuildTree(host.cstDcls ++ ext.cstDcls);
   host.containingGrammar = "host";
   host.cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
+  host.classTerminals = directBuildTree(host.classTerminalContribs ++ ext.classTerminalContribs);
+  host.parserAttributeAspects = directBuildTree(host.parserAttributeAspectContribs ++ ext.parserAttributeAspectContribs);
   host.prefixesForTerminals = directBuildTree(terminalPrefixes);
   ext.cstEnv = host.cstEnv;
   ext.containingGrammar = "ext";
   ext.cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
+  ext.classTerminals = host.classTerminals;
+  ext.parserAttributeAspects = host.parserAttributeAspects;
   ext.prefixesForTerminals = host.prefixesForTerminals;
   
   local startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, host.cstEnv);
@@ -32,7 +36,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   top.xmlCopper = 
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" ++
 
-"<CopperSpec xmlns=\"http://melt.cs.umn.edu/copper/xmlns\">\n" ++
+"<CopperSpec xmlns=\"http://melt.cs.umn.edu/copper/xmlns/skins/xml/0.9\">\n" ++
 
 "  <ExtendedParser id=\"" ++ makeCopperName(parsername) ++ "\">\n" ++
 "    <PP>" ++ parsername ++ "</PP>\n" ++
@@ -68,14 +72,26 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
 "    <BridgeProductions>\n" ++
   implode("", map(xmlCopperRef, ext.bridgeProductions)) ++
 "    </BridgeProductions>\n" ++
+"    <GlueDisambiguationFunctions>\n" ++
+  -- TODO: Workaround hack since host disambiguation functions are moved
+  -- to the extension grammar.
+  implode("",
+    map(xmlCopperRef,
+      map(
+        \ d::Decorated SyntaxDcl -> decorate new(d) with {containingGrammar = "ext";},
+        host.disambiguationClasses))) ++
+  implode("", map(xmlCopperRef, ext.disambiguationClasses)) ++
+"    </GlueDisambiguationFunctions>\n" ++
 "    <Declarations>\n" ++
   ext.xmlCopper ++
+-- All disambiguation classes go in the extension grammar for now,
+-- since they reference extension terminals.
+  implode("\n", map((.xmlCopper), host.disambiguationClasses)) ++
+  implode("\n", map((.xmlCopper), ext.disambiguationClasses)) ++
 "    </Declarations>\n" ++
 "  </ExtensionGrammar>\n\n" ++
 
 "</CopperSpec>\n";
-
-  top.unparse = error("No notion of unparsing for mda root...");
 }
 
 
