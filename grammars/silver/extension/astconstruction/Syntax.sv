@@ -10,25 +10,25 @@ imports silver:extension:patternmatching;
 
 exports silver:reflect:concretesyntax;
 
-concrete production silverExprLiteral
+concrete production quoteAST
 top::Expr ::= 'AST' '{' ast::AST_c '}'
 {
   top.unparse = s"AST {${ast.unparse}}";
   forwards to translate(top.location, reflect(ast.ast));
 }
 
-concrete production silverPatternLiteral
+concrete production quoteASTPattern
 top::Pattern ::= 'AST' '{' ast::AST_c '}'
 {
   top.unparse = s"AST {${ast.unparse}}";
   forwards to translatePattern(top.location, reflect(ast.ast));
 }
 
-concrete production escapeAST_c
+concrete production antiquoteAST_c
 top::AST_c ::= '$' '{' e::Expr '}'
 {
   top.unparse = s"$${${e.unparse}}";
-  top.ast = escapeAST(e);
+  top.ast = antiquoteAST(e);
   top.errors := [];
 }
 
@@ -51,7 +51,7 @@ top::AST_c ::= '_'
   top.errors := [];
 }
 
-abstract production escapeAST
+abstract production antiquoteAST
 top::AST ::= e::Expr
 {
   top.translation =
