@@ -154,18 +154,32 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
   top.moduleNames = [];
   top.terminalPrefixes = [];
   top.liftedAGDcls =
-    disambiguationGroupDcl(
-      'disambiguate',
-      termListCons(t, ',', ts, location=top.location),
-      actionCode_c(
-        '{',
-        productionStmtsSnoc(
-          productionStmtsNil(location=top.location),
-          pluckDef('pluck', baseExpr(t, location=top.location), ';', location=top.location),
-          location=top.location),
-        '}',
-        location=top.location),
-      location=top.location);
+    -- Generate a disambiguation function for every combination of ts.
+    -- TODO: we can't use Copper's subset disambiguation functions here unfourtunately,
+    -- since we currently require those to be disjoint.
+    foldr1(
+      appendAGDcl(_, _, location=top.location),
+      map(
+        \ ts::[QName] -> 
+          disambiguationGroupDcl(
+            'disambiguate',
+            foldr(
+              termList(_, _, location=top.location),
+              termListNull(location=top.location),
+              t :: ts),
+            actionCode_c(
+              '{',
+              productionStmtsSnoc(
+                productionStmtsNil(location=top.location),
+                pluckDef(
+                  'pluck', baseExpr(t, location=top.location), ';',
+                  location=top.location),
+                location=top.location),
+              '}',
+             location=top.location),
+            -- HACK: disambiguation function names are based on line number.  TODO fixme
+            location=loc("prefix", genInt() * 1234, -1, -1, -1, -1, -1)),
+        tail(powerSet(ts.qnames))));
 }
 
 -- Prefix seperator
