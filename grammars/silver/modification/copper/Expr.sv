@@ -53,6 +53,22 @@ top::Expr ::= q::Decorated QName
   top.upSubst = top.downSubst;
 }
 
+abstract production lexerClassReference
+top::Expr ::= q::Decorated QName
+{
+  top.unparse = q.unparse;
+
+  top.errors := []; -- Should only be referenceable from a context where its valid.
+
+  -- TODO: This should be a more specific type with type classes
+  top.typerep = listType(terminalIdType());
+  
+  top.translation = makeCopperName(q.lookupValue.fullName);
+  top.lazyTranslation = top.translation; -- never, but okay!
+  
+  top.upSubst = top.downSubst;
+}
+
 abstract production parserAttributeReference
 top::Expr ::= q::Decorated QName
 {

@@ -45,9 +45,13 @@ top::DclInfo ::= sg::String sl::Location fn::String
   top.sourceLocation = sl;
   top.fullName = fn;
   
-  -- If we made lexer classes types, it might simplify a lot of code.
+  -- If we made lexer classes proper types, it might simplify a lot of code.
   -- We wouldn't need a separate namespace, they could just be in the type namespace.
-  top.typerep = error("Internal compiler error: lexer classes do not have types");
+  -- Currently referencing a lexer class gives a list of its member's TerminalIds.
+  top.typerep = listType(terminalIdType());
+  top.refDispatcher = lexerClassReference(_, location=_);
+  top.defDispatcher = errorValueDef(_, _, location=_);
+  top.defLHSDispatcher = errorDefLHS(_, location=_);
 }
 
 {--

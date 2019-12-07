@@ -79,6 +79,8 @@ s"""    <ClassAuxiliaryCode><Code><![CDATA[
           public List<common.Terminal> getTokens() {
             return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
           }
+          
+${s2.lexerClassRefDcls}
         ]]></Code></ClassAuxiliaryCode>
 """ ++
 -- If not otherwise specified. We always specify.
