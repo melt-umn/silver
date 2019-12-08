@@ -1,5 +1,20 @@
 grammar silver:modification:copper;
 
+terminal Failure_t 'failure' lexer classes {KEYWORD, RESERVED};
+
+concrete production failureTerminalIdExpr
+top::Expr ::= 'failure'
+{
+  top.unparse = "failure";
+  top.errors := [];
+  top.typerep = terminalIdType();
+
+  top.translation = "-1";
+  top.lazyTranslation = top.translation;
+
+  top.upSubst = top.downSubst;
+}
+
 abstract production actionChildReference
 top::Expr ::= q::Decorated QName
 {
@@ -22,8 +37,7 @@ top::Expr ::= q::Decorated QName
 
   top.errors := []; -- Should only be referenceable from a context where its valid.
 
-  -- We... don't actually have a type we can use here TODO. Maybe we could cheat with a skolem type?
-  -- Or maybe these should just be TerminalId, see below.
+  -- TODO: It would be nice to have a more specific type here, see comment below.
   top.typerep = terminalIdType();
   
   top.translation = makeCopperName(q.lookupValue.fullName); -- Value right here?
@@ -102,7 +116,6 @@ top::Expr ::= q::Decorated QName
   top.translation =
     if q.name == "lexeme" then "new common.StringCatter(lexeme)" else
     if q.name == "shiftable" then "shiftableList" else
-    if q.name == "failure" then "-1" else
     if q.name == "line" then "virtualLocation.getLine()" else
     if q.name == "column" then "virtualLocation.getColumn()" else
     if q.name == "filename" then "new common.StringCatter(virtualLocation.getFileName())" else
