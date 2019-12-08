@@ -1,7 +1,8 @@
 grammar silver:modification:copper;
 
-terminal Lexer_kwd 'lexer' lexer classes {KEYWORD};
-terminal Class_kwd 'class' lexer classes {KEYWORD};
+terminal Lexer_kwd   'lexer'   lexer classes {KEYWORD};
+terminal Class_kwd   'class'   lexer classes {KEYWORD};
+terminal Extends_kwd 'extends' lexer classes {KEYWORD};
 
 concrete production lexerClassDclEmpty
 top::AGDcl ::= 'lexer' 'class' id::Name ';'
@@ -57,6 +58,15 @@ top::LexerClassModifiers ::= h::LexerClassModifier  t::LexerClassModifiers
 
   top.lexerClassModifiers = h.lexerClassModifiers ++ t.lexerClassModifiers;
   top.errors := h.errors ++ t.errors;
+}
+
+concrete production lexerClassModifierExtends
+top::LexerClassModifier ::= 'extends' cls::ClassList
+{
+  top.unparse = "extends " ++ cls.unparse;
+
+  top.lexerClassModifiers = [lexerClassExtends(cls.lexerClasses)];
+  top.errors := cls.errors;
 }
 
 concrete production lexerClassModifierDominates

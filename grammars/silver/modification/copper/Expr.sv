@@ -58,7 +58,9 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
 
-  top.errors := []; -- Should only be referenceable from a context where its valid.
+  top.errors := if !top.frame.permitActions
+                then [err(top.location, "References to lexer class members can only be made in action blocks")]
+                else [];
 
   -- TODO: This should be a more specific type with type classes
   top.typerep = listType(terminalIdType());

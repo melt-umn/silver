@@ -15,6 +15,8 @@ synthesized attribute cstNormalize :: [SyntaxDcl];
 -- Compute and allow lookup of all terminals in a lexer class
 synthesized attribute classTerminalContribs::[Pair<String String>];
 autocopy attribute classTerminals::EnvTree<String>;
+synthesized attribute superClassContribs::[Pair<String String>];
+autocopy attribute superClasses::EnvTree<String>;
 
 -- Parser attribute action code aspects
 synthesized attribute parserAttributeAspectContribs::[Pair<String String>];
@@ -35,7 +37,7 @@ autocopy attribute prefixesForTerminals :: EnvTree<String>;
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, parserAttributeAspectContribs, parserAttributeAspects, univLayout, lexerClassRefDcls, xmlCopper, containingGrammar, prefixesForTerminals;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, parserAttributeAspectContribs, parserAttributeAspects, univLayout, lexerClassRefDcls, xmlCopper, containingGrammar, prefixesForTerminals;
 
 abstract production nilSyntax
 top::Syntax ::=
@@ -48,6 +50,7 @@ top::Syntax ::=
   top.allMarkingTerminals = [];
   top.disambiguationClasses = [];
   top.classTerminalContribs = [];
+  top.superClassContribs = [];
   top.parserAttributeAspectContribs = [];
   top.lexerClassRefDcls = "";
   top.xmlCopper = "";
@@ -63,6 +66,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
   top.allMarkingTerminals = s1.allMarkingTerminals ++ s2.allMarkingTerminals;
   top.disambiguationClasses = s1.disambiguationClasses ++ s2.disambiguationClasses;
   top.classTerminalContribs = s1.classTerminalContribs ++ s2.classTerminalContribs;
+  top.superClassContribs = s1.superClassContribs ++ s2.superClassContribs;
   top.parserAttributeAspectContribs = s1.parserAttributeAspectContribs ++ s2.parserAttributeAspectContribs;
   top.lexerClassRefDcls = s1.lexerClassRefDcls ++ s2.lexerClassRefDcls;
   top.xmlCopper = s1.xmlCopper ++ s2.xmlCopper;
@@ -71,7 +75,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, parserAttributeAspectContribs, parserAttributeAspects, univLayout, lexerClassRefDcls, xmlCopper, classDomContribs, classSubContribs, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, parserAttributeAspectContribs, parserAttributeAspects, univLayout, lexerClassRefDcls, xmlCopper, classDomContribs, classSubContribs, containingGrammar, prefixesForTerminals;
 
 synthesized attribute sortKey :: String;
 
@@ -83,6 +87,7 @@ top::SyntaxDcl ::=
   top.allMarkingTerminals = [];
   top.disambiguationClasses = [];
   top.classTerminalContribs = [];
+  top.superClassContribs = [];
   top.parserAttributeAspectContribs = [];
   top.classDomContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.classSubContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
@@ -255,7 +260,7 @@ String ::= ns::Decorated NamedSignature
 
 
 function lookupStrings
-[[Decorated SyntaxDcl]] ::= t::[String] e::EnvTree<Decorated SyntaxDcl>
+[[a]] ::= t::[String] e::EnvTree<a>
 {
   return map(searchEnvTree(_, e), t);
 }
@@ -294,6 +299,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.classSubContribs = modifiers.submitsXML;
 
   top.cstNormalize = [top];
+  top.superClassContribs = modifiers.superClassContribs;
   top.disambiguationClasses = modifiers.disambiguationClasses;
 
   production terms :: [String] = searchEnvTree(n, top.classTerminals);
