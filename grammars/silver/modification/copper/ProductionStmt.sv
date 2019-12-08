@@ -21,7 +21,7 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
   -- Cast to integer is required, because that's secretly the real type of the
   -- result, but our type system only calls it an Object at the moment.
   -- Perhaps this problem can be resolved by using a proper type in this situation.
-  top.translation = "return (Integer)" ++ e.translation ++ ";\n";
+  top.translation = "return (Integer)(" ++ e.translation ++ ");\n";
 
   top.errors := (if !top.frame.permitPluck
                then [err(top.location, "'pluck' allowed only in disambiguation-group parser actions.")]
