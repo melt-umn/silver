@@ -21,14 +21,6 @@ terminal FooId /foo[a-zA-Z]*/ lexer classes CKeyword;
 
 parser attribute aIds::[TerminalId]
   action {aIds = AKeyword;};
-  
-function terminalSetEq
-Boolean ::= ts1::[TerminalId] ts2::[TerminalId]
-{
-  return
-    length(ts1) == length(ts2) &&
-    all(zipWith(terminalIdEq, map(sortBy(terminalIdEq, _),  ts1), map(sortBy(terminalIdEq, _),  ts2)));
-}
 
 -- The easiest way to test this and get data out of an action block is pushToken, ugh.
 terminal Res /true|false/;
