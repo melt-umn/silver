@@ -12,27 +12,36 @@ lexer class AKeyword extends Keyword;
 lexer class BKeyword extends AKeyword;
 lexer class CKeyword submits to BKeyword, extends AKeyword;
 
-terminal Foo 'foo' lexer classes {BKeyword};
+lexer class C1 extends C3;
+lexer class C2 extends C1;
+lexer class C3 extends C2;
+
+terminal Foo 'foo' lexer classes {BKeyword, C2};
 terminal FooId /foo[a-zA-Z]*/ lexer classes CKeyword;
 
 parser attribute aIds::[TerminalId]
   action {aIds = AKeyword;};
+  
+function terminalSetEq
+Boolean ::= ts1::[TerminalId] ts2::[TerminalId]
+{
+  return
+    length(ts1) == length(ts2) &&
+    all(zipWith(terminalIdEq, map(sortBy(terminalIdEq, _),  ts1), map(sortBy(terminalIdEq, _),  ts2)));
+}
 
 -- The easiest way to test this and get data out of an action block is pushToken, ugh.
 terminal Res /true|false/;
-terminal GetA 'getA'
+terminal GetRes 'getRes'
   lexer classes {Keyword},
   action {
     pushToken(Res, toString(
-      containsBy(terminalIdEq, Foo, AKeyword) && 
-      containsBy(terminalIdEq, FooId, AKeyword) && 
-      !containsBy(terminalIdEq, Id, AKeyword) &&
-      containsBy(terminalIdEq, Foo, BKeyword) && 
-      !containsBy(terminalIdEq, FooId, BKeyword) && 
-      !containsBy(terminalIdEq, Id, BKeyword) &&
-      !containsBy(terminalIdEq, Foo, CKeyword) && 
-      containsBy(terminalIdEq, FooId, CKeyword) && 
-      !containsBy(terminalIdEq, Id, CKeyword)));
+      terminalSetEq(AKeyword, [Foo, FooId]) &&
+      terminalSetEq(BKeyword, [Foo]) &&
+      terminalSetEq(CKeyword, [FooId]) &&
+      terminalSetEq(C1, [Foo]) &&
+      terminalSetEq(C2, [Foo]) &&
+      terminalSetEq(C3, [Foo])));
   };
 
 synthesized attribute result::String;
@@ -42,7 +51,7 @@ concrete productions top::Root
 | Id { top.result = "Id"; }
 | Foo { top.result = "Foo"; }
 | FooId { top.result = "FooId"; }
-| GetA res::Res { top.result = res.lexeme; }
+| GetRes res::Res { top.result = res.lexeme; }
 
 parser parse :: Root {
   copper_features:lexer_class;
@@ -58,5 +67,5 @@ equalityTest ( parse("foo", "").parseTree.result, "Foo", String, copper_tests );
 equalityTest ( parse("fooxyz", "").parseSuccess, true, Boolean, copper_tests );
 equalityTest ( parse("fooxyz", "").parseTree.result, "FooId", String, copper_tests );
 
-equalityTest ( parse("getA", "").parseSuccess, true, Boolean, copper_tests );
-equalityTest ( parse("getA", "").parseTree.result, "true", String, copper_tests );
+equalityTest ( parse("getRes", "").parseSuccess, true, Boolean, copper_tests );
+equalityTest ( parse("getRes", "").parseTree.result, "true", String, copper_tests );
