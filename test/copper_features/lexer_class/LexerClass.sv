@@ -6,14 +6,14 @@ imports copper_features;
 
 terminal Id /[a-zA-Z]+/;
 
-lexer class Keyword dominates Id;
+lexer class Keyword dominates {Id};
 
 lexer class AKeyword extends Keyword;
 lexer class BKeyword extends AKeyword;
-lexer class CKeyword submits to BKeyword extends AKeyword;
+lexer class CKeyword submits to BKeyword, extends AKeyword;
 
 terminal Foo 'foo' lexer classes {BKeyword};
-terminal FooId /foo[a-zA-Z]*/ lexer classes {CKeyword};
+terminal FooId /foo[a-zA-Z]*/ lexer classes CKeyword;
 
 parser attribute aIds::[TerminalId]
   action {aIds = AKeyword;};

@@ -52,7 +52,7 @@ top::LexerClassModifiers ::= tm::LexerClassModifier
   top.errors := tm.errors; 
 }
 concrete production lexerClassModifiersCons
-top::LexerClassModifiers ::= h::LexerClassModifier  t::LexerClassModifiers
+top::LexerClassModifiers ::= h::LexerClassModifier ',' t::LexerClassModifiers
 {
   top.unparse = h.unparse ++ " " ++ t.unparse;
 
@@ -61,7 +61,7 @@ top::LexerClassModifiers ::= h::LexerClassModifier  t::LexerClassModifiers
 }
 
 concrete production lexerClassModifierExtends
-top::LexerClassModifier ::= 'extends' cls::ClassList
+top::LexerClassModifier ::= 'extends' cls::LexerClasses
 {
   top.unparse = "extends " ++ cls.unparse;
 
@@ -70,7 +70,7 @@ top::LexerClassModifier ::= 'extends' cls::ClassList
 }
 
 concrete production lexerClassModifierDominates
-top::LexerClassModifier ::= 'dominates' terms::TermPrecList
+top::LexerClassModifier ::= 'dominates' terms::TermPrecs
 {
   top.unparse = "dominates " ++ terms.unparse;
 
@@ -79,7 +79,7 @@ top::LexerClassModifier ::= 'dominates' terms::TermPrecList
 }
 
 concrete production lexerClassModifierSubmitsTo
-top::LexerClassModifier ::= 'submits' 'to' terms::TermPrecList
+top::LexerClassModifier ::= 'submits' 'to' terms::TermPrecs
 {
   top.unparse = "submits to " ++ terms.unparse;
 
