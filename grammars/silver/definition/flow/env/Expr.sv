@@ -601,7 +601,7 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 -- These are all errors, basically.
 
 aspect production failureTerminalIdExpr
-top::Expr ::= 'failure'
+top::Expr ::= 'disambiguationFailure'
 {
   top.flowDeps = [];
   top.flowDefs = [];

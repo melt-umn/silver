@@ -1,11 +1,11 @@
 grammar silver:modification:copper;
 
-terminal Failure_t 'failure' lexer classes {KEYWORD, RESERVED};
+terminal DisambiguationFailure_t 'disambiguationFailure' lexer classes {KEYWORD, RESERVED};
 
 concrete production failureTerminalIdExpr
-top::Expr ::= 'failure'
+top::Expr ::= 'disambiguationFailure'
 {
-  top.unparse = "failure";
+  top.unparse = "disambiguationFailure";
   top.errors := [];
   top.typerep = terminalIdType();
 

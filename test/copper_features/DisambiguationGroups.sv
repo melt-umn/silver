@@ -22,7 +22,7 @@ disambiguate Foo_t, Id {
 }
 
 disambiguate Bar_t, Id {
-  pluck failure;
+  pluck disambiguationFailure;
 }
 
 parser dgparse::DGRoot {
