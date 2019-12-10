@@ -9,7 +9,7 @@ top::Expr ::= 'disambiguationFailure'
   top.errors := [];
   top.typerep = terminalIdType();
 
-  top.translation = "-1";
+  top.translation = "(-1)";
   top.lazyTranslation = top.translation;
 
   top.upSubst = top.downSubst;
