@@ -67,11 +67,11 @@ top::Expr ::= 'reify'
 {
   local resultType::Type =
     case finalType(top).outputType of
-      nonterminalType("core:Either", [stringType(), a]) -> a
+    | nonterminalType("core:Either", [stringType(), a]) -> a
     | _ -> error("Unexpected final type for reify!")
     end;
   
-  -- In the unusual case that we have a skolems in the result type, we can't generalize them, but
+  -- In the unusual case that we have skolems in the result type, we can't generalize them, but
   -- we also can't do any better, so leave the runtime result TypeRep unfreshened.
   -- There is a similar problem with lambdas.
   top.translation =
