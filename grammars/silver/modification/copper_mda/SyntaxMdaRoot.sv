@@ -1,5 +1,6 @@
 grammar silver:modification:copper_mda;
 
+import silver:util:raw:graph as g;
 
 abstract production cstCopperMdaRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Syntax  terminalPrefixes::[Pair<String String>]
@@ -12,12 +13,20 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   host.containingGrammar = "host";
   host.cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
   host.classTerminals = directBuildTree(host.classTerminalContribs ++ ext.classTerminalContribs);
+  host.superClasses =
+    directBuildTree(
+      g:toList(
+        g:transitiveClosure(
+          g:add(
+            host.superClassContribs ++ ext.superClassContribs,
+            g:empty(compareString)))));
   host.parserAttributeAspects = directBuildTree(host.parserAttributeAspectContribs ++ ext.parserAttributeAspectContribs);
   host.prefixesForTerminals = directBuildTree(terminalPrefixes);
   ext.cstEnv = host.cstEnv;
   ext.containingGrammar = "ext";
   ext.cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
   ext.classTerminals = host.classTerminals;
+  ext.superClasses = host.superClasses;
   ext.parserAttributeAspects = host.parserAttributeAspects;
   ext.prefixesForTerminals = host.prefixesForTerminals;
   

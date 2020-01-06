@@ -9,12 +9,13 @@ autocopy attribute className :: String;
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, disambiguationClasses, dominatesXML, submitsXML, containingGrammar;
+nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, containingGrammar;
 
 abstract production consLexerClassMod
 top::SyntaxLexerClassModifiers ::= h::SyntaxLexerClassModifier  t::SyntaxLexerClassModifiers
 {
   top.cstErrors := h.cstErrors ++ t.cstErrors;
+  top.superClassContribs = h.superClassContribs ++ t.superClassContribs;
   top.disambiguationClasses = h.disambiguationClasses ++ t.disambiguationClasses;
   top.dominatesXML = h.dominatesXML ++ t.dominatesXML;
   top.submitsXML = h.submitsXML ++ t.submitsXML;
@@ -24,6 +25,7 @@ abstract production nilLexerClassMod
 top::SyntaxLexerClassModifiers ::= 
 {
   top.cstErrors := [];
+  top.superClassContribs = [];
   top.disambiguationClasses = [];
   top.dominatesXML = "";
   top.submitsXML = "";
@@ -34,16 +36,33 @@ top::SyntaxLexerClassModifiers ::=
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, disambiguationClasses, dominatesXML, submitsXML, containingGrammar;
+nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, containingGrammar;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
 top::SyntaxLexerClassModifier ::=
 {
   --top.cstErrors := [];
+  top.superClassContribs = [];
   top.disambiguationClasses = [];
   top.dominatesXML = "";
   top.submitsXML = "";
+}
+
+{--
+ - Other lexer classes of which this is considered a sub-class.
+ -}
+abstract production lexerClassExtends
+top::SyntaxLexerClassModifier ::= super::[String]
+{
+  production superRefs :: [[Decorated SyntaxDcl]] = lookupStrings(super, top.cstEnv);
+
+  top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
+                     if !null(a.snd) then []
+                     else ["Lexer Class " ++ a.fst ++ " was referenced but " ++
+                           "this grammar was not included in this parser. (Referenced from extends clause for lexer class)"],
+                   zipWith(pair, super, superRefs));
+  top.superClassContribs = map(pair(top.className, _), super);
 }
 
 {--

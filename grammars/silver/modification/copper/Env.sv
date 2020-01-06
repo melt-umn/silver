@@ -1,7 +1,5 @@
 grammar silver:modification:copper;
 
-import silver:extension:list;
-
 --------------------------------------------------------------------------------
 -- Defs.sv
 
@@ -30,6 +28,7 @@ top::Def ::= d::EnvItem
 {
   top.dcl = d.dcl;
   top.lexerClassList = [d];
+  top.valueList = [d];
 }
 
 -- TODO: we don't do any renaming of lexer classes BUG

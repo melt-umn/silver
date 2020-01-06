@@ -7,6 +7,8 @@ imports silver:definition:env;
 imports silver:translation:java:core only makeIdName, makeClassName, makeNTClassName;
 imports silver:translation:java:type only transType;
 
+import silver:util:raw:graph as g;
+
 {--
  - Encapsulates transformations and analysis of Syntax
  -}
@@ -25,6 +27,13 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   s.containingGrammar = "host";
   s.univLayout = error("TODO: make this environment not be decorated?"); -- TODO
   s.classTerminals = error("TODO: shouldn't by necessary to normalize"); -- TODO
+  s.superClasses =
+    directBuildTree(
+      g:toList(
+        g:transitiveClosure(
+          g:add(
+            s.superClassContribs,
+            g:empty(compareString)))));
   s.parserAttributeAspects = error("TODO: shouldn't by necessary to normalize"); -- TODO
   s.prefixesForTerminals = error("TODO: shouldn't by necessary to normalize"); -- TODO
   
@@ -35,6 +44,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   s2.containingGrammar = "host";
   s2.cstNTProds = error("TODO: make this environment not be decorated?"); -- TODO
   s2.classTerminals = directBuildTree(s.classTerminalContribs);
+  s2.superClasses = s.superClasses;
   s2.parserAttributeAspects = directBuildTree(s.parserAttributeAspectContribs);
   s2.prefixesForTerminals = directBuildTree(terminalPrefixes);
   
@@ -79,6 +89,8 @@ s"""    <ClassAuxiliaryCode><Code><![CDATA[
           public List<common.Terminal> getTokens() {
             return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
           }
+          
+${s2.lexerClassRefDcls}
         ]]></Code></ClassAuxiliaryCode>
 """ ++
 -- If not otherwise specified. We always specify.
