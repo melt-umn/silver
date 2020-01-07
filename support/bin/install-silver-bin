@@ -67,11 +67,6 @@ do
 
     ln -s "$("$READLINK" -f "$SCRIPT")" ~/bin/
 
-    if [ ! $? ]; then
-        echo "Install failed!!"
-        exit 3
-    fi
-
     echo "Created ~/bin/$SCRIPT_NAME"
 
     # Just in case
