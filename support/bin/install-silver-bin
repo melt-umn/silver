@@ -59,7 +59,8 @@ do
     
     echo "Found $REPO"
 
-    if [ -a ~/bin/$SCRIPT_NAME ]; then
+    if [ -e ~/bin/$SCRIPT_NAME -o -h ~/bin/$SCRIPT_NAME ]; then
+        # -h needed in case the link exists but the targeted file does not
         rm ~/bin/$SCRIPT_NAME
         echo "Removed old(?) ~/bin/$SCRIPT_NAME file."
     fi
