@@ -15,7 +15,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   top.valueWeaving := body.valueWeaving;
 
   local argsAccess :: String =
-    implode(", ", map((.childRefElem), namedSig.inputElements));
+    implode(", ", "expected" :: map((.childRefElem), namedSig.inputElements));
 
   local funBody :: String =
 s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate();
@@ -68,7 +68,8 @@ ${makeIndexDcls(0, whatSig.inputElements)}
 ${implode("", map((.childStaticElem), whatSig.inputElements))}
 	}
 
-	public ${className}(${whatSig.javaSignature}) {
+	public ${className}(${whatSig.expectedTypeJavaSignature}) {
+	  super(expected);
 ${implode("", map(makeChildAssign, whatSig.inputElements))}
 	}
 
@@ -125,7 +126,7 @@ ${implode("", map(makeChildAccessCaseLazy, whatSig.inputElements))}
 		return "${whatSig.fullName}";
 	}
 
-	public static ${whatSig.outputElement.typerep.transType} invoke(${whatSig.javaSignature}) {
+	public static ${whatSig.outputElement.typerep.transType} invoke(${whatSig.expectedTypeJavaSignature}) {
 		try {
 ${whatResult}
 		} catch(Throwable t) {
@@ -138,8 +139,8 @@ ${whatResult}
 
 	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transType}> {
 		@Override
-		public final ${whatSig.outputElement.typerep.transType} invoke(final Object[] children, final Object[] namedNotApplicable) {
-			return ${className}.invoke(${implode(", ", unpackChildren(0, whatSig.inputElements))});
+		public final ${whatSig.outputElement.typerep.transType} invoke(final common.Typed expected, final Object[] children, final Object[] namedNotApplicable) {
+			return ${className}.invoke(${implode(", ", "expected" :: unpackChildren(0, whatSig.inputElements))});
 		}
 		
 		@Override

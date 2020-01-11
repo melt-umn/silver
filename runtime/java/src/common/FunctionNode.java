@@ -17,6 +17,10 @@ import common.exceptions.SilverInternalError;
  */
 public abstract class FunctionNode extends Node {
 
+	public FunctionNode(Typed expected) {
+		super(expected);
+	}
+
 	/**
 	 * The normal way of decorating a function node. 
 	 * 

@@ -1,7 +1,7 @@
 package common;
 
 /**
- * Representation of a function Silver type, used for run-time type checking in reification.  
+ * Representation of a primitive, terminal or nonterminal Silver type, used for run-time type checking in reification.  
  * 
  * @author krame505
  */

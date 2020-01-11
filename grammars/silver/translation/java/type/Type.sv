@@ -119,14 +119,14 @@ top::Type ::= te::Type
   top.transClassType = "common.DecoratedNode";
   top.transTypeRep =
     case te of
-      nonterminalType(fn, params) ->
-        s"new common.BaseTypeRep(\"Decorated ${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}})"
+    | nonterminalType(fn, params) ->
+        s"new common.DecoratedTypeRep(new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}}))"
     | _ -> error("Found decoratedType that does not wrap nonterminalType!")
     end;
   top.transFreshTypeRep =
     case te of
-      nonterminalType(fn, params) ->
-        s"new common.BaseTypeRep(\"Decorated ${fn}\", new common.TypeRep[] {${implode(", ", map((.transFreshTypeRep), params))}})"
+    | nonterminalType(fn, params) ->
+        s"new common.DecoratedTypeRep(new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transFreshTypeRep), params))}}))"
     | _ -> error("Found decoratedType that does not wrap nonterminalType!")
     end;
 }

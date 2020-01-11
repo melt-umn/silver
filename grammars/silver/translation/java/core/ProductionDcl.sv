@@ -43,8 +43,13 @@ ${makeIndexDcls(0, namedSig.inputElements)}
 ${implode("", map((.childStaticElem), namedSig.inputElements))}
 	}
 
+	public ${className}(${namedSig.expectedTypeJavaSignature}) {
+		super(${implode(", ", "expected" :: map((.annoRefElem), namedSig.namedInputElements))});
+${implode("", map(makeChildAssign, namedSig.inputElements))}
+	}
+
 	public ${className}(${namedSig.javaSignature}) {
-		super(${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
+		super(${implode(", ", "(() -> getType())" :: map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
 	}
 
@@ -169,8 +174,8 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 
 	public static final class Factory extends common.NodeFactory<${fnnt}> {
 		@Override
-		public final ${fnnt} invoke(final Object[] children, final Object[] annotations) {
-			return new ${className}(${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+		public final ${fnnt} invoke(final common.Typed expected, final Object[] children, final Object[] annotations) {
+			return new ${className}(${implode(", ", "expected" :: unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
 		}
 		
 		@Override

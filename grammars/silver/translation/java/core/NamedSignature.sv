@@ -4,6 +4,7 @@ grammar silver:translation:java:core;
  - The java translation of the *input parameters* signature.
  -}
 synthesized attribute javaSignature :: String occurs on NamedSignature;
+synthesized attribute expectedTypeJavaSignature :: String occurs on NamedSignature;
 synthesized attribute refInvokeTrans :: String occurs on NamedSignature;
 -- "final Object c_signame"
 synthesized attribute childSigElem :: String occurs on NamedSignatureElement;
@@ -25,7 +26,8 @@ aspect production namedSignature
 top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatureElement np::[NamedSignatureElement]
 {
   top.javaSignature = implode(", ", map((.childSigElem), ie) ++ map((.annoSigElem), np));
-  top.refInvokeTrans = implode(", ", map((.childRefElem), ie) ++ map((.annoRefElem), np));
+  top.expectedTypeJavaSignature = implode(", ", "final common.Typed expected" :: map((.childSigElem), ie) ++ map((.annoSigElem), np));
+  top.refInvokeTrans = implode(", ", "(() -> resultType)" :: map((.childRefElem), ie) ++ map((.annoRefElem), np));
 }
 
 -- TODO: It'd be nice to maybe split these into the ordered parameters and the annotations
@@ -171,6 +173,28 @@ s"""Object ${n.annoRefElem} = null;
 			throw new common.exceptions.AnnotationReifyTraceException("${fn}", "${n.elementName}", e);
 		}
 """;
+}
+function makeExpectedTypeUnify
+String ::= expectedTrans::String expected::Type arg::Type
+{
+  local allTyVars::[TyVar] = setUnionTyVars(arg.freeVariables, expected.freeVariables);
+  return
+    if length(arg.freeVariables) + length(expected.freeVariables) > length(allTyVars)
+    -- arg and expected share variables, so we can refine the inferred type
+    then s"""((common.Typed)(() -> {
+${makeTyVarDecls(5, allTyVars)}
+        if (!common.TypeRep.unify(${expectedTrans}.getType(), ${expected.transFreshTypeRep})) {
+          throw new common.exceptions.SilverInternalError("Unexpected expected type unification failure");
+        }
+        return ${arg.transFreshTypeRep};
+      }))"""
+    -- arg and expected do not share variables, so we can skip the unification
+    else makeExpectedTypeDirect(arg);
+}
+function makeExpectedTypeDirect
+String ::= arg::Type
+{
+  return s"((common.Typed)(() -> {${makeTyVarDecls(0, arg.freeVariables)} return ${arg.transFreshTypeRep}; }))";
 }
 
 

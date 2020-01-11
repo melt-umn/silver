@@ -22,12 +22,12 @@ nonterminal PrimPatterns with
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors,
   downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation;
+  scrutineeType, returnType, expectedTypeTranslation, translation;
 nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors,
   downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation;
+  scrutineeType, returnType, expectedTypeTranslation, translation;
 
 autocopy attribute scrutineeType :: Type;
 autocopy attribute returnType :: Type;
@@ -51,6 +51,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- ensureDecoratedExpr is currently wrapping 'e' in 'exprRef' which suppresses errors
   -- TODO: the use of 'exprRef' should be reviewed, given that this error slipped through...
   top.errors := e.errors ++ forward.errors;
+  
+  e.expectedTypeTranslation = top.expectedTypeTranslation;
   
   forwards to matchPrimitiveReal(ensureDecoratedExpr(e), t, pr, f, location=top.location);
 }
@@ -94,7 +96,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   pr.scrutineeType = scrutineeType;
   pr.returnType = t.typerep;
   
-  local resultTransType :: String = performSubstitution(t.typerep, top.finalSubst).transType;
+  local resultFinalType :: Type = performSubstitution(t.typerep, top.finalSubst);
+  local resultTransType :: String = resultFinalType.transType;
   -- It is necessary to subst on scrutineeType here for the horrible reason that the type we're matching on
   -- may not be determined until we get to the constructor list. e.g. 'case error("lol") of pair(x,_) -> x end'
   -- which is legal, but if we don't do this will result in java translation errors (as the scrutinee will be
@@ -122,6 +125,10 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication); 
   -- TODO there seems to be an opportunity here to avoid an anon class somehow...
+  
+  e.expectedTypeTranslation = top.expectedTypeTranslation;
+  pr.expectedTypeTranslation = makeExpectedTypeDirect(resultFinalType);
+  f.expectedTypeTranslation = pr.expectedTypeTranslation;
 }
 
 concrete production onePattern
@@ -134,6 +141,8 @@ top::PrimPatterns ::= p::PrimPattern
   
   p.downSubst = top.downSubst;
   top.upSubst = p.upSubst;
+  
+  p.expectedTypeTranslation = top.expectedTypeTranslation;
 }
 concrete production consPattern
 top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
@@ -146,6 +155,9 @@ top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
   p.downSubst = top.downSubst;
   ps.downSubst = p.upSubst;
   top.upSubst = ps.upSubst;
+  
+  p.expectedTypeTranslation = top.expectedTypeTranslation;
+  ps.expectedTypeTranslation = top.expectedTypeTranslation;
 }
 
 -- TODO: Long term, I'd like to switch to having a PrimRule and rename PrimPatterns PrimRules.
@@ -219,6 +231,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.upSubst = errCheck2.upSubst;
   
   e.env = newScopeEnv(ns.defs, top.env);
+  e.expectedTypeTranslation = top.expectedTypeTranslation;
   
   top.translation = "if(scrutineeNode instanceof " ++ makeClassName(qn.lookupValue.fullName) ++
     ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
@@ -271,6 +284,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   -- Here ends the hack
   
   e.env = newScopeEnv(ns.defs, top.env);
+  e.expectedTypeTranslation = top.expectedTypeTranslation;
   
   top.translation = "if(scrutineeNode instanceof " ++ makeClassName(qn.lookupValue.fullName) ++
     ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
@@ -303,6 +317,8 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
   top.upSubst = errCheck2.upSubst;
+  
+  e.expectedTypeTranslation = top.expectedTypeTranslation;
 
   top.translation = "if(scrutinee == " ++ i.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -331,6 +347,8 @@ top::PrimPattern ::= f::Float_t '->' e::Expr
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
   top.upSubst = errCheck2.upSubst;
+  
+  e.expectedTypeTranslation = top.expectedTypeTranslation;
 
   top.translation = "if(scrutinee == " ++ f.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -359,6 +377,8 @@ top::PrimPattern ::= i::String_t '->' e::Expr
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
   top.upSubst = errCheck2.upSubst;
+  
+  e.expectedTypeTranslation = top.expectedTypeTranslation;
 
   top.translation = "if(scrutinee.equals(" ++ i.lexeme ++ ")) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -387,6 +407,8 @@ top::PrimPattern ::= i::String '->' e::Expr
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
   top.upSubst = errCheck2.upSubst;
+  
+  e.expectedTypeTranslation = top.expectedTypeTranslation;
 
   top.translation = "if(scrutinee == " ++ i ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -415,6 +437,8 @@ top::PrimPattern ::= e::Expr
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
   top.upSubst = errCheck2.upSubst;
+  
+  e.expectedTypeTranslation = top.expectedTypeTranslation;
 
   top.translation = "if(scrutinee.nil()) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -452,6 +476,7 @@ top::PrimPattern ::= h::Name t::Name e::Expr
      lexicalLocalDef(top.grammarName, top.location, t_fName, top.scrutineeType, noVertex(), [])];
   
   e.env = newScopeEnv(consdefs, top.env);
+  e.expectedTypeTranslation = top.expectedTypeTranslation;
   
   top.translation =
     let

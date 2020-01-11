@@ -22,7 +22,7 @@ top::Expr ::= params::ProductionRHS e::Expr
   top.translation = 
 s"""(new common.NodeFactory<${finTy.outputType.transType}>() {
 				@Override
-				public final ${finTy.outputType.transType} invoke(final Object[] args, final Object[] namedArgs) {
+				public final ${finTy.outputType.transType} invoke(final common.Typed expected, final Object[] args, final Object[] namedArgs) {
 ${params.lambdaTranslation}
 					return ${e.translation};
 				}
@@ -36,6 +36,7 @@ ${makeTyVarDecls(5, finTy.freeVariables)}
   top.lazyTranslation = top.translation;
   
   params.accessIndex = 0;
+  e.expectedTypeTranslation = "expected";
 }
 
 synthesized attribute lambdaTranslation::String occurs on ProductionRHS, ProductionRHSElem;

@@ -11,9 +11,26 @@ package common;
 public abstract class NodeFactory<T> implements Typed {
 	/**
 	 * Invoke a function or production.
+	 * 
+	 * @param expected  A factory for the expected result type
+	 * @param args  The values supplied
+	 * @param namedArgs  The named values supplied
 	 * @return The return value (or node constructed.)
 	 */
-	public abstract T invoke(final Object[] args, final Object[] namedArgs);
+	public abstract T invoke(final Typed expected, final Object[] args, final Object[] namedArgs);
+	
+	/**
+	 * Invoke a function or production, without knowing the result type.
+	 * This is provided for convenience use within the runtime, when the
+	 * result is known to not contain unconstrained type variables.
+	 * 
+	 * @param args  The values supplied
+	 * @param namedArgs  The named values supplied
+	 * @return The return value (or node constructed.)
+	 */
+	public T invoke(final Object[] args, final Object[] namedArgs) {
+		return invoke((() -> getType().result), args, namedArgs);
+	}
 	
 	// Override with a more specific return type
 	@Override
@@ -24,6 +41,7 @@ public abstract class NodeFactory<T> implements Typed {
 	/**
 	 * Partial application of ordinary arguments.
 	 * 
+	 * @param expected  A factory for the expected result type
 	 * @param indices  Ordered index list of values supplied here
 	 * @param args  The values supplied here
 	 * @see PartialNodeFactory#PartialNodeFactory(int[], Object[], NodeFactory)

@@ -29,6 +29,8 @@ top::Expr ::= la::AssignExpr  e::Expr
     if top.frame.lazyApplication
     then closureExpr
     else top.translation;
+  
+  e.expectedTypeTranslation = top.expectedTypeTranslation;
 }
 
 synthesized attribute let_translation :: String occurs on AssignExpr;
@@ -54,6 +56,9 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   -- it's being used undecorated later.
   local finalTy :: Type = performSubstitution(t.typerep, top.finalSubst);
   top.let_translation = makeSpecialLocalBinding(fName, e.translation, finalTy.transType);
+  
+  e.expectedTypeTranslation =
+    makeExpectedTypeUnify("expected", top.frame.signature.outputElement.typerep, t.typerep);
 }
 
 function makeSpecialLocalBinding

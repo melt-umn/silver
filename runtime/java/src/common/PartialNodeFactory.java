@@ -1,5 +1,7 @@
 package common;
 
+import common.exceptions.*;
+
 /**
  * Takes a NodeFactory, and transforms it into a NodeFactory with a few
  * argument positions filled in already. (i.e. partial function application)
@@ -42,7 +44,7 @@ public class PartialNodeFactory<T> extends NodeFactory<T> {
 	}
 	
 	@Override
-	public T invoke(final Object[] restargs, final Object[] namedArgs) {
+	public T invoke(final Typed expected, final Object[] restargs, final Object[] namedArgs) {
 		final int fullsize = args.length + restargs.length;
 		final Object[] fullargs = new Object[fullsize];
 		
@@ -56,8 +58,9 @@ public class PartialNodeFactory<T> extends NodeFactory<T> {
 				fullargs[i] = restargs[restargsindex++];
 			}
 		}
-		// We pass through namedArgs unchanged here.
-		return ref.invoke(fullargs, namedArgs);
+		
+		// We pass through expected and namedArgs unchanged here.
+		return ref.invoke(expected, fullargs, namedArgs);
 	}
 	
 	@Override

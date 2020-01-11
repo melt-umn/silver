@@ -528,9 +528,9 @@ public class DecoratedNode implements Typed {
 	}
 	
 	@Override
-	public final BaseTypeRep getType() {
+	public final DecoratedTypeRep getType() {
 		final BaseTypeRep selfTypeRep = self.getType();
-		return new BaseTypeRep("Decorated " + selfTypeRep.baseName, selfTypeRep.params);
+		return new DecoratedTypeRep(new BaseTypeRep(selfTypeRep.baseName, selfTypeRep.params));
 	}
 	
 	/**

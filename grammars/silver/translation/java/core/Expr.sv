@@ -15,9 +15,14 @@ Type ::= e::Decorated Expr
  - BUT, is permitted to be a raw value IF it's totally safe to do so.
  -}
 synthesized attribute lazyTranslation :: String;
+synthesized attribute lazyTranslations :: [String];
 
 attribute lazyTranslation, translation occurs on Expr;
-attribute lazyTranslation occurs on Exprs;
+attribute lazyTranslations occurs on Exprs;
+attribute lazyTranslations occurs on AppExpr;
+attribute lazyTranslations occurs on AppExprs;
+attribute lazyTranslations occurs on AnnoExpr;
+attribute lazyTranslations occurs on AnnoAppExprs;
 
 -- `translation` should yield an expression of the appropriate Java type.
 --   e.g. `NodeFactory<StringCatter>` for a (String ::= ...)
@@ -25,6 +30,10 @@ attribute lazyTranslation occurs on Exprs;
 
 -- `lazyTranslation` can yield any type, since it's only ever immediately used
 --   to put values in a `new Object[]{...}`
+
+-- A translation string that will be a Typed factory object
+-- for the expected result type of the expression.
+inherited attribute expectedTypeTranslation::String occurs on Expr, Exprs;
 
 aspect production errorExpr
 top::Expr ::= msg::[Message]
@@ -136,11 +145,25 @@ top::Expr ::= q::Decorated QName
     else top.translation;
 }
 
+aspect production functionApplication
+top::Expr ::= e::Decorated Expr es::AppExprs annos::AnnoAppExprs
+{
+  es.expectedResultType = top.typerep;
+  es.expectedResultTypeTrans = top.expectedTypeTranslation;
+  annos.expectedResultType = top.typerep;
+  annos.expectedResultTypeTrans = top.expectedTypeTranslation;
+}
+
 aspect production errorApplication
 top::Expr ::= e::Decorated Expr es::AppExprs annos::AnnoAppExprs
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
+  
+  es.expectedResultType = top.typerep;
+  es.expectedResultTypeTrans = top.expectedTypeTranslation;
+  annos.expectedResultType = top.typerep;
+  annos.expectedResultTypeTrans = top.expectedTypeTranslation;
 }
 
 aspect production functionInvocation
@@ -149,35 +172,89 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
   top.translation = 
     case e of 
     | functionReference(q) -> -- static method invocation
-        s"((${finalType(top).transType})${makeClassName(q.lookupValue.fullName)}.invoke(${argsTranslation(es)}))"
+        s"((${finalType(top).transType})${makeClassName(q.lookupValue.fullName)}.invoke(${implode(", ", top.expectedTypeTranslation :: es.lazyTranslations)}))"
     | productionReference(q) -> -- static constructor invocation
-        s"((${finalType(top).transType})new ${makeClassName(q.lookupValue.fullName)}(${implode(", ", map((.lazyTranslation), es.exprs ++ reorderedAnnoAppExprs(annos)))}))"
+        s"((${finalType(top).transType})new ${makeClassName(q.lookupValue.fullName)}(${implode(", ", top.expectedTypeTranslation :: es.lazyTranslations ++ reorderedAnnoAppExprTranslations(annos))}))"
     | _ -> -- dynamic method invocation
-        s"((${finalType(top).transType})${e.translation}.invoke(new Object[]{${argsTranslation(es)}}, ${namedargsTranslation(annos)}))" 
+        s"((${finalType(top).transType})${e.translation}.invoke(${top.expectedTypeTranslation}, new Object[]{${implode(", ", es.lazyTranslations)}}, ${namedargsTranslation(annos)}))" 
     end ;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
-function argsTranslation
-String ::= e::Decorated AppExprs
-{
-  -- TODO: This is the ONLY use of .exprs  We could eliminate that, if we fix this.
-  return implode(", ", map((.lazyTranslation), e.exprs));
-}
 function namedargsTranslation
 String ::= e::Decorated AnnoAppExprs
 {
-  -- TODO: This is the ONLY use of .exprs  We could eliminate that, if we fix this.
-  return if null(e.exprs) then "null"
-  else s"new Object[]{${implode(", ", map((.lazyTranslation), reorderedAnnoAppExprs(e)))}}";
+  return if null(e.lazyTranslations) then "null"
+  else s"new Object[]{${implode(", ", reorderedAnnoAppExprTranslations(e))}";
 }
 function namedargsTranslationNOReorder
 String ::= e::Decorated AnnoAppExprs
 {
-  -- TODO: This is the ONLY use of .exprs  We could eliminate that, if we fix this.
-  return if null(e.exprs) then "null"
-  else s"new Object[]{${implode(", ", map((.lazyTranslation), e.exprs))}}";
+  return if null(e.lazyTranslations) then "null"
+  else s"new Object[]{${implode(", ", e.lazyTranslations)}}";
+}
+function reorderedAnnoAppExprTranslations
+[String] ::= d::Decorated AnnoAppExprs
+{
+  -- This is an annoyingly poor quality implementation
+  return map(reorderedGetSnd, sortBy(reorderedLte, zipWith(pair, d.annoIndexSupplied, d.lazyTranslations)));
+}
+function reorderedGetSnd
+b ::= p::Pair<a b> { return p.snd; }
+function reorderedLte
+Boolean ::= l::Pair<Integer String>  r::Pair<Integer String> { return l.fst <= r.fst; }
+
+autocopy attribute expectedResultType::Type occurs on AppExpr, AppExprs, AnnoExpr, AnnoAppExprs;
+autocopy attribute expectedResultTypeTrans::String occurs on AppExpr, AppExprs, AnnoExpr, AnnoAppExprs;
+
+aspect production missingAppExpr
+top::AppExpr ::= '_'
+{
+  top.lazyTranslations = [];
+}
+aspect production presentAppExpr
+top::AppExpr ::= e::Expr
+{
+  top.lazyTranslations = [e.lazyTranslation];
+  e.expectedTypeTranslation =
+    makeExpectedTypeUnify(top.expectedResultTypeTrans, top.expectedResultType, top.appExprTyperep);
+}
+aspect production snocAppExprs
+top::AppExprs ::= es::AppExprs ',' e::AppExpr
+{
+  top.lazyTranslations = es.lazyTranslations ++ e.lazyTranslations;
+}
+aspect production oneAppExprs
+top::AppExprs ::= e::AppExpr
+{
+  top.lazyTranslations = e.lazyTranslations;
+}
+aspect production emptyAppExprs
+top::AppExprs ::=
+{
+  top.lazyTranslations = [];
+}
+
+aspect production annoExpr
+top::AnnoExpr ::= qn::QName '=' e::AppExpr
+{
+  top.lazyTranslations = e.lazyTranslations;
+}
+aspect production snocAnnoAppExprs
+top::AnnoAppExprs ::= es::AnnoAppExprs ',' e::AnnoExpr
+{
+  top.lazyTranslations = es.lazyTranslations ++ e.lazyTranslations;
+}
+aspect production oneAnnoAppExprs
+top::AnnoAppExprs ::= e::AnnoExpr
+{
+  top.lazyTranslations = e.lazyTranslations;
+}
+aspect production emptyAnnoAppExprs
+top::AnnoAppExprs ::=
+{
+  top.lazyTranslations = [];
 }
 
 function int2str String ::= i::Integer { return toString(i); }
@@ -193,7 +270,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
     if !null(es.appExprIndicies) then
       step1 ++ ".invokePartial(" ++
       s"new int[]{${implode(", ", map(int2str, es.appExprIndicies))}}, " ++
-      s"new Object[]{${argsTranslation(es)}})"
+      s"new Object[]{${implode(", ", es.lazyTranslations)}})"
     else step1;
   local step3 :: String =
     if !null(annos.annoIndexConverted) || !null(annos.annoIndexSupplied) then
@@ -251,6 +328,13 @@ top::Expr ::= e::Expr '.' 'forward'
 {
   top.translation = s"((${finalType(top).transType})${e.translation}.forwardOrThis())";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e.expectedTypeTranslation = top.expectedTypeTranslation;
+}
+
+aspect production access
+top::Expr ::= e::Expr '.' q::QNameAttrOccur
+{
+  e.expectedTypeTranslation = makeExpectedTypeUnify(top.expectedTypeTranslation, q.typerep, e.typerep);
 }
 
 aspect production synDecoratedAccessHandler
@@ -330,6 +414,10 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
     end;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  
+  e.expectedTypeTranslation =
+    s"(() -> ((DecoratedTypeRep)${top.expectedTypeTranslation}).baseType)";
+  inh.expectedTypeTranslation = e.expectedTypeTranslation;
 }
 
 synthesized attribute nameTrans :: [String];
@@ -338,11 +426,15 @@ synthesized attribute valueTrans :: [String];
 attribute nameTrans occurs on ExprInhs, ExprInh, ExprLHSExpr;
 attribute valueTrans occurs on ExprInhs, ExprInh;
 
+attribute expectedTypeTranslation occurs on ExprInhs, ExprInh;
+
 aspect production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 {
   top.nameTrans = lhs.nameTrans;
   top.valueTrans = [wrapLazy(e)]; -- TODO: this is another appearance of the nested lazy problem...
+  
+  e.expectedTypeTranslation = makeExpectedTypeUnify(top.expectedTypeTranslation, top.decoratingnt, lhs.typerep);
 }
 
 aspect production exprInhsEmpty
@@ -357,6 +449,7 @@ top::ExprInhs ::= lhs::ExprInh
 {
   top.nameTrans = lhs.nameTrans;
   top.valueTrans = lhs.valueTrans;
+  lhs.expectedTypeTranslation = top.expectedTypeTranslation;
 }
 
 aspect production exprInhsCons
@@ -364,6 +457,8 @@ top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
 {
   top.nameTrans = lhs.nameTrans ++ inh.nameTrans;
   top.valueTrans = lhs.valueTrans ++ inh.valueTrans;
+  lhs.expectedTypeTranslation = top.expectedTypeTranslation;
+  inh.expectedTypeTranslation = top.expectedTypeTranslation;
 }
 
 
@@ -393,6 +488,8 @@ top::Expr ::= e1::Expr '&&' e2::Expr
 {
   top.translation = s"(${e1.translation} && ${e2.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e1.expectedTypeTranslation = "(() -> new common.BaseTypeRep(\"Boolean\"))";
+  e2.expectedTypeTranslation = "(() -> new common.BaseTypeRep(\"Boolean\"))";
 }
 
 aspect production or
@@ -400,6 +497,8 @@ top::Expr ::= e1::Expr '||' e2::Expr
 {
   top.translation = s"(${e1.translation} || ${e2.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e1.expectedTypeTranslation = "(() -> new common.BaseTypeRep(\"Boolean\"))";
+  e2.expectedTypeTranslation = "(() -> new common.BaseTypeRep(\"Boolean\"))";
 }
 
 aspect production not
@@ -407,6 +506,7 @@ top::Expr ::= '!' e::Expr
 {
   top.translation = s"(!${e.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e.expectedTypeTranslation = "(() -> new common.BaseTypeRep(\"Boolean\"))";
 }
 
 -- Some notes on numbers:
@@ -431,6 +531,8 @@ top::Expr ::= e1::Expr '>' e2::Expr
 {
   top.translation = comparisonTranslation(e1, ">", e2);
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e1.expectedTypeTranslation = makeExpectedTypeDirect(e1.typerep);
+  e2.expectedTypeTranslation = makeExpectedTypeDirect(e2.typerep);
 }
 
 aspect production lt
@@ -438,6 +540,8 @@ top::Expr ::= e1::Expr '<' e2::Expr
 {
   top.translation = comparisonTranslation(e1, "<", e2);
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e1.expectedTypeTranslation = makeExpectedTypeDirect(e1.typerep);
+  e2.expectedTypeTranslation = makeExpectedTypeDirect(e2.typerep);
 }
 
 aspect production gteq
@@ -445,6 +549,8 @@ top::Expr ::= e1::Expr '>=' e2::Expr
 {
   top.translation = comparisonTranslation(e1, ">=", e2);
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e1.expectedTypeTranslation = makeExpectedTypeDirect(e1.typerep);
+  e2.expectedTypeTranslation = makeExpectedTypeDirect(e2.typerep);
 }
 
 aspect production lteq
@@ -452,6 +558,8 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 {
   top.translation = comparisonTranslation(e1, "<=", e2);
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e1.expectedTypeTranslation = makeExpectedTypeDirect(e1.typerep);
+  e2.expectedTypeTranslation = makeExpectedTypeDirect(e2.typerep);
 }
 
 aspect production eqeq
@@ -459,6 +567,8 @@ top::Expr ::= e1::Expr '==' e2::Expr
 {
   top.translation = comparisonTranslation(e1, "==", e2);
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e1.expectedTypeTranslation = makeExpectedTypeDirect(e1.typerep);
+  e2.expectedTypeTranslation = makeExpectedTypeDirect(e2.typerep);
 }
 
 aspect production neq
@@ -466,14 +576,18 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 {
   top.translation = comparisonTranslation(e1, "!=", e2);
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e1.expectedTypeTranslation = makeExpectedTypeDirect(e1.typerep);
+  e2.expectedTypeTranslation = makeExpectedTypeDirect(e2.typerep);
 }
 
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
   top.translation = s"(${e1.translation} ? ${e2.translation} : ${e3.translation})";
-
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e1.expectedTypeTranslation = "(() -> new common.BaseTypeRep(\"Boolean\"))";
+  e2.expectedTypeTranslation = top.expectedTypeTranslation;
+  e3.expectedTypeTranslation = top.expectedTypeTranslation;
 }
 
 aspect production intConst
@@ -495,36 +609,47 @@ top::Expr ::= e1::Expr '+' e2::Expr
 {
   top.translation = s"(${e1.translation} + ${e2.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e1.expectedTypeTranslation = makeExpectedTypeDirect(e1.typerep);
+  e2.expectedTypeTranslation = makeExpectedTypeDirect(e2.typerep);
 }
 aspect production minus
 top::Expr ::= e1::Expr '-' e2::Expr
 {
   top.translation = s"(${e1.translation} - ${e2.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e1.expectedTypeTranslation = makeExpectedTypeDirect(e1.typerep);
+  e2.expectedTypeTranslation = makeExpectedTypeDirect(e2.typerep);
 }
 aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
   top.translation = s"(${e1.translation} * ${e2.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e1.expectedTypeTranslation = makeExpectedTypeDirect(e1.typerep);
+  e2.expectedTypeTranslation = makeExpectedTypeDirect(e2.typerep);
 }
 aspect production divide
 top::Expr ::= e1::Expr '/' e2::Expr
 {
   top.translation = s"(${e1.translation} / ${e2.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e1.expectedTypeTranslation = makeExpectedTypeDirect(e1.typerep);
+  e2.expectedTypeTranslation = makeExpectedTypeDirect(e2.typerep);
 }
 aspect production modulus
 top::Expr ::= e1::Expr '%' e2::Expr
 {
   top.translation = s"(${e1.translation} % ${e2.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e1.expectedTypeTranslation = makeExpectedTypeDirect(e1.typerep);
+  e2.expectedTypeTranslation = makeExpectedTypeDirect(e2.typerep);
 }
 aspect production neg
 top::Expr ::= '-' e::Expr
 {
   top.translation = s"(-${e.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  e.expectedTypeTranslation = makeExpectedTypeDirect(e.typerep);
 }
 
 aspect production stringConst
@@ -532,6 +657,13 @@ top::Expr ::= s::String_t
 {
   top.translation = s"(new common.StringCatter(${s.lexeme}))";
   top.lazyTranslation = top.translation;
+}
+
+aspect production plusPlus
+top::Expr ::= e1::Expr '++' e2::Expr
+{
+  e1.expectedTypeTranslation = makeExpectedTypeDirect(e1.typerep);
+  e2.expectedTypeTranslation = makeExpectedTypeDirect(e2.typerep);
 }
 
 aspect production errorPlusPlus
@@ -552,19 +684,22 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 aspect production exprsEmpty
 top::Exprs ::=
 {
-  top.lazyTranslation = "";
+  top.lazyTranslations = [];
 }
 
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.lazyTranslation = e.lazyTranslation;
+  top.lazyTranslations = [e.lazyTranslation];
+  e.expectedTypeTranslation = top.expectedTypeTranslation; -- TODO?
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  top.lazyTranslation = e1.lazyTranslation ++ ", " ++ e2.lazyTranslation;
+  top.lazyTranslations = e1.lazyTranslation :: e2.lazyTranslations;
+  e1.expectedTypeTranslation = top.expectedTypeTranslation; -- TODO?
+  e2.expectedTypeTranslation = top.expectedTypeTranslation; -- TODO?
 }
 
 aspect production exprRef

@@ -65,6 +65,7 @@ aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
   top.translation = "";
+  e.expectedTypeTranslation = "expected";
 }
 
 aspect production forwardingWith
@@ -79,7 +80,8 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
   top.translation = 
 	s"\t\t//${top.unparse}\n" ++
 	s"\t\t${top.frame.className}.forwardInheritedAttributes[${lhs.attrName}] = ${wrapLazy(e)};\n";
-
+  e.expectedTypeTranslation =
+    makeExpectedTypeUnify("context.undecorate().expected", top.frame.signature.outputElement.typerep, lhs.typerep);
 }
 
 aspect production forwardInhsOne
@@ -153,6 +155,7 @@ aspect production errorAttributeDef
 top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  e.expectedTypeTranslation = error("Internal compiler error: translation not defined in the presence of errors");
 }
 
 aspect production synthesizedAttributeDef
@@ -161,6 +164,9 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.translation = 
     s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
     s"\t\t${dl.translation}[${attr.dcl.attrOccursIndex}] = ${wrapLazy(e)};\n";
+  
+  e.expectedTypeTranslation =
+    makeExpectedTypeUnify("context.undecorate().expected", top.frame.signature.outputElement.typerep, dl.typerep);
 }
 
 aspect production inheritedAttributeDef
@@ -169,6 +175,9 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.translation = 
     s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
     s"\t\t${dl.translation}[${attr.dcl.attrOccursIndex}] = ${wrapLazy(e)};\n";
+  
+  e.expectedTypeTranslation =
+    makeExpectedTypeUnify("context.undecorate().expected", top.frame.signature.outputElement.typerep, dl.typerep);
 }
 
 
@@ -176,6 +185,7 @@ aspect production errorValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
+  e.expectedTypeTranslation = error("Internal compiler error: translation not defined in the presence of errors");
 }
 
 aspect production localValueDef
@@ -184,11 +194,15 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   top.translation =
 	s"\t\t// ${val.unparse} = ${e.unparse}\n" ++
 	s"\t\t${top.frame.className}.localAttributes[${val.lookupValue.dcl.attrOccursIndex}] = ${wrapLazy(e)};\n";
+  
+  e.expectedTypeTranslation =
+    makeExpectedTypeUnify("context.undecorate().expected", top.frame.signature.outputElement.typerep, val.lookupValue.typerep);
 }
 
 aspect production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {
   top.translation = "";
+  e.expectedTypeTranslation = "expected";
 }
 

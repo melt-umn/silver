@@ -1,5 +1,11 @@
 grammar silver:translation:java:core;
 
+aspect production lengthFunction
+top::Expr ::= 'length' '(' e::Expr ')'
+{
+  e.expectedTypeTranslation = makeExpectedTypeDirect(e.typerep);
+}
+
 aspect production errorLength
 top::Expr ::= e::Decorated Expr
 {
@@ -27,6 +33,8 @@ top::Expr ::= 'toBoolean' '(' e::Expr ')'
                     end;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  
+  e.expectedTypeTranslation = makeExpectedTypeDirect(e.typerep);
 }
 aspect production toIntegerFunction
 top::Expr ::= 'toInteger' '(' e::Expr ')'
@@ -40,6 +48,8 @@ top::Expr ::= 'toInteger' '(' e::Expr ')'
                     end;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  
+  e.expectedTypeTranslation = makeExpectedTypeDirect(e.typerep);
 }
 aspect production toFloatFunction
 top::Expr ::= 'toFloat' '(' e::Expr ')'
@@ -53,6 +63,8 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
                     end;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  
+  e.expectedTypeTranslation = makeExpectedTypeDirect(e.typerep);
 }
 aspect production toStringFunction
 top::Expr ::= 'toString' '(' e::Expr ')'
@@ -60,6 +72,8 @@ top::Expr ::= 'toString' '(' e::Expr ')'
   top.translation = s"new common.StringCatter(String.valueOf(${e.translation}))";
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  
+  e.expectedTypeTranslation = makeExpectedTypeDirect(e.typerep);
 }
 
 aspect production reifyFunctionLiteral
@@ -103,6 +117,8 @@ top::Expr ::= 'new' '(' e::Expr ')'
   top.translation = s"((${finalType(top).transType})${e.translation}.undecorate())";
   
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  
+  e.expectedTypeTranslation = s"(() -> new common.DecoratedTypeRep(${top.expectedTypeTranslation}))";
 }
 
 aspect production terminalConstructor
@@ -111,4 +127,7 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
   top.translation = s"new ${makeTerminalName(t.typerep.typeName)}(${es.translation}, (core.NLocation)${el.translation})";
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  
+  es.expectedTypeTranslation = "(() -> new common.BaseTypeRep(\"String\"))";
+  el.expectedTypeTranslation = "(() -> new common.BaseTypeRep(\"core:Location\"))";
 }

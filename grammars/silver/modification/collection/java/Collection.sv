@@ -184,6 +184,8 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   top.translation =
         "\t\t// " ++ val.unparse ++ " := " ++ e.unparse ++ "\n" ++
         "\t\t((common.CollectionAttribute)" ++ top.frame.className ++ ".localAttributes[" ++ val.lookupValue.dcl.attrOccursIndex ++ "]).setBase(" ++ wrapLazy(e) ++ ");\n";
+  e.expectedTypeTranslation =
+    makeExpectedTypeUnify("expected", top.frame.signature.outputElement.typerep, val.lookupValue.typerep);
 }
 aspect production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
@@ -192,6 +194,8 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   top.translation = 
         "\t\t// " ++ val.unparse ++ " <- " ++ e.unparse ++ "\n" ++
         "\t\t((common.CollectionAttribute)" ++ top.frame.className ++ ".localAttributes[" ++ val.lookupValue.dcl.attrOccursIndex ++ "]).addPiece(" ++ wrapLazy(e) ++ ");\n";
+  e.expectedTypeTranslation =
+    makeExpectedTypeUnify("expected", top.frame.signature.outputElement.typerep, val.lookupValue.typerep);
 }
 
 ---------- SYNTHESIZED ----
@@ -203,6 +207,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {-
         "\t\tif(" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] == null)\n" ++
         "\t\t\t" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.attrDcl.fullName) ++"(" ++ attr.dcl.attrOccursIndex ++ ");\n" ++
         "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "]).setBase(" ++ wrapLazy(e) ++ ");\n";
+  e.expectedTypeTranslation =
+    makeExpectedTypeUnify("expected", top.frame.signature.outputElement.typerep, dl.typerep);
 }
 aspect production synAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- <- -} e::Expr
@@ -212,6 +218,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {-
         "\t\tif(" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] == null)\n" ++
         "\t\t\t" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.attrDcl.fullName) ++"(" ++ attr.dcl.attrOccursIndex ++ ");\n" ++
         "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "]).addPiece(" ++ wrapLazy(e) ++ ");\n";
+  e.expectedTypeTranslation =
+    makeExpectedTypeUnify("expected", top.frame.signature.outputElement.typerep, dl.typerep);
 }
 
 ---------- INHERITED ----
@@ -223,6 +231,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {-
         "\t\tif(" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] == null)\n" ++
         "\t\t\t" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.attrDcl.fullName) ++ "();\n" ++
         "\t\t((common.CollectionAttribute)" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "]).setBase(" ++ wrapLazy(e) ++ ");\n";
+  e.expectedTypeTranslation =
+    makeExpectedTypeUnify("expected", top.frame.signature.outputElement.typerep, dl.typerep);
 }
 aspect production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- <- -} e::Expr
@@ -232,6 +242,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {-
         "\t\tif(" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] == null)\n" ++
         "\t\t\t" ++ dl.translation ++ "[" ++ attr.dcl.attrOccursIndex ++ "] = new " ++ makeCAClassName(attr.attrDcl.fullName) ++ "();\n" ++
         "\t\t((common.CollectionAttribute)" ++ dl.translation ++"[" ++ attr.dcl.attrOccursIndex ++ "]).addPiece(" ++ wrapLazy(e) ++ ");\n";
+  e.expectedTypeTranslation =
+    makeExpectedTypeUnify("expected", top.frame.signature.outputElement.typerep, dl.typerep);
 }
 
 

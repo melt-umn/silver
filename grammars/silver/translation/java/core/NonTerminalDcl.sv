@@ -34,7 +34,8 @@ public abstract class ${className} extends common.Node${
 
 	public static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];
 
-	protected ${className}(${implode(", ", map((.annoSigElem), myAnnos))}) {
+	protected ${className}(${implode(", ", "final common.Typed expected" :: map((.annoSigElem), myAnnos))}) {
+	  super(expected);
 ${implode("", map(makeAnnoAssign, myAnnos))}
 	}
 

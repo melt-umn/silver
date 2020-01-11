@@ -38,10 +38,11 @@ public class PartialNameNodeFactory<T> extends NodeFactory<T> {
 	 * @param iSuppliedHere  The ORDERED int list of indicies of named paramters we're filling in now.
 	 * @param args  The parameters being supplied, in order
 	 */
-	public PartialNameNodeFactory(final NodeFactory<? extends T> ref,
-			                      final int[] iConvertedToOrdered,
-			                      final int[] iSuppliedHere,
-			                      final Object[] args) {
+	public PartialNameNodeFactory(
+			final NodeFactory<? extends T> ref,
+      		final int[] iConvertedToOrdered,
+      		final int[] iSuppliedHere,
+      		final Object[] args) {
 		this.ref = ref;
 		this.iConvertedToOrdered = (iConvertedToOrdered == null) ? new int[0] : iConvertedToOrdered;
 		this.iSuppliedHere = (iSuppliedHere == null) ? new int[0] : iSuppliedHere;
@@ -49,7 +50,7 @@ public class PartialNameNodeFactory<T> extends NodeFactory<T> {
 	}
 	
 	@Override
-	public T invoke(final Object[] restargs, final Object[] namedArgs) {
+	public T invoke(final Typed expected, final Object[] restargs, final Object[] namedArgs) {
 		// STEP 1 : cut 'args' down to the true args we'll be supplying to 'ref'
 		final int numConverted = iConvertedToOrdered.length;
 		final int newArgsLength = restargs.length - numConverted;
@@ -83,7 +84,8 @@ public class PartialNameNodeFactory<T> extends NodeFactory<T> {
 			}
 		}
 		
-		return ref.invoke(finalArgs, fullNamedArgs);
+		// We pass through expected unchanged here.
+		return ref.invoke(expected, finalArgs, fullNamedArgs);
 	}
 	
 	@Override

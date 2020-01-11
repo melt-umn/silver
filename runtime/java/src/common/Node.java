@@ -11,6 +11,14 @@ package common;
  * @see DecoratedNode
  */
 public abstract class Node implements Typed {
+	/**
+	 * A factory for the given expected type when constructing the Node.
+	 */
+	public final Typed expected;
+	
+	public Node(final Typed expected) {
+		this.expected = expected;
+	}
 	
 	// Common manipulators of Node objects.
 	

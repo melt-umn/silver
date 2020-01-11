@@ -5,7 +5,7 @@ grammar silver:definition:core;
 nonterminal Expr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, typerep;
 nonterminal Exprs with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, rawExprs;
 
 nonterminal ExprInhs with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, decoratingnt, suppliedInhs;
@@ -22,10 +22,6 @@ autocopy attribute decoratingnt :: Type;
  - The inherited attributes being supplied in a decorate expression
  -}
 synthesized attribute suppliedInhs :: [String];
-{--
- - A list of decorated expressions from an Exprs.
- -}
-synthesized attribute exprs :: [Decorated Expr];
 {--
  - Get each individual Expr, without decorating them.
  -}
@@ -775,7 +771,6 @@ top::Exprs ::=
   top.unparse = "";
   
   top.errors := [];
-  top.exprs = [];
   top.rawExprs = [];
 }
 concrete production exprsSingle
@@ -784,7 +779,6 @@ top::Exprs ::= e::Expr
   top.unparse = e.unparse;
 
   top.errors := e.errors;
-  top.exprs = [e];
   top.rawExprs = [e];
 }
 concrete production exprsCons
@@ -793,7 +787,6 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   top.unparse = e1.unparse ++ ", " ++ e2.unparse;
 
   top.errors := e1.errors ++ e2.errors;
-  top.exprs = [e1] ++ e2.exprs;
   top.rawExprs = [e1] ++ e2.rawExprs;
 }
 
@@ -803,11 +796,11 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
  - (partial) function application.
  -}
 nonterminal AppExprs with 
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied;
 
 nonterminal AppExpr with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied;
 
 synthesized attribute isPartial :: Boolean;
@@ -829,7 +822,6 @@ top::AppExpr ::= '_'
   top.missingTypereps = [top.appExprTyperep];
   
   top.rawExprs = [];
-  top.exprs = [];
   top.appExprIndicies = [];
   
   top.errors := [];
@@ -843,7 +835,6 @@ top::AppExpr ::= e::Expr
   top.missingTypereps = [];
   
   top.rawExprs = [e];
-  top.exprs = [e];
   top.appExprIndicies = [top.appExprIndex];
   
   top.errors := e.errors;
@@ -858,7 +849,6 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
   top.missingTypereps = es.missingTypereps ++ e.missingTypereps;
 
   top.rawExprs = es.rawExprs ++ e.rawExprs;
-  top.exprs = es.exprs ++ e.exprs;
   top.appExprIndicies = es.appExprIndicies ++ e.appExprIndicies;
 
   top.errors := es.errors ++ e.errors;
@@ -880,7 +870,6 @@ top::AppExprs ::= e::AppExpr
   top.missingTypereps = e.missingTypereps;
 
   top.rawExprs = e.rawExprs;
-  top.exprs = e.exprs;
   top.appExprIndicies = e.appExprIndicies;
   
   top.errors := if null(top.appExprTypereps)
@@ -905,7 +894,6 @@ top::AppExprs ::=
   top.missingTypereps = [];
 
   top.rawExprs = [];
-  top.exprs = [];
   top.appExprIndicies = [];
   top.appExprSize = 0;
 
@@ -918,12 +906,12 @@ top::AppExprs ::=
 
 nonterminal AnnoAppExprs with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars,
-  isPartial, appExprApplied, exprs,
+  isPartial, appExprApplied,
   remainingFuncAnnotations, funcAnnotations,
   missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied;
 nonterminal AnnoExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars,
-  isPartial, appExprApplied, exprs,
+  isPartial, appExprApplied,
   remainingFuncAnnotations, funcAnnotations,
   missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied;
 
@@ -968,7 +956,6 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
      else [err(qn.location, "Named parameter '" ++ qn.name ++ "' is not appropriate for '" ++ top.appExprApplied ++ "'")]) ++
     e.errors;
   top.isPartial = e.isPartial;
-  top.exprs = e.exprs;
   top.annoIndexConverted =
     if e.isPartial then [e.appExprIndex] else [];
   top.annoIndexSupplied =
@@ -990,7 +977,6 @@ top::AnnoAppExprs ::= es::AnnoAppExprs ',' e::AnnoExpr
   top.partialAnnoTypereps = es.partialAnnoTypereps ++ e.partialAnnoTypereps;
   top.annoIndexConverted = es.annoIndexConverted ++ e.annoIndexConverted;
   top.annoIndexSupplied = es.annoIndexSupplied ++ e.annoIndexSupplied;
-  top.exprs = es.exprs ++ e.exprs;
 }
 
 concrete production oneAnnoAppExprs
@@ -1012,7 +998,6 @@ top::AnnoAppExprs ::= e::AnnoExpr
   top.partialAnnoTypereps = e.partialAnnoTypereps;
   top.annoIndexConverted = e.annoIndexConverted;
   top.annoIndexSupplied = e.annoIndexSupplied;
-  top.exprs = e.exprs;
 }
 
 abstract production emptyAnnoAppExprs
@@ -1031,24 +1016,7 @@ top::AnnoAppExprs ::=
   top.partialAnnoTypereps = [];
   top.annoIndexConverted = [];
   top.annoIndexSupplied = [];
-  top.exprs = [];
 }
-
-function reorderedAnnoAppExprs
-[Decorated Expr] ::= d::Decorated AnnoAppExprs
-{
-  -- This is an annoyingly poor quality implementation
-  return map(reorderedGetSnd, sortBy(reorderedLte, zipWith(pair, d.annoIndexSupplied, d.exprs)));
-}
-function reorderedGetSnd
-b ::= p::Pair<a b> { return p.snd; }
-function reorderedLte
-Boolean ::= l::Pair<Integer Decorated Expr>  r::Pair<Integer Decorated Expr> { return l.fst <= r.fst; }
-
-
-
-
-
 
 {--
  - Utility for other modules to create function invocations.

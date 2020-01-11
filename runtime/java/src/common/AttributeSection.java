@@ -21,7 +21,7 @@ public class AttributeSection<T> extends NodeFactory<T> {
 	}
 	
 	@Override
-	public T invoke(final Object[] args, final Object[] notApplicable) {
+	public T invoke(final Typed expected, final Object[] args, final Object[] notApplicable) {
 		DecoratedNode context = (DecoratedNode) Util.demand(args[0]);
 		return (T)context.synthesized(index);
 	}
@@ -64,7 +64,7 @@ public class AttributeSection<T> extends NodeFactory<T> {
 		}
 		
 		@Override
-		public T invoke(final Object[] args, final Object[] notApplicable) {
+		public T invoke(final Typed expected, final Object[] args, final Object[] notApplicable) {
 			DecoratedNode context = ((Node) Util.demand(args[0])).decorate(trueParent, (common.Lazy[])null);
 			return (T)context.synthesized(index);
 		}
