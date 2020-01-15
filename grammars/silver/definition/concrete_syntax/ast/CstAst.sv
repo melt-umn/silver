@@ -34,6 +34,13 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
           g:add(
             s.superClassContribs,
             g:empty(compareString)))));
+  s.subClasses =
+    directBuildTree(
+      g:toList(
+        g:transitiveClosure(
+          g:add(
+            map(\ p::Pair<String String> -> pair(p.snd, p.fst), s.superClassContribs),
+            g:empty(compareString)))));
   s.parserAttributeAspects = error("TODO: shouldn't by necessary to normalize"); -- TODO
   s.prefixesForTerminals = error("TODO: shouldn't by necessary to normalize"); -- TODO
   
@@ -45,6 +52,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   s2.cstNTProds = error("TODO: make this environment not be decorated?"); -- TODO
   s2.classTerminals = directBuildTree(s.classTerminalContribs);
   s2.superClasses = s.superClasses;
+  s2.subClasses = s.subClasses;
   s2.parserAttributeAspects = directBuildTree(s.parserAttributeAspectContribs);
   s2.prefixesForTerminals = directBuildTree(terminalPrefixes);
   

@@ -4,9 +4,10 @@ imports silver:testing ;
 imports lib:extcore ;
 imports copper_features;
 
-terminal Id /[a-zA-Z]+/;
+lexer class Identifier;
+lexer class Identifier2 extends Identifier;
 
-lexer class Keyword dominates {Id};
+lexer class Keyword dominates {Identifier};
 
 lexer class AKeyword extends Keyword;
 lexer class BKeyword extends AKeyword;
@@ -15,6 +16,8 @@ lexer class CKeyword submits to BKeyword, extends AKeyword;
 lexer class C1 extends C3;
 lexer class C2 extends C1;
 lexer class C3 extends C2;
+
+terminal Id /[a-zA-Z]+/ lexer classes Identifier2;
 
 terminal Foo 'foo' lexer classes {BKeyword, C2};
 terminal FooId /foo[a-zA-Z]*/ lexer classes CKeyword;
