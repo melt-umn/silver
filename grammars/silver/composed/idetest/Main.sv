@@ -1,6 +1,11 @@
 grammar silver:composed:idetest;
 
 import silver:host;
+import silver:translation:java;
+import silver:driver;
+
+import silver:analysis:warnings:flow;
+import silver:analysis:warnings:exporting;
 
 -- NOTE: this is needed for the correct generation of IDE, 
 -- even if we just use an empty IDE declaration block.
