@@ -17,6 +17,7 @@ synthesized attribute classTerminalContribs::[Pair<String String>];
 autocopy attribute classTerminals::EnvTree<String>;
 synthesized attribute superClassContribs::[Pair<String String>];
 autocopy attribute superClasses::EnvTree<String>;
+autocopy attribute subClasses::EnvTree<String>;
 
 -- Parser attribute action code aspects
 synthesized attribute parserAttributeAspectContribs::[Pair<String String>];
@@ -37,7 +38,7 @@ autocopy attribute prefixesForTerminals :: EnvTree<String>;
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, parserAttributeAspectContribs, parserAttributeAspects, univLayout, lexerClassRefDcls, xmlCopper, containingGrammar, prefixesForTerminals;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, univLayout, lexerClassRefDcls, xmlCopper, containingGrammar, prefixesForTerminals;
 
 abstract production nilSyntax
 top::Syntax ::=
@@ -75,7 +76,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, parserAttributeAspectContribs, parserAttributeAspects, univLayout, lexerClassRefDcls, xmlCopper, classDomContribs, classSubContribs, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, univLayout, lexerClassRefDcls, xmlCopper, classDomContribs, classSubContribs, containingGrammar, prefixesForTerminals;
 
 synthesized attribute sortKey :: String;
 

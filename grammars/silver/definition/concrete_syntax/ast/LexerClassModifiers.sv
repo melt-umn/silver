@@ -9,7 +9,7 @@ autocopy attribute className :: String;
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, containingGrammar;
+nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, containingGrammar;
 
 abstract production consLexerClassMod
 top::SyntaxLexerClassModifiers ::= h::SyntaxLexerClassModifier  t::SyntaxLexerClassModifiers
@@ -36,7 +36,7 @@ top::SyntaxLexerClassModifiers ::=
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, containingGrammar;
+nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, containingGrammar;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
@@ -71,7 +71,8 @@ top::SyntaxLexerClassModifier ::= super::[String]
 abstract production lexerClassSubmits
 top::SyntaxLexerClassModifier ::= sub::[String]
 {
-  production subRefs :: [[Decorated SyntaxDcl]] = lookupStrings(sub, top.cstEnv);
+  production allSubs :: [String] = unionsBy(stringEq, sub :: lookupStrings(sub, top.subClasses));
+  production subRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allSubs, top.cstEnv);
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
@@ -86,7 +87,8 @@ top::SyntaxLexerClassModifier ::= sub::[String]
 abstract production lexerClassDominates
 top::SyntaxLexerClassModifier ::= dom::[String]
 {
-  production domRefs :: [[Decorated SyntaxDcl]] = lookupStrings(dom, top.cstEnv);
+  production allDoms :: [String] = unionsBy(stringEq, dom :: lookupStrings(dom, top.subClasses));
+  production domRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allDoms, top.cstEnv);
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []

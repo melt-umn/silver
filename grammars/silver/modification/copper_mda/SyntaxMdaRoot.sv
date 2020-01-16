@@ -20,6 +20,15 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
           g:add(
             host.superClassContribs ++ ext.superClassContribs,
             g:empty(compareString)))));
+  host.subClasses =
+    directBuildTree(
+      g:toList(
+        g:transitiveClosure(
+          g:add(
+            map(
+              \ p::Pair<String String> -> pair(p.snd, p.fst),
+              host.superClassContribs ++ ext.superClassContribs),
+            g:empty(compareString)))));
   host.parserAttributeAspects = directBuildTree(host.parserAttributeAspectContribs ++ ext.parserAttributeAspectContribs);
   host.prefixesForTerminals = directBuildTree(terminalPrefixes);
   ext.cstEnv = host.cstEnv;
@@ -27,6 +36,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   ext.cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
   ext.classTerminals = host.classTerminals;
   ext.superClasses = host.superClasses;
+  ext.subClasses = host.subClasses;
   ext.parserAttributeAspects = host.parserAttributeAspects;
   ext.prefixesForTerminals = host.prefixesForTerminals;
   
