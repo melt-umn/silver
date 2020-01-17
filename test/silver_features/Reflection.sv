@@ -3,6 +3,8 @@ import silver:reflect;
 import silver:langutil;
 import silver:langutil:pp;
 
+-- TODO: Actually make hackUnparse work like this.
+-- Not possible for now because core shouldn't depend on anything else. 
 function lessHackyUnparse
 String ::= x::a
 {
@@ -70,6 +72,11 @@ equalityTest(
 
 equalityTest(
   reifyResToString(reify(reflect(pair(pair(1, 2), pair(3, 4))))),
+  lessHackyUnparse(pair(pair(1, 2), pair(3, 4))),
+  String, silver_tests);
+
+equalityTest(
+  lessHackyUnparse(reifyUnchecked(reflect(pair(pair(1, 2), pair(3, 4))))),
   lessHackyUnparse(pair(pair(1, 2), pair(3, 4))),
   String, silver_tests);
 
