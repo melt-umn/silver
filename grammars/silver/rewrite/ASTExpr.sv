@@ -11,6 +11,12 @@ synthesized attribute substitution::Maybe<[Pair<String AST>]>;
 
 nonterminal ASTExpr with pp, env, value, matchWith<AST>, substitution;
 
+aspect default production
+top::ASTExpr ::=
+{
+  top.substitution = error("Can't match against expression");
+}
+
 -- AST constructors
 abstract production prodCallASTExpr
 top::ASTExpr ::= prodName::String children::ASTExprs annotations::NamedASTExprs
@@ -154,20 +160,28 @@ top::ASTExpr ::= fn::(AST ::= [AST])
 {
   top.pp = pp"<fn>";
   top.value = anyAST(fn);
-  top.substitution = error("Can't match against function");
 }
 
 abstract production applyASTExpr
 top::ASTExpr ::= f::ASTExpr args::ASTExprs
 {
   top.pp = pp"${f.pp}(${ppImplode(pp", ", args.pps)})";
-  local fn::(AST ::= [AST]) =
-    case reify(f.value) of
-    | right(fn) -> fn
-    | left(msg) -> error(msg)
-    end;
+  local fn::(AST ::= [AST]) = reifyUnchecked(f.value);
   top.value = fn(args.values);
-  top.substitution = error("Can't match against generalized application");
+}
+
+abstract production plusASTExpr
+top::ASTExpr ::= a::ASTExpr b::ASTExpr
+{
+  top.pp = pp"(${a.pp} + ${b.pp})";
+  top.value =
+    case a.value, b.value of
+    | integerAST(x), integerAST(y) -> integerAST(x + y)
+    | integerAST(x), floatAST(y) -> floatAST(toFloat(x) + y)
+    | floatAST(x), integerAST(y) -> floatAST(x + toFloat(y))
+    | floatAST(x), floatAST(y) -> floatAST(x + y)
+    | _, _ -> error("Invalid values")
+    end;
 }
 
 synthesized attribute astExprs::[ASTExpr];

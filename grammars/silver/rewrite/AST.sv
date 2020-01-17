@@ -1,6 +1,6 @@
 grammar silver:rewrite;
 
-imports silver:reflect;
+exports silver:reflect; -- Needed by the extension, so just export it here.
 
 autocopy attribute givenStrategy::Strategy occurs on AST, ASTs, NamedASTs, NamedAST;
 synthesized attribute allResult<a>::Maybe<a>;
@@ -40,8 +40,7 @@ top::AST ::= terminalName::String lexeme::String location::Location
   top.allResult =
     do (bindMaybe, returnMaybe) {
       locASTResult::AST <- decorate top.givenStrategy with { term = locAST; }.result;
-      locationResult::Location =
-        fromRight(reify(locASTResult), error("Rewrite type error"));
+      locationResult::Location = reifyUnchecked(locASTResult);
       return terminalAST(terminalName, lexeme, locationResult);
     };
   top.oneResult = top.allResult; -- Exactly one rewritable child

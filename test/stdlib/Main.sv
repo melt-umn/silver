@@ -12,6 +12,7 @@ import stdlib:rawtreeset;
 import stdlib:rawtreemap;
 import stdlib:rawgraph;
 import stdlib:xml;
+import stdlib:rewrite;
 
 
 mainTestSuite core_tests ;
@@ -19,7 +20,6 @@ mainTestSuite core_tests ;
 equalityTest ( 1 + 10, 4 + 7, Integer, core_tests ) ;
 
 equalityTest ( 31 + 10, 34 + 7 , Integer, core_tests ) ;
-
 
 
 

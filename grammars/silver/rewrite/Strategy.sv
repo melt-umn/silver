@@ -1,6 +1,6 @@
 grammar silver:rewrite;
 
-imports core hiding all;
+imports core hiding all, repeat;
 imports core:monad;
 
 inherited attribute term::AST;
@@ -8,6 +8,7 @@ synthesized attribute result::Maybe<AST>;
 
 nonterminal Strategy with term, result;
 
+-- Basic combinators
 abstract production id
 top::Strategy ::=
 {
@@ -52,12 +53,7 @@ top::Strategy ::= s::Strategy
   top.result = term.oneResult;
 }
 
-abstract production rec
-top::Strategy ::= ctr::(Strategy ::= Strategy)
-{
-  forwards to ctr(top);
-}
-
+-- Rules
 abstract production rule
 top::Strategy ::= pattern::ASTExpr result::ASTExpr
 {
@@ -86,14 +82,58 @@ top::Strategy ::= pattern::ASTExpr cond::ASTExpr
     };
 }
 
-function try
-Strategy ::= s::Strategy
+
+-- Utilities
+abstract production rec
+top::Strategy ::= ctr::(Strategy ::= Strategy)
 {
-  return choice(s, id());
+  forwards to ctr(top);
 }
 
-function repeat
-Strategy ::= s::Strategy
+abstract production try
+top::Strategy ::= s::Strategy
 {
-  return choice(try(s), repeat(s));
+  forwards to s <+ id();
+}
+
+abstract production repeat
+top::Strategy ::= s::Strategy
+{
+  forwards to try(s <* repeat(s));
+}
+
+abstract production bottomUp
+top::Strategy ::= s::Strategy
+{
+  forwards to all(bottomUp(s)) <* s;
+}
+
+abstract production topDown
+top::Strategy ::= s::Strategy
+{
+  forwards to s <* all(topDown(s));
+}
+
+abstract production onceBottomUp
+top::Strategy ::= s::Strategy
+{
+  forwards to one(onceBottomUp(s)) <+ s;
+}
+
+abstract production onceTopDown
+top::Strategy ::= s::Strategy
+{
+  forwards to s <+ one(onceTopDown(s));
+}
+
+abstract production innermost
+top::Strategy ::= s::Strategy
+{
+  forwards to repeat(onceBottomUp(s));
+}
+
+abstract production outermost
+top::Strategy ::= s::Strategy
+{
+  forwards to repeat(onceTopDown(s));
 }
