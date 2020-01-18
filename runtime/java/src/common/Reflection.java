@@ -4,7 +4,6 @@ import java.lang.reflect.*;
 import java.util.*;
 
 import common.exceptions.*;
-
 import core.*;
 import core.reflect.*;
 
@@ -276,5 +275,99 @@ public final class Reflection {
 		} else {
 			throw new SilverInternalError("Unexpected ASTs production " + asts.getName());
 		}
+	}
+	
+	/**
+	 * Apply a function wrapped in AST to AST arguments.
+	 * 
+	 * @param fn An AnyAST containing the argument.
+	 * @param args A list of Maybe<AST> arguments or holes for partial application.
+	 * @param namedArgs A list of Pair<String Maybe<AST>> named arguments or holes for partial application.
+	 * @return An Either<String a> object containing either an error message or the reflected result of calling the function.
+	 */
+	public static NEither applyAST(final NAST fn, final ConsCell args, final ConsCell namedArgs) {
+		// Unpack function
+		if (!fn.getName().equals("core:reflect:anyAST") || !(fn.getChild(0) instanceof NodeFactory)) {
+			return new Pleft(new StringCatter("Expected a function AST"));
+		}
+		NodeFactory<?> givenFn = (NodeFactory<?>)(fn.getChild(0));
+		FunctionTypeRep fnType = givenFn.getType();
+		
+		// Unpack args
+		final List<Integer> argIndexList = new ArrayList<>(5);
+		final List<Object> argList = new ArrayList<>(5);
+		int i = 0;
+		for (ConsCell current = args; !current.nil(); current = current.tail()) {
+			if (i >= fnType.params.length) {
+				return new Pleft(new StringCatter("Expected only " + fnType.params.length + " arguments, but got " + args.length()));
+			}
+			final NMaybe item = (NMaybe)current.head();
+			if (item instanceof Pjust) {
+				argIndexList.add(i);
+				try {
+					argList.add(reify(fnType.params[i], (NAST)item.getChild(0)));
+				} catch (SilverException e) {
+					Throwable rootCause = SilverException.getRootCause(e);
+					if (rootCause instanceof SilverError) {
+						return new Pleft(new StringCatter("Reification error in argument " + i + " at " + ReifyTraceException.getASTRepr(e) + ":\n" + rootCause.getMessage()));
+					} else {
+						throw e;
+					}
+				}
+			}
+			i++;
+		}
+		if (i < fnType.params.length) {
+			return new Pleft(new StringCatter("Expected " + fnType.params.length + " arguments, but got only " + i));
+		}
+		
+		// Unpack named args
+		final List<Integer> convertedIndexList = new ArrayList<>();
+		final List<Integer> suppliedIndexList = new ArrayList<>();
+		final List<Object> namedArgList = new ArrayList<>();
+		final Object[] reorderedNamedArgs = new Object[fnType.namedParamNames.length];
+		for (ConsCell current = namedArgs; !current.nil(); current = current.tail()) {
+			final NPair entry = (NPair)current.head();
+			final String name = entry.getChild(0).toString();
+			int index = Arrays.asList(fnType.namedParamNames).indexOf(name);
+			if (index == -1) {
+				return new Pleft(new StringCatter("Unexpected named argument " + name));
+			}
+			final NMaybe item = (NMaybe)entry.getChild(1);
+			if (item instanceof Pjust) {
+				Object o;
+				try {
+					o = reify(fnType.namedParamTypes[index], (NAST)item.getChild(0));
+				} catch (SilverException e) {
+					Throwable rootCause = SilverException.getRootCause(e);
+					if (rootCause instanceof SilverError) {
+						return new Pleft(new StringCatter("Reification error in named argument " + name + " at " + ReifyTraceException.getASTRepr(e) + ":\n" + rootCause.getMessage()));
+					} else {
+						throw e;
+					}
+				}
+				suppliedIndexList.add(index);
+				namedArgList.add(o);
+				reorderedNamedArgs[index] = o;
+			} else {
+				convertedIndexList.add(index);
+			}
+			i++;
+		}
+		
+		Object result;
+		if (argList.size() < fnType.params.length || namedArgList.size() < fnType.namedParamNames.length) {
+			// Apply partial
+			result = givenFn
+					.invokePartial(argIndexList.stream().mapToInt(n -> n).toArray(), argList.toArray())
+					.invokeNamedPartial(
+							convertedIndexList.stream().mapToInt(n -> n).toArray(),
+							suppliedIndexList.stream().mapToInt(n -> n).toArray(),
+							namedArgList.toArray());
+		} else {
+			// Apply regular
+			result = givenFn.invoke(argList.toArray(), reorderedNamedArgs);
+		}
+		return new Pright(reflect(result));
 	}
 }
