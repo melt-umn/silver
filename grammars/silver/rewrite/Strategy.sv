@@ -58,7 +58,7 @@ abstract production rewriteRule
 top::Strategy ::= pattern::ASTExpr result::ASTExpr
 {
   pattern.matchWith = top.term;
-  result.env = pattern.substitution.fromJust;
+  result.substitutionEnv = pattern.substitution.fromJust;
   top.result =
     do (bindMaybe, returnMaybe) {
       pattern.substitution;
@@ -70,7 +70,7 @@ abstract production require
 top::Strategy ::= pattern::ASTExpr cond::ASTExpr
 {
   pattern.matchWith = top.term;
-  cond.env = pattern.substitution.fromJust;
+  cond.substitutionEnv = pattern.substitution.fromJust;
   top.result =
     do (bindMaybe, returnMaybe) {
       pattern.substitution;

@@ -3,13 +3,13 @@ grammar silver:rewrite;
 imports silver:langutil;
 imports silver:langutil:pp;
 
-autocopy attribute env::[Pair<String AST>];
+autocopy attribute substitutionEnv::[Pair<String AST>];
 synthesized attribute value::AST;
 
 inherited attribute matchWith<a>::a;
 synthesized attribute substitution::Maybe<[Pair<String AST>]>;
 
-nonterminal ASTExpr with pp, env, value, matchWith<AST>, substitution;
+nonterminal ASTExpr with pp, substitutionEnv, value, matchWith<AST>, substitution;
 
 aspect default production
 top::ASTExpr ::=
@@ -160,7 +160,7 @@ top::ASTExpr ::= n::String
   top.value =
     fromMaybe(
       error("Unbound variable " ++ n),
-      lookupBy(stringEq, n, top.env));
+      lookupBy(stringEq, n, top.substitutionEnv));
   top.substitution = just([pair(n, top.matchWith)]);
 }
 
@@ -390,8 +390,8 @@ top::ASTExpr ::= a::NamedASTExprs body::ASTExpr
 {
   top.pp = pp"let ${ppImplode(pp", ", a.pps)} in ${body.pp} end";
   top.value = body.value;
-  body.env =
-    map(\ n::NamedAST -> case n of namedAST(n, a) -> pair(n, a) end, a.namedValues) ++ top.env;
+  body.substitutionEnv =
+    map(\ n::NamedAST -> case n of namedAST(n, a) -> pair(n, a) end, a.namedValues) ++ top.substitutionEnv;
 }
 
 abstract production lengthASTExpr
@@ -401,7 +401,7 @@ top::ASTExpr ::= a::ASTExpr
   top.value =
     case a.value of
     | stringAST(s) -> integerAST(length(s))
-    | listAST(a) -> integerAST(a.count)
+    | listAST(a) -> integerAST(a.astsLength)
     | _ -> error("Invalid values")
     end;
 }
@@ -466,7 +466,7 @@ synthesized attribute astExprs::[ASTExpr];
 synthesized attribute values::[AST];
 synthesized attribute appValues::[Maybe<AST>];
 
-nonterminal ASTExprs with pps, astExprs, env, values, appValues, matchWith<ASTs>, substitution;
+nonterminal ASTExprs with pps, astExprs, substitutionEnv, values, appValues, matchWith<ASTs>, substitution;
 
 abstract production consASTExpr
 top::ASTExprs ::= h::ASTExpr t::ASTExprs
@@ -521,7 +521,7 @@ ASTExprs ::= a::ASTExprs b::ASTExprs
 synthesized attribute namedValues::[NamedAST];
 synthesized attribute namedAppValues::[Pair<String Maybe<AST>>];
 
-nonterminal NamedASTExprs with pps, env, namedValues, namedAppValues, matchWith<[Pair<String AST>]>, substitution;
+nonterminal NamedASTExprs with pps, substitutionEnv, namedValues, namedAppValues, matchWith<[Pair<String AST>]>, substitution;
 
 abstract production consNamedASTExpr
 top::NamedASTExprs ::= h::NamedASTExpr t::NamedASTExprs
@@ -562,7 +562,7 @@ NamedASTExprs ::= a::NamedASTExprs b::NamedASTExprs
 synthesized attribute namedValue::NamedAST;
 synthesized attribute namedAppValue::Pair<String Maybe<AST>>;
 
-nonterminal NamedASTExpr with pp, env, namedValue, namedAppValue, matchWith<[Pair<String AST>]>, substitution;
+nonterminal NamedASTExpr with pp, substitutionEnv, namedValue, namedAppValue, matchWith<[Pair<String AST>]>, substitution;
 
 abstract production namedASTExpr
 top::NamedASTExpr ::= n::String v::ASTExpr

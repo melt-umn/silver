@@ -74,13 +74,13 @@ top::AST ::= x::a
     end;
 }
 
-synthesized attribute count::Integer occurs on ASTs, NamedASTs;
+synthesized attribute astsLength::Integer occurs on ASTs, NamedASTs;
 attribute serialize<[String]> occurs on ASTs;
 
 aspect production consAST
 top::ASTs ::= h::AST t::ASTs
 {
-  top.count = 1 + t.count;
+  top.astsLength = 1 + t.astsLength;
   top.serialize =
     do (bindEither, returnEither) {
       hSerialize::String <- h.serialize;
@@ -92,7 +92,7 @@ top::ASTs ::= h::AST t::ASTs
 aspect production nilAST
 top::ASTs ::=
 {
-  top.count = 0;
+  top.astsLength = 0;
   top.serialize = right([]);
 }
 
@@ -101,7 +101,7 @@ attribute serialize<[String]> occurs on NamedASTs;
 aspect production consNamedAST
 top::NamedASTs ::= h::NamedAST t::NamedASTs
 {
-  top.count = 1 + t.count;
+  top.astsLength = 1 + t.astsLength;
   top.serialize =
     do (bindEither, returnEither) {
       hSerialize::String <- h.serialize;
@@ -113,7 +113,7 @@ top::NamedASTs ::= h::NamedAST t::NamedASTs
 aspect production nilNamedAST
 top::NamedASTs ::=
 {
-  top.count = 0;
+  top.astsLength = 0;
   top.serialize = right([]);
 }
 
