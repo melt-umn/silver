@@ -37,9 +37,9 @@ top::Expr ::= e1::Expr e2::Expr
 }
 
 abstract production const
-top::Expr ::= i::Integer
+top::Expr ::= n::Integer
 {
-  top.pp = text(toString(i));
+  top.pp = text(toString(n));
   top.needsParens = false;
 }
 
@@ -50,15 +50,31 @@ String ::= e::Expr
 }
 
 global evalStep::Strategy =
-  rule(
-    prodCallASTExpr(
-      "stdlib:rewrite:expreval:add",
-      consASTExpr(
-        prodCallASTExpr("stdlib:rewrite:expreval:const", consASTExpr(varASTExpr("a"), nilASTExpr()), nilNamedASTExpr()),
-        consASTExpr(
-          prodCallASTExpr("stdlib:rewrite:expreval:const", consASTExpr(varASTExpr("b"), nilASTExpr()), nilNamedASTExpr()),
-          nilASTExpr())),
-      nilNamedASTExpr()),
-    prodCallASTExpr("stdlib:rewrite:expreval:const", consASTExpr(plusASTExpr(varASTExpr("a"), varASTExpr("b")), nilASTExpr()), nilNamedASTExpr()));
+  rule on Expr of
+  | add(const(a), const(b)) -> const(a + b)
+  | sub(const(a), const(b)) -> const(a - b)
+  | mul(const(a), const(b)) -> const(a * b)
+  | div(const(a), const(b)) when b != 0 && a % b == 0 -> const(a / b)
+  | div(const(a), const(b)) when b != 0 && gcd(a, b) > 1 ->
+     let g::Integer = gcd(a, b) in div(const(a / g), const(b / g)) end
+  end;
 
-global eval::Strategy = innermost(evalStep);
+global simplifyFrac::Strategy =
+  rule on Expr of
+  | add(div(a, b), c) -> div(add(a, mul(b, c)), b)
+  | sub(div(a, b), c) -> div(sub(a, mul(b, c)), b)
+  | mul(div(a, b), c) -> div(mul(a, c), b)
+  | div(div(a, b), c) -> div(a, mul(b, c))
+  
+  | add(a, div(b, c)) -> div(add(mul(a, c), b), c)
+  | sub(a, div(b, c)) -> div(sub(mul(a, c), b), c)
+  | mul(a, div(b, c)) -> div(mul(a, b), c)
+  | div(a, div(b, c)) -> div(mul(a, c), b)
+  
+  | add(div(a, b), div(c, d)) -> div(add(mul(a, d), mul(c, b)), mul(b, d))
+  | sub(div(a, b), div(c, d)) -> div(sub(mul(a, d), mul(c, b)), mul(b, d))
+  | mul(div(a, b), div(c, d)) -> div(mul(a, c), mul(c, d))
+  | div(div(a, b), div(c, d)) -> div(mul(a, d), mul(b, c))
+  end;
+
+global eval::Strategy = innermost(evalStep <+ simplifyFrac);

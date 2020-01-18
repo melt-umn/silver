@@ -134,6 +134,24 @@ top::ASTExpr ::= b::Boolean
     end;
 }
 
+abstract production terminalASTExpr
+top::ASTExpr ::= terminalName::String lexeme::ASTExpr location::ASTExpr
+{
+  top.pp = pp"terminal(${text(terminalName)}, ${lexeme.pp}, ${location.pp})";
+  top.value =
+    case reify(lexeme.value), reify(location.value) of
+    | right(l), right(l1) -> terminalAST(terminalName, l, l1)
+    | _, _ -> error("Invalid values to terminal constructor")
+    end;
+}
+
+abstract production anyASTExpr
+top::ASTExpr ::= x::a
+{
+  top.pp = pp"<obj>";
+  top.value = reflect(x);
+}
+
 -- Meta stuff
 abstract production varASTExpr
 top::ASTExpr ::= n::String
@@ -155,19 +173,132 @@ top::ASTExpr ::=
 }
 
 -- Other constructs
-abstract production fnASTExpr
-top::ASTExpr ::= fn::(AST ::= [AST])
+abstract production applyASTExpr
+top::ASTExpr ::= f::ASTExpr args::ASTExprs namedArgs::NamedASTExprs
 {
-  top.pp = pp"<fn>";
-  top.value = anyAST(fn);
+  top.pp = pp"${f.pp}(${ppImplode(pp", ", args.pps ++ namedArgs.pps)})";
+  top.value =
+    case applyAST(f.value, args.appValues, namedArgs.namedAppValues) of
+    | left(msg) -> error(msg)
+    | right(a) -> a
+    end;
 }
 
-abstract production applyASTExpr
-top::ASTExpr ::= f::ASTExpr args::ASTExprs
+abstract production andASTExpr
+top::ASTExpr ::= a::ASTExpr b::ASTExpr
 {
-  top.pp = pp"${f.pp}(${ppImplode(pp", ", args.pps)})";
-  local fn::(AST ::= [AST]) = reifyUnchecked(f.value);
-  top.value = fn(args.values);
+  top.pp = pp"(${a.pp} && ${b.pp})";
+  top.value =
+    case a.value, b.value of
+    | booleanAST(x), booleanAST(y) -> booleanAST(x && y)
+    | _, _ -> error("Invalid values")
+    end;
+}
+
+abstract production orASTExpr
+top::ASTExpr ::= a::ASTExpr b::ASTExpr
+{
+  top.pp = pp"(${a.pp} || ${b.pp})";
+  top.value =
+    case a.value, b.value of
+    | booleanAST(x), booleanAST(y) -> booleanAST(x || y)
+    | _, _ -> error("Invalid values")
+    end;
+}
+
+abstract production notASTExpr
+top::ASTExpr ::= a::ASTExpr
+{
+  top.pp = pp"!${a.pp}";
+  top.value =
+    case a.value of
+    | booleanAST(x) -> booleanAST(!x)
+    | _ -> error("Invalid values")
+    end;
+}
+
+abstract production gtASTExpr
+top::ASTExpr ::= a::ASTExpr b::ASTExpr
+{
+  top.pp = pp"(${a.pp} > ${b.pp})";
+  top.value =
+    case a.value, b.value of
+    | integerAST(x), integerAST(y) -> booleanAST(x > y)
+    | floatAST(x), floatAST(y) -> booleanAST(x > y)
+    | _, _ -> error("Invalid values")
+    end;
+}
+
+abstract production ltASTExpr
+top::ASTExpr ::= a::ASTExpr b::ASTExpr
+{
+  top.pp = pp"(${a.pp} < ${b.pp})";
+  top.value =
+    case a.value, b.value of
+    | integerAST(x), integerAST(y) -> booleanAST(x < y)
+    | floatAST(x), floatAST(y) -> booleanAST(x < y)
+    | _, _ -> error("Invalid values")
+    end;
+}
+
+abstract production gteqASTExpr
+top::ASTExpr ::= a::ASTExpr b::ASTExpr
+{
+  top.pp = pp"(${a.pp} >= ${b.pp})";
+  top.value =
+    case a.value, b.value of
+    | integerAST(x), integerAST(y) -> booleanAST(x >= y)
+    | floatAST(x), floatAST(y) -> booleanAST(x >= y)
+    | _, _ -> error("Invalid values")
+    end;
+}
+
+abstract production lteqASTExpr
+top::ASTExpr ::= a::ASTExpr b::ASTExpr
+{
+  top.pp = pp"(${a.pp} <= ${b.pp})";
+  top.value =
+    case a.value, b.value of
+    | integerAST(x), integerAST(y) -> booleanAST(x <= y)
+    | floatAST(x), floatAST(y) -> booleanAST(x <= y)
+    | _, _ -> error("Invalid values")
+    end;
+}
+
+abstract production eqeqASTExpr
+top::ASTExpr ::= a::ASTExpr b::ASTExpr
+{
+  top.pp = pp"(${a.pp} == ${b.pp})";
+  top.value =
+    case a.value, b.value of
+    | integerAST(x), integerAST(y) -> booleanAST(x == y)
+    | floatAST(x), floatAST(y) -> booleanAST(x == y)
+    | _, _ -> error("Invalid values")
+    end;
+}
+
+abstract production neqASTExpr
+top::ASTExpr ::= a::ASTExpr b::ASTExpr
+{
+  top.pp = pp"(${a.pp} != ${b.pp})";
+  top.value =
+    case a.value, b.value of
+    | integerAST(x), integerAST(y) -> booleanAST(x != y)
+    | floatAST(x), floatAST(y) -> booleanAST(x != y)
+    | _, _ -> error("Invalid values")
+    end;
+}
+
+abstract production ifThenElseASTExpr
+top::ASTExpr ::= c::ASTExpr t::ASTExpr e::ASTExpr
+{
+  top.pp = pp"(if ${c.pp} then ${t.pp} else ${e.pp})";
+  top.value =
+    case c.value of
+    | booleanAST(true) -> c.value
+    | booleanAST(false) -> e.value
+    | _ -> error("Invalid values")
+    end;
 }
 
 abstract production plusASTExpr
@@ -177,17 +308,165 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
   top.value =
     case a.value, b.value of
     | integerAST(x), integerAST(y) -> integerAST(x + y)
-    | integerAST(x), floatAST(y) -> floatAST(toFloat(x) + y)
-    | floatAST(x), integerAST(y) -> floatAST(x + toFloat(y))
     | floatAST(x), floatAST(y) -> floatAST(x + y)
     | _, _ -> error("Invalid values")
     end;
 }
 
+abstract production multiplyASTExpr
+top::ASTExpr ::= a::ASTExpr b::ASTExpr
+{
+  top.pp = pp"(${a.pp} * ${b.pp})";
+  top.value =
+    case a.value, b.value of
+    | integerAST(x), integerAST(y) -> integerAST(x * y)
+    | floatAST(x), floatAST(y) -> floatAST(x * y)
+    | _, _ -> error("Invalid values")
+    end;
+}
+
+abstract production minusASTExpr
+top::ASTExpr ::= a::ASTExpr b::ASTExpr
+{
+  top.pp = pp"(${a.pp} - ${b.pp})";
+  top.value =
+    case a.value, b.value of
+    | integerAST(x), integerAST(y) -> integerAST(x - y)
+    | floatAST(x), floatAST(y) -> floatAST(x - y)
+    | _, _ -> error("Invalid values")
+    end;
+}
+
+abstract production divideASTExpr
+top::ASTExpr ::= a::ASTExpr b::ASTExpr
+{
+  top.pp = pp"(${a.pp} / ${b.pp})";
+  top.value =
+    case a.value, b.value of
+    | integerAST(x), integerAST(y) -> integerAST(x / y)
+    | floatAST(x), floatAST(y) -> floatAST(x / y)
+    | _, _ -> error("Invalid values")
+    end;
+}
+
+abstract production modulusASTExpr
+top::ASTExpr ::= a::ASTExpr b::ASTExpr
+{
+  top.pp = pp"(${a.pp} % ${b.pp})";
+  top.value =
+    case a.value, b.value of
+    | integerAST(x), integerAST(y) -> integerAST(x % y)
+    | floatAST(x), floatAST(y) -> floatAST(x % y)
+    | _, _ -> error("Invalid values")
+    end;
+}
+
+abstract production negASTExpr
+top::ASTExpr ::= a::ASTExpr
+{
+  top.pp = pp"-${a.pp}";
+  top.value =
+    case a.value of
+    | integerAST(x) -> integerAST(-x)
+    | floatAST(x) -> floatAST(-x)
+    | _ -> error("Invalid values")
+    end;
+}
+
+abstract production appendASTExpr
+top::ASTExpr ::= a::ASTExpr b::ASTExpr
+{
+  top.pp = pp"(${a.pp} ++ ${b.pp})";
+  top.value =
+    case a.value, b.value of
+    | stringAST(x), stringAST(y) -> stringAST(x ++ y)
+    | listAST(x), listAST(y) -> listAST(appendASTs(x, y))
+    | _, _ -> error("Invalid values")
+    end;
+}
+
+abstract production letASTExpr
+top::ASTExpr ::= a::NamedASTExprs body::ASTExpr
+{
+  top.pp = pp"let ${ppImplode(pp", ", a.pps)} in ${body.pp} end";
+  top.value = body.value;
+  body.env =
+    map(\ n::NamedAST -> case n of namedAST(n, a) -> pair(n, a) end, a.namedValues) ++ top.env;
+}
+
+abstract production lengthASTExpr
+top::ASTExpr ::= a::ASTExpr
+{
+  top.pp = pp"length(${a.pp})";
+  top.value =
+    case a.value of
+    | stringAST(s) -> integerAST(length(s))
+    | listAST(a) -> integerAST(a.count)
+    | _ -> error("Invalid values")
+    end;
+}
+
+abstract production toIntegerASTExpr
+top::ASTExpr ::= a::ASTExpr
+{
+  top.pp = pp"toInteger(${a.pp})";
+  top.value =
+    case a.value of
+    | integerAST(i) -> integerAST(toInteger(i))
+    | booleanAST(b) -> integerAST(toInteger(b))
+    | floatAST(f) -> integerAST(toInteger(f))
+    | stringAST(s) -> integerAST(toInteger(s))
+    | _ -> error("Invalid values")
+    end;
+}
+
+abstract production toBooleanASTExpr
+top::ASTExpr ::= a::ASTExpr
+{
+  top.pp = pp"toBoolean(${a.pp})";
+  top.value =
+    case a.value of
+    | integerAST(i) -> booleanAST(toBoolean(i))
+    | booleanAST(b) -> booleanAST(toBoolean(b))
+    | floatAST(f) -> booleanAST(toBoolean(f))
+    | stringAST(s) -> booleanAST(toBoolean(s))
+    | _ -> error("Invalid values")
+    end;
+}
+
+abstract production toFloatASTExpr
+top::ASTExpr ::= a::ASTExpr
+{
+  top.pp = pp"toFloat(${a.pp})";
+  top.value =
+    case a.value of
+    | integerAST(i) -> floatAST(toFloat(i))
+    | booleanAST(b) -> floatAST(toFloat(b))
+    | floatAST(f) -> floatAST(toFloat(f))
+    | stringAST(s) -> floatAST(toFloat(s))
+    | _ -> error("Invalid values")
+    end;
+}
+
+abstract production toStringASTExpr
+top::ASTExpr ::= a::ASTExpr
+{
+  top.pp = pp"toString(${a.pp})";
+  top.value =
+    case a.value of
+    | integerAST(i) -> stringAST(toString(i))
+    | booleanAST(b) -> stringAST(toString(b))
+    | floatAST(f) -> stringAST(toString(f))
+    | stringAST(s) -> stringAST(toString(s))
+    | _ -> error("Invalid values")
+    end;
+}
+
 synthesized attribute astExprs::[ASTExpr];
 synthesized attribute values::[AST];
+synthesized attribute appValues::[Maybe<AST>];
 
-nonterminal ASTExprs with pps, astExprs, env, values, matchWith<ASTs>, substitution;
+nonterminal ASTExprs with pps, astExprs, env, values, appValues, matchWith<ASTs>, substitution;
 
 abstract production consASTExpr
 top::ASTExprs ::= h::ASTExpr t::ASTExprs
@@ -195,6 +474,11 @@ top::ASTExprs ::= h::ASTExpr t::ASTExprs
   top.pps = h.pp :: t.pps;
   top.astExprs = h :: t.astExprs;
   top.values = h.value :: t.values;
+  top.appValues =
+    case h of
+    | wildASTExpr() -> nothing()
+    | _ -> just(h.value)
+    end :: t.appValues;
   
   h.matchWith = case top.matchWith of consAST(h, _) -> h end;
   t.matchWith = case top.matchWith of consAST(_, t) -> t end;
@@ -216,6 +500,7 @@ top::ASTExprs ::=
   top.pps = [];
   top.astExprs = [];
   top.values = [];
+  top.appValues = [];
   top.substitution =
     case top.matchWith of
     | nilAST() -> just([])
@@ -223,15 +508,27 @@ top::ASTExprs ::=
     end;
 }
 
-synthesized attribute namedValues::[NamedAST];
+function appendASTExprs
+ASTExprs ::= a::ASTExprs b::ASTExprs
+{
+  return
+    case a of
+    | consASTExpr(h, t) -> consASTExpr(h, appendASTExprs(t, b))
+    | nilASTExpr() -> b
+    end;
+}
 
-nonterminal NamedASTExprs with pps, env, namedValues, matchWith<[Pair<String AST>]>, substitution;
+synthesized attribute namedValues::[NamedAST];
+synthesized attribute namedAppValues::[Pair<String Maybe<AST>>];
+
+nonterminal NamedASTExprs with pps, env, namedValues, namedAppValues, matchWith<[Pair<String AST>]>, substitution;
 
 abstract production consNamedASTExpr
 top::NamedASTExprs ::= h::NamedASTExpr t::NamedASTExprs
 {
   top.pps = h.pp :: t.pps;
   top.namedValues = h.namedValue :: t.namedValues;
+  top.namedAppValues = h.namedAppValue :: t.namedAppValues;
   top.substitution =
     do (bindMaybe, returnMaybe) {
       hSubstitution::[Pair<String AST>] <- h.substitution;
@@ -248,18 +545,36 @@ top::NamedASTExprs ::=
 {
   top.pps = [];
   top.namedValues = [];
+  top.namedAppValues = [];
   top.substitution = just([]);
 }
 
-synthesized attribute namedValue::NamedAST;
+function appendNamedASTExprs
+NamedASTExprs ::= a::NamedASTExprs b::NamedASTExprs
+{
+  return
+    case a of
+    | consNamedASTExpr(h, t) -> consNamedASTExpr(h, appendNamedASTExprs(t, b))
+    | nilNamedASTExpr() -> b
+    end;
+}
 
-nonterminal NamedASTExpr with pp, env, namedValue, matchWith<[Pair<String AST>]>, substitution;
+synthesized attribute namedValue::NamedAST;
+synthesized attribute namedAppValue::Pair<String Maybe<AST>>;
+
+nonterminal NamedASTExpr with pp, env, namedValue, namedAppValue, matchWith<[Pair<String AST>]>, substitution;
 
 abstract production namedASTExpr
 top::NamedASTExpr ::= n::String v::ASTExpr
 {
   top.pp = pp"${text(n)}=${v.pp}";
   top.namedValue = namedAST(n, v.value);
+  top.namedAppValue =
+    pair(n,
+      case v of
+      | wildASTExpr() -> nothing()
+      | _ -> just(v.value)
+      end);
   
   v.matchWith =
     fromMaybe(

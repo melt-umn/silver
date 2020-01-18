@@ -54,7 +54,7 @@ top::Strategy ::= s::Strategy
 }
 
 -- Rules
-abstract production rule
+abstract production rewriteRule
 top::Strategy ::= pattern::ASTExpr result::ASTExpr
 {
   pattern.matchWith = top.term;
@@ -81,7 +81,6 @@ top::Strategy ::= pattern::ASTExpr cond::ASTExpr
       return top.term;
     };
 }
-
 
 -- Utilities
 abstract production rec

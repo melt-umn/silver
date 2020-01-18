@@ -23,8 +23,8 @@ concrete productions top::Expr_c
   { abstract mul; }
 | e1::Expr_c '/' e2::Expr_c
   { abstract div; }
-| i::Num_t
-  { top.ast = const(toInteger(i.lexeme)); }
+| n::Num_t
+  { top.ast = const(toInteger(n.lexeme)); }
 | '(' e::Expr_c ')'
   { top.ast = e.ast; }
 
