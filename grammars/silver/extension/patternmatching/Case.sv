@@ -16,8 +16,7 @@ terminal Opt_Vbar_t /\|?/ lexer classes {SPECOP}; -- optional Coq-style vbar.
 terminal When_kwd 'when' lexer classes {KEYWORD,RESERVED};
 
 -- MR | ...
-nonterminal MRuleList with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize,
-  flowEnv, grammarName, frame, compiledGrammars, downSubst, finalSubst; -- Not used here but included so that this can be reused by rewriting
+nonterminal MRuleList with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize;
 
 -- Turns MRuleList (of MatchRules) into [AbstractMatchRule]
 synthesized attribute matchRuleList :: [AbstractMatchRule];
@@ -25,8 +24,7 @@ synthesized attribute matchRuleList :: [AbstractMatchRule];
 autocopy attribute matchRulePatternSize :: Integer;
 
 -- P -> E
-nonterminal MatchRule with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize,
-  flowEnv, grammarName, frame, compiledGrammars, downSubst, upSubst, finalSubst; -- Not used here but included so that this can be reused by rewriting
+nonterminal MatchRule with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize;
 nonterminal AbstractMatchRule with location, headPattern, isVarMatchRule, expandHeadPattern;
 
 -- The head pattern of a match rule
@@ -154,8 +152,6 @@ top::MRuleList ::= m::MatchRule
   top.errors := m.errors;  
 
   top.matchRuleList = m.matchRuleList;
-  
-  m.downSubst = top.downSubst;
 }
 
 concrete production mRuleList_cons
@@ -165,9 +161,6 @@ top::MRuleList ::= h::MatchRule '|' t::MRuleList
   top.errors := h.errors ++ t.errors;
   
   top.matchRuleList = h.matchRuleList ++ t.matchRuleList;
-  
-  h.downSubst = top.downSubst;
-  t.downSubst = h.upSubst;
 }
 
 concrete production matchRule_c
@@ -181,9 +174,6 @@ top::MatchRule ::= pt::PatternList '->' e::Expr
     else [err(pt.location, "case expression matching against " ++ toString(top.matchRulePatternSize) ++ " values, but this rule has " ++ toString(length(pt.patternList)) ++ " patterns")];
 
   top.matchRuleList = [matchRule(pt.patternList, nothing(), e, location=top.location)];
-  
-  e.downSubst = top.downSubst;
-  top.upSubst = e.upSubst;
 }
 
 concrete production matchRuleWhen_c
@@ -197,10 +187,6 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr '->' e::Expr
     else [err(pt.location, "case expression matching against " ++ toString(top.matchRulePatternSize) ++ " values, but this rule has " ++ toString(length(pt.patternList)) ++ " patterns")];
 
   top.matchRuleList = [matchRule(pt.patternList, just(cond), e, location=top.location)];
-  
-  cond.downSubst = top.downSubst;
-  e.downSubst = cond.upSubst;
-  top.upSubst = e.upSubst;
 }
 
 abstract production matchRule

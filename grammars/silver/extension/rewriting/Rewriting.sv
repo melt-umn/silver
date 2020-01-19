@@ -7,6 +7,7 @@ imports silver:definition:core;
 imports silver:definition:type;
 imports silver:definition:type:syntax;
 imports silver:definition:env;
+imports silver:translation:java:core only finalType;
 imports silver:extension:patternmatching;
 imports silver:extension:reflection;
 imports silver:extension:list;
@@ -23,7 +24,7 @@ top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
   forwards to
     Silver_Expr {
       case decorate $Expr{s} with { term = silver:reflect:reflect($Expr{e}); }.result of
-      | just(a) -> just(reifyUnchecked(a))
+      | just(a) -> just(case reify(a) of right(a) -> a | left(msg) -> core:error(msg) end)
       | nothing() -> nothing()
       end
     };
@@ -59,12 +60,12 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "rule on " ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
 
-  -- Pattern matching error checking is a mess.
-  -- Easiest just to decorate caseExpr here.
+  -- Pattern matching error checking (mostly) happens on what caseExpr forwards to,
+  -- so we need to decorate one of those here.
   local checkExpr::Expr =
     caseExpr(
       [hackExprType(ty.typerep, location=builtin)],
-      ml.matchRuleList,
+      ml.wrappedMatchRuleList,
       errorExpr([], location=builtin),
       ty.typerep,
       location=builtin);
@@ -76,9 +77,11 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   checkExpr.frame = top.frame;
   checkExpr.config = top.config;
   checkExpr.compiledGrammars = top.compiledGrammars;
+  checkExpr.boundVars = [];
   
   ml.matchRulePatternSize = 1;
-  ml.downSubst = top.downSubst;
+  ml.ruleIndex = 0;
+  ml.decRuleExprsIn = checkExpr.decRuleExprs;
   
   local localErrors::[Message] = ml.errors ++ checkExpr.errors;
   

@@ -1,12 +1,15 @@
 grammar silver:extension:rewriting;
 
-autocopy attribute boundVars::[String] occurs on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr;
+autocopy attribute boundVars::[String] occurs on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern;
 attribute transform<ASTExpr> occurs on Expr;
+
+synthesized attribute decRuleExprs::[Pair<String Decorated Expr>] occurs on Expr, AssignExpr, PrimPatterns, PrimPattern;
 
 aspect default production
 top::Expr ::=
 {
   top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+  top.decRuleExprs = []; -- Only needed on things resulting from the translation of caseExpr
 }
 
 aspect production errorExpr
@@ -19,9 +22,15 @@ top::Expr ::= e::[Message]
 aspect production errorReference
 top::Expr ::= msg::[Message]  q::Decorated QName
 {
+  top.transform = error("transform not defined in the presence of errors");
+}
+
+aspect production childReference
+top::Expr ::= q::Decorated QName
+{
   top.transform =
-    if containsBy(stringEq, q.name, top.boundVars)
-    then varASTExpr(q.name)
+    if q.lookupValue.typerep.isDecorable && finalType(top).isDecorable
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
     else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
 
@@ -29,8 +38,26 @@ aspect production localReference
 top::Expr ::= q::Decorated QName
 {
   top.transform =
-    if containsBy(stringEq, q.name, top.boundVars)
-    then varASTExpr(q.name)
+    if q.lookupValue.typerep.isDecorable && finalType(top).isDecorable
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
+    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+}
+
+aspect production lhsReference
+top::Expr ::= q::Decorated QName
+{
+  top.transform =
+    if finalType(top).isDecorable
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
+    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+}
+
+aspect production forwardReference
+top::Expr ::= q::Decorated QName
+{
+  top.transform =
+    if finalType(top).isDecorable
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
     else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
 
@@ -39,18 +66,26 @@ top::Expr ::= q::Decorated QName _ _
 {
   top.transform =
     if containsBy(stringEq, q.name, top.boundVars)
-    then varASTExpr(q.name)
+    then if q.lookupValue.typerep.isDecorable && !finalType(top).isDecorable
+      then
+        applyASTExpr(
+          antiquoteASTExpr(
+            Silver_Expr {
+              silver:rewrite:anyASTExpr(
+                \ e::$TypeExpr{typerepTypeExpr(q.lookupValue.typerep, location=builtin)} ->
+                  decorate e with {})
+            }),
+          consASTExpr(varASTExpr(q.name), nilASTExpr()), nilNamedASTExpr())
+      else varASTExpr(q.name)
+    else if q.lookupValue.typerep.isDecorable && finalType(top).isDecorable
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
     else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
 
 aspect production errorApplication
 top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
-  top.transform =
-    case e of
-    | productionReference(q) -> prodCallASTExpr(q.lookupValue.fullName, es.transform, anns.transform)
-    | _ -> applyASTExpr(e.transform, es.transform, anns.transform)
-    end;
+  top.transform = error("transform not defined in the presence of errors");
 }
 
 aspect production functionInvocation
@@ -86,15 +121,7 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.transform =
-    applyASTExpr(
-      antiquoteASTExpr(
-        Silver_Expr {
-          silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(e.typerep, location=builtin)} -> e.$qName{q.name})
-        }),
-      consASTExpr(e.transform, nilASTExpr()),
-      nilNamedASTExpr());
+  top.transform = error("transform not defined in the presence of errors");
 }
 
 aspect production annoAccessHandler
@@ -157,15 +184,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.transform =
-    applyASTExpr(
-      antiquoteASTExpr(
-        Silver_Expr {
-          silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(e.typerep, location=builtin)} -> e.$qName{q.name})
-        }),
-      consASTExpr(e.transform, nilASTExpr()),
-      nilNamedASTExpr());
+  top.transform = error("transform not defined in the presence of errors");
 }
 
 aspect production decorateExprWith
@@ -310,12 +329,6 @@ top::Expr ::= e1::Expr '!=' e2::Expr
   top.transform = neqASTExpr(e1.transform, e2.transform);
 }
 
-aspect production ifThenElse
-top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
-{
-  top.transform = ifThenElseASTExpr(e1.transform, e2.transform, e3.transform);
-}
-
 aspect production intConst
 top::Expr ::= i::Int_t
 {
@@ -379,13 +392,13 @@ top::Expr ::= e1::Decorated Expr   e2::Decorated Expr
 aspect production errorPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
-  top.transform = appendASTExpr(e1.transform, e2.transform);
+  top.transform = error("transform not defined in the presence of errors");
 }
 
 aspect production errorLength
 top::Expr ::= e::Decorated Expr
 {
-  top.transform = lengthASTExpr(e.transform);
+  top.transform = error("transform not defined in the presence of errors");
 }
 
 aspect production stringLength
@@ -438,6 +451,13 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
   top.transform = terminalASTExpr(t.typerep.typeName, es.transform, el.transform);
 }
 
+aspect production ifThenElse
+top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
+{
+  top.transform = ifThenElseASTExpr(e1.transform, e2.transform, e3.transform);
+  top.decRuleExprs = e1.decRuleExprs ++ e2.decRuleExprs ++ e3.decRuleExprs;
+}
+
 -- Extensions
 aspect production emptyList
 top::Expr ::= '[' ']'
@@ -474,28 +494,45 @@ aspect production letp
 top::Expr ::= la::AssignExpr e::Expr
 {
   top.transform = letASTExpr(la.transform, e.transform);
+  top.decRuleExprs = la.decRuleExprs ++ e.decRuleExprs;
+  
   e.boundVars = top.boundVars ++ la.varBindings;
 }
 
-attribute varBindings occurs on AssignExpr;
 attribute transform<NamedASTExprs> occurs on AssignExpr;
+attribute varBindings occurs on AssignExpr;
 
 aspect production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 {
-  top.varBindings = a1.varBindings ++ a2.varBindings;
   top.transform = appendNamedASTExprs(a1.transform, a2.transform);
+  top.varBindings = a1.varBindings ++ a2.varBindings;
+  top.decRuleExprs = a1.decRuleExprs ++ a2.decRuleExprs;
 }
 
 aspect production assignExpr
 top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
-  top.varBindings = [id.name];
   top.transform =
     consNamedASTExpr(namedASTExpr(id.name, e.transform), nilNamedASTExpr());
+  top.varBindings = [id.name];
+  top.decRuleExprs = e.decRuleExprs;
 }
 
--- TODO: pattern matching?
+aspect production caseExpr_c
+top::Expr ::= 'case' es::Exprs 'of' _ ml::MRuleList 'end'
+{
+  ml.ruleIndex = 0;
+}
+
+aspect production matchPrimitiveReal
+top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
+{
+  pr.matchExprTransform = e.transform;
+  pr.failTransform = f.transform;
+  top.transform = pr.transform;
+  top.decRuleExprs = e.decRuleExprs ++ pr.decRuleExprs ++ f.decRuleExprs;
+}
 
 -- Expr "collection" productions
 attribute transform<ASTExprs> occurs on Exprs;

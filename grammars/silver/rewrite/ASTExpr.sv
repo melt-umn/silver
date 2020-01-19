@@ -179,7 +179,7 @@ top::ASTExpr ::= f::ASTExpr args::ASTExprs namedArgs::NamedASTExprs
   top.pp = pp"${f.pp}(${ppImplode(pp", ", args.pps ++ namedArgs.pps)})";
   top.value =
     case applyAST(f.value, args.appValues, namedArgs.namedAppValues) of
-    | left(msg) -> error(msg)
+    | left(msg) -> error(s"Error applying ${show(80, f.pp)}(${show(80, ppImplode(pp", ", args.pps ++ namedArgs.pps))}: ${msg}")
     | right(a) -> a
     end;
 }
@@ -225,6 +225,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     case a.value, b.value of
     | integerAST(x), integerAST(y) -> booleanAST(x > y)
     | floatAST(x), floatAST(y) -> booleanAST(x > y)
+    | stringAST(x), stringAST(y) -> booleanAST(x > y)
     | _, _ -> error("Invalid values")
     end;
 }
@@ -237,6 +238,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     case a.value, b.value of
     | integerAST(x), integerAST(y) -> booleanAST(x < y)
     | floatAST(x), floatAST(y) -> booleanAST(x < y)
+    | stringAST(x), stringAST(y) -> booleanAST(x < y)
     | _, _ -> error("Invalid values")
     end;
 }
@@ -249,6 +251,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     case a.value, b.value of
     | integerAST(x), integerAST(y) -> booleanAST(x >= y)
     | floatAST(x), floatAST(y) -> booleanAST(x >= y)
+    | stringAST(x), stringAST(y) -> booleanAST(x >= y)
     | _, _ -> error("Invalid values")
     end;
 }
@@ -261,6 +264,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     case a.value, b.value of
     | integerAST(x), integerAST(y) -> booleanAST(x <= y)
     | floatAST(x), floatAST(y) -> booleanAST(x <= y)
+    | stringAST(x), stringAST(y) -> booleanAST(x <= y)
     | _, _ -> error("Invalid values")
     end;
 }
@@ -273,6 +277,8 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     case a.value, b.value of
     | integerAST(x), integerAST(y) -> booleanAST(x == y)
     | floatAST(x), floatAST(y) -> booleanAST(x == y)
+    | stringAST(x), stringAST(y) -> booleanAST(x == y)
+    | booleanAST(x), booleanAST(y) -> booleanAST(x == y)
     | _, _ -> error("Invalid values")
     end;
 }
@@ -285,6 +291,8 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     case a.value, b.value of
     | integerAST(x), integerAST(y) -> booleanAST(x != y)
     | floatAST(x), floatAST(y) -> booleanAST(x != y)
+    | stringAST(x), stringAST(y) -> booleanAST(x != y)
+    | booleanAST(x), booleanAST(y) -> booleanAST(x != y)
     | _, _ -> error("Invalid values")
     end;
 }
@@ -460,6 +468,16 @@ top::ASTExpr ::= a::ASTExpr
     | stringAST(s) -> stringAST(toString(s))
     | _ -> error("Invalid values")
     end;
+}
+
+abstract production matchASTExpr
+top::ASTExpr ::= e::ASTExpr pattern::ASTExpr res::ASTExpr fail::ASTExpr
+{
+  top.pp = pp"case ${e.pp} of ${pattern.pp} -> ${res.pp} | _ -> ${fail.pp} end";
+  
+  pattern.matchWith = e.value;
+  res.substitutionEnv = pattern.substitution.fromJust ++ top.substitutionEnv;
+  top.value = if pattern.substitution.isJust then res.value else fail.value;
 }
 
 synthesized attribute astExprs::[ASTExpr];
