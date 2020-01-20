@@ -14,19 +14,6 @@ top::Expr ::=
   top.decRuleExprs = []; -- Only needed on things resulting from the translation of caseExpr
 }
 
-aspect production errorExpr
-top::Expr ::= e::[Message]
-{
-  top.transform = error("transform not defined in the presence of errors");
-}
-
-
-aspect production errorReference
-top::Expr ::= msg::[Message]  q::Decorated QName
-{
-  top.transform = error("transform not defined in the presence of errors");
-}
-
 aspect production lexicalLocalReference
 top::Expr ::= q::Decorated QName _ _
 {
@@ -50,7 +37,7 @@ top::Expr ::= q::Decorated QName _ _
 aspect production errorApplication
 top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
-  top.transform = error("transform not defined in the presence of errors");
+  top.transform = applyASTExpr(e.transform, es.transform, anns.transform);
 }
 
 aspect production functionInvocation
@@ -86,7 +73,15 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.transform = error("transform not defined in the presence of errors");
+  top.transform =
+    applyASTExpr(
+      antiquoteASTExpr(
+        Silver_Expr {
+          silver:rewrite:anyASTExpr(
+            \ e::$TypeExpr{typerepTypeExpr(e.typerep, location=builtin)} -> e.$qName{q.name})
+        }),
+      consASTExpr(e.transform, nilASTExpr()),
+      nilNamedASTExpr());
 }
 
 aspect production annoAccessHandler
@@ -149,7 +144,15 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.transform = error("transform not defined in the presence of errors");
+  top.transform =
+    applyASTExpr(
+      antiquoteASTExpr(
+        Silver_Expr {
+          silver:rewrite:anyASTExpr(
+            \ e::$TypeExpr{typerepTypeExpr(e.typerep, location=builtin)} -> e.$qName{q.name})
+        }),
+      consASTExpr(e.transform, nilASTExpr()),
+      nilNamedASTExpr());
 }
 
 aspect production decorateExprWith
@@ -357,13 +360,13 @@ top::Expr ::= e1::Decorated Expr   e2::Decorated Expr
 aspect production errorPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
-  top.transform = error("transform not defined in the presence of errors");
+  top.transform = appendASTExpr(e1.transform, e2.transform);
 }
 
 aspect production errorLength
 top::Expr ::= e::Decorated Expr
 {
-  top.transform = error("transform not defined in the presence of errors");
+  top.transform = lengthASTExpr(e.transform);
 }
 
 aspect production stringLength
