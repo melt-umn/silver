@@ -100,13 +100,40 @@ top::PatternList ::=
   top.firstTransform = error("Empty pattern list");
 }
 
+attribute transform<NamedASTExprs> occurs on NamedPatternList;
+
+aspect production namedPatternList_one
+top::NamedPatternList ::= p::NamedPattern
+{
+  top.transform = consNamedASTExpr(p.transform, nilNamedASTExpr());
+}
+aspect production namedPatternList_more
+top::NamedPatternList ::= p::NamedPattern ',' ps::NamedPatternList
+{
+  top.transform = consNamedASTExpr(p.transform, ps.transform);
+}
+
+aspect production namedPatternList_nil
+top::NamedPatternList ::=
+{
+  top.transform = nilNamedASTExpr();
+}
+
+attribute transform<NamedASTExpr> occurs on NamedPattern;
+
+aspect production namedPattern
+top::NamedPattern ::= qn::QName '=' p::Pattern
+{
+  top.transform = namedASTExpr(qn.lookupAttribute.fullName, p.transform);
+}
+
 attribute transform<ASTExpr> occurs on Pattern;
 
-aspect production prodAppPattern
-top::Pattern ::= prod::QName '(' ps::PatternList ')'
+aspect production prodAppPattern_named
+top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 {
   top.transform =
-    prodCallASTExpr(prod.lookupValue.fullName, ps.transform, nilNamedASTExpr());
+    prodCallASTExpr(prod.lookupValue.fullName, ps.transform, nps.transform);
 } 
 
 aspect production wildcPattern
