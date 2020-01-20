@@ -43,7 +43,7 @@ concrete production prodAppPattern_named
 top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 {
   top.unparse = prod.unparse ++ "(" ++ ps.unparse ++ ")";
-  top.errors := ps.errors;
+  top.errors := ps.errors ++ nps.errors;
 
   local parms :: Integer = length(prod.lookupValue.typerep.inputTypes);
 
@@ -249,12 +249,12 @@ top::NamedPatternList ::= p::NamedPattern
   top.namedPatternList = p.namedPatternList;
 }
 concrete production namedPatternList_more
-top::NamedPatternList ::= ps::NamedPatternList ',' p::NamedPattern
+top::NamedPatternList ::= p::NamedPattern ',' ps::NamedPatternList
 {
-  top.unparse = ps.unparse ++ ", " ++ p.unparse;
-  top.errors := ps.errors ++ p.errors;
+  top.unparse = p.unparse ++ ", " ++ ps.unparse;
+  top.errors := p.errors ++ ps.errors;
 
-  top.namedPatternList = ps.namedPatternList ++ p.namedPatternList;
+  top.namedPatternList = p.namedPatternList ++ ps.namedPatternList;
 }
 
 -- Abstract only to avoid parse conflict
@@ -275,8 +275,12 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
   top.unparse = s"${qn.unparse}=${p.unparse}";
   top.errors := p.errors;
   
+  -- TODO: Error checking for annotation patterns is a bit broken.
+  -- We can check that it is an annotation here, but any other
+  -- errors will show up in the generated code, potentially in the wrong
+  -- (or more than one) place.
   top.errors <-
-    if qn.lookupAttribute.found || !qn.lookupAttribute.dcl.isAnnotation
+    if qn.lookupAttribute.found && !qn.lookupAttribute.dcl.isAnnotation
     then [err(qn.location, s"${qn.name} is not an annotation")]
     else [];
   
