@@ -1,5 +1,9 @@
 grammar silver:rewrite;
 
+-- Some of these Strategy productions have very generic names that conflict with core.
+-- Users must explicitly import core hiding these names, or perform a qualified import,
+-- e.g. import silver:rewrite as s;
+
 imports core hiding all, repeat;
 imports core:monad;
 
@@ -80,6 +84,13 @@ top::Strategy ::= pattern::ASTExpr cond::ASTExpr
       end;
       return top.term;
     };
+}
+
+-- Debug
+abstract production printTerm
+top::Strategy ::=
+{
+  top.result = unsafeTrace(just(top.term), print(show(80, top.term.pp) ++ "\n\n", unsafeIO()));
 }
 
 -- Utilities
