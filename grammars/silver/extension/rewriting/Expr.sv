@@ -8,7 +8,9 @@ synthesized attribute decRuleExprs::[Pair<String Decorated Expr>] occurs on Expr
 aspect default production
 top::Expr ::=
 {
-  top.transform = antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+  top.transform =
+    antiquoteASTExpr(
+      Silver_Expr { silver:rewrite:anyASTExpr($Expr{exprRef(top, location=builtin)}) });
   top.decRuleExprs = []; -- Only needed on things resulting from the translation of caseExpr
 }
 
@@ -23,42 +25,6 @@ aspect production errorReference
 top::Expr ::= msg::[Message]  q::Decorated QName
 {
   top.transform = error("transform not defined in the presence of errors");
-}
-
-aspect production childReference
-top::Expr ::= q::Decorated QName
-{
-  top.transform =
-    if q.lookupValue.typerep.isDecorable && finalType(top).isDecorable
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
-}
-
-aspect production localReference
-top::Expr ::= q::Decorated QName
-{
-  top.transform =
-    if q.lookupValue.typerep.isDecorable && finalType(top).isDecorable
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
-}
-
-aspect production lhsReference
-top::Expr ::= q::Decorated QName
-{
-  top.transform =
-    if finalType(top).isDecorable
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
-}
-
-aspect production forwardReference
-top::Expr ::= q::Decorated QName
-{
-  top.transform =
-    if finalType(top).isDecorable
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
 
 aspect production lexicalLocalReference
@@ -77,9 +43,8 @@ top::Expr ::= q::Decorated QName _ _
             }),
           consASTExpr(varASTExpr(q.name), nilASTExpr()), nilNamedASTExpr())
       else varASTExpr(q.name)
-    else if q.lookupValue.typerep.isDecorable && finalType(top).isDecorable
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+    else antiquoteASTExpr(
+      Silver_Expr { silver:rewrite:anyASTExpr($Expr{exprRef(top, location=builtin)}) });
 }
 
 aspect production errorApplication
@@ -590,7 +555,7 @@ attribute transform<NamedASTExpr> occurs on AnnoExpr;
 aspect production annoExpr
 top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {
-  top.transform = namedASTExpr(qn.name, e.transform);
+  top.transform = namedASTExpr(qn.lookupAttribute.fullName, e.transform);
 }
 
 attribute transform<NamedASTExprs> occurs on AnnoAppExprs;

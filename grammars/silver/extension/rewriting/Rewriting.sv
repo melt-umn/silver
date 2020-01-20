@@ -20,11 +20,27 @@ terminal RewriteWith_t 'rewriteWith' lexer classes {KEYWORD, RESERVED};
 concrete production rewriteExpr
 top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
 {
-  -- TODO: Proper error checking here
-  forwards to
+  top.unparse = s"rewriteWith(${s.unparse}, ${e.unparse})";
+
+  local errCheckS::TypeCheck = check(s.typerep, nonterminalType("silver:rewrite:Strategy", []));
+  errCheckS.finalSubst = top.finalSubst;
+  
+  local localErrors::[Message] =
+    s.errors ++ e.errors ++
+    if errCheckS.typeerror
+    then [err(top.location, "First argument to rewriteWith must be Strategy. Instead got " ++ errCheckS.leftpp)]
+    else [];
+  
+  s.downSubst = top.downSubst;
+  e.downSubst = s.upSubst;
+  errCheckS.downSubst = e.upSubst;
+  forward.downSubst = errCheckS.upSubst;
+  
+  forwards to if !null(localErrors) then errorExpr(localErrors, location=builtin) else
     Silver_Expr {
-      case decorate $Expr{s} with { term = silver:reflect:reflect($Expr{e}); }.result of
-      | just(a) -> just(case reify(a) of right(a) -> a | left(msg) -> core:error(msg) end)
+      case decorate $Expr{exprRef(s, location=builtin)}
+           with { term = silver:reflect:reflect($Expr{exprRef(e, location=builtin)}); }.result of
+      | just(a) -> just(reifyUnchecked(a))
       | nothing() -> nothing()
       end
     };
@@ -72,7 +88,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   checkExpr.env = top.env;
   checkExpr.flowEnv = top.flowEnv;
   checkExpr.downSubst = top.downSubst;
-  checkExpr.finalSubst = top.finalSubst;
+  checkExpr.finalSubst = checkExpr.upSubst; -- Not top.finalSubst to avoid circularity
   checkExpr.grammarName = top.grammarName;
   checkExpr.frame = top.frame;
   checkExpr.config = top.config;
@@ -84,6 +100,8 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   ml.decRuleExprsIn = checkExpr.decRuleExprs;
   
   local localErrors::[Message] = ml.errors ++ checkExpr.errors;
+  
+  forward.downSubst = checkExpr.upSubst;
   
   forwards to
     if !null(localErrors)
