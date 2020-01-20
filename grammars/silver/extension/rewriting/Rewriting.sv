@@ -26,17 +26,22 @@ top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
   errCheckS.finalSubst = top.finalSubst;
   
   local localErrors::[Message] =
-    s.errors ++ e.errors ++
     if errCheckS.typeerror
     then [err(top.location, "First argument to rewriteWith must be Strategy. Instead got " ++ errCheckS.leftpp)]
     else [];
+  
+  -- Can't use an error production here, unfourtunately, due to circular dependency issues.
+  top.errors :=
+    if !null(s.errors ++ e.errors ++ localErrors)
+    then s.errors ++ e.errors ++ localErrors
+    else forward.errors;
   
   s.downSubst = top.downSubst;
   e.downSubst = s.upSubst;
   errCheckS.downSubst = e.upSubst;
   forward.downSubst = errCheckS.upSubst;
   
-  forwards to if !null(localErrors) then errorExpr(localErrors, location=builtin) else
+  forwards to
     Silver_Expr {
       case decorate $Expr{exprRef(s, location=builtin)}
            with { term = silver:reflect:reflect($Expr{exprRef(e, location=builtin)}); }.result of
@@ -99,14 +104,15 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   ml.ruleIndex = 0;
   ml.decRuleExprsIn = checkExpr.decRuleExprs;
   
-  local localErrors::[Message] = ml.errors ++ checkExpr.errors;
+  -- Can't use an error production here, unfourtunately, due to circular dependency issues.
+  top.errors :=
+    if !null(ml.errors ++ checkExpr.errors)
+    then ml.errors ++ checkExpr.errors
+    else forward.errors;
   
   forward.downSubst = checkExpr.upSubst;
   
-  forwards to
-    if !null(localErrors)
-    then errorExpr(localErrors, location=builtin)
-    else translate(builtin, reflect(ml.transform));
+  forwards to translate(builtin, reflect(ml.transform));
 }
 
 -- Hack dummy expr with a given type
