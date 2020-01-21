@@ -44,7 +44,9 @@ top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
   forwards to
     Silver_Expr {
       case decorate $Expr{exprRef(s, location=builtin)}
-           with { term = silver:reflect:reflect($Expr{exprRef(e, location=builtin)}); }.result of
+           with {
+             silver:rewrite:term = silver:reflect:reflect($Expr{exprRef(e, location=builtin)});
+           }.silver:rewrite:result of
       | just(a) -> just(reifyUnchecked(a))
       | nothing() -> nothing()
       end
