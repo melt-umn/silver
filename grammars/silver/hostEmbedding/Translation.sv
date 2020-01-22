@@ -157,6 +157,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     then just(errorPattern([err(givenLocation, "Expression antiquote is invalid in pattern context")], location=givenLocation))
     else nothing();
   
+  -- Note that we intentionally ignore annotations here
   top.patternTranslation =
     fromMaybe(
       prodAppPattern(

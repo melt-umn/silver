@@ -5,7 +5,7 @@ import silver:extension:list only LSqr_t, RSqr_t;
 {--
  - The forms of syntactic patterns that are permissible in (nested) case expresssions.
  -}
-nonterminal Pattern with location, config, unparse, env, errors, patternIsVariable, patternVariableName, patternSubPatternList, patternSortKey;
+nonterminal Pattern with location, config, unparse, env, errors, patternIsVariable, patternVariableName, patternSubPatternList, patternNamedSubPatternList, patternSortKey;
 
 {--
  - False if it actually matches anything specific, true if it's a variable/wildcard.
@@ -16,9 +16,13 @@ synthesized attribute patternIsVariable :: Boolean;
  -}
 synthesized attribute patternVariableName :: Maybe<String>;
 {--
- - Each child pattern below this one.
+ - Each positional child pattern below this one.
  -}
 synthesized attribute patternSubPatternList :: [Decorated Pattern];
+{--
+ - Each named child pattern below this one.
+ -}
+synthesized attribute patternNamedSubPatternList :: [Pair<String Decorated Pattern>];
 {--
  - The sort (and grouping) key of the pattern.
  - "~var" if patternIsVariable is true. (TODO: actually, we should call it undefined! It's not used.)
@@ -35,11 +39,11 @@ synthesized attribute patternSortKey :: String;
  - The production name may be qualified.
  - TODO: if not qualified filter down to productions on scruntinee type
  -}
-concrete production prodAppPattern
-top::Pattern ::= prod::QName '(' ps::PatternList ')'
+concrete production prodAppPattern_named
+top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 {
   top.unparse = prod.unparse ++ "(" ++ ps.unparse ++ ")";
-  top.errors := ps.errors;
+  top.errors := ps.errors ++ nps.errors;
 
   local parms :: Integer = length(prod.lookupValue.typerep.inputTypes);
 
@@ -50,8 +54,21 @@ top::Pattern ::= prod::QName '(' ps::PatternList ')'
   top.patternIsVariable = false;
   top.patternVariableName = nothing();
   top.patternSubPatternList = ps.patternList;
+  top.patternNamedSubPatternList = nps.namedPatternList;
   top.patternSortKey = prod.lookupValue.fullName;
-} 
+}
+
+concrete production prodAppPattern
+top::Pattern ::= prod::QName '(' ps::PatternList ')'
+{
+  forwards to prodAppPattern_named(prod, '(', ps, ',', namedPatternList_nil(location=top.location), ')', location=top.location);
+}
+
+concrete production propAppPattern_onlyNamed
+top::Pattern ::= prod::QName '(' nps::NamedPatternList ')'
+{
+  forwards to prodAppPattern_named(prod, '(', patternList_nil(location=top.location), ',', nps, ')', location=top.location);
+}
 
 {--
  - Match anything, and bind nothing.
@@ -115,6 +132,7 @@ top::Pattern ::=
   -- All other patterns should never set these to anything else, so let's default them.
   top.patternIsVariable = false;
   top.patternVariableName = nothing();
+  top.patternNamedSubPatternList = [];
 }
 
 --------------------------------------------------------------------------------
@@ -217,3 +235,55 @@ top::PatternList ::=
 {
   top.asListPattern = nilListPattern('[', ']', location=top.location);
 }
+
+synthesized attribute namedPatternList::[Pair<String Decorated Pattern>];
+
+nonterminal NamedPatternList with location, config, unparse, env, errors, namedPatternList;
+
+concrete production namedPatternList_one
+top::NamedPatternList ::= p::NamedPattern
+{
+  top.unparse = p.unparse;
+  top.errors := p.errors;
+
+  top.namedPatternList = p.namedPatternList;
+}
+concrete production namedPatternList_more
+top::NamedPatternList ::= p::NamedPattern ',' ps::NamedPatternList
+{
+  top.unparse = p.unparse ++ ", " ++ ps.unparse;
+  top.errors := p.errors ++ ps.errors;
+
+  top.namedPatternList = p.namedPatternList ++ ps.namedPatternList;
+}
+
+-- Abstract only to avoid parse conflict
+abstract production namedPatternList_nil
+top::NamedPatternList ::=
+{
+  top.unparse = "";
+  top.errors := [];
+
+  top.namedPatternList = [];
+}
+
+nonterminal NamedPattern with location, config, unparse, env, errors, namedPatternList;
+
+concrete production namedPattern
+top::NamedPattern ::= qn::QName '=' p::Pattern
+{
+  top.unparse = s"${qn.unparse}=${p.unparse}";
+  top.errors := p.errors;
+  
+  -- TODO: Error checking for annotation patterns is a bit broken.
+  -- We can check that it is an annotation here, but any other
+  -- errors will show up in the generated code, potentially in the wrong
+  -- (or more than one) place.
+  top.errors <-
+    if qn.lookupAttribute.found && !qn.lookupAttribute.dcl.isAnnotation
+    then [err(qn.location, s"${qn.name} is not an annotation")]
+    else [];
+  
+  top.namedPatternList = [pair(qn.lookupAttribute.fullName, p)];
+}
+
