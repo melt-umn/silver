@@ -9,8 +9,7 @@ aspect default production
 top::Expr ::=
 {
   top.transform =
-    antiquoteASTExpr(
-      Silver_Expr { silver:rewrite:anyASTExpr($Expr{exprRef(top, location=builtin)}) });
+    antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
   top.decRuleExprs = []; -- Only needed on things resulting from the translation of caseExpr
 }
 
@@ -30,8 +29,7 @@ top::Expr ::= q::Decorated QName _ _
             }),
           consASTExpr(varASTExpr(q.name), nilASTExpr()), nilNamedASTExpr())
       else varASTExpr(q.name)
-    else antiquoteASTExpr(
-      Silver_Expr { silver:rewrite:anyASTExpr($Expr{exprRef(top, location=builtin)}) });
+    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
 
 aspect production errorApplication
@@ -457,6 +455,14 @@ top::Expr ::= e::Decorated Expr
   top.transform = lengthASTExpr(e.transform);
 }
 
+aspect production caseExpr
+top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
+{
+  top.transform =
+    antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+  top.decRuleExprs = []; -- Only needed on things resulting from the translation of caseExpr
+}
+
 -- Modifications
 aspect production letp
 top::Expr ::= la::AssignExpr e::Expr
@@ -487,18 +493,9 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   top.decRuleExprs = e.decRuleExprs;
 }
 
-aspect production caseExpr_c
-top::Expr ::= 'case' es::Exprs 'of' _ ml::MRuleList 'end'
-{
-  ml.ruleIndex = 0;
-}
-
 aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
-  pr.matchExprTransform = e.transform;
-  pr.failTransform = f.transform;
-  top.transform = pr.transform;
   top.decRuleExprs = e.decRuleExprs ++ pr.decRuleExprs ++ f.decRuleExprs;
 }
 
@@ -585,5 +582,5 @@ top::AnnoAppExprs ::=
 aspect production exprRef
 top::Expr ::= e::Decorated Expr
 {
-  
+  top.transform = e.transform;
 }

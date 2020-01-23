@@ -29,7 +29,7 @@ top::MRuleList ::= h::MatchRule '|' t::MRuleList
 aspect production matchRule_c
 top::MatchRule ::= pt::PatternList _ e::Expr
 {
-  -- Aweful hack: pattern match type checking is happens on the forward "primitive match".
+  -- Awful hack: pattern match type checking is happens on the forward "primitive match".
   -- However, we 
   top.transform =
     rewriteRule(
@@ -75,6 +75,12 @@ top::Expr ::= key::String e::Expr
   top.unparse = s"key(${key}, ${e.unparse})";
   top.decRuleExprs = [pair(key, forward)];
   forwards to e;
+}
+
+aspect production caseExpr_c
+top::Expr ::= 'case' es::Exprs 'of' _ ml::MRuleList 'end'
+{
+  ml.ruleIndex = 0;
 }
 
 attribute transform<ASTExprs> occurs on PatternList;
@@ -196,34 +202,21 @@ top::Pattern ::= hp::Pattern '::' tp::Pattern
   top.transform = consListASTExpr(hp.transform, tp.transform);
 }
 
-
-attribute transform<ASTExpr> occurs on PrimPatterns, PrimPattern;
-autocopy attribute matchExprTransform::ASTExpr occurs on PrimPatterns, PrimPattern;
-autocopy attribute failTransform::ASTExpr occurs on PrimPatterns, PrimPattern;
-
+-- Primitive pattern stuff
 aspect production onePattern
 top::PrimPatterns ::= p::PrimPattern
 {
-  top.transform = p.transform;
   top.decRuleExprs = p.decRuleExprs;
 }
 aspect production consPattern
 top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
 {
-  top.transform = p.transform;
-  p.failTransform = ps.transform;
-  
   top.decRuleExprs = p.decRuleExprs ++ ps.decRuleExprs;
 }
 
 aspect production prodPatternNormal
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
-  top.transform =
-    matchASTExpr(
-      top.matchExprTransform,
-      prodCallASTExpr(qn.lookupValue.fullName, ns.transform, nilNamedASTExpr()),
-      e.transform, top.failTransform);
   top.decRuleExprs = e.decRuleExprs;
   e.boundVars = top.boundVars ++ ns.varBindings;
 }
@@ -231,11 +224,6 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 aspect production prodPatternGadt
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
-  top.transform =
-    matchASTExpr(
-      top.matchExprTransform,
-      prodCallASTExpr(qn.lookupValue.fullName, ns.transform, nilNamedASTExpr()),
-      e.transform, top.failTransform);
   top.decRuleExprs = e.decRuleExprs;
   e.boundVars = top.boundVars ++ ns.varBindings;
 }
@@ -243,99 +231,59 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 aspect production integerPattern
 top::PrimPattern ::= i::Int_t _ e::Expr
 {
-  top.transform =
-    matchASTExpr(
-      top.matchExprTransform,
-      integerASTExpr(toInteger(i.lexeme)),
-      e.transform, top.failTransform);
   top.decRuleExprs = e.decRuleExprs;
 }
 aspect production floatPattern
 top::PrimPattern ::= f::Float_t _ e::Expr
 {
-  top.transform =
-    matchASTExpr(
-      top.matchExprTransform,
-      floatASTExpr(toFloat(f.lexeme)),
-      e.transform, top.failTransform);
   top.decRuleExprs = e.decRuleExprs;
 }
 aspect production stringPattern
 top::PrimPattern ::= s::String_t _ e::Expr
 {
-  top.transform =
-    matchASTExpr(
-      top.matchExprTransform,
-      stringASTExpr(unescapeString(substring(1, length(s.lexeme) - 1, s.lexeme))),
-      e.transform,
-      top.failTransform);
   top.decRuleExprs = e.decRuleExprs;
 }
 aspect production booleanPattern
 top::PrimPattern ::= i::String _ e::Expr
 {
-  top.transform =
-    matchASTExpr(
-      top.matchExprTransform,
-      booleanASTExpr(toBoolean(i)),
-      e.transform, top.failTransform);
   top.decRuleExprs = e.decRuleExprs;
 }
 aspect production nilPattern
 top::PrimPattern ::= e::Expr
 {
-  top.transform =
-    matchASTExpr(
-      top.matchExprTransform,
-      nilListASTExpr(),
-      e.transform, top.failTransform);
   top.decRuleExprs = e.decRuleExprs;
 }
 aspect production conslstPattern
 top::PrimPattern ::= h::Name t::Name e::Expr
 {
-  top.transform =
-    matchASTExpr(
-      top.matchExprTransform,
-      consListASTExpr(varASTExpr(h.name), varASTExpr(t.name)),
-      e.transform, top.failTransform);
   top.decRuleExprs = e.decRuleExprs;
-  e.boundVars = top.boundVars ++ [h.name, t.name];
 }
 
-attribute transform<ASTExprs> occurs on VarBinders;
 synthesized attribute varBindings::[String] occurs on VarBinders, VarBinder;
 
 aspect production oneVarBinder
 top::VarBinders ::= v::VarBinder
 {
-  top.transform = consASTExpr(v.transform, nilASTExpr());
   top.varBindings = v.varBindings;
 }
 aspect production consVarBinder
 top::VarBinders ::= v::VarBinder ',' vs::VarBinders
 {
-  top.transform = consASTExpr(v.transform, vs.transform);
   top.varBindings = v.varBindings ++ vs.varBindings;
 }
 aspect production nilVarBinder
 top::VarBinders ::=
 {
-  top.transform = nilASTExpr();
   top.varBindings = [];
 }
-
-attribute transform<ASTExpr> occurs on VarBinder;
 
 aspect production varVarBinder
 top::VarBinder ::= n::Name
 {
-  top.transform = varASTExpr(n.name);
   top.varBindings = [n.name];
 }
 aspect production ignoreVarBinder
 top::VarBinder ::= '_'
 {
-  top.transform = wildASTExpr();
   top.varBindings = [];
 }
