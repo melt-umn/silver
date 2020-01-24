@@ -455,11 +455,39 @@ top::Expr ::= e::Decorated Expr
   top.transform = lengthASTExpr(e.transform);
 }
 
-aspect production caseExpr
-top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
+-- TODO: Awful hack to allow case to appear on rule RHS.
+-- This is interfering (should really be defined on primitive match)
+-- and only supports variables from the rule LHS appearing in the match expressions.
+aspect production caseExpr_c
+top::Expr ::= 'case' es::Exprs 'of' o::Opt_Vbar_t ml::MRuleList 'end'
 {
+  local decEs::Exprs = es;
+  decEs.downSubst = top.downSubst;
+  decEs.finalSubst = top.finalSubst;
+  decEs.frame = top.frame;
+  decEs.config = top.config;
+  decEs.compiledGrammars = top.compiledGrammars;
+  decEs.grammarName = top.grammarName;
+  decEs.env = top.env;
+  decEs.flowEnv = top.flowEnv;
+  decEs.boundVars = top.boundVars;
+  
   top.transform =
-    antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+    applyASTExpr(
+      antiquoteASTExpr(
+        Silver_Expr {
+          silver:rewrite:anyASTExpr(
+            $Expr{
+              lambdap(
+                decEs.lambdaParams,
+                caseExpr_c(
+                  'case', decEs.lambdaParamRefs, 'of',
+                  o, ml, 'end',
+                  location=builtin),
+                location=builtin)})
+        }),
+      decEs.transform,
+      nilNamedASTExpr());
 }
 
 -- Modifications
@@ -498,23 +526,58 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   top.decRuleExprs = e.decRuleExprs ++ pr.decRuleExprs ++ f.decRuleExprs;
 }
 
+-- TODO: Support for lambdas capturing rule LHS variables
+
 -- Expr "collection" productions
 attribute transform<ASTExprs> occurs on Exprs;
+attribute lambdaParams occurs on Exprs;
+synthesized attribute lambdaParamRefs::Exprs occurs on Exprs;
 
 aspect production exprsEmpty
 top::Exprs ::=
 {
   top.transform = nilASTExpr();
+  top.lambdaParams = productionRHSNil(location=builtin);
+  top.lambdaParamRefs = exprsEmpty(location=builtin);
 }
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
   top.transform = consASTExpr(e.transform, nilASTExpr());
+  
+  local lambdaParamName::String = "__exprs_param_" ++ toString(genInt());
+  top.lambdaParams =
+    productionRHSCons(
+      productionRHSElem(
+        name(lambdaParamName, builtin), '::',
+        typerepTypeExpr(e.typerep, location=builtin),
+        location=builtin),
+      productionRHSNil(location=builtin),
+      location=builtin);
+  top.lambdaParamRefs =
+    exprsSingle(
+      baseExpr(qName(builtin,lambdaParamName), location=builtin),
+      location=builtin);
 }
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
   top.transform = consASTExpr(e1.transform, e2.transform);
+  
+  local lambdaParamName::String = "__exprs_param_" ++ toString(genInt());
+  top.lambdaParams =
+    productionRHSCons(
+      productionRHSElem(
+        name(lambdaParamName, builtin), '::',
+        typerepTypeExpr(e1.typerep, location=builtin),
+        location=builtin),
+      e2.lambdaParams,
+      location=builtin);
+  top.lambdaParamRefs =
+    exprsCons(
+      baseExpr(qName(builtin, lambdaParamName), location=builtin),
+      ',', e2.lambdaParamRefs,
+      location=builtin);
 }
 
 attribute transform<ASTExpr> occurs on AppExpr;

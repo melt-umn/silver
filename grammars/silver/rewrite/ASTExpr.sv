@@ -179,7 +179,7 @@ top::ASTExpr ::= f::ASTExpr args::ASTExprs namedArgs::NamedASTExprs
   top.pp = pp"${f.pp}(${ppImplode(pp", ", args.pps ++ namedArgs.pps)})";
   top.value =
     case applyAST(f.value, args.appValues, namedArgs.namedAppValues) of
-    | left(msg) -> error(s"Error applying ${show(80, f.pp)}(${show(80, ppImplode(pp", ", args.pps ++ namedArgs.pps))}: ${msg}")
+    | left(msg) -> error(s"Error applying ${show(80, f.pp)}(${show(80, ppImplode(pp", ", args.pps ++ namedArgs.pps))}): ${msg}")
     | right(a) -> a
     end;
 }
