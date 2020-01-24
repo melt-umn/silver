@@ -460,7 +460,6 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
 {
   top.transform =
     antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
-  top.decRuleExprs = []; -- Only needed on things resulting from the translation of caseExpr
 }
 
 -- Modifications
