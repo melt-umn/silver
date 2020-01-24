@@ -1,4 +1,4 @@
-grammar stdlib:rewrite:expreval;
+grammar silver_features:rewrite:expreval;
 
 imports silver:langutil;
 imports silver:langutil:pp;

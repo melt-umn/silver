@@ -1,4 +1,4 @@
-grammar stdlib:rewrite:expreval;
+grammar silver_features:rewrite:expreval;
 
 terminal Num_t /[0-9]+/;
 
@@ -29,7 +29,7 @@ concrete productions top::Expr_c
   { top.ast = e.ast; }
 
 parser parse :: Expr_c {
-  stdlib:rewrite:expreval;
+  silver_features:rewrite:expreval;
 }
 
 function parseExpr

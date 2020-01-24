@@ -1,4 +1,4 @@
-grammar stdlib:rewrite:expreval;
+grammar silver_features:rewrite:expreval;
 
 import silver:testing;
 import lib:extcore;

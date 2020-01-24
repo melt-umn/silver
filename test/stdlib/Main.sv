@@ -12,7 +12,6 @@ import stdlib:rawtreeset;
 import stdlib:rawtreemap;
 import stdlib:rawgraph;
 import stdlib:xml;
-import stdlib:rewrite;
 
 
 mainTestSuite core_tests ;
