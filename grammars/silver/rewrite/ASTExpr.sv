@@ -604,7 +604,8 @@ top::NamedASTExpr ::= n::String v::ASTExpr
   top.pp = pp"${text(n)}=${v.pp}";
   top.namedValue = namedAST(n, v.value);
   top.namedAppValue =
-    pair(n,
+    pair(
+      last(explode(":", n)),
       case v of
       | wildASTExpr() -> nothing()
       | _ -> just(v.value)

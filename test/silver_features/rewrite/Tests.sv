@@ -103,3 +103,25 @@ global s8::s:Strategy =
 equalityTest(showRes(rewriteWith(s8, [foo(1), foo(2), foo(3)])), "fail", String, silver_tests);
 equalityTest(showRes(rewriteWith(s8, [foo(2), foo(2), foo(3)])), "[silver_features:rewrite:foo(2), silver_features:rewrite:foo(3)]", String, silver_tests);
 
+global s9::s:Strategy =
+  rule on Pair<Integer Integer> of
+  | pair(a, b) -> pair(b, _)(a)
+  end;
+
+equalityTest(showRes(rewriteWith(s9, pair(123, 456))), "core:pair(456, 123)", String, silver_tests);
+
+annotation a1::Integer;
+annotation a2::Integer;
+
+nonterminal Bar with a1, a2;
+
+abstract production barI
+top::Bar ::= Integer
+{}
+
+global s10::s:Strategy =
+  rule on Bar of
+  | barI(x, a1=y, a2=z) -> barI(_, a1=x, a2=_)(z, y)
+  end;
+
+equalityTest(showRes(rewriteWith(s10, barI(1, a1=2, a2=3))), "silver_features:rewrite:barI(3, silver_features:rewrite:a1=1, silver_features:rewrite:a2=2)", String, silver_tests);
