@@ -11,7 +11,7 @@ synthesized attribute transType :: String;
 synthesized attribute transClassType :: String;
 -- The runtime representation of a type, used for reification
 synthesized attribute transTypeRep :: String;
--- The runtime representation of a type, where all skolems arereplaced with flexible vars, used for reification
+-- The runtime representation of a type, where all skolems are replaced with flexible vars, used for reification
 synthesized attribute transFreshTypeRep :: String;
 
 attribute transType, transClassType, transTypeRep, transFreshTypeRep occurs on Type;
