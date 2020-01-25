@@ -20,6 +20,7 @@ top::Expr ::= q::Decorated QName _ _
     if containsBy(stringEq, q.name, top.boundVars)
     then if q.lookupValue.typerep.isDecorable && !finalType(top).isDecorable
       then
+        -- The variable is from the rule referenced as decorated, decorate it with nothing
         applyASTExpr(
           antiquoteASTExpr(
             Silver_Expr {
@@ -28,7 +29,49 @@ top::Expr ::= q::Decorated QName _ _
                   decorate e with {})
             }),
           consASTExpr(varASTExpr(q.name), nilASTExpr()), nilNamedASTExpr())
+      -- The variable is from the rule and referenced as undecorated
       else varASTExpr(q.name)
+    -- The variable comes from an enclosing let/match
+    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+}
+
+aspect production childReference
+top::Expr ::= q::Decorated QName
+{
+  top.transform =
+    -- Explicitly undecorate the variable, if appropriate for the final expected type
+    if q.lookupValue.typerep.isDecorable && finalType(top).isDecorable
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
+    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+}
+
+aspect production lhsReference
+top::Expr ::= q::Decorated QName
+{
+  top.transform =
+    -- Explicitly undecorate the variable, if appropriate for the final expected type
+    if q.lookupValue.typerep.isDecorable && finalType(top).isDecorable
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
+    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+}
+
+aspect production localReference
+top::Expr ::= q::Decorated QName
+{
+  top.transform =
+    -- Explicitly undecorate the variable, if appropriate for the final expected type
+    if q.lookupValue.typerep.isDecorable && finalType(top).isDecorable
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
+    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+}
+
+aspect production forwardReference
+top::Expr ::= q::Decorated QName
+{
+  top.transform =
+    -- Explicitly undecorate the variable, if appropriate for the final expected type
+    if q.lookupValue.typerep.isDecorable && finalType(top).isDecorable
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
     else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
 
@@ -62,7 +105,7 @@ top::Expr ::= e::Expr '.' 'forward'
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(e.typerep, location=builtin)} -> e.forward)
+            \ e::$TypeExpr{typerepTypeExpr(finalType(e), location=builtin)} -> e.forward)
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -76,7 +119,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(e.typerep, location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(finalType(e), location=builtin)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -90,7 +133,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(e.typerep, location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(finalType(e), location=builtin)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -104,7 +147,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(e.typerep, location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(finalType(e), location=builtin)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -119,7 +162,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(e.typerep, location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(finalType(e), location=builtin)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -133,7 +176,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(e.typerep, location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(finalType(e), location=builtin)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -147,7 +190,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(e.typerep, location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(finalType(e), location=builtin)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -166,7 +209,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
                 productionRHSCons(
                   productionRHSElem(
                     name("_e", builtin), '::',
-                    typerepTypeExpr(e.typerep, location=builtin),
+                    typerepTypeExpr(finalType(e), location=builtin),
                     location=builtin),
                   inh.lambdaParams,
                   location=builtin),
@@ -218,14 +261,16 @@ aspect production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 {
   top.transform = e.transform;
+  
+  local paramName::String = implode("_", explode(":", lhs.name));
   top.lambdaParam =
     productionRHSElem(
-      name(lhs.name, builtin), '::',
-      typerepTypeExpr(e.typerep, location=builtin),
+      name(paramName, builtin), '::',
+      typerepTypeExpr(finalType(e), location=builtin),
       location=builtin);
   top.bodyExprInhTransform =
     exprInh(
-      lhs, '=', baseExpr(qName(builtin, lhs.name), location=builtin), ';',
+      lhs, '=', baseExpr(qName(builtin, paramName), location=builtin), ';',
       location=builtin);
 }
 
@@ -405,7 +450,7 @@ top::Expr ::= 'new' '(' e::Expr ')'
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(e.typerep, location=builtin)} -> new(e))
+            \ e::$TypeExpr{typerepTypeExpr(finalType(e), location=builtin)} -> new(e))
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -490,6 +535,13 @@ top::Expr ::= 'case' es::Exprs 'of' o::Opt_Vbar_t ml::MRuleList 'end'
       nilNamedASTExpr());
 }
 
+aspect production rewriteExpr
+top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
+{
+  -- More efficient implementation that avoids reifying e's value.
+  top.transform = rewriteASTExpr(s.transform, e.transform);
+}
+
 -- Modifications
 aspect production letp
 top::Expr ::= la::AssignExpr e::Expr
@@ -550,7 +602,7 @@ top::Exprs ::= e::Expr
     productionRHSCons(
       productionRHSElem(
         name(lambdaParamName, builtin), '::',
-        typerepTypeExpr(e.typerep, location=builtin),
+        typerepTypeExpr(finalType(e), location=builtin),
         location=builtin),
       productionRHSNil(location=builtin),
       location=builtin);
@@ -569,7 +621,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
     productionRHSCons(
       productionRHSElem(
         name(lambdaParamName, builtin), '::',
-        typerepTypeExpr(e1.typerep, location=builtin),
+        typerepTypeExpr(finalType(e1), location=builtin),
         location=builtin),
       e2.lambdaParams,
       location=builtin);

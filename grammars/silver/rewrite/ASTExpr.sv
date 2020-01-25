@@ -148,7 +148,7 @@ top::ASTExpr ::= terminalName::String lexeme::ASTExpr location::ASTExpr
 abstract production anyASTExpr
 top::ASTExpr ::= x::a
 {
-  top.pp = pp"<obj>";
+  top.pp = reflect(x).pp;
   top.value = reflect(x);
 }
 
@@ -470,6 +470,7 @@ top::ASTExpr ::= a::ASTExpr
     end;
 }
 
+-- *Undecorated* pattern match, with no regard to forwarding - not currently used
 abstract production matchASTExpr
 top::ASTExpr ::= e::ASTExpr pattern::ASTExpr res::ASTExpr fail::ASTExpr
 {
@@ -478,6 +479,21 @@ top::ASTExpr ::= e::ASTExpr pattern::ASTExpr res::ASTExpr fail::ASTExpr
   pattern.matchWith = e.value;
   res.substitutionEnv = pattern.substitution.fromJust ++ top.substitutionEnv;
   top.value = if pattern.substitution.isJust then res.value else fail.value;
+}
+
+abstract production rewriteASTExpr
+top::ASTExpr ::= s::ASTExpr e::ASTExpr
+{
+  top.pp = pp"rewriteWith(${s.pp}, ${e.pp})";
+  
+  production st::Strategy = reifyUnchecked(s.value);
+  st.term = e.value;
+  
+  top.value =
+    case st.result of
+    | just(a) -> AST { core:just(${a}) }
+    | nothing() -> AST { core:nothing() }
+    end;
 }
 
 synthesized attribute astExprs::[ASTExpr];

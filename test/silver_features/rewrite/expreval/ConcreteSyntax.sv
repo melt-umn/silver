@@ -1,6 +1,13 @@
 grammar silver_features:rewrite:expreval;
 
+lexer class Keyword;
+
 terminal Num_t /[0-9]+/;
+terminal Var_t /[a-zA-Z]+/ submits to Keyword;
+
+terminal Let_t 'let' lexer classes {Keyword};
+terminal In_t 'in' precedence=0, lexer classes {Keyword};
+terminal Eq_t '=';
 
 terminal Plus_t '+' precedence=1, association=left;
 terminal Minus_t '-' precedence=1, association=left;
@@ -23,8 +30,12 @@ concrete productions top::Expr_c
   { abstract mul; }
 | e1::Expr_c '/' e2::Expr_c
   { abstract div; }
+| 'let' n::Var_t '=' e1::Expr_c 'in' e2::Expr_c
+  { top.ast = letE(n.lexeme, e1.ast, e2.ast); }
 | n::Num_t
   { top.ast = const(toInteger(n.lexeme)); }
+| n::Var_t
+  { top.ast = var(n.lexeme); }
 | '(' e::Expr_c ')'
   { top.ast = e.ast; }
 

@@ -19,3 +19,11 @@ equalityTest(showExpr(fromMaybe(const(12345), result3)), "2 / 3", String, silver
 global result4::Maybe<Expr> = rewriteWith(eval, parseExpr("1 + 1 / (1 + 1 / (1 + 1 / (1 + 1 / (1 + 1 / (1 + 1 / (1 + 1))))))"));
 equalityTest(result4.isJust, true, Boolean, silver_tests);
 equalityTest(showExpr(fromMaybe(const(12345), result4)), "34 / 21", String, silver_tests);
+
+global result5::Maybe<Expr> = rewriteWith(eval, parseExpr("let a = 1 / 2 in let b = a * 2 in a + b"));
+equalityTest(result5.isJust, true, Boolean, silver_tests);
+equalityTest(showExpr(fromMaybe(const(12345), result5)), "3 / 2", String, silver_tests);
+
+global result6::Maybe<Expr> = rewriteWith(eval, parseExpr("0 + 1 * a - 2 / b"));
+equalityTest(result6.isJust, true, Boolean, silver_tests);
+equalityTest(showExpr(fromMaybe(const(12345), result6)), "((a * b) - 2) / b", String, silver_tests);

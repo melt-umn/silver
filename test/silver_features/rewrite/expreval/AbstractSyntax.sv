@@ -36,6 +36,13 @@ top::Expr ::= e1::Expr e2::Expr
   top.needsParens = true;
 }
 
+abstract production letE
+top::Expr ::= n::String e1::Expr e2::Expr
+{
+  top.pp = pp"let ${text(n)} = ${e1.pp} in ${e2.pp}";
+  top.needsParens = true;
+}
+
 abstract production const
 top::Expr ::= n::Integer
 {
@@ -43,10 +50,26 @@ top::Expr ::= n::Integer
   top.needsParens = false;
 }
 
+abstract production var
+top::Expr ::= n::String
+{
+  top.pp = text(n);
+  top.needsParens = false;
+}
+
 function showExpr
 String ::= e::Expr
 {
   return show(80, e.pp);
+}
+
+function subst
+Strategy ::= n::String e::Expr
+{
+  return bottomUp(try(
+    rule on Expr of
+    | var(n1) when n == n1 -> e
+    end));
 }
 
 global evalStep::Strategy =
@@ -57,6 +80,25 @@ global evalStep::Strategy =
   | div(const(a), const(b)) when b != 0 && a % b == 0 -> const(a / b)
   | div(const(a), const(b)) when b != 0 && gcd(a, b) > 1 ->
      let g::Integer = gcd(a, b) in div(const(a / g), const(b / g)) end
+  -- This rule does not respect lexical shadowing;
+  -- it is assumed that the overall rewrite will be done in an innermost order.
+  | letE(n, e1, e2) -> rewriteWith(subst(n, e1), e2).fromJust
+  end;
+
+global simplifyConstIdent::Strategy =
+  rule on Expr of
+  | add(a, const(0)) -> a
+  | add(const(0), a) -> a
+  
+  | sub(a, const(0)) -> a
+  
+  | mul(_, const(0)) -> const(0)
+  | mul(const(0), _) -> const(0)
+  | mul(a, const(1)) -> a
+  | mul(const(1), a) -> a
+  
+  | div(const(0), _) -> const(0)
+  | div(a, const(1)) -> a
   end;
 
 global simplifyFrac::Strategy =
@@ -77,4 +119,4 @@ global simplifyFrac::Strategy =
   | div(div(a, b), div(c, d)) -> div(mul(a, d), mul(b, c))
   end;
 
-global eval::Strategy = innermost(evalStep <+ simplifyFrac);
+global eval::Strategy = innermost(evalStep <+ simplifyConstIdent <+ simplifyFrac);

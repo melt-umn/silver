@@ -36,6 +36,11 @@ top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
     then s.errors ++ e.errors ++ localErrors
     else forward.errors;
   
+  -- TODO: Equation needed due to weirdness with lets auto-undecorating bindings.
+  -- See comments in definition of lexicalLocalReference (grammars/silver/modification/let_fix/Let.sv)
+  -- Actual syntax to exactly constrain the types of arbitrary expressions would be useful here.
+  top.typerep = nonterminalType("core:Maybe", [e.typerep]);
+  
   s.downSubst = top.downSubst;
   e.downSubst = s.upSubst;
   errCheckS.downSubst = e.upSubst;
@@ -47,7 +52,11 @@ top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
            with {
              silver:rewrite:term = silver:reflect:reflect($Expr{exprRef(e, location=builtin)});
            }.silver:rewrite:result of
-      | just(a) -> just(reifyUnchecked(a))
+      | just(a) ->
+        -- let needed to constrain the result type to be the same as e.
+        let res :: $TypeExpr{typerepTypeExpr(e.typerep, location=builtin)} = reifyUnchecked(a)
+        in just(res)
+        end
       | nothing() -> nothing()
       end
     };
