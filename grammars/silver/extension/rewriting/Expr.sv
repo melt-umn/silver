@@ -18,19 +18,20 @@ top::Expr ::= q::Decorated QName _ _
 {
   top.transform =
     if containsBy(stringEq, q.name, top.boundVars)
-    then if q.lookupValue.typerep.isDecorable && !finalType(top).isDecorable
-      then
+    then case q.lookupValue.typerep of
+      | ntOrDecType(ntType, _) when finalType(top).isDecorated ->
         -- The variable is from the rule referenced as decorated, decorate it with nothing
         applyASTExpr(
           antiquoteASTExpr(
             Silver_Expr {
               silver:rewrite:anyASTExpr(
-                \ e::$TypeExpr{typerepTypeExpr(q.lookupValue.typerep, location=builtin)} ->
+                \ e::$TypeExpr{typerepTypeExpr(ntType, location=builtin)} ->
                   decorate e with {})
             }),
           consASTExpr(varASTExpr(q.name), nilASTExpr()), nilNamedASTExpr())
       -- The variable is from the rule and referenced as undecorated
-      else varASTExpr(q.name)
+      | _ -> varASTExpr(q.name)
+      end
     -- The variable comes from an enclosing let/match
     else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
@@ -40,7 +41,7 @@ top::Expr ::= q::Decorated QName
 {
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if q.lookupValue.typerep.isDecorable && finalType(top).isDecorable
+    if q.lookupValue.typerep.isDecorable && !finalType(top).isDecorated
     then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
     else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
@@ -50,7 +51,7 @@ top::Expr ::= q::Decorated QName
 {
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if q.lookupValue.typerep.isDecorable && finalType(top).isDecorable
+    if q.lookupValue.typerep.isDecorable && !finalType(top).isDecorated
     then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
     else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
@@ -60,7 +61,7 @@ top::Expr ::= q::Decorated QName
 {
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if q.lookupValue.typerep.isDecorable && finalType(top).isDecorable
+    if q.lookupValue.typerep.isDecorable && !finalType(top).isDecorated
     then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
     else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
@@ -70,7 +71,7 @@ top::Expr ::= q::Decorated QName
 {
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
-    if q.lookupValue.typerep.isDecorable && finalType(top).isDecorable
+    if q.lookupValue.typerep.isDecorable && !finalType(top).isDecorated
     then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
     else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }

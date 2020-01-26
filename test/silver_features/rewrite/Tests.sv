@@ -125,3 +125,19 @@ global s10::s:Strategy =
   end;
 
 equalityTest(showRes(rewriteWith(s10, barI(1, a1=2, a2=3))), "silver_features:rewrite:barI(3, silver_features:rewrite:a1=1, silver_features:rewrite:a2=2)", String, silver_tests);
+
+global s11::s:Strategy =
+  rule on Pair<Integer Pair<Integer Integer>> of
+  | pair(a, b) when b.fst < 10 -> pair(b.fst, pair(b.snd, a))
+  end;
+
+equalityTest(showRes(rewriteWith(s11, pair(1, pair(2, 3)))), "core:pair(2, core:pair(3, 1))", String, silver_tests);
+
+global s12::s:Strategy =
+  rule on Maybe<Decorated Pair<Integer Integer>> of
+  | just(p) -> just(decorate pair(p.snd, p.fst) with {})
+  end;
+
+-- Contains a decorated node, so tricky to test exactly.
+-- Mostly just concerned that this one compiles properly.
+equalityTest(rewriteWith(s12, just(decorate pair(123, 456) with {})).isJust, true, Boolean, silver_tests);
