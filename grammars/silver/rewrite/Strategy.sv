@@ -10,24 +10,27 @@ imports core:monad;
 inherited attribute term::AST;
 synthesized attribute result::Maybe<AST>;
 
-nonterminal Strategy with term, result;
+nonterminal Strategy with pp, term, result;
 
 -- Basic combinators
 abstract production id
 top::Strategy ::=
 {
+  top.pp = pp"id()";
   top.result = just(top.term);
 }
 
 abstract production fail
 top::Strategy ::=
 {
+  top.pp = pp"fail()";
   top.result = nothing();
 }
 
 abstract production sequence
 top::Strategy ::= s1::Strategy s2::Strategy
 {
+  top.pp = pp"(${s1.pp} <* ${s2.pp})";
   s1.term = top.term;
   s2.term = s1.result.fromJust;
   top.result = bindMaybe(s1.result, \ AST -> s2.result);
@@ -36,6 +39,7 @@ top::Strategy ::= s1::Strategy s2::Strategy
 abstract production choice
 top::Strategy ::= s1::Strategy s2::Strategy
 {
+  top.pp = pp"(${s1.pp} <+ ${s2.pp})";
   s1.term = top.term;
   s2.term = top.term;
   top.result = orElse(s1.result, s2.result);
@@ -44,6 +48,7 @@ top::Strategy ::= s1::Strategy s2::Strategy
 abstract production all
 top::Strategy ::= s::Strategy
 {
+  top.pp = pp"all(${s.pp})";
   local term::AST = top.term;
   term.givenStrategy = s;
   top.result = term.allResult;
@@ -52,6 +57,7 @@ top::Strategy ::= s::Strategy
 abstract production one
 top::Strategy ::= s::Strategy
 {
+  top.pp = pp"one(${s.pp})";
   local term::AST = top.term;
   term.givenStrategy = s;
   top.result = term.oneResult;
@@ -61,6 +67,7 @@ top::Strategy ::= s::Strategy
 abstract production rewriteRule
 top::Strategy ::= pattern::ASTExpr result::ASTExpr
 {
+  top.pp = pp"rule(${pattern.pp} -> ${result.pp})";
   pattern.matchWith = top.term;
   result.substitutionEnv = pattern.substitution.fromJust;
   top.result =
@@ -73,6 +80,7 @@ top::Strategy ::= pattern::ASTExpr result::ASTExpr
 abstract production require
 top::Strategy ::= pattern::ASTExpr cond::ASTExpr
 {
+  top.pp = pp"require(${pattern.pp} -> when ${cond.pp})";
   pattern.matchWith = top.term;
   cond.substitutionEnv = pattern.substitution.fromJust;
   top.result =
@@ -90,6 +98,7 @@ top::Strategy ::= pattern::ASTExpr cond::ASTExpr
 abstract production printTerm
 top::Strategy ::=
 {
+  top.pp = pp"print()";
   top.result = unsafeTrace(just(top.term), print(show(80, top.term.pp) ++ "\n\n", unsafeIO()));
 }
 

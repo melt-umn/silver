@@ -2,6 +2,7 @@ grammar silver:extension:rewriting;
 
 imports silver:rewrite;
 imports silver:hostEmbedding;
+imports silver:langutil:pp;
 
 imports silver:definition:core;
 imports silver:definition:type;
@@ -123,7 +124,10 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   
   forward.downSubst = checkExpr.upSubst;
   
-  forwards to translate(builtin, reflect(ml.transform));
+  local fwrd::Expr = translate(builtin, reflect(ml.transform));
+  
+  --forwards to unsafeTrace(fwrd, print(show(80, ml.transform.pp) ++ "\n\n\n", unsafeIO()));
+  forwards to fwrd;
 }
 
 -- Hack dummy expr with a given type
@@ -136,7 +140,10 @@ top::Expr ::= t::Type
 
 abstract production antiquoteASTExpr
 top::ASTExpr ::= e::Expr
-{ forwards to error("no forward"); }
+{
+  top.pp = pp"antiquoteASTExpr {${text(e.unparse)}}";
+  forwards to error("no forward");
+}
 
 aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
