@@ -138,6 +138,6 @@ global s12::s:Strategy =
   | just(p) -> just(decorate pair(p.snd, p.fst) with {})
   end;
 
--- Contains a decorated node, so tricky to test exactly.
+-- Result contains a decorated node, so tricky to test exactly.
 -- Mostly just concerned that this one compiles properly.
 equalityTest(rewriteWith(s12, just(decorate pair(123, 456) with {})).isJust, true, Boolean, silver_tests);

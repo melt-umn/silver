@@ -1,6 +1,9 @@
 grammar silver:extension:rewriting;
 
-autocopy attribute boundVars::[String] occurs on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern;
+-- Environment mapping variables that were defined on the rule RHS to Booleans indicating whether
+-- the variable was explicitly (i.e. not implicitly) decorated in the pattern.
+autocopy attribute boundVars::[Pair<String Boolean>] occurs on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern;
+
 attribute transform<ASTExpr> occurs on Expr;
 
 synthesized attribute decRuleExprs::[Pair<String Decorated Expr>] occurs on Expr, AssignExpr, PrimPatterns, PrimPattern;
@@ -16,24 +19,47 @@ top::Expr ::=
 aspect production lexicalLocalReference
 top::Expr ::= q::Decorated QName _ _
 {
+  -- In regular pattern matching nonterminal values are always effectively decorated, but we are
+  -- using the same typing behavior while matching on *undecorated* trees.  So when a variable is
+  -- referenced as decorated we must seperately handle the cases of when it was already decorated
+  -- or was decorated implicitly (in which case we need to explicitly decorate it here.)  The same
+  -- problem exists when dealing with implicit undecoration.
   top.transform =
-    if containsBy(stringEq, q.name, top.boundVars)
-    then case q.lookupValue.typerep of
-      | ntOrDecType(ntType, _) when finalType(top).isDecorated ->
-        -- The variable is from the rule referenced as decorated, decorate it with nothing
+    case lookupBy(stringEq, q.name, top.boundVars) of
+    | just(bindingIsDecorated) ->
+      -- The variable is bound in the rule
+      if finalType(top).isDecorated && !bindingIsDecorated
+      then
+        -- We want the decorated version, but the bound value is undecorated
         applyASTExpr(
           antiquoteASTExpr(
             Silver_Expr {
               silver:rewrite:anyASTExpr(
-                \ e::$TypeExpr{typerepTypeExpr(ntType, location=builtin)} ->
+                \ e::$TypeExpr{typerepTypeExpr(finalType(top).decoratedType, location=builtin)} ->
                   decorate e with {})
             }),
-          consASTExpr(varASTExpr(q.name), nilASTExpr()), nilNamedASTExpr())
-      -- The variable is from the rule and referenced as undecorated
-      | _ -> varASTExpr(q.name)
-      end
-    -- The variable comes from an enclosing let/match
-    else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+          consASTExpr(varASTExpr(q.name), nilASTExpr()),
+          nilNamedASTExpr())
+      else if finalType(top).isDecorable && bindingIsDecorated
+      -- We want the undecorated version, but the bound value is decorated
+      then
+        applyASTExpr(
+          antiquoteASTExpr(
+            Silver_Expr {
+              silver:rewrite:anyASTExpr(
+                \ e::$TypeExpr{typerepTypeExpr(decoratedType(finalType(top)), location=builtin)} -> new(e))
+            }),
+          consASTExpr(varASTExpr(q.name), nilASTExpr()),
+          nilNamedASTExpr())
+      -- Neither the bound value nor desired type is a decorated nonterminal - just return the value
+      else varASTExpr(q.name)
+    | nothing() ->
+      -- The variable is bound in an enclosing let/match
+      -- Explicitly undecorate the variable, if appropriate for the final expected type
+      if q.lookupValue.typerep.isDecorable && !finalType(top).isDecorated
+      then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
+      else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) })
+    end;
 }
 
 aspect production childReference
@@ -569,7 +595,16 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
   top.transform =
     consNamedASTExpr(namedASTExpr(id.name, e.transform), nilNamedASTExpr());
-  top.varBindings = [id.name];
+  
+  -- If this is a generated pattern variable binding, figure out whether the corresponding
+  -- primitive pattern variable was implictly decorated.
+  local isDecorated::Boolean =
+    case e of
+    | lexicalLocalReference(qn, _, _) ->
+      fromMaybe(finalType(e).isDecorated, lookupBy(stringEq, qn.name, top.boundVars))
+    | _ -> finalType(e).isDecorated
+    end;
+  top.varBindings = [pair(id.name, isDecorated)];
   top.decRuleExprs = e.decRuleExprs;
 }
 

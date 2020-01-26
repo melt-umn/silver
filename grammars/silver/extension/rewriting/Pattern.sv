@@ -259,7 +259,7 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   top.decRuleExprs = e.decRuleExprs;
 }
 
-synthesized attribute varBindings::[String] occurs on VarBinders, VarBinder;
+synthesized attribute varBindings::[Pair<String Boolean>] occurs on VarBinders, VarBinder;
 
 aspect production oneVarBinder
 top::VarBinders ::= v::VarBinder
@@ -280,7 +280,7 @@ top::VarBinders ::=
 aspect production varVarBinder
 top::VarBinder ::= n::Name
 {
-  top.varBindings = [n.name];
+  top.varBindings = [pair(n.name, performSubstitution(top.bindingType, top.finalSubst).isDecorated)];
 }
 aspect production ignoreVarBinder
 top::VarBinder ::= '_'

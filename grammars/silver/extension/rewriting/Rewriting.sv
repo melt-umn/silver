@@ -126,7 +126,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   
   local fwrd::Expr = translate(builtin, reflect(ml.transform));
   
-  --forwards to unsafeTrace(fwrd, print(show(80, ml.transform.pp) ++ "\n\n\n", unsafeIO()));
+  --forwards to unsafeTrace(fwrd, print(top.location.unparse ++ ": " ++ show(80, ml.transform.pp) ++ "\n\n\n", unsafeIO()));
   forwards to fwrd;
 }
 
