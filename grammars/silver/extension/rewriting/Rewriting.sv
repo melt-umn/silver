@@ -3,6 +3,7 @@ grammar silver:extension:rewriting;
 imports silver:rewrite;
 imports silver:hostEmbedding;
 imports silver:langutil:pp;
+imports silver:util;
 
 imports silver:definition:core;
 imports silver:definition:type;
@@ -65,7 +66,7 @@ top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
 
 -- Note that these being infix operators means that this wouldn't pass the MDA,
 -- despite being a Silver "extension".  This could be fixed by refactoring the
--- Silver Expr grammar into an "ETF" style.
+-- Silver Expr grammar into an "ETF" style with seperate operator nonterminals.
 terminal Sequence_t '<*'  precedence = 12, association = left; -- Same as *
 terminal Choice_t   '<+'  precedence = 11, association = left; -- Same as +
 
@@ -92,6 +93,11 @@ concrete production ruleExpr
 top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "rule on " ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
+  
+  -- Find the free type variables (i.e. lacking a definition) to add as skolem constants
+  local freeTyVars::[String] =
+    filter(\ tv::String -> null(getTypeDcl(tv, top.env)), makeSet(ty.lexicalTypeVariables));
+  ty.env = newScopeEnv(addNewLexicalTyVars(top.grammarName, ty.location, freeTyVars), top.env);
 
   -- Pattern matching error checking (mostly) happens on what caseExpr forwards to,
   -- so we need to decorate one of those here.
@@ -104,7 +110,6 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
       location=builtin);
   checkExpr.env = top.env;
   checkExpr.flowEnv = top.flowEnv;
-  checkExpr.downSubst = top.downSubst;
   checkExpr.finalSubst = checkExpr.upSubst; -- Not top.finalSubst to avoid circularity
   checkExpr.grammarName = top.grammarName;
   checkExpr.frame = top.frame;
@@ -118,10 +123,11 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   
   -- Can't use an error production here, unfourtunately, due to circular dependency issues.
   top.errors :=
-    if !null(ml.errors ++ checkExpr.errors)
-    then ml.errors ++ checkExpr.errors
+    if !null(ty.errors ++ ml.errors ++ checkExpr.errors)
+    then ty.errors ++ ml.errors ++ checkExpr.errors
     else forward.errors;
   
+  checkExpr.downSubst = top.downSubst;
   forward.downSubst = checkExpr.upSubst;
   
   local fwrd::Expr = translate(builtin, reflect(ml.transform));
