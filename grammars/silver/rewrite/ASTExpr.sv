@@ -189,9 +189,10 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
 {
   top.pp = pp"(${a.pp} && ${b.pp})";
   top.value =
-    case a.value, b.value of
-    | booleanAST(x), booleanAST(y) -> booleanAST(x && y)
-    | _, _ -> error("Invalid values")
+    case a.value of
+    | booleanAST(true) -> b.value
+    | booleanAST(false) -> booleanAST(false)
+    | _ -> error("Invalid values")
     end;
 }
 
@@ -200,9 +201,10 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
 {
   top.pp = pp"(${a.pp} || ${b.pp})";
   top.value =
-    case a.value, b.value of
-    | booleanAST(x), booleanAST(y) -> booleanAST(x || y)
-    | _, _ -> error("Invalid values")
+    case a.value of
+    | booleanAST(true) -> booleanAST(true)
+    | booleanAST(false) -> b.value
+    | _ -> error("Invalid values")
     end;
 }
 
