@@ -82,6 +82,7 @@ global s7::s:Strategy =
   end;
 
 equalityTest(showRes(rewriteWith(s7, pair(123, 456))), "core:pair(456, 123)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s7, pair(123, "hello"))), "fail", String, silver_tests);
 
 
 synthesized attribute isEqual::Boolean;
@@ -141,3 +142,11 @@ global s12::s:Strategy =
 -- Result contains a decorated node, so tricky to test exactly.
 -- Mostly just concerned that this one compiles properly.
 equalityTest(rewriteWith(s12, just(decorate pair(123, 456) with {})).isJust, true, Boolean, silver_tests);
+
+global s13::s:Strategy =
+  rule on Pair<a a> of
+  | pair(a, b) -> pair(b, a)
+  end;
+
+equalityTest(showRes(rewriteWith(s13, pair(123, 456))), "core:pair(456, 123)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s13, pair(123, "hello"))), "fail", String, silver_tests);

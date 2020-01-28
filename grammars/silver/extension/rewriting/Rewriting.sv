@@ -130,9 +130,22 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   checkExpr.downSubst = top.downSubst;
   forward.downSubst = checkExpr.upSubst;
   
-  local fwrd::Expr = translate(builtin, reflect(ml.transform));
+  local finalRuleType::Type =
+    freshenType(
+      performSubstitution(ty.typerep, checkExpr.upSubst),
+      ty.typerep.freeVariables);
+  local transform::Strategy =
+    if ml.isPolymorphic
+    then requireType(antiquoteASTExpr(
+      Silver_Expr {
+        silver:rewrite:anyASTExpr(
+          \ $TypeExpr{typerepTypeExpr(finalRuleType, location=builtin)} -> unit())
+      })) <* ml.transform
+    else ml.transform;
   
-  --forwards to unsafeTrace(fwrd, print(top.location.unparse ++ ": " ++ show(80, ml.transform.pp) ++ "\n\n\n", unsafeIO()));
+  local fwrd::Expr = translate(builtin, reflect(new(transform)));
+  
+  --forwards to unsafeTrace(fwrd, print(top.location.unparse ++ ": " ++ show(80, transform.pp) ++ "\n\n\n", unsafeIO()));
   forwards to fwrd;
 }
 

@@ -3,6 +3,7 @@ grammar silver:extension:rewriting;
 synthesized attribute transform<a>::a;
 
 attribute transform<Strategy> occurs on MRuleList, MatchRule;
+synthesized attribute isPolymorphic :: Boolean occurs on MRuleList, MatchRule, PatternList, Pattern, NamedPatternList, NamedPattern;
 
 synthesized attribute wrappedMatchRuleList :: [AbstractMatchRule] occurs on MRuleList, MatchRule;
 
@@ -13,6 +14,7 @@ aspect production mRuleList_one
 top::MRuleList ::= m::MatchRule
 {
   top.transform = m.transform;
+  top.isPolymorphic = m.isPolymorphic;
   top.wrappedMatchRuleList = m.wrappedMatchRuleList;
   m.ruleIndex = top.ruleIndex;
 }
@@ -20,7 +22,8 @@ top::MRuleList ::= m::MatchRule
 aspect production mRuleList_cons
 top::MRuleList ::= h::MatchRule '|' t::MRuleList
 {
-  top.transform = choice(h.transform, t.transform);
+  top.transform = h.transform <+ t.transform;
+  top.isPolymorphic = h.isPolymorphic || t.isPolymorphic;
   top.wrappedMatchRuleList = h.wrappedMatchRuleList ++ t.wrappedMatchRuleList;
   h.ruleIndex = top.ruleIndex;
   t.ruleIndex = top.ruleIndex + 1;
@@ -38,6 +41,7 @@ top::MatchRule ::= pt::PatternList _ e::Expr
       | just(e) -> e.transform
       | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex))
       end);
+  top.isPolymorphic = head(pt.patternList).patternIsVariable || pt.isPolymorphic;
   top.wrappedMatchRuleList =
     [matchRule(
       pt.patternList, nothing(),
@@ -61,6 +65,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
       | just(e) -> e.transform
       | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex))
       end);
+  top.isPolymorphic = head(pt.patternList).patternIsVariable || pt.isPolymorphic;
   top.wrappedMatchRuleList =
     [matchRule(
       pt.patternList,
@@ -90,12 +95,14 @@ aspect production patternList_one
 top::PatternList ::= p::Pattern
 {
   top.transform = consASTExpr(p.transform, nilASTExpr());
+  top.isPolymorphic = p.isPolymorphic;
   top.firstTransform = p.transform;
 }
 aspect production patternList_more
 top::PatternList ::= p::Pattern ',' ps::PatternList
 {
   top.transform = consASTExpr(p.transform, ps.transform);
+  top.isPolymorphic = p.isPolymorphic || ps.isPolymorphic;
   top.firstTransform = p.transform;
 }
 
@@ -103,6 +110,7 @@ aspect production patternList_nil
 top::PatternList ::=
 {
   top.transform = nilASTExpr();
+  top.isPolymorphic = false;
   top.firstTransform = error("Empty pattern list");
 }
 
@@ -112,17 +120,20 @@ aspect production namedPatternList_one
 top::NamedPatternList ::= p::NamedPattern
 {
   top.transform = consNamedASTExpr(p.transform, nilNamedASTExpr());
+  top.isPolymorphic = p.isPolymorphic;
 }
 aspect production namedPatternList_more
 top::NamedPatternList ::= p::NamedPattern ',' ps::NamedPatternList
 {
   top.transform = consNamedASTExpr(p.transform, ps.transform);
+  top.isPolymorphic = p.isPolymorphic || ps.isPolymorphic;
 }
 
 aspect production namedPatternList_nil
 top::NamedPatternList ::=
 {
   top.transform = nilNamedASTExpr();
+  top.isPolymorphic = false;
 }
 
 attribute transform<NamedASTExpr> occurs on NamedPattern;
@@ -131,15 +142,25 @@ aspect production namedPattern
 top::NamedPattern ::= qn::QName '=' p::Pattern
 {
   top.transform = namedASTExpr(qn.lookupAttribute.fullName, p.transform);
+  top.isPolymorphic = p.isPolymorphic;
 }
 
 attribute transform<ASTExpr> occurs on Pattern;
+
+aspect default production
+top::Pattern ::=
+{
+  top.isPolymorphic = false;
+}
 
 aspect production prodAppPattern_named
 top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 {
   top.transform =
     prodCallASTExpr(prod.lookupValue.fullName, ps.transform, nps.transform);
+  top.isPolymorphic =
+    !null(prod.lookupValue.typerep.outputType.freeVariables) ||
+    ps.isPolymorphic || nps.isPolymorphic;
 } 
 
 aspect production wildcPattern

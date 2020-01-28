@@ -94,6 +94,20 @@ top::Strategy ::= pattern::ASTExpr cond::ASTExpr
     };
 }
 
+-- Checks the type of the current term.
+-- fn evaluates to a function with a parameter of the desired type
+abstract production requireType
+top::Strategy ::= fn::ASTExpr
+{
+  top.pp = pp"(:: ${fn.pp})";
+  fn.substitutionEnv = [];
+  top.result =
+    case applyAST(fn.value, [just(top.term)], []) of
+    | left(msg) -> nothing()
+    | right(_) -> just(top.term)
+    end;
+}
+
 -- Debug
 abstract production printTerm
 top::Strategy ::=
