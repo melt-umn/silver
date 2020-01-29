@@ -3,7 +3,37 @@ grammar silver:extension:rewriting;
 synthesized attribute transform<a>::a;
 
 attribute transform<Strategy> occurs on MRuleList, MatchRule;
+
+{-
+ - "Polymorphic" rules are ones in which the LHS matches some well-typed terms
+ - that are not permitted by the type of the rule, due to the presence of type
+ - variables - such rules require an additional run-time type check before
+ - attempting to match.  For example,
+ -   rule on Pair<a a> of
+ -     pair(x, y) -> pair(y, x)
+ -   end
+ - matches only pairs where the parameters are the same type; this rule must
+ - fail when applied to pair(3, "a") because performing the rewrite would lead
+ - to the construction of a type-unsafe tree.  More generally, a rule is
+ - polymorphic if the type of a variable/wildcard pattern depends on the rule
+ - type.
+ - 
+ - Since type inference is done by the primitive match extension, detailed
+ - type information is not available here, and so we can "cheat" by being
+ - slightly more liberal with our analysis, for potentially a slight penalty to
+ - performance (by performing superfluous type checks) - a pattern might be
+ - polymorphic if either of the following hold:
+ -   * It is a variable/wildcard pattern
+ -   * A constructor pattern has a polymorphic pattern as an argument
+ -   corresponding to a parameter containing type variables that also occur in
+ -   the constructor's output type (note that this means existential type
+ -   variables and GADT productions with fully concrete output types are OK, as
+ -   their expected output type cannot affect the type of the arguments)
+ -}
 synthesized attribute isPolymorphic :: Boolean occurs on MRuleList, MatchRule, PatternList, Pattern, NamedPatternList, NamedPattern;
+inherited attribute typeHasUniversalVars :: Boolean occurs on Pattern;
+inherited attribute typesHaveUniversalVars :: [Boolean] occurs on PatternList;
+autocopy attribute namedTypesHaveUniversalVars :: [Pair<String Boolean>] occurs on NamedPatternList, NamedPattern;
 
 synthesized attribute wrappedMatchRuleList :: [AbstractMatchRule] occurs on MRuleList, MatchRule;
 
@@ -41,7 +71,10 @@ top::MatchRule ::= pt::PatternList _ e::Expr
       | just(e) -> e.transform
       | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex))
       end);
+  
   top.isPolymorphic = head(pt.patternList).patternIsVariable || pt.isPolymorphic;
+  pt.typesHaveUniversalVars = [true];
+  
   top.wrappedMatchRuleList =
     [matchRule(
       pt.patternList, nothing(),
@@ -65,7 +98,10 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
       | just(e) -> e.transform
       | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex))
       end);
+  
   top.isPolymorphic = head(pt.patternList).patternIsVariable || pt.isPolymorphic;
+  pt.typesHaveUniversalVars = [true];
+  
   top.wrappedMatchRuleList =
     [matchRule(
       pt.patternList,
@@ -95,23 +131,26 @@ aspect production patternList_one
 top::PatternList ::= p::Pattern
 {
   top.transform = consASTExpr(p.transform, nilASTExpr());
-  top.isPolymorphic = p.isPolymorphic;
   top.firstTransform = p.transform;
+  top.isPolymorphic = p.isPolymorphic;
+  p.typeHasUniversalVars = head(top.typesHaveUniversalVars);
 }
 aspect production patternList_more
 top::PatternList ::= p::Pattern ',' ps::PatternList
 {
   top.transform = consASTExpr(p.transform, ps.transform);
-  top.isPolymorphic = p.isPolymorphic || ps.isPolymorphic;
   top.firstTransform = p.transform;
+  top.isPolymorphic = p.isPolymorphic || ps.isPolymorphic;
+  p.typeHasUniversalVars = head(top.typesHaveUniversalVars);
+  ps.typesHaveUniversalVars = tail(top.typesHaveUniversalVars);
 }
 
 aspect production patternList_nil
 top::PatternList ::=
 {
   top.transform = nilASTExpr();
-  top.isPolymorphic = false;
   top.firstTransform = error("Empty pattern list");
+  top.isPolymorphic = false;
 }
 
 attribute transform<NamedASTExprs> occurs on NamedPatternList;
@@ -143,84 +182,106 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
 {
   top.transform = namedASTExpr(qn.lookupAttribute.fullName, p.transform);
   top.isPolymorphic = p.isPolymorphic;
+  p.typeHasUniversalVars =
+    fromMaybe(
+      error("transform undefined in the presence of errors"),
+      lookupBy(stringEq, last(explode(":", qn.name)), top.namedTypesHaveUniversalVars));
 }
 
 attribute transform<ASTExpr> occurs on Pattern;
-
-aspect default production
-top::Pattern ::=
-{
-  top.isPolymorphic = false;
-}
 
 aspect production prodAppPattern_named
 top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 {
   top.transform =
     prodCallASTExpr(prod.lookupValue.fullName, ps.transform, nps.transform);
-  top.isPolymorphic =
-    !null(prod.lookupValue.typerep.outputType.freeVariables) ||
-    ps.isPolymorphic || nps.isPolymorphic;
+  top.isPolymorphic = ps.isPolymorphic || nps.isPolymorphic;
+  
+  local outputFreeVars::[TyVar] = prod.lookupValue.typerep.outputType.freeVariables;
+  ps.typesHaveUniversalVars =
+    map(
+      \ t::Type -> !null(intersectBy(tyVarEqual, outputFreeVars, t.freeVariables)),
+      prod.lookupValue.typerep.inputTypes);
+  nps.namedTypesHaveUniversalVars =
+    map(
+      \ t::NamedArgType ->
+        pair(t.argName, !null(intersectBy(tyVarEqual, outputFreeVars, t.argType.freeVariables))),
+      prod.lookupValue.typerep.namedTypes);
 } 
 
 aspect production wildcPattern
 top::Pattern ::= '_'
 {
   top.transform = wildASTExpr();
+  top.isPolymorphic = top.typeHasUniversalVars;
 }
 
 aspect production varPattern
 top::Pattern ::= v::Name
 {
   top.transform = varASTExpr(v.name);
+  top.isPolymorphic = top.typeHasUniversalVars;
 }
 
 aspect production errorPattern
 top::Pattern ::= msg::[Message]
 {
   top.transform = error("transform undefined in the presence of errors");
+  top.isPolymorphic = false;
 }
 
 aspect production intPattern
 top::Pattern ::= num::Int_t
 {
   top.transform = integerASTExpr(toInteger(num.lexeme));
+  top.isPolymorphic = false;
 }
 
 aspect production fltPattern
 top::Pattern ::= num::Float_t
 {
   top.transform = floatASTExpr(toFloat(num.lexeme));
+  top.isPolymorphic = false;
 }
 
 aspect production strPattern
 top::Pattern ::= str::String_t
 {
   top.transform = stringASTExpr(unescapeString(substring(1, length(str.lexeme) - 1, str.lexeme)));
+  top.isPolymorphic = false;
 }
 
 aspect production truePattern
 top::Pattern ::= 'true'
 {
   top.transform = booleanASTExpr(true);
+  top.isPolymorphic = false;
 }
 
 aspect production falsePattern
 top::Pattern ::= 'false'
 {
   top.transform = booleanASTExpr(false);
+  top.isPolymorphic = false;
 }
 
 aspect production nilListPattern
 top::Pattern ::= '[' ']'
 {
   top.transform = nilListASTExpr();
+  top.isPolymorphic = top.typeHasUniversalVars;
 }
 
 aspect production consListPattern
 top::Pattern ::= hp::Pattern '::' tp::Pattern
 {
   top.transform = consListASTExpr(hp.transform, tp.transform);
+  
+  -- Slight special case optimization for lists:
+  -- :: has type ([a] ::= a [a]), so only polymorphic if both args are as well. 
+  top.isPolymorphic = hp.isPolymorphic && tp.isPolymorphic;
+  hp.typeHasUniversalVars = top.typeHasUniversalVars;
+  tp.typeHasUniversalVars = top.typeHasUniversalVars;
 }
 
 -- Primitive pattern stuff

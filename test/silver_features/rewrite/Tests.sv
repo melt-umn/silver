@@ -150,3 +150,12 @@ global s13::s:Strategy =
 
 equalityTest(showRes(rewriteWith(s13, pair(123, 456))), "core:pair(456, 123)", String, silver_tests);
 equalityTest(showRes(rewriteWith(s13, pair(123, "hello"))), "fail", String, silver_tests);
+
+global s14::s:Strategy =
+  rule on [[Integer]] of
+  | [n] :: rest -> rest ++ [[n + 1]]
+  end;
+
+equalityTest(showRes(rewriteWith(s14, [[2], [1, 2]])), "[[1, 2], [3]]", String, silver_tests);
+equalityTest(showRes(rewriteWith(s13, [[]])), "fail", String, silver_tests);
+equalityTest(showRes(rewriteWith(s13, [["a"]])), "fail", String, silver_tests);
