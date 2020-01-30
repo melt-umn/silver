@@ -35,7 +35,7 @@ synthesized attribute isVarMatchRule :: Boolean;
 synthesized attribute expandHeadPattern :: (AbstractMatchRule ::= [String]);
 
 -- P , ...
-nonterminal PatternList with location, config, unparse, patternList, env, errors;
+nonterminal PatternList with location, config, unparse, patternList, env, errors, patternVars, patternVarEnv;
 
 -- Turns PatternList into [Pattern]
 synthesized attribute patternList :: [Decorated Pattern];
@@ -180,6 +180,8 @@ top::MatchRule ::= pt::PatternList '->' e::Expr
     if length(pt.patternList) == top.matchRulePatternSize then []
     else [err(pt.location, "case expression matching against " ++ toString(top.matchRulePatternSize) ++ " values, but this rule has " ++ toString(length(pt.patternList)) ++ " patterns")];
 
+  pt.patternVarEnv = [];
+
   top.matchRuleList = [matchRule(pt.patternList, nothing(), e, location=top.location)];
 }
 
@@ -192,6 +194,8 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr '->' e::Expr
   top.errors <-
     if length(pt.patternList) == top.matchRulePatternSize then []
     else [err(pt.location, "case expression matching against " ++ toString(top.matchRulePatternSize) ++ " values, but this rule has " ++ toString(length(pt.patternList)) ++ " patterns")];
+
+  pt.patternVarEnv = [];
 
   top.matchRuleList = [matchRule(pt.patternList, just(cond), e, location=top.location)];
 }
@@ -211,7 +215,7 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Expr> e::Expr
           \ n::String ->
             fromMaybe(
               decorate wildcPattern('_', location=top.location)
-                with { config=head(pl).config; env=head(pl).env; },
+                with { config=head(pl).config; env=head(pl).env; patternVarEnv = []; },
               lookupBy(stringEq, n, head(pl).patternNamedSubPatternList)),
           named) ++
         tail(pl),
@@ -224,6 +228,9 @@ top::PatternList ::= p::Pattern
   top.unparse = p.unparse;
   top.errors := p.errors;
 
+  top.patternVars = p.patternVars;
+  p.patternVarEnv = top.patternVarEnv;
+  
   top.patternList = [p];
 }
 concrete production patternList_snoc
@@ -239,6 +246,9 @@ top::PatternList ::= p::Pattern ',' ps1::PatternList
   top.unparse = p.unparse ++ ", " ++ ps1.unparse;
   top.errors := p.errors ++ ps1.errors;
 
+  top.patternVars = p.patternVars ++ ps1.patternVars;
+  ps1.patternVarEnv = p.patternVarEnv ++ p.patternVars;
+  
   top.patternList = p :: ps1.patternList;
 }
 
@@ -249,6 +259,7 @@ top::PatternList ::=
   top.unparse = "";
   top.errors := [];
 
+  top.patternVars = [];
   top.patternList = [];
 }
 
