@@ -87,6 +87,132 @@ top::Expr ::= s1::Expr '<+' s2::Expr
 }
 
 
+terminal Traverse_t 'traverse' lexer classes {KEYWORD, RESERVED};
+
+concrete production traverseExprAnno
+top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
+{
+  top.unparse = s"traverse ${n.name}(${es.unparse}, ${anns.unparse})";
+  
+  local numChildren::Integer = length(n.lookupValue.typerep.inputTypes);
+  local annotations::[String] = map((.argName), n.lookupValue.typerep.namedTypes);
+  es.appExprTypereps = repeat(nonterminalType("silver:rewrite:Strategy", []), numChildren);
+  es.appExprApplied = n.unparse;
+  anns.appExprApplied = n.unparse;
+  anns.funcAnnotations =
+    map(namedArgType(_, nonterminalType("silver:rewrite:Strategy", [])), annotations);
+  anns.remainingFuncAnnotations = anns.funcAnnotations;
+ 
+  local localErrors::[Message] = es.errors ++ anns.traverseErrors;
+
+  es.downSubst = top.downSubst;
+  anns.downSubst = es.upSubst;
+  forward.downSubst = es.downSubst;
+  
+  es.traverseTransformIn = exprsEmpty(location=builtin);
+  anns.traverseTransformIn = exprsEmpty(location=builtin);
+  
+  local fwrd::Expr =
+    Silver_Expr {
+      silver:rewrite:congruence(
+        $Expr{stringConst(terminal(String_t, s"\"${n.lookupValue.fullName}\"", builtin), location=builtin)},
+        $Expr{fullList('[', es.traverseTransform, ']', location=builtin)},
+        $Expr{fullList('[', anns.traverseTransform, ']', location=builtin)})
+    };
+  
+  forwards to if !null(localErrors) then errorExpr(localErrors, location=builtin) else fwrd;
+}
+concrete production traverseAnno
+top::Expr ::= 'traverse' n::QName '(' anns::AnnoAppExprs ')'
+{
+  forwards to traverseExprAnno($1, n, $3, emptyAppExprs(location=$3.location), ',', anns, $5, location=top.location);
+}
+concrete production traverseExpr
+top::Expr ::= 'traverse' n::QName '(' es::AppExprs ')'
+{
+  forwards to traverseExprAnno($1, n, $3, es, ',', emptyAnnoAppExprs(location=$4.location), $5, location=top.location);
+}
+concrete production traverseEmpty
+top::Expr ::= 'traverse' n::QName '(' ')'
+{
+  forwards to traverseExprAnno($1, n, $3, emptyAppExprs(location=$3.location), ',', emptyAnnoAppExprs(location=$4.location), $4, location=top.location);
+}
+
+-- Compute our own errors on AnnoAppExprs, since we want to ignore missing annotations (like in patterns)
+synthesized attribute traverseErrors::[Message] occurs on AnnoAppExprs, AnnoExpr;
+synthesized attribute traverseTransform<a>::a;
+attribute traverseTransform<Expr> occurs on AppExpr, AnnoExpr;
+attribute traverseTransform<Exprs> occurs on AppExprs, AnnoAppExprs;
+autocopy attribute traverseTransformIn::Exprs occurs on AppExprs, AnnoAppExprs;
+
+aspect production missingAppExpr
+top::AppExpr ::= '_'
+{
+  top.traverseTransform = Silver_Expr { silver:rewrite:id() };
+}
+aspect production presentAppExpr
+top::AppExpr ::= e::Expr
+{
+  top.traverseTransform = e;
+}
+
+aspect production snocAppExprs
+top::AppExprs ::= es::AppExprs ',' e::AppExpr
+{
+  top.traverseTransform = es.traverseTransform;
+  es.traverseTransformIn =
+    exprsCons(e.traverseTransform, ',', top.traverseTransformIn, location=builtin);
+}
+aspect production oneAppExprs
+top::AppExprs ::= e::AppExpr
+{
+  top.traverseTransform =
+    exprsCons(e.traverseTransform, ',', top.traverseTransformIn, location=builtin);
+}
+aspect production emptyAppExprs
+top::AppExprs ::=
+{
+  top.traverseTransform = top.traverseTransformIn;
+}
+
+aspect production annoExpr
+top::AnnoExpr ::= qn::QName '=' e::AppExpr
+{
+  top.traverseErrors =
+    e.errors ++
+    if !extractNamedArg(qn.name, top.funcAnnotations).fst.isJust
+    then [err(qn.location, "Named parameter '" ++ qn.name ++ "' is not appropriate for '" ++ top.appExprApplied ++ "'")]
+    else [];
+  top.traverseTransform =
+    Silver_Expr {
+      core:pair(
+        $Expr{stringConst(terminal(String_t, s"\"${qn.lookupAttribute.fullName}\"", builtin), location=builtin)},
+        $Expr{e.traverseTransform})
+    };
+}
+
+aspect production snocAnnoAppExprs
+top::AnnoAppExprs ::= es::AnnoAppExprs ',' e::AnnoExpr
+{
+  top.traverseErrors = es.traverseErrors ++ e.traverseErrors;
+  top.traverseTransform = es.traverseTransform;
+  es.traverseTransformIn =
+    exprsCons(e.traverseTransform, ',', top.traverseTransformIn, location=builtin);
+}
+aspect production oneAnnoAppExprs
+top::AnnoAppExprs ::= e::AnnoExpr
+{
+  top.traverseErrors = e.traverseErrors;
+  top.traverseTransform =
+    exprsCons(e.traverseTransform, ',', top.traverseTransformIn, location=builtin);
+}
+aspect production emptyAnnoAppExprs
+top::AnnoAppExprs ::=
+{
+  top.traverseErrors = [];
+  top.traverseTransform = top.traverseTransformIn;
+}
+
 terminal Rule_t 'rule' lexer classes {KEYWORD, RESERVED};
 
 concrete production ruleExpr

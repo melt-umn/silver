@@ -45,6 +45,7 @@ top::Strategy ::= s1::Strategy s2::Strategy
   top.result = orElse(s1.result, s2.result);
 }
 
+-- Traversals
 abstract production all
 top::Strategy ::= s::Strategy
 {
@@ -61,6 +62,21 @@ top::Strategy ::= s::Strategy
   local term::AST = top.term;
   term.givenStrategy = s;
   top.result = term.oneResult;
+}
+
+abstract production congruence
+top::Strategy ::= prodName::String childStrategies::[Strategy] annotationStrategies::[Pair<String Strategy>]
+{
+  top.pp =
+    pp"traverse ${text(prodName)}(${
+      ppImplode(pp", ",
+        map((.pp), childStrategies) ++
+        map(\ a::Pair<String Strategy> -> pp"${text(a.fst)}=${a.snd.pp}", annotationStrategies))})";
+  local term::AST = top.term;
+  term.productionName = prodName;
+  term.childStrategies = childStrategies;
+  term.annotationStrategies = annotationStrategies;
+  top.result = term.congruenceResult;
 }
 
 -- Rules

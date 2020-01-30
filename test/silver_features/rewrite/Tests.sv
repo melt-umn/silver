@@ -159,3 +159,24 @@ global s14::s:Strategy =
 equalityTest(showRes(rewriteWith(s14, [[2], [1, 2]])), "[[1, 2], [3]]", String, silver_tests);
 equalityTest(showRes(rewriteWith(s13, [[]])), "fail", String, silver_tests);
 equalityTest(showRes(rewriteWith(s13, [["a"]])), "fail", String, silver_tests);
+
+global inc::s:Strategy = rule on Integer of i -> i + 1 end;
+
+global s15::s:Strategy = traverse pair(_, inc);
+
+equalityTest(showRes(rewriteWith(s15, pair(1, 2))), "core:pair(1, 3)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s15, pair("a", "b"))), "fail", String, silver_tests);
+equalityTest(showRes(rewriteWith(s15, [["a"]])), "fail", String, silver_tests);
+
+global s16::s:Strategy = traverse barI(inc, a1=inc, a1=_, a1=inc);
+
+equalityTest(showRes(rewriteWith(s16, barI(1, a1=2, a2=3))), "silver_features:rewrite:barI(2, silver_features:rewrite:a1=4, silver_features:rewrite:a2=3)", String, silver_tests);
+
+global s17::s:Strategy = s:rec(\ s::s:Strategy -> traverse pair(s, s) <+ s:try(inc));
+
+equalityTest(showRes(rewriteWith(s17, pair(1, 2))), "core:pair(2, 3)", String, silver_tests);
+equalityTest(
+  showRes(rewriteWith(s17, pair(pair(pair("a", 1), pair("b", 2)), pair(true, 3)))),
+  "core:pair(core:pair(core:pair(\"a\", 2), core:pair(\"b\", 3)), core:pair(true, 4))",
+  String, silver_tests);
+
