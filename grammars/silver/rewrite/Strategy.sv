@@ -64,7 +64,7 @@ top::Strategy ::= s::Strategy
   top.result = term.oneResult;
 }
 
-abstract production congruence
+abstract production prodCongruence
 top::Strategy ::= prodName::String childStrategies::[Strategy] annotationStrategies::[Pair<String Strategy>]
 {
   top.pp =
@@ -76,7 +76,25 @@ top::Strategy ::= prodName::String childStrategies::[Strategy] annotationStrateg
   term.productionName = prodName;
   term.childStrategies = childStrategies;
   term.annotationStrategies = annotationStrategies;
-  top.result = term.congruenceResult;
+  top.result = term.prodCongruenceResult;
+}
+
+abstract production consListCongruence
+top::Strategy ::= h::Strategy t::Strategy
+{
+  top.pp = pp"traverse (${h.pp} :: ${t.pp})";
+  local term::AST = top.term;
+  term.headStrategy = h;
+  term.tailStrategy = t;
+  top.result = term.consListCongruenceResult;
+}
+
+abstract production nilListCongruence
+top::Strategy ::= 
+{
+  top.pp = pp"traverse []";
+  local term::AST = top.term;
+  top.result = term.nilListCongruenceResult;
 }
 
 -- Rules

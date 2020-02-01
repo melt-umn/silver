@@ -87,7 +87,7 @@ top::Expr ::= s1::Expr '<+' s2::Expr
 
 terminal Traverse_t 'traverse' lexer classes {KEYWORD, RESERVED};
 
-concrete production traverseExprAnno
+concrete production traverseProdExprAnno
 top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   top.unparse = s"traverse ${n.name}(${es.unparse}, ${anns.unparse})";
@@ -107,70 +107,98 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   anns.downSubst = es.upSubst;
   forward.downSubst = es.downSubst;
   
-  es.traverseTransformIn = exprsEmpty(location=builtin);
-  anns.traverseTransformIn = exprsEmpty(location=builtin);
-  
-  local fwrd::Expr =
-    Silver_Expr {
-      silver:rewrite:congruence(
-        $Expr{stringConst(terminal(String_t, s"\"${n.lookupValue.fullName}\"", builtin), location=builtin)},
-        $Expr{fullList('[', es.traverseTransform, ']', location=builtin)},
-        $Expr{fullList('[', anns.traverseTransform, ']', location=builtin)})
-    };
+  local transform::Strategy =
+    prodCongruence(n.lookupValue.fullName, es.traverseTransform, anns.traverseTransform);
+  local fwrd::Expr = translate(builtin, reflect(new(transform)));
   
   forwards to if !null(localErrors) then errorExpr(localErrors, location=builtin) else fwrd;
 }
-concrete production traverseAnno
+concrete production traverseProdAnno
 top::Expr ::= 'traverse' n::QName '(' anns::AnnoAppExprs ')'
 {
-  forwards to traverseExprAnno($1, n, $3, emptyAppExprs(location=$3.location), ',', anns, $5, location=top.location);
+  forwards to traverseProdExprAnno($1, n, $3, emptyAppExprs(location=$3.location), ',', anns, $5, location=top.location);
 }
-concrete production traverseExpr
+concrete production traverseProdExpr
 top::Expr ::= 'traverse' n::QName '(' es::AppExprs ')'
 {
-  forwards to traverseExprAnno($1, n, $3, es, ',', emptyAnnoAppExprs(location=$4.location), $5, location=top.location);
+  forwards to traverseProdExprAnno($1, n, $3, es, ',', emptyAnnoAppExprs(location=$4.location), $5, location=top.location);
 }
-concrete production traverseEmpty
+concrete production traverseProdEmpty
 top::Expr ::= 'traverse' n::QName '(' ')'
 {
-  forwards to traverseExprAnno($1, n, $3, emptyAppExprs(location=$3.location), ',', emptyAnnoAppExprs(location=$4.location), $4, location=top.location);
+  forwards to traverseProdExprAnno($1, n, $3, emptyAppExprs(location=$3.location), ',', emptyAnnoAppExprs(location=$4.location), $4, location=top.location);
+}
+
+abstract production traverseConsList
+top::Expr ::= 'traverse' '(' h::AppExpr '::' t::AppExpr ')'
+{
+  top.unparse = s"traverse (${h.unparse} :: ${t.unparse})";
+  
+  local transform::Strategy = consListCongruence(h.traverseTransform, t.traverseTransform);
+  forwards to translate(top.location, reflect(new(transform)));
+}
+concrete production traverseConsListFirstMissing
+top::Expr ::= 'traverse' '(' h::'_' '::' t::AppExpr ')'
+{
+  forwards to traverseConsList($1, $2, missingAppExpr(h, location=h.location), $4, t, $6, location=top.location);
+}
+concrete production traverseConsListFirstPresent
+top::Expr ::= 'traverse' '(' h::Expr '::' t::AppExpr ')'
+{
+  forwards to traverseConsList($1, $2, presentAppExpr(h, location=h.location), $4, t, $6, location=top.location);
+}
+
+concrete production traverseNilList
+top::Expr ::= 'traverse' '[' ']'
+{
+  top.unparse = s"traverse []";
+  
+  local transform::Strategy = nilListCongruence();
+  forwards to translate(top.location, reflect(new(transform)));
+}
+
+concrete production traverseList
+top::Expr ::= 'traverse' '[' es::AppExprs ']'
+{
+  top.unparse = s"traverse [${es.unparse}]";
+  
+  local transform::Strategy = foldr(consListCongruence, nilListCongruence(), es.traverseTransform);
+  forwards to translate(top.location, reflect(new(transform)));
 }
 
 -- Compute our own errors on AnnoAppExprs, since we want to ignore missing annotations (like in patterns)
 synthesized attribute traverseErrors::[Message] occurs on AnnoAppExprs, AnnoExpr;
 synthesized attribute traverseTransform<a>::a;
-attribute traverseTransform<Expr> occurs on AppExpr, AnnoExpr;
-attribute traverseTransform<Exprs> occurs on AppExprs, AnnoAppExprs;
-autocopy attribute traverseTransformIn::Exprs occurs on AppExprs, AnnoAppExprs;
+attribute traverseTransform<Strategy> occurs on AppExpr;
+attribute traverseTransform<Pair<String Strategy>> occurs on AnnoExpr;
+attribute traverseTransform<[Strategy]> occurs on AppExprs;
+attribute traverseTransform<[Pair<String Strategy>]> occurs on AnnoAppExprs;
 
 aspect production missingAppExpr
 top::AppExpr ::= '_'
 {
-  top.traverseTransform = Silver_Expr { silver:rewrite:id() };
+  top.traverseTransform = id();
 }
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
-  top.traverseTransform = e;
+  top.traverseTransform = antiquoteStrategy(e);
 }
 
 aspect production snocAppExprs
 top::AppExprs ::= es::AppExprs ',' e::AppExpr
 {
-  top.traverseTransform = es.traverseTransform;
-  es.traverseTransformIn =
-    exprsCons(e.traverseTransform, ',', top.traverseTransformIn, location=builtin);
+  top.traverseTransform = es.traverseTransform ++ [e.traverseTransform];
 }
 aspect production oneAppExprs
 top::AppExprs ::= e::AppExpr
 {
-  top.traverseTransform =
-    exprsCons(e.traverseTransform, ',', top.traverseTransformIn, location=builtin);
+  top.traverseTransform = [e.traverseTransform];
 }
 aspect production emptyAppExprs
 top::AppExprs ::=
 {
-  top.traverseTransform = top.traverseTransformIn;
+  top.traverseTransform = [];
 }
 
 aspect production annoExpr
@@ -181,34 +209,26 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
     if !extractNamedArg(qn.name, top.funcAnnotations).fst.isJust
     then [err(qn.location, "Named parameter '" ++ qn.name ++ "' is not appropriate for '" ++ top.appExprApplied ++ "'")]
     else [];
-  top.traverseTransform =
-    Silver_Expr {
-      core:pair(
-        $Expr{stringConst(terminal(String_t, s"\"${qn.lookupAttribute.fullName}\"", builtin), location=builtin)},
-        $Expr{e.traverseTransform})
-    };
+  top.traverseTransform = pair(qn.lookupAttribute.fullName, e.traverseTransform);
 }
 
 aspect production snocAnnoAppExprs
 top::AnnoAppExprs ::= es::AnnoAppExprs ',' e::AnnoExpr
 {
   top.traverseErrors = es.traverseErrors ++ e.traverseErrors;
-  top.traverseTransform = es.traverseTransform;
-  es.traverseTransformIn =
-    exprsCons(e.traverseTransform, ',', top.traverseTransformIn, location=builtin);
+  top.traverseTransform = es.traverseTransform ++ [e.traverseTransform];
 }
 aspect production oneAnnoAppExprs
 top::AnnoAppExprs ::= e::AnnoExpr
 {
   top.traverseErrors = e.traverseErrors;
-  top.traverseTransform =
-    exprsCons(e.traverseTransform, ',', top.traverseTransformIn, location=builtin);
+  top.traverseTransform = [e.traverseTransform];
 }
 aspect production emptyAnnoAppExprs
 top::AnnoAppExprs ::=
 {
   top.traverseErrors = [];
-  top.traverseTransform = top.traverseTransformIn;
+  top.traverseTransform = [];
 }
 
 terminal Rule_t 'rule' lexer classes {KEYWORD, RESERVED};
@@ -267,7 +287,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
       })) <* ml.transform
     else ml.transform;
   
-  local fwrd::Expr = translate(builtin, reflect(new(transform)));
+  local fwrd::Expr = translate(top.location, reflect(new(transform)));
   
   --forwards to unsafeTrace(fwrd, print(top.location.unparse ++ ": " ++ show(80, transform.pp) ++ "\n\n\n", unsafeIO()));
   forwards to fwrd;
@@ -281,6 +301,7 @@ top::Expr ::= t::Type
   forwards to errorExpr([], location=builtin);
 }
 
+-- Strategy meta-translation
 abstract production antiquoteASTExpr
 top::ASTExpr ::= e::Expr
 {
@@ -288,8 +309,19 @@ top::ASTExpr ::= e::Expr
   forwards to error("no forward");
 }
 
+abstract production antiquoteStrategy
+top::Strategy ::= e::Expr
+{
+  top.pp = pp"antiquoteStrategy {${text(e.unparse)}}";
+  forwards to error("no forward");
+}
+
 aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
-{ directAntiquoteProductions <- ["silver:extension:rewriting:antiquoteASTExpr"]; }
+{
+  directAntiquoteProductions <-
+    ["silver:extension:rewriting:antiquoteASTExpr",
+     "silver:extension:rewriting:antiquoteStrategy"];
+}
 
 global builtin::Location = builtinLoc("rewriting");
