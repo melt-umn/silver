@@ -45,7 +45,13 @@ top::Defs ::= e1::Def e2::Defs
 
 --------------------------------------------------------------------------------
 
-closed nonterminal Def with typeList, valueList, attrList, prodOccursList, occursList, prodDclList, dcl;
+-- Transformations on lists of Def
+inherited attribute filterFn::(Boolean ::= EnvItem);
+synthesized attribute filterDef::Boolean;
+inherited attribute mapFn::(EnvItem ::= EnvItem);
+synthesized attribute mapDef::Def;
+
+closed nonterminal Def with typeList, valueList, attrList, prodOccursList, occursList, prodDclList, dcl, filterFn, filterDef, mapFn, mapDef;
 
 aspect default production
 top::Def ::=
@@ -58,18 +64,25 @@ top::Def ::=
   top.occursList = [];
   
   top.prodDclList = [];
+  
+  top.filterDef = true; -- preserve all others for now (legit don't consider occurs, pa)
+  top.mapDef = top; -- ditto
 }
 abstract production typeDef
 top::Def ::= d::EnvItem
 {
   top.dcl = d.dcl;
   top.typeList = [d];
+  top.filterDef = top.filterFn(d);
+  top.mapDef = typeDef(top.mapFn(d));
 }
 abstract production valueDef
 top::Def ::= d::EnvItem
 {
   top.dcl = d.dcl;
   top.valueList = [d];
+  top.filterDef = top.filterFn(d);
+  top.mapDef = valueDef(top.mapFn(d));
 }
 abstract production typeValueDef
 top::Def ::= d::EnvItem
@@ -77,12 +90,16 @@ top::Def ::= d::EnvItem
   top.dcl = d.dcl;
   top.typeList = [d];
   top.valueList = [d];
+  top.filterDef = top.filterFn(d);
+  top.mapDef = typeValueDef(top.mapFn(d));
 }
 abstract production attrDef
 top::Def ::= d::EnvItem
 {
   top.dcl = d.dcl;
   top.attrList = [d];
+  top.filterDef = top.filterFn(d);
+  top.mapDef = attrDef(top.mapFn(d));
 }
 abstract production prodDclDef
 top::Def ::= d::EnvItem
@@ -91,6 +108,8 @@ top::Def ::= d::EnvItem
   top.valueList = [d];
   -- unlike normal valueDef, also affect production lookups:
   top.prodDclList = [d.dcl];
+  top.filterDef = top.filterFn(d);
+  top.mapDef = prodDclDef(top.mapFn(d));
 }
 abstract production paDef
 top::Def ::= d::DclInfo
@@ -221,25 +240,13 @@ Def ::= d::Def  s::Substitution
 function filterDefOnEnvItem
 Boolean ::= fn::(Boolean ::= EnvItem)  d::Def
 {
-  return case d of
-  | valueDef(ei) -> fn(ei)
-  | typeDef(ei) -> fn(ei)
-  | typeValueDef(ei) -> fn(ei)
-  | attrDef(ei) -> fn(ei)
-  | prodDclDef(ei) -> fn(ei)
-  | _ -> true -- preserve all others for now (legit don't consider occurs, pa)
-  end;
+  d.filterFn = fn;
+  return d.filterDef;
 }
 function mapDefOnEnvItem
 Def ::= fn::(EnvItem ::= EnvItem)  d::Def
 {
-  return case d of
-  | valueDef(ei) -> valueDef(fn(ei))
-  | typeDef(ei) -> typeDef(fn(ei))
-  | typeValueDef(ei) -> typeValueDef(fn(ei))
-  | attrDef(ei) -> attrDef(fn(ei))
-  | prodDclDef(ei) -> prodDclDef(fn(ei))
-  | _ -> d -- ditto
-  end;
+  d.mapFn = fn;
+  return d.mapDef;
 }
 
