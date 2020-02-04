@@ -31,7 +31,7 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
 }
 
 nonterminal LexerClassModifiers with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
-nonterminal LexerClassModifier with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+closed nonterminal LexerClassModifier with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
 
 synthesized attribute lexerClassModifiers :: [SyntaxLexerClassModifier];
 
@@ -105,4 +105,3 @@ top::LexerClassModifier ::= 'disambiguate' acode::ActionCode_c
   acode.env = newScopeEnv(disambiguationClassActionVars ++ acode.defs, top.env);
   acode.frame = disambiguationContext(myFlowGraph);
 }
-

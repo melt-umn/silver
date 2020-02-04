@@ -76,7 +76,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, univLayout, lexerClassRefDcls, xmlCopper, classDomContribs, classSubContribs, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, univLayout, lexerClassRefDcls, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals;
 
 synthesized attribute sortKey :: String;
 
@@ -93,6 +93,7 @@ top::SyntaxDcl ::=
   top.classDomContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.classSubContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.lexerClassRefDcls = "";
+  top.prefixSeperator = nothing();
 }
 
 
@@ -135,17 +136,33 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.sortKey = "CCC" ++ n;
   top.cstDcls = [pair(n, top)];
   top.cstErrors := modifiers.cstErrors;
-  top.cstErrors <- if length(searchEnvTree(n, top.cstEnv)) == 1 then []
-                   else ["Name conflict with terminal " ++ n];
+  top.cstErrors <-
+    if length(searchEnvTree(n, top.cstEnv)) == 1 then []
+    else ["Name conflict with terminal " ++ n];
 
   modifiers.terminalName = n;
 
-  top.cstNormalize = [top];
   top.allIgnoreTerminals = if modifiers.ignored then [top] else [];
   top.allMarkingTerminals = if modifiers.marking then [top] else [];
   top.classTerminalContribs = modifiers.classTerminalContribs;
 
-  production pfx :: [String] = searchEnvTree(n, top.prefixesForTerminals);
+  -- left(terminal name) or right(string prefix)
+  production pfx::[String] = searchEnvTree(n, top.prefixesForTerminals);
+  top.cstErrors <-
+    if length(pfx) <= 1 then []
+    else ["Multiple prefixes for terminal " ++ n];
+  
+  top.prefixSeperator = modifiers.prefixSeperator;
+  top.cstErrors <-
+    if !null(pfx) && !top.prefixSeperator.isJust
+    then ["Terminal " ++ n ++ " does not define a prefix separator, and must use a terminal to define a prefix."] 
+    else [];
+  
+  top.cstNormalize =
+    case modifiers.prefixSeperatorToApply of
+    | just(sep) -> [syntaxTerminal(n, regexConcatenate(regex, regexLiteral(sep)), modifiers)]
+    | nothing() -> [top]
+    end;
 
   local prettyName :: String = fromMaybe(fromMaybe(n, asPrettyName(regex)), modifiers.prettyName);
 
@@ -314,6 +331,8 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   
   top.xmlCopper =
     "  <TerminalClass id=\"" ++ makeCopperName(n) ++ "\" />\n";
+  
+  top.prefixSeperator = modifiers.prefixSeperator;
 }
 
 {--

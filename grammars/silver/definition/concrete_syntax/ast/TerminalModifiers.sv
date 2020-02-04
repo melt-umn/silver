@@ -8,6 +8,8 @@ synthesized attribute marking :: Boolean;
 synthesized attribute acode :: String;
 synthesized attribute opPrecedence :: Maybe<Integer>;
 synthesized attribute opAssociation :: Maybe<String>; -- TODO type?
+synthesized attribute prefixSeperator :: Maybe<String>;
+synthesized attribute prefixSeperatorToApply :: Maybe<String>;
 synthesized attribute prettyName :: Maybe<String>;
 autocopy attribute terminalName :: String;
 
@@ -15,7 +17,7 @@ autocopy attribute terminalName :: String;
  - Modifiers for terminals.
  -}
 nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, classTerminalContribs, superClasses, subClasses, dominatesXML,
-  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation,
+  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
   marking, terminalName, prettyName;
 
 abstract production consTerminalMod
@@ -31,7 +33,14 @@ top::SyntaxTerminalModifiers ::= h::SyntaxTerminalModifier  t::SyntaxTerminalMod
   top.acode = h.acode ++ t.acode;
   top.opPrecedence = orElse(h.opPrecedence, t.opPrecedence);
   top.opAssociation = orElse(h.opAssociation, t.opAssociation);
+  top.prefixSeperator = orElse(h.prefixSeperator, t.prefixSeperator);
+  top.prefixSeperatorToApply = orElse(h.prefixSeperatorToApply, t.prefixSeperatorToApply);
   top.prettyName = orElse(h.prettyName, t.prettyName);
+  
+  top.cstErrors <-
+    if h.prefixSeperator.isJust && t.prefixSeperator.isJust
+    then ["Multiple prefix separators for terminal " ++ top.terminalName]
+    else [];
 }
 
 abstract production nilTerminalMod
@@ -47,6 +56,8 @@ top::SyntaxTerminalModifiers ::=
   top.acode = "";
   top.opPrecedence = nothing();
   top.opAssociation = nothing();
+  top.prefixSeperator = nothing();
+  top.prefixSeperatorToApply = nothing();
   top.prettyName = nothing();
 }
 
@@ -55,8 +66,8 @@ top::SyntaxTerminalModifiers ::=
 {--
  - Modifiers for terminals.
  -}
-nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, classTerminalContribs, superClasses, subClasses, dominatesXML,
-  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation,
+closed nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, classTerminalContribs, superClasses, subClasses, dominatesXML,
+  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
   marking, terminalName, prettyName;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
@@ -73,6 +84,8 @@ top::SyntaxTerminalModifier ::=
   top.acode = "";
   top.opPrecedence = nothing();
   top.opAssociation = nothing();
+  top.prefixSeperator = nothing();
+  top.prefixSeperatorToApply = nothing();
   top.prettyName = nothing();
 }
 
@@ -125,19 +138,26 @@ abstract production termClasses
 top::SyntaxTerminalModifier ::= cls::[String]
 {
   production allCls :: [String] = unionsBy(stringEq, cls :: lookupStrings(cls, top.superClasses));
-  local clsRefsL :: [[Decorated SyntaxDcl]] = lookupStrings(allCls, top.cstEnv);
-  production clsRefs :: [Decorated SyntaxDcl] = map(head, clsRefsL);
+  local allClsRefsL :: [[Decorated SyntaxDcl]] = lookupStrings(allCls, top.cstEnv);
+  production allClsRefs :: [Decorated SyntaxDcl] = map(head, allClsRefsL);
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
                      else ["Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from lexer class on terminal " ++ top.terminalName ++ ")"],
-                   zipWith(pair, allCls, clsRefsL)); 
+                   zipWith(pair, allCls, allClsRefsL)); 
   top.classTerminalContribs = map(pair(_, top.terminalName), allCls);
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
-  top.dominatesXML = implode("", map((.classDomContribs), clsRefs));
-  top.submitsXML = implode("", map((.classSubContribs), clsRefs));
-  top.lexerclassesXML = implode("", map(xmlCopperRef, clsRefs));
+  top.dominatesXML = implode("", map((.classDomContribs), allClsRefs));
+  top.submitsXML = implode("", map((.classSubContribs), allClsRefs));
+  top.lexerclassesXML = implode("", map(xmlCopperRef, allClsRefs));
+  
+  local termSeps :: [Maybe<String>] = map((.prefixSeperator), allClsRefs);
+  top.prefixSeperator = foldr(orElse, nothing(), termSeps);
+  top.cstErrors <-
+    if length(catMaybes(termSeps)) > 1
+    then ["Multiple prefix separators for terminal " ++ top.terminalName]
+    else [];
 }
 {--
  - The submits list for the terminal. Either lexer classes or terminals.
@@ -178,5 +198,36 @@ abstract production termAction
 top::SyntaxTerminalModifier ::= acode::String
 {
   top.acode = acode;
+}
+{--
+ - The prefix separator to use for the terminal.
+ - Doesn't seem super useful, but support this on terminals too for consistency
+ -}
+abstract production termPrefixSeperator
+top::SyntaxTerminalModifier ::= sep::String
+{
+  top.prefixSeperator = just(sep);
+}
+{--
+ - The terminals prefixed by this terminal, for which to use their separator.
+ -}
+abstract production termUsePrefixSeperatorFor
+top::SyntaxTerminalModifier ::= terms::[String]
+{
+  production termRefs :: [Decorated SyntaxDcl] = map(head, lookupStrings(terms, top.cstEnv));
+  local distinctSepTermRefs :: [Decorated SyntaxDcl] =
+    nubBy(
+      \ s1::Decorated SyntaxDcl s2::Decorated SyntaxDcl ->
+        case s1.prefixSeperator, s2.prefixSeperator of
+        | just(ps1), just(ps2) -> ps1 == ps2
+        | _, _ -> false
+        end,
+      termRefs);
+  top.cstErrors :=
+    if length(distinctSepTermRefs) > 1
+    then ["Terminals " ++ implode(", ", map(\ s::Decorated SyntaxDcl -> case s of syntaxTerminal(n, _, _) -> n end, distinctSepTermRefs)) ++
+          " have different prefix separators, so their prefixes must be specified seperately"]
+    else [];
+  top.prefixSeperatorToApply = head(termRefs).prefixSeperator;
 }
 
