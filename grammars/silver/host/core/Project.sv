@@ -2,7 +2,7 @@ grammar silver:host:core;
 
 {-
  - This file contains exports for the "core" Silver host language, excluding
- - all extensions.
+ - all extensions and modifications.
  - Note that the "default" host version of Silver specified in silver:host is
  - still required to build this.
  -}

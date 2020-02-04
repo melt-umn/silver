@@ -204,7 +204,7 @@ top::LexerClassModifier ::= 'prefix' 'separator' s::String_t
 {
   top.unparse = s"prefix separator ${s.lexeme}";
 
-  top.lexerClassModifiers = [lexerClassPrefixSeperator(substring(1, length(s.lexeme) - 1 , s.lexeme))];
+  top.lexerClassModifiers = [lexerClassPrefixSeperator(substring(1, length(s.lexeme) - 1, s.lexeme))];
   top.errors := [];
 }
 
@@ -215,7 +215,7 @@ top::TerminalModifier ::= 'prefix' 'separator' s::String_t
 {
   top.unparse = s"prefix separator ${s.lexeme}";
 
-  top.terminalModifiers = [termPrefixSeperator(substring(1, length(s.lexeme) - 1 , s.lexeme))];
+  top.terminalModifiers = [termPrefixSeperator(substring(1, length(s.lexeme) - 1, s.lexeme))];
   top.errors := [];
 }
 -}
