@@ -29,9 +29,9 @@ top::Def ::= d::EnvItem
   top.dcl = d.dcl;
   top.lexerClassList = [d];
   top.valueList = [d];
+  top.filterDef = top.filterFn(d);
+  top.mapDef = lxrClsDef(top.mapFn(d));
 }
-
--- TODO: we don't do any renaming of lexer classes BUG
 
 function parserAttrDef
 Def ::= sg::String sl::Location fn::String ty::Type
