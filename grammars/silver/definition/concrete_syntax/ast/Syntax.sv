@@ -76,7 +76,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, sortKey, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, univLayout, lexerClassRefDcls, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, univLayout, lexerClassRefDcls, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals;
 
 synthesized attribute sortKey :: String;
 
@@ -105,6 +105,7 @@ top::SyntaxDcl ::=
 abstract production syntaxNonterminal
 top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifiers
 {
+  top.fullName = t.typeName;
   top.sortKey = "EEE" ++ t.typeName;
   top.cstDcls = [pair(t.typeName, top)] ++ subdcls.cstDcls;
   top.cstErrors := if length(searchEnvTree(t.typeName, top.cstEnv)) == 1 then []
@@ -133,6 +134,7 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifie
 abstract production syntaxTerminal
 top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
 {
+  top.fullName = n;
   top.sortKey = "CCC" ++ n;
   top.cstDcls = [pair(n, top)];
   top.cstErrors := modifiers.cstErrors;
@@ -153,10 +155,6 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     else ["Multiple prefixes for terminal " ++ n];
   
   top.prefixSeperator = modifiers.prefixSeperator;
-  top.cstErrors <-
-    if !null(pfx) && !top.prefixSeperator.isJust
-    then ["Terminal " ++ n ++ " does not define a prefix separator, and must use a terminal to define a prefix."] 
-    else [];
   
   top.cstNormalize =
     case modifiers.prefixSeperatorToApply of
@@ -208,6 +206,7 @@ String ::= opassoc::Maybe<String>
 abstract production syntaxProduction
 top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 {
+  top.fullName = ns.fullName;
   top.sortKey = "FFF" ++ ns.fullName;
   top.cstDcls = [pair(ns.fullName, top)];
   modifiers.productionName = ns.fullName;
@@ -304,6 +303,7 @@ function checkRHS
 abstract production syntaxLexerClass
 top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 {
+  top.fullName = n;
   top.sortKey = "AAA" ++ n;
   top.cstDcls = [pair(n, top)];
   top.cstErrors := modifiers.cstErrors ++
@@ -341,6 +341,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 abstract production syntaxParserAttribute
 top::SyntaxDcl ::= n::String ty::Type acode::String
 {
+  top.fullName = n;
   top.sortKey = "BBB" ++ n;
   top.cstDcls = [pair(n, top)];
   top.cstErrors := if length(searchEnvTree(n, top.cstEnv)) == 1 then []
@@ -368,6 +369,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
 abstract production syntaxParserAttributeAspect
 top::SyntaxDcl ::= n::String acode::String
 {
+  top.fullName = n;
   top.sortKey = "BBB" ++ n;
   top.cstDcls = [];
   top.cstErrors :=
@@ -387,6 +389,7 @@ top::SyntaxDcl ::= n::String acode::String
 abstract production syntaxDisambiguationGroup
 top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode::String
 {
+  top.fullName = n;
   top.sortKey = "DDD" ++ n;
   top.cstDcls = [];
 

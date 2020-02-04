@@ -139,7 +139,8 @@ top::SyntaxTerminalModifier ::= cls::[String]
 {
   production allCls :: [String] = unionsBy(stringEq, cls :: lookupStrings(cls, top.superClasses));
   local allClsRefsL :: [[Decorated SyntaxDcl]] = lookupStrings(allCls, top.cstEnv);
-  production allClsRefs :: [Decorated SyntaxDcl] = map(head, allClsRefsL);
+  production allClsRefs :: [Decorated SyntaxDcl] =
+    flatMap(\ sds::[Decorated SyntaxDcl] -> if null(sds) then [] else [head(sds)], allClsRefsL);
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
@@ -215,6 +216,17 @@ abstract production termUsePrefixSeperatorFor
 top::SyntaxTerminalModifier ::= terms::[String]
 {
   production termRefs :: [Decorated SyntaxDcl] = map(head, lookupStrings(terms, top.cstEnv));
+  top.cstErrors := [];
+  top.prefixSeperatorToApply = head(termRefs).prefixSeperator;
+  
+  top.cstErrors <-
+    flatMap(
+      \ s::Decorated SyntaxDcl ->
+        if !s.prefixSeperator.isJust
+        then ["Terminal " ++ s.fullName ++ " does not define a prefix separator, and must use an explicit terminal to define a prefix."]
+        else [],
+      termRefs);
+  
   local distinctSepTermRefs :: [Decorated SyntaxDcl] =
     nubBy(
       \ s1::Decorated SyntaxDcl s2::Decorated SyntaxDcl ->
@@ -223,11 +235,10 @@ top::SyntaxTerminalModifier ::= terms::[String]
         | _, _ -> false
         end,
       termRefs);
-  top.cstErrors :=
+  top.cstErrors <-
     if length(distinctSepTermRefs) > 1
-    then ["Terminals " ++ implode(", ", map(\ s::Decorated SyntaxDcl -> case s of syntaxTerminal(n, _, _) -> n end, distinctSepTermRefs)) ++
+    then ["Terminals " ++ implode(", ", map((.fullName), distinctSepTermRefs)) ++
           " have different prefix separators, so their prefixes must be specified seperately"]
     else [];
-  top.prefixSeperatorToApply = head(termRefs).prefixSeperator;
 }
 

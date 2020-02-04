@@ -129,9 +129,7 @@ top::TerminalPrefixItems ::=
       consTerminalPrefixItem(_, ',', _, location=top.location),
       nilTerminalPrefixItem(location=top.location),
       map(\ sd::Decorated SyntaxDcl ->
-        qNameTerminalPrefixItem(
-          qName(top.location, case sd of syntaxTerminal(n, _, _) -> n end),
-          location=top.location),
+        qNameTerminalPrefixItem(qName(top.location, sd.fullName), location=top.location),
         syntax.allMarkingTerminals));
 }
 
