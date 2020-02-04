@@ -4,8 +4,8 @@ imports silver:langutil;
 imports simple:concretesyntax as cst;
 imports simple:abstractsyntax;
 
-terminal Repeat 'repeat' lexer classes { KEYWORDS };
-terminal Until  'until'  lexer classes { KEYWORDS };
+terminal Repeat 'repeat' lexer classes { cst:KEYWORDS };
+terminal Until  'until'  lexer classes { cst:KEYWORDS };
 
 concrete productions s::cst:StmtMatched
  | 'repeat' body::cst:Stmts 'until' cond::cst:Expr ';'
