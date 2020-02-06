@@ -14,7 +14,7 @@ autocopy attribute terminalName :: String;
 {--
  - Modifiers for terminals.
  -}
-nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, classTerminalContribs, superClasses, dominatesXML,
+nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, classTerminalContribs, superClasses, subClasses, dominatesXML,
   submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation,
   marking, terminalName, prettyName;
 
@@ -55,7 +55,7 @@ top::SyntaxTerminalModifiers ::=
 {--
  - Modifiers for terminals.
  -}
-nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, classTerminalContribs, superClasses, dominatesXML,
+nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, classTerminalContribs, superClasses, subClasses, dominatesXML,
   submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation,
   marking, terminalName, prettyName;
 
@@ -145,7 +145,8 @@ top::SyntaxTerminalModifier ::= cls::[String]
 abstract production termSubmits
 top::SyntaxTerminalModifier ::= sub::[String]
 {
-  production subRefs :: [[Decorated SyntaxDcl]] = lookupStrings(sub, top.cstEnv);
+  production allSubs :: [String] = unionsBy(stringEq, sub :: lookupStrings(sub, top.subClasses));
+  production subRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allSubs, top.cstEnv);
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
@@ -160,7 +161,8 @@ top::SyntaxTerminalModifier ::= sub::[String]
 abstract production termDominates
 top::SyntaxTerminalModifier ::= dom::[String]
 {
-  production domRefs :: [[Decorated SyntaxDcl]] = lookupStrings(dom, top.cstEnv);
+  production allDoms :: [String] = unionsBy(stringEq, dom :: lookupStrings(dom, top.subClasses));
+  production domRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allDoms, top.cstEnv);
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
