@@ -2,6 +2,48 @@
 
 set -eu
 
+# The following two functions are copied from ``silver-bash-lib.sh``.
+# These should not need to be changed.  Since this script also
+# installs this file, we cannot source it and use the library versions
+# here.
+
+# This determines the name of the "readlink" command, depending on the
+# OS.
+function set_readlink {
+    case `uname` in
+        *Darwin*)
+            READLINK=greadlink
+            readlink=greadlink
+            if [ ! -f `which greadlink` ]; then
+                echo "Missing greadlink. Please install coreutils:"
+                echo -e "\tbrew install coreutils"
+                exit 4
+            fi
+            ;;
+        *)
+            READLINK=readlink
+            readlink=readlink
+            ;;
+    esac
+}
+
+# This sets up a symbolic link, removing the file or link at
+# ${link_name} if it already exists, something that happens frequently
+# in MELT install scripts.
+function setup_sym_link {
+    target=$1
+    link_name=$2
+
+    if [ -e ${link_name} -o -h ${link_name} ]; then
+        rm ${link_name}
+        echo "Removed existing file or link ${link_name}."
+    fi
+
+    ln -s ${target} ${link_name}
+}
+
+
+# Check that ~/bin exists, if not, abort.
 if [ ! -d ~/bin ]; then
   echo "~/bin not found. Aborting."
   case `uname` in
@@ -26,48 +68,31 @@ if [ ! -d ~/bin ]; then
   exit 1
 fi
 
-echo "Found ~/bin"
 
-case `uname` in
-*Darwin*)
-  READLINK=greadlink
-  if [ ! -f `which greadlink` ]; then
-    echo "Missing greadlink. Please install coreutils:"
-    echo -e "\tbrew install coreutils"
-    exit 4
-  fi
-  ;;
-*)
-  READLINK=readlink
-  ;;
-esac
+set_readlink
 
-for SCRIPT_NAME in silver silver-custom
+
+for SCRIPT_NAME in silver silver-custom silver-bash-lib.sh
 do
 
     if [ -f $SCRIPT_NAME ]; then
-        REPO=$("$READLINK" -f ../..)
+        REPO=$($READLINK -f ../..)
         SCRIPT=$SCRIPT_NAME
     elif [ -f support/bin/$SCRIPT_NAME ]; then
-        REPO=$("$READLINK" -f .)
+        REPO=$($READLINK -f .)
         SCRIPT=support/bin/$SCRIPT_NAME
     else
-        echo "Couldn't find the Silver jars!"
-        echo "(if this is a fresh checkout, run fetch-jars before this script.)"
+        echo "Could not find the Silver jars."
+        echo "(if this is a fresh Git clone, run fetch-jars before this script.)"
         exit 2
     fi
     
-    echo "Found $REPO"
-
-    if [ -e ~/bin/$SCRIPT_NAME -o -h ~/bin/$SCRIPT_NAME ]; then
-        # -h needed in case the link exists but the targeted file does not
-        rm ~/bin/$SCRIPT_NAME
-        echo "Removed old(?) ~/bin/$SCRIPT_NAME file."
+    if [ $SCRIPT_NAME = "silver" ]; then
+        # only print this message the first time through.
+        echo "Found $REPO"
     fi
 
-    ln -s "$("$READLINK" -f "$SCRIPT")" ~/bin/
-
-    echo "Created ~/bin/$SCRIPT_NAME"
+    setup_sym_link $($READLINK -f $SCRIPT) ~/bin/$SCRIPT_NAME
 
     # Just in case
     chmod +x "$SCRIPT"
