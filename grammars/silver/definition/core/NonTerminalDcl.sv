@@ -1,11 +1,14 @@
 grammar silver:definition:core;
 
+autocopy attribute nonterminalName :: String;
+
 concrete production nonterminalDcl
-top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs ';'
+top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
-  top.unparse = "nonterminal " ++ id.unparse ++ tl.unparse ++ ";";
+  top.unparse = "nonterminal " ++ id.unparse ++ tl.unparse ++ " " ++ nm.unparse ++ ";";
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
+  nm.nonterminalName = fName;
   
   -- tl.freeVariables is our order list of the bound types for this nonterminal.
   top.defs = [cl.whichDcl(top.grammarName, id.location, fName, tl.freeVariables, nonterminalType(fName, tl.types))];
@@ -48,5 +51,39 @@ concrete production closedNt
 top::ClosedOrNot ::= 'closed'
 {
   top.whichDcl = closedNtDef;
+}
+
+nonterminal NonterminalModifiers with config, location, unparse, errors, env, nonterminalName; -- 0 or some
+nonterminal NonterminalModifierList with config, location, unparse, errors, env, nonterminalName; -- 1 or more
+closed nonterminal NonterminalModifier with config, location, unparse, errors, env, nonterminalName; -- 1
+
+concrete production nonterminalModifiersNone
+top::NonterminalModifiers ::=
+{
+  top.unparse = "";
+
+  top.errors := [];
+}
+concrete production nonterminalModifierSome
+top::NonterminalModifiers ::= nm::NonterminalModifierList
+{
+  top.unparse = nm.unparse;
+  
+  top.errors := nm.errors;
+}
+
+concrete production nonterminalModifierSingle
+top::NonterminalModifierList ::= nm::NonterminalModifier
+{
+  top.unparse = nm.unparse;
+  
+  top.errors := nm.errors;
+}
+concrete production nonterminalModifiersCons
+top::NonterminalModifierList ::= h::NonterminalModifier ',' t::NonterminalModifierList
+{
+  top.unparse = h.unparse ++ ", " ++ t.unparse;
+
+  top.errors := h.errors ++ t.errors;
 }
 

@@ -1,6 +1,6 @@
 grammar silver:extension:templating:syntax;
 
-import silver:definition:core only Expr, RCurly_t, LITERAL;
+imports silver:definition:core;
 
 terminal TripleQuote /\"\"\"/ lexer classes {LITERAL};
 terminal DoubleDollar '$$' lexer classes {LITERAL};
@@ -125,7 +125,7 @@ layout {}
 
 concrete production nonwater
 top::NonWater ::= '${' e::Expr '}'
---layout {} -- TODO: need to control layout better... But this should allow it here.
+layout {BlockComments, Comments, WhiteSpace}
 {
 }
 

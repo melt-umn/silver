@@ -26,11 +26,15 @@ autocopy attribute parserAttributeAspects::EnvTree<String>;
 synthesized attribute allIgnoreTerminals :: [Decorated SyntaxDcl];
 synthesized attribute allMarkingTerminals :: [Decorated SyntaxDcl];
 synthesized attribute disambiguationClasses :: [Decorated SyntaxDcl];
-autocopy attribute univLayout :: String;
 synthesized attribute classDomContribs :: String;
 synthesized attribute classSubContribs :: String;
 autocopy attribute containingGrammar :: String;
 synthesized attribute lexerClassRefDcls :: String;
+synthesized attribute exportedProds :: [String];
+synthesized attribute hasCustomLayout :: Boolean;
+synthesized attribute directLayoutContribs :: [Pair<String [String]>]; -- prod/nt name, layout term names
+synthesized attribute indirectLayoutContribs :: [Pair<String String>]; -- prod/nt name, prod/nt name
+autocopy attribute layoutTerms::EnvTree<String>;
 
 autocopy attribute prefixesForTerminals :: EnvTree<String>;
 
@@ -38,7 +42,7 @@ autocopy attribute prefixesForTerminals :: EnvTree<String>;
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, univLayout, lexerClassRefDcls, xmlCopper, containingGrammar, prefixesForTerminals;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, directLayoutContribs, indirectLayoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals;
 
 abstract production nilSyntax
 top::Syntax ::=
@@ -54,6 +58,8 @@ top::Syntax ::=
   top.superClassContribs = [];
   top.parserAttributeAspectContribs = [];
   top.lexerClassRefDcls = "";
+  top.directLayoutContribs = [];
+  top.indirectLayoutContribs = [];
   top.xmlCopper = "";
 }
 abstract production consSyntax
@@ -70,13 +76,15 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
   top.superClassContribs = s1.superClassContribs ++ s2.superClassContribs;
   top.parserAttributeAspectContribs = s1.parserAttributeAspectContribs ++ s2.parserAttributeAspectContribs;
   top.lexerClassRefDcls = s1.lexerClassRefDcls ++ s2.lexerClassRefDcls;
+  top.directLayoutContribs = s1.directLayoutContribs ++ s2.directLayoutContribs;
+  top.indirectLayoutContribs = s1.indirectLayoutContribs ++ s2.indirectLayoutContribs;
   top.xmlCopper = s1.xmlCopper ++ s2.xmlCopper;
 }
 
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, univLayout, lexerClassRefDcls, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, directLayoutContribs, indirectLayoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals;
 
 synthesized attribute sortKey :: String;
 
@@ -93,6 +101,10 @@ top::SyntaxDcl ::=
   top.classDomContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.classSubContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.lexerClassRefDcls = "";
+  top.exportedProds = error("Internal compiler error: should only ever be demanded of nonterminals");
+  top.hasCustomLayout = false;
+  top.directLayoutContribs = [];
+  top.indirectLayoutContribs = [];
   top.prefixSeperator = nothing();
 }
 
@@ -103,7 +115,7 @@ top::SyntaxDcl ::=
  - productions for this nonterminal under subdcls.
  -}
 abstract production syntaxNonterminal
-top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifiers
+top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayoutTerms::[String] modifiers::SyntaxNonterminalModifiers
 {
   top.fullName = t.typeName;
   top.sortKey = "EEE" ++ t.typeName;
@@ -115,8 +127,12 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifie
   top.cstNormalize =
     let myProds :: [SyntaxDcl] = searchEnvTree(t.typeName, top.cstNTProds)
     in if null(myProds) then [] -- Eliminate "Useless nonterminals" as these are expected in Silver code (non-syntax)
-       else [syntaxNonterminal(t, foldr(consSyntax, nilSyntax(), myProds))]
+       else [syntaxNonterminal(t, foldr(consSyntax, nilSyntax(), myProds), exportedProds, exportedLayoutTerms, modifiers)]
     end;
+  
+  top.exportedProds = exportedProds;
+  top.hasCustomLayout = modifiers.customLayout.isJust;
+  top.directLayoutContribs = [pair(t.typeName, fromMaybe(exportedLayoutTerms, modifiers.customLayout))];
 
   top.xmlCopper =
     "\n  <Nonterminal id=\"" ++ makeCopperName(t.typeName) ++ "\">\n" ++
@@ -215,6 +231,8 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     searchEnvTree(ns.outputElement.typerep.typeName, top.cstEnv);
   production rhsRefs :: [[Decorated SyntaxDcl]] =
     lookupStrings(map((.typeName), map((.typerep), ns.inputElements)), top.cstEnv);
+  production isExportedByNT :: Boolean =
+    !null(lhsRef) && containsBy(stringEq, head(lhsRef).fullName, head(lhsRef).exportedProds);
 
   top.cstErrors := modifiers.cstErrors;
   top.cstErrors <- if length(searchEnvTree(ns.fullName, top.cstEnv)) == 1 then []
@@ -222,7 +240,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 
   top.cstErrors <- if length(lhsRef) == 1 then
                    case head(lhsRef) of
-                   | syntaxNonterminal(_,_) -> []
+                   | syntaxNonterminal(_,_,_,_,_) -> []
                    | _ -> ["LHS of production " ++ ns.fullName ++ " is not a nonterminal"] end
                    else ["Nonterminal " ++ ns.outputElement.typerep.typeName ++ " was referenced but " ++
                          "this grammar was not included in this parser. (Referenced from LHS of production " ++ ns.fullName ++ ")"];
@@ -231,6 +249,30 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 
   top.cstProds = [pair(ns.outputElement.typerep.typeName, top)];
   top.cstNormalize = [];
+  
+  top.hasCustomLayout = modifiers.customLayout.isJust;
+  top.directLayoutContribs = [pair(ns.fullName, fromMaybe([], modifiers.customLayout))];
+  top.indirectLayoutContribs =
+    -- The production inherits its LHS nonterminal's layout, unless overridden.
+    (if top.hasCustomLayout then [] else [pair(ns.fullName, head(lhsRef).fullName)]) ++
+    -- If this production is exported by its nonterminal, all nonterminals on the RHS inherit this
+    -- production's layout, unless overriden on the nonterminal.
+    if !isExportedByNT then [] else
+      flatMap(
+        \ rhsRef::[Decorated SyntaxDcl] ->
+          case head(rhsRef) of
+          | syntaxNonterminal(_,_,_,_,_) when !head(rhsRef).hasCustomLayout ->
+            [pair(head(rhsRef).fullName, ns.fullName)]
+          | _ -> []
+          end,
+        rhsRefs);
+  
+  -- Copper doesn't support default layout on nonterminals, so we specify layout on every production.
+  production prodLayout::String =
+    implode("",
+      map(xmlCopperRef,
+        map(head,
+          lookupStrings(searchEnvTree(ns.fullName, top.layoutTerms), top.cstEnv))));
 
   top.xmlCopper =
     "  <Production id=\"" ++ makeCopperName(ns.fullName) ++ "\">\n" ++
@@ -247,9 +289,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     "]]></Code>\n" ++
     "    <LHS>" ++ xmlCopperRef(head(lhsRef)) ++ "</LHS>\n" ++
     "    <RHS>" ++ implode("", map(xmlCopperRef, map(head, rhsRefs))) ++ "</RHS>\n" ++
-    (if modifiers.customLayout.isJust then
-    "    <Layout>" ++ modifiers.customLayout.fromJust ++ "</Layout>\n"
-    else "") ++
+    "    <Layout>" ++ prodLayout ++ "</Layout>\n" ++
     (if modifiers.productionOperator.isJust then
     "    <Operator>" ++ modifiers.productionOperator.fromJust ++ "</Operator>\n"
     else "") ++
@@ -287,7 +327,7 @@ function checkRHS
   return if null(rhs) then []
          else (if length(head(refs)) == 1 then
                 case head(head(refs)) of
-                | syntaxNonterminal(_,_) -> []
+                | syntaxNonterminal(_,_,_,_,_) -> []
                 | syntaxTerminal(_,_,_) -> []
                 | _ -> ["parameter " ++ head(rhs).typeName ++ " of production " ++ pn ++ " is not syntax."]
                 end
@@ -434,7 +474,7 @@ String ::= d::Decorated SyntaxDcl
   return case d of
   | syntaxLexerClass(n, _) -> "<TerminalClassRef id=\"" ++ makeCopperName(n) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
   | syntaxTerminal(n, _, _) -> "<TerminalRef id=\"" ++ makeCopperName(n) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
-  | syntaxNonterminal(n, _) -> "<NonterminalRef id=\"" ++ makeCopperName(n.typeName) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
+  | syntaxNonterminal(n, _, _, _, _) -> "<NonterminalRef id=\"" ++ makeCopperName(n.typeName) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
   | syntaxProduction(ns, _) -> "<ProductionRef id=\"" ++ makeCopperName(ns.fullName) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
   | syntaxDisambiguationGroup(n, _, _, _) -> "<DisambiguationFunctionRef id=\"" ++ makeCopperName(n) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
   end;

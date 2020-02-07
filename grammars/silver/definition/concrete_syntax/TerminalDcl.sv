@@ -73,7 +73,7 @@ top::RegExpr ::= '/' r::Regex '/'
 }
 
 
-nonterminal TerminalKeywordModifier with unparse, location, terminalModifiers;
+closed nonterminal TerminalKeywordModifier with unparse, location, terminalModifiers;
 
 concrete production terminalKeywordModifierIgnore
 top::TerminalKeywordModifier ::= 'ignore'

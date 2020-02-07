@@ -119,8 +119,8 @@ top::TerminalPrefixItems ::=
   syntax.cstNTProds = error("This shouldn't be needed...");
   syntax.classTerminals = error("This shouldn't be needed...");
   syntax.parserAttributeAspects = error("This shouldn't be needed...");
+  syntax.layoutTerms = error("This shouldn't be needed...");
   syntax.prefixesForTerminals = error("This shouldn't be needed...");
-  syntax.univLayout = error("This shouldn't be needed...");
   syntax.superClasses = error("This shouldn't be needed...");
   syntax.subClasses = error("This shouldn't be needed...");
 

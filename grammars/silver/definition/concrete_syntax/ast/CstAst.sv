@@ -8,6 +8,7 @@ imports silver:translation:java:core only makeIdName, makeClassName, makeNTClass
 imports silver:translation:java:type only transType;
 
 import silver:util:raw:graph as g;
+import silver:util:raw:treeset as s;
 
 {--
  - Encapsulates transformations and analysis of Syntax
@@ -24,9 +25,8 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
 {
   s.cstEnv = directBuildTree(s.cstDcls);
   s.cstNTProds = directBuildTree(s.cstProds);
+  s.classTerminals = directBuildTree(s.classTerminalContribs);
   s.containingGrammar = "host";
-  s.univLayout = error("TODO: make this environment not be decorated?"); -- TODO
-  s.classTerminals = error("TODO: shouldn't by necessary to normalize"); -- TODO
   s.superClasses =
     directBuildTree(
       g:toList(
@@ -41,7 +41,8 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
           g:add(
             map(\ p::Pair<String String> -> pair(p.snd, p.fst), s.superClassContribs),
             g:empty(compareString)))));
-  s.parserAttributeAspects = error("TODO: shouldn't by necessary to normalize"); -- TODO
+  s.parserAttributeAspects = directBuildTree(s.parserAttributeAspectContribs);
+  s.layoutTerms = buildLayoutEnv(s.directLayoutContribs, s.indirectLayoutContribs);
   s.prefixesForTerminals = directBuildTree(terminalPrefixes);
   
   -- Move productions under their nonterminal, and sort the declarations
@@ -50,10 +51,11 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   s2.cstEnv = directBuildTree(s.cstDcls);
   s2.containingGrammar = "host";
   s2.cstNTProds = error("TODO: make this environment not be decorated?"); -- TODO
-  s2.classTerminals = directBuildTree(s.classTerminalContribs);
+  s2.classTerminals = s.classTerminals;
   s2.superClasses = s.superClasses;
   s2.subClasses = s.subClasses;
-  s2.parserAttributeAspects = directBuildTree(s.parserAttributeAspectContribs);
+  s2.parserAttributeAspects = s.parserAttributeAspects;
+  s2.layoutTerms = s.layoutTerms;
   s2.prefixesForTerminals = s.prefixesForTerminals;
   
   -- This should be on s1, because the s2 transform assumes everything is well formed.
@@ -68,7 +70,6 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
 
   production univLayout :: String = implode("", map(xmlCopperRef, s2.allIgnoreTerminals));
 
-  s2.univLayout = univLayout;
   top.xmlCopper =
 s"""<?xml version="1.0" encoding="UTF-8"?>
 
@@ -162,5 +163,26 @@ function makeCopperName
 String ::= str::String
 {
   return makeIdName(str);
+}
+
+function buildLayoutEnv
+EnvTree<String> ::= directLayoutContribs::[Pair<String [String]>] indirectLayoutContribs::[Pair<String String>]
+{
+  -- Build a graph of nonterminals and productions where there is an edge a -> b iff a inherits layout from b
+  local layoutSources::g:Graph<String> =
+    g:transitiveClosure(g:add(indirectLayoutContribs, g:empty(compareString)));
+  -- For every item with layout (nonterminals and productions) find all inherited layout terminals
+  local layoutTermEntries::[Pair<String String>] =
+    concat(
+      map(
+        \ item::String ->
+          map(
+            pair(item, _),
+            concat(
+              flatMap(
+                lookupAllBy(stringEq, _, directLayoutContribs),
+                s:toList(g:edgesFrom(item, layoutSources))))),
+        map(fst, directLayoutContribs)));
+  return directBuildTree(layoutTermEntries);
 }
 

@@ -29,7 +29,13 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
               \ p::Pair<String String> -> pair(p.snd, p.fst),
               host.superClassContribs ++ ext.superClassContribs),
             g:empty(compareString)))));
-  host.parserAttributeAspects = directBuildTree(host.parserAttributeAspectContribs ++ ext.parserAttributeAspectContribs);
+  host.parserAttributeAspects =
+    directBuildTree(host.parserAttributeAspectContribs ++ ext.parserAttributeAspectContribs);
+  host.layoutTerms =
+    -- ext shouldn't affect host layout, but include both so we only have to build this once
+    buildLayoutEnv(
+      host.directLayoutContribs ++ ext.directLayoutContribs,
+      host.indirectLayoutContribs ++ ext.indirectLayoutContribs);
   host.prefixesForTerminals = directBuildTree(terminalPrefixes);
   ext.cstEnv = host.cstEnv;
   ext.containingGrammar = "ext";
@@ -38,6 +44,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   ext.superClasses = host.superClasses;
   ext.subClasses = host.subClasses;
   ext.parserAttributeAspects = host.parserAttributeAspects;
+  ext.layoutTerms = host.layoutTerms;
   ext.prefixesForTerminals = host.prefixesForTerminals;
   
   local startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, host.cstEnv);
@@ -47,10 +54,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
                    else ["Nonterminal " ++ startnt ++ " was referenced but " ++
                          "this grammar was not included in this parser. (Referenced as parser's starting nonterminal)"];
 
-  local attribute univLayout :: String;
-  univLayout = implode("", map(xmlCopperRef, host.allIgnoreTerminals)); -- er, we're ignoring ext here?
-  host.univLayout = univLayout;
-  ext.univLayout = univLayout;
+  production univLayout :: String = implode("", map(xmlCopperRef, host.allIgnoreTerminals)); -- er, we're ignoring ext here?
 
   top.xmlCopper = 
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" ++
@@ -97,7 +101,18 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   implode("",
     map(xmlCopperRef,
       map(
-        \ d::Decorated SyntaxDcl -> decorate new(d) with {containingGrammar = "ext";},
+        \ d::Decorated SyntaxDcl ->
+          decorate new(d) with {
+            containingGrammar = "ext";
+            cstEnv = host.cstEnv;
+            cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
+            classTerminals = host.classTerminals;
+            superClasses = host.superClasses;
+            subClasses = host.subClasses;
+            parserAttributeAspects = host.parserAttributeAspects;
+            layoutTerms = host.layoutTerms;
+            prefixesForTerminals = host.prefixesForTerminals;
+          },
         host.disambiguationClasses))) ++
   implode("", map(xmlCopperRef, ext.disambiguationClasses)) ++
 "    </GlueDisambiguationFunctions>\n" ++
