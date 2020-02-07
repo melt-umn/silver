@@ -33,7 +33,7 @@ import core.Pioval;
  * 
  * @author tedinski
  */
-public final class IOToken {
+public final class IOToken implements Typed {
 	public static final IOToken singleton = new IOToken();
 	
 	private IOToken() {}
@@ -353,6 +353,11 @@ public final class IOToken {
 	}
 	private static int currentTime() {
 		return (int)(System.currentTimeMillis() / 1000);
+	}
+
+	@Override
+	public TypeRep getType() {
+		return new BaseTypeRep("core:IO");
 	}
 	
 }

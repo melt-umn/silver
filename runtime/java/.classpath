@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="generated_src"/>
+	<classpathentry including="core/*.java|core/monad/*.java|core/reflect/*.java|silver/json/*.java|silver/support/monto/**/*.java" kind="src" path="generated_src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="var" path="SILVER_HOME/jars/CopperRuntime.jar"/>
 	<classpathentry kind="var" path="SILVER_HOME/generated/bin"/>

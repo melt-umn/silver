@@ -6,7 +6,21 @@ imports silver:definition:env;
 imports silver:extension:patternmatching;
 imports silver:modification:let_fix;
 
+terminal ReifyUnchecked_kwd 'reifyUnchecked' lexer classes {BUILTIN,RESERVED};
 terminal Deserialize_kwd 'deserialize' lexer classes {BUILTIN,RESERVED};
+
+-- Useful shorthand in cases when we want to immediately raise an error on failure 
+concrete production reifyUncheckedFunction
+top::Expr ::= 'reifyUnchecked' '(' e::Expr ')'
+{
+  forwards to
+    Silver_Expr {
+      case reify($Expr{e}) of
+      | left(msg) -> error(msg)
+      | right(a) -> a
+      end
+    };
+}
 
 {--
  - This production deserializes a string to what it represents, in contrast to
