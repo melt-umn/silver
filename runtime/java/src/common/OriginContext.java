@@ -22,10 +22,6 @@ public final class OriginContext {
 	public final List<NOriginNote> rules;
 
 	private OriginContext(Variety variety, Node lhs, List<NOriginNote> rules) {
-		// if ((variety==Variety.NORMAL) && (lhs==null)) {
-		// 	System.err.println("Origins Fail: OriginsContext/3: Just constructed an OriginContext with variety=NORMAL and lhs=null; rules="+rules);
-		// 	throw new SilverInternalError("wrapInLink not overridden"); 
-		// }
 		this.variety = variety;
 		this.lhs = lhs;
 		this.rules = rules;
@@ -93,14 +89,6 @@ public final class OriginContext {
 	public NOriginInfo makeNewConstructionOrigin(boolean isContractum) {
 		switch (this.variety) {
 			case NORMAL:
-				// if (this.lhs == null) {
-				// 	System.err.println("Origins Warn: makeNewConstructionOrigin: variety == NORMAL but lhs == null!");
-				// 	return new core.PotherOriginInfo(null, OriginsUtil.OTHER_BOGUS_OIT, new common.StringCatter("??? variety == NORMAL but lhs == null!"), ConsCell.nil);
-				// }
-				// if (!(this.lhs instanceof Node)) {
-				// 	System.err.println("Origins Warn: attrAccessCopy: lhs not instanceof Node!");
-				// 	return new core.PotherOriginInfo(null, OriginsUtil.OTHER_BOGUS_OIT, new common.StringCatter("??? lhs not instanceof Node!"), ConsCell.nil);
-				// }
 				return new core.PoriginOriginInfo(null, OriginsUtil.SET_AT_CONSTRUCTION_OIT, this.lhs, this.rulesAsSilverList(), isContractum);
 
 			case MAINFUNCTION:
@@ -126,14 +114,6 @@ public final class OriginContext {
 	public <T extends Node> T attrAccessCopy(T arg) {
 		switch (this.variety) {
 			case NORMAL:
-				// if (this.lhs == null) {
-				// 	System.err.println("Origins Warn: attrAccessCopy: variety == NORMAL but lhs == null!");
-				// 	return arg;
-				// }
-				// if (!(this.lhs instanceof Node)) {
-				// 	System.err.println("Origins Warn: attrAccessCopy: lhs not instanceof Node!");
-				// 	return arg;
-				// }
 				return (T)arg.copy(this.lhs, this.rulesAsSilverList());
 
 			default:

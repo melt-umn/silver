@@ -138,16 +138,19 @@ public abstract class Node implements Typed {
 	public abstract String getName();
 
 	public Object duplicate(Object redex, Object rule){
+		if (System.getProperty("silver.origins.rtwarn")!=null) System.err.println("Origins Warn: Threw away OI ("+getName()+".duplicate/2)");
 		return this;
 	}
 
 	public Object duplicate(OriginContext oc) {
+		if (System.getProperty("silver.origins.rtwarn")!=null) System.err.println("Origins Warn: Threw away OI ("+getName()+".duplicate/1)");
 		// This is overridden in addition to duplicate/1 (instead of just forwarding) to avoid
 		//  calling oc.rulesAsSilverList() when we don't need to build it. 
 		return this;
 	}
 
 	public Object copy(Object redex, Object rule){
+		if (System.getProperty("silver.origins.rtwarn")!=null) System.err.println("Origins Warn: Threw away OI ("+getName()+".copy)");
 		return this;
 	}
 

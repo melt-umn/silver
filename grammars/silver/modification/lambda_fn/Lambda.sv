@@ -1,4 +1,5 @@
 import silver:definition:flow:ast only ExprVertexInfo, FlowVertex;
+import silver:definition:env;
 
 --- Concrete Syntax for lambdas
 --------------------------------------------------------------------------------
@@ -37,6 +38,7 @@ top::Expr ::= params::ProductionRHS e::Expr
   top.flowDefs = e.flowDefs;
   
   e.env = newScopeEnv(params.lambdaDefs, top.env);
+  e.frame = inLambdaContext(top.frame);
 }
 
 synthesized attribute lambdaDefs::[Def] occurs on ProductionRHS, ProductionRHSElem;

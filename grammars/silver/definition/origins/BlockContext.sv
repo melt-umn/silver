@@ -35,6 +35,12 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
 	top.originsContextSource = useRuntimePassedInfo();
 }
 
+aspect production inLambdaContext
+top::BlockContext ::= containingContext::BlockContext
+{
+  top.originsContextSource = useRuntimePassedInfo();
+}
+
 aspect production productionContext
 top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
 {

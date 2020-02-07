@@ -119,6 +119,12 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
   top.permitLocalAttributes = true;
 }
 
+abstract production inLambdaContext
+top::BlockContext ::= containingContext::BlockContext
+{
+  forwards to containingContext;
+}
+
 abstract production aspectFunctionContext
 top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
 {

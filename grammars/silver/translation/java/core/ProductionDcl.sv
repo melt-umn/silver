@@ -72,7 +72,7 @@ ${implode("", map((.childStaticElem), namedSig.inputElements))}
     }
 
     public ${className}(final NOriginInfo origin ${commaIfKidsOrAnnos} ${namedSig.javaSignature}) {
-        super(${if wantsTracking then "origin" else "null"} ${commaIfAnnos} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
+        super(origin ${commaIfAnnos} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
     }
 
