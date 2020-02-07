@@ -1,6 +1,6 @@
 grammar silver:extension:doc:core;
 
-nonterminal DclComment with body, env, location;
+nonterminal DclComment layout {} with body, env, location;
 nonterminal DclCommentComponent with body, env, location;
 nonterminal DclCommentComponents with body, env, location;
 
@@ -13,14 +13,12 @@ comments out of Silver code
 
 concrete production dclComment
 top::DclComment ::= '{@comment' components::DclCommentComponents '@}'
-layout {}
 {
   top.body = components.body;
 }
 
 concrete production consCommentComps
 top::DclCommentComponents ::= h::DclCommentComponent t::DclCommentComponents
-layout {}
 {
   top.body = h.body ++ t.body;
 }
@@ -33,7 +31,6 @@ top::DclCommentComponents ::=
 
 concrete production componentLink
 top::DclCommentComponent ::= '@link' '[' id::QName ']'
-layout {}
 {
   local dclInfo::DocDclInfo = head(treeLookup(id.lookupValue.fullName, top.docEnv));
   top.body = "[" ++ dclInfo.id ++ "](" ++ dclInfo.path ++ ")";
@@ -41,14 +38,12 @@ layout {}
 
 concrete production componentText
 top::DclCommentComponent ::= t::CommentText_t
-layout {}
 {
   top.body = t.lexeme;
 }
 
 concrete production componentWhiteSpace
 top::DclCommentComponent ::= w::WhiteSpace
-layout {}
 {
   top.body = w.lexeme;
 }
