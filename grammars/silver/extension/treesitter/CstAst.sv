@@ -62,9 +62,9 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
 }
 
 function isStartNonTerminalRule
-Boolean ::= startnt::String rule::String
+Boolean ::= startnt::String rrule::String
 {
-  return startsWith(startnt, rule);
+  return startsWith(startnt, rrule);
 }
 
 function removeEmptyStringTerminals
@@ -73,12 +73,12 @@ TreesitterRules ::= gram::TreesitterRules emptyStrTerminals::[String]
   return 
   case gram of
   | nilTreesitterRules() -> gram
-  | consTreesitterRules(rule, rest) ->
-    case rule of
+  | consTreesitterRules(rrule, rest) ->
+    case rrule of
     | treesitterTerminal(_, regex, _) ->
       if stringEq(regex.regString, "")
       then removeEmptyStringTerminals(rest, emptyStrTerminals)
-      else consTreesitterRules(rule, removeEmptyStringTerminals(rest, emptyStrTerminals))
+      else consTreesitterRules(rrule, removeEmptyStringTerminals(rest, emptyStrTerminals))
     | treesitterNonterminal(name, prods, mods)  -> 
         consTreesitterRules(
           treesitterNonterminal(name, removeEmptyStringTerminalsFromProductions(prods, emptyStrTerminals), mods),
@@ -94,14 +94,14 @@ TreesitterRules ::= prods::TreesitterRules emptyStrRules::[String]
   return
   case prods of 
   | nilTreesitterRules() -> prods
-  | consTreesitterRules(rule, rest) ->
-    case rule of 
+  | consTreesitterRules(rrule, rest) ->
+    case rrule of 
     | treesitterProduction(out, input, mods) ->
         consTreesitterRules(
           treesitterProduction(out, filter(isNotInEmptyStringList(emptyStrRules, _), input), mods),
           removeEmptyStringTerminalsFromProductions(rest, emptyStrRules))
     | _ -> 
-      consTreesitterRules(rule, removeEmptyStringTerminalsFromProductions(rest, emptyStrRules))
+      consTreesitterRules(rrule, removeEmptyStringTerminalsFromProductions(rest, emptyStrRules))
     end
   end;
 }
@@ -134,8 +134,8 @@ function computeEmptyStringRules
   return
   case gram of 
   | nilTreesitterRules() -> []
-  | consTreesitterRules(rule, rest) ->
-    case rule of
+  | consTreesitterRules(rrule, rest) ->
+    case rrule of
     | treesitterNonterminal(name, prods, _) ->
         if canNonterminalProduceEmptyString(prods) then
           name :: computeEmptyStringRules(rest)
@@ -152,8 +152,8 @@ Boolean ::= prods::TreesitterRules
   return
   case prods of
   | nilTreesitterRules() -> false
-  | consTreesitterRules(rule, rest) ->
-    case rule of
+  | consTreesitterRules(rrule, rest) ->
+    case rrule of
     | treesitterProduction(_, inputs, _) -> 
         length(inputs) == 0 || canNonterminalProduceEmptyString(rest)
     | _ -> canNonterminalProduceEmptyString(rest)
@@ -193,18 +193,18 @@ TreesitterRules ::= emptyRule::String oldGrammar::TreesitterRules
   return
   case oldGrammar of
   | nilTreesitterRules() -> nilTreesitterRules()
-  | consTreesitterRules(rule, rest) ->
-    case rule of
+  | consTreesitterRules(rrule, rest) ->
+    case rrule of
     -- rule that produced the empty string remove all empty productions
     | treesitterNonterminal(name, _, _) -> 
       if stringEq(name, emptyRule) then
         consTreesitterRules(refactorForEmptyRule(
-          TsDeclToIdentifier(emptyRule), removeEmptyProductions(rule)),
+          TsDeclToIdentifier(emptyRule), removeEmptyProductions(rrule)),
           emptyStringGrammarModification(emptyRule, rest))
       else
-        consTreesitterRules(refactorForEmptyRule(TsDeclToIdentifier(emptyRule), rule), 
+        consTreesitterRules(refactorForEmptyRule(TsDeclToIdentifier(emptyRule), rrule), 
                             emptyStringGrammarModification(emptyRule, rest))
-    | _ -> consTreesitterRules(rule, emptyStringGrammarModification(emptyRule, rest))
+    | _ -> consTreesitterRules(rrule, emptyStringGrammarModification(emptyRule, rest))
     end
   end;
 }
@@ -262,8 +262,8 @@ TreesitterRules ::= emptyRule::String prods::TreesitterRules
 {
   return case prods of
   | nilTreesitterRules() -> nilTreesitterRules()
-  | consTreesitterRules(rule, rest) -> 
-      foldr(consTreesitterRules, refactorProductions(emptyRule, rest), refactorProduction(emptyRule, rule))
+  | consTreesitterRules(rrule, rest) -> 
+      foldr(consTreesitterRules, refactorProductions(emptyRule, rest), refactorProduction(emptyRule, rrule))
   end;
 }
 
