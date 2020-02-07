@@ -37,29 +37,29 @@ TreesitterRules ::= func::(Boolean ::= TreesitterRule) rules::TreesitterRules
   return
   case rules of
   | nilTreesitterRules() -> nilTreesitterRules()
-  | consTreesitterRules(rule, rest) ->
-      if func(rule) then
-        consTreesitterRules(rule, getTreesitterRulesBy(func, rest))
+  | consTreesitterRules(rrule, rest) ->
+      if func(rrule) then
+        consTreesitterRules(rrule, getTreesitterRulesBy(func, rest))
       else
         getTreesitterRulesBy(func, rest)
   end;
 }
 
 function isTreesitterNonterminal
-Boolean ::= rule::TreesitterRule
+Boolean ::= rrule::TreesitterRule
 {
   return
-  case rule of
+  case rrule of
   | treesitterNonterminal(_, _, _) -> true
   | _ -> false
   end;
 }
 
 function isTreesitterTerminal
-Boolean ::= rule::TreesitterRule
+Boolean ::= rrule::TreesitterRule
 {
   return
-  case rule of
+  case rrule of
   | treesitterTerminal(_, _, _) -> true
   | _ -> false
   end;
