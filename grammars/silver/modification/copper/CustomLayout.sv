@@ -38,3 +38,40 @@ top::NonterminalModifier ::= 'layout' '{' '}'
   top.nonterminalModifiers = [ntLayout([])];
   top.errors := [];
 }
+
+attribute customLayout occurs on ParserComponents, ParserComponent;
+
+aspect production nilParserComponent
+top::ParserComponents ::=
+{
+  top.customLayout = nothing();
+}
+
+aspect production consParserComponent
+top::ParserComponents ::= c1::ParserComponent  c2::ParserComponents
+{
+  top.customLayout = orElse(c1.customLayout, c2.customLayout);
+}
+
+aspect default production
+top::ParserComponent ::=
+{
+  top.customLayout = nothing();
+}
+
+concrete production parserComponentLayout
+top::ParserComponent ::= 'layout' '{' terms::TermPrecList '}' ';'
+{
+  top.unparse = "layout {" ++ terms.unparse ++ "};";
+  top.errors := terms.errors;
+  top.customLayout = just(terms.precTermList);
+}
+
+concrete production parserComponentLayoutNone
+top::ParserComponent ::= 'layout' '{' '}' ';'
+{
+  top.unparse = "layout {};";
+  top.errors := [];
+  top.customLayout = just([]);
+}
+

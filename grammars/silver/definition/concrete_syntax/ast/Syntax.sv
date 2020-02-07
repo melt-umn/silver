@@ -26,6 +26,7 @@ autocopy attribute parserAttributeAspects::EnvTree<String>;
 synthesized attribute allIgnoreTerminals :: [Decorated SyntaxDcl];
 synthesized attribute allMarkingTerminals :: [Decorated SyntaxDcl];
 synthesized attribute allProductions :: [Decorated SyntaxDcl];
+synthesized attribute allNonterminals :: [Decorated SyntaxDcl];
 synthesized attribute disambiguationClasses :: [Decorated SyntaxDcl];
 synthesized attribute classDomContribs :: String;
 synthesized attribute classSubContribs :: String;
@@ -42,7 +43,7 @@ autocopy attribute prefixesForTerminals :: EnvTree<String>;
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, allProductions, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals;
 
 abstract production nilSyntax
 top::Syntax ::=
@@ -54,6 +55,7 @@ top::Syntax ::=
   top.allIgnoreTerminals = [];
   top.allMarkingTerminals = [];
   top.allProductions = [];
+  top.allNonterminals = [];
   top.disambiguationClasses = [];
   top.classTerminalContribs = [];
   top.superClassContribs = [];
@@ -72,6 +74,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
   top.allIgnoreTerminals = s1.allIgnoreTerminals ++ s2.allIgnoreTerminals;
   top.allMarkingTerminals = s1.allMarkingTerminals ++ s2.allMarkingTerminals;
   top.allProductions = s1.allProductions ++ s2.allProductions;
+  top.allNonterminals = s1.allNonterminals ++ s2.allNonterminals;
   top.disambiguationClasses = s1.disambiguationClasses ++ s2.disambiguationClasses;
   top.classTerminalContribs = s1.classTerminalContribs ++ s2.classTerminalContribs;
   top.superClassContribs = s1.superClassContribs ++ s2.superClassContribs;
@@ -84,7 +87,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allIgnoreTerminals, allMarkingTerminals, allProductions, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals;
 
 synthesized attribute sortKey :: String;
 
@@ -95,6 +98,7 @@ top::SyntaxDcl ::=
   top.allIgnoreTerminals = [];
   top.allMarkingTerminals = [];
   top.allProductions = [];
+  top.allNonterminals = [];
   top.disambiguationClasses = [];
   top.classTerminalContribs = [];
   top.superClassContribs = [];
@@ -120,6 +124,8 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   top.fullName = t.typeName;
   top.sortKey = "EEE" ++ t.typeName;
   top.cstDcls = [pair(t.typeName, top)] ++ subdcls.cstDcls;
+  top.allNonterminals = [top];
+  
   top.cstErrors := if length(searchEnvTree(t.typeName, top.cstEnv)) == 1 then []
                    else ["Name conflict with nonterminal " ++ t.typeName];
   top.cstErrors <- subdcls.cstErrors;

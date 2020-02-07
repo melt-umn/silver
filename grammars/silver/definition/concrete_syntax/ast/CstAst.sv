@@ -21,7 +21,7 @@ closed nonterminal SyntaxRoot with cstErrors, xmlCopper;
 synthesized attribute xmlCopper :: String;
 
 abstract production cstRoot
-top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
+top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  customStartLayout::Maybe<[String]> terminalPrefixes::[Pair<String String>]
 {
   s.cstEnv = directBuildTree(s.cstDcls);
   s.cstNTProds = directBuildTree(s.cstProds);
@@ -45,7 +45,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   s.layoutTerms =
     buildLayoutEnv(
       map((.fullName), s.allIgnoreTerminals),
-      map((.fullName), s.allProductions),
+      map((.fullName), s.allProductions ++ s.allNonterminals),
       s.layoutContribs);
   s.prefixesForTerminals = directBuildTree(terminalPrefixes);
   
@@ -72,7 +72,14 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
                    else ["Nonterminal " ++ startnt ++ " was referenced but " ++
                          "this grammar was not included in this parser. (Referenced as parser's starting nonterminal)"];
 
-  production univLayout :: String = implode("", map(xmlCopperRef, s2.allIgnoreTerminals));
+  -- The layout before and after the root nonterminal. By default, the layout of the root nonterminal.
+  production startLayout :: String =
+    implode("",
+      map(xmlCopperRef,
+        map(head,
+          lookupStrings(
+            fromMaybe(searchEnvTree(startnt, s.layoutTerms), customStartLayout),
+            s.cstEnv))));
 
   top.xmlCopper =
 s"""<?xml version="1.0" encoding="UTF-8"?>
@@ -82,9 +89,7 @@ s"""<?xml version="1.0" encoding="UTF-8"?>
     <PP>${parsername}</PP>
     <Grammars><GrammarRef id="${s2.containingGrammar}"/></Grammars>
     <StartSymbol>${xmlCopperRef(head(startFound))}</StartSymbol>
-""" ++
--- The layout before and after the root nonterminal. For now, universal layout.
-s"""    <StartLayout>${univLayout}</StartLayout>
+    <StartLayout>${startLayout}</StartLayout>
 """ ++
 -- TODO fix: ?
 --"    <Package>parsers</Package>\n" ++
@@ -138,9 +143,6 @@ s"""  </Parser>
 
     <PP>${s2.containingGrammar}</PP>
 
-""" ++
--- Default layout for production, unless otherwise specified.
-s"""    <Layout>${univLayout}</Layout>
     <Declarations>
       <ParserAttribute id="context">
         <Type><![CDATA[common.DecoratedNode]]></Type>
@@ -169,20 +171,21 @@ String ::= str::String
   return makeIdName(str);
 }
 
+-- Compute an environment containg the layout for a given list of items
 function buildLayoutEnv
-EnvTree<String> ::= allIgnoreTerms::[String] allProds::[String] layoutContribs::[Pair<String String>]
+EnvTree<String> ::= allIgnoreTerms::[String] layoutItems::[String] layoutContribs::[Pair<String String>]
 {
   -- Build a set of all ignore terminals, for faster lookup
   local ignoreTerms::s:Set<String> = s:add(allIgnoreTerms, s:empty(compareString));
   -- Build a graph of nonterminals, productions and layout terminals where there is an edge a -> b iff a inherits layout from b
-  local layoutSources::g:Graph<String> =
+  local transitiveLayout::g:Graph<String> =
     g:transitiveClosure(g:add(layoutContribs, g:empty(compareString)));
-  -- For every production, find all inherited layout terminals
+  -- For every item that we wish to compute layout (productions and nonterminals), find all inherited layout terminals
   local layoutTerms::[Pair<String [String]>] =
     map(
-      \ prod::String ->
-        pair(prod, s:toList(s:intersect(ignoreTerms, g:edgesFrom(prod, layoutSources)))),
-      allProds);
+      \ item::String ->
+        pair(item, s:toList(s:intersect(ignoreTerms, g:edgesFrom(item, transitiveLayout)))),
+      layoutItems);
   -- Build the layout EnvTree
   return
     directBuildTree(

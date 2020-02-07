@@ -3,7 +3,7 @@ grammar silver:modification:copper_mda;
 import silver:util:raw:graph as g;
 
 abstract production cstCopperMdaRoot
-top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Syntax  terminalPrefixes::[Pair<String String>]
+top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Syntax  customStartLayout::Maybe<[String]>  terminalPrefixes::[Pair<String String>]
 {
   -- Because there may be references between the grammars, we cannot do the
   -- usual normalization.
@@ -35,7 +35,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
     -- ext shouldn't affect host layout, but include both so we only have to build this once
     buildLayoutEnv(
       map((.fullName), host.allIgnoreTerminals ++ ext.allIgnoreTerminals),
-      map((.fullName), host.allProductions ++ ext.allProductions),
+      map((.fullName), host.allProductions ++ ext.allProductions ++ host.allNonterminals ++ ext.allNonterminals),
       host.layoutContribs ++ ext.layoutContribs);
   host.prefixesForTerminals = directBuildTree(terminalPrefixes);
   ext.cstEnv = host.cstEnv;
@@ -55,7 +55,14 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
                    else ["Nonterminal " ++ startnt ++ " was referenced but " ++
                          "this grammar was not included in this parser. (Referenced as parser's starting nonterminal)"];
 
-  production univLayout :: String = implode("", map(xmlCopperRef, host.allIgnoreTerminals)); -- er, we're ignoring ext here?
+  -- The layout before and after the root nonterminal. By default, the layout of the root nonterminal.
+  production startLayout :: String =
+    implode("",
+      map(xmlCopperRef,
+        map(head,
+          lookupStrings(
+            fromMaybe(searchEnvTree(startnt, host.layoutTerms), customStartLayout),
+            host.cstEnv))));
 
   top.xmlCopper = 
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" ++
@@ -71,13 +78,11 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
 "      <GrammarRef id=\"" ++ ext.containingGrammar ++ "\"/>\n" ++
 "    </ExtensionGrammars>\n" ++
 "    <StartSymbol>" ++ xmlCopperRef(head(startFound)) ++ "</StartSymbol>\n" ++
-"    <StartLayout>" ++ univLayout ++ "</StartLayout>\n" ++
+"    <StartLayout>" ++ startLayout ++ "</StartLayout>\n" ++
 "  </ExtendedParser>\n\n" ++
 
 "  <Grammar id=\"" ++ host.containingGrammar ++ "\">\n\n" ++
 "    <PP>" ++ host.containingGrammar ++ "</PP>\n\n" ++
--- Default layout for production, unless otherwise specified.
-"    <Layout>" ++ univLayout ++ "</Layout>\n\n" ++
 "    <Declarations>\n" ++
 "      <ParserAttribute id=\"context\">\n" ++
 "        <Type><![CDATA[common.DecoratedNode]]></Type>\n" ++
@@ -89,7 +94,6 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
 
 "  <ExtensionGrammar id=\"" ++ ext.containingGrammar ++ "\">\n" ++
 "    <PP>" ++ host.containingGrammar ++ "</PP>\n\n" ++
-"    <Layout>" ++ univLayout ++ "</Layout>\n\n" ++
 "    <MarkingTerminals>\n" ++
   implode("", map(xmlCopperRef, ext.markingTokens)) ++
 "    </MarkingTerminals>\n" ++

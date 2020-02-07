@@ -161,8 +161,6 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
 {
   top.unparse = "prefer " ++ t.unparse ++ " over " ++ ts.unparse;
   top.errors := t.lookupType.errors ++ ts.errors;
-  top.moduleNames = [];
-  top.terminalPrefixes = [];
   top.liftedAGDcls =
     -- Generate a disambiguation function for every combination of ts.
     -- TODO: we can't use Copper's subset disambiguation functions here unfourtunately,
