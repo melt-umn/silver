@@ -14,7 +14,7 @@ autocopy attribute terminalName :: String;
 {--
  - Modifiers for terminals.
  -}
-nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, classTerminalContribs, dominatesXML,
+nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, classTerminalContribs, superClasses, subClasses, dominatesXML,
   submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation,
   marking, terminalName, prettyName;
 
@@ -55,7 +55,7 @@ top::SyntaxTerminalModifiers ::=
 {--
  - Modifiers for terminals.
  -}
-nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, classTerminalContribs, dominatesXML,
+nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, classTerminalContribs, superClasses, subClasses, dominatesXML,
   submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation,
   marking, terminalName, prettyName;
 
@@ -124,15 +124,16 @@ top::SyntaxTerminalModifier ::= prettyName::String
 abstract production termClasses
 top::SyntaxTerminalModifier ::= cls::[String]
 {
-  local clsRefsL :: [[Decorated SyntaxDcl]] = lookupStrings(cls, top.cstEnv);
+  production allCls :: [String] = unionsBy(stringEq, cls :: lookupStrings(cls, top.superClasses));
+  local clsRefsL :: [[Decorated SyntaxDcl]] = lookupStrings(allCls, top.cstEnv);
   production clsRefs :: [Decorated SyntaxDcl] = map(head, clsRefsL);
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
                      else ["Lexer Class " ++ a.fst ++ " was referenced but " ++
-                           "this grammar was not included in this parser. (Referenced from lexer class on terminal " ++ top.terminalName ++")"], 
-                   zipWith(pair, cls, clsRefsL)); 
-  top.classTerminalContribs = map(pair(_, top.terminalName), cls);
+                           "this grammar was not included in this parser. (Referenced from lexer class on terminal " ++ top.terminalName ++ ")"],
+                   zipWith(pair, allCls, clsRefsL)); 
+  top.classTerminalContribs = map(pair(_, top.terminalName), allCls);
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
   top.dominatesXML = implode("", map((.classDomContribs), clsRefs));
   top.submitsXML = implode("", map((.classSubContribs), clsRefs));
@@ -144,12 +145,13 @@ top::SyntaxTerminalModifier ::= cls::[String]
 abstract production termSubmits
 top::SyntaxTerminalModifier ::= sub::[String]
 {
-  production subRefs :: [[Decorated SyntaxDcl]] = lookupStrings(sub, top.cstEnv);
+  production allSubs :: [String] = unionsBy(stringEq, sub :: lookupStrings(sub, top.subClasses));
+  production subRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allSubs, top.cstEnv);
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
-                           "this grammar was not included in this parser. (Referenced from submit clause on terminal " ++ top.terminalName ++")"], 
+                           "this grammar was not included in this parser. (Referenced from submit clause on terminal " ++ top.terminalName ++ ")"],
                    zipWith(pair, sub, subRefs)); 
   top.submitsXML = implode("", map(xmlCopperRef, map(head, subRefs)));
 }
@@ -159,12 +161,13 @@ top::SyntaxTerminalModifier ::= sub::[String]
 abstract production termDominates
 top::SyntaxTerminalModifier ::= dom::[String]
 {
-  production domRefs :: [[Decorated SyntaxDcl]] = lookupStrings(dom, top.cstEnv);
+  production allDoms :: [String] = unionsBy(stringEq, dom :: lookupStrings(dom, top.subClasses));
+  production domRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allDoms, top.cstEnv);
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
-                           "this grammar was not included in this parser. (Referenced from dominates clause on terminal " ++ top.terminalName ++")"],
+                           "this grammar was not included in this parser. (Referenced from dominates clause on terminal " ++ top.terminalName ++ ")"],
                    zipWith(pair, dom, domRefs)); 
   top.dominatesXML = implode("", map(xmlCopperRef, map(head, domRefs)));
 }

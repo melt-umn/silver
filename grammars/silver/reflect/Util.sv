@@ -27,6 +27,14 @@ String ::= x::a
   "java" : return "(new common.StringCatter(%x%.toString()))";
 }
 
+function applyAST
+Either<String AST> ::= fn::AST args::[Maybe<AST>] namedArgs::[Pair<String Maybe<AST>>]
+{
+  return error("Foreign function");
+} foreign {
+  "java" : return "(common.Reflection.applyAST(%fn%, %args%, %namedArgs%))";
+}
+
 function serialize
 Either<String String> ::= x::a
 {

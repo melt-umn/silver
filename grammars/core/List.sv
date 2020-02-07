@@ -390,6 +390,19 @@ function unionsBy
   return nubBy(eq, concat(ss));
 }
 
+function powerSet
+[[a]] ::= xs::[a]
+{
+  return
+    case xs of
+    | h :: t ->
+      let rest::[[a]] = powerSet(t)
+      in rest ++ map(cons(h, _), rest)
+      end
+    | [] -> [[]]
+    end;
+}
+
 
 -- Boolean list operations
 function all

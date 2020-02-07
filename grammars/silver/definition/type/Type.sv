@@ -118,7 +118,7 @@ top::Type ::= te::Type
 
 {--
  - An intermediate type. This *should* never appear as the type of a symbol,
- - etc. Rather, this is a helper type only used withing expressions.
+ - etc. Rather, this is a helper type only used within expressions.
  -
  - It represents a nonterminal that is *either* decorated or undecorated
  - (e.g. when referencing a child) but has not yet been specialized.
