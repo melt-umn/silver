@@ -42,7 +42,11 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
             map(\ p::Pair<String String> -> pair(p.snd, p.fst), s.superClassContribs),
             g:empty(compareString)))));
   s.parserAttributeAspects = directBuildTree(s.parserAttributeAspectContribs);
-  s.layoutTerms = buildLayoutEnv(s.directLayoutContribs, s.indirectLayoutContribs);
+  s.layoutTerms =
+    buildLayoutEnv(
+      map((.fullName), s.allIgnoreTerminals),
+      map((.fullName), s.allProductions),
+      s.layoutContribs);
   s.prefixesForTerminals = directBuildTree(terminalPrefixes);
   
   -- Move productions under their nonterminal, and sort the declarations
@@ -166,23 +170,24 @@ String ::= str::String
 }
 
 function buildLayoutEnv
-EnvTree<String> ::= directLayoutContribs::[Pair<String [String]>] indirectLayoutContribs::[Pair<String String>]
+EnvTree<String> ::= allIgnoreTerms::[String] allProds::[String] layoutContribs::[Pair<String String>]
 {
-  -- Build a graph of nonterminals and productions where there is an edge a -> b iff a inherits layout from b
+  -- Build a set of all ignore terminals, for faster lookup
+  local ignoreTerms::s:Set<String> = s:add(allIgnoreTerms, s:empty(compareString));
+  -- Build a graph of nonterminals, productions and layout terminals where there is an edge a -> b iff a inherits layout from b
   local layoutSources::g:Graph<String> =
-    g:transitiveClosure(g:add(indirectLayoutContribs, g:empty(compareString)));
-  -- For every item with layout (nonterminals and productions) find all inherited layout terminals
-  local layoutTermEntries::[Pair<String String>] =
-    concat(
-      map(
-        \ item::String ->
-          map(
-            pair(item, _),
-            concat(
-              flatMap(
-                lookupAllBy(stringEq, _, directLayoutContribs),
-                s:toList(g:edgesFrom(item, layoutSources))))),
-        map(fst, directLayoutContribs)));
-  return directBuildTree(layoutTermEntries);
+    g:transitiveClosure(g:add(layoutContribs, g:empty(compareString)));
+  -- For every production, find all inherited layout terminals
+  local layoutTerms::[Pair<String [String]>] =
+    map(
+      \ prod::String ->
+        pair(prod, s:toList(s:intersect(ignoreTerms, g:edgesFrom(prod, layoutSources)))),
+      allProds);
+  -- Build the layout EnvTree
+  return
+    directBuildTree(
+      flatMap(
+        \ item::Pair<String [String]> -> map(pair(item.fst, _), item.snd),
+        layoutTerms));
 }
 

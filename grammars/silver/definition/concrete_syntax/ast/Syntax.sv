@@ -25,6 +25,7 @@ autocopy attribute parserAttributeAspects::EnvTree<String>;
 
 synthesized attribute allIgnoreTerminals :: [Decorated SyntaxDcl];
 synthesized attribute allMarkingTerminals :: [Decorated SyntaxDcl];
+synthesized attribute allProductions :: [Decorated SyntaxDcl];
 synthesized attribute disambiguationClasses :: [Decorated SyntaxDcl];
 synthesized attribute classDomContribs :: String;
 synthesized attribute classSubContribs :: String;
@@ -32,8 +33,7 @@ autocopy attribute containingGrammar :: String;
 synthesized attribute lexerClassRefDcls :: String;
 synthesized attribute exportedProds :: [String];
 synthesized attribute hasCustomLayout :: Boolean;
-synthesized attribute directLayoutContribs :: [Pair<String [String]>]; -- prod/nt name, layout term names
-synthesized attribute indirectLayoutContribs :: [Pair<String String>]; -- prod/nt name, prod/nt name
+synthesized attribute layoutContribs :: [Pair<String String>]; -- prod/nt name, prod/nt/term name
 autocopy attribute layoutTerms::EnvTree<String>;
 
 autocopy attribute prefixesForTerminals :: EnvTree<String>;
@@ -42,7 +42,7 @@ autocopy attribute prefixesForTerminals :: EnvTree<String>;
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, directLayoutContribs, indirectLayoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, allProductions, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals;
 
 abstract production nilSyntax
 top::Syntax ::=
@@ -53,13 +53,13 @@ top::Syntax ::=
   top.cstNormalize = [];
   top.allIgnoreTerminals = [];
   top.allMarkingTerminals = [];
+  top.allProductions = [];
   top.disambiguationClasses = [];
   top.classTerminalContribs = [];
   top.superClassContribs = [];
   top.parserAttributeAspectContribs = [];
   top.lexerClassRefDcls = "";
-  top.directLayoutContribs = [];
-  top.indirectLayoutContribs = [];
+  top.layoutContribs = [];
   top.xmlCopper = "";
 }
 abstract production consSyntax
@@ -71,20 +71,20 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
   top.cstNormalize = s1.cstNormalize ++ s2.cstNormalize;
   top.allIgnoreTerminals = s1.allIgnoreTerminals ++ s2.allIgnoreTerminals;
   top.allMarkingTerminals = s1.allMarkingTerminals ++ s2.allMarkingTerminals;
+  top.allProductions = s1.allProductions ++ s2.allProductions;
   top.disambiguationClasses = s1.disambiguationClasses ++ s2.disambiguationClasses;
   top.classTerminalContribs = s1.classTerminalContribs ++ s2.classTerminalContribs;
   top.superClassContribs = s1.superClassContribs ++ s2.superClassContribs;
   top.parserAttributeAspectContribs = s1.parserAttributeAspectContribs ++ s2.parserAttributeAspectContribs;
   top.lexerClassRefDcls = s1.lexerClassRefDcls ++ s2.lexerClassRefDcls;
-  top.directLayoutContribs = s1.directLayoutContribs ++ s2.directLayoutContribs;
-  top.indirectLayoutContribs = s1.indirectLayoutContribs ++ s2.indirectLayoutContribs;
+  top.layoutContribs = s1.layoutContribs ++ s2.layoutContribs;
   top.xmlCopper = s1.xmlCopper ++ s2.xmlCopper;
 }
 
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allIgnoreTerminals, allMarkingTerminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, directLayoutContribs, indirectLayoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allIgnoreTerminals, allMarkingTerminals, allProductions, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals;
 
 synthesized attribute sortKey :: String;
 
@@ -94,6 +94,7 @@ top::SyntaxDcl ::=
   top.cstProds = [];
   top.allIgnoreTerminals = [];
   top.allMarkingTerminals = [];
+  top.allProductions = [];
   top.disambiguationClasses = [];
   top.classTerminalContribs = [];
   top.superClassContribs = [];
@@ -103,8 +104,7 @@ top::SyntaxDcl ::=
   top.lexerClassRefDcls = "";
   top.exportedProds = error("Internal compiler error: should only ever be demanded of nonterminals");
   top.hasCustomLayout = false;
-  top.directLayoutContribs = [];
-  top.indirectLayoutContribs = [];
+  top.layoutContribs = [];
   top.prefixSeperator = nothing();
 }
 
@@ -132,7 +132,7 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   
   top.exportedProds = exportedProds;
   top.hasCustomLayout = modifiers.customLayout.isJust;
-  top.directLayoutContribs = [pair(t.typeName, fromMaybe(exportedLayoutTerms, modifiers.customLayout))];
+  top.layoutContribs = map(pair(t.typeName, _), fromMaybe(exportedLayoutTerms, modifiers.customLayout));
 
   top.xmlCopper =
     "\n  <Nonterminal id=\"" ++ makeCopperName(t.typeName) ++ "\">\n" ++
@@ -225,14 +225,14 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   top.fullName = ns.fullName;
   top.sortKey = "FFF" ++ ns.fullName;
   top.cstDcls = [pair(ns.fullName, top)];
+  top.allProductions = [top];
+  
   modifiers.productionName = ns.fullName;
 
   production lhsRef :: [Decorated SyntaxDcl] =
     searchEnvTree(ns.outputElement.typerep.typeName, top.cstEnv);
   production rhsRefs :: [[Decorated SyntaxDcl]] =
     lookupStrings(map((.typeName), map((.typerep), ns.inputElements)), top.cstEnv);
-  production isExportedByNT :: Boolean =
-    !null(lhsRef) && containsBy(stringEq, head(lhsRef).fullName, head(lhsRef).exportedProds);
 
   top.cstErrors := modifiers.cstErrors;
   top.cstErrors <- if length(searchEnvTree(ns.fullName, top.cstEnv)) == 1 then []
@@ -251,21 +251,22 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   top.cstNormalize = [];
   
   top.hasCustomLayout = modifiers.customLayout.isJust;
-  top.directLayoutContribs = [pair(ns.fullName, fromMaybe([], modifiers.customLayout))];
-  top.indirectLayoutContribs =
+  top.layoutContribs =
+    map(pair(ns.fullName, _), fromMaybe([], modifiers.customLayout)) ++
     -- The production inherits its LHS nonterminal's layout, unless overridden.
     (if top.hasCustomLayout then [] else [pair(ns.fullName, head(lhsRef).fullName)]) ++
-    -- If this production is exported by its nonterminal, all nonterminals on the RHS inherit this
+    -- All nonterminals on the RHS that export this production inherit this
     -- production's layout, unless overriden on the nonterminal.
-    if !isExportedByNT then [] else
-      flatMap(
-        \ rhsRef::[Decorated SyntaxDcl] ->
-          case head(rhsRef) of
-          | syntaxNonterminal(_,_,_,_,_) when !head(rhsRef).hasCustomLayout ->
-            [pair(head(rhsRef).fullName, ns.fullName)]
-          | _ -> []
-          end,
-        rhsRefs);
+    flatMap(
+      \ rhsRef::[Decorated SyntaxDcl] ->
+        case head(rhsRef) of
+        | syntaxNonterminal(_,_,_,_,_)
+          when !head(rhsRef).hasCustomLayout &&
+               containsBy(stringEq, top.fullName, head(rhsRef).exportedProds) ->
+          [pair(head(rhsRef).fullName, ns.fullName)]
+        | _ -> []
+        end,
+      rhsRefs);
   
   -- Copper doesn't support default layout on nonterminals, so we specify layout on every production.
   production prodLayout::String =
