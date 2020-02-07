@@ -43,6 +43,7 @@ exports silver:extension:doc;
 exports silver:extension:functorattrib;
 exports silver:extension:monad;
 exports silver:extension:reflection;
+exports silver:extension:rewriting;
 exports silver:extension:silverconstruction;
 exports silver:extension:astconstruction;
 exports silver:extension:constructparser;
