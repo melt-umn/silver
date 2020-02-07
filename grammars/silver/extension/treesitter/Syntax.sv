@@ -95,10 +95,10 @@ module.exports = grammar({
 }
 
 function isStartNonterminal
-Boolean ::= rule::TreesitterRule startNt::String
+Boolean ::= rrule::TreesitterRule startNt::String
 {
   return 
-  case rule of
+  case rrule of
   | treesitterNonterminal(name, _, _) -> stringEq(name, startNt)
   | _ -> false
   end;
