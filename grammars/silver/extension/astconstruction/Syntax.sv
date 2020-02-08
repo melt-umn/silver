@@ -12,6 +12,7 @@ exports silver:reflect:concretesyntax;
 
 concrete production quoteAST
 top::Expr ::= 'AST' '{' ast::AST_c '}'
+layout {silver:reflect:concretesyntax:WhiteSpace}
 {
   top.unparse = s"AST {${ast.unparse}}";
   forwards to translate(top.location, reflect(ast.ast));
@@ -19,6 +20,7 @@ top::Expr ::= 'AST' '{' ast::AST_c '}'
 
 concrete production quoteASTPattern
 top::Pattern ::= 'AST' '{' ast::AST_c '}'
+layout {silver:reflect:concretesyntax:WhiteSpace}
 {
   top.unparse = s"AST {${ast.unparse}}";
   forwards to translatePattern(top.location, reflect(ast.ast));
@@ -26,6 +28,7 @@ top::Pattern ::= 'AST' '{' ast::AST_c '}'
 
 concrete production antiquoteAST_c
 top::AST_c ::= '$' '{' e::Expr '}'
+layout {silver:definition:core:WhiteSpace}
 {
   top.unparse = s"$${${e.unparse}}";
   top.ast = antiquoteAST(e);

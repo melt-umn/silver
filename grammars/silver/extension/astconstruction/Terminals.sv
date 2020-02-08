@@ -12,11 +12,3 @@ terminal EscapeAST_t '$' lexer classes {Escape};
 disambiguate AST_t, IdUpper_t {
   pluck AST_t;
 }
-
-disambiguate silver:definition:core:WhiteSpace, silver:reflect:concretesyntax:WhiteSpace {
-  pluck silver:definition:core:WhiteSpace;
-}
-
-disambiguate RegexChar_t, silver:definition:core:WhiteSpace, silver:reflect:concretesyntax:WhiteSpace {
-  pluck silver:definition:core:WhiteSpace;
-}
