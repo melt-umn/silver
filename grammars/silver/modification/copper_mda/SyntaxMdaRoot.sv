@@ -34,7 +34,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   host.layoutTerms =
     -- ext shouldn't affect host layout, but include both so we only have to build this once
     buildLayoutEnv(
-      map((.fullName), host.allIgnoreTerminals ++ ext.allIgnoreTerminals),
+      map((.fullName), host.allTerminals ++ ext.allTerminals),
       map((.fullName), host.allProductions ++ ext.allProductions ++ host.allNonterminals ++ ext.allNonterminals),
       host.layoutContribs ++ ext.layoutContribs);
   host.prefixesForTerminals = directBuildTree(terminalPrefixes);

@@ -44,7 +44,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  customStartL
   s.parserAttributeAspects = directBuildTree(s.parserAttributeAspectContribs);
   s.layoutTerms =
     buildLayoutEnv(
-      map((.fullName), s.allIgnoreTerminals),
+      map((.fullName), s.allTerminals),
       map((.fullName), s.allProductions ++ s.allNonterminals),
       s.layoutContribs);
   s.prefixesForTerminals = directBuildTree(terminalPrefixes);
@@ -173,10 +173,10 @@ String ::= str::String
 
 -- Compute an environment containg the layout for a given list of items
 function buildLayoutEnv
-EnvTree<String> ::= allIgnoreTerms::[String] layoutItems::[String] layoutContribs::[Pair<String String>]
+EnvTree<String> ::= allTerms::[String] layoutItems::[String] layoutContribs::[Pair<String String>]
 {
-  -- Build a set of all ignore terminals, for faster lookup
-  local ignoreTerms::s:Set<String> = s:add(allIgnoreTerms, s:empty(compareString));
+  -- Build a set of all terminals, for faster lookup
+  local terms::s:Set<String> = s:add(allTerms, s:empty(compareString));
   -- Build a graph of nonterminals, productions and layout terminals where there is an edge a -> b iff a inherits layout from b
   local transitiveLayout::g:Graph<String> =
     g:transitiveClosure(g:add(layoutContribs, g:empty(compareString)));
@@ -184,7 +184,7 @@ EnvTree<String> ::= allIgnoreTerms::[String] layoutItems::[String] layoutContrib
   local layoutTerms::[Pair<String [String]>] =
     map(
       \ item::String ->
-        pair(item, s:toList(s:intersect(ignoreTerms, g:edgesFrom(item, transitiveLayout)))),
+        pair(item, s:toList(s:intersect(terms, g:edgesFrom(item, transitiveLayout)))),
       layoutItems);
   -- Build the layout EnvTree
   return

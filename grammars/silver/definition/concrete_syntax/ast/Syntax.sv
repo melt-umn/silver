@@ -23,6 +23,7 @@ autocopy attribute subClasses::EnvTree<String>;
 synthesized attribute parserAttributeAspectContribs::[Pair<String String>];
 autocopy attribute parserAttributeAspects::EnvTree<String>;
 
+synthesized attribute allTerminals :: [Decorated SyntaxDcl];
 synthesized attribute allIgnoreTerminals :: [Decorated SyntaxDcl];
 synthesized attribute allMarkingTerminals :: [Decorated SyntaxDcl];
 synthesized attribute allProductions :: [Decorated SyntaxDcl];
@@ -43,7 +44,7 @@ autocopy attribute prefixesForTerminals :: EnvTree<String>;
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals;
 
 abstract production nilSyntax
 top::Syntax ::=
@@ -52,6 +53,7 @@ top::Syntax ::=
   top.cstErrors := [];
   top.cstProds = [];
   top.cstNormalize = [];
+  top.allTerminals = [];
   top.allIgnoreTerminals = [];
   top.allMarkingTerminals = [];
   top.allProductions = [];
@@ -71,6 +73,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
   top.cstErrors := s1.cstErrors ++ s2.cstErrors;
   top.cstProds = s1.cstProds ++ s2.cstProds;
   top.cstNormalize = s1.cstNormalize ++ s2.cstNormalize;
+  top.allTerminals = s1.allTerminals ++ s2.allTerminals;
   top.allIgnoreTerminals = s1.allIgnoreTerminals ++ s2.allIgnoreTerminals;
   top.allMarkingTerminals = s1.allMarkingTerminals ++ s2.allMarkingTerminals;
   top.allProductions = s1.allProductions ++ s2.allProductions;
@@ -87,7 +90,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals;
 
 synthesized attribute sortKey :: String;
 
@@ -95,6 +98,7 @@ aspect default production
 top::SyntaxDcl ::=
 {
   top.cstProds = [];
+  top.allTerminals = [];
   top.allIgnoreTerminals = [];
   top.allMarkingTerminals = [];
   top.allProductions = [];
@@ -166,6 +170,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
 
   modifiers.terminalName = n;
 
+  top.allTerminals = [top];
   top.allIgnoreTerminals = if modifiers.ignored then [top] else [];
   top.allMarkingTerminals = if modifiers.marking then [top] else [];
   top.classTerminalContribs = modifiers.classTerminalContribs;
