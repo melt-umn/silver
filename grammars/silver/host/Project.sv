@@ -48,6 +48,10 @@ exports silver:extension:silverconstruction;
 exports silver:extension:astconstruction;
 exports silver:extension:constructparser;
 
+exports silver:extension:treesitter;
+exports silver:extension:ideinterface;
+
+
 -- Other generally useful stuff:
 exports silver:translation:java;
 exports silver:driver;
