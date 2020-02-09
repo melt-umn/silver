@@ -78,6 +78,6 @@ top::IDEInterfaceSyntaxDcl ::= name::String terms::[String]
 aspect production syntaxLexerClass
 top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 {
-  production terms :: [String] = searchEnvTree(modifiers.className, modifiers.classTerminals);
-  top.ideSyntaxDcl = ideSyntaxLexerClass(n, terms);
+  production termsX :: [String] = searchEnvTree(modifiers.className, modifiers.classTerminals);
+  top.ideSyntaxDcl = ideSyntaxLexerClass(n, termsX);
 }
