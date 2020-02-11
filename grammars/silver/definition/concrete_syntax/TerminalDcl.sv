@@ -67,7 +67,11 @@ synthesized attribute terminalRegExprSpec :: Regex;
 
 concrete production regExpr
 top::RegExpr ::= '/' r::Regex '/'
-layout {}
+layout {
+  silver:definition:regex:LineComment_t,
+  silver:definition:regex:BlockComment_t,
+  silver:definition:regex:WhiteSpace_t
+}
 {
   top.unparse = "/" ++ r.regString ++ "/";
   top.terminalRegExprSpec = r;

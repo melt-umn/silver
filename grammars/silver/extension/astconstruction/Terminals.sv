@@ -1,7 +1,5 @@
 grammar silver:extension:astconstruction;
 
-import silver:definition:regex;
-
 marking terminal AST_t 'AST' lexer classes {KEYWORD};
 
 temp_imp_ide_font font_escape color(160, 32, 240) bold italic;

@@ -2,22 +2,35 @@ grammar silver:definition:regex;
 
 synthesized attribute regString :: String;
 
-lexer class REGEX_OPER;
-lexer class REGEX_ESC submits to REGEX_OPER;
+-- This grammar is independant from Silver, so we must define our own layout.
+-- Allow comments and whitespace instide regex literals (whitespace regex chars must be escaped),
+-- since it is useful to split complex regexes onto multiple lines with comments.
+temp_imp_ide_font font_comments color(82, 141, 115) italic;
+lexer class Comment font = font_comments;
+ignore terminal LineComment_t /([\-][\-].*)/ lexer classes {Comment};
+ignore terminal BlockComment_t /\{\-(\{\-([^\-]|\-+[^\}\-])*\-+\}|[^\-]|\-+[^\}\-])*\-+\}/ lexer classes {Comment};
+ignore terminal WhiteSpace_t /[\r\n\t\ ]+/;
 
-terminal Plus_t          '+' lexer classes { REGEX_OPER };
-terminal Kleene_t        '*' lexer classes { REGEX_OPER };
-terminal Optional_t      '?' lexer classes { REGEX_OPER };
-terminal Choice_t        '|' lexer classes { REGEX_OPER };
-terminal Range_t         '-' lexer classes { REGEX_OPER };
-terminal RegexNot_t      '^' lexer classes { REGEX_OPER };
-terminal RegexLBrack_t   '[' lexer classes { REGEX_OPER };
-terminal RegexRBrack_t   ']' lexer classes { REGEX_OPER };
-terminal RegexLParen_t   '(' lexer classes { REGEX_OPER };
-terminal RegexRParen_t   ')' lexer classes { REGEX_OPER };
-terminal RegexWildcard_t '.' lexer classes { REGEX_OPER };
-terminal RegexChar_t     /./ lexer classes { REGEX_ESC };
-terminal EscapedChar_t /\\./ submits to { REGEX_ESC };
+lexer class Operator;
+lexer class Escape submits to Operator;
+
+terminal Plus_t          '+' lexer classes { Operator };
+terminal Kleene_t        '*' lexer classes { Operator };
+terminal Optional_t      '?' lexer classes { Operator };
+terminal Choice_t        '|' lexer classes { Operator };
+terminal Range_t         '-' lexer classes { Operator };
+terminal RegexNot_t      '^' lexer classes { Operator };
+terminal RegexLBrack_t   '[' lexer classes { Operator };
+terminal RegexRBrack_t   ']' lexer classes { Operator };
+terminal RegexLParen_t   '(' lexer classes { Operator };
+terminal RegexRParen_t   ')' lexer classes { Operator };
+terminal RegexWildcard_t '.' lexer classes { Operator };
+terminal RegexChar_t     /./ lexer classes { Escape };
+terminal EscapedChar_t /\\./ lexer classes { Escape };
+
+disambiguate WhiteSpace_t, RegexChar_t {
+  pluck WhiteSpace_t; -- Escape it if you want it
+}
 
 -- TODO: It might be wise to someday do a CST/AST split on this.
 
