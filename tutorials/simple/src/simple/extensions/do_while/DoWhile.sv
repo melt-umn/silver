@@ -12,7 +12,7 @@ imports simple:concretesyntax as cst;
 imports simple:abstractsyntax;
 imports simple:extensions:repeat_until;
 
-terminal Do 'do' lexer classes { KEYWORDS };
+terminal Do 'do' lexer classes { cst:KEYWORDS };
 
 concrete productions s::cst:StmtMatched
  | 'do' body::cst:Stmt 'while' '(' cond::cst:Expr ')' ';'
