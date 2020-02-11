@@ -4,11 +4,11 @@ grammar silver:modification:copper;
 terminal Layout_kwd 'layout' lexer classes {KEYWORD,RESERVED};
 
 concrete production productionModifierLayout
-top::ProductionModifier ::= 'layout' '{' terms::TermPrecList '}'
+top::ProductionModifier ::= 'layout' '{' terms::TermList '}'
 {
   top.unparse = "layout {" ++ terms.unparse ++ "}";
 
-  top.productionModifiers = [prodLayout(terms.precTermList)];
+  top.productionModifiers = [prodLayout(terms.termList)];
   top.errors := terms.errors;
 }
 
@@ -22,11 +22,11 @@ top::ProductionModifier ::= 'layout' '{' '}'
 }
 
 concrete production nonterminalModifierLayout
-top::NonterminalModifier ::= 'layout' '{' terms::TermPrecList '}'
+top::NonterminalModifier ::= 'layout' '{' terms::TermList '}'
 {
   top.unparse = "layout {" ++ terms.unparse ++ "}";
   
-  top.nonterminalModifiers = [ntLayout(terms.precTermList)];
+  top.nonterminalModifiers = [ntLayout(terms.termList)];
   top.errors := terms.errors;
 }
 
@@ -60,11 +60,11 @@ top::ParserComponent ::=
 }
 
 concrete production parserComponentLayout
-top::ParserComponent ::= 'layout' '{' terms::TermPrecList '}' ';'
+top::ParserComponent ::= 'layout' '{' terms::TermList '}' ';'
 {
   top.unparse = "layout {" ++ terms.unparse ++ "};";
   top.errors := terms.errors;
-  top.customLayout = just(terms.precTermList);
+  top.customLayout = just(terms.termList);
 }
 
 concrete production parserComponentLayoutNone

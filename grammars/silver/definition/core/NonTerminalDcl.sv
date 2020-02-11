@@ -18,7 +18,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
   
 
   -- Here we ensure that the type list contains only type *variables*
-  top.errors := tl.errors ++ tl.errorsTyVars;
+  top.errors := tl.errors ++ tl.errorsTyVars ++ nm.errors;
   
   -- Here we bind those type variables.
   tl.initialEnv = top.env;
