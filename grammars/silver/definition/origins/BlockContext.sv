@@ -39,6 +39,8 @@ aspect production inLambdaContext
 top::BlockContext ::= containingContext::BlockContext
 {
   top.originsContextSource = useRuntimePassedInfo();
+  -- Code in lambda blocks needs to respect the OI it is passed, or notes &c won't flow into
+  --  lambdas in the same way that they flow into functions.
 }
 
 aspect production productionContext

@@ -119,6 +119,7 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
   top.permitLocalAttributes = true;
 }
 
+ -- This was necessitated by origins work, but is probably also generally useful.
 abstract production inLambdaContext
 top::BlockContext ::= containingContext::BlockContext
 {

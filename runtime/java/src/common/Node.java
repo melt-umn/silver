@@ -149,6 +149,11 @@ public abstract class Node implements Typed {
 		return this;
 	}
 
+	public Object duplicateForForwarding(Object redex, String note){
+		if (System.getProperty("silver.origins.rtwarn")!=null) System.err.println("Origins Warn: Threw away OI ("+getName()+".duplicateForForwarding/1)");
+		return this;
+	}
+
 	public Object copy(Object redex, Object rule){
 		if (System.getProperty("silver.origins.rtwarn")!=null) System.err.println("Origins Warn: Threw away OI ("+getName()+".copy)");
 		return this;

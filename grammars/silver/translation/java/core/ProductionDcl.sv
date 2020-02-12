@@ -128,7 +128,7 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
     public common.Node evalForward(final common.DecoratedNode context) {
         ${if null(body.uniqueSignificantExpression) 
           then s"throw new common.exceptions.SilverInternalError(\"Production ${fName} erroneously claimed to forward\")"
-          else s"return ${head(body.uniqueSignificantExpression).translation}"};
+          else s"return ((common.Node)${head(body.uniqueSignificantExpression).translation}${if wantsTracking then s".duplicateForForwarding(context.undecorate(), \"${substitute("\"", "\\\"", hackUnparse(head(body.uniqueSignificantExpression).location))}\")" else ""})"};
     }
 
     @Override
@@ -258,6 +258,12 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
         Object redex = ((common.Node)newRedex);
         Object redexNotes = newRule;
         return new ${className}(new PoriginAndRedexOriginInfo(null, common.OriginsUtil.SET_AT_ACCESS_OIT, origin, originNotes, redex, redexNotes, newlyConstructed) ${commaIfKids}
+            ${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(copyAnno, namedSig.namedInputElements))});
+    }
+
+    @Override
+    public ${fnnt} duplicateForForwarding(Object redex, String note) {
+        return new ${className}(new PoriginOriginInfo(null, common.OriginsUtil.SET_AT_FORWARDING_OIT, this, new common.ConsCell(new core.PoriginDbgNote(new common.StringCatter(note)), common.ConsCell.nil), true) ${commaIfKids}
             ${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(copyAnno, namedSig.namedInputElements))});
     }
 
