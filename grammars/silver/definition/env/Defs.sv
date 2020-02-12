@@ -46,6 +46,8 @@ top::Defs ::= e1::Def e2::Defs
 --------------------------------------------------------------------------------
 
 -- Transformations on lists of Def
+-- This is to support computing the defs introduced by qualified imports
+-- (import foo only bar, import foo as bar, import foo with bar as baz)
 inherited attribute filterFn::(Boolean ::= EnvItem);
 synthesized attribute filterDef::Boolean;
 inherited attribute mapFn::(EnvItem ::= EnvItem);
@@ -65,7 +67,7 @@ top::Def ::=
   
   top.prodDclList = [];
   
-  top.filterDef = true; -- preserve all others for now (legit don't consider occurs, pa)
+  top.filterDef = true; -- We don't do any renaming for production attribute or occurs defs
   top.mapDef = top; -- ditto
 }
 abstract production typeDef
