@@ -4,9 +4,9 @@ temp_imp_ide_font font_doc color(82, 100, 166) italic; -- TODO?
 temp_imp_ide_font font_doc_kwd color(82, 100, 166) italic bold; -- TODO?
 temp_imp_ide_font font_doc_id color(82, 100, 166); -- TODO?
 
-lexer class DOC font = font_doc;
-lexer class DOC_KWD font = font_doc_kwd;
-lexer class DOC_ID font = font_doc_id;
+lexer class DOC extends Silver, font = font_doc;
+lexer class DOC_KWD extends Silver, font = font_doc_kwd;
+lexer class DOC_ID extends Silver, font = font_doc_id;
 
 -- For comments on AGDcls
 terminal CommentOpen_t '{@comment' lexer classes {DOC_KWD};

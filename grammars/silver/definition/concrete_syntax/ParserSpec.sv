@@ -42,8 +42,5 @@ top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[S
     moduleExportedDefs(sl, top.compiledGrammars, computeDependencies(grams, top.compiledGrammars), grams, []);
 
   top.cstAst = cstRoot(fn, snt, foldr(consSyntax, nilSyntax(), addedDcls ++ med.syntaxAst), terminalPrefixes);
-  
-  local decomposedTerminalPrefixes :: Pair<[String] [String]> =
-    unzipPairs(terminalPrefixes);
 }
 

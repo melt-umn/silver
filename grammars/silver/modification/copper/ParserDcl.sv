@@ -19,10 +19,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   -- Only bug is that you can aspect it, but it's pointless to do so, you can't affect anything.
   top.defs = [funDef(top.grammarName, n.location, namedSig)];
   
-  -- TODO: I think it's inappropriate that we don't bubble up these declarations to the top level.
-  -- However, this necessitates a re-design of how we do 'prefix separators' which are a def we
-  -- need to be scoped to this parser only, not to be overheard by other parsers in this grammar.
-  
+  -- TODO: These declarations should probably bubble up to the top level instead of being decorated here
   production liftedAGDcls :: AGDcl = m.liftedAGDcls;
   liftedAGDcls.config = top.config;
   liftedAGDcls.grammarName = top.grammarName;

@@ -21,4 +21,3 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   top.fontList = s2.fontList;
   top.classFontList = s2.classFontList;
 }
-

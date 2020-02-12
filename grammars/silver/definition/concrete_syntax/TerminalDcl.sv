@@ -101,7 +101,7 @@ top::TerminalKeywordModifier ::=
 
 
 nonterminal TerminalModifiers with config, location, unparse, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
-nonterminal TerminalModifier with config, location, unparse, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+closed nonterminal TerminalModifier with config, location, unparse, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
 
 synthesized attribute terminalModifiers :: [SyntaxTerminalModifier];
 

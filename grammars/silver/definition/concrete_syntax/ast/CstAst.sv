@@ -42,7 +42,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
             map(\ p::Pair<String String> -> pair(p.snd, p.fst), s.superClassContribs),
             g:empty(compareString)))));
   s.parserAttributeAspects = error("TODO: shouldn't by necessary to normalize"); -- TODO
-  s.prefixesForTerminals = error("TODO: shouldn't by necessary to normalize"); -- TODO
+  s.prefixesForTerminals = directBuildTree(terminalPrefixes);
   
   -- Move productions under their nonterminal, and sort the declarations
   production s2 :: Syntax =
@@ -54,7 +54,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
   s2.superClasses = s.superClasses;
   s2.subClasses = s.subClasses;
   s2.parserAttributeAspects = directBuildTree(s.parserAttributeAspectContribs);
-  s2.prefixesForTerminals = directBuildTree(terminalPrefixes);
+  s2.prefixesForTerminals = s.prefixesForTerminals;
   
   -- This should be on s1, because the s2 transform assumes everything is well formed.
   -- In particular, it drops productions it can't find an NT for.
