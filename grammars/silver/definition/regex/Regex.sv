@@ -2,17 +2,8 @@ grammar silver:definition:regex;
 
 synthesized attribute regString :: String;
 
--- This grammar is independant from Silver, so we must define our own layout.
--- Allow comments and whitespace instide regex literals (whitespace regex chars must be escaped),
--- since it is useful to split complex regexes onto multiple lines with comments.
-temp_imp_ide_font font_comments color(82, 141, 115) italic;
-lexer class Comment font = font_comments;
-ignore terminal LineComment_t /([\-][\-].*)/ lexer classes {Comment};
-ignore terminal BlockComment_t /\{\-(\{\-([^\-]|\-+[^\}\-])*\-+\}|[^\-]|\-+[^\}\-])*\-+\}/ lexer classes {Comment};
-ignore terminal WhiteSpace_t /[\r\n\t\ ]+/;
-
 lexer class Operator;
-lexer class Escape submits to Operator;
+lexer class Escape;
 
 terminal Plus_t          '+' lexer classes { Operator };
 terminal Kleene_t        '*' lexer classes { Operator };
@@ -28,9 +19,20 @@ terminal RegexWildcard_t '.' lexer classes { Operator };
 terminal RegexChar_t     /./ lexer classes { Escape };
 terminal EscapedChar_t /\\./ lexer classes { Escape };
 
-disambiguate WhiteSpace_t, RegexChar_t {
-  pluck WhiteSpace_t; -- Escape it if you want it
-}
+-- Disambiguate these, rather than using lexical precedence,
+-- so we can avoid superfluous escapes (e.g. /--.*/).
+-- This is the behavior of most regex libraries.
+disambiguate RegexChar_t, Plus_t { pluck Plus_t; }
+disambiguate RegexChar_t, Kleene_t { pluck Kleene_t; }
+disambiguate RegexChar_t, Optional_t { pluck Optional_t; }
+disambiguate RegexChar_t, Choice_t { pluck Choice_t; }
+disambiguate RegexChar_t, Range_t { pluck Range_t; }
+disambiguate RegexChar_t, RegexNot_t { pluck RegexNot_t; }
+disambiguate RegexChar_t, RegexLBrack_t { pluck RegexLBrack_t; }
+disambiguate RegexChar_t, RegexRBrack_t { pluck RegexRBrack_t; }
+disambiguate RegexChar_t, RegexLParen_t { pluck RegexLParen_t; }
+disambiguate RegexChar_t, RegexRParen_t { pluck RegexRParen_t; }
+disambiguate RegexChar_t, RegexWildcard_t { pluck RegexWildcard_t; }
 
 -- TODO: It might be wise to someday do a CST/AST split on this.
 
