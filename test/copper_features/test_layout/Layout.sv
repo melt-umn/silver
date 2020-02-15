@@ -4,7 +4,7 @@ imports silver:testing ;
 imports lib:extcore ;
 imports copper_features hiding A;
 imports copper_features:test_layout:quoting;
-
+imports copper_features:test_layout:lookahead;
 
 ignore terminal NormalWhiteSpace_t /[\n\t\r\ ]+/;
 
