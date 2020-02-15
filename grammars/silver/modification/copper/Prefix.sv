@@ -119,8 +119,8 @@ top::TerminalPrefixItems ::=
   syntax.cstNTProds = error("This shouldn't be needed...");
   syntax.classTerminals = error("This shouldn't be needed...");
   syntax.parserAttributeAspects = error("This shouldn't be needed...");
+  syntax.layoutTerms = error("This shouldn't be needed...");
   syntax.prefixesForTerminals = error("This shouldn't be needed...");
-  syntax.univLayout = error("This shouldn't be needed...");
   syntax.superClasses = error("This shouldn't be needed...");
   syntax.subClasses = error("This shouldn't be needed...");
 
@@ -161,8 +161,6 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
 {
   top.unparse = "prefer " ++ t.unparse ++ " over " ++ ts.unparse;
   top.errors := t.lookupType.errors ++ ts.errors;
-  top.moduleNames = [];
-  top.terminalPrefixes = [];
   top.liftedAGDcls =
     -- Generate a disambiguation function for every combination of ts.
     -- TODO: we can't use Copper's subset disambiguation functions here unfourtunately,

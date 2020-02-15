@@ -67,13 +67,14 @@ synthesized attribute terminalRegExprSpec :: Regex;
 
 concrete production regExpr
 top::RegExpr ::= '/' r::Regex '/'
+layout {}
 {
   top.unparse = "/" ++ r.regString ++ "/";
   top.terminalRegExprSpec = r;
 }
 
 
-nonterminal TerminalKeywordModifier with unparse, location, terminalModifiers;
+closed nonterminal TerminalKeywordModifier with unparse, location, terminalModifiers;
 
 concrete production terminalKeywordModifierIgnore
 top::TerminalKeywordModifier ::= 'ignore'

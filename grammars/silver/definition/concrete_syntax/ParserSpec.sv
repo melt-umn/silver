@@ -27,7 +27,7 @@ synthesized attribute terminalPrefixes :: [Pair<String String>];
 
 
 abstract production parserSpec
-top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[String]  terminalPrefixes::[Pair<String String>] addedDcls::[SyntaxDcl]
+top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[String]  customStartLayout::Maybe<[String]>  terminalPrefixes::[Pair<String String>] addedDcls::[SyntaxDcl]
 {
   top.sourceLocation = sl;
   top.sourceGrammar = sg;
@@ -41,6 +41,6 @@ top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[S
   production med :: ModuleExportedDefs =
     moduleExportedDefs(sl, top.compiledGrammars, computeDependencies(grams, top.compiledGrammars), grams, []);
 
-  top.cstAst = cstRoot(fn, snt, foldr(consSyntax, nilSyntax(), addedDcls ++ med.syntaxAst), terminalPrefixes);
+  top.cstAst = cstRoot(fn, snt, foldr(consSyntax, nilSyntax(), addedDcls ++ med.syntaxAst), customStartLayout, terminalPrefixes);
 }
 
