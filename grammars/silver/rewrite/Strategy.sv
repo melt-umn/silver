@@ -205,11 +205,11 @@ top::Strategy ::= s::Strategy
 abstract production innermost
 top::Strategy ::= s::Strategy
 {
-  forwards to repeat(onceBottomUp(s));
+  forwards to bottomUp(try(s <* innermost(s)));
 }
 
 abstract production outermost
 top::Strategy ::= s::Strategy
 {
-  forwards to repeat(onceTopDown(s));
+  forwards to topDown(try(s <* outermost(s)));
 }
