@@ -191,3 +191,22 @@ global s20::s:Strategy = s:rec(\ s::s:Strategy -> traverse [_, s, _] <+ s:try(in
 equalityTest(showRes(rewriteWith(s20, [1, 2, 3])), "[1, 3, 3]", String, silver_tests);
 equalityTest(showRes(rewriteWith(s20, [1, 2, 3, 4])), "[1, 2, 3, 4]", String, silver_tests);
 equalityTest(showRes(rewriteWith(s20, [[1, 2, 3], [4, 5, 6], [7, 8, 9]])), "[[1, 2, 3], [4, 6, 6], [7, 8, 9]]", String, silver_tests);
+
+global s21::s:Strategy = s:all(inc);
+equalityTest(showRes(rewriteWith(s21, pair(1, 2))), "core:pair(2, 3)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s21, pair(true, 2))), "fail", String, silver_tests);
+equalityTest(showRes(rewriteWith(s21, pair(true, false))), "fail", String, silver_tests);
+equalityTest(showRes(rewriteWith(s21, [1, 2, 3])), "fail", String, silver_tests);
+
+global s22::s:Strategy = s:some(inc);
+equalityTest(showRes(rewriteWith(s22, pair(1, 2))), "core:pair(2, 3)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s22, pair(true, 2))), "core:pair(true, 3)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s22, pair(true, false))), "fail", String, silver_tests);
+equalityTest(showRes(rewriteWith(s22, [1, 2, 3])), "[2, 2, 3]", String, silver_tests);
+
+global s23::s:Strategy = s:one(inc);
+equalityTest(showRes(rewriteWith(s23, pair(1, 2))), "core:pair(2, 2)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s23, pair(true, 2))), "core:pair(true, 3)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s23, pair(true, false))), "fail", String, silver_tests);
+equalityTest(showRes(rewriteWith(s23, [1, 2, 3])), "[2, 2, 3]", String, silver_tests);
+
