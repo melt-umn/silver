@@ -30,7 +30,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
   top.ideSyntax = 
   case s1 of 
   | syntaxTerminal(_, _, _) -> consIDESyntax(s1.ideSyntaxDcl, s2.ideSyntax)
-  | syntaxNonterminal(_, _) -> consIDESyntax(s1.ideSyntaxDcl, s2.ideSyntax)
+  | syntaxNonterminal(_, _, _, _, _) -> consIDESyntax(s1.ideSyntaxDcl, s2.ideSyntax)
   | syntaxLexerClass(_, _)  -> consIDESyntax(s1.ideSyntaxDcl, s2.ideSyntax)
   | _ -> s2.ideSyntax
   end;
@@ -65,7 +65,7 @@ top::IDEInterfaceSyntaxDcl ::= name::String subdcls::IDEInterfaceSyntax
 }
 
 aspect production syntaxNonterminal
-top::SyntaxDcl ::= t::Type subdcls::Syntax
+top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayoutTerms::[String] modifiers::SyntaxNonterminalModifiers
 {
   top.ideSyntaxDcl = ideSyntaxNonterminal(t.typeName, subdcls.ideSyntax);
 }

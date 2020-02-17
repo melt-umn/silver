@@ -328,7 +328,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 
 {-- SYNTAX DCL PRODUCTIONS --}
 aspect production syntaxNonterminal
-top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifiers
+top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayoutTerms::[String] modifiers::SyntaxNonterminalModifiers
 {
   top.dclName = t.typeName;
   local attribute mods :: TreesitterNonterminalModifiers = 
@@ -456,7 +456,7 @@ function isNonterminal
 Boolean ::= declaration::Decorated SyntaxDcl
 {
   return case declaration of
-  | syntaxNonterminal(_, _) -> true
+  | syntaxNonterminal(_, _, _, _, _) -> true
   | _ -> false
   end;
 }

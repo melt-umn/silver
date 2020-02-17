@@ -62,8 +62,10 @@ Syntax ::= s::Syntax emptyStrTerms::[String]
   | nilSyntax() -> nilSyntax()
   | consSyntax(s1, s2) ->
     case s1 of
-    | syntaxNonterminal(n, subdcls) -> 
-        consSyntax(syntaxNonterminal(n, modifyProductionsForEmptyStringTerminals(subdcls, emptyStrTerms)),
+    | syntaxNonterminal(n, subdcls, exportedProds, exportedLayoutTerms, mods) -> 
+        consSyntax(
+          syntaxNonterminal(n, modifyProductionsForEmptyStringTerminals(subdcls, emptyStrTerms), 
+                            exportedProds, exportedLayoutTerms, mods),
           modifyProductionsForEmptyStringTerminals(s2, emptyStrTerms))
      -- remove all terminals with the empty string from the named signature of the production
     | syntaxProduction(ns, mods) ->
@@ -139,7 +141,7 @@ function modifySyntaxDclForAConflict
         createNonterminalFromTerminal(n, conflictName)
       else
         [sDcl]
-  | syntaxNonterminal(t, subdcl) ->
+  | syntaxNonterminal(t, subdcl, _, _, _) ->
       -- terminal already convereted to nonterminal in conflict
       -- add new production for it
       if containsBy(stringEq, t.typeName, termsInConflict) then
@@ -196,6 +198,6 @@ function createNonterminalFromTerminal
   local inputElem :: NamedSignatureElement = namedSignatureElement(conflictName, terminalType(conflictName));
   local namedSig :: NamedSignature = namedSignature(termName ++ conflictName, [inputElem], outputElem, []);
   local newProd :: SyntaxDcl = syntaxProduction(namedSig, nilProductionMod());
-  local newNonTerm :: SyntaxDcl = syntaxNonterminal(nonterminalType(termName, []), nilSyntax());
+  local newNonTerm :: SyntaxDcl = syntaxNonterminal(nonterminalType(termName, []), nilSyntax(), [], [], nilNonterminalMod());
   return newProd :: newNonTerm :: [];
 }

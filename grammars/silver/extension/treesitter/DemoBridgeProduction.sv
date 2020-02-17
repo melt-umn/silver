@@ -40,10 +40,13 @@ SyntaxDcl ::= dcl1::SyntaxDcl dcl2::SyntaxDcl
 {
   return
   case dcl1 of
-  | syntaxNonterminal(n1, prods1) ->
+  | syntaxNonterminal(n1, prods1, exportedProds, exportedLayoutTerms, mods) ->
     case dcl2 of
     -- names are the same
-    | syntaxNonterminal(n2, prods2) -> syntaxNonterminal(n1, appendSyntax(prods1, prods2))
+    -- TODO: decide what to do with three new attributes to syntax
+    -- nonterminal to compile and test just use first nonterminla
+    | syntaxNonterminal(n2, prods2, _, _, _) -> 
+        syntaxNonterminal(n1, appendSyntax(prods1, prods2), exportedProds, exportedLayoutTerms, mods)
     | _ -> error("Syntax declaration merging only can occur on nonterminals")
     end
   | _ -> error("Syntax declaration merging only can occur on nonterminals")
@@ -68,8 +71,8 @@ function handleDclForBridgeProduction
 {
   return
   case sDcl of 
-  | syntaxNonterminal(n, prods) -> 
-      syntaxNonterminal(n, removeBridgeProductions(prods, env)) ::
+  | syntaxNonterminal(n, prods, exportedProds, exportedLayoutTerms, mods) -> 
+      syntaxNonterminal(n, removeBridgeProductions(prods, env), exportedProds, exportedLayoutTerms, mods) ::
       createNewNtsForBridgeProductions(prods, env)
   | _ -> [sDcl]
   end;
@@ -96,7 +99,7 @@ SyntaxDcl ::= prod::SyntaxDcl
   case prod of
   | syntaxProduction(ns, mods) -> syntaxNonterminal(
       nonterminalType(nameNonterminalFromProduction(ns), []), 
-                      consSyntax(syntaxProduction(ns, mods), nilSyntax()))
+                      consSyntax(syntaxProduction(ns, mods), nilSyntax()), [], [], nilNonterminalMod())
   | _ -> prod
   end;
 }

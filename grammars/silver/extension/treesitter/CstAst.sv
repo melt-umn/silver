@@ -12,19 +12,23 @@ imports silver:definition:regex;
 --}
 
 function getModifiedCopperXML
-String ::= parsername::String startnt::String s::Syntax conflicts::[Pair<String [String]>] terminalPrefixes::[Pair<String String>]
+String ::= parsername::String startnt::String s::Syntax conflicts::[Pair<String [String]>] 
+  customStartLayout::Maybe<[String]> terminalPrefixes::[Pair<String String>]
 {
   -- remove empty string terminals just as we do in Treesitter and also
   -- removes disambigaution functions and moves terminals involved into
   -- nonterminals to bring ambiguity to parse level instead of lexer level
   local modifiedGrammarForConflicts :: Syntax = createModifiedGrammar(s, conflicts);
-  local modRoot :: SyntaxRoot = cstRoot("ModifiedGrammarForTreesitter", startnt, modifiedGrammarForConflicts, terminalPrefixes);
+  local modRoot :: SyntaxRoot = 
+   cstRoot("ModifiedGrammarForTreesitter", startnt, modifiedGrammarForConflicts, 
+   customStartLayout, terminalPrefixes);
   return modRoot.xmlCopper;
 }
 
 {-- ASPECT PRODUCTIONS --}
 aspect production cstRoot
-top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
+top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax 
+  customStartLayout::Maybe<[String]> terminalPrefixes::[Pair<String String>]
 {
 
   production grammar_to_use :: Syntax = 
@@ -40,7 +44,8 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPref
     if stringEq(parsername, "ModifiedGrammarForTreesitter") then
       ""
     else
-      getModifiedCopperXML(parsername, startnt, grammar_to_use, grammar_to_use.terminalConflicts, terminalPrefixes);
+      getModifiedCopperXML(parsername, startnt, grammar_to_use, grammar_to_use.terminalConflicts, 
+                           customStartLayout, terminalPrefixes);
 
   -- the 'normalized' version from production attribute 's2'.  This groups productions with
   -- the same left hand side together as subdcls on nonterminals.

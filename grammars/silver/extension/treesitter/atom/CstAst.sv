@@ -19,7 +19,8 @@ top::SyntaxRoot ::=
 }
 
 aspect production cstRoot
-top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
+top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax 
+  customStartLayout:: Maybe<[String]> terminalPrefixes::[Pair<String String>]
 {
   -- the 'normalized' version from production attribute 's2'.  This groups productions with
   -- the same left hand side together as subdcls on nonterminals.

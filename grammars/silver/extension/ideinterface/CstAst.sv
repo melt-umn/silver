@@ -21,7 +21,8 @@ top::IDEInterfaceSyntaxRoot ::= s::IDEInterfaceSyntax
 }
 
 aspect production cstRoot
-top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
+top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax 
+  customStartLayout::Maybe<[String]> terminalPrefixes::[Pair<String String>]
 {
   -- use grammar_to_use which modifies the grammar if the demo flag is provided
   top.ideSyntaxRoot = ideSyntaxRoot(grammar_to_use.ideSyntax);

@@ -54,7 +54,8 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 }
 
 aspect production syntaxNonterminal
-top::SyntaxDcl ::= t::Type subdcls::Syntax
+top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String]
+  exportedLayoutTerms::[String] modifiers::SyntaxNonterminalModifiers
 {
   top.jsonAtom = s"""
   {
