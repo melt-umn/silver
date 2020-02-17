@@ -178,6 +178,12 @@ top::Strategy ::= s::Strategy
   forwards to try(s <* repeat(s));
 }
 
+abstract production reduce
+top::Strategy ::= s::Strategy
+{
+  forwards to repeat(rec(\ x::Strategy -> some(x) <+ s));
+}
+
 abstract production bottomUp
 top::Strategy ::= s::Strategy
 {
