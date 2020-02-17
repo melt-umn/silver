@@ -4,6 +4,7 @@ exports silver:reflect; -- Needed by the extension, so just export it here.
 
 autocopy attribute givenStrategy::Strategy occurs on AST, ASTs, NamedASTs, NamedAST;
 synthesized attribute allResult<a>::Maybe<a>;
+synthesized attribute someResult<a>::Maybe<a>;
 synthesized attribute oneResult<a>::Maybe<a>;
 
 inherited attribute productionName::String occurs on AST;
@@ -16,6 +17,7 @@ synthesized attribute consListCongruenceResult::Maybe<AST> occurs on AST;
 synthesized attribute nilListCongruenceResult::Maybe<AST> occurs on AST;
 
 attribute allResult<AST> occurs on AST;
+attribute someResult<AST> occurs on AST;
 attribute oneResult<AST> occurs on AST;
 attribute prodCongruenceResult<AST> occurs on AST;
 
@@ -23,6 +25,7 @@ aspect default production
 top::AST ::=
 {
   top.allResult = just(top);
+  top.someResult = nothing();
   top.oneResult = nothing();
   top.prodCongruenceResult = nothing();
   top.consListCongruenceResult = nothing();
@@ -38,10 +41,22 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
       annotationsResult::NamedASTs <- annotations.allResult;
       return nonterminalAST(prodName, childrenResult, annotationsResult);
     };
+  top.someResult =
+    case children.someResult, annotations.someResult of
+    | just(childrenResult), just(annotationsResult) ->
+      just(nonterminalAST(prodName, childrenResult, annotationsResult))
+    | just(childrenResult), nothing() ->
+      just(nonterminalAST(prodName, childrenResult, annotations))
+    | nothing(), just(annotationsResult) ->
+      just(nonterminalAST(prodName, children, annotationsResult))
+    | nothing(), nothing() -> nothing()
+    end;
   top.oneResult =
     case children.oneResult, annotations.oneResult of
-    | just(childrenResult), _ -> just(nonterminalAST(prodName, childrenResult, annotations))
-    | nothing(), just(annotationsResult) -> just(nonterminalAST(prodName, children, annotationsResult))
+    | just(childrenResult), _ ->
+      just(nonterminalAST(prodName, childrenResult, annotations))
+    | nothing(), just(annotationsResult) ->
+      just(nonterminalAST(prodName, children, annotationsResult))
     | nothing(), nothing() -> nothing()
     end;
   top.prodCongruenceResult =
@@ -56,14 +71,14 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 aspect production terminalAST
 top::AST ::= terminalName::String lexeme::String location::Location
 {
-  local locAST::AST = reflect(location);
   top.allResult =
     do (bindMaybe, returnMaybe) {
-      locASTResult::AST <- decorate top.givenStrategy with { term = locAST; }.result;
-      locationResult::Location = reifyUnchecked(locASTResult);
+      locationResult::Location <- rewriteWith(top.givenStrategy, location);
       return terminalAST(terminalName, lexeme, locationResult);
     };
-  top.oneResult = top.allResult; -- Exactly one rewritable child
+  -- Exactly one rewritable child
+  top.someResult = top.allResult;
+  top.oneResult = top.allResult;
 }
 
 aspect production listAST
@@ -84,6 +99,18 @@ top::AST ::= vals::ASTs
           end;
       }
     | nilAST() -> just(top)
+    end;
+  top.someResult =
+    case vals of
+    | consAST(_, _) ->
+      case decorate top.givenStrategy with { term = h; }.result,
+           decorate top.givenStrategy with { term = t; }.result of
+      | just(hResult), just(listAST(tResult)) -> just(listAST(consAST(hResult, tResult)))
+      | just(hResult), nothing() -> just(listAST(consAST(hResult, case vals of consAST(_, t) -> t end)))
+      | nothing(), just(listAST(tResult)) -> just(listAST(consAST(h, tResult)))
+      | nothing(), _ -> nothing()
+      end
+    | nilAST() -> nothing()
     end;
   top.oneResult =
     case vals of
@@ -119,6 +146,7 @@ top::AST ::= vals::ASTs
 }
 
 attribute allResult<ASTs> occurs on ASTs;
+attribute someResult<ASTs> occurs on ASTs;
 attribute oneResult<ASTs> occurs on ASTs;
 attribute prodCongruenceResult<ASTs> occurs on ASTs;
 
@@ -131,6 +159,13 @@ top::ASTs ::= h::AST t::ASTs
       tResult::ASTs <- t.allResult;
       return consAST(hResult, tResult);
     };
+  top.someResult =
+    case decorate top.givenStrategy with { term = h; }.result, t.someResult of
+    | just(hResult), just(tResult) -> just(consAST(hResult, tResult))
+    | just(hResult), nothing() -> just(consAST(hResult, t))
+    | nothing(), just(tResult) -> just(consAST(h, tResult))
+    | nothing(), nothing() -> nothing()
+    end;
   top.oneResult =
     case decorate top.givenStrategy with { term = h; }.result, t.oneResult of
     | just(hResult), _ -> just(consAST(hResult, t))
@@ -150,6 +185,7 @@ aspect production nilAST
 top::ASTs ::=
 {
   top.allResult = just(top);
+  top.someResult = nothing();
   top.oneResult = nothing();
   top.prodCongruenceResult = just(top);
 }
@@ -157,6 +193,7 @@ top::ASTs ::=
 synthesized attribute bindings::[Pair<String AST>] occurs on NamedASTs;
 
 attribute allResult<NamedASTs> occurs on NamedASTs;
+attribute someResult<NamedASTs> occurs on NamedASTs;
 attribute oneResult<NamedASTs> occurs on NamedASTs;
 attribute prodCongruenceResult<NamedASTs> occurs on NamedASTs;
 
@@ -170,6 +207,13 @@ top::NamedASTs ::= h::NamedAST t::NamedASTs
       tResult::NamedASTs <- t.allResult;
       return consNamedAST(hResult, tResult);
     };
+  top.someResult =
+    case h.someResult, t.someResult of
+    | just(hResult), just(tResult) -> just(consNamedAST(hResult, tResult))
+    | just(hResult), nothing() -> just(consNamedAST(hResult, t))
+    | nothing(), just(tResult) -> just(consNamedAST(h, tResult))
+    | nothing(), nothing() -> nothing()
+    end;
   top.oneResult =
     case h.oneResult, t.oneResult of
     | just(hResult), _ -> just(consNamedAST(hResult, t))
@@ -189,6 +233,7 @@ top::NamedASTs ::=
 {
   top.bindings = [];
   top.allResult = just(top);
+  top.someResult = nothing();
   top.oneResult = nothing();
   top.prodCongruenceResult = just(top);
 }
@@ -196,6 +241,7 @@ top::NamedASTs ::=
 synthesized attribute binding::Pair<String AST> occurs on NamedAST;
 
 attribute allResult<NamedAST> occurs on NamedAST;
+attribute someResult<NamedAST> occurs on NamedAST;
 attribute oneResult<NamedAST> occurs on NamedAST;
 attribute prodCongruenceResult<NamedAST> occurs on NamedAST;
 
@@ -208,7 +254,10 @@ top::NamedAST ::= n::String v::AST
       vResult::AST <- decorate top.givenStrategy with { term = v; }.result;
       return namedAST(n, vResult);
     };
-  top.oneResult = top.allResult; -- Exactly one rewritable child
+  -- Exactly one rewritable child
+  top.someResult = top.allResult;
+  top.oneResult = top.allResult;
+  
   top.prodCongruenceResult =
     -- Look up and apply all strategies for the annotation
     -- (it's easier to just handle duplicates than to disallow them.)

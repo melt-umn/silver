@@ -55,6 +55,15 @@ top::Strategy ::= s::Strategy
   top.result = term.allResult;
 }
 
+abstract production some
+top::Strategy ::= s::Strategy
+{
+  top.pp = pp"some(${s.pp})";
+  local term::AST = top.term;
+  term.givenStrategy = s;
+  top.result = term.someResult;
+}
+
 abstract production one
 top::Strategy ::= s::Strategy
 {
