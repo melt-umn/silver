@@ -3,13 +3,14 @@ grammar silver:definition:concrete_syntax:ast;
 -- From TerminalModifiers
 --synthesized attribute dominatesXML :: String;
 --synthesized attribute submitsXML :: String;
+--synthesized attribute prefixSeperator :: Maybe<String>;
 
 autocopy attribute className :: String;
 
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, containingGrammar;
+nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator, containingGrammar;
 
 abstract production consLexerClassMod
 top::SyntaxLexerClassModifiers ::= h::SyntaxLexerClassModifier  t::SyntaxLexerClassModifiers
@@ -19,6 +20,12 @@ top::SyntaxLexerClassModifiers ::= h::SyntaxLexerClassModifier  t::SyntaxLexerCl
   top.disambiguationClasses = h.disambiguationClasses ++ t.disambiguationClasses;
   top.dominatesXML = h.dominatesXML ++ t.dominatesXML;
   top.submitsXML = h.submitsXML ++ t.submitsXML;
+  top.prefixSeperator = orElse(h.prefixSeperator, t.prefixSeperator);
+  
+  top.cstErrors <-
+    if h.prefixSeperator.isJust && t.prefixSeperator.isJust
+    then ["Multiple prefix separators for class " ++ top.className]
+    else [];
 }
 
 abstract production nilLexerClassMod
@@ -29,6 +36,7 @@ top::SyntaxLexerClassModifiers ::=
   top.disambiguationClasses = [];
   top.dominatesXML = "";
   top.submitsXML = "";
+  top.prefixSeperator = nothing();
 }
 
 
@@ -36,7 +44,7 @@ top::SyntaxLexerClassModifiers ::=
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, containingGrammar;
+closed nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator, containingGrammar;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
@@ -47,6 +55,7 @@ top::SyntaxLexerClassModifier ::=
   top.disambiguationClasses = [];
   top.dominatesXML = "";
   top.submitsXML = "";
+  top.prefixSeperator = nothing();
 }
 
 {--
@@ -55,13 +64,14 @@ top::SyntaxLexerClassModifier ::=
 abstract production lexerClassExtends
 top::SyntaxLexerClassModifier ::= super::[String]
 {
-  production superRefs :: [[Decorated SyntaxDcl]] = lookupStrings(super, top.cstEnv);
+  local superRefsL :: [[Decorated SyntaxDcl]] = lookupStrings(super, top.cstEnv);
+  production superRefs :: [Decorated SyntaxDcl] = map(head, lookupStrings(super, top.cstEnv));
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
                      else ["Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from extends clause for lexer class)"],
-                   zipWith(pair, super, superRefs));
+                   zipWith(pair, super, superRefsL));
   top.superClassContribs = map(pair(top.className, _), super);
 }
 
@@ -122,4 +132,14 @@ ${acode}
 
   top.cstErrors := []; -- TODO: Check for duplicate disambiguation for a lexer class
   top.disambiguationClasses = [syntaxDcl];
+}
+
+{--
+ - The default prefix separator for the members of a lexer class.
+ -}
+abstract production lexerClassPrefixSeperator
+top::SyntaxLexerClassModifier ::= sep::String
+{
+  top.cstErrors := [];
+  top.prefixSeperator = just(sep);
 }

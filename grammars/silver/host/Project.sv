@@ -1,7 +1,7 @@
 grammar silver:host;
 
 {- Silver is built as an extensible language with a core "host" language and a
- - number of extensions containing additional features.
+ - number of extensions and modifications containing additional features.
  - However many of these extensions we typically always want to include by
  - when building extended versions of Silver, and it becomes cumbersome to list
  - them repeatedly.
@@ -13,7 +13,7 @@ grammar silver:host;
 -- The "core" host language:
 exports silver:host:core;
 
--- Modifications to Silver = optional features taht are not pure extensions.
+-- Modifications to Silver = optional features that are not pure extensions.
 -- These are explicitly annotated as "options" within the core host language
 exports silver:modification:let_fix;
 exports silver:modification:lambda_fn;

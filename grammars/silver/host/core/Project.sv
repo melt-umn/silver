@@ -2,7 +2,7 @@ grammar silver:host:core;
 
 {-
  - This file contains exports for the "core" Silver host language, excluding
- - all extensions.
+ - all extensions and modifications.
  - Note that the "default" host version of Silver specified in silver:host is
  - still required to build this.
  -}
@@ -25,10 +25,4 @@ import silver:definition:core;
 disambiguate RegexChar_t, Divide_t
 {
   pluck Divide_t;
-}
--- For now, preserve existing behavior. Whitespace is allowed in regex, and ignored.
--- Escape it if you want it.
-disambiguate RegexChar_t, WhiteSpace
-{
-  pluck WhiteSpace;
 }
