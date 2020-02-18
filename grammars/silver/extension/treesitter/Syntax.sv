@@ -75,7 +75,7 @@ top::TreesitterRoot ::= name::String startnt::String rules::TreesitterRules pref
   top.treesitterGrammarJs = 
 s"""
 module.exports = grammar({
-    name: "${name}",
+    name: '${name}',
     extras: $$ => [
       ${implode(",\n      ", rules.tsExtras)}
     ],
