@@ -55,6 +55,15 @@ top::Strategy ::= s::Strategy
   top.result = term.allResult;
 }
 
+abstract production some
+top::Strategy ::= s::Strategy
+{
+  top.pp = pp"some(${s.pp})";
+  local term::AST = top.term;
+  term.givenStrategy = s;
+  top.result = term.someResult;
+}
+
 abstract production one
 top::Strategy ::= s::Strategy
 {
@@ -169,6 +178,12 @@ top::Strategy ::= s::Strategy
   forwards to try(s <* repeat(s));
 }
 
+abstract production reduce
+top::Strategy ::= s::Strategy
+{
+  forwards to repeat(rec(\ x::Strategy -> some(x) <+ s));
+}
+
 abstract production bottomUp
 top::Strategy ::= s::Strategy
 {
@@ -196,11 +211,11 @@ top::Strategy ::= s::Strategy
 abstract production innermost
 top::Strategy ::= s::Strategy
 {
-  forwards to repeat(onceBottomUp(s));
+  forwards to bottomUp(try(s <* innermost(s)));
 }
 
 abstract production outermost
 top::Strategy ::= s::Strategy
 {
-  forwards to repeat(onceTopDown(s));
+  forwards to topDown(try(s <* outermost(s)));
 }
