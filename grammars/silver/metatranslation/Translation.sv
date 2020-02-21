@@ -1,4 +1,4 @@
-grammar silver:hostEmbedding;
+grammar silver:metatranslation;
 
 imports silver:reflect;
 imports silver:langutil:pp;
