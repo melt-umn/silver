@@ -19,6 +19,7 @@ melt.trynode('silver') {
         source = "${silver.SILVER_WORKSPACE}/jars"
       }
       // Obtain jars from specified location
+      sh "mkdir -p jars"
       sh "cp ${source}/* jars/"
       melt.annotate("Jars overridden.")
     } else {
