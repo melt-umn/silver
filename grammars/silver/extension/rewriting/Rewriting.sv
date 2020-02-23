@@ -1,7 +1,7 @@
 grammar silver:extension:rewriting;
 
 imports silver:rewrite;
-imports silver:hostEmbedding;
+imports silver:metatranslation;
 imports silver:langutil:pp;
 imports silver:util;
 
