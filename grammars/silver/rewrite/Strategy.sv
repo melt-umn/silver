@@ -108,7 +108,7 @@ top::Strategy ::=
 
 -- Rules
 abstract production rewriteRule
-top::Strategy ::= pattern::ASTExpr result::ASTExpr
+top::Strategy ::= pattern::ASTPattern result::ASTExpr
 {
   top.pp = pp"rule(${pattern.pp} -> ${result.pp})";
   pattern.matchWith = top.term;
@@ -121,7 +121,7 @@ top::Strategy ::= pattern::ASTExpr result::ASTExpr
 }
 
 abstract production require
-top::Strategy ::= pattern::ASTExpr cond::ASTExpr
+top::Strategy ::= pattern::ASTPattern cond::ASTExpr
 {
   top.pp = pp"require(${pattern.pp} -> when ${cond.pp})";
   pattern.matchWith = top.term;

@@ -673,7 +673,7 @@ attribute transform<ASTExpr> occurs on AppExpr;
 aspect production missingAppExpr
 top::AppExpr ::= '_'
 {
-  top.transform = wildASTExpr();
+  top.transform = missingArgASTExpr();
 }
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr

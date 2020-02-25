@@ -124,13 +124,13 @@ top::Expr ::= 'case' es::Exprs 'of' _ ml::MRuleList 'end'
   ml.ruleIndex = 0;
 }
 
-attribute transform<ASTExprs> occurs on PatternList;
-synthesized attribute firstTransform::ASTExpr occurs on PatternList;
+attribute transform<ASTPatterns> occurs on PatternList;
+synthesized attribute firstTransform::ASTPattern occurs on PatternList;
 
 aspect production patternList_one
 top::PatternList ::= p::Pattern
 {
-  top.transform = consASTExpr(p.transform, nilASTExpr());
+  top.transform = consASTPattern(p.transform, nilASTPattern());
   top.firstTransform = p.transform;
   top.isPolymorphic = p.isPolymorphic;
   p.typeHasUniversalVars = head(top.typesHaveUniversalVars);
@@ -138,7 +138,7 @@ top::PatternList ::= p::Pattern
 aspect production patternList_more
 top::PatternList ::= p::Pattern ',' ps::PatternList
 {
-  top.transform = consASTExpr(p.transform, ps.transform);
+  top.transform = consASTPattern(p.transform, ps.transform);
   top.firstTransform = p.transform;
   top.isPolymorphic = p.isPolymorphic || ps.isPolymorphic;
   p.typeHasUniversalVars = head(top.typesHaveUniversalVars);
@@ -148,39 +148,39 @@ top::PatternList ::= p::Pattern ',' ps::PatternList
 aspect production patternList_nil
 top::PatternList ::=
 {
-  top.transform = nilASTExpr();
+  top.transform = nilASTPattern();
   top.firstTransform = error("Empty pattern list");
   top.isPolymorphic = false;
 }
 
-attribute transform<NamedASTExprs> occurs on NamedPatternList;
+attribute transform<NamedASTPatterns> occurs on NamedPatternList;
 
 aspect production namedPatternList_one
 top::NamedPatternList ::= p::NamedPattern
 {
-  top.transform = consNamedASTExpr(p.transform, nilNamedASTExpr());
+  top.transform = consNamedASTPattern(p.transform, nilNamedASTPattern());
   top.isPolymorphic = p.isPolymorphic;
 }
 aspect production namedPatternList_more
 top::NamedPatternList ::= p::NamedPattern ',' ps::NamedPatternList
 {
-  top.transform = consNamedASTExpr(p.transform, ps.transform);
+  top.transform = consNamedASTPattern(p.transform, ps.transform);
   top.isPolymorphic = p.isPolymorphic || ps.isPolymorphic;
 }
 
 aspect production namedPatternList_nil
 top::NamedPatternList ::=
 {
-  top.transform = nilNamedASTExpr();
+  top.transform = nilNamedASTPattern();
   top.isPolymorphic = false;
 }
 
-attribute transform<NamedASTExpr> occurs on NamedPattern;
+attribute transform<NamedASTPattern> occurs on NamedPattern;
 
 aspect production namedPattern
 top::NamedPattern ::= qn::QName '=' p::Pattern
 {
-  top.transform = namedASTExpr(qn.lookupAttribute.fullName, p.transform);
+  top.transform = namedASTPattern(qn.lookupAttribute.fullName, p.transform);
   top.isPolymorphic = p.isPolymorphic;
   p.typeHasUniversalVars =
     fromMaybe(
@@ -188,13 +188,13 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
       lookupBy(stringEq, last(explode(":", qn.name)), top.namedTypesHaveUniversalVars));
 }
 
-attribute transform<ASTExpr> occurs on Pattern;
+attribute transform<ASTPattern> occurs on Pattern;
 
 aspect production prodAppPattern_named
 top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 {
   top.transform =
-    prodCallASTExpr(prod.lookupValue.fullName, ps.transform, nps.transform);
+    prodCallASTPattern(prod.lookupValue.fullName, ps.transform, nps.transform);
   top.isPolymorphic = ps.isPolymorphic || nps.isPolymorphic;
   
   local outputFreeVars::[TyVar] = prod.lookupValue.typerep.outputType.freeVariables;
@@ -212,14 +212,14 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 aspect production wildcPattern
 top::Pattern ::= '_'
 {
-  top.transform = wildASTExpr();
+  top.transform = wildASTPattern();
   top.isPolymorphic = top.typeHasUniversalVars;
 }
 
 aspect production varPattern
 top::Pattern ::= v::Name
 {
-  top.transform = varASTExpr(v.name);
+  top.transform = varASTPattern(v.name);
   top.isPolymorphic = top.typeHasUniversalVars;
 }
 
@@ -233,49 +233,49 @@ top::Pattern ::= msg::[Message]
 aspect production intPattern
 top::Pattern ::= num::Int_t
 {
-  top.transform = integerASTExpr(toInteger(num.lexeme));
+  top.transform = integerASTPattern(toInteger(num.lexeme));
   top.isPolymorphic = false;
 }
 
 aspect production fltPattern
 top::Pattern ::= num::Float_t
 {
-  top.transform = floatASTExpr(toFloat(num.lexeme));
+  top.transform = floatASTPattern(toFloat(num.lexeme));
   top.isPolymorphic = false;
 }
 
 aspect production strPattern
 top::Pattern ::= str::String_t
 {
-  top.transform = stringASTExpr(unescapeString(substring(1, length(str.lexeme) - 1, str.lexeme)));
+  top.transform = stringASTPattern(unescapeString(substring(1, length(str.lexeme) - 1, str.lexeme)));
   top.isPolymorphic = false;
 }
 
 aspect production truePattern
 top::Pattern ::= 'true'
 {
-  top.transform = booleanASTExpr(true);
+  top.transform = booleanASTPattern(true);
   top.isPolymorphic = false;
 }
 
 aspect production falsePattern
 top::Pattern ::= 'false'
 {
-  top.transform = booleanASTExpr(false);
+  top.transform = booleanASTPattern(false);
   top.isPolymorphic = false;
 }
 
 aspect production nilListPattern
 top::Pattern ::= '[' ']'
 {
-  top.transform = nilListASTExpr();
+  top.transform = nilListASTPattern();
   top.isPolymorphic = top.typeHasUniversalVars;
 }
 
 aspect production consListPattern
 top::Pattern ::= hp::Pattern '::' tp::Pattern
 {
-  top.transform = consListASTExpr(hp.transform, tp.transform);
+  top.transform = consListASTPattern(hp.transform, tp.transform);
   
   -- Slight special case optimization for lists:
   -- :: has type ([a] ::= a [a]), so only polymorphic if both args are as well. 
