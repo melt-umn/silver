@@ -440,7 +440,7 @@ synthesized attribute astExprs::[ASTExpr];
 synthesized attribute values::[AST];
 synthesized attribute appValues::[Maybe<AST>];
 
-nonterminal ASTExprs with pps, astExprs, substitutionEnv, values, appValues, matchWith<ASTs>, substitution;
+nonterminal ASTExprs with pps, astExprs, substitutionEnv, values, appValues;
 
 abstract production consASTExpr
 top::ASTExprs ::= h::ASTExpr t::ASTExprs
@@ -462,11 +462,6 @@ top::ASTExprs ::=
   top.astExprs = [];
   top.values = [];
   top.appValues = [];
-  top.substitution =
-    case top.matchWith of
-    | nilAST() -> just([])
-    | _ -> nothing()
-    end;
 }
 
 function appendASTExprs
@@ -482,7 +477,7 @@ ASTExprs ::= a::ASTExprs b::ASTExprs
 synthesized attribute namedValues::[NamedAST];
 synthesized attribute namedAppValues::[Pair<String Maybe<AST>>];
 
-nonterminal NamedASTExprs with pps, substitutionEnv, namedValues, namedAppValues, matchWith<[Pair<String AST>]>, substitution;
+nonterminal NamedASTExprs with pps, substitutionEnv, namedValues, namedAppValues;
 
 abstract production consNamedASTExpr
 top::NamedASTExprs ::= h::NamedASTExpr t::NamedASTExprs
@@ -513,7 +508,7 @@ NamedASTExprs ::= a::NamedASTExprs b::NamedASTExprs
 synthesized attribute namedValue::NamedAST;
 synthesized attribute namedAppValue::Pair<String Maybe<AST>>;
 
-nonterminal NamedASTExpr with pp, substitutionEnv, namedValue, namedAppValue, matchWith<[Pair<String AST>]>, substitution;
+nonterminal NamedASTExpr with pp, substitutionEnv, namedValue, namedAppValue;
 
 abstract production namedASTExpr
 top::NamedASTExpr ::= n::String v::ASTExpr
