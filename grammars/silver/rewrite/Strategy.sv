@@ -73,7 +73,7 @@ top::Strategy ::= s::Strategy
   top.result = term.oneResult;
 }
 
-abstract production prodCongruence
+abstract production traversal
 top::Strategy ::= prodName::String childStrategies::[Strategy] annotationStrategies::[Pair<String Strategy>]
 {
   top.pp =
@@ -85,7 +85,7 @@ top::Strategy ::= prodName::String childStrategies::[Strategy] annotationStrateg
   term.productionName = prodName;
   term.childStrategies = childStrategies;
   term.annotationStrategies = annotationStrategies;
-  top.result = term.prodCongruenceResult;
+  top.result = term.traversalResult;
 }
 
 abstract production consListCongruence
