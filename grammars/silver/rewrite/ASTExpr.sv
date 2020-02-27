@@ -6,16 +6,7 @@ imports silver:langutil:pp;
 autocopy attribute substitutionEnv::[Pair<String AST>];
 synthesized attribute value::AST;
 
-inherited attribute matchWith<a>::a;
-synthesized attribute substitution::Maybe<[Pair<String AST>]>;
-
-nonterminal ASTExpr with pp, substitutionEnv, value, matchWith<AST>, substitution;
-
-aspect default production
-top::ASTExpr ::=
-{
-  top.substitution = error("Can't match against expression");
-}
+nonterminal ASTExpr with pp, substitutionEnv, value;
 
 -- AST constructors
 abstract production prodCallASTExpr
@@ -27,19 +18,6 @@ top::ASTExpr ::= prodName::String children::ASTExprs annotations::NamedASTExprs
       prodName,
       foldr(consAST, nilAST(), children.values),
       foldr(consNamedAST, nilNamedAST(), annotations.namedValues));
-  
-  children.matchWith = case top.matchWith of nonterminalAST(_, c, _) -> c end;
-  annotations.matchWith = case top.matchWith of nonterminalAST(_, _, a) -> a.bindings end;
-  top.substitution =
-    do (bindMaybe, returnMaybe) {
-      case top.matchWith of
-      | nonterminalAST(otherProdName, _, _) when prodName == otherProdName -> just(unit())
-      | _ -> nothing()
-      end;
-      childrenSubstitution::[Pair<String AST>] <- children.substitution;
-      annotationsSubstitution::[Pair<String AST>] <- annotations.substitution;
-      return childrenSubstitution ++ annotationsSubstitution;
-    };
 }
 
 abstract production consListASTExpr
@@ -51,19 +29,6 @@ top::ASTExpr ::= h::ASTExpr t::ASTExpr
     | listAST(a) -> listAST(consAST(h.value, a))
     | _ -> error("Rewrite type error")
     end;
-  
-  h.matchWith = case top.matchWith of listAST(consAST(h, _)) -> h end;
-  t.matchWith = case top.matchWith of listAST(consAST(_, t)) -> listAST(t) end;
-  top.substitution =
-    do (bindMaybe, returnMaybe) {
-      case top.matchWith of
-      | listAST(consAST(_, _)) -> just(unit())
-      | _ -> nothing()
-      end;
-      hSubstitution::[Pair<String AST>] <- h.substitution;
-      tSubstitution::[Pair<String AST>] <- t.substitution;
-      return hSubstitution ++ tSubstitution;
-    };
 }
 
 abstract production nilListASTExpr
@@ -71,11 +36,6 @@ top::ASTExpr ::=
 {
   top.pp = pp"[]";
   top.value = listAST(nilAST());
-  top.substitution =
-    case top.matchWith of
-    | listAST(nilAST()) -> just([])
-    | _ -> nothing()
-    end;
 }
 
 abstract production listASTExpr
@@ -91,11 +51,6 @@ top::ASTExpr ::= s::String
 {
   top.pp = pp"${text(escapeString(s))}";
   top.value = stringAST(s);
-  top.substitution =
-    case top.matchWith of
-    | stringAST(s1) when s == s1 -> just([])
-    | _ -> nothing()
-    end;
 }
 
 abstract production integerASTExpr
@@ -103,11 +58,6 @@ top::ASTExpr ::= i::Integer
 {
   top.pp = pp"${text(toString(i))}";
   top.value = integerAST(i);
-  top.substitution =
-    case top.matchWith of
-    | integerAST(i1) when i == i1 -> just([])
-    | _ -> nothing()
-    end;
 }
 
 abstract production floatASTExpr
@@ -115,11 +65,6 @@ top::ASTExpr ::= f::Float
 {
   top.pp = pp"${text(toString(f))}";
   top.value = floatAST(f);
-  top.substitution =
-    case top.matchWith of
-    | floatAST(f1) when f == f1 -> just([])
-    | _ -> nothing()
-    end;
 }
 
 abstract production booleanASTExpr
@@ -127,11 +72,6 @@ top::ASTExpr ::= b::Boolean
 {
   top.pp = pp"${text(toString(b))}";
   top.value = booleanAST(b);
-  top.substitution =
-    case top.matchWith of
-    | booleanAST(b1) when b == b1 -> just([])
-    | _ -> nothing()
-    end;
 }
 
 abstract production terminalASTExpr
@@ -161,15 +101,13 @@ top::ASTExpr ::= n::String
     fromMaybe(
       error("Unbound variable " ++ n),
       lookupBy(stringEq, n, top.substitutionEnv));
-  top.substitution = just([pair(n, top.matchWith)]);
 }
 
-abstract production wildASTExpr
+abstract production missingArgASTExpr
 top::ASTExpr ::=
 {
   top.pp = pp"_";
-  top.value = error("Wildcard cannot occur on rule RHS");
-  top.substitution = just([]);
+  top.value = error("missingArgASTExpr can only occur inside applyASTExpr arguments");
 }
 
 -- Other constructs
@@ -474,7 +412,7 @@ top::ASTExpr ::= a::ASTExpr
 
 -- *Undecorated* pattern match, with no regard to forwarding - not currently used
 abstract production matchASTExpr
-top::ASTExpr ::= e::ASTExpr pattern::ASTExpr res::ASTExpr fail::ASTExpr
+top::ASTExpr ::= e::ASTExpr pattern::ASTPattern res::ASTExpr fail::ASTExpr
 {
   top.pp = pp"case ${e.pp} of ${pattern.pp} -> ${res.pp} | _ -> ${fail.pp} end";
   
@@ -502,7 +440,7 @@ synthesized attribute astExprs::[ASTExpr];
 synthesized attribute values::[AST];
 synthesized attribute appValues::[Maybe<AST>];
 
-nonterminal ASTExprs with pps, astExprs, substitutionEnv, values, appValues, matchWith<ASTs>, substitution;
+nonterminal ASTExprs with pps, astExprs, substitutionEnv, values, appValues;
 
 abstract production consASTExpr
 top::ASTExprs ::= h::ASTExpr t::ASTExprs
@@ -512,22 +450,9 @@ top::ASTExprs ::= h::ASTExpr t::ASTExprs
   top.values = h.value :: t.values;
   top.appValues =
     case h of
-    | wildASTExpr() -> nothing()
+    | missingArgASTExpr() -> nothing()
     | _ -> just(h.value)
     end :: t.appValues;
-  
-  h.matchWith = case top.matchWith of consAST(h, _) -> h end;
-  t.matchWith = case top.matchWith of consAST(_, t) -> t end;
-  top.substitution =
-    do (bindMaybe, returnMaybe) {
-      case top.matchWith of
-      | consAST(_, _) -> just(unit())
-      | _ -> nothing()
-      end;
-      hSubstitution::[Pair<String AST>] <- h.substitution;
-      tSubstitution::[Pair<String AST>] <- t.substitution;
-      return hSubstitution ++ tSubstitution;
-    };
 }
 
 abstract production nilASTExpr
@@ -537,11 +462,6 @@ top::ASTExprs ::=
   top.astExprs = [];
   top.values = [];
   top.appValues = [];
-  top.substitution =
-    case top.matchWith of
-    | nilAST() -> just([])
-    | _ -> nothing()
-    end;
 }
 
 function appendASTExprs
@@ -557,7 +477,7 @@ ASTExprs ::= a::ASTExprs b::ASTExprs
 synthesized attribute namedValues::[NamedAST];
 synthesized attribute namedAppValues::[Pair<String Maybe<AST>>];
 
-nonterminal NamedASTExprs with pps, substitutionEnv, namedValues, namedAppValues, matchWith<[Pair<String AST>]>, substitution;
+nonterminal NamedASTExprs with pps, substitutionEnv, namedValues, namedAppValues;
 
 abstract production consNamedASTExpr
 top::NamedASTExprs ::= h::NamedASTExpr t::NamedASTExprs
@@ -565,15 +485,6 @@ top::NamedASTExprs ::= h::NamedASTExpr t::NamedASTExprs
   top.pps = h.pp :: t.pps;
   top.namedValues = h.namedValue :: t.namedValues;
   top.namedAppValues = h.namedAppValue :: t.namedAppValues;
-  top.substitution =
-    do (bindMaybe, returnMaybe) {
-      hSubstitution::[Pair<String AST>] <- h.substitution;
-      tSubstitution::[Pair<String AST>] <- t.substitution;
-      return hSubstitution ++ tSubstitution;
-    };
-  
-  h.matchWith = top.matchWith;
-  t.matchWith = top.matchWith;
 }
 
 abstract production nilNamedASTExpr
@@ -582,7 +493,6 @@ top::NamedASTExprs ::=
   top.pps = [];
   top.namedValues = [];
   top.namedAppValues = [];
-  top.substitution = just([]);
 }
 
 function appendNamedASTExprs
@@ -598,7 +508,7 @@ NamedASTExprs ::= a::NamedASTExprs b::NamedASTExprs
 synthesized attribute namedValue::NamedAST;
 synthesized attribute namedAppValue::Pair<String Maybe<AST>>;
 
-nonterminal NamedASTExpr with pp, substitutionEnv, namedValue, namedAppValue, matchWith<[Pair<String AST>]>, substitution;
+nonterminal NamedASTExpr with pp, substitutionEnv, namedValue, namedAppValue;
 
 abstract production namedASTExpr
 top::NamedASTExpr ::= n::String v::ASTExpr
@@ -609,13 +519,7 @@ top::NamedASTExpr ::= n::String v::ASTExpr
     pair(
       last(explode(":", n)),
       case v of
-      | wildASTExpr() -> nothing()
+      | missingArgASTExpr() -> nothing()
       | _ -> just(v.value)
       end);
-  
-  v.matchWith =
-    fromMaybe(
-      error("Unexpected annotation " ++ n),
-      lookupBy(stringEq, n, top.matchWith));
-  top.substitution = v.substitution;
 }
