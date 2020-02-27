@@ -108,7 +108,7 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   forward.downSubst = es.downSubst;
   
   local transform::Strategy =
-    prodCongruence(n.lookupValue.fullName, es.traverseTransform, anns.traverseTransform);
+    traversal(n.lookupValue.fullName, es.traverseTransform, anns.traverseTransform);
   local fwrd::Expr = translate(builtin, reflect(new(transform)));
   
   forwards to if !null(localErrors) then errorExpr(localErrors, location=builtin) else fwrd;

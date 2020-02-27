@@ -10,7 +10,7 @@ synthesized attribute oneResult<a>::Maybe<a>;
 inherited attribute productionName::String occurs on AST;
 autocopy attribute childStrategies::[Strategy] occurs on AST, ASTs;
 autocopy attribute annotationStrategies::[Pair<String Strategy>] occurs on AST, NamedASTs, NamedAST;
-synthesized attribute prodCongruenceResult<a>::Maybe<a>;
+synthesized attribute traversalResult<a>::Maybe<a>;
 inherited attribute headStrategy::Strategy occurs on AST;
 inherited attribute tailStrategy::Strategy occurs on AST;
 synthesized attribute consListCongruenceResult::Maybe<AST> occurs on AST;
@@ -19,7 +19,7 @@ synthesized attribute nilListCongruenceResult::Maybe<AST> occurs on AST;
 attribute allResult<AST> occurs on AST;
 attribute someResult<AST> occurs on AST;
 attribute oneResult<AST> occurs on AST;
-attribute prodCongruenceResult<AST> occurs on AST;
+attribute traversalResult<AST> occurs on AST;
 
 aspect default production
 top::AST ::=
@@ -27,7 +27,7 @@ top::AST ::=
   top.allResult = just(top);
   top.someResult = nothing();
   top.oneResult = nothing();
-  top.prodCongruenceResult = nothing();
+  top.traversalResult = nothing();
   top.consListCongruenceResult = nothing();
   top.nilListCongruenceResult = nothing();
 }
@@ -59,11 +59,11 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
       just(nonterminalAST(prodName, children, annotationsResult))
     | nothing(), nothing() -> nothing()
     end;
-  top.prodCongruenceResult =
+  top.traversalResult =
     do (bindMaybe, returnMaybe) {
       if prodName != top.productionName then nothing();
-      childrenResult::ASTs <- children.prodCongruenceResult;
-      annotationsResult::NamedASTs <- annotations.prodCongruenceResult;
+      childrenResult::ASTs <- children.traversalResult;
+      annotationsResult::NamedASTs <- annotations.traversalResult;
       return nonterminalAST(prodName, childrenResult, annotationsResult);
     };
 }
@@ -148,7 +148,7 @@ top::AST ::= vals::ASTs
 attribute allResult<ASTs> occurs on ASTs;
 attribute someResult<ASTs> occurs on ASTs;
 attribute oneResult<ASTs> occurs on ASTs;
-attribute prodCongruenceResult<ASTs> occurs on ASTs;
+attribute traversalResult<ASTs> occurs on ASTs;
 
 aspect production consAST
 top::ASTs ::= h::AST t::ASTs
@@ -172,10 +172,10 @@ top::ASTs ::= h::AST t::ASTs
     | nothing(), just(tResult) -> just(consAST(h, tResult))
     | nothing(), nothing() -> nothing()
     end;
-  top.prodCongruenceResult =
+  top.traversalResult =
     do (bindMaybe, returnMaybe) {
       hResult::AST <- decorate head(top.childStrategies) with { term = h; }.result;
-      tResult::ASTs <- t.prodCongruenceResult;
+      tResult::ASTs <- t.traversalResult;
       return consAST(hResult, tResult);
     };
   t.childStrategies = tail(top.childStrategies);
@@ -187,7 +187,7 @@ top::ASTs ::=
   top.allResult = just(top);
   top.someResult = nothing();
   top.oneResult = nothing();
-  top.prodCongruenceResult = just(top);
+  top.traversalResult = just(top);
 }
 
 synthesized attribute bindings::[Pair<String AST>] occurs on NamedASTs;
@@ -195,7 +195,7 @@ synthesized attribute bindings::[Pair<String AST>] occurs on NamedASTs;
 attribute allResult<NamedASTs> occurs on NamedASTs;
 attribute someResult<NamedASTs> occurs on NamedASTs;
 attribute oneResult<NamedASTs> occurs on NamedASTs;
-attribute prodCongruenceResult<NamedASTs> occurs on NamedASTs;
+attribute traversalResult<NamedASTs> occurs on NamedASTs;
 
 aspect production consNamedAST
 top::NamedASTs ::= h::NamedAST t::NamedASTs
@@ -220,10 +220,10 @@ top::NamedASTs ::= h::NamedAST t::NamedASTs
     | nothing(), just(tResult) -> just(consNamedAST(h, tResult))
     | nothing(), nothing() -> nothing()
     end;
-  top.prodCongruenceResult =
+  top.traversalResult =
     do (bindMaybe, returnMaybe) {
-      hResult::NamedAST <- h.prodCongruenceResult;
-      tResult::NamedASTs <- t.prodCongruenceResult;
+      hResult::NamedAST <- h.traversalResult;
+      tResult::NamedASTs <- t.traversalResult;
       return consNamedAST(hResult, tResult);
     };
 }
@@ -235,7 +235,7 @@ top::NamedASTs ::=
   top.allResult = just(top);
   top.someResult = nothing();
   top.oneResult = nothing();
-  top.prodCongruenceResult = just(top);
+  top.traversalResult = just(top);
 }
 
 synthesized attribute binding::Pair<String AST> occurs on NamedAST;
@@ -243,7 +243,7 @@ synthesized attribute binding::Pair<String AST> occurs on NamedAST;
 attribute allResult<NamedAST> occurs on NamedAST;
 attribute someResult<NamedAST> occurs on NamedAST;
 attribute oneResult<NamedAST> occurs on NamedAST;
-attribute prodCongruenceResult<NamedAST> occurs on NamedAST;
+attribute traversalResult<NamedAST> occurs on NamedAST;
 
 aspect production namedAST
 top::NamedAST ::= n::String v::AST
@@ -258,7 +258,7 @@ top::NamedAST ::= n::String v::AST
   top.someResult = top.allResult;
   top.oneResult = top.allResult;
   
-  top.prodCongruenceResult =
+  top.traversalResult =
     -- Look up and apply all strategies for the annotation
     -- (it's easier to just handle duplicates than to disallow them.)
     mapMaybe(
