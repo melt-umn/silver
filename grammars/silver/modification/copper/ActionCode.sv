@@ -58,18 +58,12 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 -- Support code to check the validity of disambiguation blocks. True if any elements
 -- contained in the snoc-list (so this statement or before) are a pluck. Handles
 -- raising errors if there are statements after a pluck.
-synthesized attribute containsPluck :: Boolean occurs on ProductionStmts;
+synthesized attribute containsPluck :: Boolean occurs on ProductionStmts, ProductionStmt;
 
 aspect production productionStmtsSnoc
 top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 {
-  local immediateChildIsPluck :: Boolean =
-    case t of
-    | pluckDef(_, _, _) -> true
-    | _ -> false
-    end;
-
-  top.containsPluck = immediateChildIsPluck || h.containsPluck;
+  top.containsPluck = t.containsPluck || h.containsPluck;
 
   top.errors <- if top.frame.permitPluck && h.containsPluck then [err(t.location, "Statement after pluck")] else [];
 }
@@ -78,6 +72,25 @@ aspect production productionStmtsNil
 top::ProductionStmts ::=
 {
   top.containsPluck = false;
+}
+
+aspect default production
+top::ProductionStmt ::=
+{
+  top.containsPluck = false;
+}
+
+aspect production pluckDef
+top::ProductionStmt ::= 'pluck' e::Expr ';'
+{
+  top.containsPluck = true;
+}
+
+aspect production ifElseStmt
+top::ProductionStmt ::= 'if' '(' c::Expr ')' th::ProductionStmt 'else' el::ProductionStmt
+{
+  -- Only guaranteed to pluck a terminal if both th and el contain a pluck
+  top.containsPluck = th.containsPluck && el.containsPluck;
 }
 
 -- TODO hacky. ideally we'd do this where local attributes are declared, not here.
