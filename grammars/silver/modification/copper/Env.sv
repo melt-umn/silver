@@ -131,6 +131,6 @@ global i_locVariables :: [Def] = [
 
 global terminalActionVars :: [Def] = i_lexemeVariable ++ i_locVariables;
 global productionActionVars :: [Def] = i_locVariables;
-global disambiguationActionVars :: [Def] = i_lexemeVariable;
-global disambiguationClassActionVars :: [Def] = i_lexemeVariable ++ i_shiftableVariable;
+global disambiguationActionVars :: [Def] = i_lexemeVariable ++ i_locVariables;
+global disambiguationClassActionVars :: [Def] = i_lexemeVariable ++ i_shiftableVariable ++ i_locVariables;
 
