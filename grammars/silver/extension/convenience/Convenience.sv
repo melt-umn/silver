@@ -47,17 +47,15 @@ top::AGDcl ::= 'annotation' a::QNames2 'occurs' 'on' nts::QNameWithTL ';'
 }
 
 
-
 concrete production nonterminalWithDcl
-top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 'with' attrs::QNames ';'
+top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers 'with' attrs::QNames ';'
 {
-  top.unparse = "nonterminal " ++ id.unparse ++ tl.unparse ++ " with " ++ attrs.unparse ++ " ;";
+  top.unparse = "nonterminal " ++ id.unparse ++ tl.unparse ++ " " ++ nm.unparse ++ " with " ++ attrs.unparse ++ " ;";
   forwards to appendAGDcl(
-    nonterminalDcl(cl, $2, id, tl, $7, location=top.location),
+    nonterminalDcl(cl, $2, id, tl, nm, $8, location=top.location),
     makeOccursDcls(top.location, attrs.qnames, [qNameWithTL(qNameId(id, location=id.location), tl)]),
     location=top.location);
 }
-
 
 
 concrete production attributeDclInhMultiple

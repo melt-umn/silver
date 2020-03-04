@@ -19,10 +19,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   -- Only bug is that you can aspect it, but it's pointless to do so, you can't affect anything.
   top.defs = [funDef(top.grammarName, n.location, namedSig)];
   
-  -- TODO: I think it's inappropriate that we don't bubble up these declarations to the top level.
-  -- However, this necessitates a re-design of how we do 'prefix separators' which are a def we
-  -- need to be scoped to this parser only, not to be overheard by other parsers in this grammar.
-  
+  -- TODO: These declarations should probably bubble up to the top level instead of being decorated here
   production liftedAGDcls :: AGDcl = m.liftedAGDcls;
   liftedAGDcls.config = top.config;
   liftedAGDcls.grammarName = top.grammarName;
@@ -50,7 +47,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
       []);
 
   production spec :: ParserSpec =
-    parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames, m.terminalPrefixes, liftedAGDcls.syntaxAst);
+    parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames, m.customLayout, m.terminalPrefixes, liftedAGDcls.syntaxAst);
   spec.compiledGrammars = top.compiledGrammars;
 
   top.parserSpecs = [spec]; -- Note that this is undecorated.
@@ -80,7 +77,15 @@ top::ParserComponents ::= c1::ParserComponent  c2::ParserComponents
   top.liftedAGDcls = appendAGDcl(c1.liftedAGDcls, c2.liftedAGDcls, location=top.location);
 }
 
-nonterminal ParserComponent with config, env, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls;
+closed nonterminal ParserComponent with config, env, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls;
+
+aspect default production
+top::ParserComponent ::=
+{
+  top.moduleNames = [];
+  top.terminalPrefixes = [];
+  top.liftedAGDcls = emptyAGDcl(location=top.location);
+}
 
 concrete production parserComponent
 top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
@@ -118,6 +123,13 @@ top::ParserComponentModifiers ::= h::ParserComponentModifier t::ParserComponentM
 }
 
 nonterminal ParserComponentModifier with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, liftedAGDcls;
+
+aspect default production
+top::ParserComponentModifier ::=
+{
+  top.terminalPrefixes = [];
+  top.liftedAGDcls = emptyAGDcl(location=top.location);
+}
 
 -- Separate bit translating the parser declaration.
 aspect production parserDcl

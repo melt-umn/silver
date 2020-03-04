@@ -1,5 +1,20 @@
 grammar silver:modification:copper;
 
+terminal DisambiguationFailure_t 'disambiguationFailure' lexer classes {KEYWORD, RESERVED};
+
+concrete production failureTerminalIdExpr
+top::Expr ::= 'disambiguationFailure'
+{
+  top.unparse = "disambiguationFailure";
+  top.errors := [];
+  top.typerep = terminalIdType();
+
+  top.translation = "(-1)";
+  top.lazyTranslation = top.translation;
+
+  top.upSubst = top.downSubst;
+}
+
 abstract production actionChildReference
 top::Expr ::= q::Decorated QName
 {
@@ -22,9 +37,8 @@ top::Expr ::= q::Decorated QName
 
   top.errors := []; -- Should only be referenceable from a context where its valid.
 
-  -- We... don't actually have a type we can use here TODO. Maybe we could cheat with a skolem type?
-  -- Or maybe these should just be TerminalId, see below.
-  top.typerep = freshType();
+  -- TODO: It would be nice to have a more specific type here, see comment below.
+  top.typerep = terminalIdType();
   
   top.translation = makeCopperName(q.lookupValue.fullName); -- Value right here?
   top.lazyTranslation = top.translation; -- never, but okay!
@@ -50,6 +64,24 @@ top::Expr ::= q::Decorated QName
   top.translation = s"Terminals.${makeCopperName(q.lookupValue.fullName)}.num()";
   top.lazyTranslation = top.translation; -- never, but okay!
 
+  top.upSubst = top.downSubst;
+}
+
+abstract production lexerClassReference
+top::Expr ::= q::Decorated QName
+{
+  top.unparse = q.unparse;
+
+  top.errors := if !top.frame.permitActions
+                then [err(top.location, "References to lexer class members can only be made in action blocks")]
+                else [];
+
+  -- TODO: This should be a more specific type with type classes
+  top.typerep = listType(terminalIdType());
+  
+  top.translation = makeCopperName(q.lookupValue.fullName);
+  top.lazyTranslation = top.translation; -- never, but okay!
+  
   top.upSubst = top.downSubst;
 }
 

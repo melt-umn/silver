@@ -21,14 +21,23 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
   -- Cast to integer is required, because that's secretly the real type of the
   -- result, but our type system only calls it an Object at the moment.
   -- Perhaps this problem can be resolved by using a proper type in this situation.
-  top.translation = "return (Integer)" ++ e.translation ++ ";\n";
+  top.translation = "return (Integer)(" ++ e.translation ++ ");\n";
 
   top.errors := (if !top.frame.permitPluck
                then [err(top.location, "'pluck' allowed only in disambiguation-group parser actions.")]
                else [])
                ++ e.errors;
 
-  -- TODO: figure out wtf is going on with type here! (needs to be a terminal, plus one of the ones in the disgroup)
+  local tyCk :: TypeCheck = check(e.typerep, terminalIdType());
+  tyCk.downSubst = e.upSubst;
+  top.errors <-
+    if tyCk.typeerror
+    then [err(top.location, "'pluck' expects one of the terminals it is disambiguating between. Instead it received "++tyCk.leftpp)]
+    else [];
+
+
+  -- TODO: Enforce that the plucked terminal is one of those that are being disambiguated between.
+  -- Currently all that is checked is that it is a terminal.
 
   e.downSubst = top.downSubst;
   top.upSubst = e.upSubst;
