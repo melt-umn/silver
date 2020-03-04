@@ -3,24 +3,6 @@
  - Propagates a list of functor attributes on the current production.  
  - Actual implementation in propagateOne
  -}
-concrete production propagateAttrDcl
-top::ProductionStmt ::= 'propagate' ns::NameList ';'
-{
-  top.unparse = s"propagate ${ns.unparse};";
-  
-  -- Forwards to productionStmtAppend of propagating the first element in ns
-  -- and propagateAttrDcl containing the remaining names
-  forwards to
-    case ns of
-    | nameListOne(n) -> 
-        propagateOne(n, location=top.location)
-    | nameListCons(n, _, rest) ->
-        productionStmtAppend(
-          propagateOne(n, location=top.location),
-          propagateAttrDcl($1, rest, $3, location=top.location),
-          location=top.location)
-    end;
-}
 concrete production propagateAttrDclOld
 top::ProductionStmt ::= 'propagate_functor' ns::NameList ';'
 {
