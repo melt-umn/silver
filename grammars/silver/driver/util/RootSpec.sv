@@ -4,7 +4,7 @@ import silver:reflect;
 import silver:langutil only pp;
 import silver:langutil:pp only show;
 
-import silver:definition:core only Grammar, grammarErrors, grammarName, importedDefs, grammarDependencies, globalImports, Message, err;
+import silver:definition:core only Grammar, grammarErrors, grammarName, importedDefs, importedOccursDefs, grammarDependencies, globalImports, Message, err;
 import silver:definition:flow:env only flowEnv, flowDefs, fromFlowDefs;
 import silver:definition:flow:ast only nilFlow, consFlow, FlowDef;
 
@@ -18,7 +18,7 @@ nonterminal RootSpec with
   config, compiledGrammars, productionFlowGraphs, grammarFlowTypes,
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
-  defs, grammarErrors, grammarSource, grammarTime, interfaceTime, recheckGrammars, translateGrammars,
+  defs, occursDefs, grammarErrors, grammarSource, grammarTime, interfaceTime, recheckGrammars, translateGrammars,
   parsingErrors, jarName, generateLocation;
 
 
@@ -44,10 +44,14 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   g.grammarName = grammarName;
   
   -- Create the environments for this grammar
-  g.env = toEnv(g.defs);
-  g.globalImports = toEnv(
-    if contains("core", g.moduleNames) || grammarName == "core" then g.importedDefs
-    else g.importedDefs ++ head(searchEnvTree("core", top.compiledGrammars)).defs);
+  g.env = occursEnv(g.occursDefs, toEnv(g.defs));
+  g.globalImports =
+    occursEnv(
+      if contains("core", g.moduleNames) || grammarName == "core" then g.importedOccursDefs
+      else g.importedOccursDefs ++ head(searchEnvTree("core", top.compiledGrammars)).occursDefs,
+      toEnv(
+        if contains("core", g.moduleNames) || grammarName == "core" then g.importedDefs
+        else g.importedDefs ++ head(searchEnvTree("core", top.compiledGrammars)).defs));
   
   -- This grammar, its direct imports, and only transitively close over exports and TRIGGERED conditional imports.
   -- i.e. these are the things that we really, truly depend upon. (in the sense that we get their symbols)
@@ -79,6 +83,7 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   top.allGrammarDependencies = actualDependencies;
   
   top.defs = g.defs;
+  top.occursDefs = g.occursDefs;
   top.grammarErrors = g.grammarErrors;
   top.parsingErrors = [];
 
@@ -108,6 +113,7 @@ top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer  generateLocation
   top.allGrammarDependencies = p.allGrammarDependencies;
 
   top.defs = p.defs;
+  top.occursDefs = p.occursDefs;
   top.grammarErrors = []; -- TODO: consider getting grammarName and comparing against declaredName?
   top.parsingErrors = [];
 
@@ -136,6 +142,7 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
   top.allGrammarDependencies = [];
 
   top.defs = [];
+  top.occursDefs = [];
   top.grammarErrors = [];
   top.parsingErrors = map(parseErrorToMessage(grammarSource, _), e);
 
@@ -161,7 +168,7 @@ Pair<String [Message]> ::= grammarSource::String  e::ParseError
  - Representation of all properties of a grammar, to be serialized/deserialize to/from an interface
  - file.
  -}
-nonterminal GrammarProperties with declaredName, grammarSource, grammarTime, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies, defs;
+nonterminal GrammarProperties with declaredName, grammarSource, grammarTime, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies, defs, occursDefs;
 
 abstract production consGrammarProperties
 top::GrammarProperties ::= h::GrammarProperty t::GrammarProperties
@@ -175,6 +182,7 @@ top::GrammarProperties ::= h::GrammarProperty t::GrammarProperties
   top.condBuild = fromMaybe(t.condBuild, h.maybeCondBuild);
   top.allGrammarDependencies = fromMaybe(t.allGrammarDependencies, h.maybeAllGrammarDependencies);
   top.defs = fromMaybe(t.defs, h.maybeDefs);
+  top.occursDefs = fromMaybe(t.occursDefs, h.maybeOccursDefs);
 }
 
 abstract production nilGrammarProperties
@@ -189,6 +197,7 @@ top::GrammarProperties ::=
   top.condBuild = error("Grammar property condBuild missing from interface file");
   top.allGrammarDependencies = error("Grammar property allGrammarDependencies missing from interface file");
   top.defs = error("Grammar property defs missing from interface file");
+  top.occursDefs = error("Grammar property occursDefs missing from interface file");
 }
 
 synthesized attribute maybeGrammarSource::Maybe<String>;
@@ -200,8 +209,9 @@ synthesized attribute maybeOptionalGrammars::Maybe<[String]>;
 synthesized attribute maybeCondBuild::Maybe<[[String]]>;
 synthesized attribute maybeAllGrammarDependencies::Maybe<[String]>;
 synthesized attribute maybeDefs::Maybe<[Def]>;
+synthesized attribute maybeOccursDefs::Maybe<[DclInfo]>;
 
-closed nonterminal GrammarProperty with maybeGrammarSource, maybeGrammarTime, maybeDeclaredName, maybeModuleNames, maybeExportedGrammars, maybeOptionalGrammars, maybeCondBuild, maybeAllGrammarDependencies, maybeDefs;
+closed nonterminal GrammarProperty with maybeGrammarSource, maybeGrammarTime, maybeDeclaredName, maybeModuleNames, maybeExportedGrammars, maybeOptionalGrammars, maybeCondBuild, maybeAllGrammarDependencies, maybeDefs, maybeOccursDefs;
 
 aspect default production
 top::GrammarProperty ::=
@@ -271,6 +281,12 @@ top::GrammarProperty ::= val::[Def]
   top.maybeDefs = just(val);
 }
 
+abstract production occursDefsGrammarProperty
+top::GrammarProperty ::= val::[DclInfo]
+{
+  top.maybeOccursDefs = just(val);
+}
+
 {--
  - How RootSpecs are turned into interface files shouldn't change
  - depending on what the source it, so we give this function externally
@@ -289,7 +305,8 @@ String ::= r::Decorated RootSpec
     optionalGrammarsGrammarProperty(r.optionalGrammars),
     condBuildGrammarProperty(r.condBuild),
    	allDepsGrammarProperty(r.allGrammarDependencies),
-    defsGrammarProperty(r.defs)
+    defsGrammarProperty(r.defs),
+    occursDefsGrammarProperty(r.occursDefs)
   ];
   
   return

@@ -92,6 +92,12 @@ top::Env ::= d::Defs  e::Decorated Env
   top.lexerClassTree = consEnvScope(buildTree(d.lexerClassList), e.lexerClassTree);
 }
 
+aspect production i_occursEnv
+top::Env ::= _  e::Decorated Env
+{
+  top.lexerClassTree = e.lexerClassTree;
+}
+
 function getLexerClassDcl
 [DclInfo] ::= search::String e::Decorated Env
 {

@@ -10,7 +10,7 @@ nonterminal Root with
   grammarName, env, globalImports, grammarDependencies,
   -- File-level inherited attributes
   -- Synthesized attributes
-  declaredName, unparse, location, errors, defs, moduleNames, importedDefs,
+  declaredName, unparse, location, errors, defs, occursDefs, moduleNames, importedDefs, importedOccursDefs,
   exportedGrammars, optionalGrammars, condBuild, jarName;
 
 nonterminal GrammarDcl with 
@@ -30,8 +30,10 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.moduleNames = ims.moduleNames ++ ms.moduleNames ++ ags.moduleNames;
 
   top.defs = ags.defs;
+  top.occursDefs = ags.occursDefs;
 
   top.importedDefs = ms.defs;
+  top.importedOccursDefs = ms.occursDefs;
   top.exportedGrammars = ms.exportedGrammars;
   top.optionalGrammars = ms.optionalGrammars;
   top.condBuild = ms.condBuild;
@@ -44,7 +46,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   --  THEN, we have this particular file's list of local imports. That's ims.defs here.
   --  THEN, we have the grammar-wide definitions, from the whole grammr. That's top.env here.
   -- So we're kind of injecting local imports in between two grammar-wide things there.
-  ags.env = appendEnv(top.env, newScopeEnv(ims.defs, top.globalImports));
+  ags.env = appendEnv(top.env, newScopeEnv(ims.defs, occursEnv(ims.occursDefs, top.globalImports)));
 }
 
 concrete production noGrammarDcl

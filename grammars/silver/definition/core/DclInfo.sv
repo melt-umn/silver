@@ -29,9 +29,13 @@ synthesized attribute decoratedAccessHandler :: (Expr ::= Decorated Expr  Decora
  -}
 synthesized attribute undecoratedAccessHandler :: (Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) occurs on DclInfo;
 {--
- - The production an "equation" shuld forward to for this type of attribute (i.e. the 'a' in 'x.a = e')
+ - The production an "equation" should forward to for this type of attribute (i.e. the 'a' in 'x.a = e')
  -}
 synthesized attribute attrDefDispatcher :: (ProductionStmt ::= Decorated DefLHS  Decorated QNameAttrOccur  Expr  Location) occurs on DclInfo;
+{--
+ - The production an "occurs on" decl should forward to for this type of attribute (for extension use, defaultAttributionDcl for all syn/inh/autocopy attrs.)
+ -}
+synthesized attribute attributionDispatcher :: (AGDcl ::= Decorated QName  BracketedOptTypeExprs  QName  BracketedOptTypeExprs  Location) occurs on DclInfo;
 
 aspect default production
 top::DclInfo ::=
@@ -45,7 +49,8 @@ top::DclInfo ::=
   -- all attributes must provide decoratedAccessHandler, attrDefDispatcher.
   top.decoratedAccessHandler = error("Internal compiler error: must be defined for all attribute declarations");
   top.undecoratedAccessHandler = error("Internal compiler error: must be defined for all attribute declarations");
-  top.attrDefDispatcher = error("Internal compiler error: must be defined for all attribute declarations");  
+  top.attrDefDispatcher = error("Internal compiler error: must be defined for all attribute declarations");
+  top.attributionDispatcher = error("Internal compiler error: must be defined for all attribute declarations");
 }
 
 -- -- non-interface values
@@ -103,6 +108,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_);
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
 aspect production inhDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
@@ -110,6 +116,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: above should probably be an error handler! access inh from undecorated?
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_);
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
 aspect production annoDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
@@ -119,6 +126,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.attrDefDispatcher =
     \ dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr  l::Location ->
       errorAttributeDef([err(l, "Annotations are not defined as equations within productions")], dl, attr, e, location=l);
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
 
 -- -- interface Production attr (values)

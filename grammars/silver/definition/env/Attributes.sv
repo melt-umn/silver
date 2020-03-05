@@ -48,6 +48,11 @@ synthesized attribute condBuild :: [[String]];
  - Closes over moduleNames using exports & triggers.
  -}
 synthesized attribute allGrammarDependencies :: [String];
+{--
+ - A list of attribute occurences that are exported by this particular grammar.
+ - Seperate from defs as a workaround for circular dependency issues.
+ -}
+synthesized attribute occursDefs :: [DclInfo];
 
 
 --

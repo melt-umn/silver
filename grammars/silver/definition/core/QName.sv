@@ -89,6 +89,7 @@ top::QNameLookup ::= msg::[Message]
 {
   top.dcls = [];
   top.found = true;
+  top.dcl = error("dcl demanded from errorLookup");
   top.fullName = "err";
   top.typerep = errorType();
   top.dclBoundVars = [];
