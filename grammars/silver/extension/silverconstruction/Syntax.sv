@@ -7,6 +7,20 @@ imports silver:definition:env;
 imports silver:definition:type:syntax;
 imports silver:extension:list;
 
+concrete production quoteAGDcl
+top::Expr ::= 'Silver_AGDcl' LCurly_t ast::AGDcl RCurly_t
+{
+  top.unparse = s"Silver_AGDcl {${ast.unparse}}";
+  forwards to translate(top.location, reflect(new(ast)));
+}
+
+concrete production quoteProductionStmt
+top::Expr ::= 'Silver_ProductionStmt' LCurly_t ast::ProductionStmt RCurly_t
+{
+  top.unparse = s"Silver_ProductionStmt {${ast.unparse}}";
+  forwards to translate(top.location, reflect(new(ast)));
+}
+
 concrete production quoteExpr
 top::Expr ::= 'Silver_Expr' LCurly_t ast::Expr RCurly_t
 {
