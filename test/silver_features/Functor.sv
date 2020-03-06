@@ -34,10 +34,6 @@ top::FunctorTestNT2 ::= s::String
   top.functorTestAnnoSum = top.functorTestAnno;
 }
 
-wrongCode "Functor attributes do not expect explicit type parameters" {
-  nonterminal Foo23 with functorSyn<Integer>;
-}
-
 global functorValue :: FunctorTestNT =
   consFTNT(
     consFTNT2(
@@ -66,3 +62,17 @@ global functorValueRes :: FunctorTestNT =
 equalityTest(hackUnparse(functorValueRes), hackUnparse(functorValue.functorSyn), String, silver_tests);
 -- Test to ensure annotations are copied correctly
 equalityTest(functorValueRes.functorTestAnnoSum, functorValue.functorSyn.functorTestAnnoSum, Integer, silver_tests);
+
+nonterminal FunctorTestNT3 with functorSyn<Integer>;
+
+abstract production ftnt3
+top::FunctorTestNT3 ::=
+{
+  top.functorSyn = 42;
+}
+
+equalityTest(ftnt3().functorSyn, 42, Integer, silver_tests);
+
+wrongCode "expects 1 type variables, but 2 were provided" {
+  nonterminal Foo23 with functorSyn<Integer Boolean>;
+}

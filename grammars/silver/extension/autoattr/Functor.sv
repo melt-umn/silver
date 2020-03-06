@@ -22,20 +22,18 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
 abstract production functorAttributionDcl
 top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  top.errors <-
-    if length(attl.types) > 0
-    then [err(attl.location, "Functor attributes do not expect explicit type parameters.")]
-    else [];
-  
   forwards to
     defaultAttributionDcl(
       at,
-      botlSome(
-        '<',
-        typeListSingle(
-          nominalTypeExpr(nt.qNameType, nttl, location=top.location),
-          location=top.location),
-        '>', location=top.location),
+      if length(attl.types) > 0
+      then attl
+      else
+        botlSome(
+          '<',
+          typeListSingle(
+            nominalTypeExpr(nt.qNameType, nttl, location=top.location),
+            location=top.location),
+          '>', location=top.location),
       nt, nttl,
       location=top.location);
 }
