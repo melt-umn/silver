@@ -40,7 +40,6 @@ exports silver:extension:templating;
 exports silver:extension:patternmatching;
 exports silver:extension:treegen;
 exports silver:extension:doc;
-exports silver:extension:functorattrib; -- Deprecated
 exports silver:extension:autoattr;
 exports silver:extension:monad;
 exports silver:extension:reflection;
