@@ -6,7 +6,7 @@ grammar silver:definition:core;
 nonterminal AGDcls with config, grammarName, env, location, unparse, errors, defs, occursDefs, moduleNames, compiledGrammars, grammarDependencies, jarName;
 nonterminal AGDcl  with config, grammarName, env, location, unparse, errors, defs, occursDefs, moduleNames, compiledGrammars, grammarDependencies, jarName;
 
-flowtype forward {grammarName, env} on AGDcl;
+flowtype forward {grammarName, env} on AGDcls, AGDcl;
 
 concrete production nilAGDcls
 top::AGDcls ::=
