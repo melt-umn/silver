@@ -17,7 +17,7 @@ top::AGDcl ::= 'wrongCode' s::String_t '{' ags::AGDcls '}'
     else [];
   
   -- do extend its environment with its defs
-  ags.env = newScopeEnv(ags.defs, top.env);
+  ags.env = occursEnv(ags.occursDefs, newScopeEnv(ags.defs, top.env));
   
   forwards to emptyAGDcl(location=top.location);
 }
@@ -33,7 +33,7 @@ top::AGDcl ::= 'wrongFlowCode' s::String_t '{' ags::AGDcls '}'
     else [];
   
   -- do extend its environment with its defs
-  ags.env = newScopeEnv(ags.defs, top.env);
+  ags.env = occursEnv(ags.occursDefs, newScopeEnv(ags.defs, top.env));
   
   -- let's ALSO propagate up flow info, so these kinds of errors are checked/caught
   top.flowDefs = ags.flowDefs;
