@@ -1,9 +1,8 @@
 grammar silver:extension:autoattr;
 
 imports silver:definition:core;
-imports silver:definition:type:syntax;
-
 imports silver:definition:env;
 imports silver:definition:type;
+imports silver:definition:type:syntax;
 
-import silver:util;
+exports silver:extension:autoattr:convenience;
