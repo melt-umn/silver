@@ -1,10 +1,10 @@
 
-synthesized attribute functorSyn<a> :: a;
+functor attribute functorSyn;
 synthesized attribute functorTestAnnoSum :: Integer;
 annotation functorTestAnno::Integer;
 
-nonterminal FunctorTestNT with functorSyn<FunctorTestNT>, functorTestAnnoSum, functorTestAnno;
-nonterminal FunctorTestNT2 with functorSyn<FunctorTestNT2>, functorTestAnnoSum, functorTestAnno;
+nonterminal FunctorTestNT with functorSyn, functorTestAnnoSum, functorTestAnno;
+nonterminal FunctorTestNT2 with functorSyn, functorTestAnnoSum, functorTestAnno;
 
 abstract production consFTNT
 top::FunctorTestNT ::= h::FunctorTestNT  t::FunctorTestNT

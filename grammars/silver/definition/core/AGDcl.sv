@@ -45,7 +45,6 @@ top::AGDcl ::=
   top.unparse = "";
 
   top.errors := [];
-  top.jarName = nothing();
 }
 
 abstract production errorAGDcl
@@ -53,7 +52,14 @@ top::AGDcl ::= e::[Message]
 {
   top.unparse = s"{- Errors:\n${messagesToString(e)} -}";
   top.errors := e;
-  top.jarName = nothing();
+}
+
+abstract production defsAGDcl
+top::AGDcl ::= d::[Def]
+{
+  top.unparse = s"{- Defs -}";
+  top.errors := [];
+  top.defs = d;
 }
 
 {--

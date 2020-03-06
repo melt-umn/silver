@@ -3,7 +3,7 @@ grammar silver:definition:core;
 {--
  - Qualified names of the form 'a:b:c:d...'
  -}
-nonterminal QName with config, name, location, grammarName, env, unparse;
+nonterminal QName with config, name, location, grammarName, env, unparse, qNameType;
 {--
  - Qualified names where the LAST name has an upper case first letter.
  -}
@@ -13,6 +13,8 @@ nonterminal QNameType with config, name, location, grammarName, env, unparse;
  - The list of declarations resulting from looking up this QName
  -}
 synthesized attribute dcls :: [DclInfo];
+
+synthesized attribute qNameType::QNameType;
 
 -- TODO: for consistency, the order of these args should be flipped:
 function qName
@@ -26,6 +28,7 @@ top::QName ::= id::Name
 {
   top.name = id.name;
   top.unparse = id.unparse;
+  top.qNameType = qNameTypeId(terminal(IdUpper_t, id.name, id.location), location=id.location);
   
   top.lookupValue = decorate customLookup("value", getValueDcl(top.name, top.env), top.name, top.location) with {};
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
@@ -37,6 +40,7 @@ top::QName ::= id::Name ':' qn::QName
 {
   top.name = id.name ++ ":" ++ qn.name;
   top.unparse = id.unparse ++ ":" ++ qn.unparse;
+  top.qNameType = qNameTypeCons(id, ':', qn.qNameType, location=top.location);
   
   top.lookupValue = decorate customLookup("value", getValueDcl(top.name, top.env), top.name, top.location) with {};
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
@@ -48,6 +52,7 @@ top::QName ::= msg::[Message]
 {
   top.name = "err";
   top.unparse = "<err>";
+  top.qNameType = qNameTypeId(terminal(IdUpper_t, "Err", top.location), location=top.location);
   
   top.lookupValue = decorate errorLookup(msg) with {};
   top.lookupType = decorate errorLookup(msg) with {};
