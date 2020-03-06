@@ -34,6 +34,10 @@ top::FunctorTestNT2 ::= s::String
   top.functorTestAnnoSum = top.functorTestAnno;
 }
 
+wrongCode "Functor attributes do not expect explicit type parameters" {
+  nonterminal Foo23 with functorSyn<Integer>;
+}
+
 global functorValue :: FunctorTestNT =
   consFTNT(
     consFTNT2(
