@@ -1,5 +1,6 @@
 grammar silver:composed:idetest;
 
+import silver:definition:env;
 import silver:host;
 
 -- NOTE: this is needed for the correct generation of IDE, 
