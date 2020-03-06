@@ -88,7 +88,8 @@ IOVal<[Message]> ::= project::IdeProject  args::[IdeProperty]  i::IO
 function fold
 [Location] ::= cst::Root
 {
-    return cst.foldableRanges; -- see ./Folding.sv
+  cst.env = emptyEnv();
+  return cst.foldableRanges; -- see ./Folding.sv
 }
 
 function getStubForNewFile
