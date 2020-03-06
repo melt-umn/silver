@@ -225,6 +225,7 @@ top::GrammarProperty ::=
   top.maybeCondBuild = nothing();
   top.maybeAllGrammarDependencies = nothing();
   top.maybeDefs = nothing();
+  top.maybeOccursDefs = nothing();
 }
 
 abstract production grammarSourceGrammarProperty
