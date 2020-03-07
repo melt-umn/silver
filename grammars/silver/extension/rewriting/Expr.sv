@@ -253,13 +253,13 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 attribute transform<ASTExprs> occurs on ExprInhs;
 synthesized attribute lambdaParams::ProductionRHS occurs on ExprInhs;
 functor attribute bodyExprInhTransform occurs on ExprInhs, ExprInh;
+propagate bodyExprInhTransform on ExprInhs;
 
 aspect production exprInhsEmpty
 top::ExprInhs ::= 
 {
   top.transform = nilASTExpr();
   top.lambdaParams = productionRHSNil(location=builtin);
-  propagate bodyExprInhTransform;
 }
 
 aspect production exprInhsOne
@@ -268,7 +268,6 @@ top::ExprInhs ::= lhs::ExprInh
   top.transform = consASTExpr(lhs.transform, nilASTExpr());
   top.lambdaParams =
     productionRHSCons(lhs.lambdaParam, productionRHSNil(location=builtin), location=builtin);
-  propagate bodyExprInhTransform;
 }
 
 aspect production exprInhsCons
@@ -276,7 +275,6 @@ top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
 {
   top.transform = consASTExpr(lhs.transform, inh.transform);
   top.lambdaParams = productionRHSCons(lhs.lambdaParam, inh.lambdaParams, location=builtin);
-  propagate bodyExprInhTransform;
 }
 
 attribute transform<ASTExpr> occurs on ExprInh;
