@@ -223,6 +223,8 @@ function getProdAttrs
  -  2. MWDA checking known forwarding productions on attribute occurrence declaration.
  -       - We need to be able to look from forwarding to occurs, and from
  -         occurs to forwarding to cover all cases.
+ -  3. For the automatic attributes extension
+ -       - to implement propagate on all the known non-forwarding productions of a nonterminal.
  - You should probably have a good reason for using this, and document it here if you do.
  -}
 function getKnownProds

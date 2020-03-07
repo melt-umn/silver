@@ -19,7 +19,7 @@ top::NameOrBOperator ::= q::QName
 
   top.operation = case q.lookupValue.dcl of
                   | funDcl(_,_,_) -> functionOperation(q.lookupValue.fullName)
-                  | prodDcl(_,_,_) -> productionOperation(q.lookupValue.fullName)
+                  | prodDcl(_,_,_,_) -> productionOperation(q.lookupValue.fullName)
                   | _ -> error("INTERNAL ERROR: operation attribute demanded for non-function or production.")
                   end;
 
@@ -39,7 +39,7 @@ top::NameOrBOperator ::= q::QName
   top.errors <- if !q.lookupValue.found then [] else
     case q.lookupValue.dcl of
     | funDcl(_,_,_) -> operationErrors
-    | prodDcl(_,_,_) -> operationErrors
+    | prodDcl(_,_,_,_) -> operationErrors
     | _ -> [err(top.location, q.name ++ " is not a valid operator for collections.")]
     end;
 }

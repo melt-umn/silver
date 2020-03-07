@@ -133,9 +133,9 @@ Def ::= sg::String  sl::Location  fn::String  ty::Type
   return valueDef(defaultEnvItem(localDcl(sg,sl,fn,ty)));
 }
 function prodDef
-Def ::= sg::String  sl::Location  ns::NamedSignature
+Def ::= sg::String  sl::Location  ns::NamedSignature  hasForward::Boolean
 {
-  return prodDclDef(defaultEnvItem(prodDcl(sg,sl,ns)));
+  return prodDclDef(defaultEnvItem(prodDcl(sg,sl,ns,hasForward)));
 }
 function funDef
 Def ::= sg::String  sl::Location  ns::NamedSignature

@@ -1,5 +1,73 @@
 grammar silver:extension:autoattr;
 
+concrete production propagateOnNTListDcl
+top::AGDcl ::= 'propagate' attrs::NameList 'on' nts::NameList ';'
+{
+  top.unparse = s"propagate ${attrs.unparse} on ${nts.unparse};";
+  
+  forwards to
+    case nts of
+    | nameListOne(n) -> propagateOnOneNTDcl(attrs, n, location=n.location)
+    | nameListCons(n, _, rest) ->
+      appendAGDcl(
+        propagateOnOneNTDcl(attrs, n, location=n.location),
+        propagateOnNTListDcl($1, attrs, $3, rest, $5, location=top.location),
+        location=top.location)
+    end;
+}
+
+-- Note that this only propagates on all *known* non-forwarding productions.
+-- Usually all non-forwarding productions are exported by the NT, but that isn't
+-- always the case (see options and closed nonterminals.)
+-- For such productions the attribute must still be explicitly propagated.
+abstract production propagateOnOneNTDcl
+top::AGDcl ::= attrs::NameList nt::QName
+{
+  top.unparse = s"propagate ${attrs.unparse} on ${nt.unparse};";
+  
+  -- Ugh, workaround for circular dependency
+  top.defs = [];
+  top.occursDefs = [];
+  top.moduleNames = [];
+  
+  local nonForwardingProds::[DclInfo] =
+    filter(\ d::DclInfo -> !d.hasForward, getKnownProds(nt.lookupType.fullName, top.env));
+  forwards to
+    foldr(
+      appendAGDcl(_, _, location=top.location), emptyAGDcl(location=top.location),
+      map(
+        \ d::DclInfo ->
+          aspectProductionDcl(
+            'aspect', 'production', qName(top.location, d.fullName),
+            aspectProductionSignature(
+              aspectProductionLHSFull(
+                name(d.namedSignature.outputElement.elementName, top.location),
+                d.namedSignature.outputElement.typerep,
+                location=top.location),
+              '::=',
+              foldr(
+                aspectRHSElemCons(_, _, location=top.location),
+                aspectRHSElemNil(location=top.location),
+                map(
+                  \ ie::NamedSignatureElement ->
+                    aspectRHSElemFull(
+                      name(ie.elementName, top.location),
+                      ie.typerep,
+                      location=top.location),
+                  d.namedSignature.inputElements)),
+              location=top.location),
+            productionBody(
+              '{',
+              productionStmtsSnoc(
+                productionStmtsNil(location=top.location),
+                propagateAttrList('propagate', attrs, ';', location=top.location),
+                location=top.location),
+              '}',
+              location=top.location),
+            location=top.location),
+        nonForwardingProds));
+}
+
 concrete production propagateAttrList
 top::ProductionStmt ::= 'propagate' ns::NameList ';'
 {

@@ -14,6 +14,7 @@ synthesized attribute dclBoundVars :: [TyVar];
 
 -- values
 synthesized attribute namedSignature :: NamedSignature;
+synthesized attribute hasForward :: Boolean;
 
 -- occurs
 synthesized attribute attrOccurring :: String;
@@ -45,7 +46,7 @@ inherited attribute givenSubstitution :: Substitution;
  -}
 closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
                          typerep, givenNonterminalType, -- types (gNT for occurs)
-                         namedSignature, -- values that are fun/prod
+                         namedSignature, hasForward, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
                          isInherited, isSynthesized, -- attrs
                          prodDefs, -- production attributes
@@ -81,6 +82,7 @@ top::DclInfo ::=
   
   -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();
+  top.hasForward = false;
 
   -- On Occurs declarations and attrs
   top.isAnnotation = false;
@@ -136,7 +138,7 @@ top::DclInfo ::= sg::String sl::Location ty::Type
 
 -- ValueDclInfos that DO appear in interface files:
 abstract production prodDcl
-top::DclInfo ::= sg::String sl::Location ns::NamedSignature
+top::DclInfo ::= sg::String sl::Location ns::NamedSignature hasForward::Boolean
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -144,8 +146,9 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature
 
   local boundvars :: [TyVar] = top.typerep.freeVariables;
   
-  top.namedSignature = ns;  
+  top.namedSignature = ns;
   top.typerep = ns.typerep;
+  top.hasForward = hasForward;
 }
 abstract production funDcl
 top::DclInfo ::= sg::String sl::Location ns::NamedSignature
@@ -156,8 +159,9 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature
   
   local boundvars :: [TyVar] = top.typerep.freeVariables;
   
-  top.namedSignature = ns;  
+  top.namedSignature = ns;
   top.typerep = ns.typerep;
+  top.hasForward = false;
 }
 abstract production globalValueDcl
 top::DclInfo ::= sg::String sl::Location fn::String ty::Type
