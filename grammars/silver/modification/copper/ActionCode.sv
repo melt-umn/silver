@@ -59,6 +59,7 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 -- contained in the snoc-list (so this statement or before) are a pluck. Handles
 -- raising errors if there are statements after a pluck.
 synthesized attribute containsPluck :: Boolean occurs on ProductionStmts, ProductionStmt;
+flowtype containsPluck {decorate} on ProductionStmts, ProductionStmt;
 
 aspect production productionStmtsSnoc
 top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt

@@ -21,6 +21,8 @@ top::ProductionStmt ::= 'propagate' ns::NameList ';'
 abstract production propagateOneAttr
 top::ProductionStmt ::= attr::QName
 {
+  top.unparse = s"propagate ${attr.unparse};";
+  
   -- Ugh, workaround for circular dependency
   top.defs = [];
   top.productionAttributes = [];

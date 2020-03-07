@@ -121,6 +121,12 @@ top::QName ::= id::Name ':' qn::QName
   top.lookupLexerClass = decorate customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name, top.location) with {};
 }
 
+aspect production qNameError
+top::QName ::= msg::[Message]
+{
+  top.lookupLexerClass = decorate errorLookup(msg) with {};
+}
+
 
 --------------------------------------------------------------------------------
 

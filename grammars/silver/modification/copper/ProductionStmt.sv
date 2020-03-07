@@ -30,6 +30,7 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
 
   local tyCk :: TypeCheck = check(e.typerep, terminalIdType());
   tyCk.downSubst = e.upSubst;
+  tyCk.finalSubst = top.finalSubst;
   top.errors <-
     if tyCk.typeerror
     then [err(top.location, "'pluck' expects one of the terminals it is disambiguating between. Instead it received "++tyCk.leftpp)]
