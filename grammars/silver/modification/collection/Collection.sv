@@ -118,22 +118,23 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = [synColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
-
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
   te.env = tl.envBindingTyVars;
+  
+  q.operatorForType = te.typerep;
 
-  top.errors := te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
+  top.errors <- te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
         then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
-        else [];	
+        else [];
 
-  q.operatorForType = te.typerep;
-
-  forwards to attributeDclSyn($1, $2, a, tl, $5, te, $9, location=top.location);
+  forwards to
+    defsAGDcl(
+      [synColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)],
+      location=top.location);
 }
 
 concrete production collectionAttributeDclInh
@@ -144,22 +145,23 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = [inhColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
-
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
   te.env = tl.envBindingTyVars;
+  
+  q.operatorForType = te.typerep;
 
-  top.errors := te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
+  top.errors <- te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
         then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
-        else [];	
+        else [];
 
-  q.operatorForType = te.typerep;
-
-  forwards to attributeDclInh($1, $2, a, tl, $5, te, $9, location=top.location);
+  forwards to
+    defsAGDcl(
+      [inhColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)],
+      location=top.location);
 }
 
 

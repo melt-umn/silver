@@ -41,6 +41,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
   top.attrDefDispatcher = 
     \ dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr  l::Location ->
       errorAttributeDef([err(l, attr.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 
   top.attrBaseDefDispatcher = synBaseColAttributeDef(_, _, _, location=_);
   top.attrAppendDefDispatcher = synAppendColAttributeDef(_, _, _, location=_);
@@ -61,6 +62,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
   top.attrDefDispatcher =
     \ dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr  l::Location ->
       errorAttributeDef([err(l, attr.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 
   top.attrBaseDefDispatcher = inhBaseColAttributeDef(_, _, _, location=_);
   top.attrAppendDefDispatcher = inhAppendColAttributeDef(_, _, _, location=_);
@@ -83,6 +85,10 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type o::Operation
   top.appendDefDispatcher = appendCollectionValueDef(_, _, location=_);
   
   top.substitutedDclInfo = localCollectionDcl(sg,sl,fn, performRenaming(ty, top.givenSubstitution), o);
+  
+  -- TODO: attrOccursIndex
+  -- We shouldn't be forwarding here
+  forwards to localDcl(sg,sl,fn,ty);
 }
 
 
