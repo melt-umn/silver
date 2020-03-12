@@ -123,18 +123,15 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   te.env = tl.envBindingTyVars;
   
   q.operatorForType = te.typerep;
-
-  top.errors <- te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
+  
+  top.defs = [synColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
+  
+  top.errors := te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
         then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
         else [];
-
-  forwards to
-    defsAGDcl(
-      [synColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)],
-      location=top.location);
 }
 
 concrete production collectionAttributeDclInh
@@ -151,17 +148,14 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   
   q.operatorForType = te.typerep;
 
-  top.errors <- te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
+  top.defs = [inhColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
+
+  top.errors := te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
         then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
         else [];
-
-  forwards to
-    defsAGDcl(
-      [inhColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)],
-      location=top.location);
 }
 
 
