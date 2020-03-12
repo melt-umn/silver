@@ -34,6 +34,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
 
   top.typerep = ty;
   top.dclBoundVars = bound;
+  top.isSynthesized = true;
 
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
@@ -43,8 +44,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
 
   top.attrBaseDefDispatcher = synBaseColAttributeDef(_, _, _, location=_);
   top.attrAppendDefDispatcher = synAppendColAttributeDef(_, _, _, location=_);
-
-  forwards to synDcl(sg,sl,fn,bound,ty);
 }
 abstract production inhCollectionDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::Operation
@@ -55,6 +54,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
 
   top.typerep = ty;
   top.dclBoundVars = bound;
+  top.isInherited = true;
 
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: above should probably be an error handler!
@@ -64,8 +64,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
 
   top.attrBaseDefDispatcher = inhBaseColAttributeDef(_, _, _, location=_);
   top.attrAppendDefDispatcher = inhAppendColAttributeDef(_, _, _, location=_);
-
-  forwards to inhDcl(sg,sl,fn,bound,ty);
 }
 
 abstract production localCollectionDcl
@@ -83,8 +81,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type o::Operation
 
   top.baseDefDispatcher = baseCollectionValueDef(_, _, location=_);
   top.appendDefDispatcher = appendCollectionValueDef(_, _, location=_);
-
-  forwards to localDcl(sg,sl,fn,ty);
   
   top.substitutedDclInfo = localCollectionDcl(sg,sl,fn, performRenaming(ty, top.givenSubstitution), o);
 }
