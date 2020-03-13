@@ -95,7 +95,7 @@ top::ProductionStmt ::= attr::QName
   top.defs = [];
   top.productionAttributes = [];
   forwards to
-    if !attr.lookupAttribute.found
+    if !null(attr.lookupAttribute.errors)
     then errorProductionStmt(attr.lookupAttribute.errors, location=top.location)
     else attr.lookupAttribute.dcl.propagateDispatcher(attr, top.location);
 }

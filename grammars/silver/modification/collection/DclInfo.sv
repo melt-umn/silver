@@ -1,6 +1,6 @@
 grammar silver:modification:collection;
 
-attribute attrBaseDefDispatcher, attrAppendDefDispatcher, baseDefDispatcher, appendDefDispatcher occurs on DclInfo;
+attribute operation, attrBaseDefDispatcher, attrAppendDefDispatcher, baseDefDispatcher, appendDefDispatcher occurs on DclInfo;
 
 synthesized attribute attrBaseDefDispatcher :: (ProductionStmt ::= Decorated DefLHS  Decorated QNameAttrOccur  Expr  Location);
 synthesized attribute attrAppendDefDispatcher :: (ProductionStmt ::= Decorated DefLHS  Decorated QNameAttrOccur  Expr  Location);
@@ -8,12 +8,11 @@ synthesized attribute attrAppendDefDispatcher :: (ProductionStmt ::= Decorated D
 synthesized attribute baseDefDispatcher :: (ProductionStmt ::= Decorated QName  Expr  Location);
 synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated QName  Expr  Location);
 
--- TODO: the 'operation' value on these declarations is never used.
--- Please take a moment to think about whether it should even exist or not.
-
 aspect default production
 top::DclInfo ::=
 {
+  top.operation = error("Internal compiler error: must be defined for all collection attribute declarations");
+  
   top.attrBaseDefDispatcher =
     \ dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr  l::Location ->
       errorAttributeDef([err(l, "The ':=' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e, location=l);
@@ -35,6 +34,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
   top.typerep = ty;
   top.dclBoundVars = bound;
   top.isSynthesized = true;
+  top.operation = o;
 
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
@@ -56,6 +56,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
   top.typerep = ty;
   top.dclBoundVars = bound;
   top.isInherited = true;
+  top.operation = o;
 
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: above should probably be an error handler!
@@ -76,6 +77,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type o::Operation
   top.fullName = fn;
 
   top.typerep = ty;
+  top.operation = o;
   
   top.refDispatcher = localReference(_, location=_);
   top.defDispatcher = errorColNormalValueDef(_, _, location=_);
