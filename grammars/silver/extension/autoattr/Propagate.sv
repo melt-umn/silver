@@ -32,7 +32,7 @@ top::AGDcl ::= attrs::NameList nt::QName
   
   local nonForwardingProds::[DclInfo] =
     filter(\ d::DclInfo -> !d.hasForward, getKnownProds(nt.lookupType.fullName, top.env));
-  forwards to
+  local dcl::AGDcl =
     foldr(
       appendAGDcl(_, _, location=top.location), emptyAGDcl(location=top.location),
       map(
@@ -66,6 +66,11 @@ top::AGDcl ::= attrs::NameList nt::QName
               location=top.location),
             location=top.location),
         nonForwardingProds));
+   
+  forwards to
+    if !null(nt.lookupType.errors)
+    then errorAGDcl(nt.lookupType.errors, location=top.location)
+    else dcl;
 }
 
 concrete production propagateAttrList
