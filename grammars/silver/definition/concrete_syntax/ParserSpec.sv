@@ -23,7 +23,7 @@ synthesized attribute startNT :: String;
 {--
  - Prefixes to inject onto marking terminals in the composed parser.
  -}
-synthesized attribute terminalPrefixes :: [Pair<String String>];
+monoid attribute terminalPrefixes :: [Pair<String String>] with [], ++;
 
 
 abstract production parserSpec
@@ -33,7 +33,7 @@ top::ParserSpec ::= sl::Location  sg::String  fn::String  snt::String  grams::[S
   top.sourceGrammar = sg;
   top.fullName = fn;
   top.startNT = snt;
-  top.moduleNames = grams;
+  top.moduleNames := grams;
 
   -- We've decided we're using only the grammars in this parser to compute dependencies, as opposed 
   -- to all grammars imported in the env. 

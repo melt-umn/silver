@@ -15,7 +15,7 @@ concrete production productionDclC
 top::AGDcl ::= 'concrete' 'productions' lhs::ProductionLHS stmts::ProductionDclStmts 
 {
   top.unparse = "concrete productions " ++ lhs.unparse ++ stmts.unparse;
-  top.moduleNames = [];
+  propagate moduleNames, jarName; -- Avoid dependency on forward
   
   stmts.lhsdcl = lhs;
   

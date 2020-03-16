@@ -11,9 +11,7 @@ concrete production prefixParserComponentModifier
 top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::TerminalPrefix
 {  
   top.unparse = "prefix " ++ ts.unparse ++ " with " ++ s.unparse;
-  top.errors := ts.errors ++ s.errors;
-  top.terminalPrefixes = map(pair(_, s.terminalPrefix), ts.prefixItemNames);
-  top.liftedAGDcls = s.liftedAGDcls;
+  top.terminalPrefixes <- map(pair(_, s.terminalPrefix), ts.prefixItemNames);
   s.prefixedTerminals = ts.prefixItemNames;
 }
 
@@ -26,7 +24,7 @@ top::TerminalPrefix ::= s::QName
 {
   top.unparse = s.unparse;
   top.errors := s.lookupType.errors;
-  top.liftedAGDcls = emptyAGDcl(location=top.location);
+  propagate liftedAGDcls;
   top.terminalPrefix = makeCopperName(s.lookupType.fullName);
 }
 
@@ -38,7 +36,7 @@ top::TerminalPrefix ::= r::RegExpr tm::TerminalModifiers
   -- Prefix terminal name isn't based off the prefix right now since that might not be alphanumeric
   -- TODO make the terminal name based off alphanumeric characters from the regex for easier debugging of parse conflicts
   local terminalName::String = "Prefix_" ++ toString(genInt());
-  top.liftedAGDcls =
+  top.liftedAGDcls :=
     terminalDclDefault(
       terminalKeywordModifierNone(location=top.location),
       name(terminalName, top.location),
@@ -76,7 +74,7 @@ top::TerminalModifier ::= terms::[String]
 {
   top.unparse = s"use prefix separator for {${implode(", ", terms)}}";
 
-  top.terminalModifiers = [termUsePrefixSeperatorFor(terms)];
+  top.terminalModifiers := [termUsePrefixSeperatorFor(terms)];
   top.errors := [];
 }
 
@@ -160,8 +158,8 @@ concrete production disambiguateParserComponent
 top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
 {
   top.unparse = "prefer " ++ t.unparse ++ " over " ++ ts.unparse;
-  top.errors := t.lookupType.errors ++ ts.errors;
-  top.liftedAGDcls =
+  top.errors <- t.lookupType.errors;
+  top.liftedAGDcls <-
     -- Generate a disambiguation function for every combination of ts.
     -- TODO: we can't use Copper's subset disambiguation functions here unfourtunately,
     -- since we currently require those to be disjoint.
@@ -200,8 +198,7 @@ top::LexerClassModifier ::= 'prefix' 'separator' s::String_t
 {
   top.unparse = s"prefix separator ${s.lexeme}";
 
-  top.lexerClassModifiers = [lexerClassPrefixSeperator(substring(1, length(s.lexeme) - 1, s.lexeme))];
-  top.errors := [];
+  top.lexerClassModifiers := [lexerClassPrefixSeperator(substring(1, length(s.lexeme) - 1, s.lexeme))];
 }
 
 {- Not supported due to ambiguity with modifiers on prefix terminal defined
@@ -211,7 +208,6 @@ top::TerminalModifier ::= 'prefix' 'separator' s::String_t
 {
   top.unparse = s"prefix separator ${s.lexeme}";
 
-  top.terminalModifiers = [termPrefixSeperator(substring(1, length(s.lexeme) - 1, s.lexeme))];
-  top.errors := [];
+  top.terminalModifiers := [termPrefixSeperator(substring(1, length(s.lexeme) - 1, s.lexeme))];
 }
 -}

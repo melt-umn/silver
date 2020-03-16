@@ -12,7 +12,7 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te:
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = [autocopyDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [autocopyDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;

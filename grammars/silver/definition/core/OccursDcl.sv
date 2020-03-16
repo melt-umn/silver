@@ -10,15 +10,14 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
   -- We must unconditionally emit the occurs def in order to signal to the
   -- environment mechanism that we're in a different namespace than
   -- the types/attributes.
-  top.occursDefs = [
+  top.occursDefs := [
     (if !at.lookupAttribute.dcl.isAnnotation then occursDcl else annoInstanceDcl)(
       top.grammarName, at.location,
       nt.lookupType.fullName, at.lookupAttribute.fullName,
       protontty, protoatty)];
 
   -- binding errors in looking up these names.
-  top.errors := nt.lookupType.errors ++
-    attl.errors ++ nttl.errors ++
+  top.errors <- nt.lookupType.errors ++
     -- The nonterminal type list is strictly type VARIABLES only
     nttl.errorsTyVars;
   
@@ -104,8 +103,8 @@ abstract production errorAttributionDcl
 top::AGDcl ::= msg::[Message] at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
-  top.occursDefs = [];
-  top.errors := msg;
+  top.occursDefs := [];
+  top.errors <- msg;
   
   nttl.initialEnv = top.env;
   attl.env = nttl.envBindingTyVars;
@@ -115,7 +114,6 @@ top::AGDcl ::= msg::[Message] at::Decorated QName attl::BracketedOptTypeExprs nt
   top.errors <-
     -- binding errors in looking up these names.
     nt.lookupType.errors ++
-    attl.errors ++ nttl.errors ++
     -- The nonterminal type list is strictly type VARIABLES only
     nttl.errorsTyVars;
   
@@ -139,8 +137,8 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   -- specified by a seperate occursDefs attribute.
   -- Attribution dispatch productions should only define occursDefs (i.e. no new
   -- nonterminals, productions, attributes, etc.)
-  top.defs = [];
-  top.moduleNames = [];
+  top.defs := [];
+  top.moduleNames := [];
   
   forwards to
     (if !at.lookupAttribute.found

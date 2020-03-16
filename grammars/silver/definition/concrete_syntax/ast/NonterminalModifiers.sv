@@ -7,19 +7,15 @@ imports silver:definition:core only nonterminalName;
  -}
 nonterminal SyntaxNonterminalModifiers with cstEnv, cstErrors, customLayout, nonterminalName;
 
+propagate cstErrors, customLayout on SyntaxNonterminalModifiers;
+
 abstract production consNonterminalMod
 top::SyntaxNonterminalModifiers ::= h::SyntaxNonterminalModifier  t::SyntaxNonterminalModifiers
-{
-  top.cstErrors := h.cstErrors ++ t.cstErrors;
-  top.customLayout = orElse(h.customLayout, t.customLayout);
-}
+{}
 
 abstract production nilNonterminalMod
 top::SyntaxNonterminalModifiers ::= 
-{
-  top.cstErrors := [];
-  top.customLayout = nothing();
-}
+{}
 
 
 {--
@@ -30,8 +26,8 @@ nonterminal SyntaxNonterminalModifier with cstEnv, cstErrors, customLayout, nont
 aspect default production
 top::SyntaxNonterminalModifier ::=
 {
-  top.cstErrors := [];
-  top.customLayout = nothing();
+  -- Empty values as defaults
+  propagate cstErrors, customLayout;
 }
 
 {--
@@ -48,5 +44,5 @@ top::SyntaxNonterminalModifier ::= terms::[String]
                            "this grammar was not included in this parser. (Referenced from layout clause on nonterminal " ++ top.nonterminalName ++ ")"],
                    zipWith(pair, terms, termRefs));
 
-  top.customLayout = just(terms);
+  top.customLayout := just(terms);
 }

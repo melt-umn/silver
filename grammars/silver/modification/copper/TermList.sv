@@ -8,18 +8,20 @@ grammar silver:modification:copper;
 synthesized attribute qnames :: [QName];
 nonterminal TermList with config, grammarName, unparse, location, qnames, termList, defs, errors, env;
 
-synthesized attribute termList :: [String];
+monoid attribute termList :: [String] with [], ++;
+
+propagate errors, termList on TermList;
 
 concrete production termListOne
 terms::TermList ::= t::QName
 {
-   forwards to termList(t,termListNull(location=t.location), location=t.location);
+  forwards to termList(t,termListNull(location=t.location), location=t.location);
 }
 
 concrete production termListCons
 terms::TermList ::= t::QName ',' terms_tail::TermList
 {
-   forwards to termList(t,terms_tail,location=terms.location);
+  forwards to termList(t,terms_tail,location=terms.location);
 }
 
 
@@ -34,13 +36,12 @@ top::TermList ::= h::QName t::TermList
 
   production fName::String = h.lookupType.dcl.fullName;
 
-  top.termList = [fName] ++ t.termList ;
+  top.termList <- [fName];
   
   -- Itd be nice if we didnt need this guard
-  top.defs = if null(h.lookupType.dcls) then t.defs 
-             else pluckTermDef(top.grammarName, h.location, fName) :: t.defs;
+  top.defs := if null(h.lookupType.dcls) then t.defs 
+              else pluckTermDef(top.grammarName, h.location, fName) :: t.defs;
   
-  top.errors := t.errors;
   -- Since were looking it up in two ways, do the errors ourselves
   -- Todo: Consider: should this report a different error if the element of the list 
   -- exists but is not a terminal, i.e "Expected a terminal but got a _____"?
@@ -56,7 +57,5 @@ top::TermList ::=
 {
   top.unparse = "";
   top.qnames = [];
-  top.termList = [];
-  top.defs = [];
-  top.errors := [];
+  top.defs := [];
 }

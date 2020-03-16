@@ -124,9 +124,11 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   
   q.operatorForType = te.typerep;
   
-  top.defs = [synColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
+  top.defs := [synColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
   
-  top.errors := te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
+  propagate errors, flowDefs;
+  
+  top.errors <- tl.errorsTyVars;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
@@ -148,9 +150,11 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   
   q.operatorForType = te.typerep;
 
-  top.defs = [inhColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
+  top.defs := [inhColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
 
-  top.errors := te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
+  propagate errors, flowDefs;
+  
+  top.errors <- tl.errorsTyVars;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
@@ -164,14 +168,14 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
 {
   top.unparse = "production attribute " ++ a.name ++ " :: " ++ te.unparse ++ " with " ++ q.unparse ++ " ;" ;
 
-  top.productionAttributes = [localColDef(top.grammarName, a.location, fName, te.typerep, q.operation)];
+  top.productionAttributes := [localColDef(top.grammarName, a.location, fName, te.typerep, q.operation)];
 
   production attribute fName :: String;
   fName = top.frame.fullName ++ ":local:" ++ a.name;
 
-  top.defs = [];
+  top.defs := [];
 
-  top.errors := te.errors ++ q.errors;
+  propagate errors;
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
@@ -325,8 +329,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
-  top.productionAttributes = [];
-  top.defs = [];
+  top.productionAttributes := [];
+  top.defs := [];
   
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
@@ -343,8 +347,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
-  top.productionAttributes = [];
-  top.defs = [];
+  top.productionAttributes := [];
+  top.defs := [];
   
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
@@ -362,8 +366,8 @@ top::ProductionStmt ::= val::QName '<-' e::Expr ';'
   
   top.errors <- val.lookupValue.errors;
 
-  top.productionAttributes = [];
-  top.defs = [];
+  top.productionAttributes := [];
+  top.defs := [];
   
   forwards to if null(val.lookupValue.dcls)
               then errorValueDef(val, e, location=top.location)
@@ -377,8 +381,8 @@ top::ProductionStmt ::= val::QName ':=' e::Expr ';'
 
   top.errors <- val.lookupValue.errors;
 
-  top.productionAttributes = [];
-  top.defs = [];
+  top.productionAttributes := [];
+  top.defs := [];
   
   forwards to if null(val.lookupValue.dcls)
               then errorValueDef(val, e, location=top.location)

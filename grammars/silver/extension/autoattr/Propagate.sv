@@ -26,9 +26,9 @@ top::AGDcl ::= attrs::NameList nt::QName
   top.unparse = s"propagate ${attrs.unparse} on ${nt.unparse};";
   
   -- Ugh, workaround for circular dependency
-  top.defs = [];
-  top.occursDefs = [];
-  top.moduleNames = [];
+  top.defs := [];
+  top.occursDefs := [];
+  top.moduleNames := [];
   
   local nonForwardingProds::[DclInfo] =
     filter(\ d::DclInfo -> !d.hasForward, getKnownProds(nt.lookupType.fullName, top.env));
@@ -97,8 +97,8 @@ top::ProductionStmt ::= attr::QName
   top.unparse = s"propagate ${attr.unparse};";
   
   -- Ugh, workaround for circular dependency
-  top.defs = [];
-  top.productionAttributes = [];
+  top.defs := [];
+  top.productionAttributes := [];
   forwards to
     if !null(attr.lookupAttribute.errors)
     then errorProductionStmt(attr.lookupAttribute.errors, location=top.location)

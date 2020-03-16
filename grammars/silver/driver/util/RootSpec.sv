@@ -25,7 +25,7 @@ nonterminal RootSpec with
 {--
  - Grammars that were read from source.
  -}
-synthesized attribute translateGrammars :: [Decorated RootSpec];
+monoid attribute translateGrammars :: [Decorated RootSpec] with [], ++;
 
 {--
  - Parse errors present in this grammar (only for errorRootSpec!)
@@ -72,22 +72,22 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   top.grammarTime = grammarTime;
   top.interfaceTime = grammarTime;
   top.generateLocation = generateLocation;
-  top.recheckGrammars = [];
-  top.translateGrammars = [top];
+  top.recheckGrammars := [];
+  top.translateGrammars := [top];
 
   top.declaredName = g.declaredName;
-  top.moduleNames = makeSet(g.moduleNames ++ ["core"]); -- Ensure the prelude is in the deps, always
-  top.exportedGrammars = g.exportedGrammars;
-  top.optionalGrammars = g.optionalGrammars;
-  top.condBuild = g.condBuild;
-  top.allGrammarDependencies = actualDependencies;
+  top.moduleNames := makeSet(g.moduleNames ++ ["core"]); -- Ensure the prelude is in the deps, always
+  top.exportedGrammars := g.exportedGrammars;
+  top.optionalGrammars := g.optionalGrammars;
+  top.condBuild := g.condBuild;
+  top.allGrammarDependencies := actualDependencies;
   
-  top.defs = g.defs;
-  top.occursDefs = g.occursDefs;
+  top.defs := g.defs;
+  top.occursDefs := g.occursDefs;
   top.grammarErrors = g.grammarErrors;
   top.parsingErrors = [];
 
-  top.jarName = g.jarName;
+  top.jarName := g.jarName;
 }
 
 {--
@@ -102,22 +102,22 @@ top::RootSpec ::= i::InterfaceItems  interfaceTime::Integer  generateLocation::S
   top.generateLocation = generateLocation;
   
   local ood :: Boolean = isOutOfDate(interfaceTime, top.allGrammarDependencies, top.compiledGrammars);
-  top.recheckGrammars = if ood then [i.maybeDeclaredName.fromJust] else [];
-  top.translateGrammars = [];
+  top.recheckGrammars := if ood then [i.maybeDeclaredName.fromJust] else [];
+  top.translateGrammars := [];
 
   top.declaredName = i.maybeDeclaredName.fromJust; 
-  top.moduleNames = i.maybeModuleNames.fromJust;
-  top.exportedGrammars = i.maybeExportedGrammars.fromJust;
-  top.optionalGrammars = i.maybeOptionalGrammars.fromJust;
-  top.condBuild = i.maybeCondBuild.fromJust;
-  top.allGrammarDependencies = i.maybeAllGrammarDependencies.fromJust;
+  top.moduleNames := i.maybeModuleNames.fromJust;
+  top.exportedGrammars := i.maybeExportedGrammars.fromJust;
+  top.optionalGrammars := i.maybeOptionalGrammars.fromJust;
+  top.condBuild := i.maybeCondBuild.fromJust;
+  top.allGrammarDependencies := i.maybeAllGrammarDependencies.fromJust;
 
-  top.defs = i.maybeDefs.fromJust;
-  top.occursDefs = i.maybeOccursDefs.fromJust;
+  top.defs := i.maybeDefs.fromJust;
+  top.occursDefs := i.maybeOccursDefs.fromJust;
   top.grammarErrors = []; -- TODO: consider getting grammarName and comparing against declaredName?
   top.parsingErrors = [];
 
-  top.jarName = nothing();
+  top.jarName := nothing();
 }
 
 {--
@@ -131,22 +131,22 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
   top.interfaceTime = grammarTime;
   top.generateLocation = generateLocation;
   
-  top.recheckGrammars = [];
-  top.translateGrammars = [];
+  top.recheckGrammars := [];
+  top.translateGrammars := [];
 
   top.declaredName = grammarName; 
-  top.moduleNames = [];
-  top.exportedGrammars = [];
-  top.optionalGrammars = [];
-  top.condBuild = [];
-  top.allGrammarDependencies = [];
+  top.moduleNames := [];
+  top.exportedGrammars := [];
+  top.optionalGrammars := [];
+  top.condBuild := [];
+  top.allGrammarDependencies := [];
 
-  top.defs = [];
-  top.occursDefs = [];
+  top.defs := [];
+  top.occursDefs := [];
   top.grammarErrors = [];
   top.parsingErrors = map(parseErrorToMessage(grammarSource, _), e);
 
-  top.jarName = nothing();
+  top.jarName := nothing();
 }
 
 function parseErrorToMessage
@@ -164,19 +164,18 @@ Pair<String [Message]> ::= grammarSource::String  e::ParseError
   end;
 }
 
--- TODO: These should all be monoids
-synthesized attribute maybeGrammarSource::Maybe<String>;
-synthesized attribute maybeGrammarTime::Maybe<Integer>;
-synthesized attribute maybeDeclaredName::Maybe<String>;
-synthesized attribute maybeModuleNames::Maybe<[String]>;
-synthesized attribute maybeExportedGrammars::Maybe<[String]>;
-synthesized attribute maybeOptionalGrammars::Maybe<[String]>;
-synthesized attribute maybeCondBuild::Maybe<[[String]]>;
-synthesized attribute maybeAllGrammarDependencies::Maybe<[String]>;
-synthesized attribute maybeDefs::Maybe<[Def]>;
-synthesized attribute maybeOccursDefs::Maybe<[DclInfo]>;
+monoid attribute maybeGrammarSource::Maybe<String> with nothing(), orElse;
+monoid attribute maybeGrammarTime::Maybe<Integer> with nothing(), orElse;
+monoid attribute maybeDeclaredName::Maybe<String> with nothing(), orElse;
+monoid attribute maybeModuleNames::Maybe<[String]> with nothing(), orElse;
+monoid attribute maybeExportedGrammars::Maybe<[String]> with nothing(), orElse;
+monoid attribute maybeOptionalGrammars::Maybe<[String]> with nothing(), orElse;
+monoid attribute maybeCondBuild::Maybe<[[String]]> with nothing(), orElse;
+monoid attribute maybeAllGrammarDependencies::Maybe<[String]> with nothing(), orElse;
+monoid attribute maybeDefs::Maybe<[Def]> with nothing(), orElse;
+monoid attribute maybeOccursDefs::Maybe<[DclInfo]> with nothing(), orElse;
 
-synthesized attribute interfaceErrors::[String] with ++;
+monoid attribute interfaceErrors::[String] with [], ++;
 
 {--
  - Representation of all properties of a grammar, to be serialized/deserialize to/from an interface
@@ -184,20 +183,12 @@ synthesized attribute interfaceErrors::[String] with ++;
  -}
 nonterminal InterfaceItems with maybeGrammarSource, maybeGrammarTime, maybeDeclaredName, maybeModuleNames, maybeExportedGrammars, maybeOptionalGrammars, maybeCondBuild, maybeAllGrammarDependencies, maybeDefs, maybeOccursDefs, interfaceErrors;
 
+propagate maybeGrammarSource, maybeGrammarTime, maybeDeclaredName, maybeModuleNames, maybeExportedGrammars, maybeOptionalGrammars, maybeCondBuild, maybeAllGrammarDependencies, maybeDefs, maybeOccursDefs
+  on InterfaceItems; 
+
 abstract production consInterfaceItem
 top::InterfaceItems ::= h::InterfaceItem t::InterfaceItems
 {
-  top.maybeGrammarSource = orElse(t.maybeGrammarSource, h.maybeGrammarSource);
-  top.maybeGrammarTime = orElse(t.maybeGrammarTime, h.maybeGrammarTime);
-  top.maybeDeclaredName = orElse(t.maybeDeclaredName, h.maybeDeclaredName);
-  top.maybeModuleNames = orElse(t.maybeModuleNames, h.maybeModuleNames);
-  top.maybeExportedGrammars = orElse(t.maybeExportedGrammars, h.maybeExportedGrammars);
-  top.maybeOptionalGrammars = orElse(t.maybeOptionalGrammars, h.maybeOptionalGrammars);
-  top.maybeCondBuild = orElse(t.maybeCondBuild, h.maybeCondBuild);
-  top.maybeAllGrammarDependencies = orElse(t.maybeAllGrammarDependencies, h.maybeAllGrammarDependencies);
-  top.maybeDefs = orElse(t.maybeDefs, h.maybeDefs);
-  top.maybeOccursDefs = orElse(t.maybeOccursDefs, h.maybeOccursDefs);
-  
   top.interfaceErrors := [];
   top.interfaceErrors <- if !top.maybeGrammarSource.isJust then ["Missing item grammarSource"] else [];
   top.interfaceErrors <- if !top.maybeGrammarTime.isJust then ["Missing item grammarTime"] else [];
@@ -214,17 +205,6 @@ top::InterfaceItems ::= h::InterfaceItem t::InterfaceItems
 abstract production nilInterfaceItem
 top::InterfaceItems ::=
 {
-  top.maybeGrammarSource = nothing();
-  top.maybeGrammarTime = nothing();
-  top.maybeDeclaredName = nothing();
-  top.maybeModuleNames = nothing();
-  top.maybeExportedGrammars = nothing();
-  top.maybeOptionalGrammars = nothing();
-  top.maybeCondBuild = nothing();
-  top.maybeAllGrammarDependencies = nothing();
-  top.maybeDefs = nothing();
-  top.maybeOccursDefs = nothing();
-  
   top.interfaceErrors := ["Missing all items"];
 }
 
@@ -233,76 +213,68 @@ closed nonterminal InterfaceItem with maybeGrammarSource, maybeGrammarTime, mayb
 aspect default production
 top::InterfaceItem ::=
 {
-  top.maybeGrammarSource = nothing();
-  top.maybeGrammarTime = nothing();
-  top.maybeDeclaredName = nothing();
-  top.maybeModuleNames = nothing();
-  top.maybeExportedGrammars = nothing();
-  top.maybeOptionalGrammars = nothing();
-  top.maybeCondBuild = nothing();
-  top.maybeAllGrammarDependencies = nothing();
-  top.maybeDefs = nothing();
-  top.maybeOccursDefs = nothing();
+  -- Empty values as defaults
+  propagate maybeGrammarSource, maybeGrammarTime, maybeDeclaredName, maybeModuleNames, maybeExportedGrammars, maybeOptionalGrammars, maybeCondBuild, maybeAllGrammarDependencies, maybeDefs, maybeOccursDefs;
 }
 
 abstract production grammarSourceInterfaceItem
 top::InterfaceItem ::= val::String
 {
-  top.maybeGrammarSource = just(val);
+  top.maybeGrammarSource := just(val);
 }
 
 abstract production grammarTimeInterfaceItem
 top::InterfaceItem ::= val::Integer
 {
-  top.maybeGrammarTime = just(val);
+  top.maybeGrammarTime := just(val);
 }
 
 abstract production declaredNameInterfaceItem
 top::InterfaceItem ::= val::String
 {
-  top.maybeDeclaredName = just(val);
+  top.maybeDeclaredName := just(val);
 }
 
 abstract production moduleNamesInterfaceItem
 top::InterfaceItem ::= val::[String]
 {
-  top.maybeModuleNames = just(val);
+  top.maybeModuleNames := just(val);
 }
 
 abstract production exportedGrammarsInterfaceItem
 top::InterfaceItem ::= val::[String]
 {
-  top.maybeExportedGrammars = just(val);
+  top.maybeExportedGrammars := just(val);
 }
 
 abstract production optionalGrammarsInterfaceItem
 top::InterfaceItem ::= val::[String]
 {
-  top.maybeOptionalGrammars = just(val);
+  top.maybeOptionalGrammars := just(val);
 }
 
 abstract production condBuildInterfaceItem
 top::InterfaceItem ::= val::[[String]]
 {
-  top.maybeCondBuild = just(val);
+  top.maybeCondBuild := just(val);
 }
 
 abstract production allDepsInterfaceItem
 top::InterfaceItem ::= val::[String]
 {
-  top.maybeAllGrammarDependencies = just(val);
+  top.maybeAllGrammarDependencies := just(val);
 }
 
 abstract production defsInterfaceItem
 top::InterfaceItem ::= val::[Def]
 {
-  top.maybeDefs = just(val);
+  top.maybeDefs := just(val);
 }
 
 abstract production occursDefsInterfaceItem
 top::InterfaceItem ::= val::[DclInfo]
 {
-  top.maybeOccursDefs = just(val);
+  top.maybeOccursDefs := just(val);
 }
 
 {--

@@ -8,7 +8,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::Ac
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = [parserAttrDef(top.grammarName, a.location, fName, te.typerep)];
+  top.defs := [parserAttrDef(top.grammarName, a.location, fName, te.typerep)];
 
   top.errors <- if length(getValueDclAll(fName, top.env)) > 1
                 then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
@@ -26,7 +26,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::Ac
   acode.frame = actionContext(myFlowGraph);
   acode.env = newScopeEnv(acode.defs, top.env);
   
-  top.syntaxAst = [syntaxParserAttribute(fName, te.typerep, acode.actionCode)];
+  top.syntaxAst := [syntaxParserAttribute(fName, te.typerep, acode.actionCode)];
 }
 
 concrete production attributeAspectParser
@@ -37,7 +37,7 @@ top::AGDcl ::= 'aspect' 'parser' 'attribute' a::QName 'action' acode::ActionCode
   production attribute fName :: String;
   fName = a.lookupValue.dcl.fullName;
 
-  top.defs = [];
+  top.defs := [];
 
   top.errors <- if null(a.lookupValue.dcls)
                 then [err(a.location, "Undefined attribute '" ++ a.name ++ "'.")]
@@ -55,6 +55,6 @@ top::AGDcl ::= 'aspect' 'parser' 'attribute' a::QName 'action' acode::ActionCode
   acode.frame = actionContext(myFlowGraph);
   acode.env = newScopeEnv(acode.defs, top.env);
   
-  top.syntaxAst = [syntaxParserAttributeAspect(fName, acode.actionCode)];
+  top.syntaxAst := [syntaxParserAttributeAspect(fName, acode.actionCode)];
 }
 

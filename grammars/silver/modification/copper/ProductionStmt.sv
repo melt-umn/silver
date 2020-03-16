@@ -23,10 +23,11 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
   -- Perhaps this problem can be resolved by using a proper type in this situation.
   top.translation = "return (Integer)(" ++ e.translation ++ ");\n";
 
-  top.errors := (if !top.frame.permitPluck
-               then [err(top.location, "'pluck' allowed only in disambiguation-group parser actions.")]
-               else [])
-               ++ e.errors;
+  propagate errors;
+  top.errors <-
+    if !top.frame.permitPluck
+    then [err(top.location, "'pluck' allowed only in disambiguation-group parser actions.")]
+    else [];
 
   local tyCk :: TypeCheck = check(e.typerep, terminalIdType());
   tyCk.downSubst = e.upSubst;
@@ -51,10 +52,11 @@ top::ProductionStmt ::= 'print' e::Expr ';'
 
   top.translation = "System.err.println(" ++ e.translation ++ ");\n";
 
-  top.errors := (if !top.frame.permitActions
-               then [err(top.location, "'print' statement allowed only in parser action blocks. You may be looking for print(String,IO) :: IO.")]
-               else [])
-               ++ e.errors;
+  propagate errors;
+  top.errors <-
+    if !top.frame.permitActions
+    then [err(top.location, "'print' statement allowed only in parser action blocks. You may be looking for print(String,IO) :: IO.")]
+    else [];
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
@@ -80,10 +82,11 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
-  top.errors := e.errors ++
-               (if !top.frame.permitActions
-                then [err(top.location, "Assignment to parser attributes only permitted in parser action blocks")]
-                else []);
+  propagate errors;
+  top.errors <-
+    if !top.frame.permitActions
+    then [err(top.location, "Assignment to parser attributes only permitted in parser action blocks")]
+    else [];
 
   top.translation = makeCopperName(val.lookupValue.fullName) ++ " = " ++ e.translation ++ ";\n";
 
@@ -105,10 +108,11 @@ top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
 {
   top.unparse = "\t" ++ "pushToken(" ++ val.unparse ++ ", " ++ lexeme.unparse ++ ");";
 
-  top.errors := lexeme.errors ++
-               (if !top.frame.permitActions
-                then [err(top.location, "Tokens may only be pushed in action blocks")]
-                else []);
+  propagate errors;
+  top.errors <-
+    if !top.frame.permitActions
+    then [err(top.location, "Tokens may only be pushed in action blocks")]
+    else [];
 
   top.translation = "pushToken(Terminals." ++ makeCopperName(val.lookupType.fullName) ++ ", (" ++ lexeme.translation ++ ").toString()" ++ ");";
 
@@ -129,10 +133,13 @@ concrete production blockStmt
 top::ProductionStmt ::= '{' stmts::ProductionStmts '}'
 {
   top.unparse = "\t{\n" ++ stmts.unparse ++ "\n\t}";
-  top.errors := stmts.errors ++
-               (if !top.frame.permitActions
-                then [err(top.location, "Block statement is only permitted in action blocks")]
-                else []);
+  
+  propagate errors;
+  top.errors <-
+    if !top.frame.permitActions
+    then [err(top.location, "Block statement is only permitted in action blocks")]
+    else [];
+  
   top.translation = stmts.translation;
   
   stmts.downSubst = top.downSubst;
@@ -145,10 +152,11 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' e
 {
   top.unparse = "\t" ++ "if (" ++ condition.unparse ++ ") " ++ th.unparse ++ "\nelse " ++ el.unparse;
 
-  top.errors := condition.errors ++ th.errors ++ el.errors ++
-               (if !top.frame.permitActions
-                then [err(top.location, "If statement is only permitted in action blocks")]
-                else []);
+  propagate errors;
+  top.errors <-
+    if !top.frame.permitActions
+    then [err(top.location, "If statement is only permitted in action blocks")]
+    else [];
 
   top.translation = s"if(${condition.translation}) {${th.translation}} else {${el.translation}}";
 
@@ -187,9 +195,11 @@ top::DefLHS ::= q::Decorated QName
   top.found = false;
   
   -- Note this is always erroring!
-  top.errors := if !top.frame.permitActions
-                then [err(q.location, "Parser attributes can only be used in action blocks")]
-                else [err(q.location, "Parser action blocks are imperative, not declarative. You cannot modify the attributes of " ++ q.name ++ ". If you are trying to set inherited attributes, you should use 'decorate ... with { ... }' when you create it.")];
+  propagate errors;
+  top.errors <-
+    if !top.frame.permitActions
+    then [err(q.location, "Parser attributes can only be used in action blocks")]
+    else [err(q.location, "Parser action blocks are imperative, not declarative. You cannot modify the attributes of " ++ q.name ++ ". If you are trying to set inherited attributes, you should use 'decorate ... with { ... }' when you create it.")];
 
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 
@@ -202,7 +212,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   -- these values should only ever be in scope when it's valid to use them
-  top.errors := e.errors;
+  propagate errors;
   
   top.errors <-
     if val.name != "lexeme" then [] else

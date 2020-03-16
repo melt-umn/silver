@@ -34,53 +34,37 @@ autocopy attribute frame :: BlockContext;
 {--
  - Defs of attributes that should be wrapped up as production attributes.
  -}
-synthesized attribute productionAttributes :: [Def];
+monoid attribute productionAttributes :: [Def] with [], ++;
 {--
  - Either the 'forward' expression, or the 'return' expression.
  - I gave it an obtuse name so it could easily be renamed in the future.
  -}
-synthesized attribute uniqueSignificantExpression :: [Decorated Expr];
+monoid attribute uniqueSignificantExpression :: [Decorated Expr] with [], ++;
 
 {--
  - The attribute we're defining on a DefLHS.
  -}
 inherited attribute defLHSattr :: Decorated QNameAttrOccur;
 
+propagate errors on ProductionBody, ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr;
+propagate defs, productionAttributes, uniqueSignificantExpression on ProductionBody, ProductionStmts;
 
 concrete production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
   top.unparse = stmts.unparse;
-
-  top.productionAttributes = stmts.productionAttributes;
-  top.uniqueSignificantExpression = stmts.uniqueSignificantExpression;
-
-  top.defs = stmts.defs;
-  top.errors := stmts.errors;
 }
 
 concrete production productionStmtsNil
 top::ProductionStmts ::= 
 {
   top.unparse = "";
-
-  top.productionAttributes = [];
-  top.uniqueSignificantExpression = [];
-
-  top.defs = [];
-  top.errors := [];
 }
 
 concrete production productionStmtsSnoc
 top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
-  
-  top.productionAttributes = h.productionAttributes ++ t.productionAttributes;
-  top.uniqueSignificantExpression = h.uniqueSignificantExpression ++ t.uniqueSignificantExpression;
-
-  top.defs = h.defs ++ t.defs;
-  top.errors := h.errors ++ t.errors;
 }
 
 ----------
@@ -89,23 +73,14 @@ abstract production productionStmtAppend
 top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
-
-  top.productionAttributes = h.productionAttributes ++ t.productionAttributes;
-  top.uniqueSignificantExpression = h.uniqueSignificantExpression ++ t.uniqueSignificantExpression;
-
-  top.defs = h.defs ++ t.defs;
-  top.errors := h.errors ++ t.errors;
+  propagate defs, productionAttributes, uniqueSignificantExpression;
 }
 
 abstract production errorProductionStmt
 top::ProductionStmt ::= e::[Message]
 {
   top.unparse = s"{- Errors:\n${messagesToString(e)} -}";
-  top.errors := e;
-  
-  top.productionAttributes = [];
-  top.uniqueSignificantExpression = [];
-  top.defs = [];
+  top.errors <- e;
 }
 
 --------------------------------------------------------------------------------
@@ -115,10 +90,10 @@ top::ProductionStmt ::=
 {
   -- as is usual for defaults ("base classes")
   -- can't provide unparse or location, errors should NOT be defined!
-  top.productionAttributes = [];
-  top.uniqueSignificantExpression = [];
+  top.productionAttributes := [];
+  top.uniqueSignificantExpression := [];
   
-  top.defs = [];
+  top.defs := [];
 }
 
 concrete production returnDef
@@ -126,9 +101,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 {
   top.unparse = "\treturn " ++ e.unparse ++ ";";
   
-  top.uniqueSignificantExpression = [e];
-
-  top.errors := e.errors;
+  top.uniqueSignificantExpression := [e];
   
   top.errors <- if !top.frame.permitReturn
                 then [err(top.location, "Return is not valid in this context. (They are only permitted in function declarations.)")]
@@ -143,9 +116,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   production attribute fName :: String;
   fName = top.frame.fullName ++ ":local:" ++ a.name;
 
-  top.defs = [localDef(top.grammarName, a.location, fName, te.typerep)];
-
-  top.errors := te.errors;
+  top.defs := [localDef(top.grammarName, a.location, fName, te.typerep)];
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1 
@@ -163,8 +134,8 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
   -- TODO: we should unparse the production keyword, not local here!!
   --top.unparse = "\tproduction attribute " ++ a.unparse ++ "::" ++ te.unparse ++ ";";
 
-  top.productionAttributes = forward.defs;
-  top.defs = [];
+  top.productionAttributes := forward.defs;
+  top.defs := [];
 
   top.errors <- if !top.frame.permitProductionAttributes
                 then [err(top.location, "Production attributes are not valid in this context.")]
@@ -178,10 +149,8 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
   top.unparse = "\tforwards to " ++ e.unparse;
 
-  top.productionAttributes = [forwardDef(top.grammarName, top.location, top.frame.signature.outputElement.typerep)];
-  top.uniqueSignificantExpression = [e];
-
-  top.errors := e.errors;
+  top.productionAttributes := [forwardDef(top.grammarName, top.location, top.frame.signature.outputElement.typerep)];
+  top.uniqueSignificantExpression := [e];
 
   top.errors <- if !top.frame.permitForward
                 then [err(top.location, "Forwarding is not permitted in this context. (Only permitted in non-aspect productions.)")]
@@ -206,8 +175,6 @@ top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 
   production attribute fwdDcls :: [DclInfo];
   fwdDcls = getValueDcl("forward", top.env);
-
-  top.errors := inh.errors;
   
   top.errors <- if null(fwdDcls)
                 then [err(top.location, "'forwarding with' clause for a production that does not forward!")]
@@ -219,22 +186,18 @@ concrete production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
   top.unparse = lhs.unparse ++ " = " ++ e.unparse ++ ";";
-
-  top.errors := lhs.errors ++ e.errors;
 }
 
 concrete production forwardInhsOne
 top::ForwardInhs ::= lhs::ForwardInh
 {
   top.unparse = lhs.unparse;
-  top.errors := lhs.errors;
 }
 
 concrete production forwardInhsCons
 top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 {
   top.unparse = lhs.unparse ++ " " ++ rhs.unparse;
-  top.errors := lhs.errors ++ rhs.errors;
 }
 
 concrete production forwardLhsExpr
@@ -243,7 +206,6 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
   top.name = q.name;
   top.unparse = q.unparse;
 
-  top.errors := q.errors;
   top.typerep = q.typerep;
   
   q.attrFor = top.frame.signature.outputElement.typerep;
@@ -255,8 +217,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
-  top.productionAttributes = [];
-  top.defs = [];
+  top.productionAttributes := [];
+  top.defs := [];
   
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
@@ -290,16 +252,12 @@ abstract production synthesizedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
-
-  top.errors := e.errors;
 }
 
 abstract production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
-
-  top.errors := e.errors;
 }
 
 concrete production concreteDefLHS
@@ -322,7 +280,7 @@ top::DefLHS ::= q::Decorated QName
   top.unparse = q.unparse;
   top.found = false;
   
-  top.errors := 
+  top.errors <-
     if top.typerep.isError then [] else [err(q.location, "Cannot define attributes on " ++ q.name)];
   top.typerep = q.lookupValue.typerep;
 }
@@ -342,7 +300,7 @@ top::DefLHS ::= q::Decorated QName
   
   local existingProblems :: Boolean = !top.defLHSattr.found || top.typerep.isError;
   
-  top.errors :=
+  top.errors <-
     if existingProblems || top.found then []
     else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on child '" ++ q.name ++ "'")];
                 
@@ -358,7 +316,7 @@ top::DefLHS ::= q::Decorated QName
   
   local existingProblems :: Boolean = !top.defLHSattr.found || top.typerep.isError;
   
-  top.errors :=
+  top.errors <-
     if existingProblems || top.found then []
     else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.name ++ "' on the lhs '" ++ q.name ++ "'")];
 
@@ -374,7 +332,7 @@ top::DefLHS ::= q::Decorated QName
   
   local existingProblems :: Boolean = !top.defLHSattr.found || top.typerep.isError;
   
-  top.errors :=
+  top.errors <-
     if existingProblems || top.found then []
     else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on local '" ++ q.name ++ "'")];
 
@@ -390,7 +348,7 @@ top::DefLHS ::= q::Decorated QName
   
   local existingProblems :: Boolean = !top.defLHSattr.found || top.typerep.isError;
   
-  top.errors :=
+  top.errors <-
     if existingProblems || top.found then []
     else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on forward")];
 
@@ -407,8 +365,8 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
   top.errors <- val.lookupValue.errors;
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
-  top.productionAttributes = [];
-  top.defs = [];
+  top.productionAttributes := [];
+  top.defs := [];
   
   forwards to if null(val.lookupValue.dcls)
               then errorValueDef(val, e, location=top.location)
@@ -419,13 +377,10 @@ abstract production errorValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
-
-  top.errors := assignError ++ e.errors;
   
-  local assignError :: [Message] =
+  top.errors <-
     if val.lookupValue.typerep.isError then []
     else [err(val.location, val.name ++ " cannot be assigned to.")];
-     
 }
 
 abstract production localValueDef
@@ -434,7 +389,6 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   -- val is already valid here
-  top.errors := e.errors;
 
   -- TODO: missing redefinition check
 }

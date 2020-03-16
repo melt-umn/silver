@@ -20,7 +20,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
   -- Notice the circularity: flowDefs uses flowEnv. Works fine because only
   -- the (lazy) parameter of ntRefFlowDef isn't computable until later.
 
-  top.flowDefs = [ntRefFlowDef(fName, fromMaybe(inferredInhs, specInhs))];
+  top.flowDefs <- [ntRefFlowDef(fName, fromMaybe(inferredInhs, specInhs))];
 }
 
 -- If it is inherited and exported by this grammar (according to authority)
