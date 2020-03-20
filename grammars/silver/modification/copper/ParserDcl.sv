@@ -13,21 +13,9 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   
   propagate errors, moduleNames;
 
-  top.errors <- liftedAGDcls.errors;
-
   -- Right now parsers masquerade as functions. This is probably fine.
   -- Only bug is that you can aspect it, but it's pointless to do so, you can't affect anything.
   top.defs := [funDef(top.grammarName, n.location, namedSig)];
-  
-  -- TODO: These declarations should probably bubble up to the top level instead of being decorated here
-  -- TODO: Actually liftedAGDcls can probably just go away if we generate CST AST decls directly
-  production liftedAGDcls :: AGDcl = m.liftedAGDcls;
-  liftedAGDcls.config = top.config;
-  liftedAGDcls.grammarName = top.grammarName;
-  liftedAGDcls.env = m.env;
-  liftedAGDcls.compiledGrammars = top.compiledGrammars;
-  liftedAGDcls.grammarDependencies = top.grammarDependencies;
-  liftedAGDcls.flowEnv = top.flowEnv;
   
   -- Parser spec grammarDependancies based off grammars included in the parser spec
   m.grammarDependencies = computeDependencies(m.moduleNames, top.compiledGrammars);
@@ -36,7 +24,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   production med :: ModuleExportedDefs =
     moduleExportedDefs(top.location, top.compiledGrammars, m.grammarDependencies, m.moduleNames, []);
   
-  m.env = appendEnv(toEnv(liftedAGDcls.defs ++ med.defs), top.env);
+  m.env = appendEnv(toEnv(med.defs), top.env);
   
   production fName :: String = top.grammarName ++ ":" ++ n.name;
 
@@ -48,22 +36,15 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
       []);
 
   production spec :: ParserSpec =
-    parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames, m.customLayout, m.terminalPrefixes, liftedAGDcls.syntaxAst);
+    parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames, m.customLayout, m.terminalPrefixes, m.syntaxAst);
   spec.compiledGrammars = top.compiledGrammars;
 
   top.parserSpecs := [spec]; -- Note that this is undecorated.
 }
 
-global nilAGDcl::AGDcl = emptyAGDcl(location=loc("", -1, -1, -1, -1, -1, -1));
-function appAGDcl
-AGDcl ::= a::AGDcl b::AGDcl
-{ return appendAGDcl(a, b, location=loc("", -1, -1, -1, -1, -1, -1)); }
+nonterminal ParserComponents with config, env, flowEnv, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, syntaxAst, genFiles;
 
-monoid attribute liftedAGDcls::AGDcl with nilAGDcl, appAGDcl;
-
-nonterminal ParserComponents with config, env, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls;
-
-propagate errors, moduleNames, terminalPrefixes, liftedAGDcls on ParserComponents;
+propagate errors, moduleNames, terminalPrefixes, syntaxAst, genFiles on ParserComponents;
 
 concrete production nilParserComponent
 top::ParserComponents ::=
@@ -77,14 +58,14 @@ top::ParserComponents ::= c1::ParserComponent  c2::ParserComponents
   top.unparse = c1.unparse ++ ", " ++ c2.unparse;
 }
 
-closed nonterminal ParserComponent with config, env, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, liftedAGDcls;
+closed nonterminal ParserComponent with config, env, flowEnv, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, syntaxAst, genFiles;
 
-propagate errors, moduleNames, terminalPrefixes, liftedAGDcls on ParserComponent;
+propagate errors, moduleNames, terminalPrefixes, syntaxAst, genFiles on ParserComponent;
 
 aspect default production
 top::ParserComponent ::=
 {
-  propagate errors, moduleNames, terminalPrefixes, liftedAGDcls;
+  propagate errors, moduleNames, terminalPrefixes, syntaxAst, genFiles;
 }
 
 concrete production parserComponent
@@ -98,9 +79,9 @@ top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
 autocopy attribute componentGrammarName::String;
 
 {-- Have special env built from just this parser component and the global env -}
-nonterminal ParserComponentModifiers with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, liftedAGDcls;
+nonterminal ParserComponentModifiers with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, syntaxAst, genFiles;
 
-propagate errors, terminalPrefixes, liftedAGDcls on ParserComponentModifiers;
+propagate errors, terminalPrefixes, syntaxAst, genFiles on ParserComponentModifiers;
 
 concrete production nilParserComponentModifier
 top::ParserComponentModifiers ::=
@@ -114,14 +95,14 @@ top::ParserComponentModifiers ::= h::ParserComponentModifier t::ParserComponentM
   top.unparse = h.unparse ++ t.unparse;
 }
 
-nonterminal ParserComponentModifier with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, liftedAGDcls;
+nonterminal ParserComponentModifier with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, syntaxAst, genFiles;
 
-propagate errors, terminalPrefixes, liftedAGDcls on ParserComponentModifier;
+propagate errors, terminalPrefixes, syntaxAst, genFiles on ParserComponentModifier;
 
 aspect default production
 top::ParserComponentModifier ::=
 {
-  propagate errors, terminalPrefixes, liftedAGDcls;
+  propagate errors, terminalPrefixes, syntaxAst, genFiles;
 }
 
 -- Separate bit translating the parser declaration.
@@ -144,7 +125,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   
   -- TODO: As a hack, even though we don't propogates defs up to the top level, we
   -- do generate files for the lifted dcl. Needed to generate terminal class files.
-  top.genFiles := liftedAGDcls.genFiles ++
+  top.genFiles := m.genFiles ++
     [pair(className ++ ".java",
           generateFunctionClassString(top.grammarName, n.name, namedSig, parseResult))];
   

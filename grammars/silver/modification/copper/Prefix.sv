@@ -17,14 +17,15 @@ top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::Term
 
 autocopy attribute prefixedTerminals::[String];
 synthesized attribute terminalPrefix::String;
-nonterminal TerminalPrefix with config, env, grammarName, componentGrammarName, compiledGrammars, prefixedTerminals, location, unparse, errors, liftedAGDcls, terminalPrefix;
+nonterminal TerminalPrefix with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, prefixedTerminals, location, unparse, errors, syntaxAst, genFiles, terminalPrefix;
+
+propagate errors, syntaxAst, genFiles on TerminalPrefix;
 
 concrete production nameTerminalPrefix
 top::TerminalPrefix ::= s::QName
 {
   top.unparse = s.unparse;
-  top.errors := s.lookupType.errors;
-  propagate liftedAGDcls;
+  top.errors <- s.lookupType.errors;
   top.terminalPrefix = makeCopperName(s.lookupType.fullName);
 }
 
@@ -32,17 +33,20 @@ concrete production newTermModifiersTerminalPrefix
 top::TerminalPrefix ::= r::RegExpr tm::TerminalModifiers
 {
   top.unparse = r.unparse ++ " " ++ tm.unparse;
-  top.errors := []; -- r and tm get checked when liftedAGDcls gets decorated
-  -- Prefix terminal name isn't based off the prefix right now since that might not be alphanumeric
-  -- TODO make the terminal name based off alphanumeric characters from the regex for easier debugging of parse conflicts
-  local terminalName::String = "Prefix_" ++ toString(genInt());
-  top.liftedAGDcls :=
-    terminalDclDefault(
-      terminalKeywordModifierNone(location=top.location),
-      name(terminalName, top.location),
-      r, tm,
-      location=top.location);
-  top.terminalPrefix = makeCopperName(top.grammarName ++ ":" ++ terminalName);
+  production regex::Regex = r.terminalRegExprSpec;
+  local terminalName::String =
+    "Prefix_" ++ toString(top.location.line) ++
+    case regex.asLiteral of
+    | just(a) when isAlpha(a) -> "_" ++ a
+    | _ -> ""
+    end;
+  local terminalFullName::String = top.grammarName ++ ":" ++ terminalName;
+  top.syntaxAst <-
+    [syntaxTerminal(
+       terminalFullName, regex,
+       foldr(consTerminalMod, nilTerminalMod(), tm.terminalModifiers))];
+  top.genFiles <- terminalTranslation(terminalName, top.grammarName, tm.lexerClasses);
+  top.terminalPrefix = makeCopperName(terminalFullName);
 }
 
 concrete production newTermTerminalPrefix
@@ -81,11 +85,12 @@ top::TerminalModifier ::= terms::[String]
 synthesized attribute prefixItemNames::[String];
 nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, prefixItemNames;
 
+propagate errors on TerminalPrefixItems;
+
 concrete production consTerminalPrefixItem
 top::TerminalPrefixItems ::= t::TerminalPrefixItem ',' ts::TerminalPrefixItems
 {
   top.unparse = ts.unparse ++ ", " ++ t.unparse;
-  top.errors := ts.errors ++ t.errors;
   top.prefixItemNames = ts.prefixItemNames ++ t.prefixItemNames;
 }
 
@@ -93,7 +98,6 @@ concrete production oneTerminalPrefixItem
 top::TerminalPrefixItems ::= t::TerminalPrefixItem
 {
   top.unparse = t.unparse;
-  top.errors := t.errors;
   top.prefixItemNames = t.prefixItemNames;
 }
 
@@ -101,13 +105,14 @@ abstract production nilTerminalPrefixItem
 top::TerminalPrefixItems ::=
 {
   top.unparse = "";
-  top.errors := [];
   top.prefixItemNames = [];
 }
 
+-- Empty list = prefix all marking terminals
 concrete production allTerminalPrefixItems
 top::TerminalPrefixItems ::=
 {
+  -- TODO: Potentially missing marking terminals from conditionally exported grammars
   production med :: ModuleExportedDefs =
     moduleExportedDefs(top.location, top.compiledGrammars, top.grammarDependencies, [top.componentGrammarName], []);
 
@@ -159,35 +164,31 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
 {
   top.unparse = "prefer " ++ t.unparse ++ " over " ++ ts.unparse;
   top.errors <- t.lookupType.errors;
-  top.liftedAGDcls <-
+  
+  local pluckTAction::ProductionStmt = Silver_ProductionStmt { pluck $QName{t}; };
+  -- Most of these aren't actually needed since we just want the translation. 
+  pluckTAction.config = top.config;
+  pluckTAction.env = top.env;
+  pluckTAction.flowEnv = top.flowEnv;
+  pluckTAction.grammarName = top.grammarName;
+  pluckTAction.compiledGrammars = top.compiledGrammars;
+  pluckTAction.frame = error("Not needed");
+  pluckTAction.downSubst = emptySubst();
+  pluckTAction.finalSubst = emptySubst();
+  
+  local tName::String = t.lookupType.dcl.fullName;
+  top.syntaxAst <-
     -- Generate a disambiguation function for every combination of ts.
     -- TODO: we can't use Copper's subset disambiguation functions here unfourtunately,
     -- since we currently require those to be disjoint.
     -- Also a slight bug here, if any of ts are undefined we will report errors
     -- more than once.
-    foldr1(
-      appendAGDcl(_, _, location=top.location),
-      map(
-        \ ts::[QName] -> 
-          disambiguationGroupDcl(
-            'disambiguate',
-            foldr(
-              termList(_, _, location=top.location),
-              termListNull(location=top.location),
-              t :: ts),
-            actionCode_c(
-              '{',
-              productionStmtsSnoc(
-                productionStmtsNil(location=top.location),
-                pluckDef(
-                  'pluck', baseExpr(t, location=top.location), ';',
-                  location=top.location),
-                location=top.location),
-              '}',
-             location=top.location),
-            -- HACK: disambiguation function names are based on line number.  TODO fixme
-            location=loc("prefix", genInt() * 1234, -1, -1, -1, -1, -1)),
-        tail(powerSet(ts.qnames))));
+    map(
+      \ tsNames::[String] -> 
+        syntaxDisambiguationGroup(
+          s"Prefer_${toString(top.location.line)}_${tName}__${implode("__", tsNames)}",
+          tName :: tsNames, false, pluckTAction.translation),
+      tail(powerSet(ts.termList)));
 }
 
 -- Prefix separator
