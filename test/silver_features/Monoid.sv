@@ -38,3 +38,21 @@ global testMStmt::MStmt =
 
 equalityTest(testMStmt.defs, ["a", "d"], [String], silver_tests);
 equalityTest(testMStmt.freeVars, ["b", "c"], [String], silver_tests);
+
+-- Test errors in propagate
+monoid attribute things<a>::[a] with [], ++;
+
+nonterminal Thing1 with things<Integer>;
+nonterminal Thing2 with things<Float>;
+
+abstract production thing2Thing1
+top::Thing1 ::= Thing2
+{}
+
+-- Test for both parts of 2-part error message
+wrongCode "In propagating on production silver_features:thing2Thing1" {
+  propagate things on Thing1;
+}
+wrongCode "things has type [Integer] but the expression being assigned to it has type [Float]" {
+  propagate things on Thing1;
+}

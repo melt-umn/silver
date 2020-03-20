@@ -35,42 +35,51 @@ top::AGDcl ::= attrs::NameList nt::QName
   local dcl::AGDcl =
     foldr(
       appendAGDcl(_, _, location=top.location), emptyAGDcl(location=top.location),
-      map(
-        \ d::DclInfo ->
-          aspectProductionDcl(
-            'aspect', 'production', qName(top.location, d.fullName),
-            aspectProductionSignature(
-              aspectProductionLHSFull(
-                name(d.namedSignature.outputElement.elementName, top.location),
-                d.namedSignature.outputElement.typerep,
-                location=top.location),
-              '::=',
-              foldr(
-                aspectRHSElemCons(_, _, location=top.location),
-                aspectRHSElemNil(location=top.location),
-                map(
-                  \ ie::NamedSignatureElement ->
-                    aspectRHSElemFull(
-                      name(ie.elementName, top.location),
-                      ie.typerep,
-                      location=top.location),
-                  d.namedSignature.inputElements)),
-              location=top.location),
-            productionBody(
-              '{',
-              productionStmtsSnoc(
-                productionStmtsNil(location=top.location),
-                propagateAttrList('propagate', attrs, ';', location=top.location),
-                location=top.location),
-              '}',
-              location=top.location),
-            location=top.location),
-        nonForwardingProds));
+      map(propagateAspectDcl(_, attrs, location=nt.location), nonForwardingProds));
    
   forwards to
     if !null(nt.lookupType.errors)
     then errorAGDcl(nt.lookupType.errors, location=top.location)
     else dcl;
+}
+
+abstract production propagateAspectDcl
+top::AGDcl ::= d::DclInfo attrs::NameList
+{
+  top.errors :=
+    if null(forward.errors)
+    then []
+    else [nested(top.location, s"In propagating for production ${d.fullName}:", forward.errors)];
+  
+  forwards to
+    aspectProductionDcl(
+      'aspect', 'production', qName(top.location, d.fullName),
+      aspectProductionSignature(
+        aspectProductionLHSFull(
+          name(d.namedSignature.outputElement.elementName, top.location),
+          d.namedSignature.outputElement.typerep,
+          location=top.location),
+        '::=',
+        foldr(
+          aspectRHSElemCons(_, _, location=top.location),
+          aspectRHSElemNil(location=top.location),
+          map(
+            \ ie::NamedSignatureElement ->
+              aspectRHSElemFull(
+                name(ie.elementName, top.location),
+                 ie.typerep,
+                location=top.location),
+            d.namedSignature.inputElements)),
+        location=top.location),
+      productionBody(
+        '{',
+        productionStmtsSnoc(
+          productionStmtsNil(location=top.location),
+          propagateAttrList('propagate', attrs, ';', location=top.location),
+          location=top.location),
+        '}',
+        location=top.location),
+      location=top.location);
 }
 
 concrete production propagateAttrList
@@ -85,7 +94,7 @@ top::ProductionStmt ::= 'propagate' ns::NameList ';'
     | nameListOne(n) -> propagateOneAttr(n, location=top.location)
     | nameListCons(n, _, rest) ->
       productionStmtAppend(
-        propagateOneAttr(n, location=top.location),
+        propagateOneAttr(n, location=n.location),
         propagateAttrList($1, rest, $3, location=top.location),
         location=top.location)
     end;
