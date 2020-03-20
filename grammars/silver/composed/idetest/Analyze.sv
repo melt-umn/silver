@@ -106,6 +106,8 @@ Message ::= path::String m::Message
   | err(loc(file, a, b, c, d, e, f), g) -> err(loc(path ++ "/" ++ file, a, b, c, d, e, f), g)
   | wrn(loc(file, a, b, c, d, e, f), g) -> wrn(loc(path ++ "/" ++ file, a, b, c, d, e, f), g)
   | info(loc(file, a, b, c, d, e, f), g) -> info(loc(path ++ "/" ++ file, a, b, c, d, e, f), g)
+  | nested(loc(file, a, b, c, d, e, f), g, others) ->
+    nested(loc(path ++ "/" ++ file, a, b, c, d, e, f), g, map(rewriteMessage(path, _), others))
   end;
 }
 
