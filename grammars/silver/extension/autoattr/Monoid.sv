@@ -3,7 +3,7 @@ grammar silver:extension:autoattr;
 concrete production monoidAttributeDcl
 top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' e::Expr ',' q::NameOrBOperator ';'
 {
-  top.unparse = "monoid attribute " ++ a.unparse ++ ";";
+  top.unparse = "monoid attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ " with " ++ e.unparse ++ ", " ++ q.unparse ++ ";";
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
