@@ -21,7 +21,11 @@ synthesized attribute flowVertexInfo :: ExprVertexInfo;
 attribute flowDeps, flowDefs, flowEnv occurs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 attribute flowVertexInfo occurs on Expr;
 
+propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr
+  except childReference, lhsReference, localReference, forwardReference, forwardAccess, synDecoratedAccessHandler, inhDecoratedAccessHandler,
+         decorateExprWith, newFunction, letp, lexicalLocalReference, matchPrimitiveReal;
 propagate flowDefs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
+
 
 function inhsForTakingRef
 [String] ::= nt::String  flowEnv::Decorated FlowEnv
@@ -45,18 +49,6 @@ top::Expr ::=
   -- (a) it's safe. vertexInfo is for being less conservative and more precise.
   -- (b) only a few productions actually provide it.
   top.flowVertexInfo = noVertex();
-}
-
-aspect production errorExpr
-top::Expr ::= e::[Message]
-{
-  propagate flowDeps;
-}
-
-aspect production errorReference
-top::Expr ::= msg::[Message]  q::Decorated QName
-{
-  propagate flowDeps;
 }
 
 aspect production childReference
@@ -114,49 +106,20 @@ top::Expr ::= q::Decorated QName
     then hasVertex(forwardVertexType)
     else noVertex();
 }
-aspect production productionReference
-top::Expr ::= q::Decorated QName
-{
-  propagate flowDeps;
-}
-aspect production functionReference
-top::Expr ::= q::Decorated QName
-{
-  propagate flowDeps;
-}
-aspect production globalValueReference
-top::Expr ::= q::Decorated QName
-{
-  propagate flowDeps;
-}
-
 
 -- Still need these equations since propagate ignores decorated references
 aspect production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
 {
-  top.flowDeps := e.flowDeps ++ es.flowDeps ++ annos.flowDeps;
+  top.flowDeps <- e.flowDeps ++ es.flowDeps ++ annos.flowDeps;
   top.flowDefs <- e.flowDefs ++ es.flowDefs ++ annos.flowDefs;
 }
 aspect production partialApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
 {
-  top.flowDeps := e.flowDeps ++ es.flowDeps ++ annos.flowDeps;
+  top.flowDeps <- e.flowDeps ++ es.flowDeps ++ annos.flowDeps;
   top.flowDefs <- e.flowDefs ++ es.flowDefs ++ annos.flowDefs;
 }
-aspect production errorApplication
-top::Expr ::= e::Decorated Expr es::AppExprs annos::AnnoAppExprs
-{
-  top.flowDeps := [];
-}
-
-aspect production attributeSection
-top::Expr ::= '(' '.' q::QName ')'
-{
-  propagate flowDeps;
-}
-
-
 
 aspect production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
@@ -171,7 +134,6 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  propagate flowDeps;
   top.flowDefs <- e.flowDefs;
 }
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
@@ -199,19 +161,19 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.flowDeps := []; -- errors, who cares?
+  top.flowDeps <- []; -- errors, who cares?
   top.flowDefs <- e.flowDefs;
 }
 aspect production terminalAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.flowDeps := e.flowDeps;
+  top.flowDeps <- e.flowDeps;
   top.flowDefs <- e.flowDefs;
 }
 aspect production annoAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.flowDeps := e.flowDeps;
+  top.flowDeps <- e.flowDeps;
   top.flowDefs <- e.flowDefs;
 }
 
@@ -253,7 +215,6 @@ autocopy attribute decorationVertex :: String occurs on ExprInhs, ExprInh;
 aspect production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
 {
-  propagate flowDeps;
   top.flowDefs <-
     if !null(lhs.errors) then [] else
     case lhs of
@@ -261,206 +222,19 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
     end;
     
 }
-aspect production exprInhsEmpty
-top::ExprInhs ::= 
-{
-  propagate flowDeps;
-}
-aspect production exprInhsOne
-top::ExprInhs ::= h::ExprInh
-{
-  propagate flowDeps;
-}
-aspect production exprInhsCons
-top::ExprInhs ::= h::ExprInh  t::ExprInhs
-{
-  propagate flowDeps;
-}
 
-
-aspect production trueConst
-top::Expr ::= 'true'
-{
-  propagate flowDeps;
-}
-aspect production falseConst
-top::Expr ::= 'false'
-{
-  propagate flowDeps;
-}
-aspect production and
-top::Expr ::= e1::Expr '&&' e2::Expr
-{
-  propagate flowDeps;
-}
-aspect production or
-top::Expr ::= e1::Expr '||' e2::Expr
-{
-  propagate flowDeps;
-}
-aspect production not
-top::Expr ::= '!' e1::Expr
-{
-  propagate flowDeps;
-}
-aspect production gt
-top::Expr ::= e1::Expr '>' e2::Expr
-{
-  propagate flowDeps;
-}
-aspect production lt
-top::Expr ::= e1::Expr '<' e2::Expr
-{
-  propagate flowDeps;
-}
-aspect production gteq
-top::Expr ::= e1::Expr '>=' e2::Expr
-{
-  propagate flowDeps;
-}
-aspect production lteq
-top::Expr ::= e1::Expr '<=' e2::Expr
-{
-  propagate flowDeps;
-}
-aspect production eqeq
-top::Expr ::= e1::Expr '==' e2::Expr
-{
-  propagate flowDeps;
-}
-aspect production neq
-top::Expr ::= e1::Expr '!=' e2::Expr
-{
-  propagate flowDeps;
-}
-aspect production ifThenElse
-top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
-{
-  propagate flowDeps;
-}
-aspect production intConst
-top::Expr ::= i::Int_t
-{
-  propagate flowDeps;
-}
-aspect production floatConst
-top::Expr ::= f::Float_t
-{
-  propagate flowDeps;
-}
-aspect production plus
-top::Expr ::= e1::Expr '+' e2::Expr
-{
-  propagate flowDeps;
-}
-aspect production minus
-top::Expr ::= e1::Expr '-' e2::Expr
-{
-  propagate flowDeps;
-}
-aspect production multiply
-top::Expr ::= e1::Expr '*' e2::Expr
-{
-  propagate flowDeps;
-}
-aspect production divide
-top::Expr ::= e1::Expr '/' e2::Expr
-{
-  propagate flowDeps;
-}
-aspect production modulus
-top::Expr ::= e1::Expr '%' e2::Expr
-{
-  propagate flowDeps;
-}
-aspect production neg
-top::Expr ::= '-' e1::Expr
-{
-  propagate flowDeps;
-}
-aspect production stringConst
-top::Expr ::= s::String_t
-{
-  propagate flowDeps;
-}
 aspect production errorPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
-  top.flowDeps := []; -- error, so who cares?
+  top.flowDeps <- []; -- error, so who cares?
   top.flowDefs <- e1.flowDefs ++ e2.flowDefs;
 }
 aspect production stringPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
-  top.flowDeps := e1.flowDeps ++ e2.flowDeps;
+  top.flowDeps <- e1.flowDeps ++ e2.flowDeps;
   top.flowDefs <- e1.flowDefs ++ e2.flowDefs;
 }
-
-
-aspect production exprsEmpty
-top::Exprs ::=
-{
-  propagate flowDeps;
-}
-aspect production exprsSingle
-top::Exprs ::= e::Expr
-{
-  propagate flowDeps;
-}
-aspect production exprsCons
-top::Exprs ::= e1::Expr ',' e2::Exprs
-{
-  propagate flowDeps;
-}
-
-
-aspect production missingAppExpr
-top::AppExpr ::= '_'
-{
-  propagate flowDeps;
-}
-aspect production presentAppExpr
-top::AppExpr ::= e::Expr
-{
-  propagate flowDeps;
-}
-
-aspect production snocAppExprs
-top::AppExprs ::= es::AppExprs ',' e::AppExpr
-{
-  propagate flowDeps;
-}
-aspect production oneAppExprs
-top::AppExprs ::= e::AppExpr
-{
-  propagate flowDeps;
-}
-aspect production emptyAppExprs
-top::AppExprs ::=
-{
-  propagate flowDeps;
-}
-aspect production annoExpr
-top::AnnoExpr ::= qn::QName '=' e::AppExpr
-{
-  propagate flowDeps;
-}
-aspect production snocAnnoAppExprs
-top::AnnoAppExprs ::= es::AnnoAppExprs ',' e::AnnoExpr
-{
-  propagate flowDeps;
-}
-aspect production oneAnnoAppExprs
-top::AnnoAppExprs ::= e::AnnoExpr
-{
-  propagate flowDeps;
-}
-aspect production emptyAnnoAppExprs
-top::AnnoAppExprs ::=
-{
-  propagate flowDeps;
-}
-
 
 aspect production exprRef
 top::Expr ::= e::Decorated Expr
@@ -473,7 +247,7 @@ top::Expr ::= e::Decorated Expr
   
   -- So definitely don't consider making this []!
   
-  top.flowDeps := e.flowDeps;
+  top.flowDeps <- e.flowDeps;
   top.flowVertexInfo = e.flowVertexInfo;
   top.flowDefs <- e.flowDefs; -- I guess? I haven't thought about this exactly.
   -- i.e. whether this has already been included. shouldn't hurt to do so though.
@@ -485,44 +259,14 @@ top::Expr ::= e::Decorated Expr
 aspect production stringLength
 top::Expr ::= e::Decorated Expr
 {
-  top.flowDeps := e.flowDeps;
+  top.flowDeps <- e.flowDeps;
   top.flowDefs <- e.flowDefs;
 }
 aspect production errorLength
 top::Expr ::= e::Decorated Expr
 {
-  top.flowDeps := e.flowDeps;
+  top.flowDeps <- e.flowDeps;
   top.flowDefs <- e.flowDefs;
-}
-
-aspect production toBooleanFunction
-top::Expr ::= 'toBoolean' '(' e1::Expr ')'
-{
-  propagate flowDeps;
-}
-
-aspect production toIntegerFunction
-top::Expr ::= 'toInteger' '(' e1::Expr ')'
-{
-  propagate flowDeps;
-}
-
-aspect production toFloatFunction
-top::Expr ::= 'toFloat' '(' e1::Expr ')'
-{
-  propagate flowDeps;
-}
-
-aspect production toStringFunction
-top::Expr ::= 'toString' '(' e1::Expr ')'
-{
-  propagate flowDeps;
-}
-
-aspect production reifyFunctionLiteral
-top::Expr ::= 'reify'
-{
-  propagate flowDeps;
 }
 
 aspect production newFunction
@@ -534,61 +278,6 @@ top::Expr ::= 'new' '(' e1::Expr ')'
     | hasVertex(vertex) -> vertex.eqVertex
     | noVertex() -> e1.flowDeps
     end;
-}
-
-aspect production terminalConstructor
-top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
-{
-  propagate flowDeps;
-}
-
-
-
----- FROM COPPER TODO
---grammar silver:modification:copper;
-
--- These are all errors, basically.
-
-aspect production failureTerminalIdExpr
-top::Expr ::= 'disambiguationFailure'
-{
-  propagate flowDeps;
-}
-
-aspect production actionChildReference
-top::Expr ::= q::Decorated QName
-{
-  propagate flowDeps;
-}
-
-aspect production pluckTerminalReference
-top::Expr ::= q::Decorated QName
-{
-  propagate flowDeps;
-}
-
-aspect production terminalIdReference
-top::Expr ::= q::Decorated QName
-{
-  propagate flowDeps;
-}
-
-aspect production lexerClassReference
-top::Expr ::= q::Decorated QName
-{
-  propagate flowDeps;
-}
-
-aspect production parserAttributeReference
-top::Expr ::= q::Decorated QName
-{
-  propagate flowDeps;
-}
-
-aspect production termAttrValueReference
-top::Expr ::= q::Decorated QName
-{
-  propagate flowDeps;
 }
 
 
