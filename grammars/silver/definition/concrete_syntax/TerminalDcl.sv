@@ -67,13 +67,14 @@ synthesized attribute terminalRegExprSpec :: Regex;
 
 concrete production regExpr
 top::RegExpr ::= '/' r::Regex '/'
+layout {}
 {
   top.unparse = "/" ++ r.regString ++ "/";
   top.terminalRegExprSpec = r;
 }
 
 
-nonterminal TerminalKeywordModifier with unparse, location, terminalModifiers;
+closed nonterminal TerminalKeywordModifier with unparse, location, terminalModifiers;
 
 concrete production terminalKeywordModifierIgnore
 top::TerminalKeywordModifier ::= 'ignore'
@@ -101,7 +102,7 @@ top::TerminalKeywordModifier ::=
 
 
 nonterminal TerminalModifiers with config, location, unparse, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
-nonterminal TerminalModifier with config, location, unparse, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+closed nonterminal TerminalModifier with config, location, unparse, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
 
 synthesized attribute terminalModifiers :: [SyntaxTerminalModifier];
 

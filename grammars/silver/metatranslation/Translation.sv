@@ -1,4 +1,4 @@
-grammar silver:hostEmbedding;
+grammar silver:metatranslation;
 
 imports silver:reflect;
 imports silver:langutil:pp;
@@ -105,7 +105,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     };
   
   antiquoteTranslation <-
-    if containsBy(stringEq, prodName, varPatternProductions ++ wildPatternProductions)
+    if containsBy(stringEq, prodName, patternAntiquoteProductions)
     then just(errorExpr([err(givenLocation, "Pattern antiquote is invalid in expression context")], location=givenLocation))
     else nothing();
   
@@ -121,34 +121,31 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   production attribute patternAntiquoteTranslation::Maybe<Pattern> with orElse;
   patternAntiquoteTranslation := nothing();
   
-  production attribute varPatternProductions::[String] with ++;
-  varPatternProductions := [];
+  production attribute patternAntiquoteProductions::[String] with ++;
+  patternAntiquoteProductions := [];
   patternAntiquoteTranslation <-
-    if containsBy(stringEq, prodName, varPatternProductions)
+    if containsBy(stringEq, prodName, patternAntiquoteProductions)
     then
       let wrapped::AST = 
         case children of
         | consAST(a, nilAST()) -> a
         | consAST(terminalAST(_, _, _), consAST(a, nilAST())) -> a
+        | consAST(
+            terminalAST(_, _, _),
+            consAST(
+              terminalAST(_, _, _),
+              consAST(
+                a,
+                consAST(
+                  terminalAST(_, _, _),
+                  nilAST())))) -> a
         | _ -> error(s"Unexpected antiquote production arguments: ${show(80, top.pp)}")
         end
       in
         case reify(wrapped) of
-        | right(n) -> just(varPattern(n, location=givenLocation))
+        | right(p) -> just(p)
         | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
         end
-      end
-    else nothing();
-  
-  production attribute wildPatternProductions::[String] with ++;
-  wildPatternProductions := [];
-  patternAntiquoteTranslation <-
-    if containsBy(stringEq, prodName, wildPatternProductions)
-    then
-      case children of
-      | nilAST() -> just(wildcPattern('_', location=givenLocation))
-      | consAST(terminalAST(_, _, _), nilAST()) -> just(wildcPattern('_', location=givenLocation))
-      | _ -> error(s"Unexpected antiquote production arguments: ${show(80, top.pp)}")
       end
     else nothing();
   
@@ -157,6 +154,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     then just(errorPattern([err(givenLocation, "Expression antiquote is invalid in pattern context")], location=givenLocation))
     else nothing();
   
+  -- Note that we intentionally ignore annotations here
   top.patternTranslation =
     fromMaybe(
       prodAppPattern(

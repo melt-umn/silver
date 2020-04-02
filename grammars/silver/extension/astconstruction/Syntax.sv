@@ -12,6 +12,7 @@ exports silver:reflect:concretesyntax;
 
 concrete production quoteAST
 top::Expr ::= 'AST' '{' ast::AST_c '}'
+layout {silver:reflect:concretesyntax:WhiteSpace}
 {
   top.unparse = s"AST {${ast.unparse}}";
   forwards to translate(top.location, reflect(ast.ast));
@@ -19,6 +20,7 @@ top::Expr ::= 'AST' '{' ast::AST_c '}'
 
 concrete production quoteASTPattern
 top::Pattern ::= 'AST' '{' ast::AST_c '}'
+layout {silver:reflect:concretesyntax:WhiteSpace}
 {
   top.unparse = s"AST {${ast.unparse}}";
   forwards to translatePattern(top.location, reflect(ast.ast));
@@ -26,6 +28,7 @@ top::Pattern ::= 'AST' '{' ast::AST_c '}'
 
 concrete production antiquoteAST_c
 top::AST_c ::= '$' '{' e::Expr '}'
+layout {silver:definition:core:WhiteSpace}
 {
   top.unparse = s"$${${e.unparse}}";
   top.ast = antiquoteAST(e);
@@ -36,7 +39,7 @@ concrete production varAST_c
 top::AST_c ::= n::QName_t
 {
   top.unparse = n.lexeme;
-  top.ast = varAST(name(n.lexeme, n.location));
+  top.ast = antiquotePatternAST(varPattern(name(n.lexeme, n.location), location=top.location));
   top.errors :=
     if indexOf(":", n.lexeme) != -1
     then [err(n.location, "Pattern variable name must be unqualified")]
@@ -47,7 +50,7 @@ concrete production wildAST_c
 top::AST_c ::= '_'
 {
   top.unparse = "_";
-  top.ast = wildAST();
+  top.ast = antiquotePatternAST(wildcPattern('_', location=top.location));
   top.errors := [];
 }
 
@@ -65,30 +68,16 @@ top::AST ::= e::Expr
   forwards to error("forward shouldn't be needed here");
 }
 
-abstract production varAST
-top::AST ::= n::Name
+abstract production antiquotePatternAST
+top::AST ::= p::Pattern
 {
   top.translation =
     errorExpr(
-      [err(top.givenLocation, "Variable patterns should only occur inside AST { } pattern")],
+      [err(top.givenLocation, "Variable and wildcard patterns should only occur inside AST { } pattern")],
       location=top.givenLocation);
   top.patternTranslation =
     errorPattern(
-      [err(top.givenLocation, "Variable patterns should only occur inside AST { } pattern")],
-      location=top.givenLocation);
-  forwards to error("forward shouldn't be needed here");
-}
-
-abstract production wildAST
-top::AST ::=
-{
-  top.translation =
-    errorExpr(
-      [err(top.givenLocation, "_ should only occur inside AST { } pattern")],
-      location=top.givenLocation);
-  top.patternTranslation =
-    errorPattern(
-      [err(top.givenLocation, "_ should only occur inside AST { } pattern")],
+      [err(top.givenLocation, "Variable and wildcard patterns should only occur inside AST { } pattern")],
       location=top.givenLocation);
   forwards to error("forward shouldn't be needed here");
 }

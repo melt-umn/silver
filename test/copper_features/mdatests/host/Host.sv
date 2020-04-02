@@ -4,6 +4,8 @@ parser doParse :: Root {
   copper_features:mdatests:host;
 }
 
+lexer class ColonSep prefix separator ":";
+
 terminal A 'a';
 terminal B 'b';
 
