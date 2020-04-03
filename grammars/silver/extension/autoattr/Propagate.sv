@@ -9,7 +9,16 @@ top::AGDcl ::= 'propagate' attrs::NameList 'on' nts::NameList 'except' ps::ProdN
   forwards to propagateOnNTListDcl(attrs, nts, ps, location=top.location);
 }
 
-concrete production propagateOnNTListNoExceptDcl
+concrete production propagateOnNTListExcludingDcl_c
+top::AGDcl ::= 'propagate' attrs::NameList 'on' nts::NameList 'excluding' ps::ProdNameList ';'
+{
+  top.unparse = s"propagate ${attrs.unparse} on ${nts.unparse} excluding ${ps.unparse};";
+  
+  top.errors <- ps.errors;
+  forwards to propagateOnNTListDcl(attrs, nts, ps, location=top.location);
+}
+
+concrete production propagateOnNTListDcl_c
 top::AGDcl ::= 'propagate' attrs::NameList 'on' nts::NameList ';'
 {
   top.unparse = s"propagate ${attrs.unparse} on ${nts.unparse};";
@@ -21,7 +30,7 @@ top::AGDcl ::= 'propagate' attrs::NameList 'on' nts::NameList ';'
 abstract production propagateOnNTListDcl
 top::AGDcl ::= attrs::NameList nts::NameList ps::ProdNameList
 {
-  top.unparse = s"propagate ${attrs.unparse} on ${nts.unparse} except ${ps.unparse};";
+  top.unparse = s"propagate ${attrs.unparse} on ${nts.unparse} excluding ${ps.unparse};";
   
   forwards to
     case nts of
@@ -41,7 +50,7 @@ top::AGDcl ::= attrs::NameList nts::NameList ps::ProdNameList
 abstract production propagateOnOneNTDcl
 top::AGDcl ::= attrs::NameList nt::QName ps::ProdNameList
 {
-  top.unparse = s"propagate ${attrs.unparse} on ${nt.unparse} except ${ps.unparse};";
+  top.unparse = s"propagate ${attrs.unparse} on ${nt.unparse} excluding ${ps.unparse};";
   
   -- Ugh, workaround for circular dependency
   top.defs := [];
