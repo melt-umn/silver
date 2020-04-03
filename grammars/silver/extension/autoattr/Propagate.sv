@@ -1,14 +1,5 @@
 grammar silver:extension:autoattr;
 
-concrete production propagateOnNTListExceptDcl
-top::AGDcl ::= 'propagate' attrs::NameList 'on' nts::NameList 'except' ps::ProdNameList ';'
-{
-  top.unparse = s"propagate ${attrs.unparse} on ${nts.unparse} except ${ps.unparse};";
-  
-  top.errors <- ps.errors;
-  forwards to propagateOnNTListDcl(attrs, nts, ps, location=top.location);
-}
-
 concrete production propagateOnNTListExcludingDcl_c
 top::AGDcl ::= 'propagate' attrs::NameList 'on' nts::NameList 'excluding' ps::ProdNameList ';'
 {
