@@ -1,15 +1,17 @@
 grammar silver:extension:strategyattr;
 
 synthesized attribute strategyExpr :: StrategyExpr occurs on DclInfo;
+attribute liftedStrategies occurs on DclInfo;
 
 aspect default production
 top::DclInfo ::=
 {
   top.strategyExpr = error("Internal compiler error: must be defined for all strategy attribute declarations");
+  top.liftedStrategies := error("Internal compiler error: must be defined for all strategy attribute declarations");
 }
 
 abstract production strategyDcl
-top::DclInfo ::= sg::String sl::Location fn::String tyVar::TyVar e::StrategyExpr
+top::DclInfo ::= sg::String sl::Location fn::String tyVar::TyVar e::Decorated StrategyExpr
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -24,5 +26,7 @@ top::DclInfo ::= sg::String sl::Location fn::String tyVar::TyVar e::StrategyExpr
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = strategyAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateFunctor(_, location=_);
-  top.strategyExpr = e;
+  
+  top.strategyExpr = new(e);
+  top.liftedStrategies := e.liftedStrategies;
 }

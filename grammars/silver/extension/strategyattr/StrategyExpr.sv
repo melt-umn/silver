@@ -1,95 +1,141 @@
 grammar silver:extension:strategyattr;
 
-inherited attribute attrName::String; -- Used to generate the names of lifted strategy attributes
+import silver:metatranslation;
 
-monoid attribute liftedAttrs::[Pair<String StrategyExpr>] with [], ++;
-synthesized attribute isId::Boolean;
-synthesized attribute isFail::Boolean;
+inherited attribute genName::String; -- Used to generate the names of lifted strategy attributes
+monoid attribute liftedStrategies::[Pair<String StrategyExpr>] with [], ++;
+
+synthesized attribute translation<a>::a;
+
+{-
+strategy attribute optimize =
+  innermost(
+    rule on StrategyExpr of
+    | sequence(fail(), _) -> fail()
+    | sequence(_, fail()) -> fail()
+    | sequence(id(), s) -> s
+    | sequence(s, id()) -> s
+    | choice(fail(), s) -> s
+    | choice(s, fail()) -> s
+    | choice(id(), s) -> id()
+    | rewriteRule(...) when ....fails -> fail()
+    end);
+-}
 
 nonterminal StrategyExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
-  attrName, liftedAttrs, isId, isFail;
+  genName, liftedStrategies,
+  translation<Expr>;
 
-propagate errors, flowDefs, liftedAttrs on StrategyExpr;
+flowtype StrategyExpr =
+  decorate {grammarName, env, genName}, -- NOT frame
+  unparse {}, errors {decorate, frame, config, compiledGrammars, flowEnv}, flowDefs {decorate, frame, config, compiledGrammars, flowEnv},
+  liftedStrategies {decorate},
+  translation {decorate, frame};
 
-abstract production nameStrategy
+propagate errors, flowDefs, liftedStrategies on StrategyExpr;
+
+abstract production attrRef
 top::StrategyExpr ::= id::QName
 {
   top.unparse = id.unparse;
   
   top.errors <- id.lookupAttribute.errors;
   -- TODO: Type checking!
+  
+  top.translation = Silver_Expr { $name{top.frame.lhsNtName}.$QName{id} };
 }
 
 -- Basic combinators
-concrete production idStrategy
+concrete production id
 top::StrategyExpr ::= 'id'
 {
   top.unparse = "id";
-  top.isId = true;
-  top.isFail = false;
+  top.translation = Silver_Expr { core:just($name{top.frame.lhsNtName}) };
 }
 
-concrete production failStrategy
+concrete production fail
 top::StrategyExpr ::= 'fail'
 {
   top.unparse = "fail";
-  top.isId = false;
-  top.isFail = true;
+  top.translation = Silver_Expr { core:nothing() };
 }
 
-concrete production sequenceStrategy
+concrete production sequence
 top::StrategyExpr ::= s1::StrategyExpr '<*' s2::StrategyExpr
 {
-  top.unparse = "(${s1.pp} <* ${s2.pp})";
-  top.isId = s1.isId && s2.isId;
-  top.isFail = s1.isFail || s2.isFail;
+  top.unparse = s"(${s1.unparse} <* ${s2.unparse})";
+  top.liftedStrategies <- [pair(s2.genName, s2)];
+  s1.genName = top.genName;
+  s2.genName = top.genName ++ "_cont";
+  
+  top.translation =
+    Silver_Expr {
+      -- TODO: This could be a monadic bind, but that isn't in core
+      case $Expr{s1.translation} of
+      | just(res) -> decorate res with {}.$name{s2.genName} -- TODO: Decorate with all inh attributes
+      | nothing() -> nothing()
+      end
+    };
 }
 
-concrete production choiceStrategy
+concrete production choice
 top::StrategyExpr ::= s1::StrategyExpr '<+' s2::StrategyExpr
 {
-  top.unparse = "(${s1.pp} <+ ${s2.pp})";
-  top.isId = s1.isId || (s1.isFail && s2.isId);
-  top.isFail = s1.isFail && s2.isFail;
+  top.unparse = s"(${s1.unparse} <+ ${s2.unparse})";
+  
+  s1.genName = top.genName ++ "_left";
+  s2.genName = top.genName ++ "_right";
+  
+  top.translation = Silver_Expr { core:orElse($Expr{s1.translation}, $Expr{s2.translation}) };
 }
 
 -- Traversals
-concrete production allStrategy
+concrete production allTraversal
 top::StrategyExpr ::= 'all' '(' s::StrategyExpr ')'
 {
-  top.unparse = "all(${s.pp})";
-  -- TODO: Can be more specific here
-  top.isId = s.isId;
-  top.isFail = s.isFail;
+  top.unparse = s"all(${s.unparse})";
+  
+  s.genName = top.genName ++ "_all";
+  
+  
 }
 
-concrete production someStrategy
+concrete production someTraversal
 top::StrategyExpr ::= 'some' '(' s::StrategyExpr ')'
 {
-  top.unparse = "some(${s.pp})";
-  -- TODO: Can be more specific here
-  top.isId = s.isId;
-  top.isFail = s.isFail;
+  top.unparse = s"some(${s.unparse})";
+  
+  s.genName = top.genName ++ "_some";
+  
 }
 
-concrete production oneStrategy
+concrete production oneTraversal
 top::StrategyExpr ::= 'one' '(' s::StrategyExpr ')'
 {
-  top.unparse = "one(${s.pp})";
-  -- TODO: Can be more specific here
-  top.isId = s.isId;
-  top.isFail = s.isFail;
+  top.unparse = s"one(${s.unparse})";
+  
+  s.genName = top.genName ++ "_one";
+  
+  
 }
 
+-- Recursive strategies
+concrete production recStrategy
+top::StrategyExpr ::= 'rec' n::Name '->' s::StrategyExpr
+{
+  top.unparse = s"rec ${n.name} -> (${s.unparse})";
+  
+  s.genName = top.genName ++ "_" ++ n.name;
+  
+  
+}
 
 -- Rules
-concrete production ruleStrategy
+concrete production rewriteRule
 top::StrategyExpr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "rule on " ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
-  top.isId = false; -- Unusual, and no way of checking this without decorating RHSs
-  top.isFail = ml.isFail;
   
   -- Pattern matching error checking (mostly) happens on what caseExpr forwards to,
   -- so we need to decorate one of those here.
@@ -124,30 +170,53 @@ top::Expr ::= t::Type
   forwards to errorExpr([], location=top.location);
 }
 
-attribute isFail occurs on MRuleList, MatchRule;
+monoid attribute fails::Boolean with true, && occurs on MRuleList, MatchRule, PatternList, Pattern;
+propagate fails on MRuleList, MatchRule;
+
+attribute translation<MRuleList> occurs on MRuleList;
 
 aspect production mRuleList_one
 top::MRuleList ::= m::MatchRule
 {
-  top.isFail = m.isFail;
+  local defaultRule::MRuleList =
+    mRuleList_one(
+      matchRule_c(
+        foldr(
+          patternList_more(_, ',', _, location=top.location),
+          patternList_nil(location=top.location),
+          repeat(wildcPattern('_', location=top.location), length(top.frame.signature.inputElements))),
+        '->',
+        Silver_Expr { core:nothing() },
+        location=top.location),
+      location=top.location);
+  top.translation =
+    if m.fails
+    then defaultRule
+    else mRuleList_cons(m.translation, '|', defaultRule, location=top.location);
 }
 
 aspect production mRuleList_cons
 top::MRuleList ::= h::MatchRule '|' t::MRuleList
 {
-  top.isFail = h.isFail && t.isFail;
+  top.translation =
+    if h.fails
+    then t.translation
+    else mRuleList_cons(h.translation, '|', t.translation, location=top.location);
+  
 }
+
+attribute translation<MatchRule> occurs on MatchRule;
 
 aspect production matchRule_c
 top::MatchRule ::= pt::PatternList _ e::Expr
 {
-  top.isFail = false; -- TODO
+  
 }
 
 aspect production matchRuleWhen_c
 top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
 {
-  top.isFail = false; -- TODO
+  
 }
 
 aspect production patternList_one

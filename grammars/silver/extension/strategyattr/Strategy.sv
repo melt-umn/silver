@@ -11,7 +11,7 @@ top::AGDcl ::= 'strategy' 'attribute' a::Name '=' e::StrategyExpr ';'
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
   
-  -- Define these directly to avoid flow errors
+  -- Define these directly to avoid circular dependencies
   propagate errors, moduleNames;
   
   top.errors <-
@@ -27,6 +27,8 @@ top::AGDcl ::= 'strategy' 'attribute' a::Name '=' e::StrategyExpr ';'
     constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
   e.frame = globalExprContext(myFlowGraph);
   
+  e.genName = a.name;
+  
   forwards to
     defsAGDcl(
       [attrDef(defaultEnvItem(strategyDcl(top.grammarName, a.location, fName, freshTyVar(), e)))],
@@ -36,20 +38,33 @@ top::AGDcl ::= 'strategy' 'attribute' a::Name '=' e::StrategyExpr ';'
 abstract production strategyAttributionDcl
 top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
+  local localErrors::[Message] =
+    attl.errors ++ attl.errorsTyVars ++ nt.lookupType.errors ++ nttl.errors ++ nttl.errorsTyVars ++
+    if length(attl.types) > 0
+    then [err(attl.location, "Explicit type arguments are not allowed for strategy attributes")]
+    else [];
+  
+  top.errors := if !null(localErrors) then localErrors else forward.errors;
+
   forwards to
-    defaultAttributionDcl(
-      at,
-      if length(attl.types) > 0
-      then attl
-      else
+    foldr(
+      appendAGDcl(_, _, location=top.location),
+      defaultAttributionDcl(
+        at,
         botlSome(
           '<',
           typeListSingle(
             nominalTypeExpr(nt.qNameType, nttl, location=top.location),
             location=top.location),
           '>', location=top.location),
-      nt, nttl,
-      location=top.location);
+        nt, nttl,
+        location=top.location),
+      map(
+        \ s::Pair<String StrategyExpr> ->
+          attributionDcl(
+            'attribute', qName(top.location, s.fst), attl, 'occurs', 'on', nt, nttl, ';',
+            location=top.location),
+        at.lookupAttribute.dcl.liftedStrategies));
 }
 
 {--

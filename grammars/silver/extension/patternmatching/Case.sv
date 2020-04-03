@@ -16,7 +16,7 @@ terminal Opt_Vbar_t /\|?/ lexer classes {SPECOP}; -- optional Coq-style vbar.
 terminal When_kwd 'when' lexer classes {KEYWORD,RESERVED};
 
 -- MR | ...
-nonterminal MRuleList with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize;
+nonterminal MRuleList with location, config, unparse, env, frame, errors, matchRuleList, matchRulePatternSize;
 
 -- Turns MRuleList (of MatchRules) into [AbstractMatchRule]
 synthesized attribute matchRuleList :: [AbstractMatchRule];
@@ -24,7 +24,7 @@ synthesized attribute matchRuleList :: [AbstractMatchRule];
 autocopy attribute matchRulePatternSize :: Integer;
 
 -- P -> E
-nonterminal MatchRule with location, config, unparse, env, errors, matchRuleList, matchRulePatternSize;
+nonterminal MatchRule with location, config, unparse, env, frame, errors, matchRuleList, matchRulePatternSize;
 nonterminal AbstractMatchRule with location, headPattern, isVarMatchRule, expandHeadPattern;
 
 -- The head pattern of a match rule
@@ -35,7 +35,7 @@ synthesized attribute isVarMatchRule :: Boolean;
 synthesized attribute expandHeadPattern :: (AbstractMatchRule ::= [String]);
 
 -- P , ...
-nonterminal PatternList with location, config, unparse, patternList, env, errors, patternVars, patternVarEnv;
+nonterminal PatternList with location, config, unparse, patternList, env, frame, errors, patternVars, patternVarEnv;
 
 -- Turns PatternList into [Pattern]
 synthesized attribute patternList :: [Decorated Pattern];
