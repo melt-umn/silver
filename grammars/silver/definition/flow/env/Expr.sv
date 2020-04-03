@@ -22,8 +22,9 @@ attribute flowDeps, flowDefs, flowEnv occurs on Expr, ExprInhs, ExprInh, Exprs, 
 attribute flowVertexInfo occurs on Expr;
 
 propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr
-  except childReference, lhsReference, localReference, forwardReference, forwardAccess, synDecoratedAccessHandler, inhDecoratedAccessHandler,
-         decorateExprWith, newFunction, letp, lexicalLocalReference, matchPrimitiveReal;
+  excluding
+    childReference, lhsReference, localReference, forwardReference, forwardAccess, synDecoratedAccessHandler, inhDecoratedAccessHandler,
+    decorateExprWith, newFunction, letp, lexicalLocalReference, matchPrimitiveReal;
 propagate flowDefs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
 
