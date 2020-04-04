@@ -9,5 +9,6 @@ imports silver:extension:patternmatching;
 imports silver:extension:list;
 --imports silver:extension:rewriting;
 imports silver:modification:let_fix;
+imports silver:modification:lambda_fn;
 
 exports silver:extension:strategyattr:convenience;

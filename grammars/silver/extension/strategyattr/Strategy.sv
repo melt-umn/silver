@@ -43,6 +43,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
     if length(attl.types) > 0
     then [err(attl.location, "Explicit type arguments are not allowed for strategy attributes")]
     else [];
+  -- TODO: Check that the type parameters of any rules of type nt match nttl
   
   top.errors := if !null(localErrors) then localErrors else forward.errors;
 
@@ -74,33 +75,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
 abstract production propagateStrategy
 top::ProductionStmt ::= attr::Decorated QName
 {
-  -- No explicit errors, for now.  The only conceivable issue is the attribute not
-  -- occuring on the LHS but this should be caught by the forward errors.  
-  
-  -- Generate the arguments for the constructor
-  local topName::QName = qName(top.location, top.frame.signature.outputElement.elementName);
-  local prodName::QName = qName(top.location, top.frame.fullName);
-  prodName.grammarName = top.grammarName;
-  prodName.config = top.config;
-  prodName.env = top.env;
 
-  local inputs :: [Expr] = 
-    map(makeArg(top.location, top.env, attr, _), top.frame.signature.inputElements);
-  local annotations :: [Pair<String Expr>] = 
-    map(makeAnnoArg(top.location, topName, _), top.frame.signature.namedInputElements);
-
-  -- Construct an attribute def and call with the generated arguments
-  forwards to 
-    attributeDef(
-      concreteDefLHS(topName, location=top.location),
-      '.',
-      qNameAttrOccur(new(attr), location=top.location),
-      '=',
-      mkFullFunctionInvocation(
-        top.location,
-        baseExpr(prodName, location=top.location),
-        inputs,
-        annotations),
-      ';',
-      location=top.location);
+  -- TODO: Don't generate code if attr decl contains errors
+  forwards to error("todo");
 }

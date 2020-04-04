@@ -25,7 +25,7 @@ top::DclInfo ::= sg::String sl::Location fn::String tyVar::TyVar e::Decorated St
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = strategyAttributionDcl(_, _, _, _, location=_);
-  top.propagateDispatcher = propagateFunctor(_, location=_);
+  top.propagateDispatcher = propagateStrategy(_, location=_);
   
   top.strategyExpr = new(e);
   top.liftedStrategies := e.liftedStrategies;

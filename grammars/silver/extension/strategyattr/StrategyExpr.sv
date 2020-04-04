@@ -18,7 +18,7 @@ strategy attribute optimize =
     | choice(fail(), s) -> s
     | choice(s, fail()) -> s
     | choice(id(), s) -> id()
-    | rewriteRule(...) when ....fails -> fail()
+    | rewriteRule(...) when ....matchesFrame -> fail()
     end);
 -}
 
@@ -122,7 +122,7 @@ top::StrategyExpr ::= 'one' '(' s::StrategyExpr ')'
 
 -- Recursive strategies
 concrete production recStrategy
-top::StrategyExpr ::= 'rec' n::Name '->' s::StrategyExpr
+top::StrategyExpr ::= 'rec' n::Name Arrow_t s::StrategyExpr
 {
   top.unparse = s"rec ${n.name} -> (${s.unparse})";
   
@@ -156,6 +156,10 @@ top::StrategyExpr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'en
   checkExpr.compiledGrammars = top.compiledGrammars;
   
   top.errors <- checkExpr.errors;
+  top.errors <-
+    if !ty.typerep.isDecorable
+    then [wrn(ty.location, "Only rules on nonterminals can have an effect")]
+    else []; 
   
   top.flowDefs <- checkExpr.flowDefs;
   
@@ -170,8 +174,8 @@ top::Expr ::= t::Type
   forwards to errorExpr([], location=top.location);
 }
 
-monoid attribute fails::Boolean with true, && occurs on MRuleList, MatchRule, PatternList, Pattern;
-propagate fails on MRuleList, MatchRule;
+monoid attribute matchesFrame::Boolean with false, || occurs on MRuleList, MatchRule, PatternList, Pattern;
+propagate matchesFrame on MRuleList, MatchRule, PatternList;
 
 attribute translation<MRuleList> occurs on MRuleList;
 
@@ -181,27 +185,24 @@ top::MRuleList ::= m::MatchRule
   local defaultRule::MRuleList =
     mRuleList_one(
       matchRule_c(
-        foldr(
-          patternList_more(_, ',', _, location=top.location),
-          patternList_nil(location=top.location),
-          repeat(wildcPattern('_', location=top.location), length(top.frame.signature.inputElements))),
-        '->',
+        makeWildPatternList(top.frame, top.location),
+        terminal(Arrow_kwd, "->"),
         Silver_Expr { core:nothing() },
         location=top.location),
       location=top.location);
   top.translation =
-    if m.fails
-    then defaultRule
-    else mRuleList_cons(m.translation, '|', defaultRule, location=top.location);
+    if m.matchesFrame
+    then mRuleList_cons(m.translation, '|', defaultRule, location=top.location)
+    else defaultRule;
 }
 
 aspect production mRuleList_cons
 top::MRuleList ::= h::MatchRule '|' t::MRuleList
 {
   top.translation =
-    if h.fails
-    then t.translation
-    else mRuleList_cons(h.translation, '|', t.translation, location=top.location);
+    if h.matchesFrame
+    then mRuleList_cons(h.translation, '|', t.translation, location=top.location)
+    else t.translation;
   
 }
 
@@ -210,31 +211,41 @@ attribute translation<MatchRule> occurs on MatchRule;
 aspect production matchRule_c
 top::MatchRule ::= pt::PatternList _ e::Expr
 {
-  
+  top.translation =
+    matchRule_c(
+      pt.translation, terminal(Arrow_kwd, "->"), Silver_Expr { core:just($Expr{e}) },
+      location=top.location);
 }
 
 aspect production matchRuleWhen_c
 top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
 {
-  
+  top.translation =
+    matchRuleWhen_c(
+      pt.translation, 'when', cond, terminal(Arrow_kwd, "->"), Silver_Expr { core:just($Expr{e}) },
+      location=top.location);
 }
+
+attribute translation<PatternList> occurs on PatternList;
 
 aspect production patternList_one
 top::PatternList ::= p::Pattern
 {
-  
+  top.translation = p.translation;
 }
 aspect production patternList_more
 top::PatternList ::= p::Pattern ',' ps::PatternList
 {
-  
+  top.translation = p.translation;
 }
 
 aspect production patternList_nil
 top::PatternList ::=
 {
-  
+  top.translation = error("Top-level pattern list shouldn't be empty");
 }
+
+monoid attribute letBindings::[AssignExpr] with [], ++ occurs on NamedPatternList, NamedPattern, Pattern;
 
 aspect production namedPatternList_one
 top::NamedPatternList ::= p::NamedPattern
@@ -259,10 +270,20 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
   
 }
 
+attribute translation<PatternList> occurs on Pattern;
+
+aspect default production
+top::Pattern ::=
+{
+  top.translation = makeWildPatternList(top.frame, top.location);
+  top.matchesFrame := true;
+}
+
 aspect production prodAppPattern_named
 top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 {
-  
+  top.translation = ps;
+  top.matchesFrame := prod.lookupValue.fullName == top.frame.fullName;
 } 
 
 aspect production wildcPattern
@@ -323,4 +344,14 @@ aspect production consListPattern
 top::Pattern ::= hp::Pattern '::' tp::Pattern
 {
   
+}
+
+function makeWildPatternList
+PatternList ::= frame::BlockContext loc::Location
+{
+  return
+    foldr(
+      patternList_more(_, ',', _, location=loc),
+      patternList_nil(location=loc),
+      repeat(wildcPattern('_', location=loc), length(frame.signature.inputElements ++ frame.signature.namedInputElements)));
 }
