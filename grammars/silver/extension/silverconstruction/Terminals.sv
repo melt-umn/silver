@@ -10,6 +10,7 @@ lexer class Escape font=font_escape;
 terminal EscapeExpr_t              '$Expr'              lexer classes {Escape};
 terminal EscapeTypeExpr_t          '$TypeExpr'          lexer classes {Escape};
 terminal EscapeQName_t             '$QName'             lexer classes {Escape};
+terminal EscapeQNameAttrOccur_t    '$QNameAttrOccur'    lexer classes {Escape};
 terminal EscapeName_t              '$Name'              lexer classes {Escape};
 terminal Escape_qName_t            '$qName'             lexer classes {Escape};
 terminal Escape_name_t             '$name'              lexer classes {Escape};

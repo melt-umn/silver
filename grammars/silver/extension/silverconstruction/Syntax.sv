@@ -58,6 +58,18 @@ top::QName ::= '$QName' '{' e::Expr '}'
       location=top.location);
 }
 
+concrete production antiquoteQNameAttrOccur
+top::QNameAttrOccur ::= '$QNameAttrOccur' '{' e::Expr '}'
+{
+  top.unparse = s"$$QNameAttrOccur{${e.unparse}}";
+  forwards to
+    qNameAttrOccur(
+      qNameError(
+        [err(top.location, "$QNameAttrOccur should not occur outside of Silver_Expr")],
+        location=top.location),
+      location=top.location);
+}
+
 concrete production antiquoteName
 top::Name ::= '$Name' '{' e::Expr '}'
 {
