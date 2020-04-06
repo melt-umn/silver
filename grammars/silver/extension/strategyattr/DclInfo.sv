@@ -7,7 +7,7 @@ aspect default production
 top::DclInfo ::=
 {
   top.strategyExpr = error("Internal compiler error: must be defined for all strategy attribute declarations");
-  top.liftedStrategies := error("Internal compiler error: must be defined for all strategy attribute declarations");
+  top.liftedStrategies := [];
 }
 
 abstract production strategyDcl
