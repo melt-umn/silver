@@ -3,10 +3,10 @@ grammar silver:extension:strategyattr;
 import silver:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph;
 import silver:driver:util;
 
-concrete production strategyAttributeDcl
-top::AGDcl ::= 'strategy' 'attribute' a::Name '=' e::StrategyExpr ';'
+abstract production strategyAttributeDcl
+top::AGDcl ::= a::Name e::StrategyExpr
 {
-  top.unparse = "strategy attribute " ++ a.unparse ++ ";";
+  top.unparse = "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -27,7 +27,7 @@ top::AGDcl ::= 'strategy' 'attribute' a::Name '=' e::StrategyExpr ';'
     constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
   e.frame = globalExprContext(myFlowGraph);
   
-  e.genName = a.name;
+  e.recVars = [];
   
   forwards to
     defsAGDcl(

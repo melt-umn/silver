@@ -16,10 +16,3 @@ terminal Rule_t  'rule' lexer classes {KEYWORD, STRATEGY_COMB};
 terminal Rec_t   'rec'  lexer classes {KEYWORD, STRATEGY_COMB};
 
 terminal StrategyName_t /[a-z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
-
-nonterminal StrategyQName with location, ast<QName>;
-concrete productions top::StrategyQName
-| id::StrategyName_t
-{ top.ast = qNameId(name(id.lexeme, id.location), location=top.location); }
-| id::StrategyName_t ':' qn::StrategyQName
-{ top.ast = qNameCons(name(id.lexeme, id.location), $2, qn.ast, location=top.location); }
