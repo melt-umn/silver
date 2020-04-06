@@ -84,6 +84,8 @@ top::Operation ::=
 abstract production propagateMonoid
 top::ProductionStmt ::= attr::Decorated QName
 {
+  top.unparse = s"propagate ${attr.unparse};";
+  
   -- No explicit errors, for now.  The only conceivable issue is the attribute not
   -- occuring on the LHS but this should be caught by the forward errors.  
   
@@ -94,13 +96,6 @@ top::ProductionStmt ::= attr::Decorated QName
         input.typerep.isDecorable &&
         !null(getOccursDcl(attrFullName, input.typerep.typeName, top.env)),
       top.frame.signature.inputElements);
-  
-  local topName::QName = qName(top.location, top.frame.signature.outputElement.elementName);
-  local prodName::QName = qName(top.location, top.frame.fullName);
-  prodName.grammarName = top.grammarName;
-  prodName.config = top.config;
-  prodName.env = top.env;
-
   local res :: Expr = 
     if null(inputsWithAttr)
     then attr.lookupAttribute.dcl.emptyVal
@@ -119,7 +114,7 @@ top::ProductionStmt ::= attr::Decorated QName
   -- Construct an attribute def and call with the generated arguments
   forwards to
     attrContainsBase(
-      concreteDefLHS(topName, location=top.location),
+      concreteDefLHS(qName(top.location, top.frame.signature.outputElement.elementName), location=top.location),
       '.',
       qNameAttrOccur(new(attr), location=top.location),
       ':=', res, ';', location=top.location);
