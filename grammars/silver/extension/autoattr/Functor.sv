@@ -60,7 +60,7 @@ top::ProductionStmt ::= attr::Decorated QName
       top.frame.signature.namedInputElements);
 
   -- Construct an attribute def and call with the generated arguments
-  forwards to 
+  forwards to
     attributeDef(
       concreteDefLHS(qName(top.location, top.frame.signature.outputElement.elementName), location=top.location),
       '.',

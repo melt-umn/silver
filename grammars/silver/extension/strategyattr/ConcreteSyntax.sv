@@ -7,7 +7,7 @@ top::AGDcl ::= 'strategy' 'attribute' a::Name '=' e::StrategyExpr_c ';'
 {
   top.unparse = "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
   e.givenGenName = a.name;
-  forwards to strategyAttributeDcl(a, e.ast, location=top.location);
+  forwards to strategyAttributeDcl(a, [], e.ast, location=top.location);
 }
 
 nonterminal StrategyExpr_c with location, givenGenName, unparse, ast<StrategyExpr>;
@@ -61,15 +61,26 @@ concrete productions top::StrategyExpr_c
   top.ast = rec(n, s.ast, genName=top.givenGenName, location=top.location);
   s.givenGenName = top.givenGenName ++ "_" ++ n.name;
 }
+| 'rule' 'on' id::Name '::' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
+{
+  top.unparse = "rule on " ++ id.unparse ++ "::" ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
+  top.ast = rewriteRule(id, ty, ml, genName=top.givenGenName, location=top.location);
+}
 | 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "rule on " ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
-  top.ast = rewriteRule(ty, ml, genName=top.givenGenName, location=top.location);
+  top.ast = rewriteRule(name("top", top.location), ty, ml, genName=top.givenGenName, location=top.location);
 }
 | id::StrategyQName
 {
   top.unparse = id.ast.unparse;
   top.ast = nameRef(id.ast, genName=top.givenGenName, location=top.location);
+}
+| '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"(${s.unparse})";
+  top.ast = s.ast;
+  s.givenGenName = top.givenGenName;
 }
 
 nonterminal StrategyQName with location, ast<QName>;

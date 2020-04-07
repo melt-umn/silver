@@ -1,17 +1,24 @@
 grammar silver:extension:strategyattr;
 
+synthesized attribute containsErrors::Boolean occurs on DclInfo;
+synthesized attribute liftedStrategyNames::[String] occurs on DclInfo;
+synthesized attribute givenRecVarEnv::[Pair<String String>] occurs on DclInfo;
 synthesized attribute strategyExpr :: StrategyExpr occurs on DclInfo;
-attribute liftedStrategies occurs on DclInfo;
 
 aspect default production
 top::DclInfo ::=
 {
+  top.containsErrors = false;
+  top.liftedStrategyNames = [];
+  top.givenRecVarEnv = [];
   top.strategyExpr = error("Internal compiler error: must be defined for all strategy attribute declarations");
-  top.liftedStrategies := [];
 }
 
 abstract production strategyDcl
-top::DclInfo ::= sg::String sl::Location fn::String tyVar::TyVar e::Decorated StrategyExpr
+top::DclInfo ::=
+  sg::String sl::Location fn::String tyVar::TyVar
+  containsErrors::Boolean liftedStrategyNames::[String] givenRecVarEnv::[Pair<String String>]
+  e::StrategyExpr
 {
   top.sourceGrammar = sg;
   top.sourceLocation = sl;
@@ -27,6 +34,8 @@ top::DclInfo ::= sg::String sl::Location fn::String tyVar::TyVar e::Decorated St
   top.attributionDispatcher = strategyAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateStrategy(_, location=_);
   
-  top.strategyExpr = new(e);
-  top.liftedStrategies := e.liftedStrategies;
+  top.containsErrors = containsErrors;
+  top.liftedStrategyNames = liftedStrategyNames;
+  top.givenRecVarEnv = givenRecVarEnv;
+  top.strategyExpr = e;
 }
