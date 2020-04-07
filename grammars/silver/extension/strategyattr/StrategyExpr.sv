@@ -11,7 +11,6 @@ synthesized attribute attrRefName::Maybe<String>;
 monoid attribute matchesFrame::Boolean with false, ||;
 
 functor attribute translation;
-synthesized attribute directRefTranslation::Maybe<(Expr ::= NamedSignatureElement Location)>;
 
 {-
 strategy attribute optimize =
@@ -29,6 +28,11 @@ strategy attribute optimize =
     | some(fail()) -> fail()
     | one(fail()) -> fail()
     | rec(n, s) when top.attrName.isJust -> replace n with top.attrName in s
+    
+    -- These don't apply inside traversals/sequence continuations!
+    | all(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> id()
+    | some(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail()
+    | one(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail()
     | rewriteRule(...) when !... .matchesFrame -> fail()
     | recVarRef(n) when !n.matchesFrame -> fail()
     | strategyRef(n) when !n.matchesFrame -> fail()
@@ -38,17 +42,23 @@ strategy attribute optimize =
 
 nonterminal StrategyExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
-  genName, recVars, liftedStrategies,
+  genName, recVars, liftedStrategies, attrRefName,
   translation<Expr>;
 
 flowtype StrategyExpr =
   decorate {grammarName, env, config, recVars}, -- NOT frame
   unparse {}, errors {decorate, frame, compiledGrammars, flowEnv}, flowDefs {decorate, frame, compiledGrammars, flowEnv},
-  liftedStrategies {decorate},
+  liftedStrategies {decorate}, attrRefName {decorate},
   translation {decorate, frame};
 
 propagate errors on StrategyExpr excluding strategyRef, functorRef;
 propagate flowDefs, liftedStrategies on StrategyExpr;
+
+aspect default production
+top::StrategyExpr ::=
+{
+  top.attrRefName = nothing();
+}
 
 -- Basic combinators
 abstract production id
@@ -71,30 +81,34 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   top.unparse = s"(${s1.unparse} <* ${s2.unparse})";
   top.liftedStrategies <-
     case s2 of
-    | recVarRef(_) -> []
-    | strategyRef(_) -> []
     | functorRef(_) -> []
+    | _ when s2.attrRefName.isJust -> []
     | _ -> [pair(s2.genName, s2)]
     end;
   
-  local s2Name::String =
-    case s2 of
-    | recVarRef(n) -> s2.genName ++ "_" ++ n.name
-    | strategyRef(n) -> n.name
-    | functorRef(n) -> n.name
-    | _ -> s2.genName
-    end;
+  local s2Name::String = fromMaybe(s2.genName, s2.attrRefName);
   top.translation =
-    case s2 of
-    | functorRef(_) ->
+    case s1, s2 of
+    | functorRef(attr1), functorRef(attr2) ->
+      Silver_Expr {
+        core:just(
+          decorate $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{attr1}
+          with {}.$QNameAttrOccur{attr2}) -- TODO: Decorate with all inh attributes
+      }
+    | functorRef(attr1), _ ->
+      Silver_Expr {
+        decorate $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{attr1}
+        with {}.$name{s2Name}
+      }
+    | _, functorRef(attr2) ->
       Silver_Expr {
         -- TODO: This could be a monadic bind, but bindMaybe isn't in core
         case $Expr{s1.translation} of
-        | just(res) -> core:just(decorate res with {}.$name{s2Name}) -- TODO: Decorate with all inh attributes
+        | just(res) -> decorate res with {}.$QNameAttrOccur{attr2} -- TODO: Decorate with all inh attributes
         | nothing() -> nothing()
         end
       }
-    | _ ->
+    | _, _ ->
       Silver_Expr {
         -- TODO: This could be a monadic bind, but bindMaybe isn't in core
         case $Expr{s1.translation} of
@@ -119,58 +133,56 @@ top::StrategyExpr ::= s::StrategyExpr
 {
   top.unparse = s"all(${s.unparse})";
   top.liftedStrategies <-
-    case s of
-    | recVarRef(_) -> []
-    | strategyRef(_) -> []
-    | functorRef(_) -> []
-    | _ -> [pair(s.genName, s)]
-    end;
+    if s.attrRefName.isJust
+    then []
+    else [pair(s.genName, s)];
   
-  local sName::String =
-    case s of
-    | recVarRef(n) -> s.genName ++ "_" ++ n.name
-    | strategyRef(n) -> n.name
-    | functorRef(n) -> n.name
-    | _ -> s.genName
-    end;
+  local sName::String = fromMaybe(s.genName, s.attrRefName);
+  local childAccesses::[Pair<String Boolean>] =
+    map(
+      \ e::NamedSignatureElement ->
+        pair(e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
+      top.frame.signature.inputElements);
   top.translation =
-    case s of
-    | functorRef(qNameAttrOccur(attr)) ->
-      Silver_Expr {
-        core:just(
-          $Expr{
-            -- From the functor attribute extension
-            mkFullFunctionInvocation(
-              top.location,
-              baseExpr(qName(top.location, top.frame.fullName), location=top.location),
-              map(makeArg(top.location, top.env, attr, _), top.frame.signature.inputElements),
-              map(
-                makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
-                top.frame.signature.namedInputElements))})
-      }
-    | _ ->
-      caseExpr(
-        map(
-          \ n::String -> Silver_Expr { $name{n}.$name{sName} },
-          top.frame.signature.inputNames),
-        [matchRule(
-           map(
-             \ n::String ->
-             decorate
-               varPattern(name(n ++ "_" ++ sName, top.location), location=top.location)
-             with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; },
-             top.frame.signature.inputNames),
-           nothing(),
-           mkStrFunctionInvocation(
-             top.location, top.frame.fullName,
-             map(
-               \ n::String -> Silver_Expr { $name{n ++ "_" ++ sName} },
-               top.frame.signature.inputNames)),
-           location=top.location)],
-        Silver_Expr { core:nothing() },
-        nonterminalType("core:Maybe", [top.frame.signature.outputElement.typerep]),
-        location=top.location)
-    end;
+    {- case a.s, c.s of
+       | just(a_s), just(c_s) -> just(prod(a_s, b, c_s))
+       | _, _ -> nothing()
+       end  -}
+    caseExpr(
+      flatMap(
+        \ a::Pair<String Boolean> ->
+          if a.snd then [Silver_Expr { $name{a.fst}.$name{sName} }] else [],
+        childAccesses),
+      [matchRule(
+         flatMap(
+           \ a::Pair<String Boolean> ->
+             if a.snd
+             then
+               [decorate Silver_Pattern { $name{a.fst ++ "_" ++ sName} }
+                with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
+             else [],
+           childAccesses),
+         nothing(),
+         Silver_Expr {
+           core:just(
+             $Expr{
+               mkFullFunctionInvocation(
+                 top.location,
+                 baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+                 map(
+                   \ a::Pair<String Boolean> ->
+                     if a.snd
+                     then Silver_Expr { $name{a.fst ++ "_" ++ sName} }
+                     else Silver_Expr { $name{a.fst} },
+                   childAccesses),
+                 map(
+                   makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                   top.frame.signature.namedInputElements))})
+         },
+         location=top.location)],
+      Silver_Expr { core:nothing() },
+      nonterminalType("core:Maybe", [top.frame.signature.outputElement.typerep]),
+      location=top.location);
 }
 
 abstract production someTraversal
@@ -178,29 +190,111 @@ top::StrategyExpr ::= s::StrategyExpr
 {
   top.unparse = s"some(${s.unparse})";
   top.liftedStrategies <-
-    case s of
-    | nameRef(_) -> []
-    | _ -> [pair(s.genName, s)]
-    end;
+    if s.attrRefName.isJust
+    then []
+    else [pair(s.genName, s)];
   
-  local sName::String =
-    case s of
-    | nameRef(n) -> n.name
-    | _ -> s.genName
-    end;
+  local sName::String = fromMaybe(s.genName, s.attrRefName);
+  local childAccesses::[Pair<String Boolean>] =
+    map(
+      \ e::NamedSignatureElement ->
+        pair(
+          e.elementName,
+          decorate qNameAttrOccur(qName(top.location, sName), location=top.location)
+          with { config = top.config; grammarName = top.grammarName; env = top.env; attrFor = e.typerep; }.matchesFrame),
+      top.frame.signature.inputElements);
   top.translation =
-    mkStrFunctionInvocation(
-      top.location, top.frame.fullName,
-      map(
-        \ n::String ->
-          Silver_Expr { core:fromMaybe($name{n}, $name{n}.$name{sName}) },
-        top.frame.signature.inputNames));
+    {- if a.s.isJust || c.s.isJust
+       then just(prod(fromMaybe(a, a.s), b, fromMaybe(c, c.s)))
+       else nothing() -}
+    Silver_Expr {
+      if $Expr{
+        foldr(
+          or(_, '||', _, location=top.location),
+          falseConst('false', location=top.location),
+          map(
+            \ a::String -> Silver_Expr { $name{a}.$name{sName}.isJust },
+            map(fst, filter(snd, childAccesses))))}
+      then
+        core:just(
+          $Expr{
+            mkFullFunctionInvocation(
+              top.location,
+              baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+              map(
+                \ a::Pair<String Boolean> ->
+                  if a.snd
+                  then Silver_Expr { core:fromMaybe($name{a.fst}, $name{a.fst}.$name{sName}) }
+                  else Silver_Expr { $name{a.fst} },
+                childAccesses),
+              map(
+                makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                top.frame.signature.namedInputElements))})
+      else core:nothing()
+    };
 }
 abstract production oneTraversal
 top::StrategyExpr ::= s::StrategyExpr
 {
   top.unparse = s"one(${s.unparse})";
   
+  top.liftedStrategies <-
+    if s.attrRefName.isJust
+    then []
+    else [pair(s.genName, s)];
+  
+  local sName::String = fromMaybe(s.genName, s.attrRefName);
+  local childAccesses::[Pair<String Boolean>] =
+    map(
+      \ e::NamedSignatureElement ->
+        pair(e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
+      top.frame.signature.inputElements);
+  local matchingChildren::[String] = map(fst, filter(snd, childAccesses));
+  top.translation =
+    {- case a.s, c.s of
+       | just(a_s), _ -> just(prod(a_s, b, c))
+       | _, just(c_s) -> just(prod(a, b, c_s))
+       | _, _ -> nothing()
+       end  -}
+    caseExpr(
+      map(
+        \ a::String -> Silver_Expr { $name{a}.$name{sName} },
+        matchingChildren),
+      map(
+        \ i::Integer ->
+          let childI::String = head(drop(i, matchingChildren))
+          in let childIndex::Integer = positionOf(stringEq, childI, map(fst, childAccesses))
+          in 
+            matchRule(
+              map(
+                \ p::Pattern -> decorate p with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; },
+                repeat(wildcPattern('_', location=top.location), i) ++
+                Silver_Pattern { $name{childI ++ "_" ++ sName} } ::
+                repeat(wildcPattern('_', location=top.location), length(matchingChildren) - (i + 1))),
+              nothing(),
+              Silver_Expr {
+                core:just(
+                  $Expr{
+                    mkFullFunctionInvocation(
+                      top.location,
+                      baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+                      map(
+                        \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
+                        take(childIndex, childAccesses)) ++
+                      Silver_Expr { $name{childI ++ "_" ++ sName} } ::
+                      map(
+                        \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
+                        drop(childIndex + 1, childAccesses)),
+                      map(
+                        makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                        top.frame.signature.namedInputElements))})
+              },
+              location=top.location)
+          end end,
+          range(0, length(matchingChildren))),
+      Silver_Expr { core:nothing() },
+      nonterminalType("core:Maybe", [top.frame.signature.outputElement.typerep]),
+      location=top.location);
 }
 
 -- Recursive strategies
@@ -307,6 +401,8 @@ top::StrategyExpr ::= id::QName
 {
   top.unparse = id.unparse;
   
+  top.attrRefName = just(id.name);
+  
   local attrDcl::DclInfo = id.lookupAttribute.dcl;
   attrDcl.givenNonterminalType = error("Not actually needed"); -- Ugh environment needs refactoring
   forwards to
@@ -324,6 +420,8 @@ top::StrategyExpr ::= msg::[Message] id::Decorated QName
 {
   top.unparse = id.unparse;
   
+  top.attrRefName = just(id.name);
+  
   top.errors <- msg;
   top.translation = Silver_Expr { core:nothing() };
 }
@@ -332,9 +430,9 @@ top::StrategyExpr ::= id::Decorated QName
 {
   top.unparse = id.unparse;
   
-  local recAttr::String = lookupBy(stringEq, id.name, top.recVars).fromJust;
+  top.attrRefName = lookupBy(stringEq, id.name, top.recVars);
   
-  top.translation = Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$qName{recAttr} };
+  top.translation = Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$qName{top.attrRefName.fromJust} };
 }
 abstract production strategyRef
 top::StrategyExpr ::= id::QNameAttrOccur
@@ -354,6 +452,8 @@ top::StrategyExpr ::= id::QNameAttrOccur
     | errorType(), _ -> []
     | _, _ -> [err(id.location, s"Attribute ${id.name} cannot be used as a strategy")]
     end;
+  
+  top.attrRefName = just(id.name);
   
   id.attrFor = top.frame.signature.outputElement.typerep;
   
@@ -381,6 +481,8 @@ top::StrategyExpr ::= id::QNameAttrOccur
     | _, _ -> [err(id.location, s"Attribute ${id.name} cannot be used as a functor")]
     end;
   
+  top.attrRefName = nothing();
+  
   id.attrFor = top.frame.signature.outputElement.typerep;
   
   top.translation =
@@ -400,3 +502,22 @@ top::QNameAttrOccur ::= at::QName
     | t -> !unify(top.attrFor, t).failure
     end;
 }
+
+function attrMatchesFrame
+Boolean ::= env::Decorated Env attrName::String attrFor::Type
+{
+  return
+    decorate qNameAttrOccur(qName(loc("", -1, -1, -1, -1, -1, -1), attrName), location=loc("", -1, -1, -1, -1, -1, -1))
+    with { env = env; attrFor = attrFor; }.matchesFrame;
+}
+
+function attrMatchesChild
+Boolean ::= env::Decorated Env attrName::String frame::BlockContext
+{
+  return
+    any(
+      map(
+        \ e::NamedSignatureElement -> attrMatchesFrame(env, attrName, e.typerep),
+        frame.signature.inputElements));
+}
+
