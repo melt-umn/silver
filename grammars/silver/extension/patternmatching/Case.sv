@@ -25,7 +25,7 @@ autocopy attribute matchRulePatternSize :: Integer;
 
 -- P -> E
 nonterminal MatchRule with location, config, unparse, env, frame, errors, matchRuleList, matchRulePatternSize;
-nonterminal AbstractMatchRule with location, headPattern, isVarMatchRule, expandHeadPattern;
+nonterminal AbstractMatchRule with location, unparse, headPattern, isVarMatchRule, expandHeadPattern;
 
 -- The head pattern of a match rule
 synthesized attribute headPattern :: Decorated Pattern;
@@ -75,13 +75,18 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 abstract production caseExpr
 top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
 {
-  top.unparse = error("Internal error: pretty of intermediate data structure");
+  top.unparse =
+    "(case " ++ implode(", ", map((.unparse), es)) ++ " of " ++ 
+    implode(" | ", map((.unparse), ml)) ++ " | _ -> " ++ failExpr.unparse ++
+    " end :: " ++ prettyType(retType) ++ ")";
 
   -- 4 cases: no patterns left, all constructors, all variables, or mixed con/var.
   -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules
   forwards to
     case ml of
     | matchRule([], c, e) :: _ -> buildMatchWhenConditionals(ml, failExpr) -- valid or error case
+    -- No match rules, only possible through abstract syntax
+    | [] -> Silver_Expr { let res :: $TypeExpr{typerepTypeExpr(retType, location=top.location)} = $Expr{failExpr} in res end }
     | _ -> if null(es) then failExpr -- error case
            else if null(varRules) then allConCase
            else if null(prodRules) then allVarCase
@@ -203,6 +208,10 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr '->' e::Expr
 abstract production matchRule
 top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Expr> e::Expr
 {
+  top.unparse =
+    implode(", ", map((.unparse), pl)) ++
+    (if cond.isJust then " when " ++ cond.fromJust.unparse else "") ++
+    " -> " ++ e.unparse;
   top.headPattern = head(pl);
   -- If pl is null, and we're consulted, then we're missing patterns, pretend they're _
   top.isVarMatchRule = null(pl) || head(pl).patternIsVariable;
