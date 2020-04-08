@@ -8,12 +8,10 @@ autocopy attribute recVarEnv::[Pair<String String>];
 inherited attribute outerAttr::Maybe<String>;
 monoid attribute liftedStrategies::[Pair<String Decorated StrategyExpr>] with [], ++;
 synthesized attribute attrRefName::Maybe<String>;
+monoid attribute matchesFrame::Boolean with false, ||;
 monoid attribute freeRecVars::[String] with [], ++;
 
-monoid attribute matchesFrame::Boolean with false, ||;
-
 synthesized attribute translation<a>::a;
-
 {-
 strategy attribute optimize =
   innermost(
@@ -25,7 +23,7 @@ strategy attribute optimize =
     | choice(fail(), s) -> s
     | choice(s, fail()) -> s
     | choice(id(), s) -> id()
-    | choice(functorRef(n), s) -> functorRef(n)
+    | choice(functorRef(n, genName=g, location=l), s) -> functorRef(n, genName=g, location=l)
     | all(id()) -> id()
     | some(fail()) -> fail()
     | one(fail()) -> fail()
@@ -35,23 +33,26 @@ strategy attribute optimize =
     | all(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> id()
     | some(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail()
     | one(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail()
-    | rewriteRule(...) when !... .matchesFrame -> fail()
-    | recVarRef(n) when !n.matchesFrame -> fail()
+    | rewriteRule(_, _, ml) when !ml.matchesFrame -> fail()
     | strategyRef(n) when !n.matchesFrame -> fail()
     | functorRef(n) when !n.matchesFrame -> fail()
+    | strategyRef(n) when n.matchesFrame && !n.attrDcl.isRecursive && null(n.attrDcl.givenRecVarEnv) -> n.attrDcl.strategyExpr
+    end <+
+    rule on MRuleList of
+    | mRuleList_cons(h, _, t) when !h.matchesFrame -> t
     end);
 -}
 
 nonterminal StrategyExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
-  genName, recVarEnv, outerAttr, liftedStrategies, attrRefName, freeRecVars,
-  translation<Expr>;
+  genName, recVarEnv, outerAttr, liftedStrategies, attrRefName,
+  translation<Expr>, matchesFrame, freeRecVars;
 
 flowtype StrategyExpr =
   decorate {grammarName, config, recVarEnv, outerAttr}, -- NOT frame or env
   unparse {}, errors {decorate, frame, env, compiledGrammars, flowEnv}, flowDefs {decorate, frame, env, compiledGrammars, flowEnv},
   liftedStrategies {decorate}, attrRefName {decorate},
-  translation {decorate, frame, env}, freeRecVars {decorate, env};
+  translation {decorate, frame, env}, matchesFrame {decorate, frame, env}, freeRecVars {decorate, env};
 
 propagate errors on StrategyExpr excluding strategyRef, functorRef;
 propagate flowDefs on StrategyExpr;
@@ -61,6 +62,7 @@ aspect default production
 top::StrategyExpr ::=
 {
   top.attrRefName = nothing();
+  top.matchesFrame := true;
 }
 
 -- Basic combinators
@@ -95,33 +97,36 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   
   local s2Name::String = fromMaybe(s2.genName, s2.attrRefName);
   top.translation =
-    case s1, s2 of
-    | functorRef(attr1), functorRef(attr2) ->
-      Silver_Expr {
-        core:just(
+    if !s1.matchesFrame || !s2.matchesFrame
+    then Silver_Expr { core:nothing() }
+    else
+      case s1, s2 of
+      | functorRef(attr1), functorRef(attr2) ->
+        Silver_Expr {
+          core:just(
+            decorate $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{attr1}
+            with {}.$QNameAttrOccur{attr2}) -- TODO: Decorate with all inh attributes
+        }
+      | functorRef(attr1), _ ->
+        Silver_Expr {
           decorate $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{attr1}
-          with {}.$QNameAttrOccur{attr2}) -- TODO: Decorate with all inh attributes
-      }
-    | functorRef(attr1), _ ->
-      Silver_Expr {
-        decorate $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{attr1}
-        with {}.$name{s2Name}
-      }
-    | _, functorRef(attr2) ->
-      Silver_Expr {
-        core:monad:bindMaybe(
-          $Expr{s1.translation},
-          \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep, location=top.location)} ->
-            decorate res with {}.$QNameAttrOccur{attr2}) -- TODO: Decorate with all inh attributes
-      }
-    | _, _ ->
-      Silver_Expr {
-        core:monad:bindMaybe(
-          $Expr{s1.translation},
-          \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep, location=top.location)} ->
-            decorate res with {}.$name{s2Name}) -- TODO: Decorate with all inh attributes
-      }
-    end;
+          with {}.$name{s2Name}
+        }
+      | _, functorRef(attr2) ->
+        Silver_Expr {
+          core:monad:bindMaybe(
+            $Expr{s1.translation},
+            \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep, location=top.location)} ->
+              decorate res with {}.$QNameAttrOccur{attr2}) -- TODO: Decorate with all inh attributes
+        }
+      | _, _ ->
+        Silver_Expr {
+          core:monad:bindMaybe(
+            $Expr{s1.translation},
+            \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep, location=top.location)} ->
+              decorate res with {}.$name{s2Name}) -- TODO: Decorate with all inh attributes
+        }
+      end;
 }
 
 abstract production choice
@@ -549,6 +554,7 @@ top::StrategyExpr ::= id::QNameAttrOccur
   
   propagate liftedStrategies;
   top.attrRefName = just(id.name);
+  top.matchesFrame := id.matchesFrame;
   
   id.attrFor = top.frame.signature.outputElement.typerep;
   
@@ -578,6 +584,7 @@ top::StrategyExpr ::= id::QNameAttrOccur
   
   propagate liftedStrategies;
   top.attrRefName = just(id.name);
+  top.matchesFrame := id.matchesFrame;
   
   id.attrFor = top.frame.signature.outputElement.typerep;
   
