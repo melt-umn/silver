@@ -41,19 +41,19 @@ concrete productions top::StrategyExpr_c
 {
   top.unparse = s"all(${s.unparse})";
   top.ast = allTraversal(s.ast, genName=top.givenGenName, location=top.location);
-  s.givenGenName = top.givenGenName ++ "_item";
+  s.givenGenName = top.givenGenName ++ "_all_arg";
 }
 | 'some' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"some(${s.unparse})";
   top.ast = someTraversal(s.ast, genName=top.givenGenName, location=top.location);
-  s.givenGenName = top.givenGenName ++ "_item";
+  s.givenGenName = top.givenGenName ++ "_some_arg";
 }
 | 'one' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"one(${s.unparse})";
   top.ast = oneTraversal(s.ast, genName=top.givenGenName, location=top.location);
-  s.givenGenName = top.givenGenName ++ "_item";
+  s.givenGenName = top.givenGenName ++ "_one_arg";
 }
 | 'rec' n::Name Arrow_t s::StrategyExpr_c
 {
@@ -86,55 +86,55 @@ concrete productions top::StrategyExpr_c
 {
   top.unparse = s"try(${s.unparse})";
   top.ast = try(s.ast, genName=top.givenGenName, location=top.location);
-  s.givenGenName = top.givenGenName ++ "_try";
+  s.givenGenName = top.givenGenName ++ "_try_arg";
 }
 | 'repeat' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"repeat(${s.unparse})";
   top.ast = repeatS(s.ast, genName=top.givenGenName, location=top.location);
-  s.givenGenName = top.givenGenName ++ "_repeat";
+  s.givenGenName = top.givenGenName ++ "_repeat_arg";
 }
 | 'reduce' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"reduce(${s.unparse})";
   top.ast = reduce(s.ast, genName=top.givenGenName, location=top.location);
-  s.givenGenName = top.givenGenName ++ "_reduce";
+  s.givenGenName = top.givenGenName ++ "_reduce_arg";
 }
 | 'bottomUp' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"bottomUp(${s.unparse})";
   top.ast = bottomUp(s.ast, genName=top.givenGenName, location=top.location);
-  s.givenGenName = top.givenGenName ++ "_bottomUp";
+  s.givenGenName = top.givenGenName ++ "_bottomUp_arg";
 }
 | 'topDown' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"topDown(${s.unparse})";
   top.ast = topDown(s.ast, genName=top.givenGenName, location=top.location);
-  s.givenGenName = top.givenGenName ++ "_topDown";
+  s.givenGenName = top.givenGenName ++ "_topDown_arg";
 }
 | 'onceBottomUp' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"onceBottomUp(${s.unparse})";
   top.ast = onceBottomUp(s.ast, genName=top.givenGenName, location=top.location);
-  s.givenGenName = top.givenGenName ++ "_onceBottomUp";
+  s.givenGenName = top.givenGenName ++ "_onceBottomUp_arg";
 }
 | 'onceTopDown' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"onceTopDown(${s.unparse})";
   top.ast = onceTopDown(s.ast, genName=top.givenGenName, location=top.location);
-  s.givenGenName = top.givenGenName ++ "_onceTopDown";
+  s.givenGenName = top.givenGenName ++ "_onceTopDown_arg";
 }
 | 'innermost' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"innermost(${s.unparse})";
   top.ast = innermost(s.ast, genName=top.givenGenName, location=top.location);
-  s.givenGenName = top.givenGenName ++ "_innermost";
+  s.givenGenName = top.givenGenName ++ "_innermost_arg";
 }
 | 'outermost' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"outermost(${s.unparse})";
   top.ast = outermost(s.ast, genName=top.givenGenName, location=top.location);
-  s.givenGenName = top.givenGenName ++ "_outermost";
+  s.givenGenName = top.givenGenName ++ "_outermost_arg";
 }
 
 nonterminal StrategyQName with location, ast<QName>;
