@@ -1,20 +1,15 @@
 grammar silver:extension:strategyattr;
 
-
-{-
 -- Utilities
-abstract production recStrategy
-top::StrategyExpr ::= ctr::(StrategyExpr ::= StrategyExpr)
-{
-  forwards to ctr(top);
-}
-
 abstract production try
 top::StrategyExpr ::= s::StrategyExpr
 {
-  forwards to s <+ id();
+  forwards to
+    Silver_StrategyExpr try {
+      $StrategyExpr{s} <+ id
+    };
 }
-
+{-
 abstract production repeat
 top::StrategyExpr ::= s::StrategyExpr
 {

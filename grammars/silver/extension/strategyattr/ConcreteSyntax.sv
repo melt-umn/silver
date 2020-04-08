@@ -10,7 +10,7 @@ top::AGDcl ::= 'strategy' 'attribute' a::Name '=' e::StrategyExpr_c ';'
   forwards to strategyAttributeDcl(a, [], e.ast, location=top.location);
 }
 
-nonterminal StrategyExpr_c with location, givenGenName, unparse, ast<StrategyExpr>;
+closed nonterminal StrategyExpr_c with location, givenGenName, unparse, ast<StrategyExpr>;
 
 concrete productions top::StrategyExpr_c
 | 'id'
@@ -81,6 +81,12 @@ concrete productions top::StrategyExpr_c
   top.unparse = s"(${s.unparse})";
   top.ast = s.ast;
   s.givenGenName = top.givenGenName;
+}
+| 'try' '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"try(${s.unparse})";
+  top.ast = try(s.ast, genName=top.givenGenName, location=top.location);
+  s.givenGenName = top.givenGenName ++ "_try";
 }
 
 nonterminal StrategyQName with location, ast<QName>;

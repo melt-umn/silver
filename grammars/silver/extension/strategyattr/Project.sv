@@ -8,6 +8,7 @@ imports silver:extension:autoattr;
 imports silver:extension:patternmatching;
 imports silver:extension:list;
 --imports silver:extension:rewriting;
+imports silver:extension:silverconstruction;
 imports silver:modification:let_fix;
 imports silver:modification:lambda_fn;
 

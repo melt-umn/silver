@@ -2,7 +2,7 @@ grammar silver_features;
 
 strategy attribute elimPlusZero =
   all(elimPlusZero) <*
-  (rule on SExpr of addSExpr(e, constSExpr(0)) -> e end <+ id);
+  try(rule on SExpr of addSExpr(e, constSExpr(0)) -> e end);
 
 nonterminal SExpr with elimPlusZero;
 
