@@ -1,8 +1,9 @@
 grammar silver_features;
 
+import core:monad;
+
 strategy attribute elimPlusZero =
-  all(elimPlusZero) <*
-  try(rule on SExpr of addSExpr(e, constSExpr(0)) -> e end);
+  bottomUp(try(rule on SExpr of addSExpr(e, constSExpr(0)) -> e end));
 
 nonterminal SExpr with elimPlusZero;
 
@@ -36,6 +37,11 @@ top::SStmt ::= n::String e::SExpr
 
 equalityTest(
   hackUnparse(addSExpr(constSExpr(42), constSExpr(0)).elimPlusZero),
+  "core:just(silver_features:constSExpr(42))",
+  String, silver_tests);
+
+equalityTest(
+  hackUnparse(addSExpr(addSExpr(constSExpr(42), constSExpr(0)), constSExpr(0)).elimPlusZero),
   "core:just(silver_features:constSExpr(42))",
   String, silver_tests);
 

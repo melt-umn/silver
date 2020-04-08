@@ -11,12 +11,17 @@ top::AGDcl ::= a::Name recVarEnv::[Pair<String String>] e::StrategyExpr
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
   
-  -- Define these directly to avoid circular dependencies
+  -- Define these directly to avoid circular dependencies,
+  -- since the forward contributes to the env.
   propagate errors, moduleNames;
   
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
     then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
+    else [];
+  top.errors <-
+    if null(getValueDcl("core:monad:bindMaybe", top.env))
+    then [err(top.location, "Strategy attributes require import of core:monad")]
     else [];
   
   -- Frame doesn't really matter, since we will re-check any expressions occuring in e when propagated.
@@ -30,7 +35,7 @@ top::AGDcl ::= a::Name recVarEnv::[Pair<String String>] e::StrategyExpr
   e.recVarEnv = recVarEnv;
   e.outerAttr = just(a.name);
   
-  forwards to
+  forwards to-- unsafeTrace(
     foldr(
       appendAGDcl(_, _, location=top.location),
       defsAGDcl(
@@ -38,12 +43,13 @@ top::AGDcl ::= a::Name recVarEnv::[Pair<String String>] e::StrategyExpr
            defaultEnvItem(
              strategyDcl(
                top.grammarName, a.location, fName, freshTyVar(),
-               !null(e.errors), map(fst, e.liftedStrategies), recVarEnv, e)))],
+               !null(top.errors), map(fst, e.liftedStrategies), recVarEnv, e)))],
         location=top.location),
       map(
         \ d::Pair<String Decorated StrategyExpr> ->
           strategyAttributeDcl(name(d.fst, top.location), d.snd.recVarEnv, new(d.snd), location=top.location),
-        e.liftedStrategies));
+        e.liftedStrategies));--,
+    --print(a.name ++ " = " ++ e.unparse ++ "; lifted  " ++ implode(",  ", map(fst, e.liftedStrategies)) ++ "\n\n", unsafeIO()));
 }
 
 abstract production strategyAttributionDcl
@@ -99,7 +105,7 @@ top::ProductionStmt ::= attr::Decorated QName
   forwards to
     if attr.lookupAttribute.dcl.containsErrors
     then errorProductionStmt([], location=top.location)
-    else --unsafeTrace(
+    else-- unsafeTrace(
       foldr(
         productionStmtAppend(_, _, location=top.location),
         attributeDef(
@@ -113,5 +119,5 @@ top::ProductionStmt ::= attr::Decorated QName
         map(
           \ n::String -> propagateOneAttr(qName(top.location, n), location=top.location),
           attr.lookupAttribute.dcl.liftedStrategyNames));--,
-      --print(attr.name ++ " on " ++ top.frame.fullName ++ ": " ++ e.translation.unparse ++ "\n\n", unsafeIO()));
+      --print(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ e.translation.unparse ++ ";\n\n", unsafeIO()));
 }

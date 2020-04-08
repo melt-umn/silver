@@ -109,19 +109,17 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
       }
     | _, functorRef(attr2) ->
       Silver_Expr {
-        -- TODO: This could be a monadic bind, but bindMaybe isn't in core
-        case $Expr{s1.translation} of
-        | just(res) -> decorate res with {}.$QNameAttrOccur{attr2} -- TODO: Decorate with all inh attributes
-        | nothing() -> nothing()
-        end
+        core:monad:bindMaybe(
+          $Expr{s1.translation},
+          \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep, location=top.location)} ->
+            decorate res with {}.$QNameAttrOccur{attr2}) -- TODO: Decorate with all inh attributes
       }
     | _, _ ->
       Silver_Expr {
-        -- TODO: This could be a monadic bind, but bindMaybe isn't in core
-        case $Expr{s1.translation} of
-        | just(res) -> decorate res with {}.$name{s2Name} -- TODO: Decorate with all inh attributes
-        | nothing() -> nothing()
-        end
+        core:monad:bindMaybe(
+          $Expr{s1.translation},
+          \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep, location=top.location)} ->
+            decorate res with {}.$name{s2Name}) -- TODO: Decorate with all inh attributes
       }
     end;
 }
@@ -159,16 +157,19 @@ top::StrategyExpr ::= s::StrategyExpr
   s.outerAttr = nothing();
   
   local sName::String = fromMaybe(s.genName, s.attrRefName);
+  local sBaseName::String = last(explode(":", sName));
   local childAccesses::[Pair<String Boolean>] =
     map(
       \ e::NamedSignatureElement ->
         pair(e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
   top.translation =
-    {- case a.s, c.s of
-       | just(a_s), just(c_s) -> just(prod(a_s, b, c_s))
-       | _, _ -> nothing()
-       end  -}
+    {- Translation of prod::(Foo ::= a::Foo b::Integer c::Bar):
+         case a.s, c.s of
+         | just(a_s), just(c_s) -> just(prod(a_s, b, c_s))
+         | _, _ -> nothing()
+         end
+       Could also be implemented as chained monadic binds.  Maybe more efficient this way? -}
     caseExpr(
       flatMap(
         \ a::Pair<String Boolean> ->
@@ -179,7 +180,7 @@ top::StrategyExpr ::= s::StrategyExpr
            \ a::Pair<String Boolean> ->
              if a.snd
              then
-               [decorate Silver_Pattern { core:just($name{a.fst ++ "_" ++ sName}) }
+               [decorate Silver_Pattern { core:just($name{a.fst ++ "_" ++ sBaseName}) }
                 with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
              else [],
            childAccesses),
@@ -193,7 +194,7 @@ top::StrategyExpr ::= s::StrategyExpr
                  map(
                    \ a::Pair<String Boolean> ->
                      if a.snd
-                     then Silver_Expr { $name{a.fst ++ "_" ++ sName} }
+                     then Silver_Expr { $name{a.fst ++ "_" ++ sBaseName} }
                      else Silver_Expr { $name{a.fst} },
                    childAccesses),
                  map(
@@ -232,9 +233,11 @@ top::StrategyExpr ::= s::StrategyExpr
         pair(e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
   top.translation =
-    {- if a.s.isJust || c.s.isJust
-       then just(prod(fromMaybe(a, a.s), b, fromMaybe(c, c.s)))
-       else nothing() -}
+    {- Translation of prod::(Foo ::= a::Foo b::Integer c::Bar):
+         if a.s.isJust || c.s.isJust
+         then just(prod(fromMaybe(a, a.s), b, fromMaybe(c, c.s)))
+         else nothing()
+       Not sure of a clean way to do this with monads -}
     Silver_Expr {
       if $Expr{
         foldr(
@@ -281,6 +284,7 @@ top::StrategyExpr ::= s::StrategyExpr
   s.outerAttr = nothing();
   
   local sName::String = fromMaybe(s.genName, s.attrRefName);
+  local sBaseName::String = last(explode(":", sName));
   local childAccesses::[Pair<String Boolean>] =
     map(
       \ e::NamedSignatureElement ->
@@ -288,11 +292,16 @@ top::StrategyExpr ::= s::StrategyExpr
       top.frame.signature.inputElements);
   local matchingChildren::[String] = map(fst, filter(snd, childAccesses));
   top.translation =
-    {- case a.s, c.s of
-       | just(a_s), _ -> just(prod(a_s, b, c))
-       | _, just(c_s) -> just(prod(a, b, c_s))
-       | _, _ -> nothing()
-       end  -}
+    {- Translation of prod::(Foo ::= a::Foo b::Integer c::Bar):
+         case a.s, c.s of
+         | just(a_s), _ -> just(prod(a_s, b, c))
+         | _, just(c_s) -> just(prod(a, b, c_s))
+         | _, _ -> nothing()
+         end
+       Could also be implemented as
+         orElse(
+           bindMaybe(a.s, \ a_s::Foo -> returnMaybe(prod(a_s, b, c))),
+           bindMaybe(c.s, \ c_s::Bar -> returnMaybe(prod(a, b, c_s)))  -}
     caseExpr(
       map(
         \ a::String -> Silver_Expr { $name{a}.$name{sName} },
@@ -306,7 +315,7 @@ top::StrategyExpr ::= s::StrategyExpr
               map(
                 \ p::Pattern -> decorate p with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; },
                 repeat(wildcPattern('_', location=top.location), i) ++
-                Silver_Pattern { core:just($name{childI ++ "_" ++ sName}) } ::
+                Silver_Pattern { core:just($name{childI ++ "_" ++ sBaseName}) } ::
                 repeat(wildcPattern('_', location=top.location), length(matchingChildren) - (i + 1))),
               nothing(),
               Silver_Expr {
@@ -318,7 +327,7 @@ top::StrategyExpr ::= s::StrategyExpr
                       map(
                         \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
                         take(childIndex, childAccesses)) ++
-                      Silver_Expr { $name{childI ++ "_" ++ sName} } ::
+                      Silver_Expr { $name{childI ++ "_" ++ sBaseName} } ::
                       map(
                         \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
                         drop(childIndex + 1, childAccesses)),
@@ -340,7 +349,10 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
 {
   top.unparse = s"rec ${n.name} -> (${s.unparse})";
   
-  top.liftedStrategies := if top.outerAttr.isJust then [] else [pair(s.genName, s)];
+  top.liftedStrategies :=
+    if top.outerAttr.isJust
+    then s.liftedStrategies
+    else [pair(s.genName, s)];
   top.freeRecVars := removeBy(stringEq, n.name, s.freeRecVars);
   
   s.recVarEnv = pair(n.name, fromMaybe(s.genName, top.outerAttr)) :: top.recVarEnv;
@@ -480,7 +492,7 @@ top::StrategyExpr ::= id::QName
   
   -- Forwarding depends on env here, these must be computed without env
   propagate liftedStrategies;
-  top.attrRefName = just(id.name);
+  top.attrRefName = just(fromMaybe(id.name, lookupBy(stringEq, id.name, top.recVarEnv)));
   
   local attrDcl::DclInfo = id.lookupAttribute.dcl;
   attrDcl.givenNonterminalType = error("Not actually needed"); -- Ugh environment needs refactoring
