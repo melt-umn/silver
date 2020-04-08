@@ -6,13 +6,13 @@ marking terminal SilverAGDcl_t          'Silver_AGDcl'          lexer classes {K
 marking terminal SilverProductionStmt_t 'Silver_ProductionStmt' lexer classes {KEYWORD, RESERVED};
 
 temp_imp_ide_font font_escape color(160, 32, 240) bold italic;
-lexer class Escape font=font_escape;
+lexer class Antiquote font=font_escape;
 
-terminal EscapeExpr_t              '$Expr'              lexer classes {Escape};
-terminal EscapeTypeExpr_t          '$TypeExpr'          lexer classes {Escape};
-terminal EscapePattern_t           '$Pattern'           lexer classes {Escape};
-terminal EscapeQName_t             '$QName'             lexer classes {Escape};
-terminal EscapeQNameAttrOccur_t    '$QNameAttrOccur'    lexer classes {Escape};
-terminal EscapeName_t              '$Name'              lexer classes {Escape};
-terminal Escape_qName_t            '$qName'             lexer classes {Escape};
-terminal Escape_name_t             '$name'              lexer classes {Escape};
+terminal AntiquoteExpr_t              '$Expr'              lexer classes {Antiquote};
+terminal AntiquoteTypeExpr_t          '$TypeExpr'          lexer classes {Antiquote};
+terminal AntiquotePattern_t           '$Pattern'           lexer classes {Antiquote};
+terminal AntiquoteQName_t             '$QName'             lexer classes {Antiquote};
+terminal AntiquoteQNameAttrOccur_t    '$QNameAttrOccur'    lexer classes {Antiquote};
+terminal AntiquoteName_t              '$Name'              lexer classes {Antiquote};
+terminal Antiquote_qName_t            '$qName'             lexer classes {Antiquote};
+terminal Antiquote_name_t             '$name'              lexer classes {Antiquote};
