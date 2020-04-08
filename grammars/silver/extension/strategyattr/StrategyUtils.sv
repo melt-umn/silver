@@ -18,13 +18,16 @@ top::StrategyExpr ::= s::StrategyExpr
       rec res -> try($StrategyExpr{s} <* res)
     };
 }
-{-
+
 abstract production reduce
 top::StrategyExpr ::= s::StrategyExpr
 {
-  forwards to repeat(rec(\ x::StrategyExpr -> some(x) <+ s));
+  forwards to
+    Silver_StrategyExpr reduce {
+      repeat(rec res -> some(res) <+ $StrategyExpr{s})
+    };
 }
--}
+
 abstract production bottomUp
 top::StrategyExpr ::= s::StrategyExpr
 {
@@ -60,16 +63,21 @@ top::StrategyExpr ::= s::StrategyExpr
       rec res -> $StrategyExpr{s} <+ one(res)
     };
 }
-{-
+
 abstract production innermost
 top::StrategyExpr ::= s::StrategyExpr
 {
-  forwards to bottomUp(try(s <* innermost(s)));
+  forwards to
+    Silver_StrategyExpr innermost {
+      rec res -> bottomUp(try($StrategyExpr{s} <* res))
+    };
 }
 
 abstract production outermost
 top::StrategyExpr ::= s::StrategyExpr
 {
-  forwards to topDown(try(s <* outermost(s)));
+  forwards to
+    Silver_StrategyExpr outermost {
+      rec res -> topDown(try($StrategyExpr{s} <* res))
+    };
 }
--}

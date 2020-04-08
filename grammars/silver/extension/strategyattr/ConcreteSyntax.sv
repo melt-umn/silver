@@ -94,6 +94,12 @@ concrete productions top::StrategyExpr_c
   top.ast = repeatS(s.ast, genName=top.givenGenName, location=top.location);
   s.givenGenName = top.givenGenName ++ "_repeat";
 }
+| 'reduce' '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"reduce(${s.unparse})";
+  top.ast = reduce(s.ast, genName=top.givenGenName, location=top.location);
+  s.givenGenName = top.givenGenName ++ "_reduce";
+}
 | 'bottomUp' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"bottomUp(${s.unparse})";
@@ -117,6 +123,18 @@ concrete productions top::StrategyExpr_c
   top.unparse = s"onceTopDown(${s.unparse})";
   top.ast = onceTopDown(s.ast, genName=top.givenGenName, location=top.location);
   s.givenGenName = top.givenGenName ++ "_onceTopDown";
+}
+| 'innermost' '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"innermost(${s.unparse})";
+  top.ast = innermost(s.ast, genName=top.givenGenName, location=top.location);
+  s.givenGenName = top.givenGenName ++ "_innermost";
+}
+| 'outermost' '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"outermost(${s.unparse})";
+  top.ast = outermost(s.ast, genName=top.givenGenName, location=top.location);
+  s.givenGenName = top.givenGenName ++ "_outermost";
 }
 
 nonterminal StrategyQName with location, ast<QName>;
