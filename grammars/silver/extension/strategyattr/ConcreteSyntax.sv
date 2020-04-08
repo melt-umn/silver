@@ -88,6 +88,36 @@ concrete productions top::StrategyExpr_c
   top.ast = try(s.ast, genName=top.givenGenName, location=top.location);
   s.givenGenName = top.givenGenName ++ "_try";
 }
+| 'repeat' '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"repeat(${s.unparse})";
+  top.ast = repeatS(s.ast, genName=top.givenGenName, location=top.location);
+  s.givenGenName = top.givenGenName ++ "_repeat";
+}
+| 'bottomUp' '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"bottomUp(${s.unparse})";
+  top.ast = bottomUp(s.ast, genName=top.givenGenName, location=top.location);
+  s.givenGenName = top.givenGenName ++ "_bottomUp";
+}
+| 'topDown' '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"topDown(${s.unparse})";
+  top.ast = topDown(s.ast, genName=top.givenGenName, location=top.location);
+  s.givenGenName = top.givenGenName ++ "_topDown";
+}
+| 'onceBottomUp' '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"onceBottomUp(${s.unparse})";
+  top.ast = onceBottomUp(s.ast, genName=top.givenGenName, location=top.location);
+  s.givenGenName = top.givenGenName ++ "_onceBottomUp";
+}
+| 'onceTopDown' '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"onceTopDown(${s.unparse})";
+  top.ast = onceTopDown(s.ast, genName=top.givenGenName, location=top.location);
+  s.givenGenName = top.givenGenName ++ "_onceTopDown";
+}
 
 nonterminal StrategyQName with location, ast<QName>;
 concrete productions top::StrategyQName
