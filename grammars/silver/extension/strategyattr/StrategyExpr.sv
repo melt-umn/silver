@@ -62,7 +62,7 @@ aspect default production
 top::StrategyExpr ::=
 {
   top.attrRefName = nothing();
-  top.matchesFrame := true;
+  top.matchesFrame := true; -- Consulted only when attrRefName is just(...)
 }
 
 -- Basic combinators
@@ -96,6 +96,25 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   s2.outerAttr = nothing();
   
   local s2Name::String = fromMaybe(s2.genName, s2.attrRefName);
+  -- Equations for all inh attributes on the nt that we know about.
+  -- This is safe because the MWDA requires that all inh dependencies of a syn attribute
+  -- be exported by the syn occurence anyway.
+  -- TODO - future optimization potential: this is where common sub-trees shared between
+  -- the incoming tree and the result of s1 get re-decorated.
+  local allInhs::ExprInhs =
+    foldr(
+      exprInhsCons(_, _, location=top.location),
+      exprInhsEmpty(location=top.location),
+      map(
+        \ a::DclInfo ->
+          Silver_ExprInh {
+            $name{a.fullName} = $name{top.frame.signature.outputElement.elementName}.$name{a.fullName};
+          },
+        filter(
+          (.isInherited),
+          flatMap(
+            getAttrDcl(_, top.env),
+            map((.attrOccurring), getAttrsOn(top.frame.lhsNtName, top.env))))));
   top.translation =
     if !s1.matchesFrame || !s2.matchesFrame
     then Silver_Expr { core:nothing() }
@@ -105,26 +124,26 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
         Silver_Expr {
           core:just(
             decorate $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{attr1}
-            with {}.$QNameAttrOccur{attr2}) -- TODO: Decorate with all inh attributes
+            with { $ExprInhs{allInhs} }.$QNameAttrOccur{attr2})
         }
       | functorRef(attr1), _ ->
         Silver_Expr {
           decorate $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{attr1}
-          with {}.$name{s2Name}
+          with { $ExprInhs{allInhs} }.$name{s2Name}
         }
       | _, functorRef(attr2) ->
         Silver_Expr {
           core:monad:bindMaybe(
             $Expr{s1.translation},
             \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep, location=top.location)} ->
-              decorate res with {}.$QNameAttrOccur{attr2}) -- TODO: Decorate with all inh attributes
+              decorate res with { $ExprInhs{allInhs} }.$QNameAttrOccur{attr2})
         }
       | _, _ ->
         Silver_Expr {
           core:monad:bindMaybe(
             $Expr{s1.translation},
             \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep, location=top.location)} ->
-              decorate res with {}.$name{s2Name}) -- TODO: Decorate with all inh attributes
+              decorate res with { $ExprInhs{allInhs} }.$name{s2Name})
         }
       end;
 }
