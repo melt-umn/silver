@@ -196,6 +196,48 @@ top::Strategy ::= s::Strategy
   forwards to s <* all(topDown(s));
 }
 
+abstract production downUp
+top::Strategy ::= s1::Strategy s2::Strategy
+{
+  forwards to s1 <* all(downUp(s1, s2)) <* s2;
+}
+
+abstract production allBottomUp
+top::Strategy ::= s::Strategy
+{
+  forwards to all(allBottomUp(s)) <+ s;
+}
+
+abstract production allTopDown
+top::Strategy ::= s::Strategy
+{
+  forwards to s <+ all(allTopDown(s));
+}
+
+abstract production allDownUp
+top::Strategy ::= s1::Strategy s2::Strategy
+{
+  forwards to s1 <+ all(allDownUp(s1, s2)) <+ s2;
+}
+
+abstract production someBottomUp
+top::Strategy ::= s::Strategy
+{
+  forwards to some(someBottomUp(s)) <+ s;
+}
+
+abstract production someTopDown
+top::Strategy ::= s::Strategy
+{
+  forwards to s <+ some(someTopDown(s));
+}
+
+abstract production someDownUp
+top::Strategy ::= s1::Strategy s2::Strategy
+{
+  forwards to s1 <+ some(someDownUp(s1, s2)) <+ s2;
+}
+
 abstract production onceBottomUp
 top::Strategy ::= s::Strategy
 {
@@ -206,6 +248,12 @@ abstract production onceTopDown
 top::Strategy ::= s::Strategy
 {
   forwards to s <+ one(onceTopDown(s));
+}
+
+abstract production onceDownUp
+top::Strategy ::= s1::Strategy s2::Strategy
+{
+  forwards to s1 <+ one(onceDownUp(s1, s2)) <+ s2;
 }
 
 abstract production innermost
