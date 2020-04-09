@@ -10,7 +10,7 @@ top::StrategyExpr ::= s::StrategyExpr
     };
 }
 
-abstract production repeatS
+abstract production repeatS -- name clash with repeat from core
 top::StrategyExpr ::= s::StrategyExpr
 {
   forwards to
