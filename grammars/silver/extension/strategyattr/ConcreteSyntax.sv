@@ -65,7 +65,7 @@ concrete productions top::StrategyExpr_c
 | 'rec' n::Name Arrow_t s::StrategyExpr_c
 {
   top.unparse = s"rec ${n.name} -> (${s.unparse})";
-  top.ast = rec(n, s.ast, genName=top.givenGenName, location=top.location);
+  top.ast = recComb(n, s.ast, genName=top.givenGenName, location=top.location);
   s.givenGenName = top.givenGenName ++ "_" ++ n.name;
 }
 | 'rule' 'on' id::Name '::' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'

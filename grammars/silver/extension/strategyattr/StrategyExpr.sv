@@ -1,6 +1,7 @@
 grammar silver:extension:strategyattr;
 
 import silver:metatranslation;
+import core:monad;
 
 annotation genName::String; -- Used to generate the names of lifted strategy attributes
 
@@ -10,42 +11,50 @@ monoid attribute liftedStrategies::[Pair<String Decorated StrategyExpr>] with []
 synthesized attribute attrRefName::Maybe<String>;
 synthesized attribute isId::Boolean;
 synthesized attribute attrRefNames::[String];
+monoid attribute containsFail::Boolean with false, ||;
+monoid attribute allId::Boolean with true, &&;
 monoid attribute matchesFrame::Boolean with false, ||;
 monoid attribute freeRecVars::[String] with [], ++;
 
 synthesized attribute translation<a>::a;
 {-
-strategy attribute optimize =
+-- Frame-independent algebraic simplifications
+strategy attribute simplify =
   innermost(
     rule on top::StrategyExpr of
-    | sequence(fail(), _) -> fail()
-    | sequence(_, fail()) -> fail()
+    | sequence(fail(), _) -> fail(location=top.location, genName=top.genName)
+    | sequence(_, fail()) -> fail(location=top.location, genName=top.genName)
     | sequence(id(), s) -> s
     | sequence(s, id()) -> s
     | choice(fail(), s) -> s
     | choice(s, fail()) -> s
-    | choice(id(), s) -> id()
+    | choice(id(), s) -> id(location=top.location, genName=top.genName)
     | choice(functorRef(n, genName=g, location=l), s) -> functorRef(n, genName=g, location=l)
-    | all(id()) -> id()
-    | some(fail()) -> fail()
-    | one(fail()) -> fail()
-    | prodTraversal(_, s) when s.containsFail -> fail()
-    | prodTraversal(_, s) when s.allId -> id()
-    | rec(n, s) when !containsBy(stringEq, s.freeRecVars, n.name) -> s
-    
-    -- These don't apply inside traversals/sequence continuations!
-    | all(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> id()
-    | some(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail()
-    | one(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail()
-    | prodTraversal(p, s) when p.lookupValue.fullName != top.frame.fullName -> fail()
-    | rewriteRule(_, _, ml) when !ml.matchesFrame -> fail()
-    | strategyRef(n) when !n.matchesFrame -> fail()
-    | functorRef(n) when !n.matchesFrame -> fail()
-    | strategyRef(n) when n.matchesFrame && !n.attrDcl.isRecursive && null(n.attrDcl.givenRecVarEnv) -> n.attrDcl.strategyExpr
-    end <+
-    rule on MRuleList of
-    | mRuleList_cons(h, _, t) when !h.matchesFrame -> t
+    | allTraversal(id()) -> id(location=top.location, genName=top.genName)
+    | someTraversal(fail()) -> fail(location=top.location, genName=top.genName)
+    | oneTraversal(fail()) -> fail(location=top.location, genName=top.genName)
+    | prodTraversal(_, s) when s.containsFail -> fail(location=top.location, genName=top.genName)
+    | prodTraversal(_, s) when s.allId -> id(location=top.location, genName=top.genName)
+    | recComb(n, s) when !containsBy(stringEq, n.name, s.freeRecVars) -> s
     end);
+-- Frame-dependent optimizations
+strategy attribute optimizeStep =
+  rule on top::StrategyExpr of
+  | allTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> id(location=top.location, genName=top.genName)
+  | someTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail(location=top.location, genName=top.genName)
+  | oneTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail(location=top.location, genName=top.genName)
+  | prodTraversal(p, s) when p.lookupValue.fullName != top.frame.fullName -> fail(location=top.location, genName=top.genName)
+  | rewriteRule(_, _, ml) when !ml.matchesFrame -> fail(location=top.location, genName=top.genName)
+  | strategyRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
+  | functorRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
+  --| strategyRef(n) when n.matchesFrame && !n.attrDcl.isRecursive && null(n.attrDcl.givenRecVarEnv) -> n.attrDcl.strategyExpr
+  end <+
+  rule on MRuleList of
+  | mRuleList_cons(h, _, t) when !h.matchesFrame -> t
+  end;
+strategy attribute optimize =
+  (sequence(optimize, id) <+ choice(optimize, optimize) <+ recComb(id, optimize)) <*
+  try(optimizeStep <* simplify);
 -}
 
 nonterminal StrategyExpr with
@@ -56,7 +65,7 @@ nonterminal StrategyExpr with
 nonterminal StrategyExprs with
   config, grammarName, env, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
   recVarEnv, liftedStrategies, attrRefNames,
-  freeRecVars;
+  containsFail, allId, freeRecVars;
 
 flowtype StrategyExpr =
   decorate {grammarName, config, recVarEnv, outerAttr}, -- NOT frame or env
@@ -68,12 +77,12 @@ flowtype StrategyExprs =
   decorate {grammarName, config, recVarEnv}, -- NOT frame or env
   unparse {}, errors {decorate, frame, env, compiledGrammars, flowEnv}, flowDefs {decorate, frame, env, compiledGrammars, flowEnv},
   liftedStrategies {decorate}, attrRefNames {decorate},
-  freeRecVars {decorate, env};
+  containsFail {decorate, env}, allId {decorate, env}, freeRecVars {decorate, env};
 
 propagate errors on StrategyExpr, StrategyExprs excluding strategyRef, functorRef;
 propagate flowDefs on StrategyExpr, StrategyExprs;
-propagate liftedStrategies on StrategyExprs;
-propagate freeRecVars on StrategyExpr, StrategyExprs excluding rec;
+propagate liftedStrategies, containsFail, allId on StrategyExprs;
+propagate freeRecVars on StrategyExpr, StrategyExprs excluding recComb;
 
 aspect default production
 top::StrategyExpr ::=
@@ -479,6 +488,9 @@ top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
     else [pair(h.genName, h)];
   top.attrRefNames = fromMaybe(h.genName, h.attrRefName) :: t.attrRefNames;
   
+  top.containsFail <- case h of fail() -> true | _ -> false end;
+  top.allId <- case h of id() -> true | _ -> false end;
+  
   h.outerAttr = nothing();
 }
 
@@ -491,6 +503,25 @@ top::StrategyExprs ::=
 
 -- Recursive strategies
 abstract production rec
+top::StrategyExpr ::= n::Name s::StrategyExpr
+{
+  top.unparse = s"rec ${n.name} -> (${s.unparse})";
+  
+  top.liftedStrategies :=
+    if top.outerAttr.isJust
+    then s.liftedStrategies
+    else [pair(s.genName, s)];
+  top.freeRecVars := removeBy(stringEq, n.name, s.freeRecVars);
+  
+  s.recVarEnv = pair(n.name, fromMaybe(s.genName, top.outerAttr)) :: top.recVarEnv;
+  s.outerAttr = top.outerAttr;
+  
+  top.translation =
+    if top.outerAttr.isJust
+    then s.translation
+    else Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$name{s.genName} };
+}
+abstract production recComb
 top::StrategyExpr ::= n::Name s::StrategyExpr
 {
   top.unparse = s"rec ${n.name} -> (${s.unparse})";
