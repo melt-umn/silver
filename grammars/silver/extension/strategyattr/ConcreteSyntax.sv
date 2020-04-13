@@ -112,6 +112,51 @@ concrete productions top::StrategyExpr_c
   top.ast = topDown(s.ast, genName=top.givenGenName, location=top.location);
   s.givenGenName = top.givenGenName ++ "_topDown_arg";
 }
+| 'downUp' '(' s1::StrategyExpr_c ',' s2::StrategyExpr_c ')'
+{
+  top.unparse = s"downUp(${s1.unparse}, ${s2.unparse})";
+  top.ast = downUp(s1.ast, s2.ast, genName=top.givenGenName, location=top.location);
+  s1.givenGenName = top.givenGenName ++ "_downUp_arg1";
+  s2.givenGenName = top.givenGenName ++ "_downUp_arg2";
+}
+| 'allBottomUp' '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"allBottomUp(${s.unparse})";
+  top.ast = allBottomUp(s.ast, genName=top.givenGenName, location=top.location);
+  s.givenGenName = top.givenGenName ++ "_allBottomUp_arg";
+}
+| 'allTopDown' '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"allTopDown(${s.unparse})";
+  top.ast = allTopDown(s.ast, genName=top.givenGenName, location=top.location);
+  s.givenGenName = top.givenGenName ++ "_allTopDown_arg";
+}
+| 'allDownUp' '(' s1::StrategyExpr_c ',' s2::StrategyExpr_c ')'
+{
+  top.unparse = s"allDownUp(${s1.unparse}, ${s2.unparse})";
+  top.ast = allDownUp(s1.ast, s2.ast, genName=top.givenGenName, location=top.location);
+  s1.givenGenName = top.givenGenName ++ "_allDownUp_arg1";
+  s2.givenGenName = top.givenGenName ++ "_allDownUp_arg2";
+}
+| 'someBottomUp' '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"someBottomUp(${s.unparse})";
+  top.ast = someBottomUp(s.ast, genName=top.givenGenName, location=top.location);
+  s.givenGenName = top.givenGenName ++ "_someBottomUp_arg";
+}
+| 'someTopDown' '(' s::StrategyExpr_c ')'
+{
+  top.unparse = s"someTopDown(${s.unparse})";
+  top.ast = someTopDown(s.ast, genName=top.givenGenName, location=top.location);
+  s.givenGenName = top.givenGenName ++ "_someTopDown_arg";
+}
+| 'someDownUp' '(' s1::StrategyExpr_c ',' s2::StrategyExpr_c ')'
+{
+  top.unparse = s"someDownUp(${s1.unparse}, ${s2.unparse})";
+  top.ast = someDownUp(s1.ast, s2.ast, genName=top.givenGenName, location=top.location);
+  s1.givenGenName = top.givenGenName ++ "_someDownUp_arg1";
+  s2.givenGenName = top.givenGenName ++ "_someDownUp_arg2";
+}
 | 'onceBottomUp' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"onceBottomUp(${s.unparse})";
@@ -123,6 +168,13 @@ concrete productions top::StrategyExpr_c
   top.unparse = s"onceTopDown(${s.unparse})";
   top.ast = onceTopDown(s.ast, genName=top.givenGenName, location=top.location);
   s.givenGenName = top.givenGenName ++ "_onceTopDown_arg";
+}
+| 'onceDownUp' '(' s1::StrategyExpr_c ',' s2::StrategyExpr_c ')'
+{
+  top.unparse = s"onceDownUp(${s1.unparse}, ${s2.unparse})";
+  top.ast = onceDownUp(s1.ast, s2.ast, genName=top.givenGenName, location=top.location);
+  s1.givenGenName = top.givenGenName ++ "_onceDownUp_arg1";
+  s2.givenGenName = top.givenGenName ++ "_onceDownUp_arg2";
 }
 | 'innermost' '(' s::StrategyExpr_c ')'
 {
