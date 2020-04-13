@@ -81,7 +81,7 @@ flowtype StrategyExprs =
 
 propagate errors on StrategyExpr, StrategyExprs excluding strategyRef, functorRef;
 propagate flowDefs on StrategyExpr, StrategyExprs;
-propagate liftedStrategies, containsFail, allId on StrategyExprs;
+propagate containsFail, allId on StrategyExprs;
 propagate freeRecVars on StrategyExpr, StrategyExprs excluding recComb;
 
 aspect default production
@@ -478,14 +478,15 @@ top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
      | _ -> []
      end;
   
-  top.liftedStrategies <-
+  top.liftedStrategies :=
     -- Slight hack: when h is id (common case for prod traversals), there is no need for a new attribute.
     -- However this can't be eliminated during the optumization phase.
     -- So, just don't lift the strategy, and we won't find the occurence of the non-existant attribute
     -- during translation - which means we will treat it as id anyway!
-    if h.attrRefName.isJust || h.isId
-    then []
-    else [pair(h.genName, h)];
+    (if h.attrRefName.isJust || h.isId
+     then []
+     else [pair(h.genName, h)]) ++
+    t.liftedStrategies;
   top.attrRefNames = fromMaybe(h.genName, h.attrRefName) :: t.attrRefNames;
   
   top.containsFail <- case h of fail() -> true | _ -> false end;
@@ -498,6 +499,7 @@ abstract production nilStrategyExpr
 top::StrategyExprs ::=
 {
   top.unparse = "";
+  top.liftedStrategies := [];
   top.attrRefNames = [];
 }
 
