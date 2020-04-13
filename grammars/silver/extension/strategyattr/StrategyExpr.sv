@@ -8,6 +8,7 @@ autocopy attribute recVarEnv::[Pair<String String>];
 inherited attribute outerAttr::Maybe<String>;
 monoid attribute liftedStrategies::[Pair<String Decorated StrategyExpr>] with [], ++;
 synthesized attribute attrRefName::Maybe<String>;
+synthesized attribute isId::Boolean;
 synthesized attribute attrRefNames::[String];
 monoid attribute matchesFrame::Boolean with false, ||;
 monoid attribute freeRecVars::[String] with [], ++;
@@ -49,7 +50,7 @@ strategy attribute optimize =
 
 nonterminal StrategyExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
-  genName, recVarEnv, outerAttr, liftedStrategies, attrRefName,
+  genName, recVarEnv, outerAttr, liftedStrategies, attrRefName, isId,
   translation<Expr>, matchesFrame, freeRecVars;
 
 nonterminal StrategyExprs with
@@ -60,8 +61,14 @@ nonterminal StrategyExprs with
 flowtype StrategyExpr =
   decorate {grammarName, config, recVarEnv, outerAttr}, -- NOT frame or env
   unparse {}, errors {decorate, frame, env, compiledGrammars, flowEnv}, flowDefs {decorate, frame, env, compiledGrammars, flowEnv},
-  liftedStrategies {decorate}, attrRefName {decorate},
+  liftedStrategies {decorate}, attrRefName {decorate}, isId {decorate},
   translation {decorate, frame, env}, matchesFrame {decorate, frame, env}, freeRecVars {decorate, env};
+
+flowtype StrategyExprs =
+  decorate {grammarName, config, recVarEnv}, -- NOT frame or env
+  unparse {}, errors {decorate, frame, env, compiledGrammars, flowEnv}, flowDefs {decorate, frame, env, compiledGrammars, flowEnv},
+  liftedStrategies {decorate}, attrRefNames {decorate},
+  freeRecVars {decorate, env};
 
 propagate errors on StrategyExpr, StrategyExprs excluding strategyRef, functorRef;
 propagate flowDefs on StrategyExpr, StrategyExprs;
@@ -73,6 +80,7 @@ top::StrategyExpr ::=
 {
   top.attrRefName = nothing();
   top.matchesFrame := true; -- Consulted only when attrRefName is just(...)
+  top.isId = false;
 }
 
 -- Basic combinators
@@ -81,6 +89,7 @@ top::StrategyExpr ::=
 {
   top.unparse = "id";
   propagate liftedStrategies;
+  top.isId = true;
   top.translation = Silver_Expr { core:just($name{top.frame.signature.outputElement.elementName}) };
 }
 
@@ -461,7 +470,11 @@ top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
      end;
   
   top.liftedStrategies <-
-    if h.attrRefName.isJust
+    -- Slight hack: when h is id (common case for prod traversals), there is no need for a new attribute.
+    -- However this can't be eliminated during the optumization phase.
+    -- So, just don't lift the strategy, and we won't find the occurence of the non-existant attribute
+    -- during translation - which means we will treat it as id anyway!
+    if h.attrRefName.isJust || h.isId
     then []
     else [pair(h.genName, h)];
   top.attrRefNames = fromMaybe(h.genName, h.attrRefName) :: t.attrRefNames;
@@ -626,6 +639,7 @@ top::StrategyExpr ::= id::QName
   -- Forwarding depends on env here, these must be computed without env
   propagate liftedStrategies;
   top.attrRefName = just(fromMaybe(id.name, lookupBy(stringEq, id.name, top.recVarEnv)));
+  top.isId = false;
   
   local attrDcl::DclInfo = id.lookupAttribute.dcl;
   attrDcl.givenNonterminalType = error("Not actually needed"); -- Ugh environment needs refactoring
