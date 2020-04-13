@@ -52,3 +52,31 @@ equalityTest(
       assignSStmt("b", addSExpr(addSExpr(idSExpr("a"), constSExpr(0)), constSExpr(0)))).elimPlusZero),
   "core:just(silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:constSExpr(42)), silver_features:assignSStmt(\"b\", silver_features:idSExpr(\"a\"))))",
   String, silver_tests);
+
+strategy attribute removeLastStmt =
+    rule on SStmt of
+    | seqSStmt(s, assignSStmt(_, _)) -> s
+    end <+
+    seqSStmt(id, removeLastStmt)
+  occurs on SStmt, SExpr;
+propagate removeLastStmt on SStmt, SExpr;
+
+equalityTest(
+  hackUnparse(
+    seqSStmt(
+      assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0))),
+      assignSStmt("b", addSExpr(addSExpr(idSExpr("a"), constSExpr(0)), constSExpr(0)))).removeLastStmt),
+  "core:just(silver_features:assignSStmt(\"a\", silver_features:addSExpr(silver_features:constSExpr(42), silver_features:constSExpr(0))))",
+  String, silver_tests);
+
+equalityTest(
+  hackUnparse(
+    assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0))).removeLastStmt),
+  "core:nothing()",
+  String, silver_tests);
+
+equalityTest(
+  hackUnparse(
+    addSExpr(constSExpr(42), constSExpr(0)).removeLastStmt),
+  "core:nothing()",
+  String, silver_tests);

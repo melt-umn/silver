@@ -8,6 +8,7 @@ autocopy attribute recVarEnv::[Pair<String String>];
 inherited attribute outerAttr::Maybe<String>;
 monoid attribute liftedStrategies::[Pair<String Decorated StrategyExpr>] with [], ++;
 synthesized attribute attrRefName::Maybe<String>;
+synthesized attribute attrRefNames::[String];
 monoid attribute matchesFrame::Boolean with false, ||;
 monoid attribute freeRecVars::[String] with [], ++;
 
@@ -27,12 +28,15 @@ strategy attribute optimize =
     | all(id()) -> id()
     | some(fail()) -> fail()
     | one(fail()) -> fail()
+    | prodTraversal(_, s) when s.containsFail -> fail()
+    | prodTraversal(_, s) when s.allId -> id()
     | rec(n, s) when !containsBy(stringEq, s.freeRecVars, n.name) -> s
     
     -- These don't apply inside traversals/sequence continuations!
     | all(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> id()
     | some(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail()
     | one(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail()
+    | prodTraversal(p, s) when p.lookupValue.fullName != top.frame.fullName -> fail()
     | rewriteRule(_, _, ml) when !ml.matchesFrame -> fail()
     | strategyRef(n) when !n.matchesFrame -> fail()
     | functorRef(n) when !n.matchesFrame -> fail()
@@ -48,15 +52,21 @@ nonterminal StrategyExpr with
   genName, recVarEnv, outerAttr, liftedStrategies, attrRefName,
   translation<Expr>, matchesFrame, freeRecVars;
 
+nonterminal StrategyExprs with
+  config, grammarName, env, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
+  recVarEnv, liftedStrategies, attrRefNames,
+  freeRecVars;
+
 flowtype StrategyExpr =
   decorate {grammarName, config, recVarEnv, outerAttr}, -- NOT frame or env
   unparse {}, errors {decorate, frame, env, compiledGrammars, flowEnv}, flowDefs {decorate, frame, env, compiledGrammars, flowEnv},
   liftedStrategies {decorate}, attrRefName {decorate},
   translation {decorate, frame, env}, matchesFrame {decorate, frame, env}, freeRecVars {decorate, env};
 
-propagate errors on StrategyExpr excluding strategyRef, functorRef;
-propagate flowDefs on StrategyExpr;
-propagate freeRecVars on StrategyExpr excluding rec;
+propagate errors on StrategyExpr, StrategyExprs excluding strategyRef, functorRef;
+propagate flowDefs on StrategyExpr, StrategyExprs;
+propagate liftedStrategies on StrategyExprs;
+propagate freeRecVars on StrategyExpr, StrategyExprs excluding rec;
 
 aspect default production
 top::StrategyExpr ::=
@@ -182,13 +192,14 @@ top::StrategyExpr ::= s::StrategyExpr
   
   local sName::String = fromMaybe(s.genName, s.attrRefName);
   local sBaseName::String = last(explode(":", sName));
+  -- pair(child name, attr occurs on child)
   local childAccesses::[Pair<String Boolean>] =
     map(
       \ e::NamedSignatureElement ->
         pair(e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
   top.translation =
-    {- Translation of prod::(Foo ::= a::Foo b::Integer c::Bar):
+    {- Translation of all(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
          case a.s, c.s of
          | just(a_s), just(c_s) -> just(prod(a_s, b, c_s))
          | _, _ -> nothing()
@@ -251,13 +262,14 @@ top::StrategyExpr ::= s::StrategyExpr
   s.outerAttr = nothing();
   
   local sName::String = fromMaybe(s.genName, s.attrRefName);
+  -- pair(child name, attr occurs on child)
   local childAccesses::[Pair<String Boolean>] =
     map(
       \ e::NamedSignatureElement ->
         pair(e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
   top.translation =
-    {- Translation of prod::(Foo ::= a::Foo b::Integer c::Bar):
+    {- Translation of some(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
          if a.s.isJust || c.s.isJust
          then just(prod(fromMaybe(a, a.s), b, fromMaybe(c, c.s)))
          else nothing()
@@ -309,6 +321,7 @@ top::StrategyExpr ::= s::StrategyExpr
   
   local sName::String = fromMaybe(s.genName, s.attrRefName);
   local sBaseName::String = last(explode(":", sName));
+  -- pair(child name, attr occurs on child)
   local childAccesses::[Pair<String Boolean>] =
     map(
       \ e::NamedSignatureElement ->
@@ -316,7 +329,7 @@ top::StrategyExpr ::= s::StrategyExpr
       top.frame.signature.inputElements);
   local matchingChildren::[String] = map(fst, filter(snd, childAccesses));
   top.translation =
-    {- Translation of prod::(Foo ::= a::Foo b::Integer c::Bar):
+    {- Translation of one(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
          case a.s, c.s of
          | just(a_s), _ -> just(prod(a_s, b, c))
          | _, just(c_s) -> just(prod(a, b, c_s))
@@ -365,6 +378,102 @@ top::StrategyExpr ::= s::StrategyExpr
       Silver_Expr { core:nothing() },
       nonterminalType("core:Maybe", [top.frame.signature.outputElement.typerep]),
       location=top.location);
+}
+
+abstract production prodTraversal
+top::StrategyExpr ::= prod::QName s::StrategyExprs
+{
+  top.unparse = s"${prod.unparse}(${s.unparse})";
+  
+  local numParams::Integer = length(prod.lookupValue.dcl.namedSignature.inputElements);
+  local numArgs::Integer = length(s.attrRefNames);
+  top.errors <-
+    if numArgs != numParams
+    then [err(top.location, s"Wrong number of arguments to ${prod.name}: expected ${toString(numParams)}, got ${toString(numArgs)}")]
+    else [];
+  
+  propagate liftedStrategies;
+  
+  -- pair(pair(child name, attr name), attr occurs on child)
+  local childAccesses::[Pair<Pair<String String> Boolean>] =
+    zipWith(
+      \ e::NamedSignatureElement attr::String ->
+        pair(pair(e.elementName, attr), attrMatchesFrame(top.env, attr, e.typerep)),
+      top.frame.signature.inputElements,
+      s.attrRefNames);
+  top.translation =
+    if prod.lookupValue.fullName == top.frame.fullName
+    then
+      {- Translation of prod(s1, s2, s3) for prod::(Foo ::= a::Foo b::Integer c::Bar):
+           case a.s1, c.s3 of
+           | just(a_s1), just(c_s3) -> just(prod(a_s1, b, c_s3))
+           | _, _ -> nothing()
+           end
+         Could also be implemented as chained monadic binds.  Maybe more efficient this way? -}
+      caseExpr(
+        flatMap(
+          \ a::Pair<Pair<String String> Boolean> ->
+            if a.snd then [Silver_Expr { $name{a.fst.fst}.$name{a.fst.snd} }] else [],
+          childAccesses),
+        [matchRule(
+           flatMap(
+             \ a::Pair<Pair<String String> Boolean> ->
+               if a.snd
+               then
+                 [decorate Silver_Pattern { core:just($name{a.fst.fst ++ "_" ++ last(explode(":", a.fst.snd))}) }
+                  with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
+               else [],
+             childAccesses),
+           nothing(),
+           Silver_Expr {
+             core:just(
+               $Expr{
+                 mkFullFunctionInvocation(
+                   top.location,
+                   baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+                   map(
+                     \ a::Pair<Pair<String String> Boolean> ->
+                       if a.snd
+                       then Silver_Expr { $name{a.fst.fst ++ "_" ++ last(explode(":", a.fst.snd))} }
+                       else Silver_Expr { $name{a.fst.fst} },
+                     childAccesses),
+                   map(
+                     makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                     top.frame.signature.namedInputElements))})
+           },
+           location=top.location)],
+        Silver_Expr { core:nothing() },
+        nonterminalType("core:Maybe", [top.frame.signature.outputElement.typerep]),
+        location=top.location)
+    else Silver_Expr { core:nothing() };
+}
+
+abstract production consStrategyExpr
+top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
+{
+  top.unparse = s"${h.unparse}, ${t.unparse}";
+  
+  top.errors <-
+     case h of
+     -- TBH this doesn't seem very useful anyway
+     | functorRef(_) -> [err(h.location, "Functor attributes as arguments to production traversals are not yet supported")]
+     | _ -> []
+     end;
+  
+  top.liftedStrategies <-
+    if h.attrRefName.isJust
+    then []
+    else [pair(h.genName, h)];
+  top.attrRefNames = fromMaybe(h.genName, h.attrRefName) :: t.attrRefNames;
+  
+  h.outerAttr = nothing();
+}
+
+abstract production nilStrategyExpr
+top::StrategyExprs ::=
+{
+  top.unparse = "";
+  top.attrRefNames = [];
 }
 
 -- Recursive strategies

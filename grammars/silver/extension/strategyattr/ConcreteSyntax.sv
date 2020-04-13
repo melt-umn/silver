@@ -55,6 +55,13 @@ concrete productions top::StrategyExpr_c
   top.ast = oneTraversal(s.ast, genName=top.givenGenName, location=top.location);
   s.givenGenName = top.givenGenName ++ "_one_arg";
 }
+| id::StrategyQName '(' s::StrategyExprs_c ')'
+{
+  top.unparse = s"${id.ast.unparse}(${s.unparse})";
+  top.ast = prodTraversal(id.ast, s.ast, genName=top.givenGenName, location=top.location);
+  s.index = 1;
+  s.givenGenName = top.givenGenName ++ "_" ++ id.ast.name;
+}
 | 'rec' n::Name Arrow_t s::StrategyExpr_c
 {
   top.unparse = s"rec ${n.name} -> (${s.unparse})";
@@ -187,6 +194,30 @@ concrete productions top::StrategyExpr_c
   top.unparse = s"outermost(${s.unparse})";
   top.ast = outermost(s.ast, genName=top.givenGenName, location=top.location);
   s.givenGenName = top.givenGenName ++ "_outermost_arg";
+}
+
+autocopy attribute index::Integer;
+
+nonterminal StrategyExprs_c with location, index, givenGenName, unparse, ast<StrategyExprs>;
+concrete productions top::StrategyExprs_c
+| h::StrategyExpr_c ',' t::StrategyExprs_c
+{
+  top.unparse = h.unparse ++ ", " ++ t.unparse;
+  top.ast = consStrategyExpr(h.ast, t.ast);
+  h.givenGenName = top.givenGenName ++ "_arg" ++ toString(top.index);
+  t.givenGenName = top.givenGenName;
+  t.index = top.index + 1;
+}
+| h::StrategyExpr_c
+{
+  top.unparse = h.unparse;
+  top.ast = consStrategyExpr(h.ast, nilStrategyExpr());
+  h.givenGenName = top.givenGenName ++ "_arg" ++ toString(top.index);
+}
+|
+{
+  top.unparse = "";
+  top.ast = nilStrategyExpr();
 }
 
 nonterminal StrategyQName with location, ast<QName>;
