@@ -502,25 +502,6 @@ top::StrategyExprs ::=
 }
 
 -- Recursive strategies
-abstract production rec
-top::StrategyExpr ::= n::Name s::StrategyExpr
-{
-  top.unparse = s"rec ${n.name} -> (${s.unparse})";
-  
-  top.liftedStrategies :=
-    if top.outerAttr.isJust
-    then s.liftedStrategies
-    else [pair(s.genName, s)];
-  top.freeRecVars := removeBy(stringEq, n.name, s.freeRecVars);
-  
-  s.recVarEnv = pair(n.name, fromMaybe(s.genName, top.outerAttr)) :: top.recVarEnv;
-  s.outerAttr = top.outerAttr;
-  
-  top.translation =
-    if top.outerAttr.isJust
-    then s.translation
-    else Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$name{s.genName} };
-}
 abstract production recComb
 top::StrategyExpr ::= n::Name s::StrategyExpr
 {
