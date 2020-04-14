@@ -35,7 +35,7 @@ top::AGDcl ::= a::Name recVarEnv::[Pair<String String>] e::StrategyExpr
   e.recVarEnv = recVarEnv;
   e.outerAttr = just(a.name);
   
-  forwards to-- unsafeTrace(
+  local fwrd::AGDcl =
     foldr(
       appendAGDcl(_, _, location=top.location),
       defsAGDcl(
@@ -48,8 +48,10 @@ top::AGDcl ::= a::Name recVarEnv::[Pair<String String>] e::StrategyExpr
       map(
         \ d::Pair<String Decorated StrategyExpr> ->
           strategyAttributeDcl(name(d.fst, top.location), d.snd.recVarEnv, new(d.snd), location=top.location),
-        e.liftedStrategies));--,
-    --print(a.name ++ " = " ++ e.unparse ++ "; lifted  " ++ implode(",  ", map(fst, e.liftedStrategies)) ++ "\n\n", unsafeIO()));
+        e.liftedStrategies));
+   
+  --forwards to unsafeTrace(fwrd, print(a.name ++ " = " ++ e.unparse ++ "; lifted  " ++ implode(",  ", map(fst, e.liftedStrategies)) ++ "\n\n", unsafeIO()));
+  forwards to fwrd;
 }
 
 abstract production strategyAttributionDcl
@@ -102,22 +104,40 @@ top::ProductionStmt ::= attr::Decorated QName
   e.recVarEnv = attr.lookupAttribute.dcl.givenRecVarEnv;
   e.outerAttr = just(attr.lookupAttribute.fullName);
   
-  forwards to
+  production e2::StrategyExpr =
+    case e.optimize of
+    | just(e2) -> e2
+    | nothing() -> error("optimize failed for " ++ e.unparse)
+    end;
+  e2.grammarName = e.grammarName;
+  e2.config = e.config;
+  e2.frame = e.frame;
+  e2.env = e.env;
+  e2.recVarEnv = e.recVarEnv;
+  e2.outerAttr = e.outerAttr;
+  
+  -- Can't do this with forwarding to avoid circular dependency of
+  -- forward -> dcl.containsErrors -> dcl.flowEnv -> forward.flowDefs
+  top.errors :=
     if attr.lookupAttribute.dcl.containsErrors
-    then errorProductionStmt([], location=top.location)
-    else-- unsafeTrace(
-      foldr(
-        productionStmtAppend(_, _, location=top.location),
-        attributeDef(
-          concreteDefLHS(qName(top.location, top.frame.signature.outputElement.elementName), location=top.location),
-          '.',
-          qNameAttrOccur(new(attr), location=top.location),
-          '=',
-          e.translation,
-          ';',
-          location=top.location),
-        map(
-          \ n::String -> propagateOneAttr(qName(top.location, n), location=top.location),
-          attr.lookupAttribute.dcl.liftedStrategyNames));--,
-      --print(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ e.translation.unparse ++ ";\n\n", unsafeIO()));
+    then []
+    else forward.errors;
+  
+  local fwrd::ProductionStmt =
+    foldr(
+      productionStmtAppend(_, _, location=top.location),
+      attributeDef(
+        concreteDefLHS(qName(top.location, top.frame.signature.outputElement.elementName), location=top.location),
+        '.',
+        qNameAttrOccur(new(attr), location=top.location),
+        '=',
+        e2.translation,
+        ';',
+        location=top.location),
+      map(
+        \ n::String -> propagateOneAttr(qName(top.location, n), location=top.location),
+        attr.lookupAttribute.dcl.liftedStrategyNames));
+  
+  --forwards to unsafeTrace(fwrd, print(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ e2.translation.unparse ++ ";\n\n", unsafeIO()));
+  forwards to fwrd;
 }
