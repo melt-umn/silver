@@ -18,7 +18,7 @@ top::Expr ::= 'Silver_StrategyExpr' '(' genName::Expr ')' '{' cst::StrategyExpr_
   -- occurences of `genName=$e` with `genName=$genName ++ $e`.
   -- Confused yet?
   -- A "simpler" approach would be to handle this in the meta-translation library
-  -- in one pass, but we want to keep that code as a generic library as much as possible. 
+  -- in one pass, but we want to keep that code as a generic library as much as possible.
   cst.givenGenName = "";
   forwards to
     rewriteWith(
