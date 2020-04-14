@@ -53,8 +53,9 @@ strategy attribute optimizeStep =
   rewriteRule(
     id, id,
     onceBottomUp(
-      rule on MRuleList of
+      rule on top::MRuleList of
       | mRuleList_cons(h, _, t) when !h.matchesFrame -> t
+      | mRuleList_cons(h, _, mRuleList_one(t)) when !t.matchesFrame -> mRuleList_one(h, location=top.location)
       end));
 attribute optimizeStep occurs on MRuleList;
 strategy attribute optimize =
