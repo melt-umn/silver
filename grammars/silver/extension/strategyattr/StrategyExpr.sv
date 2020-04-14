@@ -16,6 +16,7 @@ monoid attribute containsFail::Boolean with false, ||;
 monoid attribute allId::Boolean with true, &&;
 monoid attribute matchesFrame::Boolean with false, ||;
 monoid attribute freeRecVars::[String] with [], ++;
+monoid attribute isRecursive::Boolean with false, ||;
 
 synthesized attribute translation<a>::a;
 
@@ -48,7 +49,7 @@ strategy attribute optimizeStep =
   | rewriteRule(_, _, ml) when !ml.matchesFrame -> fail(location=top.location, genName=top.genName)
   | strategyRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
   | functorRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
-  --| strategyRef(n) when n.matchesFrame && !n.attrDcl.isRecursive && null(n.attrDcl.givenRecVarEnv) -> n.attrDcl.strategyExpr
+  | strategyRef(n) when n.matchesFrame && !n.attrDcl.isRecursive && null(n.attrDcl.givenRecVarEnv) -> n.attrDcl.strategyExpr
   end <+
   rewriteRule(
     id, id,
@@ -72,31 +73,32 @@ strategy attribute optimize =
 nonterminal StrategyExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
   genName, recVarEnv, outerAttr, liftedStrategies, attrRefName, isId,
-  translation<Expr>, matchesFrame, freeRecVars,
+  translation<Expr>, matchesFrame, freeRecVars, isRecursive,
   simplifyStep, simplify, optimizeStep, optimize;
 
 nonterminal StrategyExprs with
   config, grammarName, env, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
   recVarEnv, givenInputElements, liftedStrategies, attrRefNames,
-  containsFail, allId, freeRecVars,
+  containsFail, allId, freeRecVars, isRecursive,
   simplify;
 
 flowtype StrategyExpr =
   decorate {grammarName, config, recVarEnv, outerAttr}, -- NOT frame or env
   unparse {}, errors {decorate, frame, env, compiledGrammars, flowEnv}, flowDefs {decorate, frame, env, compiledGrammars, flowEnv},
   liftedStrategies {decorate}, attrRefName {decorate}, isId {decorate},
-  translation {decorate, frame, env}, matchesFrame {decorate, frame, env}, freeRecVars {decorate, env};
+  translation {decorate, frame, env}, matchesFrame {decorate, frame, env}, freeRecVars {decorate, env}, isRecursive {decorate, env};
 
 flowtype StrategyExprs =
   decorate {grammarName, config, recVarEnv}, -- NOT frame or env
   unparse {}, errors {decorate, frame, env, givenInputElements, compiledGrammars, flowEnv}, flowDefs {decorate, frame, env, compiledGrammars, flowEnv},
   liftedStrategies {decorate}, attrRefNames {decorate, env, givenInputElements},
-  containsFail {decorate, env}, allId {decorate, env}, freeRecVars {decorate, env};
+  containsFail {decorate, env}, allId {decorate, env}, freeRecVars {decorate, env}, isRecursive {decorate, env};
 
 propagate errors on StrategyExpr, StrategyExprs excluding strategyRef, functorRef;
 propagate flowDefs on StrategyExpr, StrategyExprs;
 propagate containsFail, allId on StrategyExprs;
 propagate freeRecVars on StrategyExpr, StrategyExprs excluding recComb;
+propagate isRecursive on StrategyExpr, StrategyExprs;
 propagate simplify on StrategyExprs;
 propagate optimizeStep on MRuleList;
 propagate simplifyStep, simplify, optimizeStep, optimize on StrategyExpr;
@@ -731,6 +733,12 @@ top::StrategyExpr ::= id::QNameAttrOccur
   propagate liftedStrategies;
   top.attrRefName = just(id.name);
   top.matchesFrame := id.matchesFrame;
+  
+  -- TODO: Actually figuring out if a strategy is recursive would involve building a transitive
+  -- closure of all references between strategy attributes... somewhere.  Doing that repreatedly
+  -- here would be very inefficient.  For now just assume that all strategies that reference other
+  -- strategies are recursive.
+  top.isRecursive <- true;
   
   id.attrFor = top.frame.signature.outputElement.typerep;
   

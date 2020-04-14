@@ -43,7 +43,7 @@ top::AGDcl ::= a::Name recVarEnv::[Pair<String String>] e::StrategyExpr
            defaultEnvItem(
              strategyDcl(
                top.grammarName, a.location, fName, freshTyVar(),
-               !null(top.errors), map(fst, e.liftedStrategies), recVarEnv, e)))],
+               !null(top.errors), e.isRecursive, map(fst, e.liftedStrategies), recVarEnv, e)))],
         location=top.location),
       map(
         \ d::Pair<String Decorated StrategyExpr> ->

@@ -126,7 +126,7 @@ global eval::Strategy = innermost(evalStep <+ simplifyConstIdent <+ simplifyFrac
 -- Strategy attributes
 autocopy attribute substName::String;
 autocopy attribute substExpr::Expr;
-strategy attribute substRes =
+strategy attribute substRes = -- This would actually be simpler as a functor, but this is a test...
   bottomUp(try(
     rule on top::Expr of
     | var(n1) when top.substName == n1 -> top.substExpr
