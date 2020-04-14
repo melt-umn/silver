@@ -36,7 +36,11 @@ top::Expr ::= q::Decorated QName _ _
             Silver_Expr {
               silver:rewrite:anyASTExpr(
                 \ e::$TypeExpr{typerepTypeExpr(finalType(top).decoratedType, location=builtin)} ->
-                  decorate e with {})
+                  $Expr{
+                    decorateExprWith(
+                      'decorate', Silver_Expr { e }, 'with',
+                      '{', exprInhsEmpty(location=top.location), '}',
+                      location=top.location)})
             }),
           consASTExpr(varASTExpr(q.name), nilASTExpr()),
           nilNamedASTExpr())
@@ -51,7 +55,7 @@ top::Expr ::= q::Decorated QName _ _
             }),
           consASTExpr(varASTExpr(q.name), nilASTExpr()),
           nilNamedASTExpr())
-      -- Neither the bound value nor desired type is a decorated nonterminal - just return the value
+      -- Both (or neither) the bound value/desired type is a decorated nonterminal - just return the value
       else varASTExpr(q.name)
     | nothing() ->
       -- The variable is bound in an enclosing let/match
