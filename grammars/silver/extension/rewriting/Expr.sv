@@ -191,19 +191,30 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.transform =
     case e of
     -- Special cases to avoid introducing a reference and causing flow errors.
-    | decorateExprWith(_, eUndec, _, _, inhs, _) ->
+    | decorateExprWith(_, eUndec, _, _, inh, _) ->
       applyASTExpr(
         antiquoteASTExpr(
           Silver_Expr {
             silver:rewrite:anyASTExpr(
-              \ e::$TypeExpr{typerepTypeExpr(finalType(eUndec), location=builtin)} ->
-                $Expr{
-                  decorateExprWith(
-                    'decorate', Silver_Expr { e }, 'with',
-                    '{', inhs, '}',
-                    location=top.location)}.$qName{q.name})
+              $Expr{
+                lambdap(
+                  productionRHSCons(
+                    productionRHSElem(
+                      name("_e", builtin), '::',
+                      typerepTypeExpr(finalType(eUndec), location=builtin),
+                      location=builtin),
+                    inh.lambdaParams,
+                    location=builtin),
+                  Silver_Expr {
+                    $Expr{
+                      decorateExprWith(
+                        'decorate', baseExpr(qName(builtin, "_e"), location=builtin),
+                        'with', '{', inh.bodyExprInhTransform, '}',
+                        location=builtin)}.$qName{q.name}
+                  },
+                  location=builtin)})
           }),
-        consASTExpr(eUndec.transform, nilASTExpr()),
+        consASTExpr(eUndec.transform, inh.transform),
         nilNamedASTExpr())
     | lexicalLocalReference(qn, _, _) when
         case lookupBy(stringEq, qn.name, top.boundVars) of
