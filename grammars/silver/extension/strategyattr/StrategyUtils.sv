@@ -1,5 +1,25 @@
 grammar silver:extension:strategyattr;
 
+import silver:metatranslation;
+import silver:modification:copper; -- print keyword
+
+-- Debugging
+abstract production printTerm
+top::StrategyExpr ::=
+{
+  top.unparse = s"printTerm";
+  
+  propagate liftedStrategies;
+  top.translation =
+    Silver_Expr {
+      core:unsafeTrace(
+        core:just($name{top.frame.signature.outputElement.elementName}),
+        core:print(
+          hackUnparse($name{top.frame.signature.outputElement.elementName}) ++ "\n\n",
+          core:unsafeIO()))
+    };
+}
+
 -- Utilities
 abstract production try
 top::StrategyExpr ::= s::StrategyExpr

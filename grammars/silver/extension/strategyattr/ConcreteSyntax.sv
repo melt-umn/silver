@@ -89,6 +89,11 @@ concrete productions top::StrategyExpr_c
   top.ast = s.ast;
   s.givenGenName = top.givenGenName;
 }
+| 'printTerm'
+{
+  top.unparse = s"printTerm";
+  top.ast = printTerm(genName=top.givenGenName, location=top.location);
+}
 | 'try' '(' s::StrategyExpr_c ')'
 {
   top.unparse = s"try(${s.unparse})";

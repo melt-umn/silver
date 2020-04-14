@@ -15,6 +15,7 @@ terminal One_t   'one'  lexer classes {KEYWORD, Strategy};
 terminal Rule_t  'rule' lexer classes {KEYWORD, Strategy};
 terminal Rec_t   'rec'  lexer classes {KEYWORD, Strategy};
 
+terminal PrintTerm_t    'printTerm'    lexer classes {KEYWORD, Strategy};
 terminal Try_t          'try'          lexer classes {KEYWORD, Strategy};
 terminal Repeat_t       'repeat'       lexer classes {KEYWORD, Strategy};
 terminal Reduce_t       'reduce'       lexer classes {KEYWORD, Strategy};
