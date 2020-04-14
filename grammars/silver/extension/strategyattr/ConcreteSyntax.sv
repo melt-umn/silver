@@ -27,8 +27,8 @@ concrete productions top::StrategyExpr_c
 {
   top.unparse = s"(${s1.unparse} <* ${s2.unparse})";
   top.ast = sequence(s1.ast, s2.ast, genName=top.givenGenName, location=top.location);
-  s1.givenGenName = top.givenGenName;
-  s2.givenGenName = top.givenGenName ++ "_cont";
+  s1.givenGenName = top.givenGenName ++ "_fst";
+  s2.givenGenName = top.givenGenName ++ "_snd";
 }
 | s1::StrategyExpr_c '<+' s2::StrategyExpr_c
 {
