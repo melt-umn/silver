@@ -7,18 +7,18 @@ import silver:rewrite as s;
 terminal SilverStrategyExpr_t 'Silver_StrategyExpr' lexer classes {KEYWORD, RESERVED};
 terminal AntiquoteStrategyExpr_t '$StrategyExpr' lexer classes {Antiquote, Strategy};
 
-concrete production quoteStrategyExprOld
-top::Expr ::= 'Silver_StrategyExpr' genName::Name '{' cst::StrategyExpr_c '}'
-{
-  top.unparse = s"Silver_StrategyExpr {${cst.unparse}}";
-  cst.givenGenName = genName.name ++ "_" ++ toString(genInt());
-  forwards to translate(top.location, reflect(cst.ast));
-}
-
 concrete production quoteStrategyExpr
 top::Expr ::= 'Silver_StrategyExpr' '(' genName::Expr ')' '{' cst::StrategyExpr_c '}'
 {
   top.unparse = s"Silver_StrategyExpr {${cst.unparse}}";
+  -- The meta-translation library directly translates all annotation values into
+  -- static initialization code, however we want to specify genName at runtime.
+  -- Solution: construct the term with "" as the base genName and translate it
+  -- into an expression like normal, then use term rewriting to replace all all
+  -- occurences of `genName=$e` with `genName=$genName ++ $e`.
+  -- Confused yet?
+  -- A "simpler" approach would be to handle this in the meta-translation library
+  -- in one pass, but we want to keep that code as a generic library as much as possible. 
   cst.givenGenName = "";
   forwards to
     rewriteWith(
