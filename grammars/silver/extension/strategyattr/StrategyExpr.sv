@@ -11,6 +11,7 @@ autocopy attribute inlinedStrategies::[String];
 monoid attribute liftedStrategies::[Pair<String Decorated StrategyExpr>] with [], ++;
 synthesized attribute attrRefName::Maybe<String>;
 synthesized attribute isId::Boolean;
+synthesized attribute isSuccess::Boolean;
 inherited attribute givenInputElements::[NamedSignatureElement];
 synthesized attribute attrRefNames::[Maybe<String>];
 monoid attribute containsFail::Boolean with false, ||;
@@ -31,8 +32,7 @@ strategy attribute genericStep =
   | sequence(s, id()) -> s
   | choice(fail(), s) -> s
   | choice(s, fail()) -> s
-  | choice(id(), _) -> id(location=top.location, genName=top.genName)
-  | choice(functorRef(n, genName=g, location=l), _) -> functorRef(n, genName=g, location=l)
+  | choice(s, _) when s.isSuccess -> s
   | allTraversal(id()) -> id(location=top.location, genName=top.genName)
   | someTraversal(fail()) -> fail(location=top.location, genName=top.genName)
   | oneTraversal(fail()) -> fail(location=top.location, genName=top.genName)
@@ -85,7 +85,7 @@ strategy attribute optimize =
 
 nonterminal StrategyExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
-  genName, recVarEnv, outerAttr, liftedStrategies, attrRefName, isId,
+  genName, recVarEnv, outerAttr, liftedStrategies, attrRefName, isId, isSuccess,
   translation<Expr>, matchesFrame, freeRecVars,
   inlinedStrategies, genericStep, ntStep, prodStep, simplify, optimize;
 
@@ -98,7 +98,7 @@ nonterminal StrategyExprs with
 flowtype StrategyExpr =
   decorate {grammarName, config, recVarEnv, outerAttr}, -- NOT frame or env
   unparse {}, errors {decorate, frame, env, compiledGrammars, flowEnv}, flowDefs {decorate, frame, env, compiledGrammars, flowEnv},
-  liftedStrategies {decorate}, attrRefName {decorate}, isId {decorate},
+  liftedStrategies {decorate}, attrRefName {decorate}, isId {decorate}, isSuccess {decorate},
   translation {decorate, frame, env}, matchesFrame {decorate, frame, env}, freeRecVars {decorate, env};
 
 flowtype StrategyExprs =
@@ -121,6 +121,7 @@ top::StrategyExpr ::=
   top.attrRefName = nothing();
   top.matchesFrame := true; -- Consulted only when attrRefName is just(...)
   top.isId = false;
+  top.isSuccess = false;
 }
 
 -- Basic combinators
@@ -130,6 +131,7 @@ top::StrategyExpr ::=
   top.unparse = "id";
   propagate liftedStrategies;
   top.isId = true;
+  top.isSuccess = true;
   top.translation = Silver_Expr { core:just($name{top.frame.signature.outputElement.elementName}) };
 }
 
@@ -150,6 +152,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
     if s2.attrRefName.isJust
     then []
     else [pair(s2.genName, s2)];
+  top.isSuccess = s1.isSuccess && s2.isSuccess;
   
   s1.outerAttr = nothing();
   s2.outerAttr = nothing();
@@ -212,6 +215,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
 {
   top.unparse = s"(${s1.unparse} <+ ${s2.unparse})";
   propagate liftedStrategies;
+  top.isSuccess = s1.isSuccess || s2.isSuccess;
   
   s1.outerAttr = nothing();
   s2.outerAttr = nothing();
@@ -236,6 +240,7 @@ top::StrategyExpr ::= s::StrategyExpr
     if s.attrRefName.isJust
     then []
     else [pair(s.genName, s)];
+  top.isSuccess = s.isSuccess;
   
   s.outerAttr = nothing();
   
@@ -777,6 +782,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   propagate liftedStrategies;
   top.attrRefName = just(attr.name);
   top.matchesFrame := attr.matchesFrame;
+  top.isSuccess = true;
   
   attr.attrFor = top.frame.signature.outputElement.typerep;
   
@@ -793,6 +799,7 @@ top::StrategyExpr ::= attr::Decorated QNameAttrOccur s::StrategyExpr
   top.unparse = s"(${s.unparse} aka ${attr.unparse})";
   propagate liftedStrategies;
   top.attrRefName = just(attr.attrDcl.fullName);
+  top.isSuccess = s.isSuccess;
   top.translation =
     if attr.matchesFrame
     then s.translation
