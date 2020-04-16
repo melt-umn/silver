@@ -20,8 +20,10 @@ monoid attribute freeRecVars::[String] with [], ++;
 
 synthesized attribute translation<a>::a;
 
--- Production-independent algebraic simplifications
-strategy attribute simplifyStep =
+-- Nonterminal-independent algebraic simplifications
+-- Theoretically these could be applied to the strategy before lifting/propagation,
+-- but probably not much of an improvement.
+strategy attribute genericStep =
   rule on top::StrategyExpr of
   | sequence(fail(), _) -> fail(location=top.location, genName=top.genName)
   | sequence(_, fail()) -> fail(location=top.location, genName=top.genName)
@@ -29,25 +31,29 @@ strategy attribute simplifyStep =
   | sequence(s, id()) -> s
   | choice(fail(), s) -> s
   | choice(s, fail()) -> s
-  | choice(id(), s) -> id(location=top.location, genName=top.genName)
-  | choice(functorRef(n, genName=g, location=l), s) -> functorRef(n, genName=g, location=l)
+  | choice(id(), _) -> id(location=top.location, genName=top.genName)
+  | choice(functorRef(n, genName=g, location=l), _) -> functorRef(n, genName=g, location=l)
   | allTraversal(id()) -> id(location=top.location, genName=top.genName)
   | someTraversal(fail()) -> fail(location=top.location, genName=top.genName)
   | oneTraversal(fail()) -> fail(location=top.location, genName=top.genName)
   | prodTraversal(_, s) when s.containsFail -> fail(location=top.location, genName=top.genName)
   | prodTraversal(_, s) when s.allId -> id(location=top.location, genName=top.genName)
   | recComb(n, s) when !containsBy(stringEq, n.name, s.freeRecVars) -> s
-  | strategyRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
-  | functorRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
+  | inlined(_, fail()) -> fail(location=top.location, genName=top.genName)
+  end;
+-- Nonterminal-dependent, production-independent optimizations
+strategy attribute ntStep =
+  rule on top::StrategyExpr of
   | strategyRef(n) when n.matchesFrame && !containsBy(stringEq, n.attrDcl.fullName, top.inlinedStrategies) && null(n.attrDcl.givenRecVarEnv) ->
     inlined(n, n.attrDcl.strategyExpr, location=top.location, genName=top.genName)
-  | inlined(_, fail()) -> fail(location=top.location, genName=top.genName)
+  | strategyRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
+  | functorRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
+  | inlined(n, _) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
   | inlined(n, id()) when n.matchesFrame -> id(location=top.location, genName=top.genName)
   | inlined(n1, functorRef(n2)) when n1.matchesFrame -> functorRef(n2, location=top.location, genName=top.genName)
   end;
-strategy attribute simplify = innermost(simplifyStep);
 -- Production-dependent optimizations
-strategy attribute optimizeStep =
+strategy attribute prodStep =
   rule on top::StrategyExpr of
   | allTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> id(location=top.location, genName=top.genName)
   | someTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail(location=top.location, genName=top.genName)
@@ -62,7 +68,9 @@ strategy attribute optimizeStep =
       | mRuleList_cons(h, _, t) when !h.matchesFrame -> t
       | mRuleList_cons(h, _, mRuleList_one(t)) when !t.matchesFrame -> mRuleList_one(h, location=top.location)
       end));
-attribute optimizeStep occurs on MRuleList;
+attribute prodStep occurs on MRuleList;
+
+strategy attribute simplify = innermost(genericStep <+ ntStep);
 strategy attribute optimize =
   (sequence(optimize, simplify) <+
    choice(optimize, optimize) <+
@@ -73,13 +81,13 @@ strategy attribute optimize =
    recComb(id, optimize) <+
    inlined(id, optimize) <+
    id) <*
-  try((optimizeStep <+ simplifyStep) <* optimize);
+  try((genericStep <+ ntStep <+ prodStep) <* optimize);
 
 nonterminal StrategyExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
   genName, recVarEnv, outerAttr, liftedStrategies, attrRefName, isId,
   translation<Expr>, matchesFrame, freeRecVars,
-  inlinedStrategies, simplifyStep, simplify, optimizeStep, optimize;
+  inlinedStrategies, genericStep, ntStep, prodStep, simplify, optimize;
 
 nonterminal StrategyExprs with
   config, grammarName, env, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
@@ -104,8 +112,8 @@ propagate flowDefs on StrategyExpr, StrategyExprs;
 propagate containsFail, allId on StrategyExprs;
 propagate freeRecVars on StrategyExpr, StrategyExprs excluding recComb;
 propagate simplify on StrategyExprs;
-propagate optimizeStep on MRuleList;
-propagate simplifyStep, simplify, optimizeStep, optimize on StrategyExpr;
+propagate prodStep on MRuleList;
+propagate genericStep, ntStep, prodStep, simplify, optimize on StrategyExpr;
 
 aspect default production
 top::StrategyExpr ::=
