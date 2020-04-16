@@ -43,7 +43,7 @@ top::AGDcl ::= a::Name recVarEnv::[Pair<String String>] e::StrategyExpr
            defaultEnvItem(
              strategyDcl(
                top.grammarName, a.location, fName, freshTyVar(),
-               !null(top.errors), e.isRecursive, map(fst, e.liftedStrategies), recVarEnv, e)))],
+               !null(top.errors), map(fst, e.liftedStrategies), recVarEnv, e)))],
         location=top.location),
       map(
         \ d::Pair<String Decorated StrategyExpr> ->
@@ -103,6 +103,7 @@ top::ProductionStmt ::= attr::Decorated QName
   e.env = top.env;
   e.recVarEnv = attr.lookupAttribute.dcl.givenRecVarEnv;
   e.outerAttr = just(attr.lookupAttribute.fullName);
+  e.inlinedStrategies = [attr.lookupAttribute.fullName]; -- Don't unfold the top-level strategy within itself
   
   production e2::StrategyExpr =
     case e.optimize of
@@ -115,6 +116,7 @@ top::ProductionStmt ::= attr::Decorated QName
   e2.env = e.env;
   e2.recVarEnv = e.recVarEnv;
   e2.outerAttr = e.outerAttr;
+  e2.inlinedStrategies = e.inlinedStrategies;
   
   -- Can't do this with forwarding to avoid circular dependency of
   -- forward -> dcl.containsErrors -> dcl.flowEnv -> forward.flowDefs

@@ -7,6 +7,7 @@ annotation genName::String; -- Used to generate the names of lifted strategy att
 
 autocopy attribute recVarEnv::[Pair<String String>];
 inherited attribute outerAttr::Maybe<String>;
+autocopy attribute inlinedStrategies::[String];
 monoid attribute liftedStrategies::[Pair<String Decorated StrategyExpr>] with [], ++;
 synthesized attribute attrRefName::Maybe<String>;
 synthesized attribute isId::Boolean;
@@ -16,11 +17,10 @@ monoid attribute containsFail::Boolean with false, ||;
 monoid attribute allId::Boolean with true, &&;
 monoid attribute matchesFrame::Boolean with false, ||;
 monoid attribute freeRecVars::[String] with [], ++;
-monoid attribute isRecursive::Boolean with false, ||;
 
 synthesized attribute translation<a>::a;
 
--- Frame-independent algebraic simplifications
+-- Production-independent algebraic simplifications
 strategy attribute simplifyStep =
   rule on top::StrategyExpr of
   | sequence(fail(), _) -> fail(location=top.location, genName=top.genName)
@@ -37,9 +37,16 @@ strategy attribute simplifyStep =
   | prodTraversal(_, s) when s.containsFail -> fail(location=top.location, genName=top.genName)
   | prodTraversal(_, s) when s.allId -> id(location=top.location, genName=top.genName)
   | recComb(n, s) when !containsBy(stringEq, n.name, s.freeRecVars) -> s
+  | strategyRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
+  | functorRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
+  | strategyRef(n) when n.matchesFrame && !containsBy(stringEq, n.attrDcl.fullName, top.inlinedStrategies) && null(n.attrDcl.givenRecVarEnv) ->
+    inlined(n, n.attrDcl.strategyExpr, location=top.location, genName=top.genName)
+  | inlined(_, fail()) -> fail(location=top.location, genName=top.genName)
+  | inlined(n, id()) when n.matchesFrame -> id(location=top.location, genName=top.genName)
+  | inlined(n1, functorRef(n2)) when n1.matchesFrame -> functorRef(n2, location=top.location, genName=top.genName)
   end;
 strategy attribute simplify = innermost(simplifyStep);
--- Frame-dependent optimizations
+-- Production-dependent optimizations
 strategy attribute optimizeStep =
   rule on top::StrategyExpr of
   | allTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> id(location=top.location, genName=top.genName)
@@ -47,9 +54,6 @@ strategy attribute optimizeStep =
   | oneTraversal(s) when !attrMatchesChild(top.env, fromMaybe(s.genName, s.attrRefName), top.frame) -> fail(location=top.location, genName=top.genName)
   | prodTraversal(p, s) when p.lookupValue.fullName != top.frame.fullName -> fail(location=top.location, genName=top.genName)
   | rewriteRule(_, _, ml) when !ml.matchesFrame -> fail(location=top.location, genName=top.genName)
-  | strategyRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
-  | functorRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
-  | strategyRef(n) when n.matchesFrame && !n.attrDcl.isRecursive && null(n.attrDcl.givenRecVarEnv) -> n.attrDcl.strategyExpr
   end <+
   rewriteRule(
     id, id,
@@ -67,38 +71,38 @@ strategy attribute optimize =
    oneTraversal(simplify) <+
    prodTraversal(id, simplify) <+
    recComb(id, optimize) <+
+   inlined(id, optimize) <+
    id) <*
   try((optimizeStep <+ simplifyStep) <* optimize);
 
 nonterminal StrategyExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
   genName, recVarEnv, outerAttr, liftedStrategies, attrRefName, isId,
-  translation<Expr>, matchesFrame, freeRecVars, isRecursive,
-  simplifyStep, simplify, optimizeStep, optimize;
+  translation<Expr>, matchesFrame, freeRecVars,
+  inlinedStrategies, simplifyStep, simplify, optimizeStep, optimize;
 
 nonterminal StrategyExprs with
   config, grammarName, env, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
   recVarEnv, givenInputElements, liftedStrategies, attrRefNames,
-  containsFail, allId, freeRecVars, isRecursive,
-  simplify;
+  containsFail, allId, freeRecVars,
+  inlinedStrategies, simplify;
 
 flowtype StrategyExpr =
   decorate {grammarName, config, recVarEnv, outerAttr}, -- NOT frame or env
   unparse {}, errors {decorate, frame, env, compiledGrammars, flowEnv}, flowDefs {decorate, frame, env, compiledGrammars, flowEnv},
   liftedStrategies {decorate}, attrRefName {decorate}, isId {decorate},
-  translation {decorate, frame, env}, matchesFrame {decorate, frame, env}, freeRecVars {decorate, env}, isRecursive {decorate, env};
+  translation {decorate, frame, env}, matchesFrame {decorate, frame, env}, freeRecVars {decorate, env};
 
 flowtype StrategyExprs =
   decorate {grammarName, config, recVarEnv}, -- NOT frame or env
   unparse {}, errors {decorate, frame, env, givenInputElements, compiledGrammars, flowEnv}, flowDefs {decorate, frame, env, compiledGrammars, flowEnv},
   liftedStrategies {decorate}, attrRefNames {decorate, env, givenInputElements},
-  containsFail {decorate, env}, allId {decorate, env}, freeRecVars {decorate, env}, isRecursive {decorate, env};
+  containsFail {decorate, env}, allId {decorate, env}, freeRecVars {decorate, env};
 
 propagate errors on StrategyExpr, StrategyExprs excluding strategyRef, functorRef;
 propagate flowDefs on StrategyExpr, StrategyExprs;
 propagate containsFail, allId on StrategyExprs;
 propagate freeRecVars on StrategyExpr, StrategyExprs excluding recComb;
-propagate isRecursive on StrategyExpr, StrategyExprs;
 propagate simplify on StrategyExprs;
 propagate optimizeStep on MRuleList;
 propagate simplifyStep, simplify, optimizeStep, optimize on StrategyExpr;
@@ -712,70 +716,82 @@ top::StrategyExpr ::= id::Decorated QName
   top.translation = Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$qName{top.attrRefName.fromJust} };
 }
 abstract production strategyRef
-top::StrategyExpr ::= id::QNameAttrOccur
+top::StrategyExpr ::= attr::QNameAttrOccur
 {
-  top.unparse = id.unparse;
+  top.unparse = attr.unparse;
   
-  local attrDcl::DclInfo = case id of qNameAttrOccur(a) -> a.lookupAttribute.dcl end;
+  -- Lookup for error checking is *not* contextual, since we don't know the frame here
+  local attrDcl::DclInfo = case attr of qNameAttrOccur(a) -> a.lookupAttribute.dcl end;
   attrDcl.givenNonterminalType = error("Not actually needed"); -- Ugh environment needs refactoring
   top.errors :=
     case attrDcl.typerep, attrDcl.dclBoundVars of
     | nonterminalType("core:Maybe", [varType(a1)]), [a2] when tyVarEqual(a1, a2) -> []
     | nonterminalType("core:Maybe", [nonterminalType(nt, _)]), _ ->
       case getOccursDcl(attrDcl.fullName, nt, top.env) of
-      | [] -> [wrn(id.location, s"Attribute ${id.name} cannot be used as a strategy, because it doesn't occur on its own nonterminal type ${nt}")]
+      | [] -> [wrn(attr.location, s"Attribute ${attr.name} cannot be used as a strategy, because it doesn't occur on its own nonterminal type ${nt}")]
       | _ -> []
       end
     | errorType(), _ -> []
-    | _, _ -> [err(id.location, s"Attribute ${id.name} cannot be used as a strategy")]
+    | _, _ -> [err(attr.location, s"Attribute ${attr.name} cannot be used as a strategy")]
     end;
   
   propagate liftedStrategies;
-  top.attrRefName = just(id.name);
-  top.matchesFrame := id.matchesFrame;
+  top.attrRefName = just(attr.name);
+  top.matchesFrame := attr.matchesFrame;
   
-  -- TODO: Actually figuring out if a strategy is recursive would involve building a transitive
-  -- closure of all references between strategy attributes... somewhere.  Doing that repreatedly
-  -- here would be very inefficient.  For now just assume that all strategies that reference other
-  -- strategies are recursive.
-  top.isRecursive <- true;
-  
-  id.attrFor = top.frame.signature.outputElement.typerep;
+  attr.attrFor = top.frame.signature.outputElement.typerep;
   
   top.translation =
-    if id.matchesFrame
-    then Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{id} }
+    if attr.matchesFrame
+    then Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{attr} }
     else Silver_Expr { core:nothing() };
 }
 abstract production functorRef
-top::StrategyExpr ::= id::QNameAttrOccur
+top::StrategyExpr ::= attr::QNameAttrOccur
 {
-  top.unparse = id.unparse;
+  top.unparse = attr.unparse;
   
-  local attrDcl::DclInfo = case id of qNameAttrOccur(a) -> a.lookupAttribute.dcl end;
+  -- Lookup for error checking is *not* contextual, since we don't know the frame here
+  local attrDcl::DclInfo = case attr of qNameAttrOccur(a) -> a.lookupAttribute.dcl end;
   attrDcl.givenNonterminalType = error("Not actually needed"); -- Ugh environment needs refactoring
   top.errors :=
     case attrDcl.typerep, attrDcl.dclBoundVars of
     | varType(a1), [a2] when tyVarEqual(a1, a2) -> []
     | nonterminalType(nt, _), _ ->
       case getOccursDcl(attrDcl.fullName, nt, top.env) of
-      | [] -> [wrn(id.location, s"Attribute ${id.name} cannot be used as a functor, because it doesn't occur on its own nonterminal type ${nt}")]
+      | [] -> [wrn(attr.location, s"Attribute ${attr.name} cannot be used as a functor, because it doesn't occur on its own nonterminal type ${nt}")]
       | _ -> []
       end
     | errorType(), _ -> []
-    | _, _ -> [err(id.location, s"Attribute ${id.name} cannot be used as a functor")]
+    | _, _ -> [err(attr.location, s"Attribute ${attr.name} cannot be used as a functor")]
     end;
   
   propagate liftedStrategies;
-  top.attrRefName = just(id.name);
-  top.matchesFrame := id.matchesFrame;
+  top.attrRefName = just(attr.name);
+  top.matchesFrame := attr.matchesFrame;
   
-  id.attrFor = top.frame.signature.outputElement.typerep;
+  attr.attrFor = top.frame.signature.outputElement.typerep;
   
   top.translation =
-    if id.matchesFrame
-    then Silver_Expr { core:just($name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{id}) }
+    if attr.matchesFrame
+    then Silver_Expr { core:just($name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{attr}) }
     else Silver_Expr { core:nothing() };
+}
+
+-- The result of performing an inlining optimization
+abstract production inlined
+top::StrategyExpr ::= attr::Decorated QNameAttrOccur s::StrategyExpr
+{
+  top.unparse = s"(${s.unparse} aka ${attr.unparse})";
+  propagate liftedStrategies;
+  top.attrRefName = just(attr.attrDcl.fullName);
+  top.translation =
+    if attr.matchesFrame
+    then s.translation
+    else Silver_Expr { core:nothing() };
+  
+  s.outerAttr = top.outerAttr;
+  s.inlinedStrategies = attr.attrDcl.fullName :: top.inlinedStrategies;
 }
 
 attribute matchesFrame occurs on QNameAttrOccur;
@@ -807,4 +823,3 @@ Boolean ::= env::Decorated Env attrName::String frame::BlockContext
         \ e::NamedSignatureElement -> attrMatchesFrame(env, attrName, e.typerep),
         frame.signature.inputElements));
 }
-
