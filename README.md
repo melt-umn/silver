@@ -27,11 +27,10 @@ initial clone.
 ## Authors and contributors
 Silver is currently developed and maintained by
 
-* Ted Kaminski  (tedinski@cs.umn.edu)
 * Lucas Kramer  (krame505@cs.umn.edu)
 * Eric Van Wyk  (evw@cs.umn.edu)
 
-Past contributors include Derek Bodin, Lijesh Krishnan, and Jimin Gao.
+Past contributors include Ted Kaminski (tedinski@cs.umn.edu), Derek Bodin, Lijesh Krishnan, and Jimin Gao.
 
 It is developed by the Minnesota Extensible Language Tools (MELT) Group
 (http://melt.cs.umn.edu) at the Department of Computer Science and Engineering (https://cs.umn.edu) at the University of Minnesota (https://umn.edu).
@@ -39,8 +38,8 @@ It is developed by the Minnesota Extensible Language Tools (MELT) Group
 
 ## Websites and repositories
 
-Downloads, documentation, and related papers are available on the
-Silver web site at http://melt.cs.umn.edu/silver
+Software downloads, documentation, and related papers are available on the
+Melt group web site at http://melt.cs.umn.edu/.
 
 Information about Copper and sample language frameworks developed with
 Silver can be found on the MELT Group web site at
@@ -51,6 +50,9 @@ https://github.com/melt-umn/silver.
 
 Archival versions of this software are permanently available on the Data
 Repository of the University of Minnesota at https://doi.org/10.13020/D6QX07.
+
+Other software and artifacts are also archived there and can be
+reached from this persistent link: http://hdl.handle.net/11299/206558.
 
 
 ## Acknowledgements
