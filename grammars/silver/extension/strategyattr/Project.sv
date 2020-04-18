@@ -13,3 +13,4 @@ imports silver:modification:let_fix;
 imports silver:modification:lambda_fn;
 
 exports silver:extension:strategyattr:convenience;
+exports silver:extension:strategyattr:construction;

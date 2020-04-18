@@ -1,11 +1,17 @@
-grammar silver:extension:strategyattr;
+grammar silver:extension:strategyattr:construction;
 
-import silver:reflect;
-import silver:metatranslation;
-import silver:rewrite as s;
+imports silver:definition:core;
+imports silver:extension:strategyattr;
+imports silver:extension:silverconstruction;
+
+imports silver:reflect;
+imports silver:metatranslation;
+imports silver:rewrite as s;
+imports silver:langutil:pp;
 
 terminal SilverStrategyExpr_t 'Silver_StrategyExpr' lexer classes {KEYWORD, RESERVED};
 terminal AntiquoteStrategyExpr_t '$StrategyExpr' lexer classes {Antiquote, Strategy};
+terminal AntiquoteStrategyQName_t '$strategyQName' lexer classes {Antiquote, Strategy};
 
 concrete production quoteStrategyExpr
 top::Expr ::= 'Silver_StrategyExpr' '(' genName::Expr ')' '{' cst::StrategyExpr_c '}'
@@ -37,6 +43,12 @@ top::StrategyExpr_c ::= '$StrategyExpr' '{' e::Expr '}'
   top.ast = antiquoteStrategyExpr(e, genName=top.givenGenName, location=top.location);
 }
 
+concrete production antiquote_strategyQName
+top::StrategyQName ::= '$strategyQName' '{' e::Expr '}'
+{
+  top.ast = antiquote_qName('$qName', $2, e, $4, location=top.location);
+}
+
 abstract production antiquoteStrategyExpr
 top::StrategyExpr ::= e::Expr
 {
@@ -48,5 +60,5 @@ aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   directAntiquoteProductions <-
-    ["silver:extension:strategyattr:antiquoteStrategyExpr"];
+    ["silver:extension:strategyattr:construction:antiquoteStrategyExpr"];
 }

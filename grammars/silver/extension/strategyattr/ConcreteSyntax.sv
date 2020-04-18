@@ -227,7 +227,7 @@ concrete productions top::StrategyExprs_c
 
 nonterminal StrategyQName with location, ast<QName>;
 concrete productions top::StrategyQName
-| id::StrategyName_t
+(strategyQNameOne) | id::StrategyName_t
 { top.ast = qNameId(name(id.lexeme, id.location), location=top.location); }
-| id::StrategyName_t ':' qn::StrategyQName
+(strategyQNameCons) | id::StrategyName_t ':' qn::StrategyQName
 { top.ast = qNameCons(name(id.lexeme, id.location), $2, qn.ast, location=top.location); }
