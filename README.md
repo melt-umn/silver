@@ -27,7 +27,7 @@ initial clone.
 ## Authors and contributors
 Silver is currently developed and maintained by
 
-* Lucas Kramer  (krame505@cs.umn.edu)
+* Lucas Kramer  (krame505@umn.edu)
 * Eric Van Wyk  (evw@cs.umn.edu)
 
 Past contributors include Ted Kaminski (tedinski@cs.umn.edu), Derek Bodin, Lijesh Krishnan, and Jimin Gao.
