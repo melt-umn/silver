@@ -186,6 +186,6 @@ top::StrategyExpr ::= s::StrategyExpr
   local recVarName::String = "outermost_" ++ toString(genInt());
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec res -> topDown(try($StrategyExpr{s} <* $strategyQName{recVarName}))
+      rec $name{recVarName} -> topDown(try($StrategyExpr{s} <* $strategyQName{recVarName}))
     };
 }
