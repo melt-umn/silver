@@ -76,6 +76,12 @@ top::Env ::= d::Defs  e::Decorated Env
   top.fontDefTree = consEnvScope(buildTree(d.fontDefList), e.fontDefTree);
 }
 
+aspect production i_occursEnv
+top::Env ::= _  e::Decorated Env
+{
+  top.fontDefTree = e.fontDefTree;
+}
+
 function getFontDcl
 [DclInfo] ::= search::String e::Decorated Env
 {

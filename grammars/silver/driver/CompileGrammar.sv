@@ -39,7 +39,7 @@ IOVal<Maybe<RootSpec>> ::=
     if null(gramCompile.iovalue.snd) then
       grammarRootSpec(foldRoot(gramCompile.iovalue.fst), grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue, benv.silverGen)
     else
-     errorRootSpec(gramCompile.iovalue.snd, grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue, benv.silverGen);
+      errorRootSpec(gramCompile.iovalue.snd, grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue, benv.silverGen);
   
   return
     if !grammarLocation.iovalue.isJust then

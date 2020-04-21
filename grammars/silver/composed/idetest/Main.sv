@@ -1,6 +1,9 @@
 grammar silver:composed:idetest;
 
+import silver:definition:env;
 import silver:host;
+import silver:util:cmdargs;
+import silver:util:raw:treemap as tm;
 
 -- NOTE: this is needed for the correct generation of IDE, 
 -- even if we just use an empty IDE declaration block.
@@ -88,7 +91,14 @@ IOVal<[Message]> ::= project::IdeProject  args::[IdeProperty]  i::IO
 function fold
 [Location] ::= cst::Root
 {
-    return cst.foldableRanges; -- see ./Folding.sv
+  -- Dummy values
+  cst.config = decorate errorCmdArgs("") with {};
+  cst.compiledGrammars = tm:empty(compareString);
+  cst.grammarName = "";
+  cst.env = emptyEnv();
+  cst.globalImports = emptyEnv();
+  cst.grammarDependencies = [];
+  return cst.foldableRanges; -- see ./Folding.sv
 }
 
 function getStubForNewFile

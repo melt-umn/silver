@@ -21,7 +21,8 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   -- We need to know about all attributes and occurences on nonterminals.
   -- It's possible (likely) we could do better than using the overall env here.
   local allRealDefs :: [Def] = flatMap((.defs), g.grammarList);
-  local allRealEnv :: Decorated Env = toEnv(allRealDefs);
+  local allRealOccursDefs :: [DclInfo] = flatMap((.occursDefs), g.grammarList);
+  local allRealEnv :: Decorated Env = occursEnv(allRealOccursDefs, toEnv(allRealDefs));
   
   -- List of all productions
   local allProds :: [DclInfo] = foldr(consDefs, nilDefs(), allRealDefs).prodDclList;

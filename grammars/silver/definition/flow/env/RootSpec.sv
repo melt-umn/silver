@@ -2,30 +2,29 @@ grammar silver:definition:flow:env;
 
 import silver:driver:util;
 
-attribute flowDefs occurs on RootSpec, GrammarProperties;
+synthesized attribute maybeFlowDefs::Maybe<[FlowDef]> occurs on InterfaceItems, InterfaceItem;
 
-aspect production consGrammarProperties
-top::GrammarProperties ::= h::GrammarProperty t::GrammarProperties
+aspect production consInterfaceItem
+top::InterfaceItems ::= h::InterfaceItem t::InterfaceItems
 {
-  top.flowDefs = fromMaybe(t.flowDefs, h.maybeFlowDefs);
+  top.maybeFlowDefs = orElse(t.maybeFlowDefs, h.maybeFlowDefs);
+  top.interfaceErrors <- if !top.maybeFlowDefs.isJust then ["Missing item flowDefs"] else [];
 }
 
-aspect production nilGrammarProperties
-top::GrammarProperties ::=
-{
-  top.flowDefs = error("Grammar property flowDefs missing from interface file");
-}
-
-synthesized attribute maybeFlowDefs::Maybe<[FlowDef]> occurs on GrammarProperty;
-
-aspect default production
-top::GrammarProperty ::=
+aspect production nilInterfaceItem
+top::InterfaceItems ::=
 {
   top.maybeFlowDefs = nothing();
 }
 
-abstract production flowDefsGrammarProperty
-top::GrammarProperty ::= val::[FlowDef]
+aspect default production
+top::InterfaceItem ::=
+{
+  top.maybeFlowDefs = nothing();
+}
+
+abstract production flowDefsInterfaceItem
+top::InterfaceItem ::= val::[FlowDef]
 {
   top.maybeFlowDefs = just(val);
 }
@@ -33,7 +32,7 @@ top::GrammarProperty ::= val::[FlowDef]
 aspect function unparseRootSpec
 String ::= r::Decorated RootSpec
 {
-  grammarProperties <- [flowDefsGrammarProperty(r.flowDefs)];
+  interfaceItems <- [flowDefsInterfaceItem(r.flowDefs)];
 }
 
 aspect production errorRootSpec
@@ -48,10 +47,12 @@ top::RootSpec ::= g::Grammar  _ _ _ _
   top.flowDefs = g.flowDefs;
 }
 
+attribute flowDefs occurs on RootSpec;
+
 aspect production interfaceRootSpec
-top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer _
+top::RootSpec ::= i::InterfaceItems  interfaceTime::Integer _
 {
-  top.flowDefs = p.flowDefs;
+  top.flowDefs = i.maybeFlowDefs.fromJust;
 }
 
 aspect production nilGrammar

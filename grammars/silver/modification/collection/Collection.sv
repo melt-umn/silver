@@ -19,7 +19,7 @@ top::NameOrBOperator ::= q::QName
 
   top.operation = case q.lookupValue.dcl of
                   | funDcl(_,_,_) -> functionOperation(q.lookupValue.fullName)
-                  | prodDcl(_,_,_) -> productionOperation(q.lookupValue.fullName)
+                  | prodDcl(_,_,_,_) -> productionOperation(q.lookupValue.fullName)
                   | _ -> error("INTERNAL ERROR: operation attribute demanded for non-function or production.")
                   end;
 
@@ -39,7 +39,7 @@ top::NameOrBOperator ::= q::QName
   top.errors <- if !q.lookupValue.found then [] else
     case q.lookupValue.dcl of
     | funDcl(_,_,_) -> operationErrors
-    | prodDcl(_,_,_) -> operationErrors
+    | prodDcl(_,_,_,_) -> operationErrors
     | _ -> [err(top.location, q.name ++ " is not a valid operator for collections.")]
     end;
 }
@@ -118,22 +118,20 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = [synColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
-
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
   te.env = tl.envBindingTyVars;
-
+  
+  q.operatorForType = te.typerep;
+  
+  top.defs = [synColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
+  
   top.errors := te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
         then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
-        else [];	
-
-  q.operatorForType = te.typerep;
-
-  forwards to attributeDclSyn($1, $2, a, tl, $5, te, $9, location=top.location);
+        else [];
 }
 
 concrete production collectionAttributeDclInh
@@ -144,22 +142,20 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = [inhColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
-
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
   te.env = tl.envBindingTyVars;
+  
+  q.operatorForType = te.typerep;
+
+  top.defs = [inhColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
 
   top.errors := te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
         then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
-        else [];	
-
-  q.operatorForType = te.typerep;
-
-  forwards to attributeDclInh($1, $2, a, tl, $5, te, $9, location=top.location);
+        else [];
 }
 
 

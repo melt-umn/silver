@@ -7,7 +7,7 @@ nonterminal Grammar with
   grammarName, env, globalImports, grammarDependencies,
   -- Synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild,
-  defs, importedDefs, grammarErrors, jarName;
+  defs, occursDefs, importedDefs, importedOccursDefs, grammarErrors, jarName;
 
 {--
 - A list of grammars that this grammar depends upon,
@@ -26,6 +26,7 @@ autocopy attribute globalImports :: Decorated Env;
  - At the top of a grammar, these are echoed down as globalImports
  -}
 synthesized attribute importedDefs :: [Def];
+synthesized attribute importedOccursDefs :: [DclInfo];
 {--
  - An overall listing of error messages for a grammar
  -}
@@ -43,7 +44,9 @@ top::Grammar ::=
   top.condBuild = [];
   
   top.importedDefs = [];
+  top.importedOccursDefs = [];
   top.defs = [];
+  top.occursDefs = [];
   top.grammarErrors = [];
 
   top.jarName = nothing();
@@ -58,8 +61,10 @@ top::Grammar ::= h::Root  t::Grammar
   top.optionalGrammars = h.optionalGrammars ++ t.optionalGrammars;
   top.condBuild = h.condBuild ++ t.condBuild;
 
-  top.importedDefs = h.importedDefs ++ t.importedDefs;
   top.defs = h.defs ++ t.defs;
+  top.occursDefs = h.occursDefs ++ t.occursDefs;
+  top.importedDefs = h.importedDefs ++ t.importedDefs;
+  top.importedOccursDefs = h.importedOccursDefs ++ t.importedOccursDefs;
   top.grammarErrors =
     if null(h.errors ++ jarNameErrors) then t.grammarErrors
      else pair(h.location.filename, h.errors ++ jarNameErrors) :: t.grammarErrors;

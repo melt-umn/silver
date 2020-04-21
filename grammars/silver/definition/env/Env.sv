@@ -97,9 +97,31 @@ top::Env ::= d::Defs  e::Decorated Env
   top.attrTree = oneEnvScope(buildTree(d.attrList)) :: e.attrTree;
 
   top.prodOccursTree = consEnvScope(buildTree(mapFullnameDcls(d.prodOccursList)), e.prodOccursTree);
-  top.occursTree = consEnvScope(buildTree(mapFullnameDcls(d.occursList)), e.occursTree);
+  top.occursTree = e.occursTree;
 
   top.prodsForNtTree = oneEnvScope(buildTree(map(envItemNTFromProdDcl, d.prodDclList))) :: e.prodsForNtTree;
+}
+
+{--
+ - Introduces new occurs defs to an environment.
+ - This is seperate from newEnvScope as we must be able to build the other env trees without having the occurs tree.
+ -}
+function occursEnv
+Decorated Env ::= d::[DclInfo]  e::Decorated Env
+{
+  return decorate i_occursEnv(d, e) with {};
+}
+abstract production i_occursEnv
+top::Env ::= d::[DclInfo]  e::Decorated Env
+{
+  top.typeTree = e.typeTree;
+  top.valueTree = e.valueTree;
+  top.attrTree = e.attrTree;
+  
+  top.prodOccursTree = e.prodOccursTree;
+  top.occursTree = consEnvScope(buildTree(mapFullnameDcls(d)), e.occursTree);
+  
+  top.prodsForNtTree = e.prodsForNtTree;
 }
 
 ----------------------------------------------------------------------------------------------------
@@ -201,6 +223,8 @@ function getProdAttrs
  -  2. MWDA checking known forwarding productions on attribute occurrence declaration.
  -       - We need to be able to look from forwarding to occurs, and from
  -         occurs to forwarding to cover all cases.
+ -  3. For the automatic attributes extension
+ -       - to implement propagate on all the known non-forwarding productions of a nonterminal.
  - You should probably have a good reason for using this, and document it here if you do.
  -}
 function getKnownProds

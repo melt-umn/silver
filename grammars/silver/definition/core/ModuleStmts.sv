@@ -2,14 +2,14 @@ grammar silver:definition:core;
 
 imports silver:driver:util;
 
-nonterminal ModuleStmts with config, grammarName, location, unparse, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
-nonterminal ModuleStmt with config, grammarName, location, unparse, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
+nonterminal ModuleStmts with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
+nonterminal ModuleStmt with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
 
-nonterminal ImportStmt with config, grammarName, location, unparse, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
-nonterminal ImportStmts with config, grammarName, location, unparse, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
+nonterminal ImportStmt with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
+nonterminal ImportStmts with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
 
-nonterminal ModuleExpr with config, grammarName, location, unparse, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
-nonterminal ModuleName with config, grammarName, location, unparse, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
+nonterminal ModuleExpr with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
+nonterminal ModuleName with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
 
 nonterminal NameList with config, grammarName, location, unparse, names;
 
@@ -26,7 +26,7 @@ synthesized attribute names :: [String];
 synthesized attribute envMaps :: [Pair<String String>];
 
 -- TODO: eliminate, fold into ModuleName, make filter parameters inh attrs.
-nonterminal Module with defs, errors;
+nonterminal Module with defs, occursDefs, errors;
 
 abstract production module 
 top::Module ::= l::Location
@@ -61,11 +61,12 @@ top::Module ::= l::Location
     else map(mapDefOnEnvItem(envItemPrepend(_, asPrepend ++ ":"), _), defs_after_renames);
 
   top.defs = defs_after_prepend;
+  top.occursDefs = med.occursDefs;
   top.errors := med.errors;
 }
 
 -- recurses through exportedGrammars, grabbing all definitions
-nonterminal ModuleExportedDefs with defs, errors;
+nonterminal ModuleExportedDefs with defs, occursDefs, errors;
 
 {--
  - Computes the set of defs we get from an import
@@ -99,6 +100,9 @@ top::ModuleExportedDefs ::= l::Location compiledGrammars::EnvTree<Decorated Root
   top.defs =
     if null(need) then [] else
     if null(rs) then recurse.defs else head(rs).defs ++ recurse.defs;
+  top.occursDefs =
+    if null(need) then [] else
+    if null(rs) then recurse.occursDefs else head(rs).occursDefs ++ recurse.occursDefs;
   top.errors :=
     if null(need) then [] else 
     if null(rs) then [err(l, "Grammar '" ++ gram ++ "' cannot be found.")] ++ recurse.errors else recurse.errors;
@@ -126,6 +130,7 @@ top::ImportStmt ::= 'import' m::ModuleExpr ';'
   top.errors := m.errors;
   top.moduleNames = m.moduleNames;
   top.defs = m.defs;
+  top.occursDefs = m.occursDefs;
 }
 
 concrete production nilImportStmts
@@ -137,6 +142,7 @@ top::ImportStmts ::=
 
   top.moduleNames = [];
   top.defs = [];
+  top.occursDefs = [];
 }
 
 concrete production consImportStmts
@@ -148,6 +154,7 @@ top::ImportStmts ::= h::ImportStmt t::ImportStmts
 
   top.moduleNames = h.moduleNames ++ t.moduleNames;
   top.defs = h.defs ++ t.defs;
+  top.occursDefs = h.occursDefs ++ t.occursDefs;
 }
 
 abstract production appendImportStmts
@@ -159,6 +166,7 @@ top::ImportStmts ::= h::ImportStmts t::ImportStmts
 
   top.moduleNames = h.moduleNames ++ t.moduleNames;
   top.defs = h.defs ++ t.defs;
+  top.occursDefs = h.occursDefs ++ t.occursDefs;
 }
 
 --------------
@@ -173,6 +181,7 @@ top::ModuleStmts ::=
 
   top.moduleNames = [];
   top.defs = [];
+  top.occursDefs = [];
   top.exportedGrammars = [];
   top.optionalGrammars = [];
   top.condBuild = [];
@@ -187,6 +196,7 @@ top::ModuleStmts ::= h::ModuleStmt t::ModuleStmts
 
   top.moduleNames = h.moduleNames ++ t.moduleNames;
   top.defs = h.defs ++ t.defs;
+  top.occursDefs = h.occursDefs ++ t.occursDefs;
   top.exportedGrammars = h.exportedGrammars ++ t.exportedGrammars;
   top.optionalGrammars = h.optionalGrammars ++ t.optionalGrammars;
   top.condBuild = h.condBuild ++ t.condBuild;
@@ -201,6 +211,7 @@ top::ModuleStmt ::= 'imports' m::ModuleExpr ';'
 
   top.moduleNames = m.moduleNames;
   top.defs = m.defs;
+  top.occursDefs = m.occursDefs;
   top.exportedGrammars = [];
   top.optionalGrammars = [];
   top.condBuild = [];
@@ -215,6 +226,7 @@ top::ModuleStmt ::= 'exports' m::ModuleName ';'
 
   top.moduleNames = m.moduleNames;
   top.defs = m.defs; -- 'exports' now also 'imports' that grammar.
+  top.occursDefs = m.occursDefs;
   top.exportedGrammars = m.moduleNames;
   top.optionalGrammars = [];
   top.condBuild = [];
@@ -237,6 +249,7 @@ top::ModuleStmt ::= 'exports' m::QName 'with' c::QName ';'
 
   top.moduleNames = [];
   top.defs = [];
+  top.occursDefs = [];
   top.exportedGrammars = [];
   top.optionalGrammars = [];
   top.condBuild = [[m.name, c.name]];
@@ -254,6 +267,7 @@ top::ModuleStmt ::= 'option' m::QName ';'
 
   top.moduleNames = [];
   top.defs = [];
+  top.occursDefs = [];
   top.exportedGrammars = [];
   top.optionalGrammars = [m.name];
   top.condBuild = [];
@@ -274,6 +288,7 @@ top::ModuleName ::= pkg::QName
 
   top.errors := m.errors;
   top.defs = m.defs;
+  top.occursDefs = m.occursDefs;
 }
 
 -----------------------
@@ -290,6 +305,7 @@ top::ModuleExpr ::= pkg::QName
 
   top.errors := m.errors;
   top.defs = m.defs;
+  top.occursDefs = m.occursDefs;
 }
 
 concrete production moduleAllWith
@@ -303,6 +319,7 @@ top::ModuleExpr ::= pkg::QName 'with' wc::WithElems
 
   top.errors := m.errors;
   top.defs = m.defs;
+  top.occursDefs = m.occursDefs;
 }
 
 concrete production moduleOnly
@@ -316,6 +333,7 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList
 
   top.errors := m.errors;
   top.defs = m.defs;
+  top.occursDefs = m.occursDefs;
 }
 
 concrete production moduleOnlyWith
@@ -329,6 +347,7 @@ top::ModuleExpr ::= pkg::QName 'only' ns::NameList 'with' wc::WithElems
 
   top.errors := m.errors;
   top.defs = m.defs;
+  top.occursDefs = m.occursDefs;
 }
 
 concrete production moduleHiding
@@ -342,6 +361,7 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList
 
   top.errors := m.errors;
   top.defs = m.defs;
+  top.occursDefs = m.occursDefs;
 }
 
 concrete production moduleHidingWith
@@ -355,6 +375,7 @@ top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList 'with' wc::WithElems
 
   top.errors := m.errors;
   top.defs = m.defs;
+  top.occursDefs = m.occursDefs;
 }
 
 concrete production moduleAs
@@ -368,6 +389,7 @@ top::ModuleExpr ::= pkg1::QName 'as' pkg2::QName
 
   top.errors := m.errors;
   top.defs = m.defs;
+  top.occursDefs = m.occursDefs;
 }
 
 ------------

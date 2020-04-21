@@ -10,6 +10,11 @@ nonterminal ProductionStmt with
   config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
   productionAttributes, uniqueSignificantExpression;
 
+flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst}
+  on ProductionBody, ProductionStmts;
+flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst, finalSubst}
+  on ProductionStmt;
+
 nonterminal DefLHS with 
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found;
 

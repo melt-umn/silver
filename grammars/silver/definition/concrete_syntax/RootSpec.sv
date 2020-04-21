@@ -2,40 +2,42 @@ grammar silver:definition:concrete_syntax;
 
 import silver:driver:util;
 
-attribute syntaxAst, parserSpecs occurs on RootSpec, ModuleExportedDefs, Grammar, GrammarProperties;
+attribute syntaxAst, parserSpecs occurs on RootSpec, ModuleExportedDefs, Grammar;
 
-aspect production consGrammarProperties
-top::GrammarProperties ::= h::GrammarProperty t::GrammarProperties
+synthesized attribute maybeSyntaxAst::Maybe<[SyntaxDcl]> occurs on InterfaceItems, InterfaceItem;
+synthesized attribute maybeParserSpecs::Maybe<[ParserSpec]> occurs on InterfaceItems, InterfaceItem;
+
+aspect production consInterfaceItem
+top::InterfaceItems ::= h::InterfaceItem t::InterfaceItems
 {
-  top.syntaxAst = fromMaybe(t.syntaxAst, h.maybeSyntaxAst);
-  top.parserSpecs = fromMaybe(t.parserSpecs, h.maybeParserSpecs);
+  top.maybeSyntaxAst = orElse(t.maybeSyntaxAst, h.maybeSyntaxAst);
+  top.maybeParserSpecs = orElse(t.maybeParserSpecs, h.maybeParserSpecs);
+  top.interfaceErrors <- if !top.maybeSyntaxAst.isJust then ["Missing item syntaxAst"] else [];
+  top.interfaceErrors <- if !top.maybeParserSpecs.isJust then ["Missing item parserSpecs"] else [];
 }
 
-aspect production nilGrammarProperties
-top::GrammarProperties ::=
-{
-  top.syntaxAst = error("Grammar property syntaxAst missing from interface file");
-  top.parserSpecs = error("Grammar property parserSpecs missing from interface file");
-}
-
-synthesized attribute maybeSyntaxAst::Maybe<[SyntaxDcl]> occurs on GrammarProperty;
-synthesized attribute maybeParserSpecs::Maybe<[ParserSpec]> occurs on GrammarProperty;
-
-aspect default production
-top::GrammarProperty ::=
+aspect production nilInterfaceItem
+top::InterfaceItems ::=
 {
   top.maybeSyntaxAst = nothing();
   top.maybeParserSpecs = nothing();
 }
 
-abstract production syntaxAstGrammarProperty
-top::GrammarProperty ::= val::[SyntaxDcl]
+aspect default production
+top::InterfaceItem ::=
+{
+  top.maybeSyntaxAst = nothing();
+  top.maybeParserSpecs = nothing();
+}
+
+abstract production syntaxAstInterfaceItem
+top::InterfaceItem ::= val::[SyntaxDcl]
 {
   top.maybeSyntaxAst = just(val);
 }
 
-abstract production parserSpecsGrammarProperty
-top::GrammarProperty ::= val::[ParserSpec]
+abstract production parserSpecsInterfaceItem
+top::InterfaceItem ::= val::[ParserSpec]
 {
   top.maybeParserSpecs = just(val);
 }
@@ -43,8 +45,8 @@ top::GrammarProperty ::= val::[ParserSpec]
 aspect function unparseRootSpec
 String ::= r::Decorated RootSpec
 {
-  grammarProperties <- [syntaxAstGrammarProperty(r.syntaxAst)];
-  grammarProperties <- [parserSpecsGrammarProperty(r.parserSpecs)];
+  interfaceItems <- [syntaxAstInterfaceItem(r.syntaxAst)];
+  interfaceItems <- [parserSpecsInterfaceItem(r.parserSpecs)];
 }
 
 aspect production errorRootSpec
@@ -62,10 +64,10 @@ top::RootSpec ::= c1::Grammar  _ _ _ _
 }
 
 aspect production interfaceRootSpec
-top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer _
+top::RootSpec ::= i::InterfaceItems  interfaceTime::Integer _
 {
-  top.syntaxAst = p.syntaxAst;
-  top.parserSpecs = p.parserSpecs;
+  top.syntaxAst = i.maybeSyntaxAst.fromJust;
+  top.parserSpecs = i.maybeParserSpecs.fromJust;
 }
 
 aspect production nilGrammar
