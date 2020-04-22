@@ -82,13 +82,13 @@ equalityTest(
   String, silver_tests);
 
 
-functor attribute incAllConsts occurs on SStmt, SExpr;
-propagate incAllConsts on SStmt, SExpr excluding constSExpr;
+functor attribute incConsts occurs on SStmt, SExpr;
+propagate incConsts on SStmt, SExpr excluding constSExpr;
 aspect production constSExpr
 top::SExpr ::= i::Integer
-{ top.incAllConsts = constSExpr(i + 1); }
+{ top.incConsts = constSExpr(i + 1); }
 
-strategy attribute incTwice = incAllConsts <* incAllConsts
+strategy attribute incTwice = incConsts <* incConsts
   occurs on SStmt, SExpr;
 propagate incTwice on SStmt, SExpr;
 
@@ -104,7 +104,7 @@ strategy attribute incTargetConsts =
   allTopDown(
     rule on top::SStmt of
     | assignSStmt(n, _) when n == top.target -> top
-    end <* incAllConsts)
+    end <* incConsts)
   occurs on SStmt, SExpr;
 propagate incTargetConsts on SStmt, SExpr;
 
@@ -118,7 +118,7 @@ equalityTest(
   "core:just(silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:addSExpr(silver_features:constSExpr(42), silver_features:constSExpr(0))), silver_features:assignSStmt(\"b\", silver_features:addSExpr(silver_features:addSExpr(silver_features:idSExpr(\"a\"), silver_features:constSExpr(3)), silver_features:constSExpr(18)))))",
   String, silver_tests);
 
-strategy attribute incThenElim = incAllConsts <* elimPlusZero
+strategy attribute incThenElim = incConsts <* elimPlusZero
   occurs on SStmt, SExpr;
 propagate incThenElim on SStmt, SExpr;
 
@@ -126,4 +126,40 @@ equalityTest(
   hackUnparse(
     assignSStmt("a", addSExpr(constSExpr(42), constSExpr(-1))).incThenElim),
   "core:just(silver_features:assignSStmt(\"a\", silver_features:constSExpr(43)))",
+  String, silver_tests);
+
+
+strategy attribute incAll = all(incConsts) occurs on SStmt, SExpr;
+strategy attribute incSome = some(incConsts) occurs on SStmt, SExpr;
+strategy attribute incOne = one(incConsts) occurs on SStmt, SExpr;
+strategy attribute incFstElimSnd = seqSStmt(incConsts, elimPlusZero) occurs on SStmt, SExpr;
+propagate incAll, incSome, incOne, incFstElimSnd on SStmt, SExpr;
+
+equalityTest(
+  hackUnparse(
+    seqSStmt(
+      assignSStmt("a", constSExpr(1)),
+      assignSStmt("b", constSExpr(2))).incAll),
+  "core:just(silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:constSExpr(2)), silver_features:assignSStmt(\"b\", silver_features:constSExpr(3))))",
+  String, silver_tests);
+equalityTest(
+  hackUnparse(
+    seqSStmt(
+      assignSStmt("a", constSExpr(1)),
+      assignSStmt("b", constSExpr(2))).incSome),
+  "core:just(silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:constSExpr(2)), silver_features:assignSStmt(\"b\", silver_features:constSExpr(3))))",
+  String, silver_tests);
+equalityTest(
+  hackUnparse(
+    seqSStmt(
+      assignSStmt("a", constSExpr(1)),
+      assignSStmt("b", constSExpr(2))).incOne),
+  "core:just(silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:constSExpr(2)), silver_features:assignSStmt(\"b\", silver_features:constSExpr(2))))",
+  String, silver_tests);
+equalityTest(
+  hackUnparse(
+    seqSStmt(
+      assignSStmt("a", addSExpr(constSExpr(1), constSExpr(0))),
+      assignSStmt("b", addSExpr(constSExpr(2), constSExpr(0)))).incFstElimSnd),
+  "core:just(silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:addSExpr(silver_features:constSExpr(2), silver_features:constSExpr(1))), silver_features:assignSStmt(\"b\", silver_features:constSExpr(2))))",
   String, silver_tests);

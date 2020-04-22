@@ -13,7 +13,7 @@ synthesized attribute attrRefName::Maybe<String>;
 synthesized attribute isId::Boolean;
 synthesized attribute isSuccess::Boolean;
 inherited attribute givenInputElements::[NamedSignatureElement];
-synthesized attribute attrRefNames::[Maybe<String>];
+synthesized attribute attrRefNames::[Maybe<Pair<Boolean String>>];
 monoid attribute containsFail::Boolean with false, ||;
 monoid attribute allId::Boolean with true, &&;
 monoid attribute matchesFrame::Boolean with false, ||;
@@ -98,7 +98,7 @@ nonterminal StrategyExprs with
 flowtype StrategyExpr =
   decorate {grammarName, config, recVarEnv, outerAttr}, -- NOT frame or env
   unparse {}, errors {decorate, frame, env, compiledGrammars, flowEnv}, flowDefs {decorate, frame, env, compiledGrammars, flowEnv},
-  liftedStrategies {decorate}, attrRefName {decorate}, isId {decorate}, isSuccess {decorate},
+  liftedStrategies {decorate}, attrRefName {decorate}, isId {decorate}, isSuccess {decorate, env},
   translation {decorate, frame, env}, matchesFrame {decorate, frame, env}, freeRecVars {decorate, env};
 
 flowtype StrategyExprs =
@@ -229,13 +229,6 @@ top::StrategyExpr ::= s::StrategyExpr
 {
   top.unparse = s"all(${s.unparse})";
   
-  top.errors <-
-     case s of
-     -- TBH this doesn't seem very useful anyway
-     | functorRef(_) -> [err(s.location, "Functor attributes as arguments to generic traversals are not yet supported")]
-     | _ -> []
-     end;
-  
   top.liftedStrategies :=
     if s.attrRefName.isJust
     then []
@@ -253,60 +246,73 @@ top::StrategyExpr ::= s::StrategyExpr
         pair(e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
   top.translation =
-    {- Translation of all(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
-         case a.s, c.s of
-         | just(a_s), just(c_s) -> just(prod(a_s, b, c_s))
-         | _, _ -> nothing()
-         end
-       Could also be implemented as chained monadic binds.  Maybe more efficient this way? -}
-    caseExpr(
-      flatMap(
-        \ a::Pair<String Boolean> ->
-          if a.snd then [Silver_Expr { $name{a.fst}.$name{sName} }] else [],
-        childAccesses),
-      [matchRule(
-         flatMap(
-           \ a::Pair<String Boolean> ->
-             if a.snd
-             then
-               [decorate Silver_Pattern { core:just($name{a.fst ++ "_" ++ sBaseName}) }
-                with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
-             else [],
-           childAccesses),
-         nothing(),
-         Silver_Expr {
-           core:just(
-             $Expr{
-               mkFullFunctionInvocation(
-                 top.location,
-                 baseExpr(qName(top.location, top.frame.fullName), location=top.location),
-                 map(
-                   \ a::Pair<String Boolean> ->
-                     if a.snd
-                     then Silver_Expr { $name{a.fst ++ "_" ++ sBaseName} }
-                     else Silver_Expr { $name{a.fst} },
-                   childAccesses),
-                 map(
-                   makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
-                   top.frame.signature.namedInputElements))})
-         },
-         location=top.location)],
-      Silver_Expr { core:nothing() },
-      nonterminalType("core:Maybe", [top.frame.signature.outputElement.typerep]),
-      location=top.location);
+     case s of
+     | functorRef(attr) ->
+       Silver_Expr {
+         core:just(
+           $Expr{
+             mkFullFunctionInvocation(
+               top.location,
+               baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+               map(
+                 \ a::Pair<String Boolean> ->
+                   if a.snd
+                   then Silver_Expr { $name{a.fst}.$QNameAttrOccur{attr} }
+                   else Silver_Expr { $name{a.fst} },
+                 childAccesses),
+               map(
+                 makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                 top.frame.signature.namedInputElements))})
+       }
+     | _ ->
+      {- Translation of all(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
+           case a.s, c.s of
+           | just(a_s), just(c_s) -> just(prod(a_s, b, c_s))
+           | _, _ -> nothing()
+           end
+         Could also be implemented as chained monadic binds.  Maybe more efficient this way? -}
+      caseExpr(
+        flatMap(
+          \ a::Pair<String Boolean> ->
+            if a.snd then [Silver_Expr { $name{a.fst}.$name{sName} }] else [],
+          childAccesses),
+        [matchRule(
+           flatMap(
+             \ a::Pair<String Boolean> ->
+               if a.snd
+               then
+                 [decorate Silver_Pattern { core:just($name{a.fst ++ "_" ++ sBaseName}) }
+                  with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
+               else [],
+             childAccesses),
+           nothing(),
+           Silver_Expr {
+             core:just(
+               $Expr{
+                 mkFullFunctionInvocation(
+                   top.location,
+                   baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+                   map(
+                     \ a::Pair<String Boolean> ->
+                       if a.snd
+                       then Silver_Expr { $name{a.fst ++ "_" ++ sBaseName} }
+                       else Silver_Expr { $name{a.fst} },
+                     childAccesses),
+                   map(
+                     makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                     top.frame.signature.namedInputElements))})
+           },
+           location=top.location)],
+        Silver_Expr { core:nothing() },
+        nonterminalType("core:Maybe", [top.frame.signature.outputElement.typerep]),
+        location=top.location)
+      end;
 }
 
 abstract production someTraversal
 top::StrategyExpr ::= s::StrategyExpr
 {
   top.unparse = s"some(${s.unparse})";
-  
-  top.errors <-
-     case s of
-     -- TBH this doesn't seem very useful anyway
-     | functorRef(_) -> [err(s.location, "Functor attributes as arguments to generic traversals are not yet supported")]
-     | _ -> []
-     end;
   
   top.liftedStrategies :=
     if s.attrRefName.isJust
@@ -323,48 +329,61 @@ top::StrategyExpr ::= s::StrategyExpr
         pair(e.elementName, attrMatchesFrame(top.env, sName, e.typerep)),
       top.frame.signature.inputElements);
   top.translation =
-    {- Translation of some(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
-         if a.s.isJust || c.s.isJust
-         then just(prod(fromMaybe(a, a.s), b, fromMaybe(c, c.s)))
-         else nothing()
-       Not sure of a clean way to do this with monads -}
-    Silver_Expr {
-      if $Expr{
-        foldr(
-          or(_, '||', _, location=top.location),
-          falseConst('false', location=top.location),
-          map(
-            \ a::String -> Silver_Expr { $name{a}.$name{sName}.isJust },
-            map(fst, filter(snd, childAccesses))))}
-      then
-        core:just(
-          $Expr{
-            mkFullFunctionInvocation(
-              top.location,
-              baseExpr(qName(top.location, top.frame.fullName), location=top.location),
-              map(
-                \ a::Pair<String Boolean> ->
-                  if a.snd
-                  then Silver_Expr { core:fromMaybe($name{a.fst}, $name{a.fst}.$name{sName}) }
-                  else Silver_Expr { $name{a.fst} },
-                childAccesses),
-              map(
-                makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
-                top.frame.signature.namedInputElements))})
-      else core:nothing()
-    };
+     case s of
+     | functorRef(attr) ->
+       Silver_Expr {
+         core:just(
+           $Expr{
+             mkFullFunctionInvocation(
+               top.location,
+               baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+               map(
+                 \ a::Pair<String Boolean> ->
+                   if a.snd
+                   then Silver_Expr { $name{a.fst}.$QNameAttrOccur{attr} }
+                   else Silver_Expr { $name{a.fst} },
+                 childAccesses),
+               map(
+                 makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                 top.frame.signature.namedInputElements))})
+       }
+     | _ ->
+      {- Translation of some(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
+           if a.s.isJust || c.s.isJust
+           then just(prod(fromMaybe(a, a.s), b, fromMaybe(c, c.s)))
+           else nothing()
+         Not sure of a clean way to do this with monads -}
+      Silver_Expr {
+        if $Expr{
+          foldr(
+            or(_, '||', _, location=top.location),
+            falseConst('false', location=top.location),
+            map(
+              \ a::String -> Silver_Expr { $name{a}.$name{sName}.isJust },
+              map(fst, filter(snd, childAccesses))))}
+        then
+          core:just(
+            $Expr{
+              mkFullFunctionInvocation(
+                top.location,
+                baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+                map(
+                  \ a::Pair<String Boolean> ->
+                    if a.snd
+                    then Silver_Expr { core:fromMaybe($name{a.fst}, $name{a.fst}.$name{sName}) }
+                    else Silver_Expr { $name{a.fst} },
+                  childAccesses),
+                map(
+                  makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                  top.frame.signature.namedInputElements))})
+        else core:nothing()
+      }
+    end;
 }
 abstract production oneTraversal
 top::StrategyExpr ::= s::StrategyExpr
 {
   top.unparse = s"one(${s.unparse})";
-  
-  top.errors <-
-     case s of
-     -- TBH this doesn't seem very useful anyway
-     | functorRef(_) -> [err(s.location, "Functor attributes as arguments to generic traversals are not yet supported")]
-     | _ -> []
-     end;
   
   top.liftedStrategies :=
     if s.attrRefName.isJust
@@ -383,55 +402,76 @@ top::StrategyExpr ::= s::StrategyExpr
       top.frame.signature.inputElements);
   local matchingChildren::[String] = map(fst, filter(snd, childAccesses));
   top.translation =
-    {- Translation of one(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
-         case a.s, c.s of
-         | just(a_s), _ -> just(prod(a_s, b, c))
-         | _, just(c_s) -> just(prod(a, b, c_s))
-         | _, _ -> nothing()
-         end
-       Could also be implemented as
-         orElse(
-           bindMaybe(a.s, \ a_s::Foo -> returnMaybe(prod(a_s, b, c))),
-           bindMaybe(c.s, \ c_s::Bar -> returnMaybe(prod(a, b, c_s)))  -}
-    caseExpr(
-      map(
-        \ a::String -> Silver_Expr { $name{a}.$name{sName} },
-        matchingChildren),
-      map(
-        \ i::Integer ->
-          let childI::String = head(drop(i, matchingChildren))
-          in let childIndex::Integer = positionOf(stringEq, childI, map(fst, childAccesses))
-          in 
-            matchRule(
-              map(
-                \ p::Pattern -> decorate p with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; },
-                repeat(wildcPattern('_', location=top.location), i) ++
-                Silver_Pattern { core:just($name{childI ++ "_" ++ sBaseName}) } ::
-                repeat(wildcPattern('_', location=top.location), length(matchingChildren) - (i + 1))),
-              nothing(),
-              Silver_Expr {
-                core:just(
-                  $Expr{
-                    mkFullFunctionInvocation(
-                      top.location,
-                      baseExpr(qName(top.location, top.frame.fullName), location=top.location),
-                      map(
-                        \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
-                        take(childIndex, childAccesses)) ++
-                      Silver_Expr { $name{childI ++ "_" ++ sBaseName} } ::
-                      map(
-                        \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
-                        drop(childIndex + 1, childAccesses)),
-                      map(
-                        makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
-                        top.frame.signature.namedInputElements))})
-              },
-              location=top.location)
-          end end,
-          range(0, length(matchingChildren))),
-      Silver_Expr { core:nothing() },
-      nonterminalType("core:Maybe", [top.frame.signature.outputElement.typerep]),
-      location=top.location);
+     case s of
+     | functorRef(attr) when !null(matchingChildren) ->
+       Silver_Expr {
+         core:just(
+           $Expr{
+             mkFullFunctionInvocation(
+               top.location,
+               baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+               map(
+                 \ a::Pair<String Boolean> ->
+                   if a.fst == head(matchingChildren)
+                   then Silver_Expr { $name{a.fst}.$QNameAttrOccur{attr} }
+                   else Silver_Expr { $name{a.fst} },
+                 childAccesses),
+               map(
+                 makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                 top.frame.signature.namedInputElements))})
+       }
+     | functorRef(_) -> Silver_Expr { core:nothing() }
+     | _ ->
+      {- Translation of one(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
+           case a.s, c.s of
+           | just(a_s), _ -> just(prod(a_s, b, c))
+           | _, just(c_s) -> just(prod(a, b, c_s))
+           | _, _ -> nothing()
+           end
+         Could also be implemented as
+           orElse(
+             bindMaybe(a.s, \ a_s::Foo -> returnMaybe(prod(a_s, b, c))),
+             bindMaybe(c.s, \ c_s::Bar -> returnMaybe(prod(a, b, c_s)))  -}
+      caseExpr(
+        map(
+          \ a::String -> Silver_Expr { $name{a}.$name{sName} },
+          matchingChildren),
+        map(
+          \ i::Integer ->
+            let childI::String = head(drop(i, matchingChildren))
+            in let childIndex::Integer = positionOf(stringEq, childI, map(fst, childAccesses))
+            in 
+              matchRule(
+                map(
+                  \ p::Pattern -> decorate p with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; },
+                  repeat(wildcPattern('_', location=top.location), i) ++
+                  Silver_Pattern { core:just($name{childI ++ "_" ++ sBaseName}) } ::
+                  repeat(wildcPattern('_', location=top.location), length(matchingChildren) - (i + 1))),
+                nothing(),
+                Silver_Expr {
+                  core:just(
+                    $Expr{
+                      mkFullFunctionInvocation(
+                        top.location,
+                        baseExpr(qName(top.location, top.frame.fullName), location=top.location),
+                        map(
+                          \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
+                          take(childIndex, childAccesses)) ++
+                        Silver_Expr { $name{childI ++ "_" ++ sBaseName} } ::
+                        map(
+                          \ a::Pair<String Boolean> -> Silver_Expr { $name{a.fst} },
+                          drop(childIndex + 1, childAccesses)),
+                        map(
+                          makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
+                          top.frame.signature.namedInputElements))})
+                },
+                location=top.location)
+            end end,
+            range(0, length(matchingChildren))),
+        Silver_Expr { core:nothing() },
+        nonterminalType("core:Maybe", [top.frame.signature.outputElement.typerep]),
+        location=top.location)
+      end;
 }
 
 abstract production prodTraversal
@@ -451,7 +491,7 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
   s.givenInputElements = prod.lookupValue.dcl.namedSignature.inputElements;
   
   -- pair(child name, if attr occurs on child then just(attr name) else nothing())
-  local childAccesses::[Pair<String Maybe<String>>] =
+  local childAccesses::[Pair<String Maybe<Pair<Boolean String>>>] =
     zipWith(pair, top.frame.signature.inputNames, s.attrRefNames);
   top.translation =
     if prod.lookupValue.fullName == top.frame.fullName
@@ -464,17 +504,20 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
          Could also be implemented as chained monadic binds.  Maybe more efficient this way? -}
       caseExpr(
         flatMap(
-          \ a::Pair<String Maybe<String>> ->
-            case a.snd of just(attr) -> [Silver_Expr { $name{a.fst}.$name{attr} }] | nothing() -> [] end,
+          \ a::Pair<String Maybe<Pair<Boolean String>>> ->
+            case a.snd of
+            | just(pair(false, attr)) -> [Silver_Expr { $name{a.fst}.$name{attr} }]
+            | _ -> []
+            end,
           childAccesses),
         [matchRule(
            flatMap(
-             \ a::Pair<String Maybe<String>> ->
+             \ a::Pair<String Maybe<Pair<Boolean String>>> ->
                case a.snd of
-               | just(attr) ->
+               | just(pair(false, attr)) ->
                  [decorate Silver_Pattern { core:just($name{a.fst ++ "_" ++ last(explode(":", attr))}) }
                   with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
-               | nothing() -> []
+               | _ -> []
                end,
              childAccesses),
            nothing(),
@@ -485,9 +528,10 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
                    top.location,
                    baseExpr(qName(top.location, top.frame.fullName), location=top.location),
                    map(
-                     \ a::Pair<String Maybe<String>> ->
+                     \ a::Pair<String Maybe<Pair<Boolean String>>> ->
                        case a.snd of
-                       | just(attr) -> Silver_Expr { $name{a.fst ++ "_" ++ last(explode(":", attr))} }
+                       | just(pair(true, attr)) -> Silver_Expr { $name{a.fst}.$name{attr} }
+                       | just(pair(false, attr)) -> Silver_Expr { $name{a.fst ++ "_" ++ last(explode(":", attr))} }
                        | nothing() -> Silver_Expr { $name{a.fst} }
                        end,
                      childAccesses),
@@ -506,13 +550,6 @@ abstract production consStrategyExpr
 top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
 {
   top.unparse = s"${h.unparse}, ${t.unparse}";
-  
-  top.errors <-
-     case h of
-     -- TBH this doesn't seem very useful anyway
-     | functorRef(_) -> [err(h.location, "Functor attributes as arguments to production traversals are not yet supported")]
-     | _ -> []
-     end;
    
   top.liftedStrategies :=
     -- Slight hack: when h is id (common case for prod traversals), there is no need for a new attribute.
@@ -526,7 +563,10 @@ top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
   local hType::Type = head(top.givenInputElements).typerep;
   local attr::String = fromMaybe(h.genName, h.attrRefName);
   local attrMatch::Boolean = attrMatchesFrame(top.env, attr, hType);
-  top.attrRefNames = (if attrMatch && !h.isId then just(attr) else nothing()) :: t.attrRefNames;
+  top.attrRefNames =
+   (if attrMatch && !h.isId
+   then just(pair(case h of functorRef(_) -> true | _ -> false end, attr))
+   else nothing()) :: t.attrRefNames;
   top.errors <-
     if !null(top.givenInputElements) && !attrMatch && !h.isId
     then [wrn(h.location, s"This (non-identity) strategy attribute does not occur on ${prettyType(hType)} and will be treated as identity")]
