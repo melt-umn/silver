@@ -14,6 +14,8 @@ nonterminal ExprInh with
 nonterminal ExprLHSExpr with
   config, grammarName, env, location, unparse, errors, name, typerep, decoratingnt, suppliedInhs;
 
+propagate errors on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+
 {--
  - The nonterminal being decorated. (Used for 'decorate with {}')
  -}
@@ -25,18 +27,18 @@ synthesized attribute suppliedInhs :: [String];
 {--
  - A list of decorated expressions from an Exprs.
  -}
-synthesized attribute exprs :: [Decorated Expr];
+monoid attribute exprs :: [Decorated Expr] with [], ++;
 {--
  - Get each individual Expr, without decorating them.
  -}
-synthesized attribute rawExprs :: [Expr];
+monoid attribute rawExprs :: [Expr] with [], ++;
 
 
 abstract production errorExpr
 top::Expr ::= e::[Message]
 {
   top.unparse = s"{- Errors:\n${messagesToString(e)} -}";
-  top.errors := e;
+  top.errors <- e;
   top.typerep = errorType();
 }
 
@@ -63,7 +65,7 @@ top::Expr ::= msg::[Message]  q::Decorated QName
 {
   top.unparse = q.unparse;
   
-  top.errors := msg;
+  top.errors <- msg;
   top.typerep = errorType();
 }
 
@@ -73,7 +75,6 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
   
-  top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable
                 then ntOrDecType(q.lookupValue.typerep, freshType())
                 else q.lookupValue.typerep;
@@ -84,7 +85,6 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
   
-  top.errors := [];
   -- An LHS is *always* a decorable (nonterminal) type.
   top.typerep = ntOrDecType(q.lookupValue.typerep, freshType());
 }
@@ -94,7 +94,6 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
   
-  top.errors := [];
   top.typerep = if q.lookupValue.typerep.isDecorable
                 then ntOrDecType(q.lookupValue.typerep, freshType())
                 else q.lookupValue.typerep;
@@ -105,7 +104,6 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
   
-  top.errors := [];
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
   top.typerep = ntOrDecType(q.lookupValue.typerep, freshType());
 }
@@ -118,8 +116,6 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
 
-  top.errors := [];
-
   -- TODO: the freshening should probably be the responsibility of the thing in the environment, not here?
   top.typerep = freshenCompletely(q.lookupValue.typerep);
 }
@@ -129,8 +125,6 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
 
-  top.errors := [];
-
   top.typerep = freshenCompletely(q.lookupValue.typerep); -- TODO see above
 }
 
@@ -138,8 +132,6 @@ abstract production globalValueReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
-
-  top.errors := [];
 
   top.typerep = freshenCompletely(q.lookupValue.typerep); -- TODO see above
 }
@@ -186,11 +178,11 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
   
-  top.errors := e.errors ++
-    (if e.typerep.isError then [] else  
-    [err(top.location, e.unparse ++ " has type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++
-      " and cannot be invoked as a function.")]) ++
-    es.errors ++ anns.errors;
+  top.errors <- e.errors;
+  top.errors <-
+    if e.typerep.isError then [] else  
+      [err(top.location, e.unparse ++ " has type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++
+        " and cannot be invoked as a function.")];
         -- TODO This error message is cumbersomely generated...
 
   top.typerep = errorType();
@@ -234,7 +226,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
   
-  top.errors := e.errors ++ es.errors ++ anns.errors;
+  top.errors <- e.errors ++ es.errors ++ anns.errors;
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
 
@@ -246,7 +238,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
   
-  top.errors := e.errors ++ es.errors ++ anns.errors;
+  top.errors <- e.errors ++ es.errors ++ anns.errors;
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
 
@@ -265,7 +257,7 @@ top::Expr ::= '(' '.' q::QName ')'
   local rawInputType :: Type = freshType();
   top.typerep = functionType(freshenCompletely(q.lookupAttribute.typerep), [rawInputType], []);
   
-  top.errors := q.lookupAttribute.errors;
+  top.errors <- q.lookupAttribute.errors;
   
   top.errors <- if null(q.lookupAttribute.dclBoundVars) then []
                 else [err(q.location, "Attribute " ++ q.name ++ " is parameterized, and attribute sections currently do not work with parameterized attributes, yet.")]; -- TODO The type inference system is too weak, currently.
@@ -292,7 +284,6 @@ concrete production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
 {
   top.unparse = e.unparse ++ ".forward";
-  top.errors := e.errors;
   top.typerep = e.typerep;
 }
 
@@ -323,9 +314,9 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = errorType();
-  top.errors := accessError ++ q.errors;
+  top.errors <- q.errors;
   
-  local accessError :: [Message] =
+  top.errors <-
     if e.typerep.isError then [] else
       let ref :: String =
             if length(e.unparse) < 12 then "'" ++ e.unparse ++ "' has" else "LHS of '.' is"
@@ -343,7 +334,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 
   top.typerep = q.typerep;
   
-  top.errors := q.errors;
+  top.errors <- q.errors;
 }
 
 abstract production terminalAccessHandler
@@ -353,7 +344,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   
   -- NO use of q.errors, as that become nonsensical here.
   
-  top.errors :=
+  top.errors <-
     if q.name == "lexeme" || q.name == "location" || 
        q.name == "filename" || q.name == "line" || q.name == "column"
     then []
@@ -434,7 +425,6 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = q.typerep;
-  top.errors := []; -- already included?
 }
 
 abstract production inhDecoratedAccessHandler
@@ -443,7 +433,6 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = q.typerep;
-  top.errors := []; -- already included?
 }
 
 -- TODO: change name. really "unknownDclAccessHandler"
@@ -451,8 +440,6 @@ abstract production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-
-  top.errors := []; -- empty because we only ever get here if lookup failed. see above.
 
   top.typerep = errorType();
 }
@@ -472,7 +459,6 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.unparse = "decorate " ++ e.unparse ++ " with {" ++ inh.unparse ++ "}";
 
   top.typerep = decoratedType(performSubstitution(e.typerep, e.upSubst)); -- .decoratedForm?
-  top.errors := e.errors ++ inh.errors;
   
   inh.decoratingnt = performSubstitution(e.typerep, e.upSubst);
 }
@@ -482,7 +468,6 @@ top::ExprInhs ::=
 {
   top.unparse = "";
   
-  top.errors := [];
   top.suppliedInhs = [];
 }
 
@@ -491,7 +476,6 @@ top::ExprInhs ::= lhs::ExprInh
 {
   top.unparse = lhs.unparse;
   
-  top.errors := lhs.errors;
   top.suppliedInhs = lhs.suppliedInhs;
 }
 
@@ -500,7 +484,6 @@ top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
 {
   top.unparse = lhs.unparse ++ " " ++ inh.unparse;
   
-  top.errors := lhs.errors ++ inh.errors;
   top.suppliedInhs = lhs.suppliedInhs ++ inh.suppliedInhs;
 }
 
@@ -509,7 +492,6 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 {
   top.unparse = lhs.unparse ++ " = " ++ e.unparse ++ ";";
   
-  top.errors := lhs.errors ++ e.errors;
   top.suppliedInhs = lhs.suppliedInhs;
 }
 
@@ -519,7 +501,6 @@ top::ExprLHSExpr ::= q::QNameAttrOccur
   top.name = q.name;
   top.unparse = q.unparse;
 
-  top.errors := q.errors;
   top.typerep = q.typerep;
   top.suppliedInhs = [q.dcl.attrOccurring];
   
@@ -531,7 +512,6 @@ top::Expr ::= 'true'
 {
   top.unparse = "true";
   
-  top.errors := [];
   top.typerep = boolType();
 }
 
@@ -540,7 +520,6 @@ top::Expr ::= 'false'
 {
   top.unparse = "false";
   
-  top.errors := [];
   top.typerep = boolType();
 }
 
@@ -549,7 +528,6 @@ top::Expr ::= e1::Expr '&&' e2::Expr
 {
   top.unparse = e1.unparse ++ " && " ++ e2.unparse;
 
-  top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
 }
 
@@ -558,7 +536,6 @@ top::Expr ::= e1::Expr '||' e2::Expr
 {
   top.unparse = e1.unparse ++ " || " ++ e2.unparse;
 
-  top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
 }
 
@@ -568,7 +545,6 @@ top::Expr ::= '!' e::Expr
   top.unparse = "! " ++ e.unparse;
 
   top.typerep = boolType();
-  top.errors := e.errors;
 }
 
 concrete production gt
@@ -576,7 +552,6 @@ top::Expr ::= e1::Expr '>' e2::Expr
 {
   top.unparse = e1.unparse ++ " > " ++ e2.unparse;
 
-  top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
 }
 
@@ -585,7 +560,6 @@ top::Expr ::= e1::Expr '<' e2::Expr
 {
   top.unparse = e1.unparse ++ " < " ++ e2.unparse;
 
-  top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
 }
 
@@ -594,7 +568,6 @@ top::Expr ::= e1::Expr '>=' e2::Expr
 {
   top.unparse = e1.unparse ++ " >= " ++ e2.unparse;
 
-  top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
 }
 
@@ -603,7 +576,6 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 {
   top.unparse = e1.unparse ++ " <= " ++ e2.unparse;
 
-  top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
 }
 
@@ -612,7 +584,6 @@ top::Expr ::= e1::Expr '==' e2::Expr
 {
   top.unparse = e1.unparse ++ " == " ++ e2.unparse;
 
-  top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
 }
 
@@ -621,7 +592,6 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 {
   top.unparse = e1.unparse ++ " != " ++ e2.unparse;
 
-  top.errors := e1.errors ++ e2.errors;
   top.typerep = boolType();
 }
 
@@ -631,7 +601,6 @@ precedence = 0
 {
   top.unparse = "if " ++ e1.unparse ++ " then " ++ e2.unparse ++ " else " ++ e3.unparse;
 
-  top.errors := e1.errors ++ e2.errors ++ e3.errors;
   top.typerep = e2.typerep;
 }
 
@@ -640,7 +609,6 @@ top::Expr ::= i::Int_t
 {
   top.unparse = i.lexeme;
 
-  top.errors := [];
   top.typerep = intType();
 }
 
@@ -649,7 +617,6 @@ top::Expr ::= f::Float_t
 {
   top.unparse = f.lexeme;
 
-  top.errors := [];
   top.typerep = floatType();
 } 
 
@@ -658,7 +625,6 @@ top::Expr ::= e1::Expr '+' e2::Expr
 {
   top.unparse = e1.unparse ++ " + " ++ e2.unparse;
 
-  top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
 }
 
@@ -667,7 +633,6 @@ top::Expr ::= e1::Expr '-' e2::Expr
 {
   top.unparse = e1.unparse ++ " - " ++ e2.unparse;
 
-  top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
 }
 
@@ -676,7 +641,6 @@ top::Expr ::= e1::Expr '*' e2::Expr
 {
   top.unparse = e1.unparse ++ " * " ++ e2.unparse;
 
-  top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
 }
 
@@ -685,7 +649,6 @@ top::Expr ::= e1::Expr '/' e2::Expr
 {
   top.unparse = e1.unparse ++ " / " ++ e2.unparse;
 
-  top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
 }
 
@@ -694,7 +657,6 @@ top::Expr ::= e1::Expr '%' e2::Expr
 {
   top.unparse = e1.unparse ++ " % " ++ e2.unparse;
 
-  top.errors := e1.errors ++ e2.errors;
   top.typerep = e1.typerep;
 }
 
@@ -704,7 +666,6 @@ precedence = 13
 {
   top.unparse = "- " ++ e.unparse;
 
-  top.errors := e.errors;
   top.typerep = e.typerep;
 }
 
@@ -713,7 +674,6 @@ top::Expr ::= s::String_t
 {
   top.unparse = s.lexeme;
 
-  top.errors := [];
   top.typerep = stringType();
 }
 
@@ -722,7 +682,8 @@ top::Expr ::= e1::Expr '++' e2::Expr
 {
   top.unparse = e1.unparse ++ " ++ " ++ e2.unparse;
 
-  top.errors := e1.errors ++ e2.errors ++ forward.errors;
+  propagate errors;
+  top.errors <- forward.errors;
   top.typerep = if errCheck1.typeerror then errorType() else result_type;
 
   local result_type :: Type = performSubstitution(e1.typerep, errCheck1.upSubst);
@@ -750,7 +711,6 @@ top::Expr ::= e1::Decorated Expr   e2::Decorated Expr
 {
   top.unparse = e1.unparse ++ " ++ " ++ e2.unparse;
 
-  top.errors := [];
   top.typerep = stringType();
 }
 
@@ -761,7 +721,7 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 
   local result_type :: Type = performSubstitution(e1.typerep, top.downSubst);
 
-  top.errors :=
+  top.errors <-
     if result_type.isError then []
     else [err(e1.location, prettyType(result_type) ++ " is not a concatenable type.")];
   top.typerep = errorType();
@@ -775,27 +735,24 @@ top::Exprs ::=
 {
   top.unparse = "";
   
-  top.errors := [];
-  top.exprs = [];
-  top.rawExprs = [];
+  top.exprs := [];
+  top.rawExprs := [];
 }
 concrete production exprsSingle
 top::Exprs ::= e::Expr
 {
   top.unparse = e.unparse;
 
-  top.errors := e.errors;
-  top.exprs = [e];
-  top.rawExprs = [e];
+  top.exprs := [e];
+  top.rawExprs := [e];
 }
 concrete production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
   top.unparse = e1.unparse ++ ", " ++ e2.unparse;
 
-  top.errors := e1.errors ++ e2.errors;
-  top.exprs = [e1] ++ e2.exprs;
-  top.rawExprs = [e1] ++ e2.rawExprs;
+  top.exprs := [e1] ++ e2.exprs;
+  top.rawExprs := [e1] ++ e2.rawExprs;
 }
 
 
@@ -810,6 +767,9 @@ nonterminal AppExprs with
 nonterminal AppExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied;
+
+propagate errors on AppExprs, AppExpr;
+propagate exprs, rawExprs on AppExprs;
 
 synthesized attribute isPartial :: Boolean;
 synthesized attribute missingTypereps :: [Type];
@@ -829,11 +789,9 @@ top::AppExpr ::= '_'
   top.isPartial = true;
   top.missingTypereps = [top.appExprTyperep];
   
-  top.rawExprs = [];
-  top.exprs = [];
+  top.rawExprs := [];
+  top.exprs := [];
   top.appExprIndicies = [];
-  
-  top.errors := [];
 }
 concrete production presentAppExpr
 top::AppExpr ::= e::Expr
@@ -843,11 +801,9 @@ top::AppExpr ::= e::Expr
   top.isPartial = false;
   top.missingTypereps = [];
   
-  top.rawExprs = [e];
-  top.exprs = [e];
+  top.rawExprs := [e];
+  top.exprs := [e];
   top.appExprIndicies = [top.appExprIndex];
-  
-  top.errors := e.errors;
 }
 
 concrete production snocAppExprs
@@ -858,11 +814,8 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
   top.isPartial = es.isPartial || e.isPartial;
   top.missingTypereps = es.missingTypereps ++ e.missingTypereps;
 
-  top.rawExprs = es.rawExprs ++ e.rawExprs;
-  top.exprs = es.exprs ++ e.exprs;
   top.appExprIndicies = es.appExprIndicies ++ e.appExprIndicies;
 
-  top.errors := es.errors ++ e.errors;
   top.appExprSize = es.appExprSize + 1;
 
   e.appExprIndex = es.appExprSize;
@@ -880,16 +833,13 @@ top::AppExprs ::= e::AppExpr
   top.isPartial = e.isPartial;
   top.missingTypereps = e.missingTypereps;
 
-  top.rawExprs = e.rawExprs;
-  top.exprs = e.exprs;
   top.appExprIndicies = e.appExprIndicies;
   
-  top.errors := if null(top.appExprTypereps)
+  top.errors <- if null(top.appExprTypereps)
                 then [err(top.location, "Too many arguments provided to function '" ++ top.appExprApplied ++ "'")]
                 else if length(top.appExprTypereps) > 1
                 then [err(top.location, "Too few arguments provided to function '" ++ top.appExprApplied ++ "'")]
                 else [];
-  top.errors <- e.errors;
   top.appExprSize = 1;
 
   e.appExprIndex = 0;
@@ -905,14 +855,12 @@ top::AppExprs ::=
   top.isPartial = false;
   top.missingTypereps = [];
 
-  top.rawExprs = [];
-  top.exprs = [];
   top.appExprIndicies = [];
   top.appExprSize = 0;
 
   -- Assumption: We only get here when we're looking at ()
   -- i.e. we can't ever have 'too many' provided error
-  top.errors := if null(top.appExprTypereps) then []
+  top.errors <- if null(top.appExprTypereps) then []
                 else [err(top.location, "Too few arguments provided to function '" ++ top.appExprApplied ++ "'")];
 }
 
@@ -927,6 +875,8 @@ nonterminal AnnoExpr with
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
   missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied;
+  
+propagate errors, exprs on AnnoAppExprs, AnnoExpr;
 
 {--
  - Annotations that have not yet been supplied
@@ -964,12 +914,10 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
   top.missingAnnotations = fq.snd; -- minus qn, if it was there
   top.partialAnnoTypereps = e.missingTypereps;
   
-  top.errors :=
-    (if fq.fst.isJust then []
-     else [err(qn.location, "Named parameter '" ++ qn.name ++ "' is not appropriate for '" ++ top.appExprApplied ++ "'")]) ++
-    e.errors;
+  top.errors <-
+    if fq.fst.isJust then []
+    else [err(qn.location, "Named parameter '" ++ qn.name ++ "' is not appropriate for '" ++ top.appExprApplied ++ "'")];
   top.isPartial = e.isPartial;
-  top.exprs = e.exprs;
   top.annoIndexConverted =
     if e.isPartial then [e.appExprIndex] else [];
   top.annoIndexSupplied =
@@ -982,7 +930,6 @@ top::AnnoAppExprs ::= es::AnnoAppExprs ',' e::AnnoExpr
   top.unparse = es.unparse ++ ", " ++ e.unparse;
 
   top.isPartial = es.isPartial || e.isPartial;
-  top.errors := es.errors ++ e.errors;
 
   e.remainingFuncAnnotations = top.remainingFuncAnnotations;
   es.remainingFuncAnnotations = e.missingAnnotations;
@@ -991,7 +938,6 @@ top::AnnoAppExprs ::= es::AnnoAppExprs ',' e::AnnoExpr
   top.partialAnnoTypereps = es.partialAnnoTypereps ++ e.partialAnnoTypereps;
   top.annoIndexConverted = es.annoIndexConverted ++ e.annoIndexConverted;
   top.annoIndexSupplied = es.annoIndexSupplied ++ e.annoIndexSupplied;
-  top.exprs = es.exprs ++ e.exprs;
 }
 
 concrete production oneAnnoAppExprs
@@ -1000,7 +946,7 @@ top::AnnoAppExprs ::= e::AnnoExpr
   top.unparse = e.unparse;
 
   top.isPartial = e.isPartial;
-  top.errors :=
+  top.errors <-
     if null(top.missingAnnotations) then []
     else [err(top.location, "Missing named parameters for function '" ++ top.appExprApplied ++ "': "
       ++ implode(", ", map((.argName), top.missingAnnotations)))];
@@ -1013,7 +959,6 @@ top::AnnoAppExprs ::= e::AnnoExpr
   top.partialAnnoTypereps = e.partialAnnoTypereps;
   top.annoIndexConverted = e.annoIndexConverted;
   top.annoIndexSupplied = e.annoIndexSupplied;
-  top.exprs = e.exprs;
 }
 
 abstract production emptyAnnoAppExprs
@@ -1022,7 +967,7 @@ top::AnnoAppExprs ::=
   top.unparse = "";
 
   top.isPartial = false;
-  top.errors :=
+  top.errors <-
     if null(top.missingAnnotations) then []
     else [err(top.location, "Missing named parameters for function '" ++ top.appExprApplied ++ "': "
       ++ implode(", ", map((.argName), top.missingAnnotations)))];
@@ -1032,7 +977,6 @@ top::AnnoAppExprs ::=
   top.partialAnnoTypereps = [];
   top.annoIndexConverted = [];
   top.annoIndexSupplied = [];
-  top.exprs = [];
 }
 
 function reorderedAnnoAppExprs
@@ -1126,7 +1070,6 @@ top::Expr ::= e::Decorated Expr
   top.unparse = e.unparse;
 
   -- See the major restriction. This should have been checked for error already!
-  top.errors := [];
   top.typerep = e.typerep;
   
   -- TODO: one of the little things we might want is to make this transparent to

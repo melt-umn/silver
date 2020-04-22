@@ -16,9 +16,9 @@ top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ParserComp
 {
   top.unparse = "";
   
-  top.errors := orig.lookupValue.errors ++ m.errors;
+  propagate errors, moduleNames;
   
-  top.moduleNames = m.moduleNames;
+  top.errors <- orig.lookupValue.errors;
   
   local spec :: [ParserSpec] = 
     if !orig.lookupValue.found then []

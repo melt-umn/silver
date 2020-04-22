@@ -8,7 +8,7 @@ top::ProductionModifier ::= 'layout' '{' terms::TermList '}'
 {
   top.unparse = "layout {" ++ terms.unparse ++ "}";
 
-  top.productionModifiers = [prodLayout(terms.termList)];
+  top.productionModifiers := [prodLayout(terms.termList)];
   top.errors := terms.errors;
 }
 
@@ -17,7 +17,7 @@ top::ProductionModifier ::= 'layout' '{' '}'
 {
   top.unparse = "layout {}";
 
-  top.productionModifiers = [prodLayout([])];
+  top.productionModifiers := [prodLayout([])];
   top.errors := [];
 }
 
@@ -26,7 +26,7 @@ top::NonterminalModifier ::= 'layout' '{' terms::TermList '}'
 {
   top.unparse = "layout {" ++ terms.unparse ++ "}";
   
-  top.nonterminalModifiers = [ntLayout(terms.termList)];
+  top.nonterminalModifiers := [ntLayout(terms.termList)];
   top.errors := terms.errors;
 }
 
@@ -35,43 +35,31 @@ top::NonterminalModifier ::= 'layout' '{' '}'
 {
   top.unparse = "layout {}";
   
-  top.nonterminalModifiers = [ntLayout([])];
+  top.nonterminalModifiers := [ntLayout([])];
   top.errors := [];
 }
 
 attribute customLayout occurs on ParserComponents, ParserComponent;
 
-aspect production nilParserComponent
-top::ParserComponents ::=
-{
-  top.customLayout = nothing();
-}
-
-aspect production consParserComponent
-top::ParserComponents ::= c1::ParserComponent  c2::ParserComponents
-{
-  top.customLayout = orElse(c1.customLayout, c2.customLayout);
-}
+propagate customLayout on ParserComponents, ParserComponent;
 
 aspect default production
 top::ParserComponent ::=
 {
-  top.customLayout = nothing();
+  propagate customLayout;
 }
 
 concrete production parserComponentLayout
 top::ParserComponent ::= 'layout' '{' terms::TermList '}' ';'
 {
   top.unparse = "layout {" ++ terms.unparse ++ "};";
-  top.errors := terms.errors;
-  top.customLayout = just(terms.termList);
+  top.customLayout <- just(terms.termList);
 }
 
 concrete production parserComponentLayoutNone
 top::ParserComponent ::= 'layout' '{' '}' ';'
 {
   top.unparse = "layout {};";
-  top.errors := [];
-  top.customLayout = just([]);
+  top.customLayout <- just([]);
 }
 

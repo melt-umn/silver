@@ -19,6 +19,8 @@ nonterminal VarBinder with
   bindingType, bindingIndex, translation,
   finalSubst, flowProjections, bindingName, flowEnv, matchingAgainst;
 
+propagate errors, defs on VarBinders, VarBinder;
+
 --- Types of each child
 inherited attribute bindingTypes :: [Type];
 inherited attribute bindingType :: Type;
@@ -40,8 +42,6 @@ concrete production oneVarBinder
 top::VarBinders ::= v::VarBinder
 {
   top.unparse = v.unparse;
-  top.defs = v.defs;
-  top.errors := v.errors;
 
   top.translation = v.translation;
   top.varBinderCount = 1;
@@ -61,8 +61,6 @@ concrete production consVarBinder
 top::VarBinders ::= v::VarBinder ',' vs::VarBinders
 {
   top.unparse = v.unparse ++ ", " ++ vs.unparse;
-  top.defs = v.defs ++ vs.defs;
-  top.errors := v.errors ++ vs.errors;
 
   top.translation = v.translation ++ vs.translation;
   top.varBinderCount = 1 + vs.varBinderCount;
@@ -92,8 +90,6 @@ concrete production nilVarBinder
 top::VarBinders ::=
 {
   top.unparse = "";
-  top.defs = [];
-  top.errors := [];
   
   top.translation = "";
   top.varBinderCount = 0;
@@ -138,7 +134,7 @@ top::VarBinder ::= n::Name
     then depsForTakingRef(anonVertexType(fName), ty.typeName, top.flowEnv)
     else [];
 
-  top.defs = [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps)];
+  top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps)];
 
   -- finalSubst is not necessary, downSubst would work fine, but is not threaded through here.
   -- the point is that 'ty' for Pair<String Integer> would currently show Pair<a b>
@@ -159,7 +155,7 @@ top::VarBinder ::= n::Name
   
   -- We prevent this to prevent newbies from thinking patterns are "typecase"
   -- (Types have to be upper case)
-  top.errors := 
+  top.errors <-
     if !isUpper(substring(0,1,n.name)) then []
     else [err(top.location, "Pattern variables must start with a lower case letter")];
 
@@ -176,8 +172,6 @@ concrete production ignoreVarBinder
 top::VarBinder ::= '_'
 {
   top.unparse = "_";
-  top.defs = [];
-  top.errors := [];
   top.flowProjections = [];
   top.translation = "";
 }

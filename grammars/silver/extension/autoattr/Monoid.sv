@@ -16,7 +16,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   
   -- TODO: We want to define our own defs here but can't forward to defsAGDcl because collections define different translation.
   -- Not sure about the best way to refactor this.
-  top.defs =
+  top.defs :=
     [attrDef(defaultEnvItem(monoidDcl(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, e, q.operation)))];
 
   top.errors <- e.errors;
@@ -117,7 +117,7 @@ top::ProductionStmt ::= attr::Decorated QName
           inputsWithAttr));
 
   -- Construct an attribute def and call with the generated arguments
-  forwards to 
+  forwards to
     attrContainsBase(
       concreteDefLHS(topName, location=top.location),
       '.',

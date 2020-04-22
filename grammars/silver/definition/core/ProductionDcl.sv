@@ -8,6 +8,9 @@ nonterminal ProductionRHSElem with config, grammarName, env, location, unparse, 
 flowtype forward {env} on ProductionSignature, ProductionLHS, ProductionRHS;
 flowtype forward {deterministicCount, env} on ProductionRHSElem;
 
+propagate errors on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
+propagate defs on ProductionSignature, ProductionRHS;
+
 {--
  - Used to help give names to children, when names are omitted.
  -}
@@ -26,7 +29,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
 
-  top.defs = prodDef(top.grammarName, id.location, namedSig, length(body.uniqueSignificantExpression) > 0) ::
+  top.defs := prodDef(top.grammarName, id.location, namedSig, length(body.uniqueSignificantExpression) > 0) ::
     if null(body.productionAttributes) then []
     else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 
@@ -48,8 +51,6 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     if isLower(substring(0,1,id.name)) then []
     else [wrn(id.location, s"(future) ${id.name}: productions may be required to begin with a lower-case letter.")];
 
-  top.errors := ns.errors ++ body.errors;
-
   production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
 
@@ -68,9 +69,6 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
 {
   top.unparse = lhs.unparse ++ " ::= " ++ rhs.unparse;
 
-  top.defs = lhs.defs ++ rhs.defs;
-  top.errors := lhs.errors ++ rhs.errors;
-
   top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement, annotationsForNonterminal(lhs.outputElement.typerep, top.env));
 }
 
@@ -81,23 +79,18 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
 
   top.outputElement = namedSignatureElement(id.name, t.typerep);
 
-  top.defs = [lhsDef(top.grammarName, t.location, id.name, t.typerep)];
+  top.defs := [lhsDef(top.grammarName, t.location, id.name, t.typerep)];
 
   top.errors <-
     if length(getValueDclInScope(id.name, top.env)) > 1
     then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
-    else [];	
-
-  top.errors := t.errors;
+    else [];
 }
 
 concrete production productionRHSNil
 top::ProductionRHS ::=
 {
   top.unparse = "";
-
-  top.defs = [];
-  top.errors := [];
 
   top.inputElements = [];
 }
@@ -106,9 +99,6 @@ concrete production productionRHSCons
 top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 {
   top.unparse = h.unparse ++ " " ++ t.unparse;
-
-  top.defs = h.defs ++ t.defs;
-  top.errors := h.errors ++ t.errors;
 
   top.inputElements = h.inputElements ++ t.inputElements;
   h.deterministicCount = length(t.inputElements);
@@ -121,14 +111,12 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 
   top.inputElements = [namedSignatureElement(id.name, t.typerep)];
 
-  top.defs = [childDef(top.grammarName, t.location, id.name, t.typerep)];
+  top.defs := [childDef(top.grammarName, t.location, id.name, t.typerep)];
 
   top.errors <-
     if length(getValueDclInScope(id.name, top.env)) > 1 
     then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
-    else [];	
-
-  top.errors := t.errors;
+    else [];
 }
 
 concrete production productionRHSElemType

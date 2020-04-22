@@ -8,16 +8,13 @@ nonterminal AGDcl  with config, grammarName, env, location, unparse, errors, def
 
 flowtype forward {grammarName, env} on AGDcls, AGDcl;
 
+propagate errors, moduleNames, jarName on AGDcls, AGDcl;
+propagate defs, occursDefs on AGDcls;
+
 concrete production nilAGDcls
 top::AGDcls ::=
 {
   top.unparse = "";
-
-  top.defs = [];
-  top.occursDefs = [];
-  top.errors := [];
-  top.moduleNames = [];
-  top.jarName = nothing();
 }
 
 concrete production consAGDcls
@@ -25,11 +22,7 @@ top::AGDcls ::= h::AGDcl t::AGDcls
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
 
-  top.defs = h.defs ++ t.defs;
-  top.occursDefs = h.occursDefs ++ t.occursDefs;
-  top.errors := h.errors ++ t.errors ++ warnIfMultJarName(h.jarName, t.jarName, top.location);
-  top.moduleNames = h.moduleNames ++ t.moduleNames;
-  top.jarName = orElse(h.jarName, t.jarName);
+  top.errors <- warnIfMultJarName(h.jarName, t.jarName, top.location);
 }
 
 --------
@@ -43,23 +36,20 @@ abstract production emptyAGDcl
 top::AGDcl ::=
 {
   top.unparse = "";
-
-  top.errors := [];
 }
 
 abstract production errorAGDcl
 top::AGDcl ::= e::[Message]
 {
   top.unparse = s"{- Errors:\n${messagesToString(e)} -}";
-  top.errors := e;
+  top.errors <- e;
 }
 
 abstract production defsAGDcl
 top::AGDcl ::= d::[Def]
 {
   top.unparse = s"{- Defs:\n${hackUnparse(d)} -}";
-  top.errors := [];
-  top.defs = d;
+  top.defs := d;
 }
 
 {--
@@ -69,34 +59,22 @@ abstract production appendAGDcl
 top::AGDcl ::= h::AGDcl t::AGDcl
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
+  propagate defs, occursDefs;
 
-  top.defs = h.defs ++ t.defs;
-  top.occursDefs = h.occursDefs ++ t.occursDefs;
-  top.errors := h.errors ++ t.errors ++ warnIfMultJarName(h.jarName, t.jarName, top.location);
-  top.moduleNames = h.moduleNames ++ t.moduleNames;
-  top.jarName = orElse(h.jarName, t.jarName);
+  top.errors <- warnIfMultJarName(h.jarName, t.jarName, top.location);
 }
 
 abstract production jarNameDcl
 top::AGDcl ::= n::Name
 {
   top.unparse = "jarName " ++ n.unparse;
-  top.errors := [];
-  top.moduleNames = [];
-  top.defs = [];
-  top.occursDefs = [];
-  top.jarName = just(n.name);
+  top.jarName <- just(n.name);
 }
 
 aspect default production
 top::AGDcl ::=
 {
-  -- can't provide unparse or location!
-  top.moduleNames = [];
-  top.defs = [];
-  top.occursDefs = [];
-  top.jarName = nothing();
-  --top.errors := []; -- should never be omitted, really.
+  propagate moduleNames, defs, occursDefs, jarName;
 }
 
 function warnIfMultJarName

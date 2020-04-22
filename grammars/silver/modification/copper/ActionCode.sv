@@ -9,7 +9,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
 
-  top.syntaxAst = [
+  top.syntaxAst := [
     syntaxProduction(ns.namedSignature,
       foldr(consProductionMod, nilProductionMod(), 
         prodAction(acode.actionCode) :: pm.productionModifiers))];
@@ -42,8 +42,8 @@ concrete production actionCode_c
 top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 {
   top.unparse = "{\n" ++ stmts.unparse ++ "}\n";
-  top.defs = flatMap(hackTransformLocals, stmts.defs);
-  top.flowDefs = stmts.flowDefs;
+  top.defs := flatMap(hackTransformLocals, stmts.defs);
+  propagate flowDefs;
 
   top.actionCode = sflatMap(hacklocaldeclarations, stmts.defs) ++ stmts.translation;
 

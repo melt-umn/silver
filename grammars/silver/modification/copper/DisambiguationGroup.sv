@@ -23,6 +23,6 @@ top::AGDcl ::= 'disambiguate' terms::TermList acode::ActionCode_c
 
   acode.frame = disambiguationContext(myFlowGraph);
 
-  top.syntaxAst = [syntaxDisambiguationGroup(fName, terms.termList, false, acode.actionCode)];
+  top.syntaxAst := [syntaxDisambiguationGroup(fName, terms.termList, false, acode.actionCode)];
 }
 
