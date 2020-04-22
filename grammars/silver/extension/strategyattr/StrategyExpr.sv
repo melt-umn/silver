@@ -195,10 +195,10 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
         }
       | _, functorRef(attr2) ->
         Silver_Expr {
-          core:monad:bindMaybe(
-            $Expr{s1.translation},
+          core:mapMaybe(
             \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep, location=top.location)} ->
-              decorate res with { $ExprInhs{allInhs} }.$QNameAttrOccur{attr2})
+              decorate res with { $ExprInhs{allInhs} }.$QNameAttrOccur{attr2},
+            $Expr{s1.translation})
         }
       | _, _ ->
         Silver_Expr {
