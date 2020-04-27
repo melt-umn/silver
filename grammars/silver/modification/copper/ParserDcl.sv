@@ -36,15 +36,15 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
       []);
 
   production spec :: ParserSpec =
-    parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames, m.customLayout, m.terminalPrefixes, m.syntaxAst);
+    parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames, m.customLayout, m.terminalPrefixes, m.grammarTerminalPrefixes, m.syntaxAst);
   spec.compiledGrammars = top.compiledGrammars;
 
   top.parserSpecs := [spec]; -- Note that this is undecorated.
 }
 
-nonterminal ParserComponents with config, env, flowEnv, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, syntaxAst, genFiles;
+nonterminal ParserComponents with config, env, flowEnv, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
 
-propagate errors, moduleNames, terminalPrefixes, syntaxAst, genFiles on ParserComponents;
+propagate errors, moduleNames, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponents;
 
 concrete production nilParserComponent
 top::ParserComponents ::=
@@ -58,9 +58,9 @@ top::ParserComponents ::= c1::ParserComponent  c2::ParserComponents
   top.unparse = c1.unparse ++ ", " ++ c2.unparse;
 }
 
-closed nonterminal ParserComponent with config, env, flowEnv, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, syntaxAst, genFiles;
+closed nonterminal ParserComponent with config, env, flowEnv, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
 
-propagate errors, moduleNames, terminalPrefixes, syntaxAst, genFiles on ParserComponent;
+propagate errors, moduleNames, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponent;
 
 aspect default production
 top::ParserComponent ::=
@@ -79,9 +79,9 @@ top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
 autocopy attribute componentGrammarName::String;
 
 {-- Have special env built from just this parser component and the global env -}
-nonterminal ParserComponentModifiers with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, syntaxAst, genFiles;
+nonterminal ParserComponentModifiers with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
 
-propagate errors, terminalPrefixes, syntaxAst, genFiles on ParserComponentModifiers;
+propagate errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponentModifiers;
 
 concrete production nilParserComponentModifier
 top::ParserComponentModifiers ::=
@@ -95,9 +95,9 @@ top::ParserComponentModifiers ::= h::ParserComponentModifier t::ParserComponentM
   top.unparse = h.unparse ++ t.unparse;
 }
 
-nonterminal ParserComponentModifier with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, syntaxAst, genFiles;
+nonterminal ParserComponentModifier with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;
 
-propagate errors, terminalPrefixes, syntaxAst, genFiles on ParserComponentModifier;
+propagate errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles on ParserComponentModifier;
 
 aspect default production
 top::ParserComponentModifier ::=
