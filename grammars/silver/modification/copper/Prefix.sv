@@ -12,12 +12,16 @@ top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::Term
 {  
   top.unparse = "prefix " ++ ts.unparse ++ " with " ++ s.unparse;
   top.terminalPrefixes <- map(pair(_, s.terminalPrefix), ts.prefixItemNames);
+  top.grammarTerminalPrefixes <-
+    if ts.isAllMarking then [pair(top.componentGrammarName, s.terminalPrefix)] else [];
   s.prefixedTerminals = ts.prefixItemNames;
+  s.prefixedGrammars = if ts.isAllMarking then [top.componentGrammarName] else [];
 }
 
 autocopy attribute prefixedTerminals::[String];
+autocopy attribute prefixedGrammars::[String];
 synthesized attribute terminalPrefix::String;
-nonterminal TerminalPrefix with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, prefixedTerminals, location, unparse, errors, syntaxAst, genFiles, terminalPrefix;
+nonterminal TerminalPrefix with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, prefixedTerminals, prefixedGrammars, location, unparse, errors, syntaxAst, genFiles, terminalPrefix;
 
 propagate errors, syntaxAst, genFiles on TerminalPrefix;
 
@@ -67,23 +71,24 @@ top::TerminalPrefix ::= t::String_t
       -- Specify which terminals this prefix prefixes.  This is used to find the separator to
       -- append to the regex when normalizing the CST AST
       terminalModifierSingle(
-        terminalModifierUsePrefixSeperatorFor(top.prefixedTerminals, location=top.location),
+        terminalModifierUsePrefixSeperatorFor(top.prefixedTerminals, top.prefixedGrammars, location=top.location),
         location=top.location),
       location=top.location);
 }
 
 -- Needed when generating seperated terminal declarations, this is pretty useless otherwise so abstract only
 abstract production terminalModifierUsePrefixSeperatorFor
-top::TerminalModifier ::= terms::[String]
+top::TerminalModifier ::= terms::[String]  grams::[String]
 {
-  top.unparse = s"use prefix separator for {${implode(", ", terms)}}";
+  top.unparse = s"use prefix separator for {${implode(", ", terms)}} {${implode(", ", grams)}}";
 
-  top.terminalModifiers := [termUsePrefixSeperatorFor(terms)];
+  top.terminalModifiers := [termUsePrefixSeperatorFor(terms, grams)];
   top.errors := [];
 }
 
 synthesized attribute prefixItemNames::[String];
-nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, prefixItemNames;
+synthesized attribute isAllMarking::Boolean;
+nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, prefixItemNames, isAllMarking;
 
 propagate errors on TerminalPrefixItems;
 
@@ -92,6 +97,7 @@ top::TerminalPrefixItems ::= t::TerminalPrefixItem ',' ts::TerminalPrefixItems
 {
   top.unparse = ts.unparse ++ ", " ++ t.unparse;
   top.prefixItemNames = ts.prefixItemNames ++ t.prefixItemNames;
+  top.isAllMarking = ts.isAllMarking;
 }
 
 concrete production oneTerminalPrefixItem
@@ -99,6 +105,7 @@ top::TerminalPrefixItems ::= t::TerminalPrefixItem
 {
   top.unparse = t.unparse;
   top.prefixItemNames = t.prefixItemNames;
+  top.isAllMarking = false;
 }
 
 abstract production nilTerminalPrefixItem
@@ -106,34 +113,16 @@ top::TerminalPrefixItems ::=
 {
   top.unparse = "";
   top.prefixItemNames = [];
+  top.isAllMarking = false;
 }
 
 -- Empty list = prefix all marking terminals
-concrete production allTerminalPrefixItems
+concrete production allMarkingTerminalPrefixItems
 top::TerminalPrefixItems ::=
 {
-  -- TODO: Potentially missing marking terminals from conditionally exported grammars
-  production med :: ModuleExportedDefs =
-    moduleExportedDefs(top.location, top.compiledGrammars, top.grammarDependencies, [top.componentGrammarName], []);
-
-  local syntax::Syntax = foldr(consSyntax, nilSyntax(), med.syntaxAst);
-  syntax.containingGrammar = error("This shouldn't be needed...");
-  syntax.cstEnv = error("This shouldn't be needed...");
-  syntax.cstNTProds = error("This shouldn't be needed...");
-  syntax.classTerminals = error("This shouldn't be needed...");
-  syntax.parserAttributeAspects = error("This shouldn't be needed...");
-  syntax.layoutTerms = error("This shouldn't be needed...");
-  syntax.prefixesForTerminals = error("This shouldn't be needed...");
-  syntax.superClasses = error("This shouldn't be needed...");
-  syntax.subClasses = error("This shouldn't be needed...");
-
-  forwards to
-    foldr(
-      consTerminalPrefixItem(_, ',', _, location=top.location),
-      nilTerminalPrefixItem(location=top.location),
-      map(\ sd::Decorated SyntaxDcl ->
-        qNameTerminalPrefixItem(qName(top.location, sd.fullName), location=top.location),
-        syntax.allMarkingTerminals));
+  top.unparse = "all_marking"; -- Doesn't match cst but whatever
+  top.prefixItemNames = [];
+  top.isAllMarking = true;
 }
 
 nonterminal TerminalPrefixItem with config, env, grammarName, componentGrammarName, compiledGrammars, location, unparse, errors, prefixItemNames;
