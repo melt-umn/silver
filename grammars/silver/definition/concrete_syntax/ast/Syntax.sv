@@ -24,8 +24,8 @@ monoid attribute parserAttributeAspectContribs::[Pair<String String>] with [], +
 autocopy attribute parserAttributeAspects::EnvTree<String>;
 
 monoid attribute allTerminals :: [Decorated SyntaxDcl] with [], ++;
-monoid attribute allIgnoreTerminals :: [Decorated SyntaxDcl] with [], ++;
-monoid attribute allMarkingTerminals :: [Decorated SyntaxDcl] with [], ++;
+monoid attribute allIgnoreTerminals :: [String] with [], ++;
+monoid attribute allMarkingTerminals :: [String] with [], ++;
 monoid attribute allProductions :: [Decorated SyntaxDcl] with [], ++;
 monoid attribute allNonterminals :: [Decorated SyntaxDcl] with [], ++;
 monoid attribute disambiguationClasses :: [Decorated SyntaxDcl] with [], ++;
@@ -39,12 +39,13 @@ monoid attribute layoutContribs :: [Pair<String String>] with [], ++; -- prod/nt
 autocopy attribute layoutTerms::EnvTree<String>;
 
 autocopy attribute prefixesForTerminals :: EnvTree<String>;
+autocopy attribute componentGrammarMarkingTerminals :: EnvTree<[String]>;
 
 
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals;
 
 propagate cstDcls, cstErrors, cstProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs
   on Syntax;
@@ -64,7 +65,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals;
 
 synthesized attribute sortKey :: String;
 
@@ -134,8 +135,8 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   modifiers.terminalName = n;
 
   top.allTerminals := [top];
-  top.allIgnoreTerminals := if modifiers.ignored then [top] else [];
-  top.allMarkingTerminals := if modifiers.marking then [top] else [];
+  top.allIgnoreTerminals := if modifiers.ignored then [top.fullName] else [];
+  top.allMarkingTerminals := if modifiers.marking then [top.fullName] else [];
   top.classTerminalContribs := modifiers.classTerminalContribs;
 
   -- left(terminal name) or right(string prefix)

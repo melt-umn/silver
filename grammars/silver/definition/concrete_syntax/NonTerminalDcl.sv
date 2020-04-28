@@ -18,7 +18,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
   syntax.superClasses = error("This shouldn't be needed...");
   syntax.subClasses = error("This shouldn't be needed...");
   
-  local exportedLayoutTerms::[String] = map((.fullName), syntax.allIgnoreTerminals);
+  local exportedLayoutTerms::[String] = syntax.allIgnoreTerminals;
   local exportedProds::[String] = map((.fullName), syntax.allProductions);
   
   top.syntaxAst :=

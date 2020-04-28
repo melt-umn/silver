@@ -17,7 +17,7 @@ autocopy attribute terminalName :: String;
  - Modifiers for terminals.
  -}
 nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, classTerminalContribs, superClasses, subClasses, dominatesXML,
-  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
+  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply, componentGrammarMarkingTerminals,
   marking, terminalName, prettyName;
 
 propagate cstErrors, classTerminalContribs, dominatesXML,
@@ -44,7 +44,7 @@ top::SyntaxTerminalModifiers ::=
  - Modifiers for terminals.
  -}
 closed nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, classTerminalContribs, superClasses, subClasses, dominatesXML,
-  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
+  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply, componentGrammarMarkingTerminals,
   marking, terminalName, prettyName;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
@@ -178,13 +178,20 @@ top::SyntaxTerminalModifier ::= sep::String
   top.prefixSeperator := just(sep);
 }
 {--
- - The terminals prefixed by this terminal, for which to use their separator.
+ - The terminals/grammars prefixed by this terminal, for which to use their separator.
  -}
 abstract production termUsePrefixSeperatorFor
-top::SyntaxTerminalModifier ::= terms::[String]
+top::SyntaxTerminalModifier ::= terms::[String] grams::[String]
 {
-  production termRefs :: [[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
-  top.prefixSeperatorToApply := head(head(termRefs)).prefixSeperator;
+  production allTerms :: [String] = terms ++ concat(concat(lookupStrings(grams, top.componentGrammarMarkingTerminals)));
+
+  production termRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allTerms, top.cstEnv);
+  top.prefixSeperatorToApply :=
+    case termRefs of
+    | [] -> nothing()
+    | [ref] :: _ -> ref.prefixSeperator
+    | _ -> error("Lookup failure not caught during error checking")
+    end;
   
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
@@ -199,6 +206,13 @@ top::SyntaxTerminalModifier ::= terms::[String]
         then ["Terminal " ++ s.fullName ++ " does not define a prefix separator, and must use an explicit terminal to define a prefix."]
         else [],
       map(head, termRefs));
+  
+  {- TODO: This really should be some sort of warning, not an error, I think.
+  top.cstErrors <-
+    if null(allTerms)
+    then [top.terminalName ++ " does not prefix any terminals"]
+    else [];
+  -}
   
   local distinctSepTermRefs :: [Decorated SyntaxDcl] =
     nubBy(
