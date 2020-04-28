@@ -16,7 +16,7 @@ terminal AntiquoteStrategyQName_t '$strategyQName' lexer classes {Antiquote, Str
 concrete production quoteStrategyExpr
 top::Expr ::= 'Silver_StrategyExpr' '(' genName::Expr ')' '{' cst::StrategyExpr_c '}'
 {
-  top.unparse = s"Silver_StrategyExpr {${cst.unparse}}";
+  top.unparse = s"Silver_StrategyExpr (${genName.unparse}) {${cst.unparse}}";
   -- The meta-translation library directly translates all annotation values into
   -- static initialization code, however we want to specify genName at runtime.
   -- Solution: construct the term with "" as the base genName and translate it
