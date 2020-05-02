@@ -32,6 +32,7 @@ nonterminal PrimPattern with
 autocopy attribute scrutineeType :: Type;
 autocopy attribute returnType :: Type;
 
+propagate errors on PrimPatterns, PrimPattern;
 
 concrete production matchPrimitiveConcrete
 top::Expr ::= 'match' e::Expr 'return' t::TypeExpr 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
@@ -67,9 +68,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
   
+  propagate errors;
   top.typerep = t.typerep;
-  
-  top.errors := e.errors ++ t.errors ++ pr.errors ++ f.errors;
   
   {--
    - Invariant: if we were given an undecorated expression, it should have been
@@ -136,7 +136,6 @@ top::PrimPatterns ::= p::PrimPattern
 {
   top.unparse = p.unparse;
   
-  top.errors := p.errors;
   top.translation = p.translation;
   
   p.downSubst = top.downSubst;
@@ -149,7 +148,6 @@ top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
 {
   top.unparse = p.unparse ++ " | " ++ ps.unparse;
   
-  top.errors := p.errors ++ ps.errors;
   top.translation = p.translation ++ "\nelse " ++ ps.translation;
 
   p.downSubst = top.downSubst;
@@ -198,7 +196,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
     if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
     else [err(qn.location, qn.name ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
-  top.errors := qn.lookupValue.errors ++ ns.errors ++ chk ++ e.errors;
+  top.errors <- qn.lookupValue.errors;
 
   -- Turns the existential variables existential
   local prod_type :: Type =
@@ -246,7 +244,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
     if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
     else [err(qn.location, qn.name ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
-  top.errors := qn.lookupValue.errors ++ ns.errors ++ chk ++ e.errors;
+  top.errors <- qn.lookupValue.errors;
 
   local prod_type :: Type =
     fullySkolemizeProductionType(qn.lookupValue.typerep); -- that says FULLY. See the comments on that function.
@@ -298,8 +296,6 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
 {
   top.unparse = i.lexeme ++ " -> " ++ e.unparse;
   
-  top.errors := e.errors;
-  
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   
@@ -327,8 +323,6 @@ abstract production floatPattern
 top::PrimPattern ::= f::Float_t '->' e::Expr
 {
   top.unparse = f.lexeme ++ " -> " ++ e.unparse;
-  
-  top.errors := e.errors;
   
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
@@ -358,8 +352,6 @@ top::PrimPattern ::= i::String_t '->' e::Expr
 {
   top.unparse = i.lexeme ++ " -> " ++ e.unparse;
   
-  top.errors := e.errors;
-  
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   
@@ -387,8 +379,6 @@ abstract production booleanPattern
 top::PrimPattern ::= i::String '->' e::Expr
 {
   top.unparse = i ++ " -> " ++ e.unparse;
-  
-  top.errors := e.errors;
   
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
@@ -418,8 +408,6 @@ top::PrimPattern ::= e::Expr
 {
   top.unparse = "nil() -> " ++ e.unparse;
   
-  top.errors := e.errors;
-  
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   
@@ -447,8 +435,6 @@ abstract production conslstPattern
 top::PrimPattern ::= h::Name t::Name e::Expr
 {
   top.unparse = "cons(" ++ h.unparse ++ ", " ++ t.unparse ++ ") -> " ++ e.unparse;
-  
-  top.errors := e.errors;
 
   local h_fName :: String = toString(genInt()) ++ ":" ++ h.name;
   local t_fName :: String = toString(genInt()) ++ ":" ++ t.name;

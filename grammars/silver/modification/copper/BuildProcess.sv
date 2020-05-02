@@ -107,7 +107,7 @@ top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverG
   local join :: IO = if ex.iovalue then oldSpec.io else ex.io;
 
   local err :: IO = 
-    print("CST Errors while Generating Parser " ++ spec.fullName ++ ":\n" ++
+    print("CST errors while generating parser " ++ spec.fullName ++ ":\n" ++
       implode("\n", specCst.cstErrors) ++ "\n", join);
 
   local doUTD :: IO =
@@ -115,7 +115,7 @@ top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverG
   
   local doWR :: IO =
     writeFile(file, newSpec,
-      print("Generating Parser " ++ spec.fullName ++ ".\n",
+      print("Generating parser " ++ spec.fullName ++ ".\n",
         -- hack to ensure directory exists (for --dont-translate)
         mkdir(dir, join).io));
 

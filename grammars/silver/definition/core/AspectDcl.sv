@@ -17,13 +17,14 @@ flowtype forward {deterministicCount, realSignature, env} on AspectRHSElem;
  -}
 autocopy attribute realSignature :: [NamedSignatureElement];
 
+propagate errors on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS, AspectRHSElem;
 
 concrete production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
 {
   top.unparse = "aspect production " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
 
-  top.defs = 
+  top.defs := 
     if null(body.productionAttributes) then []
     else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 
@@ -36,7 +37,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 
   -- Making sure we're aspecting a production is taken care of by type checking.
 
-  top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
+  top.errors <- id.lookupValue.errors;
 
   production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
@@ -59,7 +60,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 {
   top.unparse = "aspect function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
 
-  top.defs = 
+  top.defs := 
     if null(body.productionAttributes) then []
     else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 
@@ -72,7 +73,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 
   -- Making sure we're aspecting a function is taken care of by type checking.
 
-  top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
+  top.errors <- id.lookupValue.errors;
 
   production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
@@ -95,8 +96,7 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 {
   top.unparse = lhs.unparse ++ " ::= " ++ rhs.unparse;
 
-  top.defs = lhs.defs ++ rhs.defs;
-  top.errors := lhs.errors ++ rhs.errors;
+  propagate defs;
 
   top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement, annotationsForNonterminal(lhs.outputElement.typerep, top.env));
 
@@ -144,9 +144,9 @@ top::AspectProductionLHS ::= id::Name t::Type
 
   top.outputElement = namedSignatureElement(id.name, t);
   
-  top.defs = [aliasedLhsDef(top.grammarName, id.location, fName, t, id.name)];
+  top.defs := [aliasedLhsDef(top.grammarName, id.location, fName, t, id.name)];
 
-  top.errors := if length(getValueDclInScope(id.name, top.env)) > 1
+  top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
                 then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
                 else [];
 }
@@ -156,8 +156,7 @@ top::AspectRHS ::=
 {
   top.unparse = "";
 
-  top.defs = [];
-  top.errors := [];
+  propagate defs;
   top.inputElements = [];
 }
 
@@ -166,8 +165,7 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 {
   top.unparse = h.unparse ++ " " ++ t.unparse;
 
-  top.defs = h.defs ++ t.defs;
-  top.errors := h.errors ++ t.errors;
+  propagate defs;
 
   top.inputElements = h.inputElements ++ t.inputElements;
 
@@ -225,9 +223,9 @@ top::AspectRHSElem ::= id::Name t::Type
 
   top.inputElements = [namedSignatureElement(id.name, t)];
 
-  top.defs = [aliasedChildDef(top.grammarName, id.location, fName, t, id.name)];
+  top.defs := [aliasedChildDef(top.grammarName, id.location, fName, t, id.name)];
 
-  top.errors := if length(getValueDclInScope(id.name, top.env)) > 1
+  top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
                 then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
                 else [];
 }
@@ -237,8 +235,7 @@ top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS
 {
   top.unparse = lhs.unparse ++ " ::= " ++ rhs.unparse;
 
-  top.defs = lhs.defs ++ rhs.defs;
-  top.errors := lhs.errors ++ rhs.errors;
+  propagate defs;
 
   -- For the moment, functions do not have named parameters (hence, [])
   top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement, []);
@@ -260,8 +257,5 @@ top::AspectFunctionLHS ::= t::TypeExpr
   top.outputElement = namedSignatureElement(fName, t.typerep);
   
   -- TODO: this needs thinking. is it broken? maybe __return? or wait, it's doing that automatically isnt it...
-  top.defs = [aliasedLhsDef(top.grammarName, t.location, fName, t.typerep, fName)];
-
-  top.errors := [];
+  top.defs := [aliasedLhsDef(top.grammarName, t.location, fName, t.typerep, fName)];
 }
-

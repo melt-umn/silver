@@ -38,5 +38,5 @@ synthesized attribute ast<a> :: a;
 {--
  - For accumulating error/warning messages over a syntax tree
  -}
-synthesized attribute errors :: [Message] with ++;
+monoid attribute errors :: [Message] with [], ++;
 

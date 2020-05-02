@@ -11,59 +11,58 @@ top::AGDcl ::= 'temp_imp_ide_font' id::Name 'color' '(' r::Int_t ',' g::Int_t ',
   top.unparse = "temp_imp_ide_font " ++ id.name ++ " color(" ++ r.lexeme ++ ", " ++ g.lexeme ++ ", " ++ b.lexeme ++ ")" ++ fontStyles.unparse ++ ";\n";
   
   production fName :: String = top.grammarName ++ ":" ++ id.name;
-
-  top.defs = [fontDef(top.grammarName, top.location, fName)];
   
   top.errors := if length(getFontDcl(fName, top.env)) > 1
                 then [err(id.location, "Font style '" ++ fName ++ "' is already bound.")]
                 else [];
 
-  top.syntaxAst = [syntaxFont(
+  -- TODO: Add a way to set this via forward
+  top.syntaxAst := [syntaxFont(
                    fName, 
                    font(makeColor(toInteger(r.lexeme),toInteger(g.lexeme),toInteger(b.lexeme)), 
                         fontStyles.isBold, 
                         fontStyles.isItalic)
 		  )];
 
-  -- TODO: this forward is bs
-  forwards to emptyAGDcl(location=top.location);
+  forwards to defsAGDcl([fontDef(top.grammarName, top.location, fName)], location=top.location);
 }
 
-nonterminal FontStyles with isBold, isItalic, unparse;
+monoid attribute isBold :: Boolean with false, ||;
+monoid attribute isItalic :: Boolean with false, ||;
 
-synthesized attribute isBold :: Boolean;
-synthesized attribute isItalic :: Boolean;
+nonterminal FontStyles with isBold, isItalic, unparse;
+propagate isBold, isItalic on FontStyles, FontStyle;
 
 concrete production consFontStylesDcl
 top::FontStyles ::= h::FontStyle t::FontStyles
 {
   top.unparse = h.unparse ++ t.unparse;
-  top.isBold = h.isBold || t.isBold;
-  top.isItalic = h.isItalic || t.isItalic;
 }
 concrete production nilFontStylesDcl
 top::FontStyles ::= 
 {
   top.unparse = "";
-  top.isBold = false;
-  top.isItalic = false;
 }
 
-nonterminal FontStyle with unparse, isBold, isItalic;
+closed nonterminal FontStyle with unparse, isBold, isItalic;
+
+aspect default production
+top::FontStyle ::=
+{
+  propagate isBold, isItalic;
+}
 
 concrete production fontStyleBoldDcl
 top::FontStyle ::= 'bold'
 {
   top.unparse = " bold";
-  top.isBold = true;
-  top.isItalic = false;
+  top.isBold <- true;
 }
 concrete production fontStyleItalicDcl
 top::FontStyle ::= 'italic'
 {
   top.unparse = " italic";
-  top.isBold = false;
-  top.isItalic = true;
+  top.isItalic <- true;
 }
 
 -- temp_imp_ide_font KeywordFont color(255,0,0) bold;

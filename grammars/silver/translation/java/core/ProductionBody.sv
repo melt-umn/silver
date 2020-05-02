@@ -9,28 +9,24 @@ attribute attrName occurs on ForwardLHSExpr;
 attribute setupInh, translation, valueWeaving occurs on ProductionBody, ProductionStmts, ProductionStmt;
 attribute           translation               occurs on DefLHS, ForwardInhs, ForwardInh;
 
+propagate setupInh, valueWeaving on ProductionBody, ProductionStmts;
+
 aspect production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
-  top.setupInh := stmts.setupInh;
   top.translation = stmts.translation;
-  top.valueWeaving := stmts.valueWeaving;
 }
 
 aspect production productionStmtsNil
 top::ProductionStmts ::= 
 {
-  top.setupInh := "";
   top.translation = "";
-  top.valueWeaving := "";
 }
 
 aspect production productionStmtsSnoc
 top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 {
-  top.setupInh := h.setupInh ++ t.setupInh;
   top.translation = h.translation ++ t.translation;
-  top.valueWeaving := h.valueWeaving ++ t.valueWeaving;
 }
 
 -------
@@ -38,17 +34,14 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 aspect production productionStmtAppend
 top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 {
-  top.setupInh := h.setupInh ++ t.setupInh;
+  propagate setupInh, valueWeaving;
   top.translation = h.translation ++ t.translation;
-  top.valueWeaving := h.valueWeaving ++ t.valueWeaving;
 }
 
 aspect production errorProductionStmt
 top::ProductionStmt ::= e::[Message]
 {
-  top.setupInh := "";
   top.translation = "";
-  top.valueWeaving := "";
 }
 
 --------------------------------------------------------------------------------
@@ -56,9 +49,8 @@ top::ProductionStmt ::= e::[Message]
 aspect default production
 top::ProductionStmt ::=
 {
-  top.setupInh := "";
-  -- require a translation.
-  top.valueWeaving := "";
+  -- Always require translation
+  propagate setupInh, valueWeaving;
 }
 
 aspect production forwardsTo

@@ -7,9 +7,9 @@ terminal TestFor_T 'testFor';
 concrete production testforagdcl
 top::AGDcl ::= 'testFor' testSuite::Name ':' n::Name '::' id::QName ',' e::Expr ';'
 {
-  top.defs = [];
-  top.moduleNames = [];
-  top.flowDefs = [];
+  top.defs := [];
+  top.moduleNames := [];
+  top.flowDefs := [];
   
   forward.env = newScopeEnv(forward.defs, top.env);
 

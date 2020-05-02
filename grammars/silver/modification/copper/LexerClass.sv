@@ -18,7 +18,7 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs = [lexerClassDef(top.grammarName, id.location, fName)];
+  top.defs := [lexerClassDef(top.grammarName, id.location, fName)];
 
   top.errors <- if length(getLexerClassDcl(fName, top.env)) > 1
                 then [err(id.location, "Lexer class '" ++ fName ++ "' is already bound.")]
@@ -26,38 +26,32 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
 
   top.errors := modifiers.errors;
   
-  top.syntaxAst = [syntaxLexerClass(fName, 
+  top.syntaxAst := [syntaxLexerClass(fName, 
     foldr(consLexerClassMod, nilLexerClassMod(), modifiers.lexerClassModifiers))];
 }
 
 nonterminal LexerClassModifiers with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
-nonterminal LexerClassModifier with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+closed nonterminal LexerClassModifier with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
 
-synthesized attribute lexerClassModifiers :: [SyntaxLexerClassModifier];
+monoid attribute lexerClassModifiers :: [SyntaxLexerClassModifier] with [], ++;
+
+propagate errors on LexerClassModifiers, LexerClassModifier;
+propagate lexerClassModifiers on LexerClassModifiers;
 
 abstract production lexerClassModifiersNone
 top::LexerClassModifiers ::= 
 {
   top.unparse = "";
-
-  top.lexerClassModifiers = [];
-  top.errors := [];
 }
 concrete production lexerClassModifierSingle
 top::LexerClassModifiers ::= tm::LexerClassModifier
 {
   top.unparse = tm.unparse;
-
-  top.lexerClassModifiers = tm.lexerClassModifiers;
-  top.errors := tm.errors; 
 }
 concrete production lexerClassModifiersCons
 top::LexerClassModifiers ::= h::LexerClassModifier ',' t::LexerClassModifiers
 {
   top.unparse = h.unparse ++ " " ++ t.unparse;
-
-  top.lexerClassModifiers = h.lexerClassModifiers ++ t.lexerClassModifiers;
-  top.errors := h.errors ++ t.errors;
 }
 
 concrete production lexerClassModifierExtends
@@ -65,8 +59,7 @@ top::LexerClassModifier ::= 'extends' cls::LexerClasses
 {
   top.unparse = "extends " ++ cls.unparse;
 
-  top.lexerClassModifiers = [lexerClassExtends(cls.lexerClasses)];
-  top.errors := cls.errors;
+  top.lexerClassModifiers := [lexerClassExtends(cls.lexerClasses)];
 }
 
 concrete production lexerClassModifierDominates
@@ -74,8 +67,7 @@ top::LexerClassModifier ::= 'dominates' terms::TermPrecs
 {
   top.unparse = "dominates " ++ terms.unparse;
 
-  top.lexerClassModifiers = [lexerClassDominates(terms.precTermList)];
-  top.errors := terms.errors;
+  top.lexerClassModifiers := [lexerClassDominates(terms.precTermList)];
 }
 
 concrete production lexerClassModifierSubmitsTo
@@ -83,8 +75,7 @@ top::LexerClassModifier ::= 'submits' 'to' terms::TermPrecs
 {
   top.unparse = "submits to " ++ terms.unparse;
 
-  top.lexerClassModifiers = [lexerClassSubmits(terms.precTermList)];
-  top.errors := terms.errors;
+  top.lexerClassModifiers := [lexerClassSubmits(terms.precTermList)];
 }
 
 concrete production lexerClassModifierDisambiguate
@@ -92,8 +83,7 @@ top::LexerClassModifier ::= 'disambiguate' acode::ActionCode_c
 {
   top.unparse = "disambiguate " ++ acode.unparse;
 
-  top.lexerClassModifiers = [lexerClassDisambiguate(acode.actionCode)];
-  top.errors := acode.errors;
+  top.lexerClassModifiers := [lexerClassDisambiguate(acode.actionCode)];
   
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -105,4 +95,3 @@ top::LexerClassModifier ::= 'disambiguate' acode::ActionCode_c
   acode.env = newScopeEnv(disambiguationClassActionVars ++ acode.defs, top.env);
   acode.frame = disambiguationContext(myFlowGraph);
 }
-

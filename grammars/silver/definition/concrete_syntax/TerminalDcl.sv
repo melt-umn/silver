@@ -20,7 +20,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs = [termDef(top.grammarName, id.location, fName, r.terminalRegExprSpec)];
+  top.defs := [termDef(top.grammarName, id.location, fName, r.terminalRegExprSpec)];
 
   top.errors <-
     if length(getTypeDclAll(fName, top.env)) > 1
@@ -38,9 +38,9 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
     then [wrn(r.location, "Regex contains '\\n' but not '\\r'. This is your reminder about '\\r\\n' newlines.")]
     else [];
 
-  top.errors := tm.errors;
+  propagate errors;
 
-  top.syntaxAst = [
+  top.syntaxAst := [
     syntaxTerminal(fName, r.terminalRegExprSpec,
       foldr(consTerminalMod, nilTerminalMod(), t.terminalModifiers ++ tm.terminalModifiers))];
 }
@@ -67,20 +67,21 @@ synthesized attribute terminalRegExprSpec :: Regex;
 
 concrete production regExpr
 top::RegExpr ::= '/' r::Regex '/'
+layout {}
 {
   top.unparse = "/" ++ r.regString ++ "/";
   top.terminalRegExprSpec = r;
 }
 
 
-nonterminal TerminalKeywordModifier with unparse, location, terminalModifiers;
+closed nonterminal TerminalKeywordModifier with unparse, location, terminalModifiers;
 
 concrete production terminalKeywordModifierIgnore
 top::TerminalKeywordModifier ::= 'ignore'
 {
   top.unparse = "ignore ";
 
-  top.terminalModifiers = [termIgnore()];
+  top.terminalModifiers := [termIgnore()];
 }
 
 concrete production terminalKeywordModifierMarking
@@ -88,7 +89,7 @@ top::TerminalKeywordModifier ::= 'marking'
 {
   top.unparse = "marking ";
 
-  top.terminalModifiers = [termMarking()];
+  top.terminalModifiers := [termMarking()];
 }
 
 concrete production terminalKeywordModifierNone
@@ -96,38 +97,31 @@ top::TerminalKeywordModifier ::=
 {
   top.unparse = "";
 
-  top.terminalModifiers = [];
+  top.terminalModifiers := [];
 }
 
 
 nonterminal TerminalModifiers with config, location, unparse, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
-nonterminal TerminalModifier with config, location, unparse, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+closed nonterminal TerminalModifier with config, location, unparse, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
 
-synthesized attribute terminalModifiers :: [SyntaxTerminalModifier];
+monoid attribute terminalModifiers :: [SyntaxTerminalModifier] with [], ++;
+
+propagate terminalModifiers, errors on TerminalModifiers;
 
 abstract production terminalModifiersNone
 top::TerminalModifiers ::=
 {
   top.unparse = "";
-
-  top.terminalModifiers = [];
-  top.errors := [];
 }
 concrete production terminalModifierSingle
 top::TerminalModifiers ::= tm::TerminalModifier
 {
   top.unparse = tm.unparse;
-
-  top.terminalModifiers = tm.terminalModifiers;
-  top.errors := tm.errors;
 }
 concrete production terminalModifiersCons
 top::TerminalModifiers ::= h::TerminalModifier ',' t::TerminalModifiers
 {
   top.unparse = h.unparse ++ ", " ++ t.unparse;
-
-  top.terminalModifiers = h.terminalModifiers ++ t.terminalModifiers;
-  top.errors := h.errors ++ t.errors;
 }
 
 concrete production terminalModifierLeft
@@ -135,7 +129,7 @@ top::TerminalModifier ::= 'association' '=' 'left'
 {
   top.unparse = "association = left";
 
-  top.terminalModifiers = [termAssociation("left")];
+  top.terminalModifiers := [termAssociation("left")];
   top.errors := [];
 }
 concrete production terminalModifierRight
@@ -143,7 +137,7 @@ top::TerminalModifier ::= 'association' '=' 'right'
 {
   top.unparse = "association = right";
 
-  top.terminalModifiers = [termAssociation("right")];
+  top.terminalModifiers := [termAssociation("right")];
   top.errors := [];
 }
 
@@ -152,7 +146,7 @@ top::TerminalModifier ::= 'precedence' '=' i::Int_t
 {
   top.unparse = "precedence = " ++ i.lexeme;
 
-  top.terminalModifiers = [termPrecedence(toInteger(i.lexeme))];
+  top.terminalModifiers := [termPrecedence(toInteger(i.lexeme))];
   top.errors := [];
 }
 
@@ -161,6 +155,6 @@ top::TerminalModifier ::= 'named' name::String_t
 {
   top.unparse = "named " ++ name.lexeme;
 
-  top.terminalModifiers = [termPrettyName(substring(1, length(name.lexeme) - 1, name.lexeme))];
+  top.terminalModifiers := [termPrettyName(substring(1, length(name.lexeme) - 1, name.lexeme))];
   top.errors := [];
 }

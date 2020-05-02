@@ -19,6 +19,7 @@ melt.trynode('silver') {
         source = "${silver.SILVER_WORKSPACE}/jars"
       }
       // Obtain jars from specified location
+      sh "mkdir -p jars"
       sh "cp ${source}/* jars/"
       melt.annotate("Jars overridden.")
     } else {
@@ -93,15 +94,15 @@ melt.trynode('silver') {
 
   stage("Integration") {
     // Projects with 'develop' as main branch, we'll try to build specific branch names if they exist
-    def public_github_projects = ["ableC"]
+    def github_projects = ["/melt-umn/ableC", "/melt-umn/Oberon0", "/melt-umn/ableJ14", "/melt-umn/meta-ocaml-lite", "/melt-umn/rewriting-lambda-calculus",
+                           "/internal/ring"]
     // Specific other jobs to build
-    def specific_jobs = ["/melt-umn/Oberon0/master", "/melt-umn/ableJ14/master", "/melt-umn/meta-ocaml-lite/master",
-                         "/internal/ring/master", "/internal/matlab/master", "/internal/metaII/master", "/internal/simple/master"]
+    def specific_jobs = ["/internal/matlab/master", "/internal/metaII/master", "/internal/simple/master"]
     // AbleP is now downstream from Silver-AbleC, so we don't need to build it here: "/melt-umn/ableP/master"
 
     def tasks = [:]
-    tasks << public_github_projects.collectEntries { t ->
-      [(t): { melt.buildProject("/melt-umn/${t}", [SILVER_BASE: WS, SILVER_GEN: SILVER_GEN]) }]
+    tasks << github_projects.collectEntries { t ->
+      [(t): { melt.buildProject(t, [SILVER_BASE: WS, SILVER_GEN: SILVER_GEN]) }]
     }
     tasks << specific_jobs.collectEntries { t ->
       [(t): { melt.buildJob(t, [SILVER_BASE: WS, SILVER_GEN: SILVER_GEN]) }]

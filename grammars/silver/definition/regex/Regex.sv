@@ -2,22 +2,37 @@ grammar silver:definition:regex;
 
 synthesized attribute regString :: String;
 
-lexer class REGEX_OPER;
-lexer class REGEX_ESC submits to REGEX_OPER;
+lexer class Operator;
+lexer class Escape;
 
-terminal Plus_t          '+' lexer classes { REGEX_OPER };
-terminal Kleene_t        '*' lexer classes { REGEX_OPER };
-terminal Optional_t      '?' lexer classes { REGEX_OPER };
-terminal Choice_t        '|' lexer classes { REGEX_OPER };
-terminal Range_t         '-' lexer classes { REGEX_OPER };
-terminal RegexNot_t      '^' lexer classes { REGEX_OPER };
-terminal RegexLBrack_t   '[' lexer classes { REGEX_OPER };
-terminal RegexRBrack_t   ']' lexer classes { REGEX_OPER };
-terminal RegexLParen_t   '(' lexer classes { REGEX_OPER };
-terminal RegexRParen_t   ')' lexer classes { REGEX_OPER };
-terminal RegexWildcard_t '.' lexer classes { REGEX_OPER };
-terminal RegexChar_t     /./ lexer classes { REGEX_ESC };
-terminal EscapedChar_t /\\./ submits to { REGEX_ESC };
+terminal Plus_t          '+' lexer classes { Operator };
+terminal Kleene_t        '*' lexer classes { Operator };
+terminal Optional_t      '?' lexer classes { Operator };
+terminal Choice_t        '|' lexer classes { Operator };
+terminal Range_t         '-' lexer classes { Operator };
+terminal RegexNot_t      '^' lexer classes { Operator };
+terminal RegexLBrack_t   '[' lexer classes { Operator };
+terminal RegexRBrack_t   ']' lexer classes { Operator };
+terminal RegexLParen_t   '(' lexer classes { Operator };
+terminal RegexRParen_t   ')' lexer classes { Operator };
+terminal RegexWildcard_t '.' lexer classes { Operator };
+terminal RegexChar_t     /./ lexer classes { Escape };
+terminal EscapedChar_t /\\./ lexer classes { Escape };
+
+-- Disambiguate these, rather than using lexical precedence,
+-- so we can avoid superfluous escapes (e.g. /--.*/).
+-- This is the behavior of most regex libraries.
+disambiguate RegexChar_t, Plus_t { pluck Plus_t; }
+disambiguate RegexChar_t, Kleene_t { pluck Kleene_t; }
+disambiguate RegexChar_t, Optional_t { pluck Optional_t; }
+disambiguate RegexChar_t, Choice_t { pluck Choice_t; }
+disambiguate RegexChar_t, Range_t { pluck Range_t; }
+disambiguate RegexChar_t, RegexNot_t { pluck RegexNot_t; }
+disambiguate RegexChar_t, RegexLBrack_t { pluck RegexLBrack_t; }
+disambiguate RegexChar_t, RegexRBrack_t { pluck RegexRBrack_t; }
+disambiguate RegexChar_t, RegexLParen_t { pluck RegexLParen_t; }
+disambiguate RegexChar_t, RegexRParen_t { pluck RegexRParen_t; }
+disambiguate RegexChar_t, RegexWildcard_t { pluck RegexWildcard_t; }
 
 -- TODO: It might be wise to someday do a CST/AST split on this.
 

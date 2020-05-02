@@ -2,67 +2,51 @@ grammar silver:definition:flow:env;
 
 import silver:driver:util;
 
-attribute flowDefs occurs on RootSpec, GrammarProperties;
+monoid attribute maybeFlowDefs::Maybe<[FlowDef]> with nothing(), orElse;
+attribute maybeFlowDefs occurs on InterfaceItems, InterfaceItem;
+propagate maybeFlowDefs on InterfaceItems;
 
-aspect production consGrammarProperties
-top::GrammarProperties ::= h::GrammarProperty t::GrammarProperties
+aspect production consInterfaceItem
+top::InterfaceItems ::= h::InterfaceItem t::InterfaceItems
 {
-  top.flowDefs = fromMaybe(t.flowDefs, h.maybeFlowDefs);
+  top.interfaceErrors <- if !top.maybeFlowDefs.isJust then ["Missing item flowDefs"] else [];
 }
-
-aspect production nilGrammarProperties
-top::GrammarProperties ::=
-{
-  top.flowDefs = error("Grammar property flowDefs missing from interface file");
-}
-
-synthesized attribute maybeFlowDefs::Maybe<[FlowDef]> occurs on GrammarProperty;
 
 aspect default production
-top::GrammarProperty ::=
+top::InterfaceItem ::=
 {
-  top.maybeFlowDefs = nothing();
+  propagate maybeFlowDefs;
 }
 
-abstract production flowDefsGrammarProperty
-top::GrammarProperty ::= val::[FlowDef]
+abstract production flowDefsInterfaceItem
+top::InterfaceItem ::= val::[FlowDef]
 {
-  top.maybeFlowDefs = just(val);
+  top.maybeFlowDefs := just(val);
 }
 
 aspect function unparseRootSpec
 String ::= r::Decorated RootSpec
 {
-  grammarProperties <- [flowDefsGrammarProperty(r.flowDefs)];
+  interfaceItems <- [flowDefsInterfaceItem(r.flowDefs)];
 }
+
+attribute flowDefs occurs on RootSpec;
 
 aspect production errorRootSpec
 top::RootSpec ::= _ _ _ _ _
 {
-  top.flowDefs = [];
+  top.flowDefs := [];
 }
 
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _ _ _ _
 {
-  top.flowDefs = g.flowDefs;
+  top.flowDefs := g.flowDefs;
 }
 
 aspect production interfaceRootSpec
-top::RootSpec ::= p::GrammarProperties  interfaceTime::Integer _
+top::RootSpec ::= i::InterfaceItems  interfaceTime::Integer _
 {
-  top.flowDefs = p.flowDefs;
-}
-
-aspect production nilGrammar
-top::Grammar ::=
-{
-  top.flowDefs = [];
-}
-
-aspect production consGrammar
-top::Grammar ::= h::Root  t::Grammar
-{
-  top.flowDefs = h.flowDefs ++ t.flowDefs;
+  top.flowDefs := i.maybeFlowDefs.fromJust;
 }
 

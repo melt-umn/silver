@@ -32,6 +32,11 @@ ${params.lambdaTranslation}
 ${makeTyVarDecls(5, finTy.freeVariables)}
 					return ${finTy.transTypeRep};
 				}
+		
+				@Override
+				public final String toString() {
+					return "lambda at ${top.grammarName}:${top.location.unparse}";
+				}
 			})""";
   top.lazyTranslation = top.translation;
   

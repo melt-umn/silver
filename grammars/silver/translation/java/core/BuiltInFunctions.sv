@@ -106,6 +106,11 @@ ${makeTyVarDecls(5, resultType.freeVariables)}
 ${makeTyVarDecls(5, finalType(top).freeVariables)}
 					return ${finalType(top).transTypeRep};
 				}
+	
+				@Override
+				public final String toString() {
+					return "reify";
+				}
 			})""";
   
   top.lazyTranslation = top.translation;
