@@ -181,6 +181,8 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
     if !s1.matchesFrame || !s2.matchesFrame
     then Silver_Expr { core:nothing() }
     else
+      -- Optimizations when one or both of these is a functor, in this case a
+      -- monadic bind may not be required.
       case s1, s2 of
       | functorRef(attr1), functorRef(attr2) ->
         Silver_Expr {
@@ -248,6 +250,8 @@ top::StrategyExpr ::= s::StrategyExpr
   top.translation =
      case s of
      | functorRef(attr) ->
+      {- When s is a functor, optimized translation of all(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
+           just(prod(a.s, b, c.s)) -}
        Silver_Expr {
          core:just(
            $Expr{
@@ -331,6 +335,8 @@ top::StrategyExpr ::= s::StrategyExpr
   top.translation =
      case s of
      | functorRef(attr) ->
+      {- When s is a functor, optimized translation of all(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
+           just(prod(a.s, b, c.s)) -}
        Silver_Expr {
          core:just(
            $Expr{
@@ -404,6 +410,8 @@ top::StrategyExpr ::= s::StrategyExpr
   top.translation =
      case s of
      | functorRef(attr) when !null(matchingChildren) ->
+      {- When s is a functor, optimized translation of all(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
+           just(prod(a.s, b, c)) -}
        Silver_Expr {
          core:just(
            $Expr{
@@ -496,9 +504,10 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
   top.translation =
     if prod.lookupValue.fullName == top.frame.fullName
     then
-      {- Translation of prod(s1, s2, s3) for prod::(Foo ::= a::Foo b::Integer c::Bar):
+      {- Translation of prod(s1, s2, s3, s4) for prod::(Foo ::= a::Foo b::Integer c::Bar d::Baz)
+         where s4 is a functor:
            case a.s1, c.s3 of
-           | just(a_s1), just(c_s3) -> just(prod(a_s1, b, c_s3))
+           | just(a_s1), just(c_s3) -> just(prod(a_s1, b, c_s3, d.s4))
            | _, _ -> nothing()
            end
          Could also be implemented as chained monadic binds.  Maybe more efficient this way? -}
