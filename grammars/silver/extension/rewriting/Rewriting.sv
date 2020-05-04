@@ -9,7 +9,7 @@ imports silver:definition:core;
 imports silver:definition:type;
 imports silver:definition:type:syntax;
 imports silver:definition:env;
-imports silver:translation:java:core only finalType;
+imports silver:translation:java:core;
 imports silver:extension:patternmatching;
 imports silver:extension:reflection;
 imports silver:extension:list;
@@ -48,6 +48,10 @@ top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
   e.downSubst = s.upSubst;
   errCheckS.downSubst = e.upSubst;
   forward.downSubst = errCheckS.upSubst;
+  
+  s.expectedTypeTranslation = makeExpectedTypeDirect(s.typerep);
+  e.expectedTypeTranslation = 
+    makeExpectedTypeUnify(top.expectedTypeTranslation, top.typerep, e.typerep);
   
   forwards to
     Silver_Expr {
