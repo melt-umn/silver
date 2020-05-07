@@ -10,10 +10,11 @@ top::StrategyExpr ::=
   top.unparse = s"printTerm";
   
   propagate liftedStrategies;
-  top.translation =
+  top.isTotal = true;
+  top.totalTranslation =
     Silver_Expr {
       core:unsafeTrace(
-        core:just($name{top.frame.signature.outputElement.elementName}),
+        $name{top.frame.signature.outputElement.elementName},
         core:print(
           hackUnparse($name{top.frame.signature.outputElement.elementName}) ++ "\n\n",
           core:unsafeIO()))

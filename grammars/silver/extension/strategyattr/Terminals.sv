@@ -1,6 +1,7 @@
 grammar silver:extension:strategyattr;
 
 terminal Strategy_kwd 'strategy' lexer classes {KEYWORD, RESERVED};
+terminal Partial_kwd  'partial'  lexer classes {KEYWORD, RESERVED};
 
 terminal Sequence_t '<*'  precedence = 12, association = left; -- Same as *
 terminal Choice_t   '<+'  precedence = 11, association = left; -- Same as +

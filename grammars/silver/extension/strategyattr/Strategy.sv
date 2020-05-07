@@ -4,9 +4,9 @@ import silver:definition:flow:driver only ProductionGraph, FlowType, constructAn
 import silver:driver:util;
 
 abstract production strategyAttributeDcl
-top::AGDcl ::= a::Name recVarEnv::[Pair<String String>] e::StrategyExpr
+top::AGDcl ::= isTotal::Boolean a::Name recVarEnv::[Pair<String Pair<Boolean String>>] e::StrategyExpr
 {
-  top.unparse = "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
+  top.unparse = (if isTotal then "" else "partial ") ++ "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -23,6 +23,11 @@ top::AGDcl ::= a::Name recVarEnv::[Pair<String String>] e::StrategyExpr
     if null(getValueDcl("core:monad:bindMaybe", top.env))
     then [err(top.location, "Strategy attributes require import of core:monad")]
     else [];
+  top.errors <-
+    if isTotal && !e.isTotal
+    -- Not an error since we can still translate this, but the translation may raise run-time errors in case of failure
+    then [wrn(e.location, s"Implementation of total strategy ${a.name} is not total")]
+    else []; 
   
   -- Frame doesn't really matter, since we will re-check any expressions occuring in e when propagated.
   -- Need all this to construct a bogus frame...
@@ -33,7 +38,7 @@ top::AGDcl ::= a::Name recVarEnv::[Pair<String String>] e::StrategyExpr
   e.frame = globalExprContext(myFlowGraph);
   
   e.recVarEnv = recVarEnv;
-  e.outerAttr = just(a.name);
+  e.outerAttr = just(pair(isTotal, a.name));
   
   local fwrd::AGDcl =
     foldr(
@@ -42,12 +47,12 @@ top::AGDcl ::= a::Name recVarEnv::[Pair<String String>] e::StrategyExpr
         [attrDef(
            defaultEnvItem(
              strategyDcl(
-               top.grammarName, a.location, fName, freshTyVar(),
-               !null(top.errors), map(fst, e.liftedStrategies), recVarEnv, e)))],
+               top.grammarName, a.location, fName, isTotal, freshTyVar(),
+               !null(top.errors), map(fst, e.liftedStrategies), recVarEnv, e.totalRefs, e)))],
         location=top.location),
       map(
         \ d::Pair<String Decorated StrategyExpr> ->
-          strategyAttributeDcl(name(d.fst, top.location), d.snd.recVarEnv, new(d.snd), location=top.location),
+          strategyAttributeDcl(d.snd.isTotalInf, name(d.fst, top.location), d.snd.recVarEnv, new(d.snd), location=top.location),
         e.liftedStrategies));
    
   --forwards to unsafeTrace(fwrd, print(a.name ++ " = " ++ e.unparse ++ "; lifted  " ++ implode(",  ", map(fst, e.liftedStrategies)) ++ "\n\n", unsafeIO()));
@@ -57,11 +62,23 @@ top::AGDcl ::= a::Name recVarEnv::[Pair<String String>] e::StrategyExpr
 abstract production strategyAttributionDcl
 top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  local localErrors::[Message] =
-    attl.errors ++ attl.errorsTyVars ++ nt.lookupType.errors ++ nttl.errors ++ nttl.errorsTyVars ++
+  production attribute localErrors::[Message] with ++;
+  localErrors :=
+    attl.errors ++ attl.errorsTyVars ++ nt.lookupType.errors ++ nttl.errors ++ nttl.errorsTyVars;
+  localErrors <-
     if length(attl.types) > 0
     then [err(attl.location, "Explicit type arguments are not allowed for strategy attributes")]
     else [];
+  
+  -- Technically we could do this check on the propagate, but it seems clearer to raise it here
+  localErrors <-
+    flatMap(
+      \ totalAttr::String ->
+        if null(getOccursDcl(totalAttr, nt.lookupType.fullName, top.env))
+        then [err(top.location, s"Total strategy attribute ${totalAttr} referenced by ${at.name} does not occur on ${nt.name}")]
+        else [],
+      at.lookupAttribute.dcl.totalRefs);
+  
   -- TODO: Check that the type parameters of any rules of type nt match nttl
   
   top.errors := if !null(localErrors) then localErrors else forward.errors;
@@ -96,20 +113,17 @@ top::ProductionStmt ::= attr::Decorated QName
 {
   top.unparse = s"propagate ${attr.unparse}";
   
+  production isTotal::Boolean = attr.lookupAttribute.dcl.isTotal;
   production e::StrategyExpr = attr.lookupAttribute.dcl.strategyExpr;
   e.grammarName = top.grammarName;
   e.config = top.config;
   e.frame = top.frame;
   e.env = top.env;
   e.recVarEnv = attr.lookupAttribute.dcl.givenRecVarEnv;
-  e.outerAttr = just(attr.lookupAttribute.fullName);
+  e.outerAttr = just(pair(isTotal, attr.lookupAttribute.fullName));
   e.inlinedStrategies = [attr.lookupAttribute.fullName]; -- Don't unfold the top-level strategy within itself
   
-  production e2::StrategyExpr =
-    case e.optimize of
-    | just(e2) -> e2
-    | nothing() -> error("optimize failed for " ++ e.unparse)
-    end;
+  production e2::StrategyExpr = e.optimize;
   e2.grammarName = e.grammarName;
   e2.config = e.config;
   e2.frame = e.frame;
@@ -121,7 +135,10 @@ top::ProductionStmt ::= attr::Decorated QName
   -- Can't do this with forwarding to avoid circular dependency of
   -- forward -> dcl.containsErrors -> dcl.flowEnv -> forward.flowDefs
   top.errors :=
-    if attr.lookupAttribute.dcl.containsErrors
+    if
+      attr.lookupAttribute.dcl.containsErrors ||
+      -- Check for total strategy ref occurs errors that would already be reported on the occurence
+      any(map(null, map(getOccursDcl(_, top.frame.signature.outputElement.typerep.typeName, top.env), attr.lookupAttribute.dcl.totalRefs))) 
     then []
     else forward.errors;
   
@@ -133,13 +150,13 @@ top::ProductionStmt ::= attr::Decorated QName
         '.',
         qNameAttrOccur(new(attr), location=top.location),
         '=',
-        e2.translation,
+        if isTotal then e2.totalTranslation else e2.partialTranslation,
         ';',
         location=top.location),
       map(
         \ n::String -> propagateOneAttr(qName(top.location, n), location=top.location),
         attr.lookupAttribute.dcl.liftedStrategyNames));
   
-  --forwards to unsafeTrace(fwrd, print(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ e2.translation.unparse ++ ";\n\n", unsafeIO()));
+  --forwards to unsafeTrace(fwrd, print(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ (if isTotal then e2.totalTranslation else e2.partialTranslation).unparse ++ ";\n\n", unsafeIO()));
   forwards to fwrd;
 }

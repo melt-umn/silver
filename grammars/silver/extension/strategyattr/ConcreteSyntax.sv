@@ -2,12 +2,20 @@ grammar silver:extension:strategyattr;
 
 inherited attribute givenGenName::String;
 
-concrete production strategyAttributeDcl_c
+concrete production partialStrategyAttributeDcl
+top::AGDcl ::= 'partial' 'strategy' 'attribute' a::Name '=' e::StrategyExpr_c ';'
+{
+  top.unparse = "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
+  e.givenGenName = a.name;
+  forwards to strategyAttributeDcl(false, a, [], e.ast, location=top.location);
+}
+
+concrete production totalStrategyAttributeDcl
 top::AGDcl ::= 'strategy' 'attribute' a::Name '=' e::StrategyExpr_c ';'
 {
   top.unparse = "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
   e.givenGenName = a.name;
-  forwards to strategyAttributeDcl(a, [], e.ast, location=top.location);
+  forwards to strategyAttributeDcl(true, a, [], e.ast, location=top.location);
 }
 
 closed nonterminal StrategyExpr_c with location, givenGenName, unparse, ast<StrategyExpr>;

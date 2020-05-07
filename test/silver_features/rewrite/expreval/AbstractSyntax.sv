@@ -126,15 +126,15 @@ global eval::Strategy = innermost(evalStep <+ simplifyConstIdent <+ simplifyFrac
 -- Strategy attributes
 autocopy attribute substName::String;
 autocopy attribute substExpr::Expr;
-strategy attribute substRes = -- This would actually be simpler as a functor, but this is a test...
-  bottomUp(try(
+strategy attribute substRes =
+  allTopDown(
     rule on top::Expr of
     | var(n1) when top.substName == n1 -> top.substExpr
-    end));
+    end);
 attribute substName, substExpr, substRes occurs on Expr;
 propagate substRes on Expr;
 
-strategy attribute evalStep =
+partial strategy attribute evalStep =
   rule on Expr of
   | add(const(a), const(b)) -> const(a + b)
   | sub(const(a), const(b)) -> const(a - b)
@@ -144,10 +144,10 @@ strategy attribute evalStep =
      let g::Integer = gcd(a, b) in div(const(a / g), const(b / g)) end
   -- This rule does not respect lexical shadowing;
   -- it is assumed that the overall rewrite will be done in an innermost order.
-  | letE(n, e1, e2) -> decorate e2 with {substName = n; substExpr = e1;}.substRes.fromJust
+  | letE(n, e1, e2) -> decorate e2 with {substName = n; substExpr = e1;}.substRes
   end;
 
-strategy attribute simplifyConstIdent =
+partial strategy attribute simplifyConstIdent =
   rule on Expr of
   | add(a, const(0)) -> a
   | add(const(0), a) -> a
@@ -163,7 +163,7 @@ strategy attribute simplifyConstIdent =
   | div(a, const(1)) -> a
   end;
 
-strategy attribute simplifyFrac =
+partial strategy attribute simplifyFrac =
   rule on Expr of
   | add(div(a, b), c) -> div(add(a, mul(b, c)), b)
   | sub(div(a, b), c) -> div(sub(a, mul(b, c)), b)
