@@ -38,6 +38,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarEnv::[Pair<String Pair<Boolean Str
   e.frame = globalExprContext(myFlowGraph);
   
   e.recVarEnv = recVarEnv;
+  e.outerTotalRecVars = map(fst, filter(\ v::Pair<String Pair<Boolean String>> -> v.snd.fst, recVarEnv));
   e.outerAttr = just(pair(isTotal, a.name));
   
   local fwrd::AGDcl =
@@ -120,6 +121,7 @@ top::ProductionStmt ::= attr::Decorated QName
   e.frame = top.frame;
   e.env = top.env;
   e.recVarEnv = attr.lookupAttribute.dcl.givenRecVarEnv;
+  e.outerTotalRecVars = map(fst, filter(\ v::Pair<String Pair<Boolean String>> -> v.snd.fst, e.recVarEnv));
   e.outerAttr = just(pair(isTotal, attr.lookupAttribute.fullName));
   e.inlinedStrategies = [attr.lookupAttribute.fullName]; -- Don't unfold the top-level strategy within itself
   
@@ -129,6 +131,7 @@ top::ProductionStmt ::= attr::Decorated QName
   e2.frame = e.frame;
   e2.env = e.env;
   e2.recVarEnv = e.recVarEnv;
+  e2.outerTotalRecVars = e.outerTotalRecVars;
   e2.outerAttr = e.outerAttr;
   e2.inlinedStrategies = e.inlinedStrategies;
   
