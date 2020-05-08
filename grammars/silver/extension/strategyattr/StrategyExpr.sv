@@ -539,16 +539,21 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
 {
   top.unparse = s"${prod.unparse}(${s.unparse})";
   
+  top.errors <- prod.lookupValue.errors;
+  
   local numParams::Integer = length(s.givenInputElements);
   local numArgs::Integer = length(s.attrRefNames);
   top.errors <-
-    if numArgs != numParams
+    if prod.lookupValue.found && numArgs != numParams
     then [err(top.location, s"Wrong number of arguments to ${prod.name}: expected ${toString(numParams)}, got ${toString(numArgs)}")]
     else [];
   
   propagate liftedStrategies;
   
-  s.givenInputElements = prod.lookupValue.dcl.namedSignature.inputElements;
+  s.givenInputElements =
+    if prod.lookupValue.found
+    then prod.lookupValue.dcl.namedSignature.inputElements
+    else [];
   
   -- pair(child name, if attr occurs on child then just(attr name) else nothing())
   local childAccesses::[Pair<String Maybe<Pair<Boolean String>>>] =
@@ -626,7 +631,7 @@ top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
   local attr::String = fromMaybe(h.genName, h.attrRefName);
   local attrMatch::Boolean = attrMatchesFrame(top.env, attr, hType);
   top.attrRefNames =
-   (if attrMatch && !h.isId
+   (if !null(top.givenInputElements) && attrMatch && !h.isId
     then just(pair(if h.attrRefName.isJust then h.isTotal else h.isTotalInf, attr))
     else nothing()) :: t.attrRefNames;
   top.errors <-
