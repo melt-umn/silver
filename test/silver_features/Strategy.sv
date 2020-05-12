@@ -176,3 +176,7 @@ inherited attribute badInh<a>::a;
 wrongCode "cannot be used as total strategy" {
   strategy attribute badInhS = badInh;
 }
+
+wrongCode "is not total" {
+  strategy attribute notTotal = rule on SExpr of constSExpr(i) -> constSExpr(i + 1) end;
+}

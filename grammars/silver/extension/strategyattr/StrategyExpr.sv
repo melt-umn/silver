@@ -235,13 +235,11 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
             decorate res with { $ExprInhs{allInhs} }.$name{s2Name})
       }
     end;
-  top.totalTranslation =
-    if s1.isTotal && s2Total
-    then
-      Silver_Expr {
-        decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name}
-      }
-    else asTotal(top.partialTranslation);
+  local totalTrans::Expr =
+    Silver_Expr {
+      decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name}
+    };
+  top.totalTranslation = if s2Total then totalTrans else asTotal(totalTrans);
 }
 
 abstract production choice
@@ -260,14 +258,12 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
       core:orElse($Expr{s1.partialTranslation}, $Expr{s2.partialTranslation})
     };
   top.totalTranslation =
-    case s1.isTotal, s2.isTotal of
-    | true, _ -> s1.totalTranslation
-    | false, true ->
+    if s1.isTotal
+    then s1.totalTranslation
+    else 
       Silver_Expr {
         core:fromMaybe($Expr{s2.totalTranslation}, $Expr{s1.partialTranslation})
-      }
-    | false, false -> asTotal(top.partialTranslation)
-    end;
+      };
 }
 
 -- Traversals
