@@ -4,7 +4,7 @@ import silver:definition:flow:driver only ProductionGraph, FlowType, constructAn
 import silver:driver:util;
 
 abstract production strategyAttributeDcl
-top::AGDcl ::= isTotal::Boolean a::Name recVarEnv::[Pair<String Pair<Boolean String>>] e::StrategyExpr
+top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] recVarTotalEnv::[Pair<String Boolean>] e::StrategyExpr
 {
   top.unparse = (if isTotal then "" else "partial ") ++ "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
 
@@ -37,9 +37,9 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarEnv::[Pair<String Pair<Boolean Str
     constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
   e.frame = globalExprContext(myFlowGraph);
   
-  e.recVarEnv = recVarEnv;
-  e.outerTotalRecVars = map(fst, filter(\ v::Pair<String Pair<Boolean String>> -> v.snd.fst, recVarEnv));
-  e.outerAttr = just(pair(isTotal, a.name));
+  e.recVarNameEnv = recVarNameEnv;
+  e.recVarTotalEnv = recVarTotalEnv;
+  e.outerAttr = just(a.name);
   
   local fwrd::AGDcl =
     foldr(
@@ -49,12 +49,17 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarEnv::[Pair<String Pair<Boolean Str
            defaultEnvItem(
              strategyDcl(
                top.grammarName, a.location, fName, isTotal, freshTyVar(),
-               !null(top.errors), map(fst, e.liftedStrategies), recVarEnv, e.totalRefs, e)))],
+               !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.totalRefs, e)))],
         location=top.location),
       map(
         \ d::Pair<String Decorated StrategyExpr> ->
-          strategyAttributeDcl(d.snd.isTotalInf, name(d.fst, top.location), d.snd.recVarEnv, new(d.snd), location=top.location),
-        e.liftedStrategies));
+          strategyAttributeDcl(
+            d.snd.isTotalInf, name(d.fst, top.location), d.snd.recVarNameEnv, d.snd.recVarTotalEnv, new(d.snd),
+            location=top.location),
+        decorate e with {
+          env = emptyEnv(); -- Forward (and thus lifting) cannot depend on top.env to avoid circular dependency
+          config = e.config; grammarName = e.grammarName; recVarNameEnv = recVarNameEnv; recVarTotalEnv = recVarTotalEnv; outerAttr = e.outerAttr;
+        }.liftedStrategies));
    
   --forwards to unsafeTrace(fwrd, print(a.name ++ " = " ++ e.unparse ++ "; lifted  " ++ implode(",  ", map(fst, e.liftedStrategies)) ++ "\n\n", unsafeIO()));
   forwards to fwrd;
@@ -120,9 +125,9 @@ top::ProductionStmt ::= attr::Decorated QName
   e.config = top.config;
   e.frame = top.frame;
   e.env = top.env;
-  e.recVarEnv = attr.lookupAttribute.dcl.givenRecVarEnv;
-  e.outerTotalRecVars = map(fst, filter(\ v::Pair<String Pair<Boolean String>> -> v.snd.fst, e.recVarEnv));
-  e.outerAttr = just(pair(isTotal, attr.lookupAttribute.fullName));
+  e.recVarNameEnv = attr.lookupAttribute.dcl.givenRecVarNameEnv;
+  e.recVarTotalEnv = attr.lookupAttribute.dcl.givenRecVarTotalEnv;
+  e.outerAttr = just(attr.lookupAttribute.fullName);
   e.inlinedStrategies = [attr.lookupAttribute.fullName]; -- Don't unfold the top-level strategy within itself
   
   production e2::StrategyExpr = e.optimize;
@@ -130,8 +135,8 @@ top::ProductionStmt ::= attr::Decorated QName
   e2.config = e.config;
   e2.frame = e.frame;
   e2.env = e.env;
-  e2.recVarEnv = e.recVarEnv;
-  e2.outerTotalRecVars = e.outerTotalRecVars;
+  e2.recVarNameEnv = e.recVarNameEnv;
+  e2.recVarTotalEnv = e.recVarTotalEnv;
   e2.outerAttr = e.outerAttr;
   e2.inlinedStrategies = e.inlinedStrategies;
   

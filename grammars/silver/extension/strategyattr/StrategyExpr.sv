@@ -5,17 +5,17 @@ import core:monad;
 
 annotation genName::String; -- Used to generate the names of lifted strategy attributes
 
-autocopy attribute recVarEnv::[Pair<String Pair<Boolean String>>]; -- name, (isTotal, genName)
-autocopy attribute outerTotalRecVars::[String];
-inherited attribute outerAttr::Maybe<Pair<Boolean String>>; -- isTotal, genName
+autocopy attribute recVarNameEnv::[Pair<String String>]; -- name, (isTotal, genName)
+autocopy attribute recVarTotalEnv::[Pair<String Boolean>]; -- name, (isTotal, genName)
+inherited attribute outerAttr::Maybe<String>;
 autocopy attribute inlinedStrategies::[String];
 monoid attribute liftedStrategies::[Pair<String Decorated StrategyExpr>] with [], ++;
 synthesized attribute attrRefName::Maybe<String>;
 synthesized attribute isId::Boolean;
-synthesized attribute isTotalInf::Boolean; -- Env-independant, used for inference
-synthesized attribute isTotal::Boolean; -- Env-dependant, used for translation / optimization
+synthesized attribute isTotalInf::Boolean; -- Is total assuming all rec vars are total
+synthesized attribute isTotal::Boolean; -- Is total given rec var env
 inherited attribute givenInputElements::[NamedSignatureElement];
-synthesized attribute attrRefNames::[Maybe<Pair<Boolean String>>];
+synthesized attribute attrRefNames::[Maybe<String>];
 monoid attribute containsFail::Boolean with false, ||;
 monoid attribute allId::Boolean with true, &&;
 monoid attribute freeRecVars::[String] with [], ++;
@@ -52,7 +52,8 @@ partial strategy attribute ntStep =
   -- strategies would not permit any additional simplification.
   | partialRef(n) when
       n.matchesFrame && n.attrDcl.isStrategy &&
-      !containsBy(stringEq, n.attrDcl.fullName, top.inlinedStrategies) && null(n.attrDcl.givenRecVarEnv) ->
+      !containsBy(stringEq, n.attrDcl.fullName, top.inlinedStrategies) &&
+      null(n.attrDcl.givenRecVarNameEnv) ->
     inlined(n, n.attrDcl.strategyExpr, location=top.location, genName=top.genName)
   | partialRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
   | inlined(n, _) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
@@ -92,31 +93,31 @@ strategy attribute optimize =
 
 nonterminal StrategyExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
-  genName, outerAttr, recVarEnv, outerTotalRecVars, liftedStrategies, attrRefName, isId, isTotalInf, isTotal, freeRecVars, totalRefs, -- Frame-independent attrs
+  genName, outerAttr, recVarNameEnv, recVarTotalEnv, liftedStrategies, attrRefName, isId, isTotalInf, isTotal, freeRecVars, totalRefs, -- Frame-independent attrs
   partialTranslation, totalTranslation, matchesFrame, -- Frame-dependent attrs
   inlinedStrategies, genericStep, ntStep, prodStep, simplify, optimize; -- Optimization stuff
 
 nonterminal StrategyExprs with
   config, grammarName, env, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
-  recVarEnv, outerTotalRecVars, givenInputElements, liftedStrategies, attrRefNames, containsFail, allId, freeRecVars, totalRefs, -- Frame-independent attrs
+  recVarNameEnv, recVarTotalEnv, givenInputElements, liftedStrategies, attrRefNames, containsFail, allId, freeRecVars, totalRefs, -- Frame-independent attrs
   inlinedStrategies, simplify; -- Optimization stuff
 
 flowtype StrategyExpr =
-  decorate {grammarName, config, recVarEnv, outerTotalRecVars, outerAttr}, -- NOT frame or env
+  decorate {env, grammarName, config, recVarNameEnv, recVarTotalEnv, outerAttr}, -- NOT frame
   -- Normal expression stuff
-  unparse {}, errors {decorate, frame, env, compiledGrammars, flowEnv}, flowDefs {decorate, frame, env, compiledGrammars, flowEnv},
+  unparse {}, errors {decorate, frame, compiledGrammars, flowEnv}, flowDefs {decorate, frame, compiledGrammars, flowEnv},
   -- Frame-independent attrs
-  liftedStrategies {decorate}, attrRefName {decorate}, isId {decorate}, isTotalInf {decorate}, isTotal {decorate, env}, freeRecVars {decorate, env}, totalRefs {decorate, env},
+  liftedStrategies {decorate}, attrRefName {decorate}, isId {decorate}, isTotalInf {grammarName, config, env, recVarNameEnv, outerAttr}, isTotal {decorate}, freeRecVars {decorate}, totalRefs {decorate},
   -- Frame-dependent attrs
-  partialTranslation {decorate, frame, env}, totalTranslation {decorate, frame, env}, matchesFrame {decorate, frame, env};
+  partialTranslation {decorate, frame}, totalTranslation {decorate, frame}, matchesFrame {decorate, frame};
 
 flowtype StrategyExprs =
-  decorate {grammarName, config, recVarEnv, outerTotalRecVars}, -- NOT frame or env
+  decorate {env, grammarName, config, recVarNameEnv, recVarTotalEnv}, -- NOT frame
   -- Normal expression stuff
-  unparse {}, errors {decorate, frame, env, givenInputElements, compiledGrammars, flowEnv}, flowDefs {decorate, frame, env, compiledGrammars, flowEnv},
+  unparse {}, errors {decorate, frame, givenInputElements, compiledGrammars, flowEnv}, flowDefs {decorate, frame, compiledGrammars, flowEnv},
   -- Frame-independent attrs
-  liftedStrategies {decorate}, attrRefNames {decorate, env, givenInputElements},
-  containsFail {decorate, env}, allId {decorate, env}, freeRecVars {decorate, env}, totalRefs {decorate, env};
+  liftedStrategies {decorate}, attrRefNames {decorate, givenInputElements},
+  containsFail {decorate}, allId {decorate}, freeRecVars {decorate}, totalRefs {decorate};
 
 propagate errors on StrategyExpr, StrategyExprs excluding partialRef, totalRef;
 propagate flowDefs on StrategyExpr, StrategyExprs;
@@ -177,7 +178,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   top.unparse = s"(${s1.unparse} <* ${s2.unparse})";
   
   local s2Name::String = fromMaybe(top.genName ++ "_snd", s2.attrRefName);
-  local s2Total::Boolean = if s2.attrRefName.isJust then s2.isTotal else s2.isTotalInf;
+  local s2Total::Boolean = attrIsTotal(top.env, s2Name); -- Can differ from s2.isTotal because we lift without env
   top.liftedStrategies :=
     s1.liftedStrategies ++
     if s2.attrRefName.isJust
@@ -273,7 +274,7 @@ top::StrategyExpr ::= s::StrategyExpr
   top.unparse = s"all(${s.unparse})";
   
   local sName::String = fromMaybe(top.genName ++ "_all_arg", s.attrRefName);
-  local sTotal::Boolean = if s.attrRefName.isJust then s.isTotal else s.isTotalInf;
+  local sTotal::Boolean = attrIsTotal(top.env, sName); -- Can differ from s.isTotal because we lift without env
   top.liftedStrategies :=
     if s.attrRefName.isJust
     then []
@@ -361,7 +362,7 @@ top::StrategyExpr ::= s::StrategyExpr
   top.unparse = s"some(${s.unparse})";
   
   local sName::String = fromMaybe(top.genName ++ "_some_arg", s.attrRefName);
-  local sTotal::Boolean = if s.attrRefName.isJust then s.isTotal else s.isTotalInf;
+  local sTotal::Boolean = attrIsTotal(top.env, sName); -- Can differ from s.isTotal because we lift without env
   top.liftedStrategies :=
     if s.attrRefName.isJust
     then []
@@ -438,7 +439,7 @@ top::StrategyExpr ::= s::StrategyExpr
   top.unparse = s"one(${s.unparse})";
   
   local sName::String = fromMaybe(top.genName ++ "_one_arg", s.attrRefName);
-  local sTotal::Boolean = if s.attrRefName.isJust then s.isTotal else s.isTotalInf;
+  local sTotal::Boolean = attrIsTotal(top.env, sName); -- Can differ from s.isTotal because we lift without env
   top.liftedStrategies :=
     if s.attrRefName.isJust
     then []
@@ -552,7 +553,7 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
     else [];
   
   -- pair(child name, if attr occurs on child then just(attr name) else nothing())
-  local childAccesses::[Pair<String Maybe<Pair<Boolean String>>>] =
+  local childAccesses::[Pair<String Maybe<String>>] =
     zipWith(pair, top.frame.signature.inputNames, s.attrRefNames);
   top.partialTranslation = -- This is never total
     if prod.lookupValue.fullName == top.frame.fullName
@@ -566,17 +567,17 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
          Could also be implemented as chained monadic binds.  Maybe more efficient this way? -}
       caseExpr(
         flatMap(
-          \ a::Pair<String Maybe<Pair<Boolean String>>> ->
+          \ a::Pair<String Maybe<String>> ->
             case a.snd of
-            | just(pair(false, attr)) -> [Silver_Expr { $name{a.fst}.$name{attr} }]
+            | just(attr) when !attrIsTotal(top.env, attr) -> [Silver_Expr { $name{a.fst}.$name{attr} }]
             | _ -> []
             end,
           childAccesses),
         [matchRule(
            flatMap(
-             \ a::Pair<String Maybe<Pair<Boolean String>>> ->
+             \ a::Pair<String Maybe<String>> ->
                case a.snd of
-               | just(pair(false, attr)) ->
+               | just(attr) when !attrIsTotal(top.env, attr)  ->
                  [decorate Silver_Pattern { core:just($name{a.fst ++ "_" ++ last(explode(":", attr))}) }
                   with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
                | _ -> []
@@ -590,10 +591,10 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
                    top.location,
                    baseExpr(qName(top.location, top.frame.fullName), location=top.location),
                    map(
-                     \ a::Pair<String Maybe<Pair<Boolean String>>> ->
+                     \ a::Pair<String Maybe<String>> ->
                        case a.snd of
-                       | just(pair(true, attr)) -> Silver_Expr { $name{a.fst}.$name{attr} }
-                       | just(pair(false, attr)) -> Silver_Expr { $name{a.fst ++ "_" ++ last(explode(":", attr))} }
+                       | just(attr) when attrIsTotal(top.env, attr) -> Silver_Expr { $name{a.fst}.$name{attr} }
+                       | just(attr) -> Silver_Expr { $name{a.fst ++ "_" ++ last(explode(":", attr))} }
                        | nothing() -> Silver_Expr { $name{a.fst} }
                        end,
                      childAccesses),
@@ -628,7 +629,7 @@ top::StrategyExprs ::= h::StrategyExpr t::StrategyExprs
   local attrMatch::Boolean = attrMatchesFrame(top.env, attr, hType);
   top.attrRefNames =
    (if !null(top.givenInputElements) && attrMatch && !h.isId
-    then just(pair(if h.attrRefName.isJust then h.isTotal else h.isTotalInf, attr))
+    then just(attr)
     else nothing()) :: t.attrRefNames;
   top.errors <-
     if !null(top.givenInputElements) && !attrMatch && !h.isId
@@ -663,15 +664,10 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
     else [pair(top.genName, s)];
   top.freeRecVars := removeBy(stringEq, n.name, s.freeRecVars);
   top.isTotalInf = s.isTotalInf;
-  top.isTotal = s.isTotal;
+  top.isTotal = s.isTotal; -- Invariant: should be same as isTotalInf
   
-  s.recVarEnv =
-    pair(n.name, fromMaybe(pair(s.isTotalInf, s.genName), top.outerAttr)) :: top.recVarEnv;
-  s.outerTotalRecVars =
-    case top.outerAttr of
-    | just(pair(true, _)) -> [n.name]
-    | _ -> []
-    end ++ top.outerTotalRecVars;
+  s.recVarNameEnv = pair(n.name, fromMaybe(s.genName, top.outerAttr)) :: top.recVarNameEnv;
+  s.recVarTotalEnv = pair(n.name, s.isTotalInf) :: top.recVarTotalEnv;
   s.outerAttr = top.outerAttr;
   
   local sTotal::Boolean = if top.outerAttr.isJust then s.isTotal else s.isTotalInf;
@@ -812,21 +808,19 @@ top::StrategyExpr ::= id::QName
   
   -- Forwarding depends on env here, these must be computed without env
   propagate liftedStrategies;
-  top.attrRefName = just(fromMaybe(id.name, mapMaybe(snd, lookupBy(stringEq, id.name, top.recVarEnv))));
+  top.attrRefName = just(fromMaybe(id.name, lookupBy(stringEq, id.name, top.recVarNameEnv)));
   top.isId = false;
-  top.isTotalInf = containsBy(stringEq, id.name, top.outerTotalRecVars); -- Conservative assumption without env
   
   local attrDcl::DclInfo = id.lookupAttribute.dcl;
   attrDcl.givenNonterminalType = error("Not actually needed"); -- Ugh environment needs refactoring
   forwards to
-    if lookupBy(stringEq, id.name, top.recVarEnv).isJust
+    if lookupBy(stringEq, id.name, top.recVarNameEnv).isJust
     then recVarRef(id, genName=top.genName, location=top.location)
     else if !null(id.lookupAttribute.errors)
     then errorRef(id.lookupAttribute.errors, id, genName=top.genName, location=top.location)
-    else case decorate id.lookupAttribute.dcl with { givenNonterminalType = error("Not actually needed"); }.typerep of -- Ugh environment needs refactoring
-    | nonterminalType("core:Maybe", _) -> partialRef(qNameAttrOccur(id, location=top.location), genName=top.genName, location=top.location)
-    | _ -> totalRef(qNameAttrOccur(id, location=top.location), genName=top.genName, location=top.location)
-    end;
+    else if attrIsTotal(top.env, id.name)
+    then totalRef(qNameAttrOccur(id, location=top.location), genName=top.genName, location=top.location)
+    else partialRef(qNameAttrOccur(id, location=top.location), genName=top.genName, location=top.location);
 }
 abstract production errorRef
 top::StrategyExpr ::= msg::[Message] id::Decorated QName
@@ -845,17 +839,17 @@ top::StrategyExpr ::= id::Decorated QName
   top.unparse = id.unparse;
   
   propagate liftedStrategies;
-  top.attrRefName = mapMaybe(snd, lookupBy(stringEq, id.name, top.recVarEnv));
-  top.isTotalInf = containsBy(stringEq, id.name, top.outerTotalRecVars);
-  top.isTotal = lookupBy(stringEq, id.name, top.recVarEnv).fromJust.fst;
+  top.attrRefName = lookupBy(stringEq, id.name, top.recVarNameEnv);
+  top.isTotalInf = true;
+  top.isTotal = lookupBy(stringEq, id.name, top.recVarTotalEnv).fromJust;
   top.freeRecVars <- [id.name];
   
   top.partialTranslation =
-    if top.isTotalInf
+    if attrIsTotal(top.env, top.attrRefName.fromJust)
     then asPartial(top.totalTranslation)
     else Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$qName{top.attrRefName.fromJust} };
   top.totalTranslation =
-    if top.isTotalInf
+    if attrIsTotal(top.env, top.attrRefName.fromJust)
     then Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$qName{top.attrRefName.fromJust} }
     else asTotal(top.partialTranslation);
 }
@@ -950,6 +944,21 @@ top::QNameAttrOccur ::= at::QName
     case top.typerep of
     | nonterminalType("core:Maybe", [t]) -> !unify(top.attrFor, t).failure
     | t -> !unify(top.attrFor, t).failure
+    end;
+}
+
+function attrIsTotal
+Boolean ::= env::Decorated Env attrName::String
+{
+  local dcls::[DclInfo] = getAttrDcl(attrName, env);
+  return
+    case dcls of
+    | [] -> false
+    | d :: _ ->
+      case decorate d with { givenNonterminalType = error("Not actually needed"); }.typerep of -- Ugh environment needs refactoring
+      | nonterminalType("core:Maybe", _) -> false
+      | _ -> true
+      end
     end;
 }
 

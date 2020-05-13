@@ -89,10 +89,11 @@ top::SExpr ::= i::Integer
 { top.incConstsF = constSExpr(i + 1); }
 
 strategy attribute incConsts =
- allTopDown(
-   rule on SExpr of
-   | constSExpr(i) -> constSExpr(i + 1)
-   end) occurs on SStmt, SExpr;
+  (fail <+ id <+ fail) <*
+  allTopDown(
+    rule on SExpr of
+    | constSExpr(i) -> constSExpr(i + 1)
+    end) occurs on SStmt, SExpr;
 propagate incConsts on SStmt, SExpr;
 
 strategy attribute incTwice = incConstsF <* incConsts
