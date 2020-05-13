@@ -54,7 +54,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
       map(
         \ d::Pair<String Decorated StrategyExpr> ->
           strategyAttributeDcl(
-            d.snd.isTotalInf, name(d.fst, top.location), d.snd.recVarNameEnv, d.snd.recVarTotalEnv, new(d.snd),
+            d.snd.isTotal, name(d.fst, top.location), d.snd.recVarNameEnv, d.snd.recVarTotalEnv, new(d.snd),
             location=top.location),
         decorate e with {
           env = emptyEnv(); -- Forward (and thus lifting) cannot depend on top.env to avoid circular dependency

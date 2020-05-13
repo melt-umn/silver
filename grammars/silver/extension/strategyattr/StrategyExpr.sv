@@ -12,8 +12,7 @@ autocopy attribute inlinedStrategies::[String];
 monoid attribute liftedStrategies::[Pair<String Decorated StrategyExpr>] with [], ++;
 synthesized attribute attrRefName::Maybe<String>;
 synthesized attribute isId::Boolean;
-synthesized attribute isTotalInf::Boolean; -- Is total assuming all rec vars are total
-synthesized attribute isTotal::Boolean; -- Is total given rec var env
+synthesized attribute isTotal::Boolean;
 inherited attribute givenInputElements::[NamedSignatureElement];
 synthesized attribute attrRefNames::[Maybe<String>];
 monoid attribute containsFail::Boolean with false, ||;
@@ -93,7 +92,7 @@ strategy attribute optimize =
 
 nonterminal StrategyExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
-  genName, outerAttr, recVarNameEnv, recVarTotalEnv, liftedStrategies, attrRefName, isId, isTotalInf, isTotal, freeRecVars, totalRefs, -- Frame-independent attrs
+  genName, outerAttr, recVarNameEnv, recVarTotalEnv, liftedStrategies, attrRefName, isId, isTotal, freeRecVars, totalRefs, -- Frame-independent attrs
   partialTranslation, totalTranslation, matchesFrame, -- Frame-dependent attrs
   inlinedStrategies, genericStep, ntStep, prodStep, simplify, optimize; -- Optimization stuff
 
@@ -107,7 +106,7 @@ flowtype StrategyExpr =
   -- Normal expression stuff
   unparse {}, errors {decorate, frame, compiledGrammars, flowEnv}, flowDefs {decorate, frame, compiledGrammars, flowEnv},
   -- Frame-independent attrs
-  liftedStrategies {decorate}, attrRefName {decorate}, isId {decorate}, isTotalInf {grammarName, config, env, recVarNameEnv, outerAttr}, isTotal {decorate}, freeRecVars {decorate}, totalRefs {decorate},
+  liftedStrategies {decorate}, attrRefName {decorate}, isId {decorate}, isTotal {decorate}, freeRecVars {decorate}, totalRefs {decorate},
   -- Frame-dependent attrs
   partialTranslation {decorate, frame}, totalTranslation {decorate, frame}, matchesFrame {decorate, frame};
 
@@ -148,7 +147,6 @@ top::StrategyExpr ::=
   top.attrRefName = nothing();
   top.matchesFrame := true; -- Consulted only when attrRefName is just(...)
   top.isId = false;
-  top.isTotalInf = false;
   top.isTotal = false;
 }
 
@@ -159,7 +157,6 @@ top::StrategyExpr ::=
   top.unparse = "id";
   propagate liftedStrategies;
   top.isId = true;
-  top.isTotalInf = true;
   top.isTotal = true;
   top.totalTranslation = Silver_Expr { $name{top.frame.signature.outputElement.elementName} };
 }
@@ -184,7 +181,6 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
     if s2.attrRefName.isJust
     then []
     else [pair(s2Name, s2)];
-  top.isTotalInf = s1.isTotalInf && s2.isTotalInf;
   top.isTotal = s1.isTotal && s2.isTotal;
   
   s1.outerAttr = nothing();
@@ -248,7 +244,6 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
 {
   top.unparse = s"(${s1.unparse} <+ ${s2.unparse})";
   propagate liftedStrategies;
-  top.isTotalInf = s1.isTotalInf || s2.isTotalInf;
   top.isTotal = s1.isTotal || s2.isTotal;
   
   s1.outerAttr = nothing();
@@ -279,7 +274,6 @@ top::StrategyExpr ::= s::StrategyExpr
     if s.attrRefName.isJust
     then []
     else [pair(sName, s)];
-  top.isTotalInf = s.isTotalInf;
   top.isTotal = s.isTotal;
   
   s.outerAttr = nothing();
@@ -663,14 +657,18 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
     then s.liftedStrategies
     else [pair(top.genName, s)];
   top.freeRecVars := removeBy(stringEq, n.name, s.freeRecVars);
-  top.isTotalInf = s.isTotalInf;
-  top.isTotal = s.isTotal; -- Invariant: should be same as isTotalInf
+  top.isTotal =
+    decorate s with {
+      recVarTotalEnv = pair(n.name, true) :: s.recVarTotalEnv;
+      env = s.env; config = s.config; grammarName = s.grammarName; recVarNameEnv = s.recVarNameEnv; outerAttr = s.outerAttr;
+    }.isTotal;
   
-  s.recVarNameEnv = pair(n.name, fromMaybe(s.genName, top.outerAttr)) :: top.recVarNameEnv;
-  s.recVarTotalEnv = pair(n.name, s.isTotalInf) :: top.recVarTotalEnv;
+  local sName::String = fromMaybe(s.genName, top.outerAttr);
+  s.recVarNameEnv = pair(n.name, sName) :: top.recVarNameEnv;
+  s.recVarTotalEnv = pair(n.name, top.isTotal) :: top.recVarTotalEnv;
   s.outerAttr = top.outerAttr;
   
-  local sTotal::Boolean = if top.outerAttr.isJust then s.isTotal else s.isTotalInf;
+  local sTotal::Boolean = attrIsTotal(top.env, sName);
   top.partialTranslation =
     if top.outerAttr.isJust
     then s.partialTranslation
@@ -840,7 +838,6 @@ top::StrategyExpr ::= id::Decorated QName
   
   propagate liftedStrategies;
   top.attrRefName = lookupBy(stringEq, id.name, top.recVarNameEnv);
-  top.isTotalInf = true;
   top.isTotal = lookupBy(stringEq, id.name, top.recVarTotalEnv).fromJust;
   top.freeRecVars <- [id.name];
   
@@ -875,7 +872,6 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   propagate liftedStrategies;
   top.attrRefName = just(attr.name);
   top.matchesFrame := attr.matchesFrame;
-  top.isTotalInf = false;
   top.isTotal = false;
   
   attr.attrFor = top.frame.signature.outputElement.typerep;
@@ -907,7 +903,6 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   propagate liftedStrategies;
   top.attrRefName = just(attr.name);
   top.matchesFrame := attr.matchesFrame;
-  top.isTotalInf = true;
   top.isTotal = true;
   top.totalRefs <- [case attr of qNameAttrOccur(a) -> a.lookupAttribute.dcl.fullName end];
   
@@ -923,7 +918,6 @@ top::StrategyExpr ::= attr::Decorated QNameAttrOccur s::StrategyExpr
   top.unparse = s"(${s.unparse} aka ${attr.unparse})";
   propagate liftedStrategies;
   top.attrRefName = just(attr.attrDcl.fullName);
-  top.isTotalInf = s.isTotalInf;
   top.isTotal = s.isTotal;
   top.partialTranslation =
     if attr.matchesFrame
