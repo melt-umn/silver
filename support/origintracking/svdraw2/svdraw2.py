@@ -2,6 +2,8 @@ import os, sys
 
 allow_c = "--allow_c" in sys.argv
 allow_multiredex = "--allow_multiredex" in sys.argv
+strip_packagename = "--strip_packagename" in sys.argv
+small_nodes = "--all_oi" not in sys.argv
 
 cache={}
 def translate(x):
@@ -18,8 +20,8 @@ def translate(x):
 			return Token(x)
 		if x[1] == "core:loc":
 			return LocationNT(x)
-		if x[1].endswith("OIT"):
-			return PrimitiveValue(x[0], "<"+x[1]+">")
+		# if x[1].endswith("OIT"):
+		# 	return PrimitiveValue(x[0], "<"+x[1]+">")
 		return NT(x)
 
 	if x[0] in cache:
@@ -52,6 +54,7 @@ class NT(ComplexValue):
 		self.redex = None
 		self.newly_introduced = True
 		o = translate(pexpr[4])
+		self.oi = o
 		self.comment = o.node_text(False)
 		if o is None or (isinstance(o, PrimitiveValue) and o.value is None):
 			return
@@ -75,7 +78,9 @@ class NT(ComplexValue):
 
 	def node_text(self, inclo=True):
 		# r=self.name.split(":")[-1]+"("
-		r=self.name+"("
+		if self.name=="core:originDbgNote":
+			return ":".join(self.children[0].value[len("core:loc("):].replace("\"","").replace(" ","").split(",")[0:3])
+		r=(self.name.split(":",1)[1] if strip_packagename else self.name)+"("
 		for c in self.children:
 			if isinstance(c, PrimitiveValue) or isinstance(c, LocationNT):
 				r+=c.node_text()
@@ -84,11 +89,26 @@ class NT(ComplexValue):
 			if c!=self.children[-1]:
 				r += ","
 		r+=")"
-		if inclo: r+="\\n"+self.comment
+		if inclo:
+			if small_nodes:
+				if isinstance(self.oi, NT):
+					r+="\\n"+{
+						"core:originAndRedexOriginInfo": "OR",
+						"core:originOriginInfo": "O",
+						"core:parsedOriginInfo": "P"}[self.oi.name]
+					r+=";"+{
+						"core:setAtConstructionOIT": "C",
+						"core:setAtAccessOIT": "A",
+						"core:setAtForwardingOIT": "F",
+						"core:setFromParserOIT": "P"}[self.oi.children[0].name]
+				else:
+					r+="\\n"+"P"+";"+self.oi.node_text()
+			else:
+				r+="\\n"+self.comment
 		return r
 
 	def is_origins_impl_value(self):
-		return any(x in self.name for x in ["OriginInfo", "loc", "originLink"])
+		return any(x in self.name for x in ["OriginInfo", "loc", "originLink"]) or self.name.endswith("OIT")
 
 class LocationNT(NT):
 	def node_text(self, inclo=True):

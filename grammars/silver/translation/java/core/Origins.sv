@@ -45,7 +45,7 @@ global newConstructionOriginUsingCtxRef :: String =
 function makeNewConstructionOrigin
 String ::= top::Decorated Expr  inInteresting::Boolean --need .frame anno
 {
-  -- ORIGINS TODO: rules ref from top.originRules, er from top.isRoot
+  -- ORIGINS TODO: rules ref from top.originRules
   local ty :: Type = finalType(top);
   local interesting :: Boolean = top.frame.originsContextSource.alwaysConsideredInteresting || !top.isRoot || inInteresting;
 
