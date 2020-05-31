@@ -60,8 +60,13 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
           env = emptyEnv(); -- Forward (and thus lifting) cannot depend on top.env to avoid circular dependency
           config = e.config; grammarName = e.grammarName; recVarNameEnv = recVarNameEnv; recVarTotalEnv = recVarTotalEnv; outerAttr = e.outerAttr;
         }.liftedStrategies));
-   
+  
+  -- Uncomment for debugging
   --forwards to unsafeTrace(fwrd, print(a.name ++ " = " ++ e.unparse ++ "; lifted  " ++ implode(",  ", map(fst, e.liftedStrategies)) ++ "\n\n", unsafeIO()));
+  
+  -- Flow errors here due to exceeding the allowable host forward flow type.
+  -- I'm not actually sure where we depend on flowEnv, config or compiledGrammars.
+  -- This could be fixed by seeding the host flow type or tracking down those dependencies and substituting dummy values.
   forwards to fwrd;
 }
 
@@ -165,6 +170,7 @@ top::ProductionStmt ::= attr::Decorated QName
         \ n::String -> propagateOneAttr(qName(top.location, n), location=top.location),
         attr.lookupAttribute.dcl.liftedStrategyNames));
   
+  -- Uncomment for debugging
   --forwards to unsafeTrace(fwrd, print(attr.name ++ " on " ++ top.frame.fullName ++ " = " ++ (if isTotal then e2.totalTranslation else e2.partialTranslation).unparse ++ ";\n\n", unsafeIO()));
   forwards to fwrd;
 }
