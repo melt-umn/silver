@@ -39,8 +39,8 @@ partial strategy attribute genericStep =
   | allTraversal(id()) -> id(location=top.location, genName=top.genName)
   | someTraversal(fail()) -> fail(location=top.location, genName=top.genName)
   | oneTraversal(fail()) -> fail(location=top.location, genName=top.genName)
-  | prodTraversal(_, s) when s.containsFail -> fail(location=top.location, genName=top.genName)
-  | prodTraversal(_, s) when s.allId -> id(location=top.location, genName=top.genName)
+  | prodTraversal(_, ss) when ss.containsFail -> fail(location=top.location, genName=top.genName)
+  | prodTraversal(_, ss) when ss.allId -> id(location=top.location, genName=top.genName)
   | recComb(n, s) when !containsBy(stringEq, n.name, s.freeRecVars) -> s
   | inlined(_, fail()) -> fail(location=top.location, genName=top.genName)
   end;
@@ -652,10 +652,11 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
 {
   top.unparse = s"rec ${n.name} -> (${s.unparse})";
   
+  local sName::String = fromMaybe(top.genName ++ "_rec_body", top.outerAttr);
   top.liftedStrategies :=
     if top.outerAttr.isJust
     then s.liftedStrategies
-    else [pair(top.genName, s)];
+    else [pair(sName, s)];
   top.freeRecVars := removeBy(stringEq, n.name, s.freeRecVars);
   top.isTotal =
     decorate s with {
@@ -663,7 +664,6 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
       env = s.env; config = s.config; grammarName = s.grammarName; recVarNameEnv = s.recVarNameEnv; outerAttr = s.outerAttr;
     }.isTotal;
   
-  local sName::String = fromMaybe(s.genName, top.outerAttr);
   s.recVarNameEnv = pair(n.name, sName) :: top.recVarNameEnv;
   s.recVarTotalEnv = pair(n.name, top.isTotal) :: top.recVarTotalEnv;
   s.outerAttr = top.outerAttr;
@@ -674,12 +674,12 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
     then s.partialTranslation
     else if sTotal
     then asPartial(top.totalTranslation)
-    else Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$name{top.genName} };
+    else Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$name{sName} };
   top.totalTranslation =
     if top.outerAttr.isJust
     then s.totalTranslation
     else if sTotal
-    then Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$name{top.genName} }
+    then Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$name{sName} }
     else asTotal(top.partialTranslation);
 }
 
