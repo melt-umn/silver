@@ -20,6 +20,7 @@ grammar silver:extension:implicit_monads;
 --imports silver:extension:list;
 
 
+inherited attribute expectedMonad::Type;
 synthesized attribute monadRewritten<a>::a;
 synthesized attribute merrors::[Message] with ++;
 synthesized attribute mtyperep::Type;

@@ -1,10 +1,10 @@
 grammar silver:extension:implicit_monads;
 
 attribute mtyperep, merrors, patternType, monadRewritten<PrimPatterns>,
-          mDownSubst, mUpSubst, monadicNames,
+          mDownSubst, mUpSubst, monadicNames, expectedMonad,
           returnFun, returnify<PrimPatterns> occurs on PrimPatterns;
 attribute mtyperep, merrors, patternType, monadRewritten<PrimPattern>,
-          mDownSubst, mUpSubst, monadicNames,
+          mDownSubst, mUpSubst, monadicNames, expectedMonad,
           returnFun, returnify<PrimPattern> occurs on PrimPattern;
 
 --returnFun is the monad's defined Return for returnify
@@ -58,6 +58,10 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   f.mDownSubst = pr.mUpSubst;
   errCheck1.downSubst = f.mUpSubst;
   top.mUpSubst = errCheck1.upSubst;
+
+  e.expectedMonad = top.expectedMonad;
+  pr.expectedMonad = top.expectedMonad;
+  f.expectedMonad = top.expectedMonad;
 
   e.monadicallyUsed = isMonad(e.mtyperep) && !isMonad(pr.patternType);
   f.monadicallyUsed = false;
@@ -204,6 +208,8 @@ top::PrimPatterns ::= p::PrimPattern
   p.mDownSubst = top.mDownSubst;
   top.mUpSubst = p.mUpSubst;
 
+  p.expectedMonad = top.expectedMonad;
+
   top.mtyperep = p.mtyperep;
   top.patternType = p.patternType;
 
@@ -239,6 +245,9 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
               "pattern expression should have type " ++ errCheck1.leftpp ++
               " or a monad of this; instead it has type " ++ errCheck1.rightpp)]
     else [];
+
+  p.expectedMonad = top.expectedMonad;
+  ps.expectedMonad = top.expectedMonad;
 
   top.mtyperep = if isMonad(p.mtyperep)
                  then if isMonad(ps.mtyperep)
@@ -288,6 +297,8 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' arr::Arrow_kwd e::Expr
   e.downSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
 
+  e.expectedMonad = top.expectedMonad;
+
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
 }
@@ -297,6 +308,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.merrors := e.merrors;
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
+
+  e.expectedMonad = top.expectedMonad;
 
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
@@ -320,6 +333,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
 
+  e.expectedMonad = top.expectedMonad;
+
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
 
@@ -342,6 +357,8 @@ top::PrimPattern ::= i::Int_t arr::Arrow_kwd e::Expr
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
 
+  e.expectedMonad = top.expectedMonad;
+
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
 
@@ -359,6 +376,8 @@ top::PrimPattern ::= f::Float_t arr::Arrow_kwd e::Expr
   top.merrors := e.merrors;
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
+
+  e.expectedMonad = top.expectedMonad;
 
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
@@ -378,6 +397,8 @@ top::PrimPattern ::= i::String_t arr::Arrow_kwd e::Expr
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
 
+  e.expectedMonad = top.expectedMonad;
+
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
   
@@ -395,6 +416,8 @@ top::PrimPattern ::= i::String arr::Arrow_kwd e::Expr
   top.merrors := e.merrors;
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
+
+  e.expectedMonad = top.expectedMonad;
 
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
@@ -414,6 +437,8 @@ top::PrimPattern ::= e::Expr
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
 
+  e.expectedMonad = top.expectedMonad;
+
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
 
@@ -431,6 +456,8 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   top.merrors := e.merrors;
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
+
+  e.expectedMonad = top.expectedMonad;
 
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;

@@ -1,12 +1,14 @@
 grammar silver:extension:implicit_monads;
 
 --whether an expression needs to be bound into its immediate parent
+--I think this is for let insertion, but I'll leave it here anyway
 inherited attribute monadicallyUsed::Boolean occurs on Expr;
 --a collection of names/attribute accesses that are monadically used
 --it's a list of expressions for attribute accesses
+--I think this is for let insertion too
 synthesized attribute monadicNames::[Expr] occurs on Expr, AppExpr, AppExprs;
 
-attribute monadRewritten<Expr>, merrors, mtyperep, mDownSubst, mUpSubst occurs on Expr;
+attribute monadRewritten<Expr>, merrors, mtyperep, mDownSubst, mUpSubst, expectedMonad occurs on Expr;
 
 
 aspect default production
@@ -158,6 +160,8 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
                  then rewrite.mtyperep
                  else forward.mtyperep;
 
+  e.expectedMonad = top.expectedMonad;
+
   e.monadicallyUsed = if isMonad(e.mtyperep)
                       then true
                       else false;
@@ -237,6 +241,8 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   nes.downSubst = top.downSubst;
   nes.appExprTypereps = reverse(performSubstitution(ne.mtyperep, ne.mUpSubst).inputTypes);
   nes.appExprApplied = ne.unparse;
+
+  ne.expectedMonad = top.expectedMonad;
 
   top.merrors := ne.merrors ++ nes.merrors;
   top.mUpSubst = nes.mUpSubst;
@@ -461,6 +467,7 @@ top::Expr ::= e::Expr '.' 'forward'
   top.merrors := e.errors;
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
+  e.expectedMonad = top.expectedMonad;
   top.mtyperep = e.mtyperep;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = e.monadicNames;
@@ -472,6 +479,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
   e.mDownSubst = top.mDownSubst;
   forward.mDownSubst = e.mUpSubst;
+  e.expectedMonad = top.expectedMonad;
   top.merrors := e.merrors ++ forward.merrors;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
@@ -503,6 +511,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.expectedMonad = top.expectedMonad;
 
   ne.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
@@ -528,6 +537,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.expectedMonad = top.expectedMonad;
 
   top.merrors := ne.merrors;
   top.mUpSubst = top.mDownSubst;
@@ -562,6 +572,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.expectedMonad = top.expectedMonad;
 
   ne.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
@@ -587,6 +598,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.expectedMonad = top.expectedMonad;
 
   ne.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
@@ -612,6 +624,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.expectedMonad = top.expectedMonad;
 
   top.monadicNames = [];
 
@@ -634,6 +647,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   inh.mDownSubst = e.mUpSubst;
   top.mUpSubst = inh.mUpSubst;
   top.merrors := e.merrors;
+  e.expectedMonad = top.expectedMonad;
 
   e.monadicallyUsed = if isMonad(e.mtyperep)
                       then true
@@ -773,6 +787,9 @@ top::Expr ::= e1::Expr '&&' e2::Expr
                       then e2.mtyperep
                       else boolType();
 
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = top.expectedMonad;
+
   e1.monadicallyUsed = isMonad(e1.mtyperep);
   e2.monadicallyUsed = isMonad(e2.mtyperep);
   top.monadicNames = e1.monadicNames ++ e2.monadicNames;
@@ -846,6 +863,9 @@ top::Expr ::= e1::Expr '||' e2::Expr
   e2.monadicallyUsed = isMonad(e2.mtyperep);
   top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = top.expectedMonad;
+
   --we assume both have the same monad, so we only need one return
   --e1 >>= ( (\x::Bool y::M(Bool). y >>= (\z::Bool. Return(x || z))) (_, e2) )
   local bindBoth::Expr =
@@ -904,6 +924,8 @@ top::Expr ::= '!' e::Expr
   e.monadicallyUsed = isMonad(e.mtyperep);
   top.monadicNames = e.monadicNames;
 
+  e.expectedMonad = top.expectedMonad;
+
   top.monadRewritten =
     if isMonad(e.mtyperep)
     then Silver_Expr {
@@ -929,6 +951,9 @@ top::Expr ::= e1::Expr '>' e2::Expr
   e2.mDownSubst = e1.mUpSubst;
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
+
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = top.expectedMonad;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -1006,6 +1031,9 @@ top::Expr ::= e1::Expr '<' e2::Expr
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
 
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = top.expectedMonad;
+
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, e2.mtyperep)
@@ -1081,6 +1109,9 @@ top::Expr ::= e1::Expr '>=' e2::Expr
   e2.mDownSubst = e1.mUpSubst;
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
+
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = top.expectedMonad;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -1158,6 +1189,9 @@ top::Expr ::= e1::Expr '<=' e2::Expr
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
 
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = top.expectedMonad;
+
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, e2.mtyperep)
@@ -1234,6 +1268,9 @@ top::Expr ::= e1::Expr '==' e2::Expr
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
 
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = top.expectedMonad;
+
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, e2.mtyperep)
@@ -1309,6 +1346,9 @@ top::Expr ::= e1::Expr '!=' e2::Expr
   e2.mDownSubst = e1.mUpSubst;
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
+
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = top.expectedMonad;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -1393,17 +1433,24 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything
                  then e2.mtyperep
                  else if isMonad(e1.mtyperep)
                       then monadOfType(e1.mtyperep, e2.mtyperep)
-                      else errorType(); --we need a monad to be able to actually type this
+                      else monadOfType(top.expectedMonad, e2.mtyperep);
 
   e1.monadicallyUsed = isMonad(e1.mtyperep);
   e2.monadicallyUsed = false;
   top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = if isMonad(e1.mtyperep)
+                     then e1.mtyperep
+                     else top.expectedMonad;
+
   local fail::Either<String Expr> = if isMonad(e1.mtyperep)
                                     then monadFail(e1.mtyperep, top.location)
-                                    else monadFail(e2.mtyperep, top.location);
+                                    else if isMonad(e2.mtyperep)
+                                         then monadFail(e2.mtyperep, top.location)
+                                         else monadFail(top.expectedMonad, top.location);
 
-  forwards to if isMonad(e1.mtyperep) || isMonad(e2.mtyperep)
+  forwards to if isMonad(e1.mtyperep) || isMonad(e2.mtyperep) || isMonad(top.expectedMonad)
               then case fail of
                    | right(f) -> ifThenElse('if', e1, 'then', e2, 'else', f, location=top.location)
                    | left(e) -> errorExpr([err(top.location, e)], location=top.location)
@@ -1452,6 +1499,14 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
   e2.monadicallyUsed = false;
   e3.monadicallyUsed = false;
   top.monadicNames = e1.monadicNames ++ e2.monadicNames ++ e3.monadicNames;
+
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = if isMonad(e1.typerep)
+                     then e1.typerep
+                     else top.expectedMonad;
+  e3.expectedMonad = if isMonad(e1.typerep)
+                     then e1.typerep
+                     else top.expectedMonad;
 
   --To deal with the case where one type or the other might be "generic" (e.g. Maybe<a>),
   --   we want to do substitution on the types before putting them into the monadRewritten
@@ -1531,6 +1586,9 @@ top::Expr ::= e1::Expr '+' e2::Expr
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
 
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = top.expectedMonad;
+
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, e2.mtyperep)
@@ -1604,6 +1662,9 @@ top::Expr ::= e1::Expr '-' e2::Expr
   e2.mDownSubst = e1.mUpSubst;
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
+
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = top.expectedMonad;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -1679,6 +1740,9 @@ top::Expr ::= e1::Expr '*' e2::Expr
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
 
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = top.expectedMonad;
+
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, e2.mtyperep)
@@ -1752,6 +1816,9 @@ top::Expr ::= e1::Expr '/' e2::Expr
   e2.mDownSubst = e1.mUpSubst;
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
+
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = top.expectedMonad;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
@@ -1827,6 +1894,9 @@ top::Expr ::= e1::Expr '%' e2::Expr
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
 
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = top.expectedMonad;
+
   local ec::TypeCheck = if isMonad(e1.mtyperep)
                         then if isMonad(e2.mtyperep)
                              then check(e1.mtyperep, e2.mtyperep)
@@ -1896,6 +1966,8 @@ top::Expr ::= '-' e::Expr
   e.monadicallyUsed = isMonad(e.mtyperep);
   top.monadicNames = e.monadicNames;
 
+  e.expectedMonad = top.expectedMonad;
+
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
   top.monadRewritten =
@@ -1956,6 +2028,9 @@ top::Expr ::= e1::Expr '++' e2::Expr
                       else if isMonad(e1.mtyperep)
                            then e1.mtyperep
                            else e2.mtyperep;
+
+  e1.expectedMonad = top.expectedMonad;
+  e2.expectedMonad = top.expectedMonad;
 
   local ec::TypeCheck = if isList1
                         then if isList2
@@ -2071,6 +2146,9 @@ top::Expr ::= e1::Decorated Expr   e2::Decorated Expr
                  then ne1.mtyperep
                  else ne2.mtyperep;
 
+  ne1.expectedMonad = top.expectedMonad;
+  ne2.expectedMonad = top.expectedMonad;
+
   ne1.monadicallyUsed = isMonad(ne1.mtyperep);
   ne2.monadicallyUsed = isMonad(ne2.mtyperep);
   top.monadicNames = ne1.monadicNames ++ ne2.monadicNames;
@@ -2145,8 +2223,11 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 
 
 
+--A list of the locations where arguments are monads used implicitly
 synthesized attribute monadTypesLocations::[Pair<Type Integer>] occurs on AppExpr, AppExprs;
+--A list of the actual types of arguments
 synthesized attribute realTypes::[Type] occurs on AppExpr, AppExprs;
+
 attribute monadRewritten<AppExpr>, merrors, mDownSubst, mUpSubst occurs on AppExpr;
 attribute monadRewritten<AppExprs>, merrors, mDownSubst, mUpSubst occurs on AppExprs;
 
@@ -2204,6 +2285,12 @@ top::AppExpr ::= e::Expr
                 top.appExprApplied ++ "' expected " ++ errCheck1a.rightpp ++
                 " or a monad of " ++ errCheck1a.rightpp ++
                 " but argument is of type " ++ errCheck1a.leftpp)];
+  --Functions are not allowed to take monad-typed arguments
+  top.merrors <-
+    if isMonad(top.appExprTyperep)
+    then [err(top.location, "Implicit equations may not use functions with " ++
+                            "monad-typed arguments, specifically " ++ errCheck2a.rightpp)]
+    else [];
 
   top.monadRewritten = presentAppExpr(e.monadRewritten, location=top.location);
 }
@@ -2271,6 +2358,7 @@ top::Expr ::= e::Decorated Expr
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.expectedMonad = top.expectedMonad;
 
   top.merrors := ne.merrors;
   top.mUpSubst = ne.mUpSubst;

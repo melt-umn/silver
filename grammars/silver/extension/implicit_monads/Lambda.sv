@@ -12,6 +12,8 @@ top::Expr ::= params::ProductionRHS e::Expr
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
 
+  e.expectedMonad = top.expectedMonad;
+
   top.mtyperep = functionType(e.mtyperep, map((.typerep), params.inputElements), []);
 
   e.monadicallyUsed = false;

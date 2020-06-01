@@ -1,294 +1,85 @@
 grammar silver:extension:implicit_monads;
 
-attribute monadRewritten<ProductionBody>, merrors, mDownSubst occurs on ProductionBody;
-attribute monadRewritten<ProductionStmts>, merrors, mDownSubst occurs on ProductionStmts;
-attribute monadRewritten<ProductionStmt>, merrors, mDownSubst occurs on ProductionStmt;
-
-
-
-aspect production productionBody
-top::ProductionBody ::= '{' stmts::ProductionStmts '}'
-{
-  top.merrors := stmts.merrors;
-
-  top.monadRewritten = productionBody('{', stmts.monadRewritten, '}', location=top.location);
-}
-
-
-aspect default production
-top::ProductionStmts ::=
-{
-  top.merrors := [];
-  top.monadRewritten = error("monadRewritten must be defined on all ProductionStmts");
-}
-
-aspect production productionStmtsSnoc
-top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
-{
-  top.merrors := h.merrors ++ t.merrors;
-  top.monadRewritten = productionStmtsSnoc(h.monadRewritten, t.monadRewritten, location=top.location);
-}
-
-----------
-
-aspect default production
-top::ProductionStmt ::=
-{
-  top.merrors := [];
-  top.monadRewritten = error("monadRewritten must be defined on all ProductionStmt");
-}
-
-aspect production productionStmtsNil
-top::ProductionStmts ::= 
-{
-  top.merrors := [];
-  top.monadRewritten = productionStmtsNil(location=top.location);
-}
-
-aspect production productionStmtAppend
-top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
-{
-  top.merrors := h.merrors ++ t.merrors;
-  top.monadRewritten = productionStmtAppend(h.monadRewritten, t.monadRewritten, location=top.location);
-}
-
-aspect production errorProductionStmt
-top::ProductionStmt ::= e::[Message]
-{
-  top.monadRewritten = errorProductionStmt(e, location=top.location);
-}
-
-
---------------------------------------------------------------------------------
-
-aspect production returnDef
-top::ProductionStmt ::= 'return' e::Expr ';'
-{
-  top.merrors := e.merrors;
-  top.monadRewritten = returnDef('return', e.monadRewritten, ';', location=top.location);
-  e.monadicallyUsed = false;
-}
-
-aspect production localAttributeDcl
-top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
-{
-  top.merrors := [];
-  top.monadRewritten = localAttributeDcl('local', 'attribute', a, '::', te, ';', location=top.location);
-}
-
-aspect production productionAttributeDcl
-top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
-{
-  top.merrors := [];
-  top.monadRewritten = productionAttributeDcl('production', 'attribute', a, '::', te, ';', location=top.location);
-}
-
-aspect production forwardsTo
-top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
-{
-  top.merrors := e.merrors;
-  top.monadRewritten = forwardsTo('forwards', 'to', e.monadRewritten, ';', location=top.location);
-  e.monadicallyUsed = false;
-}
-
--- explicitly leaving out forwardsToWith here because it should be fine for forwarding here
-
---- TODO This should walk through inh and do monad rewriting, maybe?
-aspect production forwardingWith
-top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
-{
-  top.merrors := [];
-  top.monadRewritten = forwardingWith('forwarding', 'with', '{', inh, '}', ';', location=top.location);
-}
-
--- TODO This one should probably have the actual monadRewritten like
-{-aspect production forwardInh
-top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
-{
-  top.merrors := e.merrors;
-  top.monadRewritten = forwardInh(lhs, '=', e.monadRewritten, top.location);
-}
-
-aspect production forwardInhsOne
-top::ForwardInhs ::= lhs::ForwardInh
-{
-  top.merrors := [];
-  top.monadRewritten = top;
-}
-
-aspect production forwardInhsCons
-top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
-{
-  top.merrors := [];
-  top.monadRewritten = top;
-}
-
-aspect production forwardLhsExpr
-top::ForwardLHSExpr ::= q::QNameAttrOccur
-{
-  top.merrors := [];
-  top.monadRewritten = top;
-}-}
-
 --Write an empty equation filled in by an appropriate fail
 concrete production emptyAttributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
 
-  top.productionAttributes = [];
-  top.defs = [];
+  top.productionAttributes := [];
+  top.defs := [];
 
   local fail::Either<String Expr> = monadFail(attr.typerep, top.location);
 
-  top.merrors := [];
-  top.merrors <-
-    if isMonad(attr.typerep)
-    then case fail of
-         | right(_) -> []
-         | left(e) -> [err(top.location, e ++ "; this monad cannot be used in an empty equation")]
-         end
-    else [];
-  top.merrors <- if !isMonad(attr.typerep)
-                 then [err(top.location, "Empty equations can only be used for " ++
-                                            "monad-typed attributes, not attributes of type " ++
-                                            prettyType(attr.typerep))]
-                 else [];
+  local merrors::[Message] =
+    (if isMonad(attr.typerep)
+     then case fail of
+          | right(_) -> []
+          | left(e) -> [err(top.location, e ++ "; this monad cannot be used in an empty equation")]
+          end
+     else []) ++
+    (if !isMonad(attr.typerep)
+     then [err(top.location, "Empty equations can only be used for " ++
+                             "monad-typed attributes, not attributes of type " ++
+                             prettyType(attr.typerep))]
+     else []);
 
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
 
-  forwards to if null(top.merrors)
+  forwards to if null(merrors)
               then attributeDef(dl, '.', attr, '=',
                                 case fail of | right(e) -> e end,
                                 ';', location=top.location)
-              else errorProductionStmt(top.merrors, location=top.location);
+              else errorProductionStmt(merrors, location=top.location);
 }
 
-aspect production attributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
-{
---  e.downSubst = top.downSubst;
---  e.mDownSubst = top.mDownSubst;
---  e.finalSubst = e.mUpSubst;
---  top.merrors := e.merrors;
 
---  local emr::Expr = e.monadRewritten;
---  emr.env = top.env; emr.frame = top.frame; emr.grammarName = top.grammarName;
---  emr.config = top.config; emr.compiledGrammars = top.compiledGrammars;
---  emr.mDownSubst = top.mDownSubst;
-  --top.monadRewritten =
---  local mr::ProductionStmt = if isMonad(attr.typerep)
---                       then if isMonad(e.mtyperep) || isError(e.mtyperep)
---                            then attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location)
---                            else attributeDef(dl, '.', attr, '=',
---                                   Silver_Expr {
---                                     $Expr {monadReturn(attr.typerep, top.location)}
---                                      ($Expr {e.monadRewritten})
---                                   }, ';', location=top.location)
---                       else attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location);
---  top.monadRewritten = mr;
-}
-
+--Write an equation that allows implicit use of monads
 terminal Implicit_kwd    'implicit'     lexer classes {KEYWORD,RESERVED};
 
 concrete production implicitAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   e.downSubst = top.downSubst;
-  e.mDownSubst = top.mDownSubst;
+  e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
 
-  top.productionAttributes = [];
-  top.defs = [];
+  e.expectedMonad = attr.typerep;
+
+  top.productionAttributes := [];
+  top.defs := [];
 
   local fail::Either<String Expr> = monadFail(attr.typerep, top.location);
 
-  top.merrors := e.merrors;
-  top.merrors <-
-    if isMonad(attr.typerep)
-    then case fail of
-         | right(_) -> []
-         | left(e) -> [err(top.location, e ++ "; this monad cannot be used in an empty equation")]
-         end
-    else [];
-  top.merrors <- if !isMonad(attr.typerep)
-                 then [err(top.location, "Implicit equations can only be used for " ++
-                                            "monad-typed attributes, not attributes of type " ++
-                                            prettyType(attr.typerep))]
-                 else [];
+  local merrors::[Message] =
+    (if isMonad(attr.typerep)
+     then case fail of
+          | right(_) -> []
+          | left(e) -> [err(top.location, e ++ "; this monad cannot be used in an empty equation")]
+          end
+     else []) ++
+    (if !isMonad(attr.typerep)
+     then [err(top.location, "Implicit equations can only be used for " ++
+                             "monad-typed attributes, not attributes of type " ++
+                             prettyType(attr.typerep))]
+     else []);
 
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
 
-  forwards to if null(top.merrors)
-              then attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location)
-              else errorProductionStmt(top.merrors, location=top.location);
-}
-
-aspect production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
-{
-  top.merrors := msg;
-  top.monadRewritten = errorAttributeDef(msg, dl, attr, e, location=top.location);
-}
-
-aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
-{
-  top.merrors := e.merrors;
-
-  e.mDownSubst = top.mDownSubst;
---  e.finalSubst = e.mUpSubst;
-  top.monadRewritten = if isMonad(attr.typerep)
-                       then if isMonad(e.mtyperep) || isError(e.mtyperep)
-                            then synthesizedAttributeDef(dl, attr, e.monadRewritten, location=top.location)
-                            else synthesizedAttributeDef(dl, attr,
+  forwards to if null(merrors)
+              then if isMonad(attr.typerep)
+                   then if isMonad(e.mtyperep)
+                        then attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location)
+                        else synthesizedAttributeDef(dl, attr,
                                    Silver_Expr {
                                      $Expr {monadReturn(attr.typerep, top.location)}
                                       ($Expr {e.monadRewritten})
                                    }, location=top.location)
-                       else synthesizedAttributeDef(dl, attr, e.monadRewritten, location=top.location);
-  e.monadicallyUsed = false;
-}
-
-aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
-{
-  top.merrors := e.merrors;
-
-  e.mDownSubst = top.mDownSubst;
---  e.finalSubst = e.mUpSubst;
-  top.monadRewritten = if isMonad(attr.typerep)
-                       then if isMonad(e.mtyperep) || isError(e.mtyperep)
-                            then inheritedAttributeDef(dl, attr, e.monadRewritten, location=top.location)
-                            else inheritedAttributeDef(dl, attr,
-                                   Silver_Expr {
-                                     $Expr {monadReturn(attr.typerep, top.location)}
-                                      ($Expr {e.monadRewritten})
-                                   }, location=top.location)
-                       else inheritedAttributeDef(dl, attr, e.monadRewritten, location=top.location);
-  e.monadicallyUsed = false;
-}
-
-aspect production localValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
-{
-  -- val is already valid here
-  top.merrors := e.merrors;
-
-  e.mDownSubst = top.mDownSubst;
---  e.finalSubst = e.mUpSubst;
-  top.monadRewritten = if isMonad(val.lookupValue.typerep)
-                       then if isMonad(e.mtyperep) || isError(e.mtyperep)
-                            then localValueDef(val, e.monadRewritten, location=top.location)
-                            else localValueDef(val,
-                                   Silver_Expr {
-                                     $Expr {monadReturn(val.lookupValue.typerep, top.location)}
-                                      ($Expr {e.monadRewritten})
-                                   }, location=top.location)
-                       else localValueDef(val, e.monadRewritten, location=top.location);
-  e.monadicallyUsed = false;
+                   else errorProductionStmt([err(top.location, "Implicit equations can only be used " ++
+                                                 "for monad-typed attributes")], location=top.location)
+              else errorProductionStmt(merrors, location=top.location);
 }
 

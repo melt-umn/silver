@@ -1,6 +1,6 @@
 grammar silver:extension:implicit_monads;
 
-
+{-
 terminal Monadic_kwd    'monadic'     lexer classes {KEYWORD,RESERVED};
 concrete production productionMonadDcl
 top::AGDcl ::= 'monadic' 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
@@ -10,7 +10,7 @@ top::AGDcl ::= 'monadic' 'abstract' 'production' id::Name ns::ProductionSignatur
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
 
-  top.defs = prodDef(top.grammarName, id.location, namedSig) ::
+  top.defs := prodDef(top.grammarName, id.location, namedSig) ::
     if null(body.productionAttributes) then []
     else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 
@@ -39,7 +39,7 @@ top::AGDcl ::= 'monadic' 'abstract' 'production' id::Name ns::ProductionSignatur
   local myGraphs :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
   {-- Used by core to send down with .frame -}
   production myFlowGraph :: ProductionGraph = findProductionGraph(fName, myGraphs);
-  top.flowDefs = body.flowDefs ++ 
+  top.flowDefs := body.flowDefs ++ 
     if null(body.uniqueSignificantExpression)
     then [prodFlowDef(namedSig.outputElement.typerep.typeName, fName)]
     else [];
@@ -48,4 +48,4 @@ top::AGDcl ::= 'monadic' 'abstract' 'production' id::Name ns::ProductionSignatur
   forwards to productionDcl('abstract', 'production', id, ns, body.monadRewritten, location=top.location);
   --Forward equation exceeds flow type with dependencies on silver:definition:env:compiledGrammars, silver:definition:env:config, silver:definition:flow:env:flowEnv
 }
-
+-}

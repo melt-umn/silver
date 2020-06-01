@@ -45,6 +45,8 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.mDownSubst = la.mUpSubst;
   top.mUpSubst = ne.mUpSubst;
 
+  e.expectedMonad = top.expectedMonad;
+
   top.mtyperep = if isMonad(ne.mtyperep) || null(la.bindInList)
                  then ne.mtyperep
                  else case la.monadUsed of

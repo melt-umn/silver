@@ -15,7 +15,7 @@ parser svParse::Root {
   silver:extension:patternmatching;
   silver:extension:treegen;
   silver:extension:doc;
-  silver:extension:functorattrib;
+--  silver:extension:functorattrib;
   silver:extension:monad;
   silver:extension:reflection;
   silver:extension:silverconstruction;
