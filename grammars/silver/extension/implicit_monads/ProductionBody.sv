@@ -190,6 +190,43 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 --  top.monadRewritten = mr;
 }
 
+terminal Implicit_kwd    'implicit'     lexer classes {KEYWORD,RESERVED};
+
+concrete production implicitAttributeDef
+top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
+{
+  e.downSubst = top.downSubst;
+  e.mDownSubst = top.mDownSubst;
+  e.finalSubst = e.mUpSubst;
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
+
+  top.productionAttributes = [];
+  top.defs = [];
+
+  local fail::Either<String Expr> = monadFail(attr.typerep, top.location);
+
+  top.merrors := e.merrors;
+  top.merrors <-
+    if isMonad(attr.typerep)
+    then case fail of
+         | right(_) -> []
+         | left(e) -> [err(top.location, e ++ "; this monad cannot be used in an empty equation")]
+         end
+    else [];
+  top.merrors <- if !isMonad(attr.typerep)
+                 then [err(top.location, "Implicit equations can only be used for " ++
+                                            "monad-typed attributes, not attributes of type " ++
+                                            prettyType(attr.typerep))]
+                 else [];
+
+  dl.defLHSattr = attr;
+  attr.attrFor = dl.typerep;
+
+  forwards to if null(top.merrors)
+              then attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location)
+              else errorProductionStmt(top.merrors, location=top.location);
+}
+
 aspect production errorAttributeDef
 top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
