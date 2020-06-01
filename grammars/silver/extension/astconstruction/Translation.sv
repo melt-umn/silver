@@ -1,15 +1,13 @@
 grammar silver:extension:astconstruction;
 
 imports silver:reflect;
-imports silver:hostEmbedding;
+imports silver:metatranslation;
 
 aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
-  directEscapeProductions <-
-    ["silver:extension:astconstruction:escapeAST"];
-  varPatternProductions <-
-    ["silver:extension:astconstruction:varAST"];
-  wildPatternProductions <-
-    ["silver:extension:astconstruction:wildAST"];
+  directAntiquoteProductions <-
+    ["silver:extension:astconstruction:antiquoteAST"];
+  patternAntiquoteProductions <-
+    ["silver:extension:astconstruction:antiquotePatternAST"];
 }

@@ -1,7 +1,7 @@
 grammar silver:translation:java:core;
 
-aspect production attributionDcl
-top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
+aspect production defaultAttributionDcl
+top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   local ntfn :: String = nt.lookupType.fullName;
   local occursType :: String = if at.lookupAttribute.dcl.isSynthesized then "syn" else "inh";
@@ -23,3 +23,9 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
       s"${makeName(ntgrammar)}.Init.count_${occursType}__ON__${ntname}++;\n";
 }
 
+aspect production errorAttributionDcl
+top::AGDcl ::= msg::[Message] at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+{
+  top.setupInh := error("Internal compiler error: translation not defined in the presence of errors");
+  top.valueWeaving := error("Internal compiler error: translation not defined in the presence of errors");
+}

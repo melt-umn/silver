@@ -31,11 +31,11 @@ nonterminal AbstractMatchRule with location, headPattern, isVarMatchRule, expand
 synthesized attribute headPattern :: Decorated Pattern;
 -- Whether the head pattern of a match rule is a variable binder or not
 synthesized attribute isVarMatchRule :: Boolean;
--- Turns A(B, C), D into B, C, D in the patterns list.
-synthesized attribute expandHeadPattern :: AbstractMatchRule;
+-- Turns A(B, C), D into B, C, D in the patterns list, with a list of named patterns to include.
+synthesized attribute expandHeadPattern :: (AbstractMatchRule ::= [String]);
 
 -- P , ...
-nonterminal PatternList with location, config, unparse, patternList, env, errors;
+nonterminal PatternList with location, config, unparse, patternList, env, errors, patternVars, patternVarEnv;
 
 -- Turns PatternList into [Pattern]
 synthesized attribute patternList :: [Decorated Pattern];
@@ -113,13 +113,20 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
   {--
    - All constructors? Then do a real primitive match.
    -}
+  local freshCurrName :: String = "__curr_match_" ++ toString(genInt());
+  local freshCurrNameRef :: Expr =
+    baseExpr(qName(top.location, freshCurrName), location=top.location);
   local allConCase :: Expr =
-    matchPrimitive(head(es),
-      typerepTypeExpr(retType, location=top.location),
-      foldPrimPatterns(
-        map(allConCaseTransform(tail(es), failExpr, retType, _),
+    -- Annoyingly, this now needs to be a let in case of annotation patterns.
+    makeLet(top.location,
+      freshCurrName, freshType(), head(es), 
+      matchPrimitive(
+        freshCurrNameRef,
+        typerepTypeExpr(retType, location=top.location),
+        foldPrimPatterns(
+          map(allConCaseTransform(freshCurrNameRef, tail(es), failExpr, retType, _),
           groupMRules(prodRules))),
-      failExpr, location=top.location);
+        failExpr, location=top.location));
   
   {--
    - All variables? Just push a let binding inside each branch.
@@ -173,6 +180,8 @@ top::MatchRule ::= pt::PatternList '->' e::Expr
     if length(pt.patternList) == top.matchRulePatternSize then []
     else [err(pt.location, "case expression matching against " ++ toString(top.matchRulePatternSize) ++ " values, but this rule has " ++ toString(length(pt.patternList)) ++ " patterns")];
 
+  pt.patternVarEnv = [];
+
   top.matchRuleList = [matchRule(pt.patternList, nothing(), e, location=top.location)];
 }
 
@@ -186,6 +195,8 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr '->' e::Expr
     if length(pt.patternList) == top.matchRulePatternSize then []
     else [err(pt.location, "case expression matching against " ++ toString(top.matchRulePatternSize) ++ " values, but this rule has " ++ toString(length(pt.patternList)) ++ " patterns")];
 
+  pt.patternVarEnv = [];
+
   top.matchRuleList = [matchRule(pt.patternList, just(cond), e, location=top.location)];
 }
 
@@ -197,7 +208,18 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Expr> e::Expr
   top.isVarMatchRule = null(pl) || head(pl).patternIsVariable;
   -- For this, we safely know that pl is not null:
   top.expandHeadPattern = 
-    matchRule(head(pl).patternSubPatternList ++ tail(pl), cond, e, location=top.location);
+    \ named::[String] ->
+      matchRule(
+        head(pl).patternSubPatternList ++
+        map(
+          \ n::String ->
+            fromMaybe(
+              decorate wildcPattern('_', location=top.location)
+                with { config=head(pl).config; env=head(pl).env; patternVarEnv = []; },
+              lookupBy(stringEq, n, head(pl).patternNamedSubPatternList)),
+          named) ++
+        tail(pl),
+        cond, e, location=top.location);
 }
 
 concrete production patternList_one
@@ -206,14 +228,27 @@ top::PatternList ::= p::Pattern
   top.unparse = p.unparse;
   top.errors := p.errors;
 
+  top.patternVars = p.patternVars;
+  p.patternVarEnv = top.patternVarEnv;
+  
   top.patternList = [p];
 }
-concrete production patternList_more
+concrete production patternList_snoc
+top::PatternList ::= ps::PatternList ',' p::Pattern 
+{
+  top.unparse = ps.unparse ++ ", " ++ p.unparse;
+  
+  forwards to appendPatternList(ps, patternList_one(p, location=p.location));
+}
+abstract production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
   top.unparse = p.unparse ++ ", " ++ ps1.unparse;
   top.errors := p.errors ++ ps1.errors;
 
+  top.patternVars = p.patternVars ++ ps1.patternVars;
+  ps1.patternVarEnv = p.patternVarEnv ++ p.patternVars;
+  
   top.patternList = p :: ps1.patternList;
 }
 
@@ -224,12 +259,25 @@ top::PatternList ::=
   top.unparse = "";
   top.errors := [];
 
+  top.patternVars = [];
   top.patternList = [];
 }
 
 ----------------------------------------------------
 -- Added Functions
 ----------------------------------------------------
+function appendPatternList
+PatternList ::= p1::PatternList p2::PatternList
+{
+  return
+    case p1 of
+    | patternList_more(h, _, t) ->
+      patternList_more(h, ',', appendPatternList(t, p2), location=p1.location)
+    | patternList_one(h) ->
+      patternList_more(h, ',', p2, location=p1.location)
+    | patternList_nil() -> p2
+    end;
+}
 
 function patternListVars
 Name ::= p::Decorated Pattern
@@ -258,6 +306,7 @@ Expr ::= n::Name
  - Takes a set of matchrules that all match against the SAME CONSTRUCTOR and pushes
  - a complex case-expr within a primitive pattern that matches this constructor.
  -
+ - @param currExpr  (The current expression to match against in the overall complex case-expr)
  - @param restExprs  (The remaining expressions to match against in the overall complex case-expr)
  - @param failCase  (The failure expression)
  - @param retType  (The return type of the overall case-expr, and thus this)
@@ -266,7 +315,7 @@ Expr ::= n::Name
  - @return  A primitive pattern matching the constructor, with the overall case-expr pushed down into it
  -}
 function allConCaseTransform
-PrimPattern ::= restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[AbstractMatchRule]
+PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[AbstractMatchRule]
 {
   -- TODO: potential source of buggy error messages. We're using head(mrs) as the source of
   -- authority for the length of pattern variables to match against. But each match rule may
@@ -276,17 +325,22 @@ PrimPattern ::= restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[Abstract
 
   local subcase :: Expr =
     caseExpr(
-      map(exprFromName, names) ++ restExprs,
-      map((.expandHeadPattern), mrs),
+      map(exprFromName, names) ++ annoAccesses ++ restExprs,
+      map(\ mr::AbstractMatchRule -> mr.expandHeadPattern(annos), mrs),
       failCase, retType, location=head(mrs).location);
   -- TODO: head(mrs).location is probably not the correct thing to use here?? (generally)
 
+  local annos :: [String] =
+    nubBy(stringEq, map(fst, flatMap((.patternNamedSubPatternList), map((.headPattern), mrs))));
+  local annoAccesses :: [Expr] =
+    map(\ n::String -> access(currExpr, '.', qNameAttrOccur(qName(l, n), location=l), location=l), annos);
+  
   -- Maybe this one is more reasonable? We need to test examples and see what happens...
   local l :: Location = head(mrs).headPattern.location;
 
   return
     case head(mrs).headPattern of
-    | prodAppPattern(qn,_,_,_) -> 
+    | prodAppPattern_named(qn,_,_,_,_,_) -> 
         prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', '->', subcase, location=l)
     | intPattern(it) -> integerPattern(it, '->', subcase, location=l)
     | fltPattern(it) -> floatPattern(it, '->', subcase, location=l)
@@ -315,20 +369,20 @@ PrimPatterns ::= l::[PrimPattern]
  -     e.g. right now we 'map(this(x, y, _), list)'
  -}
 function bindHeadPattern
-AbstractMatchRule ::= headExpr::Expr  headType::Type  rule::AbstractMatchRule
+AbstractMatchRule ::= headExpr::Expr  headType::Type  absRule::AbstractMatchRule
 {
   -- If it's '_' we do nothing, otherwise, bind away!
-  return case rule of
+  return case absRule of
   | matchRule(headPat :: restPat, cond, e) ->
       matchRule(restPat,
         case headPat.patternVariableName, cond of
-        | just(pvn), just(c) -> just(makeLet(rule.location, pvn, headType, headExpr, c))
+        | just(pvn), just(c) -> just(makeLet(absRule.location, pvn, headType, headExpr, c))
         | _, _ -> cond
         end,
         case headPat.patternVariableName of
-        | just(pvn) -> makeLet(rule.location, pvn, headType, headExpr, e)
+        | just(pvn) -> makeLet(absRule.location, pvn, headType, headExpr, e)
         | nothing() -> e
-        end, location=rule.location)
+        end, location=absRule.location)
   end;
 }
 

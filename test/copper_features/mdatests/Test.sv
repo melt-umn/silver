@@ -14,8 +14,12 @@ copper_mda test(doParse) {
 
 parser shouldSucceed :: Root {
   copper_features:mdatests:host;
-  copper_features:mdatests:ext prefix copper_features:mdatests:ext:C with '1:'; -- Explicitly give token name
-  copper_features:mdatests:ext2 prefix with '2:'; -- Prefix marking terminals
+  
+  -- Explicitly give token name, use terminal literal as separator
+  copper_features:mdatests:ext prefix copper_features:mdatests:ext:C with '1:';
+  
+  -- Prefix marking terminals, use prefix separator
+  copper_features:mdatests:ext2 prefix with "2";
 
   prefer copper_features:mdatests:ext:C over copper_features:mdatests:ext2:C;
 }

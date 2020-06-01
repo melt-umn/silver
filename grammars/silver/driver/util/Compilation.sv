@@ -8,7 +8,7 @@ flowtype postOps {config} on Compilation;
 
 synthesized attribute postOps :: [DriverAction] with ++;
 synthesized attribute grammarList :: [Decorated RootSpec];
-synthesized attribute recheckGrammars :: [String];
+monoid attribute recheckGrammars :: [String] with [], ++;
 -- This is used on the outside, e.g. the ide functions.
 synthesized attribute allGrammars :: [Decorated RootSpec];
 
@@ -30,7 +30,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   -- the list of rootspecs coming out of g
   top.grammarList = g.grammarList;
   -- the list of grammars that should be re-checked
-  top.recheckGrammars = g.recheckGrammars;
+  top.recheckGrammars := g.recheckGrammars;
   
   g.compiledGrammars = directBuildTree(map(grammarPairing, g.grammarList));
   -- However, we are then forced to use the interface files that we are going to
@@ -60,22 +60,18 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
 
 nonterminal Grammars with config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, grammarList, recheckGrammars, translateGrammars, jarName;
 
+propagate translateGrammars, recheckGrammars, jarName on Grammars;
+
 abstract production consGrammars
 top::Grammars ::= h::RootSpec  t::Grammars
 {
   top.grammarList = h :: t.grammarList;
-  top.recheckGrammars = h.recheckGrammars ++ t.recheckGrammars;
-  top.translateGrammars = h.translateGrammars ++ t.translateGrammars;
-  top.jarName = orElse(h.jarName, t.jarName);
 }
 
 abstract production nilGrammars
 top::Grammars ::=
 {
   top.grammarList = [];
-  top.recheckGrammars = [];
-  top.translateGrammars = [];
-  top.jarName = nothing();
 }
 
 {--

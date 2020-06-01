@@ -7,15 +7,29 @@ imports silver:definition:env;
 imports silver:definition:type:syntax;
 imports silver:extension:list;
 
-concrete production silverExprLiteral
-top::Expr ::= 'Silver_Expr' LCurly_t ast::Expr RCurly_t
+concrete production quoteAGDcl
+top::Expr ::= 'Silver_AGDcl' '{' ast::AGDcl '}'
+{
+  top.unparse = s"Silver_AGDcl {${ast.unparse}}";
+  forwards to translate(top.location, reflect(new(ast)));
+}
+
+concrete production quoteProductionStmt
+top::Expr ::= 'Silver_ProductionStmt' '{' ast::ProductionStmt '}'
+{
+  top.unparse = s"Silver_ProductionStmt {${ast.unparse}}";
+  forwards to translate(top.location, reflect(new(ast)));
+}
+
+concrete production quoteExpr
+top::Expr ::= 'Silver_Expr' '{' ast::Expr '}'
 {
   top.unparse = s"Silver_Expr {${ast.unparse}}";
   forwards to translate(top.location, reflect(new(ast)));
 }
 
-concrete production escapeExpr
-top::Expr ::= '$Expr' silver:definition:core:LCurly_t e::Expr silver:definition:core:RCurly_t
+concrete production antiquoteExpr
+top::Expr ::= '$Expr' '{' e::Expr '}'
 {
   top.unparse = s"$$Expr{${e.unparse}}";
   forwards to
@@ -24,8 +38,8 @@ top::Expr ::= '$Expr' silver:definition:core:LCurly_t e::Expr silver:definition:
       location=top.location);
 }
 
-concrete production escapeTypeExpr
-top::TypeExpr ::= '$TypeExpr' silver:definition:core:LCurly_t e::Expr silver:definition:core:RCurly_t
+concrete production antiquoteTypeExpr
+top::TypeExpr ::= '$TypeExpr' '{' e::Expr '}'
 {
   top.unparse = s"$$TypeExpr{${e.unparse}}";
   forwards to
@@ -34,8 +48,8 @@ top::TypeExpr ::= '$TypeExpr' silver:definition:core:LCurly_t e::Expr silver:def
       location=top.location);
 }
 
-concrete production escapeQName
-top::QName ::= '$QName' silver:definition:core:LCurly_t e::Expr silver:definition:core:RCurly_t
+concrete production antiquoteQName
+top::QName ::= '$QName' '{' e::Expr '}'
 {
   top.unparse = s"$$QName{${e.unparse}}";
   forwards to
@@ -44,16 +58,16 @@ top::QName ::= '$QName' silver:definition:core:LCurly_t e::Expr silver:definitio
       location=top.location);
 }
 
-concrete production escapeName
-top::Name ::= '$Name' silver:definition:core:LCurly_t e::Expr silver:definition:core:RCurly_t
+concrete production antiquoteName
+top::Name ::= '$Name' '{' e::Expr '}'
 {
   top.unparse = s"$$Name{${e.unparse}}";
   -- TODO: [err(top.location, "$Name should not occur outside of Silver_Expr")]
   forwards to name("err", top.location);
 }
 
-concrete production escape_qName
-top::QName ::= '$qName' silver:definition:core:LCurly_t e::Expr silver:definition:core:RCurly_t
+concrete production antiquote_qName
+top::QName ::= '$qName' '{' e::Expr '}'
 {
   top.unparse = s"$$qName{${e.unparse}}";
   forwards to
@@ -62,8 +76,8 @@ top::QName ::= '$qName' silver:definition:core:LCurly_t e::Expr silver:definitio
       location=top.location);
 }
 
-concrete production escape_name
-top::Name ::= '$name' silver:definition:core:LCurly_t e::Expr silver:definition:core:RCurly_t
+concrete production antiquote_name
+top::Name ::= '$name' '{' e::Expr '}'
 {
   top.unparse = s"$$name{${e.unparse}}";
   -- TODO: [err(top.location, "$Name should not occur outside of Silver_Expr")]

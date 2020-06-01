@@ -4,56 +4,35 @@ terminal Dominates_t 'dominates' lexer classes {KEYWORD};
 terminal Submits_t   'submits'   lexer classes {KEYWORD};
 terminal Classes_kwd 'classes'   lexer classes {KEYWORD};
 
-synthesized attribute lexerClasses :: [String] occurs on TerminalModifier, TerminalModifiers;
-
-aspect production terminalModifiersNone
-top::TerminalModifiers ::=
-{
-  top.lexerClasses = [];
-}
-aspect production terminalModifierSingle
-top::TerminalModifiers ::= tm::TerminalModifier
-{
-  top.lexerClasses = tm.lexerClasses;
-}
-aspect production terminalModifiersCons
-top::TerminalModifiers ::= h::TerminalModifier ',' t::TerminalModifiers
-{
-  top.lexerClasses = h.lexerClasses ++ t.lexerClasses;
-}
-
-aspect default production
-top::TerminalModifier ::=
-{
-  top.lexerClasses = [];
-}
+monoid attribute lexerClasses :: [String] with [], ++;
+attribute lexerClasses occurs on TerminalModifier, TerminalModifiers;
+propagate lexerClasses on TerminalModifiers, TerminalModifier;
 
 concrete production terminalModifierDominates
-top::TerminalModifier ::= 'dominates' '{' terms::TermPrecList '}'
+top::TerminalModifier ::= 'dominates' terms::TermPrecs
 {
   top.unparse = "dominates { " ++ terms.unparse ++ " } ";
 
-  top.terminalModifiers = [termDominates(terms.precTermList)];
-  top.errors := terms.errors;
+  top.terminalModifiers := [termDominates(terms.precTermList)];
+  propagate errors;
 }
 
 concrete production terminalModifierSubmitsTo
-top::TerminalModifier ::= 'submits' 'to' '{' terms::TermPrecList  '}'
+top::TerminalModifier ::= 'submits' 'to' terms::TermPrecs
 {
   top.unparse = "submits to { " ++ terms.unparse ++ " } " ;
 
-  top.terminalModifiers = [termSubmits(terms.precTermList)];
-  top.errors := terms.errors;
+  top.terminalModifiers := [termSubmits(terms.precTermList)];
+  propagate errors;
 }
 
 concrete production terminalModifierClassSpec
-top::TerminalModifier ::= 'lexer' 'classes' '{' cl::ClassList '}'
+top::TerminalModifier ::= 'lexer' 'classes' cl::LexerClasses
 {
   top.unparse = "lexer classes { " ++ cl.unparse ++ " } " ;
 
-  top.terminalModifiers = [termClasses(cl.lexerClasses)];
-  top.lexerClasses = cl.lexerClasses;
-  top.errors := cl.errors;
+  top.terminalModifiers := [termClasses(cl.lexerClasses)];
+  propagate errors;
 }
 
 concrete production terminalModifierActionCode
@@ -61,7 +40,7 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
 {
   top.unparse = "action " ++ acode.unparse;
 
-  top.terminalModifiers = [termAction(acode.actionCode)];
+  top.terminalModifiers := [termAction(acode.actionCode)];
 
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -73,24 +52,34 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
   acode.frame = actionContext(myFlowGraph);
   acode.env = newScopeEnv(terminalActionVars ++ acode.defs, top.env);
   
-  top.errors := acode.errors;
+  propagate errors;
+}
+
+monoid attribute precTermList :: [String] with [], ++;
+
+nonterminal TermPrecs with config, grammarName, unparse, location, precTermList, errors, env;
+propagate errors, precTermList on TermPrecs;
+
+concrete production termPrecsOne
+top::TermPrecs ::= t::QName
+{
+  forwards to termPrecs(termPrecList(t,termPrecListNull(location=t.location), location=t.location), location=top.location);
+}
+
+concrete production termPrecsList
+top::TermPrecs ::= '{' terms::TermPrecList '}'
+{
+  forwards to termPrecs(terms,location=top.location);
+}
+
+abstract production termPrecs
+top::TermPrecs ::= terms::TermPrecList
+{
+  top.unparse = s"{${terms.unparse}}";
 }
 
 nonterminal TermPrecList with config, grammarName, unparse, location, precTermList, errors, env;
-
-synthesized attribute precTermList :: [String];
-
-concrete production termPrecListOne
-terms::TermPrecList ::= t::QName
-{
-   forwards to termPrecList(t,termPrecListNull(location=t.location), location=t.location);
-}
-
-concrete production termPrecListCons
-terms::TermPrecList ::= t::QName ',' terms_tail::TermPrecList
-{
-   forwards to termPrecList(t,terms_tail,location=terms.location);
-}
+propagate errors, precTermList on TermPrecList;
 
 abstract production termPrecList
 top::TermPrecList ::= h::QName t::TermPrecList
@@ -101,9 +90,7 @@ top::TermPrecList ::= h::QName t::TermPrecList
 
   production fName::String = if null(h.lookupType.dcls) then h.lookupLexerClass.dcl.fullName else h.lookupType.dcl.fullName;
 
-  top.precTermList = [fName] ++ t.precTermList ;
-
-  top.errors := t.errors;
+  top.precTermList <- [fName];
   
   -- Since we're looking it up in two ways, do the errors ourselves
   top.errors <- if null(h.lookupType.dcls) && null(h.lookupLexerClass.dcls)
@@ -116,43 +103,73 @@ top::TermPrecList ::= h::QName t::TermPrecList
 abstract production termPrecListNull
 top::TermPrecList ::=
 {
-  top.precTermList = [];
   top.unparse = "";
-  top.errors := [];
 }
 
-nonterminal ClassList with location, config, unparse, lexerClasses, errors, env;
+concrete production termPrecListOne
+top::TermPrecList ::= t::QName
+{
+  forwards to termPrecList(t, termPrecListNull(location=top.location), location=top.location);
+}
+
+concrete production termPrecListCons
+top::TermPrecList ::= t::QName ',' terms_tail::TermPrecList
+{
+  forwards to termPrecList(t, terms_tail,location=top.location);
+}
+
+nonterminal LexerClasses with location, config, unparse, lexerClasses, errors, env;
+propagate errors, lexerClasses on LexerClasses;
 
 concrete production lexerClassesOne
-top::ClassList ::= n::QName
+top::LexerClasses ::= n::QName
 {
-  forwards to lexerClassesMain(n,lexerClassesNull(location=n.location), location=n.location);
+   forwards to lexerClasses(lexerClassListMain(n, lexerClassListNull(location=top.location), location=top.location), location=top.location);
 }
 
-concrete production lexerClassesCons
-top::ClassList ::= n::QName ',' cl_tail::ClassList
+concrete production lexerClassesList
+top::LexerClasses ::= '{' cls::LexerClassList '}'
 {
-  forwards to lexerClassesMain(n,cl_tail,location=top.location);
+   forwards to lexerClasses(cls,location=top.location);
+}
+
+abstract production lexerClasses
+top::LexerClasses ::= cls::LexerClassList
+{
+  top.unparse = s"{${cls.unparse}}";
+}
+
+nonterminal LexerClassList with location, config, unparse, lexerClasses, errors, env;
+propagate errors, lexerClasses on LexerClassList;
+
+concrete production lexerClassListOne
+top::LexerClassList ::= n::QName
+{
+  forwards to lexerClassListMain(n,lexerClassListNull(location=n.location), location=n.location);
+}
+
+concrete production lexerClassListCons
+top::LexerClassList ::= n::QName ',' cl_tail::LexerClassList
+{
+  forwards to lexerClassListMain(n,cl_tail,location=top.location);
 }
 
 
-abstract production lexerClassesMain
-top::ClassList ::= n::QName t::ClassList
+abstract production lexerClassListMain
+top::LexerClassList ::= n::QName t::LexerClassList
 {
   top.unparse = if t.unparse == ""
           then n.unparse
           else n.unparse ++ ", " ++ t.unparse;
 
-  top.errors := n.lookupLexerClass.errors ++ t.errors;
+  top.errors <- n.lookupLexerClass.errors;
 
-  top.lexerClasses = [n.lookupLexerClass.dcl.fullName] ++ t.lexerClasses;
+  top.lexerClasses <- [n.lookupLexerClass.dcl.fullName];
 }
 
-abstract production lexerClassesNull
-cl::ClassList ::=
+abstract production lexerClassListNull
+cl::LexerClassList ::=
 {
   cl.unparse = "";
-  cl.errors := [];
-  cl.lexerClasses = [];
 }
 

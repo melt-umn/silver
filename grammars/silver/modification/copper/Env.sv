@@ -1,7 +1,5 @@
 grammar silver:modification:copper;
 
-import silver:extension:list;
-
 --------------------------------------------------------------------------------
 -- Defs.sv
 
@@ -30,9 +28,10 @@ top::Def ::= d::EnvItem
 {
   top.dcl = d.dcl;
   top.lexerClassList = [d];
+  top.valueList = [d];
+  top.filterDef = top.filterFn(d);
+  top.mapDef = lxrClsDef(top.mapFn(d));
 }
-
--- TODO: we don't do any renaming of lexer classes BUG
 
 function parserAttrDef
 Def ::= sg::String sl::Location fn::String ty::Type
@@ -70,12 +69,6 @@ Def ::= sg::String sl::Location fn::String ty::Type
   return valueDef(defaultEnvItem(parserLocalDcl(sg,sl,fn,ty)));
 }
 
-function prefixSeparatorDef
-Def ::= sg::String sl::Location s::String
-{
-  return valueDef(defaultEnvItem(prefixSeparatorDcl(sg, sl, s)));
-}
-
 --------------------------------------------------------------------------------
 -- Env.sv
 
@@ -97,6 +90,12 @@ aspect production i_newScopeEnv
 top::Env ::= d::Defs  e::Decorated Env
 {
   top.lexerClassTree = consEnvScope(buildTree(d.lexerClassList), e.lexerClassTree);
+}
+
+aspect production i_occursEnv
+top::Env ::= _  e::Decorated Env
+{
+  top.lexerClassTree = e.lexerClassTree;
 }
 
 function getLexerClassDcl
@@ -122,6 +121,12 @@ top::QName ::= id::Name ':' qn::QName
   top.lookupLexerClass = decorate customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name, top.location) with {};
 }
 
+aspect production qNameError
+top::QName ::= msg::[Message]
+{
+  top.lookupLexerClass = decorate errorLookup(msg) with {};
+}
+
 
 --------------------------------------------------------------------------------
 
@@ -138,6 +143,6 @@ global i_locVariables :: [Def] = [
 
 global terminalActionVars :: [Def] = i_lexemeVariable ++ i_locVariables;
 global productionActionVars :: [Def] = i_locVariables;
-global disambiguationActionVars :: [Def] = i_lexemeVariable;
-global disambiguationClassActionVars :: [Def] = i_lexemeVariable ++ i_shiftableVariable;
+global disambiguationActionVars :: [Def] = i_lexemeVariable ++ i_locVariables;
+global disambiguationClassActionVars :: [Def] = i_lexemeVariable ++ i_shiftableVariable ++ i_locVariables;
 

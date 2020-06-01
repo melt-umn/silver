@@ -3,6 +3,8 @@ import silver:reflect;
 import silver:langutil;
 import silver:langutil:pp;
 
+-- TODO: Actually make hackUnparse work like this.
+-- Not possible for now because core shouldn't depend on anything else. 
 function lessHackyUnparse
 String ::= x::a
 {
@@ -70,6 +72,11 @@ equalityTest(
 
 equalityTest(
   reifyResToString(reify(reflect(pair(pair(1, 2), pair(3, 4))))),
+  lessHackyUnparse(pair(pair(1, 2), pair(3, 4))),
+  String, silver_tests);
+
+equalityTest(
+  lessHackyUnparse(reifyUnchecked(reflect(pair(pair(1, 2), pair(3, 4))))),
   lessHackyUnparse(pair(pair(1, 2), pair(3, 4))),
   String, silver_tests);
 
@@ -254,3 +261,42 @@ equalityTest(
   reifyResToString(reifyRes12),
   s"""core:pair("hello", [1, 2, 3, 4])""",
   String, silver_tests);
+
+global add::(Integer ::= Integer Integer) = \ i::Integer j::Integer -> i + j;
+
+global applyRes1::Either<String AST> = applyAST(reflect(add), [just(reflect(1)), just(reflect(2))], []);
+equalityTest(lessHackyUnparse(applyRes1), "core:right(core:reflect:integerAST(3))", String, silver_tests);
+
+global applyRes2::Either<String AST> = applyAST(applyAST(reflect(add), [nothing(), just(reflect(2))], []).fromRight, [just(reflect(1))], []);
+equalityTest(lessHackyUnparse(applyRes2), "core:right(core:reflect:integerAST(3))", String, silver_tests);
+
+global applyRes3::Either<String AST> = applyAST(reflect(add), [just(reflect(1)), nothing(), just(reflect(2))], []);
+equalityTest(applyRes3.isLeft, true, Boolean, silver_tests);
+
+global applyRes4::Either<String AST> = applyAST(reflect(baz), [], [pair("anno1", just(reflect(42))), pair("anno2", just(reflect(3.14)))]);
+equalityTest(
+  case applyRes4 of left(m) -> m | right(a) -> reifyResToString(reify(a)) end,
+  "silver_features:baz(silver_features:anno1=42, silver_features:anno2=3.14)",
+  String, silver_tests);
+
+global applyRes5::Either<String AST> = applyAST(reflect(baz), [], [pair("anno2", just(reflect(3.14))), pair("anno1", just(reflect(42)))]);
+equalityTest(
+  case applyRes5 of left(m) -> m | right(a) -> reifyResToString(reify(a)) end,
+  "silver_features:baz(silver_features:anno1=42, silver_features:anno2=3.14)",
+  String, silver_tests);
+
+global applyRes6::Either<String AST> = applyAST(reflect(baz), [], [pair("anno2", nothing()), pair("anno1", just(reflect(42)))]);
+equalityTest(
+  case applyRes6 of left(m) -> m | right(a) -> reifyResToString(reify(a)) end,
+  "<OBJECT :: (silver_features:Baz ::= Float)>",
+  String, silver_tests);
+
+global applyRes7::Either<String AST> = applyAST(applyAST(reflect(baz), [], [pair("anno2", nothing()), pair("anno1", just(reflect(42)))]).fromRight, [just(reflect(3.14))], []);
+equalityTest(
+  case applyRes7 of left(m) -> m | right(a) -> reifyResToString(reify(a)) end,
+  "silver_features:baz(silver_features:anno1=42, silver_features:anno2=3.14)",
+  String, silver_tests);
+
+global applyRes8::Either<String AST> = applyAST(reflect(baz), [], [pair("anno1", just(reflect(3.14))), pair("anno2", just(reflect(42)))]);
+equalityTest(applyRes8.isLeft, true, Boolean, silver_tests);
+

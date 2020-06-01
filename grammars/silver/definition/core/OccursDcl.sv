@@ -1,24 +1,23 @@
 grammar silver:definition:core;
 
-concrete production attributionDcl
-top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
+abstract production defaultAttributionDcl
+top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
 
   -- TODO: this location is highly unreliable.
 
-  -- We must unconditionally emite the 'oDef' in order to signal to the
+  -- We must unconditionally emit the occurs def in order to signal to the
   -- environment mechanism that we're in a different namespace than
   -- the types/attributes.
-  top.defs = [
-    oDef((if !at.lookupAttribute.found || !at.lookupAttribute.dcl.isAnnotation then occursDcl else annoInstanceDcl)(
+  top.occursDefs := [
+    (if !at.lookupAttribute.dcl.isAnnotation then occursDcl else annoInstanceDcl)(
       top.grammarName, at.location,
       nt.lookupType.fullName, at.lookupAttribute.fullName,
-      protontty, protoatty))];
+      protontty, protoatty)];
 
   -- binding errors in looking up these names.
-  top.errors := at.lookupAttribute.errors ++ nt.lookupType.errors ++
-    attl.errors ++ nttl.errors ++
+  top.errors <- nt.lookupType.errors ++
     -- The nonterminal type list is strictly type VARIABLES only
     nttl.errorsTyVars;
   
@@ -98,6 +97,53 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
     if !nt.lookupType.found || !at.lookupAttribute.found || !at.lookupAttribute.dcl.isAnnotation ||
        isExportedBy(top.grammarName, [nt.lookupType.dcl.sourceGrammar], top.compiledGrammars) then []
     else [err(top.location, "Annotations for a nonterminal must be in a module exported by the nonterminal's declaring grammar.")];
+}
+
+abstract production errorAttributionDcl
+top::AGDcl ::= msg::[Message] at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+{
+  top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
+  top.occursDefs := [];
+  top.errors <- msg;
+  
+  nttl.initialEnv = top.env;
+  attl.env = nttl.envBindingTyVars;
+  nttl.env = nttl.envBindingTyVars;
+  
+  -- Decorate everything else to still check for errors
+  top.errors <-
+    -- binding errors in looking up these names.
+    nt.lookupType.errors ++
+    -- The nonterminal type list is strictly type VARIABLES only
+    nttl.errorsTyVars;
+  
+  -- Make sure we get the number of tyvars correct for the NT
+  top.errors <-
+    if length(nt.lookupType.dclBoundVars) != length(nttl.types)
+    then [err(nt.location, nt.name ++ " expects " ++ toString(length(nt.lookupType.dclBoundVars)) ++
+                           " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
+    else [];
+}
+
+concrete production attributionDcl
+top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
+{
+  top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
+  
+  -- Workaround for circular dependency due to dispatching on env:
+  -- Nothing used to build the env namespaces on which we dispatch can depend on
+  -- the forward here.
+  -- Attribution (occurs) defs, which obviously must depend on this forward, are
+  -- specified by a seperate occursDefs attribute.
+  -- Attribution dispatch productions should only define occursDefs (i.e. no new
+  -- nonterminals, productions, attributes, etc.)
+  top.defs := [];
+  top.moduleNames := [];
+  
+  forwards to
+    (if !at.lookupAttribute.found
+     then errorAttributionDcl(at.lookupAttribute.errors, _, _, _, _, location=_)
+     else at.lookupAttribute.dcl.attributionDispatcher)(at, attl, nt, nttl, top.location);
 }
 
 concrete production annotateDcl

@@ -31,7 +31,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   production myFlowGraph :: ProductionGraph = 
     findProductionGraph(fName, myGraphs);
 
-  top.flowDefs = body.flowDefs ++ 
+  top.flowDefs <-
     if null(body.uniqueSignificantExpression)
     then [prodFlowDef(namedSig.outputElement.typerep.typeName, fName)]
     else [];
@@ -46,16 +46,4 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   {-- Used by core to send down with .frame -}
   production myFlowGraph :: ProductionGraph = 
     findProductionGraph(id.lookupValue.fullName, myGraphs);
-
-  top.flowDefs = body.flowDefs;
 }
-
-------- Default attrs hack sorta
-
-aspect production aspectDefaultProduction
-top::AGDcl ::= 'aspect' 'default' 'production' 
-               lhs::Name '::' _ '::=' body::ProductionBody 
-{
-  top.flowDefs = body.flowDefs;
-}
-

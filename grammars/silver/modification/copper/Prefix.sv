@@ -11,46 +11,46 @@ concrete production prefixParserComponentModifier
 top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::TerminalPrefix
 {  
   top.unparse = "prefix " ++ ts.unparse ++ " with " ++ s.unparse;
-  top.errors := ts.errors ++ s.errors;
-  top.terminalPrefixes =
-    do (bindList, returnList) {
-      t::QName <- ts.prefixItemNames;
-      td::Decorated QName =
-        decorate t with {
-          config = top.config;
-          grammarName = top.grammarName;
-          env = top.env;
-        };
-      return pair(td.lookupType.fullName, makeCopperName(s.prefixFullName));
-    };
-  top.liftedAGDcls = s.liftedAGDcls;
+  top.terminalPrefixes <- map(pair(_, s.terminalPrefix), ts.prefixItemNames);
+  top.grammarTerminalPrefixes <-
+    if ts.isAllMarking then [pair(top.componentGrammarName, s.terminalPrefix)] else [];
+  s.prefixedTerminals = ts.prefixItemNames;
+  s.prefixedGrammars = if ts.isAllMarking then [top.componentGrammarName] else [];
 }
 
-synthesized attribute prefixFullName::String;
-nonterminal TerminalPrefix with config, env, grammarName, componentGrammarName, compiledGrammars, location, unparse, errors, liftedAGDcls, prefixFullName;
+autocopy attribute prefixedTerminals::[String];
+autocopy attribute prefixedGrammars::[String];
+synthesized attribute terminalPrefix::String;
+nonterminal TerminalPrefix with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, prefixedTerminals, prefixedGrammars, location, unparse, errors, syntaxAst, genFiles, terminalPrefix;
+
+propagate errors, syntaxAst, genFiles on TerminalPrefix;
 
 concrete production nameTerminalPrefix
 top::TerminalPrefix ::= s::QName
 {
   top.unparse = s.unparse;
-  top.errors := s.lookupType.errors;
-  top.liftedAGDcls = emptyAGDcl(location=top.location);
-  top.prefixFullName = s.lookupType.fullName;
+  top.errors <- s.lookupType.errors;
+  top.terminalPrefix = makeCopperName(s.lookupType.fullName);
 }
 
 concrete production newTermModifiersTerminalPrefix
 top::TerminalPrefix ::= r::RegExpr tm::TerminalModifiers
 {
   top.unparse = r.unparse ++ " " ++ tm.unparse;
-  -- Prefix terminal name isn't based off the prefix right now since that might not be alphanumeric
-  -- TODO make the terminal name based off alphanumeric characters from the regex for easier debugging of parse conflicts
-  local terminalName::String = "_Prefix" ++ toString(genInt());
-  top.liftedAGDcls = terminalDclDefault(
-    terminalKeywordModifierNone(location=top.location),
-    name(terminalName, top.location),
-    r, tm,
-    location=top.location);
-  forwards to nameTerminalPrefix(qName(top.location, terminalName), location=top.location);
+  production regex::Regex = r.terminalRegExprSpec;
+  local terminalName::String =
+    "Prefix_" ++ toString(top.location.line) ++
+    case regex.asLiteral of
+    | just(a) when isAlpha(a) -> "_" ++ a
+    | _ -> ""
+    end;
+  local terminalFullName::String = top.grammarName ++ ":" ++ terminalName;
+  top.syntaxAst <-
+    [syntaxTerminal(
+       terminalFullName, regex,
+       foldr(consTerminalMod, nilTerminalMod(), tm.terminalModifiers))];
+  top.genFiles <- terminalTranslation(terminalName, top.grammarName, tm.lexerClasses);
+  top.terminalPrefix = makeCopperName(terminalFullName);
 }
 
 concrete production newTermTerminalPrefix
@@ -64,64 +64,65 @@ concrete production seperatedTerminalPrefix
 top::TerminalPrefix ::= t::String_t
 {
   top.unparse = t.lexeme;
-  local seperatorLookup::[DclInfo] = getValueDcl("_prefix_seperator", top.env);
-  local seperator::String = 
-    case seperatorLookup of
-      prefixSeparatorDcl(sg, sl, s) :: _ -> s
-    | _ -> ""
-    end;
-  local givenPrefix::String = substring(1, length(t.lexeme) - 1, t.lexeme);
-  local regex::RegExpr =
-    regExpr('/', regexLiteral(givenPrefix ++ seperator), '/', location=top.location);
-  top.errors <- 
-    case seperatorLookup of
-      prefixSeparatorDcl(sg, sl, s) :: _ -> []
-    | _ -> [wrn(top.location, "Prefix seperator is not defined, using the empty seperator")]
-    end;
-  forwards to newTermTerminalPrefix(regex, location=top.location);
+  forwards to
+    newTermModifiersTerminalPrefix(
+      -- We pass the string prefix as a regex that does not contain the prefix separator
+      regExpr('/', regexLiteral(substring(1, length(t.lexeme) - 1, t.lexeme)), '/', location=top.location),
+      -- Specify which terminals this prefix prefixes.  This is used to find the separator to
+      -- append to the regex when normalizing the CST AST
+      terminalModifierSingle(
+        terminalModifierUsePrefixSeperatorFor(top.prefixedTerminals, top.prefixedGrammars, location=top.location),
+        location=top.location),
+      location=top.location);
 }
 
-synthesized attribute prefixItemNames::[QName];
-nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, prefixItemNames;
+-- Needed when generating seperated terminal declarations, this is pretty useless otherwise so abstract only
+abstract production terminalModifierUsePrefixSeperatorFor
+top::TerminalModifier ::= terms::[String]  grams::[String]
+{
+  top.unparse = s"use prefix separator for {${implode(", ", terms)}} {${implode(", ", grams)}}";
+
+  top.terminalModifiers := [termUsePrefixSeperatorFor(terms, grams)];
+  top.errors := [];
+}
+
+synthesized attribute prefixItemNames::[String];
+synthesized attribute isAllMarking::Boolean;
+nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, prefixItemNames, isAllMarking;
+
+propagate errors on TerminalPrefixItems;
 
 concrete production consTerminalPrefixItem
 top::TerminalPrefixItems ::= t::TerminalPrefixItem ',' ts::TerminalPrefixItems
 {
   top.unparse = ts.unparse ++ ", " ++ t.unparse;
-  top.errors := ts.errors ++ t.errors;
   top.prefixItemNames = ts.prefixItemNames ++ t.prefixItemNames;
+  top.isAllMarking = ts.isAllMarking;
 }
 
 concrete production oneTerminalPrefixItem
 top::TerminalPrefixItems ::= t::TerminalPrefixItem
 {
   top.unparse = t.unparse;
-  top.errors := t.errors;
   top.prefixItemNames = t.prefixItemNames;
+  top.isAllMarking = false;
 }
 
-concrete production allTerminalPrefixItem
+abstract production nilTerminalPrefixItem
 top::TerminalPrefixItems ::=
 {
-  production med :: ModuleExportedDefs =
-    moduleExportedDefs(top.location, top.compiledGrammars, top.grammarDependencies, [top.componentGrammarName], []);
-
-  local syntax::Syntax = foldr(consSyntax, nilSyntax(), med.syntaxAst);
-  syntax.containingGrammar = error("This shouldn't be needed...");
-  syntax.cstEnv = error("This shouldn't be needed...");
-  syntax.cstNTProds = error("This shouldn't be needed...");
-  syntax.classTerminals = error("This shouldn't be needed...");
-  syntax.parserAttributeAspects = error("This shouldn't be needed...");
-  syntax.prefixesForTerminals = error("This shouldn't be needed...");
-  syntax.univLayout = error("This shouldn't be needed...");
-
   top.unparse = "";
-  top.errors := [];
-  top.prefixItemNames =
-    do (bindList, returnList) {
-      sd::Decorated SyntaxDcl <- syntax.allMarkingTerminals;
-      return qName(top.location, case sd of syntaxTerminal(n, _, _) -> n end);
-    };
+  top.prefixItemNames = [];
+  top.isAllMarking = false;
+}
+
+-- Empty list = prefix all marking terminals
+concrete production allMarkingTerminalPrefixItems
+top::TerminalPrefixItems ::=
+{
+  top.unparse = "all_marking"; -- Doesn't match cst but whatever
+  top.prefixItemNames = [];
+  top.isAllMarking = true;
 }
 
 nonterminal TerminalPrefixItem with config, env, grammarName, componentGrammarName, compiledGrammars, location, unparse, errors, prefixItemNames;
@@ -131,15 +132,16 @@ top::TerminalPrefixItem ::= t::QName
 {
   top.unparse = t.unparse;
   top.errors := t.lookupType.errors;
-  top.prefixItemNames = [t];
+  top.prefixItemNames = [t.lookupType.fullName];
 }
 
 concrete production easyTerminalRefTerminalPrefixItem
 top::TerminalPrefixItem ::= t::EasyTerminalRef
 {
-  top.unparse = t.unparse;
-  top.errors := t.errors;
-  top.prefixItemNames = map(qName(top.location, _), map((.fullName), t.dcls));
+  forwards to
+    qNameTerminalPrefixItem(
+      qName(top.location, head(t.dcls).fullName),
+      location=top.location);
 }
 
 -- For now, manually write this to specify priorities between terminals
@@ -150,45 +152,52 @@ concrete production disambiguateParserComponent
 top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
 {
   top.unparse = "prefer " ++ t.unparse ++ " over " ++ ts.unparse;
-  top.errors := t.lookupType.errors ++ ts.errors;
-  top.moduleNames = [];
-  top.terminalPrefixes = [];
-  top.liftedAGDcls =
-    disambiguationGroupDcl(
-      'disambiguate',
-      termListCons(t, ',', ts, location=top.location),
-      actionCode_c(
-        '{',
-        productionStmtsSnoc(
-          productionStmtsNil(location=top.location),
-          pluckDef('pluck', baseExpr(t, location=top.location), ';', location=top.location),
-          location=top.location),
-        '}',
-        location=top.location),
-      location=top.location);
+  top.errors <- t.lookupType.errors;
+  
+  local pluckTAction::ProductionStmt = Silver_ProductionStmt { pluck $QName{t}; };
+  -- Most of these aren't actually needed since we just want the translation. 
+  pluckTAction.config = top.config;
+  pluckTAction.env = top.env;
+  pluckTAction.flowEnv = top.flowEnv;
+  pluckTAction.grammarName = top.grammarName;
+  pluckTAction.compiledGrammars = top.compiledGrammars;
+  pluckTAction.frame = error("Not needed");
+  pluckTAction.downSubst = emptySubst();
+  pluckTAction.finalSubst = emptySubst();
+  
+  local tName::String = t.lookupType.dcl.fullName;
+  top.syntaxAst <-
+    -- Generate a disambiguation function for every combination of ts.
+    -- TODO: we can't use Copper's subset disambiguation functions here unfourtunately,
+    -- since we currently require those to be disjoint.
+    -- Also a slight bug here, if any of ts are undefined we will report errors
+    -- more than once.
+    map(
+      \ tsNames::[String] -> 
+        syntaxDisambiguationGroup(
+          s"Prefer_${toString(top.location.line)}_${tName}__${implode("__", tsNames)}",
+          tName :: tsNames, false, pluckTAction.translation),
+      tail(powerSet(ts.termList)));
 }
 
--- Prefix seperator
-terminal Separator_kwd 'separator' lexer classes {KEYWORD}; -- not RESERVED?
+-- Prefix separator
+terminal Separator_kwd 'separator' lexer classes {KEYWORD};
 
-concrete production prefixSeparatorParserComponent
-top::ParserComponent ::= 'prefix' 'separator' s::String_t ';'
+concrete production lexerClassModifierPrefixSeperator
+top::LexerClassModifier ::= 'prefix' 'separator' s::String_t
 {
-  top.unparse = s"prefix separator ${s.lexeme};";
-  top.errors := [];
-  top.moduleNames = [];
-  top.terminalPrefixes = [];
-  top.liftedAGDcls = prefixSeparatorAGDcl($1, $2, $3, $4, location=top.location);
+  top.unparse = s"prefix separator ${s.lexeme}";
+
+  top.lexerClassModifiers := [lexerClassPrefixSeperator(substring(1, length(s.lexeme) - 1, s.lexeme))];
 }
 
-concrete production prefixSeparatorAGDcl
-top::AGDcl ::= 'prefix' 'separator' s::String_t ';'
+{- Not supported due to ambiguity with modifiers on prefix terminal defined
+ - inside parser spec.  But not really that useful anyway?
+concrete production terminalModifierPrefixSeperator
+top::TerminalModifier ::= 'prefix' 'separator' s::String_t
 {
-  top.unparse = s"prefix separator ${s.lexeme};";
-  top.errors := 
-    case getValueDcl("_prefix_seperator", top.env) of
-      [_] -> []
-    | _ -> [err(top.location, "Duplicate prefix seperator declaration")]
-    end;
-  top.defs = [prefixSeparatorDef(top.grammarName, top.location, substring(1,length(s.lexeme)-1,s.lexeme))];
+  top.unparse = s"prefix separator ${s.lexeme}";
+
+  top.terminalModifiers := [termPrefixSeperator(substring(1, length(s.lexeme) - 1, s.lexeme))];
 }
+-}
