@@ -78,6 +78,8 @@ ${implode("", map(makeChildAssign, namedSig.inputElements))}
 
     public ${className}(${namedSig.javaSignature}) { //TODO: Ugly compat hack
         super(null ${commaIfAnnos} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
+        if (System.getProperty("silver.origins.rtwarn")!=null) System.err.println("Origins Warn: no-origins constructor invoked ("+getName()+")");
+
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
     }
 
@@ -172,6 +174,7 @@ ${body.translation}
     }
 
     public static ${className} reify(
+        final core.reflect.NAST origAST,
         final common.TypeRep resultType,
         final core.reflect.NAST[] childASTs,
         final String[] annotationNames,
@@ -197,7 +200,7 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
         ${implode("\n\t\t", map(makeChildReify(fName, length(namedSig.inputElements), _), namedSig.inputElements))}
         ${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
         
-        return new ${className}(${if wantsTracking then "common.OriginContext.REFLECTION_CONTEXT.makeNewConstructionOrigin(false)" else "null"} ${commaIfKidsOrAnnos} ${namedSig.refInvokeTrans});
+        return new ${className}(${if wantsTracking then "new core.PoriginOriginInfo(null, common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, common.ConsCell.nil, true)" else "null"} ${commaIfKidsOrAnnos} ${namedSig.refInvokeTrans});
     }
 
     public static final common.NodeFactory<${fnnt}> factory = new Factory();

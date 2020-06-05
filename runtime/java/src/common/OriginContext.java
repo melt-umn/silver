@@ -14,7 +14,7 @@ import common.exceptions.*;
  */
 public final class OriginContext {
 	public enum Variety {
-	    NORMAL, MAINFUNCTION, FFI, REFLECTIVE, PARSERACTION, GLOBAL, OTHER
+	    NORMAL, MAINFUNCTION, FFI, PARSERACTION, GLOBAL, OTHER
 	}
 
 	public final Variety variety;
@@ -33,9 +33,6 @@ public final class OriginContext {
 	public static final OriginContext FFI_CONTEXT =
 		new OriginContext(Variety.FFI, null, new ArrayList<NOriginNote>());
 
-	public static final OriginContext REFLECTION_CONTEXT =
-		new OriginContext(Variety.REFLECTIVE, null, new ArrayList<NOriginNote>());
-
 	public static final OriginContext PARSERACTION_CONTEXT =
 		new OriginContext(Variety.PARSERACTION, null, new ArrayList<NOriginNote>());
 
@@ -45,9 +42,6 @@ public final class OriginContext {
 	public OriginContext(Node lhs, List<NOriginNote> rules) {
 		this(Variety.NORMAL, lhs, rules);
 	}
-
-
-
 
 	public OriginContext(OriginContext old, List<NOriginNote> newRules) {
 		this(old.variety, old.lhs, mergeRules(old.rules, newRules));
@@ -96,9 +90,6 @@ public final class OriginContext {
 			
 			case FFI:
 				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_FFI_OIT, new common.StringCatter("Called from FFI"), ConsCell.nil);
-
-			case REFLECTIVE:
-				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_REFLECTION_OIT, new common.StringCatter("Called from Reflection"), ConsCell.nil);
 
 			case PARSERACTION:
 				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_PARSER_ACTION_OIT, new common.StringCatter("Called inside a parser action block"), ConsCell.nil);

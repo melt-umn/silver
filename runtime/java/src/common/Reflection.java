@@ -68,44 +68,48 @@ public final class Reflection {
 	 * @param o The object to reflect.
 	 * @return The reflected AST.
 	 */
-	public static NAST reflect(final Object o) {
+	public static NAST reflect(Object o) {
+		if (o instanceof DecoratedNode) o = ((DecoratedNode)o).undecorate();
+
+		core.NOriginInfo origin = new core.PoriginOriginInfo(null, OriginsUtil.SET_FROM_REFLECTION_OIT, o, ConsCell.nil, true);
 		if(o instanceof Node) {
 			Node n = (Node)o;
-			NASTs children = new PnilAST();
+			NASTs children = new PnilAST(origin);
 			for (int i = n.getNumberOfChildren() - 1; i >= 0; i--) {
 				Object value = reflect(n.getChild(i));
-				children = new PconsAST(value, children);
+				children = new PconsAST(origin, value, children);
 			}
 			String[] annotationNames = n.getAnnoNames();
-			NNamedASTs annotations = new PnilNamedAST();
+			NNamedASTs annotations = new PnilNamedAST(origin);
 			for (int i = annotationNames.length - 1; i >= 0; i--) {
 				String name = annotationNames[i];
 				Object value = reflect(n.getAnno(name));
-				annotations = new PconsNamedAST(new PnamedAST(new StringCatter(name), value), annotations);
+				annotations = new PconsNamedAST(origin, new PnamedAST(origin, new StringCatter(name), value), annotations);
 			}
-			return new PnonterminalAST(new StringCatter(n.getName()), children, annotations);
+			return new PnonterminalAST(origin, new StringCatter(n.getName()), children, annotations);
 		} else if(o instanceof Terminal) {
 			Terminal t = (Terminal)o;
-			return new PterminalAST(new StringCatter(t.getName()), t.lexeme, t.location);
+			return new PterminalAST(origin, new StringCatter(t.getName()), t.lexeme, t.location);
 		} else if(o instanceof ConsCell) {
-			return new PlistAST(reflectList((ConsCell)o));
+			return new PlistAST(origin, reflectList(origin, (ConsCell)o));
 		} else if(o instanceof StringCatter) {
-			return new PstringAST((StringCatter)o);
+			return new PstringAST(origin, (StringCatter)o);
 		} else if(o instanceof Integer) {
-			return new PintegerAST((Integer)o);
+			return new PintegerAST(origin, (Integer)o);
 		} else if(o instanceof Float) {
-			return new PfloatAST((Float)o);
+			return new PfloatAST(origin, (Float)o);
 		} else if(o instanceof Boolean) {
-			return new PbooleanAST((Boolean)o);
+			return new PbooleanAST(origin, (Boolean)o);
 		} else {
-			return new PanyAST(o);
+			if (System.getProperty("silver.origins.reflwarn")!=null) System.err.println("Reflection Warn: constructing PanyAST("+o.getClass().getName()+" "+o.toString()+")");
+			return new PanyAST(origin, o);
 		}
 	}
-	private static NASTs reflectList(final ConsCell l) {
+	private static NASTs reflectList(core.NOriginInfo origin, final ConsCell l) {
 		if (!l.nil()) {
-			return new PconsAST(reflect(l.head()), reflectList(l.tail()));
+			return new PconsAST(origin, reflect(l.head()), reflectList(origin, l.tail()));
 		} else {
-			return new PnilAST();
+			return new PnilAST(origin);
 		}
 	}
 	
@@ -181,8 +185,8 @@ public final class Reflection {
 			final String className = String.join(".", path);
 			try {
 				Method prodReify =
-						((Class<Node>)Class.forName(className)).getMethod("reify", TypeRep.class, NAST[].class, String[].class, NAST[].class);
-				return prodReify.invoke(null, resultType, childASTs, annotationNames, annotationASTs);
+						((Class<Node>)Class.forName(className)).getMethod("reify", core.reflect.NAST.class, TypeRep.class, NAST[].class, String[].class, NAST[].class);
+				return prodReify.invoke(null, ast, resultType, childASTs, annotationNames, annotationASTs);
 			} catch (ClassNotFoundException e) {
 				throw new SilverError("Undefined production " + prodName);
 			} catch (NoSuchMethodException | IllegalAccessException e) {

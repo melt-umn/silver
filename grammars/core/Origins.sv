@@ -66,6 +66,12 @@ top::OriginInfoType ::=
 	top.isBogus = true;
 }
 
+abstract production setFromReificationOIT
+top::OriginInfoType ::=
+{
+	top.isBogus = true;
+}
+
 abstract production setFromEntryOIT
 top::OriginInfoType ::=
 {

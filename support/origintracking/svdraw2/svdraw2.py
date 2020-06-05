@@ -102,7 +102,9 @@ class NT(ComplexValue):
 						"core:setAtAccessOIT": "A",
 						"core:setAtForwardingOIT": "F",
 						"core:setFromParserOIT": "P",
-						"core:setFromEntryOIT": "E"}[self.oi.children[0].name]
+						"core:setFromEntryOIT": "E",
+						"core:setFromReflectionOIT": "R",
+						"core:setFromReificationOIT": "I"}[self.oi.children[0].name]
 				else:
 					r+="\\n"+"P"+";"+self.oi.node_text()
 			else:

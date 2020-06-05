@@ -7,6 +7,8 @@ echo    === INSTALL IMPL_HACK ===
 set +e
 mv grammars/core/originsimpl/Impl_hack* grammars/core/originsimpl/Impl_hack.sv
 mv grammars/core/originsimpl/Impl_real* grammars/core/originsimpl/Impl_real.sv.disabled
+mv grammars/core/reflect/AST_untracked* grammars/core/reflect/AST_untracked.sv
+mv grammars/core/reflect/AST_tracked* grammars/core/reflect/AST_tracked.sv.disabled
 echo    === DEEP CLEAN ===
 ./deep-clean -delete all
 echo    === COMPILE WITH OLD SILVER ===
@@ -26,4 +28,6 @@ cp runtime/java/*.jar jars
 echo    === INSTALL IMPL_REAL ===
 mv grammars/core/originsimpl/Impl_real* grammars/core/originsimpl/Impl_real.sv
 mv grammars/core/originsimpl/Impl_hack* grammars/core/originsimpl/Impl_hack.sv.disabled
+mv grammars/core/reflect/AST_tracked* grammars/core/reflect/AST_tracked.sv
+mv grammars/core/reflect/AST_untracked* grammars/core/reflect/AST_untracked.sv.disabled
 echo    === DONE\? ===
