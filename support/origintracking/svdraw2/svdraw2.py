@@ -95,12 +95,14 @@ class NT(ComplexValue):
 					r+="\\n"+{
 						"core:originAndRedexOriginInfo": "OR",
 						"core:originOriginInfo": "O",
-						"core:parsedOriginInfo": "P"}[self.oi.name]
+						"core:parsedOriginInfo": "P",
+						"core:otherOriginInfo":"X"}[self.oi.name]
 					r+=";"+{
 						"core:setAtConstructionOIT": "C",
 						"core:setAtAccessOIT": "A",
 						"core:setAtForwardingOIT": "F",
-						"core:setFromParserOIT": "P"}[self.oi.children[0].name]
+						"core:setFromParserOIT": "P",
+						"core:setFromEntryOIT": "E"}[self.oi.children[0].name]
 				else:
 					r+="\\n"+"P"+";"+self.oi.node_text()
 			else:
