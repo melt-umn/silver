@@ -370,7 +370,7 @@ public final class Reflection {
 							namedArgList.toArray());
 		} else {
 			// Apply regular
-			result = givenFn.invoke(argList.toArray(), reorderedNamedArgs);
+			result = givenFn.invoke(OriginContext.BOGUS_CONTEXT, argList.toArray(), reorderedNamedArgs);
 		}
 		return new Pright(reflect(result));
 	}

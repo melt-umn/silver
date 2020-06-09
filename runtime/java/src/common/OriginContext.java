@@ -39,6 +39,9 @@ public final class OriginContext {
 	public static final OriginContext GLOBAL_CONTEXT =
 		new OriginContext(Variety.GLOBAL, null, new ArrayList<NOriginNote>());
 
+	public static final OriginContext BOGUS_CONTEXT =
+		new OriginContext(Variety.OTHER, null, new ArrayList<NOriginNote>());
+
 	public OriginContext(Node lhs, List<NOriginNote> rules) {
 		this(Variety.NORMAL, lhs, rules);
 	}
