@@ -123,5 +123,10 @@ public class PartialNameNodeFactory<T> extends NodeFactory<T> {
 		
 		return new FunctionTypeRep(baseType.result, newParams, newNamedParamNames, newNamedParamTypes);
 	}
+	
+	@Override
+	public final String toString() {
+		return "partial named application of " + ref.toString();
+	}
 
 }

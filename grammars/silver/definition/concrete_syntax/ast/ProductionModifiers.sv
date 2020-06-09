@@ -4,7 +4,7 @@ imports silver:definition:concrete_syntax only productionName;
 
 synthesized attribute productionPrecedence :: Maybe<Integer>;
 -- acode from terminal modifiers
-synthesized attribute customLayout :: Maybe<String>;
+synthesized attribute customLayout :: Maybe<[String]>;
 synthesized attribute productionOperator :: Maybe<String>;
 
 {--
@@ -92,5 +92,5 @@ top::SyntaxProductionModifier ::= terms::[String]
                            "this grammar was not included in this parser. (Referenced from layout clause on production " ++ top.productionName ++ ")"],
                    zipWith(pair, terms, termRefs));
 
-  top.customLayout = just(implode("", map(xmlCopperRef, map(head, termRefs))));
+  top.customLayout = just(terms);
 }

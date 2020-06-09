@@ -24,7 +24,7 @@ terminal String_t  /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]n|[\\]r|[\\]f|[
 
 ignore terminal WhiteSpace /[\r\n\t\ ]+/;
 
-nonterminal AST_c with unparse, ast<AST>, errors, location;
+closed nonterminal AST_c with unparse, ast<AST>, errors, location;
 
 concrete productions top::AST_c
 | prodName::QName_t '(' children::ASTs_c ',' annotations::NamedASTs_c ')'

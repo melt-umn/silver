@@ -154,6 +154,11 @@ ${whatResult}
 ${makeTyVarDecls(3, whatSig.typerep.freeVariables)}
 			return ${whatSig.typerep.transFreshTypeRep};
 		}
+		
+		@Override
+		public final String toString() {
+			return "${whatGrammar}:${whatName}";
+		}
 	};
 }""";
 }

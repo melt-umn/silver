@@ -34,4 +34,3 @@ equalityTest ( basic_parse("asdfasdfIGN", "").parseSuccess, false, Boolean, copp
 equalityTest ( basic_parse("IGNasdfasdfIGN", "").parseSuccess, false, Boolean, copper_tests );
 equalityTest ( basic_parse("IGNasdfIGNasdfIGN", "").parseSuccess, false, Boolean, copper_tests );
 equalityTest ( basic_parse("IGNasdfIGNasdf", "").parseSuccess, false, Boolean, copper_tests );
-

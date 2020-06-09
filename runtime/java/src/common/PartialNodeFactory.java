@@ -80,5 +80,10 @@ public class PartialNodeFactory<T> extends NodeFactory<T> {
 		// We pass through namedParams unchanged here.
 		return new FunctionTypeRep(baseType.result, newParams, baseType.namedParamNames, baseType.namedParamTypes);
 	}
+	
+	@Override
+	public final String toString() {
+		return "partial application of " + ref.toString();
+	}
 
 }

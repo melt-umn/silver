@@ -39,7 +39,7 @@ top::SyntaxTerminalModifier ::=
 aspect production termClasses
 top::SyntaxTerminalModifier ::= cls::[String]
 {
-  top.fontAttrFromClass = dumbExtractFont(clsRefs);
+  top.fontAttrFromClass = dumbExtractFont(allClsRefs);
   
 }
 function dumbExtractFont

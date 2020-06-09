@@ -1,4 +1,4 @@
-grammar silver:hostEmbedding;
+grammar silver:metatranslation;
 
 imports silver:reflect;
 imports silver:langutil:pp;
@@ -37,14 +37,14 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   production givenLocation::Location =
     fromMaybe(top.givenLocation, orElse(children.foundLocation, annotations.foundLocation));
   
-  production attribute escapeTranslation::Maybe<Expr> with orElse;
-  escapeTranslation := nothing();
+  production attribute antiquoteTranslation::Maybe<Expr> with orElse;
+  antiquoteTranslation := nothing();
   
-  -- "Direct" escape productions
-  production attribute directEscapeProductions::[String] with ++;
-  directEscapeProductions := [];
-  escapeTranslation <-
-    if containsBy(stringEq, prodName, directEscapeProductions)
+  -- "Direct" antiquote productions
+  production attribute directAntiquoteProductions::[String] with ++;
+  directAntiquoteProductions := [];
+  antiquoteTranslation <-
+    if containsBy(stringEq, prodName, directAntiquoteProductions)
     then
       let wrapped::AST = 
         case children of
@@ -58,7 +58,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
                 consAST(
                   terminalAST(_, _, _),
                   nilAST())))) -> a
-        | _ -> error(s"Unexpected escape production arguments: ${show(80, top.pp)}")
+        | _ -> error(s"Unexpected antiquote production arguments: ${show(80, top.pp)}")
         end
       in
         case reify(wrapped) of
@@ -68,15 +68,15 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
       end
     else nothing();
   
-  -- "Collection" escape productions
-  -- Key: escape production name
+  -- "Collection" antiquote productions
+  -- Key: antiquote production name
   -- Value: pair(nonterminal short name, pair(cons production name, append production name))
-  production attribute collectionEscapeProductions::[Pair<String Pair<String Pair<String String>>>] with ++;
-  collectionEscapeProductions := [];
-  escapeTranslation <-
+  production attribute collectionAntiquoteProductions::[Pair<String Pair<String Pair<String String>>>] with ++;
+  collectionAntiquoteProductions := [];
+  antiquoteTranslation <-
     do (bindMaybe, returnMaybe) {
-      -- pair(escape production name, escape expr AST, rest AST)
-      escape::Pair<String Pair<AST Decorated AST>> <-
+      -- pair(antiquote production name, antiquote expr AST, rest AST)
+      antiquote::Pair<String Pair<AST Decorated AST>> <-
         case children of
         | consAST(
             nonterminalAST(n, consAST(a, _), _),
@@ -85,27 +85,27 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         end;
       -- pair(nonterminal short name, pair(cons production name, append production name))
       trans::Pair<String Pair<String String>> <-
-        lookupBy(stringEq, escape.fst, collectionEscapeProductions);
+        lookupBy(stringEq, antiquote.fst, collectionAntiquoteProductions);
       if prodName == trans.snd.fst then just(unit()) else nothing(); -- require prodName == trans.snd.fst
       return
-        case reify(escape.snd.fst) of
+        case reify(antiquote.snd.fst) of
         | right(e) ->
           mkStrFunctionInvocation(
-            givenLocation, trans.snd.snd, [e, escape.snd.snd.translation])
+            givenLocation, trans.snd.snd, [e, antiquote.snd.snd.translation])
         | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
         end;
     };
-  escapeTranslation <-
+  antiquoteTranslation <-
     do (bindMaybe, returnMaybe) {
       -- pair(nonterminal short name, pair(cons production name, append production name))
       trans::Pair<String Pair<String String>> <-
-        lookupBy(stringEq, prodName, collectionEscapeProductions);
+        lookupBy(stringEq, prodName, collectionAntiquoteProductions);
       return
         errorExpr([err(givenLocation, s"$$${trans.fst} may only occur as a member of ${trans.fst}")], location=givenLocation);
     };
   
-  escapeTranslation <-
-    if containsBy(stringEq, prodName, varPatternProductions ++ wildPatternProductions)
+  antiquoteTranslation <-
+    if containsBy(stringEq, prodName, patternAntiquoteProductions)
     then just(errorExpr([err(givenLocation, "Pattern antiquote is invalid in expression context")], location=givenLocation))
     else nothing();
   
@@ -116,47 +116,45 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         baseExpr(qName(givenLocation, prodName), location=givenLocation),
         children.translation,
         annotations.translation),
-      escapeTranslation);
+      antiquoteTranslation);
   
-  production attribute patternEscapeTranslation::Maybe<Pattern> with orElse;
-  patternEscapeTranslation := nothing();
+  production attribute patternAntiquoteTranslation::Maybe<Pattern> with orElse;
+  patternAntiquoteTranslation := nothing();
   
-  production attribute varPatternProductions::[String] with ++;
-  varPatternProductions := [];
-  patternEscapeTranslation <-
-    if containsBy(stringEq, prodName, varPatternProductions)
+  production attribute patternAntiquoteProductions::[String] with ++;
+  patternAntiquoteProductions := [];
+  patternAntiquoteTranslation <-
+    if containsBy(stringEq, prodName, patternAntiquoteProductions)
     then
       let wrapped::AST = 
         case children of
         | consAST(a, nilAST()) -> a
         | consAST(terminalAST(_, _, _), consAST(a, nilAST())) -> a
-        | _ -> error(s"Unexpected escape production arguments: ${show(80, top.pp)}")
+        | consAST(
+            terminalAST(_, _, _),
+            consAST(
+              terminalAST(_, _, _),
+              consAST(
+                a,
+                consAST(
+                  terminalAST(_, _, _),
+                  nilAST())))) -> a
+        | _ -> error(s"Unexpected antiquote production arguments: ${show(80, top.pp)}")
         end
       in
         case reify(wrapped) of
-        | right(n) -> just(varPattern(n, location=givenLocation))
+        | right(p) -> just(p)
         | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
         end
       end
     else nothing();
   
-  production attribute wildPatternProductions::[String] with ++;
-  wildPatternProductions := [];
-  patternEscapeTranslation <-
-    if containsBy(stringEq, prodName, wildPatternProductions)
-    then
-      case children of
-      | nilAST() -> just(wildcPattern('_', location=givenLocation))
-      | consAST(terminalAST(_, _, _), nilAST()) -> just(wildcPattern('_', location=givenLocation))
-      | _ -> error(s"Unexpected escape production arguments: ${show(80, top.pp)}")
-      end
-    else nothing();
-  
-  patternEscapeTranslation <-
-    if containsBy(stringEq, prodName, directEscapeProductions ++ map(fst, collectionEscapeProductions))
+  patternAntiquoteTranslation <-
+    if containsBy(stringEq, prodName, directAntiquoteProductions ++ map(fst, collectionAntiquoteProductions))
     then just(errorPattern([err(givenLocation, "Expression antiquote is invalid in pattern context")], location=givenLocation))
     else nothing();
   
+  -- Note that we intentionally ignore annotations here
   top.patternTranslation =
     fromMaybe(
       prodAppPattern(
@@ -165,7 +163,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         children.patternTranslation,
         ')',
         location=givenLocation),
-      patternEscapeTranslation);
+      patternAntiquoteTranslation);
   
   children.givenLocation = givenLocation;
   annotations.givenLocation = givenLocation;

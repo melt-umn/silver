@@ -214,9 +214,14 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
         @Override
         public final common.FunctionTypeRep getType() {
 ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
-            return ${namedSig.typerep.transFreshTypeRep};
-        }
-    };
+			return ${namedSig.typerep.transFreshTypeRep};
+		}
+		
+		@Override
+		public final String toString() {
+			return "${top.grammarName}:${id.name}";
+		}
+	};
 
 }
 """)];

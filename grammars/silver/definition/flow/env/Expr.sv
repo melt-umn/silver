@@ -600,6 +600,13 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 
 -- These are all errors, basically.
 
+aspect production failureTerminalIdExpr
+top::Expr ::= 'disambiguationFailure'
+{
+  top.flowDeps = [];
+  top.flowDefs = [];
+}
+
 aspect production actionChildReference
 top::Expr ::= q::Decorated QName
 {
@@ -615,6 +622,13 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production terminalIdReference
+top::Expr ::= q::Decorated QName
+{
+  top.flowDeps = [];
+  top.flowDefs = [];
+}
+
+aspect production lexerClassReference
 top::Expr ::= q::Decorated QName
 {
   top.flowDeps = [];

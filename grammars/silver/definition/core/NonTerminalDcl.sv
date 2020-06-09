@@ -1,44 +1,20 @@
 grammar silver:definition:core;
 
+autocopy attribute nonterminalName :: String;
+
 concrete production nonterminalDcl
-top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs ';'
+top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
-  -- top.unparse = "nonterminal^ " ++ id.unparse ++ tl.unparse ++ ";";
-
-  -- local l :: Location = top.location;
-
-  -- local originLinkTE :: TypeExpr = nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "OriginLink", l),
-  --   location=l), botlNone(location=l), location=l);
-  -- local ntTE :: TypeExpr = nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, id.name, l),
-  --   location=l), tl, location=l);
-
-  -- local nextLinkNothingImpl :: Expr = Silver_Expr{nothing()};
-  -- local nextLinkSomethingImpl :: Expr = Silver_Expr{just(n.origininfo)};
-  -- local hasOrigins :: Boolean = findNamedSigElem("silver:modification:origintracking:childruntime:origininfo",
-  --     annotationsForNonterminal(nonterminalType(top.grammarName ++ ":" ++ id.name, tl.types), top.env), 0) != -1;
-  -- local selectedImpl :: Expr = if hasOrigins then nextLinkSomethingImpl else nextLinkNothingImpl;
-  -- local implStmt :: ProductionStmt = attributeDef(concreteDefLHS(qName(l, "top"), location=l),
-  --   '.', qNameAttrOccur(qName(l, "nextOrigin"), location=l), '=', nextLinkSomethingImpl, ';', location=l);
-
-  -- local newdcl :: AGDcl = productionDcl('abstract', 'production', name("originLink" ++ id.name, l),
-  --   productionSignature(productionLHS(name("top", l), '::', originLinkTE, location=l), '::=',
-  --     productionRHSCons(productionRHSElem(name("n", l), '::', ntTE, location=l), productionRHSNil(location=l),
-  --       location=l), location=l), productionBody('{',
-  --         productionStmtsNil(location=l), '}', location=l), location=l);
-
-  -- forwards to appendAGDcl(
-  --   noWrapperNonterminalDcl(quals, 'nonterminal', id, tl, ';', location=l),
-  --   newdcl, location=l);
-
-  forwards to noWrapperNonterminalDcl(quals, 'nonterminal', id, tl, ';', location=top.location);
+  forwards to noWrapperNonterminalDcl(quals, $2, id, tl, nm, $6, location=top.location);
 }
 
 abstract production noWrapperNonterminalDcl
-top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs ';'
+top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
-  top.unparse = "nonterminal " ++ id.unparse ++ tl.unparse ++ ";";
+  top.unparse = "nonterminal " ++ id.unparse ++ tl.unparse ++ " " ++ nm.unparse ++ ";";
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
+  nm.nonterminalName = fName;
   
   -- tl.freeVariables is our order list of the bound types for this nonterminal.
   top.defs = [ntDef(top.grammarName,
@@ -54,7 +30,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   
 
   -- Here we ensure that the type list contains only type *variables*
-  top.errors := tl.errors ++ tl.errorsTyVars ++ quals.errors;
+  top.errors := tl.errors ++ tl.errorsTyVars ++ quals.errors ++ nm.errors;
   
   -- Here we bind those type variables.
   tl.initialEnv = top.env;
@@ -105,5 +81,39 @@ top::NTDeclQualifiers ::= 'tracked' rest::NTDeclQualifiers
 
   top.errors := rest.errors;
   top.errors <- if rest.tracked then [err(top.location, "Duplicate 'tracked' qualifier")] else [];
+}
+
+nonterminal NonterminalModifiers with config, location, unparse, errors, env, nonterminalName; -- 0 or some
+nonterminal NonterminalModifierList with config, location, unparse, errors, env, nonterminalName; -- 1 or more
+closed nonterminal NonterminalModifier with config, location, unparse, errors, env, nonterminalName; -- 1
+
+concrete production nonterminalModifiersNone
+top::NonterminalModifiers ::=
+{
+  top.unparse = "";
+
+  top.errors := [];
+}
+concrete production nonterminalModifierSome
+top::NonterminalModifiers ::= nm::NonterminalModifierList
+{
+  top.unparse = nm.unparse;
+  
+  top.errors := nm.errors;
+}
+
+concrete production nonterminalModifierSingle
+top::NonterminalModifierList ::= nm::NonterminalModifier
+{
+  top.unparse = nm.unparse;
+  
+  top.errors := nm.errors;
+}
+concrete production nonterminalModifiersCons
+top::NonterminalModifierList ::= h::NonterminalModifier ',' t::NonterminalModifierList
+{
+  top.unparse = h.unparse ++ ", " ++ t.unparse;
+
+  top.errors := h.errors ++ t.errors;
 }
 

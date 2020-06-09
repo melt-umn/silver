@@ -112,8 +112,8 @@ top::AnnoNT2 ::= s::String
 global partialApp1 :: (AnnoNT2 ::= String) = annoNT2partialAppProd(_, anno1=5, anno2="6");
 global partialApp2 :: (AnnoNT2 ::= String) = annoNT2partialAppProd(_, anno2="7", anno1=8);
 
-global partialApp1val :: AnnoNT2 = partialApp1("doesn't matter");
-global partialApp2val :: AnnoNT2 = partialApp2("doesn't matter");
+global partialApp1val :: AnnoNT2 = partialApp1("foo");
+global partialApp2val :: AnnoNT2 = partialApp2("bar");
 
 equalityTest ( partialApp1val.anno1, 5, Integer, silver_tests ) ;
 equalityTest ( partialApp1val.anno2, "6", String, silver_tests ) ;
@@ -121,6 +121,11 @@ equalityTest ( partialApp2val.anno2, "7", String, silver_tests ) ;
 equalityTest ( partialApp2val.anno1, 8, Integer, silver_tests ) ;
 
 
-
+equalityTest(
+  case partialApp1val of
+  | annoNT2partialAppProd(a, anno1=b, anno2="6") when a == "foo" -> b
+  | _ -> 42
+  end,
+  5, Integer, silver_tests);
 
 

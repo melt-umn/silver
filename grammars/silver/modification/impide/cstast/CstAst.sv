@@ -15,10 +15,9 @@ top::SyntaxRoot ::=
 }
 
 aspect production cstRoot
-top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  terminalPrefixes::[Pair<String String>]
+top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  customStartLayout::Maybe<[String]>  terminalPrefixes::[Pair<String String>]
 {
   -- 1) font information
   top.fontList = s2.fontList;
   top.classFontList = s2.classFontList;
 }
-

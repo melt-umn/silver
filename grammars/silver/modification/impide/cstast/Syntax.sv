@@ -30,7 +30,7 @@ top::SyntaxDcl ::=
 }
 
 aspect production syntaxNonterminal
-top::SyntaxDcl ::= t::Type subdcls::Syntax --modifiers::SyntaxNonterminalModifiers
+top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayoutTerms::[String] modifiers::SyntaxNonterminalModifiers
 {
 }
 

@@ -27,7 +27,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
 nonterminal ProductionModifiers with config, location, unparse, productionModifiers, errors, env, productionName; -- 0 or some
 nonterminal ProductionModifierList with config, location, unparse, productionModifiers, errors, env, productionName; -- 1 or more
-nonterminal ProductionModifier with config, location, unparse, productionModifiers, errors, env, productionName; -- 1
+closed nonterminal ProductionModifier with config, location, unparse, productionModifiers, errors, env, productionName; -- 1
 
 synthesized attribute productionModifiers :: [SyntaxProductionModifier];
 

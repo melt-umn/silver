@@ -411,7 +411,7 @@ public final class RawXML {
 		}
 
 		@Override
-		public Iterator<String> getPrefixes(String namespaceURI) {
+		public Iterator getPrefixes(String namespaceURI) {
 			throw new UnsupportedOperationException();
 		}
 

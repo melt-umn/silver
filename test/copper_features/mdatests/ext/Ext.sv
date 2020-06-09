@@ -2,7 +2,7 @@ grammar copper_features:mdatests:ext;
 
 import copper_features:mdatests:host;
 
-marking terminal C 'c';
+marking terminal C 'c' lexer classes ColonSep;
 
 terminal D 'd';
 

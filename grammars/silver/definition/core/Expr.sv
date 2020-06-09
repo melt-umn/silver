@@ -312,10 +312,11 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   -- 'q' shouldn't actually resolve to a name!
   top.errors := e.errors ++ forward.errors;
   
-  q.attrFor = performSubstitution(e.typerep, e.upSubst);
+  local eTy::Type = performSubstitution(e.typerep, e.upSubst);
+  q.attrFor = if eTy.isDecorated then eTy.decoratedType else eTy;
   
   -- Note: we're first consulting the TYPE of the LHS.
-  forwards to q.attrFor.accessHandler(e, q, top.location);
+  forwards to eTy.accessHandler(e, q, top.location);
   -- This jumps to:
   -- errorAccessHandler  (e.g. 1.unparse)
   -- undecoratedAccessHandler

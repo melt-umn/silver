@@ -6,17 +6,18 @@ temp_imp_ide_font font_keyword color(123, 0, 82) bold; -- Good: same as java
 temp_imp_ide_font font_modword color(41,95,148) bold; -- maybe good? Unusual but looks good
 temp_imp_ide_font font_type color(41,95,148); -- type coloring
 
+lexer class Silver prefix separator ":";
 
-lexer class IDENTIFIER;
+lexer class IDENTIFIER extends Silver;
 lexer class RESERVED dominates IDENTIFIER;
 
-lexer class COMMENT font = font_comments;
-lexer class LITERAL font = font_literal;
-lexer class KEYWORD font = font_keyword;
-lexer class MODSTMT font = font_modword;
-lexer class SPECOP  font = font_keyword;
-lexer class BUILTIN font = font_keyword;
-lexer class TYPE    font = font_type;
+lexer class COMMENT extends Silver, font = font_comments;
+lexer class LITERAL extends Silver, font = font_literal;
+lexer class KEYWORD extends Silver, font = font_keyword;
+lexer class MODSTMT extends Silver, font = font_modword;
+lexer class SPECOP  extends Silver, font = font_keyword;
+lexer class BUILTIN extends Silver, font = font_keyword;
+lexer class TYPE    extends Silver, font = font_type;
 
 terminal As_kwd       'as'      lexer classes {MODSTMT,RESERVED};
 terminal Exports_kwd  'exports' lexer classes {MODSTMT};

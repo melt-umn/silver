@@ -1,7 +1,8 @@
 grammar silver:modification:copper;
 
-terminal Lexer_kwd 'lexer' lexer classes {KEYWORD};
-terminal Class_kwd 'class' lexer classes {KEYWORD};
+terminal Lexer_kwd   'lexer'   lexer classes {KEYWORD};
+terminal Class_kwd   'class'   lexer classes {KEYWORD};
+terminal Extends_kwd 'extends' lexer classes {KEYWORD};
 
 concrete production lexerClassDclEmpty
 top::AGDcl ::= 'lexer' 'class' id::Name ';'
@@ -30,7 +31,7 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
 }
 
 nonterminal LexerClassModifiers with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
-nonterminal LexerClassModifier with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+closed nonterminal LexerClassModifier with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
 
 synthesized attribute lexerClassModifiers :: [SyntaxLexerClassModifier];
 
@@ -51,7 +52,7 @@ top::LexerClassModifiers ::= tm::LexerClassModifier
   top.errors := tm.errors; 
 }
 concrete production lexerClassModifiersCons
-top::LexerClassModifiers ::= h::LexerClassModifier  t::LexerClassModifiers
+top::LexerClassModifiers ::= h::LexerClassModifier ',' t::LexerClassModifiers
 {
   top.unparse = h.unparse ++ " " ++ t.unparse;
 
@@ -59,8 +60,17 @@ top::LexerClassModifiers ::= h::LexerClassModifier  t::LexerClassModifiers
   top.errors := h.errors ++ t.errors;
 }
 
+concrete production lexerClassModifierExtends
+top::LexerClassModifier ::= 'extends' cls::LexerClasses
+{
+  top.unparse = "extends " ++ cls.unparse;
+
+  top.lexerClassModifiers = [lexerClassExtends(cls.lexerClasses)];
+  top.errors := cls.errors;
+}
+
 concrete production lexerClassModifierDominates
-top::LexerClassModifier ::= 'dominates' terms::TermPrecList
+top::LexerClassModifier ::= 'dominates' terms::TermPrecs
 {
   top.unparse = "dominates " ++ terms.unparse;
 
@@ -69,7 +79,7 @@ top::LexerClassModifier ::= 'dominates' terms::TermPrecList
 }
 
 concrete production lexerClassModifierSubmitsTo
-top::LexerClassModifier ::= 'submits' 'to' terms::TermPrecList
+top::LexerClassModifier ::= 'submits' 'to' terms::TermPrecs
 {
   top.unparse = "submits to " ++ terms.unparse;
 
@@ -95,4 +105,3 @@ top::LexerClassModifier ::= 'disambiguate' acode::ActionCode_c
   acode.env = newScopeEnv(disambiguationClassActionVars ++ acode.defs, top.env);
   acode.frame = disambiguationContext(myFlowGraph);
 }
-
