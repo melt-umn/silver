@@ -23,6 +23,7 @@ public final class OriginsUtil {
 	public static PsetFromReificationOIT SET_FROM_REIFICATION_OIT = new PsetFromReificationOIT(null);
 	public static PsetFromEntryOIT SET_FROM_ENTRY_OIT = new PsetFromEntryOIT(null);
 	public static PsetInGlobalOIT SET_IN_GLOBAL_OIT = new PsetInGlobalOIT(null);
+	public static PotherBogusOIT OTHER_BOGUS_OIT = new PotherBogusOIT(null);
 
 	private static String ids(final Object arg){
 		return Integer.toString(System.identityHashCode(arg));

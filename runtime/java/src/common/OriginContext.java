@@ -14,7 +14,7 @@ import common.exceptions.*;
  */
 public final class OriginContext {
 	public enum Variety {
-	    NORMAL, MAINFUNCTION, FFI, PARSERACTION, GLOBAL
+	    NORMAL, MAINFUNCTION, FFI, PARSERACTION, GLOBAL, OTHER
 	}
 
 	public final Variety variety;
@@ -96,8 +96,10 @@ public final class OriginContext {
 
 			case GLOBAL:
 				return new core.PotherOriginInfo(null, OriginsUtil.SET_IN_GLOBAL_OIT, new common.StringCatter("Built in a global"), ConsCell.nil);
+
+			default:
+				return new core.PotherOriginInfo(null, OriginsUtil.OTHER_BOGUS_OIT, new common.StringCatter("??? Unknown variety in OriginContext.makeNewConstructionOrigin: "+this.variety.toString()), ConsCell.nil);
 		}
-		throw new RuntimeException("Impossible Condition: unknown variety.");
 	}
 
 	public <T extends Node> T attrAccessCopy(T arg) {
