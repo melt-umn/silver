@@ -298,16 +298,16 @@ PrimPatterns ::= l::[PrimPattern]
  -     e.g. right now we 'map(this(x, y, _), list)'
  -}
 function bindHeadPattern
-AbstractMatchRule ::= headExpr::Expr  headType::Type  rule::AbstractMatchRule
+AbstractMatchRule ::= headExpr::Expr  headType::Type absRule::AbstractMatchRule
 {
   -- If it's '_' we do nothing, otherwise, bind away!
-  return case rule of
+  return case absRule of
   | matchRule(headPat :: restPat, e) ->
       matchRule(restPat, 
         case headPat.patternVariableName of
-        | just(pvn) -> makeLet(rule.location, pvn, headType, headExpr, e)
+        | just(pvn) -> makeLet(absRule.location, pvn, headType, headExpr, e)
         | nothing() -> e
-        end, location=rule.location)
+        end, location=absRule.location)
   end;
 }
 
