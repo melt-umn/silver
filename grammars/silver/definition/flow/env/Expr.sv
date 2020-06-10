@@ -574,6 +574,13 @@ top::Expr ::= 'reify'
   top.flowDefs = [];
 }
 
+aspect production castFunctionLiteral
+top::Expr ::= 'cast'
+{
+  top.flowDeps = [];
+  top.flowDefs = [];
+}
+
 aspect production newFunction
 top::Expr ::= 'new' '(' e1::Expr ')'
 {

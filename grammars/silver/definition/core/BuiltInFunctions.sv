@@ -92,6 +92,16 @@ top::Expr ::= 'reify'
     functionType(nonterminalType("core:Either", [stringType(), varType(freshTyVar())]), [nonterminalType("core:reflect:AST", [])], []);
 }
 
+concrete production castFunctionLiteral
+top::Expr ::= 'cast'
+{
+  top.unparse = "cast";
+
+  top.errors := [];
+  top.typerep =
+    functionType(nonterminalType("core:Maybe", [varType(freshTyVar())]), [varType(freshTyVar())], []);
+}
+
 concrete production newFunction
 top::Expr ::= 'new' '(' e::Expr ')'
 {

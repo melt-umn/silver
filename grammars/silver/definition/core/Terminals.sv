@@ -65,6 +65,7 @@ terminal ToInt_kwd     'toInt'     lexer classes {BUILTIN,RESERVED}; -- Legacy
 terminal ToInteger_kwd 'toInteger' lexer classes {BUILTIN,RESERVED};
 terminal ToString_kwd  'toString'  lexer classes {BUILTIN,RESERVED};
 terminal Reify_kwd     'reify'     lexer classes {BUILTIN,RESERVED};
+terminal Cast_kwd      'cast'      lexer classes {BUILTIN,RESERVED};
 
 terminal Comma_t       ','  precedence = 4;
 terminal Or_t          '||' precedence = 5, association = left;
