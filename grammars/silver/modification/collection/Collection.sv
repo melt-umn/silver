@@ -216,6 +216,9 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.unparse = "\t" ++ val.unparse ++ " := " ++ e.unparse ++ ";";
 
+  e.isRoot = false;
+  e.originRules = []; -- ORIGINS TODO: ???
+
   e.downSubst = top.downSubst;
   -- the real type checking is done by the forward, but we must ensure things are tied up nicely
   -- otherwise we don't specialize ntOrDecs in OUR e
@@ -227,6 +230,9 @@ abstract production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.unparse = "\t" ++ val.unparse ++ " <- " ++ e.unparse ++ ";";
+
+  e.isRoot = false;
+  e.originRules = []; -- ORIGINS TODO: ???
 
   e.downSubst = top.downSubst;
   -- the real type checking is done by the forward, but we must ensure things are tied up nicely
@@ -251,6 +257,9 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst; 
 
+  e.isRoot = false;
+  e.originRules = []; -- ORIGINS TODO: ???
+
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror
@@ -269,6 +278,9 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   e.downSubst = top.downSubst;
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst; 
+
+  e.isRoot = false;
+  e.originRules = []; -- ORIGINS TODO: ???
 
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
@@ -292,6 +304,9 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst; 
 
+  e.isRoot = false;
+  e.originRules = []; -- ORIGINS TODO: ???
+
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror
@@ -310,6 +325,9 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   e.downSubst = top.downSubst;
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst; 
+
+  e.isRoot = false;
+  e.originRules = []; -- ORIGINS TODO: ???
 
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-

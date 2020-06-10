@@ -200,6 +200,25 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 
+aspect production noteAttachment
+top::Expr ::= 'attachNote' '(' note::Expr ',' e::Expr ')'
+{
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
+
+  note.downSubst = top.downSubst;
+  e.downSubst = note.upSubst;
+  errCheck1.downSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst;
+  
+  errCheck1 = check(note.typerep, nonterminalType("core:OriginNote", []));
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "First argument to attachNote must be OriginNote, was " ++ errCheck1.leftpp)]
+       else [];
+}
+
+
 
 aspect production trueConst
 top::Expr ::= 'true'

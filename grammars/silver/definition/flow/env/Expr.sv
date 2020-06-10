@@ -505,6 +505,13 @@ top::AnnoAppExprs ::=
   top.flowDefs = [];
 }
 
+aspect production noteAttachment
+top::Expr ::= 'attachNote' '(' note::Expr ',' e::Expr ')'
+{
+  top.flowDefs = note.flowDefs ++ e.flowDefs;
+  top.flowDeps = note.flowDeps ++ e.flowDeps;
+}
+
 
 aspect production exprRef
 top::Expr ::= e::Decorated Expr

@@ -58,14 +58,15 @@ terminal To_kwd          'to'           lexer classes {KEYWORD,RESERVED};
 terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED};
 terminal Global_kwd      'global'       lexer classes {KEYWORD,RESERVED};
 
-terminal Length_kwd    'length'    lexer classes {BUILTIN,RESERVED};
-terminal ToBoolean_kwd 'toBoolean' lexer classes {BUILTIN,RESERVED};
-terminal ToFloat_kwd   'toFloat'   lexer classes {BUILTIN,RESERVED};
-terminal ToInt_kwd     'toInt'     lexer classes {BUILTIN,RESERVED}; -- Legacy
-terminal ToInteger_kwd 'toInteger' lexer classes {BUILTIN,RESERVED};
-terminal ToString_kwd  'toString'  lexer classes {BUILTIN,RESERVED};
-terminal Reify_kwd     'reify'     lexer classes {BUILTIN,RESERVED};
-terminal Cast_kwd      'cast'      lexer classes {BUILTIN,RESERVED};
+terminal Length_kwd     'length'     lexer classes {BUILTIN,RESERVED};
+terminal ToBoolean_kwd  'toBoolean'  lexer classes {BUILTIN,RESERVED};
+terminal ToFloat_kwd    'toFloat'    lexer classes {BUILTIN,RESERVED};
+terminal ToInt_kwd      'toInt'      lexer classes {BUILTIN,RESERVED}; -- Legacy
+terminal ToInteger_kwd  'toInteger'  lexer classes {BUILTIN,RESERVED};
+terminal ToString_kwd   'toString'   lexer classes {BUILTIN,RESERVED};
+terminal Reify_kwd      'reify'      lexer classes {BUILTIN,RESERVED};
+terminal Cast_kwd       'cast'       lexer classes {BUILTIN,RESERVED};
+terminal AttachNote_kwd 'attachNote' lexer classes {BUILTIN,RESERVED};
 
 terminal Comma_t       ','  precedence = 4;
 terminal Or_t          '||' precedence = 5, association = left;

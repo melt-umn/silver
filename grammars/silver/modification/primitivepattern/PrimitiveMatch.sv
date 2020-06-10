@@ -22,12 +22,12 @@ nonterminal PrimPatterns with
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors,
   downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation, isRoot;
+  scrutineeType, returnType, translation, isRoot, originRules;
 nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors,
   downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation, isRoot;
+  scrutineeType, returnType, translation, isRoot, originRules;
 
 autocopy attribute scrutineeType :: Type;
 autocopy attribute returnType :: Type;

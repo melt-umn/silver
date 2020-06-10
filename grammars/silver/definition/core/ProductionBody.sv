@@ -130,6 +130,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
                 else [];
 
   e.isRoot = true;
+  e.originRules = [];
 }
 
 concrete production localAttributeDcl
@@ -179,6 +180,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   top.uniqueSignificantExpression = [e];
 
   e.isRoot = true;
+  e.originRules = [];
 
   top.errors := e.errors;
 
@@ -222,6 +224,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
   top.errors := lhs.errors ++ e.errors;
 
   e.isRoot = true;
+  e.originRules = [];
 }
 
 concrete production forwardInhsOne
@@ -295,6 +298,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors := e.errors;
 
   e.isRoot = true;
+  e.originRules = [];
 }
 
 abstract production inheritedAttributeDef
@@ -305,6 +309,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors := e.errors;
 
   e.isRoot = true;
+  e.originRules = [];
 }
 
 concrete production concreteDefLHS
@@ -442,6 +447,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   top.errors := e.errors;
 
   e.isRoot = true;
+  e.originRules = [];
 
   -- TODO: missing redefinition check
 }

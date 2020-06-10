@@ -31,10 +31,10 @@ top::ContextOriginInfoSource ::= name::String
 function makeOriginContextRef
 String ::= top::Decorated Expr --need .frame anno
 {
-  -- local localRules :: [Expr] = [];
-  -- return top.frame.originsContextSource.contextRef;
+  local rulesStr :: String = s"new core.NOriginNote[]{new core.PoriginDbgNote(null, new common.StringCatter(\"${substitute("\"", "\\\"", hackUnparse(top.location))}\"))," ++
+    implode(", ", map((.translation), top.originRules)) ++ "}";
 
-  return top.frame.originsContextSource.contextRefAddingRules(s"new core.NOriginNote[]{new core.PoriginDbgNote(null, new common.StringCatter(\"${substitute("\"", "\\\"", hackUnparse(top.location))}\"))}");
+  return top.frame.originsContextSource.contextRefAddingRules(rulesStr);
 
   -- ORIGINS TODO: rules ref from top.originRules
 }

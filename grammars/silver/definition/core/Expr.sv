@@ -3,16 +3,16 @@ grammar silver:definition:core;
 --import silver:analysis:typechecking:core;
 
 nonterminal Expr with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, typerep, isRoot;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, typerep, isRoot, originRules;
 nonterminal Exprs with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs, isRoot;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs, isRoot, originRules;
 
 nonterminal ExprInhs with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, decoratingnt, suppliedInhs, isRoot;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, decoratingnt, suppliedInhs, isRoot, originRules;
 nonterminal ExprInh with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, decoratingnt, suppliedInhs, isRoot;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, decoratingnt, suppliedInhs, isRoot, originRules;
 nonterminal ExprLHSExpr with
-  config, grammarName, env, location, unparse, errors, name, typerep, decoratingnt, suppliedInhs, isRoot;
+  config, grammarName, env, location, unparse, errors, name, typerep, decoratingnt, suppliedInhs, isRoot, originRules;
 
 {--
  - The nonterminal being decorated. (Used for 'decorate with {}')
@@ -34,6 +34,8 @@ synthesized attribute rawExprs :: [Expr];
 -- Is this Expr the logical "root" of the expression? That is, will it's value be the value computed
 --  for the attribute/return value/etc that it is part of?
 autocopy attribute isRoot :: Boolean;
+
+autocopy attribute originRules :: [Decorated Expr];
 
 
 abstract production errorExpr
@@ -258,6 +260,19 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
 
   top.typerep = functionType(ety.outputType, es.missingTypereps ++ anns.partialAnnoTypereps, anns.missingAnnotations);
+}
+
+concrete production noteAttachment
+top::Expr ::= 'attachNote' '(' note::Expr ',' e::Expr ')'
+{
+  top.unparse = "attachNote(" ++ note.unparse ++ ", " ++ e.unparse ++ ")";
+
+  top.errors := note.errors ++ e.errors;
+  top.typerep = e.typerep;
+
+  note.isRoot = false;
+  e.isRoot = false;
+  e.originRules = top.originRules ++ [note];
 }
 
 concrete production attributeSection
@@ -860,11 +875,11 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
  -}
 nonterminal AppExprs with 
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied, isRoot;
+  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied, isRoot, originRules;
 
 nonterminal AppExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied, isRoot;
+  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied, isRoot, originRules;
 
 synthesized attribute isPartial :: Boolean;
 synthesized attribute missingTypereps :: [Type];
@@ -976,12 +991,12 @@ nonterminal AnnoAppExprs with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
-  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot;
+  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot, originRules;
 nonterminal AnnoExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
-  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot;
+  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot, originRules;
 
 {--
  - Annotations that have not yet been supplied

@@ -249,6 +249,13 @@ top::ASTExpr ::= c::ASTExpr t::ASTExpr e::ASTExpr
     end;
 }
 
+abstract production noteAttachmentASTExpr
+top::ASTExpr ::= a::ASTExpr b::ASTExpr
+{
+  top.pp = pp"(${a.pp} + ${b.pp})";
+  top.value = b.value; -- ORIGINS TODO: ???
+}
+
 abstract production plusASTExpr
 top::ASTExpr ::= a::ASTExpr b::ASTExpr
 {

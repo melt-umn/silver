@@ -64,10 +64,10 @@ class NT(ComplexValue):
 		print(self.name)
 		print(o.children[2].value)
 		self.origin, self.originlabel = o.children[1],\
-			"\n".join(map(lambda x:x.node_text(), o.children[2].value))
+			"\n".join(map(lambda x:x.node_text(inclo=False), o.children[2].value))
 		if len(o.children)>4:
 			self.redex, self.redexlabel = o.children[3],\
-				"\n".join(map(lambda x:x.node_text(), o.children[4].value))
+				"\n".join(map(lambda x:x.node_text(inclo=False), o.children[4].value))
 		self.newly_introduced = o.children[-1].value
 
 	def get_real_children(self):
@@ -83,7 +83,7 @@ class NT(ComplexValue):
 		r=(self.name.split(":",1)[1] if strip_packagename else self.name)+"("
 		for c in self.children:
 			if isinstance(c, PrimitiveValue) or isinstance(c, LocationNT):
-				r+=c.node_text()
+				r+=c.node_text(inclo=False)
 			else:
 				r+="_"
 			if c!=self.children[-1]:
@@ -104,9 +104,10 @@ class NT(ComplexValue):
 						"core:setFromParserOIT": "P",
 						"core:setFromEntryOIT": "E",
 						"core:setFromReflectionOIT": "R",
-						"core:setFromReificationOIT": "I"}[self.oi.children[0].name]
+						"core:setFromReificationOIT": "I",
+						"core:setAtNewOIT": "N"}[self.oi.children[0].name]
 				else:
-					r+="\\n"+"P"+";"+self.oi.node_text()
+					r+="\\n"+"P"+";"+self.oi.node_text(inclo=False)
 			else:
 				r+="\\n"+self.comment
 		return r
