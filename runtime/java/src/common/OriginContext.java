@@ -14,7 +14,7 @@ import common.exceptions.*;
  */
 public final class OriginContext {
 	public enum Variety {
-	    NORMAL, MAINFUNCTION, FFI, PARSERACTION, GLOBAL, OTHER
+	    NORMAL, MAINFUNCTION, FFI, PARSERACTION, GLOBAL
 	}
 
 	public final Variety variety;
@@ -38,9 +38,6 @@ public final class OriginContext {
 
 	public static final OriginContext GLOBAL_CONTEXT =
 		new OriginContext(Variety.GLOBAL, null, new ArrayList<NOriginNote>());
-
-	public static final OriginContext BOGUS_CONTEXT =
-		new OriginContext(Variety.OTHER, null, new ArrayList<NOriginNote>());
 
 	public OriginContext(Node lhs, List<NOriginNote> rules) {
 		this(Variety.NORMAL, lhs, rules);
@@ -89,20 +86,18 @@ public final class OriginContext {
 				return new core.PoriginOriginInfo(null, OriginsUtil.SET_AT_CONSTRUCTION_OIT, this.lhs, this.rulesAsSilverList(), isContractum);
 
 			case MAINFUNCTION:
-				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_ENTRY_OIT, new common.StringCatter("Main Function"), ConsCell.nil);
+				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_ENTRY_OIT, new common.StringCatter("Main Function"), this.rulesAsSilverList());
 			
 			case FFI:
-				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_FFI_OIT, new common.StringCatter("Called from FFI"), ConsCell.nil);
+				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_FFI_OIT, new common.StringCatter("Called from FFI"), this.rulesAsSilverList());
 
 			case PARSERACTION:
-				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_PARSER_ACTION_OIT, new common.StringCatter("Called inside a parser action block"), ConsCell.nil);
+				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_PARSER_ACTION_OIT, new common.StringCatter("Called inside a parser action block"), this.rulesAsSilverList());
 
 			case GLOBAL:
-				return new core.PotherOriginInfo(null, OriginsUtil.SET_IN_GLOBAL_OIT, new common.StringCatter("Built in a global"), ConsCell.nil);
-
-			default:
-				return new core.PotherOriginInfo(null, OriginsUtil.OTHER_BOGUS_OIT, new common.StringCatter("??? Unknown variety in OriginContext.makeNewConstructionOrigin: "+this.variety.toString()), ConsCell.nil);
+				return new core.PotherOriginInfo(null, OriginsUtil.SET_IN_GLOBAL_OIT, new common.StringCatter("Built in a global"), this.rulesAsSilverList());
 		}
+		throw new RuntimeException("Impossible state: this.variety not recognized.");
 	}
 
 	public <T extends Node> T attrAccessCopy(T arg) {

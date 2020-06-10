@@ -9,6 +9,8 @@ mv grammars/core/originsimpl/Impl_hack* grammars/core/originsimpl/Impl_hack.sv
 mv grammars/core/originsimpl/Impl_real* grammars/core/originsimpl/Impl_real.sv.disabled
 mv grammars/core/reflect/AST_untracked* grammars/core/reflect/AST_untracked.sv
 mv grammars/core/reflect/AST_tracked* grammars/core/reflect/AST_tracked.sv.disabled
+mv grammars/silver/reflect/Util_old* grammars/silver/reflect/Util_old.sv
+mv grammars/silver/reflect/Util_new* grammars/silver/reflect/Util_new.sv.disabled
 echo    === DEEP CLEAN ===
 ./deep-clean -delete all
 echo    === COMPILE WITH OLD SILVER ===
@@ -31,4 +33,6 @@ mv grammars/core/originsimpl/Impl_real* grammars/core/originsimpl/Impl_real.sv
 mv grammars/core/originsimpl/Impl_hack* grammars/core/originsimpl/Impl_hack.sv.disabled
 mv grammars/core/reflect/AST_tracked* grammars/core/reflect/AST_tracked.sv
 mv grammars/core/reflect/AST_untracked* grammars/core/reflect/AST_untracked.sv.disabled
+mv grammars/silver/reflect/Util_old* grammars/silver/reflect/Util_old.sv.disabled
+mv grammars/silver/reflect/Util_new* grammars/silver/reflect/Util_new.sv
 echo    === DONE\? ===

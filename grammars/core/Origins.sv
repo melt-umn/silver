@@ -84,12 +84,6 @@ top::OriginInfoType ::=
 	top.isBogus = false;
 }
 
-abstract production otherBogusOIT
-top::OriginInfoType ::=
-{
-	top.isBogus = true;
-}
-
 abstract production otherOriginInfo
 top::OriginInfo ::= typ::OriginInfoType source::String notes::[OriginNote]
 {

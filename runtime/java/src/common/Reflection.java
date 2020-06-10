@@ -64,25 +64,26 @@ public final class Reflection {
 	/**
 	 * Implementation of the reflect operation for an arbitrary type.
 	 * 
+	 * @param rules origins context of the invocation
 	 * @param o The object to reflect.
 	 * @return The reflected AST.
 	 */
-	public static NAST reflect(Object o) {
+	public static NAST reflect(final ConsCell rules, Object o) {
 		if (o instanceof DecoratedNode) o = ((DecoratedNode)o).undecorate();
 
-		core.NOriginInfo origin = new core.PoriginOriginInfo(null, OriginsUtil.SET_FROM_REFLECTION_OIT, o, ConsCell.nil, true);
+		core.NOriginInfo origin = new core.PoriginOriginInfo(null, OriginsUtil.SET_FROM_REFLECTION_OIT, o, rules, true);
 		if(o instanceof Node) {
 			Node n = (Node)o;
 			NASTs children = new PnilAST(origin);
 			for (int i = n.getNumberOfChildren() - 1; i >= 0; i--) {
-				Object value = reflect(n.getChild(i));
+				Object value = reflect(rules, n.getChild(i));
 				children = new PconsAST(origin, value, children);
 			}
 			String[] annotationNames = n.getAnnoNames();
 			NNamedASTs annotations = new PnilNamedAST(origin);
 			for (int i = annotationNames.length - 1; i >= 0; i--) {
 				String name = annotationNames[i];
-				Object value = reflect(n.getAnno(name));
+				Object value = reflect(rules, n.getAnno(name));
 				annotations = new PconsNamedAST(origin, new PnamedAST(origin, new StringCatter(name), value), annotations);
 			}
 			return new PnonterminalAST(origin, new StringCatter(n.getName()), children, annotations);
@@ -90,7 +91,7 @@ public final class Reflection {
 			Terminal t = (Terminal)o;
 			return new PterminalAST(origin, new StringCatter(t.getName()), t.lexeme, t.location);
 		} else if(o instanceof ConsCell) {
-			return new PlistAST(origin, reflectList(origin, (ConsCell)o));
+			return new PlistAST(origin, reflectList(rules, origin, (ConsCell)o));
 		} else if(o instanceof StringCatter) {
 			return new PstringAST(origin, (StringCatter)o);
 		} else if(o instanceof Integer) {
@@ -104,9 +105,9 @@ public final class Reflection {
 			return new PanyAST(origin, o);
 		}
 	}
-	private static NASTs reflectList(core.NOriginInfo origin, final ConsCell l) {
+	private static NASTs reflectList(ConsCell rules, core.NOriginInfo origin, final ConsCell l) {
 		if (!l.nil()) {
-			return new PconsAST(origin, reflect(l.head()), reflectList(origin, l.tail()));
+			return new PconsAST(origin, reflect(rules, l.head()), reflectList(rules, origin, l.tail()));
 		} else {
 			return new PnilAST(origin);
 		}
@@ -119,9 +120,9 @@ public final class Reflection {
 	 * @param ast The AST to reify.
 	 * @return An Either<String a> object containing either an error message or a constructed object. 
 	 */
-	public static NEither reifyChecked(final TypeRep resultType, final NAST ast) {
+	public static NEither reifyChecked(final ConsCell rules, final TypeRep resultType, final NAST ast) {
 		try {
-			return new Pright(reify(resultType, ast));
+			return new Pright(reify(rules, resultType, ast));
 		} catch (SilverException e) {
 			Throwable rootCause = SilverException.getRootCause(e);
 			if (rootCause instanceof SilverError) {
@@ -135,11 +136,12 @@ public final class Reflection {
 	/**
 	 * Implementation of the reify operation for an arbitrary type.
 	 * 
+	 * @param rules origins context of the invocation of reify
 	 * @param resultType The type of tree to be constructed.
 	 * @param ast The AST to reify.
 	 * @return The constructed object.
 	 */
-	public static Object reify(final TypeRep resultType, final NAST ast) {
+	public static Object reify(final ConsCell rules, final TypeRep resultType, final NAST ast) {
 		if (ast instanceof PnonterminalAST) {
 			// Unpack production name
 			final String prodName = ((StringCatter)ast.getChild(0)).toString();
@@ -184,8 +186,8 @@ public final class Reflection {
 			final String className = String.join(".", path);
 			try {
 				Method prodReify =
-						((Class<Node>)Class.forName(className)).getMethod("reify", core.reflect.NAST.class, TypeRep.class, NAST[].class, String[].class, NAST[].class);
-				return prodReify.invoke(null, ast, resultType, childASTs, annotationNames, annotationASTs);
+						((Class<Node>)Class.forName(className)).getMethod("reify", core.reflect.NAST.class, ConsCell.class, TypeRep.class, NAST[].class, String[].class, NAST[].class);
+				return prodReify.invoke(null, ast, rules, resultType, childASTs, annotationNames, annotationASTs);
 			} catch (ClassNotFoundException e) {
 				throw new SilverError("Undefined production " + prodName);
 			} catch (NoSuchMethodException | IllegalAccessException e) {
@@ -232,7 +234,7 @@ public final class Reflection {
 			if (!TypeRep.unify(resultType, new ListTypeRep(paramType))) {
 				throw new SilverError("reify is constructing " + resultType.toString() + ", but found list AST.");
 			}
-			return reifyList(paramType, (NASTs)ast.getChild(0));
+			return reifyList(rules, paramType, (NASTs)ast.getChild(0));
 		} else {
 			Object givenObject = ast.getChild(0);
 			
@@ -259,17 +261,17 @@ public final class Reflection {
 		}
 	}
 	// Recursive helper to walk the ASTs tree and build a list
-	private static ConsCell reifyList(final TypeRep resultParamType, final NASTs asts) {
+	private static ConsCell reifyList(final ConsCell rules, final TypeRep resultParamType, final NASTs asts) {
 		if (asts instanceof PconsAST) {
 			Object head;
 			try {
-				head = reify(resultParamType, (NAST)asts.getChild(0));
+				head = reify(rules, resultParamType, (NAST)asts.getChild(0));
 			} catch (SilverException e) {
 				throw new ConsReifyTraceException(true, e);
 			}
 			ConsCell tail;
 			try {
-				tail = reifyList(resultParamType, (NASTs)asts.getChild(1));
+				tail = reifyList(rules, resultParamType, (NASTs)asts.getChild(1));
 			} catch (SilverException e) {
 				throw new ConsReifyTraceException(false, e);
 			}
@@ -289,13 +291,15 @@ public final class Reflection {
 	 * @param namedArgs A list of Pair<String Maybe<AST>> named arguments or holes for partial application.
 	 * @return An Either<String a> object containing either an error message or the reflected result of calling the function.
 	 */
-	public static NEither applyAST(final NAST fn, final ConsCell args, final ConsCell namedArgs) {
+	public static NEither applyAST(final OriginContext ctx, final NAST fn, final ConsCell args, final ConsCell namedArgs) {
 		// Unpack function
 		if (!(fn instanceof PanyAST) || !(fn.getChild(0) instanceof NodeFactory)) {
 			return new Pleft(new StringCatter("Expected a function AST"));
 		}
 		NodeFactory<?> givenFn = (NodeFactory<?>)(fn.getChild(0));
 		FunctionTypeRep fnType = givenFn.getType();
+
+		final ConsCell rules = ctx.rulesAsSilverList();
 		
 		// Unpack args
 		final List<Integer> argIndexList = new ArrayList<>(5);
@@ -309,7 +313,7 @@ public final class Reflection {
 			if (item instanceof Pjust) {
 				argIndexList.add(i);
 				try {
-					argList.add(reify(fnType.params[i], (NAST)item.getChild(0)));
+					argList.add(reify(rules, fnType.params[i], (NAST)item.getChild(0)));
 				} catch (SilverException e) {
 					Throwable rootCause = SilverException.getRootCause(e);
 					if (rootCause instanceof SilverError) {
@@ -341,7 +345,7 @@ public final class Reflection {
 			if (item instanceof Pjust) {
 				Object o;
 				try {
-					o = reify(fnType.namedParamTypes[index], (NAST)item.getChild(0));
+					o = reify(rules, fnType.namedParamTypes[index], (NAST)item.getChild(0));
 				} catch (SilverException e) {
 					Throwable rootCause = SilverException.getRootCause(e);
 					if (rootCause instanceof SilverError) {
@@ -370,8 +374,8 @@ public final class Reflection {
 							namedArgList.toArray());
 		} else {
 			// Apply regular
-			result = givenFn.invoke(OriginContext.BOGUS_CONTEXT, argList.toArray(), reorderedNamedArgs);
+			result = givenFn.invoke(ctx, argList.toArray(), reorderedNamedArgs);
 		}
-		return new Pright(reflect(result));
+		return new Pright(reflect(rules, result));
 	}
 }
