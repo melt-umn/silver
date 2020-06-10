@@ -19,11 +19,8 @@ set -e
 set +e
 echo    === BUILD CHILDRUNTIME ===
 rm -rf generated/*/core generated/*/lib/xml
-support/bin/silver-custom build/silver.composed.Default.jar core &
-P1=$!
-support/bin/silver-custom build/silver.composed.Default.jar lib:xml:ast &
-P2=$!
-wait $P1 $P2
+support/bin/silver-custom build/silver.composed.Default.jar core
+support/bin/silver-custom build/silver.composed.Default.jar lib:xml:ast
 set -e
 echo    === BUILD JAVA RUNTIME ===
 cd runtime/java
