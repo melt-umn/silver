@@ -13,7 +13,6 @@ synthesized attribute notepp :: String occurs on OriginNote;
 
 synthesized attribute isNewlyConstructed :: Boolean occurs on OriginInfo;
 synthesized attribute originNotes :: [OriginNote] occurs on OriginInfo;
-synthesized attribute mOwnRedexNotes :: Maybe<[OriginNote]> occurs on OriginInfo;
 synthesized attribute originType :: OriginInfoType occurs on OriginInfo;
 
 synthesized attribute isBogus :: Boolean occurs on OriginInfoType;
@@ -89,7 +88,6 @@ top::OriginInfo ::= typ::OriginInfoType source::String notes::[OriginNote]
 {
 	top.isNewlyConstructed = true;
 	top.originNotes = notes;
-	top.mOwnRedexNotes = nothing();
 	top.originType = typ;
 }
 
@@ -98,7 +96,6 @@ top::OriginInfo ::= typ::OriginInfoType source::Location notes::[OriginNote]
 {
 	top.isNewlyConstructed = true;
 	top.originNotes = notes;
-	top.mOwnRedexNotes = nothing();
 	top.originType = typ;
 }
 
@@ -110,7 +107,6 @@ top::OriginInfo ::= typ::OriginInfoType
 {
 	top.isNewlyConstructed = newlyConstructed;
 	top.originNotes = originNotes;
-	top.mOwnRedexNotes = nothing();
 	top.originType = typ;
 }
 
@@ -118,34 +114,14 @@ abstract production originAndRedexOriginInfo
 top::OriginInfo ::= typ::OriginInfoType 
 				 origin :: a
 				 originNotes :: [OriginNote]
-				 redex :: a
+				 redex :: b
 				 redexNotes :: [OriginNote]
 				 newlyConstructed :: Boolean
 {
 	top.isNewlyConstructed = newlyConstructed;
 	top.originNotes = originNotes;
-	top.mOwnRedexNotes = just(redexNotes);
 	top.originType = typ;
 }
-
--- function getOriginLink
--- Maybe<a> ::= oi::OriginInfo
--- {
--- 	return case oi of
--- 		| originOriginInfo(_, o, _, _) -> just(o)
--- 		| originAndRedexOriginInfo(_, o, _, _, _, _) -> just(o)
--- 		| _ -> nothing()
--- 	end;
--- }
-
--- function getRedexLink
--- Maybe<a> ::= oi::OriginInfo
--- {
--- 	return case oi of
--- 		| originAndRedexOriginInfo(_, _, _, r, _, _) -> just(r)
--- 		| _ -> nothing()
--- 	end;
--- }
 
 aspect default production
 top::OriginNote ::=
@@ -171,19 +147,20 @@ top::OriginNote ::= attributeName::String sourceGrammar::String prod::String nt:
 	
 }
 
-function getOriginChain
-[OriginInfo] ::= l::OriginInfo
+function getOriginInfoChain
+[OriginInfo] ::= l::a
 {
-	return case javaGetOriginLink(l) of
-		| just(o) -> case javaGetOrigin(o) of
-			| just(n) -> n :: getOriginChain(n)
-			| nothing() -> []
-		end
-		| nothing() -> []
+	return case getOriginInfo(l) of
+		| just(info) -> case info of
+    			| originOriginInfo(_, o, _, _) -> info :: getOriginInfoChain(o)
+                | originAndRedexOriginInfo(_, o, _, _, _, _) -> info :: getOriginInfoChain(o)
+                | _ -> [info]
+            end
+		| _ -> []
 	end;
 }
 
-function getOrigin
+function getOriginInfo
 Maybe<OriginInfo> ::= arg::a
 {
 	return javaGetOrigin(arg);
@@ -192,12 +169,9 @@ Maybe<OriginInfo> ::= arg::a
 function getUrOrigin
 Maybe<OriginInfo> ::= arg::a
 {
-	return case getOrigin(arg) of
-		| just(o) -> case getOriginChain(o) of
-			| [] -> nothing()
-			| l -> just(last(l))
-		end
-		| nothing() -> nothing()
+	return case getOriginInfoChain(arg) of
+		| [] -> nothing()
+		| l -> just(last(l))
 	end;
 }
 
