@@ -113,7 +113,7 @@ class NT(ComplexValue):
 		return r
 
 	def is_origins_impl_value(self):
-		return any(x in self.name for x in ["OriginInfo", "loc", "originLink"]) or self.name.endswith("OIT")
+		return any(x in self.name for x in ["OriginInfo", "loc", "originLink", "Note"]) or self.name.endswith("OIT")
 
 class LocationNT(NT):
 	def node_text(self, inclo=True):
@@ -239,7 +239,7 @@ print("adding origin information...")
 
 for thing in cache.values():
 	if thing.origin:
-		if not (allow_c or not thing.origin.name.endswith("_c")): continue
+		if not (allow_c or not thing.origin.name.endswith("_c")) or thing.is_origins_impl_value(): continue
 		w("n"+str(thing.ids)+" -> n"+str(thing.origin.ids)+" [style=dashed, label=\""+thing.originlabel+"\"];")
 
 	if thing.redex:
