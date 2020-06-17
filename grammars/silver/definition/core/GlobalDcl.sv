@@ -18,6 +18,9 @@ top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
     then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
     else [];
 
+  e.originRules = [];
+  e.isRoot = true;
+
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;

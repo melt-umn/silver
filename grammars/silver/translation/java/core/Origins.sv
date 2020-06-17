@@ -66,6 +66,8 @@ Boolean ::= fn::String env::Decorated Env
   -- unless we specifically know it _dosen't_ want it. If it gets it and didn't want it it simply throws it away,
   -- and as a result we only get a speed hit as opposed to a (possibly fatal) memory hit.
 
+  -- return true;
+
   return case getTypeDclAll(fn, env) of
     | ntDcl(_, _, _, _, _, _, t)::_ -> t
     | [] -> true

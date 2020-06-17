@@ -28,12 +28,17 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
                else [])
                ++ e.errors;
 
+  e.originRules = [];
+  e.isRoot = true;
+
   local tyCk :: TypeCheck = check(e.typerep, terminalIdType());
   tyCk.downSubst = e.upSubst;
   top.errors <-
     if tyCk.typeerror
     then [err(top.location, "'pluck' expects one of the terminals it is disambiguating between. Instead it received "++tyCk.leftpp)]
     else [];
+
+
 
 
   -- TODO: Enforce that the plucked terminal is one of those that are being disambiguated between.
@@ -56,6 +61,9 @@ top::ProductionStmt ::= 'print' e::Expr ';'
                ++ e.errors;
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  e.originRules = [];
+  e.isRoot = true;
 
   e.downSubst = top.downSubst;
   errCheck1.downSubst = e.upSubst;
@@ -92,6 +100,9 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
 
+  e.originRules = [];
+  e.isRoot = true;
+
   errCheck1 = check(e.typerep, val.lookupValue.typerep);
   top.errors <-
        if errCheck1.typeerror
@@ -112,6 +123,9 @@ top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
   top.translation = "pushToken(Terminals." ++ makeCopperName(val.lookupType.fullName) ++ ", (" ++ lexeme.translation ++ ").toString()" ++ ");";
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  lexeme.originRules = [];
+  lexeme.isRoot = false;
 
   lexeme.downSubst = top.downSubst;
   errCheck1.downSubst = lexeme.upSubst;
@@ -150,6 +164,9 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' e
                 else []);
 
   top.translation = s"if(${condition.translation}) {${th.translation}} else {${el.translation}}";
+
+  condition.originRules = [];
+  condition.isRoot = false;
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
@@ -221,6 +238,9 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   e.downSubst = top.downSubst;
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
+
+  e.originRules = [];
+  e.isRoot = true;
 
   errCheck1 = check(e.typerep, val.lookupValue.typerep);
   top.errors <-
