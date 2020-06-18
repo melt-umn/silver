@@ -10,7 +10,7 @@ terminal WrongFlowCode_kwd 'wrongFlowCode' lexer classes {KEYWORD};
 function containsMessage
 Boolean ::= text::String severity::Integer msgs::[Message]
 {
-  return any(map((\x::Message -> x.severity==severity && indexOf(text, x.message)!=-1), msgs));
+  return any(map((\x::Message -> x.severity==severity && indexOf(text, x.output)!=-1), msgs));
 }
 
 concrete production wrongDecl
