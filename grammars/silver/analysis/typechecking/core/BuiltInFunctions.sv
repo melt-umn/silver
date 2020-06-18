@@ -74,7 +74,7 @@ Boolean ::= ty::Type
          | decoratedType(ty) -> containsSkolem(ty)
          | functionType(out, params, namedParams) -> containsSkolem(out) || any(map(containsSkolem, params)) || any(map((\x::NamedArgType -> containsSkolem(x.argType)), namedParams))
          | _ -> false
-        end;
+         end;
 }
 
 aspect production reifyFunctionLiteral
