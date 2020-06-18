@@ -71,12 +71,6 @@ top::Expr ::= 'reify'
   top.upSubst = top.downSubst;
 }
 
-aspect production castFunctionLiteral
-top::Expr ::= 'cast'
-{
-  top.upSubst = top.downSubst;
-}
-
 aspect production newFunction
 top::Expr ::= 'new' '(' e1::Expr ')'
 {

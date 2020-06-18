@@ -76,74 +76,28 @@ top::Expr ::= 'reify'
   -- There is a similar problem with lambdas.
   top.translation =
 s"""(new common.NodeFactory<core.NEither>() {
-        @Override
-        public final core.NEither invoke(final common.OriginContext originCtx, final Object[] args, final Object[] namedArgs) {
-          assert args != null && args.length == 1;
-          assert namedArgs == null || namedArgs.length == 0;
-          
+				@Override
+				public final core.NEither invoke(final common.OriginContext originCtx, final Object[] args, final Object[] namedArgs) {
+					assert args != null && args.length == 1;
+					assert namedArgs == null || namedArgs.length == 0;
+					
 ${makeTyVarDecls(5, resultType.freeVariables)}
-          common.TypeRep resultType = ${resultType.transTypeRep};
-          
-          return common.Reflection.reifyChecked(originCtx.rulesAsSilverList(), resultType, (core.reflect.NAST)common.Util.demand(args[0]));
-        }
-        
-        @Override
-        public final common.FunctionTypeRep getType() {
+					common.TypeRep resultType = ${resultType.transTypeRep};
+					
+					return common.Reflection.reifyChecked(originCtx.rulesAsSilverList(), resultType, (core.reflect.NAST)common.Util.demand(args[0]));
+				}
+				
+				@Override
+				public final common.FunctionTypeRep getType() {
 ${makeTyVarDecls(5, finalType(top).freeVariables)}
-          return ${finalType(top).transTypeRep};
-        }
-  
-        @Override
-        public final String toString() {
-          return "reify";
-        }
-      })""";
-  
-  top.lazyTranslation = top.translation;
-}
-
-aspect production castFunctionLiteral
-top::Expr ::= 'cast'
-{
-  local resultType::Type =
-    case finalType(top).outputType of
-    | nonterminalType("core:Maybe", [a]) -> a
-    | _ -> error("Unexpected final type for cast!")
-    end;
-  
-  -- In the unusual case that we have skolems in the result type, we can't generalize them, but
-  -- we also can't do any better, so leave the runtime result TypeRep unfreshened.
-  -- There is a similar problem with lambdas.
-  top.translation =
-s"""(new common.NodeFactory<core.NMaybe>() {
-        @Override
-        public final core.NMaybe invoke(final common.OriginContext originCtx, final Object[] args, final Object[] namedArgs) {
-          assert args != null && args.length == 1;
-          assert namedArgs == null || namedArgs.length == 0;
-          
-${makeTyVarDecls(5, resultType.freeVariables)}
-          common.TypeRep resultType = ${resultType.transTypeRep};
-          Object arg = common.Util.demand(args[0]);
-          if (arg instanceof common.DecoratedNode) arg = ((common.DecoratedNode)arg).undecorate();
-
-          if(arg instanceof ${resultType.transType}) {
-            return new core.Pjust(originCtx.makeNewConstructionOrigin(true), (${resultType.transType})arg);
-          } else {
-            return new core.Pnothing(originCtx.makeNewConstructionOrigin(true));
-          }
-        }
-        
-        @Override
-        public final common.FunctionTypeRep getType() {
-${makeTyVarDecls(5, finalType(top).freeVariables)}
-          return ${finalType(top).transTypeRep};
-        }
-  
-        @Override
-        public final String toString() {
-          return "cast";
-        }
-      })""";
+					return ${finalType(top).transTypeRep};
+				}
+	
+				@Override
+				public final String toString() {
+					return "reify";
+				}
+			})""";
   
   top.lazyTranslation = top.translation;
 }
