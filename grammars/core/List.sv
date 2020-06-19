@@ -19,6 +19,19 @@ function map
 }
 
 {--
+ - Replicates the contents of a list, a-la list multiplication in Python
+ -
+ - @param x  The number of times
+ - @param l  The list
+ - @return   l ++ l ++ ... x times
+ -}
+function reproduce
+[a] ::= x::Integer l::[a]
+{
+  return if x==0 then [] else l ++ reproduce(x-1, l);
+}
+
+{--
  - Applies an operator right-associatively over a list.
  - (i.e. replaces cons with 'f', nil with 'i' in the list)
  -

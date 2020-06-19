@@ -47,6 +47,7 @@ exports silver:extension:rewriting;
 exports silver:extension:silverconstruction;
 exports silver:extension:astconstruction;
 exports silver:extension:constructparser;
+exports silver:extension:castmatching;
 
 -- Other generally useful stuff:
 exports silver:translation:java;
