@@ -32,11 +32,12 @@ Boolean ::= x::Type y::Type
 }
 
 function makeReifyAnyASTs
-Exprs ::= e::Expr l::Location i::Integer
+Exprs ::= e::Expr l::Location tys::[Type]
 {
-	return if i==0
-		   then exprsEmpty(location=l)
-		   else exprsCons(Silver_Expr {reify(anyAST($Expr{e}))}, ',', makeReifyAnyASTs(e, l, i-1), location=l);
+	return case tys of
+		   | [] -> exprsEmpty(location=l)
+		   | t::rest -> exprsCons(Silver_Expr {reify(anyAST($Expr{e}))},',', makeReifyAnyASTs(e, l, rest), location=l)
+		   end;
 }
 
 function joinPatterns
@@ -88,16 +89,16 @@ top::Expr ::= 'cast' castThis::Expr 'to' branches::CastExprBranches '|' '_' '->'
 {
 	branches.downSubst = top.downSubst;
 	fallback.downSubst = branches.upSubst;
-	top.upSubst = fallback.upSubst;
-	branches.finalSubst = top.finalSubst;
-	fallback.finalSubst = top.finalSubst;
+	-- top.upSubst = fallback.upSubst;
+	-- branches.finalSubst = top.finalSubst;
+	-- fallback.finalSubst = top.finalSubst;
 
 	local possibleTypes :: [Type] = branches.branchTypes;
 	local nrTypes :: Integer = length(possibleTypes);
 
 	top.errors := if nrTypes == 0 then [err(top.location, "Need at least one case")] else forward.errors;
 
-	local exprs :: Exprs = makeReifyAnyASTs(castThis, top.location, nrTypes);
+	local exprs :: Exprs = makeReifyAnyASTs(castThis, top.location, possibleTypes);
 
 	local fallback_rule :: MRuleList = mRuleList_one(matchRule_c(
 		joinPatterns(top.location, reproduce(nrTypes, [wildcPattern('_', location=top.location)])),
@@ -107,7 +108,10 @@ top::Expr ::= 'cast' castThis::Expr 'to' branches::CastExprBranches '|' '_' '->'
 
 	local fwd :: Expr = caseExpr_c('case', exprs, 'of', terminal(Opt_Vbar_t, "|"), rules, 'end', location=top.location);
 
+	fwd.downSubst = fallback.upSubst;
+
 	top.errors <- [wrn(top.location, fwd.unparse)];
+	top.errors <- [wrn(top.location, hackUnparse(exprs))];
 
 	forwards to fwd;
 }
@@ -119,6 +123,8 @@ top::Expr ::= 'cast' castThis::Expr 'to' branches::CastExprBranches 'end'
 		Silver_Expr{error("unhandled failure case in cast expression at "++
 			$Expr{stringConst(terminal(String_t, "\""++top.location.unparse++"\""), location=top.location)})}, $5, location=top.location);
 }
+
+
 
 nonterminal CastExprBranch with env, downSubst, upSubst, finalSubst;
 synthesized attribute branchType::Type occurs on CastExprBranch;

@@ -434,6 +434,13 @@ a ::= val::a s::String
 }
 
 
+function unsafeTraceDump
+a ::= val::a
+{
+  return unsafeTrace(val, print(hackUnparse(val), unsafeIO()));
+}
+
+
 
 -- Function for manipulating strings representing file and directory names.
 
