@@ -40,6 +40,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.downSubst = top.mDownSubst;
   ne.finalSubst = top.mUpSubst;
   ne.env = newScopeEnv(la.mdefs, top.env);
+  ne.expectedMonad = top.expectedMonad;
 
   la.mDownSubst = top.mDownSubst;
   ne.mDownSubst = la.mUpSubst;
@@ -104,7 +105,7 @@ synthesized attribute monadUsed::Maybe<Type> occurs on AssignExpr;
 --definitions, but ones that won't cause errors with monad type mismatches in let definitions
 synthesized attribute mdefs::[Def] occurs on AssignExpr;
 
-attribute merrors, mDownSubst, mUpSubst, monadicNames occurs on AssignExpr;
+attribute merrors, mDownSubst, mUpSubst, monadicNames, expectedMonad occurs on AssignExpr;
 
 aspect production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
@@ -123,6 +124,9 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
   a1.mDownSubst = top.mDownSubst;
   a2.mDownSubst = a1.mUpSubst;
   top.mUpSubst = monadCheck.snd;
+
+  a1.expectedMonad = top.expectedMonad;
+  a2.expectedMonad = top.expectedMonad;
 
   top.monadicNames = a1.monadicNames ++ a2.monadicNames;
 
@@ -163,6 +167,8 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   --only place where the name occurs, so it wouldn't affect anything then either.
   e.monadicallyUsed = isMonad(e.mtyperep) && !isMonad(t.typerep);
   top.monadicNames = e.monadicNames;
+
+  e.expectedMonad = top.expectedMonad;
 
   top.mdefs = [lexicalLocalDef(top.grammarName, id.location, fName,
                                performSubstitution(t.typerep, top.mUpSubst),

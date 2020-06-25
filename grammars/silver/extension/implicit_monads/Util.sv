@@ -20,7 +20,7 @@ grammar silver:extension:implicit_monads;
 --imports silver:extension:list;
 
 
-inherited attribute expectedMonad::Type;
+autocopy attribute expectedMonad::Type;
 synthesized attribute monadRewritten<a>::a;
 synthesized attribute merrors::[Message] with ++;
 synthesized attribute mtyperep::Type;
@@ -66,6 +66,15 @@ Type ::= ty::Type
          | decoratedType(t) -> t
          | listType(t) -> listType(t)
          | t -> t
+         end;
+}
+
+function isDecorated
+Boolean ::= ty::Type
+{
+  return case ty of
+         | decoratedType(t) -> true
+         | t -> false
          end;
 }
 

@@ -11,6 +11,12 @@ synthesized attribute monadicNames::[Expr] occurs on Expr, AppExpr, AppExprs;
 attribute monadRewritten<Expr>, merrors, mtyperep, mDownSubst, mUpSubst, expectedMonad occurs on Expr;
 
 
+--list of the attributes accessed in an explicit expression not allowed there
+monoid attribute notExplicitAttributes::[Pair<String Location>] with [], ++;
+attribute notExplicitAttributes occurs on Expr, AppExprs, AnnoAppExprs, MRuleList, Exprs, MatchRule, AbstractMatchRule, AssignExpr;
+propagate notExplicitAttributes on Expr, AppExprs, AnnoAppExprs, MRuleList, Exprs, MatchRule, AbstractMatchRule, AssignExpr;
+
+
 aspect default production
 top::Expr ::=
 {
@@ -161,6 +167,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
                  else forward.mtyperep;
 
   e.expectedMonad = top.expectedMonad;
+  nes.expectedMonad = top.expectedMonad;
 
   e.monadicallyUsed = if isMonad(e.mtyperep)
                       then true
@@ -243,6 +250,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   nes.appExprApplied = ne.unparse;
 
   ne.expectedMonad = top.expectedMonad;
+  nes.expectedMonad = top.expectedMonad;
 
   top.merrors := ne.merrors ++ nes.merrors;
   top.mUpSubst = nes.mUpSubst;
@@ -481,11 +489,24 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   forward.mDownSubst = e.mUpSubst;
   e.expectedMonad = top.expectedMonad;
   top.merrors := e.merrors ++ forward.merrors;
+  top.merrors <- case q.typerep of
+                 | explicitType(_) -> []
+                 | implicitType(_) -> []
+                 | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
+                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           " is neither")]
+                 end;
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [top] ++ e.monadicNames
                      else e.monadicNames;
   top.monadRewritten = access(e.monadRewritten, '.', q, location=top.location);
+
+  top.notExplicitAttributes <- e.notExplicitAttributes ++
+                               case q.typerep of
+                               | explicitType(_) -> []
+                               | _ -> [pair(q.unparse, top.location)]
+                               end;
 }
 
 aspect production errorAccessHandler
@@ -494,8 +515,21 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.mtyperep = errorType();
   top.mUpSubst = top.mDownSubst;
   top.merrors := [];
+  top.merrors <- case q.typerep of
+                 | explicitType(_) -> []
+                 | implicitType(_) -> []
+                 | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
+                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           " is neither")]
+                 end;
   top.monadicNames = [];
   top.monadRewritten = access(new(e), '.', new(q), location=top.location);
+
+  top.notExplicitAttributes <- e.notExplicitAttributes ++
+                               case q.typerep of
+                               | explicitType(_) -> []
+                               | _ -> [pair(q.unparse, top.location)]
+                               end;
 }
 
 aspect production annoAccessHandler
@@ -521,7 +555,20 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.typerep;
   top.merrors := [];
+  top.merrors <- case q.typerep of
+                 | explicitType(_) -> []
+                 | implicitType(_) -> []
+                 | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
+                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           " is neither")]
+                 end;
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
+
+  top.notExplicitAttributes <- e.notExplicitAttributes ++
+                               case q.typerep of
+                               | explicitType(_) -> []
+                               | _ -> [pair(q.unparse, top.location)]
+                               end;
 }
 
 aspect production terminalAccessHandler
@@ -582,7 +629,20 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.mtyperep = q.typerep;
   top.mUpSubst = top.mDownSubst;
   top.merrors := ne.merrors;
+  top.merrors <- case q.typerep of
+                 | explicitType(_) -> []
+                 | implicitType(_) -> []
+                 | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
+                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           " is neither")]
+                 end;
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
+
+  top.notExplicitAttributes <- e.notExplicitAttributes ++
+                               case q.typerep of
+                               | explicitType(_) -> []
+                               | _ -> [pair(q.unparse, top.location)]
+                               end;
 }
 
 aspect production inhDecoratedAccessHandler
@@ -608,7 +668,20 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.typerep;
   top.merrors := ne.merrors;
+  top.merrors <- case q.typerep of
+                 | explicitType(_) -> []
+                 | implicitType(_) -> []
+                 | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
+                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           " is neither")]
+                 end;
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
+
+  top.notExplicitAttributes <- e.notExplicitAttributes ++
+                               case q.typerep of
+                               | explicitType(_) -> []
+                               | _ -> [pair(q.unparse, top.location)]
+                               end;
 }
 
 aspect production errorDecoratedAccessHandler
@@ -629,9 +702,22 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.monadicNames = [];
 
   top.merrors := ne.merrors;
+  top.merrors <- case q.typerep of
+                 | explicitType(_) -> []
+                 | implicitType(_) -> []
+                 | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
+                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           " is neither")]
+                 end;
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = errorType();
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
+
+  top.notExplicitAttributes <- e.notExplicitAttributes ++
+                               case q.typerep of
+                               | explicitType(_) -> []
+                               | _ -> [pair(q.unparse, top.location)]
+                               end;
 }
 
 
@@ -2227,6 +2313,8 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 synthesized attribute monadTypesLocations::[Pair<Type Integer>] occurs on AppExpr, AppExprs;
 --A list of the actual types of arguments
 synthesized attribute realTypes::[Type] occurs on AppExpr, AppExprs;
+--The only monad banned from being used as an actual argument
+attribute expectedMonad occurs on AppExpr, AppExprs;
 
 attribute monadRewritten<AppExpr>, merrors, mDownSubst, mUpSubst occurs on AppExpr;
 attribute monadRewritten<AppExprs>, merrors, mDownSubst, mUpSubst occurs on AppExprs;
@@ -2245,6 +2333,7 @@ aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
   top.merrors := e.merrors;
+  e.expectedMonad = top.expectedMonad;
 
   top.realTypes = [e.mtyperep];
   top.monadTypesLocations = if isMonadic
@@ -2268,7 +2357,7 @@ top::AppExpr ::= e::Expr
   --   expected and being monads
   local isMonadic::Boolean = isMonad(e.mtyperep) && !isMonad(top.appExprTyperep);
 
-  errCheck1a = check(e.mtyperep, top.appExprTyperep);
+  errCheck1a = check(if isDecorated(top.appExprTyperep) then e.mtyperep else dropDecorated(e.mtyperep), top.appExprTyperep);
   errCheck2a = check(monadInnerType(e.mtyperep), top.appExprTyperep);
   top.merrors <-
     if isMonadic
@@ -2287,7 +2376,7 @@ top::AppExpr ::= e::Expr
                 " but argument is of type " ++ errCheck1a.leftpp)];
   --Functions are not allowed to take monad-typed arguments
   top.merrors <-
-    if isMonad(top.appExprTyperep)
+    if fst(monadsMatch(top.appExprTyperep, top.expectedMonad, top.mDownSubst))
     then [err(top.location, "Implicit equations may not use functions with " ++
                             "monad-typed arguments, specifically " ++ errCheck2a.rightpp)]
     else [];
@@ -2304,6 +2393,9 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
   e.mDownSubst = es.mUpSubst;
   top.mUpSubst = e.mUpSubst;
 
+  es.expectedMonad = top.expectedMonad;
+  e.expectedMonad = top.expectedMonad;
+
   top.realTypes = es.realTypes ++ e.realTypes;
 
   top.monadTypesLocations = es.monadTypesLocations ++ e.monadTypesLocations;
@@ -2319,6 +2411,8 @@ top::AppExprs ::= e::AppExpr
 
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
+
+  e.expectedMonad = top.expectedMonad;
 
   top.realTypes = e.realTypes;
 
