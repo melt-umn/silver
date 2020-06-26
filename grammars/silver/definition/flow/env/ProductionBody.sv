@@ -128,6 +128,12 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   top.flowDefs = e.flowDefs;
 }
 
+aspect production attachNoteStmt
+top::ProductionStmt ::= 'attachNote' e::Expr ';'
+{
+  top.flowDefs = e.flowDefs;
+}
+
 aspect production errorAttributeDef
 top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {

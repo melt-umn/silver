@@ -118,6 +118,22 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   top.upSubst = top.downSubst;
 }
 
+aspect production attachNoteStmt
+top::ProductionStmt ::= 'attachNote' e::Expr ';'
+{
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  e.downSubst = top.downSubst;
+  errCheck1.downSubst = e.upSubst;
+  top.upSubst = errCheck1.upSubst;
+  
+  errCheck1 = check(e.typerep, nonterminalType("core:OriginNote", []));
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Origin note must have type core:OriginNote, but the expression has actual type " ++ errCheck1.leftpp)]
+       else [];
+}
+
 aspect production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {

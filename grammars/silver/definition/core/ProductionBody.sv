@@ -5,20 +5,20 @@ nonterminal ProductionBody with
   productionAttributes, uniqueSignificantExpression;
 nonterminal ProductionStmts with 
   config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, uniqueSignificantExpression;
+  productionAttributes, uniqueSignificantExpression, originRules;
 nonterminal ProductionStmt with
   config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, uniqueSignificantExpression;
+  productionAttributes, uniqueSignificantExpression, originRules;
 
 nonterminal DefLHS with 
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found, originRules;
 
 nonterminal ForwardInhs with 
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, originRules;
 nonterminal ForwardInh with 
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, originRules;
 nonterminal ForwardLHSExpr with 
-  config, grammarName, env, location, unparse, errors, frame, name, typerep;
+  config, grammarName, env, location, unparse, errors, frame, name, typerep, originRules;
 
 {--
  - Context for ProductionStmt blocks. (Indicates function, production, aspect, etc)
@@ -41,6 +41,8 @@ synthesized attribute uniqueSignificantExpression :: [Decorated Expr];
  -}
 inherited attribute defLHSattr :: Decorated QNameAttrOccur;
 
+synthesized attribute originRuleDefs :: [Decorated Expr] occurs on ProductionStmt, ProductionStmts;
+
 
 concrete production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
@@ -52,6 +54,8 @@ top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 
   top.defs = stmts.defs;
   top.errors := stmts.errors;
+
+  stmts.originRules = stmts.originRuleDefs;
 }
 
 concrete production productionStmtsNil
@@ -64,6 +68,7 @@ top::ProductionStmts ::=
 
   top.defs = [];
   top.errors := [];
+  top.originRuleDefs = [];
 }
 
 concrete production productionStmtsSnoc
@@ -76,6 +81,7 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 
   top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
+  top.originRuleDefs = h.originRuleDefs ++ t.originRuleDefs;
 }
 
 ----------
@@ -90,6 +96,7 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 
   top.defs = h.defs ++ t.defs;
   top.errors := h.errors ++ t.errors;
+  top.originRuleDefs = h.originRuleDefs ++ t.originRuleDefs;
 }
 
 abstract production errorProductionStmt
@@ -110,10 +117,24 @@ top::ProductionStmt ::=
 {
   -- as is usual for defaults ("base classes")
   -- can't provide unparse or location, errors should NOT be defined!
+
+
   top.productionAttributes = [];
   top.uniqueSignificantExpression = [];
   
   top.defs = [];
+
+  top.originRuleDefs = [];
+}
+
+concrete production attachNoteStmt
+top::ProductionStmt ::= 'attachNote' note::Expr ';'
+{
+  top.unparse = "attachNote " ++ note.unparse;
+  top.errors := note.errors;
+  note.isRoot = false; --ORIGINS TODO
+  note.originRules = []; --Prevents cyclical dependency when translating
+  top.originRuleDefs = [note];
 }
 
 concrete production returnDef
@@ -130,7 +151,6 @@ top::ProductionStmt ::= 'return' e::Expr ';'
                 else [];
 
   e.isRoot = true;
-  e.originRules = [];
 }
 
 concrete production localAttributeDcl
@@ -180,7 +200,6 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   top.uniqueSignificantExpression = [e];
 
   e.isRoot = true;
-  e.originRules = [];
 
   top.errors := e.errors;
 
@@ -224,7 +243,6 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
   top.errors := lhs.errors ++ e.errors;
 
   e.isRoot = true;
-  e.originRules = [];
 }
 
 concrete production forwardInhsOne
@@ -298,7 +316,6 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors := e.errors;
 
   e.isRoot = true;
-  e.originRules = [];
 }
 
 abstract production inheritedAttributeDef
@@ -309,7 +326,6 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors := e.errors;
 
   e.isRoot = true;
-  e.originRules = [];
 }
 
 concrete production concreteDefLHS
@@ -447,7 +463,6 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   top.errors := e.errors;
 
   e.isRoot = true;
-  e.originRules = [];
 
   -- TODO: missing redefinition check
 }
