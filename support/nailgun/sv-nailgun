@@ -9,7 +9,7 @@ fi
 export NAILGUN_PORT=$(($RANDOM + 20000))
 
 # Try a few possible locations, pick the first
-SV_NAILGUN_CANDIDATES=$(shopt -s nullglob; echo /project/melt4/People/ted/nailgun/bin/nailgun-*.jar /usr/share/java/nailgun-server*.jar /usr/share/java/nailgun-*.jar)
+SV_NAILGUN_CANDIDATES=$(shopt -s nullglob; echo /project/melt4/People/ted/nailgun/bin/nailgun-*.jar /usr/share/java/nailgun-server*.jar /usr/share/java/nailgun-*.jar ~/.m2/repository/com/facebook/nailgun-server/*/nailgun-server*.jar)
 SV_NAILGUN_ARRAY=($SV_NAILGUN_CANDIDATES)
 export SV_NAILGUN_JAR=${SV_NAILGUN_ARRAY[0]}
 
