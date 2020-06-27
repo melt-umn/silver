@@ -91,7 +91,7 @@ melt.trynode('silver') {
     // Clean
     sh "rm -rf silver-latest"
   }
-/*
+
   stage("Integration") {
     // Projects with 'develop' as main branch, we'll try to build specific branch names if they exist
     def github_projects = ["/melt-umn/ableC", "/melt-umn/Oberon0", "/melt-umn/ableJ14", "/melt-umn/meta-ocaml-lite", "/melt-umn/rewriting-lambda-calculus",
@@ -111,7 +111,7 @@ melt.trynode('silver') {
     // Do downstream integration testing
     parallel tasks
   }
-*/
+
   if (env.BRANCH_NAME == 'develop') {
     stage("Deploy") {
       sh "rsync -a --exclude .git --exclude generated --exclude silver-latest.tar.gz --delete --delete-excluded ./ ${silver.SILVER_WORKSPACE}/"
