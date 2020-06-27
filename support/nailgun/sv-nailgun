@@ -5,6 +5,8 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   exit 5
 fi
 
+echo "Using modified nailgun script"
+
 # Try to avoid colliding with other users of nailgun: 1/32k chance
 export NAILGUN_PORT=$(($RANDOM + 20000))
 
