@@ -41,6 +41,8 @@ synthesized attribute uniqueSignificantExpression :: [Decorated Expr];
  -}
 inherited attribute defLHSattr :: Decorated QNameAttrOccur;
 
+-- Notes that should be attached to stuff constructed/modified in rules in this productionBody
+-- Notes flow 'up' in this from statements and then back 'down' into the via originRules.
 synthesized attribute originRuleDefs :: [Decorated Expr] occurs on ProductionStmt, ProductionStmts;
 
 

@@ -21,7 +21,7 @@ public final class OriginContext {
 	public final Node lhs;
 	public final List<NOriginNote> rules;
 
-	private OriginContext(Variety variety, Node lhs, List<NOriginNote> rules) {
+	private OriginContext(final Variety variety, final Node lhs, final List<NOriginNote> rules) {
 		this.variety = variety;
 		this.lhs = lhs;
 		this.rules = rules;
@@ -39,37 +39,37 @@ public final class OriginContext {
 	public static final OriginContext GLOBAL_CONTEXT =
 		new OriginContext(Variety.GLOBAL, null, new ArrayList<NOriginNote>());
 
-	public OriginContext(Node lhs, List<NOriginNote> rules) {
+	public OriginContext(final Node lhs, final List<NOriginNote> rules) {
 		this(Variety.NORMAL, lhs, rules);
 	}
 
-	public OriginContext(OriginContext old, List<NOriginNote> newRules) {
+	public OriginContext(final OriginContext old, final List<NOriginNote> newRules) {
 		this(old.variety, old.lhs, mergeRules(old.rules, newRules));
 	}
 
-	public OriginContext(OriginContext old, NOriginNote newRule) {
+	public OriginContext(final OriginContext old, final NOriginNote newRule) {
 		this(old.variety, old.lhs, mergeRule(old.rules, newRule));
 	}
 
-	public OriginContext(OriginContext old, NOriginNote[] newRules) {
+	public OriginContext(final OriginContext old, final NOriginNote[] newRules) {
 		this(old.variety, old.lhs, mergeRulesArr(old.rules, newRules));
 	}
 
-	private static List<NOriginNote> mergeRules(List<NOriginNote> a, List<NOriginNote> b) {
+	private static List<NOriginNote> mergeRules(final List<NOriginNote> a, final List<NOriginNote> b) {
 		List<NOriginNote> rules = new ArrayList<NOriginNote>();
 		rules.addAll(a);
 		rules.addAll(b);
 		return rules;
 	}
 
-	private static List<NOriginNote> mergeRulesArr(List<NOriginNote> a, NOriginNote[] b) {
+	private static List<NOriginNote> mergeRulesArr(final List<NOriginNote> a, final NOriginNote[] b) {
 		List<NOriginNote> rules = new ArrayList<NOriginNote>();
 		rules.addAll(a);
 		Collections.addAll(rules, b);
 		return rules;
 	}
 
-	private static List<NOriginNote> mergeRule(List<NOriginNote> a, NOriginNote b) {
+	private static List<NOriginNote> mergeRule(final List<NOriginNote> a, final NOriginNote b) {
 		List<NOriginNote> rules = new ArrayList<NOriginNote>();
 		rules.addAll(a);
 		rules.add(b);
@@ -100,9 +100,9 @@ public final class OriginContext {
 		throw new RuntimeException("Impossible state: this.variety not recognized.");
 	}
 
-	public <T extends Node> T attrAccessCopy(T arg) {
+	public <T extends Node> T attrAccessCopy(final T arg) {
 		switch (this.variety) {
-			case NORMAL:
+			case NORMAL: //We only copy if this is a 'normal' origin (i.e. it originates from a node)
 				return (T)arg.copy(this.lhs, this.rulesAsSilverList());
 
 			default:
@@ -110,11 +110,13 @@ public final class OriginContext {
 		}
 	}
 
-	public Object attrAccessCopyPoly(Object arg) {
+	// Used by code that does some manipulation on a type-erased generic object that might be a nonterminal.
+	public Object attrAccessCopyPoly(final Object arg) {
 		if (arg instanceof Node) return attrAccessCopy((Node)arg);
 		return arg;
 	}
 
+	// Same as above but preserves laziness
 	public Object attrAccessCopyPolyThunk(final Object t) {
 		if (t instanceof Thunk)
 			return new Thunk<Object>(() -> attrAccessCopyPoly(((Thunk<Object>)t).eval()));

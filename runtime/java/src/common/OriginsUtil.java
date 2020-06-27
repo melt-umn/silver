@@ -12,6 +12,7 @@ import java.util.*;
  */
 public final class OriginsUtil {
 
+	// Re-useable instances of the various OIT markers
 	public static PsetAtConstructionOIT SET_AT_CONSTRUCTION_OIT = new PsetAtConstructionOIT(null);
 	public static PsetAtNewOIT SET_AT_NEW_OIT = new PsetAtNewOIT(null);
 	public static PsetAtForwardingOIT SET_AT_FORWARDING_OIT = new PsetAtForwardingOIT(null);
@@ -24,6 +25,7 @@ public final class OriginsUtil {
 	public static PsetFromEntryOIT SET_FROM_ENTRY_OIT = new PsetFromEntryOIT(null);
 	public static PsetInGlobalOIT SET_IN_GLOBAL_OIT = new PsetInGlobalOIT(null);
 
+	// Sexperify code. Horrible ugly hack to serialize + spit out silver objects as python expressions
 	private static String ids(final Object arg){
 		return Integer.toString(System.identityHashCode(arg));
 	}
@@ -32,11 +34,15 @@ public final class OriginsUtil {
 		return arg.replace("\\","\\\\").replace("\"", "\\\"").replace("\n","\\n");
 	}
 
-	private static String sexprifyObj(Object arg) {
+	private static String sexprifyObj(List<String> seen, Object arg) {
 
 		if (arg instanceof DecoratedNode) arg = ((DecoratedNode)arg).undecorate();
 
-		String r = "[" + ids(arg) + ", ";
+		String id = ids(arg);
+		if (seen.contains(id)) return "[" + id + "]";
+		seen.add(id);
+
+		String r = "[" + id + ", ";
 		if (arg instanceof Integer)
 			r += "'!Integer', " + arg.toString();
 		else if (arg instanceof Float)
@@ -47,12 +53,12 @@ public final class OriginsUtil {
 			r += "'!String', \""+pySanitize(arg.toString())+"\"";
 		else if (arg instanceof Terminal){
 			Terminal t = (Terminal) arg;
-			r += "'!Terminal', '"+pySanitize(t.getName())+"', \""+pySanitize(t.lexeme.toString())+"\", "+sexprifyObj(t.location);
+			r += "'!Terminal', '"+pySanitize(t.getName())+"', \""+pySanitize(t.lexeme.toString())+"\", "+sexprifyObj(seen, t.location);
 		} else if (arg instanceof Node) {
 			Node n = (Node) arg;
 			r += "'" + pySanitize(n.getName()) + "', [";
 			for (int i=0; i<n.getNumberOfChildren(); i++){
-				r += sexprifyObj(n.getChild(i));
+				r += sexprifyObj(seen, n.getChild(i));
 				if (i!=n.getNumberOfChildren()-1) r+=",";
 			}
 			r+="],[";
@@ -61,11 +67,11 @@ public final class OriginsUtil {
 			for (int i = 0; i < annotationNames.length; i++) {
 				String name = annotationNames[i];
 				Object value = n.getAnno(name);
-				r += "('"+pySanitize(name)+"', "+sexprifyObj(value)+")";
+				r += "('"+pySanitize(name)+"', "+sexprifyObj(seen, value)+")";
 				if (i!=annotationNames.length-1) r+=",";
 			}
 			r += "],";
-			r += sexprifyObj(n.origin);
+			r += sexprifyObj(seen, n.origin);
 		} else if (arg instanceof ConsCell){
 			ConsCell cc = (ConsCell) arg;
 			if (cc.nil()) {
@@ -74,7 +80,7 @@ public final class OriginsUtil {
 				Object next;
 				r += "'!List', [";
 				while (!cc.nil()) {
-					r += sexprifyObj(cc.head());
+					r += sexprifyObj(seen, cc.head());
 					r += ",";
 					next = cc.tail();
 					if (next instanceof DecoratedNode) next = ((DecoratedNode)next).undecorate();
@@ -97,8 +103,11 @@ public final class OriginsUtil {
 	}
 
 	public static StringCatter sexprify(final Object arg) {
-		return new StringCatter(sexprifyObj(arg));
+		List<String> seen = new ArrayList<String>();
+		return new StringCatter(sexprifyObj(seen, arg));
 	}
+
+	// Implementation of the stdlib origins helpers
 
 	public static core.NMaybe polyGetOrigin(Object o) {
 		if (o instanceof DecoratedNode) o = ((DecoratedNode)o).undecorate();
@@ -117,6 +126,8 @@ public final class OriginsUtil {
 
 		return new core.Pnothing(null);
 	}
+
+	// Misc helper
 
 	public static<T> ArrayList<T> arrayListOfArray(T[] a) {
 		ArrayList<T> l = new ArrayList<T>();

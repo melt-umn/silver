@@ -1,7 +1,16 @@
 import silver:definition:origins;
 
+-- Information on how to compute origins for stuff constructed/modified in different block contexts
+-- How do we get an OriginContext representing this?
 synthesized attribute contextRef :: String occurs on ContextOriginInfoSource;
+
+-- Given a string holding java code to produce a NOriginRule[] array, produce a string holding java code
+--  to produce a OriginContext for this context adding those rules (faster than getting contextRef and
+--  adding rules)
 synthesized attribute contextRefAddingRules :: (String ::= String) occurs on ContextOriginInfoSource;
+
+-- Is this context something that's `interesting` (= er flag = isNewConstruction) all the time?
+-- Only `false` for cases where we are in a production body
 synthesized attribute alwaysConsideredInteresting :: Boolean occurs on ContextOriginInfoSource;
 
 aspect production useContextLhsAndRules
@@ -35,8 +44,6 @@ String ::= top::Decorated Expr --need .frame anno
     implode(", ", map((.translation), top.originRules)) ++ "}";
 
   return top.frame.originsContextSource.contextRefAddingRules(rulesStr);
-
-  -- ORIGINS TODO: rules ref from top.originRules
 }
 
 global newConstructionOriginUsingCtxRef :: String =
@@ -45,7 +52,6 @@ global newConstructionOriginUsingCtxRef :: String =
 function makeNewConstructionOrigin
 String ::= top::Decorated Expr  inInteresting::Boolean --need .frame anno
 {
-  -- ORIGINS TODO: rules ref from top.originRules
   local ty :: Type = finalType(top);
   local interesting :: Boolean = top.frame.originsContextSource.alwaysConsideredInteresting || !top.isRoot || inInteresting;
 
