@@ -2,7 +2,7 @@ grammar silver:extension:implicit_monads;
 
 --Write an empty equation filled in by an appropriate fail
 concrete production emptyAttributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
+top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
 
