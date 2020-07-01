@@ -97,6 +97,25 @@ Pair<Boolean Substitution> ::= ty1::Type ty2::Type subst::Substitution
 }
 
 
+{-This is the easiest way to get case_all translation working.  We
+  would be better off getting the error checking to occur prior to
+  rewriting so these functions don't show up.-}
+function acceptableMonadFunction
+Boolean ::= f::Decorated Expr
+{
+  return case f of
+         | functionReference(qNameId(name)) ->
+           case name.name of
+           | "mplusMaybe" -> true
+           | "mplusEither" -> true
+           | "mplusList" -> true
+           | _ -> false
+           end
+         | _ -> false
+         end;
+}
+
+
 {-this assumes the lists have the same length-}
 function tyListMatch
 Pair<Boolean Substitution> ::= tl1::[Type] tl2::[Type] subst::Substitution

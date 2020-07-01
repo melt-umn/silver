@@ -158,6 +158,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
                                                    then monadInnerType(e.mtyperep)
                                                    else e.mtyperep, e.mUpSubst).inputTypes);
   nes.appExprApplied = e.unparse;
+  nes.monadArgumentsAllowed = acceptableMonadFunction(e);
 
   top.mUpSubst = if isMonad(e.mtyperep)
                  then rewrite.mUpSubst
@@ -248,6 +249,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   nes.downSubst = top.downSubst;
   nes.appExprTypereps = reverse(performSubstitution(ne.mtyperep, ne.mUpSubst).inputTypes);
   nes.appExprApplied = ne.unparse;
+  nes.monadArgumentsAllowed = acceptableMonadFunction(e);
 
   ne.expectedMonad = top.expectedMonad;
   nes.expectedMonad = top.expectedMonad;
@@ -2315,6 +2317,8 @@ synthesized attribute monadTypesLocations::[Pair<Type Integer>] occurs on AppExp
 synthesized attribute realTypes::[Type] occurs on AppExpr, AppExprs;
 --The only monad banned from being used as an actual argument
 attribute expectedMonad occurs on AppExpr, AppExprs;
+--Whether we're in a special case where monad arguments are allowed, despite the normal prohibition
+autocopy attribute monadArgumentsAllowed::Boolean occurs on AppExpr, AppExprs;
 
 attribute monadRewritten<AppExpr>, merrors, mDownSubst, mUpSubst occurs on AppExpr;
 attribute monadRewritten<AppExprs>, merrors, mDownSubst, mUpSubst occurs on AppExprs;
@@ -2376,7 +2380,7 @@ top::AppExpr ::= e::Expr
                 " but argument is of type " ++ errCheck1a.leftpp)];
   --Functions are not allowed to take monad-typed arguments
   top.merrors <-
-    if fst(monadsMatch(top.appExprTyperep, top.expectedMonad, top.mDownSubst))
+    if fst(monadsMatch(top.appExprTyperep, top.expectedMonad, top.mDownSubst)) && !top.monadArgumentsAllowed
     then [err(top.location, "Implicit equations may not use functions with " ++
                             "monad-typed arguments, specifically " ++ errCheck2a.rightpp)]
     else [];

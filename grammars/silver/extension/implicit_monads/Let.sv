@@ -151,6 +151,9 @@ aspect production assignExpr
 top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
   top.merrors := e.merrors;
+  top.merrors <- if isMonad(t.typerep) && fst(monadsMatch(top.expectedMonad, t.typerep, top.mDownSubst))
+                 then [err(top.location, "Let bindings may not use a monad type")]
+                 else [];
   local errCheck::TypeCheck = if isMonad(e.mtyperep)
                               then if isMonad(t.typerep)
                                    then check(t.typerep, e.mtyperep)
