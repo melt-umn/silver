@@ -100,7 +100,7 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String params::[Type] tracked::Boolean
 {
   -- untightened version would be "common.Node", but we prefer the generated
   -- class, e.g. silver.definition.core.NExpr
@@ -132,13 +132,13 @@ top::Type ::= te::Type
   top.isPrimitiveForDuplicate = true;
   top.transTypeRep =
     case te of
-      nonterminalType(fn, params) ->
+      nonterminalType(fn, params, _) ->
         s"new common.BaseTypeRep(\"Decorated ${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}})"
     | _ -> error("Found decoratedType that does not wrap nonterminalType!")
     end;
   top.transFreshTypeRep =
     case te of
-      nonterminalType(fn, params) ->
+      nonterminalType(fn, params, _) ->
         s"new common.BaseTypeRep(\"Decorated ${fn}\", new common.TypeRep[] {${implode(", ", map((.transFreshTypeRep), params))}})"
     | _ -> error("Found decoratedType that does not wrap nonterminalType!")
     end;

@@ -43,7 +43,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
     namedSignature(fName,
       [namedSignatureElement("stringToParse", stringType()),
        namedSignatureElement("filenameToReport", stringType())],
-      namedSignatureElement("__func__lhs", nonterminalType("core:ParseResult", [t.typerep])),
+      namedSignatureElement("__func__lhs", nonterminalType("core:ParseResult", [t.typerep], false)),
       []);
 
   production spec :: ParserSpec =

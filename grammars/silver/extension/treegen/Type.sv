@@ -51,7 +51,7 @@ top::Type ::=
   top.idNameForGenArb = "String";
 }
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String params::[Type] tracked::Boolean
 {
   -- ignore parameters, we don't support them for now
   top.idNameForGenArb = substring(lastIndexOf(":", fn) + 1, length(fn), fn);

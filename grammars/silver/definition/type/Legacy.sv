@@ -85,7 +85,7 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String params::[Type]  tracked::Boolean
 {
   top.isDecorable = true;
   top.unifyInstanceNonterminal = emptySubst();

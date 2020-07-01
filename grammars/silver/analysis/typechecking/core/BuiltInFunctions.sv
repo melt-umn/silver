@@ -100,7 +100,7 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
   top.upSubst = errCheck2.upSubst;
   
   errCheck1 = check(es.typerep, stringType());
-  errCheck2 = check(el.typerep, nonterminalType("core:Location", []));
+  errCheck2 = check(el.typerep, nonterminalType("core:Location", [], false));
   top.errors <-
     if errCheck1.typeerror
     then [err(es.location, "Second operand to 'terminal(type,lexeme,location)' must be a String, instead it is " ++ errCheck1.leftpp)]

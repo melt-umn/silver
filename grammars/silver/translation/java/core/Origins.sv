@@ -73,11 +73,7 @@ Boolean ::= ty::Type conf::Decorated CmdArgs env::Decorated Env
 
   return if conf.noOrigins then false else
             case ty of
-            | nonterminalType(fn, _) -> 
-                conf.forceOrigins || case getTypeDclAll(fn, env) of
-                                     | ntDcl(_, _, _, _, _, _, t)::_ -> t
-                                     | [] -> true
-                                     end
+            | nonterminalType(fn, _, tracked) -> conf.forceOrigins || tracked
             | _ -> false
             end;
 }

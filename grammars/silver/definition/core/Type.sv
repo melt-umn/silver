@@ -84,7 +84,7 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String params::[Type] tracked::Boolean
 {
   top.accessHandler = undecoratedAccessHandler(_, _, location=_);
 }

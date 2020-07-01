@@ -155,11 +155,11 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String params::[Type] tracked::Boolean
 {
   top.refine = 
     case top.refineWith of
-    | nonterminalType(ofn, op) ->
+    | nonterminalType(ofn, op, _) ->
         if fn == ofn
         then refineAll( params, op )
         else errorSubst("Tried to refine conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
@@ -227,7 +227,7 @@ Substitution ::= scrutineeType::Type  constructorType::Type
   -- If you look at the type rules, you'll notice they're requiring "T" be the same,
   -- and this refinement only happens on the parameters (i.e. fmgu(T p = T a))
   return case scrutineeType, constructorType of
-         | decoratedType(nonterminalType(n1, p1)), decoratedType(nonterminalType(n2,p2))
+         | decoratedType(nonterminalType(n1, p1, _)), decoratedType(nonterminalType(n2,p2, _))
             -> if n1 == n2 then refineAll(p1,p2) else emptySubst()
          | _, _ -> emptySubst()
          end;

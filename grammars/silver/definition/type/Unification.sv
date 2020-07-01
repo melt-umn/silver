@@ -89,12 +89,12 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String params::[Type] tracked::Boolean
 {
   top.unify = 
     case top.unifyWith of
-    | nonterminalType(ofn, op) -> 
-        if fn == ofn
+    | nonterminalType(ofn, op, otracked) -> 
+        if fn == ofn && tracked==otracked
         then unifyAll(params, op)
         else errorSubst("Tried to unify conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
     | ntOrDecType(_, _) -> errorSubst("nte-nodte: try again")
@@ -138,7 +138,7 @@ top::Type ::= nt::Type  hidden::Type
         -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
         unifyAllShortCircuit([ote, top.unifyWith],
                              [nt,  hidden])
-    | nonterminalType(_, _) ->
+    | nonterminalType(_, _, _) ->
         -- Ensure compatibility between nonterminal types, then specialize ourselves
         unifyAllShortCircuit([top.unifyWith, top.unifyWith],
                              [nt,            hidden])

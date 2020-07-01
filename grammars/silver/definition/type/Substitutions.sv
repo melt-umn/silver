@@ -178,10 +178,10 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String params::[Type] tracked::Boolean
 {
-  top.substituted = nonterminalType(fn, mapSubst(params, top.substitution));
-  top.flatRenamed = nonterminalType(fn, mapRenameSubst(params, top.substitution));
+  top.substituted = nonterminalType(fn, mapSubst(params, top.substitution), tracked);
+  top.flatRenamed = nonterminalType(fn, mapRenameSubst(params, top.substitution), tracked);
 }
 
 aspect production terminalType

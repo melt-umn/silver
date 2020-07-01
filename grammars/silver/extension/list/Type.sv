@@ -11,7 +11,7 @@ top::Type ::= el::Type
   top.unify =
     case top.unifyWith of
     | listType(fel) -> unify(el,fel)
-    | decoratedType(nonterminalType("core:List", ftes)) -> unify(el, head(ftes))
+    | decoratedType(nonterminalType("core:List", ftes, false)) -> unify(el, head(ftes))
     | _ -> errorSubst("Tried to unify list with " ++ prettyType(top.unifyWith))
     end;
   
@@ -24,6 +24,6 @@ top::Type ::= el::Type
   
   --top.transType -- for translation.
   
-  forwards to decoratedType(nonterminalType("core:List", [el]));
+  forwards to decoratedType(nonterminalType("core:List", [el], false));
 }
 

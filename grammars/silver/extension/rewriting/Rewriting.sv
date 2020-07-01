@@ -24,7 +24,7 @@ top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
 {
   top.unparse = s"rewriteWith(${s.unparse}, ${e.unparse})";
 
-  local errCheckS::TypeCheck = check(s.typerep, nonterminalType("silver:rewrite:Strategy", []));
+  local errCheckS::TypeCheck = check(s.typerep, nonterminalType("silver:rewrite:Strategy", [], false));
   errCheckS.finalSubst = top.finalSubst;
   
   local localErrors::[Message] =
@@ -41,7 +41,7 @@ top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
   -- TODO: Equation needed due to weirdness with lets auto-undecorating bindings.
   -- See comments in definition of lexicalLocalReference (grammars/silver/modification/let_fix/Let.sv)
   -- Actual syntax to exactly constrain the types of arbitrary expressions would be useful here.
-  top.typerep = nonterminalType("core:Maybe", [e.typerep]);
+  top.typerep = nonterminalType("core:Maybe", [e.typerep], false);
   
   s.downSubst = top.downSubst;
   e.downSubst = s.upSubst;
@@ -94,11 +94,11 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   
   local numChildren::Integer = length(n.lookupValue.typerep.inputTypes);
   local annotations::[String] = map((.argName), n.lookupValue.typerep.namedTypes);
-  es.appExprTypereps = repeat(nonterminalType("silver:rewrite:Strategy", []), numChildren);
+  es.appExprTypereps = repeat(nonterminalType("silver:rewrite:Strategy", [], false), numChildren);
   es.appExprApplied = n.unparse;
   anns.appExprApplied = n.unparse;
   anns.funcAnnotations =
-    map(namedArgType(_, nonterminalType("silver:rewrite:Strategy", [])), annotations);
+    map(namedArgType(_, nonterminalType("silver:rewrite:Strategy", [], false)), annotations);
   anns.remainingFuncAnnotations = anns.funcAnnotations;
  
   local localErrors::[Message] = es.errors ++ anns.traverseErrors;

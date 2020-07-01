@@ -5,9 +5,16 @@ option silver:modification:ffi; -- foreign types
 {--
  - Silver Type Representations.
  -}
-nonterminal Type with freeVariables;
+nonterminal Type with freeVariables, tracked;
 
 synthesized attribute freeVariables :: [TyVar];
+synthesized attribute tracked :: Boolean;
+
+aspect default production
+top::Type ::=
+{
+  top.tracked = false;
+}
 
 {--
  - This is a (universally quantified) type variable.
@@ -89,17 +96,13 @@ top::Type ::=
  - An (undecorated) nonterminal type.
  - @param fn  The fully qualified name of the nonterminal.
  - @param params  The type parameters for that nonterminal.
+ - @param tracked  Might this NT be tracked.
  -}
 abstract production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String params::[Type] tracked::Boolean
 {
   top.freeVariables = setUnionTyVarsAll(map((.freeVariables), params));
-}
-
-abstract production trackedNonterminalType
-top::Type ::= fn::String params::[Type]
-{
-  forwards to nonterminalType(fn, params);
+  top.tracked = tracked;
 }
 
 {--

@@ -165,7 +165,7 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
     --  1. has a non-type-variable parameter (e.g. Expr<Boolean>)
     --  2. has fewer free variables than parameters (e.g. Eq<a a>)
     -- THEN it's a gadt.
-    | nonterminalType(_, tvs) -> !isOnlyTyVars(tvs) || length(tvs) != length(setUnionTyVarsAll(map((.freeVariables), tvs)))
+    | nonterminalType(_, tvs, _) -> !isOnlyTyVars(tvs) || length(tvs) != length(setUnionTyVarsAll(map((.freeVariables), tvs)))
     | _ -> false
     end;
   

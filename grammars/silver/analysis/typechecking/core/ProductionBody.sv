@@ -127,7 +127,7 @@ top::ProductionStmt ::= 'attachNote' e::Expr ';'
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
   
-  errCheck1 = check(e.typerep, nonterminalType("core:OriginNote", []));
+  errCheck1 = check(e.typerep, nonterminalType("core:OriginNote", [], false));
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Origin note must have type core:OriginNote, but the expression has actual type " ++ errCheck1.leftpp)]

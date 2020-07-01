@@ -20,13 +20,14 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   syntax.superClasses = error("This shouldn't be needed...");
   syntax.subClasses = error("This shouldn't be needed...");
   
+  production isThisTracked::Boolean = top.config.forceOrigins || ((!top.config.noOrigins) && quals.tracked);
   local exportedLayoutTerms::[String] = map((.fullName), syntax.allIgnoreTerminals);
   local exportedProds::[String] = map((.fullName), syntax.allProductions);
-  local maybeTracked::[SyntaxNonterminalModifier] = if top.config.forceOrigins || ((!top.config.noOrigins) && quals.tracked) then [tracked()] else [];
+  local maybeTracked::[SyntaxNonterminalModifier] = if isThisTracked then [tracked()] else [];
   
   top.syntaxAst =
     [syntaxNonterminal(
-      nonterminalType(fName, tl.types), nilSyntax(),
+      nonterminalType(fName, tl.types, isThisTracked), nilSyntax(),
       exportedProds, exportedLayoutTerms,
       foldr(consNonterminalMod, nilNonterminalMod(), maybeTracked ++ nm.nonterminalModifiers))];
 }
