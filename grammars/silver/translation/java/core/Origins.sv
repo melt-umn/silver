@@ -1,4 +1,6 @@
 import silver:definition:origins;
+import silver:util:cmdargs only CmdArgs;
+import silver:driver;
 
 -- Information on how to compute origins for stuff constructed/modified in different block contexts
 -- How do we get an OriginContext representing this?
@@ -40,10 +42,12 @@ top::ContextOriginInfoSource ::= name::String
 function makeOriginContextRef
 String ::= top::Decorated Expr --need .frame anno
 {
-  local rulesStr :: String = s"new core.NOriginNote[]{new core.PoriginDbgNote(null, new common.StringCatter(\"${substitute("\"", "\\\"", hackUnparse(top.location))}\"))," ++
-    implode(", ", map((.translation), top.originRules)) ++ "}";
+  local rulesTrans :: [String] = (if top.config.tracingOrigins then [locRule] else []) ++ map((.translation), top.originRules);
+  local locRule :: String = s"new core.PoriginDbgNote(null, new common.StringCatter(\"${substitute("\"", "\\\"", hackUnparse(top.location))}\"))";
 
-  return top.frame.originsContextSource.contextRefAddingRules(rulesStr);
+  return if top.config.noOrigins then "null" else 
+    if length(rulesTrans)==0 then top.frame.originsContextSource.contextRef else
+      top.frame.originsContextSource.contextRefAddingRules(s"new core.NOriginNote[]{${implode(", ", rulesTrans)}}");
 }
 
 global newConstructionOriginUsingCtxRef :: String =
@@ -55,16 +59,11 @@ String ::= top::Decorated Expr  inInteresting::Boolean --need .frame anno
   local ty :: Type = finalType(top);
   local interesting :: Boolean = top.frame.originsContextSource.alwaysConsideredInteresting || !top.isRoot || inInteresting;
 
-  return case ty of
-    | nonterminalType(fn, _) ->
-              if nonterminalWantsTracking(fn, top.env)
-              then makeOriginContextRef(top)++s".makeNewConstructionOrigin(${if interesting then "true" else "false"})" else "null"
-    | _ -> "null"
-  end;
+  return if typeWantsTracking(ty, top.config, top.env) then makeOriginContextRef(top)++s".makeNewConstructionOrigin(${if interesting then "true" else "false"})" else "null";
 }
 
-function nonterminalWantsTracking
-Boolean ::= fn::String env::Decorated Env
+function typeWantsTracking
+Boolean ::= ty::Type conf::Decorated CmdArgs env::Decorated Env
 {
   -- As is this is limited because the ntDcl may not be in scope, even though a production producing it is.
   -- For example, if you do `import silver:langutil only err` you'll be able to construct `err`s but not have
@@ -72,12 +71,15 @@ Boolean ::= fn::String env::Decorated Env
   -- unless we specifically know it _dosen't_ want it. If it gets it and didn't want it it simply throws it away,
   -- and as a result we only get a speed hit as opposed to a (possibly fatal) memory hit.
 
-  -- return true;
-
-  return case getTypeDclAll(fn, env) of
-    | ntDcl(_, _, _, _, _, _, t)::_ -> t
-    | [] -> true
-  end;
+  return if conf.noOrigins then false else
+            case ty of
+            | nonterminalType(fn, _) -> 
+                conf.forceOrigins || case getTypeDclAll(fn, env) of
+                                     | ntDcl(_, _, _, _, _, _, t)::_ -> t
+                                     | [] -> true
+                                     end
+            | _ -> false
+            end;
 }
 
 function wrapAccessWithOT
@@ -99,12 +101,10 @@ String ::= top::Decorated Expr expr::String
   local directCopy :: String = s"((${ty.transType})${makeOriginContextRef(top)}.attrAccessCopy((common.Node)${expr}))";
   local noop       :: String = s"((${ty.transType})${expr})";
 
-  return if ty.transType == "Object" then polyCopy else
-          case ty of
-            | nonterminalType(fn, _) ->
-              if nonterminalWantsTracking(fn, top.env) then directCopy else noop
-            | _ -> noop
-          end;
+  local impl :: String = if ty.transType == "Object" then polyCopy else
+          (if typeWantsTracking(ty, top.config, top.env) then directCopy else noop);
+
+  return if (top.config.noRedex || top.config.noOrigins) then noop else impl;
   -- The extra (common.Node) cast in the non-generic non-primitive case is sometimes required for reasons I don't fully understand.
 
 }
@@ -114,14 +114,10 @@ String ::= top::Decorated Expr expr::String
 {
   local ty :: Type = finalType(top);
 
-  -- Similar logic to wrapAccessWithOT. Since nonterminalWantsTracking is a liberal estimate it's possible
+  -- Similar logic to wrapAccessWithOT. Since typeWantsTracking is a liberal estimate it's possible
   --  calling this is a waste of time (in which case .duplicate will simple be a noop.)
 
   local directDup :: String = s"${expr}.duplicate(${makeOriginContextRef(top)})";
 
-  return case ty of
-            | nonterminalType(fn, _) ->
-              if nonterminalWantsTracking(fn, top.env) then directDup else expr
-            | _ -> expr
-          end;
+  return if ((!top.config.noRedex) && typeWantsTracking(ty, top.config, top.env)) then directDup else expr;
 }

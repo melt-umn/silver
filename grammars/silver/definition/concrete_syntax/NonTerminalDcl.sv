@@ -1,5 +1,7 @@
 grammar silver:definition:concrete_syntax;
 
+import silver:driver only noOrigins, forceOrigins;
+
 aspect production noWrapperNonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
@@ -20,12 +22,13 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   
   local exportedLayoutTerms::[String] = map((.fullName), syntax.allIgnoreTerminals);
   local exportedProds::[String] = map((.fullName), syntax.allProductions);
+  local maybeTracked::[SyntaxNonterminalModifier] = if top.config.forceOrigins || ((!top.config.noOrigins) && quals.tracked) then [tracked()] else [];
   
   top.syntaxAst =
     [syntaxNonterminal(
       nonterminalType(fName, tl.types), nilSyntax(),
       exportedProds, exportedLayoutTerms,
-      foldr(consNonterminalMod, nilNonterminalMod(), nm.nonterminalModifiers))];
+      foldr(consNonterminalMod, nilNonterminalMod(), maybeTracked ++ nm.nonterminalModifiers))];
 }
 
 synthesized attribute nonterminalModifiers :: [SyntaxNonterminalModifier] occurs on NonterminalModifiers, NonterminalModifierList, NonterminalModifier;

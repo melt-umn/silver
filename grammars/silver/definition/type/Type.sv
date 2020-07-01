@@ -96,6 +96,12 @@ top::Type ::= fn::String params::[Type]
   top.freeVariables = setUnionTyVarsAll(map((.freeVariables), params));
 }
 
+abstract production trackedNonterminalType
+top::Type ::= fn::String params::[Type]
+{
+  forwards to nonterminalType(fn, params);
+}
+
 {--
  - A terminal type.
  - @param fn  The fully qualified name of the terminal.

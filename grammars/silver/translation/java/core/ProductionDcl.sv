@@ -17,7 +17,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local localVar :: String = "count_local__ON__" ++ makeIdName(fName);
   local ntName :: String = namedSig.outputElement.typerep.typeName;
   local fnnt :: String = makeNTClassName(ntName);
-  local wantsTracking :: Boolean = nonterminalWantsTracking(ntName, top.env);
+  local wantsTracking :: Boolean = typeWantsTracking(namedSig.outputElement.typerep, top.config, top.env);
 
   local ntDeclPackage :: String = implode(".", init(explode(".", fnnt)));
   local typeNameSnipped :: String = last(explode(":", namedSig.outputElement.typerep.typeName));

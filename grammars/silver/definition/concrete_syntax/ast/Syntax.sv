@@ -286,7 +286,13 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
         map(head,
           lookupStrings(searchEnvTree(ns.fullName, top.layoutTerms), top.cstEnv))));
 
+  local isTracked :: Boolean = case head(lhsRef) of
+                               | syntaxNonterminal(_, _, _, _, mods) -> mods.tracked
+                               end;
   local commaIfArgsOrAnnos :: String = if length(ns.inputElements) + length(ns.namedInputElements)!= 0 then "," else "";
+  local originImpl :: String = if isTracked then
+                               "new core.PparsedOriginInfo(null, common.OriginsUtil.SET_FROM_PARSER_OIT, common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos()), common.ConsCell.nil)"
+                               else "null";
 
   top.xmlCopper =
     "  <Production id=\"" ++ makeCopperName(ns.fullName) ++ "\">\n" ++
@@ -298,7 +304,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     -- Annoying workaround for if a lambda in an action block needs to capture RESULT when accessing a child.
     -- Java complains when we capture something that is non-final.
     
-    "final " ++ makeClassName(ns.fullName) ++ " RESULTfinal = new " ++ makeClassName(ns.fullName) ++ "(new core.PparsedOriginInfo(null, common.OriginsUtil.SET_FROM_PARSER_OIT, common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos()), common.ConsCell.nil) " ++ commaIfArgsOrAnnos ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
+    "final " ++ makeClassName(ns.fullName) ++ " RESULTfinal = new " ++ makeClassName(ns.fullName) ++ "(" ++ originImpl ++ commaIfArgsOrAnnos ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
     "RESULT = RESULTfinal;\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++

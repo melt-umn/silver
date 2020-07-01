@@ -43,6 +43,10 @@ public final class OriginContext {
 		this(Variety.NORMAL, lhs, rules);
 	}
 
+	public OriginContext(final Node lhs, final NOriginNote[] rules) {
+		this(lhs, listOfArray(rules));
+	}
+
 	public OriginContext(final OriginContext old, final List<NOriginNote> newRules) {
 		this(old.variety, old.lhs, mergeRules(old.rules, newRules));
 	}
@@ -74,6 +78,12 @@ public final class OriginContext {
 		rules.addAll(a);
 		rules.add(b);
 		return rules;
+	}
+
+	private static List<NOriginNote> listOfArray(final NOriginNote[] arr) {
+		ArrayList<NOriginNote> l = new ArrayList<NOriginNote>();
+		Collections.addAll(l, arr);
+		return l;
 	}
 
 	public ConsCell rulesAsSilverList() {
