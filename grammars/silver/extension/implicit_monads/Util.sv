@@ -39,6 +39,7 @@ Boolean ::= ty::Type
            (name == "core:monad:State" && length(params) == 2)
          | listType(_) -> true
          | decoratedType(t) -> isMonad(t)
+         | implicitType(t) -> isMonad(t)
          | _ -> false
          end;
 }
@@ -92,6 +93,8 @@ Pair<Boolean Substitution> ::= ty1::Type ty2::Type subst::Substitution
          | listType(_), listType(_) -> pair(true, subst)
          | decoratedType(t), _ -> monadsMatch(t, ty2, subst)
          | _, decoratedType(t) -> monadsMatch(ty1, t, subst)
+         | implicitType(t), _ -> monadsMatch(t, ty2, subst)
+         | _, implicitType(t) -> monadsMatch(ty1, t, subst)
          | _, _ -> pair(false, subst)
          end;
 }
@@ -138,6 +141,8 @@ Type ::= mty::Type
            last(params1)
          | listType(ty) -> ty
          | decoratedType(t) -> monadInnerType(t)
+         | implicitType(t) -> monadInnerType(t)
+         | explicitType(t) -> monadInnerType(t)
          | _ -> error("The monadInnerType function should only be called " ++
                       "once a type has been verified to be a monad")
          end;
@@ -154,6 +159,8 @@ Type ::= mty::Type newInner::Type
            nonterminalType(name, append(init(params), [newInner]))
          | listType(_) -> listType(newInner)
          | decoratedType(t) -> monadOfType(t, newInner)
+         | implicitType(t) -> monadOfType(t, newInner)
+         | explicitType(t) -> monadOfType(t, newInner)
          | _ -> error("Tried to take a monad out of a non-monadic type to apply")
          end;
 }
@@ -175,6 +182,8 @@ String ::= ty::Type
          | listType(_) ->
            "[a]"
          | decoratedType(t) -> monadToString(t)
+         | implicitType(t) -> monadToString(t)
+         | explicitType(t) -> monadToString(t)
          | _ -> error("Tried to get monadToString for a non-monadic type")
          end;
 }

@@ -142,10 +142,18 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
     Errors might not be great if we have different monads here and in arguments;
        once partial application works, we could just do the whole rewriting here
   -}
-  e.mDownSubst = top.mDownSubst;
-  --we need a new copy to be able to set appExprTypereps
-  local nes::AppExprs = es;
-  nes.mDownSubst = e.mUpSubst;
+  local ne::Expr = new(e);
+  ne.mDownSubst = top.mDownSubst;
+  ne.env = top.env;
+  ne.flowEnv = top.flowEnv;
+  ne.config = top.config;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.downSubst;
+  local nes::AppExprs = new(es);
+  nes.mDownSubst = ne.mUpSubst;
   nes.flowEnv = top.flowEnv;
   nes.env = top.env;
   nes.config = top.config;
@@ -154,74 +162,78 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   nes.frame = top.frame;
   nes.finalSubst = top.finalSubst;
   nes.downSubst = top.downSubst;
-  nes.appExprTypereps = reverse(performSubstitution(if isMonad(e.mtyperep)
-                                                   then monadInnerType(e.mtyperep)
-                                                   else e.mtyperep, e.mUpSubst).inputTypes);
-  nes.appExprApplied = e.unparse;
+  nes.appExprTypereps = reverse(performSubstitution(ne.mtyperep, ne.mUpSubst).inputTypes);
+  nes.appExprApplied = ne.unparse;
   nes.monadArgumentsAllowed = acceptableMonadFunction(e);
 
-  top.mUpSubst = if isMonad(e.mtyperep)
-                 then rewrite.mUpSubst
-                 else forward.mUpSubst;
-  top.mtyperep = if isMonad(e.mtyperep)
-                 then rewrite.mtyperep
-                 else forward.mtyperep;
-
-  e.expectedMonad = top.expectedMonad;
+  ne.expectedMonad = top.expectedMonad;
   nes.expectedMonad = top.expectedMonad;
 
-  e.monadicallyUsed = if isMonad(e.mtyperep)
-                      then true
-                      else false;
-  top.monadicNames = e.monadicNames ++ nes.monadicNames;
+  top.merrors := ne.merrors ++ nes.merrors;
+  top.mUpSubst = nes.mUpSubst;
 
-  top.merrors := e.merrors ++ nes.merrors;
+  local mty::Type = head(nes.monadTypesLocations).fst;
+  --need to check that all our monads match
+  top.merrors <- if null(nes.monadTypesLocations) ||
+                   foldr(\x::Pair<Type Integer> b::Boolean -> b && monadsMatch(mty, x.fst, ne.mUpSubst).fst, 
+                         true, tail(nes.monadTypesLocations))
+                then []
+                else [err(top.location,
+                      "All monad types used monadically in a function application must match")];
+  --need to check it is compatible with the function return type
+  top.merrors <- if isMonad(ety.outputType)
+                then if null(nes.monadTypesLocations)
+                     then []
+                     else if monadsMatch(ety.outputType, mty, ne.mUpSubst).fst
+                          then []
+                          else [err(top.location,
+                                    "Return type of function is a monad which doesn't " ++
+                                     "match the monads used for arguments")]
+                else [];
 
-  local ety :: Type = performSubstitution(monadInnerType(e.mtyperep), e.mUpSubst);
+  local ety :: Type = performSubstitution(ne.mtyperep, top.mUpSubst);
+
+  --needs to change based on whether there are monads or not
+  top.mtyperep = if null(nes.monadTypesLocations)
+                 then ety.outputType
+                 else if isMonad(ety.outputType)
+                      then ety.outputType
+                      else monadOfType(head(nes.monadTypesLocations).fst, ety.outputType);
+
+  ne.monadicallyUsed = false; --we aren't dealing with monad-typed functions here
+  top.monadicNames = ne.monadicNames ++ nes.monadicNames;
+
   --whether we need to wrap the ultimate function call in monadRewritten in a Return
-  local wrapReturn::Boolean = !isMonad(ety.outputType) && null(nes.monadTypesLocations);
+  local wrapReturn::Boolean = !isMonad(ety.outputType) && !null(nes.monadTypesLocations);
 
-  local newname::String = "__sv_monad_function_" ++ toString(genInt());
-  local param::ProductionRHS = productionRHSCons(productionRHSElem(name(newname, top.location),
-                                                  '::',
-                                                  typerepTypeExpr(monadInnerType(e.mtyperep),
-                                                                  location=top.location),
-                                                  location=top.location),
-                                productionRHSNil(location=top.location),
-                                location=top.location);
-  local inside::Expr =
-     if wrapReturn
-     then Silver_Expr { $Expr{monadReturn(e.mtyperep, top.location)}
-                          ($Expr{application(baseExpr(qName(top.location, newname),
-                                                      location=top.location),
-                                             '(', es, ',', anns, ')',
-                                             location=top.location)}) }
-     else application(baseExpr(qName(top.location, newname),
-                               location=top.location),
-                      '(', es, ',', anns, ')',
-                      location=top.location);
-  -- e >>= \x. x(es, anns)   OR   e >>= \x. return(x(es, anns))
-  --we might need a return--depends on return type of e's inner type and whether
-  --   there are monadic arguments, which will be taken care of by further rewriting
-  local rewrite::Expr =
-          Silver_Expr { $Expr{monadBind(e.mtyperep, top.location)}
-                          ($Expr{e.monadRewritten},
-                           $Expr{lambdap(param,
-                                 inside,
-                                 location=top.location)}) };
-  rewrite.mDownSubst = e.mUpSubst;
-  rewrite.env = top.env;
-  rewrite.flowEnv = top.flowEnv;
-  rewrite.config = top.config;
-  rewrite.compiledGrammars = top.compiledGrammars;
-  rewrite.grammarName = top.grammarName;
-  rewrite.frame = top.frame;
-  rewrite.finalSubst = top.mUpSubst;
-  rewrite.downSubst = e.mUpSubst;
+  {-
+    Monad translation creates a lambda to apply to all the arguments
+    plus the function (to get fresh names for everything), then
+    creates a body that binds all the monadic arguments into the final
+    function application.
 
-  top.monadRewritten = if isMonad(e.mtyperep)
-                       then rewrite.monadRewritten
-                       else forward.monadRewritten;
+    For example, if we have
+       fun(a, b, c, d)
+    where a and d are monadic, then we translate into
+       (\a1 a2 a3 a4 f. a1 >>= (\a1. a4 >>= (\a4. f(a1, a2, a3, a4))))(a, b, c, d, fun)
+    Reusing ai in the bind for the ith argument simplifies doing the
+    application inside all the binds.
+  -}
+  --TODO also needs to deal with the case where the function is a monad
+  local lambda_fun::Expr = buildMonadApplicationLambda(nes.realTypes, nes.monadTypesLocations, ety, wrapReturn, top.location);
+  local expanded_args::AppExprs = snocAppExprs(nes.monadRewritten, ',', presentAppExpr(ne.monadRewritten, location=top.location),
+                                               location=top.location);
+  --haven't done monadRewritten on annotated ones, so ignore them
+  top.monadRewritten = if null(nes.monadTypesLocations)
+                       then applicationExpr(ne.monadRewritten, '(', nes.monadRewritten, ')', location=top.location)
+                       else
+                         case anns of
+                         | emptyAnnoAppExprs() ->
+                           applicationExpr(lambda_fun, '(', expanded_args, ')', location=top.location)
+                         | _ ->
+                           error("Monad Rewriting not defined with annotated " ++
+                                 "expressions in a function application")
+                         end;
 }
 
 aspect production functionInvocation
@@ -306,7 +318,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   -}
   --TODO also needs to deal with the case where the function is a monad
   local lambda_fun::Expr = buildMonadApplicationLambda(nes.realTypes, nes.monadTypesLocations, ety, wrapReturn, top.location);
-  local expanded_args::AppExprs = snocAppExprs(new(es), ',', presentAppExpr(new(e), location=top.location),
+  local expanded_args::AppExprs = snocAppExprs(nes.monadRewritten, ',', presentAppExpr(ne.monadRewritten, location=top.location),
                                                location=top.location);
   --haven't done monadRewritten on annotated ones, so ignore them
   top.monadRewritten = if null(nes.monadTypesLocations)
