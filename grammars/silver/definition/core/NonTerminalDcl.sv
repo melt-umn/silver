@@ -22,8 +22,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
                     fName,
                     tl.freeVariables,
                     nonterminalType(fName, tl.types, quals.tracked),
-                    quals.closed,
-                    quals.tracked)];
+                    quals.closed)];
   -- TODO: It's probably reasonable to skip listing
   -- tl.freeVariables, and the Type. Assuming we have a proper ntDcl.
   -- And we should consider recording the exact concrete names used... might be nice documentation to use
