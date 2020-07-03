@@ -151,7 +151,8 @@ top::ProductionStmt ::= attr::Decorated QName
     if
       attr.lookupAttribute.dcl.containsErrors ||
       -- Check for total strategy ref occurs errors that would already be reported on the occurence
-      any(map(null, map(getOccursDcl(_, top.frame.signature.outputElement.typerep.typeName, top.env), attr.lookupAttribute.dcl.totalRefs))) 
+      (!null(getOccursDcl(attr.lookupAttribute.fullName, top.frame.signature.outputElement.typerep.typeName, top.env)) &&
+       any(map(null, map(getOccursDcl(_, top.frame.signature.outputElement.typerep.typeName, top.env), attr.lookupAttribute.dcl.totalRefs))))
     then []
     else forward.errors;
   
