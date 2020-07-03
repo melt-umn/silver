@@ -8,14 +8,13 @@ imports silver:definition:core only nonterminalName;
 
 synthesized attribute tracked :: Boolean;
 
-nonterminal SyntaxNonterminalModifiers with cstEnv, cstErrors, customLayout, nonterminalName, tracked;
+nonterminal SyntaxNonterminalModifiers with cstEnv, cstErrors, customLayout, nonterminalName;
 
 abstract production consNonterminalMod
 top::SyntaxNonterminalModifiers ::= h::SyntaxNonterminalModifier  t::SyntaxNonterminalModifiers
 {
   top.cstErrors := h.cstErrors ++ t.cstErrors;
   top.customLayout = orElse(h.customLayout, t.customLayout);
-  top.tracked = h.tracked || t.tracked;
 }
 
 abstract production nilNonterminalMod
@@ -23,14 +22,13 @@ top::SyntaxNonterminalModifiers ::=
 {
   top.cstErrors := [];
   top.customLayout = nothing();
-  top.tracked = false;
 }
 
 
 {--
  - Modifiers for nonterminals.
  -}
-nonterminal SyntaxNonterminalModifier with cstEnv, cstErrors, customLayout, nonterminalName, tracked;
+nonterminal SyntaxNonterminalModifier with cstEnv, cstErrors, customLayout, nonterminalName;
 
 aspect default production
 top::SyntaxNonterminalModifier ::=
@@ -56,9 +54,3 @@ top::SyntaxNonterminalModifier ::= terms::[String]
   top.customLayout = just(terms);
 }
 
-
-abstract production tracked
-top::SyntaxNonterminalModifier ::=
-{
-  top.tracked = true;
-}

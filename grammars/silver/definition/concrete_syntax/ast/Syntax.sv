@@ -287,7 +287,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
           lookupStrings(searchEnvTree(ns.fullName, top.layoutTerms), top.cstEnv))));
 
   local isTracked :: Boolean = case head(lhsRef) of
-                               | syntaxNonterminal(_, _, _, _, mods) -> mods.tracked
+                               | syntaxNonterminal(nonterminalType(_, _, tracked), _, _, _, _) -> tracked
                                end;
   local commaIfArgsOrAnnos :: String = if length(ns.inputElements) + length(ns.namedInputElements)!= 0 then "," else "";
   local originImpl :: String = if isTracked then
