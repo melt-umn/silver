@@ -181,22 +181,23 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
                 else [err(top.location,
                       "All monad types used monadically in a function application must match")];
   --need to check it is compatible with the function return type
-  top.merrors <- if isMonad(ety.outputType)
+{-  top.merrors <- if isMonad(ety.outputType)
                 then if null(nes.monadTypesLocations)
                      then []
                      else if monadsMatch(ety.outputType, mty, ne.mUpSubst).fst
                           then []
                           else [err(top.location,
-                                    "Return type of function is a monad which doesn't " ++
-                                     "match the monads used for arguments")]
-                else [];
+                                    "Return type of function " ++ e.unparse ++ " is a monad (" ++
+                                    ety.outputType.typepp ++ ") which doesn't " ++
+                                    "match the monads used for arguments (" ++ mty.typepp ++ ")")]
+                else [];-}
 
   local ety :: Type = performSubstitution(ne.mtyperep, top.mUpSubst);
 
   --needs to change based on whether there are monads or not
   top.mtyperep = if null(nes.monadTypesLocations)
                  then ety.outputType
-                 else if isMonad(ety.outputType)
+                 else if isMonad(ety.outputType) && fst(monadsMatch(ety.outputType, mty, top.mUpSubst))
                       then ety.outputType
                       else monadOfType(head(nes.monadTypesLocations).fst, ety.outputType);
 
@@ -204,7 +205,8 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   top.monadicNames = ne.monadicNames ++ nes.monadicNames;
 
   --whether we need to wrap the ultimate function call in monadRewritten in a Return
-  local wrapReturn::Boolean = !isMonad(ety.outputType) && !null(nes.monadTypesLocations);
+  local wrapReturn::Boolean = !null(nes.monadTypesLocations) &&
+                              (!isMonad(ety.outputType) || !fst(monadsMatch(ety.outputType, mty, top.mUpSubst)));
 
   {-
     Monad translation creates a lambda to apply to all the arguments
@@ -278,7 +280,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
                 else [err(top.location,
                       "All monad types used monadically in a function application must match")];
   --need to check it is compatible with the function return type
-  top.merrors <- if isMonad(ety.outputType)
+  {-top.merrors <- if isMonad(ety.outputType)
                 then if null(nes.monadTypesLocations)
                      then []
                      else if monadsMatch(ety.outputType, mty, ne.mUpSubst).fst
@@ -286,14 +288,14 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
                           else [err(top.location,
                                     "Return type of function is a monad which doesn't " ++
                                      "match the monads used for arguments")]
-                else [];
+                else [];-}
 
   local ety :: Type = performSubstitution(ne.mtyperep, top.mUpSubst);
 
   --needs to change based on whether there are monads or not
   top.mtyperep = if null(nes.monadTypesLocations)
                  then ety.outputType
-                 else if isMonad(ety.outputType)
+                 else if isMonad(ety.outputType) && fst(monadsMatch(ety.outputType, mty, top.mUpSubst))
                       then ety.outputType
                       else monadOfType(head(nes.monadTypesLocations).fst, ety.outputType);
 
@@ -301,7 +303,8 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   top.monadicNames = ne.monadicNames ++ nes.monadicNames;
 
   --whether we need to wrap the ultimate function call in monadRewritten in a Return
-  local wrapReturn::Boolean = !isMonad(ety.outputType) && !null(nes.monadTypesLocations);
+  local wrapReturn::Boolean = !null(nes.monadTypesLocations) &&
+                              (!isMonad(ety.outputType) || !fst(monadsMatch(ety.outputType, mty, top.mUpSubst)));
 
   {-
     Monad translation creates a lambda to apply to all the arguments
@@ -2371,7 +2374,9 @@ top::AppExpr ::= e::Expr
   --determine whether it appears that this is supposed to take
   --   advantage of implicit monads based on types matching the
   --   expected and being monads
-  local isMonadic::Boolean = isMonad(e.mtyperep) && !isMonad(top.appExprTyperep);
+  local isMonadic::Boolean = isMonad(e.mtyperep) &&
+                             (!isMonad(top.appExprTyperep) ||
+                              !fst(monadsMatch(e.mtyperep, top.appExprTyperep, top.mDownSubst)));
 
   errCheck1a = check(if isDecorated(top.appExprTyperep) then e.mtyperep else dropDecorated(e.mtyperep), top.appExprTyperep);
   errCheck2a = check(monadInnerType(e.mtyperep), top.appExprTyperep);

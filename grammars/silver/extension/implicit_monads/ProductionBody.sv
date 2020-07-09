@@ -73,7 +73,7 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
   forwards to case attr.typerep of
               | implicitType(t) -> if null(merrors)
                                    then if isMonad(attr.typerep)
-                                        then if isMonad(e.mtyperep)
+                                        then if isMonad(e.mtyperep) && fst(monadsMatch(attr.typerep, e.mtyperep, top.downSubst))
                                              then attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location)
                                              else synthesizedAttributeDef(dl, attr,
                                                     Silver_Expr {
