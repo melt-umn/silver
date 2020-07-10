@@ -32,6 +32,27 @@ import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
  * @author tedinski, bodin, krame505
  */
 public final class Util {
+	private static String forceInit;
+	private static ArrayList<Integer> freeThisToPrintErrors;
+
+	public static void init() {
+		// forceInit = "foo" + "bar" + "baz";
+		// freeThisToPrintErrors = new ArrayList<Integer>();
+		// for (int i=0; i<1_000_000; i++) {
+		// 	freeThisToPrintErrors.add(i);
+		// }
+	}
+
+	public static void stackProbe(int count) {
+		long a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z;
+		long aa, bb, cc, dd, ee, ff, gg, hh, ii, jj, kk, ll, mm, nn, oo, pp, qq, rr, ss, tt, uu, vv, ww, xx, yy, zz;
+		if (count!=0) stackProbe(count-1);
+	}
+
+	public static void stackProbe() {
+		// stackProbe(1_000);
+	}
+
 	/**
 	 * Ensures that a (potential) closure is evaluated.
 	 *
@@ -140,6 +161,8 @@ public final class Util {
 	}
 
 	public static void printStackCauses(Throwable e) {
+		freeThisToPrintErrors = null;
+
 		System.err.println("\nAn error occured.  Silver stack trace follows. (To see full traces including java elements, SILVERTRACE=1)\n");
 
 		if(! "1".equals(System.getenv("SILVERTRACE"))) {

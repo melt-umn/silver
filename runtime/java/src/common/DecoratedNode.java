@@ -293,7 +293,8 @@ public class DecoratedNode implements Typed {
 	 * @return The value of the attribute.
 	 */
 	public Object synthesized(final int attribute) {
-		//System.err.println("TRACE: " + name + " demanding syn attribute: " + attribute);
+		// common.Util.stackProbe();
+		// System.err.println("TRACE: " + getName() + " demanding syn attribute: " + attribute);
 		
 		Object o = this.synthesizedValues[attribute];
 		if(o == null) {
@@ -384,7 +385,8 @@ public class DecoratedNode implements Typed {
 	 * @see #inheritedForwarded(String)
 	 */
 	public Object inherited(final int attribute) {
-		//System.err.println("TRACE: " + name + " demanding inh attribute: " + attribute);
+		// common.Util.stackProbe();
+		// System.err.println("TRACE: " + getName() + " demanding inh attribute: " + attribute);
 		
 		Object o = this.inheritedValues[attribute];
 		if(o == null) {
@@ -449,7 +451,8 @@ public class DecoratedNode implements Typed {
 	 * @return The value of the attribute.
 	 */
 	protected Object inheritedForwarded(final int attribute) {
-		//System.err.println("TRACE: " + name + " demanding FORWARDED inh attribute: " + attribute);
+		// common.Util.stackProbe();
+		// System.err.println("TRACE: " + getName() + " demanding FORWARDED inh attribute: " + attribute);
 		
 		// No cache look up here. There is only one forward production. It will call this method
 		// a maximum of once for each attribute, since it will cache the result.

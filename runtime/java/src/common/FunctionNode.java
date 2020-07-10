@@ -20,6 +20,7 @@ public abstract class FunctionNode extends Node {
 
 	public FunctionNode (final NOriginInfo origin) {
 		super(origin);
+		// common.Util.stackProbe();
 	}
 
 	/**

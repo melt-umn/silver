@@ -101,7 +101,7 @@ public final class Reflection {
 		} else if(o instanceof Boolean) {
 			return new PbooleanAST(origin, (Boolean)o);
 		} else {
-			if (System.getProperty("silver.origins.reflwarn")!=null) System.err.println("Reflection Warn: constructing PanyAST("+o.getClass().getName()+" "+o.toString()+")");
+			//if (System.getProperty("silver.origins.reflwarn")!=null) System.err.println("Reflection Warn: constructing PanyAST("+o.getClass().getName()+" "+o.toString()+")");
 			return new PanyAST(origin, o);
 		}
 	}

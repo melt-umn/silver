@@ -78,7 +78,7 @@ ${implode("", map(makeChildAssign, namedSig.inputElements))}
 
     public ${className}(${namedSig.javaSignature}) { //TODO: Ugly compat hack
         super(null ${commaIfAnnos} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
-        if (System.getProperty("silver.origins.rtwarn")!=null) System.err.println("Origins Warn: no-origins constructor invoked ("+getName()+")");
+        //if (System.getProperty("silver.origins.rtwarn")!=null) System.err.println("Origins Warn: no-origins constructor invoked ("+getName()+")");
 
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
     }

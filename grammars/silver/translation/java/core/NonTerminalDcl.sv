@@ -41,7 +41,7 @@ public abstract class ${className} extends common.Node${
 
 	protected ${className}(final NOriginInfo origin ${commaIfAnnos} ${implode(", ", map((.annoSigElem), myAnnos))}) {
 		super(${if wantsTracking then "origin" else "null"});
-		${if !wantsTracking then "if (origin!=null && System.getProperty(\"silver.origins.rtwarn\")!=null) System.err.println(\"Origins Warn: Threw away OI (\"+getName()+\".<init>/?)\");" else ""}
+		//${if !wantsTracking then "if (origin!=null && System.getProperty(\"silver.origins.rtwarn\")!=null) System.err.println(\"Origins Warn: Threw away OI (\"+getName()+\".<init>/?)\");" else ""}
 ${implode("", map(makeAnnoAssign, myAnnos))}
 	}
 

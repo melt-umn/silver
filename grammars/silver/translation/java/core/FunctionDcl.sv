@@ -176,6 +176,7 @@ import core.*;
 
 public class Main {
 	public static void main(String[] args) {
+		common.Util.init();
 		${package}.Init.initAllStatics();
 		${package}.Init.init();
 		${package}.Init.postInit();
