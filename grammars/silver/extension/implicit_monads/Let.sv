@@ -60,12 +60,14 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.monadicallyUsed = false;
   top.monadicNames = la.monadicNames ++ ne.monadicNames;
 
-  local mreturn::Expr = case la.monadUsed of
+  {-local mreturn::Expr = case la.monadUsed of
                         | just(ty) -> monadReturn(ty, top.location)
-                        end;
-  local mbind::Expr = case la.monadUsed of
+                        end;-}
+  local mreturn::Expr = monadReturn(top.expectedMonad, top.location);
+  {-local mbind::Expr = case la.monadUsed of
                       | just(ty) -> monadBind(ty, top.location)
-                      end;
+                      end;-}
+  local mbind::Expr = monadBind(top.expectedMonad, top.location);
 
   {-
     Our rewriting here binds in anything after the let to keep names from
@@ -177,11 +179,11 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
                                performSubstitution(t.typerep, top.mUpSubst),
                                e.flowVertexInfo, e.flowDeps)];
 
-  top.monadUsed = if isMonad(e.mtyperep) && !isMonad(t.typerep)
+  top.monadUsed = if isMonad(e.mtyperep) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                   then just(e.mtyperep)
                   else nothing();
 
-  top.bindInList = if isMonad(e.mtyperep) && !isMonad(t.typerep)
+  top.bindInList = if isMonad(e.mtyperep) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                    then [pair(id, t)]
                    else [];
 
