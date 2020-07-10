@@ -53,7 +53,7 @@ s"""	private Object child_${n};
   top.annoSigElem = "final Object a_" ++ fn;
   top.annoRefElem = "a_" ++ fn;
   top.annoDeclElem =
-s"""	private Object anno_${fn};
+s"""	protected Object anno_${fn};
 	@Override
 	public final ${ty.transType} getAnno_${fn}() {
 		return (${ty.transType}) (anno_${fn} = common.Util.demand(anno_${fn}));

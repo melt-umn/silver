@@ -35,10 +35,10 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     (\x::NamedSignatureElement -> dupX(x, s"getAnno_${makeIdName(x.elementName)}()"));
 
   local copyChild :: (String ::= NamedSignatureElement) =
-    (\x::NamedSignatureElement -> s"getChild_${x.elementName}()");
+    (\x::NamedSignatureElement -> s"child_${x.elementName}");
 
   local copyAnno :: (String ::= NamedSignatureElement) =
-    (\x::NamedSignatureElement -> s"getAnno_${makeIdName(x.elementName)}()");
+    (\x::NamedSignatureElement -> s"anno_${makeIdName(x.elementName)}");
 
   local commaIfKids :: String = if length(namedSig.inputElements)!=0 then "," else "";
   local commaIfAnnos :: String = if length(namedSig.namedInputElements)!=0 then "," else "";
