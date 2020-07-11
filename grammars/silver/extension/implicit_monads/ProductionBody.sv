@@ -70,7 +70,8 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
 
-  forwards to case attr.typerep of
+  local fwd::ProductionStmt =
+              case attr.typerep of
               | implicitType(t) -> if null(merrors)
                                    then if isMonad(attr.typerep)
                                         then if isMonad(e.mtyperep) && fst(monadsMatch(attr.typerep, e.mtyperep, top.downSubst))
@@ -88,6 +89,8 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
                                               "declared to be implicit; " ++ attr.unparse ++ " is not implicit")],
                                               location=top.location)
               end;
+
+  forwards to unsafeTrace(fwd, print(top.location.unparse ++ ": " ++ fwd.unparse ++ "\n\n", unsafeIO()));
 }
 
 

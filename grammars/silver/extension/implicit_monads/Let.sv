@@ -17,18 +17,6 @@ aspect production letp
 top::Expr ::= la::AssignExpr  e::Expr
 {
   top.merrors := la.merrors ++ ne.merrors;
-  top.merrors <- if isMonad(ne.mtyperep)
-                 then case la.monadUsed of
-                      | just(ty) ->
-                        if monadsMatch(ty, ne.mtyperep, top.mUpSubst).fst
-                        then []
-                        else [err(top.location,
-                                  "The monad returned from the body of a let (" ++ monadToString(ne.mtyperep) ++
-                                  ") must match the monad of expressions bound from that let (" ++
-                                  monadToString(ty) ++ ")")]
-                      | nothing() -> []
-                      end
-                 else [];
 
   --We needed to provide our own environment.
   local ne::Expr = e;
@@ -48,11 +36,9 @@ top::Expr ::= la::AssignExpr  e::Expr
 
   e.expectedMonad = top.expectedMonad;
 
-  top.mtyperep = if isMonad(ne.mtyperep) || null(la.bindInList)
+  top.mtyperep = if null(la.bindInList) || fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst))
                  then ne.mtyperep
-                 else case la.monadUsed of
-                      | just(ty) -> monadOfType(ty, ne.mtyperep)
-                      end;
+                 else monadOfType(top.expectedMonad, ne.mtyperep);
 
   --I'm not entirely sure if this should be false.  It might be that it should
   --be based on top.monadicallyUsed and whether other things become binds or
@@ -60,13 +46,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.monadicallyUsed = false;
   top.monadicNames = la.monadicNames ++ ne.monadicNames;
 
-  {-local mreturn::Expr = case la.monadUsed of
-                        | just(ty) -> monadReturn(ty, top.location)
-                        end;-}
   local mreturn::Expr = monadReturn(top.expectedMonad, top.location);
-  {-local mbind::Expr = case la.monadUsed of
-                      | just(ty) -> monadBind(ty, top.location)
-                      end;-}
   local mbind::Expr = monadBind(top.expectedMonad, top.location);
 
   {-
@@ -102,8 +82,6 @@ top::Expr ::= la::AssignExpr  e::Expr
 
 synthesized attribute fixedAssigns::AssignExpr occurs on AssignExpr;
 synthesized attribute bindInList::[Pair<Name TypeExpr>] occurs on AssignExpr;
---if bindInList is not empty, monadUsed must be just(ty) where ty is a monad type
-synthesized attribute monadUsed::Maybe<Type> occurs on AssignExpr;
 --definitions, but ones that won't cause errors with monad type mismatches in let definitions
 synthesized attribute mdefs::[Def] occurs on AssignExpr;
 
@@ -113,19 +91,10 @@ aspect production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 {
   top.merrors := a1.merrors ++ a2.merrors;
-  top.merrors <- case a1.monadUsed, a2.monadUsed of
-                 | just(ty1), just(ty2) -> 
-                   if monadCheck.fst
-                   then []
-                   else [err(top.location, "Multiple monads to be bound from the same let must " ++
-                                           "have the same type; instead, have " ++ monadToString(ty1) ++
-                                           " and " ++ monadToString(ty2))]
-                 | _, _ -> []
-                 end;
 
   a1.mDownSubst = top.mDownSubst;
   a2.mDownSubst = a1.mUpSubst;
-  top.mUpSubst = monadCheck.snd;
+  top.mUpSubst = a2.mUpSubst;
 
   a1.expectedMonad = top.expectedMonad;
   a2.expectedMonad = top.expectedMonad;
@@ -135,16 +104,6 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
   top.mdefs = a1.mdefs ++ a2.mdefs;
 
   top.bindInList = a1.bindInList ++ a2.bindInList;
-
-  local monadCheck::Pair<Boolean Substitution> =
-     case a1.monadUsed, a2.monadUsed of
-     | just(ty1), just(ty2) -> monadsMatch(ty1, ty2, a2.mUpSubst)
-     | _, _ -> pair(true, a2.mUpSubst)
-     end;
-  top.monadUsed = case a1.monadUsed, a2.monadUsed of
-                  | _, just(ty) -> just(ty)
-                  | t, _ -> t
-                  end;
 
   top.fixedAssigns = appendAssignExpr(a1.fixedAssigns, a2.fixedAssigns, location=top.location);
 }
@@ -179,15 +138,11 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
                                performSubstitution(t.typerep, top.mUpSubst),
                                e.flowVertexInfo, e.flowDeps)];
 
-  top.monadUsed = if isMonad(e.mtyperep) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
-                  then just(e.mtyperep)
-                  else nothing();
-
   top.bindInList = if isMonad(e.mtyperep) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                    then [pair(id, t)]
                    else [];
 
-  top.fixedAssigns = if isMonad(e.mtyperep) && !isMonad(t.typerep)
+  top.fixedAssigns = if isMonad(e.mtyperep) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                      --use t.typerep to get typechecking when we create the ultimate monadRewritten
                      then assignExpr(id, '::', typerepTypeExpr(monadOfType(e.mtyperep, t.typerep),
                                                                location=top.location),
