@@ -90,7 +90,7 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
                                               location=top.location)
               end;
 
-  forwards to unsafeTrace(fwd, print(top.location.unparse ++ ": " ++ fwd.unparse ++ "\n\n", unsafeIO()));
+  forwards to fwd; --unsafeTrace(fwd, print(top.location.unparse ++ ": " ++ fwd.unparse ++ "\n\n", unsafeIO()));
 }
 
 
