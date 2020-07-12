@@ -517,7 +517,42 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   top.monadicNames = if top.monadicallyUsed
                      then [top] ++ e.monadicNames
                      else e.monadicNames;
-  top.monadRewritten = access(e.monadRewritten, '.', q, location=top.location);
+
+  local noMonad::Expr = access(e.monadRewritten, '.', q, location=top.location);
+  local isEMonad::Expr =
+    Silver_Expr {
+      $Expr {monadBind(top.expectedMonad, top.location)}
+      ($Expr {e.monadRewritten},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location)} ->
+          $Expr {monadReturn(top.expectedMonad, top.location)}
+          (x.$QName {qName(q.location, q.name)})
+       )
+      )
+    };
+  local isBothMonad::Expr =
+    Silver_Expr {
+      $Expr {monadBind(top.expectedMonad, top.location)}
+      ($Expr {e.monadRewritten},
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location)} ->
+          (x.$QName {qName(q.location, q.name)})
+       )
+      )
+    };
+  top.monadRewritten = if isMonad(e.mtyperep) &&
+                          fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
+                       then if isMonad(q.typerep) &&
+                               fst(monadsMatch(q.typerep, top.expectedMonad, top.mUpSubst))
+                            then isBothMonad
+                            else isEMonad
+                       else noMonad;
+
+  top.mtyperep = if isMonad(e.mtyperep) &&
+                    fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
+                 then if isMonad(q.typerep) &&
+                         fst(monadsMatch(q.typerep, top.expectedMonad, top.mUpSubst))
+                      then q.typerep
+                      else monadOfType(top.expectedMonad, q.typerep)
+                 else q.typerep;
 
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                case q.typerep of
