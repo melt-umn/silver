@@ -613,11 +613,7 @@ String ::= e::Decorated Expr
   -- We're *unlikely* to be close to hitting the 64K method limit, but
   -- we have hit the 64K bytecode limit in the past, which is why `Init` farms
   -- initialization code out across each production. So who knows.
-  local swizzleOrigins::String = if e.config.noOrigins then "" else "final common.OriginContext originCtx = context.originCtx";
-  return s"new common.Lazy() { public final Object eval(final common.DecoratedNode context) { ${swizzleOrigins}; return ${e.translation}; } }";
-  -- ORIGINS TODO: this is an ugly hack
-  --  alternative: construct context for fns with origins, and pull info off context.undecorate().origin?
-  -- Bigger Q: could we do the whole thing by attacking OC info to DecNodes? Would require major 
-  --  refactoring, but might be a better solution
+  local swizzleOrigins::String = if e.config.noOrigins then "" else "final common.OriginContext originCtx = context.originCtx;";
+  return s"new common.Lazy() { public final Object eval(final common.DecoratedNode context) { ${swizzleOrigins} return ${e.translation}; } }";
 }
 
