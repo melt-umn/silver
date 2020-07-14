@@ -11,7 +11,7 @@ concrete production deriveEqagdcl
 top::AGDcl ::= 'derive' 'Eq' 'on' names::QNames ';'
 {
   -- bug: stupid hack. Find some other way to fix this, maybe?
-  top.flowDefs = [];
+  top.flowDefs := [];
 
   forwards to 
     foldr(

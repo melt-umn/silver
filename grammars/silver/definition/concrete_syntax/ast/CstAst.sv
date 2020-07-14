@@ -21,7 +21,9 @@ closed nonterminal SyntaxRoot with cstErrors, xmlCopper;
 synthesized attribute xmlCopper :: String;
 
 abstract production cstRoot
-top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  customStartLayout::Maybe<[String]> terminalPrefixes::[Pair<String String>]
+top::SyntaxRoot ::=
+  parsername::String  startnt::String  s::Syntax
+  customStartLayout::Maybe<[String]> terminalPrefixes::[Pair<String String>] componentGrammarMarkingTerminals::[Pair<String [String]>]
 {
   s.cstEnv = directBuildTree(s.cstDcls);
   s.cstNTProds = directBuildTree(s.cstProds);
@@ -48,11 +50,12 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  customStartL
       map((.fullName), s.allProductions ++ s.allNonterminals),
       s.layoutContribs);
   s.prefixesForTerminals = directBuildTree(terminalPrefixes);
+  s.componentGrammarMarkingTerminals = directBuildTree(componentGrammarMarkingTerminals);
   
   -- Move productions under their nonterminal, and sort the declarations
   production s2 :: Syntax =
     foldr(consSyntax, nilSyntax(), sortBy(syntaxDclLte, s.cstNormalize));
-  s2.cstEnv = directBuildTree(s.cstDcls);
+  s2.cstEnv = s.cstEnv;
   s2.containingGrammar = "host";
   s2.cstNTProds = error("TODO: make this environment not be decorated?"); -- TODO
   s2.classTerminals = s.classTerminals;
@@ -61,12 +64,13 @@ top::SyntaxRoot ::= parsername::String  startnt::String  s::Syntax  customStartL
   s2.parserAttributeAspects = s.parserAttributeAspects;
   s2.layoutTerms = s.layoutTerms;
   s2.prefixesForTerminals = s.prefixesForTerminals;
+  s2.componentGrammarMarkingTerminals = s.componentGrammarMarkingTerminals;
   
   -- This should be on s1, because the s2 transform assumes everything is well formed.
   -- In particular, it drops productions it can't find an NT for.
   top.cstErrors := s.cstErrors;
   
-  production startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, s2.cstEnv);
+  production startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, s.cstEnv);
 
   top.cstErrors <- if !null(startFound) then []
                    else ["Nonterminal " ++ startnt ++ " was referenced but " ++

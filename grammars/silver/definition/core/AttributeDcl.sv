@@ -8,7 +8,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = [inhDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [inhDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
@@ -19,7 +19,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
     then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
     else [];	
 
-  top.errors := te.errors ++ tl.errors ++ tl.errorsTyVars;
+  top.errors <- tl.errorsTyVars;
 }
 
 concrete production attributeDclSyn
@@ -30,7 +30,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = [synDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [synDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
@@ -41,6 +41,6 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
     then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
     else [];	
 
-  top.errors := te.errors ++ tl.errors ++ tl.errorsTyVars;
+  top.errors <- tl.errorsTyVars;
 }
 

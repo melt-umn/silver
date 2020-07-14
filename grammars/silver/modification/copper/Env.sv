@@ -92,6 +92,12 @@ top::Env ::= d::Defs  e::Decorated Env
   top.lexerClassTree = consEnvScope(buildTree(d.lexerClassList), e.lexerClassTree);
 }
 
+aspect production i_occursEnv
+top::Env ::= _  e::Decorated Env
+{
+  top.lexerClassTree = e.lexerClassTree;
+}
+
 function getLexerClassDcl
 [DclInfo] ::= search::String e::Decorated Env
 {
@@ -113,6 +119,12 @@ aspect production qNameCons
 top::QName ::= id::Name ':' qn::QName
 {
   top.lookupLexerClass = decorate customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name, top.location) with {};
+}
+
+aspect production qNameError
+top::QName ::= msg::[Message]
+{
+  top.lookupLexerClass = decorate errorLookup(msg) with {};
 }
 
 

@@ -11,7 +11,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   local isSyn :: Boolean = at.lookupAttribute.dcl.isSynthesized;
 
   -- We must be able to identify host-language synthesized attributes from the flow environment
-  top.flowDefs = 
+  top.flowDefs <-
     if !at.lookupAttribute.found || !nt.lookupType.found || !isHost || !isSyn then 
       []
     else

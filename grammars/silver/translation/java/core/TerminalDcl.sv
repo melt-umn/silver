@@ -4,14 +4,20 @@ imports silver:definition:concrete_syntax;
 imports silver:modification:copper;
 
 aspect production terminalDclDefault
-top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr
-tm::TerminalModifiers
+top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifiers
 {
-  local className :: String = "T" ++ id.name;
-  local lexerClassesStr :: String = implode(", ", map(quote, tm.lexerClasses));
+  top.genFiles := terminalTranslation(id.name, top.grammarName, tm.lexerClasses);
+}
 
-  top.genFiles := [pair(className ++ ".java", s"""
-package ${makeName(top.grammarName)};
+function terminalTranslation
+[Pair<String String>] ::= name::String grammarName::String lexerClasses::[String]
+{
+  local className :: String = "T" ++ name;
+  local fName :: String = grammarName ++ ":" ++ name;
+  local lexerClassesStr :: String = implode(", ", map(\ s::String -> s"\"${s}\"", lexerClasses));
+
+  return [pair(className ++ ".java", s"""
+package ${makeName(grammarName)};
 
 import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;
 import core.NLocation;
@@ -40,12 +46,4 @@ public class ${className} extends common.Terminal {
 }
 
 """)];
-
 }
-
-function quote
-String ::= s::String
-{
-  return "\"" ++ s ++ "\"";
-}
-

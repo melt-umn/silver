@@ -10,56 +10,14 @@ import silver:driver:util only isExportedBy, RootSpec;
 attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
 attribute flowEnv occurs on DefLHS;
 
+propagate flowDefs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
+
 {- A short note on how flowDefs are generated:
 
   - We ALWAYS produce the flowDef itself. This is necessary to catch missing or duplicate equations.
   - We omit the dependencies if it appears in a location not permitted to affect the flow type.
     This is to allow us to just compute flow types once, globally.
 -}
-
-aspect production productionBody
-top::ProductionBody ::= '{' stmts::ProductionStmts '}'
-{
-  top.flowDefs = stmts.flowDefs;
-}
-
-----
-
-aspect production productionStmtsNil
-top::ProductionStmts ::= 
-{
-  top.flowDefs = [];
-}
-
-aspect production productionStmtsSnoc
-top::ProductionStmts ::= h::ProductionStmts  t::ProductionStmt
-{
-  top.flowDefs = h.flowDefs ++ t.flowDefs;
-}
-
-----
-
-aspect production productionStmtAppend
-top::ProductionStmt ::= h::ProductionStmt  t::ProductionStmt
-{
-  top.flowDefs = h.flowDefs ++ t.flowDefs;
-}
-
-aspect production errorProductionStmt
-top::ProductionStmt ::= e::[Message]
-{
-  top.flowDefs = [];
-}
-
-{-
-aspect default production
-top::ProductionStmt ::=
-{
-  top.flowDefs = [];
-}
--}
-
-----
 
 {--
  - An occurs dcl info 's flow type can be affected here
@@ -78,7 +36,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, [ntDefGram], top.compiledGrammars);
   
-  top.flowDefs = e.flowDefs ++ [
+  top.flowDefs <- [
     fwdEq(top.frame.fullName, e.flowDeps, mayAffectFlowType),
     -- These are attributes that we know, here, occurs on this nonterminal.
     -- The point is, these are the implicit equations we KNOW get generated, so
@@ -89,55 +47,15 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
       filter(isAffectable(top.grammarName, ntDefGram, top.compiledGrammars, _),
         getAttrsOn(top.frame.lhsNtName, top.env))))];
 }
-aspect production forwardingWith
-top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
-{
-  top.flowDefs = inh.flowDefs;
-}
-
-aspect production forwardInhsOne
-top::ForwardInhs ::= lhs::ForwardInh
-{
-  top.flowDefs = lhs.flowDefs;
-}
-aspect production forwardInhsCons
-top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
-{
-  top.flowDefs = lhs.flowDefs ++ rhs.flowDefs;
-}
 aspect production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
   -- TODO: we need to figure out how to introduce any new lhsinh deps to the
   -- forward flow type automatically.
-  top.flowDefs = e.flowDefs ++ 
+  top.flowDefs <-
     case lhs of
     | forwardLhsExpr(q) -> [fwdInhEq(top.frame.fullName, q.attrDcl.fullName, e.flowDeps)]
     end;
-}
-
-aspect production localAttributeDcl
-top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
-{
-  top.flowDefs = [];
-  -- This is basically taken care of by the definition equation, rather than here.
-}
-aspect production returnDef
-top::ProductionStmt ::= 'return' e::Expr ';'
-{
-  top.flowDefs = e.flowDefs;
-}
-
-aspect production attachNoteStmt
-top::ProductionStmt ::= 'attachNote' e::Expr ';'
-{
-  top.flowDefs = e.flowDefs;
-}
-
-aspect production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
-{
-  top.flowDefs = e.flowDefs;
 }
 
 aspect production synthesizedAttributeDef
@@ -150,7 +68,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, srcGrams, top.compiledGrammars);
   
-  top.flowDefs = e.flowDefs ++
+  top.flowDefs <-
     if top.frame.hasPartialSignature then 
       [synEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
     else
@@ -159,7 +77,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  top.flowDefs = e.flowDefs ++
+  top.flowDefs <-
     case dl of
     | childDefLHS(q) -> [inhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
     | localDefLHS(q) -> [localInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
@@ -174,13 +92,8 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   -- TODO: So, I'm just going to assume for the moment that we're always allowed to define the eq for a local...
   -- technically, it's possible to break this if you declare it in one grammar, but define it in another, but
   -- I think we should forbid that syntactically, later on...
-  top.flowDefs = e.flowDefs ++
+  top.flowDefs <-
     [localEq(top.frame.fullName, val.lookupValue.fullName, val.lookupValue.typerep.typeName, e.flowDeps)];
-}
-aspect production errorValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
-{
-  top.flowDefs = e.flowDefs;
 }
 
 -- FROM COLLECTIONS TODO
@@ -193,7 +106,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {-
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, [ntDefGram, hackGramFromDcl(attr)], top.compiledGrammars);
 
-  top.flowDefs = e.flowDefs ++
+  top.flowDefs <-
     [extraEq(top.frame.fullName, lhsSynVertex(attr.attrDcl.fullName), e.flowDeps, mayAffectFlowType)];
 }
 
@@ -207,7 +120,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {-
     | forwardDefLHS(q) -> forwardVertex(attr.attrDcl.fullName)
     | _ -> localEqVertex("bogus:value:from:inhcontrib:flow")
     end;
-  top.flowDefs = e.flowDefs ++
+  top.flowDefs <-
     [extraEq(top.frame.fullName, vertex, e.flowDeps, true)];
 }
 aspect production synBaseColAttributeDef
@@ -220,7 +133,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   local mayAffectFlowType :: Boolean =
     isExportedBy(top.grammarName, srcGrams, top.compiledGrammars);
   
-  top.flowDefs = e.flowDefs ++
+  top.flowDefs <-
     if top.frame.hasPartialSignature then 
       [synEq(top.frame.fullName, attr.attrDcl.fullName, e.flowDeps, mayAffectFlowType)]
     else
@@ -229,7 +142,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 aspect production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
-  top.flowDefs = e.flowDefs ++
+  top.flowDefs <-
     case dl of
     | childDefLHS(q) -> [inhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
     | localDefLHS(q) -> [localInhEq(top.frame.fullName, q.lookupValue.fullName, attr.attrDcl.fullName, e.flowDeps)]
@@ -255,52 +168,13 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   -- If we do, we'll have to come back here to add 'location' info anyway,
   -- so if we do that, uhhh... fix this! Because you're here! Reading this!
 
-  top.flowDefs = e.flowDefs ++
+  top.flowDefs <-
     if mayAffectFlowType
     then [extraEq(top.frame.fullName, localEqVertex(val.lookupValue.fullName), e.flowDeps, true)]
     else [];
 }
------- FROM COPPER TODO
 
-aspect production pluckDef
-top::ProductionStmt ::= 'pluck' e::Expr ';'
-{
-  top.flowDefs = e.flowDefs;
-}
-
-aspect production printStmt
-top::ProductionStmt ::= 'print' e::Expr ';'
-{
-  top.flowDefs = e.flowDefs;
-}
-
-aspect production parserAttributeValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
-{
-  top.flowDefs = e.flowDefs;
-}
-
-aspect production termAttrValueValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
-{
-  top.flowDefs = e.flowDefs;
-}
-aspect production blockStmt
-top::ProductionStmt ::= '{' stmts::ProductionStmts '}'
-{
-  top.flowDefs = stmts.flowDefs;
-}
-aspect production ifElseStmt
-top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' el::ProductionStmt
-{
-  top.flowDefs = condition.flowDefs ++ th.flowDefs ++ el.flowDefs;
-}
-aspect production pushTokenStmt
-top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
-{
-  top.flowDefs = lexeme.flowDefs;
-}
-
+-- TODO: Copper ProductuionStmts
 
 -- We're in the unfortunate position of HAVING to compute values for 'flowDefs'
 -- even if there are errors in the larger grammar, as remote errors in binding

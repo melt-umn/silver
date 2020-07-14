@@ -26,12 +26,17 @@ IOVal<Maybe<RootSpec>> ::= grammarName::String  silverHostGen::[String]  grammar
   local pr :: IO = print("Found " ++ grammarName ++ "\n\t[" ++ file ++ "]\n", modTime.io);
   local text :: IOVal<String> = readFile(file, pr);
 
-  local ir :: Either<String GrammarProperties> = deserialize("Silver.svi", text.iovalue);
+  local ir :: Either<String InterfaceItems> = deserialize("Silver.svi", text.iovalue);
   
   -- IO Step 4: Perhaps complain it failed to parse
   local pr2 :: IO =
     case ir of
-    | right(_) -> text.io
+    | right(i) ->
+      if !null(i.interfaceErrors)
+      then
+        print("\n\tErrors unpacking interface file:\n  " ++ implode("\n  ", i.interfaceErrors) ++
+              "\n\tRecovering by parsing grammar....\n", text.io)
+      else text.io
     | left(msg) ->
         print("\n\tFailed to deserialize interface file!\n" ++ msg ++
               "\n\tRecovering by parsing grammar....\n", text.io)
@@ -46,7 +51,7 @@ IOVal<Maybe<RootSpec>> ::= grammarName::String  silverHostGen::[String]  grammar
     else if modTime.iovalue <= grammarTime then
       -- Interface file is too old, stop short, return nothing.
       ioval(modTime.io, nothing())
-    else if ir.isLeft then
+    else if ir.isLeft || !null(ir.fromRight.interfaceErrors) then
       -- Deserialization failed, return nothing.
       ioval(pr2, nothing())
     else ioval(pr2, just(rs));

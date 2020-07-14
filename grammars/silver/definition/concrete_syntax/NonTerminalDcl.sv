@@ -21,36 +21,16 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   syntax.subClasses = error("This shouldn't be needed...");
   
   production isThisTracked::Boolean = top.config.forceOrigins || ((!top.config.noOrigins) && quals.tracked);
-  local exportedLayoutTerms::[String] = map((.fullName), syntax.allIgnoreTerminals);
+  local exportedLayoutTerms::[String] = syntax.allIgnoreTerminals;
   local exportedProds::[String] = map((.fullName), syntax.allProductions);
   
-  top.syntaxAst =
+  top.syntaxAst :=
     [syntaxNonterminal(
       nonterminalType(fName, tl.types, isThisTracked), nilSyntax(),
       exportedProds, exportedLayoutTerms,
       foldr(consNonterminalMod, nilNonterminalMod(), nm.nonterminalModifiers))];
 }
 
-synthesized attribute nonterminalModifiers :: [SyntaxNonterminalModifier] occurs on NonterminalModifiers, NonterminalModifierList, NonterminalModifier;
-
-aspect production nonterminalModifiersNone
-top::NonterminalModifiers ::=
-{
-  top.nonterminalModifiers = [];
-}
-aspect production nonterminalModifierSome
-top::NonterminalModifiers ::= nm::NonterminalModifierList
-{
-  top.nonterminalModifiers = nm.nonterminalModifiers;
-}
-
-aspect production nonterminalModifierSingle
-top::NonterminalModifierList ::= nm::NonterminalModifier
-{
-  top.nonterminalModifiers = nm.nonterminalModifiers;
-}
-aspect production nonterminalModifiersCons
-top::NonterminalModifierList ::= h::NonterminalModifier ',' t::NonterminalModifierList
-{
-  top.nonterminalModifiers = h.nonterminalModifiers ++ t.nonterminalModifiers;
-}
+monoid attribute nonterminalModifiers :: [SyntaxNonterminalModifier] with [], ++;
+attribute nonterminalModifiers occurs on NonterminalModifiers, NonterminalModifierList, NonterminalModifier;
+propagate nonterminalModifiers on NonterminalModifiers, NonterminalModifierList;

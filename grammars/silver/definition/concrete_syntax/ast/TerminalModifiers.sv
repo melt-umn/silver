@@ -1,42 +1,33 @@
 grammar silver:definition:concrete_syntax:ast;
 
-synthesized attribute dominatesXML :: String;
-synthesized attribute submitsXML :: String;
-synthesized attribute lexerclassesXML :: String;
-synthesized attribute ignored :: Boolean;
-synthesized attribute marking :: Boolean;
-synthesized attribute acode :: String;
-synthesized attribute opPrecedence :: Maybe<Integer>;
-synthesized attribute opAssociation :: Maybe<String>; -- TODO type?
-synthesized attribute prefixSeperator :: Maybe<String>;
-synthesized attribute prefixSeperatorToApply :: Maybe<String>;
-synthesized attribute prettyName :: Maybe<String>;
+monoid attribute dominatesXML :: String with "", ++;
+monoid attribute submitsXML :: String with "", ++;
+monoid attribute lexerclassesXML :: String with "", ++;
+monoid attribute ignored :: Boolean with false, ||;
+monoid attribute marking :: Boolean with false, ||;
+monoid attribute acode :: String with "", ++;
+monoid attribute opPrecedence :: Maybe<Integer> with nothing(), orElse;
+monoid attribute opAssociation :: Maybe<String> with nothing(), orElse; -- TODO type?
+monoid attribute prefixSeperator :: Maybe<String> with nothing(), orElse;
+monoid attribute prefixSeperatorToApply :: Maybe<String> with nothing(), orElse;
+monoid attribute prettyName :: Maybe<String> with nothing(), orElse;
 autocopy attribute terminalName :: String;
 
 {--
  - Modifiers for terminals.
  -}
 nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, classTerminalContribs, superClasses, subClasses, dominatesXML,
-  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
+  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply, componentGrammarMarkingTerminals,
   marking, terminalName, prettyName;
+
+propagate cstErrors, classTerminalContribs, dominatesXML,
+    submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
+    marking, prettyName
+  on SyntaxTerminalModifiers;
 
 abstract production consTerminalMod
 top::SyntaxTerminalModifiers ::= h::SyntaxTerminalModifier  t::SyntaxTerminalModifiers
-{
-  top.cstErrors := h.cstErrors ++ t.cstErrors;
-  top.classTerminalContribs = h.classTerminalContribs ++ t.classTerminalContribs;
-  top.dominatesXML = h.dominatesXML ++ t.dominatesXML;
-  top.submitsXML = h.submitsXML ++ t.submitsXML;
-  top.lexerclassesXML = h.lexerclassesXML ++ t.lexerclassesXML;
-  top.ignored = h.ignored || t.ignored;
-  top.marking = h.marking || t.marking;
-  top.acode = h.acode ++ t.acode;
-  top.opPrecedence = orElse(h.opPrecedence, t.opPrecedence);
-  top.opAssociation = orElse(h.opAssociation, t.opAssociation);
-  top.prefixSeperator = orElse(h.prefixSeperator, t.prefixSeperator);
-  top.prefixSeperatorToApply = orElse(h.prefixSeperatorToApply, t.prefixSeperatorToApply);
-  top.prettyName = orElse(h.prettyName, t.prettyName);
-  
+{  
   top.cstErrors <-
     if h.prefixSeperator.isJust && t.prefixSeperator.isJust
     then ["Multiple prefix separators for terminal " ++ top.terminalName]
@@ -45,21 +36,7 @@ top::SyntaxTerminalModifiers ::= h::SyntaxTerminalModifier  t::SyntaxTerminalMod
 
 abstract production nilTerminalMod
 top::SyntaxTerminalModifiers ::= 
-{
-  top.cstErrors := [];
-  top.classTerminalContribs = [];
-  top.dominatesXML = "";
-  top.submitsXML = "";
-  top.lexerclassesXML = "";
-  top.ignored = false;
-  top.marking = false;
-  top.acode = "";
-  top.opPrecedence = nothing();
-  top.opAssociation = nothing();
-  top.prefixSeperator = nothing();
-  top.prefixSeperatorToApply = nothing();
-  top.prettyName = nothing();
-}
+{}
 
 
 
@@ -67,26 +44,17 @@ top::SyntaxTerminalModifiers ::=
  - Modifiers for terminals.
  -}
 closed nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, classTerminalContribs, superClasses, subClasses, dominatesXML,
-  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
+  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply, componentGrammarMarkingTerminals,
   marking, terminalName, prettyName;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
 top::SyntaxTerminalModifier ::=
 {
-  top.cstErrors := [];
-  top.classTerminalContribs = [];
-  top.dominatesXML = "";
-  top.submitsXML = "";
-  top.lexerclassesXML = "";
-  top.ignored = false;
-  top.marking = false;
-  top.acode = "";
-  top.opPrecedence = nothing();
-  top.opAssociation = nothing();
-  top.prefixSeperator = nothing();
-  top.prefixSeperatorToApply = nothing();
-  top.prettyName = nothing();
+  -- Empty values as defaults
+  propagate cstErrors, classTerminalContribs, dominatesXML,
+    submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
+    marking, prettyName;
 }
 
 {--
@@ -96,7 +64,7 @@ top::SyntaxTerminalModifier ::=
 abstract production termIgnore
 top::SyntaxTerminalModifier ::=
 {
-  top.ignored = true;
+  top.ignored := true;
 }
 {--
  - If present, this is a Marking terminal. In the default translation,
@@ -105,7 +73,7 @@ top::SyntaxTerminalModifier ::=
 abstract production termMarking
 top::SyntaxTerminalModifier ::=
 {
-  top.marking = true;
+  top.marking := true;
 }
 {--
  - The terminal's precedence. (Resolves shift/reduce conflicts)
@@ -113,7 +81,7 @@ top::SyntaxTerminalModifier ::=
 abstract production termPrecedence
 top::SyntaxTerminalModifier ::= lvl::Integer
 {
-  top.opPrecedence = just(lvl);
+  top.opPrecedence := just(lvl);
 }
 {--
  - The terminal's association. Either left, right, or nonassoc. TODO: a type?
@@ -121,7 +89,7 @@ top::SyntaxTerminalModifier ::= lvl::Integer
 abstract production termAssociation
 top::SyntaxTerminalModifier ::= direction::String
 {
-  top.opAssociation = just(direction);
+  top.opAssociation := just(direction);
 }
 {--
  - The terminal's "pretty name". Used for error messages.
@@ -129,7 +97,7 @@ top::SyntaxTerminalModifier ::= direction::String
 abstract production termPrettyName
 top::SyntaxTerminalModifier ::= prettyName::String
 {
-  top.prettyName = just(prettyName);
+  top.prettyName := just(prettyName);
 }
 {--
  - The terminal's lexer classes.
@@ -147,14 +115,14 @@ top::SyntaxTerminalModifier ::= cls::[String]
                      else ["Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from lexer class on terminal " ++ top.terminalName ++ ")"],
                    zipWith(pair, allCls, allClsRefsL)); 
-  top.classTerminalContribs = map(pair(_, top.terminalName), allCls);
+  top.classTerminalContribs := map(pair(_, top.terminalName), allCls);
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
-  top.dominatesXML = implode("", map((.classDomContribs), allClsRefs));
-  top.submitsXML = implode("", map((.classSubContribs), allClsRefs));
-  top.lexerclassesXML = implode("", map(xmlCopperRef, allClsRefs));
+  top.dominatesXML := implode("", map((.classDomContribs), allClsRefs));
+  top.submitsXML := implode("", map((.classSubContribs), allClsRefs));
+  top.lexerclassesXML := implode("", map(xmlCopperRef, allClsRefs));
   
   local termSeps :: [Maybe<String>] = map((.prefixSeperator), allClsRefs);
-  top.prefixSeperator = foldr(orElse, nothing(), termSeps);
+  top.prefixSeperator := foldr(orElse, nothing(), termSeps);
   top.cstErrors <-
     if length(catMaybes(termSeps)) > 1
     then ["Multiple prefix separators for terminal " ++ top.terminalName]
@@ -174,7 +142,7 @@ top::SyntaxTerminalModifier ::= sub::[String]
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from submit clause on terminal " ++ top.terminalName ++ ")"],
                    zipWith(pair, sub, subRefs)); 
-  top.submitsXML = implode("", map(xmlCopperRef, map(head, subRefs)));
+  top.submitsXML := implode("", map(xmlCopperRef, map(head, subRefs)));
 }
 {--
  - The dominates list for the terminal. Either lexer classes or terminals.
@@ -190,7 +158,7 @@ top::SyntaxTerminalModifier ::= dom::[String]
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from dominates clause on terminal " ++ top.terminalName ++ ")"],
                    zipWith(pair, dom, domRefs)); 
-  top.dominatesXML = implode("", map(xmlCopperRef, map(head, domRefs)));
+  top.dominatesXML := implode("", map(xmlCopperRef, map(head, domRefs)));
 }
 {--
  - The action to take whenever this terminal is SHIFTed.
@@ -198,7 +166,7 @@ top::SyntaxTerminalModifier ::= dom::[String]
 abstract production termAction
 top::SyntaxTerminalModifier ::= acode::String
 {
-  top.acode = acode;
+  top.acode := acode;
 }
 {--
  - The prefix separator to use for the terminal.
@@ -207,17 +175,29 @@ top::SyntaxTerminalModifier ::= acode::String
 abstract production termPrefixSeperator
 top::SyntaxTerminalModifier ::= sep::String
 {
-  top.prefixSeperator = just(sep);
+  top.prefixSeperator := just(sep);
 }
 {--
- - The terminals prefixed by this terminal, for which to use their separator.
+ - The terminals/grammars prefixed by this terminal, for which to use their separator.
  -}
 abstract production termUsePrefixSeperatorFor
-top::SyntaxTerminalModifier ::= terms::[String]
+top::SyntaxTerminalModifier ::= terms::[String] grams::[String]
 {
-  production termRefs :: [Decorated SyntaxDcl] = map(head, lookupStrings(terms, top.cstEnv));
-  top.cstErrors := [];
-  top.prefixSeperatorToApply = head(termRefs).prefixSeperator;
+  production allTerms :: [String] = terms ++ concat(concat(lookupStrings(grams, top.componentGrammarMarkingTerminals)));
+
+  production termRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allTerms, top.cstEnv);
+  top.prefixSeperatorToApply :=
+    case termRefs of
+    | [] -> nothing()
+    | [ref] :: _ -> ref.prefixSeperator
+    | _ -> error("Lookup failure not caught during error checking")
+    end;
+  
+  top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
+                     if !null(a.snd) then []
+                     else ["Terminal " ++ a.fst ++ " was referenced but " ++
+                           "this grammar was not included in this parser. (Referenced from use prefix seperator for clause for terminal)"],
+                   zipWith(pair, terms, termRefs));
   
   top.cstErrors <-
     flatMap(
@@ -225,7 +205,14 @@ top::SyntaxTerminalModifier ::= terms::[String]
         if !s.prefixSeperator.isJust
         then ["Terminal " ++ s.fullName ++ " does not define a prefix separator, and must use an explicit terminal to define a prefix."]
         else [],
-      termRefs);
+      map(head, termRefs));
+  
+  {- TODO: This really should be some sort of warning, not an error, I think.
+  top.cstErrors <-
+    if null(allTerms)
+    then [top.terminalName ++ " does not prefix any terminals"]
+    else [];
+  -}
   
   local distinctSepTermRefs :: [Decorated SyntaxDcl] =
     nubBy(
@@ -234,7 +221,7 @@ top::SyntaxTerminalModifier ::= terms::[String]
         | just(ps1), just(ps2) -> ps1 == ps2
         | _, _ -> false
         end,
-      termRefs);
+      map(head, termRefs));
   top.cstErrors <-
     if length(distinctSepTermRefs) > 1
     then ["Terminals " ++ implode(", ", map((.fullName), distinctSepTermRefs)) ++

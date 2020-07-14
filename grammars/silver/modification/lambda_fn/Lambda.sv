@@ -27,52 +27,42 @@ top::Expr ::= params::ProductionRHS e::Expr
 {
   top.unparse = "\\ " ++ params.unparse ++ " -> " ++ e.unparse;
   
-  top.errors := params.errors ++ e.errors;
+  propagate errors;
   
   top.typerep = functionType(e.typerep, map((.typerep), params.inputElements), []);
   
   e.downSubst = top.downSubst;
   top.upSubst = e.upSubst;
   
-  top.flowDeps = e.flowDeps;
-  top.flowDefs = e.flowDefs;
+  propagate flowDeps, flowDefs;
   
   e.env = newScopeEnv(params.lambdaDefs, top.env);
   e.frame = inLambdaContext(top.frame);
 }
 
-synthesized attribute lambdaDefs::[Def] occurs on ProductionRHS, ProductionRHSElem;
+monoid attribute lambdaDefs::[Def] with [], ++;
+attribute lambdaDefs occurs on ProductionRHS, ProductionRHSElem;
 
-aspect production productionRHSCons
-top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
-{
-  top.lambdaDefs = h.lambdaDefs ++ t.lambdaDefs;
-}
-aspect production productionRHSNil
-top::ProductionRHS ::= 
-{
-  top.lambdaDefs = [];
-}
+propagate lambdaDefs on ProductionRHS;
 
 aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
   production fName :: String = toString(genInt()) ++ ":" ++ id.name;
 --  production transName :: String = "lambda_param" ++ id.name ++ toString(genInt());
-  top.lambdaDefs = [lambdaParamDef(top.grammarName, t.location, fName, t.typerep)];
+  top.lambdaDefs := [lambdaParamDef(top.grammarName, t.location, fName, t.typerep)];
 }
 
 abstract production lambdaParamReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
-  top.errors := []; -- TODO?
+  propagate errors;
   
   top.typerep = q.lookupValue.typerep;
 
   top.upSubst = top.downSubst;
   
   -- TODO?
-  top.flowDeps = [];
-  top.flowDefs = [];
+  propagate flowDeps, flowDefs;
 }

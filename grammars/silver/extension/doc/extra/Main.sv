@@ -38,22 +38,7 @@ import silver:driver;
 import silver:driver:util;
 
 import silver:extension;
-import silver:extension:auto_ast;
-import silver:extension:convenience;
-import silver:extension:deprecation;
-import silver:extension:doc;
-import silver:extension:doc:core;
-import silver:extension:doc:driver;
-import silver:extension:easyterminal;
---import silver:extension:extendedorigins;
-import silver:extension:functorattrib;
-import silver:extension:list;
-import silver:extension:list:java;
-import silver:extension:patternmatching;
-import silver:extension:templating;
-import silver:extension:templating:syntax;
-import silver:extension:testing;
-import silver:extension:treegen;
+-- Individual extensions built by silver:composed:Default
 
 import silver:host;
 
@@ -61,26 +46,7 @@ import silver:langutil;
 import silver:langutil:pp;
 
 import silver:modification;
-import silver:modification:autocopyattr;
-import silver:modification:autocopyattr:convenience;
-import silver:modification:autocopyattr:java;
-import silver:modification:collection;
-import silver:modification:collection:java;
-import silver:modification:copper;
-import silver:modification:copper_mda;
-import silver:modification:defaultattr;
-import silver:modification:ffi;
-import silver:modification:ffi:java;
-import silver:modification:ffi:util;
-import silver:modification:impide;
-import silver:modification:impide:cstast;
-import silver:modification:impide:spec;
-import silver:modification:lambda_fn;
-import silver:modification:lambda_fn:java;
-import silver:modification:let_fix;
-import silver:modification:let_fix:java;
-import silver:modification:primitivepattern;
-import silver:modification:typedecl;
+-- Individual modifications built by silver:composed:Default
 
 import silver:support:monto;
 

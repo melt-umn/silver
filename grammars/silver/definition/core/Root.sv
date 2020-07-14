@@ -10,11 +10,14 @@ nonterminal Root with
   grammarName, env, globalImports, grammarDependencies,
   -- File-level inherited attributes
   -- Synthesized attributes
-  declaredName, unparse, location, errors, defs, moduleNames, importedDefs,
+  declaredName, unparse, location, errors, defs, occursDefs, moduleNames, importedDefs, importedOccursDefs,
   exportedGrammars, optionalGrammars, condBuild, jarName;
 
 nonterminal GrammarDcl with 
   declaredName, grammarName, location, unparse, errors;
+
+propagate errors on Root, GrammarDcl;
+propagate moduleNames on Root;
 
 concrete production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
@@ -27,24 +30,22 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.unparse = gdcl.unparse ++ "\n\n" ++ ms.unparse ++ "\n\n" ++ ims.unparse ++ "\n\n" ++ ags.unparse;
   top.declaredName = gdcl.declaredName;
 
-  top.moduleNames = ims.moduleNames ++ ms.moduleNames ++ ags.moduleNames;
+  top.defs := ags.defs;
+  top.occursDefs := ags.occursDefs;
 
-  top.defs = ags.defs;
-
-  top.importedDefs = ms.defs;
-  top.exportedGrammars = ms.exportedGrammars;
-  top.optionalGrammars = ms.optionalGrammars;
-  top.condBuild = ms.condBuild;
-  top.jarName = ags.jarName;
-
-  top.errors := gdcl.errors ++ ms.errors ++ ims.errors ++ ags.errors;
+  top.importedDefs := ms.defs;
+  top.importedOccursDefs := ms.occursDefs;
+  top.exportedGrammars := ms.exportedGrammars;
+  top.optionalGrammars := ms.optionalGrammars;
+  top.condBuild := ms.condBuild;
+  top.jarName := ags.jarName;
   
   -- We have an mismatch in how the environment gets put together:
   --  Outermost, we have grammar-wide imports in one sope.  That's top.globalImports here.
   --  THEN, we have this particular file's list of local imports. That's ims.defs here.
   --  THEN, we have the grammar-wide definitions, from the whole grammr. That's top.env here.
   -- So we're kind of injecting local imports in between two grammar-wide things there.
-  ags.env = appendEnv(top.env, newScopeEnv(ims.defs, top.globalImports));
+  ags.env = appendEnv(top.env, newScopeEnv(ims.defs, occursEnv(ims.occursDefs, top.globalImports)));
 }
 
 concrete production noGrammarDcl
@@ -52,7 +53,6 @@ top::GrammarDcl ::=
 {
   top.unparse = "";
   top.declaredName = top.grammarName;
-  top.errors := [];
 }
 
 concrete production grammarDcl_c
@@ -61,7 +61,7 @@ top::GrammarDcl ::= 'grammar' qn::QName ';'
   top.unparse = "grammar " ++ qn.unparse ++ ";";
 
   top.declaredName = qn.name;
-  top.errors := 
+  top.errors <-
     if qn.name == top.grammarName then []
     else [err(top.location, "Grammar declaration is incorrect: " ++ qn.name)];
 }

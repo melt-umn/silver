@@ -19,7 +19,7 @@ top::NameOrBOperator ::= q::QName
 
   top.operation = case q.lookupValue.dcl of
                   | funDcl(_,_,_) -> functionOperation(q.lookupValue.fullName)
-                  | prodDcl(_,_,_) -> productionOperation(q.lookupValue.fullName)
+                  | prodDcl(_,_,_,_) -> productionOperation(q.lookupValue.fullName)
                   | _ -> error("INTERNAL ERROR: operation attribute demanded for non-function or production.")
                   end;
 
@@ -39,7 +39,7 @@ top::NameOrBOperator ::= q::QName
   top.errors <- if !q.lookupValue.found then [] else
     case q.lookupValue.dcl of
     | funDcl(_,_,_) -> operationErrors
-    | prodDcl(_,_,_) -> operationErrors
+    | prodDcl(_,_,_,_) -> operationErrors
     | _ -> [err(top.location, q.name ++ " is not a valid operator for collections.")]
     end;
 }
@@ -118,22 +118,22 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = [synColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
-
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
   te.env = tl.envBindingTyVars;
-
-  top.errors := te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
+  
+  q.operatorForType = te.typerep;
+  
+  top.defs := [synColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
+  
+  propagate errors, flowDefs;
+  
+  top.errors <- tl.errorsTyVars;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
         then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
-        else [];	
-
-  q.operatorForType = te.typerep;
-
-  forwards to attributeDclSyn($1, $2, a, tl, $5, te, $9, location=top.location);
+        else [];
 }
 
 concrete production collectionAttributeDclInh
@@ -144,22 +144,22 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = [inhColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
-
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
   te.env = tl.envBindingTyVars;
+  
+  q.operatorForType = te.typerep;
 
-  top.errors := te.errors ++ q.errors ++ tl.errors ++ tl.errorsTyVars;
+  top.defs := [inhColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
+
+  propagate errors, flowDefs;
+  
+  top.errors <- tl.errorsTyVars;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
         then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
-        else [];	
-
-  q.operatorForType = te.typerep;
-
-  forwards to attributeDclInh($1, $2, a, tl, $5, te, $9, location=top.location);
+        else [];
 }
 
 
@@ -168,14 +168,14 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
 {
   top.unparse = "production attribute " ++ a.name ++ " :: " ++ te.unparse ++ " with " ++ q.unparse ++ " ;" ;
 
-  top.productionAttributes = [localColDef(top.grammarName, a.location, fName, te.typerep, q.operation)];
+  top.productionAttributes := [localColDef(top.grammarName, a.location, fName, te.typerep, q.operation)];
 
   production attribute fName :: String;
   fName = top.frame.fullName ++ ":local:" ++ a.name;
 
-  top.defs = [];
+  top.defs := [];
 
-  top.errors := te.errors ++ q.errors;
+  propagate errors;
 
   top.errors <-
         if length(getValueDclAll(fName, top.env)) > 1
@@ -347,8 +347,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
-  top.productionAttributes = [];
-  top.defs = [];
+  top.productionAttributes := [];
+  top.defs := [];
   
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
@@ -365,8 +365,8 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
-  top.productionAttributes = [];
-  top.defs = [];
+  top.productionAttributes := [];
+  top.defs := [];
   
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
@@ -384,8 +384,8 @@ top::ProductionStmt ::= val::QName '<-' e::Expr ';'
   
   top.errors <- val.lookupValue.errors;
 
-  top.productionAttributes = [];
-  top.defs = [];
+  top.productionAttributes := [];
+  top.defs := [];
   
   forwards to if null(val.lookupValue.dcls)
               then errorValueDef(val, e, location=top.location)
@@ -399,8 +399,8 @@ top::ProductionStmt ::= val::QName ':=' e::Expr ';'
 
   top.errors <- val.lookupValue.errors;
 
-  top.productionAttributes = [];
-  top.defs = [];
+  top.productionAttributes := [];
+  top.defs := [];
   
   forwards to if null(val.lookupValue.dcls)
               then errorValueDef(val, e, location=top.location)

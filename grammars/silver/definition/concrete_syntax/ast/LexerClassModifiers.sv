@@ -12,16 +12,12 @@ autocopy attribute className :: String;
  -}
 nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator, containingGrammar;
 
+propagate cstErrors, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator
+  on SyntaxLexerClassModifiers;
+
 abstract production consLexerClassMod
 top::SyntaxLexerClassModifiers ::= h::SyntaxLexerClassModifier  t::SyntaxLexerClassModifiers
 {
-  top.cstErrors := h.cstErrors ++ t.cstErrors;
-  top.superClassContribs = h.superClassContribs ++ t.superClassContribs;
-  top.disambiguationClasses = h.disambiguationClasses ++ t.disambiguationClasses;
-  top.dominatesXML = h.dominatesXML ++ t.dominatesXML;
-  top.submitsXML = h.submitsXML ++ t.submitsXML;
-  top.prefixSeperator = orElse(h.prefixSeperator, t.prefixSeperator);
-  
   top.cstErrors <-
     if h.prefixSeperator.isJust && t.prefixSeperator.isJust
     then ["Multiple prefix separators for class " ++ top.className]
@@ -30,14 +26,7 @@ top::SyntaxLexerClassModifiers ::= h::SyntaxLexerClassModifier  t::SyntaxLexerCl
 
 abstract production nilLexerClassMod
 top::SyntaxLexerClassModifiers ::= 
-{
-  top.cstErrors := [];
-  top.superClassContribs = [];
-  top.disambiguationClasses = [];
-  top.dominatesXML = "";
-  top.submitsXML = "";
-  top.prefixSeperator = nothing();
-}
+{}
 
 
 
@@ -50,12 +39,8 @@ closed nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, c
 aspect default production
 top::SyntaxLexerClassModifier ::=
 {
-  --top.cstErrors := [];
-  top.superClassContribs = [];
-  top.disambiguationClasses = [];
-  top.dominatesXML = "";
-  top.submitsXML = "";
-  top.prefixSeperator = nothing();
+  -- Empty values as defaults
+  propagate cstErrors, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator;
 }
 
 {--
@@ -72,7 +57,7 @@ top::SyntaxLexerClassModifier ::= super::[String]
                      else ["Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from extends clause for lexer class)"],
                    zipWith(pair, super, superRefsL));
-  top.superClassContribs = map(pair(top.className, _), super);
+  top.superClassContribs := map(pair(top.className, _), super);
 }
 
 {--
@@ -89,7 +74,7 @@ top::SyntaxLexerClassModifier ::= sub::[String]
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from submit clause for lexer class)"], --TODO: come up with a way to reference a given lexer class (line numbers would be great)
                    zipWith(pair, sub, subRefs)); 
-  top.submitsXML = implode("", map(xmlCopperRef, map(head, subRefs)));
+  top.submitsXML := implode("", map(xmlCopperRef, map(head, subRefs)));
 }
 {--
  - The dominates list for the lexer class. Either lexer classes or terminals.
@@ -105,7 +90,7 @@ top::SyntaxLexerClassModifier ::= dom::[String]
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from dominates clause for lexer class)"],
                    zipWith(pair, dom, domRefs));
-  top.dominatesXML = implode("", map(xmlCopperRef, map(head, domRefs)));
+  top.dominatesXML := implode("", map(xmlCopperRef, map(head, domRefs)));
 }
 
 {--
@@ -130,8 +115,9 @@ ${acode}
   syntaxDcl.cstEnv = top.cstEnv;
   syntaxDcl.containingGrammar = top.containingGrammar;
 
-  top.cstErrors := []; -- TODO: Check for duplicate disambiguation for a lexer class
-  top.disambiguationClasses = [syntaxDcl];
+  -- TODO: Check for duplicate disambiguation for a lexer class
+  
+  top.disambiguationClasses := [syntaxDcl];
 }
 
 {--
@@ -141,5 +127,5 @@ abstract production lexerClassPrefixSeperator
 top::SyntaxLexerClassModifier ::= sep::String
 {
   top.cstErrors := [];
-  top.prefixSeperator = just(sep);
+  top.prefixSeperator := just(sep);
 }

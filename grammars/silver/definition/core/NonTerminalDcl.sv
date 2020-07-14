@@ -17,7 +17,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   nm.nonterminalName = fName;
   
   -- tl.freeVariables is our order list of the bound types for this nonterminal.
-  top.defs = [ntDef(top.grammarName,
+  top.defs := [ntDef(top.grammarName,
                     id.location,
                     fName,
                     tl.freeVariables,
@@ -29,7 +29,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   
 
   -- Here we ensure that the type list contains only type *variables*
-  top.errors := tl.errors ++ tl.errorsTyVars ++ quals.errors ++ nm.errors;
+  top.errors <- tl.errorsTyVars;
   
   -- Here we bind those type variables.
   tl.initialEnv = top.env;
@@ -86,33 +86,27 @@ nonterminal NonterminalModifiers with config, location, unparse, errors, env, no
 nonterminal NonterminalModifierList with config, location, unparse, errors, env, nonterminalName; -- 1 or more
 closed nonterminal NonterminalModifier with config, location, unparse, errors, env, nonterminalName; -- 1
 
+propagate errors on NonterminalModifiers, NonterminalModifierList, NonterminalModifier;
+
 concrete production nonterminalModifiersNone
 top::NonterminalModifiers ::=
 {
   top.unparse = "";
-
-  top.errors := [];
 }
 concrete production nonterminalModifierSome
 top::NonterminalModifiers ::= nm::NonterminalModifierList
 {
   top.unparse = nm.unparse;
-  
-  top.errors := nm.errors;
 }
 
 concrete production nonterminalModifierSingle
 top::NonterminalModifierList ::= nm::NonterminalModifier
 {
   top.unparse = nm.unparse;
-  
-  top.errors := nm.errors;
 }
 concrete production nonterminalModifiersCons
 top::NonterminalModifierList ::= h::NonterminalModifier ',' t::NonterminalModifierList
 {
   top.unparse = h.unparse ++ ", " ++ t.unparse;
-
-  top.errors := h.errors ++ t.errors;
 }
 

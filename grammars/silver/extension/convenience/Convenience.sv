@@ -5,6 +5,7 @@ imports silver:definition:core;
 imports silver:definition:concrete_syntax;
 imports silver:definition:type;
 imports silver:definition:type:syntax;
+import silver:modification:collection;
 
 -- Multiple attribute occurs on statements
 concrete production multipleAttributionDclsManyMany
@@ -74,6 +75,26 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   top.unparse = "synthesized attribute " ++ a.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " occurs on " ++ qs.unparse ++ ";" ;
   forwards to appendAGDcl(
     attributeDclSyn($1, $2, a, tl, $5, te, $10, location=top.location),
+    makeOccursDclsHelp(top.location, qNameWithTL(qNameId(a, location=a.location), tl), qs.qnames),
+    location=top.location);
+}
+
+concrete production collectionAttributeDclInhMultiple
+top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' q::NameOrBOperator 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "inherited attribute " ++ a.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " with " ++ q.unparse ++ " ;" ;
+  forwards to appendAGDcl(
+    collectionAttributeDclInh($1, $2, a, tl, $5, te, $7, q, $12, location=top.location),
+    makeOccursDclsHelp(top.location, qNameWithTL(qNameId(a, location=a.location), tl), qs.qnames),
+    location=top.location);
+}
+
+concrete production collectionAttributeDclSynMultiple
+top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' q::NameOrBOperator 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "synthesized attribute " ++ a.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " with " ++ q.unparse ++ " ;" ;
+  forwards to appendAGDcl(
+    collectionAttributeDclSyn($1, $2, a, tl, $5, te, $7, q, $12, location=top.location),
     makeOccursDclsHelp(top.location, qNameWithTL(qNameId(a, location=a.location), tl), qs.qnames),
     location=top.location);
 }
