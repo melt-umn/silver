@@ -70,7 +70,7 @@ top::Type ::=
 aspect production nonterminalType
 top::Type ::= fn::String params::[Type] tracked::Boolean
 {
-  top.typepp = (if tracked then "tracked " else "") ++ fn ++ if !null(params) then "<" ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ">" else "";
+  top.typepp = fn ++ if !null(params) then "<" ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ">" else "";
 }
 
 aspect production terminalType
