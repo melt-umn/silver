@@ -37,6 +37,12 @@ top::Message ::= l::Location m::String
   top.severity = 2;
 }
 
+function errFromOrigin
+Message ::= a::a m::String
+{
+  return err(getParsedOriginLocationOrFallback(a), m);
+}
+
 {--
  - A warning that is not required to halt compilation before translation
  - proceeds on the compilation unit the warning occurs in.
@@ -50,6 +56,12 @@ top::Message ::= l::Location m::String
   top.severity = 1;
 }
 
+function wrnFromOrigin
+Message ::= a::a m::String
+{
+  return wrn(getParsedOriginLocationOrFallback(a), m);
+}
+
 {--
  - An informational message that does not halt compilation, but is usually
  - attached to an error or warning.
@@ -61,6 +73,12 @@ top::Message ::= l::Location m::String
   top.message = m;
   top.output = s"${l.unparse}: info: ${m}";
   top.severity = 0;
+}
+
+function infoFromOrigin
+Message ::= a::a m::String
+{
+  return info(getParsedOriginLocationOrFallback(a), m);
 }
 
 {--

@@ -255,7 +255,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
 }
 
 concrete production noteAttachment
-top::Expr ::= 'attachNote' '(' note::Expr ',' e::Expr ')'
+top::Expr ::= 'attachNote' note::Expr 'on' '{' e::Expr '}'
 {
   top.unparse = "attachNote(" ++ note.unparse ++ ", " ++ e.unparse ++ ")";
 

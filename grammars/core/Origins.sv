@@ -24,14 +24,14 @@ synthesized attribute isBogus :: Boolean occurs on OriginInfoType;
 abstract production setAtConstructionOIT
 top::OriginInfoType ::=
 {
-	top.isBogus = false;
+  top.isBogus = false;
 }
 
 -- Result of calling new(x) on a tracked nonterminal (including children of x that were also new-ed)
 abstract production setAtNewOIT
 top::OriginInfoType ::=
 {
-	top.isBogus = false;
+  top.isBogus = false;
 }
 
 -- Result of forwarding to a nonterminal. This is a little weird because there's an extra indirection.
@@ -41,28 +41,28 @@ top::OriginInfoType ::=
 abstract production setAtForwardingOIT
 top::OriginInfoType ::=
 {
-	top.isBogus = false;
+  top.isBogus = false;
 }
 
 -- Result of doing foo.bar (this is "normal")
 abstract production setAtAccessOIT
 top::OriginInfoType ::=
 {
-	top.isBogus = false;
+  top.isBogus = false;
 }
 
 -- The origin was set when constructing a concrete production in the parser (will be a parsedOriginInfo)
 abstract production setFromParserOIT
 top::OriginInfoType ::=
 {
-	top.isBogus = false;
+  top.isBogus = false;
 }
 
 -- The origin was set in something constructed in a parser action block
 abstract production setFromParserActionOIT
 top::OriginInfoType ::=
 {
-	top.isBogus = true;
+  top.isBogus = true;
 }
 
 -- This is a catchall for stuff constructed in java (really only used in the SilverComparator and in the XML lib)
@@ -70,21 +70,21 @@ top::OriginInfoType ::=
 abstract production setFromFFIOIT
 top::OriginInfoType ::=
 {
-	top.isBogus = true;
+  top.isBogus = true;
 }
 
 -- This originates from something via a call to `reflect`
 abstract production setFromReflectionOIT
 top::OriginInfoType ::=
 {
-	top.isBogus = true;
+  top.isBogus = true;
 }
 
 -- This originates from it's reflective representation via a call to `reify`
 abstract production setFromReificationOIT
 top::OriginInfoType ::=
 {
-	top.isBogus = true;
+  top.isBogus = true;
 }
 
 -- This was constructed in `main` or in a function called from `main` without
@@ -92,14 +92,14 @@ top::OriginInfoType ::=
 abstract production setFromEntryOIT
 top::OriginInfoType ::=
 {
-	top.isBogus = false;
+  top.isBogus = false;
 }
 
 -- This is a global
 abstract production setInGlobalOIT
 top::OriginInfoType ::=
 {
-	top.isBogus = false;
+  top.isBogus = false;
 }
 
 
@@ -109,18 +109,18 @@ top::OriginInfoType ::=
 abstract production otherOriginInfo
 top::OriginInfo ::= typ::OriginInfoType source::String notes::[OriginNote]
 {
-	top.isNewlyConstructed = true;
-	top.originNotes = notes;
-	top.originType = typ;
+  top.isNewlyConstructed = true;
+  top.originNotes = notes;
+  top.originType = typ;
 }
 
 -- The production originated from a sequence of tokens at `source` in Copper
 abstract production parsedOriginInfo
 top::OriginInfo ::= typ::OriginInfoType source::Location notes::[OriginNote]
 {
-	top.isNewlyConstructed = true;
-	top.originNotes = notes;
-	top.originType = typ;
+  top.isNewlyConstructed = true;
+  top.originNotes = notes;
+  top.originType = typ;
 }
 
 -- The following two are the same modulo if a redex is set or not
@@ -134,26 +134,26 @@ top::OriginInfo ::= typ::OriginInfoType source::Location notes::[OriginNote]
 --  is not the result of a basically no-op transformation.
 abstract production originOriginInfo
 top::OriginInfo ::= typ::OriginInfoType 
-				 origin :: a
-				 originNotes :: [OriginNote]
-				 newlyConstructed :: Boolean
+         origin :: a
+         originNotes :: [OriginNote]
+         newlyConstructed :: Boolean
 {
-	top.isNewlyConstructed = newlyConstructed;
-	top.originNotes = originNotes;
-	top.originType = typ;
+  top.isNewlyConstructed = newlyConstructed;
+  top.originNotes = originNotes;
+  top.originType = typ;
 }
 
 abstract production originAndRedexOriginInfo
 top::OriginInfo ::= typ::OriginInfoType 
-				 origin :: a
-				 originNotes :: [OriginNote]
-				 redex :: b
-				 redexNotes :: [OriginNote]
-				 newlyConstructed :: Boolean
+         origin :: a
+         originNotes :: [OriginNote]
+         redex :: b
+         redexNotes :: [OriginNote]
+         newlyConstructed :: Boolean
 {
-	top.isNewlyConstructed = newlyConstructed;
-	top.originNotes = originNotes;
-	top.originType = typ;
+  top.isNewlyConstructed = newlyConstructed;
+  top.originNotes = originNotes;
+  top.originType = typ;
 }
 
 
@@ -164,19 +164,25 @@ top::OriginInfo ::= typ::OriginInfoType
 aspect default production
 top::OriginNote ::=
 {
-	top.notepp = "<" ++ hackUnparse(top) ++ ">";
+  top.notepp = "<" ++ hackUnparse(top) ++ ">";
 }
 
 abstract production originDbgNote
 top::OriginNote ::= string::String
 {
-	
+  
 }
 
 abstract production dbgNote
 top::OriginNote ::= string::String
 {
-	
+  
+}
+
+abstract production logicalLocationNote
+top::OriginNote ::= loc::Location
+{
+  
 }
 
 -- Can be attached automatically by the compiler to show the control-flow path leading to where an origin
@@ -184,7 +190,7 @@ top::OriginNote ::= string::String
 abstract production ruleLocNote
 top::OriginNote ::= attributeName::String sourceGrammar::String prod::String nt::String sourceLocation::Location
 {
-	
+  
 }
 
 
@@ -193,29 +199,29 @@ top::OriginNote ::= attributeName::String sourceGrammar::String prod::String nt:
 function getOriginInfoChain
 [OriginInfo] ::= l::a
 {
-	return case getOriginInfo(l) of
-		| just(info) -> case info of
-    			| originOriginInfo(_, o, _, _) -> info :: getOriginInfoChain(o)
-                | originAndRedexOriginInfo(_, o, _, _, _, _) -> info :: getOriginInfoChain(o)
-                | _ -> [info]
-            end
-		| _ -> []
-	end;
+  return case getOriginInfo(l) of
+    | just(info) -> case info of
+        | originOriginInfo(_, o, _, _) -> info :: getOriginInfoChain(o)
+        | originAndRedexOriginInfo(_, o, _, _, _, _) -> info :: getOriginInfoChain(o)
+        | _ -> [info]
+      end
+    | _ -> []
+  end;
 }
 
 function getOriginInfo
 Maybe<OriginInfo> ::= arg::a
 {
-	return javaGetOrigin(arg);
+  return javaGetOrigin(arg);
 }
 
 function getUrOrigin
 Maybe<OriginInfo> ::= arg::a
 {
-	return case getOriginInfoChain(arg) of
-		| [] -> nothing()
-		| l -> just(last(l))
-	end;
+  return case getOriginInfoChain(arg) of
+    | [] -> nothing()
+    | l -> just(last(l))
+  end;
 }
 
 -- Try to walk back to a parsedOriginInfo and extract the location the node
@@ -223,10 +229,40 @@ Maybe<OriginInfo> ::= arg::a
 function getParsedOriginLocation
 Maybe<Location> ::= arg::a
 {
-	return case getUrOrigin(arg) of
-		| just(parsedOriginInfo(_, l, _)) -> just(l)
-		| _ -> nothing()
-	end;
+  return getParsedOriginLocation_helper(getOriginInfoChain(arg));
+}
+
+function getParsedOriginLocation_helper
+Maybe<Location> ::= chain::[OriginInfo]
+{
+  return case chain of
+       | [] -> nothing()
+       | link::rest -> case link of
+               | parsedOriginInfo(_, l, _) -> just(l)
+               | other -> case getParsedOriginLocation_findLogicalLocatioNote(other.originNotes) of
+                    | nothing() -> getParsedOriginLocation_helper(rest)
+                    | x -> x
+                    end
+               end
+       end;
+}
+
+function getParsedOriginLocation_findLogicalLocatioNote
+Maybe<Location> ::= notes::[OriginNote]
+{
+  return case notes of
+         | [] -> nothing()
+         | logicalLocationNote(l)::_ -> just(l)
+         end;
+}
+
+function getParsedOriginLocationOrFallback
+Location ::= arg::a
+{
+  return case getParsedOriginLocation(arg) of
+         | just(l) -> l
+         | _ -> txtLoc("getParsedOriginLocationOrFallback failed: ochain: " ++ hackUnparse(getOriginInfoChain(arg)))
+         end;
 }
 
 -- Dump out two objects in a format for svdraw2 to consume and draw their
@@ -236,9 +272,9 @@ Maybe<Location> ::= arg::a
 function printObjectPairForOriginsViz
 IO ::= start::a stop::b io::IO
 {
-	return print(
-		"\n\n\n---SVDRAW2 START---" ++
-		"\n" ++ sexprify(start) ++
-        "\n" ++ sexprify(stop) ++
-        "\n" ++ "---SVDRAW2 END---\n\n\n", io);
+  return print(
+    "\n\n\n---SVDRAW2 START---" ++
+    "\n" ++ sexprify(start) ++
+    "\n" ++ sexprify(stop) ++
+    "\n" ++ "---SVDRAW2 END---\n\n\n", io);
 }
