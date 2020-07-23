@@ -13,8 +13,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
 
   local commaIfAnnos :: String = if length(myAnnos)!=0 then "," else "";
   local wantsTracking :: Boolean = typeWantsTracking(nonterminalType(fName, tl.types, quals.tracked), top.config, top.env);
-  -- Origins TODO: ^this probably shouldn't be required; c/f the fallback to tracking-mode
-  
+
   top.initWeaving := s"""
 	public static int ${inhVar} = 0;
 	public static int ${synVar} = 0;""";

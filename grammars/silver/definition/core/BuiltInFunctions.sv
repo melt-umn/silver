@@ -87,8 +87,6 @@ top::Expr ::= 'reify'
     functionType(nonterminalType("core:Either", [stringType(), varType(freshTyVar())], false), [nonterminalType("core:reflect:AST", [], true)], []);
 }
 
--- ORIGINS TODO: Above forces core:Either to be untracked or typechecking fails
-
 concrete production newFunction
 top::Expr ::= 'new' '(' e::Expr ')'
 {

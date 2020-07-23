@@ -115,7 +115,7 @@ concrete production attachNoteStmt
 top::ProductionStmt ::= 'attachNote' note::Expr ';'
 {
   top.unparse = "attachNote " ++ note.unparse;
-  note.isRoot = false; --ORIGINS TODO
+  note.isRoot = false; -- Irrelevant because OriginNotes aren't tracked
   note.originRules = []; --Prevents cyclical dependency when translating
   top.originRuleDefs = [note];
 }
