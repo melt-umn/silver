@@ -6,8 +6,6 @@ imports silver:definition:core only nonterminalName;
  - Modifiers for nonterminals.
  -}
 
-synthesized attribute tracked :: Boolean;
-
 nonterminal SyntaxNonterminalModifiers with cstEnv, cstErrors, customLayout, nonterminalName;
 
 propagate cstErrors, customLayout on SyntaxNonterminalModifiers;

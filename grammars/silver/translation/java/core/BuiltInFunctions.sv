@@ -106,7 +106,6 @@ aspect production newFunction
 top::Expr ::= 'new' '(' e::Expr ')'
 {
   top.translation = s"((${finalType(top).transType})" ++ wrapNewWithOT(top, s"${e.translation}.undecorate()") ++ ")";
-  -- ORIGINS TODO: Need notes
   
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }

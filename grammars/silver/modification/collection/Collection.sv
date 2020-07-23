@@ -217,7 +217,6 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   top.unparse = "\t" ++ val.unparse ++ " := " ++ e.unparse ++ ";";
 
   e.isRoot = false;
-  e.originRules = []; -- ORIGINS TODO: ???
 
   e.downSubst = top.downSubst;
   -- the real type checking is done by the forward, but we must ensure things are tied up nicely
@@ -232,7 +231,6 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   top.unparse = "\t" ++ val.unparse ++ " <- " ++ e.unparse ++ ";";
 
   e.isRoot = false;
-  e.originRules = []; -- ORIGINS TODO: ???
 
   e.downSubst = top.downSubst;
   -- the real type checking is done by the forward, but we must ensure things are tied up nicely
@@ -258,7 +256,6 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.upSubst = errCheck1.upSubst; 
 
   e.isRoot = false;
-  e.originRules = []; -- ORIGINS TODO: ???
 
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
@@ -280,7 +277,6 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.upSubst = errCheck1.upSubst; 
 
   e.isRoot = false;
-  e.originRules = []; -- ORIGINS TODO: ???
 
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
@@ -305,7 +301,6 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.upSubst = errCheck1.upSubst; 
 
   e.isRoot = false;
-  e.originRules = []; -- ORIGINS TODO: ???
 
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
@@ -327,7 +322,6 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.upSubst = errCheck1.upSubst; 
 
   e.isRoot = false;
-  e.originRules = []; -- ORIGINS TODO: ???
 
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
