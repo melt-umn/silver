@@ -134,15 +134,23 @@ Expr ::= e::Expr
 
 -- Convert an expression of type Maybe<a> to a
 function asTotal
-Expr ::= e::Expr
-{ return Silver_Expr { core:fromMaybe(core:error("Total result demanded when partial strategy failed"), $Expr{e}) }; }
+Expr ::= t::Type e::Expr
+{
+  return
+    Silver_Expr {
+      let res::$TypeExpr{typerepTypeExpr(t, location=e.location)} =
+          core:error("Total result demanded when partial strategy failed")
+      in core:fromMaybe(res, $Expr{e})
+      end
+    };
+}
 
 aspect default production
 top::StrategyExpr ::=
 {
   -- At least 1 of these should be defined for every production:
   top.partialTranslation = asPartial(top.totalTranslation);
-  top.totalTranslation = asTotal(top.partialTranslation);
+  top.totalTranslation = asTotal(top.frame.signature.outputElement.typerep, top.partialTranslation);
   
   top.attrRefName = nothing();
   top.matchesFrame := true; -- Consulted only when attrRefName is just(...)
@@ -236,7 +244,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
     Silver_Expr {
       decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name}
     };
-  top.totalTranslation = if s2Total then totalTrans else asTotal(totalTrans);
+  top.totalTranslation = if s2Total then totalTrans else asTotal(top.frame.signature.outputElement.typerep, totalTrans);
 }
 
 abstract production choice
@@ -347,7 +355,7 @@ top::StrategyExpr ::= s::StrategyExpr
          map(
            makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
            top.frame.signature.namedInputElements))
-    else asTotal(top.partialTranslation);
+    else asTotal(top.frame.signature.outputElement.typerep, top.partialTranslation);
 }
 
 abstract production someTraversal
@@ -425,7 +433,7 @@ top::StrategyExpr ::= s::StrategyExpr
          map(
            makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
            top.frame.signature.namedInputElements))
-    else asTotal(top.partialTranslation);
+    else asTotal(top.frame.signature.outputElement.typerep, top.partialTranslation);
 }
 abstract production oneTraversal
 top::StrategyExpr ::= s::StrategyExpr
@@ -522,7 +530,7 @@ top::StrategyExpr ::= s::StrategyExpr
         map(
           makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
           top.frame.signature.namedInputElements))
-    else asTotal(top.partialTranslation);
+    else asTotal(top.frame.signature.outputElement.typerep, top.partialTranslation);
 }
 
 abstract production prodTraversal
@@ -680,7 +688,7 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
     then s.totalTranslation
     else if sTotal
     then Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$name{sName} }
-    else asTotal(top.partialTranslation);
+    else asTotal(top.frame.signature.outputElement.typerep, top.partialTranslation);
 }
 
 -- Rules
@@ -848,7 +856,7 @@ top::StrategyExpr ::= id::Decorated QName
   top.totalTranslation =
     if attrIsTotal(top.env, top.attrRefName.fromJust)
     then Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$qName{top.attrRefName.fromJust} }
-    else asTotal(top.partialTranslation);
+    else asTotal(top.frame.signature.outputElement.typerep, top.partialTranslation);
 }
 abstract production partialRef
 top::StrategyExpr ::= attr::QNameAttrOccur
