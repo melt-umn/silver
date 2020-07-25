@@ -184,9 +184,8 @@ top::StrategyExpr ::= s::StrategyExpr
 abstract production outermost
 top::StrategyExpr ::= s::StrategyExpr
 {
-  local recVarName::String = "outermost_" ++ toString(genInt());
   forwards to
     Silver_StrategyExpr (top.genName) {
-      rec $name{recVarName} -> topDown(try($StrategyExpr{s} <* $strategyQName{recVarName}))
+      repeat(onceTopDown($StrategyExpr{s}))
     };
 }
