@@ -97,9 +97,7 @@ public abstract class Terminal implements Typed {
 			}
 		}
 		// TODO: a better error, maybe? Eh, it should never happen.
-		System.err.println("Origins Warn: Attempting to extract location from locationless object: "+o.toString());
-		return new core.PtxtLoc(null, new common.StringCatter("Terminal.extractLocation: locationless object"));
-		// throw new RuntimeException("Attempting to extract location from locationless object: "+o.toString());
+		throw new RuntimeException("Attempting to extract location from locationless object: "+o.toString());
 	}
 
 	/**
