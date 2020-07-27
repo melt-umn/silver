@@ -17,3 +17,5 @@ Maybe<a> ::= arg::OriginInfo
 {
   return nothing();
 }
+
+nonterminal AmbientOriginNT;

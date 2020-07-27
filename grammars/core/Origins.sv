@@ -239,7 +239,7 @@ Maybe<Location> ::= chain::[OriginInfo]
        | [] -> nothing()
        | link::rest -> case link of
                | parsedOriginInfo(_, l, _) -> just(l)
-               | other -> case getParsedOriginLocation_findLogicalLocatioNote(other.originNotes) of
+               | other -> case getParsedOriginLocation_findLogicalLocationNote(other.originNotes) of
                     | nothing() -> getParsedOriginLocation_helper(rest)
                     | x -> x
                     end
@@ -247,12 +247,13 @@ Maybe<Location> ::= chain::[OriginInfo]
        end;
 }
 
-function getParsedOriginLocation_findLogicalLocatioNote
+function getParsedOriginLocation_findLogicalLocationNote
 Maybe<Location> ::= notes::[OriginNote]
 {
   return case notes of
          | [] -> nothing()
          | logicalLocationNote(l)::_ -> just(l)
+         | x::r -> getParsedOriginLocation_findLogicalLocationNote(r)
          end;
 }
 
@@ -261,8 +262,15 @@ Location ::= arg::a
 {
   return case getParsedOriginLocation(arg) of
          | just(l) -> l
-         | _ -> txtLoc("getParsedOriginLocationOrFallback failed: ochain: " ++ hackUnparse(getOriginInfoChain(arg)))
+         | _ -> txtLoc("<getParsedOriginLocationOrFallback failed: arg: " ++ hackUnparse(arg) ++ 
+                       " ochain: " ++ hackUnparse(getOriginInfoChain(arg)) ++ ">")
          end;
+}
+
+abstract production ambientOrigin
+top::AmbientOriginNT ::= 
+{
+  
 }
 
 -- Dump out two objects in a format for svdraw2 to consume and draw their

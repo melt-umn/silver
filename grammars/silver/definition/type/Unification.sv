@@ -94,11 +94,12 @@ top::Type ::= fn::String params::[Type] tracked::Boolean
   top.unify = 
     case top.unifyWith of
     | nonterminalType(ofn, op, otracked) -> 
-        if tracked!=otracked 
-        then error("Internal Error: Mismatching trackedness for " ++ fn ++ "when unifying. Try rebuilding with --clean. \nSee https://github.com/melt-umn/silver/pull/333 and https://github.com/melt-umn/silver/issues/36 .") 
-        else if fn == ofn
-             then unifyAll(params, op)
-             else errorSubst("Tried to unify conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
+        if fn == ofn
+        then
+          if tracked!=otracked 
+          then error("Internal Error: Mismatching trackedness for " ++ fn ++ " when unifying. Try rebuilding with --clean. \nSee https://github.com/melt-umn/silver/pull/333 and https://github.com/melt-umn/silver/issues/36 .") 
+          else unifyAll(params, op)
+        else errorSubst("Tried to unify conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
     | ntOrDecType(_, _) -> errorSubst("nte-nodte: try again")
     | _ -> errorSubst("Tried to unify nonterminal type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
     end;

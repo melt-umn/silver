@@ -23,3 +23,5 @@ Maybe<a> ::= arg::OriginInfo
 } foreign {
   "java" : return "common.OriginsUtil.getOriginLink(%arg%)";
 }
+
+tracked nonterminal AmbientOriginNT;
