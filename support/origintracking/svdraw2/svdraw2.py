@@ -8,6 +8,8 @@ small_nodes = "--all_oi" not in sys.argv
 cache={}
 def translate(x):
 	def _translate(x):
+		if len(x) == 1:
+			return PrimitiveValue("???", str(x[0]))
 		if x[1] in ("!Integer", "!String", "!Float", "!Boolean"):
 			return PrimitiveValue(x[0], x[2])
 		if x[1] == "???":
@@ -60,9 +62,9 @@ class NT(ComplexValue):
 			return
 		if o.name=="core:otherOriginInfo" or o.name=="core:parsedOriginInfo":
 			return
-		print()
-		print(self.name)
-		print(o.children[2].value)
+		# print()
+		# print(self.name)
+		# print(o.children[2].value)
 		self.origin, self.originlabel = o.children[1],\
 			"\n".join(map(lambda x:x.node_text(inclo=False), o.children[2].value))
 		if len(o.children)>4:
