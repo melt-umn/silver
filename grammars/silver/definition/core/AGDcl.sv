@@ -64,6 +64,15 @@ top::AGDcl ::= h::AGDcl t::AGDcl
   top.errors <- warnIfMultJarName(h.jarName, t.jarName, top.location);
 }
 
+function makeAppendAGDclOfAGDcls
+AGDcl ::= dcls::AGDcls
+{
+  return case dcls of
+         | nilAGDcls(location=l) -> emptyAGDcl(location=l)
+         | consAGDcls(dcl, rest, location=l) -> appendAGDcl(dcl, makeAppendAGDclOfAGDcls(rest), location=l)
+         end;
+}
+
 abstract production jarNameDcl
 top::AGDcl ::= n::Name
 {
