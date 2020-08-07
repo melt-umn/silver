@@ -45,9 +45,10 @@ String ::= top::Decorated Expr --need .frame anno
   local rulesTrans :: [String] = (if top.config.tracingOrigins then [locRule] else []) ++ map((.translation), top.originRules);
   local locRule :: String = s"new core.PoriginDbgNote(null, new common.StringCatter(\"${substitute("\"", "\\\"", hackUnparse(top.location))}\"))";
 
-  return if top.config.noOrigins then "null" else 
-    if length(rulesTrans)==0 then top.frame.originsContextSource.contextRef else
-      top.frame.originsContextSource.contextRefAddingRules(s"new core.NOriginNote[]{${implode(", ", rulesTrans)}}");
+  return if top.config.noOrigins then "null" 
+         else if length(rulesTrans)==0 
+              then top.frame.originsContextSource.contextRef
+              else top.frame.originsContextSource.contextRefAddingRules(s"new core.NOriginNote[]{${implode(", ", rulesTrans)}}");
 }
 
 global newConstructionOriginUsingCtxRef :: String =
@@ -59,17 +60,19 @@ String ::= top::Decorated Expr  inInteresting::Boolean --need .frame anno
   local ty :: Type = finalType(top);
   local interesting :: Boolean = top.frame.originsContextSource.alwaysConsideredInteresting || !top.isRoot || inInteresting;
 
-  return if typeWantsTracking(ty, top.config, top.env) then makeOriginContextRef(top)++s".makeNewConstructionOrigin(${if interesting then "true" else "false"})" else "null";
+  return if typeWantsTracking(ty, top.config, top.env)
+         then makeOriginContextRef(top)++s".makeNewConstructionOrigin(${if interesting then "true" else "false"})"
+         else "null";
 }
 
 function typeWantsTracking
 Boolean ::= ty::Type conf::Decorated CmdArgs env::Decorated Env
 {
-  return if conf.noOrigins then false else
-            case ty of
-            | nonterminalType(fn, _, tracked) -> conf.forceOrigins || tracked
-            | _ -> false
-            end;
+  return if conf.noOrigins then false
+         else case ty of
+              | nonterminalType(fn, _, tracked) -> conf.forceOrigins || tracked
+              | _ -> false
+              end;
 }
 
 function wrapAccessWithOT

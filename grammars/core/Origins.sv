@@ -134,9 +134,9 @@ top::OriginInfo ::= typ::OriginInfoType source::Location notes::[OriginNote]
 --  is not the result of a basically no-op transformation.
 abstract production originOriginInfo
 top::OriginInfo ::= typ::OriginInfoType 
-         origin :: a
-         originNotes :: [OriginNote]
-         newlyConstructed :: Boolean
+                    origin :: a
+                    originNotes :: [OriginNote]
+                    newlyConstructed :: Boolean
 {
   top.isNewlyConstructed = newlyConstructed;
   top.originNotes = originNotes;
@@ -145,11 +145,11 @@ top::OriginInfo ::= typ::OriginInfoType
 
 abstract production originAndRedexOriginInfo
 top::OriginInfo ::= typ::OriginInfoType 
-         origin :: a
-         originNotes :: [OriginNote]
-         redex :: b
-         redexNotes :: [OriginNote]
-         newlyConstructed :: Boolean
+                    origin :: a
+                    originNotes :: [OriginNote]
+                    redex :: b
+                    redexNotes :: [OriginNote]
+                    newlyConstructed :: Boolean
 {
   top.isNewlyConstructed = newlyConstructed;
   top.originNotes = originNotes;
@@ -200,13 +200,14 @@ function getOriginInfoChain
 [OriginInfo] ::= l::a
 {
   return case getOriginInfo(l) of
-    | just(info) -> case info of
-        | originOriginInfo(_, o, _, _) -> info :: getOriginInfoChain(o)
-        | originAndRedexOriginInfo(_, o, _, _, _, _) -> info :: getOriginInfoChain(o)
-        | _ -> [info]
-      end
-    | _ -> []
-  end;
+         | just(info) -> 
+             case info of
+             | originOriginInfo(_, o, _, _) -> info :: getOriginInfoChain(o)
+             | originAndRedexOriginInfo(_, o, _, _, _, _) -> info :: getOriginInfoChain(o)
+             | _ -> [info]
+             end
+         | _ -> []
+        end;
 }
 
 function getOriginInfo
@@ -219,9 +220,9 @@ function getUrOrigin
 Maybe<OriginInfo> ::= arg::a
 {
   return case getOriginInfoChain(arg) of
-    | [] -> nothing()
-    | l -> just(last(l))
-  end;
+         | [] -> nothing()
+         | l -> just(last(l))
+         end;
 }
 
 -- Try to walk back to a parsedOriginInfo and extract the location the node
@@ -236,15 +237,16 @@ function getParsedOriginLocation_helper
 Maybe<Location> ::= chain::[OriginInfo]
 {
   return case chain of
-       | [] -> nothing()
-       | link::rest -> case link of
-               | parsedOriginInfo(_, l, _) -> just(l)
-               | other -> case getParsedOriginLocation_findLogicalLocationNote(other.originNotes) of
-                    | nothing() -> getParsedOriginLocation_helper(rest)
-                    | x -> x
-                    end
-               end
-       end;
+         | [] -> nothing()
+         | link::rest -> 
+             case link of
+             | parsedOriginInfo(_, l, _) -> just(l)
+             | other -> case getParsedOriginLocation_findLogicalLocationNote(other.originNotes) of
+                        | nothing() -> getParsedOriginLocation_helper(rest)
+                        | x -> x
+                        end
+             end
+         end;
 }
 
 function getParsedOriginLocation_findLogicalLocationNote

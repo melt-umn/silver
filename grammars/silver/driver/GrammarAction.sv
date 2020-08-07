@@ -108,23 +108,7 @@ top::DriverAction ::= specs::[Decorated RootSpec]
 function renderMessages
 String ::= grammarSource::String  msg::Pair<String [Message]>
 {
-  return " [" ++ grammarSource ++ msg.fst ++ "]\n" ++ messagesToStringWO(msg.snd) ++ "\n";
-}
-
-function messagesToStringWO
-String ::= msgs::[Message]
-{
-  return implode("\n", map(messageToStringWO, sortBy(messageLte, msgs)));
-}
-
-function messageToStringWO
-String ::= m::Message
-{
-  local locStr :: String = case getParsedOriginLocation(m) of
-    | just(l) -> toString(l.filename)++":"++toString(l.line)++":"++toString(l.column)
-    | nothing() -> "<nothing>"
-  end;
-  return "(oi: "++locStr++") "++m.output;
+  return " [" ++ grammarSource ++ msg.fst ++ "]\n" ++ messagesToString(msg.snd) ++ "\n";
 }
 
 function grammarContainsErrors

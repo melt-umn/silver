@@ -152,9 +152,9 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
   local commaIfArgsOrAnnos :: String = if length(annos.exprs) + length(es.exprs)!= 0 then "," else "";
 
   local sameProd :: Boolean = case e of
-    | baseExpr(qn) -> qn.name == last(explode(":", top.frame.fullName))
-    | _ -> false
-  end;
+                              | baseExpr(qn) -> qn.name == last(explode(":", top.frame.fullName))
+                              | _ -> false
+                              end;
 
   top.translation = 
     case e of 
