@@ -10,6 +10,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     ["silver:extension:silverconstruction:antiquoteExpr",
      "silver:extension:silverconstruction:antiquoteExprInhs",
      "silver:extension:silverconstruction:antiquoteTypeExpr",
+     "silver:extension:silverconstruction:antiquotePattern",
      "silver:extension:silverconstruction:antiquoteQName",
      "silver:extension:silverconstruction:antiquoteQNameAttrOccur",
      "silver:extension:silverconstruction:antiquoteName"];

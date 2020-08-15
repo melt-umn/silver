@@ -72,7 +72,7 @@ top::TypeExpr ::= '$TypeExpr' '{' e::Expr '}'
 }
 
 concrete production antiquotePattern
-top::Pattern ::= '$Pattern' '{' e::Pattern '}'
+top::Pattern ::= '$Pattern' '{' e::Expr '}'
 {
   top.unparse = s"$$Pattern{${e.unparse}}";
   forwards to
