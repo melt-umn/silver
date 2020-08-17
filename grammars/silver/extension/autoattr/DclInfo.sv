@@ -52,3 +52,39 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type empt
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateMonoid(_, location=_);
 }
+
+abstract production equalityInhDcl
+top::DclInfo ::= sg::String sl::Location fn::String tyVar::TyVar
+{
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = fn;
+
+  top.typerep = varType(tyVar);
+  top.dclBoundVars = [tyVar];
+  top.isInherited = true;
+  
+  top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: should probably be an error handler! access inh from undecorated?
+  top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_); -- Allow normal inh equations
+  top.attributionDispatcher = functorAttributionDcl(_, _, _, _, location=_); -- Same as functor
+  top.propagateDispatcher = propagateEqualityInh(_, location=_);
+}
+
+abstract production equalitySynDcl
+top::DclInfo ::= sg::String sl::Location inh::String syn::String
+{
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = syn;
+
+  top.typerep = boolType();
+  top.dclBoundVars = [];
+  top.isSynthesized = true;
+  
+  top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+  top.propagateDispatcher = propagateEqualitySyn(inh, _, location=_);
+}
