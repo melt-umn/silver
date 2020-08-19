@@ -4,7 +4,7 @@ grammar silver:langutil;
 {--
  - A Message represents a compiler output message (error/warning)
  -}
-tracked nonterminal Message with message, where, output, severity;
+tracked nonterminal Message with message, where, noLocOutput, output, severity;
 
 {--
  - The location of an error message.
@@ -15,14 +15,24 @@ synthesized attribute where :: Location;
  -}
 synthesized attribute message :: String;
 {--
- - A recommended way to turn this message into console output.
+ - A recommended way to turn this message into console output with location info.
  -}
 synthesized attribute output :: String;
+{--
+ - A recommended way to turn this message into console output without location info.
+ -}
+synthesized attribute noLocOutput :: String;
 {--
  - A convention for determining message severity.
  - err=2, wrn=1, info=0
  -}
 synthesized attribute severity :: Integer;
+
+aspect default production
+top::Message ::=
+{
+  top.output = s"${top.where.unparse}: ${top.noLocOutput}";
+}
 
 {--
  - A error that should halt compilation before translation proceeds on the 
@@ -33,7 +43,7 @@ top::Message ::= l::Location m::String
 {
   top.where = l;
   top.message = m;
-  top.output = s"${l.unparse}: error: ${m}";
+  top.noLocOutput = s"error: ${m}";
   top.severity = 2;
 }
 
@@ -52,7 +62,7 @@ top::Message ::= l::Location m::String
 {
   top.where = l;
   top.message = m;
-  top.output = s"${l.unparse}: warning: ${m}";
+  top.noLocOutput = s"warning: ${m}";
   top.severity = 1;
 }
 
@@ -71,7 +81,7 @@ top::Message ::= l::Location m::String
 {
   top.where = l;
   top.message = m;
-  top.output = s"${l.unparse}: info: ${m}";
+  top.noLocOutput = s"info: ${m}";
   top.severity = 0;
 }
 
@@ -89,7 +99,7 @@ top::Message ::= l::Location m::String others::[Message]
 {
   top.where = l;
   top.message = m;
-  top.output = s"${l.unparse}: ${m}\n${messagesToString(others)}\n";
+  top.noLocOutput = s"${m}\n${messagesToString(others)}\n";
   top.severity = foldr(max, 0, map((.severity), others));
 }
 
