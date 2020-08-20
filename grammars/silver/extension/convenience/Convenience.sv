@@ -53,7 +53,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
 {
   top.unparse = "nonterminal " ++ id.unparse ++ tl.unparse ++ " " ++ nm.unparse ++ " with " ++ attrs.unparse ++ " ;";
   forwards to appendAGDcl(
-    noWrapperNonterminalDcl(quals, $2, id, tl, nm, $8, location=top.location),
+    nonterminalDcl(quals, $2, id, tl, nm, $8, location=top.location),
     makeOccursDcls(top.location, attrs.qnames, [qNameWithTL(qNameId(id, location=id.location), tl)]),
     location=top.location);
 }
