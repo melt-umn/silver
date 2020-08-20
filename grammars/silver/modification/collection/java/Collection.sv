@@ -135,6 +135,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
 "\t}\n\n" ++
 
 "\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
+"\t\t common.OriginContext originCtx = context.originCtx;\n" ++
 "\t\t" ++ te.typerep.transType ++ " result = (" ++ te.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
 "\t\tfor(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
 "\t\t\tresult = " ++ o.frontTrans ++ "result" ++ o.midTrans ++ "(" ++ te.typerep.transType ++ ")this.getPieces().get(i).eval(context)" ++ o.endTrans ++ ";\n" ++ 
@@ -165,6 +166,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
 "\t}\n\n" ++
 
 "\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
+"\t\t common.OriginContext originCtx = context.originCtx;\n" ++
 "\t\t" ++ te.typerep.transType ++ " result = (" ++ te.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
 "\t\tfor(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
 "\t\t\tresult = " ++ o.frontTrans ++ "result" ++ o.midTrans ++ "(" ++ te.typerep.transType ++ ")this.getPieces().get(i).eval(context)" ++ o.endTrans ++ ";\n" ++ 
