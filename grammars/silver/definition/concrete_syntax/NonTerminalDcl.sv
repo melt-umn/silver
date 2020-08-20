@@ -2,7 +2,7 @@ grammar silver:definition:concrete_syntax;
 
 import silver:driver only noOrigins, forceOrigins;
 
-aspect production noWrapperNonterminalDcl
+aspect production nonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
   -- TODO: We are building this for every nonterminal declaration, when it should

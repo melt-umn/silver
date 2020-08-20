@@ -105,6 +105,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
   top.setupInh <-
         "\t\t" ++ top.frame.className ++ ".localAttributes[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = new common.CollectionAttribute(){\n" ++ 
         "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
+        "\t\t\t\t common.OriginContext originCtx = context.originCtx;\n" ++
         "\t\t\t\t" ++ te.typerep.transType ++ " result = (" ++ te.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
         "\t\t\t\tfor(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
         "\t\t\t\t\tresult = " ++ o.frontTrans ++ "result" ++ o.midTrans ++ "(" ++ te.typerep.transType ++ ")this.getPieces().get(i).eval(context)" ++ o.endTrans ++ ";\n" ++ 

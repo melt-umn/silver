@@ -5,12 +5,6 @@ autocopy attribute nonterminalName :: String;
 concrete production nonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
-  forwards to noWrapperNonterminalDcl(quals, $2, id, tl, nm, $6, location=top.location);
-}
-
-abstract production noWrapperNonterminalDcl
-top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
-{
   top.unparse = "nonterminal " ++ id.unparse ++ tl.unparse ++ " " ++ nm.unparse ++ ";";
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;

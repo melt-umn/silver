@@ -1,6 +1,6 @@
 grammar silver:translation:java:core;
 
-aspect production noWrapperNonterminalDcl
+aspect production nonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
   local className :: String = "N" ++ id.name;
