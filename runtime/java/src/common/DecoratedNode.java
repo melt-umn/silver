@@ -118,6 +118,7 @@ public class DecoratedNode implements Typed {
 			final Lazy[] inhs, final DecoratedNode forwardParent) {
 		this.self = self;
 		this.parent = parent;
+		this.originCtx = parent!=null?parent.originCtx:null;
 		this.inheritedAttributes = inhs;
 		this.forwardParent = forwardParent;
 		
