@@ -69,8 +69,6 @@ public final class Reflection {
 	 * @return The reflected AST.
 	 */
 	public static NAST reflect(final ConsCell rules, Object o) {
-		if (o instanceof DecoratedNode) o = ((DecoratedNode)o).undecorate();
-
 		core.NOriginInfo origin = new core.PoriginOriginInfo(null, OriginsUtil.SET_FROM_REFLECTION_OIT, o, rules, true);
 		if(o instanceof Node) {
 			Node n = (Node)o;
@@ -101,7 +99,6 @@ public final class Reflection {
 		} else if(o instanceof Boolean) {
 			return new PbooleanAST(origin, (Boolean)o);
 		} else {
-			//if (System.getProperty("silver.origins.reflwarn")!=null) System.err.println("Reflection Warn: constructing PanyAST("+o.getClass().getName()+" "+o.toString()+")");
 			return new PanyAST(origin, o);
 		}
 	}
