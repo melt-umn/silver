@@ -252,8 +252,11 @@ top::ASTExpr ::= c::ASTExpr t::ASTExpr e::ASTExpr
 abstract production noteAttachmentASTExpr
 top::ASTExpr ::= a::ASTExpr b::ASTExpr
 {
-  top.pp = pp"(${a.pp} + ${b.pp})";
-  top.value = b.value; -- ORIGINS TODO: ???
+  top.pp = pp"attachNote ${a.pp} on {${b.pp}}";
+  top.value = case reify(a.value) of
+              | right(note) -> attachNote note on {b.value}
+              | left(msg) -> error("Invalid value for noteAttachmentASTExpr's note: " ++ msg)
+              end;
 }
 
 abstract production plusASTExpr

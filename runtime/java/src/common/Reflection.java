@@ -118,13 +118,12 @@ public final class Reflection {
 	 * @return An Either<String a> object containing either an error message or a constructed object. 
 	 */
 	public static NEither reifyChecked(final ConsCell rules, final TypeRep resultType, final NAST ast) {
-		core.NOriginInfo origin = new core.PoriginOriginInfo(null, OriginsUtil.SET_FROM_REIFICATION_OIT, ast, rules, true);
 		try {
-			return new Pright(origin, reify(rules, resultType, ast));
+			return new Pright(null, reify(rules, resultType, ast));
 		} catch (SilverException e) {
 			Throwable rootCause = SilverException.getRootCause(e);
 			if (rootCause instanceof SilverError) {
-				return new Pleft(origin, new StringCatter("Reification error at " + ReifyTraceException.getASTRepr(e) + ":\n" + rootCause.getMessage()));
+				return new Pleft(null, new StringCatter("Reification error at " + ReifyTraceException.getASTRepr(e) + ":\n" + rootCause.getMessage()));
 			} else {
 				throw e;
 			}

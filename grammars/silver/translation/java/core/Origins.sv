@@ -87,7 +87,7 @@ String ::= top::Decorated Expr expr::String
   --  - directCopy is the fastpath for things we know want OI
   --  - noop is the "fastpath" where we do nothing, either because we know it's a Node and it dosen't want OI, or because
   --     we know it's a primitive
-  --  - polyCopy is the slowpath that uses java instanceof to check if it's a node, and then send OI if it is
+  --  - polyCopy is the slowpath that uses java instanceof to check if it's tracked, and then send OI if it is
 
   local polyCopy   :: String = s"((${ty.transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${expr}))";
   local directCopy :: String = s"((${ty.transType})${makeOriginContextRef(top)}.attrAccessCopy((common.Node)${expr}))";

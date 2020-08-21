@@ -122,7 +122,7 @@ public final class OriginContext {
 
 	// Used by code that does some manipulation on a type-erased generic object that might be a nonterminal.
 	public Object attrAccessCopyPoly(final Object arg) {
-		if (arg instanceof Node) return attrAccessCopy((Node)arg);
+		if (arg instanceof OriginTracked) return attrAccessCopy((Node)arg);
 		return arg;
 	}
 
