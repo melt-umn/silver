@@ -50,9 +50,9 @@ top::Operation ::= s::String
   top.endTrans = ")";
 }
 aspect production productionOperation
-top::Operation ::= s::String
+top::Operation ::= s::String tracked::Boolean
 {
-  top.frontTrans = "new " ++ makeClassName(s) ++"(" ++ newConstructionOriginUsingCtxRef ++ ",";
+  top.frontTrans = "new " ++ makeClassName(s) ++"(" ++ (if tracked then newConstructionOriginUsingCtxRef else "null") ++ ",";
   top.midTrans = ", ";
   top.endTrans = ")";
 }

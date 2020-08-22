@@ -19,7 +19,7 @@ top::NameOrBOperator ::= q::QName
 
   top.operation = case q.lookupValue.dcl of
                   | funDcl(_,_,_) -> functionOperation(q.lookupValue.fullName)
-                  | prodDcl(_,_,_,_) -> productionOperation(q.lookupValue.fullName)
+                  | prodDcl(_,_,_,_) -> productionOperation(q.lookupValue.fullName, top.operatorForType.tracked)
                   | _ -> error("INTERNAL ERROR: operation attribute demanded for non-function or production.")
                   end;
 
@@ -89,7 +89,7 @@ top::Operation ::= s::String
 {
 }
 abstract production productionOperation
-top::Operation ::= s::String
+top::Operation ::= s::String tracked::Boolean
 {
 }
 abstract production plusPlusOperationString

@@ -52,7 +52,7 @@ top::Operation ::= s::String
   top.appendProd = \ e1::Expr e2::Expr l::Location -> mkStrFunctionInvocation(l, s, [e1, e2]);
 }
 aspect production productionOperation
-top::Operation ::= s::String
+top::Operation ::= s::String tracked::Boolean
 {
   top.appendProd = \ e1::Expr e2::Expr l::Location -> mkStrFunctionInvocation(l, s, [e1, e2]);
 }
