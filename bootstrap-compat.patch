@@ -1,0 +1,146 @@
+diff --git a/grammars/core/Origins.sv b/grammars/core/Origins.sv
+index 853e4276..61918373 100644
+--- a/grammars/core/Origins.sv
++++ b/grammars/core/Origins.sv
+@@ -286,27 +286,21 @@ function sexprify
+ String ::= nt::a
+ {
+   return error("Not impl");
+-} foreign {
+-  "java" : return "(common.OriginsUtil.sexprify(%nt%))";
+ }
+ 
+ function javaGetOrigin
+ Maybe<OriginInfo> ::= arg::a
+ {
+   return error("Not impl");
+-} foreign {
+-  "java" : return "common.OriginsUtil.polyGetOrigin(%arg%)";
+ }
+ 
+ function javaGetOriginLink
+ Maybe<a> ::= arg::OriginInfo
+ {
+   return error("Not impl");
+-} foreign {
+-  "java" : return "common.OriginsUtil.getOriginLink(%arg%)";
+ }
+ 
+-closed tracked nonterminal AmbientOriginNT;
++closed nonterminal AmbientOriginNT;
+ 
+ abstract production ambientOrigin
+ top::AmbientOriginNT ::= 
+diff --git a/grammars/core/reflect/AST.sv b/grammars/core/reflect/AST.sv
+index 52447f5b..d146e0a5 100644
+--- a/grammars/core/reflect/AST.sv
++++ b/grammars/core/reflect/AST.sv
+@@ -3,7 +3,7 @@ grammar core:reflect;
+ -- This grammar contains only the defintions of the AST nonterminals, needed by the runtime library
+ -- The full reflection library that users should import is silver:reflect 
+ 
+-tracked nonterminal AST;
++nonterminal AST;
+ 
+ abstract production nonterminalAST
+ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
+@@ -37,7 +37,7 @@ abstract production anyAST
+ top::AST ::= x::a
+ {}
+ 
+-tracked nonterminal ASTs;
++nonterminal ASTs;
+ 
+ abstract production consAST
+ top::ASTs ::= h::AST t::ASTs
+@@ -47,7 +47,7 @@ abstract production nilAST
+ top::ASTs ::=
+ {}
+ 
+-tracked nonterminal NamedASTs;
++nonterminal NamedASTs;
+ 
+ abstract production consNamedAST
+ top::NamedASTs ::= h::NamedAST t::NamedASTs
+@@ -57,7 +57,7 @@ abstract production nilNamedAST
+ top::NamedASTs ::=
+ {}
+ 
+-tracked nonterminal NamedAST;
++nonterminal NamedAST;
+ 
+ abstract production namedAST
+ top::NamedAST ::= n::String v::AST
+diff --git a/grammars/silver/extension/rewriting/Expr.sv b/grammars/silver/extension/rewriting/Expr.sv
+index 52d6523b..a119d699 100644
+--- a/grammars/silver/extension/rewriting/Expr.sv
++++ b/grammars/silver/extension/rewriting/Expr.sv
+@@ -375,12 +375,6 @@ top::Expr ::= f::Float_t
+   top.transform = floatASTExpr(toFloat(f.lexeme));
+ } 
+ 
+-aspect production noteAttachment
+-top::Expr ::= 'attachNote' note::Expr 'on' '{' e::Expr '}'
+-{
+-  top.transform = noteAttachmentASTExpr(note.transform, e.transform);
+-}
+-
+ aspect production plus
+ top::Expr ::= e1::Expr '+' e2::Expr
+ {
+diff --git a/grammars/silver/langutil/Message.sv b/grammars/silver/langutil/Message.sv
+index 6abf04ae..a6edf057 100644
+--- a/grammars/silver/langutil/Message.sv
++++ b/grammars/silver/langutil/Message.sv
+@@ -4,7 +4,7 @@ grammar silver:langutil;
+ {--
+  - A Message represents a compiler output message (error/warning)
+  -}
+-tracked nonterminal Message with message, where, noLocOutput, output, severity;
++nonterminal Message with message, where, noLocOutput, output, severity;
+ 
+ {--
+  - The location of an error message.
+diff --git a/grammars/silver/reflect/Util.sv b/grammars/silver/reflect/Util.sv
+index 45a5e9af..a4358f3d 100644
+--- a/grammars/silver/reflect/Util.sv
++++ b/grammars/silver/reflect/Util.sv
+@@ -8,7 +8,7 @@ AST ::= x::a
+ {
+   return error("Foreign function");
+ } foreign {
+-  "java" : return "(common.Reflection.reflect(originCtx.rulesAsSilverList(), %x%))";
++  "java" : return "(common.Reflection.reflect(%x%))";
+ }
+ 
+ function reflectTypeName
+@@ -32,7 +32,7 @@ Either<String AST> ::= fn::AST args::[Maybe<AST>] namedArgs::[Pair<String Maybe<
+ {
+   return error("Foreign function");
+ } foreign {
+-  "java" : return "(common.Reflection.applyAST(originCtx, %fn%, %args%, %namedArgs%))";
++  "java" : return "(common.Reflection.applyAST(%fn%, %args%, %namedArgs%))";
+ }
+ 
+ function serialize
+diff --git a/grammars/silver/rewrite/ASTExpr.sv b/grammars/silver/rewrite/ASTExpr.sv
+index fc3048b1..cd4f77b7 100644
+--- a/grammars/silver/rewrite/ASTExpr.sv
++++ b/grammars/silver/rewrite/ASTExpr.sv
+@@ -249,16 +249,6 @@ top::ASTExpr ::= c::ASTExpr t::ASTExpr e::ASTExpr
+     end;
+ }
+ 
+-abstract production noteAttachmentASTExpr
+-top::ASTExpr ::= a::ASTExpr b::ASTExpr
+-{
+-  top.pp = pp"attachNote ${a.pp} on {${b.pp}}";
+-  top.value = case reify(a.value) of
+-              | right(note) -> attachNote note on {b.value}
+-              | left(msg) -> error("Invalid value for noteAttachmentASTExpr's note: " ++ msg)
+-              end;
+-}
+-
+ abstract production plusASTExpr
+ top::ASTExpr ::= a::ASTExpr b::ASTExpr
+ {

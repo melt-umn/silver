@@ -2,16 +2,19 @@
 set -euo pipefail
 export SVJVM_FLAGS="-Xmx16G -Xss128M"
 
+# use `git diff grammars/ > bootstrap-compat.patch` to update
+
 function cleanup () {
-	git apply -R compat-build.patch
+	echo    === APPLY -R bootstrap-compat ===
+	git apply -R bootstrap-compat.patch
 }
 
-trap cleanup EXIT
+trap "echo !!! FAILED !!!; cleanup" EXIT
 
 echo    === RESTORE OLD RUNTIME ===
 cp JARS-BAK/SilverRuntime.jar jars/SilverRuntime.jar
-echo    === INSTALL IMPL_HACK ===
-git apply compat-build.patch
+echo    === APPLY bootstrap-compat ===
+git apply bootstrap-compat.patch
 echo    === DEEP CLEAN ===
 ./deep-clean -delete all
 echo    === COMPILE WITH OLD SILVER ===
@@ -26,6 +29,7 @@ ant
 echo    === INSTALL NEW RUNTIME ===
 cd ../..
 cp runtime/java/*.jar jars
-echo    === INSTALL IMPL_REAL ===
+
 cleanup
 echo    === DONE\? ===
+trap - EXIT
