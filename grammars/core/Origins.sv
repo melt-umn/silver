@@ -282,8 +282,6 @@ IO ::= start::a stop::b io::IO
     "\n" ++ "---SVDRAW2 END---\n\n\n", io);
 }
 
-grammar core:originsimpl;
-
 function sexprify
 String ::= nt::a
 {
