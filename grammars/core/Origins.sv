@@ -1,5 +1,4 @@
 grammar core;
-import core:originsimpl;
 
 -- WARNING: Many of the nonterminals and productions in this file are runtime- and/or compiler-blessed.
 --  Don't change their names, grammar locations, or parameters unless you know what your doing
@@ -269,12 +268,6 @@ Location ::= arg::a
          end;
 }
 
-abstract production ambientOrigin
-top::AmbientOriginNT ::= 
-{
-  
-}
-
 -- Dump out two objects in a format for svdraw2 to consume and draw their
 --  structure and the origins links that connect them (and any intermediate
 --  objects. The only difference between `start` and `stop` is that they will
@@ -287,4 +280,38 @@ IO ::= start::a stop::b io::IO
     "\n" ++ sexprify(start) ++
     "\n" ++ sexprify(stop) ++
     "\n" ++ "---SVDRAW2 END---\n\n\n", io);
+}
+
+grammar core:originsimpl;
+
+function sexprify
+String ::= nt::a
+{
+  return error("Not impl");
+} foreign {
+  "java" : return "(common.OriginsUtil.sexprify(%nt%))";
+}
+
+function javaGetOrigin
+Maybe<OriginInfo> ::= arg::a
+{
+  return error("Not impl");
+} foreign {
+  "java" : return "common.OriginsUtil.polyGetOrigin(%arg%)";
+}
+
+function javaGetOriginLink
+Maybe<a> ::= arg::OriginInfo
+{
+  return error("Not impl");
+} foreign {
+  "java" : return "common.OriginsUtil.getOriginLink(%arg%)";
+}
+
+closed tracked nonterminal AmbientOriginNT;
+
+abstract production ambientOrigin
+top::AmbientOriginNT ::= 
+{
+  
 }

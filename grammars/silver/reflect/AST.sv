@@ -1,140 +1,64 @@
-grammar silver:reflect;
+grammar core:reflect;
 
-exports core:reflect;
+-- This grammar contains only the defintions of the AST nonterminals, needed by the runtime library
+-- The full reflection library that users should import is silver:reflect 
 
-import core:monad;
+tracked nonterminal AST;
 
--- left(error message) or right(result)
-synthesized attribute serialize<a>::Either<String a>;
-
-attribute serialize<String> occurs on AST;
-
-aspect production nonterminalAST
+abstract production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
-{
-  top.serialize =
-    do (bindEither, returnEither) {
-      childrenSerialize::[String] <- children.serialize;
-      annotationSerialize::[String] <- annotations.serialize;
-      return s"${prodName}(${implode(", ", childrenSerialize ++ annotationSerialize)})";
-    };
-}
+{}
 
-aspect production terminalAST
+abstract production terminalAST
 top::AST ::= terminalName::String lexeme::String location::Location
-{
-  top.serialize =
-    do (bindEither, returnEither) {
-      locationSerialize::String <- serialize(new(location));
-      return s"terminal(${terminalName}, \"${escapeString(lexeme)}\", ${locationSerialize})";
-    }; 
-}
+{}
 
-aspect production listAST
+abstract production listAST
 top::AST ::= vals::ASTs
-{
-  top.serialize =
-    do (bindEither, returnEither) {
-      serializeVals::[String] <- vals.serialize;
-      return s"[${implode(", ", serializeVals)}]";
-    };
-}
+{}
 
-aspect production stringAST
+abstract production stringAST
 top::AST ::= s::String
-{
-  top.serialize = right(s"\"${escapeString(s)}\"");
-}
+{}
 
-aspect production integerAST
+abstract production integerAST
 top::AST ::= i::Integer
-{
-  top.serialize = right(toString(i));
-}
+{}
 
-aspect production floatAST
+abstract production floatAST
 top::AST ::= f::Float
-{
-  top.serialize = right(toString(f));
-}
+{}
 
-aspect production booleanAST
+abstract production booleanAST
 top::AST ::= b::Boolean
-{
-  top.serialize = right(toString(b));
-}
+{}
 
-aspect production anyAST
+abstract production anyAST
 top::AST ::= x::a
-{
-  top.serialize =
-    case reflectTypeName(x) of
-      just(n) -> left(s"Can't serialize anyAST (type ${n})")
-    | nothing() -> left("Can't serialize anyAST")
-    end;
-}
+{}
 
-synthesized attribute astsLength::Integer occurs on ASTs, NamedASTs;
-attribute serialize<[String]> occurs on ASTs;
+tracked nonterminal ASTs;
 
-aspect production consAST
+abstract production consAST
 top::ASTs ::= h::AST t::ASTs
-{
-  top.astsLength = 1 + t.astsLength;
-  top.serialize =
-    do (bindEither, returnEither) {
-      hSerialize::String <- h.serialize;
-      tSerialize::[String] <- t.serialize;
-      return hSerialize :: tSerialize;
-    };
-}
+{}
 
-aspect production nilAST
+abstract production nilAST
 top::ASTs ::=
-{
-  top.astsLength = 0;
-  top.serialize = right([]);
-}
+{}
 
-attribute serialize<[String]> occurs on NamedASTs;
+tracked nonterminal NamedASTs;
 
-aspect production consNamedAST
+abstract production consNamedAST
 top::NamedASTs ::= h::NamedAST t::NamedASTs
-{
-  top.astsLength = 1 + t.astsLength;
-  top.serialize =
-    do (bindEither, returnEither) {
-      hSerialize::String <- h.serialize;
-      tSerialize::[String] <- t.serialize;
-      return hSerialize :: tSerialize;
-    };
-}
+{}
 
-aspect production nilNamedAST
+abstract production nilNamedAST
 top::NamedASTs ::=
-{
-  top.astsLength = 0;
-  top.serialize = right([]);
-}
+{}
 
-attribute serialize<String> occurs on NamedAST;
+tracked nonterminal NamedAST;
 
-aspect production namedAST
+abstract production namedAST
 top::NamedAST ::= n::String v::AST
-{
-  top.serialize =
-    do (bindEither, returnEither) {
-      vSerialize::String <- v.serialize;
-      return s"${n}=${vSerialize}";
-    };
-}
-
-function appendASTs
-ASTs ::= a::ASTs b::ASTs
-{
-  return
-    case a of
-    | consAST(h, t) -> consAST(h, appendASTs(t, b))
-    | nilAST() -> b
-    end;
-}
+{}
