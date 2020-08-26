@@ -93,24 +93,24 @@ public final class OriginContext {
 	public NOriginInfo makeNewConstructionOrigin(boolean isContractum) {
 		switch (this.variety) {
 			case NORMAL:
-				return new core.PoriginOriginInfo(null, OriginsUtil.SET_AT_CONSTRUCTION_OIT, this.lhs, this.rulesAsSilverList(), isContractum);
+				return new core.PoriginOriginInfo(OriginsUtil.SET_AT_CONSTRUCTION_OIT, this.lhs, this.rulesAsSilverList(), isContractum);
 
 			case MAINFUNCTION:
-				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_ENTRY_OIT, new common.StringCatter("Main Function"), this.rulesAsSilverList());
+				return new core.PotherOriginInfo(OriginsUtil.SET_FROM_ENTRY_OIT, new common.StringCatter("Main Function"), this.rulesAsSilverList());
 			
 			case FFI:
-				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_FFI_OIT, new common.StringCatter("Called from FFI"), this.rulesAsSilverList());
+				return new core.PotherOriginInfo(OriginsUtil.SET_FROM_FFI_OIT, new common.StringCatter("Called from FFI"), this.rulesAsSilverList());
 
 			case PARSERACTION:
-				return new core.PotherOriginInfo(null, OriginsUtil.SET_FROM_PARSER_ACTION_OIT, new common.StringCatter("Called inside a parser action block"), this.rulesAsSilverList());
+				return new core.PotherOriginInfo(OriginsUtil.SET_FROM_PARSER_ACTION_OIT, new common.StringCatter("Called inside a parser action block"), this.rulesAsSilverList());
 
 			case GLOBAL:
-				return new core.PotherOriginInfo(null, OriginsUtil.SET_IN_GLOBAL_OIT, new common.StringCatter("Built in a global"), this.rulesAsSilverList());
+				return new core.PotherOriginInfo(OriginsUtil.SET_IN_GLOBAL_OIT, new common.StringCatter("Built in a global"), this.rulesAsSilverList());
 		}
 		throw new RuntimeException("Impossible state: this.variety not recognized.");
 	}
 
-	public <T extends Node> T attrAccessCopy(final T arg) {
+	public <T extends TrackedNode> T attrAccessCopy(final T arg) {
 		switch (this.variety) {
 			case NORMAL: //We only copy if this is a 'normal' origin (i.e. it originates from a node)
 				return (T)arg.copy(this.lhs, this.rulesAsSilverList());
@@ -122,7 +122,7 @@ public final class OriginContext {
 
 	// Used by code that does some manipulation on a type-erased generic object that might be a nonterminal.
 	public Object attrAccessCopyPoly(final Object arg) {
-		if (arg instanceof OriginTracked) return attrAccessCopy((Node)arg);
+		if (arg instanceof TrackedNode) return attrAccessCopy((TrackedNode)arg);
 		return arg;
 	}
 

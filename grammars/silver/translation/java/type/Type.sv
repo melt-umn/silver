@@ -6,7 +6,6 @@ import silver:modification:ffi;
 
 -- The Java type corresponding to the Silver Type
 synthesized attribute transType :: String;
-synthesized attribute isPrimitiveForDuplicate :: Boolean;
 -- Java has crappy syntax for some things.
 -- If we want to statically refer to the class of this type, we cannot use
 -- the <> part of the type!! e.g. "Foo<Bar>.class" is illegal, should be "Foo.class"
@@ -16,14 +15,13 @@ synthesized attribute transTypeRep :: String;
 -- The runtime representation of a type, where all skolems are replaced with flexible vars, used for reification
 synthesized attribute transFreshTypeRep :: String;
 
-attribute transType, isPrimitiveForDuplicate, transClassType, transTypeRep, transFreshTypeRep occurs on Type;
+attribute transType, transClassType, transTypeRep, transFreshTypeRep occurs on Type;
 
 aspect production varType
 top::Type ::= tv::TyVar
 {
   top.transType = "Object";
   top.transClassType = "Object";
-  top.isPrimitiveForDuplicate = false;
   top.transTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
   top.transFreshTypeRep = top.transTypeRep;
 }
@@ -33,7 +31,6 @@ top::Type ::= tv::TyVar
 {
   top.transType = "Object";
   top.transClassType = "Object";
-  top.isPrimitiveForDuplicate = false;
   top.transTypeRep = s"new common.BaseTypeRep(\"b${toString(tv.extractTyVarRep)}\")";
   top.transFreshTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
 }
@@ -43,7 +40,6 @@ top::Type ::=
 {
   local oops :: String = error("Attempting to translate in presence of errors");
   top.transType = oops;
-  top.isPrimitiveForDuplicate = true;
   top.transClassType = oops;
   top.transTypeRep = oops;
   top.transFreshTypeRep = oops;
@@ -54,7 +50,6 @@ top::Type ::=
 {
   top.transType = "Integer";
   top.transClassType = "Integer";
-  top.isPrimitiveForDuplicate = true;
   top.transTypeRep = "new common.BaseTypeRep(\"Integer\")";
   top.transFreshTypeRep = top.transTypeRep;
 }
@@ -64,7 +59,6 @@ top::Type ::=
 {
   top.transType = "Boolean";
   top.transClassType = "Boolean";
-  top.isPrimitiveForDuplicate = true;
   top.transTypeRep = "new common.BaseTypeRep(\"Boolean\")";
   top.transFreshTypeRep = top.transTypeRep;
 }
@@ -74,7 +68,6 @@ top::Type ::=
 {
   top.transType = "Float";
   top.transClassType = "Float";
-  top.isPrimitiveForDuplicate = true;
   top.transTypeRep = "new common.BaseTypeRep(\"Float\")";
   top.transFreshTypeRep = top.transTypeRep;
 }
@@ -84,7 +77,6 @@ top::Type ::=
 {
   top.transType = "common.StringCatter";
   top.transClassType = "common.StringCatter";
-  top.isPrimitiveForDuplicate = true;
   top.transTypeRep = "new common.BaseTypeRep(\"String\")";
   top.transFreshTypeRep = top.transTypeRep;
 }
@@ -94,7 +86,6 @@ top::Type ::=
 {
   top.transType = "Integer";
   top.transClassType = "Integer";
-  top.isPrimitiveForDuplicate = true;
   top.transTypeRep = "new common.BaseTypeRep(\"TerminalId\")";
   top.transFreshTypeRep = top.transTypeRep;
 }
@@ -106,7 +97,6 @@ top::Type ::= fn::String params::[Type] tracked::Boolean
   -- class, e.g. silver.definition.core.NExpr
   top.transType = makeNTClassName(fn);
   top.transClassType = top.transType;
-  top.isPrimitiveForDuplicate = false;
   top.transTypeRep =
     s"new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}})";
   top.transFreshTypeRep =
@@ -118,7 +108,6 @@ top::Type ::= fn::String
 {
   top.transType = makeTerminalName(fn);
   top.transClassType = makeTerminalName(fn);
-  top.isPrimitiveForDuplicate = true;
   top.transTypeRep = s"new common.BaseTypeRep(\"${fn}\")";
   top.transFreshTypeRep = top.transTypeRep;
 }
@@ -129,7 +118,6 @@ top::Type ::= te::Type
   -- TODO: this should probably be a generic.  e.g. "DecoratedNode<something>"
   top.transType = "common.DecoratedNode";
   top.transClassType = "common.DecoratedNode";
-  top.isPrimitiveForDuplicate = true;
   top.transTypeRep =
     case te of
       nonterminalType(fn, params, _) ->
@@ -149,7 +137,6 @@ top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
   top.transType = "common.NodeFactory<" ++ out.transType ++ ">";
   top.transClassType = "common.NodeFactory";
-  top.isPrimitiveForDuplicate = true;
   top.transTypeRep =
     s"new common.FunctionTypeRep(${out.transTypeRep}, " ++
       s"new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}}, " ++
@@ -165,5 +152,5 @@ top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 aspect production foreignType
 top::Type ::= fn::String  transType::String  params::[Type]
 {
-  top.isPrimitiveForDuplicate = true;
+
 }

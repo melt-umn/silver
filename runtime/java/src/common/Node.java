@@ -1,7 +1,6 @@
 package common;
 
 import common.exceptions.*;
-import core.NOriginInfo;
 
 /**
  * Node represents undecorated nodes.  That is, we have children, but no inherited attributes, yet.
@@ -13,14 +12,7 @@ import core.NOriginInfo;
  * @author tedinski
  * @see DecoratedNode
  */
-public abstract class Node implements Typed {
-
-	public final NOriginInfo origin;
-
-	public Node (NOriginInfo origin) {
-		this.origin = origin;
-	}
-	
+public abstract class Node implements Typed {	
 	// Common manipulators of Node objects.
 	
 	/**
@@ -63,13 +55,6 @@ public abstract class Node implements Typed {
 	 */
 	public DecoratedNode decorate() {
 		return decorate(TopNode.singleton, (Lazy[])null);
-	}
-
-	// Used only when needing origins info on lazily evaluated locals in functions :/
-	public DecoratedNode decorate(OriginContext originCtx) {
-		DecoratedNode tmp = decorate();
-		tmp.originCtx = originCtx;
-		return tmp;
 	}
 
 	// These methods are to be provided by the *nonterminal*
@@ -136,32 +121,6 @@ public abstract class Node implements Typed {
 	 * @return The full name of this Node. (e.g. "silver:definition:core:baseExpr")
 	 */
 	public abstract String getName();
-
-	public Object duplicate(Object redex, Object rule){
-		// if (System.getProperty("silver.origins.rtwarn")!=null) System.err.println("Origins Warn: Threw away OI ("+getName()+"$duplicate/2)");
-		// return this;
-		throw new RuntimeException("Origins helper "+getName()+"$duplicate/2 invoked but type not tracked.\nTry recompiling with --clean and see https://github.com/melt-umn/silver/issues/36 and https://github.com/melt-umn/silver/pull/333.\nIf it persists, report as bug.");
-	}
-
-	public Object duplicate(OriginContext oc) {
-		// if (System.getProperty("silver.origins.rtwarn")!=null) System.err.println("Origins Warn: Threw away OI ("+getName()+"$duplicate/1)");
-		//// This is overridden in addition to duplicate/1 (instead of just forwarding) to avoid
-		////  calling oc.rulesAsSilverList() when we don't need to build it. 
-		// return this;
-		throw new RuntimeException("Origins helper "+getName()+"$duplicate/1 invoked but type not tracked.\nTry recompiling with --clean and see https://github.com/melt-umn/silver/issues/36 and https://github.com/melt-umn/silver/pull/333.\nIf it persists, report as bug.");
-	}
-
-	public Object duplicateForForwarding(Object redex, String note){
-		// if (System.getProperty("silver.origins.rtwarn")!=null) System.err.println("Origins Warn: Threw away OI ("+getName()+"$duplicateForForwarding/2)");
-		// return this;
-		throw new RuntimeException("Origins helper "+getName()+"$duplicateForForwarding/2 invoked but type not tracked.\nTry recompiling with --clean and see https://github.com/melt-umn/silver/issues/36 and https://github.com/melt-umn/silver/pull/333.\nIf it persists, report as bug.");
-	}
-
-	public Object copy(Object redex, Object rule){
-		// if (System.getProperty("silver.origins.rtwarn")!=null) System.err.println("Origins Warn: Threw away OI ("+getName()+"$copy/2)");
-		// return this;
-		throw new RuntimeException("Origins helper "+getName()+"$copy/2 invoked but type not tracked.\nTry recompiling with --clean and see https://github.com/melt-umn/silver/issues/36 and https://github.com/melt-umn/silver/pull/333.\nIf it persists, report as bug.");
-	}
 
 	/**
 	 * Returns the number of children, same way array length does.

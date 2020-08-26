@@ -18,18 +18,11 @@ import core.*;
  */
 public abstract class FunctionNode extends Node {
 
-	public FunctionNode (final NOriginInfo origin) {
-		super(origin);
-		// common.Util.stackProbe();
-	}
-
-	/**
-	 * The normal way of decorating a function node. 
-	 * 
-	 * @return A "decorated" form of this FunctionNode
-	 */
-	public final DecoratedNode decorate() {
-		return new DecoratedNode(getNumberOfChildren(), getNumberOfLocalAttrs(), this);
+	// Used only when needing origins info on lazily evaluated locals in functions :/
+	public DecoratedNode decorate(OriginContext originCtx) {
+		DecoratedNode tmp = decorate();
+		tmp.originCtx = originCtx;
+		return tmp;
 	}
 
 	@Override

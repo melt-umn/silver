@@ -52,7 +52,7 @@ top::Operation ::= s::String
 aspect production productionOperation
 top::Operation ::= s::String tracked::Boolean
 {
-  top.frontTrans = "new " ++ makeClassName(s) ++"(" ++ (if tracked then newConstructionOriginUsingCtxRef else "null") ++ ",";
+  top.frontTrans = "new " ++ makeClassName(s) ++"(" ++ (if tracked then newConstructionOriginUsingCtxRef++"," else "");
   top.midTrans = ", ";
   top.endTrans = ")";
 }

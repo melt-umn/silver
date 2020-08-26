@@ -78,22 +78,34 @@ public abstract class Terminal implements Typed {
 	}
 	// Ditto
 	public static NLocation createSpan(final Object[] children, VirtualLocation l, int index) {
+		// System.err.print("createSpan n=");
 		if(children.length == 0) {
+			// System.err.println("0");
 			return new Ploc(new StringCatter(l.getFileName()), l.getLine(), l.getColumn(), l.getLine(), l.getColumn(), index, index);
 		} else if(children.length == 1) {
+			// System.err.println("1");
 			return extractLocation(children[0]);
 		} else {
+			// System.err.println("2");
 			return span(extractLocation(children[0]), extractLocation(children[children.length-1]));
 		}
 	}
 	public static NLocation extractLocation(Object o) {
+		// System.err.print("extractLocation from ");
+		// System.err.println(Util.hackyhackyUnparse(o));
 		if(o instanceof Terminal) {
+			// System.err.print("TERMINAL -> ");
+			// System.err.println(((Terminal)o).location);
 			return ((Terminal)o).location;
 		} else if(o instanceof Alocation) {
+			// System.err.print("LOCATION -> ");
+			// System.err.println((NLocation) ((Alocation)o).getAnno_core_location());
 			return (NLocation) ((Alocation)o).getAnno_core_location();
-		} else if(o instanceof Node) {
-			if (((Node)o).origin instanceof core.PparsedOriginInfo) {
-				return ((core.PparsedOriginInfo)((Node)o).origin).getChild_source();
+		} else if(o instanceof TrackedNode) {
+			core.NOriginInfo oi = ((TrackedNode)o).origin;
+			if (oi!=null && oi instanceof core.PparsedOriginInfo) {
+				// System.err.println("ORIGIN");
+				return ((core.PparsedOriginInfo)oi).getChild_source();
 			}
 		}
 		// TODO: a better error, maybe? Eh, it should never happen.

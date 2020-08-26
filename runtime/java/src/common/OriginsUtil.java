@@ -13,17 +13,17 @@ import java.util.*;
 public final class OriginsUtil {
 
 	// Re-useable instances of the various OIT markers
-	public static PsetAtConstructionOIT SET_AT_CONSTRUCTION_OIT = new PsetAtConstructionOIT(null);
-	public static PsetAtNewOIT SET_AT_NEW_OIT = new PsetAtNewOIT(null);
-	public static PsetAtForwardingOIT SET_AT_FORWARDING_OIT = new PsetAtForwardingOIT(null);
-	public static PsetAtAccessOIT SET_AT_ACCESS_OIT = new PsetAtAccessOIT(null);
-	public static PsetFromParserOIT SET_FROM_PARSER_OIT = new PsetFromParserOIT(null);
-	public static PsetFromParserActionOIT SET_FROM_PARSER_ACTION_OIT = new PsetFromParserActionOIT(null);
-	public static PsetFromFFIOIT SET_FROM_FFI_OIT = new PsetFromFFIOIT(null);
-	public static PsetFromReflectionOIT SET_FROM_REFLECTION_OIT = new PsetFromReflectionOIT(null);
-	public static PsetFromReificationOIT SET_FROM_REIFICATION_OIT = new PsetFromReificationOIT(null);
-	public static PsetFromEntryOIT SET_FROM_ENTRY_OIT = new PsetFromEntryOIT(null);
-	public static PsetInGlobalOIT SET_IN_GLOBAL_OIT = new PsetInGlobalOIT(null);
+	public static PsetAtConstructionOIT SET_AT_CONSTRUCTION_OIT = new PsetAtConstructionOIT();
+	public static PsetAtNewOIT SET_AT_NEW_OIT = new PsetAtNewOIT();
+	public static PsetAtForwardingOIT SET_AT_FORWARDING_OIT = new PsetAtForwardingOIT();
+	public static PsetAtAccessOIT SET_AT_ACCESS_OIT = new PsetAtAccessOIT();
+	public static PsetFromParserOIT SET_FROM_PARSER_OIT = new PsetFromParserOIT();
+	public static PsetFromParserActionOIT SET_FROM_PARSER_ACTION_OIT = new PsetFromParserActionOIT();
+	public static PsetFromFFIOIT SET_FROM_FFI_OIT = new PsetFromFFIOIT();
+	public static PsetFromReflectionOIT SET_FROM_REFLECTION_OIT = new PsetFromReflectionOIT();
+	public static PsetFromReificationOIT SET_FROM_REIFICATION_OIT = new PsetFromReificationOIT();
+	public static PsetFromEntryOIT SET_FROM_ENTRY_OIT = new PsetFromEntryOIT();
+	public static PsetInGlobalOIT SET_IN_GLOBAL_OIT = new PsetInGlobalOIT();
 
 	// Sexperify code. Horrible ugly hack to serialize + spit out silver objects as python expressions
 	private static String ids(final Object arg){
@@ -71,7 +71,7 @@ public final class OriginsUtil {
 				if (i!=annotationNames.length-1) r+=",";
 			}
 			r += "],";
-			r += sexprifyObj(seen, n.origin);
+			r += sexprifyObj(seen, getOriginOrNull(n));
 		} else if (arg instanceof ConsCell){
 			ConsCell cc = (ConsCell) arg;
 			if (cc.nil()) {
@@ -107,24 +107,28 @@ public final class OriginsUtil {
 		return new StringCatter(sexprifyObj(seen, arg));
 	}
 
+	public static NOriginInfo getOriginOrNull(final Object arg) {
+		if (arg instanceof TrackedNode) return ((TrackedNode)arg).origin;
+		return null;
+	}
+
 	// Implementation of the stdlib origins helpers
 
 	public static core.NMaybe polyGetOrigin(Object o) {
 		if (o instanceof DecoratedNode) o = ((DecoratedNode)o).undecorate();
-		if (!(o instanceof Node)) return new core.Pnothing(null);
-		Node n = (Node)o;
-		if (n.origin == null) return new core.Pnothing(null);
-		return new core.Pjust(null, n.origin);
+		NOriginInfo r = getOriginOrNull(o);
+		if (r == null) return new core.Pnothing();
+		return new core.Pjust(r);
 	}
 
 	public static core.NMaybe getOriginLink(core.NOriginInfo o) {
 		if (o instanceof PoriginOriginInfo)
-			return new core.Pjust(null, ((PoriginOriginInfo)o).getChild_origin());
+			return new core.Pjust(((PoriginOriginInfo)o).getChild_origin());
 
 		if (o instanceof PoriginAndRedexOriginInfo)
-			return new core.Pjust(null, ((PoriginAndRedexOriginInfo)o).getChild_origin());
+			return new core.Pjust(((PoriginAndRedexOriginInfo)o).getChild_origin());
 
-		return new core.Pnothing(null);
+		return new core.Pnothing();
 	}
 
 	// Misc helper

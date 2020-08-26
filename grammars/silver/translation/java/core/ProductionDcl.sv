@@ -24,8 +24,8 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   local dupX :: (String ::= NamedSignatureElement String) =
     (\x::NamedSignatureElement gc::String -> 
-        (if x.typerep.transType == "Object" then s"(${gc} instanceof common.Node?((common.Node)${gc}).duplicate(null, notes):${gc})"
-            else if x.typerep.isPrimitiveForDuplicate then gc
+        (if x.typerep.transType == "Object" then s"(${gc} instanceof common.TrackedNode?((common.TrackedNode)${gc}).duplicate(null, notes):${gc})"
+            else if !x.typerep.tracked then gc
             else gc++".duplicate(null, notes)"));
 
   local dupChild :: (String ::= NamedSignatureElement) =
@@ -71,15 +71,8 @@ ${makeIndexDcls(0, namedSig.inputElements)}
 ${implode("", map((.childStaticElem), namedSig.inputElements))}
     }
 
-    public ${className}(final NOriginInfo origin ${commaIfKidsOrAnnos} ${namedSig.javaSignature}) {
-        super(origin ${commaIfAnnos} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
-${implode("", map(makeChildAssign, namedSig.inputElements))}
-    }
-
-    public ${className}(${namedSig.javaSignature}) { //TODO: Ugly compat hack
-        super(null ${commaIfAnnos} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
-        //if (System.getProperty("silver.origins.rtwarn")!=null) System.err.println("Origins Warn: no-origins constructor invoked ("+getName()+")");
-
+    public ${className}(${if wantsTracking then "final NOriginInfo origin"++commaIfKidsOrAnnos else ""} ${namedSig.javaSignature}) {
+        super(${if wantsTracking then "origin"++commaIfAnnos else ""} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
     }
 
@@ -201,7 +194,7 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
         ${implode("\n\t\t", map(makeChildReify(fName, length(namedSig.inputElements), _), namedSig.inputElements))}
         ${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
         
-        return new ${className}(${if wantsTracking then "new core.PoriginOriginInfo(null, common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)" else "null"} ${commaIfKidsOrAnnos} ${namedSig.refInvokeTrans});
+        return new ${className}(${if wantsTracking then "new core.PoriginOriginInfo(common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)"++commaIfKidsOrAnnos else ""} ${namedSig.refInvokeTrans});
     }
 
     public static final common.NodeFactory<${fnnt}> factory = new Factory();
@@ -209,7 +202,7 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
     public static final class Factory extends common.NodeFactory<${fnnt}> {
         @Override
         public final ${fnnt} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] annotations) {
-            return new ${className}(${if wantsTracking then newConstructionOriginUsingCtxRef else "null"} ${commaIfKidsOrAnnos} ${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+            return new ${className}(${if wantsTracking then newConstructionOriginUsingCtxRef++commaIfKidsOrAnnos else ""} ${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
         }
         
         @Override
@@ -231,10 +224,10 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
     @Override
     public ${fnnt} duplicate(Object redex, Object notes) {
         if (redex == null) {
-            return new ${className}(new PoriginOriginInfo(null, common.OriginsUtil.SET_AT_NEW_OIT, this, notes, true) ${commaIfKids}
+            return new ${className}(new PoriginOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, true) ${commaIfKids}
                 ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
         } else {
-            return new ${className}(new PoriginAndRedexOriginInfo(null, common.OriginsUtil.SET_AT_NEW_OIT, this, notes, redex, notes, true) ${commaIfKids}
+            return new ${className}(new PoriginAndRedexOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, redex, notes, true) ${commaIfKids}
                 ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
         }
     }
@@ -266,13 +259,13 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
 
         Object redex = ((common.Node)newRedex);
         Object redexNotes = newRule;
-        return new ${className}(new PoriginAndRedexOriginInfo(null, common.OriginsUtil.SET_AT_ACCESS_OIT, origin, originNotes, redex, redexNotes, newlyConstructed) ${commaIfKids}
+        return new ${className}(new PoriginAndRedexOriginInfo(common.OriginsUtil.SET_AT_ACCESS_OIT, origin, originNotes, redex, redexNotes, newlyConstructed) ${commaIfKids}
             ${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(copyAnno, namedSig.namedInputElements))});
     }
 
     @Override
     public ${fnnt} duplicateForForwarding(Object redex, String note) {
-        return new ${className}(new PoriginOriginInfo(null, common.OriginsUtil.SET_AT_FORWARDING_OIT, this, new common.ConsCell(new core.PoriginDbgNote(new common.StringCatter(note)), common.ConsCell.nil), true) ${commaIfKids}
+        return new ${className}(new PoriginOriginInfo(common.OriginsUtil.SET_AT_FORWARDING_OIT, this, new common.ConsCell(new core.PoriginDbgNote(new common.StringCatter(note)), common.ConsCell.nil), true) ${commaIfKids}
             ${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(copyAnno, namedSig.namedInputElements))});
     }
 

@@ -161,7 +161,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
     | functionReference(q) -> -- static method invocation
         s"((${finalType(top).transType})${makeClassName(q.lookupValue.fullName)}.invoke(${makeOriginContextRef(e)} ${commaIfArgs} ${argsTranslation(es)}))"
     | productionReference(q) -> -- static constructor invocation
-        s"((${finalType(top).transType})new ${makeClassName(q.lookupValue.fullName)}(${makeNewConstructionOrigin(top, !sameProd)} ${commaIfArgsOrAnnos} ${implode(", ", map((.lazyTranslation), es.exprs ++ reorderedAnnoAppExprs(annos)))}))"
+        s"((${finalType(top).transType})new ${makeClassName(q.lookupValue.fullName)}(${makeNewConstructionOrigin(top, !sameProd, commaIfArgsOrAnnos)} ${implode(", ", map((.lazyTranslation), es.exprs ++ reorderedAnnoAppExprs(annos)))}))"
     | _ -> -- dynamic method invocation
         s"((${finalType(top).transType})${e.translation}.invoke(${makeOriginContextRef(e)}, new Object[]{${argsTranslation(es)}}, ${namedargsTranslation(annos)}))" 
     end ;

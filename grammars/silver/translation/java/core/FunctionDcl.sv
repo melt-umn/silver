@@ -20,7 +20,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   local commaIfArgs :: String = if length(namedSig.inputElements)!=0 then "," else "";
 
   local funBody :: String =
-s"""			final common.DecoratedNode context = new P${id.name}(null ${commaIfArgs} ${argsAccess}).decorate(originCtx);
+s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate(originCtx);
 			//${head(body.uniqueSignificantExpression).unparse}
 			return (${namedSig.outputElement.typerep.transType})(${head(body.uniqueSignificantExpression).translation});
 """;
@@ -74,8 +74,7 @@ ${makeIndexDcls(0, whatSig.inputElements)}
 ${implode("", map((.childStaticElem), whatSig.inputElements))}
 	}
 
-	public ${className}(final NOriginInfo origin ${commaIfArgs} ${whatSig.javaSignature}) {
-		super(origin);
+	public ${className}(${whatSig.javaSignature}) {
 ${implode("", map(makeChildAssign, whatSig.inputElements))}
 	}
 

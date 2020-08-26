@@ -24,10 +24,10 @@ package ${makeName(top.grammarName)};
 import java.util.*;
 import core.*;
 
-public abstract class ${className} extends common.Node${
+public abstract class ${className} extends common.${if wantsTracking then "TrackedNode" else "Node"}${
   (if null(myAnnos) then "" else 
     " implements " ++ implode(", ", map(makeAnnoClassName, map((.elementName), myAnnos)))
-  )} ${if wantsTracking then (if null(myAnnos) then "implements common.OriginTracked" else ", common.OriginTracked") else ""}{
+  )} {
 
 	public static final int num_inh_attrs = Init.${inhVar};
 	public static final int num_syn_attrs = Init.${synVar};
@@ -38,9 +38,8 @@ public abstract class ${className} extends common.Node${
 
 	public static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];
 
-	protected ${className}(final NOriginInfo origin ${commaIfAnnos} ${implode(", ", map((.annoSigElem), myAnnos))}) {
-		super(${if wantsTracking then "origin" else "null"});
-		${if !wantsTracking then "if (origin!=null) throw new RuntimeException(\"Origins helper \"+getName()+\"$<init>/? invoked but type not tracked.\\nTry recompiling with --clean and see https://github.com/melt-umn/silver/issues/36 and https://github.com/melt-umn/silver/pull/333.\\nIf it persists, report as bug.\");" else ""}
+	protected ${className}(${if wantsTracking then "final NOriginInfo origin"++commaIfAnnos else ""} ${implode(", ", map((.annoSigElem), myAnnos))}) {
+		${if wantsTracking then "super(origin)" else ""};
 ${implode("", map(makeAnnoAssign, myAnnos))}
 	}
 

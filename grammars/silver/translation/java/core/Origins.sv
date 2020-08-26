@@ -43,7 +43,7 @@ function makeOriginContextRef
 String ::= top::Decorated Expr --need .frame anno
 {
   local rulesTrans :: [String] = (if top.config.tracingOrigins then [locRule] else []) ++ map((.translation), top.originRules);
-  local locRule :: String = s"new core.PoriginDbgNote(null, new common.StringCatter(\"${substitute("\"", "\\\"", hackUnparse(top.location))}\"))";
+  local locRule :: String = s"new core.PoriginDbgNote(new common.StringCatter(\"${substitute("\"", "\\\"", hackUnparse(top.location))}\"))";
 
   return if top.config.noOrigins then "null" 
          else if length(rulesTrans)==0 
@@ -55,14 +55,14 @@ global newConstructionOriginUsingCtxRef :: String =
 	"originCtx.makeNewConstructionOrigin(true)";
 
 function makeNewConstructionOrigin
-String ::= top::Decorated Expr  inInteresting::Boolean --need .frame anno
+String ::= top::Decorated Expr  inInteresting::Boolean  followWith::String --need .frame anno
 {
   local ty :: Type = finalType(top);
   local interesting :: Boolean = top.frame.originsContextSource.alwaysConsideredInteresting || !top.isRoot || inInteresting;
 
   return if typeWantsTracking(ty, top.config, top.env)
-         then makeOriginContextRef(top)++s".makeNewConstructionOrigin(${if interesting then "true" else "false"})"
-         else "null";
+         then makeOriginContextRef(top)++s".makeNewConstructionOrigin(${if interesting then "true" else "false"})"++followWith
+         else "";
 }
 
 function typeWantsTracking
@@ -90,7 +90,7 @@ String ::= top::Decorated Expr expr::String
   --  - polyCopy is the slowpath that uses java instanceof to check if it's tracked, and then send OI if it is
 
   local polyCopy   :: String = s"((${ty.transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${expr}))";
-  local directCopy :: String = s"((${ty.transType})${makeOriginContextRef(top)}.attrAccessCopy((common.Node)${expr}))";
+  local directCopy :: String = s"((${ty.transType})${makeOriginContextRef(top)}.attrAccessCopy((common.TrackedNode)${expr}))";
   local noop       :: String = s"((${ty.transType})${expr})";
 
   local impl :: String = if ty.transType == "Object" then polyCopy else
@@ -106,7 +106,7 @@ String ::= top::Decorated Expr expr::String
 {
   local ty :: Type = finalType(top);
 
-  local directDup :: String = s"${expr}.duplicate(${makeOriginContextRef(top)})";
+  local directDup :: String = s"((${ty.transType})${expr}).duplicate(${makeOriginContextRef(top)})";
 
   return if ((!top.config.noRedex) && typeWantsTracking(ty, top.config, top.env)) then directDup else expr;
 }

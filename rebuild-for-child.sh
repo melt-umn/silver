@@ -19,6 +19,7 @@ echo    === DEEP CLEAN ===
 ./deep-clean -delete all
 echo    === COMPILE WITH OLD SILVER ===
 ./old-compile --clean --one-jar
+cleanup
 echo    === BUILD CHILDRUNTIME ===
 rm -rf generated/*/core generated/*/lib/xml ||true
 support/bin/silver-custom build/silver.composed.Default.jar core ||true
@@ -29,7 +30,5 @@ ant
 echo    === INSTALL NEW RUNTIME ===
 cd ../..
 cp runtime/java/*.jar jars
-
-cleanup
 echo    === DONE\? ===
 trap - EXIT

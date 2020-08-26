@@ -69,7 +69,7 @@ public final class Reflection {
 	 * @return The reflected AST.
 	 */
 	public static NAST reflect(final ConsCell rules, Object o) {
-		core.NOriginInfo origin = new core.PoriginOriginInfo(null, OriginsUtil.SET_FROM_REFLECTION_OIT, o, rules, true);
+		core.NOriginInfo origin = new core.PoriginOriginInfo(OriginsUtil.SET_FROM_REFLECTION_OIT, o, rules, true);
 		if(o instanceof Node) {
 			Node n = (Node)o;
 			NASTs children = new PnilAST(origin);
@@ -119,11 +119,11 @@ public final class Reflection {
 	 */
 	public static NEither reifyChecked(final ConsCell rules, final TypeRep resultType, final NAST ast) {
 		try {
-			return new Pright(null, reify(rules, resultType, ast));
+			return new Pright(reify(rules, resultType, ast));
 		} catch (SilverException e) {
 			Throwable rootCause = SilverException.getRootCause(e);
 			if (rootCause instanceof SilverError) {
-				return new Pleft(null, new StringCatter("Reification error at " + ReifyTraceException.getASTRepr(e) + ":\n" + rootCause.getMessage()));
+				return new Pleft(new StringCatter("Reification error at " + ReifyTraceException.getASTRepr(e) + ":\n" + rootCause.getMessage()));
 			} else {
 				throw e;
 			}
