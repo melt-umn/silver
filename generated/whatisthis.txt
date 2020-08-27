@@ -1,0 +1,9 @@
+Silver translates attribute grammar specifications to Java.  The
+resulting .java and .class files are placed here.
+
+You can delete everything here safely, but you should not remove this
+directory.  That is,
+  rm -r generated/*
+is OK, but 
+  rm -r generated
+is not.
