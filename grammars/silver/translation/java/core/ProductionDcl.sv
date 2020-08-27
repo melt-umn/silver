@@ -1,6 +1,7 @@
 grammar silver:translation:java:core;
 
 import silver:util;
+import silver:driver;
 
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
@@ -123,7 +124,7 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
     public common.Node evalForward(final common.DecoratedNode context) {
         ${if null(body.uniqueSignificantExpression) 
           then s"throw new common.exceptions.SilverInternalError(\"Production ${fName} erroneously claimed to forward\")"
-          else s"return ((common.Node)${head(body.uniqueSignificantExpression).translation}${if wantsTracking then s".duplicateForForwarding(context.undecorate(), \"${substitute("\"", "\\\"", hackUnparse(head(body.uniqueSignificantExpression).location))}\")" else ""})"};
+          else s"return ((common.Node)${head(body.uniqueSignificantExpression).translation}${if wantsTracking && !top.config.noRedex  then s".duplicateForForwarding(context.undecorate(), \"${substitute("\"", "\\\"", hackUnparse(head(body.uniqueSignificantExpression).location))}\")" else ""})"};
     }
 
     @Override
