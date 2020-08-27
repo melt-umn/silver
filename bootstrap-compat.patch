@@ -1,5 +1,5 @@
 diff --git a/grammars/core/Origins.sv b/grammars/core/Origins.sv
-index 853e4276..61918373 100644
+index ba219942..88ffb5c3 100644
 --- a/grammars/core/Origins.sv
 +++ b/grammars/core/Origins.sv
 @@ -286,27 +286,21 @@ function sexprify
@@ -31,6 +31,18 @@ index 853e4276..61918373 100644
  
  abstract production ambientOrigin
  top::AmbientOriginNT ::= 
+@@ -314,11 +308,3 @@ top::AmbientOriginNT ::=
+   
+ }
+ 
+-function callWithListOfNotes
+-a ::= notes::[OriginNote] fn::(a::=)
+-{
+-  return case notes of
+-         | [] -> fn()
+-         | x::xs -> attachNote x on {callWithListOfNotes(xs, fn)}
+-         end;
+-}
 diff --git a/grammars/core/reflect/AST.sv b/grammars/core/reflect/AST.sv
 index 52447f5b..d146e0a5 100644
 --- a/grammars/core/reflect/AST.sv

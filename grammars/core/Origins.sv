@@ -313,3 +313,12 @@ top::AmbientOriginNT ::=
 {
   
 }
+
+function callWithListOfNotes
+a ::= notes::[OriginNote] fn::(a::=)
+{
+  return case notes of
+         | [] -> fn()
+         | x::xs -> attachNote x on {callWithListOfNotes(xs, fn)}
+         end;
+}

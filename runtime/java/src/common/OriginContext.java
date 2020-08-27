@@ -19,75 +19,52 @@ public final class OriginContext {
 
 	public final Variety variety;
 	public final Node lhs;
-	public final List<NOriginNote> rules;
+	public final NOriginNote[] rules;
 
-	private OriginContext(final Variety variety, final Node lhs, final List<NOriginNote> rules) {
+	private OriginContext(final Variety variety, final Node lhs, final NOriginNote[] rules) {
 		this.variety = variety;
 		this.lhs = lhs;
 		this.rules = rules;
 	}
 
 	public static final OriginContext ENTRY_CONTEXT =
-		new OriginContext(Variety.MAINFUNCTION, null, new ArrayList<NOriginNote>());
+		new OriginContext(Variety.MAINFUNCTION, null, null);
 
 	public static final OriginContext FFI_CONTEXT =
-		new OriginContext(Variety.FFI, null, new ArrayList<NOriginNote>());
+		new OriginContext(Variety.FFI, null, null);
 
 	public static final OriginContext PARSERACTION_CONTEXT =
-		new OriginContext(Variety.PARSERACTION, null, new ArrayList<NOriginNote>());
+		new OriginContext(Variety.PARSERACTION, null, null);
 
 	public static final OriginContext GLOBAL_CONTEXT =
-		new OriginContext(Variety.GLOBAL, null, new ArrayList<NOriginNote>());
-
-	public OriginContext(final Node lhs, final List<NOriginNote> rules) {
-		this(Variety.NORMAL, lhs, rules);
-	}
+		new OriginContext(Variety.GLOBAL, null, null);
 
 	public OriginContext(final Node lhs, final NOriginNote[] rules) {
-		this(lhs, listOfArray(rules));
-	}
-
-	public OriginContext(final OriginContext old, final List<NOriginNote> newRules) {
-		this(old.variety, old.lhs, mergeRules(old.rules, newRules));
-	}
-
-	public OriginContext(final OriginContext old, final NOriginNote newRule) {
-		this(old.variety, old.lhs, mergeRule(old.rules, newRule));
+		this(Variety.NORMAL, lhs, rules);
 	}
 
 	public OriginContext(final OriginContext old, final NOriginNote[] newRules) {
 		this(old.variety, old.lhs, mergeRulesArr(old.rules, newRules));
 	}
 
-	private static List<NOriginNote> mergeRules(final List<NOriginNote> a, final List<NOriginNote> b) {
-		List<NOriginNote> rules = new ArrayList<NOriginNote>();
-		rules.addAll(a);
-		rules.addAll(b);
-		return rules;
-	}
+	private static NOriginNote[] mergeRulesArr(final NOriginNote[] a, final NOriginNote[] b) {
+		if (a==null) return b;
+		if (b==null) return a;
 
-	private static List<NOriginNote> mergeRulesArr(final List<NOriginNote> a, final NOriginNote[] b) {
-		List<NOriginNote> rules = new ArrayList<NOriginNote>();
-		rules.addAll(a);
-		Collections.addAll(rules, b);
-		return rules;
-	}
-
-	private static List<NOriginNote> mergeRule(final List<NOriginNote> a, final NOriginNote b) {
-		List<NOriginNote> rules = new ArrayList<NOriginNote>();
-		rules.addAll(a);
-		rules.add(b);
-		return rules;
-	}
-
-	private static List<NOriginNote> listOfArray(final NOriginNote[] arr) {
-		ArrayList<NOriginNote> l = new ArrayList<NOriginNote>();
-		Collections.addAll(l, arr);
-		return l;
+		NOriginNote[] result = new NOriginNote[a.length + b.length];
+	    System.arraycopy(a, 0, result, 0, a.length);
+	    System.arraycopy(b, 0, result, a.length, b.length);
+    	return result
 	}
 
 	public ConsCell rulesAsSilverList() {
-		return ConsCell.fromList(this.rules);
+		if (this.rules==null) return ConsCell.nil;
+
+		ConsCell res = ConsCell.nil;
+		for(int i=this.rules.length; i!=-1; i--) {
+			res = new ConsCell(this.rules[i], res);
+		}
+		return res;
 	}
 
 	public NOriginInfo makeNewConstructionOrigin(boolean isContractum) {
