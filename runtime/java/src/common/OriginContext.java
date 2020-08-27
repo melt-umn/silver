@@ -54,14 +54,14 @@ public final class OriginContext {
 		NOriginNote[] result = new NOriginNote[a.length + b.length];
 	    System.arraycopy(a, 0, result, 0, a.length);
 	    System.arraycopy(b, 0, result, a.length, b.length);
-    	return result
+    	return result;
 	}
 
 	public ConsCell rulesAsSilverList() {
 		if (this.rules==null) return ConsCell.nil;
 
 		ConsCell res = ConsCell.nil;
-		for(int i=this.rules.length; i!=-1; i--) {
+		for(int i=this.rules.length-1; i!=-1; i--) {
 			res = new ConsCell(this.rules[i], res);
 		}
 		return res;

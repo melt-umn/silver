@@ -18,8 +18,8 @@ synthesized attribute alwaysConsideredInteresting :: Boolean occurs on ContextOr
 aspect production useContextLhsAndRules
 top::ContextOriginInfoSource ::=
 {
-  top.contextRef = "new common.OriginContext(context.undecorate(), new java.util.ArrayList<core.NOriginNote>())";
-  top.contextRefAddingRules = (\x::String -> s"new common.OriginContext(context.undecorate(), common.OriginsUtil.arrayListOfArray(${x}))");
+  top.contextRef = "new common.OriginContext(context.undecorate(), null)";
+  top.contextRefAddingRules = (\x::String -> s"new common.OriginContext(context.undecorate(), ${x})");
   top.alwaysConsideredInteresting = false;
 }
 
