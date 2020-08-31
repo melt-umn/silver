@@ -11,6 +11,12 @@ top::DclInfo ::=
   top.emptyVal = error("Internal compiler error: must be defined for all monoid attribute declarations");
 }
 
+aspect production inhDcl
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+{
+  top.propagateDispatcher = propagateInh(_, location=_);
+}
+
 abstract production functorDcl
 top::DclInfo ::= sg::String sl::Location fn::String tyVar::TyVar
 {
@@ -87,4 +93,40 @@ top::DclInfo ::= sg::String sl::Location inh::String syn::String
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateEqualitySyn(inh, _, location=_);
+}
+
+abstract production threadedInhDcl
+top::DclInfo ::= sg::String sl::Location inh::String syn::String bound::[TyVar] ty::Type
+{
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = syn;
+
+  top.typerep = ty;
+  top.dclBoundVars = bound;
+  top.isInherited = true;
+  
+  top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_); -- Allow normal inh equations
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+  top.propagateDispatcher = propagateThreadedInh(_, syn, location=_);
+}
+
+abstract production threadedSynDcl
+top::DclInfo ::= sg::String sl::Location inh::String syn::String bound::[TyVar] ty::Type
+{
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = syn;
+
+  top.typerep = ty;
+  top.dclBoundVars = bound;
+  top.isSynthesized = true;
+  
+  top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+  top.propagateDispatcher = propagateThreadedSyn(inh, _, location=_);
 }
