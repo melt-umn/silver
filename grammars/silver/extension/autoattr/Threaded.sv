@@ -43,9 +43,13 @@ top::ProductionStmt ::= inh::Decorated QName syn::String
       map(
         name(_, top.location),
         lhsName ::
-        filter(
-          \ n::String -> !null(getOccursDcl(inh.name, n, top.env)) && !null(getOccursDcl(syn, n, top.env)),
-          map((.elementName), top.frame.signature.inputElements)) ++
+        map(
+          (.elementName),
+          filter(
+            \ ie::NamedSignatureElement ->
+              !null(getOccursDcl(inh.lookupAttribute.fullName, ie.typerep.typeName, top.env)) &&
+              !null(getOccursDcl(syn, ie.typerep.typeName, top.env)),
+            top.frame.signature.inputElements)) ++
         [if !null(getValueDcl("forward", top.env)) then "forward" else lhsName]),
       location=top.location);
 }
@@ -61,9 +65,14 @@ top::ProductionStmt ::= inh::String syn::Decorated QName
       inh, syn.name,
       map(
         name(_, top.location),
-        filter(
-          \ n::String -> !null(getOccursDcl(inh, n, top.env)) && !null(getOccursDcl(syn.name, n, top.env)),
-          map((.elementName), top.frame.signature.inputElements)) ++
+        lhsName ::
+        map(
+          (.elementName),
+          filter(
+            \ ie::NamedSignatureElement ->
+              !null(getOccursDcl(inh, ie.typerep.typeName, top.env)) &&
+              !null(getOccursDcl(syn.lookupAttribute.fullName, ie.typerep.typeName, top.env)),
+            top.frame.signature.inputElements)) ++
         [if !null(getValueDcl("forward", top.env)) then "forward" else lhsName]),
       location=top.location);
 }
@@ -75,7 +84,7 @@ top::ProductionStmt ::= 'thread' inh::QName ',' syn::QName 'on' children::Names 
   forwards to
     productionStmtAppend(
       threadInhDcl(inh.name, syn.name, children.ids, location=top.location),
-      threadInhDcl(inh.name, syn.name, children.ids, location=top.location),
+      threadSynDcl(inh.name, syn.name, children.ids, location=top.location),
       location=top.location);
 }
 
@@ -125,7 +134,7 @@ top::ProductionStmt ::= inh::String syn::String children::[Name]
             attributeDef(
               concreteDefLHS(qNameId(c1, location=top.location), location=top.location),
               '.',
-              qNameAttrOccur(qName(top.location, inh), location=top.location),
+              qNameAttrOccur(qName(top.location, syn), location=top.location),
               '=',
               access(
                 baseExpr(qNameId(c2, location=top.location), location=top.location), '.',

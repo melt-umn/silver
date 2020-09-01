@@ -58,6 +58,12 @@ top::ProductionStmt ::= attr::Decorated QName
                       repeat(wildcPattern('_', location=top.location), numChildren - (ie.fst + 1)) ),
                     ')',
                     location=top.location)} -> a
+              | a ->
+                error(
+                  "Attribute " ++ $Expr{stringConst(terminal(String_t, s"\"${attr.name}\"", top.location), location=top.location)} ++
+                  " demanded on child " ++ $Expr{stringConst(terminal(String_t, s"\"${ie.snd.elementName}\"", top.location), location=top.location)} ++
+                  " of production " ++ $Expr{stringConst(terminal(String_t, s"\"${top.frame.signature.fullName}\"", top.location), location=top.location)} ++
+                  " when given value " ++ core:hackUnparse(a) ++ " does not match.")
               end;
           },
         filter(
@@ -75,7 +81,6 @@ top::ProductionStmt ::= inh::String syn::Decorated QName
 {
   top.unparse = s"propagate ${syn.unparse};";
   
-  local numChildren::Integer = length(top.frame.signature.inputElements);
   forwards to
     Silver_ProductionStmt {
       $name{top.frame.signature.outputElement.elementName}.$QName{new(syn)} =
