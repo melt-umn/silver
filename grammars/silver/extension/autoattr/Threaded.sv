@@ -3,7 +3,7 @@ grammar silver:extension:autoattr;
 concrete production threadedAttributeDcl
 top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
-  top.unparse = s"threaded attribute ${inh.unparse}, ${syn.unparse};";
+  top.unparse = s"threaded attribute ${inh.unparse}, ${syn.unparse} ${tl.unparse} :: ${te.unparse};";
   top.moduleNames := [];
 
   production attribute inhFName :: String;
