@@ -5,43 +5,52 @@ import silver:extension:list;
 import silver:util;
 
 --import silver:analysis:typechecking:core;
+import silver:driver:util;
+import silver:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph;
+import silver:translation:java:core;
 
-nonterminal NameOrBOperator with config, location, grammarName, errors, env, unparse, operation, operatorForType;
+nonterminal NameOrBOperator with config, location, grammarName, compiledGrammars, flowEnv, productionFlowGraphs, errors, env, unparse, operation, operatorForType;
 nonterminal Operation;
 
 synthesized attribute operation :: Operation;
 inherited attribute operatorForType :: Type;
 
-concrete production nameOperator
-top::NameOrBOperator ::= q::QName
+concrete production exprOperator
+top::NameOrBOperator ::= e::Expr
 {
-  top.unparse = q.unparse;
+  top.unparse = e.unparse;
 
-  top.operation = case q.lookupValue.dcl of
-                  | funDcl(_,_,_) -> functionOperation(q.lookupValue.fullName)
-                  | prodDcl(_,_,_,_) -> productionOperation(q.lookupValue.fullName)
-                  | _ -> error("INTERNAL ERROR: operation attribute demanded for non-function or production.")
-                  end;
+  top.operation =
+    case e of
+    | functionReference(q) -> functionOperation(e, makeClassName(q.lookupValue.fullName), false, true)
+    | productionReference(q) -> functionOperation(e, makeClassName(q.lookupValue.fullName), false, false)
+    | _ -> functionOperation(e, e.translation, true, false)
+    end;
 
-  top.errors := q.lookupValue.errors;
+  top.errors := e.errors;
   
   local checkOperationType :: TypeCheck =
-    check(freshenCompletely(q.lookupValue.typerep),
+    check(freshenCompletely(e.typerep),
       functionType(top.operatorForType, [top.operatorForType, top.operatorForType], []));
-  checkOperationType.downSubst = emptySubst();
-  checkOperationType.finalSubst = checkOperationType.upSubst;
   
-  local operationErrors :: [Message] =
+  e.downSubst = emptySubst();
+  checkOperationType.downSubst = e.upSubst;
+  checkOperationType.finalSubst = checkOperationType.upSubst;
+  e.finalSubst = checkOperationType.finalSubst;
+  
+  top.errors <-
     if !checkOperationType.typeerror then []
-    else [err(top.location, q.name ++ " must be of type " ++ checkOperationType.rightpp ++
+    else [err(top.location, e.unparse ++ " must be of type " ++ checkOperationType.rightpp ++
             " instead it is of type " ++ checkOperationType.leftpp)];
   
-  top.errors <- if !q.lookupValue.found then [] else
-    case q.lookupValue.dcl of
-    | funDcl(_,_,_) -> operationErrors
-    | prodDcl(_,_,_,_) -> operationErrors
-    | _ -> [err(top.location, q.name ++ " is not a valid operator for collections.")]
-    end;
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = 
+    constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
+
+  e.frame = globalExprContext(myFlowGraph);
 }
 
 concrete production plusplusOperator
@@ -84,30 +93,52 @@ top::NameOrBOperator ::= '&&'
                 end;
 }
 
+concrete production addOperator
+top::NameOrBOperator ::= '+'
+{
+  top.unparse = "+";
+
+  top.operation = addOperation();
+  top.errors := case top.operatorForType of
+                | intType() -> []
+                | _ -> [err(top.location, "+ operator will only work for collections of type Integer")]
+                end;
+}
+concrete production mulOperator
+top::NameOrBOperator ::= '*'
+{
+  top.unparse = "*";
+
+  top.operation = addOperation();
+  top.errors := case top.operatorForType of
+                | intType() -> []
+                | _ -> [err(top.location, "* operator will only work for collections of type Integer")]
+                end;
+}
+
+-- This would be much nicer if we could pass the Decorated Expr here,
+-- but this nonterminal must be serializable as part of the environment.
 abstract production functionOperation
-top::Operation ::= s::String
-{
-}
-abstract production productionOperation
-top::Operation ::= s::String
-{
-}
+top::Operation ::= e::Expr eTrans::String isRef::Boolean isFunction::Boolean
+{}
 abstract production plusPlusOperationString
 top::Operation ::= 
-{
-}
+{}
 abstract production plusPlusOperationList
 top::Operation ::= 
-{
-}
+{}
 abstract production borOperation
 top::Operation ::= 
-{
-}
+{}
 abstract production bandOperation
 top::Operation ::= 
-{
-}
+{}
+abstract production addOperation
+top::Operation ::= 
+{}
+abstract production mulOperation
+top::Operation ::= 
+{}
 
 --- Declarations ---------------------------------------------------------------
 concrete production collectionAttributeDclSyn
