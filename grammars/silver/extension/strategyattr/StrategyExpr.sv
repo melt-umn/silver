@@ -790,7 +790,16 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
 {
   top.translation =
     matchRule(
-      pt.patternList, just(cond), Silver_Expr { core:just($Expr{e}) },
+      pt.patternList, just(pair(cond, nothing())), Silver_Expr { core:just($Expr{e}) },
+      location=top.location);
+}
+
+aspect production matchRuleWhenMatches_c
+top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::Expr
+{
+  top.translation =
+    matchRule(
+      pt.patternList, just(pair(cond, just(p))), Silver_Expr { core:just($Expr{e}) },
       location=top.location);
 }
 
