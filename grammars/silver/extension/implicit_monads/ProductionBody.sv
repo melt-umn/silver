@@ -51,15 +51,7 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
   top.productionAttributes := [];
   top.defs := [];
 
-  local fail::Either<String Expr> = monadFail(attr.typerep, top.location);
-
   local merrors::[Message] =
-    (if isMonad(attr.typerep)
-     then case fail of
-          | right(_) -> []
-          | left(e) -> [err(top.location, e ++ "; this monad cannot be used in an empty equation")]
-          end
-     else []) ++
     (if !isMonad(attr.typerep)
      then [err(top.location, "Implicit equations can only be used for " ++
                              "monad-typed attributes, not attributes of type " ++
@@ -95,10 +87,10 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
 
 
 --Write an equation that only allows accessing explicit monads
-terminal Explicit_kwd    'explicit'     lexer classes {KEYWORD,RESERVED};
+terminal Restricted_kwd    'restricted'     lexer classes {KEYWORD,RESERVED};
 
-concrete production explicitAttributeDef
-top::ProductionStmt ::= 'explicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
+concrete production restrictedAttributeDef
+top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;
@@ -116,8 +108,8 @@ top::ProductionStmt ::= 'explicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
                                    then attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
                                    else errorProductionStmt(buildExplicitAttrErrors(e.notExplicitAttributes), location=top.location)
               | _ -> errorProductionStmt([err(top.location,
-                                              "Explicit equations can only be used for attributes " ++
-                                              "declared to be explicit; " ++ attr.unparse ++ " is not explicit")],
+                                              "Restricted equations can only be used for attributes " ++
+                                              "declared to be restricted; " ++ attr.unparse ++ " is not restricted (" ++ attr.typerep.typepp ++ ")")],
                                               location=top.location)
               end;
 }
@@ -128,8 +120,41 @@ function buildExplicitAttrErrors
   return case l of
          | [] -> []
          | pair(name, loca)::t ->
-           err(loca, "Attributes accessed in explicit equations must be explicit; " ++
+           err(loca, "Attributes accessed in restricted equations must be restricted; " ++
                      name ++ " is not")::buildExplicitAttrErrors(t)
          end;
+}
+
+
+--Write an equation that doesn't care about what is accessed---same as no label at all
+terminal Unrestricted_kwd    'unrestricted'     lexer classes {KEYWORD,RESERVED};
+
+concrete production unrestrictedAttributeDef
+top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
+{
+  e.downSubst = top.downSubst;
+  e.mDownSubst = top.downSubst;
+  e.finalSubst = e.mUpSubst;
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
+
+  top.productionAttributes := [];
+  top.defs := [];
+
+  dl.defLHSattr = attr;
+  attr.attrFor = dl.typerep;
+
+  forwards to case attr.typerep of
+              | explicitType(t) -> errorProductionStmt([err(top.location,
+                                              "Unrestricted equations can only be used for attributes " ++
+                                              "not declared to be restricted or implicit; " ++ attr.unparse ++ " is restricted (" ++
+                                              attr.typerep.typepp ++ ")")],
+                                              location=top.location)
+              | implicitType(t) -> errorProductionStmt([err(top.location,
+                                              "Unrestricted equations can only be used for attributes " ++
+                                              "not declared to be restricted or implicit; " ++ attr.unparse ++ " is implicit (" ++
+                                              attr.typerep.typepp ++ ")")],
+                                              location=top.location)
+              | _ -> attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
+              end;
 }
 

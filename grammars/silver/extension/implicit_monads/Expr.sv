@@ -2133,64 +2133,30 @@ top::Expr ::= s::String_t
 aspect production plusPlus
 top::Expr ::= e1::Expr '++' e2::Expr
 {
-  {-
-    If they're both lists, just treat them as lists
-    If one is a list and the other isn't,
-       If the other is a monad, bind it in
-       If the other is not a monad, it's an error, but leave it alone (rewrite to itself)
-    Other values can be treated like we do in other places (bind or not for monads)
-  -}
-  local isList1::Boolean = case e1.mtyperep of
-                           | listType(_) -> true
-                           | _ -> false
-                           end;
-  local isList2::Boolean = case e2.mtyperep of
-                           | listType(_) -> true
-                           | _ -> false
-                           end;
   top.merrors := e1.merrors ++ e2.merrors;
-  top.merrors <- if isMonad(e1.mtyperep) && isMonad(e2.mtyperep) &&
-                    !isList1 && !isList2 && !monadsMatch(e1.mtyperep, e2.mtyperep, top.mDownSubst).fst
-                 then [err(top.location, "Both monads in a '++' must be the same (got " ++
-                                          ec.rightpp ++ " and " ++ ec.leftpp ++ ")")]
-                 else [];
 
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
-  top.mtyperep = if isList1
-                 then e2.mtyperep --could be a monad or not, but e1 isn't a monad, so e2 determines type
-                 else if isList2
-                      then e1.mtyperep
-                      else if isMonad(e1.mtyperep)
-                           then e1.mtyperep
-                           else e2.mtyperep;
+  top.mtyperep = if monadsMatch(e1.mtyperep, top.expectedMonad, top.mUpSubst).fst
+                 then e1.mtyperep
+                 else e2.mtyperep;
 
   e1.expectedMonad = top.expectedMonad;
   e2.expectedMonad = top.expectedMonad;
 
-  local ec::TypeCheck = if isList1
-                        then if isList2
+  local ec::TypeCheck = if monadsMatch(e1.mtyperep, top.expectedMonad, top.mDownSubst).fst
+                        then if monadsMatch(e2.mtyperep, top.expectedMonad, top.mDownSubst).fst
                              then check(e1.mtyperep, e2.mtyperep)
-                             else if isMonad(e2.mtyperep)
-                                  then check(e1.mtyperep, monadInnerType(e2.mtyperep))
-                                  else check(e1.mtyperep, e2.mtyperep)
-                        else if isList2
-                             then if isMonad(e1.mtyperep)
-                                  then check(monadInnerType(e1.mtyperep), e2.mtyperep)
-                                  else check(e1.mtyperep, e2.mtyperep)
-                             else if isMonad(e1.mtyperep)
-                                  then if isMonad(e2.mtyperep)
-                                       then check(e1.mtyperep, e2.mtyperep)
-                                       else check(monadInnerType(e1.mtyperep), e2.mtyperep)
-                                  else if isMonad(e2.mtyperep)
-                                       then check(e1.mtyperep, monadInnerType(e2.mtyperep))
-                                       else check(e1.mtyperep, e2.mtyperep);
+                             else check(monadInnerType(e1.mtyperep), e2.mtyperep)
+                         else if monadsMatch(e2.mtyperep, top.expectedMonad, top.mDownSubst).fst
+                              then check(e1.mtyperep, monadInnerType(e2.mtyperep))
+                              else check(e1.mtyperep, e2.mtyperep);
   ec.finalSubst = top.mUpSubst;
 
-  e1.monadicallyUsed = (isList1 && !isList2) || (isMonad(e1.mtyperep) && !isList1);
-  e2.monadicallyUsed = (isList2 && !isList1) || (isMonad(e2.mtyperep) && !isList2);
+  e1.monadicallyUsed = monadsMatch(e1.mtyperep, top.expectedMonad, top.mDownSubst).fst;
+  e2.monadicallyUsed = monadsMatch(e2.mtyperep, top.expectedMonad, top.mDownSubst).fst;
   top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   --we assume both have the same monad, so we only need one return
@@ -2227,23 +2193,14 @@ top::Expr ::= e1::Expr '++' e2::Expr
         $Expr {monadReturn(e2.mtyperep, top.location)}
         (x ++ y))($Expr {e1.monadRewritten}, _))
     };
-  top.monadRewritten = if isList1
-                        then if isList2
-                             then plusPlus(e1.monadRewritten, '++', e2.monadRewritten, location=top.location)
-                             else if isMonad(e2.mtyperep)
-                                  then bind2
-                                  else plusPlus(e1.monadRewritten, '++', e2.monadRewritten, location=top.location)
-                        else if isList2
-                             then if isMonad(e1.mtyperep)
-                                  then bind1
-                                  else plusPlus(e1.monadRewritten, '++', e2.monadRewritten, location=top.location)
-                             else if isMonad(e1.mtyperep)
-                                  then if isMonad(e2.mtyperep)
-                                       then bindBoth
-                                       else bind1
-                                  else if isMonad(e2.mtyperep)
-                                       then bind2
-                                       else plusPlus(e1.monadRewritten, '++', e2.monadRewritten, location=top.location);
+  local mRw::Expr    = if monadsMatch(e1.mtyperep, top.expectedMonad, top.mUpSubst).fst
+                       then if monadsMatch(e2.mtyperep, top.expectedMonad, top.mUpSubst).fst
+                            then bindBoth
+                            else bind1
+                       else if monadsMatch(e2.mtyperep, top.expectedMonad, top.mUpSubst).fst
+                            then bind2
+                            else plusPlus(e1.monadRewritten, '++', e2.monadRewritten, location=top.location);
+  top.monadRewritten = mRw;
 }
 
 aspect production stringPlusPlus
