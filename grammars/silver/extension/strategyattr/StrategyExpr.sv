@@ -18,8 +18,8 @@ synthesized attribute attrRefNames::[Maybe<String>];
 monoid attribute containsFail::Boolean with false, ||;
 monoid attribute allId::Boolean with true, &&;
 monoid attribute freeRecVars::[String] with [], ++;
-monoid attribute partialRefs::[String] with [], ++; -- Includes transitive references
-monoid attribute totalRefs::[String] with [], ++; -- Does not include transitive references
+monoid attribute partialRefs::[String] with [], ++;
+monoid attribute totalRefs::[String] with [], ++;
 monoid attribute matchesFrame::Boolean with false, ||;
 
 synthesized attribute partialTranslation::Expr; -- Maybe<a> on a
@@ -883,7 +883,6 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   top.matchesFrame := attr.matchesFrame;
   top.isTotal = false;
   top.partialRefs <- [attrDcl.fullName];
-  top.partialRefs <- attrDcl.partialRefs;  -- Include refs resulting from potential inlining optimizations
   
   attr.attrFor = top.frame.signature.outputElement.typerep;
   
