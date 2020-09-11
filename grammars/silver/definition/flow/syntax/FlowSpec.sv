@@ -22,7 +22,7 @@ top::AGDcl ::= 'flowtype' nt::QName '=' specs::FlowSpecs ';'
     if nt.lookupType.found
     then specs.errors
     else nt.lookupType.errors;
-  top.flowDefs =
+  top.flowDefs :=
     if nt.lookupType.found
     then specs.flowDefs
     else [];
@@ -36,7 +36,7 @@ top::AGDcl ::= 'flowtype' attr::FlowSpec 'on' nts::NtList ';'
 {
   top.unparse = "flowtype " ++ attr.unparse ++ " on " ++ nts.unparse ++ ";";
   top.errors := nts.errors;
-  top.flowDefs = nts.flowDefs;
+  top.flowDefs := nts.flowDefs;
   
   nts.flowSpecSpec = attr;
 }
@@ -44,30 +44,29 @@ top::AGDcl ::= 'flowtype' attr::FlowSpec 'on' nts::NtList ';'
 
 nonterminal FlowSpecs with config, location, grammarName, errors, env, unparse, onNt, flowDefs, compiledGrammars, flowEnv;
 
+propagate errors, flowDefs on FlowSpecs;
+
 concrete production oneFlowSpec
 top::FlowSpecs ::= h::FlowSpec
 {
   top.unparse = h.unparse;
-  top.errors := h.errors;
-  top.flowDefs = h.flowDefs;
 }
 concrete production snocFlowSpec
 top::FlowSpecs ::= h::FlowSpecs  ','  t::FlowSpec
 {
   top.unparse = h.unparse ++ ", " ++ t.unparse;
-  top.errors := h.errors ++ t.errors;
-  top.flowDefs = h.flowDefs ++ t.flowDefs;
 }
 
 nonterminal FlowSpec with config, location, grammarName, errors, env, unparse, onNt, flowDefs, compiledGrammars, flowEnv;
 
 autocopy attribute onNt :: Type;
 
+propagate errors on FlowSpec;
+
 concrete production flowSpecDcl
 top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
 {
   top.unparse = attr.unparse ++ " {" ++ inhs.unparse ++ "}";
-  top.errors := attr.errors ++ inhs.errors;
   
   top.errors <-
     if !attr.found ||
@@ -96,7 +95,7 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
   
   -- We want to put the spec in even if there are errors in 'inhs' so that
   -- we can look up specs from inhs.
-  top.flowDefs = 
+  top.flowDefs :=
     if !attr.found then []
     else [specificationFlowDef(top.onNt.typeName, attr.synName, inhs.inhList)];
 }
@@ -106,12 +105,13 @@ nonterminal FlowSpecId with config, location, grammarName, errors, env, unparse,
 synthesized attribute synName :: String;
 synthesized attribute authorityGrammar :: String;
 
+propagate errors on FlowSpecId;
+
 concrete production qnameSpecId
 top::FlowSpecId ::= syn::QNameAttrOccur
 {
   top.name = syn.name;
   top.unparse = syn.unparse;
-  top.errors := syn.errors;
   top.synName = syn.attrDcl.fullName;
   top.authorityGrammar = syn.dcl.sourceGrammar;
   top.found = syn.found && syn.attrDcl.isSynthesized;
@@ -128,7 +128,6 @@ top::FlowSpecId ::= 'forward'
 {
   top.name = "forward";
   top.unparse = top.name;
-  top.errors := [];
   top.synName = "forward";
   top.authorityGrammar = hackGramFromFName(top.onNt.typeName);
   top.found = true;
@@ -139,7 +138,6 @@ top::FlowSpecId ::= 'decorate'
 {
   top.name = "decorate";
   top.unparse = top.name;
-  top.errors := [];
   top.synName = "decorate";
   top.authorityGrammar = hackGramFromFName(top.onNt.typeName);
   top.found = true;
@@ -148,25 +146,24 @@ top::FlowSpecId ::= 'decorate'
 
 nonterminal FlowSpecInhs with config, location, grammarName, errors, env, unparse, onNt, inhList, flowEnv;
 
+propagate errors on FlowSpecInhs;
+
 concrete production nilFlowSpecInhs
 top::FlowSpecInhs ::=
 {
   top.unparse = "";
-  top.errors := [];
   top.inhList = [];
 }
 concrete production oneFlowSpecInhs
 top::FlowSpecInhs ::= h::FlowSpecInh
 {
   top.unparse = h.unparse;
-  top.errors := h.errors;
   top.inhList = h.inhList;
 }
 concrete production consFlowSpecInhs
 top::FlowSpecInhs ::= h::FlowSpecInh  ','  t::FlowSpecInhs
 {
   top.unparse = h.unparse ++ ", " ++ t.unparse;
-  top.errors := h.errors ++ t.errors;
   top.inhList = h.inhList ++ t.inhList;
 }
 
@@ -174,11 +171,12 @@ nonterminal FlowSpecInh with config, location, grammarName, errors, env, unparse
 
 synthesized attribute inhList :: [String];
 
+propagate errors on FlowSpecInh;
+
 concrete production flowSpecInh
 top::FlowSpecInh ::= inh::QNameAttrOccur
 {
   top.unparse = inh.unparse;
-  top.errors := inh.errors;
   top.inhList = if inh.found then [inh.attrDcl.fullName] else [];
   
   inh.attrFor = top.onNt;
@@ -211,7 +209,7 @@ top::FlowSpecInh ::= 'decorate'
   local specs :: [Pair<String [String]>] = getFlowTypeSpecFor(top.onNt.typeName, top.flowEnv);
   local decSpec :: Maybe<[String]> = lookupBy(stringEq, "decorate", specs);
   
-  top.errors :=
+  top.errors <-
     if decSpec.isJust then []
     else [err(top.location, s"to use 'decorate' in a flow type for nonterminal ${top.onNt.typeName}, 'decorate' must also have an explicit flow type")];
   
@@ -221,26 +219,22 @@ top::FlowSpecInh ::= 'decorate'
 
 nonterminal NtList with config, location, grammarName, errors, env, unparse, flowSpecSpec, flowDefs, compiledGrammars, flowEnv;
 
+propagate errors, flowDefs on NtList;
+
 concrete production nilNtList
 top::NtList ::=
 {
   top.unparse = "";
-  top.errors := [];
-  top.flowDefs = [];
 }
 concrete production oneNtList
 top::NtList ::= h::NtName
 {
   top.unparse = h.unparse;
-  top.errors := h.errors;
-  top.flowDefs = h.flowDefs;
 }
 concrete production consNtList
 top::NtList ::= h::NtName  ','  t::NtList
 {
   top.unparse = h.unparse ++ ", " ++ t.unparse;
-  top.errors := h.errors ++ t.errors;
-  top.flowDefs = h.flowDefs ++ t.flowDefs;
 }
 
 nonterminal NtName with config, location, grammarName, errors, env, unparse, flowSpecSpec, flowDefs, compiledGrammars, flowEnv;
@@ -256,7 +250,7 @@ top::NtName ::= nt::QName
     then myCopy.errors
     else nt.lookupType.errors;
   
-  top.flowDefs =
+  top.flowDefs :=
     if nt.lookupType.found
     then myCopy.flowDefs
     else [];

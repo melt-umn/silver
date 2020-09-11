@@ -8,8 +8,9 @@ top::TerminalModifier ::= 'font' '=' id::QName
 {
   top.unparse = "font = " ++ id.name;
 
-  top.terminalModifiers = [termFont(id.lookupFont.fullName)];
+  top.terminalModifiers := [termFont(id.lookupFont.fullName)];
   top.errors := id.lookupFont.errors;
+  propagate silver:modification:copper:lexerClasses;
 }
 
 -- Allows fonts on lexer classes, too!
@@ -18,7 +19,7 @@ top::LexerClassModifier ::= 'font' '=' id::QName
 {
   top.unparse = "font = " ++ id.name;
 
-  top.lexerClassModifiers = [lexerClassFont(id.lookupFont.fullName)];
+  top.lexerClassModifiers := [lexerClassFont(id.lookupFont.fullName)];
   top.errors := id.lookupFont.errors;
 }
 

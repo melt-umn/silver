@@ -54,3 +54,9 @@ top::Env ::= d::Defs  e::Decorated Env
   top.terminalTree = oneEnvScope(buildTerminalTree(d.typeList)) :: e.terminalTree;
 }
 
+aspect production i_occursEnv
+top::Env ::= _  e::Decorated Env
+{
+  top.terminalTree = e.terminalTree;
+}
+

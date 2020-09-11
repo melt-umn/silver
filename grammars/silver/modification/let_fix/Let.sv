@@ -43,7 +43,7 @@ top::Expr ::= la::AssignExpr  e::Expr
 {
   top.unparse = "let " ++ la.unparse ++ " in " ++ e.unparse ++ " end";
   
-  top.errors := la.errors ++ e.errors;
+  propagate errors;
   
   top.typerep = e.typerep;
     
@@ -60,12 +60,12 @@ nonterminal AssignExpr with location, config, grammarName, env, compiledGrammars
                             unparse, defs, errors, upSubst, 
                             downSubst, finalSubst, frame;
 
+propagate errors, defs on AssignExpr;
+
 abstract production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 {
   top.unparse = a1.unparse ++ ", " ++ a2.unparse;
-  top.defs = a1.defs ++ a2.defs;
-  top.errors := a1.errors ++ a2.errors;
   
   a1.downSubst = top.downSubst;
   a2.downSubst = a1.upSubst;
@@ -77,8 +77,6 @@ concrete production assignExpr
 top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
   top.unparse = id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse;
-  
-  top.errors := t.errors ++ e.errors;
   
   -- Right now some things (pattern matching) abuse us by giving type variables
   -- for `t`. So we want to do a little inference before we stuff this into
@@ -93,7 +91,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   -- auto-undecorate feature, so that's why we bother substituting.
   -- (er, except that we're starting with t, which is a Type... must be because we fake these
   -- in e.g. the pattern matching code, so type variables might appear there?)
-  top.defs = [lexicalLocalDef(top.grammarName, id.location, fName, semiTy, e.flowVertexInfo, e.flowDeps)];
+  top.defs <- [lexicalLocalDef(top.grammarName, id.location, fName, semiTy, e.flowVertexInfo, e.flowDeps)];
   
   -- TODO: At present, this isn't working properly, because the local scope is
   -- whatever scope encloses the real local scope... hrmm!

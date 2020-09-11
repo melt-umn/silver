@@ -3,117 +3,83 @@ grammar silver:definition:concrete_syntax:ast;
 imports silver:translation:java:core only makeTerminalName;
 
 -- For looking syntax elements up by name.
-synthesized attribute cstDcls :: [Pair<String Decorated SyntaxDcl>];
+monoid attribute cstDcls :: [Pair<String Decorated SyntaxDcl>] with [], ++;
 autocopy attribute cstEnv :: EnvTree<Decorated SyntaxDcl>;
-synthesized attribute cstErrors :: [String] with ++;
+monoid attribute cstErrors :: [String] with [], ++;
 
 -- Transformation that moves productions underneath their respective nonterminals.
-synthesized attribute cstProds :: [Pair<String SyntaxDcl>];
+monoid attribute cstProds :: [Pair<String SyntaxDcl>] with [], ++;
 autocopy attribute cstNTProds :: EnvTree<SyntaxDcl>;
-synthesized attribute cstNormalize :: [SyntaxDcl];
+monoid attribute cstNormalize :: [SyntaxDcl] with [], ++;
 
 -- Compute and allow lookup of all terminals in a lexer class
-synthesized attribute classTerminalContribs::[Pair<String String>];
+monoid attribute classTerminalContribs::[Pair<String String>] with [], ++;
 autocopy attribute classTerminals::EnvTree<String>;
-synthesized attribute superClassContribs::[Pair<String String>];
+monoid attribute superClassContribs::[Pair<String String>] with [], ++;
 autocopy attribute superClasses::EnvTree<String>;
 autocopy attribute subClasses::EnvTree<String>;
 
 -- Parser attribute action code aspects
-synthesized attribute parserAttributeAspectContribs::[Pair<String String>];
+monoid attribute parserAttributeAspectContribs::[Pair<String String>] with [], ++;
 autocopy attribute parserAttributeAspects::EnvTree<String>;
 
-synthesized attribute allTerminals :: [Decorated SyntaxDcl];
-synthesized attribute allIgnoreTerminals :: [Decorated SyntaxDcl];
-synthesized attribute allMarkingTerminals :: [Decorated SyntaxDcl];
-synthesized attribute allProductions :: [Decorated SyntaxDcl];
-synthesized attribute allNonterminals :: [Decorated SyntaxDcl];
-synthesized attribute disambiguationClasses :: [Decorated SyntaxDcl];
+monoid attribute allTerminals :: [Decorated SyntaxDcl] with [], ++;
+monoid attribute allIgnoreTerminals :: [String] with [], ++;
+monoid attribute allMarkingTerminals :: [String] with [], ++;
+monoid attribute allProductions :: [Decorated SyntaxDcl] with [], ++;
+monoid attribute allNonterminals :: [Decorated SyntaxDcl] with [], ++;
+monoid attribute disambiguationClasses :: [Decorated SyntaxDcl] with [], ++;
 synthesized attribute classDomContribs :: String;
 synthesized attribute classSubContribs :: String;
 autocopy attribute containingGrammar :: String;
-synthesized attribute lexerClassRefDcls :: String;
+monoid attribute lexerClassRefDcls :: String with "", ++;
 synthesized attribute exportedProds :: [String];
 synthesized attribute hasCustomLayout :: Boolean;
-synthesized attribute layoutContribs :: [Pair<String String>]; -- prod/nt name, prod/nt/term name
+monoid attribute layoutContribs :: [Pair<String String>] with [], ++; -- prod/nt name, prod/nt/term name
 autocopy attribute layoutTerms::EnvTree<String>;
 
 autocopy attribute prefixesForTerminals :: EnvTree<String>;
+autocopy attribute componentGrammarMarkingTerminals :: EnvTree<[String]>;
 
 
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals;
+
+propagate cstDcls, cstErrors, cstProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs
+  on Syntax;
 
 abstract production nilSyntax
 top::Syntax ::=
 {
-  top.cstDcls = [];
-  top.cstErrors := [];
-  top.cstProds = [];
-  top.cstNormalize = [];
-  top.allTerminals = [];
-  top.allIgnoreTerminals = [];
-  top.allMarkingTerminals = [];
-  top.allProductions = [];
-  top.allNonterminals = [];
-  top.disambiguationClasses = [];
-  top.classTerminalContribs = [];
-  top.superClassContribs = [];
-  top.parserAttributeAspectContribs = [];
-  top.lexerClassRefDcls = "";
-  top.layoutContribs = [];
   top.xmlCopper = "";
 }
+
 abstract production consSyntax
 top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {
-  top.cstDcls = s1.cstDcls ++ s2.cstDcls;
-  top.cstErrors := s1.cstErrors ++ s2.cstErrors;
-  top.cstProds = s1.cstProds ++ s2.cstProds;
-  top.cstNormalize = s1.cstNormalize ++ s2.cstNormalize;
-  top.allTerminals = s1.allTerminals ++ s2.allTerminals;
-  top.allIgnoreTerminals = s1.allIgnoreTerminals ++ s2.allIgnoreTerminals;
-  top.allMarkingTerminals = s1.allMarkingTerminals ++ s2.allMarkingTerminals;
-  top.allProductions = s1.allProductions ++ s2.allProductions;
-  top.allNonterminals = s1.allNonterminals ++ s2.allNonterminals;
-  top.disambiguationClasses = s1.disambiguationClasses ++ s2.disambiguationClasses;
-  top.classTerminalContribs = s1.classTerminalContribs ++ s2.classTerminalContribs;
-  top.superClassContribs = s1.superClassContribs ++ s2.superClassContribs;
-  top.parserAttributeAspectContribs = s1.parserAttributeAspectContribs ++ s2.parserAttributeAspectContribs;
-  top.lexerClassRefDcls = s1.lexerClassRefDcls ++ s2.lexerClassRefDcls;
-  top.layoutContribs = s1.layoutContribs ++ s2.layoutContribs;
   top.xmlCopper = s1.xmlCopper ++ s2.xmlCopper;
 }
 
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals;
 
 synthesized attribute sortKey :: String;
+
+propagate cstErrors, prefixSeperator on SyntaxDcl;
 
 aspect default production
 top::SyntaxDcl ::=
 {
-  top.cstProds = [];
-  top.allTerminals = [];
-  top.allIgnoreTerminals = [];
-  top.allMarkingTerminals = [];
-  top.allProductions = [];
-  top.allNonterminals = [];
-  top.disambiguationClasses = [];
-  top.classTerminalContribs = [];
-  top.superClassContribs = [];
-  top.parserAttributeAspectContribs = [];
+  -- Empty values as defaults
+  propagate cstProds, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs;
   top.classDomContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.classSubContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
-  top.lexerClassRefDcls = "";
   top.exportedProds = error("Internal compiler error: should only ever be demanded of nonterminals");
   top.hasCustomLayout = false;
-  top.layoutContribs = [];
-  top.prefixSeperator = nothing();
 }
 
 
@@ -127,14 +93,13 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
 {
   top.fullName = t.typeName;
   top.sortKey = "EEE" ++ t.typeName;
-  top.cstDcls = [pair(t.typeName, top)] ++ subdcls.cstDcls;
-  top.allNonterminals = [top];
+  top.cstDcls := [pair(t.typeName, top)] ++ subdcls.cstDcls;
+  top.allNonterminals := [top];
   
-  top.cstErrors := if length(searchEnvTree(t.typeName, top.cstEnv)) == 1 then []
+  top.cstErrors <- if length(searchEnvTree(t.typeName, top.cstEnv)) == 1 then []
                    else ["Name conflict with nonterminal " ++ t.typeName];
-  top.cstErrors <- subdcls.cstErrors;
-  top.cstProds = subdcls.cstProds;
-  top.cstNormalize =
+  top.cstProds := subdcls.cstProds;
+  top.cstNormalize :=
     let myProds :: [SyntaxDcl] = searchEnvTree(t.typeName, top.cstNTProds)
     in if null(myProds) then [] -- Eliminate "Useless nonterminals" as these are expected in Silver code (non-syntax)
        else [syntaxNonterminal(t, foldr(consSyntax, nilSyntax(), myProds), exportedProds, exportedLayoutTerms, modifiers)]
@@ -142,7 +107,7 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   
   top.exportedProds = exportedProds;
   top.hasCustomLayout = modifiers.customLayout.isJust;
-  top.layoutContribs = map(pair(t.typeName, _), fromMaybe(exportedLayoutTerms, modifiers.customLayout));
+  top.layoutContribs := map(pair(t.typeName, _), fromMaybe(exportedLayoutTerms, modifiers.customLayout));
 
   top.xmlCopper =
     "\n  <Nonterminal id=\"" ++ makeCopperName(t.typeName) ++ "\">\n" ++
@@ -162,18 +127,17 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
 {
   top.fullName = n;
   top.sortKey = "CCC" ++ n;
-  top.cstDcls = [pair(n, top)];
-  top.cstErrors := modifiers.cstErrors;
+  top.cstDcls := [pair(n, top)];
   top.cstErrors <-
     if length(searchEnvTree(n, top.cstEnv)) == 1 then []
     else ["Name conflict with terminal " ++ n];
 
   modifiers.terminalName = n;
 
-  top.allTerminals = [top];
-  top.allIgnoreTerminals = if modifiers.ignored then [top] else [];
-  top.allMarkingTerminals = if modifiers.marking then [top] else [];
-  top.classTerminalContribs = modifiers.classTerminalContribs;
+  top.allTerminals := [top];
+  top.allIgnoreTerminals := if modifiers.ignored then [top.fullName] else [];
+  top.allMarkingTerminals := if modifiers.marking then [top.fullName] else [];
+  top.classTerminalContribs := modifiers.classTerminalContribs;
 
   -- left(terminal name) or right(string prefix)
   production pfx::[String] = searchEnvTree(n, top.prefixesForTerminals);
@@ -181,9 +145,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     if length(pfx) <= 1 then []
     else ["Multiple prefixes for terminal " ++ n];
   
-  top.prefixSeperator = modifiers.prefixSeperator;
-  
-  top.cstNormalize =
+  top.cstNormalize :=
     case modifiers.prefixSeperatorToApply of
     | just(sep) -> [syntaxTerminal(n, regexConcatenate(regex, regexLiteral(sep)), modifiers)]
     | nothing() -> [top]
@@ -235,8 +197,8 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 {
   top.fullName = ns.fullName;
   top.sortKey = "FFF" ++ ns.fullName;
-  top.cstDcls = [pair(ns.fullName, top)];
-  top.allProductions = [top];
+  top.cstDcls := [pair(ns.fullName, top)];
+  top.allProductions := [top];
   
   modifiers.productionName = ns.fullName;
 
@@ -245,7 +207,6 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   production rhsRefs :: [[Decorated SyntaxDcl]] =
     lookupStrings(map((.typeName), map((.typerep), ns.inputElements)), top.cstEnv);
 
-  top.cstErrors := modifiers.cstErrors;
   top.cstErrors <- if length(searchEnvTree(ns.fullName, top.cstEnv)) == 1 then []
                    else ["Name conflict with production " ++ ns.fullName];
 
@@ -258,11 +219,11 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 
   top.cstErrors <- checkRHS(ns.fullName, map((.typerep), ns.inputElements), rhsRefs);
 
-  top.cstProds = [pair(ns.outputElement.typerep.typeName, top)];
-  top.cstNormalize = [];
+  top.cstProds := [pair(ns.outputElement.typerep.typeName, top)];
+  top.cstNormalize := [];
   
   top.hasCustomLayout = modifiers.customLayout.isJust;
-  top.layoutContribs =
+  top.layoutContribs :=
     map(pair(ns.fullName, _), fromMaybe([], modifiers.customLayout)) ++
     -- The production inherits its LHS nonterminal's layout, unless overridden.
     (if top.hasCustomLayout then [] else [pair(ns.fullName, head(lhsRef).fullName)]) ++
@@ -357,8 +318,8 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 {
   top.fullName = n;
   top.sortKey = "AAA" ++ n;
-  top.cstDcls = [pair(n, top)];
-  top.cstErrors := modifiers.cstErrors ++
+  top.cstDcls := [pair(n, top)];
+  top.cstErrors <-
     if length(searchEnvTree(n, top.cstEnv)) == 1 then []
     else ["Name conflict with lexer class " ++ n];
   modifiers.className = n;
@@ -368,9 +329,9 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.classDomContribs = modifiers.dominatesXML;
   top.classSubContribs = modifiers.submitsXML;
 
-  top.cstNormalize = [top];
-  top.superClassContribs = modifiers.superClassContribs;
-  top.disambiguationClasses = modifiers.disambiguationClasses;
+  top.cstNormalize := [top];
+  top.superClassContribs := modifiers.superClassContribs;
+  top.disambiguationClasses := modifiers.disambiguationClasses;
 
   production terms :: [String] = searchEnvTree(n, top.classTerminals);
   local termsInit::String =
@@ -378,13 +339,11 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
       \ term::String rest::String -> s"new common.ConsCell(Terminals.${makeCopperName(term)}.num(), ${rest})",
       "common.ConsCell.nil",
       terms);
-  top.lexerClassRefDcls =
+  top.lexerClassRefDcls :=
     s"    protected common.ConsCell ${makeCopperName(n)} = ${termsInit};\n";
   
   top.xmlCopper =
     "  <TerminalClass id=\"" ++ makeCopperName(n) ++ "\" />\n";
-  
-  top.prefixSeperator = modifiers.prefixSeperator;
 }
 
 {--
@@ -395,11 +354,11 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
 {
   top.fullName = n;
   top.sortKey = "BBB" ++ n;
-  top.cstDcls = [pair(n, top)];
-  top.cstErrors := if length(searchEnvTree(n, top.cstEnv)) == 1 then []
+  top.cstDcls := [pair(n, top)];
+  top.cstErrors <- if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with parser attribute " ++ n];
 
-  top.cstNormalize = [top];
+  top.cstNormalize := [top];
 
   top.xmlCopper =
     "  <ParserAttribute id=\"" ++ makeCopperName(n) ++ "\">\n" ++
@@ -423,14 +382,14 @@ top::SyntaxDcl ::= n::String acode::String
 {
   top.fullName = n;
   top.sortKey = "BBB" ++ n;
-  top.cstDcls = [];
-  top.cstErrors :=
+  top.cstDcls := [];
+  top.cstErrors <-
     if !null(searchEnvTree(n, top.cstEnv)) then []
     else ["Parser attribute " ++ n ++ " was referenced but this grammar was not included in this parser."];
 
-  top.cstNormalize = [top];
+  top.cstNormalize := [top];
 
-  top.parserAttributeAspectContribs = [pair(n, acode)];
+  top.parserAttributeAspectContribs := [pair(n, acode)];
   top.xmlCopper = "";
 }
 
@@ -443,19 +402,19 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
 {
   top.fullName = n;
   top.sortKey = "DDD" ++ n;
-  top.cstDcls = [];
+  top.cstDcls := [];
 
   local trefs::[[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
 
   -- this 'n' here appears to actually hold the line number of the
   -- disambiguation, and the grammar. But we arent supposed to know this?
-  top.cstErrors := flatMap(\p ::Pair<String [Decorated SyntaxDcl]> ->
+  top.cstErrors <- flatMap(\p ::Pair<String [Decorated SyntaxDcl]> ->
       if !null(p.snd) then []
       else ["Terminal " ++ p.fst ++ " was referenced but " ++
             "this grammar was not included in this parser. (Referenced from disambiguation group " ++ n ++ ")"],
     zipWith(pair, terms, trefs));
 
-  top.cstNormalize = [top];
+  top.cstNormalize := [top];
 
   top.xmlCopper =
     "  <DisambiguationFunction id=\"" ++ makeCopperName(n) ++ "\" applicableToSubsets=\"" ++ toString(applicableToSubsets) ++ "\">\n" ++

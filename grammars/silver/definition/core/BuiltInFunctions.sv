@@ -20,8 +20,8 @@ top::Expr ::= e::Decorated Expr
   local resolved :: Type =
     performSubstitution(e.typerep, top.finalSubst);
 
-  top.errors :=
-    e.errors ++
+  top.errors <- e.errors;
+  top.errors <-
     if resolved.isError then [] -- suppress additional error message
     else [err(e.location, "Operand to length is not compatible. It is of type " ++ prettyType(resolved))];
 }
@@ -33,7 +33,7 @@ top::Expr ::= e::Decorated Expr
 
   top.typerep = intType();
 
-  top.errors := e.errors;
+  top.errors <- e.errors;
 }
 
 concrete production toIntegerFunction
@@ -41,7 +41,6 @@ top::Expr ::= 'toInteger' '(' e::Expr ')'
 {
   top.unparse = "toInteger(" ++ e.unparse ++ ")";
 
-  top.errors := e.errors;
   top.typerep = intType();
 }
 
@@ -50,7 +49,6 @@ top::Expr ::= 'toBoolean' '(' e::Expr ')'
 {
   top.unparse = "toBoolean(" ++ e.unparse ++ ")";
 
-  top.errors := e.errors;
   top.typerep = boolType();
 }
 
@@ -59,7 +57,6 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
 {
   top.unparse = "toFloat(" ++ e.unparse ++ ")";
 
-  top.errors := e.errors;
   top.typerep = floatType();
 }
 
@@ -68,7 +65,6 @@ top::Expr ::= 'toString' '(' e::Expr ')'
 {
   top.unparse = "toString(" ++ e.unparse ++ ")";
 
-  top.errors := e.errors;
   top.typerep = stringType();
 }
 
@@ -77,7 +73,6 @@ top::Expr ::= 'reify'
 {
   top.unparse = "reify";
 
-  top.errors := [];
   top.typerep =
     functionType(nonterminalType("core:Either", [stringType(), varType(freshTyVar())]), [nonterminalType("core:reflect:AST", [])], []);
 }
@@ -87,7 +82,6 @@ top::Expr ::= 'new' '(' e::Expr ')'
 {
   top.unparse = "new(" ++ e.unparse ++ ")";
 
-  top.errors := e.errors;
   top.typerep = performSubstitution(e.typerep, top.upSubst).decoratedType;
 }
 
@@ -101,7 +95,6 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
   top.unparse = "terminal(" ++ t.unparse ++ ", " ++ es.unparse ++ ", " ++ el.unparse ++ ")";
 
-  top.errors := t.errors ++ es.errors ++ el.errors;
   top.typerep = t.typerep;
 }
 

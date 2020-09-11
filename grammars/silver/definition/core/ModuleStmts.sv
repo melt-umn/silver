@@ -2,19 +2,22 @@ grammar silver:definition:core;
 
 imports silver:driver:util;
 
-nonterminal ModuleStmts with config, grammarName, location, unparse, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
-nonterminal ModuleStmt with config, grammarName, location, unparse, errors, moduleNames, defs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
+nonterminal ModuleStmts with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
+nonterminal ModuleStmt with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, exportedGrammars, optionalGrammars, condBuild, compiledGrammars, grammarDependencies;
 
-nonterminal ImportStmt with config, grammarName, location, unparse, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
-nonterminal ImportStmts with config, grammarName, location, unparse, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
+nonterminal ImportStmt with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
+nonterminal ImportStmts with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
 
-nonterminal ModuleExpr with config, grammarName, location, unparse, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
-nonterminal ModuleName with config, grammarName, location, unparse, errors, moduleNames, defs, compiledGrammars, grammarDependencies;
+nonterminal ModuleExpr with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
+nonterminal ModuleName with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
 
 nonterminal NameList with config, grammarName, location, unparse, names;
 
 nonterminal WithElems with config, grammarName, location, unparse, envMaps;
 nonterminal WithElem with config, grammarName, location, unparse, envMaps;
+
+propagate errors, moduleNames, defs, occursDefs on ModuleStmts, ModuleStmt, ImportStmt, ImportStmts;
+propagate exportedGrammars, optionalGrammars, condBuild on ModuleStmts;
 
 {--
  - A list of QName strings. Used for 'only' and 'hiding'.
@@ -26,7 +29,7 @@ synthesized attribute names :: [String];
 synthesized attribute envMaps :: [Pair<String String>];
 
 -- TODO: eliminate, fold into ModuleName, make filter parameters inh attrs.
-nonterminal Module with defs, errors;
+nonterminal Module with defs, occursDefs, errors;
 
 abstract production module 
 top::Module ::= l::Location
@@ -60,12 +63,13 @@ top::Module ::= l::Location
     if asPrepend == "" then defs_after_renames
     else map(mapDefOnEnvItem(envItemPrepend(_, asPrepend ++ ":"), _), defs_after_renames);
 
-  top.defs = defs_after_prepend;
+  top.defs := defs_after_prepend;
+  top.occursDefs := med.occursDefs;
   top.errors := med.errors;
 }
 
 -- recurses through exportedGrammars, grabbing all definitions
-nonterminal ModuleExportedDefs with defs, errors;
+nonterminal ModuleExportedDefs with defs, occursDefs, errors;
 
 {--
  - Computes the set of defs we get from an import
@@ -96,9 +100,12 @@ top::ModuleExportedDefs ::= l::Location compiledGrammars::EnvTree<Decorated Root
     if null(rs) then tail(need)
     else rem(makeSet(tail(need) ++ add_to_need), new_seen);
   
-  top.defs =
+  top.defs :=
     if null(need) then [] else
     if null(rs) then recurse.defs else head(rs).defs ++ recurse.defs;
+  top.occursDefs :=
+    if null(need) then [] else
+    if null(rs) then recurse.occursDefs else head(rs).occursDefs ++ recurse.occursDefs;
   top.errors :=
     if null(need) then [] else 
     if null(rs) then [err(l, "Grammar '" ++ gram ++ "' cannot be found.")] ++ recurse.errors else recurse.errors;
@@ -122,43 +129,24 @@ concrete production importStmt
 top::ImportStmt ::= 'import' m::ModuleExpr ';'
 {
   top.unparse = "import " ++ m.unparse ++ ";";
-
-  top.errors := m.errors;
-  top.moduleNames = m.moduleNames;
-  top.defs = m.defs;
 }
 
 concrete production nilImportStmts
 top::ImportStmts ::=
 {
   top.unparse = "";
-
-  top.errors := [];
-
-  top.moduleNames = [];
-  top.defs = [];
 }
 
 concrete production consImportStmts
 top::ImportStmts ::= h::ImportStmt t::ImportStmts
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
-
-  top.errors := h.errors ++ t.errors;
-
-  top.moduleNames = h.moduleNames ++ t.moduleNames;
-  top.defs = h.defs ++ t.defs;
 }
 
 abstract production appendImportStmts
 top::ImportStmts ::= h::ImportStmts t::ImportStmts
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
-
-  top.errors := h.errors ++ t.errors;
-
-  top.moduleNames = h.moduleNames ++ t.moduleNames;
-  top.defs = h.defs ++ t.defs;
 }
 
 --------------
@@ -168,28 +156,12 @@ concrete production nilModuleStmts
 top::ModuleStmts ::=
 {
   top.unparse = "";
-
-  top.errors := [];
-
-  top.moduleNames = [];
-  top.defs = [];
-  top.exportedGrammars = [];
-  top.optionalGrammars = [];
-  top.condBuild = [];
 }
 
 concrete production consModulesStmts
 top::ModuleStmts ::= h::ModuleStmt t::ModuleStmts
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
-
-  top.errors := h.errors ++ t.errors;
-
-  top.moduleNames = h.moduleNames ++ t.moduleNames;
-  top.defs = h.defs ++ t.defs;
-  top.exportedGrammars = h.exportedGrammars ++ t.exportedGrammars;
-  top.optionalGrammars = h.optionalGrammars ++ t.optionalGrammars;
-  top.condBuild = h.condBuild ++ t.condBuild;
 }
 
 concrete production importsStmt
@@ -197,13 +169,9 @@ top::ModuleStmt ::= 'imports' m::ModuleExpr ';'
 {
   top.unparse = "imports " ++ m.unparse ++ ";";
 
-  top.errors := m.errors;
-
-  top.moduleNames = m.moduleNames;
-  top.defs = m.defs;
-  top.exportedGrammars = [];
-  top.optionalGrammars = [];
-  top.condBuild = [];
+  top.exportedGrammars := [];
+  top.optionalGrammars := [];
+  top.condBuild := [];
 }
 
 concrete production exportsStmt
@@ -211,21 +179,15 @@ top::ModuleStmt ::= 'exports' m::ModuleName ';'
 {
   top.unparse = "exports " ++ m.unparse ++ ";";
 
-  top.errors := m.errors;
-
-  top.moduleNames = m.moduleNames;
-  top.defs = m.defs; -- 'exports' now also 'imports' that grammar.
-  top.exportedGrammars = m.moduleNames;
-  top.optionalGrammars = [];
-  top.condBuild = [];
+  top.exportedGrammars := m.moduleNames;
+  top.optionalGrammars := [];
+  top.condBuild := [];
 }
 
 concrete production exportsWithStmt
 top::ModuleStmt ::= 'exports' m::QName 'with' c::QName ';'
 {
   top.unparse = "exports " ++ m.unparse ++ " with " ++ c.unparse ++ ";";
-
-  top.errors := [];
   
   top.errors <-
     if !null(searchEnvTree(m.name, top.compiledGrammars)) then []
@@ -235,28 +197,22 @@ top::ModuleStmt ::= 'exports' m::QName 'with' c::QName ';'
     if !null(searchEnvTree(c.name, top.compiledGrammars)) then []
     else [err(c.location, "Grammar '" ++ c.name ++ "' cannot be found.")];
 
-  top.moduleNames = [];
-  top.defs = [];
-  top.exportedGrammars = [];
-  top.optionalGrammars = [];
-  top.condBuild = [[m.name, c.name]];
+  top.exportedGrammars := [];
+  top.optionalGrammars := [];
+  top.condBuild := [[m.name, c.name]];
 }
 concrete production optionalStmt
 top::ModuleStmt ::= 'option' m::QName ';'
 {
   top.unparse = "option " ++ m.unparse ++ ";";
 
-  top.errors := [];
-
   top.errors <-
     if !null(searchEnvTree(m.name, top.compiledGrammars)) then []
     else [err(m.location, "Grammar '" ++ m.name ++ "' cannot be found.")];
 
-  top.moduleNames = [];
-  top.defs = [];
-  top.exportedGrammars = [];
-  top.optionalGrammars = [m.name];
-  top.condBuild = [];
+  top.exportedGrammars := [];
+  top.optionalGrammars := [m.name];
+  top.condBuild := [];
 }
   
 
@@ -267,13 +223,14 @@ concrete production moduleName
 top::ModuleName ::= pkg::QName
 {
   top.unparse = pkg.unparse;
-  top.moduleNames = [pkg.name];
+  top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
   m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], [], []);
-
+  
   top.errors := m.errors;
-  top.defs = m.defs;
+  top.defs := m.defs;
+  top.occursDefs := m.occursDefs;
 }
 
 -----------------------
@@ -283,91 +240,98 @@ concrete production moduleAll
 top::ModuleExpr ::= pkg::QName
 {
   top.unparse = pkg.unparse;
-  top.moduleNames = [pkg.name];
+  top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
   m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], [], []);
-
+  
   top.errors := m.errors;
-  top.defs = m.defs;
+  top.defs := m.defs;
+  top.occursDefs := m.occursDefs;
 }
 
 concrete production moduleAllWith
 top::ModuleExpr ::= pkg::QName 'with' wc::WithElems
 {
   top.unparse = pkg.unparse ++ " with " ++ wc.unparse;
-  top.moduleNames = [pkg.name];
+  top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
   m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], [], wc.envMaps);
-
+  
   top.errors := m.errors;
-  top.defs = m.defs;
+  top.defs := m.defs;
+  top.occursDefs := m.occursDefs;
 }
 
 concrete production moduleOnly
 top::ModuleExpr ::= pkg::QName 'only' ns::NameList
 {
   top.unparse = pkg.unparse ++ " only " ++ ns.unparse;
-  top.moduleNames = [pkg.name];
+  top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
   m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", ns.names, [], []);
-
+  
   top.errors := m.errors;
-  top.defs = m.defs;
+  top.defs := m.defs;
+  top.occursDefs := m.occursDefs;
 }
 
 concrete production moduleOnlyWith
 top::ModuleExpr ::= pkg::QName 'only' ns::NameList 'with' wc::WithElems
 {
   top.unparse = pkg.unparse ++ " only " ++ ns.unparse ++ " with " ++ wc.unparse;
-  top.moduleNames = [pkg.name];
+  top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
   m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", ns.names, [], wc.envMaps);
-
+  
   top.errors := m.errors;
-  top.defs = m.defs;
+  top.defs := m.defs;
+  top.occursDefs := m.occursDefs;
 }
 
 concrete production moduleHiding
 top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList
 {
   top.unparse = pkg.unparse ++ " hiding " ++ ns.unparse;
-  top.moduleNames = [pkg.name];
+  top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
   m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], ns.names, []);
-
+  
   top.errors := m.errors;
-  top.defs = m.defs;
+  top.defs := m.defs;
+  top.occursDefs := m.occursDefs;
 }
 
 concrete production moduleHidingWith
 top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList 'with' wc::WithElems 
 {
   top.unparse = pkg.unparse ++ " hiding " ++ ns.unparse ++ " with " ++ wc.unparse;
-  top.moduleNames = [pkg.name];
+  top.moduleNames := [pkg.name];
 
   production attribute m :: Module;
   m = module(pkg.location, [pkg.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, "", [], ns.names, wc.envMaps);
-
+  
   top.errors := m.errors;
-  top.defs = m.defs;
+  top.defs := m.defs;
+  top.occursDefs := m.occursDefs;
 }
 
 concrete production moduleAs
 top::ModuleExpr ::= pkg1::QName 'as' pkg2::QName
 {
   top.unparse = pkg1.unparse ++ " as " ++ pkg2.unparse;
-  top.moduleNames = [pkg1.name];
+  top.moduleNames := [pkg1.name];
 
   production attribute m :: Module;
   m = module(pkg1.location, [pkg1.name], [top.grammarName], top.compiledGrammars, top.grammarDependencies, pkg2.name, [], [], []);
-
+  
   top.errors := m.errors;
-  top.defs = m.defs;
+  top.defs := m.defs;
+  top.occursDefs := m.occursDefs;
 }
 
 ------------

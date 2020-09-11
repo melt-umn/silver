@@ -2,16 +2,15 @@ grammar silver:definition:env;
 
 import silver:definition:regex; -- soley for Terminals. TODO : perhaps this shouldn't be here!
 
-nonterminal Defs with typeList, valueList, attrList, prodOccursList, occursList, prodDclList;
+nonterminal Defs with typeList, valueList, attrList, prodOccursList, prodDclList;
 
 -- The standard namespaces
 synthesized attribute typeList :: [EnvItem];
 synthesized attribute valueList :: [EnvItem];
 synthesized attribute attrList :: [EnvItem];
 
--- Attribute occurs and production attributes.
+-- Production attributes.
 synthesized attribute prodOccursList :: [DclInfo];
-synthesized attribute occursList :: [DclInfo];
 
 -- Extra space for production list
 synthesized attribute prodDclList :: [DclInfo];
@@ -25,7 +24,6 @@ top::Defs ::=
   top.attrList = [];
   
   top.prodOccursList = [];
-  top.occursList = [];
   
   top.prodDclList = [];
 }
@@ -38,7 +36,6 @@ top::Defs ::= e1::Def e2::Defs
   top.attrList = e1.attrList ++ e2.attrList;
   
   top.prodOccursList = e1.prodOccursList ++ e2.prodOccursList;
-  top.occursList = e1.occursList ++ e2.occursList;
   
   top.prodDclList = e1.prodDclList ++ e2.prodDclList;
 }
@@ -53,7 +50,7 @@ synthesized attribute filterDef::Boolean;
 inherited attribute mapFn::(EnvItem ::= EnvItem);
 synthesized attribute mapDef::Def;
 
-closed nonterminal Def with typeList, valueList, attrList, prodOccursList, occursList, prodDclList, dcl, filterFn, filterDef, mapFn, mapDef;
+closed nonterminal Def with typeList, valueList, attrList, prodOccursList, prodDclList, dcl, filterFn, filterDef, mapFn, mapDef;
 
 aspect default production
 top::Def ::=
@@ -63,7 +60,6 @@ top::Def ::=
   top.attrList = [];
   
   top.prodOccursList = [];
-  top.occursList = [];
   
   top.prodDclList = [];
   
@@ -119,12 +115,6 @@ top::Def ::= d::DclInfo
   top.dcl = d;
   top.prodOccursList = [d];
 }
-abstract production oDef
-top::Def ::= d::DclInfo
-{
-  top.dcl = d;
-  top.occursList = [d];
-}
 
 
 function childDef
@@ -143,9 +133,9 @@ Def ::= sg::String  sl::Location  fn::String  ty::Type
   return valueDef(defaultEnvItem(localDcl(sg,sl,fn,ty)));
 }
 function prodDef
-Def ::= sg::String  sl::Location  ns::NamedSignature
+Def ::= sg::String  sl::Location  ns::NamedSignature  hasForward::Boolean
 {
-  return prodDclDef(defaultEnvItem(prodDcl(sg,sl,ns)));
+  return prodDclDef(defaultEnvItem(prodDcl(sg,sl,ns,hasForward)));
 }
 function funDef
 Def ::= sg::String  sl::Location  ns::NamedSignature
@@ -213,11 +203,6 @@ function annoDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {
   return attrDef(defaultEnvItem(annoDcl(sg,sl,fn,bound,ty)));
-}
-function annoInstanceDef
-Def ::= sg::String  sl::Location  fnnt::String  fnat::String  ntty::Type  atty::Type
-{
-  return oDef(annoInstanceDcl(sg,sl,fnnt,fnat,ntty,atty));
 }
 
 

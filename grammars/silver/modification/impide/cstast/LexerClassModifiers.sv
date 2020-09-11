@@ -35,3 +35,8 @@ top::SyntaxLexerClassModifier ::= fontName::String
   top.fontAttr = makeCopperName(fontName);
 }
 
+aspect production lexerClassExtends
+top::SyntaxLexerClassModifier ::= super::[String]
+{
+  top.fontAttr = dumbExtractFont(superRefs);
+}

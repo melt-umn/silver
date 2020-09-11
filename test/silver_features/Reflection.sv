@@ -173,20 +173,21 @@ equalityTest(reifyResToString(reify(anyAST(baz(anno2=_, anno1=_)))), "<OBJECT ::
 equalityTest(reifyResToString(reify(anyAST(baz(anno1=1, anno2=_)))), "<OBJECT :: (silver_features:Baz ::= Float)>", String, silver_tests);
 equalityTest(reifyResToString(reify(anyAST(baz(anno1=_, anno2=2.0)))), "<OBJECT :: (silver_features:Baz ::= Integer)>", String, silver_tests);
 
-function reifySkolem
-Either<String a> ::= x::AST
-{
-  return reify(x);
+wrongCode "skolem" {
+  function reifySkolem
+  Either<String a> ::= x::AST
+  {
+    return reify(x);
+  }
 }
 
--- This will have some sort of runtime type error involving skolems, but we can't test for it exactly since the exact message may vary.
-equalityTest(case reifySkolem(floatAST(4.0)) of left(_) -> true | right(_) -> false end, true, Boolean, silver_tests);
-
-function reifySkolem2
-Either<String (a ::= Integer)> ::= 
-{
-  local fn::(a ::= Integer) = \ i::Integer -> error(toString(i));
-  return reify(anyAST(fn));
+warnCode "skolem" {
+  function reifySkolem2
+  Either<String (a ::= Integer)> ::= 
+  {
+    local fn::(a ::= Integer) = \ i::Integer -> error(toString(i));
+    return reify(anyAST(fn));
+  }
 }
 
 equalityTest(case reifySkolem2() of left(_) -> false | right(_) -> true end, true, Boolean, silver_tests);

@@ -3,7 +3,7 @@ grammar silver:modification:copper_mda;
 import silver:util:raw:graph as g;
 
 abstract production cstCopperMdaRoot
-top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Syntax  customStartLayout::Maybe<[String]>  terminalPrefixes::[Pair<String String>]
+top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Syntax  customStartLayout::Maybe<[String]>
 {
   -- Because there may be references between the grammars, we cannot do the
   -- usual normalization.
@@ -37,7 +37,9 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
       map((.fullName), host.allTerminals ++ ext.allTerminals),
       map((.fullName), host.allProductions ++ ext.allProductions ++ host.allNonterminals ++ ext.allNonterminals),
       host.layoutContribs ++ ext.layoutContribs);
-  host.prefixesForTerminals = directBuildTree(terminalPrefixes);
+  host.prefixesForTerminals = directBuildTree([]);
+  host.componentGrammarMarkingTerminals = directBuildTree([]);
+  
   ext.cstEnv = host.cstEnv;
   ext.containingGrammar = "ext";
   ext.cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
@@ -47,6 +49,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   ext.parserAttributeAspects = host.parserAttributeAspects;
   ext.layoutTerms = host.layoutTerms;
   ext.prefixesForTerminals = host.prefixesForTerminals;
+  ext.componentGrammarMarkingTerminals = host.componentGrammarMarkingTerminals;
   
   local startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, host.cstEnv);
 
@@ -117,6 +120,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
             parserAttributeAspects = host.parserAttributeAspects;
             layoutTerms = host.layoutTerms;
             prefixesForTerminals = host.prefixesForTerminals;
+            componentGrammarMarkingTerminals = host.componentGrammarMarkingTerminals;
           },
         host.disambiguationClasses))) ++
   implode("", map(xmlCopperRef, ext.disambiguationClasses)) ++

@@ -18,14 +18,14 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 {
   top.unparse = "aspect default production\n" ++ lhs.unparse ++ "::" ++ te.unparse ++ " ::=\n" ++ body.unparse;
 
-  top.defs = [];
+  top.defs := [];
 
   production namedSig :: NamedSignature = 
     namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName, [],
       namedSignatureElement(lhs.name, te.typerep),
       annotationsForNonterminal(te.typerep, top.env));
 
-  top.errors := te.errors ++ body.errors;
+  propagate errors, flowDefs;
 
   local fakedDefs :: [Def] =
     [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];

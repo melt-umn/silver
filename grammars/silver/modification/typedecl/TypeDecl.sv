@@ -15,9 +15,10 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
   
-  top.defs = [typeAliasDef(top.grammarName, id.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [typeAliasDef(top.grammarName, id.location, fName, tl.freeVariables, te.typerep)];
 
-  top.errors := tl.errors ++ te.errors ++ tl.errorsTyVars;
+  propagate errors;
+  top.errors <- tl.errorsTyVars;
   
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;

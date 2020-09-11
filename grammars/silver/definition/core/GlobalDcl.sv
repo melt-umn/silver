@@ -6,12 +6,11 @@ concrete production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
 {
   top.unparse = "global " ++ id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse ++ "\n"; 
-  top.errors := t.errors ++ e.errors;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs = [globalDef(top.grammarName, id.location, fName, t.typerep)];
+  top.defs := [globalDef(top.grammarName, id.location, fName, t.typerep)];
 
   top.errors <-
     if length(getValueDclAll(fName, top.env)) > 1

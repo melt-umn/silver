@@ -35,7 +35,7 @@ top::AGDcl ::= 'temp_imp_ide_dcl' parsername::QName fileextension::String_t stmt
 {
   top.unparse = "temp_imp_ide_dcl " ++ parsername.unparse ++ " " ++ fileextension.lexeme ++ "\n"; -- TODO not finished
 
-  top.defs = [];
+  top.defs := [];
 
   top.errors := parsername.lookupValue.errors;
 
