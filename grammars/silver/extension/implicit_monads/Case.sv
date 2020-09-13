@@ -28,7 +28,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                    config=top.config; flowEnv=top.flowEnv;
                                    expectedMonad=top.expectedMonad;}.mtyperep
             in
-              isMonad(ty) && fst(monadsMatch(ty, top.expectedMonad, top.mUpSubst))
+              isMonad(ty) && monadsMatch(ty, top.expectedMonad, ml.mUpSubst).fst && fst(monadsMatch(ty, top.expectedMonad, top.mUpSubst))
             end),
           false,
           ml.matchRuleList);
@@ -102,7 +102,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                      frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
                                      finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
                                      config=top.config; flowEnv=top.flowEnv;expectedMonad=top.expectedMonad;}
-             in if isMonad(a.mtyperep) && !isMonad(performSubstitution(x.snd, top.mDownSubst))
+             in if isMonad(a.mtyperep) && monadsMatch(a.mtyperep, top.expectedMonad, top.mDownSubst).fst && !isMonad(performSubstitution(x.snd, top.mDownSubst))
                 then decorate x.fst with {env=top.env; mDownSubst=top.mDownSubst;
                                      frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
                                      finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
@@ -126,9 +126,7 @@ Boolean ::= elst::[Expr] env::Decorated Env sub::Substitution f::BlockContext gn
                                                   compiledGrammars=cg; config=c; flowEnv=fe;
                                                   expectedMonad=em;}.mtyperep
                 in
-                  if isMonad(etyp) && fst(monadsMatch(etyp, em, sub))
-                  then true
-                  else monadicallyUsedExpr(etl, env, sub, f, gn, cg, c, fe, em)
+                  fst(monadsMatch(etyp, em, sub)) ||  monadicallyUsedExpr(etl, env, sub, f, gn, cg, c, fe, em)
                 end
               end;
 }
@@ -158,7 +156,7 @@ elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext 
                                             compiledGrammars=cg; config=c; flowEnv=fe;
                                             expectedMonad=em;}.mtyperep
            in
-             if isMonad(ety) && fst(monadsMatch(ety, em, sub))
+             if fst(monadsMatch(ety, em, sub))
              then pair(pair(ety, pair(e, newName)) :: subcall.fst,
                        baseExpr(qName(loc, newName), location=loc) :: subcall.snd)
              else pair(subcall.fst, e::subcall.snd)
@@ -281,7 +279,7 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                    config=top.config; flowEnv=top.flowEnv;
                                    expectedMonad=top.expectedMonad;}.mtyperep
             in
-              isMonad(ty) && fst(monadsMatch(ty, top.expectedMonad, top.mUpSubst))
+              isMonad(ty) && monadsMatch(ty, top.expectedMonad, top.mDownSubst).fst && fst(monadsMatch(ty, top.expectedMonad, top.mUpSubst))
             end),
           false,
           ml.matchRuleList);

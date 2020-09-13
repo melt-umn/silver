@@ -47,7 +47,9 @@ top::AGDcl ::= 'Restricted' 'inherited' 'attribute' a::Name tl::BracketedOptType
 {
   top.unparse = "Restricted inherited attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
-  forwards to attributeDclInh('inherited', 'attribute', a, tl, '::', typerepTypeExpr(explicitType(te.typerep), location=te.location), ';', location=top.location);
+  local fwd::AGDcl = attributeDclInh('inherited', 'attribute', a, tl, '::', typerepTypeExpr(explicitType(te.typerep), location=te.location), ';', location=top.location);
+
+  forwards to fwd;
 }
 
 concrete production attributeDclSyn_Restricted
@@ -55,7 +57,9 @@ top::AGDcl ::= 'Restricted' 'synthesized' 'attribute' a::Name tl::BracketedOptTy
 {
   top.unparse = "Restricted synthesized attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
-  forwards to attributeDclSyn('synthesized', 'attribute', a, tl, '::', typerepTypeExpr(explicitType(te.typerep), location=te.location), ';', location=top.location);
+  local fwd::AGDcl = attributeDclSyn('synthesized', 'attribute', a, tl, '::', typerepTypeExpr(explicitType(te.typerep), location=te.location), ';', location=top.location);
+
+  forwards to fwd;
 }
 
 
@@ -66,7 +70,9 @@ top::AGDcl ::= 'Implicit' 'inherited' 'attribute' a::Name tl::BracketedOptTypeEx
 {
   top.unparse = "Implicit inherited attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
-  forwards to attributeDclInh('inherited', 'attribute', a, tl, '::', typerepTypeExpr(implicitType(te.typerep), location=te.location), ';', location=top.location);
+  local fwd::AGDcl = attributeDclInh('inherited', 'attribute', a, tl, '::', typerepTypeExpr(implicitType(te.typerep), location=te.location), ';', location=top.location);
+
+  forwards to fwd;
 }
 
 concrete production attributeDclSyn_Implicit
@@ -74,7 +80,9 @@ top::AGDcl ::= 'Implicit' 'synthesized' 'attribute' a::Name tl::BracketedOptType
 {
   top.unparse = "Implicit synthesized attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
-  forwards to attributeDclSyn('synthesized', 'attribute', a, tl, '::', typerepTypeExpr(implicitType(te.typerep), location=te.location), ';', location=top.location);
+  local fwd::AGDcl = attributeDclSyn('synthesized', 'attribute', a, tl, '::', typerepTypeExpr(implicitType(te.typerep), location=te.location), ';', location=top.location);
+
+  forwards to fwd;
 }
 
 

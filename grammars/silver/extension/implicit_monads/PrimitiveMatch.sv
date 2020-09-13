@@ -26,17 +26,18 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
-  top.mtyperep = if isMonad(e.mtyperep) && !isMonad(pr.patternType)
-                 then if isMonad(f.mtyperep)
+  top.mtyperep = if isMonad(e.mtyperep) && monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst).fst &&
+                    (!isMonad(pr.patternType) || !monadsMatch(pr.patternType, top.expectedMonad, top.mDownSubst).fst)
+                 then if isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst
                       then f.mtyperep
-                      else if isMonad(pr.mtyperep)
+                      else if isMonad(pr.mtyperep) && monadsMatch(pr.mtyperep, top.expectedMonad, top.mDownSubst).fst
                            then pr.mtyperep
-                           else if isMonad(t.typerep)
+                           else if isMonad(t.typerep) && monadsMatch(t.typerep, top.expectedMonad, top.mDownSubst).fst
                                 then monadOfType(t.typerep, pr.mtyperep)
                                 else monadOfType(e.mtyperep, pr.mtyperep)
-                 else if isMonad(pr.mtyperep)
+                 else if isMonad(pr.mtyperep) && monadsMatch(pr.mtyperep, top.expectedMonad, top.mDownSubst).fst
                       then pr.mtyperep
-                      else if isMonad(t.typerep)
+                      else if isMonad(t.typerep) && monadsMatch(t.typerep, top.expectedMonad, top.mDownSubst).fst
                            then monadOfType(t.typerep, pr.mtyperep)
                            else f.mtyperep;
 
@@ -45,11 +46,11 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   --check the type coming up with the type that's supposed to be
   --   coming out
   local attribute errCheck1::TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  errCheck1 = if isMonad(pr.mtyperep)
-              then if isMonad(f.mtyperep)
+  errCheck1 = if isMonad(pr.mtyperep) && monadsMatch(pr.mtyperep, top.expectedMonad, top.mDownSubst).fst
+              then if isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst
                    then check(pr.mtyperep, f.mtyperep)
                    else check(monadInnerType(pr.mtyperep), f.mtyperep)
-              else if isMonad(f.mtyperep)
+              else if isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst
                    then check(pr.mtyperep, monadInnerType(f.mtyperep))
                    else check(pr.mtyperep, f.mtyperep);
 
@@ -63,7 +64,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   pr.expectedMonad = top.expectedMonad;
   f.expectedMonad = top.expectedMonad;
 
-  e.monadicallyUsed = isMonad(e.mtyperep) && !isMonad(pr.patternType);
+  e.monadicallyUsed = isMonad(e.mtyperep) && monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst).fst &&
+                      (!isMonad(pr.patternType) || monadsMatch(pr.patternType, top.expectedMonad, top.mDownSubst).fst);
   f.monadicallyUsed = false;
   top.monadicNames = e.monadicNames ++ pr.monadicNames ++ f.monadicNames;
 
@@ -183,21 +185,23 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   local just_rewrite::Expr = matchPrimitiveReal(e.monadRewritten, outty, pr.monadRewritten,
                                                 f.monadRewritten, location=top.location);
   --pick the right rewriting
-  top.monadRewritten = if isMonad(e.mtyperep) && !isMonad(pr.patternType)
-                       then if isMonad(pr.mtyperep)
-                            then if isMonad(f.mtyperep)
+  local mRw::Expr    = if isMonad(e.mtyperep) && monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst).fst &&
+                          (!isMonad(pr.patternType) || !monadsMatch(pr.patternType, top.expectedMonad, top.mDownSubst).fst)
+                       then if isMonad(pr.mtyperep) && monadsMatch(pr.mtyperep, top.expectedMonad, top.mDownSubst).fst
+                            then if isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst
                                  then justBind_e
                                  else bind_e_return_f
-                            else if isMonad(f.mtyperep)
+                            else if isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst
                                  then bind_e_returnify_pr
                                  else bind_e_returnify_pr_return_f
-                       else if isMonad(pr.mtyperep)
-                            then if isMonad(f.mtyperep)
+                       else if isMonad(pr.mtyperep) && monadsMatch(pr.mtyperep, top.expectedMonad, top.mDownSubst).fst
+                            then if isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst
                                  then just_rewrite
                                  else return_f
-                            else if isMonad(f.mtyperep)
+                            else if isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst
                                  then returnify_pr
                                  else just_rewrite;
+  top.monadRewritten = mRw;
 }
 
 aspect production onePattern
@@ -231,11 +235,11 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
   errCheck1.downSubst = ps.mUpSubst;
   top.mUpSubst = errCheck1.upSubst;
   errCheck1.finalSubst = top.finalSubst;
-  local errCheck1::TypeCheck = if isMonad(p.mtyperep)
-                               then if isMonad(ps.mtyperep)
+  local errCheck1::TypeCheck = if isMonad(p.mtyperep) && monadsMatch(p.mtyperep, top.expectedMonad, top.mDownSubst).fst
+                               then if isMonad(ps.mtyperep) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
                                     then check(p.mtyperep, ps.mtyperep)
                                     else check(monadInnerType(p.mtyperep), ps.mtyperep)
-                               else if isMonad(ps.mtyperep)
+                               else if isMonad(ps.mtyperep) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
                                     then check(p.mtyperep, monadInnerType(ps.mtyperep))
                                     else check(p.mtyperep, ps.mtyperep);
   top.merrors <-
@@ -249,8 +253,8 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
   p.expectedMonad = top.expectedMonad;
   ps.expectedMonad = top.expectedMonad;
 
-  top.mtyperep = if isMonad(p.mtyperep)
-                 then if isMonad(ps.mtyperep)
+  top.mtyperep = if isMonad(p.mtyperep) && monadsMatch(p.mtyperep, top.expectedMonad, top.mDownSubst).fst
+                 then if isMonad(ps.mtyperep) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
                       then ps.mtyperep
                       else p.mtyperep
                  else ps.mtyperep;
@@ -281,11 +285,11 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
   local returnRewritten::PrimPatterns = consPattern(pReturnify.returnify, terminal(Vbar_kwd, "|"),
                                                     ps.monadRewritten,
                                                     location=top.location);
-  top.monadRewritten = if isMonad(p.mtyperep)
-                       then if isMonad(ps.mtyperep)
+  top.monadRewritten = if isMonad(p.mtyperep) && monadsMatch(p.mtyperep, top.expectedMonad, top.mDownSubst).fst
+                       then if isMonad(ps.mtyperep) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
                             then basicRewritten     --both monads
                             else returnifyRewritten --current monad, rest not
-                       else if isMonad(ps.mtyperep)
+                       else if isMonad(ps.mtyperep) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
                             then returnRewritten    --rest monad, current not
                             else basicRewritten;    --neither monads
 }

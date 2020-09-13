@@ -787,12 +787,12 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.merrors := e.merrors;
   e.expectedMonad = top.expectedMonad;
 
-  e.monadicallyUsed = if isMonad(e.mtyperep)
+  e.monadicallyUsed = if isMonad(e.mtyperep) && monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst).fst
                       then true
                       else false;
   top.monadicNames = e.monadicNames ++ inh.monadicNames;
 
-  top.mtyperep = if isMonad(e.mtyperep)
+  top.mtyperep = if isMonad(e.mtyperep) && monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst).fst
                  then monadOfType(e.mtyperep,
                                   decoratedType(performSubstitution(monadInnerType(e.mtyperep),
                                                                     e.mUpSubst)))
@@ -807,7 +807,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
                        productionRHSNil(location=top.location),
                        location=top.location);
   top.monadRewritten =
-     if isMonad(e.mtyperep)
+     if isMonad(e.mtyperep) && monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst).fst
      then Silver_Expr {
             $Expr{monadBind(e.mtyperep, top.location)}
               ($Expr{e.monadRewritten},
