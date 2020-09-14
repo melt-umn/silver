@@ -18,6 +18,7 @@ synthesized attribute attrRefNames::[Maybe<String>];
 monoid attribute containsFail::Boolean with false, ||;
 monoid attribute allId::Boolean with true, &&;
 monoid attribute freeRecVars::[String] with [], ++;
+monoid attribute partialRefs::[String] with [], ++;
 monoid attribute totalRefs::[String] with [], ++;
 monoid attribute matchesFrame::Boolean with false, ||;
 
@@ -92,13 +93,13 @@ strategy attribute optimize =
 
 nonterminal StrategyExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
-  genName, outerAttr, recVarNameEnv, recVarTotalEnv, liftedStrategies, attrRefName, isId, isTotal, freeRecVars, totalRefs, -- Frame-independent attrs
+  genName, outerAttr, recVarNameEnv, recVarTotalEnv, liftedStrategies, attrRefName, isId, isTotal, freeRecVars, partialRefs, totalRefs, -- Frame-independent attrs
   partialTranslation, totalTranslation, matchesFrame, -- Frame-dependent attrs
   inlinedStrategies, genericStep, ntStep, prodStep, simplify, optimize; -- Optimization stuff
 
 nonterminal StrategyExprs with
   config, grammarName, env, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
-  recVarNameEnv, recVarTotalEnv, givenInputElements, liftedStrategies, attrRefNames, containsFail, allId, freeRecVars, totalRefs, -- Frame-independent attrs
+  recVarNameEnv, recVarTotalEnv, givenInputElements, liftedStrategies, attrRefNames, containsFail, allId, freeRecVars, partialRefs, totalRefs, -- Frame-independent attrs
   inlinedStrategies, simplify; -- Optimization stuff
 
 flowtype StrategyExpr =
@@ -106,7 +107,7 @@ flowtype StrategyExpr =
   -- Normal expression stuff
   unparse {}, errors {decorate, frame, compiledGrammars, flowEnv}, flowDefs {decorate, frame, compiledGrammars, flowEnv},
   -- Frame-independent attrs
-  liftedStrategies {decorate}, attrRefName {decorate}, isId {decorate}, isTotal {decorate}, freeRecVars {decorate}, totalRefs {decorate},
+  liftedStrategies {decorate}, attrRefName {decorate}, isId {decorate}, isTotal {decorate}, freeRecVars {decorate}, partialRefs {decorate}, totalRefs {decorate},
   -- Frame-dependent attrs
   partialTranslation {decorate, frame}, totalTranslation {decorate, frame}, matchesFrame {decorate, frame};
 
@@ -116,13 +117,13 @@ flowtype StrategyExprs =
   unparse {}, errors {decorate, frame, givenInputElements, compiledGrammars, flowEnv}, flowDefs {decorate, frame, compiledGrammars, flowEnv},
   -- Frame-independent attrs
   liftedStrategies {decorate}, attrRefNames {decorate, givenInputElements},
-  containsFail {decorate}, allId {decorate}, freeRecVars {decorate}, totalRefs {decorate};
+  containsFail {decorate}, allId {decorate}, freeRecVars {decorate}, partialRefs {decorate}, totalRefs {decorate};
 
 propagate errors on StrategyExpr, StrategyExprs excluding partialRef, totalRef;
 propagate flowDefs on StrategyExpr, StrategyExprs;
 propagate containsFail, allId on StrategyExprs;
 propagate freeRecVars on StrategyExpr, StrategyExprs excluding recComb;
-propagate totalRefs on StrategyExpr, StrategyExprs;
+propagate partialRefs, totalRefs on StrategyExpr, StrategyExprs;
 propagate simplify on StrategyExprs;
 propagate prodStep on MRuleList;
 propagate genericStep, ntStep, prodStep, simplify, optimize on StrategyExpr;
@@ -890,6 +891,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   top.attrRefName = just(attr.name);
   top.matchesFrame := attr.matchesFrame;
   top.isTotal = false;
+  top.partialRefs <- [attrDcl.fullName];
   
   attr.attrFor = top.frame.signature.outputElement.typerep;
   
@@ -921,7 +923,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   top.attrRefName = just(attr.name);
   top.matchesFrame := attr.matchesFrame;
   top.isTotal = true;
-  top.totalRefs <- [case attr of qNameAttrOccur(a) -> a.lookupAttribute.dcl.fullName end];
+  top.totalRefs <- [attrDcl.fullName];
   
   attr.attrFor = top.frame.signature.outputElement.typerep;
   
