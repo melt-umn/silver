@@ -94,7 +94,8 @@ melt.trynode('silver') {
 
   stage("Integration") {
     // Projects with 'develop' as main branch, we'll try to build specific branch names if they exist
-    def github_projects = ["/melt-umn/ableC", "/melt-umn/Oberon0", "/melt-umn/ableJ14", "/melt-umn/meta-ocaml-lite", "/melt-umn/rewriting-lambda-calculus", "/melt-umn/rewriting-regex-matching",
+    def github_projects = ["/melt-umn/ableC", "/melt-umn/Oberon0", "/melt-umn/ableJ14", "/melt-umn/meta-ocaml-lite",
+                           "/melt-umn/rewriting-lambda-calculus", "/melt-umn/rewriting-regex-matching", "/melt-umn/rewriting-optimization-demo",
                            "/internal/ring"]
     // Specific other jobs to build
     def specific_jobs = ["/internal/matlab/master", "/internal/metaII/master", "/internal/simple/master"]
