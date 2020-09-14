@@ -265,5 +265,5 @@ top::Strategy ::= s::Strategy
 abstract production outermost
 top::Strategy ::= s::Strategy
 {
-  forwards to topDown(try(s <* outermost(s)));
+  forwards to repeat(onceTopDown(s));
 }

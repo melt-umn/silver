@@ -41,6 +41,7 @@ exports silver:extension:patternmatching;
 exports silver:extension:treegen;
 exports silver:extension:doc;
 exports silver:extension:autoattr;
+exports silver:extension:strategyattr;
 exports silver:extension:monad;
 exports silver:extension:reflection;
 exports silver:extension:rewriting;

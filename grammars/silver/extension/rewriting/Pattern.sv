@@ -133,7 +133,11 @@ top::PatternList ::= p::Pattern
   top.transform = consASTPattern(p.transform, nilASTPattern());
   top.firstTransform = p.transform;
   top.isPolymorphic = p.isPolymorphic;
-  p.typeHasUniversalVars = head(top.typesHaveUniversalVars);
+  p.typeHasUniversalVars =
+    case top.typesHaveUniversalVars of
+    | h :: _ -> h
+    | _ -> false
+    end;
 }
 aspect production patternList_more
 top::PatternList ::= p::Pattern ',' ps::PatternList
@@ -141,8 +145,16 @@ top::PatternList ::= p::Pattern ',' ps::PatternList
   top.transform = consASTPattern(p.transform, ps.transform);
   top.firstTransform = p.transform;
   top.isPolymorphic = p.isPolymorphic || ps.isPolymorphic;
-  p.typeHasUniversalVars = head(top.typesHaveUniversalVars);
-  ps.typesHaveUniversalVars = tail(top.typesHaveUniversalVars);
+  p.typeHasUniversalVars =
+    case top.typesHaveUniversalVars of
+    | h :: _ -> h
+    | _ -> false
+    end;
+  ps.typesHaveUniversalVars =
+    case top.typesHaveUniversalVars of
+    | _ :: t -> t
+    | _ -> []
+    end;
 }
 
 aspect production patternList_nil
