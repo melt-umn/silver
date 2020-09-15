@@ -49,7 +49,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
            defaultEnvItem(
              strategyDcl(
                top.grammarName, a.location, fName, isTotal, freshTyVar(),
-               !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.totalRefs, e)))],
+               !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e)))],
         location=top.location),
       map(
         \ d::Pair<String Decorated StrategyExpr> ->
@@ -88,7 +88,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
         if null(getOccursDcl(totalAttr, nt.lookupType.fullName, top.env))
         then [err(top.location, s"Total strategy attribute ${totalAttr} referenced by ${at.name} does not occur on ${nt.name}")]
         else [],
-      at.lookupAttribute.dcl.totalRefs);
+      nubBy(stringEq, at.lookupAttribute.dcl.totalRefs));
   
   -- TODO: Check that the type parameters of any rules of type nt match nttl
   
@@ -149,7 +149,9 @@ top::ProductionStmt ::= attr::Decorated QName
   -- forward -> dcl.containsErrors -> dcl.flowEnv -> forward.flowDefs
   top.errors :=
     if
+      -- Check for errors in this or inlined strategy expressions that would be reported on the attribute definition
       attr.lookupAttribute.dcl.containsErrors ||
+      any(map((.containsErrors), flatMap(getAttrDcl(_, top.env), attr.lookupAttribute.dcl.partialRefs))) ||
       -- Check for total strategy ref occurs errors that would already be reported on the occurence
       (!null(getOccursDcl(attr.lookupAttribute.fullName, top.frame.signature.outputElement.typerep.typeName, top.env)) &&
        any(map(null, map(getOccursDcl(_, top.frame.signature.outputElement.typerep.typeName, top.env), attr.lookupAttribute.dcl.totalRefs))))

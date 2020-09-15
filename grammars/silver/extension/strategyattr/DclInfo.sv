@@ -6,7 +6,7 @@ synthesized attribute containsErrors::Boolean occurs on DclInfo;
 synthesized attribute liftedStrategyNames::[String] occurs on DclInfo;
 synthesized attribute givenRecVarNameEnv::[Pair<String String>] occurs on DclInfo;
 synthesized attribute givenRecVarTotalEnv::[Pair<String Boolean>] occurs on DclInfo;
-attribute totalRefs occurs on DclInfo;
+attribute partialRefs, totalRefs occurs on DclInfo;
 synthesized attribute strategyExpr :: StrategyExpr occurs on DclInfo;
 
 aspect default production
@@ -18,6 +18,7 @@ top::DclInfo ::=
   top.liftedStrategyNames = [];
   top.givenRecVarNameEnv = [];
   top.givenRecVarTotalEnv = [];
+  top.partialRefs := [];
   top.totalRefs := [];
   top.strategyExpr = error("Internal compiler error: must be defined for all strategy attribute declarations");
 }
@@ -25,7 +26,7 @@ top::DclInfo ::=
 abstract production strategyDcl
 top::DclInfo ::=
   sg::String sl::Location fn::String isTotal::Boolean tyVar::TyVar
-  containsErrors::Boolean liftedStrategyNames::[String] givenRecVarNameEnv::[Pair<String String>] givenRecVarTotalEnv::[Pair<String Boolean>] totalRefs::[String]
+  containsErrors::Boolean liftedStrategyNames::[String] givenRecVarNameEnv::[Pair<String String>] givenRecVarTotalEnv::[Pair<String Boolean>] partialRefs::[String] totalRefs::[String]
   e::StrategyExpr
 {
   top.sourceGrammar = sg;
@@ -51,6 +52,7 @@ top::DclInfo ::=
   top.liftedStrategyNames = liftedStrategyNames;
   top.givenRecVarNameEnv = givenRecVarNameEnv;
   top.givenRecVarTotalEnv = givenRecVarTotalEnv;
+  top.partialRefs := partialRefs;
   top.totalRefs := totalRefs;
   top.strategyExpr = e;
 }

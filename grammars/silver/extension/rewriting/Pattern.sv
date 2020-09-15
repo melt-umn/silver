@@ -105,7 +105,37 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
   top.wrappedMatchRuleList =
     [matchRule(
       pt.patternList,
-      just(hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond, location=e.location)),
+      just(pair(hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond, location=e.location), nothing())),
+      hackWrapKey(toString(top.ruleIndex), e, location=e.location),
+      location=top.location)];
+}
+
+aspect production matchRuleWhenMatches_c
+top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::Expr
+{
+  top.transform =
+    require(
+      pt.firstTransform,
+      matchASTExpr(
+        case lookupBy(stringEq, toString(top.ruleIndex) ++ "_cond", top.decRuleExprsIn) of
+        | just(e) -> e.transform
+        | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex) ++ "_cond")
+        end,
+        p.transform, booleanASTExpr(true), booleanASTExpr(false))) <*
+    rewriteRule(
+      pt.firstTransform,
+      case lookupBy(stringEq, toString(top.ruleIndex), top.decRuleExprsIn) of
+      | just(e) -> e.transform
+      | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex))
+      end);
+  
+  top.isPolymorphic = head(pt.patternList).patternIsVariable || pt.isPolymorphic;
+  pt.typesHaveUniversalVars = [true];
+  
+  top.wrappedMatchRuleList =
+    [matchRule(
+      pt.patternList,
+      just(pair(hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond, location=e.location), just(p))),
       hackWrapKey(toString(top.ruleIndex), e, location=e.location),
       location=top.location)];
 }
