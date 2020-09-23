@@ -160,16 +160,18 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
 function initialSegmentPatternType
 Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
 {
-  return if null(lst) --this probably shouldn't be called with an empty list, but catch it anyway
-         then pair([], [])
-         else if null(tail(lst))
-              then pair(lst, [])
-              else if head(lst).isVarMatchRule == head(tail(lst)).isVarMatchRule
-                   then --both have the same type of pattern
-                      let rest::Pair<[AbstractMatchRule] [AbstractMatchRule]> = initialSegmentPatternType(tail(lst))
-                      in pair(head(lst)::rest.fst, rest.snd) end
-                   else --the first has a different type of pattern than the second
-                      pair([head(lst)], tail(lst));
+  return case lst of
+           --this probably shouldn't be called with an empty list, but catch it anyway
+         | [] -> pair([], [])
+         | [mr] -> pair([mr], [])
+         | mr1::mr2::rest ->
+           if mr1.isVarMatchRule == mr2.isVarMatchRule
+           then --both have the same type of pattern
+              let sub::Pair<[AbstractMatchRule] [AbstractMatchRule]> = initialSegmentPatternType(mr2::rest)
+              in pair(mr1::sub.fst, sub.snd) end
+           else --the first has a different type of pattern than the second
+              pair([mr1], mr2::rest)
+         end;
 }
 
 {-
