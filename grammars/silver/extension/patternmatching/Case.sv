@@ -147,17 +147,59 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
       -- So don't try that!
   
   {--
-   - Mixed con/var? Partition, and push the vars into the "fail" branch.
-   - Use a let for it, to avoid code duplication!
+    - Mixed con/var? Partition into segments and build nested case expressions
+    - The whole segment partitioning is done in a function rather than grabbing the initial segment
+      and forwarding to do the rest of the segments (another workable option) for efficiency
    -}
-  local freshFailName :: String = "__fail_" ++ toString(genInt());
-  local mixedCase :: Expr =
-    makeLet(top.location,
-      freshFailName, retType, caseExpr(es, varRules, failExpr, retType, location=top.location),
-      caseExpr(es, prodRules, baseExpr(qName(top.location, freshFailName), location=top.location),
-        retType, location=top.location));
+  local mixedCase :: Expr = buildMixedCaseMatches(es, ml, failExpr, retType, top.location);
 }
 
+
+--Get the initial segment of the match rules which all have the same
+--pattern type (constructor or var) and the rest of the rules
+function initialSegmentPatternType
+Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
+{
+  return case lst of
+           --this probably shouldn't be called with an empty list, but catch it anyway
+         | [] -> pair([], [])
+         | [mr] -> pair([mr], [])
+         | mr1::mr2::rest ->
+           if mr1.isVarMatchRule == mr2.isVarMatchRule
+           then --both have the same type of pattern
+              let sub::Pair<[AbstractMatchRule] [AbstractMatchRule]> = initialSegmentPatternType(mr2::rest)
+              in pair(mr1::sub.fst, sub.snd) end
+           else --the first has a different type of pattern than the second
+              pair([mr1], mr2::rest)
+         end;
+}
+
+{-
+  Build the correct match expression when we are mixing constructor
+  and variable patterns for the first match.  We do this by
+  partitioning the list into segments of only constructor or variable
+  patterns in order, then putting each segment into its own match.
+-}
+function buildMixedCaseMatches
+Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
+{
+  local freshFailName :: String = "__fail_" ++ toString(genInt());
+  return if null(ml)
+         then failExpr
+         else let segments::Pair<[AbstractMatchRule] [AbstractMatchRule]> =
+                            initialSegmentPatternType(ml)
+              in
+                makeLet(loc, freshFailName, retType,
+                        buildMixedCaseMatches(es, segments.snd, failExpr, retType, loc),
+                        caseExpr(es, segments.fst, baseExpr(qName(loc, freshFailName), location=loc),
+                                 retType, location=loc))
+              end;
+}
+
+
+
+
+--Match Rules
 concrete production mRuleList_one
 top::MRuleList ::= m::MatchRule
 {
