@@ -160,7 +160,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
 function initialSegmentPatternType
 Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
 {
-  {-return case lst of
+  return case lst of
            --this probably shouldn't be called with an empty list, but catch it anyway
          | [] -> pair([], [])
          | [mr] -> pair([mr], [])
@@ -171,17 +171,7 @@ Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
               in pair(mr1::sub.fst, sub.snd) end
            else --the first has a different type of pattern than the second
               pair([mr1], mr2::rest)
-         end;-}
-  return if null(lst) --this probably shouldn't be called with an empty list, but catch it anyway
-         then pair([], [])
-         else if null(tail(lst))
-              then pair(lst, [])
-              else if head(lst).isVarMatchRule == head(tail(lst)).isVarMatchRule
-                   then --both have the same type of pattern
-                      let rest::Pair<[AbstractMatchRule] [AbstractMatchRule]> = initialSegmentPatternType(tail(lst))
-                      in pair(head(lst)::rest.fst, rest.snd) end
-                   else --the first has a different type of pattern than the second
-                      pair([head(lst)], tail(lst));
+         end;
 }
 
 {-
@@ -193,14 +183,16 @@ Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
 function buildMixedCaseMatches
 Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
 {
+  local freshFailName :: String = "__fail_" ++ toString(genInt());
   return if null(ml)
          then failExpr
          else let segments::Pair<[AbstractMatchRule] [AbstractMatchRule]> =
                             initialSegmentPatternType(ml)
               in
-                caseExpr(es, segments.fst,
-                         buildMixedCaseMatches(es, segments.snd, failExpr, retType, loc),
-                         retType, location=loc)
+                makeLet(loc, freshFailName, retType,
+                        buildMixedCaseMatches(es, segments.snd, failExpr, retType, loc),
+                        caseExpr(es, segments.fst, baseExpr(qName(loc, freshFailName), location=loc),
+                                 retType, location=loc))
               end;
 }
 
