@@ -2,6 +2,14 @@ grammar silver:extension:convenience;
 
 import silver:modification:copper;
 
+-- "production" short for "abstract production"
+concrete production productionDclImplicitAbs
+top::AGDcl ::= 'production' id::Name ns::ProductionSignature body::ProductionBody
+{
+  forwards to productionDcl('abstract', $1, id, ns, body, location=top.location);
+}
+
+-- "concrete productions" syntax
 nonterminal ProductionDclStmts with unparse, location, proddcls, lhsdcl, grammarName;
 nonterminal ProductionDclStmt with unparse, location, proddcls, lhsdcl, grammarName;
 
