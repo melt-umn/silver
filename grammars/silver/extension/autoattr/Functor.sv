@@ -4,6 +4,7 @@ concrete production functorAttributeDcl
 top::AGDcl ::= 'functor' 'attribute' a::Name ';'
 {
   top.unparse = "functor attribute " ++ a.unparse ++ ";";
+  top.moduleNames := [];
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -23,6 +24,8 @@ abstract production functorAttributionDcl
 top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
+  top.moduleNames := [];
+  
   forwards to
     defaultAttributionDcl(
       at,

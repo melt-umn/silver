@@ -110,7 +110,7 @@ top::Names ::= id1::Name ',' id2::Names
 function qualifyNames
 [QName] ::= i::[Name]
 {
-  return if null(i) then [] else [qNameId(head(i))] ++ qualifyNames(tail(i));
+  return if null(i) then [] else qNameId(head(i), location=head(i).location) :: qualifyNames(tail(i));
 }
 
 -}
