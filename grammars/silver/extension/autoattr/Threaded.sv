@@ -49,8 +49,14 @@ top::ProductionStmt ::= inh::Decorated QName syn::String
             \ ie::NamedSignatureElement ->
               !null(getOccursDcl(inh.lookupAttribute.fullName, ie.typerep.typeName, top.env)) &&
               !null(getOccursDcl(syn, ie.typerep.typeName, top.env)),
-            top.frame.signature.inputElements)) ++
-        [if !null(getValueDcl("forward", top.env)) then "forward" else lhsName]),
+            if null(getOccursDcl(syn, top.frame.lhsNtName, top.env)) && !null(top.frame.signature.inputElements)
+            then init(top.frame.signature.inputElements)
+            else top.frame.signature.inputElements)) ++
+        if null(getOccursDcl(syn, top.frame.lhsNtName, top.env)) && !null(top.frame.signature.inputElements)
+        then if !null(getOccursDcl(inh.lookupAttribute.fullName, last(top.frame.signature.inputElements).typerep.typeName, top.env))
+          then [last(top.frame.signature.inputElements).elementName]
+          else []
+        else [if !null(getValueDcl("forward", top.env)) then "forward" else lhsName]),
       location=top.location);
 }
 
