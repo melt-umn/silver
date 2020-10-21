@@ -41,7 +41,6 @@ partial strategy attribute genericStep =
   | someTraversal(fail()) -> fail(location=top.location, genName=top.genName)
   | oneTraversal(fail()) -> fail(location=top.location, genName=top.genName)
   | prodTraversal(_, ss) when ss.containsFail -> fail(location=top.location, genName=top.genName)
-  | prodTraversal(_, ss) when ss.allId -> id(location=top.location, genName=top.genName)
   | recComb(n, s) when !containsBy(stringEq, n.name, s.freeRecVars) -> s
   | inlined(_, fail()) -> fail(location=top.location, genName=top.genName)
   end;
