@@ -506,13 +506,15 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   forward.mDownSubst = e.mUpSubst;
   e.expectedMonad = top.expectedMonad;
   top.merrors := e.merrors ++ forward.merrors;
-  top.merrors <- case q.typerep of
-                 | explicitType(_) -> []
-                 | implicitType(_) -> []
-                 | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
-                                           "be either implicit or explicit; " ++ q.unparse ++
-                                           " is neither")]
-                 end;
+  top.merrors <- if q.found
+                 then case q.typerep of
+                      | explicitType(_) -> []
+                      | implicitType(_) -> []
+                      | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
+                                                "be either implicit or explicit; " ++ q.unparse ++
+                                                " is neither")]
+                      end
+                 else [];
   e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
                      then [top] ++ e.monadicNames
@@ -555,10 +557,12 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
                  else q.typerep;
 
   top.notExplicitAttributes <- e.notExplicitAttributes ++
-                               case q.typerep of
-                               | explicitType(_) -> []
-                               | _ -> [pair(q.unparse, top.location)]
-                               end;
+                               if q.found
+                               then case q.typerep of
+                                    | explicitType(_) -> []
+                                    | _ -> [pair(q.unparse, top.location)]
+                                    end
+                               else [];
 }
 
 aspect production errorAccessHandler
@@ -570,6 +574,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.merrors <- case q.typerep of
                  | explicitType(_) -> []
                  | implicitType(_) -> []
+                 | errorType() -> [] --something went wrong elsewhere
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or explicit; " ++ q.unparse ++
                                            " is neither")]
@@ -580,6 +585,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                case q.typerep of
                                | explicitType(_) -> []
+                               | errorType() -> [] --something went wrong elsewhere
                                | _ -> [pair(q.unparse, top.location)]
                                end;
 }
@@ -610,6 +616,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.merrors <- case q.typerep of
                  | explicitType(_) -> []
                  | implicitType(_) -> []
+                 | errorType() -> [] --something went wrong elsewhere
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or explicit; " ++ q.unparse ++
                                            " is neither")]
@@ -619,6 +626,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                case q.typerep of
                                | explicitType(_) -> []
+                               | errorType() -> [] --something went wrong elsewhere
                                | _ -> [pair(q.unparse, top.location)]
                                end;
 }
@@ -684,6 +692,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.merrors <- case q.typerep of
                  | explicitType(_) -> []
                  | implicitType(_) -> []
+                 | errorType() -> [] --something went wrong elsewhere
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or explicit; " ++ q.unparse ++
                                            " is neither")]
@@ -693,6 +702,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                case q.typerep of
                                | explicitType(_) -> []
+                               | errorType() -> [] --something went wrong elsewhere
                                | _ -> [pair(q.unparse, top.location)]
                                end;
 }
@@ -723,6 +733,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.merrors <- case q.typerep of
                  | explicitType(_) -> []
                  | implicitType(_) -> []
+                 | errorType() -> [] --something went wrong elsewhere
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or explicit; " ++ q.unparse ++
                                            " is neither")]
@@ -732,6 +743,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                case q.typerep of
                                | explicitType(_) -> []
+                               | errorType() -> [] --something went wrong elsewhere
                                | _ -> [pair(q.unparse, top.location)]
                                end;
 }
@@ -757,6 +769,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.merrors <- case q.typerep of
                  | explicitType(_) -> []
                  | implicitType(_) -> []
+                 | errorType() -> [] --something went wrong elsewhere
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or explicit; " ++ q.unparse ++
                                            " is neither")]
@@ -768,6 +781,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                case q.typerep of
                                | explicitType(_) -> []
+                               | errorType() -> [] --something went wrong elsewhere
                                | _ -> [pair(q.unparse, top.location)]
                                end;
 }

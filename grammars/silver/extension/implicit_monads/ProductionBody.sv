@@ -52,35 +52,27 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
   top.defs := [];
 
   local merrors::[Message] =
-    (if !isMonad(attr.typerep)
-     then [err(top.location, "Implicit equations can only be used for " ++
-                             "monad-typed attributes, not attributes of type " ++
-                             prettyType(attr.typerep))]
-     else []) ++
-    e.merrors;
+     ( if attr.found && dl.found
+       then case attr.typerep of
+            | implicitType(t) -> []
+            | _ -> [err(top.location, "Implicit equations can only be used for " ++
+                                      "attributes declared to be implicit; " ++
+                                      attr.unparse ++ " is not implicit")]
+            end
+       else []) ++
+     e.merrors;
 
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
 
-  local fwd::ProductionStmt =
-              case attr.typerep of
-              | implicitType(t) -> if null(merrors)
-                                   then if isMonad(attr.typerep)
-                                        then if isMonad(e.mtyperep) && fst(monadsMatch(attr.typerep, e.mtyperep, top.downSubst))
-                                             then attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location)
-                                             else synthesizedAttributeDef(dl, attr,
-                                                    Silver_Expr {
-                                                      $Expr {monadReturn(attr.typerep, top.location)}
-                                                              ($Expr {e.monadRewritten})
-                                                     }, location=top.location)
-                                        else errorProductionStmt([err(top.location, "Implicit attributes must have " ++
-                                                 "a monad type")], location=top.location)
-                                   else errorProductionStmt(merrors, location=top.location)
-              | _ -> errorProductionStmt([err(top.location,
-                                              "Implicit equations can only be used for attributes " ++
-                                              "declared to be implicit; " ++ attr.unparse ++ " is not implicit")],
-                                              location=top.location)
-              end;
+  local fwd::ProductionStmt = if null(merrors)
+                              then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst)) || !attr.found || !dl.found
+                                   then attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location)
+                                   else attributeDef(dl, '.', attr, '=', Silver_Expr {
+                                                         $Expr {monadReturn(attr.typerep, top.location)}
+                                                            ($Expr {e.monadRewritten})
+                                                         }, ';', location=top.location)
+                              else errorAttributeDef(merrors, dl, attr, e.monadRewritten, location=top.location);
 
   forwards to fwd; --unsafeTrace(fwd, print(top.location.unparse ++ ": " ++ fwd.unparse ++ "\n\n", unsafeIO()));
 }
@@ -100,18 +92,18 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
   top.productionAttributes := [];
   top.defs := [];
 
+  local merrors::[Message] =
+     --gives errors for implicit/unrestricted attributes used
+     buildExplicitAttrErrors(e.notExplicitAttributes);
+
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
 
-  forwards to case attr.typerep of
-              | explicitType(t) -> if null(e.notExplicitAttributes)
-                                   then attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
-                                   else errorProductionStmt(buildExplicitAttrErrors(e.notExplicitAttributes), location=top.location)
-              | _ -> errorProductionStmt([err(top.location,
-                                              "Restricted equations can only be used for attributes " ++
-                                              "declared to be restricted; " ++ attr.unparse ++ " is not restricted (" ++ attr.typerep.typepp ++ ")")],
-                                              location=top.location)
-              end;
+  local fwd::ProductionStmt = if null(merrors)
+                              then attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
+                              else errorAttributeDef(merrors, dl, attr, e, location=top.location);
+
+  forwards to fwd;
 }
 
 function buildExplicitAttrErrors

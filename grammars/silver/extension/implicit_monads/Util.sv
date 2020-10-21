@@ -224,7 +224,7 @@ Expr ::= ty::Type l::Location
          | listType(_) ->
            baseExpr(qNameId(name("returnList", l), location=l), location=l)
          | decoratedType(t) -> monadReturn(t, l)
-         | _ -> error("Tried to get the return for a non-monadic type at " ++ l.unparse)
+         | _ -> error("Tried to get the return for a non-monadic type (" ++ ty.typepp ++ ") at " ++ l.unparse)
          end;
 }
 
