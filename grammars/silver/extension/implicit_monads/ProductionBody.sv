@@ -150,3 +150,44 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
               end;
 }
 
+
+
+
+
+
+
+
+
+abstract production restrictedSynAttributeDef
+top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
+{
+  local fwd::ProductionStmt = synthesizedAttributeDef(dl, attr, e, location=top.location);
+  forwards to fwd;
+}
+
+
+abstract production restrictedInhAttributeDef
+top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
+{
+  local fwd::ProductionStmt = inheritedAttributeDef(dl, attr, e, location=top.location);
+  forwards to fwd;
+}
+
+
+
+
+abstract production implicitSynAttributeDef
+top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
+{
+  local fwd::ProductionStmt = synthesizedAttributeDef(dl, attr, e, location=top.location);
+  forwards to fwd;
+}
+
+
+abstract production implicitInhAttributeDef
+top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
+{
+  local fwd::ProductionStmt = inheritedAttributeDef(dl, attr, e, location=top.location);
+  forwards to fwd;
+}
+

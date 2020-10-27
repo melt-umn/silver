@@ -5,13 +5,11 @@ terminal Explicit_t 'Restricted';
 terminal Implicit_t 'Implicit';
 terminal Unrestricted_t 'Unrestricted';
 
-terminal Tilde_t '~';
-
 
 abstract production explicitType
 top::Type ::= t::Type
 {
-  top.typepp = "~Restricted "  ++ t.typepp;
+  top.typepp = t.typepp;
 
   top.substituted = explicitType(t.substituted);
   top.flatRenamed = explicitType(t.flatRenamed);
@@ -24,7 +22,7 @@ top::Type ::= t::Type
 abstract production implicitType
 top::Type ::= t::Type
 {
-  top.typepp = "~Implicit " ++ t.typepp;
+  top.typepp = t.typepp;
 
   top.substituted = implicitType(t.substituted);
   top.flatRenamed = implicitType(t.flatRenamed);
@@ -47,6 +45,11 @@ top::AGDcl ::= 'Restricted' 'inherited' 'attribute' a::Name tl::BracketedOptType
 {
   top.unparse = "Restricted inherited attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
+  production attribute fName :: String;
+  fName = top.grammarName ++ ":" ++ a.name;
+
+  top.defs := [restrictedInhDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+
   local fwd::AGDcl = attributeDclInh('inherited', 'attribute', a, tl, '::', typerepTypeExpr(explicitType(te.typerep), location=te.location), ';', location=top.location);
 
   forwards to fwd;
@@ -56,6 +59,11 @@ concrete production attributeDclSyn_Restricted
 top::AGDcl ::= 'Restricted' 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.unparse = "Restricted synthesized attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
+
+  production attribute fName :: String;
+  fName = top.grammarName ++ ":" ++ a.name;
+
+  top.defs := [restrictedSynDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
 
   local fwd::AGDcl = attributeDclSyn('synthesized', 'attribute', a, tl, '::', typerepTypeExpr(explicitType(te.typerep), location=te.location), ';', location=top.location);
 
@@ -70,6 +78,11 @@ top::AGDcl ::= 'Implicit' 'inherited' 'attribute' a::Name tl::BracketedOptTypeEx
 {
   top.unparse = "Implicit inherited attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
+  production attribute fName :: String;
+  fName = top.grammarName ++ ":" ++ a.name;
+
+  top.defs := [implicitInhDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+
   local fwd::AGDcl = attributeDclInh('inherited', 'attribute', a, tl, '::', typerepTypeExpr(implicitType(te.typerep), location=te.location), ';', location=top.location);
 
   forwards to fwd;
@@ -79,6 +92,11 @@ concrete production attributeDclSyn_Implicit
 top::AGDcl ::= 'Implicit' 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.unparse = "Implicit synthesized attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
+
+  production attribute fName :: String;
+  fName = top.grammarName ++ ":" ++ a.name;
+
+  top.defs := [implicitSynDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
 
   local fwd::AGDcl = attributeDclSyn('synthesized', 'attribute', a, tl, '::', typerepTypeExpr(implicitType(te.typerep), location=te.location), ';', location=top.location);
 
