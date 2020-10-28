@@ -18,11 +18,14 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
           | left(e) -> [err(top.location, e ++ "; this monad cannot be used in an empty equation")]
           end
      else []) ++
-    (if !isMonad(attr.typerep)
-     then [err(top.location, "Empty equations can only be used for " ++
-                             "monad-typed attributes, not attributes of type " ++
-                             prettyType(attr.typerep))]
-     else []);
+     ( if attr.found && dl.found
+       then case attr.typerep of
+            | implicitType(t) -> []
+            | _ -> [err(top.location, "Implicit equations can only be used for " ++
+                                      "attributes declared to be implicit; " ++
+                                      attr.unparse ++ " is not implicit")]
+            end
+       else [] );
 
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
@@ -41,15 +44,7 @@ terminal Implicit_kwd    'implicit'     lexer classes {KEYWORD,RESERVED};
 concrete production implicitAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
-  e.downSubst = top.downSubst;
-  e.mDownSubst = top.downSubst;
-  e.finalSubst = e.mUpSubst;
-  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-
-  e.expectedMonad = attr.typerep;
-
-  top.productionAttributes := [];
-  top.defs := [];
+  top.unparse = "\timplicit" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
 
   local merrors::[Message] =
        if attr.found && dl.found
@@ -78,10 +73,7 @@ concrete production restrictedAttributeDef
 top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   e.downSubst = top.downSubst;
-  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-
-  top.productionAttributes := [];
-  top.defs := [];
+  top.unparse = "\trestricted" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
 
   local merrors::[Message] =
     if attr.found && dl.found
@@ -105,17 +97,6 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
   forwards to fwd;
 }
 
-function buildExplicitAttrErrors
-[Message] ::= l::[Pair<String Location>]
-{
-  return case l of
-         | [] -> []
-         | pair(name, loca)::t ->
-           err(loca, "Attributes accessed in restricted equations must be restricted; " ++
-                     name ++ " is not")::buildExplicitAttrErrors(t)
-         end;
-}
-
 
 --Write a marked equation that doesn't care about what is accessed
 terminal Unrestricted_kwd    'unrestricted'     lexer classes {KEYWORD,RESERVED};
@@ -126,7 +107,7 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;
-  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
+  top.unparse = "\tunrestricted" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
 
   top.productionAttributes := [];
   top.defs := [];
@@ -154,9 +135,21 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
 
 
 
+--take a list of unallowed attributes and generate error messages for them
+function buildExplicitAttrErrors
+[Message] ::= l::[Pair<String Location>]
+{
+  return case l of
+         | [] -> []
+         | pair(name, loca)::t ->
+           err(loca, "Attributes accessed in restricted equations must be restricted; " ++
+                     name ++ " is not")::buildExplicitAttrErrors(t)
+         end;
+}
 
 
 
+--productions for error checking on restricted attributes
 abstract production restrictedSynAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
 {
@@ -191,12 +184,15 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
 
 
 
+--productions for error checking on implicit attributes
 abstract production implicitSynAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
 {
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;
+
+  e.expectedMonad = attr.typerep;
 
   local fwd::ProductionStmt =
           if null(e.merrors)
@@ -217,6 +213,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;
+
+  e.expectedMonad = attr.typerep;
 
   local fwd::ProductionStmt =
           if null(e.merrors)
