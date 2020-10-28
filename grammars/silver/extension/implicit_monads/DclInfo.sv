@@ -1,7 +1,7 @@
 grammar silver:extension:implicit_monads;
 
 
-production restrictedSynDcl
+abstract production restrictedSynDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   top.attrDefDispatcher = restrictedSynAttributeDef(_, _, _, location=_);
@@ -11,7 +11,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 }
 
 
-production restrictedInhDcl
+abstract production restrictedInhDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   top.attrDefDispatcher = restrictedInhAttributeDef(_, _, _, location=_);
@@ -23,7 +23,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 
 
 
-production implicitSynDcl
+abstract production implicitSynDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   top.attrDefDispatcher = implicitSynAttributeDef(_, _, _, location=_);
@@ -33,7 +33,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 }
 
 
-production implicitInhDcl
+abstract production implicitInhDcl
 top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   top.attrDefDispatcher = implicitInhAttributeDef(_, _, _, location=_);
