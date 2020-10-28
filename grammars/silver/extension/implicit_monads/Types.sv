@@ -9,7 +9,7 @@ terminal Unrestricted_t 'Unrestricted';
 abstract production explicitType
 top::Type ::= t::Type
 {
-  top.typepp = t.typepp;
+  top.typepp = "{-restricted-} " ++ t.typepp;
 
   top.substituted = explicitType(t.substituted);
   top.flatRenamed = explicitType(t.flatRenamed);
@@ -22,7 +22,7 @@ top::Type ::= t::Type
 abstract production implicitType
 top::Type ::= t::Type
 {
-  top.typepp = t.typepp;
+  top.typepp = "{-implicit-} " ++ t.typepp;
 
   top.substituted = implicitType(t.substituted);
   top.flatRenamed = implicitType(t.flatRenamed);
@@ -48,7 +48,7 @@ top::AGDcl ::= 'Restricted' 'inherited' 'attribute' a::Name tl::BracketedOptType
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs := [restrictedInhDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [restrictedInhDef(top.grammarName, a.location, fName, tl.freeVariables, explicitType(te.typerep))];
 
   local fwd::AGDcl = attributeDclInh('inherited', 'attribute', a, tl, '::', typerepTypeExpr(explicitType(te.typerep), location=te.location), ';', location=top.location);
 
@@ -63,7 +63,7 @@ top::AGDcl ::= 'Restricted' 'synthesized' 'attribute' a::Name tl::BracketedOptTy
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs := [restrictedSynDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [restrictedSynDef(top.grammarName, a.location, fName, tl.freeVariables, explicitType(te.typerep))];
 
   local fwd::AGDcl = attributeDclSyn('synthesized', 'attribute', a, tl, '::', typerepTypeExpr(explicitType(te.typerep), location=te.location), ';', location=top.location);
 
@@ -81,7 +81,7 @@ top::AGDcl ::= 'Implicit' 'inherited' 'attribute' a::Name tl::BracketedOptTypeEx
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs := [implicitInhDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [implicitInhDef(top.grammarName, a.location, fName, tl.freeVariables, implicitType(te.typerep))];
 
   local fwd::AGDcl = attributeDclInh('inherited', 'attribute', a, tl, '::', typerepTypeExpr(implicitType(te.typerep), location=te.location), ';', location=top.location);
 
@@ -96,7 +96,7 @@ top::AGDcl ::= 'Implicit' 'synthesized' 'attribute' a::Name tl::BracketedOptType
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs := [implicitSynDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [implicitSynDef(top.grammarName, a.location, fName, tl.freeVariables, implicitType(te.typerep))];
 
   local fwd::AGDcl = attributeDclSyn('synthesized', 'attribute', a, tl, '::', typerepTypeExpr(implicitType(te.typerep), location=te.location), ';', location=top.location);
 

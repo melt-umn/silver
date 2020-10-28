@@ -35,7 +35,7 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 }
 
 
---Write an equation that allows implicit use of monads
+--Write a marked equation that allows implicit use of monads
 terminal Implicit_kwd    'implicit'     lexer classes {KEYWORD,RESERVED};
 
 concrete production implicitAttributeDef
@@ -52,49 +52,14 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
   top.defs := [];
 
   local merrors::[Message] =
-     ( if attr.found && dl.found
+       if attr.found && dl.found
        then case attr.typerep of
             | implicitType(t) -> []
             | _ -> [err(top.location, "Implicit equations can only be used for " ++
                                       "attributes declared to be implicit; " ++
                                       attr.unparse ++ " is not implicit")]
             end
-       else []) ++
-     e.merrors;
-
-  dl.defLHSattr = attr;
-  attr.attrFor = dl.typerep;
-
-  local fwd::ProductionStmt = if null(merrors)
-                              then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst)) || !attr.found || !dl.found
-                                   then attributeDef(dl, '.', attr, '=', e.monadRewritten, ';', location=top.location)
-                                   else attributeDef(dl, '.', attr, '=', Silver_Expr {
-                                                         $Expr {monadReturn(attr.typerep, top.location)}
-                                                            ($Expr {e.monadRewritten})
-                                                         }, ';', location=top.location)
-                              else errorAttributeDef(merrors, dl, attr, e.monadRewritten, location=top.location);
-
-  forwards to fwd; --unsafeTrace(fwd, print(top.location.unparse ++ ": " ++ fwd.unparse ++ "\n\n", unsafeIO()));
-}
-
-
---Write an equation that only allows accessing explicit monads
-terminal Restricted_kwd    'restricted'     lexer classes {KEYWORD,RESERVED};
-
-concrete production restrictedAttributeDef
-top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
-{
-  e.downSubst = top.downSubst;
-  e.mDownSubst = top.downSubst;
-  e.finalSubst = e.mUpSubst;
-  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
-
-  top.productionAttributes := [];
-  top.defs := [];
-
-  local merrors::[Message] =
-     --gives errors for implicit/unrestricted attributes used
-     buildExplicitAttrErrors(e.notExplicitAttributes);
+       else [];
 
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
@@ -102,6 +67,40 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
   local fwd::ProductionStmt = if null(merrors)
                               then attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
                               else errorAttributeDef(merrors, dl, attr, e, location=top.location);
+  forwards to fwd;
+}
+
+
+--Write a marked equation that only allows accessing explicit monads
+terminal Restricted_kwd    'restricted'     lexer classes {KEYWORD,RESERVED};
+
+concrete production restrictedAttributeDef
+top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
+{
+  e.downSubst = top.downSubst;
+  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
+
+  top.productionAttributes := [];
+  top.defs := [];
+
+  local merrors::[Message] =
+    if attr.found && dl.found
+    then case attr.typerep of
+         | explicitType(t) -> []
+         | _ -> [err(top.location, "Restricted equations can only be used for " ++
+                                   "attributes declared to be restricted; " ++
+                                   attr.unparse ++ "(" ++ attr.typerep.typepp ++ ")" ++ " is not restricted")]
+         end
+    else [];
+
+  dl.defLHSattr = attr;
+  attr.attrFor = dl.typerep;
+
+  local fwd::ProductionStmt =
+           if null(merrors)
+                --forward to this, which will delegate to the restricted syn or inh production
+           then attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
+           else errorAttributeDef(merrors, dl, attr, e, location=top.location);
 
   forwards to fwd;
 }
@@ -118,7 +117,7 @@ function buildExplicitAttrErrors
 }
 
 
---Write an equation that doesn't care about what is accessed---same as no label at all
+--Write a marked equation that doesn't care about what is accessed
 terminal Unrestricted_kwd    'unrestricted'     lexer classes {KEYWORD,RESERVED};
 
 concrete production unrestrictedAttributeDef
@@ -161,7 +160,15 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
 abstract production restrictedSynAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
 {
-  local fwd::ProductionStmt = synthesizedAttributeDef(dl, attr, e, location=top.location);
+  e.downSubst = top.downSubst;
+
+  local merrors::[Message] =
+     --gives errors for implicit/unrestricted attributes used
+     buildExplicitAttrErrors(e.notExplicitAttributes);
+
+  local fwd::ProductionStmt = if null(merrors)
+                              then synthesizedAttributeDef(dl, attr, e, location=top.location)
+                              else errorAttributeDef(merrors, dl, attr, e, location=top.location);
   forwards to fwd;
 }
 
@@ -169,7 +176,15 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
 abstract production restrictedInhAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
 {
-  local fwd::ProductionStmt = inheritedAttributeDef(dl, attr, e, location=top.location);
+  e.downSubst = top.downSubst;
+
+  local merrors::[Message] =
+     --gives errors for implicit/unrestricted attributes used
+     buildExplicitAttrErrors(e.notExplicitAttributes);
+
+  local fwd::ProductionStmt = if null(merrors)
+                              then inheritedAttributeDef(dl, attr, e, location=top.location)
+                              else errorAttributeDef(merrors, dl, attr, e, location=top.location);
   forwards to fwd;
 }
 
@@ -179,7 +194,19 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
 abstract production implicitSynAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
 {
-  local fwd::ProductionStmt = synthesizedAttributeDef(dl, attr, e, location=top.location);
+  e.downSubst = top.downSubst;
+  e.mDownSubst = top.downSubst;
+  e.finalSubst = e.mUpSubst;
+
+  local fwd::ProductionStmt =
+          if null(e.merrors)
+          then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
+               then synthesizedAttributeDef(dl, attr, e.monadRewritten, location=top.location)
+               else synthesizedAttributeDef(dl, attr, Silver_Expr {
+                                                        $Expr {monadReturn(attr.typerep, top.location)}
+                                                            ($Expr {e.monadRewritten})
+                                                      }, location=top.location)
+          else errorAttributeDef(e.merrors, dl, attr, e.monadRewritten, location=top.location);
   forwards to fwd;
 }
 
@@ -187,7 +214,19 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
 abstract production implicitInhAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
 {
-  local fwd::ProductionStmt = inheritedAttributeDef(dl, attr, e, location=top.location);
+  e.downSubst = top.downSubst;
+  e.mDownSubst = top.downSubst;
+  e.finalSubst = e.mUpSubst;
+
+  local fwd::ProductionStmt =
+          if null(e.merrors)
+          then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
+               then synthesizedAttributeDef(dl, attr, e.monadRewritten, location=top.location)
+               else synthesizedAttributeDef(dl, attr, Silver_Expr {
+                                                        $Expr {monadReturn(attr.typerep, top.location)}
+                                                            ($Expr {e.monadRewritten})
+                                                      }, location=top.location)
+          else errorAttributeDef(e.merrors, dl, attr, e.monadRewritten, location=top.location);
   forwards to fwd;
 }
 

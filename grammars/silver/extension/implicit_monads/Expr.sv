@@ -560,6 +560,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
                                if q.found
                                then case q.typerep of
                                     | explicitType(_) -> []
+                                    | errorType() -> [] --something went wrong elsewhere
                                     | _ -> [pair(q.unparse, top.location)]
                                     end
                                else [];
