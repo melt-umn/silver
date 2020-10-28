@@ -1,0 +1,6 @@
+#!/bin/bash
+
+GRAMMAR=stlc
+
+silver --clean -I .. $GRAMMAR
+
