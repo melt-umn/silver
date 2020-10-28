@@ -381,7 +381,7 @@ attribute env, mDownSubst, merrors, mtyperep, frame, grammarName, compiledGramma
           config, flowEnv, expectedMonad occurs on AbstractMatchRule;
 
 aspect production matchRule
-top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Expr> e::Expr
+top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Pair<Expr Maybe<Pattern>>> e::Expr
 {
   e.env = top.env;
   e.mDownSubst = top.mDownSubst;
