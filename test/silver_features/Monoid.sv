@@ -50,7 +50,7 @@ top::Thing1 ::= Thing2
 {}
 
 -- Test for both parts of 2-part error message
-wrongCode "In propagate for production silver_features:thing2Thing1" {
+wrongCode "In propagate of things for production silver_features:thing2Thing1" {
   propagate things on Thing1;
 }
 wrongCode "things has type [Integer] but the expression being assigned to it has type [Float]" {

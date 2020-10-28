@@ -9,6 +9,8 @@ import silver:util:cmdargs;
 import silver:definition:core;
 import silver:definition:env;
 
+import silver:rewrite;
+
 -- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
 function ideAnalyze
 IOVal<[Message]> ::= args::[String]  svParser::SVParser ioin::IO
@@ -102,12 +104,12 @@ function rewriteMessages
 function rewriteMessage
 Message ::= path::String m::Message
 {
-  return case m of
-  | err(loc(file, a, b, c, d, e, f), g) -> err(loc(path ++ "/" ++ file, a, b, c, d, e, f), g)
-  | wrn(loc(file, a, b, c, d, e, f), g) -> wrn(loc(path ++ "/" ++ file, a, b, c, d, e, f), g)
-  | info(loc(file, a, b, c, d, e, f), g) -> info(loc(path ++ "/" ++ file, a, b, c, d, e, f), g)
-  | nested(loc(file, a, b, c, d, e, f), g, others) ->
-    nested(loc(path ++ "/" ++ file, a, b, c, d, e, f), g, map(rewriteMessage(path, _), others))
-  end;
+  return
+    rewriteWith(
+      allTopDown(
+        rule on Location of
+        | loc(file, a, b, c, d, e, f) -> loc(path ++ "/" ++ file, a, b, c, d, e, f)
+        end),
+      m).fromJust;
 }
 
