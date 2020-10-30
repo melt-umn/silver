@@ -1,5 +1,8 @@
 grammar silver:extension:autoattr;
 
+import silver:driver:util;
+import silver:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph;
+
 concrete production monoidAttributeDcl
 top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' e::Expr ',' q::NameOrBOperator ';'
 {
@@ -38,6 +41,15 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   errCheck1.finalSubst = errCheck1.upSubst;
   e.finalSubst = errCheck1.upSubst;
   
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = 
+    constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
+
+  e.frame = globalExprContext(myFlowGraph);
+  
   forwards to
     collectionAttributeDclSyn(
       'synthesized', 'attribute', a, tl, '::', te, 'with', q, ';',
@@ -47,14 +59,9 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
 synthesized attribute appendProd :: (Expr ::= Expr Expr Location) occurs on Operation;
 
 aspect production functionOperation
-top::Operation ::= s::String
+top::Operation ::= e::Expr _ _ _
 {
-  top.appendProd = \ e1::Expr e2::Expr l::Location -> mkStrFunctionInvocation(l, s, [e1, e2]);
-}
-aspect production productionOperation
-top::Operation ::= s::String
-{
-  top.appendProd = \ e1::Expr e2::Expr l::Location -> mkStrFunctionInvocation(l, s, [e1, e2]);
+  top.appendProd = \ e1::Expr e2::Expr l::Location -> mkFunctionInvocation(l, e, [e1, e2]);
 }
 aspect production plusPlusOperationString
 top::Operation ::= 
@@ -75,6 +82,16 @@ aspect production bandOperation
 top::Operation ::= 
 {
   top.appendProd = and(_, '&&', _, location=_);
+}
+aspect production addOperation
+top::Operation ::= 
+{
+  top.appendProd = plus(_, '+', _, location=_);
+}
+aspect production mulOperation
+top::Operation ::= 
+{
+  top.appendProd = multiply(_, '*', _, location=_);
 }
 
 {--
