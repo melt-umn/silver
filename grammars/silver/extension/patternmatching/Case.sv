@@ -458,6 +458,7 @@ AbstractMatchRule ::= headExpr::Expr  headType::Type  absRule::AbstractMatchRule
         location=absRule.location)
     | nothing() -> matchRule(restPat, cond, e, location=absRule.location)
     end
+  | r -> r -- Don't crash when we see a rule with too few patterns (should be an error)
   end;
 }
 
