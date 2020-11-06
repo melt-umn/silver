@@ -189,52 +189,64 @@ top::Expr ::= 'new' '(' e::Expr ')'
   top.monadRewritten = newFunction('new', '(', e.monadRewritten, ')', location=top.location);
 }
 
-{-
-  TODO I don't know what these are supposed to be, really, but I suppose they should be bound in if they're monads?
--}
+
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
   top.merrors := es.merrors ++ el.merrors;
   top.mUpSubst = top.mDownSubst;
-  top.mtyperep = t.typerep;
+  top.mtyperep =
+     if ( isMonad(es.mtyperep) && monadsMatch(es.mtyperep, top.expectedMonad, top.mUpSubst).fst ) ||
+        ( isMonad(el.mtyperep) && monadsMatch(el.mtyperep, top.expectedMonad, top.mUpSubst).fst )
+     then monadOfType(top.expectedMonad, t.typerep)
+     else t.typerep;
   top.monadicNames = [];
-  top.monadRewritten = error("terminalConstructor monadRewritten not defined");
-}
 
-
---------------------------------------------------------------------------------
--- Deprecated variants of built-in functions
-
-
-aspect production toIntFunction
-top::Expr ::= 'toInt' '(' e::Expr ')'
-{
---  forwards to toIntegerFunction('toInteger', '(', e, ')', location=top.location);
-}
-
-aspect production terminalConstructorTemporaryDispatcher
-top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
-{
---  forwards to
---    if el.typerep.isTerminal
---    then terminalFunctionInherited($1, $2, t, $4, es, $6, el, $8, location=top.location)
---    else terminalConstructor($1, $2, t, $4, es, $6, el, $8, location=top.location);
-}
-
-aspect production terminalFunction
-top::Expr ::= 'terminal' '(' t::TypeExpr ',' e::Expr ')'
-{
---  forwards to terminalConstructor($1, $2, t, $4, e, ',', bogus, $6, location=top.location);
-}
-
-aspect production terminalFunctionLineCol
-top::Expr ::= 'terminal' '(' t::TypeExpr ',' e1::Expr ',' e2::Expr ',' e3::Expr ')'
-{
---  forwards to terminalConstructor($1, $2, t, $4, e1, $6,
---    mkStrFunctionInvocation($10.location, "core:loc", [
---      stringConst(terminal(String_t, "\"??\""), location=$10.location),
---      e2, e3, bogus, bogus, bogus, bogus
---    ]), $10, location=top.location);
+  local bind::Expr = monadBind(top.expectedMonad, top.location);
+  local ret::Expr = monadReturn(top.expectedMonad, top.location);
+  local esty::TypeExpr =
+              typerepTypeExpr(if isMonad(es.mtyperep) then es.mtyperep
+                              else monadInnerType(es.mtyperep), location=top.location);
+  local elty::TypeExpr =
+              typerepTypeExpr(if isMonad(es.mtyperep) then es.mtyperep
+                              else monadInnerType(es.mtyperep), location=top.location);
+  local bindes::Expr =
+    Silver_Expr {
+      $Expr {bind}
+      ($Expr {es.monadRewritten},
+       (\x::$TypeExpr {esty}
+         y::$TypeExpr {elty} ->
+            $Expr {ret}
+            (terminal($TypeExpr {t}, x, y))) (_, $Expr {el.monadRewritten}))
+    };
+  local bindel::Expr =
+    Silver_Expr {
+      $Expr {bind}
+      ($Expr {el.monadRewritten},
+       (\x::$TypeExpr {esty}
+         y::$TypeExpr {elty} ->
+            $Expr {ret}
+            (terminal($TypeExpr {t}, x, y))) ($Expr {es.monadRewritten}, _))
+    };
+  local bindBoth::Expr =
+    Silver_Expr {
+      $Expr {bind}
+      ($Expr {es.monadRewritten},
+       (\x::$TypeExpr {elty}
+         y::$TypeExpr {typerepTypeExpr(es.mtyperep, location=top.location)} ->
+          $Expr {bind}
+          (y,
+           \z::$TypeExpr {elty} ->
+            $Expr {ret}
+            (terminal($TypeExpr {t}, x, z))) (_, $Expr {el.monadRewritten})))
+    };
+  top.monadRewritten =
+      if isMonad(es.mtyperep) && monadsMatch(es.mtyperep, top.expectedMonad, top.mUpSubst).fst
+      then if isMonad(el.mtyperep) && monadsMatch(el.mtyperep, top.expectedMonad, top.mUpSubst).fst
+           then bindBoth
+           else bindes
+      else if isMonad(el.mtyperep) && monadsMatch(el.mtyperep, top.expectedMonad, top.mUpSubst).fst
+           then bindel
+           else top;
 }
 

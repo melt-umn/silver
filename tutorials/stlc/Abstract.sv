@@ -4,15 +4,15 @@ grammar stlc;
 imports core:monad;
 
 
-Restricted inherited attribute gamma::[Pair<String Type>];
-Implicit synthesized attribute type::Either<String Type>;
+restricted inherited attribute gamma::[Pair<String Type>];
+implicit synthesized attribute type::Either<String Type>;
 synthesized attribute errors::[String];
 
-Restricted inherited attribute substV::String;
-Restricted inherited attribute substE::Expression;
-Restricted synthesized attribute substed::Expression;
-Restricted synthesized attribute isvalue::Boolean;
-Implicit synthesized attribute nextStep::Maybe<Expression>;
+restricted inherited attribute substV::String;
+restricted inherited attribute substE::Expression;
+restricted synthesized attribute substed::Expression;
+restricted synthesized attribute isvalue::Boolean;
+implicit synthesized attribute nextStep::Maybe<Expression>;
 
 synthesized attribute pp::String;
 

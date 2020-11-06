@@ -1,10 +1,5 @@
 grammar silver:extension:implicit_monads;
 
---import silver:definition:flow:ast only ExprVertexInfo, FlowVertex;
-
---- Concrete Syntax for lambdas
---------------------------------------------------------------------------------
-
 aspect production lambdap
 top::Expr ::= params::ProductionRHS e::Expr
 {

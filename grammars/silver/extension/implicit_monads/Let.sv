@@ -1,16 +1,5 @@
 grammar silver:extension:implicit_monads;
 
---import silver:definition:flow:ast only ExprVertexInfo, FlowVertex;
-
---- Concrete Syntax for lets
---------------------------------------------------------------------------------
-
-{-
-  To have a let turn into a bind, it needs to have the form
-      let x::T = e in b  where e::M<T>
-  This is easier than guessing whether it should be bound in if the declared
-  type is also M<T>.
--}
 
 
 aspect production letp

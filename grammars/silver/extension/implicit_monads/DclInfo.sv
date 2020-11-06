@@ -6,8 +6,10 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   top.attrDefDispatcher = restrictedSynAttributeDef(_, _, _, location=_);
 
-  local fwd::DclInfo = synDcl(sg, sl, fn, bound, ty);
-  forwards to fwd;
+  --copied from synDcl
+  top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
 
 
@@ -16,8 +18,10 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   top.attrDefDispatcher = restrictedInhAttributeDef(_, _, _, location=_);
 
-  local fwd::DclInfo = inhDcl(sg, sl, fn, bound, ty);
-  forwards to fwd;
+  --copied from inhDcl
+  top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
 
 
@@ -28,8 +32,10 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   top.attrDefDispatcher = implicitSynAttributeDef(_, _, _, location=_);
 
-  local fwd::DclInfo = synDcl(sg, sl, fn, bound, ty);
-  forwards to fwd;
+  --copied from synDcl
+  top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
 
 
@@ -38,8 +44,10 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   top.attrDefDispatcher = implicitInhAttributeDef(_, _, _, location=_);
 
-  local fwd::DclInfo = inhDcl(sg, sl, fn, bound, ty);
-  forwards to fwd;
+  --copied from inhDcl
+  top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
 
 

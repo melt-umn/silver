@@ -1,5 +1,12 @@
 grammar silver:extension:implicit_monads;
 
+
+terminal Implicit_kwd    'implicit'     lexer classes {KEYWORD,RESERVED};
+terminal Restricted_kwd    'restricted'     lexer classes {KEYWORD,RESERVED};
+terminal Unrestricted_kwd    'unrestricted'     lexer classes {KEYWORD,RESERVED};
+
+
+
 --Write an empty equation filled in by an appropriate fail
 concrete production emptyAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
@@ -38,8 +45,6 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 }
 
 
---Write a marked equation that allows implicit use of monads
-terminal Implicit_kwd    'implicit'     lexer classes {KEYWORD,RESERVED};
 
 concrete production implicitAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
@@ -66,8 +71,7 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
 }
 
 
---Write a marked equation that only allows accessing explicit monads
-terminal Restricted_kwd    'restricted'     lexer classes {KEYWORD,RESERVED};
+
 
 concrete production restrictedAttributeDef
 top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
@@ -98,8 +102,7 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
 }
 
 
---Write a marked equation that doesn't care about what is accessed
-terminal Unrestricted_kwd    'unrestricted'     lexer classes {KEYWORD,RESERVED};
+
 
 concrete production unrestrictedAttributeDef
 top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
