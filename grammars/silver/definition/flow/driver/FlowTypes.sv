@@ -4,7 +4,7 @@ imports silver:definition:core;
 imports silver:definition:env;
 --import silver:definition:flow:env;
 imports silver:definition:flow:ast;
-imports silver:analysis:warnings:defs only isOccursSynthesized, isAutocopy;
+imports silver:analysis:warnings:flow only isOccursSynthesized, isAutocopy;
 
 imports silver:modification:autocopyattr;
 

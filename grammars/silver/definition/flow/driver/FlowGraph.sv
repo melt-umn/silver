@@ -23,12 +23,31 @@ function expandGraph
 [FlowVertex] ::= v::[FlowVertex]  e::ProductionGraph
 {
   -- look up each vertex, uniq it down.
-  return set:toList(set:add(v, foldr(set:union, set:empty(compareFlowVertex), map(e.edgeMap, v))));
+  local initial :: set:Set<FlowVertex> =
+    set:add(v, foldr(set:union, set:empty(compareFlowVertex), map(e.edgeMap, v)));
+
+  return set:toList(expandSuspectEdges(set:toList(initial), initial, e));
 }
 function onlyLhsInh
 set:Set<String> ::= s::[FlowVertex]
 {
   return set:add(filterLhsInh(s), set:empty(compareString));
+}
+
+-- suspect edges are not in the standard graph, so iteratively add them
+-- call like expandSuspectEdges(p.edges.toList, p.edges, p)
+function expandSuspectEdges
+set:Set<FlowVertex> ::= todolist::[FlowVertex]  current::set:Set<FlowVertex>  p::ProductionGraph
+{
+  -- examine this flow vertex
+  local thisvertex :: FlowVertex = head(todolist);
+  -- get any suspect edges from this vertex
+  local result :: [FlowVertex] = p.suspectEdgeMap(thisvertex);
+  -- remove anything we're already considering/considered
+  local filtered :: [FlowVertex] = filter(\v::FlowVertex -> !set:contains(v, current), result);
+  
+  return if null(todolist) then current
+  else expandSuspectEdges(tail(todolist) ++ filtered, set:add(filtered, current), p);
 }
 
 {--
@@ -53,12 +72,6 @@ Boolean ::= v::FlowVertex  inhSet::set:Set<String>
   | lhsInhVertex(a) -> set:contains(a, inhSet)
   | _ -> false
   end;
-}
-
-function compareFlowVertex
-Integer ::= a::FlowVertex  b::FlowVertex
-{
-  return if a.unparse < b.unparse then -1 else if a.unparse == b.unparse then 0 else 1;
 }
 
 function createFlowGraph

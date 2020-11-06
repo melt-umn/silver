@@ -1,7 +1,12 @@
 #!/bin/bash
 
 # example cron config:
-# */10 * * * * /export/scratch/melt-jenkins/custom-silver/support/jenkins/cron-job-publish-jars > /dev/null 2>&1
+# */10 * * * * /export/scratch/melt-jenkins/custom-silver/support/jenkins/cron-job-publish-jars
+#
+# This script is also used to copy the jars from the silver-ableC extension.
+
+# redirect this script's output to log file, not stdout
+exec > /export/scratch/gitbot-deletable-log 2>&1
 
 set -eu
 
@@ -10,12 +15,9 @@ JENKINS_DUMP=/export/scratch/melt-jenkins/custom-stable-dump
 
 # On occasion, NFS goes down, just exit gracefully if so
 
-if [ ! -d $WEB_STORE ]; then
+if [ ! -d $WEB_STORE ] || [ ! -d $JENKINS_DUMP ]; then
+  echo "NFS down?"
   exit 1
-fi
-
-if [ ! -d $JENKINS_DUMP ]; then
-  exit 2
 fi
 
 # We only want to copy the files if they are newer than what's already there.
@@ -23,13 +25,13 @@ fi
 
 # -u Only copy if the source file is newer than the destination file
 # --remove-destination  deletes so that we take ownership of the file (thus can chgrp/mod)
-cp -u --remove-destination $JENKINS_DUMP/*.jar $WEB_STORE/jars
-cp -u --remove-destination $JENKINS_DUMP/silver-latest.tar.gz $WEB_STORE
 
-# fix permissions
-chgrp -R cs-melt $WEB_STORE/jars $WEB_STORE/silver*
-chmod -R 775 $WEB_STORE/jars $WEB_STORE/silver*
+newgrp cs-melt << EOF
+  umask 002
+  cp -u --remove-destination $JENKINS_DUMP/*.jar $WEB_STORE/jars
+  cp -u --remove-destination $JENKINS_DUMP/silver-latest.tar.gz $WEB_STORE
+EOF
 
-# indicate the last successful time in which this script ran
-touch /export/scratch/gitbot-deletable-timestamp
+echo "Success"
+date
 

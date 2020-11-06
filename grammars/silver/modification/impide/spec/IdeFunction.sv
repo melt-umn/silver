@@ -1,67 +1,55 @@
 grammar silver:modification:impide:spec;
 
-nonterminal IdeFunctions with package, visibleName, implang, bundle, svIdeInterface, pluginXml, pluginXmlActions;
+nonterminal IdeFunctions with package, visibleName, implang, bundle, pluginXml, pluginXmlActions, pluginXmlBuilders, markerFullName;
+
+synthesized attribute pluginXmlBuilders :: String;
+autocopy attribute markerFullName :: String;
 
 abstract production consIdeFunction
 top::IdeFunctions ::= h::IdeFunction  t::IdeFunctions
 {
-  top.svIdeInterface = h.svIdeInterface ++ t.svIdeInterface;
   top.pluginXml = h.pluginXml ++ t.pluginXml;
   top.pluginXmlActions = h.pluginXmlActions ++ t.pluginXmlActions;
+  top.pluginXmlBuilders = h.pluginXmlBuilders ++ t.pluginXmlBuilders;
 }
 
 abstract production nilIdeFunction
 top::IdeFunctions ::=
 {
-  top.svIdeInterface = "";
   top.pluginXml = "";
   top.pluginXmlActions = "";
+  top.pluginXmlBuilders = "";
 }
 
-nonterminal IdeFunction with package, visibleName, implang, bundle, svIdeInterface, pluginXml, pluginXmlActions;
+nonterminal IdeFunction with package, visibleName, implang, bundle, pluginXml, pluginXmlActions, pluginXmlBuilders, markerFullName;
 
 aspect default production
 top::IdeFunction ::=
 {
-  top.svIdeInterface = "";
   top.pluginXml = "";
   top.pluginXmlActions = "";
+  top.pluginXmlBuilders = "";
 }
 
 abstract production builderFunction
 top::IdeFunction ::= fName::String
 {
-  top.svIdeInterface =
+  top.pluginXmlBuilders =
     s"""
-	@Override
-	public NIOVal build(IProject project, ConsCell properties, common.IOToken iotoken) {
-		return (NIOVal)${makeClassName(fName)}.invoke(project, properties, iotoken);
-	}
-""";
+      <parameter name="silver_build" value="${fName}" />""";
 }
 
 abstract production postbuilderFunction
 top::IdeFunction ::= fName::String
 {
-  top.svIdeInterface =
+  top.pluginXmlBuilders =
     s"""
-	@Override
-	public NIOVal postbuild(IProject project, ConsCell properties, common.IOToken iotoken) {
-		return (NIOVal)${makeClassName(fName)}.invoke(project, properties, iotoken);
-	}
-""";
+      <parameter name="silver_postbuild" value="${fName}" />""";
 }
 
 abstract production exporterFunction
 top::IdeFunction ::= fName::String
 {
-  top.svIdeInterface = s"""
-	@Override
-	public NIOVal export(IProject project, ConsCell properties, common.IOToken iotoken) {
-		return (NIOVal)${makeClassName(fName)}.invoke(project, properties, iotoken);
-	}
-""";
-  
   top.pluginXmlActions = s"""
     <action
         label="Export as ${top.visibleName} target"
@@ -69,6 +57,8 @@ top::IdeFunction ::= fName::String
         id="${top.bundle}.${extid_action_export}">
       <class class="edu.umn.cs.melt.ide.imp.builders.Exporter">
         <parameter name="name" value="${top.visibleName}" />
+        <parameter name="markerName" value="${top.markerFullName}" />
+        <parameter name="silver_export" value="${fName}" />
       </class>
     </action>
 """;
@@ -77,18 +67,12 @@ top::IdeFunction ::= fName::String
 abstract production folderFunction
 top::IdeFunction ::= fName::String
 {
-  top.svIdeInterface = s"""
-	@Override
-	public ConsCell getFolds(Node root) {
-		return (ConsCell)${makeClassName(fName)}.invoke(root);
-	}
-""";
-
   top.pluginXml = s"""
 <extension point="org.eclipse.imp.runtime.foldingUpdater">
   <foldingUpdater
       class="edu.umn.cs.melt.ide.imp.services.FoldingProvider"
       language="${top.implang}">
+    <silvercall function="${fName}" />
   </foldingUpdater>
 </extension>
 """;

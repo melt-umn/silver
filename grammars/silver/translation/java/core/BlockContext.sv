@@ -43,7 +43,7 @@ top::BlockContext ::= sig::NamedSignature  _
 }
 
 aspect production globalExprContext
-top::BlockContext ::=
+top::BlockContext ::= _
 {
 }
 

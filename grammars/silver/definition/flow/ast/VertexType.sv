@@ -7,7 +7,7 @@ grammar silver:definition:flow:ast;
  - lhsVertexType, rhsVertexType(sigName), localVertexType(fName),
  - forwardVertexType, anonVertexType(x)
  -}
-nonterminal VertexType with synVertex, inhVertex, fwdVertex, eqVertex, unparse;
+nonterminal VertexType with synVertex, inhVertex, fwdVertex, eqVertex;
 
 {-- FlowVertex for a synthesized attribute for this FlowVertex -}
 synthesized attribute synVertex :: (FlowVertex ::= String);
@@ -37,7 +37,6 @@ top::VertexType ::=
   top.inhVertex = lhsInhVertex;
   top.fwdVertex = forwardEqVertex_singleton;
   top.eqVertex = [];
-  top.unparse = "lhs";
 }
 
 {--
@@ -50,7 +49,6 @@ top::VertexType ::= sigName::String
   top.inhVertex = rhsVertex(sigName, _);
   top.fwdVertex = rhsVertex(sigName, "forward");
   top.eqVertex = [];
-  top.unparse = s"rhs('${sigName}')";
 }
 
 {--
@@ -63,7 +61,6 @@ top::VertexType ::= fName::String
   top.inhVertex = localVertex(fName, _);
   top.fwdVertex = localVertex(fName, "forward");
   top.eqVertex = [localEqVertex(fName)];
-  top.unparse = s"local('${fName}')";
 }
 
 {--
@@ -76,7 +73,6 @@ top::VertexType ::=
   top.inhVertex = localVertex("forward", _);
   top.fwdVertex = localVertex("forward", "forward");
   top.eqVertex = [forwardEqVertex_singleton];
-  top.unparse = s"fwd";
 }
 
 {--
@@ -89,7 +85,6 @@ top::VertexType ::= x::String
   top.inhVertex = anonVertex(x, _);
   top.fwdVertex = anonVertex(x, "forward");
   top.eqVertex = [anonEqVertex(x)];
-  top.unparse = s"anon('${x}')";
 }
 
 

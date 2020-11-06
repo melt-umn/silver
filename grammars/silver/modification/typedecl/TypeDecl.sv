@@ -10,14 +10,15 @@ terminal Type_t 'type' lexer classes {KEYWORD};
 concrete production typeDecl
 top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
 {
-  top.pp = "type " ++ id.pp ++ tl.pp ++ "=" ++ te.pp ++ ";";
+  top.unparse = "type " ++ id.unparse ++ tl.unparse ++ "=" ++ te.unparse ++ ";";
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
   
-  top.defs = [typeAliasDef(top.grammarName, id.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [typeAliasDef(top.grammarName, id.location, fName, tl.freeVariables, te.typerep)];
 
-  top.errors := tl.errors ++ te.errors ++ tl.errorsTyVars;
+  propagate errors;
+  top.errors <- tl.errorsTyVars;
   
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
@@ -49,9 +50,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  ty.boundVariables = top.boundVariables ++ bound; -- explicit to make sure it errors if we can't
-  top.unparse = "type(" ++ sl.unparse ++ ", '" ++ fn ++ "', " ++ unparseTyVars(bound, ty.boundVariables) ++ ", " ++ ty.unparse ++ ")";
-  
   top.typerep = ty;
   top.dclBoundVars = bound;
 }

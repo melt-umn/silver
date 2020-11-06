@@ -339,3 +339,25 @@ function stringToChars
 } foreign {
   "java" : return "%str%.toChars()";
 }
+
+{--
+ - Replace all special characters in a string with their escape sequences.
+ -}
+function escapeString
+String ::= s::String
+{
+  return error("Foreign function");
+} foreign {
+  "java" : return "(common.Util.escapeString(%s%))";
+}
+
+{--
+ - Replace all escape sequences in a string with corresponding special characters.
+ -}
+function unescapeString
+String ::= s::String
+{
+  return error("Foreign function");
+} foreign {
+  "java" : return "(common.Util.unescapeString(%s%))";
+}

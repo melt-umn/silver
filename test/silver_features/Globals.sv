@@ -46,7 +46,7 @@ wrongCode "initialization expression with type" {
   global badT :: Decorated Tglob = tfoo();
 }
 
-wrongCode "does not have the right signature." { -- TODO: this error message should be improved!!
+wrongCode "is not a production" {
   aspect production unT
   t::Tglob ::=
   {

@@ -1,7 +1,5 @@
 package edu.umn.cs.melt.ide.silver.misc;
 
-import ide.NIdeMessage;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
@@ -13,7 +11,9 @@ import common.DecoratedNode;
 import common.Lazy;
 import common.StringCatter;
 import common.TopNode;
+
 import core.NLocation;
+import silver.langutil.NMessage;
 
 /**
  * A wrapper of problem message returned by compiler.
@@ -102,33 +102,36 @@ public class Problem {
 		return level == ERROR;
 	}
 	
-	public static Problem extractProblem(NIdeMessage ideMsg) {
-		DecoratedNode ideMsgDecNode = ideMsg.decorate(TopNode.singleton, (Lazy[])null);
-    	
-    	StringCatter msg = (StringCatter)ideMsgDecNode.synthesized(ide.Init.ide_msg__ON__ide_IdeMessage);
-    	Integer severity = (Integer)ideMsgDecNode.synthesized(ide.Init.ide_severity__ON__ide_IdeMessage);
-    	Boolean isProjMsg = (Boolean)ideMsgDecNode.synthesized(ide.Init.ide_systemLevel__ON__ide_IdeMessage);
-    	
-    	if(isProjMsg)
-    		return Problem.createProjectProblem(severity, msg.toString());
-    	
-    	StringCatter resPath = (StringCatter)ideMsgDecNode.synthesized(ide.Init.ide_resPath__ON__ide_IdeMessage);
-    	
-    	NLocation loc = (NLocation)ideMsgDecNode.synthesized(ide.Init.ide_loc__ON__ide_IdeMessage);
-    	DecoratedNode locDecNode = loc.decorate(TopNode.singleton, (Lazy[])null);
-    	
-    	StringCatter fileName = (StringCatter)locDecNode.synthesized(core.Init.core_filename__ON__core_Location);
-    	
-    	Integer lineNo = (Integer)locDecNode.synthesized(core.Init.core_line__ON__core_Location);
-    	Integer columnNo = (Integer)locDecNode.synthesized(core.Init.core_column__ON__core_Location);
-    	Integer startInd = (Integer)locDecNode.synthesized(core.Init.core_index__ON__core_Location);
-    	Integer endInd = (Integer)locDecNode.synthesized(core.Init.core_endIndex__ON__core_Location);
-    	
-    	return Problem.createFileProblem(
-    		new Path(resPath.toString()).addTrailingSeparator().append(fileName.toString()),
-    		lineNo, columnNo, startInd, endInd, severity, msg.toString());
-    	
-    }
+	public static Problem extractProblem(NMessage ideMsg) {
+		DecoratedNode ideMsgDecNode = ideMsg.decorate();
+		
+		// Extract message, severity, where from Message:
+		
+		String message = ((StringCatter)ideMsgDecNode.synthesized(silver.langutil.Init.silver_langutil_message__ON__silver_langutil_Message)).toString();
+		int severity = (Integer)ideMsgDecNode.synthesized(silver.langutil.Init.silver_langutil_severity__ON__silver_langutil_Message);
+		
+		NLocation where_node = (NLocation)ideMsgDecNode.synthesized(silver.langutil.Init.silver_langutil_where__ON__silver_langutil_Message);
+		DecoratedNode where = where_node.decorate();
+		
+		// Extract location information from where:
+		
+		String filename = ((StringCatter)where.synthesized(core.Init.core_filename__ON__core_Location)).toString();
+		
+		// Treat no file as project-wide
+		boolean isProjMsg = filename.equals("");
+		
+		if(isProjMsg)
+			return Problem.createProjectProblem(severity, message);
+		
+		int line = (Integer)where.synthesized(core.Init.core_line__ON__core_Location);
+		int column = (Integer)where.synthesized(core.Init.core_column__ON__core_Location);
+		int index = (Integer)where.synthesized(core.Init.core_index__ON__core_Location);
+		int endIndex = (Integer)where.synthesized(core.Init.core_endIndex__ON__core_Location);
+		
+		return Problem.createFileProblem(
+			new Path(filename), line, column, index, endIndex, severity, message);
+		
+	}
 	
 	public void createMarker(IProject project, String markerType) throws CoreException {
 		if(projMsg) {

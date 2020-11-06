@@ -11,7 +11,7 @@ terminal Deprecated_kwd 'deprecated' lexer classes {KEYWORD};
 concrete production deprecatedDecl
 top::AGDcl ::= 'deprecated' s::String_t ';'
 {
-  top.pp = "deprecated" ++ s.lexeme ++ ";";
+  top.unparse = "deprecated" ++ s.lexeme ++ ";";
   
   top.errors := [wrn(top.location, s.lexeme)];
   

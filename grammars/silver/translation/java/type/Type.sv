@@ -11,7 +11,7 @@ synthesized attribute transType :: String;
 synthesized attribute transClassType :: String;
 -- The runtime representation of a type, used for reification
 synthesized attribute transTypeRep :: String;
--- The runtime representation of a type, where all skolems arereplaced with flexible vars, used for reification
+-- The runtime representation of a type, where all skolems are replaced with flexible vars, used for reification
 synthesized attribute transFreshTypeRep :: String;
 
 attribute transType, transClassType, transTypeRep, transFreshTypeRep occurs on Type;
@@ -32,6 +32,16 @@ top::Type ::= tv::TyVar
   top.transClassType = "Object";
   top.transTypeRep = s"new common.BaseTypeRep(\"b${toString(tv.extractTyVarRep)}\")";
   top.transFreshTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
+}
+
+aspect production errorType
+top::Type ::=
+{
+  local oops :: String = error("Attempting to translate in presence of errors");
+  top.transType = oops;
+  top.transClassType = oops;
+  top.transTypeRep = oops;
+  top.transFreshTypeRep = oops;
 }
 
 aspect production intType
@@ -67,6 +77,15 @@ top::Type ::=
   top.transType = "common.StringCatter";
   top.transClassType = "common.StringCatter";
   top.transTypeRep = "new common.BaseTypeRep(\"String\")";
+  top.transFreshTypeRep = top.transTypeRep;
+}
+
+aspect production terminalIdType
+top::Type ::=
+{
+  top.transType = "Integer";
+  top.transClassType = "Integer";
+  top.transTypeRep = "new common.BaseTypeRep(\"TerminalId\")";
   top.transFreshTypeRep = top.transTypeRep;
 }
 

@@ -2,8 +2,16 @@ grammar silver:extension:convenience;
 
 import silver:modification:copper;
 
-nonterminal ProductionDclStmts with pp, location, proddcls, lhsdcl, grammarName;
-nonterminal ProductionDclStmt with pp, location, proddcls, lhsdcl, grammarName;
+-- "production" short for "abstract production"
+concrete production productionDclImplicitAbs
+top::AGDcl ::= 'production' id::Name ns::ProductionSignature body::ProductionBody
+{
+  forwards to productionDcl('abstract', $1, id, ns, body, location=top.location);
+}
+
+-- "concrete productions" syntax
+nonterminal ProductionDclStmts with unparse, location, proddcls, lhsdcl, grammarName;
+nonterminal ProductionDclStmt with unparse, location, proddcls, lhsdcl, grammarName;
 
 synthesized attribute proddcls :: AGDcl;
 autocopy attribute lhsdcl :: ProductionLHS;
@@ -14,8 +22,8 @@ terminal ProdVBar '|';
 concrete production productionDclC
 top::AGDcl ::= 'concrete' 'productions' lhs::ProductionLHS stmts::ProductionDclStmts 
 {
-  top.pp = "concrete productions " ++ lhs.pp ++ stmts.pp;
-  top.moduleNames = [];
+  top.unparse = "concrete productions " ++ lhs.unparse ++ stmts.unparse;
+  propagate moduleNames, jarName; -- Avoid dependency on forward
   
   stmts.lhsdcl = lhs;
   
@@ -25,13 +33,13 @@ top::AGDcl ::= 'concrete' 'productions' lhs::ProductionLHS stmts::ProductionDclS
 concrete production productionDclStmtsOne
 top::ProductionDclStmts ::= s::ProductionDclStmt
 {
-  top.pp = s.pp;
+  top.unparse = s.unparse;
   top.proddcls = s.proddcls;
 }
 concrete production productionDclStmtsCons
 top::ProductionDclStmts ::= s::ProductionDclStmt ss::ProductionDclStmts
 {
-  top.pp = s.pp ++ ss.pp;
+  top.unparse = s.unparse ++ ss.unparse;
   top.proddcls = appendAGDcl(s.proddcls, ss.proddcls, location=top.location);
 }
 
@@ -42,7 +50,7 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
                            body::ProductionBody
                            opta::OptionalAction
 {
-  top.pp = "| " ++ rhs.pp ++ mods.pp ++ body.pp; -- TODO missing some here...
+  top.unparse = "| " ++ rhs.unparse ++ mods.unparse ++ body.unparse; -- TODO missing some here...
   -- Either we have a name, or we generate an appropriate one.
   local nme :: Name =
     case optn of

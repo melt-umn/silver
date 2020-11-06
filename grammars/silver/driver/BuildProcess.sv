@@ -2,26 +2,22 @@ grammar silver:driver;
 
 imports silver:definition:core;
 imports silver:definition:env;
-imports silver:definition:env:env_parser;
 
 imports silver:util;
 imports silver:util:cmdargs;
 
 exports silver:driver:util;
 
-import silver:langutil only message;
-
 type SVParser = (ParseResult<Root> ::= String String);
-type SVIParser = (ParseResult<IRoot> ::= String String);
 
 {--
  - Run the silver compiler, as if invoked from the command line.
  -}
 function cmdLineRun
-IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
+IOVal<Integer> ::= args::[String]  svParser::SVParser  ioin::IO
 {
   local unit :: IOErrorable<Decorated Compilation> =
-    cmdLineRunInitial(args, svParser, sviParser, ioin);
+    cmdLineRunInitial(args, svParser, ioin);
     
   return performActions(unit);
 }
@@ -29,12 +25,12 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  sviParser::SVIParser  ioi
 -- Compute the environment, and then setup and do a build run. No postOps executed, though.
 function cmdLineRunInitial
 IOErrorable<Decorated Compilation> ::=
-  args::[String]  svParser::SVParser  sviParser::SVIParser  ioin::IO
+  args::[String]  svParser::SVParser  ioin::IO
 {
   return
     runChainArg(
       computeEnv,
-      setupBuildRun(svParser, sviParser, _, _),
+      setupBuildRun(svParser, _, _),
       args, ioin);
 }
 
@@ -76,6 +72,8 @@ IOErrorable<Pair<Decorated CmdArgs  BuildEnv>> ::=
   -- we premptively handle that here. This is slightly unfortunate.
   -- Ideally, version printing would be just another thing we could have the command
   -- line decide to go do, but currently it's hard to re-use code if we do that.
+  else if !null(envErrors) then
+    ioval(benvResult.io, left(runError(1, implode("\n", envErrors))))
   else if a.displayVersion then
     ioval(benvResult.io, left(runError(1, -- error code so 'ant' isnt run
       "Silver Version 0.4.1-dev\n" ++
@@ -83,8 +81,6 @@ IOErrorable<Pair<Decorated CmdArgs  BuildEnv>> ::=
       "SILVER_GEN = " ++ benv.silverGen ++ "\n" ++
       "GRAMMAR_PATH:\n" ++ implode("\n", benv.grammarPath) ++ "\n\n" ++
       implode("\n", envErrors))))
-  else if !null(envErrors) then
-    ioval(benvResult.io, left(runError(1, implode("\n", envErrors))))
   else
     ioval(benvResult.io, right(pair(a, benv)));
 }
@@ -93,7 +89,6 @@ IOErrorable<Pair<Decorated CmdArgs  BuildEnv>> ::=
 function setupBuildRun
 IOErrorable<Decorated Compilation> ::=
   svParser::SVParser
-  sviParser::SVIParser
   envin::Pair<Decorated CmdArgs  BuildEnv>
   ioin::IO
 {
@@ -107,7 +102,7 @@ IOErrorable<Decorated Compilation> ::=
 
   -- Build!
   local buildrun :: IOVal<Decorated Compilation> =
-    buildRun(svParser, sviParser, a, benv, buildGrammar, checkbuild.io);
+    buildRun(svParser, a, benv, buildGrammar, checkbuild.io);
 
   return if !null(checkbuild.iovalue) then
     ioval(checkbuild.io, left(runError(1, implode("\n", checkbuild.iovalue))))
@@ -125,7 +120,6 @@ IOErrorable<Decorated Compilation> ::=
 function buildRun
 IOVal<Decorated Compilation> ::=
   svParser::SVParser
-  sviParser::SVIParser
   a::Decorated CmdArgs
   benv::BuildEnv
   buildGrammar::String
@@ -135,7 +129,7 @@ IOVal<Decorated Compilation> ::=
   -- This does an "initial grammar stream" composed of 
   -- grammars and interface files that *locally* seem good.
   local rootStream :: IOVal<[Maybe<RootSpec>]> =
-    compileGrammars(svParser, sviParser, benv, grammarStream, a.doClean, ioin);
+    compileGrammars(svParser, benv, grammarStream, a.doClean, ioin);
 
   -- The list of grammars to build. This is circular with the above, producing
   -- a list that's terminated when the response count is equal to the number of emitted
@@ -156,7 +150,7 @@ IOVal<Decorated Compilation> ::=
   -- There is a second circularity here where we use unit.recheckGrammars
   -- to supply the second parameter to unit.
   local reRootStream :: IOVal<[Maybe<RootSpec>]> =
-    compileGrammars(svParser, sviParser, benv, unit.recheckGrammars, true, rootStream.io);
+    compileGrammars(svParser, benv, unit.recheckGrammars, true, rootStream.io);
 
   return ioval(reRootStream.io, unit);
 }

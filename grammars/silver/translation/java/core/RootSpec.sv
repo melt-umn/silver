@@ -5,19 +5,19 @@ import silver:driver:util;
 attribute genFiles occurs on RootSpec;
 
 aspect production interfaceRootSpec
-top::RootSpec ::= _ _
+top::RootSpec ::= _ _ _
 {
   top.genFiles := [];
 }
 
 aspect production errorRootSpec
-top::RootSpec ::= _ _ _ _
+top::RootSpec ::= _ _ _ _ _
 {
   top.genFiles := [];
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar  _ _ _
+top::RootSpec ::= g::Grammar  _ _ _ _
 {
   top.genFiles := g.genFiles ++
   [pair("Silver.svi", unparseRootSpec(top)),
@@ -60,6 +60,7 @@ ${g.initProd}
 
 ${g.initWeaving}
 ${g.valueWeaving}
+	final static common.DecoratedNode context = common.TopNode.singleton; // For globals
 ${g.initValues}
 }
 """)];

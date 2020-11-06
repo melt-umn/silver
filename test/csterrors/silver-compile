@@ -2,10 +2,7 @@
 
 export SILVER_HOME=../..
 
-# Don't depend on having 'silver' in PATH from a test
-function silver {
-   java -Xss4M -Xmx1500M -jar $SILVER_HOME/jars/RunSilver.jar $@
-}
+silver() { "$SILVER_HOME/support/bin/silver" "$@"; }
 
 # Always clean build
 ARGS="$@ --clean"
@@ -27,6 +24,8 @@ silver $ARGS terminalDominate | grep "B_t" > /dev/null || ((count++))
 silver $ARGS terminalLexer | grep "lexer_b:B" > /dev/null || ((count++))
 silver $ARGS lexerSubmit | grep "B_t" > /dev/null || ((count++))
 silver $ARGS lexerDominate | grep "B_t" > /dev/null || ((count++))
+silver $ARGS missingSeparator | grep "test:nonterm_b:Mangle_t" > /dev/null || ((count++))
+silver $ARGS multipleSeparators | grep "multipleSeparators:A_t, multipleSeparators:B_t" > /dev/null || ((count++))
 
 
 rm -f build.xml

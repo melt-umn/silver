@@ -16,19 +16,30 @@ top::Name ::= 'pluck'
 concrete production pluckDef
 top::ProductionStmt ::= 'pluck' e::Expr ';'
 {
-  top.pp = "pluck " ++ e.pp ++ ";";
+  top.unparse = "pluck " ++ e.unparse ++ ";";
 
   -- Cast to integer is required, because that's secretly the real type of the
   -- result, but our type system only calls it an Object at the moment.
   -- Perhaps this problem can be resolved by using a proper type in this situation.
-  top.translation = "return (Integer)" ++ e.translation ++ ";\n";
+  top.translation = "return (Integer)(" ++ e.translation ++ ");\n";
 
-  top.errors := (if !top.frame.permitPluck
-               then [err(top.location, "'pluck' allowed only in disambiguation-group parser actions.")]
-               else [])
-               ++ e.errors;
+  propagate errors;
+  top.errors <-
+    if !top.frame.permitPluck
+    then [err(top.location, "'pluck' allowed only in disambiguation-group parser actions.")]
+    else [];
 
-  -- TODO: figure out wtf is going on with type here! (needs to be a terminal, plus one of the ones in the disgroup)
+  local tyCk :: TypeCheck = check(e.typerep, terminalIdType());
+  tyCk.downSubst = e.upSubst;
+  tyCk.finalSubst = top.finalSubst;
+  top.errors <-
+    if tyCk.typeerror
+    then [err(top.location, "'pluck' expects one of the terminals it is disambiguating between. Instead it received "++tyCk.leftpp)]
+    else [];
+
+
+  -- TODO: Enforce that the plucked terminal is one of those that are being disambiguated between.
+  -- Currently all that is checked is that it is a terminal.
 
   e.downSubst = top.downSubst;
   top.upSubst = e.upSubst;
@@ -37,14 +48,15 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
 concrete production printStmt
 top::ProductionStmt ::= 'print' e::Expr ';'
 {
-  top.pp = "print " ++ e.pp ++ ";";
+  top.unparse = "print " ++ e.unparse ++ ";";
 
   top.translation = "System.err.println(" ++ e.translation ++ ");\n";
 
-  top.errors := (if !top.frame.permitActions
-               then [err(top.location, "'print' statement allowed only in parser action blocks. You may be looking for print(String,IO) :: IO.")]
-               else [])
-               ++ e.errors;
+  propagate errors;
+  top.errors <-
+    if !top.frame.permitActions
+    then [err(top.location, "'print' statement allowed only in parser action blocks. You may be looking for print(String,IO) :: IO.")]
+    else [];
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
@@ -68,12 +80,13 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 abstract production parserAttributeValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
-  top.errors := e.errors ++
-               (if !top.frame.permitActions
-                then [err(top.location, "Assignment to parser attributes only permitted in parser action blocks")]
-                else []);
+  propagate errors;
+  top.errors <-
+    if !top.frame.permitActions
+    then [err(top.location, "Assignment to parser attributes only permitted in parser action blocks")]
+    else [];
 
   top.translation = makeCopperName(val.lookupValue.fullName) ++ " = " ++ e.translation ++ ";\n";
 
@@ -86,64 +99,107 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   errCheck1 = check(e.typerep, val.lookupValue.typerep);
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
+       then [err(top.location, "Parser attribute " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
        else [];
 }
 
 concrete production pushTokenStmt
 top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
 {
-   forwards to pushTokenIfStmt($1, $2, val, $4, lexeme, $6, 'if', trueConst('true', location=$7.location), $7, location=top.location );
-}
+  top.unparse = "\t" ++ "pushToken(" ++ val.unparse ++ ", " ++ lexeme.unparse ++ ");";
 
+  propagate errors;
+  top.errors <-
+    if !top.frame.permitActions
+    then [err(top.location, "Tokens may only be pushed in action blocks")]
+    else [];
 
-concrete production pushTokenIfStmt
-top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' 'if' condition::Expr ';'
-{
-  top.pp = "\t" ++ "pushToken(" ++ val.pp ++ ", " ++ lexeme.pp ++ ") if " ++ condition.pp ++ ";";
-
-  top.errors := lexeme.errors ++ condition.errors ++
-               (if !top.frame.permitActions
-                then [err(top.location, "Tokens may only be pushed in action blocks")]
-                else []);
-
-  top.translation = "if(" ++ condition.translation ++ "){" ++ " pushToken(Terminals." ++ makeCopperName(val.lookupType.fullName) ++ ", (" ++ lexeme.translation ++ ").toString()" ++ ");}";
+  top.translation = "pushToken(Terminals." ++ makeCopperName(val.lookupType.fullName) ++ ", (" ++ lexeme.translation ++ ").toString()" ++ ");";
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
 
   lexeme.downSubst = top.downSubst;
   errCheck1.downSubst = lexeme.upSubst;
-  condition.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = condition.upSubst;
-  top.upSubst = errCheck2.upSubst;
+  top.upSubst = errCheck1.upSubst;
 
   errCheck1 = check(lexeme.typerep, stringType());
   top.errors <-
        if errCheck1.typeerror
        then [err(lexeme.location, "Lexeme parameter has type " ++ errCheck1.leftpp ++ " which is not a String")]
        else [];
+}
 
-
-  errCheck2 = check(condition.typerep, boolType());
+concrete production blockStmt
+top::ProductionStmt ::= '{' stmts::ProductionStmts '}'
+{
+  top.unparse = "\t{\n" ++ stmts.unparse ++ "\n\t}";
+  
+  propagate errors;
   top.errors <-
-       if errCheck2.typeerror
-       then [err(condition.location, "pushToken condition has type " ++ errCheck1.leftpp ++ " which is not a Boolean")]
+    if !top.frame.permitActions
+    then [err(top.location, "Block statement is only permitted in action blocks")]
+    else [];
+  
+  top.translation = stmts.translation;
+  
+  stmts.downSubst = top.downSubst;
+  top.upSubst = error("Shouldn't ever be needed anywhere. (Should only ever be fed back here as top.finalSubst)");
+  -- Of course, this means do not use top.finalSubst here!
+}
+
+concrete production ifElseStmt
+top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' el::ProductionStmt
+{
+  top.unparse = "\t" ++ "if (" ++ condition.unparse ++ ") " ++ th.unparse ++ "\nelse " ++ el.unparse;
+
+  propagate errors;
+  top.errors <-
+    if !top.frame.permitActions
+    then [err(top.location, "If statement is only permitted in action blocks")]
+    else [];
+
+  top.translation = s"if(${condition.translation}) {${th.translation}} else {${el.translation}}";
+
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  condition.downSubst = top.downSubst;
+  errCheck1.downSubst = condition.upSubst;
+  top.upSubst = errCheck1.upSubst;
+  
+  th.downSubst = top.downSubst;
+  th.finalSubst = th.upSubst;
+  
+  el.downSubst = top.downSubst;
+  el.finalSubst = el.upSubst;
+
+  errCheck1 = check(condition.typerep, boolType());
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(condition.location, "if condition has type " ++ errCheck1.leftpp ++ " which is not a Boolean")]
        else [];
 }
 
-
+concrete production ifStmt
+top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt
+{
+  top.unparse = "\t" ++ "if (" ++ condition.unparse ++ ") " ++ th.unparse;
+  forwards to ifElseStmt($1, $2, condition, $4, th, 'else', blockStmt('{', productionStmtsNil(location=top.location), '}', location=top.location), location=top.location);
+}
 
 
 abstract production parserAttributeDefLHS
 top::DefLHS ::= q::Decorated QName
 {
-  top.pp = q.pp;
+  top.name = q.name;
+  top.unparse = q.unparse;
+  top.found = false;
   
   -- Note this is always erroring!
-  top.errors := if !top.frame.permitActions
-                then [err(q.location, "Parser attributes can only be used in action blocks")]
-                else [err(q.location, "Parser action blocks are imperative, not declarative. You cannot modify the attributes of " ++ q.name ++ ". If you are trying to set inherited attributes, you should use 'decorate ... with { ... }' when you create it.")];
+  propagate errors;
+  top.errors <-
+    if !top.frame.permitActions
+    then [err(q.location, "Parser attributes can only be used in action blocks")]
+    else [err(q.location, "Parser action blocks are imperative, not declarative. You cannot modify the attributes of " ++ q.name ++ ". If you are trying to set inherited attributes, you should use 'decorate ... with { ... }' when you create it.")];
 
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 
@@ -153,16 +209,20 @@ top::DefLHS ::= q::Decorated QName
 abstract production termAttrValueValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
-  top.pp = "\t" ++ val.pp ++ " = " ++ e.pp ++ ";";
+  top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   -- these values should only ever be in scope when it's valid to use them
-  top.errors := e.errors;
+  propagate errors;
+  
+  top.errors <-
+    if val.name != "lexeme" then [] else
+    [err(val.location, "lexeme is not reassignable.")];
 
-  local attribute memberfunc :: String;
-  memberfunc = if val.name == "filename" then "setFileName" else
-               if val.name == "line" then "setLine" else
-               if val.name == "column" then "setColumn" else
-               error("unknown assignment to terminal attribute: " ++ val.name);
+  local memberfunc :: String =
+    if val.name == "filename" then "setFileName" else
+    if val.name == "line" then "setLine" else
+    if val.name == "column" then "setColumn" else
+    error("unknown assignment to terminal attribute: " ++ val.name);
 
   top.translation = "virtualLocation." ++ memberfunc ++ "(" ++ e.translation
                      ++ (if val.name == "filename" then ".toString()" else "") ++ ");\n";
@@ -175,8 +235,8 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 
   errCheck1 = check(e.typerep, val.lookupValue.typerep);
   top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Value " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
-       else [];
+    if errCheck1.typeerror
+    then [err(top.location, "Terminal attribute " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
+    else [];
 }
 

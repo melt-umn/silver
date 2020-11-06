@@ -13,9 +13,11 @@ terminal Of_kwd 'of' lexer classes {KEYWORD,RESERVED};
 terminal Arrow_kwd '->' lexer classes {SPECOP};
 terminal Vbar_kwd '|' lexer classes {SPECOP};
 terminal Opt_Vbar_t /\|?/ lexer classes {SPECOP}; -- optional Coq-style vbar.
+terminal When_kwd 'when' lexer classes {KEYWORD,RESERVED};
+terminal Matches_kwd 'matches' lexer classes {KEYWORD};
 
 -- MR | ...
-nonterminal MRuleList with location, config, pp, env, errors, matchRuleList, matchRulePatternSize;
+nonterminal MRuleList with location, config, unparse, env, frame, errors, matchRuleList, matchRulePatternSize;
 
 -- Turns MRuleList (of MatchRules) into [AbstractMatchRule]
 synthesized attribute matchRuleList :: [AbstractMatchRule];
@@ -23,18 +25,18 @@ synthesized attribute matchRuleList :: [AbstractMatchRule];
 autocopy attribute matchRulePatternSize :: Integer;
 
 -- P -> E
-nonterminal MatchRule with location, config, pp, env, errors, matchRuleList, matchRulePatternSize;
-nonterminal AbstractMatchRule with location, headPattern, isVarMatchRule, expandHeadPattern;
+nonterminal MatchRule with location, config, unparse, env, frame, errors, matchRuleList, matchRulePatternSize;
+nonterminal AbstractMatchRule with location, unparse, headPattern, isVarMatchRule, expandHeadPattern;
 
 -- The head pattern of a match rule
 synthesized attribute headPattern :: Decorated Pattern;
 -- Whether the head pattern of a match rule is a variable binder or not
 synthesized attribute isVarMatchRule :: Boolean;
--- Turns A(B, C), D into B, C, D in the patterns list.
-synthesized attribute expandHeadPattern :: AbstractMatchRule;
+-- Turns A(B, C), D into B, C, D in the patterns list, with a list of named patterns to include.
+synthesized attribute expandHeadPattern :: (AbstractMatchRule ::= [String]);
 
 -- P , ...
-nonterminal PatternList with location, config, pp, patternList, env, errors;
+nonterminal PatternList with location, config, unparse, patternList, env, frame, errors, patternVars, patternVarEnv;
 
 -- Turns PatternList into [Pattern]
 synthesized attribute patternList :: [Decorated Pattern];
@@ -56,7 +58,7 @@ synthesized attribute patternList :: [Decorated Pattern];
 concrete production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
-  top.pp = "case " ++ es.pp ++ " of " ++ ml.pp ++ " end";
+  top.unparse = "case " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
 
   ml.matchRulePatternSize = length(es.rawExprs);
   top.errors <- ml.errors;
@@ -74,13 +76,18 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 abstract production caseExpr
 top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
 {
-  top.pp = error("Internal error: pretty of intermediate data structure");
+  top.unparse =
+    "(case " ++ implode(", ", map((.unparse), es)) ++ " of " ++ 
+    implode(" | ", map((.unparse), ml)) ++ " | _ -> " ++ failExpr.unparse ++
+    " end :: " ++ prettyType(retType) ++ ")";
 
   -- 4 cases: no patterns left, all constructors, all variables, or mixed con/var.
   -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules
   forwards to
     case ml of
-    | matchRule([], e) :: _ -> e -- valid or error case
+    | matchRule([], c, e) :: _ -> buildMatchWhenConditionals(ml, failExpr) -- valid or error case
+    -- No match rules, only possible through abstract syntax
+    | [] -> Silver_Expr { let res :: $TypeExpr{typerepTypeExpr(retType, location=top.location)} = $Expr{failExpr} in res end }
     | _ -> if null(es) then failExpr -- error case
            else if null(varRules) then allConCase
            else if null(prodRules) then allVarCase
@@ -93,13 +100,16 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
   
   top.errors <-
     case ml of
-    -- are there multiple match rules, with no patterns left in them to distinguish between them?
-    | matchRule([], e) :: _ :: _ -> [err(top.location, "Pattern has overlapping cases!")]
+    -- are there multiple match rules, with no patterns/conditions left in them to distinguish between them?
+    | matchRule([], _, e) :: _ :: _ ->
+      if areUselessPatterns(ml)
+      then [err(top.location, "Pattern has overlapping cases!")]
+      else []
     | _ -> []
     end;
        
 --  top.errors <- unsafeTrace([], 
---     print(top.pp ++ "\n\n", unsafeIO()));
+--     print(top.unparse ++ "\n\n", unsafeIO()));
 
   local partMRs :: Pair<[AbstractMatchRule] [AbstractMatchRule]> =
     partition((.isVarMatchRule), ml);
@@ -109,13 +119,20 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
   {--
    - All constructors? Then do a real primitive match.
    -}
+  local freshCurrName :: String = "__curr_match_" ++ toString(genInt());
+  local freshCurrNameRef :: Expr =
+    baseExpr(qName(top.location, freshCurrName), location=top.location);
   local allConCase :: Expr =
-    matchPrimitive(head(es),
-      typerepTypeExpr(retType, location=top.location),
-      foldPrimPatterns(
-        map(allConCaseTransform(tail(es), failExpr, retType, _),
+    -- Annoyingly, this now needs to be a let in case of annotation patterns.
+    makeLet(top.location,
+      freshCurrName, freshType(), head(es), 
+      matchPrimitive(
+        freshCurrNameRef,
+        typerepTypeExpr(retType, location=top.location),
+        foldPrimPatterns(
+          map(allConCaseTransform(freshCurrNameRef, tail(es), failExpr, retType, _),
           groupMRules(prodRules))),
-      failExpr, location=top.location);
+        failExpr, location=top.location));
   
   {--
    - All variables? Just push a let binding inside each branch.
@@ -130,21 +147,63 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
       -- So don't try that!
   
   {--
-   - Mixed con/var? Partition, and push the vars into the "fail" branch.
-   - Use a let for it, to avoid code duplication!
+    - Mixed con/var? Partition into segments and build nested case expressions
+    - The whole segment partitioning is done in a function rather than grabbing the initial segment
+      and forwarding to do the rest of the segments (another workable option) for efficiency
    -}
-  local freshFailName :: String = "__fail_" ++ toString(genInt());
-  local mixedCase :: Expr =
-    makeLet(top.location,
-      freshFailName, retType, caseExpr(es, varRules, failExpr, retType, location=top.location),
-      caseExpr(es, prodRules, baseExpr(qName(top.location, freshFailName), location=top.location),
-        retType, location=top.location));
+  local mixedCase :: Expr = buildMixedCaseMatches(es, ml, failExpr, retType, top.location);
 }
 
+
+--Get the initial segment of the match rules which all have the same
+--pattern type (constructor or var) and the rest of the rules
+function initialSegmentPatternType
+Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
+{
+  return case lst of
+           --this probably shouldn't be called with an empty list, but catch it anyway
+         | [] -> pair([], [])
+         | [mr] -> pair([mr], [])
+         | mr1::mr2::rest ->
+           if mr1.isVarMatchRule == mr2.isVarMatchRule
+           then --both have the same type of pattern
+              let sub::Pair<[AbstractMatchRule] [AbstractMatchRule]> = initialSegmentPatternType(mr2::rest)
+              in pair(mr1::sub.fst, sub.snd) end
+           else --the first has a different type of pattern than the second
+              pair([mr1], mr2::rest)
+         end;
+}
+
+{-
+  Build the correct match expression when we are mixing constructor
+  and variable patterns for the first match.  We do this by
+  partitioning the list into segments of only constructor or variable
+  patterns in order, then putting each segment into its own match.
+-}
+function buildMixedCaseMatches
+Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
+{
+  local freshFailName :: String = "__fail_" ++ toString(genInt());
+  return if null(ml)
+         then failExpr
+         else let segments::Pair<[AbstractMatchRule] [AbstractMatchRule]> =
+                            initialSegmentPatternType(ml)
+              in
+                makeLet(loc, freshFailName, retType,
+                        buildMixedCaseMatches(es, segments.snd, failExpr, retType, loc),
+                        caseExpr(es, segments.fst, baseExpr(qName(loc, freshFailName), location=loc),
+                                 retType, location=loc))
+              end;
+}
+
+
+
+
+--Match Rules
 concrete production mRuleList_one
 top::MRuleList ::= m::MatchRule
 {
-  top.pp = m.pp;
+  top.unparse = m.unparse;
   top.errors := m.errors;  
 
   top.matchRuleList = m.matchRuleList;
@@ -153,7 +212,7 @@ top::MRuleList ::= m::MatchRule
 concrete production mRuleList_cons
 top::MRuleList ::= h::MatchRule '|' t::MRuleList
 {
-  top.pp = h.pp ++ " | " ++ t.pp;
+  top.unparse = h.unparse ++ " | " ++ t.unparse;
   top.errors := h.errors ++ t.errors;
   
   top.matchRuleList = h.matchRuleList ++ t.matchRuleList;
@@ -162,41 +221,106 @@ top::MRuleList ::= h::MatchRule '|' t::MRuleList
 concrete production matchRule_c
 top::MatchRule ::= pt::PatternList '->' e::Expr
 {
-  top.pp = pt.pp ++ " -> " ++ e.pp;
-  top.errors := pt.errors; -- e.errors is examine later, after transformation.
+  top.unparse = pt.unparse ++ " -> " ++ e.unparse;
+  top.errors := pt.errors; -- e.errors is examined later, after transformation.
   
   top.errors <-
     if length(pt.patternList) == top.matchRulePatternSize then []
     else [err(pt.location, "case expression matching against " ++ toString(top.matchRulePatternSize) ++ " values, but this rule has " ++ toString(length(pt.patternList)) ++ " patterns")];
 
-  top.matchRuleList = [matchRule(pt.patternList, e, location=top.location)];
+  pt.patternVarEnv = [];
+
+  top.matchRuleList = [matchRule(pt.patternList, nothing(), e, location=top.location)];
+}
+
+concrete production matchRuleWhen_c
+top::MatchRule ::= pt::PatternList 'when' cond::Expr '->' e::Expr
+{
+  top.unparse = pt.unparse ++ " when " ++ cond.unparse ++ " -> " ++ e.unparse;
+  top.errors := pt.errors; -- e.errors is examined later, after transformation, as is cond.errors
+  
+  top.errors <-
+    if length(pt.patternList) == top.matchRulePatternSize then []
+    else [err(pt.location, "case expression matching against " ++ toString(top.matchRulePatternSize) ++ " values, but this rule has " ++ toString(length(pt.patternList)) ++ " patterns")];
+
+  pt.patternVarEnv = [];
+
+  top.matchRuleList = [matchRule(pt.patternList, just(pair(cond, nothing())), e, location=top.location)];
+}
+
+concrete production matchRuleWhenMatches_c
+top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern '->' e::Expr
+{
+  top.unparse = pt.unparse ++ " when " ++ cond.unparse ++ " matches " ++ p.unparse ++ " -> " ++ e.unparse;
+  top.errors := pt.errors; -- e.errors is examined later, after transformation, as is cond.errors
+  
+  top.errors <-
+    if length(pt.patternList) == top.matchRulePatternSize then []
+    else [err(pt.location, "case expression matching against " ++ toString(top.matchRulePatternSize) ++ " values, but this rule has " ++ toString(length(pt.patternList)) ++ " patterns")];
+
+  pt.patternVarEnv = [];
+  p.patternVarEnv = pt.patternVars;
+
+  top.matchRuleList = [matchRule(pt.patternList, just(pair(cond, just(p))), e, location=top.location)];
 }
 
 abstract production matchRule
-top::AbstractMatchRule ::= pl::[Decorated Pattern] e::Expr
+top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Pair<Expr Maybe<Pattern>>> e::Expr
 {
+  top.unparse =
+    implode(", ", map((.unparse), pl)) ++
+    case cond of
+    | just(pair(c, just(p))) -> " when " ++ c.unparse ++ " matches " ++ p.unparse
+    | just(pair(c, nothing())) -> " when " ++ c.unparse
+    | nothing() -> ""
+    end ++
+    " -> " ++ e.unparse;
   top.headPattern = head(pl);
   -- If pl is null, and we're consulted, then we're missing patterns, pretend they're _
   top.isVarMatchRule = null(pl) || head(pl).patternIsVariable;
   -- For this, we safely know that pl is not null:
   top.expandHeadPattern = 
-    matchRule(head(pl).patternSubPatternList ++ tail(pl), e, location=top.location);
+    \ named::[String] ->
+      matchRule(
+        head(pl).patternSubPatternList ++
+        map(
+          \ n::String ->
+            fromMaybe(
+              decorate wildcPattern('_', location=top.location)
+                with { config=head(pl).config; env=head(pl).env; patternVarEnv = []; },
+              lookupBy(stringEq, n, head(pl).patternNamedSubPatternList)),
+          named) ++
+        tail(pl),
+        cond, e, location=top.location);
 }
 
 concrete production patternList_one
 top::PatternList ::= p::Pattern
 {
-  top.pp = p.pp;
+  top.unparse = p.unparse;
   top.errors := p.errors;
 
+  top.patternVars = p.patternVars;
+  p.patternVarEnv = top.patternVarEnv;
+  
   top.patternList = [p];
 }
-concrete production patternList_more
+concrete production patternList_snoc
+top::PatternList ::= ps::PatternList ',' p::Pattern 
+{
+  top.unparse = ps.unparse ++ ", " ++ p.unparse;
+  
+  forwards to appendPatternList(ps, patternList_one(p, location=p.location));
+}
+abstract production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
-  top.pp = p.pp ++ ", " ++ ps1.pp;
+  top.unparse = p.unparse ++ ", " ++ ps1.unparse;
   top.errors := p.errors ++ ps1.errors;
 
+  top.patternVars = p.patternVars ++ ps1.patternVars;
+  ps1.patternVarEnv = p.patternVarEnv ++ p.patternVars;
+  
   top.patternList = p :: ps1.patternList;
 }
 
@@ -204,15 +328,28 @@ top::PatternList ::= p::Pattern ',' ps1::PatternList
 concrete production patternList_nil
 top::PatternList ::=
 {
-  top.pp = "";
+  top.unparse = "";
   top.errors := [];
 
+  top.patternVars = [];
   top.patternList = [];
 }
 
 ----------------------------------------------------
 -- Added Functions
 ----------------------------------------------------
+function appendPatternList
+PatternList ::= p1::PatternList p2::PatternList
+{
+  return
+    case p1 of
+    | patternList_more(h, _, t) ->
+      patternList_more(h, ',', appendPatternList(t, p2), location=p1.location)
+    | patternList_one(h) ->
+      patternList_more(h, ',', p2, location=p1.location)
+    | patternList_nil() -> p2
+    end;
+}
 
 function patternListVars
 Name ::= p::Decorated Pattern
@@ -241,6 +378,7 @@ Expr ::= n::Name
  - Takes a set of matchrules that all match against the SAME CONSTRUCTOR and pushes
  - a complex case-expr within a primitive pattern that matches this constructor.
  -
+ - @param currExpr  (The current expression to match against in the overall complex case-expr)
  - @param restExprs  (The remaining expressions to match against in the overall complex case-expr)
  - @param failCase  (The failure expression)
  - @param retType  (The return type of the overall case-expr, and thus this)
@@ -249,7 +387,7 @@ Expr ::= n::Name
  - @return  A primitive pattern matching the constructor, with the overall case-expr pushed down into it
  -}
 function allConCaseTransform
-PrimPattern ::= restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[AbstractMatchRule]
+PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[AbstractMatchRule]
 {
   -- TODO: potential source of buggy error messages. We're using head(mrs) as the source of
   -- authority for the length of pattern variables to match against. But each match rule may
@@ -259,19 +397,25 @@ PrimPattern ::= restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[Abstract
 
   local subcase :: Expr =
     caseExpr(
-      map(exprFromName, names) ++ restExprs,
-      map((.expandHeadPattern), mrs),
+      map(exprFromName, names) ++ annoAccesses ++ restExprs,
+      map(\ mr::AbstractMatchRule -> mr.expandHeadPattern(annos), mrs),
       failCase, retType, location=head(mrs).location);
   -- TODO: head(mrs).location is probably not the correct thing to use here?? (generally)
 
+  local annos :: [String] =
+    nubBy(stringEq, map(fst, flatMap((.patternNamedSubPatternList), map((.headPattern), mrs))));
+  local annoAccesses :: [Expr] =
+    map(\ n::String -> access(currExpr, '.', qNameAttrOccur(qName(l, n), location=l), location=l), annos);
+  
   -- Maybe this one is more reasonable? We need to test examples and see what happens...
   local l :: Location = head(mrs).headPattern.location;
 
   return
     case head(mrs).headPattern of
-    | prodAppPattern(qn,_,_,_) -> 
+    | prodAppPattern_named(qn,_,_,_,_,_) -> 
         prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', '->', subcase, location=l)
     | intPattern(it) -> integerPattern(it, '->', subcase, location=l)
+    | fltPattern(it) -> floatPattern(it, '->', subcase, location=l)
     | strPattern(it) -> stringPattern(it, '->', subcase, location=l)
     | truePattern(_) -> booleanPattern("true", '->', subcase, location=l)
     | falsePattern(_) -> booleanPattern("false", '->', subcase, location=l)
@@ -297,16 +441,24 @@ PrimPatterns ::= l::[PrimPattern]
  -     e.g. right now we 'map(this(x, y, _), list)'
  -}
 function bindHeadPattern
-AbstractMatchRule ::= headExpr::Expr  headType::Type  rule::AbstractMatchRule
+AbstractMatchRule ::= headExpr::Expr  headType::Type  absRule::AbstractMatchRule
 {
   -- If it's '_' we do nothing, otherwise, bind away!
-  return case rule of
-  | matchRule(headPat :: restPat, e) ->
-      matchRule(restPat, 
-        case headPat.patternVariableName of
-        | just(pvn) -> makeLet(rule.location, pvn, headType, headExpr, e)
-        | nothing() -> e
-        end, location=rule.location)
+  return case absRule of
+  | matchRule(headPat :: restPat, cond, e) ->
+    case headPat.patternVariableName of
+    | just(pvn) ->
+      matchRule(
+        restPat,
+        case cond of
+        | just(pair(c, p)) -> just(pair(makeLet(absRule.location, pvn, headType, headExpr, c), p))
+        | nothing() -> nothing()
+        end,
+        makeLet(absRule.location, pvn, headType, headExpr, e),
+        location=absRule.location)
+    | nothing() -> matchRule(restPat, cond, e, location=absRule.location)
+    end
+  | r -> r -- Don't crash when we see a rule with too few patterns (should be an error)
   end;
 }
 
@@ -349,6 +501,57 @@ function groupMRules
 [[AbstractMatchRule]] ::= l::[AbstractMatchRule]
 {
   return groupBy(mruleEqForGrouping, sortBy(mruleLTEForSorting, l));
+}
+
+{--
+ - Given a list of match rules, which are presumed to match empty
+ - patterns (this is not checked), turn them into nested
+ - conditionals.
+ -}
+function buildMatchWhenConditionals
+Expr ::= ml::[AbstractMatchRule] failExpr::Expr
+{
+  return
+    case ml of
+    | matchRule(_, just(pair(c, nothing())), e) :: tl ->
+      Silver_Expr {
+        if $Expr{c}
+        then $Expr{e}
+        else $Expr{buildMatchWhenConditionals(tl, failExpr)}
+      }
+    | matchRule(_, just(pair(c, just(p))), e) :: tl ->
+      Silver_Expr {
+        case $Expr{c} of
+        | $Pattern{p} -> $Expr{e}
+        | _ -> $Expr{buildMatchWhenConditionals(tl, failExpr)}
+        end
+      }
+    | matchRule(_, nothing(), e) :: tl -> e
+    | [] -> failExpr
+    end;
+}
+
+{--
+ - Check whether there are patterns that overlap in a list of match
+ - rules which are presumed to match empty patterns (this is not
+ - checked here).
+ -
+ - An answer of true definitively means there are useless patterns.
+ - An answer of false means there may be, but it would require
+ - analysis of the conditions on the patterns to determine whether
+ - they are actually useless.  We do not do that.
+ -}
+function areUselessPatterns
+Boolean ::= ml::[AbstractMatchRule]
+{
+  return
+    case ml of
+    | matchRule(_, just(_), _) :: tl ->
+      areUselessPatterns(tl)
+    | matchRule(_, nothing(), _) :: _ :: _ -> true
+    | matchRule(_, nothing(), _) :: [] -> false
+    | [] -> false
+    end;
 }
 
 

@@ -296,7 +296,7 @@ top::Expr ::= e1::Expr '>' e2::Expr
   top.errors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
        then []
-       else [err(top.location, "Operands to > must be concrete types Integer, Float, or String.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to > must be concrete types Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 aspect production lt
@@ -318,7 +318,7 @@ top::Expr ::= e1::Expr '<' e2::Expr
   top.errors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
        then []
-       else [err(top.location, "Operands to < must be concrete types Integer, Float, or String.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to < must be concrete types Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 
@@ -341,7 +341,7 @@ top::Expr ::= e1::Expr '>=' e2::Expr
   top.errors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
        then []
-       else [err(top.location, "Operands to >= must be concrete types Integer, Float, or String.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to >= must be concrete types Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 
@@ -364,7 +364,7 @@ top::Expr ::= e1::Expr '<=' e2::Expr
   top.errors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceOrd
        then []
-       else [err(top.location, "Operands to <= must be concrete types Integer, Float, or String.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to <= must be concrete types Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 
@@ -387,7 +387,7 @@ top::Expr ::= e1::Expr '==' e2::Expr
   top.errors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceEq
        then []
-       else [err(top.location, "Operands to == must be concrete types Boolean, Integer, Float, or String.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to == must be concrete types Boolean, Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 
@@ -410,7 +410,7 @@ top::Expr ::= e1::Expr '!=' e2::Expr
   top.errors <-
        if performSubstitution(e1.typerep, top.finalSubst).instanceEq
        then []
-       else [err(top.location, "Operands to != must be concrete types Boolean, Integer, Float, or String.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
+       else [err(top.location, "Operands to != must be concrete types Boolean, Integer, Float, String or TerminalId.  Instead they are of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
 
@@ -575,23 +575,8 @@ top::Expr ::= s::String_t
   top.upSubst = top.downSubst;
 }
 
-aspect production plusPlus
-top::Expr ::= e1::Expr '++' e2::Expr
-{
-  production attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  e1.downSubst = top.downSubst;
-  e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  forward.downSubst = errCheck1.upSubst;
-  -- upSubst defined via forward :D
-  
-  errCheck1 = check(e1.typerep, e2.typerep);
-  top.errors <-
-       if errCheck1.typeerror
-       then [err(top.location, "Operands to ++ must be the same type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)]
-       else [];
-}
+-- Already merged into silver:definition:core
+--aspect production plusPlus
 
 aspect production errorPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
@@ -656,7 +641,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
   errCheck1 = check(lhs.typerep, e1.typerep);
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, lhs.pp ++ " has expected type " ++ errCheck1.leftpp
+       then [err(top.location, lhs.name ++ " has expected type " ++ errCheck1.leftpp
                               ++ ", but the expression has type " ++ errCheck1.rightpp)]
        else [];
 }

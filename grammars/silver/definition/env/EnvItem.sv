@@ -1,42 +1,33 @@
 grammar silver:definition:env;
 
-import silver:util only contains;
-
---fullNameToShort  String ::= s::String
---defaultEnvItem   Decorate EnvItem ::= di::DclInfo
---renamedEnvItem   Decorate EnvItem ::= newname::String di::DclInfo
---mapGetDcls       [DclInfo] ::= i::[Decorated EnvItem]
---mapDefaultWrapDcls [Decorated EnvItem] ::= i::[DclInfo]
---mapFullnameDcls  [Decorated EnvItem] ::= i::[DclInfo]
-
+{--
+ - An entry in the environment.
+ -}
+nonterminal EnvItem with itemName, dcl, envContribs;
 
 synthesized attribute itemName :: String;
 synthesized attribute dcl :: DclInfo;
 synthesized attribute envContribs :: [Pair<String DclInfo>];
 
-nonterminal EnvItem with itemName, dcl, envContribs;
-
-function fullNameToShort
-String ::= s::String
-{
-  -- Works just fine, even when lastIndexOf returns -1
-  return substring(lastIndexOf(":", s) + 1, length(s), s);
-}
-
-function defaultEnvItem
-EnvItem ::= di::DclInfo
-{
-  return renamedEnvItem(fullNameToShort(di.fullName), di);
-}
+{--
+ - Rare case: use of `import _ with _ as _` or `import _ as _` to rename.
+ - Common case: `grammar:full:name` aka `name`. See `defaultEnvItem`.
+ -}
 abstract production renamedEnvItem
 ei::EnvItem ::= newname::String di::DclInfo
 {
   ei.itemName = newname;
   ei.dcl = di;
-  ei.envContribs = if newname != di.fullName
-                   then [pair(newname, di), pair(di.fullName, di)]
-                   else [pair(newname, di)];
+  ei.envContribs =
+    if newname != di.fullName
+    then [pair(newname, di), pair(di.fullName, di)]
+    else [pair(newname, di)];
 }
+{--
+ - Entries at fullname ONLY.
+ - Used for occurrences & production attributes, which are looked up
+ - by the full nonterminal name (or production name) only, and a shortname is nonsense.
+ -}
 abstract production fullNameEnvItem
 ei::EnvItem ::= di::DclInfo
 {
@@ -44,6 +35,11 @@ ei::EnvItem ::= di::DclInfo
   ei.dcl = di;
   ei.envContribs = [pair(di.fullName, di)];
 }
+{--
+ - Used for aspect local variables. The LHS and children have a full name
+ - like `newname` and in the aspect we can rename it anything we want.
+ - We should *not* see `newname` in the environment in those cases.
+ -}
 abstract production onlyRenamedEnvItem
 ei::EnvItem ::= newname::String di::DclInfo
 {
@@ -51,6 +47,23 @@ ei::EnvItem ::= newname::String di::DclInfo
   ei.dcl = di;
   ei.envContribs = [pair(newname, di)];
 }
+
+{--
+ - The common case, normal shortnames.
+ -}
+function defaultEnvItem
+EnvItem ::= di::DclInfo
+{
+  return renamedEnvItem(fullNameToShort(di.fullName), di);
+}
+function fullNameToShort
+String ::= s::String
+{
+  -- Works just fine, even when lastIndexOf returns -1
+  return substring(lastIndexOf(":", s) + 1, length(s), s);
+}
+
+
 
 function mapGetDcls
 [DclInfo] ::= i::[EnvItem]
@@ -73,12 +86,12 @@ function mapDefaultWrapDcls
 function envItemExclude
 Boolean ::= ei::EnvItem  exclude::[String]
 {
-  return !contains(ei.itemName, exclude);
+  return !containsBy(stringEq, ei.itemName, exclude);
 }
 function envItemInclude
 Boolean ::= ei::EnvItem  include::[String]
 {
-  return contains(ei.itemName, include);
+  return containsBy(stringEq, ei.itemName, include);
 }
 function envItemPrepend
 EnvItem ::= ei::EnvItem  pfx::String
@@ -90,15 +103,17 @@ EnvItem ::= ei::EnvItem  pfx::String
 function envItemApplyRenaming
 EnvItem ::= ei::EnvItem  renames::[Pair<String String>]
 {
-  local attribute result :: Maybe<String>;
-  result = lookupBy(stringEq, ei.itemName, renames);
+  local result :: Maybe<String> = lookupBy(stringEq, ei.itemName, renames);
   
   return if !result.isJust then ei
-         -- this should clobber any 'onlyrenamed' but those shouldn't appear in imports, where this is used.
+         -- this would clobber any 'onlyrenamed' but those shouldn't appear in imports, where this is used.
          else renamedEnvItem(result.fromJust, ei.dcl);
 }
 
 
+{--
+ - Maps a production's DclInfo into an EnvItem named for the nonterminal it constructs.
+ -}
 function envItemNTFromProdDcl
 EnvItem ::= di::DclInfo
 {

@@ -7,12 +7,12 @@ terminal AutoCopy_kwd 'autocopy' lexer classes {KEYWORD};
 concrete production attributeDclAuto
 top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
-  top.pp = "autocopy attribute " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
+  top.unparse = "autocopy attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = [autocopyDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [autocopyDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;

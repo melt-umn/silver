@@ -5,11 +5,11 @@ terminal Annotation_kwd 'annotation' lexer classes {KEYWORD};
 concrete production annotationDcl
 top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
-  top.pp = "annotation " ++ a.pp ++ tl.pp ++ " :: " ++ te.pp ++ ";";
+  top.unparse = "annotation " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
   production fName :: String = top.grammarName ++ ":" ++ a.name;
 
-  top.defs = [annoDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
+  top.defs := [annoDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)];
 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
@@ -23,7 +23,7 @@ top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr
     if indexOf(":", a.name) == -1 then []
     else [err(a.location, "The name '" ++ a.name ++ "' must not be qualified.")];
 
-  top.errors := te.errors ++ tl.errors ++ tl.errorsTyVars;
+  top.errors <- tl.errorsTyVars;
 }
 
 

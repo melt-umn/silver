@@ -5,8 +5,10 @@ grammar silver:definition:flow:ast;
  -
  - See VertexType for some extra information organizing these vertexes somewhat.
  -}
-nonterminal FlowVertex with unparse;
+nonterminal FlowVertex with vertexComparisonKey;
 
+-- It's kinda hard to implement a comparison of a type like this, so we serialize to string and compare that.
+synthesized attribute vertexComparisonKey :: String;
 
 {--
  - A vertex representing a synthesized attribute on the nonterminal being constructed by this production.
@@ -16,7 +18,7 @@ nonterminal FlowVertex with unparse;
 abstract production lhsSynVertex
 top::FlowVertex ::= attrName::String
 {
-  top.unparse = "lhsSynV(" ++ quoteString(attrName) ++ ")";
+  top.vertexComparisonKey = "lhsSynV(" ++ (attrName) ++ ")";
 }
 
 {--
@@ -30,7 +32,7 @@ top::FlowVertex ::= attrName::String
 abstract production lhsInhVertex
 top::FlowVertex ::= attrName::String
 {
-  top.unparse = "lhsInhV(" ++ quoteString(attrName) ++ ")";
+  top.vertexComparisonKey = "lhsInhV(" ++ (attrName) ++ ")";
 }
 
 -- TODO: we should do the above syn/inh separation for everything below too.
@@ -44,7 +46,7 @@ top::FlowVertex ::= attrName::String
 abstract production rhsVertex
 top::FlowVertex ::= sigName::String  attrName::String
 {
-  top.unparse = "rhsV(" ++ quoteString(sigName) ++ ", " ++ quoteString(attrName) ++ ")";
+  top.vertexComparisonKey = "rhsV(" ++ (sigName) ++ ", " ++ (attrName) ++ ")";
 }
 
 {--
@@ -58,7 +60,7 @@ top::FlowVertex ::= sigName::String  attrName::String
 abstract production localEqVertex
 top::FlowVertex ::= fName::String
 {
-  top.unparse = "localEqV(" ++ quoteString(fName) ++ ")";
+  top.vertexComparisonKey = "localEqV(" ++ (fName) ++ ")";
 }
 
 {--
@@ -72,7 +74,7 @@ top::FlowVertex ::= fName::String
 abstract production localVertex
 top::FlowVertex ::= fName::String  attrName::String
 {
-  top.unparse = "localV(" ++ quoteString(fName) ++ ", " ++ quoteString(attrName) ++ ")";
+  top.vertexComparisonKey = "localV(" ++ (fName) ++ ", " ++ (attrName) ++ ")";
 }
 
 -- TODO: we should distinguish these!
@@ -100,7 +102,7 @@ FlowVertex ::= attrName::String
 abstract production anonEqVertex
 top::FlowVertex ::= fName::String
 {
-  top.unparse = "anonEqV(" ++ quoteString(fName) ++ ")";
+  top.vertexComparisonKey = "anonEqV(" ++ (fName) ++ ")";
 }
 
 {--
@@ -113,16 +115,10 @@ top::FlowVertex ::= fName::String
 abstract production anonVertex
 top::FlowVertex ::= fName::String  attrName::String
 {
-  top.unparse = "anonV(" ++ quoteString(fName) ++ ", " ++ quoteString(attrName) ++ ")";
+  top.vertexComparisonKey = "anonV(" ++ (fName) ++ ", " ++ (attrName) ++ ")";
 }
 
 --------------------------------------------------------------------------------
-
-function unparseVertices
-String ::= fvs::[FlowVertex]
-{
-  return "[" ++ implode(", ", map((.unparse), fvs)) ++ "]";
-}
 
 function equalFlowVertex
 Boolean ::= a::FlowVertex  b::FlowVertex
@@ -138,4 +134,11 @@ Boolean ::= a::FlowVertex  b::FlowVertex
   | _, _ -> false
   end;
 }
+
+function compareFlowVertex
+Integer ::= a::FlowVertex  b::FlowVertex
+{
+  return compareString(a.vertexComparisonKey, b.vertexComparisonKey);
+}
+
 

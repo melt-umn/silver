@@ -1,7 +1,7 @@
 
 nonterminal ConcreteProductions with fst<ATerm>;
 
-terminal ATerm //;
+terminal ATerm '';
 
 -- Just make sure the syntax is as expected.
 

@@ -1,17 +1,19 @@
 grammar silver:definition:core;
 
-nonterminal FunctionSignature with config, grammarName, env, location, pp, errors, defs, namedSignature, signatureName;
-nonterminal FunctionLHS with config, grammarName, env, location, pp, errors, defs, outputElement;
+nonterminal FunctionSignature with config, grammarName, env, location, unparse, errors, defs, namedSignature, signatureName;
+nonterminal FunctionLHS with config, grammarName, env, location, unparse, errors, defs, outputElement;
+
+propagate errors on FunctionSignature, FunctionLHS;
 
 concrete production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 
 {
-  top.pp = "function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp; 
+  top.unparse = "function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse; 
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
 
-  top.defs = funDef(top.grammarName, id.location, namedSig) ::
+  top.defs := funDef(top.grammarName, id.location, namedSig) ::
     if null(body.productionAttributes) then []
     else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 
@@ -26,8 +28,6 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
         else if length(body.uniqueSignificantExpression) > 1
         then [err(top.location, "Function '" ++ id.name ++ "' has more than one declared return value.")]
         else [];
-
-  top.errors := ns.errors ++ body.errors;
 
   production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
@@ -45,10 +45,9 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 concrete production functionSignature
 top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS 
 {
-  top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
+  top.unparse = lhs.unparse ++ " ::= " ++ rhs.unparse;
 
-  top.defs = lhs.defs ++ rhs.defs;
-  top.errors := lhs.errors ++ rhs.errors;
+  propagate defs;
 
   -- For the moment, functions do not have named parameters (hence, [])
   top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement, []);
@@ -57,7 +56,7 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
 concrete production functionLHS
 top::FunctionLHS ::= t::TypeExpr
 {
-  top.pp = t.pp;
+  top.unparse = t.unparse;
 
   production attribute fName :: String;
   fName = "__func__lhs";
@@ -65,8 +64,6 @@ top::FunctionLHS ::= t::TypeExpr
   top.outputElement = namedSignatureElement(fName, t.typerep);
 
   -- TODO: think about this. lhs doesn't really have an fName.
-  top.defs = [lhsDef(top.grammarName, t.location, fName, t.typerep)];
-
-  top.errors := t.errors;
+  top.defs := [lhsDef(top.grammarName, t.location, fName, t.typerep)];
 }
 

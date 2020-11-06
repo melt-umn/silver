@@ -5,8 +5,11 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   exit 5
 fi
 
+# Try to avoid colliding with other users of nailgun: 1/32k chance
+export NAILGUN_PORT=$(($RANDOM + 20000))
+
 # Try a few possible locations, pick the first
-SV_NAILGUN_CANDIDATES=$(shopt -s nullglob; echo /project/melt4/People/ted/nailgun/bin/nailgun-*.jar /usr/share/java/nailgun-server*.jar /usr/share/java/nailgun-*.jar)
+SV_NAILGUN_CANDIDATES=$(shopt -s nullglob; echo /project/melt4/People/ted/nailgun/bin/nailgun-*.jar /usr/share/java/nailgun-server*.jar /usr/share/java/nailgun-*.jar /export/scratch/nailgun/bin/nailgun-server*.jar)
 SV_NAILGUN_ARRAY=($SV_NAILGUN_CANDIDATES)
 export SV_NAILGUN_JAR=${SV_NAILGUN_ARRAY[0]}
 
@@ -29,6 +32,8 @@ elif [[ -f /usr/bin/ng-nailgun ]]; then
   fi
 elif [[ -f /project/melt4/People/ted/nailgun/bin/ng ]]; then
   export SV_NAILGUN="/project/melt4/People/ted/nailgun/bin/ng"
+elif [[ -f /export/scratch/nailgun/bin/ng ]]; then
+  export SV_NAILGUN="/export/scratch/nailgun/bin/ng"
 elif [[ -f `which ng` ]]; then
   export SV_NAILGUN=`which ng`
 else
@@ -56,7 +61,7 @@ function sv-serve {
     return 4
   fi
 
-  java -Xmx2G -Xms1G -Xss8M -jar "$SV_NAILGUN_JAR" > /dev/null 2> /dev/null &
+  java -Xmx2G -Xms1G -Xss8M -jar "$SV_NAILGUN_JAR" $NAILGUN_PORT > /dev/null 2> /dev/null &
   
   # Unfortunately no good way to determine when the server has started, afaik
   sleep 2

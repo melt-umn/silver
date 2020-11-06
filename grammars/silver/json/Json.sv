@@ -52,15 +52,17 @@ top::Json ::= str::String
 }
 
 function jsonInteger
-Json ::= int::Integer
+Json ::= i::Integer
 {
-  return jsonFloat(toFloat(int));
+  return jsonFloat(toFloat(i));
 }
 
 abstract production jsonFloat
 top::Json ::= float::Float
 {
-  top.jsonString = toString(float);
+  top.jsonString = if float == toFloat(toInteger(float))
+                   then toString(toInteger(float))
+                   else toString(float);
 }
 
 abstract production jsonArray

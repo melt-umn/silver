@@ -7,6 +7,8 @@ imports silver:definition:concrete_syntax:ast;
 imports silver:definition:type;
 imports silver:definition:type:syntax;
 
+imports silver:extension:list;
+
 --imports silver:analysis:typechecking:core;
 
 imports silver:translation:java:core;

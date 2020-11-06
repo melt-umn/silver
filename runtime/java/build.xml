@@ -30,7 +30,6 @@
       <include name='core/*.java' />
       <include name='monto/*.java' />
       <include name='lib/xml/ast/*.java' />
-      <include name='silver/*.java' />
     </javac>
   </target>
   
@@ -49,12 +48,6 @@
         <section name='version'>
           <attribute name='Build' value='${TIMESTAMP}'/>
         </section>
-      </manifest>
-    </jar>
-    <jar destfile='${dist}/RunSilver.jar' basedir='${bin}' compress='true' level='9'>
-      <include name='silver/*.class' />
-      <manifest>
-        <attribute name='Main-Class' value='silver.Compile' />
       </manifest>
     </jar>
   </target>

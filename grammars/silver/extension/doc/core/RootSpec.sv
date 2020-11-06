@@ -5,25 +5,26 @@ import silver:driver:util;
 attribute genFiles occurs on RootSpec;
 
 aspect production interfaceRootSpec
-top::RootSpec ::= _ _
+top::RootSpec ::= _ _ _
 {
   top.genFiles := [];
 }
 
 aspect production errorRootSpec
-top::RootSpec ::= _ _ _ _
+top::RootSpec ::= _ _ _ _ _
 {
   top.genFiles := [];
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar  _ _ _
+top::RootSpec ::= g::Grammar  _ _ _ _
 {
   top.genFiles := if g.docsNoDoc 
-				  then []
-				  else if "true" == g.docsSplit
-				  then toSplitFiles(g.docs, [], g.docsHeader)
-				  else [toSingleFile(g.docs, g.docsHeader)];
+                  then []
+                  else 
+                  if "true" == g.docsSplit
+                  then toSplitFiles(g.docs, [], g.docsHeader)
+                  else [toSingleFile(g.docs, g.docsHeader)];
 
   g.docEnv = treeConvert(g.docDcls, treeNew(compareString));
 }
@@ -31,31 +32,43 @@ top::RootSpec ::= g::Grammar  _ _ _
 function toSplitFiles
 [Pair<String String>] ::= comments::[CommentItem] sortedComments::[Pair<String String>] header::String
 {
-  return case comments of
-	| c :: rest -> toSplitFiles(rest, placeComment(c, sortedComments, header), header)
-	| [] -> pair("index.md", makeIndexFile(sortedComments, header)) :: sortedComments
-	end;
+  return 
+    case comments of
+    | c :: rest -> toSplitFiles(rest, placeComment(c, sortedComments, header), header)
+    | [] -> pair("index.md", makeIndexFile(sortedComments, header)) :: sortedComments
+    end;
 }
 
 function placeComment
 [Pair<String String>] ::= comment::CommentItem sortedComments::[Pair<String String>] header::String
 {
   local markdown::String = toMarkdown(comment);
-  return case sortedComments of
-	| pair(filename, contents) :: rest -> if filename == toMarkdownExtension(comment.file)
-										  then pair(filename, contents ++ markdown) :: rest
-										  else pair(filename, contents) :: placeComment(comment, rest, header)
-	| [] -> [pair(toMarkdownExtension(comment.file), header ++ markdown)]
-	end;
+  return 
+    case sortedComments of
+    | pair(filename, contents) :: rest -> 
+        if filename == toMarkdownExtension(comment.file)
+        then pair(filename, contents ++ markdown) :: rest
+        else pair(filename, contents) :: placeComment(comment, rest, header)
+    | [] -> [pair(toMarkdownExtension(comment.file), header ++ markdown)]
+    end;
 }
 
 function makeIndexFile
 String ::= sortedComments::[Pair<String String>] header::String
 {
-  return case sortedComments of
-	| pair(f, _) :: rest -> makeIndexFile(rest, header) ++ "\n" ++ f ++ "\n"
-	| [] -> header
-	end;
+  return 
+    case sortedComments of
+    | pair(f, _) :: rest -> makeIndexFile(rest, header) ++ "\n" ++ makeLink(f) ++ "\n"
+    | [] -> header
+    end;
+}
+
+function makeLink
+String ::= mdFileName::String
+{ 
+  local txt::String = substitute( ".md", "", mdFileName );
+  local lnk::String = substitute( ".md", ".html", mdFileName );
+  return "[" ++ txt ++ "](" ++ lnk ++ ")" ;
 }
 
 
@@ -78,31 +91,32 @@ String ::= comments::[CommentItem]
 function toMarkdown
 String ::= c::CommentItem
 {
-  return case c of
-		| dclCommentItem(mod, name, sig, file, body)->
-			 let signature :: String = 
-				if 0 == length(sig)
-				then ""
-				else "\n###### `" ++ sig ++ "`"
-			  in
-				"\n\n#### _" ++ mod
-				++ "_ `" ++ name
-				++ "`" ++ signature
-				++ "\n> " ++ body.body
-				++ "\nIn file: " ++ file
-			  end
-		| bodilessDclCommentItem(mod, name, sig, file) ->
-			 let signature :: String = 
-				if 0 == length(sig)
-				then ""
-				else "\n###### `" ++ sig ++ "`"
-			  in
-				"\n\n#### _" ++ mod
-				++ "_ `" ++ name
-				++ "`" ++ signature
-				++ "\nIn file: " ++ file
-			  end
-		end;
+  return 
+    case c of
+    | dclCommentItem(mod, name, sig, file, body)->
+        let signature :: String = 
+          if 0 == length(sig)
+          then ""
+          else "\n###### `" ++ sig ++ "`"
+        in
+          "\n\n#### _" ++ mod ++
+          "_ `" ++ name ++
+          "`" ++ signature ++
+          "\n> " ++ body.body ++
+          "\nIn file: " ++ file
+        end
+    | bodilessDclCommentItem(mod, name, sig, file) ->
+        let signature :: String = 
+          if 0 == length(sig)
+          then ""
+          else "\n###### `" ++ sig ++ "`"
+        in
+          "\n\n#### _" ++ mod ++
+          "_ `" ++ name ++
+          "`" ++ signature ++
+          "\nIn file: " ++ file
+        end
+    end;
 }
 
 function toMarkdownExtension

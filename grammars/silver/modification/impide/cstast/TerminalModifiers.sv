@@ -39,7 +39,7 @@ top::SyntaxTerminalModifier ::=
 aspect production termClasses
 top::SyntaxTerminalModifier ::= cls::[String]
 {
-  top.fontAttrFromClass = dumbExtractFont(clsRefs);
+  top.fontAttrFromClass = dumbExtractFont(allClsRefs);
   
 }
 function dumbExtractFont
@@ -57,7 +57,6 @@ abstract production termFont
 top::SyntaxTerminalModifier ::= fontName::String
 {
   top.cstErrors := [];
-  top.unparses = ["font('" ++ fontName ++ "')"];
 
   top.fontAttr = makeCopperName(fontName);
 }

@@ -7,8 +7,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = error("Internal compiler error: locally scoped declaration that should never appear in interface files");
-  
   top.typerep = ty;
 
   top.refDispatcher = lambdaParamReference(_, location=_);

@@ -1,12 +1,23 @@
 
-import core:reflect;
+import silver:reflect;
 import silver:langutil;
 import silver:langutil:pp;
 
+-- TODO: Actually make hackUnparse work like this.
+-- Not possible for now because core shouldn't depend on anything else. 
 function lessHackyUnparse
 String ::= x::a
 {
-  return show(80, reflect(x).pp);
+  -- The toString of an object may vary due to changes in memory address, etc.
+  -- So as a workaround replace all these in the pp with just OBJECT.
+  local chunks::[String] = explode("<", show(80, reflect(x).pp));
+  return
+    implode(
+      "<",
+      head(chunks) ::
+      map(
+        \ s::String -> s"OBJECT :: ${head(tail(explode(" :: ", s)))}",
+        tail(chunks)));
 }
 
 annotation lineNum::Integer;
@@ -31,13 +42,9 @@ top::Expr ::= d::Decorated Expr
 
 global testExpr::Expr = addExpr(intConstExpr(2, lineNum=1), idExpr("asdf", lineNum=2), lineNum=3);
 
-{-equalityTest(
-  show(80, reflect([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]).pp),
-  s"""[silver_features:addExpr(silver_features:intConstExpr(2, silver_features:lineNum=1), silver_features:idExpr("asdf", silver_features:lineNum=2), silver_features:lineNum=3), silver_features:intConstExpr(5, silver_features:lineNum=4), silver_features:decExpr(<OBJECT :: Decorated silver_features:Expr>, silver_features:lineNum=4)]""",
-  String, silver_tests);-}
 equalityTest(
-  show(80, reflect([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]).pp),
-  s"""[silver_features:addExpr(silver_features:intConstExpr(2, silver_features:lineNum=1), silver_features:idExpr("asdf", silver_features:lineNum=2), silver_features:lineNum=3), silver_features:intConstExpr(5, silver_features:lineNum=4), silver_features:decExpr(<OBJECT>, silver_features:lineNum=4)]""",
+  lessHackyUnparse([testExpr, intConstExpr(5, lineNum=4), decExpr(decorate testExpr with {}, lineNum=4)]),
+  s"""[silver_features:addExpr(silver_features:intConstExpr(2, silver_features:lineNum=1), silver_features:idExpr("asdf", silver_features:lineNum=2), silver_features:lineNum=3), silver_features:intConstExpr(5, silver_features:lineNum=4), silver_features:decExpr(<OBJECT :: Decorated silver_features:Expr>, silver_features:lineNum=4)]""",
   String, silver_tests);
 
 function reifyResToString
@@ -65,6 +72,11 @@ equalityTest(
 
 equalityTest(
   reifyResToString(reify(reflect(pair(pair(1, 2), pair(3, 4))))),
+  lessHackyUnparse(pair(pair(1, 2), pair(3, 4))),
+  String, silver_tests);
+
+equalityTest(
+  lessHackyUnparse(reifyUnchecked(reflect(pair(pair(1, 2), pair(3, 4))))),
   lessHackyUnparse(pair(pair(1, 2), pair(3, 4))),
   String, silver_tests);
 
@@ -154,33 +166,138 @@ equalityTest(
 
 global reifyRes8::Either<String (String ::= Integer Boolean)> = reify(anyAST((\ i::Integer f::Float b::Boolean -> toString(i) ++ toString(f) ++ toString(b))(_, 3.14, _)));
 
---equalityTest(reifyResToString(reifyRes8), "<OBJECT :: (String ::= Integer Boolean)>", String, silver_tests);
-equalityTest(reifyResToString(reifyRes8), "<OBJECT>", String, silver_tests);
+equalityTest(reifyResToString(reifyRes8), "<OBJECT :: (String ::= Integer Boolean)>", String, silver_tests);
 
-{-equalityTest(reifyResToString(reify(anyAST(baz))), "<OBJECT :: (silver_features:Baz ::= ; anno1::Integer; anno2::Float)>", String, silver_tests);
+equalityTest(reifyResToString(reify(anyAST(baz))), "<OBJECT :: (silver_features:Baz ::= ; anno1::Integer; anno2::Float)>", String, silver_tests);
 equalityTest(reifyResToString(reify(anyAST(baz(anno2=_, anno1=_)))), "<OBJECT :: (silver_features:Baz ::= Float Integer)>", String, silver_tests);
 equalityTest(reifyResToString(reify(anyAST(baz(anno1=1, anno2=_)))), "<OBJECT :: (silver_features:Baz ::= Float)>", String, silver_tests);
-equalityTest(reifyResToString(reify(anyAST(baz(anno1=_, anno2=2.0)))), "<OBJECT :: (silver_features:Baz ::= Integer)>", String, silver_tests);-}
-equalityTest(reifyResToString(reify(anyAST(baz))), "<OBJECT>", String, silver_tests);
-equalityTest(reifyResToString(reify(anyAST(baz(anno2=_, anno1=_)))), "<OBJECT>", String, silver_tests);
-equalityTest(reifyResToString(reify(anyAST(baz(anno1=1, anno2=_)))), "<OBJECT>", String, silver_tests);
-equalityTest(reifyResToString(reify(anyAST(baz(anno1=_, anno2=2.0)))), "<OBJECT>", String, silver_tests);
+equalityTest(reifyResToString(reify(anyAST(baz(anno1=_, anno2=2.0)))), "<OBJECT :: (silver_features:Baz ::= Integer)>", String, silver_tests);
 
-function reifySkolem
-Either<String a> ::= x::AST
-{
-  return reify(x);
+wrongCode "skolem" {
+  function reifySkolem
+  Either<String a> ::= x::AST
+  {
+    return reify(x);
+  }
 }
 
-
--- This will have some sort of runtime type error involving skolems, but we can't test for it exactly since the exact message may vary.
-equalityTest(true, case reifySkolem(floatAST(4.0)) of left(_) -> true | right(_) -> false end, Boolean, silver_tests);
-
-function reifySkolem2
-Either<String (a ::= Integer)> ::= 
-{
-  local fn::(a ::= Integer) = \ i::Integer -> error(toString(i));
-  return reify(anyAST(fn));
+warnCode "skolem" {
+  function reifySkolem2
+  Either<String (a ::= Integer)> ::= 
+  {
+    local fn::(a ::= Integer) = \ i::Integer -> error(toString(i));
+    return reify(anyAST(fn));
+  }
 }
 
-equalityTest(true, case reifySkolem2() of left(_) -> false | right(_) -> true end, Boolean, silver_tests);
+equalityTest(case reifySkolem2() of left(_) -> false | right(_) -> true end, true, Boolean, silver_tests);
+
+global testValue::Pair<[Expr] Baz> = pair([testExpr, intConstExpr(5, lineNum=4)], baz(anno1=1, anno2=2.0));
+global serializeRes::Either<String String> = reflect(testValue).serialize;
+global deserializeRes::Either<String AST> = deserializeAST(lessHackyUnparse(testValue), case serializeRes of left(msg) -> msg | right(a) -> a end);
+
+equalityTest(case serializeRes of left(msg) -> msg | right(a) -> a end, lessHackyUnparse(testValue), String, silver_tests);
+equalityTest(case deserializeRes of left(msg) -> msg | right(a) -> show(80, a.pp) end, lessHackyUnparse(testValue), String, silver_tests);
+
+equalityTest(
+  case anyAST(\ i::Integer -> i).serialize of left(msg) -> msg | right(a) -> a end,
+  "Can't serialize anyAST (type (Integer ::= Integer))",
+  String, silver_tests);
+
+global reifyRes9::Either<String Pair<[Expr] Baz>> = reify(fromRight(deserializeRes, reflect(pair([], baz(anno1=-3, anno2=-4.3242)))));
+
+equalityTest(reifyResToString(reifyRes9), lessHackyUnparse(testValue), String, silver_tests);
+
+equalityTest(
+  case stringAST("\n\r\t	2as\bd1'\f\\\\\"\\").serialize of left(msg) -> msg | right(a) -> a end,
+  "\"\\n\\r\\t\\t2as\\bd1'\\f\\\\\\\\\\\"\\\\\"",
+  String, silver_tests);
+equalityTest(
+  case deserializeAST("test", "\"\\n\\r\\t\\t2as\\bd1'\\f\\\\\\\\\\\"\\\\\"") of left(msg) -> msg | right(stringAST(s)) -> s | _ -> "Unexpected case" end,
+  "\n\r\t	2as\bd1'\f\\\\\"\\",
+  String, silver_tests);
+
+terminal Foo_t 'foo';
+terminal Bar_t /bar[0-9]+/;
+
+-- make this test independent of how `'foo'` translates
+global terminal_foo_value :: Foo_t =
+  terminal(Foo_t, "foo", loc("??", -1, -1, -1, -1, -1, -1));
+
+global terminalTestValue::Pair<[Foo_t] Maybe<Bar_t>> = pair([terminal_foo_value, terminal_foo_value], just(terminal(Bar_t, "bar42", loc("a", 1, 2, 3, 4, 5, 6))));
+global terminalSerializeRes::Either<String String> = reflect(terminalTestValue).serialize;
+global terminalDeserializeRes::Either<String AST> = deserializeAST(lessHackyUnparse(terminalTestValue), case terminalSerializeRes of left(msg) -> msg | right(a) -> a end);
+global terminalReifyRes::Either<String Pair<[Foo_t] Maybe<Bar_t>>> = reify(case terminalDeserializeRes of left(msg) -> integerAST(37) | right(a) -> a end);
+
+equalityTest(
+  lessHackyUnparse(terminalTestValue),
+  s"""core:pair([terminal(silver_features:Foo_t, "foo", ??:-1:-1), terminal(silver_features:Foo_t, "foo", ??:-1:-1)], core:just(terminal(silver_features:Bar_t, "bar42", a:1:2)))""",
+  String, silver_tests);
+equalityTest(
+  case terminalSerializeRes of left(msg) -> msg | right(a) -> a end,
+  s"""core:pair([terminal(silver_features:Foo_t, "foo", core:loc("??", -1, -1, -1, -1, -1, -1)), terminal(silver_features:Foo_t, "foo", core:loc("??", -1, -1, -1, -1, -1, -1))], core:just(terminal(silver_features:Bar_t, "bar42", core:loc("a", 1, 2, 3, 4, 5, 6))))""",
+  String, silver_tests);
+equalityTest(case terminalDeserializeRes of left(msg) -> msg | right(a) -> show(80, a.pp) end, lessHackyUnparse(terminalTestValue), String, silver_tests);
+equalityTest(reifyResToString(terminalReifyRes), lessHackyUnparse(terminalTestValue), String, silver_tests);
+
+global reifyRes10::Either<String Baz> = reify(terminalAST("silver_features:Foo_t", "foo", txtLoc("test")));
+equalityTest(reifyResToString(reifyRes10), "Reification error at ?:\nreify is constructing silver_features:Baz, but found terminal silver_features:Foo_t AST.", String, silver_tests);
+
+global reifyRes11::Either<String Pair<String Location>> = reify(reflect(pair("asdf", 'foo')));
+equalityTest(reifyResToString(reifyRes11), "Reification error at core:pair(_, ?):\nreify is constructing core:Location, but found terminal silver_features:Foo_t AST.", String, silver_tests);
+
+equalityTest(
+  case deserializeAST("test", "terminal(asdf, \"a\", core:loc(\"a\", 2, 3.14, 4, 5, 6, 7))") of left(msg) -> msg | right(a) -> show(80, a.pp) end,
+  "test:1:20: error: Reification error at core:loc(_, _, ?, _, _, _, _):\nreify is constructing Integer, but found Float AST.",
+  String, silver_tests);
+
+global serializeRes1::Either<String String> = serialize(pair("hello", [1, 2, 3, 4]));
+global reifyRes12::Either<String Pair<String [Integer]>> = deserialize("test", fromRight(serializeRes1, ""));
+
+equalityTest(
+  case serializeRes1 of left(msg) -> msg | right(a) -> a end,
+  s"""core:pair("hello", [1, 2, 3, 4])""",
+  String, silver_tests);
+equalityTest(
+  reifyResToString(reifyRes12),
+  s"""core:pair("hello", [1, 2, 3, 4])""",
+  String, silver_tests);
+
+global add::(Integer ::= Integer Integer) = \ i::Integer j::Integer -> i + j;
+
+global applyRes1::Either<String AST> = applyAST(reflect(add), [just(reflect(1)), just(reflect(2))], []);
+equalityTest(lessHackyUnparse(applyRes1), "core:right(core:reflect:integerAST(3))", String, silver_tests);
+
+global applyRes2::Either<String AST> = applyAST(applyAST(reflect(add), [nothing(), just(reflect(2))], []).fromRight, [just(reflect(1))], []);
+equalityTest(lessHackyUnparse(applyRes2), "core:right(core:reflect:integerAST(3))", String, silver_tests);
+
+global applyRes3::Either<String AST> = applyAST(reflect(add), [just(reflect(1)), nothing(), just(reflect(2))], []);
+equalityTest(applyRes3.isLeft, true, Boolean, silver_tests);
+
+global applyRes4::Either<String AST> = applyAST(reflect(baz), [], [pair("anno1", just(reflect(42))), pair("anno2", just(reflect(3.14)))]);
+equalityTest(
+  case applyRes4 of left(m) -> m | right(a) -> reifyResToString(reify(a)) end,
+  "silver_features:baz(silver_features:anno1=42, silver_features:anno2=3.14)",
+  String, silver_tests);
+
+global applyRes5::Either<String AST> = applyAST(reflect(baz), [], [pair("anno2", just(reflect(3.14))), pair("anno1", just(reflect(42)))]);
+equalityTest(
+  case applyRes5 of left(m) -> m | right(a) -> reifyResToString(reify(a)) end,
+  "silver_features:baz(silver_features:anno1=42, silver_features:anno2=3.14)",
+  String, silver_tests);
+
+global applyRes6::Either<String AST> = applyAST(reflect(baz), [], [pair("anno2", nothing()), pair("anno1", just(reflect(42)))]);
+equalityTest(
+  case applyRes6 of left(m) -> m | right(a) -> reifyResToString(reify(a)) end,
+  "<OBJECT :: (silver_features:Baz ::= Float)>",
+  String, silver_tests);
+
+global applyRes7::Either<String AST> = applyAST(applyAST(reflect(baz), [], [pair("anno2", nothing()), pair("anno1", just(reflect(42)))]).fromRight, [just(reflect(3.14))], []);
+equalityTest(
+  case applyRes7 of left(m) -> m | right(a) -> reifyResToString(reify(a)) end,
+  "silver_features:baz(silver_features:anno1=42, silver_features:anno2=3.14)",
+  String, silver_tests);
+
+global applyRes8::Either<String AST> = applyAST(reflect(baz), [], [pair("anno1", just(reflect(3.14))), pair("anno2", just(reflect(42)))]);
+equalityTest(applyRes8.isLeft, true, Boolean, silver_tests);
+

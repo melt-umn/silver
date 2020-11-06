@@ -1,7 +1,10 @@
 grammar silver:definition:type;
 
 -- DEPRECATED STUFF
-attribute inputTypes, outputType, namedTypes, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
+attribute isError, inputTypes, outputType, namedTypes, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
+
+-- Quick check to see if an error message should be suppressed
+synthesized attribute isError :: Boolean;
 
 -- exists because we want to access both these and pattern matching can only extract one thing at a time (so far)
 synthesized attribute inputTypes :: [Type];
@@ -37,6 +40,7 @@ top::Type ::=
   top.isDecorated = false;
   top.isDecorable = false;
   top.isTerminal = false;
+  top.isError = false;
   
   top.decoratedType = errorType();
   
@@ -52,6 +56,12 @@ top::Type ::= tv::TyVar
 aspect production skolemType
 top::Type ::= tv::TyVar
 {
+}
+
+aspect production errorType
+top::Type ::=
+{
+  top.isError = true;
 }
 
 aspect production intType

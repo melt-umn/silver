@@ -28,9 +28,10 @@ top::Def ::= d::EnvItem
 {
   top.dcl = d.dcl;
   top.lexerClassList = [d];
+  top.valueList = [d];
+  top.filterDef = top.filterFn(d);
+  top.mapDef = lxrClsDef(top.mapFn(d));
 }
-
--- TODO: we don't do any renaming of lexer classes BUG
 
 function parserAttrDef
 Def ::= sg::String sl::Location fn::String ty::Type
@@ -42,12 +43,6 @@ function pluckTermDef
 Def ::= sg::String sl::Location fn::String
 {
   return valueDef(defaultEnvItem(pluckTermDcl(sg,sl,fn)));
-}
-
-function disambigLexemeDef
-Def ::= sg::String sl::Location
-{
-  return valueDef(defaultEnvItem(disambigLexemeDcl(sg,sl)));
 }
 
 function lexerClassDef
@@ -74,16 +69,10 @@ Def ::= sg::String sl::Location fn::String ty::Type
   return valueDef(defaultEnvItem(parserLocalDcl(sg,sl,fn,ty)));
 }
 
-function prefixSeparatorDef
-Def ::= sg::String sl::Location s::String
-{
-  return valueDef(defaultEnvItem(prefixSeparatorDcl(sg, sl, s)));
-}
-
 --------------------------------------------------------------------------------
 -- Env.sv
 
-synthesized attribute lexerClassTree :: Decorated EnvScope<DclInfo> occurs on Env;
+synthesized attribute lexerClassTree :: EnvScope<DclInfo> occurs on Env;
 
 aspect production i_emptyEnv
 top::Env ::=
@@ -103,6 +92,12 @@ top::Env ::= d::Defs  e::Decorated Env
   top.lexerClassTree = consEnvScope(buildTree(d.lexerClassList), e.lexerClassTree);
 }
 
+aspect production i_occursEnv
+top::Env ::= _  e::Decorated Env
+{
+  top.lexerClassTree = e.lexerClassTree;
+}
+
 function getLexerClassDcl
 [DclInfo] ::= search::String e::Decorated Env
 {
@@ -111,6 +106,8 @@ function getLexerClassDcl
 
 --------------------------------------------------------------------------------
 -- QName.sv
+
+synthesized attribute lookupLexerClass :: Decorated QNameLookup occurs on QName;
 
 aspect production qNameId
 top::QName ::= id::Name
@@ -124,5 +121,28 @@ top::QName ::= id::Name ':' qn::QName
   top.lookupLexerClass = decorate customLookup("lexer class", getLexerClassDcl(top.name, top.env), top.name, top.location) with {};
 }
 
-synthesized attribute lookupLexerClass :: Decorated QNameLookup occurs on QName;
+aspect production qNameError
+top::QName ::= msg::[Message]
+{
+  top.lookupLexerClass = decorate errorLookup(msg) with {};
+}
+
+
+--------------------------------------------------------------------------------
+
+-- Some pre-defined variables in certain contexts
+
+global i_lexemeVariable :: [Def] =
+  [termAttrValueDef("DBGtav", bogusLoc(), "lexeme", stringType())];
+global i_shiftableVariable :: [Def] =
+  [termAttrValueDef("DBGtav", bogusLoc(), "shiftable", listType(terminalIdType()))];
+global i_locVariables :: [Def] = [
+  termAttrValueDef("DBGtav", bogusLoc(), "filename", stringType()),
+  termAttrValueDef("DBGtav", bogusLoc(), "line", intType()),
+  termAttrValueDef("DBGtav", bogusLoc(), "column", intType())];
+
+global terminalActionVars :: [Def] = i_lexemeVariable ++ i_locVariables;
+global productionActionVars :: [Def] = i_locVariables;
+global disambiguationActionVars :: [Def] = i_lexemeVariable ++ i_locVariables;
+global disambiguationClassActionVars :: [Def] = i_lexemeVariable ++ i_shiftableVariable ++ i_locVariables;
 

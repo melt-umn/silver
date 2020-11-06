@@ -147,16 +147,20 @@ top::RegexChar ::= esc::EscapedChar_t
 function xmlEscapeChar
 String ::= ch::String
 {
-  return 
+  return
     if ch == ">" then "&gt;"
     else if ch == "<" then "&lt;"
     else if ch == "&" then "&amp;"
     else if ch == "\"" then "&quot;"
-    -- For completeness, there is "'" --> &apos; 
+    -- For completeness, there is "'" --> &apos;
     -- but this should only be necessary if we used single quotes for xml-attribute values
     -- e.g. <tag attr='val'>
     -- We used double quotes, so we should be okay...
     else ch;
 }
 
-
+function xmlEscapeString
+String ::= s::String
+{
+  return implode("", map(xmlEscapeChar, explode("", s)));
+}

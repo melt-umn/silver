@@ -19,7 +19,7 @@ function getTerminalRegexDclAll
 
 
 
-synthesized attribute terminalTree :: [Decorated EnvScope<DclInfo>] occurs on Env; -- must be kept in sync with typeTree's type!! (whether its a [] or not)
+synthesized attribute terminalTree :: [EnvScope<DclInfo>] occurs on Env; -- must be kept in sync with typeTree's type!! (whether its a [] or not)
 
 function filterAndConvertTermDcls
 [Pair<String DclInfo>] ::= ei::EnvItem sofar::[Pair<String DclInfo>]
@@ -52,5 +52,11 @@ aspect production i_newScopeEnv
 top::Env ::= d::Defs  e::Decorated Env
 {
   top.terminalTree = oneEnvScope(buildTerminalTree(d.typeList)) :: e.terminalTree;
+}
+
+aspect production i_occursEnv
+top::Env ::= _  e::Decorated Env
+{
+  top.terminalTree = e.terminalTree;
 }
 

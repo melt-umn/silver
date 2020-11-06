@@ -1,13 +1,13 @@
 grammar silver:extension:convenience;
 
-nonterminal QNameWithTL with pp,qnwtQN, qnwtTL;
+nonterminal QNameWithTL with unparse,qnwtQN, qnwtTL;
 synthesized attribute qnwtQN :: QName;
 synthesized attribute qnwtTL :: BracketedOptTypeExprs;
 
 concrete production qNameWithTL
 top::QNameWithTL ::= qn::QName tl::BracketedOptTypeExprs
 {
-  top.pp = qn.pp ++ tl.pp;
+  top.unparse = qn.unparse ++ tl.unparse;
   top.qnwtQN = qn;
   top.qnwtTL = tl;
 }
@@ -17,22 +17,22 @@ top::QNameWithTL ::= qn::QName tl::BracketedOptTypeExprs
    list just one, then it goes to the ordinary, non-convenience extension form.
  -}
  
-nonterminal QNames2 with pp, qnames;
-nonterminal QNames with pp, qnames;
+nonterminal QNames2 with unparse, qnames;
+nonterminal QNames with unparse, qnames;
 
 synthesized attribute qnames :: [QNameWithTL];
 
 concrete production qNames2Two
 top::QNames2 ::= id1::QNameWithTL ',' id2::QNameWithTL
 {
-  top.pp = id1.pp ++ ", " ++ id2.pp ;
+  top.unparse = id1.unparse ++ ", " ++ id2.unparse ;
   top.qnames = [id1, id2];
 }
 
 concrete production qNames2Cons
 top::QNames2 ::= id1::QNameWithTL ',' id2::QNames2
 {
-  top.pp = id1.pp ++ ", " ++ id2.pp ;
+  top.unparse = id1.unparse ++ ", " ++ id2.unparse ;
   top.qnames = [id1] ++ id2.qnames;
 }
 
@@ -40,14 +40,14 @@ top::QNames2 ::= id1::QNameWithTL ',' id2::QNames2
 concrete production qNamesSingle
 top::QNames ::= id::QNameWithTL
 {
-  top.pp = id.pp;
+  top.unparse = id.unparse;
   top.qnames = [id];
 }
 
 concrete production qNamesCons
 top::QNames ::= id1::QNameWithTL ',' id2::QNames
 {
-  top.pp = id1.pp ++ ", " ++ id2.pp ;
+  top.unparse = id1.unparse ++ ", " ++ id2.unparse ;
   top.qnames = [id1] ++ id2.qnames;
 }
 
@@ -77,40 +77,40 @@ AGDcl ::= l::Location at::QNameWithTL nts::[QNameWithTL]
 
 synthesized attribute ids :: [Name];
 
-nonterminal Names2 with pp, ids;
+nonterminal Names2 with unparse, ids;
 concrete production id2Single
 top::Names2 ::= id::Name ',' id2::Name
 {
-  top.pp = id.name ++ ", " ++ id2.name;
+  top.unparse = id.name ++ ", " ++ id2.name;
   top.ids = [id, id2];
 }
 
 concrete production id2Cons
 top::Names2 ::= id1::Name ',' id2::Names2
 {
-  top.pp = id1.name ++ ", " ++ id2.pp ;
+  top.unparse = id1.name ++ ", " ++ id2.unparse ;
   top.ids = [id1] ++ id2.ids;
 }
 
-nonterminal Names with pp, ids;
+nonterminal Names with unparse, ids;
 concrete production idSingle
 top::Names ::= id::Name
 {
-  top.pp = id.name;
+  top.unparse = id.name;
   top.ids = [id];
 }
 
 concrete production idCons
 top::Names ::= id1::Name ',' id2::Names
 {
-  top.pp = id1.name ++ ", " ++ id2.pp ;
+  top.unparse = id1.name ++ ", " ++ id2.unparse ;
   top.ids = [id1] ++ id2.ids;
 }
 
 function qualifyNames
 [QName] ::= i::[Name]
 {
-  return if null(i) then [] else [qNameId(head(i))] ++ qualifyNames(tail(i));
+  return if null(i) then [] else qNameId(head(i), location=head(i).location) :: qualifyNames(tail(i));
 }
 
 -}

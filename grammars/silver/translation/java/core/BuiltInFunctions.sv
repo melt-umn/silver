@@ -15,14 +15,28 @@ top::Expr ::= e::Decorated Expr
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
-aspect production toIntFunction
-top::Expr ::= 'toInt' '(' e::Expr ')'
+aspect production toBooleanFunction
+top::Expr ::= 'toBoolean' '(' e::Expr ')'
 {
   top.translation = case finalType(e) of
+                    | boolType() -> e.translation
+                    | intType() -> s"Boolean.valueOf(${e.translation} != 0)"
+                    | floatType() -> s"Boolean.valueOf(${e.translation} != 0.0)"
+                    | stringType() -> s"Boolean.valueOf(${e.translation}.toString())"
+                    | t -> error("INTERNAL ERROR: no toBoolean translation for type " ++ prettyType(t))
+                    end;
+
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+aspect production toIntegerFunction
+top::Expr ::= 'toInteger' '(' e::Expr ')'
+{
+  top.translation = case finalType(e) of
+                    | boolType() -> s"Integer.valueOf(${e.translation}? 1 : 0)"
                     | intType() -> e.translation
                     | floatType() -> s"Integer.valueOf(((Float)${e.translation}).intValue())"
                     | stringType() -> s"Integer.valueOf(${e.translation}.toString())"
-                    | t -> error("INTERNAL ERROR: no toInt translation for type " ++ prettyType(t))
+                    | t -> error("INTERNAL ERROR: no toInteger translation for type " ++ prettyType(t))
                     end;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
@@ -31,6 +45,7 @@ aspect production toFloatFunction
 top::Expr ::= 'toFloat' '(' e::Expr ')'
 {
   top.translation = case finalType(e) of
+                    | boolType() -> s"Float.valueOf(${e.translation}? 1.0f : 0.0f)"
                     | intType() -> s"Float.valueOf(((Integer)${e.translation}).floatValue())"
                     | floatType() -> e.translation
                     | stringType() -> s"Float.valueOf(${e.translation}.toString())"
@@ -52,19 +67,19 @@ top::Expr ::= 'reify'
 {
   local resultType::Type =
     case finalType(top).outputType of
-      nonterminalType("core:Either", [stringType(), a]) -> a
+    | nonterminalType("core:Either", [stringType(), a]) -> a
     | _ -> error("Unexpected final type for reify!")
     end;
   
-  -- In the unusual case that we have a skolems in the result type, we can't generalize them, but
+  -- In the unusual case that we have skolems in the result type, we can't generalize them, but
   -- we also can't do any better, so leave the runtime result TypeRep unfreshened.
   -- There is a similar problem with lambdas.
   top.translation =
 s"""(new common.NodeFactory<core.NEither>() {
 				@Override
 				public final core.NEither invoke(final Object[] args, final Object[] namedArgs) {
-					assert args.length == 1;
-					assert namedArgs.length == 0;
+					assert args != null && args.length == 1;
+					assert namedArgs == null || namedArgs.length == 0;
 					
 ${makeTyVarDecls(5, resultType.freeVariables)}
 					common.TypeRep resultType = ${resultType.transTypeRep};
@@ -76,6 +91,11 @@ ${makeTyVarDecls(5, resultType.freeVariables)}
 				public final common.FunctionTypeRep getType() {
 ${makeTyVarDecls(5, finalType(top).freeVariables)}
 					return ${finalType(top).transTypeRep};
+				}
+	
+				@Override
+				public final String toString() {
+					return "reify";
 				}
 			})""";
   

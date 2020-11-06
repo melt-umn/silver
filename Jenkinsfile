@@ -1,120 +1,146 @@
-// An excellent resource is Maven's own Jenkinsfile: https://github.com/apache/maven/blob/master/Jenkinsfile
-// This is also helpful: https://github.com/jenkinsci/pipeline-plugin/blob/master/TUTORIAL.md
+#!groovy
 
-properties([
-  /* If we don't set this, everything is preserved forever.
-     We don't bother discarding build logs (because they're small),
-     but if this job keeps artifacts, we ask them to only stick around
-     for awhile. */
-  [ $class: 'BuildDiscarderProperty',
-    strategy:
-      [ $class: 'LogRotator',
-        artifactDaysToKeepStr: '120',
-        artifactNumToKeepStr: '20'
-      ]
-  ]
-])
+library "github.com/melt-umn/jenkins-lib"
 
-// Location where we dump stable artifacts: jars, tarballs
-MELT_ARTIFACTS = '/export/scratch/melt-jenkins/custom-stable-dump'
-// Location of a Silver checkout (w/ jars)
-MELT_SILVER_WORKSPACE = '/export/scratch/melt-jenkins/custom-silver'
-// N.B. these declarations must not have 'def' or a type because then they're
-// invisible to functions because ??? Groovy never heard of lexical scope?
+melt.setProperties(overrideJars: true)
 
-node {
-
-def WS = pwd()
-if (env.BRANCH_NAME == 'develop') {
-  WS = MELT_SILVER_WORKSPACE
-}
-
-ws(WS) {
-// If we use 'ws' we re-allocate our own workspace in branches and thus end up in @2
-// instead of the original workspace.
-// But if we use 'dir' then we potentially stomp on a concurrent build in the special
-// workspace for 'develop'.
-// Possibly we should just stop having a special *workspace* for develop and instead
-// copy our workspace there when it builds ok, SOMEDAY. TODO
-// For now, re-discover where we ended up:
-WS = pwd()
-
-
-try {
+melt.trynode('silver') {
+  def WS = pwd()
+  def SILVER_GEN = "${WS}/generated"
 
   stage("Build") {
 
-    // Checks out this repo and branch
     checkout scm
 
-    sh "./fetch-jars"
+    // Bootstrap logic to obtain jars
+    if (params.OVERRIDE_JARS != 'no') {
+      def source = params.OVERRIDE_JARS
+      if (source == 'develop') {
+        source = "${silver.SILVER_WORKSPACE}/jars"
+      }
+      // Obtain jars from specified location
+      sh "mkdir -p jars"
+      sh "cp ${source}/* jars/"
+      melt.annotate("Jars overridden.")
+    } else {
+      // We start by obtaining normal jars, but we potentially overwrite them:
+      // (This is the least annoying way to go about this...)
+      sh "./fetch-jars"
+      if (env.BRANCH_NAME == 'develop') {
+        // For 'develop', detect pull request merges, and grab jars from the merged branch
+        String branch = getMergedBranch()
+        if (branch) {
+          echo "Trying to get jars from merged branch ${branch}"
+          String branchJob = "/melt-umn/silver/${hudson.Util.rawEncode(branch)}"
+          if(melt.doesJobExist(branchJob)) {
+            try {
+              copyArtifacts(projectName: branchJob, selector: lastSuccessful())
+              melt.annotate("Jars from merged branch.")
+            } catch (hudson.AbortException exc1) {
+              // That's okay. We prefer this approach to using 'optional: true' because it
+              // lets us know whether it happened or not. The annotation only gets set when it does.
+            }
+          }
+        }
+      } else if (env.BRANCH_NAME != 'master') {
+        // For branches, try to obtain jars from previous builds.
+        try {
+          // If the last build has artifacts, use those.
+          copyArtifacts(projectName: env.JOB_NAME, selector: lastCompleted())
+          melt.annotate("Jars from branch (prev).")
+        } catch (hudson.AbortException exc2) {
+          try {
+            // If there is a last successful build, use those.
+            copyArtifacts(projectName: env.JOB_NAME, selector: lastSuccessful())
+            melt.annotate("Jars from branch (successful).")
+          } catch (hudson.AbortException exc3) {
+            // That's okay. We tried. We'll stick with fetch-jars
+          }
+        }
+      }
+    }
+    // If requested, go download the latest Copper jars and use them instead of the archived/provided ones
+    if (params.FETCH_COPPER_JARS == 'yes') {
+      echo "Fetching lastest Copper jars"
+      melt.annotate("Fetched Copper jars.")
+      sh "./fetch-jars --copper"
+    }
+    // Build
     sh "./deep-rebuild"
-    sh "./deep-clean -delete all"
+    // Clean (but leave generated files)
+    sh "./deep-clean -delete"
+    // Package
     sh "rm -rf silver-latest* || true" // Robustness to past failures
     sh "./make-dist latest"
-
-    // An "installation" of what gets distributed in the tarball under ./silver-latest/
-    sh "tar zxf silver-latest.tar.gz"
+    // Upon succeeding at initial build, archive for future builds
+    archiveArtifacts(artifacts: "jars/*.jar", fingerprint: true)
   }
 
   stage("Test") {
-    def tests = ["silver_features", "copper_features", "patt", "stdlib", "performance", "cstast", "csterrors"]
+    def tests = ["silver_features", "copper_features", "patt", "stdlib", "performance", "csterrors"]
     def tuts = ["simple/with_all", "simple/with_do_while", "simple/with_repeat_until", "simple/with_implication", "simple/host", "dc", "lambda", "turing", "hello"]
 
     def tasks = [:]
-    for (t in tests) { tasks[t] = task_test(t, WS) }
-    for (t in tuts) { tasks[t] = task_tutorial(t, WS) }
+    tasks << tests.collectEntries { t -> [(t): task_test(t, WS)] }
+    tasks << tuts.collectEntries { t -> [(t): task_tutorial(t, WS)] }
 
+    // Unpack tarball (into ./silver-latest/) (for tutorial testing)
+    sh "tar zxf silver-latest.tar.gz"
+    // Run tests
     parallel tasks
-
-    // Done with tarbal contents
+    // Clean
     sh "rm -rf silver-latest"
   }
 
   stage("Integration") {
-    def public_github = ["ableC"]
-    // TODO: anything to build here?
-    //def private_github = []
-    // TODO: move these, port them over to new locations, migrate them to pipeline
-    def legacy_internal = ["x-metaII-artifacts", "meltsvn-Oberon0-A1", "meltsvn-Oberon0-A2a", "meltsvn-Oberon0-A2b", "meltsvn-Oberon0-A3", "meltsvn-Oberon0-A4", "meltsvn-Oberon0-A5", "meltsvn-Matlab-host", "meltsvn-ableP-host", "meltsvn-ableP-host-tests", "meltsvn-ableP-promelaCore", "meltsvn-ableP-promelaCore-tests", "meltsvn-ableP-aviation", "meltsvn-ableP-aviation-tests", "meltsvn-ableJ-alone", "meltsvn-ableJ-autoboxing", "meltsvn-ableJ-sql", "meltsvn-ableJ-complex", "meltsvn-ableJ-foreach", "meltsvn-ableJ-tables", "meltsvn-ableJ-pizza", "meltsvn-ableJ-rlp", "meltsvn-simple-core", "meltsvn-simple-host", "meltsvn-simple-matrix", "meltsvn-simple-all", "meltsvn-ring-host", "meltsvn-ring-host-tests"]
-    // Notes: The above consists of: Oberon0, Matlab, ableP, ableJ, simple, and
-    // two that are especially interesting: ring and the metaII code we wish to keep working.
+    // Projects with 'develop' as main branch, we'll try to build specific branch names if they exist
+    def github_projects = ["/melt-umn/ableC", "/melt-umn/Oberon0", "/melt-umn/ableJ14", "/melt-umn/meta-ocaml-lite",
+                           "/melt-umn/lambda-calculus", "/melt-umn/rewriting-regex-matching", "/melt-umn/rewriting-optimization-demo",
+                           "/internal/ring"]
+    // Specific other jobs to build
+    def specific_jobs = ["/internal/matlab/master", "/internal/metaII/master", "/internal/simple/master"]
+    // AbleP is now downstream from Silver-AbleC, so we don't need to build it here: "/melt-umn/ableP/master"
 
     def tasks = [:]
-    for (t in public_github) { tasks[t] = task_job("/melt-umn/" + t + "/develop", WS) }
-    for (t in legacy_internal) { tasks[t] = task_job("/" + t, WS) }
+    tasks << github_projects.collectEntries { t ->
+      [(t): { melt.buildProject(t, [SILVER_BASE: WS, SILVER_GEN: SILVER_GEN]) }]
+    }
+    tasks << specific_jobs.collectEntries { t ->
+      [(t): { melt.buildJob(t, [SILVER_BASE: WS, SILVER_GEN: SILVER_GEN]) }]
+    }
 
+    // Do downstream integration testing
     parallel tasks
   }
 
   if (env.BRANCH_NAME == 'develop') {
     stage("Deploy") {
-      sh "cp ${WS}/silver-latest.tar.gz ${MELT_ARTIFACTS}/"
-      sh "cp ${WS}/jars/*.jar ${MELT_ARTIFACTS}/"
+      sh "rsync -a --exclude .git --exclude generated --exclude silver-latest.tar.gz --delete --delete-excluded ./ ${silver.SILVER_WORKSPACE}/"
+      // -a is archive mode: rlptgoD (recurse, links, perms, time, group, owner, devices)
+      // --delete  Remove files from destination not in src
+      // --delete-excluded  Remove files from dest that we're excluding
+      // NOTE: we exclude generated, which means there's no generated dir in the custom
+      // location, which means if you don't set it, things should blow up.
+
+      sh "cp silver-latest.tar.gz ${melt.ARTIFACTS}/"
+      sh "cp jars/*.jar ${melt.ARTIFACTS}/"
     }
   }
 
-} catch(e) {
-
-  // JENKINS-28822. Not sure if this works exactly as intended or not
-  if(currentBuild.result == null) {
-    echo "Setting failure flag"
-    currentBuild.result = 'FAILURE'
-  }
-
-  throw e
-
-} finally {
-
-  // No notifications yet
-
 }
 
-} // end ws
+// If the last commit was a pull request merge, get the name of the merged branch
+def getMergedBranch() {
+  String commit_msg = sh(script: "git log --format=%B -n 1 HEAD", returnStdout: true)
+  // Matcher cannot be serialized, but we can't mark this function @NonCPS because above we use 'sh'
+  // So, YOLO, we probably won't get paused before we return!
+  java.util.regex.Matcher merge_branch = commit_msg =~ /^Merge pull.*from melt-umn\/(.*)/
+  if (merge_branch.find()) {
+    return merge_branch.group(1)
+  }
+}
 
-} // end node
-
-
+// Test in local workspace
 def task_test(String testname, String WS) {
   return {
     node {
@@ -124,7 +150,7 @@ def task_test(String testname, String WS) {
       dir(WS + '/test/' + testname) {
         sh "./silver-compile --clean -G ${GEN}"
         if (fileExists("test.jar")) {
-          sh "java -jar test.jar"
+          sh "java -Xss2M -jar test.jar"
           sh "rm test.jar"
         }
       }
@@ -133,12 +159,13 @@ def task_test(String testname, String WS) {
     }
   }
 }
+// Tutorial, in silver-latest
 def task_tutorial(String tutorialpath, String WS) {
   return {
     node {
       sh "touch ensure_workspace" // convince jenkins to create our workspace
       def GEN = pwd() // This node's workspace
-      // For tutorials we use what's distributed in the tarball:
+      echo "\nRemember that tutorials are built in 'silver-latest'.\nThis only includes files distributed with the tarball according to 'make-dist'.\n"
       dir(WS + '/silver-latest/tutorials/' + tutorialpath) {
         sh "./silver-compile --clean -G ${GEN}"
         sh "rm *.jar"
@@ -146,13 +173,6 @@ def task_tutorial(String tutorialpath, String WS) {
       // Blow away these generated files in our private workspace
       deleteDir()
     }
-  }
-}
-
-def task_job(String jobname, String WS) {
-  return {
-    build job: jobname, parameters:
-      [[$class: 'StringParameterValue', name: 'SILVER_BASE', value: WS]]
   }
 }
 

@@ -21,7 +21,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
 
-// ${ns.pp}
+// ${ns.unparse}
 public final class ${className} extends ${fnnt} {
 
 ${makeIndexDcls(0, namedSig.inputElements)}
@@ -165,11 +165,11 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 		return new ${className}(${namedSig.refInvokeTrans});
 	}
 
-	public static final common.NodeFactory<${className}> factory = new Factory();
+	public static final common.NodeFactory<${fnnt}> factory = new Factory();
 
-	public static final class Factory extends common.NodeFactory<${className}> {
+	public static final class Factory extends common.NodeFactory<${fnnt}> {
 		@Override
-		public final ${className} invoke(final Object[] children, final Object[] annotations) {
+		public final ${fnnt} invoke(final Object[] children, final Object[] annotations) {
 			return new ${className}(${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
 		}
 		
@@ -177,6 +177,11 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 		public final common.FunctionTypeRep getType() {
 ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
 			return ${namedSig.typerep.transFreshTypeRep};
+		}
+		
+		@Override
+		public final String toString() {
+			return "${top.grammarName}:${id.name}";
 		}
 	};
 

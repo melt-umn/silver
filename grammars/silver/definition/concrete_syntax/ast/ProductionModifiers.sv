@@ -2,53 +2,38 @@ grammar silver:definition:concrete_syntax:ast;
 
 imports silver:definition:concrete_syntax only productionName;
 
-synthesized attribute productionPrecedence :: Maybe<Integer>;
+monoid attribute productionPrecedence :: Maybe<Integer> with nothing(), orElse;
 -- acode from terminal modifiers
-synthesized attribute customLayout :: Maybe<String>;
-synthesized attribute productionOperator :: Maybe<String>;
+monoid attribute customLayout :: Maybe<[String]> with nothing(), orElse;
+monoid attribute productionOperator :: Maybe<String> with nothing(), orElse;
 
 {--
  - Modifiers for productions.
  -}
-nonterminal SyntaxProductionModifiers with cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, unparses, productionName;
+nonterminal SyntaxProductionModifiers with cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, productionName;
+
+propagate cstErrors, acode, productionPrecedence, customLayout, productionOperator
+  on SyntaxProductionModifiers;
 
 abstract production consProductionMod
 top::SyntaxProductionModifiers ::= h::SyntaxProductionModifier  t::SyntaxProductionModifiers
-{
-  top.cstErrors := h.cstErrors ++ t.cstErrors;
-  top.acode = h.acode ++ t.acode;
-  top.customLayout = orElse(h.customLayout, t.customLayout);
-  top.productionOperator = orElse(h.productionOperator, t.productionOperator);
-  top.productionPrecedence = orElse(h.productionPrecedence, t.productionPrecedence);
-  top.unparses = h.unparses ++ t.unparses;
-}
+{}
 
 abstract production nilProductionMod
 top::SyntaxProductionModifiers ::= 
-{
-  top.cstErrors := [];
-  top.acode = "";
-  top.customLayout = nothing();
-  top.productionOperator = nothing();
-  top.productionPrecedence = nothing();
-  top.unparses = [];
-}
+{}
 
 
 {--
  - Modifiers for productions.
  -}
-nonterminal SyntaxProductionModifier with cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, unparses, productionName;
+nonterminal SyntaxProductionModifier with cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, productionName;
 
 aspect default production
 top::SyntaxProductionModifier ::=
 {
-  top.cstErrors := [];
-  top.acode = "";
-  top.customLayout = nothing();
-  top.productionOperator = nothing();
-  top.productionPrecedence = nothing();
-  --top.unparses -- do not default this. always provide it.
+  -- Empty values as defaults
+  propagate cstErrors, acode, productionPrecedence, customLayout, productionOperator;
 }
 
 {--
@@ -57,8 +42,7 @@ top::SyntaxProductionModifier ::=
 abstract production prodPrecedence
 top::SyntaxProductionModifier ::= lvl::Integer
 {
-  top.productionPrecedence = just(lvl);
-  top.unparses = ["prec(" ++ toString(lvl) ++ ")"];
+  top.productionPrecedence := just(lvl);
 }
 {--
  - The terminal this production uses for shift/reduce conflict resolution.
@@ -72,8 +56,7 @@ top::SyntaxProductionModifier ::= term::String
   top.cstErrors := if !null(termRef) then [] 
                    else ["Terminal " ++ term ++ " was referenced but " ++
                          "this grammar was not included in this parser. (Referenced from operator clause on production " ++ top.productionName ++ ")"];
-  top.productionOperator = just(xmlCopperRef(head(termRef)));
-  top.unparses = ["oper(" ++ quoteString(term) ++ ")"];
+  top.productionOperator := just(xmlCopperRef(head(termRef)));
 }
 {--
  - The action to perform when this production is REDUCEd.
@@ -81,8 +64,7 @@ top::SyntaxProductionModifier ::= term::String
 abstract production prodAction
 top::SyntaxProductionModifier ::= acode::String
 {
-  top.acode = acode;
-  top.unparses = ["acode(\"" ++ escapeString(acode) ++ "\")"];
+  top.acode := acode;
 }
 {--
  - The layout for this production.
@@ -98,6 +80,5 @@ top::SyntaxProductionModifier ::= terms::[String]
                            "this grammar was not included in this parser. (Referenced from layout clause on production " ++ top.productionName ++ ")"],
                    zipWith(pair, terms, termRefs));
 
-  top.customLayout = just(implode("", map(xmlCopperRef, map(head, termRefs))));
-  top.unparses = ["layout(" ++ unparseStrings(terms) ++ ")"];
+  top.customLayout := just(terms);
 }

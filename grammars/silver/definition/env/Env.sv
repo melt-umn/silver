@@ -15,14 +15,14 @@ grammar silver:definition:env;
 
 nonterminal Env with typeTree, valueTree, attrTree, prodOccursTree, occursTree, prodsForNtTree;
 
-synthesized attribute typeTree      :: [Decorated EnvScope<DclInfo>]; -- Expr is type tau
-synthesized attribute valueTree     :: [Decorated EnvScope<DclInfo>]; -- x has type tau
-synthesized attribute attrTree      :: [Decorated EnvScope<DclInfo>]; -- attr a has type tau
+synthesized attribute typeTree      :: [EnvScope<DclInfo>]; -- Expr is type tau
+synthesized attribute valueTree     :: [EnvScope<DclInfo>]; -- x has type tau
+synthesized attribute attrTree      :: [EnvScope<DclInfo>]; -- attr a has type tau
 
-synthesized attribute prodOccursTree :: Decorated EnvScope<DclInfo>; -- value on prod
-synthesized attribute occursTree     :: Decorated EnvScope<DclInfo>; -- attr on NT
+synthesized attribute prodOccursTree :: EnvScope<DclInfo>; -- value on prod
+synthesized attribute occursTree     :: EnvScope<DclInfo>; -- attr on NT
 
-synthesized attribute prodsForNtTree :: [Decorated EnvScope<DclInfo>]; -- maps nt fname to prods known to construct it
+synthesized attribute prodsForNtTree :: [EnvScope<DclInfo>]; -- maps nt fname to prods known to construct it
 
 ----------------------------------------------------------------------------------------------------
 --Environment creation functions--------------------------------------------------------------------
@@ -52,6 +52,17 @@ Decorated Env ::= d::[Def]
   return newScopeEnv(d, emptyEnv());
 }
 
+{--
+ - appendEnv exists because we do a weird scope swizzling.
+ - Our scopes go [global, import, grammar] but hierarchically we
+ - should have   [global, grammar, import] because grammar-wide names would
+ - seem to have wider scope than per-file imports.
+ - But this would be horrible semantics: the file in question is even included
+ - in the grammar-wide scope. So imports would hide things in the local file, even.
+ - 
+ - Instead, we build these three scopes as essentially separate environments,
+ - and append them together in the correct order.
+ -}
 function appendEnv
 Decorated Env ::= e1::Decorated Env  e2::Decorated Env
 {
@@ -70,7 +81,9 @@ top::Env ::= e1::Decorated Env  e2::Decorated Env
   top.prodsForNtTree = e1.prodsForNtTree ++ e2.prodsForNtTree;
 }
 
--- Better replacement for appendDefsEnv(x, pushScope(env)) pattern
+{--
+ - The usual means of introducing new defs to an environment, by creating a new nested scope.
+ -}
 function newScopeEnv
 Decorated Env ::= d::[Def]  e::Decorated Env
 {
@@ -84,9 +97,31 @@ top::Env ::= d::Defs  e::Decorated Env
   top.attrTree = oneEnvScope(buildTree(d.attrList)) :: e.attrTree;
 
   top.prodOccursTree = consEnvScope(buildTree(mapFullnameDcls(d.prodOccursList)), e.prodOccursTree);
-  top.occursTree = consEnvScope(buildTree(mapFullnameDcls(d.occursList)), e.occursTree);
+  top.occursTree = e.occursTree;
 
   top.prodsForNtTree = oneEnvScope(buildTree(map(envItemNTFromProdDcl, d.prodDclList))) :: e.prodsForNtTree;
+}
+
+{--
+ - Introduces new occurs defs to an environment.
+ - This is seperate from newEnvScope as we must be able to build the other env trees without having the occurs tree.
+ -}
+function occursEnv
+Decorated Env ::= d::[DclInfo]  e::Decorated Env
+{
+  return decorate i_occursEnv(d, e) with {};
+}
+abstract production i_occursEnv
+top::Env ::= d::[DclInfo]  e::Decorated Env
+{
+  top.typeTree = e.typeTree;
+  top.valueTree = e.valueTree;
+  top.attrTree = e.attrTree;
+  
+  top.prodOccursTree = e.prodOccursTree;
+  top.occursTree = consEnvScope(buildTree(mapFullnameDcls(d)), e.occursTree);
+  
+  top.prodsForNtTree = e.prodsForNtTree;
 }
 
 ----------------------------------------------------------------------------------------------------
@@ -94,17 +129,15 @@ top::Env ::= d::Defs  e::Decorated Env
 ----------------------------------------------------------------------------------------------------
 
 function searchEnvAll
-[a] ::= search::String e::[Decorated EnvScope<a>]
+[a] ::= search::String e::[EnvScope<a>]
 {
-  return if null(e) then []
-         else searchEnvScope(search, head(e)) ++ searchEnvAll(search, tail(e));
+  return flatMap(searchEnvScope(search, _), e);
 }
 
 function searchEnv
-[a] ::= search::String e::[Decorated EnvScope<a>]
+[a] ::= search::String e::[EnvScope<a>]
 {
-  local attribute found :: [a];
-  found = searchEnvScope(search, head(e));
+  local found :: [a] = searchEnvScope(search, head(e));
   
   return if null(e) then []
          else if null(found) then searchEnv(search, tail(e))
@@ -181,21 +214,34 @@ function getProdAttrs
   return searchEnvScope(fnprod, e.prodOccursTree);
 }
 
--- Do not rely on this just yet, it's wonky.
--- It'll find all productions known locally to construct a nt.
--- This ought to be more limited than that... perhaps only those know to the nt declaration, or only those non-forwarding.
-function getProdsForNt
+{--
+ - Get all productions for a nonterminal known to local environment.
+ - (forwarding and non-forwarding.)
+ - Current known use cases:
+ -  1. Interference testing code generation (randomly generate trees)
+ -       - Because we test each production independently, we may not actually need this?
+ -  2. MWDA checking known forwarding productions on attribute occurrence declaration.
+ -       - We need to be able to look from forwarding to occurs, and from
+ -         occurs to forwarding to cover all cases.
+ -  3. For the automatic attributes extension
+ -       - to implement propagate on all the known non-forwarding productions of a nonterminal.
+ - You should probably have a good reason for using this, and document it here if you do.
+ -}
+function getKnownProds
 [DclInfo] ::= fnnt::String e::Decorated Env
 {
   return searchEnvAll(fnnt, e.prodsForNtTree);
 }
 
+-- The list of non-forwarding productions may contain productions from `options` not
+-- imported locally, and so we must consult the "flow environment" for that information:
+--function getNonforwardingProds
 
--- It's never possible to know "all" attributes, so the next function is okay,
--- but it is possible to know all non-forwarding productions, but the normal
--- environment can't do it.  So you should consult the flow env for that info.
---function getProdsOn
-
+{--
+ - Returns all attributes known locally to occur on a nonterminal.
+ - Obviously we can never know all attributes, but we generally don't need to for
+ - any reason.
+ -}
 function getAttrsOn
 [DclInfo] ::= fnnt::String e::Decorated Env
 {

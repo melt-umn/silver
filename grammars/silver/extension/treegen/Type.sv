@@ -12,7 +12,7 @@ imports silver:modification:ffi;
 imports silver:modification:collection;
 
 
-
+--- conventional suffix for function names e.g. "checkEq" ++ t.idNameForGenArb
 synthesized attribute idNameForGenArb :: String occurs on Type;
 
 aspect production varType
@@ -24,6 +24,11 @@ aspect production skolemType
 top::Type ::= tv::TyVar
 {
   top.idNameForGenArb = "SKOLEM";
+}
+aspect production errorType
+top::Type ::= 
+{
+  top.idNameForGenArb = "ERROR";
 }
 aspect production intType
 top::Type ::=
@@ -79,7 +84,7 @@ top::Type ::= el::Type
   top.idNameForGenArb = "List" ++ el.idNameForGenArb;
 }
 aspect production foreignType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String  transType::String  params::[Type]
 {
   -- err, shouldn't happen?
   top.idNameForGenArb = "FOREIGN";

@@ -10,14 +10,16 @@ import silver:definition:flow:ast only hasVertex, noVertex, PatternVarProjection
 
 nonterminal VarBinders with 
   config, grammarName, env, compiledGrammars, frame,
-  location, pp, errors, defs,
+  location, unparse, errors, defs,
   bindingTypes, bindingIndex, translation, varBinderCount,
   finalSubst, flowProjections, bindingNames, flowEnv, matchingAgainst;
 nonterminal VarBinder with
   config, grammarName, env, compiledGrammars, frame,
-  location, pp, errors, defs,
+  location, unparse, errors, defs,
   bindingType, bindingIndex, translation,
   finalSubst, flowProjections, bindingName, flowEnv, matchingAgainst;
+
+propagate errors, defs on VarBinders, VarBinder;
 
 --- Types of each child
 inherited attribute bindingTypes :: [Type];
@@ -39,9 +41,7 @@ synthesized attribute varBinderCount :: Integer;
 concrete production oneVarBinder
 top::VarBinders ::= v::VarBinder
 {
-  top.pp = v.pp;
-  top.defs = v.defs;
-  top.errors := v.errors;
+  top.unparse = v.unparse;
 
   top.translation = v.translation;
   top.varBinderCount = 1;
@@ -60,9 +60,7 @@ top::VarBinders ::= v::VarBinder
 concrete production consVarBinder
 top::VarBinders ::= v::VarBinder ',' vs::VarBinders
 {
-  top.pp = v.pp ++ ", " ++ vs.pp;
-  top.defs = v.defs ++ vs.defs;
-  top.errors := v.errors ++ vs.errors;
+  top.unparse = v.unparse ++ ", " ++ vs.unparse;
 
   top.translation = v.translation ++ vs.translation;
   top.varBinderCount = 1 + vs.varBinderCount;
@@ -91,9 +89,7 @@ top::VarBinders ::= v::VarBinder ',' vs::VarBinders
 concrete production nilVarBinder
 top::VarBinders ::=
 {
-  top.pp = "";
-  top.defs = [];
-  top.errors := [];
+  top.unparse = "";
   
   top.translation = "";
   top.varBinderCount = 0;
@@ -103,7 +99,7 @@ top::VarBinders ::=
 concrete production varVarBinder
 top::VarBinder ::= n::Name
 {
-  top.pp = n.pp;
+  top.unparse = n.unparse;
   
   -- top.bindingType comes straight from the type in the production signature.
   -- Consequently, the child is only auto-decorated if
@@ -138,7 +134,7 @@ top::VarBinder ::= n::Name
     then depsForTakingRef(anonVertexType(fName), ty.typeName, top.flowEnv)
     else [];
 
-  top.defs = [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps)];
+  top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps)];
 
   -- finalSubst is not necessary, downSubst would work fine, but is not threaded through here.
   -- the point is that 'ty' for Pair<String Integer> would currently show Pair<a b>
@@ -159,7 +155,7 @@ top::VarBinder ::= n::Name
   
   -- We prevent this to prevent newbies from thinking patterns are "typecase"
   -- (Types have to be upper case)
-  top.errors := 
+  top.errors <-
     if !isUpper(substring(0,1,n.name)) then []
     else [err(top.location, "Pattern variables must start with a lower case letter")];
 
@@ -168,16 +164,14 @@ top::VarBinder ::= n::Name
   -- this would allow us to match 'left' and 'right' on a Pair, for example, but error on Either
   top.errors <- 
     case getValueDcl(n.name, top.env) of
-    | prodDcl(_,_,_) :: _ -> [err(top.location, "Pattern variables cannot have the same name as productions (to avoid confusion)")]
+    | prodDcl(_,_,_,_) :: _ -> [err(top.location, "Pattern variables cannot have the same name as productions (to avoid confusion)")]
     | _ -> []
     end;
 }
 concrete production ignoreVarBinder
 top::VarBinder ::= '_'
 {
-  top.pp = "_";
-  top.defs = [];
-  top.errors := [];
+  top.unparse = "_";
   top.flowProjections = [];
   top.translation = "";
 }

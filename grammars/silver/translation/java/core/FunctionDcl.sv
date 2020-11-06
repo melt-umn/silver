@@ -1,13 +1,13 @@
 grammar silver:translation:java:core;
 
-import silver:modification:ffi only foreignType; -- for main type check only
+import silver:modification:ffi only ioForeignType; -- for main type check only
 import silver:util;
 
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
   top.setupInh := body.setupInh;
-  top.initProd := s"\t\t//FUNCTION ${id.name} ${ns.pp}\n" ++ body.translation;
+  top.initProd := s"\t\t//FUNCTION ${id.name} ${ns.unparse}\n" ++ body.translation;
 
   local localVar :: String = "count_local__ON__" ++ makeIdName(fName);
 
@@ -19,7 +19,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 
   local funBody :: String =
 s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate();
-			//${head(body.uniqueSignificantExpression).pp}
+			//${head(body.uniqueSignificantExpression).unparse}
 			return (${namedSig.outputElement.typerep.transType})(${head(body.uniqueSignificantExpression).translation});
 """;
 
@@ -34,7 +34,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
        unify(namedSig.typerep,
          functionType(nonterminalType("core:IOVal", [intType()]), [
            decoratedType(nonterminalType("core:List", [stringType()])),
-           foreignType("core:IO", [])], [])).failure
+           ioForeignType], [])).failure
     then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IO). Instead it has type " ++ prettyType(namedSig.typerep))]
     else [];
 }
@@ -133,7 +133,8 @@ ${whatResult}
 		}
 	}
 
-	public static final common.NodeFactory<${whatSig.outputElement.typerep.transType}> factory = new Factory();
+	// Use of ? to permit casting to more specific types
+	public static final common.NodeFactory<? extends ${whatSig.outputElement.typerep.transType}> factory = new Factory();
 
 	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transType}> {
 		@Override
@@ -145,6 +146,11 @@ ${whatResult}
 		public final common.FunctionTypeRep getType() {
 ${makeTyVarDecls(3, whatSig.typerep.freeVariables)}
 			return ${whatSig.typerep.transFreshTypeRep};
+		}
+		
+		@Override
+		public final String toString() {
+			return "${whatGrammar}:${whatName}";
 		}
 	};
 }""";

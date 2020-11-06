@@ -20,7 +20,6 @@ find ./test/ -name "*.jar" $1
 find ./test/ -name "*.test.output" $1
 find ./test/ -name "*.copperdump.html" $1
 find ./runtime/ -name "SilverRuntime.jar" $1
-find ./runtime/ -name "RunSilver.jar" $1
 find ./grammars/ -name "*.jar" $1
 find ./grammars/ -name "*.test.output" $1
 find ./tutorials/ -name "*.test.output" $1

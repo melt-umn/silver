@@ -29,6 +29,16 @@ top::Type ::= tv::TyVar
 }
 
 {--
+ - When an error message has **already** been reported, and we must supply a type,
+ - and we wish to suppress further error messages, use errorType.
+ -}
+abstract production errorType
+top::Type ::=
+{
+  top.freeVariables = [];
+}
+
+{--
  - Integer type.
  -}
 abstract production intType
@@ -59,6 +69,17 @@ top::Type ::=
  - String type.
  -}
 abstract production stringType
+top::Type ::=
+{
+  top.freeVariables = [];
+}
+
+{--
+ - Terminal identifier type.
+ - This isn't a foreign type, since we want equality checking.
+ - TODO: Revisit this once we have type classes.
+ -}
+abstract production terminalIdType
 top::Type ::=
 {
   top.freeVariables = [];
@@ -97,7 +118,7 @@ top::Type ::= te::Type
 
 {--
  - An intermediate type. This *should* never appear as the type of a symbol,
- - etc. Rather, this is a helper type only used withing expressions.
+ - etc. Rather, this is a helper type only used within expressions.
  -
  - It represents a nonterminal that is *either* decorated or undecorated
  - (e.g. when referencing a child) but has not yet been specialized.
@@ -196,12 +217,6 @@ function tyVarEqual
 Boolean ::= tv1::TyVar tv2::TyVar
 {
   return tv1.extractTyVarRep == tv2.extractTyVarRep;
-}
-
-function errorType
-Type ::=
-{
-  return varType(freshTyVar());
 }
 
 function freshType

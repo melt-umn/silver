@@ -31,8 +31,12 @@ abstract production lexerClassFont
 top::SyntaxLexerClassModifier ::= fontName::String
 {
   top.cstErrors := [];
-  top.unparses = ["font('" ++ fontName ++ "')"];
 
   top.fontAttr = makeCopperName(fontName);
 }
 
+aspect production lexerClassExtends
+top::SyntaxLexerClassModifier ::= super::[String]
+{
+  top.fontAttr = dumbExtractFont(superRefs);
+}

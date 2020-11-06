@@ -3,47 +3,69 @@ grammar silver:definition:concrete_syntax;
 import silver:driver:util;
 
 attribute syntaxAst, parserSpecs occurs on RootSpec, ModuleExportedDefs, Grammar;
+propagate syntaxAst, parserSpecs on Grammar;
+
+monoid attribute maybeSyntaxAst::Maybe<[SyntaxDcl]> with nothing(), orElse;
+monoid attribute maybeParserSpecs::Maybe<[ParserSpec]> with nothing(), orElse;
+attribute maybeSyntaxAst, maybeParserSpecs occurs on InterfaceItems, InterfaceItem;
+propagate maybeSyntaxAst, maybeParserSpecs on InterfaceItems;
+
+aspect production consInterfaceItem
+top::InterfaceItems ::= h::InterfaceItem t::InterfaceItems
+{
+  top.interfaceErrors <- if !top.maybeSyntaxAst.isJust then ["Missing item syntaxAst"] else [];
+  top.interfaceErrors <- if !top.maybeParserSpecs.isJust then ["Missing item parserSpecs"] else [];
+}
+
+aspect default production
+top::InterfaceItem ::=
+{
+  top.maybeSyntaxAst := nothing();
+  top.maybeParserSpecs := nothing();
+}
+
+abstract production syntaxAstInterfaceItem
+top::InterfaceItem ::= val::[SyntaxDcl]
+{
+  top.maybeSyntaxAst := just(val);
+}
+
+abstract production parserSpecsInterfaceItem
+top::InterfaceItem ::= val::[ParserSpec]
+{
+  top.maybeParserSpecs := just(val);
+}
 
 aspect function unparseRootSpec
 String ::= r::Decorated RootSpec
 {
-  unparses <- ["syntax [" ++ implode(",\n ", foldr(consSyntax, nilSyntax(), r.syntaxAst).unparses) ++ "]"];
-  unparses <- ["parsers [" ++ implode(",\n ", map((.unparse), r.parserSpecs)) ++ "]"];
+  interfaceItems <- [syntaxAstInterfaceItem(r.syntaxAst)];
+  interfaceItems <- [parserSpecsInterfaceItem(r.parserSpecs)];
 }
 
 aspect production errorRootSpec
-top::RootSpec ::= _ _ _ _
+top::RootSpec ::= _ _ _ _ _
 {
-  top.syntaxAst = [];
-  top.parserSpecs = [];
+  propagate syntaxAst, parserSpecs;
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= c1::Grammar  _ _ _
+top::RootSpec ::= c1::Grammar  _ _ _ _
 {
-  top.syntaxAst = c1.syntaxAst;
-  top.parserSpecs = c1.parserSpecs;
+  propagate syntaxAst, parserSpecs;
 }
 
-aspect production nilGrammar
-top::Grammar ::=
+aspect production interfaceRootSpec
+top::RootSpec ::= i::InterfaceItems  interfaceTime::Integer _
 {
-  top.syntaxAst = [];
-  top.parserSpecs = [];
-}
-
-aspect production consGrammar
-top::Grammar ::= c1::Root  c2::Grammar
-{
-  top.syntaxAst = c1.syntaxAst ++ c2.syntaxAst;
-  top.parserSpecs = c1.parserSpecs ++ c2.parserSpecs;
+  top.syntaxAst := i.maybeSyntaxAst.fromJust;
+  top.parserSpecs := i.maybeParserSpecs.fromJust;
 }
 
 aspect production moduleExportedDefs
 top::ModuleExportedDefs ::= l::Location  compiled::EnvTree<Decorated RootSpec>  grammarDependencies::[String]  need::[String]  seen::[String]
 {
-  top.syntaxAst = if null(need) || null(rs) then [] else (head(rs).syntaxAst ++ recurse.syntaxAst);
-  top.parserSpecs = if null(need) || null(rs) then [] else (head(rs).parserSpecs ++ recurse.parserSpecs);
+  top.syntaxAst := if null(need) || null(rs) then [] else (head(rs).syntaxAst ++ recurse.syntaxAst);
+  top.parserSpecs := if null(need) || null(rs) then [] else (head(rs).parserSpecs ++ recurse.parserSpecs);
 }
-
 

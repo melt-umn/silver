@@ -1,13 +1,13 @@
 grammar silver:definition:core;
 
-nonterminal AspectProductionSignature with config, grammarName, env, location, pp, errors, defs, realSignature, namedSignature, signatureName;
-nonterminal AspectProductionLHS with config, grammarName, env, location, pp, errors, defs, outputElement, realSignature;
+nonterminal AspectProductionSignature with config, grammarName, env, location, unparse, errors, defs, realSignature, namedSignature, signatureName;
+nonterminal AspectProductionLHS with config, grammarName, env, location, unparse, errors, defs, outputElement, realSignature;
 
-nonterminal AspectFunctionSignature with config, grammarName, env, location, pp, errors, defs, realSignature, namedSignature, signatureName;
-nonterminal AspectFunctionLHS with config, grammarName, env, location, pp, errors, defs, realSignature, outputElement;
+nonterminal AspectFunctionSignature with config, grammarName, env, location, unparse, errors, defs, realSignature, namedSignature, signatureName;
+nonterminal AspectFunctionLHS with config, grammarName, env, location, unparse, errors, defs, realSignature, outputElement;
 
-nonterminal AspectRHS with config, grammarName, env, location, pp, errors, defs, inputElements, realSignature;
-nonterminal AspectRHSElem with config, grammarName, env, location, pp, errors, defs, realSignature, inputElements, deterministicCount;
+nonterminal AspectRHS with config, grammarName, env, location, unparse, errors, defs, inputElements, realSignature;
+nonterminal AspectRHSElem with config, grammarName, env, location, unparse, errors, defs, realSignature, inputElements, deterministicCount;
 
 flowtype forward {realSignature, env} on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS;
 flowtype forward {deterministicCount, realSignature, env} on AspectRHSElem;
@@ -17,26 +17,27 @@ flowtype forward {deterministicCount, realSignature, env} on AspectRHSElem;
  -}
 autocopy attribute realSignature :: [NamedSignatureElement];
 
+propagate errors on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS, AspectRHSElem;
 
 concrete production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
 {
-  top.pp = "aspect production " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
+  top.unparse = "aspect production " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
 
-  top.defs = 
+  top.defs := 
     if null(body.productionAttributes) then []
     else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 
   production namedSig :: NamedSignature = ns.namedSignature;
 
   production attribute realSig :: NamedSignature;
-  realSig = if null(id.lookupValue.errors)
-            then id.lookupValue.dcl.namedSignature
+  realSig = if id.lookupValue.found
+            then freshenNamedSignature(id.lookupValue.dcl.namedSignature)
             else bogusNamedSignature();
 
   -- Making sure we're aspecting a production is taken care of by type checking.
 
-  top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
+  top.errors <- id.lookupValue.errors;
 
   production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
@@ -46,7 +47,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   ns.realSignature = if null(id.lookupValue.dcls) then [] else [realSig.outputElement] ++ realSig.inputElements;
 
   local attribute prodAtts :: [Def];
-  prodAtts = if null(id.lookupValue.errors)
+  prodAtts = if id.lookupValue.found
              then defsFromPADcls(getProdAttrs(id.lookupValue.fullName, top.env), namedSig)
              else [];
 
@@ -57,22 +58,22 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 concrete production aspectFunctionDcl
 top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody 
 {
-  top.pp = "aspect function " ++ id.pp ++ "\n" ++ ns.pp ++ "\n" ++ body.pp;
+  top.unparse = "aspect function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
 
-  top.defs = 
+  top.defs := 
     if null(body.productionAttributes) then []
     else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 
   production namedSig :: NamedSignature = ns.namedSignature;
 
   production attribute realSig :: NamedSignature;
-  realSig = if null(id.lookupValue.errors)
-            then id.lookupValue.dcl.namedSignature
+  realSig = if id.lookupValue.found
+            then freshenNamedSignature(id.lookupValue.dcl.namedSignature)
             else bogusNamedSignature();
 
   -- Making sure we're aspecting a function is taken care of by type checking.
 
-  top.errors := id.lookupValue.errors ++ ns.errors ++ body.errors;
+  top.errors <- id.lookupValue.errors;
 
   production attribute sigDefs :: [Def] with ++;
   sigDefs := ns.defs;
@@ -82,7 +83,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   ns.realSignature = if null(id.lookupValue.dcls) then [] else [realSig.outputElement] ++ realSig.inputElements;
 
   local attribute prodAtts :: [Def];
-  prodAtts = if null(id.lookupValue.errors)
+  prodAtts = if id.lookupValue.found
              then defsFromPADcls(getProdAttrs(id.lookupValue.fullName, top.env), namedSig)
              else [];
 
@@ -93,10 +94,9 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 concrete production aspectProductionSignature
 top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS 
 {
-  top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
+  top.unparse = lhs.unparse ++ " ::= " ++ rhs.unparse;
 
-  top.defs = lhs.defs ++ rhs.defs;
-  top.errors := lhs.errors ++ rhs.errors;
+  propagate defs;
 
   top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement, annotationsForNonterminal(lhs.outputElement.typerep, top.env));
 
@@ -107,14 +107,14 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 concrete production aspectProductionLHSNone
 top::AspectProductionLHS ::= '_'
 {
-  top.pp = "_";
+  top.unparse = "_";
   forwards to aspectProductionLHSId(name("p_top", top.location), location=top.location);
 }
 
 concrete production aspectProductionLHSId
 top::AspectProductionLHS ::= id::Name
 {
-  top.pp = id.pp;
+  top.unparse = id.unparse;
 
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
@@ -125,7 +125,7 @@ top::AspectProductionLHS ::= id::Name
 concrete production aspectProductionLHSTyped
 top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 {
-  top.pp = id.pp;
+  top.unparse = id.unparse;
 
   top.errors <- t.errors;
   
@@ -135,7 +135,7 @@ top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 abstract production aspectProductionLHSFull
 top::AspectProductionLHS ::= id::Name t::Type
 {
-  top.pp = id.pp ++ "::" ++ prettyType(t);
+  top.unparse = id.unparse ++ "::" ++ prettyType(t);
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
@@ -144,9 +144,9 @@ top::AspectProductionLHS ::= id::Name t::Type
 
   top.outputElement = namedSignatureElement(id.name, t);
   
-  top.defs = [aliasedLhsDef(top.grammarName, id.location, fName, t, id.name)];
+  top.defs := [aliasedLhsDef(top.grammarName, id.location, fName, t, id.name)];
 
-  top.errors := if length(getValueDclInScope(id.name, top.env)) > 1
+  top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
                 then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
                 else [];
 }
@@ -154,20 +154,18 @@ top::AspectProductionLHS ::= id::Name t::Type
 concrete production aspectRHSElemNil
 top::AspectRHS ::= 
 {
-  top.pp = "";
+  top.unparse = "";
 
-  top.defs = [];
-  top.errors := [];
+  propagate defs;
   top.inputElements = [];
 }
 
 concrete production aspectRHSElemCons
 top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 {
-  top.pp = h.pp ++ " " ++ t.pp;
+  top.unparse = h.unparse ++ " " ++ t.unparse;
 
-  top.defs = h.defs ++ t.defs;
-  top.errors := h.errors ++ t.errors;
+  propagate defs;
 
   top.inputElements = h.inputElements ++ t.inputElements;
 
@@ -179,7 +177,7 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 concrete production aspectRHSElemNone
 top::AspectRHSElem ::= '_'
 {
-  top.pp = "_";
+  top.unparse = "_";
 
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
@@ -193,7 +191,7 @@ top::AspectRHSElem ::= '_'
 concrete production aspectRHSElemId
 top::AspectRHSElem ::= id::Name
 {
-  top.pp = id.pp;
+  top.unparse = id.unparse;
 
   production attribute rType :: Type;
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
@@ -206,7 +204,7 @@ top::AspectRHSElem ::= id::Name
 concrete production aspectRHSElemTyped
 top::AspectRHSElem ::= id::Name '::' t::TypeExpr
 {
-  top.pp = id.pp ++ "::" ++ t.pp;
+  top.unparse = id.unparse ++ "::" ++ t.unparse;
   
   top.errors <- t.errors;
 
@@ -216,7 +214,7 @@ top::AspectRHSElem ::= id::Name '::' t::TypeExpr
 abstract production aspectRHSElemFull
 top::AspectRHSElem ::= id::Name t::Type
 {
-  top.pp = id.pp ++ "::" ++ prettyType(t);
+  top.unparse = id.unparse ++ "::" ++ prettyType(t);
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then id.name else head(top.realSignature).elementName;
@@ -225,9 +223,9 @@ top::AspectRHSElem ::= id::Name t::Type
 
   top.inputElements = [namedSignatureElement(id.name, t)];
 
-  top.defs = [aliasedChildDef(top.grammarName, id.location, fName, t, id.name)];
+  top.defs := [aliasedChildDef(top.grammarName, id.location, fName, t, id.name)];
 
-  top.errors := if length(getValueDclInScope(id.name, top.env)) > 1
+  top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
                 then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
                 else [];
 }
@@ -235,10 +233,9 @@ top::AspectRHSElem ::= id::Name t::Type
 concrete production aspectFunctionSignature
 top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS 
 {
-  top.pp = lhs.pp ++ " ::= " ++ rhs.pp;
+  top.unparse = lhs.unparse ++ " ::= " ++ rhs.unparse;
 
-  top.defs = lhs.defs ++ rhs.defs;
-  top.errors := lhs.errors ++ rhs.errors;
+  propagate defs;
 
   -- For the moment, functions do not have named parameters (hence, [])
   top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement, []);
@@ -250,7 +247,7 @@ top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS
 concrete production functionLHSType
 top::AspectFunctionLHS ::= t::TypeExpr
 {
-  top.pp = t.pp;
+  top.unparse = t.unparse;
 
   production attribute fName :: String;
   fName = if null(top.realSignature) then "_NULL_" else head(top.realSignature).elementName;
@@ -260,8 +257,5 @@ top::AspectFunctionLHS ::= t::TypeExpr
   top.outputElement = namedSignatureElement(fName, t.typerep);
   
   -- TODO: this needs thinking. is it broken? maybe __return? or wait, it's doing that automatically isnt it...
-  top.defs = [aliasedLhsDef(top.grammarName, t.location, fName, t.typerep, fName)];
-
-  top.errors := [];
+  top.defs := [aliasedLhsDef(top.grammarName, t.location, fName, t.typerep, fName)];
 }
-

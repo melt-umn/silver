@@ -7,6 +7,8 @@ import silver:definition:type:syntax;
 --import silver:analysis:typechecking:core;
 import silver:translation:java;
 
+import silver:definition:flow:driver only ProductionGraph, FlowType, constructDefaultProductionGraph; -- for the "oh no again!" hack below
+import silver:driver:util only RootSpec; -- ditto
 
 terminal Default_kwd 'default' lexer classes {KEYWORD, RESERVED};
 
@@ -14,16 +16,16 @@ concrete production aspectDefaultProduction
 top::AGDcl ::= 'aspect' 'default' 'production' 
                lhs::Name '::' te::TypeExpr '::=' body::ProductionBody 
 {
-  top.pp = "aspect default production\n" ++ lhs.pp ++ "::" ++ te.pp ++ " ::=\n" ++ body.pp;
+  top.unparse = "aspect default production\n" ++ lhs.unparse ++ "::" ++ te.unparse ++ " ::=\n" ++ body.unparse;
 
-  top.defs = [];
+  top.defs := [];
 
   production namedSig :: NamedSignature = 
     namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName, [],
       namedSignatureElement(lhs.name, te.typerep),
       annotationsForNonterminal(te.typerep, top.env));
 
-  top.errors := te.errors ++ body.errors;
+  propagate errors, flowDefs;
 
   local fakedDefs :: [Def] =
     [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];
@@ -31,13 +33,21 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   local sigDefs :: [Def] =
     addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, te.lexicalTypeVariables);
 
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = 
+    constructDefaultProductionGraph(namedSig, body.flowDefs, top.env, myProds, myFlow);
+
+
   body.env = newScopeEnv(fakedDefs ++ sigDefs, top.env);
-  body.frame = defaultAspectContext(namedSig);
+  body.frame = defaultAspectContext(namedSig, myFlowGraph);
 
   body.downSubst = emptySubst();
 
   top.setupInh := body.setupInh; -- Probably should be empty?
-  top.initProd := "\t\t//ASPECT DEFAULT PRODUCTION for " ++ te.pp ++ "\n" ++ body.translation;
+  top.initProd := "\t\t//ASPECT DEFAULT PRODUCTION for " ++ te.unparse ++ "\n" ++ body.translation;
   top.valueWeaving := body.valueWeaving; -- Probably should be empty?
 }
 
@@ -53,8 +63,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.unparse = error("INTERNAL ERROR: default-lhs values should never appear in interface files");
-  
   top.typerep = ty;
   
   top.refDispatcher = lhsReference(_, location=_);
@@ -65,21 +73,27 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 abstract production defaultLhsDefLHS
 top::DefLHS ::= q::Decorated QName
 {
-  top.pp = q.pp;
+  top.name = q.name;
+  top.unparse = q.unparse;
+  top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;
   
-  top.errors := if !null(top.defLHSattr.errors) || top.defLHSattr.attrDcl.isSynthesized then []
-                else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.pp ++ "' on the lhs '" ++ q.pp ++ "'")];
-
+  local existingProblems :: Boolean = !top.defLHSattr.found || top.typerep.isError;
+  
+  top.errors :=
+    if existingProblems || top.found then []
+    else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.name ++ "' on the lhs '" ++ q.name ++ "'")];
+  
   top.typerep = q.lookupValue.typerep;
 
   top.translation = makeNTClassName(top.frame.lhsNtName) ++ ".defaultSynthesizedAttributes";
 }
 
 abstract production defaultAspectContext
-top::BlockContext ::= sig::NamedSignature  -- okay, sorta has a sig?
+top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
 {
   top.fullName = sig.fullName;
   top.lhsNtName = sig.outputElement.typerep.typeName;
   top.signature = sig;
+  top.flowGraph = g;
 }
 

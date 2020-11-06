@@ -1,12 +1,14 @@
 grammar silver:driver:util;
 
+import silver:definition:core only jarName;
+
 nonterminal Compilation with config, postOps, grammarList, recheckGrammars, allGrammars;
 
 flowtype postOps {config} on Compilation;
 
 synthesized attribute postOps :: [DriverAction] with ++;
 synthesized attribute grammarList :: [Decorated RootSpec];
-synthesized attribute recheckGrammars :: [String];
+monoid attribute recheckGrammars :: [String] with [], ++;
 -- This is used on the outside, e.g. the ide functions.
 synthesized attribute allGrammars :: [Decorated RootSpec];
 
@@ -20,8 +22,7 @@ synthesized attribute allGrammars :: [Decorated RootSpec];
  - @param g  A list of grammar initially read in
  - @param r  A list of grammars that we re-compiled, due to dirtiness in 'g'
  - @param buildGrammar  The initial grammar requested built
- - @param silverHome  The home location of Silver
- - @param silverGen  The directory to store generated files
+ - @param benv  The build configuration
  -}
 abstract production compilation
 top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::BuildEnv
@@ -29,7 +30,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   -- the list of rootspecs coming out of g
   top.grammarList = g.grammarList;
   -- the list of grammars that should be re-checked
-  top.recheckGrammars = g.recheckGrammars;
+  top.recheckGrammars := g.recheckGrammars;
   
   g.compiledGrammars = directBuildTree(map(grammarPairing, g.grammarList));
   -- However, we are then forced to use the interface files that we are going to
@@ -57,22 +58,20 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   top.postOps := [];
 }
 
-nonterminal Grammars with config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, grammarList, recheckGrammars, translateGrammars;
+nonterminal Grammars with config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, grammarList, recheckGrammars, translateGrammars, jarName;
+
+propagate translateGrammars, recheckGrammars, jarName on Grammars;
 
 abstract production consGrammars
 top::Grammars ::= h::RootSpec  t::Grammars
 {
   top.grammarList = h :: t.grammarList;
-  top.recheckGrammars = h.recheckGrammars ++ t.recheckGrammars;
-  top.translateGrammars = h.translateGrammars ++ t.translateGrammars;
 }
 
 abstract production nilGrammars
 top::Grammars ::=
 {
   top.grammarList = [];
-  top.recheckGrammars = [];
-  top.translateGrammars = [];
 }
 
 {--
