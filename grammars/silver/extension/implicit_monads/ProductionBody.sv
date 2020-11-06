@@ -85,7 +85,7 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
          | explicitType(t) -> []
          | _ -> [err(top.location, "Restricted equations can only be used for " ++
                                    "attributes declared to be restricted; " ++
-                                   attr.unparse ++ "(" ++ attr.typerep.typepp ++ ")" ++ " is not restricted")]
+                                   attr.unparse ++ "(" ++ prettyType(attr.typerep) ++ ")" ++ " is not restricted")]
          end
     else [];
 
@@ -107,9 +107,6 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
 concrete production unrestrictedAttributeDef
 top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
-  e.downSubst = top.downSubst;
-  e.mDownSubst = top.downSubst;
-  e.finalSubst = e.mUpSubst;
   top.unparse = "\tunrestricted" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
 
   top.productionAttributes := [];
@@ -122,12 +119,12 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
               | explicitType(t) -> errorProductionStmt([err(top.location,
                                               "Unrestricted equations can only be used for attributes " ++
                                               "not declared to be restricted or implicit; " ++ attr.unparse ++ " is restricted (" ++
-                                              attr.typerep.typepp ++ ")")],
+                                              prettyType(attr.typerep) ++ ")")],
                                               location=top.location)
               | implicitType(t) -> errorProductionStmt([err(top.location,
                                               "Unrestricted equations can only be used for attributes " ++
                                               "not declared to be restricted or implicit; " ++ attr.unparse ++ " is implicit (" ++
-                                              attr.typerep.typepp ++ ")")],
+                                              prettyType(attr.typerep) ++ ")")],
                                               location=top.location)
               | _ -> attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
               end;
@@ -191,6 +188,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
 abstract production implicitSynAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
 {
+  top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;
@@ -213,6 +212,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
 abstract production implicitInhAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
 {
+  top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;

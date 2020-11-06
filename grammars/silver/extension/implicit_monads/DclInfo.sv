@@ -10,6 +10,16 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = fn;
+
+  top.typerep = ty;
+
+  top.dclBoundVars = bound;
+  top.isSynthesized = true;
+  top.isInherited = false;
 }
 
 
@@ -22,6 +32,16 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = fn;
+
+  top.typerep = ty;
+
+  top.dclBoundVars = bound;
+  top.isSynthesized = false;
+  top.isInherited = true;
 }
 
 
@@ -36,6 +56,16 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = fn;
+
+  top.typerep = ty;
+
+  top.dclBoundVars = bound;
+  top.isSynthesized = true;
+  top.isInherited = false;
 }
 
 
@@ -48,6 +78,16 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+
+  top.sourceGrammar = sg;
+  top.sourceLocation = sl;
+  top.fullName = fn;
+
+  top.typerep = ty;
+
+  top.dclBoundVars = bound;
+  top.isSynthesized = false;
+  top.isInherited = true;
 }
 
 

@@ -1751,8 +1751,8 @@ top::Expr ::= e1::Expr '+' e2::Expr
                              else check(e1.mtyperep, e2.mtyperep);
   ec.finalSubst = top.mUpSubst;
   top.mtyperep = if isMonad(e1.mtyperep)
-                then e1.mtyperep
-                else e2.mtyperep;
+                 then e1.mtyperep
+                 else e2.mtyperep;
 
   e1.monadicallyUsed = isMonad(e1.mtyperep);
   e2.monadicallyUsed = isMonad(e2.mtyperep);
