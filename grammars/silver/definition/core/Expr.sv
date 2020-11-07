@@ -75,9 +75,9 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
   
-  top.typerep = if q.lookupValue.typerep.isDecorable
-                then ntOrDecType(q.lookupValue.typerep, freshType())
-                else q.lookupValue.typerep;
+  top.typerep = if q.lookupValue.typeScheme.typerep.isDecorable
+                then ntOrDecType(q.lookupValue.typeScheme.typerep, freshType())
+                else q.lookupValue.typeScheme.typerep;
 }
 
 abstract production lhsReference
@@ -86,7 +86,7 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   
   -- An LHS is *always* a decorable (nonterminal) type.
-  top.typerep = ntOrDecType(q.lookupValue.typerep, freshType());
+  top.typerep = ntOrDecType(q.lookupValue.typeScheme.typerep, freshType());
 }
 
 abstract production localReference
@@ -94,9 +94,9 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
   
-  top.typerep = if q.lookupValue.typerep.isDecorable
-                then ntOrDecType(q.lookupValue.typerep, freshType())
-                else q.lookupValue.typerep;
+  top.typerep = if q.lookupValue.typeScheme.typerep.isDecorable
+                then ntOrDecType(q.lookupValue.typeScheme.typerep, freshType())
+                else q.lookupValue.typeScheme.typerep;
 }
 
 abstract production forwardReference
@@ -105,7 +105,7 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
-  top.typerep = ntOrDecType(q.lookupValue.typerep, freshType());
+  top.typerep = ntOrDecType(q.lookupValue.typeScheme.typerep, freshType());
 }
 
 -- Note here that production and function *references* are distinguished.
@@ -116,8 +116,7 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
 
-  -- TODO: the freshening should probably be the responsibility of the thing in the environment, not here?
-  top.typerep = freshenCompletely(q.lookupValue.typerep);
+  top.typerep = q.lookupValue.typeScheme.typerep;
 }
 
 abstract production functionReference
@@ -125,7 +124,7 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
 
-  top.typerep = freshenCompletely(q.lookupValue.typerep); -- TODO see above
+  top.typerep = q.lookupValue.typeScheme.typerep;
 }
 
 abstract production globalValueReference
@@ -133,7 +132,7 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
 
-  top.typerep = freshenCompletely(q.lookupValue.typerep); -- TODO see above
+  top.typerep = q.lookupValue.typeScheme.typerep;
 }
 
 concrete production concreteForwardExpr
@@ -252,14 +251,12 @@ top::Expr ::= '(' '.' q::QName ')'
   
   -- Fresh variable for the input type, and we'll come back later and check that it occurs on that type.
   
-  -- Also, freshen the attribute type, because even though there currently should NOT be any type variables
-  -- there, there could be if the code will raise an error.
   local rawInputType :: Type = freshType();
-  top.typerep = functionType(freshenCompletely(q.lookupAttribute.typerep), [rawInputType], []);
+  top.typerep = functionType(q.lookupAttribute.typeScheme.typerep, [rawInputType], []);
   
   top.errors <- q.lookupAttribute.errors;
   
-  top.errors <- if null(q.lookupAttribute.dclBoundVars) then []
+  top.errors <- if null(q.lookupAttribute.typeScheme.boundVars) then []
                 else [err(q.location, "Attribute " ++ q.name ++ " is parameterized, and attribute sections currently do not work with parameterized attributes, yet.")]; -- TODO The type inference system is too weak, currently.
   
   top.errors <- if !q.lookupAttribute.found || q.lookupAttribute.dcl.isSynthesized then []

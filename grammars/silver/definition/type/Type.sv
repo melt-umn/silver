@@ -3,6 +3,19 @@ grammar silver:definition:type;
 option silver:modification:ffi; -- foreign types
 
 {--
+ - Represents a type, quantified over some type variables.
+ -}
+nonterminal PolyType;
+
+abstract production monoType
+top::PolyType ::= ty::Type
+{}
+
+abstract production polyType
+top::PolyType ::= bound::[TyVar] ty::Type
+{}
+
+{--
  - Silver Type Representations.
  -}
 nonterminal Type with freeVariables;

@@ -10,11 +10,8 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   nm.nonterminalName = fName;
   
-  -- tl.freeVariables is our order list of the bound types for this nonterminal.
-  top.defs := [cl.whichDcl(top.grammarName, id.location, fName, tl.freeVariables, nonterminalType(fName, tl.types))];
-  -- TODO: It's probably reasonable to skip listing
-  -- tl.freeVariables, and the Type. Assuming we have a proper ntDcl.
-  -- And we should consider recording the exact concrete names used... might be nice documentation to use
+  top.defs := [cl.whichDcl(top.grammarName, id.location, fName, length(tl.types))];
+  -- TODO: We should consider recording the exact concrete names used... might be nice documentation to use
   
 
   -- Here we ensure that the type list contains only type *variables*
@@ -39,7 +36,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
 -- This feels a bit hackish.
 nonterminal ClosedOrNot with location, whichDcl;
 
-synthesized attribute whichDcl :: (Def ::= String Location String [TyVar] Type);
+synthesized attribute whichDcl :: (Def ::= String Location String Integer);
 
 concrete production openNt
 top::ClosedOrNot ::=
