@@ -40,8 +40,6 @@ top::AGDcl ::= 'restricted' 'inherited' 'attribute' a::Name tl::BracketedOptType
 {
   top.unparse = "restricted inherited attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
-  top.defs := [restrictedInhDef(top.grammarName, a.location, fName, tl.freeVariables, explicitType(te.typerep))];
-
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
@@ -54,8 +52,6 @@ concrete production attributeDclSyn_Restricted
 top::AGDcl ::= 'restricted' 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.unparse = "restricted synthesized attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
-
-  top.defs := [restrictedSynDef(top.grammarName, a.location, fName, tl.freeVariables, explicitType(te.typerep))];
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -73,8 +69,6 @@ top::AGDcl ::= 'implicit' 'inherited' 'attribute' a::Name tl::BracketedOptTypeEx
 {
   top.unparse = "implicit inherited attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
-  top.defs := [implicitInhDef(top.grammarName, a.location, fName, tl.freeVariables, implicitType(te.typerep))];
-
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
@@ -87,8 +81,6 @@ concrete production attributeDclSyn_Implicit
 top::AGDcl ::= 'implicit' 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.unparse = "implicit synthesized attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
-
-  top.defs := [implicitSynDef(top.grammarName, a.location, fName, tl.freeVariables, implicitType(te.typerep))];
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
