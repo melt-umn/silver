@@ -507,9 +507,11 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   e.expectedMonad = top.expectedMonad;
   top.merrors := e.merrors ++ forward.merrors;
   top.merrors <- if q.found
-                 then case q.typerep of
-                      | explicitType(_) -> []
-                      | implicitType(_) -> []
+                 then case q.attrDcl of
+                      | restrictedSynDcl(_, _, _, _, _) -> []
+                      | restrictedInhDcl(_, _, _, _, _) -> []
+                      | implicitSynDcl(_, _, _, _, _) -> []
+                      | implicitInhDcl(_, _, _, _, _) -> []
                       | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                                 "be either implicit or explicit; " ++ q.unparse ++
                                                 " is neither")]
@@ -558,9 +560,9 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                if q.found
-                               then case q.typerep of
-                                    | explicitType(_) -> []
-                                    | errorType() -> [] --something went wrong elsewhere
+                               then case q.attrDcl of
+                                    | restrictedSynDcl(_, _, _, _, _) -> []
+                                    | restrictedInhDcl(_, _, _, _, _) -> []
                                     | _ -> [pair(q.unparse, top.location)]
                                     end
                                else [];
@@ -572,10 +574,11 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.mtyperep = errorType();
   top.mUpSubst = top.mDownSubst;
   top.merrors := [];
-  top.merrors <- case q.typerep of
-                 | explicitType(_) -> []
-                 | implicitType(_) -> []
-                 | errorType() -> [] --something went wrong elsewhere
+  top.merrors <- case q.attrDcl of
+                 | restrictedSynDcl(_, _, _, _, _) -> []
+                 | restrictedInhDcl(_, _, _, _, _) -> []
+                 | implicitSynDcl(_, _, _, _, _) -> []
+                 | implicitInhDcl(_, _, _, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or explicit; " ++ q.unparse ++
                                            " is neither")]
@@ -584,11 +587,13 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.monadRewritten = access(new(e), '.', new(q), location=top.location);
 
   top.notExplicitAttributes <- e.notExplicitAttributes ++
-                               case q.typerep of
-                               | explicitType(_) -> []
-                               | errorType() -> [] --something went wrong elsewhere
-                               | _ -> [pair(q.unparse, top.location)]
-                               end;
+                               if q.found
+                               then case q.attrDcl of
+                                    | restrictedSynDcl(_, _, _, _, _) -> []
+                                    | restrictedInhDcl(_, _, _, _, _) -> []
+                                    | _ -> [pair(q.unparse, top.location)]
+                                    end
+                               else [];
 }
 
 aspect production annoAccessHandler
@@ -614,10 +619,11 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.typerep;
   top.merrors := [];
-  top.merrors <- case q.typerep of
-                 | explicitType(_) -> []
-                 | implicitType(_) -> []
-                 | errorType() -> [] --something went wrong elsewhere
+  top.merrors <- case q.attrDcl of
+                 | restrictedSynDcl(_, _, _, _, _) -> []
+                 | restrictedInhDcl(_, _, _, _, _) -> []
+                 | implicitSynDcl(_, _, _, _, _) -> []
+                 | implicitInhDcl(_, _, _, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or explicit; " ++ q.unparse ++
                                            " is neither")]
@@ -625,11 +631,13 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
 
   top.notExplicitAttributes <- e.notExplicitAttributes ++
-                               case q.typerep of
-                               | explicitType(_) -> []
-                               | errorType() -> [] --something went wrong elsewhere
-                               | _ -> [pair(q.unparse, top.location)]
-                               end;
+                               if q.found
+                               then case q.attrDcl of
+                                    | restrictedSynDcl(_, _, _, _, _) -> []
+                                    | restrictedInhDcl(_, _, _, _, _) -> []
+                                    | _ -> [pair(q.unparse, top.location)]
+                                    end
+                               else [];
 }
 
 aspect production terminalAccessHandler
@@ -690,10 +698,11 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.mtyperep = q.typerep;
   top.mUpSubst = top.mDownSubst;
   top.merrors := ne.merrors;
-  top.merrors <- case q.typerep of
-                 | explicitType(_) -> []
-                 | implicitType(_) -> []
-                 | errorType() -> [] --something went wrong elsewhere
+  top.merrors <- case q.attrDcl of
+                 | restrictedSynDcl(_, _, _, _, _) -> []
+                 | restrictedInhDcl(_, _, _, _, _) -> []
+                 | implicitSynDcl(_, _, _, _, _) -> []
+                 | implicitInhDcl(_, _, _, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or explicit; " ++ q.unparse ++
                                            " is neither")]
@@ -701,11 +710,13 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
 
   top.notExplicitAttributes <- e.notExplicitAttributes ++
-                               case q.typerep of
-                               | explicitType(_) -> []
-                               | errorType() -> [] --something went wrong elsewhere
-                               | _ -> [pair(q.unparse, top.location)]
-                               end;
+                               if q.found
+                               then case q.attrDcl of
+                                    | restrictedSynDcl(_, _, _, _, _) -> []
+                                    | restrictedInhDcl(_, _, _, _, _) -> []
+                                    | _ -> [pair(q.unparse, top.location)]
+                                    end
+                               else [];
 }
 
 aspect production inhDecoratedAccessHandler
@@ -731,10 +742,11 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.typerep;
   top.merrors := ne.merrors;
-  top.merrors <- case q.typerep of
-                 | explicitType(_) -> []
-                 | implicitType(_) -> []
-                 | errorType() -> [] --something went wrong elsewhere
+  top.merrors <- case q.attrDcl of
+                 | restrictedSynDcl(_, _, _, _, _) -> []
+                 | restrictedInhDcl(_, _, _, _, _) -> []
+                 | implicitSynDcl(_, _, _, _, _) -> []
+                 | implicitInhDcl(_, _, _, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or explicit; " ++ q.unparse ++
                                            " is neither")]
@@ -742,11 +754,13 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
 
   top.notExplicitAttributes <- e.notExplicitAttributes ++
-                               case q.typerep of
-                               | explicitType(_) -> []
-                               | errorType() -> [] --something went wrong elsewhere
-                               | _ -> [pair(q.unparse, top.location)]
-                               end;
+                               if q.found
+                               then case q.attrDcl of
+                                    | restrictedSynDcl(_, _, _, _, _) -> []
+                                    | restrictedInhDcl(_, _, _, _, _) -> []
+                                    | _ -> [pair(q.unparse, top.location)]
+                                    end
+                               else [];
 }
 
 aspect production errorDecoratedAccessHandler
@@ -767,10 +781,11 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.monadicNames = [];
 
   top.merrors := ne.merrors;
-  top.merrors <- case q.typerep of
-                 | explicitType(_) -> []
-                 | implicitType(_) -> []
-                 | errorType() -> [] --something went wrong elsewhere
+  top.merrors <- case q.attrDcl of
+                 | restrictedSynDcl(_, _, _, _, _) -> []
+                 | restrictedInhDcl(_, _, _, _, _) -> []
+                 | implicitSynDcl(_, _, _, _, _) -> []
+                 | implicitInhDcl(_, _, _, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or explicit; " ++ q.unparse ++
                                            " is neither")]
@@ -780,11 +795,13 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
 
   top.notExplicitAttributes <- e.notExplicitAttributes ++
-                               case q.typerep of
-                               | explicitType(_) -> []
-                               | errorType() -> [] --something went wrong elsewhere
-                               | _ -> [pair(q.unparse, top.location)]
-                               end;
+                               if q.found
+                               then case q.attrDcl of
+                                    | restrictedSynDcl(_, _, _, _, _) -> []
+                                    | restrictedInhDcl(_, _, _, _, _) -> []
+                                    | _ -> [pair(q.unparse, top.location)]
+                                    end
+                               else [];
 }
 
 

@@ -26,8 +26,9 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
           end
      else []) ++
      ( if attr.found && dl.found
-       then case attr.typerep of
-            | implicitType(t) -> []
+       then case attr.attrDcl of
+            | implicitInhDcl(_, _, _, _, _) -> []
+            | implicitSynDcl(_, _, _, _, _) -> []
             | _ -> [err(top.location, "Implicit equations can only be used for " ++
                                       "attributes declared to be implicit; " ++
                                       attr.unparse ++ " is not implicit")]
@@ -38,9 +39,7 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
   attr.attrFor = dl.typerep;
 
   forwards to if null(merrors)
-              then attributeDef(dl, '.', attr, '=',
-                                case fail of | right(e) -> e end,
-                                ';', location=top.location)
+              then attr.attrDcl.attrDefDispatcher(dl, attr, case fail of | right(e) -> e end, top.location)
               else errorProductionStmt(merrors, location=top.location);
 }
 
@@ -53,8 +52,9 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
 
   local merrors::[Message] =
        if attr.found && dl.found
-       then case attr.typerep of
-            | implicitType(t) -> []
+       then case attr.attrDcl of
+            | implicitSynDcl(_, _, _, _, _) -> []
+            | implicitInhDcl(_, _, _, _, _) -> []
             | _ -> [err(top.location, "Implicit equations can only be used for " ++
                                       "attributes declared to be implicit; " ++
                                       attr.unparse ++ " is not implicit")]
@@ -65,7 +65,7 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
   attr.attrFor = dl.typerep;
 
   local fwd::ProductionStmt = if null(merrors)
-                              then attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
+                              then attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location)
                               else errorAttributeDef(merrors, dl, attr, e, location=top.location);
   forwards to fwd;
 }
@@ -81,11 +81,12 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
 
   local merrors::[Message] =
     if attr.found && dl.found
-    then case attr.typerep of
-         | explicitType(t) -> []
+    then case attr.attrDcl of
+         | restrictedSynDcl(_, _, _, _, _) -> []
+         | restrictedInhDcl(_, _, _, _, _) -> []
          | _ -> [err(top.location, "Restricted equations can only be used for " ++
                                    "attributes declared to be restricted; " ++
-                                   attr.unparse ++ "(" ++ prettyType(attr.typerep) ++ ")" ++ " is not restricted")]
+                                   attr.unparse ++ " is not restricted")]
          end
     else [];
 
@@ -94,8 +95,7 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
 
   local fwd::ProductionStmt =
            if null(merrors)
-                --forward to this, which will delegate to the restricted syn or inh production
-           then attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
+           then attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location)
            else errorAttributeDef(merrors, dl, attr, e, location=top.location);
 
   forwards to fwd;
@@ -115,17 +115,19 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
 
-  forwards to case attr.typerep of
-              | explicitType(t) -> errorProductionStmt([err(top.location,
-                                              "Unrestricted equations can only be used for attributes " ++
-                                              "not declared to be restricted or implicit; " ++ attr.unparse ++ " is restricted (" ++
-                                              prettyType(attr.typerep) ++ ")")],
-                                              location=top.location)
-              | implicitType(t) -> errorProductionStmt([err(top.location,
-                                              "Unrestricted equations can only be used for attributes " ++
-                                              "not declared to be restricted or implicit; " ++ attr.unparse ++ " is implicit (" ++
-                                              prettyType(attr.typerep) ++ ")")],
-                                              location=top.location)
+  local restrictedErr::[Message] =
+           [err(top.location,
+                "Unrestricted equations can only be used for attributes " ++
+                "not declared to be restricted or implicit; " ++ attr.unparse ++ " is restricted")];
+  local implicitErr::[Message] =
+           [err(top.location,
+                "Unrestricted equations can only be used for attributes " ++
+                "not declared to be restricted or implicit; " ++ attr.unparse ++ " is implicit")];
+  forwards to case attr.attrDcl of
+              | restrictedSynDcl(_, _, _, _, _) -> errorAttributeDef(restrictedErr, dl, attr, e, location=top.location)
+              | restrictedInhDcl(_, _, _, _, _) -> errorAttributeDef(restrictedErr, dl, attr, e, location=top.location)
+              | implicitSynDcl(_, _, _, _, _) -> errorAttributeDef(implicitErr, dl, attr, e, location=top.location)
+              | implicitInhDcl(_, _, _, _, _) -> errorAttributeDef(implicitErr, dl, attr, e, location=top.location)
               | _ -> attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
               end;
 }
