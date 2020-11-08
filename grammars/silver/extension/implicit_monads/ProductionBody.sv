@@ -11,7 +11,7 @@ terminal Unrestricted_kwd    'unrestricted'     lexer classes {KEYWORD,RESERVED}
 concrete production emptyAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 {
-  top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
+  top.unparse = "\timplicit " ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
 
   top.productionAttributes := [];
   top.defs := [];
@@ -33,7 +33,7 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
                                       "attributes declared to be implicit; " ++
                                       attr.unparse ++ " is not implicit")]
             end
-       else [] );
+       else dl.errors ++ attr.errors );
 
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
@@ -50,6 +50,9 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
 {
   top.unparse = "\timplicit" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
 
+  top.productionAttributes := [];
+  top.defs := [];
+
   local merrors::[Message] =
        if attr.found && dl.found
        then case attr.attrDcl of
@@ -64,9 +67,13 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
 
-  local fwd::ProductionStmt = if null(merrors)
-                              then attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location)
-                              else errorAttributeDef(merrors, dl, attr, e, location=top.location);
+  local fwd::ProductionStmt =
+           if null(merrors)
+           then if attr.found
+                then attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location)
+                     --if not found, let the normal dispatcher handle it
+                else attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
+           else errorAttributeDef(merrors, dl, attr, e, location=top.location);
   forwards to fwd;
 }
 
@@ -78,6 +85,9 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
 {
   e.downSubst = top.downSubst;
   top.unparse = "\trestricted" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
+
+  top.productionAttributes := [];
+  top.defs := [];
 
   local merrors::[Message] =
     if attr.found && dl.found
@@ -95,7 +105,10 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
 
   local fwd::ProductionStmt =
            if null(merrors)
-           then attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location)
+           then if attr.found
+                then attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location)
+                     --if not found, let the normal dispatcher handle it
+                else attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
            else errorAttributeDef(merrors, dl, attr, e, location=top.location);
 
   forwards to fwd;
@@ -123,13 +136,18 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
            [err(top.location,
                 "Unrestricted equations can only be used for attributes " ++
                 "not declared to be restricted or implicit; " ++ attr.unparse ++ " is implicit")];
-  forwards to case attr.attrDcl of
-              | restrictedSynDcl(_, _, _, _, _) -> errorAttributeDef(restrictedErr, dl, attr, e, location=top.location)
-              | restrictedInhDcl(_, _, _, _, _) -> errorAttributeDef(restrictedErr, dl, attr, e, location=top.location)
-              | implicitSynDcl(_, _, _, _, _) -> errorAttributeDef(implicitErr, dl, attr, e, location=top.location)
-              | implicitInhDcl(_, _, _, _, _) -> errorAttributeDef(implicitErr, dl, attr, e, location=top.location)
-              | _ -> attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
-              end;
+  local fwd::ProductionStmt =
+            if attr.found
+            then case attr.attrDcl of
+                 | restrictedSynDcl(_, _, _, _, _) -> errorAttributeDef(restrictedErr, dl, attr, e, location=top.location)
+                 | restrictedInhDcl(_, _, _, _, _) -> errorAttributeDef(restrictedErr, dl, attr, e, location=top.location)
+                 | implicitSynDcl(_, _, _, _, _) -> errorAttributeDef(implicitErr, dl, attr, e, location=top.location)
+                 | implicitInhDcl(_, _, _, _, _) -> errorAttributeDef(implicitErr, dl, attr, e, location=top.location)
+                 | _ -> attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
+                 end
+                 --if not found, let the normal dispatcher handle it
+            else attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
+  forwards to fwd;
 }
 
 
