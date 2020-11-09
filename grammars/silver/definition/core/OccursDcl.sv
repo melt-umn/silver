@@ -26,7 +26,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
   nttl.env = nttl.envBindingTyVars;
   
   local ntTypeScheme::PolyType = nt.lookupType.typeScheme;
-  local atTypeScheme::PolyType = at.lookupType.typeScheme;
+  local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
   
   -- Make sure we get the number of tyvars correct for the NT
   top.errors <-
