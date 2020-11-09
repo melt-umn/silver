@@ -54,3 +54,5 @@ exports silver:translation:java;
 exports silver:driver;
 exports silver:analysis:warnings:flow;
 exports silver:analysis:warnings:exporting;
+
+exports silver:extension:implicit_monads;

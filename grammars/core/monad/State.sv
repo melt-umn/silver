@@ -38,6 +38,13 @@ top::State<s Unit> ::= newState::s
   top.stateVal = unit();
 }
 
+abstract production modifyState
+top::State<s Unit> ::= fun::(s ::= s)
+{
+  top.stateOut = fun(top.stateIn);
+  top.stateVal = unit();
+}
+
 function runState
 Pair<s a> ::= st::State<s a> initialState::s
 {
