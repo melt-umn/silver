@@ -877,9 +877,11 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   attrDcl.givenNonterminalType = error("Not actually needed"); -- Ugh environment needs refactoring
   local attrTypeScheme::PolyType = attrDcl.typeScheme;
   top.errors :=
-    case attrTypeScheme.typerep, attrTypeScheme.boundVars of
-    | nonterminalType("core:Maybe", [varType(a1)]), [a2] when tyVarEqual(a1, a2) -> []
-    | nonterminalType("core:Maybe", [nonterminalType(nt, _)]), _ ->
+    if !attrDcl.isSynthesized
+    then [err(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy, because it is not a synthesized attribute")]
+    else case attrTypeScheme.typerep, attrTypeScheme.boundVars of
+    | nonterminalType("core:Maybe", [varType(a1)]), [a2] when tyVarEqual(a1, a2) && attrDcl.isSynthesized -> []
+    | nonterminalType("core:Maybe", [nonterminalType(nt, _)]), _ when attrDcl.isSynthesized ->
       if null(getOccursDcl(attrDcl.fullName, nt, top.env))
       then [wrn(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy, because it doesn't occur on its own nonterminal type ${nt}")]
       else []
@@ -910,14 +912,16 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   attrDcl.givenNonterminalType = error("Not actually needed"); -- Ugh environment needs refactoring
   local attrTypeScheme::PolyType = attrDcl.typeScheme;
   top.errors :=
-    case attrTypeScheme.typerep, attrTypeScheme.boundVars of
+    if !attrDcl.isSynthesized
+    then [err(attr.location, s"Attribute ${attr.name} cannot be used as a total strategy, because it is not a synthesized attribute")]
+    else case attrTypeScheme.typerep, attrTypeScheme.boundVars of
     | varType(a1), [a2] when tyVarEqual(a1, a2) -> []
     | nonterminalType(nt, _), _ ->
       if null(getOccursDcl(attrDcl.fullName, nt, top.env))
-      then [wrn(attr.location, s"Attribute ${attr.name} cannot be used as total strategy, because it doesn't occur on its own nonterminal type ${nt}")]
+      then [wrn(attr.location, s"Attribute ${attr.name} cannot be used as a total strategy, because it doesn't occur on its own nonterminal type ${nt}")]
       else []
     | errorType(), _ -> []
-    | _, _ -> [err(attr.location, s"Attribute ${attr.name} cannot be used as total strategy")]
+    | _, _ -> [err(attr.location, s"Attribute ${attr.name} cannot be used as a total strategy")]
     end;
   
   propagate liftedStrategies;
