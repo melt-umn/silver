@@ -31,8 +31,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
-  top.dclBoundVars = bound;
+  top.typeScheme = polyType(bound, ty);
   top.isSynthesized = true;
   top.operation = o;
 
@@ -53,8 +52,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
-  top.dclBoundVars = bound;
+  top.typeScheme = polyType(bound, ty);
   top.isInherited = true;
   top.operation = o;
 
@@ -76,7 +74,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type o::Operation
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = monoType(ty);
   top.operation = o;
   
   top.refDispatcher = localReference(_, location=_);

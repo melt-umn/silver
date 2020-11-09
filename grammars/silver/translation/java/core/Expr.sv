@@ -47,7 +47,7 @@ top::Expr ::= q::Decorated QName
     top.frame.className ++ ".i_" ++ q.lookupValue.fullName;
 
   top.translation =
-    if q.lookupValue.typerep.isDecorable
+    if q.lookupValue.typeScheme.typerep.isDecorable
     then if finalType(top).isDecorable
          then s"((${finalType(top).transType})context.childDecorated(${childIDref}).undecorate())"
          else s"((${finalType(top).transType})context.childDecorated(${childIDref}))"
@@ -57,7 +57,7 @@ top::Expr ::= q::Decorated QName
 
   top.lazyTranslation =
     if !top.frame.lazyApplication then top.translation else
-    if q.lookupValue.typerep.isDecorable
+    if q.lookupValue.typeScheme.typerep.isDecorable
     then if finalType(top).isDecorable
          then s"common.Thunk.transformUndecorate(context.childDecoratedLazy(${childIDref}))"
          else s"context.childDecoratedLazy(${childIDref})"
@@ -68,7 +68,7 @@ aspect production localReference
 top::Expr ::= q::Decorated QName
 {
   top.translation =
-    if q.lookupValue.typerep.isDecorable
+    if q.lookupValue.typeScheme.typerep.isDecorable
     then if finalType(top).isDecorable
          then s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
          else s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}))"
@@ -77,7 +77,7 @@ top::Expr ::= q::Decorated QName
 
   top.lazyTranslation =
     if !top.frame.lazyApplication then top.translation else
-    if q.lookupValue.typerep.isDecorable
+    if q.lookupValue.typeScheme.typerep.isDecorable
     then if finalType(top).isDecorable
          then s"common.Thunk.transformUndecorate(context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex}))"
          else s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})"
@@ -261,7 +261,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of
     | childReference(cqn), true -> 
-        if cqn.lookupValue.typerep.isDecorable
+        if cqn.lookupValue.typeScheme.typerep.isDecorable
         then
           s"context.childDecoratedSynthesizedLazy(${top.frame.className}.i_${cqn.lookupValue.fullName}, ${q.dcl.attrOccursIndex})"
         else

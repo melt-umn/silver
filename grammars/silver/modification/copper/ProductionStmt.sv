@@ -96,7 +96,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
 
-  errCheck1 = check(e.typerep, val.lookupValue.typerep);
+  errCheck1 = check(e.typerep, val.lookupValue.typeScheme.typerep);
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Parser attribute " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
@@ -203,7 +203,7 @@ top::DefLHS ::= q::Decorated QName
 
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 
-  top.typerep = q.lookupValue.typerep;
+  top.typerep = q.lookupValue.typeScheme.typerep;
 }
 
 abstract production termAttrValueValueDef
@@ -233,7 +233,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   errCheck1.downSubst = e.upSubst;
   top.upSubst = errCheck1.upSubst;
 
-  errCheck1 = check(e.typerep, val.lookupValue.typerep);
+  errCheck1 = check(e.typerep, val.lookupValue.typeScheme.typerep);
   top.errors <-
     if errCheck1.typeerror
     then [err(top.location, "Terminal attribute " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]

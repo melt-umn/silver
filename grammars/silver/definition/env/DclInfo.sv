@@ -241,10 +241,10 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature{-fn::String outty::T
   
   top.prodDefs = dcls;
   
+  top.typeScheme = error("typeScheme not defined for production attributes");
+  
   -- This is used by the function that computes the substituted defs.
-  top.typeScheme = ns.typeScheme; -- TODO: Check this
-  -- We do have this now... any refactoring that should use it?
-  --top.namedSignature = ns;
+  top.namedSignature = ns;
 }
 
 -- OccursDclInfo
@@ -261,8 +261,7 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type at
   -- ALSO IMPORTANT: ntty and atty should be tyvar'd up, not skolem'd up. You dig?
   
   -- Here we use givenNonterminalType to find the attribute type:
-  local attribute subst :: Substitution;
-  subst = unifyDirectional(ntty, top.givenNonterminalType); -- must rewrite FROM ntty TO gNT
+  local subst :: Substitution = unifyDirectional(ntty, top.givenNonterminalType); -- must rewrite FROM ntty TO gNT
 
   top.typeScheme =
     if subst.failure
@@ -285,8 +284,7 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type at
   -- ALSO IMPORTANT: ntty and atty should be tyvar'd up, not skolem'd up. You dig?
   
   -- Here we use givenNonterminalType to find the attribute type:
-  local attribute subst :: Substitution;
-  subst = unifyDirectional(ntty, top.givenNonterminalType); -- must rewrite FROM ntty TO gNT
+  local subst :: Substitution = unifyDirectional(ntty, top.givenNonterminalType); -- must rewrite FROM ntty TO gNT
 
   top.typeScheme =
     if subst.failure
@@ -320,14 +318,9 @@ function defsFromPADcls
 [Def] ::= valueDclInfos::[DclInfo] s::NamedSignature
 {
   -- We want to rewrite FROM the sig these PAs were declared with, TO the given sig
-  local subst :: Substitution =
-    unifyDirectional(head(valueDclInfos).typerep, s.typerep);
-  
-  local useSubst :: Substitution =
-    if !subst.failure then subst
-    else errorSubstitution(head(valueDclInfos).typerep);
+  local subst :: Substitution = unifyNamedSignature(head(valueDclInfos).namedSignature, s);
   
   return if null(valueDclInfos) then []
-         else map(performSubstitutionDef(_, useSubst), head(valueDclInfos).prodDefs) ++ defsFromPADcls(tail(valueDclInfos), s);
+         else map(performSubstitutionDef(_, subst), head(valueDclInfos).prodDefs) ++ defsFromPADcls(tail(valueDclInfos), s);
 }
 

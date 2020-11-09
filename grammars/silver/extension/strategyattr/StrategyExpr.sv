@@ -875,8 +875,9 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   -- Lookup for error checking is *not* contextual, since we don't know the frame here
   local attrDcl::DclInfo = case attr of qNameAttrOccur(a) -> a.lookupAttribute.dcl end;
   attrDcl.givenNonterminalType = error("Not actually needed"); -- Ugh environment needs refactoring
+  local attrTypeScheme::PolyType = attrDcl.typeScheme;
   top.errors :=
-    case attrDcl.typerep, attrDcl.dclBoundVars of
+    case attrTypeScheme.typerep, attrTypeScheme.boundVars of
     | nonterminalType("core:Maybe", [varType(a1)]), [a2] when tyVarEqual(a1, a2) -> []
     | nonterminalType("core:Maybe", [nonterminalType(nt, _)]), _ ->
       if null(getOccursDcl(attrDcl.fullName, nt, top.env))
@@ -907,8 +908,9 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   -- Lookup for error checking is *not* contextual, since we don't know the frame here
   local attrDcl::DclInfo = case attr of qNameAttrOccur(a) -> a.lookupAttribute.dcl end;
   attrDcl.givenNonterminalType = error("Not actually needed"); -- Ugh environment needs refactoring
+  local attrTypeScheme::PolyType = attrDcl.typeScheme;
   top.errors :=
-    case attrDcl.typerep, attrDcl.dclBoundVars of
+    case attrTypeScheme.typerep, attrTypeScheme.boundVars of
     | varType(a1), [a2] when tyVarEqual(a1, a2) -> []
     | nonterminalType(nt, _), _ ->
       if null(getOccursDcl(attrDcl.fullName, nt, top.env))
@@ -967,7 +969,7 @@ Boolean ::= env::Decorated Env attrName::String
     case dcls of
     | [] -> false
     | d :: _ ->
-      case decorate d with { givenNonterminalType = error("Not actually needed"); }.typerep of -- Ugh environment needs refactoring
+      case decorate d with { givenNonterminalType = error("Not actually needed"); }.typeScheme.typerep of -- Ugh environment needs refactoring
       | nonterminalType("core:Maybe", _) -> false
       | _ -> true
       end

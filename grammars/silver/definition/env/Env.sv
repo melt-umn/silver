@@ -264,6 +264,6 @@ NamedSignatureElement ::= nt::Type  anno::DclInfo
   -- Used to compute the local typerep for this nonterminal
   anno.givenNonterminalType = nt;
   
-  return namedSignatureElement(anno.attrOccurring, anno.typerep);
+  return namedSignatureElement(anno.attrOccurring, anno.typeScheme.typerep);
 }
 

@@ -25,17 +25,22 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
   attl.env = nttl.envBindingTyVars;
   nttl.env = nttl.envBindingTyVars;
   
+  local ntTypeScheme::PolyType = nt.lookupType.typeScheme;
+  local atTypeScheme::PolyType = at.lookupType.typeScheme;
+  
   -- Make sure we get the number of tyvars correct for the NT
   top.errors <-
-    if length(nt.lookupType.dclBoundVars) != length(nttl.types)
-    then [err(nt.location, nt.name ++ " expects " ++ toString(length(nt.lookupType.dclBoundVars)) ++
-                           " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
-    else [];
+    case nt.lookupType.dcls of
+    | ntDcl(_, _, _, arity, _) :: _ when arity != length(nttl.types) ->
+        [err(nt.location, nt.name ++ " expects " ++ toString(arity) ++
+                          " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
+    | _ -> []
+    end;
 
   -- Make sure we get the number of tyvars correct for the ATTR
   top.errors <-
-    if length(at.lookupAttribute.dclBoundVars) != length(attl.types)
-    then [err(at.location, at.name ++ " expects " ++ toString(length(at.lookupAttribute.dclBoundVars)) ++
+    if length(atTypeScheme.boundVars) != length(attl.types)
+    then [err(at.location, at.name ++ " expects " ++ toString(length(atTypeScheme.boundVars)) ++
                            " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
     else [];
 
@@ -50,7 +55,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
   
   -- To that end, we want two things:
   -- 1: A type that we can unify with some nonterminal type.
-  -- 2: A type that, under than unification, will be the resulting attribute type.
+  -- 2: A type that, under that unification, will be the resulting attribute type.
 
   -- So we generate three substitutions:
   -- 1: Rewrite the tyvars of type #1 to the types of type #2.
@@ -66,22 +71,19 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
   local rewrite_from :: Substitution =
     composeSubst(
       -- nt's env types -> local skolem types  (vars -> vars)
-      zipVarsIntoSubstitution(nt.lookupType.dclBoundVars, nttl.freeVariables),
+      zipVarsIntoSubstitution(ntTypeScheme.boundVars, nttl.freeVariables),
       -- at's env types -> local skolem types  (vars -> types)
-      zipVarsAndTypesIntoSubstitution(at.lookupAttribute.dclBoundVars, attl.types));
+      zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types));
   
   local rewrite_to :: Substitution =
     zipVarsIntoSubstitution(nttl.freeVariables, freshTyVars(length(nttl.freeVariables)));
   
   -- These have to be two separate renamings, because the second renaming replaces names getting substituted in by the first renaming.
-  production attribute protontty :: Type;
-  production attribute protoatty :: Type;
-  protontty = performRenaming(performRenaming(nt.lookupType.typerep, rewrite_from), rewrite_to);
-  protoatty = performRenaming(performRenaming(at.lookupAttribute.typerep, rewrite_from), rewrite_to);
+  production protontty :: Type = performRenaming(performRenaming(ntTypeScheme.typerep, rewrite_from), rewrite_to);
+  production protoatty :: Type = performRenaming(performRenaming(atTypeScheme.typerep, rewrite_from), rewrite_to);
   
   -- Now, finally, make sure we're not "redefining" the occurs.
-  production attribute occursCheck :: [DclInfo];
-  occursCheck = getOccursDcl(at.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
+  production occursCheck :: [DclInfo] = getOccursDcl(at.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
   
   top.errors <-
     if length(occursCheck) > 1
@@ -89,7 +91,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
     else [];
 
   top.errors <-
-    if !nt.lookupType.typerep.isDecorable
+    if !ntTypeScheme.typerep.isDecorable
     then [err(nt.location, nt.name ++ " is not a nonterminal. Attributes can only occur on nonterminals.")]
     else [];
                 
@@ -119,10 +121,12 @@ top::AGDcl ::= msg::[Message] at::Decorated QName attl::BracketedOptTypeExprs nt
   
   -- Make sure we get the number of tyvars correct for the NT
   top.errors <-
-    if length(nt.lookupType.dclBoundVars) != length(nttl.types)
-    then [err(nt.location, nt.name ++ " expects " ++ toString(length(nt.lookupType.dclBoundVars)) ++
-                           " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
-    else [];
+    case nt.lookupType.dcls of
+    | ntDcl(_, _, _, arity, _) :: _ when arity != length(nttl.types) ->
+        [err(nt.location, nt.name ++ " expects " ++ toString(arity) ++
+                          " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
+    | _ -> []
+    end;
 }
 
 concrete production attributionDcl

@@ -26,7 +26,7 @@ aspect production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
   -- All non-forwarding productions for this nonterminal:
-  local nfprods :: [String] = getNonforwardingProds(nt.lookupType.typerep.typeName, top.flowEnv);
+  local nfprods :: [String] = getNonforwardingProds(nt.lookupType.typeScheme.typerep.typeName, top.flowEnv);
 
   -- The check we're writing in this aspect can find all instances of missing
   -- synthesized equations, but in the interest of improved error messages, we

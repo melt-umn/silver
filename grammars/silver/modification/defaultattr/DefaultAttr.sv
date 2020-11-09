@@ -63,7 +63,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = monoType(ty);
   
   top.refDispatcher = lhsReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- TODO: be smarter about the error message
@@ -83,7 +83,7 @@ top::DefLHS ::= q::Decorated QName
     if existingProblems || top.found then []
     else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.name ++ "' on the lhs '" ++ q.name ++ "'")];
   
-  top.typerep = q.lookupValue.typerep;
+  top.typerep = q.lookupValue.typeScheme.typerep;
 
   top.translation = makeNTClassName(top.frame.lhsNtName) ++ ".defaultSynthesizedAttributes";
 }

@@ -33,7 +33,7 @@ top::AGDcl ::= 'testFor' testSuite::Name ':' n::Name '::' id::QName ',' e::Expr 
       functionLHS(typerepTypeExpr(boolType(), location=l), location=l),
       '::=',
       productionRHSCons(
-        productionRHSElem(n, '::', typerepTypeExpr(id.lookupType.typerep, location=l), location=l),
+        productionRHSElem(n, '::', typerepTypeExpr(id.lookupType.typeScheme.typerep, location=l), location=l),
         productionRHSNil(location=l), location=l),
       location=l);
   

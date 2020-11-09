@@ -22,12 +22,12 @@ top::AGDcl ::= 'derive' 'Arbitrary' 'on' names::QNames ';'
 function prodDclInfoNumChildLte
 Boolean ::= l::DclInfo  r::DclInfo
 {
-  return length(l.typerep.inputTypes) <= length(r.typerep.inputTypes);
+  return length(l.typeScheme.typerep.inputTypes) <= length(r.typeScheme.typerep.inputTypes);
 }
 function prodDclInfoNumChildEq
 Boolean ::= l::DclInfo  r::DclInfo
 {
-  return length(l.typerep.inputTypes) == length(r.typerep.inputTypes);
+  return length(l.typeScheme.typerep.inputTypes) == length(r.typeScheme.typerep.inputTypes);
 }
 
 -- splits where operator becomes false in list
@@ -56,7 +56,7 @@ AGDcl ::= id::QName  env::Decorated Env
   
   local sig :: FunctionSignature =
     functionSignature(
-      functionLHS(typerepTypeExpr(id.lookupType.typerep, location=l), location=l),
+      functionLHS(typerepTypeExpr(id.lookupType.typeScheme.typerep, location=l), location=l),
       '::=',
       productionRHSCons(
         productionRHSElem(name("current__depth", l), '::', typerepTypeExpr(intType(), location=l), location=l),
@@ -83,7 +83,7 @@ AGDcl ::= id::QName  env::Decorated Env
   return
     functionDcl(
       'function',
-      name(getGenArbName(id.lookupType.typerep), l),
+      name(getGenArbName(id.lookupType.typeScheme.typerep), l),
       sig,
       body, location=l);
 {-
@@ -117,7 +117,7 @@ function deriveGenerateOn
 Expr ::= id::DclInfo  l::Location
 {
   local annos :: [Pair<String Expr>] =
-    if null(id.typerep.namedTypes) then
+    if null(id.typeScheme.typerep.namedTypes) then
       []
     else
       -- we just erroneously assume the annotation must be location, for now
@@ -127,7 +127,7 @@ Expr ::= id::DclInfo  l::Location
     mkFullFunctionInvocation(
       l,
       baseExpr(qName(l, id.fullName), location=l),
-      map(callGenArb(_, l), id.typerep.inputTypes),
+      map(callGenArb(_, l), id.typeScheme.typerep.inputTypes),
       annos);
 }
 

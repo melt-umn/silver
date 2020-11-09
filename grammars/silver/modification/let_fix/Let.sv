@@ -136,9 +136,9 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
   
   top.typerep = 
     -- isDecorated should return true if it's a ntOrDecType.
-    if q.lookupValue.typerep.isDecorated
-    then ntOrDecType(q.lookupValue.typerep.decoratedType, freshType())
-    else q.lookupValue.typerep;
+    if q.lookupValue.typeScheme.typerep.isDecorated
+    then ntOrDecType(q.lookupValue.typeScheme.typerep.decoratedType, freshType())
+    else q.lookupValue.typeScheme.typerep;
 
   top.upSubst = top.downSubst;
 }

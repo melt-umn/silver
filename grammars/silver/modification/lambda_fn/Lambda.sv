@@ -57,7 +57,7 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   propagate errors;
   
-  top.typerep = q.lookupValue.typerep;
+  top.typerep = q.lookupValue.typeScheme.typerep;
 
   top.upSubst = top.downSubst;
   
