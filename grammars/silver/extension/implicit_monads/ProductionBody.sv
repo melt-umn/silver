@@ -27,8 +27,8 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
      else []) ++
      ( if attr.found && dl.found
        then case attr.attrDcl of
-            | implicitInhDcl(_, _, _, _, _) -> []
-            | implicitSynDcl(_, _, _, _, _) -> []
+            | implicitInhDcl(_, _, _) -> []
+            | implicitSynDcl(_, _, _) -> []
             | _ -> [err(top.location, "Implicit equations can only be used for " ++
                                       "attributes declared to be implicit; " ++
                                       attr.unparse ++ " is not implicit")]
@@ -56,8 +56,8 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
   local merrors::[Message] =
        if attr.found && dl.found
        then case attr.attrDcl of
-            | implicitSynDcl(_, _, _, _, _) -> []
-            | implicitInhDcl(_, _, _, _, _) -> []
+            | implicitSynDcl(_, _, _) -> []
+            | implicitInhDcl(_, _, _) -> []
             | _ -> [err(top.location, "Implicit equations can only be used for " ++
                                       "attributes declared to be implicit; " ++
                                       attr.unparse ++ " is not implicit")]
@@ -92,8 +92,8 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
   local merrors::[Message] =
     if attr.found && dl.found
     then case attr.attrDcl of
-         | restrictedSynDcl(_, _, _, _, _) -> []
-         | restrictedInhDcl(_, _, _, _, _) -> []
+         | restrictedSynDcl(_, _, _) -> []
+         | restrictedInhDcl(_, _, _) -> []
          | _ -> [err(top.location, "Restricted equations can only be used for " ++
                                    "attributes declared to be restricted; " ++
                                    attr.unparse ++ " is not restricted")]
@@ -139,10 +139,10 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
   local fwd::ProductionStmt =
             if attr.found
             then case attr.attrDcl of
-                 | restrictedSynDcl(_, _, _, _, _) -> errorAttributeDef(restrictedErr, dl, attr, e, location=top.location)
-                 | restrictedInhDcl(_, _, _, _, _) -> errorAttributeDef(restrictedErr, dl, attr, e, location=top.location)
-                 | implicitSynDcl(_, _, _, _, _) -> errorAttributeDef(implicitErr, dl, attr, e, location=top.location)
-                 | implicitInhDcl(_, _, _, _, _) -> errorAttributeDef(implicitErr, dl, attr, e, location=top.location)
+                 | restrictedSynDcl(_, _, _) -> errorAttributeDef(restrictedErr, dl, attr, e, location=top.location)
+                 | restrictedInhDcl(_, _, _) -> errorAttributeDef(restrictedErr, dl, attr, e, location=top.location)
+                 | implicitSynDcl(_, _, _) -> errorAttributeDef(implicitErr, dl, attr, e, location=top.location)
+                 | implicitInhDcl(_, _, _) -> errorAttributeDef(implicitErr, dl, attr, e, location=top.location)
                  | _ -> attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
                  end
                  --if not found, let the normal dispatcher handle it

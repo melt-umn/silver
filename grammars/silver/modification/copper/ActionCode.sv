@@ -22,7 +22,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
     constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
 
   ns.signatureName = fName;
-  acode.frame = reduceActionContext(ns.namedSignature, myFlowGraph);
+  acode.frame = reduceActionContext(ns.namedSignature, myFlowGraph, sourceGrammar=top.grammarName);
   acode.env = newScopeEnv(productionActionVars ++ acode.defs ++ ns.actionDefs, top.env);
 
   top.errors <- acode.errors;
@@ -105,7 +105,7 @@ function hackTransformLocals
 [Def] ::= d::Def
 {
   return case d.dcl of
-         | localDcl(sg,sl,fn,ty) -> [parserLocalDef(sg,sl,fn,ty)]
+         | localDcl(fn,ty,sourceGrammar=sg,location=sl) -> [parserLocalDef(sg,sl,fn,ty)]
          | _ -> [] -- TODO: possibly error??
          end;
 }

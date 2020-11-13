@@ -16,7 +16,7 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
   
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(functorDcl(top.grammarName, a.location, fName, freshTyVar())))],
+      [attrDef(defaultEnvItem(functorDcl(fName, freshTyVar(), sourceGrammar=top.grammarName, location=a.location)))],
       location=top.location);
 }
 

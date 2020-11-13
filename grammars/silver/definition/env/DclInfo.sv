@@ -4,8 +4,7 @@ imports silver:definition:type;
 
 import silver:definition:regex;  -- soley for Terms. TODO : fix?
 
-synthesized attribute sourceGrammar :: String;
-synthesized attribute sourceLocation :: Location;
+annotation sourceGrammar :: String;
 synthesized attribute fullName :: String;
 
 -- types
@@ -44,7 +43,7 @@ inherited attribute givenSubstitution :: Substitution;
  -
  - hmm, unparsing could probably be fixed...
  -}
-closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
+closed nonterminal DclInfo with sourceGrammar, location, fullName, -- everyone
                          typeScheme, givenNonterminalType, -- types (gNT for occurs)
                          namedSignature, hasForward, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
@@ -56,7 +55,7 @@ closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- ever
 aspect default production
 top::DclInfo ::=
 {
-  -- All dcls must provide sourceGrammar, sourceLocation, fullName
+  -- All Dcls mus provide fullName
 
   -- All values must provide typeScheme.
   -- All attributes must provide typeScheme.
@@ -92,19 +91,15 @@ top::DclInfo ::=
 
 -- ValueDclInfos that can NEVER appear in interface files:
 abstract production childDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = monoType(ty);
 }
 abstract production lhsDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = monoType(ty);
@@ -112,34 +107,28 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 
 -- ValueDclInfos that CAN appear in interface files, but only via "production attributes:"
 abstract production localDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
   
   top.typeScheme = monoType(ty);
   
-  top.substitutedDclInfo = localDcl(sg,sl, fn, performRenaming(ty, top.givenSubstitution));
+  top.substitutedDclInfo = localDcl( fn, performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, location=top.location);
 }
 abstract production forwardDcl
-top::DclInfo ::= sg::String sl::Location ty::Type
+top::DclInfo ::= ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = "forward";
   
   top.typeScheme = monoType(ty);
   
-  top.substitutedDclInfo = forwardDcl(sg,sl, performRenaming(ty, top.givenSubstitution));
+  top.substitutedDclInfo = forwardDcl( performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, location=top.location);
 }
 
 -- ValueDclInfos that DO appear in interface files:
 abstract production prodDcl
-top::DclInfo ::= sg::String sl::Location ns::NamedSignature hasForward::Boolean
+top::DclInfo ::= ns::NamedSignature hasForward::Boolean
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = ns.fullName;
   
   top.namedSignature = ns;
@@ -147,10 +136,8 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature hasForward::Boolean
   top.hasForward = hasForward;
 }
 abstract production funDcl
-top::DclInfo ::= sg::String sl::Location ns::NamedSignature
+top::DclInfo ::= ns::NamedSignature
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = ns.fullName;
   
   top.namedSignature = ns;
@@ -158,10 +145,8 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature
   top.hasForward = false;
 }
 abstract production globalValueDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = polyType(ty.freeVariables, ty);
@@ -169,29 +154,23 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 
 -- TypeDclInfos
 abstract production ntDcl
-top::DclInfo ::= sg::String sl::Location fn::String arity::Integer closed::Boolean
+top::DclInfo ::= fn::String arity::Integer closed::Boolean
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   local tvs::[TyVar] = freshTyVars(arity);
   top.typeScheme = polyType(tvs, nonterminalType(fn, map(varType, tvs)));
 }
 abstract production termDcl
-top::DclInfo ::= sg::String sl::Location fn::String regex::Regex
+top::DclInfo ::= fn::String regex::Regex
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = monoType(terminalType(fn));
 }
 abstract production lexTyVarDcl
-top::DclInfo ::= sg::String sl::Location fn::String isAspect::Boolean tv::TyVar
+top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   -- Lexical type vars in aspects aren't skolemized, since they unify with the real (skolem) types.
@@ -201,30 +180,24 @@ top::DclInfo ::= sg::String sl::Location fn::String isAspect::Boolean tv::TyVar
 
 -- AttributeDclInfos
 abstract production synDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = polyType(bound, ty);
   top.isSynthesized = true;
 }
 abstract production inhDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = polyType(bound, ty);
   top.isInherited = true;
 }
 abstract production annoDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = polyType(bound, ty);
@@ -233,10 +206,8 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 
 -- ProductionAttrDclInfo
 abstract production paDcl
-top::DclInfo ::= sg::String sl::Location ns::NamedSignature{-fn::String outty::Type intys::[Type]-} dcls::[Def]
+top::DclInfo ::= ns::NamedSignature{-fn::String outty::Type intys::[Type]-} dcls::[Def]
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = ns.fullName;
   
   top.prodDefs = dcls;
@@ -249,10 +220,8 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature{-fn::String outty::T
 
 -- OccursDclInfo
 abstract production occursDcl
-top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type atty::Type
+top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fnnt;
   
   -- There should be no type variables in atty that aren't in ntty. (Important constraint!)
@@ -272,10 +241,8 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type at
 }
 
 abstract production annoInstanceDcl
-top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type atty::Type
+top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fnnt;
   
   -- There should be no type variables in atty that aren't in ntty. (Important constraint!)

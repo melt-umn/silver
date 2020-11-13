@@ -105,7 +105,7 @@ function dclinfo2possibility
 String ::= dcl::DclInfo
 {
   -- TODO: perhaps some way of including types, when they are relevant (attributes, values)
-  return "\t" ++ dcl.fullName ++ " (" ++ dcl.sourceLocation.filename ++ ":" ++ toString(dcl.sourceLocation.line) ++ ")";
+  return "\t" ++ dcl.fullName ++ " (" ++ dcl.location.filename ++ ":" ++ toString(dcl.location.line) ++ ")";
 }
 
 

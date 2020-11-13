@@ -39,7 +39,7 @@ abstract production disambiguationContext
 top::BlockContext ::= g::ProductionGraph
 {
   top.permitPluck = true;
-  forwards to actionContext(g);
+  forwards to actionContext(g, sourceGrammar=top.sourceGrammar);
 }
 
 {-- Production reduce actions -}
@@ -50,6 +50,6 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
   top.signature = sig; -- TODO: figure out if this is ever used for actions?
   top.className = makeClassName(top.fullName); -- child references in production actions use it
 
-  forwards to actionContext(g);
+  forwards to actionContext(g, sourceGrammar=top.sourceGrammar);
 }
 

@@ -49,7 +49,7 @@ top::NameOrBOperator ::= e::Expr
   local myFlowGraph :: ProductionGraph = 
     constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
 
-  e.frame = globalExprContext(myFlowGraph);
+  e.frame = globalExprContext(myFlowGraph, sourceGrammar=top.grammarName);
 }
 
 concrete production plusplusOperator

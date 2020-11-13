@@ -36,37 +36,37 @@ top::Def ::= d::EnvItem
 function parserAttrDef
 Def ::= sg::String sl::Location fn::String ty::Type
 {
-  return valueDef(defaultEnvItem(parserAttrDcl(sg,sl,fn,ty)));
+  return valueDef(defaultEnvItem(parserAttrDcl(fn,ty,sourceGrammar=sg,location=sl)));
 }
 
 function pluckTermDef
 Def ::= sg::String sl::Location fn::String
 {
-  return valueDef(defaultEnvItem(pluckTermDcl(sg,sl,fn)));
+  return valueDef(defaultEnvItem(pluckTermDcl(fn,sourceGrammar=sg,location=sl)));
 }
 
 function lexerClassDef
 Def ::= sg::String sl::Location fn::String
 {
-  return lxrClsDef(defaultEnvItem(lexerClassDcl(sg,sl,fn)));
+  return lxrClsDef(defaultEnvItem(lexerClassDcl(fn,sourceGrammar=sg,location=sl)));
 }
 
 function termAttrValueDef
 Def ::= sg::String sl::Location fn::String ty::Type
 {
-  return valueDef(defaultEnvItem(termAttrValueDcl(sg,sl,fn,ty)));
+  return valueDef(defaultEnvItem(termAttrValueDcl(fn,ty,sourceGrammar=sg,location=sl)));
 }
 
 function actionChildDef
 Def ::= sg::String sl::Location fn::String ty::Type
 {
-  return valueDef(defaultEnvItem(actionChildDcl(sg,sl,fn,ty)));
+  return valueDef(defaultEnvItem(actionChildDcl(fn,ty,sourceGrammar=sg,location=sl)));
 }
 
 function parserLocalDef
 Def ::= sg::String sl::Location fn::String ty::Type
 {
-  return valueDef(defaultEnvItem(parserLocalDcl(sg,sl,fn,ty)));
+  return valueDef(defaultEnvItem(parserLocalDcl(fn,ty,sourceGrammar=sg,location=sl)));
 }
 
 --------------------------------------------------------------------------------

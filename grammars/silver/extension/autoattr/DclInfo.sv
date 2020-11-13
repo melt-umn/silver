@@ -12,16 +12,14 @@ top::DclInfo ::=
 }
 
 aspect production inhDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.propagateDispatcher = propagateInh(_, location=_);
 }
 
 abstract production functorDcl
-top::DclInfo ::= sg::String sl::Location fn::String tyVar::TyVar
+top::DclInfo ::= fn::String tyVar::TyVar
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = polyType([tyVar], varType(tyVar));
@@ -35,10 +33,8 @@ top::DclInfo ::= sg::String sl::Location fn::String tyVar::TyVar
 }
 
 abstract production monoidDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type empty::Expr append::Operation
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append::Operation
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = polyType(bound, ty);
@@ -58,10 +54,8 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type empt
 }
 
 abstract production equalityInhDcl
-top::DclInfo ::= sg::String sl::Location fn::String tyVar::TyVar
+top::DclInfo ::= fn::String tyVar::TyVar
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = polyType([tyVar], varType(tyVar));
@@ -75,10 +69,8 @@ top::DclInfo ::= sg::String sl::Location fn::String tyVar::TyVar
 }
 
 abstract production equalitySynDcl
-top::DclInfo ::= sg::String sl::Location inh::String syn::String
+top::DclInfo ::= inh::String syn::String
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = syn;
 
   top.typeScheme = monoType(boolType());
@@ -92,10 +84,8 @@ top::DclInfo ::= sg::String sl::Location inh::String syn::String
 }
 
 abstract production unificationInhDcl
-top::DclInfo ::= sg::String sl::Location fn::String tyVar::TyVar
+top::DclInfo ::= fn::String tyVar::TyVar
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = polyType([tyVar], varType(tyVar));
@@ -109,10 +99,8 @@ top::DclInfo ::= sg::String sl::Location fn::String tyVar::TyVar
 }
 
 abstract production unificationSynPartialDcl
-top::DclInfo ::= sg::String sl::Location inh::String synPartial::String syn::String
+top::DclInfo ::= inh::String synPartial::String syn::String
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = synPartial;
 
   top.typeScheme = monoType(boolType());
@@ -126,10 +114,8 @@ top::DclInfo ::= sg::String sl::Location inh::String synPartial::String syn::Str
 }
 
 abstract production unificationSynDcl
-top::DclInfo ::= sg::String sl::Location inh::String synPartial::String syn::String
+top::DclInfo ::= inh::String synPartial::String syn::String
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = syn;
 
   top.typeScheme = monoType(boolType());
@@ -143,10 +129,8 @@ top::DclInfo ::= sg::String sl::Location inh::String synPartial::String syn::Str
 }
 
 abstract production threadedInhDcl
-top::DclInfo ::= sg::String sl::Location inh::String syn::String bound::[TyVar] ty::Type
+top::DclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = inh;
 
   top.typeScheme = polyType(bound, ty);
@@ -160,10 +144,8 @@ top::DclInfo ::= sg::String sl::Location inh::String syn::String bound::[TyVar] 
 }
 
 abstract production threadedSynDcl
-top::DclInfo ::= sg::String sl::Location inh::String syn::String bound::[TyVar] ty::Type
+top::DclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = syn;
 
   top.typeScheme = polyType(bound, ty);

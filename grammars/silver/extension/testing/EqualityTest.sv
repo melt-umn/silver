@@ -68,8 +68,8 @@ ag::AGDcl ::= kwd::'equalityTest'
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(ag.grammarName, ag.compiledGrammars)).grammarFlowTypes;
   local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(ag.grammarName, ag.compiledGrammars)).productionFlowGraphs;
 
-  value.frame = globalExprContext(constructAnonymousGraph(value.flowDefs, ag.env, myProds, myFlow));
-  expected.frame = globalExprContext(constructAnonymousGraph(expected.flowDefs, ag.env, myProds, myFlow));
+  value.frame = globalExprContext(constructAnonymousGraph(value.flowDefs, ag.env, myProds, myFlow), sourceGrammar=ag.grammarName);
+  expected.frame = globalExprContext(constructAnonymousGraph(expected.flowDefs, ag.env, myProds, myFlow), sourceGrammar=ag.grammarName);
   
 
   ag.errors <- forward.errors;

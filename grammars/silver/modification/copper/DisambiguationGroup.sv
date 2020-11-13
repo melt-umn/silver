@@ -21,7 +21,7 @@ top::AGDcl ::= 'disambiguate' terms::TermList acode::ActionCode_c
   local myFlowGraph :: ProductionGraph = 
     constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
 
-  acode.frame = disambiguationContext(myFlowGraph);
+  acode.frame = disambiguationContext(myFlowGraph, sourceGrammar=top.grammarName);
 
   top.syntaxAst := [syntaxDisambiguationGroup(fName, terms.termList, false, acode.actionCode)];
 }

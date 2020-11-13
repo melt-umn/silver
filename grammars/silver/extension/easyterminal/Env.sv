@@ -25,7 +25,7 @@ function filterAndConvertTermDcls
 [Pair<String DclInfo>] ::= ei::EnvItem sofar::[Pair<String DclInfo>]
 {
   return case ei.dcl of
-         | termDcl(_, _, fn, regex) -> pair(regex.regString, ei.dcl) :: sofar
+         | termDcl(fn, regex) -> pair(regex.regString, ei.dcl) :: sofar
          | _ -> sofar
          end;
 }

@@ -26,8 +26,8 @@ top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTy
   
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(threadedInhDcl(top.grammarName, inh.location, inhFName, synFName, tl.freeVariables, te.typerep))),
-       attrDef(defaultEnvItem(threadedSynDcl(top.grammarName, syn.location, inhFName, synFName, tl.freeVariables, te.typerep)))],
+      [attrDef(defaultEnvItem(threadedInhDcl(inhFName, synFName, tl.freeVariables, te.typerep, sourceGrammar=top.grammarName, location=inh.location))),
+       attrDef(defaultEnvItem(threadedSynDcl(inhFName, synFName, tl.freeVariables, te.typerep, sourceGrammar=top.grammarName, location=syn.location)))],
       location=top.location);
 }
 
