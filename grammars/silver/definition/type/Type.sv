@@ -15,6 +15,34 @@ abstract production polyType
 top::PolyType ::= bound::[TyVar] ty::Type
 {}
 
+abstract production constraintType
+top::PolyType ::= bound::TyVar contexts::[Context] ty::Type
+{}
+{-
+-- ClassDclInfos
+abstract production classDcl
+top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] contexts::[Context] tv::TyVar
+{
+  
+}
+
+-- InstDclInfos
+abstract production instDcl
+top::DclInfo ::= sg::String sl::Location tcfn::String bound::[TyVar] contexts::[Context] ty::Type
+{
+  
+}
+-}
+
+{--
+ - Represents a constraint on a type, e.g. a type class instance
+ -}
+nonterminal Context;
+
+abstract production instContext
+top::Context ::= cls::String tv::TyVar
+{}
+
 {--
  - Silver Type Representations.
  -}
