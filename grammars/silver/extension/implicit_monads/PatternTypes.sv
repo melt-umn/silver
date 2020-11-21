@@ -5,7 +5,7 @@ top::Pattern ::= prod::QName '(' ps::PatternList ')'
 {
   top.patternType = case prod.lookupValue.typeScheme.typerep of
                     | functionType(out, _, _) -> out
-                    | _ -> prod.lookupValue.typeScheme.typerep
+                    | t -> t
                     end;
 } 
 

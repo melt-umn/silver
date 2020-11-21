@@ -49,7 +49,7 @@ top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
-  top.mtyperep = if q.lookupValue.typeScheme.typerep.isDecorable
+  top.mtyperep = if q.lookupValue.typeScheme.isDecorable
                  then ntOrDecType(q.lookupValue.typeScheme.typerep, freshType())
                  else q.lookupValue.typeScheme.typerep;
   top.monadicNames = if top.monadicallyUsed
@@ -75,7 +75,7 @@ top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
-  top.mtyperep = if q.lookupValue.typeScheme.typerep.isDecorable
+  top.mtyperep = if q.lookupValue.typeScheme.isDecorable
                  then ntOrDecType(q.lookupValue.typeScheme.typerep, freshType())
                  else q.lookupValue.typeScheme.typerep;
   top.monadicNames = if top.monadicallyUsed

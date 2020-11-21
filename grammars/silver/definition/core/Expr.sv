@@ -75,7 +75,7 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
   
-  top.typerep = if q.lookupValue.typeScheme.typerep.isDecorable
+  top.typerep = if q.lookupValue.typeScheme.isDecorable
                 then ntOrDecType(q.lookupValue.typeScheme.typerep, freshType())
                 else q.lookupValue.typeScheme.typerep;
 }
@@ -94,7 +94,7 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
   
-  top.typerep = if q.lookupValue.typeScheme.typerep.isDecorable
+  top.typerep = if q.lookupValue.typeScheme.isDecorable
                 then ntOrDecType(q.lookupValue.typeScheme.typerep, freshType())
                 else q.lookupValue.typeScheme.typerep;
 }

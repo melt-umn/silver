@@ -379,7 +379,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
   
   top.errors <-
-    if val.lookupValue.typeScheme.typerep.isError then []
+    if val.lookupValue.typeScheme.isError then []
     else [err(val.location, val.name ++ " cannot be assigned to.")];
 }
 
