@@ -513,7 +513,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
                       | implicitSynDcl(_, _, _, _, _) -> []
                       | implicitInhDcl(_, _, _, _, _) -> []
                       | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
-                                                "be either implicit or explicit; " ++ q.unparse ++
+                                                "be either implicit or restricted; " ++ q.unparse ++
                                                 " is neither")]
                       end
                  else [];
@@ -580,7 +580,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                  | implicitSynDcl(_, _, _, _, _) -> []
                  | implicitInhDcl(_, _, _, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
-                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
                  end;
   top.monadicNames = [];
@@ -625,7 +625,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                  | implicitSynDcl(_, _, _, _, _) -> []
                  | implicitInhDcl(_, _, _, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
-                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
                  end;
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
@@ -704,7 +704,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                  | implicitSynDcl(_, _, _, _, _) -> []
                  | implicitInhDcl(_, _, _, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
-                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
                  end;
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
@@ -748,7 +748,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                  | implicitSynDcl(_, _, _, _, _) -> []
                  | implicitInhDcl(_, _, _, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
-                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
                  end;
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
@@ -787,7 +787,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                  | implicitSynDcl(_, _, _, _, _) -> []
                  | implicitInhDcl(_, _, _, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
-                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
                  end;
   top.mUpSubst = top.mDownSubst;
