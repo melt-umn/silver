@@ -1,28 +1,8 @@
 grammar silver:analysis:typechecking:core;
 
-aspect production lengthFunction
-top::Expr ::= 'length' '(' e::Expr ')'
-{
-  e.downSubst = top.downSubst;
-  forward.downSubst= e.upSubst;
-}
-aspect production stringLength
-top::Expr ::= e::Decorated Expr
-{
-  top.upSubst = top.downSubst;
-}
-aspect production errorLength
-top::Expr ::= e::Decorated Expr
-{
-  top.upSubst = top.downSubst;
-}
-
 aspect production toBooleanFunction
 top::Expr ::= 'toBoolean' '(' e1::Expr ')'
 {
-  e1.downSubst = top.downSubst;
-  top.upSubst = e1.upSubst;
-  
   top.errors <-
     if performSubstitution(e1.typerep, top.finalSubst).instanceConvertible
     then []
@@ -32,9 +12,6 @@ top::Expr ::= 'toBoolean' '(' e1::Expr ')'
 aspect production toIntegerFunction
 top::Expr ::= 'toInteger' '(' e1::Expr ')'
 {
-  e1.downSubst = top.downSubst;
-  top.upSubst = e1.upSubst;
-  
   top.errors <-
     if performSubstitution(e1.typerep, top.finalSubst).instanceConvertible
     then []
@@ -44,8 +21,6 @@ top::Expr ::= 'toInteger' '(' e1::Expr ')'
 aspect production toFloatFunction
 top::Expr ::= 'toFloat' '(' e1::Expr ')'
 {
-  e1.downSubst = top.downSubst;
-  top.upSubst = e1.upSubst;
   
   top.errors <-
     if performSubstitution(e1.typerep, top.finalSubst).instanceConvertible
@@ -56,9 +31,6 @@ top::Expr ::= 'toFloat' '(' e1::Expr ')'
 aspect production toStringFunction
 top::Expr ::= 'toString' '(' e1::Expr ')'
 {
-  e1.downSubst = top.downSubst;
-  top.upSubst = e1.upSubst;
-  
   top.errors <-
     if performSubstitution(e1.typerep, top.finalSubst).instanceConvertible
     then []
@@ -80,8 +52,6 @@ Boolean ::= ty::Type
 aspect production reifyFunctionLiteral
 top::Expr ::= 'reify'
 {
-  top.upSubst = top.downSubst;
-
   top.errors <-
     case performSubstitution(top.typerep, top.finalSubst) of
     | functionType(nonterminalType("core:Either", [stringType(), resultType]), [nonterminalType("core:reflect:AST", [])], []) ->
@@ -99,9 +69,7 @@ top::Expr ::= 'new' '(' e1::Expr ')'
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e1.downSubst = top.downSubst;
-  errCheck1.downSubst = e1.upSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, errCheck1, top;
   
   errCheck1 = checkDecorated(e1.typerep);
   top.errors <-
@@ -116,11 +84,7 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
 
-  es.downSubst = top.downSubst;
-  el.downSubst = es.upSubst;
-  errCheck1.downSubst = el.upSubst;
-  errCheck2.downSubst = errCheck1.upSubst;
-  top.upSubst = errCheck2.upSubst;
+  thread downSubst, upSubst on top, es, el, errCheck1, errCheck2, top;
   
   errCheck1 = check(es.typerep, stringType());
   errCheck2 = check(el.typerep, nonterminalType("core:Location", []));

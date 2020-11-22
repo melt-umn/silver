@@ -33,8 +33,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
   
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   
-  errCheck1.downSubst = top.downSubst;
-  forward.downSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, errCheck1, forward;
 
   errCheck1 = check(vty, inferredType);
   top.errors <-
