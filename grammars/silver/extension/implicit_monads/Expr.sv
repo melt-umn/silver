@@ -50,7 +50,7 @@ top::Expr ::= q::Decorated QName
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = if q.lookupValue.typeScheme.isDecorable
-                 then ntOrDecType(q.lookupValue.typeScheme.typerep, freshType())
+                 then q.lookupValue.typeScheme.asNtOrDecType
                  else q.lookupValue.typeScheme.typerep;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
@@ -63,7 +63,7 @@ top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
-  top.mtyperep = ntOrDecType(q.lookupValue.typeScheme.typerep, freshType());
+  top.mtyperep = q.lookupValue.typeScheme.asNtOrDecType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
                      else [];
@@ -76,7 +76,7 @@ top::Expr ::= q::Decorated QName
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = if q.lookupValue.typeScheme.isDecorable
-                 then ntOrDecType(q.lookupValue.typeScheme.typerep, freshType())
+                 then q.lookupValue.typeScheme.asNtOrDecType
                  else q.lookupValue.typeScheme.typerep;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
@@ -90,7 +90,7 @@ top::Expr ::= q::Decorated QName
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
-  top.mtyperep = ntOrDecType(q.lookupValue.typeScheme.typerep, freshType());
+  top.mtyperep = q.lookupValue.typeScheme.asNtOrDecType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
                      else [];

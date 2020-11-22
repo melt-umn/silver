@@ -24,11 +24,14 @@ synthesized attribute isTerminal :: Boolean;
 -- Used by 'new' and type-determination for attributes (NOT on regular nonterminals)
 synthesized attribute decoratedType :: Type;
 
+-- Freshens a nonterminal PolyType into a possibly-decorated nonterminal Type
+synthesized attribute asNtOrDecType :: Type;
+
 -- Used instead of unify() when we want to just know its decorated or undecorated
 synthesized attribute unifyInstanceNonterminal :: Substitution;
 synthesized attribute unifyInstanceDecorated :: Substitution;
 
-attribute isError, isDecorated, isDecorable, isTerminal, arity occurs on PolyType;
+attribute arity, isError, isDecorated, isDecorable, isTerminal, asNtOrDecType occurs on PolyType;
 
 aspect production monoType
 top::PolyType ::= ty::Type
@@ -38,6 +41,7 @@ top::PolyType ::= ty::Type
   top.isDecorated = ty.isDecorated;
   top.isDecorable = ty.isDecorable;
   top.isTerminal = ty.isTerminal;
+  top.asNtOrDecType = ntOrDecType(ty, freshType());
 }
 
 aspect production polyType
@@ -48,6 +52,7 @@ top::PolyType ::= bound::[TyVar] ty::Type
   top.isDecorated = ty.isDecorated;
   top.isDecorable = ty.isDecorable;
   top.isTerminal = ty.isTerminal;
+  top.asNtOrDecType = ntOrDecType(top.typerep, freshType());
 }
 
 attribute isError, inputTypes, outputType, namedTypes, arity, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;

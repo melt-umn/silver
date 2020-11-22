@@ -76,7 +76,7 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   
   top.typerep = if q.lookupValue.typeScheme.isDecorable
-                then ntOrDecType(q.lookupValue.typeScheme.typerep, freshType())
+                then q.lookupValue.typeScheme.asNtOrDecType
                 else q.lookupValue.typeScheme.typerep;
 }
 
@@ -86,7 +86,7 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   
   -- An LHS is *always* a decorable (nonterminal) type.
-  top.typerep = ntOrDecType(q.lookupValue.typeScheme.typerep, freshType());
+  top.typerep = q.lookupValue.typeScheme.asNtOrDecType;
 }
 
 abstract production localReference
@@ -95,7 +95,7 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   
   top.typerep = if q.lookupValue.typeScheme.isDecorable
-                then ntOrDecType(q.lookupValue.typeScheme.typerep, freshType())
+                then q.lookupValue.typeScheme.asNtOrDecType
                 else q.lookupValue.typeScheme.typerep;
 }
 
@@ -105,7 +105,7 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
-  top.typerep = ntOrDecType(q.lookupValue.typeScheme.typerep, freshType());
+  top.typerep = q.lookupValue.typeScheme.asNtOrDecType;
 }
 
 -- Note here that production and function *references* are distinguished.
