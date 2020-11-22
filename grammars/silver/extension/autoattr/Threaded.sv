@@ -86,7 +86,7 @@ top::ProductionStmt ::= inh::String syn::Decorated QName
 }
 
 concrete production threadDcl_c
-top::ProductionStmt ::= 'thread' inh::QName ',' syn::QName 'on' children::Names ';'
+top::ProductionStmt ::= 'thread' inh::QName ',' syn::QName 'on' children::ChildNameList ';'
 {
   top.unparse = s"thread ${inh.unparse}, ${syn.unparse} on ${children.unparse};";
   forwards to
@@ -156,17 +156,35 @@ top::ProductionStmt ::= inh::String syn::String children::[Name]
 
 synthesized attribute ids :: [Name];
 
-nonterminal Names with unparse, ids;
+nonterminal ChildNameList with location, unparse, ids;
 concrete production idSingle
-top::Names ::= id::Name
+top::ChildNameList ::= id::ChildName
 {
-  top.unparse = id.name;
-  top.ids = [id];
+  top.unparse = id.unparse;
+  top.ids = [id.id];
 }
 
 concrete production idCons
-top::Names ::= id1::Name ',' id2::Names
+top::ChildNameList ::= id1::ChildName ',' id2::ChildNameList
 {
-  top.unparse = id1.name ++ ", " ++ id2.unparse ;
-  top.ids = [id1] ++ id2.ids;
+  top.unparse = id1.unparse ++ ", " ++ id2.unparse;
+  top.ids = id1.id :: id2.ids;
 }
+
+synthesized attribute id :: Name;
+
+nonterminal ChildName with location, unparse, id;
+concrete production idName
+top::ChildName ::= id::Name
+{
+  top.unparse = id.unparse;
+  top.id = id;
+}
+
+concrete production idForward
+top::ChildName ::= 'forward'
+{
+  top.unparse = "forward";
+  top.id = name("forward", top.location);
+}
+
