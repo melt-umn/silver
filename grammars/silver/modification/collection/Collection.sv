@@ -249,7 +249,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   e.downSubst = top.downSubst;
   -- the real type checking is done by the forward, but we must ensure things are tied up nicely
   -- otherwise we don't specialize ntOrDecs in OUR e
-  forward.downSubst = unifyCheck(val.lookupValue.typeScheme.typerep, e.typerep, e.upSubst);
+  forward.downSubst = unifyCheck(val.lookupValue.typeScheme.monoType, e.typerep, e.upSubst);
   
   forwards to localValueDef(val, e, location=top.location);
 }
@@ -261,7 +261,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   e.downSubst = top.downSubst;
   -- the real type checking is done by the forward, but we must ensure things are tied up nicely
   -- otherwise we don't specialize ntOrDecs in OUR e
-  forward.downSubst = unifyCheck(val.lookupValue.typeScheme.typerep, e.typerep, e.upSubst);
+  forward.downSubst = unifyCheck(val.lookupValue.typeScheme.monoType, e.typerep, e.upSubst);
   
   forwards to localValueDef(val, e, location=top.location);
 }

@@ -77,7 +77,7 @@ top::Expr ::= q::Decorated QName
   
   top.typerep = if q.lookupValue.typeScheme.isDecorable
                 then q.lookupValue.typeScheme.asNtOrDecType
-                else q.lookupValue.typeScheme.typerep;
+                else q.lookupValue.typeScheme.monoType;
 }
 
 abstract production lhsReference
@@ -96,7 +96,7 @@ top::Expr ::= q::Decorated QName
   
   top.typerep = if q.lookupValue.typeScheme.isDecorable
                 then q.lookupValue.typeScheme.asNtOrDecType
-                else q.lookupValue.typeScheme.typerep;
+                else q.lookupValue.typeScheme.monoType;
 }
 
 abstract production forwardReference

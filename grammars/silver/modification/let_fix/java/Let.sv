@@ -71,7 +71,7 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
   -- it could be isDecorated (ntOrDecType) that later gets specialized to undecorated
   -- and therefore we must be careful not to try to undecorate it again!
   local needsUndecorating :: Boolean =
-    performSubstitution(q.lookupValue.typeScheme.typerep, top.finalSubst).isDecorated && !finalType(top).isDecorated;
+    performSubstitution(q.lookupValue.typeScheme.monoType, top.finalSubst).isDecorated && !finalType(top).isDecorated;
   
   top.translation = 
     if needsUndecorating

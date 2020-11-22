@@ -52,7 +52,7 @@ top::PolyType ::= bound::[TyVar] ty::Type
   top.isDecorated = ty.isDecorated;
   top.isDecorable = ty.isDecorable;
   top.isTerminal = ty.isTerminal;
-  top.asNtOrDecType = ntOrDecType(top.typerep, freshType());
+  top.asNtOrDecType = error("Only mono types should be possibly-decorated");
 }
 
 attribute isError, inputTypes, outputType, namedTypes, arity, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;

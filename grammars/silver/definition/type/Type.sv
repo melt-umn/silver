@@ -4,17 +4,19 @@ option silver:modification:ffi; -- foreign types
 
 synthesized attribute boundVars :: [TyVar];
 synthesized attribute typerep :: Type;
+synthesized attribute monoType :: Type; -- Raises on error when we encounter a polyType and didn't expect one
 
 {--
  - Represents a type, quantified over some type variables.
  -}
-nonterminal PolyType with boundVars, typerep;
+nonterminal PolyType with boundVars, typerep, monoType;
 
 abstract production monoType
 top::PolyType ::= ty::Type
 {
   top.boundVars = [];
   top.typerep = ty;
+  top.monoType = ty;
 }
 
 abstract production polyType
@@ -22,6 +24,7 @@ top::PolyType ::= bound::[TyVar] ty::Type
 {
   top.boundVars = freshTyVars(length(bound));
   top.typerep = freshenTypeWith(ty, bound, top.boundVars);
+  top.monoType = error("Expected a mono type but found a poly type!");
 }
 
 {--

@@ -307,7 +307,7 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
   top.flowDeps := 
     case fi of
     | hasVertex(vertex) ->
-        if performSubstitution(q.lookupValue.typeScheme.typerep, top.finalSubst).isDecorated &&
+        if performSubstitution(q.lookupValue.typeScheme.monoType, top.finalSubst).isDecorated &&
            !performSubstitution(top.typerep, top.finalSubst).isDecorated
         then vertex.eqVertex -- we're a `t` emulating `new(t)`
         else fd -- we're passing along our vertex-ness to the outer expression
