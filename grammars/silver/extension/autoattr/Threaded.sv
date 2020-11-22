@@ -47,6 +47,7 @@ top::ProductionStmt ::= inh::Decorated QName syn::String
           (.elementName),
           filter(
             \ ie::NamedSignatureElement ->
+              ie.typerep.isDecorable &&
               !null(getOccursDcl(inh.lookupAttribute.fullName, ie.typerep.typeName, top.env)) &&
               !null(getOccursDcl(syn, ie.typerep.typeName, top.env)),
             if null(getOccursDcl(syn, top.frame.lhsNtName, top.env)) && !null(top.frame.signature.inputElements)
@@ -76,6 +77,7 @@ top::ProductionStmt ::= inh::String syn::Decorated QName
           (.elementName),
           filter(
             \ ie::NamedSignatureElement ->
+              ie.typerep.isDecorable &&
               !null(getOccursDcl(inh, ie.typerep.typeName, top.env)) &&
               !null(getOccursDcl(syn.lookupAttribute.fullName, ie.typerep.typeName, top.env)),
             top.frame.signature.inputElements)) ++
