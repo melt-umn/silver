@@ -2,18 +2,27 @@ grammar silver:definition:type;
 
 option silver:modification:ffi; -- foreign types
 
+synthesized attribute boundVars :: [TyVar];
+synthesized attribute typerep :: Type;
+
 {--
  - Represents a type, quantified over some type variables.
  -}
-nonterminal PolyType;
+nonterminal PolyType with boundVars, typerep;
 
 abstract production monoType
 top::PolyType ::= ty::Type
-{}
+{
+  top.boundVars = [];
+  top.typerep = ty;
+}
 
 abstract production polyType
 top::PolyType ::= bound::[TyVar] ty::Type
-{}
+{
+  top.boundVars = freshTyVars(length(bound));
+  top.typerep = freshenTypeWith(ty, bound, top.boundVars);
+}
 
 {--
  - Silver Type Representations.
