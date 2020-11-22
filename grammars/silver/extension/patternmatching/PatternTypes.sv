@@ -53,7 +53,7 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
   top.unparse = prod.unparse ++ "(" ++ ps.unparse ++ ")";
   top.errors := ps.errors ++ nps.errors;
 
-  local parms :: Integer = length(prod.lookupValue.typeScheme.typerep.inputTypes);
+  local parms :: Integer = prod.lookupValue.typeScheme.arity;
 
   top.errors <-
     if null(prod.lookupValue.dcls) || length(ps.patternList) == parms then []

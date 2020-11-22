@@ -181,8 +181,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
   
   local chk :: [Message] =
-    if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
-    else [err(qn.location, qn.name ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+    if null(qn.lookupValue.dcls) || ns.varBinderCount == prod_type.arity then []
+    else [err(qn.location, qn.name ++ " has " ++ toString(prod_type.arity) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
   top.errors <- qn.lookupValue.errors;
 
@@ -227,8 +227,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
   
   local chk :: [Message] =
-    if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
-    else [err(qn.location, qn.name ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+    if null(qn.lookupValue.dcls) || ns.varBinderCount == prod_type.arity then []
+    else [err(qn.location, qn.name ++ " has " ++ toString(prod_type.arity) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
   top.errors <- qn.lookupValue.errors;
 

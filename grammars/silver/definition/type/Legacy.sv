@@ -1,8 +1,8 @@
 grammar silver:definition:type;
 
 -- DEPRECATED STUFF
-attribute isError, isDecorated, isDecorable, isTerminal occurs on PolyType;
-attribute isError, inputTypes, outputType, namedTypes, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
+attribute isError, isDecorated, isDecorable, isTerminal, arity occurs on PolyType;
+attribute isError, inputTypes, outputType, namedTypes, arity, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
 
 -- Quick check to see if an error message should be suppressed
 synthesized attribute isError :: Boolean;
@@ -11,6 +11,7 @@ synthesized attribute isError :: Boolean;
 synthesized attribute inputTypes :: [Type];
 synthesized attribute outputType :: Type;
 synthesized attribute namedTypes :: [NamedArgType];
+synthesized attribute arity :: Integer;
 
 -- Used by Expr, could possibly be replaced by pattern matching for decoratedType
 -- Also used by 'new()'
@@ -34,6 +35,7 @@ synthesized attribute unifyInstanceDecorated :: Substitution;
 aspect production monoType
 top::PolyType ::= ty::Type
 {
+  top.arity = ty.arity;
   top.isError = ty.isError;
   top.isDecorated = ty.isDecorated;
   top.isDecorable = ty.isDecorable;
@@ -43,6 +45,7 @@ top::PolyType ::= ty::Type
 aspect production polyType
 top::PolyType ::= bound::[TyVar] ty::Type
 {
+  top.arity = ty.arity;
   top.isError = ty.isError;
   top.isDecorated = ty.isDecorated;
   top.isDecorable = ty.isDecorable;
@@ -55,6 +58,7 @@ top::Type ::=
   top.inputTypes = [];
   top.outputType = errorType();
   top.namedTypes = [];
+  top.arity = 0;
   
   top.isDecorated = false;
   top.isDecorable = false;
@@ -137,5 +141,6 @@ top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
   top.inputTypes = params;
   top.outputType = out;
   top.namedTypes = namedParams;
+  top.arity = length(params);
 }
 
