@@ -1,9 +1,5 @@
 grammar silver:definition:type;
 
--- DEPRECATED STUFF
-attribute isError, isDecorated, isDecorable, isTerminal, arity occurs on PolyType;
-attribute isError, inputTypes, outputType, namedTypes, arity, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
-
 -- Quick check to see if an error message should be suppressed
 synthesized attribute isError :: Boolean;
 
@@ -32,6 +28,8 @@ synthesized attribute decoratedType :: Type;
 synthesized attribute unifyInstanceNonterminal :: Substitution;
 synthesized attribute unifyInstanceDecorated :: Substitution;
 
+attribute isError, isDecorated, isDecorable, isTerminal, arity occurs on PolyType;
+
 aspect production monoType
 top::PolyType ::= ty::Type
 {
@@ -51,6 +49,8 @@ top::PolyType ::= bound::[TyVar] ty::Type
   top.isDecorable = ty.isDecorable;
   top.isTerminal = ty.isTerminal;
 }
+
+attribute isError, inputTypes, outputType, namedTypes, arity, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
 
 aspect default production
 top::Type ::=
