@@ -288,8 +288,6 @@ concrete production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-
-  propagate downSubst, upSubst;
   
   -- We don't include 'q' here because this might be a terminal, where
   -- 'q' shouldn't actually resolve to a name!

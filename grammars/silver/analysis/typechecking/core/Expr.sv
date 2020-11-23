@@ -9,6 +9,24 @@ propagate upSubst, downSubst
      decorateExprWith, exprInh, presentAppExpr,
      newFunction, terminalConstructor;
 
+aspect production application
+top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
+{
+  propagate upSubst, downSubst;
+}
+
+aspect production functionApplication
+top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
+{
+  propagate upSubst, downSubst;
+}
+
+aspect production access
+top::Expr ::= e::Expr '.' q::QNameAttrOccur
+{
+  propagate upSubst, downSubst;
+}
+
 aspect production undecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
@@ -25,6 +43,12 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     else [];
   
   thread downSubst, upSubst on top, errCheck1, top;
+}
+
+aspect production accessBouncer
+top::Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e::Expr  q::Decorated QNameAttrOccur
+{
+  propagate upSubst, downSubst;
 }
 
 aspect production forwardAccess

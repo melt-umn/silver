@@ -1,5 +1,11 @@
 grammar silver:analysis:typechecking:core;
 
+aspect production lengthFunction
+top::Expr ::= 'length' '(' e::Expr ')'
+{
+  propagate upSubst, downSubst;
+}
+
 aspect production toBooleanFunction
 top::Expr ::= 'toBoolean' '(' e1::Expr ')'
 {
