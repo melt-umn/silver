@@ -12,7 +12,7 @@ propagate upSubst, downSubst
 aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
-  propagate upSubst, downSubst;
+  thread downSubst, upSubst on top, e, forward;
 }
 
 aspect production functionApplication
