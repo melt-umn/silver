@@ -36,7 +36,7 @@ top::DclInfo ::=
   top.typerep =
     if isTotal
     then varType(tyVar)
-    else nonterminalType("core:Maybe", [varType(tyVar)]);
+    else nonterminalType("core:Maybe", [varType(tyVar)], false);
   top.dclBoundVars = [tyVar];
   top.isSynthesized = true;
   top.isStrategy = true;

@@ -120,7 +120,7 @@ top::NameOrBOperator ::= '*'
 -- This would be much nicer if we could pass the Decorated Expr here,
 -- but this nonterminal must be serializable as part of the environment.
 abstract production functionOperation
-top::Operation ::= e::Expr eTrans::String isRef::Boolean isFunction::Boolean trackConstruction::Booolean
+top::Operation ::= e::Expr eTrans::String isRef::Boolean isFunction::Boolean trackConstruction::Boolean
 {}
 abstract production plusPlusOperationString
 top::Operation ::= 

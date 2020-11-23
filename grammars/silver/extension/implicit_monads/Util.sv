@@ -32,7 +32,7 @@ function isMonad
 Boolean ::= ty::Type
 {
   return case ty of
-         | nonterminalType(name, params) ->
+         | nonterminalType(name, params, _) ->
            (name == "core:Maybe" && length(params) == 1) ||
            (name == "core:Either" && length(params) == 2) ||
            (name == "core:monad:IOMonad" && length(params) == 1) ||
@@ -85,7 +85,7 @@ function monadsMatch
 Pair<Boolean Substitution> ::= ty1::Type ty2::Type subst::Substitution
 {
   return case ty1, ty2 of
-         | nonterminalType(name1, params1), nonterminalType(name2, params2) ->
+         | nonterminalType(name1, params1, _), nonterminalType(name2, params2, _) ->
            if name1 == name2 && length(params1) == length(params2)
            then tyListMatch(init(params1), init(params2), subst)
            else pair(false, subst)
@@ -134,7 +134,7 @@ function monadInnerType
 Type ::= mty::Type
 {
   return case mty of
-         | nonterminalType(name1, params1) ->
+         | nonterminalType(name1, params1, _) ->
            last(params1)
          | listType(ty) -> ty
          | decoratedType(t) -> monadInnerType(t)
@@ -150,8 +150,8 @@ function monadOfType
 Type ::= mty::Type newInner::Type
 {
   return case mty of
-         | nonterminalType(name, params) ->
-           nonterminalType(name, append(init(params), [newInner]))
+         | nonterminalType(name, params, tracked) ->
+           nonterminalType(name, append(init(params), [newInner]), tracked)
          | listType(_) -> listType(newInner)
          | decoratedType(t) -> monadOfType(t, newInner)
          | _ -> error("Tried to take a monad out of a non-monadic type to apply")
@@ -164,13 +164,13 @@ function monadToString
 String ::= ty::Type
 {
   return case ty of
-         | nonterminalType("core:Maybe", _) ->
+         | nonterminalType("core:Maybe", _, _) ->
            "Maybe<a>"
-         | nonterminalType("core:Either", [p, a]) ->
+         | nonterminalType("core:Either", [p, a], _) ->
            "Either<" ++ prettyType(p) ++ " a>"
-         | nonterminalType("core:monad:IOMonad", _) ->
+         | nonterminalType("core:monad:IOMonad", _, _) ->
            "IOMonad<a>"
-         | nonterminalType("core:monad:State", [p, a]) ->
+         | nonterminalType("core:monad:State", [p, a], _) ->
            "State<" ++ prettyType(p) ++ " a>"
          | listType(_) ->
            "[a]"
@@ -186,13 +186,13 @@ function monadBind
 Expr ::= ty::Type l::Location
 {
   return case ty of
-         | nonterminalType("core:Maybe", _) ->
+         | nonterminalType("core:Maybe", _, _) ->
            baseExpr(qNameId(name("bindMaybe", l), location=l), location=l)
-         | nonterminalType("core:Either", _) ->
+         | nonterminalType("core:Either", _, _) ->
            baseExpr(qNameId(name("bindEither", l), location=l), location=l)
-         | nonterminalType("core:monad:IOMonad", _) ->
+         | nonterminalType("core:monad:IOMonad", _, _) ->
            baseExpr(qNameId(name("bindIO", l), location=l), location=l)
-         | nonterminalType("core:monad:State", _) ->
+         | nonterminalType("core:monad:State", _, _) ->
            baseExpr(qNameId(name("bindState", l), location=l), location=l)
          | listType(_) ->
            baseExpr(qNameId(name("bindList", l), location=l), location=l)
@@ -204,13 +204,13 @@ function monadReturn
 Expr ::= ty::Type l::Location
 {
   return case ty of
-         | nonterminalType("core:Maybe", _) ->
+         | nonterminalType("core:Maybe", _, _) ->
            baseExpr(qNameId(name("returnMaybe", l), location=l), location=l)
-         | nonterminalType("core:Either", _) ->
+         | nonterminalType("core:Either", _, _) ->
            baseExpr(qNameId(name("returnEither", l), location=l), location=l)
-         | nonterminalType("core:monad:IOMonad", _) ->
+         | nonterminalType("core:monad:IOMonad", _, _) ->
            baseExpr(qNameId(name("returnIO", l), location=l), location=l)
-         | nonterminalType("core:monad:State", _) ->
+         | nonterminalType("core:monad:State", _, _) ->
            baseExpr(qNameId(name("returnState", l), location=l), location=l)
          | listType(_) ->
            baseExpr(qNameId(name("returnList", l), location=l), location=l)
@@ -234,27 +234,27 @@ Either<String Expr> ::= ty::Type l::Location
   local list::Expr = Silver_Expr { [] };
   local unit::Expr = Silver_Expr { unit() };
   return case ty of
-         | nonterminalType("core:Maybe", _) ->
+         | nonterminalType("core:Maybe", _, _) ->
            right(Silver_Expr { core:monad:failMaybe($Expr{string}) })
            --baseExpr(qNameId(name("failMaybe", l), location=l), location=l)
-         | nonterminalType("core:Either", [a, b]) ->
+         | nonterminalType("core:Either", [a, b], _) ->
            case a of
            | stringType() -> right(Silver_Expr { core:monad:failEither($Expr{string}) })
            | intType() -> right(Silver_Expr { core:monad:failEither($Expr{int}) })
            | floatType() -> right(Silver_Expr { core:monad:failEither($Expr{float}) })
            | boolType() -> right(Silver_Expr { core:monad:failEither($Expr{bool}) })
            | listType(_) -> right(Silver_Expr { core:monad:failEither($Expr{list}) })
-           | nonterminalType("core:Unit", _) ->
+           | nonterminalType("core:Unit", _, _) ->
              right(Silver_Expr { core:monad:failEither($Expr{unit}) })
            | _ -> left("Tried to get monadFail for too complex or generic an " ++
                        "argument type for Either (type " ++ prettyType(a) ++ "given; " ++
                        "must be int, float, bool, list, or unit)")
            end
            --baseExpr(qNameId(name("failEither", l), location=l), location=l)
-         | nonterminalType("core:monad:IOMonad", _) ->
+         | nonterminalType("core:monad:IOMonad", _, _) ->
            left("Fail undefined for IOMonad")
            --error("Fail undefined for IOMonad")
-         | nonterminalType("core:monad:State", _) ->
+         | nonterminalType("core:monad:State", _, _) ->
            left("Fail undefined for State monad")
            --error("Fail undefined for State monad")
          | listType(_) ->
@@ -271,13 +271,13 @@ function monadPlus
 Either<String Expr> ::= ty::Type l::Location
 {
   return case ty of
-         | nonterminalType("core:Maybe", _) ->
+         | nonterminalType("core:Maybe", _, _) ->
            right(baseExpr(qNameId(name("mplusMaybe", l), location=l), location=l))
-         | nonterminalType("core:Either", _) ->
+         | nonterminalType("core:Either", _, _) ->
            right(baseExpr(qNameId(name("mplusEither", l), location=l), location=l))
-         | nonterminalType("core:monad:IOMonad", _) ->
+         | nonterminalType("core:monad:IOMonad", _, _) ->
            left("MPlus undefined for IOMonad")
-         | nonterminalType("core:monad:State", _) ->
+         | nonterminalType("core:monad:State", _, _) ->
            left("MPlus undefined for State monad")
          | listType(_) ->
            right(baseExpr(qNameId(name("mplusList", l), location=l), location=l))
@@ -290,9 +290,9 @@ function monadZero
 Either<String Expr> ::= ty::Type l::Location
 {
   return case ty of
-         | nonterminalType("core:Maybe", _) ->
+         | nonterminalType("core:Maybe", _, _) ->
            right(Silver_Expr { core:monad:nothing() })
-         | nonterminalType("core:Either", [a, b]) ->
+         | nonterminalType("core:Either", [a, b], _) ->
            case a of
            | stringType() -> right(Silver_Expr{ core:monad:left("mzero") })
            | intType() -> right(Silver_Expr{ core:monad:left(0) })
@@ -302,9 +302,9 @@ Either<String Expr> ::= ty::Type l::Location
              left("Cannot get MZero for Either with too complex or too generic argument type (" ++
                    prettyType(ty) ++ ")")
            end
-         | nonterminalType("core:monad:IOMonad", _) ->
+         | nonterminalType("core:monad:IOMonad", _, _) ->
            left("MZero undefined for IOMonad")
-         | nonterminalType("core:monad:State", _) ->
+         | nonterminalType("core:monad:State", _, _) ->
            left("MZero undefined for State monad")
          | listType(_) ->
            right(Silver_Expr { [] })
