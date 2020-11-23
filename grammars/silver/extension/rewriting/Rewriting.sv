@@ -28,15 +28,16 @@ top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
   errCheckS.finalSubst = top.finalSubst;
   
   local localErrors::[Message] =
-    if errCheckS.typeerror
-    then [err(top.location, "First argument to rewriteWith must be Strategy. Instead got " ++ errCheckS.leftpp)]
-    else [];
+    s.errors ++ e.errors ++ 
+    (if errCheckS.typeerror
+     then [err(top.location, "First argument to rewriteWith must be Strategy. Instead got " ++ errCheckS.leftpp)]
+     else []) ++
+    (if null(getTypeDcl("silver:rewrite:Strategy", top.env))
+     then [err(top.location, "Term rewriting requires import of silver:rewrite")]
+     else []);
   
   -- Can't use an error production here, unfourtunately, due to circular dependency issues.
-  top.errors :=
-    if !null(s.errors ++ e.errors ++ localErrors)
-    then s.errors ++ e.errors ++ localErrors
-    else forward.errors;
+  top.errors := if !null(localErrors) then localErrors else forward.errors;
   
   -- TODO: Equation needed due to weirdness with lets auto-undecorating bindings.
   -- See comments in definition of lexicalLocalReference (grammars/silver/modification/let_fix/Let.sv)
@@ -101,7 +102,11 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
     map(namedArgType(_, nonterminalType("silver:rewrite:Strategy", [], false)), annotations);
   anns.remainingFuncAnnotations = anns.funcAnnotations;
  
-  local localErrors::[Message] = es.errors ++ anns.traverseErrors;
+  local localErrors::[Message] =
+    es.errors ++ anns.traverseErrors ++
+    if null(getTypeDcl("silver:rewrite:Strategy", top.env))
+    then [err(top.location, "Term rewriting requires import of silver:rewrite")]
+    else [];
 
   es.downSubst = top.downSubst;
   anns.downSubst = es.upSubst;
@@ -265,11 +270,14 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   ml.ruleIndex = 0;
   ml.decRuleExprsIn = checkExpr.decRuleExprs;
   
+  local localErrors::[Message] =
+    ty.errors ++ ml.errors ++ checkExpr.errors ++
+    if null(getTypeDcl("silver:rewrite:Strategy", top.env))
+    then [err(top.location, "Term rewriting requires import of silver:rewrite")]
+    else [];
+  
   -- Can't use an error production here, unfourtunately, due to circular dependency issues.
-  top.errors :=
-    if !null(ty.errors ++ ml.errors ++ checkExpr.errors)
-    then ty.errors ++ ml.errors ++ checkExpr.errors
-    else forward.errors;
+  top.errors := if !null(localErrors) then localErrors else forward.errors;
   
   checkExpr.downSubst = top.downSubst;
   forward.downSubst = checkExpr.upSubst;

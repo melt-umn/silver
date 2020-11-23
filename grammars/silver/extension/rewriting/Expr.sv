@@ -2,6 +2,7 @@ grammar silver:extension:rewriting;
 
 -- Environment mapping variables that were defined on the rule RHS to Booleans indicating whether
 -- the variable was explicitly (i.e. not implicitly) decorated in the pattern.
+-- TODO: Lots of flow errors in this grammar because we are pretending this attribute is in the reference set 
 autocopy attribute boundVars::[Pair<String Boolean>] occurs on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern;
 
 attribute transform<ASTExpr> occurs on Expr;
@@ -36,7 +37,10 @@ top::Expr ::= q::Decorated QName _ _
             Silver_Expr {
               silver:rewrite:anyASTExpr(
                 \ e::$TypeExpr{typerepTypeExpr(finalType(top).decoratedType, location=builtin)} ->
-                  decorate e with {})
+                  $Expr{
+                    decorateExprWithEmpty(
+                      'decorate', Silver_Expr { e }, 'with', '{', '}',
+                      location=top.location)})
             }),
           consASTExpr(varASTExpr(q.name), nilASTExpr()),
           nilNamedASTExpr())
@@ -51,7 +55,7 @@ top::Expr ::= q::Decorated QName _ _
             }),
           consASTExpr(varASTExpr(q.name), nilASTExpr()),
           nilNamedASTExpr())
-      -- Neither the bound value nor desired type is a decorated nonterminal - just return the value
+      -- Both (or neither) the bound value/desired type is a decorated nonterminal - just return the value
       else varASTExpr(q.name)
     | nothing() ->
       -- The variable is bound in an enclosing let/match
@@ -185,14 +189,56 @@ aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.transform =
-    applyASTExpr(
-      antiquoteASTExpr(
-        Silver_Expr {
-          silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(finalType(e), location=builtin)} -> e.$qName{q.name})
-        }),
-      consASTExpr(e.transform, nilASTExpr()),
-      nilNamedASTExpr());
+    case e of
+    -- Special cases to avoid introducing a reference and causing flow errors.
+    | decorateExprWith(_, eUndec, _, _, inh, _) ->
+      applyASTExpr(
+        antiquoteASTExpr(
+          Silver_Expr {
+            silver:rewrite:anyASTExpr(
+              $Expr{
+                lambdap(
+                  productionRHSCons(
+                    productionRHSElem(
+                      name("_e", builtin), '::',
+                      typerepTypeExpr(finalType(eUndec), location=builtin),
+                      location=builtin),
+                    inh.lambdaParams,
+                    location=builtin),
+                  Silver_Expr {
+                    $Expr{
+                      decorateExprWith(
+                        'decorate', baseExpr(qName(builtin, "_e"), location=builtin),
+                        'with', '{', inh.bodyExprInhTransform, '}',
+                        location=builtin)}.$qName{q.name}
+                  },
+                  location=builtin)})
+          }),
+        consASTExpr(eUndec.transform, inh.transform),
+        nilNamedASTExpr())
+    | lexicalLocalReference(qn, _, _) when
+        case lookupBy(stringEq, qn.name, top.boundVars) of
+        | just(bindingIsDecorated) -> !bindingIsDecorated
+        | nothing() -> false
+        end -> 
+      applyASTExpr(
+        antiquoteASTExpr(
+          Silver_Expr {
+            silver:rewrite:anyASTExpr(
+              \ e::$TypeExpr{typerepTypeExpr(finalType(e).decoratedType, location=builtin)} -> e.$qName{q.name})
+          }),
+        consASTExpr(varASTExpr(qn.name), nilASTExpr()),
+        nilNamedASTExpr())
+    | _ ->
+      applyASTExpr(
+        antiquoteASTExpr(
+          Silver_Expr {
+            silver:rewrite:anyASTExpr(
+              \ e::$TypeExpr{typerepTypeExpr(finalType(e), location=builtin)} -> e.$qName{q.name})
+          }),
+        consASTExpr(e.transform, nilASTExpr()),
+        nilNamedASTExpr())
+    end;
 }
 
 aspect production inhDecoratedAccessHandler

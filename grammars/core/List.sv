@@ -290,6 +290,12 @@ function repeat
          else v :: repeat(v, times-1);
 }
 
+function range
+[Integer] ::= lower::Integer upper::Integer
+{
+  return if lower >= upper then [] else lower :: range(lower + 1, upper);
+}
+
 function zipWith
 [c] ::= f::(c ::= a b)  l1::[a]  l2::[b]
 {

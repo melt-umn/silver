@@ -1,5 +1,8 @@
 grammar silver:extension:autoattr;
 
+import silver:driver:util;
+import silver:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph;
+
 concrete production monoidAttributeDcl
 top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' e::Expr ',' q::NameOrBOperator ';'
 {
@@ -38,6 +41,15 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   errCheck1.finalSubst = errCheck1.upSubst;
   e.finalSubst = errCheck1.upSubst;
   
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = 
+    constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
+
+  e.frame = globalExprContext(myFlowGraph);
+  
   forwards to
     collectionAttributeDclSyn(
       'synthesized', 'attribute', a, tl, '::', te, 'with', q, ';',
@@ -47,14 +59,9 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
 synthesized attribute appendProd :: (Expr ::= Expr Expr Location) occurs on Operation;
 
 aspect production functionOperation
-top::Operation ::= s::String
+top::Operation ::= e::Expr _ _ _ _
 {
-  top.appendProd = \ e1::Expr e2::Expr l::Location -> mkStrFunctionInvocation(l, s, [e1, e2]);
-}
-aspect production productionOperation
-top::Operation ::= s::String tracked::Boolean
-{
-  top.appendProd = \ e1::Expr e2::Expr l::Location -> mkStrFunctionInvocation(l, s, [e1, e2]);
+  top.appendProd = \ e1::Expr e2::Expr l::Location -> mkFunctionInvocation(l, e, [e1, e2]);
 }
 aspect production plusPlusOperationString
 top::Operation ::= 
@@ -76,6 +83,16 @@ top::Operation ::=
 {
   top.appendProd = and(_, '&&', _, location=_);
 }
+aspect production addOperation
+top::Operation ::= 
+{
+  top.appendProd = plus(_, '+', _, location=_);
+}
+aspect production mulOperation
+top::Operation ::= 
+{
+  top.appendProd = multiply(_, '*', _, location=_);
+}
 
 {--
  - Propagate a monoid attribute on the enclosing production
@@ -84,6 +101,8 @@ top::Operation ::=
 abstract production propagateMonoid
 top::ProductionStmt ::= attr::Decorated QName
 {
+  top.unparse = s"propagate ${attr.unparse};";
+  
   -- No explicit errors, for now.  The only conceivable issue is the attribute not
   -- occuring on the LHS but this should be caught by the forward errors.  
   
@@ -94,13 +113,6 @@ top::ProductionStmt ::= attr::Decorated QName
         input.typerep.isDecorable &&
         !null(getOccursDcl(attrFullName, input.typerep.typeName, top.env)),
       top.frame.signature.inputElements);
-  
-  local topName::QName = qName(top.location, top.frame.signature.outputElement.elementName);
-  local prodName::QName = qName(top.location, top.frame.fullName);
-  prodName.grammarName = top.grammarName;
-  prodName.config = top.config;
-  prodName.env = top.env;
-
   local res :: Expr = 
     if null(inputsWithAttr)
     then attr.lookupAttribute.dcl.emptyVal
@@ -119,7 +131,7 @@ top::ProductionStmt ::= attr::Decorated QName
   -- Construct an attribute def and call with the generated arguments
   forwards to
     attrContainsBase(
-      concreteDefLHS(topName, location=top.location),
+      concreteDefLHS(qName(top.location, top.frame.signature.outputElement.elementName), location=top.location),
       '.',
       qNameAttrOccur(new(attr), location=top.location),
       ':=', res, ';', location=top.location);

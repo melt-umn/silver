@@ -216,6 +216,8 @@ top::QNameAttrOccur ::= at::QName
   top.dcl = if top.found then head(dclsNarrowed) else
     error("INTERNAL ERROR: Accessing dcl of occurrence " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
   top.attrDcl = if top.found then head(attrsNarrowed) else
+    -- Workaround fix for proper error reporting - appairently there are some places where this is still demanded.
+    if !null(at.lookupAttribute.dcls) then head(at.lookupAttribute.dcls) else
     error("INTERNAL ERROR: Accessing dcl of attribute " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
 }
 

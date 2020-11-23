@@ -48,8 +48,8 @@ equalityTest ( basic3(nothing(), just("w"), nothing()), "w", String, pat_tests )
 equalityTest ( basic3(just("w"), nothing(), nothing()), "w", String, pat_tests ) ;
 equalityTest ( basic3(nothing(), nothing(), just("w")), "w", String, pat_tests ) ;
 
--- TODO: Well, we do left-to-right preferred above all. Haskell preferrs top-to-bottom above all....
-equalityTest ( basic3(just("g"), just("w"), just("h")), "g", String, pat_tests ) ;
+-- test top-to-bottom matching
+equalityTest ( basic3(just("g"), just("w"), just("h")), "w", String, pat_tests ) ;
 
 function basic4 -- using integers
 Integer ::= p::Pair<Integer Maybe<Integer>>
@@ -117,7 +117,7 @@ end;
 }
 
 -- once, this test returned 40, just to clarify what we're testing here.
-equalityTest ( basic7(mytriple(1,just(20),just(300))), 21, Integer, pat_tests ) ;
+equalityTest ( basic7(mytriple(1,just(20),just(300))), 301, Integer, pat_tests ) ;
 equalityTest ( basic7(mytriple(1,nothing(),just(300))), 301, Integer, pat_tests ) ;
 
 function basic8 -- using mixed name/fullnames
@@ -135,4 +135,26 @@ equalityTest ( basic8(pair(1,2)), 1, Integer, pat_tests );
 equalityTest ( basic8(pair(1,3)), 2, Integer, pat_tests );
 equalityTest ( basic8(pair(2,1)), 3, Integer, pat_tests );
 equalityTest ( basic8(pair(3,1)), 4, Integer, pat_tests );
+
+
+-- more testing mixing variable and constructor patterns
+function basic9
+Integer ::= a::Maybe<Integer> b::Maybe<Integer> c::Maybe<Integer>
+{
+return case a, b, c of
+| aa, just(bb), nothing() -> bb
+| just(aa), bb, cc -> aa
+| aa, just(bb), just(cc) -> bb + cc
+| nothing(), bb, cc -> 0
+end;
+}
+
+equalityTest ( basic9(just(1), just(2), just(5)), 1, Integer, pat_tests ) ;
+equalityTest ( basic9(just(1), just(2), nothing()), 2, Integer, pat_tests ) ;
+equalityTest ( basic9(just(1), nothing(), just(5)), 1, Integer, pat_tests ) ;
+equalityTest ( basic9(just(1), nothing(), nothing()), 1, Integer, pat_tests ) ;
+equalityTest ( basic9(nothing(), just(2), just(5)), 7, Integer, pat_tests ) ;
+equalityTest ( basic9(nothing(), just(2), nothing()), 2, Integer, pat_tests ) ;
+equalityTest ( basic9(nothing(), nothing(), just(5)), 0, Integer, pat_tests ) ;
+equalityTest ( basic9(nothing(), nothing(), nothing()), 0, Integer, pat_tests ) ;
 

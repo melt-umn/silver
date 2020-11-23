@@ -69,7 +69,7 @@ top::AGDcl ::= d::DclInfo attrs::NameList
   top.errors :=
     if null(forward.errors)
     then []
-    else [nested(top.location, s"In propagate for production ${d.fullName}:", forward.errors)];
+    else [nested(top.location, s"In propagate of ${attrs.unparse} for production ${d.fullName}:", forward.errors)];
   
   forwards to
     aspectProductionDcl(

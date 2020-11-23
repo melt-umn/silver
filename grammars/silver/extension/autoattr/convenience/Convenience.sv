@@ -30,3 +30,48 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
       makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location)), qs.qnames),
       location=top.location);
 }
+
+concrete production equalityAttributeDclMultiple
+top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "equality attribute " ++ inh.unparse ++ ", " ++ syn.name ++ " occurs on " ++ qs.unparse ++ ";";
+  forwards to
+    appendAGDcl(
+      equalityAttributeDcl($1, $2, inh, $4, syn, $9, location=top.location),
+      appendAGDcl(
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location)), qs.qnames),
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
+        location=top.location),
+      location=top.location);
+}
+
+concrete production unificationAttributeDclMultiple
+top::AGDcl ::= 'unification' 'attribute' inh::Name ',' synPartial::Name ',' syn::Name 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "equality attribute " ++ inh.unparse ++ ", " ++ synPartial.name ++ ", " ++ syn.name ++ " occurs on " ++ qs.unparse ++ ";";
+  forwards to
+    appendAGDcl(
+      unificationAttributeDcl($1, $2, inh, $4, syn, $6, synPartial, $11, location=top.location),
+      appendAGDcl(
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location)), qs.qnames),
+        appendAGDcl(
+          makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location)), qs.qnames),
+          makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
+          location=top.location),
+        location=top.location),
+      location=top.location);
+}
+
+concrete production threadedAttributeDclMultiple
+top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "threaded attribute " ++ inh.unparse ++ ", " ++ syn.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " occurs on " ++ qs.unparse ++ ";";
+  forwards to
+    appendAGDcl(
+      threadedAttributeDcl($1, $2, inh, $4, syn, tl, $7, te, $12, location=top.location),
+      appendAGDcl(
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location)), qs.qnames),
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
+        location=top.location),
+      location=top.location);
+}
