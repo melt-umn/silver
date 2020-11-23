@@ -89,7 +89,7 @@ top::Expr ::= e1::Expr '&&' e2::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
 
-  thread downSubst, upSubst on top, errCheck1, errCheck2, top;
+  thread downSubst, upSubst on top, e1, e2, errCheck1, errCheck2, top;
   
   errCheck1 = check(e1.typerep, boolType());
   errCheck2 = check(e2.typerep, boolType());
@@ -109,7 +109,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
 
-  thread downSubst, upSubst on top, errCheck1, errCheck2, top;
+  thread downSubst, upSubst on top, e1, e2, errCheck1, errCheck2, top;
   
   errCheck1 = check(e1.typerep, boolType());
   errCheck2 = check(e2.typerep, boolType());
@@ -128,7 +128,7 @@ top::Expr ::= '!' e1::Expr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   
-  thread downSubst, upSubst on top, errCheck1, top;
+  thread downSubst, upSubst on top, e1, errCheck1, top;
   
   errCheck1 = check(e1.typerep, boolType());
   top.errors <-
