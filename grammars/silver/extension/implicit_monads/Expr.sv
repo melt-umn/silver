@@ -1638,7 +1638,8 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
   ec2.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  ec1.downSubst = e2.mUpSubst;
+  e3.mDownSubst = e2.mUpSubst;
+  ec1.downSubst = e3.mUpSubst;
   ec2.downSubst = ec1.upSubst;
   top.mUpSubst = ec2.upSubst;
 
