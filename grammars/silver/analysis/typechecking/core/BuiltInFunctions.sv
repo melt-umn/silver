@@ -75,7 +75,7 @@ top::Expr ::= 'new' '(' e1::Expr ')'
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  thread downSubst, upSubst on top, errCheck1, top;
+  thread downSubst, upSubst on top, e1, errCheck1, top;
   
   errCheck1 = checkDecorated(e1.typerep);
   top.errors <-
