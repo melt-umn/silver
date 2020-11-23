@@ -1,6 +1,7 @@
 import os, sys
 
 allow_c = "--allow_c" in sys.argv
+do_partial_redex_prop = "--do_partial_redex_prop" in sys.argv
 allow_multiredex = "--allow_multiredex" in sys.argv
 strip_packagename = "--strip_packagename" in sys.argv
 small_nodes = "--all_oi" not in sys.argv
@@ -230,12 +231,12 @@ for thing in filter(lambda x:isinstance(x, ComplexValue), roots):
 	w("}")
 
 def propogate_redex(node, redex_haver, root=True):
-	w("n"+str(node.ids)+" -> n"+str(redex_haver.ids)+" [style=dotted penwidth=6 arrowsize=0.25 ];")
+	if do_partial_redex_prop: w("n"+str(node.ids)+" -> n"+str(redex_haver.ids)+" [style=dotted penwidth=6 arrowsize=0.25 ];")
 	w("n"+str(node.ids)+" -> n"+str(redex_haver.redex.ids)+" [style=dotted, label=\""+(redex_haver.redexlabel if root or allow_multiredex else "")+"\"];")
 	if isinstance(node, NT):
 		for x in node.get_real_children():
 			if x.redex is None or allow_multiredex:
-				propogate_redex(x, redex_haver, False)
+				if do_partial_redex_prop: propogate_redex(x, redex_haver, False)
 
 print("adding origin information...")
 
