@@ -30,7 +30,6 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
     else [];
 
   local tyCk :: TypeCheck = check(e.typerep, terminalIdType());
-  tyCk.downSubst = e.upSubst;
   tyCk.finalSubst = top.finalSubst;
   top.errors <-
     if tyCk.typeerror
