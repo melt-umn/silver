@@ -277,9 +277,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst; 
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
@@ -296,9 +294,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst; 
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
@@ -318,9 +314,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst; 
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
@@ -337,9 +331,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst; 
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-

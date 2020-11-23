@@ -29,10 +29,8 @@ top::Expr ::= params::ProductionRHS e::Expr
   propagate errors;
   
   top.typerep = functionType(e.typerep, map((.typerep), params.inputElements), []);
-  
-  e.downSubst = top.downSubst;
-  top.upSubst = e.upSubst;
-  
+
+  propagate downSubst, upSubst;
   propagate flowDeps, flowDefs;
   
   e.env = newScopeEnv(params.lambdaDefs, top.env);
@@ -59,7 +57,7 @@ top::Expr ::= q::Decorated QName
   
   top.typerep = q.lookupValue.typeScheme.monoType;
 
-  top.upSubst = top.downSubst;
+  propagate downSubst, upSubst;
   
   -- TODO?
   propagate flowDeps, flowDefs;

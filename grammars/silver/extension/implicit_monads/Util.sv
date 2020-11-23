@@ -24,8 +24,10 @@ autocopy attribute expectedMonad::Type;
 synthesized attribute monadRewritten<a>::a;
 synthesized attribute merrors::[Message] with ++;
 synthesized attribute mtyperep::Type;
-autocopy attribute mDownSubst::Substitution;
-synthesized attribute mUpSubst::Substitution;
+
+-- TODO: There's lots of places where we can't automatically propagate these because
+-- the host downSubst/upSubst attributes are mixed in too. 
+threaded attribute mDownSubst, mUpSubst::Substitution;
 
 
 function isMonad
