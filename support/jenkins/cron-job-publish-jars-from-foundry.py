@@ -31,7 +31,7 @@ files = [
 
 if SLACK_WEBHOOK_URL is None:
     try:
-        with open("/lhome/gitbot/cron-job-publish-jars-from-foundry-slack-webhook-url.text") as f:
+        with open("/lhome/gitbot/cron-job-publish-jars-from-foundry-slack-webhook-url.txt") as f:
             SLACK_WEBHOOK_URL = f.read().strip()
     except:
         pass
