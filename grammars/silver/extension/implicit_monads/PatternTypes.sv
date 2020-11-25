@@ -9,6 +9,15 @@ top::Pattern ::= prod::QName '(' ps::PatternList ')'
                     end;
 } 
 
+aspect production prodAppPattern_named
+top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
+{
+  top.patternType = case prod.lookupValue.typerep of
+                    | functionType(out, _, _) -> out
+                    | _ -> prod.lookupValue.typerep
+                    end;
+}
+
 aspect production wildcPattern
 top::Pattern ::= '_'
 {

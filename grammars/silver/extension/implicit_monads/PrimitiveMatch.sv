@@ -297,14 +297,23 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
 aspect production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' arr::Arrow_kwd e::Expr
 {
-  e.mDownSubst = top.mDownSubst;
-  e.downSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
+  local ne::Expr = e;
+  ne.env = e.env;
+  ne.frame = top.frame;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.config = top.config;
+  ne.flowEnv = top.flowEnv;
 
-  e.expectedMonad = top.expectedMonad;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.mDownSubst;
+  ne.mDownSubst = top.mDownSubst;
+  top.mUpSubst = ne.mUpSubst;
 
-  e.monadicallyUsed = false;
-  top.monadicNames = e.monadicNames;
+  ne.expectedMonad = top.expectedMonad;
+
+  ne.monadicallyUsed = false;
+  top.monadicNames = ne.monadicNames;
 }
 aspect production prodPatternNormal
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr

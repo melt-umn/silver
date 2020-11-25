@@ -173,6 +173,8 @@ function buildExplicitAttrErrors
 abstract production restrictedSynAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
 {
+  top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+
   e.downSubst = top.downSubst;
 
   local merrors::[Message] =
@@ -189,6 +191,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
 abstract production restrictedInhAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
 {
+  top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+
   e.downSubst = top.downSubst;
 
   local merrors::[Message] =
@@ -213,6 +217,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;
+  e.env = top.env;
 
   e.expectedMonad = attr.typerep;
 
@@ -237,6 +242,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;
+  e.env = top.env;
 
   e.expectedMonad = attr.typerep;
 
