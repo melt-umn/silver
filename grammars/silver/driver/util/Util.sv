@@ -1,5 +1,6 @@
 grammar silver:driver:util;
 
+imports silver:definition:type;
 imports silver:definition:env;
 imports silver:util only contains, rem, makeSet, containsAny;
 

@@ -75,9 +75,9 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
   
-  top.typerep = if q.lookupValue.typeScheme.typerep.isDecorable
-                then ntOrDecType(q.lookupValue.typeScheme.typerep, freshType())
-                else q.lookupValue.typeScheme.typerep;
+  top.typerep = if q.lookupValue.typeScheme.isDecorable
+                then q.lookupValue.typeScheme.asNtOrDecType
+                else q.lookupValue.typeScheme.monoType;
 }
 
 abstract production lhsReference
@@ -86,7 +86,7 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   
   -- An LHS is *always* a decorable (nonterminal) type.
-  top.typerep = ntOrDecType(q.lookupValue.typeScheme.typerep, freshType());
+  top.typerep = q.lookupValue.typeScheme.asNtOrDecType;
 }
 
 abstract production localReference
@@ -94,9 +94,9 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
   
-  top.typerep = if q.lookupValue.typeScheme.typerep.isDecorable
-                then ntOrDecType(q.lookupValue.typeScheme.typerep, freshType())
-                else q.lookupValue.typeScheme.typerep;
+  top.typerep = if q.lookupValue.typeScheme.isDecorable
+                then q.lookupValue.typeScheme.asNtOrDecType
+                else q.lookupValue.typeScheme.monoType;
 }
 
 abstract production forwardReference
@@ -105,7 +105,7 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
-  top.typerep = ntOrDecType(q.lookupValue.typeScheme.typerep, freshType());
+  top.typerep = q.lookupValue.typeScheme.asNtOrDecType;
 }
 
 -- Note here that production and function *references* are distinguished.
@@ -688,10 +688,7 @@ top::Expr ::= e1::Expr '++' e2::Expr
   -- Moved from 'analysis:typechecking' because we want to use this stuff here now
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e1.downSubst = top.downSubst;
-  e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  forward.downSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, e1, e2, errCheck1, forward;
   -- upSubst defined via forward :D
 
   errCheck1 = check(e1.typerep, e2.typerep);

@@ -98,7 +98,7 @@ top::ProductionStmt ::= 'if' '(' c::Expr ')' th::ProductionStmt 'else' el::Produ
 function hacklocaldeclarations
 String ::= d::Def
 {
-  return d.dcl.typeScheme.typerep.transType ++ " " ++ makeCopperName(d.dcl.fullName) ++ ";\n";
+  return d.dcl.typeScheme.monoType.transType ++ " " ++ makeCopperName(d.dcl.fullName) ++ ";\n";
 }
 
 function hackTransformLocals

@@ -22,12 +22,12 @@ top::AGDcl ::= 'derive' 'Arbitrary' 'on' names::QNames ';'
 function prodDclInfoNumChildLte
 Boolean ::= l::DclInfo  r::DclInfo
 {
-  return length(l.typeScheme.typerep.inputTypes) <= length(r.typeScheme.typerep.inputTypes);
+  return l.typeScheme.arity <= r.typeScheme.arity;
 }
 function prodDclInfoNumChildEq
 Boolean ::= l::DclInfo  r::DclInfo
 {
-  return length(l.typeScheme.typerep.inputTypes) == length(r.typeScheme.typerep.inputTypes);
+  return l.typeScheme.arity == r.typeScheme.arity;
 }
 
 -- splits where operator becomes false in list

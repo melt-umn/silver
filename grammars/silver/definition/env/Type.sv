@@ -1,29 +1,25 @@
 grammar silver:definition:env;
 
-synthesized attribute boundVars :: [TyVar] occurs on PolyType;
-attribute typerep occurs on PolyType;
+-- Just to clarify:
+-- call prettyType to pretty print the type.
+-- get typeName to find out what nonterminal a NT or DNT is
+synthesized attribute typeName :: String;
+
+attribute typeName occurs on PolyType;
 
 aspect production monoType
 top::PolyType ::= ty::Type
 {
-  top.boundVars = [];
-  top.typerep = ty;
+  top.typeName = ty.typeName;
 }
 
 aspect production polyType
 top::PolyType ::= tvs::[TyVar] ty::Type
 {
-  top.boundVars = freshTyVars(length(tvs));
-  top.typerep = freshenTypeWith(ty, tvs, top.boundVars);
+  top.typeName = ty.typeName;
 }
 
--- Just to clarify:
--- call prettyType to pretty print the type.
--- get typeName to find out what nonterminal a NT or DNT is
-
 attribute typeName occurs on Type;
-
-synthesized attribute typeName :: String;
 
 aspect default production
 top::Type ::=

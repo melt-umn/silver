@@ -8,7 +8,6 @@ annotation sourceGrammar :: String;
 synthesized attribute fullName :: String;
 
 -- types
-synthesized attribute typerep :: Type;
 synthesized attribute typeScheme :: PolyType;
 
 -- values
