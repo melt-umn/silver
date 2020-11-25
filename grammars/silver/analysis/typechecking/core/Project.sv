@@ -6,13 +6,8 @@ imports silver:definition:type:syntax;
 imports silver:definition:env;
 imports silver:definition:type;
 
-
-
-{-- The resulting substitution context -}
-synthesized attribute upSubst   :: Substitution;
-
-{-- The initial substitution context -}
-inherited attribute downSubst :: Substitution;
+{-- The initial and resulting substitution contexts -}
+threaded attribute downSubst, upSubst :: Substitution;
 
 {-- The complete, final substitution context -}
 autocopy attribute finalSubst :: Substitution;

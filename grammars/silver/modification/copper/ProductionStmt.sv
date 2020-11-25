@@ -30,19 +30,16 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
     else [];
 
   local tyCk :: TypeCheck = check(e.typerep, terminalIdType());
-  tyCk.downSubst = e.upSubst;
   tyCk.finalSubst = top.finalSubst;
   top.errors <-
     if tyCk.typeerror
     then [err(top.location, "'pluck' expects one of the terminals it is disambiguating between. Instead it received "++tyCk.leftpp)]
     else [];
 
+  thread downSubst, upSubst on top, e, tyCk, top;
 
   -- TODO: Enforce that the plucked terminal is one of those that are being disambiguated between.
   -- Currently all that is checked is that it is a terminal.
-
-  e.downSubst = top.downSubst;
-  top.upSubst = e.upSubst;
 }
 
 concrete production printStmt
@@ -60,9 +57,7 @@ top::ProductionStmt ::= 'print' e::Expr ';'
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, e, errCheck1, top;
   
   errCheck1 = check(e.typerep, stringType());
   top.errors <-
@@ -92,9 +87,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
   errCheck1 = check(e.typerep, val.lookupValue.typeScheme.monoType);
   top.errors <-
@@ -118,9 +111,7 @@ top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  lexeme.downSubst = top.downSubst;
-  errCheck1.downSubst = lexeme.upSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, lexeme, errCheck1, top;
 
   errCheck1 = check(lexeme.typerep, stringType());
   top.errors <-
@@ -162,9 +153,7 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' e
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  condition.downSubst = top.downSubst;
-  errCheck1.downSubst = condition.upSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, condition, errCheck1, top;
   
   th.downSubst = top.downSubst;
   th.finalSubst = th.upSubst;
@@ -229,9 +218,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
   errCheck1 = check(e.typerep, val.lookupValue.typeScheme.monoType);
   top.errors <-

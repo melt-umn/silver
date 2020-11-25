@@ -210,10 +210,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
                 else [];
   
   -- Thread NORMALLY! YAY!
-  errCheck1.downSubst = top.downSubst;
-  e.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = e.upSubst;
-  top.upSubst = errCheck2.upSubst;
+  thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
   
   e.env = newScopeEnv(ns.defs, top.env);
   
@@ -292,11 +289,8 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
   top.errors <- if errCheck2.typeerror
                 then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
-  
-  errCheck1.downSubst = top.downSubst;
-  e.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = e.upSubst;
-  top.upSubst = errCheck2.upSubst;
+
+  thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
   top.translation = "if(scrutinee == " ++ i.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -318,11 +312,8 @@ top::PrimPattern ::= f::Float_t '->' e::Expr
   top.errors <- if errCheck2.typeerror
                 then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
-  
-  errCheck1.downSubst = top.downSubst;
-  e.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = e.upSubst;
-  top.upSubst = errCheck2.upSubst;
+
+  thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
   top.translation = "if(scrutinee == " ++ f.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -344,11 +335,8 @@ top::PrimPattern ::= i::String_t '->' e::Expr
   top.errors <- if errCheck2.typeerror
                 then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
-  
-  errCheck1.downSubst = top.downSubst;
-  e.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = e.upSubst;
-  top.upSubst = errCheck2.upSubst;
+
+  thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
   top.translation = "if(scrutinee.equals(" ++ i.lexeme ++ ")) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -370,11 +358,8 @@ top::PrimPattern ::= i::String '->' e::Expr
   top.errors <- if errCheck2.typeerror
                 then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
-  
-  errCheck1.downSubst = top.downSubst;
-  e.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = e.upSubst;
-  top.upSubst = errCheck2.upSubst;
+
+  thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
   top.translation = "if(scrutinee == " ++ i ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -396,11 +381,8 @@ top::PrimPattern ::= e::Expr
   top.errors <- if errCheck2.typeerror
                 then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
-  
-  errCheck1.downSubst = top.downSubst;
-  e.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = e.upSubst;
-  top.upSubst = errCheck2.upSubst;
+
+  thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
   top.translation = "if(scrutinee.nil()) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -425,11 +407,8 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   top.errors <- if errCheck2.typeerror
                 then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
-  
-  errCheck1.downSubst = top.downSubst;
-  e.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = e.upSubst;
-  top.upSubst = errCheck2.upSubst;
+
+  thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
   
   local consdefs :: [Def] =
     [lexicalLocalDef(top.grammarName, top.location, h_fName, elemType, noVertex(), []),

@@ -2,9 +2,7 @@
 abstract production bindExpr
 top::Expr ::= n::Name t::TypeExpr e::Expr rest::Expr bindFn::QName
 {
-  {-e.downSubst = top.downSubst;
-  rest.downSubst = e.upSubst;
-  forward.downSubst = rest.upSubst;-}
+  --propagate downSubst, upSubst;
 
   local cont :: Expr =
     lambdap(

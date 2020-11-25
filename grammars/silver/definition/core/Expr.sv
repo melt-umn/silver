@@ -688,10 +688,7 @@ top::Expr ::= e1::Expr '++' e2::Expr
   -- Moved from 'analysis:typechecking' because we want to use this stuff here now
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e1.downSubst = top.downSubst;
-  e2.downSubst = e1.upSubst;
-  errCheck1.downSubst = e2.upSubst;
-  forward.downSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, e1, e2, errCheck1, forward;
   -- upSubst defined via forward :D
 
   errCheck1 = check(e1.typerep, e2.typerep);
