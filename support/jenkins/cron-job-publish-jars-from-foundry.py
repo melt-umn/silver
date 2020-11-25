@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# */10 * * * * /lhome/gitbot/cron-job-publish-jars-from-foundry
+# */10 * * * * /lhome/gitbot/cron-job-publish-jars-from-foundry.py
 #
 # Note that this currently does not self-update, or check for timestamps.
 
@@ -12,7 +12,7 @@ import sys
 from tempfile import TemporaryFile
 from urllib.request import Request, urlopen
 
-WEB_STORE = environ.get("WEB_STORE", "/web/research/melt.cs.umn.edu/downloads/silver-dev")
+WEB_STORE = environ.get("WEB_STORE", "/web/research/melt.cs.umn.edu/downloads/silver-dev/jars")
 SLACK_WEBHOOK_URL = environ.get("SLACK_WEBHOOK_URL", None)
 
 files = [
