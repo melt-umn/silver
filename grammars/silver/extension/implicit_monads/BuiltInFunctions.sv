@@ -195,8 +195,10 @@ top::Expr ::= 'new' '(' e::Expr ')'
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
+  es.mDownSubst = top.mDownSubst;
+  el.mDownSubst = es.mUpSubst;
   top.merrors := es.merrors ++ el.merrors;
-  top.mUpSubst = top.mDownSubst;
+  top.mUpSubst = el.mUpSubst;
   top.mtyperep =
      if ( isMonad(es.mtyperep) && monadsMatch(es.mtyperep, top.expectedMonad, top.mUpSubst).fst ) ||
         ( isMonad(el.mtyperep) && monadsMatch(el.mtyperep, top.expectedMonad, top.mUpSubst).fst )

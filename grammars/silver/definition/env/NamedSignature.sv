@@ -7,7 +7,7 @@ grammar silver:definition:env;
  - TODO: we might want to remove the full name of the production from this, and make it just `Signature`?
  - It's not clear if this information really belongs here, or not.
  -}
-nonterminal NamedSignature with fullName, inputElements, outputElement, namedInputElements, typerep, inputNames, inputTypes;
+nonterminal NamedSignature with fullName, inputElements, outputElement, namedInputElements, typeScheme, freeVariables, inputNames, inputTypes, typerep;
 
 synthesized attribute inputElements :: [NamedSignatureElement];
 synthesized attribute outputElement :: NamedSignatureElement;
@@ -31,7 +31,10 @@ top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatur
   top.namedInputElements = np;
   top.inputNames = map((.elementName), ie);
   top.inputTypes = map((.typerep), ie); -- Does anything actually use this? TODO: eliminate?
-  top.typerep = functionType(oe.typerep, top.inputTypes, map((.toNamedArgType), np));
+  local typerep::Type = functionType(oe.typerep, top.inputTypes, map((.toNamedArgType), np));
+  top.typeScheme = polyType(typerep.freeVariables, typerep);
+  top.freeVariables = typerep.freeVariables;
+  top.typerep = typerep; -- TODO: Only used by unifyNamedSignature.  Would be nice to eliminate, somehow.
 }
 
 {--
@@ -120,10 +123,18 @@ NamedSignatureElement ::= f::(Type ::= Type)  nse::NamedSignatureElement
 function freshenNamedSignature
 NamedSignature ::= ns::NamedSignature
 {
-  local fvs :: [TyVar] = ns.typerep.freeVariables;
-  local s :: Substitution = zipVarsIntoSubstitution(fvs, freshTyVars(length(fvs)));
+  local s :: Substitution = zipVarsIntoSubstitution(ns.freeVariables, ns.typeScheme.boundVars);
 
   -- Apply the freshening within the signature's types
   return mapNamedSignature(performRenaming(_, s), ns);
+}
+
+function unifyNamedSignature
+Substitution ::= ns1::NamedSignature ns2::NamedSignature
+{
+  local subst :: Substitution = unifyDirectional(ns1.typerep, ns2.typerep);
+  return
+    if !subst.failure then subst
+    else errorSubstitution(ns1.typerep);
 }
 

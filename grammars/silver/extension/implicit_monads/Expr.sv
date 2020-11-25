@@ -14,7 +14,7 @@ attribute monadRewritten<Expr>, merrors, mtyperep, mDownSubst, mUpSubst, expecte
 --list of the attributes accessed in an explicit expression not allowed there
 monoid attribute notExplicitAttributes::[Pair<String Location>] with [], ++;
 attribute notExplicitAttributes occurs on Expr, AppExprs, AnnoAppExprs, MRuleList, Exprs, MatchRule, AbstractMatchRule, AssignExpr;
-propagate notExplicitAttributes on Expr, AppExprs, AnnoAppExprs, MRuleList, Exprs, AssignExpr;
+propagate notExplicitAttributes on Expr, AppExprs, AnnoAppExprs, MRuleList, Exprs, AssignExpr excluding forwardAccess;
 
 
 aspect default production
@@ -28,7 +28,7 @@ aspect production errorExpr
 top::Expr ::= e::[Message]
 {
   top.merrors := e;
-  top.mUpSubst = top.mDownSubst;
+  propagate mDownSubst, mUpSubst;
   top.mtyperep = errorType();
   top.monadicNames = [];
   top.monadRewritten = errorExpr(e, location=top.location);
@@ -38,7 +38,7 @@ aspect production errorReference
 top::Expr ::= msg::[Message]  q::Decorated QName
 {
   top.merrors := msg;
-  top.mUpSubst = top.mDownSubst;
+  propagate mDownSubst, mUpSubst;
   top.mtyperep = errorType();
   top.monadicNames = [];
   top.monadRewritten = errorReference(msg, q, location=top.location);
@@ -48,10 +48,10 @@ aspect production childReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
-  top.mtyperep = if q.lookupValue.typerep.isDecorable
-                 then ntOrDecType(q.lookupValue.typerep, freshType())
-                 else q.lookupValue.typerep;
+  propagate mDownSubst, mUpSubst;
+  top.mtyperep = if q.lookupValue.typeScheme.isDecorable
+                 then q.lookupValue.typeScheme.asNtOrDecType
+                 else q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
                      else [];
@@ -62,8 +62,8 @@ aspect production lhsReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
-  top.mtyperep = ntOrDecType(q.lookupValue.typerep, freshType());
+  propagate mDownSubst, mUpSubst;
+  top.mtyperep = q.lookupValue.typeScheme.asNtOrDecType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
                      else [];
@@ -74,10 +74,10 @@ aspect production localReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
-  top.mtyperep = if q.lookupValue.typerep.isDecorable
-                 then ntOrDecType(q.lookupValue.typerep, freshType())
-                 else q.lookupValue.typerep;
+  propagate mDownSubst, mUpSubst;
+  top.mtyperep = if q.lookupValue.typeScheme.isDecorable
+                 then q.lookupValue.typeScheme.asNtOrDecType
+                 else q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
                      else [];
@@ -88,9 +88,9 @@ aspect production forwardReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
+  propagate mDownSubst, mUpSubst;
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
-  top.mtyperep = ntOrDecType(q.lookupValue.typerep, freshType());
+  top.mtyperep = q.lookupValue.typeScheme.asNtOrDecType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
                      else [];
@@ -101,8 +101,8 @@ aspect production productionReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
-  top.mtyperep = freshenCompletely(q.lookupValue.typerep);
+  propagate mDownSubst, mUpSubst;
+  top.mtyperep = q.lookupValue.typeScheme.typerep;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
                      else [];
@@ -113,8 +113,8 @@ aspect production functionReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
-  top.mtyperep = freshenCompletely(q.lookupValue.typerep);
+  propagate mDownSubst, mUpSubst;
+  top.mtyperep = q.lookupValue.typeScheme.typerep;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
                      else [];
@@ -125,8 +125,8 @@ aspect production globalValueReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
-  top.mtyperep = freshenCompletely(q.lookupValue.typerep);
+  propagate mDownSubst, mUpSubst;
+  top.mtyperep = q.lookupValue.typeScheme.typerep;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
                      else [];
@@ -372,8 +372,8 @@ aspect production attributeSection
 top::Expr ::= '(' '.' q::QName ')'
 {
   top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
-  top.mtyperep = functionType(freshenCompletely(q.lookupAttribute.typerep), [freshType()], []);
+  propagate mDownSubst, mUpSubst;
+  top.mtyperep = functionType(q.lookupAttribute.typeScheme.typerep, [freshType()], []);
   top.monadicNames = [];
   top.monadRewritten = attributeSection('(', '.', q, ')', location=top.location);
 }
@@ -381,21 +381,43 @@ top::Expr ::= '(' '.' q::QName ')'
 aspect production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
 {
-  top.merrors := e.errors;
-  e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
-  e.expectedMonad = top.expectedMonad;
-  top.mtyperep = e.mtyperep;
-  e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
-  top.monadicNames = e.monadicNames;
-  top.monadRewritten = forwardAccess(e.monadRewritten, '.', 'forward', location=top.location);
+  local ne::Expr = e;
+  ne.downSubst = top.mDownSubst;
+  ne.mDownSubst = top.mDownSubst;
+  top.mUpSubst = ne.mUpSubst;
+  ne.finalSubst = top.finalSubst;
+  ne.expectedMonad = top.expectedMonad;
+  ne.frame = top.frame;
+  ne.grammarName = top.grammarName;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.config = top.config;
+  ne.env = top.env;
+  ne.flowEnv = top.flowEnv;
+  ne.monadicallyUsed = false; --this needs to change when we decorated monadic trees
+
+  --apparently there isn't a downSubst equation normally?
+  local res_e::Expr = e;
+  res_e.downSubst = top.downSubst;
+  res_e.finalSubst = top.finalSubst;
+  res_e.frame = top.frame;
+  res_e.grammarName = top.grammarName;
+  res_e.compiledGrammars = top.compiledGrammars;
+  res_e.config = top.config;
+  res_e.env = top.env;
+  res_e.flowEnv = top.flowEnv;
+  top.notExplicitAttributes := res_e.notExplicitAttributes;
+
+  top.merrors := ne.errors;
+  top.mtyperep = ne.mtyperep;
+
+  top.monadicNames = ne.monadicNames;
+  top.monadRewritten = forwardAccess(ne.monadRewritten, '.', 'forward', location=top.location);
 }
 
 aspect production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
-  e.mDownSubst = top.mDownSubst;
-  forward.mDownSubst = e.mUpSubst;
+  propagate mDownSubst, mUpSubst;
   e.expectedMonad = top.expectedMonad;
   top.merrors := e.merrors ++ forward.merrors;
   top.merrors <- if q.found
@@ -405,7 +427,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
                       | implicitSynDcl(_, _, _, _, _) -> []
                       | implicitInhDcl(_, _, _, _, _) -> []
                       | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
-                                                "be either implicit or explicit; " ++ q.unparse ++
+                                                "be either implicit or restricted; " ++ q.unparse ++
                                                 " is neither")]
                       end
                  else [];
@@ -464,7 +486,7 @@ aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.mtyperep = errorType();
-  top.mUpSubst = top.mDownSubst;
+  propagate mDownSubst, mUpSubst;
   top.merrors := [];
   top.merrors <- case q.attrDcl of
                  | restrictedSynDcl(_, _, _, _, _) -> []
@@ -472,7 +494,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                  | implicitSynDcl(_, _, _, _, _) -> []
                  | implicitInhDcl(_, _, _, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
-                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
                  end;
   top.monadicNames = [];
@@ -517,7 +539,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                  | implicitSynDcl(_, _, _, _, _) -> []
                  | implicitInhDcl(_, _, _, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
-                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
                  end;
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
@@ -596,7 +618,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                  | implicitSynDcl(_, _, _, _, _) -> []
                  | implicitInhDcl(_, _, _, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
-                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
                  end;
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
@@ -640,7 +662,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                  | implicitSynDcl(_, _, _, _, _) -> []
                  | implicitInhDcl(_, _, _, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
-                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
                  end;
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
@@ -679,7 +701,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                  | implicitSynDcl(_, _, _, _, _) -> []
                  | implicitInhDcl(_, _, _, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
-                                           "be either implicit or explicit; " ++ q.unparse ++
+                                           "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
                  end;
   top.mUpSubst = top.mDownSubst;
@@ -705,9 +727,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
     monads, so anything that is a monad gets bound in to have its insides
     decorated.
   -}
-  e.mDownSubst = top.mDownSubst;
-  inh.mDownSubst = e.mUpSubst;
-  top.mUpSubst = inh.mUpSubst;
+  propagate mDownSubst, mUpSubst;
   top.merrors := e.merrors;
   e.expectedMonad = top.expectedMonad;
 
@@ -750,11 +770,12 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 attribute monadRewritten<ExprInhs>, merrors, mDownSubst, mUpSubst, monadicNames, expectedMonad occurs on ExprInhs;
 attribute monadRewritten<ExprInh>, merrors, mDownSubst, mUpSubst, monadicNames, expectedMonad occurs on ExprInh;
 
+propagate mDownSubst, mUpSubst on ExprInhs, ExprInh;
+
 aspect production exprInhsEmpty
 top::ExprInhs ::= 
 {
   top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
 
   top.monadicNames = [];
 
@@ -766,9 +787,6 @@ top::ExprInhs ::= lhs::ExprInh
 {
   top.merrors := lhs.merrors;
 
-  lhs.mDownSubst = top.mDownSubst;
-  top.mUpSubst = lhs.mUpSubst;
-
   top.monadicNames = lhs.monadicNames;
 
   top.monadRewritten = exprInhsOne(lhs.monadRewritten, location=top.location);
@@ -778,10 +796,6 @@ aspect production exprInhsCons
 top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
 {
   top.merrors := lhs.merrors ++ inh.merrors;
-
-  lhs.mDownSubst = top.mDownSubst;
-  inh.mDownSubst = lhs.mUpSubst;
-  top.mUpSubst = inh.mUpSubst;
 
   top.monadicNames = lhs.monadicNames ++ inh.monadicNames;
 
@@ -793,8 +807,6 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 {
   top.merrors := e.merrors;
 
-  e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
   e.expectedMonad = top.expectedMonad;
 
   e.monadicallyUsed = false;
@@ -809,7 +821,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 aspect production trueConst
 top::Expr ::= 'true'
 {
-  top.mUpSubst = top.mDownSubst;
+  propagate mDownSubst, mUpSubst;
   top.mtyperep = boolType();
   top.merrors := [];
   top.monadicNames = [];
@@ -819,7 +831,7 @@ top::Expr ::= 'true'
 aspect production falseConst
 top::Expr ::= 'false'
 {
-  top.mUpSubst = top.mDownSubst;
+  propagate mDownSubst, mUpSubst;
   top.mtyperep = boolType();
   top.merrors := [];
   top.monadicNames = [];
@@ -1544,7 +1556,8 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
   ec2.finalSubst = top.finalSubst;
   e1.mDownSubst = top.mDownSubst;
   e2.mDownSubst = e1.mUpSubst;
-  ec1.downSubst = e2.mUpSubst;
+  e3.mDownSubst = e2.mUpSubst;
+  ec1.downSubst = e3.mUpSubst;
   ec2.downSubst = ec1.upSubst;
   top.mUpSubst = ec2.upSubst;
 
@@ -1618,7 +1631,7 @@ aspect production intConst
 top::Expr ::= i::Int_t
 {
   top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
+  propagate mDownSubst, mUpSubst;
   top.mtyperep = intType();
   top.monadicNames = [];
   top.monadRewritten = intConst(i, location=top.location);
@@ -1628,7 +1641,7 @@ aspect production floatConst
 top::Expr ::= f::Float_t
 {
   top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
+  propagate mDownSubst, mUpSubst;
   top.mtyperep = floatType();
   top.monadicNames = [];
   top.monadRewritten = floatConst(f, location=top.location);
@@ -2031,8 +2044,7 @@ top::Expr ::= '-' e::Expr
 
   e.expectedMonad = top.expectedMonad;
 
-  e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
+  propagate mDownSubst, mUpSubst;
   top.monadRewritten =
     if isMonad(e.mtyperep)
     then Silver_Expr {
@@ -2048,7 +2060,7 @@ aspect production stringConst
 top::Expr ::= s::String_t
 {
   top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
+  propagate mDownSubst, mUpSubst;
   top.mtyperep = stringType();
   top.monadicNames = [];
 
@@ -2259,7 +2271,7 @@ aspect production missingAppExpr
 top::AppExpr ::= '_'
 {
   top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
+  propagate mDownSubst, mUpSubst;
   top.monadRewritten = missingAppExpr('_', location=top.location);
   top.realTypes = [];
   top.monadTypesLocations = [];
@@ -2322,14 +2334,12 @@ top::AppExpr ::= e::Expr
   top.monadRewritten = presentAppExpr(e.monadRewritten, location=top.location);
 }
 
+propagate mDownSubst, mUpSubst on AppExprs;
+
 aspect production snocAppExprs
 top::AppExprs ::= es::AppExprs ',' e::AppExpr
 {
   top.merrors := es.merrors ++ e.merrors;
-
-  es.mDownSubst = top.mDownSubst;
-  e.mDownSubst = es.mUpSubst;
-  top.mUpSubst = e.mUpSubst;
 
   es.expectedMonad = top.expectedMonad;
   e.expectedMonad = top.expectedMonad;
@@ -2347,9 +2357,6 @@ top::AppExprs ::= e::AppExpr
 {
   top.merrors := e.merrors;
 
-  e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
-
   e.expectedMonad = top.expectedMonad;
 
   top.realTypes = e.realTypes;
@@ -2364,8 +2371,6 @@ aspect production emptyAppExprs
 top::AppExprs ::=
 {
   top.merrors := [];
-
-  top.mUpSubst = top.mDownSubst;
 
   top.realTypes = [];
 
@@ -2420,7 +2425,7 @@ aspect production lexerClassReference
 top::Expr ::= q::Decorated QName
 {
   top.mUpSubst = top.mDownSubst;
-  top.mtyperep = q.lookupValue.typerep;
+  top.mtyperep = q.lookupValue.typeScheme.typerep;
   top.monadRewritten = top;
 
   top.monadicNames = [];

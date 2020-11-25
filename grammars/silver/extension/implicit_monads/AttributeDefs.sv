@@ -6,6 +6,8 @@ top::AGDcl ::= 'restricted' 'inherited' 'attribute' a::Name tl::BracketedOptType
 {
   top.unparse = "restricted inherited attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
+  top.moduleNames := [];
+
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
   te.env = tl.envBindingTyVars;
@@ -24,7 +26,7 @@ top::AGDcl ::= 'restricted' 'inherited' 'attribute' a::Name tl::BracketedOptType
 
   local fwd::AGDcl = defsAGDcl([restrictedInhDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)], location=top.location);
 
-  forwards to error("I quit"); --fwd;
+  forwards to fwd;
 }
 
 
@@ -32,6 +34,8 @@ concrete production attributeDclSyn_Restricted
 top::AGDcl ::= 'restricted' 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.unparse = "restricted synthesized attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
+
+  top.moduleNames := [];
 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
@@ -51,7 +55,7 @@ top::AGDcl ::= 'restricted' 'synthesized' 'attribute' a::Name tl::BracketedOptTy
 
   local fwd::AGDcl = defsAGDcl([restrictedSynDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)], location=top.location);
 
-  forwards to error("I quit"); --fwd;
+  forwards to fwd;
 }
 
 
@@ -61,6 +65,8 @@ concrete production attributeDclInh_Implicit
 top::AGDcl ::= 'implicit' 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.unparse = "implicit inherited attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
+
+  top.moduleNames := [];
 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
@@ -82,7 +88,7 @@ top::AGDcl ::= 'implicit' 'inherited' 'attribute' a::Name tl::BracketedOptTypeEx
 
   local fwd::AGDcl = defsAGDcl([implicitInhDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)], location=top.location);
 
-  forwards to error("I quit"); --fwd;
+  forwards to fwd;
 }
 
 
@@ -90,6 +96,8 @@ concrete production attributeDclSyn_Implicit
 top::AGDcl ::= 'implicit' 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.unparse = "implicit synthesized attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
+
+  top.moduleNames := [];
 
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
@@ -111,7 +119,7 @@ top::AGDcl ::= 'implicit' 'synthesized' 'attribute' a::Name tl::BracketedOptType
 
   local fwd::AGDcl = defsAGDcl([implicitSynDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep)], location=top.location);
 
-  forwards to error("I quit"); --fwd;
+  forwards to fwd;
 }
 
 
@@ -122,7 +130,7 @@ top::AGDcl ::= 'unrestricted' 'inherited' 'attribute' a::Name tl::BracketedOptTy
 {
   top.unparse = "unrestricted inherited attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
-  forwards to error("I quit"); --attributeDclInh('inherited', 'attribute', a, tl, '::', te, ';', location=top.location);
+  forwards to attributeDclInh('inherited', 'attribute', a, tl, '::', te, ';', location=top.location);
 }
 
 
@@ -131,6 +139,6 @@ top::AGDcl ::= 'unrestricted' 'synthesized' 'attribute' a::Name tl::BracketedOpt
 {
   top.unparse = "unrestricted synthesized attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
 
-  forwards to error("I quit"); --attributeDclSyn('synthesized', 'attribute', a, tl, '::', te, ';', location=top.location);
+  forwards to attributeDclSyn('synthesized', 'attribute', a, tl, '::', te, ';', location=top.location);
 }
 

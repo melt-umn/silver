@@ -316,11 +316,10 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                 makeLet(top.location, p.snd, freshType(), p.fst, rest),
                                monadLocal, zipWith(pair, es.rawExprs, newNames));
 
-  forwards to error("I quit");
-{-  forwards to case monadPlus(top.expectedMonad, top.location) of
+  forwards to case monadPlus(top.expectedMonad, top.location) of
               | right(_) -> letBound
               | left(e) -> errorExpr([err(top.location, e)], location=top.location)
-              end;-}
+              end;
 }
 
 
@@ -345,6 +344,7 @@ top::MRuleList ::= m::MatchRule
   m.temp_compiledGrammars = top.temp_compiledGrammars;
   m.temp_flowEnv = top.temp_flowEnv;
   m.temp_grammarName = top.temp_grammarName;
+  m.mDownSubst = top.mDownSubst;
 
   top.patternTypeList = m.patternTypeList;
   top.mUpSubst = top.mDownSubst;
@@ -356,10 +356,12 @@ top::MRuleList ::= h::MatchRule vbar::Vbar_kwd t::MRuleList
   h.temp_compiledGrammars = top.temp_compiledGrammars;
   h.temp_flowEnv = top.temp_flowEnv;
   h.temp_grammarName = top.temp_grammarName;
+  h.mDownSubst = top.mDownSubst;
 
   t.temp_compiledGrammars = top.temp_compiledGrammars;
   t.temp_flowEnv = top.temp_flowEnv;
   t.temp_grammarName = top.temp_grammarName;
+  t.mDownSubst = top.mDownSubst;
 
   top.patternTypeList = h.patternTypeList;
   --need to unify here with t.patternTypeList so, when we reach the case, if there is a
@@ -368,7 +370,6 @@ top::MRuleList ::= h::MatchRule vbar::Vbar_kwd t::MRuleList
   top.mUpSubst = foldl(\s::Substitution p::Pair<Type Type> ->
                        decorate check(p.fst, p.snd) with {downSubst=s;}.upSubst,
                       t.mUpSubst, zipWith(pair, h.patternTypeList, t.patternTypeList));
-  t.mDownSubst = top.mDownSubst;
 }
 
 aspect production matchRule_c

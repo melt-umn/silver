@@ -44,10 +44,7 @@ top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
   -- Actual syntax to exactly constrain the types of arbitrary expressions would be useful here.
   top.typerep = nonterminalType("core:Maybe", [e.typerep]);
   
-  s.downSubst = top.downSubst;
-  e.downSubst = s.upSubst;
-  errCheckS.downSubst = e.upSubst;
-  forward.downSubst = errCheckS.upSubst;
+  thread downSubst, upSubst on top, s, e, errCheckS, forward;
   
   forwards to
     Silver_Expr {
@@ -93,8 +90,8 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   top.unparse = s"traverse ${n.name}(${es.unparse}, ${anns.unparse})";
   
-  local numChildren::Integer = length(n.lookupValue.typerep.inputTypes);
-  local annotations::[String] = map((.argName), n.lookupValue.typerep.namedTypes);
+  local numChildren::Integer = n.lookupValue.typeScheme.arity;
+  local annotations::[String] = map((.argName), n.lookupValue.typeScheme.typerep.namedTypes);
   es.appExprTypereps = repeat(nonterminalType("silver:rewrite:Strategy", []), numChildren);
   es.appExprApplied = n.unparse;
   anns.appExprApplied = n.unparse;
@@ -108,9 +105,7 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
     then [err(top.location, "Term rewriting requires import of silver:rewrite")]
     else [];
 
-  es.downSubst = top.downSubst;
-  anns.downSubst = es.upSubst;
-  forward.downSubst = es.downSubst;
+  propagate downSubst, upSubst;
   
   local transform::Strategy =
     traversal(n.lookupValue.fullName, es.traverseTransform, anns.traverseTransform);
@@ -278,9 +273,8 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   
   -- Can't use an error production here, unfourtunately, due to circular dependency issues.
   top.errors := if !null(localErrors) then localErrors else forward.errors;
-  
-  checkExpr.downSubst = top.downSubst;
-  forward.downSubst = checkExpr.upSubst;
+
+  thread downSubst, upSubst on top, checkExpr, forward;
   
   local finalRuleType::Type =
     freshenType(

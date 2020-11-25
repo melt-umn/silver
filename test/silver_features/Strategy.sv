@@ -174,8 +174,13 @@ equalityTest(
 
 -- Negative tests
 inherited attribute badInh<a>::a;
-wrongCode "cannot be used as total strategy" {
+wrongCode "cannot be used as a total strategy" {
   strategy attribute badInhS = badInh;
+}
+
+synthesized attribute badSyn::Boolean;
+wrongCode "cannot be used as a total strategy" {
+  strategy attribute badSynS = badSyn;
 }
 
 warnCode "is not total" {

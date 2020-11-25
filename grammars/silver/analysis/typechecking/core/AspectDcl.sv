@@ -7,7 +7,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = ns.finalSubst;
 
-  errCheck1 = check(realSig.typerep, namedSig.typerep);
+  errCheck1 = check(realSig.typeScheme.typerep, namedSig.typeScheme.typerep);
   top.errors <-
     if errCheck1.typeerror
     then [err(top.location, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "
@@ -22,8 +22,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
       end;
 
   ns.downSubst = emptySubst();
-  errCheck1.downSubst = ns.upSubst;
-  body.downSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on ns, errCheck1, body;
   
   ns.finalSubst = errCheck1.upSubst;
 }
@@ -34,7 +33,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = ns.finalSubst;
 
-  errCheck1 = check(realSig.typerep, namedSig.typerep);
+  errCheck1 = check(realSig.typeScheme.typerep, namedSig.typeScheme.typerep);
   top.errors <-
     if errCheck1.typeerror
     then [err(top.location, "Aspect for '" ++ id.name ++ "' does not have the right signature.\nExpected: "
@@ -48,8 +47,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
       end;
 
   ns.downSubst = emptySubst();
-  errCheck1.downSubst = ns.upSubst;
-  body.downSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on ns, errCheck1, body;
   
   ns.finalSubst = errCheck1.upSubst;
 }
@@ -59,9 +57,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 aspect production aspectProductionSignature
 top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 {
-  lhs.downSubst = top.downSubst;
-  rhs.downSubst = lhs.upSubst;
-  top.upSubst = rhs.upSubst;
+  propagate downSubst, upSubst;
 }
 
 aspect production aspectProductionLHSFull
@@ -69,8 +65,7 @@ top::AspectProductionLHS ::= id::Name t::Type
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  errCheck1.downSubst = top.downSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, errCheck1, top;
   
   errCheck1 = check(rType, t);
   top.errors <-
@@ -82,15 +77,13 @@ top::AspectProductionLHS ::= id::Name t::Type
 aspect production aspectRHSElemNil
 top::AspectRHS ::= 
 {
-  top.upSubst = top.downSubst;
+  propagate downSubst, upSubst;
 }
 
 aspect production aspectRHSElemCons
 top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 {
-  h.downSubst = top.downSubst;
-  t.downSubst = h.upSubst;
-  top.upSubst = t.upSubst;
+  propagate downSubst, upSubst;
 }
 
 aspect production aspectRHSElemFull
@@ -98,8 +91,7 @@ top::AspectRHSElem ::= id::Name t::Type
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  errCheck1.downSubst = top.downSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, errCheck1, top;
   
   errCheck1 = check(rType, t);
   top.errors <-
@@ -111,9 +103,7 @@ top::AspectRHSElem ::= id::Name t::Type
 aspect production aspectFunctionSignature
 top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS 
 {
-  lhs.downSubst = top.downSubst;
-  rhs.downSubst = lhs.upSubst;
-  top.upSubst = rhs.upSubst;
+  propagate downSubst, upSubst;
 }
 
 aspect production functionLHSType
@@ -121,8 +111,7 @@ top::AspectFunctionLHS ::= t::TypeExpr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  errCheck1.downSubst = top.downSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, errCheck1, top;
   
   errCheck1 = check(rType, t.typerep);
   top.errors <-

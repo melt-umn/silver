@@ -1,5 +1,6 @@
 grammar silver:definition:flow:env;
 
+import silver:definition:type;
 import silver:modification:defaultattr;
 import silver:definition:flow:driver only ProductionGraph, findProductionGraph;
 import silver:driver:util; -- only for productionFlowGraphs occurrence?

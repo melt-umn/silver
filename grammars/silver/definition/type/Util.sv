@@ -1,8 +1,5 @@
 grammar silver:definition:type;
 
--- DEPRECATED STUFF
-attribute isError, inputTypes, outputType, namedTypes, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
-
 -- Quick check to see if an error message should be suppressed
 synthesized attribute isError :: Boolean;
 
@@ -10,6 +7,7 @@ synthesized attribute isError :: Boolean;
 synthesized attribute inputTypes :: [Type];
 synthesized attribute outputType :: Type;
 synthesized attribute namedTypes :: [NamedArgType];
+synthesized attribute arity :: Integer;
 
 -- Used by Expr, could possibly be replaced by pattern matching for decoratedType
 -- Also used by 'new()'
@@ -26,9 +24,38 @@ synthesized attribute isTerminal :: Boolean;
 -- Used by 'new' and type-determination for attributes (NOT on regular nonterminals)
 synthesized attribute decoratedType :: Type;
 
+-- Freshens a nonterminal PolyType into a possibly-decorated nonterminal Type
+synthesized attribute asNtOrDecType :: Type;
+
 -- Used instead of unify() when we want to just know its decorated or undecorated
 synthesized attribute unifyInstanceNonterminal :: Substitution;
 synthesized attribute unifyInstanceDecorated :: Substitution;
+
+attribute arity, isError, isDecorated, isDecorable, isTerminal, asNtOrDecType occurs on PolyType;
+
+aspect production monoType
+top::PolyType ::= ty::Type
+{
+  top.arity = ty.arity;
+  top.isError = ty.isError;
+  top.isDecorated = ty.isDecorated;
+  top.isDecorable = ty.isDecorable;
+  top.isTerminal = ty.isTerminal;
+  top.asNtOrDecType = ntOrDecType(ty, freshType());
+}
+
+aspect production polyType
+top::PolyType ::= bound::[TyVar] ty::Type
+{
+  top.arity = ty.arity;
+  top.isError = ty.isError;
+  top.isDecorated = ty.isDecorated;
+  top.isDecorable = ty.isDecorable;
+  top.isTerminal = ty.isTerminal;
+  top.asNtOrDecType = error("Only mono types should be possibly-decorated");
+}
+
+attribute isError, inputTypes, outputType, namedTypes, arity, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
 
 aspect default production
 top::Type ::=
@@ -36,6 +63,7 @@ top::Type ::=
   top.inputTypes = [];
   top.outputType = errorType();
   top.namedTypes = [];
+  top.arity = 0;
   
   top.isDecorated = false;
   top.isDecorable = false;
@@ -118,5 +146,6 @@ top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
   top.inputTypes = params;
   top.outputType = out;
   top.namedTypes = namedParams;
+  top.arity = length(params);
 }
 

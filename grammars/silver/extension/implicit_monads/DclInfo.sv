@@ -15,9 +15,8 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = polyType(bound, ty);
 
-  top.dclBoundVars = bound;
   top.isSynthesized = true;
   top.isInherited = false;
 }
@@ -37,9 +36,8 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = polyType(bound, ty);
 
-  top.dclBoundVars = bound;
   top.isSynthesized = false;
   top.isInherited = true;
 }
@@ -61,9 +59,8 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = polyType(bound, ty);
 
-  top.dclBoundVars = bound;
   top.isSynthesized = true;
   top.isInherited = false;
 }
@@ -83,9 +80,8 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = polyType(bound, ty);
 
-  top.dclBoundVars = bound;
   top.isSynthesized = false;
   top.isInherited = true;
 }

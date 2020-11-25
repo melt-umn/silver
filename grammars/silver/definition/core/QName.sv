@@ -59,7 +59,7 @@ top::QName ::= msg::[Message]
   top.lookupAttribute = decorate errorLookup(msg) with {};
 }
 
-nonterminal QNameLookup with fullName, typerep, errors, dcls, dcl, dclBoundVars, found;
+nonterminal QNameLookup with fullName, typeScheme, errors, dcls, dcl, found;
 
 synthesized attribute lookupValue :: Decorated QNameLookup occurs on QName;
 synthesized attribute lookupType :: Decorated QNameLookup occurs on QName;
@@ -76,11 +76,7 @@ top::QNameLookup ::= kindOfLookup::String dcls::[DclInfo] name::String l::Locati
   
   top.fullName = if top.found then top.dcl.fullName else "undeclared:value:" ++ name;
   
-  -- TODO: We could eliminate a lot of explicit calls to 'freshenCompletely' and make this more correct
-  -- if we pushed into 'dcl' a different kind of Type, which recorded quantifiers.
-  -- e.g. QuantifiedType. Then when we asked for .typerep of that, it always freshens.
-  top.typerep = if top.found then top.dcl.typerep else errorType();
-  top.dclBoundVars = if top.found then top.dcl.dclBoundVars else [];
+  top.typeScheme = if top.found then top.dcl.typeScheme else monoType(errorType());
   
   top.errors := 
     (if top.found then []
@@ -96,8 +92,7 @@ top::QNameLookup ::= msg::[Message]
   top.found = true;
   top.dcl = error("dcl demanded from errorLookup");
   top.fullName = "err";
-  top.typerep = errorType();
-  top.dclBoundVars = [];
+  top.typeScheme = monoType(errorType());
   top.errors := msg;
 }
 

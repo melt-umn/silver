@@ -7,7 +7,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = monoType(ty);
 
   top.refDispatcher = lambdaParamReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- should be impossible (never in scope at production level?)
