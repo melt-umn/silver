@@ -86,14 +86,14 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 function restrictedSynDef
 Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
-  return attrDef(defaultEnvItem(restrictedSynDcl(fn, bound, ty, sourceGrammar=sg, location=sl)));
+  return attrDef(defaultEnvItem(restrictedSynDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
 }
 
 
 function restrictedInhDef
 Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
-  return attrDef(defaultEnvItem(restrictedInhDcl(fn, bound, ty, sourceGrammar=sg, location=sl)));
+  return attrDef(defaultEnvItem(restrictedInhDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
 }
 
 
@@ -102,13 +102,13 @@ Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 function implicitSynDef
 Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
-  return attrDef(defaultEnvItem(implicitSynDcl(fn, bound, ty, sourceGrammar=sg, location=sl)));
+  return attrDef(defaultEnvItem(implicitSynDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
 }
 
 
 function implicitInhDef
 Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
-  return attrDef(defaultEnvItem(implicitInhDcl(fn, bound, ty, sourceGrammar=sg, location=sl)));
+  return attrDef(defaultEnvItem(implicitInhDcl(fn, bound, ty, sourceGrammar=sg, sourceLocation=sl)));
 }
 

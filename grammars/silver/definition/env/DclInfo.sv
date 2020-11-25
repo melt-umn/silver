@@ -5,6 +5,7 @@ imports silver:definition:type;
 import silver:definition:regex;  -- soley for Terms. TODO : fix?
 
 annotation sourceGrammar :: String;
+annotation sourceLocation :: Location;
 synthesized attribute fullName :: String;
 
 -- types
@@ -42,7 +43,7 @@ inherited attribute givenSubstitution :: Substitution;
  -
  - hmm, unparsing could probably be fixed...
  -}
-closed nonterminal DclInfo with sourceGrammar, location, fullName, -- everyone
+closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
                          typeScheme, givenNonterminalType, -- types (gNT for occurs)
                          namedSignature, hasForward, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
@@ -54,7 +55,7 @@ closed nonterminal DclInfo with sourceGrammar, location, fullName, -- everyone
 aspect default production
 top::DclInfo ::=
 {
-  -- All Dcls mus provide fullName
+  -- All Dcls must provide fullName
 
   -- All values must provide typeScheme.
   -- All attributes must provide typeScheme.
@@ -112,7 +113,7 @@ top::DclInfo ::= fn::String ty::Type
   
   top.typeScheme = monoType(ty);
   
-  top.substitutedDclInfo = localDcl( fn, performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, location=top.location);
+  top.substitutedDclInfo = localDcl( fn, performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
 }
 abstract production forwardDcl
 top::DclInfo ::= ty::Type
@@ -121,7 +122,7 @@ top::DclInfo ::= ty::Type
   
   top.typeScheme = monoType(ty);
   
-  top.substitutedDclInfo = forwardDcl( performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, location=top.location);
+  top.substitutedDclInfo = forwardDcl( performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
 }
 
 -- ValueDclInfos that DO appear in interface files:

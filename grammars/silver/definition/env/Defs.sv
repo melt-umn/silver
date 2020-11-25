@@ -120,94 +120,94 @@ top::Def ::= d::DclInfo
 function childDef
 Def ::= sg::String  sl::Location  fn::String  ty::Type
 {
-  return valueDef(defaultEnvItem(childDcl(fn,ty,sourceGrammar=sg,location=sl)));
+  return valueDef(defaultEnvItem(childDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function lhsDef
 Def ::= sg::String  sl::Location  fn::String  ty::Type
 {
-  return valueDef(defaultEnvItem(lhsDcl(fn,ty,sourceGrammar=sg,location=sl)));
+  return valueDef(defaultEnvItem(lhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function localDef
 Def ::= sg::String  sl::Location  fn::String  ty::Type
 {
-  return valueDef(defaultEnvItem(localDcl(fn,ty,sourceGrammar=sg,location=sl)));
+  return valueDef(defaultEnvItem(localDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function prodDef
 Def ::= sg::String  sl::Location  ns::NamedSignature  hasForward::Boolean
 {
-  return prodDclDef(defaultEnvItem(prodDcl(ns,hasForward,sourceGrammar=sg,location=sl)));
+  return prodDclDef(defaultEnvItem(prodDcl(ns,hasForward,sourceGrammar=sg,sourceLocation=sl)));
 }
 function funDef
 Def ::= sg::String  sl::Location  ns::NamedSignature
 {
-  return valueDef(defaultEnvItem(funDcl(ns,sourceGrammar=sg,location=sl)));
+  return valueDef(defaultEnvItem(funDcl(ns,sourceGrammar=sg,sourceLocation=sl)));
 }
 function globalDef
 Def ::= sg::String  sl::Location  fn::String  ty::Type
 {
-  return valueDef(defaultEnvItem(globalValueDcl(fn,ty,sourceGrammar=sg,location=sl)));
+  return valueDef(defaultEnvItem(globalValueDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function ntDef
 Def ::= sg::String  sl::Location  fn::String  arity::Integer
 {
-  return typeDef(defaultEnvItem(ntDcl(fn,arity,false,sourceGrammar=sg,location=sl)));
+  return typeDef(defaultEnvItem(ntDcl(fn,arity,false,sourceGrammar=sg,sourceLocation=sl)));
 }
 function closedNtDef
 Def ::= sg::String  sl::Location  fn::String  arity::Integer
 {
-  return typeDef(defaultEnvItem(ntDcl(fn,arity,true,sourceGrammar=sg,location=sl)));
+  return typeDef(defaultEnvItem(ntDcl(fn,arity,true,sourceGrammar=sg,sourceLocation=sl)));
 }
 function termDef
 Def ::= sg::String  sl::Location  fn::String  regex::Regex
 {
   -- Terminals are also in the value namespace as terminal identifiers
-  return typeValueDef(defaultEnvItem(termDcl(fn,regex,sourceGrammar=sg,location=sl)));
+  return typeValueDef(defaultEnvItem(termDcl(fn,regex,sourceGrammar=sg,sourceLocation=sl)));
 }
 function lexTyVarDef
 Def ::= sg::String  sl::Location  fn::String  tv::TyVar
 {
-  return typeDef(defaultEnvItem(lexTyVarDcl(fn,false,tv,sourceGrammar=sg,location=sl)));
+  return typeDef(defaultEnvItem(lexTyVarDcl(fn,false,tv,sourceGrammar=sg,sourceLocation=sl)));
 }
 function aspectLexTyVarDef
 Def ::= sg::String  sl::Location  fn::String  tv::TyVar
 {
-  return typeDef(defaultEnvItem(lexTyVarDcl(fn,true,tv,sourceGrammar=sg,location=sl)));
+  return typeDef(defaultEnvItem(lexTyVarDcl(fn,true,tv,sourceGrammar=sg,sourceLocation=sl)));
 }
 function synDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {
-  return attrDef(defaultEnvItem(synDcl(fn,bound,ty,sourceGrammar=sg,location=sl)));
+  return attrDef(defaultEnvItem(synDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function inhDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {
-  return attrDef(defaultEnvItem(inhDcl(fn,bound,ty,sourceGrammar=sg,location=sl)));
+  return attrDef(defaultEnvItem(inhDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function prodOccursDef
 Def ::= sg::String  sl::Location  ns::NamedSignature  dcls::[Def]
 { 
-  return paDef(paDcl(ns,dcls,sourceGrammar=sg,location=sl));
+  return paDef(paDcl(ns,dcls,sourceGrammar=sg,sourceLocation=sl));
 }
 function forwardDef
 Def ::= sg::String  sl::Location  ty::Type
 {
-  return valueDef(defaultEnvItem(forwardDcl(ty,sourceGrammar=sg,location=sl)));
+  return valueDef(defaultEnvItem(forwardDcl(ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 -- These aliased functions are used for aspects.
 function aliasedLhsDef
 Def ::= sg::String  sl::Location  fn::String  ty::Type  alias::String
 {
-  return valueDef(onlyRenamedEnvItem(alias, lhsDcl(fn,ty,sourceGrammar=sg,location=sl)));
+  return valueDef(onlyRenamedEnvItem(alias, lhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function aliasedChildDef
 Def ::= sg::String  sl::Location  fn::String  ty::Type  alias::String
 {
-  return valueDef(onlyRenamedEnvItem(alias, childDcl(fn,ty,sourceGrammar=sg,location=sl)));
+  return valueDef(onlyRenamedEnvItem(alias, childDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function annoDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {
-  return attrDef(defaultEnvItem(annoDcl(fn,bound,ty,sourceGrammar=sg,location=sl)));
+  return attrDef(defaultEnvItem(annoDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 
 

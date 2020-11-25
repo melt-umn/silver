@@ -17,6 +17,6 @@ top::DclInfo ::= fn::String ty::Type fi::ExprVertexInfo fd::[FlowVertex]
 function lexicalLocalDef
 Def ::= sg::String sl::Location fn::String ty::Type fi::ExprVertexInfo fd::[FlowVertex]
 {
-  return valueDef(defaultEnvItem(lexicalLocalDcl(fn,ty,fi,fd,sourceGrammar=sg,location=sl)));
+  return valueDef(defaultEnvItem(lexicalLocalDcl(fn,ty,fi,fd,sourceGrammar=sg,sourceLocation=sl)));
 }
 

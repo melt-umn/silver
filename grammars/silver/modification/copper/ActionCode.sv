@@ -105,7 +105,7 @@ function hackTransformLocals
 [Def] ::= d::Def
 {
   return case d.dcl of
-         | localDcl(fn,ty,sourceGrammar=sg,location=sl) -> [parserLocalDef(sg,sl,fn,ty)]
+         | localDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl) -> [parserLocalDef(sg,sl,fn,ty)]
          | _ -> [] -- TODO: possibly error??
          end;
 }

@@ -23,7 +23,7 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: should probably be an error handler!
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_);
   
-  forwards to inhDcl(fn,bound,ty,sourceGrammar=top.sourceGrammar,location=top.location); -- TODO: Interference...
+  forwards to inhDcl(fn,bound,ty,sourceGrammar=top.sourceGrammar,sourceLocation=top.sourceLocation); -- TODO: Interference...
 }
 
 -- Defs:
@@ -31,6 +31,6 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 function autocopyDef
 Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
-  return attrDef(defaultEnvItem(autocopyDcl(fn,bound,ty, sourceGrammar=sg, location=sl)));
+  return attrDef(defaultEnvItem(autocopyDcl(fn,bound,ty, sourceGrammar=sg, sourceLocation=sl)));
 }
 
