@@ -41,13 +41,11 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
 function typeAliasDef
 Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
-  return typeDef(defaultEnvItem(typeDcl(sg,sl,fn,bound,ty)));
+  return typeDef(defaultEnvItem(typeDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 abstract production typeDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = polyType(bound, ty);

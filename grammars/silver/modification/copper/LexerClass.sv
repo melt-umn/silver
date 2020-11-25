@@ -93,5 +93,5 @@ top::LexerClassModifier ::= 'disambiguate' acode::ActionCode_c
     constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
 
   acode.env = newScopeEnv(disambiguationClassActionVars ++ acode.defs, top.env);
-  acode.frame = disambiguationContext(myFlowGraph);
+  acode.frame = disambiguationContext(myFlowGraph, sourceGrammar=top.grammarName);
 }

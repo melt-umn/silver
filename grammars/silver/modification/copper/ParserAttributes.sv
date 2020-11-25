@@ -23,7 +23,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::Ac
   local myFlowGraph :: ProductionGraph = 
     constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
 
-  acode.frame = actionContext(myFlowGraph);
+  acode.frame = actionContext(myFlowGraph, sourceGrammar=top.grammarName);
   acode.env = newScopeEnv(acode.defs, top.env);
   
   top.syntaxAst := [syntaxParserAttribute(fName, te.typerep, acode.actionCode)];
@@ -52,7 +52,7 @@ top::AGDcl ::= 'aspect' 'parser' 'attribute' a::QName 'action' acode::ActionCode
   local myFlowGraph :: ProductionGraph = 
     constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
 
-  acode.frame = actionContext(myFlowGraph);
+  acode.frame = actionContext(myFlowGraph, sourceGrammar=top.grammarName);
   acode.env = newScopeEnv(acode.defs, top.env);
   
   top.syntaxAst := [syntaxParserAttributeAspect(fName, acode.actionCode)];

@@ -9,10 +9,8 @@ top::DclInfo ::=
 }
 
 abstract production autocopyDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = polyType(bound, ty);
@@ -25,7 +23,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: should probably be an error handler!
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_);
   
-  forwards to inhDcl(sg,sl,fn,bound,ty);
+  forwards to inhDcl(fn,bound,ty,sourceGrammar=top.sourceGrammar,sourceLocation=top.sourceLocation); -- TODO: Interference...
 }
 
 -- Defs:
@@ -33,6 +31,6 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 function autocopyDef
 Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
-  return attrDef(defaultEnvItem(autocopyDcl(sg,sl,fn,bound,ty)));
+  return attrDef(defaultEnvItem(autocopyDcl(fn,bound,ty, sourceGrammar=sg, sourceLocation=sl)));
 }
 

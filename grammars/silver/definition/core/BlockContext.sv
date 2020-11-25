@@ -6,7 +6,7 @@ import silver:definition:flow:driver only ProductionGraph;
  - Permissions management information for certain features that can appear in production
  - statements, etc.  i.e. "can forward/return/pluck?"
  -}
-nonterminal BlockContext with permitReturn, permitForward, permitProductionAttributes, permitLocalAttributes, lazyApplication, hasFullSignature, hasPartialSignature, fullName, lhsNtName, signature, sourceGrammar, flowGraph;
+nonterminal BlockContext with permitReturn, permitForward, permitProductionAttributes, permitLocalAttributes, lazyApplication, hasFullSignature, hasPartialSignature, fullName, lhsNtName, sourceGrammar, signature, flowGraph;
 
 
 {-- Are 'return' equations allowed in this context? -}
@@ -73,7 +73,6 @@ aspect default production
 top::BlockContext ::=
 {
   top.lhsNtName = error("LHS NT accessed for non-production");
-  top.sourceGrammar = error("sourceGrammar accessed for non-production/function");
   -- most restrictive possible
   top.permitReturn = false;
   top.permitForward = false;
@@ -92,7 +91,6 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
   top.fullName = sig.fullName;
   top.lhsNtName = "::nolhs"; -- unfortunately this is sometimes accessed, and a dummy value works okay
   top.signature = sig;
-  top.sourceGrammar = substring(0, lastIndexOf(":", top.fullName), top.fullName); -- hack
   top.flowGraph = g;
 
   top.permitReturn = true;
@@ -107,7 +105,6 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
   top.fullName = sig.fullName;
   top.lhsNtName = sig.outputElement.typerep.typeName;
   top.signature = sig;
-  top.sourceGrammar = substring(0, lastIndexOf(":", top.fullName), top.fullName); -- hack
   top.flowGraph = g;
 
   top.permitForward = true;
@@ -121,14 +118,14 @@ abstract production aspectFunctionContext
 top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
 {
   top.permitReturn = false;
-  forwards to functionContext(sig, g);
+  forwards to functionContext(sig, g, sourceGrammar=top.sourceGrammar);
 }
 
 abstract production aspectProductionContext
 top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
 {
   top.permitForward = false;
-  forwards to productionContext(sig, g);
+  forwards to productionContext(sig, g, sourceGrammar=top.sourceGrammar);
 }
 
 abstract production globalExprContext

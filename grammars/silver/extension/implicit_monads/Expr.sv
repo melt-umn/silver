@@ -506,10 +506,10 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   top.merrors := e.merrors ++ forward.merrors;
   top.merrors <- if q.found
                  then case q.attrDcl of
-                      | restrictedSynDcl(_, _, _, _, _) -> []
-                      | restrictedInhDcl(_, _, _, _, _) -> []
-                      | implicitSynDcl(_, _, _, _, _) -> []
-                      | implicitInhDcl(_, _, _, _, _) -> []
+                      | restrictedSynDcl(_, _, _) -> []
+                      | restrictedInhDcl(_, _, _) -> []
+                      | implicitSynDcl(_, _, _) -> []
+                      | implicitInhDcl(_, _, _) -> []
                       | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                                 "be either implicit or restricted; " ++ q.unparse ++
                                                 " is neither")]
@@ -559,8 +559,8 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                if q.found
                                then case q.attrDcl of
-                                    | restrictedSynDcl(_, _, _, _, _) -> []
-                                    | restrictedInhDcl(_, _, _, _, _) -> []
+                                    | restrictedSynDcl(_, _, _) -> []
+                                    | restrictedInhDcl(_, _, _) -> []
                                     | _ -> [pair(q.unparse, top.location)]
                                     end
                                else [];
@@ -573,10 +573,10 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   propagate mDownSubst, mUpSubst;
   top.merrors := [];
   top.merrors <- case q.attrDcl of
-                 | restrictedSynDcl(_, _, _, _, _) -> []
-                 | restrictedInhDcl(_, _, _, _, _) -> []
-                 | implicitSynDcl(_, _, _, _, _) -> []
-                 | implicitInhDcl(_, _, _, _, _) -> []
+                 | restrictedSynDcl(_, _, _) -> []
+                 | restrictedInhDcl(_, _, _) -> []
+                 | implicitSynDcl(_, _, _) -> []
+                 | implicitInhDcl(_, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
@@ -587,8 +587,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                if q.found
                                then case q.attrDcl of
-                                    | restrictedSynDcl(_, _, _, _, _) -> []
-                                    | restrictedInhDcl(_, _, _, _, _) -> []
+                                    | restrictedSynDcl(_, _, _) -> []
+                                    | restrictedInhDcl(_, _, _) -> []
                                     | _ -> [pair(q.unparse, top.location)]
                                     end
                                else [];
@@ -618,10 +618,10 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.mtyperep = q.typerep;
   top.merrors := [];
   top.merrors <- case q.attrDcl of
-                 | restrictedSynDcl(_, _, _, _, _) -> []
-                 | restrictedInhDcl(_, _, _, _, _) -> []
-                 | implicitSynDcl(_, _, _, _, _) -> []
-                 | implicitInhDcl(_, _, _, _, _) -> []
+                 | restrictedSynDcl(_, _, _) -> []
+                 | restrictedInhDcl(_, _, _) -> []
+                 | implicitSynDcl(_, _, _) -> []
+                 | implicitInhDcl(_, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
@@ -631,8 +631,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                if q.found
                                then case q.attrDcl of
-                                    | restrictedSynDcl(_, _, _, _, _) -> []
-                                    | restrictedInhDcl(_, _, _, _, _) -> []
+                                    | restrictedSynDcl(_, _, _) -> []
+                                    | restrictedInhDcl(_, _, _) -> []
                                     | _ -> [pair(q.unparse, top.location)]
                                     end
                                else [];
@@ -697,10 +697,10 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.mUpSubst = top.mDownSubst;
   top.merrors := ne.merrors;
   top.merrors <- case q.attrDcl of
-                 | restrictedSynDcl(_, _, _, _, _) -> []
-                 | restrictedInhDcl(_, _, _, _, _) -> []
-                 | implicitSynDcl(_, _, _, _, _) -> []
-                 | implicitInhDcl(_, _, _, _, _) -> []
+                 | restrictedSynDcl(_, _, _) -> []
+                 | restrictedInhDcl(_, _, _) -> []
+                 | implicitSynDcl(_, _, _) -> []
+                 | implicitInhDcl(_, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
@@ -710,8 +710,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                if q.found
                                then case q.attrDcl of
-                                    | restrictedSynDcl(_, _, _, _, _) -> []
-                                    | restrictedInhDcl(_, _, _, _, _) -> []
+                                    | restrictedSynDcl(_, _, _) -> []
+                                    | restrictedInhDcl(_, _, _) -> []
                                     | _ -> [pair(q.unparse, top.location)]
                                     end
                                else [];
@@ -741,10 +741,10 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.mtyperep = q.typerep;
   top.merrors := ne.merrors;
   top.merrors <- case q.attrDcl of
-                 | restrictedSynDcl(_, _, _, _, _) -> []
-                 | restrictedInhDcl(_, _, _, _, _) -> []
-                 | implicitSynDcl(_, _, _, _, _) -> []
-                 | implicitInhDcl(_, _, _, _, _) -> []
+                 | restrictedSynDcl(_, _, _) -> []
+                 | restrictedInhDcl(_, _, _) -> []
+                 | implicitSynDcl(_, _, _) -> []
+                 | implicitInhDcl(_, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
@@ -754,8 +754,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                if q.found
                                then case q.attrDcl of
-                                    | restrictedSynDcl(_, _, _, _, _) -> []
-                                    | restrictedInhDcl(_, _, _, _, _) -> []
+                                    | restrictedSynDcl(_, _, _) -> []
+                                    | restrictedInhDcl(_, _, _) -> []
                                     | _ -> [pair(q.unparse, top.location)]
                                     end
                                else [];
@@ -780,10 +780,10 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 
   top.merrors := ne.merrors;
   top.merrors <- case q.attrDcl of
-                 | restrictedSynDcl(_, _, _, _, _) -> []
-                 | restrictedInhDcl(_, _, _, _, _) -> []
-                 | implicitSynDcl(_, _, _, _, _) -> []
-                 | implicitInhDcl(_, _, _, _, _) -> []
+                 | restrictedSynDcl(_, _, _) -> []
+                 | restrictedInhDcl(_, _, _) -> []
+                 | implicitSynDcl(_, _, _) -> []
+                 | implicitInhDcl(_, _, _) -> []
                  | _ -> [err(top.location, "Attributes accessed in implicit equations must " ++
                                            "be either implicit or restricted; " ++ q.unparse ++
                                            " is neither")]
@@ -795,8 +795,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.notExplicitAttributes <- e.notExplicitAttributes ++
                                if q.found
                                then case q.attrDcl of
-                                    | restrictedSynDcl(_, _, _, _, _) -> []
-                                    | restrictedInhDcl(_, _, _, _, _) -> []
+                                    | restrictedSynDcl(_, _, _) -> []
+                                    | restrictedInhDcl(_, _, _) -> []
                                     | _ -> [pair(q.unparse, top.location)]
                                     end
                                else [];

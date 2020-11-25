@@ -20,7 +20,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   -- TODO: We want to define our own defs here but can't forward to defsAGDcl because collections define different translation.
   -- Not sure about the best way to refactor this.
   top.defs :=
-    [attrDef(defaultEnvItem(monoidDcl(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, e, q.operation)))];
+    [attrDef(defaultEnvItem(monoidDcl(fName, tl.freeVariables, te.typerep, e, q.operation, sourceGrammar=top.grammarName, sourceLocation=a.location)))];
 
   top.errors <- e.errors;
   
@@ -48,7 +48,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   local myFlowGraph :: ProductionGraph = 
     constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
 
-  e.frame = globalExprContext(myFlowGraph);
+  e.frame = globalExprContext(myFlowGraph, sourceGrammar=top.grammarName);
   
   forwards to
     collectionAttributeDclSyn(

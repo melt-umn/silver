@@ -6,10 +6,8 @@ grammar silver:modification:impide;
 -- We actually don't need to put font info on this, do we? cool!
 
 abstract production fontDcl
-top::DclInfo ::= sg::String sl::Location fn::String
+top::DclInfo ::= fn::String
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
   
   top.typeScheme = error("Internal compiler error: font style do not have types");
@@ -50,7 +48,7 @@ top::Def ::= d::EnvItem
 function fontDef
 Def ::= sg::String sl::Location fn::String
 {
-  return fontStyleDef(defaultEnvItem(fontDcl(sg,sl,fn)));
+  return fontStyleDef(defaultEnvItem(fontDcl(fn,sourceGrammar=sg,sourceLocation=sl)));
 }
 
 --------------------------------------------------------------------------------
