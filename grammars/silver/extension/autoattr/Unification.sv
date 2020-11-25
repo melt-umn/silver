@@ -28,9 +28,9 @@ top::AGDcl ::= 'unification' 'attribute' inh::Name ',' synPartial::Name  ',' syn
   
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(unificationInhDcl(inhFName, freshTyVar(), sourceGrammar=top.grammarName, location=inh.location))),
-       attrDef(defaultEnvItem(unificationSynPartialDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, location=synPartial.location))),
-       attrDef(defaultEnvItem(unificationSynDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, location=syn.location)))],
+      [attrDef(defaultEnvItem(unificationInhDcl(inhFName, freshTyVar(), sourceGrammar=top.grammarName, sourceLocation=inh.location))),
+       attrDef(defaultEnvItem(unificationSynPartialDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=synPartial.location))),
+       attrDef(defaultEnvItem(unificationSynDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
       location=top.location);
 }
 

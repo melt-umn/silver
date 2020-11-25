@@ -19,9 +19,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.env = newScopeEnv(la.mdefs, top.env);
   ne.expectedMonad = top.expectedMonad;
 
-  la.mDownSubst = top.mDownSubst;
-  ne.mDownSubst = la.mUpSubst;
-  top.mUpSubst = ne.mUpSubst;
+  propagate mDownSubst, mUpSubst;
 
   e.expectedMonad = top.expectedMonad;
 
@@ -81,9 +79,7 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 {
   top.merrors := a1.merrors ++ a2.merrors;
 
-  a1.mDownSubst = top.mDownSubst;
-  a2.mDownSubst = a1.mUpSubst;
-  top.mUpSubst = a2.mUpSubst;
+  propagate mDownSubst, mUpSubst;
 
   a1.expectedMonad = top.expectedMonad;
   a2.expectedMonad = top.expectedMonad;
@@ -146,8 +142,8 @@ aspect production lexicalLocalReference
 top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
   top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
-  top.mtyperep = q.lookupValue.typeScheme.typerep;
+  propagate mDownSubst, mUpSubst;
+  top.mtyperep = q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
                      else [];

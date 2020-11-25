@@ -148,7 +148,7 @@ top::TypeExpr ::= tv::IdLower_t
   local attribute hack::QNameLookup;
   hack = customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme, top.location);
   
-  top.typerep = hack.typeScheme.typerep; -- Is a monoType
+  top.typerep = hack.typeScheme.monoType;
   top.errors := hack.errors;
 
   top.lexicalTypeVariables = [tv.lexeme];

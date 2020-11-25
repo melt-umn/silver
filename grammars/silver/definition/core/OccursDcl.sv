@@ -14,7 +14,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
     (if !at.lookupAttribute.dcl.isAnnotation then occursDcl else annoInstanceDcl)(
       nt.lookupType.fullName, at.lookupAttribute.fullName,
       protontty, protoatty,
-      sourceGrammar=top.grammarName, location=at.location)];
+      sourceGrammar=top.grammarName, sourceLocation=at.location)];
 
   -- binding errors in looking up these names.
   top.errors <- nt.lookupType.errors ++

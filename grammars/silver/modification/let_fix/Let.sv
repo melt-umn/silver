@@ -46,10 +46,8 @@ top::Expr ::= la::AssignExpr  e::Expr
   propagate errors;
   
   top.typerep = e.typerep;
-    
-  la.downSubst = top.downSubst;
-  e.downSubst = la.upSubst;
-  top.upSubst = e.upSubst;
+
+  propagate downSubst, upSubst;
   
   -- Semantics for the moment is these are not mutually recursive,
   -- so la does NOT get new environment, only e. Thus, la.defs can depend on downSubst...
@@ -66,10 +64,8 @@ abstract production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 {
   top.unparse = a1.unparse ++ ", " ++ a2.unparse;
-  
-  a1.downSubst = top.downSubst;
-  a2.downSubst = a1.upSubst;
-  top.upSubst = a2.upSubst;
+
+  propagate downSubst, upSubst;
 }
 
 -- TODO: Well, okay, so this isn't really abstract syntax...
@@ -100,9 +96,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
     then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
     else [];
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
@@ -136,10 +130,10 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
   
   top.typerep = 
     -- isDecorated should return true if it's a ntOrDecType.
-    if q.lookupValue.typeScheme.typerep.isDecorated
-    then ntOrDecType(q.lookupValue.typeScheme.typerep.decoratedType, freshType())
-    else q.lookupValue.typeScheme.typerep;
+    if q.lookupValue.typeScheme.isDecorated
+    then ntOrDecType(q.lookupValue.typeScheme.monoType.decoratedType, freshType())
+    else q.lookupValue.typeScheme.monoType;
 
-  top.upSubst = top.downSubst;
+  propagate downSubst, upSubst;
 }
 

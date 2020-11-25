@@ -54,7 +54,7 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 function defaultLhsDef
 Def ::= sg::String sl::Location fn::String ty::Type
 {
-  return valueDef(defaultEnvItem(defaultLhsDcl(fn,ty,sourceGrammar=sg,location=sl)));
+  return valueDef(defaultEnvItem(defaultLhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 abstract production defaultLhsDcl
 top::DclInfo ::= fn::String ty::Type
@@ -81,7 +81,7 @@ top::DefLHS ::= q::Decorated QName
     if existingProblems || top.found then []
     else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.name ++ "' on the lhs '" ++ q.name ++ "'")];
   
-  top.typerep = q.lookupValue.typeScheme.typerep;
+  top.typerep = q.lookupValue.typeScheme.monoType;
 
   top.translation = makeNTClassName(top.frame.lhsNtName) ++ ".defaultSynthesizedAttributes";
 }

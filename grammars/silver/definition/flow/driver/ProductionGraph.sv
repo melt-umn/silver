@@ -1,7 +1,7 @@
 grammar silver:definition:flow:driver;
 
 import silver:util only contains, rem;
-import silver:definition:type only isDecorable;
+import silver:definition:type only isDecorable, typerep;
 
 nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, suspectEdgeMap, cullSuspect, flowTypeVertexes, prodGraphs;
 

@@ -48,7 +48,7 @@ top::Def ::= d::EnvItem
 function fontDef
 Def ::= sg::String sl::Location fn::String
 {
-  return fontStyleDef(defaultEnvItem(fontDcl(fn,sourceGrammar=sg,location=sl)));
+  return fontStyleDef(defaultEnvItem(fontDcl(fn,sourceGrammar=sg,sourceLocation=sl)));
 }
 
 --------------------------------------------------------------------------------
