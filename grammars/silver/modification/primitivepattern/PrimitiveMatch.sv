@@ -157,7 +157,7 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
 
   local isGadt :: Boolean =
-    case qn.lookupValue.typerep.outputType of
+    case qn.lookupValue.typeScheme.typerep.outputType of
     -- If the lookup is successful, and it's a production type, and it 
     -- constructs a nonterminal that either:
     --  1. has a non-type-variable parameter (e.g. Expr<Boolean>)
@@ -181,14 +181,13 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
   
   local chk :: [Message] =
-    if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
-    else [err(qn.location, qn.name ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+    if null(qn.lookupValue.dcls) || ns.varBinderCount == prod_type.arity then []
+    else [err(qn.location, qn.name ++ " has " ++ toString(prod_type.arity) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
   top.errors <- qn.lookupValue.errors;
 
   -- Turns the existential variables existential
-  local prod_type :: Type =
-    skolemizeProductionType(qn.lookupValue.typerep);
+  local prod_type :: Type = skolemizeProductionType(qn.lookupValue.typeScheme);
   -- Note that we're going to check prod_type against top.scrutineeType shortly.
   -- This is where the type variables become unified.
   
@@ -228,13 +227,12 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
   
   local chk :: [Message] =
-    if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
-    else [err(qn.location, qn.name ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+    if null(qn.lookupValue.dcls) || ns.varBinderCount == prod_type.arity then []
+    else [err(qn.location, qn.name ++ " has " ++ toString(prod_type.arity) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
   top.errors <- qn.lookupValue.errors;
 
-  local prod_type :: Type =
-    fullySkolemizeProductionType(qn.lookupValue.typerep); -- that says FULLY. See the comments on that function.
+  local prod_type :: Type = fullySkolemizeProductionType(qn.lookupValue.typeScheme); -- that says FULLY. See the comments on that function.
   
   ns.bindingTypes = prod_type.inputTypes;
   ns.bindingIndex = 0;

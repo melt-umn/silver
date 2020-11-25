@@ -148,14 +148,14 @@ Def ::= sg::String  sl::Location  fn::String  ty::Type
   return valueDef(defaultEnvItem(globalValueDcl(sg,sl,fn,ty)));
 }
 function ntDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
+Def ::= sg::String  sl::Location  fn::String  arity::Integer
 {
-  return typeDef(defaultEnvItem(ntDcl(sg,sl,fn,bound,ty,false)));
+  return typeDef(defaultEnvItem(ntDcl(sg,sl,fn,arity,false)));
 }
 function closedNtDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
+Def ::= sg::String  sl::Location  fn::String  arity::Integer
 {
-  return typeDef(defaultEnvItem(ntDcl(sg,sl,fn,bound,ty,true)));
+  return typeDef(defaultEnvItem(ntDcl(sg,sl,fn,arity,true)));
 }
 function termDef
 Def ::= sg::String  sl::Location  fn::String  regex::Regex
@@ -164,9 +164,14 @@ Def ::= sg::String  sl::Location  fn::String  regex::Regex
   return typeValueDef(defaultEnvItem(termDcl(sg,sl,fn,regex)));
 }
 function lexTyVarDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type
+Def ::= sg::String  sl::Location  fn::String  tv::TyVar
 {
-  return typeDef(defaultEnvItem(lexTyVarDcl(sg,sl,fn,ty)));
+  return typeDef(defaultEnvItem(lexTyVarDcl(sg,sl,fn,false,tv)));
+}
+function aspectLexTyVarDef
+Def ::= sg::String  sl::Location  fn::String  tv::TyVar
+{
+  return typeDef(defaultEnvItem(lexTyVarDcl(sg,sl,fn,true,tv)));
 }
 function synDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type

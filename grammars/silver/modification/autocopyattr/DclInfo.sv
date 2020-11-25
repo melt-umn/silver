@@ -15,8 +15,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
-  top.dclBoundVars = bound;
+  top.typeScheme = polyType(bound, ty);
 
   top.isInherited = true;
   top.isAutocopy = true;

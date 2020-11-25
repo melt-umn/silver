@@ -58,11 +58,11 @@ top::Expr ::= q::Decorated QName
   -- Note that q should find the actual type written in the signature, and so
   -- isDecorable on that indeed tells us whether it's something autodecorated.
   top.flowDeps :=
-    if q.lookupValue.typerep.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
-    then depsForTakingRef(rhsVertexType(q.lookupValue.fullName), q.lookupValue.typerep.typeName, top.flowEnv)
+    if q.lookupValue.typeScheme.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    then depsForTakingRef(rhsVertexType(q.lookupValue.fullName), q.lookupValue.typeScheme.typeName, top.flowEnv)
     else [];
   top.flowVertexInfo = 
-    if q.lookupValue.typerep.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    if q.lookupValue.typeScheme.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
     then hasVertex(rhsVertexType(q.lookupValue.fullName))
     else noVertex();
 }
@@ -72,7 +72,7 @@ top::Expr ::= q::Decorated QName
   -- Always a decorable type, so just check how it's being used:
   top.flowDeps :=
     if !performSubstitution(top.typerep, top.finalSubst).isDecorable
-    then depsForTakingRef(lhsVertexType, q.lookupValue.typerep.typeName, top.flowEnv)
+    then depsForTakingRef(lhsVertexType, q.lookupValue.typeScheme.typeName, top.flowEnv)
     else [];
   top.flowVertexInfo = 
     if !performSubstitution(top.typerep, top.finalSubst).isDecorable
@@ -84,12 +84,12 @@ top::Expr ::= q::Decorated QName
 {
   -- Again, q give the actual type written.
   top.flowDeps := [localEqVertex(q.lookupValue.fullName)] ++
-    if q.lookupValue.typerep.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
-    then depsForTakingRef(localVertexType(q.lookupValue.fullName), q.lookupValue.typerep.typeName, top.flowEnv)
+    if q.lookupValue.typeScheme.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    then depsForTakingRef(localVertexType(q.lookupValue.fullName), q.lookupValue.typeScheme.typeName, top.flowEnv)
     else [];
     
   top.flowVertexInfo =
-    if q.lookupValue.typerep.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    if q.lookupValue.typeScheme.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
     then hasVertex(localVertexType(q.lookupValue.fullName))
     else noVertex();
 }
@@ -99,7 +99,7 @@ top::Expr ::= q::Decorated QName
   -- Again, always a decorable type.
   top.flowDeps := [forwardEqVertex()]++
     if !performSubstitution(top.typerep, top.finalSubst).isDecorable
-    then depsForTakingRef(forwardVertexType, q.lookupValue.typerep.typeName, top.flowEnv)
+    then depsForTakingRef(forwardVertexType, q.lookupValue.typeScheme.typeName, top.flowEnv)
     else [];
     
   top.flowVertexInfo =
@@ -307,7 +307,7 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
   top.flowDeps := 
     case fi of
     | hasVertex(vertex) ->
-        if performSubstitution(q.lookupValue.typerep, top.finalSubst).isDecorated &&
+        if performSubstitution(q.lookupValue.typeScheme.monoType, top.finalSubst).isDecorated &&
            !performSubstitution(top.typerep, top.finalSubst).isDecorated
         then vertex.eqVertex -- we're a `t` emulating `new(t)`
         else fd -- we're passing along our vertex-ness to the outer expression

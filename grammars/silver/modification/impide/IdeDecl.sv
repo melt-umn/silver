@@ -185,7 +185,7 @@ top::IdeStmt ::= 'builder' builderName::QName ';'
   local expectedType :: Type =
     functionType(t_iomsgs, [t_proj, t_props, t_io], []);
   
-  local tc1 :: TypeCheck = check(freshenCompletely(builderName.lookupValue.typerep), expectedType);
+  local tc1 :: TypeCheck = check(builderName.lookupValue.typeScheme.typerep, expectedType);
   tc1.downSubst = emptySubst();
   tc1.finalSubst = tc1.upSubst;
 
@@ -205,7 +205,7 @@ top::IdeStmt ::= 'postbuilder' postbuilderName::QName ';'
   local expectedType :: Type =
     functionType(t_iomsgs, [t_proj, t_props, t_io], []);
   
-  local tc1 :: TypeCheck = check(freshenCompletely(postbuilderName.lookupValue.typerep), expectedType);
+  local tc1 :: TypeCheck = check(postbuilderName.lookupValue.typeScheme.typerep, expectedType);
   tc1.downSubst = emptySubst();
   tc1.finalSubst = tc1.upSubst;
 
@@ -225,7 +225,7 @@ top::IdeStmt ::= 'exporter' exporterName::QName ';'
   local expectedType :: Type =
     functionType(t_iomsgs, [t_proj, t_props, t_io], []);
   
-  local tc1 :: TypeCheck = check(freshenCompletely(exporterName.lookupValue.typerep), expectedType);
+  local tc1 :: TypeCheck = check(exporterName.lookupValue.typeScheme.typerep, expectedType);
   tc1.downSubst = emptySubst();
   tc1.finalSubst = tc1.upSubst;
 
@@ -245,7 +245,7 @@ top::IdeStmt ::= 'folder' folderName::QName ';'
   local expectedType :: Type =
     functionType(listType(t_loc), [nonterminalType(top.startNTName, [])], []);
   
-  local tc1 :: TypeCheck = check(freshenCompletely(folderName.lookupValue.typerep), expectedType);
+  local tc1 :: TypeCheck = check(folderName.lookupValue.typeScheme.typerep, expectedType);
   tc1.downSubst = emptySubst();
   tc1.finalSubst = tc1.upSubst;
 
@@ -328,7 +328,7 @@ top::StubGenerator ::= 'stub generator' genName::QName ';'
       [listType(nonterminalType("ide:IdeProperty", []))], -- argument type list
       []);
   
-  local tc1 :: TypeCheck = check(freshenCompletely(genName.lookupValue.typerep), stubGenTypeExpected);
+  local tc1 :: TypeCheck = check(genName.lookupValue.typeScheme.typerep, stubGenTypeExpected);
   tc1.downSubst = emptySubst();
   tc1.finalSubst = tc1.upSubst;
 

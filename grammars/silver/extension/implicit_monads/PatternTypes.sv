@@ -3,9 +3,10 @@ grammar silver:extension:implicit_monads;
 aspect production prodAppPattern
 top::Pattern ::= prod::QName '(' ps::PatternList ')'
 {
-  top.patternType = case prod.lookupValue.typerep of
+  -- TODO: is this right?  Seems like we should unify with ps pattern types?
+  top.patternType = case prod.lookupValue.typeScheme.typerep of
                     | functionType(out, _, _) -> out
-                    | _ -> prod.lookupValue.typerep
+                    | t -> t
                     end;
 } 
 

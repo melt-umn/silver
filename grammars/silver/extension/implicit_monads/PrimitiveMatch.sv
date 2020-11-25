@@ -320,8 +320,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 
   top.mtyperep = e.mtyperep;
   -- Turns the existential variables existential
-  local prod_type :: Type =
-    skolemizeProductionType(qn.lookupValue.typerep);
+  local prod_type :: Type = skolemizeProductionType(qn.lookupValue.typeScheme);
   top.patternType = prod_type.outputType;
 
   top.returnify = prodPatternNormal(qn, ns,
@@ -343,8 +342,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.monadicNames = e.monadicNames;
 
   top.mtyperep = e.mtyperep;
-  local prod_type :: Type =
-    fullySkolemizeProductionType(qn.lookupValue.typerep); -- that says FULLY. See the comments on that function.
+  local prod_type :: Type = fullySkolemizeProductionType(qn.lookupValue.typeScheme); -- that says FULLY. See the comments on that function.
   top.patternType = prod_type.outputType;
 
   top.returnify = prodPatternGadt(qn, ns,

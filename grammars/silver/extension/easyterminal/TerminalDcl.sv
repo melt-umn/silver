@@ -55,7 +55,7 @@ top::EasyTerminalRef ::= t::Terminal_t
       [err(t.location, "Found ambiguous possibilities for " ++ t.lexeme ++ "\n" ++ printPossibilities(top.dcls))]
     else [];
   
-  top.typerep = if null(top.dcls) then errorType() else head(top.dcls).typerep;
+  top.typerep = if null(top.dcls) then errorType() else head(top.dcls).typeScheme.monoType;
 }
 
 

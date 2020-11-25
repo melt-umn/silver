@@ -33,11 +33,10 @@ top::DclInfo ::=
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep =
+  top.typeScheme = polyType([tyVar],
     if isTotal
     then varType(tyVar)
-    else nonterminalType("core:Maybe", [varType(tyVar)]);
-  top.dclBoundVars = [tyVar];
+    else nonterminalType("core:Maybe", [varType(tyVar)]));
   top.isSynthesized = true;
   top.isStrategy = true;
   

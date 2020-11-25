@@ -22,7 +22,7 @@ top::Expr ::= q::Decorated QName
 
   top.errors := []; -- Should only ever be in scope when valid
 
-  top.typerep = q.lookupValue.typerep;
+  top.typerep = q.lookupValue.typeScheme.monoType;
 
   top.translation = "((" ++ top.typerep.transType ++ ")((common.Node)RESULTfinal).getChild(" ++ top.frame.className ++ ".i_" ++ q.lookupValue.fullName ++ "))";
   top.lazyTranslation = top.translation; -- never, but okay!
@@ -94,7 +94,7 @@ top::Expr ::= q::Decorated QName
                 then [err(top.location, "References to parser attributes can only be made in action blocks")]
                 else [];
 
-  top.typerep = q.lookupValue.typerep;
+  top.typerep = q.lookupValue.typeScheme.monoType;
 
   top.translation =
     s"""(${makeCopperName(q.lookupValue.fullName)} == null? (${top.typerep.transType})common.Util.error("Uninitialized parser attribute ${q.name}") : ${makeCopperName(q.lookupValue.fullName)})""";
@@ -110,7 +110,7 @@ top::Expr ::= q::Decorated QName
 
   top.errors := []; -- Should only ever be in scope in action blocks
 
-  top.typerep = q.lookupValue.typerep;
+  top.typerep = q.lookupValue.typeScheme.monoType;
 
   -- Yeah, it's a big if/then/else block, but these are all very similar and related.
   top.translation =

@@ -11,8 +11,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
 {
   top.unparse = "abstract " ++ v.unparse ++ ";";
 
-  local vty :: Type =
-    freshenCompletely(v.lookupValue.typerep);
+  local vty :: Type = v.lookupValue.typeScheme.typerep;
   
   local hasLoc :: Boolean =
     !null(vty.namedTypes) && head(vty.namedTypes).argName == "location";

@@ -93,8 +93,8 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   top.unparse = s"traverse ${n.name}(${es.unparse}, ${anns.unparse})";
   
-  local numChildren::Integer = length(n.lookupValue.typerep.inputTypes);
-  local annotations::[String] = map((.argName), n.lookupValue.typerep.namedTypes);
+  local numChildren::Integer = n.lookupValue.typeScheme.arity;
+  local annotations::[String] = map((.argName), n.lookupValue.typeScheme.typerep.namedTypes);
   es.appExprTypereps = repeat(nonterminalType("silver:rewrite:Strategy", []), numChildren);
   es.appExprApplied = n.unparse;
   anns.appExprApplied = n.unparse;

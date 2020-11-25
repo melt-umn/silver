@@ -34,7 +34,7 @@ function addNewLexicalTyVars
 [Def] ::= gn::String sl::Location l::[String]
 {
   return if null(l) then []
-         else lexTyVarDef(gn, sl, head(l), skolemType(freshTyVar())) ::
+         else lexTyVarDef(gn, sl, head(l), freshTyVar()) ::
                   addNewLexicalTyVars(gn, sl, tail(l));
 }
 
@@ -130,13 +130,14 @@ top::TypeExpr ::= q::QNameType tl::BracketedOptTypeExprs
   top.errors := q.lookupType.errors ++ tl.errors;
   top.lexicalTypeVariables = tl.lexicalTypeVariables;
 
-  top.errors <- if length(tl.types) != length(q.lookupType.dclBoundVars)
-                then [err(top.location, q.name ++ " has " ++ toString(length(q.lookupType.dclBoundVars)) ++ " type variables, but there are " ++ toString(length(tl.types)) ++ " supplied here.")]
+  local ts::PolyType = q.lookupType.typeScheme;
+  top.errors <- if length(tl.types) != length(ts.boundVars)
+                then [err(top.location, q.name ++ " has " ++ toString(length(ts.boundVars)) ++ " type variables, but there are " ++ toString(length(tl.types)) ++ " supplied here.")]
                 else [];
 
   -- Not necessarily a nonterminalType, so we should take original type and substitution
   -- e.g. consider `type Blah<a> = Foo<String a>`
-  top.typerep = performRenaming(q.lookupType.typerep, zipVarsAndTypesIntoSubstitution(q.lookupType.dclBoundVars, tl.types));
+  top.typerep = performRenaming(ts.typerep, zipVarsAndTypesIntoSubstitution(ts.boundVars, tl.types));
 }
 
 concrete production typeVariableTypeExpr
@@ -147,7 +148,7 @@ top::TypeExpr ::= tv::IdLower_t
   local attribute hack::QNameLookup;
   hack = customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme, top.location);
   
-  top.typerep = hack.typerep;
+  top.typerep = hack.typeScheme.monoType;
   top.errors := hack.errors;
 
   top.lexicalTypeVariables = [tv.lexeme];

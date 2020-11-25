@@ -10,7 +10,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = monoType(ty);
   
   top.refDispatcher = parserAttributeReference(_, location=_);
   top.defDispatcher = parserAttributeValueDef(_, _, location=_);
@@ -27,8 +27,9 @@ top::DclInfo ::= sg::String sl::Location fn::String
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = terminalIdType(); -- TODO: Still needs work to prevent returning terminals
-                                  -- that are not part of the disambiguation set.
+  -- TODO: Still needs work to prevent returning terminals
+  -- that are not part of the disambiguation set.
+  top.typeScheme = monoType(terminalIdType());
   
   top.refDispatcher = pluckTerminalReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);
@@ -48,7 +49,7 @@ top::DclInfo ::= sg::String sl::Location fn::String
   -- If we made lexer classes proper types, it might simplify a lot of code.
   -- We wouldn't need a separate namespace, they could just be in the type namespace.
   -- Currently referencing a lexer class gives a list of its member's TerminalIds.
-  top.typerep = listType(terminalIdType());
+  top.typeScheme = monoType(listType(terminalIdType()));
   top.refDispatcher = lexerClassReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);
   top.defLHSDispatcher = errorDefLHS(_, location=_);
@@ -64,7 +65,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = monoType(ty);
   
   top.refDispatcher = termAttrValueReference(_, location=_);
   top.defDispatcher = termAttrValueValueDef(_, _, location=_);
@@ -81,7 +82,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = monoType(ty);
   
   top.refDispatcher = actionChildReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);
@@ -98,7 +99,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
   top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = monoType(ty);
   
   -- TODO: use specialized ones that give better errors messages!
   top.refDispatcher = parserAttributeReference(_, location=_);
