@@ -57,7 +57,7 @@ top::Expr ::= e::Expr '.' 'forward'
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   errCheck1 = checkDecorated(e.typerep);
 
-  thread downSubst, upSubst on top, errCheck1, top;
+  thread downSubst, upSubst on top, e, errCheck1, top;
   
   top.errors <-
     if errCheck1.typeerror
