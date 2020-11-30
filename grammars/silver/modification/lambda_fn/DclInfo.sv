@@ -1,10 +1,8 @@
 import silver:definition:flow:ast only ExprVertexInfo, FlowVertex;
 
 abstract production lambdaParamDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = monoType(ty);
@@ -17,6 +15,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 function lambdaParamDef
 Def ::= sg::String sl::Location fn::String ty::Type
 {
-  return valueDef(defaultEnvItem(lambdaParamDcl(sg,sl,fn,ty)));
+  return valueDef(defaultEnvItem(lambdaParamDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 

@@ -61,7 +61,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   prodAtts = defsFromPADcls(getProdAttrs(fName, top.env), namedSig);
 
   body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
-  body.frame = productionContext(namedSig, myFlowGraph); -- graph from flow:env
+  body.frame = productionContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName); -- graph from flow:env
 }
 
 concrete production productionSignature

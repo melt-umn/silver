@@ -49,7 +49,7 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
   local myFlowGraph :: ProductionGraph = 
     constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
 
-  acode.frame = actionContext(myFlowGraph);
+  acode.frame = actionContext(myFlowGraph, sourceGrammar=top.grammarName);
   acode.env = newScopeEnv(terminalActionVars ++ acode.defs, top.env);
   
   propagate errors;

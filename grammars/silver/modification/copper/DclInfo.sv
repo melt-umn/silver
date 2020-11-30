@@ -4,10 +4,8 @@ grammar silver:modification:copper;
  - Reference to something declared as "parser attribute foo ..."
  -}
 abstract production parserAttrDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = monoType(ty);
@@ -21,10 +19,8 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
  - The names of possible pluckable terminals are jammed in the environment using this dcl.
  -}
 abstract production pluckTermDcl
-top::DclInfo ::= sg::String sl::Location fn::String
+top::DclInfo ::= fn::String
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   -- TODO: Still needs work to prevent returning terminals
@@ -40,10 +36,8 @@ top::DclInfo ::= sg::String sl::Location fn::String
  - Reference to a lexer class declaration. Has its own namespace in the environment, for now.
  -}
 abstract production lexerClassDcl
-top::DclInfo ::= sg::String sl::Location fn::String
+top::DclInfo ::= fn::String
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
   
   -- If we made lexer classes proper types, it might simplify a lot of code.
@@ -59,10 +53,8 @@ top::DclInfo ::= sg::String sl::Location fn::String
  - lexeme/filename/line/column. Used in terminal and production action code.
  -}
 abstract production termAttrValueDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = monoType(ty);
@@ -76,10 +68,8 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
  - Reference to production's children from production action code.
  -}
 abstract production actionChildDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = monoType(ty);
@@ -93,10 +83,8 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
  - Reference to a local variable ("local foo :: Type = ...") inside an action block.
  -}
 abstract production parserLocalDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = monoType(ty);

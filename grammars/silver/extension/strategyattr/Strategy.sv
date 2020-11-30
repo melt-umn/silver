@@ -35,7 +35,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
   local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
   local myFlowGraph :: ProductionGraph = 
     constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
-  e.frame = globalExprContext(myFlowGraph);
+  e.frame = globalExprContext(myFlowGraph, sourceGrammar=top.grammarName);
   
   e.recVarNameEnv = recVarNameEnv;
   e.recVarTotalEnv = recVarTotalEnv;
@@ -48,8 +48,9 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
         [attrDef(
            defaultEnvItem(
              strategyDcl(
-               top.grammarName, a.location, fName, isTotal, freshTyVar(),
-               !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e)))],
+               fName, isTotal, freshTyVar(),
+               !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e,
+               sourceGrammar=top.grammarName, sourceLocation=a.location)))],
         location=top.location),
       map(
         \ d::Pair<String Decorated StrategyExpr> ->

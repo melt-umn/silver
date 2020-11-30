@@ -42,7 +42,7 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 
 
   body.env = newScopeEnv(fakedDefs ++ sigDefs, top.env);
-  body.frame = defaultAspectContext(namedSig, myFlowGraph);
+  body.frame = defaultAspectContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName);
 
   body.downSubst = emptySubst();
 
@@ -54,13 +54,11 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 function defaultLhsDef
 Def ::= sg::String sl::Location fn::String ty::Type
 {
-  return valueDef(defaultEnvItem(defaultLhsDcl(sg,sl,fn,ty)));
+  return valueDef(defaultEnvItem(defaultLhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 abstract production defaultLhsDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
   top.typeScheme = monoType(ty);

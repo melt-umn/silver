@@ -55,21 +55,21 @@ top::DclInfo ::=
 
 -- -- non-interface values
 aspect production childDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
   top.refDispatcher = childReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- TODO: we should be smarted about error messages, and mention its a child
   top.defLHSDispatcher = childDefLHS(_, location=_);
 }
 aspect production lhsDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
   top.refDispatcher = lhsReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- TODO: be smarter about the error message
   top.defLHSDispatcher = lhsDefLHS(_, location=_);
 }
 aspect production localDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
   top.refDispatcher = localReference(_, location=_);
   top.defDispatcher = localValueDef(_, _, location=_);
@@ -79,7 +79,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 
 -- -- interface values
 aspect production prodDcl
-top::DclInfo ::= sg::String sl::Location ns::NamedSignature hasForward::Boolean
+top::DclInfo ::= ns::NamedSignature hasForward::Boolean
 {
   top.refDispatcher = productionReference(_, location=_);
    -- Note that we still need production references, even though bug #16 removes the production type.
@@ -87,14 +87,14 @@ top::DclInfo ::= sg::String sl::Location ns::NamedSignature hasForward::Boolean
   top.defLHSDispatcher = errorDefLHS(_, location=_);
 }
 aspect production funDcl
-top::DclInfo ::= sg::String sl::Location ns::NamedSignature
+top::DclInfo ::= ns::NamedSignature
 {
   top.refDispatcher = functionReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);
   top.defLHSDispatcher = errorDefLHS(_, location=_);
 }
 aspect production globalValueDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
   top.refDispatcher = globalValueReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);
@@ -103,7 +103,7 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type
 
 -- -- interface Attributes
 aspect production synDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
@@ -111,7 +111,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
 aspect production inhDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: above should probably be an error handler! access inh from undecorated?
@@ -119,7 +119,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
 aspect production annoDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.decoratedAccessHandler = accessBounceUndecorate(annoAccessHandler(_, _, location=_), _, _, _);
   top.undecoratedAccessHandler = annoAccessHandler(_, _, location=_);
@@ -131,7 +131,7 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 
 -- -- interface Production attr (values)
 aspect production forwardDcl
-top::DclInfo ::= sg::String sl::Location ty::Type
+top::DclInfo ::= ty::Type
 {
   top.refDispatcher = forwardReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- TODO: better error message
@@ -139,7 +139,7 @@ top::DclInfo ::= sg::String sl::Location ty::Type
 }
 
 aspect production termDcl
-top::DclInfo ::= sg::String sl::Location fn::String regex::Regex
+top::DclInfo ::= fn::String regex::Regex
 {
   top.refDispatcher = terminalIdReference(_, location=_);
 }
