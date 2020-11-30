@@ -324,7 +324,7 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
 
 
 
---There are several thing swe need for mtyperep on e which don't occur on match rules
+--There are several thing we need for mtyperep on e which don't occur on match rules
 --Therefore we need to pass them here
 inherited attribute temp_flowEnv::Decorated FlowEnv;
 inherited attribute temp_env::Decorated Env;
