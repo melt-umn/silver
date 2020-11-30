@@ -1,6 +1,7 @@
 grammar silver:extension:implicit_monads;
 
 
+
 {-
   EXPLANATION OF OUR VIEW OF A MONAD
 
@@ -205,7 +206,7 @@ Expr ::= ty::Type l::Location
 function monadReturn
 Expr ::= ty::Type l::Location
 {
-  return case ty of
+  return case decorate ty with {boundVariables = ty.freeVariables;} of
          | nonterminalType("core:Maybe", _) ->
            baseExpr(qNameId(name("returnMaybe", l), location=l), location=l)
          | nonterminalType("core:Either", _) ->
@@ -217,7 +218,7 @@ Expr ::= ty::Type l::Location
          | listType(_) ->
            baseExpr(qNameId(name("returnList", l), location=l), location=l)
          | decoratedType(t) -> monadReturn(t, l)
-         | _ -> error("Tried to get the return for a non-monadic type (" ++ ty.typepp ++ ") at " ++ l.unparse)
+         | _ -> error("Tried to get the return for a non-monadic type (" ++ prettyType(ty) ++ ") at " ++ l.unparse)
          end;
 }
 

@@ -23,9 +23,10 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   local monadInClauses::Boolean =
     foldl((\b::Boolean a::AbstractMatchRule ->
             b ||
-            let ty::Type = decorate a with {env=top.env; mDownSubst=ml.mUpSubst; frame=top.frame;
-                                   grammarName=top.grammarName; compiledGrammars=top.compiledGrammars;
-                                   config=top.config; flowEnv=top.flowEnv;
+            let ty::Type = decorate a with {mDownSubst=ml.mUpSubst; temp_env=top.env; temp_frame=top.frame;
+                                   temp_grammarName=top.grammarName; temp_compiledGrammars=top.compiledGrammars;
+                                   temp_config=top.config; temp_flowEnv=top.flowEnv;
+                                   temp_finalSubst=ml.mUpSubst; temp_downSubst=ml.mUpSubst;
                                    expectedMonad=top.expectedMonad;}.mtyperep
             in
               isMonad(ty) && monadsMatch(ty, top.expectedMonad, ml.mUpSubst).fst && fst(monadsMatch(ty, top.expectedMonad, top.mUpSubst))
@@ -274,9 +275,10 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   local monadInClauses::Boolean =
     foldl((\b::Boolean a::AbstractMatchRule ->
             b ||
-            let ty::Type = decorate a with {env=top.env; mDownSubst=ml.mUpSubst; frame=top.frame;
-                                   grammarName=top.grammarName; compiledGrammars=top.compiledGrammars;
-                                   config=top.config; flowEnv=top.flowEnv;
+            let ty::Type = decorate a with {mDownSubst=ml.mUpSubst; temp_env=top.env; temp_frame=top.frame;
+                                   temp_grammarName=top.grammarName; temp_compiledGrammars=top.compiledGrammars;
+                                   temp_config=top.config; temp_flowEnv=top.flowEnv;
+                                   temp_finalSubst=ml.mUpSubst; temp_downSubst=ml.mUpSubst;
                                    expectedMonad=top.expectedMonad;}.mtyperep
             in
               isMonad(ty) && monadsMatch(ty, top.expectedMonad, top.mDownSubst).fst && fst(monadsMatch(ty, top.expectedMonad, top.mUpSubst))
@@ -320,9 +322,30 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
               end;
 }
 
+
+
+--There are several thing we need for mtyperep on e which don't occur on match rules
+--Therefore we need to pass them here
+inherited attribute temp_flowEnv::Decorated FlowEnv;
+inherited attribute temp_env::Decorated Env;
+inherited attribute temp_config::Decorated CmdArgs;
+inherited attribute temp_compiledGrammars::EnvTree<Decorated RootSpec>;
+inherited attribute temp_grammarName::String;
+inherited attribute temp_frame::BlockContext;
+inherited attribute temp_finalSubst::Substitution;
+inherited attribute temp_downSubst::Substitution;
+attribute temp_flowEnv, temp_compiledGrammars, temp_grammarName occurs on MatchRule, MRuleList;
+attribute mDownSubst occurs on MatchRule;
+
+
 aspect production mRuleList_one
 top::MRuleList ::= m::MatchRule
 {
+  m.temp_compiledGrammars = top.temp_compiledGrammars;
+  m.temp_flowEnv = top.temp_flowEnv;
+  m.temp_grammarName = top.temp_grammarName;
+  m.mDownSubst = top.mDownSubst;
+
   top.patternTypeList = m.patternTypeList;
   top.mUpSubst = top.mDownSubst;
 }
@@ -330,6 +353,16 @@ top::MRuleList ::= m::MatchRule
 aspect production mRuleList_cons
 top::MRuleList ::= h::MatchRule vbar::Vbar_kwd t::MRuleList
 {
+  h.temp_compiledGrammars = top.temp_compiledGrammars;
+  h.temp_flowEnv = top.temp_flowEnv;
+  h.temp_grammarName = top.temp_grammarName;
+  h.mDownSubst = top.mDownSubst;
+
+  t.temp_compiledGrammars = top.temp_compiledGrammars;
+  t.temp_flowEnv = top.temp_flowEnv;
+  t.temp_grammarName = top.temp_grammarName;
+  t.mDownSubst = top.mDownSubst;
+
   top.patternTypeList = h.patternTypeList;
   --need to unify here with t.patternTypeList so, when we reach the case, if there is a
   --   monad pattern farther down where the first one is a wildcard/variable, we'll find
@@ -337,19 +370,78 @@ top::MRuleList ::= h::MatchRule vbar::Vbar_kwd t::MRuleList
   top.mUpSubst = foldl(\s::Substitution p::Pair<Type Type> ->
                        decorate check(p.fst, p.snd) with {downSubst=s;}.upSubst,
                       t.mUpSubst, zipWith(pair, h.patternTypeList, t.patternTypeList));
-  t.mDownSubst = top.mDownSubst;
 }
 
 aspect production matchRule_c
 top::MatchRule ::= pt::PatternList arr::Arrow_kwd e::Expr
 {
+  local ne::Expr = e;
+  ne.flowEnv = top.temp_flowEnv;
+  ne.env = top.env;
+  ne.config = top.config;
+  ne.compiledGrammars = top.temp_compiledGrammars;
+  ne.grammarName = top.temp_grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.mDownSubst;
+  ne.downSubst = top.mDownSubst;
+
   top.patternTypeList = pt.patternTypeList;
+
+  top.notExplicitAttributes := ne.notExplicitAttributes;
 }
 
 aspect production matchRuleWhen_c
 top::MatchRule ::= pt::PatternList 'when' cond::Expr arr::Arrow_kwd e::Expr
 {
+  local ncond::Expr = cond;
+  ncond.flowEnv = top.temp_flowEnv;
+  ncond.env = top.env;
+  ncond.config = top.config;
+  ncond.compiledGrammars = top.temp_compiledGrammars;
+  ncond.grammarName = top.temp_grammarName;
+  ncond.frame = top.frame;
+  ncond.finalSubst = top.mDownSubst;
+  ncond.downSubst = top.mDownSubst;
+  local ne::Expr = e;
+  ne.flowEnv = top.temp_flowEnv;
+  ne.env = top.env;
+  ne.config = top.config;
+  ne.compiledGrammars = top.temp_compiledGrammars;
+  ne.grammarName = top.temp_grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.mDownSubst;
+  ne.downSubst = top.mDownSubst;
+
   top.patternTypeList = pt.patternTypeList;
+
+  top.notExplicitAttributes := ncond.notExplicitAttributes ++ ne.notExplicitAttributes;
+}
+
+aspect production matchRuleWhenMatches_c
+top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern arr::Arrow_kwd e::Expr
+{
+  local ncond::Expr = cond;
+  ncond.flowEnv = top.temp_flowEnv;
+  ncond.env = top.env;
+  ncond.config = top.config;
+  ncond.compiledGrammars = top.temp_compiledGrammars;
+  ncond.grammarName = top.temp_grammarName;
+  ncond.frame = top.frame;
+  ncond.finalSubst = top.mDownSubst;
+  ncond.downSubst = top.mDownSubst;
+  local ne::Expr = e;
+  ne.flowEnv = top.temp_flowEnv;
+  ne.env = top.env;
+  ne.config = top.config;
+  ne.compiledGrammars = top.temp_compiledGrammars;
+  ne.grammarName = top.temp_grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.mDownSubst;
+  ne.downSubst = top.mDownSubst;
+
+  top.patternTypeList = pt.patternTypeList;
+
+  top.notExplicitAttributes := ncond.notExplicitAttributes ++ ne.notExplicitAttributes;
 }
 
 aspect production patternList_one
@@ -377,23 +469,29 @@ top::PatternList ::=
 
 
 
-attribute env, mDownSubst, merrors, mtyperep, frame, grammarName, compiledGrammars,
-          config, flowEnv, expectedMonad occurs on AbstractMatchRule;
+attribute temp_flowEnv, temp_env, temp_config, temp_compiledGrammars, temp_grammarName,
+          temp_frame, temp_finalSubst, temp_downSubst occurs on AbstractMatchRule;
+
+attribute mDownSubst, merrors, mtyperep, expectedMonad occurs on AbstractMatchRule;
 
 aspect production matchRule
 top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Pair<Expr Maybe<Pattern>>> e::Expr
 {
-  e.env = top.env;
-  e.mDownSubst = top.mDownSubst;
-  e.frame = top.frame;
-  e.grammarName = top.grammarName;
-  e.compiledGrammars = top.compiledGrammars;
-  e.config = top.config;
-  e.flowEnv = top.flowEnv;
-  e.downSubst = top.mDownSubst;
-  e.finalSubst = top.mDownSubst;
-  e.expectedMonad = top.expectedMonad;
+  local ne::Expr = e;
+  ne.flowEnv = top.temp_flowEnv;
+  ne.env = top.temp_env;
+  ne.config = top.temp_config;
+  ne.compiledGrammars = top.temp_compiledGrammars;
+  ne.grammarName = top.temp_grammarName;
+  ne.frame = top.temp_frame;
+  ne.finalSubst = top.temp_finalSubst;
+  ne.downSubst = top.temp_downSubst;
+
+  ne.mDownSubst = top.mDownSubst;
+  ne.expectedMonad = top.expectedMonad;
   top.merrors := []; --merrors from e should be picked up in primitive matching
-  top.mtyperep = e.mtyperep;
+  top.mtyperep = ne.mtyperep;
+
+  top.notExplicitAttributes := ne.notExplicitAttributes;
 }
 

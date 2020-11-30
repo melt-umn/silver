@@ -14,6 +14,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.compiledGrammars = top.compiledGrammars;
   ne.flowEnv = top.flowEnv;
   ne.frame = top.frame;
+  ne.mDownSubst = top.mDownSubst;
   ne.downSubst = top.mDownSubst;
   ne.finalSubst = top.mUpSubst;
   ne.env = newScopeEnv(la.mdefs, top.env);
