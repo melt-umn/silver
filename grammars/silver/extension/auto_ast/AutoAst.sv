@@ -11,8 +11,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
 {
   top.unparse = "abstract " ++ v.unparse ++ ";";
 
-  local vty :: Type =
-    freshenCompletely(v.lookupValue.typerep);
+  local vty :: Type = v.lookupValue.typeScheme.typerep;
   
   local hasLoc :: Boolean =
     !null(vty.namedTypes) && head(vty.namedTypes).argName == "location";
@@ -34,8 +33,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
   
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   
-  errCheck1.downSubst = top.downSubst;
-  forward.downSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, errCheck1, forward;
 
   errCheck1 = check(vty, inferredType);
   top.errors <-

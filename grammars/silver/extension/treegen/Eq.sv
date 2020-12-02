@@ -42,9 +42,9 @@ AGDcl ::= id::QName  env::Decorated Env  fenv::Decorated FlowEnv
       functionLHS(typerepTypeExpr(boolType(), location=l), location=l),
       '::=',
       productionRHSCons(
-        productionRHSElem(name("l", l), '::', typerepTypeExpr(id.lookupType.typerep, location=l), location=l),
+        productionRHSElem(name("l", l), '::', typerepTypeExpr(id.lookupType.typeScheme.typerep, location=l), location=l),
         productionRHSCons(
-          productionRHSElem(name("r", l), '::', typerepTypeExpr(id.lookupType.typerep, location=l), location=l),
+          productionRHSElem(name("r", l), '::', typerepTypeExpr(id.lookupType.typeScheme.typerep, location=l), location=l),
           productionRHSNil(location=l), location=l), location=l),
       location=l);
 
@@ -61,7 +61,7 @@ AGDcl ::= id::QName  env::Decorated Env  fenv::Decorated FlowEnv
   return
     functionDcl(
       'function',
-      name(getCheckEqName(id.lookupType.typerep), l),
+      name(getCheckEqName(id.lookupType.typeScheme.typerep), l),
       sig,
       body, location=l);
 }
@@ -87,7 +87,7 @@ PatternList ::= l::[Pattern]
 function generateCheckEqMRuleList
 MatchRule ::= prod::DclInfo  l::Location
 {
-  local children :: [Type] = prod.typerep.inputTypes;
+  local children :: [Type] = prod.typeScheme.typerep.inputTypes;
   
   local lchildren :: [Name] = genIds("l", 0, length(children), l);
   local rchildren :: [Name] = genIds("r", 0, length(children), l);

@@ -1,6 +1,7 @@
 grammar silver:extension:implicit_monads;
 
 
+
 {-
   EXPLANATION OF OUR VIEW OF A MONAD
 
@@ -24,8 +25,10 @@ autocopy attribute expectedMonad::Type;
 synthesized attribute monadRewritten<a>::a;
 synthesized attribute merrors::[Message] with ++;
 synthesized attribute mtyperep::Type;
-autocopy attribute mDownSubst::Substitution;
-synthesized attribute mUpSubst::Substitution;
+
+-- TODO: There's lots of places where we can't automatically propagate these because
+-- the host downSubst/upSubst attributes are mixed in too. 
+threaded attribute mDownSubst, mUpSubst::Substitution;
 
 
 function isMonad
@@ -203,7 +206,7 @@ Expr ::= ty::Type l::Location
 function monadReturn
 Expr ::= ty::Type l::Location
 {
-  return case ty of
+  return case decorate ty with {boundVariables = ty.freeVariables;} of
          | nonterminalType("core:Maybe", _, _) ->
            baseExpr(qNameId(name("returnMaybe", l), location=l), location=l)
          | nonterminalType("core:Either", _, _) ->
@@ -215,7 +218,7 @@ Expr ::= ty::Type l::Location
          | listType(_) ->
            baseExpr(qNameId(name("returnList", l), location=l), location=l)
          | decoratedType(t) -> monadReturn(t, l)
-         | _ -> error("Tried to get the return for a non-monadic type (" ++ ty.typepp ++ ") at " ++ l.unparse)
+         | _ -> error("Tried to get the return for a non-monadic type (" ++ prettyType(ty) ++ ") at " ++ l.unparse)
          end;
 }
 

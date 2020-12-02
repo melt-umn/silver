@@ -53,7 +53,7 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
   top.unparse = prod.unparse ++ "(" ++ ps.unparse ++ ")";
   top.errors := ps.errors ++ nps.errors;
 
-  local parms :: Integer = length(prod.lookupValue.typerep.inputTypes);
+  local parms :: Integer = prod.lookupValue.typeScheme.arity;
 
   top.errors <-
     if null(prod.lookupValue.dcls) || length(ps.patternList) == parms then []
@@ -118,7 +118,7 @@ top::Pattern ::= v::Name
     else [];
   top.errors <-
     case getValueDcl(v.name, top.env) of
-    | prodDcl(_,_,_,_) :: _ ->
+    | prodDcl(_,_) :: _ ->
       [err(v.location, "Pattern variables should not share the name of a production. (Potential confusion between '" ++ v.name ++ "' and '" ++ v.name ++ "()')")]
     | _ -> []
     end;

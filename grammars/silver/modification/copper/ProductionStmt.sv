@@ -33,21 +33,18 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
   e.isRoot = true;
 
   local tyCk :: TypeCheck = check(e.typerep, terminalIdType());
-  tyCk.downSubst = e.upSubst;
   tyCk.finalSubst = top.finalSubst;
   top.errors <-
     if tyCk.typeerror
     then [err(top.location, "'pluck' expects one of the terminals it is disambiguating between. Instead it received "++tyCk.leftpp)]
     else [];
 
+  thread downSubst, upSubst on top, e, tyCk, top;
 
 
 
   -- TODO: Enforce that the plucked terminal is one of those that are being disambiguated between.
   -- Currently all that is checked is that it is a terminal.
-
-  e.downSubst = top.downSubst;
-  top.upSubst = e.upSubst;
 }
 
 concrete production printStmt
@@ -68,9 +65,7 @@ top::ProductionStmt ::= 'print' e::Expr ';'
   e.originRules = [];
   e.isRoot = true;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, e, errCheck1, top;
   
   errCheck1 = check(e.typerep, stringType());
   top.errors <-
@@ -100,14 +95,16 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
+<<<<<<< HEAD
   e.originRules = [];
   e.isRoot = true;
 
   errCheck1 = check(e.typerep, val.lookupValue.typerep);
+=======
+  errCheck1 = check(e.typerep, val.lookupValue.typeScheme.monoType);
+>>>>>>> origin/develop
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Parser attribute " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
@@ -129,12 +126,16 @@ top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
+<<<<<<< HEAD
   lexeme.originRules = [];
   lexeme.isRoot = false;
 
   lexeme.downSubst = top.downSubst;
   errCheck1.downSubst = lexeme.upSubst;
   top.upSubst = errCheck1.upSubst;
+=======
+  thread downSubst, upSubst on top, lexeme, errCheck1, top;
+>>>>>>> origin/develop
 
   errCheck1 = check(lexeme.typerep, stringType());
   top.errors <-
@@ -179,9 +180,7 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' e
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  condition.downSubst = top.downSubst;
-  errCheck1.downSubst = condition.upSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, condition, errCheck1, top;
   
   th.downSubst = top.downSubst;
   th.finalSubst = th.upSubst;
@@ -220,7 +219,7 @@ top::DefLHS ::= q::Decorated QName
 
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 
-  top.typerep = q.lookupValue.typerep;
+  top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
 abstract production termAttrValueValueDef
@@ -246,14 +245,16 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
+<<<<<<< HEAD
   e.originRules = [];
   e.isRoot = true;
 
   errCheck1 = check(e.typerep, val.lookupValue.typerep);
+=======
+  errCheck1 = check(e.typerep, val.lookupValue.typeScheme.monoType);
+>>>>>>> origin/develop
   top.errors <-
     if errCheck1.typeerror
     then [err(top.location, "Terminal attribute " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]

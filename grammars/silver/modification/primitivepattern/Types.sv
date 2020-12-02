@@ -10,17 +10,15 @@ import silver:modification:ffi only foreignType; -- so we cover foreignType with
  - (This is used for *non-gadt* productions.)
  -}
 function skolemizeProductionType
-Type ::= te::Type
+Type ::= te::PolyType
 {
-  local attribute existentialVars :: [TyVar];
-  existentialVars = removeTyVars(te.freeVariables, te.outputType.freeVariables);
+  local existentialVars :: [TyVar] = removeTyVars(te.boundVars, te.typerep.outputType.freeVariables);
   
-  local attribute skolemize :: Substitution;
-  skolemize = composeSubst(
+  local skolemize :: Substitution = composeSubst(
     zipVarsIntoSkolemizedSubstitution(existentialVars, freshTyVars(length(existentialVars))),
-    zipVarsIntoSubstitution(te.outputType.freeVariables, freshTyVars(length(te.outputType.freeVariables))));
+    zipVarsIntoSubstitution(te.typerep.outputType.freeVariables, freshTyVars(length(te.typerep.outputType.freeVariables))));
   
-  return performRenaming(te, skolemize);
+  return performRenaming(te.typerep, skolemize);
 }
 
 {--
@@ -53,12 +51,11 @@ Type ::= te::Type
  - is as good as another, as far as correctness goes, anyway...
  -}
 function fullySkolemizeProductionType
-Type ::= te::Type
+Type ::= te::PolyType
 {
-  local attribute skolemize :: Substitution;
-  skolemize = zipVarsIntoSkolemizedSubstitution(te.freeVariables, freshTyVars(length(te.freeVariables)));
+  local skolemize :: Substitution = zipVarsIntoSkolemizedSubstitution(te.boundVars, freshTyVars(length(te.boundVars)));
   
-  return performRenaming(te, skolemize);
+  return performRenaming(te.typerep, skolemize);
 }
 
 

@@ -3,10 +3,23 @@ grammar silver:definition:env;
 -- Just to clarify:
 -- call prettyType to pretty print the type.
 -- get typeName to find out what nonterminal a NT or DNT is
+synthesized attribute typeName :: String;
+
+attribute typeName occurs on PolyType;
+
+aspect production monoType
+top::PolyType ::= ty::Type
+{
+  top.typeName = ty.typeName;
+}
+
+aspect production polyType
+top::PolyType ::= tvs::[TyVar] ty::Type
+{
+  top.typeName = ty.typeName;
+}
 
 attribute typeName occurs on Type;
-
-synthesized attribute typeName :: String;
 
 aspect default production
 top::Type ::=

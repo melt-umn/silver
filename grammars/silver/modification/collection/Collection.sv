@@ -30,8 +30,7 @@ top::NameOrBOperator ::= e::Expr
   top.errors := e.errors;
   
   local checkOperationType :: TypeCheck =
-    check(freshenCompletely(e.typerep),
-      functionType(top.operatorForType, [top.operatorForType, top.operatorForType], []));
+    check(e.typerep, functionType(top.operatorForType, [top.operatorForType, top.operatorForType], []));
   
   e.downSubst = emptySubst();
   checkOperationType.downSubst = e.upSubst;
@@ -50,7 +49,7 @@ top::NameOrBOperator ::= e::Expr
   local myFlowGraph :: ProductionGraph = 
     constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
 
-  e.frame = globalExprContext(myFlowGraph);
+  e.frame = globalExprContext(myFlowGraph, sourceGrammar=top.grammarName);
 }
 
 concrete production plusplusOperator
@@ -253,7 +252,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   e.downSubst = top.downSubst;
   -- the real type checking is done by the forward, but we must ensure things are tied up nicely
   -- otherwise we don't specialize ntOrDecs in OUR e
-  forward.downSubst = unifyCheck(val.lookupValue.typerep, e.typerep, e.upSubst);
+  forward.downSubst = unifyCheck(val.lookupValue.typeScheme.monoType, e.typerep, e.upSubst);
   
   forwards to localValueDef(val, e, location=top.location);
 }
@@ -267,7 +266,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   e.downSubst = top.downSubst;
   -- the real type checking is done by the forward, but we must ensure things are tied up nicely
   -- otherwise we don't specialize ntOrDecs in OUR e
-  forward.downSubst = unifyCheck(val.lookupValue.typerep, e.typerep, e.upSubst);
+  forward.downSubst = unifyCheck(val.lookupValue.typeScheme.monoType, e.typerep, e.upSubst);
   
   forwards to localValueDef(val, e, location=top.location);
 }
@@ -283,9 +282,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst; 
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
   e.isRoot = false;
 
@@ -304,9 +301,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst; 
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
   e.isRoot = false;
 
@@ -328,9 +323,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst; 
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
   e.isRoot = false;
 
@@ -349,9 +342,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst; 
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
   e.isRoot = false;
 

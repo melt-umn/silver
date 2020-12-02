@@ -36,7 +36,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
       []);
 
   production spec :: ParserSpec =
-    parserSpec(top.location, top.grammarName, fName, t.typerep.typeName, m.moduleNames, m.customLayout, m.terminalPrefixes, m.grammarTerminalPrefixes, m.syntaxAst);
+    parserSpec(fName, t.typerep.typeName, m.moduleNames, m.customLayout, m.terminalPrefixes, m.grammarTerminalPrefixes, m.syntaxAst, sourceGrammar=top.grammarName, location=top.location);
   spec.compiledGrammars = top.compiledGrammars;
 
   top.parserSpecs := [spec]; -- Note that this is undecorated.

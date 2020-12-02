@@ -4,8 +4,7 @@ aspect production lambdap
 top::Expr ::= params::ProductionRHS e::Expr
 {
   top.merrors := e.merrors;
-  e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
+  propagate mDownSubst, mUpSubst;
 
   e.expectedMonad = top.expectedMonad;
 
@@ -23,8 +22,8 @@ aspect production lambdaParamReference
 top::Expr ::= q::Decorated QName
 {
   top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
-  top.mtyperep = q.lookupValue.typerep;
+  propagate mDownSubst, mUpSubst;
+  top.mtyperep = q.lookupValue.typeScheme.monoType;
   top.monadicNames = if top.monadicallyUsed
                      then [baseExpr(new(q), location=top.location)]
                      else [];

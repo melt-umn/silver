@@ -4,13 +4,12 @@ imports silver:definition:type;
 
 import silver:definition:regex;  -- soley for Terms. TODO : fix?
 
-synthesized attribute sourceGrammar :: String;
-synthesized attribute sourceLocation :: Location;
+annotation sourceGrammar :: String;
+annotation sourceLocation :: Location;
 synthesized attribute fullName :: String;
 
 -- types
-synthesized attribute typerep :: Type;
-synthesized attribute dclBoundVars :: [TyVar];
+synthesized attribute typeScheme :: PolyType;
 
 -- values
 synthesized attribute namedSignature :: NamedSignature;
@@ -45,27 +44,26 @@ inherited attribute givenSubstitution :: Substitution;
  - hmm, unparsing could probably be fixed...
  -}
 closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
-                         typerep, givenNonterminalType, -- types (gNT for occurs)
+                         typeScheme, givenNonterminalType, -- types (gNT for occurs)
                          namedSignature, hasForward, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
                          isInherited, isSynthesized, -- attrs
                          prodDefs, -- production attributes
-                         dclBoundVars, -- Global values (where we have type schemes)
                          substitutedDclInfo, givenSubstitution -- type substitutions on dcls
                          ;
 
 aspect default production
 top::DclInfo ::=
 {
-  -- All dcls must provide sourceGrammar, sourceLocation, fullName
+  -- All Dcls must provide fullName
 
-  -- All values must provide typerep.
-  -- All attributes must provide typerep, bound.
-  -- All types must provide typerep, bound.
+  -- All values must provide typeScheme.
+  -- All attributes must provide typeScheme.
+  -- All types must provide typeScheme.
   
   -- All production attributes must provide attrDcl.
   -- All values that may be production attributes must provide substitutedDclInfo
-  -- All occurs must provide attrOccurring. (And now, typerep, which depends on givenNonterminalType)
+  -- All occurs must provide attrOccurring. (And now, typeScheme, which depends on givenNonterminalType)
   
   -- See silver:definition:core for more "musts"
   
@@ -77,7 +75,6 @@ top::DclInfo ::=
   -- like "anything with a fullName".)
   top.attrOccurring = error("Internal compiler error: must be defined for all occurs declarations");
   top.prodDefs = error("Internal compiler error: must be defined for all production attribute declarations");
-  top.dclBoundVars = error("Internal compiler error: must be defined for all value declarations");
   top.substitutedDclInfo = error("Internal compiler error: must be defined for all value declarations that are production attributes");
   
   -- Values that are not fun/prod have this valid default.
@@ -94,176 +91,137 @@ top::DclInfo ::=
 
 -- ValueDclInfos that can NEVER appear in interface files:
 abstract production childDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = monoType(ty);
 }
 abstract production lhsDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = monoType(ty);
 }
 
 -- ValueDclInfos that CAN appear in interface files, but only via "production attributes:"
 abstract production localDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
   
-  top.typerep = ty;
+  top.typeScheme = monoType(ty);
   
-  top.substitutedDclInfo = localDcl(sg,sl, fn, performRenaming(ty, top.givenSubstitution));
+  top.substitutedDclInfo = localDcl( fn, performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
 }
 abstract production forwardDcl
-top::DclInfo ::= sg::String sl::Location ty::Type
+top::DclInfo ::= ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = "forward";
   
-  top.typerep = ty;
+  top.typeScheme = monoType(ty);
   
-  top.substitutedDclInfo = forwardDcl(sg,sl, performRenaming(ty, top.givenSubstitution));
+  top.substitutedDclInfo = forwardDcl( performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
 }
 
 -- ValueDclInfos that DO appear in interface files:
 abstract production prodDcl
-top::DclInfo ::= sg::String sl::Location ns::NamedSignature hasForward::Boolean
+top::DclInfo ::= ns::NamedSignature hasForward::Boolean
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = ns.fullName;
-
-  local boundvars :: [TyVar] = top.typerep.freeVariables;
   
   top.namedSignature = ns;
-  top.typerep = ns.typerep;
+  top.typeScheme = ns.typeScheme;
   top.hasForward = hasForward;
 }
 abstract production funDcl
-top::DclInfo ::= sg::String sl::Location ns::NamedSignature
+top::DclInfo ::= ns::NamedSignature
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = ns.fullName;
   
-  local boundvars :: [TyVar] = top.typerep.freeVariables;
-  
   top.namedSignature = ns;
-  top.typerep = ns.typerep;
+  top.typeScheme = ns.typeScheme;
   top.hasForward = false;
 }
 abstract production globalValueDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = polyType(ty.freeVariables, ty);
 }
 
 -- TypeDclInfos
 abstract production ntDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type closed::Boolean
+top::DclInfo ::= fn::String arity::Integer closed::Boolean
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
-  top.dclBoundVars = bound;
+  local tvs::[TyVar] = freshTyVars(arity);
+  top.typeScheme = polyType(tvs, nonterminalType(fn, map(varType, tvs)));
 }
 abstract production termDcl
-top::DclInfo ::= sg::String sl::Location fn::String regex::Regex
+top::DclInfo ::= fn::String regex::Regex
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = terminalType(fn);
-  top.dclBoundVars = [];
+  top.typeScheme = monoType(terminalType(fn));
 }
 abstract production lexTyVarDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
-  top.dclBoundVars = [];
+  -- Lexical type vars in aspects aren't skolemized, since they unify with the real (skolem) types.
+  -- See comment in silver:definition:type:syntax:AspectDcl.sv
+  top.typeScheme = monoType(if isAspect then varType(tv) else skolemType(tv));
 }
 
 -- AttributeDclInfos
 abstract production synDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
-  top.dclBoundVars = bound;
+  top.typeScheme = polyType(bound, ty);
   top.isSynthesized = true;
 }
 abstract production inhDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
-  top.dclBoundVars = bound;
+  top.typeScheme = polyType(bound, ty);
   top.isInherited = true;
 }
 abstract production annoDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
-  top.dclBoundVars = bound;
+  top.typeScheme = polyType(bound, ty);
   top.isAnnotation = true;
 }
 
 -- ProductionAttrDclInfo
 abstract production paDcl
-top::DclInfo ::= sg::String sl::Location ns::NamedSignature{-fn::String outty::Type intys::[Type]-} dcls::[Def]
+top::DclInfo ::= ns::NamedSignature{-fn::String outty::Type intys::[Type]-} dcls::[Def]
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = ns.fullName;
-
-  local boundvars :: [TyVar] = top.typerep.freeVariables;
   
   top.prodDefs = dcls;
   
+  top.typeScheme = error("typeScheme not defined for production attributes");
+  
   -- This is used by the function that computes the substituted defs.
-  top.typerep = ns.typerep;
-  -- We do have this now... any refactoring that should use it?
-  --top.namedSignature = ns;
+  top.namedSignature = ns;
 }
 
 -- OccursDclInfo
 abstract production occursDcl
-top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type atty::Type
+top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fnnt;
   
   -- There should be no type variables in atty that aren't in ntty. (Important constraint!)
@@ -272,22 +230,19 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type at
   -- ALSO IMPORTANT: ntty and atty should be tyvar'd up, not skolem'd up. You dig?
   
   -- Here we use givenNonterminalType to find the attribute type:
-  local attribute subst :: Substitution;
-  subst = unifyDirectional(ntty, top.givenNonterminalType); -- must rewrite FROM ntty TO gNT
-  
-  top.typerep = if subst.failure
-                then -- We didn't get a sensible type for givenNonterminalType. Let's do our best? (This error should already be caught!)
-                     freshenCompletely(atty)
-                else performRenaming(atty, subst);
+  local subst :: Substitution = unifyDirectional(ntty, top.givenNonterminalType); -- must rewrite FROM ntty TO gNT
+
+  top.typeScheme =
+    if subst.failure
+    then polyType(atty.freeVariables, atty) -- We didn't get a sensible type for givenNonterminalType. Let's do our best? (This error should already be caught!)
+    else monoType(performRenaming(atty, subst));
   
   top.attrOccurring = fnat;
 }
 
 abstract production annoInstanceDcl
-top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type atty::Type
+top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fnnt;
   
   -- There should be no type variables in atty that aren't in ntty. (Important constraint!)
@@ -296,13 +251,12 @@ top::DclInfo ::= sg::String sl::Location fnnt::String fnat::String ntty::Type at
   -- ALSO IMPORTANT: ntty and atty should be tyvar'd up, not skolem'd up. You dig?
   
   -- Here we use givenNonterminalType to find the attribute type:
-  local attribute subst :: Substitution;
-  subst = unifyDirectional(ntty, top.givenNonterminalType); -- must rewrite FROM ntty TO gNT
-  
-  top.typerep = if subst.failure
-                then -- We didn't get a sensible type for givenNonterminalType. Let's do our best? (This error should already be caught!)
-                     freshenCompletely(atty)
-                else performRenaming(atty, subst);
+  local subst :: Substitution = unifyDirectional(ntty, top.givenNonterminalType); -- must rewrite FROM ntty TO gNT
+
+  top.typeScheme =
+    if subst.failure
+    then polyType(atty.freeVariables, atty) -- We didn't get a sensible type for givenNonterminalType. Let's do our best? (This error should already be caught!)
+    else monoType(performRenaming(atty, subst));
   
   top.attrOccurring = fnat;
 
@@ -315,7 +269,7 @@ function determineAttributeType
 Type ::= occursDclInfo::DclInfo ntty::Type
 {
   occursDclInfo.givenNonterminalType = ntty;
-  return occursDclInfo.typerep;
+  return occursDclInfo.typeScheme.typerep;
 }
 
 -- Dealing with substitutions for production attributes. Really ValueDclInfos
@@ -331,14 +285,9 @@ function defsFromPADcls
 [Def] ::= valueDclInfos::[DclInfo] s::NamedSignature
 {
   -- We want to rewrite FROM the sig these PAs were declared with, TO the given sig
-  local subst :: Substitution =
-    unifyDirectional(head(valueDclInfos).typerep, s.typerep);
-  
-  local useSubst :: Substitution =
-    if !subst.failure then subst
-    else errorSubstitution(head(valueDclInfos).typerep);
+  local subst :: Substitution = unifyNamedSignature(head(valueDclInfos).namedSignature, s);
   
   return if null(valueDclInfos) then []
-         else map(performSubstitutionDef(_, useSubst), head(valueDclInfos).prodDefs) ++ defsFromPADcls(tail(valueDclInfos), s);
+         else map(performSubstitutionDef(_, subst), head(valueDclInfos).prodDefs) ++ defsFromPADcls(tail(valueDclInfos), s);
 }
 

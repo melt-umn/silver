@@ -42,7 +42,7 @@ top::BlockContext ::= g::ProductionGraph
 {
   top.permitPluck = true;
   top.originsContextSource = useBogusInfo("PARSERACTION_CONTEXT");
-  forwards to actionContext(g);
+  forwards to actionContext(g, sourceGrammar=top.sourceGrammar);
 }
 
 {-- Production reduce actions -}
@@ -54,6 +54,6 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
   top.className = makeClassName(top.fullName); -- child references in production actions use it
   top.originsContextSource = useBogusInfo("PARSERACTION_CONTEXT");
 
-  forwards to actionContext(g);
+  forwards to actionContext(g, sourceGrammar=top.sourceGrammar);
 }
 

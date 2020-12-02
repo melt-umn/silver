@@ -316,7 +316,7 @@ top::DefLHS ::= q::Decorated QName
   
   top.errors <-
     if top.typerep.isError then [] else [err(q.location, "Cannot define attributes on " ++ q.name)];
-  top.typerep = q.lookupValue.typerep;
+  top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
 concrete production concreteDefLHSfwd
@@ -338,7 +338,7 @@ top::DefLHS ::= q::Decorated QName
     if existingProblems || top.found then []
     else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on child '" ++ q.name ++ "'")];
                 
-  top.typerep = q.lookupValue.typerep;
+  top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
 abstract production lhsDefLHS
@@ -354,7 +354,7 @@ top::DefLHS ::= q::Decorated QName
     if existingProblems || top.found then []
     else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.name ++ "' on the lhs '" ++ q.name ++ "'")];
 
-  top.typerep = q.lookupValue.typerep;
+  top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
 abstract production localDefLHS
@@ -370,7 +370,7 @@ top::DefLHS ::= q::Decorated QName
     if existingProblems || top.found then []
     else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on local '" ++ q.name ++ "'")];
 
-  top.typerep = q.lookupValue.typerep;
+  top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
 abstract production forwardDefLHS
@@ -386,7 +386,7 @@ top::DefLHS ::= q::Decorated QName
     if existingProblems || top.found then []
     else [err(q.location, "Cannot define synthesized attribute '" ++ top.defLHSattr.name ++ "' on forward")];
 
-  top.typerep = q.lookupValue.typerep;
+  top.typerep = q.lookupValue.typeScheme.monoType;
 }
 
 ----- done with DefLHS
@@ -413,7 +413,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
   
   top.errors <-
-    if val.lookupValue.typerep.isError then []
+    if val.lookupValue.typeScheme.isError then []
     else [err(val.location, val.name ++ " cannot be assigned to.")];
 }
 

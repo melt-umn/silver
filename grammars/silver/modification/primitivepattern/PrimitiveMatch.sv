@@ -157,7 +157,7 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
 
   local isGadt :: Boolean =
-    case qn.lookupValue.typerep.outputType of
+    case qn.lookupValue.typeScheme.typerep.outputType of
     -- If the lookup is successful, and it's a production type, and it 
     -- constructs a nonterminal that either:
     --  1. has a non-type-variable parameter (e.g. Expr<Boolean>)
@@ -181,14 +181,13 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
   
   local chk :: [Message] =
-    if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
-    else [err(qn.location, qn.name ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+    if null(qn.lookupValue.dcls) || ns.varBinderCount == prod_type.arity then []
+    else [err(qn.location, qn.name ++ " has " ++ toString(prod_type.arity) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
   top.errors <- qn.lookupValue.errors;
 
   -- Turns the existential variables existential
-  local prod_type :: Type =
-    skolemizeProductionType(qn.lookupValue.typerep);
+  local prod_type :: Type = skolemizeProductionType(qn.lookupValue.typeScheme);
   -- Note that we're going to check prod_type against top.scrutineeType shortly.
   -- This is where the type variables become unified.
   
@@ -211,10 +210,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
                 else [];
   
   -- Thread NORMALLY! YAY!
-  errCheck1.downSubst = top.downSubst;
-  e.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = e.upSubst;
-  top.upSubst = errCheck2.upSubst;
+  thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
   
   e.env = newScopeEnv(ns.defs, top.env);
   
@@ -228,13 +224,12 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
   
   local chk :: [Message] =
-    if null(qn.lookupValue.dcls) || ns.varBinderCount == length(prod_type.inputTypes) then []
-    else [err(qn.location, qn.name ++ " has " ++ toString(length(prod_type.inputTypes)) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
+    if null(qn.lookupValue.dcls) || ns.varBinderCount == prod_type.arity then []
+    else [err(qn.location, qn.name ++ " has " ++ toString(prod_type.arity) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
   top.errors <- qn.lookupValue.errors;
 
-  local prod_type :: Type =
-    fullySkolemizeProductionType(qn.lookupValue.typerep); -- that says FULLY. See the comments on that function.
+  local prod_type :: Type = fullySkolemizeProductionType(qn.lookupValue.typeScheme); -- that says FULLY. See the comments on that function.
   
   ns.bindingTypes = prod_type.inputTypes;
   ns.bindingIndex = 0;
@@ -294,11 +289,8 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
   top.errors <- if errCheck2.typeerror
                 then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
-  
-  errCheck1.downSubst = top.downSubst;
-  e.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = e.upSubst;
-  top.upSubst = errCheck2.upSubst;
+
+  thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
   top.translation = "if(scrutinee == " ++ i.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -320,11 +312,8 @@ top::PrimPattern ::= f::Float_t '->' e::Expr
   top.errors <- if errCheck2.typeerror
                 then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
-  
-  errCheck1.downSubst = top.downSubst;
-  e.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = e.upSubst;
-  top.upSubst = errCheck2.upSubst;
+
+  thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
   top.translation = "if(scrutinee == " ++ f.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -346,11 +335,8 @@ top::PrimPattern ::= i::String_t '->' e::Expr
   top.errors <- if errCheck2.typeerror
                 then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
-  
-  errCheck1.downSubst = top.downSubst;
-  e.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = e.upSubst;
-  top.upSubst = errCheck2.upSubst;
+
+  thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
   top.translation = "if(scrutinee.equals(" ++ i.lexeme ++ ")) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -372,11 +358,8 @@ top::PrimPattern ::= i::String '->' e::Expr
   top.errors <- if errCheck2.typeerror
                 then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
-  
-  errCheck1.downSubst = top.downSubst;
-  e.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = e.upSubst;
-  top.upSubst = errCheck2.upSubst;
+
+  thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
   top.translation = "if(scrutinee == " ++ i ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -398,11 +381,8 @@ top::PrimPattern ::= e::Expr
   top.errors <- if errCheck2.typeerror
                 then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
-  
-  errCheck1.downSubst = top.downSubst;
-  e.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = e.upSubst;
-  top.upSubst = errCheck2.upSubst;
+
+  thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
   top.translation = "if(scrutinee.nil()) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -427,11 +407,8 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   top.errors <- if errCheck2.typeerror
                 then [err(e.location, "pattern expression should have type " ++ errCheck2.rightpp ++ " instead it has type " ++ errCheck2.leftpp)]
                 else [];
-  
-  errCheck1.downSubst = top.downSubst;
-  e.downSubst = errCheck1.upSubst;
-  errCheck2.downSubst = e.upSubst;
-  top.upSubst = errCheck2.upSubst;
+
+  thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
   
   local consdefs :: [Def] =
     [lexicalLocalDef(top.grammarName, top.location, h_fName, elemType, noVertex(), []),

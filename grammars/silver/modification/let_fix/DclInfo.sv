@@ -3,13 +3,11 @@ grammar silver:modification:let_fix;
 import silver:definition:flow:ast only ExprVertexInfo, FlowVertex;
 
 abstract production lexicalLocalDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type fi::ExprVertexInfo fd::[FlowVertex]
+top::DclInfo ::= fn::String ty::Type fi::ExprVertexInfo fd::[FlowVertex]
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = monoType(ty);
 
   top.refDispatcher = lexicalLocalReference(_, fi, fd, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- should be impossible (never in scope at production level?)
@@ -19,6 +17,6 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type fi::ExprVertexInfo 
 function lexicalLocalDef
 Def ::= sg::String sl::Location fn::String ty::Type fi::ExprVertexInfo fd::[FlowVertex]
 {
-  return valueDef(defaultEnvItem(lexicalLocalDcl(sg,sl,fn,ty,fi,fd)));
+  return valueDef(defaultEnvItem(lexicalLocalDcl(fn,ty,fi,fd,sourceGrammar=sg,sourceLocation=sl)));
 }
 

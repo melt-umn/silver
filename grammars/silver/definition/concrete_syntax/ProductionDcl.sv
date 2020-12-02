@@ -75,7 +75,7 @@ top::ProductionModifier ::= 'operator' '=' n::QName
   top.productionModifiers := [prodOperator(n.lookupType.fullName)];
 
   top.errors <- n.lookupType.errors ++
-                if !n.lookupType.typerep.isTerminal
+                if !n.lookupType.typeScheme.isTerminal
                 then [err(n.location, n.unparse ++ " is not a terminal.")]
                 else [];
 }

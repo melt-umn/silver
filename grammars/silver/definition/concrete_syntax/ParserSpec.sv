@@ -6,7 +6,7 @@ import silver:driver:util only computeDependencies; -- TODO this is a bad depend
  - An abstract representation of a parser declaration.
  -}
 nonterminal ParserSpec with 
-  sourceGrammar, sourceLocation, fullName,
+  sourceGrammar, location, fullName,
   compiledGrammars,
   cstAst, startNT, moduleNames;
 
@@ -33,13 +33,11 @@ monoid attribute grammarTerminalPrefixes :: [Pair<String String>] with [], ++;
 
 abstract production parserSpec
 top::ParserSpec ::=
-  sl::Location  sg::String  fn::String  snt::String  grams::[String]
+  fn::String  snt::String  grams::[String]
   customStartLayout::Maybe<[String]>
   terminalPrefixes::[Pair<String String>]  grammarTerminalPrefixes::[Pair<String String>]
   addedDcls::[SyntaxDcl]
 {
-  top.sourceLocation = sl;
-  top.sourceGrammar = sg;
   top.fullName = fn;
   top.startNT = snt;
   top.moduleNames := grams;
@@ -48,7 +46,7 @@ top::ParserSpec ::=
   -- to all grammars imported in the env. 
   -- This could affect which conditional imports get triggered, and thus what gets included in the parser
   production deps :: [String] = computeDependencies(grams, top.compiledGrammars);
-  production med :: ModuleExportedDefs = moduleExportedDefs(sl, top.compiledGrammars, deps, grams, []);
+  production med :: ModuleExportedDefs = moduleExportedDefs(top.location, top.compiledGrammars, deps, grams, []);
   
   -- Compute the list of terminal prefixes for marking terminals here, because the set of marking
   -- terminals exported by a grammar depends on conditional imports that may be triggered by other
@@ -64,7 +62,7 @@ top::ParserSpec ::=
         pair(g, 
           foldr(
             consSyntax, nilSyntax(),
-            moduleExportedDefs(sl, top.compiledGrammars, deps, [g], []).syntaxAst).allMarkingTerminals),
+            moduleExportedDefs(top.location, top.compiledGrammars, deps, [g], []).syntaxAst).allMarkingTerminals),
       grams);
   production markingTerminalPrefixes::[Pair<String String>] =
     flatMap(

@@ -43,7 +43,7 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 
 
   body.env = newScopeEnv(fakedDefs ++ sigDefs, top.env);
-  body.frame = defaultAspectContext(namedSig, myFlowGraph);
+  body.frame = defaultAspectContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName);
 
   body.downSubst = emptySubst();
 
@@ -55,16 +55,14 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 function defaultLhsDef
 Def ::= sg::String sl::Location fn::String ty::Type
 {
-  return valueDef(defaultEnvItem(defaultLhsDcl(sg,sl,fn,ty)));
+  return valueDef(defaultEnvItem(defaultLhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 abstract production defaultLhsDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type
+top::DclInfo ::= fn::String ty::Type
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = monoType(ty);
   
   top.refDispatcher = lhsReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_); -- TODO: be smarter about the error message
@@ -84,7 +82,7 @@ top::DefLHS ::= q::Decorated QName
     if existingProblems || top.found then []
     else [err(q.location, "Cannot define inherited attribute '" ++ top.defLHSattr.name ++ "' on the lhs '" ++ q.name ++ "'")];
   
-  top.typerep = q.lookupValue.typerep;
+  top.typerep = q.lookupValue.typeScheme.monoType;
 
   top.translation = makeNTClassName(top.frame.lhsNtName) ++ ".defaultSynthesizedAttributes";
 }

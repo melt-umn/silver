@@ -25,19 +25,16 @@ top::DclInfo ::=
 
 abstract production strategyDcl
 top::DclInfo ::=
-  sg::String sl::Location fn::String isTotal::Boolean tyVar::TyVar
+  fn::String isTotal::Boolean tyVar::TyVar
   containsErrors::Boolean liftedStrategyNames::[String] givenRecVarNameEnv::[Pair<String String>] givenRecVarTotalEnv::[Pair<String Boolean>] partialRefs::[String] totalRefs::[String]
   e::StrategyExpr
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep =
+  top.typeScheme = polyType([tyVar],
     if isTotal
     then varType(tyVar)
-    else nonterminalType("core:Maybe", [varType(tyVar)], false);
-  top.dclBoundVars = [tyVar];
+    else nonterminalType("core:Maybe", [varType(tyVar)], false));
   top.isSynthesized = true;
   top.isStrategy = true;
   

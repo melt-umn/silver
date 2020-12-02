@@ -93,7 +93,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   -- technically, it's possible to break this if you declare it in one grammar, but define it in another, but
   -- I think we should forbid that syntactically, later on...
   top.flowDefs <-
-    [localEq(top.frame.fullName, val.lookupValue.fullName, val.lookupValue.typerep.typeName, e.flowDeps)];
+    [localEq(top.frame.fullName, val.lookupValue.fullName, val.lookupValue.typeScheme.typeName, e.flowDeps)];
 }
 
 -- FROM COLLECTIONS TODO

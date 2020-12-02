@@ -3,13 +3,15 @@ grammar silver:analysis:typechecking:core;
 import silver:util;
 
 attribute upSubst, downSubst, finalSubst occurs on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
+propagate upSubst, downSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr
+  excluding productionStmtAppend, forwardsTo, forwardInh, returnDef, synthesizedAttributeDef, inheritedAttributeDef, localValueDef;
 
 {--
  - These need an initial state only due to aspects (I think? maybe not. Investigate someday.)
  - They otherwise confine their contexts to each individual Stmt.
  -}
 attribute downSubst occurs on ProductionBody, ProductionStmts;
-
+-- downSubst is NOT propagated here - we give ever stmt the same downSubst, rather than threading like usual
 
 aspect production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
@@ -45,47 +47,17 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   -- Of course, this means do not use top.finalSubst here!
 }
 
-aspect production errorProductionStmt
-top::ProductionStmt ::= e::[Message]
-{
-  top.upSubst = top.downSubst;
-}
-
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
-
+  thread downSubst, upSubst on top, e, errCheck1, top;
+  
   errCheck1 = check(e.typerep, top.frame.signature.outputElement.typerep);
   top.errors <- if errCheck1.typeerror
                 then [err(e.location, "Forward's expected type is " ++ errCheck1.rightpp ++ ", but the actual type supplied is " ++ errCheck1.leftpp)]
                 else [];
-}
-
-aspect production forwardingWith
-top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
-{
-  inh.downSubst = top.downSubst;
-  top.upSubst = inh.upSubst;
-}
-
-aspect production forwardInhsOne
-top::ForwardInhs ::= lhs::ForwardInh
-{
-  lhs.downSubst = top.downSubst;
-  top.upSubst = lhs.upSubst;
-}
-
-aspect production forwardInhsCons
-top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
-{
-  lhs.downSubst = top.downSubst;
-  rhs.downSubst = lhs.upSubst;
-  top.upSubst = rhs.upSubst;
 }
 
 aspect production forwardInh
@@ -93,10 +65,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  lhs.downSubst = top.downSubst;
-  e.downSubst = lhs.upSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, lhs, e, errCheck1, top;
   
   errCheck1 = check(lhs.typerep, e.typerep);
   top.errors <- 
@@ -106,26 +75,12 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
        else [];
 }
 
-aspect production forwardLhsExpr
-top::ForwardLHSExpr ::= q::QNameAttrOccur
-{
-  top.upSubst = top.downSubst;
-}
-
-aspect production localAttributeDcl
-top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
-{
-  top.upSubst = top.downSubst;
-}
-
 aspect production attachNoteStmt
 top::ProductionStmt ::= 'attachNote' e::Expr ';'
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, e, errCheck1, top;
   
   errCheck1 = check(e.typerep, nonterminalType("core:OriginNote", [], false));
   top.errors <-
@@ -138,10 +93,8 @@ aspect production returnDef
 top::ProductionStmt ::= 'return' e::Expr ';'
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
+  
+  thread downSubst, upSubst on top, e, errCheck1, top;
   
   errCheck1 = check(e.typerep, top.frame.signature.outputElement.typerep);
   top.errors <-
@@ -150,21 +103,12 @@ top::ProductionStmt ::= 'return' e::Expr ';'
        else [];
 }
 
-aspect production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
-{
-  e.downSubst = top.downSubst;
-  top.upSubst = e.upSubst;
-}
-
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst; 
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
@@ -178,15 +122,19 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst; 
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror
     then [err(top.location, "Attribute " ++ attr.name ++ " has type " ++ errCheck1.leftpp ++ " but the expression being assigned to it has type " ++ errCheck1.rightpp)]
     else [];
+}
+
+aspect production errorAttributeDef
+top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+{
+  propagate downSubst, upSubst;
 }
 
 aspect production childDefLHS
@@ -208,21 +156,11 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-  e.downSubst = top.downSubst;
-  errCheck1.downSubst = e.upSubst;
-  top.upSubst = errCheck1.upSubst;
+  thread downSubst, upSubst on top, e, errCheck1, top;
 
-  errCheck1 = check(e.typerep, val.lookupValue.typerep);
+  errCheck1 = check(e.typerep, val.lookupValue.typeScheme.typerep);
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Local " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
        else [];
 }
-
-aspect production errorValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
-{
-  e.downSubst = top.downSubst;
-  top.upSubst = e.upSubst;
-}
-

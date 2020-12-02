@@ -209,8 +209,7 @@ top::PrimPatterns ::= p::PrimPattern
 {
   top.merrors := p.merrors;
 
-  p.mDownSubst = top.mDownSubst;
-  top.mUpSubst = p.mUpSubst;
+  propagate mDownSubst, mUpSubst;
 
   p.expectedMonad = top.expectedMonad;
 
@@ -297,21 +296,29 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
 aspect production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' arr::Arrow_kwd e::Expr
 {
-  e.mDownSubst = top.mDownSubst;
-  e.downSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
+  local ne::Expr = e;
+  ne.env = e.env;
+  ne.frame = top.frame;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.config = top.config;
+  ne.flowEnv = top.flowEnv;
 
-  e.expectedMonad = top.expectedMonad;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.mDownSubst;
+  ne.mDownSubst = top.mDownSubst;
+  top.mUpSubst = ne.mUpSubst;
 
-  e.monadicallyUsed = false;
-  top.monadicNames = e.monadicNames;
+  ne.expectedMonad = top.expectedMonad;
+
+  ne.monadicallyUsed = false;
+  top.monadicNames = ne.monadicNames;
 }
 aspect production prodPatternNormal
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.merrors := e.merrors;
-  e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
+  propagate mDownSubst, mUpSubst;
 
   e.expectedMonad = top.expectedMonad;
 
@@ -320,8 +327,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 
   top.mtyperep = e.mtyperep;
   -- Turns the existential variables existential
-  local prod_type :: Type =
-    skolemizeProductionType(qn.lookupValue.typerep);
+  local prod_type :: Type = skolemizeProductionType(qn.lookupValue.typeScheme);
   top.patternType = prod_type.outputType;
 
   top.returnify = prodPatternNormal(qn, ns,
@@ -334,8 +340,7 @@ aspect production prodPatternGadt
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.merrors := e.merrors;
-  e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
+  propagate mDownSubst, mUpSubst;
 
   e.expectedMonad = top.expectedMonad;
 
@@ -343,8 +348,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.monadicNames = e.monadicNames;
 
   top.mtyperep = e.mtyperep;
-  local prod_type :: Type =
-    fullySkolemizeProductionType(qn.lookupValue.typerep); -- that says FULLY. See the comments on that function.
+  local prod_type :: Type = fullySkolemizeProductionType(qn.lookupValue.typeScheme); -- that says FULLY. See the comments on that function.
   top.patternType = prod_type.outputType;
 
   top.returnify = prodPatternGadt(qn, ns,
@@ -378,8 +382,7 @@ aspect production floatPattern
 top::PrimPattern ::= f::Float_t arr::Arrow_kwd e::Expr
 {
   top.merrors := e.merrors;
-  e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
+  propagate mDownSubst, mUpSubst;
 
   e.expectedMonad = top.expectedMonad;
 
@@ -398,8 +401,7 @@ aspect production stringPattern
 top::PrimPattern ::= i::String_t arr::Arrow_kwd e::Expr
 {
   top.merrors := e.merrors;
-  e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
+  propagate mDownSubst, mUpSubst;
 
   e.expectedMonad = top.expectedMonad;
 
@@ -418,8 +420,7 @@ aspect production booleanPattern
 top::PrimPattern ::= i::String arr::Arrow_kwd e::Expr
 {
   top.merrors := e.merrors;
-  e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
+  propagate mDownSubst, mUpSubst;
 
   e.expectedMonad = top.expectedMonad;
 
@@ -438,8 +439,7 @@ aspect production nilPattern
 top::PrimPattern ::= e::Expr
 {
   top.merrors := e.merrors;
-  e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
+  propagate mDownSubst, mUpSubst;
 
   e.expectedMonad = top.expectedMonad;
 
@@ -458,8 +458,7 @@ aspect production conslstPattern
 top::PrimPattern ::= h::Name t::Name e::Expr
 {
   top.merrors := e.merrors;
-  e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
+  propagate mDownSubst, mUpSubst;
 
   e.expectedMonad = top.expectedMonad;
 

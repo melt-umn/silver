@@ -52,7 +52,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
              else [];
 
   body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
-  body.frame = aspectProductionContext(namedSig, myFlowGraph); -- graph from flow:env
+  body.frame = aspectProductionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
 }
 
 concrete production aspectFunctionDcl
@@ -88,7 +88,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
              else [];
 
   body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
-  body.frame = aspectFunctionContext(namedSig, myFlowGraph); -- graph from flow:env
+  body.frame = aspectFunctionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
 }
 
 concrete production aspectProductionSignature

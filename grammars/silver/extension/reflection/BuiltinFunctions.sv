@@ -42,11 +42,7 @@ top::Expr ::= 'deserialize' '(' fileName::Expr ',' text::Expr ')'
   local errCheck2::TypeCheck = check(text.typerep, stringType());
   errCheck2.finalSubst = top.finalSubst;
   
-  fileName.downSubst = top.downSubst;
-  text.downSubst = fileName.upSubst;
-  errCheck1.downSubst = text.upSubst;
-  errCheck2.downSubst = errCheck1.upSubst;
-  --top.upSubst = errCheck2.upSubst;
+  thread downSubst, upSubst on top, fileName, text, errCheck1, errCheck2, forward;
   
   local localErrors::[Message] =
     (if errCheck1.typeerror

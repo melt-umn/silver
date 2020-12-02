@@ -44,6 +44,7 @@ top::Expr ::= e::Decorated Expr
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.expectedMonad = top.expectedMonad;
   top.merrors := ne.merrors;
   top.mUpSubst = ne.mUpSubst;
   top.mtyperep = intType();
@@ -64,6 +65,7 @@ top::Expr ::= e::Decorated Expr
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.expectedMonad = top.expectedMonad;
   top.merrors := ne.merrors;
   top.mUpSubst = ne.mUpSubst;
   top.mtyperep = if isMonad(ne.mtyperep)
@@ -193,8 +195,10 @@ top::Expr ::= 'new' '(' e::Expr ')'
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
+  es.mDownSubst = top.mDownSubst;
+  el.mDownSubst = es.mUpSubst;
   top.merrors := es.merrors ++ el.merrors;
-  top.mUpSubst = top.mDownSubst;
+  top.mUpSubst = el.mUpSubst;
   top.mtyperep =
      if ( isMonad(es.mtyperep) && monadsMatch(es.mtyperep, top.expectedMonad, top.mUpSubst).fst ) ||
         ( isMonad(el.mtyperep) && monadsMatch(el.mtyperep, top.expectedMonad, top.mUpSubst).fst )

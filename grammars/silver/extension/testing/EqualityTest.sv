@@ -51,10 +51,7 @@ ag::AGDcl ::= kwd::'equalityTest'
     else [err(value.location, "Type of second expression does not match specified type (3rd argument). Instead they are " ++ errCheck3.leftpp ++ " and " ++ errCheck3.rightpp)];
 
   value.downSubst = emptySubst();
-  expected.downSubst = value.upSubst;
-  errCheck1.downSubst = expected.upSubst;
-  errCheck2.downSubst = errCheck1.upSubst;
-  errCheck3.downSubst = errCheck2.upSubst;
+  thread downSubst, upSubst on value, expected, errCheck1, errCheck2, errCheck3;
   
   value.finalSubst = errCheck3.upSubst;
   expected.finalSubst = errCheck3.upSubst;
@@ -68,8 +65,8 @@ ag::AGDcl ::= kwd::'equalityTest'
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(ag.grammarName, ag.compiledGrammars)).grammarFlowTypes;
   local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(ag.grammarName, ag.compiledGrammars)).productionFlowGraphs;
 
-  value.frame = globalExprContext(constructAnonymousGraph(value.flowDefs, ag.env, myProds, myFlow));
-  expected.frame = globalExprContext(constructAnonymousGraph(expected.flowDefs, ag.env, myProds, myFlow));
+  value.frame = globalExprContext(constructAnonymousGraph(value.flowDefs, ag.env, myProds, myFlow), sourceGrammar=ag.grammarName);
+  expected.frame = globalExprContext(constructAnonymousGraph(expected.flowDefs, ag.env, myProds, myFlow), sourceGrammar=ag.grammarName);
   
 
   ag.errors <- forward.errors;

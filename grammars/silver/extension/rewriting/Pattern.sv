@@ -239,16 +239,17 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
     prodCallASTPattern(prod.lookupValue.fullName, ps.transform, nps.transform);
   top.isPolymorphic = ps.isPolymorphic || nps.isPolymorphic;
   
-  local outputFreeVars::[TyVar] = prod.lookupValue.typerep.outputType.freeVariables;
+  local prodType::Type = prod.lookupValue.typeScheme.typerep;
+  local outputFreeVars::[TyVar] = prodType.outputType.freeVariables;
   ps.typesHaveUniversalVars =
     map(
       \ t::Type -> !null(intersectBy(tyVarEqual, outputFreeVars, t.freeVariables)),
-      prod.lookupValue.typerep.inputTypes);
+      prodType.inputTypes);
   nps.namedTypesHaveUniversalVars =
     map(
       \ t::NamedArgType ->
         pair(t.argName, !null(intersectBy(tyVarEqual, outputFreeVars, t.argType.freeVariables))),
-      prod.lookupValue.typerep.namedTypes);
+      prodType.namedTypes);
 } 
 
 aspect production wildcPattern

@@ -25,14 +25,11 @@ top::DclInfo ::=
 }
 
 abstract production synCollectionDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::Operation
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
-  top.dclBoundVars = bound;
+  top.typeScheme = polyType(bound, ty);
   top.isSynthesized = true;
   top.operation = o;
 
@@ -47,14 +44,11 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
   top.attrAppendDefDispatcher = synAppendColAttributeDef(_, _, _, location=_);
 }
 abstract production inhCollectionDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::Operation
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
-  top.dclBoundVars = bound;
+  top.typeScheme = polyType(bound, ty);
   top.isInherited = true;
   top.operation = o;
 
@@ -70,13 +64,11 @@ top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::O
 }
 
 abstract production localCollectionDcl
-top::DclInfo ::= sg::String sl::Location fn::String ty::Type o::Operation
+top::DclInfo ::= fn::String ty::Type o::Operation
 {
-  top.sourceGrammar = sg;
-  top.sourceLocation = sl;
   top.fullName = fn;
 
-  top.typerep = ty;
+  top.typeScheme = monoType(ty);
   top.operation = o;
   
   top.refDispatcher = localReference(_, location=_);
@@ -86,11 +78,11 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type o::Operation
   top.baseDefDispatcher = baseCollectionValueDef(_, _, location=_);
   top.appendDefDispatcher = appendCollectionValueDef(_, _, location=_);
   
-  top.substitutedDclInfo = localCollectionDcl(sg,sl,fn, performRenaming(ty, top.givenSubstitution), o);
+  top.substitutedDclInfo = localCollectionDcl(fn, performRenaming(ty, top.givenSubstitution), o, sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
   
   -- TODO: attrOccursIndex
   -- We shouldn't be forwarding here
-  forwards to localDcl(sg,sl,fn,ty);
+  forwards to localDcl(fn,ty,sourceGrammar=top.sourceGrammar,sourceLocation=top.sourceLocation);
 }
 
 
@@ -98,16 +90,16 @@ top::DclInfo ::= sg::String sl::Location fn::String ty::Type o::Operation
 function synColDef
 Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::Operation
 {
-  return attrDef(defaultEnvItem(synCollectionDcl(sg,sl,fn,bound,ty,o)));
+  return attrDef(defaultEnvItem(synCollectionDcl(fn,bound,ty,o,sourceGrammar=sg,sourceLocation=sl)));
 }
 function inhColDef
 Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type o::Operation
 {
-  return attrDef(defaultEnvItem(inhCollectionDcl(sg,sl,fn,bound,ty,o)));
+  return attrDef(defaultEnvItem(inhCollectionDcl(fn,bound,ty,o,sourceGrammar=sg,sourceLocation=sl)));
 }
 function localColDef
 Def ::= sg::String sl::Location fn::String ty::Type o::Operation
 {
-  return valueDef(defaultEnvItem(localCollectionDcl(sg,sl,fn,ty,o)));
+  return valueDef(defaultEnvItem(localCollectionDcl(fn,ty,o,sourceGrammar=sg,sourceLocation=sl)));
 }
 

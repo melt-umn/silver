@@ -83,7 +83,7 @@ Boolean ::= sigName::String  e::Decorated Env
   -- Suggested fix: maybe we can directly look at the signature, instead of looking
   -- up the name in the environment?
   
-  return if null(d) then true else head(d).typerep.isDecorable;
+  return if null(d) then true else head(d).typeScheme.isDecorable;
 }
 
 {--
@@ -448,7 +448,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     then
       case e of
       | childReference(lq) ->
-          if lq.lookupValue.typerep.isDecorable
+          if lq.lookupValue.typeScheme.isDecorable
           then
             let inhs :: [String] = 
                   -- N.B. we're filtering out autocopies here
@@ -464,7 +464,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
             end
           else []
       | localReference(lq) ->
-          if lq.lookupValue.typerep.isDecorable
+          if lq.lookupValue.typeScheme.isDecorable
           then
             let inhs :: [String] = 
                   filter(
