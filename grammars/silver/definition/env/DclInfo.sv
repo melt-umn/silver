@@ -154,12 +154,12 @@ top::DclInfo ::= fn::String ty::Type
 
 -- TypeDclInfos
 abstract production ntDcl
-top::DclInfo ::= fn::String arity::Integer closed::Boolean
+top::DclInfo ::= fn::String arity::Integer closed::Boolean tracked::Boolean
 {
   top.fullName = fn;
 
   local tvs::[TyVar] = freshTyVars(arity);
-  top.typeScheme = polyType(tvs, nonterminalType(fn, map(varType, tvs)));
+  top.typeScheme = polyType(tvs, nonterminalType(fn, map(varType, tvs), tracked));
 }
 abstract production termDcl
 top::DclInfo ::= fn::String regex::Regex

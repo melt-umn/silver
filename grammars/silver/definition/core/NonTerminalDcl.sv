@@ -15,13 +15,13 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
                     id.location,
                     fName,
                     length(tl.types),
-                    -- nonterminalType(fName, tl.types, quals.tracked),
-                    quals.closed)];
+                    quals.closed,
+                    quals.tracked)];
   -- TODO: It's probably reasonable to skip listing
   -- tl.freeVariables, and the Type. Assuming we have a proper ntDcl.
   -- And we should consider recording the exact concrete names used... might be nice documentation to use
   
-  top.errors := quals.errors;
+  top.errors <- quals.errors;
 
   -- Here we ensure that the type list contains only type *variables*
   top.errors <- tl.errorsTyVars;

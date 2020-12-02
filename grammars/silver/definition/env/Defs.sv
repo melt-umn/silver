@@ -148,9 +148,9 @@ Def ::= sg::String  sl::Location  fn::String  ty::Type
   return valueDef(defaultEnvItem(globalValueDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function ntDef
-Def ::= sg::String  sl::Location  fn::String  arity::Integer  closed::Boolean
+Def ::= sg::String  sl::Location  fn::String  arity::Integer  closed::Boolean  tracked::Boolean
 {
-  return typeDef(defaultEnvItem(ntDcl(fn,arity,ty,closed,sourceGrammar=sg,sourceLocation=sl)));
+  return typeDef(defaultEnvItem(ntDcl(fn,arity,closed,tracked,sourceGrammar=sg,sourceLocation=sl)));
 }
 function termDef
 Def ::= sg::String  sl::Location  fn::String  regex::Regex

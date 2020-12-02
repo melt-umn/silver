@@ -4,7 +4,7 @@ import silver:util;
 
 attribute upSubst, downSubst, finalSubst occurs on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
 propagate upSubst, downSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr
-  excluding productionStmtAppend, forwardsTo, forwardInh, returnDef, synthesizedAttributeDef, inheritedAttributeDef, localValueDef;
+  excluding productionStmtAppend, attachNoteStmt, forwardsTo, forwardInh, returnDef, synthesizedAttributeDef, inheritedAttributeDef, localValueDef;
 
 {--
  - These need an initial state only due to aspects (I think? maybe not. Investigate someday.)

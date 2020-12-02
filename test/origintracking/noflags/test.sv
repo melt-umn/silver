@@ -92,13 +92,13 @@ equalityTest(
 	end,
 	identityHashCode(reflectedThree), Integer, oitests);
 
-global fourWithNote :: Nat = callWithListOfNotes([dbgNote("foo")], (\->three.plusOne));
+-- global fourWithNote :: Nat = callWithListOfNotes([dbgNote("foo")], (\->three.plusOne));
 
-equalityTest(
-	case getOriginInfo(fourWithNote) of
-	| just(originOriginInfo(_, _, [dbgNote("foo")], _)) -> "OK"
-	| _ -> "NO"
-	end,
-	"OK", String, oitests);
+-- equalityTest(
+-- 	case getOriginInfo(fourWithNote) of
+-- 	| just(originOriginInfo(_, _, [dbgNote("foo")], _)) -> "OK"
+-- 	| _ -> "NO"
+-- 	end,
+-- 	"OK", String, oitests);
 
--- notes not supported on stuff in global context (?)
+-- notes not supported on stuff in global context

@@ -31,7 +31,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
   -- Make sure we get the number of tyvars correct for the NT
   top.errors <-
     case nt.lookupType.dcls of
-    | ntDcl(_, arity, _) :: _ when arity != length(nttl.types) ->
+    | ntDcl(_, arity, _, _) :: _ when arity != length(nttl.types) ->
         [err(nt.location, nt.name ++ " expects " ++ toString(arity) ++
                           " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
     | _ -> []
@@ -122,7 +122,7 @@ top::AGDcl ::= msg::[Message] at::Decorated QName attl::BracketedOptTypeExprs nt
   -- Make sure we get the number of tyvars correct for the NT
   top.errors <-
     case nt.lookupType.dcls of
-    | ntDcl(_, arity, _) :: _ when arity != length(nttl.types) ->
+    | ntDcl(_, arity, _, _) :: _ when arity != length(nttl.types) ->
         [err(nt.location, nt.name ++ " expects " ++ toString(arity) ++
                           " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
     | _ -> []

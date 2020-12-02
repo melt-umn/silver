@@ -97,14 +97,10 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 
   thread downSubst, upSubst on top, e, errCheck1, top;
 
-<<<<<<< HEAD
   e.originRules = [];
   e.isRoot = true;
 
-  errCheck1 = check(e.typerep, val.lookupValue.typerep);
-=======
   errCheck1 = check(e.typerep, val.lookupValue.typeScheme.monoType);
->>>>>>> origin/develop
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Parser attribute " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
@@ -126,16 +122,10 @@ top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
-<<<<<<< HEAD
   lexeme.originRules = [];
   lexeme.isRoot = false;
 
-  lexeme.downSubst = top.downSubst;
-  errCheck1.downSubst = lexeme.upSubst;
-  top.upSubst = errCheck1.upSubst;
-=======
   thread downSubst, upSubst on top, lexeme, errCheck1, top;
->>>>>>> origin/develop
 
   errCheck1 = check(lexeme.typerep, stringType());
   top.errors <-
@@ -247,14 +237,10 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 
   thread downSubst, upSubst on top, e, errCheck1, top;
 
-<<<<<<< HEAD
   e.originRules = [];
   e.isRoot = true;
 
-  errCheck1 = check(e.typerep, val.lookupValue.typerep);
-=======
   errCheck1 = check(e.typerep, val.lookupValue.typeScheme.monoType);
->>>>>>> origin/develop
   top.errors <-
     if errCheck1.typeerror
     then [err(top.location, "Terminal attribute " ++ val.name ++ " has type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]

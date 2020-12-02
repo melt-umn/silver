@@ -881,7 +881,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
     then [err(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy, because it is not a synthesized attribute")]
     else case attrTypeScheme.typerep, attrTypeScheme.boundVars of
     | nonterminalType("core:Maybe", [varType(a1)], _), [a2] when tyVarEqual(a1, a2) && attrDcl.isSynthesized -> []
-    | nonterminalType("core:Maybe", [nonterminalType(nt, _, _)]), _ when attrDcl.isSynthesized ->
+    | nonterminalType("core:Maybe", [nonterminalType(nt, _, _)], _), _ when attrDcl.isSynthesized ->
       if null(getOccursDcl(attrDcl.fullName, nt, top.env))
       then [wrn(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy, because it doesn't occur on its own nonterminal type ${nt}")]
       else []
@@ -973,13 +973,8 @@ Boolean ::= env::Decorated Env attrName::String
     case dcls of
     | [] -> false
     | d :: _ ->
-<<<<<<< HEAD
-      case decorate d with { givenNonterminalType = error("Not actually needed"); }.typerep of -- Ugh environment needs refactoring
-      | nonterminalType("core:Maybe", _, _) -> false
-=======
       case decorate d with { givenNonterminalType = error("Not actually needed"); }.typeScheme.typerep of -- Ugh environment needs refactoring
-      | nonterminalType("core:Maybe", _) -> false
->>>>>>> origin/develop
+      | nonterminalType("core:Maybe", _, _) -> false
       | _ -> true
       end
     end;

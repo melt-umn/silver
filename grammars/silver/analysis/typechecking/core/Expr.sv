@@ -7,7 +7,7 @@ propagate upSubst, downSubst
    excluding undecoratedAccessHandler, forwardAccess, decoratedAccessHandler,
      and, or, not, gt, lt, gteq, lteq, eqeq, neq, ifThenElse, plus, minus, multiply, divide, modulus,
      decorateExprWith, exprInh, presentAppExpr,
-     newFunction, terminalConstructor;
+     newFunction, terminalConstructor, noteAttachment;
 
 aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
