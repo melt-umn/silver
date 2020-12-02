@@ -101,6 +101,7 @@ class NT(ComplexValue):
 						"core:parsedOriginInfo": "P",
 						"core:otherOriginInfo":"X"}[self.oi.name]
 					r+=";"+{
+						"core:setInGlobalOIT": "G",
 						"core:setAtConstructionOIT": "C",
 						"core:setAtAccessOIT": "A",
 						"core:setAtForwardingOIT": "F",
