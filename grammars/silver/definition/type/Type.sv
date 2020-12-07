@@ -3,18 +3,20 @@ grammar silver:definition:type;
 option silver:modification:ffi; -- foreign types
 
 synthesized attribute boundVars :: [TyVar];
+synthesized attribute contexts :: [Context];
 synthesized attribute typerep :: Type;
 synthesized attribute monoType :: Type; -- Raises on error when we encounter a polyType and didn't expect one
 
 {--
  - Represents a type, quantified over some type variables.
  -}
-nonterminal PolyType with boundVars, typerep, monoType;
+nonterminal PolyType with boundVars, contexts, typerep, monoType;
 
 abstract production monoType
 top::PolyType ::= ty::Type
 {
   top.boundVars = [];
+  top.contexts = [];
   top.typerep = ty;
   top.monoType = ty;
 }
@@ -23,28 +25,19 @@ abstract production polyType
 top::PolyType ::= bound::[TyVar] ty::Type
 {
   top.boundVars = freshTyVars(length(bound));
+  top.contexts = [];
   top.typerep = freshenTypeWith(ty, bound, top.boundVars);
   top.monoType = error("Expected a mono type but found a poly type!");
 }
 
 abstract production constraintType
-top::PolyType ::= bound::TyVar contexts::[Context] ty::Type
-{}
-{-
--- ClassDclInfos
-abstract production classDcl
-top::DclInfo ::= sg::String sl::Location fn::String bound::[TyVar] contexts::[Context] tv::TyVar
+top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
 {
-  
+  top.boundVars = freshTyVars(length(bound));
+  top.contexts = map(freshenContextWith(_, bound, top.boundVars), contexts);
+  top.typerep = freshenTypeWith(ty, bound, top.boundVars);
+  top.monoType = error("Expected a mono type but found a (constraint) poly type!");
 }
-
--- InstDclInfos
-abstract production instDcl
-top::DclInfo ::= sg::String sl::Location tcfn::String bound::[TyVar] contexts::[Context] ty::Type
-{
-  
-}
--}
 
 {--
  - Represents a constraint on a type, e.g. a type class instance
@@ -52,7 +45,7 @@ top::DclInfo ::= sg::String sl::Location tcfn::String bound::[TyVar] contexts::[
 nonterminal Context;
 
 abstract production instContext
-top::Context ::= cls::String tv::TyVar
+top::Context ::= cls::String t::Type
 {}
 
 {--

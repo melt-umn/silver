@@ -19,6 +19,12 @@ top::PolyType ::= tvs::[TyVar] ty::Type
   top.typeName = ty.typeName;
 }
 
+aspect production constraintType
+top::PolyType ::= tvs::[TyVar] contexts::[Context] ty::Type
+{
+  top.typeName = ty.typeName;
+}
+
 attribute typeName occurs on Type;
 
 aspect default production

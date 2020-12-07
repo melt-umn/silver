@@ -65,11 +65,11 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 }
 
 concrete production productionSignature
-top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS 
+top::ProductionSignature ::= cl::OptConstraintList lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {
-  top.unparse = lhs.unparse ++ " ::= " ++ rhs.unparse;
+  top.unparse = cl.unparse ++ lhs.unparse ++ " ::= " ++ rhs.unparse;
 
-  top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement, annotationsForNonterminal(lhs.outputElement.typerep, top.env));
+  top.namedSignature = namedSignature(top.signatureName, cl.contexts, rhs.inputElements, lhs.outputElement, annotationsForNonterminal(lhs.outputElement.typerep, top.env));
 }
 
 concrete production productionLHS

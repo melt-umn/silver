@@ -35,54 +35,22 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, allLexicalTyVars);
 }
 
+propagate lexicalTypeVariables on AspectProductionLHS, AspectFunctionLHS, AspectRHS excluding aspectRHSElemCons;
+
 aspect production aspectProductionSignature
 top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 {
-  top.lexicalTypeVariables = makeSet(lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
-}
-
-aspect production aspectProductionLHSTyped
-top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
-{
-  top.lexicalTypeVariables = t.lexicalTypeVariables;
-}
-aspect production aspectProductionLHSFull
-top::AspectProductionLHS ::= id::Name t::Type
-{
-  top.lexicalTypeVariables = []; -- The above overrides this
-}
-
-aspect production aspectRHSElemNil
-top::AspectRHS ::= 
-{
-  top.lexicalTypeVariables = [];
+  top.lexicalTypeVariables := makeSet(lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
 }
 
 aspect production aspectRHSElemCons
 top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 {
-  top.lexicalTypeVariables = makeSet(h.lexicalTypeVariables ++ t.lexicalTypeVariables);
-}
-
-aspect production aspectRHSElemTyped
-top::AspectRHSElem ::= id::Name '::' t::TypeExpr
-{
-  top.lexicalTypeVariables = t.lexicalTypeVariables;
-}
-aspect production aspectRHSElemFull
-top::AspectRHSElem ::= id::Name t::Type
-{
-  top.lexicalTypeVariables = []; -- The above overrides this
+  top.lexicalTypeVariables := makeSet(h.lexicalTypeVariables ++ t.lexicalTypeVariables);
 }
 
 aspect production aspectFunctionSignature
 top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS 
 {
-  top.lexicalTypeVariables = makeSet(lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
-}
-
-aspect production functionLHSType
-top::AspectFunctionLHS ::= t::TypeExpr
-{
-  top.lexicalTypeVariables = t.lexicalTypeVariables;
+  top.lexicalTypeVariables := makeSet(lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
 }

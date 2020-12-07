@@ -15,32 +15,16 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 }
 
 aspect production productionSignature
-top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS 
+top::ProductionSignature ::= cl::OptConstraintList lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {
-  top.lexicalTypeVariables = makeSet(lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
+  top.lexicalTypeVariables := makeSet(cl.lexicalTypeVariables ++ lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
 }
 
-aspect production productionLHS
-top::ProductionLHS ::= id::Name '::' t::TypeExpr
-{
-  top.lexicalTypeVariables = t.lexicalTypeVariables;
-}
-
-aspect production productionRHSNil
-top::ProductionRHS ::= 
-{
-  top.lexicalTypeVariables = [];
-}
+propagate lexicalTypeVariables on ProductionLHS, ProductionRHS excluding productionRHSCons;
 
 aspect production productionRHSCons
 top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 {
-  top.lexicalTypeVariables = makeSet(h.lexicalTypeVariables ++ t.lexicalTypeVariables);
-}
-
-aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
-{
-  top.lexicalTypeVariables = t.lexicalTypeVariables;
+  top.lexicalTypeVariables := makeSet(h.lexicalTypeVariables ++ t.lexicalTypeVariables);
 }
 

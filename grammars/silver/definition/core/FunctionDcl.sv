@@ -43,14 +43,14 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 }
 
 concrete production functionSignature
-top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS 
+top::FunctionSignature ::= cl::OptConstraintList lhs::FunctionLHS '::=' rhs::ProductionRHS 
 {
-  top.unparse = lhs.unparse ++ " ::= " ++ rhs.unparse;
+  top.unparse = cl.unparse ++ lhs.unparse ++ " ::= " ++ rhs.unparse;
 
   propagate defs;
 
   -- For the moment, functions do not have named parameters (hence, [])
-  top.namedSignature = namedSignature(top.signatureName, rhs.inputElements, lhs.outputElement, []);
+  top.namedSignature = namedSignature(top.signatureName, cl.contexts, rhs.inputElements, lhs.outputElement, []);
 }
 
 concrete production functionLHS

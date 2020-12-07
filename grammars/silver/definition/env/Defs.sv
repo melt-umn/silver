@@ -2,12 +2,15 @@ grammar silver:definition:env;
 
 import silver:definition:regex; -- soley for Terminals. TODO : perhaps this shouldn't be here!
 
-nonterminal Defs with typeList, valueList, attrList, prodOccursList, prodDclList;
+nonterminal Defs with typeList, valueList, attrList, instList, prodOccursList, prodDclList;
 
 -- The standard namespaces
 synthesized attribute typeList :: [EnvItem];
 synthesized attribute valueList :: [EnvItem];
 synthesized attribute attrList :: [EnvItem];
+
+-- Type class instances
+synthesized attribute instList :: [DclInfo];
 
 -- Production attributes.
 synthesized attribute prodOccursList :: [DclInfo];
@@ -22,6 +25,7 @@ top::Defs ::=
   top.typeList = [];
   top.valueList = [];
   top.attrList = [];
+  top.instList = [];
   
   top.prodOccursList = [];
   
@@ -34,6 +38,7 @@ top::Defs ::= e1::Def e2::Defs
   top.typeList = e1.typeList ++ e2.typeList;
   top.valueList = e1.valueList ++ e2.valueList;
   top.attrList = e1.attrList ++ e2.attrList;
+  top.instList = e1.instList ++ e2.instList;
   
   top.prodOccursList = e1.prodOccursList ++ e2.prodOccursList;
   
@@ -50,7 +55,7 @@ synthesized attribute filterDef::Boolean;
 inherited attribute mapFn::(EnvItem ::= EnvItem);
 synthesized attribute mapDef::Def;
 
-closed nonterminal Def with typeList, valueList, attrList, prodOccursList, prodDclList, dcl, filterFn, filterDef, mapFn, mapDef;
+closed nonterminal Def with typeList, valueList, attrList, instList, prodOccursList, prodDclList, dcl, filterFn, filterDef, mapFn, mapDef;
 
 aspect default production
 top::Def ::=
@@ -58,6 +63,7 @@ top::Def ::=
   top.typeList = [];
   top.valueList = [];
   top.attrList = [];
+  top.instList = [];
   
   top.prodOccursList = [];
   
@@ -114,6 +120,12 @@ top::Def ::= d::DclInfo
 {
   top.dcl = d;
   top.prodOccursList = [d];
+}
+abstract production tcInstDef
+top::Def ::= d::DclInfo
+{
+  top.dcl = d;
+  top.instList = [d];
 }
 
 
@@ -209,7 +221,16 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {
   return attrDef(defaultEnvItem(annoDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
-
+function classDef
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  supers::[Context]  tv::TyVar
+{
+  return typeDef(defaultEnvItem(classDcl(fn,bound,supers,tv,sourceGrammar=sg,sourceLocation=sl)));
+}
+function instDef
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  supers::[Context]  ty::Type
+{
+  return tcInstDef(instDcl(fn,bound,supers,ty,sourceGrammar=sg,sourceLocation=sl));
+}
 
 
 -- I'm leaving "Defsironment" here just for the lols

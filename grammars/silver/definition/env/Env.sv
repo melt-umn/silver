@@ -13,12 +13,13 @@ grammar silver:definition:env;
 
 -- getProdAttrs [DclInfo] ::= prod::String e::Decorated Env
 
-nonterminal Env with typeTree, valueTree, attrTree, prodOccursTree, occursTree, prodsForNtTree;
+nonterminal Env with typeTree, valueTree, attrTree, instTree, prodOccursTree, occursTree, prodsForNtTree;
 
 synthesized attribute typeTree      :: [EnvScope<DclInfo>]; -- Expr is type tau
 synthesized attribute valueTree     :: [EnvScope<DclInfo>]; -- x has type tau
 synthesized attribute attrTree      :: [EnvScope<DclInfo>]; -- attr a has type tau
 
+synthesized attribute instTree       :: EnvScope<DclInfo>; -- class on type
 synthesized attribute prodOccursTree :: EnvScope<DclInfo>; -- value on prod
 synthesized attribute occursTree     :: EnvScope<DclInfo>; -- attr on NT
 
@@ -40,6 +41,7 @@ top::Env ::=
   top.valueTree = [emptyEnvScope()];
   top.attrTree = [emptyEnvScope()];
   
+  top.instTree = emptyEnvScope();
   top.prodOccursTree = emptyEnvScope();
   top.occursTree = emptyEnvScope();
   
@@ -75,6 +77,7 @@ top::Env ::= e1::Decorated Env  e2::Decorated Env
   top.valueTree = e1.valueTree ++ e2.valueTree;
   top.attrTree = e1.attrTree ++ e2.attrTree;
 
+  top.instTree = appendEnvScope(e1.instTree, e2.instTree);
   top.prodOccursTree = appendEnvScope(e1.prodOccursTree, e2.prodOccursTree);
   top.occursTree = appendEnvScope(e1.occursTree, e2.occursTree);
 
@@ -96,6 +99,7 @@ top::Env ::= d::Defs  e::Decorated Env
   top.valueTree = oneEnvScope(buildTree(d.valueList)) :: e.valueTree;
   top.attrTree = oneEnvScope(buildTree(d.attrList)) :: e.attrTree;
 
+  top.instTree = consEnvScope(buildTree(mapFullnameDcls(d.instList)), e.instTree);
   top.prodOccursTree = consEnvScope(buildTree(mapFullnameDcls(d.prodOccursList)), e.prodOccursTree);
   top.occursTree = e.occursTree;
 
@@ -118,6 +122,7 @@ top::Env ::= d::[DclInfo]  e::Decorated Env
   top.valueTree = e.valueTree;
   top.attrTree = e.attrTree;
   
+  top.instTree = e.instTree;
   top.prodOccursTree = e.prodOccursTree;
   top.occursTree = consEnvScope(buildTree(mapFullnameDcls(d)), e.occursTree);
   

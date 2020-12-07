@@ -7,7 +7,7 @@ grammar silver:definition:env;
  - TODO: we might want to remove the full name of the production from this, and make it just `Signature`?
  - It's not clear if this information really belongs here, or not.
  -}
-nonterminal NamedSignature with fullName, inputElements, outputElement, namedInputElements, typeScheme, freeVariables, inputNames, inputTypes, typerep;
+nonterminal NamedSignature with fullName, contexts, inputElements, outputElement, namedInputElements, typeScheme, freeVariables, inputNames, inputTypes, typerep;
 
 synthesized attribute inputElements :: [NamedSignatureElement];
 synthesized attribute outputElement :: NamedSignatureElement;
@@ -23,16 +23,17 @@ synthesized attribute inputNames :: [String];
  - @param np  Named parameters (or annotations)
  -}
 abstract production namedSignature
-top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatureElement np::[NamedSignatureElement]
+top::NamedSignature ::= fn::String ctxs::[Context] ie::[NamedSignatureElement] oe::NamedSignatureElement np::[NamedSignatureElement]
 {
   top.fullName = fn;
+  top.contexts = ctxs;
   top.inputElements = ie;
   top.outputElement = oe;
   top.namedInputElements = np;
   top.inputNames = map((.elementName), ie);
   top.inputTypes = map((.typerep), ie); -- Does anything actually use this? TODO: eliminate?
   local typerep::Type = functionType(oe.typerep, top.inputTypes, map((.toNamedArgType), np));
-  top.typeScheme = polyType(typerep.freeVariables, typerep);
+  top.typeScheme = (if null(ctxs) then polyType else constraintType(_, ctxs, _))(typerep.freeVariables, typerep);
   top.freeVariables = typerep.freeVariables;
   top.typerep = typerep; -- TODO: Only used by unifyNamedSignature.  Would be nice to eliminate, somehow.
 }
@@ -44,7 +45,7 @@ top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatur
 abstract production bogusNamedSignature
 top::NamedSignature ::= 
 {
-  forwards to namedSignature("_NULL_", [], bogusNamedSignatureElement(), []);
+  forwards to namedSignature("_NULL_", [], [], bogusNamedSignatureElement(), []);
 }
 
 {--
@@ -105,8 +106,8 @@ function mapNamedSignature
 NamedSignature ::= f::(Type ::= Type)  ns::NamedSignature
 {
   return case ns of
-  | namedSignature(fn, ie, oe, np) ->
-      namedSignature(fn, map(mapNamedSignatureElement(f, _), ie), mapNamedSignatureElement(f, oe), map(mapNamedSignatureElement(f, _), np))
+  | namedSignature(fn, ctxs, ie, oe, np) ->
+      namedSignature(fn, ctxs, map(mapNamedSignatureElement(f, _), ie), mapNamedSignatureElement(f, oe), map(mapNamedSignatureElement(f, _), np))
   end;
 }
 -- Ditto, for elements

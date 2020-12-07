@@ -93,6 +93,7 @@ terminal UnderScore_t  '_'  ;
 
 terminal CCEQ_t        '::=' lexer classes {SPECOP};
 terminal Equal_t       '='   lexer classes {SPECOP};
+terminal CtxArrow_t    '=>'  lexer classes {SPECOP};
 
 -- Unused infix operators: ~ ` @ # % ^ & | \
 -- $ is used by convenience.

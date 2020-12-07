@@ -10,6 +10,8 @@ synthesized attribute fullName :: String;
 
 -- types
 synthesized attribute typeScheme :: PolyType;
+synthesized attribute isType :: Boolean;
+synthesized attribute isClass :: Boolean;
 
 -- values
 synthesized attribute namedSignature :: NamedSignature;
@@ -44,7 +46,7 @@ inherited attribute givenSubstitution :: Substitution;
  - hmm, unparsing could probably be fixed...
  -}
 closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
-                         typeScheme, givenNonterminalType, -- types (gNT for occurs)
+                         typeScheme, givenNonterminalType, isType, isClass, -- types (gNT for occurs)
                          namedSignature, hasForward, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
                          isInherited, isSynthesized, -- attrs
@@ -76,6 +78,10 @@ top::DclInfo ::=
   top.attrOccurring = error("Internal compiler error: must be defined for all occurs declarations");
   top.prodDefs = error("Internal compiler error: must be defined for all production attribute declarations");
   top.substitutedDclInfo = error("Internal compiler error: must be defined for all value declarations that are production attributes");
+  
+  -- types
+  top.isType = false;
+  top.isClass = false;
   
   -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();
@@ -160,6 +166,7 @@ top::DclInfo ::= fn::String arity::Integer closed::Boolean
 
   local tvs::[TyVar] = freshTyVars(arity);
   top.typeScheme = polyType(tvs, nonterminalType(fn, map(varType, tvs)));
+  top.isType = true;
 }
 abstract production termDcl
 top::DclInfo ::= fn::String regex::Regex
@@ -167,6 +174,7 @@ top::DclInfo ::= fn::String regex::Regex
   top.fullName = fn;
 
   top.typeScheme = monoType(terminalType(fn));
+  top.isType = true;
 }
 abstract production lexTyVarDcl
 top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar
@@ -176,6 +184,16 @@ top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar
   -- Lexical type vars in aspects aren't skolemized, since they unify with the real (skolem) types.
   -- See comment in silver:definition:type:syntax:AspectDcl.sv
   top.typeScheme = monoType(if isAspect then varType(tv) else skolemType(tv));
+  top.isType = true;
+}
+abstract production classDcl
+top::DclInfo ::= fn::String bound::[TyVar] supers::[Context] tv::TyVar
+{
+  top.fullName = fn;
+  
+  -- These are in the type namespace but shouldn't actually be used as such
+  top.typeScheme = monoType(errorType());
+  top.isClass = true;
 }
 
 -- AttributeDclInfos
@@ -263,6 +281,16 @@ top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
   -- UGH - bit of a short hand here...
   top.isAnnotation = true;
 }
+
+-- InstDclInfos
+abstract production instDcl
+top::DclInfo ::= fntc::String bound::[TyVar] contexts::[Context] ty::Type
+{
+  top.fullName = fntc;
+  
+  top.typeScheme = constraintType(bound, contexts, ty);
+}
+
 
 -- TODO: this should probably go elsewhere?
 function determineAttributeType
