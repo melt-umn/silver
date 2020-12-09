@@ -43,7 +43,7 @@ function makeOriginContextRef
 String ::= top::Decorated Expr --need .frame anno
 {
   local rulesTrans :: [String] = (if top.config.tracingOrigins then [locRule] else []) ++ map((.translation), top.originRules);
-  local locRule :: String = s"new core.PoriginDbgNote(new common.StringCatter(\"${substitute("\"", "\\\"", hackUnparse(top.location))}\"))";
+  local locRule :: String = s"new core.PtraceNote(new common.StringCatter(\"${substitute("\"", "\\\"", top.location.unparse)}\"))";
 
   return if top.config.noOrigins then "null" 
          else if length(rulesTrans)==0 
@@ -63,6 +63,21 @@ String ::= top::Decorated Expr  inInteresting::Boolean  followWith::String --nee
   return if typeWantsTracking(ty, top.config, top.env)
          then makeOriginContextRef(top)++s".makeNewConstructionOrigin(${if interesting then "true" else "false"})"++followWith
          else "";
+}
+
+ -- Unfortunately, even with --no-origins there are cases where we depend on the signature of a constructor having a spot for origins
+ --  even if it will discard them. This is just in reflect() at the moment. If origins are disabled it passes null.
+function getTypesWithRuntimeContractualConstructor
+[String] ::=
+{
+  production attribute names::[String] with ++;
+  names := [
+    "core:reflect:AST",
+    "core:reflect:ASTs",
+    "core:reflect:NamedAST",
+    "core:reflect:NamedASTs"
+  ];
+  return names;
 }
 
 function typeWantsTracking

@@ -84,7 +84,7 @@ s"""(new common.NodeFactory<core.NEither>() {
 ${makeTyVarDecls(5, resultType.freeVariables)}
 					common.TypeRep resultType = ${resultType.transTypeRep};
 					
-					return common.Reflection.reifyChecked(originCtx.rulesAsSilverList(), resultType, (core.reflect.NAST)common.Util.demand(args[0]));
+					return common.Reflection.reifyChecked((originCtx!=null)?originCtx.rulesAsSilverList():null, resultType, (core.reflect.NAST)common.Util.demand(args[0]));
 				}
 				
 				@Override

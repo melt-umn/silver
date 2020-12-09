@@ -166,6 +166,12 @@ top::OriginNote ::=
   top.notepp = "<" ++ hackUnparse(top) ++ ">";
 }
 
+abstract production traceNote
+top::OriginNote ::= loc::String
+{
+  
+}
+
 abstract production originDbgNote
 top::OriginNote ::= string::String
 {

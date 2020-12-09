@@ -8,7 +8,7 @@ AST ::= x::a
 {
   return error("Foreign function");
 } foreign {
-  "java" : return "(common.Reflection.reflect(originCtx.rulesAsSilverList(), %x%))";
+  "java" : return "(common.Reflection.reflect((originCtx!=null)?originCtx.rulesAsSilverList():null, %x%))";
 }
 
 function reflectTypeName

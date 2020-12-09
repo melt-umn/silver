@@ -45,11 +45,19 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local commaIfAnnos :: String = if length(namedSig.namedInputElements)!=0 then "," else "";
   local commaIfKidsOrAnnos :: String = if length(namedSig.inputElements)!=0 || length(namedSig.namedInputElements)!=0 then "," else "";
 
+  local maybeRuntimeContractualConstructor :: String = if containsBy((\a::String b::String -> a==b), ntName, getTypesWithRuntimeContractualConstructor()) then
+    s"""
+public static ${className} constructTakingOrigin(final NOriginInfo origin ${commaIfKidsOrAnnos} ${namedSig.javaSignature}) {
+        return new ${className}(${if wantsTracking then "origin"++commaIfKids else ""} ${implode(", ", map((\x::NamedSignatureElement -> "c_"++makeIdName(x.elementName)), namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map((\x::NamedSignatureElement -> "a_"++makeIdName(x.elementName)), namedSig.namedInputElements))});
+    }
+    """ else "";
+
   top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
 
 import core.*;
 
+// ${ntName}
 // ${ns.unparse}
 public final class ${className} extends ${fnnt} {
 
@@ -76,6 +84,8 @@ ${implode("", map((.childStaticElem), namedSig.inputElements))}
         super(${if wantsTracking then "origin"++commaIfAnnos else ""} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
     }
+
+${maybeRuntimeContractualConstructor}
 
 ${implode("", map((.childDeclElem), namedSig.inputElements))}
 

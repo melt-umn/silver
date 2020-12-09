@@ -69,44 +69,44 @@ public final class Reflection {
 	 * @return The reflected AST.
 	 */
 	public static NAST reflect(final ConsCell rules, Object o) {
-		core.NOriginInfo origin = new core.PoriginOriginInfo(OriginsUtil.SET_FROM_REFLECTION_OIT, o, rules, true);
+		core.NOriginInfo origin = (rules!=null)?new core.PoriginOriginInfo(OriginsUtil.SET_FROM_REFLECTION_OIT, o, rules, true):null;
 		if(o instanceof Node) {
 			Node n = (Node)o;
-			NASTs children = new PnilAST(origin);
+			NASTs children = PnilAST.constructTakingOrigin(origin);
 			for (int i = n.getNumberOfChildren() - 1; i >= 0; i--) {
 				Object value = reflect(rules, n.getChild(i));
-				children = new PconsAST(origin, value, children);
+				children = PconsAST.constructTakingOrigin(origin, value, children);
 			}
 			String[] annotationNames = n.getAnnoNames();
-			NNamedASTs annotations = new PnilNamedAST(origin);
+			NNamedASTs annotations = PnilNamedAST.constructTakingOrigin(origin);
 			for (int i = annotationNames.length - 1; i >= 0; i--) {
 				String name = annotationNames[i];
 				Object value = reflect(rules, n.getAnno(name));
-				annotations = new PconsNamedAST(origin, new PnamedAST(origin, new StringCatter(name), value), annotations);
+				annotations = PconsNamedAST.constructTakingOrigin(origin, PnamedAST.constructTakingOrigin(origin, new StringCatter(name), value), annotations);
 			}
-			return new PnonterminalAST(origin, new StringCatter(n.getName()), children, annotations);
+			return PnonterminalAST.constructTakingOrigin(origin, new StringCatter(n.getName()), children, annotations);
 		} else if(o instanceof Terminal) {
 			Terminal t = (Terminal)o;
-			return new PterminalAST(origin, new StringCatter(t.getName()), t.lexeme, t.location);
+			return PterminalAST.constructTakingOrigin(origin, new StringCatter(t.getName()), t.lexeme, t.location);
 		} else if(o instanceof ConsCell) {
-			return new PlistAST(origin, reflectList(rules, origin, (ConsCell)o));
+			return PlistAST.constructTakingOrigin(origin, reflectList(rules, origin, (ConsCell)o));
 		} else if(o instanceof StringCatter) {
-			return new PstringAST(origin, (StringCatter)o);
+			return PstringAST.constructTakingOrigin(origin, (StringCatter)o);
 		} else if(o instanceof Integer) {
-			return new PintegerAST(origin, (Integer)o);
+			return PintegerAST.constructTakingOrigin(origin, (Integer)o);
 		} else if(o instanceof Float) {
-			return new PfloatAST(origin, (Float)o);
+			return PfloatAST.constructTakingOrigin(origin, (Float)o);
 		} else if(o instanceof Boolean) {
-			return new PbooleanAST(origin, (Boolean)o);
+			return PbooleanAST.constructTakingOrigin(origin, (Boolean)o);
 		} else {
-			return new PanyAST(origin, o);
+			return PanyAST.constructTakingOrigin(origin, o);
 		}
 	}
 	private static NASTs reflectList(ConsCell rules, core.NOriginInfo origin, final ConsCell l) {
 		if (!l.nil()) {
-			return new PconsAST(origin, reflect(rules, l.head()), reflectList(rules, origin, l.tail()));
+			return PconsAST.constructTakingOrigin(origin, reflect(rules, l.head()), reflectList(rules, origin, l.tail()));
 		} else {
-			return new PnilAST(origin);
+			return PnilAST.constructTakingOrigin(origin);
 		}
 	}
 	
