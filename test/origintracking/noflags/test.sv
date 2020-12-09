@@ -2,8 +2,6 @@ imports common;
 
 mainTestSuite oitests;
 
-equalityTest(s(s(s(z()))).plusOne.val, 4, Integer, oitests);
-
 global three :: Nat = s(s(s(z())));
 global four :: Nat = three.plusOne;
 global five :: Nat = four.plusOne;
@@ -92,13 +90,16 @@ equalityTest(
 	end,
 	identityHashCode(reflectedThree), Integer, oitests);
 
--- global fourWithNote :: Nat = callWithListOfNotes([dbgNote("foo")], (\->three.plusOne));
+-- -- --
 
--- equalityTest(
--- 	case getOriginInfo(fourWithNote) of
--- 	| just(originOriginInfo(_, _, [dbgNote("foo")], _)) -> "OK"
--- 	| _ -> "NO"
--- 	end,
--- 	"OK", String, oitests);
+equalityTest(
+	getParsedOriginLocationOrFallback(cstParse("  foo  ", "<inline>").parseTree).unparse,
+	"<inline>:1:2", String, oitests); --parsed location
 
--- notes not supported on stuff in global context
+equalityTest(
+	getParsedOriginLocationOrFallback(cstParse("  foo  ", "<inline>").parseTree.transform).unparse,
+	"<inline>:1:2", String, oitests); --transitive parsed location
+
+equalityTest(
+	getParsedOriginLocationOrFallback(cstParse("  foo  ", "<inline>").parseTree.transform.transform).unparse,
+	"bar", String, oitests); --logicalLocationNote
