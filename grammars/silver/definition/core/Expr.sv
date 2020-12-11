@@ -135,6 +135,14 @@ top::Expr ::= q::Decorated QName
   top.typerep = q.lookupValue.typeScheme.typerep;
 }
 
+abstract production classMemberReference
+top::Expr ::= q::Decorated QName
+{
+  top.unparse = q.unparse;
+
+  top.typerep = q.lookupValue.typeScheme.typerep;
+}
+
 concrete production concreteForwardExpr
 top::Expr ::= q::'forward'
 {

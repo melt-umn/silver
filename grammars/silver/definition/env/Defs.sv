@@ -159,6 +159,11 @@ Def ::= sg::String  sl::Location  fn::String  ty::Type
 {
   return valueDef(defaultEnvItem(globalValueDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
+function classMemberDef
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar] context::Context ty::Type
+{
+  return valueDef(defaultEnvItem(classMemberDcl(fn,bound,context,ty,sourceGrammar=sg,sourceLocation=sl)));
+}
 function ntDef
 Def ::= sg::String  sl::Location  fn::String  arity::Integer
 {
@@ -222,9 +227,9 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
   return attrDef(defaultEnvItem(annoDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function classDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  supers::[Context]  tv::TyVar
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  supers::[Context]  tv::TyVar  members::[String]
 {
-  return typeDef(defaultEnvItem(clsDcl(fn,bound,supers,tv,sourceGrammar=sg,sourceLocation=sl)));
+  return typeDef(defaultEnvItem(clsDcl(fn,bound,supers,tv,members,sourceGrammar=sg,sourceLocation=sl)));
 }
 function instDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  contexts::[Context]  ty::Type

@@ -12,6 +12,7 @@ synthesized attribute fullName :: String;
 synthesized attribute typeScheme :: PolyType;
 synthesized attribute isType :: Boolean;
 synthesized attribute isClass :: Boolean;
+synthesized attribute classMembers :: [String];
 
 -- values
 synthesized attribute namedSignature :: NamedSignature;
@@ -46,7 +47,7 @@ inherited attribute givenSubstitution :: Substitution;
  - hmm, unparsing could probably be fixed...
  -}
 closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
-                         typeScheme, givenNonterminalType, isType, isClass, -- types (gNT for occurs)
+                         typeScheme, givenNonterminalType, isType, isClass, classMembers, -- types (gNT for occurs)
                          namedSignature, hasForward, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
                          isInherited, isSynthesized, -- attrs
@@ -82,6 +83,7 @@ top::DclInfo ::=
   -- types
   top.isType = false;
   top.isClass = false;
+  top.classMembers = [];
   
   -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();
@@ -157,6 +159,13 @@ top::DclInfo ::= fn::String ty::Type
 
   top.typeScheme = polyType(ty.freeVariables, ty);
 }
+abstract production classMemberDcl
+top::DclInfo ::= fn::String bound::[TyVar] context::Context ty::Type
+{
+  top.fullName = fn;
+  
+  top.typeScheme = constraintType(bound, [context], ty);
+}
 
 -- TypeDclInfos
 abstract production ntDcl
@@ -187,7 +196,7 @@ top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar
   top.isType = true;
 }
 abstract production clsDcl
-top::DclInfo ::= fn::String bound::[TyVar] supers::[Context] tv::TyVar
+top::DclInfo ::= fn::String bound::[TyVar] supers::[Context] tv::TyVar members::[String]
 {
   top.fullName = fn;
   

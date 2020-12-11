@@ -57,6 +57,7 @@ terminal To_kwd          'to'           lexer classes {KEYWORD,RESERVED};
 terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED};
 terminal Global_kwd      'global'       lexer classes {KEYWORD,RESERVED};
 terminal Class_kwd       'class'        lexer classes {KEYWORD};
+terminal Instnace_kwd    'instance'     lexer classes {KEYWORD};
 
 terminal Length_kwd    'length'    lexer classes {BUILTIN,RESERVED};
 terminal ToBoolean_kwd 'toBoolean' lexer classes {BUILTIN,RESERVED};
