@@ -186,13 +186,13 @@ top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar
   top.typeScheme = monoType(if isAspect then varType(tv) else skolemType(tv));
   top.isType = true;
 }
-abstract production classDcl
+abstract production clsDcl
 top::DclInfo ::= fn::String bound::[TyVar] supers::[Context] tv::TyVar
 {
   top.fullName = fn;
   
   -- These are in the type namespace but shouldn't actually be used as such
-  top.typeScheme = monoType(errorType());
+  top.typeScheme = monoType(errorType()); -- TODO: distinguish class vs. type by giving these a type?
   top.isClass = true;
 }
 

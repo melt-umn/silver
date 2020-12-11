@@ -224,12 +224,12 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 function classDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  supers::[Context]  tv::TyVar
 {
-  return typeDef(defaultEnvItem(classDcl(fn,bound,supers,tv,sourceGrammar=sg,sourceLocation=sl)));
+  return typeDef(defaultEnvItem(clsDcl(fn,bound,supers,tv,sourceGrammar=sg,sourceLocation=sl)));
 }
 function instDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  supers::[Context]  ty::Type
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  contexts::[Context]  ty::Type
 {
-  return tcInstDef(instDcl(fn,bound,supers,ty,sourceGrammar=sg,sourceLocation=sl));
+  return tcInstDef(instDcl(fn,bound,contexts,ty,sourceGrammar=sg,sourceLocation=sl));
 }
 
 

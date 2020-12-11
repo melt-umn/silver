@@ -48,4 +48,6 @@ top::Constraint ::= c::QName t::TypeExpr
     if c.lookupType.dcl.isClass then []
     else [err(c.location, c.name ++ " is not a type class.")];
   top.errors <- t.errorsTyVars;
+  
+  top.defs <- [instDef(top.grammarName, top.location, c.lookupType.fullName, [], [], t.typerep)];
 }
