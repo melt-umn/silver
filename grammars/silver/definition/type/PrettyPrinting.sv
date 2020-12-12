@@ -2,8 +2,8 @@ grammar silver:definition:type;
 
 import silver:util;
 
-synthesized attribute typepp :: String occurs on Type;
-autocopy attribute boundVariables :: [TyVar] occurs on Type;
+synthesized attribute typepp :: String occurs on PolyType, Context, Type;
+autocopy attribute boundVariables :: [TyVar] occurs on Context, Type;
 
 function prettyType
 String ::= te::Type
@@ -18,7 +18,48 @@ String ::= te::Type tvs::[TyVar]
   te.boundVariables = tvs;
   return te.typepp;
 }
+
+function prettyContext
+String ::= c::Context
+{
+  c.boundVariables = c.freeVariables;
+  return c.typepp;
+}
+
+function prettyContextWith
+String ::= c::Context tvs::[TyVar]
+{
+  c.boundVariables = tvs;
+  return c.typepp;
+}
 --------------------------------------------------------------------------------
+
+aspect production monoType
+top::PolyType ::= ty::Type
+{
+  top.typepp = ty.typepp;
+}
+
+aspect production polyType
+top::PolyType ::= tvs::[TyVar] ty::Type
+{
+  top.typepp = ty.typepp;
+  ty.boundVariables = tvs;
+}
+
+aspect production constraintType
+top::PolyType ::= tvs::[TyVar] contexts::[Context] ty::Type
+{
+  top.typepp = implode(", ", map(prettyContextWith(_, tvs), contexts)) ++ " => " ++ ty.typepp;
+  ty.boundVariables = tvs;
+}
+
+aspect production instContext
+top::Context ::= cls::String t::Type
+{
+  top.typepp = cls ++ " " ++ t.typepp;
+}
+
 aspect production varType
 top::Type ::= tv::TyVar
 {

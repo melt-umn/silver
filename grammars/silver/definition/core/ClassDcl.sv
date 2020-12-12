@@ -12,9 +12,9 @@ top::AGDcl ::= 'class' cl::OptConstraintList id::Name var::TypeExpr '{' body::Cl
     | _ -> freshTyVar()
     end;
   production supers::[Context] = cl.contexts;
-  production boundVars::[TyVar] = setUnionTyVarsAll([tv] :: map((.freeVariables), supers));
+  production boundVars::[TyVar] = [tv];
   
-  top.defs := classDef(top.grammarName, id.location, fName, boundVars, supers, tv, body.classMembers) :: body.defs;
+  top.defs := classDef(top.grammarName, id.location, fName, supers, tv, body.classMembers) :: body.defs;
 
   -- Here we ensure that the type is just a type *variable*
   top.errors <- var.errorsTyVars;
@@ -34,7 +34,9 @@ top::AGDcl ::= 'class' cl::OptConstraintList id::Name var::TypeExpr '{' body::Cl
   headDefs := cl.defs;
   headDefs <- [instDef(top.grammarName, id.location, fName, boundVars, [], var.typerep)];
 
-  body.env = newScopeEnv(headDefs, top.env);
+  cl.env = newScopeEnv(headDefs, top.env);
+  
+  body.env = cl.env;
   body.classContext = instContext(fName, var.typerep);
 }
 

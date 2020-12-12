@@ -38,16 +38,22 @@ top::ConstraintList ::=
   top.contexts = [];
 }
 
-concrete production instanceConstraint
+concrete production classConstraint
 top::Constraint ::= c::QName t::TypeExpr
 {
-  top.contexts = [instContext(c.lookupType.fullName, t.typerep)];
+  top.contexts = [instContext(dcl.fullName, t.typerep)];
+  
+  production dcl::DclInfo = c.lookupType.dcl;
+  dcl.givenInstanceType = t.typerep;
   
   top.errors <- c.lookupType.errors;
   top.errors <-
-    if c.lookupType.dcl.isClass then []
+    if dcl.isClass then []
     else [err(c.location, c.name ++ " is not a type class.")];
   top.errors <- t.errorsTyVars;
   
-  top.defs <- [instDef(top.grammarName, top.location, c.lookupType.fullName, [], [], t.typerep)];
+  top.defs <- [instConstraintDef(top.grammarName, top.location, dcl.fullName, t.typerep)];
+  top.defs <- map(
+    \ c::Context -> c.contextSuperDef(top.grammarName, top.location, dcl.fullName),
+    dcl.superContexts);
 }

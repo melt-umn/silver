@@ -6,21 +6,27 @@ top::AGDcl ::= 'instance' cl::OptConstraintList id::QName ty::TypeExpr '{' body:
   top.unparse = s"instance ${cl.unparse}${id.unparse} ${ty.unparse}\n{\n${body.unparse}\n}"; 
 
   production fName :: String = id.lookupType.fullName;
-  production supers::[Context] = cl.contexts;
-  production boundVars::[TyVar] = setUnionTyVarsAll(ty.freeVariables :: map((.freeVariables), supers));
+  production boundVars::[TyVar] = ty.freeVariables;
+  production dcl::DclInfo = id.lookupType.dcl;
+  dcl.givenInstanceType = ty.typerep;
   
   top.defs := [instDef(top.grammarName, id.location, fName, boundVars, cl.contexts, ty.typerep)];
   
   top.errors <- id.lookupType.errors;
   top.errors <-
-    if id.lookupType.dcl.isClass then []
+    if dcl.isClass then []
     else [err(id.location, id.name ++ " is not a type class.")];
+  top.errors <- flatMap(contextErrors(top.env, id.location, "instance superclasses", _), dcl.superContexts);
+  -- TODO: Check that ty is well-formed
+  -- TODO: Check for duplicate instances
 
   production attribute headDefs :: [Def] with ++;
   headDefs := cl.defs;
   headDefs <- [instDef(top.grammarName, id.location, fName, boundVars, [], ty.typerep)];
   
-  body.env = newScopeEnv(headDefs, top.env);
+  cl.env = newScopeEnv(headDefs, top.env);
+  
+  body.env = cl.env;
   body.className = id.lookupType.fullName;
   body.expectedClassMembers = id.lookupType.dcl.classMembers;
 }
@@ -65,5 +71,3 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
   
   top.fullName = id.lookupValue.fullName;
 }
-
--- TODO: Defaults

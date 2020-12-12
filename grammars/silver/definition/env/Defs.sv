@@ -227,14 +227,24 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
   return attrDef(defaultEnvItem(annoDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function classDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  supers::[Context]  tv::TyVar  members::[String]
+Def ::= sg::String  sl::Location  fn::String  supers::[Context]  tv::TyVar  members::[String]
 {
-  return typeDef(defaultEnvItem(clsDcl(fn,bound,supers,tv,members,sourceGrammar=sg,sourceLocation=sl)));
+  return typeDef(defaultEnvItem(clsDcl(fn,supers,tv,members,sourceGrammar=sg,sourceLocation=sl)));
 }
 function instDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  contexts::[Context]  ty::Type
 {
   return tcInstDef(instDcl(fn,bound,contexts,ty,sourceGrammar=sg,sourceLocation=sl));
+}
+function instConstraintDef
+Def ::= sg::String  sl::Location  fn::String  ty::Type
+{
+  return tcInstDef(instConstraintDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl));
+}
+function instSuperConstraintDef
+Def ::= sg::String  sl::Location  superfn::String  basefn::String ty::Type
+{
+  return tcInstDef(instSuperConstraintDcl(superfn,basefn,ty,sourceGrammar=sg,sourceLocation=sl));
 }
 
 

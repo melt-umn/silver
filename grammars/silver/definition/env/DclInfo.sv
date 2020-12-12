@@ -14,6 +14,9 @@ synthesized attribute isType :: Boolean;
 synthesized attribute isClass :: Boolean;
 synthesized attribute classMembers :: [String];
 
+inherited attribute givenInstanceType :: Type;
+synthesized attribute superContexts :: [Context];
+
 -- values
 synthesized attribute namedSignature :: NamedSignature;
 synthesized attribute hasForward :: Boolean;
@@ -47,7 +50,8 @@ inherited attribute givenSubstitution :: Substitution;
  - hmm, unparsing could probably be fixed...
  -}
 closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
-                         typeScheme, givenNonterminalType, isType, isClass, classMembers, -- types (gNT for occurs)
+                         typeScheme, givenNonterminalType, isType, isClass, -- types (gNT for occurs)
+                         classMembers, givenInstanceType, superContexts, -- type classes, in the type namespace
                          namedSignature, hasForward, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
                          isInherited, isSynthesized, -- attrs
@@ -84,6 +88,7 @@ top::DclInfo ::=
   top.isType = false;
   top.isClass = false;
   top.classMembers = [];
+  top.superContexts = [];
   
   -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();
@@ -196,13 +201,16 @@ top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar
   top.isType = true;
 }
 abstract production clsDcl
-top::DclInfo ::= fn::String bound::[TyVar] supers::[Context] tv::TyVar members::[String]
+top::DclInfo ::= fn::String supers::[Context] tv::TyVar members::[String]
 {
   top.fullName = fn;
   
   -- These are in the type namespace but shouldn't actually be used as such
   top.typeScheme = monoType(errorType()); -- TODO: distinguish class vs. type by giving these a type?
   top.isClass = true;
+  
+  local subst :: Substitution = unifyDirectional(varType(tv), top.givenInstanceType);
+  top.superContexts = map(performContextRenaming(_, subst), supers);
 }
 
 -- AttributeDclInfos
@@ -298,6 +306,20 @@ top::DclInfo ::= fntc::String bound::[TyVar] contexts::[Context] ty::Type
   top.fullName = fntc;
   
   top.typeScheme = constraintType(bound, contexts, ty);
+}
+abstract production instConstraintDcl
+top::DclInfo ::= fntc::String ty::Type
+{
+  top.fullName = fntc;
+  
+  top.typeScheme = monoType(ty);
+}
+abstract production instSuperConstraintDcl
+top::DclInfo ::= fnSuperTC::String fnBaseTC::String ty::Type
+{
+  top.fullName = fnSuperTC;
+  
+  top.typeScheme = monoType(ty);
 }
 
 
