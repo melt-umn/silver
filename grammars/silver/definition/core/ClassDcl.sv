@@ -11,7 +11,7 @@ top::AGDcl ::= 'class' cl::OptConstraintList id::Name var::TypeExpr '{' body::Cl
     | v :: _ -> v
     | _ -> freshTyVar()
     end;
-  production supers::[Context] = cl.contexts;
+  production supers::[Context] = cl.contexts; -- *Direct* super classes only, not transitive
   production boundVars::[TyVar] = [tv];
   
   top.defs := classDef(top.grammarName, id.location, fName, supers, tv, body.classMembers) :: body.defs;
@@ -29,23 +29,29 @@ top::AGDcl ::= 'class' cl::OptConstraintList id::Name var::TypeExpr '{' body::Cl
     if isLower(substring(0,1,id.name))
     then [err(id.location, "Types must be capitalized. Invalid class name " ++ id.name)]
     else [];
+    
+  top.errors <-
+    if containsBy(stringEq, fName, catMaybes(map((.contextClassName), transitiveSuperContexts(top.env, var.typerep, [], fName))))
+    then [err(top.location, "Cycle exists in superclass relationships.")]
+    else [];
 
   production attribute headDefs :: [Def] with ++;
   headDefs := cl.defs;
   headDefs <- [instDef(top.grammarName, id.location, fName, boundVars, [], var.typerep)];
 
+  cl.instanceHead = nothing();
   cl.env = newScopeEnv(headDefs, top.env);
   
   body.env = cl.env;
-  body.classContext = instContext(fName, var.typerep);
+  body.classHead = instContext(fName, var.typerep);
 }
 
-autocopy attribute classContext::Context;
+autocopy attribute classHead::Context;
 
 nonterminal ClassBody with
-  config, grammarName, env, defs, location, unparse, errors, classContext, compiledGrammars, classMembers;
+  config, grammarName, env, defs, location, unparse, errors, classHead, compiledGrammars, classMembers;
 nonterminal ClassBodyItem with
-  config, grammarName, env, defs, location, unparse, errors, classContext, compiledGrammars, classMembers;
+  config, grammarName, env, defs, location, unparse, errors, classHead, compiledGrammars, classMembers;
 
 propagate defs, errors on ClassBody, ClassBodyItem;
 
@@ -69,10 +75,10 @@ top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
   
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production boundVars :: [TyVar] =
-    setUnionTyVars(top.classContext.freeVariables, ty.typerep.freeVariables);
+    setUnionTyVars(top.classHead.freeVariables, ty.typerep.freeVariables);
   top.classMembers = [fName];
   
-  top.defs <- [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classContext, ty.typerep)];
+  top.defs <- [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, ty.typerep)];
 
   top.errors <-
     if length(getValueDclAll(fName, top.env)) > 1

@@ -272,3 +272,11 @@ NamedSignatureElement ::= nt::Type  anno::DclInfo
   return namedSignatureElement(anno.attrOccurring, anno.typeScheme.typerep);
 }
 
+-- Looks up class instnaces matching a type
+function getInstanceDcl
+[DclInfo] ::= fntc::String t::Type e::Decorated Env
+{
+  local c::Context = instContext(fntc, t);
+  c.env = e;
+  return c.resolved;
+}

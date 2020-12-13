@@ -10,15 +10,21 @@ top::AGDcl ::= 'instance' cl::OptConstraintList id::QName ty::TypeExpr '{' body:
   production dcl::DclInfo = id.lookupType.dcl;
   dcl.givenInstanceType = ty.typerep;
   
-  top.defs := [instDef(top.grammarName, id.location, fName, boundVars, cl.contexts, ty.typerep)];
+  top.defs :=
+    if ty.typerep.isError then []
+    else [instDef(top.grammarName, id.location, fName, boundVars, cl.contexts, ty.typerep)];
   
   top.errors <- id.lookupType.errors;
   top.errors <-
     if dcl.isClass then []
     else [err(id.location, id.name ++ " is not a type class.")];
   top.errors <- flatMap(contextErrors(top.env, id.location, "instance superclasses", _), dcl.superContexts);
-  -- TODO: Check that ty is well-formed
-  -- TODO: Check for duplicate instances
+  top.errors <-
+    if length(getInstanceDcl(fName, ty.typerep, top.env)) > 1
+    then [err(id.location, "Overlapping instances exist for " ++ id.unparse ++ " " ++ ty.unparse)]
+    else []; 
+  
+  cl.instanceHead = just(instContext(fName, ty.typerep));
 
   production attribute headDefs :: [Def] with ++;
   headDefs := cl.defs;
