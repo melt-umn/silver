@@ -65,7 +65,7 @@ top::ProductionDclStmt ::= optn::OptionalName v::ProdVBar
     end;
 
   local newSig :: ProductionSignature =
-    productionSignature(top.lhsdcl, '::=', rhs, location=rhs.location);
+    productionSignature(noConstraintList(location=top.location), top.lhsdcl, '::=', rhs, location=rhs.location);
 
   top.proddcls = 
     case opta of

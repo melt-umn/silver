@@ -20,6 +20,7 @@ top::AGDcl ::= 'makeTestSuite' nme::IdLower_t ';'
 
   local sig :: ProductionSignature =
     productionSignature(
+      noConstraintList(location=top.location),
       productionLHS(name("t", top.location), '::',
         nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "TestSuite", top.location), location=top.location), botlNone(location=top.location), location=top.location), location=top.location),
      '::=', productionRHSNil(location=top.location), location=top.location);
@@ -60,6 +61,7 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
     'function', name("main", top.location),
     -- IOVal<Integer> ::= args::[String]  mainIO::IO
     functionSignature(
+     noConstraintList(location=top.location),
      functionLHS(
        nominalTypeExpr( 
          qNameTypeId(terminal(IdUpper_t, "IOVal", top.location), location=top.location),

@@ -118,7 +118,7 @@ function hackTransformLocals
 synthesized attribute actionDefs :: [Def] occurs on ProductionSignature, ProductionRHS, ProductionRHSElem;
 
 aspect production productionSignature
-top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS 
+top::ProductionSignature ::= cl::OptConstraintList lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {
   top.actionDefs = rhs.actionDefs;
 }
