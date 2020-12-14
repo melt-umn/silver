@@ -1,4 +1,10 @@
-grammar silver:definition:core;
+grammar silver:analysis:typechecking:core;
+
+function contextsErrors
+[Message] ::= env::Decorated Env loc::Location source::String cs::[Context]
+{
+  return flatMap(contextErrors(env, loc, source, _), cs);
+}
 
 function contextErrors
 [Message] ::= env::Decorated Env loc::Location source::String c::Context
@@ -20,5 +26,5 @@ top::Context ::= cls::String t::Type
   top.contextErrors =
     if null(top.resolved)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
-    else flatMap(contextErrors(top.env, top.contextLoc, top.contextSource, _), requiredContexts);
+    else contextsErrors(top.env, top.contextLoc, s"the instance for ${prettyContext(top)}, arising from ${top.contextSource}", requiredContexts);
 }

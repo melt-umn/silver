@@ -18,7 +18,6 @@ top::AGDcl ::= 'instance' cl::OptConstraintList id::QName ty::TypeExpr '{' body:
   top.errors <-
     if dcl.isClass then []
     else [err(id.location, id.name ++ " is not a type class.")];
-  top.errors <- flatMap(contextErrors(top.env, id.location, "instance superclasses", _), dcl.superContexts);
   top.errors <-
     if length(getInstanceDcl(fName, ty.typerep, top.env)) > 1
     then [err(id.location, "Overlapping instances exist for " ++ id.unparse ++ " " ++ ty.unparse)]
@@ -29,6 +28,7 @@ top::AGDcl ::= 'instance' cl::OptConstraintList id::QName ty::TypeExpr '{' body:
   production attribute headDefs :: [Def] with ++;
   headDefs := cl.defs;
   headDefs <- [instDef(top.grammarName, id.location, fName, boundVars, [], ty.typerep)];
+  -- TODO: put members in env as a different kind of def?
   
   cl.env = newScopeEnv(headDefs, top.env);
   
@@ -38,7 +38,7 @@ top::AGDcl ::= 'instance' cl::OptConstraintList id::QName ty::TypeExpr '{' body:
 }
 
 autocopy attribute className::String;
-inherited attribute expectedClassMembers::[String];
+inherited attribute expectedClassMembers::[Pair<String Type>];
 
 nonterminal InstanceBody with
   config, grammarName, env, defs, location, unparse, errors, compiledGrammars, className, expectedClassMembers;
@@ -52,7 +52,8 @@ top::InstanceBody ::= h::InstanceBodyItem t::InstanceBody
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
   
-  t.expectedClassMembers = removeBy(stringEq, h.fullName, top.expectedClassMembers);
+  t.expectedClassMembers =
+    filter(\ m::Pair<String Type> -> m.fst != h.fullName, top.expectedClassMembers);
 }
 concrete production nilInstanceBody
 top::InstanceBody ::= 
@@ -61,7 +62,7 @@ top::InstanceBody ::=
 
   top.errors <-
     map(
-      \ m::String -> err(top.location, s"Missing instance member ${m} for class ${top.className}"),
+      \ m::Pair<String Type> -> err(top.location, s"Missing instance member ${m.fst} for class ${top.className}"),
       top.expectedClassMembers);
 }
 
@@ -72,7 +73,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
   
   top.errors <- id.lookupValue.errors;
   top.errors <-
-    if containsBy(stringEq, top.fullName, top.expectedClassMembers) then []
+    if !id.lookupValue.found || lookupBy(stringEq, top.fullName, top.expectedClassMembers).isJust then []
     else [err(id.location, s"Unexpected instance member ${id.name} for class ${top.className}")]; 
   
   top.fullName = id.lookupValue.fullName;

@@ -9,6 +9,24 @@ propagate upSubst, downSubst
      decorateExprWith, exprInh, presentAppExpr,
      newFunction, terminalConstructor;
 
+aspect production productionReference
+top::Expr ::= q::Decorated QName
+{
+  top.errors <- contextsErrors(top.env, q.location, "the use of " ++ q.name, typeScheme.contexts);
+}
+
+aspect production functionReference
+top::Expr ::= q::Decorated QName
+{
+  top.errors <- contextsErrors(top.env, q.location, "the use of " ++ q.name, typeScheme.contexts);
+}
+
+aspect production classMemberReference
+top::Expr ::= q::Decorated QName
+{
+  top.errors <- contextsErrors(top.env, q.location, "the use of " ++ q.name, typeScheme.contexts);
+}
+
 aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {

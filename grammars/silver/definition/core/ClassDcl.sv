@@ -76,7 +76,7 @@ top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production boundVars :: [TyVar] =
     setUnionTyVars(top.classHead.freeVariables, ty.typerep.freeVariables);
-  top.classMembers = [fName];
+  top.classMembers = [pair(fName, ty.typerep)];
   
   top.defs <- [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, ty.typerep)];
 

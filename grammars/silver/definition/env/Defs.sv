@@ -227,7 +227,7 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
   return attrDef(defaultEnvItem(annoDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function classDef
-Def ::= sg::String  sl::Location  fn::String  supers::[Context]  tv::TyVar  members::[String]
+Def ::= sg::String  sl::Location  fn::String  supers::[Context]  tv::TyVar  members::[Pair<String Type>]
 {
   return typeDef(defaultEnvItem(clsDcl(fn,supers,tv,members,sourceGrammar=sg,sourceLocation=sl)));
 }

@@ -116,7 +116,8 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
 
-  top.typerep = q.lookupValue.typeScheme.typerep;
+  production typeScheme::PolyType = q.lookupValue.typeScheme;
+  top.typerep = typeScheme.typerep;
 }
 
 abstract production functionReference
@@ -124,15 +125,8 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
 
-  top.typerep = q.lookupValue.typeScheme.typerep;
-}
-
-abstract production globalValueReference
-top::Expr ::= q::Decorated QName
-{
-  top.unparse = q.unparse;
-
-  top.typerep = q.lookupValue.typeScheme.typerep;
+  production typeScheme::PolyType = q.lookupValue.typeScheme;
+  top.typerep = typeScheme.typerep;
 }
 
 abstract production classMemberReference
@@ -140,7 +134,16 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
 
-  top.typerep = q.lookupValue.typeScheme.typerep;
+  production typeScheme::PolyType = q.lookupValue.typeScheme;
+  top.typerep = typeScheme.typerep;
+}
+
+abstract production globalValueReference
+top::Expr ::= q::Decorated QName
+{
+  top.unparse = q.unparse;
+
+  top.typerep = q.lookupValue.typeScheme.monoType; -- These aren't generalized, for now.
 }
 
 concrete production concreteForwardExpr
