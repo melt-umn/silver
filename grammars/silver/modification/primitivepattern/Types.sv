@@ -10,7 +10,7 @@ import silver:modification:ffi only foreignType; -- so we cover foreignType with
  - (This is used for *non-gadt* productions.)
  -}
 function skolemizeProductionType
-Type ::= te::PolyType
+Pair<[Context] Type> ::= te::PolyType
 {
   local existentialVars :: [TyVar] = removeTyVars(te.boundVars, te.typerep.outputType.freeVariables);
   
@@ -18,7 +18,7 @@ Type ::= te::PolyType
     zipVarsIntoSkolemizedSubstitution(existentialVars, freshTyVars(length(existentialVars))),
     zipVarsIntoSubstitution(te.typerep.outputType.freeVariables, freshTyVars(length(te.typerep.outputType.freeVariables))));
   
-  return performRenaming(te.typerep, skolemize);
+  return pair(map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
 }
 
 {--
@@ -51,11 +51,11 @@ Type ::= te::PolyType
  - is as good as another, as far as correctness goes, anyway...
  -}
 function fullySkolemizeProductionType
-Type ::= te::PolyType
+Pair<[Context] Type> ::= te::PolyType
 {
   local skolemize :: Substitution = zipVarsIntoSkolemizedSubstitution(te.boundVars, freshTyVars(length(te.boundVars)));
   
-  return performRenaming(te.typerep, skolemize);
+  return pair(map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
 }
 
 
@@ -272,3 +272,24 @@ Boolean ::= ls::[Type]
          end;
 }
 
+
+--------
+synthesized attribute contextPatternDef::(Def ::= String Location String) occurs on Context;
+
+aspect production instContext
+top::Context ::= cls::String t::Type
+{
+  top.contextPatternDef = instPatternConstraintDef(_, _, cls, t, _);
+}
+
+abstract production instPatternConstraintDcl
+top::DclInfo ::= fnTC::String ty::Type fnProd::String 
+{
+  top.fullName = fnTC;
+  top.typeScheme = monoType(ty);
+}
+function instPatternConstraintDef
+Def ::= sg::String  sl::Location  fn::String  ty::Type fnProd::String
+{
+  return tcInstDef(instPatternConstraintDcl(fn,ty,fnProd,sourceGrammar=sg,sourceLocation=sl));
+}

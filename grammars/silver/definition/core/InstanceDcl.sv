@@ -21,7 +21,8 @@ top::AGDcl ::= 'instance' cl::OptConstraintList id::QName ty::TypeExpr '{' body:
   top.errors <-
     if length(getInstanceDcl(fName, ty.typerep, top.env)) > 1
     then [err(id.location, "Overlapping instances exist for " ++ id.unparse ++ " " ++ ty.unparse)]
-    else []; 
+    else [];
+  -- TODO: Orphaned instance check
   
   cl.instanceHead = just(instContext(fName, ty.typerep));
 

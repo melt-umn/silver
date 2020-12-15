@@ -187,7 +187,9 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.errors <- qn.lookupValue.errors;
 
   -- Turns the existential variables existential
-  local prod_type :: Type = skolemizeProductionType(qn.lookupValue.typeScheme);
+  local prod_contexts_type :: Pair<[Context] Type> = skolemizeProductionType(qn.lookupValue.typeScheme);
+  production prod_contexts :: [Context] = prod_contexts_type.fst;
+  production prod_type :: Type = prod_contexts_type.snd;
   -- Note that we're going to check prod_type against top.scrutineeType shortly.
   -- This is where the type variables become unified.
   
@@ -212,7 +214,10 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   -- Thread NORMALLY! YAY!
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
   
-  e.env = newScopeEnv(ns.defs, top.env);
+  local contextDefs::[Def] = map(
+    \ c::Context -> c.contextPatternDef(top.grammarName, top.location, qn.lookupValue.fullName),
+    prod_contexts);
+  e.env = newScopeEnv(contextDefs ++ ns.defs, top.env);
   
   top.translation = "if(scrutineeNode instanceof " ++ makeClassName(qn.lookupValue.fullName) ++
     ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
@@ -229,7 +234,9 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   top.errors <- qn.lookupValue.errors;
 
-  local prod_type :: Type = fullySkolemizeProductionType(qn.lookupValue.typeScheme); -- that says FULLY. See the comments on that function.
+  local prod_contexts_type :: Pair<[Context] Type> = fullySkolemizeProductionType(qn.lookupValue.typeScheme); -- that says FULLY. See the comments on that function.
+  production prod_contexts :: [Context] = prod_contexts_type.fst;
+  production prod_type :: Type = prod_contexts_type.snd;
   
   ns.bindingTypes = prod_type.inputTypes;
   ns.bindingIndex = 0;
@@ -263,7 +270,10 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   e.finalSubst = errCheck2.upSubst;
   -- Here ends the hack
   
-  e.env = newScopeEnv(ns.defs, top.env);
+  local contextDefs::[Def] = map(
+    \ c::Context -> c.contextPatternDef(top.grammarName, top.location, qn.lookupValue.fullName),
+    prod_contexts);
+  e.env = newScopeEnv(contextDefs ++ ns.defs, top.env);
   
   top.translation = "if(scrutineeNode instanceof " ++ makeClassName(qn.lookupValue.fullName) ++
     ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
