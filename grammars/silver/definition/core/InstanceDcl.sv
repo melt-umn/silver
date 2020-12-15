@@ -22,7 +22,15 @@ top::AGDcl ::= 'instance' cl::OptConstraintList id::QName ty::TypeExpr '{' body:
     if length(getInstanceDcl(fName, ty.typerep, top.env)) > 1
     then [err(id.location, "Overlapping instances exist for " ++ id.unparse ++ " " ++ ty.unparse)]
     else [];
-  -- TODO: Orphaned instance check
+  top.errors <-
+    case ty.typerep of
+    -- Default instance, must be exported by the class declaration
+    | skolemType(_) when !isExportedBy(top.grammarName, [dcl.sourceGrammar], top.compiledGrammars) ->
+      [wrn(top.location, "Orphaned default instance declaration for " ++ fName)]
+    -- Regular instance, must be exported by the class or type declaration
+    | t when !isExportedBy(top.grammarName, dcl.sourceGrammar :: map(\ d::DclInfo -> d.sourceGrammar, getTypeDcl(t.typeName, top.env)), top.compiledGrammars) ->
+      [wrn(top.location, s"Orphaned instance declaration for ${fName} ${prettyType(t)}")]
+    end;
   
   cl.instanceHead = just(instContext(fName, ty.typerep));
 
