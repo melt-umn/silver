@@ -16,7 +16,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   local localVar :: String = "count_local__ON__" ++ makeIdName(fName);
   local ntName :: String = namedSig.outputElement.typerep.typeName;
-  local fnnt :: String = makeNTClassName(ntName);
+  local fnnt :: String = makeNTName(ntName);
 
   top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};

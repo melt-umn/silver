@@ -219,7 +219,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
     prod_contexts);
   e.env = newScopeEnv(contextDefs ++ ns.defs, top.env);
   
-  top.translation = "if(scrutineeNode instanceof " ++ makeClassName(qn.lookupValue.fullName) ++
+  top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++
     ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
 }
 
@@ -275,7 +275,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
     prod_contexts);
   e.env = newScopeEnv(contextDefs ++ ns.defs, top.env);
   
-  top.translation = "if(scrutineeNode instanceof " ++ makeClassName(qn.lookupValue.fullName) ++
+  top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++
     ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
 }
 

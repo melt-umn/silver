@@ -22,7 +22,7 @@ synthesized attribute annoNameElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoLookupElem :: String occurs on NamedSignatureElement;
 
 aspect production namedSignature
-top::NamedSignature ::= fn::String ie::[NamedSignatureElement] oe::NamedSignatureElement np::[NamedSignatureElement]
+top::NamedSignature ::= fn::String contexts::[Context] ie::[NamedSignatureElement] oe::NamedSignatureElement np::[NamedSignatureElement]
 {
   top.javaSignature = implode(", ", map((.childSigElem), ie) ++ map((.annoSigElem), np));
   top.refInvokeTrans = implode(", ", map((.childRefElem), ie) ++ map((.annoRefElem), np));
@@ -44,7 +44,7 @@ s"""	private Object child_${n};
   
   top.childStaticElem =
     if !ty.isDecorable then ""
-    else s"\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTClassName(ty.typeName)}.num_inh_attrs];\n";
+    else s"\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ty.typeName)}.num_inh_attrs];\n";
   
   -- annos are full names:
   

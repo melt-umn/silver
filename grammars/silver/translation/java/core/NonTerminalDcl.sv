@@ -22,7 +22,7 @@ import java.util.*;
 
 public abstract class ${className} extends common.Node${
   (if null(myAnnos) then "" else 
-    " implements " ++ implode(", ", map(makeAnnoClassName, map((.elementName), myAnnos)))
+    " implements " ++ implode(", ", map(makeAnnoName, map((.elementName), myAnnos)))
   )} {
 
 	public static final int num_inh_attrs = Init.${inhVar};

@@ -110,7 +110,7 @@ top::Expr ::= q::Decorated QName
 aspect production productionReference
 top::Expr ::= q::Decorated QName
 {
-  top.translation = makeClassName(q.lookupValue.fullName) ++ ".factory";
+  top.translation = makeProdName(q.lookupValue.fullName) ++ ".factory";
   top.lazyTranslation = top.translation;
 }
 
@@ -120,7 +120,14 @@ top::Expr ::= q::Decorated QName
   -- functions, unlike productions, can return a type variable.
   -- as such, we have to cast it to the real inferred final type.
   top.translation = s"((${finalType(top).transType})${top.lazyTranslation})";
-  top.lazyTranslation = makeClassName(q.lookupValue.fullName) ++ ".factory";
+  top.lazyTranslation = makeProdName(q.lookupValue.fullName) ++ ".factory";
+}
+
+aspect production classMemberReference
+top::Expr ::= q::Decorated QName
+{
+  top.translation = s"((${transContext(top.env, context)}.eval())";
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 aspect production globalValueReference
@@ -149,9 +156,9 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
   top.translation = 
     case e of 
     | functionReference(q) -> -- static method invocation
-        s"((${finalType(top).transType})${makeClassName(q.lookupValue.fullName)}.invoke(${argsTranslation(es)}))"
+        s"((${finalType(top).transType})${makeProdName(q.lookupValue.fullName)}.invoke(${argsTranslation(es)}))"
     | productionReference(q) -> -- static constructor invocation
-        s"((${finalType(top).transType})new ${makeClassName(q.lookupValue.fullName)}(${implode(", ", map((.lazyTranslation), es.exprs ++ reorderedAnnoAppExprs(annos)))}))"
+        s"((${finalType(top).transType})new ${makeProdName(q.lookupValue.fullName)}(${implode(", ", map((.lazyTranslation), es.exprs ++ reorderedAnnoAppExprs(annos)))}))"
     | _ -> -- dynamic method invocation
         s"((${finalType(top).transType})${e.translation}.invoke(new Object[]{${argsTranslation(es)}}, ${namedargsTranslation(annos)}))" 
     end ;
@@ -324,7 +331,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
       -- (especially important because we're implicitly inserted when accessing attributes
       --  from undecorated nodes, and this is a common error for new silverers.)
     | _ -> ".decorate(context, common.Util.populateInh(" ++
-             s"${makeNTClassName(finalType(e).typeName)}.num_inh_attrs, " ++
+             s"${makeNTName(finalType(e).typeName)}.num_inh_attrs, " ++
              s"new int[]{${implode(", ", inh.nameTrans)}}, " ++ 
              s"new common.Lazy[]{${implode(", ", inh.valueTrans)}}))"
     end;

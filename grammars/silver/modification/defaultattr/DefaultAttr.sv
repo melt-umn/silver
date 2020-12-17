@@ -83,7 +83,7 @@ top::DefLHS ::= q::Decorated QName
   
   top.typerep = q.lookupValue.typeScheme.monoType;
 
-  top.translation = makeNTClassName(top.frame.lhsNtName) ++ ".defaultSynthesizedAttributes";
+  top.translation = makeNTName(top.frame.lhsNtName) ++ ".defaultSynthesizedAttributes";
 }
 
 abstract production defaultAspectContext

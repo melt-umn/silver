@@ -22,8 +22,8 @@ top::NameOrBOperator ::= e::Expr
 
   top.operation =
     case e of
-    | functionReference(q) -> functionOperation(e, makeClassName(q.lookupValue.fullName), false, true)
-    | productionReference(q) -> functionOperation(e, makeClassName(q.lookupValue.fullName), false, false)
+    | functionReference(q) -> functionOperation(e, makeProdName(q.lookupValue.fullName), false, true)
+    | productionReference(q) -> functionOperation(e, makeProdName(q.lookupValue.fullName), false, false)
     | _ -> functionOperation(e, e.translation, true, false)
     end;
 

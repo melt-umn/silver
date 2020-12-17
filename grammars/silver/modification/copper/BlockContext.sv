@@ -48,7 +48,7 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
 {
   top.fullName = sig.fullName;
   top.signature = sig; -- TODO: figure out if this is ever used for actions?
-  top.className = makeClassName(top.fullName); -- child references in production actions use it
+  top.className = makeProdName(top.fullName); -- child references in production actions use it
 
   forwards to actionContext(g, sourceGrammar=top.sourceGrammar);
 }
