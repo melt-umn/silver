@@ -67,10 +67,7 @@ top::Constraint ::= c::QName t::TypeExpr
     end;
   
   top.defs <- [instConstraintDef(top.grammarName, top.location, dcl.fullName, t.typerep)];
-  
-  top.defs <- map(
-    \ c::Context -> c.contextSuperDef(top.grammarName, top.location, dcl.fullName),
-    transitiveSuperContexts(top.env, t.typerep, [], dcl.fullName));
+  top.defs <- transitiveSuperDefs(top.env, t.typerep, [], dcl.fullName);
 }
 
 function transitiveSuperContexts
@@ -96,4 +93,21 @@ Boolean ::= c1::Context c2::Context
     case c1, c2 of
     | instContext(c1, _), instContext(c2, _) -> c1 == c2
     end;
+}
+
+function transitiveSuperDefs
+[Def] ::= env::Decorated Env ty::Type seenClasses::[String] className::String
+{
+  local dcls::[DclInfo] = getTypeDcl(className, env);
+  local dcl::DclInfo = head(dcls);
+  dcl.givenInstanceType = ty;
+  local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
+  return
+    if null(dcls) || containsBy(stringEq, dcl.fullName, seenClasses)
+    then []
+    else
+      -- This might introduce duplicate defs in "diamond subclassing" cases,
+      -- but that shouldn't actually be an issue besides the (minor) added lookup overhead.
+      map(\ c::Context -> c.contextSuperDef(dcl.sourceGrammar, dcl.sourceLocation, dcl), dcl.superContexts) ++
+      concat(map(transitiveSuperDefs(env, ty, dcl.fullName :: seenClasses, _), superClassNames));
 }

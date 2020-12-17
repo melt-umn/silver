@@ -302,9 +302,9 @@ top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
 
 -- InstDclInfos
 abstract production instDcl
-top::DclInfo ::= fntc::String bound::[TyVar] contexts::[Context] ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
 {
-  top.fullName = fntc;
+  top.fullName = fn;
   
   top.typeScheme = constraintType(bound, contexts, ty);
 }
@@ -315,12 +315,12 @@ top::DclInfo ::= fntc::String ty::Type
   
   top.typeScheme = monoType(ty);
 }
-abstract production instSuperConstraintDcl
-top::DclInfo ::= fnSuperTC::String fnBaseTC::String ty::Type
+abstract production instSuperDcl
+top::DclInfo ::= fntc::String baseDcl::DclInfo ty::Type
 {
-  top.fullName = fnSuperTC;
+  top.fullName = fntc;
   
-  top.typeScheme = monoType(ty);
+  top.typeScheme = baseDcl.typeScheme;
 }
 
 

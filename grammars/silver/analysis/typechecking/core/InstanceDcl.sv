@@ -3,7 +3,9 @@ grammar silver:analysis:typechecking:core;
 aspect production instanceDcl
 top::AGDcl ::= 'instance' cl::OptConstraintList id::QName ty::TypeExpr '{' body::InstanceBody '}'
 {
-  top.errors <- contextsErrors(top.env, id.location, "instance superclasses", dcl.superContexts);
+  superContexts.contextLoc = id.location;
+  superContexts.contextSource = "instance superclasses";
+  top.errors <- superContexts.contextErrors;
 }
 
 aspect production consInstanceBody

@@ -12,19 +12,25 @@ propagate upSubst, downSubst
 aspect production productionReference
 top::Expr ::= q::Decorated QName
 {
-  top.errors <- contextsErrors(top.env, q.location, "the use of " ++ q.name, typeScheme.contexts);
+  contexts.contextLoc = q.location;
+  contexts.contextSource = "the use of " ++ q.name;
+  top.errors <- contexts.contextErrors;
 }
 
 aspect production functionReference
 top::Expr ::= q::Decorated QName
 {
-  top.errors <- contextsErrors(top.env, q.location, "the use of " ++ q.name, typeScheme.contexts);
+  contexts.contextLoc = q.location;
+  contexts.contextSource = "the use of " ++ q.name;
+  top.errors <- contexts.contextErrors;
 }
 
 aspect production classMemberReference
 top::Expr ::= q::Decorated QName
 {
-  top.errors <- contextsErrors(top.env, q.location, "the use of " ++ q.name, typeScheme.contexts);
+  context.contextLoc = q.location;
+  context.contextSource = "the use of " ++ q.name;
+  top.errors <- context.contextErrors;
 }
 
 aspect production application

@@ -118,6 +118,9 @@ top::Expr ::= q::Decorated QName
 
   production typeScheme::PolyType = q.lookupValue.typeScheme;
   top.typerep = typeScheme.typerep;
+
+  production contexts::Contexts = foldContexts(typeScheme.contexts);
+  contexts.env = top.env;
 }
 
 abstract production functionReference
@@ -127,6 +130,9 @@ top::Expr ::= q::Decorated QName
 
   production typeScheme::PolyType = q.lookupValue.typeScheme;
   top.typerep = typeScheme.typerep;
+
+  production contexts::Contexts = foldContexts(typeScheme.contexts);
+  contexts.env = top.env;
 }
 
 abstract production classMemberReference
@@ -136,6 +142,13 @@ top::Expr ::= q::Decorated QName
 
   production typeScheme::PolyType = q.lookupValue.typeScheme;
   top.typerep = typeScheme.typerep;
+
+  production context::Context =
+    case typeScheme.contexts of
+    | [c] -> c
+    | _ -> error("Class member should have exactly one context!")
+    end;
+  context.env = top.env;
 }
 
 abstract production globalValueReference

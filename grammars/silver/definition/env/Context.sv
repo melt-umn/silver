@@ -2,16 +2,29 @@ grammar silver:definition:env;
 
 -- Context lookup/resolution stuff lives here
 
-synthesized attribute contextSuperDef::(Def ::= String Location String) occurs on Context;
+attribute env occurs on Context;
+
+-- This mostly exists as a convenient way to perform multiple env-dependant operations
+-- on a list of contexts without re-decorating them and repeating context resolution.
+nonterminal Contexts with env;
+abstract production consContext
+top::Contexts ::= h::Context t::Contexts
+{}
+abstract production nilContext
+top::Contexts ::=
+{}
+
+global foldContexts::(Contexts ::= [Context]) = foldr(consContext, nilContext(), _);
+
+synthesized attribute contextSuperDef::(Def ::= String Location DclInfo) occurs on Context;
 synthesized attribute contextClassName::Maybe<String> occurs on Context;
 
-attribute env occurs on Context;
 synthesized attribute resolved::[DclInfo] occurs on Context;
 
 aspect production instContext
 top::Context ::= cls::String t::Type
 {
-  top.contextSuperDef = instSuperConstraintDef(_, _, cls, _, t);
+  top.contextSuperDef = instSuperDef(_, _, cls, _, t);
   top.contextClassName = just(cls);
   
   -- Somewhat inefficient, since we try unifying with all the instances of the class.
@@ -25,9 +38,11 @@ top::Context ::= cls::String t::Type
         \ d::DclInfo -> !unifyDirectional(d.typeScheme.typerep, t).failure,
         searchEnvScope(cls, top.env.instTree)));
 
-  production resolvedTypeScheme::PolyType = head(top.resolved).typeScheme;
-  production requiredContexts::[Context] =
-    map(performContextRenaming(_, unifyDirectional(resolvedTypeScheme.typerep, t)), resolvedTypeScheme.contexts);
+  production resolvedDcl::DclInfo = head(top.resolved);
+  production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
+  production requiredContexts::Contexts =
+    foldContexts(map(performContextRenaming(_, unifyDirectional(resolvedTypeScheme.typerep, t)), resolvedTypeScheme.contexts));
+  requiredContexts.env = top.env;
 }
 
 -- Invariant: This should be called when a and b are unifyable
