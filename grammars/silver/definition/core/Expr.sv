@@ -119,7 +119,8 @@ top::Expr ::= q::Decorated QName
   production typeScheme::PolyType = q.lookupValue.typeScheme;
   top.typerep = typeScheme.typerep;
 
-  production contexts::Contexts = foldContexts(typeScheme.contexts);
+  production contexts::Contexts =
+    foldContexts(map(performContextSubstitution(_, top.finalSubst), typeScheme.contexts));
   contexts.env = top.env;
 }
 
@@ -131,7 +132,8 @@ top::Expr ::= q::Decorated QName
   production typeScheme::PolyType = q.lookupValue.typeScheme;
   top.typerep = typeScheme.typerep;
 
-  production contexts::Contexts = foldContexts(typeScheme.contexts);
+  production contexts::Contexts =
+    foldContexts(map(performContextSubstitution(_, top.finalSubst), typeScheme.contexts));
   contexts.env = top.env;
 }
 
@@ -145,7 +147,7 @@ top::Expr ::= q::Decorated QName
 
   production context::Context =
     case typeScheme.contexts of
-    | [c] -> c
+    | [c] -> performContextSubstitution(c, top.finalSubst)
     | _ -> error("Class member should have exactly one context!")
     end;
   context.env = top.env;
@@ -175,9 +177,18 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   -- TODO: fix comma when one or the other is empty
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
   
+  -- NOTE: REVERSED ORDER
+  -- We may need to resolve e's type to get at the actual 'function type'
+  local t :: Type = performSubstitution(e.typerep, e.upSubst);
+  es.appExprTypereps = reverse(t.inputTypes);
+  es.appExprApplied = e.unparse;
+  anns.appExprApplied = e.unparse;
+  anns.remainingFuncAnnotations = t.namedTypes;
+  anns.funcAnnotations = anns.remainingFuncAnnotations;
+  
   -- TODO: You know, since the rule is we can't access .typerep without "first" supplying
   -- .downSubst, perhaps we should just... report .typerep after substitution in the first place!
-  forwards to performSubstitution(e.typerep, e.upSubst).applicationDispatcher(e, es, anns, top.location);
+  forwards to t.applicationDispatcher(e, es, anns, top.location);
 }
 
 concrete production applicationAnno
@@ -197,7 +208,7 @@ top::Expr ::= e::Expr '(' ')'
 }
 
 abstract production errorApplication
-top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
   
@@ -209,30 +220,15 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
         -- TODO This error message is cumbersomely generated...
 
   top.typerep = errorType();
-  
-  es.appExprTypereps = [];
-  es.appExprApplied = e.unparse;
-  anns.appExprApplied = e.unparse;
-  anns.remainingFuncAnnotations = [];
-  anns.funcAnnotations = [];
 }
 
 -- Note that this applies to both function and productions.
 -- We don't distinguish anymore at this point. A production reference
 -- becomes a function, effectively.
 abstract production functionApplication
-top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
-  
-  -- NOTE: REVERSED ORDER
-  -- We may need to resolve e's type to get at the actual 'function type'
-  local t :: Type = performSubstitution(e.typerep, e.upSubst);
-  es.appExprTypereps = reverse(t.inputTypes);
-  es.appExprApplied = e.unparse;
-  anns.appExprApplied = e.unparse;
-  anns.remainingFuncAnnotations = t.namedTypes;
-  anns.funcAnnotations = anns.remainingFuncAnnotations;
   
   -- TODO: we have an ambiguity here in the longer term.
   -- How to distinguish between

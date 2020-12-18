@@ -107,7 +107,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production errorApplication
-top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.transform = applyASTExpr(e.transform, es.transform, anns.transform);
 }

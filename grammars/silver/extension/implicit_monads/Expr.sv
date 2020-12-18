@@ -454,7 +454,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
 }
 
 aspect production errorApplication
-top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   local ne::Expr = new(e);
   ne.mDownSubst = top.mDownSubst;
@@ -473,7 +473,7 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 
   top.mUpSubst = ne.mUpSubst;
   top.mtyperep = errorType();
-  top.monadRewritten = application(new(e), '(', es, ',', anns, ')', location=top.location);
+  top.monadRewritten = application(new(e), '(', new(es), ',', new(anns), ')', location=top.location);
 }
 
 aspect production attributeSection

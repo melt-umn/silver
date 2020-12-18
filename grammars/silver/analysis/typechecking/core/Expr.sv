@@ -36,12 +36,6 @@ top::Expr ::= q::Decorated QName
 aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
-  thread downSubst, upSubst on top, e, forward;
-}
-
-aspect production functionApplication
-top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
-{
   propagate upSubst, downSubst;
 }
 
