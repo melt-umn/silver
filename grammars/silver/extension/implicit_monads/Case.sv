@@ -172,19 +172,8 @@ Expr ::= bindlst::[Pair<Type Pair<Expr String>>] base::Expr loc::Location
   return case bindlst of
          | [] -> base
          | pair(ty,pair(e,n))::rest ->
-           Silver_Expr{ $Expr{monadBind(ty, loc)}
-            ($Expr{e},
-             $Expr{
-               lambdap(
-                 productionRHSCons(productionRHSElem(name(n, loc),
-                                                     '::',
-                                                     typerepTypeExpr(monadInnerType(ty),
-                                                                     location=loc),
-                                                     location=loc),
-                                   productionRHSNil(location=loc),
-                                   location=loc),
-                 buildMonadicBinds(rest, base, loc),
-                 location=loc)})}
+           buildApplication(monadBind(ty, loc),
+                            [e, buildLambda(n, monadInnerType(ty), buildMonadicBinds(rest, base, loc), loc)], loc)
          end;
 }
 
