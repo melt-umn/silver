@@ -315,6 +315,20 @@ top::DclInfo ::= fntc::String ty::Type
   
   top.typeScheme = monoType(ty);
 }
+abstract production sigConstraintDcl
+top::DclInfo ::= fntc::String ty::Type fnsig::String
+{
+  top.fullName = fntc;
+  
+  top.typeScheme = monoType(ty);
+}
+abstract production currentInstDcl
+top::DclInfo ::= fntc::String ty::Type
+{
+  top.fullName = fntc;
+  
+  top.typeScheme = monoType(ty);
+}
 abstract production instSuperDcl
 top::DclInfo ::= fntc::String baseDcl::DclInfo ty::Type
 {

@@ -2,27 +2,28 @@ grammar silver:translation:java:type;
 
 import silver:definition:env;
 
+-- Translation of *solved* contexts, not *constraint* contexts
 synthesized attribute transContexts::[String] occurs on Contexts;
-synthesized attribute transContextAccessors::String occurs on Contexts;
+synthesized attribute transContextSuperAccessors::String occurs on Contexts;
 
 aspect production consContext
 top::Contexts ::= h::Context t::Contexts
 {
   top.transContexts = h.transContext :: t.transContexts;
-  top.transContextAccessors = h.transContextAccessor ++ t.transContextAccessors;
+  top.transContextSuperAccessors = h.transContextSuperAccessor ++ t.transContextSuperAccessors;
 }
 aspect production nilContext
 top::Contexts ::=
 {
   top.transContexts = [];
-  top.transContextAccessors = "";
+  top.transContextSuperAccessors = "";
 }
 
 attribute transType occurs on Context;
 synthesized attribute transContext::String occurs on Context;
 
-synthesized attribute transContextAccessorName::String occurs on Context;
-synthesized attribute transContextAccessor::String occurs on Context;
+synthesized attribute transContextSuperAccessorName::String occurs on Context;
+synthesized attribute transContextSuperAccessor::String occurs on Context;
 
 aspect production instContext
 top::Context ::= fn::String t::Type
@@ -32,9 +33,9 @@ top::Context ::= fn::String t::Type
   resolvedDcl.transContextDeps = requiredContexts.transContexts;
   top.transContext = resolvedDcl.transContext;
   
-  top.transContextAccessorName = makeInstanceSuperAccessorName(fn);
-  top.transContextAccessor = s"""
-	public final ${top.transType} ${top.transContextAccessorName}() {
+  top.transContextSuperAccessorName = makeInstanceSuperAccessorName(fn);
+  top.transContextSuperAccessor = s"""
+	public final ${top.transType} ${top.transContextSuperAccessorName}() {
 		return ${top.transContext};
 	}
 """;
@@ -58,7 +59,17 @@ top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
 aspect production instConstraintDcl
 top::DclInfo ::= fntc::String ty::Type
 {
-  top.transContext = makeConstraintInstanceValName(fntc, ty);
+  top.transContext = makeConstraintDictName(fntc, ty);
+}
+aspect production sigConstraintDcl
+top::DclInfo ::= fntc::String ty::Type fnsig::String
+{
+  top.transContext = s"((${makeProdName(fnsig)})(context.undecorate())).${makeConstraintDictName(fntc, ty)}";
+}
+aspect production currentInstDcl
+top::DclInfo ::= fntc::String ty::Type
+{
+  top.transContext = "this";
 }
 aspect production instSuperDcl
 top::DclInfo ::= fntc::String baseDcl::DclInfo ty::Type
@@ -67,10 +78,10 @@ top::DclInfo ::= fntc::String baseDcl::DclInfo ty::Type
   top.transContext = baseDcl.transContext ++ s".${makeInstanceSuperAccessorName(fntc)}()";
 }
 
-function makeConstraintInstanceValName
+function makeConstraintDictName
 String ::= s::String t::Type
 {
-  return "d_" ++ last(explode(":", s)) ++ "_" ++ t.transTypeName;
+  return "d_" ++ makeName(s) ++ "_" ++ t.transTypeName;
 }
 
 function makeInstanceSuperAccessorName

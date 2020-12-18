@@ -11,7 +11,7 @@ package ${makeName(top.grammarName)};
 
 public interface ${className} {
 
-${sflatMap(\ c::Context -> s"\tpublic ${c.transType} ${c.transContextAccessorName}();\n", cl.contexts)}
+${sflatMap(\ c::Context -> s"\tpublic ${c.transType} ${c.transContextSuperAccessorName}();\n", cl.contexts)}
 
 ${body.translation}
 
@@ -35,7 +35,7 @@ top::ClassBody ::=
 aspect production classBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
 {
-  top.translation = s"\tpublic ${ty.typerep.transType} get${makeInstanceMemberAccessorName(id.name)}();";
+  top.translation = s"\tpublic ${ty.typerep.transType} ${makeInstanceMemberAccessorName(id.name)}();";
 }
 
 function makeInstanceMemberAccessorName

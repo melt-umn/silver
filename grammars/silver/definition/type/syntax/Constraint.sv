@@ -1,10 +1,11 @@
 grammar silver:definition:type:syntax;
 
 autocopy attribute instanceHead::Maybe<Context>;
+autocopy attribute constraintSigName::Maybe<String>;
 
-nonterminal OptConstraintList with config, grammarName, env, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead;
-nonterminal ConstraintList with config, grammarName, env, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead;
-nonterminal Constraint with config, grammarName, env, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead;
+nonterminal OptConstraintList with config, grammarName, env, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead, constraintSigName;
+nonterminal ConstraintList with config, grammarName, env, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead, constraintSigName;
+nonterminal Constraint with config, grammarName, env, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead, constraintSigName;
 
 propagate errors, defs, lexicalTypeVariables on OptConstraintList, ConstraintList, Constraint;
 
@@ -66,7 +67,11 @@ top::Constraint ::= c::QName t::TypeExpr
     | nothing() -> []
     end;
   
-  top.defs <- [instConstraintDef(top.grammarName, top.location, dcl.fullName, t.typerep)];
+  top.defs <-
+    case top.constraintSigName of
+    | just(sigfn) -> [sigConstraintDef(top.grammarName, top.location, dcl.fullName, t.typerep, sigfn)]
+    | nothing() -> [instConstraintDef(top.grammarName, top.location, dcl.fullName, t.typerep)]
+    end;
   top.defs <- transitiveSuperDefs(top.env, t.typerep, [], dcl.fullName);
 }
 

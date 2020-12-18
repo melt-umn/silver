@@ -5,6 +5,8 @@ grammar silver:translation:java:core;
  -}
 synthesized attribute javaSignature :: String occurs on NamedSignature;
 synthesized attribute refInvokeTrans :: String occurs on NamedSignature;
+-- "final ContextName d_contextname"
+synthesized attribute contextSigElem :: String occurs on Context;
 -- "final Object c_signame"
 synthesized attribute childSigElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoSigElem :: String occurs on NamedSignatureElement;
@@ -24,8 +26,14 @@ synthesized attribute annoLookupElem :: String occurs on NamedSignatureElement;
 aspect production namedSignature
 top::NamedSignature ::= fn::String contexts::[Context] ie::[NamedSignatureElement] oe::NamedSignatureElement np::[NamedSignatureElement]
 {
-  top.javaSignature = implode(", ", map((.childSigElem), ie) ++ map((.annoSigElem), np));
+  top.javaSignature = implode(", ", map((.contextSigElem), contexts) ++ map((.childSigElem), ie) ++ map((.annoSigElem), np));
   top.refInvokeTrans = implode(", ", map((.childRefElem), ie) ++ map((.annoRefElem), np));
+}
+
+aspect production instContext
+top::Context ::= fn::String t::Type
+{
+  top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(fn, t)}";
 }
 
 -- TODO: It'd be nice to maybe split these into the ordered parameters and the annotations

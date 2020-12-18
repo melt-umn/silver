@@ -11,12 +11,12 @@ package ${makeName(top.grammarName)};
 
 public class ${className} extends ${makeClassName(fName)} {
 
-	public ${className}(${cl.constructorParamTrans}) {
-${cl.constructorInitTrans}
+	public ${className}(${implode(", ", map((.contextParamTrans), cl.contexts))}) {
+${sflatMap((.contextInitTrans), cl.contexts)}
 	}
 
-${cl.translation}
-${superContexts.transContextAccessors}
+${sflatMap((.contextMemberDeclTrans), cl.contexts)}
+${superContexts.transContextSuperAccessors}
 
 ${body.translation}
 
@@ -24,53 +24,16 @@ ${body.translation}
 """)];
 }
 
-attribute translation occurs on OptConstraintList, ConstraintList, Constraint;
-synthesized attribute constructorParamTrans::String occurs on OptConstraintList, ConstraintList, Constraint;
-synthesized attribute constructorInitTrans::String occurs on OptConstraintList, ConstraintList, Constraint;
+synthesized attribute contextMemberDeclTrans::String occurs on Context;
+synthesized attribute contextParamTrans::String occurs on Context;
+synthesized attribute contextInitTrans::String occurs on Context;
 
-aspect production someConstraintList
-top::OptConstraintList ::= cl::ConstraintList '=>'
+aspect production instContext
+top::Context ::= fn::String t::Type
 {
-  top.translation = cl.translation;
-  top.constructorParamTrans = cl.constructorParamTrans;
-  top.constructorInitTrans = cl.constructorInitTrans;
-}
-aspect production noConstraintList
-top::OptConstraintList ::=
-{
-  top.translation = "";
-  top.constructorParamTrans = "";
-  top.constructorInitTrans = "";
-}
-
-aspect production consConstraint
-top::ConstraintList ::= h::Constraint ',' t::ConstraintList
-{
-  top.translation = h.translation ++ t.translation;
-  top.constructorParamTrans = h.constructorParamTrans ++ ", " ++ t.constructorParamTrans;
-  top.constructorInitTrans = h.constructorInitTrans ++ ", " ++ t.constructorInitTrans;
-}
-aspect production oneConstraint
-top::ConstraintList ::= h::Constraint
-{
-  top.translation = h.translation;
-  top.constructorParamTrans = h.constructorParamTrans;
-  top.constructorInitTrans = h.constructorInitTrans;
-}
-aspect production nilConstraint
-top::ConstraintList ::=
-{
-  top.translation = "";
-  top.constructorParamTrans = "";
-  top.constructorInitTrans = "";
-}
-
-aspect production classConstraint
-top::Constraint ::= c::QName t::TypeExpr
-{
-  top.translation = s"\tprivate final ${t.typerep.transType} ${makeConstraintInstanceValName(dcl.fullName, t.typerep)};\n";
-  top.constructorParamTrans = s"${t.typerep.transType} ${makeConstraintInstanceValName(dcl.fullName, t.typerep)}";
-  top.constructorInitTrans = s"\t\tthis.${makeConstraintInstanceValName(dcl.fullName, t.typerep)} = ${makeConstraintInstanceValName(dcl.fullName, t.typerep)};\n";
+  top.contextMemberDeclTrans = s"\public final ${top.transType} ${makeConstraintDictName(fn, t)};\n";
+  top.contextParamTrans = s"${top.transType} ${makeConstraintDictName(fn, t)}";
+  top.contextInitTrans = s"\t\tthis.${makeConstraintDictName(fn, t)} = ${makeConstraintDictName(fn, t)};\n";
 }
 
 attribute translation occurs on InstanceBody, InstanceBodyItem;

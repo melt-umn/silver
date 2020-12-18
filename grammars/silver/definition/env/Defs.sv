@@ -241,8 +241,18 @@ Def ::= sg::String  sl::Location  fn::String  ty::Type
 {
   return tcInstDef(instConstraintDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl));
 }
+function sigConstraintDef
+Def ::= sg::String  sl::Location  fn::String  ty::Type  fnsig::String
+{
+  return tcInstDef(sigConstraintDcl(fn,ty,fnsig,sourceGrammar=sg,sourceLocation=sl));
+}
+function currentInstDef
+Def ::= sg::String  sl::Location  fn::String  ty::Type
+{
+  return tcInstDef(currentInstDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl));
+}
 function instSuperDef
-Def ::= sg::String  sl::Location  fn::String  baseDcl::DclInfo ty::Type
+Def ::= sg::String  sl::Location  fn::String  baseDcl::DclInfo  ty::Type
 {
   return tcInstDef(instSuperDcl(fn,baseDcl,ty,sourceGrammar=sg,sourceLocation=sl));
 }

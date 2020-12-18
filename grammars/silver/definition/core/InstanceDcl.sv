@@ -36,15 +36,14 @@ top::AGDcl ::= 'instance' cl::OptConstraintList id::QName ty::TypeExpr '{' body:
     end;
   
   cl.instanceHead = just(instContext(fName, ty.typerep));
+  cl.constraintSigName = nothing();
 
   production attribute headDefs :: [Def] with ++;
   headDefs := cl.defs;
-  headDefs <- [instDef(top.grammarName, id.location, fName, boundVars, [], ty.typerep)];
-  -- TODO: put members in env as a different kind of def?
+  headDefs <- [currentInstDef(top.grammarName, id.location, fName, ty.typerep)];
   
   cl.env = newScopeEnv(headDefs, top.env);
   
-  body.env = cl.env;
   body.className = id.lookupType.fullName;
   body.expectedClassMembers = id.lookupType.dcl.classMembers;
 }

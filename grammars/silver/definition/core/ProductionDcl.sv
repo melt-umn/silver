@@ -68,6 +68,8 @@ concrete production productionSignature
 top::ProductionSignature ::= cl::OptConstraintList lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {
   top.unparse = cl.unparse ++ lhs.unparse ++ " ::= " ++ rhs.unparse;
+  
+  cl.constraintSigName = just(top.signatureName);
 
   top.namedSignature = namedSignature(top.signatureName, cl.contexts, rhs.inputElements, lhs.outputElement, annotationsForNonterminal(lhs.outputElement.typerep, top.env));
 }

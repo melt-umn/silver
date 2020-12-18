@@ -47,6 +47,7 @@ top::FunctionSignature ::= cl::OptConstraintList lhs::FunctionLHS '::=' rhs::Pro
 {
   top.unparse = cl.unparse ++ lhs.unparse ++ " ::= " ++ rhs.unparse;
 
+  cl.constraintSigName = just(top.signatureName);
   propagate defs;
 
   -- For the moment, functions do not have named parameters (hence, [])
