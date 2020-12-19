@@ -20,7 +20,7 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
   top.lexicalTypeVariables := makeSet(cl.lexicalTypeVariables ++ lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
 }
 
-propagate lexicalTypeVariables on ProductionLHS, ProductionRHS excluding productionRHSCons;
+propagate lexicalTypeVariables on ProductionLHS, ProductionRHS, ProductionRHSElem excluding productionRHSCons;
 
 aspect production productionRHSCons
 top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
