@@ -25,7 +25,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
   production expectedType::Type =
     fromMaybe(errorType(), lookupBy(stringEq, top.fullName, top.expectedClassMembers));
 
-  local errCheck1::TypeCheck = check(e.typerep, expectedType);
+  local errCheck1::TypeCheck = check(expectedType, e.typerep);
   top.errors <-
     if errCheck1.typeerror
     then [err(e.location, s"Member ${id.name} has expected type ${errCheck1.leftpp}, but the expression has actual type ${errCheck1.rightpp}")]
