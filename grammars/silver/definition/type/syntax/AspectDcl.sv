@@ -51,6 +51,12 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
   top.lexicalTypeVariables := makeSet(h.lexicalTypeVariables ++ t.lexicalTypeVariables);
 }
 
+aspect production aspectProductionLHSTyped
+top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
+{
+  propagate lexicalTypeVariables;
+}
+
 aspect production aspectFunctionSignature
 top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS 
 {
