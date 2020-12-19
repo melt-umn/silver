@@ -26,31 +26,38 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
-  top.mtyperep = if isMonad(e.mtyperep) && monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst).fst &&
-                    (!isMonad(pr.patternType) || !monadsMatch(pr.patternType, top.expectedMonad, top.mDownSubst).fst)
-                 then if isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst
-                      then f.mtyperep
-                      else if isMonad(pr.mtyperep) && monadsMatch(pr.mtyperep, top.expectedMonad, top.mDownSubst).fst
-                           then pr.mtyperep
-                           else if isMonad(t.typerep) && monadsMatch(t.typerep, top.expectedMonad, top.mDownSubst).fst
-                                then monadOfType(t.typerep, pr.mtyperep)
-                                else monadOfType(e.mtyperep, pr.mtyperep)
-                 else if isMonad(pr.mtyperep) && monadsMatch(pr.mtyperep, top.expectedMonad, top.mDownSubst).fst
+  --if e is the implicit monad
+  local eIsMonadic::Boolean = isMonad(e.mtyperep) && monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst).fst;
+  --if the pattern type is the implicit monad
+  local prPattIsMonadic::Boolean = isMonad(pr.patternType) && monadsMatch(pr.patternType, top.expectedMonad, top.mDownSubst).fst;
+  --the return type of the patterns is the implicit monad
+  local prRetIsMonadic::Boolean = isMonad(pr.mtyperep) && monadsMatch(pr.mtyperep, top.expectedMonad, top.mDownSubst).fst;
+  --the type of f is the implicit monad
+  local fIsMonadic::Boolean = isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst;
+  --the type t is the implicit monad
+  local tIsMonadic::Boolean = isMonad(t.typerep) && monadsMatch(t.typerep, top.expectedMonad, top.mDownSubst).fst;
+
+  top.mtyperep = if eIsMonadic
+                 then if tIsMonadic
+                      then t.typerep
+                      else monadOfType(t.typerep, top.expectedMonad)
+                 else if prRetIsMonadic
                       then pr.mtyperep
-                      else if isMonad(t.typerep) && monadsMatch(t.typerep, top.expectedMonad, top.mDownSubst).fst
-                           then monadOfType(t.typerep, pr.mtyperep)
-                           else f.mtyperep;
+                      else f.mtyperep;
 
   top.merrors := e.merrors ++ pr.merrors ++ f.merrors;
+  top.merrors <- if prPattIsMonadic
+                 then [err(top.location, "Cannot match on implicit monadic type " ++ prettyType(pr.patternType))]
+                 else [];
 
   --check the type coming up with the type that's supposed to be
   --   coming out
   local attribute errCheck1::TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  errCheck1 = if isMonad(pr.mtyperep) && monadsMatch(pr.mtyperep, top.expectedMonad, top.mDownSubst).fst
-              then if isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst
+  errCheck1 = if prRetIsMonadic
+              then if fIsMonadic
                    then check(pr.mtyperep, f.mtyperep)
                    else check(monadInnerType(pr.mtyperep), f.mtyperep)
-              else if isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst
+              else if fIsMonadic
                    then check(pr.mtyperep, monadInnerType(f.mtyperep))
                    else check(pr.mtyperep, f.mtyperep);
 
@@ -64,143 +71,126 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   pr.expectedMonad = top.expectedMonad;
   f.expectedMonad = top.expectedMonad;
 
-  e.monadicallyUsed = isMonad(e.mtyperep) && monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst).fst &&
-                      (!isMonad(pr.patternType) || monadsMatch(pr.patternType, top.expectedMonad, top.mDownSubst).fst);
+  e.monadicallyUsed = eIsMonadic;
   f.monadicallyUsed = false;
   top.monadicNames = e.monadicNames ++ pr.monadicNames ++ f.monadicNames;
 
   local freshname::String = "__sv_bindingInAMatchExpression_" ++ toString(genInt());
-  local eBind::Expr = monadBind(e.mtyperep, top.location);
+  local eBind::Expr = monadBind(top.expectedMonad, top.location);
   local eInnerType::TypeExpr = typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location);
   local binde_lambdaparams::ProductionRHS =
         productionRHSCons(productionRHSElem(name(freshname, top.location), '::',
                                             eInnerType, location=top.location),
                           productionRHSNil(location=top.location), location=top.location);
   local outty::TypeExpr = typerepTypeExpr(top.mtyperep, location=top.location);
+
+  {-We need to make sure that, if we are matching on a decorable type,
+    it is decorated.  We need to check both whether the type is
+    decorable, or, in case that is a variable because we do as little
+    typechecking as possible, whether the pattern type is decorable
+    (and to avoid double-decoration, we check it isn't decorated
+    already).-}
+  local eMTyDecorable::Boolean =
+        if eIsMonadic
+        then performSubstitution(monadInnerType(e.mtyperep), e.mUpSubst).isDecorable ||
+             (!performSubstitution(monadInnerType(e.mtyperep), e.mUpSubst).isDecorated && pr.patternType.isDecorable)
+        else performSubstitution(e.mtyperep, e.mUpSubst).isDecorable ||
+             (!performSubstitution(e.mtyperep, e.mUpSubst).isDecorated && pr.patternType.isDecorable);
+  local decName::Expr =
+        if eMTyDecorable
+        then decorateExprWithEmpty('decorate', baseExpr(qName(top.location, freshname), location=top.location),
+                                   'with', '{', '}', location=top.location)
+        else baseExpr(qName(top.location, freshname), location=top.location);
+  local decE::Expr =
+        if eMTyDecorable
+        then decorateExprWithEmpty('decorate', e.monadRewritten, 'with', '{', '}', location=top.location)
+        else e.monadRewritten;
+
   --bind e, just do the rest
   local justBind_e::Expr =
-    applicationExpr(eBind,
-                    '(',
-                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=top.location),
-                                             location=top.location),
-                                 ',',
-                                 presentAppExpr(
-                                   lambdap(binde_lambdaparams,
-                                           matchPrimitiveReal(baseExpr(qName(top.location,
-                                                                             freshname),
-                                                                       location=top.location),
+    buildApplication(eBind,
+                     [e.monadRewritten, lambdap(binde_lambdaparams,
+                                           matchPrimitiveReal(decName,
                                                               outty, pr.monadRewritten, f.monadRewritten,
                                                               location=top.location),
-                                           location=top.location),
-                                   location=top.location),
-                                 location=top.location),
-                    ')',
-                    location=top.location);
+                                           location=top.location)],
+                     top.location);
   --bind e, return f based on e's type
   local bind_e_return_f::Expr =
-    applicationExpr(eBind,
-                    '(',
-                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=top.location),
-                                             location=top.location),
-                                 ',',
-                                 presentAppExpr(
-                                   lambdap(binde_lambdaparams,
-                                           matchPrimitiveReal(baseExpr(qName(top.location,
-                                                                             freshname),
-                                                                       location=top.location),
+    buildApplication(eBind,
+                     [e.monadRewritten, lambdap(binde_lambdaparams,
+                                           matchPrimitiveReal(decName,
                                                               outty, pr.monadRewritten,
-                                                              Silver_Expr {
-                                                                $Expr{monadReturn(e.mtyperep, top.location)}
-                                                                 ($Expr{f})
-                                                              },
+                                                              buildApplication(monadReturn(top.expectedMonad, top.location),
+                                                                               [f.monadRewritten], top.location),
                                                               location=top.location),
-                                           location=top.location),
-                                   location=top.location),
-                                 location=top.location),
-                    ')',
-                    location=top.location);
+                                           location=top.location)],
+                     top.location);
   --bind e, returnify pr based on e's type
   local prReturnify::PrimPatterns = pr.monadRewritten;
-  prReturnify.returnFun = monadReturn(e.mtyperep, top.location);
+  prReturnify.returnFun = monadReturn(top.expectedMonad, top.location);
   prReturnify.grammarName = top.grammarName;
   prReturnify.env = top.env;
   prReturnify.config = top.config;
   local bind_e_returnify_pr::Expr =
-    applicationExpr(eBind,
-                    '(',
-                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=top.location),
-                                             location=top.location),
-                                 ',',
-                                 presentAppExpr(
-                                   lambdap(binde_lambdaparams,
-                                           matchPrimitiveReal(baseExpr(qName(top.location,
-                                                                             freshname),
-                                                                       location=top.location),
+    buildApplication(eBind,
+                     [e.monadRewritten, lambdap(binde_lambdaparams,
+                                           matchPrimitiveReal(decName,
                                                               outty, prReturnify.returnify,
                                                               f.monadRewritten, location=top.location),
-                                           location=top.location),
-                                   location=top.location),
-                                 location=top.location),
-                    ')',
-                    location=top.location);
+                                           location=top.location)],
+                     top.location);
   --bind e, returnify pr, return f based on e's type
   local bind_e_returnify_pr_return_f::Expr =
-    applicationExpr(eBind,
-                    '(',
-                    snocAppExprs(oneAppExprs(presentAppExpr(e.monadRewritten, location=top.location),
-                                             location=top.location),
-                                 ',',
-                                 presentAppExpr(
-                                   lambdap(binde_lambdaparams,
-                                           matchPrimitiveReal(baseExpr(qName(top.location,
-                                                                             freshname),
-                                                                       location=top.location),
+    buildApplication(eBind,
+                     [e.monadRewritten, lambdap(binde_lambdaparams,
+                                           matchPrimitiveReal(decName,
                                                               outty, prReturnify.returnify,
-                                                              Silver_Expr {
-                                                                $Expr{monadReturn(e.mtyperep, top.location)}
-                                                                 ($Expr{f.monadRewritten})
-                                                              },
+                                                              buildApplication(monadReturn(top.expectedMonad, top.location),
+                                                                 [f.monadRewritten], top.location),
                                                               location=top.location),
-                                           location=top.location),
-                                   location=top.location),
-                                 location=top.location),
-                    ')',
-                    location=top.location);
+                                           location=top.location)],
+                     top.location);
   --return f from pr's return type
   local return_f::Expr =
-    matchPrimitiveReal(e.monadRewritten, outty, pr.monadRewritten,
-                       Silver_Expr {
-                         $Expr{monadReturn(pr.mtyperep, top.location)}($Expr{f.monadRewritten})
-                       },
+    matchPrimitiveReal(decE, outty, pr.monadRewritten,
+                       buildApplication(monadReturn(top.expectedMonad, top.location), [f.monadRewritten], top.location),
                        location=top.location);
   --returnify pr from f's type
   local ret_pr_from_f::PrimPatterns = pr.monadRewritten;
-  ret_pr_from_f.returnFun = monadReturn(f.mtyperep, top.location);
+  ret_pr_from_f.returnFun = monadReturn(top.expectedMonad, top.location);
   ret_pr_from_f.grammarName = top.grammarName;
   ret_pr_from_f.env = top.env;
   ret_pr_from_f.config = top.config;
-  local returnify_pr::Expr = matchPrimitiveReal(e.monadRewritten, outty, ret_pr_from_f.returnify,
+  local returnify_pr::Expr = matchPrimitiveReal(decE, outty, ret_pr_from_f.returnify,
                                                 f.monadRewritten, location=top.location);
   --just use monadRewritten
-  local just_rewrite::Expr = matchPrimitiveReal(e.monadRewritten, outty, pr.monadRewritten,
+  local just_rewrite::Expr = matchPrimitiveReal(decE, outty, pr.monadRewritten,
                                                 f.monadRewritten, location=top.location);
+  --t is monadic and nothing else is, so return over whole thing
+  local return_whole_thing::Expr =
+    buildApplication(monadReturn(top.expectedMonad, top.location),
+                                 [matchPrimitiveReal(decE, outty, pr.monadRewritten,
+                                                     f.monadRewritten, location=top.location)],
+                                 top.location);
   --pick the right rewriting
-  local mRw::Expr    = if isMonad(e.mtyperep) && monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst).fst &&
-                          (!isMonad(pr.patternType) || !monadsMatch(pr.patternType, top.expectedMonad, top.mDownSubst).fst)
-                       then if isMonad(pr.mtyperep) && monadsMatch(pr.mtyperep, top.expectedMonad, top.mDownSubst).fst
-                            then if isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst
+  local mRw::Expr    = if eIsMonadic
+                       then if prRetIsMonadic
+                            then if fIsMonadic
                                  then justBind_e
                                  else bind_e_return_f
-                            else if isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst
+                            else if fIsMonadic
                                  then bind_e_returnify_pr
                                  else bind_e_returnify_pr_return_f
-                       else if isMonad(pr.mtyperep) && monadsMatch(pr.mtyperep, top.expectedMonad, top.mDownSubst).fst
-                            then if isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst
+                       else if prRetIsMonadic
+                            then if fIsMonadic
                                  then just_rewrite
                                  else return_f
-                            else if isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst
+                            else if fIsMonadic
                                  then returnify_pr
-                                 else just_rewrite;
+                                 else if tIsMonadic
+                                      then return_whole_thing
+                                      else just_rewrite;
   top.monadRewritten = mRw;
 }
 
@@ -296,12 +286,23 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
 aspect production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' arr::Arrow_kwd e::Expr
 {
-  propagate mDownSubst, mUpSubst;
+  local ne::Expr = e;
+  ne.env = e.env;
+  ne.frame = top.frame;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.config = top.config;
+  ne.flowEnv = top.flowEnv;
 
-  e.expectedMonad = top.expectedMonad;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.mDownSubst;
+  ne.mDownSubst = top.mDownSubst;
+  top.mUpSubst = ne.mUpSubst;
 
-  e.monadicallyUsed = false;
-  top.monadicNames = e.monadicNames;
+  ne.expectedMonad = top.expectedMonad;
+
+  ne.monadicallyUsed = false;
+  top.monadicNames = ne.monadicNames;
 }
 aspect production prodPatternNormal
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr

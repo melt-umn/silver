@@ -117,6 +117,12 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     else [];
 }
 
+aspect production errorAttributeDef
+top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+{
+  propagate downSubst, upSubst;
+}
+
 aspect production childDefLHS
 top::DefLHS ::= q::Decorated QName
 {

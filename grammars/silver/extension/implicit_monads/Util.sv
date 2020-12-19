@@ -1,6 +1,7 @@
 grammar silver:extension:implicit_monads;
 
 
+
 {-
   EXPLANATION OF OUR VIEW OF A MONAD
 
@@ -205,7 +206,7 @@ Expr ::= ty::Type l::Location
 function monadReturn
 Expr ::= ty::Type l::Location
 {
-  return case ty of
+  return case decorate ty with {boundVariables = ty.freeVariables;} of
          | nonterminalType("core:Maybe", _) ->
            baseExpr(qNameId(name("returnMaybe", l), location=l), location=l)
          | nonterminalType("core:Either", _) ->
@@ -217,7 +218,7 @@ Expr ::= ty::Type l::Location
          | listType(_) ->
            baseExpr(qNameId(name("returnList", l), location=l), location=l)
          | decoratedType(t) -> monadReturn(t, l)
-         | _ -> error("Tried to get the return for a non-monadic type (" ++ ty.typepp ++ ") at " ++ l.unparse)
+         | _ -> error("Tried to get the return for a non-monadic type (" ++ prettyType(ty) ++ ") at " ++ l.unparse)
          end;
 }
 
@@ -314,5 +315,50 @@ Either<String Expr> ::= ty::Type l::Location
          | _ ->
            error("Tried to get MZero for a non-monadic type at " ++ l.unparse)
          end;
+}
+
+
+
+
+
+{-
+  Some functions to build common structures to make rewriting easier.
+  By using these instead of Silver_Expr {...}, we can get actual locations where errors occur.
+-}
+
+function buildApplication
+Expr ::= fun::Expr args::[Expr] loc::Location
+{
+  return applicationExpr(fun, '(', buildApplicationReverseArgs(reverse(args), loc), ')', location=loc);
+}
+
+--because the AST is set up as a snoc list, we build the arguments in reverse
+--e.g. [a,b,c] gives application arguments (c, b, a)
+function buildApplicationReverseArgs
+AppExprs ::= args::[Expr] loc::Location
+{
+  return case args of
+         | [] -> emptyAppExprs(location=loc)
+         | hd::tl ->
+           snocAppExprs(buildApplicationReverseArgs(tl, loc), ',',
+                        presentAppExpr(hd, location=loc), location=loc)
+         end;
+}
+
+
+
+function buildLambda
+Expr ::= n::String ty::Type body::Expr loc::Location
+{
+  -- \ n::ty -> body
+  return lambdap(
+           productionRHSCons(productionRHSElem(name(n, loc),
+                                               '::',
+                                               typerepTypeExpr(ty, location=loc),
+                                               location=loc),
+                             productionRHSNil(location=loc),
+                             location=loc),
+           body,
+           location=loc);
 }
 
