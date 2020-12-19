@@ -170,7 +170,7 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 		  else s"""throw new common.exceptions.SilverError("Production ${fName} containes type contexts, which are not supported by reify"); // TODO"""}
 	}
 
-	${if null(namedSig.contexts) then "public static final common.NodeFactory<${fnnt}> factory = new Factory();" else ""}
+	${if null(namedSig.contexts) then s"public static final common.NodeFactory<${fnnt}> factory = new Factory();" else ""}
 
 	public static final class Factory extends common.NodeFactory<${fnnt}> {
 ${sflatMap((.contextMemberDeclTrans), namedSig.contexts)}
