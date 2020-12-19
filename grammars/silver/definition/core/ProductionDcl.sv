@@ -65,13 +65,21 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 }
 
 concrete production productionSignature
-top::ProductionSignature ::= cl::OptConstraintList lhs::ProductionLHS '::=' rhs::ProductionRHS 
+top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rhs::ProductionRHS
 {
-  top.unparse = cl.unparse ++ lhs.unparse ++ " ::= " ++ rhs.unparse;
+  top.unparse = s"${cl.unparse} => ${lhs.unparse} ::= ${rhs.unparse}";
   
   cl.constraintSigName = just(top.signatureName);
 
   top.namedSignature = namedSignature(top.signatureName, cl.contexts, rhs.inputElements, lhs.outputElement, annotationsForNonterminal(lhs.outputElement.typerep, top.env));
+}
+
+concrete production productionSignatureNoCL
+top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
+{
+  top.unparse = s"${lhs.unparse} ::= ${rhs.unparse}";
+  
+  forwards to productionSignature(nilConstraint(location=top.location), '=>', lhs, $2, rhs, location=top.location);
 }
 
 concrete production productionLHS

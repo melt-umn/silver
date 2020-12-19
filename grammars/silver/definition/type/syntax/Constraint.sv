@@ -3,24 +3,10 @@ grammar silver:definition:type:syntax;
 autocopy attribute instanceHead::Maybe<Context>;
 autocopy attribute constraintSigName::Maybe<String>;
 
-nonterminal OptConstraintList with config, grammarName, env, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead, constraintSigName;
 nonterminal ConstraintList with config, grammarName, env, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead, constraintSigName;
 nonterminal Constraint with config, grammarName, env, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead, constraintSigName;
 
-propagate errors, defs, lexicalTypeVariables on OptConstraintList, ConstraintList, Constraint;
-
-concrete production someConstraintList
-top::OptConstraintList ::= cl::ConstraintList '=>'
-{
-  top.unparse = cl.unparse ++ " =>";
-  top.contexts = cl.contexts;
-}
-concrete production noConstraintList
-top::OptConstraintList ::=
-{
-  top.unparse = "";
-  top.contexts = [];
-}
+propagate errors, defs, lexicalTypeVariables on ConstraintList, Constraint;
 
 concrete production consConstraint
 top::ConstraintList ::= h::Constraint ',' t::ConstraintList
@@ -42,7 +28,7 @@ top::ConstraintList ::=
 }
 
 concrete production classConstraint
-top::Constraint ::= c::QName t::TypeExpr
+top::Constraint ::= c::QNameType t::TypeExpr
 {
   top.contexts =
     case top.instanceHead of

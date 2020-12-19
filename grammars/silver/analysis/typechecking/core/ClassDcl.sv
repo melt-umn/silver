@@ -1,9 +1,9 @@
 grammar silver:analysis:typechecking:core;
 
 aspect production typeClassDcl
-top::AGDcl ::= 'class' cl::OptConstraintList id::Name var::TypeExpr '{' body::ClassBody '}'
+top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 {
-  
+  -- TODO should anything move here?
 }
 
 aspect production consClassBody

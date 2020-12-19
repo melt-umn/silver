@@ -39,7 +39,7 @@ AGDcl ::= id::QName  env::Decorated Env  fenv::Decorated FlowEnv
 
   local sig :: FunctionSignature =
     functionSignature(
-      noConstraintList(location=l),
+      nilConstraint(location=l), '=>',
       functionLHS(typerepTypeExpr(boolType(), location=l), location=l),
       '::=',
       productionRHSCons(

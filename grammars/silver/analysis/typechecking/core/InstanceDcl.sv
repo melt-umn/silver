@@ -1,7 +1,7 @@
 grammar silver:analysis:typechecking:core;
 
 aspect production instanceDcl
-top::AGDcl ::= 'instance' cl::OptConstraintList id::QName ty::TypeExpr '{' body::InstanceBody '}'
+top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
 {
   superContexts.contextLoc = id.location;
   superContexts.contextSource = "instance superclasses";

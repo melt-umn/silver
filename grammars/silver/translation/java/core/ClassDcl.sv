@@ -1,7 +1,7 @@
 grammar silver:translation:java:core;
 
 aspect production typeClassDcl
-top::AGDcl ::= 'class' cl::OptConstraintList id::Name var::TypeExpr '{' body::ClassBody '}'
+top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 {
   local className :: String = "C" ++ id.name;
 

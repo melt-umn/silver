@@ -125,7 +125,7 @@ ag::AGDcl ::= kwd::'equalityTest'
   local absProdCS :: AGDcl =
     productionDcl('abstract', 'production', testNameref,
       productionSignature(
-        noConstraintList(location=ag.location),
+        nilConstraint(location=ag.location), '=>',
         productionLHS(tref, '::',
           nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test", ag.location), location=ag.location), botlNone(location=ag.location), location=ag.location), location=ag.location),
         '::=', productionRHSNil(location=ag.location), location=ag.location),

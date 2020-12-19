@@ -56,7 +56,7 @@ AGDcl ::= id::QName  env::Decorated Env
   
   local sig :: FunctionSignature =
     functionSignature(
-      noConstraintList(location=l),
+      nilConstraint(location=l), '=>',
       functionLHS(typerepTypeExpr(id.lookupType.typeScheme.typerep, location=l), location=l),
       '::=',
       productionRHSCons(

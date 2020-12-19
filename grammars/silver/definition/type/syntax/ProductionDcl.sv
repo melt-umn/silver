@@ -15,7 +15,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 }
 
 aspect production productionSignature
-top::ProductionSignature ::= cl::OptConstraintList lhs::ProductionLHS '::=' rhs::ProductionRHS 
+top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {
   top.lexicalTypeVariables := makeSet(cl.lexicalTypeVariables ++ lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
 }

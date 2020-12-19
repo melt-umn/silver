@@ -1,9 +1,9 @@
 grammar silver:definition:core;
 
 concrete production typeClassDcl
-top::AGDcl ::= 'class' cl::OptConstraintList id::Name var::TypeExpr '{' body::ClassBody '}'
+top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 {
-  top.unparse = s"class ${cl.unparse}${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}"; 
+  top.unparse = s"class ${cl.unparse} => ${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}"; 
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production tv :: TyVar =
@@ -15,6 +15,11 @@ top::AGDcl ::= 'class' cl::OptConstraintList id::Name var::TypeExpr '{' body::Cl
   production boundVars::[TyVar] = [tv];
   
   top.defs := classDef(top.grammarName, id.location, fName, supers, tv, body.classMembers) :: body.defs;
+  
+  -- id *should* be just a Name, but it has to be a QNameType to avoid a reduce/reduce conflict
+  top.errors <-
+    if indexOf(":", id.name) == -1 then []
+    else [err(id.location, "Class name must be unqualified.")];
 
   -- Here we ensure that the type is just a type *variable*
   top.errors <- var.errorsTyVars;
@@ -44,6 +49,14 @@ top::AGDcl ::= 'class' cl::OptConstraintList id::Name var::TypeExpr '{' body::Cl
   
   body.env = cl.env;
   body.classHead = instContext(fName, var.typerep);
+}
+
+concrete production typeClassDclNoCL
+top::AGDcl ::= 'class' id::QNameType var::TypeExpr '{' body::ClassBody '}'
+{
+  top.unparse = s"${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}";
+
+  forwards to typeClassDcl($1, nilConstraint(location=top.location), '=>', id, var, $4, body, $6, location=top.location);
 }
 
 autocopy attribute classHead::Context;

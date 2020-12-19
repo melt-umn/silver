@@ -1,9 +1,9 @@
 grammar silver:definition:core;
 
 concrete production instanceDcl
-top::AGDcl ::= 'instance' cl::OptConstraintList id::QName ty::TypeExpr '{' body::InstanceBody '}'
+top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
 {
-  top.unparse = s"instance ${cl.unparse}${id.unparse} ${ty.unparse}\n{\n${body.unparse}\n}"; 
+  top.unparse = s"instance ${cl.unparse} => ${id.unparse} ${ty.unparse}\n{\n${body.unparse}\n}"; 
 
   production fName :: String = id.lookupType.fullName;
   production boundVars::[TyVar] = ty.freeVariables;
@@ -46,6 +46,14 @@ top::AGDcl ::= 'instance' cl::OptConstraintList id::QName ty::TypeExpr '{' body:
   
   body.className = id.lookupType.fullName;
   body.expectedClassMembers = id.lookupType.dcl.classMembers;
+}
+
+concrete production instanceDclNoCL
+top::AGDcl ::= 'instance' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
+{
+  top.unparse = s"instance ${id.unparse} ${ty.unparse}\n{\n${body.unparse}\n}"; 
+
+  forwards to instanceDcl($1, nilConstraint(location=top.location), '=>', id, ty, $4, body, $6, location=top.location);
 }
 
 autocopy attribute className::String;

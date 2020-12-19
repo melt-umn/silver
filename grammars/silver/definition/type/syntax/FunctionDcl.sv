@@ -12,7 +12,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 }
 
 aspect production functionSignature
-top::FunctionSignature ::= cl::OptConstraintList lhs::FunctionLHS '::=' rhs::ProductionRHS 
+top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::ProductionRHS
 {
   top.lexicalTypeVariables := makeSet(cl.lexicalTypeVariables ++ lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
 }
