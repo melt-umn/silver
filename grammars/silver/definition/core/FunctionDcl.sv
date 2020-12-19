@@ -47,6 +47,7 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
 {
   top.unparse = s"${cl.unparse} => ${lhs.unparse} ::= ${rhs.unparse}";
 
+  cl.instanceHead = nothing();
   cl.constraintSigName = just(top.signatureName);
   propagate defs;
 

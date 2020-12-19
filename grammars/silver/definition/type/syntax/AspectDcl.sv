@@ -37,7 +37,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   -- TODO sigDefs <- realSig.contexts as defs
 }
 
-propagate lexicalTypeVariables on AspectProductionLHS, AspectFunctionLHS, AspectRHS excluding aspectRHSElemCons;
+propagate lexicalTypeVariables on AspectProductionLHS, AspectFunctionLHS, AspectRHS, AspectRHSElem excluding aspectRHSElemCons;
 
 aspect production aspectProductionSignature
 top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
