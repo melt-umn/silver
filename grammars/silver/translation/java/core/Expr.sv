@@ -35,7 +35,7 @@ top::Expr ::=
 {
   top.invokeTranslation =
     -- dynamic method invocation
-    s"((${finalType(top).transType})${top.translation}.invoke(new Object[]{${argsTranslation(top.invokeArgs)}}, ${namedargsTranslation(top.invokeNamedArgs)}))";
+    s"((${finalType(top).outputType.transType})${top.translation}.invoke(new Object[]{${argsTranslation(top.invokeArgs)}}, ${namedargsTranslation(top.invokeNamedArgs)}))";
 }
 
 aspect production errorExpr
