@@ -57,6 +57,12 @@ top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
   propagate lexicalTypeVariables;
 }
 
+aspect production aspectRHSElemTyped
+top::AspectRHSElem ::= id::Name '::' t::TypeExpr
+{
+  propagate lexicalTypeVariables;
+}
+
 aspect production aspectFunctionSignature
 top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS 
 {
