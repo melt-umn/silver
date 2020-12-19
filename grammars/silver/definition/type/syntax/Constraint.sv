@@ -3,8 +3,8 @@ grammar silver:definition:type:syntax;
 autocopy attribute instanceHead::Maybe<Context>;
 autocopy attribute constraintSigName::Maybe<String>;
 
-nonterminal ConstraintList with config, grammarName, env, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead, constraintSigName;
-nonterminal Constraint with config, grammarName, env, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead, constraintSigName;
+nonterminal ConstraintList with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead, constraintSigName;
+nonterminal Constraint with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead, constraintSigName;
 
 propagate errors, defs, lexicalTypeVariables on ConstraintList, Constraint;
 
@@ -30,6 +30,7 @@ top::ConstraintList ::=
 concrete production classConstraint
 top::Constraint ::= c::QNameType t::TypeExpr
 {
+  top.unparse = c.unparse ++ " " ++ t.unparse;
   top.contexts =
     case top.instanceHead of
     | just(instContext(_, skolemType(_))) -> [] -- Avoid a cycle in instance resolution checking
@@ -50,7 +51,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
     case top.instanceHead of
     | just(h) when h matches instContext(_, skolemType(_)) ->
       [err(top.location, s"The constraint ${top.unparse} is no smaller than the instance head ${prettyContext(h)}")]
-    | nothing() -> []
+    | _ -> []
     end;
   
   top.defs <-

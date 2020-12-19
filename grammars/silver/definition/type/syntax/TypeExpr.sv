@@ -116,7 +116,7 @@ top::TypeExpr ::= q::QNameType tl::BracketedOptTypeExprs
 
   top.errors <- q.lookupType.errors;
   top.errors <-
-    if q.lookupType.dcl.isType then []
+    if !q.lookupType.found || q.lookupType.dcl.isType then []
     else [err(top.location, q.name ++ " is not a type.")];
 
   local ts::PolyType = q.lookupType.typeScheme;

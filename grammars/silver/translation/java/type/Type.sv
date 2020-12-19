@@ -110,7 +110,7 @@ top::Type ::= fn::String params::[Type]
     s"new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}})";
   top.transFreshTypeRep =
     s"new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transFreshTypeRep), params))}})";
-  top.transTypeName = makeName(fn) ++ "_" ++ implode("_", map((.transTypeName), params));
+  top.transTypeName = substitute(":", "_", fn) ++ "_" ++ implode("_", map((.transTypeName), params));
 }
 
 aspect production terminalType
@@ -120,7 +120,7 @@ top::Type ::= fn::String
   top.transClassType = makeTerminalName(fn);
   top.transTypeRep = s"new common.BaseTypeRep(\"${fn}\")";
   top.transFreshTypeRep = top.transTypeRep;
-  top.transTypeName = makeName(fn);
+  top.transTypeName = substitute(":", "_", fn);
 }
 
 aspect production decoratedType

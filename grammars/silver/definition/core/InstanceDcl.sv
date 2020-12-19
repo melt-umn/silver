@@ -1,5 +1,7 @@
 grammar silver:definition:core;
 
+import silver:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph;
+
 concrete production instanceDcl
 top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
 {
@@ -11,7 +13,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   dcl.givenInstanceType = ty.typerep;
   
   production superContexts::Contexts = foldContexts(dcl.superContexts);
-  superContexts.env = top.env;
+  superContexts.env = body.env;
   
   top.defs :=
     if ty.typerep.isError then []
@@ -33,19 +35,25 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
     -- Regular instance, must be exported by the class or type declaration
     | t when !isExportedBy(top.grammarName, dcl.sourceGrammar :: map(\ d::DclInfo -> d.sourceGrammar, getTypeDcl(t.typeName, top.env)), top.compiledGrammars) ->
       [wrn(top.location, s"Orphaned instance declaration for ${fName} ${prettyType(t)}")]
+    | _ -> []
     end;
   
   cl.instanceHead = just(instContext(fName, ty.typerep));
   cl.constraintSigName = nothing();
 
+  production attribute headPreDefs :: [Def] with ++;
+  headPreDefs := [];
+
   production attribute headDefs :: [Def] with ++;
   headDefs := cl.defs;
   headDefs <- [currentInstDef(top.grammarName, id.location, fName, ty.typerep)];
   
-  cl.env = newScopeEnv(headDefs, top.env);
+  cl.env = newScopeEnv(headPreDefs, top.env);
+  ty.env = cl.env;
   
+  body.env = newScopeEnv(headDefs, cl.env);
   body.className = id.lookupType.fullName;
-  body.expectedClassMembers = id.lookupType.dcl.classMembers;
+  body.expectedClassMembers = dcl.classMembers;
 }
 
 concrete production instanceDclNoCL
@@ -60,9 +68,9 @@ autocopy attribute className::String;
 inherited attribute expectedClassMembers::[Pair<String Type>];
 
 nonterminal InstanceBody with
-  config, grammarName, env, defs, location, unparse, errors, compiledGrammars, className, expectedClassMembers;
+  config, grammarName, env, defs, flowEnv, location, unparse, errors, compiledGrammars, className, expectedClassMembers;
 nonterminal InstanceBodyItem with
-  config, grammarName, env, defs, location, unparse, errors, compiledGrammars, className, expectedClassMembers, fullName;
+  config, grammarName, env, defs, flowEnv, location, unparse, errors, compiledGrammars, className, expectedClassMembers, fullName;
 
 propagate defs, errors on InstanceBody, InstanceBodyItem;
 
@@ -70,7 +78,8 @@ concrete production consInstanceBody
 top::InstanceBody ::= h::InstanceBodyItem t::InstanceBody
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
-  
+
+  h.expectedClassMembers = top.expectedClassMembers;
   t.expectedClassMembers =
     filter(\ m::Pair<String Type> -> m.fst != h.fullName, top.expectedClassMembers);
 }
@@ -89,11 +98,20 @@ concrete production instanceBodyItem
 top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 {
   top.unparse = s"${id.name} = ${e.unparse};";
-  
+
   top.errors <- id.lookupValue.errors;
   top.errors <-
     if !id.lookupValue.found || lookupBy(stringEq, top.fullName, top.expectedClassMembers).isJust then []
     else [err(id.location, s"Unexpected instance member ${id.name} for class ${top.className}")]; 
-  
+
   top.fullName = id.lookupValue.fullName;
+
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = 
+    constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
+
+  e.frame = globalExprContext(myFlowGraph, sourceGrammar=top.grammarName);
 }

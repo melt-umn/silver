@@ -81,11 +81,11 @@ top::DclInfo ::= fntc::String baseDcl::DclInfo ty::Type
 function makeConstraintDictName
 String ::= s::String t::Type
 {
-  return "d_" ++ makeName(s) ++ "_" ++ t.transTypeName;
+  return "d_" ++ substitute(":", "_", s) ++ "_" ++ t.transTypeName;
 }
 
 function makeInstanceSuperAccessorName
 String ::= s::String
 {
-  return "getSuper" ++ makeName(s);
+  return "getSuper_" ++ substitute(":", "_", s);
 }

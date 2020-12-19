@@ -40,14 +40,20 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
     then [err(top.location, "Cycle exists in superclass relationships.")]
     else [];
 
+  production attribute headPreDefs :: [Def] with ++;
+  headPreDefs := [];
+
   production attribute headDefs :: [Def] with ++;
   headDefs := cl.defs;
-  headDefs <- [instDef(top.grammarName, id.location, fName, boundVars, [], var.typerep)];
+  headDefs <- [currentInstDef(top.grammarName, id.location, fName, var.typerep)];
 
   cl.instanceHead = nothing();
-  cl.env = newScopeEnv(headDefs, top.env);
+  cl.constraintSigName = nothing();
+  cl.env = newScopeEnv(headPreDefs, top.env);
   
-  body.env = cl.env;
+  var.env = cl.env;
+  
+  body.env = newScopeEnv(headDefs, cl.env);
   body.classHead = instContext(fName, var.typerep);
 }
 

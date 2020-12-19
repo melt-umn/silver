@@ -3,13 +3,13 @@ grammar silver:translation:java:core;
 aspect production instanceDcl
 top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
 {
-  local className :: String = "C" ++ id.name ++ "_" ++ ty.typerep.transTypeName;
+  local className :: String = "I" ++ id.name ++ "_" ++ ty.typerep.transTypeName;
 
   top.genFiles := [pair(className ++ ".java", s"""
 
 package ${makeName(top.grammarName)};
 
-public class ${className} extends ${makeClassName(fName)} {
+public class ${className} implements ${makeClassName(fName)} {
 
 	public ${className}(${implode(", ", map((.contextParamTrans), cl.contexts))}) {
 ${sflatMap((.contextInitTrans), cl.contexts)}
@@ -31,7 +31,7 @@ synthesized attribute contextInitTrans::String occurs on Context;
 aspect production instContext
 top::Context ::= fn::String t::Type
 {
-  top.contextMemberDeclTrans = s"\public final ${top.transType} ${makeConstraintDictName(fn, t)};\n";
+  top.contextMemberDeclTrans = s"\tpublic final ${top.transType} ${makeConstraintDictName(fn, t)};\n";
   top.contextParamTrans = s"${top.transType} ${makeConstraintDictName(fn, t)}";
   top.contextInitTrans = s"\t\tthis.${makeConstraintDictName(fn, t)} = ${makeConstraintDictName(fn, t)};\n";
 }

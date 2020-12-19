@@ -41,5 +41,5 @@ top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
 function makeInstanceMemberAccessorName
 String ::= s::String
 {
-  return "getMember" ++ last(explode(":", s));
+  return "getMember_" ++ last(explode(":", s));
 }
