@@ -117,3 +117,22 @@ instance MyEq ABCD
   myeq = \ ABCD ABCD -> true;
 }
 equalityTest(myeq(abcd(), abcd()), true, Boolean, silver_tests);
+
+wrongCode "Missing instance member silver_features:cx" {
+  instance CFoo ABCD {}
+}
+
+wrongCode "Unexpected instance member cy" {
+  instance CFoo ABCD
+  {
+    cy = 42;
+  }
+}
+
+wrongCode "is no smaller than the instance head" {
+  instance CFoo a => CBaz a
+  {
+    cy = cx;
+  }
+}
+
