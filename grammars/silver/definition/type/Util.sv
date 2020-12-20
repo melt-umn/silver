@@ -55,6 +55,17 @@ top::PolyType ::= bound::[TyVar] ty::Type
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
 }
 
+aspect production constraintType
+top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
+{
+  top.arity = ty.arity;
+  top.isError = ty.isError;
+  top.isDecorated = ty.isDecorated;
+  top.isDecorable = ty.isDecorable;
+  top.isTerminal = ty.isTerminal;
+  top.asNtOrDecType = error("Only mono types should be possibly-decorated");
+}
+
 attribute isError, inputTypes, outputType, namedTypes, arity, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
 
 aspect default production

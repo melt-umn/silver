@@ -1,6 +1,6 @@
 grammar silver:definition:core;
 
-nonterminal ProductionSignature with config, grammarName, env, location, unparse, errors, defs, namedSignature, signatureName;
+nonterminal ProductionSignature with config, grammarName, env, location, unparse, errors, defs, constraintDefs, namedSignature, signatureName;
 nonterminal ProductionLHS with config, grammarName, env, location, unparse, errors, defs, outputElement;
 nonterminal ProductionRHS with config, grammarName, env, location, unparse, errors, defs, inputElements;
 nonterminal ProductionRHSElem with config, grammarName, env, location, unparse, errors, defs, inputElements, deterministicCount;
@@ -9,7 +9,7 @@ flowtype forward {env} on ProductionSignature, ProductionLHS, ProductionRHS;
 flowtype forward {deterministicCount, env} on ProductionRHSElem;
 
 propagate errors on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
-propagate defs on ProductionSignature, ProductionRHS;
+propagate defs on ProductionRHS;
 
 {--
  - Used to help give names to children, when names are omitted.
@@ -20,6 +20,12 @@ inherited attribute deterministicCount :: Integer;
  - Given to signature syntax, so as to construct a named signature representation.
  -}
 inherited attribute signatureName :: String;
+
+{--
+ - Defs from the constraint list are passed seperately from the rest of the signature defs,
+ - to avoid an infinite recursion.
+ -}
+synthesized attribute constraintDefs::[Def];
 
 concrete production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
@@ -60,7 +66,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local attribute prodAtts :: [Def];
   prodAtts = defsFromPADcls(getProdAttrs(fName, top.env), namedSig);
 
-  body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
+  body.env = newScopeEnv(body.defs ++ sigDefs ++ ns.constraintDefs, newScopeEnv(prodAtts, top.env));
   body.frame = productionContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName); -- graph from flow:env
 }
 
@@ -72,6 +78,8 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
   cl.instanceHead = nothing();
   cl.constraintSigName = just(top.signatureName);
 
+  top.defs := lhs.defs ++ rhs.defs;
+  top.constraintDefs = cl.defs;
   top.namedSignature = namedSignature(top.signatureName, cl.contexts, rhs.inputElements, lhs.outputElement, annotationsForNonterminal(lhs.outputElement.typerep, top.env));
 }
 

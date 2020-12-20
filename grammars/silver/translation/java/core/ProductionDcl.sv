@@ -181,7 +181,7 @@ ${sflatMap((.contextInitTrans), namedSig.contexts)}
 	
 		@Override
 		public final ${fnnt} invoke(final Object[] children, final Object[] annotations) {
-			return new ${className}(${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+			return new ${className}(${implode(", ", map((.contextRefElem), namedSig.contexts) ++ unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
 		}
 		
 		@Override

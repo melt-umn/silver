@@ -52,6 +52,23 @@ equalityTest(myeq([1, 2, 3], [1, 2, 1]), false, Boolean, silver_tests);
 equalityTest(myeq(pair([1, 2], 3), pair([1, 2], 3)), true, Boolean, silver_tests);
 equalityTest(myeq(pair([1, 2], 3), pair([1, 4], 3)), false, Boolean, silver_tests);
 
+function myRemove
+MyEq a => [a] ::= x::a xs::[a]
+{
+  return removeBy(myeq, x, xs);
+}
+equalityTest(hackUnparse(myRemove(3, [1, 2, 3, 4])), "[1, 2, 4]", String, silver_tests);
+
+equality attribute isEqTo, isEq;
+nonterminal EqPair<a b> with isEqTo, isEq;
+production eqPair
+MyEq a, MyEq b => top::EqPair<a b> ::= x::a y::b
+{
+  top.isEq = case top.isEqTo of eqPair(x1, y1) -> myeq(x1, x) && myeq(y1, y) end;
+}
+
+equalityTest(decorate eqPair(42, [1, 2, 3]) with {isEqTo=eqPair(42, [1, 2, 3]);}.isEq, true, Boolean, silver_tests);
+equalityTest(decorate eqPair(42, [1, 2, 3]) with {isEqTo=eqPair(42, [1, 23, 3]);}.isEq, false, Boolean, silver_tests);
 
 wrongCode "Could not find an instance for silver_features:CBaz Float (arising from the instance for silver_features:CFoo [Float], arising from the use of cx)" {
   global cxf::[Float] = cx;

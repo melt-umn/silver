@@ -15,7 +15,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   top.valueWeaving := body.valueWeaving;
 
   local argsAccess :: String =
-    implode(", ", map((.childRefElem), namedSig.inputElements));
+    implode(", ", map((.contextRefElem), namedSig.contexts) ++ map((.childRefElem), namedSig.inputElements));
 
   local funBody :: String =
 s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate();
@@ -151,7 +151,7 @@ ${sflatMap((.contextInitTrans), whatSig.contexts)}
 
 		@Override
 		public final ${whatSig.outputElement.typerep.transType} invoke(final Object[] children, final Object[] namedNotApplicable) {
-			return ${className}.invoke(${implode(", ", unpackChildren(0, whatSig.inputElements))});
+			return ${className}.invoke(${implode(", ", map((.contextRefElem), whatSig.contexts) ++ unpackChildren(0, whatSig.inputElements))});
 		}
 		
 		@Override

@@ -1,6 +1,6 @@
 grammar silver:definition:core;
 
-nonterminal FunctionSignature with config, grammarName, env, location, unparse, errors, defs, namedSignature, signatureName;
+nonterminal FunctionSignature with config, grammarName, env, location, unparse, errors, defs, constraintDefs, namedSignature, signatureName;
 nonterminal FunctionLHS with config, grammarName, env, location, unparse, errors, defs, outputElement;
 
 propagate errors on FunctionSignature, FunctionLHS;
@@ -38,7 +38,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   local attribute prodAtts :: [Def];
   prodAtts = defsFromPADcls(getProdAttrs(fName, top.env), namedSig);
 
-  body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
+  body.env = newScopeEnv(body.defs ++ sigDefs ++ ns.constraintDefs, newScopeEnv(prodAtts, top.env));
   body.frame = functionContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName); -- graph from flow:env
 }
 
@@ -49,7 +49,9 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
 
   cl.instanceHead = nothing();
   cl.constraintSigName = just(top.signatureName);
-  propagate defs;
+
+  top.defs := lhs.defs ++ rhs.defs;
+  top.constraintDefs = cl.defs;
 
   -- For the moment, functions do not have named parameters (hence, [])
   top.namedSignature = namedSignature(top.signatureName, cl.contexts, rhs.inputElements, lhs.outputElement, []);
