@@ -3,13 +3,14 @@ grammar silver:translation:java:core;
 aspect production instanceDcl
 top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
 {
-  local className :: String = "I" ++ id.name ++ "_" ++ ty.typerep.transTypeName;
+  local className :: String = "I" ++ substitute(":", "_", fName) ++ "_" ++ ty.typerep.transTypeName;
 
   top.genFiles := [pair(className ++ ".java", s"""
 
 package ${makeName(top.grammarName)};
 
 public class ${className} implements ${makeClassName(fName)} {
+	final static common.DecoratedNode context = common.TopNode.singleton; // For decoration in member bodies
 
 	public ${className}(${implode(", ", map((.contextParamTrans), cl.contexts))}) {
 ${sflatMap((.contextInitTrans), cl.contexts)}

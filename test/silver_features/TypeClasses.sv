@@ -39,6 +39,13 @@ equalityTest(hackUnparse(cxi), "[42]", String, silver_tests);
 global cxs::[String] = cx;
 equalityTest(hackUnparse(cxs), "[\"hello\"]", String, silver_tests);
 
+equalityTest(myeq([1, 2, 3], [1, 2, 3]), true, Boolean, silver_tests);
+equalityTest(myeq([1, 2, 3], [1, 2, 3, 2, 1]), false, Boolean, silver_tests);
+equalityTest(myeq([1, 2, 3], [1, 2, 1]), false, Boolean, silver_tests);
+equalityTest(myeq(pair([1, 2], 3), pair([1, 2], 3)), true, Boolean, silver_tests);
+equalityTest(myeq(pair([1, 2], 3), pair([1, 4], 3)), false, Boolean, silver_tests);
+
+
 wrongCode "Could not find an instance for silver_features:CBaz Float (arising from the instance for silver_features:CFoo [Float], arising from the use of cx)" {
   global cxf::[Float] = cx;
 }
@@ -81,8 +88,7 @@ wrongCode "Overlapping instances" {
   instance CFoo [a] { cx = []; }
 }
 
-{-
-wrongCode "Orphaned instance" {
+warnCode "Orphaned instance" {
   instance MyEq a => MyEq Maybe<a>
   {
     myeq = \ m1::Maybe<a> m2::Maybe<a> ->
@@ -93,8 +99,21 @@ wrongCode "Orphaned instance" {
       end;
   }
 }
--}
 
-equalityTest(myeq([1, 2, 3], [1, 2, 3]), true, Boolean, silver_tests);
-equalityTest(myeq([1, 2, 3], [1, 2, 3, 2, 1]), false, Boolean, silver_tests);
-equalityTest(myeq([1, 2, 3], [1, 2, 1]), false, Boolean, silver_tests);
+warnCode "Orphaned default instance" {
+  instance MyEq a
+  {
+    myeq = \ a a -> false;
+  }
+}
+equalityTest(myeq(3.14, 3.14), false, Boolean, silver_tests);
+
+nonterminal ABCD;
+production abcd top::ABCD ::= {}
+
+-- Type class from another grammar, but not orphaned
+instance MyEq ABCD
+{
+  myeq = \ ABCD ABCD -> true;
+}
+equalityTest(myeq(abcd(), abcd()), true, Boolean, silver_tests);

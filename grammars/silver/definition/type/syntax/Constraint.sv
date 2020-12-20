@@ -3,7 +3,12 @@ grammar silver:definition:type:syntax;
 autocopy attribute instanceHead::Maybe<Context>;
 autocopy attribute constraintSigName::Maybe<String>;
 
-nonterminal ConstraintList with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead, constraintSigName;
+nonterminal ConstraintList
+  -- This grammar doesn't export silver:definition:core, so the type concrete
+  -- syntax doesn't "know about" the core layout terminals.
+  -- Thus we have to set the layout explicitly for the "root" nonterminal here.
+  layout {BlockComments, Comments, WhiteSpace}
+  with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead, constraintSigName;
 nonterminal Constraint with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead, constraintSigName;
 
 propagate errors, defs, lexicalTypeVariables on ConstraintList, Constraint;

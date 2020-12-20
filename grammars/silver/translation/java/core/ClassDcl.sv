@@ -3,7 +3,7 @@ grammar silver:translation:java:core;
 aspect production typeClassDcl
 top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 {
-  local className :: String = "C" ++ id.name;
+  local className :: String = "C" ++ last(explode(":", fName));
 
   top.genFiles := [pair(className ++ ".java", s"""
 

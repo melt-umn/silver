@@ -25,7 +25,7 @@ top::Type ::= tv::TyVar
   top.transClassType = "Object";
   top.transTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
   top.transFreshTypeRep = top.transTypeRep;
-  top.transTypeName = "a";
+  top.transTypeName = "a" ++ toString(tv.extractTyVarRep);
 }
 
 aspect production skolemType
@@ -35,7 +35,7 @@ top::Type ::= tv::TyVar
   top.transClassType = "Object";
   top.transTypeRep = s"new common.BaseTypeRep(\"b${toString(tv.extractTyVarRep)}\")";
   top.transFreshTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
-  top.transTypeName = "a";
+  top.transTypeName = "a" ++ toString(tv.extractTyVarRep);
 }
 
 aspect production errorType

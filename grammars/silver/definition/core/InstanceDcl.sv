@@ -15,16 +15,14 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   production superContexts::Contexts = foldContexts(dcl.superContexts);
   superContexts.env = body.env;
   
-  top.defs :=
-    if ty.typerep.isError then []
-    else [instDef(top.grammarName, id.location, fName, boundVars, cl.contexts, ty.typerep)];
+  top.defs := [instDef(top.grammarName, id.location, fName, boundVars, cl.contexts, ty.typerep)];
   
   top.errors <- id.lookupType.errors;
   top.errors <-
     if dcl.isClass then []
     else [err(id.location, id.name ++ " is not a type class.")];
   top.errors <-
-    if length(getInstanceDcl(fName, ty.typerep, top.env)) > 1
+    if !ty.typerep.isError && length(getInstanceDcl(fName, ty.typerep, top.env)) > 1
     then [err(id.location, "Overlapping instances exist for " ++ id.unparse ++ " " ++ ty.unparse)]
     else [];
   top.errors <-

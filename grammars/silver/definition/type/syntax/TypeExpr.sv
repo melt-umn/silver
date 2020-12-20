@@ -5,14 +5,9 @@ imports silver:definition:type;
 imports silver:definition:env;
 imports silver:util;
 
-nonterminal TypeExpr
-  -- This grammar doesn't export silver:definition:core, so the type concrete
-  -- syntax doesn't "know about" the core layout terminals.
-  -- Thus we have to set the layout explicitly for the "root" nonterminal here.
-  layout {BlockComments, Comments, WhiteSpace}
-  with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, errorsTyVars, freeVariables;
+nonterminal TypeExpr  with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, errorsTyVars, freeVariables;
 nonterminal Signature with config, location, grammarName, errors, env, unparse, types,   lexicalTypeVariables;
-nonterminal TypeExprs  with config, location, grammarName, errors, env, unparse, types,   lexicalTypeVariables, errorsTyVars, freeVariables;
+nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, types,   lexicalTypeVariables, errorsTyVars, freeVariables;
 nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, unparse, types, lexicalTypeVariables, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 
 synthesized attribute types :: [Type];

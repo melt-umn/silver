@@ -54,7 +54,7 @@ top::DclInfo ::=
 aspect production instDcl
 top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
 {
-  top.transContext = s"new ${makeInstanceName(fn, ty)}(${implode(", ", top.transContextDeps)})";
+  top.transContext = s"new ${makeInstanceName(top.sourceGrammar, fn, ty)}(${implode(", ", top.transContextDeps)})";
 }
 aspect production instConstraintDcl
 top::DclInfo ::= fntc::String ty::Type

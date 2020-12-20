@@ -59,9 +59,9 @@ String ::= s::String
 }
 
 function makeInstanceName
-String ::= s::String t::Type
+String ::= g::String s::String t::Type
 {
-  return substituteLast(".", ".I", makeName(s)) ++ "_" ++ t.transTypeName;
+  return substituteLast(".", ".I", makeName(g ++ ":" ++ substitute(":", "_", s))) ++ "_" ++ t.transTypeName;
 }
 
 function substituteLast
