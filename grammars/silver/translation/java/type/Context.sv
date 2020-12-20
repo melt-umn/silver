@@ -69,7 +69,7 @@ top::DclInfo ::= fntc::String ty::Type fnsig::String
 aspect production currentInstDcl
 top::DclInfo ::= fntc::String ty::Type
 {
-  top.transContext = "this";
+  top.transContext = s"currentInstance()";
 }
 aspect production instSuperDcl
 top::DclInfo ::= fntc::String baseDcl::DclInfo ty::Type

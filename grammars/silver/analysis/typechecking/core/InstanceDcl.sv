@@ -8,22 +8,12 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   top.errors <- superContexts.contextErrors;
 }
 
-aspect production consInstanceBody
-top::InstanceBody ::= h::InstanceBodyItem t::InstanceBody
-{
-  
-}
-aspect production nilInstanceBody
-top::InstanceBody ::= 
-{
-  
-}
 
 aspect production instanceBodyItem
 top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 {
   production expectedType::Type =
-    fromMaybe(errorType(), lookupBy(stringEq, top.fullName, top.expectedClassMembers));
+    fromMaybe(pair(errorType(), false), lookupBy(stringEq, top.fullName, top.expectedClassMembers)).fst;
 
   local errCheck1::TypeCheck = check(expectedType, e.typerep);
   top.errors <-

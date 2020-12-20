@@ -63,7 +63,7 @@ top::AGDcl ::= 'instance' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
 }
 
 autocopy attribute className::String;
-inherited attribute expectedClassMembers::[Pair<String Type>];
+inherited attribute expectedClassMembers::[Pair<String Pair<Type Boolean>>];
 
 nonterminal InstanceBody with
   config, grammarName, env, defs, flowEnv, location, unparse, errors, compiledGrammars, className, expectedClassMembers;
@@ -79,7 +79,7 @@ top::InstanceBody ::= h::InstanceBodyItem t::InstanceBody
 
   h.expectedClassMembers = top.expectedClassMembers;
   t.expectedClassMembers =
-    filter(\ m::Pair<String Type> -> m.fst != h.fullName, top.expectedClassMembers);
+    filter(\ m::Pair<String Pair<Type Boolean>> -> m.fst != h.fullName, top.expectedClassMembers);
 }
 concrete production nilInstanceBody
 top::InstanceBody ::= 
@@ -87,8 +87,9 @@ top::InstanceBody ::=
   top.unparse = "";
 
   top.errors <-
-    map(
-      \ m::Pair<String Type> -> err(top.location, s"Missing instance member ${m.fst} for class ${top.className}"),
+    flatMap(
+      \ m::Pair<String Pair<Type Boolean>> ->
+        if m.snd.snd then [] else [err(top.location, s"Missing instance member ${m.fst} for class ${top.className}")],
       top.expectedClassMembers);
 }
 

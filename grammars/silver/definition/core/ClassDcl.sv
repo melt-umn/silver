@@ -95,7 +95,25 @@ top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production boundVars :: [TyVar] =
     setUnionTyVars(top.classHead.freeVariables, ty.typerep.freeVariables);
-  top.classMembers = [pair(fName, ty.typerep)];
+  top.classMembers = [pair(fName, pair(ty.typerep, false))];
+  
+  top.defs <- [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, ty.typerep)];
+
+  top.errors <-
+    if length(getValueDclAll(fName, top.env)) > 1
+    then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
+    else [];
+}
+
+concrete production defaultClassBodyItem
+top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
+{
+  top.unparse = s"${id.name} :: ${ty.unparse} = ${e.unparse};";
+  
+  production fName :: String = top.grammarName ++ ":" ++ id.name;
+  production boundVars :: [TyVar] =
+    setUnionTyVars(top.classHead.freeVariables, ty.typerep.freeVariables);
+  top.classMembers = [pair(fName, pair(ty.typerep, true))];
   
   top.defs <- [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, ty.typerep)];
 

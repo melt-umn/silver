@@ -12,7 +12,7 @@ synthesized attribute fullName :: String;
 synthesized attribute typeScheme :: PolyType;
 synthesized attribute isType :: Boolean;
 synthesized attribute isClass :: Boolean;
-synthesized attribute classMembers :: [Pair<String Type>];
+synthesized attribute classMembers :: [Pair<String Pair<Type Boolean>>];
 
 inherited attribute givenInstanceType :: Type;
 synthesized attribute superContexts :: [Context];
@@ -201,7 +201,7 @@ top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar
   top.isType = true;
 }
 abstract production clsDcl
-top::DclInfo ::= fn::String supers::[Context] tv::TyVar members::[Pair<String Type>]
+top::DclInfo ::= fn::String supers::[Context] tv::TyVar members::[Pair<String Pair<Type Boolean>>]
 {
   top.fullName = fn;
   
@@ -211,7 +211,10 @@ top::DclInfo ::= fn::String supers::[Context] tv::TyVar members::[Pair<String Ty
   
   local tvSubst :: Substitution = subst(tv, top.givenInstanceType);
   top.superContexts = map(performContextRenaming(_, tvSubst), supers);
-  top.classMembers = map(\ m::Pair<String Type> -> pair(m.fst, performRenaming(m.snd, tvSubst)), members);
+  top.classMembers = map(
+    \ m::Pair<String Pair<Type Boolean>> ->
+      pair(m.fst, pair(performRenaming(m.snd.fst, tvSubst), m.snd.snd)),
+    members);
 }
 
 -- AttributeDclInfos

@@ -11,6 +11,11 @@ package ${makeName(top.grammarName)};
 
 public interface ${className} {
 
+	// Needed since 'this' may refer to something else inside member translations
+	public default ${className} currentInstance() {
+		return this;
+	}
+
 ${sflatMap(\ c::Context -> s"\tpublic ${c.transType} ${c.transContextSuperAccessorName}();\n", cl.contexts)}
 
 ${body.translation}
@@ -35,7 +40,17 @@ top::ClassBody ::=
 aspect production classBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
 {
-  top.translation = s"\tpublic ${ty.typerep.transType} ${makeInstanceMemberAccessorName(id.name)}();";
+  top.translation = s"\t${ty.typerep.transType} ${makeInstanceMemberAccessorName(id.name)}();";
+}
+
+aspect production defaultClassBodyItem
+top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
+{
+  top.translation = s"""
+	default ${ty.typerep.transClassType} ${makeInstanceMemberAccessorName(id.name)}() {
+		return ${e.translation};
+	}
+""";
 }
 
 function makeInstanceMemberAccessorName

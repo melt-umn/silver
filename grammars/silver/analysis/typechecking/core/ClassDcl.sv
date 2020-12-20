@@ -1,24 +1,16 @@
 grammar silver:analysis:typechecking:core;
 
-aspect production typeClassDcl
-top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' body::ClassBody '}'
+aspect production defaultClassBodyItem
+top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
 {
-  -- TODO should anything move here?
-}
-
-aspect production consClassBody
-top::ClassBody ::= h::ClassBodyItem t::ClassBody
-{
+  local errCheck1::TypeCheck = check(ty.typerep, e.typerep);
+  top.errors <-
+    if errCheck1.typeerror
+    then [err(e.location, s"Member ${id.name} has expected type ${errCheck1.leftpp}, but the expression has actual type ${errCheck1.rightpp}")]
+    else [];
   
-}
-aspect production nilClassBody
-top::ClassBody ::= 
-{
-  
-}
-
-aspect production classBodyItem
-top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
-{
-  
+  e.downSubst = emptySubst();
+  errCheck1.downSubst = e.upSubst;
+  e.finalSubst = e.upSubst;
+  errCheck1.finalSubst = e.finalSubst;
 }

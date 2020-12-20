@@ -13,6 +13,7 @@ class CFoo a => CBar a
 class CBaz a
 {
   cy :: a;
+  bazFromInt :: (a ::= Integer) = \ Integer -> cy;
 }
 
 instance CBaz a => CFoo [a]
@@ -23,6 +24,7 @@ instance CBaz a => CFoo [a]
 instance CBaz Integer
 {
   cy = 42;
+  bazFromInt = \ i::Integer -> i;
 }
 
 instance CBaz String
@@ -38,6 +40,11 @@ equalityTest(hackUnparse(cxi), "[42]", String, silver_tests);
 
 global cxs::[String] = cx;
 equalityTest(hackUnparse(cxs), "[\"hello\"]", String, silver_tests);
+
+global bfii::Integer = bazFromInt(24);
+global bfis::String = bazFromInt(24);
+equalityTest(bfii, 24, Integer, silver_tests);
+equalityTest(bfis, "hello", String, silver_tests);
 
 equalityTest(myeq([1, 2, 3], [1, 2, 3]), true, Boolean, silver_tests);
 equalityTest(myeq([1, 2, 3], [1, 2, 3, 2, 1]), false, Boolean, silver_tests);
