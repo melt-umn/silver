@@ -43,7 +43,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production errorApplication
-top::Expr ::= e::Decorated Expr es::AppExprs annos::AnnoAppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
 {
 }
 

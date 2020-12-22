@@ -21,7 +21,7 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   top.defs := [];
 
   production namedSig :: NamedSignature = 
-    namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName, [],
+    namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName, [], [],
       namedSignatureElement(lhs.name, te.typerep),
       annotationsForNonterminal(te.typerep, top.env));
 
@@ -83,7 +83,7 @@ top::DefLHS ::= q::Decorated QName
   
   top.typerep = q.lookupValue.typeScheme.monoType;
 
-  top.translation = makeNTClassName(top.frame.lhsNtName) ++ ".defaultSynthesizedAttributes";
+  top.translation = makeNTName(top.frame.lhsNtName) ++ ".defaultSynthesizedAttributes";
 }
 
 abstract production defaultAspectContext

@@ -48,6 +48,7 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.fullName = fn;
 
+  top.isType = true;
   top.typeScheme = polyType(bound, ty);
 }
 

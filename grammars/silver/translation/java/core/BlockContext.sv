@@ -29,7 +29,7 @@ top::BlockContext ::=
 aspect production functionContext
 top::BlockContext ::= sig::NamedSignature  _
 {
-  top.className = makeClassName(top.fullName);
+  top.className = makeProdName(top.fullName);
   top.prodLocalCountName =
     makeName(top.sourceGrammar) ++ ".Init.count_local__ON__" ++ makeIdName(top.fullName);
 }
@@ -37,7 +37,7 @@ top::BlockContext ::= sig::NamedSignature  _
 aspect production productionContext
 top::BlockContext ::= sig::NamedSignature  _
 {
-  top.className = makeClassName(top.fullName);
+  top.className = makeProdName(top.fullName);
   top.prodLocalCountName =
     makeName(top.sourceGrammar) ++ ".Init.count_local__ON__" ++ makeIdName(top.fullName);
 }

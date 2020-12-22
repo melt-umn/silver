@@ -56,7 +56,7 @@ top::AGDcl ::= attrs::NameList nt::QName ps::ProdNameList
     foldr(
       appendAGDcl(_, _, location=top.location), emptyAGDcl(location=top.location),
       map(propagateAspectDcl(_, attrs, location=nt.location), includedProds));
-   
+  
   forwards to
     if !null(nt.lookupType.errors)
     then errorAGDcl(nt.lookupType.errors, location=top.location)

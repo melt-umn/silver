@@ -1,7 +1,6 @@
 grammar silver:modification:copper;
 
 terminal Lexer_kwd   'lexer'   lexer classes {KEYWORD};
-terminal Class_kwd   'class'   lexer classes {KEYWORD};
 terminal Extends_kwd 'extends' lexer classes {KEYWORD};
 
 concrete production lexerClassDclEmpty

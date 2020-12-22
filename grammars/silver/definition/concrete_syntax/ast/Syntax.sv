@@ -112,7 +112,7 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   top.xmlCopper =
     "\n  <Nonterminal id=\"" ++ makeCopperName(t.typeName) ++ "\">\n" ++
       "    <PP>" ++ t.typeName ++ "</PP>\n" ++
-      "    <Type><![CDATA[" ++ makeNTClassName(t.typeName) ++ "]]></Type>\n" ++
+      "    <Type><![CDATA[" ++ makeNTName(t.typeName) ++ "]]></Type>\n" ++
       "  </Nonterminal>\n" ++
     subdcls.xmlCopper;
 
@@ -256,7 +256,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     "    <Code><![CDATA[\n" ++
     -- Annoying workaround for if a lambda in an action block needs to capture RESULT when accessing a child.
     -- Java complains when we capture something that is non-final.
-    "final " ++ makeClassName(ns.fullName) ++ " RESULTfinal = new " ++ makeClassName(ns.fullName) ++ "(" ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
+    "final " ++ makeProdName(ns.fullName) ++ " RESULTfinal = new " ++ makeProdName(ns.fullName) ++ "(" ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
     "RESULT = RESULTfinal;\n" ++
       modifiers.acode ++
     "]]></Code>\n" ++

@@ -56,6 +56,8 @@ terminal Then_kwd        'then'         lexer classes {KEYWORD,RESERVED};
 terminal To_kwd          'to'           lexer classes {KEYWORD,RESERVED};
 terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED};
 terminal Global_kwd      'global'       lexer classes {KEYWORD,RESERVED};
+terminal Class_kwd       'class'        lexer classes {KEYWORD};
+terminal Instnace_kwd    'instance'     lexer classes {KEYWORD};
 
 terminal Length_kwd    'length'    lexer classes {BUILTIN,RESERVED};
 terminal ToBoolean_kwd 'toBoolean' lexer classes {BUILTIN,RESERVED};
@@ -93,6 +95,7 @@ terminal UnderScore_t  '_'  ;
 
 terminal CCEQ_t        '::=' lexer classes {SPECOP};
 terminal Equal_t       '='   lexer classes {SPECOP};
+terminal CtxArrow_t    '=>'  lexer classes {SPECOP};
 
 -- Unused infix operators: ~ ` @ # % ^ & | \
 -- $ is used by convenience.

@@ -2,19 +2,22 @@ grammar silver:definition:type;
 
 option silver:modification:ffi; -- foreign types
 
+synthesized attribute freeVariables :: [TyVar];
 synthesized attribute boundVars :: [TyVar];
+synthesized attribute contexts :: [Context];
 synthesized attribute typerep :: Type;
 synthesized attribute monoType :: Type; -- Raises on error when we encounter a polyType and didn't expect one
 
 {--
  - Represents a type, quantified over some type variables.
  -}
-nonterminal PolyType with boundVars, typerep, monoType;
+nonterminal PolyType with boundVars, contexts, typerep, monoType;
 
 abstract production monoType
 top::PolyType ::= ty::Type
 {
   top.boundVars = [];
+  top.contexts = [];
   top.typerep = ty;
   top.monoType = ty;
 }
@@ -23,16 +26,35 @@ abstract production polyType
 top::PolyType ::= bound::[TyVar] ty::Type
 {
   top.boundVars = freshTyVars(length(bound));
+  top.contexts = [];
   top.typerep = freshenTypeWith(ty, bound, top.boundVars);
   top.monoType = error("Expected a mono type but found a poly type!");
+}
+
+abstract production constraintType
+top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
+{
+  top.boundVars = freshTyVars(length(bound));
+  top.contexts = map(freshenContextWith(_, bound, top.boundVars), contexts);
+  top.typerep = freshenTypeWith(ty, bound, top.boundVars);
+  top.monoType = error("Expected a mono type but found a (constraint) poly type!");
+}
+
+{--
+ - Represents a constraint on a type, e.g. a type class instance
+ -}
+nonterminal Context with freeVariables;
+
+abstract production instContext
+top::Context ::= cls::String t::Type
+{
+  top.freeVariables = t.freeVariables;
 }
 
 {--
  - Silver Type Representations.
  -}
 nonterminal Type with freeVariables;
-
-synthesized attribute freeVariables :: [TyVar];
 
 {--
  - This is a (universally quantified) type variable.

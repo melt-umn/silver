@@ -2,7 +2,7 @@ grammar silver:modification:impide;
 
 import silver:driver;
 import silver:translation:java:driver;
-import silver:translation:java:core only makeParserName, makeName, makeClassName, makeNTClassName;
+import silver:translation:java:core only makeParserName, makeName, makeProdName, makeNTName;
 
 import silver:util:cmdargs;
 

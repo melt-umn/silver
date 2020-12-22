@@ -15,7 +15,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   top.valueWeaving := body.valueWeaving;
 
   local argsAccess :: String =
-    implode(", ", map((.childRefElem), namedSig.inputElements));
+    implode(", ", map((.contextRefElem), namedSig.contexts) ++ map((.childRefElem), namedSig.inputElements));
 
   local funBody :: String =
 s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate();
@@ -70,9 +70,12 @@ ${implode("", map((.childStaticElem), whatSig.inputElements))}
 
 	public ${className}(${whatSig.javaSignature}) {
 ${implode("", map(makeChildAssign, whatSig.inputElements))}
+${implode("", map((.contextInitTrans), whatSig.contexts))}
 	}
 
 ${implode("", map((.childDeclElem), whatSig.inputElements))}
+
+${sflatMap((.contextMemberDeclTrans), whatSig.contexts)}
 
 	@Override
 	public Object getChild(final int index) {
@@ -133,13 +136,22 @@ ${whatResult}
 		}
 	}
 
+${if null(whatSig.contexts) -- Can only use a singleton when there aren't contexts.
+  then s"""
 	// Use of ? to permit casting to more specific types
 	public static final common.NodeFactory<? extends ${whatSig.outputElement.typerep.transType}> factory = new Factory();
+""" else ""}
 
 	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transType}> {
+${sflatMap((.contextMemberDeclTrans), whatSig.contexts)}
+
+		public Factory(${implode(", ", map((.contextParamTrans), whatSig.contexts))}) {
+${sflatMap((.contextInitTrans), whatSig.contexts)}
+		}
+
 		@Override
 		public final ${whatSig.outputElement.typerep.transType} invoke(final Object[] children, final Object[] namedNotApplicable) {
-			return ${className}.invoke(${implode(", ", unpackChildren(0, whatSig.inputElements))});
+			return ${className}.invoke(${implode(", ", map((.contextRefElem), whatSig.contexts) ++ unpackChildren(0, whatSig.inputElements))});
 		}
 		
 		@Override

@@ -4,7 +4,7 @@ imports silver:definition:regex;
 imports silver:definition:type;
 imports silver:definition:env;
 
-imports silver:translation:java:core only makeIdName, makeClassName, makeNTClassName;
+imports silver:translation:java:core only makeIdName, makeProdName, makeNTName;
 imports silver:translation:java:type only transType;
 
 import silver:util:raw:graph as g;

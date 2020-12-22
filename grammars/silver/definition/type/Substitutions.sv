@@ -80,10 +80,13 @@ Maybe<Type> ::= tv::TyVar s::Substitution
 --------------------------------------------------------------------------------
 
 -- These are for ordinary tyvar substitutions.
-autocopy attribute substitution :: Substitution occurs on Type;
-synthesized attribute substituted :: Type occurs on Type;
+autocopy attribute substitution :: Substitution occurs on Context, Type;
+functor attribute substituted occurs on Context, Type;
 -- These are for flat, non-recursive replacement of tyvars with something else directly
-synthesized attribute flatRenamed :: Type occurs on Type;
+functor attribute flatRenamed occurs on Context, Type;
+
+propagate substituted, flatRenamed on Context, Type
+  excluding varType, skolemType, nonterminalType, ntOrDecType, functionType;
 
 aspect production varType
 top::Type ::= tv::TyVar
@@ -135,67 +138,11 @@ top::Type ::= tv::TyVar
     else top;
 }
 
-aspect production errorType
-top::Type ::=
-{
-  top.substituted = top;
-  top.flatRenamed = top;
-}
-
-aspect production intType
-top::Type ::=
-{
-  top.substituted = top;
-  top.flatRenamed = top;
-}
-
-aspect production boolType
-top::Type ::=
-{
-  top.substituted = top;
-  top.flatRenamed = top;
-}
-
-aspect production floatType
-top::Type ::=
-{
-  top.substituted = top;
-  top.flatRenamed = top;
-}
-
-aspect production stringType
-top::Type ::=
-{
-  top.substituted = top;
-  top.flatRenamed = top;
-}
-
-aspect production terminalIdType
-top::Type ::=
-{
-  top.substituted = top;
-  top.flatRenamed = top;
-}
-
 aspect production nonterminalType
 top::Type ::= fn::String params::[Type]
 {
   top.substituted = nonterminalType(fn, mapSubst(params, top.substitution));
   top.flatRenamed = nonterminalType(fn, mapRenameSubst(params, top.substitution));
-}
-
-aspect production terminalType
-top::Type ::= fn::String
-{
-  top.substituted = top;
-  top.flatRenamed = top;
-}
-
-aspect production decoratedType
-top::Type ::= te::Type
-{
-  top.substituted = decoratedType(te.substituted);
-  top.flatRenamed = decoratedType(te.flatRenamed);
 }
 
 aspect production ntOrDecType
@@ -229,6 +176,13 @@ top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 
 --------------------------------------------------------------------------------
 
+function performContextSubstitution
+Context ::= c::Context s::Substitution
+{
+  c.substitution = s;
+  return c.substituted;
+}
+
 function performSubstitution
 Type ::= te::Type s::Substitution
 {
@@ -249,6 +203,13 @@ function mapNamedSubst
 }
 
 ----
+
+function performContextRenaming
+Context ::= c::Context s::Substitution
+{
+  c.substitution = s;
+  return c.flatRenamed;
+}
 
 function performRenaming
 Type ::= te::Type s::Substitution
@@ -319,6 +280,13 @@ function freshenType
 Type ::= te::Type tvs::[TyVar]
 {
   return freshenTypeWith(te, tvs, freshTyVars(length(tvs)));
+}
+
+function freshenContextWith
+Context ::= c::Context tvs::[TyVar] ntvs::[TyVar]
+{
+  -- Freshening just straight replaces variables, not deeply substituting them.
+  return performContextRenaming(c, zipVarsIntoSubstitution(tvs, ntvs));
 }
 
 function freshenTypeWith

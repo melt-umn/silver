@@ -9,14 +9,32 @@ propagate upSubst, downSubst
      decorateExprWith, exprInh, presentAppExpr,
      newFunction, terminalConstructor;
 
-aspect production application
-top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
+aspect production productionReference
+top::Expr ::= q::Decorated QName
 {
-  thread downSubst, upSubst on top, e, forward;
+  contexts.contextLoc = q.location;
+  contexts.contextSource = "the use of " ++ q.name;
+  top.errors <- contexts.contextErrors;
 }
 
-aspect production functionApplication
-top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
+aspect production functionReference
+top::Expr ::= q::Decorated QName
+{
+  contexts.contextLoc = q.location;
+  contexts.contextSource = "the use of " ++ q.name;
+  top.errors <- contexts.contextErrors;
+}
+
+aspect production classMemberReference
+top::Expr ::= q::Decorated QName
+{
+  context.contextLoc = q.location;
+  context.contextSource = "the use of " ++ q.name;
+  top.errors <- context.contextErrors;
+}
+
+aspect production application
+top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   propagate upSubst, downSubst;
 }

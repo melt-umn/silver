@@ -16,7 +16,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   local localVar :: String = "count_local__ON__" ++ makeIdName(fName);
   local ntName :: String = namedSig.outputElement.typerep.typeName;
-  local fnnt :: String = makeNTClassName(ntName);
+  local fnnt :: String = makeNTName(ntName);
 
   top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
@@ -46,9 +46,12 @@ ${implode("", map((.childStaticElem), namedSig.inputElements))}
 	public ${className}(${namedSig.javaSignature}) {
 		super(${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
+${implode("", map((.contextInitTrans), namedSig.contexts))}
 	}
 
 ${implode("", map((.childDeclElem), namedSig.inputElements))}
+
+${sflatMap((.contextMemberDeclTrans), namedSig.contexts)}
 
 	@Override
 	public Object getChild(final int index) {
@@ -162,15 +165,23 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 		${implode("\n\t\t", map(makeChildReify(fName, length(namedSig.inputElements), _), namedSig.inputElements))}
 		${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
 		
-		return new ${className}(${namedSig.refInvokeTrans});
+		${if null(namedSig.contexts)
+		  then s"return new ${className}(${namedSig.refInvokeTrans});"
+		  else s"""throw new common.exceptions.SilverError("Production ${fName} containes type contexts, which are not supported by reify"); // TODO"""}
 	}
 
-	public static final common.NodeFactory<${fnnt}> factory = new Factory();
+	${if null(namedSig.contexts) then s"public static final common.NodeFactory<${fnnt}> factory = new Factory();" else ""}
 
 	public static final class Factory extends common.NodeFactory<${fnnt}> {
+${sflatMap((.contextMemberDeclTrans), namedSig.contexts)}
+
+		public Factory(${implode(", ", map((.contextParamTrans), namedSig.contexts))}) {
+${sflatMap((.contextInitTrans), namedSig.contexts)}
+		}
+	
 		@Override
 		public final ${fnnt} invoke(final Object[] children, final Object[] annotations) {
-			return new ${className}(${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+			return new ${className}(${implode(", ", map((.contextRefElem), namedSig.contexts) ++ unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
 		}
 		
 		@Override

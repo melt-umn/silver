@@ -36,7 +36,7 @@ top::IdeWizardDcl ::= func::String props::[IdeProperty]
 	}
 	@Override
 	public StringCatter fileStub(ConsCell properties) {
-		return (StringCatter)${makeClassName(func)}.invoke(properties);
+		return (StringCatter)${makeProdName(func)}.invoke(properties);
 	}
 """;
 

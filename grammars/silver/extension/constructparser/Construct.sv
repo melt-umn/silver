@@ -35,6 +35,8 @@ top::Root ::= gdcl::GrammarDcl  mStmts::ModuleStmts  is::ImportStmts
   local main :: AGDcl =
     functionDcl('function', name("main", top.location),
       functionSignature(
+        nilConstraint(location=top.location),
+        '=>',
         functionLHS(
           nominalTypeExpr(
             qNameTypeId(terminal(IdUpper_t, "IOVal"), location=top.location),

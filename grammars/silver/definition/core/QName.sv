@@ -109,7 +109,7 @@ String ::= dcl::DclInfo
 }
 
 
----- Right now, this is only used for types:
+---- Right now, this is only used for types and type classes:
 attribute lookupType occurs on QNameType;
 
 concrete production qNameTypeId

@@ -346,7 +346,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
 }
 
 aspect production errorApplication
-top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.merrors := [];
 
@@ -354,7 +354,7 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = errorType();
-  top.monadRewritten = errorApplication(e, es, anns, location=top.location);
+  top.monadRewritten = top;
 }
 
 aspect production attributeSection
