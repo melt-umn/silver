@@ -44,13 +44,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local commaIfKids :: String = if length(namedSig.inputElements)!=0 then "," else "";
   local commaIfAnnos :: String = if length(namedSig.namedInputElements)!=0 then "," else "";
   local commaIfKidsOrAnnos :: String = if length(namedSig.inputElements)!=0 || length(namedSig.namedInputElements)!=0 then "," else "";
-
-  local maybeRuntimeContractualConstructor :: String = if containsBy((\a::String b::String -> a==b), ntName, getTypesWithRuntimeContractualConstructor()) then
-    s"""
-public static ${className} constructTakingOrigin(final NOriginInfo origin ${commaIfKidsOrAnnos} ${namedSig.javaSignature}) {
-        return new ${className}(${if wantsTracking then "origin"++commaIfKids else ""} ${implode(", ", map((\x::NamedSignatureElement -> "c_"++makeIdName(x.elementName)), namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map((\x::NamedSignatureElement -> "a_"++makeIdName(x.elementName)), namedSig.namedInputElements))});
-    }
-    """ else "";
+  local commaIfKidsAndAnnos :: String = if length(namedSig.inputElements)!=0 && length(namedSig.namedInputElements)!=0 then "," else "";
 
   top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
@@ -85,7 +79,9 @@ ${implode("", map((.childStaticElem), namedSig.inputElements))}
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
     }
 
-${maybeRuntimeContractualConstructor}
+    public static ${className} rtConstruct(final NOriginInfo origin ${commaIfKidsOrAnnos} ${namedSig.javaSignature}) {
+        return new ${className}(${if wantsTracking then "origin"++commaIfKids else ""} ${implode(", ", map((\x::NamedSignatureElement -> "c_"++makeIdName(x.elementName)), namedSig.inputElements))} ${commaIfKidsAndAnnos} ${implode(", ", map((\x::NamedSignatureElement -> "a_"++makeIdName(x.elementName)), namedSig.namedInputElements))});
+    }
 
 ${implode("", map((.childDeclElem), namedSig.inputElements))}
 

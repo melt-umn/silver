@@ -65,25 +65,24 @@ String ::= top::Decorated Expr  inInteresting::Boolean  followWith::String --nee
          else "";
 }
 
- -- Unfortunately, even with --no-origins there are cases where we depend on the signature of a constructor having a spot for origins
- --  even if it will discard them. This is just in reflect() at the moment. If origins are disabled it passes null.
-function getTypesWithRuntimeContractualConstructor
+-- These types will not have origins (will not be TrackedNodes) even if built with --force-origins to prevent circularity
+function getOriginsInternalTypes
 [String] ::=
 {
   production attribute names::[String] with ++;
   names := [
-    "core:reflect:AST",
-    "core:reflect:ASTs",
-    "core:reflect:NamedAST",
-    "core:reflect:NamedASTs"
+    "core:OriginInfo",
+    "core:OriginInfoType",
+    "core:OriginNote"
   ];
   return names;
 }
 
+
 function typeWantsTracking
 Boolean ::= ty::Type conf::Decorated CmdArgs env::Decorated Env
 {
-  return if conf.noOrigins then false
+  return if conf.noOrigins || containsBy((\a::String b::String -> a==b), ty.typeName, getOriginsInternalTypes()) then false
          else case ty of
               | nonterminalType(fn, _, tracked) -> conf.forceOrigins || tracked
               | _ -> false

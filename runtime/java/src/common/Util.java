@@ -93,9 +93,9 @@ public final class Util {
 
 	public static core.NMaybe safetoInt(String s) {
 		try {
-			return new core.Pjust( Integer.valueOf(s) );
+			return core.Pjust.rtConstruct(null, Integer.valueOf(s) );
 		} catch(NumberFormatException e) {
-			return new core.Pnothing();
+			return core.Pnothing.rtConstruct(null);
 		}
 	}
 
@@ -365,10 +365,10 @@ public final class Util {
 		try {
 			ROOT tree = parser.parse(new StringReader(javaString), javaFile);
 			Object terminals = getTerminals(parser);
-			return new core.PparseSucceeded(tree, terminals);
+			return core.PparseSucceeded.rtConstruct(null, tree, terminals);
 		} catch(CopperSyntaxError e) {
 			// To create a space, we increment the ending columns and indexes by 1.
-			NLocation loc = new Ploc(
+			NLocation loc = Ploc.rtConstruct(null, 
 				new StringCatter(e.getVirtualFileName()),
 				e.getVirtualLine(),
 				e.getVirtualColumn(),
@@ -376,17 +376,17 @@ public final class Util {
 				e.getVirtualColumn() + 1,
 				(int)(e.getRealCharIndex()),
 				(int)(e.getRealCharIndex()) + 1);
-			NParseError err = new PsyntaxError(
+			NParseError err = PsyntaxError.rtConstruct(null, 
 					new common.StringCatter(e.getMessage()),
 					loc,
 					convertStrings(e.getExpectedTerminalsDisplay().iterator()),
 					convertStrings(e.getMatchedTerminalsDisplay().iterator()));
 			Object terminals = getTerminals(parser);
-			return new PparseFailed(err, terminals);
+			return PparseFailed.rtConstruct(null, err, terminals);
 		} catch(CopperParserException e) {
 			// Currently this is dead code, but perhaps in the future we'll see IOException wrapped in here.
-			NParseError err = new PunknownParseError(new StringCatter(e.getMessage()), file);
-			return new PparseFailed(err, null);
+			NParseError err = PunknownParseError.rtConstruct(null, new StringCatter(e.getMessage()), file);
+			return PparseFailed.rtConstruct(null, err, null);
 		} catch(Throwable t) {
 			throw new TraceException("An error occured while parsing", t);
 		}
@@ -416,7 +416,7 @@ public final class Util {
 	 * Converts a common.Terminal to a Silver core:TerminalDescriptor.
 	 */
 	private static NTerminalDescriptor terminalToTerminalDescriptor(Terminal t) {
-        return new PterminalDescriptor(
+        return PterminalDescriptor.rtConstruct(null, 
             t.lexeme,
             convertStrings(Arrays.stream(t.getLexerClasses()).iterator()),
             new StringCatter(t.getName()),

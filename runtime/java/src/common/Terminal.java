@@ -22,7 +22,7 @@ public abstract class Terminal implements Typed {
 		final int line = vl.getLine();
 		final int column = vl.getColumn();
 		vl.defaultUpdate(lexeme);
-		this.location = new Ploc(
+		this.location = Ploc.rtConstruct(null, 
 				new StringCatter(vl.getFileName()),
 				line,
 				column,
@@ -67,7 +67,7 @@ public abstract class Terminal implements Typed {
 		final DecoratedNode x = a.decorate(TopNode.singleton, (Lazy[])null);
 		final DecoratedNode y = b.decorate(TopNode.singleton, (Lazy[])null);
 		
-		return new Ploc(
+		return Ploc.rtConstruct(null, 
 				x.synthesized(core.Init.core_filename__ON__core_Location),
 				x.synthesized(core.Init.core_line__ON__core_Location),
 				x.synthesized(core.Init.core_column__ON__core_Location),
@@ -79,7 +79,7 @@ public abstract class Terminal implements Typed {
 	// Ditto
 	public static NLocation createSpan(final Object[] children, VirtualLocation l, int index) {
 		if(children.length == 0) {
-			return new Ploc(new StringCatter(l.getFileName()), l.getLine(), l.getColumn(), l.getLine(), l.getColumn(), index, index);
+			return Ploc.rtConstruct(null, new StringCatter(l.getFileName()), l.getLine(), l.getColumn(), l.getLine(), l.getColumn(), index, index);
 		} else if(children.length == 1) {
 			return extractLocation(children[0]);
 		} else {
