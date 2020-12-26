@@ -174,7 +174,7 @@ top::Expr ::= 'reify'
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
   top.mtyperep =
-    functionType(nonterminalType("core:Either", [stringType(), varType(freshTyVar())]), [nonterminalType("core:reflect:AST", [])], []);
+    functionType(appTypes(nonterminalType("core:Either", 2), [stringType(), freshType()]), [nonterminalType("core:reflect:AST", 0)], []);
   top.monadicNames = [];
   top.monadRewritten = reifyFunctionLiteral('reify', location=top.location);
 }

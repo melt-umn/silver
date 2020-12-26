@@ -34,7 +34,7 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String _
 {
   top.typeName = fn;
 }

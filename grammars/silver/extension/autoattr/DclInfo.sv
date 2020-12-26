@@ -22,7 +22,7 @@ top::DclInfo ::= fn::String tyVar::TyVar
 {
   top.fullName = fn;
 
-  top.typeScheme = polyType([tyVar], varType(tyVar));
+  top.typeScheme = polyType([tyVar], varType(tyVar, 0));
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
@@ -58,7 +58,7 @@ top::DclInfo ::= fn::String tyVar::TyVar
 {
   top.fullName = fn;
 
-  top.typeScheme = polyType([tyVar], varType(tyVar));
+  top.typeScheme = polyType([tyVar], varType(tyVar, 0));
   top.isInherited = true;
   
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
@@ -88,7 +88,7 @@ top::DclInfo ::= fn::String tyVar::TyVar
 {
   top.fullName = fn;
 
-  top.typeScheme = polyType([tyVar], varType(tyVar));
+  top.typeScheme = polyType([tyVar], varType(tyVar, 0));
   top.isInherited = true;
   
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);

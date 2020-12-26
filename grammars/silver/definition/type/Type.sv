@@ -2,6 +2,7 @@ grammar silver:definition:type;
 
 option silver:modification:ffi; -- foreign types
 
+synthesized attribute kindArity :: Integer;
 synthesized attribute freeVariables :: [TyVar];
 synthesized attribute boundVars :: [TyVar];
 synthesized attribute contexts :: [Context];
@@ -54,14 +55,15 @@ top::Context ::= cls::String t::Type
 {--
  - Silver Type Representations.
  -}
-nonterminal Type with freeVariables;
+nonterminal Type with kindArity, freeVariables;
 
 {--
  - This is a (universally quantified) type variable.
  -}
 abstract production varType
-top::Type ::= tv::TyVar
+top::Type ::= tv::TyVar k::Integer
 {
+  top.kindArity = k;
   top.freeVariables = [tv];
 }
 
@@ -70,9 +72,20 @@ top::Type ::= tv::TyVar
  - Type are pretty much (exists sks. forall tys. type)
  -}
 abstract production skolemType
-top::Type ::= tv::TyVar
+top::Type ::= tv::TyVar k::Integer
 {
+  top.kindArity = k;
   top.freeVariables = [tv];
+}
+
+{--
+ - Represents the application of a constructor type.
+ -}
+abstract production appType
+top::Type ::= c::Type a::Type
+{
+  top.kindArity = if c.kindArity > 0 then c.kindArity - 1 else 0;
+  top.freeVariables = setUnionTyVars(c.freeVariables, a.freeVariables);
 }
 
 {--
@@ -82,6 +95,7 @@ top::Type ::= tv::TyVar
 abstract production errorType
 top::Type ::=
 {
+  top.kindArity = 0;
   top.freeVariables = [];
 }
 
@@ -91,6 +105,7 @@ top::Type ::=
 abstract production intType
 top::Type ::=
 {
+  top.kindArity = 0;
   top.freeVariables = [];
 }
 
@@ -100,6 +115,7 @@ top::Type ::=
 abstract production boolType
 top::Type ::=
 {
+  top.kindArity = 0;
   top.freeVariables = [];
 }
 
@@ -109,6 +125,7 @@ top::Type ::=
 abstract production floatType
 top::Type ::=
 {
+  top.kindArity = 0;
   top.freeVariables = [];
 }
 
@@ -118,6 +135,7 @@ top::Type ::=
 abstract production stringType
 top::Type ::=
 {
+  top.kindArity = 0;
   top.freeVariables = [];
 }
 
@@ -129,6 +147,7 @@ top::Type ::=
 abstract production terminalIdType
 top::Type ::=
 {
+  top.kindArity = 0;
   top.freeVariables = [];
 }
 
@@ -138,9 +157,10 @@ top::Type ::=
  - @param params  The type parameters for that nonterminal.
  -}
 abstract production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String k::Integer
 {
-  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), params));
+  top.kindArity = k;
+  top.freeVariables = [];
 }
 
 {--
@@ -150,6 +170,7 @@ top::Type ::= fn::String params::[Type]
 abstract production terminalType
 top::Type ::= fn::String
 {
+  top.kindArity = 0;
   top.freeVariables = [];
 }
 
@@ -160,6 +181,7 @@ top::Type ::= fn::String
 abstract production decoratedType
 top::Type ::= te::Type
 {
+  top.kindArity = 0;
   top.freeVariables = te.freeVariables;
 }
 
@@ -179,7 +201,7 @@ abstract production ntOrDecType
 top::Type ::= nt::Type  hidden::Type
 {
   top.freeVariables = case hidden of
-                      | varType(_) -> nt.freeVariables
+                      | varType(_, _) -> nt.freeVariables
                       | _ -> hidden.freeVariables
                       end;
   
@@ -197,6 +219,7 @@ top::Type ::= nt::Type  hidden::Type
 abstract production functionType
 top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
+  top.kindArity = 0;
   top.freeVariables = setUnionTyVarsAll(map((.freeVariables), 
     out :: params ++ map((.argType), namedParams)));
 }
@@ -269,12 +292,12 @@ Boolean ::= tv1::TyVar tv2::TyVar
 function freshType
 Type ::=
 {
-  return varType(freshTyVar());
+  return varType(freshTyVar(), 0);
 }
 
 function newSkolemConstant
 Type ::=
 {
-  return skolemType(freshTyVar());
+  return skolemType(freshTyVar(), 0);
 }
 

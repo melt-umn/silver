@@ -178,8 +178,7 @@ top::DclInfo ::= fn::String arity::Integer closed::Boolean
 {
   top.fullName = fn;
 
-  local tvs::[TyVar] = freshTyVars(arity);
-  top.typeScheme = polyType(tvs, nonterminalType(fn, map(varType, tvs)));
+  top.typeScheme = monoType(nonterminalType(fn, arity));
   top.isType = true;
 }
 abstract production termDcl
@@ -191,13 +190,13 @@ top::DclInfo ::= fn::String regex::Regex
   top.isType = true;
 }
 abstract production lexTyVarDcl
-top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar
+top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar k::Integer
 {
   top.fullName = fn;
 
   -- Lexical type vars in aspects aren't skolemized, since they unify with the real (skolem) types.
   -- See comment in silver:definition:type:syntax:AspectDcl.sv
-  top.typeScheme = monoType(if isAspect then varType(tv) else skolemType(tv));
+  top.typeScheme = monoType(if isAspect then varType(tv, k) else skolemType(tv, k));
   top.isType = true;
 }
 abstract production clsDcl

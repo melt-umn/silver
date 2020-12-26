@@ -14,8 +14,10 @@ top::TypeExpr ::= '[' te::TypeExpr ']'
   top.typerep = listType(te.typerep);
 
   forwards to refTypeExpr('Decorated', 
-    nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "core:List"), location=top.location),
-      botlSome('<', typeListSingle(te, location=te.location), '>', location=top.location), location=top.location), location=top.location);
+    appTypeExpr(
+      nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "core:List"), location=top.location), location=top.location),
+      bTypeList('<', typeListSingle(te, location=te.location), '>', location=top.location),
+      location=top.location), location=top.location);
 }
 
 -- The expressions -------------------------------------------------------------

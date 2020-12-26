@@ -336,7 +336,7 @@ top::StrategyExpr ::= s::StrategyExpr
            },
            location=top.location)],
         Silver_Expr { core:nothing() },
-        nonterminalType("core:Maybe", [top.frame.signature.outputElement.typerep]),
+        appType(nonterminalType("core:Maybe", 1), top.frame.signature.outputElement.typerep),
         location=top.location);
   top.totalTranslation =
     if sTotal
@@ -511,7 +511,7 @@ top::StrategyExpr ::= s::StrategyExpr
             end end,
             range(0, length(matchingChildren))),
         Silver_Expr { core:nothing() },
-        nonterminalType("core:Maybe", [top.frame.signature.outputElement.typerep]),
+        appType(nonterminalType("core:Maybe", 1), top.frame.signature.outputElement.typerep),
         location=top.location);
   top.totalTranslation =
     if sTotal && !null(matchingChildren)
@@ -606,7 +606,7 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
            },
            location=top.location)],
         Silver_Expr { core:nothing() },
-        nonterminalType("core:Maybe", [top.frame.signature.outputElement.typerep]),
+        appType(nonterminalType("core:Maybe", 1), top.frame.signature.outputElement.typerep),
         location=top.location)
     else Silver_Expr { core:nothing() };
 }
@@ -734,7 +734,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
       [Silver_Expr { $name{top.frame.signature.outputElement.elementName} }],
       ml.translation,
       Silver_Expr { core:nothing() },
-      nonterminalType("core:Maybe", [ty.typerep]),
+      appType(nonterminalType("core:Maybe", 1), ty.typerep),
       location=top.location);
   top.partialTranslation =
     if unify(ty.typerep, top.frame.signature.outputElement.typerep).failure
@@ -880,8 +880,8 @@ top::StrategyExpr ::= attr::QNameAttrOccur
     if !attrDcl.isSynthesized
     then [err(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy, because it is not a synthesized attribute")]
     else case attrTypeScheme.typerep, attrTypeScheme.boundVars of
-    | nonterminalType("core:Maybe", [varType(a1)]), [a2] when tyVarEqual(a1, a2) && attrDcl.isSynthesized -> []
-    | nonterminalType("core:Maybe", [nonterminalType(nt, _)]), _ when attrDcl.isSynthesized ->
+    | appType(nonterminalType("core:Maybe", _), varType(a1, _)), [a2] when tyVarEqual(a1, a2) && attrDcl.isSynthesized -> []
+    | appType(nonterminalType("core:Maybe", _), a), _ when pair(a.baseType, attrDcl.isSynthesized) matches pair(nonterminalType(nt, _), true) ->
       if null(getOccursDcl(attrDcl.fullName, nt, top.env))
       then [wrn(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy, because it doesn't occur on its own nonterminal type ${nt}")]
       else []
@@ -915,7 +915,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
     if !attrDcl.isSynthesized
     then [err(attr.location, s"Attribute ${attr.name} cannot be used as a total strategy, because it is not a synthesized attribute")]
     else case attrTypeScheme.typerep, attrTypeScheme.boundVars of
-    | varType(a1), [a2] when tyVarEqual(a1, a2) -> []
+    | varType(a1, _), [a2] when tyVarEqual(a1, a2) -> []
     | nonterminalType(nt, _), _ ->
       if null(getOccursDcl(attrDcl.fullName, nt, top.env))
       then [wrn(attr.location, s"Attribute ${attr.name} cannot be used as a total strategy, because it doesn't occur on its own nonterminal type ${nt}")]
@@ -960,7 +960,7 @@ top::QNameAttrOccur ::= at::QName
 {
   top.matchesFrame := top.found &&
     case top.typerep of
-    | nonterminalType("core:Maybe", [t]) -> !unify(top.attrFor, t).failure
+    | appType(nonterminalType("core:Maybe", _), t) -> !unify(top.attrFor, t).failure
     | t -> !unify(top.attrFor, t).failure
     end;
 }

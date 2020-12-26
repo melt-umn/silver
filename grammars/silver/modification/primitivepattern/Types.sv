@@ -66,11 +66,11 @@ inherited attribute refineWith :: Type occurs on Type;
 synthesized attribute refine :: Substitution occurs on Type;
 
 aspect production varType
-top::Type ::= tv::TyVar
+top::Type ::= tv::TyVar _
 {
   top.refine = 
     case top.refineWith of
-    | varType(j) ->
+    | varType(j, _) ->
         if tyVarEqual(tv, j)
         then emptySubst()
         else subst(tv, top.refineWith)
@@ -81,17 +81,27 @@ top::Type ::= tv::TyVar
 }
 
 aspect production skolemType
-top::Type ::= tv::TyVar
+top::Type ::= tv::TyVar _
 {
   top.refine = 
     case top.refineWith of
-    | skolemType(j) -> 
+    | skolemType(j, _) -> 
         if tyVarEqual(tv, j)
         then emptySubst()
         else subst(tv, top.refineWith)
     | _ -> if containsTyVar(tv, top.refineWith.freeVariables)
            then errorSubst("Infinite type! Tried to refine with " ++ prettyType(top.refineWith))
            else subst(tv, top.refineWith)
+    end;
+}
+
+aspect production appType
+top::Type ::= c::Type a::Type
+{
+  top.refine =
+    case top.refineWith of
+    | appType(c1, a1) -> composeSubst(refine(c, c1), refine(a, a1))
+    | _ -> errorSubst("Tried to refine " ++ prettyType(top) ++ " with " ++ prettyType(top.refineWith))
     end;
 }
  
@@ -152,13 +162,13 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String k::Integer
 {
   top.refine = 
     case top.refineWith of
-    | nonterminalType(ofn, op) ->
-        if fn == ofn
-        then refineAll( params, op )
+    | nonterminalType(ofn, ok) ->
+        if fn == ofn && k == ok
+        then emptySubst()
         else errorSubst("Tried to refine conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
     | _ -> errorSubst("Tried to refine nonterminal type " ++ fn ++ " with " ++ prettyType(top.refineWith))
     end;
@@ -224,8 +234,12 @@ Substitution ::= scrutineeType::Type  constructorType::Type
   -- If you look at the type rules, you'll notice they're requiring "T" be the same,
   -- and this refinement only happens on the parameters (i.e. fmgu(T p = T a))
   return case scrutineeType, constructorType of
-         | decoratedType(nonterminalType(n1, p1)), decoratedType(nonterminalType(n2,p2))
-            -> if n1 == n2 then refineAll(p1,p2) else emptySubst()
+         | decoratedType(t1), decoratedType(t2) ->
+           case t1.baseType, t2.baseType of
+           | nonterminalType(n1, _), nonterminalType(n2, _) when n1 == n2 ->
+             refineAll(t1.argTypes, t2.argTypes)
+           | _, _ -> emptySubst()
+           end
          | _, _ -> emptySubst()
          end;
 }
@@ -266,8 +280,8 @@ Boolean ::= ls::[Type]
 {
   return case ls of
          | [] -> true
-         | varType(_) :: t -> isOnlyTyVars(t)
-         | skolemType(_) :: t -> isOnlyTyVars(t)
+         | varType(_, _) :: t -> isOnlyTyVars(t)
+         | skolemType(_, _) :: t -> isOnlyTyVars(t)
          | _ -> false
          end;
 }

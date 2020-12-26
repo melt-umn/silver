@@ -23,8 +23,7 @@ top::Root ::= gdcl::GrammarDcl  mStmts::ModuleStmts  is::ImportStmts
 
   local prsr :: AGDcl =
     parserDcl('parser', name("extendedParser", top.location), '::',
-      nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Root"), location=top.location),
-        botlNone(location=top.location), location=top.location),
+      nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Root"), location=top.location), location=top.location),
       '{',
       consParserComponent(
         parserComponent(moduleName(m, location=top.location),
@@ -38,9 +37,11 @@ top::Root ::= gdcl::GrammarDcl  mStmts::ModuleStmts  is::ImportStmts
         nilConstraint(location=top.location),
         '=>',
         functionLHS(
-          nominalTypeExpr(
-            qNameTypeId(terminal(IdUpper_t, "IOVal"), location=top.location),
-            botlSome('<', typeListSingle(integerTypeExpr('Integer', location=top.location),
+          appTypeExpr(
+            nominalTypeExpr(
+              qNameTypeId(terminal(IdUpper_t, "IOVal"), location=top.location),
+              location=top.location),
+            bTypeList('<', typeListSingle(integerTypeExpr('Integer', location=top.location),
               location=top.location), '>', location=top.location),
             location=top.location
           ),
@@ -52,8 +53,7 @@ top::Root ::= gdcl::GrammarDcl  mStmts::ModuleStmts  is::ImportStmts
             location=top.location), location=top.location),
           productionRHSCons(
             productionRHSElem(name("ioIn",  top.location), '::',
-              nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "IO"), location=top.location),
-                botlNone(location=top.location), location=top.location),
+              nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "IO"), location=top.location), location=top.location),
               location=top.location),
             productionRHSNil(location=top.location),
             location=top.location

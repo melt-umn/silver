@@ -24,7 +24,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
       astType(top.frame.signature.outputElement, top.env),
       map(astType(_, top.env), elems),
       (if hasLoc
-       then [namedArgType("location", nonterminalType("core:Location", []))]
+       then [namedArgType("location", nonterminalType("core:Location", 0))]
        else []));
   
   top.errors <-

@@ -47,8 +47,8 @@ function containsSkolem
 Boolean ::= ty::Type
 {
   return case ty of
-         | skolemType(_) -> true
-         | nonterminalType(_, args) -> any(map(containsSkolem, args))
+         | skolemType(_, _) -> true
+         | appType(c, a) -> containsSkolem(c) || containsSkolem(a)
          | decoratedType(ty) -> containsSkolem(ty)
          | functionType(out, params, namedParams) -> containsSkolem(out) || any(map(containsSkolem, params)) || any(map((\x::NamedArgType -> containsSkolem(x.argType)), namedParams))
          | _ -> false
@@ -60,9 +60,9 @@ top::Expr ::= 'reify'
 {
   top.errors <-
     case performSubstitution(top.typerep, top.finalSubst) of
-    | functionType(nonterminalType("core:Either", [stringType(), resultType]), [nonterminalType("core:reflect:AST", [])], []) ->
+    | functionType(appTypes(nonterminalType("core:Either", 2), [stringType(), resultType]), [nonterminalType("core:reflect:AST", 0)], []) ->
        case resultType of
-       | skolemType(_) -> [err(top.location, "reify invocation attempts to reify to a skolem type - this will never succeed, see https://github.com/melt-umn/silver/issues/368")]
+       | skolemType(_, _) -> [err(top.location, "reify invocation attempts to reify to a skolem type - this will never succeed, see https://github.com/melt-umn/silver/issues/368")]
        | ty when containsSkolem(ty) -> [wrn(top.location, "reify invocation attempts to reify to a type containing a skolem - this will only succeed in the case that the value does not actually contain an instance of the skolem type, see https://github.com/melt-umn/silver/issues/368")]
        | _ -> []
        end
@@ -93,7 +93,7 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
   thread downSubst, upSubst on top, es, el, errCheck1, errCheck2, top;
   
   errCheck1 = check(es.typerep, stringType());
-  errCheck2 = check(el.typerep, nonterminalType("core:Location", []));
+  errCheck2 = check(el.typerep, nonterminalType("core:Location", 0));
   top.errors <-
     if errCheck1.typeerror
     then [err(es.location, "Second operand to 'terminal(type,lexeme,location)' must be a String, instead it is " ++ errCheck1.leftpp)]

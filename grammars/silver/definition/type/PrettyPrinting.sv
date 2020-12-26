@@ -61,15 +61,21 @@ top::Context ::= cls::String t::Type
 }
 
 aspect production varType
-top::Type ::= tv::TyVar
+top::Type ::= tv::TyVar _
 {
   top.typepp = findAbbrevFor(tv, top.boundVariables);
 }
 
 aspect production skolemType
-top::Type ::= tv::TyVar
+top::Type ::= tv::TyVar _
 {
   top.typepp = findAbbrevFor(tv, top.boundVariables);
+}
+
+aspect production appType
+top::Type ::= c::Type a::Type
+{
+  top.typepp = c.baseType.typepp ++ "<" ++ implode(" ", map((.typepp), a.argTypes)) ++ ">";
 }
 
 aspect production errorType
@@ -109,9 +115,9 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String _
 {
-  top.typepp = fn ++ if !null(params) then "<" ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ">" else "";
+  top.typepp = fn;
 }
 
 aspect production terminalType

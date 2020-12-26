@@ -156,14 +156,15 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
 
+  local t::Type = qn.lookupValue.typeScheme.typerep.outputType;
   local isGadt :: Boolean =
-    case qn.lookupValue.typeScheme.typerep.outputType of
+    case t.baseType of
     -- If the lookup is successful, and it's a production type, and it 
     -- constructs a nonterminal that either:
     --  1. has a non-type-variable parameter (e.g. Expr<Boolean>)
     --  2. has fewer free variables than parameters (e.g. Eq<a a>)
     -- THEN it's a gadt.
-    | nonterminalType(_, tvs) -> !isOnlyTyVars(tvs) || length(tvs) != length(setUnionTyVarsAll(map((.freeVariables), tvs)))
+    | nonterminalType(_, _) -> !isOnlyTyVars(t.argTypes) || length(t.argTypes) != length(setUnionTyVarsAll(map((.freeVariables), t.argTypes)))
     | _ -> false
     end;
   

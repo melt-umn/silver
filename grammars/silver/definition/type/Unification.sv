@@ -5,30 +5,42 @@ synthesized attribute unify :: Substitution occurs on Type;
 
 --------------------------------------------------------------------------------
 aspect production varType
-top::Type ::= tv::TyVar
+top::Type ::= tv::TyVar k::Integer
 {
   top.unify = 
     case top.unifyWith of
-    | varType(j) ->
+    | varType(j, k1) when k == k1 ->
         if tyVarEqual(tv, j)
         then emptySubst()
         else subst(tv, top.unifyWith)
-    | _ -> if containsTyVar(tv, top.unifyWith.freeVariables)
-           then errorSubst("Infinite type! Tried to unify with " ++ prettyType(top.unifyWith))
-           else subst(tv, top.unifyWith)
+    | t when t.kindArity == k ->
+        if containsTyVar(tv, top.unifyWith.freeVariables)
+        then errorSubst("Infinite type! Tried to unify with " ++ prettyType(top.unifyWith))
+        else subst(tv, top.unifyWith)
+    | t -> errorSubst("Kind mismatch!  Tried to unify with " ++ prettyType(top.unifyWith))
     end;
 }
 
 aspect production skolemType
-top::Type ::= tv::TyVar
+top::Type ::= tv::TyVar _
 {
   top.unify = 
     case top.unifyWith of
-    | skolemType(otv) ->
+    | skolemType(otv, _) ->
         if tyVarEqual(tv, otv)
         then emptySubst()
         else errorSubst("Tried to unify skolem constant with incompatible skolem constant")
     | _ -> errorSubst("Tried to unify skolem constant with " ++ prettyType(top.unifyWith))
+    end;
+}
+
+aspect production appType
+top::Type ::= c::Type a::Type
+{
+  top.unify = 
+    case top.unifyWith of
+    | appType(c1, a1) when c1.kindArity == a1.kindArity -> composeSubst(unify(c, c1), unify(a, a1)) 
+    | _ -> errorSubst("Tried to application of " ++ prettyType(c) ++ " with " ++ prettyType(top.unifyWith))
     end;
 }
 
@@ -89,14 +101,11 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String k::Integer
 {
   top.unify = 
     case top.unifyWith of
-    | nonterminalType(ofn, op) -> 
-        if fn == ofn
-        then unifyAll(params, op)
-        else errorSubst("Tried to unify conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
+    | nonterminalType(ofn, _) -> errorSubst("Tried to unify conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
     | ntOrDecType(_, _) -> errorSubst("nte-nodte: try again")
     | _ -> errorSubst("Tried to unify nonterminal type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
     end;

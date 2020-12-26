@@ -9,7 +9,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
   local synVar :: String = "count_syn__ON__" ++ id.name;
   
   local myAnnos :: [NamedSignatureElement] =
-    annotationsForNonterminal(nonterminalType(fName, tl.types), top.env);
+    annotationsForNonterminal(nonterminalType(fName, length(tl.types)), top.env);
   
   top.initWeaving := s"""
 	public static int ${inhVar} = 0;

@@ -136,9 +136,9 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String k::Integer
 {
-  top.permittedInConcreteSyntax = null(params);
+  top.permittedInConcreteSyntax = k == 0;
 }
 
 aspect production terminalType

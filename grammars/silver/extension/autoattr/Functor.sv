@@ -33,11 +33,19 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
       then attl
       else
         botlSome(
-          '<',
-          typeListSingle(
-            nominalTypeExpr(nt.qNameType, nttl, location=top.location),
-            location=top.location),
-          '>', location=top.location),
+          bTypeList(
+            '<',
+            typeListSingle(
+              case nttl of
+              | botlSome(tl) -> 
+                appTypeExpr(
+                  nominalTypeExpr(nt.qNameType, location=top.location),
+                  tl, location=top.location)
+              | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
+              end,
+              location=top.location),
+            '>', location=top.location),
+          location=top.location),
       nt, nttl,
       location=top.location);
 }

@@ -34,13 +34,13 @@ threaded attribute mDownSubst, mUpSubst::Substitution;
 function isMonad
 Boolean ::= ty::Type
 {
-  return case ty of
-         | nonterminalType(name, params) ->
-           (name == "core:Maybe" && length(params) == 1) ||
-           (name == "core:Either" && length(params) == 2) ||
-           (name == "core:monad:IOMonad" && length(params) == 1) ||
-           (name == "core:monad:State" && length(params) == 2)
-         | listType(_) -> true
+  return case ty.baseType of
+         | nonterminalType(name, _) ->
+           (name == "core:Maybe") ||
+           (name == "core:Either") ||
+           (name == "core:List") ||
+           (name == "core:monad:IOMonad") ||
+           (name == "core:monad:State")
          | decoratedType(t) -> isMonad(t)
          | _ -> false
          end;
@@ -88,10 +88,9 @@ function monadsMatch
 Pair<Boolean Substitution> ::= ty1::Type ty2::Type subst::Substitution
 {
   return case ty1, ty2 of
-         | nonterminalType(name1, params1), nonterminalType(name2, params2) ->
-           if name1 == name2 && length(params1) == length(params2)
-           then tyListMatch(init(params1), init(params2), subst)
-           else pair(false, subst)
+         | nonterminalType(name1, k1), nonterminalType(name2, k2) ->
+           pair(name1 == name2 && k1 == k2, subst)
+         | appType(c1, a1), appType(c2, a2) -> tyMatch(c1, c2, subst)
          | listType(_), listType(_) -> pair(true, subst)
          | decoratedType(t), _ -> monadsMatch(t, ty2, subst)
          | _, decoratedType(t) -> monadsMatch(ty1, t, subst)
@@ -119,17 +118,12 @@ Boolean ::= f::Decorated Expr
 }
 
 
-{-this assumes the lists have the same length-}
-function tyListMatch
-Pair<Boolean Substitution> ::= tl1::[Type] tl2::[Type] subst::Substitution
+function tyMatch
+Pair<Boolean Substitution> ::= t1::Type t2::Type subst::Substitution
 {
-  local tycheck::TypeCheck = check(head(tl1), head(tl2));
+  local tycheck::TypeCheck = check(t1, t2);
   tycheck.downSubst = subst;
-  return if length(tl1) == 0
-         then pair(true, subst)
-         else if tycheck.typeerror
-              then pair(false, subst)
-              else tyListMatch(tail(tl1), tail(tl2), tycheck.upSubst);
+  return pair(!tycheck.typeerror, tycheck.upSubst);
 }
 
 
@@ -137,8 +131,7 @@ function monadInnerType
 Type ::= mty::Type
 {
   return case mty of
-         | nonterminalType(name1, params1) ->
-           last(params1)
+         | appType(c, a) -> a
          | listType(ty) -> ty
          | decoratedType(t) -> monadInnerType(t)
          | _ -> error("The monadInnerType function should only be called " ++
@@ -153,9 +146,8 @@ function monadOfType
 Type ::= mty::Type newInner::Type
 {
   return case mty of
-         | nonterminalType(name, params) ->
-           nonterminalType(name, append(init(params), [newInner]))
          | listType(_) -> listType(newInner)
+         | appType(c, _) -> appType(c, newInner)
          | decoratedType(t) -> monadOfType(t, newInner)
          | _ -> error("Tried to take a monad out of a non-monadic type to apply")
          end;
@@ -167,16 +159,16 @@ function monadToString
 String ::= ty::Type
 {
   return case ty of
-         | nonterminalType("core:Maybe", _) ->
-           "Maybe<a>"
-         | nonterminalType("core:Either", [p, a]) ->
-           "Either<" ++ prettyType(p) ++ " a>"
-         | nonterminalType("core:monad:IOMonad", _) ->
-           "IOMonad<a>"
-         | nonterminalType("core:monad:State", [p, a]) ->
-           "State<" ++ prettyType(p) ++ " a>"
          | listType(_) ->
            "[a]"
+         | appType(nonterminalType("core:Maybe", 1), _) ->
+           "Maybe<a>"
+         | appType(appType(nonterminalType("core:Either", 2), p), _) ->
+           "Either<" ++ prettyType(p) ++ " a>"
+         | appType(nonterminalType("core:monad:IOMonad", 1), _) ->
+           "IOMonad<a>"
+         | appType(appType(nonterminalType("core:monad:state", 2), p), _) ->
+           "State<" ++ prettyType(p) ++ " a>"
          | decoratedType(t) -> monadToString(t)
          | _ -> error("Tried to get monadToString for a non-monadic type")
          end;
@@ -240,7 +232,7 @@ Either<String Expr> ::= ty::Type l::Location
          | nonterminalType("core:Maybe", _) ->
            right(Silver_Expr { core:monad:failMaybe($Expr{string}) })
            --baseExpr(qNameId(name("failMaybe", l), location=l), location=l)
-         | nonterminalType("core:Either", [a, b]) ->
+         | appType(appType(nonterminalType("core:Either", 2), a), b) ->
            case a of
            | stringType() -> right(Silver_Expr { core:monad:failEither($Expr{string}) })
            | intType() -> right(Silver_Expr { core:monad:failEither($Expr{int}) })
@@ -295,7 +287,7 @@ Either<String Expr> ::= ty::Type l::Location
   return case ty of
          | nonterminalType("core:Maybe", _) ->
            right(Silver_Expr { core:monad:nothing() })
-         | nonterminalType("core:Either", [a, b]) ->
+         | appType(appType(nonterminalType("core:Either", 2), a), b) ->
            case a of
            | stringType() -> right(Silver_Expr{ core:monad:left("mzero") })
            | intType() -> right(Silver_Expr{ core:monad:left(0) })

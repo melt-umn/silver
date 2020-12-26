@@ -7,10 +7,12 @@ imports silver:util;
 
 nonterminal TypeExpr  with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, errorsTyVars, freeVariables;
 nonterminal Signature with config, location, grammarName, errors, env, unparse, types,   lexicalTypeVariables;
-nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, types,   lexicalTypeVariables, errorsTyVars, freeVariables;
-nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, unparse, types, lexicalTypeVariables, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
+nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, errorsTyVars, freeVariables;
+nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
+nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 
 synthesized attribute types :: [Type];
+synthesized attribute missingCount::Integer;
 
 -- Important: These should be IN-ORDER and include ALL type variables that appear, including duplicates!
 monoid attribute lexicalTypeVariables :: [String] with [], ++;
@@ -32,7 +34,7 @@ function addNewLexicalTyVars
 [Def] ::= gn::String sl::Location l::[String]
 {
   return if null(l) then []
-         else lexTyVarDef(gn, sl, head(l), freshTyVar()) ::
+         else lexTyVarDef(gn, sl, head(l), freshTyVar(), 0) ::
                   addNewLexicalTyVars(gn, sl, tail(l));
 }
 
@@ -105,23 +107,16 @@ top::TypeExpr ::= 'TerminalId'
 }
 
 concrete production nominalTypeExpr
-top::TypeExpr ::= q::QNameType tl::BracketedOptTypeExprs
+top::TypeExpr ::= q::QNameType
 {
-  top.unparse = q.unparse ++ tl.unparse;
+  top.unparse = q.unparse;
 
   top.errors <- q.lookupType.errors;
   top.errors <-
     if !q.lookupType.found || q.lookupType.dcl.isType then []
     else [err(top.location, q.name ++ " is not a type.")];
 
-  local ts::PolyType = q.lookupType.typeScheme;
-  top.errors <- if length(tl.types) != length(ts.boundVars)
-                then [err(top.location, q.name ++ " has " ++ toString(length(ts.boundVars)) ++ " type variables, but there are " ++ toString(length(tl.types)) ++ " supplied here.")]
-                else [];
-
-  -- Not necessarily a nonterminalType, so we should take original type and substitution
-  -- e.g. consider `type Blah<a> = Foo<String a>`
-  top.typerep = performRenaming(ts.typerep, zipVarsAndTypesIntoSubstitution(ts.boundVars, tl.types));
+  top.typerep = q.lookupType.typeScheme.monoType;
 }
 
 concrete production typeVariableTypeExpr
@@ -139,6 +134,20 @@ top::TypeExpr ::= tv::IdLower_t
   top.lexicalTypeVariables <- [tv.lexeme];
 }
 
+concrete production appTypeExpr
+top::TypeExpr ::= ty::TypeExpr tl::BracketedTypeExprs
+{
+  top.unparse = ty.unparse ++ tl.unparse;
+
+  production tlCount::Integer = length(tl.types) + tl.missingCount;
+  top.errors <-
+    if tlCount != ty.typerep.kindArity
+    then [err(top.location, prettyType(ty.typerep) ++ " has kind arity " ++ toString(ty.typerep.kindArity) ++ ", but there are " ++ toString(tlCount) ++ " type arguments supplied here.")]
+    else [];
+
+  top.typerep = appTypes(ty.typerep, tl.types);
+}
+
 concrete production refTypeExpr
 top::TypeExpr ::= 'Decorated' t::TypeExpr
 {
@@ -150,6 +159,10 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
                   nonterminalType(_,_) -> []
                 | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
                 end;
+  top.errors <-
+    if t.typerep.kindArity > 0
+    then [err(t.location, s"Type ${t.unparse} is not fully applied")]
+    else [];
 }
 
 concrete production funTypeExpr
@@ -174,6 +187,11 @@ top::Signature ::= t::TypeExpr '::=' list::TypeExprs
   top.unparse = t.unparse ++ " ::= " ++ list.unparse;
 
   top.types = [t.typerep] ++ list.types;
+
+  top.errors <-
+    if list.missingCount > 0
+    then [err(list.location, "Signature type cannot contain _")]
+    else []; 
 }
 
 -- Bracketed Optional Type Lists -----------------------------------------------
@@ -182,11 +200,20 @@ concrete production botlNone
 top::BracketedOptTypeExprs ::=
 {
   top.unparse = "";
-  forwards to botlSome('<', typeListNone(location=top.location), '>', location=top.location);
+  forwards to botlSome(bTypeList('<', typeListNone(location=top.location), '>', location=top.location), location=top.location);
 }
 
 concrete production botlSome
-top::BracketedOptTypeExprs ::= '<' tl::TypeExprs '>'
+top::BracketedOptTypeExprs ::= btl::BracketedTypeExprs
+{
+  top.unparse = btl.unparse;
+  top.types = btl.types;
+  top.freeVariables = btl.freeVariables;
+  top.envBindingTyVars = btl.envBindingTyVars;
+}
+
+concrete production bTypeList
+top::BracketedTypeExprs ::= '<' tl::TypeExprs '>'
 {
   top.unparse = "<" ++ tl.unparse ++ ">";
 
@@ -197,6 +224,10 @@ top::BracketedOptTypeExprs ::= '<' tl::TypeExprs '>'
   top.errorsTyVars <-
     if containsDuplicates(tl.lexicalTypeVariables)
     then [err(top.location, "Type parameter list repeats type variable names")]
+    else [];
+  top.errorsTyVars <-
+    if tl.missingCount > 0
+    then [err(top.location, "Type parameter list cannot contain _")]
     else [];
 
   top.envBindingTyVars =
@@ -215,13 +246,18 @@ top::TypeExprs ::=
   top.freeVariables = [];
 }
 
-
 concrete production typeListSingle
 top::TypeExprs ::= t::TypeExpr
 {
   top.unparse = t.unparse;
-  top.types = [t.typerep];
-  top.freeVariables = t.freeVariables;
+  forwards to typeListCons(t, typeListNone(location=top.location), location=top.location);
+}
+
+concrete production typeListSingleMissing
+top::TypeExprs ::= '_'
+{
+  top.unparse = "_";
+  forwards to typeListConsMissing($1, typeListNone(location=top.location), location=top.location);
 }
 
 concrete production typeListCons
@@ -230,4 +266,21 @@ top::TypeExprs ::= t::TypeExpr list::TypeExprs
   top.unparse = t.unparse ++ " " ++ list.unparse;
   top.types = t.typerep :: list.types;
   top.freeVariables = t.freeVariables ++ list.freeVariables;
+  
+  top.errors <-
+    if t.typerep.kindArity > 0
+    then [err(t.location, s"Type ${t.unparse} is not fully applied")]
+    else [];
+  top.errors <-
+    if list.missingCount > 0
+    then [err(t.location, "Provided type argument cannot be followed by unprovided argument")]
+    else [];
+}
+
+concrete production typeListConsMissing
+top::TypeExprs ::= '_' list::TypeExprs
+{
+  top.unparse = "_ " ++ list.unparse;
+  top.types = list.types;
+  top.freeVariables = list.freeVariables;
 }

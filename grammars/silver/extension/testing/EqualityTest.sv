@@ -127,7 +127,7 @@ ag::AGDcl ::= kwd::'equalityTest'
       productionSignature(
         nilConstraint(location=ag.location), '=>',
         productionLHS(tref, '::',
-          nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test", ag.location), location=ag.location), botlNone(location=ag.location), location=ag.location), location=ag.location),
+          nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test", ag.location), location=ag.location), location=ag.location), location=ag.location),
         '::=', productionRHSNil(location=ag.location), location=ag.location),
       productionBody('{', foldl(productionStmtsSnoc(_, _, location=ag.location), productionStmtsNil(location=ag.location), [
         localAttributeDcl('local', 'attribute', valueref, '::', valueType, ';', location=ag.location),

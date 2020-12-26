@@ -86,16 +86,20 @@ functor attribute substituted occurs on Context, Type;
 functor attribute flatRenamed occurs on Context, Type;
 
 propagate substituted, flatRenamed on Context, Type
-  excluding varType, skolemType, nonterminalType, ntOrDecType, functionType;
+  excluding varType, skolemType, ntOrDecType, functionType;
 
 aspect production varType
-top::Type ::= tv::TyVar
+top::Type ::= tv::TyVar k::Integer
 {
   -- Important: we recursively substitute, until no more substitutions happen!
   -- This also means the substitution list must not be circular!
 
   -- Perform one iteration of substitution
-  local partialsubst :: Maybe<Type> = findSubst(tv, top.substitution);
+  local partialsubst :: Maybe<Type> =
+    case findSubst(tv, top.substitution) of
+    | just(s) when s.kindArity != k -> error("Kind mismatch in applying substitution!")
+    | ps -> ps
+    end;
   
   -- recursively substitute only if we changed!
   top.substituted =
@@ -109,7 +113,7 @@ top::Type ::= tv::TyVar
 }
 
 aspect production skolemType
-top::Type ::= tv::TyVar
+top::Type ::= tv::TyVar k::Integer
 {
   -- This may be counter intuitive! I don't know!
   
@@ -125,7 +129,11 @@ top::Type ::= tv::TyVar
   
   -- (See the only non-unification place where subst(...) is called directly at the bottom of this file.)
   
-  local partialsubst :: Maybe<Type> = findSubst(tv, top.substitution);
+  local partialsubst :: Maybe<Type> =
+    case findSubst(tv, top.substitution) of
+    | just(s) when s.kindArity != k -> error("Kind mismatch in applying substitution!")
+    | ps -> ps
+    end;
   
   -- recursively substitute only if we changed!
   top.substituted =
@@ -138,13 +146,6 @@ top::Type ::= tv::TyVar
     else top;
 }
 
-aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
-{
-  top.substituted = nonterminalType(fn, mapSubst(params, top.substitution));
-  top.flatRenamed = nonterminalType(fn, mapRenameSubst(params, top.substitution));
-}
-
 aspect production ntOrDecType
 top::Type ::= nt::Type  hidden::Type
 {
@@ -152,8 +153,8 @@ top::Type ::= nt::Type  hidden::Type
   -- Note: we're matching on hidden.subsituted, not just hidden. Important!
   top.substituted =
     case hidden.substituted of
-    | varType(_) -> ntOrDecType(nt.substituted, hidden.substituted)
-    | _          -> hidden.substituted
+    | varType(_, _) -> ntOrDecType(nt.substituted, hidden.substituted)
+    | _             -> hidden.substituted
     end;
   -- For a renaming, we don't need to specialize.
   top.flatRenamed = ntOrDecType(nt.flatRenamed, hidden.flatRenamed);
@@ -254,7 +255,7 @@ Substitution ::= original::[TyVar] sub::[TyVar]
 {
   -- once we have "productions are subtypes of functions" then make this just map 'varType' and call the other one below
   return if null(original) || null(sub) then emptySubst()
-         else composeSubst(subst(head(original), varType(head(sub))),
+         else composeSubst(subst(head(original), varType(head(sub), 0)),
                 zipVarsIntoSubstitution(tail(original), tail(sub)));
 }
 
@@ -263,7 +264,7 @@ Substitution ::= original::[TyVar] sub::[TyVar]
 {
   -- once we have "productions are subtypes of functions" then make this just map 'varType' and call the other one below
   return if null(original) || null(sub) then emptySubst()
-         else composeSubst(subst(head(original), skolemType(head(sub))),
+         else composeSubst(subst(head(original), skolemType(head(sub), 0)),
                 zipVarsIntoSkolemizedSubstitution(tail(original), tail(sub)));
 }
 
