@@ -24,8 +24,8 @@ monoid attribute errorsTyVars :: [Message] with [], ++;
 inherited attribute initialEnv :: Decorated Env;
 synthesized attribute envBindingTyVars :: Decorated Env;
 
-propagate errors, lexicalTypeVariables on TypeExpr, Signature, TypeExprs, BracketedOptTypeExprs;
-propagate errorsTyVars on TypeExprs, BracketedOptTypeExprs;
+propagate errors, lexicalTypeVariables on TypeExpr, Signature, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
+propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
 -- TODO: This function should go away because it doesn't do location correctly.
 -- But for now, we'll use it. It might be easier to get rid of once we know exactly
@@ -218,6 +218,7 @@ top::BracketedTypeExprs ::= '<' tl::TypeExprs '>'
   top.unparse = "<" ++ tl.unparse ++ ">";
 
   top.types = tl.types;
+  top.missingCount = tl.missingCount;
 
   top.freeVariables = tl.freeVariables;
   
@@ -243,6 +244,7 @@ top::TypeExprs ::=
 {
   top.unparse = "";
   top.types = [];
+  top.missingCount = 0;
   top.freeVariables = [];
 }
 
@@ -265,6 +267,7 @@ top::TypeExprs ::= t::TypeExpr list::TypeExprs
 {
   top.unparse = t.unparse ++ " " ++ list.unparse;
   top.types = t.typerep :: list.types;
+  top.missingCount = list.missingCount;
   top.freeVariables = t.freeVariables ++ list.freeVariables;
   
   top.errors <-
@@ -282,5 +285,6 @@ top::TypeExprs ::= '_' list::TypeExprs
 {
   top.unparse = "_ " ++ list.unparse;
   top.types = list.types;
+  top.missingCount = list.missingCount + 1;
   top.freeVariables = list.freeVariables;
 }
