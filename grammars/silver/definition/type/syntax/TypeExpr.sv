@@ -210,6 +210,8 @@ top::BracketedOptTypeExprs ::= btl::BracketedTypeExprs
   top.types = btl.types;
   top.freeVariables = btl.freeVariables;
   top.envBindingTyVars = btl.envBindingTyVars;
+  
+  btl.initialEnv = top.env;
 }
 
 concrete production bTypeList
