@@ -27,6 +27,11 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 
   propagate errors, flowDefs;
 
+  top.errors <-
+    if te.typerep.kindArity > 0
+    then [err(te.location, s"Type ${te.unparse} is not fully applied")]
+    else [];
+
   local fakedDefs :: [Def] =
     [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];
   

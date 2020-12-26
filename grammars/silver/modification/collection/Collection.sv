@@ -159,6 +159,10 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   propagate errors, flowDefs;
   
   top.errors <- tl.errorsTyVars;
+  top.errors <-
+    if te.typerep.kindArity > 0
+    then [err(te.location, s"Type ${te.unparse} is not fully applied")]
+    else [];
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
@@ -185,6 +189,10 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   propagate errors, flowDefs;
   
   top.errors <- tl.errorsTyVars;
+  top.errors <-
+    if te.typerep.kindArity > 0
+    then [err(te.location, s"Type ${te.unparse} is not fully applied")]
+    else [];
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
@@ -205,14 +213,8 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
 
   top.defs := [];
 
-  propagate errors;
-
-  top.errors <-
-        if length(getValueDclAll(fName, top.env)) > 1
-        then [err(a.location, "Value '" ++ fName ++ "' is already bound.")]
-        else [];
-
   q.operatorForType = te.typerep;
+  top.errors <- q.errors;
  
   forwards to productionAttributeDcl($1, $2, a, $4, te, $8, location=top.location);
 }

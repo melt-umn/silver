@@ -3,6 +3,11 @@ grammar silver:analysis:typechecking:core;
 aspect production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
 {
+  top.errors <-
+    if t.typerep.kindArity > 0
+    then [err(t.location, s"Type ${t.unparse} is not fully applied")]
+    else [];
+
   local attribute errCheck1 :: TypeCheck;
 
   e.downSubst = emptySubst();

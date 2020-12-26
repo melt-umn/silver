@@ -34,8 +34,12 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
        if isLower(substring(0,1,id.name))
        then [err(id.location, "Types must be capitalized. Invalid nonterminal name " ++ id.name)]
        else [];
-}
 
+  top.errors <-
+    if te.typerep.kindArity > 0
+    then [err(te.location, s"Type ${te.unparse} is not fully applied")]
+    else [];
+}
 
 
 function typeAliasDef

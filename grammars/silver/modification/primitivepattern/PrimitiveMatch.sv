@@ -68,6 +68,11 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   
   propagate errors;
   top.typerep = t.typerep;
+
+  top.errors <-
+    if t.typerep.kindArity > 0
+    then [err(t.location, s"Type ${t.unparse} is not fully applied")]
+    else [];
   
   {--
    - Invariant: if we were given an undecorated expression, it should have been

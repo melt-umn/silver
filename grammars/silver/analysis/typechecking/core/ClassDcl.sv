@@ -3,6 +3,11 @@ grammar silver:analysis:typechecking:core;
 aspect production defaultClassBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
 {
+  top.errors <-
+    if ty.typerep.kindArity > 0
+    then [err(ty.location, s"Type ${ty.unparse} is not fully applied")]
+    else [];
+
   local errCheck1::TypeCheck = check(ty.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror

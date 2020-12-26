@@ -137,6 +137,15 @@ top::DefLHS ::= q::Decorated QName
                 else [err(top.location, "Inherited attributes can only be defined on (undecorated) nonterminals.")];
 }
 
+aspect production localAttributeDcl
+top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
+{
+  top.errors <-
+    if te.typerep.kindArity > 0
+    then [err(te.location, s"Type ${te.unparse} is not fully applied")]
+    else [];
+}
+
 aspect production localValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
