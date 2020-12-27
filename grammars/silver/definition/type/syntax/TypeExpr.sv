@@ -115,9 +115,11 @@ top::TypeExpr ::= q::QNameType
   top.errors <- q.lookupType.errors;
   top.errors <-
     if !q.lookupType.found || q.lookupType.dcl.isType then []
+    else if q.lookupType.dcl.isTypeAlias  -- Raise a less confusing error if we see an unapplied type alias
+    then [err(top.location, q.name ++ " is a type alias, expecting " ++ toString(length(q.lookupType.dcl.typeScheme.boundVars)) ++ " type arguments.")]
     else [err(top.location, q.name ++ " is not a type.")];
 
-  top.typerep = q.lookupType.typeScheme.monoType;
+  top.typerep = q.lookupType.typeScheme.typerep; -- NOT .monoType since this can be a polyType when an error is raised
 }
 
 concrete production typeVariableTypeExpr

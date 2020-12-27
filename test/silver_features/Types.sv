@@ -3,13 +3,13 @@ import silver:testing;
 ------------------------------------- Number of parameters to type constructors
 terminal ATerminalType 'doesnotmatter';
 
-wrongCode "ATerminalType has 0 type variables" {
+wrongCode "ATerminalType has kind arity 0, but there are 1 type arguments supplied here" {
  global t :: ATerminalType<String> = error("");
 }
 
 nonterminal NTZero;
 
-wrongCode "NTZero has 0 type variables, but there are 1 supplied here" {
+wrongCode "NTZero has kind arity 0, but there are 1 type arguments supplied here" {
  global t :: NTZero<String> = error("");
 }
 
