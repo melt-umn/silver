@@ -45,10 +45,10 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
     else [];
 
   -- We have 4 types.
-  -- 1: A type, from env, for the nonterminal
-  -- 2: A type, from syntax, for the nonterminal
-  -- 3: A type, from env, for the attribute
-  -- 4: A type, from syntax, for the attribute.
+  -- 1: A type, from env, for the nonterminal (unapplied)
+  -- 2: A type, from syntax, for the nonterminal (applied to type vars)
+  -- 3: A type, from env, for the attribute (with bound type vars)
+  -- 4: A type, from syntax, for the attribute (sharing the same type vars as #2)
   
   -- Our goal is to be able to take a (unknown) nonterminal type
   -- and yield the appropriate attribute type it corresponds to.
@@ -57,29 +57,28 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
   -- 1: A type that we can unify with some nonterminal type.
   -- 2: A type that, under that unification, will be the resulting attribute type.
 
-  -- So we generate three substitutions:
-  -- 1: Rewrite the tyvars of type #1 to the types of type #2.
-  -- 2: Rewrite the tyvars of type #3 to the types of type #4.
-  -- 3: Rewrite our local tyvars to fresh variables.
+  -- So we generate a list of fresh type variables corresponding to the types of #2,
+  -- and generate two substitutions:
+  -- 1: Rewrite the tyvars of type #3 to the types of type #4.
+  -- 2: Rewrite our local tyvars to fresh variables.
   
-  -- Thus, we apply this to type #2 and #4, and get our goal.
+  -- Thus, we apply #1 to our fresh type vars, perform both substitutions on #3, and get our goal.
   
-  -- This is perfectly correct, but it can probably be simplified with some invariants
-  -- on what appears in the environment.
+  -- Fresh type variables that will go in the environment
+  local tyVars :: [TyVar] = freshTyVars(length(nttl.freeVariables));
+  
+  -- Apply the nonterminal type to the type variables.
+  -- NOT .monoType so we do something sensible if someone does "occurs on TypeAlias<a>" or something.
+  production protontty :: Type = appTypes(ntTypeScheme.typerep, map(varType(_, 0), tyVars));
   
   -- This renames the vars from the environment
-  local rewrite_from :: Substitution =
-    composeSubst(
-      -- nt's env types -> local skolem types  (vars -> vars)
-      zipVarsIntoSubstitution(ntTypeScheme.boundVars, nttl.freeVariables),
-      -- at's env types -> local skolem types  (vars -> types)
-      zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types));
+  -- at's env types -> type params containing local skolem vars  (vars -> types)
+  local rewrite_from :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
   
-  local rewrite_to :: Substitution =
-    zipVarsIntoSubstitution(nttl.freeVariables, freshTyVars(length(nttl.freeVariables)));
+  -- local skolem vars -> fresh type vars (vars -> vars)
+  local rewrite_to :: Substitution = zipVarsIntoSubstitution(nttl.freeVariables, tyVars);
   
   -- These have to be two separate renamings, because the second renaming replaces names getting substituted in by the first renaming.
-  production protontty :: Type = performRenaming(performRenaming(ntTypeScheme.typerep, rewrite_from), rewrite_to);
   production protoatty :: Type = performRenaming(performRenaming(atTypeScheme.typerep, rewrite_from), rewrite_to);
   
   -- Now, finally, make sure we're not "redefining" the occurs.
@@ -91,7 +90,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
     else [];
 
   top.errors <-
-    if !ntTypeScheme.typerep.isDecorable
+    if !nt.lookupType.dcl.isType || !ntTypeScheme.typerep.isDecorable
     then [err(nt.location, nt.name ++ " is not a nonterminal. Attributes can only occur on nonterminals.")]
     else [];
                 

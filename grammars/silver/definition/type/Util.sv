@@ -160,6 +160,8 @@ top::Type ::= te::Type
 aspect production ntOrDecType
 top::Type ::= nt::Type  hidden::Type
 {
+  top.baseType = top;
+  top.argTypes = [];
   top.unifyInstanceNonterminal = unify(hidden, nt);
   top.unifyInstanceDecorated = unify(hidden, decoratedType(nt));
 }

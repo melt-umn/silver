@@ -41,6 +41,19 @@ top::Type ::=
   top.instanceConvertible = true;
 }
 
+aspect production appType
+top::Type ::= c::Type a::Type
+{
+  top.applicationDispatcher = c.applicationDispatcher;
+  top.accessHandler = c.accessHandler;
+  top.instanceEq = c.instanceEq;
+  top.instanceOrd = c.instanceOrd;
+  top.instanceNum = c.instanceNum;
+  top.instanceConvertible = c.instanceConvertible;
+  top.lengthDispatcher = c.lengthDispatcher;
+  top.appendDispatcher = c.appendDispatcher;
+}
+
 aspect production intType
 top::Type ::=
 {

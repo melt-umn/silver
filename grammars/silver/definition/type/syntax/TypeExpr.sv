@@ -156,9 +156,10 @@ top::TypeExpr ::= ty::TypeExpr tl::BracketedTypeExprs
   top.errors := (if isAlias then [] else ty.errors) ++ tl.errors;
 
   production tlCount::Integer = length(tl.types) + tl.missingCount;
+  production arity::Integer = if isAlias then length(ts.boundVars) else ty.typerep.kindArity;
   top.errors <-
-    if tlCount != ty.typerep.kindArity
-    then [err(top.location, prettyType(ty.typerep) ++ " has kind arity " ++ toString(ty.typerep.kindArity) ++ ", but there are " ++ toString(tlCount) ++ " type arguments supplied here.")]
+    if tlCount != arity
+    then [err(top.location, prettyType(ty.typerep) ++ " has kind arity " ++ toString(arity) ++ ", but there are " ++ toString(tlCount) ++ " type arguments supplied here.")]
     else [];
   top.errors <-
     if isAlias && tl.missingCount > 0
@@ -178,10 +179,11 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
 
   top.typerep = decoratedType(t.typerep);
   
-  top.errors <- case t.typerep of
-                  nonterminalType(_,_) -> []
-                | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
-                end;
+  top.errors <-
+    case t.typerep.baseType of
+    | nonterminalType(_,_) -> []
+    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
+    end;
   top.errors <-
     if t.typerep.kindArity > 0
     then [err(t.location, s"Type ${t.unparse} is not fully applied")]
