@@ -11,6 +11,7 @@ synthesized attribute fullName :: String;
 -- types
 synthesized attribute typeScheme :: PolyType;
 synthesized attribute isType :: Boolean;
+synthesized attribute isTypeAlias :: Boolean;
 synthesized attribute isClass :: Boolean;
 synthesized attribute classMembers :: [Pair<String Pair<Type Boolean>>];
 
@@ -50,7 +51,7 @@ inherited attribute givenSubstitution :: Substitution;
  - hmm, unparsing could probably be fixed...
  -}
 closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
-                         typeScheme, givenNonterminalType, isType, isClass, -- types (gNT for occurs)
+                         typeScheme, givenNonterminalType, isType, isTypeAlias, isClass, -- types (gNT for occurs)
                          classMembers, givenInstanceType, superContexts, -- type classes, in the type namespace
                          namedSignature, hasForward, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
@@ -86,6 +87,7 @@ top::DclInfo ::=
   
   -- types
   top.isType = false;
+  top.isTypeAlias = false;
   top.isClass = false;
   top.classMembers = [];
   top.superContexts = [];
@@ -198,6 +200,15 @@ top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar k::Integer
   -- See comment in silver:definition:type:syntax:AspectDcl.sv
   top.typeScheme = monoType(if isAspect then varType(tv, k) else skolemType(tv, k));
   top.isType = true;
+}
+abstract production typeAliasDcl
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type
+{
+  top.fullName = fn;
+
+  top.isType = null(bound);
+  top.isTypeAlias = true;
+  top.typeScheme = if null(bound) then monoType(ty) else polyType(bound, ty);
 }
 abstract production clsDcl
 top::DclInfo ::= fn::String supers::[Context] tv::TyVar members::[Pair<String Pair<Type Boolean>>]

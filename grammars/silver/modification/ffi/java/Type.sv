@@ -15,5 +15,6 @@ top::Type ::= fn::String  transType::String  params::[Type]
     s"new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}})";
   top.transFreshTypeRep =
     s"new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transFreshTypeRep), params))}})";
+  top.transTypeName = implode("_", substitute(":", "_", fn) :: map((.transTypeName), params));
 }
 

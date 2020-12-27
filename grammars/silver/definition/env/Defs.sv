@@ -190,6 +190,11 @@ Def ::= sg::String  sl::Location  fn::String  tv::TyVar  k::Integer
 {
   return typeDef(defaultEnvItem(lexTyVarDcl(fn,true,tv,k,sourceGrammar=sg,sourceLocation=sl)));
 }
+function typeAliasDef
+Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+{
+  return typeDef(defaultEnvItem(typeAliasDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
+}
 function synDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {

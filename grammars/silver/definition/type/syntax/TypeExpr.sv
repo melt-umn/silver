@@ -24,7 +24,8 @@ monoid attribute errorsTyVars :: [Message] with [], ++;
 inherited attribute initialEnv :: Decorated Env;
 synthesized attribute envBindingTyVars :: Decorated Env;
 
-propagate errors, lexicalTypeVariables on TypeExpr, Signature, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
+propagate errors, lexicalTypeVariables on TypeExpr, Signature, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs
+  excluding appTypeExpr;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
 -- TODO: This function should go away because it doesn't do location correctly.
@@ -138,14 +139,36 @@ concrete production appTypeExpr
 top::TypeExpr ::= ty::TypeExpr tl::BracketedTypeExprs
 {
   top.unparse = ty.unparse ++ tl.unparse;
+  
+  propagate lexicalTypeVariables;
+  
+  production isAlias::Boolean =
+    case ty of
+    | nominalTypeExpr(q) -> q.lookupType.found && q.lookupType.dcl.isTypeAlias
+    | _ -> false
+    end;
+  local q::Decorated QNameType =
+    case ty of
+    | nominalTypeExpr(q) -> q
+    end;
+  local ts::PolyType = q.lookupType.typeScheme;
+
+  top.errors := (if isAlias then [] else ty.errors) ++ tl.errors;
 
   production tlCount::Integer = length(tl.types) + tl.missingCount;
   top.errors <-
     if tlCount != ty.typerep.kindArity
     then [err(top.location, prettyType(ty.typerep) ++ " has kind arity " ++ toString(ty.typerep.kindArity) ++ ", but there are " ++ toString(tlCount) ++ " type arguments supplied here.")]
     else [];
+  top.errors <-
+    if isAlias && tl.missingCount > 0
+    then [err(tl.location, "Alias types cannot be partially applied")]
+    else [];
 
-  top.typerep = appTypes(ty.typerep, tl.types);
+  top.typerep =
+    if isAlias
+    then performRenaming(ts.typerep, zipVarsAndTypesIntoSubstitution(ts.boundVars, tl.types))
+    else appTypes(ty.typerep, tl.types);
 }
 
 concrete production refTypeExpr
@@ -211,7 +234,7 @@ top::BracketedOptTypeExprs ::= btl::BracketedTypeExprs
   top.freeVariables = btl.freeVariables;
   top.envBindingTyVars = btl.envBindingTyVars;
   
-  btl.initialEnv = top.env;
+  btl.initialEnv = top.initialEnv;
 }
 
 concrete production bTypeList
