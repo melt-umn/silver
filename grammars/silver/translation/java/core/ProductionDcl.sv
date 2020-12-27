@@ -127,7 +127,7 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 	}
 	
 	@Override
-	public final common.BaseTypeRep getType() {
+	public final common.TypeRep getType() {
 ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 		
 		${implode("\n\t\t", map(makeChildUnify(fName, _), namedSig.inputElements))}

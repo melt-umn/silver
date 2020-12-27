@@ -75,9 +75,9 @@ top::Type ::= tv::TyVar _
 aspect production appType
 top::Type ::= c::Type a::Type
 {
-  top.typepp = prettyTypeWith(c.baseType, top.boundVariables) ++
-    if null(a.argTypes) then ""
-    else "<" ++ implode(" ", map(prettyTypeWith(_, top.boundVariables), a.argTypes)) ++ ">";
+  top.typepp = prettyTypeWith(top.baseType, top.boundVariables) ++
+    if null(top.argTypes) then ""
+    else "<" ++ implode(" ", map(prettyTypeWith(_, top.boundVariables), top.argTypes)) ++ ">";
 }
 
 aspect production errorType

@@ -179,12 +179,13 @@ public final class Reflection {
 			path[path.length - 1] = "P" + path[path.length - 1];
 			final String className = String.join(".", path);
 			try {
+				@SuppressWarnings("unchecked")
 				Method prodReify =
 						((Class<Node>)Class.forName(className)).getMethod("reify", TypeRep.class, NAST[].class, String[].class, NAST[].class);
 				return prodReify.invoke(null, resultType, childASTs, annotationNames, annotationASTs);
 			} catch (ClassNotFoundException e) {
 				throw new SilverError("Undefined production " + prodName);
-			} catch (NoSuchMethodException | IllegalAccessException e) {
+			} catch (ClassCastException | NoSuchMethodException | IllegalAccessException e) {
 				throw new SilverInternalError("Error invoking reify for class " + className, e);
 			} catch (InvocationTargetException e) {
 				if (e.getTargetException() instanceof SilverException) {
