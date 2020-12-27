@@ -29,8 +29,24 @@ wrongCode "NTZero' is already bound" {
 wrongCode "repeats type variable names" {
  nonterminal NTTwoBad<a a>;
 }
+wrongCode "cannot contain _" {
+ nonterminal NTTwoBad<a _>;
+}
 
 nonterminal NTTwo<a b>;
+
+wrongCode "NTTwo is not fully applied, it has kind arity 2" {
+ global t :: NTTwo = error("");
+}
+wrongCode "NTTwo<_ _> is not fully applied, it has kind arity 2" {
+ global t :: NTTwo<_ _> = error("");
+}
+wrongCode "NTTwo<Integer _> is not fully applied, it has kind arity 1" {
+ global t :: NTTwo<Integer _> = error("");
+}
+wrongCode "Missing type argument cannot be followed by a provided argument" {
+ global t :: NTTwo<_ Integer> = error("");
+}
 
 synthesized attribute typeTest<a> :: a;
 
@@ -59,6 +75,9 @@ wrongCode "MyType is a type alias, expecting 1 type arguments." {
 }
 wrongCode "MyType expects 1 type arguments, but there are 2 supplied here" {
  global t :: MyType<Integer IntegeR> = error("");
+}
+wrongCode "MyType is a type alias and cannot be partially applied." {
+ global t :: MyType<_> = error("");
 }
 -- For the moment, errors ignore type names
 wrongCode "Operands to == must be the same type. Instead they are String and Integer" {

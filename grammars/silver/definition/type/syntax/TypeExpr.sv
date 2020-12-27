@@ -166,7 +166,7 @@ top::TypeExpr ::= q::Decorated QNameType tl::BracketedTypeExprs
     else [];
   top.errors <-
     if tl.missingCount > 0
-    then [err(tl.location, "Alias types cannot be partially applied")]
+    then [err(tl.location, q.lookupType.fullName ++ " is a type alias and cannot be partially applied.")]
     else [];
 }
 
@@ -316,10 +316,6 @@ top::TypeExprs ::= t::TypeExpr list::TypeExprs
     if t.typerep.kindArity > 0
     then [err(t.location, s"Type ${t.unparse} is not fully applied, it has kind arity ${toString(t.typerep.kindArity)}")]
     else [];
-  top.errors <-
-    if list.missingCount > 0
-    then [err(t.location, "Provided type argument cannot be followed by unprovided argument")]
-    else [];
 }
 
 concrete production typeListConsMissing
@@ -329,4 +325,9 @@ top::TypeExprs ::= '_' list::TypeExprs
   top.types = list.types;
   top.missingCount = list.missingCount + 1;
   top.freeVariables = list.freeVariables;
+  
+  top.errors <-
+    if length(list.types) > 0
+    then [err($1.location, "Missing type argument cannot be followed by a provided argument")]
+    else [];
 }
