@@ -105,6 +105,8 @@ top::Type ::= c::Type a::Type
 {
   top.baseType = c.baseType;
   top.argTypes = c.argTypes ++ [a];
+  top.isDecorable = c.isDecorable;
+  top.unifyInstanceNonterminal = c.unifyInstanceNonterminal;
 }
 
 

@@ -231,6 +231,7 @@ top::BracketedOptTypeExprs ::= btl::BracketedTypeExprs
 {
   top.unparse = btl.unparse;
   top.types = btl.types;
+  top.missingCount = btl.missingCount;
   top.freeVariables = btl.freeVariables;
   top.envBindingTyVars = btl.envBindingTyVars;
   
