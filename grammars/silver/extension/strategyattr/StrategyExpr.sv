@@ -918,7 +918,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   top.errors :=
     if !attrDcl.isSynthesized
     then [err(attr.location, s"Attribute ${attr.name} cannot be used as a total strategy, because it is not a synthesized attribute")]
-    else case attrTypeScheme.typerep, attrTypeScheme.boundVars of
+    else case attrTypeScheme.typerep.baseType, attrTypeScheme.boundVars of
     | varType(a1, _), [a2] when tyVarEqual(a1, a2) -> []
     | nonterminalType(nt, _), _ ->
       if null(getOccursDcl(attrDcl.fullName, nt, top.env))
@@ -978,7 +978,7 @@ Boolean ::= env::Decorated Env attrName::String
     | [] -> false
     | d :: _ ->
       case decorate d with { givenNonterminalType = error("Not actually needed"); }.typeScheme.typerep of -- Ugh environment needs refactoring
-      | nonterminalType("core:Maybe", _) -> false
+      | appType(nonterminalType("core:Maybe", _), _) -> false
       | _ -> true
       end
     end;
