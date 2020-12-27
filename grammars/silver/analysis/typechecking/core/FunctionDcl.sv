@@ -11,6 +11,6 @@ top::FunctionLHS ::= t::TypeExpr
 {
   top.errors <-
     if t.typerep.kindArity > 0
-    then [err(t.location, s"Type ${t.unparse} is not fully applied")]
+    then [err(t.location, s"Type ${t.unparse} is not fully applied, it has kind arity ${toString(t.typerep.kindArity)}")]
     else [];
 }

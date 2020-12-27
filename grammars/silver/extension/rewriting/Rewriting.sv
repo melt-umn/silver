@@ -271,7 +271,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
      then [err(top.location, "Term rewriting requires import of silver:rewrite")]
      else []) ++
     (if ty.typerep.kindArity > 0
-     then [err(ty.location, s"Type ${ty.unparse} is not fully applied")]
+     then [err(ty.location, s"Type ${ty.unparse} is not fully applied, it has kind arity ${toString(ty.typerep.kindArity)}")]
      else []);
   
   -- Can't use an error production here, unfourtunately, due to circular dependency issues.

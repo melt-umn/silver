@@ -5,7 +5,7 @@ top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
 {
   top.errors <-
     if ty.typerep.kindArity > 0
-    then [err(ty.location, s"Type ${ty.unparse} is not fully applied")]
+    then [err(ty.location, s"Type ${ty.unparse} is not fully applied, it has kind arity ${toString(ty.typerep.kindArity)}")]
     else [];
 
   local errCheck1::TypeCheck = check(ty.typerep, e.typerep);

@@ -15,10 +15,10 @@ wrongCode "NTZero has kind arity 0, but there are 1 type arguments supplied here
 
 nonterminal NTOne<a>;
 
-wrongCode "NTOne has 1 type variables, but there are 0 supplied here" {
+wrongCode "NTOne is not fully applied, it has kind arity 1" {
  global t :: NTOne = error("");
 }
-wrongCode "NTOne has 1 type variables, but there are 2 supplied here" {
+wrongCode "NTOne has kind arity 1, but there are 2 type arguments supplied here" {
  global t :: NTOne<String String> = error("");
 }
 
@@ -54,11 +54,11 @@ type MyType2 = Integer;
 global anum1 :: MyType2 = 2;
 global astr3 :: MyType<MyType2> = toString(anum1);
 
-wrongCode "MyType has 1 type variables, but there are 0 supplied here." {
+wrongCode "MyType is a type alias, expecting 1 type arguments." {
  global t :: MyType = error("");
 }
 wrongCode "MyType has 1 type variables, but there are 2 supplied here" {
- global t :: MyType<Integer IntegeR> = error("");
+ global t :: MyType<Integer Integer> = error("");
 }
 -- For the moment, errors ignore type names
 wrongCode "Operands to == must be the same type. Instead they are String and Integer" {

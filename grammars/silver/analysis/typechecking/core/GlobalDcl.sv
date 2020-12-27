@@ -5,7 +5,7 @@ top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
 {
   top.errors <-
     if t.typerep.kindArity > 0
-    then [err(t.location, s"Type ${t.unparse} is not fully applied")]
+    then [err(t.location, s"Type ${t.unparse} is not fully applied, it has kind arity ${toString(t.typerep.kindArity)}")]
     else [];
 
   local attribute errCheck1 :: TypeCheck;

@@ -188,7 +188,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
     end;
   top.errors <-
     if t.typerep.kindArity > 0
-    then [err(t.location, s"Type ${t.unparse} is not fully applied")]
+    then [err(t.location, s"Type ${t.unparse} is not fully applied, it has kind arity ${toString(t.typerep.kindArity)}")]
     else [];
 }
 
@@ -302,7 +302,7 @@ top::TypeExprs ::= t::TypeExpr list::TypeExprs
   
   top.errors <-
     if t.typerep.kindArity > 0
-    then [err(t.location, s"Type ${t.unparse} is not fully applied")]
+    then [err(t.location, s"Type ${t.unparse} is not fully applied, it has kind arity ${toString(t.typerep.kindArity)}")]
     else [];
   top.errors <-
     if list.missingCount > 0

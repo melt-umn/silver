@@ -71,7 +71,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   top.errors <-
     if t.typerep.kindArity > 0
-    then [err(t.location, s"Type ${t.unparse} is not fully applied")]
+    then [err(t.location, s"Type ${t.unparse} is not fully applied, it has kind arity ${toString(t.typerep.kindArity)}")]
     else [];
   
   {--
