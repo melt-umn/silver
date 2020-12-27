@@ -57,8 +57,8 @@ global astr3 :: MyType<MyType2> = toString(anum1);
 wrongCode "MyType is a type alias, expecting 1 type arguments." {
  global t :: MyType = error("");
 }
-wrongCode "MyType has 1 type variables, but there are 2 supplied here" {
- global t :: MyType<Integer Integer> = error("");
+wrongCode "MyType expects 1 type arguments, but there are 2 supplied here" {
+ global t :: MyType<Integer IntegeR> = error("");
 }
 -- For the moment, errors ignore type names
 wrongCode "Operands to == must be the same type. Instead they are String and Integer" {

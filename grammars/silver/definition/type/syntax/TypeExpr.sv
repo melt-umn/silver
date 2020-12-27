@@ -24,8 +24,7 @@ monoid attribute errorsTyVars :: [Message] with [], ++;
 inherited attribute initialEnv :: Decorated Env;
 synthesized attribute envBindingTyVars :: Decorated Env;
 
-propagate errors, lexicalTypeVariables on TypeExpr, Signature, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs
-  excluding appTypeExpr;
+propagate errors, lexicalTypeVariables on TypeExpr, Signature, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
 -- TODO: This function should go away because it doesn't do location correctly.
@@ -142,36 +141,49 @@ top::TypeExpr ::= ty::TypeExpr tl::BracketedTypeExprs
 {
   top.unparse = ty.unparse ++ tl.unparse;
   
-  propagate lexicalTypeVariables;
-  
-  production isAlias::Boolean =
-    case ty of
-    | nominalTypeExpr(q) -> q.lookupType.found && q.lookupType.dcl.isTypeAlias
-    | _ -> false
-    end;
-  local q::Decorated QNameType =
-    case ty of
-    | nominalTypeExpr(q) -> q
-    end;
-  local ts::PolyType = q.lookupType.typeScheme;
+  propagate lexicalTypeVariables; -- Needed to avoid circularity
 
-  top.errors := (if isAlias then [] else ty.errors) ++ tl.errors;
+  forwards to
+    case ty of
+    | nominalTypeExpr(q) when q.lookupType.found && q.lookupType.dcl.isTypeAlias ->
+      aliasAppTypeExpr(q, tl, location=top.location)
+    | _ -> typeAppTypeExpr(ty, tl, location=top.location)
+    end;
+}
 
-  production tlCount::Integer = length(tl.types) + tl.missingCount;
-  production arity::Integer = if isAlias then length(ts.boundVars) else ty.typerep.kindArity;
+abstract production aliasAppTypeExpr
+top::TypeExpr ::= q::Decorated QNameType tl::BracketedTypeExprs
+{
+  top.unparse = q.unparse ++ tl.unparse;
+
+  production ts::PolyType = q.lookupType.typeScheme;
+  top.typerep = performRenaming(ts.typerep, zipVarsAndTypesIntoSubstitution(ts.boundVars, tl.types));
+
+  local tlCount::Integer = length(tl.types) + tl.missingCount;
   top.errors <-
-    if tlCount != arity
-    then [err(top.location, prettyType(ty.typerep) ++ " has kind arity " ++ toString(arity) ++ ", but there are " ++ toString(tlCount) ++ " type arguments supplied here.")]
+    if tlCount != length(ts.boundVars)
+    then [err(top.location, q.lookupType.fullName ++ " expects " ++ toString(length(ts.boundVars)) ++ " type arguments, but there are " ++ toString(tlCount) ++ " supplied here.")]
     else [];
   top.errors <-
-    if isAlias && tl.missingCount > 0
+    if tl.missingCount > 0
     then [err(tl.location, "Alias types cannot be partially applied")]
     else [];
+}
 
-  top.typerep =
-    if isAlias
-    then performRenaming(ts.typerep, zipVarsAndTypesIntoSubstitution(ts.boundVars, tl.types))
-    else appTypes(ty.typerep, tl.types);
+abstract production typeAppTypeExpr
+top::TypeExpr ::= ty::Decorated TypeExpr tl::BracketedTypeExprs
+{
+  top.unparse = ty.unparse ++ tl.unparse;
+
+  top.typerep = appTypes(ty.typerep, tl.types);
+
+  top.errors <- ty.errors;
+
+  local tlCount::Integer = length(tl.types) + tl.missingCount;
+  top.errors <-
+    if tlCount != ty.typerep.kindArity
+    then [err(top.location, prettyType(ty.typerep) ++ " has kind arity " ++ toString(ty.typerep.kindArity) ++ ", but there are " ++ toString(tlCount) ++ " type arguments supplied here.")]
+    else [];
 }
 
 concrete production refTypeExpr
