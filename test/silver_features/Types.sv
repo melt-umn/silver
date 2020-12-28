@@ -34,6 +34,7 @@ wrongCode "cannot contain _" {
 }
 
 nonterminal NTTwo<a b>;
+production ntt top::NTTwo<a b> ::= a b {}
 
 wrongCode "NTTwo is not fully applied, it has kind arity 2" {
  global t :: NTTwo = error("");
@@ -48,10 +49,20 @@ wrongCode "Missing type argument cannot be followed by a provided argument" {
  global t :: NTTwo<_ Integer> = error("");
 }
 
+global t2 :: NTTwo<_ _><Integer _><_><String> = ntt(42, "abc");
+
 synthesized attribute typeTest<a> :: a;
 
 wrongCode "repeats type variable names" {
  attribute typeTest<a> occurs on NTTwo<a a>;
+}
+
+wrongCode "Type parameter list cannot contain _" {
+ attribute typeTest<a> occurs on NTTwo<a b _>;
+}
+
+wrongCode "Attribute type arguments cannot contain _" {
+ attribute typeTest<a _> occurs on NTTwo<a b>;
 }
 
 --nonterminal IO; -- parse error

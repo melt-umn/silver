@@ -21,6 +21,11 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
     -- The nonterminal type list is strictly type VARIABLES only
     nttl.errorsTyVars;
   
+  top.errors <-
+    if attl.missingCount > 0
+    then [err(attl.location, "Attribute type arguments cannot contain _")]
+    else [];
+  
   nttl.initialEnv = top.env;
   attl.env = nttl.envBindingTyVars;
   nttl.env = nttl.envBindingTyVars;
