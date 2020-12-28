@@ -100,11 +100,14 @@ top::Type ::= c::Type a::Type
 {
   top.refine =
     case top.refineWith of
-    | appType(c1, a1) -> composeSubst(refine(c, c1), refine(a, a1))
+    | appType(c1, a1) ->
+      let refineC :: Substitution = refine(c, c1)
+      in composeSubst(refineC, refine(performSubstitution(a, refineC), performSubstitution(a1, refineC)))
+      end
     | _ -> errorSubst("Tried to refine " ++ prettyType(top) ++ " with " ++ prettyType(top.refineWith))
     end;
 }
- 
+
 aspect production errorType
 top::Type ::=
 {

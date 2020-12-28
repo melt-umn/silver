@@ -39,8 +39,11 @@ top::Type ::= c::Type a::Type
 {
   top.unify = 
     case top.unifyWith of
-    | appType(c1, a1) -> composeSubst(unify(c, c1), unify(a, a1)) 
-    | _ -> errorSubst("Tried to application of " ++ prettyType(c) ++ " with " ++ prettyType(top.unifyWith))
+    | appType(c1, a1) ->
+      let unifyC :: Substitution = unify(c, c1)
+      in composeSubst(unifyC, unify(performSubstitution(a, unifyC), performSubstitution(a1, unifyC)))
+      end
+    | _ -> errorSubst("Tried to unify application of " ++ prettyType(c) ++ " with " ++ prettyType(top.unifyWith))
     end;
 }
 
