@@ -180,7 +180,7 @@ String ::= ty::Type
 function monadBind
 Expr ::= ty::Type l::Location
 {
-  return case ty of
+  return case ty.baseType of
          | nonterminalType("core:Maybe", _) ->
            baseExpr(qNameId(name("bindMaybe", l), location=l), location=l)
          | nonterminalType("core:Either", _) ->
@@ -198,7 +198,7 @@ Expr ::= ty::Type l::Location
 function monadReturn
 Expr ::= ty::Type l::Location
 {
-  return case decorate ty with {boundVariables = ty.freeVariables;} of
+  return case decorate ty.baseType with {boundVariables = ty.freeVariables;} of
          | nonterminalType("core:Maybe", _) ->
            baseExpr(qNameId(name("returnMaybe", l), location=l), location=l)
          | nonterminalType("core:Either", _) ->
@@ -228,11 +228,9 @@ Either<String Expr> ::= ty::Type l::Location
   local bool::Expr = Silver_Expr { false };
   local list::Expr = Silver_Expr { [] };
   local unit::Expr = Silver_Expr { unit() };
-  return case ty of
-         | nonterminalType("core:Maybe", _) ->
-           right(Silver_Expr { core:monad:failMaybe($Expr{string}) })
-           --baseExpr(qNameId(name("failMaybe", l), location=l), location=l)
-         | appType(appType(nonterminalType("core:Either", 2), a), b) ->
+  return
+    case ty of
+    | appType(appType(nonterminalType("core:Either", 2), a), b) ->
            case a of
            | stringType() -> right(Silver_Expr { core:monad:failEither($Expr{string}) })
            | intType() -> right(Silver_Expr { core:monad:failEither($Expr{int}) })
@@ -246,6 +244,10 @@ Either<String Expr> ::= ty::Type l::Location
                        "must be int, float, bool, list, or unit)")
            end
            --baseExpr(qNameId(name("failEither", l), location=l), location=l)
+   | _ -> case ty.baseType of
+         | nonterminalType("core:Maybe", _) ->
+           right(Silver_Expr { core:monad:failMaybe($Expr{string}) })
+           --baseExpr(qNameId(name("failMaybe", l), location=l), location=l)
          | nonterminalType("core:monad:IOMonad", _) ->
            left("Fail undefined for IOMonad")
            --error("Fail undefined for IOMonad")
@@ -258,14 +260,15 @@ Either<String Expr> ::= ty::Type l::Location
          | decoratedType(t) -> monadFail(t, l)
          | _ ->
            error("Tried to get the fail for a non-monadic type at " ++ l.unparse)
-         end;
+         end
+    end;
 }
 
 
 function monadPlus
 Either<String Expr> ::= ty::Type l::Location
 {
-  return case ty of
+  return case ty.baseType of
          | nonterminalType("core:Maybe", _) ->
            right(baseExpr(qNameId(name("mplusMaybe", l), location=l), location=l))
          | nonterminalType("core:Either", _) ->
@@ -284,10 +287,9 @@ Either<String Expr> ::= ty::Type l::Location
 function monadZero
 Either<String Expr> ::= ty::Type l::Location
 {
-  return case ty of
-         | nonterminalType("core:Maybe", _) ->
-           right(Silver_Expr { core:monad:nothing() })
-         | appType(appType(nonterminalType("core:Either", 2), a), b) ->
+  return
+    case ty of
+    | appType(appType(nonterminalType("core:Either", 2), a), b) ->
            case a of
            | stringType() -> right(Silver_Expr{ core:monad:left("mzero") })
            | intType() -> right(Silver_Expr{ core:monad:left(0) })
@@ -297,6 +299,9 @@ Either<String Expr> ::= ty::Type l::Location
              left("Cannot get MZero for Either with too complex or too generic argument type (" ++
                    prettyType(ty) ++ ")")
            end
+    | _ -> case ty.baseType of
+         | nonterminalType("core:Maybe", _) ->
+           right(Silver_Expr { core:monad:nothing() })
          | nonterminalType("core:monad:IOMonad", _) ->
            left("MZero undefined for IOMonad")
          | nonterminalType("core:monad:State", _) ->
@@ -306,7 +311,8 @@ Either<String Expr> ::= ty::Type l::Location
          | decoratedType(t) -> monadZero(t, l)
          | _ ->
            error("Tried to get MZero for a non-monadic type at " ++ l.unparse)
-         end;
+         end
+   end;
 }
 
 
