@@ -211,12 +211,13 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type
   top.typeScheme = if null(bound) then monoType(ty) else polyType(bound, ty);
 }
 abstract production clsDcl
-top::DclInfo ::= fn::String supers::[Context] tv::TyVar members::[Pair<String Pair<Type Boolean>>]
+top::DclInfo ::= fn::String supers::[Context] tv::TyVar k::Integer members::[Pair<String Pair<Type Boolean>>]
 {
   top.fullName = fn;
   
-  -- These are in the type namespace but shouldn't actually be used as such
-  top.typeScheme = monoType(errorType()); -- TODO: distinguish class vs. type by giving these a type?
+  -- These are in the type namespace but shouldn't actually be used as such,
+  -- this is only used to report the kind.
+  top.typeScheme = monoType(varType(freshTyVar(), k));
   top.isClass = true;
   
   local tvSubst :: Substitution = subst(tv, top.givenInstanceType);

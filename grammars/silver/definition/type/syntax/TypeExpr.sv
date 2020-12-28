@@ -5,11 +5,11 @@ imports silver:definition:type;
 imports silver:definition:env;
 imports silver:util;
 
-nonterminal TypeExpr  with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, errorsTyVars, freeVariables;
-nonterminal Signature with config, location, grammarName, errors, env, unparse, types,   lexicalTypeVariables;
-nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, errorsTyVars, freeVariables;
-nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
-nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
+nonterminal TypeExpr  with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables;
+nonterminal Signature with config, location, grammarName, errors, env, unparse, types,   lexicalTypeVariables, lexicalTyVarKinds;
+nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables;
+nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
+nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 
 synthesized attribute types :: [Type];
 synthesized attribute missingCount::Integer;
@@ -18,24 +18,26 @@ synthesized attribute missingCount::Integer;
 monoid attribute lexicalTypeVariables :: [String] with [], ++;
 -- freeVariables also occurs on TypeExprs, and should be IN ORDER
 
+monoid attribute lexicalTyVarKinds :: [Pair<String Integer>] with [], ++;
+
 -- These attributes are used if we're using the TypeExprs as type variables-only.
 monoid attribute errorsTyVars :: [Message] with [], ++;
 -- A new environment, with the type variables in this list appearing bound
 inherited attribute initialEnv :: Decorated Env;
 synthesized attribute envBindingTyVars :: Decorated Env;
 
-propagate errors, lexicalTypeVariables on TypeExpr, Signature, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
+propagate errors, lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
 -- TODO: This function should go away because it doesn't do location correctly.
 -- But for now, we'll use it. It might be easier to get rid of once we know exactly
 -- how ty vars end up in the environment.
 function addNewLexicalTyVars
-[Def] ::= gn::String sl::Location l::[String]
+[Def] ::= gn::String sl::Location lk::[Pair<String Integer>] l::[String]
 {
   return if null(l) then []
-         else lexTyVarDef(gn, sl, head(l), freshTyVar(), 0) ::
-                  addNewLexicalTyVars(gn, sl, tail(l));
+         else lexTyVarDef(gn, sl, head(l), freshTyVar(), fromMaybe(0, lookupBy(stringEq, head(l), lk))) ::
+                  addNewLexicalTyVars(gn, sl, lk, tail(l));
 }
 
 aspect default production
@@ -184,6 +186,12 @@ top::TypeExpr ::= ty::Decorated TypeExpr tl::BracketedTypeExprs
     if tlCount != ty.typerep.kindArity
     then [err(top.location, prettyType(ty.typerep) ++ " has kind arity " ++ toString(ty.typerep.kindArity) ++ ", but there are " ++ toString(tlCount) ++ " type arguments supplied here.")]
     else [];
+
+  top.lexicalTyVarKinds <-
+    case ty of
+    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, tlCount)]
+    | _ -> []
+    end;
 }
 
 concrete production refTypeExpr
@@ -275,7 +283,7 @@ top::BracketedTypeExprs ::= '<' tl::TypeExprs '>'
 
   top.envBindingTyVars =
     newScopeEnv(
-      addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTypeVariables),
+      addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTyVarKinds, tl.lexicalTypeVariables),
       top.initialEnv);
 }
 

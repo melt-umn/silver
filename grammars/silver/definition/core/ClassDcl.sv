@@ -14,7 +14,7 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   production supers::[Context] = cl.contexts; -- *Direct* super classes only, not transitive
   production boundVars::[TyVar] = [tv];
   
-  top.defs := classDef(top.grammarName, id.location, fName, supers, tv, body.classMembers) :: body.defs;
+  top.defs := classDef(top.grammarName, id.location, fName, supers, tv, var.typerep.kindArity, body.classMembers) :: body.defs;
   
   -- id *should* be just a Name, but it has to be a QNameType to avoid a reduce/reduce conflict
   top.errors <-
@@ -68,11 +68,11 @@ top::AGDcl ::= 'class' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 autocopy attribute classHead::Context;
 
 nonterminal ClassBody with
-  config, grammarName, env, defs, location, unparse, errors, classHead, compiledGrammars, classMembers;
+  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, compiledGrammars, classMembers;
 nonterminal ClassBodyItem with
-  config, grammarName, env, defs, location, unparse, errors, classHead, compiledGrammars, classMembers;
+  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, compiledGrammars, classMembers;
 
-propagate defs, errors on ClassBody, ClassBodyItem;
+propagate defs, errors,lexicalTypeVariables, lexicalTyVarKinds on ClassBody, ClassBodyItem;
 
 concrete production consClassBody
 top::ClassBody ::= h::ClassBodyItem t::ClassBody

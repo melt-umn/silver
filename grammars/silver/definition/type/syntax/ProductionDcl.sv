@@ -1,6 +1,6 @@
 grammar silver:definition:type:syntax;
 
-attribute lexicalTypeVariables occurs on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
+attribute lexicalTypeVariables, lexicalTyVarKinds occurs on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 
 flowtype lexicalTypeVariables {env} on ProductionSignature, ProductionLHS, ProductionRHS;
 flowtype lexicalTypeVariables {deterministicCount, env} on ProductionRHSElem;
@@ -11,8 +11,10 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = makeSet(ns.lexicalTypeVariables);
   
-  sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, allLexicalTyVars);
+  sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
 }
+
+propagate lexicalTyVarKinds on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 
 aspect production productionSignature
 top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rhs::ProductionRHS 

@@ -99,6 +99,13 @@ wrongCode "repeats type variable names" {
  type TypeTwo<a a> = Integer;
 }
 
+wrongCode "Type NTTwo<a _> is not fully applied, it has kind arity 1" {
+ type MyTypeErr<a> = NTTwo<a _>;
+}
+wrongCode "Type NTTwo<_ _> is not fully applied, it has kind arity 2" {
+ type MyTypeErr = NTTwo<_ _>;
+}
+
 ----------------------------------------- toString implementations
 
 equalityTest(toString("foo"), "foo",   String, silver_tests);

@@ -36,7 +36,7 @@ top::AGDcl ::= 'aspect' 'default' 'production'
     [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];
   
   local sigDefs :: [Def] =
-    addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, te.lexicalTypeVariables);
+    addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, te.lexicalTyVarKinds, te.lexicalTypeVariables);
 
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
