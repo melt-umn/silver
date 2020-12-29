@@ -7,12 +7,13 @@ import silver:definition:core;
 import silver:translation:java:type;
 import silver:translation:java:core; -- for the nil hack
 
-aspect production listType
-top::Type ::= el::Type
+aspect production listCtrType
+top::Type ::=
 {
   top.transType = "common.ConsCell";
-  top.transTypeRep = s"new common.ListTypeRep(${el.transTypeRep})";
-  top.transFreshTypeRep = s"new common.ListTypeRep(${el.transFreshTypeRep})";
+  top.transTypeRep = "new common.BaseTypeRep(\"List\")";
+  top.transFreshTypeRep = top.transTypeRep;
+  top.transTypeName = "List";
 }
 
 

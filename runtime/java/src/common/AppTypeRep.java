@@ -29,10 +29,14 @@ public class AppTypeRep extends TypeRep {
 	
 	@Override
 	public final String toString() {
-		String argsToString = arg.toString();
-		for (TypeRep a = arg; a instanceof AppTypeRep; a = ((AppTypeRep)a).cons) {
-			argsToString += " " + a.toString();
+		if (arg instanceof BaseTypeRep && ((BaseTypeRep)cons).name.equals("List")) {
+			return "[" + arg + "]";
+		} else {
+			String argsToString = arg.toString();
+			for (TypeRep a = arg; a instanceof AppTypeRep; a = ((AppTypeRep)a).cons) {
+				argsToString += " " + a.toString();
+			}
+			return cons + "<" + argsToString + ">";
 		}
-		return cons + "<" + argsToString + ">";
 	}
 }

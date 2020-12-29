@@ -38,5 +38,5 @@ f<Integer> ::= fmapI::(f<Integer> ::= (Integer ::= Integer) f<Integer>) xs::f<In
   return fmapI(\ x::Integer -> x + 1, xs);
 }
 
---equalityTest(hackUnparse(functorInc(map, [1, 2, 3])), "[2, 3, 4]", String, silver_tests);
+equalityTest(hackUnparse(functorInc(map, [1, 2, 3])), "[2, 3, 4]", String, silver_tests);
 equalityTest(hackUnparse(functorInc(mapMaybe, just(42))), "core:just(43)", String, silver_tests);
