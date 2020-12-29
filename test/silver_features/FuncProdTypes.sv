@@ -32,6 +32,7 @@ s::IntNT ::= l::IntNT r::IntNT
 
 equalityTest ( foldr (intAdd, intTestProd(0), aList).intValue, 6, Integer, silver_tests ) ;
 
+-- Higher-kinded polymorphic functions and productions
 function functorInc
 f<Integer> ::= fmapI::(f<Integer> ::= (Integer ::= Integer) f<Integer>) xs::f<Integer>
 {
@@ -40,3 +41,20 @@ f<Integer> ::= fmapI::(f<Integer> ::= (Integer ::= Integer) f<Integer>) xs::f<In
 
 equalityTest(hackUnparse(functorInc(map, [1, 2, 3])), "[2, 3, 4]", String, silver_tests);
 equalityTest(hackUnparse(functorInc(mapMaybe, just(42))), "core:just(43)", String, silver_tests);
+
+nonterminal FInts with intValue;
+production fints
+top::FInts ::= ffoldI::(Integer ::= (Integer ::= Integer Integer) Integer f<Integer>) xs::f<Integer>
+{
+  top.intValue = ffoldI(\ i1::Integer i2::Integer -> i1 + i2, 0, xs);
+}
+
+equalityTest(fints(foldr, [1, 2, 3]).intValue, 6, Integer, silver_tests);
+equalityTest(fints(\ fn::(Integer ::= Integer Integer) i0::Integer mi::Maybe<Integer> -> case mi of just(i1) -> fn(i0, i1) | _ -> i0 end, just(42)).intValue, 42, Integer, silver_tests);
+
+-- Kind mismatch
+wrongCode "Type f is not fully applied, it has kind arity 1" {
+  function badKind
+  f ::= f<a>
+  { return error(""); }
+}
