@@ -65,8 +65,17 @@ wrongCode "Attribute type arguments cannot contain _" {
  attribute typeTest<a _> occurs on NTTwo<a b>;
 }
 
---nonterminal IO; -- parse error
+global ctrList::[]<Integer> = [1, 2, 3];
 
+wrongCode "Type [] is not fully applied, it has kind arity 1" {
+  global badCtrList1::[] = [1, 2, 3];
+}
+wrongCode "[] has kind arity 1, but there are 2 type arguments supplied here" {
+  global badCtrList2::[]<Integer Integer> = [1, 2, 3];
+}
+wrongCode "[Integer] has kind arity 0, but there are 1 type arguments supplied here" {
+  global badCtrList2::[Integer]<Integer> = [1, 2, 3];
+}
 
 -------------------------------------- Type Decls
 

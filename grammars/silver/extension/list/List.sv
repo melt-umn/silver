@@ -13,11 +13,21 @@ top::TypeExpr ::= '[' te::TypeExpr ']'
 
   top.typerep = listType(te.typerep);
 
-  forwards to refTypeExpr('Decorated', 
+  forwards to
     appTypeExpr(
-      nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "core:List"), location=top.location), location=top.location),
+      listCtrTypeExpr('[', ']', location=top.location),
       bTypeList('<', typeListSingle(te, location=te.location), '>', location=top.location),
-      location=top.location), location=top.location);
+      location=top.location);
+}
+
+concrete production listCtrTypeExpr
+top::TypeExpr ::= '[' ']'
+{
+  top.unparse = "[]";
+
+  top.typerep = listCtrType();
+
+  forwards to nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "core:List"), location=top.location), location=top.location);
 }
 
 -- The expressions -------------------------------------------------------------

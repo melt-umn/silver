@@ -29,7 +29,7 @@ top::Type ::=
   top.freeVariables = [];
   top.substituted = listCtrType();
   top.flatRenamed = listCtrType();
-  top.typepp = "List";
+  top.typepp = "[]";
   
   -- Suppress its "nonterminal"ness
   top.isDecorable = false;

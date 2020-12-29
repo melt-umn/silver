@@ -133,7 +133,7 @@ public class ConsCell implements Typed {
 		}
 		@Override
 		public AppTypeRep getType() {
-			return new AppTypeRep(new BaseTypeRep("List"), new VarTypeRep());
+			return new AppTypeRep(new BaseTypeRep("[]"), new VarTypeRep());
 		}
 	}
 	

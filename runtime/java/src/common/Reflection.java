@@ -227,7 +227,7 @@ public final class Reflection {
 			}
 		} else if (ast instanceof PlistAST) {
 			final TypeRep paramType = new VarTypeRep();
-			if (!TypeRep.unify(resultType, new AppTypeRep(new BaseTypeRep("List"), paramType))) {
+			if (!TypeRep.unify(resultType, new AppTypeRep(new BaseTypeRep("[]"), paramType))) {
 				throw new SilverError("reify is constructing " + resultType.toString() + ", but found list AST.");
 			}
 			return reifyList(paramType, (NASTs)ast.getChild(0));

@@ -29,7 +29,7 @@ public class AppTypeRep extends TypeRep {
 	
 	@Override
 	public final String toString() {
-		if (arg instanceof BaseTypeRep && ((BaseTypeRep)cons).name.equals("List")) {
+		if (arg instanceof BaseTypeRep && ((BaseTypeRep)cons).name.equals("[]")) {
 			return "[" + arg + "]";
 		} else {
 			String argsToString = arg.toString();

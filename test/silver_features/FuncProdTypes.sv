@@ -39,8 +39,8 @@ f<Integer> ::= fmapI::(f<Integer> ::= (Integer ::= Integer) f<Integer>) xs::f<In
   return fmapI(\ x::Integer -> x + 1, xs);
 }
 
-equalityTest(hackUnparse(functorInc(map, [1, 2, 3])), "[2, 3, 4]", String, silver_tests);
-equalityTest(hackUnparse(functorInc(mapMaybe, just(42))), "core:just(43)", String, silver_tests);
+equalityTest(functorInc(map, [1, 2, 3]), [2, 3, 4], [Integer], silver_tests);
+equalityTest(functorInc(mapMaybe, just(42)).fromJust, 43, Integer, silver_tests);
 
 nonterminal FInts with intValue;
 production fints
@@ -50,7 +50,9 @@ top::FInts ::= ffoldI::(Integer ::= (Integer ::= Integer Integer) Integer f<Inte
 }
 
 equalityTest(fints(foldr, [1, 2, 3]).intValue, 6, Integer, silver_tests);
-equalityTest(fints(\ fn::(Integer ::= Integer Integer) i0::Integer mi::Maybe<Integer> -> case mi of just(i1) -> fn(i0, i1) | _ -> i0 end, just(42)).intValue, 42, Integer, silver_tests);
+global foldMaybeInt::(Integer ::= (Integer ::= Integer Integer) Integer Maybe<Integer>) =
+  \ fn::(Integer ::= Integer Integer) i0::Integer mi::Maybe<Integer> -> case mi of just(i1) -> fn(i0, i1) | _ -> i0 end;
+equalityTest(fints(foldMaybeInt, just(42)).intValue, 42, Integer, silver_tests);
 
 -- Kind mismatch
 wrongCode "Type f is not fully applied, it has kind arity 1" {
