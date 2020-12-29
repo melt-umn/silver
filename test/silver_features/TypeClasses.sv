@@ -160,3 +160,29 @@ wrongCode "is no smaller than the instance head" {
   }
 }
 
+class MyFunctor f {
+  myfmap :: (f<b> ::= (b ::= a) f<a>);
+}
+
+instance MyFunctor Maybe {
+  myfmap = mapMaybe;
+}
+
+function mapEither
+Either<a c> ::= fn::(c ::= b) x::Either<a b>
+{
+  return case x of left(l) -> left(l) | right(r) -> right(fn(r)) end;
+}
+
+instance MyFunctor Either<a _> {
+  myfmap = mapEither;
+}
+
+instance MyFunctor [] {
+  myfmap = map;
+}
+
+equalityTest(myfmap(\ x::Integer -> toFloat(x), [1, 2, 3]), [1.0, 2.0, 3.0], [Float], silver_tests);
+equalityTest(myfmap(\ x::Integer -> toFloat(x), just(42)).fromJust, 42.0, Float, silver_tests);
+equalityTest(myfmap(\ x::Integer -> toFloat(x), left("abc")).fromLeft, "abc", String, silver_tests);
+equalityTest(myfmap(\ x::Integer -> toFloat(x), right(42)).fromRight, 42.0, Float, silver_tests);
