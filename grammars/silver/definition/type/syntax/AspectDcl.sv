@@ -38,7 +38,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
 }
 
 propagate lexicalTypeVariables on AspectProductionLHS, AspectFunctionLHS, AspectRHS, AspectRHSElem excluding aspectRHSElemCons;
-propagate lexicalTyVarKinds on AspectProductionLHS, AspectFunctionLHS, AspectRHS, AspectRHSElem;
+propagate lexicalTyVarKinds on AspectProductionSignature, AspectFunctionSignature, AspectProductionLHS, AspectFunctionLHS, AspectRHS, AspectRHSElem;
 
 aspect production aspectProductionSignature
 top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
