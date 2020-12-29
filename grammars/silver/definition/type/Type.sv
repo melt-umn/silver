@@ -26,7 +26,7 @@ top::PolyType ::= ty::Type
 abstract production polyType
 top::PolyType ::= bound::[TyVar] ty::Type
 {
-  top.boundVars = freshTyVars(length(bound));
+  top.boundVars = freshTyVars(bound);
   top.contexts = [];
   top.typerep = freshenTypeWith(ty, bound, top.boundVars);
   top.monoType = error("Expected a mono type but found a poly type!");
@@ -35,7 +35,7 @@ top::PolyType ::= bound::[TyVar] ty::Type
 abstract production constraintType
 top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
 {
-  top.boundVars = freshTyVars(length(bound));
+  top.boundVars = freshTyVars(bound);
   top.contexts = map(freshenContextWith(_, bound, top.boundVars), contexts);
   top.typerep = freshenTypeWith(ty, bound, top.boundVars);
   top.monoType = error("Expected a mono type but found a (constraint) poly type!");
@@ -61,9 +61,9 @@ nonterminal Type with kindArity, freeVariables;
  - This is a (universally quantified) type variable.
  -}
 abstract production varType
-top::Type ::= tv::TyVar k::Integer
+top::Type ::= tv::TyVar
 {
-  top.kindArity = k;
+  top.kindArity = tv.kindArity;
   top.freeVariables = [tv];
 }
 
@@ -72,9 +72,9 @@ top::Type ::= tv::TyVar k::Integer
  - Type are pretty much (exists sks. forall tys. type)
  -}
 abstract production skolemType
-top::Type ::= tv::TyVar k::Integer
+top::Type ::= tv::TyVar
 {
-  top.kindArity = k;
+  top.kindArity = tv.kindArity;
   top.freeVariables = [tv];
 }
 
@@ -201,7 +201,7 @@ abstract production ntOrDecType
 top::Type ::= nt::Type  hidden::Type
 {
   top.freeVariables = case hidden of
-                      | varType(_, _) -> nt.freeVariables
+                      | varType(_) -> nt.freeVariables
                       | _ -> hidden.freeVariables
                       end;
   
@@ -266,38 +266,39 @@ Integer ::= s::String l::[NamedArgType] z::Integer
 
 --------------------------------------------------------------------------------
 
-nonterminal TyVar ;
+nonterminal TyVar with kindArity;
 
 -- In essence, this should be 'private' to this file.
 synthesized attribute extractTyVarRep :: Integer occurs on TyVar;
 
 abstract production tyVar
-top::TyVar ::= i::Integer
+top::TyVar ::= k::Integer i::Integer
 {
+  top.kindArity = k;
   top.extractTyVarRep = i;
 }
 
 function freshTyVar
-TyVar ::=
+TyVar ::= k::Integer
 {
-  return tyVar(genInt());
+  return tyVar(k, genInt());
 }
 
 function tyVarEqual
 Boolean ::= tv1::TyVar tv2::TyVar
 {
-  return tv1.extractTyVarRep == tv2.extractTyVarRep;
+  return tv1.kindArity == tv2.kindArity && tv1.extractTyVarRep == tv2.extractTyVarRep;
 }
 
 function freshType
 Type ::=
 {
-  return varType(freshTyVar(), 0);
+  return varType(freshTyVar(0));
 }
 
 function newSkolemConstant
 Type ::=
 {
-  return skolemType(freshTyVar(), 0);
+  return skolemType(freshTyVar(0));
 }
 

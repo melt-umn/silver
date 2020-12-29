@@ -15,8 +15,8 @@ Pair<[Context] Type> ::= te::PolyType
   local existentialVars :: [TyVar] = removeTyVars(te.boundVars, te.typerep.outputType.freeVariables);
   
   local skolemize :: Substitution = composeSubst(
-    zipVarsIntoSkolemizedSubstitution(existentialVars, freshTyVars(length(existentialVars))),
-    zipVarsIntoSubstitution(te.typerep.outputType.freeVariables, freshTyVars(length(te.typerep.outputType.freeVariables))));
+    zipVarsIntoSkolemizedSubstitution(existentialVars, freshTyVars(existentialVars)),
+    zipVarsIntoSubstitution(te.typerep.outputType.freeVariables, freshTyVars(te.typerep.outputType.freeVariables)));
   
   return pair(map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
 }
@@ -53,7 +53,7 @@ Pair<[Context] Type> ::= te::PolyType
 function fullySkolemizeProductionType
 Pair<[Context] Type> ::= te::PolyType
 {
-  local skolemize :: Substitution = zipVarsIntoSkolemizedSubstitution(te.boundVars, freshTyVars(length(te.boundVars)));
+  local skolemize :: Substitution = zipVarsIntoSkolemizedSubstitution(te.boundVars, freshTyVars(te.boundVars));
   
   return pair(map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
 }
@@ -66,32 +66,36 @@ inherited attribute refineWith :: Type occurs on Type;
 synthesized attribute refine :: Substitution occurs on Type;
 
 aspect production varType
-top::Type ::= tv::TyVar _
+top::Type ::= tv::TyVar
 {
   top.refine = 
     case top.refineWith of
-    | varType(j, _) ->
+    | varType(j) ->
         if tyVarEqual(tv, j)
         then emptySubst()
         else subst(tv, top.refineWith)
-    | _ -> if containsTyVar(tv, top.refineWith.freeVariables)
-           then errorSubst("Infinite type! Tried to refine with " ++ prettyType(top.refineWith))
-           else subst(tv, top.refineWith)
+    | t when t.kindArity == tv.kindArity ->
+        if containsTyVar(tv, t.freeVariables)
+        then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
+        else subst(tv, t)
+    | t -> errorSubst("Kind mismatch!  Tried to unify with " ++ prettyType(top.unifyWith))
     end;
 }
 
 aspect production skolemType
-top::Type ::= tv::TyVar _
+top::Type ::= tv::TyVar
 {
   top.refine = 
     case top.refineWith of
-    | skolemType(j, _) -> 
+    | skolemType(j) -> 
         if tyVarEqual(tv, j)
         then emptySubst()
         else subst(tv, top.refineWith)
-    | _ -> if containsTyVar(tv, top.refineWith.freeVariables)
-           then errorSubst("Infinite type! Tried to refine with " ++ prettyType(top.refineWith))
-           else subst(tv, top.refineWith)
+    | t when t.kindArity == tv.kindArity ->
+        if containsTyVar(tv, t.freeVariables)
+        then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
+        else subst(tv, t)
+    | t -> errorSubst("Kind mismatch!  Tried to unify with " ++ prettyType(top.unifyWith))
     end;
 }
 
@@ -283,8 +287,8 @@ Boolean ::= ls::[Type]
 {
   return case ls of
          | [] -> true
-         | varType(_, _) :: t -> isOnlyTyVars(t)
-         | skolemType(_, _) :: t -> isOnlyTyVars(t)
+         | varType(_) :: t -> isOnlyTyVars(t)
+         | skolemType(_) :: t -> isOnlyTyVars(t)
          | _ -> false
          end;
 }

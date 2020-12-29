@@ -36,7 +36,7 @@ function addNewLexicalTyVars
 [Def] ::= gn::String sl::Location lk::[Pair<String Integer>] l::[String]
 {
   return if null(l) then []
-         else lexTyVarDef(gn, sl, head(l), freshTyVar(), fromMaybe(0, lookupBy(stringEq, head(l), lk))) ::
+         else lexTyVarDef(gn, sl, head(l), freshTyVar(fromMaybe(0, lookupBy(stringEq, head(l), lk)))) ::
                   addNewLexicalTyVars(gn, sl, lk, tail(l));
 }
 

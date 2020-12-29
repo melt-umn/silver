@@ -192,13 +192,13 @@ top::DclInfo ::= fn::String regex::Regex
   top.isType = true;
 }
 abstract production lexTyVarDcl
-top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar k::Integer
+top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar
 {
   top.fullName = fn;
 
   -- Lexical type vars in aspects aren't skolemized, since they unify with the real (skolem) types.
   -- See comment in silver:definition:type:syntax:AspectDcl.sv
-  top.typeScheme = monoType(if isAspect then varType(tv, k) else skolemType(tv, k));
+  top.typeScheme = monoType(if isAspect then varType(tv) else skolemType(tv));
   top.isType = true;
 }
 abstract production typeAliasDcl
@@ -217,7 +217,7 @@ top::DclInfo ::= fn::String supers::[Context] tv::TyVar k::Integer members::[Pai
   
   -- These are in the type namespace but shouldn't actually be used as such,
   -- this is only used to report the kind.
-  top.typeScheme = monoType(varType(freshTyVar(), k));
+  top.typeScheme = monoType(varType(freshTyVar(k)));
   top.isClass = true;
   
   local tvSubst :: Substitution = subst(tv, top.givenInstanceType);

@@ -70,11 +70,11 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
   -- Thus, we apply #1 to our fresh type vars, perform both substitutions on #3, and get our goal.
   
   -- Fresh type variables that will go in the environment
-  local tyVars :: [TyVar] = freshTyVars(length(nttl.freeVariables));
+  local tyVars :: [TyVar] = freshTyVars(nttl.freeVariables);
   
   -- Apply the nonterminal type to the type variables.
   -- NOT .monoType so we do something sensible if someone does "occurs on TypeAlias<a>" or something.
-  production protontty :: Type = appTypes(ntTypeScheme.typerep, map(varType(_, 0), tyVars));
+  production protontty :: Type = appTypes(ntTypeScheme.typerep, map(varType, tyVars));
   
   -- This renames the vars from the environment
   -- at's env types -> type params containing local skolem vars  (vars -> types)

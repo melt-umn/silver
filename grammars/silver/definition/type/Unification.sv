@@ -5,15 +5,15 @@ synthesized attribute unify :: Substitution occurs on Type;
 
 --------------------------------------------------------------------------------
 aspect production varType
-top::Type ::= tv::TyVar k::Integer
+top::Type ::= tv::TyVar
 {
   top.unify = 
     case top.unifyWith of
-    | varType(j, k1) when k == k1 ->
+    | varType(j) ->
         if tyVarEqual(tv, j)
         then emptySubst()
         else subst(tv, top.unifyWith)
-    | t when t.kindArity == k ->
+    | t when t.kindArity == tv.kindArity ->
         if containsTyVar(tv, top.unifyWith.freeVariables)
         then errorSubst("Infinite type! Tried to unify with " ++ prettyType(top.unifyWith))
         else subst(tv, top.unifyWith)
@@ -22,11 +22,11 @@ top::Type ::= tv::TyVar k::Integer
 }
 
 aspect production skolemType
-top::Type ::= tv::TyVar _
+top::Type ::= tv::TyVar
 {
   top.unify = 
     case top.unifyWith of
-    | skolemType(otv, _) ->
+    | skolemType(otv) ->
         if tyVarEqual(tv, otv)
         then emptySubst()
         else errorSubst("Tried to unify skolem constant with incompatible skolem constant")

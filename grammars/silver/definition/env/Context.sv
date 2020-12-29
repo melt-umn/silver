@@ -53,8 +53,8 @@ Boolean ::= a::Type b::Type
 {
   return
     case a, b of
-    | varType(_, 0), varType(_, 0) -> false
-    | _, varType(_, 0) -> true
+    | varType(_), varType(_) -> false
+    | _, varType(_) -> true
     | appType(c1, a1), appType(c2, a2) ->
       (isMoreSpecific(c1, c2) || isMoreSpecific(a1, a2)) && !(isMoreSpecific(c2, c1) || isMoreSpecific(a2, a1))
     | decoratedType(t1), decoratedType(t2) -> isMoreSpecific(t1, t2)

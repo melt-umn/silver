@@ -61,13 +61,13 @@ top::Context ::= cls::String t::Type
 }
 
 aspect production varType
-top::Type ::= tv::TyVar _
+top::Type ::= tv::TyVar
 {
   top.typepp = findAbbrevFor(tv, top.boundVariables);
 }
 
 aspect production skolemType
-top::Type ::= tv::TyVar _
+top::Type ::= tv::TyVar
 {
   top.typepp = findAbbrevFor(tv, top.boundVariables);
 }
@@ -158,10 +158,7 @@ String ::= tv::TyVar  bv::[TyVar]
 function findAbbrevHelp
 String ::= tv::TyVar  bv::[TyVar]  vn::[String]
 {
-  local attribute tvi :: Integer;
-  tvi = case tv of tyVar(i) -> i end;
-  
-  return if null(vn) || null(bv) then "V_" ++ toString(tvi)
+  return if null(vn) || null(bv) then "V_" ++ toString(tv.extractTyVarRep)
          else if tyVarEqual(tv, head(bv))
               then head(vn)
               else findAbbrevHelp(tv, tail(bv), tail(vn));

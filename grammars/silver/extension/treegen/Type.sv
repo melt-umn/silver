@@ -16,12 +16,12 @@ imports silver:modification:collection;
 synthesized attribute idNameForGenArb :: String occurs on Type;
 
 aspect production varType
-top::Type ::= tv::TyVar _
+top::Type ::= tv::TyVar
 {
   top.idNameForGenArb = "VAR";
 }
 aspect production skolemType
-top::Type ::= tv::TyVar _
+top::Type ::= tv::TyVar
 {
   top.idNameForGenArb = "SKOLEM";
 }

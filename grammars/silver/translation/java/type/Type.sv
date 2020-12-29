@@ -19,7 +19,7 @@ synthesized attribute transTypeName :: String;
 attribute transType, transClassType, transTypeRep, transFreshTypeRep, transTypeName occurs on Type;
 
 aspect production varType
-top::Type ::= tv::TyVar _
+top::Type ::= tv::TyVar
 {
   top.transType = "Object";
   top.transClassType = "Object";
@@ -29,7 +29,7 @@ top::Type ::= tv::TyVar _
 }
 
 aspect production skolemType
-top::Type ::= tv::TyVar _
+top::Type ::= tv::TyVar
 {
   top.transType = "Object";
   top.transClassType = "Object";

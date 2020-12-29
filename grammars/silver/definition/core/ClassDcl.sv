@@ -9,7 +9,7 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   production tv :: TyVar =
     case var.typerep.freeVariables of
     | v :: _ -> v
-    | _ -> freshTyVar()
+    | _ -> freshTyVar(0)
     end;
   production supers::[Context] = cl.contexts; -- *Direct* super classes only, not transitive
   production boundVars::[TyVar] = [tv];

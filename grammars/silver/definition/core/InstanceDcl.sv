@@ -28,7 +28,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   top.errors <-
     case ty.typerep of
     -- Default instance, must be exported by the class declaration
-    | skolemType(_, _) when !isExportedBy(top.grammarName, [dcl.sourceGrammar], top.compiledGrammars) ->
+    | skolemType(_) when !isExportedBy(top.grammarName, [dcl.sourceGrammar], top.compiledGrammars) ->
       [wrn(top.location, "Orphaned default instance declaration for " ++ fName)]
     -- Regular instance, must be exported by the class or type declaration
     | t when !isExportedBy(top.grammarName, dcl.sourceGrammar :: map(\ d::DclInfo -> d.sourceGrammar, getTypeDcl(t.typeName, top.env)), top.compiledGrammars) ->

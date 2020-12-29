@@ -38,7 +38,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
   top.unparse = c.unparse ++ " " ++ t.unparse;
   top.contexts =
     case top.instanceHead of
-    | just(instContext(_, skolemType(_, _))) -> [] -- Avoid a cycle in instance resolution checking
+    | just(instContext(_, skolemType(_))) -> [] -- Avoid a cycle in instance resolution checking
     | _ -> [instContext(dcl.fullName, t.typerep)]
     end;
   
@@ -54,7 +54,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
   -- so we need to check that there are no class constraints if instance head is a type variable.
   top.errors <-
     case top.instanceHead of
-    | just(h) when h matches instContext(_, skolemType(_, _)) ->
+    | just(h) when h matches instContext(_, skolemType(_)) ->
       [err(top.location, s"The constraint ${top.unparse} is no smaller than the instance head ${prettyContext(h)}")]
     | _ -> []
     end;

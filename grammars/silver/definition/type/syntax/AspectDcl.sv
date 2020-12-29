@@ -9,7 +9,7 @@ function addNewLexicalTyVars_ActuallyVariables
 [Def] ::= gn::String sl::Location lk::[Pair<String Integer>] l::[String]
 {
   return if null(l) then []
-         else aspectLexTyVarDef(gn, sl, head(l), freshTyVar(), fromMaybe(0, lookupBy(stringEq, head(l), lk))) ::
+         else aspectLexTyVarDef(gn, sl, head(l), freshTyVar(fromMaybe(0, lookupBy(stringEq, head(l), lk)))) ::
                   addNewLexicalTyVars_ActuallyVariables(gn, sl, lk, tail(l));
 }
 

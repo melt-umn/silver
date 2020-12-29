@@ -89,7 +89,7 @@ propagate substituted, flatRenamed on Context, Type
   excluding varType, skolemType, ntOrDecType, functionType;
 
 aspect production varType
-top::Type ::= tv::TyVar k::Integer
+top::Type ::= tv::TyVar
 {
   -- Important: we recursively substitute, until no more substitutions happen!
   -- This also means the substitution list must not be circular!
@@ -97,7 +97,7 @@ top::Type ::= tv::TyVar k::Integer
   -- Perform one iteration of substitution
   local partialsubst :: Maybe<Type> =
     case findSubst(tv, top.substitution) of
-    | just(s) when s.kindArity != k -> error("Kind mismatch in applying substitution!")
+    | just(s) when s.kindArity != tv.kindArity -> error("Kind mismatch in applying substitution!")
     | ps -> ps
     end;
   
@@ -113,7 +113,7 @@ top::Type ::= tv::TyVar k::Integer
 }
 
 aspect production skolemType
-top::Type ::= tv::TyVar k::Integer
+top::Type ::= tv::TyVar
 {
   -- This may be counter intuitive! I don't know!
   
@@ -131,7 +131,7 @@ top::Type ::= tv::TyVar k::Integer
   
   local partialsubst :: Maybe<Type> =
     case findSubst(tv, top.substitution) of
-    | just(s) when s.kindArity != k -> error("Kind mismatch in applying substitution!")
+    | just(s) when s.kindArity != tv.kindArity -> error("Kind mismatch in applying substitution!")
     | ps -> ps
     end;
   
@@ -153,8 +153,8 @@ top::Type ::= nt::Type  hidden::Type
   -- Note: we're matching on hidden.subsituted, not just hidden. Important!
   top.substituted =
     case hidden.substituted of
-    | varType(_, _) -> ntOrDecType(nt.substituted, hidden.substituted)
-    | _             -> hidden.substituted
+    | varType(_) -> ntOrDecType(nt.substituted, hidden.substituted)
+    | _          -> hidden.substituted
     end;
   -- For a renaming, we don't need to specialize.
   top.flatRenamed = ntOrDecType(nt.flatRenamed, hidden.flatRenamed);
@@ -243,11 +243,11 @@ NamedArgType ::= f::(Type ::= Type) nat::NamedArgType
 
 --------------------------------------------------------------------------------
 
+-- Generate fresh type vars with the same kinds as tvs
 function freshTyVars
-[TyVar] ::= n::Integer
+[TyVar] ::= tvs::[TyVar]
 {
-  return if n > 0 then freshTyVar() :: freshTyVars(n-1)
-         else [];
+  return map(freshTyVar, map((.kindArity), tvs));
 }
 
 function zipVarsIntoSubstitution
@@ -255,7 +255,7 @@ Substitution ::= original::[TyVar] sub::[TyVar]
 {
   -- once we have "productions are subtypes of functions" then make this just map 'varType' and call the other one below
   return if null(original) || null(sub) then emptySubst()
-         else composeSubst(subst(head(original), varType(head(sub), 0)),
+         else composeSubst(subst(head(original), varType(head(sub))),
                 zipVarsIntoSubstitution(tail(original), tail(sub)));
 }
 
@@ -264,7 +264,7 @@ Substitution ::= original::[TyVar] sub::[TyVar]
 {
   -- once we have "productions are subtypes of functions" then make this just map 'varType' and call the other one below
   return if null(original) || null(sub) then emptySubst()
-         else composeSubst(subst(head(original), skolemType(head(sub), 0)),
+         else composeSubst(subst(head(original), skolemType(head(sub))),
                 zipVarsIntoSkolemizedSubstitution(tail(original), tail(sub)));
 }
 
@@ -280,7 +280,7 @@ Substitution ::= original::[TyVar] sub::[Type]
 function freshenType
 Type ::= te::Type tvs::[TyVar]
 {
-  return freshenTypeWith(te, tvs, freshTyVars(length(tvs)));
+  return freshenTypeWith(te, tvs, freshTyVars(tvs));
 }
 
 function freshenContextWith

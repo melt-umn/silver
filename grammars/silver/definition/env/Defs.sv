@@ -181,14 +181,14 @@ Def ::= sg::String  sl::Location  fn::String  regex::Regex
   return typeValueDef(defaultEnvItem(termDcl(fn,regex,sourceGrammar=sg,sourceLocation=sl)));
 }
 function lexTyVarDef
-Def ::= sg::String  sl::Location  fn::String  tv::TyVar  k::Integer
+Def ::= sg::String  sl::Location  fn::String  tv::TyVar
 {
-  return typeDef(defaultEnvItem(lexTyVarDcl(fn,false,tv,k,sourceGrammar=sg,sourceLocation=sl)));
+  return typeDef(defaultEnvItem(lexTyVarDcl(fn,false,tv,sourceGrammar=sg,sourceLocation=sl)));
 }
 function aspectLexTyVarDef
-Def ::= sg::String  sl::Location  fn::String  tv::TyVar  k::Integer
+Def ::= sg::String  sl::Location  fn::String  tv::TyVar
 {
-  return typeDef(defaultEnvItem(lexTyVarDcl(fn,true,tv,k,sourceGrammar=sg,sourceLocation=sl)));
+  return typeDef(defaultEnvItem(lexTyVarDcl(fn,true,tv,sourceGrammar=sg,sourceLocation=sl)));
 }
 function typeAliasDef
 Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type

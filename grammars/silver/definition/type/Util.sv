@@ -91,12 +91,12 @@ top::Type ::=
 }
 
 aspect production varType
-top::Type ::= tv::TyVar _
+top::Type ::= tv::TyVar
 {
 }
 
 aspect production skolemType
-top::Type ::= tv::TyVar _
+top::Type ::= tv::TyVar
 {
 }
 
