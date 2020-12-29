@@ -184,7 +184,7 @@ top::TypeExpr ::= ty::Decorated TypeExpr tl::BracketedTypeExprs
   local tlCount::Integer = length(tl.types) + tl.missingCount;
   top.errors <-
     if tlCount != ty.typerep.kindArity
-    then [err(top.location, prettyType(ty.typerep) ++ " has kind arity " ++ toString(ty.typerep.kindArity) ++ ", but there are " ++ toString(tlCount) ++ " type arguments supplied here.")]
+    then [err(top.location, ty.unparse ++ " has kind arity " ++ toString(ty.typerep.kindArity) ++ ", but there are " ++ toString(tlCount) ++ " type arguments supplied here.")]
     else [];
 
   top.lexicalTyVarKinds <-
