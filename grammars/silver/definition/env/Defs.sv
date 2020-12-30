@@ -190,6 +190,11 @@ Def ::= sg::String  sl::Location  fn::String  tv::TyVar
 {
   return typeDef(defaultEnvItem(lexTyVarDcl(fn,true,tv,sourceGrammar=sg,sourceLocation=sl)));
 }
+function typeAliasDef
+Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+{
+  return typeDef(defaultEnvItem(typeAliasDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
+}
 function synDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {
@@ -227,9 +232,9 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
   return attrDef(defaultEnvItem(annoDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function classDef
-Def ::= sg::String  sl::Location  fn::String  supers::[Context]  tv::TyVar  members::[Pair<String Pair<Type Boolean>>]
+Def ::= sg::String  sl::Location  fn::String  supers::[Context]  tv::TyVar  k::Integer  members::[Pair<String Pair<Type Boolean>>]
 {
-  return typeDef(defaultEnvItem(clsDcl(fn,supers,tv,members,sourceGrammar=sg,sourceLocation=sl)));
+  return typeDef(defaultEnvItem(clsDcl(fn,supers,tv,k,members,sourceGrammar=sg,sourceLocation=sl)));
 }
 function instDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  contexts::[Context]  ty::Type

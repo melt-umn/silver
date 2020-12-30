@@ -86,7 +86,7 @@ functor attribute substituted occurs on Context, Type;
 functor attribute flatRenamed occurs on Context, Type;
 
 propagate substituted, flatRenamed on Context, Type
-  excluding varType, skolemType, nonterminalType, ntOrDecType, functionType;
+  excluding varType, skolemType, ntOrDecType, functionType;
 
 aspect production varType
 top::Type ::= tv::TyVar
@@ -95,7 +95,11 @@ top::Type ::= tv::TyVar
   -- This also means the substitution list must not be circular!
 
   -- Perform one iteration of substitution
-  local partialsubst :: Maybe<Type> = findSubst(tv, top.substitution);
+  local partialsubst :: Maybe<Type> =
+    case findSubst(tv, top.substitution) of
+    | just(s) when s.kindArity != tv.kindArity -> error("Kind mismatch in applying substitution!")
+    | ps -> ps
+    end;
   
   -- recursively substitute only if we changed!
   top.substituted =
@@ -125,7 +129,11 @@ top::Type ::= tv::TyVar
   
   -- (See the only non-unification place where subst(...) is called directly at the bottom of this file.)
   
-  local partialsubst :: Maybe<Type> = findSubst(tv, top.substitution);
+  local partialsubst :: Maybe<Type> =
+    case findSubst(tv, top.substitution) of
+    | just(s) when s.kindArity != tv.kindArity -> error("Kind mismatch in applying substitution!")
+    | ps -> ps
+    end;
   
   -- recursively substitute only if we changed!
   top.substituted =
@@ -136,13 +144,6 @@ top::Type ::= tv::TyVar
     if partialsubst.isJust
     then partialsubst.fromJust
     else top;
-}
-
-aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
-{
-  top.substituted = nonterminalType(fn, mapSubst(params, top.substitution));
-  top.flatRenamed = nonterminalType(fn, mapRenameSubst(params, top.substitution));
 }
 
 aspect production ntOrDecType
@@ -242,11 +243,11 @@ NamedArgType ::= f::(Type ::= Type) nat::NamedArgType
 
 --------------------------------------------------------------------------------
 
+-- Generate fresh type vars with the same kinds as tvs
 function freshTyVars
-[TyVar] ::= n::Integer
+[TyVar] ::= tvs::[TyVar]
 {
-  return if n > 0 then freshTyVar() :: freshTyVars(n-1)
-         else [];
+  return map(freshTyVar, map((.kindArity), tvs));
 }
 
 function zipVarsIntoSubstitution
@@ -279,7 +280,7 @@ Substitution ::= original::[TyVar] sub::[Type]
 function freshenType
 Type ::= te::Type tvs::[TyVar]
 {
-  return freshenTypeWith(te, tvs, freshTyVars(length(tvs)));
+  return freshenTypeWith(te, tvs, freshTyVars(tvs));
 }
 
 function freshenContextWith

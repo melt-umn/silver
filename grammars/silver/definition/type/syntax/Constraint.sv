@@ -8,10 +8,10 @@ nonterminal ConstraintList
   -- syntax doesn't "know about" the core layout terminals.
   -- Thus we have to set the layout explicitly for the "root" nonterminal here.
   layout {BlockComments, Comments, WhiteSpace}
-  with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead, constraintSigName;
-nonterminal Constraint with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, instanceHead, constraintSigName;
+  with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, lexicalTyVarKinds, instanceHead, constraintSigName;
+nonterminal Constraint with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, lexicalTyVarKinds, instanceHead, constraintSigName;
 
-propagate errors, defs, lexicalTypeVariables on ConstraintList, Constraint;
+propagate errors, defs, lexicalTypeVariables, lexicalTyVarKinds on ConstraintList, Constraint;
 
 concrete production consConstraint
 top::ConstraintList ::= h::Constraint ',' t::ConstraintList
@@ -65,6 +65,12 @@ top::Constraint ::= c::QNameType t::TypeExpr
     | nothing() -> [instConstraintDef(top.grammarName, top.location, dcl.fullName, t.typerep)]
     end;
   top.defs <- transitiveSuperDefs(top.env, t.typerep, [], dcl.fullName);
+
+  top.lexicalTyVarKinds <-
+    case t of
+    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, c.lookupType.typeScheme.monoType.kindArity)]
+    | _ -> []
+    end;
 }
 
 function transitiveSuperContexts

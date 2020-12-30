@@ -72,6 +72,14 @@ top::Type ::= tv::TyVar
   top.typepp = findAbbrevFor(tv, top.boundVariables);
 }
 
+aspect production appType
+top::Type ::= c::Type a::Type
+{
+  top.typepp = prettyTypeWith(top.baseType, top.boundVariables) ++
+    if null(top.argTypes) then ""
+    else "<" ++ implode(" ", map(prettyTypeWith(_, top.boundVariables), top.argTypes)) ++ ">";
+}
+
 aspect production errorType
 top::Type ::=
 {
@@ -109,9 +117,9 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String _
 {
-  top.typepp = fn ++ if !null(params) then "<" ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ">" else "";
+  top.typepp = fn;
 }
 
 aspect production terminalType
@@ -150,10 +158,7 @@ String ::= tv::TyVar  bv::[TyVar]
 function findAbbrevHelp
 String ::= tv::TyVar  bv::[TyVar]  vn::[String]
 {
-  local attribute tvi :: Integer;
-  tvi = case tv of tyVar(i) -> i end;
-  
-  return if null(vn) || null(bv) then "V_" ++ toString(tvi)
+  return if null(vn) || null(bv) then "V_" ++ toString(tv.extractTyVarRep)
          else if tyVarEqual(tv, head(bv))
               then head(vn)
               else findAbbrevHelp(tv, tail(bv), tail(vn));

@@ -1,5 +1,7 @@
 grammar silver:definition:type;
 
+global appTypes::(Type ::= Type [Type]) = foldl(appType, _, _);
+
 -- set contains:  s 'in' sl
 function containsTyVar
 Boolean ::= s::TyVar sl::[TyVar]

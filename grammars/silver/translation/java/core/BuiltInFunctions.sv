@@ -67,7 +67,7 @@ top::Expr ::= 'reify'
 {
   local resultType::Type =
     case finalType(top).outputType of
-    | nonterminalType("core:Either", [stringType(), a]) -> a
+    | appType(appType(nonterminalType("core:Either", 2), stringType()), a) -> a
     | _ -> error("Unexpected final type for reify!")
     end;
   

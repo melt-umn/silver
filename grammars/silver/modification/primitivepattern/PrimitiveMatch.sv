@@ -4,7 +4,7 @@ imports silver:definition:core;
 imports silver:definition:env;
 imports silver:definition:type;
 
-import silver:definition:type:syntax only typerepType, TypeExpr;
+import silver:definition:type:syntax only typerepType, TypeExpr, errorsFullyApplied;
 import silver:extension:patternmatching only Arrow_kwd, Vbar_kwd, ensureDecoratedExpr; -- TODO remove
 
 import silver:translation:java:core;
@@ -68,6 +68,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   
   propagate errors;
   top.typerep = t.typerep;
+
+  top.errors <- t.errorsFullyApplied;
   
   {--
    - Invariant: if we were given an undecorated expression, it should have been
@@ -156,14 +158,15 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
 
+  local t::Type = qn.lookupValue.typeScheme.typerep.outputType;
   local isGadt :: Boolean =
-    case qn.lookupValue.typeScheme.typerep.outputType of
+    case t.baseType of
     -- If the lookup is successful, and it's a production type, and it 
     -- constructs a nonterminal that either:
     --  1. has a non-type-variable parameter (e.g. Expr<Boolean>)
     --  2. has fewer free variables than parameters (e.g. Eq<a a>)
     -- THEN it's a gadt.
-    | nonterminalType(_, tvs) -> !isOnlyTyVars(tvs) || length(tvs) != length(setUnionTyVarsAll(map((.freeVariables), tvs)))
+    | nonterminalType(_, _) -> !isOnlyTyVars(t.argTypes) || length(t.argTypes) != length(setUnionTyVarsAll(map((.freeVariables), t.argTypes)))
     | _ -> false
     end;
   
@@ -185,6 +188,12 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
     else [err(qn.location, qn.name ++ " has " ++ toString(prod_type.arity) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
   top.errors <- qn.lookupValue.errors;
+  top.errors <-
+    case qn.lookupValue.dcls of
+    | prodDcl (_, _) :: _ -> []
+    | [] -> []
+    | _ -> [err(qn.location, qn.name ++ " is not a production.")]
+    end;
 
   -- Turns the existential variables existential
   local prod_contexts_type :: Pair<[Context] Type> = skolemizeProductionType(qn.lookupValue.typeScheme);
@@ -233,6 +242,12 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
     else [err(qn.location, qn.name ++ " has " ++ toString(prod_type.arity) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
   
   top.errors <- qn.lookupValue.errors;
+  top.errors <-
+    case qn.lookupValue.dcls of
+    | prodDcl (_, _) :: _ -> []
+    | [] -> []
+    | _ -> [err(qn.location, qn.name ++ " is not a production.")]
+    end;
 
   local prod_contexts_type :: Pair<[Context] Type> = fullySkolemizeProductionType(qn.lookupValue.typeScheme); -- that says FULLY. See the comments on that function.
   production prod_contexts :: [Context] = prod_contexts_type.fst;

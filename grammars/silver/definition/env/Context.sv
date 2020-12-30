@@ -55,8 +55,8 @@ Boolean ::= a::Type b::Type
     case a, b of
     | varType(_), varType(_) -> false
     | _, varType(_) -> true
-    | nonterminalType(fn1, params1), nonterminalType(fn2, params2) when fn1 == fn2 ->
-      any(zipWith(isMoreSpecific, params1, params2)) && !any(zipWith(isMoreSpecific, params2, params1))
+    | appType(c1, a1), appType(c2, a2) ->
+      (isMoreSpecific(c1, c2) || isMoreSpecific(a1, a2)) && !(isMoreSpecific(c2, c1) || isMoreSpecific(a2, a1))
     | decoratedType(t1), decoratedType(t2) -> isMoreSpecific(t1, t2)
     | functionType(out1, params1, _), functionType(out2, params2, _) -> -- TODO: Ignoring named args for now
       any(zipWith(isMoreSpecific, out1 :: params1, out2 :: params2)) && !any(zipWith(isMoreSpecific, out2 :: params2, out1 :: params1))

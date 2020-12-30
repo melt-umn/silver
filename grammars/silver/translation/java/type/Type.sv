@@ -38,6 +38,16 @@ top::Type ::= tv::TyVar
   top.transTypeName = "a" ++ toString(tv.extractTyVarRep);
 }
 
+aspect production appType
+top::Type ::= c::Type a::Type
+{
+  top.transType = c.transType;
+  top.transClassType = c.transClassType;
+  top.transTypeRep = s"new common.AppTypeRep(${c.transTypeRep}, ${a.transTypeRep})";
+  top.transFreshTypeRep = s"new common.AppTypeRep(${c.transFreshTypeRep}, ${a.transFreshTypeRep})";
+  top.transTypeName = c.transTypeName ++ "_" ++ a.transTypeName;
+}
+
 aspect production errorType
 top::Type ::=
 {
@@ -100,17 +110,15 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String _
 {
   -- untightened version would be "common.Node", but we prefer the generated
   -- class, e.g. silver.definition.core.NExpr
   top.transType = makeNTName(fn);
   top.transClassType = top.transType;
-  top.transTypeRep =
-    s"new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}})";
-  top.transFreshTypeRep =
-    s"new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transFreshTypeRep), params))}})";
-  top.transTypeName = substitute(":", "_", fn) ++ "_" ++ implode("_", map((.transTypeName), params));
+  top.transTypeRep = s"new common.BaseTypeRep(\"${fn}\")";
+  top.transFreshTypeRep = top.transTypeRep;
+  top.transTypeName = substitute(":", "_", fn);
 }
 
 aspect production terminalType
@@ -129,18 +137,8 @@ top::Type ::= te::Type
   -- TODO: this should probably be a generic.  e.g. "DecoratedNode<something>"
   top.transType = "common.DecoratedNode";
   top.transClassType = "common.DecoratedNode";
-  top.transTypeRep =
-    case te of
-      nonterminalType(fn, params) ->
-        s"new common.BaseTypeRep(\"Decorated ${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}})"
-    | _ -> error("Found decoratedType that does not wrap nonterminalType!")
-    end;
-  top.transFreshTypeRep =
-    case te of
-      nonterminalType(fn, params) ->
-        s"new common.BaseTypeRep(\"Decorated ${fn}\", new common.TypeRep[] {${implode(", ", map((.transFreshTypeRep), params))}})"
-    | _ -> error("Found decoratedType that does not wrap nonterminalType!")
-    end;
+  top.transTypeRep = s"new common.DecoratedTypeRep(${te.transTypeRep})";
+  top.transFreshTypeRep = s"new common.DecoratedTypeRep(${te.transFreshTypeRep})";
   top.transTypeName = "Decorated_" ++ te.transTypeName;
 }
 

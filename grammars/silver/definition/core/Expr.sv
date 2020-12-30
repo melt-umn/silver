@@ -373,7 +373,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     else if q.name == "line" || q.name == "column"
     then intType()
     else if q.name == "location"
-    then nonterminalType("core:Location", [])
+    then nonterminalType("core:Location", 0)
     else errorType();
 }
 

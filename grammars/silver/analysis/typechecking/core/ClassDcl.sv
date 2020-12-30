@@ -3,6 +3,8 @@ grammar silver:analysis:typechecking:core;
 aspect production defaultClassBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
 {
+  top.errors <- ty.errorsFullyApplied;
+
   local errCheck1::TypeCheck = check(ty.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror

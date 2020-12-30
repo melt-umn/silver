@@ -1,16 +1,16 @@
 grammar silver:definition:type:syntax;
 
-attribute lexicalTypeVariables occurs on AspectProductionSignature, AspectProductionLHS, AspectRHS, AspectRHSElem, AspectFunctionSignature, AspectFunctionLHS;
+attribute lexicalTypeVariables, lexicalTyVarKinds occurs on AspectProductionSignature, AspectProductionLHS, AspectRHS, AspectRHSElem, AspectFunctionSignature, AspectFunctionLHS;
 
 flowtype lexicalTypeVariables {realSignature, env} on AspectProductionSignature, AspectProductionLHS, AspectRHS, AspectFunctionSignature, AspectFunctionLHS;
 flowtype lexicalTypeVariables {deterministicCount, realSignature, env} on AspectRHSElem;
 
 function addNewLexicalTyVars_ActuallyVariables
-[Def] ::= gn::String sl::Location l::[String]
+[Def] ::= gn::String sl::Location lk::[Pair<String Integer>] l::[String]
 {
   return if null(l) then []
-         else aspectLexTyVarDef(gn, sl, head(l), freshTyVar()) ::
-                  addNewLexicalTyVars_ActuallyVariables(gn, sl, tail(l));
+         else aspectLexTyVarDef(gn, sl, head(l), freshTyVar(fromMaybe(0, lookupBy(stringEq, head(l), lk)))) ::
+                  addNewLexicalTyVars_ActuallyVariables(gn, sl, lk, tail(l));
 }
 
 -- This binds variables that appear in the signature to type variables, rather than skolem constants
@@ -23,7 +23,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = makeSet(ns.lexicalTypeVariables);
   
-  sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, allLexicalTyVars);
+  sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
   -- TODO sigDefs <- realSig.contexts as defs
 }
 
@@ -33,11 +33,12 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = makeSet(ns.lexicalTypeVariables);
   
-  sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, allLexicalTyVars);
+  sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
   -- TODO sigDefs <- realSig.contexts as defs
 }
 
 propagate lexicalTypeVariables on AspectProductionLHS, AspectFunctionLHS, AspectRHS, AspectRHSElem excluding aspectRHSElemCons;
+propagate lexicalTyVarKinds on AspectProductionSignature, AspectFunctionSignature, AspectProductionLHS, AspectFunctionLHS, AspectRHS, AspectRHSElem;
 
 aspect production aspectProductionSignature
 top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
@@ -54,13 +55,13 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 aspect production aspectProductionLHSTyped
 top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 {
-  propagate lexicalTypeVariables;
+  propagate lexicalTypeVariables, lexicalTyVarKinds;
 }
 
 aspect production aspectRHSElemTyped
 top::AspectRHSElem ::= id::Name '::' t::TypeExpr
 {
-  propagate lexicalTypeVariables;
+  propagate lexicalTypeVariables, lexicalTyVarKinds;
 }
 
 aspect production aspectFunctionSignature

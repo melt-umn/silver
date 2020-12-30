@@ -13,9 +13,11 @@ top::Type ::= tv::TyVar
         if tyVarEqual(tv, j)
         then emptySubst()
         else subst(tv, top.unifyWith)
-    | _ -> if containsTyVar(tv, top.unifyWith.freeVariables)
-           then errorSubst("Infinite type! Tried to unify with " ++ prettyType(top.unifyWith))
-           else subst(tv, top.unifyWith)
+    | t when t.kindArity == tv.kindArity ->
+        if containsTyVar(tv, top.unifyWith.freeVariables)
+        then errorSubst("Infinite type! Tried to unify with " ++ prettyType(top.unifyWith))
+        else subst(tv, top.unifyWith)
+    | t -> errorSubst("Kind mismatch!  Tried to unify with " ++ prettyType(top.unifyWith))
     end;
 }
 
@@ -29,6 +31,19 @@ top::Type ::= tv::TyVar
         then emptySubst()
         else errorSubst("Tried to unify skolem constant with incompatible skolem constant")
     | _ -> errorSubst("Tried to unify skolem constant with " ++ prettyType(top.unifyWith))
+    end;
+}
+
+aspect production appType
+top::Type ::= c::Type a::Type
+{
+  top.unify = 
+    case top.unifyWith of
+    | appType(c1, a1) ->
+      let unifyC :: Substitution = unify(c, c1)
+      in composeSubst(unifyC, unify(performSubstitution(a, unifyC), performSubstitution(a1, unifyC)))
+      end
+    | _ -> errorSubst("Tried to unify application of " ++ prettyType(c) ++ " with " ++ prettyType(top.unifyWith))
     end;
 }
 
@@ -89,13 +104,15 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String k::Integer
 {
   top.unify = 
     case top.unifyWith of
-    | nonterminalType(ofn, op) -> 
+    | nonterminalType(ofn, ok) ->
         if fn == ofn
-        then unifyAll(params, op)
+        then if k == ok
+          then emptySubst()
+          else error("kind mismatch during unification for " ++ prettyType(top) ++ " and " ++ prettyType(top.unifyWith)) -- Should be impossible
         else errorSubst("Tried to unify conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
     | ntOrDecType(_, _) -> errorSubst("nte-nodte: try again")
     | _ -> errorSubst("Tried to unify nonterminal type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
@@ -133,7 +150,7 @@ top::Type ::= nt::Type  hidden::Type
   -- since we shouldn't be unifying with anything but fully-substituted types.
   -- And we kill off this type once hidden is specialized.
   top.unify =
-    case top.unifyWith of
+    case top.unifyWith.baseType of
     | decoratedType(ote) ->
         -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
         unifyAllShortCircuit([ote, top.unifyWith],

@@ -33,8 +33,14 @@ top::Type ::=
   top.typeName = ""; -- We actually put a value here, since it's possible for us to request typeName of nonsensical things.
 }
 
+aspect production appType
+top::Type ::= c::Type a::Type
+{
+  top.typeName = c.typeName;
+}
+
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]
+top::Type ::= fn::String _
 {
   top.typeName = fn;
 }

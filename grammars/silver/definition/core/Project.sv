@@ -22,7 +22,6 @@ option silver:modification:lambda_fn;
 option silver:modification:let_fix;
 option silver:modification:primitivepattern;
 option silver:modification:ffi;
-option silver:modification:typedecl;
 option silver:modification:copper;
 option silver:modification:defaultattr;
 option silver:modification:collection;

@@ -48,7 +48,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
         [attrDef(
            defaultEnvItem(
              strategyDcl(
-               fName, isTotal, freshTyVar(),
+               fName, isTotal, freshTyVar(0),
                !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e,
                sourceGrammar=top.grammarName, sourceLocation=a.location)))],
         location=top.location),
@@ -101,11 +101,19 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
       defaultAttributionDcl(
         at,
         botlSome(
-          '<',
-          typeListSingle(
-            nominalTypeExpr(nt.qNameType, nttl, location=top.location),
-            location=top.location),
-          '>', location=top.location),
+          bTypeList(
+            '<',
+            typeListSingle(
+              case nttl of
+              | botlSome(tl) -> 
+                appTypeExpr(
+                  nominalTypeExpr(nt.qNameType, location=top.location),
+                  tl, location=top.location)
+              | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
+              end,
+              location=top.location),
+            '>', location=top.location),
+          location=top.location),
         nt, nttl,
         location=top.location),
       map(

@@ -11,6 +11,7 @@ synthesized attribute fullName :: String;
 -- types
 synthesized attribute typeScheme :: PolyType;
 synthesized attribute isType :: Boolean;
+synthesized attribute isTypeAlias :: Boolean;
 synthesized attribute isClass :: Boolean;
 synthesized attribute classMembers :: [Pair<String Pair<Type Boolean>>];
 
@@ -50,7 +51,7 @@ inherited attribute givenSubstitution :: Substitution;
  - hmm, unparsing could probably be fixed...
  -}
 closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
-                         typeScheme, givenNonterminalType, isType, isClass, -- types (gNT for occurs)
+                         typeScheme, givenNonterminalType, isType, isTypeAlias, isClass, -- types (gNT for occurs)
                          classMembers, givenInstanceType, superContexts, -- type classes, in the type namespace
                          namedSignature, hasForward, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
@@ -86,6 +87,7 @@ top::DclInfo ::=
   
   -- types
   top.isType = false;
+  top.isTypeAlias = false;
   top.isClass = false;
   top.classMembers = [];
   top.superContexts = [];
@@ -178,8 +180,7 @@ top::DclInfo ::= fn::String arity::Integer closed::Boolean
 {
   top.fullName = fn;
 
-  local tvs::[TyVar] = freshTyVars(arity);
-  top.typeScheme = polyType(tvs, nonterminalType(fn, map(varType, tvs)));
+  top.typeScheme = monoType(nonterminalType(fn, arity));
   top.isType = true;
 }
 abstract production termDcl
@@ -200,13 +201,23 @@ top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar
   top.typeScheme = monoType(if isAspect then varType(tv) else skolemType(tv));
   top.isType = true;
 }
+abstract production typeAliasDcl
+top::DclInfo ::= fn::String bound::[TyVar] ty::Type
+{
+  top.fullName = fn;
+
+  top.isType = null(bound);
+  top.isTypeAlias = true;
+  top.typeScheme = if null(bound) then monoType(ty) else polyType(bound, ty);
+}
 abstract production clsDcl
-top::DclInfo ::= fn::String supers::[Context] tv::TyVar members::[Pair<String Pair<Type Boolean>>]
+top::DclInfo ::= fn::String supers::[Context] tv::TyVar k::Integer members::[Pair<String Pair<Type Boolean>>]
 {
   top.fullName = fn;
   
-  -- These are in the type namespace but shouldn't actually be used as such
-  top.typeScheme = monoType(errorType()); -- TODO: distinguish class vs. type by giving these a type?
+  -- These are in the type namespace but shouldn't actually be used as such,
+  -- this is only used to report the kind.
+  top.typeScheme = monoType(varType(freshTyVar(k)));
   top.isClass = true;
   
   local tvSubst :: Substitution = subst(tv, top.givenInstanceType);

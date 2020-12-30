@@ -95,12 +95,12 @@ public class ConsCell implements Typed {
 	}
 	
 	@Override
-	public ListTypeRep getType() {
+	public AppTypeRep getType() {
 		try {
 			// The type of a list is the type of its tail, but the type of its tail may be [a].
 			// Unify the parameter with the type of the head to constrain this type variable.
-			ListTypeRep tailType = tail().getType();
-			if (!TypeRep.unify(tailType.param, Reflection.getType(head()))) {
+			AppTypeRep tailType = tail().getType();
+			if (!TypeRep.unify(tailType.arg, Reflection.getType(head()))) {
 				throw new SilverInternalError("Unification failed.");
 			} else {
 				return tailType;
@@ -132,8 +132,8 @@ public class ConsCell implements Typed {
 			return 0;
 		}
 		@Override
-		public ListTypeRep getType() {
-			return new ListTypeRep(new VarTypeRep());
+		public AppTypeRep getType() {
+			return new AppTypeRep(new BaseTypeRep("[]"), new VarTypeRep());
 		}
 	}
 	

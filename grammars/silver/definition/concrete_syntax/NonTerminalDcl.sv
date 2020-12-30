@@ -23,7 +23,7 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
   
   top.syntaxAst :=
     [syntaxNonterminal(
-      nonterminalType(fName, tl.types), nilSyntax(),
+      nonterminalType(fName, length(tl.types)), nilSyntax(),
       exportedProds, exportedLayoutTerms,
       foldr(consNonterminalMod, nilNonterminalMod(), nm.nonterminalModifiers))];
 }

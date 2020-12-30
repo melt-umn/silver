@@ -12,10 +12,32 @@ top::TypeExpr ::= '[' te::TypeExpr ']'
   top.unparse = "[" ++ te.unparse ++ "]";
 
   top.typerep = listType(te.typerep);
+  
+  top.errorsFullyApplied =
+    if top.typerep.kindArity > 0
+    then [err(top.location, s"${top.unparse} is not fully applied, it has kind arity ${toString(top.typerep.kindArity)}")]
+    else [];
 
-  forwards to refTypeExpr('Decorated', 
-    nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "core:List"), location=top.location),
-      botlSome('<', typeListSingle(te, location=te.location), '>', location=top.location), location=top.location), location=top.location);
+  forwards to
+    appTypeExpr(
+      listCtrTypeExpr('[', ']', location=top.location),
+      bTypeList('<', typeListSingle(te, location=te.location), '>', location=top.location),
+      location=top.location);
+}
+
+concrete production listCtrTypeExpr
+top::TypeExpr ::= '[' ']'
+{
+  top.unparse = "[]";
+
+  top.typerep = listCtrType();
+  
+  top.errorsFullyApplied =
+    if top.typerep.kindArity > 0
+    then [err(top.location, s"${top.unparse} is not fully applied, it has kind arity ${toString(top.typerep.kindArity)}")]
+    else [];
+
+  forwards to nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "core:List"), location=top.location), location=top.location);
 }
 
 -- The expressions -------------------------------------------------------------

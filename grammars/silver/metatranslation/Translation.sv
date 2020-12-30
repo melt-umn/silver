@@ -183,7 +183,7 @@ top::AST ::= terminalName::String lexeme::String location::Location
     terminalConstructor(
       'terminal', '(',
       nominalTypeExpr(
-        makeQNameType(terminalName, top.givenLocation), botlNone(location=top.givenLocation),
+        makeQNameType(terminalName, top.givenLocation),
         location=top.givenLocation),
       ',',
       stringConst(

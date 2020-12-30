@@ -12,8 +12,13 @@ top::Type ::= fn::String  transType::String  params::[Type]
   top.transType = transType;
   top.transClassType = transType;
   top.transTypeRep =
-    s"new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}})";
+    foldl(
+      \ c::String a::Type -> s"new common.AppTypeRep(${c}, ${a.transTypeRep})",
+      s"new common.BaseTypeRep(\"${fn}\")", params);
   top.transFreshTypeRep =
-    s"new common.BaseTypeRep(\"${fn}\", new common.TypeRep[] {${implode(", ", map((.transFreshTypeRep), params))}})";
+    foldl(
+      \ c::String a::Type -> s"new common.AppTypeRep(${c}, ${a.transFreshTypeRep})",
+      s"new common.BaseTypeRep(\"${fn}\")", params);
+  top.transTypeName = implode("_", substitute(":", "_", fn) :: map((.transTypeName), params));
 }
 

@@ -6,8 +6,6 @@ imports silver:definition:type;
 imports silver:definition:type:syntax;
 imports silver:util;
 
-imports silver:modification:typedecl;
-
 -- Yikes, this was a weird choice of syntax.
 concrete production ffiTypeDclLegacy
 top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' ';'

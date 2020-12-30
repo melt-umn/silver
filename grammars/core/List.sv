@@ -428,7 +428,7 @@ Boolean ::= l::[Boolean]
 function nil
 [a] ::=
 {
-  return decorate i_nilList() with {};
+  return i_nilList();
 } foreign {
   "java" : return "common.ConsCell.nil";
 }
@@ -436,7 +436,7 @@ function nil
 function cons
 [a] ::= h::a  t::[a]
 {
-  return decorate i_consList(h, t) with {};
+  return i_consList(h, t);
 } foreign {
   "java" : return "new common.ConsCell(%?h?%, %?t?%)";
 }
@@ -486,13 +486,8 @@ function tail
 
 --------------------------------------------------------------------------------
 
-{- Note to self: Remember that the type equivalence of ['a] is Decorated List<'a>.
-   It can get confusing if you believe that ['a] is List<'a>. (NOT TRUE)
- -}
-
-
 synthesized attribute i_headList<a> :: a;
-synthesized attribute i_tailList<a> :: Decorated List<a>;
+synthesized attribute i_tailList<a> :: List<a>;
 synthesized attribute i_emptyList :: Boolean;
 synthesized attribute i_lengthList :: Integer;
 
@@ -508,7 +503,7 @@ l::List<a> ::=
 }
 
 abstract production i_consList
-l::List<a> ::= h::a  t::Decorated List<a>
+l::List<a> ::= h::a  t::List<a>
 {
   l.i_emptyList = false;
   l.i_lengthList = t.i_lengthList + 1;

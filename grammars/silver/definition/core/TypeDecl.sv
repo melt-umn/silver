@@ -1,13 +1,6 @@
-grammar silver:modification:typedecl;
+grammar silver:definition:core;
 
-imports silver:definition:core;
-imports silver:definition:type;
-imports silver:definition:type:syntax;
-imports silver:definition:env;
-
-terminal Type_t 'type' lexer classes {KEYWORD};
-
-concrete production typeDecl
+concrete production typeAliasDecl
 top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
 {
   top.unparse = "type " ++ id.unparse ++ tl.unparse ++ "=" ++ te.unparse ++ ";";
@@ -17,7 +10,6 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
   
   top.defs := [typeAliasDef(top.grammarName, id.location, fName, tl.freeVariables, te.typerep)];
 
-  propagate errors;
   top.errors <- tl.errorsTyVars;
   
   tl.initialEnv = top.env;
@@ -35,21 +27,3 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
        then [err(id.location, "Types must be capitalized. Invalid nonterminal name " ++ id.name)]
        else [];
 }
-
-
-
-function typeAliasDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
-{
-  return typeDef(defaultEnvItem(typeDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
-}
-abstract production typeDcl
-top::DclInfo ::= fn::String bound::[TyVar] ty::Type
-{
-  top.fullName = fn;
-
-  top.isType = true;
-  top.typeScheme = polyType(bound, ty);
-}
-
-

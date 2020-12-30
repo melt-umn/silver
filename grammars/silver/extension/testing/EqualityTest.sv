@@ -127,7 +127,7 @@ ag::AGDcl ::= kwd::'equalityTest'
       productionSignature(
         nilConstraint(location=ag.location), '=>',
         productionLHS(tref, '::',
-          nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test", ag.location), location=ag.location), botlNone(location=ag.location), location=ag.location), location=ag.location),
+          nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test", ag.location), location=ag.location), location=ag.location), location=ag.location),
         '::=', productionRHSNil(location=ag.location), location=ag.location),
       productionBody('{', foldl(productionStmtsSnoc(_, _, location=ag.location), productionStmtsNil(location=ag.location), [
         localAttributeDcl('local', 'attribute', valueref, '::', valueType, ';', location=ag.location),
@@ -196,7 +196,9 @@ ag::AGDcl ::= kwd::'equalityTest'
 
 function functionNameForBaseTypesCS
 Maybe<String> ::= valueType::TypeExpr prefixS::String
-{ return
+{ 
+  valueType.env = emptyEnv();
+  return
    case valueType of
    | integerTypeExpr(_) -> just(prefixS ++ "Integer")
    | floatTypeExpr(_)   -> just(prefixS ++ "Float")
@@ -209,6 +211,7 @@ Maybe<String> ::= valueType::TypeExpr prefixS::String
 function mkToStringExprCS
 Maybe<Expr> ::= valueType::TypeExpr  exprName::String  l::Location
 {
+  valueType.env = emptyEnv();
   return
     case functionNameForBaseTypesCS(valueType, "toStringFrom") of
     | just(btt) -> just(mkStrFunctionInvocation(l, btt, [mkNameExpr(exprName, l)]))
@@ -228,6 +231,7 @@ Maybe<Expr> ::= valueType::TypeExpr  exprName::String  l::Location
 function mkEqualityTestExprCS
 Maybe<Expr> ::= valueType::TypeExpr  l::Location
 {
+  valueType.env = emptyEnv();
   return
     case functionNameForBaseTypesCS(valueType, "equals") of
     | just(btt) -> just(mkStrFunctionInvocation(l, btt, [mkNameExpr("value", l), mkNameExpr("expected", l)]))
