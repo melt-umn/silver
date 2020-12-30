@@ -159,10 +159,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   propagate errors, flowDefs;
   
   top.errors <- tl.errorsTyVars;
-  top.errors <-
-    if te.typerep.kindArity > 0
-    then [err(te.location, s"Type ${te.unparse} is not fully applied, it has kind arity ${toString(te.typerep.kindArity)}")]
-    else [];
+  top.errors <- te.errorsFullyApplied;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
@@ -189,10 +186,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   propagate errors, flowDefs;
   
   top.errors <- tl.errorsTyVars;
-  top.errors <-
-    if te.typerep.kindArity > 0
-    then [err(te.location, s"Type ${te.unparse} is not fully applied, it has kind arity ${toString(te.typerep.kindArity)}")]
-    else [];
+  top.errors <- te.errorsFullyApplied;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1

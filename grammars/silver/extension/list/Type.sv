@@ -46,4 +46,3 @@ top::Type ::=
   -- effect on the performance of the java translation.
   forwards to nonterminalType("core:List", 1);
 }
-

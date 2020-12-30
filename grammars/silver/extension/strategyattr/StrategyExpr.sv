@@ -724,10 +724,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
     if !ty.typerep.isDecorable
     then [wrn(ty.location, "Only rules on nonterminals can have an effect")]
     else [];
-  top.errors <-
-    if ty.typerep.kindArity > 0
-    then [err(ty.location, s"Type ${ty.unparse} is not fully applied")]
-    else [];
+  top.errors <- ty.errorsFullyApplied;
   
   top.flowDefs <- checkExpr.flowDefs;
   

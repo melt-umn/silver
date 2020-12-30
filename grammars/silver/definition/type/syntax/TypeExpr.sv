@@ -5,7 +5,7 @@ imports silver:definition:type;
 imports silver:definition:env;
 imports silver:util;
 
-nonterminal TypeExpr  with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables;
+nonterminal TypeExpr  with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsFullyApplied;
 nonterminal Signature with config, location, grammarName, errors, env, unparse, types,   lexicalTypeVariables, lexicalTyVarKinds;
 nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables;
 nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
@@ -25,6 +25,8 @@ monoid attribute errorsTyVars :: [Message] with [], ++;
 -- A new environment, with the type variables in this list appearing bound
 inherited attribute initialEnv :: Decorated Env;
 synthesized attribute envBindingTyVars :: Decorated Env;
+
+synthesized attribute errorsFullyApplied::[Message];
 
 propagate errors, lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
@@ -48,6 +50,10 @@ top::TypeExpr ::=
   -- "semantic" errors, rather than parse errors for this.
   top.errorsTyVars := [err(top.location, top.unparse ++ " is not permitted here, only type variables are")];
   top.freeVariables = top.typerep.freeVariables;
+  top.errorsFullyApplied =
+    if top.typerep.kindArity > 0
+    then [err(top.location, s"${top.unparse} is not fully applied, it has kind arity ${toString(top.typerep.kindArity)}")]
+    else [];
 }
 
 abstract production errorTypeExpr
@@ -206,10 +212,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
     | nonterminalType(_,_) -> []
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
     end;
-  top.errors <-
-    if t.typerep.kindArity > 0
-    then [err(t.location, s"Type ${t.unparse} is not fully applied, it has kind arity ${toString(t.typerep.kindArity)}")]
-    else [];
+  top.errors <- t.errorsFullyApplied;
 }
 
 concrete production funTypeExpr
@@ -320,10 +323,7 @@ top::TypeExprs ::= t::TypeExpr list::TypeExprs
   top.missingCount = list.missingCount;
   top.freeVariables = t.freeVariables ++ list.freeVariables;
   
-  top.errors <-
-    if t.typerep.kindArity > 0
-    then [err(t.location, s"Type ${t.unparse} is not fully applied, it has kind arity ${toString(t.typerep.kindArity)}")]
-    else [];
+  top.errors <- t.errorsFullyApplied;
 }
 
 concrete production typeListConsMissing

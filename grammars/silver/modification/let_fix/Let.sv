@@ -96,10 +96,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
     then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
     else [];
 
-  top.errors <-
-    if t.typerep.kindArity > 0
-    then [err(t.location, s"Type ${t.unparse} is not fully applied, it has kind arity ${toString(t.typerep.kindArity)}")]
-    else [];
+  top.errors <- t.errorsFullyApplied;
 
   thread downSubst, upSubst on top, e, errCheck1, top;
 

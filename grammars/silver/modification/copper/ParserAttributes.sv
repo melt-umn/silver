@@ -14,10 +14,7 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::Ac
   top.errors <- if length(getValueDclAll(fName, top.env)) > 1
                 then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
                 else [];
-  top.errors <-
-    if te.typerep.kindArity > 0
-    then [err(te.location, s"Type ${te.unparse} is not fully applied, it has kind arity ${toString(te.typerep.kindArity)}")]
-    else [];
+  top.errors <- te.errorsFullyApplied;
   
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;

@@ -140,10 +140,7 @@ top::DefLHS ::= q::Decorated QName
 aspect production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 {
-  top.errors <-
-    if te.typerep.kindArity > 0
-    then [err(te.location, s"Type ${te.unparse} is not fully applied, it has kind arity ${toString(te.typerep.kindArity)}")]
-    else [];
+  top.errors <- te.errorsFullyApplied;
 }
 
 aspect production localValueDef

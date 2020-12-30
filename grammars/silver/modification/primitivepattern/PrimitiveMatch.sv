@@ -4,7 +4,7 @@ imports silver:definition:core;
 imports silver:definition:env;
 imports silver:definition:type;
 
-import silver:definition:type:syntax only typerepType, TypeExpr;
+import silver:definition:type:syntax only typerepType, TypeExpr, errorsFullyApplied;
 import silver:extension:patternmatching only Arrow_kwd, Vbar_kwd, ensureDecoratedExpr; -- TODO remove
 
 import silver:translation:java:core;
@@ -69,10 +69,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   propagate errors;
   top.typerep = t.typerep;
 
-  top.errors <-
-    if t.typerep.kindArity > 0
-    then [err(t.location, s"Type ${t.unparse} is not fully applied, it has kind arity ${toString(t.typerep.kindArity)}")]
-    else [];
+  top.errors <- t.errorsFullyApplied;
   
   {--
    - Invariant: if we were given an undecorated expression, it should have been
