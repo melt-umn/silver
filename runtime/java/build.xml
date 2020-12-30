@@ -28,7 +28,6 @@
     <javac debug='on' classpathref='compile.classpath' srcdir='${src}:${grammars}' destdir='${bin}' includeantruntime='false'>
       <include name='common/**/*.java' />
       <include name='core/*.java' />
-      <include name='monto/*.java' />
       <include name='lib/xml/ast/*.java' />
     </javac>
   </target>
@@ -36,7 +35,6 @@
   <target name='dist' depends='build'>
     <jar destfile='${dist}/SilverRuntime.jar' basedir='${bin}' compress='true' level='9'>
       <zipgroupfileset includes='jeromq-0.3.4.jar gson-2.8.0.jar' dir='../../jars'/>
-      <include name='monto/*.class' />
       <include name='common/**/*.class' />
       <manifest>
         <attribute name='Built-By' value='${user.name}'/>
