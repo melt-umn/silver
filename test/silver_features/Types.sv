@@ -67,7 +67,7 @@ wrongCode "Attribute type arguments cannot contain _" {
 
 global ctrList::[]<Integer> = [1, 2, 3];
 
-wrongCode "Type [] is not fully applied, it has kind arity 1" {
+wrongCode "[] is not fully applied, it has kind arity 1" {
   global badCtrList1::[] = [1, 2, 3];
 }
 wrongCode "[] has kind arity 1, but there are 2 type arguments supplied here" {
@@ -108,10 +108,10 @@ wrongCode "repeats type variable names" {
  type TypeTwo<a a> = Integer;
 }
 
-wrongCode "Type NTTwo<a _> is not fully applied, it has kind arity 1" {
+wrongCode "NTTwo<a _> is not fully applied, it has kind arity 1" {
  type MyTypeErr<a> = NTTwo<a _>;
 }
-wrongCode "Type NTTwo<_ _> is not fully applied, it has kind arity 2" {
+wrongCode "NTTwo<_ _> is not fully applied, it has kind arity 2" {
  type MyTypeErr = NTTwo<_ _>;
 }
 
