@@ -48,8 +48,6 @@ import silver:langutil:pp;
 import silver:modification;
 -- Individual modifications built by silver:composed:Default
 
-import silver:support:monto;
-
 import silver:testing;
 --import silver:testing:bin; --Do we want this?
 

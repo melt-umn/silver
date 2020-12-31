@@ -64,4 +64,3 @@ wrongCode "f is not fully applied, it has kind arity 1" {
 wrongCode "Signature type cannot contain _" {
   type BadFunc = (Integer ::= String _);
 }
-  
