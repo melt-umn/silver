@@ -81,9 +81,11 @@ ${implode("", map((.childStaticElem), namedSig.inputElements))}
         ${implode("", map((.contextInitTrans), namedSig.contexts))}
     }
 
+${if !null(namedSig.contexts) then "//no rtConstruct because contexts" else s"""
     public static ${className} rtConstruct(final NOriginInfo origin ${commaIfKidsOrAnnos} ${namedSig.javaSignature}) {
         return new ${className}(${if wantsTracking then "origin"++commaIfKids else ""} ${implode(", ", map((\x::NamedSignatureElement -> "c_"++makeIdName(x.elementName)), namedSig.inputElements))} ${commaIfKidsAndAnnos} ${implode(", ", map((\x::NamedSignatureElement -> "a_"++makeIdName(x.elementName)), namedSig.namedInputElements))});
     }
+"""}
 
 ${implode("", map((.childDeclElem), namedSig.inputElements))}
 
@@ -165,7 +167,7 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
     ${otImpl}
     
     @Override
-    public final common.BaseTypeRep getType() {
+    public final common.TypeRep getType() {
 ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
         
         ${implode("\n\t\t", map(makeChildUnify(fName, _), namedSig.inputElements))}
@@ -205,9 +207,8 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
         ${implode("\n\t\t", map(makeChildReify(fName, length(namedSig.inputElements), _), namedSig.inputElements))}
         ${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
     
-        ${if !null(namedSig.contexts) then s"""throw new common.exceptions.SilverError("Production ${fName} containes type contexts, which are not supported by reify"); // TODO""" else ""}
-    
-        return new ${className}(${if wantsTracking then "new core.PoriginOriginInfo(common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)"++commaIfKidsOrAnnos else ""} ${namedSig.refInvokeTrans});
+        ${if !null(namedSig.contexts) then s"""throw new common.exceptions.SilverError("Production ${fName} containes type contexts, which are not supported by reify"); // TODO""" else
+            s"""return new ${className}(${if wantsTracking then "new core.PoriginOriginInfo(common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)"++commaIfKidsOrAnnos else ""} ${namedSig.refInvokeTrans});"""}
     }
 
 	${if null(namedSig.contexts) then s"public static final common.NodeFactory<${fnnt}> factory = new Factory();" else ""}

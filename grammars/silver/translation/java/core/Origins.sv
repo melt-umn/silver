@@ -55,25 +55,28 @@ global newConstructionOriginUsingCtxRef :: String =
 	"originCtx.makeNewConstructionOrigin(true)";
 
 function makeNewConstructionOrigin
-String ::= top::Decorated Expr  inInteresting::Boolean  followWith::String --need .frame anno
+[String] ::= top::Decorated Expr  inInteresting::Boolean  --need .frame anno
 {
-  local ty :: Type = finalType(top);
+  local ty :: Type = finalType(top).outputType;
   local interesting :: Boolean = top.frame.originsContextSource.alwaysConsideredInteresting || !top.isRoot || inInteresting;
 
   return if typeWantsTracking(ty, top.config, top.env)
-         then makeOriginContextRef(top)++s".makeNewConstructionOrigin(${if interesting then "true" else "false"})"++followWith
-         else "";
+         then [makeOriginContextRef(top)++s".makeNewConstructionOrigin(${if interesting then "true" else "false"})"]
+         else [];
 }
 
--- These types will not have origins (will not be TrackedNodes) even if built with --force-origins to prevent circularity
-function getOriginsInternalTypes
+-- These types will not have origins (will not be TrackedNodes) even if built with --force-origins
+function getSpecialCaseNoOrigins
 [String] ::=
 {
   production attribute names::[String] with ++;
   names := [
+    -- These are forced to be untracked to prevent circularity
     "core:OriginInfo",
     "core:OriginInfoType",
-    "core:OriginNote"
+    "core:OriginNote",
+    -- List is special(TM) because of it's special(TM) quasi-extension translation specialization
+    "core:List"
   ];
   return names;
 }
@@ -82,9 +85,10 @@ function getOriginsInternalTypes
 function typeWantsTracking
 Boolean ::= ty::Type conf::Decorated CmdArgs env::Decorated Env
 {
-  return if conf.noOrigins || containsBy((\a::String b::String -> a==b), ty.typeName, getOriginsInternalTypes()) then false
+  return if conf.noOrigins || containsBy((\a::String b::String -> a==b), ty.typeName, getSpecialCaseNoOrigins()) then false
          else case ty of
               | nonterminalType(fn, _, tracked) -> conf.forceOrigins || tracked
+              | appType(c, _) -> typeWantsTracking(c, conf, env)
               | _ -> false
               end;
 }
