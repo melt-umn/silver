@@ -13,7 +13,7 @@ top::CST ::= 'foo'
 abstract production bar
 top::CST ::=
 {
-	top.transform = attachNote logicalLocationNote(txtLoc("bar")) on {bar()};
+	top.transform = attachNote logicalLocationNote(txtLoc("bar")) on bar() end;
 }
 
 parser cstParse::CST {

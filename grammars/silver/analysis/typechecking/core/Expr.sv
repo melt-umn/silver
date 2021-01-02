@@ -103,7 +103,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   
 
 aspect production noteAttachment
-top::Expr ::= 'attachNote' note::Expr 'on' '{' e::Expr '}'
+top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;

@@ -524,7 +524,7 @@ top::Expr ::= f::Float_t
 }
 
 aspect production noteAttachment
-top::Expr ::= 'attachNote' note::Expr 'on' '{' e::Expr '}'
+top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 {
   top.translation = e.translation;
   top.lazyTranslation = e.lazyTranslation;
