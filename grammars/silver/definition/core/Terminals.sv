@@ -60,7 +60,6 @@ terminal Then_kwd        'then'         lexer classes {KEYWORD,RESERVED};
 terminal To_kwd          'to'           lexer classes {KEYWORD,RESERVED};
 terminal Type_t          'type'         lexer classes {KEYWORD};
 terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED};
-terminal Class_kwd       'class'        lexer classes {KEYWORD};
 terminal End_kwd         'end'          lexer classes {KEYWORD,RESERVED};
 
 terminal Length_kwd     'length'     lexer classes {BUILTIN,RESERVED};
