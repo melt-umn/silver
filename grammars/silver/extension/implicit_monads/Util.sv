@@ -89,7 +89,7 @@ Pair<Boolean Substitution> ::= ty1::Type ty2::Type subst::Substitution
 {
   return case ty1, ty2 of
          | nonterminalType(name1, k1, _), nonterminalType(name2, k2, _) ->
-           pair(name1 == name2 && k1 == k2 && , subst)
+           pair(name1 == name2 && k1 == k2 , subst)
          | appType(c1, a1), appType(c2, a2) -> tyMatch(c1, c2, subst)
          | listType(_), listType(_) -> pair(true, subst)
          | decoratedType(t), _ -> monadsMatch(t, ty2, subst)

@@ -173,7 +173,7 @@ top::Type ::= fn::String k::Integer _
 {
   top.refine = 
     case top.refineWith of
-    | nonterminalType(ofn, ok) ->
+    | nonterminalType(ofn, ok, _) ->
         if fn == ofn && k == ok
         then emptySubst()
         else errorSubst("Tried to refine conflicting nonterminal types " ++ fn ++ " and " ++ ofn)

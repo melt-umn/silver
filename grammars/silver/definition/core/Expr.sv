@@ -236,18 +236,6 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
   
-  -- NOTE: REVERSED ORDER
-  -- We may need to resolve e's type to get at the actual 'function type'
-  local t :: Type = performSubstitution(e.typerep, e.upSubst);
-  es.appExprTypereps = reverse(t.inputTypes);
-  es.appExprApplied = e.unparse;
-  anns.appExprApplied = e.unparse;
-  anns.remainingFuncAnnotations = t.namedTypes;
-  anns.funcAnnotations = anns.remainingFuncAnnotations;
-
-  es.isRoot = false;
-  anns.isRoot = false;
-
   -- TODO: we have an ambiguity here in the longer term.
   -- How to distinguish between
   -- foo(x) where there is an annotation 'a'?

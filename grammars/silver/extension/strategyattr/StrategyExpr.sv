@@ -882,7 +882,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
     then [err(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy, because it is not a synthesized attribute")]
     else case attrTypeScheme.typerep, attrTypeScheme.boundVars of
     | appType(nonterminalType("core:Maybe", _, _), varType(a1)), [a2] when tyVarEqual(a1, a2) && attrDcl.isSynthesized -> []
-    | appType(nonterminalType("core:Maybe", _, _), a), _ when pair(a.baseType, attrDcl.isSynthesized) matches pair(nonterminalType(nt, _), true) ->
+    | appType(nonterminalType("core:Maybe", _, _), a), _ when pair(a.baseType, attrDcl.isSynthesized) matches pair(nonterminalType(nt, _, _), true) ->
       if null(getOccursDcl(attrDcl.fullName, nt, top.env))
       then [wrn(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy, because it doesn't occur on its own nonterminal type ${nt}")]
       else []

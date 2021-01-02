@@ -12,7 +12,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
     annotationsForNonterminal(nonterminalType(fName, length(tl.types), quals.tracked), top.env);
 
   local commaIfAnnos :: String = if length(myAnnos)!=0 then "," else "";
-  local wantsTracking :: Boolean = typeWantsTracking(nonterminalType(fName, tl.types, quals.tracked), top.config, top.env);
+  local wantsTracking :: Boolean = typeWantsTracking(nonterminalType(fName, length(tl.types), quals.tracked), top.config, top.env);
 
   top.initWeaving := s"""
 	public static int ${inhVar} = 0;

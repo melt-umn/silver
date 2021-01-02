@@ -129,7 +129,7 @@ top::Expr ::= q::Decorated QName
   top.lazyTranslation = top.translation;
   top.invokeTranslation =
     -- static constructor invocation
-    s"((${finalType(top).outputType.transType})new ${makeProdName(q.lookupValue.fullName)}(${implode(", ", [makeNewConstructionOrigin(top, !top.sameProdAsProductionDefinedOn)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs ++ reorderedAnnoAppExprs(top.invokeNamedArgs)))}))";
+    s"((${finalType(top).outputType.transType})new ${makeProdName(q.lookupValue.fullName)}(${implode(", ", [makeNewConstructionOrigin(top, !top.sameProdAsProductionDefinedOn, "")] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs ++ reorderedAnnoAppExprs(top.invokeNamedArgs)))}))";
 }
 
 aspect production functionReference
@@ -141,7 +141,7 @@ top::Expr ::= q::Decorated QName
   top.lazyTranslation = makeProdName(q.lookupValue.fullName) ++ ".factory";
   top.invokeTranslation =
     -- static method invocation
-    s"((${finalType(top).outputType.transType})${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ", [makeOriginContextRef(e)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs))}))";
+    s"((${finalType(top).outputType.transType})${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ", [makeOriginContextRef(top)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs))}))";
 }
 
 aspect production classMemberReference
