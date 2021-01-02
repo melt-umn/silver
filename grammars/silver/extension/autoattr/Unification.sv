@@ -28,7 +28,7 @@ top::AGDcl ::= 'unification' 'attribute' inh::Name ',' synPartial::Name  ',' syn
   
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(unificationInhDcl(inhFName, freshTyVar(), sourceGrammar=top.grammarName, sourceLocation=inh.location))),
+      [attrDef(defaultEnvItem(unificationInhDcl(inhFName, freshTyVar(0), sourceGrammar=top.grammarName, sourceLocation=inh.location))),
        attrDef(defaultEnvItem(unificationSynPartialDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=synPartial.location))),
        attrDef(defaultEnvItem(unificationSynDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
       location=top.location);
@@ -47,14 +47,19 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
       then attl
       else
         botlSome(
-          '<',
-          typeListSingle(
-            refTypeExpr(
-              'Decorated',
-              nominalTypeExpr(nt.qNameType, nttl, location=top.location),
+          bTypeList(
+            '<',
+            typeListSingle(
+              case nttl of
+              | botlSome(tl) -> 
+                appTypeExpr(
+                  nominalTypeExpr(nt.qNameType, location=top.location),
+                  tl, location=top.location)
+              | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
+              end,
               location=top.location),
-            location=top.location),
-          '>', location=top.location),
+            '>', location=top.location),
+          location=top.location),
       nt, nttl,
       location=top.location);
 }

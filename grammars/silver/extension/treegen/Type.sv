@@ -25,6 +25,12 @@ top::Type ::= tv::TyVar
 {
   top.idNameForGenArb = "SKOLEM";
 }
+aspect production appType
+top::Type ::= c::Type a::Type
+{
+  -- ignore parameters, we don't support them for now
+  top.idNameForGenArb = c.idNameForGenArb;
+}
 aspect production errorType
 top::Type ::= 
 {
@@ -51,9 +57,8 @@ top::Type ::=
   top.idNameForGenArb = "String";
 }
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type] tracked::Boolean
+top::Type ::= fn::String _ _
 {
-  -- ignore parameters, we don't support them for now
   top.idNameForGenArb = substring(lastIndexOf(":", fn) + 1, length(fn), fn);
 }
 aspect production terminalType

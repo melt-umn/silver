@@ -7,6 +7,7 @@ top::Type ::= fn::String  transType::String  params::[Type]
   top.substituted = foreignType(fn, transType, mapSubst(params, top.substitution));
   top.flatRenamed = foreignType(fn, transType, mapRenameSubst(params, top.substitution));
   top.typepp = fn ++ if !null(params) then "<" ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ">" else "";
+  top.kindArity = 0;
 
   -- Unification.sv
   top.unify = 

@@ -177,20 +177,9 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   top.merrors <- if null(nes.monadTypesLocations) ||
                    foldr(\x::Pair<Type Integer> b::Boolean -> b && monadsMatch(mty, x.fst, ne.mUpSubst).fst, 
                          true, tail(nes.monadTypesLocations))
-                then []
-                else [err(top.location,
-                      "All monad types used monadically in a function application must match")];
-  --need to check it is compatible with the function return type
-{-  top.merrors <- if isMonad(ety.outputType)
-                then if null(nes.monadTypesLocations)
-                     then []
-                     else if monadsMatch(ety.outputType, mty, ne.mUpSubst).fst
-                          then []
-                          else [err(top.location,
-                                    "Return type of function " ++ e.unparse ++ " is a monad (" ++
-                                    ety.outputType.typepp ++ ") which doesn't " ++
-                                    "match the monads used for arguments (" ++ mty.typepp ++ ")")]
-                else [];-}
+                 then []
+                 else [err(top.location,
+                       "All monad types used monadically in a function application must match")];
 
   local ety :: Type = performSubstitution(ne.mtyperep, top.mUpSubst);
 
@@ -357,7 +346,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
 }
 
 aspect production errorApplication
-top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.merrors := [];
 
@@ -365,7 +354,7 @@ top::Expr ::= e::Decorated Expr es::AppExprs anns::AnnoAppExprs
 
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = errorType();
-  top.monadRewritten = errorApplication(e, es, anns, location=top.location);
+  top.monadRewritten = top;
 }
 
 aspect production attributeSection
@@ -583,7 +572,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     else if q.name == "line" || q.name == "column"
     then intType()
     else if q.name == "location"
-    then nonterminalType("core:Location", [], false)
+    then nonterminalType("core:Location", 0, false)
     else errorType();
 
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);
@@ -2291,8 +2280,8 @@ top::AppExpr ::= e::Expr
   top.monadicNames = e.monadicNames;
 
   --these have an 'a' at the end of their names because of a bug where local names are not local to their grammars
-  local attribute errCheck1a :: TypeCheck; errCheck1a.finalSubst = top.mUpSubst;
-  local attribute errCheck2a :: TypeCheck; errCheck2a.finalSubst = top.mUpSubst;
+  local attribute errCheck1a::TypeCheck; errCheck1a.finalSubst = top.mUpSubst;
+  local attribute errCheck2a::TypeCheck; errCheck2a.finalSubst = top.mUpSubst;
 
   e.mDownSubst = top.mDownSubst;
   errCheck1a.downSubst = e.mUpSubst;
@@ -2303,9 +2292,10 @@ top::AppExpr ::= e::Expr
   --determine whether it appears that this is supposed to take
   --   advantage of implicit monads based on types matching the
   --   expected and being monads
-  local isMonadic::Boolean = isMonad(e.mtyperep) &&
-                             (!isMonad(top.appExprTyperep) ||
-                              !fst(monadsMatch(e.mtyperep, top.appExprTyperep, top.mDownSubst)));
+  local isMonadic::Boolean =
+           isMonad(e.mtyperep) &&
+           fst(monadsMatch(e.mtyperep, top.expectedMonad, e.mUpSubst)) &&
+          !fst(monadsMatch(e.mtyperep, top.appExprTyperep, e.mUpSubst));
 
   errCheck1a = check(if isDecorated(top.appExprTyperep) then e.mtyperep else dropDecorated(e.mtyperep), top.appExprTyperep);
   errCheck2a = check(monadInnerType(e.mtyperep), top.appExprTyperep);

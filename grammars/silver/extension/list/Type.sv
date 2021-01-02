@@ -1,19 +1,35 @@
 grammar silver:extension:list;
 
+{- Everything about this is awful.
+   We want to have `[a]` be able to unify with `f<a>`, while also maintaining the
+   expected [a] pretty-print AND the specialized translation.  
+   This is in itself interfering, but this makes the situation even more complicated:
+   listType exists for pretty-printing, while listCtrType provides something
+   for the `f` variable in `f<a>` to unify with while maintaining the proper
+   semantic behavior and translation. 
+   TODO: Think really, really hard about just making this ... not an extension.
+   Would lose the non-specialized implementations, but maybe that's okay since
+   alternative Silver translations should probably provide a more efficient
+   implementation of lists anyway?
+ -}
+
 abstract production listType
 top::Type ::= el::Type
 {
-  top.freeVariables = el.freeVariables; -- TypeExp.sv
   top.substituted = listType(el.substituted);
   top.flatRenamed = listType(el.flatRenamed);
   top.typepp = "[" ++ el.typepp ++ "]";
 
-  top.unify =
-    case top.unifyWith of
-    | listType(fel) -> unify(el,fel)
-    | decoratedType(nonterminalType("core:List", ftes, false)) -> unify(el, head(ftes))
-    | _ -> errorSubst("Tried to unify list with " ++ prettyType(top.unifyWith))
-    end;
+  forwards to appType(listCtrType(), el);
+}
+
+abstract production listCtrType
+top::Type ::=
+{
+  top.freeVariables = [];
+  top.substituted = listCtrType();
+  top.flatRenamed = listCtrType();
+  top.typepp = "[]";
   
   -- Suppress its "nonterminal"ness
   top.isDecorable = false;
@@ -24,6 +40,9 @@ top::Type ::= el::Type
   
   --top.transType -- for translation.
   
-  forwards to decoratedType(nonterminalType("core:List", [el], false));
+  -- We would *like* this to be Decorated core:List to allow caching of
+  -- i_emptyList, i_lengthList, etc. in the non-specialized translation.
+  -- That's no longer possible with the switch to appType, but this has no
+  -- effect on the performance of the java translation.
+  forwards to nonterminalType("core:List", 1, false);
 }
-

@@ -57,14 +57,10 @@ top::Expr ::= la::AssignExpr  e::Expr
                        else Silver_Expr { $Expr{mreturn}($Expr{e.monadRewritten}) };
   local boundIn::Expr =
          foldr(\x::Pair<Name TypeExpr> y::Expr ->
-                 Silver_Expr {
-                  $Expr{mbind}
-                   ($Expr{baseExpr(qName(top.location, x.fst.name), location=top.location)},
-                    $Expr{lambdap(productionRHSCons(productionRHSElem(x.fst, '::', x.snd,
-                                                  location=top.location),
-                                    productionRHSNil(location=top.location),
-                                    location=top.location), y, location=top.location)}) },
-                  inside, la.bindInList);
+                 buildApplication(mbind,
+                     [baseExpr(qName(top.location, x.fst.name), location=top.location),
+                      buildLambda(x.fst.name, x.snd.typerep, y, top.location)], top.location),
+               inside, la.bindInList);
 }
 
 
@@ -101,8 +97,8 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   top.merrors <- if isMonad(t.typerep) && fst(monadsMatch(top.expectedMonad, t.typerep, top.mDownSubst))
                  then [err(top.location, "Let bindings may not use a monad type")]
                  else [];
-  local errCheck::TypeCheck = if isMonad(e.mtyperep)
-                              then if isMonad(t.typerep)
+  local errCheck::TypeCheck = if isMonad(e.mtyperep) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst))
+                              then if isMonad(t.typerep) && fst(monadsMatch(t.typerep, top.expectedMonad, top.mDownSubst))
                                    then check(t.typerep, e.mtyperep)
                                    else check(t.typerep, monadInnerType(e.mtyperep))
                               else check(t.typerep, e.mtyperep);
@@ -115,7 +111,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   --to write (?), and redfining it monadically.  This would happen if the person
   --was putting in a let after let insertion failed, but then this should be the
   --only place where the name occurs, so it wouldn't affect anything then either.
-  e.monadicallyUsed = isMonad(e.mtyperep) && !isMonad(t.typerep);
+  e.monadicallyUsed = isMonad(e.mtyperep) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst)) && !isMonad(t.typerep);
   top.monadicNames = e.monadicNames;
 
   e.expectedMonad = top.expectedMonad;
@@ -130,7 +126,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 
   top.fixedAssigns = if isMonad(e.mtyperep) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                      --use t.typerep to get typechecking when we create the ultimate monadRewritten
-                     then assignExpr(id, '::', typerepTypeExpr(monadOfType(e.mtyperep, t.typerep),
+                     then assignExpr(id, '::', typerepTypeExpr(monadOfType(top.expectedMonad, t.typerep),
                                                                location=top.location),
                                      '=', e.monadRewritten, location=top.location)
                      else assignExpr(id, '::', t, '=', e.monadRewritten, location=top.location);

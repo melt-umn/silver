@@ -3,11 +3,12 @@ grammar silver:definition:type;
 -- Quick check to see if an error message should be suppressed
 synthesized attribute isError :: Boolean;
 
--- exists because we want to access both these and pattern matching can only extract one thing at a time (so far)
 synthesized attribute inputTypes :: [Type];
 synthesized attribute outputType :: Type;
 synthesized attribute namedTypes :: [NamedArgType];
 synthesized attribute arity :: Integer;
+synthesized attribute baseType :: Type;
+synthesized attribute argTypes :: [Type];
 
 -- Used by Expr, could possibly be replaced by pattern matching for decoratedType
 -- Also used by 'new()'
@@ -55,7 +56,18 @@ top::PolyType ::= bound::[TyVar] ty::Type
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
 }
 
-attribute isError, inputTypes, outputType, namedTypes, arity, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
+aspect production constraintType
+top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
+{
+  top.arity = ty.arity;
+  top.isError = ty.isError;
+  top.isDecorated = ty.isDecorated;
+  top.isDecorable = ty.isDecorable;
+  top.isTerminal = ty.isTerminal;
+  top.asNtOrDecType = error("Only mono types should be possibly-decorated");
+}
+
+attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
 
 aspect default production
 top::Type ::=
@@ -64,6 +76,8 @@ top::Type ::=
   top.outputType = errorType();
   top.namedTypes = [];
   top.arity = 0;
+  top.baseType = top;
+  top.argTypes = [];
   
   top.isDecorated = false;
   top.isDecorable = false;
@@ -85,6 +99,16 @@ aspect production skolemType
 top::Type ::= tv::TyVar
 {
 }
+
+aspect production appType
+top::Type ::= c::Type a::Type
+{
+  top.baseType = c.baseType;
+  top.argTypes = c.argTypes ++ [a];
+  top.isDecorable = c.isDecorable;
+  top.unifyInstanceNonterminal = c.unifyInstanceNonterminal;
+}
+
 
 aspect production errorType
 top::Type ::=
@@ -113,7 +137,7 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type]  tracked::Boolean
+top::Type ::= fn::String _ _
 {
   top.isDecorable = true;
   top.unifyInstanceNonterminal = emptySubst();
@@ -136,6 +160,8 @@ top::Type ::= te::Type
 aspect production ntOrDecType
 top::Type ::= nt::Type  hidden::Type
 {
+  top.baseType = top;
+  top.argTypes = [];
   top.unifyInstanceNonterminal = unify(hidden, nt);
   top.unifyInstanceDecorated = unify(hidden, decoratedType(nt));
 }

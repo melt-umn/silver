@@ -29,10 +29,10 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   production fName :: String = top.grammarName ++ ":" ++ n.name;
 
   production namedSig :: NamedSignature =
-    namedSignature(fName,
+    namedSignature(fName, [],
       [namedSignatureElement("stringToParse", stringType()),
        namedSignatureElement("filenameToReport", stringType())],
-      namedSignatureElement("__func__lhs", nonterminalType("core:ParseResult", [t.typerep], false)),
+      namedSignatureElement("__func__lhs", appType(nonterminalType("core:ParseResult", 1, false), t.typerep)),
       []);
 
   production spec :: ParserSpec =

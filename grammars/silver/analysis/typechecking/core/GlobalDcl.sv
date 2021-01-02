@@ -3,6 +3,8 @@ grammar silver:analysis:typechecking:core;
 aspect production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
 {
+  top.errors <- t.errorsFullyApplied;
+
   local attribute errCheck1 :: TypeCheck;
 
   e.downSubst = emptySubst();

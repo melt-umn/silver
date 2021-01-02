@@ -19,6 +19,12 @@ top::PolyType ::= tvs::[TyVar] ty::Type
   top.typeName = ty.typeName;
 }
 
+aspect production constraintType
+top::PolyType ::= tvs::[TyVar] contexts::[Context] ty::Type
+{
+  top.typeName = ty.typeName;
+}
+
 attribute typeName occurs on Type;
 
 aspect default production
@@ -27,8 +33,14 @@ top::Type ::=
   top.typeName = ""; -- We actually put a value here, since it's possible for us to request typeName of nonsensical things.
 }
 
+aspect production appType
+top::Type ::= c::Type a::Type
+{
+  top.typeName = c.typeName;
+}
+
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type] tracked::Boolean
+top::Type ::= fn::String _ _
 {
   top.typeName = fn;
 }

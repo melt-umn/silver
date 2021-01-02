@@ -1,6 +1,6 @@
 grammar silver:definition:type:syntax;
 
-attribute lexicalTypeVariables occurs on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
+attribute lexicalTypeVariables, lexicalTyVarKinds occurs on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 
 flowtype lexicalTypeVariables {env} on ProductionSignature, ProductionLHS, ProductionRHS;
 flowtype lexicalTypeVariables {deterministicCount, env} on ProductionRHSElem;
@@ -11,36 +11,22 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = makeSet(ns.lexicalTypeVariables);
   
-  sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, allLexicalTyVars);
+  sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
 }
+
+propagate lexicalTyVarKinds on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 
 aspect production productionSignature
-top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS 
+top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {
-  top.lexicalTypeVariables = makeSet(lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
+  top.lexicalTypeVariables := makeSet(cl.lexicalTypeVariables ++ lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
 }
 
-aspect production productionLHS
-top::ProductionLHS ::= id::Name '::' t::TypeExpr
-{
-  top.lexicalTypeVariables = t.lexicalTypeVariables;
-}
-
-aspect production productionRHSNil
-top::ProductionRHS ::= 
-{
-  top.lexicalTypeVariables = [];
-}
+propagate lexicalTypeVariables on ProductionLHS, ProductionRHS, ProductionRHSElem excluding productionRHSCons;
 
 aspect production productionRHSCons
 top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 {
-  top.lexicalTypeVariables = makeSet(h.lexicalTypeVariables ++ t.lexicalTypeVariables);
-}
-
-aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
-{
-  top.lexicalTypeVariables = t.lexicalTypeVariables;
+  top.lexicalTypeVariables := makeSet(h.lexicalTypeVariables ++ t.lexicalTypeVariables);
 }
 

@@ -10,11 +10,11 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::Ac
 
   top.defs := [parserAttrDef(top.grammarName, a.location, fName, te.typerep)];
 
+  propagate errors;
   top.errors <- if length(getValueDclAll(fName, top.env)) > 1
                 then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
                 else [];
-
-  top.errors := te.errors ++ acode.errors;
+  top.errors <- te.errorsFullyApplied;
   
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -39,11 +39,10 @@ top::AGDcl ::= 'aspect' 'parser' 'attribute' a::QName 'action' acode::ActionCode
 
   top.defs := [];
 
+  propagate errors;
   top.errors <- if null(a.lookupValue.dcls)
                 then [err(a.location, "Undefined attribute '" ++ a.name ++ "'.")]
                 else [];
-
-  top.errors := acode.errors;
   
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;

@@ -100,6 +100,13 @@ top::DclInfo ::= fn::String ty::Type
   top.defDispatcher = errorValueDef(_, _, location=_);
   top.defLHSDispatcher = errorDefLHS(_, location=_);
 }
+aspect production classMemberDcl
+top::DclInfo ::= fn::String bound::[TyVar] context::Context ty::Type
+{
+  top.refDispatcher = classMemberReference(_, location=_);
+  top.defDispatcher = errorValueDef(_, _, location=_);
+  top.defLHSDispatcher = errorDefLHS(_, location=_);
+}
 
 -- -- interface Attributes
 aspect production synDcl

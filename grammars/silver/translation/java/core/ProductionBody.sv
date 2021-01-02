@@ -103,7 +103,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
     if !te.typerep.isDecorable then  "" else
     s"\t\t//${top.unparse}\n" ++
     s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursIndex}] = " ++ 
-      s"new common.Lazy[${makeNTClassName(te.typerep.typeName)}.num_inh_attrs];\n";
+      s"new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n";
 
   top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursIndex}] = \"${fName}\";\n";
 

@@ -20,14 +20,15 @@ top::AGDcl ::= 'makeTestSuite' nme::IdLower_t ';'
 
   local sig :: ProductionSignature =
     productionSignature(
+      nilConstraint(location=top.location), '=>',
       productionLHS(name("t", top.location), '::',
-        nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "TestSuite", top.location), location=top.location), botlNone(location=top.location), location=top.location), location=top.location),
+        nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "TestSuite", top.location), location=top.location), location=top.location), location=top.location),
      '::=', productionRHSNil(location=top.location), location=top.location);
 
   local bod :: [ProductionStmt] =
     [forwardsTo('forwards', 'to', mkStrFunctionInvocation(top.location, "testsAsNT", [mkNameExpr("testsToPerform", top.location)]), ';', location=top.location),
      collectionAttributeDclProd('production', 'attribute', name("testsToPerform", top.location), '::',
-       listTypeExpr('[', nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test", top.location), location=top.location), botlNone(location=top.location), location=top.location), ']', location=top.location),
+       listTypeExpr('[', nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "Test", top.location), location=top.location), location=top.location), ']', location=top.location),
        'with', plusplusOperator('++', location=top.location), ';', location=top.location),
      valContainsBase(qName(top.location, "testsToPerform"), ':=', emptyList('[',']', location=top.location), ';', location=top.location)
     ];
@@ -60,10 +61,11 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
     'function', name("main", top.location),
     -- IOVal<Integer> ::= args::[String]  mainIO::IO
     functionSignature(
+      nilConstraint(location=top.location), '=>',
      functionLHS(
-       nominalTypeExpr( 
-         qNameTypeId(terminal(IdUpper_t, "IOVal", top.location), location=top.location),
-         botlSome('<', typeListSingle(integerTypeExpr('Integer', location=top.location), location=top.location), '>', location=top.location), location=top.location), location=top.location),
+       appTypeExpr(
+         nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "IOVal", top.location), location=top.location), location=top.location),
+         bTypeList('<', typeListSingle(integerTypeExpr('Integer', location=top.location), location=top.location), '>', location=top.location), location=top.location), location=top.location),
      '::=',
      productionRHSCons(
       productionRHSElemType(listTypeExpr('[', stringTypeExpr('String', location=top.location), ']', location=top.location), location=top.location),
@@ -81,7 +83,7 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
      --  local testResults :: TestSuite;
      localAttributeDcl(
       'local', 'attribute', name("testResults", top.location), '::',
-      nominalTypeExpr( qNameTypeId(terminal(IdUpper_t,"TestSuite", top.location), location=top.location), botlNone(location=top.location), location=top.location), ';', location=top.location),
+      nominalTypeExpr( qNameTypeId(terminal(IdUpper_t,"TestSuite", top.location), location=top.location), location=top.location), ';', location=top.location),
      -- testResults = name()
      valueEq( qName(top.location, "testResults"), '=', 
                  applicationEmpty( baseExpr( qNameId(nameIdLower(nme, location=top.location), location=top.location), location=top.location), 

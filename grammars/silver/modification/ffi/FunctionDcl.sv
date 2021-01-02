@@ -23,7 +23,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   ns.env = newScopeEnv(sigDefs, top.env);
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = makeSet(ns.lexicalTypeVariables);
-  sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, allLexicalTyVars);
+  sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
 
   -- TODO this is a BS use of forwarding and should be eliminated. body.env and .frame are all wrong locally...
   

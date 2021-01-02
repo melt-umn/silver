@@ -13,7 +13,7 @@ imports silver:modification:impide:cstast;
 
 --imports silver:modification:impide only getPropertyGenerator, getPropertyProvider;
 
-imports silver:translation:java:core only makeClassName, makeParserName, makeName;
+imports silver:translation:java:core only makeProdName, makeParserName, makeName;
 
 imports silver:driver:util only grammarToPath;
 

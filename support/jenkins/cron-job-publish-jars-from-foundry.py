@@ -23,8 +23,6 @@ files = [
     "edu.umn.cs.melt.exts.silver.ableC.composed.with_ableC.jar",
     "edu.umn.cs.melt.exts.silver.ableC.composed.with_all.jar",
     "edu.umn.cs.melt.exts.silver.ableC.composed.with_base.jar",
-    "gson-2.8.0.jar",
-    "jeromq-0.3.4.jar",
     "silver-latest.tar.gz",
     "silver.composed.Default.jar",
 ]

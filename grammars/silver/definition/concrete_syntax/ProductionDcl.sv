@@ -88,7 +88,7 @@ attribute concreteSyntaxTypeErrors occurs on ProductionSignature, ProductionRHS,
 propagate concreteSyntaxTypeErrors on ProductionSignature, ProductionRHS, ProductionRHSElem;
 
 aspect production productionSignature
-top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS 
+top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {
   local fstType :: Type = head(top.namedSignature.inputElements).typerep;
   local lstType :: Type = last(top.namedSignature.inputElements).typerep;
@@ -143,9 +143,9 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type] tracked::Boolean
+top::Type ::= fn::String k::Integer tracked::Boolean
 {
-  top.permittedInConcreteSyntax = null(params);
+  top.permittedInConcreteSyntax = k == 0;
 }
 
 aspect production terminalType

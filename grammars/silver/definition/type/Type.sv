@@ -2,19 +2,23 @@ grammar silver:definition:type;
 
 option silver:modification:ffi; -- foreign types
 
+synthesized attribute kindArity :: Integer;
+synthesized attribute freeVariables :: [TyVar];
 synthesized attribute boundVars :: [TyVar];
+synthesized attribute contexts :: [Context];
 synthesized attribute typerep :: Type;
 synthesized attribute monoType :: Type; -- Raises on error when we encounter a polyType and didn't expect one
 
 {--
  - Represents a type, quantified over some type variables.
  -}
-nonterminal PolyType with boundVars, typerep, monoType;
+nonterminal PolyType with boundVars, contexts, typerep, monoType;
 
 abstract production monoType
 top::PolyType ::= ty::Type
 {
   top.boundVars = [];
+  top.contexts = [];
   top.typerep = ty;
   top.monoType = ty;
 }
@@ -22,17 +26,37 @@ top::PolyType ::= ty::Type
 abstract production polyType
 top::PolyType ::= bound::[TyVar] ty::Type
 {
-  top.boundVars = freshTyVars(length(bound));
+  top.boundVars = freshTyVars(bound);
+  top.contexts = [];
   top.typerep = freshenTypeWith(ty, bound, top.boundVars);
   top.monoType = error("Expected a mono type but found a poly type!");
+}
+
+abstract production constraintType
+top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
+{
+  top.boundVars = freshTyVars(bound);
+  top.contexts = map(freshenContextWith(_, bound, top.boundVars), contexts);
+  top.typerep = freshenTypeWith(ty, bound, top.boundVars);
+  top.monoType = error("Expected a mono type but found a (constraint) poly type!");
+}
+
+{--
+ - Represents a constraint on a type, e.g. a type class instance
+ -}
+
+nonterminal Context with freeVariables;
+
+abstract production instContext
+top::Context ::= cls::String t::Type
+{
+  top.freeVariables = t.freeVariables;
 }
 
 {--
  - Silver Type Representations.
  -}
-nonterminal Type with freeVariables, tracked;
-
-synthesized attribute freeVariables :: [TyVar];
+nonterminal Type with kindArity, freeVariables, tracked;
 synthesized attribute tracked :: Boolean;
 
 aspect default production
@@ -47,6 +71,7 @@ top::Type ::=
 abstract production varType
 top::Type ::= tv::TyVar
 {
+  top.kindArity = tv.kindArity;
   top.freeVariables = [tv];
 }
 
@@ -57,7 +82,19 @@ top::Type ::= tv::TyVar
 abstract production skolemType
 top::Type ::= tv::TyVar
 {
+  top.kindArity = tv.kindArity;
   top.freeVariables = [tv];
+}
+
+{--
+ - Represents the application of a constructor type.
+ -}
+abstract production appType
+top::Type ::= c::Type a::Type
+{
+  top.kindArity = if c.kindArity > 0 then c.kindArity - 1 else 0;
+  top.freeVariables = setUnionTyVars(c.freeVariables, a.freeVariables);
+  top.tracked = c.tracked;
 }
 
 {--
@@ -67,6 +104,7 @@ top::Type ::= tv::TyVar
 abstract production errorType
 top::Type ::=
 {
+  top.kindArity = 0;
   top.freeVariables = [];
 }
 
@@ -76,6 +114,7 @@ top::Type ::=
 abstract production intType
 top::Type ::=
 {
+  top.kindArity = 0;
   top.freeVariables = [];
 }
 
@@ -85,6 +124,7 @@ top::Type ::=
 abstract production boolType
 top::Type ::=
 {
+  top.kindArity = 0;
   top.freeVariables = [];
 }
 
@@ -94,6 +134,7 @@ top::Type ::=
 abstract production floatType
 top::Type ::=
 {
+  top.kindArity = 0;
   top.freeVariables = [];
 }
 
@@ -103,6 +144,7 @@ top::Type ::=
 abstract production stringType
 top::Type ::=
 {
+  top.kindArity = 0;
   top.freeVariables = [];
 }
 
@@ -114,6 +156,7 @@ top::Type ::=
 abstract production terminalIdType
 top::Type ::=
 {
+  top.kindArity = 0;
   top.freeVariables = [];
 }
 
@@ -124,9 +167,10 @@ top::Type ::=
  - @param tracked  Might this NT be tracked.
  -}
 abstract production nonterminalType
-top::Type ::= fn::String params::[Type] tracked::Boolean
+top::Type ::= fn::String k::Integer tracked::Boolean
 {
-  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), params));
+  top.kindArity = k;
+  top.freeVariables = [];
   top.tracked = tracked;
 }
 
@@ -137,6 +181,7 @@ top::Type ::= fn::String params::[Type] tracked::Boolean
 abstract production terminalType
 top::Type ::= fn::String
 {
+  top.kindArity = 0;
   top.freeVariables = [];
 }
 
@@ -147,6 +192,7 @@ top::Type ::= fn::String
 abstract production decoratedType
 top::Type ::= te::Type
 {
+  top.kindArity = 0;
   top.freeVariables = te.freeVariables;
 }
 
@@ -184,6 +230,7 @@ top::Type ::= nt::Type  hidden::Type
 abstract production functionType
 top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
+  top.kindArity = 0;
   top.freeVariables = setUnionTyVarsAll(map((.freeVariables), 
     out :: params ++ map((.argType), namedParams)));
 }
@@ -230,38 +277,39 @@ Integer ::= s::String l::[NamedArgType] z::Integer
 
 --------------------------------------------------------------------------------
 
-nonterminal TyVar ;
+nonterminal TyVar with kindArity;
 
 -- In essence, this should be 'private' to this file.
 synthesized attribute extractTyVarRep :: Integer occurs on TyVar;
 
 abstract production tyVar
-top::TyVar ::= i::Integer
+top::TyVar ::= k::Integer i::Integer
 {
+  top.kindArity = k;
   top.extractTyVarRep = i;
 }
 
 function freshTyVar
-TyVar ::=
+TyVar ::= k::Integer
 {
-  return tyVar(genInt());
+  return tyVar(k, genInt());
 }
 
 function tyVarEqual
 Boolean ::= tv1::TyVar tv2::TyVar
 {
-  return tv1.extractTyVarRep == tv2.extractTyVarRep;
+  return tv1.kindArity == tv2.kindArity && tv1.extractTyVarRep == tv2.extractTyVarRep;
 }
 
 function freshType
 Type ::=
 {
-  return varType(freshTyVar());
+  return varType(freshTyVar(0));
 }
 
 function newSkolemConstant
 Type ::=
 {
-  return skolemType(freshTyVar());
+  return skolemType(freshTyVar(0));
 }
 

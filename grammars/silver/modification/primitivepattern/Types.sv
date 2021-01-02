@@ -10,15 +10,15 @@ import silver:modification:ffi only foreignType; -- so we cover foreignType with
  - (This is used for *non-gadt* productions.)
  -}
 function skolemizeProductionType
-Type ::= te::PolyType
+Pair<[Context] Type> ::= te::PolyType
 {
   local existentialVars :: [TyVar] = removeTyVars(te.boundVars, te.typerep.outputType.freeVariables);
   
   local skolemize :: Substitution = composeSubst(
-    zipVarsIntoSkolemizedSubstitution(existentialVars, freshTyVars(length(existentialVars))),
-    zipVarsIntoSubstitution(te.typerep.outputType.freeVariables, freshTyVars(length(te.typerep.outputType.freeVariables))));
+    zipVarsIntoSkolemizedSubstitution(existentialVars, freshTyVars(existentialVars)),
+    zipVarsIntoSubstitution(te.typerep.outputType.freeVariables, freshTyVars(te.typerep.outputType.freeVariables)));
   
-  return performRenaming(te.typerep, skolemize);
+  return pair(map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
 }
 
 {--
@@ -51,11 +51,11 @@ Type ::= te::PolyType
  - is as good as another, as far as correctness goes, anyway...
  -}
 function fullySkolemizeProductionType
-Type ::= te::PolyType
+Pair<[Context] Type> ::= te::PolyType
 {
-  local skolemize :: Substitution = zipVarsIntoSkolemizedSubstitution(te.boundVars, freshTyVars(length(te.boundVars)));
+  local skolemize :: Substitution = zipVarsIntoSkolemizedSubstitution(te.boundVars, freshTyVars(te.boundVars));
   
-  return performRenaming(te.typerep, skolemize);
+  return pair(map(performContextRenaming(_, skolemize), te.contexts), performRenaming(te.typerep, skolemize));
 }
 
 
@@ -74,9 +74,11 @@ top::Type ::= tv::TyVar
         if tyVarEqual(tv, j)
         then emptySubst()
         else subst(tv, top.refineWith)
-    | _ -> if containsTyVar(tv, top.refineWith.freeVariables)
-           then errorSubst("Infinite type! Tried to refine with " ++ prettyType(top.refineWith))
-           else subst(tv, top.refineWith)
+    | t when t.kindArity == tv.kindArity ->
+        if containsTyVar(tv, t.freeVariables)
+        then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
+        else subst(tv, t)
+    | t -> errorSubst("Kind mismatch!  Tried to unify with " ++ prettyType(top.unifyWith))
     end;
 }
 
@@ -89,12 +91,27 @@ top::Type ::= tv::TyVar
         if tyVarEqual(tv, j)
         then emptySubst()
         else subst(tv, top.refineWith)
-    | _ -> if containsTyVar(tv, top.refineWith.freeVariables)
-           then errorSubst("Infinite type! Tried to refine with " ++ prettyType(top.refineWith))
-           else subst(tv, top.refineWith)
+    | t when t.kindArity == tv.kindArity ->
+        if containsTyVar(tv, t.freeVariables)
+        then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
+        else subst(tv, t)
+    | t -> errorSubst("Kind mismatch!  Tried to unify with " ++ prettyType(top.unifyWith))
     end;
 }
- 
+
+aspect production appType
+top::Type ::= c::Type a::Type
+{
+  top.refine =
+    case top.refineWith of
+    | appType(c1, a1) ->
+      let refineC :: Substitution = refine(c, c1)
+      in composeSubst(refineC, refine(performSubstitution(a, refineC), performSubstitution(a1, refineC)))
+      end
+    | _ -> errorSubst("Tried to refine " ++ prettyType(top) ++ " with " ++ prettyType(top.refineWith))
+    end;
+}
+
 aspect production errorType
 top::Type ::=
 {
@@ -152,13 +169,13 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type] tracked::Boolean
+top::Type ::= fn::String k::Integer _
 {
   top.refine = 
     case top.refineWith of
-    | nonterminalType(ofn, op, _) ->
-        if fn == ofn
-        then refineAll( params, op )
+    | nonterminalType(ofn, ok) ->
+        if fn == ofn && k == ok
+        then emptySubst()
         else errorSubst("Tried to refine conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
     | _ -> errorSubst("Tried to refine nonterminal type " ++ fn ++ " with " ++ prettyType(top.refineWith))
     end;
@@ -224,8 +241,12 @@ Substitution ::= scrutineeType::Type  constructorType::Type
   -- If you look at the type rules, you'll notice they're requiring "T" be the same,
   -- and this refinement only happens on the parameters (i.e. fmgu(T p = T a))
   return case scrutineeType, constructorType of
-         | decoratedType(nonterminalType(n1, p1, _)), decoratedType(nonterminalType(n2,p2, _))
-            -> if n1 == n2 then refineAll(p1,p2) else emptySubst()
+         | decoratedType(t1), decoratedType(t2) ->
+           case t1.baseType, t2.baseType of
+           | nonterminalType(n1, _, _), nonterminalType(n2, _, _) when n1 == n2 ->
+             refineAll(t1.argTypes, t2.argTypes)
+           | _, _ -> emptySubst()
+           end
          | _, _ -> emptySubst()
          end;
 }
@@ -272,3 +293,24 @@ Boolean ::= ls::[Type]
          end;
 }
 
+
+--------
+synthesized attribute contextPatternDef::(Def ::= String Location String) occurs on Context;
+
+aspect production instContext
+top::Context ::= cls::String t::Type
+{
+  top.contextPatternDef = instPatternConstraintDef(_, _, cls, t, _);
+}
+
+abstract production instPatternConstraintDcl
+top::DclInfo ::= fnTC::String ty::Type fnProd::String 
+{
+  top.fullName = fnTC;
+  top.typeScheme = monoType(ty);
+}
+function instPatternConstraintDef
+Def ::= sg::String  sl::Location  fn::String  ty::Type fnProd::String
+{
+  return tcInstDef(instPatternConstraintDcl(fn,ty,fnProd,sourceGrammar=sg,sourceLocation=sl));
+}

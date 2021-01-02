@@ -22,17 +22,19 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   top.defs := [];
 
   production namedSig :: NamedSignature = 
-    namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName, [],
+    namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName, [], [],
       namedSignatureElement(lhs.name, te.typerep),
       annotationsForNonterminal(te.typerep, top.env));
 
   propagate errors, flowDefs;
 
+  top.errors <- te.errorsFullyApplied;
+
   local fakedDefs :: [Def] =
     [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];
   
   local sigDefs :: [Def] =
-    addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, te.lexicalTypeVariables);
+    addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, te.lexicalTyVarKinds, te.lexicalTypeVariables);
 
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -84,7 +86,7 @@ top::DefLHS ::= q::Decorated QName
   
   top.typerep = q.lookupValue.typeScheme.monoType;
 
-  top.translation = makeNTClassName(top.frame.lhsNtName) ++ ".defaultSynthesizedAttributes";
+  top.translation = makeNTName(top.frame.lhsNtName) ++ ".defaultSynthesizedAttributes";
 }
 
 abstract production defaultAspectContext

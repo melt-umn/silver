@@ -21,7 +21,6 @@ exports silver:modification:collection;
 exports silver:modification:primitivepattern;
 exports silver:modification:autocopyattr;
 exports silver:modification:ffi;
-exports silver:modification:typedecl;
 exports silver:modification:copper;
 exports silver:modification:defaultattr;
 -- slight hacks, for the moment

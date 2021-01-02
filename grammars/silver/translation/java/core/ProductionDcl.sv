@@ -17,7 +17,8 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   local localVar :: String = "count_local__ON__" ++ makeIdName(fName);
   local ntName :: String = namedSig.outputElement.typerep.typeName;
-  local fnnt :: String = makeNTClassName(ntName);
+
+  local fnnt :: String = makeNTName(ntName);
   local wantsTracking :: Boolean = typeWantsTracking(namedSig.outputElement.typerep, top.config, top.env);
 
   local ntDeclPackage :: String = implode(".", init(explode(".", fnnt)));
@@ -76,7 +77,8 @@ ${implode("", map((.childStaticElem), namedSig.inputElements))}
 
     public ${className}(${if wantsTracking then "final NOriginInfo origin"++commaIfKidsOrAnnos else ""} ${namedSig.javaSignature}) {
         super(${if wantsTracking then "origin"++commaIfAnnos else ""} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
-${implode("", map(makeChildAssign, namedSig.inputElements))}
+        ${implode("", map(makeChildAssign, namedSig.inputElements))}
+        ${implode("", map((.contextInitTrans), namedSig.contexts))}
     }
 
     public static ${className} rtConstruct(final NOriginInfo origin ${commaIfKidsOrAnnos} ${namedSig.javaSignature}) {
@@ -85,9 +87,11 @@ ${implode("", map(makeChildAssign, namedSig.inputElements))}
 
 ${implode("", map((.childDeclElem), namedSig.inputElements))}
 
-    @Override
-    public Object getChild(final int index) {
-        switch(index) {
+${sflatMap((.contextMemberDeclTrans), namedSig.contexts)}
+
+	@Override
+	public Object getChild(final int index) {
+		switch(index) {
 ${implode("", map(makeChildAccessCase, namedSig.inputElements))}
             default: return null;
         }
@@ -183,7 +187,7 @@ ${body.translation}
         assert annotationNames.length == annotationASTs.length;
 ${makeAnnoIndexDcls(0, namedSig.namedInputElements)}
 ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
-        
+
         common.TypeRep givenType = ${namedSig.outputElement.typerep.transFreshTypeRep};
         if (!common.TypeRep.unify(resultType, givenType)) {
             throw new common.exceptions.SilverError("reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " production ${fName} AST.");
@@ -200,18 +204,26 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
         
         ${implode("\n\t\t", map(makeChildReify(fName, length(namedSig.inputElements), _), namedSig.inputElements))}
         ${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
-        
+    
+        ${if !null(namedSig.contexts) then s"""throw new common.exceptions.SilverError("Production ${fName} containes type contexts, which are not supported by reify"); // TODO""" else ""}
+    
         return new ${className}(${if wantsTracking then "new core.PoriginOriginInfo(common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)"++commaIfKidsOrAnnos else ""} ${namedSig.refInvokeTrans});
     }
 
-    public static final common.NodeFactory<${fnnt}> factory = new Factory();
+	${if null(namedSig.contexts) then s"public static final common.NodeFactory<${fnnt}> factory = new Factory();" else ""}
 
-    public static final class Factory extends common.NodeFactory<${fnnt}> {
-        @Override
+	public static final class Factory extends common.NodeFactory<${fnnt}> {
+${sflatMap((.contextMemberDeclTrans), namedSig.contexts)}
+
+		public Factory(${implode(", ", map((.contextParamTrans), namedSig.contexts))}) {
+${sflatMap((.contextInitTrans), namedSig.contexts)}
+		}
+	
+		@Override
         public final ${fnnt} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] annotations) {
-            return new ${className}(${if wantsTracking then newConstructionOriginUsingCtxRef++commaIfKidsOrAnnos else ""} ${implode(", ", unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+            return new ${className}(${implode(", ", (if wantsTracking then [newConstructionOriginUsingCtxRef] else []) ++ map((.contextRefElem), namedSig.contexts) ++ unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
         }
-        
+		
         @Override
         public final common.FunctionTypeRep getType() {
 ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}

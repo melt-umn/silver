@@ -17,7 +17,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
     then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
-    else [];	
+    else [];
 
   top.errors <- tl.errorsTyVars;
 }
@@ -39,7 +39,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
     then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
-    else [];	
+    else [];
 
   top.errors <- tl.errorsTyVars;
 }

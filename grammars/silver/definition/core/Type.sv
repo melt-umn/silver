@@ -1,7 +1,7 @@
 grammar silver:definition:core;
 
 -- LHS type gives this to 'application' for "foo(...)" calls.
-synthesized attribute applicationDispatcher :: (Expr ::= Decorated Expr  AppExprs  AnnoAppExprs  Location);
+synthesized attribute applicationDispatcher :: (Expr ::= Decorated Expr  Decorated AppExprs  Decorated AnnoAppExprs  Location);
 -- LHS type gives this to 'access' for "foo.some" accesses.
 -- (See DclInfo for the next step)
 synthesized attribute accessHandler :: (Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location);
@@ -39,6 +39,19 @@ top::Type ::=
   top.instanceOrd = true;
   top.instanceNum = true;
   top.instanceConvertible = true;
+}
+
+aspect production appType
+top::Type ::= c::Type a::Type
+{
+  top.applicationDispatcher = c.applicationDispatcher;
+  top.accessHandler = c.accessHandler;
+  top.instanceEq = c.instanceEq;
+  top.instanceOrd = c.instanceOrd;
+  top.instanceNum = c.instanceNum;
+  top.instanceConvertible = c.instanceConvertible;
+  top.lengthDispatcher = c.lengthDispatcher;
+  top.appendDispatcher = c.appendDispatcher;
 }
 
 aspect production intType
@@ -84,7 +97,7 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String params::[Type] tracked::Boolean
+top::Type ::= fn::String _ _
 {
   top.accessHandler = undecoratedAccessHandler(_, _, location=_);
 }

@@ -182,12 +182,13 @@ public final class Reflection {
 			path[path.length - 1] = "P" + path[path.length - 1];
 			final String className = String.join(".", path);
 			try {
+				@SuppressWarnings("unchecked")
 				Method prodReify =
 						((Class<Node>)Class.forName(className)).getMethod("reify", core.reflect.NAST.class, ConsCell.class, TypeRep.class, NAST[].class, String[].class, NAST[].class);
 				return prodReify.invoke(null, ast, rules, resultType, childASTs, annotationNames, annotationASTs);
 			} catch (ClassNotFoundException e) {
 				throw new SilverError("Undefined production " + prodName);
-			} catch (NoSuchMethodException | IllegalAccessException e) {
+			} catch (ClassCastException | NoSuchMethodException | IllegalAccessException e) {
 				throw new SilverInternalError("Error invoking reify for class " + className, e);
 			} catch (InvocationTargetException e) {
 				if (e.getTargetException() instanceof SilverException) {
@@ -212,12 +213,13 @@ public final class Reflection {
 			path[path.length - 1] = "T" + path[path.length - 1];
 			final String className = String.join(".", path);
 			try {
+				@SuppressWarnings("unchecked")
 				Constructor<Terminal> terminalConstructor =
 						((Class<Terminal>)Class.forName(className)).getConstructor(StringCatter.class, NLocation.class);
 				return terminalConstructor.newInstance(lexeme, location);
 			} catch (ClassNotFoundException e) {
 				throw new SilverError("Undefined terminal " + terminalName);
-			} catch (NoSuchMethodException | InstantiationException | IllegalAccessException e) {
+			} catch (ClassCastException | NoSuchMethodException | InstantiationException | IllegalAccessException e) {
 				throw new SilverInternalError("Error constructing class " + className, e);
 			} catch (InvocationTargetException e) {
 				if (e.getTargetException() instanceof SilverException) {
@@ -228,7 +230,7 @@ public final class Reflection {
 			}
 		} else if (ast instanceof PlistAST) {
 			final TypeRep paramType = new VarTypeRep();
-			if (!TypeRep.unify(resultType, new ListTypeRep(paramType))) {
+			if (!TypeRep.unify(resultType, new AppTypeRep(new BaseTypeRep("[]"), paramType))) {
 				throw new SilverError("reify is constructing " + resultType.toString() + ", but found list AST.");
 			}
 			return reifyList(rules, paramType, (NASTs)ast.getChild(0));

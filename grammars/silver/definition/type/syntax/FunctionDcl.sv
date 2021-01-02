@@ -1,6 +1,6 @@
 grammar silver:definition:type:syntax;
 
-attribute lexicalTypeVariables occurs on FunctionSignature, FunctionLHS;
+attribute lexicalTypeVariables, lexicalTyVarKinds occurs on FunctionSignature, FunctionLHS;
 
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 
@@ -8,18 +8,15 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = makeSet(ns.lexicalTypeVariables);
   
-  sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, allLexicalTyVars);
+  sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
 }
 
 aspect production functionSignature
-top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS 
+top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::ProductionRHS
 {
-  top.lexicalTypeVariables = makeSet(lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
+  top.lexicalTypeVariables := makeSet(cl.lexicalTypeVariables ++ lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
 }
 
-aspect production functionLHS
-top::FunctionLHS ::= t::TypeExpr
-{
-  top.lexicalTypeVariables = t.lexicalTypeVariables;
-}
+propagate lexicalTyVarKinds on FunctionSignature;
+propagate lexicalTypeVariables, lexicalTyVarKinds on FunctionLHS;
 

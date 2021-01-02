@@ -208,8 +208,4 @@ public abstract class Node implements Typed {
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of the attribute
 	 */
 	public abstract Lazy getSynthesized(final int index);
-	
-	// Override with a more specific return type
-	@Override
-	public abstract BaseTypeRep getType();
 }

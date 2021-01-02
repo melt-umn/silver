@@ -28,6 +28,19 @@ attribute lazyTranslation occurs on Exprs;
 -- `lazyTranslation` can yield any type, since it's only ever immediately used
 --   to put values in a `new Object[]{...}`
 
+synthesized attribute invokeTranslation :: String occurs on Expr;
+inherited attribute invokeArgs :: Decorated AppExprs occurs on Expr;
+inherited attribute invokeNamedArgs :: Decorated AnnoAppExprs occurs on Expr;
+inherited attribute sameProdAsProductionDefinedOn :: Boolean occurs on Expr;
+
+aspect default production
+top::Expr ::=
+{
+  top.invokeTranslation =
+    -- dynamic method invocation
+    s"((${finalType(top).outputType.transType})${top.translation}.invoke(${makeOriginContextRef(top)}, new Object[]{${argsTranslation(top.invokeArgs)}}, ${namedargsTranslation(top.invokeNamedArgs)}))";
+}
+
 aspect production errorExpr
 top::Expr ::= msg::[Message]
 {
@@ -112,8 +125,11 @@ top::Expr ::= q::Decorated QName
 aspect production productionReference
 top::Expr ::= q::Decorated QName
 {
-  top.translation = makeClassName(q.lookupValue.fullName) ++ ".factory";
+  top.translation = makeProdName(q.lookupValue.fullName) ++ ".factory";
   top.lazyTranslation = top.translation;
+  top.invokeTranslation =
+    -- static constructor invocation
+    s"((${finalType(top).outputType.transType})new ${makeProdName(q.lookupValue.fullName)}(${implode(", ", [makeNewConstructionOrigin(top, !top.sameProdAsProductionDefinedOn)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs ++ reorderedAnnoAppExprs(top.invokeNamedArgs)))}))";
 }
 
 aspect production functionReference
@@ -122,7 +138,17 @@ top::Expr ::= q::Decorated QName
   -- functions, unlike productions, can return a type variable.
   -- as such, we have to cast it to the real inferred final type.
   top.translation = s"((${finalType(top).transType})${top.lazyTranslation})";
-  top.lazyTranslation = makeClassName(q.lookupValue.fullName) ++ ".factory";
+  top.lazyTranslation = makeProdName(q.lookupValue.fullName) ++ ".factory";
+  top.invokeTranslation =
+    -- static method invocation
+    s"((${finalType(top).outputType.transType})${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ", [makeOriginContextRef(e)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs))}))";
+}
+
+aspect production classMemberReference
+top::Expr ::= q::Decorated QName
+{
+  top.translation = s"((${finalType(top).transType})${context.transContext}.${makeInstanceMemberAccessorName(q.lookupValue.fullName)}())";
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 aspect production globalValueReference
@@ -138,8 +164,22 @@ top::Expr ::= q::Decorated QName
     else top.translation;
 }
 
+aspect production application
+top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
+{
+  -- TODO: Flow error here, since these aren't in the reference set of Expr.
+  -- We would like a way to decorate a `Decorated Expr` with additional attributes
+  -- such that these equations could be written on `functionInvocation` instead...
+  e.invokeArgs = es;
+  e.invokeNamedArgs = anns;
+  e.sameProdAsProductionDefinedOn = case e of
+                                    | baseExpr(qn) -> qn.name == last(explode(":", top.frame.fullName))
+                                    | _ -> false
+                                    end;
+}
+
 aspect production errorApplication
-top::Expr ::= e::Decorated Expr es::AppExprs annos::AnnoAppExprs
+top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
@@ -148,24 +188,7 @@ top::Expr ::= e::Decorated Expr es::AppExprs annos::AnnoAppExprs
 aspect production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
 {
-  local commaIfArgs :: String = if length(es.exprs) != 0 then "," else "";
-  local commaIfArgsOrAnnos :: String = if length(annos.exprs) + length(es.exprs)!= 0 then "," else "";
-
-  local sameProd :: Boolean = case e of
-                              | baseExpr(qn) -> qn.name == last(explode(":", top.frame.fullName))
-                              | _ -> false
-                              end;
-
-  top.translation = 
-    case e of 
-    | functionReference(q) -> -- static method invocation
-        s"((${finalType(top).transType})${makeClassName(q.lookupValue.fullName)}.invoke(${makeOriginContextRef(e)} ${commaIfArgs} ${argsTranslation(es)}))"
-    | productionReference(q) -> -- static constructor invocation
-        s"((${finalType(top).transType})new ${makeClassName(q.lookupValue.fullName)}(${makeNewConstructionOrigin(top, !sameProd, commaIfArgsOrAnnos)} ${implode(", ", map((.lazyTranslation), es.exprs ++ reorderedAnnoAppExprs(annos)))}))"
-    | _ -> -- dynamic method invocation
-        s"((${finalType(top).transType})${e.translation}.invoke(${makeOriginContextRef(e)}, new Object[]{${argsTranslation(es)}}, ${namedargsTranslation(annos)}))" 
-    end ;
-
+  top.translation = e.invokeTranslation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
@@ -334,7 +357,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
       -- (especially important because we're implicitly inserted when accessing attributes
       --  from undecorated nodes, and this is a common error for new silverers.)
     | _ -> ".decorate(context, common.Util.populateInh(" ++
-             s"${makeNTClassName(finalType(e).typeName)}.num_inh_attrs, " ++
+             s"${makeNTName(finalType(e).typeName)}.num_inh_attrs, " ++
              s"new int[]{${implode(", ", inh.nameTrans)}}, " ++ 
              s"new common.Lazy[]{${implode(", ", inh.valueTrans)}}))"
     end;

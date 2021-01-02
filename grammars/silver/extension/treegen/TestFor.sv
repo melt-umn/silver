@@ -30,6 +30,7 @@ top::AGDcl ::= 'testFor' testSuite::Name ':' n::Name '::' id::QName ',' e::Expr 
 
   local sig :: FunctionSignature =
     functionSignature(
+      nilConstraint(location=l), '=>',
       functionLHS(typerepTypeExpr(boolType(), location=l), location=l),
       '::=',
       productionRHSCons(
@@ -64,6 +65,7 @@ AGDcl ::= d::DclInfo  testfunname::String  l::Location  testSuite::Name
   local sig :: FunctionSignature =
     -- id ::= 
     functionSignature(
+      nilConstraint(location=l), '=>',
       functionLHS(typerepTypeExpr(boolType(), location=l), location=l),
       '::=',
       productionRHSNil(location=l),
