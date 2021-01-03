@@ -56,11 +56,11 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   -- This grammar, its direct imports, and only transitively close over exports and TRIGGERED conditional imports.
   -- i.e. these are the things that we really, truly depend upon. (in the sense that we get their symbols)
   local actualDependencies :: [String] =
-    makeSet(computeDependencies(grammarName :: top.moduleNames, top.compiledGrammars));
+    nubBy(stringEq, computeDependencies(grammarName :: top.moduleNames, top.compiledGrammars));
 
   -- Compute flow information for this grammar, (closing over imports and options, too:)
   local depsPlusOptions :: [String] =
-    makeSet(completeDependencyClosure(actualDependencies, top.compiledGrammars));
+    nubBy(stringEq, completeDependencyClosure(actualDependencies, top.compiledGrammars));
   g.grammarDependencies = actualDependencies;
   g.flowEnv = fromFlowDefs(foldr(consFlow, nilFlow(), gatherFlowEnv(depsPlusOptions, top.compiledGrammars)));
   
@@ -76,7 +76,7 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   top.translateGrammars := [top];
 
   top.declaredName = g.declaredName;
-  top.moduleNames := makeSet(g.moduleNames ++ ["silver:core"]); -- Ensure the prelude is in the deps, always
+  top.moduleNames := nubBy(stringEq, g.moduleNames ++ ["silver:core"]); -- Ensure the prelude is in the deps, always
   top.exportedGrammars := g.exportedGrammars;
   top.optionalGrammars := g.optionalGrammars;
   top.condBuild := g.condBuild;
@@ -312,7 +312,7 @@ String ::= r::Decorated RootSpec
 function mentionedGrammars
 [String] ::= r::Decorated RootSpec
 {
-  return makeSet(r.moduleNames ++ concat(r.condBuild) ++ r.optionalGrammars);
+  return nubBy(stringEq, r.moduleNames ++ concat(r.condBuild) ++ r.optionalGrammars);
 }
 
 function gatherFlowEnv

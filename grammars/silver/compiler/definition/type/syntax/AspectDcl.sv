@@ -21,7 +21,7 @@ aspect production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
 {
   production attribute allLexicalTyVars :: [String];
-  allLexicalTyVars = makeSet(ns.lexicalTypeVariables);
+  allLexicalTyVars = nubBy(stringEq, ns.lexicalTypeVariables);
   
   sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
   -- TODO sigDefs <- realSig.contexts as defs
@@ -31,7 +31,7 @@ aspect production aspectFunctionDcl
 top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody 
 {
   production attribute allLexicalTyVars :: [String];
-  allLexicalTyVars = makeSet(ns.lexicalTypeVariables);
+  allLexicalTyVars = nubBy(stringEq, ns.lexicalTypeVariables);
   
   sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
   -- TODO sigDefs <- realSig.contexts as defs
@@ -43,13 +43,13 @@ propagate lexicalTyVarKinds on AspectProductionSignature, AspectFunctionSignatur
 aspect production aspectProductionSignature
 top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 {
-  top.lexicalTypeVariables := makeSet(lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
+  top.lexicalTypeVariables := nubBy(stringEq, lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
 }
 
 aspect production aspectRHSElemCons
 top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 {
-  top.lexicalTypeVariables := makeSet(h.lexicalTypeVariables ++ t.lexicalTypeVariables);
+  top.lexicalTypeVariables := nubBy(stringEq, h.lexicalTypeVariables ++ t.lexicalTypeVariables);
 }
 
 aspect production aspectProductionLHSTyped
@@ -67,5 +67,5 @@ top::AspectRHSElem ::= id::Name '::' t::TypeExpr
 aspect production aspectFunctionSignature
 top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS 
 {
-  top.lexicalTypeVariables := makeSet(lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
+  top.lexicalTypeVariables := nubBy(stringEq, lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
 }
