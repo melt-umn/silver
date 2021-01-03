@@ -1,7 +1,6 @@
 grammar silver:compiler:extension:strategyattr;
 
 import silver:compiler:metatranslation;
-import silver:core;
 
 annotation genName::String; -- Used to generate the names of lifted strategy attributes
 

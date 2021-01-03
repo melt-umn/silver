@@ -2,7 +2,6 @@ grammar silver:compiler:extension:doc:extra;
 
 {- This grammar is just a bunch of imports. It is run by the generate-documentation script, and just builds documentation. The jar it produces is just thrown away. -}
 
-import silver:core;
 
 --import ide;
 
