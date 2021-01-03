@@ -10,7 +10,7 @@ grammar silver:host;
  - Note that this list may grow over time.
  -} 
 
--- The "core" host language:
+-- The "silver:core" host language:
 exports silver:host:core;
 
 -- Modifications to Silver = optional features that are not pure extensions.

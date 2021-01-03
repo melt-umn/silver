@@ -59,7 +59,7 @@ function makeDotArrow
 String ::= f::String t::String
 {
   -- A heuristic to try to make the graph more readable...
-  return if t == "core" then "" 
+  return if t == "silver:core" then "" 
   else "\"" ++ f ++ "\" -> \"" ++ t ++ "\";\n";
 }
 
