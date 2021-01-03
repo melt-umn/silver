@@ -1,6 +1,6 @@
 grammar silver:metatranslation;
 
-imports silver:reflect;
+imports silver:rewrite;
 imports silver:langutil:pp;
 imports core:monad;
 
@@ -9,8 +9,6 @@ imports silver:definition:env;
 imports silver:definition:type:syntax;
 imports silver:extension:list;
 imports silver:extension:patternmatching;
-
-imports silver:rewrite;
 
 global rename::Strategy = allTopDown(
   rule on QName of
