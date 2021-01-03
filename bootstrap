@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -eu
+
+git checkout feature/renaming-bootstrap
+
+./deep-clean -delete all
+rm jars/*.jar
+./fetch-jars
+
+./self-compile --clean
+
+cp build/silver.composed.Default.jar jars/silver.compiler.composed.Default.jar
+
+git checkout feature/renaming
+
+./deep-rebuild
