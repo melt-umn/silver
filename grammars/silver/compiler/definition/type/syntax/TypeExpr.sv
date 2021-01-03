@@ -275,7 +275,7 @@ top::BracketedTypeExprs ::= '<' tl::TypeExprs '>'
   top.freeVariables = tl.freeVariables;
   
   top.errorsTyVars <-
-    if containsDuplicates(tl.lexicalTypeVariables)
+    if length(tl.lexicalTypeVariables) != length(nubBy(stringEq(), tl.lexicalTypeVariables))
     then [err(top.location, "Type parameter list repeats type variable names")]
     else [];
   top.errorsTyVars <-

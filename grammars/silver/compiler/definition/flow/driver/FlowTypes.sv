@@ -12,8 +12,6 @@ imports silver:util:treemap as rtm;
 imports silver:util:graph as g;
 imports silver:util:treeset as set;
 
-import silver:util only rem;
-
 -- Help some type signatures suck a little less
 type ProdName = String;
 type NtName = String;

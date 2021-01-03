@@ -211,7 +211,7 @@ function noninductiveExpansion
 [String] ::= initial::[String] rules::[[String]]
 {
   return if null(rules) then []
-         else if containsAny(tail(head(rules)), initial) && !containsBy(stringEq, head(head(rules)), initial)
+         else if any(map(containsBy(stringEq, _, initial), tail(head(rules)))) && !containsBy(stringEq, head(head(rules)), initial)
               then head(head(rules)) :: noninductiveExpansion(initial, tail(rules))
               else noninductiveExpansion(initial, tail(rules));
 }

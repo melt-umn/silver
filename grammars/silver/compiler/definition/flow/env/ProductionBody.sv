@@ -4,7 +4,6 @@ import silver:compiler:definition:type:syntax;
 import silver:compiler:modification:defaultattr;
 import silver:compiler:modification:collection;
 import silver:compiler:modification:copper;
-import silver:util only contains;
 import silver:compiler:driver:util only isExportedBy, RootSpec;
 
 attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;

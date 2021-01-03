@@ -1,6 +1,5 @@
 grammar silver:compiler:definition:flow:env;
 
-import silver:util only contains;
 import silver:compiler:definition:type:syntax;
 import silver:compiler:driver:util only isExportedBy;
 

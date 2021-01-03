@@ -91,7 +91,7 @@ function stitchEdgesFor
 function edgeIsNew
 Boolean ::= edge::Pair<FlowVertex FlowVertex>  e::g:Graph<FlowVertex>
 {
-  return !g:containsBy(stringEq, edge, e);
+  return !g:contains(edge, e);
 }
 
 {--
