@@ -1,4 +1,4 @@
-grammar core:monad;
+grammar silver:core;
 
 function bindMaybe
 Maybe<b> ::= m::Maybe<a> fn::(Maybe<b> ::= a)

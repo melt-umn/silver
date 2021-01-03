@@ -1,4 +1,4 @@
-grammar core;
+grammar silver:core;
 
 {--
  - true if parsing successfully produced a syntax tree. false if a parse error occurred.

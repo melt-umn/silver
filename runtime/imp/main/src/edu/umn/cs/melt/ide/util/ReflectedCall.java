@@ -10,11 +10,11 @@ import common.OriginContext;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Status;
 
-import core.NIOVal;
-import core.NMaybe;
-import core.Pioval;
-import core.Pjust;
-import core.Pnothing;
+import silver.core.NIOVal;
+import silver.core.NMaybe;
+import silver.core.Pioval;
+import silver.core.Pjust;
+import silver.core.Pnothing;
 
 /**
  * Helper to call a Silver function from Java code.
@@ -39,11 +39,11 @@ public final class ReflectedCall<T> {
 		return arg_types;
 	}
 	
-	// "core:map", 2
+	// "silver:core:map", 2
 	public ReflectedCall(String silver_function, int arity) throws CoreException {
 		this(to_sv_class(silver_function), "invoke", sv_args(arity));
 	}
-	// "core.Pmap", "invoke", {Object, Object}
+	// "silver.core.Pmap", "invoke", {Object, Object}
 	public ReflectedCall(String class_name, String method_name, Class[] arg_types) throws CoreException {
 		try {
 			Class<Node> cls = (Class<Node>)Class.forName(class_name);

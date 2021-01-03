@@ -1,7 +1,7 @@
 package common;
 
 import common.exceptions.SilverInternalError;
-import core.*;
+import silver.core.*;
 
 /**
  * FunctionNode is a Node, but with a few methods "removed".

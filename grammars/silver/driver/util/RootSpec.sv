@@ -47,11 +47,11 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   g.env = occursEnv(g.occursDefs, toEnv(g.defs));
   g.globalImports =
     occursEnv(
-      if contains("core", g.moduleNames) || grammarName == "core" then g.importedOccursDefs
-      else g.importedOccursDefs ++ head(searchEnvTree("core", top.compiledGrammars)).occursDefs,
+      if contains("silver:core", g.moduleNames) || grammarName == "silver:core" then g.importedOccursDefs
+      else g.importedOccursDefs ++ head(searchEnvTree("silver:core", top.compiledGrammars)).occursDefs,
       toEnv(
-        if contains("core", g.moduleNames) || grammarName == "core" then g.importedDefs
-        else g.importedDefs ++ head(searchEnvTree("core", top.compiledGrammars)).defs));
+        if contains("silver:core", g.moduleNames) || grammarName == "silver:core" then g.importedDefs
+        else g.importedDefs ++ head(searchEnvTree("silver:core", top.compiledGrammars)).defs));
   
   -- This grammar, its direct imports, and only transitively close over exports and TRIGGERED conditional imports.
   -- i.e. these are the things that we really, truly depend upon. (in the sense that we get their symbols)
@@ -76,7 +76,7 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   top.translateGrammars := [top];
 
   top.declaredName = g.declaredName;
-  top.moduleNames := makeSet(g.moduleNames ++ ["core"]); -- Ensure the prelude is in the deps, always
+  top.moduleNames := makeSet(g.moduleNames ++ ["silver:core"]); -- Ensure the prelude is in the deps, always
   top.exportedGrammars := g.exportedGrammars;
   top.optionalGrammars := g.optionalGrammars;
   top.condBuild := g.condBuild;

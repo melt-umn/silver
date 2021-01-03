@@ -1,4 +1,4 @@
-grammar core:monad;
+grammar silver:core;
 
 -- Here we treat left as 'failure' and right as 'success'
 

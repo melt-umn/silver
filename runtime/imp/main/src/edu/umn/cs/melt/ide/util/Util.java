@@ -20,11 +20,11 @@ import common.ConsCell;
 import common.IOToken;
 import common.StringCatter;
 import common.javainterop.ConsCellCollection;
-import core.NIOVal;
-import core.NMaybe;
-import core.Pioval;
-import core.Pjust;
-import core.Pnothing;
+import silver.core.NIOVal;
+import silver.core.NMaybe;
+import silver.core.Pioval;
+import silver.core.Pjust;
+import silver.core.Pnothing;
 
 import edu.umn.cs.melt.ide.imp.services.Console;
 import edu.umn.cs.melt.ide.impl.SVRegistry;

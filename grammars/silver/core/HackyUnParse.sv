@@ -1,4 +1,4 @@
-grammar core;
+grammar silver:core;
 
 {--
  - hackUnparse takes any value, and produce a string that represents

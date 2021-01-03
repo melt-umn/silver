@@ -1,4 +1,4 @@
-grammar core;
+grammar silver:core;
 
 nonterminal Unit;
 

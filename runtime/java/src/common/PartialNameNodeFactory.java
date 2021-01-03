@@ -2,7 +2,7 @@ package common;
 
 import java.util.*;
 
-import core.NOriginInfo;
+import silver.core.NOriginInfo;
 
 
 /**

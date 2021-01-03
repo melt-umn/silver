@@ -2,7 +2,7 @@ grammar silver:metatranslation;
 
 imports silver:reflect;
 imports silver:langutil:pp;
-imports core:monad;
+imports silver:core;
 
 imports silver:definition:core;
 imports silver:definition:env;

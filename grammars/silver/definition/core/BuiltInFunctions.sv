@@ -84,7 +84,7 @@ top::Expr ::= 'reify'
   top.unparse = "reify";
 
   top.typerep =
-    functionType(appTypes(nonterminalType("core:Either", 2, false), [stringType(), freshType()]), [nonterminalType("core:reflect:AST", 0, true)], []);
+    functionType(appTypes(nonterminalType("core:Either", 2, false), [stringType(), freshType()]), [nonterminalType("silver:core:AST", 0, true)], []);
 }
 
 concrete production newFunction

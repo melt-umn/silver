@@ -20,7 +20,7 @@ import common.OriginContext;
 import common.TopNode;
 import common.javainterop.ConsCellCollection;
 
-import core.NIOVal;
+import silver.core.NIOVal;
 import silver.langutil.NMessage;
 
 import edu.umn.cs.melt.ide.silver.misc.Problem;
@@ -98,9 +98,9 @@ public class Builder extends IncrementalProjectBuilder implements IExecutableExt
                     sv_build.invoke(new Object[]{OriginContext.FFI_CONTEXT, project, properties.serializeToSilverType(), IOToken.singleton});
 		final DecoratedNode build_result = undecorated_build_result.decorate();
 		// demand evaluation of io actions
-		build_result.synthesized(core.Init.core_io__ON__core_IOVal);
+		build_result.synthesized(silver.core.Init.core_io__ON__core_IOVal);
 		
-		final ConsCell errors = (ConsCell)build_result.synthesized(core.Init.core_iovalue__ON__core_IOVal);
+		final ConsCell errors = (ConsCell)build_result.synthesized(silver.core.Init.core_iovalue__ON__core_IOVal);
 		
 		// Clear old markers this builder had perhaps created.
 		// TODO: we should preserve existing markers that haven't changed as much as possible. oh well.
@@ -130,9 +130,9 @@ public class Builder extends IncrementalProjectBuilder implements IExecutableExt
 					final NIOVal undecorate_post_result = 
                                             sv_postbuild.invoke(new Object[]{OriginContext.FFI_CONTEXT, project, properties.serializeToSilverType(), IOToken.singleton});
 					final DecoratedNode post_result = undecorate_post_result.decorate();
-					post_result.synthesized(core.Init.core_io__ON__core_IOVal);
+					post_result.synthesized(silver.core.Init.core_io__ON__core_IOVal);
 					
-					final ConsCell post_errors = (ConsCell)post_result.synthesized(core.Init.core_iovalue__ON__core_IOVal);
+					final ConsCell post_errors = (ConsCell)post_result.synthesized(silver.core.Init.core_iovalue__ON__core_IOVal);
 	
 					// TODO: it's now possible that we do need to batch these marker creations?
 					// because we're outside the (probable?) AVOID_UPDATE of the build function.

@@ -1,4 +1,4 @@
-grammar core;
+grammar silver:core;
 
 synthesized attribute fromLeft<a> :: a;
 synthesized attribute fromRight<a> :: a;

@@ -1,4 +1,4 @@
-grammar core;
+grammar silver:core;
 
 -- WARNING: Many of the nonterminals and productions in this file are runtime- and/or compiler-blessed.
 --  Don't change their names, grammar locations, or parameters unless you know what your doing

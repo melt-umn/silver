@@ -4,8 +4,8 @@ import java.lang.reflect.*;
 import java.util.*;
 
 import common.exceptions.*;
-import core.*;
-import core.reflect.*;
+import silver.core.*;
+import silver.core.reflect.*;
 
 /**
  * Implementation of the Silver reflection library
@@ -69,7 +69,7 @@ public final class Reflection {
 	 * @return The reflected AST.
 	 */
 	public static NAST reflect(final ConsCell rules, Object o) {
-		core.NOriginInfo origin = (rules!=null)?new core.PoriginOriginInfo(OriginsUtil.SET_FROM_REFLECTION_OIT, o, rules, true):null;
+		silver.core.NOriginInfo origin = (rules!=null)?new silver.core.PoriginOriginInfo(OriginsUtil.SET_FROM_REFLECTION_OIT, o, rules, true):null;
 		if(o instanceof Node) {
 			Node n = (Node)o;
 			NASTs children = PnilAST.rtConstruct(origin);
@@ -102,7 +102,7 @@ public final class Reflection {
 			return PanyAST.rtConstruct(origin, o);
 		}
 	}
-	private static NASTs reflectList(ConsCell rules, core.NOriginInfo origin, final ConsCell l) {
+	private static NASTs reflectList(ConsCell rules, silver.core.NOriginInfo origin, final ConsCell l) {
 		if (!l.nil()) {
 			return PconsAST.rtConstruct(origin, reflect(rules, l.head()), reflectList(rules, origin, l.tail()));
 		} else {
@@ -184,7 +184,7 @@ public final class Reflection {
 			try {
 				@SuppressWarnings("unchecked")
 				Method prodReify =
-						((Class<Node>)Class.forName(className)).getMethod("reify", core.reflect.NAST.class, ConsCell.class, TypeRep.class, NAST[].class, String[].class, NAST[].class);
+						((Class<Node>)Class.forName(className)).getMethod("reify", silver.core.reflect.NAST.class, ConsCell.class, TypeRep.class, NAST[].class, String[].class, NAST[].class);
 				return prodReify.invoke(null, ast, rules, resultType, childASTs, annotationNames, annotationASTs);
 			} catch (ClassNotFoundException e) {
 				throw new SilverError("Undefined production " + prodName);

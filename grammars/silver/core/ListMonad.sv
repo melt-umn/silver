@@ -1,4 +1,4 @@
-grammar core:monad;
+grammar silver:core;
 
 function bindList
 [b] ::= l::[a] fn::([b] ::= a)

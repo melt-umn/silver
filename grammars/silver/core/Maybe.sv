@@ -1,4 +1,4 @@
-grammar core;
+grammar silver:core;
 
 synthesized attribute fromJust<a> :: a;
 synthesized attribute isJust :: Boolean;

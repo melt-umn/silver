@@ -1,4 +1,4 @@
-grammar core;
+grammar silver:core;
 
 {--
  - Fold a list of strings into one string, by interspersing a separator.

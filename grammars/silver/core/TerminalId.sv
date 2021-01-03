@@ -1,4 +1,4 @@
-grammar core;
+grammar silver:core;
 
 function terminalIdEq
 Boolean ::= t1::TerminalId  t2::TerminalId

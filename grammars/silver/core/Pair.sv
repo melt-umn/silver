@@ -1,4 +1,4 @@
-grammar core;
+grammar silver:core;
 
 synthesized attribute fst<a> :: a;
 synthesized attribute snd<a> :: a;

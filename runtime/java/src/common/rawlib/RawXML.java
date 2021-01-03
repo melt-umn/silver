@@ -44,7 +44,7 @@ import common.exceptions.SilverError;
 import common.exceptions.SilverInternalError;
 import common.exceptions.TraceException;
 import common.javainterop.ConsCellCollection;
-import core.NPair;
+import silver.core.NPair;
 
 public final class RawXML {
 
@@ -79,7 +79,7 @@ public final class RawXML {
 	 * @return The Silver AST of the XML file, wrapped in a ParseResult structure.
 	 *   (Silver type core:ParseResult&lt;lib:xml:ast:XMLDocument&gt;)
 	 */
-	public static final core.NParseResult parseXMLFileN(final common.StringCatter fn) {
+	public static final silver.core.NParseResult parseXMLFileN(final common.StringCatter fn) {
 		
 		ensureParserSetup();
 		
@@ -90,10 +90,10 @@ public final class RawXML {
 			throw new TraceException("IO error while parsing xml file " + fn.toString(), e);
 		} catch (SAXException e) {
 			// Return the failure data structure, with the parse error.
-			return core.PparseFailed.rtConstruct(null, new common.StringCatter(e.toString()), null);
+			return silver.core.PparseFailed.rtConstruct(null, new common.StringCatter(e.toString()), null);
 		}
 		
-		return core.PparseSucceeded.rtConstruct(null, documentF2N(d), null);
+		return silver.core.PparseSucceeded.rtConstruct(null, documentF2N(d), null);
 		//  fmap documentF2n . parseXMLFileF  -- OH WAIT
 	}
 	
@@ -102,7 +102,7 @@ public final class RawXML {
 	 * @return A parse result containing a direct reference to a Document.
 	 *   (Silver type core:ParseResult&lt;lib:xml:foreigntypes:XML_Document&gt;)
 	 */
-	public static final core.NParseResult parseXMLFileF(final common.StringCatter fn) {
+	public static final silver.core.NParseResult parseXMLFileF(final common.StringCatter fn) {
 
 		ensureParserSetup();
 		
@@ -113,10 +113,10 @@ public final class RawXML {
 			throw new TraceException("IO error while parsing xml file " + fn.toString(), e);
 		} catch (SAXException e) {
 			// Return the failure data structure, with the parse error.
-			return core.PparseFailed.rtConstruct(null, new common.StringCatter(e.toString()), null);
+			return silver.core.PparseFailed.rtConstruct(null, new common.StringCatter(e.toString()), null);
 		}
 		
-		return core.PparseSucceeded.rtConstruct(null, d, null);	
+		return silver.core.PparseSucceeded.rtConstruct(null, d, null);	
 	}
 	
 	/**

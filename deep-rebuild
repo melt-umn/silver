@@ -34,7 +34,7 @@ fi
 # Should backup old jars here
 
 echo "Before we start, let's get this thing built ..."
-java $JVM_ARGS --clean lib:xml:ast
+java $JVM_ARGS --clean silver:xml:ast
 echo "Start ..."
 time java $JVM_ARGS --relative-jar --clean silver:composed:Default
 

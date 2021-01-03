@@ -547,11 +547,11 @@ public class DecoratedNode implements Typed {
 		String qualifier;
 		if(self == null) {
 			return "<top>";
-		} else if(self instanceof core.Alocation) {
-			DecoratedNode loc = ((core.Alocation)self).getAnno_core_location().decorate(TopNode.singleton, (Lazy[])null);
-			String file = loc.synthesized(core.Init.core_filename__ON__core_Location).toString();
-			int line = (Integer)loc.synthesized(core.Init.core_line__ON__core_Location);
-			int col = (Integer)loc.synthesized(core.Init.core_column__ON__core_Location);
+		} else if(self instanceof silver.core.Alocation) {
+			DecoratedNode loc = ((silver.core.Alocation)self).getAnno_core_location().decorate(TopNode.singleton, (Lazy[])null);
+			String file = loc.synthesized(silver.core.Init.core_filename__ON__core_Location).toString();
+			int line = (Integer)loc.synthesized(silver.core.Init.core_line__ON__core_Location);
+			int col = (Integer)loc.synthesized(silver.core.Init.core_column__ON__core_Location);
 			qualifier = ", " + file + ":" + Integer.toString(line) + ":" + Integer.toString(col);
 		} else {
 			qualifier = "";

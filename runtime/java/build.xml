@@ -17,9 +17,9 @@
       <format property='TIME' pattern='MM/dd/yyyy hh:mm aa'/>
     </tstamp>
     <mkdir dir='${bin}'/>
-    <fail message='Generated java of grammars not found (for core, etc) at ${grammars}'>
+    <fail message='Generated java of grammars not found (for silver:core, etc) at ${grammars}'>
       <condition>
-        <not><available file='${grammars}/core' type='dir' /></not>
+        <not><available file='${grammars}/silver/core' type='dir' /></not>
       </condition>
     </fail>
   </target>
@@ -27,8 +27,8 @@
   <target name='build' depends='init'>
     <javac debug='on' classpathref='compile.classpath' srcdir='${src}:${grammars}' destdir='${bin}' includeantruntime='false'>
       <include name='common/**/*.java' />
-      <include name='core/*.java' />
-      <include name='lib/xml/ast/*.java' />
+      <include name='silver/core/*.java' />
+      <include name='silver/xml/ast/*.java' />
     </javac>
   </target>
   

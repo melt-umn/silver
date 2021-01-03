@@ -1,4 +1,4 @@
-grammar core;
+grammar silver:core;
 
 synthesized attribute lexeme :: String;
 synthesized attribute lexerClasses :: [String];

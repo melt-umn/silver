@@ -1,4 +1,4 @@
-grammar core:monad;
+grammar silver:core;
 
 nonterminal IOMonad<a> with stateIn<IO>, stateOut<IO>, stateVal<a>;
 

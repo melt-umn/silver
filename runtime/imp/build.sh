@@ -13,8 +13,8 @@ fi
 cd main
 
 ### clean up generated code that's stale
-if [ -d src/core ]; then
-  rm -rf src/core src/ide src/silver
+if [ -d src/silver ]; then
+  rm -rf src/ide src/silver
 fi
 
 ### regenerate fresh code:

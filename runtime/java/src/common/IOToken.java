@@ -14,8 +14,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import common.exceptions.SilverExit;
-import core.NIOVal;
-import core.Pioval;
+import silver.core.NIOVal;
+import silver.core.Pioval;
 
 /**
  * This class represents the `<code>IO</code>` type in Silver.

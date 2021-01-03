@@ -1,4 +1,4 @@
-grammar core;
+grammar silver:core;
 
 {@comment
   Applies a function to each element of the list.

@@ -9,15 +9,15 @@ import java.net.URI;
 import common.exceptions.*;
 import common.javainterop.ConsCellCollection;
 
-import core.NLocation;
-import core.NParseError;
-import core.NParseResult;
-import core.NTerminalDescriptor;
-import core.Ploc;
-import core.PparseFailed;
-import core.PsyntaxError;
-import core.PterminalDescriptor;
-import core.PunknownParseError;
+import silver.core.NLocation;
+import silver.core.NParseError;
+import silver.core.NParseResult;
+import silver.core.NTerminalDescriptor;
+import silver.core.Ploc;
+import silver.core.PparseFailed;
+import silver.core.PsyntaxError;
+import silver.core.PterminalDescriptor;
+import silver.core.PunknownParseError;
 import edu.umn.cs.melt.copper.runtime.engines.CopperParser;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
@@ -91,11 +91,11 @@ public final class Util {
 		throw new SilverError(o.toString());
 	}
 
-	public static core.NMaybe safetoInt(String s) {
+	public static silver.core.NMaybe safetoInt(String s) {
 		try {
-			return core.Pjust.rtConstruct(null, Integer.valueOf(s) );
+			return silver.core.Pjust.rtConstruct(null, Integer.valueOf(s) );
 		} catch(NumberFormatException e) {
-			return core.Pnothing.rtConstruct(null);
+			return silver.core.Pnothing.rtConstruct(null);
 		}
 	}
 
@@ -365,7 +365,7 @@ public final class Util {
 		try {
 			ROOT tree = parser.parse(new StringReader(javaString), javaFile);
 			Object terminals = getTerminals(parser);
-			return core.PparseSucceeded.rtConstruct(null, tree, terminals);
+			return silver.core.PparseSucceeded.rtConstruct(null, tree, terminals);
 		} catch(CopperSyntaxError e) {
 			// To create a space, we increment the ending columns and indexes by 1.
 			NLocation loc = Ploc.rtConstruct(null, 

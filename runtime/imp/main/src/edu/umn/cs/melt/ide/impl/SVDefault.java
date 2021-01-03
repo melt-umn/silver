@@ -10,8 +10,8 @@ import common.IOToken;
 import common.Node;
 import common.StringCatter;
 
-import core.NIOVal;
-import core.Pioval;
+import silver.core.NIOVal;
+import silver.core.Pioval;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.ide.eclipse.property.IPropertyPageTab;
 import edu.umn.cs.melt.ide.imp.services.IdeParseResult;

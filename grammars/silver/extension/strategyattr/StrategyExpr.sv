@@ -1,7 +1,7 @@
 grammar silver:extension:strategyattr;
 
 import silver:metatranslation;
-import core:monad;
+import silver:core;
 
 annotation genName::String; -- Used to generate the names of lifted strategy attributes
 
@@ -234,7 +234,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
       }
     | false, false ->
       Silver_Expr {
-        core:monad:bindMaybe(
+        silver:core:bindMaybe(
           $Expr{s1.partialTranslation},
           \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep, location=top.location)} ->
             decorate res with { $ExprInhs{allInhs} }.$name{s2Name})

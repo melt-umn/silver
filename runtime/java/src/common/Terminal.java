@@ -1,9 +1,9 @@
 package common;
 
 import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;
-import core.NLocation;
-import core.Ploc;
-import core.Alocation;
+import silver.core.NLocation;
+import silver.core.Ploc;
+import silver.core.Alocation;
 
 /**
  * The terminal representation object, containing a lexeme and a location.
@@ -47,19 +47,19 @@ public abstract class Terminal implements Typed {
 		return d.synthesized(syn);
 	}
 	public Integer getLine() {
-		return (Integer)getFromLoc(core.Init.core_line__ON__core_Location);
+		return (Integer)getFromLoc(silver.core.Init.core_line__ON__core_Location);
 	}
 	public Integer getColumn() {
-		return (Integer)getFromLoc(core.Init.core_column__ON__core_Location);
+		return (Integer)getFromLoc(silver.core.Init.core_column__ON__core_Location);
 	}
 	public StringCatter getFilename() {
-		return (StringCatter)getFromLoc(core.Init.core_filename__ON__core_Location);
+		return (StringCatter)getFromLoc(silver.core.Init.core_filename__ON__core_Location);
 	}
 	public Integer getStartOffset() {
-		return (Integer)getFromLoc(core.Init.core_index__ON__core_Location);
+		return (Integer)getFromLoc(silver.core.Init.core_index__ON__core_Location);
 	}
 	public Integer getEndOffset() {
-		return (Integer)getFromLoc(core.Init.core_endIndex__ON__core_Location);
+		return (Integer)getFromLoc(silver.core.Init.core_endIndex__ON__core_Location);
 	}
 	
 	// This is a utility that I put here because why not. Perhaps it should be moved?
@@ -68,13 +68,13 @@ public abstract class Terminal implements Typed {
 		final DecoratedNode y = b.decorate(TopNode.singleton, (Lazy[])null);
 		
 		return Ploc.rtConstruct(null, 
-				x.synthesized(core.Init.core_filename__ON__core_Location),
-				x.synthesized(core.Init.core_line__ON__core_Location),
-				x.synthesized(core.Init.core_column__ON__core_Location),
-				y.synthesized(core.Init.core_endLine__ON__core_Location),
-				y.synthesized(core.Init.core_endColumn__ON__core_Location),
-				x.synthesized(core.Init.core_index__ON__core_Location),
-				y.synthesized(core.Init.core_endIndex__ON__core_Location));
+				x.synthesized(silver.core.Init.core_filename__ON__core_Location),
+				x.synthesized(silver.core.Init.core_line__ON__core_Location),
+				x.synthesized(silver.core.Init.core_column__ON__core_Location),
+				y.synthesized(silver.core.Init.core_endLine__ON__core_Location),
+				y.synthesized(silver.core.Init.core_endColumn__ON__core_Location),
+				x.synthesized(silver.core.Init.core_index__ON__core_Location),
+				y.synthesized(silver.core.Init.core_endIndex__ON__core_Location));
 	}
 	// Ditto
 	public static NLocation createSpan(final Object[] children, VirtualLocation l, int index) {
@@ -92,9 +92,9 @@ public abstract class Terminal implements Typed {
 		} else if(o instanceof Alocation) {
 			return (NLocation) ((Alocation)o).getAnno_core_location();
 		} else if(o instanceof TrackedNode) {
-			core.NOriginInfo oi = ((TrackedNode)o).origin;
-			if (oi!=null && oi instanceof core.PparsedOriginInfo) {
-				return ((core.PparsedOriginInfo)oi).getChild_source();
+			silver.core.NOriginInfo oi = ((TrackedNode)o).origin;
+			if (oi!=null && oi instanceof silver.core.PparsedOriginInfo) {
+				return ((silver.core.PparsedOriginInfo)oi).getChild_source();
 			}
 		}
 		// TODO: a better error, maybe? Eh, it should never happen.

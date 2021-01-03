@@ -1,4 +1,4 @@
-grammar core;
+grammar silver:core;
 
 {--
  - Returns the maximum of two numbers.

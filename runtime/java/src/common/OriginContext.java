@@ -1,6 +1,6 @@
 package common;
 
-import core.*;
+import silver.core.*;
 import java.util.*;
 import common.exceptions.*;
 
@@ -70,19 +70,19 @@ public final class OriginContext {
 	public NOriginInfo makeNewConstructionOrigin(boolean isContractum) {
 		switch (this.variety) {
 			case NORMAL:
-				return new core.PoriginOriginInfo(OriginsUtil.SET_AT_CONSTRUCTION_OIT, this.lhs, this.rulesAsSilverList(), isContractum);
+				return new silver.core.PoriginOriginInfo(OriginsUtil.SET_AT_CONSTRUCTION_OIT, this.lhs, this.rulesAsSilverList(), isContractum);
 
 			case MAINFUNCTION:
-				return new core.PotherOriginInfo(OriginsUtil.SET_FROM_ENTRY_OIT, new common.StringCatter("Main Function"), this.rulesAsSilverList());
+				return new silver.core.PotherOriginInfo(OriginsUtil.SET_FROM_ENTRY_OIT, new common.StringCatter("Main Function"), this.rulesAsSilverList());
 			
 			case FFI:
-				return new core.PotherOriginInfo(OriginsUtil.SET_FROM_FFI_OIT, new common.StringCatter("Called from FFI"), this.rulesAsSilverList());
+				return new silver.core.PotherOriginInfo(OriginsUtil.SET_FROM_FFI_OIT, new common.StringCatter("Called from FFI"), this.rulesAsSilverList());
 
 			case PARSERACTION:
-				return new core.PotherOriginInfo(OriginsUtil.SET_FROM_PARSER_ACTION_OIT, new common.StringCatter("Called inside a parser action block"), this.rulesAsSilverList());
+				return new silver.core.PotherOriginInfo(OriginsUtil.SET_FROM_PARSER_ACTION_OIT, new common.StringCatter("Called inside a parser action block"), this.rulesAsSilverList());
 
 			case GLOBAL:
-				return new core.PotherOriginInfo(OriginsUtil.SET_IN_GLOBAL_OIT, new common.StringCatter("Built in a global"), this.rulesAsSilverList());
+				return new silver.core.PotherOriginInfo(OriginsUtil.SET_IN_GLOBAL_OIT, new common.StringCatter("Built in a global"), this.rulesAsSilverList());
 		}
 		throw new RuntimeException("Impossible state: this.variety not recognized.");
 	}

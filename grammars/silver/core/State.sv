@@ -1,4 +1,4 @@
-grammar core:monad;
+grammar silver:core;
 
 nonterminal State<s a> with stateIn<s>, stateOut<s>, stateVal<a>;
 

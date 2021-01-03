@@ -1,4 +1,4 @@
-grammar core;
+grammar silver:core;
 
 {--
  - The resulting world-state token of an IO action.
