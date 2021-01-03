@@ -292,7 +292,7 @@ String ::= ns::Decorated NamedSignature
 
   return if null(ns.namedInputElements) then ""
   else if length(ns.namedInputElements) > 1 then pfx ++ "multiple_annotation_problem" -- TODO
-  else if head(ns.namedInputElements).elementName != "core:location" then pfx ++ "unknown_annotation_type_problem"
+  else if head(ns.namedInputElements).elementName != "silver:core:location" then pfx ++ "unknown_annotation_type_problem"
   else pfx ++ "common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos())";
 }
 
