@@ -14,6 +14,8 @@ global rename::Strategy = allTopDown(
   rule on QName of
   | qNameCons(n, _, q) when n.name == "silver" -> qNameCons(n, ':', qNameCons(makeName("compiler", q.location), ':', q, location=q.location), location=q.location)
   | qNameCons(n, _, q) when n.name == "core" -> qNameCons(makeName("silver", q.location), ':', qNameCons(n, ':', q, location=q.location), location=q.location)
+  | qNameId(q) when startsWith("silver:", q.name) -> makeQName(substitute("silver:", "silver:compiler:", q.name), q.location)
+  | qNameId(q) when startsWith("core:", q.name) -> makeQName(substitute("core:", "silver:core:", q.name), q.location)
   end <+
   rule on QNameType of
   | qNameTypeCons(n, _, q) when n.name == "silver" -> qNameTypeCons(n, ':', qNameTypeCons(makeName("compiler", q.location), ':', q, location=q.location), location=q.location)
