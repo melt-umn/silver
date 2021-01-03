@@ -3,7 +3,6 @@ grammar silver:compiler:driver;
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 
-imports silver:util;
 imports silver:util:cmdargs;
 
 exports silver:compiler:driver:util;

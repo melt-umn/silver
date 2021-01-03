@@ -14,7 +14,6 @@ imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
 
 -- Utilities
-imports silver:util;
 
 option silver:compiler:definition:concrete_syntax;
 option silver:compiler:definition:flow:syntax;

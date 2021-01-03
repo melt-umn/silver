@@ -1,6 +1,5 @@
 grammar silver:compiler:analysis:typechecking:core;
 
-import silver:util;
 
 attribute upSubst, downSubst, finalSubst occurs on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
 propagate upSubst, downSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr

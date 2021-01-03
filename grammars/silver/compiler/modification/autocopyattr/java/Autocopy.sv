@@ -9,7 +9,6 @@ import silver:compiler:definition:type;
 import silver:compiler:translation:java:core;
 import silver:compiler:translation:java:type;
 
-import silver:util;
 
 
 aspect production attributeDclAuto

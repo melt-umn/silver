@@ -1,6 +1,5 @@
 grammar silver:compiler:translation:java:core;
 
-import silver:util;
 
 synthesized attribute attrName :: String;
 

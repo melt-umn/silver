@@ -3,7 +3,6 @@ grammar silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
-imports silver:util;
 
 nonterminal TypeExpr  with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsFullyApplied;
 nonterminal Signature with config, location, grammarName, errors, env, unparse, types,   lexicalTypeVariables, lexicalTyVarKinds;

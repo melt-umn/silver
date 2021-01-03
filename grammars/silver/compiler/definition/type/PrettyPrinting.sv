@@ -1,6 +1,5 @@
 grammar silver:compiler:definition:type;
 
-import silver:util;
 
 synthesized attribute typepp :: String occurs on PolyType, Context, Type;
 autocopy attribute boundVariables :: [TyVar] occurs on Context, Type;

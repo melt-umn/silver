@@ -4,7 +4,6 @@ import silver:compiler:definition:core;
 import silver:compiler:definition:env;
 import silver:compiler:definition:type;
 import silver:compiler:modification:ffi;
-import silver:util;
 
 function substituteAll
 String ::= s::String names::[String] results::[String]

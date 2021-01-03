@@ -1,7 +1,6 @@
 grammar silver:compiler:translation:java:core;
 
 import silver:compiler:modification:ffi only ioForeignType; -- for main type check only
-import silver:util;
 
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody

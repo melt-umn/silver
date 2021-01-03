@@ -1,7 +1,6 @@
 grammar silver:compiler:modification:collection:java;
 import silver:compiler:modification:collection;
 
-import silver:util;
 
 import silver:compiler:definition:core;
 import silver:compiler:definition:env;

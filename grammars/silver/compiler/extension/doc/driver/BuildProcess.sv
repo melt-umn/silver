@@ -6,7 +6,6 @@ import silver:compiler:driver;
 import silver:compiler:definition:env;
 import silver:compiler:definition:core;
 
-import silver:util;
 import silver:util:cmdargs;
 
 synthesized attribute docGeneration :: Boolean occurs on CmdArgs;

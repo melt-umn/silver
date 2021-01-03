@@ -1,6 +1,5 @@
 grammar silver:compiler:translation:java:core;
 
-import silver:util;
 import silver:compiler:driver;
 
 aspect production productionDcl

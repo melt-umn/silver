@@ -20,10 +20,6 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
     then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
     else [];
   top.errors <-
-    if null(getValueDcl("silver:core:bindMaybe", top.env))
-    then [err(top.location, "Strategy attributes require import of silver:core")]
-    else [];
-  top.errors <-
     if isTotal && !e.isTotal
     -- Not an error since we can still translate this, but the translation may raise run-time errors in case of failure
     then [wrn(e.location, s"Implementation of total strategy ${a.name} is not total")]

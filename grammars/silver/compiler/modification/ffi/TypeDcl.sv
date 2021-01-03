@@ -4,7 +4,6 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:type:syntax;
-imports silver:util;
 
 -- Yikes, this was a weird choice of syntax.
 concrete production ffiTypeDclLegacy

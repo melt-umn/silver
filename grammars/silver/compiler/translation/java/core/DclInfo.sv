@@ -1,6 +1,5 @@
 grammar silver:compiler:translation:java:core;
 
-import silver:util;
 
 attribute attrOccursIndexName, attrOccursIndex occurs on DclInfo;
 

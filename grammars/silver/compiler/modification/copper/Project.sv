@@ -14,5 +14,4 @@ imports silver:compiler:extension:list;
 imports silver:compiler:translation:java:core;
 imports silver:compiler:translation:java:type;
 
-imports silver:util;
 

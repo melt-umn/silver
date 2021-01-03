@@ -3,7 +3,6 @@ grammar silver:compiler:extension:rewriting;
 imports silver:rewrite;
 imports silver:compiler:metatranslation;
 imports silver:langutil:pp;
-imports silver:util;
 
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:type;

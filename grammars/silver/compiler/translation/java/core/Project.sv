@@ -9,7 +9,6 @@ imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 
 
-import silver:util;
 
 function makeName
 String ::= str::String

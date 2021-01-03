@@ -1,7 +1,5 @@
 grammar silver:compiler:modification:autocopyattr;
 
-import silver:util;
-
 terminal AutoCopy_kwd 'autocopy' lexer classes {KEYWORD};
 
 concrete production attributeDclAuto
