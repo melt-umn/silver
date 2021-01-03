@@ -47,10 +47,10 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   g.env = occursEnv(g.occursDefs, toEnv(g.defs));
   g.globalImports =
     occursEnv(
-      if contains("silver:core", g.moduleNames) || grammarName == "silver:core" then g.importedOccursDefs
+      if containsBy(stringEq, "silver:core", g.moduleNames) || grammarName == "silver:core" then g.importedOccursDefs
       else g.importedOccursDefs ++ head(searchEnvTree("silver:core", top.compiledGrammars)).occursDefs,
       toEnv(
-        if contains("silver:core", g.moduleNames) || grammarName == "silver:core" then g.importedDefs
+        if containsBy(stringEq, "silver:core", g.moduleNames) || grammarName == "silver:core" then g.importedDefs
         else g.importedDefs ++ head(searchEnvTree("silver:core", top.compiledGrammars)).defs));
   
   -- This grammar, its direct imports, and only transitively close over exports and TRIGGERED conditional imports.

@@ -189,7 +189,7 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   
   -- (safe, suspect)
   local synsBySuspicion :: Pair<[String] [String]> =
-    partition(contains(_, getNonSuspectAttrsForProd(prod, flowEnv)), syns);
+    partition(containsBy(stringEq, _, getNonSuspectAttrsForProd(prod, flowEnv)), syns);
   
   -- No implicit equations here, just keep track.
   local suspectEdges :: [Pair<FlowVertex FlowVertex>] =
@@ -209,7 +209,7 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   local flowTypeSpecs :: [String] = getSpecifiedSynsForNt(nt, flowEnv);
   
   local flowTypeVertexes :: [FlowVertex] =
-    filter(\x::FlowVertex -> !contains(x.flowTypeName, flowTypeSpecs), flowTypeVertexesOverall);
+    filter(\x::FlowVertex -> !containsBy(stringEq, x.flowTypeName, flowTypeSpecs), flowTypeVertexesOverall);
   
   local initialGraph :: g:Graph<FlowVertex> =
     createFlowGraph(fixedEdges);

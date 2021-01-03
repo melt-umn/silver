@@ -116,7 +116,7 @@ function triggeredGrammars
 {
   return if null(trig) then
     []
-  else if contains(head(tail(head(trig))), grammarDependencies) then 
+  else if containsBy(stringEq, head(tail(head(trig))), grammarDependencies) then 
     head(head(trig)) :: triggeredGrammars(grammarDependencies, tail(trig))
   else
     triggeredGrammars(grammarDependencies, tail(trig));

@@ -495,7 +495,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       | hasVertex(_) -> [] -- no check to make, as it was done transitively
       -- without a vertex, we're accessing from a reference, and so...
       | noVertex() ->
-          if contains(q.attrDcl.fullName, inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv))
+          if containsBy(stringEq, q.attrDcl.fullName, inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv))
           then []
           else [wrn(top.location, "Access of inherited attribute " ++ q.name ++ " from a reference is not permitted, as references are not known to be decorated with this attribute.")]
       end
@@ -527,7 +527,7 @@ top::Expr ::= '(' '.' q::QName ')'
     then
       let inhs :: [String] = 
             filter(
-              \ x::String -> !contains(x, acceptable),
+              \ x::String -> !containsBy(stringEq, x, acceptable),
               set:toList(inhDepsForSyn(q.lookupAttribute.fullName, inputType.typeName, myFlow)))
        in if null(inhs) then []
           else [wrn(top.location, s"Attribute section (.${q.name}) requires attributes not known to be on '${prettyType(inputType)}': ${implode(", ", inhs)}")]
