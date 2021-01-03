@@ -42,8 +42,8 @@ global s3::s:Strategy =
   | pair(a, b) when a == b -> pair(a, 17)
   end;
 
-equalityTest(showRes(rewriteWith(s3, pair(1, 2))), "core:pair(2, 1)", String, silver_tests);
-equalityTest(showRes(rewriteWith(s3, pair(42, 42))), "core:pair(42, 17)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s3, pair(1, 2))), "silver:core:pair(2, 1)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s3, pair(42, 42))), "silver:core:pair(42, 17)", String, silver_tests);
 
 global s4::s:Strategy =
   rule on Pair<Integer Integer> of
@@ -51,8 +51,8 @@ global s4::s:Strategy =
   | pair(a, b) when a != b -> pair(b, a)
   end;
 
-equalityTest(showRes(rewriteWith(s4, pair(1, 2))), "core:pair(2, 1)", String, silver_tests);
-equalityTest(showRes(rewriteWith(s4, pair(42, 42))), "core:pair(42, 17)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s4, pair(1, 2))), "silver:core:pair(2, 1)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s4, pair(42, 42))), "silver:core:pair(42, 17)", String, silver_tests);
 
 global s5::s:Strategy =
   rule on Pair<Integer String> of
@@ -61,8 +61,8 @@ global s5::s:Strategy =
   | a -> a
   end;
 
-equalityTest(showRes(rewriteWith(s5, pair(123, "4"))), "core:pair(4, \"123\")", String, silver_tests);
-equalityTest(showRes(rewriteWith(s5, pair(467, "foo"))), "core:pair(467, \"foo\")", String, silver_tests);
+equalityTest(showRes(rewriteWith(s5, pair(123, "4"))), "silver:core:pair(4, \"123\")", String, silver_tests);
+equalityTest(showRes(rewriteWith(s5, pair(467, "foo"))), "silver:core:pair(467, \"foo\")", String, silver_tests);
 
 global s6::s:Strategy =
   rule on Pair<Integer String> of
@@ -73,15 +73,15 @@ global s6::s:Strategy =
     end
   end;
 
-equalityTest(showRes(rewriteWith(s6, pair(123, "4"))), "core:pair(4, \"123\")", String, silver_tests);
-equalityTest(showRes(rewriteWith(s6, pair(467, "foo"))), "core:pair(467, \"foo\")", String, silver_tests);
+equalityTest(showRes(rewriteWith(s6, pair(123, "4"))), "silver:core:pair(4, \"123\")", String, silver_tests);
+equalityTest(showRes(rewriteWith(s6, pair(467, "foo"))), "silver:core:pair(467, \"foo\")", String, silver_tests);
 
 global s7::s:Strategy =
   rule on Pair<Integer Integer> of
   | p -> pair(p.snd, p.fst)
   end;
 
-equalityTest(showRes(rewriteWith(s7, pair(123, 456))), "core:pair(456, 123)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s7, pair(123, 456))), "silver:core:pair(456, 123)", String, silver_tests);
 equalityTest(showRes(rewriteWith(s7, pair(123, "hello"))), "fail", String, silver_tests);
 
 
@@ -109,7 +109,7 @@ global s9::s:Strategy =
   | pair(a, b) -> pair(b, _)(a)
   end;
 
-equalityTest(showRes(rewriteWith(s9, pair(123, 456))), "core:pair(456, 123)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s9, pair(123, 456))), "silver:core:pair(456, 123)", String, silver_tests);
 
 annotation a1::Integer;
 annotation a2::Integer;
@@ -132,7 +132,7 @@ global s11::s:Strategy =
   | pair(a, b) when b.fst < 10 -> pair(b.fst, pair(b.snd, a))
   end;
 
-equalityTest(showRes(rewriteWith(s11, pair(1, pair(2, 3)))), "core:pair(2, core:pair(3, 1))", String, silver_tests);
+equalityTest(showRes(rewriteWith(s11, pair(1, pair(2, 3)))), "silver:core:pair(2, core:pair(3, 1))", String, silver_tests);
 
 global s12::s:Strategy =
   rule on Maybe<Decorated Pair<Integer Integer>> of
@@ -148,7 +148,7 @@ global s13::s:Strategy =
   | pair(a, b) -> pair(b, a)
   end;
 
-equalityTest(showRes(rewriteWith(s13, pair(123, 456))), "core:pair(456, 123)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s13, pair(123, 456))), "silver:core:pair(456, 123)", String, silver_tests);
 equalityTest(showRes(rewriteWith(s13, pair(123, "hello"))), "fail", String, silver_tests);
 
 global s14::s:Strategy =
@@ -164,7 +164,7 @@ global inc::s:Strategy = rule on Integer of i -> i + 1 end;
 
 global s15::s:Strategy = traverse pair(_, inc);
 
-equalityTest(showRes(rewriteWith(s15, pair(1, 2))), "core:pair(1, 3)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s15, pair(1, 2))), "silver:core:pair(1, 3)", String, silver_tests);
 equalityTest(showRes(rewriteWith(s15, pair("a", "b"))), "fail", String, silver_tests);
 equalityTest(showRes(rewriteWith(s15, [["a"]])), "fail", String, silver_tests);
 
@@ -174,10 +174,10 @@ equalityTest(showRes(rewriteWith(s16, barI(1, a1=2, a2=3))), "silver_features:re
 
 global s17::s:Strategy = s:rec(\ s::s:Strategy -> traverse pair(s, s) <+ s:try(inc));
 
-equalityTest(showRes(rewriteWith(s17, pair(1, 2))), "core:pair(2, 3)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s17, pair(1, 2))), "silver:core:pair(2, 3)", String, silver_tests);
 equalityTest(
   showRes(rewriteWith(s17, pair(pair(pair("a", 1), pair("b", 2)), pair(true, 3)))),
-  "core:pair(core:pair(core:pair(\"a\", 2), core:pair(\"b\", 3)), core:pair(true, 4))",
+  "silver:core:pair(core:pair(core:pair(\"a\", 2), core:pair(\"b\", 3)), core:pair(true, 4))",
   String, silver_tests);
 
 global s18::s:Strategy = s:rec(\ s::s:Strategy -> traverse (s :: s) <+ traverse [] <+ s:try(inc));
@@ -193,20 +193,20 @@ equalityTest(showRes(rewriteWith(s20, [1, 2, 3, 4])), "[1, 2, 3, 4]", String, si
 equalityTest(showRes(rewriteWith(s20, [[1, 2, 3], [4, 5, 6], [7, 8, 9]])), "[[1, 2, 3], [4, 6, 6], [7, 8, 9]]", String, silver_tests);
 
 global s21::s:Strategy = s:all(inc);
-equalityTest(showRes(rewriteWith(s21, pair(1, 2))), "core:pair(2, 3)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s21, pair(1, 2))), "silver:core:pair(2, 3)", String, silver_tests);
 equalityTest(showRes(rewriteWith(s21, pair(true, 2))), "fail", String, silver_tests);
 equalityTest(showRes(rewriteWith(s21, pair(true, false))), "fail", String, silver_tests);
 equalityTest(showRes(rewriteWith(s21, [1, 2, 3])), "fail", String, silver_tests);
 
 global s22::s:Strategy = s:some(inc);
-equalityTest(showRes(rewriteWith(s22, pair(1, 2))), "core:pair(2, 3)", String, silver_tests);
-equalityTest(showRes(rewriteWith(s22, pair(true, 2))), "core:pair(true, 3)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s22, pair(1, 2))), "silver:core:pair(2, 3)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s22, pair(true, 2))), "silver:core:pair(true, 3)", String, silver_tests);
 equalityTest(showRes(rewriteWith(s22, pair(true, false))), "fail", String, silver_tests);
 equalityTest(showRes(rewriteWith(s22, [1, 2, 3])), "[2, 2, 3]", String, silver_tests);
 
 global s23::s:Strategy = s:one(inc);
-equalityTest(showRes(rewriteWith(s23, pair(1, 2))), "core:pair(2, 2)", String, silver_tests);
-equalityTest(showRes(rewriteWith(s23, pair(true, 2))), "core:pair(true, 3)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s23, pair(1, 2))), "silver:core:pair(2, 2)", String, silver_tests);
+equalityTest(showRes(rewriteWith(s23, pair(true, 2))), "silver:core:pair(true, 3)", String, silver_tests);
 equalityTest(showRes(rewriteWith(s23, pair(true, false))), "fail", String, silver_tests);
 equalityTest(showRes(rewriteWith(s23, [1, 2, 3])), "[2, 2, 3]", String, silver_tests);
 

@@ -231,11 +231,11 @@ global terminalReifyRes::Either<String Pair<[Foo_t] Maybe<Bar_t>>> = reify(case 
 
 equalityTest(
   lessHackyUnparse(terminalTestValue),
-  s"""core:pair([terminal(silver_features:Foo_t, "foo", ??:-1:-1), terminal(silver_features:Foo_t, "foo", ??:-1:-1)], core:just(terminal(silver_features:Bar_t, "bar42", a:1:2)))""",
+  s"""silver:core:pair([terminal(silver_features:Foo_t, "foo", ??:-1:-1), terminal(silver_features:Foo_t, "foo", ??:-1:-1)], core:just(terminal(silver_features:Bar_t, "bar42", a:1:2)))""",
   String, silver_tests);
 equalityTest(
   case terminalSerializeRes of left(msg) -> msg | right(a) -> a end,
-  s"""core:pair([terminal(silver_features:Foo_t, "foo", core:loc("??", -1, -1, -1, -1, -1, -1)), terminal(silver_features:Foo_t, "foo", core:loc("??", -1, -1, -1, -1, -1, -1))], core:just(terminal(silver_features:Bar_t, "bar42", core:loc("a", 1, 2, 3, 4, 5, 6))))""",
+  s"""silver:core:pair([terminal(silver_features:Foo_t, "foo", core:loc("??", -1, -1, -1, -1, -1, -1)), terminal(silver_features:Foo_t, "foo", core:loc("??", -1, -1, -1, -1, -1, -1))], core:just(terminal(silver_features:Bar_t, "bar42", core:loc("a", 1, 2, 3, 4, 5, 6))))""",
   String, silver_tests);
 equalityTest(case terminalDeserializeRes of left(msg) -> msg | right(a) -> show(80, a.pp) end, lessHackyUnparse(terminalTestValue), String, silver_tests);
 equalityTest(reifyResToString(terminalReifyRes), lessHackyUnparse(terminalTestValue), String, silver_tests);
@@ -256,20 +256,20 @@ global reifyRes12::Either<String Pair<String [Integer]>> = deserialize("test", f
 
 equalityTest(
   case serializeRes1 of left(msg) -> msg | right(a) -> a end,
-  s"""core:pair("hello", [1, 2, 3, 4])""",
+  s"""silver:core:pair("hello", [1, 2, 3, 4])""",
   String, silver_tests);
 equalityTest(
   reifyResToString(reifyRes12),
-  s"""core:pair("hello", [1, 2, 3, 4])""",
+  s"""silver:core:pair("hello", [1, 2, 3, 4])""",
   String, silver_tests);
 
 global add::(Integer ::= Integer Integer) = \ i::Integer j::Integer -> i + j;
 
 global applyRes1::Either<String AST> = applyAST(reflect(add), [just(reflect(1)), just(reflect(2))], []);
-equalityTest(lessHackyUnparse(applyRes1), "core:right(core:reflect:integerAST(3))", String, silver_tests);
+equalityTest(lessHackyUnparse(applyRes1), "silver:core:right(core:reflect:integerAST(3))", String, silver_tests);
 
 global applyRes2::Either<String AST> = applyAST(applyAST(reflect(add), [nothing(), just(reflect(2))], []).fromRight, [just(reflect(1))], []);
-equalityTest(lessHackyUnparse(applyRes2), "core:right(core:reflect:integerAST(3))", String, silver_tests);
+equalityTest(lessHackyUnparse(applyRes2), "silver:core:right(core:reflect:integerAST(3))", String, silver_tests);
 
 global applyRes3::Either<String AST> = applyAST(reflect(add), [just(reflect(1)), nothing(), just(reflect(2))], []);
 equalityTest(applyRes3.isLeft, true, Boolean, silver_tests);

@@ -42,7 +42,7 @@ top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
   -- TODO: Equation needed due to weirdness with lets auto-undecorating bindings.
   -- See comments in definition of lexicalLocalReference (grammars/silver/modification/let_fix/Let.sv)
   -- Actual syntax to exactly constrain the types of arbitrary expressions would be useful here.
-  top.typerep = appType(nonterminalType("core:Maybe", 1, false), e.typerep);
+  top.typerep = appType(nonterminalType("silver:core:Maybe", 1, false), e.typerep);
   
   thread downSubst, upSubst on top, s, e, errCheckS, forward;
   

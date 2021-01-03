@@ -326,7 +326,7 @@ top::NamedAST ::= n::String v::AST
     -- hack to get annotation shortname
     pair(last(explode(":", n)), v.translation);
   top.foundLocation =
-    if n == "core:location"
+    if n == "silver:core:location"
     then
       case reify(v) of
       | right(l) -> just(l)

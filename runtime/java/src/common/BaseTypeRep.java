@@ -7,7 +7,7 @@ package common;
  */
 public class BaseTypeRep extends TypeRep {
 	/**
-	 * The name of the type - e.g. "Integer" or "core:Pair".
+	 * The name of the type - e.g. "Integer" or "silver:core:Pair".
 	 */
 	public final String name;
 	

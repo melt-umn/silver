@@ -39,7 +39,7 @@ public final class ReflectedCall<T> {
 		return arg_types;
 	}
 	
-	// "core:map", 2
+	// "silver:core:map", 2
 	public ReflectedCall(String silver_function, int arity) throws CoreException {
 		this(to_sv_class(silver_function), "invoke", sv_args(arity));
 	}
