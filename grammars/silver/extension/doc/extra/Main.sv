@@ -9,7 +9,7 @@ import core;
 import lib:errors;
 import lib:extcore;
 import lib:system;
-import lib:xml;
+import silver:xml;
 
 import silver:analysis;
 import silver:analysis:typechecking:core;

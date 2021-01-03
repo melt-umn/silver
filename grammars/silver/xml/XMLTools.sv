@@ -1,8 +1,8 @@
-grammar lib:xml;
+grammar silver:xml;
 
-exports lib:xml:ast; -- don't force users to import anything but lib:xml.
+exports silver:xml:ast; -- don't force users to import anything but silver:xml.
 
-import lib:xml:ast;
+import silver:xml:ast;
 
 {--
  - WARNING: this is buggy! we're parsing a file without demanding an IO token!!

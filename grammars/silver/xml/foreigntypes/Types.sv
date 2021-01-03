@@ -1,6 +1,6 @@
-grammar lib:xml:foreigntypes;
+grammar silver:xml:foreigntypes;
 
-import lib:xml:ast;
+import silver:xml:ast;
 
 type XML_Document foreign;
 type XML_NodeList foreign;

@@ -1,4 +1,4 @@
-grammar lib:xml:ast;
+grammar silver:xml:ast;
 
 -- Authors: August Schwerdfeger for Adventium Enterprises LLC, 2011.
 --          Ted Kaminski
