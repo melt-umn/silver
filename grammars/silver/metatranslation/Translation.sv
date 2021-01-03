@@ -4,11 +4,11 @@ imports silver:reflect;
 imports silver:langutil:pp;
 imports silver:core;
 
-imports silver:definition:core;
-imports silver:definition:env;
-imports silver:definition:type:syntax;
-imports silver:extension:list;
-imports silver:extension:patternmatching;
+imports silver:compiler:definition:core;
+imports silver:compiler:definition:env;
+imports silver:compiler:definition:type:syntax;
+imports silver:compiler:extension:list;
+imports silver:compiler:extension:patternmatching;
 
 function translate
 Expr ::= loc::Location ast::AST
@@ -335,7 +335,7 @@ top::NamedAST ::= n::String v::AST
     else nothing();
 }
 
--- the functions below are directly referenced in reflection code in silver:extensions:silverconstruction
+-- the functions below are directly referenced in reflection code in silver:compiler:extensions:silverconstruction
 -- so make sure you grep for that if you change/move them.
 
 function makeName
