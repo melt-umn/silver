@@ -1,7 +1,6 @@
 
 import silver_features;
 import silver:testing;
-import lib:extcore;
 
 nonterminal AnnoNT with what; -- our target of abuse!
 

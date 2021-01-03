@@ -1,7 +1,6 @@
 
 
 import silver:testing;
-import lib:extcore;
 import silver:util:raw:treemap as tm;
 import stdlib;
 

@@ -1,7 +1,6 @@
 grammar patt;
 
 imports silver:testing ;
-imports lib:extcore ;
 
 
 nonterminal T;

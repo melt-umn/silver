@@ -1,6 +1,5 @@
 
 import silver:testing;
-import lib:extcore;
 import silver:util:raw:graph as g;
 import silver:util:raw:treeset as set;
 import stdlib;

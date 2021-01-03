@@ -361,3 +361,59 @@ String ::= s::String
 } foreign {
   "java" : return "(common.Util.unescapeString(%s%))";
 }
+
+{--
+ - Strips extra leading and trailing whitespace from a string.
+ -}
+function stripExtraWhiteSpace 
+String ::= str::String 
+{ return implode ("", stripExtraWhiteSpaceHelper(
+                           woLeadingOrEndingWhiteSpace)) ; 
+
+  local attribute woLeadingOrEndingWhiteSpace :: [String] ;
+  woLeadingOrEndingWhiteSpace 
+    = reverse((dropWhile(isSpace,
+        reverse(dropWhile(isSpace, explode("",str)))))) ;
+}
+
+function stripExtraWhiteSpaceHelper
+[String] ::= ss::[String]
+{ return if   null(ss) 
+         then [ ]
+         else 
+         if   hd==" " || hd=="\n" || hd=="\t"
+         then (if null(tail(ss))
+               then [ ] 
+               else (if   nxt==" " || nxt=="\n" || nxt=="\t"
+                     then stripExtraWhiteSpaceHelper(tail(ss)) -- drop hd
+                     else " " :: stripExtraWhiteSpaceHelper(tail(ss))
+                          -- replace hd with " "
+                    )
+              )
+         else hd :: stripExtraWhiteSpaceHelper(tail(ss)) ;
+
+  local attribute hd::String ;
+  hd = head(ss) ;
+
+  local attribute nxt::String ;
+  nxt = head(tail(ss)) ;
+}
+
+{--
+ - Adds line numbers to a string
+ -}
+function addLineNumbers
+String ::= code::String
+{ return addLineNums(1, 2, lines) ;
+  local lines::[String] = explode("\n",code) ;
+}
+
+function addLineNums
+String ::= next::Integer width::Integer lines::[String]
+{ return if null(lines)
+         then ""
+         else pad ++ ln ++ ": " ++ head(lines) ++ "\n" ++
+              addLineNums(next+1, width, tail(lines)) ;
+  local ln::String = toString(next); 
+  local pad::String = implode("", repeat(" ", width - length(ln)) ) ;
+}

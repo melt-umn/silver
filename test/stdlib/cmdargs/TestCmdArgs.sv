@@ -1,7 +1,6 @@
 
 import silver:util:cmdargs;
 import silver:testing ;
-import lib:extcore ;
 import stdlib;
 
 synthesized attribute isVerbose :: Boolean occurs on CmdArgs;

@@ -7,7 +7,6 @@ import core;
 --import ide;
 
 import lib:errors;
-import lib:extcore;
 import lib:system;
 import silver:xml;
 

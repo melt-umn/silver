@@ -1,7 +1,6 @@
 grammar silver_features:rewrite;
 
 imports silver:testing;
-imports lib:extcore;
 imports silver_features;
 
 imports silver:rewrite as s;

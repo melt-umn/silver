@@ -77,7 +77,7 @@ public final class RawXML {
 	/**
 	 * @param fn The filename of an XML file to convert to a Silver AST (Silver type String)
 	 * @return The Silver AST of the XML file, wrapped in a ParseResult structure.
-	 *   (Silver type core:ParseResult&lt;lib:xml:ast:XMLDocument&gt;)
+	 *   (Silver type core:ParseResult&lt;silver:xml:ast:XMLDocument&gt;)
 	 */
 	public static final silver.core.NParseResult parseXMLFileN(final common.StringCatter fn) {
 		
@@ -100,7 +100,7 @@ public final class RawXML {
 	/**
 	 * @param fn The filename of an XML file (Silver type String)
 	 * @return A parse result containing a direct reference to a Document.
-	 *   (Silver type core:ParseResult&lt;lib:xml:foreigntypes:XML_Document&gt;)
+	 *   (Silver type core:ParseResult&lt;silver:xml:foreigntypes:XML_Document&gt;)
 	 */
 	public static final silver.core.NParseResult parseXMLFileF(final common.StringCatter fn) {
 
@@ -122,8 +122,8 @@ public final class RawXML {
 	/**
 	 * Convert a document of type Foreign DOM to Silver XML AST.
 	 * 
-	 * @param d A DOM Document (Silver type lib:xml:foreigntypes:XML_Document)
-	 * @return An equivalent Silver AST type. (Silver type lib:xml:ast:XMLDocument)
+	 * @param d A DOM Document (Silver type silver:xml:foreigntypes:XML_Document)
+	 * @return An equivalent Silver AST type. (Silver type silver:xml:ast:XMLDocument)
 	 */
 	public static final lib.xml.ast.NXMLDocument documentF2N(org.w3c.dom.Document d) {
 		final DocumentType dt = d.getDoctype();
@@ -145,8 +145,8 @@ public final class RawXML {
 	/**
 	 * Convert a document of type Silver XML AST to a Foreign DOM type
 	 * 
-	 * @param docAst Silver AST Document (Silver type lib:xml:ast:XMLDocument)
-	 * @return An equivalent DOM document (Silver type lib:xml:foreigntypes:XML_Document)
+	 * @param docAst Silver AST Document (Silver type silver:xml:ast:XMLDocument)
+	 * @return An equivalent DOM document (Silver type silver:xml:foreigntypes:XML_Document)
 	 */
 	public static final Document documentN2F(lib.xml.ast.NXMLDocument docAst) {
 		ensureParserSetup();
@@ -161,7 +161,7 @@ public final class RawXML {
 	/**
 	 * Produces a text document from a DOM tree
 	 * 
-	 * @param document DOM tree to unparse (Silver type lib:xml:foreigntypes:XML_Document)
+	 * @param document DOM tree to unparse (Silver type silver:xml:foreigntypes:XML_Document)
 	 * @return String output (Silver type String)
 	 */
 	public static final StringCatter documentF2String(Document document) {
@@ -190,7 +190,7 @@ public final class RawXML {
 	 * @param document The Node or document to query
 	 * @param querystring The XPath query to execute on this document
 	 * @param namespace null, or a [(String, String)] namespace resolver info
-	 * @return The foreign DOM response (Silver type lib:xml:foreigntypes:XML_NodeList)
+	 * @return The foreign DOM response (Silver type silver:xml:foreigntypes:XML_NodeList)
 	 */
 	public static final NodeList xpathQueryNodeSet(Object document, String querystring, common.ConsCell namespace) {
 		try {
@@ -233,8 +233,8 @@ public final class RawXML {
 	/**
 	 * Convert a DOM NodeList to a silver one
 	 * 
-	 * @param nl a DOM NodeList (Silver type lib:xml:foreigntypes:XML_NodeList)
-	 * @return a silver ast NodeList (Silver type lib:xml:ast:XMLNodeList)
+	 * @param nl a DOM NodeList (Silver type silver:xml:foreigntypes:XML_NodeList)
+	 * @return a silver ast NodeList (Silver type silver:xml:ast:XMLNodeList)
 	 */
 	public static final lib.xml.ast.NXMLNodeList nodeListF2N(final NodeList nl) {
 		
@@ -278,8 +278,8 @@ public final class RawXML {
 	/**
 	 * Convert a DOM Node List to a silver list of DOM nodes!
 	 * 
-	 * @param nl a DOM Node list (Silver type lib:xml:foreigntypes:XML_NodeList)
-	 * @return a list of DOM Nodes (Silver type [lib:xml:foreigntypes:XML_Node])
+	 * @param nl a DOM Node list (Silver type silver:xml:foreigntypes:XML_NodeList)
+	 * @return a list of DOM Nodes (Silver type [silver:xml:foreigntypes:XML_Node])
 	 */
 	public static final common.ConsCell nodeListF2NPartial(final NodeList nl) {
 		
@@ -296,7 +296,7 @@ public final class RawXML {
 	 * Convert a DOM NamedNodeMap (attributes) to a list of silver attributes.
 	 * 
 	 * @param al DOM Attribute list
-	 * @return silver ast attribute list (Silver type [lib:xml:ast:XMLAttribute])
+	 * @return silver ast attribute list (Silver type [silver:xml:ast:XMLAttribute])
 	 */
 	private static final common.ConsCell attributesF2N(final NamedNodeMap al) {
 		

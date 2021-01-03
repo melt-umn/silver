@@ -13,7 +13,6 @@ import silver:compiler:driver:util only RootSpec; -- ditto
 
 --import silver:compiler:analysis:typechecking:core;
 
-import lib:extcore;
 
 terminal EqualityTest_t 'equalityTest' lexer classes {KEYWORD};
 
