@@ -5,6 +5,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 import common.Node;
+import common.OriginContext;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Status;
@@ -32,8 +33,9 @@ public final class ReflectedCall<T> {
 		return before.replace(":", ".") + ".P" + after;
 	}
 	private static Class[] sv_args(int arity) {
-		Class[] arg_types = new Class[arity];
+		Class[] arg_types = new Class[arity + 1];
 		Arrays.fill(arg_types, Object.class);
+                arg_types[0] = OriginContext.class;
 		return arg_types;
 	}
 	

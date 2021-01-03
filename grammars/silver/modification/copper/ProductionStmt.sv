@@ -29,6 +29,9 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
     then [err(top.location, "'pluck' allowed only in disambiguation-group parser actions.")]
     else [];
 
+  e.originRules = [];
+  e.isRoot = true;
+
   local tyCk :: TypeCheck = check(e.typerep, terminalIdType());
   tyCk.finalSubst = top.finalSubst;
   top.errors <-
@@ -37,6 +40,8 @@ top::ProductionStmt ::= 'pluck' e::Expr ';'
     else [];
 
   thread downSubst, upSubst on top, e, tyCk, top;
+
+
 
   -- TODO: Enforce that the plucked terminal is one of those that are being disambiguated between.
   -- Currently all that is checked is that it is a terminal.
@@ -56,6 +61,9 @@ top::ProductionStmt ::= 'print' e::Expr ';'
     else [];
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  e.originRules = [];
+  e.isRoot = true;
 
   thread downSubst, upSubst on top, e, errCheck1, top;
   
@@ -89,6 +97,9 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 
   thread downSubst, upSubst on top, e, errCheck1, top;
 
+  e.originRules = [];
+  e.isRoot = true;
+
   errCheck1 = check(e.typerep, val.lookupValue.typeScheme.monoType);
   top.errors <-
        if errCheck1.typeerror
@@ -110,6 +121,9 @@ top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
   top.translation = "pushToken(Terminals." ++ makeCopperName(val.lookupType.fullName) ++ ", (" ++ lexeme.translation ++ ").toString()" ++ ");";
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  lexeme.originRules = [];
+  lexeme.isRoot = false;
 
   thread downSubst, upSubst on top, lexeme, errCheck1, top;
 
@@ -150,6 +164,9 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' e
     else [];
 
   top.translation = s"if(${condition.translation}) {${th.translation}} else {${el.translation}}";
+
+  condition.originRules = [];
+  condition.isRoot = false;
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
@@ -219,6 +236,9 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   thread downSubst, upSubst on top, e, errCheck1, top;
+
+  e.originRules = [];
+  e.isRoot = true;
 
   errCheck1 = check(e.typerep, val.lookupValue.typeScheme.monoType);
   top.errors <-

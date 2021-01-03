@@ -19,6 +19,7 @@ import common.ConsCell;
 import common.DecoratedNode;
 import common.IOToken;
 import common.Lazy;
+import common.OriginContext;
 import common.TopNode;
 
 import core.NIOVal;
@@ -78,7 +79,7 @@ public class Exporter implements IObjectActionDelegate, IExecutableExtension {
 			protected IStatus run(final IProgressMonitor monitor) {
 
 				final NIOVal undecorated_export_result =
-					sv_export.invoke(new Object[]{project, properties.serializeToSilverType(), IOToken.singleton});
+                                    sv_export.invoke(new Object[]{OriginContext.FFI_CONTEXT, project, properties.serializeToSilverType(), IOToken.singleton});
 				final DecoratedNode export_result = undecorated_export_result.decorate();
 				// demand evaluation of io actions
 				export_result.synthesized(core.Init.core_io__ON__core_IOVal);

@@ -1,5 +1,7 @@
 package common;
 
+import common.exceptions.*;
+
 /**
  * Node represents undecorated nodes.  That is, we have children, but no inherited attributes, yet.
  * 
@@ -10,8 +12,7 @@ package common;
  * @author tedinski
  * @see DecoratedNode
  */
-public abstract class Node implements Typed {
-	
+public abstract class Node implements Typed {	
 	// Common manipulators of Node objects.
 	
 	/**

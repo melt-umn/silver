@@ -1,6 +1,7 @@
 grammar silver:modification:defaultattr;
 
 import silver:definition:core;
+import silver:definition:origins;
 import silver:definition:env;
 import silver:definition:type;
 import silver:definition:type:syntax;
@@ -95,5 +96,6 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
   top.lhsNtName = sig.outputElement.typerep.typeName;
   top.signature = sig;
   top.flowGraph = g;
+  top.originsContextSource = useContextLhsAndRules();
 }
 

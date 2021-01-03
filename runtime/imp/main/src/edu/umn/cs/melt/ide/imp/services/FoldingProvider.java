@@ -13,6 +13,7 @@ import org.eclipse.jface.text.source.Annotation;
 import common.ConsCell;
 import common.DecoratedNode;
 import common.Node;
+import common.OriginContext;
 import common.javainterop.ConsCellCollection;
 import core.NLocation;
 
@@ -57,7 +58,7 @@ public class FoldingProvider extends FolderBase implements IExecutableExtension 
 			HashMap<Annotation, Position> newAnnotations,
 			List<Annotation> annotations, Object _ast) {
 		
-		ConsCell folds = silvercall.invoke(new Object[]{_ast});
+               ConsCell folds = silvercall.invoke(new Object[]{OriginContext.FFI_CONTEXT, _ast});
 		
 		for(NLocation loc : new ConsCellCollection<NLocation>(folds)) {
 			DecoratedNode dloc = loc.decorate();

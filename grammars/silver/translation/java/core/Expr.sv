@@ -4,6 +4,8 @@ import silver:util;
 
 import silver:analysis:typechecking:core only finalSubst;
 
+import silver:driver only noOrigins;
+
 function finalType
 Type ::= e::Decorated Expr
 {
@@ -29,13 +31,14 @@ attribute lazyTranslation occurs on Exprs;
 synthesized attribute invokeTranslation :: String occurs on Expr;
 inherited attribute invokeArgs :: Decorated AppExprs occurs on Expr;
 inherited attribute invokeNamedArgs :: Decorated AnnoAppExprs occurs on Expr;
+inherited attribute sameProdAsProductionDefinedOn :: Boolean occurs on Expr;
 
 aspect default production
 top::Expr ::=
 {
   top.invokeTranslation =
     -- dynamic method invocation
-    s"((${finalType(top).outputType.transType})${top.translation}.invoke(new Object[]{${argsTranslation(top.invokeArgs)}}, ${namedargsTranslation(top.invokeNamedArgs)}))";
+    s"((${finalType(top).outputType.transType})${top.translation}.invoke(${makeOriginContextRef(top)}, new Object[]{${argsTranslation(top.invokeArgs)}}, ${namedargsTranslation(top.invokeNamedArgs)}))";
 }
 
 aspect production errorExpr
@@ -126,7 +129,7 @@ top::Expr ::= q::Decorated QName
   top.lazyTranslation = top.translation;
   top.invokeTranslation =
     -- static constructor invocation
-    s"((${finalType(top).outputType.transType})new ${makeProdName(q.lookupValue.fullName)}(${implode(", ", contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs ++ reorderedAnnoAppExprs(top.invokeNamedArgs)))}))";
+    s"((${finalType(top).outputType.transType})new ${makeProdName(q.lookupValue.fullName)}(${implode(", ", makeNewConstructionOrigin(top, !top.sameProdAsProductionDefinedOn) ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs ++ reorderedAnnoAppExprs(top.invokeNamedArgs)))}))";
 }
 
 aspect production functionReference
@@ -138,7 +141,7 @@ top::Expr ::= q::Decorated QName
   top.lazyTranslation = makeProdName(q.lookupValue.fullName) ++ ".factory";
   top.invokeTranslation =
     -- static method invocation
-    s"((${finalType(top).outputType.transType})${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ", contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs))}))";
+    s"((${finalType(top).outputType.transType})${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ", [makeOriginContextRef(top)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs))}))";
 }
 
 aspect production classMemberReference
@@ -169,6 +172,10 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   -- such that these equations could be written on `functionInvocation` instead...
   e.invokeArgs = es;
   e.invokeNamedArgs = anns;
+  e.sameProdAsProductionDefinedOn = case e of
+                                    | baseExpr(qn) -> qn.name == last(explode(":", top.frame.fullName))
+                                    | _ -> false
+                                    end;
 }
 
 aspect production errorApplication
@@ -182,7 +189,6 @@ aspect production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
 {
   top.translation = e.invokeTranslation;
-
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
@@ -283,7 +289,7 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.translation = s"((${finalType(top).transType})${e.translation}.synthesized(${q.dcl.attrOccursIndex}))";
+  top.translation = wrapAccessWithOT(top, s"${e.translation}.synthesized(${q.dcl.attrOccursIndex})");
 
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of
@@ -302,7 +308,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
-  top.translation = s"((${finalType(top).transType})${e.translation}.inherited(${q.dcl.attrOccursIndex}))";
+  top.translation = wrapAccessWithOT(top, s"${e.translation}.inherited(${q.dcl.attrOccursIndex})");
 
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of
@@ -517,6 +523,13 @@ top::Expr ::= f::Float_t
   top.lazyTranslation = top.translation;
 }
 
+aspect production noteAttachment
+top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
+{
+  top.translation = e.translation;
+  top.lazyTranslation = e.lazyTranslation;
+}
+
 aspect production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
@@ -623,6 +636,7 @@ String ::= e::Decorated Expr
   -- We're *unlikely* to be close to hitting the 64K method limit, but
   -- we have hit the 64K bytecode limit in the past, which is why `Init` farms
   -- initialization code out across each production. So who knows.
-  return s"new common.Lazy() { public final Object eval(final common.DecoratedNode context) { return ${e.translation}; } }";
+  local swizzleOrigins::String = if e.config.noOrigins then "" else "final common.OriginContext originCtx = context.originCtx;";
+  return s"new common.Lazy() { public final Object eval(final common.DecoratedNode context) { ${swizzleOrigins} return ${e.translation}; } }";
 }
 

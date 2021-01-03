@@ -1,4 +1,5 @@
 import silver:definition:flow:ast only ExprVertexInfo, FlowVertex;
+import silver:definition:env;
 
 --- Concrete Syntax for lambdas
 --------------------------------------------------------------------------------
@@ -34,6 +35,7 @@ top::Expr ::= params::ProductionRHS e::Expr
   propagate flowDeps, flowDefs;
   
   e.env = newScopeEnv(params.lambdaDefs, top.env);
+  e.frame = inLambdaContext(top.frame, sourceGrammar=top.frame.sourceGrammar); --TODO: Is this sourceGrammar correct?
 }
 
 monoid attribute lambdaDefs::[Def] with [], ++;

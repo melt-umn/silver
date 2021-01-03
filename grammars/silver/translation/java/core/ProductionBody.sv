@@ -183,3 +183,8 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   top.translation = "";
 }
 
+aspect production attachNoteStmt
+top::ProductionStmt ::= 'attachNote' note::Expr ';'
+{
+  top.translation = "";
+}

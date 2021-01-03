@@ -7,7 +7,7 @@ propagate upSubst, downSubst
    excluding undecoratedAccessHandler, forwardAccess, decoratedAccessHandler,
      and, or, not, gt, lt, gteq, lteq, eqeq, neq, ifThenElse, plus, minus, multiply, divide, modulus,
      decorateExprWith, exprInh, presentAppExpr,
-     newFunction, terminalConstructor;
+     newFunction, terminalConstructor, noteAttachment;
 
 aspect production productionReference
 top::Expr ::= q::Decorated QName
@@ -97,8 +97,24 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     if errCheck1.typeerror
     then [err(top.location, "Attribute " ++ q.name ++ " being accessed from an undecorated type.")]
     else [];
-  
+
   thread downSubst, upSubst on top, errCheck1, top;
+}
+  
+
+aspect production noteAttachment
+top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
+{
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
+
+  thread downSubst, upSubst on top, note, e, errCheck1, top;
+  
+  errCheck1 = check(note.typerep, nonterminalType("core:OriginNote", 0, false));
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "First argument to attachNote must be OriginNote, was " ++ errCheck1.leftpp)]
+       else [];
 }
 
 aspect production and

@@ -104,14 +104,16 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String k::Integer
+top::Type ::= fn::String k::Integer tracked::Boolean
 {
   top.unify = 
     case top.unifyWith of
-    | nonterminalType(ofn, ok) ->
+    | nonterminalType(ofn, ok, otracked) ->
         if fn == ofn
         then if k == ok
-          then emptySubst()
+          then if tracked!=otracked 
+            then error("Internal Error: Mismatching trackedness for " ++ fn ++ " when unifying. Try rebuilding with --clean. \nSee https://github.com/melt-umn/silver/pull/333 and https://github.com/melt-umn/silver/issues/36 .")
+            else emptySubst()
           else error("kind mismatch during unification for " ++ prettyType(top) ++ " and " ++ prettyType(top.unifyWith)) -- Should be impossible
         else errorSubst("Tried to unify conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
     | ntOrDecType(_, _) -> errorSubst("nte-nodte: try again")
@@ -155,7 +157,7 @@ top::Type ::= nt::Type  hidden::Type
         -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
         unifyAllShortCircuit([ote, top.unifyWith],
                              [nt,  hidden])
-    | nonterminalType(_, _) ->
+    | nonterminalType(_, _, _) ->
         -- Ensure compatibility between nonterminal types, then specialize ourselves
         unifyAllShortCircuit([top.unifyWith, top.unifyWith],
                              [nt,            hidden])

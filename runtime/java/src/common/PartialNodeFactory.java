@@ -1,5 +1,8 @@
 package common;
 
+import core.NOriginInfo;
+
+
 /**
  * Takes a NodeFactory, and transforms it into a NodeFactory with a few
  * argument positions filled in already. (i.e. partial function application)
@@ -42,7 +45,7 @@ public class PartialNodeFactory<T> extends NodeFactory<T> {
 	}
 	
 	@Override
-	public T invoke(final Object[] restargs, final Object[] namedArgs) {
+	public T invoke(final common.OriginContext originCtx, final Object[] restargs, final Object[] namedArgs) {
 		final int fullsize = args.length + restargs.length;
 		final Object[] fullargs = new Object[fullsize];
 		
@@ -57,7 +60,7 @@ public class PartialNodeFactory<T> extends NodeFactory<T> {
 			}
 		}
 		// We pass through namedArgs unchanged here.
-		return ref.invoke(fullargs, namedArgs);
+		return ref.invoke(originCtx, fullargs, namedArgs);
 	}
 	
 	@Override

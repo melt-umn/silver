@@ -33,7 +33,9 @@ terminal Optional_kwd 'option'  lexer classes {MODSTMT};
 terminal Abstract_kwd    'abstract'     lexer classes {KEYWORD,RESERVED};
 terminal Aspect_kwd      'aspect'       lexer classes {KEYWORD,RESERVED};
 terminal Attribute_kwd   'attribute'    lexer classes {KEYWORD,RESERVED};
+terminal Class_kwd       'class'        lexer classes {KEYWORD};
 terminal Closed_kwd      'closed'       lexer classes {KEYWORD};
+terminal Tracked_kwd     'tracked'      lexer classes {KEYWORD};
 terminal Concrete_kwd    'concrete'     lexer classes {KEYWORD,RESERVED};
 terminal Decorate_kwd    'decorate'     lexer classes {KEYWORD,RESERVED};
 terminal Else_kwd        'else'         lexer classes {KEYWORD,RESERVED}, precedence = 4, association = left; -- Association needed for dangling else in action code.
@@ -58,15 +60,16 @@ terminal Then_kwd        'then'         lexer classes {KEYWORD,RESERVED};
 terminal To_kwd          'to'           lexer classes {KEYWORD,RESERVED};
 terminal Type_t          'type'         lexer classes {KEYWORD};
 terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED};
-terminal Class_kwd       'class'        lexer classes {KEYWORD};
+terminal End_kwd         'end'          lexer classes {KEYWORD,RESERVED};
 
-terminal Length_kwd    'length'    lexer classes {BUILTIN,RESERVED};
-terminal ToBoolean_kwd 'toBoolean' lexer classes {BUILTIN,RESERVED};
-terminal ToFloat_kwd   'toFloat'   lexer classes {BUILTIN,RESERVED};
-terminal ToInt_kwd     'toInt'     lexer classes {BUILTIN,RESERVED}; -- Legacy
-terminal ToInteger_kwd 'toInteger' lexer classes {BUILTIN,RESERVED};
-terminal ToString_kwd  'toString'  lexer classes {BUILTIN,RESERVED};
-terminal Reify_kwd     'reify'     lexer classes {BUILTIN,RESERVED};
+terminal Length_kwd     'length'     lexer classes {BUILTIN,RESERVED};
+terminal ToBoolean_kwd  'toBoolean'  lexer classes {BUILTIN,RESERVED};
+terminal ToFloat_kwd    'toFloat'    lexer classes {BUILTIN,RESERVED};
+terminal ToInt_kwd      'toInt'      lexer classes {BUILTIN,RESERVED}; -- Legacy
+terminal ToInteger_kwd  'toInteger'  lexer classes {BUILTIN,RESERVED};
+terminal ToString_kwd   'toString'   lexer classes {BUILTIN,RESERVED};
+terminal Reify_kwd      'reify'      lexer classes {BUILTIN,RESERVED};
+terminal AttachNote_kwd 'attachNote' lexer classes {BUILTIN,RESERVED};
 
 terminal Comma_t       ','  precedence = 4;
 terminal Or_t          '||' precedence = 5, association = left;

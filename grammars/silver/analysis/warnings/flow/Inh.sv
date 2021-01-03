@@ -350,6 +350,18 @@ top::ProductionStmt ::= 'return' e::Expr ';'
     else [];
 }
 
+aspect production attachNoteStmt
+top::ProductionStmt ::= 'attachNote' e::Expr ';'
+{
+  local transitiveDeps :: [FlowVertex] =
+    expandGraph(e.flowDeps, top.frame.flowGraph);
+
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh)
+    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs))
+    else [];
+}
+
 -- Skipping `baseCollectionValueDef`: it forwards to `localValueDef`
 -- Partially skipping `appendCollectionValueDef`: it likewise forwards
 -- But we do have a special "exceeds check" to do here:

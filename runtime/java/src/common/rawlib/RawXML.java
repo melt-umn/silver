@@ -90,10 +90,10 @@ public final class RawXML {
 			throw new TraceException("IO error while parsing xml file " + fn.toString(), e);
 		} catch (SAXException e) {
 			// Return the failure data structure, with the parse error.
-			return new core.PparseFailed(new common.StringCatter(e.toString()), null);
+			return core.PparseFailed.rtConstruct(null, new common.StringCatter(e.toString()), null);
 		}
 		
-		return new core.PparseSucceeded(documentF2N(d), null);
+		return core.PparseSucceeded.rtConstruct(null, documentF2N(d), null);
 		//  fmap documentF2n . parseXMLFileF  -- OH WAIT
 	}
 	
@@ -113,10 +113,10 @@ public final class RawXML {
 			throw new TraceException("IO error while parsing xml file " + fn.toString(), e);
 		} catch (SAXException e) {
 			// Return the failure data structure, with the parse error.
-			return new core.PparseFailed(new common.StringCatter(e.toString()), null);
+			return core.PparseFailed.rtConstruct(null, new common.StringCatter(e.toString()), null);
 		}
 		
-		return new core.PparseSucceeded(d, null);	
+		return core.PparseSucceeded.rtConstruct(null, d, null);	
 	}
 	
 	/**

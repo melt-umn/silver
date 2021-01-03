@@ -169,11 +169,11 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String k::Integer
+top::Type ::= fn::String k::Integer _
 {
   top.refine = 
     case top.refineWith of
-    | nonterminalType(ofn, ok) ->
+    | nonterminalType(ofn, ok, _) ->
         if fn == ofn && k == ok
         then emptySubst()
         else errorSubst("Tried to refine conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
@@ -243,7 +243,7 @@ Substitution ::= scrutineeType::Type  constructorType::Type
   return case scrutineeType, constructorType of
          | decoratedType(t1), decoratedType(t2) ->
            case t1.baseType, t2.baseType of
-           | nonterminalType(n1, _), nonterminalType(n2, _) when n1 == n2 ->
+           | nonterminalType(n1, _, _), nonterminalType(n2, _, _) when n1 == n2 ->
              refineAll(t1.argTypes, t2.argTypes)
            | _, _ -> emptySubst()
            end

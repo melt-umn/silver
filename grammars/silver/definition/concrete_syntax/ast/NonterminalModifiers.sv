@@ -5,6 +5,7 @@ imports silver:definition:core only nonterminalName;
 {--
  - Modifiers for nonterminals.
  -}
+
 nonterminal SyntaxNonterminalModifiers with cstEnv, cstErrors, customLayout, nonterminalName;
 
 propagate cstErrors, customLayout on SyntaxNonterminalModifiers;
@@ -46,3 +47,4 @@ top::SyntaxNonterminalModifier ::= terms::[String]
 
   top.customLayout := just(terms);
 }
+

@@ -44,6 +44,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
 {--
  - Represents a constraint on a type, e.g. a type class instance
  -}
+
 nonterminal Context with freeVariables;
 
 abstract production instContext
@@ -55,7 +56,14 @@ top::Context ::= cls::String t::Type
 {--
  - Silver Type Representations.
  -}
-nonterminal Type with kindArity, freeVariables;
+nonterminal Type with kindArity, freeVariables, tracked;
+synthesized attribute tracked :: Boolean;
+
+aspect default production
+top::Type ::=
+{
+  top.tracked = false;
+}
 
 {--
  - This is a (universally quantified) type variable.
@@ -86,6 +94,7 @@ top::Type ::= c::Type a::Type
 {
   top.kindArity = if c.kindArity > 0 then c.kindArity - 1 else 0;
   top.freeVariables = setUnionTyVars(c.freeVariables, a.freeVariables);
+  top.tracked = c.tracked;
 }
 
 {--
@@ -155,12 +164,14 @@ top::Type ::=
  - An (undecorated) nonterminal type.
  - @param fn  The fully qualified name of the nonterminal.
  - @param params  The type parameters for that nonterminal.
+ - @param tracked  Might this NT be tracked.
  -}
 abstract production nonterminalType
-top::Type ::= fn::String k::Integer
+top::Type ::= fn::String k::Integer tracked::Boolean
 {
   top.kindArity = k;
   top.freeVariables = [];
+  top.tracked = tracked;
 }
 
 {--

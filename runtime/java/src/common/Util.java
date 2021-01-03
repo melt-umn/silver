@@ -32,6 +32,27 @@ import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
  * @author tedinski, bodin, krame505
  */
 public final class Util {
+	private static String forceInit;
+	private static ArrayList<Integer> freeThisToPrintErrors;
+
+	public static void init() {
+		// forceInit = "foo" + "bar" + "baz";
+		// freeThisToPrintErrors = new ArrayList<Integer>();
+		// for (int i=0; i<1_000_000; i++) {
+		// 	freeThisToPrintErrors.add(i);
+		// }
+	}
+
+	public static void stackProbe(int count) {
+		long a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z;
+		long aa, bb, cc, dd, ee, ff, gg, hh, ii, jj, kk, ll, mm, nn, oo, pp, qq, rr, ss, tt, uu, vv, ww, xx, yy, zz;
+		if (count!=0) stackProbe(count-1);
+	}
+
+	public static void stackProbe() {
+		// stackProbe(1_000);
+	}
+
 	/**
 	 * Ensures that a (potential) closure is evaluated.
 	 *
@@ -72,9 +93,9 @@ public final class Util {
 
 	public static core.NMaybe safetoInt(String s) {
 		try {
-			return new core.Pjust( Integer.valueOf(s) );
+			return core.Pjust.rtConstruct(null, Integer.valueOf(s) );
 		} catch(NumberFormatException e) {
-			return new core.Pnothing();
+			return core.Pnothing.rtConstruct(null);
 		}
 	}
 
@@ -140,6 +161,8 @@ public final class Util {
 	}
 
 	public static void printStackCauses(Throwable e) {
+		freeThisToPrintErrors = null;
+
 		System.err.println("\nAn error occured.  Silver stack trace follows. (To see full traces including java elements, SILVERTRACE=1)\n");
 
 		if(! "1".equals(System.getenv("SILVERTRACE"))) {
@@ -342,10 +365,10 @@ public final class Util {
 		try {
 			ROOT tree = parser.parse(new StringReader(javaString), javaFile);
 			Object terminals = getTerminals(parser);
-			return new core.PparseSucceeded(tree, terminals);
+			return core.PparseSucceeded.rtConstruct(null, tree, terminals);
 		} catch(CopperSyntaxError e) {
 			// To create a space, we increment the ending columns and indexes by 1.
-			NLocation loc = new Ploc(
+			NLocation loc = Ploc.rtConstruct(null, 
 				new StringCatter(e.getVirtualFileName()),
 				e.getVirtualLine(),
 				e.getVirtualColumn(),
@@ -353,17 +376,17 @@ public final class Util {
 				e.getVirtualColumn() + 1,
 				(int)(e.getRealCharIndex()),
 				(int)(e.getRealCharIndex()) + 1);
-			NParseError err = new PsyntaxError(
+			NParseError err = PsyntaxError.rtConstruct(null, 
 					new common.StringCatter(e.getMessage()),
 					loc,
 					convertStrings(e.getExpectedTerminalsDisplay().iterator()),
 					convertStrings(e.getMatchedTerminalsDisplay().iterator()));
 			Object terminals = getTerminals(parser);
-			return new PparseFailed(err, terminals);
+			return PparseFailed.rtConstruct(null, err, terminals);
 		} catch(CopperParserException e) {
 			// Currently this is dead code, but perhaps in the future we'll see IOException wrapped in here.
-			NParseError err = new PunknownParseError(new StringCatter(e.getMessage()), file);
-			return new PparseFailed(err, null);
+			NParseError err = PunknownParseError.rtConstruct(null, new StringCatter(e.getMessage()), file);
+			return PparseFailed.rtConstruct(null, err, null);
 		} catch(Throwable t) {
 			throw new TraceException("An error occured while parsing", t);
 		}
@@ -393,7 +416,7 @@ public final class Util {
 	 * Converts a common.Terminal to a Silver core:TerminalDescriptor.
 	 */
 	private static NTerminalDescriptor terminalToTerminalDescriptor(Terminal t) {
-        return new PterminalDescriptor(
+        return PterminalDescriptor.rtConstruct(null, 
             t.lexeme,
             convertStrings(Arrays.stream(t.getLexerClasses()).iterator()),
             new StringCatter(t.getName()),

@@ -105,6 +105,9 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 
   top.fullName = id.lookupValue.fullName;
 
+  e.originRules = [];
+  e.isRoot = true;
+
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;

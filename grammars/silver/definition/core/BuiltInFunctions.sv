@@ -5,6 +5,8 @@ top::Expr ::= 'length' '(' e::Expr ')'
 {
   top.unparse = "length(" ++ e.unparse ++ ")";
 
+  e.isRoot = false;
+
   top.typerep = intType(); -- is this necessary? for flowtype reasons?
 
   forwards to performSubstitution(e.typerep, e.upSubst).lengthDispatcher(e, top.location);
@@ -42,6 +44,8 @@ top::Expr ::= 'toInteger' '(' e::Expr ')'
   top.unparse = "toInteger(" ++ e.unparse ++ ")";
 
   top.typerep = intType();
+
+  e.isRoot = false;
 }
 
 concrete production toBooleanFunction
@@ -50,6 +54,8 @@ top::Expr ::= 'toBoolean' '(' e::Expr ')'
   top.unparse = "toBoolean(" ++ e.unparse ++ ")";
 
   top.typerep = boolType();
+
+  e.isRoot = false;
 }
 
 concrete production toFloatFunction
@@ -58,6 +64,8 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
   top.unparse = "toFloat(" ++ e.unparse ++ ")";
 
   top.typerep = floatType();
+
+  e.isRoot = false;
 }
 
 concrete production toStringFunction
@@ -66,6 +74,8 @@ top::Expr ::= 'toString' '(' e::Expr ')'
   top.unparse = "toString(" ++ e.unparse ++ ")";
 
   top.typerep = stringType();
+
+  e.isRoot = false;
 }
 
 concrete production reifyFunctionLiteral
@@ -74,7 +84,7 @@ top::Expr ::= 'reify'
   top.unparse = "reify";
 
   top.typerep =
-    functionType(appTypes(nonterminalType("core:Either", 2), [stringType(), freshType()]), [nonterminalType("core:reflect:AST", 0)], []);
+    functionType(appTypes(nonterminalType("core:Either", 2, false), [stringType(), freshType()]), [nonterminalType("core:reflect:AST", 0, true)], []);
 }
 
 concrete production newFunction
@@ -83,6 +93,8 @@ top::Expr ::= 'new' '(' e::Expr ')'
   top.unparse = "new(" ++ e.unparse ++ ")";
 
   top.typerep = performSubstitution(e.typerep, top.upSubst).decoratedType;
+
+  e.isRoot = false;
 }
 
 {--
@@ -96,6 +108,9 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
   top.unparse = "terminal(" ++ t.unparse ++ ", " ++ es.unparse ++ ", " ++ el.unparse ++ ")";
 
   top.typerep = t.typerep;
+
+  es.isRoot = false;
+  el.isRoot = false;
 }
 
 

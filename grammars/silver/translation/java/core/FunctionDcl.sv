@@ -17,8 +17,10 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   local argsAccess :: String =
     implode(", ", map((.contextRefElem), namedSig.contexts) ++ map((.childRefElem), namedSig.inputElements));
 
+  local commaIfArgs :: String = if length(namedSig.inputElements)!=0 then "," else "";
+
   local funBody :: String =
-s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate();
+s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate(originCtx);
 			//${head(body.uniqueSignificantExpression).unparse}
 			return (${namedSig.outputElement.typerep.transType})(${head(body.uniqueSignificantExpression).translation});
 """;
@@ -32,8 +34,8 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
   top.errors <-
     if id.name == "main" &&
        unify(namedSig.typerep,
-         functionType(appType(nonterminalType("core:IOVal", 1), intType()), [
-           appType(nonterminalType("core:List", 1), stringType()),
+         functionType(appType(nonterminalType("core:IOVal", 1, false), intType()), [
+           appType(nonterminalType("core:List", 1, false), stringType()),
            ioForeignType], [])).failure
     then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IO). Instead it has type " ++ prettyType(namedSig.typerep))]
     else [];
@@ -47,8 +49,12 @@ String ::= whatGrammar::String whatName::String whatSig::NamedSignature whatResu
   local localVar :: String = 
     s"count_local__ON__${makeIdName(whatGrammar)}_${whatName}";
 
+  local commaIfArgs :: String = if length(whatSig.inputElements) != 0 then "," else "";
+
   return s"""
 package ${makeName(whatGrammar)};
+
+import core.NOriginInfo;
 
 public final class ${className} extends common.FunctionNode {
 
@@ -128,7 +134,7 @@ ${implode("", map(makeChildAccessCaseLazy, whatSig.inputElements))}
 		return "${whatSig.fullName}";
 	}
 
-	public static ${whatSig.outputElement.typerep.transType} invoke(${whatSig.javaSignature}) {
+	public static ${whatSig.outputElement.typerep.transType} invoke(final common.OriginContext originCtx ${commaIfArgs} ${whatSig.javaSignature}) {
 		try {
 ${whatResult}
 		} catch(Throwable t) {
@@ -150,8 +156,8 @@ ${sflatMap((.contextInitTrans), whatSig.contexts)}
 		}
 
 		@Override
-		public final ${whatSig.outputElement.typerep.transType} invoke(final Object[] children, final Object[] namedNotApplicable) {
-			return ${className}.invoke(${implode(", ", map((.contextRefElem), whatSig.contexts) ++ unpackChildren(0, whatSig.inputElements))});
+		public final ${whatSig.outputElement.typerep.transType} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] namedNotApplicable) {
+			return ${className}.invoke(${implode(", ", ["originCtx"] ++ map((.contextRefElem), whatSig.contexts) ++ unpackChildren(0, whatSig.inputElements))});
 		}
 		
 		@Override
@@ -177,13 +183,16 @@ String ::= whatGrammar::String
   return s"""
 package ${package};
 
+import core.*;
+
 public class Main {
 	public static void main(String[] args) {
+		common.Util.init();
 		${package}.Init.initAllStatics();
 		${package}.Init.init();
 		${package}.Init.postInit();
 		try {
-			common.Node rv = (common.Node) ${package}.Pmain.invoke(cvargs(args), common.IOToken.singleton);
+			common.Node rv = (common.Node) ${package}.Pmain.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args), common.IOToken.singleton);
 			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
 			drv.synthesized(core.Init.core_io__ON__core_IOVal); // demand the io token
 			System.exit( (Integer)drv.synthesized(core.Init.core_iovalue__ON__core_IOVal) );

@@ -1,6 +1,6 @@
 grammar silver:driver;
 
-attribute genLocation, doClean, displayVersion, warnError, searchPath, outName, buildGrammar, silverHomeOption, noBindingChecking occurs on CmdArgs;
+attribute genLocation, doClean, displayVersion, warnError, forceOrigins, noOrigins, noRedex, tracingOrigins, searchPath, outName, buildGrammar, silverHomeOption, noBindingChecking occurs on CmdArgs;
 
 synthesized attribute searchPath :: [String];
 synthesized attribute outName :: [String];
@@ -10,6 +10,10 @@ synthesized attribute silverHomeOption :: [String];
 synthesized attribute displayVersion :: Boolean;
 synthesized attribute doClean :: Boolean;
 synthesized attribute warnError :: Boolean;
+synthesized attribute forceOrigins :: Boolean;
+synthesized attribute noOrigins :: Boolean;
+synthesized attribute noRedex :: Boolean;
+synthesized attribute tracingOrigins :: Boolean;
 
 synthesized attribute buildGrammar :: [String];
 
@@ -27,6 +31,10 @@ top::CmdArgs ::= l::[String]
   top.silverHomeOption = [];
   top.buildGrammar= l;
   top.noBindingChecking = false;
+  top.forceOrigins = false;
+  top.noOrigins = false;
+  top.noRedex = false;
+  top.tracingOrigins = false;
 }
 abstract production versionFlag
 top::CmdArgs ::= rest::CmdArgs
@@ -44,6 +52,30 @@ abstract production warnErrorFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.warnError = true;
+  forwards to rest;
+}
+abstract production forceOriginsFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.forceOrigins = true;
+  forwards to rest;
+}
+abstract production noOriginsFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.noOrigins = true;
+  forwards to rest;
+}
+abstract production tracingOriginsFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.tracingOrigins = true;
+  forwards to rest;
+}
+abstract production noRedexFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.noRedex = true;
   forwards to rest;
 }
 abstract production outFlag
@@ -98,7 +130,11 @@ Either<String  Decorated CmdArgs> ::= args::[String]
      pair("--version", flag(versionFlag)),
      pair("--clean",   flag(cleanFlag)),
      pair("--dont-analyze", flag(nobindingFlag)),
-     pair("--warn-error", flag(warnErrorFlag))
+     pair("--warn-error", flag(warnErrorFlag)),
+     pair("--no-origins", flag(noOriginsFlag)),
+     pair("--force-origins", flag(forceOriginsFlag)),
+     pair("--no-redex", flag(noRedexFlag)),
+     pair("--tracing-origins", flag(tracingOriginsFlag))
     ];
   -- Always start with \t, name options descriptively in <>, do not end with \n!
   flagdescs <- 
@@ -107,7 +143,11 @@ Either<String  Decorated CmdArgs> ::= args::[String]
      "\t--version  : display version",
      "\t--clean  : overwrite interface files",
      "\t-G <path>  : Location to store generate files (SILVER_GEN)",
-     "\t--warn-error  : treat warnings as errors"
+     "\t--warn-error  : treat warnings as errors",
+     "\t--no-origins  : treat all nonterminals as un`tracked`",
+     "\t--force-origins  : treat all nonterminals as `tracked`",
+     "\t--no-redex  : do not collect redex information",
+     "\t--tracing-origins  : attach source locations as origin notes to trace control flow"
     ];
   
   local usage :: String = 
@@ -124,6 +164,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
     else if length(a.outName) > 1 then ["Multiple options given for -o flag: " ++ implode(" ", a.outName)]
     else if length(a.genLocation) > 1 then ["Multiple options given for -G flag: " ++ implode(" ", a.genLocation)]
     else if length(a.silverHomeOption) > 1 then ["Multiple options given for --silver-home flag: " ++ implode(" ", a.silverHomeOption)]
+    else if a.noOrigins && a.forceOrigins then ["Can't specify --no-origins and --force-origins"]
     else [];
   
   return if !null(errors)

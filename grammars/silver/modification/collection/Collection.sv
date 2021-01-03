@@ -22,9 +22,9 @@ top::NameOrBOperator ::= e::Expr
 
   top.operation =
     case e of
-    | functionReference(q) -> functionOperation(e, makeProdName(q.lookupValue.fullName), false, true)
-    | productionReference(q) -> functionOperation(e, makeProdName(q.lookupValue.fullName), false, false)
-    | _ -> functionOperation(e, e.translation, true, false)
+    | functionReference(q) -> functionOperation(e, makeProdName(q.lookupValue.fullName), false, true, false)
+    | productionReference(q) -> functionOperation(e, makeProdName(q.lookupValue.fullName), false, false, top.operatorForType.tracked)
+    | _ -> functionOperation(e, e.translation, true, false, false)
     end;
 
   top.errors := e.errors;
@@ -103,6 +103,7 @@ top::NameOrBOperator ::= '+'
                 | _ -> [err(top.location, "+ operator will only work for collections of type Integer")]
                 end;
 }
+
 concrete production mulOperator
 top::NameOrBOperator ::= '*'
 {
@@ -118,7 +119,7 @@ top::NameOrBOperator ::= '*'
 -- This would be much nicer if we could pass the Decorated Expr here,
 -- but this nonterminal must be serializable as part of the environment.
 abstract production functionOperation
-top::Operation ::= e::Expr eTrans::String isRef::Boolean isFunction::Boolean
+top::Operation ::= e::Expr eTrans::String isRef::Boolean isFunction::Boolean trackConstruction::Boolean
 {}
 abstract production plusPlusOperationString
 top::Operation ::= 
@@ -242,6 +243,8 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.unparse = "\t" ++ val.unparse ++ " := " ++ e.unparse ++ ";";
 
+  e.isRoot = false;
+
   e.downSubst = top.downSubst;
   -- the real type checking is done by the forward, but we must ensure things are tied up nicely
   -- otherwise we don't specialize ntOrDecs in OUR e
@@ -253,6 +256,8 @@ abstract production appendCollectionValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.unparse = "\t" ++ val.unparse ++ " <- " ++ e.unparse ++ ";";
+
+  e.isRoot = false;
 
   e.downSubst = top.downSubst;
   -- the real type checking is done by the forward, but we must ensure things are tied up nicely
@@ -275,6 +280,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 
   thread downSubst, upSubst on top, e, errCheck1, top;
 
+  e.isRoot = false;
+
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror
@@ -291,6 +298,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   thread downSubst, upSubst on top, e, errCheck1, top;
+
+  e.isRoot = false;
 
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
@@ -312,6 +321,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 
   thread downSubst, upSubst on top, e, errCheck1, top;
 
+  e.isRoot = false;
+
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-
     if errCheck1.typeerror
@@ -328,6 +339,8 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   thread downSubst, upSubst on top, e, errCheck1, top;
+
+  e.isRoot = false;
 
   errCheck1 = check(attr.typerep, e.typerep);
   top.errors <-

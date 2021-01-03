@@ -1,7 +1,7 @@
 grammar silver:translation:java:core;
 
 aspect production nonterminalDcl
-top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
+top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
   local className :: String = "N" ++ id.name;
   
@@ -9,8 +9,11 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
   local synVar :: String = "count_syn__ON__" ++ id.name;
   
   local myAnnos :: [NamedSignatureElement] =
-    annotationsForNonterminal(nonterminalType(fName, length(tl.types)), top.env);
-  
+    annotationsForNonterminal(nonterminalType(fName, length(tl.types), quals.tracked), top.env);
+
+  local commaIfAnnos :: String = if length(myAnnos)!=0 then "," else "";
+  local wantsTracking :: Boolean = typeWantsTracking(nonterminalType(fName, length(tl.types), quals.tracked), top.config, top.env);
+
   top.initWeaving := s"""
 	public static int ${inhVar} = 0;
 	public static int ${synVar} = 0;""";
@@ -19,8 +22,9 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
 package ${makeName(top.grammarName)};
 
 import java.util.*;
+import core.*;
 
-public abstract class ${className} extends common.Node${
+public abstract class ${className} extends common.${if wantsTracking then "TrackedNode" else "Node"}${
   (if null(myAnnos) then "" else 
     " implements " ++ implode(", ", map(makeAnnoName, map((.elementName), myAnnos)))
   )} {
@@ -34,7 +38,8 @@ public abstract class ${className} extends common.Node${
 
 	public static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];
 
-	protected ${className}(${implode(", ", map((.annoSigElem), myAnnos))}) {
+	protected ${className}(${if wantsTracking then "final NOriginInfo origin"++commaIfAnnos else ""} ${implode(", ", map((.annoSigElem), myAnnos))}) {
+		${if wantsTracking then "super(origin)" else ""};
 ${implode("", map(makeAnnoAssign, myAnnos))}
 	}
 

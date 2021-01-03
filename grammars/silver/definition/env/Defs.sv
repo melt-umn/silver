@@ -165,14 +165,9 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar] context::Context ty
   return valueDef(defaultEnvItem(classMemberDcl(fn,bound,context,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function ntDef
-Def ::= sg::String  sl::Location  fn::String  arity::Integer
+Def ::= sg::String  sl::Location  fn::String  arity::Integer  closed::Boolean  tracked::Boolean
 {
-  return typeDef(defaultEnvItem(ntDcl(fn,arity,false,sourceGrammar=sg,sourceLocation=sl)));
-}
-function closedNtDef
-Def ::= sg::String  sl::Location  fn::String  arity::Integer
-{
-  return typeDef(defaultEnvItem(ntDcl(fn,arity,true,sourceGrammar=sg,sourceLocation=sl)));
+  return typeDef(defaultEnvItem(ntDcl(fn,arity,closed,tracked,sourceGrammar=sg,sourceLocation=sl)));
 }
 function termDef
 Def ::= sg::String  sl::Location  fn::String  regex::Regex

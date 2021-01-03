@@ -137,7 +137,7 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String _
+top::Type ::= fn::String _ _
 {
   top.isDecorable = true;
   top.unifyInstanceNonterminal = emptySubst();

@@ -26,7 +26,7 @@ public final class RawTreeMap {
 		ConsCell ret = ConsCell.nil;
 		for(Object key : t.descendingKeySet()) {
 			for(Object value : new ConsCellCollection<Object>(t.get(key))) {
-				ret = new ConsCell(new core.Ppair(key, value), ret);
+				ret = new ConsCell(core.Ppair.rtConstruct(null, key, value), ret);
 			}
 		}
 		return ret;

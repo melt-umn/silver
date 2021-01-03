@@ -421,6 +421,12 @@ top::Expr ::= f::Float_t
   top.transform = floatASTExpr(toFloat(f.lexeme));
 } 
 
+aspect production noteAttachment
+top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
+{
+  top.transform = noteAttachmentASTExpr(note.transform, e.transform);
+}
+
 aspect production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {

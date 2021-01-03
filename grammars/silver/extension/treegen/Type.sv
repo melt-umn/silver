@@ -57,7 +57,7 @@ top::Type ::=
   top.idNameForGenArb = "String";
 }
 aspect production nonterminalType
-top::Type ::= fn::String _
+top::Type ::= fn::String _ _
 {
   top.idNameForGenArb = substring(lastIndexOf(":", fn) + 1, length(fn), fn);
 }

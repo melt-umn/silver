@@ -1,5 +1,8 @@
 package common;
 
+import core.NOriginInfo;
+
+
 /**
  * NodeFactories are used when we take references to Silver functions.
  * 
@@ -13,7 +16,7 @@ public abstract class NodeFactory<T> implements Typed {
 	 * Invoke a function or production.
 	 * @return The return value (or node constructed.)
 	 */
-	public abstract T invoke(final Object[] args, final Object[] namedArgs);
+	public abstract T invoke(final common.OriginContext originCtx, final Object[] args, final Object[] namedArgs);
 	
 	// Override with a more specific return type
 	@Override

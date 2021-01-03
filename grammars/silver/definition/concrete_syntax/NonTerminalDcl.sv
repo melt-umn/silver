@@ -1,7 +1,9 @@
 grammar silver:definition:concrete_syntax;
 
+import silver:driver only noOrigins, forceOrigins;
+
 aspect production nonterminalDcl
-top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
+top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
   -- TODO: We are building this for every nonterminal declaration, when it should
   -- be the same for all nonterminals in the grammar
@@ -18,12 +20,13 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
   syntax.superClasses = error("This shouldn't be needed...");
   syntax.subClasses = error("This shouldn't be needed...");
   
+  production isThisTracked::Boolean = top.config.forceOrigins || ((!top.config.noOrigins) && quals.tracked);
   local exportedLayoutTerms::[String] = syntax.allIgnoreTerminals;
   local exportedProds::[String] = map((.fullName), syntax.allProductions);
   
   top.syntaxAst :=
     [syntaxNonterminal(
-      nonterminalType(fName, length(tl.types)), nilSyntax(),
+      nonterminalType(fName, length(tl.types), isThisTracked), nilSyntax(),
       exportedProds, exportedLayoutTerms,
       foldr(consNonterminalMod, nilNonterminalMod(), nm.nonterminalModifiers))];
 }

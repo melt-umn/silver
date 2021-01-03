@@ -67,7 +67,7 @@ top::Expr ::= 'reify'
 {
   local resultType::Type =
     case finalType(top).outputType of
-    | appType(appType(nonterminalType("core:Either", 2), stringType()), a) -> a
+    | appType(appType(nonterminalType("core:Either", 2, _), stringType()), a) -> a
     | _ -> error("Unexpected final type for reify!")
     end;
   
@@ -77,14 +77,14 @@ top::Expr ::= 'reify'
   top.translation =
 s"""(new common.NodeFactory<core.NEither>() {
 				@Override
-				public final core.NEither invoke(final Object[] args, final Object[] namedArgs) {
+				public final core.NEither invoke(final common.OriginContext originCtx, final Object[] args, final Object[] namedArgs) {
 					assert args != null && args.length == 1;
 					assert namedArgs == null || namedArgs.length == 0;
 					
 ${makeTyVarDecls(5, resultType.freeVariables)}
 					common.TypeRep resultType = ${resultType.transTypeRep};
 					
-					return common.Reflection.reifyChecked(resultType, (core.reflect.NAST)common.Util.demand(args[0]));
+					return common.Reflection.reifyChecked((originCtx!=null)?originCtx.rulesAsSilverList():null, resultType, (core.reflect.NAST)common.Util.demand(args[0]));
 				}
 				
 				@Override
@@ -105,7 +105,7 @@ ${makeTyVarDecls(5, finalType(top).freeVariables)}
 aspect production newFunction
 top::Expr ::= 'new' '(' e::Expr ')'
 {
-  top.translation = s"((${finalType(top).transType})${e.translation}.undecorate())";
+  top.translation = s"((${finalType(top).transType})" ++ wrapNewWithOT(top, s"${e.translation}.undecorate()") ++ ")";
   
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }

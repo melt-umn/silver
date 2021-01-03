@@ -8,7 +8,7 @@ AST ::= x::a
 {
   return error("Foreign function");
 } foreign {
-  "java" : return "(common.Reflection.reflect(%x%))";
+  "java" : return "(common.Reflection.reflect((originCtx!=null)?originCtx.rulesAsSilverList():null, %x%))";
 }
 
 function reflectTypeName
@@ -32,7 +32,7 @@ Either<String AST> ::= fn::AST args::[Maybe<AST>] namedArgs::[Pair<String Maybe<
 {
   return error("Foreign function");
 } foreign {
-  "java" : return "(common.Reflection.applyAST(%fn%, %args%, %namedArgs%))";
+  "java" : return "(common.Reflection.applyAST(originCtx, %fn%, %args%, %namedArgs%))";
 }
 
 function serialize

@@ -94,29 +94,36 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
   local lstType :: Type = last(top.namedSignature.inputElements).typerep;
   
   local checkFirst :: Boolean =
-    fstType.isTerminal || !null(getOccursDcl("core:location", fstType.typeName, top.env));
+    fstType.isTerminal || !null(getOccursDcl("core:location", fstType.typeName, top.env)) || fstType.tracked;
   local checkSecond :: Boolean =
-    lstType.isTerminal || !null(getOccursDcl("core:location", lstType.typeName, top.env));
+    lstType.isTerminal || !null(getOccursDcl("core:location", lstType.typeName, top.env)) || lstType.tracked;
   local errFirst :: [Message] =
-    if checkFirst then [] else [err(top.location, "Production has location annotation, but first element of signature does not have a location.")];
+    if checkFirst then [] else [err(top.location, "Production has location annotation or is tracked, but first element of signature does not have location and is not tracked.")];
   local errSecond :: [Message] =
-    if checkSecond then [] else [err(top.location, "Production has location annotation, but last element of signature does not have a location.")];
-      
+    if checkSecond then [] else [err(top.location, "Production has location annotation or is tracked, but last element of signature does not have location and is not tracked.")];
+  
+  local lhsHasLocation :: Boolean =
+    case top.namedSignature.namedInputElements of
+    | [namedSignatureElement("core:location", _)] -> true
+    | _ -> false
+    end;
+  local lhsHasOrigin :: Boolean = top.namedSignature.outputElement.typerep.tracked;
+
   top.concreteSyntaxTypeErrors <-
-    if null(top.namedSignature.namedInputElements) then
-      []
-    else if length(top.namedSignature.namedInputElements) == 1 then
-      if head(top.namedSignature.namedInputElements).elementName == "core:location" then
-        if length(top.namedSignature.inputElements) > 1 then
-          errFirst ++ errSecond
-        else if null(top.namedSignature.inputElements) then
-          [] -- yay, done!
-        else
-          errFirst
-      else
-        [err(top.location, "Annotation on this production is not handlable by the parser generator.")]
-    else
-      [err(top.location, "Annotations on this production are not handlable by the parser generator.")];
+    case top.namedSignature.namedInputElements of
+    | [] -> []
+    | [namedSignatureElement("core:location", _)] -> []
+    | _ -> [err(top.location, "Annotation(s) on this production are not handleable by the parser generator (only a single annotation, and only core:location is supported.)")]
+    end;
+
+  top.concreteSyntaxTypeErrors <-
+    if lhsHasLocation || lhsHasOrigin
+    then case length(top.namedSignature.inputElements) of
+         | 0 -> [] -- OK
+         | 1 -> errFirst
+         | _ -> errFirst ++ errSecond
+         end
+    else [];
 }
 
 aspect production productionRHSElem
@@ -136,7 +143,7 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String k::Integer
+top::Type ::= fn::String k::Integer tracked::Boolean
 {
   top.permittedInConcreteSyntax = k == 0;
 }

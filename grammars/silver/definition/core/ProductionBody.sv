@@ -5,10 +5,10 @@ nonterminal ProductionBody with
   productionAttributes, uniqueSignificantExpression;
 nonterminal ProductionStmts with 
   config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, uniqueSignificantExpression;
+  productionAttributes, uniqueSignificantExpression, originRules;
 nonterminal ProductionStmt with
   config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, uniqueSignificantExpression;
+  productionAttributes, uniqueSignificantExpression, originRules;
 
 flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst}
   on ProductionBody, ProductionStmts;
@@ -16,14 +16,14 @@ flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, d
   on ProductionStmt;
 
 nonterminal DefLHS with 
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found, originRules;
 
 nonterminal ForwardInhs with 
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, originRules;
 nonterminal ForwardInh with 
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, originRules;
 nonterminal ForwardLHSExpr with 
-  config, grammarName, env, location, unparse, errors, frame, name, typerep;
+  config, grammarName, env, location, unparse, errors, frame, name, typerep, originRules;
 
 {--
  - Context for ProductionStmt blocks. (Indicates function, production, aspect, etc)
@@ -46,25 +46,36 @@ monoid attribute uniqueSignificantExpression :: [Decorated Expr] with [], ++;
  -}
 inherited attribute defLHSattr :: Decorated QNameAttrOccur;
 
+-- Notes that should be attached to stuff constructed/modified in rules in this productionBody
+-- Notes flow 'up' in this from statements and then back 'down' into the via originRules.
+synthesized attribute originRuleDefs :: [Decorated Expr] occurs on ProductionStmt, ProductionStmts;
+
 propagate errors on ProductionBody, ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr;
 propagate defs, productionAttributes, uniqueSignificantExpression on ProductionBody, ProductionStmts;
+
 
 concrete production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
   top.unparse = stmts.unparse;
+
+  stmts.originRules = stmts.originRuleDefs;
 }
 
 concrete production productionStmtsNil
 top::ProductionStmts ::= 
 {
   top.unparse = "";
+
+  top.originRuleDefs = [];
 }
 
 concrete production productionStmtsSnoc
 top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
+
+  top.originRuleDefs = h.originRuleDefs ++ t.originRuleDefs;
 }
 
 ----------
@@ -73,6 +84,8 @@ abstract production productionStmtAppend
 top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
+
+  top.originRuleDefs = h.originRuleDefs ++ t.originRuleDefs;
   propagate defs, productionAttributes, uniqueSignificantExpression;
 }
 
@@ -94,6 +107,17 @@ top::ProductionStmt ::=
   top.uniqueSignificantExpression := [];
   
   top.defs := [];
+
+  top.originRuleDefs = [];
+}
+
+concrete production attachNoteStmt
+top::ProductionStmt ::= 'attachNote' note::Expr ';'
+{
+  top.unparse = "attachNote " ++ note.unparse;
+  note.isRoot = false; -- Irrelevant because OriginNotes aren't tracked
+  note.originRules = []; --Prevents cyclical dependency when translating
+  top.originRuleDefs = [note];
 }
 
 concrete production returnDef
@@ -106,6 +130,8 @@ top::ProductionStmt ::= 'return' e::Expr ';'
   top.errors <- if !top.frame.permitReturn
                 then [err(top.location, "Return is not valid in this context. (They are only permitted in function declarations.)")]
                 else [];
+
+  e.isRoot = true;
 }
 
 concrete production localAttributeDcl
@@ -149,6 +175,8 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
   top.unparse = "\tforwards to " ++ e.unparse;
 
+  e.isRoot = true;
+
   top.productionAttributes := [forwardDef(top.grammarName, top.location, top.frame.signature.outputElement.typerep)];
   top.uniqueSignificantExpression := [e];
 
@@ -186,6 +214,8 @@ concrete production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
   top.unparse = lhs.unparse ++ " = " ++ e.unparse ++ ";";
+
+  e.isRoot = true;
 }
 
 concrete production forwardInhsOne
@@ -252,12 +282,16 @@ abstract production synthesizedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+
+  e.isRoot = true;
 }
 
 abstract production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+
+  e.isRoot = true;
 }
 
 concrete production concreteDefLHS
@@ -389,6 +423,8 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
   -- val is already valid here
+
+  e.isRoot = true;
 
   -- TODO: missing redefinition check
 }

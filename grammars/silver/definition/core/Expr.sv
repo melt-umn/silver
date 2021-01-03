@@ -3,16 +3,16 @@ grammar silver:definition:core;
 --import silver:analysis:typechecking:core;
 
 nonterminal Expr with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, typerep;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, typerep, isRoot, originRules;
 nonterminal Exprs with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs, isRoot, originRules;
 
 nonterminal ExprInhs with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, decoratingnt, suppliedInhs;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, decoratingnt, suppliedInhs, isRoot, originRules;
 nonterminal ExprInh with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, decoratingnt, suppliedInhs;
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, decoratingnt, suppliedInhs, isRoot, originRules;
 nonterminal ExprLHSExpr with
-  config, grammarName, env, location, unparse, errors, name, typerep, decoratingnt, suppliedInhs;
+  config, grammarName, env, location, unparse, errors, name, typerep, decoratingnt, suppliedInhs, isRoot, originRules;
 
 propagate errors on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
@@ -32,6 +32,12 @@ monoid attribute exprs :: [Decorated Expr] with [], ++;
  - Get each individual Expr, without decorating them.
  -}
 monoid attribute rawExprs :: [Expr] with [], ++;
+
+-- Is this Expr the logical "root" of the expression? That is, will it's value be the value computed
+--  for the attribute/return value/etc that it is part of?
+autocopy attribute isRoot :: Boolean;
+
+autocopy attribute originRules :: [Decorated Expr];
 
 
 abstract production errorExpr
@@ -264,6 +270,18 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   top.typerep = functionType(ety.outputType, es.missingTypereps ++ anns.partialAnnoTypereps, anns.missingAnnotations);
 }
 
+concrete production noteAttachment
+top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
+{
+  top.unparse = "attachNote" ++ note.unparse ++ " on " ++ e.unparse ++ " end";
+
+  top.typerep = e.typerep;
+
+  note.isRoot = false;
+  e.isRoot = false;
+  e.originRules = top.originRules ++ [note];
+}
+
 concrete production attributeSection
 top::Expr ::= '(' '.' q::QName ')'
 {
@@ -373,7 +391,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     else if q.name == "line" || q.name == "column"
     then intType()
     else if q.name == "location"
-    then nonterminalType("core:Location", 0)
+    then nonterminalType("core:Location", 0, false)
     else errorType();
 }
 
@@ -476,6 +494,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.unparse = "decorate " ++ e.unparse ++ " with {" ++ inh.unparse ++ "}";
 
   top.typerep = decoratedType(performSubstitution(e.typerep, e.upSubst)); -- .decoratedForm?
+  e.isRoot = false;
   
   inh.decoratingnt = performSubstitution(e.typerep, e.upSubst);
 }
@@ -546,6 +565,9 @@ top::Expr ::= e1::Expr '&&' e2::Expr
   top.unparse = e1.unparse ++ " && " ++ e2.unparse;
 
   top.typerep = boolType();
+
+  e1.isRoot = false;
+  e2.isRoot = false;
 }
 
 concrete production or
@@ -554,6 +576,9 @@ top::Expr ::= e1::Expr '||' e2::Expr
   top.unparse = e1.unparse ++ " || " ++ e2.unparse;
 
   top.typerep = boolType();
+
+  e1.isRoot = false;
+  e2.isRoot = false;
 }
 
 concrete production not
@@ -562,6 +587,8 @@ top::Expr ::= '!' e::Expr
   top.unparse = "! " ++ e.unparse;
 
   top.typerep = boolType();
+
+  e.isRoot = false;
 }
 
 concrete production gt
@@ -570,6 +597,9 @@ top::Expr ::= e1::Expr '>' e2::Expr
   top.unparse = e1.unparse ++ " > " ++ e2.unparse;
 
   top.typerep = boolType();
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production lt
@@ -578,6 +608,9 @@ top::Expr ::= e1::Expr '<' e2::Expr
   top.unparse = e1.unparse ++ " < " ++ e2.unparse;
 
   top.typerep = boolType();
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production gteq
@@ -586,6 +619,9 @@ top::Expr ::= e1::Expr '>=' e2::Expr
   top.unparse = e1.unparse ++ " >= " ++ e2.unparse;
 
   top.typerep = boolType();
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production lteq
@@ -594,6 +630,9 @@ top::Expr ::= e1::Expr '<=' e2::Expr
   top.unparse = e1.unparse ++ " <= " ++ e2.unparse;
 
   top.typerep = boolType();
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production eqeq
@@ -602,6 +641,9 @@ top::Expr ::= e1::Expr '==' e2::Expr
   top.unparse = e1.unparse ++ " == " ++ e2.unparse;
 
   top.typerep = boolType();
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production neq
@@ -610,6 +652,9 @@ top::Expr ::= e1::Expr '!=' e2::Expr
   top.unparse = e1.unparse ++ " != " ++ e2.unparse;
 
   top.typerep = boolType();
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production ifThenElse
@@ -643,6 +688,9 @@ top::Expr ::= e1::Expr '+' e2::Expr
   top.unparse = e1.unparse ++ " + " ++ e2.unparse;
 
   top.typerep = e1.typerep;
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production minus
@@ -651,6 +699,9 @@ top::Expr ::= e1::Expr '-' e2::Expr
   top.unparse = e1.unparse ++ " - " ++ e2.unparse;
 
   top.typerep = e1.typerep;
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production multiply
@@ -659,6 +710,9 @@ top::Expr ::= e1::Expr '*' e2::Expr
   top.unparse = e1.unparse ++ " * " ++ e2.unparse;
 
   top.typerep = e1.typerep;
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production divide
@@ -667,6 +721,9 @@ top::Expr ::= e1::Expr '/' e2::Expr
   top.unparse = e1.unparse ++ " / " ++ e2.unparse;
 
   top.typerep = e1.typerep;
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production modulus
@@ -675,6 +732,9 @@ top::Expr ::= e1::Expr '%' e2::Expr
   top.unparse = e1.unparse ++ " % " ++ e2.unparse;
 
   top.typerep = e1.typerep;
+
+  e1.isRoot=false;
+  e2.isRoot=false;
 }
 
 concrete production neg
@@ -684,6 +744,8 @@ precedence = 13
   top.unparse = "- " ++ e.unparse;
 
   top.typerep = e.typerep;
+
+  e.isRoot=false;
 }
 
 concrete production stringConst
@@ -712,6 +774,9 @@ top::Expr ::= e1::Expr '++' e2::Expr
   -- upSubst defined via forward :D
 
   errCheck1 = check(e1.typerep, e2.typerep);
+
+  e1.isRoot = false;
+  e2.isRoot = false;
 
   forwards to
     -- if the types disagree, forward to an error production instead.
@@ -776,11 +841,11 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
  -}
 nonterminal AppExprs with 
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied;
+  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied, isRoot, originRules;
 
 nonterminal AppExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied;
+  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied, isRoot, originRules;
 
 propagate errors on AppExprs, AppExpr;
 propagate exprs, rawExprs on AppExprs;
@@ -883,12 +948,12 @@ nonterminal AnnoAppExprs with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
-  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied;
+  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot, originRules;
 nonterminal AnnoExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
-  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied;
+  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot, originRules;
   
 propagate errors, exprs on AnnoAppExprs, AnnoExpr;
 

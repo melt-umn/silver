@@ -2,6 +2,9 @@ package common;
 
 import java.util.*;
 
+import core.NOriginInfo;
+
+
 /**
  * Here we are concerning ONLY with partially applying named arguments.
  * 
@@ -49,7 +52,7 @@ public class PartialNameNodeFactory<T> extends NodeFactory<T> {
 	}
 	
 	@Override
-	public T invoke(final Object[] restargs, final Object[] namedArgs) {
+	public T invoke(final common.OriginContext originCtx, final Object[] restargs, final Object[] namedArgs) {
 		// STEP 1 : cut 'args' down to the true args we'll be supplying to 'ref'
 		final int numConverted = iConvertedToOrdered.length;
 		final int newArgsLength = restargs.length - numConverted;
@@ -83,7 +86,7 @@ public class PartialNameNodeFactory<T> extends NodeFactory<T> {
 			}
 		}
 		
-		return ref.invoke(finalArgs, fullNamedArgs);
+		return ref.invoke(originCtx, finalArgs, fullNamedArgs);
 	}
 	
 	@Override

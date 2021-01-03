@@ -6,7 +6,9 @@ import silver:definition:flow:driver only ProductionGraph;
  - Permissions management information for certain features that can appear in production
  - statements, etc.  i.e. "can forward/return/pluck?"
  -}
-nonterminal BlockContext with permitReturn, permitForward, permitProductionAttributes, permitLocalAttributes, lazyApplication, hasFullSignature, hasPartialSignature, fullName, lhsNtName, sourceGrammar, signature, flowGraph;
+nonterminal BlockContext with permitReturn, permitForward, permitProductionAttributes,
+  permitLocalAttributes, lazyApplication, hasFullSignature, hasPartialSignature,
+  fullName, lhsNtName, signature, sourceGrammar, flowGraph;
 
 
 {-- Are 'return' equations allowed in this context? -}
@@ -82,7 +84,7 @@ top::BlockContext ::=
   top.hasPartialSignature = false;
   top.hasFullSignature = false;
   
-  -- always required: fullName, signature, flowGraph
+  -- always required: fullName, signature, flowGraph, usePassedOriginsContext
 }
 
 abstract production functionContext
@@ -112,6 +114,13 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
   top.hasFullSignature = true;
   top.permitProductionAttributes = true;
   top.permitLocalAttributes = true;
+}
+
+ -- This was necessitated by origins work, but is probably also generally useful.
+abstract production inLambdaContext
+top::BlockContext ::= containingContext::BlockContext
+{
+  forwards to containingContext;
 }
 
 abstract production aspectFunctionContext

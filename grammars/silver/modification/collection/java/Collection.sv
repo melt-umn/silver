@@ -42,15 +42,16 @@ inherited attribute rightOpTranslation::String occurs on Operation;
 attribute translation occurs on Operation;
 
 aspect production functionOperation
-top::Operation ::= e::Expr eTrans::String isRef::Boolean isFunction::Boolean
+top::Operation ::= e::Expr eTrans::String isRef::Boolean isFunction::Boolean trackConstruction::Boolean
 {
   top.translation =
     if isRef
-    then s"${eTrans}.invoke(new Object[]{${top.leftOpTranslation}, ${top.rightOpTranslation}}, null)"
+    then s"${eTrans}.invoke(context.originCtx, new Object[]{${top.leftOpTranslation}, ${top.rightOpTranslation}}, null)"
     else if isFunction
-    then s"${eTrans}.invoke(${top.leftOpTranslation}, ${top.rightOpTranslation})"
+    then s"${eTrans}.invoke(context.originCtx, ${top.leftOpTranslation}, ${top.rightOpTranslation})"
     else s"new ${eTrans}(${top.leftOpTranslation}, ${top.rightOpTranslation})";
 }
+-- (if tracked then newConstructionOriginUsingCtxRef++"," else "")
 aspect production plusPlusOperationString
 top::Operation ::= 
 {
@@ -103,6 +104,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
   top.setupInh <-
         "\t\t" ++ top.frame.className ++ ".localAttributes[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = new common.CollectionAttribute(){\n" ++ 
         "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
+        "\t\t\t\t common.OriginContext originCtx = context.originCtx;\n" ++
         "\t\t\t\t" ++ te.typerep.transType ++ " result = (" ++ te.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
         "\t\t\t\tfor(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
         "\t\t\t\t\tresult = " ++ o.translation ++ ";\n" ++ 
@@ -133,6 +135,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
 "\t}\n\n" ++
 
 "\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
+"\t\t common.OriginContext originCtx = context.originCtx;\n" ++
 "\t\t" ++ te.typerep.transType ++ " result = (" ++ te.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
 "\t\tfor(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
 "\t\t\tresult = " ++ o.translation ++ ";\n" ++ 
@@ -164,6 +167,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
 "\t}\n\n" ++
 
 "\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
+"\t\t common.OriginContext originCtx = context.originCtx;\n" ++
 "\t\t" ++ te.typerep.transType ++ " result = (" ++ te.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
 "\t\tfor(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
 "\t\t\tresult = " ++ o.translation ++ ";\n" ++ 

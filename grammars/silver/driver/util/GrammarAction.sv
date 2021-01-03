@@ -1,6 +1,6 @@
 grammar silver:driver:util;
 
-closed nonterminal DriverAction with ioIn, io, code, order;
+closed nonterminal DriverAction with config, ioIn, io, code, order;
 
 synthesized attribute code :: Integer;
 synthesized attribute order :: Integer;

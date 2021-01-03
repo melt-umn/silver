@@ -176,11 +176,11 @@ top::DclInfo ::= fn::String ty::Type
 
 -- TypeDclInfos
 abstract production ntDcl
-top::DclInfo ::= fn::String arity::Integer closed::Boolean
+top::DclInfo ::= fn::String arity::Integer closed::Boolean tracked::Boolean
 {
   top.fullName = fn;
 
-  top.typeScheme = monoType(nonterminalType(fn, arity));
+  top.typeScheme = monoType(nonterminalType(fn, arity, tracked));
   top.isType = true;
 }
 abstract production termDcl

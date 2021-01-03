@@ -4,7 +4,7 @@ import silver:util;
 
 attribute upSubst, downSubst, finalSubst occurs on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
 propagate upSubst, downSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr
-  excluding productionStmtAppend, forwardsTo, forwardInh, returnDef, synthesizedAttributeDef, inheritedAttributeDef, localValueDef;
+  excluding productionStmtAppend, attachNoteStmt, forwardsTo, forwardInh, returnDef, synthesizedAttributeDef, inheritedAttributeDef, localValueDef;
 
 {--
  - These need an initial state only due to aspects (I think? maybe not. Investigate someday.)
@@ -72,6 +72,20 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
        if errCheck1.typeerror
        then [err(e.location, lhs.name ++ " has expected type " ++ errCheck1.leftpp
                               ++ ", but the expression has type " ++ errCheck1.rightpp)]
+       else [];
+}
+
+aspect production attachNoteStmt
+top::ProductionStmt ::= 'attachNote' e::Expr ';'
+{
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  thread downSubst, upSubst on top, e, errCheck1, top;
+  
+  errCheck1 = check(e.typerep, nonterminalType("core:OriginNote", 0, false));
+  top.errors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Origin note must have type core:OriginNote, but the expression has actual type " ++ errCheck1.leftpp)]
        else [];
 }
 

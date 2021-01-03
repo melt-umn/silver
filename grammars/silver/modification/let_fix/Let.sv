@@ -7,7 +7,6 @@ import silver:definition:flow:ast only ExprVertexInfo, FlowVertex;
 
 terminal Let_kwd 'let' lexer classes {KEYWORD,RESERVED};
 terminal In_kwd 'in' lexer classes {KEYWORD,RESERVED};
-terminal End_kwd 'end' lexer classes {KEYWORD,RESERVED};
 
 concrete production letp_c
 top::Expr ::= 'let' la::LetAssigns 'in' e::Expr 'end'
@@ -56,7 +55,7 @@ top::Expr ::= la::AssignExpr  e::Expr
 
 nonterminal AssignExpr with location, config, grammarName, env, compiledGrammars, 
                             unparse, defs, errors, upSubst, 
-                            downSubst, finalSubst, frame;
+                            downSubst, finalSubst, frame, isRoot, originRules;
 
 propagate errors, defs on AssignExpr;
 

@@ -3,16 +3,25 @@ grammar silver:definition:core;
 autocopy attribute nonterminalName :: String;
 
 concrete production nonterminalDcl
-top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
+top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
   top.unparse = "nonterminal " ++ id.unparse ++ tl.unparse ++ " " ++ nm.unparse ++ ";";
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   nm.nonterminalName = fName;
   
-  top.defs := [cl.whichDcl(top.grammarName, id.location, fName, length(tl.types))];
-  -- TODO: We should consider recording the exact concrete names used... might be nice documentation to use
+  -- tl.freeVariables is our order list of the bound types for this nonterminal.
+  top.defs := [ntDef(top.grammarName,
+                    id.location,
+                    fName,
+                    length(tl.types),
+                    quals.closed,
+                    quals.tracked)];
+  -- TODO: It's probably reasonable to skip listing
+  -- tl.freeVariables, and the Type. Assuming we have a proper ntDcl.
+  -- And we should consider recording the exact concrete names used... might be nice documentation to use
   
+  top.errors <- quals.errors;
 
   -- Here we ensure that the type list contains only type *variables*
   top.errors <- tl.errorsTyVars;
@@ -33,21 +42,39 @@ top::AGDcl ::= cl::ClosedOrNot 'nonterminal' id::Name tl::BracketedOptTypeExprs 
     else [];
 }
 
--- This feels a bit hackish.
-nonterminal ClosedOrNot with location, whichDcl;
+nonterminal NTDeclQualifiers with location, errors;
 
-synthesized attribute whichDcl :: (Def ::= String Location String Integer);
+synthesized attribute closed :: Boolean occurs on NTDeclQualifiers;
+synthesized attribute tracked :: Boolean occurs on NTDeclQualifiers;
 
-concrete production openNt
-top::ClosedOrNot ::=
+concrete production nilNTQualifier
+top::NTDeclQualifiers ::=
 {
-  top.whichDcl = ntDef;
+  -- This controls the default closed-ness and tracked-ness of nonterminals
+  top.closed = false;
+  top.tracked = false;
+
+  top.errors := [];
 }
 
-concrete production closedNt
-top::ClosedOrNot ::= 'closed'
+concrete production closedNTQualifier
+top::NTDeclQualifiers ::= 'closed' rest::NTDeclQualifiers
 {
-  top.whichDcl = closedNtDef;
+  top.closed = true;
+  top.tracked = rest.tracked;
+
+  top.errors := rest.errors;
+  top.errors <- if rest.closed then [err(top.location, "Duplicate 'closed' qualifier")] else [];
+}
+
+concrete production trackedNTQualifier
+top::NTDeclQualifiers ::= 'tracked' rest::NTDeclQualifiers
+{
+  top.closed = rest.closed;
+  top.tracked = true;
+
+  top.errors := rest.errors;
+  top.errors <- if rest.tracked then [err(top.location, "Duplicate 'tracked' qualifier")] else [];
 }
 
 nonterminal NonterminalModifiers with config, location, unparse, errors, env, nonterminalName; -- 0 or some

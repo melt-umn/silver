@@ -11,7 +11,7 @@ import silver:translation:java:core;
 import silver:translation:java:type;
 
 -- Actually only used for lists, in this file... TODO
-import silver:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef, End_kwd;
+import silver:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef;
 import silver:definition:flow:ast only noVertex;
 
 import silver:extension:list; -- Oh no, this is a hack! TODO
@@ -22,12 +22,12 @@ nonterminal PrimPatterns with
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors,
   downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation;
+  scrutineeType, returnType, translation, isRoot, originRules;
 nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors,
   downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation;
+  scrutineeType, returnType, translation, isRoot, originRules;
 
 autocopy attribute scrutineeType :: Type;
 autocopy attribute returnType :: Type;
@@ -166,7 +166,7 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
     --  1. has a non-type-variable parameter (e.g. Expr<Boolean>)
     --  2. has fewer free variables than parameters (e.g. Eq<a a>)
     -- THEN it's a gadt.
-    | nonterminalType(_, _) -> !isOnlyTyVars(t.argTypes) || length(t.argTypes) != length(setUnionTyVarsAll(map((.freeVariables), t.argTypes)))
+    | nonterminalType(_, _, _) -> !isOnlyTyVars(t.argTypes) || length(t.argTypes) != length(setUnionTyVarsAll(map((.freeVariables), t.argTypes)))
     | _ -> false
     end;
   
