@@ -16,6 +16,7 @@ import common.ConsCell;
 import common.DecoratedNode;
 import common.IOToken;
 import common.Lazy;
+import common.OriginContext;
 import common.TopNode;
 import common.javainterop.ConsCellCollection;
 
@@ -94,7 +95,7 @@ public class Builder extends IncrementalProjectBuilder implements IExecutableExt
 		
 		// Run the build
 		final NIOVal undecorated_build_result =
-			sv_build.invoke(new Object[]{project, properties.serializeToSilverType(), IOToken.singleton});
+                    sv_build.invoke(new Object[]{OriginContext.FFI_CONTEXT, project, properties.serializeToSilverType(), IOToken.singleton});
 		final DecoratedNode build_result = undecorated_build_result.decorate();
 		// demand evaluation of io actions
 		build_result.synthesized(core.Init.core_io__ON__core_IOVal);
@@ -127,7 +128,7 @@ public class Builder extends IncrementalProjectBuilder implements IExecutableExt
 				// Now, invoke the post-builder.
 				synchronized(lock) {
 					final NIOVal undecorate_post_result = 
-						sv_postbuild.invoke(new Object[]{project, properties.serializeToSilverType(), IOToken.singleton});
+                                            sv_postbuild.invoke(new Object[]{OriginContext.FFI_CONTEXT, project, properties.serializeToSilverType(), IOToken.singleton});
 					final DecoratedNode post_result = undecorate_post_result.decorate();
 					post_result.synthesized(core.Init.core_io__ON__core_IOVal);
 					
