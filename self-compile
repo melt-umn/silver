@@ -7,7 +7,7 @@ set -eu
 SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx3G -Xss8M"}
   # These can be fun sometimes:
   # -XX:+PrintCompilation -verbose:gc -XX:+PrintGCTimeStamps -XX:+PrintGCDetails -XX:-PrintGC
-SV_BUILD_TARGET=${SV_BUILD_TARGET:-"silver:composed:Default"}
+SV_BUILD_TARGET=${SV_BUILD_TARGET:-"silver:compiler:composed:Default"}
 
 mkdir -p build
 cd build
