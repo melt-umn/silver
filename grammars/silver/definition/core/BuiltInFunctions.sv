@@ -84,7 +84,7 @@ top::Expr ::= 'reify'
   top.unparse = "reify";
 
   top.typerep =
-    functionType(appTypes(nonterminalType("silver:core:Either", 2, false), [stringType(), freshType()]), [nonterminalType("silver:core:reflect:AST", 0, true)], []);
+    functionType(appTypes(nonterminalType("core:Either", 2, false), [stringType(), freshType()]), [nonterminalType("core:reflect:AST", 0, true)], []);
 }
 
 concrete production newFunction
@@ -163,7 +163,7 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' e::Expr ')'
   --top.errors <- [wrn(t.location, "terminal(type,lexeme) is deprecated. Use terminal(type,lexeme,location) instead.")];
 
   local bogus :: Expr =
-    mkStrFunctionInvocation($6.location, "silver:core:bogusLoc", []);
+    mkStrFunctionInvocation($6.location, "core:bogusLoc", []);
 
   forwards to terminalConstructor($1, $2, t, $4, e, ',', bogus, $6, location=top.location);
 }
@@ -178,7 +178,7 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' e1::Expr ',' e2::Expr ',' e3::Expr 
     intConst(terminal(Int_t, "-1"), location=$10.location);
 
   forwards to terminalConstructor($1, $2, t, $4, e1, $6,
-    mkStrFunctionInvocation($10.location, "silver:core:loc", [
+    mkStrFunctionInvocation($10.location, "core:loc", [
       stringConst(terminal(String_t, "\"??\""), location=$10.location),
       e2, e3, bogus, bogus, bogus, bogus
     ]), $10, location=top.location);

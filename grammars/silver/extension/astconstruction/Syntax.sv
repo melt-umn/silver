@@ -28,7 +28,7 @@ layout {silver:reflect:concretesyntax:WhiteSpace}
 
 concrete production antiquoteAST_c
 top::AST_c ::= '$' '{' e::Expr '}'
-layout {silver:definition:silver:core:WhiteSpace}
+layout {silver:definition:core:WhiteSpace}
 {
   top.unparse = s"$${${e.unparse}}";
   top.ast = antiquoteAST(e);

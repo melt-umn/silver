@@ -169,11 +169,11 @@ top::IdeStmt ::=
 }
 
 -- Helpers for writing expected types
-global t_iomsgs :: Type = appType(nonterminalType("silver:core:IOVal", 1, false), listType(nonterminalType("silver:langutil:Message", 0, true)));
+global t_iomsgs :: Type = appType(nonterminalType("core:IOVal", 1, false), listType(nonterminalType("silver:langutil:Message", 0, true)));
 global t_props :: Type = listType(nonterminalType("ide:IdeProperty", 0, false));
 global t_io :: Type = ioForeignType;
 global t_proj :: Type = foreignType("ide:IdeProject", "Object", []);
-global t_loc :: Type = nonterminalType("silver:core:Location", 0, false);
+global t_loc :: Type = nonterminalType("core:Location", 0, false);
 
 concrete production makeIdeStmt_Builder
 top::IdeStmt ::= 'builder' builderName::QName ';' 

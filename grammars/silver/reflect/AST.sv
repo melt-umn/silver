@@ -1,8 +1,8 @@
 grammar silver:reflect;
 
-exports silver:core:reflect;
+exports core:reflect;
 
-import silver:core:monad;
+import core:monad;
 
 -- left(error message) or right(result)
 synthesized attribute serialize<a>::Either<String a>;

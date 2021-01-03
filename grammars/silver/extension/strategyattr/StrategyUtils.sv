@@ -13,11 +13,11 @@ top::StrategyExpr ::=
   top.isTotal = true;
   top.totalTranslation =
     Silver_Expr {
-      silver:core:unsafeTrace(
+      core:unsafeTrace(
         $name{top.frame.signature.outputElement.elementName},
-        silver:core:print(
+        core:print(
           hackUnparse($name{top.frame.signature.outputElement.elementName}) ++ "\n\n",
-          silver:core:unsafeIO()))
+          core:unsafeIO()))
     };
 }
 

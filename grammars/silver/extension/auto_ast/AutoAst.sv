@@ -24,7 +24,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
       astType(top.frame.signature.outputElement, top.env),
       map(astType(_, top.env), elems),
       (if hasLoc
-       then [namedArgType("location", nonterminalType("silver:core:Location", 0, false))]
+       then [namedArgType("location", nonterminalType("core:Location", 0, false))]
        else []));
   
   top.errors <-
@@ -41,7 +41,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
     else [err(v.location, "Signature yields ast type " ++ errCheck1.rightpp ++ ", but the supplied ast constructor has type " ++ errCheck1.leftpp)];
   
   top.errors <-
-    if hasLoc && null(getOccursDcl("silver:core:location", top.frame.lhsNtName, top.env))
+    if hasLoc && null(getOccursDcl("core:location", top.frame.lhsNtName, top.env))
     then [err(top.location, "Ast constructor wants 'location' but this nonterminal does not have a location")]
     else [];
   

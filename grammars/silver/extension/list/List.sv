@@ -37,7 +37,7 @@ top::TypeExpr ::= '[' ']'
     then [err(top.location, s"${top.unparse} is not fully applied, it has kind arity ${toString(top.typerep.kindArity)}")]
     else [];
 
-  forwards to nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "silver:core:List"), location=top.location), location=top.location);
+  forwards to nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "core:List"), location=top.location), location=top.location);
 }
 
 -- The expressions -------------------------------------------------------------
@@ -47,7 +47,7 @@ top::Expr ::= '[' ']'
 {
   top.unparse = "[]";
 
-  forwards to mkStrFunctionInvocation(top.location, "silver:core:nil", []);
+  forwards to mkStrFunctionInvocation(top.location, "core:nil", []);
 }
 
 -- TODO: BUG: '::' is HasType_t.  We probably want to have a different
@@ -60,7 +60,7 @@ top::Expr ::= h::Expr '::' t::Expr
   
   h.downSubst = top.downSubst; t.downSubst = top.downSubst; -- TODO BUG: don't know what this is needed... unparse apparently??
   
-  forwards to mkStrFunctionInvocation(top.location, "silver:core:cons", [h, t]);
+  forwards to mkStrFunctionInvocation(top.location, "core:cons", [h, t]);
 }
 
 concrete production fullList
@@ -84,13 +84,13 @@ top::Exprs ::=
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  top.listtrans = mkStrFunctionInvocation(e.location, "silver:core:cons", [e, emptyList('[',']', location=top.location)]);
+  top.listtrans = mkStrFunctionInvocation(e.location, "core:cons", [e, emptyList('[',']', location=top.location)]);
 }
 
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  top.listtrans = mkStrFunctionInvocation(e1.location, "silver:core:cons", [e1, e2.listtrans]);
+  top.listtrans = mkStrFunctionInvocation(e1.location, "core:cons", [e1, e2.listtrans]);
 }
 
 -- Overloaded operators --------------------------------------------------------
@@ -98,7 +98,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 abstract production listPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
-  forwards to mkStrFunctionInvocationDecorated(e1.location, "silver:core:append", [e1,e2]);
+  forwards to mkStrFunctionInvocationDecorated(e1.location, "core:append", [e1,e2]);
 }
 
 abstract production listLengthBouncer
@@ -108,6 +108,6 @@ top::Expr ::= e::Decorated Expr
   -- forward tree.
   top.errors := forward.errors ++ e.errors;
 
-  forwards to mkStrFunctionInvocationDecorated(e.location, "silver:core:listLength", [e]);
+  forwards to mkStrFunctionInvocationDecorated(e.location, "core:listLength", [e]);
 }
 

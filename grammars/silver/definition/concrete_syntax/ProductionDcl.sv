@@ -94,9 +94,9 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
   local lstType :: Type = last(top.namedSignature.inputElements).typerep;
   
   local checkFirst :: Boolean =
-    fstType.isTerminal || !null(getOccursDcl("silver:core:location", fstType.typeName, top.env)) || fstType.tracked;
+    fstType.isTerminal || !null(getOccursDcl("core:location", fstType.typeName, top.env)) || fstType.tracked;
   local checkSecond :: Boolean =
-    lstType.isTerminal || !null(getOccursDcl("silver:core:location", lstType.typeName, top.env)) || lstType.tracked;
+    lstType.isTerminal || !null(getOccursDcl("core:location", lstType.typeName, top.env)) || lstType.tracked;
   local errFirst :: [Message] =
     if checkFirst then [] else [err(top.location, "Production has location annotation or is tracked, but first element of signature does not have location and is not tracked.")];
   local errSecond :: [Message] =
@@ -104,7 +104,7 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
   
   local lhsHasLocation :: Boolean =
     case top.namedSignature.namedInputElements of
-    | [namedSignatureElement("silver:core:location", _)] -> true
+    | [namedSignatureElement("core:location", _)] -> true
     | _ -> false
     end;
   local lhsHasOrigin :: Boolean = top.namedSignature.outputElement.typerep.tracked;
@@ -112,8 +112,8 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
   top.concreteSyntaxTypeErrors <-
     case top.namedSignature.namedInputElements of
     | [] -> []
-    | [namedSignatureElement("silver:core:location", _)] -> []
-    | _ -> [err(top.location, "Annotation(s) on this production are not handleable by the parser generator (only a single annotation, and only silver:core:location is supported.)")]
+    | [namedSignatureElement("core:location", _)] -> []
+    | _ -> [err(top.location, "Annotation(s) on this production are not handleable by the parser generator (only a single annotation, and only core:location is supported.)")]
     end;
 
   top.concreteSyntaxTypeErrors <-

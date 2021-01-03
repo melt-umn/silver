@@ -67,7 +67,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
   -- introduce the failure case here.
   forwards to 
     caseExpr(es.rawExprs, ml.matchRuleList, 
-      mkStrFunctionInvocation(top.location, "silver:core:error",
+      mkStrFunctionInvocation(top.location, "core:error",
         [stringConst(terminal(String_t, 
           "\"Error: pattern match failed at " ++ top.grammarName ++ " " ++ top.location.unparse ++ "\\n\""), location=top.location)]),
       freshType(), location=top.location);

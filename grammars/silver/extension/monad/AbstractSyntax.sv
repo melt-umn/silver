@@ -36,6 +36,6 @@ top::Expr ::= returnFn::QName
 {
   forwards to
     returnExpr(
-      mkStrFunctionInvocation(top.location, "silver:core:unit", []),
+      mkStrFunctionInvocation(top.location, "core:unit", []),
       true, returnFn, location=top.location);
 }

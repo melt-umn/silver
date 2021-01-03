@@ -5,7 +5,7 @@ grammar silver:rewrite;
 -- e.g. import silver:rewrite as s;
 
 imports core hiding all, repeat;
-imports silver:core:monad;
+imports core:monad;
 
 inherited attribute term::AST;
 synthesized attribute result::Maybe<AST>;

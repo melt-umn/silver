@@ -2,7 +2,7 @@ grammar silver:metatranslation;
 
 imports silver:reflect;
 imports silver:langutil:pp;
-imports silver:core:monad;
+imports core:monad;
 
 imports silver:definition:core;
 imports silver:definition:env;
@@ -326,7 +326,7 @@ top::NamedAST ::= n::String v::AST
     -- hack to get annotation shortname
     pair(last(explode(":", n)), v.translation);
   top.foundLocation =
-    if n == "silver:core:location"
+    if n == "core:location"
     then
       case reify(v) of
       | right(l) -> just(l)

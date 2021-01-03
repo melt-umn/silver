@@ -34,8 +34,8 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
   top.errors <-
     if id.name == "main" &&
        unify(namedSig.typerep,
-         functionType(appType(nonterminalType("silver:core:IOVal", 1, false), intType()), [
-           appType(nonterminalType("silver:core:List", 1, false), stringType()),
+         functionType(appType(nonterminalType("core:IOVal", 1, false), intType()), [
+           appType(nonterminalType("core:List", 1, false), stringType()),
            ioForeignType], [])).failure
     then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IO). Instead it has type " ++ prettyType(namedSig.typerep))]
     else [];
