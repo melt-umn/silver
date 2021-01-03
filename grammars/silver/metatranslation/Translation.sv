@@ -10,18 +10,30 @@ imports silver:definition:type:syntax;
 imports silver:extension:list;
 imports silver:extension:patternmatching;
 
+imports silver:rewrite;
+
+global rename::Strategy = allTopDown(
+  rule on QName of
+  | q when startsWith("silver:", q.name) -> makeQName(substitute("silver:", "silver:compiler:", q.name), q.location)
+  | q when startsWith("core:", q.name) -> makeQName(substitute("core:", "silver:core:", q.name), q.location)
+  end <+
+  rule on QNameType of
+  | q when startsWith("silver:", q.name) -> makeQNameType(substitute("silver:", "silver:compiler:", q.name), q.location)
+  | q when startsWith("core:", q.name) -> makeQNameType(substitute("core:", "silver:core:", q.name), q.location)
+  end);
+
 function translate
 Expr ::= loc::Location ast::AST
 {
   ast.givenLocation = loc;
-  return ast.translation;
+  return rewriteWith(rename, ast.translation).fromJust;
 }
 
 function translatePattern
 Pattern ::= loc::Location ast::AST
 {
   ast.givenLocation = loc;
-  return ast.patternTranslation;
+  return rewriteWith(rename, ast.patternTranslation).fromJust;
 }
 
 synthesized attribute translation<a>::a;
