@@ -163,7 +163,7 @@ function computeOptionalDeps
   local initPlusExported :: [String] = computeDependencies(init, e);
   local closeOptions :: [String] = expandOptionalsIter(initPlusExported, [], e);
   
-  return if null(rem(closeOptions, initPlusExported)) then initPlusExported
+  return if null(removeAllBy(stringEq, closeOptions, initPlusExported)) then initPlusExported
          else computeOptionalDeps(closeOptions, e);
 }
 
@@ -174,7 +174,7 @@ function computeOptionalDeps
 function completeDependencyClosure
 [String] ::= init::[String]  e::EnvTree<Decorated RootSpec>
 {
-  local n :: [String] = rem(nubBy(stringEq, flatMap(skipNulls((.moduleNames), _), map(searchEnvTree(_, e), init))), init);
+  local n :: [String] = removeAllBy(stringEq, nubBy(stringEq, flatMap(skipNulls((.moduleNames), _), map(searchEnvTree(_, e), init))), init);
   
   return if null(n) then computeOptionalDeps(init, e)
   else completeDependencyClosure(computeOptionalDeps(n ++ init, e), e);

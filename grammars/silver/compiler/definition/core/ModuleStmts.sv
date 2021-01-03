@@ -98,7 +98,7 @@ top::ModuleExportedDefs ::= l::Location compiledGrammars::EnvTree<Decorated Root
   -- ... but only if we haven't already added this.
   local new_need :: [String] =
     if null(rs) then tail(need)
-    else rem(nubBy(stringEq, tail(need) ++ add_to_need), new_seen);
+    else removeAllBy(stringEq, nubBy(stringEq, tail(need) ++ add_to_need), new_seen);
   
   top.defs :=
     if null(need) then [] else

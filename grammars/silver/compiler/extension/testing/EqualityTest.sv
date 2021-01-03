@@ -186,7 +186,7 @@ ag::AGDcl ::= kwd::'equalityTest'
     mkToStringExprCS(valueType, "expected", ag.location);
 
   local testName :: String = "generatedTest" ++ "_" ++ 
-                            replaceChars(".","_",kwd.filename) ++ "_" ++ 
+                            substitute(".","_",kwd.filename) ++ "_" ++ 
                             toString(kwd.line) ++ "_" ++ 
                             toString(genInt());
 }

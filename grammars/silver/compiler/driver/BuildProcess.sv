@@ -172,7 +172,7 @@ function eatGrammars
   
   local directDeps :: [String] = mentionedGrammars(it);
   
-  local newDeps :: [String] = rem(directDeps, sofar);
+  local newDeps :: [String] = removeAllBy(stringEq, directDeps, sofar);
   
   return
     if n == 0 then
