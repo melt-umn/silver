@@ -12,12 +12,12 @@ imports silver:extension:patternmatching;
 
 global rename::Strategy = allTopDown(
   rule on QName of
-  | q when startsWith("silver:", q.name) -> makeQName(substitute("silver:", "silver:compiler:", q.name), q.location)
-  | q when startsWith("core:", q.name) -> makeQName(substitute("core:", "silver:core:", q.name), q.location)
+  | qNameCons(n, _, q) when n.name == "silver" -> qNameCons(n, ':', qNameCons(makeName("compiler", q.location), ':', q, location=q.location), location=q.location)
+  | qNameCons(n, _, q) when n.name == "core" -> qNameCons(makeName("silver", q.location), ':', qNameCons(n, ':', q, location=q.location), location=q.location)
   end <+
   rule on QNameType of
-  | q when startsWith("silver:", q.name) -> makeQNameType(substitute("silver:", "silver:compiler:", q.name), q.location)
-  | q when startsWith("core:", q.name) -> makeQNameType(substitute("core:", "silver:core:", q.name), q.location)
+  | qNameTypeCons(n, _, q) when n.name == "silver" -> qNameTypeCons(n, ':', qNameTypeCons(makeName("compiler", q.location), ':', q, location=q.location), location=q.location)
+  | qNameTypeCons(n, _, q) when n.name == "core" -> qNameTypeCons(makeName("silver", q.location), ':', qNameTypeCons(n, ':', q, location=q.location), location=q.location)
   end);
 
 function translate
