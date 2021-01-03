@@ -20,8 +20,8 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
     then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
     else [];
   top.errors <-
-    if null(getValueDcl("core:monad:bindMaybe", top.env))
-    then [err(top.location, "Strategy attributes require import of core:monad")]
+    if null(getValueDcl("silver:core:monad:bindMaybe", top.env))
+    then [err(top.location, "Strategy attributes require import of silver:core:monad")]
     else [];
   top.errors <-
     if isTotal && !e.isTotal

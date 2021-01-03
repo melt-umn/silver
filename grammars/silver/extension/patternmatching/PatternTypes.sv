@@ -222,7 +222,7 @@ top::Pattern ::= '[' ']'
   
   top.patternVars = [];
   top.patternSubPatternList = [];
-  top.patternSortKey = "core:nil";
+  top.patternSortKey = "silver:core:nil";
 }
 
 concrete production consListPattern
@@ -236,7 +236,7 @@ top::Pattern ::= hp::Pattern '::' tp::Pattern
   tp.patternVarEnv = hp.patternVarEnv ++ hp.patternVars;
   
   top.patternSubPatternList = [hp, tp];
-  top.patternSortKey = "core:cons";
+  top.patternSortKey = "silver:core:cons";
 }
 
 -- List literal patterns

@@ -63,7 +63,7 @@ top::ProductionStmt ::= attr::Decorated QName
                   "Attribute " ++ $Expr{stringConst(terminal(String_t, s"\"${attr.name}\"", top.location), location=top.location)} ++
                   " demanded on child " ++ $Expr{stringConst(terminal(String_t, s"\"${ie.snd.elementName}\"", top.location), location=top.location)} ++
                   " of production " ++ $Expr{stringConst(terminal(String_t, s"\"${top.frame.signature.fullName}\"", top.location), location=top.location)} ++
-                  " when given value " ++ core:hackUnparse(a) ++ " does not match.")
+                  " when given value " ++ silver:core:hackUnparse(a) ++ " does not match.")
               end;
           },
         filter(

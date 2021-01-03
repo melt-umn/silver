@@ -1,6 +1,6 @@
 grammar silver:modification:copper;
 
-import core:monad;
+import silver:core:monad;
 
 import silver:definition:regex;
 import silver:extension:easyterminal; -- only Terminal_t, EasyTerminalRef;

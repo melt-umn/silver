@@ -72,11 +72,11 @@ function getSpecialCaseNoOrigins
   production attribute names::[String] with ++;
   names := [
     -- These are forced to be untracked to prevent circularity
-    "core:OriginInfo",
-    "core:OriginInfoType",
-    "core:OriginNote",
+    "silver:core:OriginInfo",
+    "silver:core:OriginInfoType",
+    "silver:core:OriginNote",
     -- List is special(TM) because of it's special(TM) quasi-extension translation specialization
-    "core:List"
+    "silver:core:List"
   ];
   return names;
 }
