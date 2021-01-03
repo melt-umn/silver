@@ -1,7 +1,7 @@
 grammar silver:compiler:extension:astconstruction;
 
 imports silver:reflect;
-imports silver:metatranslation;
+imports silver:compiler:metatranslation;
 
 aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs

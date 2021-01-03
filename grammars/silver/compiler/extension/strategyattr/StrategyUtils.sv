@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:strategyattr;
 
-import silver:metatranslation;
+import silver:compiler:metatranslation;
 import silver:compiler:modification:copper; -- print keyword
 
 -- Debugging

@@ -3,8 +3,8 @@ grammar silver:compiler:driver:util;
 import silver:compiler:definition:flow:driver;
 import silver:compiler:definition:flow:ast;
 import silver:compiler:definition:flow:env;
-import silver:util:raw:treemap as rtm;
-import silver:util:raw:graph as g;
+import silver:util:treemap as rtm;
+import silver:util:graph as g;
 
 -- Hide all the flow type computation over here
 

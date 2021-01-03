@@ -1,7 +1,7 @@
 
 import silver:testing;
-import silver:util:raw:graph as g;
-import silver:util:raw:treeset as set;
+import silver:util:graph as g;
+import silver:util:treeset as set;
 import stdlib;
 
 function compareInteger

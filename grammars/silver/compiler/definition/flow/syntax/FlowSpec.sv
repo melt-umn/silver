@@ -6,7 +6,7 @@ imports silver:compiler:definition:flow:driver only FlowType, inhDepsForSyn;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 imports silver:compiler:driver:util only isExportedBy;
-imports silver:util:raw:treeset as set;
+imports silver:util:treeset as set;
 
 -- unfortunate...
 import silver:compiler:analysis:warnings only warnAll;

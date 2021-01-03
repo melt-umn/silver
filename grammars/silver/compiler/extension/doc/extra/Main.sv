@@ -2,12 +2,10 @@ grammar silver:compiler:extension:doc:extra;
 
 {- This grammar is just a bunch of imports. It is run by the generate-documentation script, and just builds documentation. The jar it produces is just thrown away. -}
 
-import core;
+import silver:core;
 
 --import ide;
 
-import lib:errors;
-import lib:system;
 import silver:xml;
 
 import silver:compiler:analysis;
@@ -57,13 +55,12 @@ import silver:compiler:translation:java:type;
 
 import silver:util;
 import silver:util:cmdargs;
-import silver:util:command;
 import silver:util:deque;
 import silver:util:fixedmap;
 import silver:util:treemap;
-import silver:util:raw:graph;
-import silver:util:raw:treemap;
-import silver:util:raw:treeset;
+import silver:util:graph;
+import silver:util:treemap;
+import silver:util:treeset;
 
 {@comment Dummy main function that does nothing @link[dummyFunction] @}
 function main

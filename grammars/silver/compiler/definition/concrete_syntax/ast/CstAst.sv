@@ -7,8 +7,8 @@ imports silver:compiler:definition:env;
 imports silver:compiler:translation:java:core only makeIdName, makeProdName, makeNTName;
 imports silver:compiler:translation:java:type only transType;
 
-import silver:util:raw:graph as g;
-import silver:util:raw:treeset as s;
+import silver:util:graph as g;
+import silver:util:treeset as s;
 
 {--
  - Encapsulates transformations and analysis of Syntax

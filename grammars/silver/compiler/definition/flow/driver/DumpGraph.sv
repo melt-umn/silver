@@ -2,7 +2,7 @@ grammar silver:compiler:definition:flow:driver;
 
 import silver:compiler:driver;
 import silver:util:cmdargs;
-import silver:util:raw:treemap as rtm;
+import silver:util:treemap as rtm;
 
 -- This isn't exactly a warning, but it can live here for now...
 

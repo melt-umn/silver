@@ -1,6 +1,6 @@
 
 import silver:testing;
-import silver:util:raw:treeset as ts;
+import silver:util:treeset as ts;
 import stdlib;
 
 function integerCompare

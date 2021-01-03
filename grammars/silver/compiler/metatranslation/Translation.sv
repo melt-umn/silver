@@ -1,4 +1,4 @@
-grammar silver:metatranslation;
+grammar silver:compiler:metatranslation;
 
 imports silver:reflect;
 imports silver:langutil:pp;

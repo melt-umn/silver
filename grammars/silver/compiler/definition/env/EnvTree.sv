@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:env;
 
-import silver:util:raw:treemap as rtm; -- good performance (mostly due to strictness!)
+import silver:util:treemap as rtm; -- good performance (mostly due to strictness!)
 --import silver:util:fixedmap as fm; -- decent performance
 --import silver:util:treemap as tm; -- poor performance
 

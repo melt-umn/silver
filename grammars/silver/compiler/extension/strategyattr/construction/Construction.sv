@@ -5,7 +5,7 @@ imports silver:compiler:extension:strategyattr;
 imports silver:compiler:extension:silverconstruction;
 
 imports silver:reflect;
-imports silver:metatranslation;
+imports silver:compiler:metatranslation;
 imports silver:rewrite as s;
 imports silver:langutil:pp;
 

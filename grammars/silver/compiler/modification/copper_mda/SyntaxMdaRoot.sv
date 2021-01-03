@@ -1,6 +1,6 @@
 grammar silver:compiler:modification:copper_mda;
 
-import silver:util:raw:graph as g;
+import silver:util:graph as g;
 
 abstract production cstCopperMdaRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Syntax  customStartLayout::Maybe<[String]>

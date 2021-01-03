@@ -2,7 +2,7 @@ grammar silver:compiler:analysis:warnings:flow;
 
 -- data structures
 imports silver:util;
-imports silver:util:raw:treeset as set;
+imports silver:util:treeset as set;
 
 -- driver stuff
 imports silver:util:cmdargs;

@@ -8,9 +8,9 @@ imports silver:compiler:analysis:warnings:flow only isOccursSynthesized, isAutoc
 
 imports silver:compiler:modification:autocopyattr;
 
-imports silver:util:raw:treemap as rtm;
-imports silver:util:raw:graph as g;
-imports silver:util:raw:treeset as set;
+imports silver:util:treemap as rtm;
+imports silver:util:graph as g;
+imports silver:util:treeset as set;
 
 import silver:util only rem;
 

@@ -1,7 +1,7 @@
 
 
 import silver:testing;
-import silver:util:raw:treemap as tm;
+import silver:util:treemap as tm;
 import stdlib;
 
 global e :: tm:Map<String Integer> = tm:empty(compareString);

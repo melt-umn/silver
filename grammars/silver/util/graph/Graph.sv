@@ -1,6 +1,6 @@
-grammar silver:util:raw:graph;
+grammar silver:util:graph;
 
-import silver:util:raw:treeset as set;
+import silver:util:treeset as set;
 
 {--
  - A primitive graph representation. Edges has no special value

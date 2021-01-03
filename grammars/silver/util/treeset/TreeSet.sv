@@ -1,6 +1,6 @@
-grammar silver:util:raw:treeset;
+grammar silver:util:treeset;
 
--- One should always import this via 'import silver:util:raw:treeset as ...'
+-- One should always import this via 'import silver:util:treeset as ...'
 -- The names are too general otherwise.
 
 type Set<a> foreign;

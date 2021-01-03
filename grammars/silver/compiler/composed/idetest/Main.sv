@@ -3,7 +3,7 @@ grammar silver:compiler:composed:idetest;
 import silver:compiler:definition:env;
 import silver:compiler:host;
 import silver:util:cmdargs;
-import silver:util:raw:treemap as tm;
+import silver:util:treemap as tm;
 
 -- NOTE: this is needed for the correct generation of IDE, 
 -- even if we just use an empty IDE declaration block.

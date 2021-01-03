@@ -1,7 +1,7 @@
 grammar silver:compiler:extension:silverconstruction;
 
 imports silver:reflect;
-imports silver:metatranslation;
+imports silver:compiler:metatranslation;
 
 aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
@@ -26,7 +26,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
           just(
             mkFullFunctionInvocation(
               givenLocation,
-              baseExpr(qName(givenLocation, "silver:metatranslation:makeQName"), location=givenLocation),
+              baseExpr(qName(givenLocation, "silver:compiler:metatranslation:makeQName"), location=givenLocation),
               [e, locAST.translation],
               []))
         | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
@@ -41,7 +41,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
           just(
             mkFullFunctionInvocation(
               givenLocation,
-              baseExpr(qName(givenLocation, "silver:metatranslation:makeName"), location=givenLocation),
+              baseExpr(qName(givenLocation, "silver:compiler:metatranslation:makeName"), location=givenLocation),
               [e, locAST.translation],
               []))
         | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
