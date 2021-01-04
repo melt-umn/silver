@@ -5,7 +5,7 @@ To edit the Silver runtime from an Eclipse IDE,
    This is necessary to generate translations for the Silver standard library
    and other things referenced by the runtime.
    (Failure to do this, or later having run clean, will result in errors related
-   to not finding classes from `core` and `lib`.)
+   to not finding classes from `silver:core` and other grammars.)
 
 2. In Eclipse, `File -> Import`, `General -> Existing Projects into Workspace`.
    Give it the path to `silver/runtime/java`.

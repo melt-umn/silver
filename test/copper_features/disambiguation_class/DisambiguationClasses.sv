@@ -1,5 +1,4 @@
 imports silver:testing ;
-imports lib:extcore ;
 imports copper_features;
 
 -- Test disambiguation classes.

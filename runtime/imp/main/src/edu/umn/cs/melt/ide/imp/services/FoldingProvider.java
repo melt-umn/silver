@@ -15,7 +15,7 @@ import common.DecoratedNode;
 import common.Node;
 import common.OriginContext;
 import common.javainterop.ConsCellCollection;
-import core.NLocation;
+import silver.core.NLocation;
 
 import edu.umn.cs.melt.ide.util.ReflectedCall;
 
@@ -26,11 +26,11 @@ import edu.umn.cs.melt.ide.util.ReflectedCall;
       <foldingUpdater
           class="edu.umn.cs.melt.ide.imp.services.FoldingProvider"
           language="Silver">
-        <silvercall function="silver:composed:idetest:fold" />
+        <silvercall function="silver:compiler:composed:idetest:fold" />
       </foldingUpdater>
     </extension>
  *
- * The function (above `silver:composed:idetest:fold`) should have
+ * The function (above `silver:compiler:composed:idetest:fold`) should have
  * Silver type `[Location] ::= ASTRoot`.
  */
 public class FoldingProvider extends FolderBase implements IExecutableExtension {
@@ -63,8 +63,8 @@ public class FoldingProvider extends FolderBase implements IExecutableExtension 
 		for(NLocation loc : new ConsCellCollection<NLocation>(folds)) {
 			DecoratedNode dloc = loc.decorate();
 			
-			int startInd = (Integer)dloc.synthesized(core.Init.core_index__ON__core_Location);
-			int endInd = (Integer)dloc.synthesized(core.Init.core_endIndex__ON__core_Location);
+			int startInd = (Integer)dloc.synthesized(silver.core.Init.silver_core_index__ON__silver_core_Location);
+			int endInd = (Integer)dloc.synthesized(silver.core.Init.silver_core_endIndex__ON__silver_core_Location);
 
 			makeAnnotation(startInd, endInd - startInd);
 		}

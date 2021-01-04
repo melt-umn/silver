@@ -125,7 +125,7 @@ equalityTest(toString(false), "false", String, silver_tests);
 
 type MyType3 = Pair<Integer String>;
 
-wrongCode "Operand to toString must be concrete types String, Integer, Float, or Boolean.  Instead it is of type core:Pair<Integer String>" {
+wrongCode "Operand to toString must be concrete types String, Integer, Float, or Boolean.  Instead it is of type silver:core:Pair<Integer String>" {
   global m3t :: MyType3 = pair(0, "");
   equalityTest(toString(m3t), "<this fails>", String, silver_tests);
 }

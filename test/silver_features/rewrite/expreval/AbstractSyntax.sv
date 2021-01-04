@@ -3,7 +3,6 @@ grammar silver_features:rewrite:expreval;
 imports silver:langutil;
 imports silver:langutil:pp;
 imports silver:rewrite;
-imports core:monad;
 
 synthesized attribute needsParens::Boolean;
 

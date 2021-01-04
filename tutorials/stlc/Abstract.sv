@@ -1,9 +1,5 @@
 grammar stlc;
 
-
-imports core:monad;
-
-
 restricted inherited attribute gamma::[Pair<String Type>];
 implicit synthesized attribute type::Either<String Type>;
 synthesized attribute errors::[String];

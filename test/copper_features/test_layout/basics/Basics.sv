@@ -1,7 +1,6 @@
 grammar copper_features:test_layout:basics;
 
 imports silver:testing ;
-imports lib:extcore ;
 imports copper_features hiding A;
 
 nonterminal BRoot;

@@ -24,8 +24,8 @@ public final class RawGraph {
 			return g;
 		// Note that this clone only the tree map... it's up to us to clone the sets in the values.
 		TreeMap<Object,TreeSet<Object>> ret = (TreeMap<Object,TreeSet<Object>>)g.clone();
-		for(core.NPair elem : new ConsCellCollection<core.NPair>(l)) {
-			assert(elem instanceof core.Ppair); // document as an assert why not
+		for(silver.core.NPair elem : new ConsCellCollection<silver.core.NPair>(l)) {
+			assert(elem instanceof silver.core.Ppair); // document as an assert why not
 			final Object src = elem.getChild(0);
 			final Object dst = elem.getChild(1);
 			
@@ -56,8 +56,8 @@ public final class RawGraph {
 	}
 	
 	// contains :: (Boolean ::= Pair<a a>  Graph<a>)
-	public static boolean contains(core.NPair p, TreeMap<Object,TreeSet<Object>> g) {
-		assert(p instanceof core.Ppair); // document as an assert why not
+	public static boolean contains(silver.core.NPair p, TreeMap<Object,TreeSet<Object>> g) {
+		assert(p instanceof silver.core.Ppair); // document as an assert why not
 		final TreeSet<Object> set = g.get(p.getChild(0));
 		if(set == null)
 			return false;
@@ -70,7 +70,7 @@ public final class RawGraph {
 		for(Entry<Object, TreeSet<Object>> e : g.entrySet()) {
 			final Object key = e.getKey();
 			for(Object value : e.getValue()) {
-				ret = new ConsCell(core.Ppair.rtConstruct(null, key, value), ret);
+				ret = new ConsCell(silver.core.Ppair.rtConstruct(null, key, value), ret);
 			}
 		}
 		return ret;
@@ -127,8 +127,8 @@ public final class RawGraph {
 		// Cloning the crap out of graphs way too often is a smaller price to pay than the additional
 		// calls to comparison functions. So, uh, to-do someday: make silver fast. Heh.
 		
-		for(core.NPair elem : new ConsCellCollection<core.NPair>(l)) {
-			assert(elem instanceof core.Ppair); // document as an assert why not
+		for(silver.core.NPair elem : new ConsCellCollection<silver.core.NPair>(l)) {
+			assert(elem instanceof silver.core.Ppair); // document as an assert why not
 			final Object src = elem.getChild(0);
 			final Object dst = elem.getChild(1);
 

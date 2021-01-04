@@ -1,6 +1,6 @@
 package common;
 
-import core.NOriginInfo;
+import silver.core.NOriginInfo;
 
 
 /**

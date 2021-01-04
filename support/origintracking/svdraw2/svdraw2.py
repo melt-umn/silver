@@ -21,7 +21,7 @@ def translate(x):
 			return PrimitiveValue(x[0], None)
 		if x[1] == "!Terminal":
 			return Token(x)
-		if x[1] == "core:loc":
+		if x[1] == "silver:core:loc":
 			return LocationNT(x)
 		# if x[1].endswith("OIT"):
 		# 	return PrimitiveValue(x[0], "<"+x[1]+">")
@@ -61,7 +61,7 @@ class NT(ComplexValue):
 		self.comment = o.node_text(False)
 		if o is None or (isinstance(o, PrimitiveValue) and o.value is None):
 			return
-		if o.name=="core:otherOriginInfo" or o.name=="core:parsedOriginInfo":
+		if o.name=="silver:core:otherOriginInfo" or o.name=="silver:core:parsedOriginInfo":
 			return
 		# print()
 		# print(self.name)
@@ -81,8 +81,8 @@ class NT(ComplexValue):
 
 	def node_text(self, inclo=True):
 		# r=self.name.split(":")[-1]+"("
-		if self.name=="core:originDbgNote":
-			return ":".join(self.children[0].value[len("core:loc("):].replace("\"","").replace(" ","").split(",")[0:3])
+		if self.name=="silver:core:originDbgNote":
+			return ":".join(self.children[0].value[len("silver:core:loc("):].replace("\"","").replace(" ","").split(",")[0:3])
 		r=(self.name.split(":",1)[1] if strip_packagename else self.name)+"("
 		for c in self.children:
 			if isinstance(c, PrimitiveValue) or isinstance(c, LocationNT):
@@ -96,20 +96,20 @@ class NT(ComplexValue):
 			if small_nodes:
 				if isinstance(self.oi, NT):
 					r+="\\n"+{
-						"core:originAndRedexOriginInfo": "OR",
-						"core:originOriginInfo": "O",
-						"core:parsedOriginInfo": "P",
-						"core:otherOriginInfo":"X"}[self.oi.name]
+						"silver:core:originAndRedexOriginInfo": "OR",
+						"silver:core:originOriginInfo": "O",
+						"silver:core:parsedOriginInfo": "P",
+						"silver:core:otherOriginInfo":"X"}[self.oi.name]
 					r+=";"+{
-						"core:setInGlobalOIT": "G",
-						"core:setAtConstructionOIT": "C",
-						"core:setAtAccessOIT": "A",
-						"core:setAtForwardingOIT": "F",
-						"core:setFromParserOIT": "P",
-						"core:setFromEntryOIT": "E",
-						"core:setFromReflectionOIT": "R",
-						"core:setFromReificationOIT": "I",
-						"core:setAtNewOIT": "N"}[self.oi.children[0].name]
+						"silver:core:setInGlobalOIT": "G",
+						"silver:core:setAtConstructionOIT": "C",
+						"silver:core:setAtAccessOIT": "A",
+						"silver:core:setAtForwardingOIT": "F",
+						"silver:core:setFromParserOIT": "P",
+						"silver:core:setFromEntryOIT": "E",
+						"silver:core:setFromReflectionOIT": "R",
+						"silver:core:setFromReificationOIT": "I",
+						"silver:core:setAtNewOIT": "N"}[self.oi.children[0].name]
 				else:
 					r+="\\n"+"P"+";"+self.oi.node_text(inclo=False)
 			else:

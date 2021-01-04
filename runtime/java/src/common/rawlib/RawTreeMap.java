@@ -15,8 +15,8 @@ public final class RawTreeMap {
 		if(l.nil())
 			return t;
 		TreeMap<Object,ConsCell> ret = (TreeMap<Object,ConsCell>)t.clone();
-		for(core.NPair elem : new ConsCellCollection<core.NPair>(l)) {
-			assert(elem instanceof core.Ppair); // document as an assert why not
+		for(silver.core.NPair elem : new ConsCellCollection<silver.core.NPair>(l)) {
+			assert(elem instanceof silver.core.Ppair); // document as an assert why not
 			ConsCell existing = lookup(elem.getChild(0), ret);
 			ret.put(elem.getChild(0), new ConsCell(elem.getChild(1), existing));
 		}
@@ -26,7 +26,7 @@ public final class RawTreeMap {
 		ConsCell ret = ConsCell.nil;
 		for(Object key : t.descendingKeySet()) {
 			for(Object value : new ConsCellCollection<Object>(t.get(key))) {
-				ret = new ConsCell(core.Ppair.rtConstruct(null, key, value), ret);
+				ret = new ConsCell(silver.core.Ppair.rtConstruct(null, key, value), ret);
 			}
 		}
 		return ret;
