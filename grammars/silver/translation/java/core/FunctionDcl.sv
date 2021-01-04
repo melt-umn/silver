@@ -194,8 +194,8 @@ public class Main {
 		try {
 			common.Node rv = (common.Node) ${package}.Pmain.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args), common.IOToken.singleton);
 			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
-			drv.synthesized(silver.core.Init.core_io__ON__core_IOVal); // demand the io token
-			System.exit( (Integer)drv.synthesized(silver.core.Init.core_iovalue__ON__core_IOVal) );
+			drv.synthesized(silver.core.Init.silver_core_io__ON__silver_core_IOVal); // demand the io token
+			System.exit( (Integer)drv.synthesized(silver.core.Init.silver_core_iovalue__ON__silver_core_IOVal) );
 		} catch(Throwable t) {
 			Throwable rt = common.exceptions.SilverException.getRootCause(t);
 			if(rt instanceof common.exceptions.SilverExit)
