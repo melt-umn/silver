@@ -98,8 +98,8 @@ import java.util.Iterator;
 import common.ConsCell;
 import common.Node;
 import common.StringCatter;
-import core.NIOVal;
-import core.Pioval;
+import silver.core.NIOVal;
+import silver.core.Pioval;
 
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.core.resources.IProject;

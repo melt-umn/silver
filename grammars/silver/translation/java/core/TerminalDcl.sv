@@ -20,7 +20,7 @@ function terminalTranslation
 package ${makeName(grammarName)};
 
 import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;
-import core.NLocation;
+import silver.core.NLocation;
 
 public class ${className} extends common.Terminal {
   public ${className}(final String lexeme, final VirtualLocation vl, final int index, final int endIndex) {

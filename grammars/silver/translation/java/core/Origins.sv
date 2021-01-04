@@ -43,12 +43,12 @@ function makeOriginContextRef
 String ::= top::Decorated Expr --need .frame anno
 {
   local rulesTrans :: [String] = (if top.config.tracingOrigins then [locRule] else []) ++ map((.translation), top.originRules);
-  local locRule :: String = s"new core.PtraceNote(new common.StringCatter(\"${substitute("\"", "\\\"", top.location.unparse)}\"))";
+  local locRule :: String = s"new silver.core.PtraceNote(new common.StringCatter(\"${substitute("\"", "\\\"", top.location.unparse)}\"))";
 
   return if top.config.noOrigins then "null" 
          else if length(rulesTrans)==0 
               then top.frame.originsContextSource.contextRef
-              else top.frame.originsContextSource.contextRefAddingRules(s"new core.NOriginNote[]{${implode(", ", rulesTrans)}}");
+              else top.frame.originsContextSource.contextRefAddingRules(s"new silver.core.NOriginNote[]{${implode(", ", rulesTrans)}}");
 }
 
 global newConstructionOriginUsingCtxRef :: String =
