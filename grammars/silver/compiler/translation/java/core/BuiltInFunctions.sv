@@ -75,16 +75,16 @@ top::Expr ::= 'reify'
   -- we also can't do any better, so leave the runtime result TypeRep unfreshened.
   -- There is a similar problem with lambdas.
   top.translation =
-s"""(new common.NodeFactory<core.NEither>() {
+s"""(new common.NodeFactory<silver.core.NEither>() {
 				@Override
-				public final core.NEither invoke(final common.OriginContext originCtx, final Object[] args, final Object[] namedArgs) {
+				public final silver.core.NEither invoke(final common.OriginContext originCtx, final Object[] args, final Object[] namedArgs) {
 					assert args != null && args.length == 1;
 					assert namedArgs == null || namedArgs.length == 0;
 					
 ${makeTyVarDecls(5, resultType.freeVariables)}
 					common.TypeRep resultType = ${resultType.transTypeRep};
 					
-					return common.Reflection.reifyChecked((originCtx!=null)?originCtx.rulesAsSilverList():null, resultType, (core.reflect.NAST)common.Util.demand(args[0]));
+					return common.Reflection.reifyChecked((originCtx!=null)?originCtx.rulesAsSilverList():null, resultType, (silver.core.NAST)common.Util.demand(args[0]));
 				}
 				
 				@Override
@@ -113,7 +113,7 @@ top::Expr ::= 'new' '(' e::Expr ')'
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
-  top.translation = s"new ${makeTerminalName(t.typerep.typeName)}(${es.translation}, (core.NLocation)${el.translation})";
+  top.translation = s"new ${makeTerminalName(t.typerep.typeName)}(${es.translation}, (silver.core.NLocation)${el.translation})";
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }

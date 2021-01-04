@@ -53,7 +53,7 @@ String ::= whatGrammar::String whatName::String whatSig::NamedSignature whatResu
   return s"""
 package ${makeName(whatGrammar)};
 
-import core.NOriginInfo;
+import silver.core.NOriginInfo;
 
 public final class ${className} extends common.FunctionNode {
 
@@ -182,7 +182,7 @@ String ::= whatGrammar::String
   return s"""
 package ${package};
 
-import core.*;
+import silver.core.*;
 
 public class Main {
 	public static void main(String[] args) {
@@ -193,8 +193,8 @@ public class Main {
 		try {
 			common.Node rv = (common.Node) ${package}.Pmain.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args), common.IOToken.singleton);
 			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
-			drv.synthesized(core.Init.core_io__ON__core_IOVal); // demand the io token
-			System.exit( (Integer)drv.synthesized(core.Init.core_iovalue__ON__core_IOVal) );
+			drv.synthesized(silver.core.Init.core_io__ON__core_IOVal); // demand the io token
+			System.exit( (Integer)drv.synthesized(silver.core.Init.core_iovalue__ON__core_IOVal) );
 		} catch(Throwable t) {
 			Throwable rt = common.exceptions.SilverException.getRootCause(t);
 			if(rt instanceof common.exceptions.SilverExit)

@@ -22,7 +22,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
 package ${makeName(top.grammarName)};
 
 import java.util.*;
-import core.*;
+import silver.core.*;
 
 public abstract class ${className} extends common.${if wantsTracking then "TrackedNode" else "Node"}${
   (if null(myAnnos) then "" else 

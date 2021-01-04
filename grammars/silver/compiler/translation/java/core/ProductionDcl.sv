@@ -49,7 +49,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
 
-import core.*;
+import silver.core.*;
 
 // ${ntName}
 // ${ns.unparse}
@@ -179,12 +179,12 @@ ${body.translation}
     }
 
     public static ${className} reify(
-        final core.reflect.NAST origAST,
+        final silver.core.NAST origAST,
         final common.ConsCell rules,
         final common.TypeRep resultType,
-        final core.reflect.NAST[] childASTs,
+        final silver.core.NAST[] childASTs,
         final String[] annotationNames,
-        final core.reflect.NAST[] annotationASTs) {
+        final silver.core.NAST[] annotationASTs) {
         assert annotationNames.length == annotationASTs.length;
 ${makeAnnoIndexDcls(0, namedSig.namedInputElements)}
 ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
@@ -207,7 +207,7 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
         ${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
     
         ${if !null(namedSig.contexts) then s"""throw new common.exceptions.SilverError("Production ${fName} containes type contexts, which are not supported by reify"); // TODO""" else
-            s"""return new ${className}(${if wantsTracking then "new core.PoriginOriginInfo(common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)"++commaIfKidsOrAnnos else ""} ${namedSig.refInvokeTrans});"""}
+            s"""return new ${className}(${if wantsTracking then "new silver.core.PoriginOriginInfo(common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)"++commaIfKidsOrAnnos else ""} ${namedSig.refInvokeTrans});"""}
     }
 
 	${if null(namedSig.contexts) then s"public static final common.NodeFactory<${fnnt}> factory = new Factory();" else ""}
@@ -284,7 +284,7 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
 
     @Override
     public ${fnnt} duplicateForForwarding(Object redex, String note) {
-        return new ${className}(new PoriginOriginInfo(common.OriginsUtil.SET_AT_FORWARDING_OIT, this, new common.ConsCell(new core.PoriginDbgNote(new common.StringCatter(note)), common.ConsCell.nil), true) ${commaIfKids}
+        return new ${className}(new PoriginOriginInfo(common.OriginsUtil.SET_AT_FORWARDING_OIT, this, new common.ConsCell(new silver.core.PoriginDbgNote(new common.StringCatter(note)), common.ConsCell.nil), true) ${commaIfKids}
             ${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(copyAnno, namedSig.namedInputElements))});
     }
 
