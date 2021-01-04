@@ -301,7 +301,7 @@ Either<String Expr> ::= ty::Type l::Location
            end
     | _ -> case ty.baseType of
          | nonterminalType("core:Maybe", _, _) ->
-           right(Silver_Expr { silver:core:nothing() })
+           right(Silver_Expr { silver:silver:core:nothing() })
          | nonterminalType("silver:core:IOMonad", _, _) ->
            left("MZero undefined for IOMonad")
          | nonterminalType("silver:core:State", _, _) ->

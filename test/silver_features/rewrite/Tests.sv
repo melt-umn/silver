@@ -181,7 +181,7 @@ equalityTest(
 
 global s18::s:Strategy = s:rec(\ s::s:Strategy -> traverse (s :: s) <+ traverse [] <+ s:try(inc));
 equalityTest(showRes(rewriteWith(s18, [[1], [], [2, 3]])), "[[2], [], [3, 4]]", String, silver_tests);
-equalityTest(showRes(rewriteWith(s18, [[just(1)]])), "[[core:just(1)]]", String, silver_tests);
+equalityTest(showRes(rewriteWith(s18, [[just(1)]])), "[[silver:core:just(1)]]", String, silver_tests);
 
 global s19::s:Strategy = s:rec(\ s::s:Strategy -> traverse (_ :: s) <+ rule on [Integer] of [] -> [42] end);
 equalityTest(showRes(rewriteWith(s19, [1, 2, 3])), "[1, 2, 3, 42]", String, silver_tests);

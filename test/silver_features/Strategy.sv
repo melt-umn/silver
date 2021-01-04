@@ -66,19 +66,19 @@ equalityTest(
     seqSStmt(
       assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0))),
       assignSStmt("b", addSExpr(addSExpr(idSExpr("a"), constSExpr(0)), constSExpr(0)))).removeLastStmt),
-  "core:just(silver_features:assignSStmt(\"a\", silver_features:addSExpr(silver_features:constSExpr(42), silver_features:constSExpr(0))))",
+  "silver:core:just(silver_features:assignSStmt(\"a\", silver_features:addSExpr(silver_features:constSExpr(42), silver_features:constSExpr(0))))",
   String, silver_tests);
 
 equalityTest(
   hackUnparse(
     assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0))).removeLastStmt),
-  "core:nothing()",
+  "silver:core:nothing()",
   String, silver_tests);
 
 equalityTest(
   hackUnparse(
     addSExpr(constSExpr(42), constSExpr(0)).removeLastStmt),
-  "core:nothing()",
+  "silver:core:nothing()",
   String, silver_tests);
 
 
@@ -155,21 +155,21 @@ equalityTest(
     seqSStmt(
       assignSStmt("a", constSExpr(1)),
       assignSStmt("b", constSExpr(2))).incSome),
-  "core:just(silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:constSExpr(2)), silver_features:assignSStmt(\"b\", silver_features:constSExpr(3))))",
+  "silver:core:just(silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:constSExpr(2)), silver_features:assignSStmt(\"b\", silver_features:constSExpr(3))))",
   String, silver_tests);
 equalityTest(
   hackUnparse(
     seqSStmt(
       assignSStmt("a", constSExpr(1)),
       assignSStmt("b", constSExpr(2))).incOne),
-  "core:just(silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:constSExpr(2)), silver_features:assignSStmt(\"b\", silver_features:constSExpr(2))))",
+  "silver:core:just(silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:constSExpr(2)), silver_features:assignSStmt(\"b\", silver_features:constSExpr(2))))",
   String, silver_tests);
 equalityTest(
   hackUnparse(
     seqSStmt(
       assignSStmt("a", addSExpr(constSExpr(1), constSExpr(0))),
       assignSStmt("b", addSExpr(constSExpr(2), constSExpr(0)))).incFstElimSnd),
-  "core:just(silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:addSExpr(silver_features:constSExpr(2), silver_features:constSExpr(1))), silver_features:assignSStmt(\"b\", silver_features:constSExpr(2))))",
+  "silver:core:just(silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:addSExpr(silver_features:constSExpr(2), silver_features:constSExpr(1))), silver_features:assignSStmt(\"b\", silver_features:constSExpr(2))))",
   String, silver_tests);
 
 -- Negative tests
