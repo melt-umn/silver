@@ -18,6 +18,10 @@ java -Xss8M -Xmx3G -jar jars/silver.compiler.composed.Default.jar --clean silver
 
 ./rebuild-runtime
 
+cd build/
+ant
+cd ..
+
 ./self-compile --clean
 cp build/silver.compiler.composed.Default.jar jars/silver.compiler.composed.Default.jar
 
