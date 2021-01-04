@@ -266,10 +266,10 @@ equalityTest(
 global add::(Integer ::= Integer Integer) = \ i::Integer j::Integer -> i + j;
 
 global applyRes1::Either<String AST> = applyAST(reflect(add), [just(reflect(1)), just(reflect(2))], []);
-equalityTest(lessHackyUnparse(applyRes1), "silver:core:right(silver:core:reflect:integerAST(3))", String, silver_tests);
+equalityTest(lessHackyUnparse(applyRes1), "silver:core:right(silver:core:integerAST(3))", String, silver_tests);
 
 global applyRes2::Either<String AST> = applyAST(applyAST(reflect(add), [nothing(), just(reflect(2))], []).fromRight, [just(reflect(1))], []);
-equalityTest(lessHackyUnparse(applyRes2), "silver:core:right(silver:core:reflect:integerAST(3))", String, silver_tests);
+equalityTest(lessHackyUnparse(applyRes2), "silver:core:right(silver:core:integerAST(3))", String, silver_tests);
 
 global applyRes3::Either<String AST> = applyAST(reflect(add), [just(reflect(1)), nothing(), just(reflect(2))], []);
 equalityTest(applyRes3.isLeft, true, Boolean, silver_tests);

@@ -1,6 +1,6 @@
 grammar simple:abstractsyntax;
 
-import silver:util:raw:treemap as tm;
+import silver:util:treemap as tm;
 
 {- This is slightly overkill for simple, however it's an ideal way to set up the
    environment for larger projects and more realistic languages. -}
