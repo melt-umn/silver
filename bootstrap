@@ -16,7 +16,7 @@ git checkout feature/renaming
 
 ./deep-clean -delete all
 
-java -Xss8M -Xmx3G -jar silver.compiler.composed.Default.jar --clean silver:xml:ast
+java -Xss8M -Xmx3G -jar jars/silver.compiler.composed.Default.jar --clean silver:xml:ast
 
 ./rebuild-runtime
 
