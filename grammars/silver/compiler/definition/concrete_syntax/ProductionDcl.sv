@@ -113,7 +113,7 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
     case top.namedSignature.namedInputElements of
     | [] -> []
     | [namedSignatureElement("silver:core:location", _)] -> []
-    | _ -> [err(top.location, "Annotation(s) on this production are not handleable by the parser generator (only a single annotation, and only core:location is supported.)")]
+    | _ -> [err(top.location, "Annotation(s) on this production are not handleable by the parser generator (only a single annotation, and only silver:core:location is supported.)")]
     end;
 
   top.concreteSyntaxTypeErrors <-

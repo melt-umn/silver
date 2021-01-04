@@ -413,7 +413,7 @@ public final class Util {
 	}
 
 	/**
-	 * Converts a common.Terminal to a Silver core:TerminalDescriptor.
+	 * Converts a common.Terminal to a Silver silver:core:TerminalDescriptor.
 	 */
 	private static NTerminalDescriptor terminalToTerminalDescriptor(Terminal t) {
         return PterminalDescriptor.rtConstruct(null, 

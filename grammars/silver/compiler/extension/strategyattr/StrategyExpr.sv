@@ -138,7 +138,7 @@ Expr ::= t::Type e::Expr
   return
     Silver_Expr {
       let res::$TypeExpr{typerepTypeExpr(t, location=e.location)} =
-          core:error("Total result demanded when partial strategy failed")
+          silver:core:error("Total result demanded when partial strategy failed")
       in silver:core:fromMaybe(res, $Expr{e})
       end
     };
@@ -335,7 +335,7 @@ top::StrategyExpr ::= s::StrategyExpr
            },
            location=top.location)],
         Silver_Expr { silver:core:nothing() },
-        appType(nonterminalType("core:Maybe", 1, false), top.frame.signature.outputElement.typerep),
+        appType(nonterminalType("silver:core:Maybe", 1, false), top.frame.signature.outputElement.typerep),
         location=top.location);
   top.totalTranslation =
     if sTotal
@@ -510,7 +510,7 @@ top::StrategyExpr ::= s::StrategyExpr
             end end,
             range(0, length(matchingChildren))),
         Silver_Expr { silver:core:nothing() },
-        appType(nonterminalType("core:Maybe", 1, false), top.frame.signature.outputElement.typerep),
+        appType(nonterminalType("silver:core:Maybe", 1, false), top.frame.signature.outputElement.typerep),
         location=top.location);
   top.totalTranslation =
     if sTotal && !null(matchingChildren)
@@ -605,7 +605,7 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
            },
            location=top.location)],
         Silver_Expr { silver:core:nothing() },
-        appType(nonterminalType("core:Maybe", 1, false), top.frame.signature.outputElement.typerep),
+        appType(nonterminalType("silver:core:Maybe", 1, false), top.frame.signature.outputElement.typerep),
         location=top.location)
     else Silver_Expr { silver:core:nothing() };
 }
@@ -734,7 +734,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
       [Silver_Expr { $name{top.frame.signature.outputElement.elementName} }],
       ml.translation,
       Silver_Expr { silver:core:nothing() },
-      appType(nonterminalType("core:Maybe", 1, false), ty.typerep),
+      appType(nonterminalType("silver:core:Maybe", 1, false), ty.typerep),
       location=top.location);
   top.partialTranslation =
     if unify(ty.typerep, top.frame.signature.outputElement.typerep).failure
@@ -880,8 +880,8 @@ top::StrategyExpr ::= attr::QNameAttrOccur
     if !attrDcl.isSynthesized
     then [err(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy, because it is not a synthesized attribute")]
     else case attrTypeScheme.typerep, attrTypeScheme.boundVars of
-    | appType(nonterminalType("core:Maybe", _, _), varType(a1)), [a2] when tyVarEqual(a1, a2) && attrDcl.isSynthesized -> []
-    | appType(nonterminalType("core:Maybe", _, _), a), _ when pair(a.baseType, attrDcl.isSynthesized) matches pair(nonterminalType(nt, _, _), true) ->
+    | appType(nonterminalType("silver:core:Maybe", _, _), varType(a1)), [a2] when tyVarEqual(a1, a2) && attrDcl.isSynthesized -> []
+    | appType(nonterminalType("silver:core:Maybe", _, _), a), _ when pair(a.baseType, attrDcl.isSynthesized) matches pair(nonterminalType(nt, _, _), true) ->
       if null(getOccursDcl(attrDcl.fullName, nt, top.env))
       then [wrn(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy, because it doesn't occur on its own nonterminal type ${nt}")]
       else []
@@ -960,7 +960,7 @@ top::QNameAttrOccur ::= at::QName
 {
   top.matchesFrame := top.found &&
     case top.typerep of
-    | appType(nonterminalType("core:Maybe", _, _), t) -> !unify(top.attrFor, t).failure
+    | appType(nonterminalType("silver:core:Maybe", _, _), t) -> !unify(top.attrFor, t).failure
     | t -> !unify(top.attrFor, t).failure
     end;
 }
@@ -974,7 +974,7 @@ Boolean ::= env::Decorated Env attrName::String
     | [] -> false
     | d :: _ ->
       case decorate d with { givenNonterminalType = error("Not actually needed"); }.typeScheme.typerep of -- Ugh environment needs refactoring
-      | appType(nonterminalType("core:Maybe", _, _), _) -> false
+      | appType(nonterminalType("silver:core:Maybe", _, _), _) -> false
       | _ -> true
       end
     end;

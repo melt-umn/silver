@@ -125,9 +125,9 @@ Integer ::= p::Pair<Integer Integer>
 {
 return case p of
 | pair(1,2) -> 1
-| core:pair(1,_) -> 2
+| silver:core:pair(1,_) -> 2
 | pair(2,1) -> 3
-| core:pair(_,1) -> 4
+| silver:core:pair(_,1) -> 4
 end;
 }
 

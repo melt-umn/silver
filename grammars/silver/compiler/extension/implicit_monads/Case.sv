@@ -34,7 +34,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
           false,
           ml.matchRuleList);
 
-  local basicFailure::Expr = mkStrFunctionInvocation(top.location, "core:error",
+  local basicFailure::Expr = mkStrFunctionInvocation(top.location, "silver:core:error",
                                [stringConst(terminal(String_t, 
                                   "\"Error: pattern match failed at " ++ top.grammarName ++
                                   " " ++ top.location.unparse ++ "\\n\""),

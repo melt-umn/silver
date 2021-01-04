@@ -1,6 +1,6 @@
 grammar silver_features;
 
-import core:monad;
+import silver:core:monad;
 
 strategy attribute elimPlusZero =
   bottomUp(try(rule on SExpr of addSExpr(e, constSExpr(0)) -> e end));

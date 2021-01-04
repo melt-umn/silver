@@ -77,7 +77,7 @@ public final class RawXML {
 	/**
 	 * @param fn The filename of an XML file to convert to a Silver AST (Silver type String)
 	 * @return The Silver AST of the XML file, wrapped in a ParseResult structure.
-	 *   (Silver type core:ParseResult&lt;silver:xml:ast:XMLDocument&gt;)
+	 *   (Silver type silver:core:ParseResult&lt;silver:xml:ast:XMLDocument&gt;)
 	 */
 	public static final silver.core.NParseResult parseXMLFileN(final common.StringCatter fn) {
 		
@@ -100,7 +100,7 @@ public final class RawXML {
 	/**
 	 * @param fn The filename of an XML file (Silver type String)
 	 * @return A parse result containing a direct reference to a Document.
-	 *   (Silver type core:ParseResult&lt;silver:xml:foreigntypes:XML_Document&gt;)
+	 *   (Silver type silver:core:ParseResult&lt;silver:xml:foreigntypes:XML_Document&gt;)
 	 */
 	public static final silver.core.NParseResult parseXMLFileF(final common.StringCatter fn) {
 

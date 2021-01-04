@@ -357,7 +357,7 @@ public final class IOToken implements Typed {
 
 	@Override
 	public TypeRep getType() {
-		return new BaseTypeRep("core:IO");
+		return new BaseTypeRep("silver:core:IO");
 	}
 	
 }
