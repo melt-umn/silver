@@ -1,8 +1,7 @@
 grammar silver:compiler:definition:env;
 
 imports silver:compiler:definition:type;
-
-import silver:compiler:definition:regex;  -- soley for Terms. TODO : fix?
+imports silver:regex;
 
 annotation sourceGrammar :: String;
 annotation sourceLocation :: Location;

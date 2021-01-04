@@ -147,7 +147,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   
   top.cstNormalize :=
     case modifiers.prefixSeperatorToApply of
-    | just(sep) -> [syntaxTerminal(n, regexConcatenate(regex, regexLiteral(sep)), modifiers)]
+    | just(sep) -> [syntaxTerminal(n, seq(regex, regexLiteral(sep)), modifiers)]
     | nothing() -> [top]
     end;
 

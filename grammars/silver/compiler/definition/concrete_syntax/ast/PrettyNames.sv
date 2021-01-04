@@ -5,7 +5,7 @@ Maybe<String> ::= r::Regex
 {
   return mapMaybe(\x::String -> "'" ++ xmlEscapeString(x) ++ "'", r.asLiteral);
 }
-
+{-
 -- |If the regex matches only a single literal string, the attribute contains
 -- it.
 synthesized attribute asLiteral::Maybe<String> occurs on Regex, RegexSeq,
@@ -149,3 +149,4 @@ top::RegexChar ::= esc::EscapedChar_t
   -- TODO: Support this better.
   top.asLiteral = just(substring(1, 2, esc.lexeme));
 }
+-}

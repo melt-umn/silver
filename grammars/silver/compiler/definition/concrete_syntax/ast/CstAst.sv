@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:concrete_syntax:ast;
 
-imports silver:compiler:definition:regex;
+imports silver:regex;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
 

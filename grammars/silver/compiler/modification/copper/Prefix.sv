@@ -1,7 +1,7 @@
 grammar silver:compiler:modification:copper;
 
 
-import silver:compiler:definition:regex;
+import silver:regex;
 import silver:compiler:extension:easyterminal; -- only Terminal_t, EasyTerminalRef;
 
 terminal Prefix_t 'prefix' lexer classes {KEYWORD, RESERVED};

@@ -1,6 +1,7 @@
 grammar silver:compiler:definition:concrete_syntax;
 
-import silver:compiler:definition:regex;
+import silver:regex as abs;
+import silver:regex:concrete_syntax;
 
 terminal Ignore_kwd      'ignore'      lexer classes {KEYWORD};
 terminal Marking_kwd     'marking'     lexer classes {KEYWORD};
@@ -34,7 +35,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
 
   -- This is a crude check, but effective.
   top.errors <-
-    if indexOf("\\n", r.terminalRegExprSpec.regString) != -1 && indexOf("\\r", r.terminalRegExprSpec.regString) == -1
+    if indexOf("\\n", r.unparse) != -1 && indexOf("\\r", r.unparse) == -1
     then [wrn(r.location, "Regex contains '\\n' but not '\\r'. This is your reminder about '\\r\\n' newlines.")]
     else [];
 
@@ -63,14 +64,14 @@ top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr tm::Ter
  -}
 nonterminal RegExpr with config, location, grammarName, unparse, terminalRegExprSpec;
 
-synthesized attribute terminalRegExprSpec :: Regex;
+synthesized attribute terminalRegExprSpec :: abs:Regex;
 
 concrete production regExpr
 top::RegExpr ::= '/' r::Regex '/'
 layout {}
 {
-  top.unparse = "/" ++ r.regString ++ "/";
-  top.terminalRegExprSpec = r;
+  top.unparse = "/" ++ r.unparse ++ "/";
+  top.terminalRegExprSpec = r.ast;
 }
 
 

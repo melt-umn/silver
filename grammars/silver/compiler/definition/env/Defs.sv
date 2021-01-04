@@ -1,7 +1,5 @@
 grammar silver:compiler:definition:env;
 
-import silver:compiler:definition:regex; -- soley for Terminals. TODO : perhaps this shouldn't be here!
-
 nonterminal Defs with typeList, valueList, attrList, instList, prodOccursList, prodDclList;
 
 -- The standard namespaces

@@ -1,80 +1,31 @@
 grammar silver:compiler:definition:concrete_syntax:ast;
 
 -- Translation of regex to Copper XML format.
-attribute xmlCopper occurs on Regex, RegexSeq, RegexRepetition, RegexItem, RegexCharSet, RegexCharSetItem, RegexChar;
+attribute xmlCopper occurs on Regex;
 
 {--
  - Used to prevent unneeded nesting of the same operator. (choices, sequences)
  -}
-synthesized attribute unwrappedXML :: String occurs on Regex, RegexSeq;
+synthesized attribute altXML :: String occurs on Regex;
+synthesized attribute seqXML :: String occurs on Regex;
+
+aspect default production
+top::Regex ::=
+{
+  top.altXML = top.xmlCopper;
+  top.seqXML = top.xmlCopper;
+}
 
 
 ---------------------------------------------------------------------------------
-aspect production regexEpsilon
+
+aspect production char
+top::Regex ::= _
+{
+  top.xmlCopper = "<CharacterSet><SingleCharacter char=\"" ++ xmlEscapeChar(char) ++ "\"/></CharacterSet>";
+}
+aspect production wildChar
 top::Regex ::=
-{
-  top.xmlCopper = "<EmptyString/>";
-  top.unwrappedXML = top.xmlCopper;
-}
-aspect production regexSeq
-top::Regex ::= h::RegexSeq
-{
-  top.xmlCopper = h.xmlCopper;
-  top.unwrappedXML = top.xmlCopper;
-}
-aspect production regexChoice
-top::Regex ::= h::RegexSeq _ t::Regex
-{
-  top.xmlCopper = "<Choice>" ++ h.xmlCopper ++ t.unwrappedXML ++ "</Choice>";
-  top.unwrappedXML = h.xmlCopper ++ t.unwrappedXML;
-}
-
-
-aspect production regexSeqSnoc
-top::RegexSeq ::= h::RegexSeq t::RegexRepetition
-{
-  top.xmlCopper = "<Concatenation>" ++ h.unwrappedXML ++ t.xmlCopper ++ "</Concatenation>";
-  top.unwrappedXML = h.unwrappedXML ++ t.xmlCopper;
-}
-aspect production regexSeqOne
-top::RegexSeq ::= t::RegexRepetition
-{
-  top.xmlCopper = t.xmlCopper;
-  top.unwrappedXML = top.xmlCopper;
-}
-
-
-aspect production regexKleene
-top::RegexRepetition ::= i::RegexItem _
-{
-  top.xmlCopper = "<KleeneStar>" ++ i.xmlCopper ++ "</KleeneStar>";
-}
-aspect production regexPlus
-top::RegexRepetition ::= i::RegexItem _
-{
-  -- Copper has no direct translation of +
-  top.xmlCopper = "<Concatenation>" ++ i.xmlCopper ++ "<KleeneStar>" ++ i.xmlCopper ++ "</KleeneStar></Concatenation>";
-}
-aspect production regexOptional
-top::RegexRepetition ::= i::RegexItem _
-{
-  -- Copper has no direct translation of ?
-  top.xmlCopper = "<Choice>" ++ i.xmlCopper ++ "<EmptyString/></Choice>";
-}
-aspect production regexOnce
-top::RegexRepetition ::= i::RegexItem
-{
-  top.xmlCopper = i.xmlCopper;
-}
-
-
-aspect production regexCharItem
-top::RegexItem ::= char::RegexChar
-{
-  top.xmlCopper = "<CharacterSet><SingleCharacter char=\"" ++ char.xmlCopper ++ "\"/></CharacterSet>";
-}
-aspect production regexWildcard
-top::RegexItem ::= _
 {
   -- Copper has no direct representation of dot.
   -- Dot represents everything EXCEPT \n
@@ -89,6 +40,36 @@ aspect production regexSetInverted
 top::RegexItem ::= _ _ g::RegexCharSet _
 {
   top.xmlCopper = "<CharacterSet invert=\"true\">" ++ g.xmlCopper ++ "</CharacterSet>";
+}
+
+aspect production empty
+top::Regex ::=
+{
+  top.xmlCopper = "<Choice></Choice>";
+  top.altXML = "";
+}
+aspect production epsilon
+top::Regex ::=
+{
+  top.xmlCopper = "<EmptyString/>";
+  top.seqXML = "";
+}
+aspect production alt
+top::Regex ::= r1::Regex r2::Regex
+{
+  top.xmlCopper = "<Choice>" ++ r1.altXML ++ r2.altXML ++ "</Choice>";
+  top.altXML = r1.altXML ++ r2.altXML;
+}
+aspect production seq
+top::Regex ::= r1::Regex r2::Regex
+{
+  top.xmlCopper = "<Concatenation>" ++ r1.seqXML ++ r2.seqXML ++ "</Concatenation>";
+  top.seqXML = r1.seqXML ++ r2.seqXML;
+}
+aspect production star
+top::Regex ::= r::Regex
+{
+  top.xmlCopper = "<KleeneStar>" ++ r.xmlCopper ++ "</KleeneStar>";
 }
 aspect production regexGroup
 top::RegexItem ::= _ r::Regex _
