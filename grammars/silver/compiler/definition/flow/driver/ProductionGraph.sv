@@ -349,7 +349,7 @@ ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated E
   -- Just synthesized attributes.
   local syns :: [String] = map((.attrOccurring), filter(isOccursSynthesized(_, realEnv), attrs));
   -- Those syns that are not part of the host, and so should have edges to fwdeq
-  local extSyns :: [String] = removeAllBy(stringEq, syns, getHostSynsFor(nt, flowEnv));
+  local extSyns :: [String] = removeAllBy(stringEq, getHostSynsFor(nt, flowEnv), syns);
 
   -- The phantom edges: ext syn -> fwd.eq
   local phantomEdges :: [Pair<FlowVertex FlowVertex>] =

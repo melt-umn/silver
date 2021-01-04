@@ -118,7 +118,7 @@ function findBrandNewEdges
   local inhs :: [String] = head(candidates).snd;
   
   -- TODO: we might take '[Pair<String Set<String>>]' insteadof [String] and gain speed?
-  local newinhs :: [String] = removeAllBy(stringEq, inhs, set:toList(g:edgesFrom(syn, currentFlowType)));
+  local newinhs :: [String] = removeAllBy(stringEq, set:toList(g:edgesFrom(syn, currentFlowType)), inhs);
   
   local newEdges :: [Pair<String String>] = map(pair(syn, _), newinhs);
   
