@@ -1,4 +1,3 @@
-import silver:core:monad;
 
 -- Test Maybe
 global monadRes1::Maybe<Integer> = do (bindMaybe, returnMaybe) {
