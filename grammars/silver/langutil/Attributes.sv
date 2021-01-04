@@ -5,16 +5,6 @@ exports silver:langutil:reflect with silver:reflect; -- Contains pp definitions 
 
 import silver:langutil:pp;
 
-{-
-This has been "deprecated" for a very long time.  We should either not use 
-this library or get rid of the message.
-
-I've gotten rid of the message for now.
-
-
-deprecated "This library is not deprecated, but users should be aware it is not stable and very subject to change!";
--}
-
 {--
  - The unparse of a syntax tree.
  -}
