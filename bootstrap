@@ -14,4 +14,15 @@ cp build/silver.composed.Default.jar jars/silver.compiler.composed.Default.jar
 
 git checkout feature/renaming
 
-./deep-rebuild
+./deep-clean -delete all
+
+java -Xss8M -Xmx3G -jar silver.compiler.composed.Default.jar --clean silver:xml:ast
+
+./rebuild-runtime
+
+./self-compile --clean
+cp build/silver.compiler.composed.Default.jar jars/silver.compiler.composed.Default.jar
+
+./self-compile --clean
+cp build/silver.compiler.composed.Default.jar jars/silver.compiler.composed.Default.jar
+
