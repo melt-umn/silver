@@ -39,8 +39,8 @@ Boolean ::= ty::Type
            (name == "silver:core:Maybe") ||
            (name == "silver:core:Either") ||
            (name == "silver:core:List") ||
-           (name == "silver:core:monad:IOMonad") ||
-           (name == "silver:core:monad:State")
+           (name == "silver:core:IOMonad") ||
+           (name == "silver:core:State")
          | decoratedType(t) -> isMonad(t)
          | _ -> false
          end;
@@ -165,9 +165,9 @@ String ::= ty::Type
            "Maybe<a>"
          | appType(appType(nonterminalType("silver:core:Either", 2, _), p), _) ->
            "Either<" ++ prettyType(p) ++ " a>"
-         | appType(nonterminalType("silver:core:monad:IOMonad", 1, _), _) ->
+         | appType(nonterminalType("silver:core:IOMonad", 1, _), _) ->
            "IOMonad<a>"
-         | appType(appType(nonterminalType("silver:core:monad:state", 2, _), p), _) ->
+         | appType(appType(nonterminalType("silver:core:state", 2, _), p), _) ->
            "State<" ++ prettyType(p) ++ " a>"
          | decoratedType(t) -> monadToString(t)
          | _ -> error("Tried to get monadToString for a non-monadic type")
@@ -185,9 +185,9 @@ Expr ::= ty::Type l::Location
            baseExpr(qNameId(name("bindMaybe", l), location=l), location=l)
          | nonterminalType("silver:core:Either", _, _) ->
            baseExpr(qNameId(name("bindEither", l), location=l), location=l)
-         | nonterminalType("silver:core:monad:IOMonad", _, _) ->
+         | nonterminalType("silver:core:IOMonad", _, _) ->
            baseExpr(qNameId(name("bindIO", l), location=l), location=l)
-         | nonterminalType("silver:core:monad:State", _, _) ->
+         | nonterminalType("silver:core:State", _, _) ->
            baseExpr(qNameId(name("bindState", l), location=l), location=l)
          | listType(_) ->
            baseExpr(qNameId(name("bindList", l), location=l), location=l)
@@ -203,9 +203,9 @@ Expr ::= ty::Type l::Location
            baseExpr(qNameId(name("returnMaybe", l), location=l), location=l)
          | nonterminalType("silver:core:Either", _, _) ->
            baseExpr(qNameId(name("returnEither", l), location=l), location=l)
-         | nonterminalType("silver:core:monad:IOMonad", _, _) ->
+         | nonterminalType("silver:core:IOMonad", _, _) ->
            baseExpr(qNameId(name("returnIO", l), location=l), location=l)
-         | nonterminalType("silver:core:monad:State", _, _) ->
+         | nonterminalType("silver:core:State", _, _) ->
            baseExpr(qNameId(name("returnState", l), location=l), location=l)
          | listType(_) ->
            baseExpr(qNameId(name("returnList", l), location=l), location=l)
@@ -248,10 +248,10 @@ Either<String Expr> ::= ty::Type l::Location
          | nonterminalType("silver:core:Maybe", _, _) ->
            right(Silver_Expr { core:monad:failMaybe($Expr{string}) })
            --baseExpr(qNameId(name("failMaybe", l), location=l), location=l)
-         | nonterminalType("silver:core:monad:IOMonad", _, _) ->
+         | nonterminalType("silver:core:IOMonad", _, _) ->
            left("Fail undefined for IOMonad")
            --error("Fail undefined for IOMonad")
-         | nonterminalType("silver:core:monad:State", _, _) ->
+         | nonterminalType("silver:core:State", _, _) ->
            left("Fail undefined for State monad")
            --error("Fail undefined for State monad")
          | listType(_) ->
@@ -273,9 +273,9 @@ Either<String Expr> ::= ty::Type l::Location
            right(baseExpr(qNameId(name("mplusMaybe", l), location=l), location=l))
          | nonterminalType("silver:core:Either", _, _) ->
            right(baseExpr(qNameId(name("mplusEither", l), location=l), location=l))
-         | nonterminalType("silver:core:monad:IOMonad", _, _) ->
+         | nonterminalType("silver:core:IOMonad", _, _) ->
            left("MPlus undefined for IOMonad")
-         | nonterminalType("silver:core:monad:State", _, _) ->
+         | nonterminalType("silver:core:State", _, _) ->
            left("MPlus undefined for State monad")
          | listType(_) ->
            right(baseExpr(qNameId(name("mplusList", l), location=l), location=l))
@@ -302,9 +302,9 @@ Either<String Expr> ::= ty::Type l::Location
     | _ -> case ty.baseType of
          | nonterminalType("silver:core:Maybe", _, _) ->
            right(Silver_Expr { core:monad:nothing() })
-         | nonterminalType("silver:core:monad:IOMonad", _, _) ->
+         | nonterminalType("silver:core:IOMonad", _, _) ->
            left("MZero undefined for IOMonad")
-         | nonterminalType("silver:core:monad:State", _, _) ->
+         | nonterminalType("silver:core:State", _, _) ->
            left("MZero undefined for State monad")
          | listType(_) ->
            right(Silver_Expr { [] })
