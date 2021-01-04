@@ -36,8 +36,8 @@ temp_imp_ide_dcl svParse ".sv" {
 
   name "Silver";
   version "0.2.3";
-  resource grammars "../../../../grammars/"; -- I have "../grammars" to be explicit about what's going on here.
-  resource jars     "../../../../jars/";
+  resource grammars "../../../../../grammars/"; -- I have "../grammars" to be explicit about what's going on here.
+  resource jars     "../../../../../jars/";
 }
 
 -- Declarations of IDE functions referred in decl block.
