@@ -49,7 +49,7 @@ top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
     Silver_Expr {
       case decorate $Expr{exprRef(s, location=builtin)}
            with {
-             silver:rewrite:term = silver:reflect:reflect($Expr{exprRef(e, location=builtin)});
+             silver:rewrite:term = silver:reflect:util:reflect($Expr{exprRef(e, location=builtin)});
            }.silver:rewrite:result of
       | just(a) ->
         -- let needed to constrain the result type to be the same as e.
