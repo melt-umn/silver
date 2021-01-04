@@ -52,7 +52,7 @@
 <!--
             <extraClasspathElement>
               <groupId>edu.umn.cs.melt</groupId>
-              <artifactId>hack_for_generated_core_grammar</artifactId>
+              <artifactId>hack_for_generated_silver_core_grammar</artifactId>
               <version>1.0.0</version>
               <scope>system</scope>
               <!-
