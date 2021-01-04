@@ -548,10 +548,10 @@ public class DecoratedNode implements Typed {
 		if(self == null) {
 			return "<top>";
 		} else if(self instanceof silver.core.Alocation) {
-			DecoratedNode loc = ((silver.core.Alocation)self).getAnno_core_location().decorate(TopNode.singleton, (Lazy[])null);
-			String file = loc.synthesized(silver.core.Init.core_filename__ON__core_Location).toString();
-			int line = (Integer)loc.synthesized(silver.core.Init.core_line__ON__core_Location);
-			int col = (Integer)loc.synthesized(silver.core.Init.core_column__ON__core_Location);
+			DecoratedNode loc = ((silver.core.Alocation)self).getAnno_silver_core_location().decorate(TopNode.singleton, (Lazy[])null);
+			String file = loc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+			int line = (Integer)loc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
+			int col = (Integer)loc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
 			qualifier = ", " + file + ":" + Integer.toString(line) + ":" + Integer.toString(col);
 		} else {
 			qualifier = "";

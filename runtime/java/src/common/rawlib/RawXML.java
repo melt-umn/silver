@@ -24,10 +24,10 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import lib.xml.ast.NXMLAttribute;
-import lib.xml.ast.NXMLDocumentType;
-import lib.xml.ast.NXMLNode;
-import lib.xml.ast.NXMLNodeList;
+import silver.xml.ast.NXMLAttribute;
+import silver.xml.ast.NXMLDocumentType;
+import silver.xml.ast.NXMLNode;
+import silver.xml.ast.NXMLNodeList;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
@@ -125,21 +125,21 @@ public final class RawXML {
 	 * @param d A DOM Document (Silver type silver:xml:foreigntypes:XML_Document)
 	 * @return An equivalent Silver AST type. (Silver type silver:xml:ast:XMLDocument)
 	 */
-	public static final lib.xml.ast.NXMLDocument documentF2N(org.w3c.dom.Document d) {
+	public static final silver.xml.ast.NXMLDocument documentF2N(org.w3c.dom.Document d) {
 		final DocumentType dt = d.getDoctype();
 		final NodeList nl = d.getChildNodes();
 		
-		lib.xml.ast.NXMLDocumentType sdt;
+		silver.xml.ast.NXMLDocumentType sdt;
 		
 		if(dt != null) {
-			sdt = new lib.xml.ast.PxmlDocumentType(
+			sdt = new silver.xml.ast.PxmlDocumentType(
 					new common.StringCatter(dt.getName()), 
 					nodeListF2N(dt.getChildNodes())); 
 		} else {
-			sdt = new lib.xml.ast.PxmlNoDocumentType();
+			sdt = new silver.xml.ast.PxmlNoDocumentType();
 		}
 		
-		return new lib.xml.ast.PxmlDocument(sdt, nodeListF2N(nl));
+		return new silver.xml.ast.PxmlDocument(sdt, nodeListF2N(nl));
 	}
 	
 	/**
@@ -148,7 +148,7 @@ public final class RawXML {
 	 * @param docAst Silver AST Document (Silver type silver:xml:ast:XMLDocument)
 	 * @return An equivalent DOM document (Silver type silver:xml:foreigntypes:XML_Document)
 	 */
-	public static final Document documentN2F(lib.xml.ast.NXMLDocument docAst) {
+	public static final Document documentN2F(silver.xml.ast.NXMLDocument docAst) {
 		ensureParserSetup();
 		
 		Document docContext = parser.newDocument();
@@ -236,9 +236,9 @@ public final class RawXML {
 	 * @param nl a DOM NodeList (Silver type silver:xml:foreigntypes:XML_NodeList)
 	 * @return a silver ast NodeList (Silver type silver:xml:ast:XMLNodeList)
 	 */
-	public static final lib.xml.ast.NXMLNodeList nodeListF2N(final NodeList nl) {
+	public static final silver.xml.ast.NXMLNodeList nodeListF2N(final NodeList nl) {
 		
-		lib.xml.ast.NXMLNodeList l = new lib.xml.ast.PxmlNodeListNil();
+		silver.xml.ast.NXMLNodeList l = new silver.xml.ast.PxmlNodeListNil();
 		
 		for(int i = nl.getLength() - 1; i >= 0; i -- ) {
 			final Node n = nl.item(i);
@@ -250,19 +250,19 @@ public final class RawXML {
 				common.StringCatter val = new common.StringCatter(n.getNodeValue());
 				
 				// Add this element to the list
-				l = new lib.xml.ast.PxmlNodeListCons( new lib.xml.ast.PxmlNodeText(val), l);
+				l = new silver.xml.ast.PxmlNodeListCons( new silver.xml.ast.PxmlNodeText(val), l);
 				break;
 			case Node.ELEMENT_NODE:
 			case Node.ENTITY_NODE: // treating the same as an element for now!
 				// Convert the name
 				common.StringCatter name = new common.StringCatter(n.getNodeName());
 				// Convert the attributes
-				common.ConsCell/*lib.xml.ast.NXMLAttribute*/ attrs = attributesF2N(n.getAttributes());
+				common.ConsCell/*silver.xml.ast.NXMLAttribute*/ attrs = attributesF2N(n.getAttributes());
 				// Convert the children
-				lib.xml.ast.NXMLNodeList children = nodeListF2N(n.getChildNodes());
+				silver.xml.ast.NXMLNodeList children = nodeListF2N(n.getChildNodes());
 				
 				// Create the Node
-				l = new lib.xml.ast.PxmlNodeListCons( new lib.xml.ast.PxmlNodeElement(name, attrs, children), l);
+				l = new silver.xml.ast.PxmlNodeListCons( new silver.xml.ast.PxmlNodeElement(name, attrs, children), l);
 				break;
 			case Node.COMMENT_NODE:
 			case Node.DOCUMENT_TYPE_NODE: // for now: wtf?
@@ -300,43 +300,43 @@ public final class RawXML {
 	 */
 	private static final common.ConsCell attributesF2N(final NamedNodeMap al) {
 		
-		common.ConsCell/*lib.xml.ast.NXMLAttribute*/ l = common.ConsCell.nil;
+		common.ConsCell/*silver.xml.ast.NXMLAttribute*/ l = common.ConsCell.nil;
 		
 		for(int i = 0; i < al.getLength(); i++ ) {
 			final Node n = al.item(i);
 			final common.StringCatter key = new common.StringCatter(n.getNodeName());
 			final common.StringCatter value = new common.StringCatter(n.getNodeValue());
-			l = new common.ConsCell( new lib.xml.ast.PxmlAttribute(key, value), l);
+			l = new common.ConsCell( new silver.xml.ast.PxmlAttribute(key, value), l);
 		}
 		
 		return l;
 	}
 	
-	private static final void deconvertXmlAstDocument(lib.xml.ast.NXMLDocument docAst, Document docContext) {
-		lib.xml.ast.NXMLDocumentType dt = (NXMLDocumentType) docAst.getChild(0);
-		lib.xml.ast.NXMLNodeList nl = (NXMLNodeList) docAst.getChild(1);
+	private static final void deconvertXmlAstDocument(silver.xml.ast.NXMLDocument docAst, Document docContext) {
+		silver.xml.ast.NXMLDocumentType dt = (NXMLDocumentType) docAst.getChild(0);
+		silver.xml.ast.NXMLNodeList nl = (NXMLNodeList) docAst.getChild(1);
 		mutateDocumentType(dt, docContext);
 		mutateXmlAstNodeList(nl, docContext, docContext);
 	}
-	private static final void mutateDocumentType(lib.xml.ast.NXMLDocumentType docTypeAst, Document docContext) {
-		if(docTypeAst instanceof lib.xml.ast.PxmlNoDocumentType) {
+	private static final void mutateDocumentType(silver.xml.ast.NXMLDocumentType docTypeAst, Document docContext) {
+		if(docTypeAst instanceof silver.xml.ast.PxmlNoDocumentType) {
 			// do nothing!
-		} else if(docTypeAst instanceof lib.xml.ast.PxmlDocumentType) {
+		} else if(docTypeAst instanceof silver.xml.ast.PxmlDocumentType) {
 			// TODO: oh, bother. how?
 		} else {
 			throw new SilverInternalError("Unknown type in XML AST during unparse of doctype...");
 		}
 	}
-	private static final void mutateXmlAstNodeList(lib.xml.ast.NXMLNodeList docNLAst, Node nodeContext, Document docContext) {
+	private static final void mutateXmlAstNodeList(silver.xml.ast.NXMLNodeList docNLAst, Node nodeContext, Document docContext) {
 		NXMLNodeList current = docNLAst;
-		while(current instanceof lib.xml.ast.PxmlNodeListCons) {
+		while(current instanceof silver.xml.ast.PxmlNodeListCons) {
 			Node n = deconvertXmlAstNode((NXMLNode)current.getChild(0), docContext);
 			nodeContext.appendChild(n);
 			current = (NXMLNodeList) current.getChild(1);
 		}
 	}
-	private static final Node deconvertXmlAstNode(lib.xml.ast.NXMLNode docNodeAst, Document docContext) {
-		if(docNodeAst instanceof lib.xml.ast.PxmlNodeElement) {
+	private static final Node deconvertXmlAstNode(silver.xml.ast.NXMLNode docNodeAst, Document docContext) {
+		if(docNodeAst instanceof silver.xml.ast.PxmlNodeElement) {
 			StringCatter sc = (StringCatter) docNodeAst.getChild(0);
 			common.ConsCell at = (ConsCell) docNodeAst.getChild(1);
 			NXMLNodeList nl = (NXMLNodeList) docNodeAst.getChild(2);
@@ -346,7 +346,7 @@ public final class RawXML {
 			mutateXmlAstNodeList(nl, n, docContext);
 			return n;
 		}
-		if(docNodeAst instanceof lib.xml.ast.PxmlNodeText) {
+		if(docNodeAst instanceof silver.xml.ast.PxmlNodeText) {
 			StringCatter sc = (StringCatter) docNodeAst.getChild(0);
 			
 			Text t = docContext.createTextNode(sc.toString());
@@ -355,7 +355,7 @@ public final class RawXML {
 		throw new SilverInternalError("Unknown type in XML AST during unparse of node...");
 		
 	}
-	private static final void mutateAttributes(common.ConsCell/*lib.xml.ast.NXMLAttribute*/ docAttrsAst, Element elem, Document docContext) {
+	private static final void mutateAttributes(common.ConsCell/*silver.xml.ast.NXMLAttribute*/ docAttrsAst, Element elem, Document docContext) {
 		common.ConsCell current = docAttrsAst;
 		
 		while(!current.nil()) {

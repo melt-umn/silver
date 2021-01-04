@@ -5,7 +5,7 @@ import java.util.*;
 
 import common.exceptions.*;
 import silver.core.*;
-import silver.core.reflect.*;
+import silver.core.*;
 
 /**
  * Implementation of the Silver reflection library
@@ -184,7 +184,7 @@ public final class Reflection {
 			try {
 				@SuppressWarnings("unchecked")
 				Method prodReify =
-						((Class<Node>)Class.forName(className)).getMethod("reify", silver.core.reflect.NAST.class, ConsCell.class, TypeRep.class, NAST[].class, String[].class, NAST[].class);
+						((Class<Node>)Class.forName(className)).getMethod("reify", silver.core.NAST.class, ConsCell.class, TypeRep.class, NAST[].class, String[].class, NAST[].class);
 				return prodReify.invoke(null, ast, rules, resultType, childASTs, annotationNames, annotationASTs);
 			} catch (ClassNotFoundException e) {
 				throw new SilverError("Undefined production " + prodName);
