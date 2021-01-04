@@ -129,7 +129,7 @@ XML_Document ::= doc::XMLDocument
 {
   return error("xmlDocumentN2F not yet implemented");
 } foreign {
-  "java" : return "common.rawlib.RawXML.documentN2F((lib.xml.ast.NXMLDocument)%doc%)";
+  "java" : return "common.rawlib.RawXML.documentN2F((silver.xml.ast.NXMLDocument)%doc%)";
 }
 
 function xmlDocumentF2String

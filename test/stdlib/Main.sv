@@ -8,7 +8,7 @@ import stdlib:pplib;
 import stdlib:treeset;
 import stdlib:treemap;
 import stdlib:graph;
-import stdsilver:xml;
+import stdlib:xml;
 
 
 mainTestSuite core_tests ;
