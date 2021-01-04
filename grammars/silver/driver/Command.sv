@@ -257,6 +257,6 @@ IOVal<String> ::=  i::IO
   -- This grabs the path to this jar (using Init.class as the thing to find the path to)
   -- Then goes up two levels (HOME/jars/file.jar to HOME) and returns that.
   -- If anything goes wrong, we crash.
-  "java" : return "new silver.core.Pioval(%i%, common.Util.determineSilverHomePath(Init.class))";
+  "java" : return "new core.Pioval(%i%, common.Util.determineSilverHomePath(Init.class))";
 }
 
