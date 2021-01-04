@@ -183,7 +183,7 @@ top::DclInfo ::= fn::String arity::Integer closed::Boolean tracked::Boolean
   top.isType = true;
 }
 abstract production termDcl
-top::DclInfo ::= fn::String regex::Regex
+top::DclInfo ::= fn::String regex::Regex easyName::Maybe<String>
 {
   top.fullName = fn;
 

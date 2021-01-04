@@ -168,10 +168,10 @@ Def ::= sg::String  sl::Location  fn::String  arity::Integer  closed::Boolean  t
   return typeDef(defaultEnvItem(ntDcl(fn,arity,closed,tracked,sourceGrammar=sg,sourceLocation=sl)));
 }
 function termDef
-Def ::= sg::String  sl::Location  fn::String  regex::Regex
+Def ::= sg::String  sl::Location  fn::String  regex::Regex  easyName::Maybe<String>
 {
   -- Terminals are also in the value namespace as terminal identifiers
-  return typeValueDef(defaultEnvItem(termDcl(fn,regex,sourceGrammar=sg,sourceLocation=sl)));
+  return typeValueDef(defaultEnvItem(termDcl(fn,regex,easyName,sourceGrammar=sg,sourceLocation=sl)));
 }
 function lexTyVarDef
 Def ::= sg::String  sl::Location  fn::String  tv::TyVar

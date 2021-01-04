@@ -66,7 +66,7 @@ top::TerminalPrefix ::= t::String_t
   forwards to
     newTermModifiersTerminalPrefix(
       -- We pass the string prefix as a regex that does not contain the prefix separator
-      regExpr('/', regexLiteral(substring(1, length(t.lexeme) - 1, t.lexeme)), '/', location=top.location),
+      regExpr(regexLiteral(substring(1, length(t.lexeme) - 1, t.lexeme)), location=top.location),
       -- Specify which terminals this prefix prefixes.  This is used to find the separator to
       -- append to the regex when normalizing the CST AST
       terminalModifierSingle(

@@ -9,11 +9,18 @@ attribute xmlCopper occurs on Regex;
 synthesized attribute altXML :: String occurs on Regex;
 synthesized attribute seqXML :: String occurs on Regex;
 
+{--
+ - Used to recognize char sets
+ -}
+implicit synthesized attribute setXML :: Maybe<String>;
+attribute setXML occurs on Regex; 
+
 aspect default production
 top::Regex ::=
 {
   top.altXML = top.xmlCopper;
   top.seqXML = top.xmlCopper;
+  implicit top.setXML =;
 }
 
 
@@ -23,6 +30,7 @@ aspect production char
 top::Regex ::= _
 {
   top.xmlCopper = "<CharacterSet><SingleCharacter char=\"" ++ xmlEscapeChar(char) ++ "\"/></CharacterSet>";
+  top.setXML = "<SingleCharacter char=\"" ++ xmlEscapeChar(char) ++ "\"/>";
 }
 aspect production wildChar
 top::Regex ::=
@@ -30,16 +38,18 @@ top::Regex ::=
   -- Copper has no direct representation of dot.
   -- Dot represents everything EXCEPT \n
   top.xmlCopper = "<CharacterSet invert=\"true\"><SingleCharacter char=\"&#10;\"/></CharacterSet>";
+  top.setXML = "<SingleCharacter char=\"&#10;\"/>";
 }
-aspect production regexSet
-top::RegexItem ::= _ g::RegexCharSet _
+aspect production charRange
+top::Regex ::= _ _
 {
-  top.xmlCopper = "<CharacterSet>" ++ g.xmlCopper ++ "</CharacterSet>";
+  top.xmlCopper = "<CharacterSet><CharacterRange lower=\"" ++ xmlEscapeChar(lChar) ++ "\" upper=\"" ++ xmlEscapeChar(uChar) ++ "\"/></CharacterSet>";
+  top.setXML = "<CharacterRange lower=\"" ++ xmlEscapeChar(lChar) ++ "\" upper=\"" ++ xmlEscapeChar(uChar) ++ "\"/>";
 }
-aspect production regexSetInverted
-top::RegexItem ::= _ _ g::RegexCharSet _
+aspect production negChars
+top::Regex ::= r::Regex 
 {
-  top.xmlCopper = "<CharacterSet invert=\"true\">" ++ g.xmlCopper ++ "</CharacterSet>";
+  top.xmlCopper = "<CharacterSet invert=\"true\">" ++ r.setXML.fromJust ++ "</CharacterSet>";
 }
 
 aspect production empty
@@ -57,8 +67,13 @@ top::Regex ::=
 aspect production alt
 top::Regex ::= r1::Regex r2::Regex
 {
-  top.xmlCopper = "<Choice>" ++ r1.altXML ++ r2.altXML ++ "</Choice>";
+  top.xmlCopper =
+    case top.setXML of
+    | just(sx) -> "<CharacterSet>" ++ sx ++ "</CharacterSet>"
+    | nothing() -> "<Choice>" ++ r1.altXML ++ r2.altXML ++ "</Choice>"
+    end;
   top.altXML = r1.altXML ++ r2.altXML;
+  top.setXML = r1.setXML ++ r2.setXML;
 }
 aspect production seq
 top::Regex ::= r1::Regex r2::Regex
@@ -70,55 +85,6 @@ aspect production star
 top::Regex ::= r::Regex
 {
   top.xmlCopper = "<KleeneStar>" ++ r.xmlCopper ++ "</KleeneStar>";
-}
-aspect production regexGroup
-top::RegexItem ::= _ r::Regex _
-{
-  -- As an AST, Copper has no need to represent groups ()
-  top.xmlCopper = r.xmlCopper;
-}
-
-
-aspect production regexCharSetSnoc
-top::RegexCharSet ::= h::RegexCharSet  t::RegexCharSetItem
-{
-  top.xmlCopper = h.xmlCopper ++ t.xmlCopper;
-}
-aspect production regexCharSetOne
-top::RegexCharSet ::= t::RegexCharSetItem
-{
-  top.xmlCopper = t.xmlCopper;
-}
-
-
-aspect production regexSetChar
-top::RegexCharSetItem ::= char::RegexChar
-{
-  top.xmlCopper = "<SingleCharacter char=\"" ++ char.xmlCopper ++ "\"/>";
-}
-aspect production regexSetRange
-top::RegexCharSetItem ::= l::RegexChar _ u::RegexChar
-{
-  top.xmlCopper = "<CharacterRange lower=\"" ++ l.xmlCopper ++ "\" upper=\"" ++ u.xmlCopper ++ "\"/>";
-}
-
-
-aspect production regexChar
-top::RegexChar ::= char::RegexChar_t
-{
-  -- Can be special characters like &
-  top.xmlCopper = xmlEscapeChar(char.lexeme);
-}
-aspect production regexEscapedChar
-top::RegexChar ::= esc::EscapedChar_t
-{
-  -- These are ESCAPED character (e.g. \n) we need to represent as XML.
-  -- We only animate \r\n\t. Otherwise, literal translation.
-  top.xmlCopper =
-    if esc.lexeme == "\\r" then "&#13;"
-    else if esc.lexeme == "\\n" then "&#10;"
-    else if esc.lexeme == "\\t" then "&#9;"
-    else xmlEscapeChar(substring(1, 2, esc.lexeme));
 }
 
 -----------------------------------------------------------------------------------
