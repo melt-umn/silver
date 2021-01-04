@@ -175,12 +175,13 @@ function eatGrammars
   local newDeps :: [String] = removeAllBy(stringEq, directDeps, sofar);
   
   return
+    unsafeTrace(
     if n == 0 then
       []
     else if !head(rootStream).isJust then
       eatGrammars(n-1, sofar, tail(rootStream), grammars)
     else
-      newDeps ++ eatGrammars(n-1+length(newDeps), newDeps ++ sofar, tail(rootStream), tail(grammars));
+      newDeps ++ eatGrammars(n-1+length(newDeps), newDeps ++ sofar, tail(rootStream), tail(grammars)), print("eatGrammars sofar=" ++ hackUnparse(sofar) ++ "     directDeps=" ++ hackUnparse(directDeps) ++ "\n\n",unsafeIO()));
 }
 
 
