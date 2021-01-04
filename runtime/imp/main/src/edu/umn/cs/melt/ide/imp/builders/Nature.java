@@ -18,10 +18,10 @@ import org.eclipse.imp.runtime.IPluginLog;
  *
  * Example configuration:
     <extension point="org.eclipse.core.resources.natures" id="nature" name="Silver Nature">
-      <builder id="silver.composed.idetest.builder" />
+      <builder id="silver.compiler.composed.idetest.builder" />
       <runtime>
         <run class="edu.umn.cs.melt.ide.imp.builders.Nature">
-          <parameter name="builder" value="silver.composed.idetest.builder" />
+          <parameter name="builder" value="silver.compiler.composed.idetest.builder" />
         </run>
       </runtime>
     </extension>

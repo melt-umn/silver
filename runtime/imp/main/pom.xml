@@ -56,10 +56,10 @@
               <version>1.0.0</version>
               <scope>system</scope>
               <!-
-                <systemPath>${basedir}/../../../jars/silver.composed.Default.jar</systemPath>
+                <systemPath>${basedir}/../../../jars/silver.compiler.composed.Default.jar</systemPath>
                 Okay, so we don't just need silver.core.* and friends, we also need ide.* and friends, so let's get that from:
                 ->
-              <systemPath>${basedir}/../../../build/silver.composed.Default.jar</systemPath>
+              <systemPath>${basedir}/../../../build/silver.compiler.composed.Default.jar</systemPath>
             </extraClasspathElement> -->
             <extraClasspathElement>
               <groupId>edu.umn.cs.melt</groupId>

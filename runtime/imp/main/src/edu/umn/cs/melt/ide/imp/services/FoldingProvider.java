@@ -26,11 +26,11 @@ import edu.umn.cs.melt.ide.util.ReflectedCall;
       <foldingUpdater
           class="edu.umn.cs.melt.ide.imp.services.FoldingProvider"
           language="Silver">
-        <silvercall function="silver:composed:idetest:fold" />
+        <silvercall function="silver:compiler:composed:idetest:fold" />
       </foldingUpdater>
     </extension>
  *
- * The function (above `silver:composed:idetest:fold`) should have
+ * The function (above `silver:compiler:composed:idetest:fold`) should have
  * Silver type `[Location] ::= ASTRoot`.
  */
 public class FoldingProvider extends FolderBase implements IExecutableExtension {

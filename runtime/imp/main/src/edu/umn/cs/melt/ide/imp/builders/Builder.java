@@ -33,9 +33,9 @@ import edu.umn.cs.melt.ide.util.ReflectedCall;
     <extension point="org.eclipse.core.resources.builders" id="builder" name="Silver builder">
       <builder hasNature="true">
         <run class="edu.umn.cs.melt.ide.imp.builders.Builder">
-          <parameter name="markerName" value="silver.composed.idetest.builder.problem" />
-          <parameter name="silver_build" value="silver:composed:idetest:analyze" />
-          <parameter name="silver_postbuild" value="silver:composed:idetest:generate" />
+          <parameter name="markerName" value="silver.compiler.composed.idetest.builder.problem" />
+          <parameter name="silver_build" value="silver:compiler:composed:idetest:analyze" />
+          <parameter name="silver_postbuild" value="silver:compiler:composed:idetest:generate" />
         </run>
       </builder>
     </extension>

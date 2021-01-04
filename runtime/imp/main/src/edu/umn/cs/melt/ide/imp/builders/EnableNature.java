@@ -16,13 +16,13 @@ import org.eclipse.ui.IWorkbenchPart;
  * 
  * Example configuration:
     <extension point="org.eclipse.ui.popupMenus">
-      <objectContribution objectClass="org.eclipse.core.resources.IProject" adaptable="true" nameFilter="*" id="silver.composed.idetest.actions.projectmenu">
+      <objectContribution objectClass="org.eclipse.core.resources.IProject" adaptable="true" nameFilter="*" id="silver.compiler.composed.idetest.actions.projectmenu">
         <action
             label="Enable Silver Builder"
             tooltip="Enable the Silver builder for this project"
-            id="silver.composed.idetest.actions.nature">
+            id="silver.compiler.composed.idetest.actions.nature">
           <class class="edu.umn.cs.melt.ide.imp.builders.EnableNature">
-            <parameter name="nature" value="silver.composed.idetest.nature" />
+            <parameter name="nature" value="silver.compiler.composed.idetest.nature" />
           </class>
         </action>
  *

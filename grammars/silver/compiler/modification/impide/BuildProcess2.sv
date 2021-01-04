@@ -8,7 +8,7 @@ import silver:util:cmdargs;
  - @param grams  Compiled grammars (used to generate parser)
  - @param ide  The ide specification to generate files for.
  - @param ideGenPath  The path to the ide generation directory
- -   (e.g. generated/ide/silver.composed.idetest)
+ -   (e.g. generated/ide/silver.compiler.composed.idetest)
  -   (contains: plugin feature updatesite)
  -}
 abstract production generateNCS

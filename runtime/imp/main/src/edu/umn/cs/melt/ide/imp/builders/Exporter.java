@@ -30,15 +30,15 @@ import edu.umn.cs.melt.ide.util.ReflectedCall;
 /**
  * Action performed via menu. Example configuration:
     <extension point="org.eclipse.ui.popupMenus">
-      <objectContribution objectClass="org.eclipse.core.resources.IProject" adaptable="true" nameFilter="*" id="silver.composed.idetest.actions.projectmenu">
+      <objectContribution objectClass="org.eclipse.core.resources.IProject" adaptable="true" nameFilter="*" id="silver.compiler.composed.idetest.actions.projectmenu">
         <action
             label="Export as Silver target"
             tooltip="Export the project as Silver distributable"
-            id="silver.composed.idetest.actions.export">
+            id="silver.compiler.composed.idetest.actions.export">
           <class class="edu.umn.cs.melt.ide.imp.builders.Exporter">
             <parameter name="name" value="Silver" />
-            <parameter name="markerName" value="silver.composed.idetest.builder.problem" />
-            <parameter name="silver_export" value="silver:composed:idetest:export" />
+            <parameter name="markerName" value="silver.compiler.composed.idetest.builder.problem" />
+            <parameter name="silver_export" value="silver:compiler:composed:idetest:export" />
           </class>
         </action>
  * 

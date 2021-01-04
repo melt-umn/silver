@@ -21,7 +21,7 @@ ME=$(${READLINK} -f "${BASH_SOURCE}")
 export SILVER_HOME=${ME/support\/bin\/silver/}
 
 # Find the silver jar
-SILVER="$SILVER_HOME/jars/silver.composed.Default.jar"
+SILVER="$SILVER_HOME/jars/silver.compiler.composed.Default.jar"
 
 if [ ! -f "$SILVER" ]; then
   echo "Couldn't find the Silver jars to execute, aborting."

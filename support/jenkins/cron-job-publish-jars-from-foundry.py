@@ -24,7 +24,7 @@ files = [
     "edu.umn.cs.melt.exts.silver.ableC.composed.with_all.jar",
     "edu.umn.cs.melt.exts.silver.ableC.composed.with_base.jar",
     "silver-latest.tar.gz",
-    "silver.composed.Default.jar",
+    "silver.compiler.composed.Default.jar",
 ]
 
 if SLACK_WEBHOOK_URL is None:
