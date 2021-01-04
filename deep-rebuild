@@ -22,7 +22,7 @@ fi
 echo "One full cycle ..."
 time java $JVM_ARGS --relative-jar --clean silver:compiler:composed:Default
 ant
-mv silver.composed.Default.jar ../jars/
+mv silver.compiler.composed.Default.jar ../jars/
 
 # Modifications may need to be made to how core translates, to accomodate translation/runtime changes
 if [ $# -gt 0 ] && [ "$1" == "--newcore" ]; then
@@ -47,14 +47,14 @@ mv SilverRuntime.jar ../../jars/
 cd ../../build
 echo "Now finish ..."
 ant
-mv silver.composed.Default.jar ../jars/
+mv silver.compiler.composed.Default.jar ../jars/
 
 # Finally, we should have a fully working binary on all the new code. Run it again to reach a fixed point:
 
 echo "One more full cycle ..."
 time java -ea $JVM_ARGS --relative-jar --clean silver:compiler:composed:Default
 ant
-mv silver.composed.Default.jar ../jars/
+mv silver.compiler.composed.Default.jar ../jars/
 
 # If the last build failed, should restore backup jars
 
