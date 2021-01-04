@@ -55,3 +55,34 @@ Boolean ::= neq::(Boolean ::= a a) l1::[a] l2::[a]
               neq(head(l1), head(l2)) ||
               notEqualsList(neq, tail(l1), tail(l2)) ;
 }
+
+-- toString functions
+function toStringFromInteger
+String ::= v::Integer
+{ return toString(v) ; }
+
+function toStringFromFloat
+String ::= v::Float
+{ return toString(v) ; }
+
+function toStringFromBoolean
+String ::= v::Boolean
+{ return if v then "true" else "false" ; }
+
+function toStringFromString
+String ::= v::String
+{ return v ; }
+
+function toStringFromList
+String ::= toStr::(String ::= a) xs::[a]
+{ return "[" ++ toStringFromListHelper(toStr, xs) ++ "]" ; }
+
+function toStringFromListHelper
+String ::= toStr::(String ::= a) xs::[a]
+{ return if  null(xs) 
+         then ""
+         else toStr(head(xs)) ++
+              if null(tail(xs))
+              then ""
+              else ", " ++ toStringFromListHelper(toStr, tail(xs)) ;
+}
