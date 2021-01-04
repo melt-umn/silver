@@ -130,7 +130,7 @@ propagate genericStep, ntStep, prodStep, simplify, optimize on StrategyExpr;
 -- Convert an expression of type a to Maybe<a>
 function asPartial
 Expr ::= e::Expr
-{ return Silver_Expr { core:just($Expr{e}) }; }
+{ return Silver_Expr { silver:core:just($Expr{e}) }; }
 
 -- Convert an expression of type Maybe<a> to a
 function asTotal
@@ -140,7 +140,7 @@ Expr ::= t::Type e::Expr
     Silver_Expr {
       let res::$TypeExpr{typerepTypeExpr(t, location=e.location)} =
           core:error("Total result demanded when partial strategy failed")
-      in core:fromMaybe(res, $Expr{e})
+      in silver:core:fromMaybe(res, $Expr{e})
       end
     };
 }
@@ -174,7 +174,7 @@ top::StrategyExpr ::=
 {
   top.unparse = "fail";
   propagate liftedStrategies;
-  top.partialTranslation = Silver_Expr { core:nothing() };
+  top.partialTranslation = Silver_Expr { silver:core:nothing() };
 }
 
 abstract production sequence
@@ -219,7 +219,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
     case s1.isTotal, s2Total of
     | true, true ->
       Silver_Expr {
-        core:just(decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name})
+        silver:core:just(decorate $Expr{s1.totalTranslation} with { $ExprInhs{allInhs} }.$name{s2Name})
       }
     | true, false ->
       Silver_Expr {
@@ -259,14 +259,14 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
   
   top.partialTranslation =
     Silver_Expr {
-      core:orElse($Expr{s1.partialTranslation}, $Expr{s2.partialTranslation})
+      silver:core:orElse($Expr{s1.partialTranslation}, $Expr{s2.partialTranslation})
     };
   top.totalTranslation =
     if s1.isTotal
     then s1.totalTranslation
     else 
       Silver_Expr {
-        core:fromMaybe($Expr{s2.totalTranslation}, $Expr{s1.partialTranslation})
+        silver:core:fromMaybe($Expr{s2.totalTranslation}, $Expr{s1.partialTranslation})
       };
 }
 
@@ -313,13 +313,13 @@ top::StrategyExpr ::= s::StrategyExpr
              \ a::Pair<String Boolean> ->
                if a.snd
                then
-                 [decorate Silver_Pattern { core:just($name{a.fst ++ "_" ++ sBaseName}) }
+                 [decorate Silver_Pattern { silver:core:just($name{a.fst ++ "_" ++ sBaseName}) }
                   with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
                else [],
              childAccesses),
            nothing(),
            Silver_Expr {
-             core:just(
+             silver:core:just(
                $Expr{
                  mkFullFunctionInvocation(
                    top.location,
@@ -335,7 +335,7 @@ top::StrategyExpr ::= s::StrategyExpr
                      top.frame.signature.namedInputElements))})
            },
            location=top.location)],
-        Silver_Expr { core:nothing() },
+        Silver_Expr { silver:core:nothing() },
         appType(nonterminalType("silver:core:Maybe", 1, false), top.frame.signature.outputElement.typerep),
         location=top.location);
   top.totalTranslation =
@@ -384,7 +384,7 @@ top::StrategyExpr ::= s::StrategyExpr
     then
       if !null(matchingChildren)
       then asPartial(top.totalTranslation)
-      else Silver_Expr { core:nothing() }
+      else Silver_Expr { silver:core:nothing() }
     else
       {- Translation of some(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
            if a.s.isJust || c.s.isJust
@@ -400,7 +400,7 @@ top::StrategyExpr ::= s::StrategyExpr
               \ a::String -> Silver_Expr { $name{a}.$name{sName}.isJust },
               matchingChildren))}
         then
-          core:just(
+          silver:core:just(
             $Expr{
               mkFullFunctionInvocation(
                 top.location,
@@ -408,13 +408,13 @@ top::StrategyExpr ::= s::StrategyExpr
                 map(
                   \ a::Pair<String Boolean> ->
                     if a.snd
-                    then Silver_Expr { core:fromMaybe($name{a.fst}, $name{a.fst}.$name{sName}) }
+                    then Silver_Expr { silver:core:fromMaybe($name{a.fst}, $name{a.fst}.$name{sName}) }
                     else Silver_Expr { $name{a.fst} },
                   childAccesses),
                 map(
                   makeAnnoArg(top.location, top.frame.signature.outputElement.elementName, _),
                   top.frame.signature.namedInputElements))})
-        else core:nothing()
+        else silver:core:nothing()
       };
   top.totalTranslation =
     if sTotal && !null(matchingChildren)
@@ -462,7 +462,7 @@ top::StrategyExpr ::= s::StrategyExpr
     then
       if !null(matchingChildren)
       then asPartial(top.totalTranslation)
-      else Silver_Expr { core:nothing() }
+      else Silver_Expr { silver:core:nothing() }
     else
       {- Translation of one(s) for prod::(Foo ::= a::Foo b::Integer c::Bar):
            case a.s, c.s of
@@ -487,11 +487,11 @@ top::StrategyExpr ::= s::StrategyExpr
                 map(
                   \ p::Pattern -> decorate p with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; },
                   repeat(wildcPattern('_', location=top.location), i) ++
-                  Silver_Pattern { core:just($name{childI ++ "_" ++ sBaseName}) } ::
+                  Silver_Pattern { silver:core:just($name{childI ++ "_" ++ sBaseName}) } ::
                   repeat(wildcPattern('_', location=top.location), length(matchingChildren) - (i + 1))),
                 nothing(),
                 Silver_Expr {
-                  core:just(
+                  silver:core:just(
                     $Expr{
                       mkFullFunctionInvocation(
                         top.location,
@@ -510,7 +510,7 @@ top::StrategyExpr ::= s::StrategyExpr
                 location=top.location)
             end end,
             range(0, length(matchingChildren))),
-        Silver_Expr { core:nothing() },
+        Silver_Expr { silver:core:nothing() },
         appType(nonterminalType("silver:core:Maybe", 1, false), top.frame.signature.outputElement.typerep),
         location=top.location);
   top.totalTranslation =
@@ -580,14 +580,14 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
              \ a::Pair<String Maybe<String>> ->
                case a.snd of
                | just(attr) when !attrIsTotal(top.env, attr)  ->
-                 [decorate Silver_Pattern { core:just($name{a.fst ++ "_" ++ last(explode(":", attr))}) }
+                 [decorate Silver_Pattern { silver:core:just($name{a.fst ++ "_" ++ last(explode(":", attr))}) }
                   with { config = top.config; env = top.env; frame = top.frame; patternVarEnv = []; }]
                | _ -> []
                end,
              childAccesses),
            nothing(),
            Silver_Expr {
-             core:just(
+             silver:core:just(
                $Expr{
                  mkFullFunctionInvocation(
                    top.location,
@@ -605,10 +605,10 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
                      top.frame.signature.namedInputElements))})
            },
            location=top.location)],
-        Silver_Expr { core:nothing() },
+        Silver_Expr { silver:core:nothing() },
         appType(nonterminalType("silver:core:Maybe", 1, false), top.frame.signature.outputElement.typerep),
         location=top.location)
-    else Silver_Expr { core:nothing() };
+    else Silver_Expr { silver:core:nothing() };
 }
 
 abstract production consStrategyExpr
@@ -734,12 +734,12 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
     caseExpr(
       [Silver_Expr { $name{top.frame.signature.outputElement.elementName} }],
       ml.translation,
-      Silver_Expr { core:nothing() },
+      Silver_Expr { silver:core:nothing() },
       appType(nonterminalType("silver:core:Maybe", 1, false), ty.typerep),
       location=top.location);
   top.partialTranslation =
     if unify(ty.typerep, top.frame.signature.outputElement.typerep).failure
-    then Silver_Expr { core:nothing() }
+    then Silver_Expr { silver:core:nothing() }
     else if top.frame.signature.outputElement.elementName == id.name
     then res
     else Silver_Expr {
@@ -782,7 +782,7 @@ top::MatchRule ::= pt::PatternList _ e::Expr
 {
   top.translation =
     matchRule(
-      pt.patternList, nothing(), Silver_Expr { core:just($Expr{e}) },
+      pt.patternList, nothing(), Silver_Expr { silver:core:just($Expr{e}) },
       location=top.location);
 }
 
@@ -791,7 +791,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
 {
   top.translation =
     matchRule(
-      pt.patternList, just(pair(cond, nothing())), Silver_Expr { core:just($Expr{e}) },
+      pt.patternList, just(pair(cond, nothing())), Silver_Expr { silver:core:just($Expr{e}) },
       location=top.location);
 }
 
@@ -800,7 +800,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
 {
   top.translation =
     matchRule(
-      pt.patternList, just(pair(cond, just(p))), Silver_Expr { core:just($Expr{e}) },
+      pt.patternList, just(pair(cond, just(p))), Silver_Expr { silver:core:just($Expr{e}) },
       location=top.location);
 }
 
@@ -847,7 +847,7 @@ top::StrategyExpr ::= msg::[Message] id::Decorated QName
   top.attrRefName = just(id.name);
   
   top.errors <- msg;
-  top.partialTranslation = Silver_Expr { core:nothing() };
+  top.partialTranslation = Silver_Expr { silver:core:nothing() };
 }
 abstract production recVarRef
 top::StrategyExpr ::= id::Decorated QName
@@ -901,7 +901,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   top.partialTranslation =
     if attr.matchesFrame
     then Silver_Expr { $name{top.frame.signature.outputElement.elementName}.$QNameAttrOccur{attr} }
-    else Silver_Expr { core:nothing() };
+    else Silver_Expr { silver:core:nothing() };
 }
 abstract production totalRef
 top::StrategyExpr ::= attr::QNameAttrOccur
@@ -947,7 +947,7 @@ top::StrategyExpr ::= attr::Decorated QNameAttrOccur s::StrategyExpr
   top.partialTranslation =
     if attr.matchesFrame
     then s.partialTranslation
-    else Silver_Expr { core:nothing() };
+    else Silver_Expr { silver:core:nothing() };
   top.totalTranslation = s.totalTranslation;
   
   s.outerAttr = top.outerAttr;
