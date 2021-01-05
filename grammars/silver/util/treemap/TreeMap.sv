@@ -30,6 +30,17 @@ Map<a b> ::= lst::[Pair<a b>] mp::Map<a b>
 }
 
 {--
+ - Returns a list of keys that are present in the map, in sorted order.
+ -}
+function keys
+[a] ::= mp::Map<a b>
+{
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawTreeMap.keys((java.util.TreeMap<Object,common.ConsCell>)%mp%)";
+}
+
+{--
  - Looks up an element from the map, empty list if not contained.
  -}
 function lookup
