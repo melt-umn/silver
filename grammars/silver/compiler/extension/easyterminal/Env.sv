@@ -1,7 +1,6 @@
 grammar silver:compiler:extension:easyterminal;
 
 import silver:compiler:definition:env;
-import silver:compiler:definition:regex;
 
 function getTerminalRegexDclAll
 [DclInfo] ::= search::String e::Decorated Env
