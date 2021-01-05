@@ -15,18 +15,18 @@ top::ConvenienceAspects ::= attr::QName ty::TypeExpr ml::MRuleList
 
 
 function generateAspectExprFromMatch
-AGDcl ::= ty::TypeExpr attr::QName matchRule::AbstractMatchRule
+AGDcl ::= ty::TypeExpr attr::QName mRule::AbstractMatchRule
  {
-   local rhsExpr::Expr = case matchRule of
-   | AbstractMatchRule(_,_,e) -> e
+   local rhsExpr::Expr = case mRule of
+   | matchRule(_,_,e) -> e
    end;
 
-   local patternList::[Pattern] = case matchRule of
-   | AbstractMatchRule(pl,_,_) -> pl
+   local patternList::[Decorated Pattern] = case mRule of
+   | matchRule(pl,_,_) -> pl
    end;
 
 
-   return case matchRule.headPattern of
+   return case mRule.headPattern of
    | wildcPattern(_) ->
      Silver_AGDcl {
        aspect default production

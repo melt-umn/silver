@@ -12,4 +12,4 @@ imports silver:modification:let_fix;
 imports silver:modification:lambda_fn;
 imports silver:modification:defaultattr;
 
-exports silver:extension:convenienceaspects;
+-- exports silver:extension:convenienceaspects;
