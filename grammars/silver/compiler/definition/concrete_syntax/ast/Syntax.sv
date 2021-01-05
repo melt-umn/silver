@@ -2,6 +2,7 @@ grammar silver:compiler:definition:concrete_syntax:ast;
 
 imports silver:compiler:translation:java:core only makeTerminalName;
 import silver:util:treemap as tm;
+import silver:util:treeset as s;
 
 -- For looking syntax elements up by name.
 monoid attribute cstDcls :: [Pair<String Decorated SyntaxDcl>] with [], ++;
@@ -45,9 +46,8 @@ autocopy attribute componentGrammarMarkingTerminals :: EnvTree<[String]>;
 -- Creating unambiguous <PP>s; this is a multiset used to accumulate all the
 -- names for terminals, and the actual name for <PP> will be modified to
 -- disambiguate if it would be ambiguous.
-monoid attribute prettyNamesAccum::[String] with [], ++;
--- invariant: only have one value
-autocopy attribute prettyNames::tm:Map<String Integer>;
+monoid attribute prettyNamesAccum::[Pair<String String>] with [], ++;
+autocopy attribute prettyNames::tm:Map<String String>;
 
 
 {--
@@ -160,12 +160,11 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     end;
 
   local prettyName :: String = fromMaybe(fromMaybe(n, asPrettyName(regex)), modifiers.prettyName);
-  top.prettyNamesAccum := [prettyName];
+  top.prettyNamesAccum := [pair(prettyName, n)];
   local disambiguatedPrettyName :: String =
-    case tm:lookup(prettyName, top.prettyNames) of
-    | [1] -> prettyName
-    | [i] -> prettyName ++ " (" ++ n ++ ")"
-    | _ -> error("invariant broken")
+    case length(tm:lookup(prettyName, top.prettyNames)) of
+    | 1 -> prettyName
+    | _ -> prettyName ++ " (" ++ n ++ ")"
     end;
 
   top.xmlCopper =
