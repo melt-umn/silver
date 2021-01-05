@@ -38,7 +38,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
 
   top.errors <-
     if nt.lookupType.found && at.lookupAttribute.found
-    && (top.config.warnAll || top.config.warnMissingSyn)
+    && (top.config.warnAll || top.config.warnMissingSyn || top.config.runMwda)
     -- We only care about synthesized attributes:
     && at.lookupAttribute.dcl.isSynthesized
     -- This error message won't be redundant:
@@ -46,7 +46,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
     -- And we can ignore any attribute that has a default equation:
     && null(lookupDef(nt.lookupType.fullName, at.lookupAttribute.fullName, top.flowEnv))
     -- Otherwise, examine them all:
-    then flatMap(raiseMissingProds(top.location, at.lookupAttribute.fullName, _, top.flowEnv), nfprods)
+    then flatMap(raiseMissingProds(top.location, at.lookupAttribute.fullName, _, top.flowEnv, top.config.runMwda), nfprods)
     else [];
 }
 
@@ -61,14 +61,14 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
  - @returns      An error message from the attribute occurrence's perspective, if any
  -}
 function raiseMissingProds
-[Message] ::= l::Location  attr::String  prod::String  e::Decorated FlowEnv
+[Message] ::= l::Location  attr::String  prod::String  e::Decorated FlowEnv runMwda::Boolean
 {
   -- Because the location is of the attribute occurrence, deliberately use the attribute's shortname
   local shortName :: String = substring(lastIndexOf(":", attr) + 1, length(attr), attr);
 
   return case lookupSyn(prod, attr, e) of
   | _ :: _ -> [] -- equation exists
-  | [] -> [wrn(l, "attribute "  ++ shortName ++ " missing equation for production " ++ prod)]
+  | [] -> [mwdaWrn(l, "attribute "  ++ shortName ++ " missing equation for production " ++ prod, runMwda)]
   end;
 
 }
@@ -89,11 +89,11 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   top.errors <-
     if null(body.errors ++ ns.errors)
-    && (top.config.warnAll || top.config.warnMissingSyn)
+    && (top.config.warnAll || top.config.warnMissingSyn || top.config.runMwda)
     -- Forwarding productions do no have missing synthesized equations:
     && null(body.uniqueSignificantExpression)
     -- Otherwise, examine them all:
-    then flatMap(raiseMissingAttrs(top.location, fName, _, top.flowEnv), attrs)
+    then flatMap(raiseMissingAttrs(top.location, fName, _, top.flowEnv, top.config.runMwda), attrs)
     else [];
 }
 
@@ -108,7 +108,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
  - @returns      An error message from the production's perspective, if any
  -}
 function raiseMissingAttrs
-[Message] ::= l::Location  prod::String  attr::DclInfo  e::Decorated FlowEnv
+[Message] ::= l::Location  prod::String  attr::DclInfo  e::Decorated FlowEnv runMwda::Boolean
 {
   -- Because the location is of the production, deliberately use the production's shortname
   local shortName :: String = substring(lastIndexOf(":", prod) + 1, length(prod), prod);
@@ -123,7 +123,7 @@ function raiseMissingAttrs
     end;
  
   return if lacks_default_equation && missing_explicit_equation
-  then [wrn(l, "production " ++ shortName ++ " lacks synthesized equation for " ++ attr.attrOccurring)]
+  then [mwdaWrn(l, "production " ++ shortName ++ " lacks synthesized equation for " ++ attr.attrOccurring, runMwda)]
   else [];
 }
 
