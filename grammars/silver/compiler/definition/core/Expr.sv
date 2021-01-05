@@ -897,12 +897,23 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
 
   top.appExprSize = es.appExprSize + 1;
 
-  e.appExprIndex = es.appExprSize;
-  e.appExprTyperep = if null(top.appExprTypereps)
-                     then errorType()
-                     else head(top.appExprTypereps);
+  top.errors <- if length(top.appExprTypereps) > top.appExprSize
+                then [err(top.location, "Too few arguments provided to function '" ++ top.appExprApplied ++ "'")]
+                else if length(top.appExprTypereps) < top.appExprSize
+                then [err(top.location, "Too many arguments provided to function '" ++ top.appExprApplied ++ "'")]
+                else [];
 
-  es.appExprTypereps = if null(top.appExprTypereps) then [] else tail(top.appExprTypereps);
+  local correctNumTypes :: [Type] =
+    if length(top.appExprTypereps) > top.appExprSize
+    then drop(length(top.appExprTypereps) - top.appExprSize, top.appExprTypereps)
+    else if length(top.appExprTypereps) < top.appExprSize
+    then repeat(errorType(), top.appExprSize - length(top.appExprTypereps)) ++ top.appExprTypereps
+    else top.appExprTypereps;
+
+  e.appExprIndex = es.appExprSize;
+  e.appExprTyperep = head(correctNumTypes);
+  
+  es.appExprTypereps = tail(correctNumTypes);
 }
 concrete production oneAppExprs
 top::AppExprs ::= e::AppExpr
