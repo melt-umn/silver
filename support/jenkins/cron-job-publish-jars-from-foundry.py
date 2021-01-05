@@ -30,6 +30,15 @@ files = [
 if SLACK_WEBHOOK_URL is None:
     try:
         with open("/lhome/gitbot/cron-job-publish-jars-from-foundry-slack-webhook-url.txt") as f:
+            # To recreate this file:
+            #
+            # 1. Be a collaborator on the corresponding Slack app.
+            # 2. Go to https://api.slack.com/apps/A01F6CM5X46/install-on-team?
+            # 3. SSH to coldpress
+            # 4. sudo -u gitbot vim /lhome/gitbot/cron-job-publish-jars-from-foundry-slack-webhook-url.txt
+            # 5. Hit Copy on the appropriate webhook from the Slack page from step 2
+            # 6. Paste it into the file
+            # 7. Google how to exit Vim
             SLACK_WEBHOOK_URL = f.read().strip()
     except:
         pass
