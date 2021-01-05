@@ -35,9 +35,6 @@ disambiguate RegexChar_t, RegexLParen_t { pluck RegexLParen_t; }
 disambiguate RegexChar_t, RegexRParen_t { pluck RegexRParen_t; }
 disambiguate RegexChar_t, RegexWildcard_t { pluck RegexWildcard_t; }
 
--- TODO: It might be wise to someday do a CST/AST split on this.
-
-
 {--
  - A basic regular expression.
  -
@@ -218,5 +215,5 @@ concrete production regexEscapedChar
 top::RegexChar ::= esc::EscapedChar_t
 {
   top.unparse = esc.lexeme;
-  top.ast = head(tail(stringToChars(esc.lexeme)));
+  top.ast = head(stringToChars(unescapeString(esc.lexeme)));
 }

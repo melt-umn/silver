@@ -95,7 +95,10 @@ function xmlEscapeChar
 String ::= ch::String
 {
   return
-    if ch == ">" then "&gt;"
+    if ch == "\r" then "&#13;"
+    else if ch == "\n" then "&#10;"
+    else if ch == "\t" then "&#9;"
+    else if ch == ">" then "&gt;"
     else if ch == "<" then "&lt;"
     else if ch == "&" then "&amp;"
     else if ch == "\"" then "&quot;"

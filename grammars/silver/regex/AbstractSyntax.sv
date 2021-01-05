@@ -114,7 +114,7 @@ top::Regex ::= r::Regex
   top.altPP = top.seqPP;
   top.seqPP = top.basePP;
   top.basePP = pp"${r.basePP}?";
-  forwards to alt(star(r), epsilon());
+  forwards to alt(r, epsilon());
 }
 
 ------------------------------------------------
