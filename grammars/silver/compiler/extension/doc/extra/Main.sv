@@ -54,7 +54,6 @@ import silver:compiler:translation:java:type;
 
 import silver:util:cmdargs;
 import silver:util:deque;
-import silver:util:fixedmap;
 import silver:util:treemap;
 import silver:util:graph;
 import silver:util:treemap;
