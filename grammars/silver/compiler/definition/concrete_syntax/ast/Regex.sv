@@ -1,9 +1,16 @@
 grammar silver:compiler:definition:concrete_syntax:ast;
 
 imports silver:core hiding empty, alt;
+import silver:compiler:definition:concrete_syntax:copper as copper;
 
 -- Translation of regex to Copper XML format.
 attribute xmlCopper occurs on Regex;
+
+-- Translation of regex to Copper grammar beans.
+synthesized attribute copperRegex::copper:Regex occurs on Regex, RegexSeq, RegexRepetition, RegexItem, RegexCharSet, RegexCharSetItem, RegexChar;
+synthesized attribute copperRegexAlts::[copper:Regex] occurs on Regex, RegexSeq, RegexRepetition, RegexItem, RegexCharSet, RegexCharSetItem, RegexChar;
+synthesized attribute copperRegexSeqs::[copper:Regex] occurs on Regex, RegexSeq, RegexRepetition, RegexItem, RegexCharSet, RegexCharSetItem, RegexChar;
+synthesized attribute copperRegexCharSet::copper:CharSet occurs on Regex, RegexSeq, RegexRepetition, RegexItem, RegexCharSet, RegexCharSetItem, RegexChar;
 
 {--
  - Used to prevent unneeded nesting of the same operator. (choices, sequences)
@@ -20,6 +27,9 @@ attribute setXML occurs on Regex;
 aspect default production
 top::Regex ::=
 {
+  top.copperRegexAlts = [top.copperRegex];
+  top.copperRegexSeqs = [top.copperRegex];
+  implicit top.copperRegexCharSet =;
   top.altXML = top.xmlCopper;
   top.seqXML = top.xmlCopper;
   implicit top.setXML =;
