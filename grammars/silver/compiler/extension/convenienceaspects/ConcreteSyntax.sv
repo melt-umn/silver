@@ -1,4 +1,4 @@
-grammar silver:extension:convenienceaspects;
+grammar silver:compiler:extension:convenienceaspects;
 
 closed nonterminal ConvenienceAspects_c with location, unparse, ast<ConvenienceAspects>;
 

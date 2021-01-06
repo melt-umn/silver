@@ -48,6 +48,7 @@ exports silver:compiler:extension:silverconstruction;
 exports silver:compiler:extension:astconstruction;
 exports silver:compiler:extension:constructparser;
 exports silver:compiler:extension:regex;
+exports silver:compiler:extension:convenienceaspects;
 
 -- Other generally useful stuff:
 exports silver:compiler:translation:java;

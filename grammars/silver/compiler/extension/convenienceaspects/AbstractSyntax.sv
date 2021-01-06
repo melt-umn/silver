@@ -1,4 +1,4 @@
-grammar silver:extension:convenienceaspects;
+grammar silver:compiler:extension:convenienceaspects;
 
 
 nonterminal ConvenienceAspects with pp, unparse, location;
