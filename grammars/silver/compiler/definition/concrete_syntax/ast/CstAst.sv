@@ -8,6 +8,7 @@ imports silver:compiler:translation:java:core only makeIdName, makeProdName, mak
 imports silver:compiler:translation:java:type only transType;
 
 import silver:util:graph as g;
+import silver:util:treemap as tm;
 import silver:util:treeset as s;
 
 {--
@@ -65,6 +66,8 @@ top::SyntaxRoot ::=
   s2.layoutTerms = s.layoutTerms;
   s2.prefixesForTerminals = s.prefixesForTerminals;
   s2.componentGrammarMarkingTerminals = s.componentGrammarMarkingTerminals;
+
+  s2.prettyNames = tm:add(s2.prettyNamesAccum, tm:empty(compareString));
   
   -- This should be on s1, because the s2 transform assumes everything is well formed.
   -- In particular, it drops productions it can't find an NT for.
