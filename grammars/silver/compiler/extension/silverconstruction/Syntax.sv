@@ -11,14 +11,14 @@ imports silver:compiler:extension:patternmatching;
 concrete production quoteAGDcl
 top::Expr ::= 'Silver_AGDcl' '{' ast::AGDcl '}'
 {
-  top.unparse = s"Silver_AGDcl " ++ substitute("\n","", "{${ast.unparse}}");
+  top.unparse = s"Silver_AGDcl " ++ substitute("\n"," ", "{${ast.unparse}}");
   forwards to translate(top.location, reflect(new(ast)));
 }
 
 concrete production quoteProductionStmt
 top::Expr ::= 'Silver_ProductionStmt' '{' ast::ProductionStmt '}'
 {
-  top.unparse = s"Silver_ProductionStmt" ++ substitute("\n","", "{${ast.unparse}}");
+  top.unparse = s"Silver_ProductionStmt" ++ substitute("\n"," ", "{${ast.unparse}}");
   forwards to translate(top.location, reflect(new(ast)));
 }
 
