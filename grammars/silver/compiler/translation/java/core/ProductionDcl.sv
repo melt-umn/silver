@@ -52,7 +52,7 @@ package ${makeName(top.grammarName)};
 import silver.core.*;
 
 // ${ntName}
-// ${ns.unparse}
+/* ${ns.unparse} */
 public final class ${className} extends ${fnnt} {
 
 ${makeIndexDcls(0, namedSig.inputElements)}

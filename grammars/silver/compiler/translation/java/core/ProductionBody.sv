@@ -68,7 +68,7 @@ aspect production forwardInh
 top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 {
   top.translation = 
-	s"\t\t//${top.unparse}\n" ++
+	s"\t\t/*${top.unparse}*/\n" ++
 	s"\t\t${top.frame.className}.forwardInheritedAttributes[${lhs.attrName}] = ${wrapLazy(e)};\n";
 }
 
@@ -100,7 +100,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 
   top.setupInh := 
     if !te.typerep.isDecorable then  "" else
-    s"\t\t//${top.unparse}\n" ++
+    s"\t\t/*${top.unparse}*/\n" ++
     s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursIndex}] = " ++ 
       s"new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n";
 
@@ -149,7 +149,7 @@ aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.translation = 
-    s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
+    s"\t\t/* ${dl.unparse}.${attr.unparse} = ${e.unparse} */\n" ++
     s"\t\t${dl.translation}[${attr.dcl.attrOccursIndex}] = ${wrapLazy(e)};\n";
 }
 
@@ -157,7 +157,7 @@ aspect production inheritedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.translation = 
-    s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
+    s"\t\t/* ${dl.unparse}.${attr.unparse} = ${e.unparse}*/\n" ++
     s"\t\t${dl.translation}[${attr.dcl.attrOccursIndex}] = ${wrapLazy(e)};\n";
 }
 
@@ -172,7 +172,7 @@ aspect production localValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.translation =
-	s"\t\t// ${val.unparse} = ${e.unparse}\n" ++
+	s"\t\t/* ${val.unparse} = ${e.unparse} */\n" ++
 	s"\t\t${top.frame.className}.localAttributes[${val.lookupValue.dcl.attrOccursIndex}] = ${wrapLazy(e)};\n";
 }
 
