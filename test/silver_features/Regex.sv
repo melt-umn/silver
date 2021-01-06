@@ -14,3 +14,9 @@ equalityTest("asd_f323" =~ /[a-zA-Z_][a-zA-Z_0-9]*/, true, Boolean, silver_tests
 equalityTest("asd_f3@23" =~ /[a-zA-Z_][a-zA-Z_0-9]*/, false, Boolean, silver_tests);
 equalityTest("{-{-a-}{--bc--}d-}" =~ /\{\-(\{\-([^\-]|\-+[^\}\-])*\-+\}|[^\-]|\-+[^\}\-])*\-+\}/, true, Boolean, silver_tests);
 equalityTest("{-{-a{--}-}{--bc--}d-}" =~ /\{\-(\{\-([^\-]|\-+[^\}\-])*\-+\}|[^\-]|\-+[^\}\-])*\-+\}/, false, Boolean, silver_tests);
+
+equalityTest("// abc" =~ /\/\/.*/, true, Boolean, silver_tests);
+equalityTest("// a\nbc" =~ /\/\/.*/, false, Boolean, silver_tests);
+
+equalityTest(" \r\n\t" =~ /[\r\n\t ]+/, true, Boolean, silver_tests);
+equalityTest(" blah\n" =~ /[\r\n\t ]+/, false, Boolean, silver_tests);
