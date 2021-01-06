@@ -20,3 +20,4 @@ equalityTest("// a\nbc" =~ /\/\/.*/, false, Boolean, silver_tests);
 
 equalityTest(" \r\n\t" =~ /[\r\n\t ]+/, true, Boolean, silver_tests);
 equalityTest(" blah\n" =~ /[\r\n\t ]+/, false, Boolean, silver_tests);
+equalityTest("" =~ /[\r\n\t ]+/, false, Boolean, silver_tests);
