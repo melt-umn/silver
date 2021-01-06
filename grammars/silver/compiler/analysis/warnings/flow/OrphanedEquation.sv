@@ -30,15 +30,15 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur e::
   -- Orphaned equation check
   top.errors <-
     if dl.found && attr.found
-    && (top.config.warnAll || top.config.warnEqdef)
+    && (top.config.warnAll || top.config.warnEqdef || top.config.runMwda)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [wrn(top.location, "Orphaned equation: " ++ attr.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [mwdaWrn(top.location, "Orphaned equation: " ++ attr.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName, top.config.runMwda)]
     else [];
   
   -- Duplicate equation check
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1
-    then [wrn(top.location, "Duplicate equation for " ++ attr.name ++ " in production " ++ top.frame.fullName)]
+    then [mwdaWrn(top.location, "Duplicate equation for " ++ attr.name ++ " in production " ++ top.frame.fullName, top.config.runMwda)]
     else [];
 }
 
@@ -55,15 +55,15 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 
   top.errors <-
     if dl.found && attr.found
-    && (top.config.warnAll || top.config.warnEqdef)
+    && (top.config.warnAll || top.config.warnEqdef || top.config.runMwda)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [wrn(top.location, "Orphaned equation: " ++ attr.name ++ " on " ++ dl.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [mwdaWrn(top.location, "Orphaned equation: " ++ attr.name ++ " on " ++ dl.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName, top.config.runMwda)]
     -- Now, check for duplicate equations!
     else [];
     
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1
-    then [wrn(top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
+    then [mwdaWrn(top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName, top.config.runMwda)]
     else [];
 }
 
@@ -81,15 +81,15 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   -- Orphaned equation check
   top.errors <-
     if dl.found && attr.found
-    && (top.config.warnAll || top.config.warnEqdef)
+    && (top.config.warnAll || top.config.warnEqdef || top.config.runMwda)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [wrn(top.location, "Orphaned equation: " ++ attr.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [mwdaWrn(top.location, "Orphaned equation: " ++ attr.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName, top.config.runMwda)]
     else [];
   
   -- Duplicate equation check
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1
-    then [wrn(top.location, "Duplicate equation for " ++ attr.name ++ " in production " ++ top.frame.fullName)]
+    then [mwdaWrn(top.location, "Duplicate equation for " ++ attr.name ++ " in production " ++ top.frame.fullName, top.config.runMwda)]
     else [];
 }
 aspect production inhBaseColAttributeDef
@@ -105,15 +105,15 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 
   top.errors <-
     if dl.found && attr.found
-    && (top.config.warnAll || top.config.warnEqdef)
+    && (top.config.warnAll || top.config.warnEqdef || top.config.runMwda)
     && !isExportedBy(top.grammarName, exportedBy, top.compiledGrammars)
-    then [wrn(top.location, "Orphaned equation: " ++ attr.name ++ " on " ++ dl.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName)]
+    then [mwdaWrn(top.location, "Orphaned equation: " ++ attr.name ++ " on " ++ dl.name ++ " (occurs from " ++ attr.dcl.sourceGrammar ++ ") in production " ++ top.frame.fullName, top.config.runMwda)]
     -- Now, check for duplicate equations!
     else [];
     
   top.errors <-
     if length(dl.lookupEqDefLHS) > 1
-    then [wrn(top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
+    then [mwdaWrn(top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName, top.config.runMwda)]
     else [];
 }
 
