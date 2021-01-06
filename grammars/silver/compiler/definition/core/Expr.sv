@@ -199,22 +199,18 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   anns.remainingFuncAnnotations = t.namedTypes;
   anns.funcAnnotations = anns.remainingFuncAnnotations;
   
+  top.errors <- 
+    if !t.isApplicable
+    then []
+    else if length(t.inputTypes) > es.appExprSize
+    then [err(top.location, "Too few arguments provided to function '" ++ e.unparse ++ "'")]
+    else if length(t.inputTypes) < es.appExprSize
+    then [err(top.location, "Too many arguments provided to function '" ++ e.unparse ++ "'")]
+    else [];
+
   -- TODO: You know, since the rule is we can't access .typerep without "first" supplying
   -- .downSubst, perhaps we should just... report .typerep after substitution in the first place!
-  local applied :: Expr = t.applicationDispatcher(e, es, anns, top.location);
-  
-  top.errors <- 
-    case applied of
-    | errorApplication(_, _, _) -> []
-    | _ ->
-      if length(t.inputTypes) > es.appExprSize
-      then [err(top.location, "Too few arguments provided to function '" ++ e.unparse ++ "'")]
-      else if length(t.inputTypes) < es.appExprSize
-      then [err(top.location, "Too many arguments provided to function '" ++ e.unparse ++ "'")]
-      else []
-    end;
-
-  forwards to applied;
+  forwards to t.applicationDispatcher(e, es, anns, top.location);
 }
 
 concrete production applicationAnno

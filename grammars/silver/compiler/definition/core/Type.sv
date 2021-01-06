@@ -15,13 +15,17 @@ synthesized attribute instanceOrd :: Boolean;
 synthesized attribute instanceNum :: Boolean;
 synthesized attribute instanceConvertible :: Boolean;
 
+synthesized attribute isApplicable :: Boolean;
+
 attribute applicationDispatcher, accessHandler, lengthDispatcher, appendDispatcher,
-          instanceEq, instanceOrd, instanceNum, instanceConvertible occurs on Type;
+          instanceEq, instanceOrd, instanceNum, instanceConvertible, isApplicable
+          occurs on Type;
 
 aspect default production
 top::Type ::=
 {
   top.applicationDispatcher = errorApplication(_, _, _, location=_);
+  top.isApplicable = false;
   top.accessHandler = errorAccessHandler(_, _, location=_);
   top.instanceEq = false;
   top.instanceOrd = false;
@@ -45,6 +49,7 @@ aspect production appType
 top::Type ::= c::Type a::Type
 {
   top.applicationDispatcher = c.applicationDispatcher;
+  top.isApplicable = c.isApplicable;
   top.accessHandler = c.accessHandler;
   top.instanceEq = c.instanceEq;
   top.instanceOrd = c.instanceOrd;
@@ -119,5 +124,6 @@ top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
   -- TODO: We don't seem to use this. Perhaps we should remove it?
   top.applicationDispatcher = functionApplication(_, _, _, location=_);
+  top.isApplicable = true;
 }
 
