@@ -41,7 +41,7 @@ Regex ::= r::Regex
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CharacterSetRegex
 function characterSetRegex
-Regex ::=
+Regex ::= cs::CharSet
 {
   return error("copper FFI function");
 } foreign {
@@ -50,3 +50,20 @@ Regex ::=
 }
 
 nonterminal CharSet;
+
+-- This should always be called with a single-char string.
+abstract production singleChar
+top::CharSet ::= c::String
+{}
+
+abstract production invertCharSet
+top::CharSet ::= inner::CharSet
+{}
+
+abstract production charRange
+top::CharSet ::= lower::String upper::String
+{}
+
+abstract production unionCharSets
+top::CharSet ::= l::CharSet  r::CharSet
+{}
