@@ -12,7 +12,7 @@ import common.Lazy;
 import common.StringCatter;
 import common.TopNode;
 
-import core.NLocation;
+import silver.core.NLocation;
 import silver.langutil.NMessage;
 
 /**
@@ -115,7 +115,7 @@ public class Problem {
 		
 		// Extract location information from where:
 		
-		String filename = ((StringCatter)where.synthesized(core.Init.core_filename__ON__core_Location)).toString();
+		String filename = ((StringCatter)where.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location)).toString();
 		
 		// Treat no file as project-wide
 		boolean isProjMsg = filename.equals("");
@@ -123,10 +123,10 @@ public class Problem {
 		if(isProjMsg)
 			return Problem.createProjectProblem(severity, message);
 		
-		int line = (Integer)where.synthesized(core.Init.core_line__ON__core_Location);
-		int column = (Integer)where.synthesized(core.Init.core_column__ON__core_Location);
-		int index = (Integer)where.synthesized(core.Init.core_index__ON__core_Location);
-		int endIndex = (Integer)where.synthesized(core.Init.core_endIndex__ON__core_Location);
+		int line = (Integer)where.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location);
+		int column = (Integer)where.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location);
+		int index = (Integer)where.synthesized(silver.core.Init.silver_core_index__ON__silver_core_Location);
+		int endIndex = (Integer)where.synthesized(silver.core.Init.silver_core_endIndex__ON__silver_core_Location);
 		
 		return Problem.createFileProblem(
 			new Path(filename), line, column, index, endIndex, severity, message);

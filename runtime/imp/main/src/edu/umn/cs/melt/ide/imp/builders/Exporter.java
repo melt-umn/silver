@@ -22,7 +22,7 @@ import common.Lazy;
 import common.OriginContext;
 import common.TopNode;
 
-import core.NIOVal;
+import silver.core.NIOVal;
 
 import edu.umn.cs.melt.ide.silver.property.ProjectProperties;
 import edu.umn.cs.melt.ide.util.ReflectedCall;
@@ -30,15 +30,15 @@ import edu.umn.cs.melt.ide.util.ReflectedCall;
 /**
  * Action performed via menu. Example configuration:
     <extension point="org.eclipse.ui.popupMenus">
-      <objectContribution objectClass="org.eclipse.core.resources.IProject" adaptable="true" nameFilter="*" id="silver.composed.idetest.actions.projectmenu">
+      <objectContribution objectClass="org.eclipse.core.resources.IProject" adaptable="true" nameFilter="*" id="silver.compiler.composed.idetest.actions.projectmenu">
         <action
             label="Export as Silver target"
             tooltip="Export the project as Silver distributable"
-            id="silver.composed.idetest.actions.export">
+            id="silver.compiler.composed.idetest.actions.export">
           <class class="edu.umn.cs.melt.ide.imp.builders.Exporter">
             <parameter name="name" value="Silver" />
-            <parameter name="markerName" value="silver.composed.idetest.builder.problem" />
-            <parameter name="silver_export" value="silver:composed:idetest:export" />
+            <parameter name="markerName" value="silver.compiler.composed.idetest.builder.problem" />
+            <parameter name="silver_export" value="silver:compiler:composed:idetest:export" />
           </class>
         </action>
  * 
@@ -82,9 +82,9 @@ public class Exporter implements IObjectActionDelegate, IExecutableExtension {
                                     sv_export.invoke(new Object[]{OriginContext.FFI_CONTEXT, project, properties.serializeToSilverType(), IOToken.singleton});
 				final DecoratedNode export_result = undecorated_export_result.decorate();
 				// demand evaluation of io actions
-				export_result.synthesized(core.Init.core_io__ON__core_IOVal);
+				export_result.synthesized(silver.core.Init.silver_core_io__ON__silver_core_IOVal);
 				
-				final ConsCell errors = (ConsCell)export_result.synthesized(core.Init.core_iovalue__ON__core_IOVal);
+				final ConsCell errors = (ConsCell)export_result.synthesized(silver.core.Init.silver_core_iovalue__ON__silver_core_IOVal);
 
 				try {
 					Builder.renderMessages(errors, project, markerName);

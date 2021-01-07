@@ -1,7 +1,6 @@
 
 import silver:util:deque;
 import silver:testing ;
-import lib:extcore ;
 import stdlib;
 
 equalityTest ( dqIsEmpty(dqEmpty()), true, Boolean, core_tests ) ;

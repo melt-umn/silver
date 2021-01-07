@@ -441,8 +441,8 @@ top::ASTExpr ::= s::ASTExpr e::ASTExpr
   
   top.value =
     case st.result of
-    | just(a) -> AST { core:just(${a}) }
-    | nothing() -> AST { core:nothing() }
+    | just(a) -> AST { silver:core:just(${a}) }
+    | nothing() -> AST { silver:core:nothing() }
     end;
 }
 

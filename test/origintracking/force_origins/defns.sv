@@ -1,6 +1,5 @@
 imports core;
 imports silver:testing;
-imports lib:extcore;
 imports silver:reflect;
 imports silver:langutil;
 

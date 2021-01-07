@@ -1,8 +1,7 @@
 
 import silver:testing;
-import lib:extcore;
-import lib:xml;
-import lib:xml:foreigntypes;
+import silver:xml;
+import silver:xml:foreigntypes;
 import stdlib;
 
 global books :: XML_Document = parseXMLFileF("xml/books.xml").parseTree;

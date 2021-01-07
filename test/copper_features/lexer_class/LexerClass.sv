@@ -1,7 +1,6 @@
 grammar copper_features:lexer_class;
 
 imports silver:testing ;
-imports lib:extcore ;
 imports copper_features;
 
 lexer class Identifier;

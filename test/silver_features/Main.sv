@@ -1,7 +1,6 @@
 grammar silver_features;
 
 imports silver:testing;
-imports lib:extcore;
 
 import silver_features:defs;
 import silver_features:cond;

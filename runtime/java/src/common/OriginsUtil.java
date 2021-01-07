@@ -1,7 +1,7 @@
 package common;
 
 
-import core.*;
+import silver.core.*;
 import common.exceptions.*;
 import java.util.*;
 
@@ -114,21 +114,21 @@ public final class OriginsUtil {
 
 	// Implementation of the stdlib origins helpers
 
-	public static core.NMaybe polyGetOrigin(Object o) {
+	public static silver.core.NMaybe polyGetOrigin(Object o) {
 		if (o instanceof DecoratedNode) o = ((DecoratedNode)o).undecorate();
 		NOriginInfo r = getOriginOrNull(o);
-		if (r == null) return core.Pnothing.rtConstruct(null);
-		return core.Pjust.rtConstruct(null, r);
+		if (r == null) return silver.core.Pnothing.rtConstruct(null);
+		return silver.core.Pjust.rtConstruct(null, r);
 	}
 
-	public static core.NMaybe getOriginLink(core.NOriginInfo o) {
+	public static silver.core.NMaybe getOriginLink(silver.core.NOriginInfo o) {
 		if (o instanceof PoriginOriginInfo)
-			return core.Pjust.rtConstruct(null, ((PoriginOriginInfo)o).getChild_origin());
+			return silver.core.Pjust.rtConstruct(null, ((PoriginOriginInfo)o).getChild_origin());
 
 		if (o instanceof PoriginAndRedexOriginInfo)
-			return core.Pjust.rtConstruct(null, ((PoriginAndRedexOriginInfo)o).getChild_origin());
+			return silver.core.Pjust.rtConstruct(null, ((PoriginAndRedexOriginInfo)o).getChild_origin());
 
-		return core.Pnothing.rtConstruct(null);
+		return silver.core.Pnothing.rtConstruct(null);
 	}
 
 	// Misc helper
