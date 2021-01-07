@@ -111,7 +111,7 @@ top::Regex ::= r1::Regex r2::Regex
     | just(cs) -> [top.copperRegex]
     | nothing() -> r1.copperRegexAlts ++ r2.copperRegexAlts
     end;
-  top.copperRegexCharSet = unionCharSets(r1.copperRegexCharSet, r2.copperRegexCharSet);
+  top.copperRegexCharSet = copper:unionCharSets(r1.copperRegexCharSet, r2.copperRegexCharSet);
 
   top.xmlCopper =
     case top.setXML of
