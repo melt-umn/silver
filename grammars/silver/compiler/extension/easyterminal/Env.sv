@@ -1,15 +1,6 @@
 grammar silver:compiler:extension:easyterminal;
 
 import silver:compiler:definition:env;
-import silver:compiler:definition:regex;
-
--- TODO BUG FIXME: This looks up terminals via their regular expressions, but
--- that confuses single quoted and non-single quoted regexs!
--- i.e. 'hi' will happily match /hi/ and '(' will match /[\(]/, but this should
--- probably not be the case!
-
--- The correct solution would be to only look up via their "single quotes name"
--- which for '' terminals is the bit in '', while for // terminals, it can be specified if desired
 
 function getTerminalRegexDclAll
 [DclInfo] ::= search::String e::Decorated Env
@@ -17,15 +8,13 @@ function getTerminalRegexDclAll
   return searchEnv(search, e.terminalTree);
 }
 
-
-
 synthesized attribute terminalTree :: [EnvScope<DclInfo>] occurs on Env; -- must be kept in sync with typeTree's type!! (whether its a [] or not)
 
 function filterAndConvertTermDcls
 [Pair<String DclInfo>] ::= ei::EnvItem sofar::[Pair<String DclInfo>]
 {
   return case ei.dcl of
-         | termDcl(fn, regex) -> pair(regex.regString, ei.dcl) :: sofar
+         | termDcl(fn, _, just(en)) -> pair(en, ei.dcl) :: sofar
          | _ -> sofar
          end;
 }

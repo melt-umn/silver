@@ -11,16 +11,13 @@ grammar silver:compiler:host:core;
 exports silver:compiler:definition:core;
 exports silver:compiler:definition:concrete_syntax;
 exports silver:compiler:definition:type:syntax;
-exports silver:compiler:definition:regex;
 exports silver:compiler:definition:flow:syntax;
+exports silver:regex:concrete_syntax;
 
 -- symbols
 exports silver:compiler:analysis:typechecking:core;
 
 --We wish regex to remain a generic grammar, so we resolve the conflict here!
-import silver:compiler:definition:regex;
-import silver:compiler:definition:core;
-
 -- Regexes end with /. Escape it if you want it.
 disambiguate RegexChar_t, Divide_t
 {

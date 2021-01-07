@@ -1,9 +1,10 @@
 grammar silver:compiler:modification:impide:cstast;
 
 imports silver:compiler:definition:concrete_syntax:ast;
-imports silver:compiler:definition:regex;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
+
+imports silver:regex:concrete_syntax;
 
 imports silver:compiler:modification:impide:spec;
 
