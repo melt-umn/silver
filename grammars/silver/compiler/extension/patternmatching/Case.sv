@@ -85,7 +85,6 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
     implode(" | ", map((.unparse), ml)) ++ " | _ -> " ++ failExpr.unparse ++
     " end :: " ++ prettyType(retType) ++ ")";
 
-
   {-Checking Pattern Completeness
 
     We want to check if a set of patterns covers all possible cases.
@@ -113,13 +112,14 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
   local completenessCounterExample::Maybe<[Pattern]> =
         checkCompleteness(conditionlessPatterns);
 
-{-  top.errors <- case completenessCounterExample of
-                | just(lst) ->
-                  [err(top.location,
-                       "This pattern-matching is not exhaustive.  Here is an example of a " ++
-                       "case that is not matched:  " ++ implode(", ", map((.unparse), lst)))]
-                | nothing() -> []
-                end;-}
+  top.errors <-
+      case completenessCounterExample of
+      | just(lst) ->
+        [wrn(top.location,
+             "This pattern-matching is not exhaustive.  Here is an example of a " ++
+             "case that is not matched:  " ++ implode(", ", map((.unparse), lst)))]
+      | nothing() -> []
+      end;
 
   {-
     With the addition of completeness checking, we cannot
@@ -182,18 +182,26 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
   local freshCurrNameRef :: Expr =
     baseExpr(qName(loc, freshCurrName), location=loc);
   local allConCase :: Pair<Expr [Message]> =
-    pair(
-      -- Annoyingly, this now needs to be a let in case of annotation patterns.
-      makeLet(loc,
-        freshCurrName, freshType(), head(es), 
-        matchPrimitive(
-          freshCurrNameRef,
-          typerepTypeExpr(retType, location=loc),
-          foldPrimPatterns(
-            map(allConCaseTransform(freshCurrNameRef, tail(es), failExpr, retType, _),
-            groupMRules(prodRules))),
-          failExpr, location=loc)),
-      errors);
+      let constructorGroups::[[AbstractMatchRule]] = groupMRules(prodRules) in
+      let mappedPatternsErrs::[Pair<PrimPattern [Message]>] =
+          map(allConCaseTransform(freshCurrNameRef, tail(es), failExpr, retType, _),
+              constructorGroups) in
+      let primPatterns::[PrimPattern] =
+          map(\ p::Pair<PrimPattern [Message]> -> p.fst, mappedPatternsErrs) in
+      let errs::[Message] =
+          foldr(\ p::Pair<PrimPattern [Message]> l::[Message] -> p.snd ++ l,
+                [], mappedPatternsErrs) in
+        pair(
+          -- Annoyingly, this now needs to be a let in case of annotation patterns.
+          makeLet(loc,
+            freshCurrName, freshType(), head(es), 
+            matchPrimitive(
+              freshCurrNameRef,
+              typerepTypeExpr(retType, location=loc),
+              foldPrimPatterns(primPatterns),
+              failExpr, location=loc)),
+          errors ++ errs)
+      end end end end;
 
   {--
    - All variables? Just push a let binding inside each branch.
@@ -258,10 +266,6 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
                   pair(makeLet(loc, freshFailName, retType, bmexpr, ccexpr),
                        bmerrs ++ ccerrs)
                 end
---  makeLet(loc, freshFailName, retType,
---                        buildMixedCaseMatches(es, segments.snd, failExpr, retType, loc),
---                        caseExpr(es, segments.fst, baseExpr(qName(loc, freshFailName), location=loc),
---                                 retType, location=loc))
               end;
 }
 
@@ -609,10 +613,10 @@ Expr ::= n::Name
  - @param retType  (The return type of the overall case-expr, and thus this)
  - @param mrs  (Match rules that all share the same head-pattern)
  -
- - @return  A primitive pattern matching the constructor, with the overall case-expr pushed down into it
+ - @return  A primitive pattern matching the constructor, with the overall case-expr pushed down into it and compiled, along with any errors for overlapping patterns.
  -}
 function allConCaseTransform
-PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[AbstractMatchRule]
+Pair<PrimPattern [Message]> ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[AbstractMatchRule]
 {
   -- TODO: potential source of buggy error messages. We're using head(mrs) as the source of
   -- authority for the length of pattern variables to match against. But each match rule may
@@ -620,11 +624,12 @@ PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type 
   -- This is an erroneous condition, but it means we transform into a maybe-more erroneous condition.
   local names :: [Name] = map(patternListVars, head(mrs).headPattern.patternSubPatternList);
 
-  local subcase :: Expr =
-    caseExpr(
+  local subcase :: Expr = subCaseCompile.fst;
+  local subCaseCompile::Pair<Expr [Message]> =
+    compileCaseExpr(
       map(exprFromName, names) ++ annoAccesses ++ restExprs,
       map(\ mr::AbstractMatchRule -> mr.expandHeadPattern(annos), mrs),
-      failCase, retType, location=head(mrs).location);
+      failCase, retType, head(mrs).location);
   -- TODO: head(mrs).location is probably not the correct thing to use here?? (generally)
 
   local annos :: [String] =
@@ -638,14 +643,14 @@ PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type 
   return
     case head(mrs).headPattern of
     | prodAppPattern_named(qn,_,_,_,_,_) -> 
-        prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', '->', subcase, location=l)
-    | intPattern(it) -> integerPattern(it, '->', subcase, location=l)
-    | fltPattern(it) -> floatPattern(it, '->', subcase, location=l)
-    | strPattern(it) -> stringPattern(it, '->', subcase, location=l)
-    | truePattern(_) -> booleanPattern("true", '->', subcase, location=l)
-    | falsePattern(_) -> booleanPattern("false", '->', subcase, location=l)
-    | nilListPattern(_,_) -> nilPattern(subcase, location=l)
-    | consListPattern(h,_,t) -> conslstPattern(head(names), head(tail(names)), subcase, location=l)
+        pair(prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', '->', subcase, location=l), subCaseCompile.snd)
+    | intPattern(it) -> pair(integerPattern(it, '->', subcase, location=l), subCaseCompile.snd)
+    | fltPattern(it) -> pair(floatPattern(it, '->', subcase, location=l), subCaseCompile.snd)
+    | strPattern(it) -> pair(stringPattern(it, '->', subcase, location=l), subCaseCompile.snd)
+    | truePattern(_) -> pair(booleanPattern("true", '->', subcase, location=l), subCaseCompile.snd)
+    | falsePattern(_) -> pair(booleanPattern("false", '->', subcase, location=l), subCaseCompile.snd)
+    | nilListPattern(_,_) -> pair(nilPattern(subcase, location=l), subCaseCompile.snd)
+    | consListPattern(h,_,t) -> pair(conslstPattern(head(names), head(tail(names)), subcase, location=l), subCaseCompile.snd)
     end;
 }
 

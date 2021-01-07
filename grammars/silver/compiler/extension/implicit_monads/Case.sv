@@ -203,8 +203,9 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type {
         m_freshCurrNameRef,
         typerepTypeExpr(retType, location=top.location),
         foldPrimPatterns(
+          map(\ p::Pair<PrimPattern [Message]> -> p.fst,
           map(allConCaseTransform(m_freshCurrNameRef, tail(es), failExpr, retType, _),
-          groupMRules(m_prodRules))),
+          groupMRules(m_prodRules)))),
         failExpr, location=top.location));
   
   {--
