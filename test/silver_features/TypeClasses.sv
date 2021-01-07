@@ -52,6 +52,12 @@ equalityTest(myeq([1, 2, 3], [1, 2, 1]), false, Boolean, silver_tests);
 equalityTest(myeq(pair([1, 2], 3), pair([1, 2], 3)), true, Boolean, silver_tests);
 equalityTest(myeq(pair([1, 2], 3), pair([1, 4], 3)), false, Boolean, silver_tests);
 
+equalityTest(myneq([1, 2, 3], [1, 2, 3]), false, Boolean, silver_tests);
+equalityTest(myneq([1, 2, 3], [1, 2, 3, 2, 1]), true, Boolean, silver_tests);
+equalityTest(myneq([1, 2, 3], [1, 2, 1]), true, Boolean, silver_tests);
+equalityTest(myneq(pair([1, 2], 3), pair([1, 2], 3)), false, Boolean, silver_tests);
+equalityTest(myneq(pair([1, 2], 3), pair([1, 4], 3)), true, Boolean, silver_tests);
+
 function myRemove
 MyEq a => [a] ::= x::a xs::[a]
 {
