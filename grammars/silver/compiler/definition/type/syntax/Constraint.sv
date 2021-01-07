@@ -39,14 +39,15 @@ top::Constraint ::= c::QNameType t::TypeExpr
   top.contexts =
     case top.instanceHead of
     | just(instContext(_, skolemType(_))) -> [] -- Avoid a cycle in instance resolution checking
-    | _ -> [instContext(dcl.fullName, t.typerep)]
+    | _ -> [instContext(fName, t.typerep)]
     end;
   
   production dcl::DclInfo = c.lookupType.dcl;
+  production fName::String = c.lookupType.fullName;
   
   top.errors <- c.lookupType.errors;
   top.errors <-
-    if dcl.isClass then []
+    if c.lookupType.found && dcl.isClass then []
     else [err(c.location, c.name ++ " is not a type class.")];
   top.errors <- t.errorsTyVars;
   
@@ -61,10 +62,10 @@ top::Constraint ::= c::QNameType t::TypeExpr
   
   top.defs <-
     case top.constraintSigName of
-    | just(sigfn) -> [sigConstraintDef(top.grammarName, top.location, dcl.fullName, t.typerep, sigfn)]
-    | nothing() -> [instConstraintDef(top.grammarName, top.location, dcl.fullName, t.typerep)]
+    | just(sigfn) -> [sigConstraintDef(top.grammarName, top.location, fName, t.typerep, sigfn)]
+    | nothing() -> [instConstraintDef(top.grammarName, top.location, fName, t.typerep)]
     end;
-  top.defs <- transitiveSuperDefs(top.env, t.typerep, [], dcl.fullName);
+  top.defs <- transitiveSuperDefs(top.env, t.typerep, [], fName);
 
   top.lexicalTyVarKinds <-
     case t of

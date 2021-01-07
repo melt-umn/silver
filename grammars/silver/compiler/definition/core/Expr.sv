@@ -183,15 +183,31 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   -- TODO: fix comma when one or the other is empty
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
   
+  local correctNumTypes :: [Type] =
+    if length(t.inputTypes) > es.appExprSize
+    then take(es.appExprSize, t.inputTypes)
+    else if length(t.inputTypes) < es.appExprSize
+    then t.inputTypes ++ repeat(errorType(), es.appExprSize - length(t.inputTypes))
+    else t.inputTypes;
+  
   -- NOTE: REVERSED ORDER
   -- We may need to resolve e's type to get at the actual 'function type'
   local t :: Type = performSubstitution(e.typerep, e.upSubst);
-  es.appExprTypereps = reverse(t.inputTypes);
+  es.appExprTypereps = reverse(correctNumTypes);
   es.appExprApplied = e.unparse;
   anns.appExprApplied = e.unparse;
   anns.remainingFuncAnnotations = t.namedTypes;
   anns.funcAnnotations = anns.remainingFuncAnnotations;
   
+  top.errors <- 
+    if !t.isApplicable
+    then []
+    else if length(t.inputTypes) > es.appExprSize
+    then [err(top.location, "Too few arguments provided to function '" ++ e.unparse ++ "'")]
+    else if length(t.inputTypes) < es.appExprSize
+    then [err(top.location, "Too many arguments provided to function '" ++ e.unparse ++ "'")]
+    else [];
+
   -- TODO: You know, since the rule is we can't access .typerep without "first" supplying
   -- .downSubst, perhaps we should just... report .typerep after substitution in the first place!
   forwards to t.applicationDispatcher(e, es, anns, top.location);
@@ -880,11 +896,9 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
   top.appExprSize = es.appExprSize + 1;
 
   e.appExprIndex = es.appExprSize;
-  e.appExprTyperep = if null(top.appExprTypereps)
-                     then errorType()
-                     else head(top.appExprTypereps);
-
-  es.appExprTypereps = if null(top.appExprTypereps) then [] else tail(top.appExprTypereps);
+  e.appExprTyperep = head(top.appExprTypereps);
+  
+  es.appExprTypereps = tail(top.appExprTypereps);
 }
 concrete production oneAppExprs
 top::AppExprs ::= e::AppExpr
@@ -896,11 +910,6 @@ top::AppExprs ::= e::AppExpr
 
   top.appExprIndicies = e.appExprIndicies;
   
-  top.errors <- if null(top.appExprTypereps)
-                then [err(top.location, "Too many arguments provided to function '" ++ top.appExprApplied ++ "'")]
-                else if length(top.appExprTypereps) > 1
-                then [err(top.location, "Too few arguments provided to function '" ++ top.appExprApplied ++ "'")]
-                else [];
   top.appExprSize = 1;
 
   e.appExprIndex = 0;

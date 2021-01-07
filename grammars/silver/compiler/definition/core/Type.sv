@@ -117,7 +117,6 @@ top::Type ::= te::Type
 aspect production functionType
 top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 {
-  -- TODO: We don't seem to use this. Perhaps we should remove it?
   top.applicationDispatcher = functionApplication(_, _, _, location=_);
 }
 
