@@ -84,6 +84,11 @@ melt.trynode('silver') {
     tasks << tests.collectEntries { t -> [(t): task_test(t, WS)] }
     tasks << tuts.collectEntries { t -> [(t): task_tutorial(t, WS)] }
 
+    // Build test driver
+    dir ("${WS}/tests") {
+      sh "silver silver:testing:bin"
+    }
+
     // Unpack tarball (into ./silver-latest/) (for tutorial testing)
     sh "tar zxf silver-latest.tar.gz"
     // Run tests
@@ -148,11 +153,10 @@ def task_test(String testname, String WS) {
       def GEN = pwd() // This node's workspace
       // Go back to our "parent" workspace, into the test
       dir(WS + '/test/' + testname) {
-        sh "./silver-compile --clean -G ${GEN}"
-        if (fileExists("test.jar")) {
-          sh "java -Xss2M -jar test.jar"
-          sh "rm test.jar"
-        }
+        // HACK: edit the test specs to specify the generated directory
+        sh "find . -name '*.test' -exec sed -i'' 's/\(run: [^ ]*silver[^ ]*\) /\1 -G ${GEN} /g' {} \;"
+        // Run the tests
+        sh "java -jar ../silver.testing.bin.jar"
       }
       // Blow away these generated files in our private workspace
       deleteDir()
