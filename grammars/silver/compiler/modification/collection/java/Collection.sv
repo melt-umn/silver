@@ -103,12 +103,17 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
   top.setupInh <-
         "\t\t" ++ top.frame.className ++ ".localAttributes[" ++ ugh_dcl_hack.attrOccursIndex ++ "] = new common.CollectionAttribute(){\n" ++ 
         "\t\t\tpublic Object eval(common.DecoratedNode context) {\n" ++ 
-        "\t\t\t\t common.OriginContext originCtx = context.originCtx;\n" ++
-        "\t\t\t\t" ++ te.typerep.transType ++ " result = (" ++ te.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
-        "\t\t\t\tfor(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
-        "\t\t\t\t\tresult = " ++ o.translation ++ ";\n" ++ 
-        "\t\t\t\t}\n" ++ 
-        "\t\t\t\treturn result;\n" ++ 
+        "\t\t\t\tcommon.OriginContext originCtx = context.originCtx;\n" ++
+        "\t\t\t\tcommon.Lazy base = this.getBase();\n" ++
+        "\t\t\t\tif(base != null){\n" ++
+        "\t\t\t\t\t" ++ te.typerep.transType ++ " result = (" ++ te.typerep.transType ++ ")this.getBase().eval(context);\n" ++ 
+        "\t\t\t\t\tfor(int i = 0; i < this.getPieces().size(); i++){\n" ++ 
+        "\t\t\t\t\t\tresult = " ++ o.translation ++ ";\n" ++ 
+        "\t\t\t\t\t}\n" ++ 
+        "\t\t\t\t\treturn result;\n" ++ 
+        "\t\t\t\t} else {\n" ++
+        "\t\t\t\t\tthrow new common.exceptions.MissingDefinitionException(\"Production attribute '" ++ a.name ++ "' in '" ++ top.frame.fullName ++ "' has no base definition\"); \n" ++
+        "\t\t\t\t}\n" ++
         "\t\t\t}\n" ++ 
         "\t\t};\n";
 }
