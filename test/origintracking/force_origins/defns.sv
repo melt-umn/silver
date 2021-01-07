@@ -1,4 +1,3 @@
-imports core;
 imports silver:testing;
 imports silver:reflect;
 imports silver:langutil;
