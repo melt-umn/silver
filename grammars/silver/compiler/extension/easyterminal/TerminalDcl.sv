@@ -5,7 +5,8 @@ import silver:compiler:definition:env;
 import silver:compiler:definition:type;
 import silver:compiler:definition:type:syntax;
 import silver:compiler:definition:concrete_syntax;
-import silver:compiler:definition:regex only Regex, regString, regexLiteral;
+
+import silver:regex only Regex, regexLiteral;
 
 terminal Terminal_t /\'[^\'\r\n]*\'/ lexer classes {LITERAL};
 
@@ -26,9 +27,10 @@ top::RegExpr ::= t::Terminal_t
 {
   top.unparse = t.lexeme;
   
-  top.terminalRegExprSpec = regexLiteral(substring(1, length(t.lexeme) - 1, t.lexeme));
+  production easyName::String = substring(1, length(t.lexeme) - 1, t.lexeme);
+  top.easyName = just(easyName);
   
-  forwards to regExpr('/', top.terminalRegExprSpec, '/', location=top.location);
+  forwards to regExpr(regexLiteral(easyName), location=top.location);
 }
 
 {-- Abstracts away looking up terminals in the environment -}
@@ -43,10 +45,7 @@ top::EasyTerminalRef ::= t::Terminal_t
   top.unparse = t.lexeme;
   top.easyString = substring(1, length(t.lexeme) - 1, t.lexeme);
 
-  -- TODO: This is necessary because the environment is still populated using the regex, so we have to look up the corresponding regex.
-  local regHack :: Regex = regexLiteral(top.easyString);
-
-  top.dcls = getTerminalRegexDclAll(regHack.regString, top.env);
+  top.dcls = getTerminalRegexDclAll(top.easyString, top.env);
 
   top.errors :=
     if null(top.dcls) then

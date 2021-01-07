@@ -1,6 +1,5 @@
 grammar silver:compiler:definition:core;
 
-import silver:compiler:definition:regex;  -- soley for Terms. TODO : fix?
 import silver:compiler:modification:copper only terminalIdReference;
 
 {--
@@ -146,7 +145,7 @@ top::DclInfo ::= ty::Type
 }
 
 aspect production termDcl
-top::DclInfo ::= fn::String regex::Regex
+top::DclInfo ::= fn::String _ _
 {
   top.refDispatcher = terminalIdReference(_, location=_);
 }
