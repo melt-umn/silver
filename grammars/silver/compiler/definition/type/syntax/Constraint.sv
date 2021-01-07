@@ -61,9 +61,14 @@ top::Constraint ::= c::QNameType t::TypeExpr
     end;
   
   top.defs <-
-    case top.constraintSigName of
-    | just(sigfn) -> [sigConstraintDef(top.grammarName, top.location, fName, t.typerep, sigfn)]
-    | nothing() -> [instConstraintDef(top.grammarName, top.location, fName, t.typerep)]
+    case top.constraintSigName, top.instanceHead of
+    | just(sigfn), _ -> [sigConstraintDef(top.grammarName, top.location, fName, t.typerep, sigfn)]
+    | nothing(), just(_) -> [instConstraintDef(top.grammarName, top.location, fName, t.typerep)]
+    | _, _ ->
+      [instSuperDef(
+        top.grammarName, top.location, fName,
+        currentInstDcl(error("Class name shouldn't be needed"), t.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location),
+        t.typerep)]
     end;
   top.defs <- transitiveSuperDefs(top.env, t.typerep, [], fName);
 

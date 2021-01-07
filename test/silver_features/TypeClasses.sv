@@ -222,3 +222,16 @@ instance CDefaultVal String {
 
 equalityTest(cdv2, "abc", String, silver_tests);
 
+class AmbInst a {
+  ambval :: a;
+}
+instance AmbInst Integer {
+  ambval = 42;
+}
+instance AmbInst Float {
+  ambval = 3.14;
+}
+
+wrongCode "Ambiguous type variable a (arising from the use of ambval) prevents the constraint silver_features:AmbInst a from being solved." {
+  global ambStr::String = hackUnparse(ambval);
+}
