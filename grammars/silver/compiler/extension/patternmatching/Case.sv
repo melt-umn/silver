@@ -76,6 +76,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
       freshType(), location=top.location);
 }
 
+
 abstract production caseExpr
 top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
 {
@@ -83,78 +84,6 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
     "(case " ++ implode(", ", map((.unparse), es)) ++ " of " ++ 
     implode(" | ", map((.unparse), ml)) ++ " | _ -> " ++ failExpr.unparse ++
     " end :: " ++ prettyType(retType) ++ ")";
-
-  -- 4 cases: no patterns left, all constructors, all variables, or mixed con/var.
-  -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules
-  forwards to
-    case ml of
-    | matchRule([], c, e) :: _ -> buildMatchWhenConditionals(ml, failExpr) -- valid or error case
-    -- No match rules, only possible through abstract syntax
-    | [] -> Silver_Expr { let res :: $TypeExpr{typerepTypeExpr(retType, location=top.location)} = $Expr{failExpr} in res end }
-    | _ -> if null(es) then failExpr -- error case
-           else if null(varRules) then allConCase
-           else if null(prodRules) then allVarCase
-           else mixedCase
-    end;
-  -- TODO: BUG: we're using the left of patterns in the first match rule as a guide here
-  -- which means we run into serious problems if not all match rules agree on the length
-  -- of the pattern list. We don't report some errors related to not having enough
-  -- variable binders
-  
-  top.errors <-
-    case ml of
-    -- are there multiple match rules, with no patterns/conditions left in them to distinguish between them?
-    | matchRule([], _, e) :: _ :: _ ->
-      if areUselessPatterns(ml)
-      then [err(top.location, "Pattern has overlapping cases!")]
-      else []
-    | _ -> []
-    end;
-       
---  top.errors <- unsafeTrace([], 
---     print(top.unparse ++ "\n\n", unsafeIO()));
-
-  local partMRs :: Pair<[AbstractMatchRule] [AbstractMatchRule]> =
-    partition((.isVarMatchRule), ml);
-  local varRules :: [AbstractMatchRule] = partMRs.fst;
-  local prodRules :: [AbstractMatchRule] = partMRs.snd;
-  
-  {--
-   - All constructors? Then do a real primitive match.
-   -}
-  local freshCurrName :: String = "__curr_match_" ++ toString(genInt());
-  local freshCurrNameRef :: Expr =
-    baseExpr(qName(top.location, freshCurrName), location=top.location);
-  local allConCase :: Expr =
-    -- Annoyingly, this now needs to be a let in case of annotation patterns.
-    makeLet(top.location,
-      freshCurrName, freshType(), head(es), 
-      matchPrimitive(
-        freshCurrNameRef,
-        typerepTypeExpr(retType, location=top.location),
-        foldPrimPatterns(
-          map(allConCaseTransform(freshCurrNameRef, tail(es), failExpr, retType, _),
-          groupMRules(prodRules))),
-        failExpr, location=top.location));
-  
-  {--
-   - All variables? Just push a let binding inside each branch.
-   -}
-  local allVarCase :: Expr =
-    caseExpr(tail(es),
-      map(bindHeadPattern(head(es), freshType(){-whatever the first expression's type is?-}, _),
-        ml),
-      failExpr, retType, location=top.location);
-      -- A quick note about that freshType() hack: putting it here means there's ONE fresh type
-      -- generated, puching it inside 'bindHeadPattern' would generate multiple fresh types.
-      -- So don't try that!
-  
-  {--
-    - Mixed con/var? Partition into segments and build nested case expressions
-    - The whole segment partitioning is done in a function rather than grabbing the initial segment
-      and forwarding to do the rest of the segments (another workable option) for efficiency
-   -}
-  local mixedCase :: Expr = buildMixedCaseMatches(es, ml, failExpr, retType, top.location);
 
 
   {-Checking Pattern Completeness
@@ -184,13 +113,26 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
   local completenessCounterExample::Maybe<[Pattern]> =
         checkCompleteness(conditionlessPatterns);
 
-  top.errors <- case completenessCounterExample of
+{-  top.errors <- case completenessCounterExample of
                 | just(lst) ->
                   [err(top.location,
                        "This pattern-matching is not exhaustive.  Here is an example of a " ++
                        "case that is not matched:  " ++ implode(", ", map((.unparse), lst)))]
                 | nothing() -> []
-                end;
+                end;-}
+
+  {-
+    With the addition of completeness checking, we cannot
+    incrementally forward through a series of caseExpr, compiling
+    toward primitive matching as we go.  That would lead to a lot of
+    false incompletes.  Instead, we compile it in a function.  This
+    function also checks for overlapping cases in patterns (best
+    detected through compilation), hence the [Message] part of the
+    return value.
+  -}
+  local fwdResult::Pair<Expr [Message]> = compileCaseExpr(es, ml, failExpr, retType, top.location);
+  top.errors <- fwdResult.snd;
+  forwards to fwdResult.fst;
 }
 
 
@@ -213,6 +155,87 @@ Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
          end;
 }
 
+--Compile a case expression `case es of ml` down into primitive matches
+--Also check for overlapping patterns, which show up by this compilation
+function compileCaseExpr
+Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
+{
+  local errors::[Message] =
+    case ml of
+    -- are there multiple match rules, with no patterns/conditions left in them to distinguish between them?
+    | matchRule([], _, e) :: _ :: _ ->
+      if areUselessPatterns(ml)
+      then [err(loc, "Pattern has overlapping cases!")]
+      else []
+    | _ -> []
+    end;
+
+  local partMRs :: Pair<[AbstractMatchRule] [AbstractMatchRule]> =
+    partition((.isVarMatchRule), ml);
+  local varRules :: [AbstractMatchRule] = partMRs.fst;
+  local prodRules :: [AbstractMatchRule] = partMRs.snd;
+
+  {--
+   - All constructors? Then do a real primitive match.
+   -}
+  local freshCurrName :: String = "__curr_match_" ++ toString(genInt());
+  local freshCurrNameRef :: Expr =
+    baseExpr(qName(loc, freshCurrName), location=loc);
+  local allConCase :: Pair<Expr [Message]> =
+    pair(
+      -- Annoyingly, this now needs to be a let in case of annotation patterns.
+      makeLet(loc,
+        freshCurrName, freshType(), head(es), 
+        matchPrimitive(
+          freshCurrNameRef,
+          typerepTypeExpr(retType, location=loc),
+          foldPrimPatterns(
+            map(allConCaseTransform(freshCurrNameRef, tail(es), failExpr, retType, _),
+            groupMRules(prodRules))),
+          failExpr, location=loc)),
+      errors);
+
+  {--
+   - All variables? Just push a let binding inside each branch.
+   -}
+  local allVarCase :: Pair<Expr [Message]> =
+     let p::Pair<Expr [Message]> =
+        compileCaseExpr(
+             tail(es),
+             map(bindHeadPattern(head(es), freshType(){-whatever the first expression's type is?-}, _),
+                 ml),
+             failExpr, retType, loc)
+             -- A quick note about that freshType() hack: putting it here means there's ONE fresh type
+             -- generated, puching it inside 'bindHeadPattern' would generate multiple fresh types.
+             -- So don't try that!
+     in pair(p.fst, errors ++ p.snd) end;
+
+  {--
+    - Mixed con/var? Partition into segments and build nested case expressions
+    - The whole segment partitioning is done in a function rather than grabbing the initial segment
+      and forwarding to do the rest of the segments (another workable option) for efficiency
+   -}
+  local mixedCase :: Pair<Expr [Message]> = buildMixedCaseMatches(es, ml, failExpr, retType, loc);
+
+  -- 4 cases: no patterns left, all constructors, all variables, or mixed con/var.
+  -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules
+  return
+    case ml of
+    | matchRule([], c, e) :: _ -> pair(buildMatchWhenConditionals(ml, failExpr), -- valid or error case
+                                       errors)
+    -- No match rules, only possible through abstract syntax
+    | [] -> pair(Silver_Expr { let res :: $TypeExpr{typerepTypeExpr(retType, location=loc)} = $Expr{failExpr} in res end }, [])
+    | _ -> if null(es) then pair(failExpr, []) -- error case
+           else if null(varRules) then allConCase
+           else if null(prodRules) then allVarCase
+           else mixedCase
+    end;
+  -- TODO: BUG: we're using the left of patterns in the first match rule as a guide here
+  -- which means we run into serious problems if not all match rules agree on the length
+  -- of the pattern list. We don't report some errors related to not having enough
+  -- variable binders
+}
+
 {-
   Build the correct match expression when we are mixing constructor
   and variable patterns for the first match.  We do this by
@@ -220,18 +243,25 @@ Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
   patterns in order, then putting each segment into its own match.
 -}
 function buildMixedCaseMatches
-Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
+Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
 {
   local freshFailName :: String = "__fail_" ++ toString(genInt());
   return if null(ml)
-         then failExpr
+         then pair(failExpr, [])
          else let segments::Pair<[AbstractMatchRule] [AbstractMatchRule]> =
                             initialSegmentPatternType(ml)
               in
-                makeLet(loc, freshFailName, retType,
-                        buildMixedCaseMatches(es, segments.snd, failExpr, retType, loc),
-                        caseExpr(es, segments.fst, baseExpr(qName(loc, freshFailName), location=loc),
-                                 retType, location=loc))
+                case buildMixedCaseMatches(es, segments.snd, failExpr, retType, loc),
+                     compileCaseExpr(es, segments.fst, baseExpr(qName(loc, freshFailName), location=loc),
+                                     retType, loc) of
+                | pair(bmexpr, bmerrs), pair(ccexpr, ccerrs) ->
+                  pair(makeLet(loc, freshFailName, retType, bmexpr, ccexpr),
+                       bmerrs ++ ccerrs)
+                end
+--  makeLet(loc, freshFailName, retType,
+--                        buildMixedCaseMatches(es, segments.snd, failExpr, retType, loc),
+--                        caseExpr(es, segments.fst, baseExpr(qName(loc, freshFailName), location=loc),
+--                                 retType, location=loc))
               end;
 }
 
