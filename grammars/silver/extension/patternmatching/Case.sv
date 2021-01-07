@@ -4,6 +4,7 @@ imports silver:definition:core;
 imports silver:definition:env;
 imports silver:definition:type;
 imports silver:modification:primitivepattern;
+imports silver:extension:list;
 
 import silver:definition:type:syntax only typerepTypeExpr;
 import silver:modification:let_fix;
@@ -26,7 +27,7 @@ autocopy attribute matchRulePatternSize :: Integer;
 
 -- P -> E
 nonterminal MatchRule with location, config, unparse, env, frame, errors, matchRuleList, matchRulePatternSize;
-nonterminal AbstractMatchRule with location, unparse, headPattern, isVarMatchRule, expandHeadPattern;
+nonterminal AbstractMatchRule with location, unparse, headPattern, isVarMatchRule, expandHeadPattern, hasCondition;
 
 -- The head pattern of a match rule
 synthesized attribute headPattern :: Decorated Pattern;
@@ -34,6 +35,8 @@ synthesized attribute headPattern :: Decorated Pattern;
 synthesized attribute isVarMatchRule :: Boolean;
 -- Turns A(B, C), D into B, C, D in the patterns list, with a list of named patterns to include.
 synthesized attribute expandHeadPattern :: (AbstractMatchRule ::= [String]);
+-- For completeness checking, we need to know if we have a condition
+synthesized attribute hasCondition::Boolean;
 
 -- P , ...
 nonterminal PatternList with location, config, unparse, patternList, env, frame, errors, patternVars, patternVarEnv;
@@ -152,6 +155,35 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
       and forwarding to do the rest of the segments (another workable option) for efficiency
    -}
   local mixedCase :: Expr = buildMixedCaseMatches(es, ml, failExpr, retType, top.location);
+
+
+  {-Checking Pattern Completeness
+
+    We want to check if a set of patterns covers all possible cases.
+    For this, we need to consider closed and non-closed nonterminals
+    separately.  We will NOT count match rules with conditions as
+    contributing to completeness, as we will assume conditions are
+    actually conditionall, and the rule with a condition will
+    sometimes match and sometimes not.
+
+    * Closed Nonterminals:  These do not forward, so we need to have a
+      default case (variable pattern).
+
+    * Non-Closed Nonterminals:  These can be complete in two different
+      ways:
+      - If they have a default case, they are complete.
+      - If they have a pattern for each non-forwarding production.
+  -}
+  local isComplete::Boolean =
+        if null(clVarRules)
+        then error("I need to do this")
+        else true;
+
+  local conditionlessRules::[AbstractMatchRule] = partition((.hasCondition), ml).snd;
+  local partConditionlessRules::Pair<[AbstractMatchRule] [AbstractMatchRule]> =
+        partition((.isVarMatchRule), conditionlessRules);
+  local clVarRules::[AbstractMatchRule] = partConditionlessRules.fst;
+  local clProdRules::[AbstractMatchRule] = partConditionlessRules.snd;
 }
 
 
@@ -194,6 +226,154 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Lo
                         caseExpr(es, segments.fst, baseExpr(qName(loc, freshFailName), location=loc),
                                  retType, location=loc))
               end;
+}
+
+
+{-
+  We check completeness with a function because we want to recursively
+  check, which we cannot do with attributes alone.
+
+  We return nothing() if the patterns are complete, and just(plst) if
+  plst is an example of a missing pattern set (matching over multiple
+  values at once).
+-}
+function checkCompleteness
+Maybe<[Pattern]> ::= lst::[[Decorated Pattern]]
+{
+  --local firstPatt::[Decorated Pattern] = map(head, lst);
+  local firstPatt::[Decorated Pattern] = foldr(\ l::[Decorated Pattern] rest::[Decorated Pattern] -> if length(l) > 0 then head(l)::rest else rest, [], lst);
+  local partPatts::Pair<[Decorated Pattern] [Decorated Pattern]> = partition((.patternIsVariable), firstPatt);
+  local varPatts::[Decorated Pattern] = partPatts.fst;
+  local conPatts::[Decorated Pattern] = partPatts.snd;
+
+  local numPatts::Integer = foldr(\ p::[Decorated Pattern] i::Integer -> if length(p) > i then length(p) else i, 0, lst);
+
+  local isPrimPatts::Boolean = foldr(\ a::Decorated Pattern b::Boolean -> b || a.isPrimitivePattern, false, conPatts);
+  local isBoolPatts::Boolean = foldr(\ a::Decorated Pattern b::Boolean -> b || a.isBoolPattern, false, conPatts);
+  local isListPatts::Boolean = foldr(\ a::Decorated Pattern b::Boolean -> b || a.isListPattern, false, conPatts);
+
+  local firstComplete::Maybe<Pattern> =
+        if null(varPatts)
+        then if isBoolPatts
+             then checkBooleanCompleteness(conPatts)
+             else if isListPatts
+                  then checkListCompleteness(conPatts)
+                  else if isPrimPatts
+                       then generatePrimitiveMissingPattern(conPatts)
+                       else error("Nonterminal stuff")
+        else nothing();
+
+  local restComplete::Maybe<[Pattern]> = checkCompleteness(map(tail, lst));
+
+  return if numPatts == 0
+         then nothing() --inherently complete, by way of having no patterns
+         else case firstComplete of
+              | nothing() ->
+                case restComplete of
+                | nothing() -> nothing()
+                | just(lps) -> just(wildcPattern('_', location=bogusLoc())::lps)
+                end
+              | just(p) ->
+                just(p::repeat(wildcPattern('_', location=bogusLoc()), numPatts - 1))
+              end;
+}
+
+function generatePrimitiveMissingPattern
+Maybe<Pattern> ::= patts::[Decorated Pattern]
+{
+  local ints::[Integer] =
+        foldr(\ p::Decorated Pattern l::[Integer] ->
+                case p of
+                | intPattern(int_t) -> toInteger(int_t.lexeme)::l
+                | _ -> l
+                end, [], patts);
+  local flts::[Float] =
+        foldr(\ p::Decorated Pattern l::[Float] ->
+                case p of
+                | fltPattern(flt_t) -> toFloat(flt_t.lexeme)::l
+                | _ -> l
+                end, [], patts);
+  local strs::[String] =
+        foldr(\ p::Decorated Pattern l::[String] ->
+                case p of
+                                       --remove quotation marks
+                | strPattern(str_t) -> substring(0, length(str_t.lexeme) - 1, str_t.lexeme)::l
+                | _ -> l
+                end, [], patts);
+  return case ints, flts, strs of
+         | _::_, [], [] -> just(generateMissingIntegerPattern(ints, 0))
+         | [], _::_, [] -> just(generateMissingFloatPattern(flts, 0.0))
+         | [], [], _::_ -> just(generateMissingStringPattern(strs, ""))
+         | _, _, _ -> nothing() --type error, so don't generate a completeness error
+         end;
+}
+
+function generateMissingIntegerPattern
+Pattern ::= lst::[Integer] initial::Integer
+{
+  return if containsBy(\ a::Integer b::Integer -> a == b, initial, lst)
+         then generateMissingIntegerPattern(lst, initial + 1)
+         else intPattern(terminal(Int_t, toString(initial), bogusLoc()), location=bogusLoc());
+}
+function generateMissingFloatPattern
+Pattern ::= lst::[Float] initial::Float
+{
+  return if containsBy(\ a::Float b::Float -> a == b, initial, lst)
+         then generateMissingFloatPattern(lst, initial + 1.0)
+         else fltPattern(terminal(Float_t, toString(initial), bogusLoc()), location=bogusLoc());
+}
+function generateMissingStringPattern
+Pattern ::= lst::[String] initial::String
+{
+  return if containsBy(\ a::String b::String -> a == b, initial, lst)
+         then generateMissingStringPattern(lst, initial ++ "*")
+         else strPattern(terminal(String_t, "\"" ++ initial ++ "\"", bogusLoc()), location=bogusLoc());
+}
+
+function checkBooleanCompleteness
+Maybe<Pattern> ::= patts::[Decorated Pattern]
+{
+  local foundTrue::Boolean =
+        foldr(\ p::Decorated Pattern b::Boolean ->
+                b || case p of
+                     | truePattern(_) -> true
+                     | _ -> false
+                     end, false, patts);
+  local foundFalse::Boolean =
+        foldr(\ p::Decorated Pattern b::Boolean ->
+                b || case p of
+                     | falsePattern(_) -> true
+                     | _ -> false
+                     end, false, patts);
+  return if foundTrue
+         then if foundFalse
+              then nothing()
+              else just(falsePattern('false', location=bogusLoc()))
+         else just(truePattern('true', location=bogusLoc()));
+}
+
+function checkListCompleteness
+Maybe<Pattern> ::= patts::[Decorated Pattern]
+{
+  local foundNil::Boolean =
+        foldr(\ p::Decorated Pattern b::Boolean ->
+                b || p.patternSortKey == "core:nil", false, patts);
+
+  --We need to check that we have a cons and that its components are complete
+  local consPatts::[Decorated Pattern] =
+        partition(\ p::Decorated Pattern -> p.patternSortKey == "core:cons", patts).fst;
+  local consComp::Maybe<[Pattern]> = checkCompleteness(map((.patternSubPatternList), consPatts));
+
+  return if foundNil
+         then if null(consPatts) --didn't try to catch _::_
+              then just(consListPattern(wildcPattern('_', location=bogusLoc()), '::', wildcPattern('_', location=bogusLoc()), location=bogusLoc()))
+              else case consComp of
+                   | nothing() -> nothing()
+                   | just(hp::tp::_) -> just(consListPattern(hp, '::', tp, location=bogusLoc()))
+                   --This last case is a typing error, where the cons didn't have enough arguments
+                   | just(_) -> nothing()
+                   end
+         else just(nilListPattern('[', ']', location=bogusLoc()));
 }
 
 
@@ -292,6 +472,11 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Pair<Expr Maybe<P
           named) ++
         tail(pl),
         cond, e, location=top.location);
+
+  top.hasCondition = case cond of
+                     | just(_) -> true
+                     | nothing() -> false
+                     end;
 }
 
 concrete production patternList_one
