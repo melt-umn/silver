@@ -7,10 +7,11 @@ import silver:compiler:definition:concrete_syntax:copper as copper;
 attribute xmlCopper occurs on Regex;
 
 -- Translation of regex to Copper grammar beans.
-synthesized attribute copperRegex::copper:Regex occurs on Regex, RegexSeq, RegexRepetition, RegexItem, RegexCharSet, RegexCharSetItem, RegexChar;
-synthesized attribute copperRegexAlts::[copper:Regex] occurs on Regex, RegexSeq, RegexRepetition, RegexItem, RegexCharSet, RegexCharSetItem, RegexChar;
-synthesized attribute copperRegexSeqs::[copper:Regex] occurs on Regex, RegexSeq, RegexRepetition, RegexItem, RegexCharSet, RegexCharSetItem, RegexChar;
-synthesized attribute copperRegexCharSet::copper:CharSet occurs on Regex, RegexSeq, RegexRepetition, RegexItem, RegexCharSet, RegexCharSetItem, RegexChar;
+synthesized attribute copperRegex::copper:Regex occurs on Regex;
+synthesized attribute copperRegexAlts::[copper:Regex] occurs on Regex;
+synthesized attribute copperRegexSeqs::[copper:Regex] occurs on Regex;
+implicit synthesized attribute copperRegexCharSet::Maybe<copper:CharSet>;
+attribute copperRegexCharSet occurs on Regex;
 
 {--
  - Used to prevent unneeded nesting of the same operator. (choices, sequences)
@@ -41,6 +42,10 @@ top::Regex ::=
 aspect production char
 top::Regex ::= _
 {
+  local charSet::copper:CharSet = copper:singleChar(char);
+  top.copperRegex = copper:characterSetRegex(charSet);
+  top.copperRegexCharSet = charSet;
+
   top.xmlCopper = "<CharacterSet><SingleCharacter char=\"" ++ xmlEscapeChar(char) ++ "\"/></CharacterSet>";
   top.setXML = "<SingleCharacter char=\"" ++ xmlEscapeChar(char) ++ "\"/>";
 }
@@ -49,36 +54,65 @@ top::Regex ::=
 {
   -- Copper has no direct representation of dot.
   -- Dot represents everything EXCEPT \n
+
+  local charSet::copper:CharSet = copper:invertCharSet(copper:singleChar("\n"));
+  top.copperRegex = copper:characterSetRegex(charSet);
+  top.copperRegexCharSet = charSet;
+
   top.xmlCopper = "<CharacterSet invert=\"true\"><SingleCharacter char=\"&#10;\"/></CharacterSet>";
   top.setXML = "<SingleCharacter char=\"&#10;\"/>";
 }
 aspect production charRange
 top::Regex ::= _ _
 {
+  local charSet::copper:CharSet = copper:charRange(lChar, uChar);
+  top.copperRegex = copper:characterSetRegex(charSet);
+  top.copperRegexCharSet = charSet;
+
   top.xmlCopper = "<CharacterSet><CharacterRange lower=\"" ++ xmlEscapeChar(lChar) ++ "\" upper=\"" ++ xmlEscapeChar(uChar) ++ "\"/></CharacterSet>";
   top.setXML = "<CharacterRange lower=\"" ++ xmlEscapeChar(lChar) ++ "\" upper=\"" ++ xmlEscapeChar(uChar) ++ "\"/>";
 }
 aspect production negChars
 top::Regex ::= r::Regex 
 {
+  local charSet::copper:CharSet = copper:invertCharSet(r.copperRegexCharSet.fromJust);
+  top.copperRegex = copper:characterSetRegex(charSet);
+  top.copperRegexCharSet = charSet;
+
   top.xmlCopper = "<CharacterSet invert=\"true\">" ++ r.setXML.fromJust ++ "</CharacterSet>";
 }
 
 aspect production empty
 top::Regex ::=
 {
+  top.copperRegex = copper:choiceRegex([]);
+  top.copperRegexAlts = [];
+
   top.xmlCopper = "<Choice></Choice>";
   top.altXML = "";
 }
 aspect production epsilon
 top::Regex ::=
 {
+  top.copperRegex = copper:emptyStringRegex();
+  top.copperRegexSeqs = [];
+
   top.xmlCopper = "<EmptyString/>";
   top.seqXML = "";
 }
 aspect production alt
 top::Regex ::= r1::Regex r2::Regex
 {
+  top.copperRegex = case top.copperRegexCharSet of
+    | just(cs) -> copper:characterSetRegex(cs)
+    | nothing() -> copper:choiceRegex(top.copperRegexAlts)
+    end;
+  top.copperRegexAlts = case top.copperRegexCharSet of
+    | just(cs) -> [top.copperRegex]
+    | nothing() -> r1.copperRegexAlts ++ r2.copperRegexAlts
+    end;
+  top.copperRegexCharSet = unionCharSets(r1.copperRegexCharSet, r2.copperRegexCharSet);
+
   top.xmlCopper =
     case top.setXML of
     | just(sx) -> "<CharacterSet>" ++ sx ++ "</CharacterSet>"
@@ -90,12 +124,17 @@ top::Regex ::= r1::Regex r2::Regex
 aspect production seq
 top::Regex ::= r1::Regex r2::Regex
 {
+  top.copperRegex = copper:concatenationRegex(top.copperRegexSeqs);
+  top.copperRegexSeqs = r1.copperRegexSeqs ++ r2.copperRegexSeqs;
+
   top.xmlCopper = "<Concatenation>" ++ r1.seqXML ++ r2.seqXML ++ "</Concatenation>";
   top.seqXML = r1.seqXML ++ r2.seqXML;
 }
 aspect production star
 top::Regex ::= r::Regex
 {
+  top.copperRegex = copper:kleeneStarRegex(r.copperRegex);
+
   top.xmlCopper = "<KleeneStar>" ++ r.xmlCopper ++ "</KleeneStar>";
 }
 
