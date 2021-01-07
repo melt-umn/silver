@@ -202,3 +202,15 @@ wrongCode "f has kind arity 1, but there are 2 type arguments supplied here" {
     myfmap2 :: (f<b> ::= (b ::= a) f<a b>);
   }
 }
+
+class CDefaultVal a {
+  cdv1 :: Pair<Integer a>;
+  cdv2 :: a = cdv1.snd;
+}
+
+instance CDefaultVal String {
+  cdv1 = pair(42, "abc");
+}
+
+equalityTest(cdv2, "abc", String, silver_tests);
+ 
