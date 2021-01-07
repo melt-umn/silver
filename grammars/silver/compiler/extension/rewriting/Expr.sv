@@ -373,37 +373,39 @@ top::Expr ::= '!' e::Expr
   top.transform = notASTExpr(e.transform);
 }
 
-aspect production gt
+-- These operator productions forward to function calls, however we specialize
+-- the transform here for efficiency.
+aspect production gtOp
 top::Expr ::= e1::Expr '>' e2::Expr
 {
   top.transform = gtASTExpr(e1.transform, e2.transform);
 }
 
-aspect production lt
+aspect production ltOp
 top::Expr ::= e1::Expr '<' e2::Expr
 {
   top.transform = ltASTExpr(e1.transform, e2.transform);
 }
 
-aspect production gteq
+aspect production gteOp
 top::Expr ::= e1::Expr '>=' e2::Expr
 {
   top.transform = gteqASTExpr(e1.transform, e2.transform);
 }
 
-aspect production lteq
+aspect production lteOp
 top::Expr ::= e1::Expr '<=' e2::Expr
 {
   top.transform = lteqASTExpr(e1.transform, e2.transform);
 }
 
-aspect production eqeq
+aspect production eqOp
 top::Expr ::= e1::Expr '==' e2::Expr
 {
   top.transform = eqeqASTExpr(e1.transform, e2.transform);
 }
 
-aspect production neq
+aspect production neqOp
 top::Expr ::= e1::Expr '!=' e2::Expr
 {
   top.transform = neqASTExpr(e1.transform, e2.transform);

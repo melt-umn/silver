@@ -441,65 +441,6 @@ top::Expr ::= '!' e::Expr
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
--- Some notes on numbers:
--- Use `Integer.valueOf` (et al) instead of `new Integer`. It's more efficient.
--- Let Java's autoboxing do the heavy lifting for us, why not? It's smarter.
--- Primitive casts ensure `Integer == Integer` will be value-eq, not reference-eq
-function comparisonTranslation
-String ::= e1::Decorated Expr  op::String  e2::Decorated Expr
-{
-  return case finalType(e1) of
-  | intType() -> s"(${e1.translation} ${op} (int)${e2.translation})"
-  | floatType() -> s"(${e1.translation} ${op} (float)${e2.translation})"
-  | boolType() -> s"(${e1.translation} ${op} (boolean)${e2.translation})"
-  | stringType() -> s"(${e1.translation}.toString().compareTo(${e2.translation}.toString()) ${op} 0)"
-  | terminalIdType() -> s"(${e1.translation} ${op} (int)${e2.translation})"
-  | t -> error(s"INTERNAL ERROR: no ${op} trans for type ${prettyType(t)}")
-  end;
-}
-
-aspect production gt
-top::Expr ::= e1::Expr '>' e2::Expr
-{
-  top.translation = comparisonTranslation(e1, ">", e2);
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-}
-
-aspect production lt
-top::Expr ::= e1::Expr '<' e2::Expr
-{
-  top.translation = comparisonTranslation(e1, "<", e2);
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-}
-
-aspect production gteq
-top::Expr ::= e1::Expr '>=' e2::Expr
-{
-  top.translation = comparisonTranslation(e1, ">=", e2);
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-}
-
-aspect production lteq
-top::Expr ::= e1::Expr '<=' e2::Expr
-{
-  top.translation = comparisonTranslation(e1, "<=", e2);
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-}
-
-aspect production eqeq
-top::Expr ::= e1::Expr '==' e2::Expr
-{
-  top.translation = comparisonTranslation(e1, "==", e2);
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-}
-
-aspect production neq
-top::Expr ::= e1::Expr '!=' e2::Expr
-{
-  top.translation = comparisonTranslation(e1, "!=", e2);
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-}
-
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {

@@ -92,7 +92,7 @@ top::ProductionStmt ::= inh::String synPartial::Decorated QName syn::String
               map(
                 \ ie::NamedSignatureElement ->
                   if null(getOccursDcl(syn, ie.typerep.typeName, top.env))
-                  then Silver_Expr { $name{ie.elementName} == $name{ie.elementName ++ "2"} }
+                  then Silver_Expr { silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"}) }
                   else Silver_Expr { $name{ie.elementName}.$qName{syn} },
                 top.frame.signature.inputElements))}
         | _ -> false

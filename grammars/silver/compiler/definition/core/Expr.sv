@@ -591,70 +591,52 @@ top::Expr ::= '!' e::Expr
   e.isRoot = false;
 }
 
-concrete production gt
+concrete production gtOp
 top::Expr ::= e1::Expr '>' e2::Expr
 {
   top.unparse = e1.unparse ++ " > " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:gt($Expr{e2}, $Expr{e2}) };
 }
 
-concrete production lt
+concrete production ltOp
 top::Expr ::= e1::Expr '<' e2::Expr
 {
   top.unparse = e1.unparse ++ " < " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:lt($Expr{e2}, $Expr{e2}) };
 }
 
-concrete production gteq
+concrete production gteOp
 top::Expr ::= e1::Expr '>=' e2::Expr
 {
   top.unparse = e1.unparse ++ " >= " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:gte($Expr{e2}, $Expr{e2}) };
 }
 
-concrete production lteq
+concrete production lteOp
 top::Expr ::= e1::Expr '<=' e2::Expr
 {
   top.unparse = e1.unparse ++ " <= " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:lte($Expr{e2}, $Expr{e2}) };
 }
 
-concrete production eqeq
+concrete production eqOp
 top::Expr ::= e1::Expr '==' e2::Expr
 {
   top.unparse = e1.unparse ++ " == " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:eq($Expr{e2}, $Expr{e2}) };
 }
 
-concrete production neq
+concrete production neqOp
 top::Expr ::= e1::Expr '!=' e2::Expr
 {
   top.unparse = e1.unparse ++ " != " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to Silver_Expr { silver:core:neq($Expr{e2}, $Expr{e2}) };
 }
 
 concrete production ifThenElse

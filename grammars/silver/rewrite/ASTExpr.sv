@@ -166,7 +166,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     | integerAST(x), integerAST(y) -> booleanAST(x > y)
     | floatAST(x), floatAST(y) -> booleanAST(x > y)
     | stringAST(x), stringAST(y) -> booleanAST(x > y)
-    | _, _ -> error("Invalid values")
+    --| x, y -> applyAST(anyAST(gt), [just(x), just(y)], []).fromRight
     end;
 }
 
@@ -179,7 +179,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     | integerAST(x), integerAST(y) -> booleanAST(x < y)
     | floatAST(x), floatAST(y) -> booleanAST(x < y)
     | stringAST(x), stringAST(y) -> booleanAST(x < y)
-    | _, _ -> error("Invalid values")
+    --| x, y -> applyAST(anyAST(lt), [just(x), just(y)], []).fromRight
     end;
 }
 
@@ -192,7 +192,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     | integerAST(x), integerAST(y) -> booleanAST(x >= y)
     | floatAST(x), floatAST(y) -> booleanAST(x >= y)
     | stringAST(x), stringAST(y) -> booleanAST(x >= y)
-    | _, _ -> error("Invalid values")
+    --| x, y -> applyAST(anyAST(gte), [just(x), just(y)], []).fromRight
     end;
 }
 
@@ -205,7 +205,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     | integerAST(x), integerAST(y) -> booleanAST(x <= y)
     | floatAST(x), floatAST(y) -> booleanAST(x <= y)
     | stringAST(x), stringAST(y) -> booleanAST(x <= y)
-    | _, _ -> error("Invalid values")
+    --| x, y -> applyAST(anyAST(lte), [just(x), just(y)], []).fromRight
     end;
 }
 
@@ -219,7 +219,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     | floatAST(x), floatAST(y) -> booleanAST(x == y)
     | stringAST(x), stringAST(y) -> booleanAST(x == y)
     | booleanAST(x), booleanAST(y) -> booleanAST(x == y)
-    | _, _ -> error("Invalid values")
+    --| x, y -> applyAST(anyAST(eq), [just(x), just(y)], []).fromRight
     end;
 }
 
@@ -233,7 +233,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     | floatAST(x), floatAST(y) -> booleanAST(x != y)
     | stringAST(x), stringAST(y) -> booleanAST(x != y)
     | booleanAST(x), booleanAST(y) -> booleanAST(x != y)
-    | _, _ -> error("Invalid values")
+    --| x, y -> applyAST(anyAST(neq), [just(x), just(y)], []).fromRight
     end;
 }
 
