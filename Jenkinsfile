@@ -154,7 +154,7 @@ def task_test(String testname, String WS) {
       // Go back to our "parent" workspace, into the test
       dir(WS + '/test/' + testname) {
         // HACK: edit the test specs to specify the generated directory
-        sh "find . -name '*.test' -exec sed -i'' 's/\(run: [^ ]*silver[^ ]*\) /\1 -G ${GEN} /g' {} \;"
+        sh "find . -name '*.test' -exec sed -i'' 's/\\(run: [^ ]*silver[^ ]*\\) /\\1 -G ${GEN} /g' {} \\;"
         // Run the tests
         sh "java -jar ../silver.testing.bin.jar"
       }
