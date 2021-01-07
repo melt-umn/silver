@@ -174,16 +174,23 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
       - If they have a default case, they are complete.
       - If they have a pattern for each non-forwarding production.
   -}
-  local isComplete::Boolean =
-        if null(clVarRules)
-        then error("I need to do this")
-        else true;
+  local conditionlessRules::[AbstractMatchRule] =
+        partition((.hasCondition), ml).snd;
+  local conditionlessPatterns::[[Decorated Pattern]] =
+        map(\ x::AbstractMatchRule ->
+              case x of
+              | matchRule(plst, _, _) -> plst
+              end, conditionlessRules);
+  local completenessCounterExample::Maybe<[Pattern]> =
+        checkCompleteness(conditionlessPatterns);
 
-  local conditionlessRules::[AbstractMatchRule] = partition((.hasCondition), ml).snd;
-  local partConditionlessRules::Pair<[AbstractMatchRule] [AbstractMatchRule]> =
-        partition((.isVarMatchRule), conditionlessRules);
-  local clVarRules::[AbstractMatchRule] = partConditionlessRules.fst;
-  local clProdRules::[AbstractMatchRule] = partConditionlessRules.snd;
+  top.errors <- case completenessCounterExample of
+                | just(lst) ->
+                  [err(top.location,
+                       "This pattern-matching is not exhaustive.  Here is an example of a " ++
+                       "case that is not matched:  " ++ implode(", ", map((.unparse), lst)))]
+                | nothing() -> []
+                end;
 }
 
 
@@ -263,7 +270,7 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]]
                   then checkListCompleteness(conPatts)
                   else if isPrimPatts
                        then generatePrimitiveMissingPattern(conPatts)
-                       else error("Nonterminal stuff")
+                       else nothing() --error("Nonterminal stuff:  " ++ implode(", ", map((.unparse), head(lst))))
         else nothing();
 
   local restComplete::Maybe<[Pattern]> = checkCompleteness(map(tail, lst));
@@ -300,7 +307,7 @@ Maybe<Pattern> ::= patts::[Decorated Pattern]
         foldr(\ p::Decorated Pattern l::[String] ->
                 case p of
                                        --remove quotation marks
-                | strPattern(str_t) -> substring(0, length(str_t.lexeme) - 1, str_t.lexeme)::l
+                | strPattern(str_t) -> substring(1, length(str_t.lexeme) - 1, str_t.lexeme)::l
                 | _ -> l
                 end, [], patts);
   return case ints, flts, strs of
@@ -360,11 +367,11 @@ Maybe<Pattern> ::= patts::[Decorated Pattern]
 {
   local foundNil::Boolean =
         foldr(\ p::Decorated Pattern b::Boolean ->
-                b || p.patternSortKey == "core:nil", false, patts);
+                b || p.patternSortKey == "silver:core:nil", false, patts);
 
   --We need to check that we have a cons and that its components are complete
   local consPatts::[Decorated Pattern] =
-        partition(\ p::Decorated Pattern -> p.patternSortKey == "core:cons", patts).fst;
+        partition(\ p::Decorated Pattern -> p.patternSortKey == "silver:core:cons", patts).fst;
   local consComp::Maybe<[Pattern]> = checkCompleteness(map((.patternSubPatternList), consPatts));
 
   return if foundNil
