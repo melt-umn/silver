@@ -115,6 +115,9 @@ top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
     setUnionTyVars(top.classHead.freeVariables, ty.typerep.freeVariables);
   top.classMembers = [pair(fName, pair(ty.typerep, true))];
   
+  e.isRoot = true;
+  e.originRules = [];
+  
   top.defs <- [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, ty.typerep)];
 
   top.errors <-
