@@ -28,7 +28,6 @@ instance Ord Integer {
   gt = ltInteger;
   gte = lteInteger;
 }
-
 function ltInteger
 Boolean ::= x::Integer y::Integer
 {
@@ -36,7 +35,6 @@ Boolean ::= x::Integer y::Integer
 } foreign {
   "java" : return "(%x% < (int)%y%)";
 }
-
 function lteInteger
 Boolean ::= x::Integer y::Integer
 {
@@ -44,7 +42,6 @@ Boolean ::= x::Integer y::Integer
 } foreign {
   "java" : return "(%x% <= (int)%y%)";
 }
-
 function gtInteger
 Boolean ::= x::Integer y::Integer
 {
@@ -52,7 +49,6 @@ Boolean ::= x::Integer y::Integer
 } foreign {
   "java" : return "(%x% > (int)%y%)";
 }
-
 function gteInteger
 Boolean ::= x::Integer y::Integer
 {
@@ -67,7 +63,6 @@ instance Ord Float {
   gt = ltFloat;
   gte = lteFloat;
 }
-
 function ltFloat
 Boolean ::= x::Float y::Float
 {
@@ -75,7 +70,6 @@ Boolean ::= x::Float y::Float
 } foreign {
   "java" : return "(%x% < (float)%y%)";
 }
-
 function lteFloat
 Boolean ::= x::Float y::Float
 {
@@ -83,7 +77,6 @@ Boolean ::= x::Float y::Float
 } foreign {
   "java" : return "(%x% <= (float)%y%)";
 }
-
 function gtFloat
 Boolean ::= x::Float y::Float
 {
@@ -91,7 +84,6 @@ Boolean ::= x::Float y::Float
 } foreign {
   "java" : return "(%x% > (float)%y%)";
 }
-
 function gteFloat
 Boolean ::= x::Float y::Float
 {
@@ -106,37 +98,25 @@ instance Ord Boolean {
   gt = ltBoolean;
   gte = lteBoolean;
 }
-
 function ltBoolean
 Boolean ::= x::Boolean y::Boolean
 {
-  return error("Foreign function");
-} foreign {
-  "java" : return "(%x% < (boolean)%y%)";
+  return x == false && y == true;
 }
-
 function lteBoolean
 Boolean ::= x::Boolean y::Boolean
 {
-  return error("Foreign function");
-} foreign {
-  "java" : return "(%x% <= (boolean)%y%)";
+  return x != true || y != false;
 }
-
 function gtBoolean
 Boolean ::= x::Boolean y::Boolean
 {
-  return error("Foreign function");
-} foreign {
-  "java" : return "(%x% > (boolean)%y%)";
+  return x == true && y == false;
 }
-
 function gteBoolean
 Boolean ::= x::Boolean y::Boolean
 {
-  return error("Foreign function");
-} foreign {
-  "java" : return "(%x% >= (boolean)%y%)";
+  return x != true || y != false;
 }
 
 instance Ord String {
@@ -145,7 +125,6 @@ instance Ord String {
   gt = ltString;
   gte = lteString;
 }
-
 function ltString
 Boolean ::= x::String y::String
 {
@@ -153,7 +132,6 @@ Boolean ::= x::String y::String
 } foreign {
   "java" : return "(%x%.toString().compareTo(%y%.toString()) < 0)";
 }
-
 function lteString
 Boolean ::= x::String y::String
 {
@@ -161,7 +139,6 @@ Boolean ::= x::String y::String
 } foreign {
   "java" : return "(%x%.toString().compareTo(%y%.toString()) <= 0)";
 }
-
 function gtString
 Boolean ::= x::String y::String
 {
@@ -169,7 +146,6 @@ Boolean ::= x::String y::String
 } foreign {
   "java" : return "(%x%.toString().compareTo(%y%.toString()) > 0)";
 }
-
 function gteString
 Boolean ::= x::String y::String
 {
@@ -184,7 +160,6 @@ instance Ord TerminalId {
   gt = ltTerminalId;
   gte = lteTerminalId;
 }
-
 function ltTerminalId
 Boolean ::= x::TerminalId y::TerminalId
 {
@@ -192,7 +167,6 @@ Boolean ::= x::TerminalId y::TerminalId
 } foreign {
   "java" : return "(%x% < (int)%y%)";
 }
-
 function lteTerminalId
 Boolean ::= x::TerminalId y::TerminalId
 {
@@ -200,7 +174,6 @@ Boolean ::= x::TerminalId y::TerminalId
 } foreign {
   "java" : return "(%x% <= (int)%y%)";
 }
-
 function gtTerminalId
 Boolean ::= x::TerminalId y::TerminalId
 {
@@ -208,7 +181,6 @@ Boolean ::= x::TerminalId y::TerminalId
 } foreign {
   "java" : return "(%x% > (int)%y%)";
 }
-
 function gteTerminalId
 Boolean ::= x::TerminalId y::TerminalId
 {
