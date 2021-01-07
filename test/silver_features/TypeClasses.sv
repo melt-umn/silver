@@ -110,6 +110,14 @@ wrongCode "is not a type class" {
   instance Maybe Integer {}
 }
 
+wrongCode "Undeclared type" {
+  instance Blarch Integer {}
+}
+
+wrongCode "Undeclared type" {
+  instance Blarch a => CBaz a {}
+}
+
 wrongCode "Overlapping instances" {
   instance CBaz Integer { cy = 24; }
 }
@@ -213,4 +221,4 @@ instance CDefaultVal String {
 }
 
 equalityTest(cdv2, "abc", String, silver_tests);
- 
+
