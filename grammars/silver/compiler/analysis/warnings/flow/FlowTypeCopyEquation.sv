@@ -26,16 +26,16 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   top.errors <-
     if null(body.errors ++ ns.errors)
-    && (top.config.warnAll || top.config.warnMissingInh)
+    && (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
     -- Must be a forwarding production
     && !null(body.uniqueSignificantExpression)
-    then flatMap(raiseImplicitFwdEqFlowTypes(top.location, lhsNt, fName, _, top.flowEnv, fwdFlowDeps, myFlow), hostSyns)
+    then flatMap(raiseImplicitFwdEqFlowTypes(top.location, lhsNt, fName, _, top.flowEnv, fwdFlowDeps, myFlow, top.config.runMwda), hostSyns)
     else [];
 }
 
 
 function raiseImplicitFwdEqFlowTypes
-[Message] ::= l::Location  lhsNt::String  prod::String  attr::String  e::Decorated FlowEnv  fwdFlowDeps::set:Set<String>  myFlow::EnvTree<FlowType>
+[Message] ::= l::Location  lhsNt::String  prod::String  attr::String  e::Decorated FlowEnv  fwdFlowDeps::set:Set<String>  myFlow::EnvTree<FlowType> runMwda::Boolean
 {
   -- The flow type for `attr` on `lhsNt`
   local depsForThisAttr :: set:Set<String> = inhDepsForSyn(attr, lhsNt, myFlow);
@@ -46,8 +46,7 @@ function raiseImplicitFwdEqFlowTypes
   | eq :: _ -> []
   | [] ->
       if null(diff) then []
-      else 
-      [wrn(l, s"In production ${prod}, the implicit copy equation for ${attr} (due to forwarding) would exceed the attribute's flow type because the production forward equation depends on ${implode(", ", diff)}")]
+      else [mwdaWrn(l, s"In production ${prod}, the implicit copy equation for ${attr} (due to forwarding) would exceed the attribute's flow type because the production forward equation depends on ${implode(", ", diff)}", runMwda)]
   end;
 }
 

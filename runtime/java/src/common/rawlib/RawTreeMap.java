@@ -22,6 +22,13 @@ public final class RawTreeMap {
 		}
 		return ret;
 	}
+	public static ConsCell keys(TreeMap<Object,ConsCell> t) {
+		ConsCell ret = ConsCell.nil;
+		for(Object key : t.descendingKeySet()) {
+			ret = new ConsCell(key, ret);
+		}
+		return ret;
+	}
 	public static ConsCell toList(TreeMap<Object,ConsCell> t) {
 		ConsCell ret = ConsCell.nil;
 		for(Object key : t.descendingKeySet()) {

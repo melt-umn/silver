@@ -1,6 +1,7 @@
-grammar silver:compiler:definition:regex;
+grammar silver:regex:concrete_syntax;
 
-synthesized attribute regString :: String;
+imports silver:langutil;
+imports silver:regex as abs;
 
 lexer class Operator;
 lexer class Escape;
@@ -34,216 +35,185 @@ disambiguate RegexChar_t, RegexLParen_t { pluck RegexLParen_t; }
 disambiguate RegexChar_t, RegexRParen_t { pluck RegexRParen_t; }
 disambiguate RegexChar_t, RegexWildcard_t { pluck RegexWildcard_t; }
 
--- TODO: It might be wise to someday do a CST/AST split on this.
-
-
 {--
  - A basic regular expression.
  -
  - At lowest precedence, a regex consists of a series of choices (a|b|c)
  -}
-nonterminal Regex with regString;
+nonterminal Regex with unparse, ast<abs:Regex>;
 
 concrete production regexEpsilon
 top::Regex ::=
 {
-  top.regString = "";
+  top.unparse = "";
+  abstract abs:epsilon;
 }
 
 concrete production regexSeq
 top::Regex ::= h::RegexSeq
 {
-  top.regString = h.regString;
+  top.unparse = h.unparse;
+  top.ast = h.ast;
 }
 
 concrete production regexChoice
 top::Regex ::= h::RegexSeq '|' t::Regex
 {
-  top.regString = h.regString ++ "|" ++ t.regString;
+  top.unparse = h.unparse ++ "|" ++ t.unparse;
+  abstract abs:alt;
 }
 
 
 {--
  - A sequence of regular expressions.
  -}
-nonterminal RegexSeq with regString;
+nonterminal RegexSeq with unparse, ast<abs:Regex>;
 
 concrete production regexSeqSnoc
 top::RegexSeq ::= h::RegexSeq t::RegexRepetition
 {
-  top.regString = h.regString ++ t.regString;
+  top.unparse = h.unparse ++ t.unparse;
+  abstract abs:seq;
 }
 
 concrete production regexSeqOne
 top::RegexSeq ::= t::RegexRepetition
 {
-  top.regString = t.regString;
+  top.unparse = t.unparse;
+  top.ast = t.ast;
 }
 
 
 {--
  - A RegexItem with an optional repetition operator (*+?)
  -}
-nonterminal RegexRepetition with regString;
+nonterminal RegexRepetition with unparse, ast<abs:Regex>;
 
 concrete production regexKleene
 top::RegexRepetition ::= i::RegexItem '*'
 {
-  top.regString = i.regString ++ "*";
+  top.unparse = i.unparse ++ "*";
+  abstract abs:star;
 }
 
 concrete production regexPlus
 top::RegexRepetition ::= i::RegexItem '+'
 {
-  top.regString = i.regString ++ "+";
+  top.unparse = i.unparse ++ "+";
+  abstract abs:plus;
 }
 
 concrete production regexOptional
 top::RegexRepetition ::= i::RegexItem '?'
 {
-  top.regString = i.regString ++ "?";
+  top.unparse = i.unparse ++ "?";
+  abstract abs:opt;
 }
 
 concrete production regexOnce
 top::RegexRepetition ::= i::RegexItem
 {
-  top.regString = i.regString;
+  top.unparse = i.unparse;
+  top.ast = i.ast;
 }
 
 
 {--
  - A single matched entity (char, wildcard, set, group)
  -}
-nonterminal RegexItem with regString;      -- characters or sequences/sets
+nonterminal RegexItem with unparse, ast<abs:Regex>;      -- characters or sequences/sets
 
 concrete production regexCharItem
 top::RegexItem ::= char::RegexChar
 {
-  top.regString = char.regString;
+  top.unparse = char.unparse;
+  abstract abs:char;
 }
 
 concrete production regexWildcard
 top::RegexItem ::= '.'
 {
-  top.regString = ".";
+  top.unparse = ".";
+  abstract abs:wildChar;
 }
 
 concrete production regexSet
 top::RegexItem ::= '[' g::RegexCharSet ']'
 {
-  top.regString = "[" ++ g.regString ++ "]";
+  top.unparse = "[" ++ g.unparse ++ "]";
+  top.ast = g.ast;
 }
 
 concrete production regexSetInverted
 top::RegexItem ::= '[' '^' g::RegexCharSet ']'
 {
-  top.regString = "[^" ++ g.regString ++ "]";
+  top.unparse = "[^" ++ g.unparse ++ "]";
+  abstract abs:negChars;
 }
 
 concrete production regexGroup
 top::RegexItem ::= '(' r::Regex ')'
 {
-  top.regString = "(" ++ r.regString ++ ")";
+  top.unparse = "(" ++ r.unparse ++ ")";
+  top.ast = r.ast;
 }
 
 
 {--
  - A list of options or ranges within a regexSet.
  -}
-nonterminal RegexCharSet with regString;
+nonterminal RegexCharSet with unparse, ast<abs:Regex>;
 
 concrete production regexCharSetSnoc
 top::RegexCharSet ::= h::RegexCharSet  t::RegexCharSetItem
 {
-  top.regString = h.regString ++ t.regString;
+  top.unparse = h.unparse ++ t.unparse;
+  abstract abs:alt;
 }
 
 concrete production regexCharSetOne
 top::RegexCharSet ::= t::RegexCharSetItem
 {
-  top.regString = t.regString;
+  top.unparse = t.unparse;
+  top.ast = t.ast;
 }
 
 
 {--
  - An option or range within a regexSet.
  -}
-nonterminal RegexCharSetItem with regString;
+nonterminal RegexCharSetItem with unparse, ast<abs:Regex>;
 
 concrete production regexSetChar
 top::RegexCharSetItem ::= char::RegexChar
 {
-  top.regString = char.regString;
+  top.unparse = char.unparse;
+  abstract abs:char;
 }
 
 concrete production regexSetRange
 top::RegexCharSetItem ::= l::RegexChar '-' u::RegexChar
 {
-  top.regString = l.regString ++ "-" ++ u.regString;
+  top.unparse = l.unparse ++ "-" ++ u.unparse;
+  abstract abs:charRange;
 }
 
 
 {--
  - A character, escaped or otherwise.
  -}
-nonterminal RegexChar with regString;
+nonterminal RegexChar with unparse, ast<Integer>;
 
 concrete production regexChar
 top::RegexChar ::= char::RegexChar_t
 {
-  top.regString = char.lexeme;
+  top.unparse = char.lexeme;
+  top.ast = head(stringToChars(char.lexeme));
 }
 
 concrete production regexEscapedChar
 top::RegexChar ::= esc::EscapedChar_t
 {
-  top.regString = esc.lexeme;
+  top.unparse = esc.lexeme;
+  top.ast = head(stringToChars(unescapeString(esc.lexeme)));
 }
-
-
----- Helper functions
-
-
-{--
- - Concatenates two regular expressions.
- -}
-function regexConcatenate
-Regex ::= l::Regex  r::Regex
-{
-  return regexSeq(concatRegexItems([regexGroup('(', l, ')'), regexGroup('(', r, ')')]));
-}
-
-{--
- - Concatenates a list of RegexItems, must be non-empty.
- -}
-function concatRegexItems
-RegexSeq ::= l::[RegexItem]
-{
-  return foldl(regexSeqSnoc, regexSeqOne(regexOnce(head(l))), map(regexOnce, tail(l)));
-}
-
-{--
- - Converts a character to a RegexItem, escaping if necessary.
- -}
-function regexCharToItem
-RegexItem ::= ch::String
-{
-  return regexCharItem(
-    if isAlpha(ch) || isDigit(ch)
-    then regexChar(terminal(RegexChar_t, ch))
-    else regexEscapedChar(terminal(EscapedChar_t, "\\" ++ ch)));
-}
-
-{--
- - Returns a regex that matches a string literal.
- - (i.e. no interpretation of special characters.)
- -}
-function regexLiteral
-Regex ::= s::String
-{
-  return if length(s) == 0
-  then regexEpsilon()
-  else regexSeq(concatRegexItems(map(regexCharToItem, explode("", s))));
-}
-
-
