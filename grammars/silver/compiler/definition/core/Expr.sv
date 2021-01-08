@@ -612,7 +612,7 @@ top::Expr ::= e1::Expr '>' e2::Expr
 {
   top.unparse = e1.unparse ++ " > " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:gt($Expr{e2}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:gt($Expr{e1}, $Expr{e2}) };
 }
 
 concrete production ltOp
@@ -620,7 +620,7 @@ top::Expr ::= e1::Expr '<' e2::Expr
 {
   top.unparse = e1.unparse ++ " < " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:lt($Expr{e2}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:lt($Expr{e1}, $Expr{e2}) };
 }
 
 concrete production gteOp
@@ -628,7 +628,7 @@ top::Expr ::= e1::Expr '>=' e2::Expr
 {
   top.unparse = e1.unparse ++ " >= " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:gte($Expr{e2}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:gte($Expr{e1}, $Expr{e2}) };
 }
 
 concrete production lteOp
@@ -636,7 +636,7 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 {
   top.unparse = e1.unparse ++ " <= " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:lte($Expr{e2}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:lte($Expr{e1}, $Expr{e2}) };
 }
 
 concrete production eqOp
@@ -644,7 +644,7 @@ top::Expr ::= e1::Expr '==' e2::Expr
 {
   top.unparse = e1.unparse ++ " == " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:eq($Expr{e2}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:eq($Expr{e1}, $Expr{e2}) };
 }
 
 concrete production neqOp
@@ -652,7 +652,7 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 {
   top.unparse = e1.unparse ++ " != " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:neq($Expr{e2}, $Expr{e2}) };
+  forwards to Silver_Expr { silver:core:neq($Expr{e1}, $Expr{e2}) };
 }
 
 concrete production ifThenElse
