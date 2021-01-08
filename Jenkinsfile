@@ -67,7 +67,7 @@ melt.trynode('silver') {
       sh "./fetch-jars --copper"
     }
     // Build
-    //sh "./deep-rebuild"
+    sh "./deep-rebuild"
     // Clean (but leave generated files)
     sh "./deep-clean -delete"
     // Package
@@ -99,7 +99,7 @@ melt.trynode('silver') {
     // Clean
     sh "rm -rf silver-latest"
   }
-/*
+
   stage("Integration") {
     // Projects with 'develop' as main branch, we'll try to build specific branch names if they exist
     def github_projects = ["/melt-umn/ableC", "/melt-umn/Oberon0", "/melt-umn/ableJ14", "/melt-umn/meta-ocaml-lite",
@@ -133,7 +133,7 @@ melt.trynode('silver') {
       sh "cp silver-latest.tar.gz ${melt.ARTIFACTS}/"
       sh "cp jars/*.jar ${melt.ARTIFACTS}/"
     }
-  }*/
+  }
 
 }
 
