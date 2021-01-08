@@ -1,11 +1,14 @@
 grammar silver:compiler:extension:convenienceaspects;
 
-closed nonterminal ConvenienceAspects_c with location, unparse, ast<AGDcl>;
 
-concrete productions top::ConvenienceAspects_c
-| 'aspect' attr::QName 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
+concrete production convenienceAspects_c
+top::AGDcl ::= 'aspect' attr::QName 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
-  top.unparse = "aspect " ++ attr.unparse ++ " on " ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
-  top.ast = convenienceAspects(attr, ty, ml, location=top.location);
-}
+  local attrDcl::DclInfo = attr.lookupAttribute.dcl;
 
+
+  local fwrd::AGDcl = makeAppendAGDclOfAGDcls(ml.aspectDcls);
+  -- local trees::String = implode(",\n\n",(map(\agdcl::AGDcl -> agdcl.unparse, fwrd)));
+
+  forwards to unsafeTrace(fwrd, print(fwrd.unparse ++ "\n\n", unsafeIO()));
+}
