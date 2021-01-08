@@ -103,12 +103,14 @@ top::Regex ::=
 aspect production alt
 top::Regex ::= r1::Regex r2::Regex
 {
-  top.copperRegex = case top.copperRegexCharSet of
+  top.copperRegex =
+    case top.copperRegexCharSet of
     | just(cs) -> copper:characterSetRegex(cs)
     | nothing() -> copper:choiceRegex(top.copperRegexAlts)
     end;
-  top.copperRegexAlts = case top.copperRegexCharSet of
-    | just(cs) -> [top.copperRegex]
+  top.copperRegexAlts =
+    case top.copperRegexCharSet of
+    | just(_) -> [top.copperRegex]
     | nothing() -> r1.copperRegexAlts ++ r2.copperRegexAlts
     end;
   top.copperRegexCharSet = copper:unionCharSets(r1.copperRegexCharSet, r2.copperRegexCharSet);
@@ -118,7 +120,11 @@ top::Regex ::= r1::Regex r2::Regex
     | just(sx) -> "<CharacterSet>" ++ sx ++ "</CharacterSet>"
     | nothing() -> "<Choice>" ++ r1.altXML ++ r2.altXML ++ "</Choice>"
     end;
-  top.altXML = r1.altXML ++ r2.altXML;
+  top.altXML =
+    case top.setXML of
+    | just(_) -> top.xmlCopper
+    | nothing() -> r1.altXML ++ r2.altXML
+    end;
   top.setXML = r1.setXML ++ r2.setXML;
 }
 aspect production seq
