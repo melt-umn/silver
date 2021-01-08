@@ -10,9 +10,9 @@ function nonterminal_
 GrammarElement ::= id::String  pp::String  type_::String
 {
   return error("copper FFI function");
-} foreign {
+} {- foreign {
   "java" : return "common.CopperUtil.makeNonTerminal(%id%.toString(), %pp%.toString(), %type_%.toString())";
-}
+} -}
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.OperatorClass
 
@@ -37,6 +37,6 @@ function terminalClass
 GrammarElement ::= id::String
 {
   return error("copper FFI function");
-} foreign {
+} {- foreign {
   "java" : return "common.CopperUtil.makeTerminalClass(%id%.toString())";
-}
+} -}
