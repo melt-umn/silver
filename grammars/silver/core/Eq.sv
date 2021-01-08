@@ -5,6 +5,13 @@ class Eq a {
   neq :: (Boolean ::= a a);-- = \ x::a y::a -> !(x == y);
 }
 
+equality attribute isEqualTo, isEqual;
+{- TODO: once we have occurence constraints...
+instance isEqual {isEqual} occurs on a => Eq a {
+  eq = \ x::a y::a -> decorate x with {isEqualTo = y;}.isEqual;
+}
+-}
+
 instance Eq Integer {
   eq = eqInteger;
   neq = neqInteger;
