@@ -86,7 +86,7 @@ melt.trynode('silver') {
     tasks << tuts.collectEntries { t -> [(t): task_tutorial(t, WS)] }
 
     // Build test driver
-    env (newenv) {
+    withEnv (newenv) {
       dir ("${WS}/tests") {
         sh "silver silver:testing:bin"
       }
@@ -160,7 +160,7 @@ def task_test(String testname, String WS) {
         // HACK: edit the test specs to specify the generated directory
         sh "find . -name '*.test' -exec sed -i'' 's/\\(run: [^ ]*silver[^ ]*\\) /\\1 -G ${GEN} /g' {} \\;"
         // Run the tests
-        env (newenv) {
+        withEnv (newenv) {
           sh "java -jar ../silver.testing.bin.jar"
         }
       }
