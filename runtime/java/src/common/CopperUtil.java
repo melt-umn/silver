@@ -1,13 +1,27 @@
 package common;
 
 import edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.*;
+import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;
+import edu.umn.cs.melt.copper.runtime.io.Location;
 import java.text.ParseException;
 import java.util.List;
 
 public final class CopperUtil {
+  private static Location LOCATION = new VirtualLocation("<silver>", -1, -1);
+
+  public static CopperElementReference makeElementReference(String grammarName,
+                                                            String name) {
+    try {
+      return CopperElementReference.ref(CopperElementName.newName(grammarName),
+                                        name, LOCATION);
+    } catch (ParseException exc) {
+      throw new RuntimeException(exc);
+    }
+  }
+
   public static NonTerminal makeNonTerminal(String id, String pp,
                                             String type_) {
-    return null;
+    throw new RuntimeException("TODO CopperUtil.makeNonTerminal");
   }
 
   public static Terminal makeTerminal(String id, String pp, Regex regex,
@@ -16,7 +30,7 @@ public final class CopperUtil {
                                       List<StringCatter> classes, String prefix,
                                       List<StringCatter> submits,
                                       List<StringCatter> dominates) {
-    return null;
+    throw new RuntimeException("TODO CopperUtil.makeTerminal");
   }
 
   public static TerminalClass makeTerminalClass(String id) {

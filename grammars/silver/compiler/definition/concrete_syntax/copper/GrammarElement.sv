@@ -24,8 +24,8 @@ GrammarElement ::= id::String  pp::String  type_::String
 function terminal_
 GrammarElement ::= id::String  pp::String  regex::Regex  hasPrecedence::Boolean
     precedence_::Integer  hasAssociativity::Boolean associativity::String
-    type_::String  code::String  classes_::[String] hasPrefix::Boolean
-    prefix_::String submits_::[String]  dominates_::[String]
+    type_::String  code::String  classes_::[ElementReference] hasPrefix::Boolean
+    prefix_::ElementReference submits_::[ElementReference]  dominates_::[ElementReference]
 {
   return error("copper FFI function");
 } {- foreign {
