@@ -10,9 +10,9 @@ autocopy attribute className :: String;
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator, containingGrammar;
+nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator, containingGrammar, dominates_, submits_;
 
-propagate cstErrors, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator
+propagate cstErrors, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator, dominates_, submits_
   on SyntaxLexerClassModifiers;
 
 abstract production consLexerClassMod
@@ -33,7 +33,7 @@ top::SyntaxLexerClassModifiers ::=
 {--
  - Modifiers for lexer classes.
  -}
-closed nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator, containingGrammar;
+closed nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator, containingGrammar, dominates_, submits_;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
@@ -74,6 +74,9 @@ top::SyntaxLexerClassModifier ::= sub::[String]
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from submit clause for lexer class)"], --TODO: come up with a way to reference a given lexer class (line numbers would be great)
                    zipWith(pair, sub, subRefs)); 
+  
+  top.submits_ := map(error("TODO"), map(head, subRefs));
+
   top.submitsXML := implode("", map(xmlCopperRef, map(head, subRefs)));
 }
 {--
@@ -90,6 +93,9 @@ top::SyntaxLexerClassModifier ::= dom::[String]
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from dominates clause for lexer class)"],
                    zipWith(pair, dom, domRefs));
+
+  top.dominates_ := map(error("TODO"), map(head, subRefs));
+
   top.dominatesXML := implode("", map(xmlCopperRef, map(head, domRefs)));
 }
 
