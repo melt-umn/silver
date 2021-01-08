@@ -1,5 +1,7 @@
 grammar silver:compiler:definition:concrete_syntax:ast;
 
+import silver:compiler:definition:concrete_syntax:copper as copper;
+
 monoid attribute dominatesXML :: String;
 monoid attribute submitsXML :: String;
 monoid attribute lexerclassesXML :: String;
@@ -13,9 +15,9 @@ monoid attribute prefixSeperatorToApply :: Maybe<String> with nothing(), orElse;
 monoid attribute prettyName :: Maybe<String> with nothing(), orElse;
 autocopy attribute terminalName :: String;
 
-monoid attribute dominates_ :: [String] with [], ++;
-monoid attribute submits_ :: [String] with [], ++;
-monoid attribute lexerClasses :: [String] with [], ++;
+monoid attribute dominates_ :: [copper:ElementReference] with [], ++;
+monoid attribute submits_ :: [copper:ElementReference] with [], ++;
+monoid attribute lexerClasses :: [copper:ElementReference] with [], ++;
 
 {--
  - Modifiers for terminals.
@@ -121,9 +123,11 @@ top::SyntaxTerminalModifier ::= cls::[String]
                    zipWith(pair, allCls, allClsRefsL)); 
   top.classTerminalContribs := map(pair(_, top.terminalName), allCls);
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
-  top.dominatesXML := implode("", map((.classDomContribs), allClsRefs));
-  top.submitsXML := implode("", map((.classSubContribs), allClsRefs));
+  top.dominatesXML := implode("", map((.classDomContribsXML), allClsRefs));
+  top.submitsXML := implode("", map((.classSubContribsXML), allClsRefs));
   top.lexerclassesXML := implode("", map(xmlCopperRef, allClsRefs));
+
+  -- top.dominates_ := 
   
   local termSeps :: [Maybe<String>] = map((.prefixSeperator), allClsRefs);
   top.prefixSeperator := foldr(orElse, nothing(), termSeps);
