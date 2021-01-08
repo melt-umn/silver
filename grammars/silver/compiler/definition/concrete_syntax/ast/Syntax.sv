@@ -32,8 +32,8 @@ monoid attribute allMarkingTerminals :: [String];
 monoid attribute allProductions :: [Decorated SyntaxDcl];
 monoid attribute allNonterminals :: [Decorated SyntaxDcl];
 monoid attribute disambiguationClasses :: [Decorated SyntaxDcl];
-synthesized attribute classDomContribs :: String;
-synthesized attribute classSubContribs :: String;
+synthesized attribute classDomContribsXML :: String;
+synthesized attribute classSubContribsXML :: String;
 autocopy attribute containingGrammar :: String;
 monoid attribute lexerClassRefDcls :: String;
 synthesized attribute exportedProds :: [String];
@@ -80,7 +80,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperGrammarElement;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribsXML, classSubContribsXML, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperGrammarElement;
 
 synthesized attribute sortKey :: String;
 
@@ -91,8 +91,8 @@ top::SyntaxDcl ::=
 {
   -- Empty values as defaults
   propagate cstProds, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs, prettyNamesAccum;
-  top.classDomContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
-  top.classSubContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
+  top.classDomContribsXML = error("Internal compiler error: should only ever be demanded of lexer classes");
+  top.classSubContribsXML = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.exportedProds = error("Internal compiler error: should only ever be demanded of nonterminals");
   top.hasCustomLayout = false;
 }
@@ -368,8 +368,8 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 
   -- TODO: these attributes are on all SyntaxDcls, but only have meaning for this production
   -- that's UUUUGLY.
-  top.classDomContribs = modifiers.dominatesXML;
-  top.classSubContribs = modifiers.submitsXML;
+  top.classDomContribsXML = modifiers.dominatesXML;
+  top.classSubContribsXML = modifiers.submitsXML;
 
   top.cstNormalize := [top];
   top.superClassContribs := modifiers.superClassContribs;
