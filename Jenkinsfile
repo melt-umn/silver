@@ -87,7 +87,7 @@ melt.trynode('silver') {
 
     // Build test driver
     withEnv (newenv) {
-      dir ("${WS}/tests") {
+      dir ("${WS}/test") {
         sh "silver silver:testing:bin"
       }
     }
