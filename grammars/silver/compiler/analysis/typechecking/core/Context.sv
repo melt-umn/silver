@@ -11,13 +11,17 @@ top::Context ::= cls::String t::Type
   requiredContexts.contextLoc = top.contextLoc;
   requiredContexts.contextSource = s"the instance for ${prettyContext(top)}, arising from ${top.contextSource}";
   
+  -- Check for ambiguous type variables
+  local ambTyVars::[TyVar] =
+    removeAllBy(tyVarEqual, resolvedTypeScheme.typerep.freeVariables, map(fst, resolvedSubst.substList));
+  
   -- Duplicates are checked at the instance declaration
   top.contextErrors :=
     if null(top.resolved)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
-    else requiredContexts.contextErrors ++
-      -- Check for ambiguous type variables
-      map(
-        \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
-        removeAllBy(tyVarEqual, resolvedTypeScheme.typerep.freeVariables, map(fst, resolvedSubst.substList)));
+    else if !null(ambTyVars)
+    then map(
+      \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
+      ambTyVars)
+    else requiredContexts.contextErrors;
 }
