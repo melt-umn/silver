@@ -116,9 +116,24 @@ aspect production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.transform =
-    case e of
-    | productionReference(q) -> prodCallASTExpr(q.lookupValue.fullName, es.transform, anns.transform)
-    | _ -> applyASTExpr(e.transform, es.transform, anns.transform)
+    case e, es of
+    | productionReference(q), _ -> prodCallASTExpr(q.lookupValue.fullName, es.transform, anns.transform)
+    
+    -- Special cases for efficiency (and workaround for inability to use applyAST on functions with constraints)
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
+      when q.name == "silver:core:eq" -> eqeqASTExpr(e1.transform, e2.transform)
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
+      when q.name == "silver:core:neq" -> neqASTExpr(e1.transform, e2.transform)
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
+      when q.name == "silver:core:lt" -> ltASTExpr(e1.transform, e2.transform)
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
+      when q.name == "silver:core:lte" -> lteqASTExpr(e1.transform, e2.transform)
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
+      when q.name == "silver:core:gt" -> gtASTExpr(e1.transform, e2.transform)
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
+      when q.name == "silver:core:gte" -> gteqASTExpr(e1.transform, e2.transform)
+    
+    | _, _ -> applyASTExpr(e.transform, es.transform, anns.transform)
     end;
 }
 
@@ -371,44 +386,6 @@ aspect production not
 top::Expr ::= '!' e::Expr
 {
   top.transform = notASTExpr(e.transform);
-}
-
--- These operator productions forward to function calls, however we specialize
--- the transform here for efficiency.
-aspect production gtOp
-top::Expr ::= e1::Expr '>' e2::Expr
-{
-  top.transform = gtASTExpr(e1.transform, e2.transform);
-}
-
-aspect production ltOp
-top::Expr ::= e1::Expr '<' e2::Expr
-{
-  top.transform = ltASTExpr(e1.transform, e2.transform);
-}
-
-aspect production gteOp
-top::Expr ::= e1::Expr '>=' e2::Expr
-{
-  top.transform = gteqASTExpr(e1.transform, e2.transform);
-}
-
-aspect production lteOp
-top::Expr ::= e1::Expr '<=' e2::Expr
-{
-  top.transform = lteqASTExpr(e1.transform, e2.transform);
-}
-
-aspect production eqOp
-top::Expr ::= e1::Expr '==' e2::Expr
-{
-  top.transform = eqeqASTExpr(e1.transform, e2.transform);
-}
-
-aspect production neqOp
-top::Expr ::= e1::Expr '!=' e2::Expr
-{
-  top.transform = neqASTExpr(e1.transform, e2.transform);
 }
 
 aspect production intConst
