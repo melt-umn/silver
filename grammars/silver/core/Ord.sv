@@ -7,7 +7,7 @@ production ordGT top::Ordering ::= {}
 
 class Eq a => Ord a {
   compare :: (Ordering ::= a a) = \ x::a y::a ->
-    if eq(x, y) then ordEQ() else if lte(x, y) then ordLT() else ordGT(); --if x == y then ordEQ() else if x <= y then ordLT() else ordGT();
+    if x == y then ordEQ() else if x <= y then ordLT() else ordGT();
   
   lt :: (Boolean ::= a a) = \ x::a y::a ->
     case compare(x, y) of ordLT() -> true | _ -> false end;
@@ -18,8 +18,8 @@ class Eq a => Ord a {
   gte :: (Boolean ::= a a) = \ x::a y::a ->
     case compare(x, y) of ordLT() -> false | _ -> true end;
   
-  --max :: (a ::= a a) = \ x::a y::a -> if x <= y then y else x;
-  --min :: (a ::= a a) = \ x::a y::a -> if x <= y then y else x;
+  max :: (a ::= a a) = \ x::a y::a -> if x <= y then y else x;
+  min :: (a ::= a a) = \ x::a y::a -> if x <= y then y else x;
 }
 
 instance Ord Integer {

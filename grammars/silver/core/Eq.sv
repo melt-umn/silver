@@ -1,8 +1,8 @@
 grammar silver:core;
 
 class Eq a {
-  eq :: (Boolean ::= a a);-- = \ x::a y::a -> !(x != y);
-  neq :: (Boolean ::= a a);-- = \ x::a y::a -> !(x == y);
+  eq :: (Boolean ::= a a) = \ x::a y::a -> !(x != y);
+  neq :: (Boolean ::= a a) = \ x::a y::a -> !(x == y);
 }
 
 equality attribute isEqualTo, isEqual;
@@ -121,7 +121,7 @@ instance Eq a => Eq [a] {
   eq = \ x::[a] y::[a] -> length(x) == length(y) && all(zipWith(eq, x, y));
   neq = \ x::[a] y::[a] -> length(x) != length(y) || any(zipWith(neq, x, y));
 }
-{-
+
 instance Eq a => Eq Maybe<a> {
   eq = \ x::Maybe<a> y::Maybe<a> ->
     case x, y of
@@ -144,4 +144,3 @@ instance Eq a, Eq b => Eq Either<a b> {
     | _, _ -> false
     end;
 }
--}
