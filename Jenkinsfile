@@ -85,7 +85,8 @@ melt.trynode('silver') {
     tasks << tuts.collectEntries { t -> [(t): task_tutorial(t, WS)] }
 
     // Build test driver
-    env (silver.getSilverEnv(WS)) {
+    def newenv = silver.getSilverEnv(WS)
+    env (newenv) {
       dir ("${WS}/tests") {
         sh "silver silver:testing:bin"
       }
@@ -157,9 +158,9 @@ def task_test(String testname, String WS) {
       dir(WS + '/test/' + testname) {
         // HACK: edit the test specs to specify the generated directory
         sh "find . -name '*.test' -exec sed -i'' 's/\\(run: [^ ]*silver[^ ]*\\) /\\1 -G ${GEN} /g' {} \\;"
-
         // Run the tests
-        env (silver.getSilverEnv(WS)) {
+        def newenv = silver.getSilverEnv(WS)
+        env (newenv) {
           sh "java -jar ../silver.testing.bin.jar"
         }
       }
