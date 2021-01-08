@@ -6,8 +6,8 @@ monoid attribute nonforwardingProductions::[DclInfo] with [], ++;
 attribute nonforwardingProductions occurs on AGDcl, AGDcls;
 propagate nonforwardingProductions on AGDcl, AGDcls excluding productionDcl;
 
---Pairs of fully-qualified nonterminal name and fully-qualified production names
-autocopy attribute requiredProductionPatterns::[Pair<String [String]>];
+--Pairs of fully-qualified nonterminal name and (fully-qualified production names and arities)
+autocopy attribute requiredProductionPatterns::[Pair<String [Pair<String Integer>]>];
 attribute requiredProductionPatterns occurs on AGDcl, AGDcls, ProductionBody, ProductionStmts, ProductionStmt, Expr, Exprs, AppExprs, AnnoAppExprs;
 
 
@@ -35,7 +35,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 
 
 function groupNonforwardingProductions
-[Pair<String [String]>] ::= prods::[DclInfo]
+[Pair<String [Pair<String Integer>]>] ::= prods::[DclInfo]
 {
   local getTypeName::(String ::= DclInfo) =
         \ d::DclInfo ->
@@ -43,9 +43,15 @@ function groupNonforwardingProductions
           | functionType(nonterminalType(name, _, _), _, _) -> name
           | _ -> error("Should never get here")
           end;
+  local getTypeArgNumber::(Integer ::= DclInfo) =
+        \ d::DclInfo ->
+          case d.typeScheme.typerep of
+          | functionType(_, args, _) -> length(args)
+          | _ -> error("Should never get here")
+          end;
   local eqFun::(Boolean ::= DclInfo DclInfo) =
         \ d1::DclInfo d2::DclInfo -> getTypeName(d1) == getTypeName(d2);
   local groups::[[DclInfo]] = groupBy(eqFun, prods);
-  return map(\ dlst::[DclInfo] -> pair(getTypeName(head(dlst)), map(\ d::DclInfo -> d.fullName, dlst)), groups);
+  return map(\ dlst::[DclInfo] -> pair(getTypeName(head(dlst)), map(\ d::DclInfo -> pair(d.fullName, getTypeArgNumber(d)), dlst)), groups);
 }
 
