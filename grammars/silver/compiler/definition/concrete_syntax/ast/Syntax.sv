@@ -1,6 +1,7 @@
 grammar silver:compiler:definition:concrete_syntax:ast;
 
 imports silver:compiler:translation:java:core only makeTerminalName;
+import silver:compiler:definition:concrete_syntax:copper as copper;
 import silver:util:treemap as tm;
 import silver:util:treeset as s;
 
@@ -49,11 +50,13 @@ autocopy attribute componentGrammarMarkingTerminals :: EnvTree<[String]>;
 monoid attribute prettyNamesAccum::[Pair<String String>];
 autocopy attribute prettyNames::tm:Map<String String>;
 
+synthesized attribute copperGrammarElement::copper:GrammarElement;
+synthesized attribute copperGrammarElements::[copper:GrammarElement];
 
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperGrammarElements;
 
 propagate cstDcls, cstErrors, cstProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs, prettyNamesAccum
   on Syntax;
@@ -61,19 +64,23 @@ propagate cstDcls, cstErrors, cstProds, cstNormalize, allTerminals, allIgnoreTer
 abstract production nilSyntax
 top::Syntax ::=
 {
+  top.copperGrammarElements = [];
+
   top.xmlCopper = "";
 }
 
 abstract production consSyntax
 top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {
+  top.copperGrammarElements = s1.copperGrammarElement :: s2.copperGrammarElements;
+
   top.xmlCopper = s1.xmlCopper ++ s2.xmlCopper;
 }
 
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperGrammarElement;
 
 synthesized attribute sortKey :: String;
 
@@ -116,6 +123,9 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   top.exportedProds = exportedProds;
   top.hasCustomLayout = modifiers.customLayout.isJust;
   top.layoutContribs := map(pair(t.typeName, _), fromMaybe(exportedLayoutTerms, modifiers.customLayout));
+
+  top.copperGrammarElement = copper:nonterminal_(makeCopperName(t.typeName),
+    t.typeName, makeNTName(t.typeName));
 
   top.xmlCopper =
     "\n  <Nonterminal id=\"" ++ makeCopperName(t.typeName) ++ "\">\n" ++
@@ -166,6 +176,14 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     | 1 -> prettyName
     | _ -> prettyName ++ " (" ++ n ++ ")"
     end;
+
+  top.copperGrammarElement = copper:terminal_(makeCopperName(n),
+    disambiguatedPrettyName, regex.copperRegex, modifiers.opPrecedence.isJust,
+    error("precedence"), modifiers.opAssociation.isJust,
+    error("associativity"), makeTerminalName(n), 
+    "RESULT = new " ++ makeTerminalName(n) ++ "(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());tokenList.add(RESULT);\n" ++ modifiers.acode,
+    modifiers.lexerClasses,
+    !null(pfx), error("TODO pfx"), modifiers.submits_, modifiers.dominates_);
 
   top.xmlCopper =
     "  <Terminal id=\"" ++ makeCopperName(n) ++ "\">\n" ++
@@ -365,6 +383,8 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
       terms);
   top.lexerClassRefDcls :=
     s"    protected common.ConsCell ${makeCopperName(n)} = ${termsInit};\n";
+
+  top.copperGrammarElement = copper:terminalClass(makeCopperName(n));
   
   top.xmlCopper =
     "  <TerminalClass id=\"" ++ makeCopperName(n) ++ "\" />\n";
