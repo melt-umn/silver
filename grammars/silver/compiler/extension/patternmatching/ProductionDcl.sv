@@ -6,7 +6,7 @@ monoid attribute nonforwardingProductions::[DclInfo] with [], ++;
 attribute nonforwardingProductions occurs on AGDcl, AGDcls;
 propagate nonforwardingProductions on AGDcl, AGDcls excluding productionDcl;
 
---Pairs of fully-qualified nonterminal name and (fully-qualified production names and arities)
+--Pairs of fully-qualified nonterminal name and (fully-qualified production names and number of args)
 autocopy attribute requiredProductionPatterns::[Pair<String [Pair<String Integer>]>];
 attribute requiredProductionPatterns occurs on AGDcl, AGDcls, ProductionBody, ProductionStmts, ProductionStmt, Expr, Exprs, AppExprs, AnnoAppExprs;
 
@@ -40,18 +40,19 @@ function groupNonforwardingProductions
   local getTypeName::(String ::= DclInfo) =
         \ d::DclInfo ->
           case d.typeScheme.typerep of
-          | functionType(nonterminalType(name, _, _), _, _) -> name
-          | _ -> error("Should never get here")
+          | functionType(outty, _, _) -> getHeadTypeName(outty)
+          | ty -> error("All productions should have a function type, not:  " ++ prettyType(ty))
           end;
-  local getTypeArgNumber::(Integer ::= DclInfo) =
-        \ d::DclInfo ->
-          case d.typeScheme.typerep of
-          | functionType(_, args, _) -> length(args)
-          | _ -> error("Should never get here")
+  local getHeadTypeName::(String ::= Type) =
+        \ ty::Type ->
+          case ty of
+          | nonterminalType(name, _, _) -> name
+          | appType(ty1, _) -> getHeadTypeName(ty1)
+          | ty -> error("Should only have applied nonterminal types given, not:  " ++ prettyType(ty))
           end;
   local eqFun::(Boolean ::= DclInfo DclInfo) =
         \ d1::DclInfo d2::DclInfo -> getTypeName(d1) == getTypeName(d2);
   local groups::[[DclInfo]] = groupBy(eqFun, prods);
-  return map(\ dlst::[DclInfo] -> pair(getTypeName(head(dlst)), map(\ d::DclInfo -> pair(d.fullName, getTypeArgNumber(d)), dlst)), groups);
+  return map(\ dlst::[DclInfo] -> pair(getTypeName(head(dlst)), map(\ d::DclInfo -> pair(d.fullName, d.typeScheme.arity), dlst)), groups);
 }
 

@@ -5,7 +5,7 @@ import silver:compiler:extension:list only LSqr_t, RSqr_t;
 {--
  - The forms of syntactic patterns that are permissible in (nested) case expresssions.
  -}
-nonterminal Pattern with location, config, unparse, env, frame, errors, patternVars, patternVarEnv, patternIsVariable, patternVariableName, patternSubPatternList, patternNamedSubPatternList, patternSortKey, isPrimitivePattern, isBoolPattern, isListPattern;
+nonterminal Pattern with location, config, unparse, env, frame, errors, patternVars, patternVarEnv, patternIsVariable, patternVariableName, patternSubPatternList, patternNamedSubPatternList, patternSortKey, isPrimitivePattern, isBoolPattern, isListPattern, patternTypeName;
 
 {--
  - The names of all var patterns in the pattern.
@@ -55,6 +55,9 @@ synthesized attribute isBoolPattern::Boolean;
 --   so we'll handle them specially
 synthesized attribute isListPattern::Boolean;
 
+--the fully-qualified name of the type being built
+synthesized attribute patternTypeName::String;
+
 
 -- These are the "canonical" patterns:
 
@@ -87,6 +90,11 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
   top.isPrimitivePattern = false;
   top.isBoolPattern = false;
   top.isListPattern = false;
+  top.patternTypeName =
+      case prod.lookupValue.typeScheme.typerep of
+      | functionType(nonterminalType(name, _, _), _, _) -> name
+      | _ -> "" --not a real production
+      end;
 }
 
 concrete production prodAppPattern
@@ -187,6 +195,9 @@ top::Pattern ::=
   top.patternIsVariable = false;
   top.patternVariableName = nothing();
   top.patternNamedSubPatternList = [];
+
+  --This should only be accessed on production patterns
+  top.patternTypeName = "";
 }
 
 --------------------------------------------------------------------------------
@@ -382,5 +393,18 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
   
   top.patternVars = p.patternVars;
   top.namedPatternList = [pair(qn.lookupAttribute.fullName, p)];
+}
+
+
+
+--helper function for building patternLists from lists of patterns
+function buildPatternList
+PatternList ::= plst::[Pattern] loc::Location
+{
+  return case plst of
+         | [] -> patternList_nil(location=loc)
+         | h::t ->
+           patternList_more(h, ',', buildPatternList(t, loc), location=loc)
+         end;
 }
 
