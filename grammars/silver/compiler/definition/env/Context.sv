@@ -42,8 +42,9 @@ top::Context ::= cls::String t::Type
 
   production resolvedDcl::DclInfo = head(top.resolved);
   production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
+  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, t);
   production requiredContexts::Contexts =
-    foldContexts(map(performContextRenaming(_, unifyDirectional(resolvedTypeScheme.typerep, t)), resolvedTypeScheme.contexts));
+    foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
   requiredContexts.env = top.env;
 }
 

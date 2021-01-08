@@ -123,11 +123,7 @@ top::Expr ::= 'toInt' '(' e::Expr ')'
 {
   top.unparse = "toInt(" ++ e.unparse ++ ")";
 
-  -- TODO: Please uncomment this soon. I'm only leaving it because
-  -- Jenkins builds things with `--warn-error` as part of MWDA.
-  -- We really need to add a `--mwda` flag or something, so new warnings
-  -- can be introduced safely.
-  --top.errors <- [wrn($1.location, "'toInt' is deprecated syntax, please use 'toInteger' instead.")];
+  top.errors <- [wrn($1.location, "'toInt' is deprecated syntax, please use 'toInteger' instead.")];
 
   forwards to toIntegerFunction('toInteger', '(', e, ')', location=top.location);
 }

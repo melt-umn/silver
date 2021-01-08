@@ -48,6 +48,7 @@ top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
 {
   top.translation = s"""
 	default ${ty.typerep.transClassType} ${makeInstanceMemberAccessorName(id.name)}() {
+		final common.DecoratedNode context = common.TopNode.singleton;
 		return ${e.translation};
 	}
 """;

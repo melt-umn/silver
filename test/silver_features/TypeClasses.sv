@@ -52,6 +52,12 @@ equalityTest(myeq([1, 2, 3], [1, 2, 1]), false, Boolean, silver_tests);
 equalityTest(myeq(pair([1, 2], 3), pair([1, 2], 3)), true, Boolean, silver_tests);
 equalityTest(myeq(pair([1, 2], 3), pair([1, 4], 3)), false, Boolean, silver_tests);
 
+equalityTest(myneq([1, 2, 3], [1, 2, 3]), false, Boolean, silver_tests);
+equalityTest(myneq([1, 2, 3], [1, 2, 3, 2, 1]), true, Boolean, silver_tests);
+equalityTest(myneq([1, 2, 3], [1, 2, 1]), true, Boolean, silver_tests);
+equalityTest(myneq(pair([1, 2], 3), pair([1, 2], 3)), false, Boolean, silver_tests);
+equalityTest(myneq(pair([1, 2], 3), pair([1, 4], 3)), true, Boolean, silver_tests);
+
 function myRemove
 MyEq a => [a] ::= x::a xs::[a]
 {
@@ -102,6 +108,14 @@ wrongCode "is already bound" {
 
 wrongCode "is not a type class" {
   instance Maybe Integer {}
+}
+
+wrongCode "Undeclared type" {
+  instance Blarch Integer {}
+}
+
+wrongCode "Undeclared type" {
+  instance Blarch a => CBaz a {}
 }
 
 wrongCode "Overlapping instances" {
@@ -195,4 +209,29 @@ wrongCode "f has kind arity 1, but there are 2 type arguments supplied here" {
   class MyFunctorBad f {
     myfmap2 :: (f<b> ::= (b ::= a) f<a b>);
   }
+}
+
+class CDefaultVal a {
+  cdv1 :: Pair<Integer a>;
+  cdv2 :: a = cdv1.snd;
+}
+
+instance CDefaultVal String {
+  cdv1 = pair(42, "abc");
+}
+
+equalityTest(cdv2, "abc", String, silver_tests);
+
+class AmbInst a {
+  ambval :: a;
+}
+instance AmbInst Integer {
+  ambval = 42;
+}
+instance AmbInst Float {
+  ambval = 3.14;
+}
+
+wrongCode "Ambiguous type variable a (arising from the use of ambval) prevents the constraint silver_features:AmbInst a from being solved." {
+  global ambStr::String = hackUnparse(ambval);
 }
