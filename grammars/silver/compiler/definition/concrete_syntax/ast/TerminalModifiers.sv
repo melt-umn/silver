@@ -13,16 +13,20 @@ monoid attribute prefixSeperatorToApply :: Maybe<String> with nothing(), orElse;
 monoid attribute prettyName :: Maybe<String> with nothing(), orElse;
 autocopy attribute terminalName :: String;
 
+monoid attribute dominates_ :: [String] with [], ++;
+monoid attribute submits_ :: [String] with [], ++;
+monoid attribute lexerClasses :: [String] with [], ++;
+
 {--
  - Modifiers for terminals.
  -}
 nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, classTerminalContribs, superClasses, subClasses, dominatesXML,
   submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply, componentGrammarMarkingTerminals,
-  marking, terminalName, prettyName;
+  marking, terminalName, prettyName, dominates_, submits_, lexerClasses;
 
 propagate cstErrors, classTerminalContribs, dominatesXML,
     submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
-    marking, prettyName
+    marking, prettyName, dominates_, submits_, lexerClasses
   on SyntaxTerminalModifiers;
 
 abstract production consTerminalMod
