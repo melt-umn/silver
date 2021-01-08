@@ -6,6 +6,9 @@ imports silver:compiler:definition:type;
 imports silver:compiler:modification:primitivepattern;
 imports silver:compiler:extension:list;
 
+--Get mwdaWrn production for completeness analysis
+import silver:compiler:analysis:warnings:flow;
+
 import silver:compiler:definition:type:syntax only typerepTypeExpr;
 import silver:compiler:modification:let_fix;
 
@@ -107,9 +110,10 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
   top.errors <-
       case completenessCounterExample of
       | just(lst) ->
-        [wrn(top.location,
-             "This pattern-matching is not exhaustive.  Here is an example of a " ++
-             "case that is not matched:  " ++ implode(", ", map((.unparse), lst)))]
+        [mwdaWrn(top.location,
+                 "This pattern-matching is not exhaustive.  Here is an example of a " ++
+                   "case that is not matched:  " ++ implode(", ", map((.unparse), lst)),
+                 top.config.runMwda)]
       | nothing() -> []
       end;
 
