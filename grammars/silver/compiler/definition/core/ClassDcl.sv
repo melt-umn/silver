@@ -1,5 +1,7 @@
 grammar silver:compiler:definition:core;
 
+import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph;
+
 concrete production typeClassDcl
 top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 {
@@ -114,6 +116,18 @@ top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
   production boundVars :: [TyVar] =
     setUnionTyVars(top.classHead.freeVariables, ty.typerep.freeVariables);
   top.classMembers = [pair(fName, pair(ty.typerep, true))];
+  
+  e.isRoot = true;
+  e.originRules = [];
+
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = 
+    constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
+
+  e.frame = globalExprContext(myFlowGraph, sourceGrammar=top.grammarName);
   
   top.defs <- [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, ty.typerep)];
 

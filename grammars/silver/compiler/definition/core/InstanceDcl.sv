@@ -12,14 +12,14 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   production dcl::DclInfo = id.lookupType.dcl;
   dcl.givenInstanceType = ty.typerep;
   
-  production superContexts::Contexts = foldContexts(dcl.superContexts);
+  production superContexts::Contexts = foldContexts(if id.lookupType.found then dcl.superContexts else []);
   superContexts.env = body.env;
   
   top.defs := [instDef(top.grammarName, id.location, fName, boundVars, cl.contexts, ty.typerep)];
   
   top.errors <- id.lookupType.errors;
   top.errors <-
-    if dcl.isClass then []
+    if !id.lookupType.found || dcl.isClass then []
     else [err(id.location, id.name ++ " is not a type class.")];
   top.errors <-
     if !ty.typerep.isError && length(getInstanceDcl(fName, ty.typerep, top.env)) > 1
@@ -28,10 +28,14 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   top.errors <-
     case ty.typerep of
     -- Default instance, must be exported by the class declaration
-    | skolemType(_) when !isExportedBy(top.grammarName, [dcl.sourceGrammar], top.compiledGrammars) ->
+    | skolemType(_) when id.lookupType.found && !isExportedBy(top.grammarName, [dcl.sourceGrammar], top.compiledGrammars) ->
       [wrn(top.location, "Orphaned default instance declaration for " ++ fName)]
     -- Regular instance, must be exported by the class or type declaration
-    | t when !isExportedBy(top.grammarName, dcl.sourceGrammar :: map(\ d::DclInfo -> d.sourceGrammar, getTypeDcl(t.typeName, top.env)), top.compiledGrammars) ->
+    | t when id.lookupType.found &&
+        !isExportedBy(
+          top.grammarName,
+          dcl.sourceGrammar :: map(\ d::DclInfo -> d.sourceGrammar, getTypeDcl(t.typeName, top.env)),
+          top.compiledGrammars) ->
       [wrn(top.location, s"Orphaned instance declaration for ${fName} ${prettyType(t)}")]
     | _ -> []
     end;
@@ -51,7 +55,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   
   body.env = newScopeEnv(headDefs, cl.env);
   body.className = id.lookupType.fullName;
-  body.expectedClassMembers = dcl.classMembers;
+  body.expectedClassMembers = if id.lookupType.found then dcl.classMembers else [];
 }
 
 concrete production instanceDclNoCL

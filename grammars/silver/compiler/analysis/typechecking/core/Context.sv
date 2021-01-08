@@ -15,5 +15,9 @@ top::Context ::= cls::String t::Type
   top.contextErrors :=
     if null(top.resolved)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
-    else requiredContexts.contextErrors;
+    else requiredContexts.contextErrors ++
+      -- Check for ambiguous type variables
+      map(
+        \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
+        removeAllBy(tyVarEqual, resolvedTypeScheme.typerep.freeVariables, map(fst, resolvedSubst.substList)));
 }
