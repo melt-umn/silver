@@ -7,6 +7,7 @@ melt.setProperties(overrideJars: true)
 melt.trynode('silver') {
   def WS = pwd()
   def SILVER_GEN = "${WS}/generated"
+  def newenv = silver.getSilverEnv(WS)
 
   stage("Build") {
 
@@ -85,7 +86,6 @@ melt.trynode('silver') {
     tasks << tuts.collectEntries { t -> [(t): task_tutorial(t, WS)] }
 
     // Build test driver
-    def newenv = silver.getSilverEnv(WS)
     env (newenv) {
       dir ("${WS}/tests") {
         sh "silver silver:testing:bin"
@@ -150,6 +150,7 @@ def getMergedBranch() {
 
 // Test in local workspace
 def task_test(String testname, String WS) {
+  def newenv = silver.getSilverEnv(WS)
   return {
     node {
       sh "touch ensure_workspace" // convince jenkins to create our workspace
@@ -159,7 +160,6 @@ def task_test(String testname, String WS) {
         // HACK: edit the test specs to specify the generated directory
         sh "find . -name '*.test' -exec sed -i'' 's/\\(run: [^ ]*silver[^ ]*\\) /\\1 -G ${GEN} /g' {} \\;"
         // Run the tests
-        def newenv = silver.getSilverEnv(WS)
         env (newenv) {
           sh "java -jar ../silver.testing.bin.jar"
         }
