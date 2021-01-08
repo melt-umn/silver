@@ -154,7 +154,7 @@ aspect production globalValueReference
 top::Expr ::= q::Decorated QName
 {
   local directThunk :: String =
-    s"${makeName(q.lookupValue.dcl.sourceGrammar)}.Init.${fullNameToShort(q.lookupValue.fullName)}";
+    s"${makeName(q.lookupValue.dcl.sourceGrammar)}.Init.global_${fullNameToShort(q.lookupValue.fullName)}";
 
   top.translation = s"((${finalType(top).transType})${directThunk}.eval())";
   top.lazyTranslation = 
