@@ -25,8 +25,8 @@ class Eq a => Ord a {
 instance Ord Integer {
   lt = ltInteger;
   lte = lteInteger;
-  gt = ltInteger;
-  gte = lteInteger;
+  gt = gtInteger;
+  gte = gteInteger;
 }
 function ltInteger
 Boolean ::= x::Integer y::Integer
@@ -60,8 +60,8 @@ Boolean ::= x::Integer y::Integer
 instance Ord Float {
   lt = ltFloat;
   lte = lteFloat;
-  gt = ltFloat;
-  gte = lteFloat;
+  gt = gtFloat;
+  gte = gteFloat;
 }
 function ltFloat
 Boolean ::= x::Float y::Float
@@ -95,8 +95,8 @@ Boolean ::= x::Float y::Float
 instance Ord Boolean {
   lt = ltBoolean;
   lte = lteBoolean;
-  gt = ltBoolean;
-  gte = lteBoolean;
+  gt = gtBoolean;
+  gte = gteBoolean;
 }
 function ltBoolean
 Boolean ::= x::Boolean y::Boolean
@@ -122,8 +122,8 @@ Boolean ::= x::Boolean y::Boolean
 instance Ord String {
   lt = ltString;
   lte = lteString;
-  gt = ltString;
-  gte = lteString;
+  gt = gtString;
+  gte = gteString;
 }
 function ltString
 Boolean ::= x::String y::String
@@ -157,8 +157,8 @@ Boolean ::= x::String y::String
 instance Ord TerminalId {
   lt = ltTerminalId;
   lte = lteTerminalId;
-  gt = ltTerminalId;
-  gte = lteTerminalId;
+  gt = gtTerminalId;
+  gte = gteTerminalId;
 }
 function ltTerminalId
 Boolean ::= x::TerminalId y::TerminalId
