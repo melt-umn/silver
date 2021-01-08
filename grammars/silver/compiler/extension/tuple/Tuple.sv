@@ -8,10 +8,35 @@ imports silver:compiler:extension:patternmatching;
 
 terminal Comma_t ',' ;
 
+nonterminal ListOfTypeExprs with location, unparse, te_translation;
+synthesized attribute te_translation :: TypeExpr;
 nonterminal TupleList with location, unparse, translation;
 synthesized attribute translation :: Expr;
 
 -- Note: We consider only tuples containing two or more elements
+
+concrete production tupleTypeExpr
+top::TypeExpr ::= '(' tes::ListOfTypeExprs ')'
+{
+    top.unparse = '(' ++ tes.unparse ++ ')';
+    forwards to tes.translation;
+}
+
+concrete production tupleTypeExpr2
+top::ListOfTypeExprs ::= te1::TypeExpr ',' te2::TypeExpr
+{
+    top.unparse = te1.unparse ++ ',' ++ te2.unparse;
+    --TO DO: top.te_translation = $TypeExpr { silver:core:pair($Expr{te1}, $Expr{te2}) };
+
+}
+
+concrete production tupleTypeExprn
+top::ListOfTypeExprs ::= te::TypeExpr ',' tes::ListOfTypeExprs
+{
+    top.unparse = te1.unparse ++ ',' ++ te2.unparse;
+    --TO DO: top.te_translation = $TypeExpr { silver:core:pair($Expr{te1}, $Expr{te2.translation}) };
+}
+
 
 concrete production tuple_c
 top::Expr ::= '(' tl::TupleList ')'

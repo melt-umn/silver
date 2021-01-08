@@ -11,7 +11,7 @@ equalityTest((1,"a",2,"b").snd.snd.snd, "b", String, silver_tests);
 -- Pattern matching tests
 
 function tupleMatch1
-Boolean ::= tuple::Pair <String Pair <Integer Integer>>
+Boolean ::= tuple::(String, Integer, Integer)
 {
     return case tuple of
         | (_, _, 2) -> true
