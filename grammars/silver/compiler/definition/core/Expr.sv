@@ -612,7 +612,14 @@ top::Expr ::= e1::Expr '>' e2::Expr
 {
   top.unparse = e1.unparse ++ " > " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:gt($Expr{e1}, $Expr{e2}) };
+  forwards to
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:gt"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
 concrete production ltOp
@@ -620,7 +627,14 @@ top::Expr ::= e1::Expr '<' e2::Expr
 {
   top.unparse = e1.unparse ++ " < " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:lt($Expr{e1}, $Expr{e2}) };
+  forwards to
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:lt"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
 concrete production gteOp
@@ -628,7 +642,14 @@ top::Expr ::= e1::Expr '>=' e2::Expr
 {
   top.unparse = e1.unparse ++ " >= " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:gte($Expr{e1}, $Expr{e2}) };
+  forwards to
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:gte"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
 concrete production lteOp
@@ -636,7 +657,14 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 {
   top.unparse = e1.unparse ++ " <= " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:lte($Expr{e1}, $Expr{e2}) };
+  forwards to
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:lte"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
 concrete production eqOp
@@ -644,7 +672,14 @@ top::Expr ::= e1::Expr '==' e2::Expr
 {
   top.unparse = e1.unparse ++ " == " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:eq($Expr{e1}, $Expr{e2}) };
+  forwards to
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:eq"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
 concrete production neqOp
@@ -652,7 +687,14 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 {
   top.unparse = e1.unparse ++ " != " ++ e2.unparse;
 
-  forwards to Silver_Expr { silver:core:neq($Expr{e1}, $Expr{e2}) };
+  forwards to
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:neq"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
 concrete production ifThenElse
