@@ -69,14 +69,14 @@ abstract production unitT   t::Type<Unit> ::= {}
 abstract production arrow  t::Type<Arrow<a b>> ::= Type<a> Type<b> {}
 
 nonterminal Eq<a b>;
-abstract production eq   e::Eq<a a> ::= {}
+abstract production refl   e::Eq<a a> ::= {}
 
 function typeEquals
 Maybe<Eq<a b>> ::= ta::Type<a>  tb::Type<b>
 {
   return match ta return Maybe<Eq<a b>> with
            unitT() -> match tb return Maybe<Eq<a b>> with
-                       unitT() -> just(eq())
+                       unitT() -> just(refl())
                        else -> nothing()
                      end
          | arrow(aa, ab) ->
@@ -84,11 +84,11 @@ Maybe<Eq<a b>> ::= ta::Type<a>  tb::Type<b>
                        arrow(ba, bb) -> match decorate typeEquals(aa, ba) with {} return Maybe<Eq<a b>> with
                                           just(lrn1) -> 
                                               match decorate lrn1 with {} return Maybe<Eq<a b>> with
-                                                eq() ->
+                                                refl() ->
                                                         match decorate typeEquals(ab, bb) with {} return Maybe<Eq<a b>> with
                                                           just(lrn2) ->
                                                              match decorate lrn2 with {} return Maybe<Eq<a b>> with
-                                                               eq() -> just(eq())
+                                                               refl() -> just(refl())
                                                                else -> nothing()
                                                              end
                                                           else -> nothing()
@@ -131,7 +131,7 @@ wrongCode "pattern expression should have type" {
   return match ta return Maybe<Eq<a b>> with
           arrow(aa, ab) ->
             match tb return Maybe<Eq<a b>> with
-              arrow(ba, bb) -> just(eq())
+              arrow(ba, bb) -> just(refl)
               else -> error("")
             end
           else -> error("")
