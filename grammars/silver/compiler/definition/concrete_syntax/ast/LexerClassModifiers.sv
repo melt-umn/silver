@@ -94,7 +94,7 @@ top::SyntaxLexerClassModifier ::= dom::[String]
                            "this grammar was not included in this parser. (Referenced from dominates clause for lexer class)"],
                    zipWith(pair, dom, domRefs));
 
-  top.dominates_ := map(error("TODO"), map(head, subRefs));
+  top.dominates_ := map(error("TODO"), map(head, domRefs));
 
   top.dominatesXML := implode("", map(xmlCopperRef, map(head, domRefs)));
 }
