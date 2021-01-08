@@ -91,16 +91,8 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
     For this, we need to consider closed and non-closed nonterminals
     separately.  We will NOT count match rules with conditions as
     contributing to completeness, as we will assume conditions are
-    actually conditionall, and the rule with a condition will
-    sometimes match and sometimes not.
-
-    * Closed Nonterminals:  These do not forward, so we need to have a
-      default case (variable pattern).
-
-    * Non-Closed Nonterminals:  These can be complete in two different
-      ways:
-      - If they have a default case, they are complete.
-      - If they have a pattern for each non-forwarding production.
+    actually conditional, and the rule with a condition will sometimes
+    match and sometimes not.
   -}
   local conditionlessRules::[AbstractMatchRule] =
         partition((.hasCondition), ml).snd;
@@ -109,9 +101,8 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
               case x of
               | matchRule(plst, _, _) -> plst
               end, conditionlessRules);
-  local nonforwardingProds::[Pair<String [Pair<String Integer>]>] = top.requiredProductionPatterns;
   local completenessCounterExample::Maybe<[Pattern]> =
-        checkCompleteness(conditionlessPatterns, nonforwardingProds);
+        checkCompleteness(conditionlessPatterns, top.requiredProductionPatterns, top.env);
 
   top.errors <-
       case completenessCounterExample of
@@ -275,12 +266,15 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
   We check completeness with a function because we want to recursively
   check, which we cannot do with attributes alone.
 
+  We need the environment to look up any nonterminal matches and see
+  if the nonterminal is closed or not.
+
   We return nothing() if the patterns are complete, and just(plst) if
   plst is an example of a missing pattern set (matching over multiple
   values at once).
 -}
 function checkCompleteness
-Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] nonforwardingProds::[Pair<String [Pair<String Integer>]>]
+Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] nonforwardingProds::[Pair<String [Pair<String Integer>]>] env::Decorated Env
 {
   --This is safer than mapping head because we might be short some patterns
   local firstPatt::[Decorated Pattern] =
@@ -297,18 +291,33 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] nonforwardingProds::[Pair<String
   local isBoolPatts::Boolean = foldr(\ a::Decorated Pattern b::Boolean -> b || a.isBoolPattern, false, conPatts);
   local isListPatts::Boolean = foldr(\ a::Decorated Pattern b::Boolean -> b || a.isListPattern, false, conPatts);
 
+  {-Checking Pattern Completeness
+
+    Everything is complete if it has a variable pattern.  Some other
+    types can also be complete in other ways:
+
+    * Boolean:  A Boolean match is complete if it has patterns for
+      true and false.
+
+    * Lists:  A list match is complete if it has patterns for nil and
+      cons, and the heads and tails of cons are complete patterns as
+      well.
+
+    * Non-Closed Nonterminals:  These are complete if they have a
+      pattern for each non-forwarding production.
+  -}
   local firstComplete::Maybe<Pattern> =
         if null(varPatts)
         then if isBoolPatts
              then checkBooleanCompleteness(conPatts)
              else if isListPatts
-                  then checkListCompleteness(conPatts, nonforwardingProds)
+                  then checkListCompleteness(conPatts, nonforwardingProds, env)
                   else if isPrimPatts
                        then generatePrimitiveMissingPattern(conPatts)
-                       else checkNonterminalCompleteness(conPatts, nonforwardingProds)
+                       else checkNonterminalCompleteness(conPatts, nonforwardingProds, env)
         else nothing();
 
-  local restComplete::Maybe<[Pattern]> = checkCompleteness(map(tail, lst), nonforwardingProds);
+  local restComplete::Maybe<[Pattern]> = checkCompleteness(map(tail, lst), nonforwardingProds, env);
 
   return if numPatts == 0
          then nothing() --inherently complete, by way of having no patterns
@@ -340,8 +349,7 @@ Maybe<Pattern> ::= patts::[Decorated Pattern]
                 end, [], patts);
   local strs::[String] =
         foldr(\ p::Decorated Pattern l::[String] ->
-                case p of
-                                       --remove quotation marks
+                case p of              --remove quotation marks
                 | strPattern(str_t) -> substring(1, length(str_t.lexeme) - 1, str_t.lexeme)::l
                 | _ -> l
                 end, [], patts);
@@ -398,7 +406,7 @@ Maybe<Pattern> ::= patts::[Decorated Pattern]
 }
 
 function checkListCompleteness
-Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [Pair<String Integer>]>]
+Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [Pair<String Integer>]>] env::Decorated Env
 {
   local foundNil::Boolean =
         foldr(\ p::Decorated Pattern b::Boolean ->
@@ -408,7 +416,7 @@ Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [
   local consPatts::[Decorated Pattern] =
         partition(\ p::Decorated Pattern -> p.patternSortKey == "silver:core:cons", patts).fst;
   local consComp::Maybe<[Pattern]> =
-        checkCompleteness(map((.patternSubPatternList), consPatts), nonforwardingProds);
+        checkCompleteness(map((.patternSubPatternList), consPatts), nonforwardingProds, env);
 
   return if foundNil
          then if null(consPatts) --didn't try to catch _::_
@@ -425,14 +433,13 @@ Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [
 
 --given a set of nonterminal patterns, check that they have all the required productions covered
 function checkNonterminalCompleteness
-Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [Pair<String Integer>]>]
+Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [Pair<String Integer>]>] env::Decorated Env
 {
   --All the patterns ought to have the same type.
   local builtTypes::[String] =
         nubBy(\ a::String b::String -> a == b, map((.patternTypeName), patts));
   local builtType::String = head(builtTypes);
 
-  --   [Pair<String [Pair<String Integer>]>]
   local requiredProds::[Pair<String Integer>] =
         let reqProdGroups::[Pair<String [Pair<String Integer>]>] =
              partition(\ p::Pair<String [Pair<String Integer>]> -> p.fst == builtType,
@@ -442,19 +449,32 @@ Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [
         groupBy(\ a::Decorated Pattern b::Decorated Pattern ->
                   a.patternSortKey == b.patternSortKey, patts);
 
+  --To find out if the nonterminal is closed or not, we need to look it up
+  local nt::QName = qName(bogusLoc(), builtType);
+  nt.env = env;
+  local isClosed::Boolean =
+        case nt.lookupType.dcls of
+        | ntDcl(_, _, closed, _) :: _ -> closed
+        | _ -> false -- default, if the lookup fails
+        end;
+
   -- TODO:  named argument patterns are not handled yet
   return
      --If we are building multiple types or have unknown productions,
      --   we have a type error, so don't check completeness
      if length(builtTypes) != 1
      then nothing()
-     else checkAllProdsRepresented(groupedPatts, requiredProds, nonforwardingProds);
+     else if isClosed
+               --This is a hack to pass up a message about closed nonterminals
+          then just(varPattern(name("<default case for closed nonterminal>", bogusLoc()),
+                               location=bogusLoc()))
+          else checkAllProdsRepresented(groupedPatts, requiredProds, nonforwardingProds, env);
 }
 
 --check that all required productions are present and that their children are completely covered
 function checkAllProdsRepresented
 Maybe<Pattern> ::= pattGroups::[[Decorated Pattern]] requiredProds::[Pair<String Integer>]
-                   nonforwardingProds::[Pair<String [Pair<String Integer>]>]
+                   nonforwardingProds::[Pair<String [Pair<String Integer>]>] env::Decorated Env
 {
   {-
     We walk down through requiredProds rather than pattGroups.  We
@@ -479,28 +499,29 @@ Maybe<Pattern> ::= pattGroups::[[Decorated Pattern]] requiredProds::[Pair<String
   --check that all children of the current production are completely covered
   local childrenComp::Maybe<[Pattern]> =
         checkCompleteness(map((.patternSubPatternList), pattGroup),
-                          nonforwardingProds);
+                          nonforwardingProds, env);
 
-  return case requiredProds of
-         | [] -> nothing()
-         | _::rest ->
-           case pattGroup of
-           | [] -> --this one is missing
-             just(prodAppPattern(firstProdQName, '(', wildcards, ')', location=bogusLoc()))
-           | _::_ ->
-             case childrenComp of
-             | nothing() ->
-               --current production is fully covered, so on to the next
-               checkAllProdsRepresented(pattGroups, rest, nonforwardingProds)
-             | just(plst) ->
-               --check that it has the right number of patterns
-               if length(plst) == firstProdNumArgs
-               then just(prodAppPattern(firstProdQName, '(', buildPatternList(plst, bogusLoc()), ')',
-                         location=bogusLoc()))
-               else nothing() --wrong number of children -> type error, so skip completeness
-             end
-           end
-         end;
+  return
+     case requiredProds of
+     | [] -> nothing()
+     | _::rest ->
+       case pattGroup of
+       | [] -> --this one is missing
+         just(prodAppPattern(firstProdQName, '(', wildcards, ')', location=bogusLoc()))
+       | _::_ ->
+         case childrenComp of
+         | nothing() ->
+           --current production is fully covered, so on to the next
+           checkAllProdsRepresented(pattGroups, rest, nonforwardingProds, env)
+         | just(plst) ->
+           --check that it has the right number of patterns
+           if length(plst) == firstProdNumArgs
+           then just(prodAppPattern(firstProdQName, '(', buildPatternList(plst, bogusLoc()), ')',
+                     location=bogusLoc()))
+           else nothing() --wrong number of children -> type error, so skip completeness
+         end
+       end
+     end;
 }
 
 
@@ -627,7 +648,7 @@ top::PatternList ::= ps::PatternList ',' p::Pattern
 abstract production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
-  top.unparse = p.unparse ++ ", " ++ ps1.unparse;
+  top.unparse = p.unparse ++ (if ps1.unparse == "" then "" else ", " ++ ps1.unparse);
   top.errors := p.errors ++ ps1.errors;
 
   top.patternVars = p.patternVars ++ ps1.patternVars;

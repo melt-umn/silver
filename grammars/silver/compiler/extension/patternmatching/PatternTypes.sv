@@ -55,7 +55,7 @@ synthesized attribute isBoolPattern::Boolean;
 --   so we'll handle them specially
 synthesized attribute isListPattern::Boolean;
 
---the fully-qualified name of the type being built
+--The fully-qualified name of the type being built
 synthesized attribute patternTypeName::String;
 
 
@@ -92,9 +92,16 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
   top.isListPattern = false;
   top.patternTypeName =
       case prod.lookupValue.typeScheme.typerep of
-      | functionType(nonterminalType(name, _, _), _, _) -> name
+      | functionType(out, _, _) -> getHeadTypeName(out)
       | _ -> "" --not a real production
       end;
+  local getHeadTypeName::(String ::= Type) =
+        \ ty::Type ->
+          case ty of
+          | nonterminalType(name, _, _) -> name
+          | appType(ty1, _) -> getHeadTypeName(ty1)
+          | ty -> error("Should only have applied nonterminal types given, not:  " ++ prettyType(ty))
+          end;
 }
 
 concrete production prodAppPattern
