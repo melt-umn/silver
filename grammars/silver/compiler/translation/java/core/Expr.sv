@@ -124,7 +124,10 @@ top::Expr ::= q::Decorated QName
 aspect production productionReference
 top::Expr ::= q::Decorated QName
 {
-  top.translation = makeProdName(q.lookupValue.fullName) ++ ".factory";
+  top.translation =
+    if null(typeScheme.contexts)
+    then makeProdName(q.lookupValue.fullName) ++ ".factory"
+    else s"new ${makeProdName(q.lookupValue.fullName)}.Factory(${implode(", ", contexts.transContexts)})";
   top.lazyTranslation = top.translation;
   top.invokeTranslation =
     -- static constructor invocation
@@ -137,7 +140,10 @@ top::Expr ::= q::Decorated QName
   -- functions, unlike productions, can return a type variable.
   -- as such, we have to cast it to the real inferred final type.
   top.translation = s"((${finalType(top).transType})${top.lazyTranslation})";
-  top.lazyTranslation = makeProdName(q.lookupValue.fullName) ++ ".factory";
+  top.lazyTranslation =
+    if null(typeScheme.contexts)
+    then makeProdName(q.lookupValue.fullName) ++ ".factory"
+    else s"new ${makeProdName(q.lookupValue.fullName)}.Factory(${implode(", ", contexts.transContexts)})";
   top.invokeTranslation =
     -- static method invocation
     s"((${finalType(top).outputType.transType})${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ", [makeOriginContextRef(top)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs))}))";

@@ -235,3 +235,17 @@ instance AmbInst Float {
 wrongCode "Ambiguous type variable a (arising from the use of ambval) prevents the constraint silver_features:AmbInst a from being solved." {
   global ambStr::String = hackUnparse(ambval);
 }
+
+global intIsEqual::(Boolean ::= Integer Integer) = myeq;
+equalityTest(intIsEqual(42, 42), true, Boolean, silver_tests);
+equalityTest(intIsEqual(42, 34), false, Boolean, silver_tests);
+
+function myeq2
+MyEq a => Boolean ::= x::a y::a
+{
+  return myeq(x, y);
+}
+global intIsEqual2::(Boolean ::= Integer Integer) = myeq2;
+equalityTest(intIsEqual2(42, 42), true, Boolean, silver_tests);
+equalityTest(intIsEqual2(42, 34), false, Boolean, silver_tests);
+
