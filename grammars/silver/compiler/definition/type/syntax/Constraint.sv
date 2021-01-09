@@ -60,17 +60,18 @@ top::Constraint ::= c::QNameType t::TypeExpr
     | _ -> []
     end;
   
-  top.defs <-
+  local instDcl::DclInfo =
     case top.constraintSigName, top.instanceHead of
-    | just(sigfn), _ -> [sigConstraintDef(top.grammarName, top.location, fName, t.typerep, sigfn)]
-    | nothing(), just(_) -> [instConstraintDef(top.grammarName, top.location, fName, t.typerep)]
-    | _, _ ->
-      [instSuperDef(
-        top.grammarName, top.location, fName,
-        currentInstDcl(error("Class name shouldn't be needed"), t.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location),
-        t.typerep)]
+    | just(sigfn), _ -> sigConstraintDcl(fName, t.typerep, sigfn, sourceGrammar=top.grammarName, sourceLocation=top.location)
+    | nothing(), just(_) -> instConstraintDcl(fName, t.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location)
+    | _, _ -> instSuperDcl(
+      fName,
+      currentInstDcl(error("Class name shouldn't be needed"), t.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location),
+      t.typerep,
+      sourceGrammar=top.grammarName, sourceLocation=top.location)
     end;
-  top.defs <- transitiveSuperDefs(top.env, t.typerep, [], fName);
+  top.defs <- [tcInstDef(instDcl)];
+  top.defs <- transitiveSuperDefs(top.env, t.typerep, [], fName, instDcl);
 
   top.lexicalTyVarKinds <-
     case t of
@@ -105,18 +106,20 @@ Boolean ::= c1::Context c2::Context
 }
 
 function transitiveSuperDefs
-[Def] ::= env::Decorated Env ty::Type seenClasses::[String] className::String
+[Def] ::= env::Decorated Env ty::Type seenClasses::[String] className::String instDcl::DclInfo
 {
   local dcls::[DclInfo] = getTypeDcl(className, env);
   local dcl::DclInfo = head(dcls);
   dcl.givenInstanceType = ty;
   local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
+  local superInstDcl::DclInfo =
+    instSuperDcl(className, instDcl, ty, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation);
   return
     if null(dcls) || containsBy(stringEq, dcl.fullName, seenClasses)
     then []
     else
       -- This might introduce duplicate defs in "diamond subclassing" cases,
       -- but that shouldn't actually be an issue besides the (minor) added lookup overhead.
-      map(\ c::Context -> c.contextSuperDef(dcl.sourceGrammar, dcl.sourceLocation, dcl), dcl.superContexts) ++
-      concat(map(transitiveSuperDefs(env, ty, dcl.fullName :: seenClasses, _), superClassNames));
+      map(\ c::Context -> c.contextSuperDef(dcl.sourceGrammar, dcl.sourceLocation, instDcl), dcl.superContexts) ++
+      concat(map(transitiveSuperDefs(env, ty, dcl.fullName :: seenClasses, _, superInstDcl), superClassNames));
 }
