@@ -167,12 +167,12 @@ e::Expr ::= l::Expr r::Expr
   e.c_code = s"(${l.c_code} / ${r.c_code})";  
 }
 
-aspect production eq
+aspect production eqOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.c_code = s"(${l.c_code} == ${r.c_code})";  
 }
-aspect production lt
+aspect production ltOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.c_code = s"(${l.c_code} < ${r.c_code})";  

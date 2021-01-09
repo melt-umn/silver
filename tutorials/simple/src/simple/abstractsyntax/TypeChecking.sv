@@ -150,9 +150,9 @@ Boolean ::= t::Type
 -- Relational and Logical Operations
 ------------------------------------ 
 {- Because of forwarding in Expr.sv, we do not need to write aspect
-   productions for "or", "neq", "lte", "gt", or "gte", only these below.
+   productions for "or", "neqOp", "lteOp", "gtOp", or "gteOp", only these below.
 -}
-aspect production eq
+aspect production eqOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.type = booleanType();
@@ -163,7 +163,7 @@ e::Expr ::= l::Expr r::Expr
                else [err(locUnknown(), "Expression \"" ++ show(100,r.pp) ++ 
                       "\" must be of type Integer or Float.\n")]);
 }
-aspect production lt
+aspect production ltOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.type = booleanType();
