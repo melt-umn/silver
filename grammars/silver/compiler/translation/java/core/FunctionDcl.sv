@@ -46,7 +46,7 @@ String ::= whatGrammar::String whatName::String whatSig::NamedSignature whatResu
   local localVar :: String = 
     s"count_local__ON__${makeIdName(whatGrammar)}_${whatName}";
 
-  local commaIfArgs :: String = if length(namedSig.contexts) + length(whatSig.inputElements) != 0 then "," else "";
+  local commaIfArgs :: String = if length(whatSig.contexts) + length(whatSig.inputElements) != 0 then "," else "";
 
   return s"""
 package ${makeName(whatGrammar)};
