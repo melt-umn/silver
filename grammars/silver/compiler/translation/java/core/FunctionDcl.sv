@@ -16,7 +16,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   local argsAccess :: String =
     implode(", ", map((.contextRefElem), namedSig.contexts) ++ map((.childRefElem), namedSig.inputElements));
 
-  local commaIfArgs :: String = if length(namedSig.inputElements)!=0 then "," else "";
+  local commaIfArgs :: String = if length(namedSig.contexts) + length(namedSig.inputElements)!=0 then "," else "";
 
   local funBody :: String =
 s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate(originCtx);
