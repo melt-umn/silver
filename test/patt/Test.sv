@@ -131,7 +131,7 @@ wrongCode "pattern expression should have type" {
   return match ta return Maybe<Eq<a b>> with
           arrow(aa, ab) ->
             match tb return Maybe<Eq<a b>> with
-              arrow(ba, bb) -> just(refl)
+              arrow(ba, bb) -> just(refl())
               else -> error("")
             end
           else -> error("")
