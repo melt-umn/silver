@@ -143,6 +143,18 @@ function nubBy
 }
 
 {--
+ - Removes all duplicates from a list.
+ -
+ - @param xs  The list to remove duplicates from
+ - @return  A list containing no duplicates, according to ==.
+ -}
+function nub
+Eq a => [a] ::= xs::[a]
+{
+  return nubBy(eq, xs);
+}
+
+{--
  - Removes all instances of an element from a list.
  -
  - @param eq  The equality function to use
@@ -158,6 +170,19 @@ function removeBy
 }
 
 {--
+ - Removes all instances of an element from a list.
+ -
+ - @param x  The element to remove
+ - @param xs  The list to remove the element from
+ - @return  A list with no remaining instances of 'x' according to ==
+ -}
+function remove
+Eq a => [a] ::= x::a  xs::[a]
+{
+  return removeBy(eq, x, xs);
+}
+
+{--
  - Removes all instances of several elements from a list: xs - ys
  -
  - @param eq  The equality function to use
@@ -170,6 +195,19 @@ function removeAllBy
 {
  return if null(ys) then xs
         else removeAllBy(eq, tail(ys), removeBy(eq, head(ys), xs));
+}
+
+{--
+ - Removes all instances of several elements from a list: xs - ys
+ -
+ - @param ys  The list of elements to remove
+ - @param xs  The list to remove elements from
+ - @return  A list with no remaining instances in 'ys' according to 'eq'
+ -}
+function removeAll
+Eq a => [a] ::= ys::[a]  xs::[a]
+{
+  return removeAllBy(eq, ys, xs);
 }
 
 {--
@@ -307,6 +345,13 @@ function sortBy
 {
   return sortByHelp(lte, lst, length(lst));
 }
+
+function sort
+Ord a => [a] ::= lst::[a]
+{
+  return sortByHelp(lte, lst, length(lst));
+}
+
 function sortByHelp -- do not use
 [a] ::= lte::(Boolean ::= a a) lst::[a] upTo::Integer
 {
@@ -379,6 +424,12 @@ function unionBy
          ++ unionBy(eq, tail(l), r);
 }
 
+function union
+Eq a => [a] ::= l::[a] r::[a]
+{
+  return unionBy(eq, l, r);
+}
+
 function intersectBy
 [a] ::= eq::(Boolean ::= a a) l::[a] r::[a]
 {
@@ -390,10 +441,22 @@ function intersectBy
          ++ intersectBy(eq, tail(l), r);
 }
 
+function intersect
+Eq a => [a] ::= l::[a] r::[a]
+{
+  return intersectBy(eq, l, r);
+}
+
 function unionsBy
 [a] ::= eq::(Boolean ::= a a) ss::[[a]]
 {
   return nubBy(eq, concat(ss));
+}
+
+function unions
+Eq a => [a] ::= ss::[[a]]
+{
+  return nub(concat(ss));
 }
 
 function powerSet

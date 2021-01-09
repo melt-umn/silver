@@ -144,3 +144,7 @@ instance Eq a, Eq b => Eq Either<a b> {
     | _, _ -> false
     end;
 }
+
+instance Eq Unit {
+  eq = \ Unit Unit -> true;
+}

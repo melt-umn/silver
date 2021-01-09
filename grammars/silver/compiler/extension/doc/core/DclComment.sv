@@ -32,7 +32,7 @@ top::DclCommentComponents ::=
 concrete production componentLink
 top::DclCommentComponent ::= '@link' '[' id::QName ']'
 {
-  local dclInfo::DocDclInfo = head(lookup(id.lookupValue.fullName, top.docEnv));
+  local dclInfo::DocDclInfo = head(tm:lookup(id.lookupValue.fullName, top.docEnv));
   top.body = "[" ++ dclInfo.id ++ "](" ++ dclInfo.path ++ ")";
 }
 

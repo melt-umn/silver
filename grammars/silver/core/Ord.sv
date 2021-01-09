@@ -1,28 +1,19 @@
 grammar silver:core;
-
-nonterminal Ordering;
-production ordLT top::Ordering ::= {}
-production ordEQ top::Ordering ::= {}
-production ordGT top::Ordering ::= {}
-
 class Eq a => Ord a {
-  compare :: (Ordering ::= a a) = \ x::a y::a ->
-    if x == y then ordEQ() else if x <= y then ordLT() else ordGT();
+  compare :: (Integer ::= a a) = \ x::a y::a ->
+    if x == y then 0 else if x <= y then -1 else 1;
   
-  lt :: (Boolean ::= a a) = \ x::a y::a ->
-    case compare(x, y) of ordLT() -> true | _ -> false end;
-  lte :: (Boolean ::= a a) = \ x::a y::a ->
-    case compare(x, y) of ordGT() -> false | _ -> true end;
-  gt :: (Boolean ::= a a) = \ x::a y::a ->
-    case compare(x, y) of ordGT() -> true | _ -> false end;
-  gte :: (Boolean ::= a a) = \ x::a y::a ->
-    case compare(x, y) of ordLT() -> false | _ -> true end;
+  lt :: (Boolean ::= a a) = \ x::a y::a -> compare(x, y) < 0;
+  lte :: (Boolean ::= a a) = \ x::a y::a -> compare(x, y) <= 0;
+  gt :: (Boolean ::= a a) = \ x::a y::a -> compare(x, y) > 0;
+  gte :: (Boolean ::= a a) = \ x::a y::a -> compare(x, y) >= 0;
   
   max :: (a ::= a a) = \ x::a y::a -> if x <= y then y else x;
   min :: (a ::= a a) = \ x::a y::a -> if x <= y then y else x;
 }
 
 instance Ord Integer {
+  compare = \ x::Integer y::Integer -> x - y;
   lt = ltInteger;
   lte = lteInteger;
   gt = gtInteger;
@@ -187,4 +178,40 @@ Boolean ::= x::TerminalId y::TerminalId
   return error("Foreign function");
 } foreign {
   "java" : return "(%x% >= (int)%y%)";
+}
+
+instance Ord a => Ord [a] {
+  lte = \ x::[a] y::[a] ->
+    case x, y of
+    | h1::t1, h2::t2 -> h1 <= h2 && t1 <= t2
+    | [], _ -> true
+    | _, _ -> false
+    end;
+}
+
+instance Ord a => Ord Maybe<a> {
+  lte = \ x::Maybe<a> y::Maybe<a> ->
+    case x, y of
+    | just(w), just(z) -> w <= z
+    | nothing(), _ -> true
+    | _, _ -> false
+    end;
+}
+
+instance Ord a, Ord b => Ord Pair<a b> {
+  lte = \ x::Pair<a b> y::Pair<a b> -> x.fst <= y.fst && x.snd <= y.snd;
+}
+
+instance Ord a, Ord b => Ord Either<a b> {
+  compare = \ x::Either<a b> y::Either<a b> ->
+    case x, y of
+    | left(w), left(z) -> compare(w, z)
+    | left(_), right(_) -> -1
+    | right(_), left(_) -> 1
+    | right(w), right(z) -> compare(w, z)
+    end;
+}
+
+instance Ord Unit {
+  compare = \ Unit Unit -> 0;
 }
