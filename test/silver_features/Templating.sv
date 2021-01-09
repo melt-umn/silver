@@ -1,7 +1,7 @@
 
 import silver:testing;
 import silver:langutil:pp;
-import silver:util:deque;
+import silver:util:deque as dq;
 
 -- empty
 equalityTest ( s"""""", "", String, silver_tests ) ;
