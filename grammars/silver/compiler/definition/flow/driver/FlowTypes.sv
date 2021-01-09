@@ -23,12 +23,12 @@ EnvTree<FlowType> ::= flowEnv::Decorated FlowDefs
   local specs :: [Pair<NtName [Pair<String [String]>]>] =
     ntListCoalesce(groupBy(ntListEq, sortBy(ntListLte, flowEnv.specContribs)));
   
-  return rtm:add(map(initialFlowType, specs), rtm:empty(compareString));
+  return rtm:add(map(initialFlowType, specs), rtm:empty());
 }
 function initialFlowType
 Pair<NtName FlowType> ::= x::Pair<NtName [Pair<String [String]>]>
 {
-  return pair(x.fst, g:add(flatMap(toFlatEdges, x.snd), g:empty(compareString)));
+  return pair(x.fst, g:add(flatMap(toFlatEdges, x.snd), g:empty()));
 }
 function ntListLte
 Boolean ::= a::Pair<NtName a>  b::Pair<NtName b>

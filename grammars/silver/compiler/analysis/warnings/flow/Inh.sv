@@ -565,7 +565,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   local diff :: [String] =
     set:toList(set:removeAll(
       inhsForTakingRef(e.typerep.typeName, top.flowEnv),
-      set:add(inhDeps, set:empty(compareString))));
+      set:add(inhDeps, set:empty())));
 
   top.errors <-
     if null(e.errors)

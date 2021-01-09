@@ -77,7 +77,7 @@ top::ProductionGraph ::=
       productionGraph(prod, lhsNt, flowTypeVertexes, transitiveClosure, suspectEdges, stitchPoints) end;
     
   top.edgeMap = g:edgesFrom(_, graph);
-  top.suspectEdgeMap = lookupAllBy(equalFlowVertex, _, suspectEdges);
+  top.suspectEdgeMap = lookupAll(_, suspectEdges);
   
   top.cullSuspect = 
     -- this potentially introduces the same edge twice, but that's a nonissue

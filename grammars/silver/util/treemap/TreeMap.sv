@@ -6,9 +6,18 @@ grammar silver:util:treemap;
 type Map<a b> foreign;
 
 {--
- - Returns a new, empty, multimap using the specified comparator.
+ - Returns a new, empty, multimap using Ord for comparison.
  -}
 function empty
+Ord a => Map<a b> ::=
+{
+  return emptyWith(compare);
+}
+
+{--
+ - Returns a new, empty, multimap using the specified comparator.
+ -}
+function emptyWith
 Map<a b> ::= comparator::(Integer ::= a a)
 {
   return error("NYI");

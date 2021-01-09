@@ -6,9 +6,18 @@ grammar silver:util:treeset;
 type Set<a> foreign;
 
 {--
- - Returns a new, empty, set using the specified comparator.
+ - Returns a new, empty, set using Ord for comparison.
  -}
 function empty
+Ord a => Set<a> ::=
+{
+  return emptyWith(compare);
+}
+
+{--
+ - Returns a new, empty, set using the specified comparator.
+ -}
+function emptyWith
 Set<a> ::= comparator::(Integer ::= a a)
 {
   return error("NYI");
