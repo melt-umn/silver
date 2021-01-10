@@ -1,6 +1,8 @@
 grammar silver:compiler:extension:rewriting;
 
-imports silver:rewrite;
+imports silver:core hiding id;
+
+imports silver:rewrite hiding repeat;
 imports silver:compiler:metatranslation;
 imports silver:langutil:pp;
 
