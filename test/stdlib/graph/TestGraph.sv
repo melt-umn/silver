@@ -4,18 +4,13 @@ import silver:util:graph as g;
 import silver:util:treeset as set;
 import stdlib;
 
-function compareInteger
-Integer ::= a::Integer b::Integer
-{
-  return a - b;
-}
 function iset
 set:Set<Integer> ::= l::[Integer]
 {
-  return set:add(l, set:empty(compareInteger));
+  return set:add(l, set:empty());
 }
 
-global e :: g:Graph<Integer> = g:empty(compareInteger);
+global e :: g:Graph<Integer> = g:empty();
 
 global g1 :: g:Graph<Integer> =
   g:add([

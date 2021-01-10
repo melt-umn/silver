@@ -111,11 +111,20 @@ Boolean ::= x::Boolean y::Boolean
 }
 
 instance Ord String {
+  compare = compareString;
   lt = ltString;
   lte = lteString;
   gt = gtString;
   gte = gteString;
 }
+function compareString
+Integer ::= l::String  r::String
+{
+  return if l <= r then if l == r then 0 else -1 else 1;
+} foreign {
+  "java" : return "Integer.valueOf(%l%.toString().compareTo(%r%.toString()))";
+}
+
 function ltString
 Boolean ::= x::String y::String
 {
@@ -146,10 +155,18 @@ Boolean ::= x::String y::String
 }
 
 instance Ord TerminalId {
+  compare = compareTerminalId;
   lt = ltTerminalId;
   lte = lteTerminalId;
   gt = gtTerminalId;
   gte = gteTerminalId;
+}
+function compareTerminalId
+Integer ::= x::TerminalId y::TerminalId
+{
+  return error("Foreign function");
+} foreign {
+  "java" : return "(%x% - (int)%y%)";
 }
 function ltTerminalId
 Boolean ::= x::TerminalId y::TerminalId

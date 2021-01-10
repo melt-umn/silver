@@ -480,7 +480,7 @@ top::StrategyExpr ::= s::StrategyExpr
         map(
           \ i::Integer ->
             let childI::String = head(drop(i, matchingChildren))
-            in let childIndex::Integer = positionOf(stringEq, childI, map(fst, childAccesses))
+            in let childIndex::Integer = positionOf(childI, map(fst, childAccesses))
             in 
               matchRule(
                 map(

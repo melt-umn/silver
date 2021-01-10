@@ -55,7 +55,7 @@ top::SyntaxRoot ::=
   
   -- Move productions under their nonterminal, and sort the declarations
   production s2 :: Syntax =
-    foldr(consSyntax, nilSyntax(), sortBy(syntaxDclLte, s.cstNormalize));
+    foldr(consSyntax, nilSyntax(), sort(s.cstNormalize));
   s2.cstEnv = s.cstEnv;
   s2.containingGrammar = "host";
   s2.cstNTProds = error("TODO: make this environment not be decorated?"); -- TODO

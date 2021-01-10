@@ -63,7 +63,10 @@ aspect production matchRule_c
 top::MatchRule ::= pt::PatternList _ e::Expr
 {
   -- Awful hack: pattern match type checking is happens on the forward "primitive match".
-  -- However, we 
+  -- However, we are translating on the pattern matching extension syntax,
+  -- so we need the Decorated Expr here.
+  -- Solution: extract the Decorated Exprs from the case expression and compute
+  -- the translation on them.
   top.transform =
     rewriteRule(
       pt.firstTransform,

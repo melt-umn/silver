@@ -75,7 +75,7 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
 
   top.errors <-
     if attr.found &&
-       length(filter(stringEq(attr.synName, _), getSpecifiedSynsForNt(top.onNt.typeName, top.flowEnv))) > 1
+       length(filter(eq(attr.synName, _), getSpecifiedSynsForNt(top.onNt.typeName, top.flowEnv))) > 1
     then [err(attr.location, "duplicate specification of flow type for " ++ attr.name ++ " on " ++ top.onNt.typeName)]
     else [];
 

@@ -271,7 +271,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
     then [err(top.location, "Term rewriting requires import of silver:rewrite")]
     else [];
   
-  -- Can't use an error production here, unfourtunately, due to circular dependency issues.
+  -- Can't use an error production here, unfortunately, due to circular dependency issues.
   top.errors := if !null(localErrors) then localErrors else forward.errors;
 
   thread downSubst, upSubst on top, checkExpr, forward;

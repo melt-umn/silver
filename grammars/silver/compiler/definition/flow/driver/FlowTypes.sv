@@ -21,7 +21,7 @@ function computeInitialFlowTypes
 EnvTree<FlowType> ::= flowEnv::Decorated FlowDefs
 {
   local specs :: [Pair<NtName [Pair<String [String]>]>] =
-    ntListCoalesce(group(sortBy(ntListLte, flowEnv.specContribs)));
+    ntListCoalesce(groupBy(ntListEq, sortBy(ntListLte, flowEnv.specContribs)));
   
   return rtm:add(map(initialFlowType, specs), rtm:empty());
 }

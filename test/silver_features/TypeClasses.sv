@@ -249,3 +249,6 @@ global intIsEqual2::(Boolean ::= Integer Integer) = myeq2;
 equalityTest(intIsEqual2(42, 42), true, Boolean, silver_tests);
 equalityTest(intIsEqual2(42, 34), false, Boolean, silver_tests);
 
+global isSingleDigit::(Boolean ::= String) = contains(_, ["1", "2", "3", "4", "5", "6", "7", "8", "9"]);
+equalityTest(isSingleDigit("5"), true, Boolean, silver_tests);
+equalityTest(isSingleDigit("42"), false, Boolean, silver_tests);

@@ -307,7 +307,7 @@ function takeUntil
          else head(lst) :: takeUntil(f, tail(lst));
 }
 
-function positionOf
+function positionOfBy
 Integer ::= eq::(Boolean ::= a a) x::a xs::[a]
 {
   return positionOfHelper(eq,x,xs,0);
@@ -319,6 +319,12 @@ Integer ::= eq::(Boolean ::= a a) x::a xs::[a] currentPos::Integer
   return if null(xs) then -1
          else if eq(x, head(xs)) then currentPos
          else positionOfHelper(eq, x, tail(xs), currentPos+1);
+}
+
+function positionOf
+Eq a => Integer ::= x::a xs::[a]
+{
+  return positionOfBy(eq, x, xs);
 }
 
 function repeat
