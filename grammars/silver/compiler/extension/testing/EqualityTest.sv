@@ -24,12 +24,6 @@ ag::AGDcl ::= kwd::'equalityTest'
   ag.unparse = "equalityTest (" ++ value.unparse ++ "," ++ expected.unparse ++ ",\n" ++ 
           "              " ++ valueType.unparse ++ ", " ++ testSuite.unparse ++ ");\n";
 
-  ag.errors := case equalityTestExpr of
-               | just(_) -> []
-               | nothing() -> 
-                   [err(valueType.location, "Type \"" ++ valueType.unparse ++ "\" not suported on equality tests.")]
-               end;
-
   local attribute errCheck1 :: TypeCheck; 
   local attribute errCheck2 :: TypeCheck; 
   local attribute errCheck3 :: TypeCheck; 
@@ -66,9 +60,6 @@ ag::AGDcl ::= kwd::'equalityTest'
 
   value.frame = globalExprContext(constructAnonymousGraph(value.flowDefs, ag.env, myProds, myFlow), sourceGrammar=ag.grammarName);
   expected.frame = globalExprContext(constructAnonymousGraph(expected.flowDefs, ag.env, myProds, myFlow), sourceGrammar=ag.grammarName);
-  
-
-  ag.errors <- forward.errors;
 
 {- Causes some circularities with the environment. TODO
   forwards to if !errCheck1.typeerror && !errCheck2.typeerror && !errCheck3.typeerror
@@ -121,6 +112,7 @@ ag::AGDcl ::= kwd::'equalityTest'
   local msgref :: Name = name("msg", ag.location);
   local passref :: Name = name("pass", ag.location);
   
+  -- TODO: Rewrite as Silver_AGDcl { ... }
   local absProdCS :: AGDcl =
     productionDcl('abstract', 'production', testNameref,
       productionSignature(
@@ -138,12 +130,12 @@ ag::AGDcl ::= kwd::'equalityTest'
             strCnst("Test at " ++ ag.location.unparse ++ " failed.\nChecking that expression\n   " ++
               stringifyString(value.unparse) ++ "\nshould be same as expression\n   " ++
               stringifyString(expected.unparse) ++ "\nActual value:\n   "),
-            toStringValueExpr.fromJust,
+            Silver_Expr { silver:testing:showTestValue(value) },
             strCnst("\nExpected value: \n   "),
-            toStringExpectedExpr.fromJust,
+            Silver_Expr { silver:testing:showTestValue(expected) },
             strCnst("\n")]), ';', location=ag.location),
         attributeDef(concreteDefLHS(qNameId(tref, location=tref.location), location=tref.location), '.', qNameAttrOccur(qNameId(passref, location=passref.location), location=ag.location), '=',
-           equalityTestExpr.fromJust, ';', location=ag.location),
+           Silver_Expr { value == expected }, ';', location=ag.location),
         forwardsTo('forwards', 'to', mkStrFunctionInvocation(ag.location, "defTest", []), ';', location=ag.location)]), '}', location=ag.location), location=ag.location);
 
 {-
@@ -172,78 +164,9 @@ ag::AGDcl ::= kwd::'equalityTest'
               ']', location=ag.location),
             ';', location=ag.location), location=ag.location), '}', location=ag.location), location=ag.location);
 
-
-
-  -- If valueType is a base type (Integer, Float, etc.) or a List whose
-  -- element type is a base type, then we can check for equality.
-  -- With curried functions we could handle nested lists, but not now.
-  local equalityTestExpr :: Maybe<Expr> =
-    mkEqualityTestExprCS(valueType, ag.location);
-
-  local toStringValueExpr :: Maybe<Expr> =
-    mkToStringExprCS(valueType, "value", ag.location);
-  local toStringExpectedExpr :: Maybe<Expr> =
-    mkToStringExprCS(valueType, "expected", ag.location);
-
   local testName :: String = "generatedTest" ++ "_" ++ 
                             substitute(".","_",kwd.filename) ++ "_" ++ 
                             toString(kwd.line) ++ "_" ++ 
                             toString(genInt());
-}
-
--- Oh, boy... this whole pile of code is awful
-
-function functionNameForBaseTypesCS
-Maybe<String> ::= valueType::TypeExpr prefixS::String
-{ 
-  valueType.env = emptyEnv();
-  return
-   case valueType of
-   | integerTypeExpr(_) -> just(prefixS ++ "Integer")
-   | floatTypeExpr(_)   -> just(prefixS ++ "Float")
-   | stringTypeExpr(_)  -> just(prefixS ++ "String")
-   | booleanTypeExpr(_) -> just(prefixS ++ "Boolean")
-   | _ -> nothing()
-   end;
-}
-
-function mkToStringExprCS
-Maybe<Expr> ::= valueType::TypeExpr  exprName::String  l::Location
-{
-  valueType.env = emptyEnv();
-  return
-    case functionNameForBaseTypesCS(valueType, "toStringFrom") of
-    | just(btt) -> just(mkStrFunctionInvocation(l, btt, [mkNameExpr(exprName, l)]))
-    | nothing() -> 
-        case valueType of
-        | listTypeExpr(_,elemType,_) ->
-            case functionNameForBaseTypesCS(elemType,"toStringFrom") of
-            | just(btt) ->
-                just(mkStrFunctionInvocation(l, "toStringFromList", [mkNameExpr(btt, l), mkNameExpr(exprName, l)]))
-            | _ -> nothing()
-            end
-        | _ -> nothing()
-        end 
-    end;
-}
-
-function mkEqualityTestExprCS
-Maybe<Expr> ::= valueType::TypeExpr  l::Location
-{
-  valueType.env = emptyEnv();
-  return
-    case functionNameForBaseTypesCS(valueType, "equals") of
-    | just(btt) -> just(mkStrFunctionInvocation(l, btt, [mkNameExpr("value", l), mkNameExpr("expected", l)]))
-    | nothing() -> 
-        case valueType of
-        | listTypeExpr(_,elemType,_) ->
-            case functionNameForBaseTypesCS(elemType, "equals") of
-            | just(btt) ->
-                just(mkStrFunctionInvocation(l, "equalsList", [mkNameExpr(btt, l), mkNameExpr("value", l), mkNameExpr("expected", l)]))
-            | _ -> nothing()
-            end
-        | _ -> nothing()
-        end 
-    end;
 }
 

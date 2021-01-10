@@ -215,19 +215,19 @@ equalityTest ( unions ([ [1,2], [2,3], [1,4,5,6] ] ), [1,2,3,4,5,6] ,
                 [Integer], core_tests ) ;
 
 
+-- eq
+equalityTest ( emptyIntList == [], true, Boolean, core_tests) ;
+equalityTest ( [1] == [1], true, Boolean, core_tests) ;
+equalityTest ( [1,2] == [1,2], true, Boolean, core_tests) ;
+equalityTest ( [1] == [2], false, Boolean, core_tests) ;
+equalityTest ( [1] == [1,2], false, Boolean, core_tests) ;
+equalityTest ( [1,2] == [], false, Boolean, core_tests) ;
 
----- from lib:extcore!
-equalityTest ( equalsList ( equalsInteger, [], []), true, Boolean, core_tests) ;
-equalityTest ( equalsList ( equalsInteger, [1], [1]), true, Boolean, core_tests) ;
-equalityTest ( equalsList ( equalsInteger, [1,2], [1,2]), true, Boolean, core_tests) ;
-equalityTest ( equalsList ( equalsInteger, [1], [2]), false, Boolean, core_tests) ;
-equalityTest ( equalsList ( equalsInteger, [1], [1,2]), false, Boolean, core_tests) ;
-equalityTest ( equalsList ( equalsInteger, [1,2], []), false, Boolean, core_tests) ;
-
-equalityTest ( notEqualsList ( notEqualsInteger, [], []), false, Boolean, core_tests) ;
-equalityTest ( notEqualsList ( notEqualsInteger, [1], [1]), false, Boolean, core_tests) ;
-equalityTest ( notEqualsList ( notEqualsInteger, [1,2], [1,2]), false, Boolean, core_tests) ;
-equalityTest ( notEqualsList ( notEqualsInteger, [1], [2]), true, Boolean, core_tests) ;
-equalityTest ( notEqualsList ( notEqualsInteger, [1], [1,2]), true, Boolean, core_tests) ;
-equalityTest ( notEqualsList ( notEqualsInteger, [1,2], []), true, Boolean, core_tests) ;
+-- neq
+equalityTest ( emptyIntList != [], false, Boolean, core_tests) ;
+equalityTest ( [1] != [1], false, Boolean, core_tests) ;
+equalityTest ( [1,2] != [1,2], false, Boolean, core_tests) ;
+equalityTest ( [1] != [2], true, Boolean, core_tests) ;
+equalityTest ( [1] != [1,2], true, Boolean, core_tests) ;
+equalityTest ( [1,2] != [], true, Boolean, core_tests) ;
 

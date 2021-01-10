@@ -36,10 +36,10 @@ instance CBaz a => CBar [a]
 {}
 
 global cxi::[Integer] = cx;
-equalityTest(hackUnparse(cxi), "[42]", String, silver_tests);
+equalityTest(cxi, [42], [Integer], silver_tests);
 
 global cxs::[String] = cx;
-equalityTest(hackUnparse(cxs), "[\"hello\"]", String, silver_tests);
+equalityTest(cxs, ["hello"], [String], silver_tests);
 
 global bfii::Integer = bazFromInt(24);
 global bfis::String = bazFromInt(24);
@@ -63,7 +63,7 @@ MyEq a => [a] ::= x::a xs::[a]
 {
   return removeBy(myeq, x, xs);
 }
-equalityTest(hackUnparse(myRemove(3, [1, 2, 3, 4])), "[1, 2, 4]", String, silver_tests);
+equalityTest(myRemove(3, [1, 2, 3, 4]), [1, 2, 4], [Integer], silver_tests);
 
 equality attribute isEqTo, isEq;
 nonterminal EqPair<a b> with isEqTo, isEq;

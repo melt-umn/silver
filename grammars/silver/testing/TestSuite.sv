@@ -1,5 +1,9 @@
 grammar silver:testing ;
 
+imports silver:reflect;
+imports silver:langutil;
+imports silver:langutil:pp;
+
 nonterminal Test 
   with msg, pass, ioIn, ioOut ;
 
@@ -108,4 +112,8 @@ Boolean ::= f::(Boolean ::=)  times::Integer
     f() && repeatTestTimes(f, times - 1);
 }
 
+-- TODO: Use show typeclass
+function showTestValue
+String ::= x::a
+{ return show(80, reflect(x).pp); }
 
