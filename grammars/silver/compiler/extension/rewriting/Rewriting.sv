@@ -239,7 +239,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   
   -- Find the free type variables (i.e. lacking a definition) to add as skolem constants
   local freeTyVars::[String] =
-    filter(\ tv::String -> null(getTypeDcl(tv, top.env)), nubBy(stringEq, ty.lexicalTypeVariables));
+    filter(\ tv::String -> null(getTypeDcl(tv, top.env)), nub(ty.lexicalTypeVariables));
   ty.env = newScopeEnv(addNewLexicalTyVars(top.grammarName, ty.location, [], freeTyVars), top.env);
 
   -- Pattern matching error checking (mostly) happens on what caseExpr forwards to,

@@ -105,7 +105,7 @@ top::SyntaxTerminalModifier ::= prettyName::String
 abstract production termClasses
 top::SyntaxTerminalModifier ::= cls::[String]
 {
-  production allCls :: [String] = unionsBy(stringEq, cls :: lookupStrings(cls, top.superClasses));
+  production allCls :: [String] = unions(cls :: lookupStrings(cls, top.superClasses));
   local allClsRefsL :: [[Decorated SyntaxDcl]] = lookupStrings(allCls, top.cstEnv);
   production allClsRefs :: [Decorated SyntaxDcl] =
     flatMap(\ sds::[Decorated SyntaxDcl] -> if null(sds) then [] else [head(sds)], allClsRefsL);
@@ -134,7 +134,7 @@ top::SyntaxTerminalModifier ::= cls::[String]
 abstract production termSubmits
 top::SyntaxTerminalModifier ::= sub::[String]
 {
-  production allSubs :: [String] = unionsBy(stringEq, sub :: lookupStrings(sub, top.subClasses));
+  production allSubs :: [String] = unions(sub :: lookupStrings(sub, top.subClasses));
   production subRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allSubs, top.cstEnv);
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
@@ -150,7 +150,7 @@ top::SyntaxTerminalModifier ::= sub::[String]
 abstract production termDominates
 top::SyntaxTerminalModifier ::= dom::[String]
 {
-  production allDoms :: [String] = unionsBy(stringEq, dom :: lookupStrings(dom, top.subClasses));
+  production allDoms :: [String] = unions(dom :: lookupStrings(dom, top.subClasses));
   production domRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allDoms, top.cstEnv);
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->

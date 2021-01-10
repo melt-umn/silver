@@ -248,7 +248,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
         case head(rhsRef) of
         | syntaxNonterminal(_,_,_,_,_)
           when !head(rhsRef).hasCustomLayout &&
-               containsBy(stringEq, top.fullName, head(rhsRef).exportedProds) ->
+               contains(top.fullName, head(rhsRef).exportedProds) ->
           [pair(head(rhsRef).fullName, ns.fullName)]
         | _ -> []
         end,

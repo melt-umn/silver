@@ -21,7 +21,7 @@ function computeInitialFlowTypes
 EnvTree<FlowType> ::= flowEnv::Decorated FlowDefs
 {
   local specs :: [Pair<NtName [Pair<String [String]>]>] =
-    ntListCoalesce(groupBy(ntListEq, sortBy(ntListLte, flowEnv.specContribs)));
+    ntListCoalesce(group(sortBy(ntListLte, flowEnv.specContribs)));
   
   return rtm:add(map(initialFlowType, specs), rtm:empty());
 }
@@ -118,7 +118,7 @@ function findBrandNewEdges
   local inhs :: [String] = head(candidates).snd;
   
   -- TODO: we might take '[Pair<String Set<String>>]' insteadof [String] and gain speed?
-  local newinhs :: [String] = removeAllBy(stringEq, set:toList(g:edgesFrom(syn, currentFlowType)), inhs);
+  local newinhs :: [String] = removeAll(set:toList(g:edgesFrom(syn, currentFlowType)), inhs);
   
   local newEdges :: [Pair<String String>] = map(pair(syn, _), newinhs);
   

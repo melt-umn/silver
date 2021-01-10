@@ -38,7 +38,7 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
     else [];
     
   top.errors <-
-    if containsBy(stringEq, fName, catMaybes(map((.contextClassName), transitiveSuperContexts(top.env, var.typerep, [], fName))))
+    if contains(fName, catMaybes(map((.contextClassName), transitiveSuperContexts(top.env, var.typerep, [], fName))))
     then [err(top.location, "Cycle exists in superclass relationships.")]
     else [];
 

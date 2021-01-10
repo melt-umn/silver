@@ -13,7 +13,7 @@ top::Context ::= cls::String t::Type
   
   -- Check for ambiguous type variables
   local ambTyVars::[TyVar] =
-    removeAllBy(tyVarEqual, resolvedTypeScheme.typerep.freeVariables, map(fst, resolvedSubst.substList));
+    removeAll(resolvedTypeScheme.typerep.freeVariables, map(fst, resolvedSubst.substList));
   
   -- Duplicates are checked at the instance declaration
   top.contextErrors :=

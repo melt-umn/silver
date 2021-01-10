@@ -100,7 +100,7 @@ top::ASTExpr ::= n::String
   top.value =
     fromMaybe(
       error("Unbound variable " ++ n),
-      lookupBy(stringEq, n, top.substitutionEnv));
+      lookup(n, top.substitutionEnv));
 }
 
 abstract production missingArgASTExpr

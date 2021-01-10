@@ -158,7 +158,7 @@ function findAbbrevHelp
 String ::= tv::TyVar  bv::[TyVar]  vn::[String]
 {
   return if null(vn) || null(bv) then "V_" ++ toString(tv.extractTyVarRep)
-         else if tyVarEqual(tv, head(bv))
+         else if tv == head(bv)
               then head(vn)
               else findAbbrevHelp(tv, tail(bv), tail(vn));
 }

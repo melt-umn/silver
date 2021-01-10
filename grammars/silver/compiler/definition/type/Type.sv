@@ -295,12 +295,6 @@ TyVar ::= k::Integer
   return tyVar(k, genInt());
 }
 
-function tyVarEqual
-Boolean ::= tv1::TyVar tv2::TyVar
-{
-  return tv1.kindArity == tv2.kindArity && tv1.extractTyVarRep == tv2.extractTyVarRep;
-}
-
 function freshType
 Type ::=
 {
@@ -311,5 +305,10 @@ function newSkolemConstant
 Type ::=
 {
   return skolemType(freshTyVar(0));
+}
+
+-- TODO: Replace with propagated default instance
+instance Eq TyVar {
+  eq = \ tv1::TyVar tv2::TyVar -> tv1.kindArity == tv2.kindArity && tv1.extractTyVarRep == tv2.extractTyVarRep;
 }
 

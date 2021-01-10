@@ -74,7 +74,7 @@ Substitution ::= s::Substitution
 function findSubst
 Maybe<Type> ::= tv::TyVar s::Substitution
 {
-  return lookupBy(tyVarEqual, tv, s.substList);
+  return lookup(tv, s.substList);
 }
 
 --------------------------------------------------------------------------------

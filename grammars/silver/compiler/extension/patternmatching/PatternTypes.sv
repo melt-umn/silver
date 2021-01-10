@@ -109,7 +109,7 @@ top::Pattern ::= v::Name
   top.unparse = v.name;
   top.errors := [];
   top.errors <-
-    if containsBy(stringEq, v.name, top.patternVarEnv)
+    if contains(v.name, top.patternVarEnv)
     then [err(v.location, "Duplicate pattern variable " ++ v.name)]
     else [];
   top.errors <-

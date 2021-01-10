@@ -9,7 +9,7 @@ function addNewLexicalTyVars_ActuallyVariables
 [Def] ::= gn::String sl::Location lk::[Pair<String Integer>] l::[String]
 {
   return if null(l) then []
-         else aspectLexTyVarDef(gn, sl, head(l), freshTyVar(fromMaybe(0, lookupBy(stringEq, head(l), lk)))) ::
+         else aspectLexTyVarDef(gn, sl, head(l), freshTyVar(fromMaybe(0, lookup(head(l), lk)))) ::
                   addNewLexicalTyVars_ActuallyVariables(gn, sl, lk, tail(l));
 }
 
@@ -21,7 +21,7 @@ aspect production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
 {
   production attribute allLexicalTyVars :: [String];
-  allLexicalTyVars = nubBy(stringEq, ns.lexicalTypeVariables);
+  allLexicalTyVars = nub(ns.lexicalTypeVariables);
   
   sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
   -- TODO sigDefs <- realSig.contexts as defs
@@ -31,7 +31,7 @@ aspect production aspectFunctionDcl
 top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody 
 {
   production attribute allLexicalTyVars :: [String];
-  allLexicalTyVars = nubBy(stringEq, ns.lexicalTypeVariables);
+  allLexicalTyVars = nub(ns.lexicalTypeVariables);
   
   sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
   -- TODO sigDefs <- realSig.contexts as defs
@@ -43,13 +43,13 @@ propagate lexicalTyVarKinds on AspectProductionSignature, AspectFunctionSignatur
 aspect production aspectProductionSignature
 top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 {
-  top.lexicalTypeVariables := nubBy(stringEq, lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
+  top.lexicalTypeVariables := nub(lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
 }
 
 aspect production aspectRHSElemCons
 top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
 {
-  top.lexicalTypeVariables := nubBy(stringEq, h.lexicalTypeVariables ++ t.lexicalTypeVariables);
+  top.lexicalTypeVariables := nub(h.lexicalTypeVariables ++ t.lexicalTypeVariables);
 }
 
 aspect production aspectProductionLHSTyped
@@ -67,5 +67,5 @@ top::AspectRHSElem ::= id::Name '::' t::TypeExpr
 aspect production aspectFunctionSignature
 top::AspectFunctionSignature ::= lhs::AspectFunctionLHS '::=' rhs::AspectRHS 
 {
-  top.lexicalTypeVariables := nubBy(stringEq, lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
+  top.lexicalTypeVariables := nub(lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
 }

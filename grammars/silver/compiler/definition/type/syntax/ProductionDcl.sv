@@ -9,7 +9,7 @@ aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
   production attribute allLexicalTyVars :: [String];
-  allLexicalTyVars = nubBy(stringEq, ns.lexicalTypeVariables);
+  allLexicalTyVars = nub(ns.lexicalTypeVariables);
   
   sigDefs <- addNewLexicalTyVars(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
 }
@@ -19,7 +19,7 @@ propagate lexicalTyVarKinds on ProductionSignature, ProductionLHS, ProductionRHS
 aspect production productionSignature
 top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {
-  top.lexicalTypeVariables := nubBy(stringEq, cl.lexicalTypeVariables ++ lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
+  top.lexicalTypeVariables := nub(cl.lexicalTypeVariables ++ lhs.lexicalTypeVariables ++ rhs.lexicalTypeVariables);
 }
 
 propagate lexicalTypeVariables on ProductionLHS, ProductionRHS, ProductionRHSElem excluding productionRHSCons;
@@ -27,6 +27,6 @@ propagate lexicalTypeVariables on ProductionLHS, ProductionRHS, ProductionRHSEle
 aspect production productionRHSCons
 top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 {
-  top.lexicalTypeVariables := nubBy(stringEq, h.lexicalTypeVariables ++ t.lexicalTypeVariables);
+  top.lexicalTypeVariables := nub(h.lexicalTypeVariables ++ t.lexicalTypeVariables);
 }
 

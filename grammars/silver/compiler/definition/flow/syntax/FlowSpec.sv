@@ -206,7 +206,7 @@ top::FlowSpecInh ::= 'decorate'
   top.unparse = "decorate";
   
   local specs :: [Pair<String [String]>] = getFlowTypeSpecFor(top.onNt.typeName, top.flowEnv);
-  local decSpec :: Maybe<[String]> = lookupBy(stringEq, "decorate", specs);
+  local decSpec :: Maybe<[String]> = lookup("decorate", specs);
   
   top.errors <-
     if decSpec.isJust then []

@@ -24,5 +24,5 @@ function terminalSubset
 Boolean ::= ts1::[TerminalId] ts2::[TerminalId]
 {
   -- Probably more efficient than sorting if ts1 is small?
-  return all(map(containsBy(terminalIdEq, _, ts2), ts1));
+  return all(map(contains(_, ts2), ts1));
 }

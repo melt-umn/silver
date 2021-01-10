@@ -48,7 +48,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   production attribute directAntiquoteProductions::[String] with ++;
   directAntiquoteProductions := [];
   antiquoteTranslation <-
-    if containsBy(stringEq, prodName, directAntiquoteProductions)
+    if contains(prodName, directAntiquoteProductions)
     then
       let wrapped::AST = 
         case children of
@@ -89,7 +89,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         end;
       -- pair(nonterminal short name, pair(cons production name, append production name))
       trans::Pair<String Pair<String String>> <-
-        lookupBy(stringEq, antiquote.fst, collectionAntiquoteProductions);
+        lookup(antiquote.fst, collectionAntiquoteProductions);
       if prodName == trans.snd.fst then just(unit()) else nothing(); -- require prodName == trans.snd.fst
       return
         case reify(antiquote.snd.fst) of
@@ -103,13 +103,13 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     do (bindMaybe, returnMaybe) {
       -- pair(nonterminal short name, pair(cons production name, append production name))
       trans::Pair<String Pair<String String>> <-
-        lookupBy(stringEq, prodName, collectionAntiquoteProductions);
+        lookup(prodName, collectionAntiquoteProductions);
       return
         errorExpr([err(givenLocation, s"$$${trans.fst} may only occur as a member of ${trans.fst}")], location=givenLocation);
     };
   
   antiquoteTranslation <-
-    if containsBy(stringEq, prodName, patternAntiquoteProductions)
+    if contains(prodName, patternAntiquoteProductions)
     then just(errorExpr([err(givenLocation, "Pattern antiquote is invalid in expression context")], location=givenLocation))
     else nothing();
   
@@ -128,7 +128,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   production attribute patternAntiquoteProductions::[String] with ++;
   patternAntiquoteProductions := [];
   patternAntiquoteTranslation <-
-    if containsBy(stringEq, prodName, patternAntiquoteProductions)
+    if contains(prodName, patternAntiquoteProductions)
     then
       let wrapped::AST = 
         case children of
@@ -154,7 +154,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     else nothing();
   
   patternAntiquoteTranslation <-
-    if containsBy(stringEq, prodName, directAntiquoteProductions ++ map(fst, collectionAntiquoteProductions))
+    if contains(prodName, directAntiquoteProductions ++ map(fst, collectionAntiquoteProductions))
     then just(errorPattern([err(givenLocation, "Expression antiquote is invalid in pattern context")], location=givenLocation))
     else nothing();
   

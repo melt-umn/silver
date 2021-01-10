@@ -40,7 +40,7 @@ partial strategy attribute genericStep =
   | someTraversal(fail()) -> fail(location=top.location, genName=top.genName)
   | oneTraversal(fail()) -> fail(location=top.location, genName=top.genName)
   | prodTraversal(_, ss) when ss.containsFail -> fail(location=top.location, genName=top.genName)
-  | recComb(n, s) when !containsBy(stringEq, n.name, s.freeRecVars) -> s
+  | recComb(n, s) when !contains(n.name, s.freeRecVars) -> s
   | inlined(_, fail()) -> fail(location=top.location, genName=top.genName)
   end;
 -- Nonterminal-dependent, production-independent optimizations
@@ -50,7 +50,7 @@ partial strategy attribute ntStep =
   -- strategies would not permit any additional simplification.
   | partialRef(n) when
       n.matchesFrame && n.attrDcl.isStrategy &&
-      !containsBy(stringEq, n.attrDcl.fullName, top.inlinedStrategies) &&
+      !contains(n.attrDcl.fullName, top.inlinedStrategies) &&
       null(n.attrDcl.givenRecVarNameEnv) ->
     inlined(n, n.attrDcl.strategyExpr, location=top.location, genName=top.genName)
   | partialRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
@@ -664,7 +664,7 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
     if top.outerAttr.isJust
     then s.liftedStrategies
     else [pair(sName, s)];
-  top.freeRecVars := removeBy(stringEq, n.name, s.freeRecVars);
+  top.freeRecVars := remove(n.name, s.freeRecVars);
   top.isTotal =
     decorate s with {
       recVarTotalEnv = pair(n.name, true) :: s.recVarTotalEnv;
@@ -823,13 +823,13 @@ top::StrategyExpr ::= id::QName
   
   -- Forwarding depends on env here, these must be computed without env
   propagate liftedStrategies;
-  top.attrRefName = just(fromMaybe(id.name, lookupBy(stringEq, id.name, top.recVarNameEnv)));
+  top.attrRefName = just(fromMaybe(id.name, lookup(id.name, top.recVarNameEnv)));
   top.isId = false;
   
   local attrDcl::DclInfo = id.lookupAttribute.dcl;
   attrDcl.givenNonterminalType = error("Not actually needed"); -- Ugh environment needs refactoring
   forwards to
-    if lookupBy(stringEq, id.name, top.recVarNameEnv).isJust
+    if lookup(id.name, top.recVarNameEnv).isJust
     then recVarRef(id, genName=top.genName, location=top.location)
     else if !null(id.lookupAttribute.errors)
     then errorRef(id.lookupAttribute.errors, id, genName=top.genName, location=top.location)
@@ -854,8 +854,8 @@ top::StrategyExpr ::= id::Decorated QName
   top.unparse = id.unparse;
   
   propagate liftedStrategies;
-  top.attrRefName = lookupBy(stringEq, id.name, top.recVarNameEnv);
-  top.isTotal = lookupBy(stringEq, id.name, top.recVarTotalEnv).fromJust;
+  top.attrRefName = lookup(id.name, top.recVarNameEnv);
+  top.isTotal = lookup(id.name, top.recVarTotalEnv).fromJust;
   top.freeRecVars <- [id.name];
   
   top.partialTranslation =
@@ -880,7 +880,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
     if !attrDcl.isSynthesized
     then [err(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy, because it is not a synthesized attribute")]
     else case attrTypeScheme.typerep, attrTypeScheme.boundVars of
-    | appType(nonterminalType("silver:core:Maybe", _, _), varType(a1)), [a2] when tyVarEqual(a1, a2) && attrDcl.isSynthesized -> []
+    | appType(nonterminalType("silver:core:Maybe", _, _), varType(a1)), [a2] when a1 == a2 && attrDcl.isSynthesized -> []
     | appType(nonterminalType("silver:core:Maybe", _, _), a), _ when pair(a.baseType, attrDcl.isSynthesized) matches pair(nonterminalType(nt, _, _), true) ->
       if null(getOccursDcl(attrDcl.fullName, nt, top.env))
       then [wrn(attr.location, s"Attribute ${attr.name} cannot be used as a partial strategy, because it doesn't occur on its own nonterminal type ${nt}")]
@@ -915,7 +915,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
     if !attrDcl.isSynthesized
     then [err(attr.location, s"Attribute ${attr.name} cannot be used as a total strategy, because it is not a synthesized attribute")]
     else case attrTypeScheme.typerep.baseType, attrTypeScheme.boundVars of
-    | varType(a1), [a2] when tyVarEqual(a1, a2) -> []
+    | varType(a1), [a2] when a1 == a2 -> []
     | nonterminalType(nt, _, _), _ ->
       if null(getOccursDcl(attrDcl.fullName, nt, top.env))
       then [wrn(attr.location, s"Attribute ${attr.name} cannot be used as a total strategy, because it doesn't occur on its own nonterminal type ${nt}")]

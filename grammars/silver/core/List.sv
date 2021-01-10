@@ -129,6 +129,19 @@ Boolean ::= eq::(Boolean ::= a a)  elem::a  lst::[a]
 }
 
 {--
+ - Determine if an element appears in a list.
+ -
+ - @param elem  The element to search for
+ - @param lst  The list to search
+ - @return  True if == is true for some element of the list, false otherwise.
+ -}
+function contains
+Eq a => Boolean ::= elem::a  lst::[a]
+{
+  return containsBy(eq, elem, lst);
+}
+
+{--
  - Removes all duplicates from a list.
  -
  - @param eq  The equality function to use
@@ -400,6 +413,12 @@ Pair<[a] [a]> ::= eq::(Boolean ::= a a) f::a l::[a]
          then pair([], l)
          else pair(head(l) :: recurse.fst, recurse.snd);
 }
+
+function group
+Eq a => [[a]] ::= l::[a]
+{
+  return groupBy(eq, l);
+}  
 
 {--
  - Inserts the separator in between all elements of the list.

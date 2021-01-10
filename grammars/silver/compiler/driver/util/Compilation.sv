@@ -91,6 +91,6 @@ Pair<String Decorated RootSpec> ::= r::Decorated RootSpec
 function keepGrammars
 [Decorated RootSpec] ::= keep::[String] d::[Decorated RootSpec]
 {
-  return if null(d) then [] else (if containsBy(stringEq, head(d).declaredName, keep) then [head(d)] else []) ++ keepGrammars(keep, tail(d));
+  return if null(d) then [] else (if contains(head(d).declaredName, keep) then [head(d)] else []) ++ keepGrammars(keep, tail(d));
 }
 

@@ -46,7 +46,7 @@ action {
 }
 
 disambiguate KnownTerm, UnknownTerm {
-  pluck if containsBy(stringEq, lexeme, knownlist) then KnownTerm else UnknownTerm;
+  pluck if contains(lexeme, knownlist) then KnownTerm else UnknownTerm;
 }
 
 

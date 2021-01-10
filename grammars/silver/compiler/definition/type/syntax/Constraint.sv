@@ -88,7 +88,7 @@ function transitiveSuperContexts
   dcl.givenInstanceType = ty;
   local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
   return
-    if null(dcls) || containsBy(stringEq, dcl.fullName, seenClasses)
+    if null(dcls) || contains(dcl.fullName, seenClasses)
     then []
     else unionsBy(
       sameSuperContext,
@@ -115,7 +115,7 @@ function transitiveSuperDefs
   local superInstDcl::DclInfo =
     instSuperDcl(className, instDcl, ty, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation);
   return
-    if null(dcls) || containsBy(stringEq, dcl.fullName, seenClasses)
+    if null(dcls) || contains(dcl.fullName, seenClasses)
     then []
     else
       -- This might introduce duplicate defs in "diamond subclassing" cases,

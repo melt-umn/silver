@@ -55,7 +55,7 @@ equalityTest(showRes(rewriteWith(s4, pair(42, 42))), "silver:core:pair(42, 17)",
 
 global s5::s:Strategy =
   rule on Pair<Integer String> of
-  | pair(n, s) when all(map(containsBy(stringEq, _, ["1", "2", "3", "4", "5", "6", "7", "8", "9"]), explode("", s))) ->
+  | pair(n, s) when all(map(contains(_, ["1", "2", "3", "4", "5", "6", "7", "8", "9"]), explode("", s))) ->
     pair(toInteger(s), toString(n))
   | a -> a
   end;
@@ -66,7 +66,7 @@ equalityTest(showRes(rewriteWith(s5, pair(467, "foo"))), "silver:core:pair(467, 
 global s6::s:Strategy =
   rule on Pair<Integer String> of
   | p -> case p of
-    | pair(n, s) when all(map(containsBy(stringEq, _, ["1", "2", "3", "4", "5", "6", "7", "8", "9"]), explode("", s))) ->
+    | pair(n, s) when all(map(contains(_, ["1", "2", "3", "4", "5", "6", "7", "8", "9"]), explode("", s))) ->
       pair(toInteger(s), toString(n))
     | a -> a
     end
