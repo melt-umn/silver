@@ -20,9 +20,8 @@ top::AGDcl ::= attr::QName ty::TypeExpr ml::MRuleList
 synthesized attribute makeAspect::(AGDcl ::= Expr) occurs on Pattern;
 synthesized attribute aspectDcl::AGDcl occurs on MatchRule;
 synthesized attribute aspectDcls::AGDcls occurs on MRuleList;
-autocopy attribute aspectRhs::Expr occurs on MRuleList, MatchRule;
-autocopy attribute aspectTy::TypeExpr occurs on MRuleList, MatchRule, Pattern;
-autocopy attribute aspectAttr::QName occurs on MRuleList, MatchRule, Pattern;
+autocopy attribute aspectTy::TypeExpr occurs on MRuleList, MatchRule, PatternList, Pattern;
+autocopy attribute aspectAttr::QName occurs on MRuleList, MatchRule, PatternList, Pattern;
 
 
 aspect production mRuleList_one
@@ -42,7 +41,8 @@ top::MRuleList ::= h::MatchRule '|' t::MRuleList
 aspect production matchRule_c
 top::MatchRule ::= pt::PatternList _ e::Expr
 {
- top.aspectDcl = head(pt.patternList).makeAspect(top.aspectRhs);
+
+ top.aspectDcl = head(pt.patternList).makeAspect(e);
 }
 
 aspect default production
@@ -54,17 +54,22 @@ top::MatchRule ::=
 
 }
 
+-- In the Case.sv file (in silver/compiler/extensions/patternmatching) there's a
+-- groupMRules function which groups AbstractMatchRule by production
+
 aspect production prodAppPattern_named
 top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 {
+  local rhs::AspectRHS = aspectRHSElemNil(location=top.location);
   top.makeAspect = \rhsExpr::Expr ->
-     Silver_AGDcl {
-       aspect production $QName{prod}
-       top::$TypeExpr{top.aspectTy} ::=
-       { top.$QName{top.aspectAttr} = $Expr{rhsExpr}; }
-     };
+      Silver_AGDcl {
+        aspect production $QName{prod}
+        top::$TypeExpr{top.aspectTy} ::=
+        { top.$QName{top.aspectAttr} = $Expr{rhsExpr}; }
+      };
 
 }
+
 
 aspect production wildcPattern
 top::Pattern ::= '_'
@@ -73,9 +78,8 @@ top::Pattern ::= '_'
     Silver_AGDcl {
       aspect default production
       top::$TypeExpr{top.aspectTy} ::=
-      {
-        top.$QName{top.aspectAttr} = $Expr{rhsExpr}; }
-      };
+      { top.$QName{top.aspectAttr} = $Expr{rhsExpr}; }
+    };
 
 }
 
@@ -89,40 +93,40 @@ top::Pattern ::=
 }
 
 
-function generateAspectExprFromMatch
-AGDcl ::= ty::TypeExpr attr::QName mRule::AbstractMatchRule
- {
-   local rhsExpr::Expr = case mRule of
-   | matchRule(_,_,e) -> e
-   end;
+-- function generateAspectExprFromMatch
+-- AGDcl ::= ty::TypeExpr attr::QName mRule::AbstractMatchRule
+--  {
+--    local rhsExpr::Expr = case mRule of
+--    | matchRule(_,_,e) -> e
+--    end;
 
-   local patternList::[Decorated Pattern] = case mRule of
-   | matchRule(pl,_,_) -> pl
-   end;
+--    local patternList::[Decorated Pattern] = case mRule of
+--    | matchRule(pl,_,_) -> pl
+--    end;
 
 
-   return case mRule.headPattern of
-   -- Not certain how varPatterns would work here
-   -- | varPattern(_) ->
-   --   Silver_AGDcl {
-   --     aspect default production
-   --     top::$TypeExpr{ty} ::=
-   --     { top.$QName{attr} = $Expr{rhsExpr}; }
-   --   }
-   | prodAppPattern_named(prod,_,_,_,_,_) ->
-     Silver_AGDcl {
-       aspect production $QName{prod}
-       top::$TypeExpr{ty} ::=
-       { top.$QName{attr} = $Expr{rhsExpr}; }
-     }
-   | wildcPattern(_) ->
-     Silver_AGDcl {
-       aspect default production
-       top::$TypeExpr{ty} ::=
-       { top.$QName{attr} = $Expr{rhsExpr}; }
-     }
-   | _ -> errorAGDcl([err(mRule.location,
-                            "This production is not supported for convenience aspect productions." )],
-                         location=mRule.location)
-   end;
-  }
+--    return case mRule.headPattern of
+--    -- Not certain how varPatterns would work here
+--    -- | varPattern(_) ->
+--    --   Silver_AGDcl {
+--    --     aspect default production
+--    --     top::$TypeExpr{ty} ::=
+--    --     { top.$QName{attr} = $Expr{rhsExpr}; }
+--    --   }
+--    | prodAppPattern_named(prod,_,_,_,_,_) ->
+--      Silver_AGDcl {
+--        aspect production $QName{prod}
+--        top::$TypeExpr{ty} ::=
+--        { top.$QName{attr} = $Expr{rhsExpr}; }
+--      }
+--    | wildcPattern(_) ->
+--      Silver_AGDcl {
+--        aspect default production
+--        top::$TypeExpr{ty} ::=
+--        { top.$QName{attr} = $Expr{rhsExpr}; }
+--      }
+--    | _ -> errorAGDcl([err(mRule.location,
+--                             "This production is not supported for convenience aspect productions." )],
+--                          location=mRule.location)
+--    end;
+--   }

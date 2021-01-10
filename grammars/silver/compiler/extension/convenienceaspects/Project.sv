@@ -1,5 +1,6 @@
 grammar silver:compiler:extension:convenienceaspects;
 
+imports silver:compiler:analysis:typechecking:core;
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
