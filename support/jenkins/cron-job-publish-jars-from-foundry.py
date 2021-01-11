@@ -12,12 +12,12 @@ import sys
 from tempfile import TemporaryFile
 from urllib.request import Request, urlopen
 
-WEB_STORE = environ.get("WEB_STORE", "/web/research/melt.cs.umn.edu/downloads/silver-dev/jars")
+WEB_STORE = environ.get(
+    "WEB_STORE", "/web/research/melt.cs.umn.edu/downloads/silver-dev/jars")
 SLACK_WEBHOOK_URL = environ.get("SLACK_WEBHOOK_URL", None)
 
 files = [
     "CopperCompiler.jar",
-    "CopperRuntime.jar",
     "IDEPluginRuntime.jar",
     "SilverRuntime.jar",
     "edu.umn.cs.melt.exts.silver.ableC.composed.with_ableC.jar",
@@ -43,13 +43,16 @@ if SLACK_WEBHOOK_URL is None:
     except:
         pass
 
+
 def send_to_slack(fmt, *args):
     if SLACK_WEBHOOK_URL is None:
         print(fmt.format(*args), file=sys.stderr)
     else:
         urlopen(Request(SLACK_WEBHOOK_URL,
-            data=json.dumps({"text": fmt.format(*args)}).encode("utf-8"),
-            headers={"Content-type": "application/json"}))
+                        data=json.dumps(
+                            {"text": fmt.format(*args)}).encode("utf-8"),
+                        headers={"Content-type": "application/json"}))
+
 
 try:
     old_hashes = None
@@ -60,7 +63,8 @@ try:
         pass
     for name in files:
         with open(join(WEB_STORE, name), "wb") as f:
-            resp = urlopen("https://foundry.remexre.xyz/custom-stable-dump/" + name)
+            resp = urlopen(
+                "https://foundry.remexre.xyz/custom-stable-dump/" + name)
             f.write(resp.read())
     hashes = check_output(["sha256sum"] + files, cwd=WEB_STORE)
     updated = False
