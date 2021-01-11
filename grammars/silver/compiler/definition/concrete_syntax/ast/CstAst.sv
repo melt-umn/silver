@@ -7,6 +7,7 @@ imports silver:compiler:definition:env;
 imports silver:compiler:translation:java:core only makeIdName, makeProdName, makeNTName;
 imports silver:compiler:translation:java:type only transType;
 
+import silver:compiler:definition:concrete_syntax:copper as copper;
 import silver:util:graph as g;
 import silver:util:treemap as tm;
 import silver:util:treeset as s;
@@ -14,7 +15,9 @@ import silver:util:treeset as s;
 {--
  - Encapsulates transformations and analysis of Syntax
  -}
-closed nonterminal SyntaxRoot with cstErrors, xmlCopper;
+closed nonterminal SyntaxRoot with cstErrors, xmlCopper, copperParser;
+
+synthesized attribute copperParser::copper:ParserBean;
 
 {--
  - Translation of a CST AST to Copper XML.
@@ -88,7 +91,35 @@ top::SyntaxRoot ::=
             fromMaybe(searchEnvTree(startnt, s.layoutTerms), customStartLayout),
             s.cstEnv))));
 
-  top.xmlCopper =
+  local startLayoutCopper::[copper:ElementReference] =
+    map((.copperElementReference),
+      map(head,
+        lookupStrings(
+          fromMaybe(searchEnvTree(startnt, s.layoutTerms), customStartLayout),
+          s.cstEnv)));
+
+  local parserClassAuxCode::String =
+    s"""
+          protected List<common.Terminal> tokenList = null;
+
+          public void reset() {
+            tokenList = new ArrayList<common.Terminal>();
+          }
+
+          public List<common.Terminal> getTokens() {
+            return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
+          }
+${s2.lexerClassRefDcls}
+    """;
+  local parserInitCode::String = "reset();";
+  local preambleCode::String = "import java.util.ArrayList;\nimport java.util.List;\n";
+
+  top.copperParser = copper:parserBean(makeCopperName(parsername), parsername,
+    s2.containingGrammar, head(startFound).copperElementReference, startLayoutCopper,
+    parserClassAuxCode, parserInitCode, preambleCode, []);
+
+  top.xmlCopper = unsafeTracePrint(xmlCopper, hackUnparse(top.copperParser));
+  local xmlCopper::String =
 s"""<?xml version="1.0" encoding="UTF-8"?>
 
 <CopperSpec xmlns="http://melt.cs.umn.edu/copper/xmlns/skins/xml/0.9">
@@ -104,19 +135,7 @@ s"""<?xml version="1.0" encoding="UTF-8"?>
 -- This stuff gets dumped onto the outer class:
 --"    <ClassAuxiliaryCode><Code><![CDATA[  ]]></Code></ClassAuxiliaryCode>\n" ++
 
-s"""    <ClassAuxiliaryCode><Code><![CDATA[
-          protected List<common.Terminal> tokenList = null;
-
-          public void reset() {
-            tokenList = new ArrayList<common.Terminal>();
-          }
-
-          public List<common.Terminal> getTokens() {
-            return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
-          }
-          
-${s2.lexerClassRefDcls}
-        ]]></Code></ClassAuxiliaryCode>
+s"""    <ClassAuxiliaryCode><Code><![CDATA[${parserClassAuxCode}]]></Code></ClassAuxiliaryCode>
 """ ++
 -- If not otherwise specified. We always specify.
 --"    <DefaultProductionCode><Code><![CDATA[  ]]></Code></DefaultProductionCode>\n" ++
@@ -132,15 +151,10 @@ ${s2.lexerClassRefDcls}
 --"    <SemanticActionAuxiliaryCode><Code><![CDATA[  ]]></Code></SemanticActionAuxiliaryCode>\n" ++
 
 s"""    <ParserInitCode>
-      <Code><![CDATA[
-        reset();
-      ]]></Code>
+      <Code><![CDATA[${parserInitCode}]]></Code>
     </ParserInitCode>
     <Preamble>
-<Code><![CDATA[
-import java.util.ArrayList;
-import java.util.List;
-]]></Code>
+<Code><![CDATA[${preambleCode}]]></Code>
     </Preamble>
 """ ++
 

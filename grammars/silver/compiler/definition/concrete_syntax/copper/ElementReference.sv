@@ -9,6 +9,6 @@ function elementReference
 ElementReference ::= grammarName::String  name::String
 {
   return error("copper FFI function");
-} {- foreign {
+} foreign {
   "java" : return "common.CopperUtil.makeElementReference(%grammarName%.toString(), %name%.toString())";
-} -}
+}

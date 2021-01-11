@@ -24,6 +24,15 @@ public final class CopperUtil {
     throw new RuntimeException("TODO CopperUtil.makeNonTerminal");
   }
 
+  public static ParserBean
+  makeParserBean(String id, String pp, String grammarName,
+                 CopperElementReference startSymbol,
+                 List<CopperElementReference> startLayout,
+                 String parserClassAuxCode, String parserInitCode,
+                 String preambleCode, List<Grammar> grammars) {
+    throw new RuntimeException("TODO CopperUtil.makeParserBean");
+  }
+
   public static Terminal makeTerminal(String id, String pp, Regex regex,
                                       Integer precedence, Object associativity,
                                       String type_, String code,
