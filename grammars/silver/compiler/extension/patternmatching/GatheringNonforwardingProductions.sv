@@ -3,8 +3,10 @@ grammar silver:compiler:extension:patternmatching;
 
 --Gathering productions which do not forward
 monoid attribute nonforwardingProductions::[DclInfo] with [], ++;
-attribute nonforwardingProductions occurs on AGDcl, AGDcls;
-propagate nonforwardingProductions on AGDcl, AGDcls excluding productionDcl;
+attribute nonforwardingProductions occurs on AGDcl, AGDcls, ImportStmt, ModuleStmt, ImportStmts, ModuleStmts;
+propagate nonforwardingProductions on
+          AGDcl, AGDcls, ImportStmt, ModuleStmt, ImportStmts, ModuleStmts
+          excluding productionDcl, importStmt, importsStmt;
 
 --Pairs of fully-qualified nonterminal name and (fully-qualified production names and number of args)
 autocopy attribute requiredProductionPatterns::[Pair<String [Pair<String Integer>]>];
@@ -27,11 +29,55 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 }
 
 
+
+aspect production importStmt
+top::ImportStmt ::= 'import' m::ModuleExpr ';'
+{
+  top.nonforwardingProductions := defsToNonforwardingProductions(m.defs);
+}
+
+
+aspect production importsStmt
+top::ModuleStmt ::= 'imports' m::ModuleExpr ';'
+{
+  top.nonforwardingProductions := defsToNonforwardingProductions(m.defs);
+}
+
+
+function defsToNonforwardingProductions
+[DclInfo] ::= l::[Def]
+{
+  return
+     case l of
+     | [] -> []
+     | h::t ->
+       case h of
+       | prodDclDef(_) ->
+         case h.dcl of
+         | prodDcl(_, forwardExists) ->
+           if forwardExists
+           then []
+           else [h.dcl]
+         | _ -> []
+         end
+       | _ -> []
+       end ++ defsToNonforwardingProductions(t)
+     end;
+}
+
+
+
+
+
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 {
   ags.requiredProductionPatterns = groupNonforwardingProductions(ags.nonforwardingProductions);
 }
+
+
+
+
 
 
 function groupNonforwardingProductions
