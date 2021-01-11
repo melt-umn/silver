@@ -1,10 +1,8 @@
-imports core;
 imports silver:testing;
 imports silver:reflect;
 imports silver:langutil;
 
 exports silver:testing;
-exports lib:extcore;
 exports silver:reflect;
 exports silver:langutil;
 

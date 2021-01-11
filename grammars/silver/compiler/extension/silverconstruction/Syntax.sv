@@ -88,6 +88,14 @@ top::Pattern ::= '$Pattern' '{' e::Expr '}'
       location=top.location);
 }
 
+
+concrete production antiquoteAspectRHS
+top::AspectRHS ::= '$AspectRHS' '{' e::Expr '}'
+{
+  top.unparse = s"$$AspectRHS{${e.unparse}}";
+  forwards to aspectRHSElemNil(location=top.location);
+}
+
 concrete production antiquoteQName
 top::QName ::= '$QName' '{' e::Expr '}'
 {
