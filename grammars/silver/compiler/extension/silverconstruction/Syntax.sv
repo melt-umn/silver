@@ -43,6 +43,13 @@ top::Expr ::= 'Silver_Pattern' '{' ast::Pattern '}'
   forwards to translate(top.location, reflect(new(ast)));
 }
 
+concrete production quoteTypeExpr
+top::Expr ::= 'Silver_TypeExpr' '{' ast::TypeExpr '}'
+{
+  top.unparse = s"Silver_TypeExpr {${ast.unparse}}";
+  forwards to translate(top.location, reflect(new(ast)));
+}
+
 concrete production antiquoteExpr
 top::Expr ::= '$Expr' '{' e::Expr '}'
 {
