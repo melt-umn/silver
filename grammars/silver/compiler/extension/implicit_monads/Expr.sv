@@ -121,6 +121,18 @@ top::Expr ::= q::Decorated QName
   top.monadRewritten = baseExpr(new(q), location=top.location);
 }
 
+aspect production classMemberReference
+top::Expr ::= q::Decorated QName
+{
+  top.merrors := [];
+  propagate mDownSubst, mUpSubst;
+  top.mtyperep = q.lookupValue.typeScheme.typerep;
+  top.monadicNames = if top.monadicallyUsed
+                     then [baseExpr(new(q), location=top.location)]
+                     else [];
+  top.monadRewritten = baseExpr(new(q), location=top.location);
+}
+
 aspect production globalValueReference
 top::Expr ::= q::Decorated QName
 {
