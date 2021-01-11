@@ -4,10 +4,18 @@ attribute upSubst, downSubst, finalSubst occurs on Expr, ExprInhs, ExprInh, Expr
 
 propagate upSubst, downSubst
    on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs
-   excluding undecoratedAccessHandler, forwardAccess, decoratedAccessHandler,
+   excluding
+     undecoratedAccessHandler, forwardAccess, decoratedAccessHandler,
      and, or, not, ifThenElse, plus, minus, multiply, divide, modulus,
      decorateExprWith, exprInh, presentAppExpr,
      newFunction, terminalConstructor, noteAttachment;
+
+attribute contexts occurs on Expr;
+aspect default production
+top::Expr ::=
+{
+  top.contexts = [];
+}
 
 aspect production productionReference
 top::Expr ::= q::Decorated QName
@@ -15,6 +23,7 @@ top::Expr ::= q::Decorated QName
   contexts.contextLoc = q.location;
   contexts.contextSource = "the use of " ++ q.name;
   top.errors <- contexts.contextErrors;
+  top.contexts = typeScheme.contexts;
 }
 
 aspect production functionReference
@@ -23,6 +32,7 @@ top::Expr ::= q::Decorated QName
   contexts.contextLoc = q.location;
   contexts.contextSource = "the use of " ++ q.name;
   top.errors <- contexts.contextErrors;
+  top.contexts = typeScheme.contexts;
 }
 
 aspect production classMemberReference
@@ -31,12 +41,19 @@ top::Expr ::= q::Decorated QName
   context.contextLoc = q.location;
   context.contextSource = "the use of " ++ q.name;
   top.errors <- context.contextErrors;
+  top.contexts = typeScheme.contexts;
 }
 
 aspect production application
 top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
-  propagate upSubst, downSubst;
+  -- If e's contexts include unrefined ntOrDecTypes at this point (arising from
+  -- es' types, presumably), then refine these ntOrDecTypes types using e's
+  -- contexts in the environment.
+  production infContexts::Contexts = foldContexts(e.contexts);
+  infContexts.env = top.env;
+
+  thread downSubst, upSubst on top, e, es, anns, infContexts, forward;
 }
 
 aspect production access

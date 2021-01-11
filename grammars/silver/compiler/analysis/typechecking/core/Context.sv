@@ -3,7 +3,8 @@ grammar silver:compiler:analysis:typechecking:core;
 inherited attribute contextLoc::Location occurs on Contexts, Context;
 inherited attribute contextSource::String occurs on Contexts, Context;
 monoid attribute contextErrors::[Message] with [], ++ occurs on Contexts, Context;
-propagate contextLoc, contextSource, contextErrors on Contexts;
+attribute downSubst, upSubst occurs on Contexts, Context;
+propagate contextLoc, contextSource, contextErrors, downSubst, upSubst on Contexts;
 
 aspect production instContext
 top::Context ::= cls::String t::Type
@@ -24,4 +25,12 @@ top::Context ::= cls::String t::Type
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
       ambTyVars)
     else requiredContexts.contextErrors;
+  
+  production substT::Type = performSubstitution(t, top.downSubst);
+  top.upSubst =
+    case substT of
+    | ntOrDecType(nt, _) when !null(getInstanceDcl(cls, nt, top.env)) && null(getInstanceDcl(cls, decoratedType(nt), top.env)) ->
+      composeSubst(top.downSubst, substT.unifyInstanceNonterminal)
+    | _ -> top.downSubst
+    end;
 }
