@@ -31,17 +31,23 @@ ag::AGDcl ::= kwd::'equalityTest'
   errCheck2 = check(value.typerep, valueType.typerep);
   errCheck3 = check(expected.typerep, valueType.typerep);
 
-  ag.errors <-
+  production attribute localErrors::[Message] with ++;
+  localErrors := value.errors ++ expected.errors ++ valueType.errors;
+  localErrors <-
     if !errCheck1.typeerror then []
     else [err(value.location, "Type of first and second expressions in equalityTest do not match. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)];
-
-  ag.errors <-
+  localErrors <-
     if !errCheck2.typeerror then []
     else [err(value.location, "Type of initial expression does not match specified type (3rd argument). Instead they are " ++ errCheck2.leftpp ++ " and " ++ errCheck2.rightpp)];
-
-  ag.errors <-
+  localErrors <-
     if !errCheck3.typeerror then []
     else [err(value.location, "Type of second expression does not match specified type (3rd argument). Instead they are " ++ errCheck3.leftpp ++ " and " ++ errCheck3.rightpp)];
+
+  local eqCtx::Context = instContext("silver:core:Eq", valueType.typerep);
+  eqCtx.env = ag.env;
+  eqCtx.contextLoc = valueType.location;
+  eqCtx.contextSource = "equalityTest";
+  localErrors <- eqCtx.contextErrors;
 
   value.downSubst = emptySubst();
   thread downSubst, upSubst on value, expected, errCheck1, errCheck2, errCheck3;
@@ -66,6 +72,7 @@ ag::AGDcl ::= kwd::'equalityTest'
               then appendAGDcl(absProdCS, aspProdCS)
               else emptyAGDcl();
 -}
+  ag.errors := if null(localErrors) then forward.errors else localErrors;
 
   forwards to appendAGDcl(absProdCS, aspProdCS, location=ag.location);
 
