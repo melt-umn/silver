@@ -25,10 +25,13 @@ top::Context ::= cls::String t::Type
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
       ambTyVars)
     else requiredContexts.contextErrors;
-  
+
   production substT::Type = performSubstitution(t, top.downSubst);
   top.upSubst =
     case substT of
+    -- Only refine to the *undecorated* type based on instances, since if left
+    -- unrefined the type will be treated as decorated, anyway (and leaving it
+    -- unrefined will result in less confusing behavior.)
     | ntOrDecType(nt, _) when !null(getInstanceDcl(cls, nt, top.env)) && null(getInstanceDcl(cls, decoratedType(nt), top.env)) ->
       composeSubst(top.downSubst, substT.unifyInstanceNonterminal)
     | _ -> top.downSubst

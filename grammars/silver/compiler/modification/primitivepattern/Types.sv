@@ -71,7 +71,7 @@ top::Type ::= tv::TyVar
   top.refine = 
     case top.refineWith of
     | varType(j) ->
-        if new(tv) == j
+        if tv == j
         then emptySubst()
         else subst(tv, top.refineWith)
     | t when t.kindArity == tv.kindArity ->
@@ -88,7 +88,7 @@ top::Type ::= tv::TyVar
   top.refine = 
     case top.refineWith of
     | skolemType(j) -> 
-        if new(tv) == j
+        if tv == j
         then emptySubst()
         else subst(tv, top.refineWith)
     | t when t.kindArity == tv.kindArity ->

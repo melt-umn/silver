@@ -10,7 +10,7 @@ top::Type ::= tv::TyVar
   top.unify = 
     case top.unifyWith of
     | varType(j) ->
-        if new(tv) == j
+        if tv == j
         then emptySubst()
         else subst(tv, top.unifyWith)
     | t when t.kindArity == tv.kindArity ->
@@ -27,7 +27,7 @@ top::Type ::= tv::TyVar
   top.unify = 
     case top.unifyWith of
     | skolemType(otv) ->
-        if new(tv) == otv
+        if tv == otv
         then emptySubst()
         else errorSubst("Tried to unify skolem constant with incompatible skolem constant")
     | _ -> errorSubst("Tried to unify skolem constant with " ++ prettyType(top.unifyWith))
