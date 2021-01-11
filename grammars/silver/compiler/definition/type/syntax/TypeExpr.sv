@@ -209,6 +209,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
   top.errors <-
     case t.typerep.baseType of
     | nonterminalType(_,_,_) -> []
+    | skolemType(_) -> []
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
     end;
   top.errors <- t.errorsFullyApplied;
