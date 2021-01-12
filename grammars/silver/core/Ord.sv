@@ -1,4 +1,5 @@
 grammar silver:core;
+
 class Eq a => Ord a {
   compare :: (Integer ::= a a) = \ x::a y::a ->
     if x == y then 0 else if x <= y then -1 else 1;

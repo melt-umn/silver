@@ -7,9 +7,10 @@ class Eq a {
 
 equality attribute isEqualTo, isEqual;
 {- TODO: once we have occurence constraints...
-instance isEqual {isEqual} occurs on a => Eq a {
+instance isEqual {isEqualTo} occurs on a => Eq a {
   eq = \ x::a y::a -> decorate x with {isEqualTo = y;}.isEqual;
 }
+Do something similar for Ord.
 -}
 
 instance Eq Integer {
