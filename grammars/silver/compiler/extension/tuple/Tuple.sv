@@ -1,3 +1,5 @@
+-- Note: We consider only tuples containing two or more elements
+
 grammar silver:compiler:extension:tuple;
 
 imports silver:compiler:definition:core;
@@ -13,73 +15,62 @@ synthesized attribute te_translation :: TypeExpr;
 nonterminal TupleList with location, unparse, translation;
 synthesized attribute translation :: Expr;
 
--- Note: We consider only tuples containing two or more elements
-
 concrete production tupleTypeExpr
 top::TypeExpr ::= '(' tes::ListOfTypeExprs ')'
 {
-    top.unparse = "(" ++ tes.unparse ++ ")";
-    forwards to tes.te_translation;
+  top.unparse = "(" ++ tes.unparse ++ ")";
+  forwards to tes.te_translation;
 }
 
 concrete production tupleTypeExpr2
 top::ListOfTypeExprs ::= te1::TypeExpr ',' te2::TypeExpr
 {
-    top.unparse = te1.unparse ++ "," ++ te2.unparse;
-    top.te_translation = Silver_TypeExpr {silver:core:Pair<$TypeExpr{te1} $TypeExpr{te2}>};
-
+  top.unparse = te1.unparse ++ "," ++ te2.unparse;
+  top.te_translation = Silver_TypeExpr {silver:core:Pair<$TypeExpr{te1} $TypeExpr{te2}>};
 }
 
 concrete production tupleTypeExprn
 top::ListOfTypeExprs ::= te::TypeExpr ',' tes::ListOfTypeExprs
 {
-    top.unparse = te.unparse ++ "," ++ tes.unparse;
-    --local temp::TypeExpr = tes.te_translation;
-    top.te_translation = Silver_TypeExpr {silver:core:Pair<$TypeExpr{te} $TypeExpr{tes.te_translation}>};
+  top.unparse = te.unparse ++ "," ++ tes.unparse;
+  top.te_translation = Silver_TypeExpr {silver:core:Pair<$TypeExpr{te} $TypeExpr{tes.te_translation}>};
 }
 
 
 concrete production tuple_c
 top::Expr ::= '(' tl::TupleList ')'
 {
-    top.unparse = "(" ++ tl.unparse ++ ")";
-    forwards to tl.translation;
-
+  top.unparse = "(" ++ tl.unparse ++ ")";
+  forwards to tl.translation;
 }
 
 -- TupleList cases:
-
---   There are two elements in the tuple
+-- There are two elements in the tuple
 concrete production tupleList_2Elements
 top::TupleList ::= fst::Expr ',' snd::Expr
 {
-    top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-    top.translation = Silver_Expr { silver:core:pair($Expr{fst}, $Expr{snd}) };
-
+  top.unparse = fst.unparse ++ ", " ++ snd.unparse;
+  top.translation = Silver_Expr { silver:core:pair($Expr{fst}, $Expr{snd}) };
 }
 
---   There are more than two elements in the tuple
+-- There are more than two elements in the tuple
 concrete production tupleList_nElements
 top::TupleList ::= fst::Expr ',' snd::TupleList
 {
-
-    top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-    top.translation = Silver_Expr { silver:core:pair($Expr{fst}, $Expr{snd.translation}) };
-
+  top.unparse = fst.unparse ++ ", " ++ snd.unparse;
+  top.translation = Silver_Expr { silver:core:pair($Expr{fst}, $Expr{snd.translation}) };
 }
 
 -- Pattern matching on tuples
-
 nonterminal TuplePatternList with location, unparse, patternList;
-
 -- Turns TuplePatternList into [Pattern]
 synthesized attribute patternList :: [Decorated Pattern];
 
 concrete production tuplePattern
 top::Pattern ::= '(' ts::TuplePatternList ')'
 {
-    top.unparse = s"(${ts.unparse})";
-    forwards to ts.asTuplePattern;
+  top.unparse = s"(${ts.unparse})";
+  forwards to ts.asTuplePattern;
 }
 
 synthesized attribute asTuplePattern::Pattern occurs on TuplePatternList;
@@ -87,13 +78,13 @@ synthesized attribute asTuplePattern::Pattern occurs on TuplePatternList;
 concrete production patternTuple_two
 top::TuplePatternList ::= fst::Pattern ',' snd::Pattern
 {
-    top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-    top.asTuplePattern = Silver_Pattern { silver:core:pair($Pattern{fst}, $Pattern{snd}) };
+  top.unparse = fst.unparse ++ ", " ++ snd.unparse;
+  top.asTuplePattern = Silver_Pattern { silver:core:pair($Pattern{fst}, $Pattern{snd}) };
 }
 
 concrete production patternTuple_more
 top::TuplePatternList ::= fst::Pattern ',' snd::TuplePatternList
 {
-    top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-    top.asTuplePattern = Silver_Pattern { silver:core:pair($Pattern{fst}, $Pattern{snd.asTuplePattern}) };
+  top.unparse = fst.unparse ++ ", " ++ snd.unparse;
+  top.asTuplePattern = Silver_Pattern { silver:core:pair($Pattern{fst}, $Pattern{snd.asTuplePattern}) };
 }
