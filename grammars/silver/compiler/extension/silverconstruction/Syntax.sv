@@ -43,6 +43,13 @@ top::Expr ::= 'Silver_Pattern' '{' ast::Pattern '}'
   forwards to translate(top.location, reflect(new(ast)));
 }
 
+concrete production quoteTypeExpr
+top::Expr ::= 'Silver_TypeExpr' '{' ast::TypeExpr '}'
+{
+  top.unparse = s"Silver_TypeExpr {${ast.unparse}}";
+  forwards to translate(top.location, reflect(new(ast)));
+}
+
 concrete production antiquoteExpr
 top::Expr ::= '$Expr' '{' e::Expr '}'
 {
@@ -79,6 +86,14 @@ top::Pattern ::= '$Pattern' '{' e::Expr '}'
     errorPattern(
       [err(top.location, "$Pattern should not occur outside of quoted Silver literal")],
       location=top.location);
+}
+
+
+concrete production antiquoteAspectRHS
+top::AspectRHS ::= '$AspectRHS' '{' e::Expr '}'
+{
+  top.unparse = s"$$AspectRHS{${e.unparse}}";
+  forwards to aspectRHSElemNil(location=top.location);
 }
 
 concrete production antiquoteQName
