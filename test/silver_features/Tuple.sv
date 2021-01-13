@@ -88,3 +88,26 @@ Float ::= tuple::(String, Boolean, (Integer, Float))
 
 equalityTest(studentGPAMatch(("Student1", true, (2020, 3.45))), 3.45, Float, silver_tests);
 equalityTest(studentGPAMatch(("Student2", false, (2020, 2.96))), 2.96, Float, silver_tests);
+
+-- Empty tuple
+equalityTest(hackUnparse(()), "silver:core:unit()", String, silver_tests);
+
+function emptyTupleTest
+Boolean ::= tuple::()
+{
+  return case tuple of
+    | () -> true
+    | _ -> false
+    end;
+}
+
+equalityTest(emptyTupleTest(()), true, Boolean, silver_tests);
+
+-- Tuple creation
+function makeDate
+(Integer, Integer, Integer) ::= day::Integer month::Integer year::Integer
+{
+  return (day, month, year);
+} 
+
+equalityTest(hackUnparse(makeDate(1, 12, 2021)), "silver:core:pair(1, silver:core:pair(12, 2021))", String, silver_tests);
