@@ -3,21 +3,13 @@ grammar silver:compiler:extension:doc:core;
 aspect production nonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
-  top.docs := [bodilessDclCommentItem("nonterminal", id.name ++ tl.unparse ++ " " ++ nm.unparse, "", id.location.filename)];
+  top.docs := [bodilessDclCommentItem("nonterminal", top.grammarName, id.name ++ tl.unparse ++ " " ++ nm.unparse, "", id.location)];
 }
 
 concrete production docNonterminalDcl
-top::AGDcl ::= comment::DclComment quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
+top::AGDcl ::= comment::DocComment_t quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
-  top.docs := [dclCommentItem("nonterminal", id.name ++ tl.unparse ++ " " ++ nm.unparse, "", id.location.filename, comment)];
-
-  forwards to nonterminalDcl(quals, 'nonterminal', id, tl, nm, ';', location=top.location);
-}
-
-concrete production noDocNonterminalDcl
-top::AGDcl ::= noDoc::NoDclComment_t quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
-{
-  top.docs := [];
+  top.docs := [dclCommentItem("nonterminal", top.grammarName, id.name ++ tl.unparse ++ " " ++ nm.unparse, "", id.location, comment)];
 
   forwards to nonterminalDcl(quals, 'nonterminal', id, tl, nm, ';', location=top.location);
 }
@@ -25,21 +17,13 @@ top::AGDcl ::= noDoc::NoDclComment_t quals::NTDeclQualifiers 'nonterminal' id::N
 aspect production nonterminalWithDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers  'with' attrs::QNames ';'
 {
-  top.docs := [bodilessDclCommentItem("nonterminal", id.name ++ tl.unparse ++ " " ++ nm.unparse, "", id.location.filename)];
+  top.docs := [bodilessDclCommentItem("nonterminal", top.grammarName, id.name ++ tl.unparse ++ " " ++ nm.unparse, "", id.location)];
 }
 
 concrete production docNonterminalWithDcl
-top::AGDcl ::= comment::DclComment quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers  'with' attrs::QNames ';'
+top::AGDcl ::= comment::DocComment_t quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers  'with' attrs::QNames ';'
 {
-  top.docs := [dclCommentItem("nonterminal", id.name ++ tl.unparse, "", id.location.filename, comment)];
-
-  forwards to nonterminalWithDcl(quals, 'nonterminal', id, tl, nm, 'with', attrs, ';', location=top.location);
-}
-
-concrete production noDocNonterminalWithDcl
-top::AGDcl ::= noDoc::NoDclComment_t quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers  'with' attrs::QNames ';'
-{
-  top.docs := [];
+  top.docs := [dclCommentItem("nonterminal", top.grammarName, id.name ++ tl.unparse, "", id.location, comment)];
 
   forwards to nonterminalWithDcl(quals, 'nonterminal', id, tl, nm, 'with', attrs, ';', location=top.location);
 }

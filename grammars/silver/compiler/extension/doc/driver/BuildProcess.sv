@@ -9,13 +9,13 @@ import silver:compiler:definition:core;
 import silver:util:cmdargs;
 
 synthesized attribute docGeneration :: Boolean occurs on CmdArgs;
-synthesized attribute docOutOption :: [String] occurs on CmdArgs;
+synthesized attribute docOutOption :: Maybe<String> occurs on CmdArgs;
 
 aspect production endCmdArgs
 top::CmdArgs ::= _
 {
   top.docGeneration = false;
-  top.docOutOption = [];
+  top.docOutOption = nothing();
 }
 
 abstract production docFlag
@@ -28,7 +28,10 @@ top::CmdArgs ::= rest::CmdArgs
 abstract production docOutFlag
 top::CmdArgs ::= loc::String rest::CmdArgs
 {
-  top.docOutOption = loc :: rest.docOutOption;
+  top.docOutOption = case rest.docOutOption of
+    | nothing() -> just(loc)
+    | _ -> error("Duplicate arguments for docOutOption")
+  end;
   forwards to rest;
 }
 
@@ -44,10 +47,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
-  local outputLoc::String =
-    if null(top.config.docOutOption)
-    then benv.silverGen
-    else head(top.config.docOutOption) ++ "/"; -- TODO: check only one item for docOutOption is provided
+  local outputLoc::String = fromMaybe(benv.silverGen, top.config.docOutOption) ++ "/";
   top.postOps <- if top.config.docGeneration then 
                  [genDoc(top.config, grammarsToTranslate, outputLoc)]
                  else [];

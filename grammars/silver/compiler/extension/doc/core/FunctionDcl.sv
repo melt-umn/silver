@@ -3,26 +3,17 @@ grammar silver:compiler:extension:doc:core;
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
-  top.docs := [bodilessDclCommentItem("function", id.name, ns.unparse, id.location.filename)];
+  top.docs := [bodilessDclCommentItem("function", top.grammarName, id.name, ns.unparse, id.location)];
 
-  top.docDcls := [pair(top.grammarName ++ ":" ++ id.name, functionDocDclInfoP(id.name, id.location.filename, nameToPath(top.grammarName ++ ":" ++ id.name)))];
+  top.docDcls := [pair(top.grammarName ++ ":" ++ id.name, docDclInfo(id.name, id.location, nameToPath(top.grammarName ++ ":" ++ id.name)))];
 }
 
 concrete production docFunctionDcl
-top::AGDcl ::= comment::DclComment 'function' id::Name ns::FunctionSignature body::ProductionBody
+top::AGDcl ::= comment::DocComment_t 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
-  top.docs := [dclCommentItem("function", id.name, ns.unparse, id.location.filename, comment)];
+  top.docs := [dclCommentItem("function", top.grammarName, id.name, ns.unparse, id.location, comment)];
 
-  top.docDcls := [pair(top.grammarName ++ ":" ++ id.name, functionDocDclInfoP(id.name, id.location.filename, nameToPath(top.grammarName ++ ":" ++ id.name)))];
+  top.docDcls := [pair(top.grammarName ++ ":" ++ id.name, docDclInfo(id.name, id.location, nameToPath(top.grammarName ++ ":" ++ id.name)))];
 
   forwards to functionDcl('function', id, ns, body, location=top.location);
 }
-
-concrete production noDocFunctionDcl
-top::AGDcl ::= noDoc::NoDclComment_t 'function' id::Name ns::FunctionSignature body::ProductionBody
-{
-  top.docs := [];
-  top.docDcls := [];
-  forwards to functionDcl('function', id, ns, body, location=top.location);
-}
-

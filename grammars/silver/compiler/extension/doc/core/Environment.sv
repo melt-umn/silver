@@ -1,39 +1,14 @@
 grammar silver:compiler:extension:doc:core;
 
-nonterminal DocDclInfo with id, file, path;
+nonterminal DocDclInfo with id, loc, path;
 
 synthesized attribute id :: String;
 synthesized attribute path :: String;
 
-abstract production functionDocDclInfo
-top::DocDclInfo ::= id::String file::String
+abstract production docDclInfo
+top::DocDclInfo ::= id::String loc::Location path::String
 {
   top.id = id;
-  top.file = file;
-  top.path = "";
-}
-
-abstract production functionDocDclInfoP
-top::DocDclInfo ::= id::String file::String path::String
-{
-  top.id = id;
-  top.file = file;
+  top.loc = loc;
   top.path = path;
 }
-
-abstract production productionDocDclInfo
-top::DocDclInfo ::= id::String file::String
-{
-  top.id = id;
-  top.file = file;
-  top.path = "";
-}
-
-abstract production productionDocDclInfoP
-top::DocDclInfo ::= id::String file::String path::String
-{
-  top.id = id;
-  top.file = file;
-  top.path = path;
-}
-

@@ -59,7 +59,7 @@ import silver:util:graph;
 import silver:util:treemap;
 import silver:util:treeset;
 
-{@comment Dummy main function that does nothing @link[dummyFunction] @}
+@{- Dummy main function that does nothing @link[dummyFunction] -}
 function main
 IOVal<Integer> ::= args::[String] ioIn::IO
 {
