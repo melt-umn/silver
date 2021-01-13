@@ -57,7 +57,6 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
   local foo :: String = "addfoo";
 
   top.errors <-
-    (if (stringEq(prod.name, foo)) then error("prodAppPattern:" ++ hackUnparse(prod.lookupValue.typeScheme) ++ "\n\n") else []) ++
     if null(prod.lookupValue.dcls) || length(ps.patternList) == parms then []
     else [err(prod.location, prod.name ++ " has " ++ toString(parms) ++ " parameters but " ++ toString(length(ps.patternList)) ++ " patterns were provided")];
   

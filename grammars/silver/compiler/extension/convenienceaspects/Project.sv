@@ -11,7 +11,6 @@ imports silver:compiler:extension:list;
 --imports silver:compiler:extension:rewriting;
 imports silver:compiler:extension:silverconstruction;
 imports silver:compiler:modification:let_fix;
-imports silver:compiler:modification:lambda_fn;
 imports silver:compiler:modification:defaultattr;
 
 exports silver:compiler:extension:strategyattr:convenience;

@@ -1,22 +1,22 @@
 
 
 synthesized attribute value :: Integer;
+synthesized attribute prettierprint :: String;
 
-nonterminal FooExpr with  value;
+nonterminal FooExpr with prettierprint, value;
 
 abstract production subtractFoo
 sum::FooExpr ::= l::FooExpr r::FooExpr
 {
+ sum.prettierprint = l.prettierprint ++ "-" ++ r.prettierprint;
  sum.value = l.value - r.value;
 }
 
 abstract production addfoo
 sum::FooExpr ::= l::FooExpr r::FooExpr
 {
- sum.value = case l of
-   | subtractFoo(l,r) -> l.value + r.value
-   | _ -> 0
-   end;
+  sum.prettierprint = l.prettierprint ++ "+" ++ r.prettierprint;
+  sum.value = l.value + r.value;
 }
 
 synthesized attribute foopp :: String;
@@ -25,10 +25,16 @@ attribute foopp occurs on FooExpr;
 
 
 aspect foopp on FooExpr of
-| addfoo(_, _) -> "test test"
-| _ -> "unparse test"
+| addfoo(l, _) -> "foo " ++ l.prettierprint
+| subtractFoo(l,r) -> "foo " ++ l.prettierprint ++ "-" ++ r.prettierprint
+| _ -> "default"
 end;
 
+-- aspect unparse on Thing of
+-- | foo([]) -> "emptyFoo"
+-- | foo(h :: t) -> h.unparse ++ " and then " ++ t.unparse
+-- | bar(x) -> x
+-- end;
 -- aspect production addfoo
 -- top::FooExpr ::= _ _
 -- { top.foopp = "test test";}
