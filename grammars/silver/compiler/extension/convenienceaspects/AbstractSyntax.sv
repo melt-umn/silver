@@ -1,5 +1,7 @@
 grammar silver:compiler:extension:convenienceaspects;
 
+import silver:compiler:analysis:typechecking:core;
+
 
 
 -- Should produce/forward-to a list of AgDcl
@@ -54,22 +56,58 @@ top::MatchRule ::=
 
 }
 
--- In the Case.sv file (in silver/compiler/extensions/patternmatching) there's a
--- groupMRules function which groups AbstractMatchRule by production
+
+-- function GenAspectParamFromPattern
+-- AspectRHSElem ::= p::Pattern
+-- {
+--   case p of
+--   |
+
+-- }
+
+-- function GenerateAspectParamsFromPatternList
+-- [AspectRHSElem] ::=  ps::PatternList
+-- {
+--   case ps of
+--   | patternList_one(p) ->
+-- }
+
+
+-- abstract production functionType
+-- top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
 
 aspect production prodAppPattern_named
 top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 {
-  local rhs::AspectRHS = aspectRHSElemNil(location=top.location);
+  -- local rhs::AspectRHS = aspectRHSElemNil(location=top.location);
+
+  local parms :: Integer = prod.lookupValue.typeScheme.arity;
+  local prodType :: Type = prod.lookupValue.typeScheme.typerep;
+  local typeParams :: [Type] = case prodType of
+                             | functionType(_,p,_) -> p
+                             | _ -> []
+                             end;
+                             -- TODO: make error cases for the bits where its not a valid prod
+  local paramsAspect :: AspectRHS =
+        foldr(\asp1::AspectRHSElem asp2::AspectRHS -> aspectRHSElemCons(asp1,asp2, location=top.location),
+              aspectRHSElemNil(location=top.location),
+              (map((\ty::Type -> aspectRHSElemFull(name("generatedAspectArg" ++ toString(genInt()),top.location),
+                                                   ty,
+                                                   location = top.location)),
+                    typeParams)));
+
+
   top.makeAspect = \rhsExpr::Expr ->
       Silver_AGDcl {
         aspect production $QName{prod}
-        top::$TypeExpr{top.aspectTy} ::=
+        top::$TypeExpr{top.aspectTy} ::= $AspectRHS{paramsAspect}
         { top.$QName{top.aspectAttr} = $Expr{rhsExpr}; }
       };
 
 }
 
+-- In the Case.sv file (in silver/compiler/extensions/patternmatching) there's a
+-- groupMRules function which groups AbstractMatchRule by production
 
 aspect production wildcPattern
 top::Pattern ::= '_'

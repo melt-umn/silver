@@ -54,8 +54,10 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
   top.errors := ps.errors ++ nps.errors;
 
   local parms :: Integer = prod.lookupValue.typeScheme.arity;
+  local foo :: String = "addfoo";
 
   top.errors <-
+    (if (stringEq(prod.name, foo)) then error("prodAppPattern:" ++ hackUnparse(prod.lookupValue.typeScheme) ++ "\n\n") else []) ++
     if null(prod.lookupValue.dcls) || length(ps.patternList) == parms then []
     else [err(prod.location, prod.name ++ " has " ++ toString(parms) ++ " parameters but " ++ toString(length(ps.patternList)) ++ " patterns were provided")];
   
@@ -72,13 +74,19 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 concrete production prodAppPattern
 top::Pattern ::= prod::QName '(' ps::PatternList ')'
 {
-  forwards to prodAppPattern_named(prod, '(', ps, ',', namedPatternList_nil(location=top.location), ')', location=top.location);
+   
+  local fwrd::Pattern = prodAppPattern_named(prod, '(', ps, ',', namedPatternList_nil(location=top.location), ')', location=top.location);
+  forwards to fwrd;
+  -- forwards to unsafeTrace(fwrd, print("prodAppPattern:" ++ hackUnparse(fwrd) ++ "\n\n", unsafeIO()));
 }
 
 concrete production propAppPattern_onlyNamed
 top::Pattern ::= prod::QName '(' nps::NamedPatternList ')'
 {
-  forwards to prodAppPattern_named(prod, '(', patternList_nil(location=top.location), ',', nps, ')', location=top.location);
+  local fwrd::Pattern = prodAppPattern_named(prod, '(', patternList_nil(location=top.location), ',', nps, ')', location=top.location);
+
+  forwards to fwrd;
+  -- forwards to unsafeTrace(fwrd, print("prodAppPattern_onlyNamed" ++ hackUnparse(fwrd) ++ "\n\n", unsafeIO()));
 }
 
 {--
