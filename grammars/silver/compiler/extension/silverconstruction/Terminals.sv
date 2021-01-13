@@ -5,6 +5,7 @@ marking terminal SilverExprInh_t        'Silver_ExprInh'        lexer classes {K
 marking terminal SilverPattern_t        'Silver_Pattern'        lexer classes {KEYWORD, RESERVED};
 marking terminal SilverAGDcl_t          'Silver_AGDcl'          lexer classes {KEYWORD, RESERVED};
 marking terminal SilverProductionStmt_t 'Silver_ProductionStmt' lexer classes {KEYWORD, RESERVED};
+marking terminal SilverTypeExpr_t       'Silver_TypeExpr'       lexer classes {KEYWORD, RESERVED};
 
 temp_imp_ide_font font_escape color(160, 32, 240) bold italic;
 lexer class Antiquote font=font_escape;
