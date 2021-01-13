@@ -116,15 +116,6 @@ Boolean ::= l::Set<a> r::Set<a>
 }
 
 {--
- - Determines if the sets are equal.
- -}
-function equals
-Boolean ::= l::Set<a> r::Set<a>
-{
-  return subset(l,r) && subset(r,l);
-}
-
-{--
  - Determines if a set is empty.
  -}
 function isEmpty
@@ -168,3 +159,6 @@ Set<a> ::= lst::[a] set::Set<a>
   "java" : return "common.rawlib.RawTreeSet.removeAll(%lst%, (java.util.TreeSet<Object>)%set%)";
 }
 
+instance Eq Set<a> {
+  eq = \ l::Set<a> r::Set<a> -> subset(l,r) && subset(r,l);
+}
