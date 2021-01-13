@@ -131,7 +131,7 @@ top::Type ::= tv::TyVar
   
   local partialsubst :: Maybe<Type> =
     case findSubst(tv, top.substitution) of
-    | just(s) when s.kindArity != tv.kindArity -> error("Kind mismatch in applying substitution!")
+    | just(s) when s.kindArity != tv.kindArity -> nothing()
     | ps -> ps
     end;
   

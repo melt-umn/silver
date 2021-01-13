@@ -252,3 +252,15 @@ equalityTest(intIsEqual2(42, 34), false, Boolean, silver_tests);
 global isSingleDigit::(Boolean ::= String) = contains(_, ["1", "2", "3", "4", "5", "6", "7", "8", "9"]);
 equalityTest(isSingleDigit("5"), true, Boolean, silver_tests);
 equalityTest(isSingleDigit("42"), false, Boolean, silver_tests);
+
+
+wrongCode "is a type alias" {
+  -- This caused a kind mismatch crash previously
+  class Semigroupoid a {
+    compose :: (a<b d> ::= a<c d> a<b c>);
+  }
+  type Func<a b> = (b ::= a);
+  instance Semigroupoid Func {
+    compose = error("compose"); --\f::(d ::= c)  g::(c ::= b) -> \x::b -> f(g(x));
+  }
+}
