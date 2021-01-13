@@ -13,7 +13,14 @@ terminal Comma_t ',' ;
 nonterminal TupleList with location, unparse, translation;
 synthesized attribute translation :: Expr;
 
-concrete production tuple_c
+concrete production emptyTuple
+top::Expr ::= '(' ')'
+{
+  top.unparse = "()";
+  forwards to Silver_Expr { silver:core:unit() };
+}
+
+concrete production tupleExpr
 top::Expr ::= '(' tl::TupleList ')'
 {
   top.unparse = "(" ++ tl.unparse ++ ")";
@@ -41,6 +48,13 @@ top::TupleList ::= fst::Expr ',' snd::TupleList
 nonterminal TuplePatternList with location, unparse, patternList;
 -- Turns TuplePatternList into [Pattern]
 synthesized attribute patternList :: [Decorated Pattern];
+
+concrete production emptyTuplePattern
+top::Pattern ::= '(' ')'
+{
+  top.unparse = "()";
+  forwards to Silver_Pattern { silver:core:unit() };
+}
 
 concrete production tuplePattern
 top::Pattern ::= '(' ts::TuplePatternList ')'

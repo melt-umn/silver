@@ -3,6 +3,13 @@ grammar silver:compiler:extension:tuple;
 nonterminal ListOfTypeExprs with location, unparse, te_translation;
 synthesized attribute te_translation :: TypeExpr;
 
+concrete production emptyTupleTypeExpr
+top::TypeExpr ::= '(' ')'
+{
+  top.unparse = "()";
+  forwards to Silver_TypeExpr { silver:core:Unit };
+}
+
 concrete production tupleTypeExpr
 top::TypeExpr ::= '(' tes::ListOfTypeExprs ')'
 {
