@@ -112,8 +112,9 @@ synthesized attribute colOr :: Boolean with ||;
 synthesized attribute colAnd :: Boolean with &&;
 synthesized attribute colFun :: Maybe<Integer> with orElse;
 synthesized attribute colProd :: ColNT with colNode;
+synthesized attribute colTCFun :: [Integer] with union;
 
-attribute colList, colOr, colAnd, colFun, colProd occurs on ColNT;
+attribute colList, colOr, colAnd, colFun, colProd, colTCFun occurs on ColNT;
 
 abstract production colTest1
 top::ColNT ::=
@@ -128,6 +129,8 @@ top::ColNT ::=
   top.colFun <- just(1);
   top.colProd := colLeaf();
   top.colProd <- colLeaf();
+  top.colTCFun := [1, 2, 3];
+  top.colTCFun <- [2, 3, 4];
 }
 
 equalityTest( colTest1().colList, ["one", "two"], [String], silver_tests );
@@ -136,6 +139,7 @@ equalityTest( colTest1().colAnd, false, Boolean, silver_tests );
 equalityTest( colTest1().colFun.isJust, true, Boolean, silver_tests );
 equalityTest( fromMaybe(2, colTest1().colFun), 1, Integer, silver_tests );
 equalityTest( colTest1().colProd.colSyn, "( a  c )( d  e ) b ", String, silver_tests );
+equalityTest( colTest1().colTCFun, [1, 2, 3, 4], [Integer], silver_tests );
 
 abstract production colTest2
 top::ColNT ::=
@@ -150,6 +154,7 @@ top::ColNT ::=
   top.colFun <- nothing();
   top.colProd := colProdLeaf();
   top.colProd <- colLeaf();
+  top.colTCFun := [];
 }
 
 equalityTest( colTest2().colList, ["one", "two"], [String], silver_tests );
@@ -171,6 +176,7 @@ top::ColNT ::=
   top.colFun <- just(2);
   top.colProd := colLeaf();
   top.colProd <- colProdLeaf();
+  top.colTCFun := [];
 }
 
 equalityTest( colTest3().colList, ["one", "two"], [String], silver_tests );

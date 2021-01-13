@@ -41,14 +41,9 @@ inherited attribute rightOpTranslation::String occurs on Operation;
 attribute translation occurs on Operation;
 
 aspect production functionOperation
-top::Operation ::= e::Expr eTrans::String isRef::Boolean isFunction::Boolean trackConstruction::Boolean
+top::Operation ::= e::Expr eTrans::String trackConstruction::Boolean
 {
-  top.translation =
-    if isRef
-    then s"${eTrans}.invoke(context.originCtx, new Object[]{${top.leftOpTranslation}, ${top.rightOpTranslation}}, null)"
-    else if isFunction
-    then s"${eTrans}.invoke(context.originCtx, ${top.leftOpTranslation}, ${top.rightOpTranslation})"
-    else s"new ${eTrans}(${top.leftOpTranslation}, ${top.rightOpTranslation})";
+  top.translation = s"${eTrans}.invoke(context.originCtx, new Object[]{${top.leftOpTranslation}, ${top.rightOpTranslation}}, null)";
 }
 -- (if tracked then newConstructionOriginUsingCtxRef++"," else "")
 aspect production plusPlusOperationString
