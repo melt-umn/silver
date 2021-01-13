@@ -3,6 +3,7 @@ grammar silver:compiler:modification:ffi;
 abstract production foreignType
 top::Type ::= fn::String  transType::String  params::[Type]
 {
+  top.typeName = fn;
   top.freeVariables = setUnionTyVarsAll(map((.freeVariables), params));
   top.substituted = foreignType(fn, transType, mapSubst(params, top.substitution));
   top.flatRenamed = foreignType(fn, transType, mapRenameSubst(params, top.substitution));
