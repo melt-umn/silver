@@ -1,5 +1,31 @@
 grammar silver:core;
 
+{-
+Ord represents ordering relationships between data.
+
+Laws are based on Haskell's Ord type class:
+
+Transitivity
+  if x <= y && y <= z = true, then x <= z = true
+Reflexivity
+  x <= x = true
+Antisymmetry
+  if x <= y && y <= x = true, then x == y = true
+
+Note that the following operator interactions are expected to hold:
+1. x >= y = y <= x
+2. x < y = x <= y && x != y
+3. x > y = y < x
+4. x < y = compare x y < 0
+5. x > y = compare x y > 0
+6. x == y = compare x y == 0
+7. min(x, y) == if x <= y then x else y = true
+8. max(x, y) == if x >= y then x else y = true
+
+Note that (7.) and (8.) do not require min and max to return either of their arguments. The result is merely required to equal one of the arguments in terms of (==).
+
+Minimal complete definition: either compare or <=. Using compare can be more efficient for complex types.
+-}
 class Eq a => Ord a {
   compare :: (Integer ::= a a) = \ x::a y::a ->
     if x == y then 0 else if x <= y then -1 else 1;
@@ -10,7 +36,7 @@ class Eq a => Ord a {
   gte :: (Boolean ::= a a) = \ x::a y::a -> compare(x, y) >= 0;
   
   max :: (a ::= a a) = \ x::a y::a -> if x <= y then y else x;
-  min :: (a ::= a a) = \ x::a y::a -> if x <= y then y else x;
+  min :: (a ::= a a) = \ x::a y::a -> if x >= y then y else x;
 }
 
 instance Ord Integer {

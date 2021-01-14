@@ -1,5 +1,23 @@
 grammar silver:core;
 
+{-
+Eq represents equality/inequality relationships between data.
+
+Laws are based on Haskell's Eq type class:
+
+Reflexivity
+  x == x = true
+Symmetry
+  x == y = y == x
+Transitivity
+  if x == y && y == z = true, then x == z = true
+Substitutivity
+  if x == y = true and f is a "public" function whose return type is an instance of Eq, then f x == f y = true
+Negation
+  x != y = !(x == y)
+
+Minimal complete definition: either == or !=.
+-}
 class Eq a {
   eq :: (Boolean ::= a a) = \ x::a y::a -> !(x != y);
   neq :: (Boolean ::= a a) = \ x::a y::a -> !(x == y);

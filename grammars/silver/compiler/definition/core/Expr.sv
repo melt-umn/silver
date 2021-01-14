@@ -613,6 +613,7 @@ top::Expr ::= e1::Expr '>' e2::Expr
   top.unparse = e1.unparse ++ " > " ++ e2.unparse;
 
   forwards to
+    -- silver:core:gt(e1, e2)
     applicationExpr(
       baseExpr(qName(top.location, "silver:core:gt"), location=top.location), '(',
       snocAppExprs(
@@ -628,6 +629,7 @@ top::Expr ::= e1::Expr '<' e2::Expr
   top.unparse = e1.unparse ++ " < " ++ e2.unparse;
 
   forwards to
+    -- silver:core:lt(e1, e2)
     applicationExpr(
       baseExpr(qName(top.location, "silver:core:lt"), location=top.location), '(',
       snocAppExprs(
@@ -643,6 +645,7 @@ top::Expr ::= e1::Expr '>=' e2::Expr
   top.unparse = e1.unparse ++ " >= " ++ e2.unparse;
 
   forwards to
+    -- silver:core:gte(e1, e2)
     applicationExpr(
       baseExpr(qName(top.location, "silver:core:gte"), location=top.location), '(',
       snocAppExprs(
@@ -658,6 +661,7 @@ top::Expr ::= e1::Expr '<=' e2::Expr
   top.unparse = e1.unparse ++ " <= " ++ e2.unparse;
 
   forwards to
+    -- silver:core:lte(e1, e2)
     applicationExpr(
       baseExpr(qName(top.location, "silver:core:lte"), location=top.location), '(',
       snocAppExprs(
@@ -673,6 +677,7 @@ top::Expr ::= e1::Expr '==' e2::Expr
   top.unparse = e1.unparse ++ " == " ++ e2.unparse;
 
   forwards to
+    -- silver:core:eq(e1, e2)
     applicationExpr(
       baseExpr(qName(top.location, "silver:core:eq"), location=top.location), '(',
       snocAppExprs(
@@ -688,6 +693,7 @@ top::Expr ::= e1::Expr '!=' e2::Expr
   top.unparse = e1.unparse ++ " != " ++ e2.unparse;
 
   forwards to
+    -- silver:core:neq(e1, e2)
     applicationExpr(
       baseExpr(qName(top.location, "silver:core:neq"), location=top.location), '(',
       snocAppExprs(
