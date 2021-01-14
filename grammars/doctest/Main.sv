@@ -1,3 +1,5 @@
+@{- Standalone Comment -}
+
 @{--
   - Dummy main function
   -

@@ -19,19 +19,19 @@ Contained in grammar ${grammarName}. [Defined at ${substitute(":", "/", grammarN
 }
 
 abstract production dclCommentItem
-top::CommentItem ::= modifiers::String grammarName::String name::String signature::String loc::Location body::DocComment_t
+top::CommentItem ::= dcl::Decorated AGDcl body::DocComment_t
 {
   local docCommentContent::String = substring(3, length(body.lexeme)-2, body.lexeme);
   local parsed::ParseResult<DclComment> = parseDocComment(docCommentContent, "DocComment");
   local text::String = if parsed.parseSuccess then parsed.parseTree.body else "--error--" ++ "\n```\n" ++ docCommentContent ++ "\n```\n" ++ parsed.parseErrors;
 
-  top.body = makeStub(modifiers, grammarName, name, signature, loc) ++ "\n\n" ++ text;
-  top.loc = loc;
+  top.body = "## " ++ dcl.unparse ++ "\n\n" ++ text;
+  top.loc = dcl.location;
 }
 
-abstract production bodilessDclCommentItem
-top::CommentItem ::= modifiers::String grammarName::String name::String signature::String loc::Location
-{
-  top.body = makeStub(modifiers, grammarName, name, signature, loc);
-  top.loc = loc;
-}
+-- abstract production bodilessDclCommentItem
+-- top::CommentItem ::= modifiers::String grammarName::String name::String signature::String loc::Location
+-- {
+--   top.body = makeStub(modifiers, grammarName, name, signature, loc);
+--   top.loc = loc;
+-- }
