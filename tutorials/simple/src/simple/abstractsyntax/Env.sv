@@ -66,7 +66,7 @@ synthesized attribute valueContribs :: [Pair<String Decorated TypeExpr>] occurs 
 aspect production emptyEnv_i
 top::Env ::=
 {
-  top.values = tm:empty(compareString);
+  top.values = tm:empty();
 }
 aspect production addEnv_i
 top::Env ::= dlist::[Def]  e::Decorated Env

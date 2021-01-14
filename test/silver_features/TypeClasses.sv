@@ -36,10 +36,10 @@ instance CBaz a => CBar [a]
 {}
 
 global cxi::[Integer] = cx;
-equalityTest(hackUnparse(cxi), "[42]", String, silver_tests);
+equalityTest(cxi, [42], [Integer], silver_tests);
 
 global cxs::[String] = cx;
-equalityTest(hackUnparse(cxs), "[\"hello\"]", String, silver_tests);
+equalityTest(cxs, ["hello"], [String], silver_tests);
 
 global bfii::Integer = bazFromInt(24);
 global bfis::String = bazFromInt(24);
@@ -63,7 +63,7 @@ MyEq a => [a] ::= x::a xs::[a]
 {
   return removeBy(myeq, x, xs);
 }
-equalityTest(hackUnparse(myRemove(3, [1, 2, 3, 4])), "[1, 2, 4]", String, silver_tests);
+equalityTest(myRemove(3, [1, 2, 3, 4]), [1, 2, 4], [Integer], silver_tests);
 
 equality attribute isEqTo, isEq;
 nonterminal EqPair<a b> with isEqTo, isEq;
@@ -234,4 +234,33 @@ instance AmbInst Float {
 
 wrongCode "Ambiguous type variable a (arising from the use of ambval) prevents the constraint silver_features:AmbInst a from being solved." {
   global ambStr::String = hackUnparse(ambval);
+}
+
+global intIsEqual::(Boolean ::= Integer Integer) = myeq;
+equalityTest(intIsEqual(42, 42), true, Boolean, silver_tests);
+equalityTest(intIsEqual(42, 34), false, Boolean, silver_tests);
+
+function myeq2
+MyEq a => Boolean ::= x::a y::a
+{
+  return myeq(x, y);
+}
+global intIsEqual2::(Boolean ::= Integer Integer) = myeq2;
+equalityTest(intIsEqual2(42, 42), true, Boolean, silver_tests);
+equalityTest(intIsEqual2(42, 34), false, Boolean, silver_tests);
+
+global isSingleDigit::(Boolean ::= String) = contains(_, ["1", "2", "3", "4", "5", "6", "7", "8", "9"]);
+equalityTest(isSingleDigit("5"), true, Boolean, silver_tests);
+equalityTest(isSingleDigit("42"), false, Boolean, silver_tests);
+
+
+wrongCode "is a type alias" {
+  -- This caused a kind mismatch crash previously
+  class Semigroupoid a {
+    compose :: (a<b d> ::= a<c d> a<b c>);
+  }
+  type Func<a b> = (b ::= a);
+  instance Semigroupoid Func {
+    compose = error("compose"); --\f::(d ::= c)  g::(c ::= b) -> \x::b -> f(g(x));
+  }
 }

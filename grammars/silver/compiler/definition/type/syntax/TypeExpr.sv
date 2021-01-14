@@ -37,7 +37,7 @@ function addNewLexicalTyVars
 [Def] ::= gn::String sl::Location lk::[Pair<String Integer>] l::[String]
 {
   return if null(l) then []
-         else lexTyVarDef(gn, sl, head(l), freshTyVar(fromMaybe(0, lookupBy(stringEq, head(l), lk)))) ::
+         else lexTyVarDef(gn, sl, head(l), freshTyVar(fromMaybe(0, lookup(head(l), lk)))) ::
                   addNewLexicalTyVars(gn, sl, lk, tail(l));
 }
 
@@ -209,6 +209,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
   top.errors <-
     case t.typerep.baseType of
     | nonterminalType(_,_,_) -> []
+    | skolemType(_) -> []
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
     end;
   top.errors <- t.errorsFullyApplied;
@@ -275,7 +276,7 @@ top::BracketedTypeExprs ::= '<' tl::TypeExprs '>'
   top.freeVariables = tl.freeVariables;
   
   top.errorsTyVars <-
-    if length(tl.lexicalTypeVariables) != length(nubBy(stringEq, tl.lexicalTypeVariables))
+    if length(tl.lexicalTypeVariables) != length(nub(tl.lexicalTypeVariables))
     then [err(top.location, "Type parameter list repeats type variable names")]
     else [];
   top.errorsTyVars <-

@@ -12,7 +12,7 @@ import silver:compiler:modification:ffi only foreignType; -- so we cover foreign
 function skolemizeProductionType
 Pair<[Context] Type> ::= te::PolyType
 {
-  local existentialVars :: [TyVar] = removeTyVars(te.boundVars, te.typerep.outputType.freeVariables);
+  local existentialVars :: [TyVar] = removeAll(te.typerep.outputType.freeVariables, te.boundVars);
   
   local skolemize :: Substitution = composeSubst(
     zipVarsIntoSkolemizedSubstitution(existentialVars, freshTyVars(existentialVars)),
@@ -71,11 +71,11 @@ top::Type ::= tv::TyVar
   top.refine = 
     case top.refineWith of
     | varType(j) ->
-        if tyVarEqual(tv, j)
+        if tv == j
         then emptySubst()
         else subst(tv, top.refineWith)
     | t when t.kindArity == tv.kindArity ->
-        if containsTyVar(tv, t.freeVariables)
+        if contains(tv, t.freeVariables)
         then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
         else subst(tv, t)
     | t -> errorSubst("Kind mismatch!  Tried to unify with " ++ prettyType(top.unifyWith))
@@ -88,11 +88,11 @@ top::Type ::= tv::TyVar
   top.refine = 
     case top.refineWith of
     | skolemType(j) -> 
-        if tyVarEqual(tv, j)
+        if tv == j
         then emptySubst()
         else subst(tv, top.refineWith)
     | t when t.kindArity == tv.kindArity ->
-        if containsTyVar(tv, t.freeVariables)
+        if contains(tv, t.freeVariables)
         then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
         else subst(tv, t)
     | t -> errorSubst("Kind mismatch!  Tried to unify with " ++ prettyType(top.unifyWith))

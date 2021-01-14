@@ -11,7 +11,7 @@ nonterminal MExpr with freeVars;
 abstract production seqMStmt
 top::MStmt ::= s1::MStmt s2::MStmt
 {
-  top.freeVars := s1.freeVars ++ removeAllBy(stringEq, s1.defs, s2.freeVars);
+  top.freeVars := s1.freeVars ++ removeAll(s1.defs, s2.freeVars);
 }
 
 abstract production assignMStmt

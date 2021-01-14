@@ -277,42 +277,12 @@ String ::= f::(String ::= a)  lst::[a]
 }
 
 {--
- - A comparison function for strings.
- - @return Negative if l<r, 0 if l==r, positive if l>r
- -}
-function compareString
-Integer ::= l::String  r::String
-{
-  return if l <= r then if l == r then 0 else -1 else 1;
-} foreign {
-  -- This is temporary until we have better analysis & translation of Silver functions.
-  "java" : return "Integer.valueOf(%l%.toString().compareTo(%r%.toString()))";
-}
-
-{--
  - String append. Useful for higher order functions.
+ - TODO: Remove with Monoid type class.
  -}
 function stringConcat
 String ::= s1::String s2::String
 { return s1 ++ s2; }
-
-{--
- - String equality test.  Useful for some "...By" higher order functions.
- -}
-function stringEq
-Boolean ::= s1::String s2::String
-{
-  return s1 == s2;
-}
-
-{--
- - String <= test.  Useful for some "...By" higher order functions. (like sortBy)
- -}
-function stringLte
-Boolean ::= s1::String s2::String
-{
-  return s1 <= s2;
-}
 
 {--
  - Converts a list of code points to a string. Note that due to Java's use of

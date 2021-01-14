@@ -93,7 +93,7 @@ function fold
 {
   -- Dummy values
   cst.config = decorate errorCmdArgs("") with {};
-  cst.compiledGrammars = tm:empty(compareString);
+  cst.compiledGrammars = tm:empty();
   cst.grammarName = "";
   cst.env = emptyEnv();
   cst.globalImports = emptyEnv();

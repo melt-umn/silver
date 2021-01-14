@@ -9,7 +9,7 @@ function interpretCmdArgs
 CmdArgs ::= flags::[Pair<String Flag>]  input::[String]
 {
   local attribute l :: Maybe<Flag>;
-  l = lookupBy(stringEq, head(input), flags);
+  l = lookup(head(input), flags);
   
   local attribute here :: Flag;
   here = l.fromJust;

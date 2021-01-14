@@ -41,14 +41,9 @@ inherited attribute rightOpTranslation::String occurs on Operation;
 attribute translation occurs on Operation;
 
 aspect production functionOperation
-top::Operation ::= e::Expr eTrans::String isRef::Boolean isFunction::Boolean trackConstruction::Boolean
+top::Operation ::= e::Expr eTrans::String trackConstruction::Boolean
 {
-  top.translation =
-    if isRef
-    then s"${eTrans}.invoke(context.originCtx, new Object[]{${top.leftOpTranslation}, ${top.rightOpTranslation}}, null)"
-    else if isFunction
-    then s"${eTrans}.invoke(context.originCtx, ${top.leftOpTranslation}, ${top.rightOpTranslation})"
-    else s"new ${eTrans}(${top.leftOpTranslation}, ${top.rightOpTranslation})";
+  top.translation = s"${eTrans}.invoke(context.originCtx, new Object[]{${top.leftOpTranslation}, ${top.rightOpTranslation}}, null)";
 }
 -- (if tracked then newConstructionOriginUsingCtxRef++"," else "")
 aspect production plusPlusOperationString
@@ -97,7 +92,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
   -- So we'll create the collection attribute object here, and not worry.
 
   local o :: Operation = q.operation;
-  o.leftOpTranslation = "result";
+  o.leftOpTranslation = s"(${te.typerep.transType})result";
   o.rightOpTranslation = s"(${te.typerep.transType})this.getPieces().get(i).eval(context)";
 
   top.setupInh <- s"""
@@ -106,7 +101,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
         common.OriginContext originCtx = context.originCtx;
         common.Lazy base = this.getBase();
         if (base != null) {
-          ${te.typerep.transType} result = (${te.typerep.transType})base.eval(context);
+          ${te.typerep.transClassType} result = (${te.typerep.transClassType})base.eval(context);
           for (int i = 0; i < this.getPieces().size(); i++) {
             result = ${o.translation};
           }
@@ -126,7 +121,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   className = "CA" ++ a.name;
 
   local o :: Operation = q.operation;
-  o.leftOpTranslation = "result";
+  o.leftOpTranslation = s"(${te.typerep.transType})result";
   o.rightOpTranslation = s"(${te.typerep.transType})this.getPieces().get(i).eval(context)";
 
   top.genFiles := [pair(className ++ ".java",
@@ -141,7 +136,7 @@ public class ${className} extends common.CollectionAttribute {
 
   public Object eval(common.DecoratedNode context) {
     common.OriginContext originCtx = context.originCtx;
-    ${te.typerep.transType} result = (${te.typerep.transType})this.getBase().eval(context);
+    ${te.typerep.transClassType} result = (${te.typerep.transClassType})this.getBase().eval(context);
     for (int i = 0; i < this.getPieces().size(); i++) {
       result = ${o.translation};
     }
@@ -159,7 +154,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   className = "CA" ++ a.name;
 
   local o :: Operation = q.operation;
-  o.leftOpTranslation = "result";
+  o.leftOpTranslation = s"(${te.typerep.transType})result";
   o.rightOpTranslation = s"(${te.typerep.transType})this.getPieces().get(i).eval(context)";
 
   top.genFiles := [pair(className ++ ".java",
@@ -174,7 +169,7 @@ public class ${className} extends common.CollectionAttribute {
 
   public Object eval(common.DecoratedNode context) {
     common.OriginContext originCtx = context.originCtx;
-    ${te.typerep.transType} result = (${te.typerep.transType})this.getBase().eval(context);
+    ${te.typerep.transClassType} result = (${te.typerep.transClassType})this.getBase().eval(context);
     for (int i = 0; i < this.getPieces().size(); i++) {
       result = ${o.translation};
     }

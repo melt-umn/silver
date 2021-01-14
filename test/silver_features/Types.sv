@@ -100,7 +100,7 @@ wrongCode "MyType is a type alias and cannot be partially applied." {
  global t :: MyType<_> = error("");
 }
 -- For the moment, errors ignore type names
-wrongCode "Operands to == must be the same type. Instead they are String and Integer" {
+wrongCode "Argument 2 of function 'silver:core:eq' expected String but argument is of type Integer" {
  global t :: Boolean = astr1 == anum1;
 }
 

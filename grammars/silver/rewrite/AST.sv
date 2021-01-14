@@ -267,5 +267,5 @@ top::NamedAST ::= n::String v::AST
         \ ma::Maybe<AST> s::Strategy ->
           bindMaybe(ma, \ a::AST -> decorate s with { term = a; }.result),
         just(v),
-        lookupAllBy(stringEq, n, top.annotationStrategies)));
+        lookupAll(n, top.annotationStrategies)));
 }

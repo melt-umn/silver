@@ -104,7 +104,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 
   top.errors <- id.lookupValue.errors;
   top.errors <-
-    if !id.lookupValue.found || lookupBy(stringEq, top.fullName, top.expectedClassMembers).isJust then []
+    if !id.lookupValue.found || lookup(top.fullName, top.expectedClassMembers).isJust then []
     else [err(id.location, s"Unexpected instance member ${id.name} for class ${top.className}")]; 
 
   top.fullName = id.lookupValue.fullName;

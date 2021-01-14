@@ -71,7 +71,7 @@ AGDcl ::= id::QName  env::Decorated Env
     [
       shortLocalDecl('local', name("pval", l), '::', typerepTypeExpr(floatType(), location=l), '=', 
         ifThenElse(
-          'if', gt(baseExpr(qName(l, "current__depth"), location=l), '>', intConst(terminal(Int_t, "12"), location=l), location=l),
+          'if', gtOp(baseExpr(qName(l, "current__depth"), location=l), '>', intConst(terminal(Int_t, "12"), location=l), location=l),
           'then', multiply(
             mkStrFunctionInvocation(l, "genRand", []), '*',
             floatConst(terminal(Float_t, toString(toFloat(num_lowest_arity)/toFloat(length(prods)))), location=l), location=l),
@@ -107,7 +107,7 @@ Expr ::= index::Integer  lst::[DclInfo]  total::Integer  l::Location
   else
     -- yield "if pval < '(index+1)/total' then 'deriveGenerateOn' else generateExprChain..."
     ifThenElse(
-      'if', lt(baseExpr(qName(l, "pval"), location=l), '<', floatConst(terminal(Float_t, toString(toFloat(index+ 1) / toFloat(total))), location=l), location=l),
+      'if', ltOp(baseExpr(qName(l, "pval"), location=l), '<', floatConst(terminal(Float_t, toString(toFloat(index+ 1) / toFloat(total))), location=l), location=l),
       'then', deriveGenerateOn(head(lst), l),
       'else', generateExprChain(index + 1, tail(lst), total, l),
       location=l);

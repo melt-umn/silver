@@ -67,7 +67,7 @@ top::ParserSpec ::=
   production markingTerminalPrefixes::[Pair<String String>] =
     flatMap(
       \ gp::Pair<String String> ->
-        map(pair(_, gp.snd), lookupBy(stringEq, gp.fst, componentGrammarMarkingTerminals).fromJust),
+        map(pair(_, gp.snd), lookup(gp.fst, componentGrammarMarkingTerminals).fromJust),
       grammarTerminalPrefixes);
 
   top.cstAst =

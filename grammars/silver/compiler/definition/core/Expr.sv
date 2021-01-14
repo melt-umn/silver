@@ -607,70 +607,100 @@ top::Expr ::= '!' e::Expr
   e.isRoot = false;
 }
 
-concrete production gt
+concrete production gtOp
 top::Expr ::= e1::Expr '>' e2::Expr
 {
   top.unparse = e1.unparse ++ " > " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to
+    -- silver:core:gt(e1, e2)
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:gt"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
-concrete production lt
+concrete production ltOp
 top::Expr ::= e1::Expr '<' e2::Expr
 {
   top.unparse = e1.unparse ++ " < " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to
+    -- silver:core:lt(e1, e2)
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:lt"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
-concrete production gteq
+concrete production gteOp
 top::Expr ::= e1::Expr '>=' e2::Expr
 {
   top.unparse = e1.unparse ++ " >= " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to
+    -- silver:core:gte(e1, e2)
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:gte"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
-concrete production lteq
+concrete production lteOp
 top::Expr ::= e1::Expr '<=' e2::Expr
 {
   top.unparse = e1.unparse ++ " <= " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to
+    -- silver:core:lte(e1, e2)
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:lte"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
-concrete production eqeq
+concrete production eqOp
 top::Expr ::= e1::Expr '==' e2::Expr
 {
   top.unparse = e1.unparse ++ " == " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to
+    -- silver:core:eq(e1, e2)
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:eq"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
-concrete production neq
+concrete production neqOp
 top::Expr ::= e1::Expr '!=' e2::Expr
 {
   top.unparse = e1.unparse ++ " != " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to
+    -- silver:core:neq(e1, e2)
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:neq"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
 concrete production ifThenElse
@@ -1071,15 +1101,10 @@ function reorderedAnnoAppExprs
 [Decorated Expr] ::= d::Decorated AnnoAppExprs
 {
   -- This is an annoyingly poor quality implementation
-  return map(reorderedGetSnd, sortBy(reorderedLte, zipWith(pair, d.annoIndexSupplied, d.exprs)));
+  return map(snd, sortBy(reorderedLte, zipWith(pair, d.annoIndexSupplied, d.exprs)));
 }
-function reorderedGetSnd
-b ::= p::Pair<a b> { return p.snd; }
 function reorderedLte
 Boolean ::= l::Pair<Integer Decorated Expr>  r::Pair<Integer Decorated Expr> { return l.fst <= r.fst; }
-
-
-
 
 
 

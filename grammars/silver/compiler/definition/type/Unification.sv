@@ -10,11 +10,11 @@ top::Type ::= tv::TyVar
   top.unify = 
     case top.unifyWith of
     | varType(j) ->
-        if tyVarEqual(tv, j)
+        if tv == j
         then emptySubst()
         else subst(tv, top.unifyWith)
     | t when t.kindArity == tv.kindArity ->
-        if containsTyVar(tv, top.unifyWith.freeVariables)
+        if contains(tv, top.unifyWith.freeVariables)
         then errorSubst("Infinite type! Tried to unify with " ++ prettyType(top.unifyWith))
         else subst(tv, top.unifyWith)
     | t -> errorSubst("Kind mismatch!  Tried to unify with " ++ prettyType(top.unifyWith))
@@ -27,7 +27,7 @@ top::Type ::= tv::TyVar
   top.unify = 
     case top.unifyWith of
     | skolemType(otv) ->
-        if tyVarEqual(tv, otv)
+        if tv == otv
         then emptySubst()
         else errorSubst("Tried to unify skolem constant with incompatible skolem constant")
     | _ -> errorSubst("Tried to unify skolem constant with " ++ prettyType(top.unifyWith))

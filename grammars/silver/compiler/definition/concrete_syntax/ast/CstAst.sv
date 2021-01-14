@@ -36,14 +36,14 @@ top::SyntaxRoot ::=
         g:transitiveClosure(
           g:add(
             s.superClassContribs,
-            g:empty(compareString)))));
+            g:empty()))));
   s.subClasses =
     directBuildTree(
       g:toList(
         g:transitiveClosure(
           g:add(
             map(\ p::Pair<String String> -> pair(p.snd, p.fst), s.superClassContribs),
-            g:empty(compareString)))));
+            g:empty()))));
   s.parserAttributeAspects = directBuildTree(s.parserAttributeAspectContribs);
   s.layoutTerms =
     buildLayoutEnv(
@@ -55,7 +55,7 @@ top::SyntaxRoot ::=
   
   -- Move productions under their nonterminal, and sort the declarations
   production s2 :: Syntax =
-    foldr(consSyntax, nilSyntax(), sortBy(syntaxDclLte, s.cstNormalize));
+    foldr(consSyntax, nilSyntax(), sort(s.cstNormalize));
   s2.cstEnv = s.cstEnv;
   s2.containingGrammar = "host";
   s2.cstNTProds = error("TODO: make this environment not be decorated?"); -- TODO
@@ -67,7 +67,7 @@ top::SyntaxRoot ::=
   s2.prefixesForTerminals = s.prefixesForTerminals;
   s2.componentGrammarMarkingTerminals = s.componentGrammarMarkingTerminals;
 
-  s2.prettyNames = tm:add(s2.prettyNamesAccum, tm:empty(compareString));
+  s2.prettyNames = tm:add(s2.prettyNamesAccum, tm:empty());
   
   -- This should be on s1, because the s2 transform assumes everything is well formed.
   -- In particular, it drops productions it can't find an NT for.
@@ -183,10 +183,9 @@ function buildLayoutEnv
 EnvTree<String> ::= allTerms::[String] layoutItems::[String] layoutContribs::[Pair<String String>]
 {
   -- Build a set of all terminals, for faster lookup
-  local terms::s:Set<String> = s:add(allTerms, s:empty(compareString));
+  local terms::s:Set<String> = s:add(allTerms, s:empty());
   -- Build a graph of nonterminals, productions and layout terminals where there is an edge a -> b iff a inherits layout from b
-  local transitiveLayout::g:Graph<String> =
-    g:transitiveClosure(g:add(layoutContribs, g:empty(compareString)));
+  local transitiveLayout::g:Graph<String> = g:transitiveClosure(g:add(layoutContribs, g:empty()));
   -- For every item that we wish to compute layout (productions and nonterminals), find all inherited layout terminals
   local layoutTerms::[Pair<String [String]>] =
     map(

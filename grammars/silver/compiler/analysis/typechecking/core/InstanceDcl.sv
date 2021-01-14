@@ -16,7 +16,7 @@ aspect production instanceBodyItem
 top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 {
   production expectedType::Type =
-    fromMaybe(pair(errorType(), false), lookupBy(stringEq, top.fullName, top.expectedClassMembers)).fst;
+    fromMaybe(pair(errorType(), false), lookup(top.fullName, top.expectedClassMembers)).fst;
 
   local errCheck1::TypeCheck = check(expectedType, e.typerep);
   top.errors <-

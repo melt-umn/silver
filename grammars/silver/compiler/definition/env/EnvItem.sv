@@ -86,12 +86,12 @@ function mapDefaultWrapDcls
 function envItemExclude
 Boolean ::= ei::EnvItem  exclude::[String]
 {
-  return !containsBy(stringEq, ei.itemName, exclude);
+  return !contains(ei.itemName, exclude);
 }
 function envItemInclude
 Boolean ::= ei::EnvItem  include::[String]
 {
-  return containsBy(stringEq, ei.itemName, include);
+  return contains(ei.itemName, include);
 }
 function envItemPrepend
 EnvItem ::= ei::EnvItem  pfx::String
@@ -103,7 +103,7 @@ EnvItem ::= ei::EnvItem  pfx::String
 function envItemApplyRenaming
 EnvItem ::= ei::EnvItem  renames::[Pair<String String>]
 {
-  local result :: Maybe<String> = lookupBy(stringEq, ei.itemName, renames);
+  local result :: Maybe<String> = lookup(ei.itemName, renames);
   
   return if !result.isJust then ei
          -- this would clobber any 'onlyrenamed' but those shouldn't appear in imports, where this is used.

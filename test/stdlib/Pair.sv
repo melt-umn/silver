@@ -16,24 +16,24 @@ global pairtester :: [Pair<String Integer>] =
   pair("3", 2)];
   
 
-equalityTest ( lookupBy(stringEq, "A", pairtester).isJust, false,
+equalityTest ( lookup("A", pairtester).isJust, false,
                Boolean, core_tests ) ;
-equalityTest ( lookupBy(stringEq, "1", pairtester).isJust, true,
+equalityTest ( lookup("1", pairtester).isJust, true,
                Boolean, core_tests ) ;
-equalityTest ( lookupBy(stringEq, "2", pairtester).fromJust, 2,
+equalityTest ( lookup("2", pairtester).fromJust, 2,
                Integer, core_tests ) ;
-equalityTest ( lookupBy(stringEq, "1", pairtester).fromJust, 1,
+equalityTest ( lookup("1", pairtester).fromJust, 1,
                Integer, core_tests ) ;
-equalityTest ( lookupBy(stringEq, "99", pairtester).fromJust, 99,
+equalityTest ( lookup("99", pairtester).fromJust, 99,
                Integer, core_tests ) ;
-equalityTest ( lookupBy(stringEq, "4", pairtester).fromJust, 4,
+equalityTest ( lookup("4", pairtester).fromJust, 4,
                Integer, core_tests ) ;
 
-equalityTest(lookupAllBy(stringEq, "1", pairtester), [1], [Integer], core_tests);
-equalityTest(lookupAllBy(stringEq, "2", pairtester), [2], [Integer], core_tests);
-equalityTest(lookupAllBy(stringEq, "4", pairtester), [4,3], [Integer], core_tests);
-equalityTest(lookupAllBy(stringEq, "3", pairtester), [3,2], [Integer], core_tests);
-equalityTest(lookupAllBy(stringEq, "A", pairtester), [], [Integer], core_tests);
+equalityTest(lookupAll("1", pairtester), [1], [Integer], core_tests);
+equalityTest(lookupAll("2", pairtester), [2], [Integer], core_tests);
+equalityTest(lookupAll("4", pairtester), [4,3], [Integer], core_tests);
+equalityTest(lookupAll("3", pairtester), [3,2], [Integer], core_tests);
+equalityTest(lookupAll("A", pairtester), [], [Integer], core_tests);
 
 equalityTest(unzipPairs(pairtester).fst, ["1", "2", "3", "99", "4", "4", "3"], [String], core_tests);
 equalityTest(unzipPairs(pairtester).snd, [1, 2, 3, 99, 4, 3, 2], [Integer], core_tests);

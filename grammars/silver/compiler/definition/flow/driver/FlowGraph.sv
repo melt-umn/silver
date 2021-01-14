@@ -7,7 +7,7 @@ FlowType ::= prod::String  e::EnvTree<FlowType>
 {
   local lookup :: [FlowType] = searchEnvTree(prod, e);
   
-  return if null(lookup) then g:empty(compareString) else head(lookup);
+  return if null(lookup) then g:empty() else head(lookup);
 }
 function findProductionGraph
 ProductionGraph ::= n::String  l::EnvTree<ProductionGraph>
@@ -24,14 +24,14 @@ function expandGraph
 {
   -- look up each vertex, uniq it down.
   local initial :: set:Set<FlowVertex> =
-    set:add(v, foldr(set:union, set:empty(compareFlowVertex), map(e.edgeMap, v)));
+    set:add(v, foldr(set:union, set:empty(), map(e.edgeMap, v)));
 
   return set:toList(expandSuspectEdges(set:toList(initial), initial, e));
 }
 function onlyLhsInh
 set:Set<String> ::= s::[FlowVertex]
 {
-  return set:add(filterLhsInh(s), set:empty(compareString));
+  return set:add(filterLhsInh(s), set:empty());
 }
 
 -- suspect edges are not in the standard graph, so iteratively add them
@@ -77,7 +77,7 @@ Boolean ::= v::FlowVertex  inhSet::set:Set<String>
 function createFlowGraph
 g:Graph<FlowVertex> ::= l::[Pair<FlowVertex FlowVertex>]
 {
-  return g:add(l, g:empty(compareFlowVertex));
+  return g:add(l, g:empty());
 }
 
 function extendFlowGraph

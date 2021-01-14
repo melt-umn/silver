@@ -248,7 +248,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
         case head(rhsRef) of
         | syntaxNonterminal(_,_,_,_,_)
           when !head(rhsRef).hasCustomLayout &&
-               containsBy(stringEq, top.fullName, head(rhsRef).exportedProds) ->
+               contains(top.fullName, head(rhsRef).exportedProds) ->
           [pair(head(rhsRef).fullName, ns.fullName)]
         | _ -> []
         end,
@@ -447,10 +447,6 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
     "  </DisambiguationFunction>\n";
 }
 
-function syntaxDclLte
-Boolean ::= l::SyntaxDcl r::SyntaxDcl
-{
-  return l.sortKey <= r.sortKey;
 {-- Sort key PREFIXES are as follows:
     | syntaxLexerClass(_,_,_)           ->  AAA
     | syntaxParserAttribute(_,_,_)      ->  BBB
@@ -459,6 +455,11 @@ Boolean ::= l::SyntaxDcl r::SyntaxDcl
     | syntaxNonterminal(_,_)            ->  EEE
     | syntaxProduction(_,_,_,_)         ->  FFF
 -}
+instance Eq SyntaxDcl {
+  eq = \ l::SyntaxDcl r::SyntaxDcl -> l.sortKey == r.sortKey;
+}
+instance Ord SyntaxDcl {
+  lte = \ l::SyntaxDcl r::SyntaxDcl -> l.sortKey <= r.sortKey;
 }
 
 function xmlCopperRef

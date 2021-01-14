@@ -27,13 +27,23 @@ top::Context ::= cls::String t::Type
   top.contextSuperDef = instSuperDef(_, _, cls, _, t);
   top.contextClassName = just(cls);
   
+  -- Here possibly-decorated types that are still unspecialized at this point
+  -- are specialized as decorated.  Why?  Instance resolution happens after
+  -- final types have been computed, and the default is to be decorated,
+  -- so we can't allow this to match an instance for the undecorated type.
+  production decT::Type =
+    case t of
+    | ntOrDecType(nt, _) -> decoratedType(nt)
+    | _ -> t
+    end;
+
   -- Somewhat inefficient, since we try unifying with all the instances of the class.
   -- But occurs-on lookup works this way too and isn't too bad?
   -- TODO: This does unification twice, once for filtering and once when we find
   -- the instance.  Probably unavoidable?
   local matching::[DclInfo] =
     filter(
-      \ d::DclInfo -> !unifyDirectional(d.typeScheme.typerep, t).failure && !d.typeScheme.typerep.isError,
+      \ d::DclInfo -> !unifyDirectional(d.typeScheme.typerep, decT).failure && !d.typeScheme.typerep.isError,
       searchEnvScope(cls, top.env.instTree));
   top.resolved =
     removeAllBy(
@@ -42,7 +52,7 @@ top::Context ::= cls::String t::Type
 
   production resolvedDcl::DclInfo = head(top.resolved);
   production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
-  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, t);
+  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, decT);
   production requiredContexts::Contexts =
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
   requiredContexts.env = top.env;
