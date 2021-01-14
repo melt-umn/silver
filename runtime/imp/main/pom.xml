@@ -73,7 +73,7 @@
               <artifactId>copper</artifactId>
               <version>1.0.0</version>
               <scope>system</scope>
-              <systemPath>${basedir}/../../../jars/CopperRuntime.jar</systemPath>
+              <systemPath>${basedir}/../../../jars/CopperCompiler.jar</systemPath>
             </extraClasspathElement>
           </extraClasspathElements>
         </configuration>
@@ -104,7 +104,7 @@
     
     So, we use Tycho because we need to depend on OSGi packages for eclipse.
     But we directly inject custom classpath entires for SilverRuntime,
-    CopperRuntime, and as a hack just use the silver compiler to see core
+    CopperCompiler, and as a hack just use the silver compiler to see core
     in the classpath at compile time.
     
     We won't be using this package as an OSGI bundle anyway. Instead,

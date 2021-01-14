@@ -27,8 +27,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
-  classpathCompiler <- ["${sh}/jars/CopperCompiler.jar"];
-  classpathRuntime <- ["${sh}/jars/CopperRuntime.jar"];
+  classpathRuntime <- ["${sh}/jars/CopperCompiler.jar"];
 
   -- Get the parsers
   production allParsers :: [ParserSpec] =
