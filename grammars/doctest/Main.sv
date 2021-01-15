@@ -4,6 +4,8 @@
   - A large.
   - Set of.
   - Sentences on different lines.
+  - - Bulleted list
+  - - In prose
   - With @link[foo] links @link[bar] and stuff like ats @@.
   - @param abc right after prose
   -

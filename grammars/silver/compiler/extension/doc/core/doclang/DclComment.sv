@@ -15,7 +15,6 @@ nonterminal DclCommentBlock layout {} with body, location;
 nonterminal DclCommentLines layout {} with body, location;
 
 nonterminal DclCommentParts layout {} with body, location;
-nonterminal DclCommentStrictPart layout {} with body, location;
 nonterminal DclCommentPart layout {} with body, location;
 
 parser parseDocComment::DclComment {
@@ -86,9 +85,9 @@ top::DclCommentBlock ::= Param_t Whitespace_t id::Id_t Whitespace_t content::Dcl
 }
 
 concrete production returnBlock
-top::DclCommentBlock ::= Return_t Whitespace_t id::Id_t Whitespace_t content::DclCommentLines
+top::DclCommentBlock ::= Return_t Whitespace_t content::DclCommentLines
 {
-	top.body = "@return " ++ id.lexeme ++ " <" ++ content.body ++ ">";
+	top.body = "@return <" ++ content.body ++ ">";
 }
 
 
@@ -102,7 +101,7 @@ top::DclCommentLines ::= body::DclCommentParts
 concrete production consCommentLines
 top::DclCommentLines ::= body::DclCommentParts Newline_t rest::DclCommentLines
 {
-	top.body = body.body ++ " " ++ rest.body;
+	top.body = body.body ++ "\n" ++ rest.body;
 }
 
 
@@ -110,7 +109,7 @@ top::DclCommentLines ::= body::DclCommentParts Newline_t rest::DclCommentLines
 
 
 concrete production firstCommentParts
-top::DclCommentParts ::= part::DclCommentStrictPart
+top::DclCommentParts ::= part::DclCommentPart
 {
 	top.body = part.body;
 }
@@ -122,57 +121,42 @@ top::DclCommentParts ::= rest::DclCommentParts part::DclCommentPart
 }
 
 
-
-
-concrete production laxTextCommentPart
+concrete production textCommentPart
 top::DclCommentPart ::= part::CommentContent_t
 {
 	top.body = part.lexeme;
 }
 
-concrete production passThruCommentPart
-top::DclCommentPart ::= part::DclCommentStrictPart
-{
-	top.body = part.body;
-}
-
-
-
-concrete production strictTextCommentPart
-top::DclCommentStrictPart ::= part::StartCommentContent_t
-{
-	top.body = part.lexeme;
-}
-
 concrete production linkCommentPart
-top::DclCommentStrictPart ::= '@link' '[' id::Id_t ']'
+top::DclCommentPart ::= '@link' '[' id::Id_t ']'
 {
 	top.body = s"[${id.lexeme}](${id.lexeme})";
 }
 
 concrete production escapedAtPart
-top::DclCommentStrictPart ::= '@@'
+top::DclCommentPart ::= '@@'
 {
 	top.body = "@";
 }
 
 
-terminal InitialIgnore_t /@+\{\-[\- ]*/;
+terminal InitialIgnore_t /@+\{\- *\-* */;
 terminal FinalIgnore_t /[\- \r\n]*\-\}/ dominates {CommentContent_t};
 
-terminal EmptyLines_t /\n([\- ]*\r?\n)+[ \-]*/;
+terminal EmptyLines_t /\n( *\-* *\r?\n)+ *\-* */;
 terminal Newline_t /\r?\n *\-* */;
 
-terminal CommentContent_t /([^@\r\n\-]|\-[^\}])+/;
-terminal StartCommentContent_t /[^@\r\n\- ]+/ dominates {CommentContent_t};
-terminal Whitespace_t /[\t ]*/;
+terminal CommentContent_t /([^@\r\n\-]|\-[^\r\n}])+/;
 
 terminal EscapedAt_t '@@';
 
-terminal Param_t /([\- ]*\r?\n)*[ \-]*@param/ dominates {CommentContent_t};
-terminal Return_t /([\- ]*\r?\n)*[ \-]*@return/ dominates {CommentContent_t};
+terminal Param_t /( *\-* *\r?\n)* *\-* *@param/ lexer classes {BLOCK_KWD};
+terminal Return_t /( *\-* *\r?\n)* *\-* *@return/ lexer classes {BLOCK_KWD};
+terminal Whitespace_t /[\t ]*/;
 
 terminal Link_t '@link';
 terminal Open_t '[';
 terminal Close_t ']';
 terminal Id_t /[a-zA-Z][a-zA-Z0-9_]*/;
+
+lexer class BLOCK_KWD dominates CommentContent_t;
