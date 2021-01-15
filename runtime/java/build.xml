@@ -9,7 +9,7 @@
   <property name='version' value='0.0.1'/><!--dummy value for OSGi-->
 
   <path id='compile.classpath'>
-    <fileset dir='../../jars' includes='CopperRuntime.jar CopperCompiler.jar' />
+    <fileset dir='../../jars' includes='CopperCompiler.jar' />
   </path>
 
   <target name='init'>
