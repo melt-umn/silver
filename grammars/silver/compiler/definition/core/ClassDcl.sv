@@ -51,7 +51,7 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
 
   cl.instanceHead = nothing();
   cl.constraintSigName = nothing();
-  cl.isClassMember = false;
+  cl.classDefName = just(fName);
   cl.env = newScopeEnv(headPreDefs, top.env);
   
   var.env = cl.env;
@@ -109,9 +109,18 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
     setUnionTyVars(top.classHead.freeVariables, ty.typerep.freeVariables);
   top.classMembers = [pair(fName, false)];
   
-  cl.instanceHead = nothing();
+  cl.instanceHead =
+    case top.classHead of
+    -- A bit strange, but class member constraints are sort of like instance constraints.
+    -- However we don't know what the instance type actually is, and want to skip the
+    -- decidability check, so just put errorType here for now.
+    | instContext(cls, _) -> just(instContext(cls, errorType()))
+    end;
   cl.constraintSigName = nothing();
-  cl.isClassMember = true;
+  cl.classDefName =
+    case top.classHead of
+    | instContext(cls, _) -> just(cls)
+    end;
   cl.env = top.constraintEnv;
   
   top.defs := [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, cl.contexts, ty.typerep)];
@@ -138,9 +147,18 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
     setUnionTyVars(top.classHead.freeVariables, ty.typerep.freeVariables);
   top.classMembers = [pair(fName, true)];
   
-  cl.instanceHead = nothing();
+  cl.instanceHead =
+    case top.classHead of
+    -- A bit strange, but class member constraints are sort of like instance constraints.
+    -- However we don't know what the instance type actually is, and want to skip the
+    -- decidability check, so just put errorType here for now.
+    | instContext(cls, _) -> just(instContext(cls, errorType()))
+    end;
   cl.constraintSigName = nothing();
-  cl.isClassMember = true;
+  cl.classDefName =
+    case top.classHead of
+    | instContext(cls, _) -> just(cls)
+    end;
   cl.env = top.constraintEnv;
   
   e.isRoot = true;

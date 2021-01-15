@@ -2,15 +2,15 @@ grammar silver:compiler:definition:type:syntax;
 
 autocopy attribute instanceHead::Maybe<Context>;
 autocopy attribute constraintSigName::Maybe<String>;
-autocopy attribute isClassMember::Boolean;
+autocopy attribute classDefName::Maybe<String>;
 
 nonterminal ConstraintList
   -- This grammar doesn't export silver:compiler:definition:core, so the type concrete
   -- syntax doesn't "know about" the core layout terminals.
   -- Thus we have to set the layout explicitly for the "root" nonterminal here.
   layout {BlockComments, Comments, WhiteSpace}
-  with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, lexicalTyVarKinds, instanceHead, constraintSigName, isClassMember;
-nonterminal Constraint with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, lexicalTyVarKinds, instanceHead, constraintSigName, isClassMember;
+  with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, lexicalTyVarKinds, instanceHead, constraintSigName, classDefName;
+nonterminal Constraint with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, lexicalTyVarKinds, instanceHead, constraintSigName, classDefName;
 
 propagate errors, defs, lexicalTypeVariables, lexicalTyVarKinds on ConstraintList, Constraint;
 
@@ -62,23 +62,24 @@ top::Constraint ::= c::QNameType t::TypeExpr
     end;
   
   local instDcl::DclInfo =
-    case top.constraintSigName of
-    | just(sigfn) -> sigConstraintDcl(fName, t.typerep, sigfn, sourceGrammar=top.grammarName, sourceLocation=top.location)
-    | nothing() ->
-      if top.instanceHead.isJust || top.isClassMember
-      then instConstraintDcl(fName, t.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location)
-      else instSuperDcl(
-        fName,
-        currentInstDcl(error("Class name shouldn't be needed"), t.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location),
-        t.typerep,
-        sourceGrammar=top.grammarName, sourceLocation=top.location)
+    case top.constraintSigName, top.instanceHead of
+    | just(sigfn), _ -> sigConstraintDcl(fName, t.typerep, sigfn, sourceGrammar=top.grammarName, sourceLocation=top.location)
+    | nothing(), just(_) -> instConstraintDcl(fName, t.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location)
+    | _, _ -> instSuperDcl(
+      fName,
+      currentInstDcl(error("Class name shouldn't be needed"), t.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location),
+      t.typerep,
+      sourceGrammar=top.grammarName, sourceLocation=top.location)
     end;
   top.defs <- [tcInstDef(instDcl)];
   top.defs <- transitiveSuperDefs(top.env, t.typerep, [], fName, instDcl);
 
   top.lexicalTyVarKinds <-
     case t of
-    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, c.lookupType.typeScheme.monoType.kindArity)]
+    | typeVariableTypeExpr(tv)
+      -- Avoid circular inference if someone uses a class constraint within its own definition
+      when top.classDefName != just(fName) ->
+      [pair(tv.lexeme, c.lookupType.typeScheme.monoType.kindArity)]
     | _ -> []
     end;
 }

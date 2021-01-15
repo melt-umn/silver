@@ -156,6 +156,17 @@ equalityTest(myeq(3.14, 3.14), false, Boolean, silver_tests);
 nonterminal ABCD;
 production abcd top::ABCD ::= {}
 
+class CQux a {
+  cqx :: CQux a => a = cqy;
+  cqy :: a;
+}
+
+instance CQux Integer {
+  cqy = 1234;
+}
+
+equalityTest(cqx, 1234, Integer, silver_tests);
+
 -- Type class from another grammar, but not orphaned
 instance MyEq ABCD
 {
