@@ -12,6 +12,8 @@ nonterminal DclCommentBlocks layout {} with body, location;
 nonterminal DclCommentStrictBlocks layout {} with body, location;
 nonterminal DclCommentBlock layout {} with body, location;
 
+nonterminal ConfigValue layout {} with body, location;
+
 nonterminal DclCommentLines layout {} with body, location;
 
 nonterminal DclCommentParts layout {} with body, location;
@@ -84,10 +86,52 @@ top::DclCommentBlock ::= Param_t Whitespace_t id::Id_t Whitespace_t content::Dcl
 	top.body = "@param " ++ id.lexeme ++ " <" ++ content.body ++ ">";
 }
 
+concrete production prodattrBlock
+top::DclCommentBlock ::= Prodattr_t Whitespace_t id::Id_t Whitespace_t content::DclCommentLines
+{
+	top.body = "@prodattr " ++ id.lexeme ++ " <" ++ content.body ++ ">";
+}
+
 concrete production returnBlock
 top::DclCommentBlock ::= Return_t Whitespace_t content::DclCommentLines
 {
 	top.body = "@return <" ++ content.body ++ ">";
+}
+
+concrete production forwardBlock
+top::DclCommentBlock ::= Forward_t Whitespace_t content::DclCommentLines
+{
+	top.body = "@forward <" ++ content.body ++ ">";
+}
+
+concrete production warningBlock
+top::DclCommentBlock ::= Warning_t Whitespace_t content::DclCommentLines
+{
+	top.body = "@warning <" ++ content.body ++ ">";
+}
+
+concrete production configBlock
+top::DclCommentBlock ::= Config_t Whitespace_t param::Id_t Whitespace_t Equals_t Whitespace_t value::ConfigValue
+{
+	top.body = "@config " ++ param.lexeme ++ " = " ++ value.body;
+}
+
+concrete production kwdValue
+top::ConfigValue ::= v::ConfigValueKeyword_t
+{
+	top.body = v.lexeme;
+}
+
+concrete production stringValue
+top::ConfigValue ::= v::ConfigValueString_t
+{
+	top.body = v.lexeme;
+}
+
+concrete production integerValue
+top::ConfigValue ::= v::ConfigValueInt_t
+{
+	top.body = v.lexeme;
 }
 
 
@@ -133,6 +177,12 @@ top::DclCommentPart ::= '@link' '[' id::Id_t ']'
 	top.body = s"[${id.lexeme}](${id.lexeme})";
 }
 
+concrete production webLinkCommentPart
+top::DclCommentPart ::= '@weblink' '[' visible::WebLinkBody_t ']' '(' url::WebLinkBody_t ')'
+{
+	top.body = s"[${visible.lexeme}](${url.lexeme})";
+}
+
 concrete production escapedAtPart
 top::DclCommentPart ::= '@@'
 {
@@ -152,11 +202,25 @@ terminal EscapedAt_t '@@';
 
 terminal Param_t /( *\-* *\r?\n)* *\-* *@param/ lexer classes {BLOCK_KWD};
 terminal Return_t /( *\-* *\r?\n)* *\-* *@return/ lexer classes {BLOCK_KWD};
+terminal Forward_t /( *\-* *\r?\n)* *\-* *@forward/ lexer classes {BLOCK_KWD};
+terminal Prodattr_t /( *\-* *\r?\n)* *\-* *@prodattr/ lexer classes {BLOCK_KWD};
+terminal Warning_t /( *\-* *\r?\n)* *\-* *@warning/ lexer classes {BLOCK_KWD};
+terminal Config_t /( *\-* *\r?\n)* *\-* *@config/ lexer classes {BLOCK_KWD};
+
+terminal ConfigValueKeyword_t /(on|off|true|false)/;
+terminal ConfigValueString_t /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]n|[\\]r|[\\]f|[\\]t)*[\"]/;
+terminal ConfigValueInt_t /[0-9]+/;
+
 terminal Whitespace_t /[\t ]*/;
+terminal Equals_t /=?/;
 
 terminal Link_t '@link';
-terminal Open_t '[';
-terminal Close_t ']';
+terminal WebLink_t '@weblink';
+terminal OpenBracket_t '[';
+terminal CloseBracket_t ']';
+terminal OpenParen_t '(';
+terminal CloseParen_t ')';
 terminal Id_t /[a-zA-Z][a-zA-Z0-9_]*/;
+terminal WebLinkBody_t /[^\]\)\r\n]+/;
 
 lexer class BLOCK_KWD dominates CommentContent_t;
