@@ -176,11 +176,10 @@ top::DclCommentPart ::= '@link' '[' id::Id_t ']'
 {
 	top.body = s"[${id.lexeme}](${id.lexeme})";
 }
-
-concrete production webLinkCommentPart
-top::DclCommentPart ::= '@weblink' '[' visible::WebLinkBody_t ']' '(' url::WebLinkBody_t ')'
+concrete production fileLinkCommentPart
+top::DclCommentPart ::= '@file' '[' path::Path_t ']'
 {
-	top.body = s"[${visible.lexeme}](${url.lexeme})";
+	top.body = s"[${path.lexeme}](github -> ${path.lexeme})";
 }
 
 concrete production escapedAtPart
@@ -200,7 +199,7 @@ terminal CommentContent_t /([^@\r\n\-]|\-[^\r\n}])+/;
 
 terminal EscapedAt_t '@@';
 
-terminal Param_t /( *\-* *\r?\n)* *\-* *@param/ lexer classes {BLOCK_KWD};
+terminal Param_t /( *\-* *\r?\n)* *\-* *@(param|child)/ lexer classes {BLOCK_KWD};
 terminal Return_t /( *\-* *\r?\n)* *\-* *@return/ lexer classes {BLOCK_KWD};
 terminal Forward_t /( *\-* *\r?\n)* *\-* *@forward/ lexer classes {BLOCK_KWD};
 terminal Prodattr_t /( *\-* *\r?\n)* *\-* *@prodattr/ lexer classes {BLOCK_KWD};
@@ -215,12 +214,10 @@ terminal Whitespace_t /[\t ]*/;
 terminal Equals_t /=?/;
 
 terminal Link_t '@link';
-terminal WebLink_t '@weblink';
+terminal FileLink_t '@file';
 terminal OpenBracket_t '[';
 terminal CloseBracket_t ']';
-terminal OpenParen_t '(';
-terminal CloseParen_t ')';
 terminal Id_t /[a-zA-Z][a-zA-Z0-9_]*/;
-terminal WebLinkBody_t /[^\]\)\r\n]+/;
+terminal Path_t /[a-zA-Z0-9_\-\/\.]+/;
 
 lexer class BLOCK_KWD dominates CommentContent_t;

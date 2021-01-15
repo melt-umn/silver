@@ -23,8 +23,10 @@
   - @param foo foo desc.
                more foo desc.
   - @param bar bar desc.
+  - @child child is synonymous with @@param
 
-  - @warning counter-intuitive! See @weblink[here](http://foo.com/bar) for a tutorial.
+  - @warning counter-intuitive! See @file[here/there/EveryWhere.sv] for a tutorial.
+  - Or use a regular [markdown link](http://somewhere.com)
 
   - @return return desc
   -}
