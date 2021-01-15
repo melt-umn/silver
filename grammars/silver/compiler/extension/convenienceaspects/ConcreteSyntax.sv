@@ -3,7 +3,7 @@ import silver:core;
 
 
 function extractAgDclFromRuleList
-AGDcl ::= rules::[AbstractMatchRule] aspectTy::TypeExpr aspectAttr::QName location::Location
+Pair<AGDcl [Message]> ::= rules::[AbstractMatchRule] aspectTy::TypeExpr aspectAttr::QName location::Location
 {
 
   local makeProdParamTypes::([Type] ::= QName) = \prod::QName ->
@@ -14,14 +14,14 @@ AGDcl ::= rules::[AbstractMatchRule] aspectTy::TypeExpr aspectAttr::QName locati
   -- local makeProdParamsList::([AspectRHSElem] ::= [Type]) = \prodParamTypes::[Type] ->
   --   map(\ty::Type -> aspectRHSElemFull(name("__generated_" ++ toString(genIntReally(ty)), location), ty, location=location),
   --   prodParamTypes);
-  local makeProdParamsList::([AspectRHSElem] ::= [Name] [Type]) =
-    \prodParamNames::[Name] prodParamTypes::[Type] ->
+  local makeProdParamsList::([AspectRHSElem] ::= [Decorated Name] [Type]) =
+    \prodParamNames::[Decorated Name] prodParamTypes::[Type] ->
       zipWith(aspectRHSElemFull(_, _, location=location), prodParamNames, prodParamTypes);
   local makeProdParams::(AspectRHS ::= [AspectRHSElem] ) = \prodParamsList::[AspectRHSElem] ->
     foldr(aspectRHSElemCons(_, _, location=location),
           aspectRHSElemNil(location=location),
           prodParamsList);
-  local makeQNamesFromNames::([QName] ::= [Name]) = map(qNameId(_, location=location),_);
+  local makeQNamesFromNames::([QName] ::= [Decorated Name]) = map(qNameId(_, location=location),_);
   -- local makeProdParamNames::([QName] ::= [AspectRHSElem]) = \prodParamsList::[AspectRHSElem] ->
   --   map((\asp::AspectRHSElem -> case asp of
   --                               | aspectRHSElemFull(n,_) -> qNameId(n, location=location)
@@ -44,26 +44,42 @@ AGDcl ::= rules::[AbstractMatchRule] aspectTy::TypeExpr aspectAttr::QName locati
         top::$TypeExpr{aspectTy} ::= $AspectRHS{prodParams}
         { top.$QName{aspectAttr} = $Expr{paramsCaseExpr}; }
       };
-  return case head(rules) of
-    | matchRule(prodAppPattern(name,_,_,_)::_, cond,e) ->
-    -- I wish let bindings were stable
-    makeAspect(
+  return case rules of
+    | matchRule(prodAppPattern(name,_,_,_)::_, cond,e) :: _ ->
+    -- I wish let bindings were stable...
+    pair(makeAspect(
       makeParamsCaseExpr(
         makeParamCaseSubExpr(
           makeQNamesFromNames(head(rules).aspectProdParamsList)), rules),
       name,
-      makeProdParams(makeProdParamsList(head(rules).aspectProdParamsList, makeProdParamTypes(name))))
-    -- makeAspect(
-    --   makeParamsCaseExpr(
-    --     makeParamCaseSubExpr(
-    --       makeProdParamNames(
-    --         makeProdParamsList(
-    --           makeProdParamTypes(name)))),
-    --     rules),
-    --     name
-    --     )
+      makeProdParams(
+        makeProdParamsList(
+          head(rules).aspectProdParamsList,
+          makeProdParamTypes(name)))),
+        [])
+    | [matchRule(wildcPattern(_)::_,_,e)] ->
+      pair(Silver_AGDcl {
+        aspect default production
+        top::$TypeExpr{aspectTy} ::=
+        { top.$QName{aspectAttr} = $Expr{e}; }
+      },
+      [])
+    | matchRule(wildcPattern(_)::_,_,e) :: _ ->
+      pair(Silver_AGDcl {
+        aspect default production
+        top::$TypeExpr{aspectTy} ::=
+        { top.$QName{aspectAttr} = $Expr{e}; }
+      },
+      [wrn(location, "wildcard patterns after this one are dead code.")])
+    | _ ->
+      pair(
+        error("Patterns in aspect convenience syntax should be productions or wildcards only"),
+        [err(location,"Patterns in aspect convenience syntax should be productions or wildcards only")])
+
     end;
 }
+
+
 
 concrete production convenienceAspects_c
 top::AGDcl ::= 'aspect' attr::QName 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end' ';'
@@ -80,9 +96,16 @@ top::AGDcl ::= 'aspect' attr::QName 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleL
 
 
   local groupedMRules::[[AbstractMatchRule]] = groupMRules(ml.matchRuleList);
-  local fwrd::AGDcl = makeAppendAGDclOfAGDcls(ml.aspectDcls);
+  local groupExtractResults::[Pair<AGDcl [Message]>] = map(extractAgDclFromRuleList(_,ty,attr,top.location), groupedMRules);
+  local combinedAspectProds::[AGDcl] = map(fst(_),groupExtractResults);
+  local combinedAspectDcls::AGDcls = foldr(
+   consAGDcls(_,_,location=top.location),
+   nilAGDcls(location=top.location),
+   combinedAspectProds);
+  local fwrd::AGDcl = makeAppendAGDclOfAGDcls(combinedAspectDcls);
 
-  forwards to unsafeTrace(fwrd, print(hackUnparse(groupedMRules) ++ "\n\n",unsafeIO()));
+  -- forwards to fwrd ;
+  forwards to unsafeTrace(fwrd, print(fwrd.unparse ++ "\n\n",unsafeIO()));
 }
 
 
@@ -111,7 +134,7 @@ autocopy attribute aspectAttr::QName occurs on MRuleList, MatchRule, PatternList
 autocopy attribute aspectTy::TypeExpr occurs on MRuleList, MatchRule, PatternList, Pattern;
 
 synthesized attribute aspectDcls::AGDcls occurs on MRuleList;
-synthesized attribute aspectProdParamsList::[Name] occurs on AbstractMatchRule;
+synthesized attribute aspectProdParamsList::[Decorated Name] occurs on AbstractMatchRule;
 
 aspect production mRuleList_one
 top::MRuleList ::= m::MatchRule
