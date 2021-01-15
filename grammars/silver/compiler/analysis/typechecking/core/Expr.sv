@@ -38,9 +38,14 @@ top::Expr ::= q::Decorated QName
 aspect production classMemberReference
 top::Expr ::= q::Decorated QName
 {
-  context.contextLoc = q.location;
-  context.contextSource = "the use of " ++ q.name;
-  top.errors <- context.contextErrors;
+  instHead.contextLoc = q.location;
+  instHead.contextSource = "the use of " ++ q.name;
+  top.errors <- instHead.contextErrors;
+  
+  contexts.contextLoc = q.location;
+  contexts.contextSource = "the use of " ++ q.name;
+  top.errors <- contexts.contextErrors;
+  
   top.contexts = typeScheme.contexts;
 }
 

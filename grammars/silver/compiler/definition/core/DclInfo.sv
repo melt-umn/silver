@@ -100,7 +100,7 @@ top::DclInfo ::= fn::String ty::Type
   top.defLHSDispatcher = errorDefLHS(_, location=_);
 }
 aspect production classMemberDcl
-top::DclInfo ::= fn::String bound::[TyVar] context::Context ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] head::Context contexts::[Context] ty::Type
 {
   top.refDispatcher = classMemberReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);

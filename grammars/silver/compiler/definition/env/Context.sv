@@ -16,7 +16,8 @@ top::Contexts ::=
 
 global foldContexts::(Contexts ::= [Context]) = foldr(consContext, nilContext(), _);
 
-synthesized attribute contextSuperDef::(Def ::= String Location DclInfo) occurs on Context;
+synthesized attribute contextSuperDef::(Def ::= String Location DclInfo) occurs on Context;  -- Instances from context's superclasses
+synthesized attribute contextMemberDef::(Def ::= String Location) occurs on Context; -- Instances from a context on a class member
 synthesized attribute contextClassName::Maybe<String> occurs on Context;
 
 synthesized attribute resolved::[DclInfo] occurs on Context;
@@ -25,6 +26,7 @@ aspect production instContext
 top::Context ::= cls::String t::Type
 {
   top.contextSuperDef = instSuperDef(_, _, cls, _, t);
+  top.contextMemberDef = instConstraintDef(_, _, cls, t); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextClassName = just(cls);
   
   -- Here possibly-decorated types that are still unspecialized at this point

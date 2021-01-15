@@ -1,7 +1,7 @@
 grammar silver:compiler:analysis:typechecking:core;
 
-aspect production defaultClassBodyItem
-top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
+aspect production defaultConstraintClassBodyItem
+top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
 {
   top.errors <- ty.errorsFullyApplied;
 

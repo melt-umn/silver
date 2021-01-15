@@ -49,6 +49,7 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
 
   cl.instanceHead = nothing();
   cl.constraintSigName = just(top.signatureName);
+  cl.isClassMember = false;
 
   top.defs := lhs.defs ++ rhs.defs;
   top.constraintDefs = cl.defs;

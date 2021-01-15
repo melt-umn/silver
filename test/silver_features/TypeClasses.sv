@@ -14,6 +14,7 @@ class CBaz a
 {
   cy :: a;
   bazFromInt :: (a ::= Integer) = \ Integer -> cy;
+  bazEq :: MyEq a => (Boolean ::= a) = \ x::a -> myeq(x, cy);  
 }
 
 instance CBaz a => CFoo [a]
@@ -25,6 +26,7 @@ instance CBaz Integer
 {
   cy = 42;
   bazFromInt = \ i::Integer -> i;
+  bazEq = myeq(_, 42);  
 }
 
 instance CBaz String
@@ -45,6 +47,11 @@ global bfii::Integer = bazFromInt(24);
 global bfis::String = bazFromInt(24);
 equalityTest(bfii, 24, Integer, silver_tests);
 equalityTest(bfis, "hello", String, silver_tests);
+
+equalityTest(bazEq(42), true, Boolean, silver_tests);
+equalityTest(bazEq(1234), false, Boolean, silver_tests);
+equalityTest(bazEq("hello"), true, Boolean, silver_tests);
+equalityTest(bazEq("abc"), false, Boolean, silver_tests);
 
 equalityTest(myeq([1, 2, 3], [1, 2, 3]), true, Boolean, silver_tests);
 equalityTest(myeq([1, 2, 3], [1, 2, 3, 2, 1]), false, Boolean, silver_tests);

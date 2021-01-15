@@ -152,7 +152,7 @@ top::Expr ::= q::Decorated QName
 aspect production classMemberReference
 top::Expr ::= q::Decorated QName
 {
-  top.translation = s"((${finalType(top).transType})${context.transContext}.${makeInstanceMemberAccessorName(q.lookupValue.fullName)}())";
+  top.translation = s"((${finalType(top).transType})${instHead.transContext}.${makeInstanceMemberAccessorName(q.lookupValue.fullName)}(${implode(", ", contexts.transContexts)}))";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
