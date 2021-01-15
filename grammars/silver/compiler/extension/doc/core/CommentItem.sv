@@ -11,27 +11,23 @@ AGDcl is given
 -}
 
 function makeStub
-String ::= modifiers::String grammarName::String name::String signature::String loc::Location
+String ::= docUnparse::String grammarName::String loc::Location
 {
 	return
-s"""## `${modifiers} ${name}` &nbsp; `${signature}`
+s"""## `${docUnparse}`
 Contained in grammar ${grammarName}. [Defined at ${substitute(":", "/", grammarName)}/${loc.filename} line ${toString(loc.line)}](https://github.com/melt-umn/silver/blob/develop/grammars/${substitute(":", "/", grammarName)}/${loc.filename}#L${toString(loc.line)})""";
 }
 
 abstract production dclCommentItem
-top::CommentItem ::= dcl::Decorated AGDcl body::DocComment_t
+top::CommentItem ::= dcl::Decorated AGDcl body::DclComment
 {
-  local docCommentContent::String = substring(3, length(body.lexeme)-2, body.lexeme);
-  local parsed::ParseResult<DclComment> = parseDocComment(docCommentContent, "DocComment");
-  local text::String = if parsed.parseSuccess then parsed.parseTree.body else "--error--" ++ "\n```\n" ++ docCommentContent ++ "\n```\n" ++ parsed.parseErrors;
-
-  top.body = "## " ++ dcl.unparse ++ "\n\n" ++ text;
-  top.loc = dcl.location;
+	top.body = "## " ++ dcl.unparse ++ "\n\n" ++ body.body;
+	top.loc = dcl.location;
 }
 
--- abstract production bodilessDclCommentItem
--- top::CommentItem ::= modifiers::String grammarName::String name::String signature::String loc::Location
--- {
---   top.body = makeStub(modifiers, grammarName, name, signature, loc);
---   top.loc = loc;
--- }
+abstract production standaloneDclCommentItem
+top::CommentItem ::= body::DclComment
+{
+	top.body = body.body;
+	top.loc = body.location;
+}
