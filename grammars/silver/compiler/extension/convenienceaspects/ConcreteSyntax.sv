@@ -3,10 +3,10 @@ import silver:core;
 
 
 function extractAgDclFromRuleList
-Pair<AGDcl [Message]> ::= rules::[AbstractMatchRule] aspectTy::TypeExpr aspectAttr::QName location::Location
+Pair<AGDcl [Message]> ::= rules::[Decorated AbstractMatchRule] aspectTy::TypeExpr aspectAttr::QName location::Location
 {
 
-  local makeProdParamTypes::([Type] ::= QName) = \prod::QName ->
+  local makeProdParamTypes::([Type] ::= Decorated QName) = \prod::Decorated QName ->
     case prod.lookupValue.typeScheme.typerep of
     | functionType(_, paramTypes, _) -> paramTypes
     | _ -> error("invalid production type")
@@ -14,14 +14,14 @@ Pair<AGDcl [Message]> ::= rules::[AbstractMatchRule] aspectTy::TypeExpr aspectAt
   -- local makeProdParamsList::([AspectRHSElem] ::= [Type]) = \prodParamTypes::[Type] ->
   --   map(\ty::Type -> aspectRHSElemFull(name("__generated_" ++ toString(genIntReally(ty)), location), ty, location=location),
   --   prodParamTypes);
-  local makeProdParamsList::([AspectRHSElem] ::= [Decorated Name] [Type]) =
-    \prodParamNames::[Decorated Name] prodParamTypes::[Type] ->
+  local makeProdParamsList::([AspectRHSElem] ::= [Name] [Type]) =
+    \prodParamNames::[Name] prodParamTypes::[Type] ->
       zipWith(aspectRHSElemFull(_, _, location=location), prodParamNames, prodParamTypes);
   local makeProdParams::(AspectRHS ::= [AspectRHSElem] ) = \prodParamsList::[AspectRHSElem] ->
     foldr(aspectRHSElemCons(_, _, location=location),
           aspectRHSElemNil(location=location),
           prodParamsList);
-  local makeQNamesFromNames::([QName] ::= [Decorated Name]) = map(qNameId(_, location=location),_);
+  local makeQNamesFromNames::([QName] ::= [Name]) = map(qNameId(_, location=location),_);
   -- local makeProdParamNames::([QName] ::= [AspectRHSElem]) = \prodParamsList::[AspectRHSElem] ->
   --   map((\asp::AspectRHSElem -> case asp of
   --                               | aspectRHSElemFull(n,_) -> qNameId(n, location=location)
@@ -30,9 +30,9 @@ Pair<AGDcl [Message]> ::= rules::[AbstractMatchRule] aspectTy::TypeExpr aspectAt
   --           prodParamsList);
   local makeParamCaseSubExpr::([Expr] ::= [QName]) = \prodParamNames::[QName] ->
     map(baseExpr(_,location=location),prodParamNames);
-  local makeParamsCaseExpr::(Expr ::= [Expr] [AbstractMatchRule]) =
-    \paramsCaseSubExpr::[Expr] mRules::[AbstractMatchRule] ->
-      caseExpr(paramsCaseSubExpr, mRules,
+  local makeParamsCaseExpr::(Expr ::= [Expr] [Decorated AbstractMatchRule]) =
+    \paramsCaseSubExpr::[Expr] mRules::[Decorated AbstractMatchRule] ->
+      caseExpr(paramsCaseSubExpr, map(\mRule::Decorated AbstractMatchRule -> new(mRule), mRules),
         mkStrFunctionInvocation(location, "silver:core:error",
             [stringConst(terminal(String_t,
             "\"Error: pattern match failed at " ++ location.unparse ++ "\\n\""), location=location)]),
@@ -49,8 +49,8 @@ Pair<AGDcl [Message]> ::= rules::[AbstractMatchRule] aspectTy::TypeExpr aspectAt
     -- I wish let bindings were stable...
     pair(makeAspect(
       makeParamsCaseExpr(
-        makeParamCaseSubExpr(
-          makeQNamesFromNames(head(rules).aspectProdParamsList)), rules),
+        makeParamCaseSubExpr(makeQNamesFromNames(head(rules).aspectProdParamsList)),
+        rules),
       name,
       makeProdParams(
         makeProdParamsList(
@@ -95,7 +95,9 @@ top::AGDcl ::= 'aspect' attr::QName 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleL
   --       foldr( w )
 
 
-  local groupedMRules::[[AbstractMatchRule]] = groupMRules(ml.matchRuleList);
+  local groupedMRules::[[Decorated AbstractMatchRule]] =
+    map(\rules::[AbstractMatchRule] -> map(\rule_::AbstractMatchRule -> decorate rule_ with { env = top.env; }, rules),
+        groupMRules(ml.matchRuleList));
   local groupExtractResults::[Pair<AGDcl [Message]>] = map(extractAgDclFromRuleList(_,ty,attr,top.location), groupedMRules);
   local combinedAspectProds::[AGDcl] = map(fst(_),groupExtractResults);
   local combinedAspectDcls::AGDcls = foldr(
@@ -105,7 +107,7 @@ top::AGDcl ::= 'aspect' attr::QName 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleL
   local fwrd::AGDcl = makeAppendAGDclOfAGDcls(combinedAspectDcls);
 
   -- forwards to fwrd ;
-  forwards to unsafeTrace(fwrd, print(fwrd.unparse ++ "\n\n",unsafeIO()));
+  forwards to unsafeTraceDump(fwrd);
 }
 
 
@@ -134,7 +136,7 @@ autocopy attribute aspectAttr::QName occurs on MRuleList, MatchRule, PatternList
 autocopy attribute aspectTy::TypeExpr occurs on MRuleList, MatchRule, PatternList, Pattern;
 
 synthesized attribute aspectDcls::AGDcls occurs on MRuleList;
-synthesized attribute aspectProdParamsList::[Decorated Name] occurs on AbstractMatchRule;
+synthesized attribute aspectProdParamsList::[Name] occurs on AbstractMatchRule;
 
 aspect production mRuleList_one
 top::MRuleList ::= m::MatchRule

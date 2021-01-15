@@ -26,7 +26,7 @@ autocopy attribute matchRulePatternSize :: Integer;
 
 -- P -> E
 nonterminal MatchRule with location, config, unparse, env, frame, errors, matchRuleList, matchRulePatternSize;
-nonterminal AbstractMatchRule with location, unparse, headPattern, isVarMatchRule, expandHeadPattern;
+nonterminal AbstractMatchRule with location, unparse, env, headPattern, isVarMatchRule, expandHeadPattern;
 
 -- The head pattern of a match rule
 synthesized attribute headPattern :: Decorated Pattern;
