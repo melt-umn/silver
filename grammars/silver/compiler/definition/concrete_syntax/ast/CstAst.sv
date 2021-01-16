@@ -115,8 +115,8 @@ ${s2.lexerClassRefDcls}
   local preambleCode::String = "import java.util.ArrayList;\nimport java.util.List;\n";
 
   top.copperParser = copper:parserBean(makeCopperName(parsername), parsername,
-    s2.containingGrammar, head(startFound).copperElementReference, startLayoutCopper,
-    parserClassAuxCode, parserInitCode, preambleCode, []);
+    head(startFound).copperElementReference, startLayoutCopper,
+    parserClassAuxCode, parserInitCode, preambleCode, s2.copperGrammar);
 
   top.xmlCopper = unsafeTracePrint(xmlCopper, hackUnparse(top.copperParser));
   local xmlCopper::String =
