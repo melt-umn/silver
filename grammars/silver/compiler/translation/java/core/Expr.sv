@@ -143,7 +143,7 @@ top::Expr ::= q::Decorated QName
   top.lazyTranslation =
     if null(typeScheme.contexts)
     then makeProdName(q.lookupValue.fullName) ++ ".factory"
-    else s"new ${makeProdName(q.lookupValue.fullName)}.Factory(${implode(", ", contexts.transContexts)})";
+    else s"${makeProdName(q.lookupValue.fullName)}.getFactory(${implode(", ", contexts.transContexts)})";
   top.invokeTranslation =
     -- static method invocation
     s"((${finalType(top).outputType.transType})${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ", [makeOriginContextRef(top)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs))}))";

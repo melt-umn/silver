@@ -19,7 +19,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   local funBody :: String =
 s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate(originCtx);
 			//${head(body.uniqueSignificantExpression).unparse}
-			return (${namedSig.outputElement.typerep.transClassType})(${head(body.uniqueSignificantExpression).translation});
+			return (${namedSig.outputElement.typerep.transType})(${head(body.uniqueSignificantExpression).translation});
 """;
 
   top.genFiles :=
@@ -142,10 +142,14 @@ ${whatResult}
 ${if null(whatSig.contexts) -- Can only use a singleton when there aren't contexts.
   then s"""
 	// Use of ? to permit casting to more specific types
-	public static final common.NodeFactory<? extends ${whatSig.outputElement.typerep.transClassType}> factory = new Factory();
-""" else ""}
+	public static final common.NodeFactory<? extends ${whatSig.outputElement.typerep.transType}> factory = new Factory();
+""" else s"""
+	public static final common.NodeFactory<? extends ${whatSig.outputElement.typerep.transType}> getFactory(${implode(", ", map((.contextParamTrans), whatSig.contexts))}) {
+		return new Factory(${implode(", ", map((.contextRefElem), whatSig.contexts))});
+	}
+"""}
 
-	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transClassType}> {
+	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transType}> {
 ${sflatMap((.contextMemberDeclTrans), whatSig.contexts)}
 
 		public Factory(${implode(", ", map((.contextParamTrans), whatSig.contexts))}) {
@@ -153,7 +157,7 @@ ${sflatMap((.contextInitTrans), whatSig.contexts)}
 		}
 
 		@Override
-		public final ${whatSig.outputElement.typerep.transClassType} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] namedNotApplicable) {
+		public final ${whatSig.outputElement.typerep.transType} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] namedNotApplicable) {
 			return ${className}.invoke(${implode(", ", ["originCtx"] ++ map((.contextRefElem), whatSig.contexts) ++ unpackChildren(0, whatSig.inputElements))});
 		}
 		
