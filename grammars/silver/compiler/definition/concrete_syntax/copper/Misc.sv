@@ -4,14 +4,13 @@ grammar silver:compiler:definition:concrete_syntax:copper;
 type ParserBean foreign;
 
 function parserBean
-ParserBean ::= id::String  name::String  grammarName::String
-     startSymbol::ElementReference  startLayout::[ElementReference]
-     parserClassAuxCode::String  parserInitCode::String  preambleCode::String
-     grammars::[Grammar]
+ParserBean ::= id::String  name::String  startSymbol::ElementReference
+     startLayout::[ElementReference]  parserClassAuxCode::String
+     parserInitCode::String  preambleCode::String  grammar_::Grammar
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "common.CopperUtil.makeParserBean(%id%.toString(), %name%.toString(), %grammarName%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new java.util.ArrayList<edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference>(new common.javainterop.ConsCellCollection(%startLayout%)), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), new java.util.ArrayList<edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar>(new common.javainterop.ConsCellCollection(%grammars%)))";
+  "java" : return "common.CopperUtil.makeParserBean(%id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection(%startLayout%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)(%grammar_%))";
 }
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar
