@@ -143,7 +143,7 @@ top::Expr ::= q::Decorated QName
   top.lazyTranslation =
     if null(typeScheme.contexts)
     then makeProdName(q.lookupValue.fullName) ++ ".factory"
-    else s"new ${makeProdName(q.lookupValue.fullName)}.Factory(${implode(", ", contexts.transContexts)})";
+    else s"${makeProdName(q.lookupValue.fullName)}.getFactory(${implode(", ", contexts.transContexts)})";
   top.invokeTranslation =
     -- static method invocation
     s"((${finalType(top).outputType.transType})${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ", [makeOriginContextRef(top)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs))}))";
@@ -152,7 +152,7 @@ top::Expr ::= q::Decorated QName
 aspect production classMemberReference
 top::Expr ::= q::Decorated QName
 {
-  top.translation = s"((${finalType(top).transType})${context.transContext}.${makeInstanceMemberAccessorName(q.lookupValue.fullName)}())";
+  top.translation = s"((${finalType(top).transType})${instHead.transContext}.${makeInstanceMemberAccessorName(q.lookupValue.fullName)}(${implode(", ", contexts.transContexts)}))";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 

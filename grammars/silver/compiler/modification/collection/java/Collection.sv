@@ -101,7 +101,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
         common.OriginContext originCtx = context.originCtx;
         common.Lazy base = this.getBase();
         if (base != null) {
-          ${te.typerep.transClassType} result = (${te.typerep.transClassType})base.eval(context);
+          ${te.typerep.transType} result = (${te.typerep.transType})base.eval(context);
           for (int i = 0; i < this.getPieces().size(); i++) {
             result = ${o.translation};
           }
@@ -136,7 +136,7 @@ public class ${className} extends common.CollectionAttribute {
 
   public Object eval(common.DecoratedNode context) {
     common.OriginContext originCtx = context.originCtx;
-    ${te.typerep.transClassType} result = (${te.typerep.transClassType})this.getBase().eval(context);
+    ${te.typerep.transType} result = (${te.typerep.transType})this.getBase().eval(context);
     for (int i = 0; i < this.getPieces().size(); i++) {
       result = ${o.translation};
     }
@@ -169,7 +169,7 @@ public class ${className} extends common.CollectionAttribute {
 
   public Object eval(common.DecoratedNode context) {
     common.OriginContext originCtx = context.originCtx;
-    ${te.typerep.transClassType} result = (${te.typerep.transClassType})this.getBase().eval(context);
+    ${te.typerep.transType} result = (${te.typerep.transType})this.getBase().eval(context);
     for (int i = 0; i < this.getPieces().size(); i++) {
       result = ${o.translation};
     }

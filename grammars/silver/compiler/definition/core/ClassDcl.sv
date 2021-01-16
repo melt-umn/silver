@@ -51,11 +51,13 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
 
   cl.instanceHead = nothing();
   cl.constraintSigName = nothing();
+  cl.classDefName = just(fName);
   cl.env = newScopeEnv(headPreDefs, top.env);
   
   var.env = cl.env;
   
   body.env = newScopeEnv(headDefs, cl.env);
+  body.constraintEnv = cl.env;
   body.classHead = instContext(fName, var.typerep);
 }
 
@@ -68,13 +70,15 @@ top::AGDcl ::= 'class' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 }
 
 autocopy attribute classHead::Context;
+autocopy attribute constraintEnv::Decorated Env;
 
 nonterminal ClassBody with
-  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, compiledGrammars, classMembers;
+  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, compiledGrammars, classMembers;
 nonterminal ClassBodyItem with
-  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, compiledGrammars, classMembers;
+  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, compiledGrammars, classMembers;
 
-propagate defs, errors,lexicalTypeVariables, lexicalTyVarKinds on ClassBody, ClassBodyItem;
+propagate errors, lexicalTypeVariables, lexicalTyVarKinds on ClassBody, ClassBodyItem;
+propagate defs on ClassBody;
 
 concrete production consClassBody
 top::ClassBody ::= h::ClassBodyItem t::ClassBody
@@ -92,14 +96,34 @@ top::ClassBody ::=
 concrete production classBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
 {
-  top.unparse = s"${id.name} :: ${ty.unparse};";
+  forwards to constraintClassBodyItem(id, $2, nilConstraint(location=top.location), '=>', ty, $4, location=top.location);
+}
+
+concrete production constraintClassBodyItem
+top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
+{
+  top.unparse = s"${id.name} :: ${cl.unparse} => ${ty.unparse};";
   
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production boundVars :: [TyVar] =
     setUnionTyVars(top.classHead.freeVariables, ty.typerep.freeVariables);
-  top.classMembers = [pair(fName, pair(ty.typerep, false))];
+  top.classMembers = [pair(fName, false)];
   
-  top.defs <- [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, ty.typerep)];
+  cl.instanceHead =
+    case top.classHead of
+    -- A bit strange, but class member constraints are sort of like instance constraints.
+    -- However we don't know what the instance type actually is, and want to skip the
+    -- decidability check, so just put errorType here for now.
+    | instContext(cls, _) -> just(instContext(cls, errorType()))
+    end;
+  cl.constraintSigName = nothing();
+  cl.classDefName =
+    case top.classHead of
+    | instContext(cls, _) -> just(cls)
+    end;
+  cl.env = top.constraintEnv;
+  
+  top.defs := [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, cl.contexts, ty.typerep)];
 
   top.errors <-
     if length(getValueDclAll(fName, top.env)) > 1
@@ -110,12 +134,32 @@ top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
 concrete production defaultClassBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
 {
-  top.unparse = s"${id.name} :: ${ty.unparse} = ${e.unparse};";
+  forwards to defaultConstraintClassBodyItem(id, $2, nilConstraint(location=top.location), '=>', ty, $4, e, $6, location=top.location);
+}
+
+concrete production defaultConstraintClassBodyItem
+top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
+{
+  top.unparse = s"${id.name} :: ${cl.unparse} => ${ty.unparse} = ${e.unparse};";
   
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production boundVars :: [TyVar] =
     setUnionTyVars(top.classHead.freeVariables, ty.typerep.freeVariables);
-  top.classMembers = [pair(fName, pair(ty.typerep, true))];
+  top.classMembers = [pair(fName, true)];
+  
+  cl.instanceHead =
+    case top.classHead of
+    -- A bit strange, but class member constraints are sort of like instance constraints.
+    -- However we don't know what the instance type actually is, and want to skip the
+    -- decidability check, so just put errorType here for now.
+    | instContext(cls, _) -> just(instContext(cls, errorType()))
+    end;
+  cl.constraintSigName = nothing();
+  cl.classDefName =
+    case top.classHead of
+    | instContext(cls, _) -> just(cls)
+    end;
+  cl.env = top.constraintEnv;
   
   e.isRoot = true;
   e.originRules = [];
@@ -128,8 +172,9 @@ top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
     constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
 
   e.frame = globalExprContext(myFlowGraph, sourceGrammar=top.grammarName);
+  e.env = newScopeEnv(cl.defs, top.env);
   
-  top.defs <- [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, ty.typerep)];
+  top.defs := [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, cl.contexts, ty.typerep)];
 
   top.errors <-
     if length(getValueDclAll(fName, top.env)) > 1

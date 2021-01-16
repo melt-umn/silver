@@ -151,12 +151,18 @@ top::Expr ::= q::Decorated QName
   production typeScheme::PolyType = q.lookupValue.typeScheme;
   top.typerep = typeScheme.typerep;
 
-  production context::Context =
+  production instHead::Context =
     case typeScheme.contexts of
-    | [c] -> performContextSubstitution(c, top.finalSubst)
-    | _ -> error("Class member should have exactly one context!")
+    | c :: _ -> performContextSubstitution(c, top.finalSubst)
+    | _ -> error("Class member should have at least one context!")
     end;
-  context.env = top.env;
+  instHead.env = top.env;
+  production contexts::Contexts =
+    case typeScheme.contexts of
+    | _ :: cs -> foldContexts(map(performContextSubstitution(_, top.finalSubst), cs))
+    | _ -> error("Class member should have at least one context!")
+    end;
+  contexts.env = top.env;
 }
 
 abstract production globalValueReference

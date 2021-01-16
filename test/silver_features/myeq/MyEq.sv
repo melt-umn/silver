@@ -11,6 +11,11 @@ instance MyEq Integer
   myeq = \ x::Integer y::Integer -> x == y;
 }
 
+instance MyEq String
+{
+  myeq = \ x::String y::String -> x == y;
+}
+
 instance MyEq a => MyEq [a]
 {
   myeq = \ xs::[a] ys::[a] -> length(xs) == length(ys) && all(zipWith(myeq, xs, ys));
