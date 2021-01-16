@@ -59,8 +59,8 @@ attribute foopp occurs on BarExpr;
 aspect foopp on BarExpr of
 | barInit1([],_) -> "emptyFoopp"
 | barInit1(h::t,_) -> h ++ "Foopp"
-| barInit2(h :: t,value) -> h ++ " and then " ++ toStringFromInteger(value)
-| barInit3(_,val) -> toStringFromInteger(val)
+| barInit2(h :: t,value) -> h ++ " and then " ++ toString(value)
+| barInit3(_,val) -> toString(val)
 | _ -> "testing"
 end;
 

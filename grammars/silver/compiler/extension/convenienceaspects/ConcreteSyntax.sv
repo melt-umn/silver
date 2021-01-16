@@ -30,9 +30,20 @@ Pair<AGDcl [Message]> ::= rules::[Decorated AbstractMatchRule] aspectTy::TypeExp
   --           prodParamsList);
   local makeParamCaseSubExpr::([Expr] ::= [QName]) = \prodParamNames::[QName] ->
     map(baseExpr(_,location=location),prodParamNames);
+  local transformPatternMatchRule::([AbstractMatchRule]::=[Decorated AbstractMatchRule]) =
+    \mRuleList::[Decorated AbstractMatchRule] ->
+      map((\mRule::Decorated AbstractMatchRule -> case mRule of
+         | matchRule(pl,cond,e) -> matchRule(
+           (foldr(append, [], (map(\pat::Decorated Pattern -> pat.patternSubPatternList, pl)) ) ),
+           cond,
+           e,
+           location=location)
+         | _ -> error("This error indicates possible productions for AbstractMatchRule have expanded.")
+         end),
+         mRuleList);
   local makeParamsCaseExpr::(Expr ::= [Expr] [Decorated AbstractMatchRule]) =
     \paramsCaseSubExpr::[Expr] mRules::[Decorated AbstractMatchRule] ->
-      caseExpr(paramsCaseSubExpr, map(\mRule::Decorated AbstractMatchRule -> new(mRule), mRules),
+      caseExpr(paramsCaseSubExpr, transformPatternMatchRule(mRules),
         mkStrFunctionInvocation(location, "silver:core:error",
             [stringConst(terminal(String_t,
             "\"Error: pattern match failed at " ++ location.unparse ++ "\\n\""), location=location)]),
@@ -107,7 +118,7 @@ top::AGDcl ::= 'aspect' attr::QName 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleL
   local fwrd::AGDcl = makeAppendAGDclOfAGDcls(combinedAspectDcls);
 
   -- forwards to fwrd ;
-  forwards to unsafeTraceDump(fwrd);
+  forwards to unsafeTracePrint(fwrd, fwrd.unparse);
 }
 
 
