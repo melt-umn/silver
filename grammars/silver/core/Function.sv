@@ -5,7 +5,7 @@ a ::= x::a
 { return x; }
 
 function compose
-(c ::= a) ::= f1::(b ::= a) f2::(c ::= b)
+(c ::= a) ::= f1::(c ::= b) f2::(b ::= a)
 {
-  return \ x::a -> f2(f1(x));
+  return \ x::a -> f1(f2(x));
 }
