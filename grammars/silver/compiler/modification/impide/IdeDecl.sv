@@ -183,7 +183,7 @@ top::IdeStmt ::= 'builder' builderName::QName ';'
   
   -- IOVal<[Message]> ::= IdeProject  [IdeProperty]  IO
   local expectedType :: Type =
-    functionType(t_iomsgs, [t_proj, t_props, t_io], []);
+    appTypes(functionType(3, []), [t_proj, t_props, t_io, t_iomsgs]);
   
   local tc1 :: TypeCheck = check(builderName.lookupValue.typeScheme.typerep, expectedType);
   tc1.downSubst = emptySubst();
@@ -203,7 +203,7 @@ top::IdeStmt ::= 'postbuilder' postbuilderName::QName ';'
   
   -- IOVal<[Message]> ::= IdeProject  [IdeProperty]  IO
   local expectedType :: Type =
-    functionType(t_iomsgs, [t_proj, t_props, t_io], []);
+    appTypes(functionType(3, []), [t_proj, t_props, t_io, t_iomsgs]);
   
   local tc1 :: TypeCheck = check(postbuilderName.lookupValue.typeScheme.typerep, expectedType);
   tc1.downSubst = emptySubst();
@@ -223,7 +223,7 @@ top::IdeStmt ::= 'exporter' exporterName::QName ';'
   
   -- IOVal<[Message]> ::= IdeProject  [IdeProperty]  IO
   local expectedType :: Type =
-    functionType(t_iomsgs, [t_proj, t_props, t_io], []);
+    appTypes(functionType(3, []), [t_proj, t_props, t_io, t_iomsgs]);
   
   local tc1 :: TypeCheck = check(exporterName.lookupValue.typeScheme.typerep, expectedType);
   tc1.downSubst = emptySubst();
@@ -243,7 +243,7 @@ top::IdeStmt ::= 'folder' folderName::QName ';'
   
   -- [Location] ::= <<CST root's type>>
   local expectedType :: Type =
-    functionType(listType(t_loc), [nonterminalType(top.startNTName, 0, false)], []);
+    appTypes(functionType(1, []), [nonterminalType(top.startNTName, 0, false), listType(t_loc)]);
   
   local tc1 :: TypeCheck = check(folderName.lookupValue.typeScheme.typerep, expectedType);
   tc1.downSubst = emptySubst();
@@ -323,10 +323,7 @@ top::StubGenerator ::= 'stub generator' genName::QName ';'
 
   -- String ::= [IdeProperty]
   local stubGenTypeExpected :: Type =
-    functionType(
-      stringType(),  -- return type
-      [listType(nonterminalType("ide:IdeProperty", 0, false))], -- argument type list
-      []);
+    appTypes(functionType(1, []), [listType(nonterminalType("ide:IdeProperty", 0, false)), stringType()]);
   
   local tc1 :: TypeCheck = check(genName.lookupValue.typeScheme.typerep, stubGenTypeExpected);
   tc1.downSubst = emptySubst();

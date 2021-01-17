@@ -24,7 +24,7 @@ top::NameOrBOperator ::= e::Expr
   top.errors := e.errors;
   
   local checkOperationType :: TypeCheck =
-    check(e.typerep, functionType(top.operatorForType, [top.operatorForType, top.operatorForType], []));
+    check(e.typerep, appTypes(functionType(2, []), [top.operatorForType, top.operatorForType, top.operatorForType]));
   
   e.downSubst = emptySubst();
   checkOperationType.downSubst = e.upSubst;

@@ -41,7 +41,11 @@ top::Type ::= tv::TyVar
 aspect production appType
 top::Type ::= c::Type a::Type
 {
-  top.transType = c.transType;
+  top.transType =
+    case c.baseType of
+    | functionType(_, _) -> "common.NodeFactory<" ++ top.outputType.transType ++ ">"
+    | _ -> c.transType
+    end;
   top.transClassType = c.transClassType;
   top.transTypeRep = s"new common.AppTypeRep(${c.transTypeRep}, ${a.transTypeRep})";
   top.transFreshTypeRep = s"new common.AppTypeRep(${c.transFreshTypeRep}, ${a.transFreshTypeRep})";
@@ -143,27 +147,12 @@ top::Type ::= te::Type
 }
 
 aspect production functionType
-top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
+top::Type ::= params::Integer namedParams::[String]
 {
-  top.transType = "common.NodeFactory<" ++ out.transType ++ ">";
+  top.transType = "common.NodeFactory";
   top.transClassType = "common.NodeFactory";
   top.transTypeRep =
-    s"new common.FunctionTypeRep(${out.transTypeRep}, " ++
-      s"new common.TypeRep[] {${implode(", ", map((.transTypeRep), params))}}, " ++
-      s"new String[] {${implode(", ", map(\ nat::NamedArgType -> s"\"${nat.argName}\"", namedParams))}}, " ++
-      s"new common.TypeRep[] {${implode(", ", map((.transTypeRep), map((.argType), namedParams)))}})";
-  top.transFreshTypeRep =
-    s"new common.FunctionTypeRep(${out.transFreshTypeRep}, " ++
-      s"new common.TypeRep[] {${implode(", ", map((.transFreshTypeRep), params))}}, " ++
-      s"new String[] {${implode(", ", map(\ nat::NamedArgType -> s"\"${nat.argName}\"", namedParams))}}, " ++
-      s"new common.TypeRep[] {${implode(", ", map((.transFreshTypeRep), map((.argType), namedParams)))}})";
-  top.transTypeName = "Fn_" ++ out.transTypeName ++ "_from_" ++ implode("_", map((.transTypeName), params)) ++ implode("_", map((.transTypeName), namedParams));
-}
-
-attribute transTypeName occurs on NamedArgType;
-
-aspect production namedArgType
-top::NamedArgType ::= s::String  ty::Type
-{
-  top.transTypeName = s ++ "_" ++ ty.transTypeName;
+    s"new common.FunctionTypeRep(${toString(params)}, new String[] {${implode(", ", map(\ n::String -> s"\"${n}\"", namedParams))}})";
+  top.transFreshTypeRep = top.transTypeRep;
+  top.transTypeName = "Fn_" ++ toString(params) ++ "_" ++ implode("_", namedParams);
 }

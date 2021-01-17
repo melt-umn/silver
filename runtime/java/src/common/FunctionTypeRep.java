@@ -1,85 +1,56 @@
 package common;
 
 /**
- * Representation of a (possibly parametric) basic Silver type, used for run-time type checking in reification.  
+ * Representation of a Silver function type, used for run-time type checking in reification.  
  * 
  * @author krame505
  */
 public class FunctionTypeRep extends TypeRep {
 	/**
-	 * The result type of the function.
+	 * The number of parameters to the function.
 	 */
-	public final TypeRep result;
-	
-	/**
-	 * The types of the parameters to the function.
-	 */
-	public final TypeRep[] params;
+	public final int params;
 	
 	/**
 	 * The names of the named parameters to the function.
 	 */
-	public final String[] namedParamNames;
-	
-	/**
-	 * The types of the named parameters to the function.
-	 */
-	public final TypeRep[] namedParamTypes;
+	public final String[] namedParams;
 	
 	/**
 	 * Create a FunctionTypeRep.
-	 * 
-	 * @param result The result type of the function.
-	 * @param params The parameter types of the function.
-	 * @param namedParamNames The names of the named parameters to the function.
-	 * @param namedParamTypes The types of the named parameters to the function.
+	 *
+	 * @param params The number of parameters to the function.
+	 * @param namedParams The names of the named parameters to the function.
 	 */
-	public FunctionTypeRep(final TypeRep result, final TypeRep[] params, final String[] namedParamNames, final TypeRep[] namedParamTypes) {
-		this.result = result;
+	public FunctionTypeRep(final int params, final String[] namedParams) {
 		this.params = params;
-		this.namedParamNames = namedParamNames;
-		this.namedParamTypes = namedParamTypes;
-		
-		assert namedParamNames.length == namedParamTypes.length;
+		this.namedParams = namedParams;
 	}
 	
 	@Override
 	protected final boolean unifyPartial(final TypeRep other) {
 		if (!(other instanceof FunctionTypeRep) ||
-				!TypeRep.unify(result, ((FunctionTypeRep)other).result) ||
-				params.length != ((FunctionTypeRep)other).params.length ||
-				namedParamNames.length != ((FunctionTypeRep)other).namedParamNames.length) {
+				params != ((FunctionTypeRep)other).params ||
+				namedParams.length != ((FunctionTypeRep)other).namedParams.length) {
 			return false;
 		}
-		
-		for (int i = 0; i < params.length; i++) {
-			if (!TypeRep.unify(params[i], ((FunctionTypeRep)other).params[i])) {
+		for (int i = 0; i < namedParams.length; i++) {
+			if (!namedParams[i].equals(((FunctionTypeRep)other).namedParams[i])) {
 				return false;
 			}
 		}
-		
-		for (int i = 0; i < namedParamNames.length; i++) {
-			if (!namedParamNames[i].equals(((FunctionTypeRep)other).namedParamNames[i]) ||
-					!TypeRep.unify(namedParamTypes[i], ((FunctionTypeRep)other).namedParamTypes[i])) {
-				return false;
-			}
-		}
-		
 		return true;
 	}
 	
 	@Override
 	public final String toString() {
 		String paramsToString = "";
-		if (params.length > 0) {
-			paramsToString += params[0].toString();
+		for (int i = 0; i < params; i++) {
+			paramsToString += " _";
 		}
-		for (int i = 1; i < params.length; i++) {
-			paramsToString += " " + params[i].toString();
+		for (int i = 0; i < namedParams.length; i++) {
+			paramsToString += "; " + namedParams[i] + "::_";
 		}
-		for (int i = 0; i < namedParamNames.length; i++) {
-			paramsToString += "; " + namedParamNames[i] + "::" + namedParamTypes[i].toString();
-		}
-		return "(" + result.toString() + " ::= " + paramsToString + ")";
+		return "(_ ::=" + paramsToString + ")";
 	}
 }

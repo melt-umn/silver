@@ -14,18 +14,19 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
   local vty :: Type = v.lookupValue.typeScheme.typerep;
   
   local hasLoc :: Boolean =
-    !null(vty.namedTypes) && head(vty.namedTypes).argName == "location";
+    !null(vty.namedTypes) && head(vty.namedTypes).fst == "location";
   
   local elems :: [NamedSignatureElement] =
     filter(hasAst(_, top.env), top.frame.signature.inputElements);
     
   local inferredType :: Type =
-    functionType(
-      astType(top.frame.signature.outputElement, top.env),
-      map(astType(_, top.env), elems),
+    appTypes(
+      functionType(length(elems), if hasLoc then ["location"] else []),
+      map(astType(_, top.env), elems) ++
       (if hasLoc
-       then [namedArgType("location", nonterminalType("silver:core:Location", 0, false))]
-       else []));
+       then [ nonterminalType("silver:core:Location", 0, false)]
+       else []) ++
+      [astType(top.frame.signature.outputElement, top.env)]);
   
   top.errors <-
     if hasAst(top.frame.signature.outputElement, top.env) then []

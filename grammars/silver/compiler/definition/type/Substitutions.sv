@@ -86,7 +86,7 @@ functor attribute substituted occurs on Context, Type;
 functor attribute flatRenamed occurs on Context, Type;
 
 propagate substituted, flatRenamed on Context, Type
-  excluding varType, skolemType, ntOrDecType, functionType;
+  excluding varType, skolemType, ntOrDecType;
 
 aspect production varType
 top::Type ::= tv::TyVar
@@ -160,21 +160,6 @@ top::Type ::= nt::Type  hidden::Type
   top.flatRenamed = ntOrDecType(nt.flatRenamed, hidden.flatRenamed);
 }
 
-aspect production functionType
-top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
-{
-  top.substituted = 
-    functionType(
-      out.substituted,
-      mapSubst(params, top.substitution),
-      mapNamedSubst(namedParams, top.substitution));
-  top.flatRenamed = 
-    functionType(
-      out.flatRenamed,
-      mapRenameSubst(params, top.substitution),
-      mapNamedRenameSubst(namedParams, top.substitution));
-}
-
 --------------------------------------------------------------------------------
 
 function performContextSubstitution
@@ -197,12 +182,6 @@ function mapSubst
   return map(performSubstitution(_, s), tes);
 }
 
-function mapNamedSubst
-[NamedArgType] ::= np::[NamedArgType] s::Substitution
-{
-  return map(mapNamedArgType(performSubstitution(_, s), _), np);
-}
-
 ----
 
 function performContextRenaming
@@ -223,22 +202,6 @@ function mapRenameSubst
 [Type] ::= tes::[Type] s::Substitution
 {
   return map(performRenaming(_, s), tes);
-}
-
-function mapNamedRenameSubst
-[NamedArgType] ::= np::[NamedArgType] s::Substitution
-{
-  return map(mapNamedArgType(performRenaming(_, s), _), np);
-}
-
-----
-
-function mapNamedArgType
-NamedArgType ::= f::(Type ::= Type) nat::NamedArgType
-{
-  return case nat of
-  | namedArgType(n, t) -> namedArgType(n, f(t))
-  end;
 }
 
 --------------------------------------------------------------------------------

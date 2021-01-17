@@ -271,14 +271,32 @@ global isSingleDigit::(Boolean ::= String) = contains(_, ["1", "2", "3", "4", "5
 equalityTest(isSingleDigit("5"), true, Boolean, silver_tests);
 equalityTest(isSingleDigit("42"), false, Boolean, silver_tests);
 
+class Semigroupoid a {
+  sgcompose :: (a<b d> ::= a<c d> a<b c>);
+}
+
+instance Semigroupoid (_ ::= _) {
+  sgcompose = compose;
+}
+
+equalityTest(sgcompose(\ x::Integer -> x * 2, \ s::String -> toInteger(s))("42"), 84, Integer, silver_tests);
+
+wrongCode "(_ ::= _ _) has kind arity 3, but the class Semigroupoid expected kind arity 2" {
+  instance Semigroupoid (_ ::= _ _) {
+    sgcompose = compose;
+  }
+}
+
+wrongCode "Member sgcompose has expected type ((b ::= Integer c) ::= (b ::= Integer a) (a ::= Integer c)), but the expression has actual type ((b ::= c) ::= (b ::= a) (a ::= c))" {
+  instance Semigroupoid (_ ::= Integer _) {
+    sgcompose = compose;
+  }
+}
 
 wrongCode "is a type alias" {
   -- This caused a kind mismatch crash previously
-  class Semigroupoid a {
-    compose :: (a<b d> ::= a<c d> a<b c>);
-  }
   type Func<a b> = (b ::= a);
   instance Semigroupoid Func {
-    compose = error("compose"); --\f::(d ::= c)  g::(c ::= b) -> \x::b -> f(g(x));
+    sgcompose = error("compose"); --\f::(d ::= c)  g::(c ::= b) -> \x::b -> f(g(x));
   }
 }

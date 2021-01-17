@@ -205,11 +205,11 @@ top::Type ::= te::Type
 }
 
 aspect production functionType
-top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
+top::Type ::= params::Integer namedParams::[String]
 {
   top.refine = 
     case top.refineWith of
-    | functionType(oo, op, onp) -> refineAll(out :: params ++ map((.argType), namedParams), oo :: op ++ map((.argType), onp))
+    | functionType(op, onp) when params == op && namedParams == onp -> emptySubst()
     | _ -> errorSubst("Tried to refine function type with " ++ prettyType(top.refineWith))
     end;
 }

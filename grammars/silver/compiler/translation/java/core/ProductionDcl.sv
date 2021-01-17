@@ -225,7 +225,7 @@ ${sflatMap((.contextInitTrans), namedSig.contexts)}
         }
 		
         @Override
-        public final common.FunctionTypeRep getType() {
+        public final common.AppTypeRep getType() {
 ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
 			return ${namedSig.typerep.transFreshTypeRep};
 		}
