@@ -2,7 +2,7 @@ grammar silver:compiler:extension:doc:core;
 
 synthesized attribute body :: String;
 synthesized attribute loc :: Location;
-nonterminal CommentItem with body, loc;
+nonterminal CommentItem with body, loc, doEmit;
 
 {-
 Used by other productions to construct 
@@ -23,6 +23,7 @@ top::CommentItem ::= dcl::Decorated AGDcl body::Decorated DclComment
 {
 	top.body = "## " ++ dcl.unparse ++ "\n\n" ++ body.body;
 	top.loc = dcl.location;
+	top.doEmit = body.doEmit;
 }
 
 abstract production standaloneDclCommentItem
@@ -30,4 +31,5 @@ top::CommentItem ::= body::Decorated DclComment
 {
 	top.body = body.body;
 	top.loc = body.location;
+	top.doEmit = body.doEmit;
 }

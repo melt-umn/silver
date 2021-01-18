@@ -1,87 +1,59 @@
 
-nonterminal DocConfiguration;
-synthesized attribute splitByFile::Boolean occurs on DocConfiguration;
-synthesized attribute weight::Integer occurs on DocConfiguration;
-synthesized attribute title::Maybe<String> occurs on DocConfiguration;
-synthesized attribute collapseChildren::Boolean occurs on DocConfiguration;
-synthesized attribute noDocs::Boolean occurs on DocConfiguration;
-
-abstract production nilConfig
-top::DocConfiguration ::=
-{
-	top.splitByFile = false;
-	top.weight = 0;
-	top.title = nothing();
-	top.collapseChildren = true;
-	top.noDocs = false;
-}
+nonterminal DocConfigSetting;
+synthesized attribute fileScope::Boolean occurs on DocConfigSetting;
 
 abstract production splitConfig
-top::DocConfiguration ::= v::Boolean r::DocConfiguration
+top::DocConfigSetting ::= v::Boolean
 {
-	top.splitByFile = v;
-	top.weight = r.weight;
-	top.title = r.title;
-	top.collapseChildren = r.collapseChildren;
-	top.noDocs = r.noDocs;
+	top.fileScope = false;
 }
 
 abstract production weightConfig
-top::DocConfiguration ::= v::Integer r::DocConfiguration
+top::DocConfigSetting ::= v::Integer
 {
-	top.splitByFile = r.splitByFile;
-	top.weight = v;
-	top.title = r.title;
-	top.collapseChildren = r.collapseChildren;
-	top.noDocs = r.noDocs;
+	top.fileScope = true;
 }
 
 abstract production titleConfig
-top::DocConfiguration ::= v::String r::DocConfiguration
+top::DocConfigSetting ::= v::String
 {
-	top.splitByFile = r.splitByFile;
-	top.weight = r.weight;
-	top.title = just(v);
-	top.collapseChildren = r.collapseChildren;
-	top.noDocs = r.noDocs;
+	top.fileScope = true;
 }
 
 abstract production collapseConfig
-top::DocConfiguration ::= v::Boolean r::DocConfiguration
+top::DocConfigSetting ::= v::Boolean
 {
-	top.splitByFile = r.splitByFile;
-	top.weight = r.weight;
-	top.title = r.title;
-	top.collapseChildren = v;
-	top.noDocs = r.noDocs;
+	top.fileScope = false;
 }
 
-abstract production noDocsConfig
-top::DocConfiguration ::= v::Boolean r::DocConfiguration
+abstract production grammarNoDocsConfig
+top::DocConfigSetting ::= v::Boolean
 {
-	top.splitByFile = r.splitByFile;
-	top.weight = r.weight;
-	top.title = r.title;
-	top.collapseChildren = r.collapseChildren;
-	top.noDocs = v;
+	top.fileScope = false;
 }
 
--- abstract production newGrammarConfig
--- top::DocConfiguration ::= r::DocConfiguration
--- {
--- 	top.splitByFile = nilConfig().splitByFile;
--- 	top.weight = nilConfig().weight;
--- 	top.title = nilConfig().title;
--- 	top.collapseChildren = nilConfig().collapseChildren;
--- 	top.noDocs = r.noDocs;
--- }
-
-abstract production newFileConfig
-top::DocConfiguration ::= r::DocConfiguration
+abstract production fileNoDocsConfig
+top::DocConfigSetting ::= v::Boolean
 {
-	top.splitByFile = r.splitByFile;
-	top.weight = nilConfig().weight;
-	top.title = nilConfig().title;
-	top.collapseChildren = r.collapseChildren;
-	top.noDocs = r.noDocs;
+	top.fileScope = true;
+}
+
+abstract production tocConfig
+top::DocConfigSetting ::= v::Boolean
+{
+	top.fileScope = true;
+}
+
+
+-- a grammar with @excludeGrammar containing file(s) with @excludeFile false will
+-- only emit docs for that file(s)
+function doesExcludeFile
+Boolean ::= args::[DocConfigSetting]
+{
+	return case args of
+		   | fileNoDocsConfig(v)::_ -> v
+		   | grammarNoDocsConfig(true)::_ -> true
+		   | _::r -> doesExcludeFile(r)
+		   | [] -> false
+		   end;
 }

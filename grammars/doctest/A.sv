@@ -1,1 +1,5 @@
-@@{-Docs in A.sv-}
+@@{-
+
+@config excludeFile
+
+Docs in A.sv-}

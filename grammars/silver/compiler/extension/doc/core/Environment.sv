@@ -1,14 +1,21 @@
 grammar silver:compiler:extension:doc:core;
 
-nonterminal DocDclInfo with id, loc, path;
-
-synthesized attribute id :: String;
-synthesized attribute path :: String;
+nonterminal DocDclInfo;
 
 abstract production docDclInfo
-top::DocDclInfo ::= typ::String id::String loc::Location path::String
+top::DocDclInfo ::= id::String loc::Location grammar_::String
 {
-  top.id = id;
-  top.loc = loc;
-  top.path = path;
+
+}
+
+aspect production functionDcl
+top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 
+{
+	top.docDcls := [pair(id.name, docDclInfo(id.name, top.location, top.grammarName))];
+}
+
+aspect production productionDcl
+top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+{
+	top.docDcls := [pair(id.name, docDclInfo(id.name, top.location, top.grammarName))];
 }

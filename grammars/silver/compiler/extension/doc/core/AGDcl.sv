@@ -25,8 +25,10 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
     parsed.paramNames = paramNamesAndForWhat.fst;
     parsed.isForWhat = paramNamesAndForWhat.snd;
     parsed.downDocConfig = top.downDocConfig;
-    top.upDocConfig = parsed.upDocConfig;
-
+    parsed.docEnv = top.docEnv;
+    parsed.offsetLocation = comment.location;
+    
+    top.upDocConfig <- parsed.upDocConfig;
     top.errors <- parsed.errors;
 
     local isDoubleComment::Boolean = length(dcl.docs) != 0;
@@ -44,12 +46,14 @@ concrete production standaloneCommentAGDcl
 top::AGDcl ::= '@' comment::DocComment_t
 {
     local parsed::DclComment = parseComment(comment);
-    
+
     parsed.paramNames = [];
     parsed.isForWhat = "standalone";
     parsed.downDocConfig = top.downDocConfig;
-    top.upDocConfig = parsed.upDocConfig;
-
+    parsed.docEnv = top.docEnv;
+    parsed.offsetLocation = comment.location;
+    
+    top.upDocConfig <- parsed.upDocConfig;
     top.errors <- parsed.errors;
 
     top.docs := [standaloneDclCommentItem(parsed)];
