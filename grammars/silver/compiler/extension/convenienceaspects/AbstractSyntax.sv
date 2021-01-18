@@ -125,7 +125,7 @@ top::AGDcl ::= attr::QNameAttrOccur aspectLHS::ConvAspectLHS eqKind::Convenience
     extractAspectAgDclFromRuleList(_,aspectLHS,attr,eqKind,top.location),
     groupedMRules);
 
-  top.errors <- foldr(append, [], (map(snd(_), groupExtractResults)));
+  -- top.errors := foldr(append, [], (map(snd(_), groupExtractResults)));
 
   local combinedAspectProds::[AGDcl] = map(fst(_),groupExtractResults);
 

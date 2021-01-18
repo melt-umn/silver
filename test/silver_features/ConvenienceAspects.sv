@@ -58,6 +58,14 @@ top::BarExpr ::= ppList::[String] value::Integer
   top.hiddenAttr = toString(value);
 }
 
+abstract production barInit4
+top::BarExpr ::=
+{
+  top.ppList = [];
+  top.value = 10;
+  top.hiddenAttr = "aardvarks";
+}
+
 attribute foopp occurs on BarExpr;
 
 aspect foopp on top::BarExpr of
@@ -65,6 +73,8 @@ aspect foopp on top::BarExpr of
 | barInit1(h::t,_) -> h ++ "Foopp" ++ top.hiddenAttr
 | barInit2(h :: t,value) -> h ++ " and then " ++ toString(value)
 | barInit3(_,val) -> toString(val) ++ top.hiddenAttr
+| barInit4() -> "Foopp"
+| barInit5() -> "Foopp"
 | _ -> top.hiddenAttr
 end;
 -- Which is tranformed to the following.
