@@ -134,9 +134,7 @@ top::AGDcl ::= attr::QNameAttrOccur aspectLHS::ConvAspectLHS eqKind::Convenience
    nilAGDcls(location=top.location),
    combinedAspectProds);
 
-  local fwrd::AGDcl = makeAppendAGDclOfAGDcls(combinedAspectDcls);
-  forwards to unsafeTracePrint(fwrd,fwrd.unparse);
-  -- forwards to makeAppendAGDclOfAGDcls(combinedAspectDcls);
+  forwards to makeAppendAGDclOfAGDcls(combinedAspectDcls);
 
 }
 
