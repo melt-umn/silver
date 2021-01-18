@@ -1,5 +1,5 @@
 
-monoid attribute defs::[String] with [], ++;
+monoid attribute defs::[String];
 monoid attribute freeVars::[String] with [], ++;
 
 propagate defs on MStmt;
@@ -38,6 +38,12 @@ global testMStmt::MStmt =
 
 equalityTest(testMStmt.defs, ["a", "d"], [String], silver_tests);
 equalityTest(testMStmt.freeVars, ["b", "c"], [String], silver_tests);
+
+wrongCode "Could not find an instance for silver:core:Monoid silver_features:NotAMonoid" {
+  nonterminal NotAMonoid;
+  monoid attribute nam::NotAMonoid occurs on MStmt, MExpr;
+  propagate nam on MStmt, MExpr;
+}
 
 -- Test errors in propagate
 monoid attribute things<a>::[a] with [], ++;
