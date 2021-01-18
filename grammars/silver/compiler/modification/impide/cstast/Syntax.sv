@@ -2,8 +2,8 @@ grammar silver:compiler:modification:impide:cstast;
 
 --import (see grammar-wide import in cstast.sv)
 
-monoid attribute fontList :: [Pair<String Font>] with [], ++;
-monoid attribute classFontList :: [Pair<String String>] with [], ++;
+monoid attribute fontList :: [Pair<String Font>];
+monoid attribute classFontList :: [Pair<String String>];
 
 attribute fontList, classFontList occurs on Syntax, SyntaxDcl, SyntaxRoot;
 propagate fontList, classFontList on Syntax, SyntaxDcl;

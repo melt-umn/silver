@@ -10,7 +10,7 @@ import silver:compiler:modification:let_fix;
 {--
  - Direct (potential) dependencies this expression has on nodes in the production flow graph.
  -}
-monoid attribute flowDeps :: [FlowVertex] with [], ++;
+monoid attribute flowDeps :: [FlowVertex];
 {--
  - Determines whether this expression corresponds to a node in the flow graph, and how
  - to treat it specially if so.

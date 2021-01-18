@@ -27,11 +27,11 @@ synthesized attribute suppliedInhs :: [String];
 {--
  - A list of decorated expressions from an Exprs.
  -}
-monoid attribute exprs :: [Decorated Expr] with [], ++;
+monoid attribute exprs :: [Decorated Expr];
 {--
  - Get each individual Expr, without decorating them.
  -}
-monoid attribute rawExprs :: [Expr] with [], ++;
+monoid attribute rawExprs :: [Expr];
 
 -- Is this Expr the logical "root" of the expression? That is, will it's value be the value computed
 --  for the attribute/return value/etc that it is part of?

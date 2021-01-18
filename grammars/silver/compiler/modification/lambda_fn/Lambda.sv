@@ -38,7 +38,7 @@ top::Expr ::= params::ProductionRHS e::Expr
   e.frame = inLambdaContext(top.frame, sourceGrammar=top.frame.sourceGrammar); --TODO: Is this sourceGrammar correct?
 }
 
-monoid attribute lambdaDefs::[Def] with [], ++;
+monoid attribute lambdaDefs::[Def];
 attribute lambdaDefs occurs on ProductionRHS, ProductionRHSElem;
 
 propagate lambdaDefs on ProductionRHS;

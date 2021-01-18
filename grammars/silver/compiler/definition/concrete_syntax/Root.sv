@@ -1,7 +1,7 @@
 grammar silver:compiler:definition:concrete_syntax;
 
-monoid attribute syntaxAst :: [SyntaxDcl] with [], ++;
-monoid attribute parserSpecs :: [ParserSpec] with [], ++;
+monoid attribute syntaxAst :: [SyntaxDcl];
+monoid attribute parserSpecs :: [ParserSpec];
 
 attribute syntaxAst, parserSpecs occurs on Root, AGDcls, AGDcl;
 propagate syntaxAst, parserSpecs on Root, AGDcls;

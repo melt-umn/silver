@@ -2,7 +2,7 @@ grammar silver:compiler:analysis:typechecking:core;
 
 inherited attribute contextLoc::Location occurs on Contexts, Context;
 inherited attribute contextSource::String occurs on Contexts, Context;
-monoid attribute contextErrors::[Message] with [], ++ occurs on Contexts, Context;
+monoid attribute contextErrors::[Message] occurs on Contexts, Context;
 attribute downSubst, upSubst occurs on Contexts, Context;
 propagate contextLoc, contextSource, contextErrors, downSubst, upSubst on Contexts;
 

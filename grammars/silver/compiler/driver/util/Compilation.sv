@@ -8,7 +8,7 @@ flowtype postOps {config} on Compilation;
 
 synthesized attribute postOps :: [DriverAction] with ++;
 synthesized attribute grammarList :: [Decorated RootSpec];
-monoid attribute recheckGrammars :: [String] with [], ++;
+monoid attribute recheckGrammars :: [String];
 -- This is used on the outside, e.g. the ide functions.
 synthesized attribute allGrammars :: [Decorated RootSpec];
 

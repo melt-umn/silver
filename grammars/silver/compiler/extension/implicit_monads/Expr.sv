@@ -12,7 +12,7 @@ attribute monadRewritten<Expr>, merrors, mtyperep, mDownSubst, mUpSubst, expecte
 
 
 --list of the attributes accessed in an explicit expression not allowed there
-monoid attribute notExplicitAttributes::[Pair<String Location>] with [], ++;
+monoid attribute notExplicitAttributes::[Pair<String Location>];
 attribute notExplicitAttributes occurs on Expr, AppExprs, AnnoAppExprs, MRuleList, Exprs, MatchRule, AbstractMatchRule, AssignExpr;
 propagate notExplicitAttributes on Expr, AppExprs, AnnoAppExprs, MRuleList, Exprs, AssignExpr excluding forwardAccess;
 

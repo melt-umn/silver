@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:concrete_syntax:ast;
 
-imports silver:core hiding empty;
+imports silver:core with empty as mempty;
 
 -- Translation of regex to Copper XML format.
 attribute xmlCopper occurs on Regex;

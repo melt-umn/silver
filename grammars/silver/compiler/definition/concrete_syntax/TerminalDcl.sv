@@ -115,7 +115,7 @@ top::TerminalKeywordModifier ::=
 nonterminal TerminalModifiers with config, location, unparse, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
 closed nonterminal TerminalModifier with config, location, unparse, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
 
-monoid attribute terminalModifiers :: [SyntaxTerminalModifier] with [], ++;
+monoid attribute terminalModifiers :: [SyntaxTerminalModifier];
 
 propagate terminalModifiers, errors on TerminalModifiers;
 
