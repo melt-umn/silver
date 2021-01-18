@@ -1,7 +1,4 @@
 grammar silver:compiler:extension:convenienceaspects;
-import silver:core;
-import silver:compiler:modification:collection;
-import silver:compiler:extension:constructparser;
 
 
 function extractAspectAgDclFromRuleList
@@ -11,35 +8,36 @@ Pair<AGDcl [Message]> ::= rules::[Decorated AbstractMatchRule] aspectTy::TypeExp
   local makeProdParamTypes::([Type] ::= Decorated QName) = \prod::Decorated QName ->
     case prod.lookupValue.typeScheme.typerep of
     | functionType(_, paramTypes, _) -> paramTypes
-    | errorType() -> error("Production not visible in current scope.")
-    | _ -> error("invalid production type")
+    -- Case when production not in scope
+    -- This will be reported by the QNameLookup production
+    | errorType() -> []
+    -- Case when prod name isn't a name for a production
+    -- This will also be reported later, as the production is used.
+    | _ -> []
     end;
 
   local makeProdParamsList::([AspectRHSElem] ::= [Name] [Type]) =
-    \prodParamNames::[Name] prodParamTypes::[Type] ->
-      zipWith(aspectRHSElemFull(_, _, location=location), prodParamNames, prodParamTypes);
+    zipWith(aspectRHSElemFull(_, _, location=location), _, _);
 
-  local makeProdParams::(AspectRHS ::= [AspectRHSElem] ) = \prodParamsList::[AspectRHSElem] ->
-    foldr(aspectRHSElemCons(_, _, location=location),
-          aspectRHSElemNil(location=location),
-          prodParamsList);
+  local makeProdParams::(AspectRHS ::= [AspectRHSElem] ) = foldr(
+    aspectRHSElemCons(_, _, location=location),
+    aspectRHSElemNil(location=location),
+    _);
 
   local makeQNamesFromNames::([QName] ::= [Name]) = map(qNameId(_, location=location),_);
 
-  local makeParamCaseSubExpr::([Expr] ::= [QName]) = \prodParamNames::[QName] ->
-    map(baseExpr(_,location=location),prodParamNames);
+  local makeParamCaseSubExpr::([Expr] ::= [QName]) = map(baseExpr(_,location=location),_);
 
   local transformPatternMatchRule::([AbstractMatchRule]::=[Decorated AbstractMatchRule]) =
-    \mRuleList::[Decorated AbstractMatchRule] ->
-      map((\mRule::Decorated AbstractMatchRule -> case mRule of
-         | matchRule(pl,cond,e) -> matchRule(
-           (foldr(append, [], (map(\pat::Decorated Pattern -> pat.patternSubPatternList, pl)) ) ),
-           cond,
-           e,
-           location=location)
-         | _ -> error("This error indicates possible productions for AbstractMatchRule have expanded.")
-         end),
-         mRuleList);
+    map((\mRule::Decorated AbstractMatchRule -> case mRule of
+      | matchRule(pl,cond,e) -> matchRule(
+        (foldr(append, [], (map(\pat::Decorated Pattern -> pat.patternSubPatternList, pl)) ) ),
+        cond,
+        e,
+        location=location)
+      | _ -> error("This error indicates possible productions for AbstractMatchRule have expanded.")
+      end),
+      _);
 
   local makeParamsCaseExpr::(Expr ::= [Expr] [Decorated AbstractMatchRule]) =
     \paramsCaseSubExpr::[Expr] mRules::[Decorated AbstractMatchRule] ->
@@ -70,8 +68,8 @@ Pair<AGDcl [Message]> ::= rules::[Decorated AbstractMatchRule] aspectTy::TypeExp
         name,
         makeProdParams(
             makeProdParamsList(
-            head(rules).aspectProdParamsList,
-            makeProdParamTypes(name)))),
+              head(rules).aspectProdParamsList,
+              makeProdParamTypes(name)))),
       [])
     | [matchRule(wildcPattern(_)::_,_,e)] ->
       pair(
@@ -88,7 +86,7 @@ Pair<AGDcl [Message]> ::= rules::[Decorated AbstractMatchRule] aspectTy::TypeExp
           top::$TypeExpr{aspectTy} ::=
           { $ProductionStmt{genDef(defTop,aspectAttr,e,head(rules).location)}}
         },
-        [wrn(location, "wildcard patterns after this one are dead code.")])
+        [wrn(head(rules).location, "wildcard patterns after this one are dead code.")])
     | _ ->
       pair(
         error("Patterns in aspect convenience syntax should be productions or wildcards only"),
@@ -132,7 +130,7 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Pair<Expr Maybe<P
   top.aspectProdParamsList = case pl of
     | prodAppPattern_named(prod, _, ps,_,_,_) :: _ ->
       map(\pat::Decorated Pattern ->
-        name("__generated_" ++ toString(genIntReally(pat)), top.location),
+        name("__generated_" ++ toString(genInt()), top.location),
         ps.patternList)
     | _ -> []
     end;

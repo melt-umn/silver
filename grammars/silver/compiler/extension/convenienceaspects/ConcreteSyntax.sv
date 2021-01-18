@@ -1,5 +1,4 @@
 grammar silver:compiler:extension:convenienceaspects;
-import silver:core;
 import silver:compiler:modification:collection;
 import silver:compiler:extension:constructparser;
 
