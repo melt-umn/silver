@@ -132,6 +132,8 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
       when q.name == "silver:core:gt" -> gtASTExpr(e1.transform, e2.transform)
     | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
       when q.name == "silver:core:gte" -> gteqASTExpr(e1.transform, e2.transform)
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
+      when q.name == "silver:core:append" -> appendASTExpr(e1.transform, e2.transform)
     
     | _, _ -> applyASTExpr(e.transform, es.transform, anns.transform)
     end;
@@ -446,18 +448,6 @@ aspect production stringConst
 top::Expr ::= s::String_t
 {
   top.transform = stringASTExpr(unescapeString(substring(1, length(s.lexeme) - 1, s.lexeme)));
-}
-
-aspect production stringPlusPlus
-top::Expr ::= e1::Decorated Expr   e2::Decorated Expr
-{
-  top.transform = appendASTExpr(e1.transform, e2.transform);
-}
-
-aspect production errorPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
-{
-  top.transform = appendASTExpr(e1.transform, e2.transform);
 }
 
 aspect production errorLength

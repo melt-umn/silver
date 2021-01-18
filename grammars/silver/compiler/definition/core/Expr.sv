@@ -816,49 +816,15 @@ top::Expr ::= e1::Expr '++' e2::Expr
 {
   top.unparse = e1.unparse ++ " ++ " ++ e2.unparse;
 
-  propagate errors;
-  top.errors <- forward.errors;
-  top.typerep = if errCheck1.typeerror then errorType() else result_type;
-
-  local result_type :: Type = performSubstitution(e1.typerep, errCheck1.upSubst);
-
-  -- Moved from 'analysis:typechecking' because we want to use this stuff here now
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, e2, errCheck1, forward;
-  -- upSubst defined via forward :D
-
-  errCheck1 = check(e1.typerep, e2.typerep);
-
-  e1.isRoot = false;
-  e2.isRoot = false;
-
   forwards to
-    -- if the types disagree, forward to an error production instead.
-    if errCheck1.typeerror
-    then errorExpr([err(top.location, "Operands to ++ must be the same concatenable type. Instead they are " ++ errCheck1.leftpp ++ " and " ++ errCheck1.rightpp)], location=top.location)
-    else top.typerep.appendDispatcher(e1, e2, top.location);
-}
-
-abstract production stringPlusPlus
-top::Expr ::= e1::Decorated Expr   e2::Decorated Expr
-{
-  top.unparse = e1.unparse ++ " ++ " ++ e2.unparse;
-
-  top.typerep = stringType();
-}
-
-abstract production errorPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
-{
-  top.unparse = e1.unparse ++ " ++ " ++ e2.unparse;
-
-  local result_type :: Type = performSubstitution(e1.typerep, top.downSubst);
-
-  top.errors <-
-    if result_type.isError then []
-    else [err(e1.location, prettyType(result_type) ++ " is not a concatenable type.")];
-  top.typerep = errorType();
+    -- silver:core:append(e1, e2)
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:append"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
 -- These sorta seem obsolete, but there are some important differences from AppExprs.

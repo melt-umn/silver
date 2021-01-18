@@ -224,19 +224,6 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
     
 }
 
-aspect production errorPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
-{
-  top.flowDeps <- []; -- error, so who cares?
-  top.flowDefs <- e1.flowDefs ++ e2.flowDefs;
-}
-aspect production stringPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
-{
-  top.flowDeps <- e1.flowDeps ++ e2.flowDeps;
-  top.flowDefs <- e1.flowDefs ++ e2.flowDefs;
-}
-
 aspect production exprRef
 top::Expr ::= e::Decorated Expr
 {

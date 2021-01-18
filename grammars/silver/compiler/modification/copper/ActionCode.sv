@@ -45,7 +45,7 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
   top.defs := flatMap(hackTransformLocals, stmts.defs);
   propagate flowDefs;
 
-  top.actionCode = sflatMap(hacklocaldeclarations, stmts.defs) ++ stmts.translation;
+  top.actionCode = flatMap(hacklocaldeclarations, stmts.defs) ++ stmts.translation;
 
   top.errors := stmts.errors;
   top.errors <- if top.frame.permitPluck && !stmts.containsPluck then

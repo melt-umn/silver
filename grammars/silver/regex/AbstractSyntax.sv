@@ -1,5 +1,6 @@
 grammar silver:regex;
 
+imports silver:core hiding empty;
 imports silver:rewrite;
 imports silver:langutil;
 imports silver:langutil:pp;

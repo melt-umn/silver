@@ -317,7 +317,7 @@ public class PropertyControlsProvider implements IPropertyControlsProvider {
     if(controls == null) {
       controls = new ArrayList<PropertyControl>();
 
-${sflatMap((.controlJavaTranslation), propDcls)}
+${flatMap((.controlJavaTranslation), propDcls)}
     }
 
     return controls;
@@ -360,7 +360,7 @@ public class PropertyGenerator {
         if(properties==null) {
             StringBuilder sb = new StringBuilder();
     
-${sflatMap((.generatorJavaTranslation), propDcls)}
+${flatMap((.generatorJavaTranslation), propDcls)}
     
             properties = sb.toString();
         }

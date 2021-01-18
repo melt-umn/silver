@@ -173,16 +173,6 @@ top::Expr ::= s::String_t
 {
 }
 
-aspect production errorPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
-{
-}
-
-aspect production stringPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
-{
-}
-
 aspect production exprsEmpty
 top::Exprs ::=
 {
