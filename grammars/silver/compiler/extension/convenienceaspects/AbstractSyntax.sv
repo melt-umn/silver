@@ -2,7 +2,7 @@ grammar silver:compiler:extension:convenienceaspects;
 
 
 function extractAspectAgDclFromRuleList
-Pair<AGDcl [Message]> ::= rules::[Decorated AbstractMatchRule] aspectTy::TypeExpr aspectAttr::QNameAttrOccur genDef::(ProductionStmt ::= DefLHS QNameAttrOccur Expr Location) location::Location
+Pair<AGDcl [Message]> ::= rules::[Decorated AbstractMatchRule] aspectLHS::ConvAspectLHS aspectAttr::QNameAttrOccur  eqKind::ConvenienceAspectEquationKind location::Location
 {
 
   local makeProdParamTypes::([Type] ::= Decorated QName) = \prod::Decorated QName ->
@@ -35,7 +35,6 @@ Pair<AGDcl [Message]> ::= rules::[Decorated AbstractMatchRule] aspectTy::TypeExp
         cond,
         e,
         location=location)
-      | _ -> error("This error indicates possible productions for AbstractMatchRule have expanded.")
       end),
       _);
 
@@ -51,11 +50,18 @@ Pair<AGDcl [Message]> ::= rules::[Decorated AbstractMatchRule] aspectTy::TypeExp
     \paramsCaseExpr::Expr prod::QName prodParams::AspectRHS ->
       Silver_AGDcl {
         aspect production $QName{prod}
-        top::$TypeExpr{aspectTy} ::= $AspectRHS{prodParams}
-        { $ProductionStmt{genDef(defTop,aspectAttr,paramsCaseExpr, paramsCaseExpr.location)}}
+        $Name{aspectLHS.aspectName}::$TypeExpr{aspectLHS.aspectType} ::= $AspectRHS{prodParams}
+          { $ProductionStmt{eqKind.makeAspectEquation(
+              defTop(
+                aspectLHS.aspectName,
+                head(rules).location),
+              aspectAttr,
+              paramsCaseExpr,
+              paramsCaseExpr.location)}}
       };
 
-  local defTop::DefLHS = concreteDefLHS(qNameId(name("top",location), location=location), location=location);
+  local defTop::(DefLHS ::= Name Location) = \name::Name loc::Location ->
+    concreteDefLHS(qNameId(name,location=loc), location=loc);
 
   return case rules of
     | matchRule(prodAppPattern(name,_,_,_)::_, cond,e) :: _ ->
@@ -75,16 +81,28 @@ Pair<AGDcl [Message]> ::= rules::[Decorated AbstractMatchRule] aspectTy::TypeExp
       pair(
         Silver_AGDcl {
           aspect default production
-          top::$TypeExpr{aspectTy} ::=
-          { $ProductionStmt{genDef(defTop,aspectAttr,e,head(rules).location)}}
+          $Name{aspectLHS.aspectName}::$TypeExpr{aspectLHS.aspectType} ::=
+          { $ProductionStmt{eqKind.makeAspectEquation(
+              defTop(
+                aspectLHS.aspectName,
+                head(rules).location),
+              aspectAttr,
+              e,
+              head(rules).location)}}
       },
       [])
     | matchRule(wildcPattern(_)::_,_,e) :: _ ->
       pair(
         Silver_AGDcl {
           aspect default production
-          top::$TypeExpr{aspectTy} ::=
-          { $ProductionStmt{genDef(defTop,aspectAttr,e,head(rules).location)}}
+          $Name{aspectLHS.aspectName}::$TypeExpr{aspectLHS.aspectType} ::=
+          { $ProductionStmt{eqKind.makeAspectEquation(
+              defTop(
+                aspectLHS.aspectName,
+                head(rules).location),
+              aspectAttr,
+              e,
+              head(rules).location)}}
         },
         [wrn(head(rules).location, "wildcard patterns after this one are dead code.")])
     | _ ->
@@ -98,7 +116,7 @@ Pair<AGDcl [Message]> ::= rules::[Decorated AbstractMatchRule] aspectTy::TypeExp
 synthesized attribute aspectProdParamsList::[Name] occurs on AbstractMatchRule;
 
 abstract production convenienceAspects
-top::AGDcl ::= attr::QNameAttrOccur ty::TypeExpr ml::MRuleList makeEquation::(ProductionStmt ::= DefLHS QNameAttrOccur Expr Location)
+top::AGDcl ::= attr::QNameAttrOccur aspectLHS::ConvAspectLHS eqKind::ConvenienceAspectEquationKind ml::MRuleList
 {
   top.defs := [];
 
@@ -108,7 +126,7 @@ top::AGDcl ::= attr::QNameAttrOccur ty::TypeExpr ml::MRuleList makeEquation::(Pr
         groupMRules(ml.matchRuleList));
 
   local groupExtractResults::[Pair<AGDcl [Message]>] = map(
-    extractAspectAgDclFromRuleList(_,ty,attr,makeEquation,top.location),
+    extractAspectAgDclFromRuleList(_,aspectLHS,attr,eqKind,top.location),
     groupedMRules);
 
   top.errors <- foldr(append, [], (map(snd(_), groupExtractResults)));
@@ -120,7 +138,9 @@ top::AGDcl ::= attr::QNameAttrOccur ty::TypeExpr ml::MRuleList makeEquation::(Pr
    nilAGDcls(location=top.location),
    combinedAspectProds);
 
-  forwards to makeAppendAGDclOfAGDcls(combinedAspectDcls);
+  local fwrd::AGDcl = makeAppendAGDclOfAGDcls(combinedAspectDcls);
+  forwards to unsafeTraceDump(fwrd);
+  -- forwards to makeAppendAGDclOfAGDcls(combinedAspectDcls);
 
 }
 
@@ -142,7 +162,3 @@ top::AbstractMatchRule ::=
 {
   top.aspectProdParamsList = [];
 }
-
-function genIntReally -- zzz
-Integer ::= a
-{ return genInt(); }

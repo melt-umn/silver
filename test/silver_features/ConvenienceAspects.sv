@@ -31,13 +31,15 @@ aspect foopp on FooExpr of
 end;
 
 synthesized attribute ppList :: [String];
-nonterminal BarExpr with ppList, value;
+synthesized attribute hiddenAttr :: String;
+nonterminal BarExpr with ppList, value, hiddenAttr;
 
 abstract production barInit1
 top::BarExpr ::= ppList::[String] value::Integer
 {
   top.ppList = ppList;
   top.value = value;
+  top.hiddenAttr = toString(value);
 }
 
 abstract production barInit2
@@ -45,6 +47,7 @@ top::BarExpr ::= ppList::[String] value::Integer
 {
   top.ppList = ppList;
   top.value = value + 1;
+  top.hiddenAttr = "aardvarks";
 }
 
 abstract production barInit3
@@ -52,49 +55,35 @@ top::BarExpr ::= ppList::[String] value::Integer
 {
   top.ppList = ppList ++ ["extra"];
   top.value = value;
+  top.hiddenAttr = toString(value);
 }
 
 attribute foopp occurs on BarExpr;
 
-aspect foopp on BarExpr of
+aspect foopp on top::BarExpr of
 | barInit1([],_) -> "emptyFoopp"
-| barInit1(h::t,_) -> h ++ "Foopp"
+| barInit1(h::t,_) -> h ++ "Foopp" ++ top.hiddenAttr
 | barInit2(h :: t,value) -> h ++ " and then " ++ toString(value)
-| barInit3(_,val) -> toString(val)
-| _ -> "testing"
+| barInit3(_,val) -> toString(val) ++ top.hiddenAttr
+| _ -> top.hiddenAttr
 end;
-
-
-
 -- Which is tranformed to the following.
 -- (This is the unparse output of the generated tree)
 -- ----->
 
--- aspect production addfoo
--- top ::= __generated_284::silver_features:FooExpr __generated_285::silver_features:FooExpr
--- 	top.foopp = case __generated_284, __generated_285,  of l, _ -> "foo " ++ l.prettierprint end;
--- aspect production subtractFoo
--- top ::= __generated_286::silver_features:FooExpr __generated_287::silver_features:FooExpr
-
--- 	top.foopp = case __generated_286, __generated_287,  of l, r -> "foo " ++ l.prettierprint ++ "-" ++ r.prettierprint end;
--- aspect default production
--- top::FooExpr ::=
-
--- 	top.foopp = "default";
-
 -- aspect production barInit1
--- top ::= __generated_288::[String] __generated_289::Integer
+-- top ::= __generated_305::[String] __generated_306::Integer
 
--- 	top.foopp = case __generated_288, __generated_289,  of [], _ -> "emptyFoopp" end;
--- aspect production barInit1
--- top ::= __generated_290::[String] __generated_291::Integer
-
--- 	top.foopp = case __generated_290, __generated_291,  of h::t, _ -> h ++ "Foopp" end;
+-- 	top.foopp = (case __generated_305, __generated_306 of [], _ -> "emptyFoopp" | h::t, _ -> h ++ "Foopp" ++ top.hiddenAttr | _ -> silver:core:error(, "Error: pattern match failed at ConvenienceAspects.sv:64:2\n",) end :: a);
 -- aspect production barInit2
--- top ::= __generated_292::[String] __generated_293::Integer
+-- top ::= __generated_308::[String] __generated_309::Integer
 
--- 	top.foopp = case __generated_292, __generated_293,  of h::t, value -> h ++ " and then " ++ toStringFromInteger(value,) end;
+-- 	top.foopp = (case __generated_308, __generated_309 of h::t, value -> h ++ " and then " ++ toString(value) | _ -> silver:core:error(, "Error: pattern match failed at ConvenienceAspects.sv:66:2\n",) end :: a);
 -- aspect production barInit3
--- top ::= __generated_294::[String] __generated_295::Integer
+-- top ::= __generated_311::[String] __generated_312::Integer
 
--- 	top.foopp = case __generated_294, __generated_295,  of _, val -> toStringFromInteger(val,) end;
+-- 	top.foopp = (case __generated_311, __generated_312 of _, val -> toString(val) ++ top.hiddenAttr | _ -> silver:core:error(, "Error: pattern match failed at ConvenienceAspects.sv:67:2\n",) end :: a);
+-- aspect default production
+-- top::BarExpr ::=
+
+-- 	top.foopp = top.hiddenAttr;
