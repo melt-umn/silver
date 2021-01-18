@@ -72,7 +72,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
       sourceGrammar=top.grammarName, sourceLocation=top.location)
     end;
   top.defs <- [tcInstDef(instDcl)];
-  top.defs <- transitiveSuperDefs(top.env, t.typerep, [], fName, instDcl);
+  top.defs <- transitiveSuperDefs(top.env, t.typerep, [], instDcl);
 
   top.lexicalTyVarKinds <-
     case t of
@@ -100,6 +100,7 @@ function transitiveSuperContexts
       map(transitiveSuperContexts(env, ty, dcl.fullName :: seenClasses, _), superClassNames));
 }
 
+-- TODO: Should be an equality attribute, maybe, once we have more than one kind of context?
 function sameSuperContext
 Boolean ::= c1::Context c2::Context
 {
@@ -110,14 +111,16 @@ Boolean ::= c1::Context c2::Context
 }
 
 function transitiveSuperDefs
-[Def] ::= env::Decorated Env ty::Type seenClasses::[String] className::String instDcl::DclInfo
+[Def] ::= env::Decorated Env ty::Type seenClasses::[String] instDcl::DclInfo
 {
-  local dcls::[DclInfo] = getTypeDcl(className, env);
+  local dcls::[DclInfo] = getTypeDcl(instDcl.fullName, env);
   local dcl::DclInfo = head(dcls);
   dcl.givenInstanceType = ty;
   local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
-  local superInstDcl::DclInfo =
-    instSuperDcl(className, instDcl, ty, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation);
+  local superInstDcls::[DclInfo] =
+    map(
+      instSuperDcl(_, instDcl, ty, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
+      superClassNames);
   return
     if null(dcls) || contains(dcl.fullName, seenClasses)
     then []
@@ -125,5 +128,5 @@ function transitiveSuperDefs
       -- This might introduce duplicate defs in "diamond subclassing" cases,
       -- but that shouldn't actually be an issue besides the (minor) added lookup overhead.
       map(\ c::Context -> c.contextSuperDef(dcl.sourceGrammar, dcl.sourceLocation, instDcl), dcl.superContexts) ++
-      concat(map(transitiveSuperDefs(env, ty, dcl.fullName :: seenClasses, _, superInstDcl), superClassNames));
+      flatMap(transitiveSuperDefs(env, ty, dcl.fullName :: seenClasses, _), superInstDcls);
 }
