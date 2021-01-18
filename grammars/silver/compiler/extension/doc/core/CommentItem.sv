@@ -14,14 +14,14 @@ function makeStub
 String ::= docUnparse::String grammarName::String loc::Location
 {
 	return
-s"""## `${docUnparse}`
+s"""## ${docUnparse}
 Contained in grammar ${grammarName}. [Defined at ${substitute(":", "/", grammarName)}/${loc.filename} line ${toString(loc.line)}](https://github.com/melt-umn/silver/blob/develop/grammars/${substitute(":", "/", grammarName)}/${loc.filename}#L${toString(loc.line)})""";
 }
 
 abstract production dclCommentItem
 top::CommentItem ::= dcl::Decorated AGDcl body::Decorated DclComment
 {
-	top.body = "## " ++ dcl.unparse ++ "\n\n" ++ body.body;
+	top.body = makeStub(dcl.docUnparse, dcl.grammarName, dcl.location) ++ "\n\n" ++ body.body;
 	top.loc = dcl.location;
 	top.doEmit = body.doEmit;
 }

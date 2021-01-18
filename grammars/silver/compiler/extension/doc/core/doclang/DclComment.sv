@@ -129,8 +129,7 @@ top::DclComment ::= InitialIgnore_t blocks::DclCommentBlocks FinalIgnore_t
             prodAttrBlocksSorted ++
             returnBlocks ++
             forwardBlocks ++
-            commentBlocks))
-        ++ "\n\n\n\n" ++ hackUnparse(configArgs) ++ "\n\n\n\n" ++ hackUnparse(confResult.snd);
+            commentBlocks));
 
     local confResult::Pair<[String] [DocConfigSetting]> = processConfigOptions([], configArgs, []);
     top.upDocConfig := confResult.snd;
@@ -152,11 +151,12 @@ Pair<[String] [DocConfigSetting]> ::= alreadyErrs::[String] args::[Pair<String C
         case arg of
         | pair("split", v) -> if !v.asBool.isJust then ["@config split takes a boolean value (or just @config split)"] else []
         | pair("weight", v) -> if !v.asInteger.isJust then ["@config weight takes an integer"] else []
+        | pair("grammarWeight", v) -> if !v.asInteger.isJust then ["@config grammarWeight takes an integer"] else []
         | pair("title", v) -> if !v.asString.isJust then ["@config title takes a string in quotes"] else []
+        | pair("grammarTitle", v) -> if !v.asString.isJust then ["@config grammarTitle takes a string in quotes"] else []
         | pair("collapseChildren", v) -> if !v.asBool.isJust then ["@config collapseChildren takes a boolean value (or just @config collapseChildren)"] else []
         | pair("excludeFile", v) -> if !v.asBool.isJust then ["@config excludeFile takes a boolean value (or just @config excludeFile)"] else []
         | pair("excludeGrammar", v) -> if !v.asBool.isJust then ["@config excludeGrammar takes a boolean value (or just @config excludeGrammar)"] else []
-        | pair("toc", v) -> if !v.asBool.isJust then ["@config toc takes a boolean value (or just @config toc)"] else []
         | pair(k, _) -> ["Unknown @config directive '"++k++"'"]
         end;
 
@@ -164,11 +164,12 @@ Pair<[String] [DocConfigSetting]> ::= alreadyErrs::[String] args::[Pair<String C
         case arg of
         | pair("split", v) -> splitConfig(v.asBool.fromJust)
         | pair("weight", v) -> weightConfig(v.asInteger.fromJust)
+        | pair("grammarWeight", v) -> grammarWeightConfig(v.asInteger.fromJust)
         | pair("title", v) -> titleConfig(v.asString.fromJust)
+        | pair("grammarTitle", v) -> grammarTitleConfig(v.asString.fromJust)
         | pair("collapseChildren", v) -> collapseConfig(v.asBool.fromJust)
         | pair("excludeFile", v) -> fileNoDocsConfig(v.asBool.fromJust)
         | pair("excludeGrammar", v) -> grammarNoDocsConfig(v.asBool.fromJust)
-        | pair("toc", v) -> tocConfig(v.asBool.fromJust)
         end;
 
     return case args of
@@ -363,7 +364,7 @@ top::DclCommentPart ::= '@link' '[' id::Id_t ']'
 {
     local res::[DocDclInfo] = lookup(id.lexeme, top.docEnv);
     top.body = case res of
-               | [docDclInfo(_, location, grammarName)] -> grammarName ++ "/" ++ location.filename
+               | [docDclInfo(_, location, grammarName)] -> id.lexeme ++ " at " ++ grammarName ++ "/" ++ location.filename ++ "#" ++ toString(location.line)
                | _ -> s"${id.lexeme} (**BROKEN LINK**)"
                end;
     top.errors <- case res of
@@ -385,26 +386,26 @@ top::DclCommentPart ::= '@@'
 }
 
 
-terminal InitialIgnore_t /@+\{\- *\-* */;
+terminal InitialIgnore_t /@+\{\-[ \t]*\-*[ \t]*/;
 terminal FinalIgnore_t /[\- \r\n]*\-\}/ dominates {CommentContent_t};
 
-terminal EmptyLines_t /\n( *\-* *\r?\n)+ *\-* */;
-terminal Newline_t /\r?\n *\-* */;
+terminal EmptyLines_t /\n([ \t]*\-*[ \t]*\r?\n)+[ \t]*\-*[ \t]*/;
+terminal Newline_t /\r?\n[ \t]*\-*[ \t]*/;
 
 terminal CommentContent_t /([^@\r\n\-]|\-[^\r\n}])+/;
 
 terminal EscapedAt_t '@@';
 
-terminal Param_t /( *\-* *\r?\n)* *\-* *@(param|child)/ lexer classes {BLOCK_KWD};
-terminal Return_t /( *\-* *\r?\n)* *\-* *@return/ lexer classes {BLOCK_KWD};
-terminal Forward_t /( *\-* *\r?\n)* *\-* *@forward/ lexer classes {BLOCK_KWD};
-terminal Prodattr_t /( *\-* *\r?\n)* *\-* *@prodattr/ lexer classes {BLOCK_KWD};
-terminal Warning_t /( *\-* *\r?\n)* *\-* *@warning/ lexer classes {BLOCK_KWD};
-terminal Config_t /( *\-* *\r?\n)* *\-* *@config/ lexer classes {BLOCK_KWD};
+terminal Param_t /([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*@(param|child)/ lexer classes {BLOCK_KWD};
+terminal Return_t /([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*@return/ lexer classes {BLOCK_KWD};
+terminal Forward_t /([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*@forward/ lexer classes {BLOCK_KWD};
+terminal Prodattr_t /([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*@prodattr/ lexer classes {BLOCK_KWD};
+terminal Warning_t /([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*@warning/ lexer classes {BLOCK_KWD};
+terminal Config_t /([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*@config/ lexer classes {BLOCK_KWD};
 
 terminal ConfigValueKeyword_t /(on|off|true|false|yes|no)/;
 terminal ConfigValueString_t /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]n|[\\]r|[\\]f|[\\]t)*[\"]/;
-terminal ConfigValueInt_t /[0-9]+/;
+terminal ConfigValueInt_t /\-?[0-9]+/;
 
 terminal Whitespace_t /[\t ]*/;
 terminal Equals_t /=?/;
@@ -413,7 +414,7 @@ terminal Link_t '@link';
 terminal FileLink_t '@file';
 terminal OpenBracket_t '[';
 terminal CloseBracket_t ']';
-terminal Id_t /[a-zA-Z][a-zA-Z0-9_]*/;
+terminal Id_t /[a-zA-Z][a-zA-Z0-9_:]*/;
 terminal Path_t /[a-zA-Z0-9_\-\/\.]+/;
 
 lexer class BLOCK_KWD dominates CommentContent_t;

@@ -1,3 +1,4 @@
+grammar silver:compiler:extension:doc:core;
 
 nonterminal DocConfigSetting;
 synthesized attribute fileScope::Boolean occurs on DocConfigSetting;
@@ -12,6 +13,18 @@ abstract production weightConfig
 top::DocConfigSetting ::= v::Integer
 {
 	top.fileScope = true;
+}
+
+abstract production grammarWeightConfig
+top::DocConfigSetting ::= v::Integer
+{
+	top.fileScope = false;
+}
+
+abstract production grammarTitleConfig
+top::DocConfigSetting ::= v::String
+{
+	top.fileScope = false;
 }
 
 abstract production titleConfig
@@ -38,12 +51,6 @@ top::DocConfigSetting ::= v::Boolean
 	top.fileScope = true;
 }
 
-abstract production tocConfig
-top::DocConfigSetting ::= v::Boolean
-{
-	top.fileScope = true;
-}
-
 
 -- a grammar with @excludeGrammar containing file(s) with @excludeFile false will
 -- only emit docs for that file(s)
@@ -55,5 +62,27 @@ Boolean ::= args::[DocConfigSetting]
 		   | grammarNoDocsConfig(true)::_ -> true
 		   | _::r -> doesExcludeFile(r)
 		   | [] -> false
+		   end;
+}
+
+function getTitle
+String ::= args::[DocConfigSetting] fallback::String
+{
+	return case args of
+		   | titleConfig(x)::_ -> x
+		   | grammarTitleConfig(x)::_ -> x
+		   | _::r -> getTitle(r, fallback)
+		   | [] -> fallback
+		   end;
+}
+
+function getWeight
+Integer ::= args::[DocConfigSetting]
+{
+	return case args of
+		   | weightConfig(x)::_ -> x
+		   | grammarWeightConfig(x)::_ -> x
+		   | _::r -> getWeight(r)
+		   | [] -> 0
 		   end;
 }

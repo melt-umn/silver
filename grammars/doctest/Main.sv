@@ -1,24 +1,29 @@
 
 @@{-
-   - 
-   - @config title = "Example Docs Page"
-   - @config weight 15
+   - @config grammarTitle = "Example Docs Page"
+   - @config grammarWeight -10
    -}
 
 @{-
   -
-  - Link to @link[dummyFunction].
-  - Link to @link[exFn].
-  - Link to @link[badLink]
+  - See also @link[sub], which is implemented in terms of this function.
+  - 
+  - @param a the first number to add
+  - @param b the second number to add
+  - @return the value of a + b (possibly plus bias)
+  - @prodattr bias a list of integers, the sum of which is added to every addition
+  - @warning NOTE: see the biad prod attr. An extension may have changed the behavior of addition.
+  -
+  - Here is some discussion of why it is a good idea to allow extensible addition:
+  - - It was a good idea at the time
+  - - And now the java translation depends on it
   -}
-function main
-IOVal<Integer> ::= args::[String] ioIn::IO
+function add
+Integer ::= a::Integer b::Integer
 {
-  return ioval(ioIn, 0);
+  production attribute bias::[Integer] with ++;
+  bias := [];
+
+  return a + b + foldl((\x::Integer y::Integer -> x + y), 0, bias);
 }
 
-function dummyFunction
-Integer ::=
-{
-  return 1;
-}
