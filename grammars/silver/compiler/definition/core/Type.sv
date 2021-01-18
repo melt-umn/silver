@@ -94,7 +94,7 @@ top::Type ::= te::Type
 }
 
 aspect production functionType
-top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
+top::Type ::= _ _
 {
   top.applicationDispatcher = functionApplication(_, _, _, location=_);
 }

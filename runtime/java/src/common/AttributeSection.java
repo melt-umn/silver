@@ -1,8 +1,5 @@
 package common;
 
-import silver.core.NOriginInfo;
-
-
 /**
  * Returns a function reference (a NodeFactory) that accesses the attribute
  * provided to the constructor.  Used to implement attribute sections (.pp)

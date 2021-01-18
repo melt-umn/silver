@@ -5,7 +5,6 @@ import java.util.*;
 
 import common.exceptions.*;
 import silver.core.*;
-import silver.core.*;
 
 /**
  * Implementation of the Silver reflection library
@@ -296,7 +295,17 @@ public final class Reflection {
 			return Pleft.rtConstruct(null, new StringCatter("Expected a function AST"));
 		}
 		NodeFactory<?> givenFn = (NodeFactory<?>)(fn.getChild(0));
-		FunctionTypeRep fnType = givenFn.getType();
+		
+		// Unpack the function type
+		List<TypeRep> typeArgs = new LinkedList<>();
+		TypeRep a = givenFn.getType();
+		for (; a instanceof AppTypeRep; a = ((AppTypeRep)a).cons) {
+			typeArgs.add(0, ((AppTypeRep)a).arg);
+		}
+		FunctionTypeRep fnType = (FunctionTypeRep)a;
+		List<TypeRep> params = typeArgs.subList(0, fnType.params);
+		List<TypeRep> namedParamTypes = typeArgs.subList(fnType.params, fnType.params + fnType.namedParams.length);
+		TypeRep resultType = typeArgs.get(fnType.params + fnType.namedParams.length);
 
 		final ConsCell rules = ctx.rulesAsSilverList();
 		
@@ -305,14 +314,14 @@ public final class Reflection {
 		final List<Object> argList = new ArrayList<>(5);
 		int i = 0;
 		for (ConsCell current = args; !current.nil(); current = current.tail()) {
-			if (i >= fnType.params.length) {
-				return Pleft.rtConstruct(null, new StringCatter("Expected only " + fnType.params.length + " arguments, but got " + args.length()));
+			if (i >= fnType.params) {
+				return Pleft.rtConstruct(null, new StringCatter("Expected only " + fnType.params + " arguments, but got " + args.length()));
 			}
 			final NMaybe item = (NMaybe)current.head();
 			if (item instanceof Pjust) {
 				argIndexList.add(i);
 				try {
-					argList.add(reify(rules, fnType.params[i], (NAST)item.getChild(0)));
+					argList.add(reify(rules, params.get(i), (NAST)item.getChild(0)));
 				} catch (SilverException e) {
 					Throwable rootCause = SilverException.getRootCause(e);
 					if (rootCause instanceof SilverError) {
@@ -324,19 +333,19 @@ public final class Reflection {
 			}
 			i++;
 		}
-		if (i < fnType.params.length) {
-			return Pleft.rtConstruct(null, new StringCatter("Expected " + fnType.params.length + " arguments, but got only " + i));
+		if (i < fnType.params) {
+			return Pleft.rtConstruct(null, new StringCatter("Expected " + fnType.params + " arguments, but got only " + i));
 		}
 		
 		// Unpack named args
 		final List<Integer> convertedIndexList = new ArrayList<>();
 		final List<Integer> suppliedIndexList = new ArrayList<>();
 		final List<Object> namedArgList = new ArrayList<>();
-		final Object[] reorderedNamedArgs = new Object[fnType.namedParamNames.length];
+		final Object[] reorderedNamedArgs = new Object[fnType.namedParams.length];
 		for (ConsCell current = namedArgs; !current.nil(); current = current.tail()) {
 			final NPair entry = (NPair)current.head();
 			final String name = entry.getChild(0).toString();
-			int index = Arrays.asList(fnType.namedParamNames).indexOf(name);
+			int index = Arrays.asList(fnType.namedParams).indexOf(name);
 			if (index == -1) {
 				return Pleft.rtConstruct(null, new StringCatter("Unexpected named argument " + name));
 			}
@@ -344,7 +353,7 @@ public final class Reflection {
 			if (item instanceof Pjust) {
 				Object o;
 				try {
-					o = reify(rules, fnType.namedParamTypes[index], (NAST)item.getChild(0));
+					o = reify(rules, namedParamTypes.get(index), (NAST)item.getChild(0));
 				} catch (SilverException e) {
 					Throwable rootCause = SilverException.getRootCause(e);
 					if (rootCause instanceof SilverError) {
@@ -363,7 +372,7 @@ public final class Reflection {
 		}
 		
 		Object result;
-		if (argList.size() < fnType.params.length || namedArgList.size() < fnType.namedParamNames.length) {
+		if (argList.size() < fnType.params || namedArgList.size() < fnType.namedParams.length) {
 			// Apply partial
 			result = givenFn
 					.invokePartial(argIndexList.stream().mapToInt(n -> n).toArray(), argList.toArray())

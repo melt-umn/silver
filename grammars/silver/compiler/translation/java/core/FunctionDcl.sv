@@ -31,9 +31,11 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
   top.errors <-
     if id.name == "main" &&
        unify(namedSig.typerep,
-         functionType(appType(nonterminalType("silver:core:IOVal", 1, false), intType()), [
-           appType(nonterminalType("silver:core:List", 1, false), stringType()),
-           ioForeignType], [])).failure
+         appTypes(
+           functionType(2, []),
+           [appType(nonterminalType("silver:core:List", 1, false), stringType()),
+            ioForeignType,
+            appType(nonterminalType("silver:core:IOVal", 1, false), intType())])).failure
     then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IO). Instead it has type " ++ prettyType(namedSig.typerep))]
     else [];
 }
@@ -162,7 +164,7 @@ ${sflatMap((.contextInitTrans), whatSig.contexts)}
 		}
 		
 		@Override
-		public final common.FunctionTypeRep getType() {
+		public final common.AppTypeRep getType() {
 ${makeTyVarDecls(3, whatSig.typerep.freeVariables)}
 			return ${whatSig.typerep.transFreshTypeRep};
 		}

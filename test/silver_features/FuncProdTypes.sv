@@ -61,6 +61,14 @@ wrongCode "f is not fully applied, it has kind arity 1" {
   { return error(""); }
 }
 
-wrongCode "Signature type cannot contain _" {
+wrongCode "Missing type argument cannot be followed by a provided argument" {
+  type BadFunc = (_ ::= _ String);
+}
+
+wrongCode "Return type cannot be present when argument types are missing" {
   type BadFunc = (Integer ::= String _);
 }
+
+global idInt1::(Integer ::= Integer) = id;
+global idInt2::(_ ::= Integer)<Integer> = id;
+global idInt3::(_ ::= _)<Integer Integer> = id;

@@ -289,7 +289,10 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
 
-  top.typerep = functionType(ety.outputType, es.missingTypereps ++ anns.partialAnnoTypereps, anns.missingAnnotations);
+  top.typerep =
+    appTypes(
+      functionType(length(es.missingTypereps) + length(anns.partialAnnoTypereps), map(fst, anns.missingAnnotations)),
+      es.missingTypereps ++ anns.partialAnnoTypereps ++ map(snd, anns.missingAnnotations) ++ [ety.outputType]);
 }
 
 concrete production noteAttachment
@@ -312,7 +315,7 @@ top::Expr ::= '(' '.' q::QName ')'
   -- Fresh variable for the input type, and we'll come back later and check that it occurs on that type.
   
   local rawInputType :: Type = freshType();
-  top.typerep = functionType(q.lookupAttribute.typeScheme.typerep, [rawInputType], []);
+  top.typerep = appTypes(functionType(1, []), [rawInputType, q.lookupAttribute.typeScheme.typerep]);
   
   top.errors <- q.lookupAttribute.errors;
   
@@ -1005,15 +1008,15 @@ propagate errors, exprs on AnnoAppExprs, AnnoExpr;
 {--
  - Annotations that have not yet been supplied
  -}
-inherited attribute remainingFuncAnnotations :: [NamedArgType];
+inherited attribute remainingFuncAnnotations :: [Pair<String Type>];
 {--
  - All annotations of this function
  -}
-autocopy attribute funcAnnotations :: [NamedArgType];
+autocopy attribute funcAnnotations :: [Pair<String Type>];
 {--
  - Annotations that have not been supplied (by subtracting from remainingFuncAnnotations)
  -}
-synthesized attribute missingAnnotations :: [NamedArgType];
+synthesized attribute missingAnnotations :: [Pair<String Type>];
 {--
  - Typereps of those annotations that are partial (_)
  -}
@@ -1027,13 +1030,13 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {
   top.unparse = qn.unparse ++ "=" ++ e.unparse;
   
-  local fq :: Pair<Maybe<NamedArgType> [NamedArgType]> =
+  local fq :: Pair<Maybe<Pair<String Type>> [Pair<String Type>]> =
     extractNamedArg(qn.name, top.remainingFuncAnnotations);
     
   e.appExprIndex =
     findNamedArgType(qn.name, top.funcAnnotations, 0);
   e.appExprTyperep =
-    if fq.fst.isJust then fq.fst.fromJust.argType else errorType();
+    if fq.fst.isJust then fq.fst.fromJust.snd else errorType();
     
   top.missingAnnotations = fq.snd; -- minus qn, if it was there
   top.partialAnnoTypereps = e.missingTypereps;
@@ -1073,7 +1076,7 @@ top::AnnoAppExprs ::= e::AnnoExpr
   top.errors <-
     if null(top.missingAnnotations) then []
     else [err(top.location, "Missing named parameters for function '" ++ top.appExprApplied ++ "': "
-      ++ implode(", ", map((.argName), top.missingAnnotations)))];
+      ++ implode(", ", map(fst, top.missingAnnotations)))];
 
   top.errors <- e.errors;
 
@@ -1094,7 +1097,7 @@ top::AnnoAppExprs ::=
   top.errors <-
     if null(top.missingAnnotations) then []
     else [err(top.location, "Missing named parameters for function '" ++ top.appExprApplied ++ "': "
-      ++ implode(", ", map((.argName), top.missingAnnotations)))];
+      ++ implode(", ", map(fst, top.missingAnnotations)))];
 
   top.missingAnnotations = top.remainingFuncAnnotations;
   
@@ -1112,6 +1115,24 @@ function reorderedAnnoAppExprs
 function reorderedLte
 Boolean ::= l::Pair<Integer Decorated Expr>  r::Pair<Integer Decorated Expr> { return l.fst <= r.fst; }
 
+function extractNamedArg
+Pair<Maybe<Pair<String Type>> [Pair<String Type>]> ::= n::String  l::[Pair<String Type>]
+{
+  local recurse :: Pair<Maybe<Pair<String Type>> [Pair<String Type>]> =
+    extractNamedArg(n, tail(l));
+
+  return if null(l) then pair(nothing(), [])
+  else if head(l).fst == n then pair(just(head(l)), tail(l))
+  else pair(recurse.fst, head(l) :: recurse.snd);
+}
+
+function findNamedArgType
+Integer ::= s::String l::[Pair<String Type>] z::Integer
+{
+  return if null(l) then -1
+  else if s == head(l).fst then z
+  else findNamedArgType(s, tail(l), z+1);
+}
 
 
 {--

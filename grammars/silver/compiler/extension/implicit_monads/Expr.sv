@@ -374,7 +374,7 @@ top::Expr ::= '(' '.' q::QName ')'
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
-  top.mtyperep = functionType(q.lookupAttribute.typeScheme.typerep, [freshType()], []);
+  top.mtyperep = appTypes(functionType(1, []), [freshType(), q.lookupAttribute.typeScheme.typerep]);
   top.monadicNames = [];
   top.monadRewritten = attributeSection('(', '.', q, ')', location=top.location);
 }

@@ -250,8 +250,8 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
       prodType.inputTypes);
   nps.namedTypesHaveUniversalVars =
     map(
-      \ t::NamedArgType ->
-        pair(t.argName, !null(intersect(outputFreeVars, t.argType.freeVariables))),
+      \ t::Pair<String Type> ->
+        pair(t.fst, !null(intersect(outputFreeVars, t.snd.freeVariables))),
       prodType.namedTypes);
 } 
 
