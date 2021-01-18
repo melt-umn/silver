@@ -6,15 +6,11 @@ Pair<AGDcl [Message]> ::= rules::[Decorated AbstractMatchRule] aspectLHS::ConvAs
 {
 
   local makeProdParamTypes::([Type] ::= Decorated QName) = \prod::Decorated QName ->
-    case prod.lookupValue.typeScheme.typerep of
-    | functionType(_, paramTypes, _) -> paramTypes
-    -- Case when production not in scope
-    -- This will be reported by the QNameLookup production
-    | errorType() -> []
-    -- Case when prod name isn't a name for a production
-    -- This will also be reported later, as the production is used.
-    | _ -> []
-    end;
+    if prod.lookupValue.typeScheme.typerep.isApplicable then
+      prod.lookupValue.typeScheme.typerep.inputTypes
+    -- Productions that aren't in scope, and names that
+    -- aren't productions will be caught later.
+    else [];
 
   local makeProdParamsList::([AspectRHSElem] ::= [Name] [Type]) =
     zipWith(aspectRHSElemFull(_, _, location=location), _, _);
@@ -31,7 +27,7 @@ Pair<AGDcl [Message]> ::= rules::[Decorated AbstractMatchRule] aspectLHS::ConvAs
   local transformPatternMatchRule::([AbstractMatchRule]::=[Decorated AbstractMatchRule]) =
     map((\mRule::Decorated AbstractMatchRule -> case mRule of
       | matchRule(pl,cond,e) -> matchRule(
-        (foldr(append, [], (map(\pat::Decorated Pattern -> pat.patternSubPatternList, pl)) ) ),
+        (foldr(append, [], (map(\pat::Decorated Pattern -> pat.patternSubPatternList, pl)))),
         cond,
         e,
         location=location)
@@ -139,10 +135,11 @@ top::AGDcl ::= attr::QNameAttrOccur aspectLHS::ConvAspectLHS eqKind::Convenience
    combinedAspectProds);
 
   local fwrd::AGDcl = makeAppendAGDclOfAGDcls(combinedAspectDcls);
-  forwards to unsafeTraceDump(fwrd);
+  forwards to unsafeTracePrint(fwrd,fwrd.unparse);
   -- forwards to makeAppendAGDclOfAGDcls(combinedAspectDcls);
 
 }
+
 
 aspect production matchRule
 top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Pair<Expr Maybe<Pattern>>> e::Expr
