@@ -78,6 +78,7 @@ aspect foopp on top::BarExpr of
 end;
 
 
+
 wrongCode "Undeclared value 'barInit5'." {
     aspect foopp on top::BarExpr of
     | barInit5() -> "Foopp"
@@ -88,6 +89,68 @@ wrongCode "Undeclared value 'barInit5'." {
 wrongCode "barInit5 is not a production." {
     aspect foopp on top::BarExpr of
     | barInit5() -> "Foopp"
+    | _ -> top.hiddenAttr
+    end;
+}
+
+
+nonterminal BazExpr with ppList, value, hiddenAttr;
+
+abstract production bazInit1
+top::BazExpr ::= ppList::[String] value::Integer
+{
+  top.ppList = ppList;
+  top.value = value;
+  top.hiddenAttr = toString(value);
+}
+
+abstract production bazInit2
+top::BazExpr ::= ppList::[String] value::Integer
+{
+  top.ppList = ppList;
+  top.value = value + 1;
+  top.hiddenAttr = "aardvarks";
+}
+
+abstract production bazInit3
+top::BazExpr ::= ppList::[String] value::Integer
+{
+  top.ppList = ppList ++ ["extra"];
+  top.value = value;
+  top.hiddenAttr = toString(value);
+}
+
+abstract production bazInit4
+top::BazExpr ::=
+{
+  top.ppList = [];
+  top.value = 10;
+  top.hiddenAttr = "aardvarks";
+}
+
+synthesized attribute bazList :: [Integer] with ++ occurs on BazExpr;
+
+aspect bazList on BazExpr using := of
+| bazInit2(h::t,value) -> [length(h), value]
+| bazInit3(_,val) -> [val]
+| bazInit4() -> []
+| _ -> []
+end;
+
+
+synthesized attribute bagList :: [String] with ++ occurs on BazExpr;
+
+
+aspect bagList on top::BazExpr using <- of
+| bazInit2(h::t,value) -> [h, toString(value)]
+| bazInit3(_,val) -> [top.hiddenAttr]
+| bazInit4() -> explode(top.hiddenAttr,"\t")
+| _ -> []
+end;
+
+wrongCode "Undeclared value 'top'." {
+    aspect foopp on BarExpr of
+    | barInit1() -> "Foopp" ++ top.hiddenAttr
     | _ -> top.hiddenAttr
     end;
 }
