@@ -115,6 +115,7 @@ abstract production convenienceAspects
 top::AGDcl ::= attr::QNameAttrOccur aspectLHS::ConvAspectLHS eqKind::ConvenienceAspectEquationKind ml::MRuleList
 {
   top.defs := [];
+  top.moduleNames := [];
 
   local groupedMRules::[[Decorated AbstractMatchRule]] =
     map(\rules::[AbstractMatchRule] -> map(

@@ -74,26 +74,20 @@ aspect foopp on top::BarExpr of
 | barInit2(h :: t,value) -> h ++ " and then " ++ toString(value)
 | barInit3(_,val) -> toString(val) ++ top.hiddenAttr
 | barInit4() -> "Foopp"
-| barInit5() -> "Foopp"
 | _ -> top.hiddenAttr
 end;
--- Which is tranformed to the following.
--- (This is the unparse output of the generated tree)
--- ----->
 
--- aspect production barInit1
--- top ::= __generated_305::[String] __generated_306::Integer
 
--- 	top.foopp = (case __generated_305, __generated_306 of [], _ -> "emptyFoopp" | h::t, _ -> h ++ "Foopp" ++ top.hiddenAttr | _ -> silver:core:error(, "Error: pattern match failed at ConvenienceAspects.sv:64:2\n",) end :: a);
--- aspect production barInit2
--- top ::= __generated_308::[String] __generated_309::Integer
+wrongCode "Undeclared value 'barInit5'." {
+    aspect foopp on top::BarExpr of
+    | barInit5() -> "Foopp"
+    | _ -> top.hiddenAttr
+    end;
+}
 
--- 	top.foopp = (case __generated_308, __generated_309 of h::t, value -> h ++ " and then " ++ toString(value) | _ -> silver:core:error(, "Error: pattern match failed at ConvenienceAspects.sv:66:2\n",) end :: a);
--- aspect production barInit3
--- top ::= __generated_311::[String] __generated_312::Integer
-
--- 	top.foopp = (case __generated_311, __generated_312 of _, val -> toString(val) ++ top.hiddenAttr | _ -> silver:core:error(, "Error: pattern match failed at ConvenienceAspects.sv:67:2\n",) end :: a);
--- aspect default production
--- top::BarExpr ::=
-
--- 	top.foopp = top.hiddenAttr;
+wrongCode "barInit5 is not a production." {
+    aspect foopp on top::BarExpr of
+    | barInit5() -> "Foopp"
+    | _ -> top.hiddenAttr
+    end;
+}
