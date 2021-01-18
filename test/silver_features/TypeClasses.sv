@@ -300,3 +300,21 @@ wrongCode "is a type alias" {
     sgcompose = error("compose"); --\f::(d ::= c)  g::(c ::= b) -> \x::b -> f(g(x));
   }
 }
+
+class BoolThing a {
+  bteq :: Eq b => (a ::= b b);
+}
+
+instance BoolThing Maybe<Unit> {
+  bteq = mbteq;
+}
+
+function mbteq
+Eq b => Maybe<Unit> ::= x::b y::b
+{
+  return if x == y then just(unit()) else nothing();
+} 
+
+equalityTest(bteq(42, 42), just(unit()), Maybe<Unit>, silver_tests);
+equalityTest(bteq(234, 42), nothing(), Maybe<Unit>, silver_tests);
+
