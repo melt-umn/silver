@@ -19,13 +19,13 @@ top::RootSpec ::= _ _ _ _ _
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _ _ _ _
 {
-  -- top.genFiles := if g.docsNoDoc 
-  --                 then []
-  --                 else 
-  --                 if "true" == g.docsSplit
-  --                 then toSplitFiles(g.docs, [])
-  --                 else [toSingleFile(g.docs)];
-  top.genFiles := map((\x::CommentItem -> pair(toString(genInt()) ++ ".md", x.body)), g.docs);
+  top.genFiles := if g.upDocConfig.noDocs 
+                  then []
+                  else 
+                  -- if "true" == g.docsSplit
+                  -- then toSplitFiles(g.docs, [])
+                  -- else [toSingleFile(g.docs)];
+                  map((\x::CommentItem -> pair(toString(genInt()) ++ ".md", x.body)), g.docs);
 
   g.docEnv = add(g.docDcls, empty(compareString));
 }

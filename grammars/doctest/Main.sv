@@ -1,11 +1,11 @@
 
 @@{-
-   - @config split on
+   - @config noDocs off 
    - @config title = "Example Docs Page"
    - @config weight 15
    -}
 
-@{-@param on First Line
+@{-
   -
   - A large.
   - Set of.
@@ -13,17 +13,18 @@
   - - Bulleted list
   - - In prose
   - With @link[foo] links @link[bar] and stuff like ats @@.
-  - @param abc right after prose
   - *regular markdown* _styling_ is **passed through**
   - # Like headers
   -
   - Sentance with a - in it.
   - Complicated case of a -@link[baz]- link in dashes.
   -
-  - @param foo foo desc.
-               more foo desc.
-  - @param bar bar desc.
-  - @child child is synonymous with @@param
+  - @param args Input Arguments
+  - @param ioIn input IO
+  
+  - @prodattr a a
+  @prodattr z z
+  @prodattr b b
 
   - @warning counter-intuitive! See @file[here/there/EveryWhere.sv] for a tutorial.
   - Or use a regular [markdown link](http://somewhere.com)

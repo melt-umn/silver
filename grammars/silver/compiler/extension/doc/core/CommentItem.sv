@@ -19,14 +19,14 @@ Contained in grammar ${grammarName}. [Defined at ${substitute(":", "/", grammarN
 }
 
 abstract production dclCommentItem
-top::CommentItem ::= dcl::Decorated AGDcl body::DclComment
+top::CommentItem ::= dcl::Decorated AGDcl body::Decorated DclComment
 {
 	top.body = "## " ++ dcl.unparse ++ "\n\n" ++ body.body;
 	top.loc = dcl.location;
 }
 
 abstract production standaloneDclCommentItem
-top::CommentItem ::= body::DclComment
+top::CommentItem ::= body::Decorated DclComment
 {
 	top.body = body.body;
 	top.loc = body.location;
