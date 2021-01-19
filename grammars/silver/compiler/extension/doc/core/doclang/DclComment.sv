@@ -7,18 +7,20 @@ imports silver:util:treemap;
 -- Blocks start with a newline or a @param/@return/@prodattr/@forward/...
 -- Initial block is a 'normal' block even if no newline (but is other type if has @tag)
 
-synthesized attribute blocks::[DclCommentBlock];
-
 synthesized attribute doEmit::Boolean occurs on DclComment;
 
 inherited attribute paramNames::[String] occurs on DclComment;
 inherited attribute isForWhat::String occurs on DclComment;
 
+synthesized attribute paramBlocks::[Pair<String String>];
+synthesized attribute otherBlocks::[Pair<String String>];
+synthesized attribute configArgs::[Pair<String ConfigValue>];
+
 nonterminal DclComment layout {} with docEnv, body, errors, location, downDocConfig, upDocConfig;
 
-nonterminal DclCommentBlocks layout {} with blocks, location, docEnv, errors;
-nonterminal DclCommentStrictBlocks layout {} with blocks, location, docEnv, errors;
-nonterminal DclCommentBlock layout {} with body, location, docEnv, errors;
+nonterminal DclCommentBlocks layout {} with paramBlocks, otherBlocks, configArgs, location, docEnv, errors;
+nonterminal DclCommentStrictBlocks layout {} with paramBlocks, otherBlocks, configArgs, location, docEnv, errors;
+nonterminal DclCommentBlock layout {} with paramBlocks, otherBlocks, configArgs, body, location, docEnv, errors;
 
 nonterminal ConfigValue layout {} with location;
 
@@ -41,76 +43,22 @@ parser parseDocComment::DclComment {
 concrete production normalDclComment
 top::DclComment ::= InitialIgnore_t blocks::DclCommentBlocks FinalIgnore_t
 {
-    local paramBlocks::[Pair<String DclCommentBlock>] =
-        flatMap((\x::DclCommentBlock ->
-                     case x of
-                     | paramBlock(_, _, id, _, _) -> [pair(id.lexeme, x)]
-                     | _ -> [] end),
-                blocks.blocks);
+    local warningBlocks::[String] = getBlocksNamed(blocks.otherBlocks, "warning");
+    local prodAttrBlocks::[String] = getBlocksNamed(blocks.otherBlocks, "prodAttr");
+    local returnBlocks::[String] = getBlocksNamed(blocks.otherBlocks, "return");
+    local forwardBlocks::[String] = getBlocksNamed(blocks.otherBlocks, "forward");
+    local normalBlocks::[String] = getBlocksNamed(blocks.otherBlocks, "normal");
 
-    local paramBlocksSorted::[Decorated DclCommentBlock] =
-        map((\x::Pair<String DclCommentBlock> -> 
-                decorate x.snd with {offsetLocation = top.offsetLocation; docEnv = top.docEnv;}),
-            sortBy((\x::Pair<String DclCommentBlock> y::Pair<String DclCommentBlock> ->
+    local paramBlocks::[String] = 
+        map(snd, sortBy(
+            (\x::Pair<String String> y::Pair<String String> ->
                 positionOf(stringEq, x.fst, top.paramNames) < positionOf(stringEq, y.fst, top.paramNames)),
-                    paramBlocks));
-
-    local warningBlocks::[Decorated DclCommentBlock] =
-        flatMap((\x::DclCommentBlock ->
-                     case x of
-                     | warningBlock(_, _, _) ->
-                        [decorate x with {offsetLocation = top.offsetLocation; docEnv = top.docEnv;}]
-                     | _ -> [] end),
-                blocks.blocks);
-
-    local returnBlocks::[Decorated DclCommentBlock] =
-        flatMap((\x::DclCommentBlock ->
-                     case x of
-                     | returnBlock(_, _, _) ->
-                        [decorate x with {offsetLocation = top.offsetLocation; docEnv = top.docEnv;}]
-                     | _ -> [] end),
-                blocks.blocks);
-
-    local forwardBlocks::[Decorated DclCommentBlock] =
-        flatMap((\x::DclCommentBlock ->
-                     case x of
-                     | forwardBlock(_, _, _) ->
-                        [decorate x with {offsetLocation = top.offsetLocation; docEnv = top.docEnv;}]
-                     | _ -> [] end),
-                blocks.blocks);
-
-    local prodAttrBlocks::[Pair<String DclCommentBlock>] =
-        flatMap((\x::DclCommentBlock ->
-                     case x of
-                     | prodattrBlock(_, _, id, _, _) -> [pair(id.lexeme, x)]
-                     | _ -> [] end),
-                blocks.blocks);
-
-    local prodAttrBlocksSorted::[Decorated DclCommentBlock] =
-        map((\x::Pair<String DclCommentBlock> ->
-                decorate x.snd with {offsetLocation = top.offsetLocation; docEnv = top.docEnv;}),
-            sortBy((\x::Pair<String DclCommentBlock> y::Pair<String DclCommentBlock> ->
-                compareString(x.fst, y.fst) < 0), prodAttrBlocks));
-
-    local commentBlocks::[Decorated DclCommentBlock] =
-        flatMap((\x::DclCommentBlock ->
-                     case x of
-                     | commentBlock(_, _) ->
-                        [decorate x with {offsetLocation = top.offsetLocation; docEnv = top.docEnv;}]
-                     | _ -> [] end),
-                blocks.blocks);
-
-    local configArgs::[Pair<String ConfigValue>] =
-        flatMap((\x::DclCommentBlock ->
-                     case x of
-                     | configBlock(_, _, name, _, _, _, value) -> [pair(name.lexeme, value)]
-                     | _ -> [] end),
-                blocks.blocks);
+            blocks.paramBlocks));
 
     local errs::[String] =
         (if (length(paramBlocks) != length(top.paramNames)) && (length(paramBlocks) != 0)
         then ["Arity doesn't match in doc-comment"]
-        else checkParams(top.paramNames, map(fst, paramBlocks))) ++
+        else checkParams(top.paramNames, map(fst, blocks.paramBlocks))) ++
         (if length(forwardBlocks) > 1 then ["More than one forward block in doc-comment"] else []) ++
         (if length(returnBlocks) > 1 then ["More than one return block in doc-comment"] else []) ++
         (if length(returnBlocks) > 0 && top.isForWhat!="function" then ["@return in non-function doc-comment"] else []) ++
@@ -123,20 +71,26 @@ top::DclComment ::= InitialIgnore_t blocks::DclCommentBlocks FinalIgnore_t
     top.errors <- blocks.errors;
 
     top.body =
-        implode("\n\n", map((.body),
+        implode("\n\n",
             warningBlocks ++
-            paramBlocksSorted ++ 
-            prodAttrBlocksSorted ++
+            paramBlocks ++
+            prodAttrBlocks ++
             returnBlocks ++
             forwardBlocks ++
-            commentBlocks));
+            normalBlocks);
 
-    local confResult::Pair<[String] [DocConfigSetting]> = processConfigOptions([], configArgs, []);
+    local confResult::Pair<[String] [DocConfigSetting]> = processConfigOptions([], blocks.configArgs, []);
     top.upDocConfig := confResult.snd;
 
     top.doEmit =
-        !(length(configArgs) == length(blocks.blocks)) &&
+        !((length(blocks.otherBlocks) + length(paramBlocks)) == 0) &&
         !(doesExcludeFile(top.downDocConfig));
+}
+
+function getBlocksNamed
+[String] ::= l::[Pair<String String>] f::String
+{
+    return flatMap((\x::Pair<String String> -> if x.fst==f then [x.snd] else []), l);
 }
 
 function processConfigOptions
@@ -221,13 +175,18 @@ ${content}
 concrete production initialCommentBlocks
 top::DclCommentBlocks ::= block::DclCommentLines blocks::DclCommentStrictBlocks
 {
-    top.blocks = commentBlock(terminal(EmptyLines_t, ""), block, location=top.location) :: blocks.blocks;
+    top.otherBlocks = 
+        pair("normal", block.body) :: blocks.otherBlocks;
+    top.paramBlocks = blocks.paramBlocks;
+    top.configArgs = blocks.configArgs;
 }
 
 concrete production passThruCommentBlocks
 top::DclCommentBlocks ::= blocks::DclCommentStrictBlocks
 {
-    top.blocks = blocks.blocks;
+    top.otherBlocks = blocks.otherBlocks;
+    top.paramBlocks = blocks.paramBlocks;
+    top.configArgs = blocks.configArgs;
 }
 
 
@@ -235,13 +194,17 @@ top::DclCommentBlocks ::= blocks::DclCommentStrictBlocks
 concrete production nilCommentBlocks
 top::DclCommentStrictBlocks ::=
 {
-    top.blocks = [];
+    top.otherBlocks = [];
+    top.paramBlocks = [];
+    top.configArgs = [];
 }
 
 concrete production consCommentBlocks
 top::DclCommentStrictBlocks ::= block::DclCommentBlock rest::DclCommentStrictBlocks  
 {
-    top.blocks = block :: rest.blocks;
+    top.paramBlocks = block.paramBlocks ++ rest.paramBlocks;
+    top.otherBlocks = block.otherBlocks ++ rest.otherBlocks;
+    top.configArgs = block.configArgs ++ rest.configArgs;
 }
 
 
@@ -251,42 +214,63 @@ concrete production commentBlock
 top::DclCommentBlock ::= EmptyLines_t content::DclCommentLines
 {
     top.body = content.body;
+    top.otherBlocks = [pair("normal", top.body)];
+    top.paramBlocks = [];
+    top.configArgs = [];
 }
 
 concrete production paramBlock
 top::DclCommentBlock ::= Param_t Whitespace_t id::Id_t Whitespace_t content::DclCommentLines
 {
     top.body = "{{< hint info >}}\n**Parameter `"++id.lexeme++"`**\\\n " ++ content.body ++ "\n{{< /hint >}}";
+    top.otherBlocks = [];
+    top.paramBlocks = [pair(id.lexeme, top.body)];
+    top.configArgs = [];
 }
 
 concrete production prodattrBlock
 top::DclCommentBlock ::= Prodattr_t Whitespace_t id::Id_t Whitespace_t content::DclCommentLines
 {
     top.body = "{{< hint warning >}}\n**Production Attribute `"++id.lexeme++"`**\\\n " ++ content.body ++ "\n{{< /hint >}}";
+    top.otherBlocks = [pair("prodAttr", top.body)];
+    top.paramBlocks = [];
+    top.configArgs = [];
 }
 
 concrete production returnBlock
 top::DclCommentBlock ::= Return_t Whitespace_t content::DclCommentLines
 {
     top.body = "{{< hint info >}}\n**Return**\\\n " ++ content.body ++ "\n{{< /hint >}}";
+    top.otherBlocks = [pair("return", top.body)];
+    top.paramBlocks = [];
+    top.configArgs = [];
 }
 
 concrete production forwardBlock
 top::DclCommentBlock ::= Forward_t Whitespace_t content::DclCommentLines
 {
     top.body = "{{< hint warning >}}\n**Forward**\\\n " ++ content.body ++ "\n{{< /hint >}}";
+    top.otherBlocks = [pair("forward", top.body)];
+    top.paramBlocks = [];
+    top.configArgs = [];
 }
 
 concrete production warningBlock
 top::DclCommentBlock ::= Warning_t Whitespace_t content::DclCommentLines
 {
     top.body = "{{< hint danger >}}\n**WARNING!**\\\n " ++ content.body ++ "\n{{< /hint >}}";
+    top.otherBlocks = [pair("warning", top.body)];
+    top.paramBlocks = [];
+    top.configArgs = [];
 }
 
 concrete production configBlock
 top::DclCommentBlock ::= Config_t Whitespace_t param::Id_t Whitespace_t Equals_t Whitespace_t value::ConfigValue
 {
     top.body = "@config " ++ param.lexeme ++ " = " ++ hackUnparse(value); --not emitted
+    top.otherBlocks = [];
+    top.paramBlocks = [];
+    top.configArgs = [pair(param.lexeme, value)];
 }
 
 concrete production configBlockImplicitTrue
@@ -303,7 +287,7 @@ synthesized attribute asInteger::Maybe<Integer> occurs on ConfigValue;
 concrete production kwdValue
 top::ConfigValue ::= v::ConfigValueKeyword_t
 {
-    top.asBool = just(v.lexeme=="on" || v.lexeme=="true");
+    top.asBool = just(v.lexeme=="on" || v.lexeme=="true" || v.lexeme=="yes");
     top.asString = nothing();
     top.asInteger = nothing();
 }
