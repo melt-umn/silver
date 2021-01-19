@@ -14,6 +14,7 @@ concrete production tupleTypeExpr
 top::TypeExpr ::= '(' tes::ListOfTypeExprs ')'
 {
   top.unparse = "(" ++ tes.unparse ++ ")";
+  top.typerep = tupleType(tes.typerep);
   forwards to tes.te_translation;
 }
 

@@ -5,10 +5,18 @@ grammar silver:compiler:extension:tuple;
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type:syntax;
+imports silver:compiler:definition:type;
 
 imports silver:compiler:extension:patternmatching;
 
 terminal Comma_t ',' ;
+
+abstract production tupleType
+top::Type ::= ts::[Type]
+{
+  --top.unparse = "(" ++ ts.unparse ++ ")";
+  forwards to foldr1(\ t1::Type t2::Type -> appType(appType(nonterminalType("silver:core:Pair", 2), t1), t2), ts);
+}
 
 nonterminal TupleList with location, unparse, translation;
 synthesized attribute translation :: Expr;
@@ -24,6 +32,7 @@ concrete production tupleExpr
 top::Expr ::= '(' tl::TupleList ')'
 {
   top.unparse = "(" ++ tl.unparse ++ ")";
+  top.typerep = tupleType(tl.typerep);
   forwards to tl.translation;
 }
 
