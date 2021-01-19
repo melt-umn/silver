@@ -1,16 +1,36 @@
 grammar silver:compiler:extension:patternmatching;
 
 
+imports silver:compiler:driver;
+imports silver:compiler:modification:defaultattr;
+imports silver:compiler:modification:ffi;
+imports silver:compiler:modification:copper;
+imports silver:compiler:definition:concrete_syntax;
+imports silver:compiler:modification:collection;
+imports silver:compiler:modification:autocopyattr;
+imports silver:compiler:modification:copper_mda;
+imports silver:compiler:modification:impide;
+imports silver:compiler:modification:let_fix;
+{-
+  We need a lot of imports so propagating nonforwardingProductions
+  will work correctly, including hitting the modifications.
+-}
+
+
 --Gathering productions which do not forward
 monoid attribute nonforwardingProductions::[DclInfo] with [], ++;
-attribute nonforwardingProductions occurs on AGDcl, AGDcls, ImportStmt, ModuleStmt, ImportStmts, ModuleStmts;
+attribute nonforwardingProductions occurs on
+          Grammar, Root, AGDcl, AGDcls, ImportStmt, ModuleStmt, ImportStmts, ModuleStmts;
 propagate nonforwardingProductions on
-          AGDcl, AGDcls, ImportStmt, ModuleStmt, ImportStmts, ModuleStmts
+          Grammar, Root, AGDcl, AGDcls, ImportStmt, ModuleStmt, ImportStmts, ModuleStmts
           excluding productionDcl, importStmt, importsStmt;
 
 --Pairs of fully-qualified nonterminal name and (fully-qualified production names and number of args)
 autocopy attribute requiredProductionPatterns::[Pair<String [Pair<String Integer>]>];
-attribute requiredProductionPatterns occurs on AGDcl, AGDcls, ProductionBody, ProductionStmts, ProductionStmt, Expr, Exprs, AppExprs, AnnoAppExprs;
+attribute requiredProductionPatterns occurs on
+          Grammars, Grammar, Root, AGDcl, AGDcls, ProductionBody, ProductionStmts,
+          ProductionStmt, Expr, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr,
+          MRuleList, PrimPattern, PrimPatterns;
 
 
 aspect production productionDcl
@@ -69,10 +89,30 @@ function defsToNonforwardingProductions
 
 
 
-aspect production root
-top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
+{-aspect production aspectDefaultProduction
+top::AGDcl ::= 'aspect' 'default' 'production' 
+               lhs::Name '::' te::TypeExpr '::=' body::ProductionBody 
 {
-  ags.requiredProductionPatterns = groupNonforwardingProductions(ags.nonforwardingProductions);
+  top.nonforwardingProductions := [];
+}-}
+
+
+
+
+
+
+
+
+--aspect production root
+--top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
+--{
+--  ags.requiredProductionPatterns = groupNonforwardingProductions(ags.nonforwardingProductions);
+--}
+
+aspect production grammarRootSpec
+top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  grammarTime::Integer  generateLocation::String
+{
+  g.requiredProductionPatterns = groupNonforwardingProductions(g.nonforwardingProductions);
 }
 
 
