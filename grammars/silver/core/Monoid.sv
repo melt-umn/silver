@@ -1,7 +1,22 @@
 grammar silver:core;
 
+{-
+The class of monoids (types with an associative binary operation that has an identity). Instances should satisfy the following:
+
+Right identity
+  append(x, empty) = x
+Left identity
+  append(empty, x) = x
+Associativity
+  append(x, append(y, z)) = append(append(x, y), z) (Semigroup law)
+Concatenation
+  concat = foldr(append, empty, _)
+
+Minimal complete definition: empty
+-}
 class Semigroup a => Monoid a {
   empty :: a;
+  concat :: (a ::= [a]) = foldr(append, empty, _);
 }
 
 instance Monoid [a] {
@@ -18,18 +33,6 @@ instance Monoid a => Monoid Maybe<a> {
 
 instance Monoid Unit {
   empty = unit();
-}
-
-{--
- - Concatenates a list of monoids.
- -
- - @param lst  A list containing monoids
- - @return  A flattened monoid
- -}
-function concat
-Monoid m => m ::= lst::[m]
-{
-  return foldr(append, empty, lst);
 }
 
 {--
