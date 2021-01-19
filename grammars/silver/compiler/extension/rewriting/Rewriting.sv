@@ -1,6 +1,8 @@
 grammar silver:compiler:extension:rewriting;
 
-imports silver:rewrite;
+imports silver:core hiding id;
+
+imports silver:rewrite hiding repeat;
 imports silver:compiler:metatranslation;
 imports silver:langutil:pp;
 
@@ -90,12 +92,12 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   top.unparse = s"traverse ${n.name}(${es.unparse}, ${anns.unparse})";
   
   local numChildren::Integer = n.lookupValue.typeScheme.arity;
-  local annotations::[String] = map((.argName), n.lookupValue.typeScheme.typerep.namedTypes);
+  local annotations::[String] = map(fst, n.lookupValue.typeScheme.typerep.namedTypes);
   es.appExprTypereps = repeat(nonterminalType("silver:rewrite:Strategy", 0, false), numChildren);
   es.appExprApplied = n.unparse;
   anns.appExprApplied = n.unparse;
   anns.funcAnnotations =
-    map(namedArgType(_, nonterminalType("silver:rewrite:Strategy", 0, false)), annotations);
+    map(pair(_, nonterminalType("silver:rewrite:Strategy", 0, false)), annotations);
   anns.remainingFuncAnnotations = anns.funcAnnotations;
  
   local localErrors::[Message] =
@@ -239,7 +241,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   
   -- Find the free type variables (i.e. lacking a definition) to add as skolem constants
   local freeTyVars::[String] =
-    filter(\ tv::String -> null(getTypeDcl(tv, top.env)), nubBy(stringEq, ty.lexicalTypeVariables));
+    filter(\ tv::String -> null(getTypeDcl(tv, top.env)), nub(ty.lexicalTypeVariables));
   ty.env = newScopeEnv(addNewLexicalTyVars(top.grammarName, ty.location, [], freeTyVars), top.env);
 
   -- Pattern matching error checking (mostly) happens on what caseExpr forwards to,
@@ -271,7 +273,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
     then [err(top.location, "Term rewriting requires import of silver:rewrite")]
     else [];
   
-  -- Can't use an error production here, unfourtunately, due to circular dependency issues.
+  -- Can't use an error production here, unfortunately, due to circular dependency issues.
   top.errors := if !null(localErrors) then localErrors else forward.errors;
 
   thread downSubst, upSubst on top, checkExpr, forward;

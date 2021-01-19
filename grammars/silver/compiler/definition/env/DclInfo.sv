@@ -12,7 +12,7 @@ synthesized attribute typeScheme :: PolyType;
 synthesized attribute isType :: Boolean;
 synthesized attribute isTypeAlias :: Boolean;
 synthesized attribute isClass :: Boolean;
-synthesized attribute classMembers :: [Pair<String Pair<Type Boolean>>];
+synthesized attribute classMembers :: [Pair<String Boolean>];
 
 inherited attribute givenInstanceType :: Type;
 synthesized attribute superContexts :: [Context];
@@ -159,11 +159,11 @@ top::DclInfo ::= ns::NamedSignature
   top.hasForward = false;
 }
 abstract production classMemberDcl
-top::DclInfo ::= fn::String bound::[TyVar] context::Context ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] clsHead::Context contexts::[Context] ty::Type
 {
   top.fullName = fn;
   
-  top.typeScheme = constraintType(bound, [context], ty);
+  top.typeScheme = constraintType(bound, clsHead :: contexts, ty);
 }
 abstract production globalValueDcl
 top::DclInfo ::= fn::String ty::Type
@@ -210,7 +210,7 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type
   top.typeScheme = if null(bound) then monoType(ty) else polyType(bound, ty);
 }
 abstract production clsDcl
-top::DclInfo ::= fn::String supers::[Context] tv::TyVar k::Integer members::[Pair<String Pair<Type Boolean>>]
+top::DclInfo ::= fn::String supers::[Context] tv::TyVar k::Integer members::[Pair<String Boolean>]
 {
   top.fullName = fn;
   
@@ -221,10 +221,7 @@ top::DclInfo ::= fn::String supers::[Context] tv::TyVar k::Integer members::[Pai
   
   local tvSubst :: Substitution = subst(tv, top.givenInstanceType);
   top.superContexts = map(performContextRenaming(_, tvSubst), supers);
-  top.classMembers = map(
-    \ m::Pair<String Pair<Type Boolean>> ->
-      pair(m.fst, pair(performRenaming(m.snd.fst, tvSubst), m.snd.snd)),
-    members);
+  top.classMembers = members;
 }
 
 -- AttributeDclInfos
@@ -349,7 +346,6 @@ top::DclInfo ::= fntc::String baseDcl::DclInfo ty::Type
   
   top.typeScheme = baseDcl.typeScheme;
 }
-
 
 -- TODO: this should probably go elsewhere?
 function determineAttributeType

@@ -134,9 +134,10 @@ String ::= msgs::[Message]
 }
 
 -- for use with sortBy
+-- not an instance of Eq/Ord for now, does it really make sense to compare messages for equality?
 function messageLte
 Boolean ::= m1::Message m2::Message
 {
-  return locationLte(m1.where, m2.where);
+  return m1.where <= m2.where;
 }
 

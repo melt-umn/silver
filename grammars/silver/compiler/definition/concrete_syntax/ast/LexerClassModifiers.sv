@@ -66,7 +66,7 @@ top::SyntaxLexerClassModifier ::= super::[String]
 abstract production lexerClassSubmits
 top::SyntaxLexerClassModifier ::= sub::[String]
 {
-  production allSubs :: [String] = unionsBy(stringEq, sub :: lookupStrings(sub, top.subClasses));
+  production allSubs :: [String] = unions(sub :: lookupStrings(sub, top.subClasses));
   production subRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allSubs, top.cstEnv);
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
@@ -82,7 +82,7 @@ top::SyntaxLexerClassModifier ::= sub::[String]
 abstract production lexerClassDominates
 top::SyntaxLexerClassModifier ::= dom::[String]
 {
-  production allDoms :: [String] = unionsBy(stringEq, dom :: lookupStrings(dom, top.subClasses));
+  production allDoms :: [String] = unions(dom :: lookupStrings(dom, top.subClasses));
   production domRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allDoms, top.cstEnv);
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->

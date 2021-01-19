@@ -25,7 +25,7 @@ synthesized attribute docDcls :: [Pair<String DocDclInfo>] with ++;
 attribute docDcls occurs on Grammar, Root, AGDcls, AGDcl;
 
 -- Environment of all documented AGDcls
-autocopy attribute docEnv :: Map<String DocDclInfo>;
+autocopy attribute docEnv :: tm:Map<String DocDclInfo>;
 attribute docEnv occurs on Grammar, Root, AGDcls, AGDcl;
 
 aspect production root

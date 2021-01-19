@@ -88,7 +88,7 @@ ${makeTyVarDecls(5, resultType.freeVariables)}
 				}
 				
 				@Override
-				public final common.FunctionTypeRep getType() {
+				public final common.TypeRep getType() {
 ${makeTyVarDecls(5, finalType(top).freeVariables)}
 					return ${finalType(top).transTypeRep};
 				}

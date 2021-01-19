@@ -212,6 +212,6 @@ top::NamedASTPattern ::= n::String v::ASTPattern
   v.matchWith =
     fromMaybe(
       error("Unexpected annotation " ++ n),
-      lookupBy(stringEq, n, top.matchWith));
+      lookup(n, top.matchWith));
   top.substitution = v.substitution;
 }

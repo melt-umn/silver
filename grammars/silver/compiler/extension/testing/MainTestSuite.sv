@@ -107,9 +107,9 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
                    attrAcc("testResults","msg", top.location),
                    strCnst("\n\n"), 
                    strCnst("Passed "), 
-                   mkStrFunctionInvocation(top.location, "toStringFromInteger", [ attrAcc("testResults","numPassed", top.location) ]),
+                   Silver_Expr { toString(testResults.numPassed) },
                    strCnst(" tests out of "), 
-                   mkStrFunctionInvocation(top.location, "toStringFromInteger", [ attrAcc("testResults","numTests", top.location) ]),
+                   Silver_Expr { toString(testResults.numTests) },
                    strCnst("\n"), 
                    strCnst("============================================================\n") 
                  ]),

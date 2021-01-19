@@ -6,7 +6,7 @@ Bundle-Version: @IDE_VERSION@.@IDE_BUILD_TIMESTAMP@
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: .,
  @LANG_COMPOSED@.jar,
- CopperRuntime.jar,
+ CopperCompiler.jar,
  SilverRuntime.jar,
  IDEPluginRuntime.jar
 Require-Bundle: org.eclipse.core.runtime,

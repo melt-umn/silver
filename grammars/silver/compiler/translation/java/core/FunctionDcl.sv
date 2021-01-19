@@ -16,8 +16,6 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   local argsAccess :: String =
     implode(", ", map((.contextRefElem), namedSig.contexts) ++ map((.childRefElem), namedSig.inputElements));
 
-  local commaIfArgs :: String = if length(namedSig.inputElements)!=0 then "," else "";
-
   local funBody :: String =
 s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decorate(originCtx);
 			//${head(body.uniqueSignificantExpression).unparse}
@@ -33,9 +31,11 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
   top.errors <-
     if id.name == "main" &&
        unify(namedSig.typerep,
-         functionType(appType(nonterminalType("silver:core:IOVal", 1, false), intType()), [
-           appType(nonterminalType("silver:core:List", 1, false), stringType()),
-           ioForeignType], [])).failure
+         appTypes(
+           functionType(2, []),
+           [appType(nonterminalType("silver:core:List", 1, false), stringType()),
+            ioForeignType,
+            appType(nonterminalType("silver:core:IOVal", 1, false), intType())])).failure
     then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IO). Instead it has type " ++ prettyType(namedSig.typerep))]
     else [];
 }
@@ -48,7 +48,7 @@ String ::= whatGrammar::String whatName::String whatSig::NamedSignature whatResu
   local localVar :: String = 
     s"count_local__ON__${makeIdName(whatGrammar)}_${whatName}";
 
-  local commaIfArgs :: String = if length(whatSig.inputElements) != 0 then "," else "";
+  local commaIfArgs :: String = if length(whatSig.contexts) + length(whatSig.inputElements) != 0 then "," else "";
 
   return s"""
 package ${makeName(whatGrammar)};
@@ -133,7 +133,7 @@ ${implode("", map(makeChildAccessCaseLazy, whatSig.inputElements))}
 		return "${whatSig.fullName}";
 	}
 
-	public static ${whatSig.outputElement.typerep.transType} invoke(final common.OriginContext originCtx ${commaIfArgs} ${whatSig.javaSignature}) {
+	public static ${whatSig.outputElement.typerep.transClassType} invoke(final common.OriginContext originCtx ${commaIfArgs} ${whatSig.javaSignature}) {
 		try {
 ${whatResult}
 		} catch(Throwable t) {
@@ -145,7 +145,11 @@ ${if null(whatSig.contexts) -- Can only use a singleton when there aren't contex
   then s"""
 	// Use of ? to permit casting to more specific types
 	public static final common.NodeFactory<? extends ${whatSig.outputElement.typerep.transType}> factory = new Factory();
-""" else ""}
+""" else s"""
+	public static final common.NodeFactory<? extends ${whatSig.outputElement.typerep.transType}> getFactory(${implode(", ", map((.contextParamTrans), whatSig.contexts))}) {
+		return new Factory(${implode(", ", map((.contextRefElem), whatSig.contexts))});
+	}
+"""}
 
 	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transType}> {
 ${sflatMap((.contextMemberDeclTrans), whatSig.contexts)}
@@ -160,7 +164,7 @@ ${sflatMap((.contextInitTrans), whatSig.contexts)}
 		}
 		
 		@Override
-		public final common.FunctionTypeRep getType() {
+		public final common.AppTypeRep getType() {
 ${makeTyVarDecls(3, whatSig.typerep.freeVariables)}
 			return ${whatSig.typerep.transFreshTypeRep};
 		}

@@ -8,7 +8,7 @@ synthesized attribute isApplicable :: Boolean;
 
 synthesized attribute inputTypes :: [Type];
 synthesized attribute outputType :: Type;
-synthesized attribute namedTypes :: [NamedArgType];
+synthesized attribute namedTypes :: [Pair<String Type>];
 synthesized attribute arity :: Integer;
 synthesized attribute baseType :: Type;
 synthesized attribute argTypes :: [Type];
@@ -111,7 +111,20 @@ top::Type ::= c::Type a::Type
   top.argTypes = c.argTypes ++ [a];
   top.isDecorable = c.isDecorable;
   top.unifyInstanceNonterminal = c.unifyInstanceNonterminal;
+  top.arity = c.arity;
   top.isApplicable = c.isApplicable;
+  
+  top.inputTypes = take(top.arity, top.argTypes);
+  top.outputType =
+    case top.baseType of
+    | functionType(_, _) -> last(top.argTypes)
+    | _ -> errorType()
+    end;
+  top.namedTypes =
+    case top.baseType of
+    | functionType(_, nps) -> zipWith(pair, nps, drop(top.arity, top.argTypes))
+    | _ -> []
+    end;
 }
 
 
@@ -172,12 +185,9 @@ top::Type ::= nt::Type  hidden::Type
 }
 
 aspect production functionType
-top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
+top::Type ::= params::Integer namedParams::[String]
 {
-  top.inputTypes = params;
-  top.outputType = out;
-  top.namedTypes = namedParams;
-  top.arity = length(params);
+  top.arity = params;
   top.isApplicable = true;
 }
 

@@ -98,7 +98,7 @@ top::ModuleExportedDefs ::= l::Location compiledGrammars::EnvTree<Decorated Root
   -- ... but only if we haven't already added this.
   local new_need :: [String] =
     if null(rs) then tail(need)
-    else removeAllBy(stringEq, new_seen, nubBy(stringEq, tail(need) ++ add_to_need));
+    else removeAll(new_seen, nub(tail(need) ++ add_to_need));
   
   top.defs :=
     if null(need) then [] else
@@ -116,7 +116,7 @@ function triggeredGrammars
 {
   return if null(trig) then
     []
-  else if containsBy(stringEq, head(tail(head(trig))), grammarDependencies) then 
+  else if contains(head(tail(head(trig))), grammarDependencies) then 
     head(head(trig)) :: triggeredGrammars(grammarDependencies, tail(trig))
   else
     triggeredGrammars(grammarDependencies, tail(trig));

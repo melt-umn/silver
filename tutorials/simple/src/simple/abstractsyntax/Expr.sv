@@ -127,46 +127,46 @@ e::Expr ::= l::Expr r::Expr
    lt.  The rest (neq, lte, gt, gte) can be handled by forwarding.  
 -}
 
-abstract production eq 
+abstract production eqOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l.pp} == ${r.pp})";
   e.errors := l.errors ++ r.errors;
 }
 
-abstract production lt 
+abstract production ltOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l.pp} < ${r.pp})";
   e.errors := l.errors ++ r.errors;
 }
 
-abstract production neq 
+abstract production neqOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l.pp} != ${r.pp})";
-  forwards to not (eq(l,r));
+  forwards to not (eqOp(l,r));
   -- e.errors is copied from the forwarded-to tree
   -- Similarly, type checking attributes defined TypeChecking.sv are
   -- automatically copied, as are other yet-to-be defined attributes.
 }
-abstract production lte 
+abstract production lteOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l.pp} <= ${r.pp})";
-  forwards to or( lt(l,r), eq(l,r) );
+  forwards to or( ltOp(l,r), eqOp(l,r) );
 }
-abstract production gt 
+abstract production gtOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l.pp} > ${r.pp})";
-  forwards to not(lte(l,r));
+  forwards to not(lteOp(l,r));
 }
-abstract production gte 
+abstract production gteOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l.pp} >= ${r.pp})";
-  forwards to not(lt(l,r));
+  forwards to not(ltOp(l,r));
 }
 
 

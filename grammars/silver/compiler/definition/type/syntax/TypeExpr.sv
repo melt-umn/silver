@@ -5,11 +5,13 @@ imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
 
 nonterminal TypeExpr  with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsFullyApplied;
-nonterminal Signature with config, location, grammarName, errors, env, unparse, types,   lexicalTypeVariables, lexicalTyVarKinds;
+nonterminal Signature with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds;
+nonterminal SignatureLHS with config, location, grammarName, errors, env, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds;
 nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables;
 nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 
+synthesized attribute maybeType :: Maybe<Type>;
 synthesized attribute types :: [Type];
 synthesized attribute missingCount::Integer;
 
@@ -27,7 +29,7 @@ synthesized attribute envBindingTyVars :: Decorated Env;
 
 synthesized attribute errorsFullyApplied::[Message];
 
-propagate errors, lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
+propagate errors, lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
 -- TODO: This function should go away because it doesn't do location correctly.
@@ -37,7 +39,7 @@ function addNewLexicalTyVars
 [Def] ::= gn::String sl::Location lk::[Pair<String Integer>] l::[String]
 {
   return if null(l) then []
-         else lexTyVarDef(gn, sl, head(l), freshTyVar(fromMaybe(0, lookupBy(stringEq, head(l), lk)))) ::
+         else lexTyVarDef(gn, sl, head(l), freshTyVar(fromMaybe(0, lookup(head(l), lk)))) ::
                   addNewLexicalTyVars(gn, sl, lk, tail(l));
 }
 
@@ -209,6 +211,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
   top.errors <-
     case t.typerep.baseType of
     | nonterminalType(_,_,_) -> []
+    | skolemType(_) -> []
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
     end;
   top.errors <- t.errorsFullyApplied;
@@ -218,29 +221,43 @@ concrete production funTypeExpr
 top::TypeExpr ::= '(' sig::Signature ')'
 {
   top.unparse = "(" ++ sig.unparse ++ ")";
-
-  top.typerep = functionType(head(sig.types), tail(sig.types), []);
+  top.typerep = sig.typerep;
 }
 
 concrete production signatureEmptyRhs
-top::Signature ::= t::TypeExpr '::='
+top::Signature ::= l::SignatureLHS '::='
 {
-  top.unparse = t.unparse ++ " ::=";
-
-  top.types = [t.typerep];
+  top.unparse = l.unparse ++ " ::=";
+  top.typerep = appTypes(functionType(0, []), case l.maybeType of just(t) -> [t] | nothing() -> [] end);
 }
 
 concrete production psignature
-top::Signature ::= t::TypeExpr '::=' list::TypeExprs 
+top::Signature ::= l::SignatureLHS '::=' list::TypeExprs 
 {
-  top.unparse = t.unparse ++ " ::= " ++ list.unparse;
-
-  top.types = [t.typerep] ++ list.types;
-
+  top.unparse = l.unparse ++ " ::= " ++ list.unparse;
+  top.typerep =
+    appTypes(
+      functionType(length(list.types) + list.missingCount, []),
+      list.types ++ case l.maybeType of just(t) -> [t] | nothing() -> [] end);
+  
   top.errors <-
-    if list.missingCount > 0
-    then [err(list.location, "Signature type cannot contain _")]
-    else []; 
+    if l.maybeType.isJust && list.missingCount > 0
+    then [err($1.location, "Return type cannot be present when argument types are missing")]
+    else [];
+}
+
+concrete production presentSignatureLhs
+top::SignatureLHS ::= t::TypeExpr
+{
+  top.unparse = t.unparse;
+  top.maybeType = just(t.typerep);
+}
+
+concrete production missingSignatureLhs
+top::SignatureLHS ::= '_'
+{
+  top.unparse = "_";
+  top.maybeType = nothing();
 }
 
 -- Bracketed Optional Type Lists -----------------------------------------------
@@ -275,7 +292,7 @@ top::BracketedTypeExprs ::= '<' tl::TypeExprs '>'
   top.freeVariables = tl.freeVariables;
   
   top.errorsTyVars <-
-    if length(tl.lexicalTypeVariables) != length(nubBy(stringEq, tl.lexicalTypeVariables))
+    if length(tl.lexicalTypeVariables) != length(nub(tl.lexicalTypeVariables))
     then [err(top.location, "Type parameter list repeats type variable names")]
     else [];
   top.errorsTyVars <-

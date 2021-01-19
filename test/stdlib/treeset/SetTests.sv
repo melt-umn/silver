@@ -3,19 +3,13 @@ import silver:testing;
 import silver:util:treeset as ts;
 import stdlib;
 
-function integerCompare
-Integer ::= l::Integer r::Integer
-{
-  return l - r;
-}
+equalityTest ( ts:toList(ts:empty()), [], [Integer], core_tests ) ;
 
-equalityTest ( ts:toList(ts:empty(integerCompare)), [], [Integer], core_tests ) ;
-
-global set1 :: ts:Set<Integer> = ts:add([8,2,4,1,1,0], ts:empty(integerCompare));
+global set1 :: ts:Set<Integer> = ts:add([8,2,4,1,1,0], ts:empty());
 
 equalityTest ( ts:toList(set1), [0,1,2,4,8], [Integer], core_tests ) ;
 
-global set2 :: ts:Set<Integer> = ts:add([-1, 4, 7, 11, 4], ts:empty(integerCompare));
+global set2 :: ts:Set<Integer> = ts:add([-1, 4, 7, 11, 4], ts:empty());
 
 equalityTest ( ts:toList(set2), [-1,4,7,11], [Integer], core_tests ) ;
 

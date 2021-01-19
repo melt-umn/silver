@@ -10,11 +10,11 @@ top::Type ::= tv::TyVar
   top.unify = 
     case top.unifyWith of
     | varType(j) ->
-        if tyVarEqual(tv, j)
+        if tv == j
         then emptySubst()
         else subst(tv, top.unifyWith)
     | t when t.kindArity == tv.kindArity ->
-        if containsTyVar(tv, top.unifyWith.freeVariables)
+        if contains(tv, top.unifyWith.freeVariables)
         then errorSubst("Infinite type! Tried to unify with " ++ prettyType(top.unifyWith))
         else subst(tv, top.unifyWith)
     | t -> errorSubst("Kind mismatch!  Tried to unify with " ++ prettyType(top.unifyWith))
@@ -27,7 +27,7 @@ top::Type ::= tv::TyVar
   top.unify = 
     case top.unifyWith of
     | skolemType(otv) ->
-        if tyVarEqual(tv, otv)
+        if tv == otv
         then emptySubst()
         else errorSubst("Tried to unify skolem constant with incompatible skolem constant")
     | _ -> errorSubst("Tried to unify skolem constant with " ++ prettyType(top.unifyWith))
@@ -170,12 +170,12 @@ top::Type ::= nt::Type  hidden::Type
 }
 
 aspect production functionType
-top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
+top::Type ::= params::Integer namedParams::[String]
 {
   top.unify = 
     case top.unifyWith of
-    | functionType(oo, op, onp) -> unifyFunctions(out :: params, oo :: op, namedParams, onp)
-    | _ -> errorSubst("Tried to unify function type with " ++ prettyType(top.unifyWith))
+    | functionType(op, onp) when params == op && namedParams == onp -> emptySubst()
+    | _ -> errorSubst("Tried to unify conflicting function types " ++ prettyType(top) ++ " and " ++ prettyType(top.unifyWith))
     end;
 }
 
@@ -245,28 +245,3 @@ Substitution ::= te1::[Type] te2::[Type]
          else composeSubst(first, unifyAllShortCircuit( mapSubst(tail(te1), first),
                                                         mapSubst(tail(te2), first) ));
 }
-
-function unifyAllNamed
-Substitution ::= te1::[NamedArgType]  te2::[NamedArgType]
-{
-  local first :: Substitution = unify(head(te1).argType, head(te2).argType);
-  
-  return if null(te1) && null(te2)
-         then emptySubst()
-         else if null(te1) || null(te2)
-         then errorSubst("Internal error: unifying mismatching numbers")
-         else if head(te1).argName != head(te2).argName -- additionally check names
-         then errorSubst("Mismatching named parameters")
-         else composeSubst(first, unifyAllNamed( mapNamedSubst(tail(te1), first),
-                                                 mapNamedSubst(tail(te2), first) ));  
-}
-
-function unifyFunctions
-Substitution ::= te1::[Type]  te2::[Type]  n1::[NamedArgType]  n2::[NamedArgType]
-{
-  local first :: Substitution = unifyAll(te1, te2);
-  local second :: Substitution = unifyAllNamed(mapNamedSubst(n1, first), mapNamedSubst(n2, first));
-  
-  return composeSubst(first, second);
-}
-

@@ -3,10 +3,11 @@ grammar silver:compiler:modification:ffi;
 abstract production foreignType
 top::Type ::= fn::String  transType::String  params::[Type]
 {
+  top.typeName = fn;
   top.freeVariables = setUnionTyVarsAll(map((.freeVariables), params));
   top.substituted = foreignType(fn, transType, mapSubst(params, top.substitution));
   top.flatRenamed = foreignType(fn, transType, mapRenameSubst(params, top.substitution));
-  top.typepp = fn ++ if !null(params) then "<" ++ implode(" ", mapTypePP(params, top.boundVariables)) ++ ">" else "";
+  top.typepp = fn ++ if !null(params) then "<" ++ implode(" ", map(prettyTypeWith(_, top.boundVariables), params)) ++ ">" else "";
   top.kindArity = 0;
 
   -- Unification.sv

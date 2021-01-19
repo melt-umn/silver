@@ -96,6 +96,17 @@ top::AspectRHS ::= '$AspectRHS' '{' e::Expr '}'
   forwards to aspectRHSElemNil(location=top.location);
 }
 
+concrete production antiquoteProductionStmt
+top::ProductionStmt ::= '$ProductionStmt' '{' e::Expr '}'
+{
+  top.unparse = s"$$ProductionStmt{${e.unparse}}";
+  forwards to
+    errorProductionStmt(
+      [err(top.location, "$ProductionStmt should not occur outside of quoted Silver Literal.")],
+      location=top.location);
+}
+
+
 concrete production antiquoteQName
 top::QName ::= '$QName' '{' e::Expr '}'
 {

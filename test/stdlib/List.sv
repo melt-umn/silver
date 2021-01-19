@@ -58,38 +58,38 @@ equalityTest ( partition(even, [1,2,3,4,5,6,7,8]).fst,   [2,4,6,8],
                [Integer], core_tests ) ;
 
 
--- containsBy TODO
+-- contains TODO
 
--- nubBy tests
-equalityTest ( nubBy (equalsInteger, [1,2,3,4,3,2,1]), [1,2,3,4], 
+-- nub tests
+equalityTest ( nub ([1,2,3,4,3,2,1]), [1,2,3,4], 
                [Integer], core_tests ) ;
 
-equalityTest ( nubBy (equalsInteger, [1,2,3,4]), [1,2,3,4], 
+equalityTest ( nub ([1,2,3,4]), [1,2,3,4], 
                [Integer], core_tests ) ;
 
-equalityTest ( nubBy (equalsInteger, [ ]), [ ], 
+equalityTest ( nub ([ ]), [ ], 
                [Integer], core_tests ) ;
 
--- removeBy tests
-equalityTest ( removeBy (equalsInteger, 2, [1,2,3,4,3,2,1]), [1,3,4,3,1],
+-- remove tests
+equalityTest ( remove (2, [1,2,3,4,3,2,1]), [1,3,4,3,1],
                [Integer], core_tests ) ;
 
-equalityTest ( removeBy (equalsInteger, 9, [1,2,3,4,3,2,1]), [1,2,3,4,3,2,1],
+equalityTest ( remove (9, [1,2,3,4,3,2,1]), [1,2,3,4,3,2,1],
                [Integer], core_tests ) ;
 
-equalityTest ( removeBy (equalsInteger, 9, [ ]), [ ],
+equalityTest ( remove (9, [ ]), [ ],
                [Integer], core_tests ) ;
 
--- removeAllBy tests
-equalityTest ( removeAllBy (equalsInteger, [], [1,2,3]), [1,2,3],
+-- removeAll tests
+equalityTest ( removeAll ([], [1,2,3]), [1,2,3],
                [Integer], core_tests ) ;
 
-equalityTest ( removeAllBy (equalsInteger, [1,3,5], [1,2,3,4,5,6]), [2,4,6],
+equalityTest ( removeAll ([1,3,5], [1,2,3,4,5,6]), [2,4,6],
                [Integer], core_tests ) ;
 
-equalityTest ( removeAllBy (equalsInteger, [1,3,5], [1,1,3,4,5,3]), [4],
+equalityTest ( removeAll ([1,3,5], [1,1,3,4,5,3]), [4],
                [Integer], core_tests ) ;
-equalityTest ( removeAllBy (equalsInteger, [1,3,5], [5,3,1,3,5]), [],
+equalityTest ( removeAll ([1,3,5], [5,3,1,3,5]), [],
                [Integer], core_tests ) ;
 
 -- last
@@ -147,33 +147,34 @@ equalityTest ( takeUntil (equals1, []), [],
                [Integer], core_tests ) ;
 
 -- positionOf
-equalityTest ( positionOf ( equalsInteger, 1, []), -1, Integer, core_tests) ;
-equalityTest ( positionOf ( equalsInteger, 1, [1,2]), 0, Integer, core_tests) ;
-equalityTest ( positionOf ( equalsInteger, 3, [0,1,2,3]), 3, Integer, core_tests) ;
+equalityTest ( positionOf ( 1, []), -1, Integer, core_tests) ;
+equalityTest ( positionOf ( 1, [1,2]), 0, Integer, core_tests) ;
+equalityTest ( positionOf ( 3, [0,1,2,3]), 3, Integer, core_tests) ;
 
 -- repeat TODO
 -- zipWith TODO
 -- reverse TODO
 
--- sortBy
-equalityTest ( null(sortBy(stringLte, [])), true,
+-- sort
+global emptyIntList::[Integer] = [];
+equalityTest ( null(sort(emptyIntList)), true,
                Boolean, core_tests ) ;
-equalityTest ( sortBy(stringLte, ["cd", "ca", "b", "z", "a"]), 
-                          ["a", "b", "ca", "cd", "z"],
+equalityTest ( sort(["cd", "ca", "b", "z", "a"]), 
+                    ["a", "b", "ca", "cd", "z"],
                [String], core_tests ) ;
 
--- groupBy
-equalityTest ( null(groupBy(equalsString, [])), true,
+-- group
+equalityTest ( null(group(emptyIntList)), true,
                Boolean, core_tests ) ;
-equalityTest ( map(head, groupBy(equalsInteger, [1, 1, 2, 1, 2, 2])),     [1,2,1,2],
+equalityTest ( map(head, group([1, 1, 2, 1, 2, 2])),     [1,2,1,2],
                [Integer], core_tests ) ;
-equalityTest ( head(groupBy(equalsInteger, [1, 1, 2, 1, 2, 2])),       [1,1],
+equalityTest ( head(group([1, 1, 2, 1, 2, 2])),       [1,1],
                [Integer], core_tests ) ;
-equalityTest ( map(head,groupBy(equalsInteger, [1, 2, 1, 3])),        [1,2,1,3],
+equalityTest ( map(head,group([1, 2, 1, 3])),        [1,2,1,3],
                [Integer], core_tests ) ;
-equalityTest ( head(tail(groupBy(equalsInteger, [1, 1, 2, 1, 2, 2]))),       [2],
+equalityTest ( head(tail(group([1, 1, 2, 1, 2, 2]))),       [2],
                [Integer], core_tests ) ;
-equalityTest ( map(listLength, groupBy(equalsInteger, [1, 1, 2, 1, 2, 2])),      [2,1,1,2],
+equalityTest ( map(listLength, group([1, 1, 2, 1, 2, 2])),      [2,1,1,2],
                [Integer], core_tests ) ;
 
 -- intersperse
@@ -182,51 +183,51 @@ equalityTest ( intersperse(1, [2]), [2], [Integer], core_tests ) ;
 equalityTest ( intersperse(1, []), [], [Integer], core_tests ) ;
 
 -- set operations
-equalityTest ( unionBy (equalsInteger, [], []), [],
+equalityTest ( union ([], []), [],
                [Integer], core_tests ) ;
-equalityTest ( unionBy (equalsInteger, [1,2,3], []), [1,2,3],
+equalityTest ( union ([1,2,3], []), [1,2,3],
                [Integer], core_tests ) ;
-equalityTest ( unionBy (equalsInteger, [], [1,2,3]), [1,2,3],
+equalityTest ( union ([], [1,2,3]), [1,2,3],
                [Integer], core_tests ) ;
-equalityTest ( unionBy (equalsInteger, [1,2,3], [4,5,6]), [1,2,3,4,5,6],
-               [Integer], core_tests ) ;
-
-equalityTest ( unionBy (equalsInteger, [1,2,3], [1,4,5,6]), [2,3,1,4,5,6],
-               [Integer], core_tests ) ;
-equalityTest ( unionBy (equalsInteger, [1,2,3], [3,4,5,6,1]), [2,3,4,5,6,1],
+equalityTest ( union ([1,2,3], [4,5,6]), [1,2,3,4,5,6],
                [Integer], core_tests ) ;
 
-equalityTest ( intersectBy (equalsInteger, [], []), [],
+equalityTest ( union ([1,2,3], [1,4,5,6]), [2,3,1,4,5,6],
                [Integer], core_tests ) ;
-equalityTest ( intersectBy (equalsInteger, [1,2,3], []), [],
-               [Integer], core_tests ) ;
-equalityTest ( intersectBy (equalsInteger, [], [1,2,3]), [],
-               [Integer], core_tests ) ;
-equalityTest ( intersectBy (equalsInteger, [1,2,3], [4,5,6]), [],
+equalityTest ( union ([1,2,3], [3,4,5,6,1]), [2,3,4,5,6,1],
                [Integer], core_tests ) ;
 
-equalityTest ( intersectBy (equalsInteger, [1,2,3], [4,2,6]), [2],
+equalityTest ( intersect ([], []), [],
                [Integer], core_tests ) ;
-equalityTest ( intersectBy (equalsInteger, [1,2,3], [4,2,3,6]), [2,3],
+equalityTest ( intersect ([1,2,3], []), [],
+               [Integer], core_tests ) ;
+equalityTest ( intersect ([], [1,2,3]), [],
+               [Integer], core_tests ) ;
+equalityTest ( intersect ([1,2,3], [4,5,6]), [],
                [Integer], core_tests ) ;
 
-equalityTest ( unionsBy (equalsInteger, [ [1,2], [2,3], [1,4,5,6] ] ), [1,2,3,4,5,6] ,
+equalityTest ( intersect ([1,2,3], [4,2,6]), [2],
+               [Integer], core_tests ) ;
+equalityTest ( intersect ([1,2,3], [4,2,3,6]), [2,3],
+               [Integer], core_tests ) ;
+
+equalityTest ( unions ([ [1,2], [2,3], [1,4,5,6] ] ), [1,2,3,4,5,6] ,
                 [Integer], core_tests ) ;
 
 
+-- eq
+equalityTest ( emptyIntList == [], true, Boolean, core_tests) ;
+equalityTest ( [1] == [1], true, Boolean, core_tests) ;
+equalityTest ( [1,2] == [1,2], true, Boolean, core_tests) ;
+equalityTest ( [1] == [2], false, Boolean, core_tests) ;
+equalityTest ( [1] == [1,2], false, Boolean, core_tests) ;
+equalityTest ( [1,2] == [], false, Boolean, core_tests) ;
 
----- from lib:extcore!
-equalityTest ( equalsList ( equalsInteger, [], []), true, Boolean, core_tests) ;
-equalityTest ( equalsList ( equalsInteger, [1], [1]), true, Boolean, core_tests) ;
-equalityTest ( equalsList ( equalsInteger, [1,2], [1,2]), true, Boolean, core_tests) ;
-equalityTest ( equalsList ( equalsInteger, [1], [2]), false, Boolean, core_tests) ;
-equalityTest ( equalsList ( equalsInteger, [1], [1,2]), false, Boolean, core_tests) ;
-equalityTest ( equalsList ( equalsInteger, [1,2], []), false, Boolean, core_tests) ;
-
-equalityTest ( notEqualsList ( notEqualsInteger, [], []), false, Boolean, core_tests) ;
-equalityTest ( notEqualsList ( notEqualsInteger, [1], [1]), false, Boolean, core_tests) ;
-equalityTest ( notEqualsList ( notEqualsInteger, [1,2], [1,2]), false, Boolean, core_tests) ;
-equalityTest ( notEqualsList ( notEqualsInteger, [1], [2]), true, Boolean, core_tests) ;
-equalityTest ( notEqualsList ( notEqualsInteger, [1], [1,2]), true, Boolean, core_tests) ;
-equalityTest ( notEqualsList ( notEqualsInteger, [1,2], []), true, Boolean, core_tests) ;
+-- neq
+equalityTest ( emptyIntList != [], false, Boolean, core_tests) ;
+equalityTest ( [1] != [1], false, Boolean, core_tests) ;
+equalityTest ( [1,2] != [1,2], false, Boolean, core_tests) ;
+equalityTest ( [1] != [2], true, Boolean, core_tests) ;
+equalityTest ( [1] != [1,2], true, Boolean, core_tests) ;
+equalityTest ( [1,2] != [], true, Boolean, core_tests) ;
 

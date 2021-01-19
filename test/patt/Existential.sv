@@ -15,6 +15,14 @@ String ::= v::Existential
          end;
 }
 
+function toStringFromInteger
+String ::= v::Integer
+{ return toString(v) ; }
+
+function toStringFromFloat
+String ::= v::Float
+{ return toString(v) ; }
+
 equalityTest ( applyExist(existentialprod(1, toStringFromInteger)), "1", String, pat_tests ) ;
 equalityTest ( applyExist(existentialprod(2, toStringFromInteger)), "2", String, pat_tests ) ;
 equalityTest ( applyExist(existentialprod(1.0, toStringFromFloat)), "1.0", String, pat_tests ) ;

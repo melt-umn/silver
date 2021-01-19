@@ -151,12 +151,18 @@ top::Expr ::= q::Decorated QName
   production typeScheme::PolyType = q.lookupValue.typeScheme;
   top.typerep = typeScheme.typerep;
 
-  production context::Context =
+  production instHead::Context =
     case typeScheme.contexts of
-    | [c] -> performContextSubstitution(c, top.finalSubst)
-    | _ -> error("Class member should have exactly one context!")
+    | c :: _ -> performContextSubstitution(c, top.finalSubst)
+    | _ -> error("Class member should have at least one context!")
     end;
-  context.env = top.env;
+  instHead.env = top.env;
+  production contexts::Contexts =
+    case typeScheme.contexts of
+    | _ :: cs -> foldContexts(map(performContextSubstitution(_, top.finalSubst), cs))
+    | _ -> error("Class member should have at least one context!")
+    end;
+  contexts.env = top.env;
 }
 
 abstract production globalValueReference
@@ -283,7 +289,10 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
 
-  top.typerep = functionType(ety.outputType, es.missingTypereps ++ anns.partialAnnoTypereps, anns.missingAnnotations);
+  top.typerep =
+    appTypes(
+      functionType(length(es.missingTypereps) + length(anns.partialAnnoTypereps), map(fst, anns.missingAnnotations)),
+      es.missingTypereps ++ anns.partialAnnoTypereps ++ map(snd, anns.missingAnnotations) ++ [ety.outputType]);
 }
 
 concrete production noteAttachment
@@ -306,7 +315,7 @@ top::Expr ::= '(' '.' q::QName ')'
   -- Fresh variable for the input type, and we'll come back later and check that it occurs on that type.
   
   local rawInputType :: Type = freshType();
-  top.typerep = functionType(q.lookupAttribute.typeScheme.typerep, [rawInputType], []);
+  top.typerep = appTypes(functionType(1, []), [rawInputType, q.lookupAttribute.typeScheme.typerep]);
   
   top.errors <- q.lookupAttribute.errors;
   
@@ -607,70 +616,100 @@ top::Expr ::= '!' e::Expr
   e.isRoot = false;
 }
 
-concrete production gt
+concrete production gtOp
 top::Expr ::= e1::Expr '>' e2::Expr
 {
   top.unparse = e1.unparse ++ " > " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to
+    -- silver:core:gt(e1, e2)
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:gt"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
-concrete production lt
+concrete production ltOp
 top::Expr ::= e1::Expr '<' e2::Expr
 {
   top.unparse = e1.unparse ++ " < " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to
+    -- silver:core:lt(e1, e2)
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:lt"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
-concrete production gteq
+concrete production gteOp
 top::Expr ::= e1::Expr '>=' e2::Expr
 {
   top.unparse = e1.unparse ++ " >= " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to
+    -- silver:core:gte(e1, e2)
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:gte"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
-concrete production lteq
+concrete production lteOp
 top::Expr ::= e1::Expr '<=' e2::Expr
 {
   top.unparse = e1.unparse ++ " <= " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to
+    -- silver:core:lte(e1, e2)
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:lte"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
-concrete production eqeq
+concrete production eqOp
 top::Expr ::= e1::Expr '==' e2::Expr
 {
   top.unparse = e1.unparse ++ " == " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to
+    -- silver:core:eq(e1, e2)
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:eq"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
-concrete production neq
+concrete production neqOp
 top::Expr ::= e1::Expr '!=' e2::Expr
 {
   top.unparse = e1.unparse ++ " != " ++ e2.unparse;
 
-  top.typerep = boolType();
-
-  e1.isRoot=false;
-  e2.isRoot=false;
+  forwards to
+    -- silver:core:neq(e1, e2)
+    applicationExpr(
+      baseExpr(qName(top.location, "silver:core:neq"), location=top.location), '(',
+      snocAppExprs(
+        oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
+        presentAppExpr(e2, location=top.location),
+        location=top.location),')',
+      location=top.location);
 }
 
 concrete production ifThenElse
@@ -969,15 +1008,15 @@ propagate errors, exprs on AnnoAppExprs, AnnoExpr;
 {--
  - Annotations that have not yet been supplied
  -}
-inherited attribute remainingFuncAnnotations :: [NamedArgType];
+inherited attribute remainingFuncAnnotations :: [Pair<String Type>];
 {--
  - All annotations of this function
  -}
-autocopy attribute funcAnnotations :: [NamedArgType];
+autocopy attribute funcAnnotations :: [Pair<String Type>];
 {--
  - Annotations that have not been supplied (by subtracting from remainingFuncAnnotations)
  -}
-synthesized attribute missingAnnotations :: [NamedArgType];
+synthesized attribute missingAnnotations :: [Pair<String Type>];
 {--
  - Typereps of those annotations that are partial (_)
  -}
@@ -991,13 +1030,13 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {
   top.unparse = qn.unparse ++ "=" ++ e.unparse;
   
-  local fq :: Pair<Maybe<NamedArgType> [NamedArgType]> =
+  local fq :: Pair<Maybe<Pair<String Type>> [Pair<String Type>]> =
     extractNamedArg(qn.name, top.remainingFuncAnnotations);
     
   e.appExprIndex =
     findNamedArgType(qn.name, top.funcAnnotations, 0);
   e.appExprTyperep =
-    if fq.fst.isJust then fq.fst.fromJust.argType else errorType();
+    if fq.fst.isJust then fq.fst.fromJust.snd else errorType();
     
   top.missingAnnotations = fq.snd; -- minus qn, if it was there
   top.partialAnnoTypereps = e.missingTypereps;
@@ -1037,7 +1076,7 @@ top::AnnoAppExprs ::= e::AnnoExpr
   top.errors <-
     if null(top.missingAnnotations) then []
     else [err(top.location, "Missing named parameters for function '" ++ top.appExprApplied ++ "': "
-      ++ implode(", ", map((.argName), top.missingAnnotations)))];
+      ++ implode(", ", map(fst, top.missingAnnotations)))];
 
   top.errors <- e.errors;
 
@@ -1058,7 +1097,7 @@ top::AnnoAppExprs ::=
   top.errors <-
     if null(top.missingAnnotations) then []
     else [err(top.location, "Missing named parameters for function '" ++ top.appExprApplied ++ "': "
-      ++ implode(", ", map((.argName), top.missingAnnotations)))];
+      ++ implode(", ", map(fst, top.missingAnnotations)))];
 
   top.missingAnnotations = top.remainingFuncAnnotations;
   
@@ -1071,16 +1110,29 @@ function reorderedAnnoAppExprs
 [Decorated Expr] ::= d::Decorated AnnoAppExprs
 {
   -- This is an annoyingly poor quality implementation
-  return map(reorderedGetSnd, sortBy(reorderedLte, zipWith(pair, d.annoIndexSupplied, d.exprs)));
+  return map(snd, sortBy(reorderedLte, zipWith(pair, d.annoIndexSupplied, d.exprs)));
 }
-function reorderedGetSnd
-b ::= p::Pair<a b> { return p.snd; }
 function reorderedLte
 Boolean ::= l::Pair<Integer Decorated Expr>  r::Pair<Integer Decorated Expr> { return l.fst <= r.fst; }
 
+function extractNamedArg
+Pair<Maybe<Pair<String Type>> [Pair<String Type>]> ::= n::String  l::[Pair<String Type>]
+{
+  local recurse :: Pair<Maybe<Pair<String Type>> [Pair<String Type>]> =
+    extractNamedArg(n, tail(l));
 
+  return if null(l) then pair(nothing(), [])
+  else if head(l).fst == n then pair(just(head(l)), tail(l))
+  else pair(recurse.fst, head(l) :: recurse.snd);
+}
 
-
+function findNamedArgType
+Integer ::= s::String l::[Pair<String Type>] z::Integer
+{
+  return if null(l) then -1
+  else if s == head(l).fst then z
+  else findNamedArgType(s, tail(l), z+1);
+}
 
 
 {--

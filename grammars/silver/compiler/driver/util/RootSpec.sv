@@ -47,20 +47,20 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   g.env = occursEnv(g.occursDefs, toEnv(g.defs));
   g.globalImports =
     occursEnv(
-      if containsBy(stringEq, "silver:core", g.moduleNames) || grammarName == "silver:core" then g.importedOccursDefs
+      if contains("silver:core", g.moduleNames) || grammarName == "silver:core" then g.importedOccursDefs
       else g.importedOccursDefs ++ head(searchEnvTree("silver:core", top.compiledGrammars)).occursDefs,
       toEnv(
-        if containsBy(stringEq, "silver:core", g.moduleNames) || grammarName == "silver:core" then g.importedDefs
+        if contains("silver:core", g.moduleNames) || grammarName == "silver:core" then g.importedDefs
         else g.importedDefs ++ head(searchEnvTree("silver:core", top.compiledGrammars)).defs));
   
   -- This grammar, its direct imports, and only transitively close over exports and TRIGGERED conditional imports.
   -- i.e. these are the things that we really, truly depend upon. (in the sense that we get their symbols)
   local actualDependencies :: [String] =
-    nubBy(stringEq, computeDependencies(grammarName :: top.moduleNames, top.compiledGrammars));
+    nub(computeDependencies(grammarName :: top.moduleNames, top.compiledGrammars));
 
   -- Compute flow information for this grammar, (closing over imports and options, too:)
   local depsPlusOptions :: [String] =
-    nubBy(stringEq, completeDependencyClosure(actualDependencies, top.compiledGrammars));
+    nub(completeDependencyClosure(actualDependencies, top.compiledGrammars));
   g.grammarDependencies = actualDependencies;
   g.flowEnv = fromFlowDefs(foldr(consFlow, nilFlow(), gatherFlowEnv(depsPlusOptions, top.compiledGrammars)));
   
@@ -76,7 +76,7 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   top.translateGrammars := [top];
 
   top.declaredName = g.declaredName;
-  top.moduleNames := nubBy(stringEq, g.moduleNames ++ ["silver:core"]); -- Ensure the prelude is in the deps, always
+  top.moduleNames := nub(g.moduleNames ++ ["silver:core"]); -- Ensure the prelude is in the deps, always
   top.exportedGrammars := g.exportedGrammars;
   top.optionalGrammars := g.optionalGrammars;
   top.condBuild := g.condBuild;
@@ -312,7 +312,7 @@ String ::= r::Decorated RootSpec
 function mentionedGrammars
 [String] ::= r::Decorated RootSpec
 {
-  return nubBy(stringEq, r.moduleNames ++ concat(r.condBuild) ++ r.optionalGrammars);
+  return nub(r.moduleNames ++ concat(r.condBuild) ++ r.optionalGrammars);
 }
 
 function gatherFlowEnv

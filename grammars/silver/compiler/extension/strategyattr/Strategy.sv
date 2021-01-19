@@ -85,7 +85,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
         if null(getOccursDcl(totalAttr, nt.lookupType.fullName, top.env))
         then [err(top.location, s"Total strategy attribute ${totalAttr} referenced by ${at.name} does not occur on ${nt.name}")]
         else [],
-      nubBy(stringEq, at.lookupAttribute.dcl.totalRefs));
+      nub(at.lookupAttribute.dcl.totalRefs));
   
   -- TODO: Check that the type parameters of any rules of type nt match nttl
   

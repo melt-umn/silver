@@ -29,7 +29,7 @@ top::Expr ::= params::ProductionRHS e::Expr
   
   propagate errors;
   
-  top.typerep = functionType(e.typerep, map((.typerep), params.inputElements), []);
+  top.typerep = appTypes(functionType(length(params.inputElements), []), map((.typerep), params.inputElements) ++ [e.typerep]);
 
   propagate downSubst, upSubst;
   propagate flowDeps, flowDefs;

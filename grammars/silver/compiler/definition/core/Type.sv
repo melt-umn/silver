@@ -10,21 +10,18 @@ synthesized attribute lengthDispatcher :: (Expr ::= Decorated Expr  Location);
 synthesized attribute appendDispatcher :: (Expr ::= Decorated Expr  Decorated Expr  Location);
 
 -- Used for poor man's type classes
-synthesized attribute instanceEq :: Boolean;
-synthesized attribute instanceOrd :: Boolean;
+-- TODO: Finish removing these and replace with real type classes
 synthesized attribute instanceNum :: Boolean;
 synthesized attribute instanceConvertible :: Boolean;
 
 attribute applicationDispatcher, accessHandler, lengthDispatcher, appendDispatcher,
-          instanceEq, instanceOrd, instanceNum, instanceConvertible occurs on Type;
+          instanceNum, instanceConvertible occurs on Type;
 
 aspect default production
 top::Type ::=
 {
   top.applicationDispatcher = errorApplication(_, _, _, location=_);
   top.accessHandler = errorAccessHandler(_, _, location=_);
-  top.instanceEq = false;
-  top.instanceOrd = false;
   top.instanceNum = false;
   top.instanceConvertible = false;
   top.lengthDispatcher = errorLength(_, location=_);
@@ -35,8 +32,6 @@ aspect production errorType
 top::Type ::=
 {
   -- Allow these, to suppress raising additional unnecessary errors.
-  top.instanceEq = true;
-  top.instanceOrd = true;
   top.instanceNum = true;
   top.instanceConvertible = true;
 }
@@ -46,8 +41,6 @@ top::Type ::= c::Type a::Type
 {
   top.applicationDispatcher = c.applicationDispatcher;
   top.accessHandler = c.accessHandler;
-  top.instanceEq = c.instanceEq;
-  top.instanceOrd = c.instanceOrd;
   top.instanceNum = c.instanceNum;
   top.instanceConvertible = c.instanceConvertible;
   top.lengthDispatcher = c.lengthDispatcher;
@@ -57,8 +50,6 @@ top::Type ::= c::Type a::Type
 aspect production intType
 top::Type ::=
 {
-  top.instanceEq = true;
-  top.instanceOrd = true;
   top.instanceNum = true;
   top.instanceConvertible = true;
 }
@@ -66,15 +57,12 @@ top::Type ::=
 aspect production boolType
 top::Type ::=
 {
-  top.instanceEq = true;
   top.instanceConvertible = true;
 }
 
 aspect production floatType
 top::Type ::=
 {
-  top.instanceEq = true;
-  top.instanceOrd = true;
   top.instanceNum = true;
   top.instanceConvertible = true;
 }
@@ -82,18 +70,9 @@ top::Type ::=
 aspect production stringType
 top::Type ::=
 {
-  top.instanceEq = true;
-  top.instanceOrd = true;
   top.instanceConvertible = true;
   top.lengthDispatcher = stringLength(_, location=_);
   top.appendDispatcher = stringPlusPlus(_, _, location=_);
-}
-
-aspect production terminalIdType
-top::Type ::=
-{
-  top.instanceEq = true;
-  top.instanceOrd = true;
 }
 
 aspect production nonterminalType
@@ -115,7 +94,7 @@ top::Type ::= te::Type
 }
 
 aspect production functionType
-top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
+top::Type ::= _ _
 {
   top.applicationDispatcher = functionApplication(_, _, _, location=_);
 }

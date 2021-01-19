@@ -158,9 +158,9 @@ Def ::= sg::String  sl::Location  fn::String  ty::Type
   return valueDef(defaultEnvItem(globalValueDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function classMemberDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar] context::Context ty::Type
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar] head::Context contexts::[Context] ty::Type
 {
-  return valueDef(defaultEnvItem(classMemberDcl(fn,bound,context,ty,sourceGrammar=sg,sourceLocation=sl)));
+  return valueDef(defaultEnvItem(classMemberDcl(fn,bound,head,contexts,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function ntDef
 Def ::= sg::String  sl::Location  fn::String  arity::Integer  closed::Boolean  tracked::Boolean
@@ -225,7 +225,7 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
   return attrDef(defaultEnvItem(annoDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function classDef
-Def ::= sg::String  sl::Location  fn::String  supers::[Context]  tv::TyVar  k::Integer  members::[Pair<String Pair<Type Boolean>>]
+Def ::= sg::String  sl::Location  fn::String  supers::[Context]  tv::TyVar  k::Integer  members::[Pair<String Boolean>]
 {
   return typeDef(defaultEnvItem(clsDcl(fn,supers,tv,k,members,sourceGrammar=sg,sourceLocation=sl)));
 }

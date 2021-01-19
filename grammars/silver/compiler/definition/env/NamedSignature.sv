@@ -32,7 +32,7 @@ top::NamedSignature ::= fn::String ctxs::[Context] ie::[NamedSignatureElement] o
   top.namedInputElements = np;
   top.inputNames = map((.elementName), ie);
   top.inputTypes = map((.typerep), ie); -- Does anything actually use this? TODO: eliminate?
-  local typerep::Type = functionType(oe.typerep, top.inputTypes, map((.toNamedArgType), np));
+  local typerep::Type = appTypes(functionType(length(ie), map((.elementShortName), np)), top.inputTypes ++ map((.typerep), np) ++ [oe.typerep]);
   top.typeScheme = (if null(ctxs) then polyType else constraintType(_, ctxs, _))(typerep.freeVariables, typerep);
   top.freeVariables = typerep.freeVariables;
   top.typerep = typerep; -- TODO: Only used by unifyNamedSignature.  Would be nice to eliminate, somehow.
@@ -51,10 +51,10 @@ top::NamedSignature ::=
 {--
  - Represents an elements of a signature, whether input, output, or annotation.
  -}
-nonterminal NamedSignatureElement with elementName, typerep, toNamedArgType;
+nonterminal NamedSignatureElement with elementName, typerep, elementShortName;
 
 synthesized attribute elementName :: String;
-synthesized attribute toNamedArgType :: NamedArgType;
+synthesized attribute elementShortName :: String;
 
 {--
  - Represents an element of the function/production signature.
@@ -65,11 +65,9 @@ top::NamedSignatureElement ::= n::String ty::Type
   top.elementName = n;
   top.typerep = ty;
 
-  -- When we convert from a SignatureElement to a NamedArg, we cut down to the short name only:
-  local annoShortName :: String =
+  -- When we convert from a SignatureElement to a functionType, we cut down to the short name only:
+  top.elementShortName = 
     substring(lastIndexOf(":", n) + 1, length(n), n);
-  
-  top.toNamedArgType = namedArgType(annoShortName, ty);
 }
 
 {--

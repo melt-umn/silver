@@ -100,7 +100,7 @@ top::ASTExpr ::= n::String
   top.value =
     fromMaybe(
       error("Unbound variable " ++ n),
-      lookupBy(stringEq, n, top.substitutionEnv));
+      lookup(n, top.substitutionEnv));
 }
 
 abstract production missingArgASTExpr
@@ -166,7 +166,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     | integerAST(x), integerAST(y) -> booleanAST(x > y)
     | floatAST(x), floatAST(y) -> booleanAST(x > y)
     | stringAST(x), stringAST(y) -> booleanAST(x > y)
-    | _, _ -> error("Invalid values")
+    | x, y -> error("TODO: overloaded operator") -- Figure out how to handle this, applyAST doesn't work with type classes
     end;
 }
 
@@ -179,7 +179,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     | integerAST(x), integerAST(y) -> booleanAST(x < y)
     | floatAST(x), floatAST(y) -> booleanAST(x < y)
     | stringAST(x), stringAST(y) -> booleanAST(x < y)
-    | _, _ -> error("Invalid values")
+    | x, y -> error("TODO: overloaded operator") -- Figure out how to handle this, applyAST doesn't work with type classes
     end;
 }
 
@@ -192,7 +192,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     | integerAST(x), integerAST(y) -> booleanAST(x >= y)
     | floatAST(x), floatAST(y) -> booleanAST(x >= y)
     | stringAST(x), stringAST(y) -> booleanAST(x >= y)
-    | _, _ -> error("Invalid values")
+    | x, y -> error("TODO: overloaded operator") -- Figure out how to handle this, applyAST doesn't work with type classes
     end;
 }
 
@@ -205,7 +205,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     | integerAST(x), integerAST(y) -> booleanAST(x <= y)
     | floatAST(x), floatAST(y) -> booleanAST(x <= y)
     | stringAST(x), stringAST(y) -> booleanAST(x <= y)
-    | _, _ -> error("Invalid values")
+    | x, y -> error("TODO: overloaded operator") -- Figure out how to handle this, applyAST doesn't work with type classes
     end;
 }
 
@@ -219,7 +219,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     | floatAST(x), floatAST(y) -> booleanAST(x == y)
     | stringAST(x), stringAST(y) -> booleanAST(x == y)
     | booleanAST(x), booleanAST(y) -> booleanAST(x == y)
-    | _, _ -> error("Invalid values")
+    | x, y -> error("TODO: overloaded operator") -- Figure out how to handle this, applyAST doesn't work with type classes
     end;
 }
 
@@ -233,7 +233,7 @@ top::ASTExpr ::= a::ASTExpr b::ASTExpr
     | floatAST(x), floatAST(y) -> booleanAST(x != y)
     | stringAST(x), stringAST(y) -> booleanAST(x != y)
     | booleanAST(x), booleanAST(y) -> booleanAST(x != y)
-    | _, _ -> error("Invalid values")
+    | x, y -> error("TODO: overloaded operator") -- Figure out how to handle this, applyAST doesn't work with type classes
     end;
 }
 

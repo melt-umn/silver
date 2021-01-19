@@ -50,7 +50,6 @@ Boolean ::= ty::Type
          | skolemType(_) -> true
          | appType(c, a) -> containsSkolem(c) || containsSkolem(a)
          | decoratedType(ty) -> containsSkolem(ty)
-         | functionType(out, params, namedParams) -> containsSkolem(out) || any(map(containsSkolem, params)) || any(map((\x::NamedArgType -> containsSkolem(x.argType)), namedParams))
          | _ -> false
          end;
 }
@@ -60,7 +59,7 @@ top::Expr ::= 'reify'
 {
   top.errors <-
     case performSubstitution(top.typerep, top.finalSubst) of
-    | functionType(appType(appType(nonterminalType("silver:core:Either", 2, _), stringType()), resultType), [nonterminalType("silver:core:AST", 0, _)], []) ->
+    | appType(appType(functionType(1, []), nonterminalType("silver:core:AST", 0, _)), appType(appType(nonterminalType("silver:core:Either", 2, _), stringType()), resultType)) ->
        case resultType of
        | skolemType(_) -> [err(top.location, "reify invocation attempts to reify to a skolem type - this will never succeed, see https://github.com/melt-umn/silver/issues/368")]
        | ty when containsSkolem(ty) -> [wrn(top.location, "reify invocation attempts to reify to a type containing a skolem - this will only succeed in the case that the value does not actually contain an instance of the skolem type, see https://github.com/melt-umn/silver/issues/368")]
