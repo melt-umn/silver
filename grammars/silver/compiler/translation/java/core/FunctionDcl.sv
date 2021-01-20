@@ -80,7 +80,7 @@ ${implode("", map((.contextInitTrans), whatSig.contexts))}
 
 ${implode("", map((.childDeclElem), whatSig.inputElements))}
 
-${sflatMap((.contextMemberDeclTrans), whatSig.contexts)}
+${flatMap((.contextMemberDeclTrans), whatSig.contexts)}
 
 	@Override
 	public Object getChild(final int index) {
@@ -152,10 +152,10 @@ ${if null(whatSig.contexts) -- Can only use a singleton when there aren't contex
 """}
 
 	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transType}> {
-${sflatMap((.contextMemberDeclTrans), whatSig.contexts)}
+${flatMap((.contextMemberDeclTrans), whatSig.contexts)}
 
 		public Factory(${implode(", ", map((.contextParamTrans), whatSig.contexts))}) {
-${sflatMap((.contextInitTrans), whatSig.contexts)}
+${flatMap((.contextInitTrans), whatSig.contexts)}
 		}
 
 		@Override

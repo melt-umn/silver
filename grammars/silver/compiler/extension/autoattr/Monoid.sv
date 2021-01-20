@@ -56,6 +56,18 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
       location=top.location);
 }
 
+concrete production tcMonoidAttributeDcl
+top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
+{
+  top.unparse = "monoid attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
+  forwards to
+    monoidAttributeDcl(
+      $1, $2, a, tl, $5, te, 'with',
+      baseExpr(qName(te.location, "silver:core:empty"), location=te.location), ',',
+      exprOperator(baseExpr(qName(te.location, "silver:core:append"), location=te.location), location=te.location), $7,
+      location=top.location);
+}
+
 synthesized attribute appendProd :: (Expr ::= Expr Expr Location) occurs on Operation;
 
 aspect production functionOperation

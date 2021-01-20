@@ -133,14 +133,14 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 "  <property name='src' location='${jg}/src'/>\n\n" ++
 
 "  <path id='lib.classpath'>\n" ++
-    sflatMap(pathLocation, classpathRuntime) ++
+    flatMap(pathLocation, classpathRuntime) ++
 "  </path>\n\n" ++
 
 "  <path id='compile.classpath'>\n" ++
 "    <pathelement location='${src}' />\n" ++
 "    <path refid='lib.classpath'/>\n" ++
-    sflatMap(pathLocation, classpathCompiler) ++
-    sflatMap(pathLocation, map(\s::String -> s ++ "bin/", benv.silverHostGen)) ++
+    flatMap(pathLocation, classpathCompiler) ++
+    flatMap(pathLocation, map(\s::String -> s ++ "bin/", benv.silverHostGen)) ++
 "  </path>\n\n" ++
 
 implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
@@ -170,7 +170,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 ) ++
 "    </pathconvert>\n" ++
 "    <jar destfile='" ++ outputFile ++ "' zip64Mode='as-needed'>\n" ++
-    sflatMap(includeClassFiles, grammarsRelevant) ++
+    flatMap(includeClassFiles, grammarsRelevant) ++
 "      <manifest>\n" ++
 "        " ++ implode("\n        ", extraManifestAttributes) ++ "\n" ++
 "      </manifest>\n" ++
@@ -183,7 +183,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 
 "  <target name='grammars' depends='" ++ implode(", ", extraGrammarsDeps) ++ "'>\n" ++
 "    <javac debug='on' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false'>\n" ++
-    sflatMap(includeJavaFiles, grammarsDependedUpon) ++
+    flatMap(includeJavaFiles, grammarsDependedUpon) ++
 "    </javac>\n" ++
 "  </target>\n" ++
 "</project>\n";

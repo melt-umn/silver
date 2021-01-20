@@ -4,7 +4,7 @@ terminal Dominates_t 'dominates' lexer classes {KEYWORD};
 terminal Submits_t   'submits'   lexer classes {KEYWORD};
 terminal Classes_kwd 'classes'   lexer classes {KEYWORD};
 
-monoid attribute lexerClasses :: [String] with [], ++;
+monoid attribute lexerClasses :: [String];
 attribute lexerClasses occurs on TerminalModifier, TerminalModifiers;
 propagate lexerClasses on TerminalModifiers, TerminalModifier;
 
@@ -55,7 +55,7 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
   propagate errors;
 }
 
-monoid attribute precTermList :: [String] with [], ++;
+monoid attribute precTermList :: [String];
 
 nonterminal TermPrecs with config, grammarName, unparse, location, precTermList, errors, env;
 propagate errors, precTermList on TermPrecs;

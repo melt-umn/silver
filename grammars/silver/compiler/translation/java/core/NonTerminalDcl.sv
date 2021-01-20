@@ -77,7 +77,7 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 	
 	@Override
 	public final Object getAnno(final String name) {
-		${sconcat(map((.annoLookupElem), myAnnos))}{
+		${concat(map((.annoLookupElem), myAnnos))}{
 			throw new common.exceptions.SilverInternalError("Invalid annotation " + name);
 		}
 	}

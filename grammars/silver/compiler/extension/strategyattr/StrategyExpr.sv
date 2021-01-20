@@ -8,7 +8,7 @@ autocopy attribute recVarNameEnv::[Pair<String String>]; -- name, (isTotal, genN
 autocopy attribute recVarTotalEnv::[Pair<String Boolean>]; -- name, (isTotal, genName)
 inherited attribute outerAttr::Maybe<String>;
 autocopy attribute inlinedStrategies::[String];
-monoid attribute liftedStrategies::[Pair<String Decorated StrategyExpr>] with [], ++;
+monoid attribute liftedStrategies::[Pair<String Decorated StrategyExpr>];
 synthesized attribute attrRefName::Maybe<String>;
 synthesized attribute isId::Boolean;
 synthesized attribute isTotal::Boolean;
@@ -16,9 +16,9 @@ inherited attribute givenInputElements::[NamedSignatureElement];
 synthesized attribute attrRefNames::[Maybe<String>];
 monoid attribute containsFail::Boolean with false, ||;
 monoid attribute allId::Boolean with true, &&;
-monoid attribute freeRecVars::[String] with [], ++;
-monoid attribute partialRefs::[String] with [], ++;
-monoid attribute totalRefs::[String] with [], ++;
+monoid attribute freeRecVars::[String];
+monoid attribute partialRefs::[String];
+monoid attribute totalRefs::[String];
 monoid attribute matchesFrame::Boolean with false, ||;
 
 synthesized attribute partialTranslation::Expr; -- Maybe<a> on a

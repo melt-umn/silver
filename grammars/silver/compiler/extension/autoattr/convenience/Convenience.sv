@@ -31,6 +31,17 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
       location=top.location);
 }
 
+concrete production tcMonoidAttributeDclMultiple
+top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "monoid attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ " occurs on " ++ qs.unparse ++ ";";
+  forwards to
+    appendAGDcl(
+      tcMonoidAttributeDcl($1, $2, a, tl, $5, te, $10, location=a.location),
+      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location)), qs.qnames),
+      location=top.location);
+}
+
 concrete production equalityAttributeDclMultiple
 top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name 'occurs' 'on' qs::QNames ';'
 {

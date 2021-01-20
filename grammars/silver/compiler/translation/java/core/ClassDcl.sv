@@ -16,7 +16,7 @@ public interface ${className} {
 		return this;
 	}
 
-${sflatMap(\ c::Context -> s"\tpublic ${c.transType} ${c.transContextSuperAccessorName}();\n", cl.contexts)}
+${flatMap(\ c::Context -> s"\tpublic ${c.transType} ${c.transContextSuperAccessorName}();\n", cl.contexts)}
 
 ${body.translation}
 
