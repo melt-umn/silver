@@ -13,8 +13,6 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import java.util.List;
-
 import common.exceptions.SilverExit;
 import silver.core.NIOVal;
 import silver.core.Pioval;
@@ -361,44 +359,4 @@ public final class IOToken implements Typed {
 	public TypeRep getType() {
 		return new BaseTypeRep("silver:core:IO");
 	}
-
-
-        /**
-         * <pre>IOVal<ProcessHandle> ::= cmd::String args::[String] i::IO</pre>
-         */
-        public NIOVal spawnProcess(StringCatter cmd, ConsCell args) {
-            List<String> full_cmd = ConsCell.toList(args);
-            full_cmd.add(0, cmd.toString());
-            return this.wrap(new ProcessHandle(full_cmd));
-        }
-
-        /**
-         * <pre>IO ::= p::ProcessHandle msg::String</pre>
-         */
-        public IOToken sendToProcess(ProcessHandle p, StringCatter msg) {
-            p.writeString(msg.toString());
-            return this;
-        }
- 
-        /**
-         * <pre>IOVal<String> ::= p::ProcessHandle</pre>
-         */
-        public NIOVal readLineFromProcess(ProcessHandle p) {
-            return this.wrap(p.readLineStdout());
-        }
- 
-        /**
-         * <pre>IOVal<String> ::= p::ProcessHandle</pre>
-         */
-        public NIOVal readErrLineFromProcess(ProcessHandle p) {
-            return this.wrap(p.readLineStderr());
-        }
- 
-        /**
-         * <pre>IO ::= p::ProcessHandle</pre>
-         */
-        public IOToken waitForProcess(ProcessHandle p) {
-            p.waitOnEnd();
-            return this;
-        }
 }
