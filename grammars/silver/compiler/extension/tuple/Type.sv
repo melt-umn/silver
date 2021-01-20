@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:tuple;
 
-nonterminal ListOfTypeExprs with location, unparse, env, config, te_translation;
+nonterminal ListOfTypeExprs with location, unparse, te_translation;
 synthesized attribute te_translation :: TypeExpr;
 
 aspect production appType
@@ -42,7 +42,7 @@ concrete production tupleTypeExpr
 top::TypeExpr ::= '(' tes::ListOfTypeExprs ')'
 {
   top.unparse = "(" ++ tes.unparse ++ ")";
-  top.typerep = tupleType(tes.te_translation.typerep.tupleElems);
+  top.typerep = tupleType(forward.typerep.tupleElems);
   forwards to tes.te_translation;
 }
 

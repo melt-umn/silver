@@ -11,7 +11,7 @@ imports silver:compiler:extension:patternmatching;
 
 terminal Comma_t ',' ;
 
-nonterminal TupleList with location, unparse, env, config, compiledGrammars, originRules, isRoot, grammarName, frame, translation;
+nonterminal TupleList with location, unparse, translation;
 synthesized attribute translation :: Expr;
 
 concrete production emptyTuple
@@ -25,7 +25,7 @@ concrete production tupleExpr
 top::Expr ::= '(' tl::TupleList ')'
 {
   top.unparse = "(" ++ tl.unparse ++ ")";
-  top.typerep = tupleType(tl.translation.typerep.tupleElems);
+  top.typerep = tupleType(forward.typerep.tupleElems);
   forwards to tl.translation;
 }
 
