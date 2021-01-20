@@ -111,3 +111,13 @@ function makeDate
 } 
 
 equalityTest(hackUnparse(makeDate(1, 12, 2021)), "silver:core:pair(1, silver:core:pair(12, 2021))", String, silver_tests);
+
+wrongCode "Argument 1 of function 'testingTupleType' expected (String, Integer, Integer) but argument is of type (Integer, String, String)" {
+  function testingTupleType
+  Boolean ::= tuple::(String, Integer, Integer)
+  {
+    return true;
+  }
+
+  equalityTest(testingTupleType((1, "bad", "type")), true, Boolean, silver_tests);
+}
