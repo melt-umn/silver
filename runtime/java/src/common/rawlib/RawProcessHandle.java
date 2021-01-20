@@ -7,6 +7,9 @@ import java.io.InputStreamReader;
 import java.util.List;
 
 import common.IOToken;
+import common.ConsCell;
+import common.StringCatter;
+import silver.core.NIOVal;
 
 /**
  * This class represents the `<code>ProcessHandle</code>` type in Silver for

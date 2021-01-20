@@ -42,7 +42,7 @@ public final class IOToken implements Typed {
 	 * Function that return IOToken can return `this`.
 	 * Those that return `IOVal<>` can return `this.wrap(...)`.
 	 */
-	private NIOVal wrap(Object arg) {
+	public NIOVal wrap(Object arg) {
 		return Pioval.rtConstruct(null, this, arg);
 	}
 	
