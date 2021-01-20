@@ -7,32 +7,12 @@ imports silver:compiler:definition:env;
 imports silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:type;
 
-imports silver:compiler:analysis:typechecking:core;
-
 imports silver:compiler:extension:patternmatching;
---imports silver:compiler:extension:list;
 
 terminal Comma_t ',' ;
 
-abstract production tupleType
-top::Type ::= ts::[Type]
-{
-  top.typepp = "(" ++ printTupleTypeList(ts) ++ ")";
-  forwards to foldr1(\ t1::Type t2::Type -> appType(appType(nonterminalType("silver:core:Pair", 2, false), t1), t2), ts);
-}
-
-function printTupleTypeList
-String ::= ts::[Type]
-{
-  return case ts of
-  | [ty] -> ty.typepp
-  | ty::tys -> ty.typepp ++ ", " ++ printTupleTypeList(tys)
-  end;
-}
-
-nonterminal TupleList with location, unparse, env, downSubst, typelist, translation;
+nonterminal TupleList with location, unparse, env, config, compiledGrammars, originRules, isRoot, grammarName, frame, translation;
 synthesized attribute translation :: Expr;
-synthesized attribute typelist :: [Type];
 
 concrete production emptyTuple
 top::Expr ::= '(' ')'
@@ -45,7 +25,7 @@ concrete production tupleExpr
 top::Expr ::= '(' tl::TupleList ')'
 {
   top.unparse = "(" ++ tl.unparse ++ ")";
-  top.typerep = tupleType(tl.typelist);
+  top.typerep = tupleType(tl.translation.typerep.tupleElems);
   forwards to tl.translation;
 }
 
@@ -55,7 +35,6 @@ concrete production tupleList_2Elements
 top::TupleList ::= fst::Expr ',' snd::Expr
 {
   top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-  top.typelist = [fst.typerep, snd.typerep];
   top.translation = Silver_Expr { silver:core:pair($Expr{fst}, $Expr{snd}) };
 }
 
@@ -64,12 +43,11 @@ concrete production tupleList_nElements
 top::TupleList ::= fst::Expr ',' snd::TupleList
 {
   top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-  top.typelist = fst.typerep::snd.typelist;
   top.translation = Silver_Expr { silver:core:pair($Expr{fst}, $Expr{snd.translation}) };
 }
 
 -- Pattern matching on tuples
-nonterminal TuplePatternList with location, unparse, patternList;
+nonterminal TuplePatternList with location, unparse, env, config, patternList;
 -- Turns TuplePatternList into [Pattern]
 synthesized attribute patternList :: [Decorated Pattern];
 
