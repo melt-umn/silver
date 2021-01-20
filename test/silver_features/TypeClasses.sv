@@ -306,14 +306,8 @@ class BoolThing a {
 }
 
 instance BoolThing Maybe<Unit> {
-  bteq = mbteq;
+  bteq = \ x::b y::b -> if x == y then just(unit()) else nothing();
 }
-
-function mbteq
-Eq b => Maybe<Unit> ::= x::b y::b
-{
-  return if x == y then just(unit()) else nothing();
-} 
 
 equalityTest(bteq(42, 42), just(unit()), Maybe<Unit>, silver_tests);
 equalityTest(bteq(234, 42), nothing(), Maybe<Unit>, silver_tests);
