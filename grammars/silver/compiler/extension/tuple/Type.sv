@@ -1,7 +1,13 @@
 grammar silver:compiler:extension:tuple;
 
-nonterminal ListOfTypeExprs with location, unparse, te_translation;
+nonterminal ListOfTypeExprs with location, unparse, boundVariables, te_translation;
 synthesized attribute te_translation :: TypeExpr;
+
+aspect default production
+top::Type ::=
+{
+  top.tupleElems = [top];
+}
 
 aspect production appType
 top::Type ::= c::Type a::Type
