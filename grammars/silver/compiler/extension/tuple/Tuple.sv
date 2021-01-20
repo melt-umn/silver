@@ -47,9 +47,7 @@ top::TupleList ::= fst::Expr ',' snd::TupleList
 }
 
 -- Pattern matching on tuples
-nonterminal TuplePatternList with location, unparse, env, config, patternList;
--- Turns TuplePatternList into [Pattern]
-synthesized attribute patternList :: [Decorated Pattern];
+nonterminal TuplePatternList with location, unparse;
 
 concrete production emptyTuplePattern
 top::Pattern ::= '(' ')'
