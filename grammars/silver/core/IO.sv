@@ -352,6 +352,86 @@ IO ::= files::[String] i::IO
   "java" : return "%i%.touchFiles(%files%)";
 }
 
+
+------ Subprocesses
+type ProcessHandle foreign = "common.ProcessHandle";
+
+{--
+ - Start a subprocess to run in the background with which to communicate.
+ - To run `cmd a1 a2`, call `spawnProcess("cmd", ["a1", "a2"])`
+ -
+ - @param cmd  The command to run
+ - @param args  The arguments to pass to the command (separate from the command)
+ - @param i  The IO token
+ - @return  The handle to communicate with the process
+-}
+function spawnProcess
+IOVal<ProcessHandle> ::= cmd::String args::[String] i::IO
+{
+  return error("Not Yet Implemented: spawnProcess");
+} foreign {
+  "java" : return "%i%.spawnProcess(%cmd%, %args%)";
+}
+{--
+ - Send a string message to a subprocess
+ -
+ - @param p  The process to which to send the message
+ - @param msg  The message to send to the subprocess
+ - @param i  The IO token
+ - @return  The IO token
+-}
+function sendToProcess
+IO ::= process::ProcessHandle message::String i::IO
+{
+  return error("Not Yet Implemented:  sendToProcess");
+} foreign {
+  "java" : return "%i%.sendToProcess(%p%, %msg%)";
+}
+{--
+ - Read a line of output from a subprocess
+ -
+ - @param p  The process from which to read
+ - @param i  The IO token
+ - @return  The line which was read
+-}
+function readLineFromProcess
+IOVal<String> ::= p::ProcessHandle i::IO
+{
+  return error("Not Yet Implemented:  readLineFromProcess");
+} foreign {
+  "java" : return "%i%.readLineFromProcess(%p%)";
+}
+{--
+ - Read a line of output from stderr of a subprocess
+ -
+ - @param p  The process from which to read
+ - @param i  The IO token
+ - @return  The line which was read
+-}
+function readErrLineFromProcess
+IOVal<String> ::= p::ProcessHandle i::IO
+{
+  return error("Not Yet Implemented:  readLineFromProcess");
+} foreign {
+  "java" : return "%i%.readErrLineFromProcess(%p%)";
+}
+{--
+ - Wait for a running subprocess to end.  There should be a reason to
+ - expect it to end; this does not kill it.
+ -
+ - @param p  The process for which to wait
+ - @param i  The IO token
+ - @return  The IO token
+-}
+function waitForProcess
+IO ::= p::ProcessHandle i::IO
+{
+  return error("Not Yet Implemented:  waitForProcess");
+} foreign {
+  "java" : return "%i%.waitForProcess(%p%)";
+}
+
+
 ------ IO Misc.
 
 {--
