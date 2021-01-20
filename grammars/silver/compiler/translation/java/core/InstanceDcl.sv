@@ -54,7 +54,7 @@ aspect production instanceBodyItem
 top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 {
   top.translation = s"""
-	public ${id.lookupValue.typeScheme.typerep.transClassType} ${makeInstanceMemberAccessorName(top.fullName)}(${implode(", ", map((.contextParamTrans), memberContexts))}) {
+	public ${id.lookupValue.typeScheme.typerep.transCovariantType} ${makeInstanceMemberAccessorName(top.fullName)}(${implode(", ", map((.contextParamTrans), memberContexts))}) {
 		return ${e.translation};
 	}
 """;
