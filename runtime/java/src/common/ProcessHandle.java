@@ -87,8 +87,13 @@ public class ProcessHandle {
 
     /*Wait for the process to exit*/
     public void waitOnEnd() {
-        proc.waitFor();
-        return;
+        try {
+            proc.waitFor();
+            return;
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
 

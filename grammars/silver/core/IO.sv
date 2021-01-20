@@ -381,7 +381,7 @@ IOVal<ProcessHandle> ::= cmd::String args::[String] i::IO
  - @return  The IO token
 -}
 function sendToProcess
-IO ::= process::ProcessHandle message::String i::IO
+IO ::= p::ProcessHandle msg::String i::IO
 {
   return error("Not Yet Implemented:  sendToProcess");
 } foreign {
