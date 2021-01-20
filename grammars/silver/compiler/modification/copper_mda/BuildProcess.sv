@@ -19,7 +19,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 
   extraTopLevelDecls <-
     if null(targets) then []
-    else ["  <target name='copper_mda'>\n" ++ sflatMap(mdaBuildSpecTarget, targets) ++ "  </target>\n"];
+    else ["  <target name='copper_mda'>\n" ++ flatMap(mdaBuildSpecTarget, targets) ++ "  </target>\n"];
   -- By adding the dependency here, the MDA check happens right after parsers are built normally.
   extraGrammarsDeps <-
     if null(targets) then [] else ["copper_mda"];

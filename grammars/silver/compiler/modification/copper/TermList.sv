@@ -7,7 +7,7 @@ grammar silver:compiler:modification:copper;
 
 nonterminal TermList with config, grammarName, unparse, location, termList, defs, errors, env;
 
-monoid attribute termList :: [String] with [], ++;
+monoid attribute termList :: [String];
 
 propagate errors, termList on TermList;
 

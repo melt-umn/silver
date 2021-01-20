@@ -67,7 +67,7 @@ top::DriverAction ::= specs::[Decorated RootSpec]
   local i :: IO =
     if null(errs)
     then top.ioIn
-    else print("Errors for " ++ head(specs).declaredName ++ "\n" ++ sflatMap(renderMessages(head(specs).grammarSource, _), errs) ++ "\n", top.ioIn);
+    else print("Errors for " ++ head(specs).declaredName ++ "\n" ++ flatMap(renderMessages(head(specs).grammarSource, _), errs) ++ "\n", top.ioIn);
 
   local recurse :: DriverAction = printAllBindingErrorsHelp(tail(specs));
   recurse.ioIn = i;
@@ -90,7 +90,7 @@ top::DriverAction ::= specs::[Decorated RootSpec]
   local i :: IO =
     if null(errs)
     then top.ioIn
-    else print("Errors for " ++ head(specs).declaredName ++ "\n" ++ sflatMap(renderMessages(head(specs).grammarSource, _), errs) ++ "\n", top.ioIn);
+    else print("Errors for " ++ head(specs).declaredName ++ "\n" ++ flatMap(renderMessages(head(specs).grammarSource, _), errs) ++ "\n", top.ioIn);
 
   local recurse :: DriverAction = printAllParsingErrors(tail(specs));
   recurse.ioIn = i;

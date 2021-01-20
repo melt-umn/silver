@@ -1,11 +1,11 @@
 grammar silver:compiler:definition:concrete_syntax:ast;
 
-monoid attribute dominatesXML :: String with "", ++;
-monoid attribute submitsXML :: String with "", ++;
-monoid attribute lexerclassesXML :: String with "", ++;
+monoid attribute dominatesXML :: String;
+monoid attribute submitsXML :: String;
+monoid attribute lexerclassesXML :: String;
 monoid attribute ignored :: Boolean with false, ||;
 monoid attribute marking :: Boolean with false, ||;
-monoid attribute acode :: String with "", ++;
+monoid attribute acode :: String;
 monoid attribute opPrecedence :: Maybe<Integer> with nothing(), orElse;
 monoid attribute opAssociation :: Maybe<String> with nothing(), orElse; -- TODO type?
 monoid attribute prefixSeperator :: Maybe<String> with nothing(), orElse;

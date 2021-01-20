@@ -25,7 +25,7 @@ nonterminal RootSpec with
 {--
  - Grammars that were read from source.
  -}
-monoid attribute translateGrammars :: [Decorated RootSpec] with [], ++;
+monoid attribute translateGrammars :: [Decorated RootSpec];
 
 {--
  - Parse errors present in this grammar (only for errorRootSpec!)
@@ -175,7 +175,7 @@ monoid attribute maybeAllGrammarDependencies::Maybe<[String]> with nothing(), or
 monoid attribute maybeDefs::Maybe<[Def]> with nothing(), orElse;
 monoid attribute maybeOccursDefs::Maybe<[DclInfo]> with nothing(), orElse;
 
-monoid attribute interfaceErrors::[String] with [], ++;
+monoid attribute interfaceErrors::[String];
 
 {--
  - Representation of all properties of a grammar, to be serialized/deserialize to/from an interface

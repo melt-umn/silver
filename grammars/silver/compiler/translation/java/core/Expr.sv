@@ -520,21 +520,6 @@ top::Expr ::= s::String_t
   top.lazyTranslation = top.translation;
 }
 
-aspect production errorPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
-{
-  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
-  top.lazyTranslation = top.translation;
-}
-
-aspect production stringPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
-{
-  top.translation = s"new common.StringCatter(${e1.translation}, ${e2.translation})";
-
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-}
-
 aspect production exprsEmpty
 top::Exprs ::=
 {

@@ -88,7 +88,7 @@ ${if !null(namedSig.contexts) then "//no rtConstruct because contexts" else s"""
 
 ${implode("", map((.childDeclElem), namedSig.inputElements))}
 
-${sflatMap((.contextMemberDeclTrans), namedSig.contexts)}
+${flatMap((.contextMemberDeclTrans), namedSig.contexts)}
 
 	@Override
 	public Object getChild(final int index) {
@@ -213,10 +213,10 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 	${if null(namedSig.contexts) then s"public static final common.NodeFactory<${fnnt}> factory = new Factory();" else ""}
 
 	public static final class Factory extends common.NodeFactory<${fnnt}> {
-${sflatMap((.contextMemberDeclTrans), namedSig.contexts)}
+${flatMap((.contextMemberDeclTrans), namedSig.contexts)}
 
 		public Factory(${implode(", ", map((.contextParamTrans), namedSig.contexts))}) {
-${sflatMap((.contextInitTrans), namedSig.contexts)}
+${flatMap((.contextInitTrans), namedSig.contexts)}
 		}
 	
 		@Override

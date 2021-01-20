@@ -13,10 +13,10 @@ public class ${className} implements ${makeClassName(fName)} {
 	final static common.DecoratedNode context = common.TopNode.singleton; // For decoration in member bodies
 
 	public ${className}(${implode(", ", map((.contextParamTrans), cl.contexts))}) {
-${sflatMap((.contextInitTrans), cl.contexts)}
+${flatMap((.contextInitTrans), cl.contexts)}
 	}
 
-${sflatMap((.contextMemberDeclTrans), cl.contexts)}
+${flatMap((.contextMemberDeclTrans), cl.contexts)}
 ${superContexts.transContextSuperAccessors}
 
 ${body.translation}
