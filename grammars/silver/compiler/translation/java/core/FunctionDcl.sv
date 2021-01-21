@@ -133,7 +133,7 @@ ${implode("", map(makeChildAccessCaseLazy, whatSig.inputElements))}
 		return "${whatSig.fullName}";
 	}
 
-	public static ${whatSig.outputElement.typerep.transClassType} invoke(final common.OriginContext originCtx ${commaIfArgs} ${whatSig.javaSignature}) {
+	public static ${whatSig.outputElement.typerep.transCovariantType} invoke(final common.OriginContext originCtx ${commaIfArgs} ${whatSig.javaSignature}) {
 		try {
 ${whatResult}
 		} catch(Throwable t) {
@@ -144,14 +144,14 @@ ${whatResult}
 ${if null(whatSig.contexts) -- Can only use a singleton when there aren't contexts.
   then s"""
 	// Use of ? to permit casting to more specific types
-	public static final common.NodeFactory<? extends ${whatSig.outputElement.typerep.transType}> factory = new Factory();
+	public static final common.NodeFactory<? extends ${whatSig.outputElement.typerep.transCovariantType}> factory = new Factory();
 """ else s"""
-	public static final common.NodeFactory<? extends ${whatSig.outputElement.typerep.transType}> getFactory(${implode(", ", map((.contextParamTrans), whatSig.contexts))}) {
+	public static final common.NodeFactory<? extends ${whatSig.outputElement.typerep.transCovariantType}> getFactory(${implode(", ", map((.contextParamTrans), whatSig.contexts))}) {
 		return new Factory(${implode(", ", map((.contextRefElem), whatSig.contexts))});
 	}
 """}
 
-	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transType}> {
+	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transCovariantType}> {
 ${flatMap((.contextMemberDeclTrans), whatSig.contexts)}
 
 		public Factory(${implode(", ", map((.contextParamTrans), whatSig.contexts))}) {
@@ -159,7 +159,7 @@ ${flatMap((.contextInitTrans), whatSig.contexts)}
 		}
 
 		@Override
-		public final ${whatSig.outputElement.typerep.transType} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] namedNotApplicable) {
+		public final ${whatSig.outputElement.typerep.transCovariantType} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] namedNotApplicable) {
 			return ${className}.invoke(${implode(", ", ["originCtx"] ++ map((.contextRefElem), whatSig.contexts) ++ unpackChildren(0, whatSig.inputElements))});
 		}
 		

@@ -31,10 +31,18 @@ top::Expr ::= params::ProductionRHS e::Expr
   
   top.typerep = appTypes(functionType(length(params.inputElements), []), map((.typerep), params.inputElements) ++ [e.typerep]);
 
+  production attribute sigDefs::[Def] with ++;
+  sigDefs := params.lambdaDefs;
+  sigDefs <-
+    addNewLexicalTyVars_ActuallyVariables(
+      top.grammarName, top.location, params.lexicalTyVarKinds,
+      filter(\ tv::String -> null(getTypeDcl(tv, top.env)), nub(params.lexicalTypeVariables)));
+
   propagate downSubst, upSubst;
   propagate flowDeps, flowDefs;
   
-  e.env = newScopeEnv(params.lambdaDefs, top.env);
+  params.env = newScopeEnv(sigDefs, top.env);
+  e.env = params.env;
   e.frame = inLambdaContext(top.frame, sourceGrammar=top.frame.sourceGrammar); --TODO: Is this sourceGrammar correct?
 }
 

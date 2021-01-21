@@ -40,14 +40,14 @@ top::ClassBody ::=
 aspect production constraintClassBodyItem
 top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
 {
-  top.translation = s"\t${ty.typerep.transType} ${makeInstanceMemberAccessorName(id.name)}(${implode(", ", map((.contextParamTrans), cl.contexts))});";
+  top.translation = s"\t${ty.typerep.transCovariantType} ${makeInstanceMemberAccessorName(id.name)}(${implode(", ", map((.contextParamTrans), cl.contexts))});";
 }
 
 aspect production defaultConstraintClassBodyItem
 top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
 {
   top.translation = s"""
-	default ${ty.typerep.transClassType} ${makeInstanceMemberAccessorName(id.name)}(${implode(", ", map((.contextParamTrans), cl.contexts))}) {
+	default ${ty.typerep.transCovariantType} ${makeInstanceMemberAccessorName(id.name)}(${implode(", ", map((.contextParamTrans), cl.contexts))}) {
 		final common.DecoratedNode context = common.TopNode.singleton;
 		return ${e.translation};
 	}
