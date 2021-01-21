@@ -1,23 +1,5 @@
 grammar silver:core;
 
-{@comment
-  Applies a function to each element of the list.
-
-  This is a list of links.
-  @link[map]
-  @link[foldr]
-
-  param f  The function to apply
-  param l  The list to map over
-  return  The list containing the results of applying the function to l
-@}
-function map
-[b] ::= f::(b ::= a)  l::[a]
-{
-  return if null(l) then []
-         else f(head(l)) :: map(f, tail(l));
-}
-
 {--
  - Applies an operator right-associatively over a list.
  - (i.e. replaces cons with 'f', nil with 'i' in the list)
