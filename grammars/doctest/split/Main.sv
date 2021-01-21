@@ -1,7 +1,9 @@
 
 @@{-
-   - @config grammarTitle = "Example Docs Page"
+   - @config split
    - @config grammarWeight -10
+   - @config title "This is the Main file"
+   - @config noToc
    -}
 
 @{-

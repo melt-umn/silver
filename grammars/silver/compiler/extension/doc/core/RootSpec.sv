@@ -19,24 +19,56 @@ top::RootSpec ::= _ _ _ _ _
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _ _ _ _
 {
-  top.genFiles := toOneFile(g.grammarName, g.upDocConfig, g.docs);
+  top.genFiles := if getSplit(g.upDocConfig) 
+  				  then toSplitFiles(g, g.upDocConfig, [])
+  				  else formatFile("_index.md", 
+  				  	              getGrammarTitle(g.upDocConfig, lastPart(g.grammarName)),
+  				  	              getGrammarWeight(g.upDocConfig), getCollapse(g.upDocConfig),
+  				  	              length(g.upDocConfig) == 0, s"{{< toc-tree >}}\n\nIn grammar `${g.grammarName}`: {{< toc >}}",
+  				  	              g.docs);
 
   g.docEnv = add(g.docDcls, empty(compareString));
   g.downDocConfig = g.upDocConfig;
 }
 
-function toOneFile
-[Pair<String String>] ::= grammarName::String grammarConfig::[DocConfigSetting] comments::[CommentItem]
+function toSplitFiles
+[Pair<String String>] ::= g::Decorated Grammar grammarConf::[DocConfigSetting] soFar::[Pair<String String>]
 {
-	return if null(comments) then [] else
-		[pair("index.md", s"""---
-title: ${getTitle(grammarConfig, grammarName)}
-weight: ${toString(getWeight(grammarConfig))}
-geekdocCollapseSection: true
+	return case g of
+		   | consGrammar(this, rest) ->
+	   			toSplitFiles(rest, grammarConf, formatFile(
+		   			substitute(".sv", ".md", this.location.filename),
+		   			getFileTitle(this.localDocConfig, substitute(".sv", "", this.location.filename)),
+		   			getFileWeight(this.localDocConfig), false, true,
+		   			s"In file `${this.location.filename}`: "++(if getToc(this.localDocConfig) then "{{< toc >}}" else ""), 
+		   			this.docs) ++ soFar)
+		   | nilGrammar() -> if length(soFar) == 0 && length(grammarConf) == 0 then []
+		   					 else formatFile("_index.md", getGrammarTitle(grammarConf, lastPart(g.grammarName)),
+		   					 	getGrammarWeight(grammarConf), getCollapse(grammarConf),
+		   					 	false, s"In grammar `${g.grammarName}`: {{< toc-tree >}}", []) ++ soFar
+		   end;
+}
+
+function formatFile
+[Pair<String String>] ::= fileName::String title::String weight::Integer
+                          collapse::Boolean skipIfEmpty::Boolean pfxText::String
+                          comments::[CommentItem]
+{
+	local realDocs::[CommentItem] = filter((.doEmit), comments);
+	return if length(realDocs) == 0 && skipIfEmpty then [] else [pair(fileName, s"""---
+title: ${title}
+weight: ${toString(weight)}
+geekdocCollapseSection: ${toString(collapse)}
 ---
 
-{{< toc >}}
+${pfxText}
 
-""" ++
-			implode("\n\n\n\n", map((.body), filter((.doEmit), comments))))];
+${implode("\n\n\n\n", map((.body), realDocs))}
+""")];
+}
+
+function lastPart
+String ::= s::String
+{
+	return last(explode(":", s));
 }

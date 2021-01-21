@@ -104,6 +104,7 @@ Pair<[String] [DocConfigSetting]> ::= alreadyErrs::[String] args::[Pair<String C
     local err::[String] =
         case arg of
         | pair("split", v) -> if !v.asBool.isJust then ["@config split takes a boolean value (or just @config split)"] else []
+        | pair("noToc", v) -> if !v.asBool.isJust then ["@config noToc takes a boolean value (or just @config noToc)"] else []
         | pair("weight", v) -> if !v.asInteger.isJust then ["@config weight takes an integer"] else []
         | pair("grammarWeight", v) -> if !v.asInteger.isJust then ["@config grammarWeight takes an integer"] else []
         | pair("title", v) -> if !v.asString.isJust then ["@config title takes a string in quotes"] else []
@@ -117,6 +118,7 @@ Pair<[String] [DocConfigSetting]> ::= alreadyErrs::[String] args::[Pair<String C
     local boundConf::DocConfigSetting =
         case arg of
         | pair("split", v) -> splitConfig(v.asBool.fromJust)
+        | pair("noToc", v) -> tocConfig(!v.asBool.fromJust)
         | pair("weight", v) -> weightConfig(v.asInteger.fromJust)
         | pair("grammarWeight", v) -> grammarWeightConfig(v.asInteger.fromJust)
         | pair("title", v) -> titleConfig(v.asString.fromJust)
@@ -370,10 +372,10 @@ top::DclCommentPart ::= '@@'
 }
 
 
-terminal InitialIgnore_t /@+\{\-[ \t]*\-*[ \t]*/;
+terminal InitialIgnore_t /@+\{\-[ \t]*\-*[ \t]*([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*/;
 terminal FinalIgnore_t /[\- \r\n]*\-\}/ dominates {CommentContent_t};
 
-terminal EmptyLines_t /\n([ \t]*\-*[ \t]*\r?\n)+[ \t]*\-*[ \t]*/;
+terminal EmptyLines_t /\r?\n([ \t]*\-*[ \t]*\r?\n)+[ \t]*\-*[ \t]*/;
 terminal Newline_t /\r?\n[ \t]*\-*[ \t]*/;
 
 terminal CommentContent_t /([^@\r\n\-]|\-[^\r\n}])+/;

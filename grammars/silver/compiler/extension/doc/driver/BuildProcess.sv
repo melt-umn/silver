@@ -75,7 +75,7 @@ IO ::= i::IO  a::Decorated CmdArgs  l::[Decorated RootSpec]  outputLoc::String
 function writeSpec
 IO ::= i::IO  r::Decorated RootSpec  outputLoc::String
 {
-  local path :: String = outputLoc ++ "doc/" ++ grammarToPath(r.declaredName);
+  local path :: String = outputLoc ++ grammarToPath(r.declaredName);
 
   local mkiotest :: IOVal<Boolean> =
     isDirectory(path, i);
@@ -111,7 +111,7 @@ IO ::= path::String s::[Pair<String String>] i::IO
 function deleteStaleDocs
 IO ::= iIn::IO outputLoc::String gram::String
 {
-  local docPath :: String = outputLoc ++ "doc/" ++ grammarToPath(gram);
+  local docPath :: String = outputLoc ++ grammarToPath(gram);
   
   return deleteDirFiles(docPath, iIn).io;
 }

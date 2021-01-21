@@ -10,6 +10,7 @@ attribute docs occurs on Grammar, Root, AGDcls, AGDcl;
 
 inherited attribute downDocConfig :: [DocConfigSetting] occurs on Grammar, Root, AGDcls, AGDcl;
 synthesized attribute upDocConfig :: [DocConfigSetting] with ++ occurs on Grammar, Root, AGDcls, AGDcl;
+synthesized attribute localDocConfig :: [DocConfigSetting] occurs on Root;
 
 -- Declarations of documented AGDcls
 synthesized attribute docDcls :: [Pair<String DocDclInfo>] with ++;
@@ -24,6 +25,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 {
   top.docs := ags.docs;
   ags.downDocConfig = filter((\x::DocConfigSetting -> x.fileScope), ags.upDocConfig) ++ top.downDocConfig;
+  top.localDocConfig = ags.downDocConfig;
   top.upDocConfig := filter((\x::DocConfigSetting -> !x.fileScope), ags.upDocConfig);
   top.docDcls := ags.docDcls;
 }
@@ -60,8 +62,7 @@ top::AGDcl ::= h::AGDcl t::AGDcl
   top.docs := h.docs ++ t.docs;
   h.downDocConfig = top.downDocConfig;
   t.downDocConfig = top.downDocConfig;
-  top.upDocConfig <- h.upDocConfig;
-  top.upDocConfig <- t.upDocConfig;
+  top.upDocConfig := h.upDocConfig ++ t.upDocConfig;
   top.docDcls := h.docDcls ++ t.docDcls;
 }
 

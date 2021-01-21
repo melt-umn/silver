@@ -51,6 +51,12 @@ top::DocConfigSetting ::= v::Boolean
 	top.fileScope = true;
 }
 
+abstract production tocConfig
+top::DocConfigSetting ::= v::Boolean
+{
+	top.fileScope = true;
+}
+
 
 -- a grammar with @excludeGrammar containing file(s) with @excludeFile false will
 -- only emit docs for that file(s)
@@ -65,24 +71,72 @@ Boolean ::= args::[DocConfigSetting]
 		   end;
 }
 
-function getTitle
+function getFileTitle
 String ::= args::[DocConfigSetting] fallback::String
 {
 	return case args of
 		   | titleConfig(x)::_ -> x
-		   | grammarTitleConfig(x)::_ -> x
-		   | _::r -> getTitle(r, fallback)
+		   | _::r -> getFileTitle(r, fallback)
 		   | [] -> fallback
 		   end;
 }
 
-function getWeight
+function getGrammarTitle
+String ::= args::[DocConfigSetting] fallback::String
+{
+	return case args of
+		   | grammarTitleConfig(x)::_ -> x
+		   | _::r -> getGrammarTitle(r, fallback)
+		   | [] -> fallback
+		   end;
+}
+
+function getFileWeight
 Integer ::= args::[DocConfigSetting]
 {
 	return case args of
 		   | weightConfig(x)::_ -> x
-		   | grammarWeightConfig(x)::_ -> x
-		   | _::r -> getWeight(r)
+		   | _::r -> getFileWeight(r)
 		   | [] -> 0
+		   end;
+}
+
+function getGrammarWeight
+Integer ::= args::[DocConfigSetting]
+{
+	return case args of
+		   | grammarWeightConfig(x)::_ -> x
+		   | _::r -> getGrammarWeight(r)
+		   | [] -> 0
+		   end;
+}
+
+function getSplit
+Boolean ::= args::[DocConfigSetting]
+{
+	return case args of
+		   | splitConfig(v)::_ -> v
+		   | _::r -> getSplit(r)
+		   | [] -> false
+		   end;
+}
+
+function getToc
+Boolean ::= args::[DocConfigSetting]
+{
+	return case args of
+		   | tocConfig(v)::_ -> v
+		   | _::r -> getToc(r)
+		   | [] -> false
+		   end;
+}
+
+function getCollapse
+Boolean ::= args::[DocConfigSetting]
+{
+	return case args of
+		   | collapseConfig(v)::_ -> v
+		   | _::r -> getCollapse(r)
+		   | [] -> true
 		   end;
 }
