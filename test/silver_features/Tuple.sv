@@ -161,6 +161,8 @@ wrongCode "Argument 1 of function 'testEmptyTupleType' expected () but argument 
 
 }
 
+-- Note that given our inductive implementation of tuples,
+-- a type (String, (Integer, String)) is equivalent to (String, Integer, String)
 wrongCode "Argument 1 of function 'testingTupleType2' expected (String, Integer, String) but argument is of type (String, Integer)" {
 
   function testingTupleType2
