@@ -6,9 +6,18 @@ grammar silver:util:treemap;
 type Map<a b> foreign;
 
 {--
- - Returns a new, empty, multimap using the specified comparator.
+ - Returns a new, empty, multimap using Ord for comparison.
  -}
 function empty
+Ord a => Map<a b> ::=
+{
+  return emptyWith(compare);
+}
+
+{--
+ - Returns a new, empty, multimap using the specified comparator.
+ -}
+function emptyWith
 Map<a b> ::= comparator::(Integer ::= a a)
 {
   return error("NYI");
@@ -27,6 +36,17 @@ Map<a b> ::= lst::[Pair<a b>] mp::Map<a b>
   return error("NYI");
 } foreign {
   "java" : return "common.rawlib.RawTreeMap.addList(%lst%, (java.util.TreeMap<Object,common.ConsCell>)%mp%)";
+}
+
+{--
+ - Returns a list of keys that are present in the map, in sorted order.
+ -}
+function keys
+[a] ::= mp::Map<a b>
+{
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawTreeMap.keys((java.util.TreeMap<Object,common.ConsCell>)%mp%)";
 }
 
 {--

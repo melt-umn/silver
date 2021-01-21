@@ -1,7 +1,7 @@
 grammar silver:compiler:extension:doc:core:doclang;
 imports silver:compiler:extension:doc:core;
 imports silver:langutil;
-imports silver:util:treemap;
+imports silver:util:treemap as tm;
 
 -- Comment is sequence of blocks
 -- Blocks start with a newline or a @param/@return/@prodattr/@forward/...
@@ -52,7 +52,7 @@ top::DclComment ::= InitialIgnore_t blocks::DclCommentBlocks FinalIgnore_t
     local paramBlocks::[String] = 
         map(snd, sortBy(
             (\x::Pair<String String> y::Pair<String String> ->
-                positionOf(stringEq, x.fst, top.paramNames) < positionOf(stringEq, y.fst, top.paramNames)),
+                positionOf(x.fst, top.paramNames) < positionOf(y.fst, top.paramNames)),
             blocks.paramBlocks));
 
     local errs::[String] =
@@ -307,7 +307,7 @@ top::ConfigValue ::= v::ConfigValueInt_t
 {
     top.asBool = nothing();
     top.asString = nothing();
-    top.asInteger = just(toInt(v.lexeme));
+    top.asInteger = just(toInteger(v.lexeme));
 }
 
 concrete production lastCommentLines
@@ -348,7 +348,7 @@ top::DclCommentPart ::= part::CommentContent_t
 concrete production linkCommentPart
 top::DclCommentPart ::= '@link' '[' id::Id_t ']'
 {
-    local res::[DocDclInfo] = lookup(id.lexeme, top.docEnv);
+    local res::[DocDclInfo] = tm:lookup(id.lexeme, top.docEnv);
     top.body = case res of
                | [docDclInfo(_, location, grammarName)] -> id.lexeme ++ " at " ++ grammarName ++ "/" ++ location.filename ++ "#" ++ toString(location.line)
                | _ -> s"${id.lexeme} (**BROKEN LINK**)"

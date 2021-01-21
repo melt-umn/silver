@@ -12,14 +12,14 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   production dcl::DclInfo = id.lookupType.dcl;
   dcl.givenInstanceType = ty.typerep;
   
-  production superContexts::Contexts = foldContexts(dcl.superContexts);
+  production superContexts::Contexts = foldContexts(if id.lookupType.found then dcl.superContexts else []);
   superContexts.env = body.env;
   
   top.defs := [instDef(top.grammarName, id.location, fName, boundVars, cl.contexts, ty.typerep)];
   
   top.errors <- id.lookupType.errors;
   top.errors <-
-    if dcl.isClass then []
+    if !id.lookupType.found || dcl.isClass then []
     else [err(id.location, id.name ++ " is not a type class.")];
   top.errors <-
     if !ty.typerep.isError && length(getInstanceDcl(fName, ty.typerep, top.env)) > 1
@@ -28,16 +28,21 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   top.errors <-
     case ty.typerep of
     -- Default instance, must be exported by the class declaration
-    | skolemType(_) when !isExportedBy(top.grammarName, [dcl.sourceGrammar], top.compiledGrammars) ->
+    | skolemType(_) when id.lookupType.found && !isExportedBy(top.grammarName, [dcl.sourceGrammar], top.compiledGrammars) ->
       [wrn(top.location, "Orphaned default instance declaration for " ++ fName)]
     -- Regular instance, must be exported by the class or type declaration
-    | t when !isExportedBy(top.grammarName, dcl.sourceGrammar :: map(\ d::DclInfo -> d.sourceGrammar, getTypeDcl(t.typeName, top.env)), top.compiledGrammars) ->
+    | t when id.lookupType.found &&
+        !isExportedBy(
+          top.grammarName,
+          dcl.sourceGrammar :: map(\ d::DclInfo -> d.sourceGrammar, getTypeDcl(t.typeName, top.env)),
+          top.compiledGrammars) ->
       [wrn(top.location, s"Orphaned instance declaration for ${fName} ${prettyType(t)}")]
     | _ -> []
     end;
   
   cl.instanceHead = just(instContext(fName, ty.typerep));
   cl.constraintSigName = nothing();
+  cl.classDefName = nothing();
 
   production attribute headPreDefs :: [Def] with ++;
   headPreDefs := [];
@@ -51,7 +56,8 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   
   body.env = newScopeEnv(headDefs, cl.env);
   body.className = id.lookupType.fullName;
-  body.expectedClassMembers = dcl.classMembers;
+  body.instanceType = ty.typerep; 
+  body.expectedClassMembers = if id.lookupType.found then dcl.classMembers else [];
 }
 
 concrete production instanceDclNoCL
@@ -63,12 +69,13 @@ top::AGDcl ::= 'instance' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
 }
 
 autocopy attribute className::String;
-inherited attribute expectedClassMembers::[Pair<String Pair<Type Boolean>>];
+autocopy attribute instanceType::Type;
+inherited attribute expectedClassMembers::[Pair<String Boolean>];
 
 nonterminal InstanceBody with
-  config, grammarName, env, defs, flowEnv, location, unparse, errors, compiledGrammars, className, expectedClassMembers;
+  config, grammarName, env, defs, flowEnv, location, unparse, errors, compiledGrammars, className, instanceType, expectedClassMembers;
 nonterminal InstanceBodyItem with
-  config, grammarName, env, defs, flowEnv, location, unparse, errors, compiledGrammars, className, expectedClassMembers, fullName;
+  config, grammarName, env, defs, flowEnv, location, unparse, errors, compiledGrammars, className, instanceType, expectedClassMembers, fullName;
 
 propagate defs, errors on InstanceBody, InstanceBodyItem;
 
@@ -79,7 +86,7 @@ top::InstanceBody ::= h::InstanceBodyItem t::InstanceBody
 
   h.expectedClassMembers = top.expectedClassMembers;
   t.expectedClassMembers =
-    filter(\ m::Pair<String Pair<Type Boolean>> -> m.fst != h.fullName, top.expectedClassMembers);
+    filter(\ m::Pair<String Boolean> -> m.fst != h.fullName, top.expectedClassMembers);
 }
 concrete production nilInstanceBody
 top::InstanceBody ::= 
@@ -88,8 +95,8 @@ top::InstanceBody ::=
 
   top.errors <-
     flatMap(
-      \ m::Pair<String Pair<Type Boolean>> ->
-        if m.snd.snd then [] else [err(top.location, s"Missing instance member ${m.fst} for class ${top.className}")],
+      \ m::Pair<String Boolean> ->
+        if m.snd then [] else [err(top.location, s"Missing instance member ${m.fst} for class ${top.className}")],
       top.expectedClassMembers);
 }
 
@@ -98,13 +105,31 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 {
   top.unparse = s"${id.name} = ${e.unparse};";
 
+  production typeScheme::PolyType = id.lookupValue.typeScheme;
+  production instSubst::Substitution =
+    case typeScheme.contexts of
+    -- Current class context is the first context on the member's type scheme
+    | instContext(cls, ty) :: _ when cls == top.className ->
+      composeSubst(
+        unify(ty, top.instanceType),
+        -- Skolemize all the other type vars that didn't get instantiated by the instance head
+        zipVarsIntoSkolemizedSubstitution(typeScheme.boundVars, freshTyVars(typeScheme.boundVars)))
+    | _ -> emptySubst() -- Fall back in case of errors
+    end;
+  production memberContexts::[Context] =
+    case typeScheme.contexts of
+    | _ :: cs -> map(performContextSubstitution(_, instSubst), cs)
+    | _ -> []
+    end;
+
   top.errors <- id.lookupValue.errors;
   top.errors <-
-    if !id.lookupValue.found || lookupBy(stringEq, top.fullName, top.expectedClassMembers).isJust then []
+    if !id.lookupValue.found || lookup(top.fullName, top.expectedClassMembers).isJust then []
     else [err(id.location, s"Unexpected instance member ${id.name} for class ${top.className}")]; 
 
   top.fullName = id.lookupValue.fullName;
 
+  e.env = newScopeEnv(map(\ c::Context -> c.contextMemberDef(top.grammarName, top.location), memberContexts), top.env);
   e.originRules = [];
   e.isRoot = true;
 

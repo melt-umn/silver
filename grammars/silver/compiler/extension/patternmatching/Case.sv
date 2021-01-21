@@ -288,7 +288,7 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Pair<Expr Maybe<P
             fromMaybe(
               decorate wildcPattern('_', location=top.location)
                 with { config=head(pl).config; env=head(pl).env; patternVarEnv = []; },
-              lookupBy(stringEq, n, head(pl).patternNamedSubPatternList)),
+              lookup(n, head(pl).patternNamedSubPatternList)),
           named) ++
         tail(pl),
         cond, e, location=top.location);
@@ -403,7 +403,7 @@ PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type 
   -- TODO: head(mrs).location is probably not the correct thing to use here?? (generally)
 
   local annos :: [String] =
-    nubBy(stringEq, map(fst, flatMap((.patternNamedSubPatternList), map((.headPattern), mrs))));
+    nub(map(fst, flatMap((.patternNamedSubPatternList), map((.headPattern), mrs))));
   local annoAccesses :: [Expr] =
     map(\ n::String -> access(currExpr, '.', qNameAttrOccur(qName(l, n), location=l), location=l), annos);
   
@@ -481,15 +481,13 @@ Expr ::= e::Decorated Expr
          else exprRef(e, location=e.location);
 }
 
-function mruleEqForGrouping
-Boolean ::= a::AbstractMatchRule b::AbstractMatchRule
-{
-  return a.headPattern.patternSortKey == b.headPattern.patternSortKey;
+instance Eq AbstractMatchRule {
+  eq = \ a::AbstractMatchRule b::AbstractMatchRule ->
+    a.headPattern.patternSortKey == b.headPattern.patternSortKey;
 }
-function mruleLTEForSorting
-Boolean ::= a::AbstractMatchRule b::AbstractMatchRule
-{
-  return a.headPattern.patternSortKey <= b.headPattern.patternSortKey;
+instance Ord AbstractMatchRule {
+  lte = \ a::AbstractMatchRule b::AbstractMatchRule ->
+    a.headPattern.patternSortKey <= b.headPattern.patternSortKey;
 }
 {--
  - Given a list of match rules, examine the "head pattern" of each.
@@ -500,7 +498,7 @@ Boolean ::= a::AbstractMatchRule b::AbstractMatchRule
 function groupMRules
 [[AbstractMatchRule]] ::= l::[AbstractMatchRule]
 {
-  return groupBy(mruleEqForGrouping, sortBy(mruleLTEForSorting, l));
+  return group(sort(l));
 }
 
 {--

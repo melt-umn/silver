@@ -43,6 +43,20 @@ Maybe<b> ::= eqf::(Boolean ::= a a)  elem::a  lst::[Pair<a b>]
               else lookupBy(eqf, elem, tail(lst));
 }
 
+{--
+ - Look up an element in an association list, using ==.
+ -
+ - @param elem   The element to look up
+ - @param lst  The list of assocation pairs
+ - @return  The first association pair found in the list, where the element
+ -   equaled the first element of the pair.
+ -}
+function lookup
+Eq a => Maybe<b> ::= elem::a  lst::[Pair<a b>]
+{
+  return lookupBy(eq, elem, lst);
+}
+
 function lookupAllBy
 [b] ::= eqf::(Boolean ::= a a)  elem::a  lst::[Pair<a b>]
 {
@@ -51,6 +65,12 @@ function lookupAllBy
          else if eqf(elem, head(lst).fst)
               then head(lst).snd :: lookupAllBy(eqf, elem, tail(lst))
               else lookupAllBy(eqf, elem, tail(lst));
+}
+
+function lookupAll
+Eq a => [b] ::= elem::a  lst::[Pair<a b>]
+{
+  return lookupAllBy(eq, elem, lst);
 }
 
 {--

@@ -3,9 +3,12 @@ grammar silver:compiler:definition:type;
 -- Quick check to see if an error message should be suppressed
 synthesized attribute isError :: Boolean;
 
+-- Check for whether the type can be applied
+synthesized attribute isApplicable :: Boolean;
+
 synthesized attribute inputTypes :: [Type];
 synthesized attribute outputType :: Type;
-synthesized attribute namedTypes :: [NamedArgType];
+synthesized attribute namedTypes :: [Pair<String Type>];
 synthesized attribute arity :: Integer;
 synthesized attribute baseType :: Type;
 synthesized attribute argTypes :: [Type];
@@ -67,7 +70,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
 }
 
-attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
+attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated, isApplicable occurs on Type;
 
 aspect default production
 top::Type ::=
@@ -83,6 +86,7 @@ top::Type ::=
   top.isDecorable = false;
   top.isTerminal = false;
   top.isError = false;
+  top.isApplicable = false;
   
   top.decoratedType = errorType();
   
@@ -107,6 +111,20 @@ top::Type ::= c::Type a::Type
   top.argTypes = c.argTypes ++ [a];
   top.isDecorable = c.isDecorable;
   top.unifyInstanceNonterminal = c.unifyInstanceNonterminal;
+  top.arity = c.arity;
+  top.isApplicable = c.isApplicable;
+  
+  top.inputTypes = take(top.arity, top.argTypes);
+  top.outputType =
+    case top.baseType of
+    | functionType(_, _) -> last(top.argTypes)
+    | _ -> errorType()
+    end;
+  top.namedTypes =
+    case top.baseType of
+    | functionType(_, nps) -> zipWith(pair, nps, drop(top.arity, top.argTypes))
+    | _ -> []
+    end;
 }
 
 
@@ -167,11 +185,9 @@ top::Type ::= nt::Type  hidden::Type
 }
 
 aspect production functionType
-top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
+top::Type ::= params::Integer namedParams::[String]
 {
-  top.inputTypes = params;
-  top.outputType = out;
-  top.namedTypes = namedParams;
-  top.arity = length(params);
+  top.arity = params;
+  top.isApplicable = true;
 }
 

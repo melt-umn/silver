@@ -14,6 +14,7 @@ class CBaz a
 {
   cy :: a;
   bazFromInt :: (a ::= Integer) = \ Integer -> cy;
+  bazEq :: MyEq a => (Boolean ::= a) = \ x::a -> myeq(x, cy);  
 }
 
 instance CBaz a => CFoo [a]
@@ -25,6 +26,7 @@ instance CBaz Integer
 {
   cy = 42;
   bazFromInt = \ i::Integer -> i;
+  bazEq = myeq(_, 42);  
 }
 
 instance CBaz String
@@ -36,15 +38,20 @@ instance CBaz a => CBar [a]
 {}
 
 global cxi::[Integer] = cx;
-equalityTest(hackUnparse(cxi), "[42]", String, silver_tests);
+equalityTest(cxi, [42], [Integer], silver_tests);
 
 global cxs::[String] = cx;
-equalityTest(hackUnparse(cxs), "[\"hello\"]", String, silver_tests);
+equalityTest(cxs, ["hello"], [String], silver_tests);
 
 global bfii::Integer = bazFromInt(24);
 global bfis::String = bazFromInt(24);
 equalityTest(bfii, 24, Integer, silver_tests);
 equalityTest(bfis, "hello", String, silver_tests);
+
+equalityTest(bazEq(42), true, Boolean, silver_tests);
+equalityTest(bazEq(1234), false, Boolean, silver_tests);
+equalityTest(bazEq("hello"), true, Boolean, silver_tests);
+equalityTest(bazEq("abc"), false, Boolean, silver_tests);
 
 equalityTest(myeq([1, 2, 3], [1, 2, 3]), true, Boolean, silver_tests);
 equalityTest(myeq([1, 2, 3], [1, 2, 3, 2, 1]), false, Boolean, silver_tests);
@@ -52,12 +59,18 @@ equalityTest(myeq([1, 2, 3], [1, 2, 1]), false, Boolean, silver_tests);
 equalityTest(myeq(pair([1, 2], 3), pair([1, 2], 3)), true, Boolean, silver_tests);
 equalityTest(myeq(pair([1, 2], 3), pair([1, 4], 3)), false, Boolean, silver_tests);
 
+equalityTest(myneq([1, 2, 3], [1, 2, 3]), false, Boolean, silver_tests);
+equalityTest(myneq([1, 2, 3], [1, 2, 3, 2, 1]), true, Boolean, silver_tests);
+equalityTest(myneq([1, 2, 3], [1, 2, 1]), true, Boolean, silver_tests);
+equalityTest(myneq(pair([1, 2], 3), pair([1, 2], 3)), false, Boolean, silver_tests);
+equalityTest(myneq(pair([1, 2], 3), pair([1, 4], 3)), true, Boolean, silver_tests);
+
 function myRemove
 MyEq a => [a] ::= x::a xs::[a]
 {
   return removeBy(myeq, x, xs);
 }
-equalityTest(hackUnparse(myRemove(3, [1, 2, 3, 4])), "[1, 2, 4]", String, silver_tests);
+equalityTest(myRemove(3, [1, 2, 3, 4]), [1, 2, 4], [Integer], silver_tests);
 
 equality attribute isEqTo, isEq;
 nonterminal EqPair<a b> with isEqTo, isEq;
@@ -104,6 +117,14 @@ wrongCode "is not a type class" {
   instance Maybe Integer {}
 }
 
+wrongCode "Undeclared type" {
+  instance Blarch Integer {}
+}
+
+wrongCode "Undeclared type" {
+  instance Blarch a => CBaz a {}
+}
+
 wrongCode "Overlapping instances" {
   instance CBaz Integer { cy = 24; }
 }
@@ -134,6 +155,17 @@ equalityTest(myeq(3.14, 3.14), false, Boolean, silver_tests);
 
 nonterminal ABCD;
 production abcd top::ABCD ::= {}
+
+class CQux a {
+  cqx :: CQux a => a = cqy;
+  cqy :: a;
+}
+
+instance CQux Integer {
+  cqy = 1234;
+}
+
+equalityTest(cqx, 1234, Integer, silver_tests);
 
 -- Type class from another grammar, but not orphaned
 instance MyEq ABCD
@@ -196,3 +228,87 @@ wrongCode "f has kind arity 1, but there are 2 type arguments supplied here" {
     myfmap2 :: (f<b> ::= (b ::= a) f<a b>);
   }
 }
+
+class CDefaultVal a {
+  cdv1 :: Pair<Integer a>;
+  cdv2 :: a = cdv1.snd;
+}
+
+instance CDefaultVal String {
+  cdv1 = pair(42, "abc");
+}
+
+equalityTest(cdv2, "abc", String, silver_tests);
+
+class AmbInst a {
+  ambval :: a;
+}
+instance AmbInst Integer {
+  ambval = 42;
+}
+instance AmbInst Float {
+  ambval = 3.14;
+}
+
+wrongCode "Ambiguous type variable a (arising from the use of ambval) prevents the constraint silver_features:AmbInst a from being solved." {
+  global ambStr::String = hackUnparse(ambval);
+}
+
+global intIsEqual::(Boolean ::= Integer Integer) = myeq;
+equalityTest(intIsEqual(42, 42), true, Boolean, silver_tests);
+equalityTest(intIsEqual(42, 34), false, Boolean, silver_tests);
+
+function myeq2
+MyEq a => Boolean ::= x::a y::a
+{
+  return myeq(x, y);
+}
+global intIsEqual2::(Boolean ::= Integer Integer) = myeq2;
+equalityTest(intIsEqual2(42, 42), true, Boolean, silver_tests);
+equalityTest(intIsEqual2(42, 34), false, Boolean, silver_tests);
+
+global isSingleDigit::(Boolean ::= String) = contains(_, ["1", "2", "3", "4", "5", "6", "7", "8", "9"]);
+equalityTest(isSingleDigit("5"), true, Boolean, silver_tests);
+equalityTest(isSingleDigit("42"), false, Boolean, silver_tests);
+
+class Semigroupoid a {
+  sgcompose :: (a<b d> ::= a<c d> a<b c>);
+}
+
+instance Semigroupoid (_ ::= _) {
+  sgcompose = compose;
+}
+
+equalityTest(sgcompose(\ x::Integer -> x * 2, \ s::String -> toInteger(s))("42"), 84, Integer, silver_tests);
+
+wrongCode "(_ ::= _ _) has kind arity 3, but the class Semigroupoid expected kind arity 2" {
+  instance Semigroupoid (_ ::= _ _) {
+    sgcompose = compose;
+  }
+}
+
+wrongCode "Member sgcompose has expected type ((b ::= Integer c) ::= (b ::= Integer a) (a ::= Integer c)), but the expression has actual type ((b ::= c) ::= (b ::= a) (a ::= c))" {
+  instance Semigroupoid (_ ::= Integer _) {
+    sgcompose = compose;
+  }
+}
+
+wrongCode "is a type alias" {
+  -- This caused a kind mismatch crash previously
+  type Func<a b> = (b ::= a);
+  instance Semigroupoid Func {
+    sgcompose = error("compose"); --\f::(d ::= c)  g::(c ::= b) -> \x::b -> f(g(x));
+  }
+}
+
+class BoolThing a {
+  bteq :: Eq b => (a ::= b b);
+}
+
+instance BoolThing Maybe<Unit> {
+  bteq = \ x::b y::b -> if x == y then just(unit()) else nothing();
+}
+
+equalityTest(bteq(42, 42), just(unit()), Maybe<Unit>, silver_tests);
+equalityTest(bteq(234, 42), nothing(), Maybe<Unit>, silver_tests);
+

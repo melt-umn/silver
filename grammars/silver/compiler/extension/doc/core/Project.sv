@@ -8,7 +8,7 @@ imports silver:compiler:definition:type;
 
 imports silver:compiler:extension:convenience;
 
-imports silver:util:treemap;
+imports silver:util:treemap as tm;
 
 
 

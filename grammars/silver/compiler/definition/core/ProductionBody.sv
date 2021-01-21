@@ -34,12 +34,12 @@ autocopy attribute frame :: BlockContext;
 {--
  - Defs of attributes that should be wrapped up as production attributes.
  -}
-monoid attribute productionAttributes :: [Def] with [], ++;
+monoid attribute productionAttributes :: [Def];
 {--
  - Either the 'forward' expression, or the 'return' expression.
  - I gave it an obtuse name so it could easily be renamed in the future.
  -}
-monoid attribute uniqueSignificantExpression :: [Decorated Expr] with [], ++;
+monoid attribute uniqueSignificantExpression :: [Decorated Expr];
 
 {--
  - The attribute we're defining on a DefLHS.

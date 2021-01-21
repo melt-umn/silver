@@ -13,10 +13,10 @@ public class ${className} implements ${makeClassName(fName)} {
 	final static common.DecoratedNode context = common.TopNode.singleton; // For decoration in member bodies
 
 	public ${className}(${implode(", ", map((.contextParamTrans), cl.contexts))}) {
-${sflatMap((.contextInitTrans), cl.contexts)}
+${flatMap((.contextInitTrans), cl.contexts)}
 	}
 
-${sflatMap((.contextMemberDeclTrans), cl.contexts)}
+${flatMap((.contextMemberDeclTrans), cl.contexts)}
 ${superContexts.transContextSuperAccessors}
 
 ${body.translation}
@@ -54,7 +54,7 @@ aspect production instanceBodyItem
 top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 {
   top.translation = s"""
-	public ${id.lookupValue.typeScheme.typerep.transClassType} ${makeInstanceMemberAccessorName(top.fullName)}() {
+	public ${id.lookupValue.typeScheme.typerep.transCovariantType} ${makeInstanceMemberAccessorName(top.fullName)}(${implode(", ", map((.contextParamTrans), memberContexts))}) {
 		return ${e.translation};
 	}
 """;

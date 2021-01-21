@@ -4,7 +4,7 @@ import silver:testing;
 import silver:util:treemap as tm;
 import stdlib;
 
-global e :: tm:Map<String Integer> = tm:empty(compareString);
+global e :: tm:Map<String Integer> = tm:empty();
 
 global t1 :: tm:Map<String Integer> =
   tm:add([pair("1", 1), pair("2", 2), pair("3", 3), pair("4", 4), pair("5", 5), pair("6", 6), pair("1", 1), pair("2", 2), pair("0", 0), pair("7", 7)], e);

@@ -32,6 +32,6 @@ EnvTree<DclInfo> ::= eis::[EnvItem]
 function directBuildTree
 EnvTree<a> ::= eis::[Pair<String a>]
 {
-  return rtm:add(eis, rtm:empty(compareString));
+  return rtm:add(eis, rtm:empty());
 }
 

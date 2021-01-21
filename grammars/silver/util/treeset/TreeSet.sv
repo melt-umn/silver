@@ -6,9 +6,18 @@ grammar silver:util:treeset;
 type Set<a> foreign;
 
 {--
- - Returns a new, empty, set using the specified comparator.
+ - Returns a new, empty, set using Ord for comparison.
  -}
 function empty
+Ord a => Set<a> ::=
+{
+  return emptyWith(compare);
+}
+
+{--
+ - Returns a new, empty, set using the specified comparator.
+ -}
+function emptyWith
 Set<a> ::= comparator::(Integer ::= a a)
 {
   return error("NYI");
@@ -107,15 +116,6 @@ Boolean ::= l::Set<a> r::Set<a>
 }
 
 {--
- - Determines if the sets are equal.
- -}
-function equals
-Boolean ::= l::Set<a> r::Set<a>
-{
-  return subset(l,r) && subset(r,l);
-}
-
-{--
  - Determines if a set is empty.
  -}
 function isEmpty
@@ -159,3 +159,6 @@ Set<a> ::= lst::[a] set::Set<a>
   "java" : return "common.rawlib.RawTreeSet.removeAll(%lst%, (java.util.TreeSet<Object>)%set%)";
 }
 
+instance Eq Set<a> {
+  eq = \ l::Set<a> r::Set<a> -> subset(l,r) && subset(r,l);
+}

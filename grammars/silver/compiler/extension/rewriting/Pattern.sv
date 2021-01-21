@@ -63,11 +63,14 @@ aspect production matchRule_c
 top::MatchRule ::= pt::PatternList _ e::Expr
 {
   -- Awful hack: pattern match type checking is happens on the forward "primitive match".
-  -- However, we 
+  -- However, we are translating on the pattern matching extension syntax,
+  -- so we need the Decorated Expr here.
+  -- Solution: extract the Decorated Exprs from the case expression and compute
+  -- the translation on them.
   top.transform =
     rewriteRule(
       pt.firstTransform,
-      case lookupBy(stringEq, toString(top.ruleIndex), top.decRuleExprsIn) of
+      case lookup(toString(top.ruleIndex), top.decRuleExprsIn) of
       | just(e) -> e.transform
       | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex))
       end);
@@ -88,13 +91,13 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
   top.transform =
     require(
       pt.firstTransform,
-      case lookupBy(stringEq, toString(top.ruleIndex) ++ "_cond", top.decRuleExprsIn) of
+      case lookup(toString(top.ruleIndex) ++ "_cond", top.decRuleExprsIn) of
       | just(e) -> e.transform
       | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex) ++ "_cond")
       end) <*
     rewriteRule(
       pt.firstTransform,
-      case lookupBy(stringEq, toString(top.ruleIndex), top.decRuleExprsIn) of
+      case lookup(toString(top.ruleIndex), top.decRuleExprsIn) of
       | just(e) -> e.transform
       | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex))
       end);
@@ -117,14 +120,14 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
     require(
       pt.firstTransform,
       matchASTExpr(
-        case lookupBy(stringEq, toString(top.ruleIndex) ++ "_cond", top.decRuleExprsIn) of
+        case lookup(toString(top.ruleIndex) ++ "_cond", top.decRuleExprsIn) of
         | just(e) -> e.transform
         | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex) ++ "_cond")
         end,
         p.transform, booleanASTExpr(true), booleanASTExpr(false))) <*
     rewriteRule(
       pt.firstTransform,
-      case lookupBy(stringEq, toString(top.ruleIndex), top.decRuleExprsIn) of
+      case lookup(toString(top.ruleIndex), top.decRuleExprsIn) of
       | just(e) -> e.transform
       | nothing() -> error("Failed to find decorated RHS " ++ toString(top.ruleIndex))
       end);
@@ -227,7 +230,7 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
   p.typeHasUniversalVars =
     fromMaybe(
       error("transform undefined in the presence of errors"),
-      lookupBy(stringEq, last(explode(":", qn.name)), top.namedTypesHaveUniversalVars));
+      lookup(last(explode(":", qn.name)), top.namedTypesHaveUniversalVars));
 }
 
 attribute transform<ASTPattern> occurs on Pattern;
@@ -243,12 +246,12 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
   local outputFreeVars::[TyVar] = prodType.outputType.freeVariables;
   ps.typesHaveUniversalVars =
     map(
-      \ t::Type -> !null(intersectBy(tyVarEqual, outputFreeVars, t.freeVariables)),
+      \ t::Type -> !null(intersect(outputFreeVars, t.freeVariables)),
       prodType.inputTypes);
   nps.namedTypesHaveUniversalVars =
     map(
-      \ t::NamedArgType ->
-        pair(t.argName, !null(intersectBy(tyVarEqual, outputFreeVars, t.argType.freeVariables))),
+      \ t::Pair<String Type> ->
+        pair(t.fst, !null(intersect(outputFreeVars, t.snd.freeVariables))),
       prodType.namedTypes);
 } 
 

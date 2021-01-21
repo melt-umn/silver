@@ -84,7 +84,10 @@ top::Expr ::= 'reify'
   top.unparse = "reify";
 
   top.typerep =
-    functionType(appTypes(nonterminalType("silver:core:Either", 2, false), [stringType(), freshType()]), [nonterminalType("silver:core:AST", 0, true)], []);
+    appTypes(
+      functionType(1, []),
+      [nonterminalType("silver:core:AST", 0, true),
+       appTypes(nonterminalType("silver:core:Either", 2, false), [stringType(), freshType()])]);
 }
 
 concrete production newFunction
@@ -123,11 +126,7 @@ top::Expr ::= 'toInt' '(' e::Expr ')'
 {
   top.unparse = "toInt(" ++ e.unparse ++ ")";
 
-  -- TODO: Please uncomment this soon. I'm only leaving it because
-  -- Jenkins builds things with `--warn-error` as part of MWDA.
-  -- We really need to add a `--mwda` flag or something, so new warnings
-  -- can be introduced safely.
-  --top.errors <- [wrn($1.location, "'toInt' is deprecated syntax, please use 'toInteger' instead.")];
+  top.errors <- [wrn($1.location, "'toInt' is deprecated syntax, please use 'toInteger' instead.")];
 
   forwards to toIntegerFunction('toInteger', '(', e, ')', location=top.location);
 }

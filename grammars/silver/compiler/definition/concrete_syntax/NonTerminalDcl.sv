@@ -31,6 +31,6 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
       foldr(consNonterminalMod, nilNonterminalMod(), nm.nonterminalModifiers))];
 }
 
-monoid attribute nonterminalModifiers :: [SyntaxNonterminalModifier] with [], ++;
+monoid attribute nonterminalModifiers :: [SyntaxNonterminalModifier];
 attribute nonterminalModifiers occurs on NonterminalModifiers, NonterminalModifierList, NonterminalModifier;
 propagate nonterminalModifiers on NonterminalModifiers, NonterminalModifierList;

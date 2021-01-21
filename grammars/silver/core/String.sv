@@ -252,66 +252,14 @@ Maybe<Integer> ::= str::String
 }
 
 {--
- - Concatenates a list of strings.
- -
- - @param lst  A list of strings
- - @return  The flattened string
+ - String append. Use overloaded append or ++ instead.
  -}
-function sconcat
-String ::= lst::[String]
-{
-  return foldr(stringConcat, "", lst);
-}
-
-{--
- - Map a function over a list, and then conatenates the results together.
- -
- - @param f  A function to apply to each element of a list, returning a string.
- - @param lst  A list
- - @return  The concatenated string
- -}
-function sflatMap
-String ::= f::(String ::= a)  lst::[a]
-{
-  return sconcat(map(f, lst));
-}
-
-{--
- - A comparison function for strings.
- - @return Negative if l<r, 0 if l==r, positive if l>r
- -}
-function compareString
-Integer ::= l::String  r::String
-{
-  return if l <= r then if l == r then 0 else -1 else 1;
-} foreign {
-  -- This is temporary until we have better analysis & translation of Silver functions.
-  "java" : return "Integer.valueOf(%l%.toString().compareTo(%r%.toString()))";
-}
-
-{--
- - String append. Useful for higher order functions.
- -}
-function stringConcat
+function stringAppend
 String ::= s1::String s2::String
-{ return s1 ++ s2; }
-
-{--
- - String equality test.  Useful for some "...By" higher order functions.
- -}
-function stringEq
-Boolean ::= s1::String s2::String
 {
-  return s1 == s2;
-}
-
-{--
- - String <= test.  Useful for some "...By" higher order functions. (like sortBy)
- -}
-function stringLte
-Boolean ::= s1::String s2::String
-{
-  return s1 <= s2;
+  return error("Foreign function");
+} foreign {
+  "java" : return "new common.StringCatter(%s1%, %s2%)";
 }
 
 {--

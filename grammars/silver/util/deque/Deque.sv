@@ -1,5 +1,7 @@
 grammar silver:util:deque;
 
+import silver:core with reverse as listReverse;
+
 -- This is all based on Okasaki 1998.
 
 nonterminal Deque<a>;
@@ -8,18 +10,18 @@ abstract production deque
 top::Deque<a> ::= ln::Integer l::[a] rn::Integer r::[a]
 {}
 
-function dqEmpty
+function empty
 Deque<a> ::=
 {
   return deque(0, [], 0, []);
 }
 
-function dqCons
+function cons
 Deque<a> ::= e::a q::Deque<a>
 {
-  return case q of deque(ln,l,rn,r) -> dqCheck(ln+1,e::l,rn,r) end;
+  return case q of deque(ln,l,rn,r) -> check(ln+1,e::l,rn,r) end;
 }
-function dqHead
+function head
 a ::= q::Deque<a>
 {
   return case q of 
@@ -27,20 +29,20 @@ a ::= q::Deque<a>
   | deque(_,x::_,_,_) -> x
   end;
 }
-function dqTail
+function tail
 Deque<a> ::= q::Deque<a>
 {
   return case q of 
-  | deque(_,[],_,_::_) -> dqEmpty() -- single element
-  | deque(ln,lh::lt,rn,r) -> dqCheck(ln-1, lt, rn, r)
+  | deque(_,[],_,_::_) -> empty() -- single element
+  | deque(ln,lh::lt,rn,r) -> check(ln-1, lt, rn, r)
   end;
 }
-function dqSnoc
+function snoc
 Deque<a> ::= q::Deque<a> e::a
 {
-  return case q of deque(ln,l,rn,r) -> dqCheck(ln,l,rn+1,e::r) end;
+  return case q of deque(ln,l,rn,r) -> check(ln,l,rn+1,e::r) end;
 }
-function dqLast
+function last
 a ::= q::Deque<a>
 {
   return case q of 
@@ -48,37 +50,37 @@ a ::= q::Deque<a>
   | deque(_,_,_,x::_) -> x
   end;
 }
-function dqInit
+function init
 Deque<a> ::= q::Deque<a>
 {
   return case q of 
-  | deque(_,_::_,_,[]) -> dqEmpty() -- single element
-  | deque(ln,l,rn,rh::rt) -> dqCheck(ln, l, rn-1, rt)
+  | deque(_,_::_,_,[]) -> empty() -- single element
+  | deque(ln,l,rn,rh::rt) -> check(ln, l, rn-1, rt)
   end;
 }
-function dqIsEmpty
+function isEmpty
 Boolean ::= q::Deque<a>
 {
   return case q of deque(ln,_,rn,_) -> ln == 0 && rn == 0 end;
 }
-function dqReverse
+function reverse
 Deque<a> ::= q::Deque<a>
 {
   return case q of deque(ln,l,rn,r) -> deque(rn,r,ln,l) end;
 } 
 
-function dqCheck
+function check
 Deque<a> ::= lenf::Integer f::[a] lenr::Integer r::[a]
 {
   local mid::Integer = (lenf + lenr) / 2;
   local rest::Integer = lenf + lenr - mid;
   return if lenf > 2 * lenr + 1 then
            let fprime ::[a]= take(mid,f),
-               rprime ::[a] = r ++ reverse(drop(mid,f))
+               rprime ::[a] = r ++ listReverse(drop(mid,f))
             in deque(mid, fprime, rest, rprime) end
          else if lenr > 2*lenf + 1 then
            let rprime ::[a]= take(mid, r),
-               fprime ::[a]= f ++ reverse(drop(mid, r))
+               fprime ::[a]= f ++ listReverse(drop(mid, r))
             in deque(rest, fprime, mid, rprime) end
          else deque(lenf, f, lenr, r);
 }

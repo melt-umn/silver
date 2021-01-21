@@ -33,7 +33,7 @@ mentionedGrammars: Any mentioned grammar (for build process, what grammars to lo
 function isExportedBy
 Boolean ::= target::String  sources::[String]  e::EnvTree<Decorated RootSpec>
 {
-  return containsBy(stringEq, target, computeOptionalDeps(sources, e));
+  return contains(target, computeOptionalDeps(sources, e));
 }
 {--
  - Alternate for the "reference set" heuristic: ignore options, but otherwise follow exports
@@ -41,7 +41,7 @@ Boolean ::= target::String  sources::[String]  e::EnvTree<Decorated RootSpec>
 function isStrictlyExportedBy
 Boolean ::= target::String  sources::[String]  e::EnvTree<Decorated RootSpec>
 {
-  return containsBy(stringEq, target, computeDependencies(sources, e));
+  return contains(target, computeDependencies(sources, e));
 }
 
 
@@ -61,7 +61,7 @@ function expandExports
 
   return if null(need) then seen
          -- If the grammar has already been taken care of, discard it.
-         else if containsBy(stringEq, head(need), seen) then expandExports(tail(need), seen, e)
+         else if contains(head(need), seen) then expandExports(tail(need), seen, e)
          -- If the grammar does not exist, skip over it. (DO NOT REMOVE, as it may have been added by another loop)
          else if null(g) then expandExports(tail(need), head(need) :: seen, e)
          -- Otherwise, tack its exported list to the need list, and add this grammar to the taken care of list.
@@ -84,7 +84,7 @@ function expandAllDeps
 
   return if null(need) then seen
          -- If the grammar has already been taken care of, or doesn't exist, discard it.
-         else if containsBy(stringEq, head(need), seen) then expandAllDeps(tail(need), seen, e)
+         else if contains(head(need), seen) then expandAllDeps(tail(need), seen, e)
          -- If the grammar does not exist, skip over it. (DO NOT REMOVE, as it may have been added by another loop)
          else if null(g) then expandAllDeps(tail(need), head(need) :: seen, e)
          -- Otherwise, tack its all deps list to the need list, and add this grammar to the taken care of list.
@@ -147,7 +147,7 @@ function expandOptionalsIter
 
   return if null(need) then seen
          -- If the grammar has already been taken care of, discard it.
-         else if containsBy(stringEq, head(need), seen) then expandOptionalsIter(tail(need), seen, e)
+         else if contains(head(need), seen) then expandOptionalsIter(tail(need), seen, e)
          -- If the grammar does not exist, skip over it. (DO NOT REMOVE, as it may have been added by another loop)
          else if null(g) then expandOptionalsIter(tail(need), head(need) :: seen, e)
          -- Otherwise, tack its exported list to the need list, and add this grammar to the taken care of list.
@@ -163,7 +163,7 @@ function computeOptionalDeps
   local initPlusExported :: [String] = computeDependencies(init, e);
   local closeOptions :: [String] = expandOptionalsIter(initPlusExported, [], e);
   
-  return if null(removeAllBy(stringEq, initPlusExported, closeOptions)) then initPlusExported
+  return if null(removeAll(initPlusExported, closeOptions)) then initPlusExported
          else computeOptionalDeps(closeOptions, e);
 }
 
@@ -174,7 +174,7 @@ function computeOptionalDeps
 function completeDependencyClosure
 [String] ::= init::[String]  e::EnvTree<Decorated RootSpec>
 {
-  local n :: [String] = removeAllBy(stringEq, init, nubBy(stringEq, flatMap(skipNulls((.moduleNames), _), map(searchEnvTree(_, e), init))));
+  local n :: [String] = removeAll(init, nub(flatMap(skipNulls((.moduleNames), _), map(searchEnvTree(_, e), init))));
   
   return if null(n) then computeOptionalDeps(init, e)
   else completeDependencyClosure(computeOptionalDeps(n ++ init, e), e);
@@ -211,7 +211,7 @@ function noninductiveExpansion
 [String] ::= initial::[String] rules::[[String]]
 {
   return if null(rules) then []
-         else if any(map(containsBy(stringEq, _, initial), tail(head(rules)))) && !containsBy(stringEq, head(head(rules)), initial)
+         else if any(map(contains(_, initial), tail(head(rules)))) && !contains(head(head(rules)), initial)
               then head(head(rules)) :: noninductiveExpansion(initial, tail(rules))
               else noninductiveExpansion(initial, tail(rules));
 }

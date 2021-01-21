@@ -27,8 +27,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
-  classpathCompiler <- ["${sh}/jars/CopperCompiler.jar"];
-  classpathRuntime <- ["${sh}/jars/CopperRuntime.jar"];
+  classpathRuntime <- ["${sh}/jars/CopperCompiler.jar"];
 
   -- Get the parsers
   production allParsers :: [ParserSpec] =
@@ -38,7 +37,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   extraGrammarsDeps <- ["copper"];
   extraTopLevelDecls <- [
     "  <taskdef name='copper' classname='edu.umn.cs.melt.copper.ant.CopperAntTask' classpathref='compile.classpath'/>",
-    "  <target name='copper'>\n" ++ sflatMap(buildAntParserPart(_, top.config), allParsers) ++ "  </target>"];
+    "  <target name='copper'>\n" ++ flatMap(buildAntParserPart(_, top.config), allParsers) ++ "  </target>"];
 
   -- Generate the .copper files
   top.postOps <-

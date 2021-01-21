@@ -2,7 +2,7 @@
 import silver:testing;
 import silver:langutil:pp;
 import stdlib;
-import silver:util:deque;
+import silver:util:deque as dq;
 
 -- should always be hello
 equalityTest ( show(20, text("hello")), "hello", String, core_tests ) ;

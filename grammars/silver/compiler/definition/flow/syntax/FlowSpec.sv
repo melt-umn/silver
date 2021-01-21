@@ -75,7 +75,7 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
 
   top.errors <-
     if attr.found &&
-       length(filter(stringEq(attr.synName, _), getSpecifiedSynsForNt(top.onNt.typeName, top.flowEnv))) > 1
+       length(filter(eq(attr.synName, _), getSpecifiedSynsForNt(top.onNt.typeName, top.flowEnv))) > 1
     then [err(attr.location, "duplicate specification of flow type for " ++ attr.name ++ " on " ++ top.onNt.typeName)]
     else [];
 
@@ -206,7 +206,7 @@ top::FlowSpecInh ::= 'decorate'
   top.unparse = "decorate";
   
   local specs :: [Pair<String [String]>] = getFlowTypeSpecFor(top.onNt.typeName, top.flowEnv);
-  local decSpec :: Maybe<[String]> = lookupBy(stringEq, "decorate", specs);
+  local decSpec :: Maybe<[String]> = lookup("decorate", specs);
   
   top.errors <-
     if decSpec.isJust then []

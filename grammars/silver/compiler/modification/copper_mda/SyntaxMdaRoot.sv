@@ -1,6 +1,7 @@
 grammar silver:compiler:modification:copper_mda;
 
 import silver:util:graph as g;
+import silver:util:treemap as tm;
 
 abstract production cstCopperMdaRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Syntax  customStartLayout::Maybe<[String]>
@@ -19,7 +20,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
         g:transitiveClosure(
           g:add(
             host.superClassContribs ++ ext.superClassContribs,
-            g:empty(compareString)))));
+            g:empty()))));
   host.subClasses =
     directBuildTree(
       g:toList(
@@ -28,7 +29,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
             map(
               \ p::Pair<String String> -> pair(p.snd, p.fst),
               host.superClassContribs ++ ext.superClassContribs),
-            g:empty(compareString)))));
+            g:empty()))));
   host.parserAttributeAspects =
     directBuildTree(host.parserAttributeAspectContribs ++ ext.parserAttributeAspectContribs);
   host.layoutTerms =
@@ -50,6 +51,11 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   ext.layoutTerms = host.layoutTerms;
   ext.prefixesForTerminals = host.prefixesForTerminals;
   ext.componentGrammarMarkingTerminals = host.componentGrammarMarkingTerminals;
+
+  local prettyNames::tm:Map<String String> =
+    tm:add(host.prettyNamesAccum, tm:add(ext.prettyNamesAccum, tm:empty()));
+  host.prettyNames = prettyNames;
+  ext.prettyNames = prettyNames;
   
   local startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, host.cstEnv);
 

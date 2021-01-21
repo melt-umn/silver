@@ -1,7 +1,7 @@
 grammar silver:compiler:analysis:typechecking:core;
 
-aspect production defaultClassBodyItem
-top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
+aspect production defaultConstraintClassBodyItem
+top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
 {
   top.errors <- ty.errorsFullyApplied;
 
@@ -13,6 +13,6 @@ top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
   
   e.downSubst = emptySubst();
   errCheck1.downSubst = e.upSubst;
-  e.finalSubst = e.upSubst;
+  e.finalSubst = errCheck1.upSubst;
   errCheck1.finalSubst = e.finalSubst;
 }

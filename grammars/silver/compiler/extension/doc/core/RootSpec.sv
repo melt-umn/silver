@@ -27,8 +27,9 @@ top::RootSpec ::= g::Grammar  _ _ _ _
   				  	              length(g.upDocConfig) == 0, s"{{< toc-tree >}}\n\nIn grammar `${g.grammarName}`: {{< toc >}}",
   				  	              g.docs);
 
-  g.docEnv = add(g.docDcls, empty(compareString));
+  g.docEnv = tm:add(g.docDcls, tm:empty());
   g.downDocConfig = g.upDocConfig;
+  -- g.docEnv = tm:add(g.docDcls, tm:empty());
 }
 
 function toSplitFiles

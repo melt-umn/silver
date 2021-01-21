@@ -29,7 +29,7 @@ nonterminal ProductionModifiers with config, location, unparse, productionModifi
 nonterminal ProductionModifierList with config, location, unparse, productionModifiers, errors, env, productionName; -- 1 or more
 closed nonterminal ProductionModifier with config, location, unparse, productionModifiers, errors, env, productionName; -- 1
 
-monoid attribute productionModifiers :: [SyntaxProductionModifier] with [], ++;
+monoid attribute productionModifiers :: [SyntaxProductionModifier];
 
 propagate productionModifiers on ProductionModifiers, ProductionModifierList;
 propagate errors on ProductionModifiers, ProductionModifierList, ProductionModifier;
@@ -65,7 +65,7 @@ top::ProductionModifier ::= 'precedence' '=' i::Int_t
   top.productionModifiers := [prodPrecedence(toInteger(i.lexeme))];
 }
 
-terminal Operator_kwd /operator/ lexer classes {KEYWORD,RESERVED};
+terminal Operator_kwd 'operator' lexer classes {KEYWORD,RESERVED};
 
 concrete production productionModifierOperator
 top::ProductionModifier ::= 'operator' '=' n::QName
@@ -83,7 +83,7 @@ top::ProductionModifier ::= 'operator' '=' n::QName
 --------------------------------------------------------------------------------
 -- Type sanity checking on concrete productions
 
-monoid attribute concreteSyntaxTypeErrors :: [Message] with [], ++;
+monoid attribute concreteSyntaxTypeErrors :: [Message];
 attribute concreteSyntaxTypeErrors occurs on ProductionSignature, ProductionRHS, ProductionRHSElem;
 propagate concreteSyntaxTypeErrors on ProductionSignature, ProductionRHS, ProductionRHSElem;
 

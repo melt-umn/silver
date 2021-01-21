@@ -26,7 +26,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   
   -- List of all productions
   local allProds :: [DclInfo] = foldr(consDefs, nilDefs(), allRealDefs).prodDclList;
-  local allNts :: [String] = nubBy(stringEq, map(getProdNt, allProds));
+  local allNts :: [String] = nub(map(getProdNt, allProds));
   
   -- Construct production graphs.
   production prodGraph :: [ProductionGraph] = 

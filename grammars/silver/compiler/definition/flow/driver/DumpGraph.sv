@@ -75,7 +75,7 @@ String ::= flowTypes::[Pair<String [FlowType]>]
   
   return if null(flowTypes) then ""
   else "subgraph \"cluster:" ++ nt ++ "\" {\nlabel=\"" ++ substring(lastIndexOf(":", nt) + 1, length(nt), nt) ++ "\";\n" ++ 
-       implode("", map(makeLabelDcls(nt, _), nubBy(stringEq, expandLabels(edges)))) ++
+       implode("", map(makeLabelDcls(nt, _), nub(expandLabels(edges)))) ++
        implode("", map(makeNtFlow(nt, _), edges)) ++
        "}\n" ++
        generateFlowDotGraph(tail(flowTypes));

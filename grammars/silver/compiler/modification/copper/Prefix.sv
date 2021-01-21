@@ -1,7 +1,7 @@
 grammar silver:compiler:modification:copper;
 
 
-import silver:compiler:definition:regex;
+import silver:regex;
 import silver:compiler:extension:easyterminal; -- only Terminal_t, EasyTerminalRef;
 
 terminal Prefix_t 'prefix' lexer classes {KEYWORD, RESERVED};
@@ -66,7 +66,7 @@ top::TerminalPrefix ::= t::String_t
   forwards to
     newTermModifiersTerminalPrefix(
       -- We pass the string prefix as a regex that does not contain the prefix separator
-      regExpr('/', regexLiteral(substring(1, length(t.lexeme) - 1, t.lexeme)), '/', location=top.location),
+      regExpr(regexLiteral(substring(1, length(t.lexeme) - 1, t.lexeme)), location=top.location),
       -- Specify which terminals this prefix prefixes.  This is used to find the separator to
       -- append to the regex when normalizing the CST AST
       terminalModifierSingle(

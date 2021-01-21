@@ -136,7 +136,7 @@ String ::= indent::Integer vars::[TyVar]
       "\n",
       map(
         \ tv::TyVar ->
-          s"${sconcat(repeat("\t", indent))}common.VarTypeRep freshTypeVar_${toString(tv.extractTyVarRep)} = new common.VarTypeRep();",
+          s"${concat(repeat("\t", indent))}common.VarTypeRep freshTypeVar_${toString(tv.extractTyVarRep)} = new common.VarTypeRep();",
           vars));
     
 }

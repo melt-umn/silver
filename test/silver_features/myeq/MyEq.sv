@@ -3,11 +3,17 @@ grammar silver_features:myeq;
 class MyEq a
 {
   myeq :: (Boolean ::= a a);
+  myneq :: (Boolean ::= a a) = \ x::a y::a -> !myeq(x, y);
 }
 
 instance MyEq Integer
 {
   myeq = \ x::Integer y::Integer -> x == y;
+}
+
+instance MyEq String
+{
+  myeq = \ x::String y::String -> x == y;
 }
 
 instance MyEq a => MyEq [a]

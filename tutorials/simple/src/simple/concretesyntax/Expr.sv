@@ -40,17 +40,17 @@ concrete productions e::Expr
    its lexeme and thus make all assignments to unparse be the same.  -}
 
  | l::Expr op::'==' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                               e.ast = ast:eq(l.ast, r.ast); }
+                               e.ast = ast:eqOp(l.ast, r.ast); }
  | l::Expr op::'!=' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                               e.ast = ast:neq(l.ast, r.ast); }
+                               e.ast = ast:neqOp(l.ast, r.ast); }
  | l::Expr op::'<'  r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                               e.ast = ast:lt(l.ast, r.ast); }
+                               e.ast = ast:ltOp(l.ast, r.ast); }
  | l::Expr op::'<=' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                               e.ast = ast:lte(l.ast, r.ast); }
+                               e.ast = ast:lteOp(l.ast, r.ast); }
  | l::Expr op::'>'  r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                               e.ast = ast:gt(l.ast, r.ast); }
+                               e.ast = ast:gtOp(l.ast, r.ast); }
  | l::Expr op::'>=' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                               e.ast = ast:gte(l.ast, r.ast); }
+                               e.ast = ast:gteOp(l.ast, r.ast); }
 
 -- Arithmetic Operations
 ------------------------

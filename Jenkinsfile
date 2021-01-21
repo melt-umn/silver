@@ -7,6 +7,7 @@ melt.setProperties(overrideJars: true)
 melt.trynode('silver') {
   def WS = pwd()
   def SILVER_GEN = "${WS}/generated"
+  def newenv = silver.getSilverEnv(WS)
 
   stage("Build") {
 
@@ -84,6 +85,13 @@ melt.trynode('silver') {
     tasks << tests.collectEntries { t -> [(t): task_test(t, WS)] }
     tasks << tuts.collectEntries { t -> [(t): task_tutorial(t, WS)] }
 
+    // Build test driver
+    withEnv (newenv) {
+      dir ("${WS}/test") {
+        sh "silver silver:testing:bin"
+      }
+    }
+
     // Unpack tarball (into ./silver-latest/) (for tutorial testing)
     sh "tar zxf silver-latest.tar.gz"
     // Run tests
@@ -142,16 +150,18 @@ def getMergedBranch() {
 
 // Test in local workspace
 def task_test(String testname, String WS) {
+  def newenv = silver.getSilverEnv(WS)
   return {
     node {
       sh "touch ensure_workspace" // convince jenkins to create our workspace
       def GEN = pwd() // This node's workspace
       // Go back to our "parent" workspace, into the test
       dir(WS + '/test/' + testname) {
-        sh "./silver-compile --clean -G ${GEN}"
-        if (fileExists("test.jar")) {
-          sh "java -Xss2M -jar test.jar"
-          sh "rm test.jar"
+        // HACK: edit the test specs to specify the generated directory
+        sh "../set-generated-dir ${GEN}"
+        // Run the tests
+        withEnv (newenv) {
+          sh "java -jar ../silver.testing.bin.jar"
         }
       }
       // Blow away these generated files in our private workspace
