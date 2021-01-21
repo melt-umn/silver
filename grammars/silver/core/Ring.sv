@@ -17,7 +17,7 @@ function negate
 Ring a => a ::= x::a
 { return sub(zero, x); }
 
-@{- Converts a non-negative integer into an arbitrary semiring. -}
+@{- Converts an integer into an arbitrary ring. -}
 function fromInteger
 Ring a => a ::= n::Integer
 {
