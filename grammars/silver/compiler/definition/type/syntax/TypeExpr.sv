@@ -16,13 +16,13 @@ synthesized attribute types :: [Type];
 synthesized attribute missingCount::Integer;
 
 -- Important: These should be IN-ORDER and include ALL type variables that appear, including duplicates!
-monoid attribute lexicalTypeVariables :: [String] with [], ++;
+monoid attribute lexicalTypeVariables :: [String];
 -- freeVariables also occurs on TypeExprs, and should be IN ORDER
 
-monoid attribute lexicalTyVarKinds :: [Pair<String Integer>] with [], ++;
+monoid attribute lexicalTyVarKinds :: [Pair<String Integer>];
 
 -- These attributes are used if we're using the TypeExprs as type variables-only.
-monoid attribute errorsTyVars :: [Message] with [], ++;
+monoid attribute errorsTyVars :: [Message];
 -- A new environment, with the type variables in this list appearing bound
 inherited attribute initialEnv :: Decorated Env;
 synthesized attribute envBindingTyVars :: Decorated Env;

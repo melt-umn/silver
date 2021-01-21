@@ -23,12 +23,12 @@ synthesized attribute startNT :: String;
 {--
  - Prefixes to inject onto terminals in the composed parser.
  -}
-monoid attribute terminalPrefixes :: [Pair<String String>] with [], ++;
+monoid attribute terminalPrefixes :: [Pair<String String>];
 
 {--
  - Prefixes to inject onto the marking terminals of grammars in the composed parser.
  -}
-monoid attribute grammarTerminalPrefixes :: [Pair<String String>] with [], ++;
+monoid attribute grammarTerminalPrefixes :: [Pair<String String>];
 
 
 abstract production parserSpec

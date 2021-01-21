@@ -82,7 +82,7 @@ top::Type ::= c::Type a::Type
          else "_") ++ " ::= " ++
          implode(" ", map(prettyTypeWith(_, top.boundVariables), take(params, top.argTypes))) ++
          (if length(top.argTypes) < params then replicate(params - length(top.argTypes), " _") else "") ++
-         sconcat(
+         concat(
            zipWith(\ np::String t::Type -> s"; ${np}::${prettyTypeWith(t, top.boundVariables)}", namedParams, drop(params, top.argTypes)) ++
            map(\ np::String -> s"; ${np}::_", drop(length(top.argTypes) - (params + length(namedParams)), namedParams))) ++ ")" ++
          if length(top.argTypes) <= params + length(namedParams) + 1 then ""
@@ -171,7 +171,8 @@ String ::= tv::TyVar  bv::[TyVar]
 function findAbbrevHelp
 String ::= tv::TyVar  bv::[TyVar]  vn::[String]
 {
-  return if null(vn) || null(bv) then "V_" ++ toString(tv.extractTyVarRep)
+  return if null(vn) then "a" ++ toString(length(bv))
+         else if null(bv) then "V_" ++ toString(tv.extractTyVarRep)
          else if tv == head(bv)
               then head(vn)
               else findAbbrevHelp(tv, tail(bv), tail(vn));
