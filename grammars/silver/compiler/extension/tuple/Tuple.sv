@@ -18,6 +18,7 @@ concrete production emptyTuple
 top::Expr ::= '(' ')'
 {
   top.unparse = "()";
+  top.typerep = tupleType([]);
   forwards to Silver_Expr { silver:core:unit() };
 }
 
@@ -25,7 +26,7 @@ concrete production tupleExpr
 top::Expr ::= '(' tl::TupleList ')'
 {
   top.unparse = "(" ++ tl.unparse ++ ")";
-  top.typerep = tupleType(forward.typerep.tupleElems);
+  top.typerep = tupleType(performSubstitution(forward.typerep, forward.upSubst).tupleElems);
   forwards to tl.translation;
 }
 
