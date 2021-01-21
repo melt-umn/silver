@@ -261,7 +261,7 @@ top::NamedAST ::= n::String v::AST
   top.traversalResult =
     -- Look up and apply all strategies for the annotation
     -- (it's easier to just handle duplicates than to disallow them.)
-    mapMaybe(
+    map(
       namedAST(n, _),
       foldl(
         \ ma::Maybe<AST> s::Strategy ->
