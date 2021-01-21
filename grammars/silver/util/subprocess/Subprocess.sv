@@ -56,6 +56,23 @@ IOVal<String> ::= p::ProcessHandle i::IO
 
 
 {--
+ - Read everything available in the output from a subprocess.
+ - Returns an empty string if nothing is available.
+ -
+ - @param p  The process from which to read
+ - @param i  The IO token
+ - @return  The line which was read
+-}
+function readAllFromProcess
+IOVal<String> ::= p::ProcessHandle i::IO
+{
+  return error("Not Yet Implemented:  readLineFromProcess");
+} foreign {
+  "java" : return "%p%.readAllFromProcess(%i%)";
+}
+
+
+{--
  - Read a line of output from stderr of a subprocess
  -
  - @param p  The process from which to read
@@ -68,6 +85,23 @@ IOVal<String> ::= p::ProcessHandle i::IO
   return error("Not Yet Implemented:  readLineFromProcess");
 } foreign {
   "java" : return "%p%.readErrLineFromProcess(%i%)";
+}
+
+
+{--
+ - Read everything available in the stderr from a subprocess.
+ - Returns an empty string if nothing is available.
+ -
+ - @param p  The process from which to read
+ - @param i  The IO token
+ - @return  The line which was read
+-}
+function readErrAllFromProcess
+IOVal<String> ::= p::ProcessHandle i::IO
+{
+  return error("Not Yet Implemented:  readLineFromProcess");
+} foreign {
+  "java" : return "%p%.readErrAllFromProcess(%i%)";
 }
 
 

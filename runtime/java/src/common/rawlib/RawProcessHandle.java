@@ -42,10 +42,26 @@ public class RawProcessHandle {
     }
 
 
+    private String readAll(BufferedReader reader) {
+        String output = "";
+        char last_char;
+        try {
+            while (reader.ready()) {
+                last_char = (char) reader.read();
+                output = output + last_char;
+            }
+            return output;
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
     //Used for reading stdout from the process
     private BufferedReader our_stdout = null;
     /*Read a line from stdout of the process*/
-    public String readLineStdout() {
+    private String readLineStdout() {
         try {
             if (our_stdout == null) {
                 InputStream instream = proc.getInputStream();
@@ -59,11 +75,26 @@ public class RawProcessHandle {
         }
     }
 
+    /*Read everything available from the process (empty string if nothing is available)*/
+    private String readAllStdout() {
+        try {
+            if (our_stdout == null) {
+                InputStream instream = proc.getInputStream();
+                InputStreamReader r = new InputStreamReader(instream);
+                our_stdout = new BufferedReader(r);
+            }
+            return readAll(our_stdout);
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     //Used for reading stderr from the process
     private BufferedReader our_stderr = null;
     /*Read a line from stderr of the process*/
-    public String readLineStderr() {
+    private String readLineStderr() {
         try {
             if (our_stderr == null) {
                 InputStream instream = proc.getErrorStream();
@@ -77,8 +108,24 @@ public class RawProcessHandle {
         }
     }
 
+    /*Read everything available in stderr from the process (empty string if nothing is available)*/
+    private String readAllStderr() {
+        try {
+            if (our_stdout == null) {
+                InputStream instream = proc.getInputStream();
+                InputStreamReader r = new InputStreamReader(instream);
+                our_stdout = new BufferedReader(r);
+            }
+            return readAll(our_stderr);
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
     /*Write a message to stdin of the process*/
-    public void writeString(String msg) {
+    private void writeString(String msg) {
         OutputStream ostream = proc.getOutputStream();
         try {
             ostream.write(msg.getBytes());
@@ -91,7 +138,7 @@ public class RawProcessHandle {
     }
 
     /*Wait for the process to exit*/
-    public void waitOnEnd() {
+    private void waitOnEnd() {
         try {
             proc.waitFor();
             return;
@@ -135,8 +182,22 @@ public class RawProcessHandle {
     /**
      * <pre>IOVal<String> ::= p::ProcessHandle io::IO</pre>
      */
+    public NIOVal readAllFromProcess(IOToken io) {
+        return io.wrap(new StringCatter(this.readAllStdout()));
+    }
+
+    /**
+     * <pre>IOVal<String> ::= p::ProcessHandle io::IO</pre>
+     */
     public NIOVal readErrLineFromProcess(IOToken io) {
         return io.wrap(new StringCatter(this.readLineStderr()));
+    }
+
+    /**
+     * <pre>IOVal<String> ::= p::ProcessHandle io::IO</pre>
+     */
+    public NIOVal readErrAllFromProcess(IOToken io) {
+        return io.wrap(new StringCatter(this.readAllStderr()));
     }
 
     /**
