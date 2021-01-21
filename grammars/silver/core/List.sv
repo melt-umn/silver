@@ -1,6 +1,6 @@
 grammar silver:core;
 
-{@comment
+{-comment
   Applies a function to each element of the list.
 
   This is a list of links.
@@ -10,7 +10,7 @@ grammar silver:core;
   param f  The function to apply
   param l  The list to map over
   return  The list containing the results of applying the function to l
-@}
+-}
 function map
 [b] ::= f::(b ::= a)  l::[a]
 {

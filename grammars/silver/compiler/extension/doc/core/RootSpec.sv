@@ -19,109 +19,57 @@ top::RootSpec ::= _ _ _ _ _
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _ _ _ _
 {
-  top.genFiles := if g.docsNoDoc 
-                  then []
-                  else 
-                  if "true" == g.docsSplit
-                  then toSplitFiles(g.docs, [], g.docsHeader)
-                  else [toSingleFile(g.docs, g.docsHeader)];
+  top.genFiles := if getSplit(g.upDocConfig) 
+  				  then toSplitFiles(g, g.upDocConfig, [])
+  				  else formatFile("_index.md", 
+  				  	              getGrammarTitle(g.upDocConfig, lastPart(g.grammarName)),
+  				  	              getGrammarWeight(g.upDocConfig), getCollapse(g.upDocConfig),
+  				  	              length(g.upDocConfig) == 0, s"{{< toc-tree >}}\n\nIn grammar `${g.grammarName}`: {{< toc >}}",
+  				  	              g.docs);
 
   g.docEnv = tm:add(g.docDcls, tm:empty());
+  g.downDocConfig = g.upDocConfig;
+  -- g.docEnv = tm:add(g.docDcls, tm:empty());
 }
 
 function toSplitFiles
-[Pair<String String>] ::= comments::[CommentItem] sortedComments::[Pair<String String>] header::String
+[Pair<String String>] ::= g::Decorated Grammar grammarConf::[DocConfigSetting] soFar::[Pair<String String>]
 {
-  return 
-    case comments of
-    | c :: rest -> toSplitFiles(rest, placeComment(c, sortedComments, header), header)
-    | [] -> pair("index.md", makeIndexFile(sortedComments, header)) :: sortedComments
-    end;
+	return case g of
+		   | consGrammar(this, rest) ->
+	   			toSplitFiles(rest, grammarConf, formatFile(
+		   			substitute(".sv", ".md", this.location.filename),
+		   			getFileTitle(this.localDocConfig, substitute(".sv", "", this.location.filename)),
+		   			getFileWeight(this.localDocConfig), false, true,
+		   			s"In file `${this.location.filename}`: "++(if getToc(this.localDocConfig) then "{{< toc >}}" else ""), 
+		   			this.docs) ++ soFar)
+		   | nilGrammar() -> if length(soFar) == 0 && length(grammarConf) == 0 then []
+		   					 else formatFile("_index.md", getGrammarTitle(grammarConf, lastPart(g.grammarName)),
+		   					 	getGrammarWeight(grammarConf), getCollapse(grammarConf),
+		   					 	false, s"This Grammar is documented in individual files. Contents of `${g.grammarName}`: {{< toc-tree >}}", []) ++ soFar
+		   end;
 }
 
-function placeComment
-[Pair<String String>] ::= comment::CommentItem sortedComments::[Pair<String String>] header::String
+function formatFile
+[Pair<String String>] ::= fileName::String title::String weight::Integer
+                          collapse::Boolean skipIfEmpty::Boolean pfxText::String
+                          comments::[CommentItem]
 {
-  local markdown::String = toMarkdown(comment);
-  return 
-    case sortedComments of
-    | pair(filename, contents) :: rest -> 
-        if filename == toMarkdownExtension(comment.file)
-        then pair(filename, contents ++ markdown) :: rest
-        else pair(filename, contents) :: placeComment(comment, rest, header)
-    | [] -> [pair(toMarkdownExtension(comment.file), header ++ markdown)]
-    end;
+	local realDocs::[CommentItem] = filter((.doEmit), comments);
+	return if length(realDocs) == 0 && skipIfEmpty then [] else [pair(fileName, s"""---
+title: ${title}
+weight: ${toString(weight)}
+geekdocCollapseSection: ${toString(collapse)}
+---
+
+${pfxText}
+
+${implode("\n\n\n\n", map((.body), realDocs))}
+""")];
 }
 
-function makeIndexFile
-String ::= sortedComments::[Pair<String String>] header::String
+function lastPart
+String ::= s::String
 {
-  return 
-    case sortedComments of
-    | pair(f, _) :: rest -> makeIndexFile(rest, header) ++ "\n" ++ makeLink(f) ++ "\n"
-    | [] -> header
-    end;
+	return last(explode(":", s));
 }
-
-function makeLink
-String ::= mdFileName::String
-{ 
-  local txt::String = substitute( ".md", "", mdFileName );
-  local lnk::String = substitute( ".md", ".html", mdFileName );
-  return "[" ++ txt ++ "](" ++ lnk ++ ")" ;
-}
-
-
-function toSingleFile
-Pair<String String> ::= comments::[CommentItem] header::String
-{
-  local commentMarkdown::String = toSingleMarkdown(comments);
-  return pair("index.md", header ++ commentMarkdown);
-}
-
-function toSingleMarkdown
-String ::= comments::[CommentItem]
-{
-  return case comments of
-	 | c :: rest -> toMarkdown(c) ++ toSingleMarkdown(rest)
-	 | [] -> ""
-	 end;
-}
-
-function toMarkdown
-String ::= c::CommentItem
-{
-  return 
-    case c of
-    | dclCommentItem(mod, name, sig, file, body)->
-        let signature :: String = 
-          if 0 == length(sig)
-          then ""
-          else "\n###### `" ++ sig ++ "`"
-        in
-          "\n\n#### _" ++ mod ++
-          "_ `" ++ name ++
-          "`" ++ signature ++
-          "\n> " ++ body.body ++
-          "\nIn file: " ++ file
-        end
-    | bodilessDclCommentItem(mod, name, sig, file) ->
-        let signature :: String = 
-          if 0 == length(sig)
-          then ""
-          else "\n###### `" ++ sig ++ "`"
-        in
-          "\n\n#### _" ++ mod ++
-          "_ `" ++ name ++
-          "`" ++ signature ++
-          "\nIn file: " ++ file
-        end
-    end;
-}
-
-function toMarkdownExtension
-String ::= filename::String
-{
-  return substitute(".sv", ".md", filename);
-}
-

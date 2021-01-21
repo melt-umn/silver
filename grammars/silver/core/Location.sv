@@ -63,6 +63,27 @@ top::Location ::= text::String
   top.endIndex = -1;
 }
 
+
+{--
+ - Offset one location "inside" another. For use when e.g. parsing a doc comment grammar out of a single
+ -  terminal in the host language. use linesOffset, firstLineColsOffset, allLinesColsOffset, indexOffset if some
+ -  part of the terminal is munged before being passed to the child parser (e.g. the {- and -} are removed from a comment.)
+ -}
+function childParserLoc
+Location ::= parent::Location child::Location linesOffset::Integer firstLineColsOffset::Integer allLinesColsOffset::Integer indexOffset::Integer
+{
+  return loc(
+    parent.filename,
+    parent.line - 1 + linesOffset + child.line,
+    allLinesColsOffset + (if child.line == 1 then parent.column + firstLineColsOffset + child.column else child.column),
+    parent.endLine - 1 + linesOffset + child.endLine,
+    allLinesColsOffset + (if child.endLine == 1 then parent.endColumn + firstLineColsOffset + child.endColumn else child.endColumn),
+    parent.index + indexOffset + child.index,
+    parent.endIndex + indexOffset + child.endIndex
+  );
+}
+
+
 {--
  - A helper constructor for location information, for built-in locations
  -
