@@ -74,18 +74,6 @@ function catMaybes
 }
 
 {--
- - Maps a function over the value inside of a Maybe, if it exists.
- -}
-function mapMaybe
-Maybe<b> ::= f::(b ::= a) m::Maybe<a>
-{
-  return case m of
-  | just(x)   -> just(f(x))
-  | nothing() -> nothing()
-  end;
-}
-
-{--
  - Finds the first value matching a predicate.
  -}
 function find
