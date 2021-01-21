@@ -1,6 +1,7 @@
 package common;
 
 import java.util.List;
+import java.util.LinkedList;
 
 import common.exceptions.*;
 
@@ -47,6 +48,22 @@ public class ConsCell implements Typed {
 			cons = new ConsCell(val, cons);
 		}
 		return cons;
+	}
+
+	/**
+	 * Creates a Java List from a cons list.
+	 *
+	 * @param l The cons list.
+	 * @return An equivalent Java List.
+	 */
+	public static <T> List<T> toList(ConsCell cons) {
+                List<T> lst = new LinkedList();
+		while(! cons.nil()) {
+                        T val = (T) cons.head();
+                        cons = cons.tail();
+                        lst.add(val);
+		}
+		return lst;
 	}
 	
 	/**
