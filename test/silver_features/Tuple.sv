@@ -7,6 +7,9 @@ equalityTest((3, "b").snd, "b", String, silver_tests);
 
 -- Testing that a tuple of > two elements behaves as nested pairs
 equalityTest((1,2,3).snd.fst, 2, Integer, silver_tests);
+
+--equalityTest((1,2,3).snd, "hi", String, silver_tests);
+
 equalityTest((1,"a",2,"b").snd.snd.snd, "b", String, silver_tests);
 
 -- Pattern matching tests
@@ -113,6 +116,7 @@ function makeDate
 equalityTest(hackUnparse(makeDate(1, 12, 2021)), "silver:core:pair(1, silver:core:pair(12, 2021))", String, silver_tests);
 
 wrongCode "Argument 1 of function 'testingTupleType' expected (String, Integer, Integer) but argument is of type (Integer, String, String)" {
+
   function testingTupleType
   Boolean ::= tuple::(String, Integer, Integer)
   {
