@@ -7,9 +7,6 @@ equalityTest((3, "b").snd, "b", String, silver_tests);
 
 -- Testing that a tuple of > two elements behaves as nested pairs
 equalityTest((1,2,3).snd.fst, 2, Integer, silver_tests);
-
---equalityTest((1,2,3).snd, "hi", String, silver_tests);
-
 equalityTest((1,"a",2,"b").snd.snd.snd, "b", String, silver_tests);
 
 -- Pattern matching tests
@@ -125,3 +122,66 @@ wrongCode "Argument 1 of function 'testingTupleType' expected (String, Integer, 
 
   equalityTest(testingTupleType((1, "bad", "type")), true, Boolean, silver_tests);
 }
+
+wrongCode "Expected return type is String, but the expression has actual type (Integer, String, Integer)" {
+
+  function testTupleAccess1
+  String ::= tuple::(Integer, Integer, String, Integer)
+  {
+    return tuple.snd;
+  }
+
+  equalityTest(testTupleAccess1((1,2,"three",4)), "hi", String, silver_tests);
+
+}
+
+wrongCode "Expected return type is String, but the expression has actual type Integer" {
+
+  function testTupleAccess2
+  String ::= tuple::(Integer, Integer, String, Integer)
+  {
+    return case tuple of
+      | (_,x,_,_) -> x
+      end; 
+  }
+
+  equalityTest(testTupleAccess2((1,2,"three",4)), "hi", String, silver_tests);
+
+}
+
+wrongCode "Argument 1 of function 'testEmptyTupleType' expected () but argument is of type (Integer, Integer)" {
+
+  function testEmptyTupleType
+  Boolean ::= tuple::()
+  {
+    return true;
+  }
+
+  equalityTest(testEmptyTupleType((2, 3)), true, Boolean, silver_tests);
+
+}
+
+wrongCode "Argument 1 of function 'testingTupleType2' expected (String, Integer, String) but argument is of type (String, Integer)" {
+
+  function testingTupleType2
+  Boolean ::= tuple::(String, (Integer, String))
+  {
+    return true;
+  }
+
+  equalityTest(testingTupleType2(("dog", 4)), true, Boolean, silver_tests);
+
+}
+
+wrongCode "Argument 1 of function 'testingTupleType3' expected ((String, Integer), String) but argument is of type (String, Integer)" {
+
+  function testingTupleType3
+  Boolean ::= tuple::((String, Integer), String)
+  {
+    return true;
+  }
+
+  equalityTest(testingTupleType3(("dog", 4)), true, Boolean, silver_tests);
+
+}
+
