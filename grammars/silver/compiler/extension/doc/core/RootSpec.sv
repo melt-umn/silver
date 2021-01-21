@@ -45,7 +45,7 @@ function toSplitFiles
 		   | nilGrammar() -> if length(soFar) == 0 && length(grammarConf) == 0 then []
 		   					 else formatFile("_index.md", getGrammarTitle(grammarConf, lastPart(g.grammarName)),
 		   					 	getGrammarWeight(grammarConf), getCollapse(grammarConf),
-		   					 	false, s"In grammar `${g.grammarName}`: {{< toc-tree >}}", []) ++ soFar
+		   					 	false, s"This Grammar is documented in individual files. Contents of `${g.grammarName}`: {{< toc-tree >}}", []) ++ soFar
 		   end;
 }
 
