@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:tuple;
 
-nonterminal ListOfTypeExprs with location, unparse, boundVariables, te_translation;
+nonterminal ListOfTypeExprs with location, unparse, te_translation;
 synthesized attribute te_translation :: TypeExpr;
 
 aspect default production
@@ -13,10 +13,12 @@ aspect production appType
 top::Type ::= c::Type a::Type
 {
   top.tupleElems =
-    case a.baseType of
-    | nonterminalType("silver:core:Pair", 2, false) -> c.argTypes ++ a.argTypes
-    | _ -> c.argTypes ++ [a]
+    -- c.argTypes should only have a single element
+    case c.baseType of
+    | nonterminalType("silver:core:Pair", 2, false) -> c.argTypes ++ a.tupleElems
+    | _ -> [top]
     end;
+
 }
 
 synthesized attribute tupleElems :: [Type] occurs on Type;
@@ -24,23 +26,25 @@ synthesized attribute tupleElems :: [Type] occurs on Type;
 abstract production tupleType
 top::Type ::= ts::[Type]
 {
-  top.typepp = "(" ++ printTupleTypeList(ts) ++ ")";
-  forwards to foldr1(\ t1::Type t2::Type -> appType(appType(nonterminalType("silver:core:Pair", 2, false), t1), t2), ts);
-}
 
-function printTupleTypeList
-String ::= ts::[Type]
-{
-  return case ts of
-  | [ty] -> ty.typepp
-  | ty::tys -> ty.typepp ++ ", " ++ printTupleTypeList(tys)
-  end;
+  top.substituted = tupleType(map (\ t::Type -> decorate t with {substitution = top.substitution;}.substituted, ts));
+  top.flatRenamed = tupleType(map (\ t::Type -> decorate t with {substitution = top.substitution;}.flatRenamed, ts));
+
+  top.typepp = "(" ++ implode(", ", map(\t::Type -> t.typepp, ts)) ++ ")";
+  
+  forwards to case ts of
+    | [] -> nonterminalType("silver:core:Unit", 0, false)
+    | [t] -> t
+    | t1::t1s -> appType(appType(nonterminalType("silver:core:Pair", 2, false), t1), tupleType(t1s))
+    end;
+
 }
 
 concrete production emptyTupleTypeExpr
 top::TypeExpr ::= '(' ')'
 {
   top.unparse = "()";
+  top.typerep = tupleType([]);
   forwards to Silver_TypeExpr { silver:core:Unit };
 }
 
