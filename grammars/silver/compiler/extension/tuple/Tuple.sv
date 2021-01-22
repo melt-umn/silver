@@ -9,8 +9,6 @@ imports silver:compiler:definition:type;
 
 imports silver:compiler:extension:patternmatching;
 
-terminal Comma_t ',' ;
-
 nonterminal TupleList with location, unparse, translation;
 synthesized attribute translation :: Expr;
 
