@@ -182,7 +182,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 "  </target>\n\n" ++
 
 "  <target name='grammars' depends='" ++ implode(", ", extraGrammarsDeps) ++ "'>\n" ++
-"    <javac debug='on' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false'>\n" ++
+"    <javac debug='on' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false' source='1.8' target='1.8' release='8'>\n" ++
     flatMap(includeJavaFiles, grammarsDependedUpon) ++
 "    </javac>\n" ++
 "  </target>\n" ++
