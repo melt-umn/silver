@@ -110,8 +110,11 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
     case typeScheme.contexts of
     -- Current class context is the first context on the member's type scheme
     | instContext(cls, ty) :: _ when cls == top.className ->
-      unify(ty, top.instanceType)
-    | _ -> emptySubst()
+      composeSubst(
+        unify(ty, top.instanceType),
+        -- Skolemize all the other type vars that didn't get instantiated by the instance head
+        zipVarsIntoSkolemizedSubstitution(typeScheme.boundVars, freshTyVars(typeScheme.boundVars)))
+    | _ -> emptySubst() -- Fall back in case of errors
     end;
   production memberContexts::[Context] =
     case typeScheme.contexts of

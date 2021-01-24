@@ -252,37 +252,15 @@ Maybe<Integer> ::= str::String
 }
 
 {--
- - Concatenates a list of strings.
- -
- - @param lst  A list of strings
- - @return  The flattened string
+ - String append. Use overloaded append or ++ instead.
  -}
-function sconcat
-String ::= lst::[String]
-{
-  return foldr(stringConcat, "", lst);
-}
-
-{--
- - Map a function over a list, and then conatenates the results together.
- -
- - @param f  A function to apply to each element of a list, returning a string.
- - @param lst  A list
- - @return  The concatenated string
- -}
-function sflatMap
-String ::= f::(String ::= a)  lst::[a]
-{
-  return sconcat(map(f, lst));
-}
-
-{--
- - String append. Useful for higher order functions.
- - TODO: Remove with Monoid type class.
- -}
-function stringConcat
+function stringAppend
 String ::= s1::String s2::String
-{ return s1 ++ s2; }
+{
+  return error("Foreign function");
+} foreign {
+  "java" : return "new common.StringCatter(%s1%, %s2%)";
+}
 
 {--
  - Converts a list of code points to a string. Note that due to Java's use of

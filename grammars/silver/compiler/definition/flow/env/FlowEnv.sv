@@ -6,7 +6,7 @@ imports silver:compiler:definition:core;
 
 
 autocopy attribute flowEnv :: Decorated FlowEnv;
-monoid attribute flowDefs :: [FlowDef] with [], ++;
+monoid attribute flowDefs :: [FlowDef];
 
 nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree;
 

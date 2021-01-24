@@ -10,7 +10,7 @@ import silver:compiler:modification:let_fix;
 {--
  - Direct (potential) dependencies this expression has on nodes in the production flow graph.
  -}
-monoid attribute flowDeps :: [FlowVertex] with [], ++;
+monoid attribute flowDeps :: [FlowVertex];
 {--
  - Determines whether this expression corresponds to a node in the flow graph, and how
  - to treat it specially if so.
@@ -222,19 +222,6 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
     | exprLhsExpr(q) -> [anonInhEq(top.frame.fullName, top.decorationVertex, q.attrDcl.fullName, e1.flowDeps)]
     end;
     
-}
-
-aspect production errorPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
-{
-  top.flowDeps <- []; -- error, so who cares?
-  top.flowDefs <- e1.flowDefs ++ e2.flowDefs;
-}
-aspect production stringPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
-{
-  top.flowDeps <- e1.flowDeps ++ e2.flowDeps;
-  top.flowDefs <- e1.flowDefs ++ e2.flowDefs;
 }
 
 aspect production exprRef

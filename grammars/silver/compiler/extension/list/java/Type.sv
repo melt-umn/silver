@@ -11,6 +11,7 @@ aspect production listCtrType
 top::Type ::=
 {
   top.transType = "common.ConsCell";
+  top.transCovariantType = "common.ConsCell";
   top.transClassType = "common.ConsCell";
   top.transTypeRep = "new common.BaseTypeRep(\"[]\")";
   top.transFreshTypeRep = top.transTypeRep;

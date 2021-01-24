@@ -5,6 +5,9 @@ imports silver:compiler:translation:java:core;
 
 -- The Java type corresponding to the Silver Type
 synthesized attribute transType :: String;
+-- The *covariant* Java type corresponding to the Silver Type
+-- e.g. common.NodeFactory<? extends Object> instead of common.NodeFactory<Object>
+synthesized attribute transCovariantType :: String;
 -- Java has crappy syntax for some things.
 -- If we want to statically refer to the class of this type, we cannot use
 -- the <> part of the type!! e.g. "Foo<Bar>.class" is illegal, should be "Foo.class"
@@ -16,12 +19,18 @@ synthesized attribute transFreshTypeRep :: String;
 -- A valid Java identifier, unique to the type
 synthesized attribute transTypeName :: String;
 
-attribute transType, transClassType, transTypeRep, transFreshTypeRep, transTypeName occurs on Type;
+attribute transType, transCovariantType, transClassType, transTypeRep, transFreshTypeRep, transTypeName occurs on Type;
+
+aspect default production
+top::Type ::=
+{
+  top.transType = top.transClassType;
+  top.transCovariantType = top.transType;
+}
 
 aspect production varType
 top::Type ::= tv::TyVar
 {
-  top.transType = "Object";
   top.transClassType = "Object";
   top.transTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
   top.transFreshTypeRep = top.transTypeRep;
@@ -31,7 +40,6 @@ top::Type ::= tv::TyVar
 aspect production skolemType
 top::Type ::= tv::TyVar
 {
-  top.transType = "Object";
   top.transClassType = "Object";
   top.transTypeRep = s"new common.BaseTypeRep(\"b${toString(tv.extractTyVarRep)}\")";
   top.transFreshTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
@@ -46,6 +54,11 @@ top::Type ::= c::Type a::Type
     | functionType(_, _) -> "common.NodeFactory<" ++ top.outputType.transType ++ ">"
     | _ -> c.transType
     end;
+  top.transCovariantType =
+    case c.baseType of
+    | functionType(_, _) -> "common.NodeFactory<? extends " ++ top.outputType.transCovariantType ++ ">"
+    | _ -> c.transCovariantType
+    end;
   top.transClassType = c.transClassType;
   top.transTypeRep = s"new common.AppTypeRep(${c.transTypeRep}, ${a.transTypeRep})";
   top.transFreshTypeRep = s"new common.AppTypeRep(${c.transFreshTypeRep}, ${a.transFreshTypeRep})";
@@ -56,7 +69,6 @@ aspect production errorType
 top::Type ::=
 {
   local oops :: String = error("Attempting to translate in presence of errors");
-  top.transType = oops;
   top.transClassType = oops;
   top.transTypeRep = oops;
   top.transFreshTypeRep = oops;
@@ -66,7 +78,6 @@ top::Type ::=
 aspect production intType
 top::Type ::=
 {
-  top.transType = "Integer";
   top.transClassType = "Integer";
   top.transTypeRep = "new common.BaseTypeRep(\"Integer\")";
   top.transFreshTypeRep = top.transTypeRep;
@@ -76,7 +87,6 @@ top::Type ::=
 aspect production boolType
 top::Type ::=
 {
-  top.transType = "Boolean";
   top.transClassType = "Boolean";
   top.transTypeRep = "new common.BaseTypeRep(\"Boolean\")";
   top.transFreshTypeRep = top.transTypeRep;
@@ -86,7 +96,6 @@ top::Type ::=
 aspect production floatType
 top::Type ::=
 {
-  top.transType = "Float";
   top.transClassType = "Float";
   top.transTypeRep = "new common.BaseTypeRep(\"Float\")";
   top.transFreshTypeRep = top.transTypeRep;
@@ -96,7 +105,6 @@ top::Type ::=
 aspect production stringType
 top::Type ::=
 {
-  top.transType = "common.StringCatter";
   top.transClassType = "common.StringCatter";
   top.transTypeRep = "new common.BaseTypeRep(\"String\")";
   top.transFreshTypeRep = top.transTypeRep;
@@ -106,7 +114,6 @@ top::Type ::=
 aspect production terminalIdType
 top::Type ::=
 {
-  top.transType = "Integer";
   top.transClassType = "Integer";
   top.transTypeRep = "new common.BaseTypeRep(\"TerminalId\")";
   top.transFreshTypeRep = top.transTypeRep;
@@ -118,8 +125,7 @@ top::Type ::= fn::String _ _
 {
   -- untightened version would be "common.Node", but we prefer the generated
   -- class, e.g. silver.definition.core.NExpr
-  top.transType = makeNTName(fn);
-  top.transClassType = top.transType;
+  top.transClassType = makeNTName(fn);
   top.transTypeRep = s"new common.BaseTypeRep(\"${fn}\")";
   top.transFreshTypeRep = top.transTypeRep;
   top.transTypeName = substitute(":", "_", fn);
@@ -128,7 +134,6 @@ top::Type ::= fn::String _ _
 aspect production terminalType
 top::Type ::= fn::String
 {
-  top.transType = makeTerminalName(fn);
   top.transClassType = makeTerminalName(fn);
   top.transTypeRep = s"new common.BaseTypeRep(\"${fn}\")";
   top.transFreshTypeRep = top.transTypeRep;
@@ -149,7 +154,6 @@ top::Type ::= te::Type
 aspect production functionType
 top::Type ::= params::Integer namedParams::[String]
 {
-  top.transType = "common.NodeFactory";
   top.transClassType = "common.NodeFactory";
   top.transTypeRep =
     s"new common.FunctionTypeRep(${toString(params)}, new String[] {${implode(", ", map(\ n::String -> s"\"${n}\"", namedParams))}})";

@@ -14,7 +14,7 @@ synthesized attribute appendDispatcher :: (Expr ::= Decorated Expr  Decorated Ex
 synthesized attribute instanceNum :: Boolean;
 synthesized attribute instanceConvertible :: Boolean;
 
-attribute applicationDispatcher, accessHandler, lengthDispatcher, appendDispatcher,
+attribute applicationDispatcher, accessHandler, lengthDispatcher,
           instanceNum, instanceConvertible occurs on Type;
 
 aspect default production
@@ -25,7 +25,6 @@ top::Type ::=
   top.instanceNum = false;
   top.instanceConvertible = false;
   top.lengthDispatcher = errorLength(_, location=_);
-  top.appendDispatcher = errorPlusPlus(_, _, location=_);
 }
 
 aspect production errorType
@@ -44,7 +43,6 @@ top::Type ::= c::Type a::Type
   top.instanceNum = c.instanceNum;
   top.instanceConvertible = c.instanceConvertible;
   top.lengthDispatcher = c.lengthDispatcher;
-  top.appendDispatcher = c.appendDispatcher;
 }
 
 aspect production intType
@@ -72,7 +70,6 @@ top::Type ::=
 {
   top.instanceConvertible = true;
   top.lengthDispatcher = stringLength(_, location=_);
-  top.appendDispatcher = stringPlusPlus(_, _, location=_);
 }
 
 aspect production nonterminalType

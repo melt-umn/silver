@@ -29,30 +29,30 @@ synthesized attribute declaredName :: String;
  - i.e. imports, exports, parser components, etc.
  - NOT options, or triggers, or transitive dependencies.
  -}
-monoid attribute moduleNames :: [String] with [], ++;
+monoid attribute moduleNames :: [String];
 {--
  - Grammars DIRECTLY exported by this grammar.
  -}
-monoid attribute exportedGrammars :: [String] with [], ++;
+monoid attribute exportedGrammars :: [String];
 {--
  - Grammars this grammar specifies as optional modifications.
  - (i.e. grammars that introduce more productions that do not forward)
  -}
-monoid attribute optionalGrammars :: [String] with [], ++;
+monoid attribute optionalGrammars :: [String];
 {--
  - A list of triggered builds. Format is actually [ [build x, with gram], ... ]
  -}
-monoid attribute condBuild :: [[String]] with [], ++;
+monoid attribute condBuild :: [[String]];
 {--
  - A list of TRUE dependencies of this grammar.
  - Closes over moduleNames using exports & triggers.
  -}
-monoid attribute allGrammarDependencies :: [String] with [], ++;
+monoid attribute allGrammarDependencies :: [String];
 {--
  - A list of attribute occurences that are exported by this particular grammar.
  - Seperate from defs as a workaround for circular dependency issues.
  -}
-monoid attribute occursDefs :: [DclInfo] with [], ++;
+monoid attribute occursDefs :: [DclInfo];
 
 
 --
@@ -62,7 +62,7 @@ monoid attribute occursDefs :: [DclInfo] with [], ++;
 {--
  - A list of definitions exported by this particular grammar.
  -}
-monoid attribute defs :: [Def] with [], ++;
+monoid attribute defs :: [Def];
 {--
  - The environment. Dun dun dunnn.
  -}
