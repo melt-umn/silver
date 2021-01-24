@@ -1,5 +1,25 @@
 grammar silver:core;
 
+instance Functor [] {
+  map = \ f::(b ::= a) l::[a] ->
+    if null(l) then []
+    else f(head(l)) :: map(f, tail(l));
+}
+
+instance Apply [] {
+  ap = apM;
+}
+
+instance Applicative [] {
+  pure = \ x::a -> [x];
+}
+
+instance Bind [] {
+  bind = \ x::[a] y::([b] ::= a) -> flatMap(y, x);
+}
+
+instance Monad [] {}
+
 {--
  - Applies an operator right-associatively over a list.
  - (i.e. replaces cons with 'f', nil with 'i' in the list)

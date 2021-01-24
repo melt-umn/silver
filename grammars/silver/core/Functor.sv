@@ -1,27 +1,35 @@
 grammar silver:core;
 
+{-
+A type f is a Functor if it provides a function map which, given any types a and b lets you apply
+any function from (a -> b) to turn an f<a> into an f<b>, preserving the structure of f. 
+Furthermore f needs to adhere to the following:
+
+Identity
+  map(id, x) == x
+Composition
+  map(compose(f, g), x) == map(f, map(g, x))
+-}
 class Functor f {
   map :: (f<b> ::= (b ::= a) f<a>); 
 }
 
-instance Functor [] {
-  map = \ f::(b ::= a) l::[a] ->
-    if null(l) then []
-    else f(head(l)) :: map(f, tail(l));
-}
+function mapFlipped
+Functor f => f<b> ::= x::f<a>  f::(b ::= a)
+{ return map(f, x); }
 
-instance Functor Maybe {
-  map = \ f::(b ::= a) m::Maybe<a> ->
-    case m of
-    | just(x)   -> just(f(x))
-    | nothing() -> nothing()
-    end;
-}
+function void
+Functor f => f<Unit> ::= x::f<a>
+{ return map(\y::a -> unit(), x); }
 
-instance Functor Either<a _> {
-  map = \ f::(c ::= b) e::Either<a b> ->
-    case e of
-    | right(x) -> right(f(x))
-    | left(x)  -> left(x)
-    end;
-}
+function voidLeft
+Functor f => f<b> ::= x::f<a>  y::b
+{ return map(\z::a -> y, x); }
+
+function voidRight
+Functor f => f<a> ::= x::a  y::f<b>
+{ return map(\z::b -> x, y); }
+
+function flap
+Functor f => f<b> ::= fs::f<(b ::= a)>  x::a
+{ return map(\f::(b ::= a) -> f(x), fs); }

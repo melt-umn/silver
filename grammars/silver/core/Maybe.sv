@@ -19,6 +19,36 @@ top::Maybe<a> ::=
   top.isJust = false;
 }
 
+instance Functor Maybe {
+  map = \ f::(b ::= a) m::Maybe<a> ->
+    case m of
+    | just(x)   -> just(f(x))
+    | nothing() -> nothing()
+    end;
+}
+
+instance Apply Maybe {
+  ap = \ mf::Maybe<(b ::= a)> m::Maybe<a> ->
+    case mf of
+    | just(f)   -> map(f, m)
+    | nothing() -> nothing()
+    end;
+}
+
+instance Applicative Maybe {
+  pure = just;
+}
+
+instance Bind Maybe {
+  bind = \ m::Maybe<a> fn::(Maybe<b> ::= a) ->
+    case m of
+    | just(x) -> fn(x)
+    | nothing() -> nothing()
+    end;
+}
+
+instance Monad Maybe {}
+
 --------------------------------------------------------------------------------
 
 {--
