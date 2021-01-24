@@ -40,6 +40,7 @@ synthesized attribute patternNamedSubPatternList :: [Pair<String Decorated Patte
 synthesized attribute patternSortKey :: String;
 
 
+
 -- These are the "canonical" patterns:
 
 {--
@@ -54,7 +55,6 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
   top.errors := ps.errors ++ nps.errors;
 
   local parms :: Integer = prod.lookupValue.typeScheme.arity;
-  local foo :: String = "addfoo";
 
   top.errors <-
     if null(prod.lookupValue.dcls) || length(ps.patternList) == parms then []
