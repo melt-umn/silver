@@ -15,6 +15,8 @@ nonterminal ExprInh with
 nonterminal ExprLHSExpr with
   config, grammarName, env, location, unparse, errors, freeVars, name, typerep, decoratingnt, suppliedInhs, isRoot, originRules;
 
+flowtype freeVars {} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+
 propagate errors, freeVars on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
 {--
@@ -65,6 +67,7 @@ concrete production baseExpr
 top::Expr ::= q::QName
 {
   top.unparse = q.unparse;
+  top.freeVars := ts:fromList([q.name]);
   
   forwards to if null(q.lookupValue.dcls)
               then errorReference(q.lookupValue.errors, q, location=top.location)
@@ -75,6 +78,7 @@ abstract production errorReference
 top::Expr ::= msg::[Message]  q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars <- ts:fromList([q.name]);
   
   top.errors <- msg;
   top.typerep = errorType();
@@ -201,6 +205,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   -- TODO: fix comma when one or the other is empty
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  propagate freeVars;
   
   local correctNumTypes :: [Type] =
     if length(t.inputTypes) > es.appExprSize
@@ -270,6 +275,7 @@ abstract production functionApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  propagate freeVars;
   
   -- TODO: we have an ambiguity here in the longer term.
   -- How to distinguish between
@@ -364,6 +370,7 @@ concrete production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  propagate freeVars;
   
   -- We don't include 'q' here because this might be a terminal, where
   -- 'q' shouldn't actually resolve to a name!
@@ -437,6 +444,7 @@ abstract production undecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  propagate freeVars;
 
   top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
   
@@ -477,6 +485,7 @@ abstract production decoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  propagate freeVars;
 
   top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
   

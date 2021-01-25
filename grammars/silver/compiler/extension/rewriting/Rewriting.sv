@@ -1,6 +1,7 @@
 grammar silver:compiler:extension:rewriting;
 
 imports silver:core hiding id;
+imports silver:util:treeset as ts;
 
 imports silver:rewrite hiding repeat;
 imports silver:compiler:metatranslation;
@@ -24,6 +25,7 @@ concrete production rewriteExpr
 top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
 {
   top.unparse = s"rewriteWith(${s.unparse}, ${e.unparse})";
+  propagate freeVars;
 
   local errCheckS::TypeCheck = check(s.typerep, nonterminalType("silver:rewrite:Strategy", 0, false));
   errCheckS.finalSubst = top.finalSubst;
@@ -238,6 +240,7 @@ concrete production ruleExpr
 top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "rule on " ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
+  top.freeVars := checkExpr.freeVars;
   
   -- Find the free type variables (i.e. lacking a definition) to add as skolem constants
   local freeTyVars::[String] =
