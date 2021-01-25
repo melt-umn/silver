@@ -162,3 +162,11 @@ Set<a> ::= lst::[a] set::Set<a>
 instance Eq Set<a> {
   eq = \ l::Set<a> r::Set<a> -> subset(l,r) && subset(r,l);
 }
+
+instance Semigroup Set<a> {
+  append = union;
+}
+
+instance Ord a => Monoid Set<a> {
+  mempty = empty();
+}
