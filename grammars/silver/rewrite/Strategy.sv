@@ -112,11 +112,7 @@ top::Strategy ::= pattern::ASTPattern result::ASTExpr
   top.pp = pp"rule(${pattern.pp} -> ${result.pp})";
   pattern.matchWith = top.term;
   result.substitutionEnv = pattern.substitution.fromJust;
-  top.result =
-    do (bindMaybe, returnMaybe) {
-      pattern.substitution;
-      return result.value;
-    };
+  top.result = do { pattern.substitution; return result.value; };
 }
 
 abstract production require
@@ -126,7 +122,7 @@ top::Strategy ::= pattern::ASTPattern cond::ASTExpr
   pattern.matchWith = top.term;
   cond.substitutionEnv = pattern.substitution.fromJust;
   top.result =
-    do (bindMaybe, returnMaybe) {
+    do {
       pattern.substitution;
       case cond.value of
       | booleanAST(b) -> if b then just(unit()) else nothing()
