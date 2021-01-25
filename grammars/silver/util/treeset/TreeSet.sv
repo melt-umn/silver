@@ -39,6 +39,15 @@ Set<a> ::= lst::[a] set::Set<a>
 }
 
 {--
+ - Converts a list to a set.
+ -}
+function fromList
+Ord a => Set<a> ::= lst::[a]
+{
+  return add(lst, empty());
+}
+
+{--
  - Converts a set back to a list, in sorted order.
  -}
 function toList

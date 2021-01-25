@@ -1,5 +1,7 @@
 grammar silver:compiler:modification:primitivepattern;
 
+imports silver:util:treeset as ts;
+
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
@@ -20,12 +22,12 @@ terminal Match_kwd 'match' lexer classes {KEYWORD,RESERVED}; -- temporary!!!
 
 nonterminal PrimPatterns with 
   config, grammarName, env, compiledGrammars, frame,
-  location, unparse, errors,
+  location, unparse, errors, freeVars,
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation, isRoot, originRules;
 nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
-  location, unparse, errors,
+  location, unparse, errors, freeVars,
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation, isRoot, originRules;
 
@@ -33,6 +35,7 @@ autocopy attribute scrutineeType :: Type;
 autocopy attribute returnType :: Type;
 
 propagate errors on PrimPatterns, PrimPattern;
+propagate freeVars on PrimPatterns;
 
 concrete production matchPrimitiveConcrete
 top::Expr ::= 'match' e::Expr 'return' t::TypeExpr 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
@@ -66,7 +69,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
   
-  propagate errors;
+  propagate errors, freeVars;
   top.typerep = t.typerep;
 
   top.errors <- t.errorsFullyApplied;
@@ -183,6 +186,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
   
+  top.freeVars := ts:removeAll(ns.boundNames, e.freeVars);
+  
   local chk :: [Message] =
     if null(qn.lookupValue.dcls) || ns.varBinderCount == prod_type.arity then []
     else [err(qn.location, qn.name ++ " has " ++ toString(prod_type.arity) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
@@ -236,6 +241,8 @@ abstract production prodPatternGadt
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
+  
+  top.freeVars := ts:removeAll(ns.boundNames, e.freeVars);
   
   local chk :: [Message] =
     if null(qn.lookupValue.dcls) || ns.varBinderCount == prod_type.arity then []
@@ -416,6 +423,8 @@ abstract production conslstPattern
 top::PrimPattern ::= h::Name t::Name e::Expr
 {
   top.unparse = "cons(" ++ h.unparse ++ ", " ++ t.unparse ++ ") -> " ++ e.unparse;
+  
+  top.freeVars := ts:removeAll([h.name, t.name], e.freeVars);
 
   local h_fName :: String = toString(genInt()) ++ ":" ++ h.name;
   local t_fName :: String = toString(genInt()) ++ ":" ++ t.name;
