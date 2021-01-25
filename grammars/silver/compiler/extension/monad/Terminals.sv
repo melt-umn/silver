@@ -1,5 +1,5 @@
 
-marking terminal Do_kwd 'do' lexer classes {KEYWORD,RESERVED};
+--marking terminal Do_kwd 'do' lexer classes {KEYWORD,RESERVED};
 
 terminal LArrow_t '<-' lexer classes {SPECOP};
 --terminal DoubleColon_t '::' lexer classes {SPECOP};
