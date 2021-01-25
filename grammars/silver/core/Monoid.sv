@@ -17,8 +17,6 @@ Minimal complete definition: mempty
 class Semigroup a => Monoid a {
   mempty :: a;
   concat :: (a ::= [a]) = foldr(append, mempty, _);
-  
-  empty :: a = mempty;
 }
 
 instance Monoid [a] {
