@@ -1,10 +1,10 @@
 grammar silver:rewrite;
 
 -- Some of these Strategy productions have very generic names that conflict with core.
--- Users must explicitly import core hiding these names, or perform a qualified import,
+-- Users must explicitly import silver:core hiding these names, or perform a qualified import,
 -- e.g. import silver:rewrite as s;
 
-imports silver:core hiding id, all, repeat;
+imports silver:core hiding id, all, repeat, sequence;
 
 inherited attribute term::AST;
 synthesized attribute result::Maybe<AST>;

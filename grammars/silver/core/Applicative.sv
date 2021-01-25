@@ -33,3 +33,12 @@ Applicative f => f<Unit> ::= cond::Boolean  body::f<Unit>
 function unless
 Applicative f => f<Unit> ::= cond::Boolean  body::f<Unit>
 { return if cond then pure(unit()) else body; }
+
+-- These should be factored out into a Traversable type class, eventually.
+function traverseA
+Applicative m => m<[b]> ::= f::(m<b> ::= a) lst::[a]
+{ return foldr(lift2(cons, _, _), pure([]), map(f, lst)); }
+
+function sequence
+Applicative m => m<[a]> ::= lst::[m<a>]
+{ return foldr(lift2(cons, _, _), pure([]), lst); }
