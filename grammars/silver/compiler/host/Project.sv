@@ -42,7 +42,6 @@ exports silver:compiler:extension:doc;
 exports silver:compiler:extension:autoattr;
 exports silver:compiler:extension:strategyattr;
 exports silver:compiler:extension:do_notation;
-exports silver:compiler:extension:monad;
 exports silver:compiler:extension:reflection;
 exports silver:compiler:extension:rewriting;
 exports silver:compiler:extension:silverconstruction;
