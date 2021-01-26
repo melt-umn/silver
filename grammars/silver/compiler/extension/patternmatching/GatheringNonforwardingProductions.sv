@@ -88,27 +88,6 @@ function defsToNonforwardingProductions
 
 
 
-
-{-aspect production aspectDefaultProduction
-top::AGDcl ::= 'aspect' 'default' 'production' 
-               lhs::Name '::' te::TypeExpr '::=' body::ProductionBody 
-{
-  top.nonforwardingProductions := [];
-}-}
-
-
-
-
-
-
-
-
---aspect production root
---top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
---{
---  ags.requiredProductionPatterns = groupNonforwardingProductions(ags.nonforwardingProductions);
---}
-
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  grammarTime::Integer  generateLocation::String
 {
@@ -125,10 +104,7 @@ function groupNonforwardingProductions
 {
   local getTypeName::(String ::= DclInfo) =
         \ d::DclInfo ->
-          case d.typeScheme.typerep of
-          | functionType(outty, _, _) -> getHeadTypeName(outty)
-          | ty -> error("All productions should have a function type, not:  " ++ prettyType(ty))
-          end;
+          getHeadTypeName(d.typeScheme.typerep.outputType);
   local getHeadTypeName::(String ::= Type) =
         \ ty::Type ->
           case ty of

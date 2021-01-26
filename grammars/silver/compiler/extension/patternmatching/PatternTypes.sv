@@ -91,10 +91,7 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
   top.isBoolPattern = false;
   top.isListPattern = false;
   top.patternTypeName =
-      case prod.lookupValue.typeScheme.typerep of
-      | functionType(out, _, _) -> getHeadTypeName(out)
-      | _ -> "" --not a real production
-      end;
+      getHeadTypeName(prod.lookupValue.typeScheme.typerep.outputType);
   local getHeadTypeName::(String ::= Type) =
         \ ty::Type ->
           case ty of
