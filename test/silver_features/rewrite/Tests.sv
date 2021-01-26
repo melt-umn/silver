@@ -44,7 +44,7 @@ equalityTest(rewriteWith(s4, pair(1, 2)), just(pair(2, 1)), Maybe<Pair<Integer I
 equalityTest(rewriteWith(s4, pair(42, 42)), just(pair(42, 17)), Maybe<Pair<Integer Integer>>, silver_tests);
 
 global isChars::(Boolean ::= [String]) =
-  \ cs::[String] -> all(map(contains(_, ["1", "2", "3", "4", "5", "6", "7", "8", "9"]), cs)); -- TODO: can't use contains here
+  \ cs::[String] -> all(map(contains(_, ["1", "2", "3", "4", "5", "6", "7", "8", "9"]), cs)); -- TODO: can't use type class functions inside a rule
 global s5::s:Strategy =
   rule on Pair<Integer String> of
   | pair(n, s) when isChars(explode("", s)) ->
