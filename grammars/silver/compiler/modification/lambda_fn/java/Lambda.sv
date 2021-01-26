@@ -28,7 +28,7 @@ ${params.lambdaTranslation}
 				}
 	
 				@Override
-				public final common.FunctionTypeRep getType() {
+				public final common.TypeRep getType() {
 ${makeTyVarDecls(5, finTy.freeVariables)}
 					return ${finTy.transTypeRep};
 				}

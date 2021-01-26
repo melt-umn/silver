@@ -26,7 +26,7 @@ top::RootSpec ::= g::Grammar  _ _ _ _
                   then toSplitFiles(g.docs, [], g.docsHeader)
                   else [toSingleFile(g.docs, g.docsHeader)];
 
-  g.docEnv = add(g.docDcls, empty(compareString));
+  g.docEnv = tm:add(g.docDcls, tm:empty());
 }
 
 function toSplitFiles

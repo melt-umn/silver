@@ -77,7 +77,7 @@ top::ProductionGraph ::=
       productionGraph(prod, lhsNt, flowTypeVertexes, transitiveClosure, suspectEdges, stitchPoints) end;
     
   top.edgeMap = g:edgesFrom(_, graph);
-  top.suspectEdgeMap = lookupAllBy(equalFlowVertex, _, suspectEdges);
+  top.suspectEdgeMap = lookupAll(_, suspectEdges);
   
   top.cullSuspect = 
     -- this potentially introduces the same edge twice, but that's a nonissue
@@ -188,7 +188,7 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   
   -- (safe, suspect)
   local synsBySuspicion :: Pair<[String] [String]> =
-    partition(containsBy(stringEq, _, getNonSuspectAttrsForProd(prod, flowEnv)), syns);
+    partition(contains(_, getNonSuspectAttrsForProd(prod, flowEnv)), syns);
   
   -- No implicit equations here, just keep track.
   local suspectEdges :: [Pair<FlowVertex FlowVertex>] =
@@ -208,7 +208,7 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
   local flowTypeSpecs :: [String] = getSpecifiedSynsForNt(nt, flowEnv);
   
   local flowTypeVertexes :: [FlowVertex] =
-    filter(\x::FlowVertex -> !containsBy(stringEq, x.flowTypeName, flowTypeSpecs), flowTypeVertexesOverall);
+    filter(\x::FlowVertex -> !contains(x.flowTypeName, flowTypeSpecs), flowTypeVertexesOverall);
   
   local initialGraph :: g:Graph<FlowVertex> =
     createFlowGraph(fixedEdges);
@@ -349,7 +349,7 @@ ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated E
   -- Just synthesized attributes.
   local syns :: [String] = map((.attrOccurring), filter(isOccursSynthesized(_, realEnv), attrs));
   -- Those syns that are not part of the host, and so should have edges to fwdeq
-  local extSyns :: [String] = removeAllBy(stringEq, getHostSynsFor(nt, flowEnv), syns);
+  local extSyns :: [String] = removeAll(getHostSynsFor(nt, flowEnv), syns);
 
   -- The phantom edges: ext syn -> fwd.eq
   local phantomEdges :: [Pair<FlowVertex FlowVertex>] =

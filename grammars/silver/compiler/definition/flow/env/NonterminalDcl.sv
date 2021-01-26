@@ -15,7 +15,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
       getAttrsOn(fName, top.env));
   
   local specInhs :: Maybe<[String]> =
-    lookupBy(stringEq, "decorate", getFlowTypeSpecFor(fName, top.flowEnv));
+    lookup("decorate", getFlowTypeSpecFor(fName, top.flowEnv));
 
   -- Notice the circularity: flowDefs uses flowEnv. Works fine because only
   -- the (lazy) parameter of ntRefFlowDef isn't computable until later.

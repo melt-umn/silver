@@ -156,7 +156,7 @@ function checkEqDeps
       then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
            then []
            else let
-             anonl :: Maybe<Location> = lookupBy(stringEq, fName, anonResolve)
+             anonl :: Maybe<Location> = lookup(fName, anonResolve)
            in if anonl.isJust 
               then [mwdaWrn(anonl.fromJust, "Decoration requires inherited attribute for " ++ attrName ++ ".", runMwda)]
               else [] -- If it's not in the list, then it's a transitive dep from a DIFFERENT equation (and thus reported there)
@@ -495,7 +495,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       | hasVertex(_) -> [] -- no check to make, as it was done transitively
       -- without a vertex, we're accessing from a reference, and so...
       | noVertex() ->
-          if containsBy(stringEq, q.attrDcl.fullName, inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv))
+          if contains(q.attrDcl.fullName, inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv))
           then []
           else [mwdaWrn(top.location, "Access of inherited attribute " ++ q.name ++ " from a reference is not permitted, as references are not known to be decorated with this attribute.", top.config.runMwda)]
       end
@@ -527,7 +527,7 @@ top::Expr ::= '(' '.' q::QName ')'
     then
       let inhs :: [String] = 
             filter(
-              \ x::String -> !containsBy(stringEq, x, acceptable),
+              \ x::String -> !contains(x, acceptable),
               set:toList(inhDepsForSyn(q.lookupAttribute.fullName, inputType.typeName, myFlow)))
        in if null(inhs) then []
           else [mwdaWrn(top.location, s"Attribute section (.${q.name}) requires attributes not known to be on '${prettyType(inputType)}': ${implode(", ", inhs)}", top.config.runMwda)]
@@ -565,7 +565,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   local diff :: [String] =
     set:toList(set:removeAll(
       inhsForTakingRef(e.typerep.typeName, top.flowEnv),
-      set:add(inhDeps, set:empty(compareString))));
+      set:add(inhDeps, set:empty())));
 
   top.errors <-
     if null(e.errors)

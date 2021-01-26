@@ -1,11 +1,14 @@
 grammar silver:compiler:modification:copper;
 
+import silver:util:treeset as ts;
+
 terminal DisambiguationFailure_t 'disambiguationFailure' lexer classes {KEYWORD, RESERVED};
 
 concrete production failureTerminalIdExpr
 top::Expr ::= 'disambiguationFailure'
 {
   top.unparse = "disambiguationFailure";
+  propagate freeVars;
   top.errors := [];
   top.typerep = terminalIdType();
 
@@ -19,6 +22,7 @@ abstract production actionChildReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars := ts:fromList([q.name]);
 
   top.errors := []; -- Should only ever be in scope when valid
 
@@ -34,6 +38,7 @@ abstract production pluckTerminalReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars := ts:fromList([q.name]);
 
   top.errors := []; -- Should only be referenceable from a context where its valid.
 
@@ -54,6 +59,7 @@ abstract production terminalIdReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars := ts:fromList([q.name]);
 
   top.errors := if !top.frame.permitActions
                 then [err(top.location, "References to terminal identifiers can only be made in action blocks")]
@@ -71,6 +77,7 @@ abstract production lexerClassReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars := ts:fromList([q.name]);
 
   top.errors := if !top.frame.permitActions
                 then [err(top.location, "References to lexer class members can only be made in action blocks")]
@@ -89,6 +96,7 @@ abstract production parserAttributeReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars := ts:fromList([q.name]);
 
   top.errors := if !top.frame.permitActions
                 then [err(top.location, "References to parser attributes can only be made in action blocks")]
@@ -107,6 +115,7 @@ abstract production termAttrValueReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars := ts:fromList([q.name]);
 
   top.errors := []; -- Should only ever be in scope in action blocks
 

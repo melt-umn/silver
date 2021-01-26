@@ -2,14 +2,15 @@ grammar silver:compiler:definition:type:syntax;
 
 autocopy attribute instanceHead::Maybe<Context>;
 autocopy attribute constraintSigName::Maybe<String>;
+autocopy attribute classDefName::Maybe<String>;
 
 nonterminal ConstraintList
   -- This grammar doesn't export silver:compiler:definition:core, so the type concrete
   -- syntax doesn't "know about" the core layout terminals.
   -- Thus we have to set the layout explicitly for the "root" nonterminal here.
   layout {BlockComments, Comments, WhiteSpace}
-  with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, lexicalTyVarKinds, instanceHead, constraintSigName;
-nonterminal Constraint with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, lexicalTyVarKinds, instanceHead, constraintSigName;
+  with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, lexicalTyVarKinds, instanceHead, constraintSigName, classDefName;
+nonterminal Constraint with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, lexicalTyVarKinds, instanceHead, constraintSigName, classDefName;
 
 propagate errors, defs, lexicalTypeVariables, lexicalTyVarKinds on ConstraintList, Constraint;
 
@@ -60,21 +61,25 @@ top::Constraint ::= c::QNameType t::TypeExpr
     | _ -> []
     end;
   
-  top.defs <-
+  local instDcl::DclInfo =
     case top.constraintSigName, top.instanceHead of
-    | just(sigfn), _ -> [sigConstraintDef(top.grammarName, top.location, fName, t.typerep, sigfn)]
-    | nothing(), just(_) -> [instConstraintDef(top.grammarName, top.location, fName, t.typerep)]
-    | _, _ ->
-      [instSuperDef(
-        top.grammarName, top.location, fName,
-        currentInstDcl(error("Class name shouldn't be needed"), t.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location),
-        t.typerep)]
+    | just(sigfn), _ -> sigConstraintDcl(fName, t.typerep, sigfn, sourceGrammar=top.grammarName, sourceLocation=top.location)
+    | nothing(), just(_) -> instConstraintDcl(fName, t.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location)
+    | _, _ -> instSuperDcl(
+      fName,
+      currentInstDcl(error("Class name shouldn't be needed"), t.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location),
+      t.typerep,
+      sourceGrammar=top.grammarName, sourceLocation=top.location)
     end;
-  top.defs <- transitiveSuperDefs(top.env, t.typerep, [], fName);
+  top.defs <- [tcInstDef(instDcl)];
+  top.defs <- transitiveSuperDefs(top.env, t.typerep, [], instDcl);
 
   top.lexicalTyVarKinds <-
     case t of
-    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, c.lookupType.typeScheme.monoType.kindArity)]
+    | typeVariableTypeExpr(tv)
+      -- Avoid circular inference if someone uses a class constraint within its own definition
+      when top.classDefName != just(fName) ->
+      [pair(tv.lexeme, c.lookupType.typeScheme.monoType.kindArity)]
     | _ -> []
     end;
 }
@@ -87,7 +92,7 @@ function transitiveSuperContexts
   dcl.givenInstanceType = ty;
   local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
   return
-    if null(dcls) || containsBy(stringEq, dcl.fullName, seenClasses)
+    if null(dcls) || contains(dcl.fullName, seenClasses)
     then []
     else unionsBy(
       sameSuperContext,
@@ -95,6 +100,7 @@ function transitiveSuperContexts
       map(transitiveSuperContexts(env, ty, dcl.fullName :: seenClasses, _), superClassNames));
 }
 
+-- TODO: Should be an equality attribute, maybe, once we have more than one kind of context?
 function sameSuperContext
 Boolean ::= c1::Context c2::Context
 {
@@ -105,18 +111,22 @@ Boolean ::= c1::Context c2::Context
 }
 
 function transitiveSuperDefs
-[Def] ::= env::Decorated Env ty::Type seenClasses::[String] className::String
+[Def] ::= env::Decorated Env ty::Type seenClasses::[String] instDcl::DclInfo
 {
-  local dcls::[DclInfo] = getTypeDcl(className, env);
+  local dcls::[DclInfo] = getTypeDcl(instDcl.fullName, env);
   local dcl::DclInfo = head(dcls);
   dcl.givenInstanceType = ty;
   local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
+  local superInstDcls::[DclInfo] =
+    map(
+      instSuperDcl(_, instDcl, ty, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
+      superClassNames);
   return
-    if null(dcls) || containsBy(stringEq, dcl.fullName, seenClasses)
+    if null(dcls) || contains(dcl.fullName, seenClasses)
     then []
     else
       -- This might introduce duplicate defs in "diamond subclassing" cases,
       -- but that shouldn't actually be an issue besides the (minor) added lookup overhead.
-      map(\ c::Context -> c.contextSuperDef(dcl.sourceGrammar, dcl.sourceLocation, dcl), dcl.superContexts) ++
-      concat(map(transitiveSuperDefs(env, ty, dcl.fullName :: seenClasses, _), superClassNames));
+      map(\ c::Context -> c.contextSuperDef(dcl.sourceGrammar, dcl.sourceLocation, instDcl), dcl.superContexts) ++
+      flatMap(transitiveSuperDefs(env, ty, dcl.fullName :: seenClasses, _), superInstDcls);
 }

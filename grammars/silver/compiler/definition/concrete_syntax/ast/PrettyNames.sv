@@ -3,7 +3,7 @@ grammar silver:compiler:definition:concrete_syntax:ast;
 function asPrettyName
 Maybe<String> ::= r::Regex
 {
-  return mapMaybe(\x::String -> "'" ++ xmlEscapeString(x) ++ "'", r.asLiteral);
+  return map(\x::String -> "'" ++ xmlEscapeString(x) ++ "'", r.asLiteral);
 }
 
 implicit synthesized attribute asLiteral::Maybe<String>;

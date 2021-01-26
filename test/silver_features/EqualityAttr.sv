@@ -1,7 +1,5 @@
 grammar silver_features;
 
-equality attribute isEqualTo, isEqual;
-
 nonterminal EqExpr with isEqualTo, isEqual;
 
 abstract production addEqExpr

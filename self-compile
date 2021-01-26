@@ -4,7 +4,7 @@
 set -eu
 
 # Defaults overridable by setting an environment variable:
-SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx3G -Xss8M"}
+SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx3G -Xss16M"}
   # These can be fun sometimes:
   # -XX:+PrintCompilation -verbose:gc -XX:+PrintGCTimeStamps -XX:+PrintGCDetails -XX:-PrintGC
 SV_BUILD_TARGET=${SV_BUILD_TARGET:-"silver:compiler:composed:Default"}
@@ -12,6 +12,6 @@ SV_BUILD_TARGET=${SV_BUILD_TARGET:-"silver:compiler:composed:Default"}
 mkdir -p build
 cd build
 
-time java ${SVJVM_FLAGS} -jar ../jars/silver.compiler.composed.Default.jar $@ ${SV_BUILD_TARGET}
+time java ${SVJVM_FLAGS} -cp ../jars/CopperCompiler.jar -jar ../jars/silver.compiler.composed.Default.jar $@ ${SV_BUILD_TARGET}
 ant
 

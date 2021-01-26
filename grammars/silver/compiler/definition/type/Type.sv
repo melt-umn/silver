@@ -187,7 +187,7 @@ top::Type ::= fn::String
 
 {--
  - A *decorated* nonterminal type.
- - @param te  MUST be a 'nonterminalType' (TODO: should probably just put that here)
+ - @param te  MUST be a 'nonterminalType' or 'varType'/'skolemType'
  -}
 abstract production decoratedType
 top::Type ::= te::Type
@@ -222,57 +222,15 @@ top::Type ::= nt::Type  hidden::Type
 
 {--
  - Function type. (Whether production or function.)
- - @param out  The result type of the function
- - @param params  The (ordered) input types of the function
- - @param namedParams  Named parameters for this nonterminal.
+ - @param params  The number input types of the function
+ - @param namedParams  Named parameters for this function.
  -        NOTE: These must always be *IN SORTED ORDER*
  -}
 abstract production functionType
-top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
+top::Type ::= params::Integer namedParams::[String]
 {
-  top.kindArity = 0;
-  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), 
-    out :: params ++ map((.argType), namedParams)));
-}
-
---------------------------------------------------------------------------------
-
-nonterminal NamedArgType with argName, argType, typepp, boundVariables;
-
-synthesized attribute argName :: String;
-synthesized attribute argType :: Type;
-
-abstract production namedArgType
-top::NamedArgType ::= s::String  ty::Type
-{
-  top.typepp = "; " ++ s ++ "::" ++ ty.typepp;
-  top.argName = s;
-  top.argType = ty;
-}
-
-function namedArgTypeLte
-Boolean ::= a::NamedArgType  b::NamedArgType
-{
-  return a.argName <= b.argName;
-}
-
-function extractNamedArg
-Pair<Maybe<NamedArgType> [NamedArgType]> ::= n::String  l::[NamedArgType]
-{
-  local recurse :: Pair<Maybe<NamedArgType> [NamedArgType]> =
-    extractNamedArg(n, tail(l));
-
-  return if null(l) then pair(nothing(), [])
-  else if head(l).argName == n then pair(just(head(l)), tail(l))
-  else pair(recurse.fst, head(l) :: recurse.snd);
-}
-
-function findNamedArgType
-Integer ::= s::String l::[NamedArgType] z::Integer
-{
-  return if null(l) then -1
-  else if s == head(l).argName then z
-  else findNamedArgType(s, tail(l), z+1);
+  top.kindArity = params + length(namedParams) + 1;
+  top.freeVariables = [];
 }
 
 --------------------------------------------------------------------------------
@@ -295,12 +253,6 @@ TyVar ::= k::Integer
   return tyVar(k, genInt());
 }
 
-function tyVarEqual
-Boolean ::= tv1::TyVar tv2::TyVar
-{
-  return tv1.kindArity == tv2.kindArity && tv1.extractTyVarRep == tv2.extractTyVarRep;
-}
-
 function freshType
 Type ::=
 {
@@ -311,5 +263,10 @@ function newSkolemConstant
 Type ::=
 {
   return skolemType(freshTyVar(0));
+}
+
+-- TODO: Replace with propagated default instance
+instance Eq TyVar {
+  eq = \ tv1::TyVar tv2::TyVar -> tv1.kindArity == tv2.kindArity && tv1.extractTyVarRep == tv2.extractTyVarRep;
 }
 

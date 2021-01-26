@@ -19,17 +19,12 @@ top::NameOrBOperator ::= e::Expr
 {
   top.unparse = e.unparse;
 
-  top.operation =
-    case e of
-    | functionReference(q) -> functionOperation(e, makeProdName(q.lookupValue.fullName), false, true, false)
-    | productionReference(q) -> functionOperation(e, makeProdName(q.lookupValue.fullName), false, false, top.operatorForType.tracked)
-    | _ -> functionOperation(e, e.translation, true, false, false)
-    end;
+  top.operation = functionOperation(e, e.translation, false);
 
   top.errors := e.errors;
   
   local checkOperationType :: TypeCheck =
-    check(e.typerep, functionType(top.operatorForType, [top.operatorForType, top.operatorForType], []));
+    check(e.typerep, appTypes(functionType(2, []), [top.operatorForType, top.operatorForType, top.operatorForType]));
   
   e.downSubst = emptySubst();
   checkOperationType.downSubst = e.upSubst;
@@ -118,7 +113,7 @@ top::NameOrBOperator ::= '*'
 -- This would be much nicer if we could pass the Decorated Expr here,
 -- but this nonterminal must be serializable as part of the environment.
 abstract production functionOperation
-top::Operation ::= e::Expr eTrans::String isRef::Boolean isFunction::Boolean trackConstruction::Boolean
+top::Operation ::= e::Expr eTrans::String trackConstruction::Boolean
 {}
 abstract production plusPlusOperationString
 top::Operation ::= 

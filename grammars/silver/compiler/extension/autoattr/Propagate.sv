@@ -50,7 +50,7 @@ top::AGDcl ::= attrs::NameList nt::QName ps::ProdNameList
   
   local includedProds::[DclInfo] =
     filter(
-      \ d::DclInfo -> !d.hasForward && !containsBy(stringEq, d.fullName, ps.names),
+      \ d::DclInfo -> !d.hasForward && !contains(d.fullName, ps.names),
       getKnownProds(nt.lookupType.fullName, top.env));
   local dcl::AGDcl =
     foldr(

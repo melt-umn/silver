@@ -9,7 +9,7 @@
   <property name='version' value='0.0.1'/><!--dummy value for OSGi-->
 
   <path id='compile.classpath'>
-    <fileset dir='../../jars' includes='CopperRuntime.jar CopperCompiler.jar' />
+    <fileset dir='../../jars' includes='CopperCompiler.jar' />
   </path>
 
   <target name='init'>
@@ -25,7 +25,7 @@
   </target>
 
   <target name='build' depends='init'>
-    <javac debug='on' classpathref='compile.classpath' srcdir='${src}:${grammars}' destdir='${bin}' includeantruntime='false'>
+    <javac debug='on' classpathref='compile.classpath' srcdir='${src}:${grammars}' destdir='${bin}' includeantruntime='false' source='1.8' target='1.8' release='8'>
       <include name='common/**/*.java' />
       <include name='silver/core/*.java' />
       <include name='silver/xml/ast/*.java' />

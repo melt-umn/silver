@@ -5,39 +5,39 @@ import silver:util:treemap as tm;
 import silver:util:treeset as s;
 
 -- For looking syntax elements up by name.
-monoid attribute cstDcls :: [Pair<String Decorated SyntaxDcl>] with [], ++;
+monoid attribute cstDcls :: [Pair<String Decorated SyntaxDcl>];
 autocopy attribute cstEnv :: EnvTree<Decorated SyntaxDcl>;
-monoid attribute cstErrors :: [String] with [], ++;
+monoid attribute cstErrors :: [String];
 
 -- Transformation that moves productions underneath their respective nonterminals.
-monoid attribute cstProds :: [Pair<String SyntaxDcl>] with [], ++;
+monoid attribute cstProds :: [Pair<String SyntaxDcl>];
 autocopy attribute cstNTProds :: EnvTree<SyntaxDcl>;
-monoid attribute cstNormalize :: [SyntaxDcl] with [], ++;
+monoid attribute cstNormalize :: [SyntaxDcl];
 
 -- Compute and allow lookup of all terminals in a lexer class
-monoid attribute classTerminalContribs::[Pair<String String>] with [], ++;
+monoid attribute classTerminalContribs::[Pair<String String>];
 autocopy attribute classTerminals::EnvTree<String>;
-monoid attribute superClassContribs::[Pair<String String>] with [], ++;
+monoid attribute superClassContribs::[Pair<String String>];
 autocopy attribute superClasses::EnvTree<String>;
 autocopy attribute subClasses::EnvTree<String>;
 
 -- Parser attribute action code aspects
-monoid attribute parserAttributeAspectContribs::[Pair<String String>] with [], ++;
+monoid attribute parserAttributeAspectContribs::[Pair<String String>];
 autocopy attribute parserAttributeAspects::EnvTree<String>;
 
-monoid attribute allTerminals :: [Decorated SyntaxDcl] with [], ++;
-monoid attribute allIgnoreTerminals :: [String] with [], ++;
-monoid attribute allMarkingTerminals :: [String] with [], ++;
-monoid attribute allProductions :: [Decorated SyntaxDcl] with [], ++;
-monoid attribute allNonterminals :: [Decorated SyntaxDcl] with [], ++;
-monoid attribute disambiguationClasses :: [Decorated SyntaxDcl] with [], ++;
+monoid attribute allTerminals :: [Decorated SyntaxDcl];
+monoid attribute allIgnoreTerminals :: [String];
+monoid attribute allMarkingTerminals :: [String];
+monoid attribute allProductions :: [Decorated SyntaxDcl];
+monoid attribute allNonterminals :: [Decorated SyntaxDcl];
+monoid attribute disambiguationClasses :: [Decorated SyntaxDcl];
 synthesized attribute classDomContribs :: String;
 synthesized attribute classSubContribs :: String;
 autocopy attribute containingGrammar :: String;
-monoid attribute lexerClassRefDcls :: String with "", ++;
+monoid attribute lexerClassRefDcls :: String;
 synthesized attribute exportedProds :: [String];
 synthesized attribute hasCustomLayout :: Boolean;
-monoid attribute layoutContribs :: [Pair<String String>] with [], ++; -- prod/nt name, prod/nt/term name
+monoid attribute layoutContribs :: [Pair<String String>]; -- prod/nt name, prod/nt/term name
 autocopy attribute layoutTerms::EnvTree<String>;
 
 autocopy attribute prefixesForTerminals :: EnvTree<String>;
@@ -46,7 +46,7 @@ autocopy attribute componentGrammarMarkingTerminals :: EnvTree<[String]>;
 -- Creating unambiguous <PP>s; this is a multiset used to accumulate all the
 -- names for terminals, and the actual name for <PP> will be modified to
 -- disambiguate if it would be ambiguous.
-monoid attribute prettyNamesAccum::[Pair<String String>] with [], ++;
+monoid attribute prettyNamesAccum::[Pair<String String>];
 autocopy attribute prettyNames::tm:Map<String String>;
 
 
@@ -248,7 +248,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
         case head(rhsRef) of
         | syntaxNonterminal(_,_,_,_,_)
           when !head(rhsRef).hasCustomLayout &&
-               containsBy(stringEq, top.fullName, head(rhsRef).exportedProds) ->
+               contains(top.fullName, head(rhsRef).exportedProds) ->
           [pair(head(rhsRef).fullName, ns.fullName)]
         | _ -> []
         end,
@@ -447,10 +447,6 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
     "  </DisambiguationFunction>\n";
 }
 
-function syntaxDclLte
-Boolean ::= l::SyntaxDcl r::SyntaxDcl
-{
-  return l.sortKey <= r.sortKey;
 {-- Sort key PREFIXES are as follows:
     | syntaxLexerClass(_,_,_)           ->  AAA
     | syntaxParserAttribute(_,_,_)      ->  BBB
@@ -459,6 +455,11 @@ Boolean ::= l::SyntaxDcl r::SyntaxDcl
     | syntaxNonterminal(_,_)            ->  EEE
     | syntaxProduction(_,_,_,_)         ->  FFF
 -}
+instance Eq SyntaxDcl {
+  eq = \ l::SyntaxDcl r::SyntaxDcl -> l.sortKey == r.sortKey;
+}
+instance Ord SyntaxDcl {
+  lte = \ l::SyntaxDcl r::SyntaxDcl -> l.sortKey <= r.sortKey;
 }
 
 function xmlCopperRef

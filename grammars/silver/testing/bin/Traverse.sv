@@ -17,8 +17,7 @@ IOVal<a> ::= startDir::String paths::[String]
    = if   ! headIsDir.iovalue || skipIt.iovalue
      then ioval ( headIsDir.io, [ ] )
      else ioval ( dirContents.io,   -- add sorted list of dir contents to list
-                  sortBy ( stringLte, 
-                           prependAll ( head(paths), dirContents.iovalue ) ) ) ;
+                  sort ( prependAll ( head(paths), dirContents.iovalue ) ) ) ;
 
  {- Thought links were a bug, they seem not to be.  It maybe the 
     size of the Java stack that was the problem.

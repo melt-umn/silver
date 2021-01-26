@@ -14,7 +14,7 @@ top::ASTPattern ::= prodName::String children::ASTPatterns annotations::NamedAST
   children.matchWith = case top.matchWith of nonterminalAST(_, c, _) -> c end;
   annotations.matchWith = case top.matchWith of nonterminalAST(_, _, a) -> a.bindings end;
   top.substitution =
-    do (bindMaybe, returnMaybe) {
+    do {
       case top.matchWith of
       | nonterminalAST(otherProdName, _, _) when prodName == otherProdName -> just(unit())
       | _ -> nothing()
@@ -33,7 +33,7 @@ top::ASTPattern ::= h::ASTPattern t::ASTPattern
   h.matchWith = case top.matchWith of listAST(consAST(h, _)) -> h end;
   t.matchWith = case top.matchWith of listAST(consAST(_, t)) -> listAST(t) end;
   top.substitution =
-    do (bindMaybe, returnMaybe) {
+    do {
       case top.matchWith of
       | listAST(consAST(_, _)) -> just(unit())
       | _ -> nothing()
@@ -135,7 +135,7 @@ top::ASTPatterns ::= h::ASTPattern t::ASTPatterns
   h.matchWith = case top.matchWith of consAST(h, _) -> h end;
   t.matchWith = case top.matchWith of consAST(_, t) -> t end;
   top.substitution =
-    do (bindMaybe, returnMaybe) {
+    do {
       case top.matchWith of
       | consAST(_, _) -> just(unit())
       | _ -> nothing()
@@ -175,7 +175,7 @@ top::NamedASTPatterns ::= h::NamedASTPattern t::NamedASTPatterns
 {
   top.pps = h.pp :: t.pps;
   top.substitution =
-    do (bindMaybe, returnMaybe) {
+    do {
       hSubstitution::[Pair<String AST>] <- h.substitution;
       tSubstitution::[Pair<String AST>] <- t.substitution;
       return hSubstitution ++ tSubstitution;
@@ -212,6 +212,6 @@ top::NamedASTPattern ::= n::String v::ASTPattern
   v.matchWith =
     fromMaybe(
       error("Unexpected annotation " ++ n),
-      lookupBy(stringEq, n, top.matchWith));
+      lookup(n, top.matchWith));
   top.substitution = v.substitution;
 }

@@ -151,7 +151,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
     ];
   
   local usage :: String = 
-    "Usage: silver [options] grammar:to:build\n\nFlag options:\n" ++ implode("\n", sortBy(stringLte, flagdescs)) ++ "\n";
+    "Usage: silver [options] grammar:to:build\n\nFlag options:\n" ++ implode("\n", sort(flagdescs)) ++ "\n";
   
   -- Parse the command line
   production a :: CmdArgs = interpretCmdArgs(flags, args);

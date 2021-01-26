@@ -78,7 +78,7 @@ top::Type ::= nt::Type  hidden::Type
   top.idNameForGenArb = "WTFnrOrDecTypeExpr";
 }
 aspect production functionType
-top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
+top::Type ::= _ _
 {
   -- err, shouldn't happen?
   top.idNameForGenArb = "FUNCTION";

@@ -8,11 +8,19 @@ import silver:util:treeset as set;
  -}
 type Graph<a> foreign;
 
+{--
+ - Returns an empty graph using Ord for comparison.
+ -}
+function empty
+Ord a => Graph<a> ::=
+{
+  return emptyWith(compare);
+}
 
 {--
  - Returns an empty graph using the specified vertex comparator.
  -}
-function empty
+function emptyWith
 Graph<a> ::= comparator::(Integer ::= a a)
 {
   return error("NYI");

@@ -74,9 +74,24 @@ top::Type ::= tv::TyVar
 aspect production appType
 top::Type ::= c::Type a::Type
 {
-  top.typepp = prettyTypeWith(top.baseType, top.boundVariables) ++
-    if null(top.argTypes) then ""
-    else "<" ++ implode(" ", map(prettyTypeWith(_, top.boundVariables), top.argTypes)) ++ ">";
+  top.typepp =
+    case c.baseType of
+    | functionType(params, namedParams) -> "(" ++
+        (if length(top.argTypes) > params + length(namedParams)
+         then prettyTypeWith(head(drop(params + length(namedParams), top.argTypes)), top.boundVariables)
+         else "_") ++ " ::= " ++
+         implode(" ", map(prettyTypeWith(_, top.boundVariables), take(params, top.argTypes))) ++
+         (if length(top.argTypes) < params then replicate(params - length(top.argTypes), " _") else "") ++
+         concat(
+           zipWith(\ np::String t::Type -> s"; ${np}::${prettyTypeWith(t, top.boundVariables)}", namedParams, drop(params, top.argTypes)) ++
+           map(\ np::String -> s"; ${np}::_", drop(length(top.argTypes) - (params + length(namedParams)), namedParams))) ++ ")" ++
+         if length(top.argTypes) <= params + length(namedParams) + 1 then ""
+         else "<" ++ implode(" ", map(prettyTypeWith(_, top.boundVariables), drop(params + length(namedParams) + 1, top.argTypes))) ++ ">"
+    | _ -> prettyTypeWith(top.baseType, top.boundVariables) ++
+      if null(top.argTypes) then ""
+      else "<" ++ implode(" ", map(prettyTypeWith(_, top.boundVariables), top.argTypes)) ++
+        replicate(length(top.argTypes) - top.baseType.kindArity, " _") ++ ">"
+    end;
 }
 
 aspect production errorType
@@ -141,10 +156,9 @@ top::Type ::= nt::Type  hidden::Type
 }
 
 aspect production functionType
-top::Type ::= out::Type params::[Type] namedParams::[NamedArgType]
+top::Type ::= params::Integer namedParams::[String]
 {
-  top.typepp = "(" ++ out.typepp ++ " ::= " ++ implode(" ", mapTypePP(params, top.boundVariables)) ++
-    (if null(namedParams) then ")" else mapNamedPP(namedParams, top.boundVariables) ++ ")");
+  top.typepp = s"(_ ::=${replicate(params, " _") }${if null(namedParams) then "" else "; " ++ implode("::_; ", namedParams) ++ "::_"})";
 }
 
 --------------------------------------------------------------------------------
@@ -157,29 +171,9 @@ String ::= tv::TyVar  bv::[TyVar]
 function findAbbrevHelp
 String ::= tv::TyVar  bv::[TyVar]  vn::[String]
 {
-  return if null(vn) || null(bv) then "V_" ++ toString(tv.extractTyVarRep)
-         else if tyVarEqual(tv, head(bv))
+  return if null(vn) then "a" ++ toString(length(bv))
+         else if null(bv) then "V_" ++ toString(tv.extractTyVarRep)
+         else if tv == head(bv)
               then head(vn)
               else findAbbrevHelp(tv, tail(bv), tail(vn));
-}
-
--- TODO: oh crap is this stupid
-function mapTypePP
-[String] ::= tes::[Type] bv::[TyVar]
-{
-  local fst :: Type = head(tes);
-  fst.boundVariables = bv;
-  
-  return if null(tes) then []
-         else fst.typepp :: mapTypePP(tail(tes), bv);
-}
--- This is crummy:
-function mapNamedPP
-String ::= tes::[NamedArgType] bv::[TyVar]
-{
-  local fst :: NamedArgType = head(tes);
-  fst.boundVariables = bv;
-  
-  return if null(tes) then ""
-         else fst.typepp ++ mapNamedPP(tail(tes), bv);
 }

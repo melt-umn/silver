@@ -124,7 +124,10 @@ top::Expr ::= q::Decorated QName
 aspect production productionReference
 top::Expr ::= q::Decorated QName
 {
-  top.translation = makeProdName(q.lookupValue.fullName) ++ ".factory";
+  top.translation =
+    if null(typeScheme.contexts)
+    then makeProdName(q.lookupValue.fullName) ++ ".factory"
+    else s"new ${makeProdName(q.lookupValue.fullName)}.Factory(${implode(", ", contexts.transContexts)})";
   top.lazyTranslation = top.translation;
   top.invokeTranslation =
     -- static constructor invocation
@@ -137,7 +140,10 @@ top::Expr ::= q::Decorated QName
   -- functions, unlike productions, can return a type variable.
   -- as such, we have to cast it to the real inferred final type.
   top.translation = s"((${finalType(top).transType})${top.lazyTranslation})";
-  top.lazyTranslation = makeProdName(q.lookupValue.fullName) ++ ".factory";
+  top.lazyTranslation =
+    if null(typeScheme.contexts)
+    then makeProdName(q.lookupValue.fullName) ++ ".factory"
+    else s"${makeProdName(q.lookupValue.fullName)}.getFactory(${implode(", ", contexts.transContexts)})";
   top.invokeTranslation =
     -- static method invocation
     s"((${finalType(top).outputType.transType})${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ", [makeOriginContextRef(top)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs))}))";
@@ -146,7 +152,7 @@ top::Expr ::= q::Decorated QName
 aspect production classMemberReference
 top::Expr ::= q::Decorated QName
 {
-  top.translation = s"((${finalType(top).transType})${context.transContext}.${makeInstanceMemberAccessorName(q.lookupValue.fullName)}())";
+  top.translation = s"((${finalType(top).transType})${instHead.transContext}.${makeInstanceMemberAccessorName(q.lookupValue.fullName)}(${implode(", ", contexts.transContexts)}))";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
@@ -441,65 +447,6 @@ top::Expr ::= '!' e::Expr
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
--- Some notes on numbers:
--- Use `Integer.valueOf` (et al) instead of `new Integer`. It's more efficient.
--- Let Java's autoboxing do the heavy lifting for us, why not? It's smarter.
--- Primitive casts ensure `Integer == Integer` will be value-eq, not reference-eq
-function comparisonTranslation
-String ::= e1::Decorated Expr  op::String  e2::Decorated Expr
-{
-  return case finalType(e1) of
-  | intType() -> s"(${e1.translation} ${op} (int)${e2.translation})"
-  | floatType() -> s"(${e1.translation} ${op} (float)${e2.translation})"
-  | boolType() -> s"(${e1.translation} ${op} (boolean)${e2.translation})"
-  | stringType() -> s"(${e1.translation}.toString().compareTo(${e2.translation}.toString()) ${op} 0)"
-  | terminalIdType() -> s"(${e1.translation} ${op} (int)${e2.translation})"
-  | t -> error(s"INTERNAL ERROR: no ${op} trans for type ${prettyType(t)}")
-  end;
-}
-
-aspect production gt
-top::Expr ::= e1::Expr '>' e2::Expr
-{
-  top.translation = comparisonTranslation(e1, ">", e2);
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-}
-
-aspect production lt
-top::Expr ::= e1::Expr '<' e2::Expr
-{
-  top.translation = comparisonTranslation(e1, "<", e2);
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-}
-
-aspect production gteq
-top::Expr ::= e1::Expr '>=' e2::Expr
-{
-  top.translation = comparisonTranslation(e1, ">=", e2);
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-}
-
-aspect production lteq
-top::Expr ::= e1::Expr '<=' e2::Expr
-{
-  top.translation = comparisonTranslation(e1, "<=", e2);
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-}
-
-aspect production eqeq
-top::Expr ::= e1::Expr '==' e2::Expr
-{
-  top.translation = comparisonTranslation(e1, "==", e2);
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-}
-
-aspect production neq
-top::Expr ::= e1::Expr '!=' e2::Expr
-{
-  top.translation = comparisonTranslation(e1, "!=", e2);
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-}
-
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
@@ -571,21 +518,6 @@ top::Expr ::= s::String_t
 {
   top.translation = s"(new common.StringCatter(${s.lexeme}))";
   top.lazyTranslation = top.translation;
-}
-
-aspect production errorPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
-{
-  top.translation = error("Internal compiler error: translation not defined in the presence of errors");
-  top.lazyTranslation = top.translation;
-}
-
-aspect production stringPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
-{
-  top.translation = s"new common.StringCatter(${e1.translation}, ${e2.translation})";
-
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
 aspect production exprsEmpty

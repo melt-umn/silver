@@ -1,22 +1,24 @@
 grammar silver:core;
 
-{@comment
-  Applies a function to each element of the list.
-
-  This is a list of links.
-  @link[map]
-  @link[foldr]
-
-  param f  The function to apply
-  param l  The list to map over
-  return  The list containing the results of applying the function to l
-@}
-function map
-[b] ::= f::(b ::= a)  l::[a]
-{
-  return if null(l) then []
-         else f(head(l)) :: map(f, tail(l));
+instance Functor [] {
+  map = \ f::(b ::= a) l::[a] ->
+    if null(l) then []
+    else f(head(l)) :: map(f, tail(l));
 }
+
+instance Apply [] {
+  ap = apM;
+}
+
+instance Applicative [] {
+  pure = \ x::a -> [x];
+}
+
+instance Bind [] {
+  bind = \ x::[a] y::([b] ::= a) -> flatMap(y, x);
+}
+
+instance Monad [] {}
 
 {--
  - Applies an operator right-associatively over a list.
@@ -129,6 +131,19 @@ Boolean ::= eq::(Boolean ::= a a)  elem::a  lst::[a]
 }
 
 {--
+ - Determine if an element appears in a list.
+ -
+ - @param elem  The element to search for
+ - @param lst  The list to search
+ - @return  True if == is true for some element of the list, false otherwise.
+ -}
+function contains
+Eq a => Boolean ::= elem::a  lst::[a]
+{
+  return containsBy(eq, elem, lst);
+}
+
+{--
  - Removes all duplicates from a list.
  -
  - @param eq  The equality function to use
@@ -140,6 +155,18 @@ function nubBy
 {
  return if null(xs) then []
         else head(xs) :: nubBy(eq, removeBy(eq, head(xs), tail(xs)));
+}
+
+{--
+ - Removes all duplicates from a list.
+ -
+ - @param xs  The list to remove duplicates from
+ - @return  A list containing no duplicates, according to ==.
+ -}
+function nub
+Eq a => [a] ::= xs::[a]
+{
+  return nubBy(eq, xs);
 }
 
 {--
@@ -158,6 +185,19 @@ function removeBy
 }
 
 {--
+ - Removes all instances of an element from a list.
+ -
+ - @param x  The element to remove
+ - @param xs  The list to remove the element from
+ - @return  A list with no remaining instances of 'x' according to ==
+ -}
+function remove
+Eq a => [a] ::= x::a  xs::[a]
+{
+  return removeBy(eq, x, xs);
+}
+
+{--
  - Removes all instances of several elements from a list: xs - ys
  -
  - @param eq  The equality function to use
@@ -170,6 +210,19 @@ function removeAllBy
 {
  return if null(ys) then xs
         else removeAllBy(eq, tail(ys), removeBy(eq, head(ys), xs));
+}
+
+{--
+ - Removes all instances of several elements from a list: xs - ys
+ -
+ - @param ys  The list of elements to remove
+ - @param xs  The list to remove elements from
+ - @return  A list with no remaining instances in 'ys' according to 'eq'
+ -}
+function removeAll
+Eq a => [a] ::= ys::[a]  xs::[a]
+{
+  return removeAllBy(eq, ys, xs);
 }
 
 {--
@@ -197,31 +250,6 @@ a ::= lst::[a]
 {
   return if null(tail(lst)) then head(lst)
          else last(tail(lst));
-}
-
-{--
- - Concatenates a list of lists.
- -
- - @param lst  A list containing lists
- - @return  A flattened list
- -}
-function concat
-[a] ::= lst::[[a]]
-{
-  return foldr(append, [], lst);
-}
-
-{--
- - Map a function over a list, and then conatenates the results together.
- -
- - @param f  A function to apply to each element of a list, returning a list.
- - @param lst  A list
- - @return  The combined list
- -}
-function flatMap
-[b] ::= f::([b] ::= a)  lst::[a]
-{
-  return concat(map(f, lst));
 }
 
 function drop
@@ -256,7 +284,7 @@ function takeUntil
          else head(lst) :: takeUntil(f, tail(lst));
 }
 
-function positionOf
+function positionOfBy
 Integer ::= eq::(Boolean ::= a a) x::a xs::[a]
 {
   return positionOfHelper(eq,x,xs,0);
@@ -268,6 +296,12 @@ Integer ::= eq::(Boolean ::= a a) x::a xs::[a] currentPos::Integer
   return if null(xs) then -1
          else if eq(x, head(xs)) then currentPos
          else positionOfHelper(eq, x, tail(xs), currentPos+1);
+}
+
+function positionOf
+Eq a => Integer ::= x::a xs::[a]
+{
+  return positionOfBy(eq, x, xs);
 }
 
 function repeat
@@ -307,6 +341,13 @@ function sortBy
 {
   return sortByHelp(lte, lst, length(lst));
 }
+
+function sort
+Ord a => [a] ::= lst::[a]
+{
+  return sortByHelp(lte, lst, length(lst));
+}
+
 function sortByHelp -- do not use
 [a] ::= lte::(Boolean ::= a a) lst::[a] upTo::Integer
 {
@@ -356,6 +397,12 @@ Pair<[a] [a]> ::= eq::(Boolean ::= a a) f::a l::[a]
          else pair(head(l) :: recurse.fst, recurse.snd);
 }
 
+function group
+Eq a => [[a]] ::= l::[a]
+{
+  return groupBy(eq, l);
+}  
+
 {--
  - Inserts the separator in between all elements of the list.
  -}
@@ -379,6 +426,12 @@ function unionBy
          ++ unionBy(eq, tail(l), r);
 }
 
+function union
+Eq a => [a] ::= l::[a] r::[a]
+{
+  return unionBy(eq, l, r);
+}
+
 function intersectBy
 [a] ::= eq::(Boolean ::= a a) l::[a] r::[a]
 {
@@ -390,10 +443,22 @@ function intersectBy
          ++ intersectBy(eq, tail(l), r);
 }
 
+function intersect
+Eq a => [a] ::= l::[a] r::[a]
+{
+  return intersectBy(eq, l, r);
+}
+
 function unionsBy
 [a] ::= eq::(Boolean ::= a a) ss::[[a]]
 {
   return nubBy(eq, concat(ss));
+}
+
+function unions
+Eq a => [a] ::= ss::[[a]]
+{
+  return nub(concat(ss));
 }
 
 function powerSet
@@ -441,7 +506,7 @@ function cons
   "java" : return "new common.ConsCell(%?h?%, %?t?%)";
 }
 
-function append
+function appendList
 [a] ::= l1::[a] l2::[a]
 {
   return if l1.i_emptyList

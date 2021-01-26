@@ -16,7 +16,7 @@ public interface ${className} {
 		return this;
 	}
 
-${sflatMap(\ c::Context -> s"\tpublic ${c.transType} ${c.transContextSuperAccessorName}();\n", cl.contexts)}
+${flatMap(\ c::Context -> s"\tpublic ${c.transType} ${c.transContextSuperAccessorName}();\n", cl.contexts)}
 
 ${body.translation}
 
@@ -37,17 +37,17 @@ top::ClassBody ::=
   top.translation = "";
 }
 
-aspect production classBodyItem
-top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
+aspect production constraintClassBodyItem
+top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
 {
-  top.translation = s"\t${ty.typerep.transType} ${makeInstanceMemberAccessorName(id.name)}();";
+  top.translation = s"\t${ty.typerep.transCovariantType} ${makeInstanceMemberAccessorName(id.name)}(${implode(", ", map((.contextParamTrans), cl.contexts))});";
 }
 
-aspect production defaultClassBodyItem
-top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
+aspect production defaultConstraintClassBodyItem
+top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
 {
   top.translation = s"""
-	default ${ty.typerep.transClassType} ${makeInstanceMemberAccessorName(id.name)}() {
+	default ${ty.typerep.transCovariantType} ${makeInstanceMemberAccessorName(id.name)}(${implode(", ", map((.contextParamTrans), cl.contexts))}) {
 		final common.DecoratedNode context = common.TopNode.singleton;
 		return ${e.translation};
 	}

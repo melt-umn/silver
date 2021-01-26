@@ -1,5 +1,7 @@
 grammar silver:compiler:extension:patternmatching;
 
+imports silver:util:treeset as ts;
+
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
@@ -21,7 +23,8 @@ terminal When_kwd 'when' lexer classes {KEYWORD,RESERVED};
 terminal Matches_kwd 'matches' lexer classes {KEYWORD};
 
 -- MR | ...
-nonterminal MRuleList with location, config, unparse, env, frame, errors, matchRuleList, matchRulePatternSize;
+nonterminal MRuleList with location, config, unparse, env, frame, errors, freeVars, matchRuleList, matchRulePatternSize;
+propagate errors, freeVars on MRuleList;
 
 -- Turns MRuleList (of MatchRules) into [AbstractMatchRule]
 synthesized attribute matchRuleList :: [AbstractMatchRule];
@@ -29,7 +32,7 @@ synthesized attribute matchRuleList :: [AbstractMatchRule];
 autocopy attribute matchRulePatternSize :: Integer;
 
 -- P -> E
-nonterminal MatchRule with location, config, unparse, env, frame, errors, matchRuleList, matchRulePatternSize;
+nonterminal MatchRule with location, config, unparse, env, frame, errors, freeVars, matchRuleList, matchRulePatternSize;
 nonterminal AbstractMatchRule with location, unparse, headPattern, isVarMatchRule, expandHeadPattern, hasCondition;
 
 -- The head pattern of a match rule
@@ -43,6 +46,7 @@ synthesized attribute hasCondition::Boolean;
 
 -- P , ...
 nonterminal PatternList with location, config, unparse, patternList, env, frame, errors, patternVars, patternVarEnv;
+propagate errors on PatternList;
 
 -- Turns PatternList into [Pattern]
 synthesized attribute patternList :: [Decorated Pattern];
@@ -65,6 +69,7 @@ concrete production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "case " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
+  propagate freeVars;
 
   ml.matchRulePatternSize = length(es.rawExprs);
   top.errors <- ml.errors;
@@ -536,7 +541,6 @@ concrete production mRuleList_one
 top::MRuleList ::= m::MatchRule
 {
   top.unparse = m.unparse;
-  top.errors := m.errors;  
 
   top.matchRuleList = m.matchRuleList;
 }
@@ -545,7 +549,6 @@ concrete production mRuleList_cons
 top::MRuleList ::= h::MatchRule '|' t::MRuleList
 {
   top.unparse = h.unparse ++ " | " ++ t.unparse;
-  top.errors := h.errors ++ t.errors;
   
   top.matchRuleList = h.matchRuleList ++ t.matchRuleList;
 }
@@ -555,6 +558,7 @@ top::MatchRule ::= pt::PatternList '->' e::Expr
 {
   top.unparse = pt.unparse ++ " -> " ++ e.unparse;
   top.errors := pt.errors; -- e.errors is examined later, after transformation.
+  top.freeVars := ts:removeAll(pt.patternVars, e.freeVars);
   
   top.errors <-
     if length(pt.patternList) == top.matchRulePatternSize then []
@@ -570,6 +574,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr '->' e::Expr
 {
   top.unparse = pt.unparse ++ " when " ++ cond.unparse ++ " -> " ++ e.unparse;
   top.errors := pt.errors; -- e.errors is examined later, after transformation, as is cond.errors
+  top.freeVars := ts:removeAll(pt.patternVars, cond.freeVars ++ e.freeVars);
   
   top.errors <-
     if length(pt.patternList) == top.matchRulePatternSize then []
@@ -585,6 +590,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern '->' e
 {
   top.unparse = pt.unparse ++ " when " ++ cond.unparse ++ " matches " ++ p.unparse ++ " -> " ++ e.unparse;
   top.errors := pt.errors; -- e.errors is examined later, after transformation, as is cond.errors
+  top.freeVars := ts:removeAll(pt.patternVars, cond.freeVars ++ ts:removeAll(p.patternVars, e.freeVars));
   
   top.errors <-
     if length(pt.patternList) == top.matchRulePatternSize then []
@@ -620,7 +626,7 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Pair<Expr Maybe<P
             fromMaybe(
               decorate wildcPattern('_', location=top.location)
                 with { config=head(pl).config; env=head(pl).env; patternVarEnv = []; },
-              lookupBy(stringEq, n, head(pl).patternNamedSubPatternList)),
+              lookup(n, head(pl).patternNamedSubPatternList)),
           named) ++
         tail(pl),
         cond, e, location=top.location);
@@ -635,7 +641,6 @@ concrete production patternList_one
 top::PatternList ::= p::Pattern
 {
   top.unparse = p.unparse;
-  top.errors := p.errors;
 
   top.patternVars = p.patternVars;
   p.patternVarEnv = top.patternVarEnv;
@@ -653,7 +658,6 @@ abstract production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
   top.unparse = p.unparse ++ (if ps1.unparse == "" then "" else ", " ++ ps1.unparse);
-  top.errors := p.errors ++ ps1.errors;
 
   top.patternVars = p.patternVars ++ ps1.patternVars;
   ps1.patternVarEnv = p.patternVarEnv ++ p.patternVars;
@@ -666,7 +670,6 @@ concrete production patternList_nil
 top::PatternList ::=
 {
   top.unparse = "";
-  top.errors := [];
 
   top.patternVars = [];
   top.patternList = [];
@@ -741,7 +744,7 @@ Pair<PrimPattern [Message]> ::= currExpr::Expr restExprs::[Expr]  failCase::Expr
   -- TODO: head(mrs).location is probably not the correct thing to use here?? (generally)
 
   local annos :: [String] =
-    nubBy(stringEq, map(fst, flatMap((.patternNamedSubPatternList), map((.headPattern), mrs))));
+    nub(map(fst, flatMap((.patternNamedSubPatternList), map((.headPattern), mrs))));
   local annoAccesses :: [Expr] =
     map(\ n::String -> access(currExpr, '.', qNameAttrOccur(qName(l, n), location=l), location=l), annos);
   
@@ -819,15 +822,13 @@ Expr ::= e::Decorated Expr
          else exprRef(e, location=e.location);
 }
 
-function mruleEqForGrouping
-Boolean ::= a::AbstractMatchRule b::AbstractMatchRule
-{
-  return a.headPattern.patternSortKey == b.headPattern.patternSortKey;
+instance Eq AbstractMatchRule {
+  eq = \ a::AbstractMatchRule b::AbstractMatchRule ->
+    a.headPattern.patternSortKey == b.headPattern.patternSortKey;
 }
-function mruleLTEForSorting
-Boolean ::= a::AbstractMatchRule b::AbstractMatchRule
-{
-  return a.headPattern.patternSortKey <= b.headPattern.patternSortKey;
+instance Ord AbstractMatchRule {
+  lte = \ a::AbstractMatchRule b::AbstractMatchRule ->
+    a.headPattern.patternSortKey <= b.headPattern.patternSortKey;
 }
 {--
  - Given a list of match rules, examine the "head pattern" of each.
@@ -838,7 +839,7 @@ Boolean ::= a::AbstractMatchRule b::AbstractMatchRule
 function groupMRules
 [[AbstractMatchRule]] ::= l::[AbstractMatchRule]
 {
-  return groupBy(mruleEqForGrouping, sortBy(mruleLTEForSorting, l));
+  return group(sort(l));
 }
 
 {--

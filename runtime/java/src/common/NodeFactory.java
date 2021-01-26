@@ -18,10 +18,6 @@ public abstract class NodeFactory<T> implements Typed {
 	 */
 	public abstract T invoke(final common.OriginContext originCtx, final Object[] args, final Object[] namedArgs);
 	
-	// Override with a more specific return type
-	@Override
-	public abstract FunctionTypeRep getType();
-	
 	// Below are just utilities
 	
 	/**

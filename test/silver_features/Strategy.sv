@@ -33,23 +33,34 @@ top::SStmt ::= n::String e::SExpr
   propagate elimPlusZero;
 }
 
-equalityTest(
-  hackUnparse(addSExpr(constSExpr(42), constSExpr(0)).elimPlusZero),
-  "silver_features:constSExpr(42)",
-  String, silver_tests);
+attribute isEqualTo, isEqual occurs on SExpr, SStmt;
+propagate isEqualTo, isEqual on SExpr, SStmt;
+
+-- TODO: Remove these once default instance exists
+instance Eq SExpr {
+  eq = \ a::SExpr b::SExpr -> decorate a with {isEqualTo = b;}.isEqual;
+}
+instance Eq SStmt {
+  eq = \ a::SStmt b::SStmt -> decorate a with {isEqualTo = b;}.isEqual;
+}
+
 
 equalityTest(
-  hackUnparse(addSExpr(addSExpr(constSExpr(42), constSExpr(0)), constSExpr(0)).elimPlusZero),
-  "silver_features:constSExpr(42)",
-  String, silver_tests);
+  addSExpr(constSExpr(42), constSExpr(0)).elimPlusZero,
+  constSExpr(42),
+  SExpr, silver_tests);
 
 equalityTest(
-  hackUnparse(
-    seqSStmt(
-      assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0))),
-      assignSStmt("b", addSExpr(addSExpr(idSExpr("a"), constSExpr(0)), constSExpr(0)))).elimPlusZero),
-  "silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:constSExpr(42)), silver_features:assignSStmt(\"b\", silver_features:idSExpr(\"a\")))",
-  String, silver_tests);
+  addSExpr(addSExpr(constSExpr(42), constSExpr(0)), constSExpr(0)).elimPlusZero,
+  constSExpr(42),
+  SExpr, silver_tests);
+
+equalityTest(
+  seqSStmt(
+    assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0))),
+    assignSStmt("b", addSExpr(addSExpr(idSExpr("a"), constSExpr(0)), constSExpr(0)))).elimPlusZero,
+  seqSStmt(assignSStmt("a", constSExpr(42)), assignSStmt("b", idSExpr("a"))),
+  SStmt, silver_tests);
 
 partial strategy attribute removeLastStmt =
     rule on SStmt of
@@ -60,24 +71,21 @@ partial strategy attribute removeLastStmt =
 propagate removeLastStmt on SStmt, SExpr;
 
 equalityTest(
-  hackUnparse(
-    seqSStmt(
-      assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0))),
-      assignSStmt("b", addSExpr(addSExpr(idSExpr("a"), constSExpr(0)), constSExpr(0)))).removeLastStmt),
-  "silver:core:just(silver_features:assignSStmt(\"a\", silver_features:addSExpr(silver_features:constSExpr(42), silver_features:constSExpr(0))))",
-  String, silver_tests);
+  seqSStmt(
+    assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0))),
+    assignSStmt("b", addSExpr(addSExpr(idSExpr("a"), constSExpr(0)), constSExpr(0)))).removeLastStmt,
+  just(assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0)))),
+  Maybe<SStmt>, silver_tests);
 
 equalityTest(
-  hackUnparse(
-    assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0))).removeLastStmt),
-  "silver:core:nothing()",
-  String, silver_tests);
+  assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0))).removeLastStmt,
+  nothing(),
+  Maybe<SStmt>, silver_tests);
 
 equalityTest(
-  hackUnparse(
-    addSExpr(constSExpr(42), constSExpr(0)).removeLastStmt),
-  "silver:core:nothing()",
-  String, silver_tests);
+  addSExpr(constSExpr(42), constSExpr(0)).removeLastStmt,
+  nothing(),
+  Maybe<SExpr>, silver_tests);
 
 
 functor attribute incConstsF occurs on SStmt, SExpr;
@@ -99,10 +107,9 @@ strategy attribute incTwice = incConstsF <* incConsts
 propagate incTwice on SStmt, SExpr;
 
 equalityTest(
-  hackUnparse(
-    assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0))).incTwice),
-  "silver_features:assignSStmt(\"a\", silver_features:addSExpr(silver_features:constSExpr(44), silver_features:constSExpr(2)))",
-  String, silver_tests);
+  assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0))).incTwice,
+  assignSStmt("a", addSExpr(constSExpr(44), constSExpr(2))),
+  SStmt, silver_tests);
 
 
 autocopy attribute target::String occurs on SStmt, SExpr;
@@ -115,24 +122,22 @@ strategy attribute incTargetConsts =
 propagate incTargetConsts on SStmt, SExpr;
 
 equalityTest(
-  hackUnparse(
-    decorate
-      seqSStmt(
-        assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0))),
-        assignSStmt("b", addSExpr(addSExpr(idSExpr("a"), constSExpr(2)), constSExpr(17))))
-    with {target = "b";}.incTargetConsts),
-  "silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:addSExpr(silver_features:constSExpr(42), silver_features:constSExpr(0))), silver_features:assignSStmt(\"b\", silver_features:addSExpr(silver_features:addSExpr(silver_features:idSExpr(\"a\"), silver_features:constSExpr(3)), silver_features:constSExpr(18))))",
-  String, silver_tests);
+  decorate
+    seqSStmt(
+      assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0))),
+      assignSStmt("b", addSExpr(addSExpr(idSExpr("a"), constSExpr(2)), constSExpr(17))))
+  with {target = "b";}.incTargetConsts,
+  seqSStmt(assignSStmt("a", addSExpr(constSExpr(42), constSExpr(0))), assignSStmt("b", addSExpr(addSExpr(idSExpr("a"), constSExpr(3)), constSExpr(18)))),
+  SStmt, silver_tests);
 
 strategy attribute incThenElim = incConsts <* elimPlusZero
   occurs on SStmt, SExpr;
 propagate incThenElim on SStmt, SExpr;
 
 equalityTest(
-  hackUnparse(
-    assignSStmt("a", addSExpr(constSExpr(42), constSExpr(-1))).incThenElim),
-  "silver_features:assignSStmt(\"a\", silver_features:constSExpr(43))",
-  String, silver_tests);
+  assignSStmt("a", addSExpr(constSExpr(42), constSExpr(-1))).incThenElim,
+  assignSStmt("a", constSExpr(43)),
+  SStmt, silver_tests);
 
 
 strategy attribute incAll = all(incConsts) occurs on SStmt, SExpr;
@@ -142,33 +147,29 @@ partial strategy attribute incFstElimSnd = seqSStmt(incConsts, elimPlusZero) occ
 propagate incAll, incSome, incOne, incFstElimSnd on SStmt, SExpr;
 
 equalityTest(
-  hackUnparse(
-    seqSStmt(
-      assignSStmt("a", constSExpr(1)),
-      assignSStmt("b", constSExpr(2))).incAll),
-  "silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:constSExpr(2)), silver_features:assignSStmt(\"b\", silver_features:constSExpr(3)))",
-  String, silver_tests);
+  seqSStmt(
+    assignSStmt("a", constSExpr(1)),
+    assignSStmt("b", constSExpr(2))).incAll,
+  seqSStmt(assignSStmt("a", constSExpr(2)), assignSStmt("b", constSExpr(3))),
+  SStmt, silver_tests);
 equalityTest(
-  hackUnparse(
-    seqSStmt(
-      assignSStmt("a", constSExpr(1)),
-      assignSStmt("b", constSExpr(2))).incSome),
-  "silver:core:just(silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:constSExpr(2)), silver_features:assignSStmt(\"b\", silver_features:constSExpr(3))))",
-  String, silver_tests);
+  seqSStmt(
+    assignSStmt("a", constSExpr(1)),
+    assignSStmt("b", constSExpr(2))).incSome,
+  just(seqSStmt(assignSStmt("a", constSExpr(2)), assignSStmt("b", constSExpr(3)))),
+  Maybe<SStmt>, silver_tests);
 equalityTest(
-  hackUnparse(
-    seqSStmt(
-      assignSStmt("a", constSExpr(1)),
-      assignSStmt("b", constSExpr(2))).incOne),
-  "silver:core:just(silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:constSExpr(2)), silver_features:assignSStmt(\"b\", silver_features:constSExpr(2))))",
-  String, silver_tests);
+  seqSStmt(
+    assignSStmt("a", constSExpr(1)),
+    assignSStmt("b", constSExpr(2))).incOne,
+  just(seqSStmt(assignSStmt("a", constSExpr(2)), assignSStmt("b", constSExpr(2)))),
+  Maybe<SStmt>, silver_tests);
 equalityTest(
-  hackUnparse(
-    seqSStmt(
-      assignSStmt("a", addSExpr(constSExpr(1), constSExpr(0))),
-      assignSStmt("b", addSExpr(constSExpr(2), constSExpr(0)))).incFstElimSnd),
-  "silver:core:just(silver_features:seqSStmt(silver_features:assignSStmt(\"a\", silver_features:addSExpr(silver_features:constSExpr(2), silver_features:constSExpr(1))), silver_features:assignSStmt(\"b\", silver_features:constSExpr(2))))",
-  String, silver_tests);
+  seqSStmt(
+    assignSStmt("a", addSExpr(constSExpr(1), constSExpr(0))),
+    assignSStmt("b", addSExpr(constSExpr(2), constSExpr(0)))).incFstElimSnd,
+  just(seqSStmt(assignSStmt("a", addSExpr(constSExpr(2), constSExpr(1))), assignSStmt("b", constSExpr(2)))),
+  Maybe<SStmt>, silver_tests);
 
 -- Negative tests
 inherited attribute badInh<a>::a;

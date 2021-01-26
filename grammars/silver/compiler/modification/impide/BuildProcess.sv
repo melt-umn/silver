@@ -69,7 +69,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 
     <!-- 5. plugin dependencies -->
       <copy file="$${lang.composed}.jar" tofile="$${ide.proj.plugin.path}/$${lang.composed}.jar"/>
-      <copy file="$${sh}/jars/CopperRuntime.jar" tofile="$${ide.proj.plugin.path}/CopperRuntime.jar"/>
+      <copy file="$${sh}/jars/CopperCompiler.jar" tofile="$${ide.proj.plugin.path}/CopperCompiler.jar"/>
       <copy file="$${sh}/jars/SilverRuntime.jar" tofile="$${ide.proj.plugin.path}/SilverRuntime.jar"/>
       <copy file="$${sh}/jars/IDEPluginRuntime.jar" tofile="$${ide.proj.plugin.path}/IDEPluginRuntime.jar"/>
     <!-- 10. Ide resources -->

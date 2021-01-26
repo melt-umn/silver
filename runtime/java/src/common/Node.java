@@ -1,7 +1,5 @@
 package common;
 
-import common.exceptions.*;
-
 /**
  * Node represents undecorated nodes.  That is, we have children, but no inherited attributes, yet.
  * 

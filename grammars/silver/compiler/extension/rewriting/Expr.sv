@@ -26,7 +26,7 @@ top::Expr ::= q::Decorated QName _ _
   -- or was decorated implicitly (in which case we need to explicitly decorate it here.)  The same
   -- problem exists when dealing with implicit undecoration.
   top.transform =
-    case lookupBy(stringEq, q.name, top.boundVars) of
+    case lookup(q.name, top.boundVars) of
     | just(bindingIsDecorated) ->
       -- The variable is bound in the rule
       if finalType(top).isDecorated && !bindingIsDecorated
@@ -116,9 +116,26 @@ aspect production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.transform =
-    case e of
-    | productionReference(q) -> prodCallASTExpr(q.lookupValue.fullName, es.transform, anns.transform)
-    | _ -> applyASTExpr(e.transform, es.transform, anns.transform)
+    case e, es of
+    | productionReference(q), _ -> prodCallASTExpr(q.lookupValue.fullName, es.transform, anns.transform)
+    
+    -- Special cases for efficiency (and workaround for inability to use applyAST on functions with constraints)
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
+      when q.name == "silver:core:eq" -> eqeqASTExpr(e1.transform, e2.transform)
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
+      when q.name == "silver:core:neq" -> neqASTExpr(e1.transform, e2.transform)
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
+      when q.name == "silver:core:lt" -> ltASTExpr(e1.transform, e2.transform)
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
+      when q.name == "silver:core:lte" -> lteqASTExpr(e1.transform, e2.transform)
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
+      when q.name == "silver:core:gt" -> gtASTExpr(e1.transform, e2.transform)
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
+      when q.name == "silver:core:gte" -> gteqASTExpr(e1.transform, e2.transform)
+    | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
+      when q.name == "silver:core:append" -> appendASTExpr(e1.transform, e2.transform)
+    
+    | _, _ -> applyASTExpr(e.transform, es.transform, anns.transform)
     end;
 }
 
@@ -217,7 +234,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
         consASTExpr(eUndec.transform, inh.transform),
         nilNamedASTExpr())
     | lexicalLocalReference(qn, _, _) when
-        case lookupBy(stringEq, qn.name, top.boundVars) of
+        case lookup(qn.name, top.boundVars) of
         | just(bindingIsDecorated) -> !bindingIsDecorated
         | nothing() -> false
         end -> 
@@ -373,42 +390,6 @@ top::Expr ::= '!' e::Expr
   top.transform = notASTExpr(e.transform);
 }
 
-aspect production gt
-top::Expr ::= e1::Expr '>' e2::Expr
-{
-  top.transform = gtASTExpr(e1.transform, e2.transform);
-}
-
-aspect production lt
-top::Expr ::= e1::Expr '<' e2::Expr
-{
-  top.transform = ltASTExpr(e1.transform, e2.transform);
-}
-
-aspect production gteq
-top::Expr ::= e1::Expr '>=' e2::Expr
-{
-  top.transform = gteqASTExpr(e1.transform, e2.transform);
-}
-
-aspect production lteq
-top::Expr ::= e1::Expr '<=' e2::Expr
-{
-  top.transform = lteqASTExpr(e1.transform, e2.transform);
-}
-
-aspect production eqeq
-top::Expr ::= e1::Expr '==' e2::Expr
-{
-  top.transform = eqeqASTExpr(e1.transform, e2.transform);
-}
-
-aspect production neq
-top::Expr ::= e1::Expr '!=' e2::Expr
-{
-  top.transform = neqASTExpr(e1.transform, e2.transform);
-}
-
 aspect production intConst
 top::Expr ::= i::Int_t
 {
@@ -467,18 +448,6 @@ aspect production stringConst
 top::Expr ::= s::String_t
 {
   top.transform = stringASTExpr(unescapeString(substring(1, length(s.lexeme) - 1, s.lexeme)));
-}
-
-aspect production stringPlusPlus
-top::Expr ::= e1::Decorated Expr   e2::Decorated Expr
-{
-  top.transform = appendASTExpr(e1.transform, e2.transform);
-}
-
-aspect production errorPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
-{
-  top.transform = appendASTExpr(e1.transform, e2.transform);
 }
 
 aspect production errorLength
@@ -649,7 +618,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   local isDecorated::Boolean =
     case e of
     | lexicalLocalReference(qn, _, _) ->
-      fromMaybe(finalType(e).isDecorated, lookupBy(stringEq, qn.name, top.boundVars))
+      fromMaybe(finalType(e).isDecorated, lookup(qn.name, top.boundVars))
     | _ -> finalType(e).isDecorated
     end;
   top.varBindings = [pair(id.name, isDecorated)];

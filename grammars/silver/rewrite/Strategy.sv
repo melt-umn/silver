@@ -1,10 +1,10 @@
 grammar silver:rewrite;
 
 -- Some of these Strategy productions have very generic names that conflict with core.
--- Users must explicitly import core hiding these names, or perform a qualified import,
+-- Users must explicitly import silver:core hiding these names, or perform a qualified import,
 -- e.g. import silver:rewrite as s;
 
-imports silver:core hiding all, repeat;
+imports silver:core hiding id, all, repeat, sequence;
 
 inherited attribute term::AST;
 synthesized attribute result::Maybe<AST>;
@@ -112,11 +112,7 @@ top::Strategy ::= pattern::ASTPattern result::ASTExpr
   top.pp = pp"rule(${pattern.pp} -> ${result.pp})";
   pattern.matchWith = top.term;
   result.substitutionEnv = pattern.substitution.fromJust;
-  top.result =
-    do (bindMaybe, returnMaybe) {
-      pattern.substitution;
-      return result.value;
-    };
+  top.result = do { pattern.substitution; return result.value; };
 }
 
 abstract production require
@@ -126,7 +122,7 @@ top::Strategy ::= pattern::ASTPattern cond::ASTExpr
   pattern.matchWith = top.term;
   cond.substitutionEnv = pattern.substitution.fromJust;
   top.result =
-    do (bindMaybe, returnMaybe) {
+    do {
       pattern.substitution;
       case cond.value of
       | booleanAST(b) -> if b then just(unit()) else nothing()

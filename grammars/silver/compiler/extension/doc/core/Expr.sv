@@ -128,36 +128,6 @@ top::Expr ::= '!' e::Expr
 {
 }
 
-aspect production gt
-top::Expr ::= e1::Expr '>' e2::Expr
-{
-}
-
-aspect production lt
-top::Expr ::= e1::Expr '<' e2::Expr
-{
-}
-
-aspect production gteq
-top::Expr ::= e1::Expr '>=' e2::Expr
-{
-}
-
-aspect production lteq
-top::Expr ::= e1::Expr '<=' e2::Expr
-{
-}
-
-aspect production eqeq
-top::Expr ::= e1::Expr '==' e2::Expr
-{
-}
-
-aspect production neq
-top::Expr ::= e1::Expr '!=' e2::Expr
-{
-}
-
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
@@ -200,16 +170,6 @@ top::Expr ::= '-' e::Expr
 
 aspect production stringConst
 top::Expr ::= s::String_t
-{
-}
-
-aspect production errorPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
-{
-}
-
-aspect production stringPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
 }
 

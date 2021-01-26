@@ -1,4 +1,6 @@
-grammar silver:compiler:extension:monad;
+grammar silver:compiler:extension:do_notation;
+
+imports silver:util:treeset as ts;
 
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:type:syntax;

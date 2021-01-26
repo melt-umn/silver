@@ -32,7 +32,7 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
 nonterminal LexerClassModifiers with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
 closed nonterminal LexerClassModifier with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
 
-monoid attribute lexerClassModifiers :: [SyntaxLexerClassModifier] with [], ++;
+monoid attribute lexerClassModifiers :: [SyntaxLexerClassModifier];
 
 propagate errors on LexerClassModifiers, LexerClassModifier;
 propagate lexerClassModifiers on LexerClassModifiers;

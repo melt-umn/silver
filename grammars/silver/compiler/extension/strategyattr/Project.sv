@@ -1,5 +1,7 @@
 grammar silver:compiler:extension:strategyattr;
 
+imports silver:core hiding id, sequence;
+
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;

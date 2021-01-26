@@ -8,7 +8,7 @@ top::Expr ::= params::ProductionRHS e::Expr
 
   e.expectedMonad = top.expectedMonad;
 
-  top.mtyperep = functionType(e.mtyperep, map((.typerep), params.inputElements), []);
+  top.mtyperep = appTypes(functionType(length(params.inputElements), []), map((.typerep), params.inputElements) ++ [e.typerep]);
 
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;

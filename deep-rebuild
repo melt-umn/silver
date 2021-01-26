@@ -3,7 +3,7 @@
 set -eu
 
 export SILVER_HOME=$(pwd)
-JVM_ARGS="-Xss8M -Xmx3G -jar ../jars/silver.compiler.composed.Default.jar"
+JVM_ARGS="-Xss16M -Xmx3G -jar ../jars/silver.compiler.composed.Default.jar"
 
 # just run this script, no parameters or options.
 # One new option: --newcore, for when the core FFI stuff has to change in tandem with the runtime
@@ -20,6 +20,12 @@ fi
 # Modifications may have been made to how the translation is done
 
 echo "One full cycle ..."
+echo ""
+echo " > Silver Build"
+echo "   Silver Build"
+echo "   Runtime Build"
+echo "   Silver Build"
+echo ""
 time java $JVM_ARGS --relative-jar --clean silver:compiler:composed:Default
 ant
 mv silver.compiler.composed.Default.jar ../jars/
@@ -34,6 +40,12 @@ fi
 # Should backup old jars here
 
 echo "Before we start, let's get this thing built ..."
+echo ""
+echo "   Silver Build"
+echo " > Silver Build"
+echo "   Runtime Build"
+echo "   Silver Build"
+echo ""
 java $JVM_ARGS --clean silver:xml:ast
 echo "Start ..."
 time java $JVM_ARGS --relative-jar --clean silver:compiler:composed:Default
@@ -41,6 +53,12 @@ time java $JVM_ARGS --relative-jar --clean silver:compiler:composed:Default
 # Modifications may have been made to the runtime
 
 echo "No ant yet! Let's go build the runtime! ..."
+echo ""
+echo "   Silver Build"
+echo "   Silver Build"
+echo " > Runtime Build"
+echo "   Silver Build"
+echo ""
 cd ../runtime/java
 ant
 mv SilverRuntime.jar ../../jars/
@@ -52,6 +70,12 @@ mv silver.compiler.composed.Default.jar ../jars/
 # Finally, we should have a fully working binary on all the new code. Run it again to reach a fixed point:
 
 echo "One more full cycle ..."
+echo ""
+echo "   Silver Build"
+echo "   Silver Build"
+echo "   Runtime Build"
+echo " > Silver Build"
+echo ""
 time java -ea $JVM_ARGS --relative-jar --clean silver:compiler:composed:Default
 ant
 mv silver.compiler.composed.Default.jar ../jars/
