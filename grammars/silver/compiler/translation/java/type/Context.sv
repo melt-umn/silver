@@ -81,6 +81,7 @@ top::DclInfo ::= fntc::String baseDcl::DclInfo ty::Type
 function makeConstraintDictName
 String ::= s::String t::Type
 {
+  t.boundVariables = [];
   return "d_" ++ substitute(":", "_", s) ++ "_" ++ t.transTypeName;
 }
 

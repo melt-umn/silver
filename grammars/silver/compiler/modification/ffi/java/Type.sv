@@ -19,6 +19,6 @@ top::Type ::= fn::String  transType::String  params::[Type]
     foldl(
       \ c::String a::Type -> s"new common.AppTypeRep(${c}, ${a.transFreshTypeRep})",
       s"new common.BaseTypeRep(\"${fn}\")", params);
-  top.transTypeName = implode("_", substitute(":", "_", fn) :: map((.transTypeName), params));
+  top.transTypeName = implode("_", substitute(":", "_", fn) :: map(transTypeNameWith(_, top.boundVariables), params));
 }
 
