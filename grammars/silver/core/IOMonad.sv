@@ -23,6 +23,24 @@ top::IOMonad<a> ::= x::a
   top.stateVal = x;
 }
 
+instance Functor IOMonad {
+  map = liftM1;
+}
+
+instance Apply IOMonad {
+  ap = apM;
+}
+
+instance Applicative IOMonad {
+  pure = returnIO;
+}
+
+instance Bind IOMonad {
+  bind = bindIO;
+}
+
+instance Monad IOMonad {}
+
 function runIO
 IO ::= st::IOMonad<a> ioIn::IO
 {
