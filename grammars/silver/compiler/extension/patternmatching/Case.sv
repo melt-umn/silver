@@ -105,7 +105,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
               | matchRule(plst, _, _) -> plst
               end, conditionlessRules);
   local completenessCounterExample::Maybe<[Pattern]> =
-        checkCompleteness(conditionlessPatterns, top.requiredProductionPatterns, top.env);
+        checkCompleteness(conditionlessPatterns, top.requiredProductionPatterns, top.env, top.flowEnv);
 
   top.errors <-
       case completenessCounterExample of
@@ -278,7 +278,7 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
   values at once).
 -}
 function checkCompleteness
-Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] nonforwardingProds::[Pair<String [Pair<String Integer>]>] env::Decorated Env
+Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] nonforwardingProds::[Pair<String [Pair<String Integer>]>] env::Decorated Env flowEnv::Decorated FlowEnv
 {
   --This is safer than mapping head because we might be short some patterns
   local firstPatt::[Decorated Pattern] =
@@ -324,7 +324,7 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] nonforwardingProds::[Pair<String
   local restComplete::Maybe<[Pattern]> = checkCompleteness(map(tail, lst), nonforwardingProds, env);
 
   return if numPatts == 0
-         then nothing() --inherently complete, by way of having no patterns
+         then nothing() --inherently complete, by way of having no patterns to determine the type
          else case firstComplete of
               | nothing() ->
                 case restComplete of
@@ -410,7 +410,7 @@ Maybe<Pattern> ::= patts::[Decorated Pattern]
 }
 
 function checkListCompleteness
-Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [Pair<String Integer>]>] env::Decorated Env
+Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [Pair<String Integer>]>] env::Decorated Env flowEnv::Decorated FlowEnv
 {
   local foundNil::Boolean =
         foldr(\ p::Decorated Pattern b::Boolean ->
@@ -437,7 +437,7 @@ Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [
 
 --given a set of nonterminal patterns, check that they have all the required productions covered
 function checkNonterminalCompleteness
-Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [Pair<String Integer>]>] env::Decorated Env
+Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [Pair<String Integer>]>] env::Decorated Env flowEnv::Decorated FlowEnv
 {
   --All the patterns ought to have the same type.
   local builtTypes::[String] =
