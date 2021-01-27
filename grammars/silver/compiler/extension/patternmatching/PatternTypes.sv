@@ -97,6 +97,7 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
           case ty of
           | nonterminalType(name, _, _) -> name
           | appType(ty1, _) -> getHeadTypeName(ty1)
+          | errorType() -> "" --for unknown patterns
           | ty -> error("Should only have applied nonterminal types given, not:  " ++ prettyType(ty))
           end;
 }

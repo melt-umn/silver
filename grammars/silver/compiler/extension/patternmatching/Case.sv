@@ -10,6 +10,8 @@ imports silver:compiler:extension:list;
 
 --Get mwdaWrn production for completeness analysis
 import silver:compiler:analysis:warnings:flow;
+--Get getNonforwardingProds to check all are covered
+import silver:compiler:definition:flow:env;
 
 import silver:compiler:definition:type:syntax only typerepTypeExpr;
 import silver:compiler:modification:let_fix;
@@ -110,7 +112,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
               | matchRule(plst, _, _) -> plst
               end, conditionlessRules);
   local completenessCounterExample::Maybe<[Pattern]> =
-        checkCompleteness(conditionlessPatterns, top.requiredProductionPatterns, top.env, top.flowEnv);
+        checkCompleteness(conditionlessPatterns, top.env, top.flowEnv);
 
   top.errors <-
       case completenessCounterExample of
@@ -283,7 +285,7 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
   values at once).
 -}
 function checkCompleteness
-Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] nonforwardingProds::[Pair<String [Pair<String Integer>]>] env::Decorated Env flowEnv::Decorated FlowEnv
+Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env flowEnv::Decorated FlowEnv
 {
   --This is safer than mapping head because we might be short some patterns
   local firstPatt::[Decorated Pattern] =
@@ -320,13 +322,13 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] nonforwardingProds::[Pair<String
         then if isBoolPatts
              then checkBooleanCompleteness(conPatts)
              else if isListPatts
-                  then checkListCompleteness(conPatts, nonforwardingProds, env, flowEnv)
+                  then checkListCompleteness(conPatts, env, flowEnv)
                   else if isPrimPatts
                        then generatePrimitiveMissingPattern(conPatts)
-                       else checkNonterminalCompleteness(conPatts, nonforwardingProds, env, flowEnv)
+                       else checkNonterminalCompleteness(conPatts, env, flowEnv)
         else nothing();
 
-  local restComplete::Maybe<[Pattern]> = checkCompleteness(map(tail, lst), nonforwardingProds, env, flowEnv);
+  local restComplete::Maybe<[Pattern]> = checkCompleteness(map(tail, lst), env, flowEnv);
 
   return if numPatts == 0
          then nothing() --inherently complete, by way of having no patterns to determine the type
@@ -415,7 +417,7 @@ Maybe<Pattern> ::= patts::[Decorated Pattern]
 }
 
 function checkListCompleteness
-Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [Pair<String Integer>]>] env::Decorated Env flowEnv::Decorated FlowEnv
+Maybe<Pattern> ::= patts::[Decorated Pattern] env::Decorated Env flowEnv::Decorated FlowEnv
 {
   local foundNil::Boolean =
         foldr(\ p::Decorated Pattern b::Boolean ->
@@ -425,7 +427,7 @@ Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [
   local consPatts::[Decorated Pattern] =
         partition(\ p::Decorated Pattern -> p.patternSortKey == "silver:core:cons", patts).fst;
   local consComp::Maybe<[Pattern]> =
-        checkCompleteness(map((.patternSubPatternList), consPatts), nonforwardingProds, env, flowEnv);
+        checkCompleteness(map((.patternSubPatternList), consPatts), env, flowEnv);
 
   return if foundNil
          then if null(consPatts) --didn't try to catch _::_
@@ -442,7 +444,7 @@ Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [
 
 --given a set of nonterminal patterns, check that they have all the required productions covered
 function checkNonterminalCompleteness
-Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [Pair<String Integer>]>] env::Decorated Env flowEnv::Decorated FlowEnv
+Maybe<Pattern> ::= patts::[Decorated Pattern] env::Decorated Env flowEnv::Decorated FlowEnv
 {
   --All the patterns ought to have the same type.
   local builtTypes::[String] =
@@ -450,10 +452,7 @@ Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [
   local builtType::String = head(builtTypes);
 
   local requiredProds::[Pair<String Integer>] =
-        let reqProdGroups::[Pair<String [Pair<String Integer>]>] =
-             partition(\ p::Pair<String [Pair<String Integer>]> -> p.fst == builtType,
-                       nonforwardingProds).fst
-        in if null(reqProdGroups) then [] else head(reqProdGroups).snd end;
+        map(\x::String -> pair(x, 0), getNonforwardingProds(builtType, flowEnv));
   local groupedPatts::[[Decorated Pattern]] =
         groupBy(\ a::Decorated Pattern b::Decorated Pattern ->
                   a.patternSortKey == b.patternSortKey, patts);
@@ -477,13 +476,13 @@ Maybe<Pattern> ::= patts::[Decorated Pattern] nonforwardingProds::[Pair<String [
                --This is a hack to pass up a message about closed nonterminals
           then just(varPattern(name("<default case for closed nonterminal>", bogusLoc()),
                                location=bogusLoc()))
-          else checkAllProdsRepresented(groupedPatts, requiredProds, nonforwardingProds, env, flowEnv);
+          else checkAllProdsRepresented(groupedPatts, requiredProds, env, flowEnv);
 }
 
 --check that all required productions are present and that their children are completely covered
 function checkAllProdsRepresented
 Maybe<Pattern> ::= pattGroups::[[Decorated Pattern]] requiredProds::[Pair<String Integer>]
-                   nonforwardingProds::[Pair<String [Pair<String Integer>]>] env::Decorated Env flowEnv::Decorated FlowEnv
+                   env::Decorated Env flowEnv::Decorated FlowEnv
 {
   {-
     We walk down through requiredProds rather than pattGroups.  We
@@ -507,8 +506,7 @@ Maybe<Pattern> ::= pattGroups::[[Decorated Pattern]] requiredProds::[Pair<String
 
   --check that all children of the current production are completely covered
   local childrenComp::Maybe<[Pattern]> =
-        checkCompleteness(map((.patternSubPatternList), pattGroup),
-                          nonforwardingProds, env, flowEnv);
+        checkCompleteness(map((.patternSubPatternList), pattGroup), env, flowEnv);
 
   return
      case requiredProds of
@@ -521,7 +519,7 @@ Maybe<Pattern> ::= pattGroups::[[Decorated Pattern]] requiredProds::[Pair<String
          case childrenComp of
          | nothing() ->
            --current production is fully covered, so on to the next
-           checkAllProdsRepresented(pattGroups, rest, nonforwardingProds, env, flowEnv)
+           checkAllProdsRepresented(pattGroups, rest, env, flowEnv)
          | just(plst) ->
            --check that it has the right number of patterns
            if length(plst) == firstProdNumArgs
