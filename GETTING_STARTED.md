@@ -35,7 +35,7 @@ carefully to ensure you are thinking at the meta level as you work.
 
 
 
-## Building and Updating Scripts
+## Scripts for Logistics
 
 There are several scripts for building Silver and other logistical
 operations in the `silver` repository.
