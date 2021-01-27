@@ -161,6 +161,7 @@ def task_test(String testname, String WS) {
         sh "../set-generated-dir ${GEN}"
         // Run the tests
         withEnv (newenv) {
+	  sh "running test ${testname}, workspace ${WS} in ${pwd()} with gen ${GEN}"
           sh "java -jar ../silver.testing.bin.jar"
         }
       }
