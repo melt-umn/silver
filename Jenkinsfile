@@ -162,7 +162,7 @@ def task_test(String testname, String WS) {
         // Run the tests
         withEnv (newenv) {
 	  sh "running test ${testname}"
-          sh "java -jar ../silver.testing.bin.jar ${testname}"
+          sh "java -jar silver.testing.bin.jar ${testname}"
         }
       }
       // Blow away these generated files in our private workspace
