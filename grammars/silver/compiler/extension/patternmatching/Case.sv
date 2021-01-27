@@ -296,7 +296,15 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env flowEnv::Deco
   local conPatts::[Decorated Pattern] = partPatts.snd;
 
   --This is max length.  Should it be min length?
-  local numPatts::Integer = foldr(\ p::[Decorated Pattern] i::Integer -> if length(p) > i then length(p) else i, 0, lst);
+  local allPattLens::[Integer] = map(\ x::[Decorated Pattern] -> length(x), lst);
+  local allSameLen::Boolean =
+        if null(lst)
+        then true
+        else all(map(\ x::Integer -> x == head(allPattLens), allPattLens));
+  local numPatts::Integer =
+        if null(lst) || !allSameLen
+        then 0
+        else head(allPattLens);
 
   local isPrimPatts::Boolean = foldr(\ a::Decorated Pattern b::Boolean -> b || a.isPrimitivePattern, false, conPatts);
   local isBoolPatts::Boolean = foldr(\ a::Decorated Pattern b::Boolean -> b || a.isBoolPattern, false, conPatts);
@@ -331,7 +339,8 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env flowEnv::Deco
   local restComplete::Maybe<[Pattern]> = checkCompleteness(map(tail, lst), env, flowEnv);
 
   return if numPatts == 0
-         then nothing() --inherently complete, by way of having no patterns to determine the type
+         --has no patterns to determine the type, or has inconsistent lengths
+         then nothing()
          else case firstComplete of
               | nothing() ->
                 case restComplete of
