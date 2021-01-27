@@ -161,7 +161,7 @@ def task_test(String testname, String WS) {
         sh "./set-generated-dir ${GEN} ${testname}"
         // Run the tests
         withEnv (newenv) {
-	  sh "running test ${testname}"
+	  echo "running test ${testname}"
           sh "java -jar silver.testing.bin.jar ${testname}"
         }
       }
