@@ -78,6 +78,7 @@ melt.trynode('silver') {
   }
 
   stage("Test") {
+    // These test cases and tutorials are run as seperate tasks to allow for parallelism
     def tests = ["silver_features", "copper_features", "patt", "stdlib", "performance", "csterrors"]
     def tuts = ["simple/with_all", "simple/with_do_while", "simple/with_repeat_until", "simple/with_implication", "simple/host", "dc", "lambda", "turing", "hello"]
 
@@ -161,7 +162,7 @@ def task_test(String testname, String WS) {
         sh "./set-generated-dir ${GEN} ${testname}"
         // Run the tests
         withEnv (newenv) {
-	  echo "Running test ${testname}"
+          echo "Running test ${testname}"
           sh "java -jar silver.testing.bin.jar ${testname}"
         }
       }
