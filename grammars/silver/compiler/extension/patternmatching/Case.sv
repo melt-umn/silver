@@ -451,8 +451,7 @@ Maybe<Pattern> ::= patts::[Decorated Pattern] env::Decorated Env flowEnv::Decora
         nubBy(\ a::String b::String -> a == b, map((.patternTypeName), patts));
   local builtType::String = head(builtTypes);
 
-  local requiredProds::[Pair<String Integer>] =
-        map(\x::String -> pair(x, 0), getNonforwardingProds(builtType, flowEnv));
+  local requiredProds::[String] = getNonforwardingProds(builtType, flowEnv);
   local groupedPatts::[[Decorated Pattern]] =
         groupBy(\ a::Decorated Pattern b::Decorated Pattern ->
                   a.patternSortKey == b.patternSortKey, patts);
@@ -473,7 +472,7 @@ Maybe<Pattern> ::= patts::[Decorated Pattern] env::Decorated Env flowEnv::Decora
      if length(builtTypes) != 1
      then nothing()
      else if isClosed
-               --This is a hack to pass up a message about closed nonterminals
+               --This is a hack to pass up a message about closed nonterminals as a pattern
           then just(varPattern(name("<default case for closed nonterminal>", bogusLoc()),
                                location=bogusLoc()))
           else checkAllProdsRepresented(groupedPatts, requiredProds, env, flowEnv);
@@ -481,7 +480,7 @@ Maybe<Pattern> ::= patts::[Decorated Pattern] env::Decorated Env flowEnv::Decora
 
 --check that all required productions are present and that their children are completely covered
 function checkAllProdsRepresented
-Maybe<Pattern> ::= pattGroups::[[Decorated Pattern]] requiredProds::[Pair<String Integer>]
+Maybe<Pattern> ::= pattGroups::[[Decorated Pattern]] requiredProds::[String]
                    env::Decorated Env flowEnv::Decorated FlowEnv
 {
   {-
@@ -490,7 +489,7 @@ Maybe<Pattern> ::= pattGroups::[[Decorated Pattern]] requiredProds::[Pair<String
     care about anything else which shows up in pattGroups
     (e.g. forwarding productions).
   -}
-  local firstProdName::String = head(requiredProds).fst;
+  local firstProdName::String = head(requiredProds);
   local firstProdQName::QName = qName(bogusLoc(), firstProdName);
   local pattGroup::[Decorated Pattern] =
             --Because the groups were produced by groupBy(), there can be at most one group
@@ -500,7 +499,8 @@ Maybe<Pattern> ::= pattGroups::[[Decorated Pattern]] requiredProds::[Pair<String
                       pattGroups).fst
          in if null(thisGroup) then [] else head(thisGroup) end;
 
-  local firstProdNumArgs::Integer = head(requiredProds).snd;
+  firstProdQName.env = env;
+  local firstProdNumArgs::Integer = firstProdQName.lookupValue.typeScheme.typerep.arity;
   local wildcards::PatternList =
         buildPatternList(repeat(wildcPattern('_', location=bogusLoc()), firstProdNumArgs), bogusLoc());
 
