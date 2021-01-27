@@ -155,14 +155,14 @@ def task_test(String testname, String WS) {
     node {
       sh "touch ensure_workspace" // convince jenkins to create our workspace
       def GEN = pwd() // This node's workspace
-      // Go back to our "parent" workspace, into the test
-      dir(WS + '/test/' + testname) {
+      // Go back to our "parent" workspace, into the tests directory
+      dir(WS + '/test/') {
         // HACK: edit the test specs to specify the generated directory
-        sh "../set-generated-dir ${GEN}"
+        sh "./set-generated-dir ${GEN}"
         // Run the tests
         withEnv (newenv) {
-	  sh "running test ${testname}, workspace ${WS} in ${pwd()} with gen ${GEN}"
-          sh "java -jar ../silver.testing.bin.jar"
+	  sh "running test ${testname}"
+          sh "java -jar ../silver.testing.bin.jar ${testname}"
         }
       }
       // Blow away these generated files in our private workspace
