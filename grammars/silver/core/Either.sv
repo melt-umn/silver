@@ -33,6 +33,35 @@ top::Either<a b> ::= value::b
   top.isRight = true;
 }
 
+instance Functor Either<a _> {
+  map = \ f::(c ::= b) e::Either<a b> ->
+    case e of
+    | right(x) -> right(f(x))
+    | left(x)  -> left(x)
+    end;
+}
+
+instance Apply Either<a _> {
+  ap = \ ef::Either<a (c ::= b)> e::Either<a b> ->
+    case ef of
+    | left(x)  -> left(x)
+    | right(f) -> map(f, e)
+    end;
+}
+
+instance Applicative Either<a _> {
+  pure = right;
+}
+
+instance Bind Either<a _> {
+  bind = \ e::Either<a b> fn::(Either<a c> ::= b) ->
+    case e of
+    | left(x) -> left(x)
+    | right(x) -> fn(x)
+    end;
+}
+
+instance Monad Either<a _> {}
 
 {--
  - Order preserving partitioning of a list of eithers into a pair

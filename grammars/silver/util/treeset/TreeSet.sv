@@ -39,6 +39,15 @@ Set<a> ::= lst::[a] set::Set<a>
 }
 
 {--
+ - Converts a list to a set.
+ -}
+function fromList
+Ord a => Set<a> ::= lst::[a]
+{
+  return add(lst, empty());
+}
+
+{--
  - Converts a set back to a list, in sorted order.
  -}
 function toList
@@ -161,4 +170,12 @@ Set<a> ::= lst::[a] set::Set<a>
 
 instance Eq Set<a> {
   eq = \ l::Set<a> r::Set<a> -> subset(l,r) && subset(r,l);
+}
+
+instance Semigroup Set<a> {
+  append = union;
+}
+
+instance Ord a => Monoid Set<a> {
+  mempty = empty();
 }

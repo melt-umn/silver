@@ -45,6 +45,24 @@ top::State<s Unit> ::= fun::(s ::= s)
   top.stateVal = unit();
 }
 
+instance Functor State<a _> {
+  map = liftM1;
+}
+
+instance Apply State<a _> {
+  ap = apM;
+}
+
+instance Applicative State<a _> {
+  pure = returnState;
+}
+
+instance Bind State<a _> {
+  bind = bindState;
+}
+
+instance Monad State<a _> {}
+
 function runState
 Pair<s a> ::= st::State<s a> initialState::s
 {

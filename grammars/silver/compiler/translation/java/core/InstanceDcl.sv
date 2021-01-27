@@ -3,7 +3,7 @@ grammar silver:compiler:translation:java:core;
 aspect production instanceDcl
 top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
 {
-  local className :: String = "I" ++ substitute(":", "_", fName) ++ "_" ++ ty.typerep.transTypeName;
+  local className :: String = "I" ++ substitute(":", "_", fName) ++ "_" ++ transTypeName(ty.typerep);
 
   top.genFiles := [pair(className ++ ".java", s"""
 
@@ -32,7 +32,7 @@ synthesized attribute contextInitTrans::String occurs on Context;
 aspect production instContext
 top::Context ::= fn::String t::Type
 {
-  top.contextMemberDeclTrans = s"\tpublic final ${top.transType} ${makeConstraintDictName(fn, t)};\n";
+  top.contextMemberDeclTrans = s"\tprivate final ${top.transType} ${makeConstraintDictName(fn, t)};\n";
   top.contextParamTrans = s"${top.transType} ${makeConstraintDictName(fn, t)}";
   top.contextInitTrans = s"\t\tthis.${makeConstraintDictName(fn, t)} = ${makeConstraintDictName(fn, t)};\n";
 }

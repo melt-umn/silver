@@ -79,9 +79,9 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   production attribute collectionAntiquoteProductions::[(String, String, String, String)] with ++;
   collectionAntiquoteProductions := [];
   antiquoteTranslation <-
-    do (bindMaybe, returnMaybe) {
-      -- (antiquote production name, antiquote expr AST, rest AST)
-      antiquote::(String, AST, Decorated AST) <-
+    do {
+      -- pair(antiquote production name, antiquote expr AST, rest AST)
+      antiquote::Pair<String Pair<AST Decorated AST>> <-
         case children of
         | consAST(
             nonterminalAST(n, consAST(a, _), _),
@@ -101,9 +101,9 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         end;
     };
   antiquoteTranslation <-
-    do (bindMaybe, returnMaybe) {
-      -- (nonterminal short name, cons production name, append production name)
-      trans::(String, String, String) <-
+    do {
+      -- pair(nonterminal short name, pair(cons production name, append production name))
+      trans::Pair<String Pair<String String>> <-
         lookup(prodName, collectionAntiquoteProductions);
       return
         errorExpr([err(givenLocation, s"$$${trans.fst} may only occur as a member of ${trans.fst}")], location=givenLocation);

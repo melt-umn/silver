@@ -226,7 +226,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
       }
     | false, true ->
       Silver_Expr {
-        silver:core:mapMaybe(
+        silver:core:map(
           \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep, location=top.location)} ->
             decorate res with { $ExprInhs{allInhs} }.$name{s2Name},
           $Expr{s1.partialTranslation})
