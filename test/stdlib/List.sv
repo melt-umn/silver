@@ -19,11 +19,11 @@ equalityTest ( foldl(sub, 1, [3]), -2,
                Integer, core_tests ) ;
 equalityTest ( foldl(sub, 10, [2,4]), 4,
                Integer, core_tests ) ;
-equalityTest ( foldl(stringConcat, "1 ", ["10 ","2 ","4"]), "1 10 2 4",
+equalityTest ( foldl(append, "1 ", ["10 ","2 ","4"]), "1 10 2 4",
                String, core_tests ) ;
 equalityTest ( foldr(sub, 2, [10,8,4]), 4, 
                Integer, core_tests ) ;
-equalityTest ( foldr(stringConcat, "2", ["10","8","4"]), "10842", 
+equalityTest ( foldr(append, "2", ["10","8","4"]), "10842", 
                String, core_tests ) ;
 equalityTest ( foldr1(sub,[10,4,2]), 8, 
                Integer, core_tests ) ;
