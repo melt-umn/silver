@@ -158,7 +158,7 @@ def task_test(String testname, String WS) {
       // Go back to our "parent" workspace, into the tests directory
       dir(WS + '/test/') {
         // HACK: edit the test specs to specify the generated directory
-        sh "./set-generated-dir ${GEN}"
+        sh "./set-generated-dir ${GEN} ${testname}"
         // Run the tests
         withEnv (newenv) {
 	  sh "running test ${testname}"
