@@ -44,9 +44,14 @@ top::AGDcl ::= 'warnCode' s::String_t '{' ags::AGDcls '}'
   -- Forward to the decls so that we can use the stuff declared with warnings in other tests
 }
 
---Check that code does *NOT* include a particular type of warning
---Used to ensure warnings are only generated on code where they are relevant
---We don't need a version for errors, since they will cause failures anyway
+{--
+ -Check that code does *NOT* include a particular type of warning.
+ -This is used to ensure warnings are only generated on code where they should be generated.
+ -We don't need a version for errors, since errors will cause failures anyway.
+ -
+ - @param s  The string which should NOT be contained in any warning messages from this code block
+ - @param ags  The code block which we are checking
+-}
 concrete production noWarnDecl
 top::AGDcl ::= 'noWarnCode' s::String_t '{' ags::AGDcls '}'
 {

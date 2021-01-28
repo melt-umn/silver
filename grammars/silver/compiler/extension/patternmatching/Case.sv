@@ -285,13 +285,15 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
   values at once).
 -}
 function checkCompleteness
-Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env flowEnv::Decorated FlowEnv
+Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env
+                     flowEnv::Decorated FlowEnv
 {
   --This is safer than mapping head because we might be short some patterns
   local firstPatt::[Decorated Pattern] =
         foldr(\ l::[Decorated Pattern] rest::[Decorated Pattern] ->
                 if length(l) > 0 then head(l)::rest else rest, [], lst);
-  local partPatts::Pair<[Decorated Pattern] [Decorated Pattern]> = partition((.patternIsVariable), firstPatt);
+  local partPatts::Pair<[Decorated Pattern] [Decorated Pattern]> =
+        partition((.patternIsVariable), firstPatt);
   local varPatts::[Decorated Pattern] = partPatts.fst;
   local conPatts::[Decorated Pattern] = partPatts.snd;
 
@@ -306,9 +308,15 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env flowEnv::Deco
         then 0
         else head(allPattLens);
 
-  local isPrimPatts::Boolean = foldr(\ a::Decorated Pattern b::Boolean -> b || a.isPrimitivePattern, false, conPatts);
-  local isBoolPatts::Boolean = foldr(\ a::Decorated Pattern b::Boolean -> b || a.isBoolPattern, false, conPatts);
-  local isListPatts::Boolean = foldr(\ a::Decorated Pattern b::Boolean -> b || a.isListPattern, false, conPatts);
+  local isPrimPatts::Boolean =
+         foldr(\ a::Decorated Pattern b::Boolean -> b || a.isPrimitivePattern,
+               false, conPatts);
+  local isBoolPatts::Boolean =
+        foldr(\ a::Decorated Pattern b::Boolean -> b || a.isBoolPattern,
+              false, conPatts);
+  local isListPatts::Boolean =
+        foldr(\ a::Decorated Pattern b::Boolean -> b || a.isListPattern,
+              false, conPatts);
 
   {-Checking Pattern Completeness
 
@@ -325,18 +333,26 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env flowEnv::Deco
     * Non-Closed Nonterminals:  These are complete if they have a
       pattern for each non-forwarding production.
   -}
+  local firstConstructorsComplete::Maybe<Pattern> =
+        if isBoolPatts
+        then checkBooleanCompleteness(conPatts)
+        else if isListPatts
+             then checkListCompleteness(conPatts, env, flowEnv)
+             else if isPrimPatts
+                  then generatePrimitiveMissingPattern(conPatts)
+                  else checkNonterminalCompleteness(conPatts, env, flowEnv);
   local firstComplete::Maybe<Pattern> =
         if null(varPatts)
-        then if isBoolPatts
-             then checkBooleanCompleteness(conPatts)
-             else if isListPatts
-                  then checkListCompleteness(conPatts, env, flowEnv)
-                  else if isPrimPatts
-                       then generatePrimitiveMissingPattern(conPatts)
-                       else checkNonterminalCompleteness(conPatts, env, flowEnv)
+        then firstConstructorsComplete
         else nothing();
 
-  local restComplete::Maybe<[Pattern]> = checkCompleteness(map(tail, lst), env, flowEnv);
+  local restComplete::Maybe<[Pattern]> =
+        --check if a variable pattern was required for the first match to be complete
+        --determined by whether just the constructors are complete
+        case firstConstructorsComplete of
+        | just(_) -> checkTailCompleteness(lst, true, env, flowEnv)
+        | nothing() -> checkTailCompleteness(lst, false, env, flowEnv)
+        end;
 
   return if numPatts == 0
          --has no patterns to determine the type, or has inconsistent lengths
@@ -350,6 +366,61 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env flowEnv::Deco
               | just(p) ->
                 just(p::repeat(wildcPattern('_', location=bogusLoc()), numPatts - 1))
               end;
+}
+
+{-
+  To check if the tails of pattern lists are complete, we need to
+  group them by the first pattern.  For example, consider this case
+  expression:
+     case x, y of
+     | 1, _ -> "1"
+     | _, 1 -> "2"
+     | 2, _ -> "3"
+     end
+  We can't just check that the set of first patterns is complete and
+  the set of second patterns is complete.  Both sets are complete
+  individually, but in their combination there is no pattern to match
+  `0, 0`.  We need to group by the first pattern, add the variable
+  patterns to each constructor set, then check completenss.  For our
+  example, we will need to group into
+     [ [(1, _), (_, 1)],  [(2, _), (_, 1)],  [(_, 1)] ]
+  then check the completeness of the tails of the patterns in these
+  sets (started with 1, started with 2, and started with var):
+     [_, 1]   and   [_, 1]   and   [1]
+  We need to include a started-with-var set only if the first patterns
+  are incomplete without it, which is passed as an argument.
+-}
+function checkTailCompleteness
+Maybe<[Pattern]> ::= patts::[[Decorated Pattern]] firstPattsVarCompleted::Boolean
+                     env::Decorated Env flowEnv::Decorated FlowEnv
+{
+  local partPatts::Pair<[[Decorated Pattern]] [[Decorated Pattern]]> =
+        partition(\ plst::[Decorated Pattern] -> head(plst).patternIsVariable, patts);
+  local varPatts::[[Decorated Pattern]] = partPatts.fst;
+  --list of sets of match rules of some length (innermost list is one match rule)
+  local consPattGroups::[[[Decorated Pattern]]] =
+        groupBy(\ a::[Decorated Pattern] b::[Decorated Pattern] ->
+                  head(a).patternSortKey == head(b).patternSortKey,
+                partPatts.snd);
+  local combinedPattGroups::[[[Decorated Pattern]]] =
+        --include varPatts separately if a variable is necessary for completeness
+        ( if firstPattsVarCompleted
+          then [varPatts]
+          else [] ) ++
+        map(\ group::[[Decorated Pattern]] -> group ++ varPatts, consPattGroups);
+  local combinedRemoveFirst::[[[Decorated Pattern]]] =
+        map(\ x::[[Decorated Pattern]] ->
+              map(\ y::[Decorated Pattern] -> tail(y), x),
+            combinedPattGroups);
+
+  --Check the completeness of each group in turn, up to the first incomplete one.
+  return
+     foldr(\ grp::[[Decorated Pattern]] priorResult::Maybe<[Pattern]> ->
+             case priorResult of
+             | nothing() -> checkCompleteness(grp, env, flowEnv)
+             | just(x) -> just(x)
+             end,
+           nothing(), combinedRemoveFirst);
 }
 
 function generatePrimitiveMissingPattern
@@ -441,17 +512,19 @@ Maybe<Pattern> ::= patts::[Decorated Pattern] env::Decorated Env flowEnv::Decora
   return if foundNil
          then if null(consPatts) --didn't try to catch _::_
               then just(consListPattern(wildcPattern('_', location=bogusLoc()), '::',
-                                        wildcPattern('_', location=bogusLoc()), location=bogusLoc()))
+                                        wildcPattern('_', location=bogusLoc()),
+                                        location=bogusLoc()))
               else case consComp of
                    | nothing() -> nothing()
-                   | just(hp::tp::_) -> just(consListPattern(hp, '::', tp, location=bogusLoc()))
-                   --This last case is a typing error, where the cons didn't have enough arguments
+                   | just(hp::tp::_) ->
+                     just(consListPattern(hp, '::', tp, location=bogusLoc()))
+                   --last case is an error, where cons didn't have enough arguments
                    | just(_) -> nothing()
                    end
          else just(nilListPattern('[', ']', location=bogusLoc()));
 }
 
---given a set of nonterminal patterns, check that they have all the required productions covered
+--given a set of nonterminal patterns, check that all the required productions are covered
 function checkNonterminalCompleteness
 Maybe<Pattern> ::= patts::[Decorated Pattern] env::Decorated Env flowEnv::Decorated FlowEnv
 {
