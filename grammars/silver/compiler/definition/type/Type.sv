@@ -162,8 +162,12 @@ top::Type ::=
 
 {--
  - An (undecorated) nonterminal type.
+ - Note that this is the *unapplied* type constructor for a nonterminal type;
+ - e.g. `Pair<String Integer>` would be represented as
+ - `apType(apType(nonterminalType("silver:core:Pair", 2, false), stringType()), integerType())`.
+ -
  - @param fn  The fully qualified name of the nonterminal.
- - @param params  The type parameters for that nonterminal.
+ - @param k  The number type parameters for that nonterminal.
  - @param tracked  Might this NT be tracked.
  -}
 abstract production nonterminalType
@@ -222,8 +226,13 @@ top::Type ::= nt::Type  hidden::Type
 
 {--
  - Function type. (Whether production or function.)
+ - Note that this is the *unapplied* type constructor for a nonterminal type,
+ - and argument types are provided before the result type;
+ - e.g. `(Integer ::= String Boolean)` would be represented as
+ - `apType(apType(apType(functionType(3, []), stringType()), booleanType()), integerType())`.
+ -
  - @param params  The number input types of the function
- - @param namedParams  Named parameters for this function.
+ - @param namedParams  The names of named parameters for this function.
  -        NOTE: These must always be *IN SORTED ORDER*
  -}
 abstract production functionType

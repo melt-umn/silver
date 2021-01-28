@@ -78,6 +78,7 @@ melt.trynode('silver') {
   }
 
   stage("Test") {
+    // These test cases and tutorials are run as seperate tasks to allow for parallelism
     def tests = ["silver_features", "copper_features", "patt", "stdlib", "performance", "csterrors"]
     def tuts = ["simple/with_all", "simple/with_do_while", "simple/with_repeat_until", "simple/with_implication", "simple/host", "dc", "lambda", "turing", "hello"]
 
@@ -155,13 +156,14 @@ def task_test(String testname, String WS) {
     node {
       sh "touch ensure_workspace" // convince jenkins to create our workspace
       def GEN = pwd() // This node's workspace
-      // Go back to our "parent" workspace, into the test
-      dir(WS + '/test/' + testname) {
+      // Go back to our "parent" workspace, into the tests directory
+      dir(WS + '/test/') {
         // HACK: edit the test specs to specify the generated directory
-        sh "../set-generated-dir ${GEN}"
+        sh "./set-generated-dir ${GEN} ${testname}"
         // Run the tests
         withEnv (newenv) {
-          sh "java -jar ../silver.testing.bin.jar"
+          echo "Running test ${testname}"
+          sh "java -jar silver.testing.bin.jar ${testname}"
         }
       }
       // Blow away these generated files in our private workspace
