@@ -136,13 +136,14 @@ Boolean ::= elst::[Expr] env::Decorated Env sub::Substitution f::BlockContext gn
 --use a name from names when that is not empty; when empty, use a new name
 function monadicMatchTypesNames
 Pair<[Pair<Type Pair<Expr String>>] [Expr]> ::=
-elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext gn::String
+  elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext gn::String
   cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::Decorated FlowEnv names::[String]
   loc::Location index::Integer em::Type
 {
   local attribute subcall::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
   subcall = case elst, tylst of
             | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, env, sub, f, gn, cg, c, fe, ntail, loc, index+1, em)
+            | _, _ -> error("Must have lists of equal length and non-empty for subcall")
             end;
   local ntail::[String] = if null(names) then [] else tail(names);
   local newName::String = if null(names)
@@ -277,9 +278,11 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
           ml.matchRuleList);
   local mplus::Expr = case monadPlus(top.expectedMonad, top.location) of
                       | right(e) -> e
+                      | left(_) -> error("Must be monoid to get here")
                       end;
   local mzero::Expr = case monadZero(top.expectedMonad, top.location) of
                       | right(e) -> e
+                      | left(_) -> error("Must be monoid to get here")
                       end;
 
   --new names for using lets to bind the incoming expressions

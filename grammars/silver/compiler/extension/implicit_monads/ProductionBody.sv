@@ -38,9 +38,15 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
 
-  forwards to if null(merrors)
-              then attr.attrDcl.attrDefDispatcher(dl, attr, case fail of | right(e) -> e end, top.location)
-              else errorProductionStmt(merrors, location=top.location);
+  forwards to
+     if null(merrors)
+     then attr.attrDcl.attrDefDispatcher(dl, attr,
+                   case fail of
+                   | right(e) -> e
+                   | left(_) ->
+                     error("Can't get left here because merrors will not be null")
+                   end, top.location)
+     else errorProductionStmt(merrors, location=top.location);
 }
 
 

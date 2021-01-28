@@ -842,6 +842,7 @@ Pair<PrimPattern [Message]> ::= currExpr::Expr restExprs::[Expr]  failCase::Expr
     | falsePattern(_) -> pair(booleanPattern("false", '->', subcase, location=l), subCaseCompile.snd)
     | nilListPattern(_,_) -> pair(nilPattern(subcase, location=l), subCaseCompile.snd)
     | consListPattern(h,_,t) -> pair(conslstPattern(head(names), head(tail(names)), subcase, location=l), subCaseCompile.snd)
+    | _ -> error("Can only have constructor patterns in allConCaseTransform")
     end;
 }
 
