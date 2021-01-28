@@ -40,6 +40,15 @@ parser parseDocComment::DclComment {
     silver:compiler:extension:doc:core:doclang;
 }
 
+concrete production emptyDclComment
+top::DclComment ::= EmptyDclComment_t
+{
+    top.errors := [];
+    top.body = "";
+    top.upDocConfig := [];
+    top.doEmit = !doesExcludeFile(top.downDocConfig);
+}
+
 concrete production normalDclComment
 top::DclComment ::= InitialIgnore_t blocks::DclCommentBlocks FinalIgnore_t
 {
@@ -84,7 +93,9 @@ top::DclComment ::= InitialIgnore_t blocks::DclCommentBlocks FinalIgnore_t
 
     top.doEmit =
         !((length(blocks.otherBlocks) + length(paramBlocks)) == 0) &&
-        !(doesExcludeFile(top.downDocConfig));
+        !(doesExcludeFile(top.downDocConfig)) &&
+        !(fromMaybe(false, fromMaybe(kwdValue(terminal(ConfigValueKeyword_t, "off"),
+            location=top.location), lookup("hide", blocks.configArgs)).asBool));
 }
 
 function getBlocksNamed
@@ -112,26 +123,28 @@ Pair<[String] [DocConfigSetting]> ::= alreadyErrs::[String] args::[Pair<String C
         | pair("collapseChildren", v) -> if !v.asBool.isJust then ["@config collapseChildren takes a boolean value (or just @config collapseChildren)"] else []
         | pair("excludeFile", v) -> if !v.asBool.isJust then ["@config excludeFile takes a boolean value (or just @config excludeFile)"] else []
         | pair("excludeGrammar", v) -> if !v.asBool.isJust then ["@config excludeGrammar takes a boolean value (or just @config excludeGrammar)"] else []
+        | pair("hide", v) -> if !v.asBool.isJust then ["@config hide takes a boolean value (or just @config hide or @hide)"] else []
         | pair(k, _) -> ["Unknown @config directive '"++k++"'"]
         end;
 
-    local boundConf::DocConfigSetting =
+    local boundConf::[DocConfigSetting] =
         case arg of
-        | pair("split", v) -> splitConfig(v.asBool.fromJust)
-        | pair("noToc", v) -> tocConfig(!v.asBool.fromJust)
-        | pair("weight", v) -> weightConfig(v.asInteger.fromJust)
-        | pair("grammarWeight", v) -> grammarWeightConfig(v.asInteger.fromJust)
-        | pair("title", v) -> titleConfig(v.asString.fromJust)
-        | pair("grammarTitle", v) -> grammarTitleConfig(v.asString.fromJust)
-        | pair("collapseChildren", v) -> collapseConfig(v.asBool.fromJust)
-        | pair("excludeFile", v) -> fileNoDocsConfig(v.asBool.fromJust)
-        | pair("excludeGrammar", v) -> grammarNoDocsConfig(v.asBool.fromJust)
+        | pair("split", v) -> [splitConfig(v.asBool.fromJust)]
+        | pair("noToc", v) -> [tocConfig(!v.asBool.fromJust)]
+        | pair("weight", v) -> [weightConfig(v.asInteger.fromJust)]
+        | pair("grammarWeight", v) -> [grammarWeightConfig(v.asInteger.fromJust)]
+        | pair("title", v) -> [titleConfig(v.asString.fromJust)]
+        | pair("grammarTitle", v) -> [grammarTitleConfig(v.asString.fromJust)]
+        | pair("collapseChildren", v) -> [collapseConfig(v.asBool.fromJust)]
+        | pair("excludeFile", v) -> [fileNoDocsConfig(v.asBool.fromJust)]
+        | pair("excludeGrammar", v) -> [grammarNoDocsConfig(v.asBool.fromJust)]
+        | pair("hide", _) -> []
         end;
 
     return case args of
            | [] -> pair(alreadyErrs, conf)
            | _::r when length(err)!=0 -> processConfigOptions(err++alreadyErrs, r, conf)
-           | _::r -> processConfigOptions(alreadyErrs, r, boundConf::conf)
+           | _::r -> processConfigOptions(alreadyErrs, r, boundConf ++ conf)
            end;
 }
 
@@ -266,6 +279,14 @@ top::DclCommentBlock ::= Warning_t Whitespace_t content::DclCommentLines
     top.configArgs = [];
 }
 
+concrete production hideBlock
+top::DclCommentBlock ::= Hide_t
+{
+    forwards to configBlockImplicitTrue(
+        terminal(Config_t, "@config"), terminal(Whitespace_t, ""),
+        terminal(Id_t, "hide"), terminal(Whitespace_t, ""), location=top.location);
+}
+
 concrete production configBlock
 top::DclCommentBlock ::= Config_t Whitespace_t param::Id_t Whitespace_t Equals_t Whitespace_t value::ConfigValue
 {
@@ -374,6 +395,7 @@ top::DclCommentPart ::= '@@'
 
 terminal InitialIgnore_t /@+\{\-[ \t]*\-*[ \t]*([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*/;
 terminal FinalIgnore_t /[\- \r\n]*\-\}/ dominates {CommentContent_t};
+terminal EmptyDclComment_t /@+{\-[ \-]*\-}/;
 
 terminal EmptyLines_t /\r?\n([ \t]*\-*[ \t]*\r?\n)+[ \t]*\-*[ \t]*/;
 terminal Newline_t /\r?\n[ \t]*\-*[ \t]*/;
@@ -388,6 +410,7 @@ terminal Forward_t /([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*@forward/ lexer classe
 terminal Prodattr_t /([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*@prodattr/ lexer classes {BLOCK_KWD};
 terminal Warning_t /([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*@warning/ lexer classes {BLOCK_KWD};
 terminal Config_t /([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*@config/ lexer classes {BLOCK_KWD};
+terminal Hide_t /([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*@hide/ lexer classes {BLOCK_KWD};
 
 terminal ConfigValueKeyword_t /(on|off|true|false|yes|no)/;
 terminal ConfigValueString_t /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]n|[\\]r|[\\]f|[\\]t)*[\"]/;
