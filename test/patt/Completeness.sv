@@ -128,7 +128,7 @@ warnCode "not exhaustive" {
   String ::=
   {
     return case [1, 2] of
-           | 1::2::x -> "1"
+           | 1::2::_ -> "1"
            | 1::_ -> "2"
            | _::_ -> "3"
            end;
@@ -220,10 +220,10 @@ noWarnCode "not exhaustive" {
   function fun_maybe_complete_var
   String ::=
   {
-    return case abstract1() of
+    return case nothing() of
            | nothing() -> "nothing"
            | just(15) -> "just 15"
-           | x -> "other"
+           | _ -> "other"
            end;
   }
 }
@@ -416,9 +416,9 @@ noWarnCode "not exhaustive" {
   String ::=
   {
     return case 1, 2, 3 of
-           | 1, b, c -> "1"
-           | a, 2, 3 -> "2"
-           | a, b, c -> "3"
+           | 1, _, _ -> "1"
+           | _, 2, 3 -> "2"
+           | _, _, _ -> "3"
            end;
   }
 }
