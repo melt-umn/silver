@@ -70,14 +70,14 @@ instance MonadZero [] {}
 instance MonadZero Maybe {}
 
 {-
-The MonadZero type class has no members of its own; it just extends MonadZero with an additional law.
+The MonadPlus type class has no members of its own; it just extends MonadZero with an additional law.
 
 Instances should satisfy the following:
 
 Distributivity
   bind(alt(x, y), f) = alt(bind(x, f), bind(y, f))
 -}
-class Monad m, Alternative m => MonadPlus m {}
+class MonadZero m, Alternative m => MonadPlus m {}
 
 instance MonadPlus [] {}
 instance MonadPlus Maybe {}
