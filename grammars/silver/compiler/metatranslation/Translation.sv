@@ -9,7 +9,6 @@ imports silver:compiler:definition:env;
 imports silver:compiler:definition:type:syntax;
 imports silver:compiler:extension:list;
 imports silver:compiler:extension:patternmatching;
-imports silver:compiler:extension:tuple;
 
 function translate
 Expr ::= loc::Location ast::AST
@@ -75,8 +74,8 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   
   -- "Collection" antiquote productions
   -- Key: antiquote production name
-  -- Value: (nonterminal short name, cons production name, append production name)
-  production attribute collectionAntiquoteProductions::[(String, String, String, String)] with ++;
+  -- Value: pair(nonterminal short name, pair(cons production name, append production name))
+  production attribute collectionAntiquoteProductions::[Pair<String Pair<String Pair<String String>>>] with ++;
   collectionAntiquoteProductions := [];
   antiquoteTranslation <-
     do {
@@ -85,11 +84,11 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         case children of
         | consAST(
             nonterminalAST(n, consAST(a, _), _),
-            consAST(rest, nilAST())) -> just((n, a, rest))
+            consAST(rest, nilAST())) -> just(pair(n, pair(a, rest)))
         | _ -> nothing()
         end;
-      -- (nonterminal short name, cons production name, append production name)
-      trans::(String, String, String) <-
+      -- pair(nonterminal short name, pair(cons production name, append production name))
+      trans::Pair<String Pair<String String>> <-
         lookup(antiquote.fst, collectionAntiquoteProductions);
       if prodName == trans.snd.fst then just(unit()) else nothing(); -- require prodName == trans.snd.fst
       return
@@ -302,7 +301,7 @@ top::ASTs ::=
   top.foundLocation = nothing();
 }
 
-attribute givenLocation, translation<[(String, Expr)]>, foundLocation occurs on NamedASTs;
+attribute givenLocation, translation<[Pair<String Expr>]>, foundLocation occurs on NamedASTs;
 
 aspect production consNamedAST
 top::NamedASTs ::= h::NamedAST t::NamedASTs
@@ -318,14 +317,14 @@ top::NamedASTs ::=
   top.foundLocation = nothing();
 }
 
-attribute givenLocation, translation<(String, Expr)>, foundLocation occurs on NamedAST;
+attribute givenLocation, translation<Pair<String Expr>>, foundLocation occurs on NamedAST;
 
 aspect production namedAST
 top::NamedAST ::= n::String v::AST
 {
   top.translation =
     -- hack to get annotation shortname
-    (last(explode(":", n)), v.translation);
+    pair(last(explode(":", n)), v.translation);
   top.foundLocation =
     if n == "silver:core:location"
     then
