@@ -4,7 +4,7 @@ grammar silver:rewrite;
 -- Users must explicitly import silver:core hiding these names, or perform a qualified import,
 -- e.g. import silver:rewrite as s;
 
-imports silver:core hiding id, all, repeat, sequence;
+imports silver:core hiding id, all, repeat, sequence, fail;
 
 inherited attribute term::AST;
 synthesized attribute result::Maybe<AST>;
