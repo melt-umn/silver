@@ -90,12 +90,7 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
   top.isPrimitivePattern = false;
   top.isBoolPattern = false;
   top.isListPattern = false;
-  top.patternTypeName =
-      case prod.lookupValue.typeScheme.typerep.outputType.baseType of
-      | nonterminalType(name, _, _) -> name
-      | errorType() -> "" --for unknown patterns
-      | ty -> error("Should only have applied nonterminal types given, not:  " ++ prettyType(ty))
-      end;
+  top.patternTypeName = prod.lookupValue.typeScheme.typerep.outputType.baseType.typeName;
 }
 
 concrete production prodAppPattern
