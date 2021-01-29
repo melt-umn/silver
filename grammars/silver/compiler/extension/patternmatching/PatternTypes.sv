@@ -94,7 +94,7 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
       getHeadTypeName(prod.lookupValue.typeScheme.typerep.outputType);
   local getHeadTypeName::(String ::= Type) =
         \ ty::Type ->
-          case ty of
+          case prod.lookupValue.typeScheme.typerep.outputType of
           | nonterminalType(name, _, _) -> name
           | appType(ty1, _) -> getHeadTypeName(ty1)
           | errorType() -> "" --for unknown patterns

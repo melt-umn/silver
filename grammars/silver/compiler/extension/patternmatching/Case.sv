@@ -423,6 +423,8 @@ Maybe<[Pattern]> ::= patts::[[Decorated Pattern]] firstPattsVarCompleted::Boolea
            nothing(), combinedRemoveFirst);
 }
 
+--This checks the primitive patterns all have the same type and generates an
+--   example of a primitive value which is not covered by the given patterns
 function generatePrimitiveMissingPattern
 Maybe<Pattern> ::= patts::[Decorated Pattern]
 {
@@ -711,10 +713,7 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Pair<Expr Maybe<P
         tail(pl),
         cond, e, location=top.location);
 
-  top.hasCondition = case cond of
-                     | just(_) -> true
-                     | nothing() -> false
-                     end;
+  top.hasCondition = cond.isJust;
 }
 
 concrete production patternList_one
