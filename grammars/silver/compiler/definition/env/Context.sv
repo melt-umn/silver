@@ -25,7 +25,7 @@ synthesized attribute resolved::[DclInfo] occurs on Context;
 aspect production instContext
 top::Context ::= cls::String t::Type
 {
-  top.contextSuperDef = instSuperDef(_, _, cls, _, t);
+  top.contextSuperDef = instSuperDef(_, _, cls, _);
   top.contextMemberDef = instConstraintDef(_, _, cls, t); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextClassName = just(cls);
   
@@ -57,6 +57,28 @@ top::Context ::= cls::String t::Type
   production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, decT);
   production requiredContexts::Contexts =
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
+  requiredContexts.env = top.env;
+}
+
+
+aspect production typeableContext
+top::Context ::= t::Type
+{
+  top.contextSuperDef = typeableSuperDef(_, _, _);
+  top.contextMemberDef = typeableInstConstraintDef(_, _, t); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextClassName = nothing();
+
+  top.resolved =
+    case t of
+    | skolemType(_) ->
+      filter(
+        \ d::DclInfo -> !unifyDirectional(d.typeScheme.typerep, t).failure && !d.typeScheme.typerep.isError,
+        searchEnvScope("typeable", top.env.instTree))
+    | _ -> [typeableDcl(t, sourceGrammar="silver:core", sourceLocation=txtLoc("<builtin>"))] -- No real location to use here...
+    end;
+
+  production resolvedDcl::DclInfo = head(top.resolved); -- resolvedDcl.typeScheme should not bind any type variables!
+  production requiredContexts::Contexts = foldContexts(resolvedDcl.typeScheme.contexts);
   requiredContexts.env = top.env;
 }
 

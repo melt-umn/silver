@@ -53,6 +53,12 @@ top::Context ::= cls::String t::Type
   top.freeVariables = t.freeVariables;
 }
 
+abstract production typeableContext
+top::Context ::= t::Type
+{
+  top.freeVariables = t.freeVariables;
+}
+
 {--
  - Silver Type Representations.
  -}

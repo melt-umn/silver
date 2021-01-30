@@ -14,6 +14,8 @@ synthesized attribute transCovariantType :: String;
 synthesized attribute transClassType :: String;
 -- The runtime representation of a type, used for reification
 synthesized attribute transTypeRep :: String;
+-- An environment mapping skolem constants to their runtime representation translations
+autocopy attribute skolemTypeReps :: [Pair<TyVar String>];
 -- The runtime representation of a type, where all skolems are replaced with flexible vars, used for reification
 synthesized attribute transFreshTypeRep :: String;
 -- A valid Java identifier, unique to the type
@@ -33,7 +35,7 @@ String ::= te::Type tvs::[TyVar]
   return te.transTypeName;
 }
 
-attribute transType, transCovariantType, transClassType, transTypeRep, transFreshTypeRep, transTypeName occurs on Type;
+attribute transType, transCovariantType, transClassType, transTypeRep, skolemTypeReps, transFreshTypeRep, transTypeName occurs on Type;
 
 aspect default production
 top::Type ::=
@@ -55,7 +57,7 @@ aspect production skolemType
 top::Type ::= tv::TyVar
 {
   top.transClassType = "Object";
-  top.transTypeRep = s"new common.BaseTypeRep(\"b${toString(tv.extractTyVarRep)}\")";
+  top.transTypeRep = lookup(tv, top.skolemTypeReps).fromJust;
   top.transFreshTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
   top.transTypeName = findAbbrevFor(tv, top.boundVariables);
 }

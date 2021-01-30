@@ -41,6 +41,22 @@ top::Context ::= fn::String t::Type
 """;
 }
 
+aspect production typeableContext
+top::Context ::= t::Type
+{
+  top.transType = "common.TypeRep";
+  
+  resolvedDcl.transContextDeps = requiredContexts.transContexts;
+  top.transContext = resolvedDcl.transContext;
+  
+  top.transContextSuperAccessorName = "getType";
+  top.transContextSuperAccessor = s"""
+	public final common.TypeRep getType() {
+		return ${top.transContext};
+	}
+""";
+}
+
 -- The translations of the narrowed forms of the instDcl's contexts are fed back as dcl.transContextDeps 
 inherited attribute transContextDeps::[String] occurs on DclInfo;
 attribute transContext occurs on DclInfo;
@@ -72,10 +88,32 @@ top::DclInfo ::= fntc::String ty::Type
   top.transContext = s"currentInstance()";
 }
 aspect production instSuperDcl
-top::DclInfo ::= fntc::String baseDcl::DclInfo ty::Type
+top::DclInfo ::= fntc::String baseDcl::DclInfo
 {
   baseDcl.transContextDeps = top.transContextDeps;
   top.transContext = baseDcl.transContext ++ s".${makeInstanceSuperAccessorName(fntc)}()";
+}
+aspect production typeableInstConstraintDcl
+top::DclInfo ::= ty::Type
+{
+  top.transContext = "typeRep_" ++ ty.transTypeName;
+}
+aspect production typeableSigConstraintDcl
+top::DclInfo ::= ty::Type fnsig::String
+{
+  top.transContext = s"((${makeProdName(fnsig)})(context.undecorate())).typeRep_${ty.transTypeName}"; 
+}
+aspect production typeableSuperDcl
+top::DclInfo ::= baseDcl::DclInfo
+{
+  baseDcl.transContextDeps = top.transContextDeps;
+  top.transContext = baseDcl.transContext ++ ".getType()";
+}
+aspect production typeableDcl
+top::DclInfo ::= ty::Type
+{
+  ty.skolemTypeReps = zipWith(pair, ty.freeVariables, top.transContextDeps);
+  top.transContext = ty.transTypeRep;
 }
 
 function makeConstraintDictName

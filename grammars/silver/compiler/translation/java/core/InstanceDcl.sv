@@ -37,6 +37,14 @@ top::Context ::= fn::String t::Type
   top.contextInitTrans = s"\t\tthis.${makeConstraintDictName(fn, t)} = ${makeConstraintDictName(fn, t)};\n";
 }
 
+aspect production typeableContext
+top::Context ::= t::Type
+{
+  top.contextMemberDeclTrans = s"\tprivate final common.TypeRep typeRep_${t.transTypeName};\n";
+  top.contextParamTrans = s"common.TypeRep typeRep_${t.transTypeName}";
+  top.contextInitTrans = s"\t\tthis.typeRep_${t.transTypeName} = typeRep_${t.transTypeName};\n";
+}
+
 attribute translation occurs on InstanceBody, InstanceBodyItem;
 
 aspect production consInstanceBody

@@ -65,10 +65,8 @@ top::Constraint ::= c::QNameType t::TypeExpr
     case top.constraintSigName, top.instanceHead of
     | just(sigfn), _ -> sigConstraintDcl(fName, t.typerep, sigfn, sourceGrammar=top.grammarName, sourceLocation=top.location)
     | nothing(), just(_) -> instConstraintDcl(fName, t.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location)
-    | _, _ -> instSuperDcl(
-      fName,
+    | _, _ -> instSuperDcl(fName,
       currentInstDcl(error("Class name shouldn't be needed"), t.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location),
-      t.typerep,
       sourceGrammar=top.grammarName, sourceLocation=top.location)
     end;
   top.defs <- [tcInstDef(instDcl)];
@@ -82,6 +80,25 @@ top::Constraint ::= c::QNameType t::TypeExpr
       [pair(tv.lexeme, c.lookupType.typeScheme.monoType.kindArity)]
     | _ -> []
     end;
+}
+
+concrete production typeableConstraint
+top::Constraint ::= t::TypeExpr
+{
+  top.unparse = "typeable " ++ t.unparse;
+  top.contexts = [typeableContext(t.typerep)];
+  
+  top.errors <- t.errorsTyVars;
+
+  local instDcl::DclInfo =
+    case top.constraintSigName, top.instanceHead of
+    | just(sigfn), _ -> typeableSigConstraintDcl(t.typerep, sigfn, sourceGrammar=top.grammarName, sourceLocation=top.location)
+    | nothing(), just(_) -> typeableInstConstraintDcl(t.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location)
+    | _, _ -> typeableSuperDcl(
+      currentInstDcl(error("Class name shouldn't be needed"), t.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location),
+      sourceGrammar=top.grammarName, sourceLocation=top.location)
+    end;
+  top.defs <- [tcInstDef(instDcl)];
 }
 
 function transitiveSuperContexts
@@ -100,13 +117,15 @@ function transitiveSuperContexts
       map(transitiveSuperContexts(env, ty, dcl.fullName :: seenClasses, _), superClassNames));
 }
 
--- TODO: Should be an equality attribute, maybe, once we have more than one kind of context?
+-- TODO: Should be an equality attribute, maybe?
 function sameSuperContext
 Boolean ::= c1::Context c2::Context
 {
   return
     case c1, c2 of
     | instContext(c1, _), instContext(c2, _) -> c1 == c2
+    | typeableContext(_), typeableContext(_) -> true
+    | _, _ -> false
     end;
 }
 
@@ -119,7 +138,7 @@ function transitiveSuperDefs
   local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
   local superInstDcls::[DclInfo] =
     map(
-      instSuperDcl(_, instDcl, ty, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
+      instSuperDcl(_, instDcl, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
       superClassNames);
   return
     if null(dcls) || contains(dcl.fullName, seenClasses)
