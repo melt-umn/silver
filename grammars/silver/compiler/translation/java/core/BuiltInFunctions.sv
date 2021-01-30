@@ -65,15 +65,6 @@ top::Expr ::= 'toString' '(' e::Expr ')'
 aspect production reifyFunctionLiteral
 top::Expr ::= 'reify'
 {
-  local resultType::Type =
-    case finalType(top).outputType of
-    | appType(appType(nonterminalType("silver:core:Either", 2, _), stringType()), a) -> a
-    | _ -> error("Unexpected final type for reify!")
-    end;
-  
-  -- In the unusual case that we have skolems in the result type, we can't generalize them, but
-  -- we also can't do any better, so leave the runtime result TypeRep unfreshened.
-  -- There is a similar problem with lambdas.
   top.translation =
 s"""(new common.NodeFactory<silver.core.NEither>() {
 				@Override
@@ -81,8 +72,8 @@ s"""(new common.NodeFactory<silver.core.NEither>() {
 					assert args != null && args.length == 1;
 					assert namedArgs == null || namedArgs.length == 0;
 					
-${makeTyVarDecls(5, resultType.freeVariables)}
-					common.TypeRep resultType = ${resultType.transTypeRep};
+${makeTyVarDecls(5, finalType(top).freeVariables)}
+					common.TypeRep resultType = ${context.transContext};
 					
 					return common.Reflection.reifyChecked((originCtx!=null)?originCtx.rulesAsSilverList():null, resultType, (silver.core.NAST)common.Util.demand(args[0]));
 				}
@@ -90,7 +81,7 @@ ${makeTyVarDecls(5, resultType.freeVariables)}
 				@Override
 				public final common.TypeRep getType() {
 ${makeTyVarDecls(5, finalType(top).freeVariables)}
-					return ${finalType(top).transTypeRep};
+					return ${context.transContext};
 				}
 	
 				@Override

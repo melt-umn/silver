@@ -57,7 +57,11 @@ aspect production skolemType
 top::Type ::= tv::TyVar
 {
   top.transClassType = "Object";
-  top.transTypeRep = lookup(tv, top.skolemTypeReps).fromJust;
+  top.transTypeRep =
+    case lookup(tv, top.skolemTypeReps) of
+    | just(trans) -> trans  -- We know the runtime type with whiich the skolem is instantiated
+    | nothing() -> s"new common.BaseTypeRep(\"b${toString(tv.extractTyVarRep)}\")"  -- Fall back to a rigid skolem constant
+    end;
   top.transFreshTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
   top.transTypeName = findAbbrevFor(tv, top.boundVariables);
 }

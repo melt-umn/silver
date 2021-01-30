@@ -83,11 +83,15 @@ top::Expr ::= 'reify'
 {
   top.unparse = "reify";
 
+  production resType::Type = freshType();
   top.typerep =
     appTypes(
       functionType(1, []),
       [nonterminalType("silver:core:AST", 0, true),
-       appTypes(nonterminalType("silver:core:Either", 2, false), [stringType(), freshType()])]);
+       appTypes(nonterminalType("silver:core:Either", 2, false), [stringType(), resType])]);
+  
+  production context::Context = typeableContext(performSubstitution(resType, top.finalSubst));
+  context.env = top.env;
 }
 
 concrete production newFunction
