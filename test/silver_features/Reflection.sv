@@ -173,16 +173,31 @@ equalityTest(reifyResToString(reify(anyAST(baz(anno2=_, anno1=_)))), "<OBJECT ::
 equalityTest(reifyResToString(reify(anyAST(baz(anno1=1, anno2=_)))), "<OBJECT :: (silver_features:Baz ::= Float)>", String, silver_tests);
 equalityTest(reifyResToString(reify(anyAST(baz(anno1=_, anno2=2.0)))), "<OBJECT :: (silver_features:Baz ::= Integer)>", String, silver_tests);
 
-wrongCode "skolem" {
-  function reifySkolem
+function reifySkolem
+typeable a => Either<String a> ::= x::AST
+{
+  return reify(x);
+}
+
+wrongCode "typeable" {
+  function reifySkolemErr
   Either<String a> ::= x::AST
   {
     return reify(x);
   }
 }
 
-warnCode "skolem" {
-  function reifySkolem2
+equalityTest(reifySkolem(reflect(pair("abc", 123))), right(pair("abc", 123)), Either<String Pair<String Integer>>, silver_tests);
+
+function reifySkolem2
+typeable a => Either<String (a ::= Integer)> ::= 
+{
+  local fn::(a ::= Integer) = \ i::Integer -> error(toString(i));
+  return reify(anyAST(fn));
+}
+
+wrongCode "typeable" {
+  function reifySkolemErr2
   Either<String (a ::= Integer)> ::= 
   {
     local fn::(a ::= Integer) = \ i::Integer -> error(toString(i));

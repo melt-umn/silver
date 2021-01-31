@@ -37,6 +37,7 @@ aspect production monoType
 top::PolyType ::= ty::Type
 {
   top.typepp = ty.typepp;
+  ty.boundVariables = [];
 }
 
 aspect production polyType
@@ -57,6 +58,12 @@ aspect production instContext
 top::Context ::= cls::String t::Type
 {
   top.typepp = cls ++ " " ++ t.typepp;
+}
+
+aspect production typeableContext
+top::Context ::= t::Type
+{
+  top.typepp = "typeable " ++ t.typepp;
 }
 
 aspect production varType

@@ -39,6 +39,13 @@ top::Context ::= fn::String t::Type
   top.contextRefElem = makeConstraintDictName(fn, t);
 }
 
+aspect production typeableContext
+top::Context ::= t::Type
+{
+  top.contextSigElem = s"final ${top.transType} ${makeTypeableName(t)}";
+  top.contextRefElem = makeTypeableName(t);
+}
+
 -- TODO: It'd be nice to maybe split these into the ordered parameters and the annotations
 aspect production namedSignatureElement
 top::NamedSignatureElement ::= n::String ty::Type

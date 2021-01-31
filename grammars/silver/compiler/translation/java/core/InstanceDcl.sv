@@ -32,7 +32,7 @@ synthesized attribute contextInitTrans::String occurs on Context;
 aspect production instContext
 top::Context ::= fn::String t::Type
 {
-  top.contextMemberDeclTrans = s"\tprivate final ${top.transType} ${makeConstraintDictName(fn, t)};\n";
+  top.contextMemberDeclTrans = s"\tpublic final ${top.transType} ${makeConstraintDictName(fn, t)};\n";
   top.contextParamTrans = s"${top.transType} ${makeConstraintDictName(fn, t)}";
   top.contextInitTrans = s"\t\tthis.${makeConstraintDictName(fn, t)} = ${makeConstraintDictName(fn, t)};\n";
 }
@@ -40,9 +40,9 @@ top::Context ::= fn::String t::Type
 aspect production typeableContext
 top::Context ::= t::Type
 {
-  top.contextMemberDeclTrans = s"\tprivate final common.TypeRep typeRep_${t.transTypeName};\n";
-  top.contextParamTrans = s"common.TypeRep typeRep_${t.transTypeName}";
-  top.contextInitTrans = s"\t\tthis.typeRep_${t.transTypeName} = typeRep_${t.transTypeName};\n";
+  top.contextMemberDeclTrans = s"\tpublic final common.TypeRep ${makeTypeableName(t)};\n";
+  top.contextParamTrans = s"common.TypeRep ${makeTypeableName(t)}";
+  top.contextInitTrans = s"\t\tthis.${makeTypeableName(t)} = ${makeTypeableName(t)};\n";
 }
 
 attribute translation occurs on InstanceBody, InstanceBodyItem;

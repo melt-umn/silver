@@ -83,7 +83,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
 }
 
 concrete production typeableConstraint
-top::Constraint ::= t::TypeExpr
+top::Constraint ::= 'typeable' t::TypeExpr
 {
   top.unparse = "typeable " ++ t.unparse;
   top.contexts = [typeableContext(t.typerep)];

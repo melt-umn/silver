@@ -12,10 +12,10 @@ synthesized attribute transCovariantType :: String;
 -- If we want to statically refer to the class of this type, we cannot use
 -- the <> part of the type!! e.g. "Foo<Bar>.class" is illegal, should be "Foo.class"
 synthesized attribute transClassType :: String;
--- The runtime representation of a type, used for reification
-synthesized attribute transTypeRep :: String;
 -- An environment mapping skolem constants to their runtime representation translations
 autocopy attribute skolemTypeReps :: [Pair<TyVar String>];
+-- The runtime representation of a type, where all skolems are replaced with their provided representations, used for reification
+synthesized attribute transTypeRep :: String;
 -- The runtime representation of a type, where all skolems are replaced with flexible vars, used for reification
 synthesized attribute transFreshTypeRep :: String;
 -- A valid Java identifier, unique to the type
@@ -57,11 +57,7 @@ aspect production skolemType
 top::Type ::= tv::TyVar
 {
   top.transClassType = "Object";
-  top.transTypeRep =
-    case lookup(tv, top.skolemTypeReps) of
-    | just(trans) -> trans  -- We know the runtime type with whiich the skolem is instantiated
-    | nothing() -> s"new common.BaseTypeRep(\"b${toString(tv.extractTyVarRep)}\")"  -- Fall back to a rigid skolem constant
-    end;
+  top.transTypeRep = lookup(tv, top.skolemTypeReps).fromJust;
   top.transFreshTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
   top.transTypeName = findAbbrevFor(tv, top.boundVariables);
 }
