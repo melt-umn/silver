@@ -207,6 +207,24 @@ wrongCode "typeable" {
 
 equalityTest(case reifySkolem2() of left(_) -> false | right(_) -> true end, true, Boolean, silver_tests);
 
+function makeSpecializedId
+(a ::= a) ::= a
+{
+  return \x::a -> x;
+}
+
+equalityTest(applyAST(anyAST(makeSpecializedId(42)), [just(reflect(12))], []).isLeft, true, Boolean, silver_tests);
+equalityTest(applyAST(anyAST(makeSpecializedId(42)), [just(reflect(3.14))], []).isLeft, true, Boolean, silver_tests);
+
+function makeSpecializedId2
+typeable a => (a ::= a) ::= a
+{
+  return \x::a -> x;
+}
+
+equalityTest(case applyAST(anyAST(makeSpecializedId2(42)), [just(reflect(12))], []) of left(m) -> m | right(a) -> reifyResToString(reify(a)) end, "12", String, silver_tests);
+equalityTest(case applyAST(anyAST(makeSpecializedId2(42)), [just(reflect(3.14))], []) of left(m) -> m | right(a) -> reifyResToString(reify(a)) end, "Reification error in argument 0 at ?:\nreify is constructing Integer, but found Float AST.", String, silver_tests);
+
 global testValue::Pair<[Expr] Baz> = pair([testExpr, intConstExpr(5, lineNum=4)], baz(anno1=1, anno2=2.0));
 global serializeRes::Either<String String> = reflect(testValue).serialize;
 global deserializeRes::Either<String AST> = deserializeAST(lessHackyUnparse(testValue), case serializeRes of left(msg) -> msg | right(a) -> a end);
