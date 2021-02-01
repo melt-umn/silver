@@ -10,6 +10,14 @@ AST ::= x::a
   "java" : return "(common.Reflection.reflect((originCtx!=null)?originCtx.rulesAsSilverList():null, %x%))";
 }
 
+function reify2
+typeable a => Either<String a> ::= x::AST
+{
+  return error("Foreign function");
+} foreign {
+  "java" : return "common.Reflection.reifyChecked((originCtx!=null)?originCtx.rulesAsSilverList():null, %@0@%, (silver.core.NAST)%x%)";
+}
+
 function reflectTypeName
 Maybe<String> ::= x::a
 {
