@@ -105,7 +105,7 @@ function rewriteMessage
 Message ::= path::String m::Message
 {
   return
-    rewriteWith(
+    rewriteWith_(
       allTopDown(
         rule on Location of
         | loc(file, a, b, c, d, e, f) -> loc(path ++ "/" ++ file, a, b, c, d, e, f)

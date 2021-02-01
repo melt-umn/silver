@@ -35,7 +35,7 @@ top::Expr ::= 'reifyUnchecked' '(' e::Expr ')'
 concrete production deserializeFunction
 top::Expr ::= 'deserialize' '(' fileName::Expr ',' text::Expr ')'
 {
-  top.unparse = s"deserialize(${fileName.unparse}, ${text.unparse})";
+  top.unparse = s"deserialize_(${fileName.unparse}, ${text.unparse})";
   
   local errCheck1::TypeCheck = check(fileName.typerep, stringType());
   errCheck1.finalSubst = top.finalSubst;
@@ -46,10 +46,10 @@ top::Expr ::= 'deserialize' '(' fileName::Expr ',' text::Expr ')'
   
   local localErrors::[Message] =
     (if errCheck1.typeerror
-     then [err(fileName.location, "First operand to 'deserialize(fileName, text)' must be a String, instead it is " ++ errCheck1.leftpp)]
+     then [err(fileName.location, "First operand to 'deserialize_(fileName, text)' must be a String, instead it is " ++ errCheck1.leftpp)]
      else []) ++
     (if errCheck2.typeerror
-     then [err(text.location, "Second operand to 'deserialize(fileName, text)' must be a String, instead it is " ++ errCheck2.leftpp)]
+     then [err(text.location, "Second operand to 'deserialize_(fileName, text)' must be a String, instead it is " ++ errCheck2.leftpp)]
      else []);
   
   local fwrd::Expr =

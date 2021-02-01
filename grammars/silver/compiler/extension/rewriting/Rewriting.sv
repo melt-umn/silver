@@ -24,7 +24,7 @@ terminal RewriteWith_t 'rewriteWith' lexer classes {KEYWORD, RESERVED};
 concrete production rewriteExpr
 top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
 {
-  top.unparse = s"rewriteWith(${s.unparse}, ${e.unparse})";
+  top.unparse = s"rewriteWith_(${s.unparse}, ${e.unparse})";
   propagate freeVars;
 
   local errCheckS::TypeCheck = check(s.typerep, nonterminalType("silver:rewrite:Strategy", 0, false));
