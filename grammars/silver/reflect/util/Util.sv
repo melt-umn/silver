@@ -33,3 +33,13 @@ Either<String AST> ::= fn::AST args::[Maybe<AST>] namedArgs::[Pair<String Maybe<
 } foreign {
   "java" : return "(common.Reflection.applyAST(originCtx, %fn%, %args%, %namedArgs%))";
 }
+
+function reifyUnchecked_
+typeable a => a ::= x::AST
+{
+  return 
+    case reify(x) of
+    | left(msg) -> error(msg)
+    | right(a) -> a
+    end;
+}
