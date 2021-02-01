@@ -46,7 +46,7 @@ function reifyUnchecked
 typeable a => a ::= x::AST
 {
   return 
-    case reify(x) of
+    case reify2(x) of
     | left(msg) -> error(msg)
     | right(a) -> a
     end;
