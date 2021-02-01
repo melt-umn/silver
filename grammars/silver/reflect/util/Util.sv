@@ -34,7 +34,7 @@ Either<String AST> ::= fn::AST args::[Maybe<AST>] namedArgs::[Pair<String Maybe<
   "java" : return "(common.Reflection.applyAST(originCtx, %fn%, %args%, %namedArgs%))";
 }
 
-function reifyUnchecked_
+function reifyUnchecked
 typeable a => a ::= x::AST
 {
   return 

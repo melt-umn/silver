@@ -27,7 +27,7 @@ top::Expr ::= 'Silver_StrategyExpr' '(' genName::Expr ')' '{' cst::StrategyExpr_
   -- in one pass, but we want to keep that code as a generic library as much as possible.
   cst.givenGenName = "";
   forwards to
-    s:rewriteWith_(
+    s:rewriteWith(
       s:allTopDown(
         rule on AnnoExpr of
         | annoExpr(n, _, presentAppExpr(e), location=l) when n.name == "genName" ->

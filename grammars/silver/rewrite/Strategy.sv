@@ -6,10 +6,10 @@ grammar silver:rewrite;
 
 imports silver:core hiding id, all, repeat, sequence, fail;
 
-function rewriteWith_
+function rewriteWith
 typeable a => Maybe<a> ::= s::Strategy x::a
 {
-  return map(reifyUnchecked_, decorate s with {term = reflect(x);}.result);
+  return map(reifyUnchecked, decorate s with {term = reflect(x);}.result);
 }
 
 inherited attribute term::AST;

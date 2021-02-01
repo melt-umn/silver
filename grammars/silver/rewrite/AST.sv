@@ -73,7 +73,7 @@ top::AST ::= terminalName::String lexeme::String location::Location
 {
   top.allResult =
     do {
-      locationResult::Location <- rewriteWith_(top.givenStrategy, location);
+      locationResult::Location <- rewriteWith(top.givenStrategy, location);
       return terminalAST(terminalName, lexeme, locationResult);
     };
   -- Exactly one rewritable child

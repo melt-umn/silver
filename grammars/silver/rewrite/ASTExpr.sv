@@ -434,7 +434,7 @@ top::ASTExpr ::= e::ASTExpr pattern::ASTPattern res::ASTExpr fail::ASTExpr
 abstract production rewriteASTExpr
 top::ASTExpr ::= s::ASTExpr e::ASTExpr
 {
-  top.pp = pp"rewriteWith_(${s.pp}, ${e.pp})";
+  top.pp = pp"rewriteWith(${s.pp}, ${e.pp})";
   
   production st::Strategy = reifyUnchecked(s.value);
   st.term = e.value;
