@@ -54,14 +54,6 @@ Boolean ::= ty::Type
          end;
 }
 
-aspect production reifyFunctionLiteral
-top::Expr ::= 'reify'
-{
-  context.contextLoc = top.location;
-  context.contextSource = "the use of reify";
-  top.errors <- context.contextErrors;
-}
-
 aspect production newFunction
 top::Expr ::= 'new' '(' e1::Expr ')'
 {
