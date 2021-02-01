@@ -55,7 +55,7 @@ concrete productions top::AST_c
 | 'terminal' '(' terminalName::QName_t ',' lexeme::String_t ',' location::AST_c ')'
   {
     top.unparse = s"terminal(${terminalName.lexeme}, ${lexeme.lexeme}, ${location.unparse})";
-    local locReifyRes::Either<String Location> = reify2(location.ast);
+    local locReifyRes::Either<String Location> = reify(location.ast);
     top.ast =
       terminalAST(
         terminalName.lexeme,

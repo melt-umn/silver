@@ -10,7 +10,7 @@ AST ::= x::a
   "java" : return "(common.Reflection.reflect((originCtx!=null)?originCtx.rulesAsSilverList():null, %x%))";
 }
 
-function reify2
+function reify
 typeable a => Either<String a> ::= x::AST
 {
   return error("Foreign function");
@@ -46,7 +46,7 @@ function reifyUnchecked
 typeable a => a ::= x::AST
 {
   return 
-    case reify2(x) of
+    case reify(x) of
     | left(msg) -> error(msg)
     | right(a) -> a
     end;

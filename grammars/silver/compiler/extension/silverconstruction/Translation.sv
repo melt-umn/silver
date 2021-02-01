@@ -23,7 +23,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     | "silver:compiler:extension:silverconstruction:antiquote_qName",
       consAST(_, consAST(_, consAST(a, consAST(_, nilAST())))),
       consNamedAST(namedAST("silver:core:location", locAST), nilNamedAST()) ->
-        case reify2(a) of
+        case reify(a) of
         | right(e) ->
           just(
             mkFullFunctionInvocation(
@@ -38,7 +38,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     | "silver:compiler:extension:silverconstruction:antiquote_name",
       consAST(_, consAST(_, consAST(a, consAST(_, nilAST())))),
       consNamedAST(namedAST("silver:core:location", locAST), nilNamedAST()) ->
-        case reify2(a) of
+        case reify(a) of
         | right(e) ->
           just(
             mkFullFunctionInvocation(

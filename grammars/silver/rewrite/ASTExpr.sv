@@ -79,7 +79,7 @@ top::ASTExpr ::= terminalName::String lexeme::ASTExpr location::ASTExpr
 {
   top.pp = pp"terminal(${text(terminalName)}, ${lexeme.pp}, ${location.pp})";
   top.value =
-    case reify2(lexeme.value), reify2(location.value) of
+    case reify(lexeme.value), reify(location.value) of
     | right(l), right(l1) -> terminalAST(terminalName, l, l1)
     | _, _ -> error("Invalid values to terminal constructor")
     end;
@@ -253,7 +253,7 @@ abstract production noteAttachmentASTExpr
 top::ASTExpr ::= a::ASTExpr b::ASTExpr
 {
   top.pp = pp"attachNote ${a.pp} on {${b.pp}} end";
-  top.value = case reify2(a.value) of
+  top.value = case reify(a.value) of
               | right(note) -> attachNote note on b.value end
               | left(msg) -> error("Invalid value for noteAttachmentASTExpr's note: " ++ msg)
               end;

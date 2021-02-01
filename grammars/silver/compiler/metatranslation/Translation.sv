@@ -65,7 +65,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         | _ -> error(s"Unexpected antiquote production arguments: ${show(80, top.pp)}")
         end
       in
-        case reify2(wrapped) of
+        case reify(wrapped) of
         | right(e) -> just(e)
         | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
         end
@@ -92,7 +92,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         lookup(antiquote.fst, collectionAntiquoteProductions);
       if prodName == trans.snd.fst then just(unit()) else nothing(); -- require prodName == trans.snd.fst
       return
-        case reify2(antiquote.snd.fst) of
+        case reify(antiquote.snd.fst) of
         | right(e) ->
           mkStrFunctionInvocation(
             givenLocation, trans.snd.snd, [e, antiquote.snd.snd.translation])
@@ -146,7 +146,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         | _ -> error(s"Unexpected antiquote production arguments: ${show(80, top.pp)}")
         end
       in
-        case reify2(wrapped) of
+        case reify(wrapped) of
         | right(p) -> just(p)
         | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
         end
@@ -285,7 +285,7 @@ top::ASTs ::= h::AST t::ASTs
     -- Try to reify the last child as a location
     case t of
     | nilAST() ->
-        case reify2(h) of
+        case reify(h) of
         | right(l) -> just(l)
         | left(_) -> nothing()
         end
@@ -328,7 +328,7 @@ top::NamedAST ::= n::String v::AST
   top.foundLocation =
     if n == "silver:core:location"
     then
-      case reify2(v) of
+      case reify(v) of
       | right(l) -> just(l)
       | left(msg) -> error(s"Error in reifying location:\n${msg}")
       end
