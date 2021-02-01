@@ -296,6 +296,13 @@ equalityTest(
   s"""silver:core:pair("hello", [1, 2, 3, 4])""",
   String, silver_tests);
 
+type ForeignString foreign = "String";
+wrongCode "Could not find an instance for typeable silver_features:ForeignString (arising from the use of reifyUnchecked)" {
+  function reifyForeignString
+  ForeignString ::= x::AST
+  { return reifyUnchecked(x); }
+}
+
 global add::(Integer ::= Integer Integer) = \ i::Integer j::Integer -> i + j;
 
 global applyRes1::Either<String AST> = applyAST(reflect(add), [just(reflect(1)), just(reflect(2))], []);

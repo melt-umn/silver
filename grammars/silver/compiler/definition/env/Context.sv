@@ -69,18 +69,25 @@ top::Context ::= t::Type
   top.contextClassName = nothing();
 
   top.resolved =
-    case t of
-    | skolemType(_) ->
+    if t.isTypeable
+    then [typeableDcl(t, sourceGrammar="silver:core", sourceLocation=txtLoc("<builtin>"))]
+    else
       filter(
         \ d::DclInfo -> !unifyDirectional(d.typeScheme.typerep, t).failure && !d.typeScheme.typerep.isError,
-        searchEnvScope("typeable", top.env.instTree))
-    | _ -> [typeableDcl(t, sourceGrammar="silver:core", sourceLocation=txtLoc("<builtin>"))] -- No real location to use here...
-    end;
+        searchEnvScope("typeable", top.env.instTree));
 
   production resolvedDcl::DclInfo = head(top.resolved); -- resolvedDcl.typeScheme should not bind any type variables!
   production requiredContexts::Contexts = foldContexts(resolvedDcl.typeScheme.contexts);
   requiredContexts.env = top.env;
 }
+
+synthesized attribute isTypeable::Boolean occurs on Type;
+aspect default production
+top::Type ::=
+{ top.isTypeable = true; }
+aspect production skolemType
+top::Type ::= _
+{ top.isTypeable = false; }
 
 -- Invariant: This should be called when a and b are unifyable
 function isMoreSpecific

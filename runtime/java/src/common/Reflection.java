@@ -30,8 +30,7 @@ public final class Reflection {
 		} else if(o instanceof Thunk) {
 			throw new SilverInternalError("Runtime type of an unevaluated Thunk should never be demanded.");
 		} else {
-			// Not an internal error, since foreign types not implementing Typed will trigger this
-			throw new SilverError("Runtime type checking of object requires class " + o.getClass().getName() + " to implement Typed.");
+			throw new SilverInternalError("Runtime type demanded from object of class " + o.getClass().getName() + " that does not implement Typed.");
 		}
 	}
 	
