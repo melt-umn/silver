@@ -63,7 +63,7 @@ top::Context ::= cls::String t::Type
 aspect production typeableContext
 top::Context ::= t::Type
 {
-  top.typepp = "typeable " ++ t.typepp;
+  top.typepp = "runtimeTypeable " ++ t.typepp;
 }
 
 aspect production varType
