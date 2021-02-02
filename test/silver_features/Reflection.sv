@@ -179,7 +179,7 @@ runtimeTypeable a => Either<String a> ::= x::AST
   return reify(x);
 }
 
-wrongCode "typeable" {
+wrongCode "runtimeTypeable" {
   function reifySkolemErr
   Either<String a> ::= x::AST
   {
@@ -196,7 +196,7 @@ runtimeTypeable a => Either<String (a ::= Integer)> ::=
   return reify(anyAST(fn));
 }
 
-wrongCode "typeable" {
+wrongCode "runtimeTypeable" {
   function reifySkolemErr2
   Either<String (a ::= Integer)> ::= 
   {
