@@ -18,11 +18,6 @@ top::Expr ::= '\' params::ProductionRHS '->' e::Expr
   forwards to lambdap(params, e, location=top.location);
 }
 
--- TODO: New type variables are not currently allowed on the params.  This isn't a big deal for
--- writing code since lambdas aren't generalized anyway, but it would be nice to have for generated
--- code involving lambdas.  This isn't implemented at the moment due to a mess right now with how
--- this works for ProductionDcl
--- Also issues here with lexically scoped type variables
 abstract production lambdap
 top::Expr ::= params::ProductionRHS e::Expr
 {

@@ -168,20 +168,6 @@ top::Expr ::= 'toString' '(' e::Expr ')'
                        else toStringFunction('toString', '(', e.monadRewritten, ')', location=top.location);
 }
 
-aspect production reifyFunctionLiteral
-top::Expr ::= 'reify'
-{
-  top.merrors := [];
-  top.mUpSubst = top.mDownSubst;
-  top.mtyperep =
-    appTypes(
-      functionType(1, []),
-      [nonterminalType("silver:core:AST", 0, true),
-       appTypes(nonterminalType("silver:core:Either", 2, false), [stringType(), freshType()])]);
-  top.monadicNames = [];
-  top.monadRewritten = reifyFunctionLiteral('reify', location=top.location);
-}
-
 aspect production newFunction
 top::Expr ::= 'new' '(' e::Expr ')'
 {

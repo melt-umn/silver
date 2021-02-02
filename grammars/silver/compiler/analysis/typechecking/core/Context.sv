@@ -37,3 +37,17 @@ top::Context ::= cls::String t::Type
     | _ -> top.downSubst
     end;
 }
+
+aspect production typeableContext
+top::Context ::= t::Type
+{
+  requiredContexts.contextLoc = top.contextLoc;
+  requiredContexts.contextSource = s"the instance for ${prettyContext(top)}, arising from ${top.contextSource}";
+
+  top.contextErrors :=
+    if null(top.resolved)
+    then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
+    else requiredContexts.contextErrors;
+
+  top.upSubst = top.downSubst; -- No effect on decoratedness
+}

@@ -17,8 +17,13 @@ top::Expr ::= params::ProductionRHS e::Expr
 {
   local finTy :: Type = finalType(top);
   
-  -- If the type somehow contains a skolem (e.g. through scoped type variables), then there isn't
-  -- any better we can do with the result type, so leave it unfreshened.
+  -- Attempt to solve a context `typeable ${finType}`, from which the runtime TypeRep translation is computed.
+  -- If the type somehow contains a skolem (e.g. through scoped type variables),
+  -- then we will attempt to use the more specific runtime TypeRep from the context,
+  -- but will otherwise fall back to rigid skolem constant TypeReps.
+  local context :: Context = typeableContext(finTy);
+  context.env = top.env;
+  
   top.translation = 
 s"""(new common.NodeFactory<${finTy.outputType.transType}>() {
 				@Override
@@ -30,7 +35,7 @@ ${params.lambdaTranslation}
 				@Override
 				public final common.TypeRep getType() {
 ${makeTyVarDecls(5, finTy.freeVariables)}
-					return ${finTy.transTypeRep};
+					return ${context.transTypeableContext};
 				}
 		
 				@Override

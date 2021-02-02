@@ -579,13 +579,6 @@ top::Expr ::= 'case' es::Exprs 'of' o::Opt_Vbar_t ml::MRuleList 'end'
       nilNamedASTExpr());
 }
 
-aspect production rewriteExpr
-top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
-{
-  -- More efficient implementation that avoids reifying e's value.
-  top.transform = rewriteASTExpr(s.transform, e.transform);
-}
-
 -- Modifications
 aspect production letp
 top::Expr ::= la::AssignExpr e::Expr
