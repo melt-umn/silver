@@ -1,6 +1,6 @@
 grammar silver:regex;
 
-imports silver:core with empty as mempty;
+imports silver:core hiding empty, alt;
 imports silver:rewrite;
 imports silver:langutil;
 imports silver:langutil:pp;

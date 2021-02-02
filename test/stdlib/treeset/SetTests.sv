@@ -30,7 +30,7 @@ equalityTest ( ts:subset(set1, set2), false, Boolean, core_tests ) ;
 equalityTest ( ts:subset(set1, ts:union(set1,set2)), true, Boolean, core_tests ) ;
 equalityTest ( ts:subset(set2, ts:union(set1,set2)), true, Boolean, core_tests ) ;
 
-equalityTest ( ts:equals(set1, set2), false, Boolean, core_tests ) ;
-equalityTest ( ts:equals(set1, ts:union(set1,set2)), false, Boolean, core_tests ) ;
-equalityTest ( ts:equals(set1, set1), true, Boolean, core_tests ) ;
+equalityTest ( set1 == set2, false, Boolean, core_tests ) ;
+equalityTest ( set1 == ts:union(set1,set2), false, Boolean, core_tests ) ;
+equalityTest ( set1, set1, ts:Set<Integer>, core_tests ) ;
 

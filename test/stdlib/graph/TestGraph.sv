@@ -43,10 +43,10 @@ equalityTest ( g:contains(pair(3,2), g1), false, Boolean, core_tests ) ;
 equalityTest ( g:contains(pair(99,87), g1), false, Boolean, core_tests ) ;
 
 -- set equality on edges from...
-equalityTest ( set:equals(g:edgesFrom(1, g1), iset([1,2])), true, Boolean, core_tests ) ;
-equalityTest ( set:equals(g:edgesFrom(1, g2), iset([1,2])), true, Boolean, core_tests ) ;
-equalityTest ( set:equals(g:edgesFrom(6, g1), iset([])), true, Boolean, core_tests ) ;
-equalityTest ( set:equals(g:edgesFrom(56, g1), iset([])), true, Boolean, core_tests ) ;
+equalityTest ( g:edgesFrom(1, g1) == iset([1,2]), true, Boolean, core_tests ) ;
+equalityTest ( g:edgesFrom(1, g2) == iset([1,2]), true, Boolean, core_tests ) ;
+equalityTest ( g:edgesFrom(6, g1) == iset([]), true, Boolean, core_tests ) ;
+equalityTest ( g:edgesFrom(56, g1) == iset([]), true, Boolean, core_tests ) ;
 
 -- test length as a proxy for correctness...
 equalityTest ( length(g:toList(g1)), 5, Integer, core_tests ) ;
