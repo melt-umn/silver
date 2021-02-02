@@ -187,3 +187,21 @@ wrongCode "Argument 1 of function 'testingTupleType3' expected ((String, Integer
 
 }
 
+-- Testing tuple access selector
+
+equalityTest((3, 2, "dog", "cat").1, 3, Integer, silver_tests);
+equalityTest(("hello", "I", "am", "test").3, "am", String, silver_tests);
+equalityTest((4, 3, "testing last", true).4, true, Boolean, silver_tests);
+equalityTest(("nested tuple", "should", (2,3,4,"work"), "too").3.2, 3, Integer, silver_tests);
+
+wrongCode "Invalid tuple selector index." {
+
+  equalityTest((3, 2, 5, true).5, true, Boolean, silver_tests);
+
+}
+
+wrongCode "Invalid tuple selector index." {
+
+  equalityTest((3, 2, 5, true).0, true, Boolean, silver_tests);
+
+}
