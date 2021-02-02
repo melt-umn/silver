@@ -82,10 +82,16 @@ top::Constraint ::= c::QNameType t::TypeExpr
     end;
 }
 
-concrete production typeableConstraint
+
+terminal Typeable        'typeable'     lexer classes {KEYWORD,RESERVED};
+concrete production typeableConstraint_old
 top::Constraint ::= 'typeable' t::TypeExpr
+{ forwards to typeableConstraint('runtimeTypeable', t, location=top.location); }
+
+concrete production typeableConstraint
+top::Constraint ::= 'runtimeTypeable' t::TypeExpr
 {
-  top.unparse = "typeable " ++ t.unparse;
+  top.unparse = "runtimeTypeable " ++ t.unparse;
   top.contexts = [typeableContext(t.typerep)];
   
   top.errors <- t.errorsTyVars;
