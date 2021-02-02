@@ -7,7 +7,7 @@ grammar silver:rewrite;
 imports silver:core hiding id, all, repeat, sequence, fail;
 
 function rewriteWith
-typeable a => Maybe<a> ::= s::Strategy x::a
+runtimeTypeable a => Maybe<a> ::= s::Strategy x::a
 {
   return map(reifyUnchecked, decorate s with {term = reflect(x);}.result);
 }

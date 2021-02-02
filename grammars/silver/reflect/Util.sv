@@ -30,7 +30,7 @@ Either<String AST> ::= fileName::String text::String
 }
 
 function deserialize
-typeable a => Either<String a> ::= fileName::String text::String
+runtimeTypeable a => Either<String a> ::= fileName::String text::String
 {
   return bind(deserializeAST(fileName, text), reify);
 }

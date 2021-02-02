@@ -174,7 +174,7 @@ equalityTest(reifyResToString(reify(anyAST(baz(anno1=1, anno2=_)))), "<OBJECT ::
 equalityTest(reifyResToString(reify(anyAST(baz(anno1=_, anno2=2.0)))), "<OBJECT :: (silver_features:Baz ::= Integer)>", String, silver_tests);
 
 function reifySkolem
-typeable a => Either<String a> ::= x::AST
+runtimeTypeable a => Either<String a> ::= x::AST
 {
   return reify(x);
 }
@@ -190,7 +190,7 @@ wrongCode "typeable" {
 equalityTest(reifySkolem(reflect(pair("abc", 123))), right(pair("abc", 123)), Either<String Pair<String Integer>>, silver_tests);
 
 function reifySkolem2
-typeable a => Either<String (a ::= Integer)> ::= 
+runtimeTypeable a => Either<String (a ::= Integer)> ::= 
 {
   local fn::(a ::= Integer) = \ i::Integer -> error(toString(i));
   return reify(anyAST(fn));
@@ -217,7 +217,7 @@ equalityTest(applyAST(anyAST(makeSpecializedId(42)), [just(reflect(12))], []).is
 equalityTest(applyAST(anyAST(makeSpecializedId(42)), [just(reflect(3.14))], []).isLeft, true, Boolean, silver_tests);
 
 function makeSpecializedId2
-typeable a => (a ::= a) ::= a
+runtimeTypeable a => (a ::= a) ::= a
 {
   return \x::a -> x;
 }
@@ -297,7 +297,7 @@ equalityTest(
   String, silver_tests);
 
 type ForeignString foreign = "String";
-wrongCode "Could not find an instance for typeable silver_features:ForeignString (arising from the use of reifyUnchecked)" {
+wrongCode "Could not find an instance for runtimeTypeable silver_features:ForeignString (arising from the use of reifyUnchecked)" {
   function reifyForeignString
   ForeignString ::= x::AST
   { return reifyUnchecked(x); }

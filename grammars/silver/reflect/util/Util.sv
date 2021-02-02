@@ -11,7 +11,7 @@ AST ::= x::a
 }
 
 function reify
-typeable a => Either<String a> ::= x::AST
+runtimeTypeable a => Either<String a> ::= x::AST
 {
   return error("Foreign function");
 } foreign {
@@ -43,7 +43,7 @@ Either<String AST> ::= fn::AST args::[Maybe<AST>] namedArgs::[Pair<String Maybe<
 }
 
 function reifyUnchecked
-typeable a => a ::= x::AST
+runtimeTypeable a => a ::= x::AST
 {
   return 
     case reify(x) of

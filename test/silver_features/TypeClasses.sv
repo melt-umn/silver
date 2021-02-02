@@ -315,17 +315,17 @@ instance BoolThing Maybe<Unit> {
 equalityTest(bteq(42, 42), just(unit()), Maybe<Unit>, silver_tests);
 equalityTest(bteq(234, 42), nothing(), Maybe<Unit>, silver_tests);
 
-class typeable a => MyTypeable a {
+class runtimeTypeable a => MyTypeable a {
   myreify :: (a ::= AST) = reifyUnchecked;
 }
 
-instance typeable a => MyTypeable a {}
+instance runtimeTypeable a => MyTypeable a {}
 
 instance MyTypeable Integer {
   myreify = \ a::AST -> case a of integerAST(i) -> i end;
 }
 
-instance typeable a, MyTypeable b => MyTypeable Pair<a b> {
+instance runtimeTypeable a, MyTypeable b => MyTypeable Pair<a b> {
   myreify = \ a::AST -> case a of AST { silver:core:pair(fst, snd) } -> pair(reifyUnchecked(fst), myreify(snd)) end;
 }
 
