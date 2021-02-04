@@ -1,7 +1,5 @@
 grammar silver:reflect;
 
-
-
 -- left(error message) or right(result)
 synthesized attribute serialize<a>::Either<String a>;
 

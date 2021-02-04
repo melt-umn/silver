@@ -28,3 +28,9 @@ Either<String AST> ::= fileName::String text::String
     then left(messagesToString(parseTree.errors))
     else right(parseTree.ast);
 }
+
+function deserialize
+runtimeTypeable a => Either<String a> ::= fileName::String text::String
+{
+  return bind(deserializeAST(fileName, text), reify);
+}
