@@ -20,7 +20,7 @@ function collectPatternsFromPatternList
   | patternList_one(p) -> p::accum
   | patternList_snoc(ps,_,p) -> collectPatternsFromPatternList(ps, p::accum)
   | patternList_more(p,_,ps) -> collectPatternsFromPatternList(ps, p::accum)
-  | patternList_nil() -> []
+  | patternList_nil() -> accum
   end;
 }
 
@@ -161,32 +161,36 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
   return case rules of
     | matchRule_c(patternList_one(prodAppPattern(name,_,_,_)),_,e) :: _
     ->
-    -- I wish let bindings were stable...
+    let paramNames :: [Name] = makeGeneratedNamesFromMatchRule(head(rules),location)
+    in
     pair(
       makeAspectProduction(
         makeParamsCaseExpr(
-            makeParamCaseSubExpr(makeQNamesFromNames(head(rules).aspectProdParamsList)),
+            makeParamCaseSubExpr(makeQNamesFromNames(paramNames)),
             rules),
         name,
         makeProdParams(
             makeProdParamsList(
-              head(rules).aspectProdParamsList,
+              paramNames,
               lookupProdInputTypes(name.name)))),
       [])
+    end
     | matchRule_c(patternList_more(prodAppPattern(name,_,_,_),_,_),_,e) :: _
     ->
-    -- I wish let bindings were stable...
+    let paramNames :: [Name] = makeGeneratedNamesFromMatchRule(head(rules),location)
+    in
     pair(
       makeAspectProduction(
         makeParamsCaseExpr(
-            makeParamCaseSubExpr(makeQNamesFromNames(head(rules).aspectProdParamsList)),
+            makeParamCaseSubExpr(makeQNamesFromNames(paramNames)),
             rules),
         name,
         makeProdParams(
             makeProdParamsList(
-              head(rules).aspectProdParamsList,
+              paramNames,
               lookupProdInputTypes(name.name)))),
       [])
+    end
     | matchRule_c(patternList_one(wildcPattern(_)),_,e) :: _ ->
       pair(
         Silver_AGDcl {
@@ -405,43 +409,67 @@ top::AGDcl ::= attr::QNameAttrOccur aspectLHS::ConvAspectLHS eqKind::Convenience
    combinedAspectProds);
 
   local fwrd::AGDcl = makeAppendAGDclOfAGDcls(combinedAspectDcls);
-  forwards to makeAppendAGDclOfAGDcls(combinedAspectDcls);
-
+  forwards to unsafeTraceDump(fwrd);
+  -- forwards to makeAppendAGDclOfAGDcls(combinedAspectDcls);
 }
 
 
+function makeGeneratedNamesFromMatchRule
+[Name] ::= mr::MatchRule loc::Location
+{
+  local patList::PatternList =
+    case mr of
+    | matchRule_c(pl,_,_) -> pl
+    | matchRuleWhen_c(pl,_,_,_,_) -> pl
+    | matchRuleWhenMatches_c(pl,_,_,_,_,_,_) -> pl
+    end;
+
+  return
+    map(\pat::Pattern ->
+      name("__generated_" ++ toString(genInt()), loc),
+      collectPatternsFromPatternList(patList,[]));
+
+}
 
 aspect production matchRule_c
 top::MatchRule ::= pt::PatternList '->' e::Expr
 {
-  top.aspectProdParamsList = case pt of
+  top.aspectProdParamsList = unsafeTraceDump( case pt of
     | patternList_one(prodAppPattern_named(_, _, ps,_,_,_)) ->
       map(\pat::Pattern ->
         name("__generated_" ++ toString(genInt()), top.location),
-        collectPatternsFromPatternList(pt,[]))
+        collectPatternsFromPatternList(ps,[]))
     | patternList_more(prodAppPattern_named(_, _, ps,_,_,_),_,_) ->
       map(\pat::Pattern ->
         name("__generated_" ++ toString(genInt()), top.location),
-        collectPatternsFromPatternList(pt,[]))
+        collectPatternsFromPatternList(ps,[]))
+    | patternList_snoc(_,_,prodAppPattern_named(_, _, ps,_,_,_)) ->
+      map(\pat::Pattern ->
+        name("__generated_" ++ toString(genInt()), top.location),
+        collectPatternsFromPatternList(ps,[]))
     | _ -> []
-    end;
+    end);
 
 }
 
 aspect production matchRuleWhen_c
 top::MatchRule ::= pt::PatternList 'when' cond::Expr '->' e::Expr
 {
-  top.aspectProdParamsList = case pt of
+  top.aspectProdParamsList = unsafeTraceDump( case pt of
     | patternList_one(prodAppPattern_named(_, _, ps,_,_,_)) ->
       map(\pat::Pattern ->
         name("__generated_" ++ toString(genInt()), top.location),
-        collectPatternsFromPatternList(pt,[]))
+        collectPatternsFromPatternList(ps,[]))
     | patternList_more(prodAppPattern_named(_, _, ps,_,_,_),_,_) ->
       map(\pat::Pattern ->
         name("__generated_" ++ toString(genInt()), top.location),
-        collectPatternsFromPatternList(pt,[]))
+        collectPatternsFromPatternList(ps,[]))
+    | patternList_snoc(_,_,prodAppPattern_named(_, _, ps,_,_,_)) ->
+      map(\pat::Pattern ->
+        name("__generated_" ++ toString(genInt()), top.location),
+        collectPatternsFromPatternList(ps,[]))
     | _ -> []
-    end;
+    end);
 
 }
 
