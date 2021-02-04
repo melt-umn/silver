@@ -71,11 +71,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 aspect production terminalAST
 top::AST ::= terminalName::String lexeme::String location::Location
 {
-  top.allResult =
-    do {
-      locationResult::Location <- rewriteWith(top.givenStrategy, location);
-      return terminalAST(terminalName, lexeme, locationResult);
-    };
+  top.allResult = map(terminalAST(terminalName, lexeme, _), rewriteWith(top.givenStrategy, location));
   -- Exactly one rewritable child
   top.someResult = top.allResult;
   top.oneResult = top.allResult;

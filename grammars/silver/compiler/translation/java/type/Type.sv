@@ -12,7 +12,9 @@ synthesized attribute transCovariantType :: String;
 -- If we want to statically refer to the class of this type, we cannot use
 -- the <> part of the type!! e.g. "Foo<Bar>.class" is illegal, should be "Foo.class"
 synthesized attribute transClassType :: String;
--- The runtime representation of a type, used for reification
+-- An environment mapping skolem constants to their runtime representation translations
+autocopy attribute skolemTypeReps :: [Pair<TyVar String>];
+-- The runtime representation of a type, where all skolems are replaced with their provided representations, used for reification
 synthesized attribute transTypeRep :: String;
 -- The runtime representation of a type, where all skolems are replaced with flexible vars, used for reification
 synthesized attribute transFreshTypeRep :: String;
@@ -33,7 +35,7 @@ String ::= te::Type tvs::[TyVar]
   return te.transTypeName;
 }
 
-attribute transType, transCovariantType, transClassType, transTypeRep, transFreshTypeRep, transTypeName occurs on Type;
+attribute transType, transCovariantType, transClassType, transTypeRep, skolemTypeReps, transFreshTypeRep, transTypeName occurs on Type;
 
 aspect default production
 top::Type ::=
@@ -55,7 +57,7 @@ aspect production skolemType
 top::Type ::= tv::TyVar
 {
   top.transClassType = "Object";
-  top.transTypeRep = s"new common.BaseTypeRep(\"b${toString(tv.extractTyVarRep)}\")";
+  top.transTypeRep = lookup(tv, top.skolemTypeReps).fromJust;
   top.transFreshTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
   top.transTypeName = findAbbrevFor(tv, top.boundVariables);
 }

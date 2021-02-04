@@ -173,16 +173,31 @@ equalityTest(reifyResToString(reify(anyAST(baz(anno2=_, anno1=_)))), "<OBJECT ::
 equalityTest(reifyResToString(reify(anyAST(baz(anno1=1, anno2=_)))), "<OBJECT :: (silver_features:Baz ::= Float)>", String, silver_tests);
 equalityTest(reifyResToString(reify(anyAST(baz(anno1=_, anno2=2.0)))), "<OBJECT :: (silver_features:Baz ::= Integer)>", String, silver_tests);
 
-wrongCode "skolem" {
-  function reifySkolem
+function reifySkolem
+runtimeTypeable a => Either<String a> ::= x::AST
+{
+  return reify(x);
+}
+
+wrongCode "runtimeTypeable" {
+  function reifySkolemErr
   Either<String a> ::= x::AST
   {
     return reify(x);
   }
 }
 
-warnCode "skolem" {
-  function reifySkolem2
+equalityTest(reifySkolem(reflect(pair("abc", 123))), right(pair("abc", 123)), Either<String Pair<String Integer>>, silver_tests);
+
+function reifySkolem2
+runtimeTypeable a => Either<String (a ::= Integer)> ::= 
+{
+  local fn::(a ::= Integer) = \ i::Integer -> error(toString(i));
+  return reify(anyAST(fn));
+}
+
+wrongCode "runtimeTypeable" {
+  function reifySkolemErr2
   Either<String (a ::= Integer)> ::= 
   {
     local fn::(a ::= Integer) = \ i::Integer -> error(toString(i));
@@ -191,6 +206,24 @@ warnCode "skolem" {
 }
 
 equalityTest(case reifySkolem2() of left(_) -> false | right(_) -> true end, true, Boolean, silver_tests);
+
+function makeSpecializedId
+(a ::= a) ::= a
+{
+  return \x::a -> x;
+}
+
+equalityTest(applyAST(anyAST(makeSpecializedId(42)), [just(reflect(12))], []).isLeft, true, Boolean, silver_tests);
+equalityTest(applyAST(anyAST(makeSpecializedId(42)), [just(reflect(3.14))], []).isLeft, true, Boolean, silver_tests);
+
+function makeSpecializedId2
+runtimeTypeable a => (a ::= a) ::= a
+{
+  return \x::a -> x;
+}
+
+equalityTest(case applyAST(anyAST(makeSpecializedId2(42)), [just(reflect(12))], []) of left(m) -> m | right(a) -> reifyResToString(reify(a)) end, "12", String, silver_tests);
+equalityTest(case applyAST(anyAST(makeSpecializedId2(42)), [just(reflect(3.14))], []) of left(m) -> m | right(a) -> reifyResToString(reify(a)) end, "Reification error in argument 0 at ?:\nreify is constructing Integer, but found Float AST.", String, silver_tests);
 
 global testValue::Pair<[Expr] Baz> = pair([testExpr, intConstExpr(5, lineNum=4)], baz(anno1=1, anno2=2.0));
 global serializeRes::Either<String String> = reflect(testValue).serialize;
@@ -262,6 +295,13 @@ equalityTest(
   reifyResToString(reifyRes12),
   s"""silver:core:pair("hello", [1, 2, 3, 4])""",
   String, silver_tests);
+
+type ForeignString foreign = "String";
+wrongCode "Could not find an instance for runtimeTypeable silver_features:ForeignString (arising from the use of reifyUnchecked)" {
+  function reifyForeignString
+  ForeignString ::= x::AST
+  { return reifyUnchecked(x); }
+}
 
 global add::(Integer ::= Integer Integer) = \ i::Integer j::Integer -> i + j;
 

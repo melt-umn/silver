@@ -1,6 +1,7 @@
 grammar silver_features;
 
 import silver_features:myeq;
+import silver:reflect;
 
 class CFoo a
 {
@@ -313,4 +314,22 @@ instance BoolThing Maybe<Unit> {
 
 equalityTest(bteq(42, 42), just(unit()), Maybe<Unit>, silver_tests);
 equalityTest(bteq(234, 42), nothing(), Maybe<Unit>, silver_tests);
+
+class runtimeTypeable a => MyTypeable a {
+  myreify :: (a ::= AST) = reifyUnchecked;
+}
+
+instance runtimeTypeable a => MyTypeable a {}
+
+instance MyTypeable Integer {
+  myreify = \ a::AST -> case a of integerAST(i) -> i end;
+}
+
+instance runtimeTypeable a, MyTypeable b => MyTypeable Pair<a b> {
+  myreify = \ a::AST -> case a of AST { silver:core:pair(fst, snd) } -> pair(reifyUnchecked(fst), myreify(snd)) end;
+}
+
+equalityTest(myreify(reflect(42)), 42, Integer, silver_tests);
+equalityTest(myreify(reflect("hello")), "hello", String, silver_tests);
+equalityTest(myreify(reflect(pair("abc", 123))), pair("abc", 123), Pair<String Integer>, silver_tests);
 
