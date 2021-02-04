@@ -423,3 +423,18 @@ noWarnCode "not exhaustive" {
   }
 }
 
+noWarnCode "not exhaustive" {
+   function fun_test
+   String ::=
+   {
+     return
+       case just(1), just(2) of
+       | nothing(), nothing() -> ""
+       | just(0), nothing() -> ""
+       | just(expected), just(actual) -> "Incorrect return type, expected "
+       | nothing(), just(actual) -> "Unexpected return"
+       | just(expected), nothing() -> "Expected return value, but found valueless return"
+       end;
+   }
+}
+
