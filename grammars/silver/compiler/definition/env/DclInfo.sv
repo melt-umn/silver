@@ -311,6 +311,7 @@ top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
 }
 
 -- InstDclInfos
+-- Class instances
 abstract production instDcl
 top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
 {
@@ -340,11 +341,46 @@ top::DclInfo ::= fntc::String ty::Type
   top.typeScheme = monoType(ty);
 }
 abstract production instSuperDcl
-top::DclInfo ::= fntc::String baseDcl::DclInfo ty::Type
+top::DclInfo ::= fntc::String baseDcl::DclInfo
 {
   top.fullName = fntc;
   
   top.typeScheme = baseDcl.typeScheme;
+}
+
+-- typeable instances
+abstract production typeableInstConstraintDcl
+top::DclInfo ::= ty::Type
+{
+  top.fullName = "typeable";
+  
+  top.typeScheme = monoType(ty);
+}
+abstract production typeableSigConstraintDcl
+top::DclInfo ::= ty::Type fnsig::String
+{
+  top.fullName = "typeable";
+  
+  top.typeScheme = monoType(ty);
+}
+abstract production typeableSuperDcl
+top::DclInfo ::= baseDcl::DclInfo
+{
+  top.fullName = "typeable";
+  
+  top.typeScheme = baseDcl.typeScheme;
+}
+-- This doesn't appear in the environment, but is instead "looked up" on the type
+abstract production typeableDcl
+top::DclInfo ::= ty::Type
+{
+  top.fullName = "typeable";
+
+  top.typeScheme =
+    case ty of
+    | varType(_) -> monoType(ty) -- Don't require an instance for flexible type variables, leave these flexible at runtime
+    | _ -> constraintType([], map(compose(typeableContext, skolemType), ty.freeVariables), ty)
+    end;
 }
 
 -- TODO: this should probably go elsewhere?

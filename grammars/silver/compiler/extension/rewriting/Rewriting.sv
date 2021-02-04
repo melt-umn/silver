@@ -13,57 +13,10 @@ imports silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:env;
 imports silver:compiler:translation:java:core only finalType;
 imports silver:compiler:extension:patternmatching;
-imports silver:compiler:extension:reflection;
 imports silver:compiler:extension:list;
 imports silver:compiler:modification:primitivepattern;
 imports silver:compiler:modification:lambda_fn;
 imports silver:compiler:modification:let_fix;
-
-terminal RewriteWith_t 'rewriteWith' lexer classes {KEYWORD, RESERVED};
-
-concrete production rewriteExpr
-top::Expr ::= 'rewriteWith' '(' s::Expr ',' e::Expr ')'
-{
-  top.unparse = s"rewriteWith(${s.unparse}, ${e.unparse})";
-  propagate freeVars;
-
-  local errCheckS::TypeCheck = check(s.typerep, nonterminalType("silver:rewrite:Strategy", 0, false));
-  errCheckS.finalSubst = top.finalSubst;
-  
-  local localErrors::[Message] =
-    s.errors ++ e.errors ++ 
-    (if errCheckS.typeerror
-     then [err(top.location, "First argument to rewriteWith must be Strategy. Instead got " ++ errCheckS.leftpp)]
-     else []) ++
-    (if null(getTypeDcl("silver:rewrite:Strategy", top.env))
-     then [err(top.location, "Term rewriting requires import of silver:rewrite")]
-     else []);
-  
-  -- Can't use an error production here, unfourtunately, due to circular dependency issues.
-  top.errors := if !null(localErrors) then localErrors else forward.errors;
-  
-  -- TODO: Equation needed due to weirdness with lets auto-undecorating bindings.
-  -- See comments in definition of lexicalLocalReference (grammars/silver/modification/let_fix/Let.sv)
-  -- Actual syntax to exactly constrain the types of arbitrary expressions would be useful here.
-  top.typerep = appType(nonterminalType("silver:core:Maybe", 1, false), e.typerep);
-  
-  thread downSubst, upSubst on top, s, e, errCheckS, forward;
-  
-  forwards to
-    Silver_Expr {
-      case decorate $Expr{exprRef(s, location=builtin)}
-           with {
-             silver:rewrite:term = silver:reflect:util:reflect($Expr{exprRef(e, location=builtin)});
-           }.silver:rewrite:result of
-      | just(a) ->
-        -- let needed to constrain the result type to be the same as e.
-        let res :: $TypeExpr{typerepTypeExpr(e.typerep, location=builtin)} = reifyUnchecked(a)
-        in just(res)
-        end
-      | nothing() -> nothing()
-      end
-    };
-}
 
 -- Note that these being infix operators means that this wouldn't pass the MDA,
 -- despite being a Silver "extension".  This could be fixed by refactoring the

@@ -9,6 +9,7 @@ top::Type ::= fn::String  transType::String  params::[Type]
   top.flatRenamed = foreignType(fn, transType, mapRenameSubst(params, top.substitution));
   top.typepp = fn ++ if !null(params) then "<" ++ implode(" ", map(prettyTypeWith(_, top.boundVariables), params)) ++ ">" else "";
   top.kindArity = 0;
+  top.isTypeable = false; -- TODO: May want to add extra syntax to indicate that a foreign type's translation is an instance of Typed
 
   -- Unification.sv
   top.unify = 

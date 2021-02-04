@@ -22,6 +22,11 @@ String ::= s::String
 {
   return "%?" ++ s ++ "?%";
 }
+function wrapContextNotation
+String ::= i::Integer
+{
+  return "%@" ++ toString(i) ++ "@%";
+}
 
 function cleanStringLexeme
 String ::= s::String

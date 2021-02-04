@@ -6,13 +6,13 @@ attribute env occurs on Context;
 
 -- This mostly exists as a convenient way to perform multiple env-dependant operations
 -- on a list of contexts without re-decorating them and repeating context resolution.
-nonterminal Contexts with env;
+nonterminal Contexts with env, freeVariables;
 abstract production consContext
 top::Contexts ::= h::Context t::Contexts
-{}
+{ top.freeVariables = setUnionTyVars(h.freeVariables, t.freeVariables); }
 abstract production nilContext
 top::Contexts ::=
-{}
+{ top.freeVariables = []; }
 
 global foldContexts::(Contexts ::= [Context]) = foldr(consContext, nilContext(), _);
 
@@ -25,7 +25,7 @@ synthesized attribute resolved::[DclInfo] occurs on Context;
 aspect production instContext
 top::Context ::= cls::String t::Type
 {
-  top.contextSuperDef = instSuperDef(_, _, cls, _, t);
+  top.contextSuperDef = instSuperDef(_, _, cls, _);
   top.contextMemberDef = instConstraintDef(_, _, cls, t); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextClassName = just(cls);
   
@@ -59,6 +59,35 @@ top::Context ::= cls::String t::Type
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
   requiredContexts.env = top.env;
 }
+
+
+aspect production typeableContext
+top::Context ::= t::Type
+{
+  top.contextSuperDef = typeableSuperDef(_, _, _);
+  top.contextMemberDef = typeableInstConstraintDef(_, _, t); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextClassName = nothing();
+
+  top.resolved =
+    if t.isTypeable
+    then [typeableDcl(t, sourceGrammar="silver:core", sourceLocation=txtLoc("<builtin>"))]
+    else
+      filter(
+        \ d::DclInfo -> !unifyDirectional(d.typeScheme.typerep, t).failure && !d.typeScheme.typerep.isError,
+        searchEnvScope("typeable", top.env.instTree));
+
+  production resolvedDcl::DclInfo = head(top.resolved); -- resolvedDcl.typeScheme should not bind any type variables!
+  production requiredContexts::Contexts = foldContexts(resolvedDcl.typeScheme.contexts);
+  requiredContexts.env = top.env;
+}
+
+synthesized attribute isTypeable::Boolean occurs on Type;
+aspect default production
+top::Type ::=
+{ top.isTypeable = true; }
+aspect production skolemType
+top::Type ::= _
+{ top.isTypeable = false; }
 
 -- Invariant: This should be called when a and b are unifyable
 function isMoreSpecific

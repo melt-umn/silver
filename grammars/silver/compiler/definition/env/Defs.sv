@@ -250,9 +250,19 @@ Def ::= sg::String  sl::Location  fn::String  ty::Type
   return tcInstDef(currentInstDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl));
 }
 function instSuperDef
-Def ::= sg::String  sl::Location  fn::String  baseDcl::DclInfo  ty::Type
+Def ::= sg::String  sl::Location  fn::String  baseDcl::DclInfo
 {
-  return tcInstDef(instSuperDcl(fn,baseDcl,ty,sourceGrammar=sg,sourceLocation=sl));
+  return tcInstDef(instSuperDcl(fn,baseDcl,sourceGrammar=sg,sourceLocation=sl));
+}
+function typeableInstConstraintDef
+Def ::= sg::String  sl::Location  ty::Type
+{
+  return tcInstDef(typeableInstConstraintDcl(ty,sourceGrammar=sg,sourceLocation=sl));
+}
+function typeableSuperDef
+Def ::= sg::String  sl::Location  baseDcl::DclInfo
+{
+  return tcInstDef(typeableSuperDcl(baseDcl,sourceGrammar=sg,sourceLocation=sl));
 }
 
 

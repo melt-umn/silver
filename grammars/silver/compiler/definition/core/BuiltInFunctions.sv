@@ -1,5 +1,7 @@
 grammar silver:compiler:definition:core;
 
+-- TODO: Everything in this file should become type class methods, except (possibly) new and terminal
+
 concrete production lengthFunction
 top::Expr ::= 'length' '(' e::Expr ')'
 {
@@ -76,18 +78,6 @@ top::Expr ::= 'toString' '(' e::Expr ')'
   top.typerep = stringType();
 
   e.isRoot = false;
-}
-
-concrete production reifyFunctionLiteral
-top::Expr ::= 'reify'
-{
-  top.unparse = "reify";
-
-  top.typerep =
-    appTypes(
-      functionType(1, []),
-      [nonterminalType("silver:core:AST", 0, true),
-       appTypes(nonterminalType("silver:core:Either", 2, false), [stringType(), freshType()])]);
 }
 
 concrete production newFunction
