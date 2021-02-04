@@ -78,7 +78,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   production attribute collectionAntiquoteProductions::[Pair<String Pair<String Pair<String String>>>] with ++;
   collectionAntiquoteProductions := [];
   antiquoteTranslation <-
-    do (bindMaybe, returnMaybe) {
+    do {
       -- pair(antiquote production name, antiquote expr AST, rest AST)
       antiquote::Pair<String Pair<AST Decorated AST>> <-
         case children of
@@ -100,7 +100,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
         end;
     };
   antiquoteTranslation <-
-    do (bindMaybe, returnMaybe) {
+    do {
       -- pair(nonterminal short name, pair(cons production name, append production name))
       trans::Pair<String Pair<String String>> <-
         lookup(prodName, collectionAntiquoteProductions);

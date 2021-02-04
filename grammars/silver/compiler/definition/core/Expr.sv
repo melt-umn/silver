@@ -1,20 +1,23 @@
 grammar silver:compiler:definition:core;
 
 --import silver:compiler:analysis:typechecking:core;
+import silver:util:treeset as ts;
 
 nonterminal Expr with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, typerep, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, typerep, isRoot, originRules;
 nonterminal Exprs with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs, isRoot, originRules;
 
 nonterminal ExprInhs with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, decoratingnt, suppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, isRoot, originRules;
 nonterminal ExprInh with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, decoratingnt, suppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, isRoot, originRules;
 nonterminal ExprLHSExpr with
-  config, grammarName, env, location, unparse, errors, name, typerep, decoratingnt, suppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, name, typerep, decoratingnt, suppliedInhs, isRoot, originRules;
 
-propagate errors on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+flowtype freeVars {} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+
+propagate errors, freeVars on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
 {--
  - The nonterminal being decorated. (Used for 'decorate with {}')
@@ -32,6 +35,10 @@ monoid attribute exprs :: [Decorated Expr];
  - Get each individual Expr, without decorating them.
  -}
 monoid attribute rawExprs :: [Expr];
+{--
+ - Compute the expression's free (unbound) variables
+ -}
+monoid attribute freeVars :: ts:Set<String>;
 
 -- Is this Expr the logical "root" of the expression? That is, will it's value be the value computed
 --  for the attribute/return value/etc that it is part of?
@@ -60,6 +67,7 @@ concrete production baseExpr
 top::Expr ::= q::QName
 {
   top.unparse = q.unparse;
+  top.freeVars := ts:fromList([q.name]);
   
   forwards to if null(q.lookupValue.dcls)
               then errorReference(q.lookupValue.errors, q, location=top.location)
@@ -70,6 +78,7 @@ abstract production errorReference
 top::Expr ::= msg::[Message]  q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars <- ts:fromList([q.name]);
   
   top.errors <- msg;
   top.typerep = errorType();
@@ -80,6 +89,7 @@ abstract production childReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars <- ts:fromList([q.name]);
   
   top.typerep = if q.lookupValue.typeScheme.isDecorable
                 then q.lookupValue.typeScheme.asNtOrDecType
@@ -90,6 +100,7 @@ abstract production lhsReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars <- ts:fromList([q.name]);
   
   -- An LHS is *always* a decorable (nonterminal) type.
   top.typerep = q.lookupValue.typeScheme.asNtOrDecType;
@@ -99,6 +110,7 @@ abstract production localReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars <- ts:fromList([q.name]);
   
   top.typerep = if q.lookupValue.typeScheme.isDecorable
                 then q.lookupValue.typeScheme.asNtOrDecType
@@ -109,6 +121,7 @@ abstract production forwardReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars <- ts:fromList([q.name]);
   
   -- An LHS (and thus, forward) is *always* a decorable (nonterminal) type.
   top.typerep = q.lookupValue.typeScheme.asNtOrDecType;
@@ -121,6 +134,7 @@ abstract production productionReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars <- ts:fromList([q.name]);
 
   production typeScheme::PolyType = q.lookupValue.typeScheme;
   top.typerep = typeScheme.typerep;
@@ -134,6 +148,7 @@ abstract production functionReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars <- ts:fromList([q.name]);
 
   production typeScheme::PolyType = q.lookupValue.typeScheme;
   top.typerep = typeScheme.typerep;
@@ -147,6 +162,7 @@ abstract production classMemberReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars <- ts:fromList([q.name]);
 
   production typeScheme::PolyType = q.lookupValue.typeScheme;
   top.typerep = typeScheme.typerep;
@@ -169,6 +185,7 @@ abstract production globalValueReference
 top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
+  top.freeVars <- ts:fromList([q.name]);
 
   top.typerep = q.lookupValue.typeScheme.monoType; -- These aren't generalized, for now.
 }
@@ -188,6 +205,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   -- TODO: fix comma when one or the other is empty
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  propagate freeVars;
   
   local correctNumTypes :: [Type] =
     if length(t.inputTypes) > es.appExprSize
@@ -257,6 +275,7 @@ abstract production functionApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  propagate freeVars;
   
   -- TODO: we have an ambiguity here in the longer term.
   -- How to distinguish between
@@ -351,6 +370,7 @@ concrete production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  propagate freeVars;
   
   -- We don't include 'q' here because this might be a terminal, where
   -- 'q' shouldn't actually resolve to a name!
@@ -424,6 +444,7 @@ abstract production undecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  propagate freeVars;
 
   top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
   
@@ -464,6 +485,7 @@ abstract production decoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  propagate freeVars;
 
   top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
   
@@ -861,14 +883,14 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
  - (partial) function application.
  -}
 nonterminal AppExprs with 
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied, isRoot, originRules;
 
 nonterminal AppExpr with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, exprs, rawExprs,
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied, isRoot, originRules;
 
-propagate errors on AppExprs, AppExpr;
+propagate errors, freeVars on AppExprs, AppExpr;
 propagate exprs, rawExprs on AppExprs;
 
 synthesized attribute isPartial :: Boolean;
@@ -959,17 +981,17 @@ top::AppExprs ::=
 
 
 nonterminal AnnoAppExprs with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars,
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
   missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot, originRules;
 nonterminal AnnoExpr with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars,
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
   missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot, originRules;
   
-propagate errors, exprs on AnnoAppExprs, AnnoExpr;
+propagate errors, freeVars, exprs on AnnoAppExprs, AnnoExpr;
 
 {--
  - Annotations that have not yet been supplied
@@ -1174,6 +1196,7 @@ abstract production exprRef
 top::Expr ::= e::Decorated Expr
 {
   top.unparse = e.unparse;
+  top.freeVars <- e.freeVars;
 
   -- See the major restriction. This should have been checked for error already!
   top.typerep = e.typerep;

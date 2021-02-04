@@ -9,7 +9,6 @@ Maybe<b> ::= m::Maybe<a> fn::(Maybe<b> ::= a)
   end;
 }
 
---global returnMaybe::(Maybe<a> ::= a) = just; -- TODO: Why doesn't this work?
 function returnMaybe
 Maybe<a> ::= x::a
 {

@@ -171,9 +171,13 @@ String ::= tv::TyVar  bv::[TyVar]
 function findAbbrevHelp
 String ::= tv::TyVar  bv::[TyVar]  vn::[String]
 {
-  return if null(vn) then "a" ++ toString(length(bv))
-         else if null(bv) then "V_" ++ toString(tv.extractTyVarRep)
-         else if tv == head(bv)
-              then head(vn)
-              else findAbbrevHelp(tv, tail(bv), tail(vn));
+  return
+    case bv, vn of
+    | hbv :: tbv, hvn :: tvn -> if tv == hbv then hvn else findAbbrevHelp(tv, tbv, tvn)
+    | _, _ ->
+      case positionOf(tv, bv) of
+      | -1 -> "V_" ++ toString(tv.extractTyVarRep)
+      | i -> "a" ++ toString(i)
+      end
+  end;
 }

@@ -10,16 +10,16 @@ import silver:compiler:definition:flow:ast only hasVertex, noVertex, PatternVarP
 
 nonterminal VarBinders with 
   config, grammarName, env, compiledGrammars, frame,
-  location, unparse, errors, defs,
+  location, unparse, errors, defs, boundNames,
   bindingTypes, bindingIndex, translation, varBinderCount,
   finalSubst, flowProjections, bindingNames, flowEnv, matchingAgainst;
 nonterminal VarBinder with
   config, grammarName, env, compiledGrammars, frame,
-  location, unparse, errors, defs,
+  location, unparse, errors, defs, boundNames,
   bindingType, bindingIndex, translation,
   finalSubst, flowProjections, bindingName, flowEnv, matchingAgainst;
 
-propagate errors, defs on VarBinders, VarBinder;
+propagate errors, defs, boundNames on VarBinders, VarBinder;
 
 --- Types of each child
 inherited attribute bindingTypes :: [Type];
@@ -37,6 +37,7 @@ autocopy attribute matchingAgainst :: Maybe<DclInfo>;
 
 synthesized attribute varBinderCount :: Integer;
 
+monoid attribute boundNames::[String];
 
 concrete production oneVarBinder
 top::VarBinders ::= v::VarBinder
@@ -135,6 +136,7 @@ top::VarBinder ::= n::Name
     else [];
 
   top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps)];
+  top.boundNames <- [n.name];
 
   -- finalSubst is not necessary, downSubst would work fine, but is not threaded through here.
   -- the point is that 'ty' for Pair<String Integer> would currently show Pair<a b>

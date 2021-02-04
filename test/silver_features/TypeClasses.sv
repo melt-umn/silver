@@ -199,15 +199,17 @@ class MyFunctor f {
 instance MyFunctor Maybe {
   myfmap = mapMaybe;
 }
-
-function mapEither
-Either<a c> ::= fn::(c ::= b) x::Either<a b>
+function mapMaybe
+Maybe<b> ::= f::(b ::= a) m::Maybe<a>
 {
-  return case x of left(l) -> left(l) | right(r) -> right(fn(r)) end;
+  return case m of
+  | just(x)   -> just(f(x))
+  | nothing() -> nothing()
+  end;
 }
 
 instance MyFunctor Either<a _> {
-  myfmap = mapEither;
+  myfmap = \ fn::(c ::= b) x::Either<a b> -> case x of left(l) -> left(l) | right(r) -> right(fn(r)) end;
 }
 
 instance MyFunctor [] {
