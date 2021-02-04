@@ -205,3 +205,6 @@ wrongCode "Invalid tuple selector index." {
   equalityTest((3, 2, 5, true).0, true, Boolean, silver_tests);
 
 }
+
+equalityTest((3, 2).2, 2, Integer, silver_tests);
+equalityTest(("one", 2).1, "one", String, silver_tests);
