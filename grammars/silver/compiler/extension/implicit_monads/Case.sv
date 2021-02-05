@@ -29,7 +29,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                    temp_finalSubst=ml.mUpSubst; temp_downSubst=ml.mUpSubst;
                                    expectedMonad=top.expectedMonad;}.mtyperep
             in
-              isMonad(ty) && monadsMatch(ty, top.expectedMonad, ml.mUpSubst).fst && fst(monadsMatch(ty, top.expectedMonad, top.mUpSubst))
+              isMonad(ty) && monadsMatch(ty, top.expectedMonad, ml.mUpSubst).1 && fst(monadsMatch(ty, top.expectedMonad, top.mUpSubst))
             end),
           false,
           ml.matchRuleList);
@@ -71,13 +71,13 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                 | left(_) -> freshType() --absolutely nothing is a monad
                                 end;
   --read the comment on the function below if you want to know what it is
-  local attribute monadStuff::([(Type, (Expr, String))], [Expr]);
+  local attribute monadStuff::([(Type, Expr, String)], [Expr]);
   monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.mUpSubst, top.frame,
                                       top.grammarName, top.compiledGrammars, top.config, top.flowEnv, [],
                                       top.location, 1, top.expectedMonad);
 
   local monadLocal::Expr =
-    buildMonadicBinds(monadStuff.fst,
+    buildMonadicBinds(monadStuff.1,
                       caseExpr(monadStuff.snd,
                                ml.matchRuleList, failure,
                                outty, location=top.location), top.location);
@@ -140,7 +140,7 @@ elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext 
   cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::Decorated FlowEnv names::[String]
   loc::Location index::Integer em::Type
 {
-  local attribute subcall::([(Type, (Expr, String))], [Expr]);
+  local attribute subcall::([(Type, Expr, String)], [Expr]);
   subcall = case elst, tylst of
             | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, env, sub, f, gn, cg, c, fe, ntail, loc, index+1, em)
             end;
@@ -158,9 +158,9 @@ elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext 
                                             expectedMonad=em;}.mtyperep
            in
              if fst(monadsMatch(ety, em, sub))
-             then ((ety, (e, newName)) :: subcall.fst, 
-                   baseExpr(qName(loc, newName), location=loc) :: subcall.snd)
-             else (subcall.fst, subcall.snd)
+             then ((ety, e, newName) :: subcall.1, 
+                   baseExpr(qName(loc, newName), location=loc) :: subcall.2)
+             else (subcall.1, e::subcall.2)
            end
          end;
 }
