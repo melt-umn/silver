@@ -40,7 +40,10 @@ top::Expr ::= tuple::Expr '.' a::IntConst
   local accessIndex::Integer = toInteger(a.lexeme);
 
   top.unparse = tuple.unparse ++ "." ++ a.lexeme;
-  local len::Integer = length(tuple.typerep.tupleElems);
+  local len::Integer = case tuple.typerep of
+    | decoratedType(t) -> length(t.tupleElems)
+    | t -> length(t.tupleElems)
+    end;
   
   forwards to if (accessIndex > len || accessIndex < 1) then
       errorExpr(tuple.errors ++ [err(top.location, "Invalid tuple selector index.")], location=top.location)
@@ -54,15 +57,14 @@ function select
 -- len is the total length of the tuple
 Expr ::= exp::Expr i::Integer a::Integer len::Integer
  {
-  return if (i > len || i < 1) then Silver_Expr { errorExpr }
-    else
-      if i == a then
-        (if a == len then
-          -- only if the access index is the length of the
-          -- tuple do we simply return the expression itself
-          Silver_Expr { $Expr{exp} } 
-        else Silver_Expr { $Expr{exp}.fst })
-      else select(Silver_Expr{ $Expr{exp}.snd }, i + 1, a, len);
+  return 
+    if i == a then
+      if a == len then
+        -- only if the access index is the length of the
+        -- tuple do we simply return the expression itself
+        Silver_Expr { $Expr{exp} } 
+      else Silver_Expr { $Expr{exp}.fst }
+    else select(Silver_Expr{ $Expr{exp}.snd }, i + 1, a, len);
 }
 
 -- TupleList cases:
