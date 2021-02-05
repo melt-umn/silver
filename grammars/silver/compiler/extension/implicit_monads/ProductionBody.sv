@@ -18,10 +18,10 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 
   local merrors::[Message] =
     (if isMonadFail(attr.typerep, top.env)
-     then [err(top.location, monadToString(attr.typerep) ++
+     then []
+     else [err(top.location, monadToString(attr.typerep) ++
                " is not an instance of MonadFail and cannot " ++
-               "be used in an empty equation")]
-     else []) ++
+               "be used in an empty equation")]) ++
      ( if attr.found && dl.found
        then case attr.attrDcl of
             | implicitInhDcl(_, _, _) -> []
