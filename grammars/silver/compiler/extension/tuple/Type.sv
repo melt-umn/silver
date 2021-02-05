@@ -1,5 +1,7 @@
 grammar silver:compiler:extension:tuple;
 
+imports silver:compiler:extension:list;
+
 nonterminal ListOfTypeExprs with location, unparse, te_translation;
 synthesized attribute te_translation :: TypeExpr;
 
@@ -19,6 +21,20 @@ top::Type ::= c::Type a::Type
     | _ -> [top]
     end;
 
+}
+
+-- Needed to avoid discarding the forwarding list type
+-- when we extract tupleElems
+aspect production listType
+top::Type ::= _
+{
+  top.tupleElems = [top];
+}
+
+aspect production listCtrType
+top::Type ::=
+{
+  top.tupleElems = [top];
 }
 
 synthesized attribute tupleElems :: [Type] occurs on Type;
