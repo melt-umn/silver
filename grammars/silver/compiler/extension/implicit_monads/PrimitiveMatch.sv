@@ -27,15 +27,15 @@ aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   --if e is the implicit monad
-  local eIsMonadic::Boolean = isMonad(e.mtyperep) && monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst).fst;
+  local eIsMonadic::Boolean = isMonad(e.mtyperep, top.env) && monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst).fst;
   --if the pattern type is the implicit monad
-  local prPattIsMonadic::Boolean = isMonad(pr.patternType) && monadsMatch(pr.patternType, top.expectedMonad, top.mDownSubst).fst;
+  local prPattIsMonadic::Boolean = isMonad(pr.patternType, top.env) && monadsMatch(pr.patternType, top.expectedMonad, top.mDownSubst).fst;
   --the return type of the patterns is the implicit monad
-  local prRetIsMonadic::Boolean = isMonad(pr.mtyperep) && monadsMatch(pr.mtyperep, top.expectedMonad, top.mDownSubst).fst;
+  local prRetIsMonadic::Boolean = isMonad(pr.mtyperep, top.env) && monadsMatch(pr.mtyperep, top.expectedMonad, top.mDownSubst).fst;
   --the type of f is the implicit monad
-  local fIsMonadic::Boolean = isMonad(f.mtyperep) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst;
+  local fIsMonadic::Boolean = isMonad(f.mtyperep, top.env) && monadsMatch(f.mtyperep, top.expectedMonad, top.mDownSubst).fst;
   --the type t is the implicit monad
-  local tIsMonadic::Boolean = isMonad(t.typerep) && monadsMatch(t.typerep, top.expectedMonad, top.mDownSubst).fst;
+  local tIsMonadic::Boolean = isMonad(t.typerep, top.env) && monadsMatch(t.typerep, top.expectedMonad, top.mDownSubst).fst;
 
   top.mtyperep = if eIsMonadic
                  then if tIsMonadic
@@ -76,7 +76,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   top.monadicNames = e.monadicNames ++ pr.monadicNames ++ f.monadicNames;
 
   local freshname::String = "__sv_bindingInAMatchExpression_" ++ toString(genInt());
-  local eBind::Expr = monadBind(top.expectedMonad, top.location);
+  local eBind::Expr = monadBind(top.location);
   local eInnerType::TypeExpr = typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location);
   local binde_lambdaparams::ProductionRHS =
         productionRHSCons(productionRHSElem(name(freshname, top.location), '::',
@@ -121,14 +121,14 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                      [e.monadRewritten, lambdap(binde_lambdaparams,
                                            matchPrimitiveReal(decName,
                                                               outty, pr.monadRewritten,
-                                                              buildApplication(monadReturn(top.expectedMonad, top.location),
+                                                              buildApplication(monadReturn(top.location),
                                                                                [f.monadRewritten], top.location),
                                                               location=top.location),
                                            location=top.location)],
                      top.location);
   --bind e, returnify pr based on e's type
   local prReturnify::PrimPatterns = pr.monadRewritten;
-  prReturnify.returnFun = monadReturn(top.expectedMonad, top.location);
+  prReturnify.returnFun = monadReturn(top.location);
   prReturnify.grammarName = top.grammarName;
   prReturnify.env = top.env;
   prReturnify.config = top.config;
@@ -146,7 +146,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                      [e.monadRewritten, lambdap(binde_lambdaparams,
                                            matchPrimitiveReal(decName,
                                                               outty, prReturnify.returnify,
-                                                              buildApplication(monadReturn(top.expectedMonad, top.location),
+                                                              buildApplication(monadReturn(top.location),
                                                                  [f.monadRewritten], top.location),
                                                               location=top.location),
                                            location=top.location)],
@@ -154,11 +154,11 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   --return f from pr's return type
   local return_f::Expr =
     matchPrimitiveReal(decE, outty, pr.monadRewritten,
-                       buildApplication(monadReturn(top.expectedMonad, top.location), [f.monadRewritten], top.location),
+                       buildApplication(monadReturn(top.location), [f.monadRewritten], top.location),
                        location=top.location);
   --returnify pr from f's type
   local ret_pr_from_f::PrimPatterns = pr.monadRewritten;
-  ret_pr_from_f.returnFun = monadReturn(top.expectedMonad, top.location);
+  ret_pr_from_f.returnFun = monadReturn(top.location);
   ret_pr_from_f.grammarName = top.grammarName;
   ret_pr_from_f.env = top.env;
   ret_pr_from_f.config = top.config;
@@ -169,7 +169,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                                                 f.monadRewritten, location=top.location);
   --t is monadic and nothing else is, so return over whole thing
   local return_whole_thing::Expr =
-    buildApplication(monadReturn(top.expectedMonad, top.location),
+    buildApplication(monadReturn(top.location),
                                  [matchPrimitiveReal(decE, outty, pr.monadRewritten,
                                                      f.monadRewritten, location=top.location)],
                                  top.location);
@@ -224,11 +224,11 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
   errCheck1.downSubst = ps.mUpSubst;
   top.mUpSubst = errCheck1.upSubst;
   errCheck1.finalSubst = top.finalSubst;
-  local errCheck1::TypeCheck = if isMonad(p.mtyperep) && monadsMatch(p.mtyperep, top.expectedMonad, top.mDownSubst).fst
-                               then if isMonad(ps.mtyperep) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
+  local errCheck1::TypeCheck = if isMonad(p.mtyperep, top.env) && monadsMatch(p.mtyperep, top.expectedMonad, top.mDownSubst).fst
+                               then if isMonad(ps.mtyperep, top.env) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
                                     then check(p.mtyperep, ps.mtyperep)
                                     else check(monadInnerType(p.mtyperep), ps.mtyperep)
-                               else if isMonad(ps.mtyperep) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
+                               else if isMonad(ps.mtyperep, top.env) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
                                     then check(p.mtyperep, monadInnerType(ps.mtyperep))
                                     else check(p.mtyperep, ps.mtyperep);
   top.merrors <-
@@ -242,8 +242,8 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
   p.expectedMonad = top.expectedMonad;
   ps.expectedMonad = top.expectedMonad;
 
-  top.mtyperep = if isMonad(p.mtyperep) && monadsMatch(p.mtyperep, top.expectedMonad, top.mDownSubst).fst
-                 then if isMonad(ps.mtyperep) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
+  top.mtyperep = if isMonad(p.mtyperep, top.env) && monadsMatch(p.mtyperep, top.expectedMonad, top.mDownSubst).fst
+                 then if isMonad(ps.mtyperep, top.env) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
                       then ps.mtyperep
                       else p.mtyperep
                  else ps.mtyperep;
@@ -258,7 +258,7 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
                                                    location=top.location);
   --when the current clause is a monad but the rest aren't, wrap all of them in Return()
   local psReturnify::PrimPatterns = ps.monadRewritten;
-  psReturnify.returnFun = monadReturn(p.mtyperep, top.location);
+  psReturnify.returnFun = monadReturn(top.location);
   psReturnify.env = top.env;
   psReturnify.config = top.config;
   psReturnify.grammarName = top.grammarName;
@@ -267,18 +267,18 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
                                                        location=top.location);
   --when the current clause is not a monad but the rest are, wrap the current one in Return()
   local pReturnify::PrimPattern = p.monadRewritten;
-  pReturnify.returnFun = monadReturn(ps.mtyperep, top.location);
+  pReturnify.returnFun = monadReturn(top.location);
   pReturnify.grammarName = top.grammarName;
   pReturnify.config = top.config;
   pReturnify.env = top.env;
   local returnRewritten::PrimPatterns = consPattern(pReturnify.returnify, terminal(Vbar_kwd, "|"),
                                                     ps.monadRewritten,
                                                     location=top.location);
-  top.monadRewritten = if isMonad(p.mtyperep) && monadsMatch(p.mtyperep, top.expectedMonad, top.mDownSubst).fst
-                       then if isMonad(ps.mtyperep) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
+  top.monadRewritten = if isMonad(p.mtyperep, top.env) && monadsMatch(p.mtyperep, top.expectedMonad, top.mDownSubst).fst
+                       then if isMonad(ps.mtyperep, top.env) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
                             then basicRewritten     --both monads
                             else returnifyRewritten --current monad, rest not
-                       else if isMonad(ps.mtyperep) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
+                       else if isMonad(ps.mtyperep, top.env) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
                             then returnRewritten    --rest monad, current not
                             else basicRewritten;    --neither monads
 }

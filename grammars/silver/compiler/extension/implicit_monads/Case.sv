@@ -29,7 +29,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                    temp_finalSubst=ml.mUpSubst; temp_downSubst=ml.mUpSubst;
                                    expectedMonad=top.expectedMonad;}.mtyperep
             in
-              isMonad(ty) && monadsMatch(ty, top.expectedMonad, ml.mUpSubst).fst && fst(monadsMatch(ty, top.expectedMonad, top.mUpSubst))
+              isMonad(ty, top.env) && monadsMatch(ty, top.expectedMonad, ml.mUpSubst).fst && fst(monadsMatch(ty, top.expectedMonad, top.mUpSubst))
             end),
           false,
           ml.matchRuleList);
@@ -40,7 +40,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                   " " ++ top.location.unparse ++ "\\n\""),
                                 location=top.location)]);
   {-
-    This will add in a Fail() for an appropriate monad (if the
+    This will add in a Fail() for the appropriate monad (if the
     expression is well-typed) whenever we are matching against a monad
     or any clause returns a monad.  This does not cover the case where
     a monad type is expected out and the clauses are incomplete.  That
@@ -53,23 +53,23 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
     as we don't really have ways to come up with basic fail arguments
     for anything more complex.
   -}
-  local failure::Expr = case monadFail(top.expectedMonad, top.location) of
-                        | right(e) -> e
-                        | left(_) -> basicFailure
-                        end;
+  local failure::Expr =
+        if isMonadFail(top.expectedMonad, top.env)
+        then monadFail(top.location)
+        else basicFailure;
   {-
     This sets up the actual output type.  If there's a monad, the
     return type given to the case expression is M(freshtype); if not,
     the return type is just a fresh type.
   -}
-  local outty::Type = if monadInExprs
-                      then monadOfType(top.expectedMonad, freshType())
-                      else if monadInClauses
-                           then monadOfType(top.expectedMonad, freshType())
-                           else case monadFail(top.expectedMonad, top.location) of
-                                | right(_) -> monadOfType(top.expectedMonad, freshType())
-                                | left(_) -> freshType() --absolutely nothing is a monad
-                                end;
+  local outty::Type =
+        if monadInExprs
+        then monadOfType(top.expectedMonad, freshType())
+        else if monadInClauses
+             then monadOfType(top.expectedMonad, freshType())
+             else if isMonadFail(top.expectedMonad, top.env)
+                  then monadOfType(top.expectedMonad, freshType())
+                  else freshType(); --absolutely nothing is a monad
   --read the comment on the function below if you want to know what it is
   local attribute monadStuff::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
   monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.mUpSubst, top.frame,
@@ -103,7 +103,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                      frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
                                      finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
                                      config=top.config; flowEnv=top.flowEnv;expectedMonad=top.expectedMonad;}
-             in if isMonad(a.mtyperep) && monadsMatch(a.mtyperep, top.expectedMonad, top.mDownSubst).fst && !isMonad(performSubstitution(x.snd, top.mDownSubst))
+             in if isMonad(a.mtyperep, top.env) && monadsMatch(a.mtyperep, top.expectedMonad, top.mDownSubst).fst && !isMonad(performSubstitution(x.snd, top.mDownSubst), top.env)
                 then decorate x.fst with {env=top.env; mDownSubst=top.mDownSubst;
                                      frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
                                      finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
@@ -172,7 +172,7 @@ Expr ::= bindlst::[Pair<Type Pair<Expr String>>] base::Expr loc::Location
   return case bindlst of
          | [] -> base
          | pair(ty,pair(e,n))::rest ->
-           buildApplication(monadBind(ty, loc),
+           buildApplication(monadBind(loc),
                             [e, buildLambda(n, monadInnerType(ty), buildMonadicBinds(rest, base, loc), loc)], loc)
          end;
 }
@@ -270,16 +270,17 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                    temp_finalSubst=ml.mUpSubst; temp_downSubst=ml.mUpSubst;
                                    expectedMonad=top.expectedMonad;}.mtyperep
             in
-              isMonad(ty) && monadsMatch(ty, top.expectedMonad, top.mDownSubst).fst && fst(monadsMatch(ty, top.expectedMonad, top.mUpSubst))
+              isMonad(ty, top.env) && monadsMatch(ty, top.expectedMonad, top.mDownSubst).fst && fst(monadsMatch(ty, top.expectedMonad, top.mUpSubst))
             end),
           false,
           ml.matchRuleList);
-  local mplus::Expr = case monadPlus(top.expectedMonad, top.location) of
-                      | right(e) -> e
-                      end;
-  local mzero::Expr = case monadZero(top.expectedMonad, top.location) of
-                      | right(e) -> e
-                      end;
+  local mplus::Expr = monadPlus(top.location);
+  local mzero::Expr = monadZero(top.location);
+
+  local isMonadPlus_instance::Boolean = isMonadPlus(top.expectedMonad, top.env);
+  local notMonadPlus::String =
+        monadToString(top.expectedMonad) ++ " is not an instance of " ++
+        "MonadPlus and cannot be used with case_any";
 
   --new names for using lets to bind the incoming expressions
   local newNames::[String] = map(\x::Expr -> "__sv_mcase_var_" ++ toString(genInt()), es.rawExprs);
@@ -305,10 +306,9 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                 makeLet(top.location, p.snd, freshType(), p.fst, rest),
                                monadLocal, zipWith(pair, es.rawExprs, newNames));
 
-  forwards to case monadPlus(top.expectedMonad, top.location) of
-              | right(_) -> letBound
-              | left(e) -> errorExpr([err(top.location, e)], location=top.location)
-              end;
+  forwards to if isMonadPlus_instance
+              then letBound
+              else errorExpr([err(top.location, notMonadPlus)], location=top.location);
 }
 
 

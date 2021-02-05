@@ -16,14 +16,11 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
   top.productionAttributes := [];
   top.defs := [];
 
-  local fail::Either<String Expr> = monadFail(attr.typerep, top.location);
-
   local merrors::[Message] =
-    (if isMonad(attr.typerep)
-     then case fail of
-          | right(_) -> []
-          | left(e) -> [err(top.location, e ++ "; this monad cannot be used in an empty equation")]
-          end
+    (if isMonadFail(attr.typerep, top.env)
+     then [err(top.location, monadToString(attr.typerep) ++
+               " is not an instance of MonadFail and cannot " ++
+               "be used in an empty equation")]
      else []) ++
      ( if attr.found && dl.found
        then case attr.attrDcl of
@@ -39,7 +36,7 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
   attr.attrFor = dl.typerep;
 
   forwards to if null(merrors)
-              then attr.attrDcl.attrDefDispatcher(dl, attr, case fail of | right(e) -> e end, top.location)
+              then attr.attrDcl.attrDefDispatcher(dl, attr, monadFail(top.location), top.location)
               else errorProductionStmt(merrors, location=top.location);
 }
 
@@ -226,7 +223,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
           then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
                then synthesizedAttributeDef(dl, attr, e.monadRewritten, location=top.location)
                else synthesizedAttributeDef(dl, attr, Silver_Expr {
-                                                        $Expr {monadReturn(attr.typerep, top.location)}
+                                                        $Expr {monadReturn(top.location)}
                                                             ($Expr {e.monadRewritten})
                                                       }, location=top.location)
           else errorAttributeDef(e.merrors, dl, attr, e.monadRewritten, location=top.location);
@@ -251,7 +248,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
           then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
                then synthesizedAttributeDef(dl, attr, e.monadRewritten, location=top.location)
                else synthesizedAttributeDef(dl, attr, Silver_Expr {
-                                                        $Expr {monadReturn(attr.typerep, top.location)}
+                                                        $Expr {monadReturn(top.location)}
                                                             ($Expr {e.monadRewritten})
                                                       }, location=top.location)
           else errorAttributeDef(e.merrors, dl, attr, e.monadRewritten, location=top.location);
