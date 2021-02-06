@@ -14,15 +14,14 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.compiledGrammars = top.compiledGrammars;
   ne.flowEnv = top.flowEnv;
   ne.frame = top.frame;
-  ne.mDownSubst = top.mDownSubst;
-  ne.downSubst = top.mDownSubst;
+  ne.mDownSubst = la.mUpSubst;
+  ne.downSubst = la.mUpSubst;
   ne.finalSubst = top.mUpSubst;
   ne.env = newScopeEnv(la.mdefs, top.env);
   ne.expectedMonad = top.expectedMonad;
 
-  propagate mDownSubst, mUpSubst;
-
-  e.expectedMonad = top.expectedMonad;
+  la.mDownSubst = top.mDownSubst;
+  top.mUpSubst = ne.mUpSubst;
 
   top.mtyperep = if null(la.bindInList) || fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst))
                  then ne.mtyperep
@@ -52,9 +51,9 @@ top::Expr ::= la::AssignExpr  e::Expr
      letp(la.fixedAssigns,
           boundIn,
           location=top.location);
-  local inside::Expr = if isMonad(e.mtyperep, top.env) || null(la.bindInList)
-                       then e.monadRewritten
-                       else Silver_Expr { $Expr{mreturn}($Expr{e.monadRewritten}) };
+  local inside::Expr = if isMonad(ne.mtyperep, top.env) || null(la.bindInList)
+                       then ne.monadRewritten
+                       else Silver_Expr { $Expr{mreturn}($Expr{ne.monadRewritten}) };
   local boundIn::Expr =
          foldr(\x::Pair<Name TypeExpr> y::Expr ->
                  buildApplication(mbind,
