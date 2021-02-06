@@ -1,4 +1,5 @@
 -- Note: We consider only tuples containing two or more elements
+--       The empty tuple () forwards to unit
 
 grammar silver:compiler:extension:tuple;
 
@@ -26,10 +27,16 @@ concrete production tupleExpr
 top::Expr ::= '(' tl::TupleList ')'
 {
   top.unparse = "(" ++ tl.unparse ++ ")";
+
+  -- substitution is cleaner
+  -- instantiates types on pairs & gets tuples off pairs
+  -- it avoids threading the env?
   top.typerep = tupleType(performSubstitution(forward.typerep, forward.upSubst).tupleElems);
+  
   forwards to tl.translation;
 }
 
+-- selects tuple element at index a
 concrete production selector
 top::Expr ::= tuple::Expr '.' a::IntConst
 {
@@ -40,6 +47,10 @@ top::Expr ::= tuple::Expr '.' a::IntConst
   local accessIndex::Integer = toInteger(a.lexeme);
 
   top.unparse = tuple.unparse ++ "." ++ a.lexeme;
+
+  -- If tuple is decorated, the length of its tupleElems 
+  -- will be 1, so it must be undecorated? before we can take
+  -- the length of its tupleElems
   local len::Integer = case tuple.typerep of
     | decoratedType(t) -> length(t.tupleElems)
     | t -> length(t.tupleElems)
