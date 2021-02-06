@@ -5,12 +5,20 @@ imports silver:compiler:extension:list;
 nonterminal ListOfTypeExprs with location, unparse, te_translation;
 synthesized attribute te_translation :: TypeExpr;
 
+synthesized attribute tupleElems :: [Type] occurs on Type;
+
+-- One can think of any single type t as a single element tuple type (t)
+-- Default production assigns the tupleElems for (t) as [t]; a
+-- list containing just the type of t
+-- This default avoids aspecting other types
 aspect default production
 top::Type ::=
 {
   top.tupleElems = [top];
 }
 
+-- For any Pair (or nested Pair) type, accumulate its tupleElems
+-- as the fst and snd types that make up that Pair
 aspect production appType
 top::Type ::= c::Type a::Type
 {
@@ -23,8 +31,8 @@ top::Type ::= c::Type a::Type
 
 }
 
--- Needed to avoid discarding the forwarding list type
--- when we extract tupleElems
+-- Aspect productions needed to avoid discarding 
+-- the forwarding list type when we extract tupleElems
 aspect production listType
 top::Type ::= _
 {
@@ -37,12 +45,15 @@ top::Type ::=
   top.tupleElems = [top];
 }
 
-synthesized attribute tupleElems :: [Type] occurs on Type;
-
+-- accepts a [Type] (will be tupleElems here)
+-- prints tuples w/ correct type syntax
+-- forwards to Pair type
 abstract production tupleType
 top::Type ::= ts::[Type]
 {
 
+  -- why?
+  -- we decorate the types in the tuple?
   top.substituted = tupleType(map (\ t::Type -> decorate t with {substitution = top.substitution;}.substituted, ts));
   top.flatRenamed = tupleType(map (\ t::Type -> decorate t with {substitution = top.substitution;}.flatRenamed, ts));
 
@@ -56,6 +67,8 @@ top::Type ::= ts::[Type]
     end;
 
 }
+
+-- Tuple TypeExpr
 
 concrete production emptyTupleTypeExpr
 top::TypeExpr ::= '(' ')'
