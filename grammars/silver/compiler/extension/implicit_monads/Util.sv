@@ -164,10 +164,16 @@ Expr ::= l::Location
   return baseExpr(qNameId(name("silver:core:pure", l), location=l), location=l);
 }
 
+--We want to produce a value, not a function, so we apply it to an argument
 function monadFail
 Expr ::= l::Location
 {
-  return baseExpr(qNameId(name("silver:core:fail", l), location=l), location=l);
+  return
+     buildApplication
+       (baseExpr(qNameId(name("silver:core:fail", l), location=l), location=l),
+        [stringConst(terminal(String_t, "\"Automatically-inserted fail at " ++
+                                           l.unparse ++ "\""),
+                     location=l)], l);
 }
 
 
