@@ -49,7 +49,7 @@ Boolean ::= ty::Type
   return case ty of
          | skolemType(_) -> true
          | appType(c, a) -> containsSkolem(c) || containsSkolem(a)
-         | decoratedType(ty) -> containsSkolem(ty)
+         | decoratedType(_, ty) -> containsSkolem(ty)
          | _ -> false
          end;
 }

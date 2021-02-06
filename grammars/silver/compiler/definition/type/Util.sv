@@ -33,7 +33,7 @@ synthesized attribute asNtOrDecType :: Type;
 
 -- Used instead of unify() when we want to just know its decorated or undecorated
 synthesized attribute unifyInstanceNonterminal :: Substitution;
-synthesized attribute unifyInstanceDecorated :: Substitution;
+synthesized attribute unifyInstanceDecorated :: (Substitution ::= [String]);
 
 attribute arity, isError, isDecorated, isDecorable, isTerminal, asNtOrDecType occurs on PolyType;
 
@@ -91,7 +91,7 @@ top::Type ::=
   top.decoratedType = errorType();
   
   top.unifyInstanceNonterminal = errorSubst("not nt");
-  top.unifyInstanceDecorated = errorSubst("not dec");
+  top.unifyInstanceDecorated = \ [String] -> errorSubst("not dec");
 }
 
 aspect production varType
@@ -168,11 +168,12 @@ top::Type ::= fn::String
 }
 
 aspect production decoratedType
-top::Type ::= te::Type
+top::Type ::= inhs::[String] te::Type
 {
   top.isDecorated = true;
   top.decoratedType = te;
-  top.unifyInstanceDecorated = emptySubst();
+  top.unifyInstanceDecorated = \ oinhs::[String] ->
+    if inhs == oinhs then emptySubst() else errorSubst("inhs mismatch");
 }
 
 aspect production ntOrDecType
@@ -181,7 +182,7 @@ top::Type ::= nt::Type  hidden::Type
   top.baseType = top;
   top.argTypes = [];
   top.unifyInstanceNonterminal = unify(hidden, nt);
-  top.unifyInstanceDecorated = unify(hidden, decoratedType(nt));
+  top.unifyInstanceDecorated = \ inhs::[String] -> unify(hidden, decoratedType(inhs, nt));
 }
 
 aspect production functionType

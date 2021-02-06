@@ -150,9 +150,9 @@ top::Type ::= fn::String
 }
 
 aspect production decoratedType
-top::Type ::= te::Type
+top::Type ::= inhs::[String] te::Type
 {
-  top.typepp = "Decorated " ++ te.typepp;
+  top.typepp = s"Decorated {${implode(", ", inhs)}} ${te.typepp}";
 }
 
 aspect production ntOrDecType

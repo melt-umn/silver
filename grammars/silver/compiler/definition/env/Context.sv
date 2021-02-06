@@ -35,7 +35,7 @@ top::Context ::= cls::String t::Type
   -- so we can't allow this to match an instance for the undecorated type.
   production decT::Type =
     case t of
-    | ntOrDecType(nt, _) -> decoratedType(nt)
+    | ntOrDecType(nt, _) -> decoratedType([], nt)
     | _ -> t
     end;
 
@@ -99,7 +99,7 @@ Boolean ::= a::Type b::Type
     | _, varType(_) -> true
     | appType(c1, a1), appType(c2, a2) ->
       (isMoreSpecific(c1, c2) || isMoreSpecific(a1, a2)) && !(isMoreSpecific(c2, c1) || isMoreSpecific(a2, a1))
-    | decoratedType(t1), decoratedType(t2) -> isMoreSpecific(t1, t2)
+    | decoratedType(_, t1), decoratedType(_, t2) -> isMoreSpecific(t1, t2)
     | _, _ -> false
     end;
 }

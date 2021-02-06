@@ -40,16 +40,16 @@ top::TypeCheck ::= l::Type
   top.rightpp = "a nonterminal";
 }
 abstract production checkDecorated
-top::TypeCheck ::= l::Type
+top::TypeCheck ::= inhs::[String] l::Type
 {
   local refined :: Type =
     performSubstitution(l, top.downSubst);
 
-  top.upSubst = composeSubst(ignoreFailure(top.downSubst), refined.unifyInstanceDecorated);
+  top.upSubst = composeSubst(ignoreFailure(top.downSubst), refined.unifyInstanceDecorated(inhs));
 
   top.typeerror = top.upSubst.failure && !refined.isError;
 
   top.leftpp = prettyType(performSubstitution(l, top.finalSubst));
-  top.rightpp = "a decorated nonterminal";
+  top.rightpp = s"a nonterminal decorated with ${implode(", ", inhs)}";
 }
 

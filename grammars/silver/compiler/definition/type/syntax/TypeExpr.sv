@@ -3,13 +3,15 @@ grammar silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
+imports silver:compiler:definition:flow:ast;
+imports silver:compiler:definition:flow:syntax;
 
-nonterminal TypeExpr  with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsFullyApplied;
-nonterminal Signature with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds;
-nonterminal SignatureLHS with config, location, grammarName, errors, env, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds;
-nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables;
-nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
-nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
+nonterminal TypeExpr  with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsFullyApplied;
+nonterminal Signature with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds;
+nonterminal SignatureLHS with config, location, grammarName, errors, env, flowEnv, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds;
+nonterminal TypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables;
+nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
+nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 
 synthesized attribute maybeType :: Maybe<Type>;
 synthesized attribute types :: [Type];
@@ -206,7 +208,11 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
 {
   top.unparse = "Decorated " ++ t.unparse;
 
-  top.typerep = decoratedType(t.typerep);
+  top.typerep =
+    case getInhsForNtRef(t.typerep.typeName, top.flowEnv) of
+    | ntRefFlowDef(_, inhs) :: _ -> decoratedType(inhs, t.typerep)
+    | _ -> decoratedType([], t.typerep)
+    end;
   
   top.errors <-
     case t.typerep.baseType of
@@ -215,6 +221,24 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
     end;
   top.errors <- t.errorsFullyApplied;
+}
+
+concrete production refSpecTypeExpr
+top::TypeExpr ::= 'Decorated' '{' inhs::FlowSpecInhs '}' t::TypeExpr
+{
+  top.unparse = s"Decorated {${inhs.unparse}} ${t.unparse}";
+
+  top.typerep = decoratedType(inhs.inhList, t.typerep);
+  
+  top.errors <-
+    case t.typerep.baseType of
+    | nonterminalType(_,_,_) -> []
+    | skolemType(_) -> []
+    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
+    end;
+  top.errors <- t.errorsFullyApplied;
+  
+  inhs.onNt = t.typerep;
 }
 
 concrete production funTypeExpr
