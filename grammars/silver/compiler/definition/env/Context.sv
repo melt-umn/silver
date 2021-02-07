@@ -30,12 +30,12 @@ top::Context ::= cls::String t::Type
   top.contextClassName = just(cls);
   
   -- Here possibly-decorated types that are still unspecialized at this point
-  -- are specialized as decorated.  Why?  Instance resolution happens after
+  -- are specialized as decorated with the ref set.  Why?  Instance resolution happens after
   -- final types have been computed, and the default is to be decorated,
   -- so we can't allow this to match an instance for the undecorated type.
   production decT::Type =
     case t of
-    | ntOrDecType(nt, _) -> decoratedType([], nt)
+    | ntOrDecType(nt, _) -> decoratedType(true, [], nt)
     | _ -> t
     end;
 
@@ -99,7 +99,7 @@ Boolean ::= a::Type b::Type
     | _, varType(_) -> true
     | appType(c1, a1), appType(c2, a2) ->
       (isMoreSpecific(c1, c2) || isMoreSpecific(a1, a2)) && !(isMoreSpecific(c2, c1) || isMoreSpecific(a2, a1))
-    | decoratedType(_, t1), decoratedType(_, t2) -> isMoreSpecific(t1, t2)
+    | decoratedType(_, _, t1), decoratedType(_, _, t2) -> isMoreSpecific(t1, t2)
     | _, _ -> false
     end;
 }

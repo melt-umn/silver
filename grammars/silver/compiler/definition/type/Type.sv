@@ -197,11 +197,12 @@ top::Type ::= fn::String
 
 {--
  - A *decorated* nonterminal type.
+ - @param hasRefSet  true if the nonterminal is decorated with the reference set of inherited attributes.
  - @param inhs  The inherited attributes with which the nonterminal is decorated, sorted by name. 
  - @param te  MUST be a 'nonterminalType' or 'varType'/'skolemType'
  -}
 abstract production decoratedType
-top::Type ::= inhs::[String] te::Type
+top::Type ::= hasRefSet::Boolean inhs::[String] te::Type
 {
   top.kindArity = 0;
   top.freeVariables = te.freeVariables;
@@ -227,8 +228,8 @@ top::Type ::= nt::Type  hidden::Type
                       | _ -> hidden.freeVariables
                       end;
   
-  -- If we never specialize, we're decorated with nothing.
-  forwards to decoratedType([], nt);
+  -- If we never specialize, we're decorated with the reference set.
+  forwards to decoratedType(true, [], nt);
 }
 
 {--

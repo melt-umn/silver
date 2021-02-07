@@ -40,16 +40,31 @@ top::TypeCheck ::= l::Type
   top.rightpp = "a nonterminal";
 }
 abstract production checkDecorated
-top::TypeCheck ::= inhs::[String] l::Type
+top::TypeCheck ::= l::Type
 {
   local refined :: Type =
     performSubstitution(l, top.downSubst);
 
-  top.upSubst = composeSubst(ignoreFailure(top.downSubst), refined.unifyInstanceDecorated(inhs));
+  top.upSubst = composeSubst(ignoreFailure(top.downSubst), refined.unifyInstanceDecorated);
 
   top.typeerror = top.upSubst.failure && !refined.isError;
 
   top.leftpp = prettyType(performSubstitution(l, top.finalSubst));
-  top.rightpp = s"a nonterminal decorated with ${implode(", ", inhs)}";
+  top.rightpp = s"a decorated nonterminal";
+}
+abstract production checkDecoratedWith
+top::TypeCheck ::= hasRefSet::Boolean inhs::[String] l::Type
+{
+  local refined :: Type =
+    performSubstitution(l, top.downSubst);
+  refined.withRefSet = hasRefSet;
+  refined.withInhs = inhs;
+
+  top.upSubst = composeSubst(ignoreFailure(top.downSubst), refined.unifyInstanceDecoratedWith);
+
+  top.typeerror = top.upSubst.failure && !refined.isError;
+
+  top.leftpp = prettyType(performSubstitution(l, top.finalSubst));
+  top.rightpp = s"a nonterminal decorated with ${implode(", ", (if hasRefSet then ["the reference set"] else []) ++ inhs)}";
 }
 

@@ -33,7 +33,11 @@ synthesized attribute asNtOrDecType :: Type;
 
 -- Used instead of unify() when we want to just know its decorated or undecorated
 synthesized attribute unifyInstanceNonterminal :: Substitution;
-synthesized attribute unifyInstanceDecorated :: (Substitution ::= [String]);
+synthesized attribute unifyInstanceDecorated :: Substitution;
+
+autocopy attribute withRefSet :: Boolean;
+autocopy attribute withInhs :: [String];
+synthesized attribute unifyInstanceDecoratedWith :: Substitution;
 
 attribute arity, isError, isDecorated, isDecorable, isTerminal, asNtOrDecType occurs on PolyType;
 
@@ -70,7 +74,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
 }
 
-attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated, isApplicable occurs on Type;
+attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated, withRefSet, withInhs, unifyInstanceDecoratedWith, isApplicable occurs on Type;
 
 aspect default production
 top::Type ::=
@@ -91,7 +95,8 @@ top::Type ::=
   top.decoratedType = errorType();
   
   top.unifyInstanceNonterminal = errorSubst("not nt");
-  top.unifyInstanceDecorated = \ [String] -> errorSubst("not dec");
+  top.unifyInstanceDecorated = errorSubst("not dec");
+  top.unifyInstanceDecoratedWith = errorSubst("not same dec");
 }
 
 aspect production varType
@@ -168,12 +173,15 @@ top::Type ::= fn::String
 }
 
 aspect production decoratedType
-top::Type ::= inhs::[String] te::Type
+top::Type ::= hrs::Boolean inhs::[String] te::Type
 {
   top.isDecorated = true;
   top.decoratedType = te;
-  top.unifyInstanceDecorated = \ oinhs::[String] ->
-    if inhs == oinhs then emptySubst() else errorSubst("inhs mismatch");
+  top.unifyInstanceDecorated = emptySubst();
+  top.unifyInstanceDecoratedWith =
+    if top.withRefSet == hrs && top.withInhs == inhs
+    then emptySubst()
+    else errorSubst("inhs mismatch");
 }
 
 aspect production ntOrDecType
@@ -182,7 +190,8 @@ top::Type ::= nt::Type  hidden::Type
   top.baseType = top;
   top.argTypes = [];
   top.unifyInstanceNonterminal = unify(hidden, nt);
-  top.unifyInstanceDecorated = \ inhs::[String] -> unify(hidden, decoratedType(inhs, nt));
+  top.unifyInstanceDecorated = unify(hidden, decoratedType(true, [], nt)); -- We have to specialize as something, so use the ref set
+  top.unifyInstanceDecoratedWith = unify(hidden, decoratedType(top.withRefSet, top.withInhs, nt));
 }
 
 aspect production functionType

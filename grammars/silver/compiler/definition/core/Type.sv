@@ -85,7 +85,7 @@ top::Type ::= fn::String
 }
 
 aspect production decoratedType
-top::Type ::= _ te::Type
+top::Type ::= _ _ te::Type
 {
   top.accessHandler = decoratedAccessHandler(_, _, location=_);
 }

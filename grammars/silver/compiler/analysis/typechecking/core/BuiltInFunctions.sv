@@ -43,17 +43,6 @@ top::Expr ::= 'toString' '(' e1::Expr ')'
     else [err(top.location, "Operand to toString must be concrete types String, Integer, Float, or Boolean.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
-function containsSkolem
-Boolean ::= ty::Type
-{
-  return case ty of
-         | skolemType(_) -> true
-         | appType(c, a) -> containsSkolem(c) || containsSkolem(a)
-         | decoratedType(_, ty) -> containsSkolem(ty)
-         | _ -> false
-         end;
-}
-
 aspect production newFunction
 top::Expr ::= 'new' '(' e1::Expr ')'
 {

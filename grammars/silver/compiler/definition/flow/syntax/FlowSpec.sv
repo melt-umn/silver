@@ -92,11 +92,18 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
     then []
     else [err(attr.location, attr.name ++ " is an extension synthesized attribute, and must contain at least the forward flow type. It is missing " ++ implode(", ", missingFt))];
   
+  production attribute inhList :: [String] with ++;
+  inhList := inhs.inhList;
+  
+  local specs :: [Pair<String [String]>] = getFlowTypeSpecFor(top.onNt.typeName, top.flowEnv);
+  local decSpec :: [String] = fromMaybe([], lookup("decorate", specs));
+  inhList <- if inhs.containsRefSet then decSpec else [];
+  
   -- We want to put the spec in even if there are errors in 'inhs' so that
   -- we can look up specs from inhs.
   top.flowDefs :=
     if !attr.found then []
-    else [specificationFlowDef(top.onNt.typeName, attr.synName, inhs.inhList)];
+    else [specificationFlowDef(top.onNt.typeName, attr.synName, inhList)];
 }
 
 nonterminal FlowSpecId with config, location, grammarName, errors, env, unparse, onNt, synName, authorityGrammar, found, name;
@@ -142,33 +149,30 @@ top::FlowSpecId ::= 'decorate'
   top.found = true;
 }
 
+monoid attribute inhList :: [String];
+monoid attribute containsRefSet :: Boolean with false, ||;
 
-nonterminal FlowSpecInhs with config, location, grammarName, errors, env, unparse, onNt, inhList, flowEnv;
+nonterminal FlowSpecInhs with config, location, grammarName, errors, env, unparse, onNt, inhList, containsRefSet, flowEnv;
 
-propagate errors on FlowSpecInhs;
+propagate errors, inhList, containsRefSet on FlowSpecInhs;
 
 concrete production nilFlowSpecInhs
 top::FlowSpecInhs ::=
 {
   top.unparse = "";
-  top.inhList = [];
 }
 concrete production oneFlowSpecInhs
 top::FlowSpecInhs ::= h::FlowSpecInh
 {
   top.unparse = h.unparse;
-  top.inhList = h.inhList;
 }
 concrete production consFlowSpecInhs
 top::FlowSpecInhs ::= h::FlowSpecInh  ','  t::FlowSpecInhs
 {
   top.unparse = h.unparse ++ ", " ++ t.unparse;
-  top.inhList = h.inhList ++ t.inhList;
 }
 
-nonterminal FlowSpecInh with config, location, grammarName, errors, env, unparse, onNt, inhList, flowEnv;
-
-synthesized attribute inhList :: [String];
+nonterminal FlowSpecInh with config, location, grammarName, errors, env, unparse, onNt, inhList, containsRefSet, flowEnv;
 
 propagate errors on FlowSpecInh;
 
@@ -176,13 +180,14 @@ concrete production flowSpecInh
 top::FlowSpecInh ::= inh::QNameAttrOccur
 {
   top.unparse = inh.unparse;
-  top.inhList = if inh.found then [inh.attrDcl.fullName] else [];
   
   inh.attrFor = top.onNt;
 
   top.errors <-
     if !inh.found || inh.attrDcl.isInherited then []
     else [err(inh.location, inh.name ++ " is not an inherited attribute and so cannot be within a flow type")];
+
+  top.inhList <- if inh.found then [inh.attrDcl.fullName] else [];
 }
 
 {--
@@ -206,13 +211,11 @@ top::FlowSpecInh ::= 'decorate'
   top.unparse = "decorate";
   
   local specs :: [Pair<String [String]>] = getFlowTypeSpecFor(top.onNt.typeName, top.flowEnv);
-  local decSpec :: Maybe<[String]> = lookup("decorate", specs);
-  
   top.errors <-
-    if decSpec.isJust then []
+    if lookup("decorate", specs).isJust then []
     else [err(top.location, s"to use 'decorate' in a flow type for nonterminal ${top.onNt.typeName}, 'decorate' must also have an explicit flow type")];
   
-  top.inhList = fromMaybe([], decSpec);
+  top.containsRefSet <- true;
 }
 
 

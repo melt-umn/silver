@@ -3,7 +3,6 @@ grammar silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
-imports silver:compiler:definition:flow:ast;
 imports silver:compiler:definition:flow:syntax;
 
 nonterminal TypeExpr  with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsFullyApplied;
@@ -208,11 +207,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
 {
   top.unparse = "Decorated " ++ t.unparse;
 
-  top.typerep =
-    case getInhsForNtRef(t.typerep.typeName, top.flowEnv) of
-    | ntRefFlowDef(_, inhs) :: _ -> decoratedType(inhs, t.typerep)
-    | _ -> decoratedType([], t.typerep)
-    end;
+  top.typerep = decoratedType(true, [], t.typerep);
   
   top.errors <-
     case t.typerep.baseType of
@@ -228,7 +223,7 @@ top::TypeExpr ::= 'Decorated' '{' inhs::FlowSpecInhs '}' t::TypeExpr
 {
   top.unparse = s"Decorated {${inhs.unparse}} ${t.unparse}";
 
-  top.typerep = decoratedType(inhs.inhList, t.typerep);
+  top.typerep = decoratedType(inhs.containsRefSet, sort(inhs.inhList), t.typerep);
   
   top.errors <-
     case t.typerep.baseType of

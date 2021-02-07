@@ -150,9 +150,12 @@ top::Type ::= fn::String
 }
 
 aspect production decoratedType
-top::Type ::= inhs::[String] te::Type
+top::Type ::= hasRefSet::Boolean inhs::[String] te::Type
 {
-  top.typepp = s"Decorated {${implode(", ", inhs)}} ${te.typepp}";
+  top.typepp =
+    if hasRefSet && null(inhs)
+    then s"Decorated ${te.typepp}"
+    else s"Decorated {${implode(", ", (if hasRefSet then ["decorate"] else []) ++ inhs)}} ${te.typepp}";
 }
 
 aspect production ntOrDecType
