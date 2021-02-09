@@ -28,9 +28,10 @@ top::Expr ::= '(' tl::TupleList ')'
 {
   top.unparse = "(" ++ tl.unparse ++ ")";
 
-  -- substitution is cleaner
-  -- instantiates types on pairs & gets tuples off pairs
-  -- it avoids threading the env?
+  -- computing specialized tupleType from forward.typerep 
+  -- is cleaner than performing type checking on TupleList
+  -- (performSubstitution is needed because forward.typerep 
+  -- isn't instantiated into a chain of pairs until upSubst is applied) 
   top.typerep = tupleType(performSubstitution(forward.typerep, forward.upSubst).tupleElems);
   
   forwards to tl.translation;
@@ -49,8 +50,9 @@ top::Expr ::= tuple::Expr '.' a::IntConst
   top.unparse = tuple.unparse ++ "." ++ a.lexeme;
 
   -- If tuple is decorated, the length of its tupleElems 
-  -- will be 1, so it must be undecorated? before we can take
-  -- the length of its tupleElems
+  -- will be 1, so we must pattern match to get at the 
+  -- underlying tupleType and compute correct length of 
+  -- its tupleElems
   local len::Integer = case tuple.typerep of
     | decoratedType(t) -> length(t.tupleElems)
     | t -> length(t.tupleElems)

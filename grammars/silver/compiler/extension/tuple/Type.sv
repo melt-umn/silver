@@ -52,8 +52,8 @@ abstract production tupleType
 top::Type ::= ts::[Type]
 {
 
-  -- why?
-  -- we decorate the types in the tuple?
+  -- to avoid transforming away the tupleType and turning it back 
+  -- into a chain of Pairs when performing substitutions
   top.substituted = tupleType(map (\ t::Type -> decorate t with {substitution = top.substitution;}.substituted, ts));
   top.flatRenamed = tupleType(map (\ t::Type -> decorate t with {substitution = top.substitution;}.flatRenamed, ts));
 
