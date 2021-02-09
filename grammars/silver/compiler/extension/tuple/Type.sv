@@ -3,8 +3,13 @@ grammar silver:compiler:extension:tuple;
 imports silver:compiler:extension:list;
 
 nonterminal ListOfTypeExprs with location, unparse, te_translation;
+
+-- Used to convert the comma-separated list of TypeExprs 
+-- that make up the tuple type expression into a 
+-- pair type expression:
 synthesized attribute te_translation :: TypeExpr;
 
+-- A list of the types that make up any given tuple:
 synthesized attribute tupleElems :: [Type] occurs on Type;
 
 -- One can think of any single type t as a single element tuple type (t)

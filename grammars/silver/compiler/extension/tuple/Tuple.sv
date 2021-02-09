@@ -13,6 +13,9 @@ imports silver:compiler:extension:patternmatching;
 terminal IntConst /[0-9]+/;
 
 nonterminal TupleList with location, unparse, translation;
+
+-- used to convert the comma-separated list of expressions 
+-- that make up the tuple into a pair expression:
 synthesized attribute translation :: Expr;
 
 concrete production emptyTuple

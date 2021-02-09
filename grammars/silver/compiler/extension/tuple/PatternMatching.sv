@@ -15,6 +15,8 @@ top::Pattern ::= '(' ts::TuplePatternList ')'
   forwards to ts.asTuplePattern;
 }
 
+-- Used to convert the comma-separated list of patterns 
+-- that make up the tuple into a pair pattern:
 synthesized attribute asTuplePattern::Pattern occurs on TuplePatternList;
 
 concrete production patternTuple_two
