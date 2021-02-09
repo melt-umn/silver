@@ -103,6 +103,22 @@ Boolean ::= tuple::()
 
 equalityTest(emptyTupleTest(()), true, Boolean, silver_tests);
 
+function tupleMatchWhen
+Boolean ::= tuple::(Integer, Integer, Integer)
+{
+  return case tuple of
+    | (_, _, x) when x > 3 -> true
+    | (x, _, _) when x < 5 -> false
+    | (_, x, _) when x == 4 -> true
+    | _ -> false
+    end; 
+}
+
+equalityTest(tupleMatchWhen((3, 4, 5)), true, Boolean, silver_tests);
+equalityTest(tupleMatchWhen((3, 4, 2)), false, Boolean, silver_tests);
+equalityTest(tupleMatchWhen((6, 4, 2)), true, Boolean, silver_tests);
+equalityTest(tupleMatchWhen((6, 7, 2)), false, Boolean, silver_tests);
+
 -- Tuple creation
 function makeDate
 (Integer, Integer, Integer) ::= day::Integer month::Integer year::Integer
@@ -111,6 +127,18 @@ function makeDate
 } 
 
 equalityTest(hackUnparse(makeDate(1, 12, 2021)), "silver:core:pair(1, silver:core:pair(12, 2021))", String, silver_tests);
+
+function temp
+String ::=
+{
+  local attribute goodDog:: (String, Integer);
+  goodDog = ("Basil", 9);
+  return goodDog.1;
+}
+
+equalityTest(temp(), "Basil", String, silver_tests);
+
+-- Errors
 
 wrongCode "Argument 1 of function 'testingTupleType' expected (String, Integer, Integer) but argument is of type (Integer, String, String)" {
 
@@ -208,29 +236,3 @@ wrongCode "Invalid tuple selector index." {
 
 equalityTest((3, 2).2, 2, Integer, silver_tests);
 equalityTest(("one", 2).1, "one", String, silver_tests);
-
-function temp
-String ::=
-{
-  local attribute goodDog:: (String, Integer);
-  goodDog = ("Basil", 9);
-  return goodDog.1;
-}
-
-equalityTest(temp(), "Basil", String, silver_tests);
-
-function tupleMatchWhen
-Boolean ::= tuple::(Integer, Integer, Integer)
-{
-  return case tuple of
-    | (_, _, x) when x > 3 -> true
-    | (x, _, _) when x < 5 -> false
-    | (_, x, _) when x == 4 -> true
-    | _ -> false
-    end; 
-}
-
-equalityTest(tupleMatchWhen((3, 4, 5)), true, Boolean, silver_tests);
-equalityTest(tupleMatchWhen((3, 4, 2)), false, Boolean, silver_tests);
-equalityTest(tupleMatchWhen((6, 4, 2)), true, Boolean, silver_tests);
-equalityTest(tupleMatchWhen((6, 7, 2)), false, Boolean, silver_tests);
