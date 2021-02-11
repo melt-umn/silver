@@ -9,6 +9,12 @@ top::DocConfigSetting ::= v::Boolean
 	top.fileScope = false;
 }
 
+abstract production fileSplitConfig
+top::DocConfigSetting ::= v::Boolean
+{
+	top.fileScope = true;
+}
+
 abstract production weightConfig
 top::DocConfigSetting ::= v::Integer
 {
@@ -31,12 +37,6 @@ abstract production titleConfig
 top::DocConfigSetting ::= v::String
 {
 	top.fileScope = true;
-}
-
-abstract production collapseConfig
-top::DocConfigSetting ::= v::Boolean
-{
-	top.fileScope = false;
 }
 
 abstract production grammarNoDocsConfig
@@ -115,7 +115,8 @@ function getSplit
 Boolean ::= args::[DocConfigSetting]
 {
 	return case args of
-		   | splitConfig(v)::_ -> v
+		   | fileSplitConfig(v)::_ -> v
+		   | splitConfig(true)::_ -> true
 		   | _::r -> getSplit(r)
 		   | [] -> false
 		   end;
@@ -128,15 +129,5 @@ Boolean ::= args::[DocConfigSetting]
 		   | tocConfig(v)::_ -> v
 		   | _::r -> getToc(r)
 		   | [] -> false
-		   end;
-}
-
-function getCollapse
-Boolean ::= args::[DocConfigSetting]
-{
-	return case args of
-		   | collapseConfig(v)::_ -> v
-		   | _::r -> getCollapse(r)
-		   | [] -> true
 		   end;
 }

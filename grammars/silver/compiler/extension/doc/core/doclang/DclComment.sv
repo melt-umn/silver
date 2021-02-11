@@ -92,9 +92,9 @@ top::DclComment ::= InitialIgnore_t blocks::DclCommentBlocks FinalIgnore_t
     top.upDocConfig := confResult.snd;
 
     top.doEmit =
-        !((length(blocks.otherBlocks) + length(paramBlocks)) == 0) &&
-        !(doesExcludeFile(top.downDocConfig)) &&
-        !(fromMaybe(false, fromMaybe(kwdValue(terminal(ConfigValueKeyword_t, "off"),
+        ((length(blocks.otherBlocks) + length(paramBlocks)) != 0) &&
+        (!doesExcludeFile(top.downDocConfig)) &&
+        (!fromMaybe(false, fromMaybe(kwdValue(terminal(ConfigValueKeyword_t, "off"),
             location=top.location), lookup("hide", blocks.configArgs)).asBool));
 }
 
@@ -115,12 +115,12 @@ Pair<[String] [DocConfigSetting]> ::= alreadyErrs::[String] args::[Pair<String C
     local err::[String] =
         case arg of
         | pair("split", v) -> if !v.asBool.isJust then ["@config split takes a boolean value (or just @config split)"] else []
+        | pair("fileSplit", v) -> if !v.asBool.isJust then ["@config fileSplit takes a boolean value (or just @config fileSplit)"] else []
         | pair("noToc", v) -> if !v.asBool.isJust then ["@config noToc takes a boolean value (or just @config noToc)"] else []
         | pair("weight", v) -> if !v.asInteger.isJust then ["@config weight takes an integer"] else []
         | pair("grammarWeight", v) -> if !v.asInteger.isJust then ["@config grammarWeight takes an integer"] else []
         | pair("title", v) -> if !v.asString.isJust then ["@config title takes a string in quotes"] else []
         | pair("grammarTitle", v) -> if !v.asString.isJust then ["@config grammarTitle takes a string in quotes"] else []
-        | pair("collapseChildren", v) -> if !v.asBool.isJust then ["@config collapseChildren takes a boolean value (or just @config collapseChildren)"] else []
         | pair("excludeFile", v) -> if !v.asBool.isJust then ["@config excludeFile takes a boolean value (or just @config excludeFile)"] else []
         | pair("excludeGrammar", v) -> if !v.asBool.isJust then ["@config excludeGrammar takes a boolean value (or just @config excludeGrammar)"] else []
         | pair("hide", v) -> if !v.asBool.isJust then ["@config hide takes a boolean value (or just @config hide or @hide)"] else []
@@ -130,12 +130,12 @@ Pair<[String] [DocConfigSetting]> ::= alreadyErrs::[String] args::[Pair<String C
     local boundConf::[DocConfigSetting] =
         case arg of
         | pair("split", v) -> [splitConfig(v.asBool.fromJust)]
+        | pair("fileSplit", v) -> [fileSplitConfig(v.asBool.fromJust)]
         | pair("noToc", v) -> [tocConfig(!v.asBool.fromJust)]
         | pair("weight", v) -> [weightConfig(v.asInteger.fromJust)]
         | pair("grammarWeight", v) -> [grammarWeightConfig(v.asInteger.fromJust)]
         | pair("title", v) -> [titleConfig(v.asString.fromJust)]
         | pair("grammarTitle", v) -> [grammarTitleConfig(v.asString.fromJust)]
-        | pair("collapseChildren", v) -> [collapseConfig(v.asBool.fromJust)]
         | pair("excludeFile", v) -> [fileNoDocsConfig(v.asBool.fromJust)]
         | pair("excludeGrammar", v) -> [grammarNoDocsConfig(v.asBool.fromJust)]
         | pair("hide", _) -> []
@@ -319,7 +319,7 @@ concrete production stringValue
 top::ConfigValue ::= v::ConfigValueString_t
 {
     top.asBool = nothing();
-    top.asString = just(v.lexeme);
+    top.asString = just(substring(1, length(v.lexeme)-1, v.lexeme));
     top.asInteger = nothing();
 }
 
