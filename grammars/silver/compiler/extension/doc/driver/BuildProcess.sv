@@ -80,13 +80,15 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 abstract production printUndoc
 top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]
 {
-  local report :: String = "\nUndocumented Items Report:\n" ++ implode("\n\n",
+  local report :: String = "\nUndocumented Items Report:\n" ++ implode("\n",
     flatMap((\x::Decorated RootSpec -> case x of 
       | grammarRootSpec(g, _, _, _, _) ->
-          if length(g.undocumentedNamed)!=0
-          then [s" - [${g.grammarName}]: ${toString(length(g.undocumentedNamed))} items undocumented"
-            ++ (if a.printUndoc
-                then ": " ++ implode(", ", g.undocumentedNamed)
+          if (length(g.documentedNamed)+length(g.undocumentedNamed))!=0
+          then [s" - [${g.grammarName}]: ${toString(length(g.documentedNamed))}" ++
+                s"/${toString(toInteger(length(g.undocumentedNamed)+length(g.documentedNamed)))} " ++ 
+                s"(${toString((toFloat(length(g.documentedNamed))/toFloat(length(g.undocumentedNamed)+length(g.documentedNamed)))*toFloat(100))}%) items documented"
+            ++ (if a.printUndoc && (length(g.undocumentedNamed)!=0)
+                then ", missing: " ++ implode(", ", g.undocumentedNamed)
                 else ".")]
           else []
       | _ -> []

@@ -13,6 +13,7 @@ synthesized attribute upDocConfig :: [DocConfigSetting] with ++ occurs on Gramma
 synthesized attribute localDocConfig :: [DocConfigSetting] occurs on Root;
 
 synthesized attribute undocumentedNamed :: [String] occurs on AGDcl, AGDcls, Root, Grammar;
+synthesized attribute documentedNamed :: [String] occurs on AGDcl, AGDcls, Root, Grammar;
 
 -- Declarations of documented AGDcls
 synthesized attribute docDcls :: [Pair<String DocDclInfo>] with ++;
@@ -31,6 +32,7 @@ top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
   top.upDocConfig := filter((\x::DocConfigSetting -> !x.fileScope), ags.upDocConfig);
   top.docDcls := ags.docDcls;
   top.undocumentedNamed = ags.undocumentedNamed;
+  top.documentedNamed = ags.documentedNamed;
 }
 
 aspect production nilAGDcls
@@ -40,6 +42,7 @@ top::AGDcls ::=
   top.upDocConfig := [];
   top.docDcls := [];
   top.undocumentedNamed = [];
+  top.documentedNamed = [];
 }
 
 aspect production consAGDcls
@@ -51,6 +54,7 @@ top::AGDcls ::= h::AGDcl t::AGDcls
   top.upDocConfig := h.upDocConfig ++ t.upDocConfig;
   top.docDcls := h.docDcls ++ t.docDcls;
   top.undocumentedNamed = h.undocumentedNamed ++ t.undocumentedNamed;
+  top.documentedNamed = h.documentedNamed ++ t.documentedNamed;
 }
 
 aspect default production
@@ -60,6 +64,7 @@ top::AGDcl ::=
   top.docs := [];
   top.docDcls := [];
   top.undocumentedNamed = [];
+  top.documentedNamed = [];
 }
 
 aspect production appendAGDcl
@@ -71,6 +76,7 @@ top::AGDcl ::= h::AGDcl t::AGDcl
   top.upDocConfig := h.upDocConfig ++ t.upDocConfig;
   top.docDcls := h.docDcls ++ t.docDcls;
   top.undocumentedNamed = h.undocumentedNamed ++ t.undocumentedNamed;
+  top.documentedNamed = h.documentedNamed ++ t.documentedNamed;
 }
 
 aspect production nilGrammar
@@ -80,6 +86,7 @@ top::Grammar ::=
   top.upDocConfig := [];
   top.docDcls := [];
   top.undocumentedNamed = [];
+  top.documentedNamed = [];
 }
 
 aspect production consGrammar
@@ -91,6 +98,7 @@ top::Grammar ::= c1::Root  c2::Grammar
   c2.downDocConfig = top.downDocConfig;
   top.docDcls := c1.docDcls ++ c2.docDcls;
   top.undocumentedNamed = c1.undocumentedNamed ++ c2.undocumentedNamed;
+  top.documentedNamed = c1.documentedNamed ++ c2.documentedNamed;
 }
 
 -- consGrammar(FILE1, consGrammar(FILE2, nilGrammar()))

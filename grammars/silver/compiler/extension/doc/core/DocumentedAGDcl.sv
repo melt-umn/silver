@@ -38,6 +38,7 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
                     else [];
 
     top.undocumentedNamed = if length(parsed.errors)==0 then [] else dcl.undocumentedNamed;
+    top.documentedNamed = if length(parsed.errors)==0 then dcl.undocumentedNamed else [];
 
     forwards to dcl;
 }
