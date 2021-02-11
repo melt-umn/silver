@@ -1,4 +1,5 @@
 @{-
+  - @config fileSplit
   - @config weight 100
   - @config title "The Second File"
   -

@@ -9,12 +9,15 @@ import silver:compiler:definition:core;
 import silver:util:cmdargs;
 
 synthesized attribute docGeneration :: Boolean occurs on CmdArgs;
+synthesized attribute printUndoc :: Boolean occurs on CmdArgs;
+synthesized attribute countUndoc :: Boolean occurs on CmdArgs;
 synthesized attribute docOutOption :: Maybe<String> occurs on CmdArgs;
 
 aspect production endCmdArgs
 top::CmdArgs ::= _
 {
   top.docGeneration = false;
+  top.printUndoc = false;
   top.docOutOption = nothing();
 }
 
@@ -22,6 +25,20 @@ abstract production docFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.docGeneration = true;
+  forwards to rest;
+}
+
+abstract production printUndocFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.printUndoc = true;
+  forwards to rest;
+}
+
+abstract production countUndocFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.countUndoc = true;
   forwards to rest;
 }
 
@@ -39,9 +56,13 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--doc", flag(docFlag)),
+            pair("--print-undoc", flag(printUndocFlag)),
+            pair("--count-undoc", flag(countUndocFlag)),
             pair("--doc-out", option(docOutFlag))];
-  flagdescs <- ["\t--doc     : build the documentation",
-                "\t--doc-out : output location for documentation"];
+  flagdescs <- ["\t--doc       : build the documentation",
+                "\t--count-undoc : print names of undocumented items",
+                "\t--print-undoc : print names of undocumented items",
+                "\t--doc-out   : output location for documentation"];
 }
 
 aspect production compilation
@@ -51,7 +72,31 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   top.postOps <- if top.config.docGeneration then 
                  [genDoc(top.config, grammarsToTranslate, outputLoc)]
                  else [];
+  top.postOps <- if top.config.printUndoc || top.config.countUndoc then 
+                 [printUndoc(top.config, grammarsToTranslate)]
+                 else [];
 }
+
+abstract production printUndoc
+top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]
+{
+  local report :: String = "\nUndocumented Items Report:\n" ++ implode("\n\n",
+    flatMap((\x::Decorated RootSpec -> case x of 
+      | grammarRootSpec(g, _, _, _, _) ->
+          if length(g.undocumentedNamed)!=0
+          then [s" - [${g.grammarName}]: ${toString(length(g.undocumentedNamed))} items undocumented"
+            ++ (if a.printUndoc
+                then ": " ++ implode(", ", g.undocumentedNamed)
+                else ".")]
+          else []
+      | _ -> []
+      end), specs));
+
+  top.io = print(report ++ "\n", top.ioIn);
+  top.code = 0;
+  top.order = 5;
+}
+
 
 abstract production genDoc
 top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  outputLoc::String

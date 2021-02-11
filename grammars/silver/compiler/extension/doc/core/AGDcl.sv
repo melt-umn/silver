@@ -8,6 +8,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
 	top.docUnparse = "`function " ++ id.name ++ "` &nbsp; (`" ++ ns.unparse ++ "`) {#" ++ id.name ++ "}";
 	top.docDcls := [pair(id.name, docDclInfo(id.name, top.location, top.grammarName))];
+	top.undocumentedNamed = [id.name];
 }
 
 aspect production productionDcl
@@ -15,4 +16,5 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 {
 	top.docUnparse = "`abstract production " ++ id.name ++ "` &nbsp; (`" ++ ns.unparse ++ "`) {#" ++ id.name ++ "}";
 	top.docDcls := [pair(id.name, docDclInfo(id.name, top.location, top.grammarName))];
+	top.undocumentedNamed = [id.name];
 }

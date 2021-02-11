@@ -37,6 +37,8 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
                     then [wrn(parsed.location, "Doc comment not immediately preceding AGDcl, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
                     else [];
 
+    top.undocumentedNamed = if length(parsed.errors)==0 then [] else dcl.undocumentedNamed;
+
     forwards to dcl;
 }
 

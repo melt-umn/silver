@@ -1,6 +1,6 @@
 
 @@{-
-   - @config split
+   - @config fileSplit
    - @config grammarWeight -10
    - @config title "This is the Main file"
    - @config noToc
@@ -29,3 +29,8 @@ Integer ::= a::Integer b::Integer
   return a + b + foldl((\x::Integer y::Integer -> x + y), 0, bias);
 }
 
+@@{-Another doc in Main.sv-}
+
+@@{-@config hide
+
+something hidden-}

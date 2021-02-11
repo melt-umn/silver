@@ -19,34 +19,27 @@ top::RootSpec ::= _ _ _ _ _
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _ _ _ _
 {
-  top.genFiles := if getSplit(g.upDocConfig) 
-  				  then toSplitFiles(g, g.upDocConfig, [])
-  				  else formatFile("_index.md", 
-  				  	              getGrammarTitle(g.upDocConfig, "["++g.grammarName++"]"), --getLastPart(...)
-  				  	              getGrammarWeight(g.upDocConfig),
-  				  	              length(g.upDocConfig) == 0, s"Children (files, grammars): {{< toc-tree >}}\n\nDefined in grammar `[${g.grammarName}]`: {{< toc >}}",
-  				  	              g.docs);
+  top.genFiles := toSplitFiles(g, g.upDocConfig, [], []);
 
   g.docEnv = tm:add(g.docDcls, tm:empty());
   g.downDocConfig = g.upDocConfig;
-  -- g.docEnv = tm:add(g.docDcls, tm:empty());
 }
 
 function toSplitFiles
-[Pair<String String>] ::= g::Decorated Grammar grammarConf::[DocConfigSetting] soFar::[Pair<String String>]
+[Pair<String String>] ::= g::Decorated Grammar grammarConf::[DocConfigSetting] forIndex::[CommentItem] soFar::[Pair<String String>]
 {
 	return case g of
 		   | consGrammar(this, rest) ->
-	   			toSplitFiles(rest, grammarConf, formatFile(
+	   			if getSplit(this.localDocConfig) then toSplitFiles(rest, grammarConf, forIndex, formatFile(
 		   			substitute(".sv", ".md", this.location.filename),
 		   			getFileTitle(this.localDocConfig, substitute(".sv", "", this.location.filename)),
 		   			getFileWeight(this.localDocConfig), true,
 		   			s"In file `${this.location.filename}`: "++(if getToc(this.localDocConfig) then "{{< toc >}}" else ""), 
-		   			this.docs) ++ soFar)
-		   | nilGrammar() -> if length(soFar) == 0 && length(grammarConf) == 0 then []
+		   			this.docs) ++ soFar) else toSplitFiles(rest, grammarConf, forIndex ++ this.docs, soFar)
+		   | nilGrammar() -> if length(soFar) == 0 && length(grammarConf) == 0 && length(forIndex) == 0 then []
 		   					 else formatFile("_index.md", getGrammarTitle(grammarConf, "["++g.grammarName++"]"),
 		   					 	getGrammarWeight(grammarConf),
-		   					 	false, s"This Grammar is documented in individual files. Contents (files, grammars) of `[${g.grammarName}]`: {{< toc-tree >}}", []) ++ soFar
+		   					 	false, s"Contents of `[${g.grammarName}]`: {{< toc-tree >}} \n\nDefined in this grammar:", forIndex) ++ soFar
 		   end;
 }
 
@@ -64,7 +57,7 @@ geekdocBreadcrumb: false
 
 ${pfxText}
 
-${implode("\n\n\n\n", map((.body), realDocs))}
+${implode("\n\n<hr/>\n\n", map((.body), realDocs))}
 """)];
 }
 
