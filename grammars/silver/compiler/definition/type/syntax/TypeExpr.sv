@@ -361,8 +361,6 @@ top::TypeExprs ::= t::TypeExpr list::TypeExprs
   top.types = t.typerep :: list.types;
   top.missingCount = list.missingCount;
   top.freeVariables = t.freeVariables ++ list.freeVariables;
-  
-  top.errors <- t.errorsKindStar;
 }
 
 concrete production typeListConsMissing
