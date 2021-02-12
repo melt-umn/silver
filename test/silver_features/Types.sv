@@ -3,22 +3,22 @@ import silver:testing;
 ------------------------------------- Number of parameters to type constructors
 terminal ATerminalType 'doesnotmatter';
 
-wrongCode "ATerminalType has kind arity 0, but there are 1 type arguments supplied here" {
+wrongCode "ATerminalType has kind *, but there are 1 type arguments supplied here" {
  global t :: ATerminalType<String> = error("");
 }
 
 nonterminal NTZero;
 
-wrongCode "NTZero has kind arity 0, but there are 1 type arguments supplied here" {
+wrongCode "NTZero has kind *, but there are 1 type arguments supplied here" {
  global t :: NTZero<String> = error("");
 }
 
 nonterminal NTOne<a>;
 
-wrongCode "NTOne is not fully applied, it has kind arity 1" {
+wrongCode "NTOne has kind * -> *, but kind * is expected here" {
  global t :: NTOne = error("");
 }
-wrongCode "NTOne has kind arity 1, but there are 2 type arguments supplied here" {
+wrongCode "NTOne has kind * -> *, but there are 2 type arguments supplied here" {
  global t :: NTOne<String String> = error("");
 }
 
@@ -36,13 +36,13 @@ wrongCode "cannot contain _" {
 nonterminal NTTwo<a b>;
 production ntt top::NTTwo<a b> ::= a b {}
 
-wrongCode "NTTwo is not fully applied, it has kind arity 2" {
+wrongCode "NTTwo has kind * -> * -> *, but kind * is expected here" {
  global t :: NTTwo = error("");
 }
-wrongCode "NTTwo<_ _> is not fully applied, it has kind arity 2" {
+wrongCode "NTTwo<_ _> has kind * -> * -> *, but kind * is expected here" {
  global t :: NTTwo<_ _> = error("");
 }
-wrongCode "NTTwo<Integer _> is not fully applied, it has kind arity 1" {
+wrongCode "NTTwo<Integer _> has kind * -> *, but kind * is expected here" {
  global t :: NTTwo<Integer _> = error("");
 }
 wrongCode "Missing type argument cannot be followed by a provided argument" {
@@ -67,13 +67,13 @@ wrongCode "Attribute type arguments cannot contain _" {
 
 global ctrList::[]<Integer> = [1, 2, 3];
 
-wrongCode "[] is not fully applied, it has kind arity 1" {
+wrongCode "[] has kind * -> *, but kind * is expected here" {
   global badCtrList1::[] = [1, 2, 3];
 }
-wrongCode "[] has kind arity 1, but there are 2 type arguments supplied here" {
+wrongCode "[] has kind * -> *, but there are 2 type arguments supplied here" {
   global badCtrList2::[]<Integer Integer> = [1, 2, 3];
 }
-wrongCode "[Integer] has kind arity 0, but there are 1 type arguments supplied here" {
+wrongCode "[Integer] has kind *, but there are 1 type arguments supplied here" {
   global badCtrList2::[Integer]<Integer> = [1, 2, 3];
 }
 
@@ -108,10 +108,10 @@ wrongCode "repeats type variable names" {
  type TypeTwo<a a> = Integer;
 }
 
-wrongCode "NTTwo<a _> is not fully applied, it has kind arity 1" {
+wrongCode "NTTwo<a _> has kind * -> *, but kind * is expected here" {
  type MyTypeErr<a> = NTTwo<a _>;
 }
-wrongCode "NTTwo<_ _> is not fully applied, it has kind arity 2" {
+wrongCode "NTTwo<_ _> has kind * -> * -> *, but kind * is expected here" {
  type MyTypeErr = NTTwo<_ _>;
 }
 

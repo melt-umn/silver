@@ -2,6 +2,8 @@ grammar silver:compiler:definition:type:syntax;
 
 nonterminal KindExpr with config, location, grammarName, errors, env, unparse, kindrep;
 
+propagate errors on KindExpr; -- TODO: Are errors even possible here?
+
 concrete production starKindExpr
 top::KindExpr ::= '*'
 {

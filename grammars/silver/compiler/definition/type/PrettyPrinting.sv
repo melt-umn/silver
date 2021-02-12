@@ -104,7 +104,7 @@ top::Type ::= c::Type a::Type
     | _ -> prettyTypeWith(top.baseType, top.boundVariables) ++
       if null(top.argTypes) then ""
       else "<" ++ implode(" ", map(prettyTypeWith(_, top.boundVariables), top.argTypes)) ++
-        replicate(length(top.argTypes) - length(top.baseType.kindrep.argKinds), " _") ++ ">"
+        replicate(max(length(top.argTypes) - length(top.baseType.kindrep.argKinds), 0), " _") ++ ">"
     end;
 }
 
