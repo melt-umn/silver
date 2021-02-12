@@ -92,13 +92,17 @@ Pair<Boolean Substitution> ::= ty1::Type ty2::Type subst::Substitution
 
 {-This is the easiest way to get case_any translation working.  We
   would be better off getting the error checking to occur prior to
-  rewriting so these functions don't show up.-}
+  rewriting so these functions don't show up.
+
+  We also need to use this because we occasionally need to use new to
+  drop the decoration from the type of things we're passing into
+  binds.-}
 function acceptableMonadFunction
 Boolean ::= f::Decorated Expr
 {
   return case f of
          | functionReference(qNameId(name)) ->
-           name.name == "alt"
+           name.name == "silver:core:alt"
          | _ -> false
          end;
 }
@@ -146,7 +150,7 @@ String ::= ty::Type
        --We use nonterminalType to get it to show just an underscore
        --e.g. this gives us Maybe<_>, Either<String _>
        prettyType(appType(c, nonterminalType("_", 0, false)))
-     | _ -> error("Tried to get monadToString for a non-monadic type")
+     | _ -> error("Tried to get monadToString for a non-monadic type (" ++ prettyType(ty) ++ ")")
      end;
 }
 
@@ -232,5 +236,21 @@ Expr ::= n::String ty::Type body::Expr loc::Location
                              location=loc),
            body,
            location=loc);
+}
+
+
+function buildMultiLambda
+Expr ::= names::[Pair<String Type>] body::Expr loc::Location
+{
+  local sig::ProductionRHS =
+        foldr(\ pr::Pair<String Type> p::ProductionRHS ->
+                case pr of
+                | pair(n, ty) ->
+                  productionRHSCons(productionRHSElem(name(n, loc), '::',
+                                       typerepTypeExpr(ty, location=loc), location=loc),
+                                    p, location=loc)
+                end,
+              productionRHSNil(location=loc), names);
+  return lambdap(sig, body, location=loc);
 }
 

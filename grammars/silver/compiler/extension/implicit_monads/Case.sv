@@ -77,6 +77,11 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                       top.location, 1, top.expectedMonad);
 
   local monadLocal::Expr =
+        buildMultiLambda(map(\ p::Pair<Type Pair<Expr String>> ->
+                         case p of
+                         | pair(ty, pair(e, n)) -> pair(n, dropDecorated(ty))
+                         end, monadStuff.fst), monadLocalBody, top.location);
+  local monadLocalBody::Expr =
     buildMonadicBinds(monadStuff.fst,
                       caseExpr(monadStuff.snd,
                                ml.matchRuleList, failure,
@@ -91,8 +96,10 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   monadLocal.downSubst = ml.mUpSubst;
   monadLocal.finalSubst = top.finalSubst;
   monadLocal.expectedMonad = top.expectedMonad;
-  top.monadRewritten = monadLocal.monadRewritten;
-  top.mtyperep = monadLocal.mtyperep;
+  top.monadRewritten = buildApplication(monadLocal.monadRewritten, map(\ p::Pair<Type Pair<Expr String>> -> case p of | pair(ty, pair(e, n)) -> if isDecorated(ty) then newFunction('new', '(', e, ')', location=top.location) else e end, monadStuff.fst), top.location);
+  --top.monadRewritten = foldr(\ p::Pair<Type Pair<Expr String>> rest::Expr -> case p of | pair(ty, pair(e, n)) -> buildApplication(buildLambda(n, dropDecorated(ty), rest, top.location), [if isDecorated(ty) then newFunction('new', '(', e, ')', location=top.location) else e], top.location) end, monadLocal.monadRewritten, monadStuff.fst);
+  --top.monadRewritten = unsafeTrace(monadLocal.monadRewritten, print(monadLocal.unparse ++ "\ns type:  " ++ prettyType(test.typerep) ++ "\n\n", unsafeIO()));
+  top.mtyperep = monadLocal.mtyperep.outputType;
   top.mUpSubst = monadLocal.mUpSubst;
 
   monadLocal.monadicallyUsed = false;
@@ -171,9 +178,11 @@ Expr ::= bindlst::[Pair<Type Pair<Expr String>>] base::Expr loc::Location
 {
   return case bindlst of
          | [] -> base
-         | pair(ty,pair(e,n))::rest ->
-           buildApplication(monadBind(loc),
-                            [e, buildLambda(n, monadInnerType(ty), buildMonadicBinds(rest, base, loc), loc)], loc)
+         | pair(ty, pair(e, n))::rest ->
+           buildApplication(monadBind(loc), [baseExpr(qNameId(name(n, loc), location=loc), location=loc), buildLambda(n, monadInnerType(ty), buildMonadicBinds(rest, base, loc), loc)], loc)
+           {-buildApplication(monadBind(loc),
+                            [if isDecorated(ty) then newFunction('new', '(', e, ')', location=loc) else e,
+                             buildLambda(n, monadInnerType(ty), buildMonadicBinds(rest, base, loc), loc)], loc)-}
          end;
 }
 

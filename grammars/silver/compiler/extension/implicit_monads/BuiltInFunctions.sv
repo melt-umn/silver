@@ -21,14 +21,19 @@ top::Expr ::= 'length' '(' e::Expr ')'
   e.monadicallyUsed = !isList && isMonad(e.mtyperep, top.env);
   top.monadicNames = e.monadicNames;
 
-  top.monadRewritten = if !isList && isMonad(e.mtyperep, top.env)
-                       then Silver_Expr {
-                              $Expr {monadBind(top.location)}
-                              ($Expr {e.monadRewritten},
-                              \x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location)} ->
-                                  $Expr {monadReturn(top.location)} (length(x)))
-                            }
-                       else lengthFunction('length', '(', e.monadRewritten, ')', location=top.location);
+  local eUnDec::Expr =
+        if isDecorated(e.mtyperep)
+        then Silver_Expr {new($Expr {e.monadRewritten})}
+        else e.monadRewritten;
+  top.monadRewritten =
+      if isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
+      then Silver_Expr {
+             $Expr {monadBind(top.location)}
+             ($Expr {eUnDec},
+             \x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location)} ->
+                 $Expr {monadReturn(top.location)} (length(x)))
+           }
+      else lengthFunction('length', '(', e.monadRewritten, ')', location=top.location);
 }
 
 aspect production errorLength
@@ -68,16 +73,21 @@ top::Expr ::= e::Decorated Expr
   ne.expectedMonad = top.expectedMonad;
   top.merrors := ne.merrors;
   top.mUpSubst = ne.mUpSubst;
-  top.mtyperep = if isMonad(ne.mtyperep, top.env)
+  top.mtyperep = if isMonad(ne.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
                  then monadOfType(ne.mtyperep, intType())
                  else intType();
-  ne.monadicallyUsed = isMonad(ne.mtyperep, top.env);
+  ne.monadicallyUsed = isMonad(ne.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst;
   top.monadicNames = ne.monadicNames;
+
+  local neUnDec::Expr =
+        if isDecorated(ne.mtyperep)
+        then Silver_Expr {new($Expr {ne.monadRewritten})}
+        else ne.monadRewritten;
   top.monadRewritten =
-     if isMonad(ne.mtyperep, top.env)
+     if isMonad(ne.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
      then Silver_Expr {
             $Expr {monadBind(top.location)}
-             ($Expr {ne.monadRewritten},
+             ($Expr {neUnDec},
                \x::$TypeExpr {typerepTypeExpr(monadInnerType(ne.mtyperep), location=top.location)} ->
                      $Expr {monadReturn(top.location)} (length(x)))
                    }
@@ -90,19 +100,26 @@ top::Expr ::= 'toInteger' '(' e::Expr ')'
   top.merrors := e.merrors;
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
-  top.mtyperep = if isMonad(e.mtyperep, top.env)
-                 then monadOfType(e.mtyperep, intType())
-                 else intType();
-  e.monadicallyUsed = isMonad(e.mtyperep, top.env);
+  top.mtyperep =
+      if isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
+      then monadOfType(e.mtyperep, intType())
+      else intType();
+  e.monadicallyUsed = isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst;
   top.monadicNames = e.monadicNames;
-  top.monadRewritten = if isMonad(e.mtyperep, top.env)
-                       then Silver_Expr {
-                              $Expr {monadBind(top.location)}
-                              ($Expr {e.monadRewritten},
-                              \x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location)} ->
-                                  $Expr {monadReturn(top.location)} (toInteger(x)))
-                            }
-                       else toIntegerFunction('toInteger', '(', e.monadRewritten, ')', location=top.location);
+
+  local eUnDec::Expr =
+        if isDecorated(e.mtyperep)
+        then Silver_Expr {new($Expr {e.monadRewritten})}
+        else e.monadRewritten;
+  top.monadRewritten =
+      if isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
+      then Silver_Expr {
+             $Expr {monadBind(top.location)}
+             ($Expr {eUnDec},
+             \x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location)} ->
+                 $Expr {monadReturn(top.location)} (toInteger(x)))
+           }
+      else toIntegerFunction('toInteger', '(', e.monadRewritten, ')', location=top.location);
 }
 
 aspect production toBooleanFunction
@@ -111,19 +128,26 @@ top::Expr ::= 'toBoolean' '(' e::Expr ')'
   top.merrors := e.merrors;
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
-  top.mtyperep = if isMonad(e.mtyperep, top.env)
-                 then monadOfType(e.mtyperep, boolType())
-                 else boolType();
-  e.monadicallyUsed = isMonad(e.mtyperep, top.env);
+  top.mtyperep =
+      if isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
+      then monadOfType(e.mtyperep, boolType())
+      else boolType();
+  e.monadicallyUsed = isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst;
   top.monadicNames = e.monadicNames;
-  top.monadRewritten = if isMonad(e.mtyperep, top.env)
-                       then Silver_Expr {
-                              $Expr {monadBind(top.location)}
-                              ($Expr {e.monadRewritten},
-                              \x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location)} ->
-                                  $Expr {monadReturn(top.location)} (toBoolean(x)))
-                            }
-                       else toBooleanFunction('toBoolean', '(', e.monadRewritten, ')', location=top.location);
+
+  local eUnDec::Expr =
+        if isDecorated(e.mtyperep)
+        then Silver_Expr {new($Expr {e.monadRewritten})}
+        else e.monadRewritten;
+  top.monadRewritten =
+      if isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
+      then Silver_Expr {
+             $Expr {monadBind(top.location)}
+             ($Expr {eUnDec},
+             \x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location)} ->
+                 $Expr {monadReturn(top.location)} (toBoolean(x)))
+           }
+      else toBooleanFunction('toBoolean', '(', e.monadRewritten, ')', location=top.location);
 }
 
 aspect production toFloatFunction
@@ -132,19 +156,26 @@ top::Expr ::= 'toFloat' '(' e::Expr ')'
   top.merrors := e.merrors;
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
-  top.mtyperep = if isMonad(e.mtyperep, top.env)
-                 then monadOfType(e.mtyperep, floatType())
-                 else floatType();
-  e.monadicallyUsed = isMonad(e.mtyperep, top.env);
+  top.mtyperep =
+      if isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
+      then monadOfType(e.mtyperep, floatType())
+      else floatType();
+  e.monadicallyUsed = isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst;
   top.monadicNames = e.monadicNames;
-  top.monadRewritten = if isMonad(e.mtyperep, top.env)
-                       then Silver_Expr {
-                              $Expr {monadBind(top.location)}
-                              ($Expr {e.monadRewritten},
-                              \x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location)} ->
-                                  $Expr {monadReturn(top.location)} (toFloat(x)))
-                            }
-                       else toFloatFunction('toFloat', '(', e.monadRewritten, ')', location=top.location);
+
+  local eUnDec::Expr =
+        if isDecorated(e.mtyperep)
+        then Silver_Expr {new($Expr {e.monadRewritten})}
+        else e.monadRewritten;
+  top.monadRewritten =
+      if isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
+      then Silver_Expr {
+             $Expr {monadBind(top.location)}
+             ($Expr {eUnDec},
+             \x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location)} ->
+                 $Expr {monadReturn(top.location)} (toFloat(x)))
+           }
+      else toFloatFunction('toFloat', '(', e.monadRewritten, ')', location=top.location);
 }
 
 aspect production toStringFunction
@@ -153,19 +184,26 @@ top::Expr ::= 'toString' '(' e::Expr ')'
   top.merrors := e.merrors;
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
-  top.mtyperep = if isMonad(e.mtyperep, top.env)
-                 then monadOfType(e.mtyperep, stringType())
-                 else stringType();
-  e.monadicallyUsed = isMonad(e.mtyperep, top.env);
+  top.mtyperep =
+      if isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
+      then monadOfType(e.mtyperep, stringType())
+      else stringType();
+  e.monadicallyUsed = isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst;
   top.monadicNames = e.monadicNames;
-  top.monadRewritten = if isMonad(e.mtyperep, top.env)
-                       then Silver_Expr {
-                              $Expr {monadBind(top.location)}
-                              ($Expr {e.monadRewritten},
-                              \x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location)} ->
-                                  $Expr {monadReturn(top.location)} (toString(x)))
-                            }
-                       else toStringFunction('toString', '(', e.monadRewritten, ')', location=top.location);
+
+  local eUnDec::Expr =
+        if isDecorated(e.mtyperep)
+        then Silver_Expr {new($Expr {e.monadRewritten})}
+        else e.monadRewritten;
+  top.monadRewritten =
+      if isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
+      then Silver_Expr {
+             $Expr {monadBind(top.location)}
+             ($Expr {eUnDec},
+             \x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location)} ->
+                 $Expr {monadReturn(top.location)} (toString(x)))
+           }
+      else toStringFunction('toString', '(', e.monadRewritten, ')', location=top.location);
 }
 
 aspect production newFunction
@@ -174,10 +212,24 @@ top::Expr ::= 'new' '(' e::Expr ')'
   top.merrors := e.merrors;
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
-  top.mtyperep = e.mtyperep;
-  e.monadicallyUsed = false;
+  top.mtyperep =
+      if isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
+      then monadOfType(top.expectedMonad, dropDecorated(monadInnerType(e.mtyperep)))
+      else e.mtyperep;
+  e.monadicallyUsed = isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst;
   top.monadicNames = e.monadicNames;
-  top.monadRewritten = newFunction('new', '(', e.monadRewritten, ')', location=top.location);
+
+  local eUnDec::Expr =
+        if isDecorated(e.mtyperep)
+        then Silver_Expr {new($Expr {e.monadRewritten})}
+        else e.monadRewritten;
+  top.monadRewritten =
+      if isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
+      then buildApplication(monadBind(top.location),
+                            [eUnDec, buildLambda("x", monadInnerType(e.mtyperep),
+                             newFunction('new', '(', baseExpr(qNameId(name("x", top.location), location=top.location),
+                                         location=top.location), ')', location=top.location), top.location)], top.location)
+      else newFunction('new', '(', e.monadRewritten, ')', location=top.location);
 }
 
 
