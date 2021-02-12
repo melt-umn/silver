@@ -71,7 +71,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                   then monadOfType(top.expectedMonad, freshType())
                   else freshType(); --absolutely nothing is a monad
   --read the comment on the function below if you want to know what it is
-  local attribute monadStuff::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
+  local attribute monadStuff::([(Type, Expr, String)], [Expr]);
   monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.mUpSubst, top.frame,
                                       top.grammarName, top.compiledGrammars, top.config, top.flowEnv, [],
                                       top.location, 1, top.expectedMonad);
@@ -82,7 +82,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                          | pair(ty, pair(e, n)) -> pair(n, dropDecorated(ty))
                          end, monadStuff.fst), monadLocalBody, top.location);
   local monadLocalBody::Expr =
-    buildMonadicBinds(monadStuff.fst,
+    buildMonadicBinds(monadStuff.1,
                       caseExpr(monadStuff.snd,
                                ml.matchRuleList, failure,
                                outty, location=top.location), top.location);
@@ -142,12 +142,12 @@ Boolean ::= elst::[Expr] env::Decorated Env sub::Substitution f::BlockContext gn
 --   well as a new list of expressions for the forward to use
 --use a name from names when that is not empty; when empty, use a new name
 function monadicMatchTypesNames
-Pair<[Pair<Type Pair<Expr String>>] [Expr]> ::=
+([(Type, (Expr, String))], [Expr]) ::=
 elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext gn::String
   cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::Decorated FlowEnv names::[String]
   loc::Location index::Integer em::Type
 {
-  local attribute subcall::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
+  local attribute subcall::([(Type, Expr, String)], [Expr]);
   subcall = case elst, tylst of
             | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, env, sub, f, gn, cg, c, fe, ntail, loc, index+1, em)
             end;
@@ -165,16 +165,16 @@ elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext 
                                             expectedMonad=em;}.mtyperep
            in
              if fst(monadsMatch(ety, em, sub))
-             then pair(pair(ety, pair(e, newName)) :: subcall.fst,
-                       baseExpr(qName(loc, newName), location=loc) :: subcall.snd)
-             else pair(subcall.fst, e::subcall.snd)
+             then ((ety, e, newName) :: subcall.1, 
+                   baseExpr(qName(loc, newName), location=loc) :: subcall.2)
+             else (subcall.1, e::subcall.2)
            end
          end;
 }
 --take a list of things to bind and the name to use in binding them, as well as
 --   a base for the binding, and create an expression with all of them bound
 function buildMonadicBinds
-Expr ::= bindlst::[Pair<Type Pair<Expr String>>] base::Expr loc::Location
+Expr ::= bindlst::[(Type, Expr, String)] base::Expr loc::Location
 {
   return case bindlst of
          | [] -> base
@@ -304,7 +304,7 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                },
                               head(caseExprs), tail(caseExprs));
   --figure out which ones need to get bound in
-  local attribute monadStuff::Pair<[Pair<Type Pair<Expr String>>] [Expr]>;
+  local attribute monadStuff::([(Type, (Expr, String))], [Expr]);
   monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.mUpSubst, top.frame,
                                       top.grammarName, top.compiledGrammars, top.config, top.flowEnv,
                                       newNames, top.location, 1, top.expectedMonad);
@@ -473,7 +473,7 @@ attribute temp_flowEnv, temp_env, temp_config, temp_compiledGrammars, temp_gramm
 attribute mDownSubst, merrors, mtyperep, expectedMonad occurs on AbstractMatchRule;
 
 aspect production matchRule
-top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Pair<Expr Maybe<Pattern>>> e::Expr
+top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<(Expr, Maybe<Pattern>)> e::Expr
 {
   local ne::Expr = e;
   ne.flowEnv = top.temp_flowEnv;
