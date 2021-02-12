@@ -74,7 +74,7 @@ top::Type ::= tv::TyVar
         if tv == j
         then emptySubst()
         else subst(tv, top.refineWith)
-    | t when t.kindArity == tv.kindArity ->
+    | t when t.kindrep == tv.kindrep ->
         if contains(tv, t.freeVariables)
         then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
         else subst(tv, t)
@@ -91,7 +91,7 @@ top::Type ::= tv::TyVar
         if tv == j
         then emptySubst()
         else subst(tv, top.refineWith)
-    | t when t.kindArity == tv.kindArity ->
+    | t when t.kindrep == tv.kindrep ->
         if contains(tv, t.freeVariables)
         then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
         else subst(tv, t)
@@ -169,12 +169,12 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String k::Integer _
+top::Type ::= fn::String ks::[Kind] _
 {
   top.refine = 
     case top.refineWith of
-    | nonterminalType(ofn, ok, _) ->
-        if fn == ofn && k == ok
+    | nonterminalType(ofn, oks, _) ->
+        if fn == ofn && ks == oks
         then emptySubst()
         else errorSubst("Tried to refine conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
     | _ -> errorSubst("Tried to refine nonterminal type " ++ fn ++ " with " ++ prettyType(top.refineWith))

@@ -53,7 +53,7 @@ top::TypeExpr ::=
   top.freeVariables = top.typerep.freeVariables;
   top.errorsKindStar =
     if top.typerep.kindrep != starKind()
-    then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)} where kind * is expected")]
+    then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
     else [];
 }
 

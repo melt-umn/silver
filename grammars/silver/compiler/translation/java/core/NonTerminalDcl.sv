@@ -9,10 +9,10 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   local synVar :: String = "count_syn__ON__" ++ id.name;
   
   local myAnnos :: [NamedSignatureElement] =
-    annotationsForNonterminal(nonterminalType(fName, length(tl.types), quals.tracked), top.env);
+    annotationsForNonterminal(nonterminalType(fName, map((.kindrep), tl.types), quals.tracked), top.env);
 
   local commaIfAnnos :: String = if length(myAnnos)!=0 then "," else "";
-  local wantsTracking :: Boolean = typeWantsTracking(nonterminalType(fName, length(tl.types), quals.tracked), top.config, top.env);
+  local wantsTracking :: Boolean = typeWantsTracking(nonterminalType(fName, map((.kindrep), tl.types), quals.tracked), top.config, top.env);
 
   top.initWeaving := s"""
 	public static int ${inhVar} = 0;

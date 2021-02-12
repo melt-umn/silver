@@ -34,7 +34,7 @@ top::DclInfo ::=
   top.typeScheme = polyType([tyVar],
     if isTotal
     then varType(tyVar)
-    else appType(nonterminalType("silver:core:Maybe", 1, false), varType(tyVar)));
+    else appType(nonterminalType("silver:core:Maybe", [starKind()], false), varType(tyVar)));
   top.isSynthesized = true;
   top.isStrategy = true;
   

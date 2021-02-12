@@ -33,9 +33,9 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
        unify(namedSig.typerep,
          appTypes(
            functionType(2, []),
-           [appType(nonterminalType("silver:core:List", 1, false), stringType()),
+           [appType(nonterminalType("silver:core:List", [starKind()], false), stringType()),
             ioForeignType,
-            appType(nonterminalType("silver:core:IOVal", 1, false), intType())])).failure
+            appType(nonterminalType("silver:core:IOVal", [starKind()], false), intType())])).failure
     then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IO). Instead it has type " ++ prettyType(namedSig.typerep))]
     else [];
 }
