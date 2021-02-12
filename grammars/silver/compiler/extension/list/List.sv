@@ -13,7 +13,7 @@ top::TypeExpr ::= '[' te::TypeExpr ']'
 
   top.typerep = listType(te.typerep);
   
-  top.errorsFullyApplied =
+  top.errorsKindStar =
     if top.typerep.kindArity > 0
     then [err(top.location, s"${top.unparse} is not fully applied, it has kind arity ${toString(top.typerep.kindArity)}")]
     else [];
@@ -32,7 +32,7 @@ top::TypeExpr ::= '[' ']'
 
   top.typerep = listCtrType();
   
-  top.errorsFullyApplied =
+  top.errorsKindStar =
     if top.typerep.kindArity > 0
     then [err(top.location, s"${top.unparse} is not fully applied, it has kind arity ${toString(top.typerep.kindArity)}")]
     else [];

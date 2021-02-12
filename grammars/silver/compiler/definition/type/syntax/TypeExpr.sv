@@ -4,7 +4,7 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
 
-nonterminal TypeExpr  with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsFullyApplied;
+nonterminal TypeExpr  with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsKindStar;
 nonterminal Signature with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds;
 nonterminal SignatureLHS with config, location, grammarName, errors, env, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds;
 nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables;
@@ -19,7 +19,7 @@ synthesized attribute missingCount::Integer;
 monoid attribute lexicalTypeVariables :: [String];
 -- freeVariables also occurs on TypeExprs, and should be IN ORDER
 
-monoid attribute lexicalTyVarKinds :: [Pair<String Integer>];
+monoid attribute lexicalTyVarKinds :: [Pair<String Kind>];
 
 -- These attributes are used if we're using the TypeExprs as type variables-only.
 monoid attribute errorsTyVars :: [Message];
@@ -27,7 +27,7 @@ monoid attribute errorsTyVars :: [Message];
 inherited attribute initialEnv :: Decorated Env;
 synthesized attribute envBindingTyVars :: Decorated Env;
 
-synthesized attribute errorsFullyApplied::[Message];
+synthesized attribute errorsKindStar::[Message];
 
 propagate errors, lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
@@ -36,10 +36,10 @@ propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 -- But for now, we'll use it. It might be easier to get rid of once we know exactly
 -- how ty vars end up in the environment.
 function addNewLexicalTyVars
-[Def] ::= gn::String sl::Location lk::[Pair<String Integer>] l::[String]
+[Def] ::= gn::String sl::Location lk::[Pair<String Kind>] l::[String]
 {
   return if null(l) then []
-         else lexTyVarDef(gn, sl, head(l), freshTyVar(fromMaybe(0, lookup(head(l), lk)))) ::
+         else lexTyVarDef(gn, sl, head(l), freshTyVar(fromMaybe(starKind(), lookup(head(l), lk)))) ::
                   addNewLexicalTyVars(gn, sl, lk, tail(l));
 }
 
@@ -51,9 +51,9 @@ top::TypeExpr ::=
   -- "semantic" errors, rather than parse errors for this.
   top.errorsTyVars := [err(top.location, top.unparse ++ " is not permitted here, only type variables are")];
   top.freeVariables = top.typerep.freeVariables;
-  top.errorsFullyApplied =
-    if top.typerep.kindArity > 0
-    then [err(top.location, s"${top.unparse} is not fully applied, it has kind arity ${toString(top.typerep.kindArity)}")]
+  top.errorsKindStar =
+    if top.typerep.kindrep != starKind()
+    then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)} where kind * is expected")]
     else [];
 }
 
@@ -145,6 +145,22 @@ top::TypeExpr ::= tv::IdLower_t
   top.lexicalTypeVariables <- [tv.lexeme];
 }
 
+concrete production kindSigTypeVariableTypeExpr
+top::TypeExpr ::= '(' tv::IdLower_t '::' k::KindExpr ')'
+{
+  top.unparse = s"(${tv.lexeme} :: ${k.unparse})";
+  
+  local attribute hack::QNameLookup;
+  hack = customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme, top.location);
+  
+  top.typerep = hack.typeScheme.monoType;
+  top.errors <- hack.errors;
+  top.errorsTyVars := [];
+
+  top.lexicalTypeVariables <- [tv.lexeme];
+  top.lexicalTyVarKinds <- [pair(tv.lexeme, k.kindrep)];
+}
+
 concrete production appTypeExpr
 top::TypeExpr ::= ty::TypeExpr tl::BracketedTypeExprs
 {
@@ -189,14 +205,21 @@ top::TypeExpr ::= ty::Decorated TypeExpr tl::BracketedTypeExprs
   top.errors <- ty.errors;
 
   local tlCount::Integer = length(tl.types) + tl.missingCount;
+  local tlKinds::[Kind] = map((.kindrep), tl.types);
   top.errors <-
-    if tlCount != ty.typerep.kindArity
-    then [err(top.location, ty.unparse ++ " has kind arity " ++ toString(ty.typerep.kindArity) ++ ", but there are " ++ toString(tlCount) ++ " type arguments supplied here.")]
+    if tlCount != length(ty.typerep.kindrep.argKinds)
+    then [err(top.location, ty.unparse ++ " has kind " ++ prettyKind(ty.typerep.kindrep) ++ ", but there are " ++ toString(tlCount) ++ " type arguments supplied here.")]
+    else if take(length(tlKinds), ty.typerep.kindrep.argKinds) != tlKinds
+    then [err(top.location, ty.unparse ++ " has kind " ++ prettyKind(ty.typerep.kindrep) ++ ", but argument(s) have kind(s) " ++ implode(", ", map(prettyKind, tlKinds)))]
     else [];
 
   top.lexicalTyVarKinds <-
     case ty of
-    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, tlCount)]
+    | typeVariableTypeExpr(tv) ->
+      -- This assumes that all type args have kind *.
+      -- If that is not the case, then an explcit kind signature is needed on ty,
+      -- which will shadow this entry in the lexicalTyVarKinds list.
+      [pair(tv.lexeme, constructorKind(tlCount))]
     | _ -> []
     end;
 }
@@ -214,7 +237,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
     | skolemType(_) -> []
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
     end;
-  top.errors <- t.errorsFullyApplied;
+  top.errors <- t.errorsKindStar;
 }
 
 concrete production funTypeExpr
@@ -339,7 +362,7 @@ top::TypeExprs ::= t::TypeExpr list::TypeExprs
   top.missingCount = list.missingCount;
   top.freeVariables = t.freeVariables ++ list.freeVariables;
   
-  top.errors <- t.errorsFullyApplied;
+  top.errors <- t.errorsKindStar;
 }
 
 concrete production typeListConsMissing

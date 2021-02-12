@@ -102,7 +102,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
     then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
     else [];
 
-  top.errors <- t.errorsFullyApplied;
+  top.errors <- t.errorsKindStar;
 
   thread downSubst, upSubst on top, e, errCheck1, top;
 

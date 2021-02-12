@@ -153,7 +153,7 @@ top::DefLHS ::= q::Decorated QName
 aspect production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 {
-  top.errors <- te.errorsFullyApplied;
+  top.errors <- te.errorsKindStar;
 }
 
 aspect production localValueDef

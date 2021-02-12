@@ -6,7 +6,7 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 
-import silver:compiler:definition:type:syntax only typerepType, TypeExpr, errorsFullyApplied;
+import silver:compiler:definition:type:syntax only typerepType, TypeExpr, errorsKindStar;
 import silver:compiler:extension:patternmatching only Arrow_kwd, Vbar_kwd, ensureDecoratedExpr; -- TODO remove
 
 import silver:compiler:translation:java:core;
@@ -72,7 +72,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   propagate errors, freeVars;
   top.typerep = t.typerep;
 
-  top.errors <- t.errorsFullyApplied;
+  top.errors <- t.errorsKindStar;
   
   {--
    - Invariant: if we were given an undecorated expression, it should have been

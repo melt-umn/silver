@@ -3,7 +3,7 @@ grammar silver:compiler:analysis:typechecking:core;
 aspect production defaultConstraintClassBodyItem
 top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
 {
-  top.errors <- ty.errorsFullyApplied;
+  top.errors <- ty.errorsKindStar;
 
   local errCheck1::TypeCheck = check(ty.typerep, e.typerep);
   top.errors <-

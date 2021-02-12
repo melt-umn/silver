@@ -224,7 +224,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   
   local localErrors::[Message] =
     ty.errors ++ ml.errors ++ checkExpr.errors ++
-    ty.errorsFullyApplied ++
+    ty.errorsKindStar ++
     if null(getTypeDcl("silver:rewrite:Strategy", top.env))
     then [err(top.location, "Term rewriting requires import of silver:rewrite")]
     else [];

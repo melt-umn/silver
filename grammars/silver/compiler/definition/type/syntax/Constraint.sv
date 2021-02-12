@@ -77,7 +77,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
     | typeVariableTypeExpr(tv)
       -- Avoid circular inference if someone uses a class constraint within its own definition
       when top.classDefName != just(fName) ->
-      [pair(tv.lexeme, c.lookupType.typeScheme.monoType.kindArity)]
+      [pair(tv.lexeme, c.lookupType.typeScheme.monoType.kindrep)]
     | _ -> []
     end;
 }

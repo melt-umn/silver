@@ -175,11 +175,11 @@ top::DclInfo ::= fn::String ty::Type
 
 -- TypeDclInfos
 abstract production ntDcl
-top::DclInfo ::= fn::String arity::Integer closed::Boolean tracked::Boolean
+top::DclInfo ::= fn::String ks::[Kind] closed::Boolean tracked::Boolean
 {
   top.fullName = fn;
 
-  top.typeScheme = monoType(nonterminalType(fn, arity, tracked));
+  top.typeScheme = monoType(nonterminalType(fn, ks, tracked));
   top.isType = true;
 }
 abstract production termDcl
@@ -210,7 +210,7 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type
   top.typeScheme = if null(bound) then monoType(ty) else polyType(bound, ty);
 }
 abstract production clsDcl
-top::DclInfo ::= fn::String supers::[Context] tv::TyVar k::Integer members::[Pair<String Boolean>]
+top::DclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pair<String Boolean>]
 {
   top.fullName = fn;
   
