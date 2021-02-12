@@ -63,6 +63,10 @@ instance Bind Either<a _> {
 
 instance Monad Either<a _> {}
 
+instance MonadFail Either<String _> {
+  fail = left;
+}
+
 {--
  - Order preserving partitioning of a list of eithers into a pair
  - of lists of the two different results.

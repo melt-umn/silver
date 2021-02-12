@@ -44,18 +44,6 @@ class Monad m => MonadFail m {
   fail :: (m<a> ::= String);
 }
 
-instance MonadFail [] {
-  fail = \ String -> [];
-}
-
-instance MonadFail Maybe {
-  fail = \ String -> nothing();
-}
-
-instance MonadFail Either<String _> {
-  fail = left;
-}
-
 {-
 The MonadZero type class has no members of its own; it just specifies that the type has both Monad and Alternative instances.
 
@@ -66,9 +54,6 @@ Annihilation
 -}
 class Monad m, Alternative m => MonadZero m {}
 
-instance MonadZero [] {}
-instance MonadZero Maybe {}
-
 {-
 The MonadPlus type class has no members of its own; it just extends MonadZero with an additional law.
 
@@ -78,6 +63,3 @@ Distributivity
   bind(alt(x, y), f) = alt(bind(x, f), bind(y, f))
 -}
 class MonadZero m, Alternative m => MonadPlus m {}
-
-instance MonadPlus [] {}
-instance MonadPlus Maybe {}

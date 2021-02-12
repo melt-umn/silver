@@ -49,6 +49,13 @@ instance Bind Maybe {
 
 instance Monad Maybe {}
 
+instance MonadFail Maybe {
+  fail = \ String -> nothing();
+}
+
+instance MonadZero Maybe {}
+instance MonadPlus Maybe {}
+
 --------------------------------------------------------------------------------
 
 {--
