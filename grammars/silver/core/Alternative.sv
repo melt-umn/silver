@@ -17,7 +17,7 @@ class Functor f => Alt f {
 }
 
 instance Alt List {
-  alt = append;
+  alt = appendList;
 }
 
 instance Alt Maybe {
