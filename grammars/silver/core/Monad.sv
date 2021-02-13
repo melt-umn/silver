@@ -63,3 +63,12 @@ Distributivity
   bind(alt(x, y), f) = alt(bind(x, f), bind(y, f))
 -}
 class MonadZero m, Alternative m => MonadPlus m {}
+
+class MonadTrans (t :: (* -> *) -> * -> *) {
+  lift :: Monad m => (t<m a> ::= m<a>);
+}
+
+{-
+Can be used to extract the monadic value from a MonadTrans instance value.
+ -}
+synthesized attribute run<a>::a;
