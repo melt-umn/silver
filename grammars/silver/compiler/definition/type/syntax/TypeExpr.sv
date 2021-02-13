@@ -7,9 +7,9 @@ imports silver:compiler:definition:env;
 nonterminal TypeExpr  with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsKindStar;
 nonterminal Signature with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds;
 nonterminal SignatureLHS with config, location, grammarName, errors, env, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds;
-nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables;
-nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
-nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
+nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables;
+nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
+nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 
 synthesized attribute maybeType :: Maybe<Type>;
 synthesized attribute types :: [Type];
@@ -21,6 +21,9 @@ monoid attribute lexicalTypeVariables :: [String];
 
 monoid attribute lexicalTyVarKinds :: [Pair<String Kind>];
 
+inherited attribute appArgKinds :: [Kind];
+monoid attribute appLexicalTyVarKinds :: [Pair<String Kind>];
+
 -- These attributes are used if we're using the TypeExprs as type variables-only.
 monoid attribute errorsTyVars :: [Message];
 -- A new environment, with the type variables in this list appearing bound
@@ -30,6 +33,7 @@ synthesized attribute envBindingTyVars :: Decorated Env;
 synthesized attribute errorsKindStar::[Message];
 
 propagate errors, lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
+propagate appLexicalTyVarKinds on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
 -- TODO: This function should go away because it doesn't do location correctly.
@@ -213,6 +217,11 @@ top::TypeExpr ::= ty::Decorated TypeExpr tl::BracketedTypeExprs
     then [err(top.location, ty.unparse ++ " has kind " ++ prettyKind(ty.typerep.kindrep) ++ ", but argument(s) have kind(s) " ++ implode(", ", map(prettyKind, tlKinds)))]
     else [];
 
+  tl.appArgKinds =
+    case ty of
+    | nominalTypeExpr(q) when q.lookupType.found -> q.lookupType.dcl.kindrep.argKinds
+    | _ -> []
+    end;
   top.lexicalTyVarKinds <-
     case ty of
     | typeVariableTypeExpr(tv) ->
@@ -220,6 +229,8 @@ top::TypeExpr ::= ty::Decorated TypeExpr tl::BracketedTypeExprs
       -- If that is not the case, then an explcit kind signature is needed on ty,
       -- which will shadow this entry in the lexicalTyVarKinds list.
       [pair(tv.lexeme, constructorKind(tlCount))]
+
+    | nominalTypeExpr(q) when q.lookupType.found -> tl.appLexicalTyVarKinds
     | _ -> []
     end;
 }
@@ -302,6 +313,7 @@ top::BracketedOptTypeExprs ::= btl::BracketedTypeExprs
   top.envBindingTyVars = btl.envBindingTyVars;
   
   btl.initialEnv = top.initialEnv;
+  btl.appArgKinds = top.appArgKinds;
 }
 
 concrete production bTypeList
@@ -327,6 +339,8 @@ top::BracketedTypeExprs ::= '<' tl::TypeExprs '>'
     newScopeEnv(
       addNewLexicalTyVars(top.grammarName, top.location, tl.lexicalTyVarKinds, tl.lexicalTypeVariables),
       top.initialEnv);
+
+  tl.appArgKinds = top.appArgKinds;
 }
 
 -- TypeExprs -------------------------------------------------------------------
@@ -361,6 +375,17 @@ top::TypeExprs ::= t::TypeExpr list::TypeExprs
   top.types = t.typerep :: list.types;
   top.missingCount = list.missingCount;
   top.freeVariables = t.freeVariables ++ list.freeVariables;
+
+  list.appArgKinds =
+    case top.appArgKinds of
+    | [] -> []
+    | _ :: t -> t
+    end;
+  top.appLexicalTyVarKinds <-
+    case t, top.appArgKinds of
+    | typeVariableTypeExpr(tv), k :: _ -> [pair(tv.lexeme, k)]
+    | _, _ -> []
+    end;
 }
 
 concrete production typeListConsMissing
@@ -370,6 +395,12 @@ top::TypeExprs ::= '_' list::TypeExprs
   top.types = list.types;
   top.missingCount = list.missingCount + 1;
   top.freeVariables = list.freeVariables;
+
+  list.appArgKinds =
+    case top.appArgKinds of
+    | [] -> []
+    | _ :: t -> t
+    end;
   
   top.errors <-
     if length(list.types) > 0

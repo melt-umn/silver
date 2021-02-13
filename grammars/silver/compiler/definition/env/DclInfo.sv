@@ -50,7 +50,7 @@ inherited attribute givenSubstitution :: Substitution;
  - hmm, unparsing could probably be fixed...
  -}
 closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
-                         typeScheme, givenNonterminalType, isType, isTypeAlias, isClass, -- types (gNT for occurs)
+                         typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, isClass, -- types (gNT for occurs)
                          classMembers, givenInstanceType, superContexts, -- type classes, in the type namespace
                          namedSignature, hasForward, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
@@ -85,6 +85,7 @@ top::DclInfo ::=
   top.substitutedDclInfo = error("Internal compiler error: must be defined for all value declarations that are production attributes");
   
   -- types
+  top.kindrep = starKind();
   top.isType = false;
   top.isTypeAlias = false;
   top.isClass = false;
@@ -180,6 +181,7 @@ top::DclInfo ::= fn::String ks::[Kind] closed::Boolean tracked::Boolean
   top.fullName = fn;
 
   top.typeScheme = monoType(nonterminalType(fn, ks, tracked));
+  top.kindrep = foldr(arrowKind, starKind(), ks);
   top.isType = true;
 }
 abstract production termDcl
@@ -198,6 +200,7 @@ top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar
   -- Lexical type vars in aspects aren't skolemized, since they unify with the real (skolem) types.
   -- See comment in silver:compiler:definition:type:syntax:AspectDcl.sv
   top.typeScheme = monoType(if isAspect then varType(tv) else skolemType(tv));
+  top.kindrep = tv.kindrep;
   top.isType = true;
 }
 abstract production typeAliasDcl
@@ -208,6 +211,7 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type
   top.isType = null(bound);
   top.isTypeAlias = true;
   top.typeScheme = if null(bound) then monoType(ty) else polyType(bound, ty);
+  top.kindrep = foldr(arrowKind, ty.kindrep, map((.kindrep), bound)); 
 }
 abstract production clsDcl
 top::DclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pair<String Boolean>]
