@@ -12,8 +12,9 @@ class Semigroup a {
   append :: (a ::= a a);
 }
 
-instance Semigroup [a] {
-  append = appendList;
+-- e.g. []
+instance Alt m => Semigroup m<a> {
+  append = alt;
 }
 
 instance Semigroup String {
