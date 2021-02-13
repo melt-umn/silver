@@ -146,6 +146,6 @@ function transitiveSuperDefs
     else
       -- This might introduce duplicate defs in "diamond subclassing" cases,
       -- but that shouldn't actually be an issue besides the (minor) added lookup overhead.
-      map(\ c::Context -> c.contextSuperDef(dcl.sourceGrammar, dcl.sourceLocation, instDcl), dcl.superContexts) ++
+      map(\ c::Context -> tcInstDef(c.contextSuperDcl(instDcl, dcl.sourceGrammar, dcl.sourceLocation)), dcl.superContexts) ++
       flatMap(transitiveSuperDefs(env, ty, dcl.fullName :: seenClasses, _), superInstDcls);
 }
