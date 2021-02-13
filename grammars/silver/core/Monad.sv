@@ -64,6 +64,13 @@ Distributivity
 -}
 class MonadZero m, Alternative m => MonadPlus m {}
 
+{-
+Monad transformers lift a monadic computation into an additional monad.
+
+Instances should satisfy the following:
+  compose(lift, pure) = pure
+  lift(bind(m, f)) = bind(lift(m), compose(lift, f))
+-}
 class MonadTrans (t :: (* -> *) -> * -> *) {
   lift :: Monad m => (t<m a> ::= m<a>);
 }
