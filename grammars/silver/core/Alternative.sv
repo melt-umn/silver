@@ -16,24 +16,6 @@ class Functor f => Alt f {
   alt :: (f<a> ::= f<a> f<a>);
 }
 
-instance Alt List {
-  alt = appendList;
-}
-
-instance Alt Maybe {
-  alt = orElse;
-}
-
-instance Alt Either<a _> {
-  alt = \ e1::Either<a b> e2::Either<a b> ->
-    case e1, e2 of
-    | right(x), _ -> right(x)
-    | _, right(x) -> right(x)
-    -- If they're both left, arbitrarily take the first one
-    | _, _ -> e1
-    end;
-}
-
 {-
 The Plus type class extends the Alt type class with a value that should be the
 left and right identity for (<|>).
@@ -54,14 +36,6 @@ class Alt f => Plus f {
   empty :: f<a>;
 }
 
-instance Plus [] {
-  empty = [];
-}
-
-instance Plus Maybe {
-  empty = nothing();
-}
-
 {-
 The Alternative class is for members of Plus that are also Applicative functors,
 and specifies some additional laws:
@@ -72,7 +46,3 @@ Annihilation
   ap(empty, x) = empty
 -}
 class Applicative f, Plus f => Alternative f {}
-
-instance Alternative [] {}
-instance Alternative Maybe {}
-

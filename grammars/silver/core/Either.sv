@@ -67,6 +67,16 @@ instance MonadFail Either<String _> {
   fail = left;
 }
 
+instance Alt Either<a _> {
+  alt = \ e1::Either<a b> e2::Either<a b> ->
+    case e1, e2 of
+    | right(x), _ -> right(x)
+    | _, right(x) -> right(x)
+    -- If they're both left, arbitrarily take the first one
+    | _, _ -> e1
+    end;
+}
+
 {--
  - Order preserving partitioning of a list of eithers into a pair
  - of lists of the two different results.
