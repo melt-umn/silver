@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:core;
 
--- TODO: Everything in this file should become type class methods, except (possibly) new and terminal
+-- TODO: Everything in this file should become type class methods, except (probably) terminal
 
 concrete production lengthFunction
 top::Expr ::= 'length' '(' e::Expr ')'
@@ -76,16 +76,6 @@ top::Expr ::= 'toString' '(' e::Expr ')'
   top.unparse = "toString(" ++ e.unparse ++ ")";
 
   top.typerep = stringType();
-
-  e.isRoot = false;
-}
-
-concrete production newFunction
-top::Expr ::= 'new' '(' e::Expr ')'
-{
-  top.unparse = "new(" ++ e.unparse ++ ")";
-
-  top.typerep = performSubstitution(e.typerep, top.upSubst).decoratedType;
 
   e.isRoot = false;
 }

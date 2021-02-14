@@ -8,7 +8,7 @@ propagate upSubst, downSubst
      undecoratedAccessHandler, forwardAccess, decoratedAccessHandler,
      and, or, not, ifThenElse, plus, minus, multiply, divide, modulus,
      decorateExprWith, exprInh, presentAppExpr,
-     newFunction, terminalConstructor, noteAttachment;
+     terminalConstructor, noteAttachment;
 
 attribute contexts occurs on Expr;
 aspect default production

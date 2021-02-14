@@ -24,7 +24,7 @@ attribute flowVertexInfo occurs on Expr;
 propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr
   excluding
     childReference, lhsReference, localReference, forwardReference, forwardAccess, synDecoratedAccessHandler, inhDecoratedAccessHandler,
-    decorateExprWith, newFunction, letp, lexicalLocalReference, matchPrimitiveReal;
+    decorateExprWith, letp, lexicalLocalReference, matchPrimitiveReal;
 propagate flowDefs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
 
@@ -255,17 +255,6 @@ top::Expr ::= e::Decorated Expr
 {
   top.flowDeps <- e.flowDeps;
   top.flowDefs <- e.flowDefs;
-}
-
-aspect production newFunction
-top::Expr ::= 'new' '(' e1::Expr ')'
-{
-  -- Emit nothing except the keepDeps, for a vertex node
-  top.flowDeps :=
-    case e1.flowVertexInfo of
-    | hasVertex(vertex) -> vertex.eqVertex
-    | noVertex() -> e1.flowDeps
-    end;
 }
 
 

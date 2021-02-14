@@ -478,7 +478,7 @@ Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e
 function accessBounceUndecorate
 Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e::Decorated Expr  q::Decorated QNameAttrOccur  l::Location
 {
-  return accessBouncer(target, newFunction('new', '(', exprRef(e, location=l), ')', location=l), q, location=l);
+  return accessBouncer(target, mkStrFunctionInvocationDecorated(l, "silver:core:new", [e]), q, location=l);
 }
 
 abstract production decoratedAccessHandler

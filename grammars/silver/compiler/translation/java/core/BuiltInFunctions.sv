@@ -62,14 +62,6 @@ top::Expr ::= 'toString' '(' e::Expr ')'
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
-aspect production newFunction
-top::Expr ::= 'new' '(' e::Expr ')'
-{
-  top.translation = s"((${finalType(top).transType})" ++ wrapNewWithOT(top, s"${e.translation}.undecorate()") ++ ")";
-  
-  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
-}
-
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {

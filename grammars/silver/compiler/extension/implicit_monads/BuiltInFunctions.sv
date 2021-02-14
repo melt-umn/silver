@@ -168,19 +168,6 @@ top::Expr ::= 'toString' '(' e::Expr ')'
                        else toStringFunction('toString', '(', e.monadRewritten, ')', location=top.location);
 }
 
-aspect production newFunction
-top::Expr ::= 'new' '(' e::Expr ')'
-{
-  top.merrors := e.merrors;
-  e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
-  top.mtyperep = e.mtyperep;
-  e.monadicallyUsed = false;
-  top.monadicNames = e.monadicNames;
-  top.monadRewritten = newFunction('new', '(', e.monadRewritten, ')', location=top.location);
-}
-
-
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {

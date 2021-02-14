@@ -43,20 +43,6 @@ top::Expr ::= 'toString' '(' e1::Expr ')'
     else [err(top.location, "Operand to toString must be concrete types String, Integer, Float, or Boolean.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
-aspect production newFunction
-top::Expr ::= 'new' '(' e1::Expr ')'
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, errCheck1, top;
-  
-  errCheck1 = checkDecorated(e1.typerep);
-  top.errors <-
-    if errCheck1.typeerror
-    then [err(top.location, "Operand to new must be a decorated nonterminal.  Instead it is of type " ++ errCheck1.leftpp)]
-    else [];
-}
-
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {

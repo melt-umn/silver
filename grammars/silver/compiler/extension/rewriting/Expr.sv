@@ -51,7 +51,7 @@ top::Expr ::= q::Decorated QName _ _
           antiquoteASTExpr(
             Silver_Expr {
               silver:rewrite:anyASTExpr(
-                \ e::$TypeExpr{typerepTypeExpr(decoratedType(finalType(top)), location=builtin)} -> new(e))
+                \ e::$TypeExpr{typerepTypeExpr(decoratedType(finalType(top)), location=builtin)} -> silver:core:new(e))
             }),
           consASTExpr(varASTExpr(q.name), nilASTExpr()),
           nilNamedASTExpr())
@@ -61,7 +61,7 @@ top::Expr ::= q::Decorated QName _ _
       -- The variable is bound in an enclosing let/match
       -- Explicitly undecorate the variable, if appropriate for the final expected type
       if q.lookupValue.typeScheme.isDecorable && !finalType(top).isDecorated
-      then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
+      then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
       else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) })
     end;
 }
@@ -72,7 +72,7 @@ top::Expr ::= q::Decorated QName
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
     if q.lookupValue.typeScheme.isDecorable && !finalType(top).isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
     else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
 
@@ -82,7 +82,7 @@ top::Expr ::= q::Decorated QName
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
     if q.lookupValue.typeScheme.isDecorable && !finalType(top).isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
     else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
 
@@ -92,7 +92,7 @@ top::Expr ::= q::Decorated QName
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
     if q.lookupValue.typeScheme.isDecorable && !finalType(top).isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
     else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
 
@@ -102,7 +102,7 @@ top::Expr ::= q::Decorated QName
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
     if q.lookupValue.typeScheme.isDecorable && !finalType(top).isDecorated
-    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(new($Expr{top})) })
+    then antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr(silver:core:new($Expr{top})) })
     else antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
 }
 
@@ -484,20 +484,6 @@ aspect production toStringFunction
 top::Expr ::= 'toString' '(' e::Expr ')'
 {
   top.transform = toStringASTExpr(e.transform);
-}
-
-aspect production newFunction
-top::Expr ::= 'new' '(' e::Expr ')'
-{
-  top.transform =
-    applyASTExpr(
-      antiquoteASTExpr(
-        Silver_Expr {
-          silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(finalType(e), location=builtin)} -> new(e))
-        }),
-      consASTExpr(e.transform, nilASTExpr()),
-      nilNamedASTExpr());
 }
 
 aspect production terminalConstructor
