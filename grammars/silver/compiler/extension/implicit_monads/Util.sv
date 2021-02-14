@@ -161,13 +161,13 @@ String ::= ty::Type
   return case ty of
          | listType(_) ->
            "[a]"
-         | appType(nonterminalType("silver:core:Maybe", 1, _), _) ->
+         | appType(nonterminalType("silver:core:Maybe", _, _), _) ->
            "Maybe<a>"
-         | appType(appType(nonterminalType("silver:core:Either", 2, _), p), _) ->
+         | appType(appType(nonterminalType("silver:core:Either", _, _), p), _) ->
            "Either<" ++ prettyType(p) ++ " a>"
-         | appType(nonterminalType("silver:core:IOMonad", 1, _), _) ->
+         | appType(nonterminalType("silver:core:IOMonad", _, _), _) ->
            "IOMonad<a>"
-         | appType(appType(nonterminalType("silver:core:state", 2, _), p), _) ->
+         | appType(appType(nonterminalType("silver:core:state", _, _), p), _) ->
            "State<" ++ prettyType(p) ++ " a>"
          | decoratedType(t) -> monadToString(t)
          | _ -> error("Tried to get monadToString for a non-monadic type")
@@ -230,7 +230,7 @@ Either<String Expr> ::= ty::Type l::Location
   local unit::Expr = Silver_Expr { unit() };
   return
     case ty of
-    | appType(appType(nonterminalType("silver:core:Either", 2, _), a), b) ->
+    | appType(appType(nonterminalType("silver:core:Either", _, _), a), b) ->
            case a of
            | stringType() -> right(Silver_Expr { silver:core:failEither($Expr{string}) })
            | intType() -> right(Silver_Expr { silver:core:failEither($Expr{int}) })
@@ -289,7 +289,7 @@ Either<String Expr> ::= ty::Type l::Location
 {
   return
     case ty of
-    | appType(appType(nonterminalType("silver:core:Either", 2, _), a), b) ->
+    | appType(appType(nonterminalType("silver:core:Either", _, _), a), b) ->
            case a of
            | stringType() -> right(Silver_Expr{ silver:core:left("mzero") })
            | intType() -> right(Silver_Expr{ silver:core:left(0) })

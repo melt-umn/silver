@@ -28,7 +28,7 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 
   propagate errors, flowDefs;
 
-  top.errors <- te.errorsFullyApplied;
+  top.errors <- te.errorsKindStar;
 
   local fakedDefs :: [Def] =
     [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];

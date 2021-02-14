@@ -222,11 +222,11 @@ equalityTest(myfmap(\ x::Integer -> toFloat(x), just(42)).fromJust, 42.0, Float,
 equalityTest(myfmap(\ x::Integer -> toFloat(x), left("abc")).fromLeft, "abc", String, silver_tests);
 equalityTest(myfmap(\ x::Integer -> toFloat(x), right(42)).fromRight, 42.0, Float, silver_tests);
 
-wrongCode "Either has kind arity 2, but the class MyFunctor expected kind arity 1" {
+wrongCode "Either has kind * -> * -> *, but the class MyFunctor expected kind * -> *" {
   instance MyFunctor Either {}
 }
 
-wrongCode "f has kind arity 1, but there are 2 type arguments supplied here" {
+wrongCode "f has kind * -> *, but there are 2 type arguments supplied here" {
   class MyFunctorBad f {
     myfmap2 :: (f<b> ::= (b ::= a) f<a b>);
   }
@@ -274,7 +274,7 @@ global isSingleDigit::(Boolean ::= String) = contains(_, ["1", "2", "3", "4", "5
 equalityTest(isSingleDigit("5"), true, Boolean, silver_tests);
 equalityTest(isSingleDigit("42"), false, Boolean, silver_tests);
 
-class Semigroupoid a {
+class Semigroupoid (a :: * -> * -> *) {
   sgcompose :: (a<b d> ::= a<c d> a<b c>);
 }
 
@@ -284,7 +284,7 @@ instance Semigroupoid (_ ::= _) {
 
 equalityTest(sgcompose(\ x::Integer -> x * 2, \ s::String -> toInteger(s))("42"), 84, Integer, silver_tests);
 
-wrongCode "(_ ::= _ _) has kind arity 3, but the class Semigroupoid expected kind arity 2" {
+wrongCode "(_ ::= _ _) has kind * -> * -> * -> *, but the class Semigroupoid expected kind * -> * -> *" {
   instance Semigroupoid (_ ::= _ _) {
     sgcompose = compose;
   }

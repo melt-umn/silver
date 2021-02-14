@@ -169,11 +169,11 @@ top::IdeStmt ::=
 }
 
 -- Helpers for writing expected types
-global t_iomsgs :: Type = appType(nonterminalType("silver:core:IOVal", 1, false), listType(nonterminalType("silver:langutil:Message", 0, true)));
-global t_props :: Type = listType(nonterminalType("ide:IdeProperty", 0, false));
+global t_iomsgs :: Type = appType(nonterminalType("silver:core:IOVal", [starKind()], false), listType(nonterminalType("silver:langutil:Message", [], true)));
+global t_props :: Type = listType(nonterminalType("ide:IdeProperty", [], false));
 global t_io :: Type = ioForeignType;
 global t_proj :: Type = foreignType("ide:IdeProject", "Object", []);
-global t_loc :: Type = nonterminalType("silver:core:Location", 0, false);
+global t_loc :: Type = nonterminalType("silver:core:Location", [], false);
 
 concrete production makeIdeStmt_Builder
 top::IdeStmt ::= 'builder' builderName::QName ';' 
@@ -243,7 +243,7 @@ top::IdeStmt ::= 'folder' folderName::QName ';'
   
   -- [Location] ::= <<CST root's type>>
   local expectedType :: Type =
-    appTypes(functionType(1, []), [nonterminalType(top.startNTName, 0, false), listType(t_loc)]);
+    appTypes(functionType(1, []), [nonterminalType(top.startNTName, [], false), listType(t_loc)]);
   
   local tc1 :: TypeCheck = check(folderName.lookupValue.typeScheme.typerep, expectedType);
   tc1.downSubst = emptySubst();
@@ -323,7 +323,7 @@ top::StubGenerator ::= 'stub generator' genName::QName ';'
 
   -- String ::= [IdeProperty]
   local stubGenTypeExpected :: Type =
-    appTypes(functionType(1, []), [listType(nonterminalType("ide:IdeProperty", 0, false)), stringType()]);
+    appTypes(functionType(1, []), [listType(nonterminalType("ide:IdeProperty", [], false)), stringType()]);
   
   local tc1 :: TypeCheck = check(genName.lookupValue.typeScheme.typerep, stubGenTypeExpected);
   tc1.downSubst = emptySubst();

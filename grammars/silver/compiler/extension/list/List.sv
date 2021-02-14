@@ -13,9 +13,9 @@ top::TypeExpr ::= '[' te::TypeExpr ']'
 
   top.typerep = listType(te.typerep);
   
-  top.errorsFullyApplied =
-    if top.typerep.kindArity > 0
-    then [err(top.location, s"${top.unparse} is not fully applied, it has kind arity ${toString(top.typerep.kindArity)}")]
+  top.errorsKindStar =
+    if top.typerep.kindrep != starKind()
+    then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
     else [];
 
   forwards to
@@ -32,9 +32,9 @@ top::TypeExpr ::= '[' ']'
 
   top.typerep = listCtrType();
   
-  top.errorsFullyApplied =
-    if top.typerep.kindArity > 0
-    then [err(top.location, s"${top.unparse} is not fully applied, it has kind arity ${toString(top.typerep.kindArity)}")]
+  top.errorsKindStar =
+    if top.typerep.kindrep != starKind()
+    then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
     else [];
 
   forwards to nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "silver:core:List"), location=top.location), location=top.location);

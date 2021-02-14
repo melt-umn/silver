@@ -77,7 +77,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
     | typeVariableTypeExpr(tv)
       -- Avoid circular inference if someone uses a class constraint within its own definition
       when top.classDefName != just(fName) ->
-      [pair(tv.lexeme, c.lookupType.typeScheme.monoType.kindArity)]
+      [pair(tv.lexeme, c.lookupType.typeScheme.monoType.kindrep)]
     | _ -> []
     end;
 }
@@ -146,6 +146,6 @@ function transitiveSuperDefs
     else
       -- This might introduce duplicate defs in "diamond subclassing" cases,
       -- but that shouldn't actually be an issue besides the (minor) added lookup overhead.
-      map(\ c::Context -> c.contextSuperDef(dcl.sourceGrammar, dcl.sourceLocation, instDcl), dcl.superContexts) ++
+      map(\ c::Context -> tcInstDef(c.contextSuperDcl(instDcl, dcl.sourceGrammar, dcl.sourceLocation)), dcl.superContexts) ++
       flatMap(transitiveSuperDefs(env, ty, dcl.fullName :: seenClasses, _), superInstDcls);
 }

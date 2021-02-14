@@ -30,7 +30,7 @@ top::Type ::= c::Type a::Type
   top.tupleElems =
     -- c.argTypes should only have a single element
     case c.baseType of
-    | nonterminalType("silver:core:Pair", 2, false) -> c.argTypes ++ a.tupleElems
+    | nonterminalType("silver:core:Pair", [starKind(), starKind()], false) -> c.argTypes ++ a.tupleElems
     | _ -> [top]
     end;
 
@@ -66,9 +66,9 @@ top::Type ::= ts::[Type]
   top.typepp = "(" ++ implode(", ", map(prettyTypeWith(_, top.boundVariables), ts)) ++ ")";
   
   forwards to case ts of
-    | [] -> nonterminalType("silver:core:Unit", 0, false)
+    | [] -> nonterminalType("silver:core:Unit", [], false)
     | [t] -> t
-    | t1::t1s -> appType(appType(nonterminalType("silver:core:Pair", 2, false), t1), tupleType(t1s))
+    | t1::t1s -> appType(appType(nonterminalType("silver:core:Pair", [starKind(), starKind()], false), t1), tupleType(t1s))
     end;
 
 }

@@ -9,11 +9,11 @@ top::Type ::= tv::TyVar
 {
   top.unify = 
     case top.unifyWith of
-    | varType(j) ->
+    | varType(j) when j.kindrep == tv.kindrep ->
         if tv == j
         then emptySubst()
         else subst(tv, top.unifyWith)
-    | t when t.kindArity == tv.kindArity ->
+    | t when t.kindrep == tv.kindrep ->
         if contains(tv, top.unifyWith.freeVariables)
         then errorSubst("Infinite type! Tried to unify with " ++ prettyType(top.unifyWith))
         else subst(tv, top.unifyWith)
@@ -26,7 +26,7 @@ top::Type ::= tv::TyVar
 {
   top.unify = 
     case top.unifyWith of
-    | skolemType(otv) ->
+    | skolemType(otv) when tv.kindrep == otv.kindrep ->
         if tv == otv
         then emptySubst()
         else errorSubst("Tried to unify skolem constant with incompatible skolem constant")
@@ -104,13 +104,13 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String k::Integer tracked::Boolean
+top::Type ::= fn::String ks::[Kind] tracked::Boolean
 {
   top.unify = 
     case top.unifyWith of
-    | nonterminalType(ofn, ok, otracked) ->
+    | nonterminalType(ofn, oks, otracked) ->
         if fn == ofn
-        then if k == ok
+        then if ks == oks
           then if tracked!=otracked 
             then error("Internal Error: Mismatching trackedness for " ++ fn ++ " when unifying. Try rebuilding with --clean. \nSee https://github.com/melt-umn/silver/pull/333 and https://github.com/melt-umn/silver/issues/36 .")
             else emptySubst()

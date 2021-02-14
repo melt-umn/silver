@@ -20,6 +20,24 @@ instance Bind [] {
 
 instance Monad [] {}
 
+instance MonadFail [] {
+  fail = \ String -> [];
+}
+
+instance Alt List {
+  alt = appendList;
+}
+
+instance Plus [] {
+  empty = [];
+}
+
+instance Alternative [] {}
+
+instance MonadZero [] {}
+instance MonadPlus [] {}
+
+
 {--
  - Applies an operator right-associatively over a list.
  - (i.e. replaces cons with 'f', nil with 'i' in the list)
