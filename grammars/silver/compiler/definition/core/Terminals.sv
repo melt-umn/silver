@@ -49,7 +49,7 @@ terminal If_kwd          'if'           lexer classes {KEYWORD,RESERVED};
 terminal Inherited_kwd   'inherited'    lexer classes {KEYWORD,RESERVED};
 terminal Instance_kwd    'instance'     lexer classes {KEYWORD};
 terminal Local_kwd       'local'        lexer classes {KEYWORD,RESERVED};
-terminal New_kwd         'new'          lexer classes {KEYWORD,RESERVED};
+terminal New_kwd         'new'          lexer classes {KEYWORD};
 terminal NonTerminal_kwd 'nonterminal'  lexer classes {KEYWORD,RESERVED};
 terminal Occurs_kwd      'occurs'       lexer classes {KEYWORD,RESERVED};
 terminal On_kwd          'on'           lexer classes {KEYWORD,RESERVED};
@@ -61,6 +61,8 @@ terminal Then_kwd        'then'         lexer classes {KEYWORD,RESERVED};
 terminal To_kwd          'to'           lexer classes {KEYWORD,RESERVED};
 terminal Type_t          'type'         lexer classes {KEYWORD};
 terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED};
+
+disambiguate New_kwd, IdLower_t { pluck New_kwd; }
 
 terminal Length_kwd     'length'     lexer classes {BUILTIN,RESERVED};
 terminal ToBoolean_kwd  'toBoolean'  lexer classes {BUILTIN,RESERVED};
