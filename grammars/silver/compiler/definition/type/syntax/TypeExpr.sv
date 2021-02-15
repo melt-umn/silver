@@ -272,6 +272,17 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr 'with' i::TypeExpr
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
     end;
   top.errors <- t.errorsKindStar;
+
+  top.lexicalTyVarKinds <-
+    case t of
+    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, starKind())]
+    | _ -> []
+    end;
+  top.lexicalTyVarKinds <-
+    case i of
+    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, inhSetKind())]
+    | _ -> []
+    end;
 }
 
 concrete production refDefaultTypeExpr
