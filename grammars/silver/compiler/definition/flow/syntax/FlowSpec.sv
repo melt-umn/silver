@@ -216,7 +216,7 @@ top::FlowSpecInh ::= 'decorate'
     | nonterminalType(_, _, _), nothing() -> 
       [err(top.location, s"to use the default reference set for nonterminal ${top.onNt.typeName}, 'decorate' must also have an explicit flow type")]
     | errorType(), _ -> []
-    | _, _ -> [err(top.location, s"default reference set can only be with nonterminal types, not ${prettyType(top.onNt)}")]
+    | _, _ -> [err(top.location, s"default reference set can only be used with nonterminal types, not ${prettyType(top.onNt)}")]
     end;
   
   top.inhList = fromMaybe([], decSpec);

@@ -132,7 +132,7 @@ top::VarBinder ::= n::Name
     else noVertex();
   local deps :: [FlowVertex] =
     if top.bindingType.isDecorable
-    then depsForTakingRef(anonVertexType(fName), ty.typeName, top.flowEnv)
+    then depsForTakingRef(anonVertexType(fName), ty)
     else [];
 
   top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps)];

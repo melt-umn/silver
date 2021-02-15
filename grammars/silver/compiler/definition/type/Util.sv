@@ -12,6 +12,7 @@ synthesized attribute namedTypes :: [Pair<String Type>];
 synthesized attribute arity :: Integer;
 synthesized attribute baseType :: Type;
 synthesized attribute argTypes :: [Type];
+synthesized attribute inhSetMembers :: [String];
 
 -- Used by Expr, could possibly be replaced by pattern matching for decoratedType
 -- Also used by 'new()'
@@ -70,7 +71,7 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
 }
 
-attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated, isApplicable occurs on Type;
+attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isDecorable, isTerminal, isApplicable, decoratedType, inhSetMembers, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
 
 aspect default production
 top::Type ::=
@@ -81,6 +82,7 @@ top::Type ::=
   top.arity = 0;
   top.baseType = top;
   top.argTypes = [];
+  top.inhSetMembers = [];
   
   top.isDecorated = false;
   top.isDecorable = false;
@@ -165,6 +167,12 @@ aspect production terminalType
 top::Type ::= fn::String
 {
   top.isTerminal = true;
+}
+
+aspect production inhSetType
+top::Type ::= inhs::[String]
+{
+  top.inhSetMembers = inhs;
 }
 
 aspect production decoratedType
