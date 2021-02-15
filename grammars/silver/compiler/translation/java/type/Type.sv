@@ -156,6 +156,15 @@ top::Type ::= fn::String
   top.transTypeName = substitute(":", "_", fn);
 }
 
+aspect production inhSetType
+top::Type ::= inhs::[String]
+{
+  top.transClassType = error("Demanded translation of InhSet type");
+  top.transTypeRep = s"new common.InhSetTypeRep(new String[] {${implode(", ", map(\ n::String -> s"\"${n}\"", inhs))}})";
+  top.transFreshTypeRep = top.transTypeRep;
+  top.transTypeName = substitute(":", "_", implode("_", inhs));
+}
+
 aspect production decoratedType
 top::Type ::= te::Type i::Type
 {
