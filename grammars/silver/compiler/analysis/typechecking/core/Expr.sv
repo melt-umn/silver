@@ -82,7 +82,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     then [err(top.location, "Access of " ++ q.name ++ " from a decorated type.")]
     else [];
   
-  thread downSubst, upSubst on top, errCheck1, top;
+  thread downSubst, upSubst on top, errCheck1, forward;
 }
 
 aspect production accessBouncer
@@ -120,7 +120,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     then [err(top.location, "Attribute " ++ q.name ++ " being accessed from an undecorated type.")]
     else [];
 
-  thread downSubst, upSubst on top, errCheck1, top;
+  thread downSubst, upSubst on top, errCheck1, forward;
 }
   
 
