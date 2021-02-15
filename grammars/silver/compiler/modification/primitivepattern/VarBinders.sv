@@ -110,7 +110,7 @@ top::VarBinder ::= n::Name
   -- NOT automatically decorated!)
   local ty :: Type =
     if top.bindingType.isDecorable
-    then decoratedType(top.bindingType)
+    then decoratedType(top.bindingType, freshInhSet())
     else top.bindingType;
 
   production fName :: String = "__pv" ++ toString(genInt()) ++ ":" ++ n.name;

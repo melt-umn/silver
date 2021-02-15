@@ -215,7 +215,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   
-  errCheck1 = check(decoratedType(prod_type.outputType), top.scrutineeType);
+  errCheck1 = check(decoratedType(prod_type.outputType, freshInhSet()), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -268,7 +268,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- part of the
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- threading hack
   
-  errCheck1 = check(decoratedType(prod_type.outputType), top.scrutineeType);
+  errCheck1 = check(decoratedType(prod_type.outputType, freshInhSet()), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -285,7 +285,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.upSubst = top.downSubst;
   
   -- AFTER everything is done elsewhere, we come back with finalSubst, and we produce the refinement, and thread THAT through everything.
-  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, decoratedType(prod_type.outputType)));
+  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, decoratedType(prod_type.outputType, freshInhSet())));
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
   -- Okay, now update the finalSubst....

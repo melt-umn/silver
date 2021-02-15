@@ -57,7 +57,7 @@ top::Expr ::= tuple::Expr '.' a::IntConst
   -- underlying tupleType and compute correct length of 
   -- its tupleElems
   local len::Integer = case tuple.typerep of
-    | decoratedType(t) -> length(t.tupleElems)
+    | decoratedType(t, _) -> length(t.tupleElems)
     | t -> length(t.tupleElems)
     end;
   

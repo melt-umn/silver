@@ -41,8 +41,18 @@ Boolean ::= ty::Type
            (name == "silver:core:List") ||
            (name == "silver:core:IOMonad") ||
            (name == "silver:core:State")
-         | decoratedType(t) -> isMonad(t)
+         | decoratedType(t, _) -> isMonad(t)
          | _ -> false
+         end;
+}
+
+function dropDecorated
+Type ::= ty::Type
+{
+  return case ty of
+         | decoratedType(t, _) -> t
+         | listType(t) -> listType(t)
+         | t -> t
          end;
 }
 
@@ -62,26 +72,6 @@ Boolean ::= ty::Type
          end;
 }
 
-function dropDecorated
-Type ::= ty::Type
-{
-  return case ty of
-         | decoratedType(t) -> t
-         | listType(t) -> listType(t)
-         | t -> t
-         end;
-}
-
-function isDecorated
-Boolean ::= ty::Type
-{
-  return case ty of
-         | decoratedType(t) -> true
-         | t -> false
-         end;
-}
-
-
 {-this checks two types are the same monad, (assuming they are monads)
   though not necessarily the same monadic type (see discussion above)-}
 function monadsMatch
@@ -92,8 +82,8 @@ Pair<Boolean Substitution> ::= ty1::Type ty2::Type subst::Substitution
            pair(name1 == name2 && k1 == k2 , subst)
          | appType(c1, a1), appType(c2, a2) -> tyMatch(c1, c2, subst)
          | listType(_), listType(_) -> pair(true, subst)
-         | decoratedType(t), _ -> monadsMatch(t, ty2, subst)
-         | _, decoratedType(t) -> monadsMatch(ty1, t, subst)
+         | decoratedType(t, _), _ -> monadsMatch(t, ty2, subst)
+         | _, decoratedType(t, _) -> monadsMatch(ty1, t, subst)
          | _, _ -> pair(false, subst)
          end;
 }
@@ -133,7 +123,7 @@ Type ::= mty::Type
   return case mty of
          | appType(c, a) -> a
          | listType(ty) -> ty
-         | decoratedType(t) -> monadInnerType(t)
+         | decoratedType(t, _) -> monadInnerType(t)
          | _ -> error("The monadInnerType function should only be called " ++
                       "once a type has been verified to be a monad")
          end;
@@ -148,7 +138,7 @@ Type ::= mty::Type newInner::Type
   return case mty of
          | listType(_) -> listType(newInner)
          | appType(c, _) -> appType(c, newInner)
-         | decoratedType(t) -> monadOfType(t, newInner)
+         | decoratedType(t, _) -> monadOfType(t, newInner)
          | _ -> error("Tried to take a monad out of a non-monadic type to apply")
          end;
 }
@@ -169,7 +159,7 @@ String ::= ty::Type
            "IOMonad<a>"
          | appType(appType(nonterminalType("silver:core:state", _, _), p), _) ->
            "State<" ++ prettyType(p) ++ " a>"
-         | decoratedType(t) -> monadToString(t)
+         | decoratedType(t, _) -> monadToString(t)
          | _ -> error("Tried to get monadToString for a non-monadic type")
          end;
 }
@@ -191,7 +181,7 @@ Expr ::= ty::Type l::Location
            baseExpr(qNameId(name("bindState", l), location=l), location=l)
          | listType(_) ->
            baseExpr(qNameId(name("bindList", l), location=l), location=l)
-         | decoratedType(t) -> monadBind(t, l)
+         | decoratedType(t, _) -> monadBind(t, l)
          | _ -> error("Tried to get the bind for a non-monadic type at " ++ l.unparse)
          end;
 }
@@ -209,7 +199,7 @@ Expr ::= ty::Type l::Location
            baseExpr(qNameId(name("returnState", l), location=l), location=l)
          | listType(_) ->
            baseExpr(qNameId(name("returnList", l), location=l), location=l)
-         | decoratedType(t) -> monadReturn(t, l)
+         | decoratedType(t, _) -> monadReturn(t, l)
          | _ -> error("Tried to get the return for a non-monadic type (" ++ prettyType(ty) ++ ") at " ++ l.unparse)
          end;
 }
@@ -257,7 +247,7 @@ Either<String Expr> ::= ty::Type l::Location
          | listType(_) ->
            right(Silver_Expr { silver:core:failList($Expr{string}) })
            --baseExpr(qNameId(name("failList", l), location=l), location=l)
-         | decoratedType(t) -> monadFail(t, l)
+         | decoratedType(t, _) -> monadFail(t, l)
          | _ ->
            error("Tried to get the fail for a non-monadic type at " ++ l.unparse)
          end
@@ -279,7 +269,7 @@ Either<String Expr> ::= ty::Type l::Location
            left("MPlus undefined for State monad")
          | listType(_) ->
            right(baseExpr(qNameId(name("mplusList", l), location=l), location=l))
-         | decoratedType(t) -> monadPlus(t, l)
+         | decoratedType(t, _) -> monadPlus(t, l)
          | _ ->
            error("Tried to get MPlus for a non-monadic type at " ++ l.unparse)
          end;
@@ -308,7 +298,7 @@ Either<String Expr> ::= ty::Type l::Location
            left("MZero undefined for State monad")
          | listType(_) ->
            right(Silver_Expr { [] })
-         | decoratedType(t) -> monadZero(t, l)
+         | decoratedType(t, _) -> monadZero(t, l)
          | _ ->
            error("Tried to get MZero for a non-monadic type at " ++ l.unparse)
          end

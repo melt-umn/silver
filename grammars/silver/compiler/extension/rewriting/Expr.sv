@@ -50,8 +50,7 @@ top::Expr ::= q::Decorated QName _ _
         applyASTExpr(
           antiquoteASTExpr(
             Silver_Expr {
-              silver:rewrite:anyASTExpr(
-                \ e::$TypeExpr{typerepTypeExpr(decoratedType(finalType(top)), location=builtin)} -> silver:core:new(e))
+              silver:rewrite:anyASTExpr(silver:core:new)
             }),
           consASTExpr(varASTExpr(q.name), nilASTExpr()),
           nilNamedASTExpr())

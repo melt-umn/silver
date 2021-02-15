@@ -32,7 +32,7 @@ top::Context ::= cls::String t::Type
     -- Only refine to the *undecorated* type based on instances, since if left
     -- unrefined the type will be treated as decorated, anyway (and leaving it
     -- unrefined will result in less confusing behavior.)
-    | ntOrDecType(nt, _) when !null(getInstanceDcl(cls, nt, top.env)) && null(getInstanceDcl(cls, decoratedType(nt), top.env)) ->
+    | ntOrDecType(nt, _) when !null(getInstanceDcl(cls, nt, top.env)) && null(getInstanceDcl(cls, decoratedType(nt, freshInhSet()), top.env)) ->
       composeSubst(top.downSubst, substT.unifyInstanceNonterminal)
     | _ -> top.downSubst
     end;

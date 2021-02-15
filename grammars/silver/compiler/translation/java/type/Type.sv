@@ -157,13 +157,13 @@ top::Type ::= fn::String
 }
 
 aspect production decoratedType
-top::Type ::= te::Type
+top::Type ::= te::Type i::Type
 {
   -- TODO: this should probably be a generic.  e.g. "DecoratedNode<something>"
   top.transType = "common.DecoratedNode";
   top.transClassType = "common.DecoratedNode";
-  top.transTypeRep = s"new common.DecoratedTypeRep(${te.transTypeRep})";
-  top.transFreshTypeRep = s"new common.DecoratedTypeRep(${te.transFreshTypeRep})";
+  top.transTypeRep = s"new common.DecoratedTypeRep(${i.transTypeRep}, ${te.transTypeRep})";
+  top.transFreshTypeRep = s"new common.DecoratedTypeRep(${i.transTypeRep}, ${te.transFreshTypeRep})";
   top.transTypeName = "Decorated_" ++ te.transTypeName;
 }
 

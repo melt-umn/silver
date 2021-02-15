@@ -738,10 +738,12 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.monadicNames = e.monadicNames ++ inh.monadicNames;
 
   top.mtyperep = if isMonad(e.mtyperep) && monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst).fst
-                 then monadOfType(e.mtyperep,
-                                  decoratedType(performSubstitution(monadInnerType(e.mtyperep),
-                                                                    e.mUpSubst)))
-                 else decoratedType(performSubstitution(e.mtyperep, e.mUpSubst));
+                 then monadOfType(
+                        e.mtyperep,
+                        decoratedType(
+                          performSubstitution(monadInnerType(e.mtyperep), e.mUpSubst),
+                          inhSetType(sort(inh.suppliedInhs))))
+                 else decoratedType(performSubstitution(e.mtyperep, e.mUpSubst), inhSetType(sort(inh.suppliedInhs)));
 
   local newname::String = "__sv_bind_" ++ toString(genInt());
   local params::ProductionRHS =
@@ -1648,7 +1650,7 @@ top::AppExpr ::= e::Expr
            fst(monadsMatch(e.mtyperep, top.expectedMonad, e.mUpSubst)) &&
           !fst(monadsMatch(e.mtyperep, top.appExprTyperep, e.mUpSubst));
 
-  errCheck1a = check(if isDecorated(top.appExprTyperep) then e.mtyperep else dropDecorated(e.mtyperep), top.appExprTyperep);
+  errCheck1a = check(if top.appExprTyperep.isDecorated then e.mtyperep else dropDecorated(e.mtyperep), top.appExprTyperep);
   errCheck2a = check(monadInnerType(e.mtyperep), top.appExprTyperep);
   top.merrors <-
     if isMonadic

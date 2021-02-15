@@ -163,9 +163,9 @@ top::Type ::= inhs::[String]
 }
 
 aspect production decoratedType
-top::Type ::= te::Type
+top::Type ::= t::Type i::Type
 {
-  top.typepp = "Decorated " ++ te.typepp;
+  top.typepp = s"Decorated ${t.typepp} with ${i.typepp}";
 }
 
 aspect production ntOrDecType

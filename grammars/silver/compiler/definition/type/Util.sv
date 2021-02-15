@@ -168,7 +168,7 @@ top::Type ::= fn::String
 }
 
 aspect production decoratedType
-top::Type ::= te::Type
+top::Type ::= te::Type i::Type
 {
   top.isDecorated = true;
   top.decoratedType = te;
@@ -181,7 +181,7 @@ top::Type ::= nt::Type  hidden::Type
   top.baseType = top;
   top.argTypes = [];
   top.unifyInstanceNonterminal = unify(hidden, nt);
-  top.unifyInstanceDecorated = unify(hidden, decoratedType(nt));
+  top.unifyInstanceDecorated = unify(hidden, decoratedType(nt, freshInhSet()));
 }
 
 aspect production functionType

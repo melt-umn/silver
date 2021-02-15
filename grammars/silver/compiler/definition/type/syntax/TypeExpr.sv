@@ -34,7 +34,8 @@ synthesized attribute envBindingTyVars :: Decorated Env;
 synthesized attribute errorsKindStar::[Message];
 synthesized attribute errorsInhSet::[Message];
 
-propagate errors, lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
+propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs excluding refTypeExpr;
+propagate lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate appLexicalTyVarKinds on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
@@ -123,7 +124,7 @@ top::TypeExpr ::= 'TerminalId'
 }
 
 concrete production inhSetTypeExpr
-top::TypeExpr ::= '{' inhs::FlowSpecInhs '}'
+top::TypeExpr ::= InhSetLCurly_t inhs::FlowSpecInhs '}'
 {
   top.unparse = s"{${inhs.unparse}}";
   
@@ -252,12 +253,18 @@ top::TypeExpr ::= ty::Decorated TypeExpr tl::BracketedTypeExprs
 }
 
 concrete production refTypeExpr
-top::TypeExpr ::= 'Decorated' t::TypeExpr
+top::TypeExpr ::= 'Decorated' t::TypeExpr 'with' i::TypeExpr
 {
-  top.unparse = "Decorated " ++ t.unparse;
+  top.unparse = "Decorated " ++ i.unparse ++ " " ++ t.unparse;
 
-  top.typerep = decoratedType(t.typerep);
+  top.typerep = decoratedType(t.typerep, i.typerep);
   
+  i.onNt = t.typerep;
+  top.errors := i.errorsInhSet ++ t.errors;
+  top.errors <-
+    if i.typerep.kindrep != inhSetKind()
+    then [err(top.location, s"${i.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind InhSet is expected here")]
+    else [];
   top.errors <-
     case t.typerep.baseType of
     | nonterminalType(_,_,_) -> []
@@ -265,6 +272,19 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
     end;
   top.errors <- t.errorsKindStar;
+}
+
+concrete production refDefaultTypeExpr
+top::TypeExpr ::= 'Decorated' t::TypeExpr
+{
+  top.unparse = "Decorated " ++ t.unparse;
+
+  forwards to
+    refTypeExpr($1, t, 'with',
+      inhSetTypeExpr(terminal(InhSetLCurly_t, "{"),
+        oneFlowSpecInhs(flowSpecDec('decorate', location=top.location), location=top.location),
+        '}', location=top.location),
+      location=top.location);
 }
 
 concrete production funTypeExpr

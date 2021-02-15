@@ -208,9 +208,16 @@ top::FlowSpecInh ::= 'decorate'
   local specs :: [Pair<String [String]>] = getFlowTypeSpecFor(top.onNt.typeName, top.flowEnv);
   local decSpec :: Maybe<[String]> = lookup("decorate", specs);
   
+  -- This error message also shows up for Decorated Foo when Foo lacks a spec for 'decorate',
+  -- so be sufficiently general here.
   top.errors <-
-    if decSpec.isJust then []
-    else [err(top.location, s"to use 'decorate' in a flow type for nonterminal ${top.onNt.typeName}, 'decorate' must also have an explicit flow type")];
+    case top.onNt, decSpec of
+    | nonterminalType(_, _, _), just(_) -> []
+    | nonterminalType(_, _, _), nothing() -> 
+      [err(top.location, s"to use the default reference set for nonterminal ${top.onNt.typeName}, 'decorate' must also have an explicit flow type")]
+    | errorType(), _ -> []
+    | _, _ -> [err(top.location, s"default reference set can only be with nonterminal types, not ${prettyType(top.onNt)}")]
+    end;
   
   top.inhList = fromMaybe([], decSpec);
 }

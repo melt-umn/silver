@@ -4,6 +4,12 @@ grammar silver:compiler:definition:type:syntax;
 
 terminal Arrow_t '->' association = right, lexer classes {SPECOP};
 
+-- Ambiguity at '{' in production signature between an inh set type and the production body.
+-- Since just `{inh}` doesn't make any sense in a production signature,
+-- prefer '{' as the start of a production body. 
+terminal InhSetLCurly_t /{/;
+disambiguate LCurly_t, InhSetLCurly_t { pluck LCurly_t; }
+
 terminal Boolean_tkwd    'Boolean'    lexer classes {TYPE,RESERVED};
 terminal Decorated_tkwd  'Decorated'  lexer classes {TYPE,RESERVED}, precedence=1;
 terminal Float_tkwd      'Float'      lexer classes {TYPE,RESERVED};

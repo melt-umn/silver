@@ -199,6 +199,11 @@ top::Type ::= fn::String
   top.freeVariables = [];
 }
 
+
+{--
+ - A type-level inherited attribute set.
+ - @param inhs  The (sorted) list of fully-qualified inherited attribute names. 
+ -}
 abstract production inhSetType
 top::Type ::= inhs::[String]
 {
@@ -209,9 +214,10 @@ top::Type ::= inhs::[String]
 {--
  - A *decorated* nonterminal type.
  - @param te  MUST be a 'nonterminalType' or 'varType'/'skolemType'
+ - @param i MUST have kind InhSet
  -}
 abstract production decoratedType
-top::Type ::= te::Type
+top::Type ::= te::Type i::Type
 {
   top.kindrep = starKind();
   top.freeVariables = te.freeVariables;
@@ -224,7 +230,7 @@ top::Type ::= te::Type
  - It represents a nonterminal that is *either* decorated or undecorated
  - (e.g. when referencing a child) but has not yet been specialized.
  - @param nt  MUST be a 'nonterminalType'
- - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(nt)'
+ - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(inhs, nt)'
  -                representing state: unspecialized, undecorated, or decorated.
  -}
 
@@ -237,8 +243,8 @@ top::Type ::= nt::Type  hidden::Type
                       | _ -> hidden.freeVariables
                       end;
   
-  -- If we never specialize, we're decorated.
-  forwards to decoratedType(nt);
+  -- If we never specialize, we're decorated with nothing.
+  forwards to decoratedType(nt, inhSetType([]));
 }
 
 {--
@@ -289,6 +295,12 @@ function newSkolemConstant
 Type ::=
 {
   return skolemType(freshTyVar(starKind()));
+}
+
+function freshInhSet
+Type ::=
+{
+  return varType(freshTyVar(inhSetKind()));
 }
 
 -- TODO: Replace with propagated default instance

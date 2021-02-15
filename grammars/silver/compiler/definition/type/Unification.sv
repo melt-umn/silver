@@ -145,11 +145,11 @@ top::Type ::= inhs::[String]
 }
 
 aspect production decoratedType
-top::Type ::= te::Type
+top::Type ::= te::Type i::Type
 {
   top.unify = 
     case top.unifyWith of
-    | decoratedType(ote) -> unify(te, ote)
+    | decoratedType(ote, oi) -> composeSubst(unify(te, ote), unify(i, oi))
     | ntOrDecType(_,_) -> errorSubst("dte-nodte: try again")
     | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
     end;
@@ -163,7 +163,7 @@ top::Type ::= nt::Type  hidden::Type
   -- And we kill off this type once hidden is specialized.
   top.unify =
     case top.unifyWith.baseType of
-    | decoratedType(ote) ->
+    | decoratedType(ote, _) ->
         -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
         unifyAllShortCircuit([ote, top.unifyWith],
                              [nt,  hidden])

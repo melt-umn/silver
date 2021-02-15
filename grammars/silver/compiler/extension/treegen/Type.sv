@@ -67,7 +67,7 @@ top::Type ::= fn::String
   top.idNameForGenArb = substring(lastIndexOf(":", fn) + 1, length(fn), fn);
 }
 aspect production decoratedType
-top::Type ::= te::Type
+top::Type ::= te::Type _
 {
   top.idNameForGenArb = "Decorated" ++ te.idNameForGenArb;
 }

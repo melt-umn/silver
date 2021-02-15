@@ -195,11 +195,11 @@ top::Type ::= fn::String
 }
 
 aspect production decoratedType
-top::Type ::= te::Type
+top::Type ::= te::Type i::Type
 {
   top.refine = 
     case top.refineWith of
-    | decoratedType(ote) -> refine(te, ote)
+    | decoratedType(oi, ote) -> composeSubst(refine(te, ote), refine(i, oi))
     | _ -> errorSubst("Tried to refine decorated type with " ++ prettyType(top.refineWith))
     end;
 }
@@ -241,10 +241,10 @@ Substitution ::= scrutineeType::Type  constructorType::Type
   -- If you look at the type rules, you'll notice they're requiring "T" be the same,
   -- and this refinement only happens on the parameters (i.e. fmgu(T p = T a))
   return case scrutineeType, constructorType of
-         | decoratedType(t1), decoratedType(t2) ->
+         | decoratedType(t1, i1), decoratedType(t2, i2) ->
            case t1.baseType, t2.baseType of
            | nonterminalType(n1, _, _), nonterminalType(n2, _, _) when n1 == n2 ->
-             refineAll(t1.argTypes, t2.argTypes)
+             refineAll(i1 :: t1.argTypes, i2 :: t2.argTypes)
            | _, _ -> emptySubst()
            end
          | _, _ -> emptySubst()
