@@ -199,6 +199,13 @@ top::Type ::= fn::String
   top.freeVariables = [];
 }
 
+abstract production inhSetType
+top::Type ::= inhs::[String]
+{
+  top.kindrep = inhSetKind();
+  top.freeVariables = [];
+}
+
 {--
  - A *decorated* nonterminal type.
  - @param te  MUST be a 'nonterminalType' or 'varType'/'skolemType'

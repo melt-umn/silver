@@ -134,6 +134,16 @@ top::Type ::= fn::String
     end;
 }
 
+aspect production inhSetType
+top::Type ::= inhs::[String]
+{
+  top.unify =
+    case top.unifyWith of
+    | inhSetType(oinhs) when inhs == oinhs -> emptySubst()
+    | _ -> errorSubst("Tried to unify inh set type " ++ prettyType(top) ++ " with " ++ prettyType(top.unifyWith))
+    end;
+}
+
 aspect production decoratedType
 top::Type ::= te::Type
 {

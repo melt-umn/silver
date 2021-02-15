@@ -156,6 +156,12 @@ top::Type ::= fn::String
   top.typepp = fn;
 }
 
+aspect production inhSetType
+top::Type ::= inhs::[String]
+{
+  top.typepp = s"{${implode(", ", inhs)}}";
+}
+
 aspect production decoratedType
 top::Type ::= te::Type
 {
@@ -179,6 +185,12 @@ aspect production starKind
 top::Kind ::=
 {
   top.typepp = "*";
+}
+
+aspect production inhSetKind
+top::Kind ::=
+{
+  top.typepp = "InhSet";
 }
 
 aspect production arrowKind
