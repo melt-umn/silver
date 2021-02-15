@@ -5,6 +5,8 @@ import silver:compiler:modification:defaultattr;
 import silver:compiler:definition:flow:driver only ProductionGraph, findProductionGraph;
 import silver:compiler:driver:util; -- only for productionFlowGraphs occurrence?
 
+attribute flowEnv occurs on ProductionSignature, AspectProductionSignature;
+
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {

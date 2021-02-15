@@ -11,6 +11,13 @@ top::KindExpr ::= '*'
   top.kindrep = starKind();
 }
 
+concrete production inhSetKindExpr
+top::KindExpr ::= 'InhSet'
+{
+  top.unparse = "InhSet";
+  top.kindrep = inhSetKind();
+}
+
 concrete production arrowKindExpr
 top::KindExpr ::= k1::KindExpr '->' k2::KindExpr
 {

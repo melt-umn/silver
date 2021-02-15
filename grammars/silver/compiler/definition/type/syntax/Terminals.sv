@@ -10,5 +10,6 @@ terminal Float_tkwd      'Float'      lexer classes {TYPE,RESERVED};
 terminal Integer_tkwd    'Integer'    lexer classes {TYPE,RESERVED};
 terminal String_tkwd     'String'     lexer classes {TYPE,RESERVED};
 terminal TerminalId_tkwd 'TerminalId' lexer classes {TYPE,RESERVED};
+terminal InhSet_tkwd     'InhSet'     lexer classes {TYPE}; -- Well, actually a kind
 
 terminal RuntimeTypeable_kwd 'runtimeTypeable' lexer classes {KEYWORD,RESERVED};

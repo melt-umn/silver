@@ -3,13 +3,14 @@ grammar silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
+imports silver:compiler:definition:flow:syntax;
 
-nonterminal TypeExpr  with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsKindStar;
-nonterminal Signature with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds;
-nonterminal SignatureLHS with config, location, grammarName, errors, env, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds;
-nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables;
-nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
-nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
+nonterminal TypeExpr  with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsKindStar, onNt, errorsInhSet;
+nonterminal Signature with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds;
+nonterminal SignatureLHS with config, location, grammarName, errors, env, flowEnv, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds;
+nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, flowEnv, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables;
+nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
+nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 
 synthesized attribute maybeType :: Maybe<Type>;
 synthesized attribute types :: [Type];
@@ -31,6 +32,7 @@ inherited attribute initialEnv :: Decorated Env;
 synthesized attribute envBindingTyVars :: Decorated Env;
 
 synthesized attribute errorsKindStar::[Message];
+synthesized attribute errorsInhSet::[Message];
 
 propagate errors, lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate appLexicalTyVarKinds on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
@@ -59,6 +61,7 @@ top::TypeExpr ::=
     if top.typerep.kindrep != starKind()
     then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
     else [];
+  top.errorsInhSet = top.errors;
 }
 
 abstract production errorTypeExpr
@@ -111,12 +114,25 @@ top::TypeExpr ::= 'Boolean'
   top.typerep = boolType();
 }
 
-concrete production termnalIdTypeExpr
+concrete production terminalIdTypeExpr
 top::TypeExpr ::= 'TerminalId'
 {
   top.unparse = "TerminalId";
 
   top.typerep = terminalIdType();
+}
+
+concrete production inhSetTypeExpr
+top::TypeExpr ::= '{' inhs::FlowSpecInhs '}'
+{
+  top.unparse = s"{${inhs.unparse}}";
+  
+  top.typerep = inhSetType(sort(inhs.inhList));
+  
+  inhs.onNt = errorType();
+  top.errorsInhSet =
+    -- decorate inhs with {onNt = top.onNt;}.errors
+    decorate inhs with {config = top.config; grammarName = top.grammarName; env = top.env; flowEnv = top.flowEnv; onNt = top.onNt;}.errors;
 }
 
 concrete production nominalTypeExpr
