@@ -40,7 +40,6 @@ synthesized attribute patternNamedSubPatternList :: [Pair<String Decorated Patte
 synthesized attribute patternSortKey :: String;
 
 
-
 -- These are the "canonical" patterns:
 
 {--
@@ -73,19 +72,13 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
 concrete production prodAppPattern
 top::Pattern ::= prod::QName '(' ps::PatternList ')'
 {
-   
-  local fwrd::Pattern = prodAppPattern_named(prod, '(', ps, ',', namedPatternList_nil(location=top.location), ')', location=top.location);
-  forwards to fwrd;
-  -- forwards to unsafeTrace(fwrd, print("prodAppPattern:" ++ hackUnparse(fwrd) ++ "\n\n", unsafeIO()));
+  forwards to prodAppPattern_named(prod, '(', ps, ',', namedPatternList_nil(location=top.location), ')', location=top.location);
 }
 
 concrete production propAppPattern_onlyNamed
 top::Pattern ::= prod::QName '(' nps::NamedPatternList ')'
 {
-  local fwrd::Pattern = prodAppPattern_named(prod, '(', patternList_nil(location=top.location), ',', nps, ')', location=top.location);
-
-  forwards to fwrd;
-  -- forwards to unsafeTrace(fwrd, print("prodAppPattern_onlyNamed" ++ hackUnparse(fwrd) ++ "\n\n", unsafeIO()));
+  forwards to prodAppPattern_named(prod, '(', patternList_nil(location=top.location), ',', nps, ')', location=top.location);
 }
 
 {--
