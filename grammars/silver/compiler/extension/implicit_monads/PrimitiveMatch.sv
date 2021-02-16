@@ -43,7 +43,9 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                       else monadOfType(t.typerep, top.expectedMonad)
                  else if prRetIsMonadic
                       then pr.mtyperep
-                      else f.mtyperep;
+                      else if tIsMonadic
+                           then t.typerep
+                           else f.mtyperep;
 
   top.merrors := e.merrors ++ pr.merrors ++ f.merrors;
   top.merrors <- if prPattIsMonadic
@@ -82,7 +84,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
         productionRHSCons(productionRHSElem(name(freshname, top.location), '::',
                                             eInnerType, location=top.location),
                           productionRHSNil(location=top.location), location=top.location);
-  local outty::TypeExpr = typerepTypeExpr(top.mtyperep, location=top.location);
+  local outty::TypeExpr = typerepTypeExpr(freshType(), location=top.location); --typerepTypeExpr(top.mtyperep, location=top.location);
 
   {-We need to make sure that, if we are matching on a decorable type,
     it is decorated.  We need to check both whether the type is
@@ -174,23 +176,26 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                                                      f.monadRewritten, location=top.location)],
                                  top.location);
   --pick the right rewriting
-  local mRw::Expr    = if eIsMonadic
-                       then if prRetIsMonadic
-                            then if fIsMonadic
-                                 then justBind_e
-                                 else bind_e_return_f
-                            else if fIsMonadic
-                                 then bind_e_returnify_pr
-                                 else bind_e_returnify_pr_return_f
-                       else if prRetIsMonadic
-                            then if fIsMonadic
-                                 then just_rewrite
-                                 else return_f
-                            else if fIsMonadic
-                                 then returnify_pr
-                                 else if tIsMonadic
-                                      then return_whole_thing
-                                      else just_rewrite;
+  local mRw::Expr =
+        if eIsMonadic
+        then if prRetIsMonadic
+             then if fIsMonadic
+                  then justBind_e
+                  else bind_e_return_f
+             else if fIsMonadic
+                  then bind_e_returnify_pr
+                  else bind_e_returnify_pr_return_f
+        else if prRetIsMonadic
+             then if fIsMonadic
+                  then just_rewrite
+                  else return_f
+             else if fIsMonadic
+                  then returnify_pr
+                  else if tIsMonadic
+                       then return_whole_thing
+                       else if tIsMonadic
+                            then Silver_Expr {pure($Expr {just_rewrite})}
+                            else just_rewrite;
   top.monadRewritten = mRw;
 }
 
