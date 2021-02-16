@@ -17,10 +17,10 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   local specInhs :: Maybe<[String]> =
     lookup("decorate", getFlowTypeSpecFor(fName, top.flowEnv));
 
-  -- Notice the circularity: flowDefs uses flowEnv. Works fine because only
-  -- the (lazy) parameter of ntRefFlowDef isn't computable until later.
+  -- Notice the circularity: refDefs uses flowEnv. Works fine because only
+  -- the (lazy) parameter of pair isn't computable until later.
 
-  top.flowDefs <- [ntRefFlowDef(fName, fromMaybe(inferredInhs, specInhs))];
+  top.refDefs <- [(fName, fromMaybe(inferredInhs, specInhs))];
 }
 
 -- If it is inherited and exported by this grammar (according to authority)

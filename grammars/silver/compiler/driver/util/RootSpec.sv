@@ -5,7 +5,7 @@ import silver:langutil only pp;
 import silver:langutil:pp only show;
 
 import silver:compiler:definition:core only Grammar, grammarErrors, grammarName, importedDefs, importedOccursDefs, grammarDependencies, globalImports, Message, err;
-import silver:compiler:definition:flow:env only flowEnv, flowDefs, fromFlowDefs;
+import silver:compiler:definition:flow:env only flowEnv, flowDefs, specDefs, refDefs, fromFlowDefs;
 import silver:compiler:definition:flow:ast only nilFlow, consFlow, FlowDef;
 
 import silver:compiler:definition:core only jarName;
@@ -61,8 +61,13 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   -- Compute flow information for this grammar, (closing over imports and options, too:)
   local depsPlusOptions :: [String] =
     nub(completeDependencyClosure(actualDependencies, top.compiledGrammars));
+  local rootSpecs :: [Decorated RootSpec] = flatMap(searchEnvTree(_, top.compiledGrammars), depsPlusOptions);
   g.grammarDependencies = actualDependencies;
-  g.flowEnv = fromFlowDefs(foldr(consFlow, nilFlow(), gatherFlowEnv(depsPlusOptions, top.compiledGrammars)));
+  g.flowEnv =
+    fromFlowDefs(
+      flatMap((.specDefs), rootSpecs),
+      flatMap((.refDefs), rootSpecs),
+      foldr(consFlow, nilFlow(), flatMap((.flowDefs), rootSpecs)));
   
   -- Echo down global compiler info
   g.config = top.config;
@@ -313,16 +318,6 @@ function mentionedGrammars
 [String] ::= r::Decorated RootSpec
 {
   return nub(r.moduleNames ++ concat(r.condBuild) ++ r.optionalGrammars);
-}
-
-function gatherFlowEnv
-[FlowDef] ::= deps::[String]  e::EnvTree<Decorated RootSpec>
-{
-  return if null(deps) then []
-         else case searchEnvTree(head(deps), e) of
-              | r :: _ -> r.flowDefs ++ gatherFlowEnv(tail(deps), e)
-              | [] -> gatherFlowEnv(tail(deps), e)
-              end;
 }
 
 -- We're comparing INTERFACE TIME against GRAMMAR TIME, just to emphasize what's going on here...
