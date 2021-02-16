@@ -160,7 +160,7 @@ aspect production inhSetType
 top::Type ::= inhs::[String]
 {
   top.transClassType = error("Demanded translation of InhSet type");
-  top.transTypeRep = s"new common.InhSetTypeRep(new String[] {${implode(", ", map(\ n::String -> s"\"${n}\"", inhs))}})";
+  top.transTypeRep = error("Demanded TypeRep translation of InhSet type");
   top.transFreshTypeRep = top.transTypeRep;
   top.transTypeName = substitute(":", "_", implode("_", inhs));
 }
@@ -171,8 +171,8 @@ top::Type ::= te::Type i::Type
   -- TODO: this should probably be a generic.  e.g. "DecoratedNode<something>"
   top.transType = "common.DecoratedNode";
   top.transClassType = "common.DecoratedNode";
-  top.transTypeRep = s"new common.DecoratedTypeRep(${i.transTypeRep}, ${te.transTypeRep})";
-  top.transFreshTypeRep = s"new common.DecoratedTypeRep(${i.transFreshTypeRep}, ${te.transFreshTypeRep})";
+  top.transTypeRep = s"new common.DecoratedTypeRep(${te.transTypeRep})";
+  top.transFreshTypeRep = s"new common.DecoratedTypeRep(${te.transFreshTypeRep})";
   top.transTypeName = "Decorated_" ++ te.transTypeName;
 }
 
