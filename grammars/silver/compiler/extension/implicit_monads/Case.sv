@@ -99,7 +99,8 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   --We get the monadic names out of the expressions bound in here and the rest off the fake forward (monadLocal)
   top.monadicNames =
      foldr(\x::Pair<Expr Type> l::[Expr] ->
-             let a::Decorated Expr = decorate x.fst with {env=top.env; mDownSubst=top.mDownSubst;
+             let a::Decorated Expr with {env, mDownSubst, frame, grammarName, downSubst, finalSubst, compiledGrammars, config, flowEnv, expectedMonad} =
+                decorate x.fst with {env=top.env; mDownSubst=top.mDownSubst;
                                      frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
                                      finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
                                      config=top.config; flowEnv=top.flowEnv;expectedMonad=top.expectedMonad;}

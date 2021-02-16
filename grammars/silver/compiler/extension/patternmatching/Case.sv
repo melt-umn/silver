@@ -293,7 +293,7 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Pair<Expr Maybe<P
           \ n::String ->
             fromMaybe(
               decorate wildcPattern('_', location=top.location)
-                with { config=head(pl).config; env=head(pl).env; patternVarEnv = []; },
+                with { frame = head(pl).frame; config=head(pl).config; env=head(pl).env; patternVarEnv = []; },
               lookup(n, head(pl).patternNamedSubPatternList)),
           named) ++
         tail(pl),
