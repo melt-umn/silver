@@ -172,7 +172,7 @@ top::Type ::= te::Type i::Type
   top.transType = "common.DecoratedNode";
   top.transClassType = "common.DecoratedNode";
   top.transTypeRep = s"new common.DecoratedTypeRep(${i.transTypeRep}, ${te.transTypeRep})";
-  top.transFreshTypeRep = s"new common.DecoratedTypeRep(${i.transTypeRep}, ${te.transFreshTypeRep})";
+  top.transFreshTypeRep = s"new common.DecoratedTypeRep(${i.transFreshTypeRep}, ${te.transFreshTypeRep})";
   top.transTypeName = "Decorated_" ++ te.transTypeName;
 }
 

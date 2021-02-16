@@ -220,7 +220,7 @@ abstract production decoratedType
 top::Type ::= te::Type i::Type
 {
   top.kindrep = starKind();
-  top.freeVariables = te.freeVariables;
+  top.freeVariables = setUnionTyVars(te.freeVariables, i.freeVariables);
 }
 
 {--
