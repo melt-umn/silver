@@ -37,17 +37,19 @@ concrete productions top::ConvenienceAspectEquationKind
 synthesized attribute aspectName::Name;
 synthesized attribute aspectType::TypeExpr;
 
-nonterminal ConvAspectLHS with aspectName, aspectType;
+nonterminal ConvAspectLHS with aspectName, aspectType, unparse;
 concrete productions top::ConvAspectLHS
 | name::Name '::' ty::TypeExpr
 {
   top.aspectType = ty;
   top.aspectName = name;
+  top.unparse = name.unparse ++ "::" ++ ty.unparse;
 }
 | ty::TypeExpr
 {
   top.aspectType = ty;
   top.aspectName = name("__generatedTop_" ++ toString(genInt()), ty.location);
+  top.unparse = ty.unparse;
 }
 
 

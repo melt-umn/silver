@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:convenienceaspects;
 
-
+import silver:compiler:modification:let_fix;
 
 function makePatternListfromListofPatterns
 PatternList ::= l::[Pattern] defaultLoc::Location
@@ -19,7 +19,7 @@ function collectPatternsFromPatternList
   return case l of
   | patternList_one(p) -> p::accum
   | patternList_snoc(ps,_,p) -> collectPatternsFromPatternList(ps, p::accum)
-  | patternList_more(p,_,ps) -> collectPatternsFromPatternList(ps, p::accum)
+  | patternList_more(p,_,ps) -> [p] ++ collectPatternsFromPatternList(ps, accum)
   | patternList_nil() -> accum
   end;
 }
@@ -48,7 +48,6 @@ b ::= f::(b ::= a b)  i::(b ::= a)  l::[a]
   | h::t -> f(h, foldrLastElem(f,i,t))
   | [] -> error("You can't call foldrLastElem with an empty list")
   end;
-
 }
 
 function makeExprsFromExprList
@@ -76,32 +75,57 @@ MRuleList ::= l::[MatchRule] loc::Location
 }
 
 
+function makeGeneratedNamesFromMatchRule
+[Name] ::= mr::MatchRule loc::Location
+{
+  local patList::PatternList =
+    case mr of
+    | matchRule_c(patternList_one(prodAppPattern(_,_,pl,_)),_,_) -> pl
+    | matchRuleWhen_c(patternList_one(prodAppPattern(_,_,pl,_)),_,_,_,_) -> pl
+    | matchRuleWhenMatches_c(patternList_one(prodAppPattern(_,_,pl,_)),_,_,_,_,_,_) -> pl
+    | _ -> patternList_nil(location=loc)
+    end;
+
+  return
+    map(\pat::Pattern ->
+      name("__generated_" ++ toString(genInt()), loc),
+      collectPatternsFromPatternList(patList,[]));
+
+}
+
+
 function extractAspectAgDclFromRuleList
 Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr::QNameAttrOccur  eqKind::ConvenienceAspectEquationKind location::Location env::Decorated Env
 {
 
   local lookupProdInputTypes::([Type] ::= String) = \prodName::String ->
-    if (!null(getValueDclInScope(prodName,env))
-       && head(getValueDclInScope(prodName,env)).typeScheme.typerep.isApplicable)
-       then
-         head(getValueDclInScope(prodName,env)).typeScheme.typerep.inputTypes
-    -- Replace with call to function lookup that uses strings.
-    -- Productions that aren't in scope, and names that
-    -- aren't productions will be caught later.
-    else [];
+      case (getValueDclInScope(prodName,env)) of
+      | [] -> []
+      | dcl:: _ ->
+        let dcl :: Decorated DclInfo = decorate dcl with {givenNonterminalType = error("Not actually needed");}
+        in
+          if dcl.typeScheme.typerep.isApplicable
+          then dcl.typeScheme.typerep.inputTypes
+          -- Productions that aren't in scope, and names that
+          -- aren't productions will be caught later in the primitive match.
+          else []
+        end
+      end;
 
-  local makeProdParamsList::([AspectRHSElem] ::= [Name] [Type]) =
+  local makeAspectRHSElemListFromNameAndTypeList::([AspectRHSElem] ::= [Name] [Type]) =
     zipWith(aspectRHSElemFull(_, _, location=location), _, _);
 
-  local makeProdParams::(AspectRHS ::= [AspectRHSElem] ) = foldr(
+  local makeAspectRHSFromParamsList::(AspectRHS ::= [AspectRHSElem] ) = foldr(
     aspectRHSElemCons(_, _, location=location),
     aspectRHSElemNil(location=location),
     _);
 
   local makeQNamesFromNames::([QName] ::= [Name]) = map(qNameId(_, location=location),_);
 
-  local makeParamCaseSubExpr::([Expr] ::= [QName]) = map(baseExpr(_,location=location),_);
+  local makeBaseExprFromQNames::([Expr] ::= [QName]) = map(baseExpr(_,location=location),_);
 
+  -- Transforms it to extract a subpattern and bring it up as the
+  -- main pattern.
   local transformPatternMatchRule::([MatchRule]::=[MatchRule]) =
     map((\mRule::MatchRule -> case mRule of
       | matchRule_c(pl,arrow,e) -> matchRule_c(
@@ -147,7 +171,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
         aspect production $QName{prod}
         $Name{aspectLHS.aspectName}::$TypeExpr{aspectLHS.aspectType} ::= $AspectRHS{prodParams}
           { $ProductionStmt{eqKind.makeAspectEquation(
-              defTop(
+              makeTopDefinitionLHS(
                 aspectLHS.aspectName,
                 head(rules).location),
               aspectAttr,
@@ -155,8 +179,12 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
               paramsCaseExpr.location)}}
       };
 
-  local defTop::(DefLHS ::= Name Location) = \name::Name loc::Location ->
+  local makeTopDefinitionLHS::(DefLHS ::= Name Location) = \name::Name loc::Location ->
     concreteDefLHS(qNameId(name,location=loc), location=loc);
+
+  local makeLetExprForTopRenaming::(Expr ::= Name Expr Location) = \newName::Name e::Expr loc::Location ->
+    (letp(assignExpr(newName,'::',aspectLHS.aspectType,'=', baseExpr(qNameId(aspectLHS.aspectName,location=loc),location=loc),location=loc), e,location=loc));
+
 
   return case rules of
     | matchRule_c(patternList_one(prodAppPattern(name,_,_,_)),_,e) :: _
@@ -166,11 +194,11 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
     pair(
       makeAspectProduction(
         makeParamsCaseExpr(
-            makeParamCaseSubExpr(makeQNamesFromNames(paramNames)),
+            makeBaseExprFromQNames(makeQNamesFromNames(paramNames)),
             rules),
         name,
-        makeProdParams(
-            makeProdParamsList(
+        makeAspectRHSFromParamsList(
+            makeAspectRHSElemListFromNameAndTypeList(
               paramNames,
               lookupProdInputTypes(name.name)))),
       [])
@@ -182,11 +210,11 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
     pair(
       makeAspectProduction(
         makeParamsCaseExpr(
-            makeParamCaseSubExpr(makeQNamesFromNames(paramNames)),
+            makeBaseExprFromQNames(makeQNamesFromNames(paramNames)),
             rules),
         name,
-        makeProdParams(
-            makeProdParamsList(
+        makeAspectRHSFromParamsList(
+            makeAspectRHSElemListFromNameAndTypeList(
               paramNames,
               lookupProdInputTypes(name.name)))),
       [])
@@ -197,7 +225,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
           aspect default production
           $Name{aspectLHS.aspectName}::$TypeExpr{aspectLHS.aspectType} ::=
           { $ProductionStmt{eqKind.makeAspectEquation(
-              defTop(
+              makeTopDefinitionLHS(
                 aspectLHS.aspectName,
                 head(rules).location),
               aspectAttr,
@@ -211,7 +239,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
           aspect default production
           $Name{aspectLHS.aspectName}::$TypeExpr{aspectLHS.aspectType} ::=
           { $ProductionStmt{eqKind.makeAspectEquation(
-              defTop(
+              makeTopDefinitionLHS(
                 aspectLHS.aspectName,
                 head(rules).location),
               aspectAttr,
@@ -219,30 +247,41 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
               head(rules).location)}}
       },
       [])
-    -- | [matchRule(varPattern(name)::_,_,e)] ->
-    --   pair(
-    --     Silver_AGDcl {
-    --       aspect default production
-    --       $Name{aspectLHS.aspectName}::$TypeExpr{aspectLHS.aspectType} ::=
-    --       { $ProductionStmt{eqKind.makeAspectEquation(
-    --           defTop(
-    --             aspectLHS.aspectName,
-    --             head(rules).location),
-    --           aspectAttr,
-    --           e,
-    --           head(rules).location)}}
-    --   },
-    --   [])
-    -- varPattern(name,...) -> let top = Name in <expr>
+    | matchRule_c(patternList_one(varPattern(name)),_,e) :: _ ->
+      pair(
+        Silver_AGDcl {
+          aspect default production
+          $Name{aspectLHS.aspectName}::$TypeExpr{aspectLHS.aspectType} ::=
+          { $ProductionStmt{eqKind.makeAspectEquation(
+              makeTopDefinitionLHS(
+                aspectLHS.aspectName,
+                head(rules).location),
+              aspectAttr,
+              makeLetExprForTopRenaming(name, e, head(rules).location),
+              head(rules).location)}}
+      },
+      [])
+    | matchRule_c(patternList_more(varPattern(name),_,_),_,e) :: _ ->
+      pair(
+        Silver_AGDcl {
+          aspect default production
+          $Name{aspectLHS.aspectName}::$TypeExpr{aspectLHS.aspectType} ::=
+          { $ProductionStmt{eqKind.makeAspectEquation(
+              makeTopDefinitionLHS(
+                aspectLHS.aspectName,
+                head(rules).location),
+              aspectAttr,
+              makeLetExprForTopRenaming(name, e, head(rules).location),
+              head(rules).location)}}
+      },
+      [])
     | _ ->
       pair(
-        error("Patterns in aspect convenience syntax should be productions or wildcards only"),
-        [err(location,"Patterns in aspect convenience syntax should be productions or wildcards only")])
-
+        error("Patterns in aspect convenience syntax should be productions,wildcards, or varpatterns only"),
+        [err(location,"Patterns in aspect convenience syntax should be productions,wildcards, or varpatterns only")])
     end;
 }
 
-synthesized attribute aspectProdParamsList::[Name] occurs on MatchRule;
 
 function collectMatchRulesfromMRuleList
 [MatchRule] ::= l::MRuleList accum::[MatchRule]
@@ -252,9 +291,6 @@ function collectMatchRulesfromMRuleList
   | mRuleList_cons(h,_,t) -> collectMatchRulesfromMRuleList(t,(h :: accum))
   end;
 }
-
-
-
 
 -- Compares patterns, if they're
 -- both production patterns, compares production name
@@ -269,9 +305,15 @@ Boolean ::= l::Pattern r::Pattern
       nameR.name == nameL.name
     | _ -> false
     end
+  | wildcPattern(_) ->
+    case r of
+    | wildcPattern(_) -> true
+    | _ -> false
+    end
   | leftPatt ->
     case r of
     | prodAppPattern_named(_,_,_,_,_,_) -> false
+    | wildcPattern(_) -> false
     | _ -> true
     end
   end;
@@ -380,26 +422,56 @@ Boolean ::= l::MatchRule r::MatchRule
 
 }
 
+function isWildCardMatchRule
+Boolean ::= mRule::MatchRule
+{ return
+      case mRule of
+      | matchRule_c(patternList_one(wildcPattern(_)),_,_) -> true
+      | matchRule_c(patternList_more(wildcPattern(_),_,_),_,e) -> true
+      | matchRule_c(patternList_snoc(patternList_one(wildcPattern(_)),_,_),_,e) -> true
+      | matchRule_c(patternList_one(varPattern(_)),_,_) -> true
+      | matchRule_c(patternList_more(varPattern(_),_,_),_,e) -> true
+      | matchRule_c(patternList_snoc(patternList_one(varPattern(_)),_,_),_,e) -> true
+      | _ -> false
+      end;
+}
+
+
 abstract production convenienceAspects
 top::AGDcl ::= attr::QNameAttrOccur aspectLHS::ConvAspectLHS eqKind::ConvenienceAspectEquationKind ml::MRuleList
 {
   top.defs := [];
   top.moduleNames := [];
+  top.occursDefs := [];
 
-  --check for wildcard varpattern nonsense
+  top.unparse = "aspect " ++ attr.unparse ++ " on " ++ aspectLHS.unparse ++ " " ++ eqKind.unparse ++ " of |" ++ ml.unparse ++ " end";
+  --Everything past the first wildcard gets dropped before grouping of match patterns
+  local mList::[MatchRule] = reverse(collectMatchRulesfromMRuleList(ml,[]));
+  local mListUpToFirstWildcard::[MatchRule] =
+    foldr(\next::MatchRule accum::[MatchRule] ->
+      if !isWildCardMatchRule(next) then next::accum else [next],
+      [],
+      mList);
+  local mListWildcardAndAfter::[MatchRule] =
+    dropWhile(\mRule::MatchRule -> !isWildCardMatchRule(mRule),mList);
+  local mListAfterWildcard::[MatchRule] =
+    if null(mListWildcardAndAfter) then [] else tail(mListWildcardAndAfter);
 
-  -- local groupedMRules::[[MatchRule]] =
-  --   map(\rules::[AbstractMatchRule] -> map(
-  --     \rule_::AbstractMatchRule -> decorate rule_ with { env = top.env; }, rules),
-  --       groupMRules(ml.matchRuleList));
-
-  local groupedMRules::[[MatchRule]] = groupBy(eqPatternMatchRule, collectMatchRulesfromMRuleList(ml,[]));
+  local groupedMRules::[[MatchRule]] = groupBy(eqPatternMatchRule, mListUpToFirstWildcard);
 
   local groupExtractResults::[Pair<AGDcl [Message]>] = map(
     extractAspectAgDclFromRuleList(_,aspectLHS,attr,eqKind,top.location, top.env),
     groupedMRules);
 
-  -- top.errors := foldr(append, [], (map(snd(_), groupExtractResults)));
+  local groupExtractErrors::[Message] = foldr(append, [], (map(snd(_), groupExtractResults)));
+
+
+  top.errors <- if null(mListAfterWildcard)
+                -- This means that nothing is past the wildcard pattern, which is good.
+                then groupExtractErrors
+                -- Something _is_ past the wildcard pattern
+                else [wrn(((head(mListAfterWildcard)).location),"This pattern and the ones that follow are being ignored.")]
+                  ++ groupExtractErrors;
 
   local combinedAspectProds::[AGDcl] = map(fst(_),groupExtractResults);
 
@@ -409,72 +481,5 @@ top::AGDcl ::= attr::QNameAttrOccur aspectLHS::ConvAspectLHS eqKind::Convenience
    combinedAspectProds);
 
   local fwrd::AGDcl = makeAppendAGDclOfAGDcls(combinedAspectDcls);
-  forwards to unsafeTraceDump(fwrd);
-  -- forwards to makeAppendAGDclOfAGDcls(combinedAspectDcls);
-}
-
-
-function makeGeneratedNamesFromMatchRule
-[Name] ::= mr::MatchRule loc::Location
-{
-  local patList::PatternList =
-    case mr of
-    | matchRule_c(pl,_,_) -> pl
-    | matchRuleWhen_c(pl,_,_,_,_) -> pl
-    | matchRuleWhenMatches_c(pl,_,_,_,_,_,_) -> pl
-    end;
-
-  return
-    map(\pat::Pattern ->
-      name("__generated_" ++ toString(genInt()), loc),
-      collectPatternsFromPatternList(patList,[]));
-
-}
-
-aspect production matchRule_c
-top::MatchRule ::= pt::PatternList '->' e::Expr
-{
-  top.aspectProdParamsList = unsafeTraceDump( case pt of
-    | patternList_one(prodAppPattern_named(_, _, ps,_,_,_)) ->
-      map(\pat::Pattern ->
-        name("__generated_" ++ toString(genInt()), top.location),
-        collectPatternsFromPatternList(ps,[]))
-    | patternList_more(prodAppPattern_named(_, _, ps,_,_,_),_,_) ->
-      map(\pat::Pattern ->
-        name("__generated_" ++ toString(genInt()), top.location),
-        collectPatternsFromPatternList(ps,[]))
-    | patternList_snoc(_,_,prodAppPattern_named(_, _, ps,_,_,_)) ->
-      map(\pat::Pattern ->
-        name("__generated_" ++ toString(genInt()), top.location),
-        collectPatternsFromPatternList(ps,[]))
-    | _ -> []
-    end);
-
-}
-
-aspect production matchRuleWhen_c
-top::MatchRule ::= pt::PatternList 'when' cond::Expr '->' e::Expr
-{
-  top.aspectProdParamsList = unsafeTraceDump( case pt of
-    | patternList_one(prodAppPattern_named(_, _, ps,_,_,_)) ->
-      map(\pat::Pattern ->
-        name("__generated_" ++ toString(genInt()), top.location),
-        collectPatternsFromPatternList(ps,[]))
-    | patternList_more(prodAppPattern_named(_, _, ps,_,_,_),_,_) ->
-      map(\pat::Pattern ->
-        name("__generated_" ++ toString(genInt()), top.location),
-        collectPatternsFromPatternList(ps,[]))
-    | patternList_snoc(_,_,prodAppPattern_named(_, _, ps,_,_,_)) ->
-      map(\pat::Pattern ->
-        name("__generated_" ++ toString(genInt()), top.location),
-        collectPatternsFromPatternList(ps,[]))
-    | _ -> []
-    end);
-
-}
-
-aspect default production
-top::MatchRule ::=
-{
-  top.aspectProdParamsList = [];
+  forwards to fwrd;
 }

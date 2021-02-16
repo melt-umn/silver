@@ -23,7 +23,6 @@ synthesized attribute foopp :: String;
 attribute foopp occurs on FooExpr;
 
 
-
 aspect foopp on FooExpr of
 | addfoo(l, _) -> "foo " ++ l.prettierprint
 | subtractFoo(l,r) -> "foo " ++ l.prettierprint ++ "-" ++ r.prettierprint
@@ -154,3 +153,31 @@ wrongCode "Undeclared value 'top'." {
     | _ -> top.hiddenAttr
     end;
 }
+
+
+synthesized attribute bagList2 :: [String] with ++ occurs on BazExpr;
+
+warnCode "This pattern and the ones that follow are being ignored." {
+    aspect bagList2 on top::BazExpr using <- of
+    | bazInit2(h::t,value) -> [h, toString(value)]
+    | _ -> []
+    | _ -> ["ignored"]
+    end;
+}
+
+synthesized attribute bagList3 :: [String] with ++ occurs on BazExpr;
+
+warnCode "This pattern and the ones that follow are being ignored." {
+    aspect bagList2 on top::BazExpr using <- of
+    | bazInit2(h::t,value) -> [h, toString(value)]
+    | coolName -> coolName.hiddenAttr
+    | _ -> ["ignored"]
+    end;
+}
+
+synthesized attribute gAttribute :: String occurs on BazExpr;
+aspect gAttribute on BazExpr of
+    | bazInit2(h::t,value) -> h ++ toString(value)
+    | bazInit3(_,val) -> toString(val)
+    | coolName -> coolName.hiddenAttr
+end;
