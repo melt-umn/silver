@@ -176,7 +176,7 @@ concrete production flowSpecInh
 top::FlowSpecInh ::= inh::QNameAttrOccur
 {
   top.unparse = inh.unparse;
-  top.inhList = if inh.found then [inh.attrDcl.fullName] else [];
+  top.inhList = if inh.attrFound then [inh.attrDcl.fullName] else [];
   
   inh.attrFor = top.onNt;
 
