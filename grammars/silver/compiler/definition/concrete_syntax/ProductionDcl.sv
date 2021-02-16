@@ -143,9 +143,9 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String k::Integer tracked::Boolean
+top::Type ::= fn::String ks::[Kind] tracked::Boolean
 {
-  top.permittedInConcreteSyntax = k == 0;
+  top.permittedInConcreteSyntax = null(ks);
 }
 
 aspect production terminalType

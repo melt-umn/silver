@@ -154,7 +154,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   propagate errors, flowDefs;
   
   top.errors <- tl.errorsTyVars;
-  top.errors <- te.errorsFullyApplied;
+  top.errors <- te.errorsKindStar;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1
@@ -181,7 +181,7 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   propagate errors, flowDefs;
   
   top.errors <- tl.errorsTyVars;
-  top.errors <- te.errorsFullyApplied;
+  top.errors <- te.errorsKindStar;
 
   top.errors <-
         if length(getAttrDclAll(fName, top.env)) > 1

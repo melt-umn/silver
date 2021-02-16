@@ -3,7 +3,7 @@ grammar silver:compiler:analysis:typechecking:core;
 aspect production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
 {
-  top.errors <- t.errorsFullyApplied;
+  top.errors <- t.errorsKindStar;
 
   local attribute errCheck1 :: TypeCheck;
 

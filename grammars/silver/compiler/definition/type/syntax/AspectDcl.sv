@@ -6,10 +6,10 @@ flowtype lexicalTypeVariables {realSignature, env} on AspectProductionSignature,
 flowtype lexicalTypeVariables {deterministicCount, realSignature, env} on AspectRHSElem;
 
 function addNewLexicalTyVars_ActuallyVariables
-[Def] ::= gn::String sl::Location lk::[Pair<String Integer>] l::[String]
+[Def] ::= gn::String sl::Location lk::[Pair<String Kind>] l::[String]
 {
   return if null(l) then []
-         else aspectLexTyVarDef(gn, sl, head(l), freshTyVar(fromMaybe(0, lookup(head(l), lk)))) ::
+         else aspectLexTyVarDef(gn, sl, head(l), freshTyVar(fromMaybe(starKind(), lookup(head(l), lk)))) ::
                   addNewLexicalTyVars_ActuallyVariables(gn, sl, lk, tail(l));
 }
 

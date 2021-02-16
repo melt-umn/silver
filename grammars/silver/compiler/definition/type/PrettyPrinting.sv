@@ -1,7 +1,7 @@
 grammar silver:compiler:definition:type;
 
 
-synthesized attribute typepp :: String occurs on PolyType, Context, Type;
+synthesized attribute typepp :: String occurs on PolyType, Context, Type, Kind;
 autocopy attribute boundVariables :: [TyVar] occurs on Context, Type;
 
 function prettyType
@@ -31,6 +31,13 @@ String ::= c::Context tvs::[TyVar]
   c.boundVariables = tvs;
   return c.typepp;
 }
+
+function prettyKind
+String ::= k::Kind
+{
+  return k.typepp;
+}
+
 --------------------------------------------------------------------------------
 
 aspect production monoType
@@ -97,7 +104,7 @@ top::Type ::= c::Type a::Type
     | _ -> prettyTypeWith(top.baseType, top.boundVariables) ++
       if null(top.argTypes) then ""
       else "<" ++ implode(" ", map(prettyTypeWith(_, top.boundVariables), top.argTypes)) ++
-        replicate(length(top.argTypes) - top.baseType.kindArity, " _") ++ ">"
+        replicate(max(length(top.baseType.kindrep.argKinds) - length(top.argTypes), 0), " _") ++ ">"
     end;
 }
 
@@ -166,6 +173,22 @@ aspect production functionType
 top::Type ::= params::Integer namedParams::[String]
 {
   top.typepp = s"(_ ::=${replicate(params, " _") }${if null(namedParams) then "" else "; " ++ implode("::_; ", namedParams) ++ "::_"})";
+}
+
+aspect production starKind
+top::Kind ::=
+{
+  top.typepp = "*";
+}
+
+aspect production arrowKind
+top::Kind ::= k1::Kind k2::Kind
+{
+  top.typepp =
+    case k1 of
+    | arrowKind(_, _) -> s"(${k1.typepp}) -> ${k2.typepp}"
+    | _ -> s"${k1.typepp} -> ${k2.typepp}"
+    end;
 }
 
 --------------------------------------------------------------------------------

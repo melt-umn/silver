@@ -22,7 +22,7 @@ top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name ';'
   
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(equalityInhDcl(inhFName, freshTyVar(0), sourceGrammar=top.grammarName, sourceLocation=inh.location))),
+      [attrDef(defaultEnvItem(equalityInhDcl(inhFName, freshTyVar(starKind()), sourceGrammar=top.grammarName, sourceLocation=inh.location))),
        attrDef(defaultEnvItem(equalitySynDcl(inhFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
       location=top.location);
 }

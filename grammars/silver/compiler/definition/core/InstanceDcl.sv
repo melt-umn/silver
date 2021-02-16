@@ -129,7 +129,11 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 
   top.fullName = id.lookupValue.fullName;
 
-  e.env = newScopeEnv(map(\ c::Context -> c.contextMemberDef(top.grammarName, top.location), memberContexts), top.env);
+  e.env = newScopeEnv(flatMap(\ c::Context ->
+      let instDcl::DclInfo = c.contextMemberDcl(top.grammarName, top.location)
+      in tcInstDef(instDcl) :: transitiveSuperDefs(top.env, top.instanceType, [], instDcl)
+      end, memberContexts),
+    top.env);
   e.originRules = [];
   e.isRoot = true;
 

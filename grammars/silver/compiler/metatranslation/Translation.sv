@@ -74,38 +74,38 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   
   -- "Collection" antiquote productions
   -- Key: antiquote production name
-  -- Value: pair(nonterminal short name, pair(cons production name, append production name))
-  production attribute collectionAntiquoteProductions::[Pair<String Pair<String Pair<String String>>>] with ++;
+  -- Value: (nonterminal short name, cons production name, append production name)
+  production attribute collectionAntiquoteProductions::[(String, String, String, String)] with ++;
   collectionAntiquoteProductions := [];
   antiquoteTranslation <-
     do {
-      -- pair(antiquote production name, antiquote expr AST, rest AST)
-      antiquote::Pair<String Pair<AST Decorated AST>> <-
+      -- (antiquote production name, antiquote expr AST, rest AST)
+      antiquote::(String, AST, Decorated AST) <-
         case children of
         | consAST(
             nonterminalAST(n, consAST(a, _), _),
-            consAST(rest, nilAST())) -> just(pair(n, pair(a, rest)))
+            consAST(rest, nilAST())) -> just((n, a, rest))
         | _ -> nothing()
         end;
-      -- pair(nonterminal short name, pair(cons production name, append production name))
-      trans::Pair<String Pair<String String>> <-
-        lookup(antiquote.fst, collectionAntiquoteProductions);
-      if prodName == trans.snd.fst then just(unit()) else nothing(); -- require prodName == trans.snd.fst
+      -- (nonterminal short name, cons production name, append production name)
+      trans::(String, String, String) <-
+        lookup(antiquote.1, collectionAntiquoteProductions);
+      if prodName == trans.2 then just(unit()) else nothing(); -- require prodName == trans.2
       return
-        case reify(antiquote.snd.fst) of
+        case reify(antiquote.2) of
         | right(e) ->
           mkStrFunctionInvocation(
-            givenLocation, trans.snd.snd, [e, antiquote.snd.snd.translation])
+            givenLocation, trans.3, [e, antiquote.3.translation])
         | left(msg) -> error(s"Error in reifying child of production ${prodName}:\n${msg}")
         end;
     };
   antiquoteTranslation <-
     do {
-      -- pair(nonterminal short name, pair(cons production name, append production name))
-      trans::Pair<String Pair<String String>> <-
+      -- (nonterminal short name, cons production name, append production name)
+      trans::(String, String, String) <-
         lookup(prodName, collectionAntiquoteProductions);
       return
-        errorExpr([err(givenLocation, s"$$${trans.fst} may only occur as a member of ${trans.fst}")], location=givenLocation);
+        errorExpr([err(givenLocation, s"$$${trans.1} may only occur as a member of ${trans.1}")], location=givenLocation);
     };
   
   antiquoteTranslation <-
@@ -301,7 +301,7 @@ top::ASTs ::=
   top.foundLocation = nothing();
 }
 
-attribute givenLocation, translation<[Pair<String Expr>]>, foundLocation occurs on NamedASTs;
+attribute givenLocation, translation<[(String, Expr)]>, foundLocation occurs on NamedASTs;
 
 aspect production consNamedAST
 top::NamedASTs ::= h::NamedAST t::NamedASTs
@@ -317,14 +317,14 @@ top::NamedASTs ::=
   top.foundLocation = nothing();
 }
 
-attribute givenLocation, translation<Pair<String Expr>>, foundLocation occurs on NamedAST;
+attribute givenLocation, translation<(String, Expr)>, foundLocation occurs on NamedAST;
 
 aspect production namedAST
 top::NamedAST ::= n::String v::AST
 {
   top.translation =
     -- hack to get annotation shortname
-    pair(last(explode(":", n)), v.translation);
+    (last(explode(":", n)), v.translation);
   top.foundLocation =
     if n == "silver:core:location"
     then

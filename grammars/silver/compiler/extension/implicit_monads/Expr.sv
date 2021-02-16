@@ -584,7 +584,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     else if q.name == "line" || q.name == "column"
     then intType()
     else if q.name == "location"
-    then nonterminalType("silver:core:Location", 0, false)
+    then nonterminalType("silver:core:Location", [], false)
     else errorType();
 
   top.monadRewritten = access(ne.monadRewritten, '.', new(q), location=top.location);

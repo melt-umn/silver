@@ -163,9 +163,9 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar] head::Context conte
   return valueDef(defaultEnvItem(classMemberDcl(fn,bound,head,contexts,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function ntDef
-Def ::= sg::String  sl::Location  fn::String  arity::Integer  closed::Boolean  tracked::Boolean
+Def ::= sg::String  sl::Location  fn::String  ks::[Kind]  closed::Boolean  tracked::Boolean
 {
-  return typeDef(defaultEnvItem(ntDcl(fn,arity,closed,tracked,sourceGrammar=sg,sourceLocation=sl)));
+  return typeDef(defaultEnvItem(ntDcl(fn,ks,closed,tracked,sourceGrammar=sg,sourceLocation=sl)));
 }
 function termDef
 Def ::= sg::String  sl::Location  fn::String  regex::Regex  easyName::Maybe<String>
@@ -225,7 +225,7 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
   return attrDef(defaultEnvItem(annoDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function classDef
-Def ::= sg::String  sl::Location  fn::String  supers::[Context]  tv::TyVar  k::Integer  members::[Pair<String Boolean>]
+Def ::= sg::String  sl::Location  fn::String  supers::[Context]  tv::TyVar  k::Kind  members::[Pair<String Boolean>]
 {
   return typeDef(defaultEnvItem(clsDcl(fn,supers,tv,k,members,sourceGrammar=sg,sourceLocation=sl)));
 }

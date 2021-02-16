@@ -46,6 +46,7 @@ exports silver:compiler:extension:rewriting;
 exports silver:compiler:extension:silverconstruction;
 exports silver:compiler:extension:astconstruction;
 exports silver:compiler:extension:constructparser;
+exports silver:compiler:extension:tuple;
 exports silver:compiler:extension:regex;
 exports silver:compiler:extension:convenienceaspects;
 
