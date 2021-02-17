@@ -110,6 +110,8 @@ function collectMatchRulesfromMRuleList
 {-
 This function goes into a production pattern (if it is one), extracts out the sub pattern
 for that production, and generates names for each element of that sub pattern.
+e.g Given silver_matchRule {foo(bar(3,x),y) -> y+1 } where foo,bar are productions,
+   it returns [_gen1,_gen2] (where the numbers are generated from genInt)
 -}
 function makeGeneratedNamesFromMatchRule
 [Name] ::= mr::MatchRule loc::Location
@@ -366,34 +368,22 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
 {-
 Compares patterns, if they're
 both production patterns, compares production name
-otherwise compares the kind of pattern, (varname, wildcard, etc)
+otherwise compares the kind of pattern, (varname or wildcard, mostly).
 -}
 function eqKindPattern
 Boolean ::= l::Pattern r::Pattern
 {
-  return case l of
-  | prodAppPattern_named(nameL,_,_,_,_,_) ->
-    case r of
-    | prodAppPattern_named(nameR,_,_,_,_,_) ->
-      nameR.name == nameL.name
-    | _ -> false
-    end
-  | wildcPattern(_) ->
-    case r of
-    | wildcPattern(_) -> true
-    | _ -> false
-    end
-  | varPattern(_) ->
-    case r of
-    | varPattern(_) -> true
-    | _ -> false
-    end
-  | leftPatt ->
-    case r of
-    | prodAppPattern_named(_,_,_,_,_,_) -> false
-    | wildcPattern(_) -> false
-    | _ -> true
-    end
+  return case l,r of
+  | prodAppPattern_named(nameL,_,_,_,_,_),prodAppPattern_named(nameR,_,_,_,_,_) ->
+    nameR.name == nameL.name
+  | wildcPattern(_),wildcPattern(_) -> true
+  | varPattern(_),varPattern(_) -> true
+  | prodAppPattern_named(_,_,_,_,_,_),_ -> false
+  | wildcPattern(_),_ -> false
+  | varPattern(_),_ -> false
+  -- other patterns compare favorably with eachother, for our purposes they're all the
+  -- same "kind" as not being a varPattern,wildcard,or prod.
+  | _,_ -> true
   end;
 }
 
