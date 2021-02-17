@@ -585,7 +585,7 @@ top::ExprLHSExpr ::= q::QNameAttrOccur
   top.unparse = q.unparse;
 
   top.typerep = q.typerep;
-  top.suppliedInhs = [q.dcl.attrOccurring];
+  top.suppliedInhs = if q.attrFound then [q.attrDcl.fullName] else [];
   
   q.attrFor = top.decoratingnt;
 }
