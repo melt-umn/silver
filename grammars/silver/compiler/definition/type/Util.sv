@@ -180,6 +180,7 @@ top::Type ::= te::Type i::Type
 {
   top.isDecorated = true;
   top.decoratedType = te;
+  top.inhSetMembers = i.inhSetMembers;
   top.unifyInstanceDecorated = emptySubst();
 }
 
