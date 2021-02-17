@@ -97,9 +97,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
                  then [err(top.location, "Let bindings may not use a monad type")]
                  else [];
   local errCheck::TypeCheck = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst))
-                              then if isMonad(t.typerep, top.env) && fst(monadsMatch(t.typerep, top.expectedMonad, top.mDownSubst))
-                                   then check(t.typerep, e.mtyperep)
-                                   else check(t.typerep, monadInnerType(e.mtyperep))
+                              then check(t.typerep, monadInnerType(e.mtyperep, top.location))
                               else check(t.typerep, e.mtyperep);
   e.mDownSubst = top.mDownSubst;
   errCheck.downSubst = e.mUpSubst;

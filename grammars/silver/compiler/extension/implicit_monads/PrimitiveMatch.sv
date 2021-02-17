@@ -52,22 +52,10 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                  then [err(top.location, "Cannot match on implicit monadic type " ++ prettyType(pr.patternType))]
                  else [];
 
-  --check the type coming up with the type that's supposed to be
-  --   coming out
-  local attribute errCheck1::TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  errCheck1 = if prRetIsMonadic
-              then if fIsMonadic
-                   then check(pr.mtyperep, f.mtyperep)
-                   else check(monadInnerType(pr.mtyperep), f.mtyperep)
-              else if fIsMonadic
-                   then check(pr.mtyperep, monadInnerType(f.mtyperep))
-                   else check(pr.mtyperep, f.mtyperep);
-
   e.mDownSubst = top.mDownSubst;
   pr.mDownSubst = e.mUpSubst;
   f.mDownSubst = pr.mUpSubst;
-  errCheck1.downSubst = f.mUpSubst;
-  top.mUpSubst = errCheck1.upSubst;
+  top.mUpSubst = f.mUpSubst;
 
   e.expectedMonad = top.expectedMonad;
   pr.expectedMonad = top.expectedMonad;
@@ -79,12 +67,14 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   local freshname::String = "__sv_bindingInAMatchExpression_" ++ toString(genInt());
   local eBind::Expr = monadBind(top.location);
-  local eInnerType::TypeExpr = typerepTypeExpr(monadInnerType(e.mtyperep), location=top.location);
+  local eInnerType::TypeExpr = typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location);
   local binde_lambdaparams::ProductionRHS =
         productionRHSCons(productionRHSElem(name(freshname, top.location), '::',
                                             eInnerType, location=top.location),
                           productionRHSNil(location=top.location), location=top.location);
-  local outty::TypeExpr = typerepTypeExpr(freshType(), location=top.location); --typerepTypeExpr(top.mtyperep, location=top.location);
+  --Since we sometimes need to just use pure() over the top of everything to get a
+  --   monad out, we use a fresh type rather than the top.mtyperep
+  local outty::TypeExpr = typerepTypeExpr(freshType(), location=top.location);
 
   {-We need to make sure that, if we are matching on a decorable type,
     it is decorated.  We need to check both whether the type is
@@ -94,8 +84,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     already).-}
   local eMTyDecorable::Boolean =
         if eIsMonadic
-        then performSubstitution(monadInnerType(e.mtyperep), e.mUpSubst).isDecorable ||
-             (!performSubstitution(monadInnerType(e.mtyperep), e.mUpSubst).isDecorated && pr.patternType.isDecorable)
+        then performSubstitution(monadInnerType(e.mtyperep, top.location), e.mUpSubst).isDecorable ||
+             (!performSubstitution(monadInnerType(e.mtyperep, top.location), e.mUpSubst).isDecorated && pr.patternType.isDecorable)
         else performSubstitution(e.mtyperep, e.mUpSubst).isDecorable ||
              (!performSubstitution(e.mtyperep, e.mUpSubst).isDecorated && pr.patternType.isDecorable);
   local decName::Expr =
@@ -193,8 +183,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
                   then returnify_pr
                   else if tIsMonadic
                        then return_whole_thing
-                       else if tIsMonadic
-                            then Silver_Expr {pure($Expr {just_rewrite})}
+                       else if tIsMonadic --and nothing else is, so we need to add return
+                            then Silver_Expr {$Expr {monadReturn(top.location)}($Expr {just_rewrite})}
                             else just_rewrite;
   top.monadRewritten = mRw;
 }
@@ -226,23 +216,7 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
 
   p.mDownSubst = top.mDownSubst;
   ps.mDownSubst = p.mUpSubst;
-  errCheck1.downSubst = ps.mUpSubst;
-  top.mUpSubst = errCheck1.upSubst;
-  errCheck1.finalSubst = top.finalSubst;
-  local errCheck1::TypeCheck = if isMonad(p.mtyperep, top.env) && monadsMatch(p.mtyperep, top.expectedMonad, top.mDownSubst).fst
-                               then if isMonad(ps.mtyperep, top.env) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
-                                    then check(p.mtyperep, ps.mtyperep)
-                                    else check(monadInnerType(p.mtyperep), ps.mtyperep)
-                               else if isMonad(ps.mtyperep, top.env) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
-                                    then check(p.mtyperep, monadInnerType(ps.mtyperep))
-                                    else check(p.mtyperep, ps.mtyperep);
-  top.merrors <-
-    if errCheck1.typeerror
-    then [err(top.location,
-          --TODO this message should really be specialized based on what is and isn't monadic
-              "pattern expression should have type " ++ errCheck1.leftpp ++
-              " or a monad of this; instead it has type " ++ errCheck1.rightpp)]
-    else [];
+  top.mUpSubst = ps.mUpSubst;
 
   p.expectedMonad = top.expectedMonad;
   ps.expectedMonad = top.expectedMonad;

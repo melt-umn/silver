@@ -76,6 +76,12 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                       top.grammarName, top.compiledGrammars, top.config, top.flowEnv, [],
                                       top.location, 1, top.expectedMonad);
 
+  {-
+    We rewrite by creating a function which does the actual case
+    matching, which we do monad rewriting on.  We then pass the actual
+    things to match on into the function as arguments after the
+    rewriting.
+  -}
   local monadLocal::Expr =
         buildMultiLambda(map(\ p::Pair<Type Pair<Expr String>> ->
                          case p of
@@ -101,11 +107,8 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                        map(\ p::Pair<Type Pair<Expr String>> ->
                              case p of
                              | pair(ty, pair(e, n)) -> e
-                               --if isDecorated(ty) then newFunction('new', '(', e, ')', location=top.location) else e
                              end,
                            monadStuff.fst), top.location);
-  --top.monadRewritten = foldr(\ p::Pair<Type Pair<Expr String>> rest::Expr -> case p of | pair(ty, pair(e, n)) -> buildApplication(buildLambda(n, dropDecorated(ty), rest, top.location), [if isDecorated(ty) then newFunction('new', '(', e, ')', location=top.location) else e], top.location) end, monadLocal.monadRewritten, monadStuff.fst);
-  --top.monadRewritten = unsafeTrace(monadLocal.monadRewritten, print(monadLocal.unparse ++ "\ns type:  " ++ prettyType(test.typerep) ++ "\n\n", unsafeIO()));
   top.mtyperep = monadLocal.mtyperep.outputType;
   top.mUpSubst = monadLocal.mUpSubst;
 
@@ -117,7 +120,8 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                      frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
                                      finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
                                      config=top.config; flowEnv=top.flowEnv;expectedMonad=top.expectedMonad;}
-             in if isMonad(a.mtyperep, top.env) && monadsMatch(a.mtyperep, top.expectedMonad, top.mDownSubst).fst && !isMonad(performSubstitution(x.snd, top.mDownSubst), top.env)
+             in if isMonad(a.mtyperep, top.env) && monadsMatch(a.mtyperep, top.expectedMonad, top.mDownSubst).fst &&
+                   !isMonad(performSubstitution(x.snd, top.mDownSubst), top.env)
                 then decorate x.fst with {env=top.env; mDownSubst=top.mDownSubst;
                                      frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
                                      finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
@@ -171,7 +175,7 @@ elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext 
                                             compiledGrammars=cg; config=c; flowEnv=fe;
                                             expectedMonad=em;}.mtyperep
            in
-             if fst(monadsMatch(ety, em, sub))
+             if isMonad(ety, env) && fst(monadsMatch(ety, em, sub))
              then ((ety, e, newName) :: subcall.1, 
                    baseExpr(qName(loc, newName), location=loc) :: subcall.2)
              else (subcall.1, e::subcall.2)
@@ -186,10 +190,10 @@ Expr ::= bindlst::[(Type, Expr, String)] base::Expr loc::Location
   return case bindlst of
          | [] -> base
          | pair(ty, pair(e, n))::rest ->
-           buildApplication(monadBind(loc), [baseExpr(qNameId(name(n, loc), location=loc), location=loc), buildLambda(n, monadInnerType(ty), buildMonadicBinds(rest, base, loc), loc)], loc)
-           {-buildApplication(monadBind(loc),
-                            [if isDecorated(ty) then newFunction('new', '(', e, ')', location=loc) else e,
-                             buildLambda(n, monadInnerType(ty), buildMonadicBinds(rest, base, loc), loc)], loc)-}
+           buildApplication(monadBind(loc),
+                [baseExpr(qNameId(name(n, loc), location=loc), location=loc),
+                 buildLambda(n, monadInnerType(ty, loc), buildMonadicBinds(rest, base, loc), loc)],
+               loc)
          end;
 }
 
@@ -201,7 +205,7 @@ Expr ::= bindlst::[(Type, Expr, String)] base::Expr loc::Location
 aspect production caseExpr
 top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type {
 
-  local monadLocal::Expr = result.fst; --monadCompileCaseExpr(es, ml, failExpr, retType, top.location);
+  local monadLocal::Expr = result.fst;
   monadLocal.mDownSubst = top.mDownSubst;
   monadLocal.frame = top.frame;
   monadLocal.grammarName = top.grammarName;
@@ -213,21 +217,27 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type {
   monadLocal.finalSubst = top.finalSubst;
   monadLocal.expectedMonad = top.expectedMonad;
 
-  top.monadRewritten = monadLocal.monadRewritten; --result.fst;
-  local result::Pair<Expr [Message]> = monadCompileCaseExpr(es, ml, failExpr, retType, top.location); --, top.mDownSubst, top.frame, top.grammarName, top.compiledGrammars, top.config, top.env, top.expectedMonad);
+  top.monadRewritten = monadLocal.monadRewritten;
+  local result::Pair<Expr [Message]> = monadCompileCaseExpr(es, ml, failExpr, retType, top.location);
+
+  top.merrors <- result.snd;
 }
 
 
 {-
+  We need to compile the case expression for monad rewriting to take
+  advantage of primitive matching's monad rewriting for patterns, but
+  without ending up rewriting any lets which will turn out poorly with
+  rewriting.  For example, the standard compilation involving
+  rewriting to "let __fail = <expr> in <actual match>", which will not
+  work for us if our failure expression has a monadic type, as it
+  often does.
 
-  We need to compile the case expression for monad rewriting, but without ending up rewriting any lets which will turn out poorly with rewriting.
-
+  This is essentially the standard compilation, but without inserting
+  failure lets.
 -}
 function monadCompileCaseExpr
 Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
-                        --a bunch of inherited attributes for rewriting
-                        --subst::Substitution frame::Frame gName::String cGs::[String] config::Config
-                        --env::Decorated Env fEnv::FlowEnv eMonad::Type
 {
   local errors::[Message] =
     case ml of
@@ -253,7 +263,7 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
   local allConCase :: Pair<Expr [Message]> =
       let constructorGroups::[[AbstractMatchRule]] = groupMRules(prodRules) in
       let mappedPatternsErrs::[Pair<PrimPattern [Message]>] =
-          map(allConCaseTransform(freshCurrNameRef, tail(es), failExpr, retType, _),
+          map(monadAllConCaseTransform(freshCurrNameRef, tail(es), failExpr, retType, _),
               constructorGroups) in
       let primPatterns::[PrimPattern] =
           map(\ p::Pair<PrimPattern [Message]> -> p.fst, mappedPatternsErrs) in
@@ -279,7 +289,7 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
      let p::Pair<Expr [Message]> =
         monadCompileCaseExpr(
              tail(es),
-             map(bindHeadPattern(head(es), freshType(){-whatever the first expression's type is?-}, _),
+             map(bindHeadPattern(head(es), freshType(), _),
                  ml),
              failExpr, retType, loc)
              -- A quick note about that freshType() hack: putting it here means there's ONE fresh type
@@ -292,7 +302,7 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
     - The whole segment partitioning is done in a function rather than grabbing the initial segment
       and forwarding to do the rest of the segments (another workable option) for efficiency
    -}
-  local mixedCase :: Pair<Expr [Message]> = buildMixedCaseMatches(es, ml, failExpr, retType, loc);
+  local mixedCase :: Pair<Expr [Message]> = monadBuildMixedCaseMatches(es, ml, failExpr, retType, loc);
 
   -- 4 cases: no patterns left, all constructors, all variables, or mixed con/var.
   -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules
@@ -308,7 +318,10 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
            else mixedCase
     end;
 }
-function allConCaseTransform
+{-
+  Turn matching on all constructors into primitive matching.
+-}
+function monadAllConCaseTransform
 Pair<PrimPattern [Message]> ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[AbstractMatchRule]
 {
   -- TODO: potential source of buggy error messages. We're using head(mrs) as the source of
@@ -344,10 +357,15 @@ Pair<PrimPattern [Message]> ::= currExpr::Expr restExprs::[Expr]  failCase::Expr
     | falsePattern(_) -> pair(booleanPattern("false", terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
     | nilListPattern(_,_) -> pair(nilPattern(subcase, location=l), subCaseCompile.snd)
     | consListPattern(h,_,t) -> pair(conslstPattern(head(names), head(tail(names)), subcase, location=l), subCaseCompile.snd)
-    | _ -> error("Can only have constructor patterns in allConCaseTransform")
+    | _ -> error("Can only have constructor patterns in monadAllConCaseTransform")
     end;
 }
-function buildMixedCaseMatches
+{-
+  Build a matching for patterns of a mixed type, but by passing the
+  rest of the match as the failure expression directly rather than
+  using a let to bind it there.
+-}
+function monadBuildMixedCaseMatches
 Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
 {
   local freshFailName :: String = "__fail_" ++ toString(genInt());
@@ -357,7 +375,7 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
                             initialSegmentPatternType(ml)
               in
                 let pairMixed::Pair<Expr [Message]> =
-                    buildMixedCaseMatches(es, segments.snd, failExpr, retType, loc)
+                    monadBuildMixedCaseMatches(es, segments.snd, failExpr, retType, loc)
                 in
                   --the failure here is the expression for the other matches
                   let pairCompiled::Pair<Expr [Message]> =
@@ -377,24 +395,15 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "case_any " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
 
+  top.merrors := [];
+  top.merrors <- if isMonadPlus_instance then [] else [err(top.location, notMonadPlus)];
+
   ml.mDownSubst = top.mDownSubst;
   local monadInExprs::Boolean =
     monadicallyUsedExpr(es.rawExprs, top.env, ml.mUpSubst, top.frame,
                         top.grammarName, top.compiledGrammars, top.config, top.flowEnv,
                         top.expectedMonad);
-  local monadInClauses::Boolean =
-    foldl((\b::Boolean a::AbstractMatchRule ->
-            b ||
-            let ty::Type = decorate a with {mDownSubst=ml.mUpSubst; temp_env=top.env; temp_frame=top.frame;
-                                   temp_grammarName=top.grammarName; temp_compiledGrammars=top.compiledGrammars;
-                                   temp_config=top.config; temp_flowEnv=top.flowEnv;
-                                   temp_finalSubst=ml.mUpSubst; temp_downSubst=ml.mUpSubst;
-                                   expectedMonad=top.expectedMonad;}.mtyperep
-            in
-              isMonad(ty, top.env) && monadsMatch(ty, top.expectedMonad, top.mDownSubst).fst && fst(monadsMatch(ty, top.expectedMonad, top.mUpSubst))
-            end),
-          false,
-          ml.matchRuleList);
+
   local mplus::Expr = monadPlus(top.location);
   local mzero::Expr = monadZero(top.location);
 
@@ -403,33 +412,104 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
         monadToString(top.expectedMonad) ++ " is not an instance of " ++
         "MonadPlus and cannot be used with case_any";
 
-  --new names for using lets to bind the incoming expressions
-  local newNames::[String] = map(\x::Expr -> "__sv_mcase_var_" ++ toString(genInt()), es.rawExprs);
+  --we need fresh names for the expressions being matched on, which we will use to only evaluate them once
+  local newNames::[String] = map(\ x::Expr -> "__sv_mcase_var_" ++ toString(genInt()), es.rawExprs);
+  local params::[Pair<String Type>] = zipWith(pair, newNames, ml.patternTypeList);
   local nameExprs::[Expr] = map(\x::String -> baseExpr(qName(top.location, x), location=top.location),
                                 newNames);
-  local caseExprs::[Expr] = map(\x::AbstractMatchRule ->
-                                 caseExpr(nameExprs, [x], mzero, freshType(), location=top.location),
-                                ml.matchRuleList);
+
+  --Build a separate case expression for each match rule with mzero as the failure
+  local caseExprs::[Expr] =
+        map(\ x::AbstractMatchRule ->
+             caseExpr(nameExprs, [x], mzero, top.mtyperep, location=top.location),
+            ml.matchRuleList);
+  --Rewrite the case expressions, wrapped in lambdas to provide the names
+  local rewrittenCaseExprs::[Expr] =
+         map(\ x::Expr ->
+               decorate buildMultiLambda(params, x, top.location) with
+                 {mDownSubst = top.mDownSubst;
+                  frame = top.frame;
+                  grammarName = top.grammarName;
+                  compiledGrammars = top.compiledGrammars;
+                  config = top.config;
+                  env = top.env;
+                  flowEnv = top.flowEnv;
+                  downSubst = top.mDownSubst;
+                  finalSubst = top.mDownSubst;
+                  expectedMonad = top.expectedMonad;}.monadRewritten,
+             caseExprs);
+  --Take the rewritten functions and apply them to the names to get expressions of a monad type
+  local appliedCaseExprs::[Expr] =
+        map(\ x::Expr -> buildApplication(x, nameExprs, top.location),
+            rewrittenCaseExprs);
+  --In some cases, they might not return monadic types, so we need to check and add return
+  local typecheckedCaseExprs::[Expr] =
+        map(\ x::Expr ->
+              let ty::Type = decorate x with
+                             {flowEnv = top.flowEnv; env = top.env; config=top.config;
+                              compiledGrammars=top.compiledGrammars; grammarName=top.grammarName;
+                              frame=top.frame; downSubst=top.mDownSubst; finalSubst=top.mDownSubst;
+                             }.typerep
+              in
+                if isMonad(ty, top.env) && monadsMatch(ty, top.expectedMonad, top.mDownSubst).fst
+                then x
+                else buildApplication(monadReturn(top.location), [x], top.location)
+              end,
+            appliedCaseExprs);
+  --Mplus the rewritten-and-applied case expressions together
   local mplused::Expr = foldl(\rest::Expr current::Expr -> 
                                Silver_Expr{
                                  $Expr{mplus}($Expr{rest}, $Expr{current})
                                },
-                              head(caseExprs), tail(caseExprs));
-  --figure out which ones need to get bound in
-  local attribute monadStuff::([(Type, (Expr, String))], [Expr]);
-  monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.mUpSubst, top.frame,
-                                      top.grammarName, top.compiledGrammars, top.config, top.flowEnv,
-                                      newNames, top.location, 1, top.expectedMonad);
-  --bind those ones in over the mpluses
-  local monadLocal::Expr = buildMonadicBinds(monadStuff.fst, mplused, top.location);
-  --put lets for all the names over the top (the binds will overwrite some)
-  local letBound::Expr = foldr(\p::Pair<Expr String> rest::Expr ->
-                                makeLet(top.location, p.snd, freshType(), p.fst, rest),
-                               monadLocal, zipWith(pair, es.rawExprs, newNames));
+                              head(typecheckedCaseExprs), tail(typecheckedCaseExprs));
+  --Use bind and lambdas to change the names of everything being matched on to only evaluate it once
+  local applied::Expr =
+        mcaseBindsApps(es.rawExprs, newNames, top.location, mplused,
+                       top.env, ml.mUpSubst, top.frame, top.grammarName,
+                       top.compiledGrammars, top.config, top.flowEnv, top.expectedMonad);
+
+  top.monadRewritten = applied;
+  top.mUpSubst = ml.mUpSubst;
+  top.mtyperep = monadOfType(top.expectedMonad, freshType());
 
   forwards to if isMonadPlus_instance
-              then letBound
+              then applied
               else errorExpr([err(top.location, notMonadPlus)], location=top.location);
+}
+
+{-
+  We walk down exprs and names to either bind head(exprs) using
+  head(names) for it if it is monadic, otherwise simply applying it to
+  a lambda to change the name.
+-}
+function mcaseBindsApps
+Expr ::= exprs::[Expr] names::[String] loc::Location base::Expr
+         env::Decorated Env sub::Substitution f::BlockContext
+         gn::String cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs
+         fe::Decorated FlowEnv em::Type
+{
+  local subcall::Expr =
+        mcaseBindsApps(tail(exprs), tail(names), loc, base,
+                       env, sub, f, gn, cg, c, fe, em);
+  return
+     if null(exprs)
+     then base
+     else let ety::Type = decorate head(exprs) with
+                             {env=env; mDownSubst=sub; frame=f; grammarName=gn;
+                              downSubst=sub; finalSubst=sub;
+                              compiledGrammars=cg; config=c; flowEnv=fe;
+                              expectedMonad=em;}.mtyperep
+           in
+             if isMonad(ety, env) && fst(monadsMatch(ety, em, sub))
+             then buildApplication(
+                    monadBind(loc),
+                              [if isDecorated(ety) then newFunction('new', '(', head(exprs), ')', location=loc)
+                                                   else head(exprs),
+                               buildLambda(head(names), monadInnerType(ety, loc), subcall, loc)],
+                              loc)
+             else buildApplication(buildLambda(head(names), dropDecorated(ety), subcall, loc),
+                                   [head(exprs)], loc)
+           end;
 }
 
 

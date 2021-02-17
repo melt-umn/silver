@@ -118,12 +118,13 @@ Pair<Boolean Substitution> ::= t1::Type t2::Type subst::Substitution
 
 
 function monadInnerType
-Type ::= mty::Type
+Type ::= mty::Type loc::Location
 {
   return case dropDecorated(mty) of
          | appType(c, a) -> a
          | _ -> error("The monadInnerType function should only be called " ++
-                      "once a type has been verified to be a monad")
+                      "once a type has been verified to be a monad (" ++
+                      prettyType(mty) ++ " at " ++  loc.unparse ++ ")")
          end;
 }
 
