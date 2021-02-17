@@ -570,7 +570,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     && (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
     && sinkVertexName.isJust
     && !null(diff)
-    then [mwdaWrn(e.location, "Pattern match on reference has transitive dependencies on " ++ implode(", ", diff) ++ " which are not known to be supplied to references", top.config.runMwda)]
+    then [mwdaWrn(e.location, "Pattern match on reference of type " ++ prettyType(e.typerep) ++ " has transitive dependencies on " ++ implode(", ", diff), top.config.runMwda)]
     else [];
 
 }
