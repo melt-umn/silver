@@ -203,7 +203,9 @@ top::TypeExpr ::= ty::TypeExpr tl::BracketedTypeExprs
 
   forwards to
     case ty of
-    | nominalTypeExpr(q) when q.lookupType.found && q.lookupType.dcl.isTypeAlias ->
+    | nominalTypeExpr(q) when
+        q.lookupType.found && q.lookupType.dcl.isTypeAlias &&
+        length(q.lookupType.typeScheme.boundVars) > 0 ->
       aliasAppTypeExpr(q, tl, location=top.location)
     | _ -> typeAppTypeExpr(ty, tl, location=top.location)
     end;

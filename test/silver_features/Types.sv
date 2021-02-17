@@ -99,6 +99,21 @@ wrongCode "MyType expects 1 type arguments, but there are 2 supplied here" {
 wrongCode "MyType is a type alias and cannot be partially applied." {
  global t :: MyType<_> = error("");
 }
+
+type MyTypePartial1<a> = NTTwo<a _>;
+
+global mt1::MyTypePartial1<Integer><String> = error("");
+wrongCode "silver_features:MyTypePartial1 expects 1 type arguments, but there are 2 supplied here" {
+  global mt2::MyTypePartial1<Integer String> = error("");
+}
+
+type MyTypePartial2 = NTTwo<_ _>;
+
+wrongCode "MyTypePartial2 has kind * -> * -> *, but there are 1 type arguments supplied here" {
+  global mt3::MyTypePartial2<String><Integer> = error("");
+}
+global mt4::MyTypePartial2<String Integer> = error("");
+
 -- For the moment, errors ignore type names
 wrongCode "Argument 2 of function 'silver:core:eq' expected String but argument is of type Integer" {
  global t :: Boolean = astr1 == anum1;
@@ -106,13 +121,6 @@ wrongCode "Argument 2 of function 'silver:core:eq' expected String but argument 
 
 wrongCode "repeats type variable names" {
  type TypeTwo<a a> = Integer;
-}
-
-wrongCode "NTTwo<a _> has kind * -> *, but kind * is expected here" {
- type MyTypeErr<a> = NTTwo<a _>;
-}
-wrongCode "NTTwo<_ _> has kind * -> * -> *, but kind * is expected here" {
- type MyTypeErr = NTTwo<_ _>;
 }
 
 ----------------------------------------- toString implementations
@@ -182,6 +190,9 @@ global d4 :: Decorated DExpr with {env1, env2} = decorate mkDExpr() with {env1 =
 global d5 :: Decorated DExpr with {decorate} = decorate mkDExpr() with {env1 = [];};
 global d6 :: Decorated DExpr with {decorate, env2} = decorate mkDExpr() with {env1 = []; env2 = [];};
 
-wrongCode "Declaration of global d7 with type Decorated silver_features:DExpr with {silver_features:env1, :env2} has initialization expression with type Decorated silver_features:DExpr with {silver_features:env1}" {
-  global d7 :: Decorated DExpr with {env1, env2} = decorate mkDExpr() with {env1 = [];};
+type Inhs1 = {env1};
+global d7 :: Decorated DExpr with Inhs1 = decorate mkDExpr() with {env1 = [];};
+
+wrongCode "type Decorated silver_features:DExpr with {silver_features:env1, :env2} has initialization expression with type Decorated silver_features:DExpr with {silver_features:env1}" {
+  global dBad :: Decorated DExpr with {env1, env2} = decorate mkDExpr() with {env1 = [];};
 }
