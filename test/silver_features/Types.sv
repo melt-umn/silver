@@ -154,3 +154,34 @@ wrongCode "Declaration of global aft2 with type silver_features:FType<String> ha
  global aft2 :: FType<String> = aft1;
 }
 
+-------------------------------------- Decorated/InhSet types
+
+inherited attribute env1::[String];
+inherited attribute env2::[String];
+nonterminal DExpr with env1, env2;
+flowtype DExpr = decorate {env1};
+production mkDExpr
+top::DExpr ::=
+{
+  production d::DExpr = mkDExpr();
+  d.env1 = top.env1;
+  d.env2 = top.env2;
+
+  production d1 :: Decorated DExpr = d;
+  production d2 :: Decorated DExpr with {env1} = d;
+  production d3 :: Decorated DExpr = d;
+  production d4 :: Decorated DExpr with {env1, env2} = d;
+  production d5 :: Decorated DExpr with {decorate} = d;
+  production d6 :: Decorated DExpr with {decorate, env2} = d;
+}
+
+global d1 :: Decorated DExpr = decorate mkDExpr() with {env1 = [];};
+global d2 :: Decorated DExpr with {env1} = decorate mkDExpr() with {env1 = [];};
+global d3 :: Decorated DExpr = decorate mkDExpr() with {env1 = [];};
+global d4 :: Decorated DExpr with {env1, env2} = decorate mkDExpr() with {env1 = []; env2 = [];};
+global d5 :: Decorated DExpr with {decorate} = decorate mkDExpr() with {env1 = [];};
+global d6 :: Decorated DExpr with {decorate, env2} = decorate mkDExpr() with {env1 = []; env2 = [];};
+
+wrongCode "Declaration of global d7 with type Decorated silver_features:DExpr with {silver_features:env1, :env2} has initialization expression with type Decorated silver_features:DExpr with {silver_features:env1}" {
+  global d7 :: Decorated DExpr with {env1, env2} = decorate mkDExpr() with {env1 = [];};
+}
