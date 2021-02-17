@@ -5,7 +5,7 @@ imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:flow:syntax;
 
-nonterminal TypeExpr  with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsKindStar;
+nonterminal TypeExpr  with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsKindStar, onNt, errorsInhSet;
 nonterminal Signature with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds;
 nonterminal SignatureLHS with config, location, grammarName, errors, env, flowEnv, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds;
 nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, flowEnv, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables;
@@ -32,6 +32,7 @@ inherited attribute initialEnv :: Decorated Env;
 synthesized attribute envBindingTyVars :: Decorated Env;
 
 synthesized attribute errorsKindStar::[Message];
+synthesized attribute errorsInhSet::[Message];
 
 propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs excluding refTypeExpr;
 propagate lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
@@ -61,6 +62,7 @@ top::TypeExpr ::=
     if top.typerep.kindrep != starKind()
     then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
     else [];
+  top.errorsInhSet = top.errors;
 }
 
 abstract production errorTypeExpr
@@ -129,6 +131,9 @@ top::TypeExpr ::= InhSetLCurly_t inhs::FlowSpecInhs '}'
   top.typerep = inhSetType(sort(inhs.inhList));
   
   inhs.onNt = errorType();
+  top.errorsInhSet =
+    -- decorate inhs with {onNt = top.onNt;}.errors
+    decorate inhs with {config = top.config; grammarName = top.grammarName; env = top.env; flowEnv = top.flowEnv; onNt = top.onNt;}.errors;
 }
 
 concrete production nominalTypeExpr
@@ -252,42 +257,20 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr 'with' i::TypeExpr
 {
   top.unparse = "Decorated " ++ i.unparse ++ " " ++ t.unparse;
 
-  -- When i is an inhSetTypeExpr, decorate the inhSetTypeExpr with onNt for better errors and lookup disambiguation.
-  -- TODO: Make this Decorated FlowSpecInhs and only redecorate with onNt
-  local inhs::FlowSpecInhs =
-    case i of
-    | inhSetTypeExpr(_, is, _) -> is
-    | _ -> error("demanded inhs when i not inhSetTypeExpr")
-    end;
-  inhs.config = top.config;
-  inhs.grammarName = top.grammarName;
-  inhs.env = top.env;
-  inhs.flowEnv = top.flowEnv;
-  inhs.onNt = t.typerep;
-
-  local iType::Type =
-    case i of
-    | inhSetTypeExpr(_, _, _) -> inhSetType(sort(inhs.inhList))
-    | _ -> i.typerep
-    end;
-  top.typerep = decoratedType(t.typerep, iType);
+  top.typerep = decoratedType(t.typerep, i.typerep);
   
-  top.errors := t.errors;
+  i.onNt = t.typerep;
+  top.errors := i.errorsInhSet ++ t.errors;
   top.errors <-
-    case i of
-    | inhSetTypeExpr(_, _, _) -> inhs.errors
-    | _ -> i.errors
-    end;
+    if i.typerep.kindrep != inhSetKind()
+    then [err(top.location, s"${i.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind InhSet is expected here")]
+    else [];
   top.errors <-
     case t.typerep.baseType of
     | nonterminalType(_,_,_) -> []
     | skolemType(_) -> []
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
     end;
-  top.errors <-
-    if i.typerep.kindrep != inhSetKind()
-    then [err(i.location, s"${i.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind InhSet is expected here")]
-    else [];
   top.errors <- t.errorsKindStar;
 
   top.lexicalTyVarKinds <-
