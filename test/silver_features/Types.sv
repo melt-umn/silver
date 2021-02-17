@@ -196,3 +196,11 @@ global d7 :: Decorated DExpr with Inhs1 = decorate mkDExpr() with {env1 = [];};
 wrongCode "type Decorated silver_features:DExpr with {silver_features:env1, :env2} has initialization expression with type Decorated silver_features:DExpr with {silver_features:env1}" {
   global dBad :: Decorated DExpr with {env1, env2} = decorate mkDExpr() with {env1 = [];};
 }
+
+wrongCode "Integer has kind *, but kind InhSet is expected here" {
+  global dBad :: Decorated DExpr with Integer = error("");
+}
+
+wrongCode "{env1} has kind InhSet, but kind * is expected here" {
+  global inhBad :: {env1} = 42;
+}
