@@ -1,5 +1,4 @@
 import silver:testing;
-import silver:compiler:extension:tuple;
 
 -- Testing that a tuple of two elements behaves like a pair
 equalityTest((1,2).fst, 1, Integer, silver_tests);
