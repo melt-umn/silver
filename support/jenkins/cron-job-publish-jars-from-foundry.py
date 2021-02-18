@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
+# This runs on coldpress (or any other machine with UMN NFS).
+#
 # */10 * * * * /lhome/gitbot/cron-job-publish-jars-from-foundry.py
 #
-# Note that this currently does not self-update, or check for timestamps.
+# Note that this currently does not self-update, or check for timestamps (it
+# uses hashes instead).
 
 import json
 from os import environ, listdir
@@ -63,7 +66,10 @@ def send_to_slack(fmt, *args):
 
 
 def download_new_files(kont):
-    """Returns whether re-deployment is needed."""
+    """
+    Downloads new files and calls kont with the directory the files are
+    downloaded to.
+    """
     old_hashes = None
     try:
         with open(join(WEB_STORE, "downloads/silver-dev/jars/SHA256SUMS"), "rb") as f:
@@ -83,41 +89,46 @@ def download_new_files(kont):
         with open(join(download_dir, "SHA256SUMS"), "wb") as f:
             f.write(hashes)
 
-        updated = False
-        if old_hashes == hashes:
+        if old_hashes != hashes:
             return kont(download_dir)
 
 
 def install(download_dir):
-    errors = []
-    with TemporaryDirectory() as new_site:
-        check_call(["tar", "-zxf", join(download_dir, f), "-C", new_site])
+    """"""
 
-        for f in listdir(WEB_STORE):
-            if f in dont_delete:
-                continue
-            rmtree(f, onerror=lambda func, path, exc: errors.push((func, path, exc)))
-            if exists(f):
-                copytree(join(new_site, f), join(WEB_STORE, f))
+    errors = []
+
+    # Delete the old files.
+    for f in listdir(WEB_STORE):
+        if f in dont_delete:
+            continue
+        rmtree(f, onerror=lambda func, path, exc: errors.push((func, path, exc)))
+
+    # Untar the new website in.
+    check_call(["tar", "-zxf", join(download_dir, f), "-C", WEB_STORE])
+
+    # Copy the rest of the files into the jars directory.
     for f in listdir(download_dir):
         copytree(join(download_dir, f), join(WEB_STORE, "downloads/silver-dev/jars", f))
+
+    # Fix up permissions.
     check_call(
         ["find", "-type", "d", "-exec", "chmod", "775", "{}", "\;"], cwd=WEB_STORE
     )
     check_call(
         ["find", "-type", "f", "-exec", "chmod", "664", "{}", "\;"], cwd=WEB_STORE
     )
+
     return errors
 
 
 try:
-    old_hashes = None
     errors = download_new_files(install)
     if errors is None:
         pass
     elif len(errors) == 0:
-        send_to_slack("Copied jars!")
+        send_to_slack("Deployed new jars/website!")
     else:
-        send_to_slack("Copied jars with errors: {}", errors)
+        send_to_slack("Deployed new jars/website with errors: `{}`", errors)
 except Exception as e:
     send_to_slack("Caught exception `{}`", e)
