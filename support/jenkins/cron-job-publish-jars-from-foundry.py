@@ -8,8 +8,8 @@
 # uses hashes instead).
 
 import json
-from os import environ, listdir
-from os.path import exists, join
+from os import environ, listdir, remove
+from os.path import exists, isdir, isfile, join
 from shutil import copyfile, rmtree
 from subprocess import check_call, check_output
 import sys
@@ -97,26 +97,35 @@ def install(download_dir):
     """"""
 
     errors = []
+    def onerror(*args):
+        print(*args)
+        errors.append(args)
 
     # Delete the old files.
     for f in listdir(WEB_STORE):
         if f in dont_delete:
             continue
-        rmtree(f, onerror=lambda func, path, exc: errors.push((func, path, exc)))
+        f = join(WEB_STORE, f)
+        if isdir(f):
+            rmtree(f, onerror=onerror)
+        elif isfile(f):
+            remove(f)
+        else:
+            onerror(f + " is neither a directory or a file")
 
     # Untar the new website in.
-    check_call(["tar", "-zxf", join(download_dir, f), "-C", WEB_STORE])
+    check_call(["tar", "--no-overwrite-dir", "--touch", "-zxf", join(download_dir, "website.tar.gz"), "-C", WEB_STORE])
 
-    # Copy the rest of the files into the jars directory.
+    # Copy the rest of the files (the JARs) into the jars directory.
     for f in listdir(download_dir):
-        copytree(join(download_dir, f), join(WEB_STORE, "downloads/silver-dev/jars", f))
+        copyfile(join(download_dir, f), join(WEB_STORE, "downloads/silver-dev/jars", f))
 
     # Fix up permissions.
     check_call(
-        ["find", "-type", "d", "-exec", "chmod", "775", "{}", "\;"], cwd=WEB_STORE
+        ["find", "-type", "d", "-exec", "chmod", "775", "{}", ";"], cwd=WEB_STORE
     )
     check_call(
-        ["find", "-type", "f", "-exec", "chmod", "664", "{}", "\;"], cwd=WEB_STORE
+        ["find", "-type", "f", "-exec", "chmod", "664", "{}", ";"], cwd=WEB_STORE
     )
 
     return errors
