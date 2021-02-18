@@ -13,6 +13,7 @@ synthesized attribute arity :: Integer;
 synthesized attribute baseType :: Type;
 synthesized attribute argTypes :: [Type];
 synthesized attribute inhSetMembers :: [String];
+monoid attribute freeSkolemVars :: [TyVar] with [], setUnionTyVars;
 
 -- Used by Expr, could possibly be replaced by pattern matching for decoratedType
 -- Also used by 'new()'
@@ -46,7 +47,7 @@ top::PolyType ::= ty::Type
   top.isDecorated = ty.isDecorated;
   top.isDecorable = ty.isDecorable;
   top.isTerminal = ty.isTerminal;
-  top.asNtOrDecType = ntOrDecType(ty, freshType());
+  top.asNtOrDecType = ntOrDecType(ty, freshInhSet(), freshType());
 }
 
 aspect production polyType
@@ -71,7 +72,9 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
 }
 
-attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isDecorable, isTerminal, isApplicable, decoratedType, inhSetMembers, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
+attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isDecorable, isTerminal, isApplicable, decoratedType, inhSetMembers, freeSkolemVars, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
+
+propagate freeSkolemVars on Type;
 
 aspect default production
 top::Type ::=
@@ -104,6 +107,7 @@ top::Type ::= tv::TyVar
 aspect production skolemType
 top::Type ::= tv::TyVar
 {
+  top.freeSkolemVars <- [tv];
 }
 
 aspect production appType
@@ -185,11 +189,12 @@ top::Type ::= te::Type i::Type
 }
 
 aspect production ntOrDecType
-top::Type ::= nt::Type  hidden::Type
+top::Type ::= nt::Type inhs::Type hidden::Type
 {
   top.baseType = top;
   top.argTypes = [];
   top.unifyInstanceNonterminal = unify(hidden, nt);
+  --  freshInhSet(), NOT inhs - we are specializing to be decorated, but not to a specific decorated type
   top.unifyInstanceDecorated = unify(hidden, decoratedType(nt, freshInhSet()));
 }
 

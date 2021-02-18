@@ -136,12 +136,13 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
   -- i.e.  "let x :: a = someLocal in wantsUndecorated(x) end"
   --       will mean "let x = decorated version of someLocal in wantsUndecorated(x.undecorate())"
   --       and not "let x = undecorated someLocal in wantsUndecorated(x)"
-  
+
   top.typerep = 
-    -- isDecorated should return true if it's a ntOrDecType.
-    if q.lookupValue.typeScheme.isDecorated
-    then ntOrDecType(q.lookupValue.typeScheme.monoType.decoratedType, freshType())
-    else q.lookupValue.typeScheme.monoType;
+    case q.lookupValue.typeScheme.monoType of
+    -- This should match if it's a ntOrDecType.
+    | decoratedType(t, i) -> ntOrDecType(t, i, freshType())
+    | t -> t
+    end;
 
   propagate downSubst, upSubst;
 }

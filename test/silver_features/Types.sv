@@ -204,3 +204,15 @@ wrongCode "Integer has kind *, but kind InhSet is expected here" {
 wrongCode "{env1} has kind InhSet, but kind * is expected here" {
   global inhBad :: {env1} = 42;
 }
+
+wrongCode "type Decorated silver_features:DExpr with {silver_features:env1} has initialization expression with type Decorated silver_features:DExpr with {silver_features:env2}" {
+  global dBad :: Decorated DExpr with {env1} = let res :: Decorated DExpr with {env2} = error("") in res end;
+}
+
+wrongCode "Expected return type is Decorated silver_features:DExpr with {silver_features:env1}, but the expression has actual type Decorated silver_features:DExpr with a" {
+  function decBad
+  Decorated DExpr with {env1} ::= x::Decorated DExpr with i
+  {
+    return let res :: Decorated DExpr with i = x in res end;
+  }
+}

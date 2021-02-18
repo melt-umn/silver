@@ -72,7 +72,7 @@ top::Type ::= te::Type _
   top.idNameForGenArb = "Decorated" ++ te.idNameForGenArb;
 }
 aspect production ntOrDecType
-top::Type ::= nt::Type  hidden::Type
+top::Type ::= _ _ _
 {
   -- err, shouldn't happen?
   top.idNameForGenArb = "WTFnrOrDecTypeExpr";

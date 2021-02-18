@@ -214,7 +214,7 @@ top::Type ::= inhs::[String]
 {--
  - A *decorated* nonterminal type.
  - @param te  MUST be a 'nonterminalType' or 'varType'/'skolemType'
- - @param i MUST have kind InhSet
+ - @param i  MUST have kind InhSet
  -}
 abstract production decoratedType
 top::Type ::= te::Type i::Type
@@ -230,21 +230,22 @@ top::Type ::= te::Type i::Type
  - It represents a nonterminal that is *either* decorated or undecorated
  - (e.g. when referencing a child) but has not yet been specialized.
  - @param nt  MUST be a 'nonterminalType'
+ - @param inhs  The inh set that we're decorated with if we never specialize - MUST have kind InhSet
  - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(inhs, nt)'
  -                representing state: unspecialized, undecorated, or decorated.
  -}
 
 -- This will ONLY appear in the types of expressions, nowhere else!
 abstract production ntOrDecType
-top::Type ::= nt::Type  hidden::Type
+top::Type ::= nt::Type inhs::Type hidden::Type
 {
   top.freeVariables = case hidden of
-                      | varType(_) -> nt.freeVariables
+                      | varType(_) -> nt.freeVariables ++ inhs.freeVariables
                       | _ -> hidden.freeVariables
                       end;
   
-  -- If we never specialize, we're decorated with nothing.
-  forwards to decoratedType(nt, inhSetType([]));
+  -- If we never specialize, we're decorated.
+  forwards to decoratedType(nt, inhs);
 }
 
 {--
