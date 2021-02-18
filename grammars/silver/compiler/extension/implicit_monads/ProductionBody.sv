@@ -227,7 +227,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
                                                             ($Expr {e.monadRewritten})
                                                       }, location=top.location)
           else errorAttributeDef(e.merrors, dl, attr, e.monadRewritten, location=top.location);
-  forwards to unsafeTrace(fwd, print(top.location.unparse ++ " : Equation:  " ++ fwd.unparse ++ "\n" ++ prettyType(e.mtyperep) ++ "\n\n", unsafeIO()));
+  forwards to fwd;
 }
 
 
