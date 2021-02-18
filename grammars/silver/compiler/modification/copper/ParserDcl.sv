@@ -2,7 +2,7 @@ grammar silver:compiler:modification:copper;
 
 import silver:compiler:driver:util only computeDependencies;
 
-terminal Parser_kwd 'parser' lexer classes {KEYWORD}; -- not RESERVED?
+terminal Parser_kwd 'parser' lexer classes {KEYWORD,RESERVED};
 
 -- TODO: You know, maybe parser specs should get moved over here as well.
 
@@ -32,7 +32,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
     namedSignature(fName, [],
       [namedSignatureElement("stringToParse", stringType()),
        namedSignatureElement("filenameToReport", stringType())],
-      namedSignatureElement("__func__lhs", appType(nonterminalType("silver:core:ParseResult", 1, false), t.typerep)),
+      namedSignatureElement("__func__lhs", appType(nonterminalType("silver:core:ParseResult", [starKind()], false), t.typerep)),
       []);
 
   production spec :: ParserSpec =

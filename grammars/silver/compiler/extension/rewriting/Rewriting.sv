@@ -48,11 +48,11 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   
   local numChildren::Integer = n.lookupValue.typeScheme.arity;
   local annotations::[String] = map(fst, n.lookupValue.typeScheme.typerep.namedTypes);
-  es.appExprTypereps = repeat(nonterminalType("silver:rewrite:Strategy", 0, false), numChildren);
+  es.appExprTypereps = repeat(nonterminalType("silver:rewrite:Strategy", [], false), numChildren);
   es.appExprApplied = n.unparse;
   anns.appExprApplied = n.unparse;
   anns.funcAnnotations =
-    map(pair(_, nonterminalType("silver:rewrite:Strategy", 0, false)), annotations);
+    map(pair(_, nonterminalType("silver:rewrite:Strategy", [], false)), annotations);
   anns.remainingFuncAnnotations = anns.funcAnnotations;
  
   local localErrors::[Message] =
@@ -224,7 +224,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   
   local localErrors::[Message] =
     ty.errors ++ ml.errors ++ checkExpr.errors ++
-    ty.errorsFullyApplied ++
+    ty.errorsKindStar ++
     if null(getTypeDcl("silver:rewrite:Strategy", top.env))
     then [err(top.location, "Term rewriting requires import of silver:rewrite")]
     else [];

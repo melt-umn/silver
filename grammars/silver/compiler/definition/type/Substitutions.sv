@@ -97,7 +97,7 @@ top::Type ::= tv::TyVar
   -- Perform one iteration of substitution
   local partialsubst :: Maybe<Type> =
     case findSubst(tv, top.substitution) of
-    | just(s) when s.kindArity != tv.kindArity -> error("Kind mismatch in applying substitution!")
+    | just(s) when s.kindrep != tv.kindrep -> error("Kind mismatch in applying substitution!")
     | ps -> ps
     end;
   
@@ -131,7 +131,7 @@ top::Type ::= tv::TyVar
   
   local partialsubst :: Maybe<Type> =
     case findSubst(tv, top.substitution) of
-    | just(s) when s.kindArity != tv.kindArity -> nothing()
+    | just(s) when s.kindrep != tv.kindrep -> nothing()
     | ps -> ps
     end;
   
@@ -210,7 +210,7 @@ function mapRenameSubst
 function freshTyVars
 [TyVar] ::= tvs::[TyVar]
 {
-  return map(freshTyVar, map((.kindArity), tvs));
+  return map(freshTyVar, map((.kindrep), tvs));
 }
 
 function zipVarsIntoSubstitution

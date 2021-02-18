@@ -11,12 +11,12 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   production tv :: TyVar =
     case var.typerep.freeVariables of
     | v :: _ -> v
-    | _ -> freshTyVar(0)
+    | _ -> freshTyVar(starKind())
     end;
   production supers::[Context] = cl.contexts; -- *Direct* super classes only, not transitive
   production boundVars::[TyVar] = [tv];
   
-  top.defs := classDef(top.grammarName, id.location, fName, supers, tv, var.typerep.kindArity, body.classMembers) :: body.defs;
+  top.defs := classDef(top.grammarName, id.location, fName, supers, tv, var.typerep.kindrep, body.classMembers) :: body.defs;
   
   -- id *should* be just a Name, but it has to be a QNameType to avoid a reduce/reduce conflict
   top.errors <-

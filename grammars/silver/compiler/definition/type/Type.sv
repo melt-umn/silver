@@ -2,7 +2,7 @@ grammar silver:compiler:definition:type;
 
 option silver:compiler:modification:ffi; -- foreign types
 
-synthesized attribute kindArity :: Integer;
+synthesized attribute kindrep :: Kind;
 synthesized attribute freeVariables :: [TyVar];
 synthesized attribute boundVars :: [TyVar];
 synthesized attribute contexts :: [Context];
@@ -62,7 +62,7 @@ top::Context ::= t::Type
 {--
  - Silver Type Representations.
  -}
-nonterminal Type with kindArity, freeVariables, tracked;
+nonterminal Type with kindrep, freeVariables, tracked;
 synthesized attribute tracked :: Boolean;
 
 aspect default production
@@ -77,7 +77,7 @@ top::Type ::=
 abstract production varType
 top::Type ::= tv::TyVar
 {
-  top.kindArity = tv.kindArity;
+  top.kindrep = tv.kindrep;
   top.freeVariables = [tv];
 }
 
@@ -88,7 +88,7 @@ top::Type ::= tv::TyVar
 abstract production skolemType
 top::Type ::= tv::TyVar
 {
-  top.kindArity = tv.kindArity;
+  top.kindrep = tv.kindrep;
   top.freeVariables = [tv];
 }
 
@@ -98,7 +98,11 @@ top::Type ::= tv::TyVar
 abstract production appType
 top::Type ::= c::Type a::Type
 {
-  top.kindArity = if c.kindArity > 0 then c.kindArity - 1 else 0;
+  top.kindrep =
+    case c.kindrep of
+    | arrowKind(_, k) -> k
+    | _ -> starKind()
+    end;
   top.freeVariables = setUnionTyVars(c.freeVariables, a.freeVariables);
   top.tracked = c.tracked;
 }
@@ -110,7 +114,7 @@ top::Type ::= c::Type a::Type
 abstract production errorType
 top::Type ::=
 {
-  top.kindArity = 0;
+  top.kindrep = starKind();
   top.freeVariables = [];
 }
 
@@ -120,7 +124,7 @@ top::Type ::=
 abstract production intType
 top::Type ::=
 {
-  top.kindArity = 0;
+  top.kindrep = starKind();
   top.freeVariables = [];
 }
 
@@ -130,7 +134,7 @@ top::Type ::=
 abstract production boolType
 top::Type ::=
 {
-  top.kindArity = 0;
+  top.kindrep = starKind();
   top.freeVariables = [];
 }
 
@@ -140,7 +144,7 @@ top::Type ::=
 abstract production floatType
 top::Type ::=
 {
-  top.kindArity = 0;
+  top.kindrep = starKind();
   top.freeVariables = [];
 }
 
@@ -150,7 +154,7 @@ top::Type ::=
 abstract production stringType
 top::Type ::=
 {
-  top.kindArity = 0;
+  top.kindrep = starKind();
   top.freeVariables = [];
 }
 
@@ -162,7 +166,7 @@ top::Type ::=
 abstract production terminalIdType
 top::Type ::=
 {
-  top.kindArity = 0;
+  top.kindrep = starKind();
   top.freeVariables = [];
 }
 
@@ -170,16 +174,16 @@ top::Type ::=
  - An (undecorated) nonterminal type.
  - Note that this is the *unapplied* type constructor for a nonterminal type;
  - e.g. `Pair<String Integer>` would be represented as
- - `apType(apType(nonterminalType("silver:core:Pair", 2, false), stringType()), integerType())`.
+ - `apType(apType(nonterminalType("silver:core:Pair", [starKind(), starKind()], false), stringType()), integerType())`.
  -
  - @param fn  The fully qualified name of the nonterminal.
  - @param k  The number type parameters for that nonterminal.
  - @param tracked  Might this NT be tracked.
  -}
 abstract production nonterminalType
-top::Type ::= fn::String k::Integer tracked::Boolean
+top::Type ::= fn::String ks::[Kind] tracked::Boolean
 {
-  top.kindArity = k;
+  top.kindrep = foldr(arrowKind, starKind(), ks);
   top.freeVariables = [];
   top.tracked = tracked;
 }
@@ -191,7 +195,7 @@ top::Type ::= fn::String k::Integer tracked::Boolean
 abstract production terminalType
 top::Type ::= fn::String
 {
-  top.kindArity = 0;
+  top.kindrep = starKind();
   top.freeVariables = [];
 }
 
@@ -202,7 +206,7 @@ top::Type ::= fn::String
 abstract production decoratedType
 top::Type ::= te::Type
 {
-  top.kindArity = 0;
+  top.kindrep = starKind();
   top.freeVariables = te.freeVariables;
 }
 
@@ -244,26 +248,26 @@ top::Type ::= nt::Type  hidden::Type
 abstract production functionType
 top::Type ::= params::Integer namedParams::[String]
 {
-  top.kindArity = params + length(namedParams) + 1;
+  top.kindrep = constructorKind(params + length(namedParams) + 1);
   top.freeVariables = [];
 }
 
 --------------------------------------------------------------------------------
 
-nonterminal TyVar with kindArity;
+nonterminal TyVar with kindrep;
 
 -- In essence, this should be 'private' to this file.
 synthesized attribute extractTyVarRep :: Integer occurs on TyVar;
 
 abstract production tyVar
-top::TyVar ::= k::Integer i::Integer
+top::TyVar ::= k::Kind i::Integer
 {
-  top.kindArity = k;
+  top.kindrep = k;
   top.extractTyVarRep = i;
 }
 
 function freshTyVar
-TyVar ::= k::Integer
+TyVar ::= k::Kind
 {
   return tyVar(k, genInt());
 }
@@ -271,17 +275,17 @@ TyVar ::= k::Integer
 function freshType
 Type ::=
 {
-  return varType(freshTyVar(0));
+  return varType(freshTyVar(starKind()));
 }
 
 function newSkolemConstant
 Type ::=
 {
-  return skolemType(freshTyVar(0));
+  return skolemType(freshTyVar(starKind()));
 }
 
 -- TODO: Replace with propagated default instance
 instance Eq TyVar {
-  eq = \ tv1::TyVar tv2::TyVar -> tv1.kindArity == tv2.kindArity && tv1.extractTyVarRep == tv2.extractTyVarRep;
+  eq = \ tv1::TyVar tv2::TyVar -> tv1.kindrep == tv2.kindrep && tv1.extractTyVarRep == tv2.extractTyVarRep;
 }
 

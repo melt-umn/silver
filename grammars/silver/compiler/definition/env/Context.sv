@@ -16,8 +16,8 @@ top::Contexts ::=
 
 global foldContexts::(Contexts ::= [Context]) = foldr(consContext, nilContext(), _);
 
-synthesized attribute contextSuperDef::(Def ::= String Location DclInfo) occurs on Context;  -- Instances from context's superclasses
-synthesized attribute contextMemberDef::(Def ::= String Location) occurs on Context; -- Instances from a context on a class member
+synthesized attribute contextSuperDcl::(DclInfo ::= DclInfo String Location) occurs on Context;  -- Instances from context's superclasses
+synthesized attribute contextMemberDcl::(DclInfo ::= String Location) occurs on Context; -- Instances from a context on a class member
 synthesized attribute contextClassName::Maybe<String> occurs on Context;
 
 synthesized attribute resolved::[DclInfo] occurs on Context;
@@ -25,8 +25,8 @@ synthesized attribute resolved::[DclInfo] occurs on Context;
 aspect production instContext
 top::Context ::= cls::String t::Type
 {
-  top.contextSuperDef = instSuperDef(_, _, cls, _);
-  top.contextMemberDef = instConstraintDef(_, _, cls, t); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextSuperDcl = instSuperDcl(cls, _, sourceGrammar=_, sourceLocation=_);
+  top.contextMemberDcl = instConstraintDcl(cls, t, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextClassName = just(cls);
   
   -- Here possibly-decorated types that are still unspecialized at this point
@@ -64,8 +64,8 @@ top::Context ::= cls::String t::Type
 aspect production typeableContext
 top::Context ::= t::Type
 {
-  top.contextSuperDef = typeableSuperDef(_, _, _);
-  top.contextMemberDef = typeableInstConstraintDef(_, _, t); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextSuperDcl = typeableSuperDcl(_, sourceGrammar=_, sourceLocation=_);
+  top.contextMemberDcl = typeableInstConstraintDcl(t, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextClassName = nothing();
 
   top.resolved =

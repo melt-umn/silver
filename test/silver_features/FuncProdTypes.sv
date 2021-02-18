@@ -55,7 +55,7 @@ global foldMaybeInt::(Integer ::= (Integer ::= Integer Integer) Integer Maybe<In
 equalityTest(fints(foldMaybeInt, just(42)).intValue, 42, Integer, silver_tests);
 
 -- Kind mismatch
-wrongCode "f is not fully applied, it has kind arity 1" {
+wrongCode "f has kind * -> *, but kind * is expected here" {
   function badKind
   f ::= f<a>
   { return error(""); }
