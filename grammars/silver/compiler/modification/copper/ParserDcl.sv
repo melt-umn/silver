@@ -2,7 +2,7 @@ grammar silver:compiler:modification:copper;
 
 import silver:compiler:driver:util only computeDependencies;
 
-terminal Parser_kwd 'parser' lexer classes {KEYWORD}; -- not RESERVED?
+terminal Parser_kwd 'parser' lexer classes {KEYWORD,RESERVED};
 
 -- TODO: You know, maybe parser specs should get moved over here as well.
 
