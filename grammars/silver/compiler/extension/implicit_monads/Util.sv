@@ -31,7 +31,7 @@ threaded attribute mDownSubst, mUpSubst::Substitution;
 function isMonad
 Boolean ::= ty::Type env::Decorated Env
 {
-  return case dropDecorated(ty.baseType) of
+  return case dropDecorated(ty) of
          | appType(t, _) -> length(getInstanceDcl("silver:core:Monad", t, env)) > 0
          | t -> length(getInstanceDcl("silver:core:Monad", t, env)) > 0
          end;
@@ -40,7 +40,7 @@ Boolean ::= ty::Type env::Decorated Env
 function isMonadPlus
 Boolean ::= ty::Type env::Decorated Env
 {
-  return case dropDecorated(ty.baseType) of
+  return case dropDecorated(ty) of
          | appType(t, _) -> length(getInstanceDcl("silver:core:MonadPlus", t, env)) > 0
          | t -> length(getInstanceDcl("silver:core:MonadPlus", t, env)) > 0
          end;
@@ -49,7 +49,7 @@ Boolean ::= ty::Type env::Decorated Env
 function isMonadFail
 Boolean ::= ty::Type env::Decorated Env
 {
-  return case dropDecorated(ty.baseType) of
+  return case dropDecorated(ty) of
          | appType(t, _) -> length(getInstanceDcl("silver:core:MonadFail", t, env)) > 0
          | t -> length(getInstanceDcl("silver:core:MonadFail", t, env)) > 0
          end;
@@ -150,7 +150,7 @@ String ::= ty::Type
      | appType(c, _) ->
        --We use nonterminalType to get it to show just an underscore
        --e.g. this gives us Maybe<_>, Either<String _>
-       prettyType(appType(c, nonterminalType("_", 0, false)))
+       prettyType(appType(c, nonterminalType("_", [], false)))
      | _ -> error("Tried to get monadToString for a non-monadic type (" ++ prettyType(ty) ++ ")")
      end;
 }

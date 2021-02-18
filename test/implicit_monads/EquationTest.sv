@@ -10,20 +10,28 @@ restricted inherited attribute r_eq_in::Integer;
 synthesized attribute u_eq_out::Integer;
 inherited attribute u_eq_in::Integer;
 
-nonterminal EquationTest with i_eq_out, i_eq_in, r_eq_out, r_eq_in, u_eq_out, u_eq_in;
+implicit synthesized attribute no_fail_out::State<Integer Integer>;
+implicit inherited attribute no_fail_in::State<Integer Integer>;
 
-nonterminal TurnAround_Eq with i_eq_out, i_eq_in, r_eq_out, r_eq_in, u_eq_out, u_eq_in;
+nonterminal EquationTest with
+   i_eq_out, i_eq_in, r_eq_out, r_eq_in, u_eq_out, u_eq_in,
+   no_fail_in, no_fail_out;
+
+nonterminal TurnAround_Eq with
+   i_eq_out, i_eq_in, r_eq_out, r_eq_in, u_eq_out, u_eq_in,
+   no_fail_in, no_fail_out;
 production turnAround_Eq
 top::TurnAround_Eq ::=
 {
   top.i_eq_out = top.i_eq_in;
   top.r_eq_out = top.r_eq_in;
   top.u_eq_out = top.u_eq_in;
+  top.no_fail_out = top.no_fail_in;
 }
 
 
 
---Test empty equations
+--Test empty equations work with failure monads
 production test_empty_eq1
 top::EquationTest ::=
 {
@@ -40,6 +48,24 @@ equalityTest(test_empty_eq1().i_eq_out, [],
              [Integer], implicit_monad_tests);
 equalityTest(test_empty_eq2(turnAround_Eq()).i_eq_out, [],
              [Integer], implicit_monad_tests);
+
+
+
+--Test empty equations only work with failure monads
+wrongCode "not an instance of MonadFail" {
+  production test_empty_eq_no_fail
+  top::EquationTest ::=
+  {
+    implicit top.no_fail_out = ;
+  }
+}
+wrongCode "not an instance of MonadFail" {
+  production test_empty_eq_no_fail
+  top::EquationTest ::= c::TurnAround_Eq
+  {
+    implicit c.no_fail_in = ;
+  }
+}
 
 
 
