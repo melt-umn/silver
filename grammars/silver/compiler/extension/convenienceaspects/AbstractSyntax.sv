@@ -165,7 +165,8 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
       case (getValueDclInScope(prodName,env)) of
       | [] -> []
       | dcl:: _ ->
-        let dcl :: Decorated DclInfo = decorate dcl with {givenNonterminalType = error("Not actually needed");}
+        let dcl :: Decorated DclInfo with {givenNonterminalType} =
+          decorate dcl with {givenNonterminalType = error("Not actually needed");}
         in
           if dcl.typeScheme.typerep.isApplicable
           then dcl.typeScheme.typerep.inputTypes
