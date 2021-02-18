@@ -94,9 +94,14 @@ def download_new_files(kont):
 
 
 def install(download_dir):
-    """"""
+    """
+    Installs the website and jars, which are expected to be downloaded to download_dir.
+
+    Returns a list of errors that occurred.
+    """
 
     errors = []
+
     def onerror(*args):
         print(*args)
         errors.append(args)
@@ -114,7 +119,20 @@ def install(download_dir):
             onerror(f + " is neither a directory or a file")
 
     # Untar the new website in.
-    check_call(["tar", "--no-overwrite-dir", "--touch", "-zxf", join(download_dir, "website.tar.gz"), "-C", WEB_STORE])
+    # --no-overwrite-dir and --touch are required (for now?) because the
+    # permissions on all the dont_delete dirs are such that we can't write to
+    # them...
+    check_call(
+        [
+            "tar",
+            "--no-overwrite-dir",
+            "--touch",
+            "-zxf",
+            join(download_dir, "website.tar.gz"),
+            "-C",
+            WEB_STORE,
+        ]
+    )
 
     # Copy the rest of the files (the JARs) into the jars directory.
     for f in listdir(download_dir):
@@ -123,6 +141,9 @@ def install(download_dir):
     # Fix up permissions.
     check_call(
         ["find", "-type", "d", "-exec", "chmod", "775", "{}", ";"], cwd=WEB_STORE
+    )
+    check_call(
+        ["find", "-type", "d", "-exec", "chmod", "g+s", "{}", ";"], cwd=WEB_STORE
     )
     check_call(
         ["find", "-type", "f", "-exec", "chmod", "664", "{}", ";"], cwd=WEB_STORE
