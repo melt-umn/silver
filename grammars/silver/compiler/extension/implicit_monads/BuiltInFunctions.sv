@@ -49,6 +49,8 @@ top::Expr ::= e::Decorated Expr
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.originRules = top.originRules;
+  ne.isRoot = false;
   ne.expectedMonad = top.expectedMonad;
   top.merrors := ne.merrors;
   top.mUpSubst = ne.mUpSubst;
@@ -71,12 +73,14 @@ top::Expr ::= e::Decorated Expr
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
   ne.expectedMonad = top.expectedMonad;
+  ne.originRules = top.originRules;
+  ne.isRoot = false;
   top.merrors := ne.merrors;
   top.mUpSubst = ne.mUpSubst;
-  top.mtyperep = if isMonad(ne.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
+  top.mtyperep = if isMonad(ne.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne.mtyperep, top.mDownSubst).fst
                  then monadOfType(ne.mtyperep, intType())
                  else intType();
-  ne.monadicallyUsed = isMonad(ne.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst;
+  ne.monadicallyUsed = isMonad(ne.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne.mtyperep, top.mDownSubst).fst;
   top.monadicNames = ne.monadicNames;
 
   local neUnDec::Expr =
@@ -84,7 +88,7 @@ top::Expr ::= e::Decorated Expr
         then Silver_Expr {new($Expr {ne.monadRewritten})}
         else ne.monadRewritten;
   top.monadRewritten =
-     if isMonad(ne.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
+     if isMonad(ne.mtyperep, top.env) && monadsMatch(top.expectedMonad, ne.mtyperep, top.mDownSubst).fst
      then Silver_Expr {
             $Expr {monadBind(top.location)}
              ($Expr {neUnDec},

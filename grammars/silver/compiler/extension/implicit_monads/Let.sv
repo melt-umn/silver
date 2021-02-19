@@ -19,6 +19,8 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.finalSubst = top.mUpSubst;
   ne.env = newScopeEnv(la.mdefs, top.env);
   ne.expectedMonad = top.expectedMonad;
+  ne.originRules = top.originRules;
+  ne.isRoot = top.isRoot;
 
   la.mDownSubst = top.mDownSubst;
   top.mUpSubst = ne.mUpSubst;
@@ -58,7 +60,10 @@ top::Expr ::= la::AssignExpr  e::Expr
          foldr(\x::Pair<Name TypeExpr> y::Expr ->
                  buildApplication(mbind,
                      [baseExpr(qName(top.location, x.fst.name), location=top.location),
-                      buildLambda(x.fst.name, x.snd.typerep, y, top.location)], top.location),
+                      buildLambda(x.fst.name,
+                                  decorate x.snd with
+                                     {env=top.env; grammarName=top.grammarName; config=top.config;}.typerep,
+                                  y, top.location)], top.location),
                inside, la.bindInList);
 }
 

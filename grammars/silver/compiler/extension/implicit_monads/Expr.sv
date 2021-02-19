@@ -164,6 +164,8 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.originRules = top.originRules;
+  ne.isRoot = false;
   local nes::AppExprs = new(es);
   nes.mDownSubst = ne.mUpSubst;
   nes.flowEnv = top.flowEnv;
@@ -174,6 +176,8 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   nes.frame = top.frame;
   nes.finalSubst = top.finalSubst;
   nes.downSubst = top.downSubst;
+  nes.originRules = top.originRules;
+  nes.isRoot = false;
   nes.appExprTypereps = reverse(performSubstitution(ne.mtyperep, ne.mUpSubst).inputTypes);
   nes.appExprApplied = ne.unparse;
   nes.monadArgumentsAllowed = acceptableMonadFunction(e);
@@ -270,6 +274,8 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   t.frame = top.frame;
   t.finalSubst = top.finalSubst;
   t.downSubst = top.downSubst;
+  t.isRoot = top.isRoot;
+  t.originRules = top.originRules;
   t.expectedMonad = top.expectedMonad;
 
   t.monadicallyUsed = top.monadicallyUsed;
@@ -399,6 +405,22 @@ top::Expr ::= '(' '.' q::QName ')'
   top.monadRewritten = attributeSection('(', '.', q, ')', location=top.location);
 }
 
+aspect production noteAttachment
+top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
+{
+  top.merrors := e.merrors;
+
+  e.mDownSubst = top.mDownSubst;
+  top.mUpSubst = e.mUpSubst;
+
+  top.mtyperep = e.mtyperep;
+
+  e.monadicallyUsed = top.monadicallyUsed;
+  top.monadicNames = e.monadicNames;
+
+  top.monadRewritten = noteAttachment('attachNote', note, 'on', e.monadRewritten, 'end', location=top.location);
+}
+
 aspect production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
 {
@@ -414,6 +436,8 @@ top::Expr ::= e::Expr '.' 'forward'
   ne.config = top.config;
   ne.env = top.env;
   ne.flowEnv = top.flowEnv;
+  ne.originRules = top.originRules;
+  ne.isRoot = false;
   ne.monadicallyUsed = false; --this needs to change when we decorated monadic trees
 
   --apparently there isn't a downSubst equation normally?
@@ -426,6 +450,8 @@ top::Expr ::= e::Expr '.' 'forward'
   res_e.config = top.config;
   res_e.env = top.env;
   res_e.flowEnv = top.flowEnv;
+  res_e.isRoot = false;
+  res_e.originRules = top.originRules;
   top.notExplicitAttributes := res_e.notExplicitAttributes;
 
   top.merrors := ne.errors;
@@ -548,6 +574,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.originRules = top.originRules;
+  ne.isRoot = false;
   ne.expectedMonad = top.expectedMonad;
 
   ne.monadicallyUsed = false; --this needs to change when we decorate monadic trees
@@ -592,6 +620,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.originRules = top.originRules;
+  ne.isRoot = false;
   ne.expectedMonad = top.expectedMonad;
 
   top.merrors := ne.merrors;
@@ -627,6 +657,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.originRules = top.originRules;
+  ne.isRoot = false;
   ne.expectedMonad = top.expectedMonad;
 
   ne.monadicallyUsed = false; --this needs to change when we decorate monadic trees
@@ -671,6 +703,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.originRules = top.originRules;
+  ne.isRoot = false;
   ne.expectedMonad = top.expectedMonad;
 
   ne.monadicallyUsed = false; --this needs to change when we decorate monadic trees
@@ -715,6 +749,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.isRoot = false;
+  ne.originRules = top.originRules;
   ne.expectedMonad = top.expectedMonad;
 
   top.monadicNames = [];
@@ -1893,6 +1929,8 @@ top::Expr ::= e::Decorated Expr
   ne.frame = top.frame;
   ne.finalSubst = top.finalSubst;
   ne.downSubst = top.downSubst;
+  ne.originRules = top.originRules;
+  ne.isRoot = top.isRoot;
   ne.expectedMonad = top.expectedMonad;
 
   top.merrors := ne.merrors;

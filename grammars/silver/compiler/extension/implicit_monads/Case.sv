@@ -19,7 +19,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   local monadInExprs::Boolean =
     monadicallyUsedExpr(es.rawExprs, top.env, ml.mUpSubst, top.frame,
                         top.grammarName, top.compiledGrammars, top.config, top.flowEnv,
-                        top.expectedMonad);
+                        top.expectedMonad, false, top.originRules);
   local monadInClauses::Boolean =
     foldl((\b::Boolean a::AbstractMatchRule ->
             b ||
@@ -29,7 +29,8 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                    temp_finalSubst=ml.mUpSubst; temp_downSubst=ml.mUpSubst;
                                    expectedMonad=top.expectedMonad;}.mtyperep
             in
-              isMonad(ty, top.env) && monadsMatch(ty, top.expectedMonad, ml.mUpSubst).fst && fst(monadsMatch(ty, top.expectedMonad, top.mUpSubst))
+              isMonad(ty, top.env) &&
+              monadsMatch(ty, top.expectedMonad, ml.mUpSubst).fst && fst(monadsMatch(ty, top.expectedMonad, ml.mUpSubst))
             end),
           false,
           ml.matchRuleList);
@@ -74,7 +75,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   local attribute monadStuff::([(Type, Expr, String)], [Expr]);
   monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.mUpSubst, top.frame,
                                       top.grammarName, top.compiledGrammars, top.config, top.flowEnv, [],
-                                      top.location, 1, top.expectedMonad);
+                                      top.location, 1, top.expectedMonad, top.isRoot, top.originRules);
 
   {-
     We rewrite by creating a function which does the actual case
@@ -102,6 +103,8 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   monadLocal.downSubst = ml.mUpSubst;
   monadLocal.finalSubst = top.finalSubst;
   monadLocal.expectedMonad = top.expectedMonad;
+  monadLocal.originRules = top.originRules;
+  monadLocal.isRoot = false;
   top.monadRewritten =
       buildApplication(monadLocal.monadRewritten,
                        map(\ p::Pair<Type Pair<Expr String>> ->
@@ -119,14 +122,15 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
              let a::Decorated Expr = decorate x.fst with {env=top.env; mDownSubst=top.mDownSubst;
                                      frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
                                      finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
-                                     config=top.config; flowEnv=top.flowEnv;expectedMonad=top.expectedMonad;}
+                                     config=top.config; flowEnv=top.flowEnv;expectedMonad=top.expectedMonad;
+                                     isRoot=top.isRoot; originRules=top.originRules;}
              in if isMonad(a.mtyperep, top.env) && monadsMatch(a.mtyperep, top.expectedMonad, top.mDownSubst).fst &&
                    !isMonad(performSubstitution(x.snd, top.mDownSubst), top.env)
                 then decorate x.fst with {env=top.env; mDownSubst=top.mDownSubst;
                                      frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
                                      finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
                                      config=top.config; flowEnv=top.flowEnv; monadicallyUsed=true;
-                                     expectedMonad=top.expectedMonad;}.monadicNames
+                                     expectedMonad=top.expectedMonad; isRoot=top.isRoot; originRules=top.originRules;}.monadicNames
                 else []
              end ++ l,
            monadLocal.monadicNames, zipWith(\x::Expr y::Type -> pair(x,y), es.rawExprs, ml.patternTypeList));
@@ -136,6 +140,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
 function monadicallyUsedExpr
 Boolean ::= elst::[Expr] env::Decorated Env sub::Substitution f::BlockContext gn::String
   cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::Decorated FlowEnv em::Type
+  iR::Boolean oR::[Decorated Expr]
 {
   return case elst of
               | [] -> false
@@ -143,9 +148,9 @@ Boolean ::= elst::[Expr] env::Decorated Env sub::Substitution f::BlockContext gn
                 let etyp::Type = decorate e with {env=env; mDownSubst=sub; frame=f; grammarName=gn;
                                                   downSubst=sub; finalSubst=sub;
                                                   compiledGrammars=cg; config=c; flowEnv=fe;
-                                                  expectedMonad=em;}.mtyperep
+                                                  expectedMonad=em; isRoot=iR; originRules=oR;}.mtyperep
                 in
-                  fst(monadsMatch(etyp, em, sub)) ||  monadicallyUsedExpr(etl, env, sub, f, gn, cg, c, fe, em)
+                  fst(monadsMatch(etyp, em, sub)) ||  monadicallyUsedExpr(etl, env, sub, f, gn, cg, c, fe, em, iR, oR)
                 end
               end;
 }
@@ -156,11 +161,11 @@ function monadicMatchTypesNames
 ([(Type, (Expr, String))], [Expr]) ::=
 elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext gn::String
   cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::Decorated FlowEnv names::[String]
-  loc::Location index::Integer em::Type
+  loc::Location index::Integer em::Type iR::Boolean oR::[Decorated Expr]
 {
   local attribute subcall::([(Type, Expr, String)], [Expr]);
   subcall = case elst, tylst of
-            | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, env, sub, f, gn, cg, c, fe, ntail, loc, index+1, em)
+            | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, env, sub, f, gn, cg, c, fe, ntail, loc, index+1, em, iR, oR)
             end;
   local ntail::[String] = if null(names) then [] else tail(names);
   local newName::String = if null(names)
@@ -173,7 +178,7 @@ elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext 
            let ety::Type = decorate e with {env=env; mDownSubst=sub; frame=f; grammarName=gn;
                                             downSubst=sub; finalSubst=sub;
                                             compiledGrammars=cg; config=c; flowEnv=fe;
-                                            expectedMonad=em;}.mtyperep
+                                            expectedMonad=em; isRoot=iR; originRules=oR;}.mtyperep
            in
              if isMonad(ety, env) && fst(monadsMatch(ety, em, sub))
              then ((ety, e, newName) :: subcall.1, 
@@ -216,6 +221,8 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type {
   monadLocal.downSubst = top.mDownSubst;
   monadLocal.finalSubst = top.finalSubst;
   monadLocal.expectedMonad = top.expectedMonad;
+  monadLocal.originRules = top.originRules;
+  monadLocal.isRoot = top.isRoot;
 
   top.monadRewritten = monadLocal.monadRewritten;
   local result::Pair<Expr [Message]> = monadCompileCaseExpr(es, ml, failExpr, retType, top.location);
@@ -400,9 +407,9 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
 
   ml.mDownSubst = top.mDownSubst;
   local monadInExprs::Boolean =
-    monadicallyUsedExpr(es.rawExprs, top.env, ml.mUpSubst, top.frame,
-                        top.grammarName, top.compiledGrammars, top.config, top.flowEnv,
-                        top.expectedMonad);
+        monadicallyUsedExpr(es.rawExprs, top.env, ml.mUpSubst, top.frame,
+                            top.grammarName, top.compiledGrammars, top.config, top.flowEnv,
+                            top.expectedMonad, false, top.originRules);
 
   local mplus::Expr = monadPlus(top.location);
   local mzero::Expr = monadZero(top.location);
@@ -436,7 +443,10 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                   flowEnv = top.flowEnv;
                   downSubst = top.mDownSubst;
                   finalSubst = top.mDownSubst;
-                  expectedMonad = top.expectedMonad;}.monadRewritten,
+                  expectedMonad = top.expectedMonad;
+                  isRoot = top.isRoot;
+                  originRules = top.originRules;
+                 }.monadRewritten,
              caseExprs);
   --Take the rewritten functions and apply them to the names to get expressions of a monad type
   local appliedCaseExprs::[Expr] =
@@ -449,6 +459,7 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                              {flowEnv = top.flowEnv; env = top.env; config=top.config;
                               compiledGrammars=top.compiledGrammars; grammarName=top.grammarName;
                               frame=top.frame; downSubst=top.mDownSubst; finalSubst=top.mDownSubst;
+                              isRoot=top.isRoot; originRules=top.originRules;
                              }.typerep
               in
                 if isMonad(ty, top.env) && monadsMatch(ty, top.expectedMonad, top.mDownSubst).fst
@@ -466,7 +477,8 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   local applied::Expr =
         mcaseBindsApps(es.rawExprs, newNames, top.location, mplused,
                        top.env, ml.mUpSubst, top.frame, top.grammarName,
-                       top.compiledGrammars, top.config, top.flowEnv, top.expectedMonad);
+                       top.compiledGrammars, top.config, top.flowEnv,
+                       top.expectedMonad, top.isRoot, top.originRules);
 
   top.monadRewritten = applied;
   top.mUpSubst = ml.mUpSubst;
@@ -486,11 +498,11 @@ function mcaseBindsApps
 Expr ::= exprs::[Expr] names::[String] loc::Location base::Expr
          env::Decorated Env sub::Substitution f::BlockContext
          gn::String cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs
-         fe::Decorated FlowEnv em::Type
+         fe::Decorated FlowEnv em::Type iR::Boolean oR::[Decorated Expr]
 {
   local subcall::Expr =
         mcaseBindsApps(tail(exprs), tail(names), loc, base,
-                       env, sub, f, gn, cg, c, fe, em);
+                       env, sub, f, gn, cg, c, fe, em, iR, oR);
   return
      if null(exprs)
      then base
@@ -498,7 +510,8 @@ Expr ::= exprs::[Expr] names::[String] loc::Location base::Expr
                              {env=env; mDownSubst=sub; frame=f; grammarName=gn;
                               downSubst=sub; finalSubst=sub;
                               compiledGrammars=cg; config=c; flowEnv=fe;
-                              expectedMonad=em;}.mtyperep
+                              expectedMonad=em; originRules = oR;
+                              isRoot = iR;}.mtyperep
            in
              if isMonad(ety, env) && fst(monadsMatch(ety, em, sub))
              then buildApplication(
@@ -574,6 +587,8 @@ top::MatchRule ::= pt::PatternList arr::Arrow_kwd e::Expr
   ne.frame = top.frame;
   ne.finalSubst = top.mDownSubst;
   ne.downSubst = top.mDownSubst;
+  ne.originRules = [];
+  ne.isRoot = false;
 
   top.patternTypeList = pt.patternTypeList;
 
@@ -592,6 +607,8 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr arr::Arrow_kwd e::Expr
   ncond.frame = top.frame;
   ncond.finalSubst = top.mDownSubst;
   ncond.downSubst = top.mDownSubst;
+  ncond.originRules = [];
+  ncond.isRoot = false;
   local ne::Expr = e;
   ne.flowEnv = top.temp_flowEnv;
   ne.env = top.env;
@@ -601,6 +618,8 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr arr::Arrow_kwd e::Expr
   ne.frame = top.frame;
   ne.finalSubst = top.mDownSubst;
   ne.downSubst = top.mDownSubst;
+  ne.originRules = [];
+  ne.isRoot = false;
 
   top.patternTypeList = pt.patternTypeList;
 
@@ -619,6 +638,8 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern arr::A
   ncond.frame = top.frame;
   ncond.finalSubst = top.mDownSubst;
   ncond.downSubst = top.mDownSubst;
+  ncond.originRules = [];
+  ncond.isRoot = false;
   local ne::Expr = e;
   ne.flowEnv = top.temp_flowEnv;
   ne.env = top.env;
@@ -628,6 +649,8 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern arr::A
   ne.frame = top.frame;
   ne.finalSubst = top.mDownSubst;
   ne.downSubst = top.mDownSubst;
+  ne.originRules = [];
+  ne.isRoot = false;
 
   top.patternTypeList = pt.patternTypeList;
 
@@ -676,6 +699,8 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<(Expr, Maybe<Patt
   ne.frame = top.temp_frame;
   ne.finalSubst = top.temp_finalSubst;
   ne.downSubst = top.temp_downSubst;
+  ne.originRules = [];
+  ne.isRoot = false;
 
   ne.mDownSubst = top.mDownSubst;
   ne.expectedMonad = top.expectedMonad;

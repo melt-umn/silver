@@ -16,6 +16,8 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
   top.productionAttributes := [];
   top.defs := [];
 
+  top.containsPluck = false;
+
   local merrors::[Message] =
     (if isMonadFail(attr.typerep, top.env)
      then []
@@ -49,6 +51,8 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
 
   top.productionAttributes := [];
   top.defs := [];
+
+  top.containsPluck = false;
 
   local merrors::[Message] =
        if attr.found && dl.found
@@ -85,6 +89,8 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
 
   top.productionAttributes := [];
   top.defs := [];
+
+  top.containsPluck = false;
 
   local merrors::[Message] =
     if attr.found && dl.found
@@ -124,6 +130,8 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
 
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
+
+  top.containsPluck = false;
 
   local restrictedErr::[Message] =
            [err(top.location,
@@ -173,6 +181,10 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.downSubst = top.downSubst;
+  e.originRules = top.originRules;
+  e.isRoot = true;
+
+  top.containsPluck = false;
 
   local merrors::[Message] =
      --gives errors for implicit/unrestricted attributes used
@@ -191,6 +203,10 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
   e.downSubst = top.downSubst;
+  e.originRules = top.originRules;
+  e.isRoot = true;
+
+  top.containsPluck = false;
 
   local merrors::[Message] =
      --gives errors for implicit/unrestricted attributes used
@@ -215,8 +231,12 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
   e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;
   e.env = top.env;
+  e.originRules = top.originRules;
+  e.isRoot = true;
 
   e.expectedMonad = attr.typerep;
+
+  top.containsPluck = false;
 
   local fwd::ProductionStmt =
           if null(e.merrors)
@@ -240,8 +260,12 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
   e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;
   e.env = top.env;
+  e.originRules = top.originRules;
+  e.isRoot = true;
 
   e.expectedMonad = attr.typerep;
+
+  top.containsPluck = false;
 
   local fwd::ProductionStmt =
           if null(e.merrors)
