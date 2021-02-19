@@ -155,7 +155,7 @@ Def ::= sg::String  sl::Location  ns::NamedSignature
 function globalDef
 Def ::= sg::String  sl::Location  fn::String  ty::Type
 {
-  return valueDef(defaultEnvItem(globalValueDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
+  return valueDef(defaultEnvItem(globalValueDcl(fn, ty.freeVariables, ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function classMemberDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar] head::Context contexts::[Context] ty::Type
