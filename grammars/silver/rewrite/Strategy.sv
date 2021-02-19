@@ -38,7 +38,7 @@ top::Strategy ::= s1::Strategy s2::Strategy
   top.pp = pp"(${s1.pp} <* ${s2.pp})";
   s1.term = top.term;
   s2.term = s1.result.fromJust;
-  top.result = bindMaybe(s1.result, \ AST -> s2.result);
+  top.result = bind(s1.result, \ AST -> s2.result);
 }
 
 abstract production choice
