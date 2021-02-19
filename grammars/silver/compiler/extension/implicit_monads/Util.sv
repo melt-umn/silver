@@ -18,10 +18,16 @@ grammar silver:compiler:extension:implicit_monads;
 -}
 
 
+--The monad of the attribute the equation for which we are rewriting
 autocopy attribute expectedMonad::Type;
+--The rewritten version of the current expression, exprs, etc.
 synthesized attribute monadRewritten<a>::a;
+--Errors encountered in rewriting
 synthesized attribute merrors::[Message] with ++;
+--The type in the expression based on implicit monads
+--We can't just use the normal typerep because it depends on the implicit monads
 synthesized attribute mtyperep::Type;
+
 
 -- TODO: There's lots of places where we can't automatically propagate these because
 -- the host downSubst/upSubst attributes are mixed in too. 

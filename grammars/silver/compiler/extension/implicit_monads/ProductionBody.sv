@@ -8,6 +8,7 @@ terminal Unrestricted_kwd    'unrestricted'     lexer classes {KEYWORD,RESERVED}
 
 
 --Write an empty equation filled in by an appropriate fail
+--We want to keep the 'implicit' keyword here so people don't accidentally write empty equations
 concrete production emptyAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 {
