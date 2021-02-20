@@ -18,13 +18,16 @@ grammar silver:compiler:extension:implicit_monads;
 -}
 
 
---imports silver:compiler:extension:list;
-
-
+--The monad of the attribute the equation for which we are rewriting
 autocopy attribute expectedMonad::Type;
+--The rewritten version of the current expression, exprs, etc.
 synthesized attribute monadRewritten<a>::a;
+--Errors encountered in rewriting
 synthesized attribute merrors::[Message] with ++;
+--The type in the expression based on implicit monads
+--We can't just use the normal typerep because it depends on the implicit monads
 synthesized attribute mtyperep::Type;
+
 
 -- TODO: There's lots of places where we can't automatically propagate these because
 -- the host downSubst/upSubst attributes are mixed in too. 
@@ -32,35 +35,32 @@ threaded attribute mDownSubst, mUpSubst::Substitution;
 
 
 function isMonad
-Boolean ::= ty::Type
+Boolean ::= ty::Type env::Decorated Env
 {
-  return case ty.baseType of
-         | nonterminalType(name, _, _) ->
-           (name == "silver:core:Maybe") ||
-           (name == "silver:core:Either") ||
-           (name == "silver:core:List") ||
-           (name == "silver:core:IOMonad") ||
-           (name == "silver:core:State")
-         | decoratedType(t) -> isMonad(t)
-         | _ -> false
+  return case dropDecorated(ty) of
+         | appType(t, _) -> length(getInstanceDcl("silver:core:Monad", t, env)) > 0
+         | t -> length(getInstanceDcl("silver:core:Monad", t, env)) > 0
          end;
 }
 
-
-{-
-  Since we're translating before doing most error checking, we want to
-  avoid translating if we have an error type to make errors easier to
-  trace back to their original location, so we need a way to check for
-  that.
--}
-function isError
-Boolean ::= ty::Type
+function isMonadPlus
+Boolean ::= ty::Type env::Decorated Env
 {
-  return case ty of
-         | errorType() -> true
-         | _ -> false
+  return case dropDecorated(ty) of
+         | appType(t, _) -> length(getInstanceDcl("silver:core:MonadPlus", t, env)) > 0
+         | t -> length(getInstanceDcl("silver:core:MonadPlus", t, env)) > 0
          end;
 }
+
+function isMonadFail
+Boolean ::= ty::Type env::Decorated Env
+{
+  return case dropDecorated(ty) of
+         | appType(t, _) -> length(getInstanceDcl("silver:core:MonadFail", t, env)) > 0
+         | t -> length(getInstanceDcl("silver:core:MonadFail", t, env)) > 0
+         end;
+}
+
 
 function dropDecorated
 Type ::= ty::Type
@@ -82,37 +82,33 @@ Boolean ::= ty::Type
 }
 
 
-{-this checks two types are the same monad, (assuming they are monads)
+{-This checks two types are the same monad, (assuming they are monads)
   though not necessarily the same monadic type (see discussion above)-}
 function monadsMatch
 Pair<Boolean Substitution> ::= ty1::Type ty2::Type subst::Substitution
 {
-  return case ty1, ty2 of
-         | nonterminalType(name1, k1, _), nonterminalType(name2, k2, _) ->
-           pair(name1 == name2 && k1 == k2 , subst)
-         | appType(c1, a1), appType(c2, a2) -> tyMatch(c1, c2, subst)
-         | listType(_), listType(_) -> pair(true, subst)
-         | decoratedType(t), _ -> monadsMatch(t, ty2, subst)
-         | _, decoratedType(t) -> monadsMatch(ty1, t, subst)
-         | _, _ -> pair(false, subst)
-         end;
+  return
+     case dropDecorated(ty1), dropDecorated(ty2) of
+     | appType(c1, _), appType(c2, _) ->
+       tyMatch(c1, c2, subst)
+     | _, _ -> pair(false, subst)
+     end;
 }
 
 
-{-This is the easiest way to get case_all translation working.  We
+{-This is the easiest way to get case_any translation working.  We
   would be better off getting the error checking to occur prior to
-  rewriting so these functions don't show up.-}
+  rewriting so these functions don't show up.
+
+  We also need to use this because we occasionally need to use new to
+  drop the decoration from the type of things we're passing into
+  binds.-}
 function acceptableMonadFunction
 Boolean ::= f::Decorated Expr
 {
   return case f of
          | functionReference(qNameId(name)) ->
-           case name.name of
-           | "mplusMaybe" -> true
-           | "mplusEither" -> true
-           | "mplusList" -> true
-           | _ -> false
-           end
+           name.name == "silver:core:alt"
          | _ -> false
          end;
 }
@@ -128,14 +124,13 @@ Pair<Boolean Substitution> ::= t1::Type t2::Type subst::Substitution
 
 
 function monadInnerType
-Type ::= mty::Type
+Type ::= mty::Type loc::Location
 {
-  return case mty of
+  return case dropDecorated(mty) of
          | appType(c, a) -> a
-         | listType(ty) -> ty
-         | decoratedType(t) -> monadInnerType(t)
          | _ -> error("The monadInnerType function should only be called " ++
-                      "once a type has been verified to be a monad")
+                      "once a type has been verified to be a monad (" ++
+                      prettyType(mty) ++ " at " ++  loc.unparse ++ ")")
          end;
 }
 
@@ -145,11 +140,9 @@ Type ::= mty::Type
 function monadOfType
 Type ::= mty::Type newInner::Type
 {
-  return case mty of
-         | listType(_) -> listType(newInner)
+  return case dropDecorated(mty) of
          | appType(c, _) -> appType(c, newInner)
-         | decoratedType(t) -> monadOfType(t, newInner)
-         | _ -> error("Tried to take a monad out of a non-monadic type to apply")
+         | _ -> error("Tried to take a monad out of a non-monadic type (" ++ prettyType(mty) ++ ") to apply")
          end;
 }
 
@@ -158,161 +151,52 @@ Type ::= mty::Type newInner::Type
 function monadToString
 String ::= ty::Type
 {
-  return case ty of
-         | listType(_) ->
-           "[a]"
-         | appType(nonterminalType("silver:core:Maybe", _, _), _) ->
-           "Maybe<a>"
-         | appType(appType(nonterminalType("silver:core:Either", _, _), p), _) ->
-           "Either<" ++ prettyType(p) ++ " a>"
-         | appType(nonterminalType("silver:core:IOMonad", _, _), _) ->
-           "IOMonad<a>"
-         | appType(appType(nonterminalType("silver:core:state", _, _), p), _) ->
-           "State<" ++ prettyType(p) ++ " a>"
-         | decoratedType(t) -> monadToString(t)
-         | _ -> error("Tried to get monadToString for a non-monadic type")
-         end;
+  return
+     case dropDecorated(ty) of
+     | appType(c, _) ->
+       --We use nonterminalType to get it to show just an underscore
+       --e.g. this gives us Maybe<_>, Either<String _>
+       prettyType(appType(c, nonterminalType("_", [], false)))
+     | _ -> error("Tried to get monadToString for a non-monadic type (" ++ prettyType(ty) ++ ")")
+     end;
 }
 
 
 {-find the name of the bind/return for a given monad to use to build
   the rewritten term-}
 function monadBind
-Expr ::= ty::Type l::Location
+Expr ::= l::Location
 {
-  return case ty.baseType of
-         | nonterminalType("silver:core:Maybe", _, _) ->
-           baseExpr(qNameId(name("bindMaybe", l), location=l), location=l)
-         | nonterminalType("silver:core:Either", _, _) ->
-           baseExpr(qNameId(name("bindEither", l), location=l), location=l)
-         | nonterminalType("silver:core:IOMonad", _, _) ->
-           baseExpr(qNameId(name("bindIO", l), location=l), location=l)
-         | nonterminalType("silver:core:State", _, _) ->
-           baseExpr(qNameId(name("bindState", l), location=l), location=l)
-         | listType(_) ->
-           baseExpr(qNameId(name("bindList", l), location=l), location=l)
-         | decoratedType(t) -> monadBind(t, l)
-         | _ -> error("Tried to get the bind for a non-monadic type at " ++ l.unparse)
-         end;
+  return baseExpr(qNameId(name("silver:core:bind", l), location=l), location=l);
 }
 function monadReturn
-Expr ::= ty::Type l::Location
+Expr ::= l::Location
 {
-  return case decorate ty.baseType with {boundVariables = ty.freeVariables;} of
-         | nonterminalType("silver:core:Maybe", _, _) ->
-           baseExpr(qNameId(name("returnMaybe", l), location=l), location=l)
-         | nonterminalType("silver:core:Either", _, _) ->
-           baseExpr(qNameId(name("returnEither", l), location=l), location=l)
-         | nonterminalType("silver:core:IOMonad", _, _) ->
-           baseExpr(qNameId(name("returnIO", l), location=l), location=l)
-         | nonterminalType("silver:core:State", _, _) ->
-           baseExpr(qNameId(name("returnState", l), location=l), location=l)
-         | listType(_) ->
-           baseExpr(qNameId(name("returnList", l), location=l), location=l)
-         | decoratedType(t) -> monadReturn(t, l)
-         | _ -> error("Tried to get the return for a non-monadic type (" ++ prettyType(ty) ++ ") at " ++ l.unparse)
-         end;
+  return baseExpr(qNameId(name("silver:core:pure", l), location=l), location=l);
 }
 
---Return right of an expression suitable for monad fail for the given type if
---   it exists or left of an error message if it fails
+--We want to produce a value, not a function, so we apply it to an argument
 function monadFail
-Either<String Expr> ::= ty::Type l::Location
+Expr ::= l::Location
 {
-  local string::Expr =
-     stringConst(terminal(String_t,
-             "\"automatically-inserted fail at " ++ l.unparse ++ "\""),
-             location=l);
-  local int::Expr = Silver_Expr { 0 };
-  local float::Expr = Silver_Expr { 0.0 };
-  local bool::Expr = Silver_Expr { false };
-  local list::Expr = Silver_Expr { [] };
-  local unit::Expr = Silver_Expr { unit() };
   return
-    case ty of
-    | appType(appType(nonterminalType("silver:core:Either", _, _), a), b) ->
-           case a of
-           | stringType() -> right(Silver_Expr { silver:core:failEither($Expr{string}) })
-           | intType() -> right(Silver_Expr { silver:core:failEither($Expr{int}) })
-           | floatType() -> right(Silver_Expr { silver:core:failEither($Expr{float}) })
-           | boolType() -> right(Silver_Expr { silver:core:failEither($Expr{bool}) })
-           | listType(_) -> right(Silver_Expr { silver:core:failEither($Expr{list}) })
-           | nonterminalType("silver:core:Unit", _, _) ->
-             right(Silver_Expr { silver:core:failEither($Expr{unit}) })
-           | _ -> left("Tried to get monadFail for too complex or generic an " ++
-                       "argument type for Either (type " ++ prettyType(a) ++ "given; " ++
-                       "must be int, float, bool, list, or unit)")
-           end
-           --baseExpr(qNameId(name("failEither", l), location=l), location=l)
-   | _ -> case ty.baseType of
-         | nonterminalType("silver:core:Maybe", _, _) ->
-           right(Silver_Expr { silver:core:failMaybe($Expr{string}) })
-           --baseExpr(qNameId(name("failMaybe", l), location=l), location=l)
-         | nonterminalType("silver:core:IOMonad", _, _) ->
-           left("Fail undefined for IOMonad")
-           --error("Fail undefined for IOMonad")
-         | nonterminalType("silver:core:State", _, _) ->
-           left("Fail undefined for State monad")
-           --error("Fail undefined for State monad")
-         | listType(_) ->
-           right(Silver_Expr { silver:core:failList($Expr{string}) })
-           --baseExpr(qNameId(name("failList", l), location=l), location=l)
-         | decoratedType(t) -> monadFail(t, l)
-         | _ ->
-           error("Tried to get the fail for a non-monadic type at " ++ l.unparse)
-         end
-    end;
+     buildApplication
+       (baseExpr(qNameId(name("silver:core:fail", l), location=l), location=l),
+        [stringConst(terminal(String_t, "\"Automatically-inserted fail at " ++
+                                           l.unparse ++ "\""),
+                     location=l)], l);
 }
 
 
 function monadPlus
-Either<String Expr> ::= ty::Type l::Location
+Expr ::= l::Location
 {
-  return case ty.baseType of
-         | nonterminalType("silver:core:Maybe", _, _) ->
-           right(baseExpr(qNameId(name("mplusMaybe", l), location=l), location=l))
-         | nonterminalType("silver:core:Either", _, _) ->
-           right(baseExpr(qNameId(name("mplusEither", l), location=l), location=l))
-         | nonterminalType("silver:core:IOMonad", _, _) ->
-           left("MPlus undefined for IOMonad")
-         | nonterminalType("silver:core:State", _, _) ->
-           left("MPlus undefined for State monad")
-         | listType(_) ->
-           right(baseExpr(qNameId(name("mplusList", l), location=l), location=l))
-         | decoratedType(t) -> monadPlus(t, l)
-         | _ ->
-           error("Tried to get MPlus for a non-monadic type at " ++ l.unparse)
-         end;
+  return baseExpr(qNameId(name("silver:core:alt", l), location=l), location=l);
 }
 function monadZero
-Either<String Expr> ::= ty::Type l::Location
+Expr ::= l::Location
 {
-  return
-    case ty of
-    | appType(appType(nonterminalType("silver:core:Either", _, _), a), b) ->
-           case a of
-           | stringType() -> right(Silver_Expr{ silver:core:left("mzero") })
-           | intType() -> right(Silver_Expr{ silver:core:left(0) })
-           | floatType() -> right(Silver_Expr{ silver:core:left(0.0) })
-           | listType(_) -> right(Silver_Expr{ silver:core:left([]) })
-           | _ ->
-             left("Cannot get MZero for Either with too complex or too generic argument type (" ++
-                   prettyType(ty) ++ ")")
-           end
-    | _ -> case ty.baseType of
-         | nonterminalType("silver:core:Maybe", _, _) ->
-           right(Silver_Expr { silver:silver:core:nothing() })
-         | nonterminalType("silver:core:IOMonad", _, _) ->
-           left("MZero undefined for IOMonad")
-         | nonterminalType("silver:core:State", _, _) ->
-           left("MZero undefined for State monad")
-         | listType(_) ->
-           right(Silver_Expr { [] })
-         | decoratedType(t) -> monadZero(t, l)
-         | _ ->
-           error("Tried to get MZero for a non-monadic type at " ++ l.unparse)
-         end
-   end;
+  return baseExpr(qNameId(name("silver:core:empty", l), location=l), location=l);
 }
 
 
@@ -322,6 +206,7 @@ Either<String Expr> ::= ty::Type l::Location
 {-
   Some functions to build common structures to make rewriting easier.
   By using these instead of Silver_Expr {...}, we can get actual locations where errors occur.
+  These can also be easier to read because we don't have all the "$Expr"s and "Silver_Expr"s around.
 -}
 
 function buildApplication
@@ -358,5 +243,21 @@ Expr ::= n::String ty::Type body::Expr loc::Location
                              location=loc),
            body,
            location=loc);
+}
+
+
+function buildMultiLambda
+Expr ::= names::[Pair<String Type>] body::Expr loc::Location
+{
+  local sig::ProductionRHS =
+        foldr(\ pr::Pair<String Type> p::ProductionRHS ->
+                case pr of
+                | pair(n, ty) ->
+                  productionRHSCons(productionRHSElem(name(n, loc), '::',
+                                       typerepTypeExpr(ty, location=loc), location=loc),
+                                    p, location=loc)
+                end,
+              productionRHSNil(location=loc), names);
+  return lambdap(sig, body, location=loc);
 }
 

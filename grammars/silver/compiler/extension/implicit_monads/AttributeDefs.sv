@@ -72,7 +72,7 @@ top::AGDcl ::= 'implicit' 'inherited' 'attribute' a::Name tl::BracketedOptTypeEx
   tl.env = tl.envBindingTyVars;
   te.env = tl.envBindingTyVars;
 
-  top.errors := if isMonad(te.typerep)
+  top.errors := if isMonad(te.typerep, top.env)
                 then []
                 else [err(top.location, "Implicit attributes must have a monadic type; " ++
                                         prettyType(te.typerep) ++ " is not monadic")];
@@ -103,7 +103,7 @@ top::AGDcl ::= 'implicit' 'synthesized' 'attribute' a::Name tl::BracketedOptType
   tl.env = tl.envBindingTyVars;
   te.env = tl.envBindingTyVars;
 
-  top.errors := if isMonad(te.typerep)
+  top.errors := if isMonad(te.typerep, top.env)
                 then []
                 else [err(top.location, "Implicit attributes must have a monadic type; " ++
                                         prettyType(te.typerep) ++ " is not monadic")];
