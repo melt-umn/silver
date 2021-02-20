@@ -261,7 +261,7 @@ top::NamedAST ::= n::String v::AST
       namedAST(n, _),
       foldl(
         \ ma::Maybe<AST> s::Strategy ->
-          bindMaybe(ma, \ a::AST -> decorate s with { term = a; }.result),
+          bind(ma, \ a::AST -> decorate s with { term = a; }.result),
         just(v),
         lookupAll(n, top.annotationStrategies)));
 }
