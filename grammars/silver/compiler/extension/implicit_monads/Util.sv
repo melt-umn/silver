@@ -76,7 +76,7 @@ function isDecorated
 Boolean ::= ty::Type
 {
   return case ty of
-         | decoratedType(t) -> true
+         | decoratedType(t, _) -> true
          | t -> false
          end;
 }
