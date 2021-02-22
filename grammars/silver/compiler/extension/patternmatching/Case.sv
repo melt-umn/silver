@@ -399,28 +399,82 @@ Maybe<[Pattern]> ::= patts::[[Decorated Pattern]] firstPattsVarCompleted::Boolea
   local varPatts::[[Decorated Pattern]] = partPatts.fst;
   --list of sets of match rules of some length (innermost list is one match rule)
   local consPattGroups::[[[Decorated Pattern]]] =
-        groupBy(\ a::[Decorated Pattern] b::[Decorated Pattern] ->
-                  head(a).patternSortKey == head(b).patternSortKey,
-                partPatts.snd);
+        groupAllPattsByHead(\ a::[Decorated Pattern] b::[Decorated Pattern] ->
+                              head(a).patternSortKey == head(b).patternSortKey,
+                            partPatts.snd);
   local combinedPattGroups::[[[Decorated Pattern]]] =
         --include varPatts separately if a variable is necessary for completeness
         ( if firstPattsVarCompleted
           then [varPatts]
           else [] ) ++
         map(\ group::[[Decorated Pattern]] -> group ++ varPatts, consPattGroups);
+  local consPG::String =
+        foldr(\ l1::[[Decorated Pattern]] s1::String ->
+                "[" ++
+                foldr(\ l2::[Decorated Pattern] s2::String ->
+                        "[" ++ foldr(\ p::Decorated Pattern sp::String -> p.unparse ++ ", " ++ sp,
+                                     "", l2) ++ "],  " ++ s2,
+                      "", l1) ++ "],   " ++ s1,
+              "", consPattGroups);
+  local consPG2::String =
+        foldr(\ l1::[[Decorated Pattern]] s1::String ->
+                "[" ++
+                foldr(\ l2::[Decorated Pattern] s2::String ->
+                        "[" ++ foldr(\ p::Decorated Pattern sp::String -> p.patternSortKey ++ ", " ++ sp,
+                                     "", l2) ++ "],  " ++ s2,
+                      "", l1) ++ "],   " ++ s1,
+              "", consPattGroups);
+  local cpg::String =
+        foldr(\ l1::[[Decorated Pattern]] s1::String ->
+                "[" ++
+                foldr(\ l2::[Decorated Pattern] s2::String ->
+                        "[" ++ foldr(\ p::Decorated Pattern sp::String -> p.unparse ++ ", " ++ sp,
+                                     "", l2) ++ "],  " ++ s2,
+                      "", l1) ++ "],   " ++ s1,
+              "", combinedPattGroups);
+  local p::String =
+        foldr(\ l::[Decorated Pattern] sl::String ->
+                "[" ++ foldr(\ p::Decorated Pattern sp::String -> p.unparse ++ ", " ++ sp, "", l) ++ "], " ++ sl,
+              "", patts);
   local combinedRemoveFirst::[[[Decorated Pattern]]] =
         map(\ x::[[Decorated Pattern]] ->
               map(\ y::[Decorated Pattern] -> tail(y), x),
             combinedPattGroups);
 
   --Check the completeness of each group in turn, up to the first incomplete one.
-  return
+  local result::Maybe<[Pattern]> =
      foldr(\ grp::[[Decorated Pattern]] priorResult::Maybe<[Pattern]> ->
              case priorResult of
              | nothing() -> checkCompleteness(grp, env, flowEnv)
              | just(x) -> just(x)
              end,
            nothing(), combinedRemoveFirst);
+  return result; --unsafeTrace(result, print("Patterns:  " ++ p ++ "\n" ++ "Groups:  " ++ cpg ++ "\n" ++ "Cons:  " ++ consPG ++ "\n" ++ "Names: " ++ consPG2 ++ "\n" ++ "Complete:  " ++ (case result of just(_) -> "false" | nothing() -> "true" end) ++ "\n\n\n", unsafeIO()));
+}
+
+function groupAllPattsByHead
+[[[Decorated Pattern]]] ::= pattLists::[[Decorated Pattern]]
+{
+  return
+     if null(pattLists)
+     then []
+     else case groupAllPattsByHeadHelp(head(pattLists), tail(pattLists)) of
+          | pair(thisGroup, others) -> thisGroup::groupAllPattsByHead(others)
+          end;
+}
+function groupAllPattsByHeadHelp
+Pair<[[Decorated Pattern]] [[Decorated Pattern]]> ::= item::[Decorated Pattern] rest::[[Decorated Pattern]]
+{
+  return
+     case rest of
+     | [] -> pair([], [])
+     | h::t -> case groupAllPattsByHeadHelp(item, t) of
+               | pair(grp, rst) ->
+                 if head(item).patternSortKey == head(h).patternSortKey
+                 then pair(h::grp, rst)
+                 else pair(grp, h::rst)
+               end
+     end;
 }
 
 --This checks the primitive patterns all have the same type and generates an
