@@ -205,7 +205,14 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   local checkExpr::Expr =
     caseExpr(
       [hackExprType(ty.typerep, location=builtin)],
-      ml.wrappedMatchRuleList,
+      ml.wrappedMatchRuleList ++
+      [matchRule(
+        [decorate wildcPattern('_', location=builtin) with {
+          env = top.env;
+          patternVarEnv = [];
+          frame = top.frame;
+          config = top.config;
+        }], nothing(), Silver_Expr { silver:core:error("not needed") }, location=builtin)],
       errorExpr([], location=builtin),
       ty.typerep,
       location=builtin);
