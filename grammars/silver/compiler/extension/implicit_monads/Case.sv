@@ -166,6 +166,8 @@ function monadicMatchTypesNames
   local attribute subcall::([(Type, Expr, String)], [Expr]);
   subcall = case elst, tylst of
             | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, env, sub, f, gn, cg, c, fe, ntail, loc, index+1, em, iR, oR)
+            | [], [] -> error("Should not access subcall in monadicMatchTypesNames with empty lists")
+            | _, _ -> error("Both lists in monadicMatchTypesNames must be the same length")
             end;
   local ntail::[String] = if null(names) then [] else tail(names);
   local newName::String = if null(names)
