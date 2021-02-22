@@ -19,16 +19,13 @@ class Semigroup a => Monoid a {
   concat :: (a ::= [a]) = foldr(append, mempty, _);
 }
 
-instance Monoid [a] {
-  mempty = [];
+-- e.g. [] and Maybe
+instance Plus m => Monoid m<a> {
+  mempty = empty;
 }
 
 instance Monoid String {
   mempty = "";
-}
-
-instance Monoid a => Monoid Maybe<a> {
-  mempty = nothing();
 }
 
 instance Monoid Unit {

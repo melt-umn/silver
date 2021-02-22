@@ -14,7 +14,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   top.defs := [ntDef(top.grammarName,
                     id.location,
                     fName,
-                    length(tl.types),
+                    map((.kindrep), tl.types),
                     quals.closed,
                     quals.tracked)];
   -- TODO: It's probably reasonable to skip listing

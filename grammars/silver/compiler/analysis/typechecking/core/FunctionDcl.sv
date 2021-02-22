@@ -9,5 +9,5 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 aspect production functionLHS
 top::FunctionLHS ::= t::TypeExpr
 {
-  top.errors <- t.errorsFullyApplied;
+  top.errors <- t.errorsKindStar;
 }

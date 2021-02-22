@@ -9,11 +9,11 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 aspect production productionLHS
 top::ProductionLHS ::= id::Name '::' t::TypeExpr
 {
-  top.errors <- t.errorsFullyApplied;
+  top.errors <- t.errorsKindStar;
 }
 
 aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
-  top.errors <- t.errorsFullyApplied;
+  top.errors <- t.errorsKindStar;
 }

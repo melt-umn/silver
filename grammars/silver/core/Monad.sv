@@ -44,18 +44,6 @@ class Monad m => MonadFail m {
   fail :: (m<a> ::= String);
 }
 
-instance MonadFail [] {
-  fail = \ String -> [];
-}
-
-instance MonadFail Maybe {
-  fail = \ String -> nothing();
-}
-
-instance MonadFail Either<String _> {
-  fail = left;
-}
-
 {-
 The MonadZero type class has no members of its own; it just specifies that the type has both Monad and Alternative instances.
 
@@ -65,9 +53,6 @@ Annihilation
   bind(fail(s), f) = fail(s)
 -}
 class Monad m, Alternative m => MonadZero m {}
-
-instance MonadZero [] {}
-instance MonadZero Maybe {}
 
 {-
 The MonadPlus type class has no members of its own; it just extends MonadZero with an additional law.
@@ -79,5 +64,18 @@ Distributivity
 -}
 class MonadZero m, Alternative m => MonadPlus m {}
 
-instance MonadPlus [] {}
-instance MonadPlus Maybe {}
+{-
+Monad transformers lift a monadic computation into an additional monad.
+
+Instances should satisfy the following:
+  compose(lift, pure) = pure
+  lift(bind(m, f)) = bind(lift(m), compose(lift, f))
+-}
+class MonadTrans (t :: (* -> *) -> * -> *) {
+  lift :: Monad m => (t<m a> ::= m<a>);
+}
+
+{-
+Can be used to extract the monadic value from a MonadTrans instance value.
+ -}
+synthesized attribute run<a>::a;

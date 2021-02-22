@@ -5,7 +5,7 @@ imports silver:core hiding id, sequence, fail;
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
-imports silver:compiler:definition:type:syntax;
+imports silver:compiler:definition:type:syntax hiding Arrow_t;
 imports silver:compiler:extension:autoattr;
 imports silver:compiler:extension:patternmatching;
 imports silver:compiler:extension:list;
