@@ -79,7 +79,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
   -- TODO: this is the only use of .rawExprs. FIXME
   -- introduce the failure case here.
   forwards to 
-    caseExpr(es.rawExprs, ml.matchRuleList, 
+    caseExpr(es.rawExprs, ml.matchRuleList, true,
       mkStrFunctionInvocation(top.location, "silver:core:error",
         [stringConst(terminal(String_t, 
           "\"Error: pattern match failed at " ++ top.grammarName ++ " " ++ top.location.unparse ++ "\\n\""), location=top.location)]),
@@ -88,7 +88,7 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 
 
 abstract production caseExpr
-top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
+top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Expr retType::Type
 {
   top.unparse =
     "(case " ++ implode(", ", map((.unparse), es)) ++ " of " ++ 
@@ -116,12 +116,12 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
 
   top.errors <-
       case completenessCounterExample of
-      | just(lst) ->
+      | just(lst) when complete ->
         [mwdaWrn(top.location,
                  "This pattern-matching is not exhaustive.  Here is an example of a " ++
                    "case that is not matched:  " ++ implode(", ", map((.unparse), lst)),
                  top.config.runMwda)]
-      | nothing() -> []
+      | _ -> []
       end;
 
   {-
