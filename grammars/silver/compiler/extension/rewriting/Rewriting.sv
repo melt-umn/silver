@@ -205,7 +205,7 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   local checkExpr::Expr =
     caseExpr(
       [hackExprType(ty.typerep, location=builtin)],
-      ml.wrappedMatchRuleList,
+      ml.wrappedMatchRuleList, false,
       errorExpr([], location=builtin),
       ty.typerep,
       location=builtin);

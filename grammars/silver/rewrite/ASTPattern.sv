@@ -11,8 +11,8 @@ top::ASTPattern ::= prodName::String children::ASTPatterns annotations::NamedAST
 {
   top.pp = pp"${text(prodName)}(${ppImplode(pp", ", children.pps ++ annotations.pps)})";
   
-  children.matchWith = case top.matchWith of nonterminalAST(_, c, _) -> c end;
-  annotations.matchWith = case top.matchWith of nonterminalAST(_, _, a) -> a.bindings end;
+  children.matchWith = case top.matchWith of nonterminalAST(_, c, _) -> c | _ -> error("not nonterminalAST") end;
+  annotations.matchWith = case top.matchWith of nonterminalAST(_, _, a) -> a.bindings | _ -> error("not nonterminalAST") end;
   top.substitution =
     do {
       case top.matchWith of
@@ -30,8 +30,8 @@ top::ASTPattern ::= h::ASTPattern t::ASTPattern
 {
   top.pp = pp"(${h.pp} :: ${t.pp})";
   
-  h.matchWith = case top.matchWith of listAST(consAST(h, _)) -> h end;
-  t.matchWith = case top.matchWith of listAST(consAST(_, t)) -> listAST(t) end;
+  h.matchWith = case top.matchWith of listAST(consAST(h, _)) -> h | _ -> error("not listAST(consAST(_, _))") end;
+  t.matchWith = case top.matchWith of listAST(consAST(_, t)) -> listAST(t) | _ -> error("not listAST(consAST(_, _))") end;
   top.substitution =
     do {
       case top.matchWith of
@@ -132,8 +132,8 @@ top::ASTPatterns ::= h::ASTPattern t::ASTPatterns
   top.pps = h.pp :: t.pps;
   top.astPatterns = h :: t.astPatterns;
   
-  h.matchWith = case top.matchWith of consAST(h, _) -> h end;
-  t.matchWith = case top.matchWith of consAST(_, t) -> t end;
+  h.matchWith = case top.matchWith of consAST(h, _) -> h | _ -> error("not consAST") end;
+  t.matchWith = case top.matchWith of consAST(_, t) -> t | _ -> error("not consAST") end;
   top.substitution =
     do {
       case top.matchWith of

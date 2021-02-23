@@ -261,9 +261,11 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
         map(head,
           lookupStrings(searchEnvTree(ns.fullName, top.layoutTerms), top.cstEnv))));
 
-  local isTracked :: Boolean = case head(lhsRef) of
-                               | syntaxNonterminal(nonterminalType(_, _, tracked), _, _, _, _) -> tracked
-                               end;
+  local isTracked :: Boolean =
+    case head(lhsRef) of
+    | syntaxNonterminal(nonterminalType(_, _, tracked), _, _, _, _) -> tracked
+    | _ -> error("LHS is not a nonterminal")
+    end;
   local commaIfArgsOrAnnos :: String = if length(ns.inputElements) + length(ns.namedInputElements)!= 0 then "," else "";
   local originImpl :: String = if isTracked then
                                "new silver.core.PparsedOriginInfo(common.OriginsUtil.SET_FROM_PARSER_OIT, common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos()), common.ConsCell.nil)"  ++ commaIfArgsOrAnnos
@@ -471,6 +473,7 @@ String ::= d::Decorated SyntaxDcl
   | syntaxNonterminal(n, _, _, _, _) -> "<NonterminalRef id=\"" ++ makeCopperName(n.typeName) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
   | syntaxProduction(ns, _) -> "<ProductionRef id=\"" ++ makeCopperName(ns.fullName) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
   | syntaxDisambiguationGroup(n, _, _, _) -> "<DisambiguationFunctionRef id=\"" ++ makeCopperName(n) ++ "\" grammar=\"" ++ d.containingGrammar ++ "\" />"
+  | _ -> error("Can't reference SyntaxDcl " ++ d.fullName)
   end;
 }
 

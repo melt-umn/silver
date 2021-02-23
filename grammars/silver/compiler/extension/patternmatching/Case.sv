@@ -6,6 +6,12 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 imports silver:compiler:modification:primitivepattern;
+imports silver:compiler:extension:list;
+
+--Get mwdaWrn production for completeness analysis
+import silver:compiler:analysis:warnings:flow;
+--Get getNonforwardingProds to check all are covered
+import silver:compiler:definition:flow:env only getNonforwardingProds;
 
 import silver:compiler:definition:type:syntax only typerepTypeExpr;
 import silver:compiler:modification:let_fix;
@@ -29,7 +35,7 @@ autocopy attribute matchRulePatternSize :: Integer;
 
 -- P -> E
 nonterminal MatchRule with location, config, unparse, env, frame, errors, freeVars, matchRuleList, matchRulePatternSize;
-nonterminal AbstractMatchRule with location, unparse, headPattern, isVarMatchRule, expandHeadPattern;
+nonterminal AbstractMatchRule with location, unparse, headPattern, isVarMatchRule, expandHeadPattern, hasCondition;
 
 -- The head pattern of a match rule
 synthesized attribute headPattern :: Decorated Pattern;
@@ -37,6 +43,8 @@ synthesized attribute headPattern :: Decorated Pattern;
 synthesized attribute isVarMatchRule :: Boolean;
 -- Turns A(B, C), D into B, C, D in the patterns list, with a list of named patterns to include.
 synthesized attribute expandHeadPattern :: (AbstractMatchRule ::= [String]);
+-- For completeness checking, we need to know if we have a condition
+synthesized attribute hasCondition::Boolean;
 
 -- P , ...
 nonterminal PatternList with location, config, unparse, patternList, env, frame, errors, patternVars, patternVarEnv;
@@ -71,92 +79,63 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
   -- TODO: this is the only use of .rawExprs. FIXME
   -- introduce the failure case here.
   forwards to 
-    caseExpr(es.rawExprs, ml.matchRuleList, 
+    caseExpr(es.rawExprs, ml.matchRuleList, true,
       mkStrFunctionInvocation(top.location, "silver:core:error",
         [stringConst(terminal(String_t, 
           "\"Error: pattern match failed at " ++ top.grammarName ++ " " ++ top.location.unparse ++ "\\n\""), location=top.location)]),
       freshType(), location=top.location);
 }
 
+
 abstract production caseExpr
-top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
+top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Expr retType::Type
 {
   top.unparse =
     "(case " ++ implode(", ", map((.unparse), es)) ++ " of " ++ 
     implode(" | ", map((.unparse), ml)) ++ " | _ -> " ++ failExpr.unparse ++
     " end :: " ++ prettyType(retType) ++ ")";
 
-  -- 4 cases: no patterns left, all constructors, all variables, or mixed con/var.
-  -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules
-  forwards to
-    case ml of
-    | matchRule([], c, e) :: _ -> buildMatchWhenConditionals(ml, failExpr) -- valid or error case
-    -- No match rules, only possible through abstract syntax
-    | [] -> Silver_Expr { let res :: $TypeExpr{typerepTypeExpr(retType, location=top.location)} = $Expr{failExpr} in res end }
-    | _ -> if null(es) then failExpr -- error case
-           else if null(varRules) then allConCase
-           else if null(prodRules) then allVarCase
-           else mixedCase
-    end;
-  -- TODO: BUG: we're using the left of patterns in the first match rule as a guide here
-  -- which means we run into serious problems if not all match rules agree on the length
-  -- of the pattern list. We don't report some errors related to not having enough
-  -- variable binders
-  
-  top.errors <-
-    case ml of
-    -- are there multiple match rules, with no patterns/conditions left in them to distinguish between them?
-    | matchRule([], _, e) :: _ :: _ ->
-      if areUselessPatterns(ml)
-      then [err(top.location, "Pattern has overlapping cases!")]
-      else []
-    | _ -> []
-    end;
-       
---  top.errors <- unsafeTrace([], 
---     print(top.unparse ++ "\n\n", unsafeIO()));
+  {-Checking Pattern Completeness
 
-  local partMRs :: Pair<[AbstractMatchRule] [AbstractMatchRule]> =
-    partition((.isVarMatchRule), ml);
-  local varRules :: [AbstractMatchRule] = partMRs.fst;
-  local prodRules :: [AbstractMatchRule] = partMRs.snd;
-  
-  {--
-   - All constructors? Then do a real primitive match.
-   -}
-  local freshCurrName :: String = "__curr_match_" ++ toString(genInt());
-  local freshCurrNameRef :: Expr =
-    baseExpr(qName(top.location, freshCurrName), location=top.location);
-  local allConCase :: Expr =
-    -- Annoyingly, this now needs to be a let in case of annotation patterns.
-    makeLet(top.location,
-      freshCurrName, freshType(), head(es), 
-      matchPrimitive(
-        freshCurrNameRef,
-        typerepTypeExpr(retType, location=top.location),
-        foldPrimPatterns(
-          map(allConCaseTransform(freshCurrNameRef, tail(es), failExpr, retType, _),
-          groupMRules(prodRules))),
-        failExpr, location=top.location));
-  
-  {--
-   - All variables? Just push a let binding inside each branch.
-   -}
-  local allVarCase :: Expr =
-    caseExpr(tail(es),
-      map(bindHeadPattern(head(es), freshType(){-whatever the first expression's type is?-}, _),
-        ml),
-      failExpr, retType, location=top.location);
-      -- A quick note about that freshType() hack: putting it here means there's ONE fresh type
-      -- generated, puching it inside 'bindHeadPattern' would generate multiple fresh types.
-      -- So don't try that!
-  
-  {--
-    - Mixed con/var? Partition into segments and build nested case expressions
-    - The whole segment partitioning is done in a function rather than grabbing the initial segment
-      and forwarding to do the rest of the segments (another workable option) for efficiency
-   -}
-  local mixedCase :: Expr = buildMixedCaseMatches(es, ml, failExpr, retType, top.location);
+    We want to check if a set of patterns covers all possible cases.
+    For this, we need to consider closed and non-closed nonterminals
+    separately.  We will NOT count match rules with conditions as
+    contributing to completeness, as we will assume conditions are
+    actually conditional, and the rule with a condition will sometimes
+    match and sometimes not.
+  -}
+  local conditionlessRules::[AbstractMatchRule] =
+        partition((.hasCondition), ml).snd;
+  local conditionlessPatterns::[[Decorated Pattern]] =
+        map(\ x::AbstractMatchRule ->
+              case x of
+              | matchRule(plst, _, _) -> plst
+              end, conditionlessRules);
+  local completenessCounterExample::Maybe<[Pattern]> =
+        checkCompleteness(conditionlessPatterns, top.env, top.flowEnv);
+
+  top.errors <-
+      case completenessCounterExample of
+      | just(lst) when complete ->
+        [mwdaWrn(top.location,
+                 "This pattern-matching is not exhaustive.  Here is an example of a " ++
+                   "case that is not matched:  " ++ implode(", ", map((.unparse), lst)),
+                 top.config.runMwda)]
+      | _ -> []
+      end;
+
+  {-
+    With the addition of completeness checking, we cannot
+    incrementally forward through a series of caseExpr, compiling
+    toward primitive matching as we go.  That would lead to a lot of
+    false incompletes.  Instead, we compile it in a function.  This
+    function also checks for overlapping cases in patterns (best
+    detected through compilation), hence the [Message] part of the
+    return value.
+  -}
+  local fwdResult::Pair<Expr [Message]> = compileCaseExpr(es, ml, failExpr, retType, top.location);
+  top.errors <- fwdResult.snd;
+  forwards to fwdResult.fst;
 }
 
 
@@ -179,6 +158,95 @@ Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
          end;
 }
 
+--Compile a case expression `case es of ml` down into primitive matches
+--Also check for overlapping patterns, which show up by this compilation
+function compileCaseExpr
+Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
+{
+  local errors::[Message] =
+    case ml of
+    -- are there multiple match rules, with no patterns/conditions left in them to distinguish between them?
+    | matchRule([], _, e) :: _ :: _ ->
+      if areUselessPatterns(ml)
+      then [err(loc, "Pattern has overlapping cases!")]
+      else []
+    | _ -> []
+    end;
+
+  local partMRs :: Pair<[AbstractMatchRule] [AbstractMatchRule]> =
+    partition((.isVarMatchRule), ml);
+  local varRules :: [AbstractMatchRule] = partMRs.fst;
+  local prodRules :: [AbstractMatchRule] = partMRs.snd;
+
+  {--
+   - All constructors? Then do a real primitive match.
+   -}
+  local freshCurrName :: String = "__curr_match_" ++ toString(genInt());
+  local freshCurrNameRef :: Expr =
+    baseExpr(qName(loc, freshCurrName), location=loc);
+  local allConCase :: Pair<Expr [Message]> =
+      let constructorGroups::[[AbstractMatchRule]] = groupMRules(prodRules) in
+      let mappedPatternsErrs::[Pair<PrimPattern [Message]>] =
+          map(allConCaseTransform(freshCurrNameRef, tail(es), failExpr, retType, _),
+              constructorGroups) in
+      let primPatterns::[PrimPattern] =
+          map(\ p::Pair<PrimPattern [Message]> -> p.fst, mappedPatternsErrs) in
+      let errs::[Message] =
+          foldr(\ p::Pair<PrimPattern [Message]> l::[Message] -> p.snd ++ l,
+                [], mappedPatternsErrs) in
+        pair(
+          -- Annoyingly, this now needs to be a let in case of annotation patterns.
+          makeLet(loc,
+            freshCurrName, freshType(), head(es), 
+            matchPrimitive(
+              freshCurrNameRef,
+              typerepTypeExpr(retType, location=loc),
+              foldPrimPatterns(primPatterns),
+              failExpr, location=loc)),
+          errors ++ errs)
+      end end end end;
+
+  {--
+   - All variables? Just push a let binding inside each branch.
+   -}
+  local allVarCase :: Pair<Expr [Message]> =
+     let p::Pair<Expr [Message]> =
+        compileCaseExpr(
+             tail(es),
+             map(bindHeadPattern(head(es), freshType(){-whatever the first expression's type is?-}, _),
+                 ml),
+             failExpr, retType, loc)
+             -- A quick note about that freshType() hack: putting it here means there's ONE fresh type
+             -- generated, puching it inside 'bindHeadPattern' would generate multiple fresh types.
+             -- So don't try that!
+     in pair(p.fst, errors ++ p.snd) end;
+
+  {--
+    - Mixed con/var? Partition into segments and build nested case expressions
+    - The whole segment partitioning is done in a function rather than grabbing the initial segment
+      and forwarding to do the rest of the segments (another workable option) for efficiency
+   -}
+  local mixedCase :: Pair<Expr [Message]> = buildMixedCaseMatches(es, ml, failExpr, retType, loc);
+
+  -- 4 cases: no patterns left, all constructors, all variables, or mixed con/var.
+  -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules
+  return
+    case ml of
+    | matchRule([], c, e) :: _ -> pair(buildMatchWhenConditionals(ml, failExpr), -- valid or error case
+                                       errors)
+    -- No match rules, only possible through abstract syntax
+    | [] -> pair(Silver_Expr { let res :: $TypeExpr{typerepTypeExpr(retType, location=loc)} = $Expr{failExpr} in res end }, [])
+    | _ -> if null(es) then pair(failExpr, []) -- error case
+           else if null(varRules) then allConCase
+           else if null(prodRules) then allVarCase
+           else mixedCase
+    end;
+  -- TODO: BUG: we're using the left of patterns in the first match rule as a guide here
+  -- which means we run into serious problems if not all match rules agree on the length
+  -- of the pattern list. We don't report some errors related to not having enough
+  -- variable binders
+}
+
 {-
   Build the correct match expression when we are mixing constructor
   and variable patterns for the first match.  We do this by
@@ -186,19 +254,392 @@ Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
   patterns in order, then putting each segment into its own match.
 -}
 function buildMixedCaseMatches
-Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
+Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
 {
   local freshFailName :: String = "__fail_" ++ toString(genInt());
   return if null(ml)
-         then failExpr
+         then pair(failExpr, [])
          else let segments::Pair<[AbstractMatchRule] [AbstractMatchRule]> =
                             initialSegmentPatternType(ml)
               in
-                makeLet(loc, freshFailName, retType,
-                        buildMixedCaseMatches(es, segments.snd, failExpr, retType, loc),
-                        caseExpr(es, segments.fst, baseExpr(qName(loc, freshFailName), location=loc),
-                                 retType, location=loc))
+                case buildMixedCaseMatches(es, segments.snd, failExpr, retType, loc),
+                     compileCaseExpr(es, segments.fst, baseExpr(qName(loc, freshFailName), location=loc),
+                                     retType, loc) of
+                | pair(bmexpr, bmerrs), pair(ccexpr, ccerrs) ->
+                  pair(makeLet(loc, freshFailName, retType, bmexpr, ccexpr),
+                       bmerrs ++ ccerrs)
+                end
               end;
+}
+
+
+{-
+  We check completeness with a function because we want to recursively
+  check, which we cannot do with attributes alone.
+
+  We need the environment to look up any nonterminal matches and see
+  if the nonterminal is closed or not.
+
+  We return nothing() if the patterns are complete, and just(plst) if
+  plst is an example of a missing pattern set (matching over multiple
+  values at once).
+-}
+function checkCompleteness
+Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env
+                     flowEnv::Decorated FlowEnv
+{
+  --This is safer than mapping head because we might be short some patterns
+  local firstPatt::[Decorated Pattern] =
+        foldr(\ l::[Decorated Pattern] rest::[Decorated Pattern] ->
+                if length(l) > 0 then head(l)::rest else rest, [], lst);
+  local partPatts::Pair<[Decorated Pattern] [Decorated Pattern]> =
+        partition((.patternIsVariable), firstPatt);
+  local varPatts::[Decorated Pattern] = partPatts.fst;
+  local conPatts::[Decorated Pattern] = partPatts.snd;
+
+  --This is max length.  Should it be min length?
+  local allPattLens::[Integer] = map(\ x::[Decorated Pattern] -> length(x), lst);
+  local allSameLen::Boolean =
+        if null(lst)
+        then true
+        else all(map(\ x::Integer -> x == head(allPattLens), allPattLens));
+  local numPatts::Integer =
+        if null(lst) || !allSameLen
+        then 0
+        else head(allPattLens);
+
+  local isPrimPatts::Boolean =
+         foldr(\ a::Decorated Pattern b::Boolean -> b || a.isPrimitivePattern,
+               false, conPatts);
+  local isBoolPatts::Boolean =
+        foldr(\ a::Decorated Pattern b::Boolean -> b || a.isBoolPattern,
+              false, conPatts);
+  local isListPatts::Boolean =
+        foldr(\ a::Decorated Pattern b::Boolean -> b || a.isListPattern,
+              false, conPatts);
+
+  {-Checking Pattern Completeness
+
+    Everything is complete if it has a variable pattern.  Some other
+    types can also be complete in other ways:
+
+    * Boolean:  A Boolean match is complete if it has patterns for
+      true and false.
+
+    * Lists:  A list match is complete if it has patterns for nil and
+      cons, and the heads and tails of cons are complete patterns as
+      well.
+
+    * Non-Closed Nonterminals:  These are complete if they have a
+      pattern for each non-forwarding production.
+  -}
+  local firstConstructorsComplete::Maybe<Pattern> =
+        if isBoolPatts
+        then checkBooleanCompleteness(conPatts)
+        else if isListPatts
+             then checkListCompleteness(conPatts, env, flowEnv)
+             else if isPrimPatts
+                  then generatePrimitiveMissingPattern(conPatts)
+                  else checkNonterminalCompleteness(conPatts, env, flowEnv);
+  local firstComplete::Maybe<Pattern> =
+        if null(varPatts)
+        then firstConstructorsComplete
+        else nothing();
+
+  local restComplete::Maybe<[Pattern]> =
+        --check if a variable pattern was required for the first match to be complete
+        --determined by whether just the constructors are complete
+        case firstConstructorsComplete of
+        | just(_) -> checkTailCompleteness(lst, true, env, flowEnv)
+        | nothing() -> checkTailCompleteness(lst, false, env, flowEnv)
+        end;
+
+  return if numPatts == 0
+         --has no patterns to determine the type, or has inconsistent lengths
+         then nothing()
+         else case firstComplete of
+              | nothing() ->
+                case restComplete of
+                | nothing() -> nothing()
+                | just(lps) -> just(wildcPattern('_', location=bogusLoc())::lps)
+                end
+              | just(p) ->
+                just(p::repeat(wildcPattern('_', location=bogusLoc()), numPatts - 1))
+              end;
+}
+
+{-
+  To check if the tails of pattern lists are complete, we need to
+  group them by the first pattern.  For example, consider this case
+  expression:
+     case x, y of
+     | 1, _ -> "1"
+     | _, 1 -> "2"
+     | 2, _ -> "3"
+     end
+  We can't just check that the set of first patterns is complete and
+  the set of second patterns is complete.  Both sets are complete
+  individually, but in their combination there is no pattern to match
+  `0, 0`.  We need to group by the first pattern, add the variable
+  patterns to each constructor set, then check completenss.  For our
+  example, we will need to group into
+     [ [(1, _), (_, 1)],  [(2, _), (_, 1)],  [(_, 1)] ]
+  then check the completeness of the tails of the patterns in these
+  sets (started with 1, started with 2, and started with var):
+     [_, 1]   and   [_, 1]   and   [1]
+  We need to include a started-with-var set only if the first patterns
+  are incomplete without it, which is passed as an argument.
+-}
+function checkTailCompleteness
+Maybe<[Pattern]> ::= patts::[[Decorated Pattern]] firstPattsVarCompleted::Boolean
+                     env::Decorated Env flowEnv::Decorated FlowEnv
+{
+  local partPatts::Pair<[[Decorated Pattern]] [[Decorated Pattern]]> =
+        partition(\ plst::[Decorated Pattern] -> head(plst).patternIsVariable, patts);
+  local varPatts::[[Decorated Pattern]] = partPatts.fst;
+  --list of sets of match rules of some length (innermost list is one match rule)
+  local consPattGroups::[[[Decorated Pattern]]] =
+        groupAllPattsByHead(partPatts.snd);
+  local combinedPattGroups::[[[Decorated Pattern]]] =
+        --include varPatts separately if a variable is necessary for completeness
+        ( if firstPattsVarCompleted
+          then [varPatts]
+          else [] ) ++
+        map(\ group::[[Decorated Pattern]] -> group ++ varPatts, consPattGroups);
+  local combinedRemoveFirst::[[[Decorated Pattern]]] =
+        map(\ x::[[Decorated Pattern]] ->
+              map(\ y::[Decorated Pattern] -> tail(y), x),
+            combinedPattGroups);
+
+  --Check the completeness of each group in turn, up to the first incomplete one.
+  local result::Maybe<[Pattern]> =
+     foldr(\ grp::[[Decorated Pattern]] priorResult::Maybe<[Pattern]> ->
+             case priorResult of
+             | nothing() -> checkCompleteness(grp, env, flowEnv)
+             | just(x) -> just(x)
+             end,
+           nothing(), combinedRemoveFirst);
+  return result;
+}
+
+--Group sets of patterns by the first pattern in each set
+function groupAllPattsByHead
+[[[Decorated Pattern]]] ::= pattLists::[[Decorated Pattern]]
+{
+  return
+     if null(pattLists)
+     then []
+     else case groupAllPattsByHeadHelp(head(pattLists), tail(pattLists)) of
+          | pair(thisGroup, others) ->
+            (head(pattLists)::thisGroup)::groupAllPattsByHead(others)
+          end;
+}
+function groupAllPattsByHeadHelp
+Pair<[[Decorated Pattern]] [[Decorated Pattern]]> ::=
+    item::[Decorated Pattern] rest::[[Decorated Pattern]]
+{
+  return
+     case rest of
+     | [] -> pair([], [])
+     | h::t -> case groupAllPattsByHeadHelp(item, t) of
+               | pair(grp, rst) ->
+                 if head(item).patternSortKey == head(h).patternSortKey
+                 then pair(h::grp, rst)
+                 else pair(grp, h::rst)
+               end
+     end;
+}
+
+--This checks the primitive patterns all have the same type and generates an
+--   example of a primitive value which is not covered by the given patterns
+function generatePrimitiveMissingPattern
+Maybe<Pattern> ::= patts::[Decorated Pattern]
+{
+  local ints::[Integer] =
+        foldr(\ p::Decorated Pattern l::[Integer] ->
+                case p of
+                | intPattern(int_t) -> toInteger(int_t.lexeme)::l
+                | _ -> l
+                end, [], patts);
+  local flts::[Float] =
+        foldr(\ p::Decorated Pattern l::[Float] ->
+                case p of
+                | fltPattern(flt_t) -> toFloat(flt_t.lexeme)::l
+                | _ -> l
+                end, [], patts);
+  local strs::[String] =
+        foldr(\ p::Decorated Pattern l::[String] ->
+                case p of              --remove quotation marks
+                | strPattern(str_t) -> substring(1, length(str_t.lexeme) - 1, str_t.lexeme)::l
+                | _ -> l
+                end, [], patts);
+  return case ints, flts, strs of
+         | _::_, [], [] -> just(generateMissingIntegerPattern(ints, 0))
+         | [], _::_, [] -> just(generateMissingFloatPattern(flts, 0.0))
+         | [], [], _::_ -> just(generateMissingStringPattern(strs, ""))
+         | _, _, _ -> nothing() --type error, so don't generate a completeness error
+         end;
+}
+
+function generateMissingIntegerPattern
+Pattern ::= lst::[Integer] initial::Integer
+{
+  return if containsBy(\ a::Integer b::Integer -> a == b, initial, lst)
+         then generateMissingIntegerPattern(lst, initial + 1)
+         else intPattern(terminal(Int_t, toString(initial), bogusLoc()), location=bogusLoc());
+}
+function generateMissingFloatPattern
+Pattern ::= lst::[Float] initial::Float
+{
+  return if containsBy(\ a::Float b::Float -> a == b, initial, lst)
+         then generateMissingFloatPattern(lst, initial + 1.0)
+         else fltPattern(terminal(Float_t, toString(initial), bogusLoc()), location=bogusLoc());
+}
+function generateMissingStringPattern
+Pattern ::= lst::[String] initial::String
+{
+  return if containsBy(\ a::String b::String -> a == b, initial, lst)
+         then generateMissingStringPattern(lst, initial ++ "*")
+         else strPattern(terminal(String_t, "\"" ++ initial ++ "\"", bogusLoc()), location=bogusLoc());
+}
+
+function checkBooleanCompleteness
+Maybe<Pattern> ::= patts::[Decorated Pattern]
+{
+  local foundTrue::Boolean =
+        foldr(\ p::Decorated Pattern b::Boolean ->
+                b || case p of
+                     | truePattern(_) -> true
+                     | _ -> false
+                     end, false, patts);
+  local foundFalse::Boolean =
+        foldr(\ p::Decorated Pattern b::Boolean ->
+                b || case p of
+                     | falsePattern(_) -> true
+                     | _ -> false
+                     end, false, patts);
+  return if foundTrue
+         then if foundFalse
+              then nothing()
+              else just(falsePattern('false', location=bogusLoc()))
+         else just(truePattern('true', location=bogusLoc()));
+}
+
+function checkListCompleteness
+Maybe<Pattern> ::= patts::[Decorated Pattern] env::Decorated Env flowEnv::Decorated FlowEnv
+{
+  local foundNil::Boolean =
+        foldr(\ p::Decorated Pattern b::Boolean ->
+                b || p.patternSortKey == "silver:core:nil", false, patts);
+
+  --We need to check that we have a cons and that its components are complete
+  local consPatts::[Decorated Pattern] =
+        partition(\ p::Decorated Pattern -> p.patternSortKey == "silver:core:cons", patts).fst;
+  local consComp::Maybe<[Pattern]> =
+        checkCompleteness(map((.patternSubPatternList), consPatts), env, flowEnv);
+
+  return if foundNil
+         then if null(consPatts) --didn't try to catch _::_
+              then just(consListPattern(wildcPattern('_', location=bogusLoc()), '::',
+                                        wildcPattern('_', location=bogusLoc()),
+                                        location=bogusLoc()))
+              else case consComp of
+                   | nothing() -> nothing()
+                   | just(hp::tp::_) ->
+                     just(consListPattern(hp, '::', tp, location=bogusLoc()))
+                   --last case is an error, where cons didn't have enough arguments
+                   | just(_) -> nothing()
+                   end
+         else just(nilListPattern('[', ']', location=bogusLoc()));
+}
+
+--given a set of nonterminal patterns, check that all the required productions are covered
+function checkNonterminalCompleteness
+Maybe<Pattern> ::= patts::[Decorated Pattern] env::Decorated Env flowEnv::Decorated FlowEnv
+{
+  --All the patterns ought to have the same type.
+  local builtTypes::[String] =
+        nubBy(\ a::String b::String -> a == b, map((.patternTypeName), patts));
+  local builtType::String = head(builtTypes);
+
+  local requiredProds::[String] = getNonforwardingProds(builtType, flowEnv);
+  local groupedPatts::[[Decorated Pattern]] =
+        groupBy(\ a::Decorated Pattern b::Decorated Pattern ->
+                  a.patternSortKey == b.patternSortKey, patts);
+
+  --To find out if the nonterminal is closed or not, we need to look it up
+  local nt::QName = qName(bogusLoc(), builtType);
+  nt.env = env;
+  local isClosed::Boolean =
+        case nt.lookupType.dcls of
+        | ntDcl(_, _, closed, _) :: _ -> closed
+        | _ -> false -- default, if the lookup fails
+        end;
+
+  -- TODO:  named argument patterns are not handled yet
+  return
+     --If we are building multiple types or have unknown productions,
+     --   we have a type error, so don't check completeness
+     if length(builtTypes) != 1
+     then nothing()
+     else if isClosed
+               --This is a hack to pass up a message about closed nonterminals as a pattern
+          then just(varPattern(name("<default case for closed nonterminal>", bogusLoc()),
+                               location=bogusLoc()))
+          else checkAllProdsRepresented(groupedPatts, requiredProds, env, flowEnv);
+}
+
+--check that all required productions are present and that their children are completely covered
+function checkAllProdsRepresented
+Maybe<Pattern> ::= pattGroups::[[Decorated Pattern]] requiredProds::[String]
+                   env::Decorated Env flowEnv::Decorated FlowEnv
+{
+  {-
+    We walk down through requiredProds rather than pattGroups.  We
+    only care that everything in requiredProds is covered; we don't
+    care about anything else which shows up in pattGroups
+    (e.g. forwarding productions).
+  -}
+  local firstProdName::String = head(requiredProds);
+  local firstProdQName::QName = qName(bogusLoc(), firstProdName);
+  local pattGroup::[Decorated Pattern] =
+            --Because the groups were produced by groupBy(), there can be at most one group
+        let thisGroup::[[Decorated Pattern]] =
+            partition(\ lst::[Decorated Pattern] ->
+                        head(lst).patternSortKey == firstProdName,
+                      pattGroups).fst
+         in if null(thisGroup) then [] else head(thisGroup) end;
+
+  firstProdQName.env = env;
+  local firstProdNumArgs::Integer = firstProdQName.lookupValue.typeScheme.typerep.arity;
+  local wildcards::PatternList =
+        buildPatternList(repeat(wildcPattern('_', location=bogusLoc()), firstProdNumArgs), bogusLoc());
+
+  --check that all children of the current production are completely covered
+  local childrenComp::Maybe<[Pattern]> =
+        checkCompleteness(map((.patternSubPatternList), pattGroup), env, flowEnv);
+
+  return
+     case requiredProds of
+     | [] -> nothing()
+     | _::rest ->
+       case pattGroup of
+       | [] -> --this one is missing
+         just(prodAppPattern(firstProdQName, '(', wildcards, ')', location=bogusLoc()))
+       | _::_ ->
+         case childrenComp of
+         | nothing() ->
+           --current production is fully covered, so on to the next
+           checkAllProdsRepresented(pattGroups, rest, env, flowEnv)
+         | just(plst) ->
+           --check that it has the right number of patterns
+           if length(plst) == firstProdNumArgs
+           then just(prodAppPattern(firstProdQName, '(', buildPatternList(plst, bogusLoc()), ')',
+                     location=bogusLoc()))
+           else nothing() --wrong number of children -> type error, so skip completeness
+         end
+       end
+     end;
 }
 
 
@@ -298,6 +739,8 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Pair<Expr Maybe<P
           named) ++
         tail(pl),
         cond, e, location=top.location);
+
+  top.hasCondition = cond.isJust;
 }
 
 concrete production patternList_one
@@ -320,7 +763,7 @@ top::PatternList ::= ps::PatternList ',' p::Pattern
 abstract production patternList_more
 top::PatternList ::= p::Pattern ',' ps1::PatternList
 {
-  top.unparse = p.unparse ++ ", " ++ ps1.unparse;
+  top.unparse = p.unparse ++ (if ps1.unparse == "" then "" else ", " ++ ps1.unparse);
 
   top.patternVars = p.patternVars ++ ps1.patternVars;
   ps1.patternVarEnv = p.patternVarEnv ++ p.patternVars;
@@ -387,10 +830,10 @@ Expr ::= n::Name
  - @param retType  (The return type of the overall case-expr, and thus this)
  - @param mrs  (Match rules that all share the same head-pattern)
  -
- - @return  A primitive pattern matching the constructor, with the overall case-expr pushed down into it
+ - @return  A primitive pattern matching the constructor, with the overall case-expr pushed down into it and compiled, along with any errors for overlapping patterns.
  -}
 function allConCaseTransform
-PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[AbstractMatchRule]
+Pair<PrimPattern [Message]> ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[AbstractMatchRule]
 {
   -- TODO: potential source of buggy error messages. We're using head(mrs) as the source of
   -- authority for the length of pattern variables to match against. But each match rule may
@@ -398,11 +841,12 @@ PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type 
   -- This is an erroneous condition, but it means we transform into a maybe-more erroneous condition.
   local names :: [Name] = map(patternListVars, head(mrs).headPattern.patternSubPatternList);
 
-  local subcase :: Expr =
-    caseExpr(
+  local subcase :: Expr = subCaseCompile.fst;
+  local subCaseCompile::Pair<Expr [Message]> =
+    compileCaseExpr(
       map(exprFromName, names) ++ annoAccesses ++ restExprs,
       map(\ mr::AbstractMatchRule -> mr.expandHeadPattern(annos), mrs),
-      failCase, retType, location=head(mrs).location);
+      failCase, retType, head(mrs).location);
   -- TODO: head(mrs).location is probably not the correct thing to use here?? (generally)
 
   local annos :: [String] =
@@ -416,14 +860,15 @@ PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type 
   return
     case head(mrs).headPattern of
     | prodAppPattern_named(qn,_,_,_,_,_) -> 
-        prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', '->', subcase, location=l)
-    | intPattern(it) -> integerPattern(it, '->', subcase, location=l)
-    | fltPattern(it) -> floatPattern(it, '->', subcase, location=l)
-    | strPattern(it) -> stringPattern(it, '->', subcase, location=l)
-    | truePattern(_) -> booleanPattern("true", '->', subcase, location=l)
-    | falsePattern(_) -> booleanPattern("false", '->', subcase, location=l)
-    | nilListPattern(_,_) -> nilPattern(subcase, location=l)
-    | consListPattern(h,_,t) -> conslstPattern(head(names), head(tail(names)), subcase, location=l)
+        pair(prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', '->', subcase, location=l), subCaseCompile.snd)
+    | intPattern(it) -> pair(integerPattern(it, '->', subcase, location=l), subCaseCompile.snd)
+    | fltPattern(it) -> pair(floatPattern(it, '->', subcase, location=l), subCaseCompile.snd)
+    | strPattern(it) -> pair(stringPattern(it, '->', subcase, location=l), subCaseCompile.snd)
+    | truePattern(_) -> pair(booleanPattern("true", '->', subcase, location=l), subCaseCompile.snd)
+    | falsePattern(_) -> pair(booleanPattern("false", '->', subcase, location=l), subCaseCompile.snd)
+    | nilListPattern(_,_) -> pair(nilPattern(subcase, location=l), subCaseCompile.snd)
+    | consListPattern(h,_,t) -> pair(conslstPattern(head(names), head(tail(names)), subcase, location=l), subCaseCompile.snd)
+    | _ -> error("Can only have constructor patterns in allConCaseTransform")
     end;
 }
 

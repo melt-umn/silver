@@ -91,7 +91,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   local monadLocalBody::Expr =
     buildMonadicBinds(monadStuff.1,
                       caseExpr(monadStuff.snd,
-                               ml.matchRuleList, failure,
+                               ml.matchRuleList, !isMonadFail(top.expectedMonad, top.env), failure,
                                outty, location=top.location), top.location);
   monadLocal.mDownSubst = ml.mUpSubst;
   monadLocal.frame = top.frame;
@@ -160,13 +160,15 @@ Boolean ::= elst::[Expr] env::Decorated Env sub::Substitution f::BlockContext gn
 --use a name from names when that is not empty; when empty, use a new name
 function monadicMatchTypesNames
 ([(Type, (Expr, String))], [Expr]) ::=
-elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext gn::String
+  elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext gn::String
   cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::Decorated FlowEnv names::[String]
   loc::Location index::Integer em::Type iR::Boolean oR::[Decorated Expr]
 {
   local attribute subcall::([(Type, Expr, String)], [Expr]);
   subcall = case elst, tylst of
             | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, env, sub, f, gn, cg, c, fe, ntail, loc, index+1, em, iR, oR)
+            | [], [] -> error("Should not access subcall in monadicMatchTypesNames with empty lists")
+            | _, _ -> error("Both lists in monadicMatchTypesNames must be the same length")
             end;
   local ntail::[String] = if null(names) then [] else tail(names);
   local newName::String = if null(names)
@@ -209,8 +211,7 @@ Expr ::= bindlst::[(Type, Expr, String)] base::Expr loc::Location
   turning into a bind over the matching, so everything matching
   fails.-}
 aspect production caseExpr
-top::Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type {
-
+top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Expr retType::Type {
   local monadLocal::Expr = result.fst;
   monadLocal.mDownSubst = top.mDownSubst;
   monadLocal.frame = top.frame;
@@ -429,7 +430,7 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   --Build a separate case expression for each match rule with mzero as the failure
   local caseExprs::[Expr] =
         map(\ x::AbstractMatchRule ->
-             caseExpr(nameExprs, [x], mzero, top.mtyperep, location=top.location),
+             caseExpr(nameExprs, [x], false, mzero, top.mtyperep, location=top.location),
             ml.matchRuleList);
   --Rewrite the case expressions, wrapped in lambdas to provide the names
   local rewrittenCaseExprs::[Expr] =
