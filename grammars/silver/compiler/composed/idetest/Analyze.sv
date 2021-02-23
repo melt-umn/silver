@@ -17,12 +17,12 @@ IOVal<[Message]> ::= args::[String]  svParser::SVParser ioin::IO
 {
   -- Figure out arguments
   local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
-  local a :: Decorated CmdArgs = case argResult of right(t) -> t end;
+  local a :: Decorated CmdArgs = argResult.fromRight;
   local argErrors :: [String] = case argResult of | left(s) -> [s] | _ -> [] end;
 
   -- Figure out build env from environment and args
   local benvResult :: IOVal<Either<BuildEnv  [String]>> = determineBuildEnv(a, ioin);
-  local benv :: BuildEnv = case benvResult.iovalue of left(t) -> t end;
+  local benv :: BuildEnv = benvResult.iovalue.fromLeft;
   local envErrors :: [String] = case benvResult.iovalue of | right(s) -> s | _ -> [] end;
   
   -- Let's start preparing to build
