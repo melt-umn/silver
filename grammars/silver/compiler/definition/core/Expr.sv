@@ -187,7 +187,16 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
-  top.typerep = q.lookupValue.typeScheme.monoType; -- These aren't generalized, for now.
+  -- Type inference
+  production typeScheme::PolyType = q.lookupValue.typeScheme;
+  top.typerep = typeScheme.typerep;
+
+  -- Context resolution 
+  -- Performs final substition on all the contexts
+  production contexts::Contexts =
+    foldContexts(map(performContextSubstitution(_, top.finalSubst), typeScheme.contexts));
+  contexts.env = top.env;
+
 }
 
 concrete production concreteForwardExpr
