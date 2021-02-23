@@ -115,11 +115,13 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
     -- However we don't know what the instance type actually is, and want to skip the
     -- decidability check, so just put errorType here for now.
     | instContext(cls, _) -> just(instContext(cls, errorType()))
+    | _ -> error("Class head is not an instContext")
     end;
   cl.constraintSigName = nothing();
   cl.classDefName =
     case top.classHead of
     | instContext(cls, _) -> just(cls)
+    | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
   
@@ -153,11 +155,13 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
     -- However we don't know what the instance type actually is, and want to skip the
     -- decidability check, so just put errorType here for now.
     | instContext(cls, _) -> just(instContext(cls, errorType()))
+    | _ -> error("Class head is not an instContext")
     end;
   cl.constraintSigName = nothing();
   cl.classDefName =
     case top.classHead of
     | instContext(cls, _) -> just(cls)
+    | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
   
