@@ -1,6 +1,10 @@
 #!/bin/bash
 
+set -eu
+silver() { "../../support/bin/silver" "$@"; }
+
+SRC=..  # cheating a bit. Current directory should be 'stlc'
 GRAMMAR=stlc
 
-silver --clean -I .. $GRAMMAR
+silver -I $SRC $@ $GRAMMAR
 
