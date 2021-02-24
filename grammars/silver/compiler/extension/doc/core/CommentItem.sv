@@ -2,7 +2,8 @@ grammar silver:compiler:extension:doc:core;
 
 synthesized attribute body :: String;
 synthesized attribute loc :: Location;
-nonterminal CommentItem with body, loc, doEmit;
+synthesized attribute stub :: Boolean;
+nonterminal CommentItem with body, loc, doEmit, stub;
 
 {-
 Used by other productions to construct 
@@ -24,6 +25,7 @@ top::CommentItem ::= dcl::Decorated AGDcl body::Decorated DclComment
 	top.body = makeStub(dcl.docUnparse, dcl.grammarName, dcl.location) ++ "\n\n" ++ body.body;
 	top.loc = dcl.location;
 	top.doEmit = body.doEmit;
+	top.stub = false;
 }
 
 abstract production standaloneDclCommentItem
@@ -32,4 +34,14 @@ top::CommentItem ::= body::Decorated DclComment
 	top.body = body.body;
 	top.loc = body.location;
 	top.doEmit = body.doEmit;
+	top.stub = false;
+}
+
+abstract production undocumentedItem
+top::CommentItem ::= dcl::Decorated AGDcl
+{
+	top.body = makeStub(dcl.docUnparse, dcl.grammarName, dcl.location) ++ "\n\n (Undocumented.)";
+	top.loc = dcl.location;
+	top.doEmit = true;
+	top.stub = true;
 }

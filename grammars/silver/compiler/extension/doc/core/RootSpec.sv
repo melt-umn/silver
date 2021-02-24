@@ -49,6 +49,8 @@ function formatFile
                           comments::[CommentItem]
 {
 	local realDocs::[CommentItem] = filter((.doEmit), comments);
+	local stubDocs::[CommentItem] = filter((.stub), realDocs);
+	local nonStubDocs::[CommentItem] = filter((\x::CommentItem->!x.stub), realDocs);
 	return if length(realDocs) == 0 && skipIfEmpty then [] else [pair(fileName, s"""---
 title: "${title}"
 weight: ${toString(weight)}
@@ -57,8 +59,18 @@ geekdocBreadcrumb: false
 
 ${pfxText}
 
-${implode("\n\n<hr/>\n\n", map((.body), realDocs))}
-""")];
+${implode("\n\n<hr/>\n\n", map((.body), nonStubDocs))}
+
+
+"""
+++ (if length(stubDocs)!=0 then s"""
+{{< expand "Undocumented Items" "..." >}}
+
+${implode("\n\n<hr/>\n\n", map((.body), stubDocs))}
+
+{{< /expand >}}
+""" else ""
+))];
 }
 
 function lastPart

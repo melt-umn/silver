@@ -61,10 +61,11 @@ aspect default production
 top::AGDcl ::=
 {
   top.upDocConfig := [];
-  top.docs := [];
+  top.docs := [undocumentedItem(top)];
   top.docDcls := [];
   top.undocumentedNamed = [];
   top.documentedNamed = [];
+  top.docUnparse = head(explode("\n", top.unparse)) ++ "\n{{< hint danger >}}\nNo docUnparse defined for `" ++ hackUnparse(top) ++ "`\n{{< /hint >}}\n\n";
 }
 
 aspect production appendAGDcl

@@ -29,9 +29,10 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
     top.upDocConfig <- parsed.upDocConfig;
     top.errors <- parsed.errors;
 
-    local isDoubleComment::Boolean = length(dcl.docs) != 0;
+    local realDclDocs::[CommentItem] = filter((\x::CommentItem->!x.stub), dcl.docs);
+    local isDoubleComment::Boolean = length(realDclDocs) != 0;
     top.docs := if isDoubleComment
-                  then [standaloneDclCommentItem(parsed)] ++ dcl.docs
+                  then [standaloneDclCommentItem(parsed)] ++ realDclDocs
                   else [dclCommentItem(dcl, parsed)];
     top.errors <- if isDoubleComment
                     then [wrn(parsed.location, "Doc comment not immediately preceding AGDcl, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
