@@ -304,6 +304,14 @@ wrongCode "is a type alias" {
   }
 }
 
+wrongCode "a has kind * -> * -> *, but kind * is expected here" {
+  function badKind
+  Semigroupoid a => Integer ::= a
+  {
+    return 42;
+  }
+}
+
 class BoolThing a {
   bteq :: Eq b => (a ::= b b);
 }
@@ -322,14 +330,21 @@ class runtimeTypeable a => MyTypeable a {
 instance runtimeTypeable a => MyTypeable a {}
 
 instance MyTypeable Integer {
-  myreify = \ a::AST -> case a of integerAST(i) -> i end;
+  myreify = \ a::AST -> case a of integerAST(i) -> i | _ -> error("not integer") end;
 }
 
 instance runtimeTypeable a, MyTypeable b => MyTypeable Pair<a b> {
-  myreify = \ a::AST -> case a of AST { silver:core:pair(fst, snd) } -> pair(reifyUnchecked(fst), myreify(snd)) end;
+  myreify = \ a::AST -> case a of AST { silver:core:pair(fst, snd) } -> pair(reifyUnchecked(fst), myreify(snd)) | _ -> error("not pair") end;
 }
 
 equalityTest(myreify(reflect(42)), 42, Integer, silver_tests);
 equalityTest(myreify(reflect("hello")), "hello", String, silver_tests);
 equalityTest(myreify(reflect(pair("abc", 123))), pair("abc", 123), Pair<String Integer>, silver_tests);
 
+wrongCode "a has kind * -> * -> *, but kind * is expected here" {
+  function badKind
+  Semigroupoid a, runtimeTypeable a => Integer ::=
+  {
+    return 42;
+  }
+}

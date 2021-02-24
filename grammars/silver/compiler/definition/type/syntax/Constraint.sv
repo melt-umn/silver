@@ -89,6 +89,7 @@ top::Constraint ::= 'runtimeTypeable' t::TypeExpr
   top.contexts = [typeableContext(t.typerep)];
   
   top.errors <- t.errorsTyVars;
+  top.errors <- t.errorsKindStar;
 
   local instDcl::DclInfo =
     case top.constraintSigName, top.instanceHead of
