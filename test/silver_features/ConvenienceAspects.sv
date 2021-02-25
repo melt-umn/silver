@@ -130,12 +130,17 @@ top::BazExpr ::=
 
 synthesized attribute bazList :: [Integer] with ++ occurs on BazExpr;
 
+aspect production bazInit1
+top::BazExpr ::= ppList::[String] value::Integer
+{
+  top.bazList := [4];
+}
+
 aspect bazList on BazExpr using := of
 | bazInit2(h::t,value) -> [length(h), value]
 | bazInit2([],value) -> [0, value]
 | bazInit3(_,val) -> [val]
 | bazInit4() -> []
-| _ -> []
 end;
 
 
