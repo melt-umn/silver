@@ -108,8 +108,6 @@ top::Context ::= i1::Type i2::Type
           !unifyDirectional(d.typerep2, i2).failure && !d.typerep2.isError,
         searchEnvScope("subset", top.env.instTree))
     end;
-
-  production resolvedDcl::DclInfo = head(top.resolved); -- "instances" should not bind any type variables
 }
 
 -- Invariant: This should be called when a and b are unifyable
