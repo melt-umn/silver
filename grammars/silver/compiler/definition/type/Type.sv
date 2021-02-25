@@ -59,6 +59,12 @@ top::Context ::= t::Type
   top.freeVariables = t.freeVariables;
 }
 
+abstract production inhSubsetContext
+top::Context ::= i1::Type i2::Type
+{
+  top.freeVariables = setUnionTyVars(i1.freeVariables, i2.freeVariables);
+}
+
 {--
  - Silver Type Representations.
  -}

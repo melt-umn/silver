@@ -19,3 +19,7 @@ terminal TerminalId_tkwd 'TerminalId' lexer classes {TYPE,RESERVED};
 terminal InhSet_tkwd     'InhSet'     lexer classes {TYPE}; -- Well, actually a kind
 
 terminal RuntimeTypeable_kwd 'runtimeTypeable' lexer classes {KEYWORD,RESERVED};
+terminal Subset_kwd          'subset'          lexer classes {KEYWORD};
+
+-- Avoid making 'subset' reserved, for now
+disambiguate Subset_kwd, IdLower_t { pluck Subset_kwd; }

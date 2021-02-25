@@ -102,6 +102,49 @@ top::Constraint ::= 'runtimeTypeable' t::TypeExpr
   top.defs <- [tcInstDef(instDcl)];
 }
 
+concrete production inhSubsetConstraint
+top::Constraint ::= i1::TypeExpr 'subset' i2::TypeExpr
+{
+  top.unparse = i1.unparse ++ " subset " ++ i2.unparse;
+  top.contexts = [inhSubsetContext(i1.typerep, i2.typerep)];
+
+  top.errors <-
+    if i1.typerep.kindrep != inhSetKind()
+    then [err(top.location, s"${top.unparse} has kind ${prettyKind(i1.typerep.kindrep)}, but kind InhSet is expected here")]
+    else [];
+  top.errors <-
+    if i2.typerep.kindrep != inhSetKind()
+    then [err(top.location, s"${top.unparse} has kind ${prettyKind(i2.typerep.kindrep)}, but kind InhSet is expected here")]
+    else [];
+
+  local isSuper::Boolean =
+    case top.constraintSigName, top.instanceHead of
+    | nothing(), nothing() -> true
+    | _, _ -> false
+    end;
+  top.errors <-
+    if isSuper
+    then [err(top.location, "subset constraint not permitted as superclass")]
+    else [];
+  local instDcl::DclInfo =
+    case top.constraintSigName of
+    | just(sigfn) -> inhSubsetSigConstraintDcl(i1.typerep, i2.typerep, sigfn, sourceGrammar=top.grammarName, sourceLocation=top.location)
+    | nothing()-> inhSubsetInstConstraintDcl(i1.typerep, i2.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location)
+    end;
+  top.defs <- if isSuper then [] else [tcInstDef(instDcl)];
+
+  top.lexicalTyVarKinds <-
+    case i1 of
+    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, inhSetKind())]
+    | _ -> []
+    end;
+  top.lexicalTyVarKinds <-
+    case i2 of
+    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, inhSetKind())]
+    | _ -> []
+    end;
+}
+
 function transitiveSuperContexts
 [Context] ::= env::Decorated Env ty::Type seenClasses::[String] className::String
 {

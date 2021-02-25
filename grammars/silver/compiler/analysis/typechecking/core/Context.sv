@@ -51,3 +51,14 @@ top::Context ::= t::Type
 
   top.upSubst = top.downSubst; -- No effect on decoratedness
 }
+
+aspect production inhSubsetContext
+top::Context ::= i1::Type i2::Type
+{
+  top.contextErrors :=
+    if null(top.resolved)
+    then [err(top.contextLoc, s"${prettyType(i1)} is not a subset of ${prettyType(i2)} (arising from ${top.contextSource})")]
+    else [];
+
+  top.upSubst = top.downSubst; -- No effect on decoratedness
+}

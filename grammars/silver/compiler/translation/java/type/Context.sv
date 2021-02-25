@@ -29,6 +29,12 @@ synthesized attribute transTypeableContext::String occurs on Context;
 synthesized attribute transContextSuperAccessorName::String occurs on Context;
 synthesized attribute transContextSuperAccessor::String occurs on Context;
 
+aspect default production
+top::Context ::=
+{
+  top.transTypeableContext = top.transContext; -- Shouldn't be demanded?
+}
+
 aspect production instContext
 top::Context ::= fn::String t::Type
 {
@@ -36,7 +42,6 @@ top::Context ::= fn::String t::Type
   
   resolvedDcl.transContextDeps = requiredContexts.transContexts;
   top.transContext = resolvedDcl.transContext;
-  top.transTypeableContext = top.transContext; -- Shouldn't be demanded?
   
   top.transContextSuperAccessorName = makeInstanceSuperAccessorName(fn);
   top.transContextSuperAccessor = s"""
@@ -72,6 +77,20 @@ ${makeTyVarDecls(5, t.freeVariables)}
   top.transContextSuperAccessorName = "getType";
   top.transContextSuperAccessor = s"""
 	public final common.TypeRep getType() {
+		return ${top.transTypeableContext};
+	}
+""";
+}
+
+aspect production inhSubsetContext
+top::Context ::= i1::Type i2::Type
+{
+  -- This doesn't actually encode any runtime information, for now...
+  top.transType = "Object";
+  top.transContext = "null";
+  top.transContextSuperAccessorName = "getInhSubset";
+  top.transContextSuperAccessor = s"""
+	public final common.TypeRep getInhSubset() {
 		return ${top.transTypeableContext};
 	}
 """;
@@ -135,6 +154,21 @@ top::DclInfo ::= ty::Type
   ty.skolemTypeReps = zipWith(pair, ty.freeVariables, top.transContextDeps);
   top.transContext = ty.transTypeRep;
 }
+aspect production inhSubsetInstConstraintDcl
+top::DclInfo ::= i1::Type i2::Type
+{
+  top.transContext = "null";
+}
+aspect production inhSubsetSigConstraintDcl
+top::DclInfo ::= i1::Type i2::Type fnsig::String
+{
+  top.transContext = "null";
+}
+aspect production inhSubsetDcl
+top::DclInfo ::= i1::Type i2::Type
+{
+  top.transContext = "null";
+}
 
 function makeConstraintDictName
 String ::= s::String t::Type
@@ -148,6 +182,14 @@ String ::= t::Type
 {
   t.boundVariables = [];
   return "typeRep_" ++ t.transTypeName;
+}
+
+function makeInhSubsetName
+String ::= i1::Type i2::Type
+{
+  i1.boundVariables = [];
+  i2.boundVariables = [];
+  return s"inhSubset_${i1.transTypeName}_${i2.transTypeName}";
 }
 
 function makeInstanceSuperAccessorName

@@ -46,6 +46,13 @@ top::Context ::= t::Type
   top.contextRefElem = makeTypeableName(t);
 }
 
+aspect production inhSubsetContext
+top::Context ::= i1::Type i2::Type
+{
+  top.contextSigElem = s"final ${top.transType} ${makeInhSubsetName(i1, i2)}";
+  top.contextRefElem = makeInhSubsetName(i1, i2);
+}
+
 -- TODO: It'd be nice to maybe split these into the ordered parameters and the annotations
 aspect production namedSignatureElement
 top::NamedSignatureElement ::= n::String ty::Type

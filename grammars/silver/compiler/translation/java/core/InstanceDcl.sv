@@ -45,6 +45,14 @@ top::Context ::= t::Type
   top.contextInitTrans = s"\t\tthis.${makeTypeableName(t)} = ${makeTypeableName(t)};\n";
 }
 
+aspect production inhSubsetContext
+top::Context ::= i1::Type i2::Type
+{
+  top.contextMemberDeclTrans = s"\tpublic final ${top.transType} ${makeInhSubsetName(i1, i2)};\n";
+  top.contextParamTrans = s"${top.transType} ${makeInhSubsetName(i1, i2)}";
+  top.contextInitTrans = s"\t\tthis.${makeInhSubsetName(i1, i2)} = ${makeInhSubsetName(i1, i2)};\n";
+}
+
 attribute translation occurs on InstanceBody, InstanceBodyItem;
 
 aspect production consInstanceBody

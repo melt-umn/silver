@@ -60,7 +60,6 @@ top::Context ::= cls::String t::Type
   requiredContexts.env = top.env;
 }
 
-
 aspect production typeableContext
 top::Context ::= t::Type
 {
@@ -88,6 +87,30 @@ top::Type ::=
 aspect production skolemType
 top::Type ::= _
 { top.isTypeable = false; }
+
+aspect production inhSubsetContext
+top::Context ::= i1::Type i2::Type
+{
+  top.contextSuperDcl = error("subset can't appear as superclass");
+  top.contextMemberDcl = inhSubsetInstConstraintDcl(i1, i2, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextClassName = nothing();
+
+  top.resolved =
+    case i1, i2 of
+    | skolemType(a1), skolemType(a2) when a1 == a2 -> 
+      [inhSubsetDcl(i1, i2, sourceGrammar="silver:core", sourceLocation=txtLoc("<builtin>"))]
+    | inhSetType(inhs1), inhSetType(inhs2) when all(map(contains(_, inhs2), inhs1)) -> 
+      [inhSubsetDcl(i1, i2, sourceGrammar="silver:core", sourceLocation=txtLoc("<builtin>"))]
+    | _, _ ->
+      filter(
+        \ d::DclInfo ->
+          !unifyDirectional(d.typeScheme.monoType, i1).failure && !d.typeScheme.monoType.isError &&
+          !unifyDirectional(d.typerep2, i2).failure && !d.typerep2.isError,
+        searchEnvScope("subset", top.env.instTree))
+    end;
+
+  production resolvedDcl::DclInfo = head(top.resolved); -- "instances" should not bind any type variables
+}
 
 -- Invariant: This should be called when a and b are unifyable
 function isMoreSpecific
