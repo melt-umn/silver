@@ -71,6 +71,7 @@ aspect foopp on top::BarExpr of
 | barInit1([],_) -> "emptyFoopp"
 | barInit1(h::t,_) -> h ++ "Foopp" ++ top.hiddenAttr
 | barInit2(h :: t,value) -> h ++ " and then " ++ toString(value)
+| barInit2([],value) -> toString(value)
 | barInit3(_,val) -> toString(val) ++ top.hiddenAttr
 | barInit4() -> "Foopp"
 | _ -> top.hiddenAttr
@@ -131,6 +132,7 @@ synthesized attribute bazList :: [Integer] with ++ occurs on BazExpr;
 
 aspect bazList on BazExpr using := of
 | bazInit2(h::t,value) -> [length(h), value]
+| bazInit2([],value) -> [0, value]
 | bazInit3(_,val) -> [val]
 | bazInit4() -> []
 | _ -> []
@@ -142,6 +144,7 @@ synthesized attribute bagList :: [String] with ++ occurs on BazExpr;
 
 aspect bagList on top::BazExpr using <- of
 | bazInit2(h::t,value) -> [h, toString(value)]
+| bazInit2([],value) -> [toString(value)]
 | bazInit3(_,val) -> [top.hiddenAttr]
 | bazInit4() -> explode(top.hiddenAttr,"\t")
 | _ -> []
@@ -170,14 +173,25 @@ synthesized attribute bagList3 :: [String] with ++ occurs on BazExpr;
 warnCode "This pattern and the ones that follow are being ignored." {
     aspect bagList2 on top::BazExpr using <- of
     | bazInit2(h::t,value) -> [h, toString(value)]
-    | coolName -> coolName.hiddenAttr
+    | bazInit2([],value) -> [toString(value)]
+    | coolName -> [coolName.hiddenAttr]
     | _ -> ["ignored"]
     end;
+}
+
+
+warnCode "warning: This pattern-matching is not exhaustive.  Here is an example of a case that is not matched:  [], _" {
+    synthesized attribute bagList4 :: [String] with ++ occurs on BazExpr;
+        aspect bagList2 on top::BazExpr using <- of
+        | bazInit2(h::t,value) -> [h, toString(value)]
+        | coolName -> [coolName.hiddenAttr]
+        end;
 }
 
 synthesized attribute gAttribute :: String occurs on BazExpr;
 aspect gAttribute on BazExpr of
     | bazInit2(h::t,value) -> h ++ toString(value)
+    | bazInit2([],value) -> toString(value)
     | bazInit3(_,val) -> toString(val)
     | coolName -> coolName.hiddenAttr
 end;
