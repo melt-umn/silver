@@ -66,6 +66,6 @@ global myMap::([b] ::= (b ::= a) [a]) = map;
 global globLst::[Integer] = myMap((\x::Integer -> x + 3), [1,2,3,4,5]);
 equalityTest (head(globLst), 4, Integer, silver_tests );
 
---global myEq::Eq a => Boolean ::= a a = eq;
---equalityTest (myEq(1, 2), false, Boolean, silver_tests);
+global myEq::Eq a => (Boolean ::= a a) = eq;
+equalityTest (myEq(1, 2), false, Boolean, silver_tests);
 

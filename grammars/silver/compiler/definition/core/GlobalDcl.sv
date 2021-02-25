@@ -3,12 +3,15 @@ grammar silver:compiler:definition:core;
 import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph;
 
 concrete production globalValueDclConcrete
-top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
+top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e::Expr ';'
 {
-  top.unparse = "global " ++ id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse ++ ";\n";
+  top.unparse = "global " ++ id.unparse ++ " :: " ++ cl.unparse ++ " => " ++ t.unparse ++ " = " ++ e.unparse ++ ";\n";
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
+
+  production contexts::[Context] = cl.contexts;
+  production boundVars::[TyVar] = t.typerep.freeVariables;
 
   production attribute allLexicalTyVars :: [String];
   allLexicalTyVars = nub(t.lexicalTypeVariables);
@@ -18,7 +21,7 @@ top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
   t.env = newScopeEnv(typeExprDefs, top.env);
   e.env = newScopeEnv(typeExprDefs, top.env);
 
-  top.defs := [globalDef(top.grammarName, id.location, fName, t.typerep)];
+  top.defs := [globalDef(top.grammarName, id.location, fName, boundVars, contexts, t.typerep)];
 
   top.errors <-
     if length(getValueDclAll(fName, top.env)) > 1
@@ -28,6 +31,10 @@ top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
   e.originRules = [];
   e.isRoot = true;
 
+  cl.instanceHead = nothing();
+  cl.constraintSigName = nothing();
+  cl.classDefName = just(fName);
+
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
@@ -36,4 +43,12 @@ top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
     constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
 
   e.frame = globalExprContext(myFlowGraph, sourceGrammar=top.grammarName);
+}
+
+concrete production globalValueDclConcreteNoCL
+top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
+{
+  top.unparse = "global " ++ id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse ++ ";\n";
+
+  forwards to globalValueDclConcrete($1, id, $3, nilConstraint(location=top.location), '=>', t, $5, e, $7, location=top.location);
 }

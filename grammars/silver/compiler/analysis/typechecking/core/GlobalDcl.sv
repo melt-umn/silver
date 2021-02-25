@@ -1,7 +1,7 @@
 grammar silver:compiler:analysis:typechecking:core;
 
 aspect production globalValueDclConcrete
-top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
+top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e::Expr ';'
 {
   top.errors <- t.errorsKindStar;
 

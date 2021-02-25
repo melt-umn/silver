@@ -93,7 +93,7 @@ top::DclInfo ::= ns::NamedSignature
   top.defLHSDispatcher = errorDefLHS(_, location=_);
 }
 aspect production globalValueDcl
-top::DclInfo ::= fn::String bound::[TyVar] ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
 {
   top.refDispatcher = globalValueReference(_, location=_);
   top.defDispatcher = errorValueDef(_, _, location=_);
