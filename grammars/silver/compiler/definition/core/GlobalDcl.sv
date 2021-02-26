@@ -20,8 +20,8 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
   typeExprDefs := addNewLexicalTyVars(top.grammarName, top.location, t.lexicalTyVarKinds, allLexicalTyVars);
   
   cl.env = newScopeEnv(typeExprDefs, top.env);
-  t.env = cl.env;
-  e.env = cl.env;
+  t.env = cl.env;  
+  e.env = newScopeEnv(cl.defs, cl.env);
 
   top.defs := [globalDef(top.grammarName, id.location, fName, boundVars, contexts, t.typerep)];
 
@@ -34,8 +34,8 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
   e.isRoot = true;
 
   cl.instanceHead = nothing();
-  cl.constraintSigName = nothing();
-  cl.classDefName = just(fName);
+  cl.constraintSigName = just(fName);
+  cl.classDefName = nothing();
 
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
