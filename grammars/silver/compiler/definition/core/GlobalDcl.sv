@@ -18,8 +18,10 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
   
   production attribute typeExprDefs :: [Def] with ++;
   typeExprDefs := addNewLexicalTyVars(top.grammarName, top.location, t.lexicalTyVarKinds, allLexicalTyVars);
-  t.env = newScopeEnv(typeExprDefs, top.env);
-  e.env = newScopeEnv(typeExprDefs, top.env);
+  
+  cl.env = newScopeEnv(typeExprDefs, top.env);
+  t.env = cl.env;
+  e.env = cl.env;
 
   top.defs := [globalDef(top.grammarName, id.location, fName, boundVars, contexts, t.typerep)];
 
