@@ -40,9 +40,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
     | _ -> []
     end;
   
-  cl.instanceHead = just(instContext(fName, ty.typerep));
-  cl.constraintSigName = nothing();
-  cl.classDefName = nothing();
+  cl.constraintPos = instancePos(instContext(fName, ty.typerep));
 
   production attribute headPreDefs :: [Def] with ++;
   headPreDefs := [];

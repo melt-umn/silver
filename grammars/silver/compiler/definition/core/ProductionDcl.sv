@@ -75,9 +75,7 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
 {
   top.unparse = s"${cl.unparse} => ${lhs.unparse} ::= ${rhs.unparse}";
   
-  cl.instanceHead = nothing();
-  cl.constraintSigName = just(top.signatureName);
-  cl.classDefName = nothing();
+  cl.constraintPos = signaturePos(top.namedSignature);
 
   top.defs := lhs.defs ++ rhs.defs;
   top.constraintDefs = cl.defs;

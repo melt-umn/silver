@@ -7,8 +7,8 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
     if null(cl.contexts) then
       s"\tpublic static final common.Thunk<${t.typerep.transType}> global_${id.name} = ${wrapThunkText(e.translation, t.typerep.transType)};\n"
     else s"""
-  public static final common.Thunk<${t.typerep.transType}> global_${id.name}(${implode(", ", map((.contextSigElem), cl.contexts))}){
-    return ${wrapThunkText(e.translation, t.typerep.transType)};
-  }
+	public static final common.Thunk<${t.typerep.transType}> global_${id.name}(${implode(", ", map((.contextSigElem), cl.contexts))}){
+		return ${wrapThunkText(e.translation, t.typerep.transType)};
+	}
 """;
 }

@@ -33,9 +33,7 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
   e.originRules = [];
   e.isRoot = true;
 
-  cl.instanceHead = nothing();
-  cl.constraintSigName = just(fName);
-  cl.classDefName = nothing();
+  cl.constraintPos = globalPos();
 
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
