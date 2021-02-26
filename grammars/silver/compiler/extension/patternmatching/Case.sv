@@ -381,7 +381,7 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env
   the set of second patterns is complete.  Both sets are complete
   individually, but in their combination there is no pattern to match
   `0, 0`.  We need to group by the first pattern, add the variable
-  patterns to each constructor set, then check completenss.  For our
+  patterns to each constructor set, then check completeness.  For our
   example, we will need to group into
      [ [(1, _), (_, 1)],  [(2, _), (_, 1)],  [(_, 1)] ]
   then check the completeness of the tails of the patterns in these
