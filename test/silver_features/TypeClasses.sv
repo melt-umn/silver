@@ -220,7 +220,11 @@ instance MyFunctor [] {
 equalityTest(myfmap(\ x::Integer -> toFloat(x), [1, 2, 3]), [1.0, 2.0, 3.0], [Float], silver_tests);
 equalityTest(myfmap(\ x::Integer -> toFloat(x), just(42)).fromJust, 42.0, Float, silver_tests);
 equalityTest(myfmap(\ x::Integer -> toFloat(x), left("abc")).fromLeft, "abc", String, silver_tests);
-equalityTest(myfmap(\ x::Integer -> toFloat(x), right(42)).fromRight, 42.0, Float, silver_tests);
+equalityTest(myfmap(\ x::Integer -> toFloat(x), let e::Either<String Integer> = right(42) in e end).fromRight, 42.0, Float, silver_tests);
+
+wrongCode "Ambiguous type variable a (arising from the use of myfmap) prevents the constraint silver_features:MyFunctor silver:core:Either<a _> from being solved" {
+  global ambRes::String = hackUnparse(myfmap(\ x::Integer -> toFloat(x), right(42)).fromRight);
+}
 
 wrongCode "Either has kind * -> * -> *, but the class MyFunctor expected kind * -> *" {
   instance MyFunctor Either {}

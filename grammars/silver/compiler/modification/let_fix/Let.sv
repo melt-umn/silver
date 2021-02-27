@@ -139,7 +139,7 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 
   top.typerep = 
     case q.lookupValue.typeScheme.monoType of
-    -- This should match if it's a ntOrDecType.
+    | ntOrDecType(t, i, _) -> ntOrDecType(t, i, freshType())
     | decoratedType(t, i) -> ntOrDecType(t, i, freshType())
     | t -> t
     end;

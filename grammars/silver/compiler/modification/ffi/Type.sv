@@ -5,6 +5,8 @@ top::Type ::= fn::String  transType::String  params::[Type]
 {
   top.typeName = fn;
   top.freeVariables = setUnionTyVarsAll(map((.freeVariables), params));
+  top.freeSkolemVars := setUnionTyVarsAll(map((.freeSkolemVars), params));
+  top.freeFlexibleVars := setUnionTyVarsAll(map((.freeFlexibleVars), params));
   top.substituted = foreignType(fn, transType, mapSubst(params, top.substitution));
   top.flatRenamed = foreignType(fn, transType, mapRenameSubst(params, top.substitution));
   top.typepp = fn ++ if !null(params) then "<" ++ implode(" ", map(prettyTypeWith(_, top.boundVariables), params)) ++ ">" else "";

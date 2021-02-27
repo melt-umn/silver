@@ -251,7 +251,12 @@ top::Type ::= nt::Type inhs::Type hidden::Type
                       end;
   
   -- If we never specialize, we're decorated.
-  forwards to decoratedType(nt, inhs);
+  forwards to
+    case inhs of
+    -- If we never specialize what we're decorated with, we're decorated with nothing.
+    | varType(_) -> decoratedType(nt, inhSetType([]))
+    | _ -> decoratedType(nt, inhs)
+    end;
 }
 
 {--
