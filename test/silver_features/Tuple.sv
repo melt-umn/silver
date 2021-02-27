@@ -236,3 +236,12 @@ wrongCode "Invalid tuple selector index." {
 
 equalityTest((3, 2).2, 2, Integer, silver_tests);
 equalityTest(("one", 2).1, "one", String, silver_tests);
+
+-- polymorphism
+function thirdOfFive
+c ::= tuple::(a,b,c,d,e)
+{
+  return tuple.3;
+}
+equalityTest(thirdOfFive((1,2,"three", 4, "five")), "three", String, silver_tests);
+equalityTest(thirdOfFive((1,2,3,"four", "five")), 3, Integer, silver_tests);
