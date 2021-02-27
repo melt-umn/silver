@@ -50,6 +50,7 @@ Integer ::= tuple::(Integer, String, String, Integer)
   return case tuple of
     | (fst, _, _, 4) -> fst
     | (8, _, _, frth) -> frth
+    | _ -> error("match failed")
     end; 
 }
 
