@@ -293,17 +293,6 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env
   local varGroup::[[Decorated Pattern]] = pattGroups.1;
   local consGroup::[[Decorated Pattern]] = pattGroups.2;
 
-  local conPatts::[Decorated Pattern] = map(head, consGroup);
-
-{-  --This is safer than mapping head because we might be short some patterns
-  local firstPatt::[Pattern] =
-        foldr(\ l::[Pattern] rest::[Pattern] ->
-                if length(l) > 0 then head(l)::rest else rest, [], lst);
-  local partPatts::Pair<[Pattern] [Pattern]> =
-        partition((.patternIsVariable), firstPatt);
-  local varPatts::[Pattern] = partPatts.fst;
-  local conPatts::[Pattern] = partPatts.snd;-}
-
   local allPattLens::[Integer] = map(\ x::[Decorated Pattern] -> length(x), lst);
   local allSameLen::Boolean =
         if null(lst)
@@ -314,6 +303,8 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env
         then 0
         else head(allPattLens);
 
+  --We delegate checking based on the kind of pattern which is first in the list.
+  local conPatts::[Decorated Pattern] = map(head, consGroup);
   local isPrimPatts::Boolean =
         foldr(\ a::Decorated Pattern b::Boolean -> b || a.isPrimitivePattern,
               false, conPatts);
@@ -324,31 +315,19 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env
         foldr(\ a::Decorated Pattern b::Boolean -> b || a.isListPattern,
               false, conPatts);
 
-  {-Checking Pattern Completeness
-
-    Everything is complete if it has a variable pattern.  Some other
-    types can also be complete in other ways:
-
-    * Boolean:  A Boolean match is complete if it has patterns for
-      true and false.
-
-    * Lists:  A list match is complete if it has patterns for nil and
-      cons, and the heads and tails of cons are complete patterns as
-      well.
-
-    * Non-Closed Nonterminals:  These are complete if they have a
-      pattern for each non-forwarding production.
+  {-
+    Each checking function checks completeness of the first patterns
+    in the sets, which are of the appropriate type, including checking
+    for variable patterns.  If the first patterns are complete, it
+    then handles grouping the rest of the sets of patterns and
+    checking if they are complete as well.  Correctly handling
+    grouping is the reason we need to have a separate function for
+    each kind of pattern.
   -}
-  local boolComp::Maybe<[Pattern]> = unsafeTrace(checkBooleanCompleteness(consGroup, varGroup, env, flowEnv), print("Bool patterns " ++ head(head(lst)).location.unparse ++ "\n\n", unsafeIO()));
-  local listComp::Maybe<[Pattern]> = unsafeTrace(checkListCompleteness(consGroup, varGroup, env, flowEnv), print("List patterns " ++ head(head(lst)).location.unparse ++ "\n\n", unsafeIO()));
-  local ntComp::Maybe<[Pattern]> = unsafeTrace(checkNonterminalCompleteness(consGroup, varGroup, env, flowEnv), print("NT patterns " ++ head(head(lst)).location.unparse ++ "\n\n", unsafeIO()));
-  local primComp::Maybe<[Pattern]> = unsafeTrace(checkPrimitiveCompleteness(consGroup, varGroup, env, flowEnv), print("Prim patterns " ++ head(head(lst)).location.unparse ++ "\n\n", unsafeIO()));
---        if length(varGroup) > 0
---        then nothing()
---        else case generatePrimitiveMissingPattern(conPatts) of
---             | nothing() -> nothing() --typing error in patterns
---             | just(p) -> just(p::generateWildcards(numPatts - 1))
---             end;
+  local boolComp::Maybe<[Pattern]> = checkBooleanCompleteness(consGroup, varGroup, env, flowEnv);
+  local listComp::Maybe<[Pattern]> = checkListCompleteness(consGroup, varGroup, env, flowEnv);
+  local ntComp::Maybe<[Pattern]> = checkNonterminalCompleteness(consGroup, varGroup, env, flowEnv);
+  local primComp::Maybe<[Pattern]> = checkPrimitiveCompleteness(consGroup, varGroup, env, flowEnv);
 
   return
      if numPatts == 0 || !allSameLen
@@ -361,19 +340,30 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env
                     then primComp
                     else if length(consGroup) > 0
                          then ntComp
-                         else case checkCompleteness(map(tail, lst), env, flowEnv) of
+                         else --If we somehow end up with all vars to start, just check the rest
+                              case checkCompleteness(map(tail, lst), env, flowEnv) of
                               | nothing() -> nothing()
                               | just(plst) -> just(wildcPattern('_', location=bogusLoc())::plst)
                               end;
 }
 
+{-
+  We need blanks for (1) output when a production is missing and (2)
+  for expanding a variable pattern list to be the same length as an
+  expanded list from a head pattern with subpatterns.
+-}
 function generateWildcards
 [Pattern] ::= n::Integer
 {
   return repeat(wildcPattern('_', location=bogusLoc()), n);
 }
 
---Sometimes we need to decorate a list of wildcard patterns for the type system.
+{-
+  Sometimes we need to decorate a list of wildcard patterns for the
+  type system to pass as an expanded list for completeness checking to
+  replace a variable.  We should never need to access anything on
+  these, so empty decoration is fine.
+-}
 function decoratePattList
 [Decorated Pattern] ::= lst::[Pattern]
 {
@@ -381,6 +371,8 @@ function decoratePattList
 }
 
 --Group sets of patterns by the first pattern in each set
+--The core groupBy function doesn't work because it groups contiguous
+--   sets, and the patterns might not be contiguous.
 function groupAllPattsByHead
 [[[Decorated Pattern]]] ::= pattLists::[[Decorated Pattern]]
 {
@@ -462,6 +454,7 @@ Pattern ::= lst::[String] initial::String
 }
 
 --First pattern in each set in conPatts is a primitive
+--The first match can only be completed by a variable
 function checkPrimitiveCompleteness
 Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Pattern]]
                      env::Decorated Env flowEnv::Decorated FlowEnv
@@ -503,6 +496,7 @@ Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Patte
 }
 
 --First pattern in each set in consPatts is a Boolean pattern
+--The first match can be completed by a variable or patterns for true and false
 function checkBooleanCompleteness
 Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Pattern]]
                      env::Decorated Env flowEnv::Decorated FlowEnv
@@ -551,6 +545,7 @@ Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Patte
 }
 
 --First pattern in each set in consPatts is a list pattern
+--The first match can be completed by a variable or patterns for cons and nil
 function checkListCompleteness
 Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Pattern]]
                      env::Decorated Env flowEnv::Decorated FlowEnv
@@ -571,7 +566,7 @@ Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Patte
                           env, flowEnv);
   --Check the completeness of the rest of the patterns where 'cons' or a variable was first
   local consSubcall::Maybe<[Pattern]> =
-        --We check the subpatterns for the head and tail and the overall tail together
+        --We check the subpatterns for the head and tail of the list and the overall tail together
         checkCompleteness(map(\ plst::[Decorated Pattern] ->
                                 head(plst).patternSubPatternList ++ tail(plst), grouped.2) ++
                           map(\ plst::[Decorated Pattern] ->
@@ -606,6 +601,8 @@ Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Patte
 }
 
 --First pattern in each set in consPatts is a nonterminal pattern
+--The first match can be completed by a variable or, for a non-closed nonterminal,
+--   by having a pattern for each non-forwarding production
 function checkNonterminalCompleteness
 Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Pattern]]
                      env::Decorated Env flowEnv::Decorated FlowEnv
@@ -655,16 +652,11 @@ Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Patte
         | _ -> false -- default, if the lookup fails
         end;
 
-  local conString::String =
-  foldr(\ plst::[Decorated Pattern] s::String -> "[" ++ foldr(\ p::Decorated Pattern s2::String -> p.unparse ++ ", " ++ s2, "", plst) ++ "],  " ++ s, "", conPatts);
-  local varString::String =
-  foldr(\ plst::[Decorated Pattern] s::String -> "[" ++ foldr(\ p::Decorated Pattern s2::String -> p.unparse ++ ", " ++ s2, "", plst) ++ "],  " ++ s, "", varPatts);
-
   -- TODO:  named argument patterns are not handled yet
   return
      --If we are building multiple types or have unknown productions,
      --   we have a type error, so don't check completeness
-     if unsafeTrace(length(builtTypes) != 1, print("length(builtTypes):  " ++ toString(length(builtTypes)) ++ "\n" ++ "length(conPatts):  " ++ toString(length(conPatts)) ++ "\n" ++ "length(varPatts):  " ++ toString(length(varPatts)) ++ "\n" ++ "length(reqGroupedPatts):  " ++ toString(length(reqGroupedPatts)) ++ "\n" ++ "allRepresented:  " ++ (case allRepresented of | just(p) -> "just(" ++ p.unparse ++ ")" | nothing() -> "nothing()" end) ++ "\n" ++ "hasVar:  " ++ toString(hasVar) ++ "\n" ++ "conPatts:  " ++ conString ++ "\n" ++ "varPatts:  " ++ varString ++ "\n\n", unsafeIO()))
+     if length(builtTypes) != 1
      then nothing()
      else if isClosed && !hasVar
                --This is a hack to pass up a message about closed nonterminals as a pattern
@@ -686,8 +678,9 @@ Maybe<[Pattern]> ::= conGrps::[ [[Decorated Pattern]] ] varPatts::[[Decorated Pa
   local hdProdPatt::Decorated Pattern = head(head(head(conGrps)));
   local numChildren::Integer = length(hdProdPatt.patternSubPatternList);
 
-  --We need to drop the head and add wildcards for the number of children
+  --Check the completeness of the children of the current production, joined with the rest of the pattern list
   local expandedVars::[[Decorated Pattern]] =
+        --We need to drop the head and add wildcards for the number of children
         map(\ plst::[Decorated Pattern] ->
             decoratePattList(generateWildcards(numChildren)) ++ tail(plst), varPatts);
   local grpWithVars::[[Decorated Pattern]] =
@@ -696,19 +689,11 @@ Maybe<[Pattern]> ::= conGrps::[ [[Decorated Pattern]] ] varPatts::[[Decorated Pa
         expandedVars;
   local hdComplete::Maybe<[Pattern]> = checkCompleteness(grpWithVars, env, flowEnv);
 
-  --unsafeTrace printing pieces
-  local thisGrp::String =
-  foldr(\ plst::[Decorated Pattern] s::String -> "[" ++ foldr(\ p::Decorated Pattern s2::String -> p.unparse ++ ", " ++ s2, "", plst) ++ "],  " ++ s, "", head(conGrps));
-  local grpString::String =
-  foldr(\ plst::[Decorated Pattern] s::String -> "[" ++ foldr(\ p::Decorated Pattern s2::String -> p.unparse ++ ", " ++ s2, "", plst) ++ "],  " ++ s, "", grpWithVars);
-  local exVarString::String =
-  foldr(\ plst::[Decorated Pattern] s::String -> "[" ++ foldr(\ p::Decorated Pattern s2::String -> p.unparse ++ ", " ++ s2, "", plst) ++ "],  " ++ s, "", expandedVars);
-
   return
      case conGrps of
      | [] -> nothing()
      | _::rest ->
-       case unsafeTrace(hdComplete, print("Current group:  " ++ thisGrp ++ "\n" ++ "Current + vars - heads:  " ++ grpString ++ "\n" ++ "Expanded Vars:  " ++ exVarString ++ "\n\n", unsafeIO())), hdProdPatt of
+       case hdComplete, hdProdPatt of
        | just(plst), prodAppPattern_named(qname, _, _, _, _, _) ->
          just(prodAppPattern(qname, '(', buildPatternList(take(numChildren, plst), bogusLoc()),
                              ')', location=bogusLoc())::drop(numChildren, plst))
