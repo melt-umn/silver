@@ -362,12 +362,17 @@ function generateWildcards
   Sometimes we need to decorate a list of wildcard patterns for the
   type system to pass as an expanded list for completeness checking to
   replace a variable.  We should never need to access anything on
-  these, so empty decoration is fine.
+  these, so passing in error values for the attributes is fine.
 -}
 function decoratePattList
 [Decorated Pattern] ::= lst::[Pattern]
 {
-  return map(\ p::Pattern -> decorate p with {}, lst);
+  return map(\ p::Pattern -> decorate p with {
+      config = error("not needed");
+      frame = error("not needed");
+      env = error("not needed");
+      patternVarEnv = error("not needed");
+    }, lst);
 }
 
 --Group sets of patterns by the first pattern in each set
