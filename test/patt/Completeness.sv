@@ -424,7 +424,7 @@ noWarnCode "not exhaustive" {
 }
 
 noWarnCode "not exhaustive" {
-   function fun_test
+   function fun_test_nongrouped_completeness
    String ::=
    {
      return
@@ -434,6 +434,18 @@ noWarnCode "not exhaustive" {
        | just(expected), just(actual) -> "Incorrect return type, expected "
        | nothing(), just(actual) -> "Unexpected return"
        | just(expected), nothing() -> "Expected return value, but found valueless return"
+       end;
+   }
+}
+
+warnCode "not exhaustive" {
+   function fun_test_incompleteness_under_constructor_combination
+   String ::=
+   {
+     return
+       case (3, 4), 0 of
+       | (1, 2), _ -> "first"
+       | (_, _), 8 -> "second"
        end;
    }
 }

@@ -288,16 +288,11 @@ function checkCompleteness
 Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env
                      flowEnv::Decorated FlowEnv
 {
-  --This is safer than mapping head because we might be short some patterns
-  local firstPatt::[Decorated Pattern] =
-        foldr(\ l::[Decorated Pattern] rest::[Decorated Pattern] ->
-                if length(l) > 0 then head(l)::rest else rest, [], lst);
-  local partPatts::Pair<[Decorated Pattern] [Decorated Pattern]> =
-        partition((.patternIsVariable), firstPatt);
-  local varPatts::[Decorated Pattern] = partPatts.fst;
-  local conPatts::[Decorated Pattern] = partPatts.snd;
+  local pattGroups::([[Decorated Pattern]], [[Decorated Pattern]]) =
+        partition(\ plst::[Decorated Pattern] -> head(plst).patternIsVariable, lst);
+  local varGroup::[[Decorated Pattern]] = pattGroups.1;
+  local consGroup::[[Decorated Pattern]] = pattGroups.2;
 
-  --This is max length.  Should it be min length?
   local allPattLens::[Integer] = map(\ x::[Decorated Pattern] -> length(x), lst);
   local allSameLen::Boolean =
         if null(lst)
@@ -308,9 +303,11 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env
         then 0
         else head(allPattLens);
 
+  --We delegate checking based on the kind of pattern which is first in the list.
+  local conPatts::[Decorated Pattern] = map(head, consGroup);
   local isPrimPatts::Boolean =
-         foldr(\ a::Decorated Pattern b::Boolean -> b || a.isPrimitivePattern,
-               false, conPatts);
+        foldr(\ a::Decorated Pattern b::Boolean -> b || a.isPrimitivePattern,
+              false, conPatts);
   local isBoolPatts::Boolean =
         foldr(\ a::Decorated Pattern b::Boolean -> b || a.isBoolPattern,
               false, conPatts);
@@ -318,111 +315,64 @@ Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env
         foldr(\ a::Decorated Pattern b::Boolean -> b || a.isListPattern,
               false, conPatts);
 
-  {-Checking Pattern Completeness
-
-    Everything is complete if it has a variable pattern.  Some other
-    types can also be complete in other ways:
-
-    * Boolean:  A Boolean match is complete if it has patterns for
-      true and false.
-
-    * Lists:  A list match is complete if it has patterns for nil and
-      cons, and the heads and tails of cons are complete patterns as
-      well.
-
-    * Non-Closed Nonterminals:  These are complete if they have a
-      pattern for each non-forwarding production.
+  {-
+    Each checking function checks completeness of the first patterns
+    in the sets, which are of the appropriate type, including checking
+    for variable patterns.  If the first patterns are complete, it
+    then handles grouping the rest of the sets of patterns and
+    checking if they are complete as well.  Correctly handling
+    grouping is the reason we need to have a separate function for
+    each kind of pattern.
   -}
-  local firstConstructorsComplete::Maybe<Pattern> =
-        if isBoolPatts
-        then checkBooleanCompleteness(conPatts)
-        else if isListPatts
-             then checkListCompleteness(conPatts, env, flowEnv)
-             else if isPrimPatts
-                  then generatePrimitiveMissingPattern(conPatts)
-                  else checkNonterminalCompleteness(conPatts, env, flowEnv);
-  local firstComplete::Maybe<Pattern> =
-        if null(varPatts)
-        then firstConstructorsComplete
-        else nothing();
+  local boolComp::Maybe<[Pattern]> = checkBooleanCompleteness(consGroup, varGroup, env, flowEnv);
+  local listComp::Maybe<[Pattern]> = checkListCompleteness(consGroup, varGroup, env, flowEnv);
+  local ntComp::Maybe<[Pattern]> = checkNonterminalCompleteness(consGroup, varGroup, env, flowEnv);
+  local primComp::Maybe<[Pattern]> = checkPrimitiveCompleteness(consGroup, varGroup, env, flowEnv);
 
-  local restComplete::Maybe<[Pattern]> =
-        --check if a variable pattern was required for the first match to be complete
-        --determined by whether just the constructors are complete
-        case firstConstructorsComplete of
-        | just(_) -> checkTailCompleteness(lst, true, env, flowEnv)
-        | nothing() -> checkTailCompleteness(lst, false, env, flowEnv)
-        end;
-
-  return if numPatts == 0
-         --has no patterns to determine the type, or has inconsistent lengths
-         then nothing()
-         else case firstComplete of
-              | nothing() ->
-                case restComplete of
-                | nothing() -> nothing()
-                | just(lps) -> just(wildcPattern('_', location=bogusLoc())::lps)
-                end
-              | just(p) ->
-                just(p::repeat(wildcPattern('_', location=bogusLoc()), numPatts - 1))
-              end;
+  return
+     if numPatts == 0 || !allSameLen
+     then nothing()
+     else if isBoolPatts
+          then boolComp
+          else if isListPatts
+               then listComp
+               else if isPrimPatts
+                    then primComp
+                    else if length(consGroup) > 0
+                         then ntComp
+                         else --If we somehow end up with all vars to start, just check the rest
+                              case checkCompleteness(map(tail, lst), env, flowEnv) of
+                              | nothing() -> nothing()
+                              | just(plst) -> just(wildcPattern('_', location=bogusLoc())::plst)
+                              end;
 }
 
 {-
-  To check if the tails of pattern lists are complete, we need to
-  group them by the first pattern.  For example, consider this case
-  expression:
-     case x, y of
-     | 1, _ -> "1"
-     | _, 1 -> "2"
-     | 2, _ -> "3"
-     end
-  We can't just check that the set of first patterns is complete and
-  the set of second patterns is complete.  Both sets are complete
-  individually, but in their combination there is no pattern to match
-  `0, 0`.  We need to group by the first pattern, add the variable
-  patterns to each constructor set, then check completenss.  For our
-  example, we will need to group into
-     [ [(1, _), (_, 1)],  [(2, _), (_, 1)],  [(_, 1)] ]
-  then check the completeness of the tails of the patterns in these
-  sets (started with 1, started with 2, and started with var):
-     [_, 1]   and   [_, 1]   and   [1]
-  We need to include a started-with-var set only if the first patterns
-  are incomplete without it, which is passed as an argument.
+  We need blanks for (1) output when a production is missing and (2)
+  for expanding a variable pattern list to be the same length as an
+  expanded list from a head pattern with subpatterns.
 -}
-function checkTailCompleteness
-Maybe<[Pattern]> ::= patts::[[Decorated Pattern]] firstPattsVarCompleted::Boolean
-                     env::Decorated Env flowEnv::Decorated FlowEnv
+function generateWildcards
+[Pattern] ::= n::Integer
 {
-  local partPatts::Pair<[[Decorated Pattern]] [[Decorated Pattern]]> =
-        partition(\ plst::[Decorated Pattern] -> head(plst).patternIsVariable, patts);
-  local varPatts::[[Decorated Pattern]] = partPatts.fst;
-  --list of sets of match rules of some length (innermost list is one match rule)
-  local consPattGroups::[[[Decorated Pattern]]] =
-        groupAllPattsByHead(partPatts.snd);
-  local combinedPattGroups::[[[Decorated Pattern]]] =
-        --include varPatts separately if a variable is necessary for completeness
-        ( if firstPattsVarCompleted
-          then [varPatts]
-          else [] ) ++
-        map(\ group::[[Decorated Pattern]] -> group ++ varPatts, consPattGroups);
-  local combinedRemoveFirst::[[[Decorated Pattern]]] =
-        map(\ x::[[Decorated Pattern]] ->
-              map(\ y::[Decorated Pattern] -> tail(y), x),
-            combinedPattGroups);
+  return repeat(wildcPattern('_', location=bogusLoc()), n);
+}
 
-  --Check the completeness of each group in turn, up to the first incomplete one.
-  local result::Maybe<[Pattern]> =
-     foldr(\ grp::[[Decorated Pattern]] priorResult::Maybe<[Pattern]> ->
-             case priorResult of
-             | nothing() -> checkCompleteness(grp, env, flowEnv)
-             | just(x) -> just(x)
-             end,
-           nothing(), combinedRemoveFirst);
-  return result;
+{-
+  Sometimes we need to decorate a list of wildcard patterns for the
+  type system to pass as an expanded list for completeness checking to
+  replace a variable.  We should never need to access anything on
+  these, so empty decoration is fine.
+-}
+function decoratePattList
+[Decorated Pattern] ::= lst::[Pattern]
+{
+  return map(\ p::Pattern -> decorate p with {}, lst);
 }
 
 --Group sets of patterns by the first pattern in each set
+--The core groupBy function doesn't work because it groups contiguous
+--   sets, and the patterns might not be contiguous.
 function groupAllPattsByHead
 [[[Decorated Pattern]]] ::= pattLists::[[Decorated Pattern]]
 {
@@ -503,69 +453,195 @@ Pattern ::= lst::[String] initial::String
          else strPattern(terminal(String_t, "\"" ++ initial ++ "\"", bogusLoc()), location=bogusLoc());
 }
 
+--First pattern in each set in conPatts is a primitive
+--The first match can only be completed by a variable
+function checkPrimitiveCompleteness
+Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Pattern]]
+                     env::Decorated Env flowEnv::Decorated FlowEnv
+{
+  local firstPatts::[Decorated Pattern] = map(head, conPatts);
+  local firstPattMissng::Maybe<Pattern> =
+        generatePrimitiveMissingPattern(firstPatts);
+  local numPatts::Integer = length(head(conPatts));
+
+  local grouped::[ [[Decorated Pattern]] ] = groupAllPattsByHead(conPatts);
+  local subcallCons::Maybe<[Pattern]> =
+        foldr(\ patts::[[Decorated Pattern]] rest::Maybe<[Pattern]> ->
+                case rest of
+                | nothing() ->
+                  case checkCompleteness(map(tail, patts) ++ map(tail, varPatts),
+                                         env, flowEnv) of
+                  | just(plst) -> just(new(head(head(patts)))::plst)
+                  | nothing() -> nothing()
+                  end
+                | just(plst) -> just(plst)
+                end,
+              nothing(), grouped);
+  local subcall::Maybe<[Pattern]> =
+        case subcallCons of
+        | just(plst) -> just(plst)
+        | nothing() ->
+          case checkCompleteness(map(tail, varPatts), env, flowEnv) of
+          | just(plst) -> just(wildcPattern('_', location=bogusLoc())::plst)
+          | nothing() -> nothing()
+          end
+        end;
+
+  return if length(varPatts) > 0
+         then subcall
+         else case firstPattMissng of
+              | just(p) -> just(p::generateWildcards(numPatts - 1))
+              | nothing() -> nothing() --only possible if there is a typing error
+              end;
+}
+
+--First pattern in each set in consPatts is a Boolean pattern
+--The first match can be completed by a variable or patterns for true and false
 function checkBooleanCompleteness
-Maybe<Pattern> ::= patts::[Decorated Pattern]
+Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Pattern]]
+                     env::Decorated Env flowEnv::Decorated FlowEnv
 {
-  local foundTrue::Boolean =
-        foldr(\ p::Decorated Pattern b::Boolean ->
-                b || case p of
-                     | truePattern(_) -> true
-                     | _ -> false
-                     end, false, patts);
-  local foundFalse::Boolean =
-        foldr(\ p::Decorated Pattern b::Boolean ->
-                b || case p of
-                     | falsePattern(_) -> true
-                     | _ -> false
-                     end, false, patts);
-  return if foundTrue
-         then if foundFalse
-              then nothing()
-              else just(falsePattern('false', location=bogusLoc()))
-         else just(truePattern('true', location=bogusLoc()));
+  --create groups for true and false
+  local grouped::([[Decorated Pattern]], [[Decorated Pattern]]) =
+        partition(\ plst::[Decorated Pattern] -> head(plst).patternSortKey == "true", conPatts);
+  local numPatts::Integer = length(head(conPatts));
+
+  local foundTrue::Boolean = length(grouped.1) > 0;
+  local foundFalse::Boolean = length(grouped.2) > 0;
+  local foundVar::Boolean = length(varPatts) > 0;
+
+  --Check the completeness of the rest of the patterns where 'true' or a variable was first
+  local trueSubcall::Maybe<[Pattern]> =
+        checkCompleteness(map(\ plst::[Decorated Pattern] -> tail(plst), grouped.1) ++
+                          map(\ plst::[Decorated Pattern] -> tail(plst), varPatts),
+                          env, flowEnv);
+  --Check the completeness of the rest of the patterns where 'false' or a variable was first
+  local falseSubcall::Maybe<[Pattern]> =
+        checkCompleteness(map(\ plst::[Decorated Pattern] -> tail(plst), grouped.2) ++
+                          map(\ plst::[Decorated Pattern] -> tail(plst), varPatts),
+                          env, flowEnv);
+  --What's missing from subcalls, including the first pattern
+  local subcallResult::Maybe<[Pattern]> =
+        case trueSubcall of
+        | just(lst) -> just(truePattern('true', location=bogusLoc())::lst)
+        | nothing() ->
+          case falseSubcall of
+          | just(lst) -> just(falsePattern('false', location=bogusLoc())::lst)
+          | nothing() ->
+            --If completed by vars, need to check vars case is complete as well
+            if foundTrue && foundFalse
+            then nothing()
+            else checkCompleteness(varPatts, env, flowEnv)
+          end
+        end;
+
+  return if foundVar
+         then subcallResult
+         else if foundTrue
+              then if foundFalse
+                   then subcallResult
+                   else just(falsePattern('false', location=bogusLoc())::generateWildcards(numPatts - 1))
+              else just(truePattern('true', location=bogusLoc())::generateWildcards(numPatts - 1));
 }
 
+--First pattern in each set in consPatts is a list pattern
+--The first match can be completed by a variable or patterns for cons and nil
 function checkListCompleteness
-Maybe<Pattern> ::= patts::[Decorated Pattern] env::Decorated Env flowEnv::Decorated FlowEnv
+Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Pattern]]
+                     env::Decorated Env flowEnv::Decorated FlowEnv
 {
-  local foundNil::Boolean =
-        foldr(\ p::Decorated Pattern b::Boolean ->
-                b || p.patternSortKey == "silver:core:nil", false, patts);
+  --create groups for nil and cons
+  local grouped::([[Decorated Pattern]], [[Decorated Pattern]]) =
+        partition(\ plst::[Decorated Pattern] -> head(plst).patternSortKey == "silver:core:nil", conPatts);
+  local numPatts::Integer = length(head(conPatts));
 
-  --We need to check that we have a cons and that its components are complete
-  local consPatts::[Decorated Pattern] =
-        partition(\ p::Decorated Pattern -> p.patternSortKey == "silver:core:cons", patts).fst;
-  local consComp::Maybe<[Pattern]> =
-        checkCompleteness(map((.patternSubPatternList), consPatts), env, flowEnv);
+  local foundNil::Boolean = length(grouped.1) > 0;
+  local foundCons::Boolean = length(grouped.2) > 0;
+  local foundVar::Boolean = length(varPatts) > 0;
 
-  return if foundNil
-         then if null(consPatts) --didn't try to catch _::_
-              then just(consListPattern(wildcPattern('_', location=bogusLoc()), '::',
-                                        wildcPattern('_', location=bogusLoc()),
-                                        location=bogusLoc()))
-              else case consComp of
-                   | nothing() -> nothing()
-                   | just(hp::tp::_) ->
-                     just(consListPattern(hp, '::', tp, location=bogusLoc()))
-                   --last case is an error, where cons didn't have enough arguments
-                   | just(_) -> nothing()
-                   end
-         else just(nilListPattern('[', ']', location=bogusLoc()));
+  --Check the completeness of the rest of the patterns where 'nil' or a variable was first
+  local nilSubcall::Maybe<[Pattern]> =
+        checkCompleteness(map(\ plst::[Decorated Pattern] -> tail(plst), grouped.1) ++
+                          map(\ plst::[Decorated Pattern] -> tail(plst), varPatts),
+                          env, flowEnv);
+  --Check the completeness of the rest of the patterns where 'cons' or a variable was first
+  local consSubcall::Maybe<[Pattern]> =
+        --We check the subpatterns for the head and tail of the list and the overall tail together
+        checkCompleteness(map(\ plst::[Decorated Pattern] ->
+                                head(plst).patternSubPatternList ++ tail(plst), grouped.2) ++
+                          map(\ plst::[Decorated Pattern] ->
+                                decoratePattList(generateWildcards(2)) ++ tail(plst), varPatts),
+                          env, flowEnv);
+  --What's missing from subcalls, including the first pattern
+  local subcallResult::Maybe<[Pattern]> =
+        case nilSubcall of
+        | just(lst) -> just(nilListPattern('[', ']', location=bogusLoc())::lst)
+        | nothing() ->
+          case consSubcall of
+          | just(hd::tl::lst) ->
+            just(consListPattern(hd, '::', tl, location=bogusLoc())::lst)
+          | just(_) -> error("List must include patterns for at least head and tail")
+          | nothing() ->
+            --If completed by vars, need to check vars case is complete as well
+            if foundNil && foundCons
+            then nothing()
+            else checkCompleteness(varPatts, env, flowEnv)
+          end
+        end;
+
+  return if foundVar
+         then subcallResult
+         else if foundNil
+              then if foundCons
+                   then subcallResult
+                   else just(consListPattern(wildcPattern('_', location=bogusLoc()), '::',
+                                             wildcPattern('_', location=bogusLoc()), location=bogusLoc())::
+                             generateWildcards(numPatts - 1))
+              else just(nilListPattern('[', ']', location=bogusLoc())::generateWildcards(numPatts - 1));
 }
 
---given a set of nonterminal patterns, check that all the required productions are covered
+--First pattern in each set in consPatts is a nonterminal pattern
+--The first match can be completed by a variable or, for a non-closed nonterminal,
+--   by having a pattern for each non-forwarding production
 function checkNonterminalCompleteness
-Maybe<Pattern> ::= patts::[Decorated Pattern] env::Decorated Env flowEnv::Decorated FlowEnv
+Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Pattern]]
+                     env::Decorated Env flowEnv::Decorated FlowEnv
 {
+  local numPatts::Integer = length(head(conPatts));
+
   --All the patterns ought to have the same type.
   local builtTypes::[String] =
-        nubBy(\ a::String b::String -> a == b, map((.patternTypeName), patts));
+        nubBy(\ a::String b::String -> a == b, map((.patternTypeName), map(head, conPatts)));
   local builtType::String = head(builtTypes);
 
+  --Test whether all the required productions are represented in the productions
   local requiredProds::[String] = getNonforwardingProds(builtType, flowEnv);
-  local groupedPatts::[[Decorated Pattern]] =
-        groupBy(\ a::Decorated Pattern b::Decorated Pattern ->
-                  a.patternSortKey == b.patternSortKey, patts);
+  local groupedPatts::[ [[Decorated Pattern]] ] =
+        groupAllPattsByHead(conPatts);
+  local constructorReps::[Decorated Pattern] =
+        map(\ plst::[[Decorated Pattern]] -> head(head(plst)), groupedPatts);
+  local allRepresented::Maybe<Pattern> =
+        checkAllProdsRepresented(constructorReps, requiredProds, env);
+
+  local hasVar::Boolean = length(varPatts) > 0 && length(head(varPatts)) > 0;
+  local isVarCompleted::Boolean = hasVar && allRepresented.isJust;
+
+  --Test whether the children and rests of the list are complete, but only for required productions
+  --We don't care whether other productions are complete because they forward to required productions
+  local reqGroupedPatts::[ [[Decorated Pattern]] ] =
+        filter(\ plst::[[Decorated Pattern]] ->
+                 contains(head(head(plst)).patternSortKey, requiredProds), groupedPatts);
+  local groupsWithVars::[ [[Decorated Pattern]] ] =
+        map(\ plst::[[Decorated Pattern]] -> plst ++ varPatts, reqGroupedPatts);
+  local subcallResult::Maybe<[Pattern]> =
+        case checkAllProdGroupsComplete(reqGroupedPatts, varPatts, env, flowEnv) of
+        | just(plst) -> just(plst)
+        | nothing() ->
+          --check if it was var completed, and, if so, if the var patterns are complete
+          if isVarCompleted
+          then checkCompleteness(map(tail, varPatts), env, flowEnv)
+          else nothing()
+        end;
 
   --To find out if the nonterminal is closed or not, we need to look it up
   local nt::QName = qName(bogusLoc(), builtType);
@@ -582,17 +658,54 @@ Maybe<Pattern> ::= patts::[Decorated Pattern] env::Decorated Env flowEnv::Decora
      --   we have a type error, so don't check completeness
      if length(builtTypes) != 1
      then nothing()
-     else if isClosed
+     else if isClosed && !hasVar
                --This is a hack to pass up a message about closed nonterminals as a pattern
           then just(varPattern(name("<default case for closed nonterminal>", bogusLoc()),
-                               location=bogusLoc()))
-          else checkAllProdsRepresented(groupedPatts, requiredProds, env, flowEnv);
+                               location=bogusLoc())::generateWildcards(numPatts - 1))
+          else if hasVar
+               then subcallResult
+               else case allRepresented of
+                    | just(p) -> just(p::generateWildcards(numPatts - 1))
+                    | nothing() -> subcallResult
+                    end;
 }
 
---check that all required productions are present and that their children are completely covered
+--Check every set of patterns in conGrps is complete, when varPatts is added to it
+function checkAllProdGroupsComplete
+Maybe<[Pattern]> ::= conGrps::[ [[Decorated Pattern]] ] varPatts::[[Decorated Pattern]]
+                     env::Decorated Env flowEnv::Decorated FlowEnv
+{
+  local hdProdPatt::Decorated Pattern = head(head(head(conGrps)));
+  local numChildren::Integer = length(hdProdPatt.patternSubPatternList);
+
+  --Check the completeness of the children of the current production, joined with the rest of the pattern list
+  local expandedVars::[[Decorated Pattern]] =
+        --We need to drop the head and add wildcards for the number of children
+        map(\ plst::[Decorated Pattern] ->
+            decoratePattList(generateWildcards(numChildren)) ++ tail(plst), varPatts);
+  local grpWithVars::[[Decorated Pattern]] =
+        map(\ plst::[Decorated Pattern] ->
+              head(plst).patternSubPatternList ++ tail(plst), head(conGrps)) ++
+        expandedVars;
+  local hdComplete::Maybe<[Pattern]> = checkCompleteness(grpWithVars, env, flowEnv);
+
+  return
+     case conGrps of
+     | [] -> nothing()
+     | _::rest ->
+       case hdComplete, hdProdPatt of
+       | just(plst), prodAppPattern_named(qname, _, _, _, _, _) ->
+         just(prodAppPattern(qname, '(', buildPatternList(take(numChildren, plst), bogusLoc()),
+                             ')', location=bogusLoc())::drop(numChildren, plst))
+       | just(_), _ -> error("Should not have anything but prodAppPattern_named here")
+       | nothing(), _ -> checkAllProdGroupsComplete(rest, varPatts, env, flowEnv)
+       end
+     end;
+}
+
+--check that all required productions are present
 function checkAllProdsRepresented
-Maybe<Pattern> ::= pattGroups::[[Decorated Pattern]] requiredProds::[String]
-                   env::Decorated Env flowEnv::Decorated FlowEnv
+Maybe<Pattern> ::= givenPatts::[Decorated Pattern] requiredProds::[String] env::Decorated Env
 {
   {-
     We walk down through requiredProds rather than pattGroups.  We
@@ -602,43 +715,24 @@ Maybe<Pattern> ::= pattGroups::[[Decorated Pattern]] requiredProds::[String]
   -}
   local firstProdName::String = head(requiredProds);
   local firstProdQName::QName = qName(bogusLoc(), firstProdName);
-  local pattGroup::[Decorated Pattern] =
-            --Because the groups were produced by groupBy(), there can be at most one group
-        let thisGroup::[[Decorated Pattern]] =
-            partition(\ lst::[Decorated Pattern] ->
-                        head(lst).patternSortKey == firstProdName,
-                      pattGroups).fst
-         in if null(thisGroup) then [] else head(thisGroup) end;
+  local pattFound::Boolean =
+        foldr(\ p::Decorated Pattern b::Boolean ->
+                b || p.patternSortKey == firstProdName,
+              false, givenPatts);
 
   firstProdQName.env = env;
   local firstProdNumArgs::Integer = firstProdQName.lookupValue.typeScheme.typerep.arity;
   local wildcards::PatternList =
         buildPatternList(repeat(wildcPattern('_', location=bogusLoc()), firstProdNumArgs), bogusLoc());
 
-  --check that all children of the current production are completely covered
-  local childrenComp::Maybe<[Pattern]> =
-        checkCompleteness(map((.patternSubPatternList), pattGroup), env, flowEnv);
-
   return
      case requiredProds of
      | [] -> nothing()
      | _::rest ->
-       case pattGroup of
-       | [] -> --this one is missing
-         just(prodAppPattern(firstProdQName, '(', wildcards, ')', location=bogusLoc()))
-       | _::_ ->
-         case childrenComp of
-         | nothing() ->
-           --current production is fully covered, so on to the next
-           checkAllProdsRepresented(pattGroups, rest, env, flowEnv)
-         | just(plst) ->
-           --check that it has the right number of patterns
-           if length(plst) == firstProdNumArgs
-           then just(prodAppPattern(firstProdQName, '(', buildPatternList(plst, bogusLoc()), ')',
-                     location=bogusLoc()))
-           else nothing() --wrong number of children -> type error, so skip completeness
-         end
-       end
+       if pattFound
+       then checkAllProdsRepresented(givenPatts, rest, env)
+       else just(prodAppPattern(firstProdQName, '(', wildcards, ')',
+                 location=bogusLoc()))
      end;
 }
 
