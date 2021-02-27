@@ -38,9 +38,10 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
 
-  forwards to if null(merrors)
-              then attr.attrDcl.attrDefDispatcher(dl, attr, monadFail(top.location), top.location)
-              else errorProductionStmt(merrors, location=top.location);
+  forwards to
+     if null(merrors)
+     then attr.attrDcl.attrDefDispatcher(dl, attr, monadFail(top.location), top.location)
+     else errorProductionStmt(merrors, location=top.location);
 }
 
 

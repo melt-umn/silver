@@ -6,6 +6,7 @@ Boolean ::= s::String
   return case s of
            "true" -> true
          | "false" -> false
+         | _ -> true
          end;
 }
 
@@ -15,6 +16,7 @@ Boolean ::= s::String
   return case s of
          | "true" -> true
          | "false" -> false
+         | _ -> true
          end;
 }
 
@@ -28,6 +30,7 @@ Boolean ::= s::Maybe<String>
            just("true") -> true
          | just("false") -> false
          | nothing() -> false
+         | _ -> false
          end;
 }
 
@@ -42,6 +45,7 @@ Boolean ::= s::Maybe<Maybe<String>>
            just(just("true")) -> true
          | just(nothing()) -> false
          | nothing() -> false
+         | _ -> false
          end;
 }
 
@@ -181,10 +185,10 @@ wrongCode "2 values, but this rule has 3" {
 }
 
 -- Silver used to crash because pattern used to rely on signature.
-global signatureTest :: Integer = case just(1) of just(x) -> x end;
+global signatureTest :: Integer = case just(1) of just(x) -> x | _ -> 0 end;
 
 -- That toString works on a pattern expression (type information is available)
-equalityTest ( toString(case just(1) of just(x) -> x end), "1", String, pat_tests ) ;
+equalityTest ( toString(case just(1) of just(x) -> x | _ -> 0 end), "1", String, pat_tests ) ;
 
 
 ------------------------

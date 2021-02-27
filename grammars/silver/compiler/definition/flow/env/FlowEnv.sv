@@ -119,7 +119,7 @@ function getNonforwardingProds
 [String] ::= nt::String  e::Decorated FlowEnv
 {
   local extractProdName :: (String ::= FlowDef) =
-    \p::FlowDef -> case p of prodFlowDef(_, p) -> p end;
+    \p::FlowDef -> case p of prodFlowDef(_, p) -> p | _ -> error("Searches only prod defs") end;
 
   return map(extractProdName, searchEnvTree(nt, e.prodTree));
 }
@@ -129,7 +129,7 @@ function getHostSynsFor
 [String] ::= nt::String  e::Decorated FlowEnv
 {
   local extractHostSynName :: (String ::= FlowDef) =
-    \f::FlowDef -> case f of hostSynFlowDef(_, at) -> at end;
+    \f::FlowDef -> case f of hostSynFlowDef(_, at) -> at | _ -> error("Searches only host defs") end;
 
   return map(extractHostSynName, searchEnvTree(nt, e.hostSynTree));
 }
