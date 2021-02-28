@@ -35,6 +35,15 @@ top::Expr ::= q::Decorated QName
   top.contexts = typeScheme.contexts;
 }
 
+aspect production globalValueReference
+top::Expr ::= q::Decorated QName
+{
+  contexts.contextLoc = q.location;
+  contexts.contextSource = "the use of " ++ q.name;
+  top.errors <- contexts.contextErrors;
+  top.contexts = typeScheme.contexts;
+}
+
 aspect production classMemberReference
 top::Expr ::= q::Decorated QName
 {

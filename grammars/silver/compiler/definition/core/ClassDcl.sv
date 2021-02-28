@@ -49,9 +49,7 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   headDefs := cl.defs;
   headDefs <- [currentInstDef(top.grammarName, id.location, fName, var.typerep)];
 
-  cl.instanceHead = nothing();
-  cl.constraintSigName = nothing();
-  cl.classDefName = just(fName);
+  cl.constraintPos = classPos(fName);
   cl.env = newScopeEnv(headPreDefs, top.env);
   
   var.env = cl.env;
@@ -109,18 +107,9 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
     setUnionTyVars(top.classHead.freeVariables, ty.typerep.freeVariables);
   top.classMembers = [pair(fName, false)];
   
-  cl.instanceHead =
+  cl.constraintPos =
     case top.classHead of
-    -- A bit strange, but class member constraints are sort of like instance constraints.
-    -- However we don't know what the instance type actually is, and want to skip the
-    -- decidability check, so just put errorType here for now.
-    | instContext(cls, _) -> just(instContext(cls, errorType()))
-    | _ -> error("Class head is not an instContext")
-    end;
-  cl.constraintSigName = nothing();
-  cl.classDefName =
-    case top.classHead of
-    | instContext(cls, _) -> just(cls)
+    | instContext(cls, _) -> classMemberPos(cls)
     | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
@@ -149,18 +138,9 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
     setUnionTyVars(top.classHead.freeVariables, ty.typerep.freeVariables);
   top.classMembers = [pair(fName, true)];
   
-  cl.instanceHead =
+  cl.constraintPos =
     case top.classHead of
-    -- A bit strange, but class member constraints are sort of like instance constraints.
-    -- However we don't know what the instance type actually is, and want to skip the
-    -- decidability check, so just put errorType here for now.
-    | instContext(cls, _) -> just(instContext(cls, errorType()))
-    | _ -> error("Class head is not an instContext")
-    end;
-  cl.constraintSigName = nothing();
-  cl.classDefName =
-    case top.classHead of
-    | instContext(cls, _) -> just(cls)
+    | instContext(cls, _) -> classMemberPos(cls)
     | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
