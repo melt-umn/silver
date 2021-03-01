@@ -27,6 +27,7 @@ a ::= q::Deque<a>
   return case q of 
   | deque(_,[],_,x::_) -> x -- single element
   | deque(_,x::_,_,_) -> x
+  | _ -> error("Requested head of empty deque")
   end;
 }
 function tail
@@ -35,6 +36,7 @@ Deque<a> ::= q::Deque<a>
   return case q of 
   | deque(_,[],_,_::_) -> empty() -- single element
   | deque(ln,lh::lt,rn,r) -> check(ln-1, lt, rn, r)
+  | _ -> error("Requested tail of empty deque")
   end;
 }
 function snoc
@@ -48,6 +50,7 @@ a ::= q::Deque<a>
   return case q of 
   | deque(_,x::_,_,[]) -> x -- single element
   | deque(_,_,_,x::_) -> x
+  | _ -> error("Requested last of empty deque")
   end;
 }
 function init
@@ -56,6 +59,7 @@ Deque<a> ::= q::Deque<a>
   return case q of 
   | deque(_,_::_,_,[]) -> empty() -- single element
   | deque(ln,l,rn,rh::rt) -> check(ln, l, rn-1, rt)
+  | _ -> error("Requested init of empty deque")
   end;
 }
 function isEmpty

@@ -80,8 +80,8 @@ top::AST ::= terminalName::String lexeme::String location::Location
 aspect production listAST
 top::AST ::= vals::ASTs
 {
-  local h::AST = case vals of consAST(h, _) -> h end;
-  local t::AST = case vals of consAST(_, t) -> listAST(t) end;
+  local h::AST = case vals of consAST(h, _) -> h | _ -> error("not consAST") end;
+  local t::AST = case vals of consAST(_, t) -> listAST(t) | _ -> error("not consAST") end;
   top.allResult =
     case vals of
     | consAST(_, _) ->
@@ -102,9 +102,9 @@ top::AST ::= vals::ASTs
       case decorate top.givenStrategy with { term = h; }.result,
            decorate top.givenStrategy with { term = t; }.result of
       | just(hResult), just(listAST(tResult)) -> just(listAST(consAST(hResult, tResult)))
-      | just(hResult), nothing() -> just(listAST(consAST(hResult, case vals of consAST(_, t) -> t end)))
+      | just(hResult), nothing() -> just(listAST(consAST(hResult, case vals of consAST(_, t) -> t | _ -> error("not consAST") end)))
       | nothing(), just(listAST(tResult)) -> just(listAST(consAST(h, tResult)))
-      | nothing(), _ -> nothing()
+      | _, _ -> nothing()
       end
     | nilAST() -> nothing()
     end;
@@ -113,7 +113,7 @@ top::AST ::= vals::ASTs
     | consAST(_, _) ->
       case decorate top.givenStrategy with { term = h; }.result,
            decorate top.givenStrategy with { term = t; }.result of
-      | just(hResult), _ -> just(listAST(consAST(hResult, case vals of consAST(_, t) -> t end)))
+      | just(hResult), _ -> just(listAST(consAST(hResult, case vals of consAST(_, t) -> t | _ -> error("not consAST") end)))
       | nothing(), just(listAST(tResult)) -> just(listAST(consAST(h, tResult)))
       | nothing(), _ -> nothing()
       end

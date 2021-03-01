@@ -398,6 +398,7 @@ Pattern ::= pList::PatternList
   | patternList_one(patHead) -> patHead
   | patternList_more(patHead,_,_) -> patHead
   | patternList_snoc(ps,_,_) -> extractHeadPatternFromPatternList(ps)
+  | patternList_nil() -> error("No head pattern in patternList_nil()")
   end;
 }
 

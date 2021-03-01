@@ -334,6 +334,7 @@ top::StrategyExpr ::= s::StrategyExpr
                      top.frame.signature.namedInputElements))})
            },
            location=top.location)],
+        false,
         Silver_Expr { silver:core:nothing() },
         appType(nonterminalType("silver:core:Maybe", [starKind()], false), top.frame.signature.outputElement.typerep),
         location=top.location);
@@ -509,6 +510,7 @@ top::StrategyExpr ::= s::StrategyExpr
                 location=top.location)
             end end,
             range(0, length(matchingChildren))),
+        false,
         Silver_Expr { silver:core:nothing() },
         appType(nonterminalType("silver:core:Maybe", [starKind()], false), top.frame.signature.outputElement.typerep),
         location=top.location);
@@ -604,6 +606,7 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
                      top.frame.signature.namedInputElements))})
            },
            location=top.location)],
+        false,
         Silver_Expr { silver:core:nothing() },
         appType(nonterminalType("silver:core:Maybe", [starKind()], false), top.frame.signature.outputElement.typerep),
         location=top.location)
@@ -704,7 +707,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
       assignExpr(id, '::', ty, '=', errorExpr([], location=top.location), location=top.location),
       caseExpr(
         [hackExprType(ty.typerep, location=top.location)],
-        ml.matchRuleList,
+        ml.matchRuleList, false,
         errorExpr([], location=top.location),
         ty.typerep,
         location=top.location),
@@ -732,7 +735,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   local res::Expr =
     caseExpr(
       [Silver_Expr { $name{top.frame.signature.outputElement.elementName} }],
-      ml.translation,
+      ml.translation, false,
       Silver_Expr { silver:core:nothing() },
       appType(nonterminalType("silver:core:Maybe", [starKind()], false), ty.typerep),
       location=top.location);

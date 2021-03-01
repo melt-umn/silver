@@ -53,7 +53,7 @@ IOErrorable<Pair<Decorated CmdArgs  BuildEnv>> ::=
   local argResult :: Either<String  Decorated CmdArgs> =
     parseArgs(args);
   local a :: Decorated CmdArgs =
-    case argResult of right(t) -> t end;
+    case argResult of right(t) -> t | _ -> error("Form is checked elsewhere before use") end;
   local argErrors :: [String] =
     case argResult of | left(s) -> [s] | _ -> [] end;
 
@@ -61,7 +61,7 @@ IOErrorable<Pair<Decorated CmdArgs  BuildEnv>> ::=
   local benvResult :: IOVal<Either<BuildEnv  [String]>> =
     determineBuildEnv(a, ioin);
   local benv :: BuildEnv =
-    case benvResult.iovalue of left(t) -> t end;
+    case benvResult.iovalue of left(t) -> t | right(_) -> error("Form is checked elsewhere before use") end;
   local envErrors :: [String] =
     case benvResult.iovalue of | right(s) -> s | _ -> [] end;
 

@@ -5,7 +5,7 @@ import silver:compiler:extension:list only LSqr_t, RSqr_t;
 {--
  - The forms of syntactic patterns that are permissible in (nested) case expresssions.
  -}
-nonterminal Pattern with location, config, unparse, env, frame, errors, patternVars, patternVarEnv, patternIsVariable, patternVariableName, patternSubPatternList, patternNamedSubPatternList, patternSortKey;
+nonterminal Pattern with location, config, unparse, env, frame, errors, patternVars, patternVarEnv, patternIsVariable, patternVariableName, patternSubPatternList, patternNamedSubPatternList, patternSortKey, isPrimitivePattern, isBoolPattern, isListPattern, patternTypeName;
 
 {--
  - The names of all var patterns in the pattern.
@@ -40,6 +40,25 @@ synthesized attribute patternNamedSubPatternList :: [Pair<String Decorated Patte
 synthesized attribute patternSortKey :: String;
 
 
+{-
+  For completeness checking:
+-}
+
+--For non-nonterminal patterns, which generally require a default case for completeness
+synthesized attribute isPrimitivePattern::Boolean;
+
+--We need a special case for Booleans, since they can be complete
+--   without variables but are not nonterminals
+synthesized attribute isBoolPattern::Boolean;
+
+--Lists occupy a place somewhere between nonterminals and primitives,
+--   so we'll handle them specially
+synthesized attribute isListPattern::Boolean;
+
+--The fully-qualified name of the type being built
+synthesized attribute patternTypeName::String;
+
+
 -- These are the "canonical" patterns:
 
 {--
@@ -67,6 +86,11 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
   top.patternSubPatternList = ps.patternList;
   top.patternNamedSubPatternList = nps.namedPatternList;
   top.patternSortKey = prod.lookupValue.fullName;
+
+  top.isPrimitivePattern = false;
+  top.isBoolPattern = false;
+  top.isListPattern = false;
+  top.patternTypeName = prod.lookupValue.typeScheme.typerep.outputType.baseType.typeName;
 }
 
 concrete production prodAppPattern
@@ -95,6 +119,11 @@ top::Pattern ::= '_'
   top.patternVariableName = nothing();
   top.patternSubPatternList = [];
   top.patternSortKey = "~var";
+
+  --This might be used with these kinds of patterns, but it isn't one itself
+  top.isPrimitivePattern = false;
+  top.isBoolPattern = false;
+  top.isListPattern = false;
 }
 
 {--
@@ -128,6 +157,11 @@ top::Pattern ::= v::Name
   top.patternVariableName = just(v.name);
   top.patternSubPatternList = [];
   top.patternSortKey = "~var";
+
+  --This might be used with these kinds of patterns, but it isn't one itself
+  top.isPrimitivePattern = false;
+  top.isBoolPattern = false;
+  top.isListPattern = false;
 }
 
 {--
@@ -144,6 +178,10 @@ top::Pattern ::= msg::[Message]
   top.patternVariableName = nothing();
   top.patternSubPatternList = [];
   top.patternSortKey = "error";
+
+  top.isPrimitivePattern = false;
+  top.isBoolPattern = false;
+  top.isListPattern = false;
 }
 
 aspect default production
@@ -153,6 +191,9 @@ top::Pattern ::=
   top.patternIsVariable = false;
   top.patternVariableName = nothing();
   top.patternNamedSubPatternList = [];
+
+  --This should only be accessed on production patterns
+  top.patternTypeName = "";
 }
 
 --------------------------------------------------------------------------------
@@ -168,6 +209,10 @@ top::Pattern ::= num::Int_t
   top.patternVars = [];
   top.patternSubPatternList = [];
   top.patternSortKey = num.lexeme;
+
+  top.isPrimitivePattern = true;
+  top.isBoolPattern = false;
+  top.isListPattern = false;
 }
 
 concrete production fltPattern
@@ -179,6 +224,10 @@ top::Pattern ::= num::Float_t
   top.patternVars = [];
   top.patternSubPatternList = [];
   top.patternSortKey = num.lexeme;
+
+  top.isPrimitivePattern = true;
+  top.isBoolPattern = false;
+  top.isListPattern = false;
 }
 
 concrete production strPattern
@@ -190,6 +239,10 @@ top::Pattern ::= str::String_t
   top.patternVars = [];
   top.patternSubPatternList = [];
   top.patternSortKey = str.lexeme;
+
+  top.isPrimitivePattern = true;
+  top.isBoolPattern = false;
+  top.isListPattern = false;
 }
 
 concrete production truePattern
@@ -201,6 +254,10 @@ top::Pattern ::= 'true'
   top.patternVars = [];
   top.patternSubPatternList = [];
   top.patternSortKey = "true";
+
+  top.isPrimitivePattern = true;
+  top.isBoolPattern = true;
+  top.isListPattern = false;
 }
 
 concrete production falsePattern
@@ -212,6 +269,10 @@ top::Pattern ::= 'false'
   top.patternVars = [];
   top.patternSubPatternList = [];
   top.patternSortKey = "false";
+
+  top.isPrimitivePattern = true;
+  top.isBoolPattern = true;
+  top.isListPattern = false;
 }
 
 abstract production nilListPattern
@@ -223,6 +284,10 @@ top::Pattern ::= '[' ']'
   top.patternVars = [];
   top.patternSubPatternList = [];
   top.patternSortKey = "silver:core:nil";
+
+  top.isPrimitivePattern = true;
+  top.isBoolPattern = false;
+  top.isListPattern = true;
 }
 
 concrete production consListPattern
@@ -237,6 +302,10 @@ top::Pattern ::= hp::Pattern '::' tp::Pattern
   
   top.patternSubPatternList = [hp, tp];
   top.patternSortKey = "silver:core:cons";
+
+  top.isPrimitivePattern = true;
+  top.isBoolPattern = false;
+  top.isListPattern = true;
 }
 
 -- List literal patterns
@@ -320,5 +389,18 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
   
   top.patternVars = p.patternVars;
   top.namedPatternList = [pair(qn.lookupAttribute.fullName, p)];
+}
+
+
+
+--helper function for building patternLists from lists of patterns
+function buildPatternList
+PatternList ::= plst::[Pattern] loc::Location
+{
+  return case plst of
+         | [] -> patternList_nil(location=loc)
+         | h::t ->
+           patternList_more(h, ',', buildPatternList(t, loc), location=loc)
+         end;
 }
 

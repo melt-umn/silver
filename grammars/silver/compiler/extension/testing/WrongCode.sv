@@ -5,6 +5,7 @@ import silver:compiler:definition:env;
 
 terminal WrongCode_kwd 'wrongCode' lexer classes {KEYWORD};
 terminal WarnCode_kwd 'warnCode' lexer classes {KEYWORD};
+terminal NoWarnCode_kwd 'noWarnCode' lexer classes {KEYWORD};
 terminal WrongFlowCode_kwd 'wrongFlowCode' lexer classes {KEYWORD};
 
 function containsMessage
@@ -41,6 +42,35 @@ top::AGDcl ::= 'warnCode' s::String_t '{' ags::AGDcls '}'
   
   forwards to makeAppendAGDclOfAGDcls(ags);
   -- Forward to the decls so that we can use the stuff declared with warnings in other tests
+}
+
+{--
+ -Check that code does *NOT* include a particular type of warning.
+ -This is used to ensure warnings are only generated on code where they should be generated.
+ -We don't need a version for no errors, since errors will cause failures anyway.
+ -
+ - @param s  The string which should NOT be contained in any warning messages from this code block
+ - @param ags  The code block which we are checking
+-}
+concrete production noWarnDecl
+top::AGDcl ::= 'noWarnCode' s::String_t '{' ags::AGDcls '}'
+{
+  top.unparse = "noWarnCode " ++ s.lexeme ++ " {" ++ ags.unparse ++ "}";
+
+  {-
+    I think we want the errors from ags in any case.  This production
+    is essentially requiring that the code is correct, so we want to
+    know that the reason there is no warning is because the code was
+    written correctly, not because it had a worse error in it.
+  -}
+  top.errors :=
+    ags.errors ++
+    if containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 1, ags.errors)
+    then [err(top.location, "No-warn code raised a warning containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))]
+    else [];
+
+  forwards to makeAppendAGDclOfAGDcls(ags);
+  -- Forward to the decls so that we can use the stuff declared without warnings in other tests
 }
 
 concrete production wrongFlowDecl

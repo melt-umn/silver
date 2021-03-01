@@ -110,6 +110,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
   cl.constraintPos =
     case top.classHead of
     | instContext(cls, _) -> classMemberPos(cls)
+    | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
   
@@ -140,6 +141,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
   cl.constraintPos =
     case top.classHead of
     | instContext(cls, _) -> classMemberPos(cls)
+    | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
   
