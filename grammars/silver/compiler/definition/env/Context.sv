@@ -6,7 +6,7 @@ attribute env occurs on Context;
 
 -- This mostly exists as a convenient way to perform multiple env-dependant operations
 -- on a list of contexts without re-decorating them and repeating context resolution.
-nonterminal Contexts with env, freeVariables;
+nonterminal Contexts with env, freeVariables, boundVariables;
 abstract production consContext
 top::Contexts ::= h::Context t::Contexts
 { top.freeVariables = setUnionTyVars(h.freeVariables, t.freeVariables); }
@@ -17,7 +17,7 @@ top::Contexts ::=
 global foldContexts::(Contexts ::= [Context]) = foldr(consContext, nilContext(), _);
 
 synthesized attribute contextSuperDcl::(DclInfo ::= DclInfo String Location) occurs on Context;  -- Instances from context's superclasses
-synthesized attribute contextMemberDcl::(DclInfo ::= String Location) occurs on Context; -- Instances from a context on a class member
+synthesized attribute contextMemberDcl::(DclInfo ::= [TyVar] String Location) occurs on Context; -- Instances from a context on a class member
 synthesized attribute contextClassName::Maybe<String> occurs on Context;
 
 synthesized attribute resolved::[DclInfo] occurs on Context;
@@ -26,7 +26,7 @@ aspect production instContext
 top::Context ::= cls::String t::Type
 {
   top.contextSuperDcl = instSuperDcl(cls, _, sourceGrammar=_, sourceLocation=_);
-  top.contextMemberDcl = instConstraintDcl(cls, t, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextMemberDcl = instConstraintDcl(cls, t, _, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextClassName = just(cls);
   
   -- Here possibly-decorated types that are still unspecialized at this point
@@ -64,7 +64,7 @@ aspect production typeableContext
 top::Context ::= t::Type
 {
   top.contextSuperDcl = typeableSuperDcl(_, sourceGrammar=_, sourceLocation=_);
-  top.contextMemberDcl = typeableInstConstraintDcl(t, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextMemberDcl = typeableInstConstraintDcl(t, _, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextClassName = nothing();
 
   top.resolved =
@@ -92,7 +92,7 @@ aspect production inhSubsetContext
 top::Context ::= i1::Type i2::Type
 {
   top.contextSuperDcl = error("subset can't appear as superclass");
-  top.contextMemberDcl = inhSubsetInstConstraintDcl(i1, i2, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextMemberDcl = inhSubsetInstConstraintDcl(i1, i2, _, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextClassName = nothing();
 
   top.resolved =

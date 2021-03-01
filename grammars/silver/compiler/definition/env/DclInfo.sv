@@ -325,14 +325,14 @@ top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
   top.typeScheme = constraintType(bound, contexts, ty);
 }
 abstract production instConstraintDcl
-top::DclInfo ::= fntc::String ty::Type
+top::DclInfo ::= fntc::String ty::Type tvs::[TyVar]
 {
   top.fullName = fntc;
   
   top.typeScheme = monoType(ty);
 }
 abstract production sigConstraintDcl
-top::DclInfo ::= fntc::String ty::Type fnsig::String
+top::DclInfo ::= fntc::String ty::Type ns::NamedSignature
 {
   top.fullName = fntc;
   
@@ -355,14 +355,14 @@ top::DclInfo ::= fntc::String baseDcl::DclInfo
 
 -- typeable instances
 abstract production typeableInstConstraintDcl
-top::DclInfo ::= ty::Type
+top::DclInfo ::= ty::Type tvs::[TyVar]
 {
   top.fullName = "typeable";
   
   top.typeScheme = monoType(ty);
 }
 abstract production typeableSigConstraintDcl
-top::DclInfo ::= ty::Type fnsig::String
+top::DclInfo ::= ty::Type ns::NamedSignature
 {
   top.fullName = "typeable";
   
@@ -390,7 +390,7 @@ top::DclInfo ::= ty::Type
 
 -- inhSubset instances
 abstract production inhSubsetInstConstraintDcl
-top::DclInfo ::= i1::Type i2::Type
+top::DclInfo ::= i1::Type i2::Type tvs::[TyVar]
 {
   top.fullName = "subset";
   
@@ -398,7 +398,7 @@ top::DclInfo ::= i1::Type i2::Type
   top.typerep2 = i2;
 }
 abstract production inhSubsetSigConstraintDcl
-top::DclInfo ::= i1::Type i2::Type fnsig::String
+top::DclInfo ::= i1::Type i2::Type ns::NamedSignature
 {
   top.fullName = "subset";
   

@@ -39,7 +39,7 @@ String ::= str::String sig::NamedSignature
 {
   return substituteAll(str,
       map(wrapStrictNotation, sig.inputNames) ++ map(wrapLazyNotation, sig.inputNames) ++ map(wrapContextNotation, range(0, length(sig.contexts))),
-      map(strictChildAccessor, sig.inputElements) ++ map((.childRefElem), sig.inputElements) ++ map((.contextRefElem), sig.contexts));
+      map(strictChildAccessor, sig.inputElements) ++ map((.childRefElem), sig.inputElements) ++ map(\ c::Context -> decorate c with {boundVariables = sig.freeVariables;}.contextRefElem, sig.contexts));
 }
 
 

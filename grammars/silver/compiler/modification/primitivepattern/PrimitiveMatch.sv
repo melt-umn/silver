@@ -228,13 +228,21 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   -- Thread NORMALLY! YAY!
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
   
+  -- If there are contexts on the production, then we need to make the scrutinee available
+  -- in the RHS to access their implementations.
+  local scrutineeName::String = "__scrutineeNode_" ++ toString(genInt());
   local contextDefs::[Def] = map(
-    \ c::Context -> c.contextPatternDef(top.grammarName, top.location, qn.lookupValue.fullName),
+    \ c::Context ->
+      tcInstDef(
+        performContextSubstitution(c, e.finalSubst).contextPatternDcl(
+          if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
+          scrutineeName, top.location, top.grammarName)),
     prod_contexts);
   e.env = newScopeEnv(contextDefs ++ ns.defs, top.env);
   
-  top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++
-    ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
+  top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++ ") { " ++
+    (if null(prod_contexts) then "" else s"final ${makeProdName(qn.lookupValue.fullName)} ${scrutineeName} = (${makeProdName(qn.lookupValue.fullName)})scrutineeNode; ") ++
+    ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
 }
 
 abstract production prodPatternGadt
@@ -292,13 +300,21 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   e.finalSubst = errCheck2.upSubst;
   -- Here ends the hack
   
+  -- If there are contexts on the production, then we need to make the scrutinee available
+  -- in the RHS to access their implementations.
+  local scrutineeName::String = "__scrutinee_" ++ toString(genInt());
   local contextDefs::[Def] = map(
-    \ c::Context -> c.contextPatternDef(top.grammarName, top.location, qn.lookupValue.fullName),
+    \ c::Context ->
+      tcInstDef(
+        performContextSubstitution(c, e.finalSubst).contextPatternDcl(
+          if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
+          scrutineeName, top.location, top.grammarName)),
     prod_contexts);
   e.env = newScopeEnv(contextDefs ++ ns.defs, top.env);
   
-  top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++
-    ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
+  top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++ ") { " ++
+    (if null(prod_contexts) then "" else s"final ${makeProdName(qn.lookupValue.fullName)} ${scrutineeName} = (${makeProdName(qn.lookupValue.fullName)})scrutineeNode; ") ++
+    ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
 }
 
 -- TODO: We currently provide the below for ease of translation from complex case exprs, but

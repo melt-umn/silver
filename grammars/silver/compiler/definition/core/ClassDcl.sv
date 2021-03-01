@@ -49,7 +49,7 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   headDefs := cl.defs;
   headDefs <- [currentInstDef(top.grammarName, id.location, fName, var.typerep)];
 
-  cl.constraintPos = classPos(fName);
+  cl.constraintPos = classPos(fName, var.freeVariables);
   cl.env = newScopeEnv(headPreDefs, top.env);
   
   var.env = cl.env;
@@ -109,7 +109,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
   
   cl.constraintPos =
     case top.classHead of
-    | instContext(cls, _) -> classMemberPos(cls)
+    | instContext(cls, _) -> classMemberPos(cls, boundVars)
     | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
@@ -140,7 +140,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
   
   cl.constraintPos =
     case top.classHead of
-    | instContext(cls, _) -> classMemberPos(cls)
+    | instContext(cls, _) -> classMemberPos(cls, boundVars)
     | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;

@@ -28,29 +28,29 @@ synthesized attribute annoLookupElem :: String occurs on NamedSignatureElement;
 aspect production namedSignature
 top::NamedSignature ::= fn::String contexts::[Context] ie::[NamedSignatureElement] oe::NamedSignatureElement np::[NamedSignatureElement]
 {
-  top.javaSignature = implode(", ", map((.contextSigElem), contexts) ++ map((.childSigElem), ie) ++ map((.annoSigElem), np));
-  top.refInvokeTrans = implode(", ", map((.contextRefElem), contexts) ++ map((.childRefElem), ie) ++ map((.annoRefElem), np));
+  top.javaSignature = implode(", ", map(\ c::Context -> decorate c with {boundVariables = top.freeVariables;}.contextSigElem, contexts) ++ map((.childSigElem), ie) ++ map((.annoSigElem), np));
+  top.refInvokeTrans = implode(", ", map(\ c::Context -> decorate c with {boundVariables = top.freeVariables;}.contextRefElem, contexts) ++ map((.childRefElem), ie) ++ map((.annoRefElem), np));
 }
 
 aspect production instContext
 top::Context ::= fn::String t::Type
 {
-  top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(fn, t)}";
-  top.contextRefElem = makeConstraintDictName(fn, t);
+  top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(fn, t, top.boundVariables)}";
+  top.contextRefElem = makeConstraintDictName(fn, t, top.boundVariables);
 }
 
 aspect production typeableContext
 top::Context ::= t::Type
 {
-  top.contextSigElem = s"final ${top.transType} ${makeTypeableName(t)}";
-  top.contextRefElem = makeTypeableName(t);
+  top.contextSigElem = s"final ${top.transType} ${makeTypeableName(t, top.boundVariables)}";
+  top.contextRefElem = makeTypeableName(t, top.boundVariables);
 }
 
 aspect production inhSubsetContext
 top::Context ::= i1::Type i2::Type
 {
-  top.contextSigElem = s"final ${top.transType} ${makeInhSubsetName(i1, i2)}";
-  top.contextRefElem = makeInhSubsetName(i1, i2);
+  top.contextSigElem = s"final ${top.transType} ${makeInhSubsetName(i1, i2, top.boundVariables)}";
+  top.contextRefElem = makeInhSubsetName(i1, i2, top.boundVariables);
 }
 
 -- TODO: It'd be nice to maybe split these into the ordered parameters and the annotations

@@ -83,6 +83,15 @@ MyEq a, MyEq b => top::EqPair<a b> ::= x::a y::b
 
 equalityTest(decorate eqPair(42, [1, 2, 3]) with {isEqTo=eqPair(42, [1, 2, 3]);}.isEq, true, Boolean, silver_tests);
 equalityTest(decorate eqPair(42, [1, 2, 3]) with {isEqTo=eqPair(42, [1, 23, 3]);}.isEq, false, Boolean, silver_tests);
+equalityTest(case eqPair(42, [1, 2, 3]), eqPair(42, [1, 2, 3]) of eqPair(w, x), eqPair(y, z) -> myeq(w, y) && myeq(x, z) end, true, Boolean, silver_tests);
+
+nonterminal EqRank1;
+production eqR1
+Eq a => top::EqRank1 ::= x::a
+{}
+
+global eqR1Res::Boolean = case eqR1([1, 2, 3]) of eqR1(a) -> a == a end; 
+equalityTest(eqR1Res, true, Boolean, silver_tests);
 
 wrongCode "Could not find an instance for silver_features:CBaz Float (arising from the instance for silver_features:CFoo [Float], arising from the use of cx)" {
   global cxf::[Float] = cx;
@@ -352,3 +361,15 @@ wrongCode "a has kind * -> * -> *, but kind * is expected here" {
     return 42;
   }
 }
+{-
+nonterminal RTNT;
+production rtProd
+runtimeTypeable a => top::RTNT ::= fn::(Integer ::= a)
+{}
+
+global rtCaseRes::Integer =
+  case rtProd(\ xs::[Integer] -> length(xs)) of
+  | rtProd(f) -> f(reifyUnchecked(reflect([1, 2, 3])))
+  end;
+equalityTest(rtCaseRes, 3, Integer, silver_tests);
+-}

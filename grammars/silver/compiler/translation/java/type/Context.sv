@@ -112,14 +112,14 @@ top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
   top.transContext = s"new ${makeInstanceName(top.sourceGrammar, fn, ty)}(${implode(", ", top.transContextDeps)})";
 }
 aspect production instConstraintDcl
-top::DclInfo ::= fntc::String ty::Type
+top::DclInfo ::= fntc::String ty::Type tvs::[TyVar]
 {
-  top.transContext = makeConstraintDictName(fntc, ty);
+  top.transContext = makeConstraintDictName(fntc, ty, tvs);
 }
 aspect production sigConstraintDcl
-top::DclInfo ::= fntc::String ty::Type fnsig::String
+top::DclInfo ::= fntc::String ty::Type ns::NamedSignature
 {
-  top.transContext = s"((${makeProdName(fnsig)})(context.undecorate())).${makeConstraintDictName(fntc, ty)}";
+  top.transContext = s"((${makeProdName(ns.fullName)})(context.undecorate())).${makeConstraintDictName(fntc, ty, ns.freeVariables)}";
 }
 aspect production currentInstDcl
 top::DclInfo ::= fntc::String ty::Type
@@ -133,14 +133,14 @@ top::DclInfo ::= fntc::String baseDcl::DclInfo
   top.transContext = baseDcl.transContext ++ s".${makeInstanceSuperAccessorName(fntc)}()";
 }
 aspect production typeableInstConstraintDcl
-top::DclInfo ::= ty::Type
+top::DclInfo ::= ty::Type tvs::[TyVar]
 {
-  top.transContext = makeTypeableName(ty);
+  top.transContext = makeTypeableName(ty, tvs);
 }
 aspect production typeableSigConstraintDcl
-top::DclInfo ::= ty::Type fnsig::String
+top::DclInfo ::= ty::Type ns::NamedSignature
 {
-  top.transContext = s"((${makeProdName(fnsig)})(context.undecorate())).${makeTypeableName(ty)}"; 
+  top.transContext = s"((${makeProdName(ns.fullName)})(context.undecorate())).${makeTypeableName(ty, ns.freeVariables)}"; 
 }
 aspect production typeableSuperDcl
 top::DclInfo ::= baseDcl::DclInfo
@@ -155,12 +155,12 @@ top::DclInfo ::= ty::Type
   top.transContext = ty.transTypeRep;
 }
 aspect production inhSubsetInstConstraintDcl
-top::DclInfo ::= i1::Type i2::Type
+top::DclInfo ::= i1::Type i2::Type tvs::[TyVar]
 {
   top.transContext = "null";
 }
 aspect production inhSubsetSigConstraintDcl
-top::DclInfo ::= i1::Type i2::Type fnsig::String
+top::DclInfo ::= i1::Type i2::Type fnsig::NamedSignature
 {
   top.transContext = "null";
 }
@@ -171,24 +171,24 @@ top::DclInfo ::= i1::Type i2::Type
 }
 
 function makeConstraintDictName
-String ::= s::String t::Type
+String ::= s::String t::Type tvs::[TyVar]
 {
-  t.boundVariables = [];
+  t.boundVariables = tvs;
   return "d_" ++ substitute(":", "_", s) ++ "_" ++ t.transTypeName;
 }
 
 function makeTypeableName
-String ::= t::Type
+String ::= t::Type tvs::[TyVar]
 {
-  t.boundVariables = [];
+  t.boundVariables = tvs;
   return "typeRep_" ++ t.transTypeName;
 }
 
 function makeInhSubsetName
-String ::= i1::Type i2::Type
+String ::= i1::Type i2::Type tvs::[TyVar]
 {
-  i1.boundVariables = [];
-  i2.boundVariables = [];
+  i1.boundVariables = tvs;
+  i2.boundVariables = tvs;
   return s"inhSubset_${i1.transTypeName}_${i2.transTypeName}";
 }
 

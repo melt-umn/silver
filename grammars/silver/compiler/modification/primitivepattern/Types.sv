@@ -1,6 +1,7 @@
 grammar silver:compiler:modification:primitivepattern;
 
 import silver:compiler:modification:ffi only foreignType; -- so we cover foreignType with the 'refine' hack below. TODO
+import silver:compiler:translation:java:type;
 
 {--
  - Turns the existential variables of a production type into skolem constants,
@@ -305,22 +306,18 @@ Boolean ::= ls::[Type]
 
 
 --------
-synthesized attribute contextPatternDef::(Def ::= String Location String) occurs on Context;
+synthesized attribute contextPatternDcl::(DclInfo ::= [TyVar] String Location String) occurs on Context;
 
 aspect production instContext
 top::Context ::= cls::String t::Type
 {
-  top.contextPatternDef = instPatternConstraintDef(_, _, cls, t, _);
+  top.contextPatternDcl = instPatternConstraintDcl(cls, t, _, _, sourceLocation=_, sourceGrammar=_);
 }
 
 abstract production instPatternConstraintDcl
-top::DclInfo ::= fnTC::String ty::Type fnProd::String 
+top::DclInfo ::= fntc::String ty::Type tvs::[TyVar] scrutineeTrans::String 
 {
-  top.fullName = fnTC;
+  top.fullName = fntc;
   top.typeScheme = monoType(ty);
-}
-function instPatternConstraintDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type fnProd::String
-{
-  return tcInstDef(instPatternConstraintDcl(fn,ty,fnProd,sourceGrammar=sg,sourceLocation=sl));
+  top.transContext = s"${scrutineeTrans}.${makeConstraintDictName(fntc, ty, tvs)}";
 }

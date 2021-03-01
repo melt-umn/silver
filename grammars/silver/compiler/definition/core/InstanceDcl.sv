@@ -40,7 +40,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
     | _ -> []
     end;
   
-  cl.constraintPos = instancePos(instContext(fName, ty.typerep));
+  cl.constraintPos = instancePos(instContext(fName, ty.typerep), boundVars);
 
   production attribute headPreDefs :: [Def] with ++;
   headPreDefs := [];
@@ -128,7 +128,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
   top.fullName = id.lookupValue.fullName;
 
   e.env = newScopeEnv(flatMap(\ c::Context ->
-      let instDcl::DclInfo = c.contextMemberDcl(top.grammarName, top.location)
+      let instDcl::DclInfo = c.contextMemberDcl(top.instanceType.freeVariables, top.grammarName, top.location)
       in tcInstDef(instDcl) :: transitiveSuperDefs(top.env, top.instanceType, [], instDcl)
       end, memberContexts),
     top.env);

@@ -10,7 +10,6 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  production contexts::[Context] = cl.contexts;
   production boundVars::[TyVar] = t.typerep.freeVariables;
 
   production attribute allLexicalTyVars :: [String];
@@ -23,7 +22,7 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
   t.env = cl.env;  
   e.env = newScopeEnv(cl.defs, cl.env);
 
-  top.defs := [globalDef(top.grammarName, id.location, fName, boundVars, contexts, t.typerep)];
+  top.defs := [globalDef(top.grammarName, id.location, fName, boundVars, cl.contexts, t.typerep)];
 
   top.errors <-
     if length(getValueDclAll(fName, top.env)) > 1
@@ -33,7 +32,7 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
   e.originRules = [];
   e.isRoot = true;
 
-  cl.constraintPos = globalPos();
+  cl.constraintPos = globalPos(boundVars);
 
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;

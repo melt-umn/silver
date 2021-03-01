@@ -46,6 +46,9 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local commaIfKidsOrAnnos :: String = if length(namedSig.inputElements)!=0 || length(namedSig.namedInputElements)!=0 then "," else "";
   local commaIfKidsAndAnnos :: String = if length(namedSig.inputElements)!=0 && length(namedSig.namedInputElements)!=0 then "," else "";
 
+  local contexts::Contexts = foldContexts(namedSig.contexts);
+  contexts.boundVariables = namedSig.freeVariables;
+
   top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
 
@@ -75,9 +78,9 @@ ${implode("", map((.childStaticElem), namedSig.inputElements))}
     }
 
     public ${className}(${if wantsTracking then "final NOriginInfo origin"++commaIfKidsOrAnnos else ""} ${namedSig.javaSignature}) {
-        super(${if wantsTracking then "origin"++commaIfAnnos else ""} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
-        ${implode("", map(makeChildAssign, namedSig.inputElements))}
-        ${implode("", map((.contextInitTrans), namedSig.contexts))}
+        super(${if wantsTracking then "origin"++commaIfAnnos else ""}${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
+${implode("", map(makeChildAssign, namedSig.inputElements))}
+${contexts.contextInitTrans}
     }
 
 ${if !null(namedSig.contexts) then "//no rtConstruct because contexts" else s"""
@@ -88,7 +91,7 @@ ${if !null(namedSig.contexts) then "//no rtConstruct because contexts" else s"""
 
 ${implode("", map((.childDeclElem), namedSig.inputElements))}
 
-${flatMap((.contextMemberDeclTrans), namedSig.contexts)}
+${contexts.contextMemberDeclTrans}
 
 	@Override
 	public Object getChild(final int index) {
@@ -213,15 +216,15 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 	${if null(namedSig.contexts) then s"public static final common.NodeFactory<${fnnt}> factory = new Factory();" else ""}
 
 	public static final class Factory extends common.NodeFactory<${fnnt}> {
-${flatMap((.contextMemberDeclTrans), namedSig.contexts)}
+${contexts.contextMemberDeclTrans}
 
-		public Factory(${implode(", ", map((.contextParamTrans), namedSig.contexts))}) {
-${flatMap((.contextInitTrans), namedSig.contexts)}
+		public Factory(${contexts.contextParamTrans}) {
+${contexts.contextInitTrans}
 		}
 	
 		@Override
         public final ${fnnt} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] annotations) {
-            return new ${className}(${implode(", ", (if wantsTracking then [newConstructionOriginUsingCtxRef] else []) ++ map((.contextRefElem), namedSig.contexts) ++ unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+            return new ${className}(${implode(", ", (if wantsTracking then [newConstructionOriginUsingCtxRef] else []) ++ map(\ c::Context -> decorate c with {boundVariables = namedSig.freeVariables;}.contextRefElem, namedSig.contexts) ++ unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
         }
 		
         @Override

@@ -101,20 +101,16 @@ top::Constraint ::= i1::TypeExpr 'subset' i2::TypeExpr
     then [err(top.location, s"${top.unparse} has kind ${prettyKind(i2.typerep.kindrep)}, but kind InhSet is expected here")]
     else [];
 
-  top.errors <-
-    case top.constraintPos of
-    | classPos(_) -> [err(top.location, "subset constraint not permitted as superclass")]
-    | _ -> []
-    end;
-  local instDcl::DclInfo =
-    case top.constraintPos of
-    | signaturePos(sig) -> inhSubsetSigConstraintDcl(i1.typerep, i2.typerep, sig.fullName, sourceGrammar=top.grammarName, sourceLocation=top.location)
-    | _ -> inhSubsetInstConstraintDcl(i1.typerep, i2.typerep, sourceGrammar=top.grammarName, sourceLocation=top.location)
-    end;
+  local instDcl::DclInfo = top.constraintPos.inhSubsetInstDcl(i1.typerep, i2.typerep, top.grammarName, top.location);
   top.defs <-
     case top.constraintPos of
-    | classPos(_) -> []
+    | classPos(_, _) -> []
     | _ -> [tcInstDef(instDcl)]
+    end;
+  top.errors <-
+    case top.constraintPos of
+    | classPos(_, _) -> [err(top.location, "subset constraint not permitted as superclass")]
+    | _ -> []
     end;
 
   top.lexicalTyVarKinds <-
@@ -131,9 +127,10 @@ top::Constraint ::= i1::TypeExpr 'subset' i2::TypeExpr
 
 synthesized attribute classInstDcl::(DclInfo ::= String Type String Location);
 synthesized attribute typeableInstDcl::(DclInfo ::= Type String Location);
+synthesized attribute inhSubsetInstDcl::(DclInfo ::= Type Type String Location);
 synthesized attribute classDefName::Maybe<String>;
 synthesized attribute instanceHead::Maybe<Context>;
-nonterminal ConstraintPosition with classInstDcl, typeableInstDcl, classDefName, instanceHead;
+nonterminal ConstraintPosition with classInstDcl, typeableInstDcl, inhSubsetInstDcl, classDefName, instanceHead;
 
 aspect default production
 top::ConstraintPosition ::=
@@ -142,14 +139,15 @@ top::ConstraintPosition ::=
   top.instanceHead = nothing();
 }
 abstract production instancePos
-top::ConstraintPosition ::= instHead::Context
+top::ConstraintPosition ::= instHead::Context tvs::[TyVar]
 {
-  top.classInstDcl = instConstraintDcl(_, _, sourceGrammar=_, sourceLocation=_);
-  top.typeableInstDcl = typeableInstConstraintDcl(_, sourceGrammar=_, sourceLocation=_);
+  top.classInstDcl = instConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
+  top.typeableInstDcl = typeableInstConstraintDcl(_, tvs, sourceGrammar=_, sourceLocation=_);
+  top.inhSubsetInstDcl = inhSubsetInstConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
   top.instanceHead = just(instHead);
 }
 abstract production classPos
-top::ConstraintPosition ::= className::String
+top::ConstraintPosition ::= className::String tvs::[TyVar]
 {
   top.classInstDcl = \ fName::String t::Type g::String l::Location ->
     instSuperDcl(fName,
@@ -159,13 +157,15 @@ top::ConstraintPosition ::= className::String
     typeableSuperDcl(
       currentInstDcl(error("Class name shouldn't be needed"), t, sourceGrammar=g, sourceLocation=l),
       sourceGrammar=g, sourceLocation=l);
+  top.inhSubsetInstDcl = error("subset constraint not permitted as superclass");
   top.classDefName = just(className);
 }
 abstract production classMemberPos
-top::ConstraintPosition ::= className::String
+top::ConstraintPosition ::= className::String tvs::[TyVar]
 {
-  top.classInstDcl = instConstraintDcl(_, _, sourceGrammar=_, sourceLocation=_);
-  top.typeableInstDcl = typeableInstConstraintDcl(_, sourceGrammar=_, sourceLocation=_);
+  top.classInstDcl = instConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
+  top.typeableInstDcl = typeableInstConstraintDcl(_, tvs, sourceGrammar=_, sourceLocation=_);
+  top.inhSubsetInstDcl = inhSubsetInstConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
   top.classDefName = just(className);
   -- A bit strange, but class member constraints are sort of like instance constraints.
   -- However we don't know what the instance type actually is, and want to skip the
@@ -175,15 +175,17 @@ top::ConstraintPosition ::= className::String
 abstract production signaturePos
 top::ConstraintPosition ::= sig::NamedSignature
 {
-  top.classInstDcl = sigConstraintDcl(_, _, sig.fullName, sourceGrammar=_, sourceLocation=_);
-  top.typeableInstDcl = typeableSigConstraintDcl(_, sig.fullName, sourceGrammar=_, sourceLocation=_);
+  top.classInstDcl = sigConstraintDcl(_, _, sig, sourceGrammar=_, sourceLocation=_);
+  top.typeableInstDcl = typeableSigConstraintDcl(_, sig, sourceGrammar=_, sourceLocation=_);
+  top.inhSubsetInstDcl = inhSubsetSigConstraintDcl(_, _, sig, sourceGrammar=_, sourceLocation=_);
 }
 abstract production globalPos
-top::ConstraintPosition ::=
+top::ConstraintPosition ::= tvs::[TyVar]
 {
   -- These are translated the same as instance constraints.
-  top.classInstDcl = instConstraintDcl(_, _, sourceGrammar=_, sourceLocation=_);
-  top.typeableInstDcl = typeableInstConstraintDcl(_, sourceGrammar=_, sourceLocation=_);
+  top.classInstDcl = instConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
+  top.typeableInstDcl = typeableInstConstraintDcl(_, tvs, sourceGrammar=_, sourceLocation=_);
+  top.inhSubsetInstDcl = inhSubsetInstConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
 }
 
 function transitiveSuperContexts
