@@ -460,7 +460,7 @@ Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Patte
                      env::Decorated Env flowEnv::Decorated FlowEnv
 {
   local firstPatts::[Decorated Pattern] = map(head, conPatts);
-  local firstPattMissng::Maybe<Pattern> =
+  local firstPattMissing::Maybe<Pattern> =
         generatePrimitiveMissingPattern(firstPatts);
   local numPatts::Integer = length(head(conPatts));
 
@@ -481,15 +481,18 @@ Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Patte
         case subcallCons of
         | just(plst) -> just(plst)
         | nothing() ->
-          case checkCompleteness(map(tail, varPatts), env, flowEnv) of
-          | just(plst) -> just(wildcPattern('_', location=bogusLoc())::plst)
-          | nothing() -> nothing()
+          --If we have a case not covered by a pattern, we want to fill that in rather than '_'
+          --This gives us better error messages for missing patterns
+          case checkCompleteness(map(tail, varPatts), env, flowEnv), firstPattMissing of
+          | just(plst), just(fp) -> just(fp::plst)
+          | just(plst), nothing() -> just(wildcPattern('_', location=bogusLoc())::plst)
+          | nothing(), _ -> nothing()
           end
         end;
 
   return if length(varPatts) > 0
          then subcall
-         else case firstPattMissng of
+         else case firstPattMissing of
               | just(p) -> just(p::generateWildcards(numPatts - 1))
               | nothing() -> nothing() --only possible if there is a typing error
               end;
@@ -639,7 +642,14 @@ Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Patte
         | nothing() ->
           --check if it was var completed, and, if so, if the var patterns are complete
           if isVarCompleted
-          then checkCompleteness(map(tail, varPatts), env, flowEnv)
+          then
+             --If we have a case not covered by a pattern, we want to fill that in rather than '_'
+             --This gives us better error messages for missing patterns
+             case checkCompleteness(map(tail, varPatts), env, flowEnv), allRepresented of
+             | nothing(), _ -> nothing()
+             | just(plst), nothing() -> just(wildcPattern('_', location=bogusLoc())::plst)
+             | just(plst), just(p) -> just(p::plst)
+             end
           else nothing()
         end;
 
