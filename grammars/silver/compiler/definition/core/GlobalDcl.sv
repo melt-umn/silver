@@ -18,8 +18,12 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
   production attribute typeExprDefs :: [Def] with ++;
   typeExprDefs := addNewLexicalTyVars(top.grammarName, top.location, t.lexicalTyVarKinds, allLexicalTyVars);
   
+  -- The following environments require the definitions from the type
+  -- expression, as constructed above in typeExprDefs using its lexical
+  -- type variables 
   cl.env = newScopeEnv(typeExprDefs, top.env);
-  t.env = cl.env;  
+  t.env = cl.env;
+  -- The expression also requires the constraint list definitions in its env
   e.env = newScopeEnv(cl.defs, cl.env);
 
   top.defs := [globalDef(top.grammarName, id.location, fName, boundVars, cl.contexts, t.typerep)];
@@ -44,6 +48,9 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
   e.frame = globalExprContext(myFlowGraph, sourceGrammar=top.grammarName);
 }
 
+-- If the global declaration does not have constraints, we unparse appropriately 
+-- in the following production and forward to the generic globalValueDclConcrete
+-- production with an empty constraint list
 concrete production globalValueDclConcreteNoCL
 top::AGDcl ::= 'global' id::Name '::' t::TypeExpr '=' e::Expr ';'
 {
