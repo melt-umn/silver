@@ -231,13 +231,14 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   -- If there are contexts on the production, then we need to make the scrutinee available
   -- in the RHS to access their implementations.
   local scrutineeName::String = "__scrutineeNode_" ++ toString(genInt());
-  local contextDefs::[Def] = map(
-    \ c::Context ->
+  local contextDefs::[Def] = zipWith(
+    \ c::Context oc::Context ->
       tcInstDef(
         performContextSubstitution(c, e.finalSubst).contextPatternDcl(
+          oc,
           if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
           scrutineeName, top.location, top.grammarName)),
-    prod_contexts);
+    prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts);
   e.env = newScopeEnv(contextDefs ++ ns.defs, top.env);
   
   top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++ ") { " ++
@@ -303,13 +304,14 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   -- If there are contexts on the production, then we need to make the scrutinee available
   -- in the RHS to access their implementations.
   local scrutineeName::String = "__scrutinee_" ++ toString(genInt());
-  local contextDefs::[Def] = map(
-    \ c::Context ->
+  local contextDefs::[Def] = zipWith(
+    \ c::Context oc::Context ->
       tcInstDef(
         performContextSubstitution(c, e.finalSubst).contextPatternDcl(
+          oc,
           if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
           scrutineeName, top.location, top.grammarName)),
-    prod_contexts);
+    prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts);
   e.env = newScopeEnv(contextDefs ++ ns.defs, top.env);
   
   top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++ ") { " ++

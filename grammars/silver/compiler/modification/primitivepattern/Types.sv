@@ -306,18 +306,20 @@ Boolean ::= ls::[Type]
 
 
 --------
-synthesized attribute contextPatternDcl::(DclInfo ::= [TyVar] String Location String) occurs on Context;
+synthesized attribute contextPatternDcl::(DclInfo ::= Context [TyVar] String Location String) occurs on Context;
 
 aspect production instContext
 top::Context ::= cls::String t::Type
 {
-  top.contextPatternDcl = instPatternConstraintDcl(cls, t, _, _, sourceLocation=_, sourceGrammar=_);
+  top.contextPatternDcl = instPatternConstraintDcl(cls, t, _, _, _, sourceLocation=_, sourceGrammar=_);
 }
 
 abstract production instPatternConstraintDcl
-top::DclInfo ::= fntc::String ty::Type tvs::[TyVar] scrutineeTrans::String 
+top::DclInfo ::= fntc::String ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
 {
   top.fullName = fntc;
   top.typeScheme = monoType(ty);
-  top.transContext = s"${scrutineeTrans}.${makeConstraintDictName(fntc, ty, tvs)}";
+  
+  oc.boundVariables = tvs;
+  top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
 }

@@ -26,6 +26,7 @@ attribute transType occurs on Context;
 synthesized attribute transContext::String occurs on Context;
 synthesized attribute transTypeableContext::String occurs on Context;
 
+synthesized attribute transContextMemberName::String occurs on Context;
 synthesized attribute transContextSuperAccessorName::String occurs on Context;
 synthesized attribute transContextSuperAccessor::String occurs on Context;
 
@@ -43,6 +44,7 @@ top::Context ::= fn::String t::Type
   resolvedDcl.transContextDeps = requiredContexts.transContexts;
   top.transContext = resolvedDcl.transContext;
   
+  top.transContextMemberName = makeConstraintDictName(fn, t, top.boundVariables);
   top.transContextSuperAccessorName = makeInstanceSuperAccessorName(fn);
   top.transContextSuperAccessor = s"""
 	public final ${top.transType} ${top.transContextSuperAccessorName}() {
@@ -74,6 +76,7 @@ ${makeTyVarDecls(5, t.freeVariables)}
 				}
 			}).getType()""";
   
+  top.transContextMemberName = makeTypeableName(t, top.boundVariables);
   top.transContextSuperAccessorName = "getType";
   top.transContextSuperAccessor = s"""
 	public final common.TypeRep getType() {
@@ -88,10 +91,11 @@ top::Context ::= i1::Type i2::Type
   -- This doesn't actually encode any runtime information, for now...
   top.transType = "Object";
   top.transContext = "null";
+  top.transContextMemberName = makeInhSubsetName(i1, i2, top.boundVariables);
   top.transContextSuperAccessorName = "getInhSubset";
   top.transContextSuperAccessor = s"""
 	public final common.TypeRep getInhSubset() {
-		return ${top.transTypeableContext};
+		return ${top.transContext};
 	}
 """;
 }

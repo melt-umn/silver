@@ -47,28 +47,12 @@ top::Contexts ::=
   top.contextInitTrans = "";
 }
 
-aspect production instContext
-top::Context ::= fn::String t::Type
+aspect default production
+top::Context ::=
 {
-  top.contextMemberDeclTrans = s"\tpublic final ${top.transType} ${makeConstraintDictName(fn, t, top.boundVariables)};\n";
-  top.contextParamTrans = s"${top.transType} ${makeConstraintDictName(fn, t, top.boundVariables)}";
-  top.contextInitTrans = s"\t\tthis.${makeConstraintDictName(fn, t, top.boundVariables)} = ${makeConstraintDictName(fn, t, top.boundVariables)};\n";
-}
-
-aspect production typeableContext
-top::Context ::= t::Type
-{
-  top.contextMemberDeclTrans = s"\tpublic final common.TypeRep ${makeTypeableName(t, top.boundVariables)};\n";
-  top.contextParamTrans = s"common.TypeRep ${makeTypeableName(t, top.boundVariables)}";
-  top.contextInitTrans = s"\t\tthis.${makeTypeableName(t, top.boundVariables)} = ${makeTypeableName(t, top.boundVariables)};\n";
-}
-
-aspect production inhSubsetContext
-top::Context ::= i1::Type i2::Type
-{
-  top.contextMemberDeclTrans = s"\tpublic final ${top.transType} ${makeInhSubsetName(i1, i2, top.boundVariables)};\n";
-  top.contextParamTrans = s"${top.transType} ${makeInhSubsetName(i1, i2, top.boundVariables)}";
-  top.contextInitTrans = s"\t\tthis.${makeInhSubsetName(i1, i2, top.boundVariables)} = ${makeInhSubsetName(i1, i2, top.boundVariables)};\n";
+  top.contextMemberDeclTrans = s"\tpublic final ${top.transType} ${top.transContextMemberName};\n";
+  top.contextParamTrans = s"${top.transType} ${top.transContextMemberName}";
+  top.contextInitTrans = s"\t\tthis.${top.transContextMemberName} = ${top.transContextMemberName};\n";
 }
 
 attribute translation occurs on InstanceBody, InstanceBodyItem;
