@@ -167,11 +167,10 @@ top::DclInfo ::= fn::String bound::[TyVar] clsHead::Context contexts::[Context] 
   top.typeScheme = constraintType(bound, clsHead :: contexts, ty);
 }
 abstract production globalValueDcl
-top::DclInfo ::= fn::String ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
 {
   top.fullName = fn;
-
-  top.typeScheme = monoType(ty);
+  top.typeScheme = constraintType(bound, contexts, ty);
 }
 
 -- TypeDclInfos
