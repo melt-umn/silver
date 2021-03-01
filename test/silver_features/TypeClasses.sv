@@ -361,7 +361,7 @@ wrongCode "a has kind * -> * -> *, but kind * is expected here" {
     return 42;
   }
 }
-{-
+
 nonterminal RTNT;
 production rtProd
 runtimeTypeable a => top::RTNT ::= fn::(Integer ::= a)
@@ -372,4 +372,15 @@ global rtCaseRes::Integer =
   | rtProd(f) -> f(reifyUnchecked(reflect([1, 2, 3])))
   end;
 equalityTest(rtCaseRes, 3, Integer, silver_tests);
+
+nonterminal SNT;
+production sProd
+i1 subset i2 => top::SNT ::= x::Decorated a with i2  f::([String] ::= Decorated a with i1)
+{}
+{-
+global sCaseRes::[String] =
+  case sProd(decorate mkDExpr() with {env1 = ["a"]; env2 = ["2"];}, \ x::Decorated DExpr with {env2} -> x.env2) of
+  | sProd(x, f) -> f(partialUndecorate(x))
+  end;
+equalityTest(sCaseRes, ["2"], [String], silver_tests);
 -}

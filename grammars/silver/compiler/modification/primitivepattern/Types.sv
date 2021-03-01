@@ -314,11 +314,44 @@ top::Context ::= cls::String t::Type
   top.contextPatternDcl = instPatternConstraintDcl(cls, t, _, _, _, sourceLocation=_, sourceGrammar=_);
 }
 
+aspect production typeableContext
+top::Context ::= t::Type
+{
+  top.contextPatternDcl = typeablePatternConstraintDcl(t, _, _, _, sourceLocation=_, sourceGrammar=_);
+}
+
+aspect production inhSubsetContext
+top::Context ::= i1::Type i2::Type
+{
+  top.contextPatternDcl = inhSubsetPatternConstraintDcl(i1, i2, _, _, _, sourceLocation=_, sourceGrammar=_);
+}
+
 abstract production instPatternConstraintDcl
 top::DclInfo ::= fntc::String ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
 {
   top.fullName = fntc;
   top.typeScheme = monoType(ty);
+  
+  oc.boundVariables = tvs;
+  top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
+}
+
+abstract production typeablePatternConstraintDcl
+top::DclInfo ::= ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
+{
+  top.fullName = "typeable";
+  top.typeScheme = monoType(ty);
+  
+  oc.boundVariables = tvs;
+  top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
+}
+
+abstract production inhSubsetPatternConstraintDcl
+top::DclInfo ::= i1::Type i2::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
+{
+  top.fullName = "subset";
+  top.typeScheme = monoType(i1);
+  top.typerep2 = i2;
   
   oc.boundVariables = tvs;
   top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
