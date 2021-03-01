@@ -73,6 +73,12 @@ top::Context ::= t::Type
   top.typepp = "runtimeTypeable " ++ t.typepp;
 }
 
+aspect production inhSubsetContext
+top::Context ::= i1::Type i2::Type
+{
+  top.typepp = i1.typepp ++ " subset " ++ i2.typepp;
+}
+
 aspect production varType
 top::Type ::= tv::TyVar
 {

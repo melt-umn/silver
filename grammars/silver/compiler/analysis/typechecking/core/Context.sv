@@ -58,7 +58,7 @@ top::Context ::= i1::Type i2::Type
 {
   top.contextErrors :=
     if null(top.resolved)
-    then [err(top.contextLoc, s"${prettyType(i1)} is not a subset of ${prettyType(i2)} (arising from ${top.contextSource})")]
+    then [err(top.contextLoc, s"${prettyTypeWith(i1, top.freeVariables)} is not a subset of ${prettyTypeWith(i2, top.freeVariables)} (arising from ${top.contextSource})")]
     else if !null(i1.freeFlexibleVars ++ i2.freeFlexibleVars)
     then map(
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
