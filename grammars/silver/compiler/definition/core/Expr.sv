@@ -192,7 +192,7 @@ top::Expr ::= q::Decorated QName
   top.typerep = typeScheme.typerep;
 
   -- Context resolution 
-  -- Performs final substition on all the contexts
+  -- Performs final substitution on all the contexts
   production contexts::Contexts =
     foldContexts(map(performContextSubstitution(_, top.finalSubst), typeScheme.contexts));
   contexts.env = top.env;
