@@ -138,4 +138,9 @@ public final class OriginsUtil {
 		Collections.addAll(l, a);
 		return l;
 	}
+
+	public static Object duplicatePoly(Object x, OriginContext c) {
+		if (x instanceof TrackedNode) return ((TrackedNode)x).duplicate(c);
+		else return x;
+	}
 }
