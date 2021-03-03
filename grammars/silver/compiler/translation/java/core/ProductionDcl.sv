@@ -245,7 +245,7 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
   local otImpl :: String = if wantsTracking then s"""
     @Override
     public ${fnnt} duplicate(Object redex, Object notes) {
-        if (redex == null) {
+        if (redex == null || ${if top.config.noRedex then "true" else "false"}) {
             return new ${className}(new PoriginOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, true) ${commaIfKids}
                 ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
         } else {

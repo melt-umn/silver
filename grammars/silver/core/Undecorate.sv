@@ -4,7 +4,7 @@ function new
 a ::= x::Decorated a with i
 { return error("foreign function"); }
 foreign {
-  "java": return "%x%.undecorate()";
+  "java": return "common.OriginsUtil.duplicatePoly(%x%.undecorate(), originCtx)";
 }
 
 function partialUndecorate
