@@ -284,7 +284,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr 'with' i::TypeExpr
     end;
   top.errors <-
     if i.typerep.kindrep != inhSetKind()
-    then [err(i.location, s"${i.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind InhSet is expected here")]
+    then [err(i.location, s"${i.unparse} has kind ${prettyKind(i.typerep.kindrep)}, but kind InhSet is expected here")]
     else [];
   top.errors <- t.errorsKindStar;
 
