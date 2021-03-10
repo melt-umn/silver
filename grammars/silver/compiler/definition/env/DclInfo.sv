@@ -92,7 +92,9 @@ top::DclInfo ::=
   top.isClass = false;
   top.classMembers = [];
   top.superContexts = [];
-  top.typerep2 = errorType();
+
+  -- instances
+  top.typerep2 = error("Internal compiler error: must be defined for all binary constraint instances");
   
   -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();

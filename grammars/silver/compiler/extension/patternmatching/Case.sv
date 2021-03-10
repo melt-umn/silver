@@ -362,7 +362,7 @@ function generateWildcards
   Sometimes we need to decorate a list of wildcard patterns for the
   type system to pass as an expanded list for completeness checking to
   replace a variable.  We should never need to access anything on
-  these, so passing in error values for the attributes is fine.
+  these, so passing in bottom values for the attributes is fine.
 -}
 function decoratePattList
 [Decorated Pattern] ::= lst::[Pattern]
