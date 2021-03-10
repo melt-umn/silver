@@ -118,13 +118,3 @@ String ::= top::Decorated Expr expr::String
   -- The extra (common.Node) cast in the non-generic non-primitive case is sometimes required for reasons I don't fully understand.
 
 }
-
-function wrapNewWithOT
-String ::= top::Decorated Expr expr::String
-{
-  local ty :: Type = finalType(top);
-
-  local directDup :: String = s"((${ty.transType})${expr}).duplicate(${makeOriginContextRef(top)})";
-
-  return if ((!top.config.noRedex) && typeWantsTracking(ty, top.config, top.env)) then directDup else expr;
-}

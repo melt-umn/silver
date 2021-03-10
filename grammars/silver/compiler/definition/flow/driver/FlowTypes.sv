@@ -18,10 +18,10 @@ type NtName = String;
 
 -- from explicit specifications
 function computeInitialFlowTypes
-EnvTree<FlowType> ::= flowEnv::Decorated FlowDefs
+EnvTree<FlowType> ::= specDefs::[(String, String, [String])]
 {
   local specs :: [Pair<NtName [Pair<String [String]>]>] =
-    ntListCoalesce(groupBy(ntListEq, sortBy(ntListLte, flowEnv.specContribs)));
+    ntListCoalesce(groupBy(ntListEq, sortBy(ntListLte, specDefs)));
   
   return rtm:add(map(initialFlowType, specs), rtm:empty());
 }

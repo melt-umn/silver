@@ -133,7 +133,7 @@ top::QNameType ::= id::Name ':' qn::QNameType
 {--
  - Qualified name looked up CONTEXTUALLY
  -}
-nonterminal QNameAttrOccur with config, name, location, grammarName, env, unparse, attrFor, errors, typerep, dcl, attrDcl, found;
+nonterminal QNameAttrOccur with config, name, location, grammarName, env, unparse, attrFor, errors, typerep, dcl, attrDcl, found, attrFound;
 
 {--
  - For QNameAttrOccur, the name of the LHS to look up this attribute on.
@@ -148,6 +148,11 @@ synthesized attribute attrDcl :: DclInfo;
 synthesized attribute found :: Boolean;
 
 {--
+ - Whether we found the *attribute*.  Sometimes we still want to know this even when the nonterminal was an error
+ -}
+synthesized attribute attrFound :: Boolean;
+
+{--
  - Used like `x.<this>`.
  - @param  at       the name of an attribute
  - @inh    attrFor  the type this attribute should be on
@@ -159,12 +164,14 @@ top::QNameAttrOccur ::= at::QName
   top.unparse = at.unparse;
   
   -- We start with all attributes we find with the name `at`:
+  local attrs :: [DclInfo] = at.lookupAttribute.dcls;
+  
   -- Then we filter to just those that appear to have an occurrence on `top.attrFor`:
   local narrowed :: [[DclInfo]] = 
     -- The occurs dcls on this nonterminal for
     map(getOccursDcl(_, top.attrFor.typeName, top.env),
       -- the full names of each candidate
-      map((.fullName), at.lookupAttribute.dcls));
+      map((.fullName), attrs));
   -- TODO: BUG: this disambiguates, but doesn't find full-named that aren't in scope with short names!
   -- i.e. 'import somthing as prefixed;  something.a' won't find prefixed:a.
 
@@ -172,7 +179,7 @@ top::QNameAttrOccur ::= at::QName
   local dclsNarrowed :: [DclInfo] = concat(narrowed);
   
   -- Attribute dcls
-  local attrsNarrowed :: [DclInfo] = zipFilterDcls(at.lookupAttribute.dcls, narrowed);
+  local attrsNarrowed :: [DclInfo] = zipFilterDcls(attrs, narrowed);
   
   -- This basically has to mirror the logic in errors below!
   top.found = 
@@ -180,6 +187,8 @@ top::QNameAttrOccur ::= at::QName
       top.attrFor.isError ||
       null(dclsNarrowed) ||
       length(attrsNarrowed) != 1);
+  
+  top.attrFound = !null(attrs);
   
   top.errors :=
     -- If we fail to look up the attribute, just report that.
@@ -195,7 +204,7 @@ top::QNameAttrOccur ::= at::QName
       (if top.attrFor.typeName != "" && null(getTypeDcl(top.attrFor.typeName, top.env)) then
          [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Perhaps import '" ++ substring(0, lastIndexOf(":", top.attrFor.typeName), top.attrFor.typeName)  ++ "'?")]
        else
-         [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Looked at:\n" ++ printPossibilities(at.lookupAttribute.dcls))]
+         [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Looked at:\n" ++ printPossibilities(attrs))]
       )
     -- If more than one attribute on the same _short name_ occurs, raise ambiguity
     else if length(attrsNarrowed) > 1 then
@@ -212,7 +221,7 @@ top::QNameAttrOccur ::= at::QName
     error("INTERNAL ERROR: Accessing dcl of occurrence " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
   top.attrDcl = if top.found then head(attrsNarrowed) else
     -- Workaround fix for proper error reporting - appairently there are some places where this is still demanded.
-    if !null(at.lookupAttribute.dcls) then head(at.lookupAttribute.dcls) else
+    if !null(attrs) then head(attrs) else
     error("INTERNAL ERROR: Accessing dcl of attribute " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
 }
 

@@ -57,12 +57,12 @@ top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name 'occurs' 'on' qs::
 }
 
 concrete production unificationAttributeDclMultiple
-top::AGDcl ::= 'unification' 'attribute' inh::Name ',' synPartial::Name ',' syn::Name 'occurs' 'on' qs::QNames ';'
+top::AGDcl ::= 'unification' 'attribute' inh::Name i::TypeExpr ',' synPartial::Name ',' syn::Name 'occurs' 'on' qs::QNames ';'
 {
-  top.unparse = "equality attribute " ++ inh.unparse ++ ", " ++ synPartial.name ++ ", " ++ syn.name ++ " occurs on " ++ qs.unparse ++ ";";
+  top.unparse = "equality attribute " ++ inh.unparse ++ " " ++ i.unparse ++ ", " ++ synPartial.name ++ ", " ++ syn.name ++ " occurs on " ++ qs.unparse ++ ";";
   forwards to
     appendAGDcl(
-      unificationAttributeDcl($1, $2, inh, $4, syn, $6, synPartial, $11, location=top.location),
+      unificationAttributeDcl($1, $2, inh, i, $5, syn, $7, synPartial, $12, location=top.location),
       appendAGDcl(
         makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location)), qs.qnames),
         appendAGDcl(

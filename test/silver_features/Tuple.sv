@@ -1,5 +1,4 @@
 import silver:testing;
-import silver:compiler:extension:tuple;
 
 -- Testing that a tuple of two elements behaves like a pair
 equalityTest((1,2).fst, 1, Integer, silver_tests);
@@ -51,6 +50,7 @@ Integer ::= tuple::(Integer, String, String, Integer)
   return case tuple of
     | (fst, _, _, 4) -> fst
     | (8, _, _, frth) -> frth
+    | _ -> error("match failed")
     end; 
 }
 

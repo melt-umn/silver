@@ -215,7 +215,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   
-  errCheck1 = check(decoratedType(prod_type.outputType), top.scrutineeType);
+  errCheck1 = check(decoratedType(prod_type.outputType, freshInhSet()), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -228,13 +228,22 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   -- Thread NORMALLY! YAY!
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
   
-  local contextDefs::[Def] = map(
-    \ c::Context -> c.contextPatternDef(top.grammarName, top.location, qn.lookupValue.fullName),
-    prod_contexts);
+  -- If there are contexts on the production, then we need to make the scrutinee available
+  -- in the RHS to access their implementations.
+  local scrutineeName::String = "__scrutineeNode_" ++ toString(genInt());
+  local contextDefs::[Def] = zipWith(
+    \ c::Context oc::Context ->
+      tcInstDef(
+        performContextSubstitution(c, e.finalSubst).contextPatternDcl(
+          oc,
+          if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
+          scrutineeName, top.location, top.grammarName)),
+    prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts);
   e.env = newScopeEnv(contextDefs ++ ns.defs, top.env);
   
-  top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++
-    ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
+  top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++ ") { " ++
+    (if null(prod_contexts) then "" else s"final ${makeProdName(qn.lookupValue.fullName)} ${scrutineeName} = (${makeProdName(qn.lookupValue.fullName)})scrutineeNode; ") ++
+    ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
 }
 
 abstract production prodPatternGadt
@@ -268,7 +277,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- part of the
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- threading hack
   
-  errCheck1 = check(decoratedType(prod_type.outputType), top.scrutineeType);
+  errCheck1 = check(decoratedType(prod_type.outputType, freshInhSet()), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -285,20 +294,29 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.upSubst = top.downSubst;
   
   -- AFTER everything is done elsewhere, we come back with finalSubst, and we produce the refinement, and thread THAT through everything.
-  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, decoratedType(prod_type.outputType)));
+  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, decoratedType(prod_type.outputType, freshInhSet())));
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
   -- Okay, now update the finalSubst....
   e.finalSubst = errCheck2.upSubst;
   -- Here ends the hack
   
-  local contextDefs::[Def] = map(
-    \ c::Context -> c.contextPatternDef(top.grammarName, top.location, qn.lookupValue.fullName),
-    prod_contexts);
+  -- If there are contexts on the production, then we need to make the scrutinee available
+  -- in the RHS to access their implementations.
+  local scrutineeName::String = "__scrutinee_" ++ toString(genInt());
+  local contextDefs::[Def] = zipWith(
+    \ c::Context oc::Context ->
+      tcInstDef(
+        performContextSubstitution(c, e.finalSubst).contextPatternDcl(
+          oc,
+          if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
+          scrutineeName, top.location, top.grammarName)),
+    prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts);
   e.env = newScopeEnv(contextDefs ++ ns.defs, top.env);
   
-  top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++
-    ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
+  top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++ ") { " ++
+    (if null(prod_contexts) then "" else s"final ${makeProdName(qn.lookupValue.fullName)} ${scrutineeName} = (${makeProdName(qn.lookupValue.fullName)})scrutineeNode; ") ++
+    ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
 }
 
 -- TODO: We currently provide the below for ease of translation from complex case exprs, but

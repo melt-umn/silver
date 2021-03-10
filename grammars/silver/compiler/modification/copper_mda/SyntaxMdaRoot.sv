@@ -127,6 +127,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
             layoutTerms = host.layoutTerms;
             prefixesForTerminals = host.prefixesForTerminals;
             componentGrammarMarkingTerminals = host.componentGrammarMarkingTerminals;
+            prettyNames = prettyNames;
           },
         host.disambiguationClasses))) ++
   implode("", map(xmlCopperRef, ext.disambiguationClasses)) ++

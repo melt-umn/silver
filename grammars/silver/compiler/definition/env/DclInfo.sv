@@ -16,6 +16,7 @@ synthesized attribute classMembers :: [Pair<String Boolean>];
 
 inherited attribute givenInstanceType :: Type;
 synthesized attribute superContexts :: [Context];
+synthesized attribute typerep2 :: Type; -- Used for binary constraint instances
 
 -- values
 synthesized attribute namedSignature :: NamedSignature;
@@ -51,7 +52,7 @@ inherited attribute givenSubstitution :: Substitution;
  -}
 closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
                          typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, isClass, -- types (gNT for occurs)
-                         classMembers, givenInstanceType, superContexts, -- type classes, in the type namespace
+                         classMembers, givenInstanceType, superContexts, typerep2, -- type classes, in the type namespace
                          namedSignature, hasForward, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
                          isInherited, isSynthesized, -- attrs
@@ -91,6 +92,9 @@ top::DclInfo ::=
   top.isClass = false;
   top.classMembers = [];
   top.superContexts = [];
+
+  -- instances
+  top.typerep2 = error("Internal compiler error: must be defined for all binary constraint instances");
   
   -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();
@@ -323,14 +327,14 @@ top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
   top.typeScheme = constraintType(bound, contexts, ty);
 }
 abstract production instConstraintDcl
-top::DclInfo ::= fntc::String ty::Type
+top::DclInfo ::= fntc::String ty::Type tvs::[TyVar]
 {
   top.fullName = fntc;
   
   top.typeScheme = monoType(ty);
 }
 abstract production sigConstraintDcl
-top::DclInfo ::= fntc::String ty::Type fnsig::String
+top::DclInfo ::= fntc::String ty::Type ns::NamedSignature
 {
   top.fullName = fntc;
   
@@ -353,14 +357,14 @@ top::DclInfo ::= fntc::String baseDcl::DclInfo
 
 -- typeable instances
 abstract production typeableInstConstraintDcl
-top::DclInfo ::= ty::Type
+top::DclInfo ::= ty::Type tvs::[TyVar]
 {
   top.fullName = "typeable";
   
   top.typeScheme = monoType(ty);
 }
 abstract production typeableSigConstraintDcl
-top::DclInfo ::= ty::Type fnsig::String
+top::DclInfo ::= ty::Type ns::NamedSignature
 {
   top.fullName = "typeable";
   
@@ -384,6 +388,33 @@ top::DclInfo ::= ty::Type
     | varType(_) -> monoType(ty) -- Don't require an instance for flexible type variables, leave these flexible at runtime
     | _ -> constraintType([], map(compose(typeableContext, skolemType), ty.freeVariables), ty)
     end;
+}
+
+-- inhSubset instances
+abstract production inhSubsetInstConstraintDcl
+top::DclInfo ::= i1::Type i2::Type tvs::[TyVar]
+{
+  top.fullName = "subset";
+  
+  top.typeScheme = monoType(i1);
+  top.typerep2 = i2;
+}
+abstract production inhSubsetSigConstraintDcl
+top::DclInfo ::= i1::Type i2::Type ns::NamedSignature
+{
+  top.fullName = "subset";
+  
+  top.typeScheme = monoType(i1);
+  top.typerep2 = i2;
+}
+-- This doesn't appear in the environment, but is instead "looked up" on the type
+abstract production inhSubsetDcl
+top::DclInfo ::= i1::Type i2::Type
+{
+  top.fullName = "subset";
+
+  top.typeScheme = monoType(i1);
+  top.typerep2 = i2;
 }
 
 -- TODO: this should probably go elsewhere?

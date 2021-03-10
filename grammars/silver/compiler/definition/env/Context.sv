@@ -6,7 +6,7 @@ attribute env occurs on Context;
 
 -- This mostly exists as a convenient way to perform multiple env-dependant operations
 -- on a list of contexts without re-decorating them and repeating context resolution.
-nonterminal Contexts with env, freeVariables;
+nonterminal Contexts with env, freeVariables, boundVariables;
 abstract production consContext
 top::Contexts ::= h::Context t::Contexts
 { top.freeVariables = setUnionTyVars(h.freeVariables, t.freeVariables); }
@@ -17,7 +17,7 @@ top::Contexts ::=
 global foldContexts::(Contexts ::= [Context]) = foldr(consContext, nilContext(), _);
 
 synthesized attribute contextSuperDcl::(DclInfo ::= DclInfo String Location) occurs on Context;  -- Instances from context's superclasses
-synthesized attribute contextMemberDcl::(DclInfo ::= String Location) occurs on Context; -- Instances from a context on a class member
+synthesized attribute contextMemberDcl::(DclInfo ::= [TyVar] String Location) occurs on Context; -- Instances from a context on a class member
 synthesized attribute contextClassName::Maybe<String> occurs on Context;
 
 synthesized attribute resolved::[DclInfo] occurs on Context;
@@ -26,16 +26,16 @@ aspect production instContext
 top::Context ::= cls::String t::Type
 {
   top.contextSuperDcl = instSuperDcl(cls, _, sourceGrammar=_, sourceLocation=_);
-  top.contextMemberDcl = instConstraintDcl(cls, t, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextMemberDcl = instConstraintDcl(cls, t, _, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextClassName = just(cls);
   
   -- Here possibly-decorated types that are still unspecialized at this point
   -- are specialized as decorated.  Why?  Instance resolution happens after
-  -- final types have been computed, and the default is to be decorated,
+  -- final types have been computed, and the default is to be decorated with nothing,
   -- so we can't allow this to match an instance for the undecorated type.
   production decT::Type =
     case t of
-    | ntOrDecType(nt, _) -> decoratedType(nt)
+    | ntOrDecType(nt, inhs, _) -> decoratedType(nt, inhs)
     | _ -> t
     end;
 
@@ -60,12 +60,11 @@ top::Context ::= cls::String t::Type
   requiredContexts.env = top.env;
 }
 
-
 aspect production typeableContext
 top::Context ::= t::Type
 {
   top.contextSuperDcl = typeableSuperDcl(_, sourceGrammar=_, sourceLocation=_);
-  top.contextMemberDcl = typeableInstConstraintDcl(t, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextMemberDcl = typeableInstConstraintDcl(t, _, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
   top.contextClassName = nothing();
 
   top.resolved =
@@ -89,6 +88,28 @@ aspect production skolemType
 top::Type ::= _
 { top.isTypeable = false; }
 
+aspect production inhSubsetContext
+top::Context ::= i1::Type i2::Type
+{
+  top.contextSuperDcl = error("subset can't appear as superclass");
+  top.contextMemberDcl = inhSubsetInstConstraintDcl(i1, i2, _, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextClassName = nothing();
+
+  top.resolved =
+    case i1, i2 of
+    | skolemType(a1), skolemType(a2) when a1 == a2 -> 
+      [inhSubsetDcl(i1, i2, sourceGrammar="silver:core", sourceLocation=txtLoc("<builtin>"))]
+    | inhSetType(inhs1), inhSetType(inhs2) when all(map(contains(_, inhs2), inhs1)) -> 
+      [inhSubsetDcl(i1, i2, sourceGrammar="silver:core", sourceLocation=txtLoc("<builtin>"))]
+    | _, _ ->
+      filter(
+        \ d::DclInfo ->
+          !unifyDirectional(d.typeScheme.monoType, i1).failure && !d.typeScheme.monoType.isError &&
+          !unifyDirectional(d.typerep2, i2).failure && !d.typerep2.isError,
+        searchEnvScope("subset", top.env.instTree))
+    end;
+}
+
 -- Invariant: This should be called when a and b are unifyable
 function isMoreSpecific
 Boolean ::= a::Type b::Type
@@ -99,7 +120,8 @@ Boolean ::= a::Type b::Type
     | _, varType(_) -> true
     | appType(c1, a1), appType(c2, a2) ->
       (isMoreSpecific(c1, c2) || isMoreSpecific(a1, a2)) && !(isMoreSpecific(c2, c1) || isMoreSpecific(a2, a1))
-    | decoratedType(t1), decoratedType(t2) -> isMoreSpecific(t1, t2)
+    | decoratedType(t1, i1), decoratedType(t2, i2) ->
+      (isMoreSpecific(t1, t2) || isMoreSpecific(i1, i2)) && !(isMoreSpecific(t2, t1) || isMoreSpecific(i2, i1))
     | _, _ -> false
     end;
 }

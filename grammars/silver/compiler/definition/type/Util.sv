@@ -12,6 +12,9 @@ synthesized attribute namedTypes :: [Pair<String Type>];
 synthesized attribute arity :: Integer;
 synthesized attribute baseType :: Type;
 synthesized attribute argTypes :: [Type];
+synthesized attribute inhSetMembers :: [String];
+monoid attribute freeSkolemVars :: [TyVar] with [], setUnionTyVars;
+monoid attribute freeFlexibleVars :: [TyVar] with [], setUnionTyVars;
 
 -- Used by Expr, could possibly be replaced by pattern matching for decoratedType
 -- Also used by 'new()'
@@ -45,7 +48,7 @@ top::PolyType ::= ty::Type
   top.isDecorated = ty.isDecorated;
   top.isDecorable = ty.isDecorable;
   top.isTerminal = ty.isTerminal;
-  top.asNtOrDecType = ntOrDecType(ty, freshType());
+  top.asNtOrDecType = ntOrDecType(ty, freshInhSet(), freshType());
 }
 
 aspect production polyType
@@ -70,7 +73,9 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
 }
 
-attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isDecorable, isTerminal, decoratedType, unifyInstanceNonterminal, unifyInstanceDecorated, isApplicable occurs on Type;
+attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isDecorable, isTerminal, isApplicable, decoratedType, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
+
+propagate freeSkolemVars, freeFlexibleVars on Type;
 
 aspect default production
 top::Type ::=
@@ -81,6 +86,7 @@ top::Type ::=
   top.arity = 0;
   top.baseType = top;
   top.argTypes = [];
+  top.inhSetMembers = [];
   
   top.isDecorated = false;
   top.isDecorable = false;
@@ -97,11 +103,13 @@ top::Type ::=
 aspect production varType
 top::Type ::= tv::TyVar
 {
+  top.freeFlexibleVars <- [tv];
 }
 
 aspect production skolemType
 top::Type ::= tv::TyVar
 {
+  top.freeSkolemVars <- [tv];
 }
 
 aspect production appType
@@ -167,21 +175,29 @@ top::Type ::= fn::String
   top.isTerminal = true;
 }
 
+aspect production inhSetType
+top::Type ::= inhs::[String]
+{
+  top.inhSetMembers = inhs;
+}
+
 aspect production decoratedType
-top::Type ::= te::Type
+top::Type ::= te::Type i::Type
 {
   top.isDecorated = true;
   top.decoratedType = te;
+  top.inhSetMembers = i.inhSetMembers;
   top.unifyInstanceDecorated = emptySubst();
 }
 
 aspect production ntOrDecType
-top::Type ::= nt::Type  hidden::Type
+top::Type ::= nt::Type inhs::Type hidden::Type
 {
   top.baseType = top;
   top.argTypes = [];
   top.unifyInstanceNonterminal = unify(hidden, nt);
-  top.unifyInstanceDecorated = unify(hidden, decoratedType(nt));
+  --  freshInhSet(), NOT inhs - we are specializing to be decorated, but not to a specific decorated type
+  top.unifyInstanceDecorated = unify(hidden, decoratedType(nt, freshInhSet()));
 }
 
 aspect production functionType

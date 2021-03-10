@@ -59,6 +59,12 @@ top::Context ::= t::Type
   top.freeVariables = t.freeVariables;
 }
 
+abstract production inhSubsetContext
+top::Context ::= i1::Type i2::Type
+{
+  top.freeVariables = setUnionTyVars(i1.freeVariables, i2.freeVariables);
+}
+
 {--
  - Silver Type Representations.
  -}
@@ -199,15 +205,28 @@ top::Type ::= fn::String
   top.freeVariables = [];
 }
 
+
+{--
+ - A type-level inherited attribute set.
+ - @param inhs  The (sorted) list of fully-qualified inherited attribute names. 
+ -}
+abstract production inhSetType
+top::Type ::= inhs::[String]
+{
+  top.kindrep = inhSetKind();
+  top.freeVariables = [];
+}
+
 {--
  - A *decorated* nonterminal type.
  - @param te  MUST be a 'nonterminalType' or 'varType'/'skolemType'
+ - @param i  MUST have kind InhSet
  -}
 abstract production decoratedType
-top::Type ::= te::Type
+top::Type ::= te::Type i::Type
 {
   top.kindrep = starKind();
-  top.freeVariables = te.freeVariables;
+  top.freeVariables = setUnionTyVars(te.freeVariables, i.freeVariables);
 }
 
 {--
@@ -217,21 +236,27 @@ top::Type ::= te::Type
  - It represents a nonterminal that is *either* decorated or undecorated
  - (e.g. when referencing a child) but has not yet been specialized.
  - @param nt  MUST be a 'nonterminalType'
- - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(nt)'
+ - @param inhs  The inh set that we're decorated with if we never specialize - MUST have kind InhSet
+ - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(inhs, nt)'
  -                representing state: unspecialized, undecorated, or decorated.
  -}
 
 -- This will ONLY appear in the types of expressions, nowhere else!
 abstract production ntOrDecType
-top::Type ::= nt::Type  hidden::Type
+top::Type ::= nt::Type inhs::Type hidden::Type
 {
   top.freeVariables = case hidden of
-                      | varType(_) -> nt.freeVariables
+                      | varType(_) -> nt.freeVariables ++ inhs.freeVariables
                       | _ -> hidden.freeVariables
                       end;
   
   -- If we never specialize, we're decorated.
-  forwards to decoratedType(nt);
+  forwards to
+    case inhs of
+    -- If we never specialize what we're decorated with, we're decorated with nothing.
+    | varType(_) -> decoratedType(nt, inhSetType([]))
+    | _ -> decoratedType(nt, inhs)
+    end;
 }
 
 {--
@@ -282,6 +307,12 @@ function newSkolemConstant
 Type ::=
 {
   return skolemType(freshTyVar(starKind()));
+}
+
+function freshInhSet
+Type ::=
+{
+  return varType(freshTyVar(inhSetKind()));
 }
 
 -- TODO: Replace with propagated default instance

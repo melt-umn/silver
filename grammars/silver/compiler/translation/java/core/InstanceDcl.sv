@@ -5,6 +5,9 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
 {
   local className :: String = "I" ++ substitute(":", "_", fName) ++ "_" ++ transTypeName(ty.typerep);
 
+  local contexts::Contexts = foldContexts(cl.contexts);
+  contexts.boundVariables = boundVars;
+
   top.genFiles := [pair(className ++ ".java", s"""
 
 package ${makeName(top.grammarName)};
@@ -12,11 +15,11 @@ package ${makeName(top.grammarName)};
 public class ${className} implements ${makeClassName(fName)} {
 	final static common.DecoratedNode context = common.TopNode.singleton; // For decoration in member bodies
 
-	public ${className}(${implode(", ", map((.contextParamTrans), cl.contexts))}) {
-${flatMap((.contextInitTrans), cl.contexts)}
+	public ${className}(${contexts.contextParamTrans}) {
+${contexts.contextInitTrans}
 	}
 
-${flatMap((.contextMemberDeclTrans), cl.contexts)}
+${contexts.contextMemberDeclTrans}
 ${superContexts.transContextSuperAccessors}
 
 ${body.translation}
@@ -25,24 +28,31 @@ ${body.translation}
 """)];
 }
 
-synthesized attribute contextMemberDeclTrans::String occurs on Context;
-synthesized attribute contextParamTrans::String occurs on Context;
-synthesized attribute contextInitTrans::String occurs on Context;
+synthesized attribute contextMemberDeclTrans::String occurs on Contexts, Context;
+synthesized attribute contextParamTrans::String occurs on Contexts, Context;
+synthesized attribute contextInitTrans::String occurs on Contexts, Context;
 
-aspect production instContext
-top::Context ::= fn::String t::Type
+aspect production consContext
+top::Contexts ::= h::Context t::Contexts
 {
-  top.contextMemberDeclTrans = s"\tpublic final ${top.transType} ${makeConstraintDictName(fn, t)};\n";
-  top.contextParamTrans = s"${top.transType} ${makeConstraintDictName(fn, t)}";
-  top.contextInitTrans = s"\t\tthis.${makeConstraintDictName(fn, t)} = ${makeConstraintDictName(fn, t)};\n";
+  top.contextMemberDeclTrans = h.contextMemberDeclTrans ++ t.contextMemberDeclTrans;
+  top.contextParamTrans = h.contextParamTrans ++ case t of nilContext() -> "" | _ -> ", " ++ t.contextParamTrans end;
+  top.contextInitTrans = h.contextInitTrans ++ t.contextInitTrans;
+}
+aspect production nilContext
+top::Contexts ::=
+{
+  top.contextMemberDeclTrans = "";
+  top.contextParamTrans = "";
+  top.contextInitTrans = "";
 }
 
-aspect production typeableContext
-top::Context ::= t::Type
+aspect default production
+top::Context ::=
 {
-  top.contextMemberDeclTrans = s"\tpublic final common.TypeRep ${makeTypeableName(t)};\n";
-  top.contextParamTrans = s"common.TypeRep ${makeTypeableName(t)}";
-  top.contextInitTrans = s"\t\tthis.${makeTypeableName(t)} = ${makeTypeableName(t)};\n";
+  top.contextMemberDeclTrans = s"\tpublic final ${top.transType} ${top.transContextMemberName};\n";
+  top.contextParamTrans = s"${top.transType} ${top.transContextMemberName}";
+  top.contextInitTrans = s"\t\tthis.${top.transContextMemberName} = ${top.transContextMemberName};\n";
 }
 
 attribute translation occurs on InstanceBody, InstanceBodyItem;
@@ -61,8 +71,11 @@ top::InstanceBody ::=
 aspect production instanceBodyItem
 top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 {
+  local contexts::Contexts = foldContexts(memberContexts);
+  contexts.boundVariables = top.instanceType.freeVariables;
+
   top.translation = s"""
-	public ${id.lookupValue.typeScheme.typerep.transCovariantType} ${makeInstanceMemberAccessorName(top.fullName)}(${implode(", ", map((.contextParamTrans), memberContexts))}) {
+	public ${id.lookupValue.typeScheme.typerep.transCovariantType} ${makeInstanceMemberAccessorName(top.fullName)}(${contexts.contextParamTrans}) {
 		return ${e.translation};
 	}
 """;

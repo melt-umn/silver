@@ -210,33 +210,6 @@ top::Expr ::= 'toString' '(' e::Expr ')'
       else toStringFunction('toString', '(', e.monadRewritten, ')', location=top.location);
 }
 
-aspect production newFunction
-top::Expr ::= 'new' '(' e::Expr ')'
-{
-  top.merrors := e.merrors;
-  e.mDownSubst = top.mDownSubst;
-  top.mUpSubst = e.mUpSubst;
-  top.mtyperep =
-      if isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
-      then monadOfType(top.expectedMonad, dropDecorated(monadInnerType(e.mtyperep, top.location)))
-      else e.mtyperep;
-  e.monadicallyUsed = isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst;
-  top.monadicNames = e.monadicNames;
-
-  local eUnDec::Expr =
-        if isDecorated(e.mtyperep)
-        then Silver_Expr {new($Expr {e.monadRewritten})}
-        else e.monadRewritten;
-  top.monadRewritten =
-      if isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst
-      then buildApplication(monadBind(top.location),
-                            [eUnDec, buildLambda("x", monadInnerType(e.mtyperep, top.location),
-                             newFunction('new', '(', baseExpr(qNameId(name("x", top.location), location=top.location),
-                                         location=top.location), ')', location=top.location), top.location)], top.location)
-      else newFunction('new', '(', e.monadRewritten, ')', location=top.location);
-}
-
-
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {

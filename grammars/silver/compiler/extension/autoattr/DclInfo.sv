@@ -84,11 +84,11 @@ top::DclInfo ::= inh::String syn::String
 }
 
 abstract production unificationInhDcl
-top::DclInfo ::= fn::String tyVar::TyVar
+top::DclInfo ::= fn::String tyVar::TyVar inhs::[String]
 {
   top.fullName = fn;
 
-  top.typeScheme = polyType([tyVar], varType(tyVar));
+  top.typeScheme = polyType([tyVar], decoratedType(varType(tyVar), inhSetType(sort(nub(fn :: inhs)))));
   top.isInherited = true;
   
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);

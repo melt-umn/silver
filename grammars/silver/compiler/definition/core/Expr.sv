@@ -487,7 +487,7 @@ Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e
 function accessBounceUndecorate
 Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e::Decorated Expr  q::Decorated QNameAttrOccur  l::Location
 {
-  return accessBouncer(target, newFunction('new', '(', exprRef(e, location=l), ')', location=l), q, location=l);
+  return accessBouncer(target, mkStrFunctionInvocationDecorated(l, "silver:core:new", [e]), q, location=l);
 }
 
 abstract production decoratedAccessHandler
@@ -549,7 +549,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.unparse = "decorate " ++ e.unparse ++ " with {" ++ inh.unparse ++ "}";
 
-  top.typerep = decoratedType(performSubstitution(e.typerep, e.upSubst)); -- .decoratedForm?
+  top.typerep = decoratedType(performSubstitution(e.typerep, e.upSubst), inhSetType(sort(inh.suppliedInhs))); -- .decoratedForm?
   e.isRoot = false;
   
   inh.decoratingnt = performSubstitution(e.typerep, e.upSubst);
@@ -594,7 +594,7 @@ top::ExprLHSExpr ::= q::QNameAttrOccur
   top.unparse = q.unparse;
 
   top.typerep = q.typerep;
-  top.suppliedInhs = [q.dcl.attrOccurring];
+  top.suppliedInhs = if q.attrFound then [q.attrDcl.fullName] else [];
   
   q.attrFor = top.decoratingnt;
 }

@@ -119,7 +119,8 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   --We get the monadic names out of the expressions bound in here and the rest off the fake forward (monadLocal)
   top.monadicNames =
      foldr(\x::Pair<Expr Type> l::[Expr] ->
-             let a::Decorated Expr = decorate x.fst with {env=top.env; mDownSubst=top.mDownSubst;
+             let a::Decorated Expr with {env, mDownSubst, frame, grammarName, downSubst, finalSubst, compiledGrammars, config, flowEnv, expectedMonad, isRoot, originRules} =
+                decorate x.fst with {env=top.env; mDownSubst=top.mDownSubst;
                                      frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
                                      finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
                                      config=top.config; flowEnv=top.flowEnv;expectedMonad=top.expectedMonad;
@@ -517,8 +518,9 @@ Expr ::= exprs::[Expr] names::[String] loc::Location base::Expr
              if isMonad(ety, env) && fst(monadsMatch(ety, em, sub))
              then buildApplication(
                     monadBind(loc),
-                              [if isDecorated(ety) then newFunction('new', '(', head(exprs), ')', location=loc)
-                                                   else head(exprs),
+                              [if isDecorated(ety)
+                               then mkStrFunctionInvocation(loc, "silver:core:new", [head(exprs)])
+                               else head(exprs),
                                buildLambda(head(names), monadInnerType(ety, loc), subcall, loc)],
                               loc)
              else buildApplication(buildLambda(head(names), dropDecorated(ety), subcall, loc),

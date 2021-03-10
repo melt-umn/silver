@@ -73,6 +73,12 @@ top::Context ::= t::Type
   top.typepp = "runtimeTypeable " ++ t.typepp;
 }
 
+aspect production inhSubsetContext
+top::Context ::= i1::Type i2::Type
+{
+  top.typepp = i1.typepp ++ " subset " ++ i2.typepp;
+}
+
 aspect production varType
 top::Type ::= tv::TyVar
 {
@@ -156,17 +162,29 @@ top::Type ::= fn::String
   top.typepp = fn;
 }
 
-aspect production decoratedType
-top::Type ::= te::Type
+aspect production inhSetType
+top::Type ::= inhs::[String]
 {
-  top.typepp = "Decorated " ++ te.typepp;
+  -- Elide the grammar name when it is repeated
+  -- e.g. {silver:compiler:definition:env:env, :config, :isRoot}
+  top.typepp =
+    s"{${implode(", ",
+      flatMap(
+        \ is::[String] -> head(is) :: map(\ i::String -> ":" ++ last(explode(":", i)), tail(is)),
+        groupBy(\ i1::String i2::String -> init(explode(":", i1)) == init(explode(":", i2)), inhs)))}}";
+}
+
+aspect production decoratedType
+top::Type ::= t::Type i::Type
+{
+  top.typepp = s"Decorated ${t.typepp} with ${i.typepp}";
 }
 
 aspect production ntOrDecType
-top::Type ::= nt::Type  hidden::Type
+top::Type ::= nt::Type inhs::Type hidden::Type
 {
 -- Sometimes useful for debugging.
---  top.typepp = "Undecorable " ++ nt.typepp ++ "{" ++ prettyTypeWith(hidden, []) ++ "}";
+--  top.typepp = "Undecorable " ++ nt.typepp ++ " with  " ++ inhs.typepp ++ " specialized " ++ prettyTypeWith(hidden, []);
 }
 
 aspect production functionType
@@ -179,6 +197,12 @@ aspect production starKind
 top::Kind ::=
 {
   top.typepp = "*";
+}
+
+aspect production inhSetKind
+top::Kind ::=
+{
+  top.typepp = "InhSet";
 }
 
 aspect production arrowKind

@@ -417,11 +417,10 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   -- oh no again
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
-  local eTypeName :: String = performSubstitution(e.typerep, e.upSubst).typeName;
+  local finalTy :: Type = performSubstitution(e.typerep, e.upSubst);
   local diff :: [String] =
-    set:toList(set:removeAll(
-      inhsForTakingRef(eTypeName, top.flowEnv),  -- blessed inhs for a reference
-      inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow))); -- needed inhs
+    set:toList(set:removeAll(finalTy.inhSetMembers,  -- blessed inhs for a reference
+      inhDepsForSyn(q.attrDcl.fullName, finalTy.typeName, myFlow))); -- needed inhs
   
   -- CASE 1: References. This check is necessary and won't be caught elsewhere.
   top.errors <- 
@@ -433,7 +432,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       -- without a vertex, we're accessing from a reference, and so...
       | noVertex() ->
           if null(diff) then []
-          else [mwdaWrn(top.location, "Access of " ++ q.name ++ " from reference requires inherited attributes not known to be supplied to references: " ++ implode(", ", diff), top.config.runMwda)]
+          else [mwdaWrn(top.location, "Access of " ++ q.name ++ " from reference of type " ++ prettyType(finalTy) ++ " requires inherited attributes not known to be supplied to this reference: " ++ implode(", ", diff), top.config.runMwda)]
       end
     else [];
 
@@ -458,7 +457,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                       isEquationMissing(
                         lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                         _),
-                      set:toList(inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow))))
+                      set:toList(inhDepsForSyn(q.attrDcl.fullName, finalTy.typeName, myFlow))))
              in if null(inhs) then []
                 else [mwdaWrn(top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied", top.config.runMwda)]
             end
@@ -471,7 +470,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                     isEquationMissing(
                       lookupLocalInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                       _),
-                    set:toList(inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow)))
+                    set:toList(inhDepsForSyn(q.attrDcl.fullName, finalTy.typeName, myFlow)))
              in if null(inhs) then []
                 else [mwdaWrn(top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied", top.config.runMwda)]
             end
@@ -487,6 +486,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   -- In this case, ONLY check for references.
   -- The transitive deps error will be less difficult to figure out when there's
   -- an explicit access to the attributes.
+  local finalTy::Type = performSubstitution(e.typerep, e.upSubst);
   top.errors <- 
     if null(e.errors)
     && (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
@@ -495,9 +495,9 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       | hasVertex(_) -> [] -- no check to make, as it was done transitively
       -- without a vertex, we're accessing from a reference, and so...
       | noVertex() ->
-          if contains(q.attrDcl.fullName, inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv))
+          if contains(q.attrDcl.fullName, finalTy.inhSetMembers)
           then []
-          else [mwdaWrn(top.location, "Access of inherited attribute " ++ q.name ++ " from a reference is not permitted, as references are not known to be decorated with this attribute.", top.config.runMwda)]
+          else [mwdaWrn(top.location, "Access of inherited attribute " ++ q.name ++ " on reference of type " ++ prettyType(finalTy) ++ " is not permitted", top.config.runMwda)]
       end
     else [];      
 }
@@ -519,7 +519,7 @@ top::Expr ::= '(' '.' q::QName ')'
   -- undecorated accesses: flow type for attribute has to be empty
   -- decorated accesses: FT has to be subset of refset
   local acceptable :: [String] =
-    if inputType.isDecorated then inhsForTakingRef(inputType.typeName, top.flowEnv) else [];
+    if inputType.isDecorated then inputType.inhSetMembers else [];
 
   top.errors <- 
     if q.lookupAttribute.found
@@ -563,16 +563,14 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   -- Subtract the ref set from our deps
   local diff :: [String] =
-    set:toList(set:removeAll(
-      inhsForTakingRef(e.typerep.typeName, top.flowEnv),
-      set:add(inhDeps, set:empty())));
+    set:toList(set:removeAll(e.typerep.inhSetMembers, set:add(inhDeps, set:empty())));
 
   top.errors <-
     if null(e.errors)
     && (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
     && sinkVertexName.isJust
     && !null(diff)
-    then [mwdaWrn(e.location, "Pattern match on reference has transitive dependencies on " ++ implode(", ", diff) ++ " which are not known to be supplied to references", top.config.runMwda)]
+    then [mwdaWrn(e.location, "Pattern match on reference of type " ++ prettyType(e.typerep) ++ " has transitive dependencies on " ++ implode(", ", diff), top.config.runMwda)]
     else [];
 
 }

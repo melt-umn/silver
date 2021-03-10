@@ -234,15 +234,10 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  contexts::[Context
 {
   return tcInstDef(instDcl(fn,bound,contexts,ty,sourceGrammar=sg,sourceLocation=sl));
 }
-function instConstraintDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type
-{
-  return tcInstDef(instConstraintDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl));
-}
 function sigConstraintDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type  fnsig::String
+Def ::= sg::String  sl::Location  fn::String  ty::Type  ns::NamedSignature
 {
-  return tcInstDef(sigConstraintDcl(fn,ty,fnsig,sourceGrammar=sg,sourceLocation=sl));
+  return tcInstDef(sigConstraintDcl(fn,ty,ns,sourceGrammar=sg,sourceLocation=sl));
 }
 function currentInstDef
 Def ::= sg::String  sl::Location  fn::String  ty::Type
@@ -253,11 +248,6 @@ function instSuperDef
 Def ::= sg::String  sl::Location  fn::String  baseDcl::DclInfo
 {
   return tcInstDef(instSuperDcl(fn,baseDcl,sourceGrammar=sg,sourceLocation=sl));
-}
-function typeableInstConstraintDef
-Def ::= sg::String  sl::Location  ty::Type
-{
-  return tcInstDef(typeableInstConstraintDcl(ty,sourceGrammar=sg,sourceLocation=sl));
 }
 function typeableSuperDef
 Def ::= sg::String  sl::Location  baseDcl::DclInfo

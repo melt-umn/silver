@@ -110,7 +110,7 @@ top::VarBinder ::= n::Name
   -- NOT automatically decorated!)
   local ty :: Type =
     if top.bindingType.isDecorable
-    then decoratedType(top.bindingType)
+    then decoratedType(top.bindingType, freshInhSet())
     else top.bindingType;
 
   production fName :: String = "__pv" ++ toString(genInt()) ++ ":" ++ n.name;
@@ -132,7 +132,7 @@ top::VarBinder ::= n::Name
     else noVertex();
   local deps :: [FlowVertex] =
     if top.bindingType.isDecorable
-    then depsForTakingRef(anonVertexType(fName), ty.typeName, top.flowEnv)
+    then depsForTakingRef(anonVertexType(fName), performSubstitution(ty, top.finalSubst))
     else [];
 
   top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps)];

@@ -3,13 +3,14 @@ grammar silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
+imports silver:compiler:definition:flow:syntax;
 
-nonterminal TypeExpr  with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsKindStar;
-nonterminal Signature with config, location, grammarName, errors, env, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds;
-nonterminal SignatureLHS with config, location, grammarName, errors, env, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds;
-nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables;
-nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
-nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
+nonterminal TypeExpr  with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsKindStar, onNt, errorsInhSet, typerepInhSet;
+nonterminal Signature with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds;
+nonterminal SignatureLHS with config, location, grammarName, errors, env, flowEnv, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds;
+nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, flowEnv, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables;
+nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
+nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 
 synthesized attribute maybeType :: Maybe<Type>;
 synthesized attribute types :: [Type];
@@ -32,7 +33,11 @@ synthesized attribute envBindingTyVars :: Decorated Env;
 
 synthesized attribute errorsKindStar::[Message];
 
-propagate errors, lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
+synthesized attribute errorsInhSet::[Message];
+synthesized attribute typerepInhSet::Type;
+
+propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs excluding refTypeExpr;
+propagate lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate appLexicalTyVarKinds on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
@@ -59,6 +64,8 @@ top::TypeExpr ::=
     if top.typerep.kindrep != starKind()
     then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
     else [];
+  top.errorsInhSet = top.errors;
+  top.typerepInhSet = top.typerep;
 }
 
 abstract production errorTypeExpr
@@ -111,12 +118,34 @@ top::TypeExpr ::= 'Boolean'
   top.typerep = boolType();
 }
 
-concrete production termnalIdTypeExpr
+concrete production terminalIdTypeExpr
 top::TypeExpr ::= 'TerminalId'
 {
   top.unparse = "TerminalId";
 
   top.typerep = terminalIdType();
+}
+
+concrete production inhSetTypeExpr
+top::TypeExpr ::= InhSetLCurly_t inhs::FlowSpecInhs '}'
+{
+  top.unparse = s"{${inhs.unparse}}";
+  
+  top.typerep = inhSetType(sort(inhs.inhList));
+  inhs.onNt = errorType();
+
+  -- When we are in a refTypeExpr where we know the nonterminal type,
+  -- decorate the inhSetTypeExpr with onNt for better errors and lookup disambiguation.
+  -- TODO: Make this Decorated FlowSpecInhs and only redecorate with onNt
+  production ntInhs::FlowSpecInhs = inhs;
+  ntInhs.config = top.config;
+  ntInhs.grammarName = top.grammarName;
+  ntInhs.env = top.env;
+  ntInhs.flowEnv = top.flowEnv;
+  ntInhs.onNt = top.onNt;
+
+  top.errorsInhSet = ntInhs.errors;
+  top.typerepInhSet = inhSetType(sort(ntInhs.inhList));
 }
 
 concrete production nominalTypeExpr
@@ -174,7 +203,9 @@ top::TypeExpr ::= ty::TypeExpr tl::BracketedTypeExprs
 
   forwards to
     case ty of
-    | nominalTypeExpr(q) when q.lookupType.found && q.lookupType.dcl.isTypeAlias ->
+    | nominalTypeExpr(q) when
+        q.lookupType.found && q.lookupType.dcl.isTypeAlias &&
+        length(q.lookupType.typeScheme.boundVars) > 0 ->
       aliasAppTypeExpr(q, tl, location=top.location)
     | _ -> typeAppTypeExpr(ty, tl, location=top.location)
     end;
@@ -236,19 +267,49 @@ top::TypeExpr ::= ty::Decorated TypeExpr tl::BracketedTypeExprs
 }
 
 concrete production refTypeExpr
-top::TypeExpr ::= 'Decorated' t::TypeExpr
+top::TypeExpr ::= 'Decorated' t::TypeExpr 'with' i::TypeExpr
 {
-  top.unparse = "Decorated " ++ t.unparse;
-
-  top.typerep = decoratedType(t.typerep);
+  top.unparse = "Decorated " ++ i.unparse ++ " " ++ t.unparse;
   
+  i.onNt = t.typerep;
+
+  top.typerep = decoratedType(t.typerep, i.typerepInhSet);
+  
+  top.errors := i.errorsInhSet ++ t.errors;
   top.errors <-
     case t.typerep.baseType of
     | nonterminalType(_,_,_) -> []
     | skolemType(_) -> []
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
     end;
+  top.errors <-
+    if i.typerep.kindrep != inhSetKind()
+    then [err(i.location, s"${i.unparse} has kind ${prettyKind(i.typerep.kindrep)}, but kind InhSet is expected here")]
+    else [];
   top.errors <- t.errorsKindStar;
+
+  top.lexicalTyVarKinds <-
+    case i of
+    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, inhSetKind())]
+    | _ -> []
+    end;
+}
+
+concrete production refDefaultTypeExpr
+top::TypeExpr ::= 'Decorated' t::TypeExpr
+{
+  top.unparse = "Decorated " ++ t.unparse;
+
+  top.typerep =
+    decoratedType(t.typerep,
+      inhSetType(sort(concat(getInhsForNtRef(t.typerep.typeName, top.flowEnv)))));
+  
+  top.errors <-
+    case t.typerep.baseType of
+    | nonterminalType(_,_,_) -> []
+    | skolemType(_) -> [err(t.location, "polymorphic Decorated types must specify an explicit reference set")]
+    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
+    end;
 }
 
 concrete production funTypeExpr

@@ -156,8 +156,17 @@ top::Type ::= fn::String
   top.transTypeName = substitute(":", "_", fn);
 }
 
+aspect production inhSetType
+top::Type ::= inhs::[String]
+{
+  top.transClassType = error("Demanded translation of InhSet type");
+  top.transTypeRep = error("Demanded TypeRep translation of InhSet type");
+  top.transFreshTypeRep = top.transTypeRep;
+  top.transTypeName = substitute(":", "_", implode("_", inhs));
+}
+
 aspect production decoratedType
-top::Type ::= te::Type
+top::Type ::= te::Type i::Type
 {
   -- TODO: this should probably be a generic.  e.g. "DecoratedNode<something>"
   top.transType = "common.DecoratedNode";

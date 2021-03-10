@@ -99,6 +99,21 @@ wrongCode "MyType expects 1 type arguments, but there are 2 supplied here" {
 wrongCode "MyType is a type alias and cannot be partially applied." {
  global t :: MyType<_> = error("");
 }
+
+type MyTypePartial1<a> = NTTwo<a _>;
+
+global mt1::MyTypePartial1<Integer><String> = error("");
+wrongCode "silver_features:MyTypePartial1 expects 1 type arguments, but there are 2 supplied here" {
+  global mt2::MyTypePartial1<Integer String> = error("");
+}
+
+type MyTypePartial2 = NTTwo<_ _>;
+
+wrongCode "MyTypePartial2 has kind * -> * -> *, but there are 1 type arguments supplied here" {
+  global mt3::MyTypePartial2<String><Integer> = error("");
+}
+global mt4::MyTypePartial2<String Integer> = error("");
+
 -- For the moment, errors ignore type names
 wrongCode "Argument 2 of function 'silver:core:eq' expected String but argument is of type Integer" {
  global t :: Boolean = astr1 == anum1;
@@ -106,13 +121,6 @@ wrongCode "Argument 2 of function 'silver:core:eq' expected String but argument 
 
 wrongCode "repeats type variable names" {
  type TypeTwo<a a> = Integer;
-}
-
-wrongCode "NTTwo<a _> has kind * -> *, but kind * is expected here" {
- type MyTypeErr<a> = NTTwo<a _>;
-}
-wrongCode "NTTwo<_ _> has kind * -> * -> *, but kind * is expected here" {
- type MyTypeErr = NTTwo<_ _>;
 }
 
 ----------------------------------------- toString implementations
@@ -154,3 +162,79 @@ wrongCode "Declaration of global aft2 with type silver_features:FType<String> ha
  global aft2 :: FType<String> = aft1;
 }
 
+-------------------------------------- Decorated/InhSet types
+
+inherited attribute env1::[String];
+inherited attribute env2::[String];
+nonterminal DExpr with env1, env2;
+flowtype DExpr = decorate {env1};
+production mkDExpr
+top::DExpr ::=
+{
+  production d::DExpr = mkDExpr();
+  d.env1 = top.env1;
+  d.env2 = top.env2;
+
+  production d1 :: Decorated DExpr = d;
+  production d2 :: Decorated DExpr with {env1} = d;
+  production d3 :: Decorated DExpr = d;
+  production d4 :: Decorated DExpr with {env1, env2} = d;
+  production d5 :: Decorated DExpr with {decorate} = d;
+  production d6 :: Decorated DExpr with {decorate, env2} = d;
+}
+
+global d1 :: Decorated DExpr = decorate mkDExpr() with {env1 = [];};
+global d2 :: Decorated DExpr with {env1} = decorate mkDExpr() with {env1 = [];};
+global d3 :: Decorated DExpr = decorate mkDExpr() with {env1 = [];};
+global d4 :: Decorated DExpr with {env1, env2} = decorate mkDExpr() with {env1 = []; env2 = [];};
+global d5 :: Decorated DExpr with {decorate} = decorate mkDExpr() with {env1 = [];};
+global d6 :: Decorated DExpr with {decorate, env2} = decorate mkDExpr() with {env1 = []; env2 = [];};
+
+type Inhs1 = {env1};
+global d7 :: Decorated DExpr with Inhs1 = decorate mkDExpr() with {env1 = [];};
+
+global d8 :: Decorated DExpr with {env1} = partialUndecorate(decorate mkDExpr() with {env1 = []; env2 = [];});
+global d9 :: Decorated DExpr with {env1} = partialUndecorate(decorate mkDExpr() with {env1 = [];});
+
+function getEnv1
+{env1} subset i => [String] ::= x::Decorated DExpr with i 
+{
+  return let y::Decorated DExpr with {env1} = partialUndecorate(x) in y.env1 end;
+}
+
+global d10 :: [String] = getEnv1(decorate mkDExpr() with {env1 = []; env2 = [];});
+global d11 :: [String] = getEnv1(decorate mkDExpr() with {env1 = [];});
+
+wrongCode "type Decorated silver_features:DExpr with {silver_features:env1, :env2} has initialization expression with type Decorated silver_features:DExpr with {silver_features:env1}" {
+  global dBad :: Decorated DExpr with {env1, env2} = decorate mkDExpr() with {env1 = [];};
+}
+
+wrongCode "Integer has kind *, but kind InhSet is expected here" {
+  global dBad :: Decorated DExpr with Integer = error("");
+}
+
+wrongCode "{env1} has kind InhSet, but kind * is expected here" {
+  global inhBad :: {env1} = 42;
+}
+
+wrongCode "type Decorated silver_features:DExpr with {silver_features:env1} has initialization expression with type Decorated silver_features:DExpr with {silver_features:env2}" {
+  global dBad :: Decorated DExpr with {env1} = let res :: Decorated DExpr with {env2} = error("") in res end;
+}
+
+wrongCode "Expected return type is Decorated silver_features:DExpr with {silver_features:env1}, but the expression has actual type Decorated silver_features:DExpr with a" {
+  function decBad
+  Decorated DExpr with {env1} ::= x::Decorated DExpr with i
+  {
+    return let res :: Decorated DExpr with i = x in res end;
+  }
+}
+
+wrongCode "{silver_features:env1, :env2} is not a subset of {silver_features:env1} (arising from the use of partialUndecorate)" {
+  global dSuper :: Decorated DExpr with {env1, env2} = partialUndecorate(decorate mkDExpr() with {env1 = [];});
+}
+wrongCode "{silver_features:env2} is not a subset of {silver_features:env1} (arising from the use of partialUndecorate)" {
+  global dDisjoint :: Decorated DExpr with {env2} = partialUndecorate(decorate mkDExpr() with {env1 = [];});
+}
+wrongCode "{silver_features:env1} is not a subset of {silver_features:env2} (arising from the use of getEnv1)" {
+  global dDisjoint2 :: [String] = getEnv1(decorate mkDExpr() with {env2 = [];});
+}
