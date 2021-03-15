@@ -35,3 +35,20 @@ EnvTree<a> ::= eis::[Pair<String a>]
   return rtm:add(eis, rtm:empty());
 }
 
+function emptyEnvTree
+EnvTree<a> ::=
+{
+  return directBuildTree([]);
+}
+
+function appendEnvTree
+EnvTree<a> ::= e1::EnvTree<a> e2::EnvTree<a>
+{
+  return rtm:add(rtm:toList(e1), e2);
+}
+
+function consEnvTree
+EnvTree<DclInfo> ::= eis::[EnvItem] et::EnvTree<DclInfo>
+{
+  return rtm:add(flatMap((.envContribs), eis), et);
+}
