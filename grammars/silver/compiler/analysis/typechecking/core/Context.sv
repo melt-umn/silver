@@ -14,16 +14,16 @@ top::Context ::= cls::String t::Type
   
   -- Duplicates are checked at the instance declaration
   top.contextErrors :=
-    if null(top.resolved)
-    then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     -- Check for ambiguous type variables.
     -- Since we've already computed the final substitution, if t has any,
     -- they could unify with something more specific in instance resolution here,
     -- and unify with something else in solving another instance later on. 
-    else if !null(t.freeFlexibleVars)
+    if !null(t.freeFlexibleVars)
     then map(
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
       t.freeFlexibleVars)
+    else if null(top.resolved)
+    then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
 
   production substT::Type = performSubstitution(t, top.downSubst);
@@ -57,12 +57,12 @@ aspect production inhSubsetContext
 top::Context ::= i1::Type i2::Type
 {
   top.contextErrors :=
-    if null(top.resolved)
-    then [err(top.contextLoc, s"${prettyTypeWith(i1, top.freeVariables)} is not a subset of ${prettyTypeWith(i2, top.freeVariables)} (arising from ${top.contextSource})")]
-    else if !null(i1.freeFlexibleVars ++ i2.freeFlexibleVars)
+    if !null(i1.freeFlexibleVars ++ i2.freeFlexibleVars)
     then map(
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
       i1.freeFlexibleVars ++ i2.freeFlexibleVars)
+    else if null(top.resolved)
+    then [err(top.contextLoc, s"${prettyTypeWith(i1, top.freeVariables)} is not a subset of ${prettyTypeWith(i2, top.freeVariables)} (arising from ${top.contextSource})")]
     else [];
 
   top.upSubst = top.downSubst; -- No effect on decoratedness
