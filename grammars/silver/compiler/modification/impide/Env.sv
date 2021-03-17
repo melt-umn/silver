@@ -54,24 +54,24 @@ Def ::= sg::String sl::Location fn::String
 --------------------------------------------------------------------------------
 -- Env.sv
 
-synthesized attribute fontDefTree :: EnvScope<DclInfo> occurs on Env;
+synthesized attribute fontDefTree :: EnvTree<DclInfo> occurs on Env;
 
 aspect production i_emptyEnv
 top::Env ::=
 {
-  top.fontDefTree = emptyEnvScope();
+  top.fontDefTree = emptyEnvTree();
 }
 
 aspect production i_appendEnv
 top::Env ::= e1::Decorated Env  e2::Decorated Env
 {
-  top.fontDefTree = appendEnvScope(e1.fontDefTree, e2.fontDefTree);
+  top.fontDefTree = appendEnvTree(e1.fontDefTree, e2.fontDefTree);
 }
 
 aspect production i_newScopeEnv
 top::Env ::= d::Defs  e::Decorated Env
 {
-  top.fontDefTree = consEnvScope(buildTree(d.fontDefList), e.fontDefTree);
+  top.fontDefTree = consEnvTree(d.fontDefList, e.fontDefTree);
 }
 
 aspect production i_occursEnv
@@ -83,7 +83,7 @@ top::Env ::= _  e::Decorated Env
 function getFontDcl
 [DclInfo] ::= search::String e::Decorated Env
 {
-  return searchEnvScope(search, e.fontDefTree);
+  return searchEnvTree(search, e.fontDefTree);
 }
 
 --------------------------------------------------------------------------------

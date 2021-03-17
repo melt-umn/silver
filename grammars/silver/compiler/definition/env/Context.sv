@@ -46,7 +46,7 @@ top::Context ::= cls::String t::Type
   local matching::[DclInfo] =
     filter(
       \ d::DclInfo -> !unifyDirectional(d.typeScheme.typerep, decT).failure && !d.typeScheme.typerep.isError,
-      searchEnvScope(cls, top.env.instTree));
+      searchEnvTree(cls, top.env.instTree));
   top.resolved =
     removeAllBy(
       \ d1::DclInfo d2::DclInfo -> isMoreSpecific(d1.typeScheme.typerep, d2.typeScheme.typerep),
@@ -73,7 +73,7 @@ top::Context ::= t::Type
     else
       filter(
         \ d::DclInfo -> !unifyDirectional(d.typeScheme.typerep, t).failure && !d.typeScheme.typerep.isError,
-        searchEnvScope("typeable", top.env.instTree));
+        searchEnvTree("typeable", top.env.instTree));
 
   production resolvedDcl::DclInfo = head(top.resolved); -- resolvedDcl.typeScheme should not bind any type variables!
   production requiredContexts::Contexts = foldContexts(resolvedDcl.typeScheme.contexts);
@@ -106,7 +106,7 @@ top::Context ::= i1::Type i2::Type
         \ d::DclInfo ->
           !unifyDirectional(d.typeScheme.monoType, i1).failure && !d.typeScheme.monoType.isError &&
           !unifyDirectional(d.typerep2, i2).failure && !d.typerep2.isError,
-        searchEnvScope("subset", top.env.instTree))
+        searchEnvTree("subset", top.env.instTree))
     end;
 }
 

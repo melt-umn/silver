@@ -72,24 +72,24 @@ Def ::= sg::String sl::Location fn::String ty::Type
 --------------------------------------------------------------------------------
 -- Env.sv
 
-synthesized attribute lexerClassTree :: EnvScope<DclInfo> occurs on Env;
+synthesized attribute lexerClassTree :: EnvTree<DclInfo> occurs on Env;
 
 aspect production i_emptyEnv
 top::Env ::=
 {
-  top.lexerClassTree = emptyEnvScope();
+  top.lexerClassTree = emptyEnvTree();
 }
 
 aspect production i_appendEnv
 top::Env ::= e1::Decorated Env  e2::Decorated Env
 {
-  top.lexerClassTree = appendEnvScope(e1.lexerClassTree, e2.lexerClassTree);
+  top.lexerClassTree = appendEnvTree(e1.lexerClassTree, e2.lexerClassTree);
 }
 
 aspect production i_newScopeEnv
 top::Env ::= d::Defs  e::Decorated Env
 {
-  top.lexerClassTree = consEnvScope(buildTree(d.lexerClassList), e.lexerClassTree);
+  top.lexerClassTree = consEnvTree(d.lexerClassList, e.lexerClassTree);
 }
 
 aspect production i_occursEnv
@@ -101,7 +101,7 @@ top::Env ::= _  e::Decorated Env
 function getLexerClassDcl
 [DclInfo] ::= search::String e::Decorated Env
 {
-  return searchEnvScope(search, e.lexerClassTree);
+  return searchEnvTree(search, e.lexerClassTree);
 }
 
 --------------------------------------------------------------------------------
