@@ -272,7 +272,7 @@ NamedSignatureElement ::= nt::Type  anno::DclInfo
   return namedSignatureElement(anno.attrOccurring, anno.typeScheme.typerep);
 }
 
--- Looks up class instnaces matching a type
+-- Looks up class instances matching a type
 function getInstanceDcl
 [DclInfo] ::= fntc::String t::Type e::Decorated Env
 {
@@ -280,3 +280,22 @@ function getInstanceDcl
   c.env = e;
   return c.resolved;
 }
+
+-- Get the members of an InhSet type, including transitive ones arising from subset constraints
+function getInhSetMembers
+[String] ::= seen::[TyVar] t::Type e::Decorated Env
+{
+  local c::Context = inhSubsetContext(varType(freshTyVar(inhSetKind())), t);
+  c.env = e;
+  
+  return
+    case t of
+    | skolemType(tv) when contains(tv, seen) -> []
+    | _ -> sort(unions(
+      t.inhSetMembers ::
+      map(
+        \ d::DclInfo -> getInhSetMembers(t.freeVariables ++ seen, d.typeScheme.monoType, e),
+        c.resolved)))
+    end;
+}
+ 
