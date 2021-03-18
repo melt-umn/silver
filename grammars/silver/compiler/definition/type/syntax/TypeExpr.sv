@@ -41,15 +41,10 @@ propagate lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, Signat
 propagate appLexicalTyVarKinds on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
--- TODO: This function should go away because it doesn't do location correctly.
--- But for now, we'll use it. It might be easier to get rid of once we know exactly
--- how ty vars end up in the environment.
 function addNewLexicalTyVars
 [Def] ::= gn::String sl::Location lk::[Pair<String Kind>] l::[String]
 {
-  return if null(l) then []
-         else lexTyVarDef(gn, sl, head(l), freshTyVar(fromMaybe(starKind(), lookup(head(l), lk)))) ::
-                  addNewLexicalTyVars(gn, sl, lk, tail(l));
+  return map(\ n::String -> lexTyVarDef(gn, sl, n, freshTyVarNamed(fromMaybe(starKind(), lookup(n, lk)), n)), l);
 }
 
 aspect default production
