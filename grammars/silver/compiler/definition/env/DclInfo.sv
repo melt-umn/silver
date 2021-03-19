@@ -407,15 +407,6 @@ top::DclInfo ::= i1::Type i2::Type ns::NamedSignature
   top.typeScheme = monoType(i1);
   top.typerep2 = i2;
 }
--- This doesn't appear in the environment, but is instead "looked up" on the type
-abstract production inhSubsetDcl
-top::DclInfo ::= i1::Type i2::Type
-{
-  top.fullName = "subset";
-
-  top.typeScheme = monoType(i1);
-  top.typerep2 = i2;
-}
 
 -- TODO: this should probably go elsewhere?
 function determineAttributeType

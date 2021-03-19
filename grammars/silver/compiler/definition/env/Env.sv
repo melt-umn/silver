@@ -281,8 +281,8 @@ function getInstanceDcl
   return c.resolved;
 }
 
--- Get the members of an InhSet type, including transitive ones arising from subset constraints
-function getInhSetMembers
+-- Compute a lower bound on the members of an InhSet type, including transitive ones arising from subset constraints
+function getMinInhSetMembers
 [String] ::= seen::[TyVar] t::Type e::Decorated Env
 {
   local c::Context = inhSubsetContext(varType(freshTyVar(inhSetKind())), t);
@@ -294,7 +294,27 @@ function getInhSetMembers
     | _ -> sort(unions(
       t.inhSetMembers ::
       map(
-        \ d::DclInfo -> getInhSetMembers(t.freeVariables ++ seen, d.typeScheme.monoType, e),
+        \ d::DclInfo -> getMinInhSetMembers(t.freeVariables ++ seen, d.typeScheme.monoType, e),
+        c.resolved)))
+    end;
+}
+
+-- Try to compute an upper bound on the members of an InhSet type, including transitive ones arising from subset constraints
+function getMaxInhSetMembers
+Maybe<[String]> ::= seen::[TyVar] t::Type e::Decorated Env
+{
+  local c::Context = inhSubsetContext(t, varType(freshTyVar(inhSetKind())));
+  c.env = e;
+  
+  return
+    case t of
+    | skolemType(tv) when contains(tv, seen) -> nothing()
+    | inhSetType(inhs) -> just(inhs)
+    | _ -> map(sort, foldr(
+      \ inhs1::Maybe<[String]> inhs2::Maybe<[String]> -> alt(lift2(intersect, inhs1, inhs2), alt(inhs1, inhs2)),
+      empty,
+      map(
+        \ d::DclInfo -> getMaxInhSetMembers(t.freeVariables ++ seen, d.typeScheme.monoType, e),
         c.resolved)))
     end;
 }

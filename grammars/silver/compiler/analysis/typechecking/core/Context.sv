@@ -61,9 +61,14 @@ top::Context ::= i1::Type i2::Type
     then map(
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
       i1.freeFlexibleVars ++ i2.freeFlexibleVars)
-    else if null(top.resolved)
-    then [err(top.contextLoc, s"${prettyTypeWith(i1, top.freeVariables)} is not a subset of ${prettyTypeWith(i2, top.freeVariables)} (arising from ${top.contextSource})")]
-    else [];
+    else case i1, i2 of
+    | skolemType(a1), skolemType(a2) when a1 == a2 -> []
+    | _, _ ->
+      case getMaxInhSetMembers([], i1, top.env), getMinInhSetMembers([], i2, top.env) of
+      | just(inhs1), inhs2 when all(map(contains(_, inhs2), inhs1)) -> []
+      | _, _ -> [err(top.contextLoc, s"${prettyTypeWith(i1, top.freeVariables)} is not a subset of ${prettyTypeWith(i2, top.freeVariables)} (arising from ${top.contextSource})")]
+      end
+    end;
 
   top.upSubst = top.downSubst; -- No effect on decoratedness
 }

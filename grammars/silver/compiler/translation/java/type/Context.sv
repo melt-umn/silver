@@ -168,11 +168,6 @@ top::DclInfo ::= i1::Type i2::Type fnsig::NamedSignature
 {
   top.transContext = "null";
 }
-aspect production inhSubsetDcl
-top::DclInfo ::= i1::Type i2::Type
-{
-  top.transContext = "null";
-}
 
 function makeConstraintDictName
 String ::= s::String t::Type tvs::[TyVar]
