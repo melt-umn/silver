@@ -1,6 +1,6 @@
 import silver:testing;
 
-------------------------------------- Number of parameters to type constructors
+------------------------------------- Number/kinds of parameters to type constructors
 terminal ATerminalType 'doesnotmatter';
 
 wrongCode "ATerminalType has kind *, but there are 1 type arguments supplied here" {
@@ -75,6 +75,20 @@ wrongCode "[] has kind * -> *, but there are 2 type arguments supplied here" {
 }
 wrongCode "[Integer] has kind *, but there are 1 type arguments supplied here" {
   global badCtrList2::[Integer]<Integer> = [1, 2, 3];
+}
+
+-------------------------------------- Type variables are named properly in error messages
+wrongCode "(bar, baz)" {
+  global foo::(bar, baz) = 42;
+}
+wrongCode "(b, a)" {
+  global foo::(b, a) = 42;
+}
+wrongCode "(a1, a)" {
+  global foo::(a1, a) = 42;
+}
+wrongCode "(a, b) has initialization expression with type (silver:core:Pair<c a> ::= c a)" {
+  global foo::(a, b) = pair(_, _);
 }
 
 -------------------------------------- Type Decls
@@ -261,7 +275,7 @@ wrongCode "type Decorated silver_features:DExpr with {silver_features:env1} has 
   global dBad :: Decorated DExpr with {env1} = let res :: Decorated DExpr with {env2} = error("") in res end;
 }
 
-wrongCode "Expected return type is Decorated silver_features:DExpr with {silver_features:env1}, but the expression has actual type Decorated silver_features:DExpr with a" {
+wrongCode "Expected return type is Decorated silver_features:DExpr with {silver_features:env1}, but the expression has actual type Decorated silver_features:DExpr with i" {
   function decBad
   Decorated DExpr with {env1} ::= x::Decorated DExpr with i
   {

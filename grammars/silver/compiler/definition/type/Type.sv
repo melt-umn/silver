@@ -291,10 +291,22 @@ top::TyVar ::= k::Kind i::Integer
   top.extractTyVarRep = i;
 }
 
+abstract production tyVarNamed
+top::TyVar ::= k::Kind i::Integer n::String
+{
+  forwards to tyVar(k, i);
+}
+
 function freshTyVar
 TyVar ::= k::Kind
 {
   return tyVar(k, genInt());
+}
+
+function freshTyVarNamed
+TyVar ::= k::Kind n::String
+{
+  return tyVarNamed(k, genInt(), n);
 }
 
 function freshType
