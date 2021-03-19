@@ -72,7 +72,7 @@ aspect production instanceBodyItem
 top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 {
   local contexts::Contexts = foldContexts(memberContexts);
-  contexts.boundVariables = top.instanceType.freeVariables;
+  contexts.boundVariables = boundVars;
 
   top.translation = s"""
 	public ${id.lookupValue.typeScheme.typerep.transCovariantType} ${makeInstanceMemberAccessorName(top.fullName)}(${contexts.contextParamTrans}) {

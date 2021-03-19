@@ -50,7 +50,7 @@ top::Type ::= tv::TyVar
   top.transClassType = "Object";
   top.transTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
   top.transFreshTypeRep = top.transTypeRep;
-  top.transTypeName = findAbbrevFor(tv, top.boundVariables);
+  top.transTypeName = "a" ++ toString(positionOf(tv, top.boundVariables));
 }
 
 aspect production skolemType
@@ -59,7 +59,7 @@ top::Type ::= tv::TyVar
   top.transClassType = "Object";
   top.transTypeRep = lookup(tv, top.skolemTypeReps).fromJust;
   top.transFreshTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
-  top.transTypeName = findAbbrevFor(tv, top.boundVariables);
+  top.transTypeName = "a" ++ toString(positionOf(tv, top.boundVariables));
 }
 
 aspect production appType

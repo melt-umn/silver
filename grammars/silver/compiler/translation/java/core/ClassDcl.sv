@@ -41,7 +41,7 @@ aspect production constraintClassBodyItem
 top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
 {
   local contexts::Contexts = foldContexts(cl.contexts);
-  contexts.boundVariables = ty.freeVariables;
+  contexts.boundVariables = boundVars;
 
   top.translation = s"\t${ty.typerep.transCovariantType} ${makeInstanceMemberAccessorName(id.name)}(${contexts.contextParamTrans});";
 }
@@ -50,7 +50,7 @@ aspect production defaultConstraintClassBodyItem
 top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
 {
   local contexts::Contexts = foldContexts(cl.contexts);
-  contexts.boundVariables = ty.freeVariables;
+  contexts.boundVariables = boundVars;
 
   top.translation = s"""
 	default ${ty.typerep.transCovariantType} ${makeInstanceMemberAccessorName(id.name)}(${contexts.contextParamTrans}) {
