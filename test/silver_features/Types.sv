@@ -211,13 +211,53 @@ global d8 :: Decorated DExpr with {env1} = partialUndecorate(decorate mkDExpr() 
 global d9 :: Decorated DExpr with {env1} = partialUndecorate(decorate mkDExpr() with {env1 = [];});
 
 function getEnv1
-{env1} subset i => [String] ::= x::Decorated DExpr with i 
+{env1} subset i => [String] ::= x::Decorated DExpr with i
 {
   return let y::Decorated DExpr with {env1} = partialUndecorate(x) in y.env1 end;
 }
-
 global d10 :: [String] = getEnv1(decorate mkDExpr() with {env1 = []; env2 = [];});
 global d11 :: [String] = getEnv1(decorate mkDExpr() with {env1 = [];});
+
+function getEnv1Direct
+{env1} subset i => [String] ::= x::Decorated DExpr with i
+{
+  return x.env1;
+}
+global d12 :: [String] = getEnv1Direct(decorate mkDExpr() with {env1 = []; env2 = [];});
+global d13 :: [String] = getEnv1Direct(decorate mkDExpr() with {env1 = [];});
+
+function getEnv1Chained
+{env1} subset i1, i1 subset i2 => [String] ::= Decorated DExpr with i1  x::Decorated DExpr with i2
+{
+  return x.env1;
+}
+
+global d14 :: [String] = getEnv1Chained(decorate mkDExpr() with {env1 = []; env2 = [];}, decorate mkDExpr() with {env1 = []; env2 = [];});
+global d15 :: [String] = getEnv1Chained(decorate mkDExpr() with {env1 = [];}, decorate mkDExpr() with {env1 = []; env2 = [];});
+global d16 :: [String] = getEnv1Chained(decorate mkDExpr() with {env1 = [];}, decorate mkDExpr() with {env1 = [];});
+
+function getEnv1Cycle
+{env1} subset i1, i1 subset i2, i2 subset i1 => [String] ::= Decorated DExpr with i1  x::Decorated DExpr with i2
+{
+  return x.env1;
+}
+
+global d17 :: [String] = getEnv1Cycle(decorate mkDExpr() with {env1 = []; env2 = [];}, decorate mkDExpr() with {env1 = []; env2 = [];});
+global d18 :: [String] = getEnv1Cycle(decorate mkDExpr() with {env1 = [];}, decorate mkDExpr() with {env1 = [];});
+
+wrongCode "{silver_features:env1, :env2} is not a subset of {silver_features:env1} (arising from the use of getEnv1Cycle)" {
+  global dBad :: [String] = getEnv1Cycle(decorate mkDExpr() with {env1 = [];}, decorate mkDExpr() with {env1 = []; env2 = [];});
+}
+
+function getEnv1ChainedAmb
+{env1} subset i1, i1 subset i2 => [String] ::= x::Decorated DExpr with i2
+{
+  return x.env1;
+}
+
+wrongCode "Ambiguous type variable a (arising from the use of getEnv1ChainedAmb) prevents the constraint a subset {silver_features:env1, :env2} from being solved." {
+  global dAmb :: [String] = getEnv1ChainedAmb(decorate mkDExpr() with {env1 = []; env2 = [];});
+}
 
 wrongCode "type Decorated silver_features:DExpr with {silver_features:env1, :env2} has initialization expression with type Decorated silver_features:DExpr with {silver_features:env1}" {
   global dBad :: Decorated DExpr with {env1, env2} = decorate mkDExpr() with {env1 = [];};

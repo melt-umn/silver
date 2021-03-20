@@ -68,15 +68,16 @@ top::Context ::= t::Type
   top.contextClassName = nothing();
 
   top.resolved =
-    if t.isTypeable
-    then [typeableDcl(t, sourceGrammar="silver:core", sourceLocation=txtLoc("<builtin>"))]
-    else
-      filter(
-        \ d::DclInfo -> !unifyDirectional(d.typeScheme.typerep, t).failure && !d.typeScheme.typerep.isError,
-        searchEnvTree("typeable", top.env.instTree));
+    filter(
+      \ d::DclInfo -> !unifyDirectional(d.typeScheme.typerep, t).failure && !d.typeScheme.typerep.isError,
+      searchEnvTree("typeable", top.env.instTree));
 
   production resolvedDcl::DclInfo = head(top.resolved); -- resolvedDcl.typeScheme should not bind any type variables!
-  production requiredContexts::Contexts = foldContexts(resolvedDcl.typeScheme.contexts);
+  production requiredContexts::Contexts =
+    foldContexts(
+      if null(top.resolved)
+      then map(compose(typeableContext, skolemType), t.freeSkolemVars)
+      else resolvedDcl.typeScheme.contexts);
   requiredContexts.env = top.env;
 }
 
@@ -96,18 +97,11 @@ top::Context ::= i1::Type i2::Type
   top.contextClassName = nothing();
 
   top.resolved =
-    case i1, i2 of
-    | skolemType(a1), skolemType(a2) when a1 == a2 -> 
-      [inhSubsetDcl(i1, i2, sourceGrammar="silver:core", sourceLocation=txtLoc("<builtin>"))]
-    | inhSetType(inhs1), inhSetType(inhs2) when all(map(contains(_, inhs2), inhs1)) -> 
-      [inhSubsetDcl(i1, i2, sourceGrammar="silver:core", sourceLocation=txtLoc("<builtin>"))]
-    | _, _ ->
-      filter(
-        \ d::DclInfo ->
-          !unifyDirectional(d.typeScheme.monoType, i1).failure && !d.typeScheme.monoType.isError &&
-          !unifyDirectional(d.typerep2, i2).failure && !d.typerep2.isError,
-        searchEnvTree("subset", top.env.instTree))
-    end;
+    filter(
+      \ d::DclInfo ->
+        !unifyDirectional(d.typeScheme.monoType, i1).failure && !d.typeScheme.monoType.isError &&
+        !unifyDirectional(d.typerep2, i2).failure && !d.typerep2.isError,
+      searchEnvTree("subset", top.env.instTree));
 }
 
 -- Invariant: This should be called when a and b are unifyable

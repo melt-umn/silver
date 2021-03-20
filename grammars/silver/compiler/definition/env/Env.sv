@@ -272,7 +272,7 @@ NamedSignatureElement ::= nt::Type  anno::DclInfo
   return namedSignatureElement(anno.attrOccurring, anno.typeScheme.typerep);
 }
 
--- Looks up class instnaces matching a type
+-- Looks up class instances matching a type
 function getInstanceDcl
 [DclInfo] ::= fntc::String t::Type e::Decorated Env
 {
@@ -280,3 +280,46 @@ function getInstanceDcl
   c.env = e;
   return c.resolved;
 }
+
+-- Compute a lower bound on the members of an InhSet type, including transitive ones arising from subset constraints
+function getMinInhSetMembers
+([String], [TyVar]) ::= seen::[TyVar] t::Type e::Decorated Env
+{
+  local c::Context = inhSubsetContext(varType(freshTyVar(inhSetKind())), t);
+  c.env = e;
+  
+  local recurse::[([String], [TyVar])] =
+    map(
+      \ d::DclInfo -> getMinInhSetMembers(t.freeVariables ++ seen, d.typeScheme.monoType, e),
+      c.resolved);
+
+  return
+    case t of
+    | skolemType(tv) when contains(tv, seen) -> ([], [])
+    | _ -> (sort(unions(t.inhSetMembers :: map(fst, recurse))), unions(t.freeVariables :: map(snd, recurse))) 
+    end;
+}
+
+-- Try to compute an upper bound on the members of an InhSet type, including transitive ones arising from subset constraints
+function getMaxInhSetMembers
+(Maybe<[String]>, [TyVar]) ::= seen::[TyVar] t::Type e::Decorated Env
+{
+  local c::Context = inhSubsetContext(t, varType(freshTyVar(inhSetKind())));
+  c.env = e;
+  
+  local recurse::[(Maybe<[String]>, [TyVar])] =
+    map(
+      \ d::DclInfo -> getMaxInhSetMembers(t.freeVariables ++ seen, d.typerep2, e),
+      c.resolved);
+  
+  return
+    case t of
+    | skolemType(tv) when contains(tv, seen) -> (nothing(), [])
+    | inhSetType(inhs) -> (just(inhs), [])
+    | _ -> (map(sort, foldr(
+        \ inhs1::Maybe<[String]> inhs2::Maybe<[String]> -> alt(lift2(intersect, inhs1, inhs2), alt(inhs1, inhs2)),
+        empty, map(fst, recurse))),
+      unions(t.freeVariables :: map(snd, recurse)))
+    end;
+}
+ 

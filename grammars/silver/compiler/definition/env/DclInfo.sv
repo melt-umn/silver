@@ -377,18 +377,6 @@ top::DclInfo ::= baseDcl::DclInfo
   
   top.typeScheme = baseDcl.typeScheme;
 }
--- This doesn't appear in the environment, but is instead "looked up" on the type
-abstract production typeableDcl
-top::DclInfo ::= ty::Type
-{
-  top.fullName = "typeable";
-
-  top.typeScheme =
-    case ty of
-    | varType(_) -> monoType(ty) -- Don't require an instance for flexible type variables, leave these flexible at runtime
-    | _ -> constraintType([], map(compose(typeableContext, skolemType), ty.freeVariables), ty)
-    end;
-}
 
 -- inhSubset instances
 abstract production inhSubsetInstConstraintDcl
@@ -404,15 +392,6 @@ top::DclInfo ::= i1::Type i2::Type ns::NamedSignature
 {
   top.fullName = "subset";
   
-  top.typeScheme = monoType(i1);
-  top.typerep2 = i2;
-}
--- This doesn't appear in the environment, but is instead "looked up" on the type
-abstract production inhSubsetDcl
-top::DclInfo ::= i1::Type i2::Type
-{
-  top.fullName = "subset";
-
   top.typeScheme = monoType(i1);
   top.typerep2 = i2;
 }

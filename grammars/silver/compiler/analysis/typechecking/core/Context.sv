@@ -14,16 +14,16 @@ top::Context ::= cls::String t::Type
   
   -- Duplicates are checked at the instance declaration
   top.contextErrors :=
-    if null(top.resolved)
-    then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     -- Check for ambiguous type variables.
     -- Since we've already computed the final substitution, if t has any,
     -- they could unify with something more specific in instance resolution here,
-    -- and unify with something else in solving another instance later on. 
-    else if !null(t.freeFlexibleVars)
+    -- and unify with something else in solving another instance later on.
+    if !null(t.freeFlexibleVars)
     then map(
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
       t.freeFlexibleVars)
+    else if null(top.resolved)
+    then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
 
   production substT::Type = performSubstitution(t, top.downSubst);
@@ -44,9 +44,10 @@ top::Context ::= t::Type
   requiredContexts.contextLoc = top.contextLoc;
   requiredContexts.contextSource = s"the instance for ${prettyContext(top)}, arising from ${top.contextSource}";
 
-  -- Note that ambiguous type variables are permitted here
+  -- Note that ambiguous type variables are permitted here,
+  -- since they can be consistently type-checked at runtime.
   top.contextErrors :=
-    if null(top.resolved)
+    if !t.isTypeable && null(top.resolved)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
 
@@ -57,13 +58,20 @@ aspect production inhSubsetContext
 top::Context ::= i1::Type i2::Type
 {
   top.contextErrors :=
-    if null(top.resolved)
-    then [err(top.contextLoc, s"${prettyTypeWith(i1, top.freeVariables)} is not a subset of ${prettyTypeWith(i2, top.freeVariables)} (arising from ${top.contextSource})")]
-    else if !null(i1.freeFlexibleVars ++ i2.freeFlexibleVars)
+    -- Check for ambiguous type variables.
+    -- Since we've already computed the final substitution, if i1 or i2 has any,
+    -- they could unify with something more specific in instance resolution here,
+    -- and unify with something else in solving another instance later on.
+    if !null(i1.freeFlexibleVars ++ i2.freeFlexibleVars)
     then map(
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
       i1.freeFlexibleVars ++ i2.freeFlexibleVars)
-    else [];
+    else
+      case getMaxInhSetMembers([], i1, top.env), getMinInhSetMembers([], i2, top.env) of
+      | (just(inhs1), _), (inhs2, _) when all(map(contains(_, inhs2), inhs1)) -> []
+      | (_, tvs1), (_, tvs2) when any(map(contains(_, tvs2), tvs1)) -> []
+      | _, _ -> [err(top.contextLoc, s"${prettyTypeWith(i1, top.freeVariables)} is not a subset of ${prettyTypeWith(i2, top.freeVariables)} (arising from ${top.contextSource})")]
+      end;
 
   top.upSubst = top.downSubst; -- No effect on decoratedness
 }

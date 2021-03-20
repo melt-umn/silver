@@ -33,8 +33,8 @@ top::NamedSignature ::= fn::String ctxs::[Context] ie::[NamedSignatureElement] o
   top.inputNames = map((.elementName), ie);
   top.inputTypes = map((.typerep), ie); -- Does anything actually use this? TODO: eliminate?
   local typerep::Type = appTypes(functionType(length(ie), map((.elementShortName), np)), top.inputTypes ++ map((.typerep), np) ++ [oe.typerep]);
-  top.typeScheme = (if null(ctxs) then polyType else constraintType(_, ctxs, _))(typerep.freeVariables, typerep);
-  top.freeVariables = typerep.freeVariables;
+  top.typeScheme = (if null(ctxs) then polyType else constraintType(_, ctxs, _))(top.freeVariables, typerep);
+  top.freeVariables = setUnionTyVarsAll(typerep.freeVariables :: map((.freeVariables), ctxs));
   top.typerep = typerep; -- TODO: Only used by unifyNamedSignature.  Would be nice to eliminate, somehow.
 }
 
