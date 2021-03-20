@@ -283,39 +283,43 @@ function getInstanceDcl
 
 -- Compute a lower bound on the members of an InhSet type, including transitive ones arising from subset constraints
 function getMinInhSetMembers
-[String] ::= seen::[TyVar] t::Type e::Decorated Env
+([String], [TyVar]) ::= seen::[TyVar] t::Type e::Decorated Env
 {
   local c::Context = inhSubsetContext(varType(freshTyVar(inhSetKind())), t);
   c.env = e;
   
+  local recurse::[([String], [TyVar])] =
+    map(
+      \ d::DclInfo -> getMinInhSetMembers(t.freeVariables ++ seen, d.typeScheme.monoType, e),
+      c.resolved);
+
   return
     case t of
-    | skolemType(tv) when contains(tv, seen) -> []
-    | _ -> sort(unions(
-      t.inhSetMembers ::
-      map(
-        \ d::DclInfo -> getMinInhSetMembers(t.freeVariables ++ seen, d.typeScheme.monoType, e),
-        c.resolved)))
+    | skolemType(tv) when contains(tv, seen) -> ([], [])
+    | _ -> (sort(unions(t.inhSetMembers :: map(fst, recurse))), unions(t.freeVariables :: map(snd, recurse))) 
     end;
 }
 
 -- Try to compute an upper bound on the members of an InhSet type, including transitive ones arising from subset constraints
 function getMaxInhSetMembers
-Maybe<[String]> ::= seen::[TyVar] t::Type e::Decorated Env
+(Maybe<[String]>, [TyVar]) ::= seen::[TyVar] t::Type e::Decorated Env
 {
   local c::Context = inhSubsetContext(t, varType(freshTyVar(inhSetKind())));
   c.env = e;
   
+  local recurse::[(Maybe<[String]>, [TyVar])] =
+    map(
+      \ d::DclInfo -> getMaxInhSetMembers(t.freeVariables ++ seen, d.typeScheme.monoType, e),
+      c.resolved);
+  
   return
     case t of
-    | skolemType(tv) when contains(tv, seen) -> nothing()
-    | inhSetType(inhs) -> just(inhs)
-    | _ -> map(sort, foldr(
-      \ inhs1::Maybe<[String]> inhs2::Maybe<[String]> -> alt(lift2(intersect, inhs1, inhs2), alt(inhs1, inhs2)),
-      empty,
-      map(
-        \ d::DclInfo -> getMaxInhSetMembers(t.freeVariables ++ seen, d.typeScheme.monoType, e),
-        c.resolved)))
+    | skolemType(tv) when contains(tv, seen) -> (nothing(), [])
+    | inhSetType(inhs) -> (just(inhs), [])
+    | _ -> (map(sort, foldr(
+        \ inhs1::Maybe<[String]> inhs2::Maybe<[String]> -> alt(lift2(intersect, inhs1, inhs2), alt(inhs1, inhs2)),
+        empty, map(fst, recurse))),
+      unions(t.freeVariables :: map(snd, recurse)))
     end;
 }
  
