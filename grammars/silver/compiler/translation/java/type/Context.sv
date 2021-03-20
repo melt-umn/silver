@@ -58,12 +58,14 @@ top::Context ::= t::Type
 {
   top.transType = "common.TypeRep";
   
+  t.skolemTypeReps = zipWith(pair, t.freeVariables, requiredContexts.transTypeableContexts);
   resolvedDcl.transContextDeps = requiredContexts.transTypeableContexts;
   top.transTypeableContext =
     case top.resolved, t of
     -- We might need translate this context even when resolution fails;
     -- in that case fall back to a rigid skolem constant.
     | [], skolemType(tv) -> s"new common.BaseTypeRep(\"b${toString(tv.extractTyVarRep)}\")"
+    | [], _ -> t.transTypeRep
     | _, _ -> resolvedDcl.transContext
     end;
   top.transContext =
@@ -151,12 +153,6 @@ top::DclInfo ::= baseDcl::DclInfo
 {
   baseDcl.transContextDeps = top.transContextDeps;
   top.transContext = baseDcl.transContext ++ ".getType()";
-}
-aspect production typeableDcl
-top::DclInfo ::= ty::Type
-{
-  ty.skolemTypeReps = zipWith(pair, ty.freeVariables, top.transContextDeps);
-  top.transContext = ty.transTypeRep;
 }
 aspect production inhSubsetInstConstraintDcl
 top::DclInfo ::= i1::Type i2::Type tvs::[TyVar]

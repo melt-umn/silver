@@ -17,7 +17,7 @@ top::Context ::= cls::String t::Type
     -- Check for ambiguous type variables.
     -- Since we've already computed the final substitution, if t has any,
     -- they could unify with something more specific in instance resolution here,
-    -- and unify with something else in solving another instance later on. 
+    -- and unify with something else in solving another instance later on.
     if !null(t.freeFlexibleVars)
     then map(
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
@@ -44,9 +44,10 @@ top::Context ::= t::Type
   requiredContexts.contextLoc = top.contextLoc;
   requiredContexts.contextSource = s"the instance for ${prettyContext(top)}, arising from ${top.contextSource}";
 
-  -- Note that ambiguous type variables are permitted here
+  -- Note that ambiguous type variables are permitted here,
+  -- since they can be consistently type-checked at runtime.
   top.contextErrors :=
-    if null(top.resolved)
+    if !t.isTypeable && null(top.resolved)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
 
@@ -57,6 +58,10 @@ aspect production inhSubsetContext
 top::Context ::= i1::Type i2::Type
 {
   top.contextErrors :=
+    -- Check for ambiguous type variables.
+    -- Since we've already computed the final substitution, if i1 or i2 has any,
+    -- they could unify with something more specific in instance resolution here,
+    -- and unify with something else in solving another instance later on.
     if !null(i1.freeFlexibleVars ++ i2.freeFlexibleVars)
     then map(
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),

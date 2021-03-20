@@ -68,15 +68,16 @@ top::Context ::= t::Type
   top.contextClassName = nothing();
 
   top.resolved =
-    if t.isTypeable
-    then [typeableDcl(t, sourceGrammar="silver:core", sourceLocation=txtLoc("<builtin>"))]
-    else
-      filter(
-        \ d::DclInfo -> !unifyDirectional(d.typeScheme.typerep, t).failure && !d.typeScheme.typerep.isError,
-        searchEnvTree("typeable", top.env.instTree));
+    filter(
+      \ d::DclInfo -> !unifyDirectional(d.typeScheme.typerep, t).failure && !d.typeScheme.typerep.isError,
+      searchEnvTree("typeable", top.env.instTree));
 
   production resolvedDcl::DclInfo = head(top.resolved); -- resolvedDcl.typeScheme should not bind any type variables!
-  production requiredContexts::Contexts = foldContexts(resolvedDcl.typeScheme.contexts);
+  production requiredContexts::Contexts =
+    foldContexts(
+      if null(top.resolved)
+      then map(compose(typeableContext, skolemType), t.freeSkolemVars)
+      else resolvedDcl.typeScheme.contexts);
   requiredContexts.env = top.env;
 }
 
