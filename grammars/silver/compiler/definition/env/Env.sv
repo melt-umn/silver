@@ -309,7 +309,7 @@ function getMaxInhSetMembers
   
   local recurse::[(Maybe<[String]>, [TyVar])] =
     map(
-      \ d::DclInfo -> getMaxInhSetMembers(t.freeVariables ++ seen, d.typeScheme.monoType, e),
+      \ d::DclInfo -> getMaxInhSetMembers(t.freeVariables ++ seen, d.typerep2, e),
       c.resolved);
   
   return

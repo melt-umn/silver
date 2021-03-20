@@ -384,3 +384,30 @@ global sCaseRes::[String] =
   end;
 equalityTest(sCaseRes, ["2"], [String], silver_tests);
 
+function transitiveSubset
+i1 subset i2, i2 subset i3, i3 subset i4 => Decorated a with i1 ::= x::Decorated a with i4
+{
+  return partialUndecorate(x);
+}
+
+function transitiveSubset2
+i1 subset {env1}, {env1, env2} subset i2 => Decorated a with i1 ::= x::Decorated a with i2
+{
+  return partialUndecorate(x);
+}
+
+wrongCode "i3 is not a subset of i2 (arising from the use of partialUndecorate)" {
+  function transitiveSubsetBad
+  i1 subset i2, i2 subset i3, i3 subset i4 => Decorated a with i3 ::= x::Decorated a with i2
+  {
+    return partialUndecorate(x);
+  }
+}
+
+wrongCode "i1 is not a subset of i2 (arising from the use of partialUndecorate)" {
+  function transitiveSubsetBad2
+  i1 subset {env1, env2}, {env1} subset i2 => Decorated a with i1 ::= x::Decorated a with i2
+  {
+    return partialUndecorate(x);
+  }
+}
