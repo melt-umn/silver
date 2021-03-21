@@ -292,3 +292,10 @@ wrongCode "{silver_features:env2} is not a subset of {silver_features:env1} (ari
 wrongCode "{silver_features:env1} is not a subset of {silver_features:env2} (arising from the use of getEnv1)" {
   global dDisjoint2 :: [String] = getEnv1(decorate mkDExpr() with {env2 = [];});
 }
+
+-------------------------------------- Production LHSs
+wrongCode "Production LHS type must be a nonterminal.  Instead it is of type a" {
+  production varLHS
+  top::a ::=
+  {}
+}

@@ -10,6 +10,15 @@ aspect production productionLHS
 top::ProductionLHS ::= id::Name '::' t::TypeExpr
 {
   top.errors <- t.errorsKindStar;
+  
+  local checkNT::TypeCheck = checkNonterminal(t.typerep);
+  checkNT.downSubst = emptySubst();
+  checkNT.finalSubst = emptySubst();
+  
+  top.errors <-
+    if checkNT.typeerror
+    then [err(top.location, "Production LHS type must be a nonterminal.  Instead it is of type " ++ checkNT.leftpp)]
+    else [];
 }
 
 aspect production productionRHSElem
