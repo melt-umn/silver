@@ -5,7 +5,7 @@ import silver:compiler:translation:java:type;
 
 import silver:compiler:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef;
 
-import silver:compiler:definition:flow:ast only hasVertex, noVertex, PatternVarProjection, patternVarProjection, anonVertexType, ExprVertexInfo, FlowVertex;
+import silver:compiler:definition:flow:ast only hasVertex, noVertex, PatternVarProjection, patternVarProjection, anonVertexType, ExprVertexInfo, FlowVertex, inhVertex;
 -- also unfortunately placed references to flowEnv
 
 nonterminal VarBinders with 
@@ -112,6 +112,8 @@ top::VarBinder ::= n::Name
     if top.bindingType.isDecorable
     then decoratedType(top.bindingType, freshInhSet())
     else top.bindingType;
+  production finalTy::Type = performSubstitution(ty, top.finalSubst);
+  production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
 
   production fName :: String = "__pv" ++ toString(genInt()) ++ ":" ++ n.name;
   
@@ -132,7 +134,7 @@ top::VarBinder ::= n::Name
     else noVertex();
   local deps :: [FlowVertex] =
     if top.bindingType.isDecorable
-    then depsForTakingRef(top.env, anonVertexType(fName), performSubstitution(ty, top.finalSubst))
+    then map(anonVertexType(fName).inhVertex, fromMaybe([], refSet))
     else [];
 
   top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps)];
