@@ -8,6 +8,8 @@ silver() { "$SILVER_HOME/support/bin/silver" "$@"; }
 ARGS="$@ --clean --dont-translate"
 
 count=0
+fail=0
+pass=0
 
 # Check to ensure all these builds yield the shown string (as an error)
 function cst_test {
@@ -15,10 +17,12 @@ function cst_test {
     if [[ $? != 0 ]]
     then
         echo -e "\nFailure: $1 did not produce output $2"
-        ((count++))
+        ((fail++))
     else
         echo -n "."
+        ((pass++))
     fi
+    ((count++))
 }
 
 cst_test rhs "B_t"
@@ -27,8 +31,7 @@ cst_test startMissing "nonterm_b:B"
 cst_test prodMod "B_t"
 cst_test mda "nonterm_b:B"
 cst_test missingLHS "nonterm_b:B"
-# terminalLHS doesn't contain a reference to B_t or B
-cst_test terminalLHS "terminalLHS:terminalLHS"
+cst_test terminalLHS "terminalLHS:A_t"
 cst_test terminalSubmit "B_t"
 cst_test terminalDominate "B_t"
 cst_test terminalLexer "lexer_b:B"
@@ -37,7 +40,9 @@ cst_test lexerDominate "B_t"
 cst_test missingSeparator "test:nonterm_b:Mangle_t"
 cst_test multipleSeparators "multipleSeparators:A_t, multipleSeparators:B_t"
 
+echo ""
+echo "$pass out of $count tests passed"
 
 rm -f build.xml
 
-exit $count
+exit $fail
