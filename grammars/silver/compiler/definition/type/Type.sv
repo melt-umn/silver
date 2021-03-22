@@ -236,7 +236,7 @@ top::Type ::= te::Type i::Type
  - It represents a nonterminal that is *either* decorated or undecorated
  - (e.g. when referencing a child) but has not yet been specialized.
  - @param nt  MUST be a 'nonterminalType'
- - @param inhs  The inh set that we're decorated with if we never specialize - MUST have kind InhSet
+ - @param inhs  The inh set that we're decorated with - MUST have kind InhSet
  - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(inhs, nt)'
  -                representing state: unspecialized, undecorated, or decorated.
  -}

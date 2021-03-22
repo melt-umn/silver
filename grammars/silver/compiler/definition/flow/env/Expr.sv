@@ -30,7 +30,11 @@ propagate flowDefs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoApp
 function depsForTakingRef
 [FlowVertex] ::= env::Decorated Env f::VertexType  t::Type
 {
-  return map(f.inhVertex, getMinInhSetMembers([], t, env).fst);
+  return
+    case getMaxRefSet(t, env) of
+    | just(refSet) -> map(f.inhVertex, refSet)
+    | nothing() -> [f.ubVertex]
+    end;
 }
 
 aspect default production

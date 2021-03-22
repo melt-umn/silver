@@ -300,6 +300,16 @@ function getMinInhSetMembers
     end;
 }
 
+function getMinRefSet
+[String] ::= t::Type e::Decorated Env
+{
+  return
+    case t of
+    | decoratedType(_, i) -> getMinInhSetMembers([], i, e).fst
+    | _ -> []
+    end;
+}
+
 -- Try to compute an upper bound on the members of an InhSet type, including transitive ones arising from subset constraints
 function getMaxInhSetMembers
 (Maybe<[String]>, [TyVar]) ::= seen::[TyVar] t::Type e::Decorated Env
@@ -320,6 +330,16 @@ function getMaxInhSetMembers
         \ inhs1::Maybe<[String]> inhs2::Maybe<[String]> -> alt(lift2(intersect, inhs1, inhs2), alt(inhs1, inhs2)),
         empty, map(fst, recurse))),
       unions(t.freeVariables :: map(snd, recurse)))
+    end;
+}
+
+function getMaxRefSet
+Maybe<[String]> ::= t::Type e::Decorated Env
+{
+  return
+    case t of
+    | decoratedType(_, i) -> getMaxInhSetMembers([], i, e).fst
+    | _ -> just([])
     end;
 }
  

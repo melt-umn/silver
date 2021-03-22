@@ -35,6 +35,18 @@ top::FlowVertex ::= attrName::String
   top.vertexComparisonKey = "lhsInhV(" ++ (attrName) ++ ")";
 }
 
+{--
+ - A vertex representing taking a reference to the LHS where the InhSet is an unbounded
+ - polymorphic type variable, i.e. we may be expected to supply anything.
+ - Attempting to actually depend on this will always be an error.
+ - e.g. local d::Decorated Expr with i = e;
+ -}
+abstract production lhsUnboundedVertex
+top::FlowVertex ::=
+{
+  top.vertexComparisonKey = "lhsUnboundedV()";
+}
+
 -- TODO: we should do the above syn/inh separation for everything below too.
 
 {--
@@ -47,6 +59,21 @@ abstract production rhsVertex
 top::FlowVertex ::= sigName::String  attrName::String
 {
   top.vertexComparisonKey = "rhsV(" ++ (sigName) ++ ", " ++ (attrName) ++ ")";
+}
+
+{--
+ - A vertex representing taking a reference to an element of the signature RHS
+ - where the InhSet is an unbounded polymorphic type variable,
+ - i.e. we may be expected to supply anything.
+ - Attempting to actually depend on this will always be an error.
+ - e.g. local d::Decorated Expr with i = e;
+ -
+ - @param sigName  the name given to a signature nonterminal.
+ -}
+abstract production rhsUnboundedVertex
+top::FlowVertex ::= sigName::String
+{
+  top.vertexComparisonKey = "rhsUnboundedV(" ++ (sigName) ++ ")";
 }
 
 {--
@@ -75,6 +102,21 @@ abstract production localVertex
 top::FlowVertex ::= fName::String  attrName::String
 {
   top.vertexComparisonKey = "localV(" ++ (fName) ++ ", " ++ (attrName) ++ ")";
+}
+
+{--
+ - A vertex representing taking a reference to a local
+ - where the InhSet is an unbounded polymorphic type variable,
+ - i.e. we may be expected to supply anything.
+ - Attempting to actually depend on this will always be an error.
+ - e.g. local d::Decorated Expr with i = e;
+ -
+ - @param fName  the full name of the NTA/FWD
+ -}
+abstract production localUnboundedVertex
+top::FlowVertex ::= fName::String
+{
+  top.vertexComparisonKey = "localUnboundedV(" ++ (fName) ++ ")";
 }
 
 -- TODO: we should distinguish these!
@@ -116,6 +158,21 @@ abstract production anonVertex
 top::FlowVertex ::= fName::String  attrName::String
 {
   top.vertexComparisonKey = "anonV(" ++ (fName) ++ ", " ++ (attrName) ++ ")";
+}
+
+{--
+ - A vertex representing taking a reference to 'decorate e with..'
+ - where the InhSet is an unbounded polymorphic type variable,
+ - i.e. we may be expected to supply anything.
+ - Attempting to actually depend on this will always be an error.
+ - e.g. local d::Decorated Expr with i = e;
+ -
+ - @param fName  an anonymous name (typically generated with genInt)
+ -}
+abstract production anonUnboundedVertex
+top::FlowVertex ::= fName::String
+{
+  top.vertexComparisonKey = "anonUnboundedV(" ++ (fName) ++ ")";
 }
 
 --------------------------------------------------------------------------------

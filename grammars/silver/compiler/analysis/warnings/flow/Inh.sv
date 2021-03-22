@@ -120,6 +120,11 @@ function checkEqDeps
   -- A dependency on an LHS.SYN can be checked locally, but we do not do so here.
   -- All productions must have all SYN equations, so those errors are raised elsewhere.
   | lhsSynVertex(attrName) -> []
+  -- A dependency on an LHS, caused by taking an unbounded reference.
+  -- This could probably be handled via some extension to flow types, but that would
+  -- greatly complicate things for a seemingly contrived use case.
+  -- Just forbid taking unbounded LHS references, for now.
+  | lhsUnboundedVertex() -> [mwdaWrn(l, "Equation has transitive dependency for any inherited attribute, caused by taking an unbounded reference to the production LHS.", runMwda)]
   -- A dependency on an RHS.ATTR. SYN are always present, so we only care about INH here.
   -- Filter missing equations for autocopy or for RHS that are references.
   | rhsVertex(sigName, attrName) ->
@@ -130,6 +135,9 @@ function checkEqDeps
            then []
            else [mwdaWrn(l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.", runMwda)]
       else []
+  -- A dependency on an arbitrary attribute on an RHS, caused by taking an unbounded reference.
+  -- This is always an error, since we can't supply attributes that we don't know about.
+  | rhsUnboundedVertex(sigName) -> [mwdaWrn(l, "Equation has transitive dependency for any inherited attribute on child " ++ sigName ++ ", caused by taking an unbounded reference.", runMwda)]
   -- A dependency on a LOCAL. Technically, local equations may not exist!
   -- But let's just assume they do, since `local name :: type = expr;` is the prefered syntax.
   | localEqVertex(fName) -> []
@@ -144,6 +152,9 @@ function checkEqDeps
            then []
            else [mwdaWrn(l, "Equation has transitive dependency on local " ++ fName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.", runMwda)]
       else []
+  -- A dependency on an arbitrary attribute on a LOCAL, caused by taking an unbounded reference.
+  -- This is always an error, since we can't supply attributes that we don't know about.
+  | localUnboundedVertex(fName) -> [mwdaWrn(l, "Equation has transitive dependency for any inherited attribute on local " ++ fName ++ ", caused by taking an unbounded reference.", runMwda)]
   -- A dependency on a ANON. This do always exist (`decorate expr with..` always has expr.)
   | anonEqVertex(fName) -> []
   -- A dependency on ANON.ATTR. Again, SYN are safe. We need to check only for INH.
@@ -162,6 +173,15 @@ function checkEqDeps
               else [] -- If it's not in the list, then it's a transitive dep from a DIFFERENT equation (and thus reported there)
            end
       else []
+  -- A dependency on an arbitrary attribute on ANON, caused by taking an unbounded reference.
+  -- This is always an error, since we can't supply attributes that we don't know about.
+  | anonUnboundedVertex(fName) ->
+      let
+        anonl :: Maybe<Location> = lookup(fName, anonResolve)
+      in if anonl.isJust
+         then [mwdaWrn(anonl.fromJust, "Decoration to an unbounded reference could require any inherited attribute.", runMwda)]
+         else [] -- If it's not in the list, then it's a transitive dep from a DIFFERENT equation (and thus reported there)
+      end
   end;
 }
 function checkAllEqDeps
@@ -397,7 +417,8 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 Step 2: Let's go check on expressions. This has two purposes:
 1. Better error messages for missing equations than the "transitive dependency" ones.
    But technically, unneeded and transititve dependencies are covering this.
-2. We have to ensure that each individual access from a reference fits within the blessed set.
+2. We have to ensure that each individual access from a reference fits within the inferred reference set.
+   Additionally we must check that wherever we take a reference, the required reference set is bounded.
    This is not covered by any other checks.
 -}
 
@@ -419,7 +440,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 
   local finalTy :: Type = performSubstitution(e.typerep, e.upSubst);
   local diff :: [String] =
-    set:toList(set:removeAll(getMinInhSetMembers([], finalTy, top.env).fst,  -- blessed inhs for a reference
+    set:toList(set:removeAll(getMinRefSet(finalTy, top.env),  -- blessed inhs for a reference
       inhDepsForSyn(q.attrDcl.fullName, finalTy.typeName, myFlow))); -- needed inhs
   
   -- CASE 1: References. This check is necessary and won't be caught elsewhere.
@@ -495,7 +516,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       | hasVertex(_) -> [] -- no check to make, as it was done transitively
       -- without a vertex, we're accessing from a reference, and so...
       | noVertex() ->
-          if contains(q.attrDcl.fullName, getMinInhSetMembers([], finalTy, top.env).fst)
+          if contains(q.attrDcl.fullName, getMinRefSet(finalTy, top.env))
           then []
           else [mwdaWrn(top.location, "Access of inherited attribute " ++ q.name ++ " on reference of type " ++ prettyType(finalTy) ++ " is not permitted", top.config.runMwda)]
       end
@@ -518,8 +539,7 @@ top::Expr ::= '(' '.' q::QName ')'
   -- We need to check that the flow sets are acceptable to what we're doing
   -- undecorated accesses: flow type for attribute has to be empty
   -- decorated accesses: FT has to be subset of refset
-  local acceptable :: [String] =
-    if inputType.isDecorated then getMinInhSetMembers([], inputType, top.env).fst else [];
+  local acceptable :: [String] = getMinRefSet(inputType, top.env);
 
   top.errors <- 
     if q.lookupAttribute.found
@@ -563,7 +583,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   -- Subtract the ref set from our deps
   local diff :: [String] =
-    set:toList(set:removeAll(getMinInhSetMembers([], e.typerep, top.env).fst, set:add(inhDeps, set:empty())));
+    set:toList(set:removeAll(getMinRefSet(e.typerep, top.env), set:add(inhDeps, set:empty())));
 
   top.errors <-
     if null(e.errors)
