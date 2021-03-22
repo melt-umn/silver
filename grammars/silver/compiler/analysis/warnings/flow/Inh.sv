@@ -410,7 +410,7 @@ top::Expr ::= q::Decorated QName
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
     && q.lookupValue.typeScheme.isDecorable
     then if refSet.isJust then []
-         else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)} as the reference set is not bounded", top.config.runMwda)]
+         else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.", top.config.runMwda)]
     else [];
 }
 aspect production lhsReference
@@ -420,7 +420,7 @@ top::Expr ::= q::Decorated QName
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
     then if refSet.isJust then []
-         else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)} as the reference set is not bounded", top.config.runMwda)]
+         else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.", top.config.runMwda)]
     else [];
 }
 aspect production localReference
@@ -431,7 +431,7 @@ top::Expr ::= q::Decorated QName
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
     && q.lookupValue.typeScheme.isDecorable
     then if refSet.isJust then []
-         else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)} as the reference set is not bounded", top.config.runMwda)]
+         else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.", top.config.runMwda)]
     else [];
 }
 aspect production forwardReference
@@ -441,7 +441,7 @@ top::Expr ::= q::Decorated QName
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
     then if refSet.isJust then []
-         else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)} as the reference set is not bounded", top.config.runMwda)]
+         else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.", top.config.runMwda)]
     else [];
 }
 
@@ -636,12 +636,12 @@ autocopy attribute receivedDeps :: [FlowVertex] occurs on VarBinders, VarBinder,
 aspect production varVarBinder
 top::VarBinder ::= n::Name
 {
-  -- MWDA check that we're not taking an unbounded reference
+  -- Check that we're not taking an unbounded reference
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
     && top.bindingType.isDecorable
     then if refSet.isJust then []
-         else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)} as the reference set is not bounded", top.config.runMwda)]
+         else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.", top.config.runMwda)]
     else [];
 
   -- fName is our invented vertex name for the pattern variable
