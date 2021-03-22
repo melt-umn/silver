@@ -29,7 +29,7 @@ Decorated Expr with {env1} ::= x::Expr
   return x;
 }
 
-warnCode "Equation has transitive dependency for any inherited attribute on child x, caused by taking an unbounded reference." {
+warnCode "Cannot take a reference of type Decorated flow:Expr with i, as the reference set is not bounded." {
   function getRefUnbounded
   Decorated Expr with i ::= x::Expr
   {
@@ -65,7 +65,7 @@ wrongCode "Expected return type is Decorated flow:Expr with i, but the expressio
 
 synthesized attribute getRefWith<a (i :: InhSet)>::Decorated a with i;
 nonterminal RExpr<(i :: InhSet)> with env1, env2, getRefWith<RExpr<i> i>;
-warnCode "Equation has transitive dependency for any inherited attribute, caused by taking an unbounded reference to the production LHS." {
+warnCode "Cannot take a reference of type Decorated flow:RExpr<i> with i, as the reference set is not bounded." {
   production mkRExprUnbounded
   top::RExpr<i> ::=
   {
