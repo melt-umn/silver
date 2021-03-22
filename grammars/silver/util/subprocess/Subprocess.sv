@@ -73,6 +73,25 @@ IOVal<String> ::= p::ProcessHandle i::IO
 
 
 {--
+ - Read everything in the stdout from a subprocess until reaching the string "ending".
+ - The ending string is included in the output.  If the process never outputs the
+ - ending string to stdout, this function never returns.
+ -
+ - @param p  The process from which to read
+ - @param ending  The string to end on
+ - @param i  The IO token
+ - @return  The line which was read
+-}
+function readUntilFromProcess
+IOVal<String> ::= p::ProcessHandle ending::String i::IO
+{
+  return error("Not Yet Implemented:  readLineFromProcess");
+} foreign {
+  "java" : return "%p%.readUntilFromProcess(%i%, %ending%)";
+}
+
+
+{--
  - Read a line of output from stderr of a subprocess
  -
  - @param p  The process from which to read
@@ -102,6 +121,25 @@ IOVal<String> ::= p::ProcessHandle i::IO
   return error("Not Yet Implemented:  readLineFromProcess");
 } foreign {
   "java" : return "%p%.readErrAllFromProcess(%i%)";
+}
+
+
+{--
+ - Read everything in the stderr from a subprocess until reaching the string "ending".
+ - The ending string is included in the output.  If the process never outputs the
+ - ending string to stderr, this function never returns.
+ -
+ - @param p  The process from which to read
+ - @param ending  The string to end on
+ - @param i  The IO token
+ - @return  The line which was read
+-}
+function readErrUntilFromProcess
+IOVal<String> ::= p::ProcessHandle ending::String i::IO
+{
+  return error("Not Yet Implemented:  readLineFromProcess");
+} foreign {
+  "java" : return "%p%.readErrUntilFromProcess(%i%, %ending%)";
 }
 
 
