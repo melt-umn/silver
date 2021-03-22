@@ -33,7 +33,7 @@ function depsForTakingRef
   return
     case getMaxRefSet(t, env) of
     | just(refSet) -> map(f.inhVertex, refSet)
-    | nothing() -> [f.ubVertex]
+    | nothing() -> f.ubVertex
     end;
 }
 

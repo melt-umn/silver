@@ -160,21 +160,6 @@ top::FlowVertex ::= fName::String  attrName::String
   top.vertexComparisonKey = "anonV(" ++ (fName) ++ ", " ++ (attrName) ++ ")";
 }
 
-{--
- - A vertex representing taking a reference to 'decorate e with..'
- - where the InhSet is an unbounded polymorphic type variable,
- - i.e. we may be expected to supply anything.
- - Attempting to actually depend on this will always be an error.
- - e.g. local d::Decorated Expr with i = e;
- -
- - @param fName  an anonymous name (typically generated with genInt)
- -}
-abstract production anonUnboundedVertex
-top::FlowVertex ::= fName::String
-{
-  top.vertexComparisonKey = "anonUnboundedV(" ++ (fName) ++ ")";
-}
-
 --------------------------------------------------------------------------------
 
 -- TODO: Replace with propagated equality/ordering attributes

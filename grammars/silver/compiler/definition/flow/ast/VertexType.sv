@@ -18,7 +18,7 @@ synthesized attribute fwdVertex :: FlowVertex;
 {-- FlowVertex for the equation giving this FlowVertex (there may not be one!) -}
 synthesized attribute eqVertex :: [FlowVertex];
 {-- FlowVertex for taking an unbounded reference to this FlowVertex -}
-synthesized attribute ubVertex :: FlowVertex;
+synthesized attribute ubVertex :: [FlowVertex];
 
 global lhsVertexType :: VertexType = lhsVertexType_real();
 global forwardVertexType :: VertexType = forwardVertexType_real();
@@ -39,7 +39,7 @@ top::VertexType ::=
   top.inhVertex = lhsInhVertex;
   top.fwdVertex = forwardEqVertex_singleton;
   top.eqVertex = [];
-  top.ubVertex = lhsUnboundedVertex();
+  top.ubVertex = [lhsUnboundedVertex()];
 }
 
 {--
@@ -52,7 +52,7 @@ top::VertexType ::= sigName::String
   top.inhVertex = rhsVertex(sigName, _);
   top.fwdVertex = rhsVertex(sigName, "forward");
   top.eqVertex = [];
-  top.ubVertex = rhsUnboundedVertex(sigName);
+  top.ubVertex = [rhsUnboundedVertex(sigName)];
 }
 
 {--
@@ -65,7 +65,7 @@ top::VertexType ::= fName::String
   top.inhVertex = localVertex(fName, _);
   top.fwdVertex = localVertex(fName, "forward");
   top.eqVertex = [localEqVertex(fName)];
-  top.ubVertex = localUnboundedVertex(fName);
+  top.ubVertex = [localUnboundedVertex(fName)];
 }
 
 {--
@@ -78,7 +78,7 @@ top::VertexType ::=
   top.inhVertex = localVertex("forward", _);
   top.fwdVertex = localVertex("forward", "forward");
   top.eqVertex = [forwardEqVertex_singleton];
-  top.ubVertex = localUnboundedVertex("forward");
+  top.ubVertex = [localUnboundedVertex("forward")];
 }
 
 {--
@@ -91,7 +91,7 @@ top::VertexType ::= x::String
   top.inhVertex = anonVertex(x, _);
   top.fwdVertex = anonVertex(x, "forward");
   top.eqVertex = [anonEqVertex(x)];
-  top.ubVertex = anonUnboundedVertex(x);
+  top.ubVertex = []; -- Should always be a type error
 }
 
 

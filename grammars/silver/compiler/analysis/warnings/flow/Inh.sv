@@ -173,15 +173,6 @@ function checkEqDeps
               else [] -- If it's not in the list, then it's a transitive dep from a DIFFERENT equation (and thus reported there)
            end
       else []
-  -- A dependency on an arbitrary attribute on ANON, caused by taking an unbounded reference.
-  -- This is always an error, since we can't supply attributes that we don't know about.
-  | anonUnboundedVertex(fName) ->
-      let
-        anonl :: Maybe<Location> = lookup(fName, anonResolve)
-      in if anonl.isJust
-         then [mwdaWrn(anonl.fromJust, "Decoration to an unbounded reference could require any inherited attribute.", runMwda)]
-         else [] -- If it's not in the list, then it's a transitive dep from a DIFFERENT equation (and thus reported there)
-      end
   end;
 }
 function checkAllEqDeps
