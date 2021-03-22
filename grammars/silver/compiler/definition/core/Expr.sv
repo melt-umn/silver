@@ -9,11 +9,11 @@ nonterminal Exprs with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs, isRoot, originRules;
 
 nonterminal ExprInhs with
-  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
 nonterminal ExprInh with
-  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
 nonterminal ExprLHSExpr with
-  config, grammarName, env, location, unparse, errors, freeVars, name, typerep, decoratingnt, suppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, name, typerep, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
 
 flowtype freeVars {} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
@@ -27,6 +27,7 @@ autocopy attribute decoratingnt :: Type;
  - The inherited attributes being supplied in a decorate expression
  -}
 synthesized attribute suppliedInhs :: [String];
+autocopy attribute allSuppliedInhs :: [String];
 {--
  - A list of decorated expressions from an Exprs.
  -}
@@ -549,10 +550,11 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.unparse = "decorate " ++ e.unparse ++ " with {" ++ inh.unparse ++ "}";
 
-  top.typerep = decoratedType(performSubstitution(e.typerep, e.upSubst), inhSetType(sort(inh.suppliedInhs))); -- .decoratedForm?
+  top.typerep = decoratedType(performSubstitution(e.typerep, e.upSubst), inhSetType(sort(nub(inh.suppliedInhs)))); -- .decoratedForm?
   e.isRoot = false;
   
   inh.decoratingnt = performSubstitution(e.typerep, e.upSubst);
+  inh.allSuppliedInhs = inh.suppliedInhs;
 }
 
 abstract production exprInhsEmpty

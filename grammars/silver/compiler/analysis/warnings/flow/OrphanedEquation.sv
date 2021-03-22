@@ -117,6 +117,16 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     else [];
 }
 
+aspect production exprLhsExpr
+top::ExprLHSExpr ::= attr::QNameAttrOccur
+{
+  -- Duplicate equation check
+  top.errors <-
+    if attr.attrFound && length(filter(eq(attr.attrDcl.fullName, _), top.allSuppliedInhs)) > 1
+    then [mwdaWrn(top.location, "Duplicate equation for " ++ attr.name, top.config.runMwda)]
+    else [];
+}
+
 
 --- For our DefLHSs:
 

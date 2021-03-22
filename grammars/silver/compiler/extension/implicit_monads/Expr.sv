@@ -803,8 +803,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
                    e.mtyperep,
                    decoratedType(
                      performSubstitution(monadInnerType(e.mtyperep, top.location), e.mUpSubst),
-                     inhSetType(sort(inh.suppliedInhs))))
-                 else decoratedType(performSubstitution(e.mtyperep, e.mUpSubst), inhSetType(sort(inh.suppliedInhs)));
+                     inhSetType(sort(nub(inh.suppliedInhs)))))
+                 else decoratedType(performSubstitution(e.mtyperep, e.mUpSubst), inhSetType(sort(nub(inh.suppliedInhs))));
 
   local newname::String = "__sv_bind_" ++ toString(genInt());
   local params::ProductionRHS =

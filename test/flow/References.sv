@@ -86,3 +86,7 @@ Decorated RExpr<{env1}> with {env1} ::=
   a.env1 = [];
   return a.getRefWith;
 }
+
+warnCode "Duplicate equation for env1" {
+  global decDuplicate::Decorated Expr with {env1, env2} = decorate zero() with {env1 = []; env2 = []; env1 = ["a"];};
+}
