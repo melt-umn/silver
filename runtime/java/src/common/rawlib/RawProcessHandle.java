@@ -22,7 +22,13 @@ import silver.core.NIOVal;
  */
 public class RawProcessHandle {
 
+    //The underlying process with which we are communicating
     private Process proc;
+    //Used for reading stdout from proc
+    private BufferedReader our_stdout = null;
+    //Used for reading stderr from proc
+    private BufferedReader our_stderr = null;
+
 
     public RawProcessHandle(Process p) {
         proc = p;
@@ -42,6 +48,26 @@ public class RawProcessHandle {
     }
 
 
+    /*Check if stdout has been initialized and initialize it*/
+    private void checkInitializeStdout() {
+        if (our_stdout == null) {
+            InputStream instream = proc.getInputStream();
+            InputStreamReader r = new InputStreamReader(instream);
+            our_stdout = new BufferedReader(r);
+        }
+    }
+
+    /*Check if stderr has been initialized and initialize it*/
+    private void checkInitializeStderr() {
+        if (our_stderr == null) {
+            InputStream instream = proc.getErrorStream();
+            InputStreamReader r = new InputStreamReader(instream);
+            our_stderr = new BufferedReader(r);
+        }
+    }
+
+
+    /*Read everything available from a given reader*/
     private String readAll(BufferedReader reader) {
         String output = "";
         char last_char;
@@ -57,17 +83,27 @@ public class RawProcessHandle {
         }
     }
 
+    /*Read everything from a given reader until it ends with ending*/
+    private String readUntil(BufferedReader reader, String ending) {
+        String output = "";
+        char last_char;
+        try {
+            while (!output.endsWith(ending)) {
+                last_char = (char) reader.read();
+                output = output + last_char;
+            }
+            return output;
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-    //Used for reading stdout from the process
-    private BufferedReader our_stdout = null;
+
     /*Read a line from stdout of the process*/
     private String readLineStdout() {
         try {
-            if (our_stdout == null) {
-                InputStream instream = proc.getInputStream();
-                InputStreamReader r = new InputStreamReader(instream);
-                our_stdout = new BufferedReader(r);
-            }
+            checkInitializeStdout();
             return our_stdout.readLine();
         }
         catch (Exception e) {
@@ -78,11 +114,7 @@ public class RawProcessHandle {
     /*Read everything available from the process (empty string if nothing is available)*/
     private String readAllStdout() {
         try {
-            if (our_stdout == null) {
-                InputStream instream = proc.getInputStream();
-                InputStreamReader r = new InputStreamReader(instream);
-                our_stdout = new BufferedReader(r);
-            }
+            checkInitializeStdout();
             return readAll(our_stdout);
         }
         catch (Exception e) {
@@ -90,17 +122,22 @@ public class RawProcessHandle {
         }
     }
 
+    /*Read everything from stdout until the read string ends with ending*/
+    private String readUntilStdout(String ending) {
+        try {
+            checkInitializeStdout();
+            return readUntil(our_stdout, ending);
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-    //Used for reading stderr from the process
-    private BufferedReader our_stderr = null;
+
     /*Read a line from stderr of the process*/
     private String readLineStderr() {
         try {
-            if (our_stderr == null) {
-                InputStream instream = proc.getErrorStream();
-                InputStreamReader r = new InputStreamReader(instream);
-                our_stderr = new BufferedReader(r);
-            }
+            checkInitializeStderr();
             return our_stderr.readLine();
         }
         catch (Exception e) {
@@ -111,12 +148,19 @@ public class RawProcessHandle {
     /*Read everything available in stderr from the process (empty string if nothing is available)*/
     private String readAllStderr() {
         try {
-            if (our_stdout == null) {
-                InputStream instream = proc.getInputStream();
-                InputStreamReader r = new InputStreamReader(instream);
-                our_stdout = new BufferedReader(r);
-            }
+            checkInitializeStderr();
             return readAll(our_stderr);
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /*Read everything from stderr until the read string ends with ending*/
+    private String readUntilStderr(String ending) {
+        try {
+            checkInitializeStderr();
+            return readUntil(our_stderr, ending);
         }
         catch (Exception e) {
             throw new RuntimeException(e);
@@ -136,6 +180,7 @@ public class RawProcessHandle {
             throw new RuntimeException(e);
         }
     }
+
 
     /*Wait for the process to exit*/
     private void waitOnEnd() {
@@ -189,6 +234,13 @@ public class RawProcessHandle {
     /**
      * <pre>IOVal<String> ::= p::ProcessHandle io::IO</pre>
      */
+    public NIOVal readUntilFromProcess(IOToken io, StringCatter s) {
+        return io.wrap(new StringCatter(this.readUntilStdout(s.toString())));
+    }
+
+    /**
+     * <pre>IOVal<String> ::= p::ProcessHandle io::IO</pre>
+     */
     public NIOVal readErrLineFromProcess(IOToken io) {
         return io.wrap(new StringCatter(this.readLineStderr()));
     }
@@ -198,6 +250,13 @@ public class RawProcessHandle {
      */
     public NIOVal readErrAllFromProcess(IOToken io) {
         return io.wrap(new StringCatter(this.readAllStderr()));
+    }
+
+    /**
+     * <pre>IOVal<String> ::= p::ProcessHandle io::IO</pre>
+     */
+    public NIOVal readErrUntilFromProcess(IOToken io, StringCatter s) {
+        return io.wrap(new StringCatter(this.readUntilStdout(s.toString())));
     }
 
     /**
