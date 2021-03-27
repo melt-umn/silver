@@ -126,12 +126,12 @@ top::TypeExpr ::= InhSetLCurly_t inhs::FlowSpecInhs '}'
 {
   top.unparse = s"{${inhs.unparse}}";
   
-  top.typerep = inhSetType(sort(inhs.inhList));
+  top.typerep = inhSetType(sort(nub(inhs.inhList)));
   inhs.onNt = errorType();
 
   -- When we are in a refTypeExpr where we know the nonterminal type,
   -- decorate the inhSetTypeExpr with onNt for better errors and lookup disambiguation.
-  -- TODO: Make this Decorated FlowSpecInhs and only redecorate with onNt
+  -- TODO: Make this ref(inhs)
   production ntInhs::FlowSpecInhs = inhs;
   ntInhs.config = top.config;
   ntInhs.grammarName = top.grammarName;
