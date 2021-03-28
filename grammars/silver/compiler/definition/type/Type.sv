@@ -53,6 +53,18 @@ top::Context ::= cls::String t::Type
   top.freeVariables = t.freeVariables;
 }
 
+abstract production inhOccursContext
+top::Context ::= attr::String args::[Type] inhs::Type atty::Type ntty::Type
+{
+  top.freeVariables = setUnionTyVarsAll(nt.freeVariables :: map((.freeVariables), args));
+}
+
+abstract production synOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.freeVariables = setUnionTyVarsAll(nt.freeVariables :: map((.freeVariables), args));
+}
+
 abstract production typeableContext
 top::Context ::= t::Type
 {

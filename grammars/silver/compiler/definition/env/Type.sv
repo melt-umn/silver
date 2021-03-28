@@ -56,4 +56,3 @@ top::Type ::= te::Type _
 {
   top.typeName = te.typeName;
 }
-
