@@ -74,9 +74,9 @@ top::Constraint ::= c::QNameType t::TypeExpr
 }
 
 concrete production inhOccursConstraint
-top::Constraint ::= at::QName attl::BracketedOptTypeExprs 'occurs' 'on' t::TypeExpr
+top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' t::TypeExpr
 {
-  top.unparse = at.unparse ++ attl.unparse ++ " occurs on " ++ t.unparse;
+  top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ t.unparse;
   top.contexts = [inhOccursContext(fName, attl.types, attrTy, t.typerep)];
   
   production dcl::DclInfo = at.lookupAttribute.dcl;
@@ -105,9 +105,9 @@ top::Constraint ::= at::QName attl::BracketedOptTypeExprs 'occurs' 'on' t::TypeE
 }
 
 concrete production synOccursConstraint
-top::Constraint ::= at::QName attl::BracketedOptTypeExprs i::TypeExpr 'occurs' 'on' t::TypeExpr
+top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExpr 'occurs' 'on' t::TypeExpr
 {
-  top.unparse = at.unparse ++ attl.unparse ++ " " ++ i.unparse ++ " occurs on " ++ t.unparse;
+  top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " " ++ i.unparse ++ " occurs on " ++ t.unparse;
   top.contexts = [synOccursContext(fName, attl.types, attrTy, i.typerep, t.typerep)];
   
   production dcl::DclInfo = at.lookupAttribute.dcl;
@@ -115,8 +115,8 @@ top::Constraint ::= at::QName attl::BracketedOptTypeExprs i::TypeExpr 'occurs' '
 
   top.errors <- at.lookupAttribute.errors;
   top.errors <-
-    if at.lookupAttribute.found && !dcl.isInherited
-    then [err(at.location, fName ++ " is not an inherited attribute")]
+    if at.lookupAttribute.found && !dcl.isSynthesized
+    then [err(at.location, fName ++ " is not synthesized attribute")]
     else [];
   
   top.errors <-

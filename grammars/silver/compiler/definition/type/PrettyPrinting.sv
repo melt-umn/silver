@@ -70,7 +70,13 @@ top::Context ::= cls::String t::Type
 aspect production inhOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
-  top.typepp = s"${attr} ${if null(args) then "" else s"<${implode(" ", map(prettyTypeWith(_, top.boundVariables), args))}>"} occurs on ${ntty.typepp}}";
+  top.typepp = s"attribute ${attr} ${if null(args) then "" else s"<${implode(" ", map(prettyTypeWith(_, top.boundVariables), args))}>"} occurs on ${ntty.typepp}}";
+}
+
+aspect production synOccursContext
+top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
+{
+  top.typepp = s"attribute ${attr} ${if null(args) then "" else s"<${implode(" ", map(prettyTypeWith(_, top.boundVariables), args))}>"} ${inhs.typepp} occurs on ${ntty.typepp}}";
 }
 
 aspect production typeableContext
