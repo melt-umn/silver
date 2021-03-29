@@ -116,7 +116,7 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExp
   top.errors <- at.lookupAttribute.errors;
   top.errors <-
     if at.lookupAttribute.found && !dcl.isSynthesized
-    then [err(at.location, fName ++ " is not synthesized attribute")]
+    then [err(at.location, fName ++ " is not a synthesized attribute")]
     else [];
   
   top.errors <-

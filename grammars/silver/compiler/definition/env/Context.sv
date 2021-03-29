@@ -69,6 +69,7 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
   
   top.resolved = getOccursDcl(attr, ntty.typeName, top.env);
   production resolvedDcl::DclInfo = head(top.resolved);
+  resolvedDcl.givenNonterminalType = ntty;
   production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
   production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
   production requiredContexts::Contexts =
@@ -85,6 +86,7 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 
   top.resolved = getOccursDcl(attr, ntty.typeName, top.env);
   production resolvedDcl::DclInfo = head(top.resolved);
+  resolvedDcl.givenNonterminalType = ntty;
   production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
   production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
   production requiredContexts::Contexts =
