@@ -99,7 +99,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   top.valueWeaving := s"public static final int ${ugh_dcl_hack.attrOccursIndexName} = ${top.frame.prodLocalCountName}++;\n";
 
   top.setupInh := 
-    if !te.typerep.isDecorable then  "" else
+    if !isDecorable(te.typerep, top.env) then  "" else
     s"\t\t//${top.unparse}\n" ++
     s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursIndex}] = " ++ 
       s"new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n";

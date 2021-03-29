@@ -44,11 +44,11 @@ top::Expr ::= q::Decorated QName
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowDeps :=
-    if q.lookupValue.typeScheme.isDecorable && !finalTy.isDecorable
+    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !isDecorable(finalTy, top.env)
     then map(rhsVertexType(q.lookupValue.fullName).inhVertex, fromMaybe([], refSet))
     else [];
   top.flowVertexInfo = 
-    if q.lookupValue.typeScheme.isDecorable && !finalTy.isDecorable
+    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !isDecorable(finalTy, top.env)
     then hasVertex(rhsVertexType(q.lookupValue.fullName))
     else noVertex();
 }
@@ -59,11 +59,11 @@ top::Expr ::= q::Decorated QName
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowDeps :=
-    if !finalTy.isDecorable
+    if !isDecorable(finalTy, top.env)
     then map(lhsVertexType.inhVertex, fromMaybe([], refSet))
     else [];
   top.flowVertexInfo = 
-    if !finalTy.isDecorable
+    if !isDecorable(finalTy, top.env)
     then hasVertex(lhsVertexType)
     else noVertex();
 }
@@ -74,12 +74,12 @@ top::Expr ::= q::Decorated QName
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowDeps := [localEqVertex(q.lookupValue.fullName)] ++
-    if q.lookupValue.typeScheme.isDecorable && !finalTy.isDecorable
+    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !isDecorable(finalTy, top.env)
     then map(localVertexType(q.lookupValue.fullName).inhVertex, fromMaybe([], refSet))
     else [];
     
   top.flowVertexInfo =
-    if q.lookupValue.typeScheme.isDecorable && !finalTy.isDecorable
+    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !isDecorable(finalTy, top.env)
     then hasVertex(localVertexType(q.lookupValue.fullName))
     else noVertex();
 }
@@ -90,12 +90,12 @@ top::Expr ::= q::Decorated QName
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowDeps := [forwardEqVertex()]++
-    if !finalTy.isDecorable
+    if !isDecorable(finalTy, top.env)
     then map(forwardVertexType.inhVertex, fromMaybe([], refSet))
     else [];
     
   top.flowVertexInfo =
-    if !finalTy.isDecorable
+    if !isDecorable(finalTy, top.env)
     then hasVertex(forwardVertexType)
     else noVertex();
 }

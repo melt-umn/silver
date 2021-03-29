@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:flow:driver;
 
-import silver:compiler:definition:type only isDecorable, typerep;
+import silver:compiler:definition:type only isNonterminal, typerep;
 
 nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, suspectEdgeMap, cullSuspect, flowTypeVertexes, prodGraphs;
 
@@ -461,7 +461,7 @@ function rhsStitchPoints
 {
   return if null(rhs) then []
   -- We want only NONTERMINAL stitch points!
-  else if head(rhs).typerep.isDecorable
+  else if head(rhs).typerep.isNonterminal
        then nonterminalStitchPoint(
               head(rhs).typerep.typeName,
               rhsVertexType(head(rhs).elementName)) :: rhsStitchPoints(tail(rhs))

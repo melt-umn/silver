@@ -20,10 +20,9 @@ monoid attribute freeFlexibleVars :: [TyVar] with [], setUnionTyVars;
 -- Also used by 'new()'
 synthesized attribute isDecorated :: Boolean;
 
--- Determines whether a type is automatically promoted to a decorated type
--- and whether a type may be supplied with inherited attributes.
--- Used by expression (id refs), decorate type checking, and translations.
-synthesized attribute isDecorable :: Boolean;
+-- Determines whether a type is an (undecorated) nonterminal type
+-- Used in determining whether a type may be supplied with inherited attributes.
+synthesized attribute isNonterminal :: Boolean;
 
 -- Used for type checking by 'terminal()'
 synthesized attribute isTerminal :: Boolean;
@@ -38,7 +37,7 @@ synthesized attribute asNtOrDecType :: Type;
 synthesized attribute unifyInstanceNonterminal :: Substitution;
 synthesized attribute unifyInstanceDecorated :: Substitution;
 
-attribute arity, isError, isDecorated, isDecorable, isTerminal, asNtOrDecType occurs on PolyType;
+attribute arity, isError, isDecorated, isNonterminal, isTerminal, asNtOrDecType occurs on PolyType;
 
 aspect production monoType
 top::PolyType ::= ty::Type
@@ -46,7 +45,7 @@ top::PolyType ::= ty::Type
   top.arity = ty.arity;
   top.isError = ty.isError;
   top.isDecorated = ty.isDecorated;
-  top.isDecorable = ty.isDecorable;
+  top.isNonterminal = ty.isNonterminal;
   top.isTerminal = ty.isTerminal;
   top.asNtOrDecType = ntOrDecType(ty, freshInhSet(), freshType());
 }
@@ -57,7 +56,7 @@ top::PolyType ::= bound::[TyVar] ty::Type
   top.arity = ty.arity;
   top.isError = ty.isError;
   top.isDecorated = ty.isDecorated;
-  top.isDecorable = ty.isDecorable;
+  top.isNonterminal = ty.isNonterminal;
   top.isTerminal = ty.isTerminal;
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
 }
@@ -68,12 +67,12 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
   top.arity = ty.arity;
   top.isError = ty.isError;
   top.isDecorated = ty.isDecorated;
-  top.isDecorable = ty.isDecorable;
+  top.isNonterminal = ty.isNonterminal;
   top.isTerminal = ty.isTerminal;
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
 }
 
-attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isDecorable, isTerminal, isApplicable, decoratedType, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
+attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isNonterminal, isTerminal, isApplicable, decoratedType, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
 
 propagate freeSkolemVars, freeFlexibleVars on Type;
 
@@ -89,7 +88,7 @@ top::Type ::=
   top.inhSetMembers = [];
   
   top.isDecorated = false;
-  top.isDecorable = false;
+  top.isNonterminal = false;
   top.isTerminal = false;
   top.isError = false;
   top.isApplicable = false;
@@ -117,7 +116,7 @@ top::Type ::= c::Type a::Type
 {
   top.baseType = c.baseType;
   top.argTypes = c.argTypes ++ [a];
-  top.isDecorable = c.isDecorable;
+  top.isNonterminal = c.isNonterminal;
   top.unifyInstanceNonterminal = c.unifyInstanceNonterminal;
   top.arity = c.arity;
   top.isApplicable = c.isApplicable;
@@ -165,7 +164,7 @@ top::Type ::=
 aspect production nonterminalType
 top::Type ::= fn::String _ _
 {
-  top.isDecorable = true;
+  top.isNonterminal = true;
   top.unifyInstanceNonterminal = emptySubst();
 }
 

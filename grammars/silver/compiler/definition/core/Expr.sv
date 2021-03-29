@@ -92,7 +92,7 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  top.typerep = if q.lookupValue.typeScheme.isDecorable
+  top.typerep = if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
                 then q.lookupValue.typeScheme.asNtOrDecType
                 else q.lookupValue.typeScheme.monoType;
 }
@@ -113,7 +113,7 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  top.typerep = if q.lookupValue.typeScheme.isDecorable
+  top.typerep = if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
                 then q.lookupValue.typeScheme.asNtOrDecType
                 else q.lookupValue.typeScheme.monoType;
 }

@@ -103,7 +103,7 @@ Expr ::= loc::Location env::Decorated Env attrName::Decorated QName input::Named
   -- Check if the attribute occurs on the first child
   local attrOccursOnHead :: Boolean =
     !null(getOccursDcl(attrName.lookupAttribute.dcl.fullName, input.typerep.typeName, env));
-  local validTypeHead :: Boolean = input.typerep.isDecorable;
+  local validTypeHead :: Boolean = isDecorable(input.typerep, env);
   
   return
     if validTypeHead && attrOccursOnHead

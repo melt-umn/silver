@@ -61,8 +61,8 @@ top::Expr ::= q::Decorated QName
     top.frame.className ++ ".i_" ++ q.lookupValue.fullName;
 
   top.translation =
-    if q.lookupValue.typeScheme.isDecorable
-    then if finalType(top).isDecorable
+    if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
+    then if isDecorable(finalType(top), top.env)
          then s"((${finalType(top).transType})context.childDecorated(${childIDref}).undecorate())"
          else s"((${finalType(top).transType})context.childDecorated(${childIDref}))"
     else s"((${finalType(top).transType})context.childAsIs(${childIDref}))";
@@ -71,8 +71,8 @@ top::Expr ::= q::Decorated QName
 
   top.lazyTranslation =
     if !top.frame.lazyApplication then top.translation else
-    if q.lookupValue.typeScheme.isDecorable
-    then if finalType(top).isDecorable
+    if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
+    then if isDecorable(finalType(top), top.env)
          then s"common.Thunk.transformUndecorate(context.childDecoratedLazy(${childIDref}))"
          else s"context.childDecoratedLazy(${childIDref})"
     else s"context.childAsIsLazy(${childIDref})";
@@ -82,8 +82,8 @@ aspect production localReference
 top::Expr ::= q::Decorated QName
 {
   top.translation =
-    if q.lookupValue.typeScheme.isDecorable
-    then if finalType(top).isDecorable
+    if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
+    then if isDecorable(finalType(top), top.env)
          then s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
          else s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}))"
     else s"((${finalType(top).transType})context.localAsIs(${q.lookupValue.dcl.attrOccursIndex}))";
@@ -91,8 +91,8 @@ top::Expr ::= q::Decorated QName
 
   top.lazyTranslation =
     if !top.frame.lazyApplication then top.translation else
-    if q.lookupValue.typeScheme.isDecorable
-    then if finalType(top).isDecorable
+    if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
+    then if isDecorable(finalType(top), top.env)
          then s"common.Thunk.transformUndecorate(context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex}))"
          else s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})"
     else s"context.localAsIsLazy(${q.lookupValue.dcl.attrOccursIndex})";
@@ -102,7 +102,7 @@ aspect production lhsReference
 top::Expr ::= q::Decorated QName
 {
   top.translation =
-    if finalType(top).isDecorable
+    if isDecorable(finalType(top), top.env)
     then s"((${finalType(top).transType})context.undecorate())"
     else "context";
 
@@ -113,7 +113,7 @@ aspect production forwardReference
 top::Expr ::= q::Decorated QName
 {
   top.translation =
-    if finalType(top).isDecorable
+    if isDecorable(finalType(top), top.env)
     then s"((${finalType(top).transType})context.forward().undecorate())"
     else "context.forward()";
 
@@ -301,7 +301,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of
     | childReference(cqn), true -> 
-        if cqn.lookupValue.typeScheme.isDecorable
+        if isDecorable(cqn.lookupValue.typeScheme.typerep, top.env)
         then
           s"context.childDecoratedSynthesizedLazy(${top.frame.className}.i_${cqn.lookupValue.fullName}, ${q.dcl.attrOccursIndex})"
         else
