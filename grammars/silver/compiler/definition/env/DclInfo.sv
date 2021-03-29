@@ -293,27 +293,29 @@ top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
   top.attrOccurring = fnat;
 }
 
-abstract production inhOccursInstConstraintDcl
-top::DclInfo ::= fnat::String ntty::Type atty::Type
+abstract production occursInstConstraintDcl
+top::DclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
 {
-  top.fullName = "";
+  top.fullName = ntty.typeName;
   top.attrOccurring = fnat;
   
   top.typeScheme = monoType(atty);
 }
 abstract production occursSigConstraintDcl
-top::DclInfo ::= ty::Type ns::NamedSignature
+top::DclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
 {
-  top.fullName = "";
+  top.fullName = ntty.typeName;
+  top.attrOccurring = fnat;
   
-  top.typeScheme = monoType(ty);
+  top.typeScheme = monoType(atty);
 }
 abstract production occursSuperDcl
-top::DclInfo ::= baseDcl::DclInfo
+top::DclInfo ::= fnat::String atty::Type baseDcl::DclInfo
 {
-  top.fullName = "";
+  top.fullName = baseDcl.fullName;
+  top.attrOccurring = fnat;
   
-  top.typeScheme = baseDcl.typeScheme;
+  top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, atty);
 }
 
 abstract production annoInstanceDcl

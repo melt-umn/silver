@@ -17,7 +17,8 @@ top::DclInfo ::=
 {
   -- See TODO in the env DclInfo
   top.attrOccursIndexName = error("Internal compiler error: must be defined for all occurs declarations");
-  top.attrOccursIndex = error("Internal compiler error: must be defined for all occurs declarations");
+
+  top.attrOccursIndex = top.transContext;
 }
 
 

@@ -60,6 +60,38 @@ top::Context ::= cls::String t::Type
   requiredContexts.env = top.env;
 }
 
+aspect production inhOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.contextSuperDcl = occursSuperDcl(attr, atty, _, sourceGrammar=_, sourceLocation=_);
+  top.contextMemberDcl = occursInstConstraintDcl(attr, ntty, atty, _, sourceGrammar=_, sourceLocation=_);
+  top.contextClassName = nothing();
+  
+  top.resolved = getOccursDcl(attr, ntty.typeName, top.env);
+  production resolvedDcl::DclInfo = head(top.resolved);
+  production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
+  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
+  production requiredContexts::Contexts =
+    foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
+  requiredContexts.env = top.env;
+}
+
+aspect production synOccursContext
+top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
+{
+  top.contextSuperDcl = occursSuperDcl(attr, atty, _, sourceGrammar=_, sourceLocation=_);
+  top.contextMemberDcl = occursInstConstraintDcl(attr, ntty, atty, _, sourceGrammar=_, sourceLocation=_);
+  top.contextClassName = nothing();
+
+  top.resolved = getOccursDcl(attr, ntty.typeName, top.env);
+  production resolvedDcl::DclInfo = head(top.resolved);
+  production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
+  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
+  production requiredContexts::Contexts =
+    foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
+  requiredContexts.env = top.env;
+}
+
 aspect production typeableContext
 top::Context ::= t::Type
 {

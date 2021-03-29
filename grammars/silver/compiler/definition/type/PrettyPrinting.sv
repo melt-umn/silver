@@ -67,6 +67,12 @@ top::Context ::= cls::String t::Type
   top.typepp = cls ++ " " ++ t.typepp;
 }
 
+aspect production inhOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.typepp = s"${attr} ${if null(args) then "" else s"<${implode(" ", map(prettyTypeWith(_, top.boundVariables), args))}>"} occurs on ${ntty.typepp}}";
+}
+
 aspect production typeableContext
 top::Context ::= t::Type
 {

@@ -56,3 +56,29 @@ top::Type ::= te::Type _
 {
   top.typeName = te.typeName;
 }
+
+aspect production varType
+top::Type ::= tv::TyVar
+{
+  top.typeName = tv.typeName;
+}
+
+aspect production skolemType
+top::Type ::= tv::TyVar
+{
+  top.typeName = tv.typeName;
+}
+
+attribute typeName occurs on TyVar;
+
+aspect production tyVar
+top::TyVar ::= k::Kind i::Integer
+{
+  top.typeName = "_a" ++ toString(i);
+}
+
+aspect production tyVarNamed
+top::TyVar ::= k::Kind i::Integer n::String
+{
+  top.typeName = n;
+}
