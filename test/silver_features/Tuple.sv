@@ -245,3 +245,20 @@ c ::= tuple::(a,b,c,d,e)
 }
 equalityTest(thirdOfFive((1,2,"three", 4, "five")), "three", String, silver_tests);
 equalityTest(thirdOfFive((1,2,3,"four", "five")), 3, Integer, silver_tests);
+
+global lst::[(Integer, Integer)] = [(0, 1), (1, 2), (2, 3)];
+global x::Integer = head(lst).1;
+
+equalityTest(x, 0, Integer, silver_tests);
+
+function id
+a ::= a::a
+{
+  return a;
+}
+
+global y::Integer = id((1, 3)).1;
+global z::String = id(("hello", "this", "is", "test")).4;
+
+equalityTest(y, 1, Integer, silver_tests);
+equalityTest(z, "test", String, silver_tests);
