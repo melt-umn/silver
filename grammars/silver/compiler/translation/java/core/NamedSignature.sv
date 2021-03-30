@@ -68,8 +68,9 @@ s"""	private Object child_${n};
 """;
   
   top.childStaticElem =
-    if !ty.isNonterminal && null(ty.freeVariables) then "" -- isDecorable(ty), but we don't have the env here :-/
-    else s"\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ty.typeName)}.num_inh_attrs];\n";
+    if ty.isNonterminal
+    then s"\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ty.typeName)}.num_inh_attrs];\n"
+    else "";  -- TODO: Handle occurs-on contexts
   
   -- annos are full names:
   
