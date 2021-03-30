@@ -56,7 +56,8 @@ top::Expr ::= tuple::Expr '.' a::IntConst
   -- will be 1, so we must pattern match to get at the 
   -- underlying tupleType and compute correct length of 
   -- its tupleElems
-  local len::Integer = case tuple.typerep of
+  local ty :: Type = performSubstitution(tuple.typerep, tuple.upSubst);
+  local len::Integer = case ty of
     | decoratedType(t, _) -> length(t.tupleElems)
     | t -> length(t.tupleElems)
     end;
