@@ -99,10 +99,10 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   extraGrammarsDeps := ["init"];
   
   production attribute classpathCompiler :: [String] with ++;
-  classpathCompiler := [];
+  classpathCompiler := ["${sh}/jars/commonmark-0.17.1.jar"];
   
   production attribute classpathRuntime :: [String] with ++;
-  classpathRuntime := ["${sh}/jars/SilverRuntime.jar"];
+  classpathRuntime := ["${sh}/jars/commonmark-0.17.1.jar", "${sh}/jars/SilverRuntime.jar"];
   
   -- The --XRTjar hack
   classpathRuntime <- top.config.includeRTJars;
