@@ -79,7 +79,13 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
 
   top.defs := lhs.defs ++ rhs.defs;
   top.constraintDefs = cl.defs;
-  top.namedSignature = namedSignature(top.signatureName, cl.contexts, rhs.inputElements, lhs.outputElement, annotationsForNonterminal(lhs.outputElement.typerep, top.env));
+  top.namedSignature =
+    namedSignature(
+      top.signatureName,
+      foldContexts(cl.contexts),
+      foldNamedSignatureElements(rhs.inputElements),
+      lhs.outputElement,
+      foldNamedSignatureElements(annotationsForNonterminal(lhs.outputElement.typerep, top.env)));
 }
 
 concrete production productionSignatureNoCL

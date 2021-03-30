@@ -6,13 +6,19 @@ attribute env occurs on Context;
 
 -- This mostly exists as a convenient way to perform multiple env-dependant operations
 -- on a list of contexts without re-decorating them and repeating context resolution.
-nonterminal Contexts with env, freeVariables, boundVariables;
+nonterminal Contexts with env, contexts, freeVariables, boundVariables;
 abstract production consContext
 top::Contexts ::= h::Context t::Contexts
-{ top.freeVariables = setUnionTyVars(h.freeVariables, t.freeVariables); }
+{
+  top.contexts = h :: t.contexts;
+  top.freeVariables = setUnionTyVars(h.freeVariables, t.freeVariables);
+}
 abstract production nilContext
 top::Contexts ::=
-{ top.freeVariables = []; }
+{
+  top.contexts = [];
+  top.freeVariables = [];
+}
 
 global foldContexts::(Contexts ::= [Context]) = foldr(consContext, nilContext(), _);
 

@@ -23,19 +23,24 @@ synthesized attribute inputNames :: [String];
  - @param np  Named parameters (or annotations)
  -}
 abstract production namedSignature
-top::NamedSignature ::= fn::String ctxs::[Context] ie::[NamedSignatureElement] oe::NamedSignatureElement np::[NamedSignatureElement]
+top::NamedSignature ::= fn::String ctxs::Contexts ie::NamedSignatureElements oe::NamedSignatureElement np::NamedSignatureElements
 {
   top.fullName = fn;
-  top.contexts = ctxs;
-  top.inputElements = ie;
+  top.contexts = ctxs.contexts;
+  top.inputElements = ie.elements;
   top.outputElement = oe;
-  top.namedInputElements = np;
-  top.inputNames = map((.elementName), ie);
-  top.inputTypes = map((.typerep), ie); -- Does anything actually use this? TODO: eliminate?
-  local typerep::Type = appTypes(functionType(length(ie), map((.elementShortName), np)), top.inputTypes ++ map((.typerep), np) ++ [oe.typerep]);
-  top.typeScheme = (if null(ctxs) then polyType else constraintType(_, ctxs, _))(top.freeVariables, typerep);
-  top.freeVariables = setUnionTyVarsAll(typerep.freeVariables :: map((.freeVariables), ctxs));
+  top.namedInputElements = np.elements;
+  top.inputNames = ie.elementNames;
+  top.inputTypes = ie.elementTypes; -- Does anything actually use this? TODO: eliminate?
+  local typerep::Type = appTypes(functionType(length(ie.elements), np.elementShortNames), ie.elementTypes ++ np.elementTypes ++ [oe.typerep]);
+  top.typeScheme = (if null(ctxs.contexts) then polyType else constraintType(_, ctxs.contexts, _))(top.freeVariables, typerep);
+  top.freeVariables = setUnionTyVars(ctxs.freeVariables, typerep.freeVariables);
   top.typerep = typerep; -- TODO: Only used by unifyNamedSignature.  Would be nice to eliminate, somehow.
+  
+  ctxs.boundVariables = top.freeVariables;
+  ie.boundVariables = top.freeVariables;
+  oe.boundVariables = top.freeVariables;
+  np.boundVariables = top.freeVariables;
 }
 
 {--
@@ -45,13 +50,46 @@ top::NamedSignature ::= fn::String ctxs::[Context] ie::[NamedSignatureElement] o
 abstract production bogusNamedSignature
 top::NamedSignature ::= 
 {
-  forwards to namedSignature("_NULL_", [], [], bogusNamedSignatureElement(), []);
+  forwards to namedSignature("_NULL_", nilContext(), nilNamedSignatureElement(), bogusNamedSignatureElement(), nilNamedSignatureElement());
 }
+
+{--
+ - Represents a collection of NamedSignatureElements
+ -}
+nonterminal NamedSignatureElements with elements, elementNames, elementShortNames, elementTypes, freeVariables, boundVariables;
+
+synthesized attribute elements::[NamedSignatureElement];
+synthesized attribute elementNames::[String];
+synthesized attribute elementShortNames::[String];
+synthesized attribute elementTypes::[Type];
+
+abstract production consNamedSignatureElement
+top::NamedSignatureElements ::= h::NamedSignatureElement t::NamedSignatureElements
+{
+  top.elements = h :: t.elements;
+  top.elementNames = h.elementName :: t.elementNames;
+  top.elementShortNames = h.elementShortName :: t.elementShortNames;
+  top.elementTypes = h.typerep :: t.elementTypes;
+  top.freeVariables = setUnionTyVars(h.freeVariables, t.freeVariables);
+}
+
+abstract production nilNamedSignatureElement
+top::NamedSignatureElements ::=
+{
+  top.elements = [];
+  top.elementNames = [];
+  top.elementShortNames = [];
+  top.elementTypes = [];
+  top.freeVariables = [];
+}
+
+global foldNamedSignatureElements::(NamedSignatureElements ::= [NamedSignatureElement]) =
+  foldr(consNamedSignatureElement, nilNamedSignatureElement(), _);
 
 {--
  - Represents an elements of a signature, whether input, output, or annotation.
  -}
-nonterminal NamedSignatureElement with elementName, typerep, elementShortName;
+nonterminal NamedSignatureElement with elementName, elementShortName, typerep, freeVariables, boundVariables;
 
 synthesized attribute elementName :: String;
 synthesized attribute elementShortName :: String;
@@ -64,6 +102,7 @@ top::NamedSignatureElement ::= n::String ty::Type
 {
   top.elementName = n;
   top.typerep = ty;
+  top.freeVariables = ty.freeVariables;
 
   -- When we convert from a SignatureElement to a functionType, we cut down to the short name only:
   top.elementShortName = 
@@ -99,33 +138,15 @@ Integer ::= s::String l::[NamedSignatureElement] z::Integer
 
 --------------
 
--- Applies function to constituent types
-function mapNamedSignature
-NamedSignature ::= f::(Type ::= Type)  ns::NamedSignature
-{
-  return case ns of
-  | namedSignature(fn, ctxs, ie, oe, np) ->
-      namedSignature(fn, ctxs, map(mapNamedSignatureElement(f, _), ie), mapNamedSignatureElement(f, oe), map(mapNamedSignatureElement(f, _), np))
-  end;
-}
--- Ditto, for elements
-function mapNamedSignatureElement
-NamedSignatureElement ::= f::(Type ::= Type)  nse::NamedSignatureElement
-{
-  return case nse of
-  | namedSignatureElement(n, ty) ->
-      namedSignatureElement(n, f(ty))
-  end;
-}
+attribute substitution, flatRenamed occurs on NamedSignature, Contexts, NamedSignatureElements, NamedSignatureElement;
+propagate flatRenamed on NamedSignature, Contexts, NamedSignatureElements, NamedSignatureElement;
 
 -- Freshens all the signature's types
 function freshenNamedSignature
 NamedSignature ::= ns::NamedSignature
 {
-  local s :: Substitution = zipVarsIntoSubstitution(ns.freeVariables, ns.typeScheme.boundVars);
-
-  -- Apply the freshening within the signature's types
-  return mapNamedSignature(performRenaming(_, s), ns);
+  ns.substitution = zipVarsIntoSubstitution(ns.freeVariables, ns.typeScheme.boundVars);
+  return ns.flatRenamed;
 }
 
 function unifyNamedSignature
