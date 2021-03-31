@@ -49,7 +49,7 @@ function extractSilverCodeBlocks
 ```
 
 We do the actual extraction with the [commonmark-java](https://github.com/commonmark/commonmark-java) library.
-Tragically, foreign functions seem not to support multiline strings, so the code it generates is fairly hard to read.
+The actual conversion is in `Markdown.java` in the runtime; see there for the fine details.
 
 ```silver
 function extractCodeBlocks
@@ -57,8 +57,6 @@ function extractCodeBlocks
 {
   return [];
 } foreign {
-  "java" : return "(new common.Lazy() { public Object eval(common.DecoratedNode context) { java.util.ArrayList<silver.core.Ppair> out = new java.util.ArrayList<silver.core.Ppair>(); org.commonmark.parser.Parser.builder().includeSourceSpans(org.commonmark.parser.IncludeSourceSpans.BLOCKS).build().parse(%markdown%.toString()).accept(new org.commonmark.node.AbstractVisitor() { public void visit(org.commonmark.node.FencedCodeBlock node) { java.util.List<org.commonmark.node.SourceSpan> spans = node.getSourceSpans(); out.add(silver.core.Ppair.rtConstruct(null, new common.StringCatter(node.getInfo()), silver.core.Ppair.rtConstruct(null, new Integer(spans.isEmpty() ? -1 : spans.get(0).getLineIndex()), new common.StringCatter(node.getLiteral())))); } }); return common.javainterop.ConsCellCollection.fromIterator(out.iterator()); } }).eval(null)";
+  "java" : return "common.Markdown.extractCodeBlocks(%markdown%.toString())";
 }
 ```
-
-Indented more reasonably, this is:
