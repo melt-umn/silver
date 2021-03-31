@@ -42,7 +42,7 @@ See [rustdoc](https://doc.rust-lang.org/rustdoc/documentation-tests.html#attribu
 function extractSilverCodeBlocks
 [String] ::= markdown::String
 {
-  return map(\block::(String, Integer, String) -> block.3,
+  return map(\block::(String, Integer, String) -> "#line " ++ toString(block.2 + 1) ++ "\n" ++ block.3,
              filter(\block::(String, Integer, String) -> block.1 == "silver",
                     extractCodeBlocks(markdown)));
 }
@@ -57,7 +57,7 @@ function extractCodeBlocks
 {
   return [];
 } foreign {
-  "java" : return "(new common.Lazy() { public Object eval(common.DecoratedNode context) { java.util.ArrayList<silver.core.Ppair> out = new java.util.ArrayList<silver.core.Ppair>(); org.commonmark.parser.Parser.builder().build().parse(%markdown%.toString()).accept(new org.commonmark.node.AbstractVisitor() { public void visit(org.commonmark.node.FencedCodeBlock node) { out.add(silver.core.Ppair.rtConstruct(null, new common.StringCatter(node.getInfo()), silver.core.Ppair.rtConstruct(null, new Integer(0), new common.StringCatter(node.getLiteral())))); } }); return common.javainterop.ConsCellCollection.fromIterator(out.iterator()); } }).eval(null)";
+  "java" : return "(new common.Lazy() { public Object eval(common.DecoratedNode context) { java.util.ArrayList<silver.core.Ppair> out = new java.util.ArrayList<silver.core.Ppair>(); org.commonmark.parser.Parser.builder().includeSourceSpans(org.commonmark.parser.IncludeSourceSpans.BLOCKS).build().parse(%markdown%.toString()).accept(new org.commonmark.node.AbstractVisitor() { public void visit(org.commonmark.node.FencedCodeBlock node) { java.util.List<org.commonmark.node.SourceSpan> spans = node.getSourceSpans(); out.add(silver.core.Ppair.rtConstruct(null, new common.StringCatter(node.getInfo()), silver.core.Ppair.rtConstruct(null, new Integer(spans.isEmpty() ? -1 : spans.get(0).getLineIndex()), new common.StringCatter(node.getLiteral())))); } }); return common.javainterop.ConsCellCollection.fromIterator(out.iterator()); } }).eval(null)";
 }
 ```
 
@@ -68,14 +68,16 @@ Indented more reasonably, this is:
   public Object eval(common.DecoratedNode context) {
     java.util.ArrayList<silver.core.Ppair> out = new java.util.ArrayList<silver.core.Ppair>();
     org.commonmark.parser.Parser.builder()
+      .includeSourceSpans(org.commonmark.parser.IncludeSourceSpans.BLOCKS)
       .build()
       .parse(%markdown%.toString())
       .accept(new org.commonmark.node.AbstractVisitor() {
         public void visit(org.commonmark.node.FencedCodeBlock node) {
+	  java.util.List<org.commonmark.node.SourceSpan> spans = node.getSourceSpans();
           out.add(silver.core.Ppair.rtConstruct(null,
             new common.StringCatter(node.getInfo()),
             silver.core.Ppair.rtConstruct(null,
-              new Integer(0),
+              new Integer(spans.isEmpty() ? -1 : spans.get(0).getLineIndex()),
               new common.StringCatter(node.getLiteral()))));
         }
       });

@@ -109,6 +109,11 @@ ignore terminal Comments /([\-][\-].*)/ lexer classes {COMMENT};
 
 ignore terminal WhiteSpace /[\r\n\t\ ]+/;
 
+ignore terminal LocationTag_t /#line -?[0-9]+/
+  action {
+    line = toInteger(substring(6, length(lexeme), lexeme));
+  };
+
 terminal IdLower_t /[a-z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
 terminal IdUpper_t /[A-Z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
 
