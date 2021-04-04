@@ -74,7 +74,7 @@ ${makeIndexDcls(0, namedSig.inputElements)}
     public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
 
     static {
-${implode("", map((.childStaticElem), namedSig.inputElements))}
+${namedSig.childStatic}
     }
 
     public ${className}(${if wantsTracking then "final NOriginInfo origin"++commaIfKidsOrAnnos else ""} ${namedSig.javaSignature}) {
@@ -89,7 +89,9 @@ ${if !null(namedSig.contexts) then "//no rtConstruct because contexts" else s"""
     }
 """}
 
-${implode("", map((.childDeclElem), namedSig.inputElements))}
+${namedSig.inhOccursIndexDecls}
+
+${namedSig.childDecls}
 
 ${contexts.contextMemberDeclTrans}
 

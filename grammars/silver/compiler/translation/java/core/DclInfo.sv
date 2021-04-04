@@ -48,7 +48,7 @@ aspect production occursSigConstraintDcl
 top::DclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
 {
   top.attrOccursIndexName = makeIdName(fnat ++ "__ON__" ++ ntty.typeName);
-  top.attrOccursInitIndex = implode(".", init(explode(":", ns.fullName))) ++ ".P" ++ last(explode(":", ns.fullName)) ++ "." ++ top.attrOccursIndexName;
+  top.attrOccursInitIndex = makeProdName(ns.fullName) ++ "." ++ top.attrOccursIndexName;
 }
 aspect production occursSuperDcl
 top::DclInfo ::= fnat::String atty::Type baseDcl::DclInfo

@@ -73,7 +73,7 @@ ${makeIndexDcls(0, whatSig.inputElements)}
 	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
 
 	static {
-${implode("", map((.childStaticElem), whatSig.inputElements))}
+${whatSig.childStatic}
 	}
 
 	public ${className}(${whatSig.javaSignature}) {
@@ -81,7 +81,9 @@ ${implode("", map(makeChildAssign, whatSig.inputElements))}
 ${contexts.contextInitTrans}
 	}
 
-${implode("", map((.childDeclElem), whatSig.inputElements))}
+${whatSig.inhOccursIndexDecls}
+
+${whatSig.childDecls}
 
 ${contexts.contextMemberDeclTrans}
 
