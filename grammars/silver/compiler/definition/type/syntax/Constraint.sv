@@ -10,7 +10,7 @@ nonterminal ConstraintList
   with config, grammarName, env, flowEnv, location, unparse, errors, defs, occursDefs, contexts, lexicalTypeVariables, lexicalTyVarKinds, constraintPos;
 nonterminal Constraint with config, grammarName, env, flowEnv, location, unparse, errors, defs, occursDefs, contexts, lexicalTypeVariables, lexicalTyVarKinds, constraintPos;
 
-propagate errors, defs, lexicalTypeVariables, lexicalTyVarKinds on ConstraintList, Constraint;
+propagate errors, defs, occursDefs, lexicalTypeVariables, lexicalTyVarKinds on ConstraintList, Constraint;
 
 concrete production consConstraint
 top::ConstraintList ::= h::Constraint ',' t::ConstraintList
@@ -99,7 +99,7 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' '
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
   production attrTy::Type = performRenaming(atTypeScheme.typerep, rewrite);
 
-  local instDcl::DclInfo = top.constraintPos.occursInstDcl(fName, attrTy, t.typerep, top.grammarName, top.location);
+  local instDcl::DclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy, top.grammarName, top.location);
   top.occursDefs <- [instDcl];
   
 }
@@ -135,7 +135,7 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExp
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
   production attrTy::Type = performRenaming(atTypeScheme.typerep, rewrite);
 
-  local instDcl::DclInfo = top.constraintPos.occursInstDcl(fName, attrTy, t.typerep, top.grammarName, top.location);
+  local instDcl::DclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy, top.grammarName, top.location);
   top.occursDefs <- [instDcl];
 
   top.lexicalTyVarKinds <-

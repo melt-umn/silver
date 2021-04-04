@@ -5,7 +5,7 @@ attribute isEqualTo occurs on a, attribute isEqual {isEqualTo} occurs on a =>
 Boolean ::= x::a y::a
 {
   x.isEqualTo = y;
-  return y.isEqual;
+  return x.isEqual;
 }
 
 equalityTest(eqA(ee1, ee1), true, Boolean, silver_tests);

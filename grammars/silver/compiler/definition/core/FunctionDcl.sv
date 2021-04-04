@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:core;
 
-nonterminal FunctionSignature with config, grammarName, env, location, unparse, errors, defs, constraintDefs, namedSignature, signatureName;
+nonterminal FunctionSignature with config, grammarName, env, location, unparse, errors, defs, constraintDefs, occursDefs, namedSignature, signatureName;
 nonterminal FunctionLHS with config, grammarName, env, location, unparse, errors, defs, outputElement;
 
 propagate errors on FunctionSignature, FunctionLHS;
@@ -38,7 +38,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   local attribute prodAtts :: [Def];
   prodAtts = defsFromPADcls(getProdAttrs(fName, top.env), namedSig);
 
-  body.env = newScopeEnv(body.defs ++ sigDefs ++ ns.constraintDefs, newScopeEnv(prodAtts, top.env));
+  body.env = occursEnv(ns.occursDefs, newScopeEnv(body.defs ++ sigDefs ++ ns.constraintDefs, newScopeEnv(prodAtts, top.env)));
   body.frame = functionContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName); -- graph from flow:env
 }
 
@@ -51,6 +51,7 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
 
   top.defs := lhs.defs ++ rhs.defs;
   top.constraintDefs = cl.defs;
+  top.occursDefs := cl.occursDefs;
 
   top.namedSignature =
     namedSignature(
