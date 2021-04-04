@@ -87,7 +87,7 @@ top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 aspect production forwardLhsExpr
 top::ForwardLHSExpr ::= q::QNameAttrOccur
 {
-  top.attrName = q.dcl.attrOccursIndex;
+  top.attrName = q.dcl.attrOccursInitIndex;
 }
 
 aspect production localAttributeDcl
@@ -101,10 +101,10 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   top.setupInh := 
     if !isDecorable(te.typerep, top.env) then  "" else
     s"\t\t//${top.unparse}\n" ++
-    s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursIndex}] = " ++ 
+    s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = " ++ 
       s"new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n";
 
-  top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursIndex}] = \"${fName}\";\n";
+  top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";
 
   top.translation = "";
 }
@@ -150,7 +150,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 {
   top.translation = 
     s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
-    s"\t\t${dl.translation}[${attr.dcl.attrOccursIndex}] = ${wrapLazy(e)};\n";
+    s"\t\t${dl.translation}[${attr.dcl.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
 }
 
 aspect production inheritedAttributeDef
@@ -158,7 +158,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 {
   top.translation = 
     s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
-    s"\t\t${dl.translation}[${attr.dcl.attrOccursIndex}] = ${wrapLazy(e)};\n";
+    s"\t\t${dl.translation}[${attr.dcl.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
 }
 
 
@@ -173,7 +173,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.translation =
 	s"\t\t// ${val.unparse} = ${e.unparse}\n" ++
-	s"\t\t${top.frame.className}.localAttributes[${val.lookupValue.dcl.attrOccursIndex}] = ${wrapLazy(e)};\n";
+	s"\t\t${top.frame.className}.localAttributes[${val.lookupValue.dcl.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
 }
 
 aspect production returnDef

@@ -58,6 +58,20 @@ top::Context ::= fn::String t::Type
   top.contextRefElem = makeConstraintDictName(fn, t, top.boundVariables);
 }
 
+aspect production inhOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.contextSigElem = s"final int ${makeConstraintDictName(attr, ntty, top.boundVariables)}";
+  top.contextRefElem = makeConstraintDictName(attr, ntty, top.boundVariables);
+}
+
+aspect production synOccursContext
+top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
+{
+  top.contextSigElem = s"final int ${makeConstraintDictName(attr, ntty, top.boundVariables)}";
+  top.contextRefElem = makeConstraintDictName(attr, ntty, top.boundVariables);
+}
+
 aspect production typeableContext
 top::Context ::= t::Type
 {
