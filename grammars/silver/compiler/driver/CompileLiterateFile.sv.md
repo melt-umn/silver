@@ -22,7 +22,7 @@ If it's a Literate Silver file instead, we extract the relevant code blocks, the
 
 ```silver
     else if endsWith(".sv.md", path)
-    then implode("\n", extractSilverCodeBlocks(contents))
+    then implode("\n", extractSilverCodeBlocks(path, contents))
 ```
 
 Since these are the only two extensions allowed by `isValidSilverFile` in `CompileGrammar.sv`, they're the only two we need to handle.
@@ -40,11 +40,28 @@ See [rustdoc](https://doc.rust-lang.org/rustdoc/documentation-tests.html#attribu
 
 ```silver
 function extractSilverCodeBlocks
-[String] ::= markdown::String
+[String] ::= path::String  markdown::String
 {
-  return map(\block::(String, Integer, String) -> "#line " ++ toString(block.2 + 1) ++ "\n" ++ block.3,
-             filter(\block::(String, Integer, String) -> block.1 == "silver",
-                    extractCodeBlocks(markdown)));
+  local goodCode::[String] =
+    map(\block::(String, Location, String) -> "#line " ++ toString(block.2.line + 1) ++ "\n" ++ block.3,
+        filter(\block::(String, Location, String) -> block.1 == "silver",
+               extractCodeBlocks(path, markdown)));
+```
+
+We also emit warnings for code blocks with no info string.
+
+```silver
+  local warnCode::[String] =
+    map(\block::(String, Location, String) -> "#line " ++ toString(block.2.line + 1) ++ "\n"
+                                           ++ "#warn Code block with no info string; this won't be compiled",
+        filter(\block::(String, Location, String) -> block.1 == "",
+               extractCodeBlocks(path, markdown)));
+```
+
+Since we use `#line` to set the line numbers on the parsed trees, we don't need to do any fancy interleaving or anything before returning all the blocks.
+
+```silver
+  return goodCode ++ warnCode;
 }
 ```
 
@@ -53,10 +70,10 @@ The actual conversion is in `Markdown.java` in the runtime; see there for the fi
 
 ```silver
 function extractCodeBlocks
-[(String, Integer, String)] ::= markdown::String
+[(String, Location, String)] ::= path::String  markdown::String
 {
   return [];
 } foreign {
-  "java" : return "common.Markdown.extractCodeBlocks(%markdown%.toString())";
+  "java" : return "common.Markdown.extractCodeBlocks(%path%.toString(), %markdown%.toString())";
 }
 ```

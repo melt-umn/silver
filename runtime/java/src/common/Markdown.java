@@ -8,6 +8,7 @@ import org.commonmark.node.FencedCodeBlock;
 import org.commonmark.node.SourceSpan;
 import org.commonmark.parser.IncludeSourceSpans;
 import org.commonmark.parser.Parser;
+import silver.core.Ploc;
 import silver.core.Ppair;
 
 /**
@@ -17,7 +18,7 @@ import silver.core.Ppair;
  * @author remexre
  */
 public final class Markdown {
-  public static ConsCell extractCodeBlocks(String markdown) {
+  public static ConsCell extractCodeBlocks(String path, String markdown) {
     ArrayList<Ppair> out = new ArrayList<Ppair>();
     Parser.builder()
         .includeSourceSpans(IncludeSourceSpans.BLOCKS)
@@ -25,11 +26,17 @@ public final class Markdown {
         .parse(markdown)
         .accept(new AbstractVisitor() {
           public void visit(FencedCodeBlock node) {
-            List<SourceSpan> spans = node.getSourceSpans();
+            SourceSpan span = node.getSourceSpans().get(0);
+
+            // TODO: SourceSpan only provides line/column, but it provides a
+            // length in UTF-16 code units; do we have a utility for this?
+            Ploc location = Ploc.rtConstruct(
+                null, path, span.getLineIndex(), span.getColumnIndex(),
+                span.getLineIndex(), span.getColumnIndex(), 0, 0);
+
             out.add(Ppair.rtConstruct(
                 null, new StringCatter(node.getInfo()),
-                Ppair.rtConstruct(null,
-                                  new Integer(spans.get(0).getLineIndex()),
+                Ppair.rtConstruct(null, location,
                                   new StringCatter(node.getLiteral()))));
           }
         });
