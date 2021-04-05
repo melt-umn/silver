@@ -9,7 +9,7 @@ if [[ $* == *--copper* ]]; then
     # Only fetch the Copper jars, if requested
     FILES="CopperCompiler.jar"
 else
-    FILES="CopperCompiler.jar silver.compiler.composed.Default.jar SilverRuntime.jar IDEPluginRuntime.jar"
+    FILES="CopperCompiler.jar commonmark-0.17.1.jar silver.compiler.composed.Default.jar SilverRuntime.jar IDEPluginRuntime.jar"
 fi
 
 mkdir -p jars
