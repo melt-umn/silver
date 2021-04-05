@@ -9,6 +9,8 @@ SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx4G -Xss16M"}
   # -XX:+PrintCompilation -verbose:gc -XX:+PrintGCTimeStamps -XX:+PrintGCDetails -XX:-PrintGC
 SV_BUILD_TARGET=${SV_BUILD_TARGET:-"silver:compiler:composed:Default"}
 
+export ANT_OPTS=-Xss10M
+
 mkdir -p build
 cd build
 
