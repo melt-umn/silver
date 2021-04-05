@@ -13,9 +13,10 @@ IOVal<Pair<[Root] [ParseError]>> ::= svParser::SVParser  gpath::String  files::[
 {
   local file :: String = head(files);
   
-  -- Print the path we're reading, and read the file.
-  local text :: IOVal<String> =
+  local rawText :: IOVal<String> =
     readFile(gpath ++ file, ioin);
+  local text :: IOVal<String> =
+    ioval(rawText.io, transformFile(file, rawText.iovalue));
 
   -- This is where a .sv file actually gets parsed:
   local r :: ParseResult<Root> = svParser(text.iovalue, file);
@@ -32,4 +33,3 @@ IOVal<Pair<[Root] [ParseError]>> ::= svParser::SVParser  gpath::String  files::[
              ioval(recurse.io, pair(recurse.iovalue.fst, errval :: recurse.iovalue.snd))
          end;
 }
-
