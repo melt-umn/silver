@@ -10,6 +10,7 @@
 
   <path id='compile.classpath'>
     <fileset dir='../../jars' includes='CopperCompiler.jar' />
+    <fileset dir='../../jars' includes='commonmark-0.17.1.jar' />
   </path>
 
   <target name='init'>

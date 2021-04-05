@@ -24,6 +24,10 @@ instance Plus m => Monoid m<a> {
   mempty = empty;
 }
 
+instance Monoid a, Monoid b => Monoid (a, b) {
+  mempty = (mempty, mempty);
+}
+
 instance Monoid String {
   mempty = "";
 }
