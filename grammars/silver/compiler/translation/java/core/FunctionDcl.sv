@@ -72,6 +72,8 @@ ${makeIndexDcls(0, whatSig.inputElements)}
 	public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
 	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
 
+${whatSig.inhOccursIndexDecls}
+
 	static {
 ${whatSig.childStatic}
 	}
@@ -80,8 +82,6 @@ ${whatSig.childStatic}
 ${implode("", map(makeChildAssign, whatSig.inputElements))}
 ${contexts.contextInitTrans}
 	}
-
-${whatSig.inhOccursIndexDecls}
 
 ${whatSig.childDecls}
 

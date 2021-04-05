@@ -73,6 +73,8 @@ ${makeIndexDcls(0, namedSig.inputElements)}
     public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
     public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
 
+${namedSig.inhOccursIndexDecls}
+
     static {
 ${namedSig.childStatic}
     }
@@ -88,8 +90,6 @@ ${if !null(namedSig.contexts) then "//no rtConstruct because contexts" else s"""
         return new ${className}(${if wantsTracking then "origin"++commaIfKids else ""} ${implode(", ", map((\x::NamedSignatureElement -> "c_"++makeIdName(x.elementName)), namedSig.inputElements))} ${commaIfKidsAndAnnos} ${implode(", ", map((\x::NamedSignatureElement -> "a_"++makeIdName(x.elementName)), namedSig.namedInputElements))});
     }
 """}
-
-${namedSig.inhOccursIndexDecls}
 
 ${namedSig.childDecls}
 
