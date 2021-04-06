@@ -171,6 +171,10 @@ top::Type ::= nt::Type inhs::Type hidden::Type
         -- Ensure compatibility between nonterminal types, then specialize ourselves
         unifyAllShortCircuit([top.unifyWith, top.unifyWith],
                              [nt,            hidden])
+    | skolemType(_) ->
+        -- Ensure compatibility between skolem types (referring to an unknown nonterminal), then specialize ourselves
+        unifyAllShortCircuit([top.unifyWith, top.unifyWith],
+                             [nt,            hidden])
     | ntOrDecType(ont1, oi, ohidden1) ->
         -- Ensure compatibility between nonterminal types and inh sets, then merge our specializations
         unifyAllShortCircuit([ont1, oi,   ohidden1],

@@ -4,19 +4,19 @@ function eqA
 attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a =>
 Boolean ::= x::a y::a
 {
-  x.isEqualTo = new(y);
+  x.isEqualTo = y;
   return x.isEqual;
 }
 
 function eqB
-attribute isEqualTo occurs on a, attribute isEqual {isEqualTo} occurs on a =>
+attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a =>
 Boolean ::= x::a y::a
 {
-  production z::a = new(x);
-  z.isEqualTo = y;
-  return z.isEqual;
+  production z::a = x;
+  production w::a = z;
+  w.isEqualTo = y;
+  return w.isEqual;
 }
-
 equalityTest(eqA(ee1, ee1), true, Boolean, silver_tests);
 equalityTest(eqA(ee1, ee2), false, Boolean, silver_tests);
 equalityTest(eqA(ee1, ee3), false, Boolean, silver_tests);
@@ -26,3 +26,13 @@ equalityTest(eqA(ee2, ee3), false, Boolean, silver_tests);
 equalityTest(eqA(ee3, ee1), false, Boolean, silver_tests);
 equalityTest(eqA(ee3, ee2), false, Boolean, silver_tests);
 equalityTest(eqA(ee3, ee3), true, Boolean, silver_tests);
+
+equalityTest(eqB(ee1, ee1), true, Boolean, silver_tests);
+equalityTest(eqB(ee1, ee2), false, Boolean, silver_tests);
+equalityTest(eqB(ee1, ee3), false, Boolean, silver_tests);
+equalityTest(eqB(ee2, ee1), false, Boolean, silver_tests);
+equalityTest(eqB(ee2, ee2), true, Boolean, silver_tests);
+equalityTest(eqB(ee2, ee3), false, Boolean, silver_tests);
+equalityTest(eqB(ee3, ee1), false, Boolean, silver_tests);
+equalityTest(eqB(ee3, ee2), false, Boolean, silver_tests);
+equalityTest(eqB(ee3, ee3), true, Boolean, silver_tests);
