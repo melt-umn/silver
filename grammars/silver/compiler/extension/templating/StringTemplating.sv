@@ -5,6 +5,8 @@ imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:type:syntax;
 
+imports silver:compiler:translation:java:core;
+
 exports silver:compiler:extension:templating:syntax;
 
 terminal Template_kwd   's"""' lexer classes {LITERAL};
@@ -14,14 +16,14 @@ concrete production templateExpr
 top::Expr ::= Template_kwd t::TemplateString
 layout {}
 {
-  forwards to infold(plusPlus(_, '++', _, location=top.location), t.stringTemplate);
+  forwards to foldr1(stringAppendCall(_, _, location=top.location), t.stringTemplate);
 }
 
 concrete production singleLineTemplateExpr
 top::Expr ::= SLTemplate_kwd t::SingleLineTemplateString
 layout {}
 {
-  forwards to infold(plusPlus(_, '++', _, location=top.location), t.stringTemplate);
+  forwards to foldr1(stringAppendCall(_, _, location=top.location), t.stringTemplate);
 }
 
 terminal PPTemplate_kwd   'pp"""' lexer classes {LITERAL};
@@ -31,29 +33,38 @@ concrete production pptemplateExpr
 top::Expr ::= PPTemplate_kwd t::TemplateString
 layout {}
 {
-  forwards to infold(catcall(_, _, top.location), t.ppTemplate);
+  forwards to foldr1(catcall(_, _, top.location), t.ppTemplate);
 }
 
 concrete production singleLinepptemplateExpr
 top::Expr ::= SLPPTemplate_kwd t::SingleLineTemplateString
 layout {}
 {
-  forwards to infold(catcall(_, _, top.location), t.ppTemplate);
+  forwards to foldr1(catcall(_, _, top.location), t.ppTemplate);
+}
+
+production stringAppendCall
+top::Expr ::= a::Expr b::Expr
+{
+  -- TODO: We really need eagerness analysis in Silver.
+  -- Otherwise the translation for a large string template block contains
+  -- new common.Thunk<Object>(new common.Thunk.Evaluable() { public final Object eval() { return ((common.StringCatter)silver.core.PstringAppend.invoke(${a.translation}, ${b.translation}); } })
+  -- a ridiculous number of times, when it can just be translated as:
+  top.translation = s"new common.StringCatter(${a.translation}, ${b.translation})";
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+  
+  thread downSubst, upSubst on top, a, b, forward;
+  
+  forwards to
+    mkStrFunctionInvocation(
+      top.location, "silver:core:stringAppend",
+      [exprRef(a, location=a.location), exprRef(b, location=b.location)]);
 }
 
 function catcall
 Expr ::= a::Expr b::Expr l::Location
 {
   return mkStrFunctionInvocation(l, "silver:langutil:pp:cat", [a, b]);
-}
-
--- TODO: make standard somehow?
-function infold
-a ::= f::(a ::= a a) l::[a]
-{
-  return if null(l) then error("invalid use of infold")
-  else if null(tail(l)) then head(l)
-  else f(head(l), infold(f, tail(l)));
 }
 
 synthesized attribute stringTemplate :: [Expr] occurs on TemplateString, SingleLineTemplateString,
