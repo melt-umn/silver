@@ -9,8 +9,9 @@ synthesized attribute refInvokeTrans :: String occurs on NamedSignature;
 synthesized attribute contextSigElems :: [String] occurs on Contexts;
 synthesized attribute contextSigElem :: String occurs on Context;
 -- Track what children with inh occurs-on contexts need to have indices generated
-monoid attribute contextInhOccurs :: [(String, String)] occurs on Contexts, Context;
-autocopy attribute sigInhOccurs :: [(String, String)] occurs on NamedSignatureElements, NamedSignatureElement;
+monoid attribute contextInhOccurs :: [(Type, String)] occurs on NamedSignature, Contexts, Context;
+autocopy attribute sigInhOccurs :: [(Type, String)] occurs on NamedSignatureElements, NamedSignatureElement;
+synthesized attribute inhOccursContextTypes :: [Type] occurs on NamedSignature;
 monoid attribute inhOccursIndexDecls :: String occurs on NamedSignature, Contexts, Context;
 -- "final Object c_signame"
 synthesized attribute childSigElems :: [String] occurs on NamedSignatureElements;
@@ -25,6 +26,9 @@ synthesized attribute childRefElems :: [String] occurs on NamedSignatureElements
 synthesized attribute childRefElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoRefElems :: [String] occurs on NamedSignatureElements;
 synthesized attribute annoRefElem :: String occurs on NamedSignatureElement;
+-- "type_a" or "-1"
+synthesized attribute childTypeVarElems :: [String] occurs on NamedSignature, NamedSignatureElements;
+synthesized attribute childTypeVarElem :: String occurs on NamedSignatureElement;
 -- "inhs[c_signame] = new lazy[]"
 synthesized attribute childStaticElem :: String occurs on NamedSignatureElement;
 synthesized attribute childStatic :: String occurs on NamedSignature, NamedSignatureElements;
@@ -42,13 +46,20 @@ top::NamedSignature ::= fn::String ctxs::Contexts ie::NamedSignatureElements oe:
 {
   top.javaSignature = implode(", ", ctxs.contextSigElems ++ ie.childSigElems ++ np.annoSigElems);
   top.refInvokeTrans = implode(", ", ctxs.contextRefElems ++ ie.childRefElems ++ np.annoRefElems);
+  top.childTypeVarElems = ie.childTypeVarElems;
   top.childStatic = ie.childStatic;
   top.childDecls = ie.childDecls;
+  
+  top.inhOccursContextTypes = nubBy(typeNameEq, map(fst, ctxs.contextInhOccurs));
   top.inhOccursIndexDecls :=
     flatMap(
-      \ ta::(String, String) -> s"\tpublic static int count_inh__ON__${makeIdName(ta.fst)} = 0;\n",
-      ctxs.contextInhOccurs) ++
+      \ t::Type -> s"\tpublic static final int type_${transTypeNameWith(t, top.freeVariables)} = ${toString(positionOfBy(typeNameEq, t, top.inhOccursContextTypes))};\n",
+      top.inhOccursContextTypes) ++
+    flatMap(
+      \ t::Type -> s"\tpublic static int count_inh__ON__${transTypeNameWith(t, top.freeVariables)} = 0;\n",
+      top.inhOccursContextTypes) ++
     ctxs.inhOccursIndexDecls;
+  top.contextInhOccurs := ctxs.contextInhOccurs;
   ie.sigInhOccurs = ctxs.contextInhOccurs;
 }
 
@@ -79,9 +90,9 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
   top.contextSigElem = s"final int ${makeConstraintDictName(attr, ntty, top.boundVariables)}";
   top.contextRefElem = makeConstraintDictName(attr, ntty, top.boundVariables);
-  top.contextInhOccurs <- [(ntty.typeName, attr)];
+  top.contextInhOccurs <- [(ntty, attr)];
   top.inhOccursIndexDecls <-
-    s"\tpublic static final int ${makeIdName(attr)}__ON__${makeIdName(ntty.typeName)} = count_inh__ON__${makeIdName(ntty.typeName)}++;\n";
+    s"\tpublic static final int ${makeIdName(attr)}__ON__${ntty.transTypeName} = count_inh__ON__${ntty.transTypeName}++;\n";
 }
 
 aspect production synOccursContext
@@ -112,6 +123,7 @@ top::NamedSignatureElements ::= h::NamedSignatureElement t::NamedSignatureElemen
   top.annoSigElems = h.annoSigElem :: t.annoSigElems;
   top.childRefElems = h.childRefElem :: t.childRefElems;
   top.annoRefElems = h.annoRefElem :: t.annoRefElems;
+  top.childTypeVarElems = h.childTypeVarElem :: t.childTypeVarElems;
   top.childStatic = h.childStaticElem ++ t.childStatic;
   top.childDecls = h.childDeclElem ++ t.childDecls;
 }
@@ -123,6 +135,7 @@ top::NamedSignatureElements ::=
   top.annoSigElems = [];
   top.childRefElems = [];
   top.annoRefElems = [];
+  top.childTypeVarElems = [];
   top.childStatic = "";
   top.childDecls = "";
 }
@@ -141,12 +154,17 @@ s"""	private Object child_${n};
 	}
 
 """;
+
+  top.childTypeVarElem =
+    if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
+    then s"type_${ty.transTypeName}"
+    else "-1";
   
   top.childStaticElem =
     if ty.isNonterminal
-    then s"\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ty.typeName)}.num_inh_attrs];\n"
-    else if lookup(ty.typeName, top.sigInhOccurs).isJust
-    then s"\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${makeIdName(ty.typeName)}];\n"
+    then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ty.typeName)}.num_inh_attrs];\n"
+    else if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
+    then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ty.transTypeName}];\n"
     else "";
   
   -- annos are full names:
@@ -220,6 +238,19 @@ String ::= n::NamedSignatureElement
   return s"\t\tthis.child_${n.elementName} = c_${n.elementName};\n";
 }
 
+function makeInhOccursContextAccess
+String ::= bv::[TyVar] sigInhOccurs::[(Type, String)] typeVarArray::String inhArray::String accessor::String t::Type
+{
+  t.boundVariables = bv;
+  local inhs::[String] = lookupAllBy(typeNameEq, t, sigInhOccurs);
+  return s"""		if (${typeVarArray}[key] == type_${t.transTypeName}) {
+			common.Lazy[] res = new common.Lazy[${accessor}(key).getNumberOfInhAttrs()];
+${flatMap(\ inh::String -> s"\t\t\tres[${makeConstraintDictName(inh, t, bv)}] = ${makeIdName(inh)}__ON__${t.transTypeName}\n", inhs)}
+			return res;
+		}
+""";
+}
+
 function makeTyVarDecls
 String ::= indent::Integer vars::[TyVar]
 {
@@ -276,4 +307,7 @@ s"""Object ${n.annoRefElem} = null;
 """;
 }
 
+function typeNameEq
+Boolean ::= t1::Type t2::Type
+{ return t1.typeName == t2.typeName; }
 

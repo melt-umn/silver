@@ -8,6 +8,15 @@ Boolean ::= x::a y::a
   return x.isEqual;
 }
 
+function eqB
+attribute isEqualTo occurs on a, attribute isEqual {isEqualTo} occurs on a =>
+Boolean ::= x::a y::a
+{
+  production z::a = new(x);
+  z.isEqualTo = y;
+  return z.isEqual;
+}
+
 equalityTest(eqA(ee1, ee1), true, Boolean, silver_tests);
 equalityTest(eqA(ee1, ee2), false, Boolean, silver_tests);
 equalityTest(eqA(ee1, ee3), false, Boolean, silver_tests);
