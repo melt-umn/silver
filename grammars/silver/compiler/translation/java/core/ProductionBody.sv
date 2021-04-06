@@ -105,7 +105,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
       s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = " ++ 
       if te.typerep.isNonterminal
       then s"new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
-      else s"new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(te.typerep.typeName)}];\n"
+      else s"new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
     else "";
 
   top.setupInh <- s"\t\t${top.frame.className}.occurs_local[${ugh_dcl_hack.attrOccursInitIndex}] = \"${fName}\";\n";

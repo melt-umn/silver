@@ -244,8 +244,8 @@ String ::= bv::[TyVar] sigInhOccurs::[(Type, String)] typeVarArray::String inhAr
   t.boundVariables = bv;
   local inhs::[String] = lookupAllBy(typeNameEq, t, sigInhOccurs);
   return s"""		if (${typeVarArray}[key] == type_${t.transTypeName}) {
-			common.Lazy[] res = new common.Lazy[${accessor}(key).getNumberOfInhAttrs()];
-${flatMap(\ inh::String -> s"\t\t\tres[${makeConstraintDictName(inh, t, bv)}] = ${makeIdName(inh)}__ON__${t.transTypeName}\n", inhs)}
+			common.Lazy[] res = new common.Lazy[((common.Node)${accessor}(key)).getNumberOfInhAttrs()];
+${flatMap(\ inh::String -> s"\t\t\tres[${makeConstraintDictName(inh, t, bv)}] = ${inhArray}[key][${makeIdName(inh)}__ON__${t.transTypeName}];\n", inhs)}
 			return res;
 		}
 """;

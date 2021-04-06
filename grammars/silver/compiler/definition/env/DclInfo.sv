@@ -300,6 +300,8 @@ top::DclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
   top.attrOccurring = fnat;
   
   top.typeScheme = monoType(atty);
+  
+  ntty.boundVariables = tvs;
 }
 abstract production occursSigConstraintDcl
 top::DclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
@@ -308,6 +310,8 @@ top::DclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
   top.attrOccurring = fnat;
   
   top.typeScheme = monoType(atty);
+  
+  ntty.boundVariables = ns.freeVariables;
 }
 abstract production occursSuperDcl
 top::DclInfo ::= fnat::String atty::Type baseDcl::DclInfo

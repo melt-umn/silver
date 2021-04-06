@@ -1,10 +1,10 @@
 grammar silver_features;
 
 function eqA
-attribute isEqualTo occurs on a, attribute isEqual {isEqualTo} occurs on a =>
+attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a =>
 Boolean ::= x::a y::a
 {
-  x.isEqualTo = y;
+  x.isEqualTo = new(y);
   return x.isEqual;
 }
 
