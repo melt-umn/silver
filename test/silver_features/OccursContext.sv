@@ -44,7 +44,7 @@ Boolean ::= x::(a ::= ) y::(a ::= )
 {
   production z::a = x();
   production w::a = y();
-  w.isEqualTo = w;
+  w.isEqualTo = z;
   return w.isEqual;
 }
 

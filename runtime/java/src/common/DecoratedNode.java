@@ -438,7 +438,12 @@ public class DecoratedNode implements Typed {
 		// (which could be null if *no inherited attributes occur at all* on this
 		// node), this could be the result of correctly compiled, but wrongly written user
 		// code.
-		if(inheritedAttributes == null || inheritedAttributes[attribute] == null) {
+		// Also, we need to check for attribute >= inheritedAttributes.length, because
+		// with inherited occurs-on constraints don't know how big to make the array,
+		// only the largest supplied attribute index, 
+		// so the user omitting some inherited equations for attributes with higher indices
+		// could mean the resulting array that we are passed is too short.  Sigh.
+		if(inheritedAttributes == null || attribute >= inheritedAttributes.length || inheritedAttributes[attribute] == null) {
 			return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
 		}
 		return new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' in " + getDebugID(), t);
