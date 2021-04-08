@@ -8,15 +8,6 @@ Boolean ::= x::a y::a
   return x.isEqual;
 }
 
-function eqB
-attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a =>
-Boolean ::= x::a y::a
-{
-  production z::a = x;
-  production w::a = z;
-  w.isEqualTo = y;
-  return w.isEqual;
-}
 equalityTest(eqA(ee1, ee1), true, Boolean, silver_tests);
 equalityTest(eqA(ee1, ee2), false, Boolean, silver_tests);
 equalityTest(eqA(ee1, ee3), false, Boolean, silver_tests);
@@ -27,6 +18,16 @@ equalityTest(eqA(ee3, ee1), false, Boolean, silver_tests);
 equalityTest(eqA(ee3, ee2), false, Boolean, silver_tests);
 equalityTest(eqA(ee3, ee3), true, Boolean, silver_tests);
 
+function eqB
+attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a =>
+Boolean ::= x::a y::a
+{
+  production z::a = x;
+  production w::a = z;
+  w.isEqualTo = y;
+  return w.isEqual;
+}
+
 equalityTest(eqB(ee1, ee1), true, Boolean, silver_tests);
 equalityTest(eqB(ee1, ee2), false, Boolean, silver_tests);
 equalityTest(eqB(ee1, ee3), false, Boolean, silver_tests);
@@ -36,3 +37,23 @@ equalityTest(eqB(ee2, ee3), false, Boolean, silver_tests);
 equalityTest(eqB(ee3, ee1), false, Boolean, silver_tests);
 equalityTest(eqB(ee3, ee2), false, Boolean, silver_tests);
 equalityTest(eqB(ee3, ee3), true, Boolean, silver_tests);
+
+function eqC
+attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a =>
+Boolean ::= x::(a ::= ) y::(a ::= )
+{
+  production z::a = x();
+  production w::a = y();
+  w.isEqualTo = w;
+  return w.isEqual;
+}
+
+equalityTest(eqC(\ -> ee1, \ -> ee1), true, Boolean, silver_tests);
+equalityTest(eqC(\ -> ee1, \ -> ee2), false, Boolean, silver_tests);
+equalityTest(eqC(\ -> ee1, \ -> ee3), false, Boolean, silver_tests);
+equalityTest(eqC(\ -> ee2, \ -> ee1), false, Boolean, silver_tests);
+equalityTest(eqC(\ -> ee2, \ -> ee2), true, Boolean, silver_tests);
+equalityTest(eqC(\ -> ee2, \ -> ee3), false, Boolean, silver_tests);
+equalityTest(eqC(\ -> ee3, \ -> ee1), false, Boolean, silver_tests);
+equalityTest(eqC(\ -> ee3, \ -> ee2), false, Boolean, silver_tests);
+equalityTest(eqC(\ -> ee3, \ -> ee3), true, Boolean, silver_tests);

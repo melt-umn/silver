@@ -239,16 +239,42 @@ String ::= n::NamedSignatureElement
 }
 
 function makeInhOccursContextAccess
-String ::= bv::[TyVar] sigInhOccurs::[(Type, String)] typeVarArray::String inhArray::String accessor::String t::Type
+String ::= bv::[TyVar] sigInhOccurs::[(Type, String)] typeVarArray::String inhArray::String numInhAccessor::(String ::= String) t::Type
 {
   t.boundVariables = bv;
   local inhs::[String] = lookupAllBy(typeNameEq, t, sigInhOccurs);
   return s"""		if (${typeVarArray}[key] == type_${t.transTypeName}) {
-			common.Lazy[] res = new common.Lazy[((common.Node)${accessor}(key)).getNumberOfInhAttrs()];
+			common.Lazy[] res = new common.Lazy[${numInhAccessor("key")}];
 ${flatMap(\ inh::String -> s"\t\t\tres[${makeConstraintDictName(inh, t, bv)}] = ${inhArray}[key][${makeIdName(inh)}__ON__${t.transTypeName}];\n", inhs)}
 			return res;
 		}
 """;
+}
+
+function getLocalNumInhAttrs
+String ::= key::String
+{
+  return s"((common.Node)getChild(inhContextTypeVarChildren[localInhContextTypeVars[${key}]])).getNumberOfInhAttrs()";
+}
+
+function getChildNumInhAttrs
+String ::= key::String
+{
+  return s"((common.Node)getChild(${key})).getNumberOfInhAttrs()";
+}
+
+function makeInhContextTypeVarChild
+String ::= sig::NamedSignature t::Type
+{
+  local matching::[NamedSignatureElement] =
+    filter(
+      \ ie::NamedSignatureElement -> ie.typerep.typeName == t.typeName,
+      sig.inputElements);
+  return
+    case matching of
+    | h :: _ -> "i_" ++ h.elementName
+    | [] -> "-1"
+    end;
 }
 
 function makeTyVarDecls

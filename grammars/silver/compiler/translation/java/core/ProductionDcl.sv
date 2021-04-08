@@ -77,6 +77,7 @@ ${namedSig.inhOccursIndexDecls}
 
     public static final int[] childInhContextTypeVars = {${implode(",", namedSig.childTypeVarElems)}};
     public static final int[] localInhContextTypeVars = new int[num_local_attrs];
+    public static final int[] inhContextTypeVarChildren = {${implode(",", map(makeInhContextTypeVarChild(namedSig, _), namedSig.inhOccursContextTypes))}};
 
     static {
 ${namedSig.childStatic}
@@ -126,13 +127,13 @@ ${implode("", map(makeChildAccessCaseLazy, namedSig.inputElements))}
 
     @Override
     public common.Lazy[] getLocalInheritedAttributes(final int key) {
-${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInhOccurs, "localInhContextTypeVars", "localInheritedAttributes", "getLocal", _), namedSig.inhOccursContextTypes)}
+${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInhOccurs, "localInhContextTypeVars", "localInheritedAttributes", getLocalNumInhAttrs, _), namedSig.inhOccursContextTypes)}
         return localInheritedAttributes[key];
     }
 
     @Override
     public common.Lazy[] getChildInheritedAttributes(final int key) {
-${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInhOccurs, "childInhContextTypeVars", "childInheritedAttributes", "getChild", _), namedSig.inhOccursContextTypes)}
+${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInhOccurs, "childInhContextTypeVars", "childInheritedAttributes", getChildNumInhAttrs, _), namedSig.inhOccursContextTypes)}
         return childInheritedAttributes[key];
     }
 
