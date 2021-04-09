@@ -141,11 +141,12 @@ Integer ::= s::String l::[NamedSignatureElement] z::Integer
 attribute substitution, flatRenamed occurs on NamedSignature, Contexts, NamedSignatureElements, NamedSignatureElement;
 propagate flatRenamed on NamedSignature, Contexts, NamedSignatureElements, NamedSignatureElement;
 
--- Freshens all the signature's types
+-- "Freshens" all the signature's type variables with new skolem constants,
+-- to avoid type vars from interface files clashing with new ones from genInt()
 function freshenNamedSignature
 NamedSignature ::= ns::NamedSignature
 {
-  ns.substitution = zipVarsIntoSubstitution(ns.freeVariables, ns.typeScheme.boundVars);
+  ns.substitution = zipVarsAndTypesIntoSubstitution(ns.freeVariables, map(skolemType, ns.typeScheme.boundVars));
   return ns.flatRenamed;
 }
 
