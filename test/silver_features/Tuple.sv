@@ -237,6 +237,18 @@ wrongCode "Invalid tuple selector index." {
 equalityTest((3, 2).2, 2, Integer, silver_tests);
 equalityTest(("one", 2).1, "one", String, silver_tests);
 
+-- tests that tuple selectors do not hide child errors
+
+wrongCode "Undeclared value 'random'" {
+
+function fun
+String ::=
+{
+  return random.1;
+}
+
+}
+
 -- polymorphism
 function thirdOfFive
 c ::= tuple::(a,b,c,d,e)
