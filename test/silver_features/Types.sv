@@ -299,3 +299,9 @@ wrongCode "Production LHS type must be a nonterminal.  Instead it is of type a" 
   top::a ::=
   {}
 }
+
+wrongCode "Type incorrect in aspect signature. Expected: silver:core:Maybe<a>  Got: silver:core:Maybe<String>" {
+  aspect production just
+  top::Maybe<String> ::= x::String
+  {}
+}
