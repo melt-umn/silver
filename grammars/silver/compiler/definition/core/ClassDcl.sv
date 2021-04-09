@@ -54,7 +54,7 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   
   var.env = cl.env;
   
-  body.env = newScopeEnv(headDefs, cl.env);
+  body.env = occursEnv(cl.occursDefs, newScopeEnv(headDefs, cl.env));
   body.constraintEnv = cl.env;
   body.classHead = instContext(fName, var.typerep);
 }
@@ -156,7 +156,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
     constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
 
   e.frame = globalExprContext(myFlowGraph, sourceGrammar=top.grammarName);
-  e.env = newScopeEnv(cl.defs, top.env);
+  e.env = occursEnv(cl.occursDefs, newScopeEnv(cl.defs, top.env));
   
   top.defs := [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, cl.contexts, ty.typerep)];
 

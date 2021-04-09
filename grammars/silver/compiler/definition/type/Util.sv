@@ -109,6 +109,9 @@ aspect production skolemType
 top::Type ::= tv::TyVar
 {
   top.freeSkolemVars <- [tv];
+
+  -- Skolems with occurs-on contexts act like nonterminals, so use that behavior in unification
+  top.unifyInstanceNonterminal = emptySubst();
 }
 
 aspect production appType

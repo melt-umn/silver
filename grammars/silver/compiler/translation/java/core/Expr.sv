@@ -356,7 +356,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
-  top.translation = e.translation ++ 
+  top.translation = s"((common.Node)${e.translation})" ++ 
     case inh of
     | exprInhsEmpty() -> ".decorate(context, (common.Lazy[])null)"
       -- Note: we don't NEED to pass context here, but it's good for error messages!
@@ -364,9 +364,14 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
       -- (especially important because we're implicitly inserted when accessing attributes
       --  from undecorated nodes, and this is a common error for new silverers.)
     | _ -> ".decorate(context, common.Util.populateInh(" ++
-             s"${makeNTName(finalType(e).typeName)}.num_inh_attrs, " ++
-             s"new int[]{${implode(", ", inh.nameTrans)}}, " ++ 
-             s"new common.Lazy[]{${implode(", ", inh.valueTrans)}}))"
+      case finalType(e) of
+      -- Don't know the actual number of attributes for skolems with occurs-on contexts,
+      -- fall back to using the max index.
+      | skolemType(_) -> foldr1(\ i1::String i2::String -> s"max(${i1}, ${i2})", inh.nameTrans) ++ " + 1"
+      | t -> s"${makeNTName(t.typeName)}.num_inh_attrs"
+      end ++ ", " ++
+      s"new int[]{${implode(", ", inh.nameTrans)}}, " ++ 
+      s"new common.Lazy[]{${implode(", ", inh.valueTrans)}}))"
     end;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);

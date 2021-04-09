@@ -52,7 +52,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   cl.env = newScopeEnv(headPreDefs, top.env);
   ty.env = cl.env;
   
-  body.env = newScopeEnv(headDefs, cl.env);
+  body.env = occursEnv(cl.occursDefs, newScopeEnv(headDefs, cl.env));
   body.className = id.lookupType.fullName;
   body.instanceType = ty.typerep; 
   body.expectedClassMembers = if id.lookupType.found then dcl.classMembers else [];

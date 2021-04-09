@@ -57,3 +57,31 @@ equalityTest(eqC(\ -> ee2, \ -> ee3), false, Boolean, silver_tests);
 equalityTest(eqC(\ -> ee3, \ -> ee1), false, Boolean, silver_tests);
 equalityTest(eqC(\ -> ee3, \ -> ee2), false, Boolean, silver_tests);
 equalityTest(eqC(\ -> ee3, \ -> ee3), true, Boolean, silver_tests);
+
+class OCEq a {
+  ocEq :: (Boolean ::= a a);
+}
+
+instance OCEq Integer
+{
+  ocEq = \ x::Integer y::Integer -> x == y;
+}
+
+instance OCEq String
+{
+  ocEq = \ x::String y::String -> x == y;
+}
+
+instance attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a => OCEq a {
+  ocEq = \ x::a y::a -> decorate x with {isEqualTo = y;}.isEqual; 
+}
+
+equalityTest(ocEq(ee1, ee1), true, Boolean, silver_tests);
+equalityTest(ocEq(ee1, ee2), false, Boolean, silver_tests);
+equalityTest(ocEq(ee1, ee3), false, Boolean, silver_tests);
+equalityTest(ocEq(ee2, ee1), false, Boolean, silver_tests);
+equalityTest(ocEq(ee2, ee2), true, Boolean, silver_tests);
+equalityTest(ocEq(ee2, ee3), false, Boolean, silver_tests);
+equalityTest(ocEq(ee3, ee1), false, Boolean, silver_tests);
+equalityTest(ocEq(ee3, ee2), false, Boolean, silver_tests);
+equalityTest(ocEq(ee3, ee3), true, Boolean, silver_tests);
