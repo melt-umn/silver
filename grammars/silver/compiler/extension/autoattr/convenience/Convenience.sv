@@ -66,7 +66,7 @@ top::AGDcl ::= 'unification' 'attribute' inh::Name i::TypeExpr ',' synPartial::N
       appendAGDcl(
         makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location)), qs.qnames),
         appendAGDcl(
-          makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location)), qs.qnames),
+          makeOccursDclsHelp($1.location, qNameWithTL(qNameId(synPartial, location=synPartial.location), botlNone(location=top.location)), qs.qnames),
           makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
           location=top.location),
         location=top.location),

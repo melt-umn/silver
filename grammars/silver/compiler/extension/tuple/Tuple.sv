@@ -51,6 +51,7 @@ top::Expr ::= tuple::Expr '.' a::IntConst
   local accessIndex::Integer = toInteger(a.lexeme);
 
   top.unparse = tuple.unparse ++ "." ++ a.lexeme;
+  top.errors <- tuple.errors;
 
   -- If tuple is decorated, the length of its tupleElems 
   -- will be 1, so we must pattern match to get at the 
@@ -63,7 +64,7 @@ top::Expr ::= tuple::Expr '.' a::IntConst
     end;
   
   forwards to if (accessIndex > len || accessIndex < 1) then
-      errorExpr(tuple.errors ++ [err(top.location, "Invalid tuple selector index.")], location=top.location)
+      errorExpr([err(top.location, "Invalid tuple selector index.")], location=top.location)
     -- exprRef prevents exponential type checking
     else select(exprRef(tuple, location=top.location), 1, accessIndex, len);
 
