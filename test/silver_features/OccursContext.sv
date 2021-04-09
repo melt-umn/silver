@@ -1,5 +1,8 @@
 grammar silver_features;
 
+inherited attribute extraInh1::String occurs on EqExpr;
+inherited attribute extraInh2::Integer occurs on EqExpr;
+
 function eqA
 attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a =>
 Boolean ::= x::a y::a
@@ -85,3 +88,27 @@ equalityTest(ocEq(ee2, ee3), false, Boolean, silver_tests);
 equalityTest(ocEq(ee3, ee1), false, Boolean, silver_tests);
 equalityTest(ocEq(ee3, ee2), false, Boolean, silver_tests);
 equalityTest(ocEq(ee3, ee3), true, Boolean, silver_tests);
+
+nonterminal OCEqPair<a b> with isEqualTo, isEqual;
+production ocEqPair
+attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a,
+attribute isEqualTo<b> occurs on b, attribute isEqual {isEqualTo} occurs on b =>
+top::OCEqPair<a b> ::= x::a y::b
+{
+  propagate isEqualTo, isEqual;
+  {-
+  x.isEqualTo = case top.isEqualTo of ocEqPair(a, _) -> a end;
+  y.isEqualTo = case top.isEqualTo of ocEqPair(_, a) -> a end;
+  top.isEqual = x.isEqual && y.isEqual;
+  -}
+}
+
+equalityTest(ocEq(ocEqPair(ee1, ee2), ocEqPair(ee1, ee2)), true, Boolean, silver_tests);
+equalityTest(ocEq(ocEqPair(ee1, ee2), ocEqPair(ee1, ee3)), false, Boolean, silver_tests);
+
+wrongCode "Could not find an instance for attribute silver:core:isEqual {silver:core:isEqualTo} occurs on String (arising from the use of ocEqPair)" {
+  global err::OCEqPair<EqExpr String> = ocEqPair(ee1, "abc");
+}
+wrongCode "Could not find an instance for attribute silver:core:isEqualTo<b> occurs on String (arising from the use of ocEqPair)" {
+  global err::OCEqPair<EqExpr String> = ocEqPair(ee1, "abc");
+}
