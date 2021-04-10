@@ -87,7 +87,7 @@ top::AGDcl ::= d::DclInfo attrs::NameList
             \ ie::NamedSignatureElement ->
               aspectRHSElemFull(
                 name(ie.elementName, top.location),
-                 ie.typerep,
+                freshenType(ie.typerep, ie.typerep.freeVariables),
                 location=top.location),
             d.namedSignature.inputElements)),
         location=top.location),
