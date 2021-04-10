@@ -103,6 +103,8 @@ top::OCEqPair<a b> ::= x::a y::b
   -}
 }
 
+equalityTest(decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);}.isEqual, true, Boolean, silver_tests);
+-- equalityTest(case decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);}.isEqual of ocEqPair(x, y) -> x.isEqual && y.isEqual end, true, Boolean, silver_tests);
 equalityTest(ocEq(ocEqPair(ee1, ee2), ocEqPair(ee1, ee2)), true, Boolean, silver_tests);
 equalityTest(ocEq(ocEqPair(ee1, ee2), ocEqPair(ee1, ee3)), false, Boolean, silver_tests);
 
@@ -112,3 +114,13 @@ wrongCode "Could not find an instance for attribute silver:core:isEqual {silver:
 wrongCode "Could not find an instance for attribute silver:core:isEqualTo<b> occurs on String (arising from the use of ocEqPair)" {
   global err::OCEqPair<EqExpr String> = ocEqPair(ee1, "abc");
 }
+{-
+synthesized attribute isEqual2::Boolean occurs on OCEqPair<a b>;
+aspect production ocEqPair
+top::OCEqPair<a b> ::= x::a y::b
+{
+  top.isEqual2 = x.isEqual && y.isEqual;
+}
+
+equalityTest(decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);}.isEqual2, true, Boolean, silver_tests);
+-}

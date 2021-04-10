@@ -62,6 +62,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
   local instDcl::DclInfo = top.constraintPos.classInstDcl(fName, t.typerep, top.grammarName, top.location);
   top.defs <- [tcInstDef(instDcl)];
   top.defs <- transitiveSuperDefs(top.env, t.typerep, [], instDcl);
+  top.occursDefs <- transitiveSuperOccursDefs(top.env, t.typerep, [], instDcl);
 
   top.lexicalTyVarKinds <-
     case t of
@@ -113,7 +114,6 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' '
 
   local instDcl::DclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy, top.grammarName, top.location);
   top.occursDefs <- [instDcl];
-  
 }
 
 concrete production synOccursConstraint
@@ -323,7 +323,6 @@ Boolean ::= c1::Context c2::Context
     end;
 }
 
--- TODO: handle super defs from occurs properly
 function transitiveSuperDefs
 [Def] ::= env::Decorated Env ty::Type seenClasses::[String] instDcl::DclInfo
 {
@@ -341,6 +340,27 @@ function transitiveSuperDefs
     else
       -- This might introduce duplicate defs in "diamond subclassing" cases,
       -- but that shouldn't actually be an issue besides the (minor) added lookup overhead.
-      map(\ c::Context -> tcInstDef(c.contextSuperDcl(instDcl, dcl.sourceGrammar, dcl.sourceLocation)), dcl.superContexts) ++
+      flatMap(\ c::Context -> c.contextSuperDefs(instDcl, dcl.sourceGrammar, dcl.sourceLocation), dcl.superContexts) ++
       flatMap(transitiveSuperDefs(env, ty, dcl.fullName :: seenClasses, _), superInstDcls);
+}
+
+function transitiveSuperOccursDefs
+[DclInfo] ::= env::Decorated Env ty::Type seenClasses::[String] instDcl::DclInfo
+{
+  local dcls::[DclInfo] = getTypeDcl(instDcl.fullName, env);
+  local dcl::DclInfo = head(dcls);
+  dcl.givenInstanceType = ty;
+  local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
+  local superInstDcls::[DclInfo] =
+    map(
+      instSuperDcl(_, instDcl, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
+      superClassNames);
+  return
+    if null(dcls) || contains(dcl.fullName, seenClasses)
+    then []
+    else
+      -- This might introduce duplicate defs in "diamond subclassing" cases,
+      -- but that shouldn't actually be an issue besides the (minor) added lookup overhead.
+      flatMap(\ c::Context -> c.contextSuperOccursDefs(instDcl, dcl.sourceGrammar, dcl.sourceLocation), dcl.superContexts) ++
+      flatMap(transitiveSuperOccursDefs(env, ty, dcl.fullName :: seenClasses, _), superInstDcls);
 }

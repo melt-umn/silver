@@ -22,7 +22,6 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   allLexicalTyVars = nub(ns.lexicalTypeVariables);
   
   sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
-  -- TODO sigDefs <- realSig.contexts as defs
 }
 
 aspect production aspectFunctionDcl
@@ -32,7 +31,6 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   allLexicalTyVars = nub(ns.lexicalTypeVariables);
   
   sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
-  -- TODO sigDefs <- realSig.contexts as defs
 }
 
 propagate lexicalTypeVariables on AspectProductionLHS, AspectFunctionLHS, AspectRHS, AspectRHSElem excluding aspectRHSElemCons;

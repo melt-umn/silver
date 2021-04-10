@@ -51,7 +51,19 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
              then defsFromPADcls(getProdAttrs(id.lookupValue.fullName, top.env), namedSig)
              else [];
 
-  body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
+  local contextSigDefs::[Def] =
+    flatMap(
+      \ c::Context -> c.contextSigDefs(realSig, top.grammarName, top.location),
+      realSig.contexts);
+  local contextSigOccursDefs::[DclInfo] =
+    flatMap(
+      \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, top.location),
+      realSig.contexts);
+
+  body.env =
+    occursEnv(contextSigOccursDefs,
+      newScopeEnv(body.defs ++ sigDefs ++ contextSigDefs,
+        newScopeEnv(prodAtts, top.env)));
   body.frame = aspectProductionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
 }
 
@@ -87,7 +99,19 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
              then defsFromPADcls(getProdAttrs(id.lookupValue.fullName, top.env), namedSig)
              else [];
 
-  body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
+  local contextSigDefs::[Def] =
+    flatMap(
+      \ c::Context -> c.contextSigDefs(realSig, top.grammarName, top.location),
+      realSig.contexts);
+  local contextSigOccursDefs::[DclInfo] =
+    flatMap(
+      \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, top.location),
+      realSig.contexts);
+
+  body.env =
+    occursEnv(contextSigOccursDefs,
+      newScopeEnv(body.defs ++ sigDefs ++ contextSigDefs,
+        newScopeEnv(prodAtts, top.env)));
   body.frame = aspectFunctionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
 }
 
