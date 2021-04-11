@@ -95,16 +95,15 @@ attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a,
 attribute isEqualTo<b> occurs on b, attribute isEqual {isEqualTo} occurs on b =>
 top::OCEqPair<a b> ::= x::a y::b
 {
-  propagate isEqualTo, isEqual;
-  {-
+  --propagate isEqualTo, isEqual;
+
   x.isEqualTo = case top.isEqualTo of ocEqPair(a, _) -> a end;
   y.isEqualTo = case top.isEqualTo of ocEqPair(_, a) -> a end;
   top.isEqual = x.isEqual && y.isEqual;
-  -}
 }
 
 equalityTest(decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);}.isEqual, true, Boolean, silver_tests);
--- equalityTest(case decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);}.isEqual of ocEqPair(x, y) -> x.isEqual && y.isEqual end, true, Boolean, silver_tests);
+equalityTest(case decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);} of ocEqPair(x, y) -> x.isEqual && y.isEqual end, true, Boolean, silver_tests);
 equalityTest(ocEq(ocEqPair(ee1, ee2), ocEqPair(ee1, ee2)), true, Boolean, silver_tests);
 equalityTest(ocEq(ocEqPair(ee1, ee2), ocEqPair(ee1, ee3)), false, Boolean, silver_tests);
 
