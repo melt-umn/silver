@@ -103,7 +103,10 @@ top::OCEqPair<a b> ::= x::a y::b
 }
 
 equalityTest(decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);}.isEqual, true, Boolean, silver_tests);
-equalityTest(case decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);} of ocEqPair(x, y) -> x.isEqual && y.isEqual end, true, Boolean, silver_tests);
+
+-- Not supported: decorated match on polymorphic child
+-- equalityTest(case decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);} of ocEqPair(x, y) -> x.isEqual && y.isEqual end, true, Boolean, silver_tests);
+
 equalityTest(ocEq(ocEqPair(ee1, ee2), ocEqPair(ee1, ee2)), true, Boolean, silver_tests);
 equalityTest(ocEq(ocEqPair(ee1, ee2), ocEqPair(ee1, ee3)), false, Boolean, silver_tests);
 

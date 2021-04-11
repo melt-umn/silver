@@ -239,16 +239,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
           if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
           scrutineeName, top.location, top.grammarName),
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
-  local contextOccursDefs::[DclInfo] = concat(
-    zipWith(
-      \ c::Context oc::Context ->
-        performContextSubstitution(c, e.finalSubst).contextPatternOccursDefs(
-          oc,
-          if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
-          scrutineeName, top.location, top.grammarName),
-      prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
-  ns.env = occursEnv(contextOccursDefs, top.env);
-  e.env = newScopeEnv(contextDefs ++ ns.defs, ns.env);
+  e.env = newScopeEnv(contextDefs ++ ns.defs, top.env);
   
   top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++ ") { " ++
     (if null(prod_contexts) then "" else s"final ${makeProdName(qn.lookupValue.fullName)} ${scrutineeName} = (${makeProdName(qn.lookupValue.fullName)})scrutineeNode; ") ++
@@ -321,16 +312,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
           if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
           scrutineeName, top.location, top.grammarName),
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
-  local contextOccursDefs::[DclInfo] = concat(
-    zipWith(
-      \ c::Context oc::Context ->
-        performContextSubstitution(c, e.finalSubst).contextPatternOccursDefs(
-          oc,
-          if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
-          scrutineeName, top.location, top.grammarName),
-      prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
-  ns.env = occursEnv(contextOccursDefs, top.env);
-  e.env = newScopeEnv(contextDefs ++ ns.defs, ns.env);
+  e.env = newScopeEnv(contextDefs ++ ns.defs, top.env);
   
   top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++ ") { " ++
     (if null(prod_contexts) then "" else s"final ${makeProdName(qn.lookupValue.fullName)} ${scrutineeName} = (${makeProdName(qn.lookupValue.fullName)})scrutineeNode; ") ++

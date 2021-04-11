@@ -307,30 +307,24 @@ Boolean ::= ls::[Type]
 
 --------
 synthesized attribute contextPatternDefs::([Def] ::= Context [TyVar] String Location String) occurs on Context;
-synthesized attribute contextPatternOccursDefs::([DclInfo] ::= Context [TyVar] String Location String) occurs on Context;
 
 aspect production instContext
 top::Context ::= cls::String t::Type
 {
   top.contextPatternDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
     [tcInstDef(instPatternConstraintDcl(cls, t, oc, tvs, st, sourceLocation=l, sourceGrammar=g))];
-  top.contextPatternOccursDefs = \ Context [TyVar] String Location String -> [];
 }
 
 aspect production inhOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
   top.contextPatternDefs = \ Context [TyVar] String Location String -> [];
-  top.contextPatternOccursDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
-    [occursPatternConstraintDcl(attr, ntty, atty, oc, tvs, st, sourceLocation=l, sourceGrammar=g)];
 }
 
 aspect production synOccursContext
 top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 {
   top.contextPatternDefs = \ Context [TyVar] String Location String -> [];
-  top.contextPatternOccursDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
-    [occursPatternConstraintDcl(attr, ntty, atty, oc, tvs, st, sourceLocation=l, sourceGrammar=g)];
 }
 
 aspect production typeableContext
@@ -338,7 +332,6 @@ top::Context ::= t::Type
 {
   top.contextPatternDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
     [tcInstDef(typeablePatternConstraintDcl(t, oc, tvs, st, sourceLocation=l, sourceGrammar=g))];
-  top.contextPatternOccursDefs = \ Context [TyVar] String Location String -> [];
 }
 
 aspect production inhSubsetContext
@@ -346,7 +339,6 @@ top::Context ::= i1::Type i2::Type
 {
   top.contextPatternDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
     [tcInstDef(inhSubsetPatternConstraintDcl(i1, i2, oc, tvs, st, sourceLocation=l, sourceGrammar=g))];
-  top.contextPatternOccursDefs = \ Context [TyVar] String Location String -> [];
 }
 
 abstract production instPatternConstraintDcl
@@ -357,18 +349,6 @@ top::DclInfo ::= fntc::String ty::Type oc::Context tvs::[TyVar] scrutineeTrans::
   
   oc.boundVariables = tvs;
   top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
-}
-
-abstract production occursPatternConstraintDcl
-top::DclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
-{
-  top.fullName = ntty.typeName;
-  top.attrOccurring = fnat;
-  top.typeScheme = monoType(atty);
-  
-  oc.boundVariables = tvs;
-  top.attrOccursIndexName = makeIdName(fnat ++ "__ON__" ++ ntty.transTypeName);
-  top.attrOccursIndex = s"${scrutineeTrans}.${oc.transContextMemberName}";
 }
 
 abstract production typeablePatternConstraintDcl
