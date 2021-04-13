@@ -95,11 +95,12 @@ attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a,
 attribute isEqualTo<b> occurs on b, attribute isEqual {isEqualTo} occurs on b =>
 top::OCEqPair<a b> ::= x::a y::b
 {
-  --propagate isEqualTo, isEqual;
-
+  propagate isEqualTo, isEqual;
+{-
   x.isEqualTo = case top.isEqualTo of ocEqPair(a, _) -> a end;
   y.isEqualTo = case top.isEqualTo of ocEqPair(_, a) -> a end;
   top.isEqual = x.isEqual && y.isEqual;
+  -}
 }
 
 equalityTest(decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);}.isEqual, true, Boolean, silver_tests);
@@ -113,10 +114,10 @@ equalityTest(ocEq(ocEqPair(ee1, ee2), ocEqPair(ee1, ee3)), false, Boolean, silve
 wrongCode "Could not find an instance for attribute silver:core:isEqual {silver:core:isEqualTo} occurs on String (arising from the use of ocEqPair)" {
   global err::OCEqPair<EqExpr String> = ocEqPair(ee1, "abc");
 }
-wrongCode "Could not find an instance for attribute silver:core:isEqualTo<b> occurs on String (arising from the use of ocEqPair)" {
+wrongCode "Could not find an instance for attribute silver:core:isEqualTo<String> occurs on String (arising from the use of ocEqPair)" {
   global err::OCEqPair<EqExpr String> = ocEqPair(ee1, "abc");
 }
-{-
+
 synthesized attribute isEqual2::Boolean occurs on OCEqPair<a b>;
 aspect production ocEqPair
 top::OCEqPair<a b> ::= x::a y::b
@@ -125,4 +126,42 @@ top::OCEqPair<a b> ::= x::a y::b
 }
 
 equalityTest(decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);}.isEqual2, true, Boolean, silver_tests);
--}
+
+synthesized attribute prodName::String;
+nonterminal OCExpr with prodName;
+production constOCE
+top::OCExpr ::= i::Integer
+{ top.prodName = "const"; }
+production addOCE
+top::OCExpr ::= e1::OCExpr e2::OCExpr
+{ top.prodName = "add"; }
+
+class ProdName1 a {
+  prodName1 :: (String ::= a);
+}
+instance attribute prodName {} occurs on a => ProdName1 a {
+  prodName1 = (.prodName);
+}
+
+equalityTest(prodName1(constOCE(42)), "const", String, silver_tests);
+
+class attribute prodName {} occurs on a => ProdName2 a {
+  prodName2 :: (String ::= a) = (.prodName);
+}
+instance ProdName2 OCExpr {}
+
+equalityTest(prodName2(constOCE(42)), "const", String, silver_tests);
+
+function prodName3
+ProdName2 a => String ::= x::a
+{
+  return x.prodName;
+}
+
+equalityTest(prodName3(constOCE(42)), "const", String, silver_tests);
+
+wrongCode "error: Attribute 'prodName' does not occur on 'a'" {
+  function prodName4
+  String ::= x::a
+  { return x.prodName; }
+}

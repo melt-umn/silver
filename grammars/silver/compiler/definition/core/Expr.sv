@@ -458,9 +458,6 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 
   top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
   
-  -- TODO: We should consider disambiguating based on what dcls *actually*
-  -- occur on the LHS here.
-  
   -- Note: LHS is UNdecorated, here we dispatch based on the kind of attribute.
   forwards to if !q.found then errorDecoratedAccessHandler(e, q, location=top.location)
               else q.attrDcl.undecoratedAccessHandler(e, q, top.location);
@@ -498,9 +495,6 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   propagate freeVars;
 
   top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
-  
-  -- TODO: We should consider disambiguating based on what dcls *actually*
-  -- occur on the LHS here.
   
   -- Note: LHS is decorated, here we dispatch based on the kind of attribute.
   forwards to if !q.found then errorDecoratedAccessHandler(e, q, location=top.location)

@@ -87,7 +87,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   -- TECHNICALLY, I think the current implementation makes this impossible,
   -- But let's leave it since it's the right thing to do.
   top.errors <-
-    if errCheck1.typeerror
+    if errCheck1.typeerror && q.found
     then [err(top.location, "Access of " ++ q.name ++ " from a decorated type.")]
     else [];
   

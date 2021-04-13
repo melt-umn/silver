@@ -173,7 +173,7 @@ top::AspectProductionLHS ::= id::Name t::Type
 
   top.outputElement = namedSignatureElement(id.name, t);
   
-  top.defs := [aliasedLhsDef(top.grammarName, id.location, fName, t, id.name)];
+  top.defs := [aliasedLhsDef(top.grammarName, id.location, fName, performSubstitution(t, top.upSubst), id.name)];
 
   top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
                 then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
@@ -252,7 +252,7 @@ top::AspectRHSElem ::= id::Name t::Type
 
   top.inputElements = [namedSignatureElement(id.name, t)];
 
-  top.defs := [aliasedChildDef(top.grammarName, id.location, fName, t, id.name)];
+  top.defs := [aliasedChildDef(top.grammarName, id.location, fName, performSubstitution(t, top.upSubst), id.name)];
 
   top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
                 then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
@@ -291,5 +291,5 @@ top::AspectFunctionLHS ::= t::TypeExpr
   top.outputElement = namedSignatureElement(fName, t.typerep);
   
   -- TODO: this needs thinking. is it broken? maybe __return? or wait, it's doing that automatically isnt it...
-  top.defs := [aliasedLhsDef(top.grammarName, t.location, fName, t.typerep, fName)];
+  top.defs := [aliasedLhsDef(top.grammarName, t.location, fName, performSubstitution(t.typerep, top.upSubst), fName)];
 }

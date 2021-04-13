@@ -316,7 +316,7 @@ top::DclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
 abstract production occursSuperDcl
 top::DclInfo ::= fnat::String atty::Type baseDcl::DclInfo
 {
-  top.fullName = baseDcl.fullName;
+  top.fullName = baseDcl.typeScheme.typerep.typeName;
   top.attrOccurring = fnat;
   
   top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, atty);
