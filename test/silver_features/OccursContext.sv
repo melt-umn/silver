@@ -136,14 +136,24 @@ production addOCE
 top::OCExpr ::= e1::OCExpr e2::OCExpr
 { top.prodName = "add"; }
 
+inherited attribute prodNameIn::String;
+nonterminal OCThing with prodNameIn, prodName;
+production ocThing
+top::OCThing ::=
+{ top.prodName = top.prodNameIn; }
+
 class ProdName1 a {
   prodName1 :: (String ::= a);
+}
+instance attribute prodName i occurs on a => ProdName1 Decorated a with i {
+  prodName1 = (.prodName);
 }
 instance attribute prodName {} occurs on a => ProdName1 a {
   prodName1 = (.prodName);
 }
 
 equalityTest(prodName1(constOCE(42)), "const", String, silver_tests);
+equalityTest(prodName1(decorate ocThing() with {prodNameIn = "thing";}), "thing", String, silver_tests);
 
 class attribute prodName {} occurs on a => ProdName2 a {
   prodName2 :: (String ::= a) = (.prodName);
