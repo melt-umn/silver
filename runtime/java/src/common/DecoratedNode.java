@@ -314,6 +314,19 @@ public class DecoratedNode implements Typed {
 		Lazy l = self.getSynthesized(attribute);
 		if(l != null) {
 			try {
+				if(l instanceof CollectionAttribute) {
+					// This is necessary to ensure collection
+					// attribute equations in aspect default
+					// productions work; see
+					// https://github.com/melt-umn/silver/issues/290
+					CollectionAttribute prodAttr = (CollectionAttribute)l;
+					if(!prodAttr.appliedNTFix) {
+						prodAttr.appliedNTFix = true;
+						CollectionAttribute ntAttr = (CollectionAttribute)self.getDefaultSynthesized(attribute);
+						if(ntAttr != null)
+							prodAttr.getPieces().addAll(ntAttr.getPieces());
+					}
+				}
 				return l.eval(this);
 			} catch(Throwable t) {
 				throw new TraceException("While evaling syn '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t);
