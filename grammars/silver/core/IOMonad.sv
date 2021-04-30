@@ -61,20 +61,28 @@ a ::= st::IOMonad<a>
 }
 
 -- Monadic IO wrappers
-abstract production printM
-top::IOMonad<Unit> ::= s::String
+abstract production wrapIOToken
+top::IOMonad<Unit> ::= f::(IO ::= IO)
 {
-  top.stateOut = print(s, top.stateIn);
+  top.stateOut = f(top.stateIn);
   top.stateVal = unit();
 }
 
-abstract production readLineStdinM
-top::IOMonad<String> ::=
+abstract production wrapIOVal
+top::IOMonad<a> ::= f::(IOVal<a> ::= IO)
 {
-  local res::IOVal<String> = readLineStdin(top.stateIn);
+  local res::IOVal<a> = f(top.stateIn);
   top.stateOut = res.io;
   top.stateVal = res.iovalue;
 }
+
+abstract production printM
+top::IOMonad<Unit> ::= s::String
+{ forwards to wrapIOToken(print(s, _)); }
+
+abstract production readLineStdinM
+top::IOMonad<String> ::=
+{ forwards to wrapIOVal(readLineStdin); }
 
 -- Having a polymorphic return type lets us write code like:
 --
@@ -93,115 +101,60 @@ top::IOMonad<a> ::= val::Integer
 
 abstract production mkdirM
 top::IOMonad<Boolean> ::= s::String
-{
-  local res::IOVal<Boolean> = mkdir(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
-}
+{ forwards to wrapIOVal(mkdir(s, _)); }
 
 abstract production systemM
 top::IOMonad<Integer> ::= s::String
-{
-  local res::IOVal<Integer> = system(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
-}
+{ forwards to wrapIOVal(system(s, _)); }
 
 abstract production writeFileM
 top::IOMonad<Unit> ::= file::String contents::String
-{
-  top.stateOut = writeFile(file, contents, top.stateIn);
-  top.stateVal = unit();
-}
+{ forwards to wrapIOToken(writeFile(file, contents, _)); }
 
 abstract production appendFileM
 top::IOMonad<Unit> ::= file::String contents::String
-{
-  top.stateOut = appendFile(file, contents, top.stateIn);
-  top.stateVal = unit();
-}
+{ forwards to wrapIOToken(appendFile(file, contents, _)); }
 
 abstract production fileTimeM
 top::IOMonad<Integer> ::= s::String
-{
-  local res::IOVal<Integer> = fileTime(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
-}
+{ forwards to wrapIOVal(fileTime(s, _)); }
 
 abstract production isFileM
 top::IOMonad<Boolean> ::= s::String
-{
-  local res::IOVal<Boolean> = isFile(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
-}
+{ forwards to wrapIOVal(isFile(s, _)); }
 
 abstract production isDirectoryM
 top::IOMonad<Boolean> ::= s::String
-{
-  local res::IOVal<Boolean> = isDirectory(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
-}
+{ forwards to wrapIOVal(isDirectory(s, _)); }
 
 abstract production readFileM
 top::IOMonad<String> ::= s::String
-{
-  local res::IOVal<String> = readFile(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
-}
+{ forwards to wrapIOVal(readFile(s, _)); }
 
 abstract production cwdM
 top::IOMonad<String> ::= 
-{
-  local res::IOVal<String> = cwd(top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
-}
+{ forwards to wrapIOVal(cwd); }
 
 abstract production envVarM
 top::IOMonad<String> ::= s::String
-{
-  local res::IOVal<String> = envVar(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
-}
+{ forwards to wrapIOVal(envVar(s, _)); }
 
 abstract production listContentsM
 top::IOMonad<[String]> ::= s::String
-{
-  local res::IOVal<[String]> = listContents(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
-}
+{ forwards to wrapIOVal(listContents(s, _)); }
 
 abstract production deleteFileM
 top::IOMonad<Boolean> ::= s::String
-{
-  local res::IOVal<Boolean> = deleteFile(s, top.stateIn);
-  top.stateOut = res.io;
-  top.stateVal = res.iovalue;
-}
+{ forwards to wrapIOVal(deleteFile(s, _)); }
 
 abstract production deleteTreeM
 top::IOMonad<Unit> ::= s::String
-{
-  top.stateOut = deleteTree(s, top.stateIn);
-  top.stateVal = unit();
-}
+{ forwards to wrapIOToken(deleteTree(s, _)); }
 
 abstract production copyFileM
 top::IOMonad<Unit> ::= src::String dst::String
-{
-  top.stateOut = copyFile(src, dst, top.stateIn);
-  top.stateVal = unit();
-}
+{ forwards to wrapIOToken(copyFile(src, dst, _)); }
 
 abstract production touchFileM
 top::IOMonad<Unit> ::= file::String
-{
-  top.stateOut = touchFile(file, top.stateIn);
-  top.stateVal = unit();
-}
+{ forwards to wrapIOToken(touchFile(file, _)); }
