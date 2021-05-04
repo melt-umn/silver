@@ -30,10 +30,11 @@ Contained in grammar `[${grammarName}]`. Defined at [${substitute(":", "/", gram
 }
 
 abstract production dclCommentItem
-top::CommentItem ::= forName::String dcl::Decorated AGDcl body::Decorated DclComment
+top::CommentItem ::= forName::String docUnparse::String grammarName::String location::Location body::Decorated DclComment
 {
-	top.body = makeStub(forName, dcl.docUnparse, dcl.grammarName, dcl.location) ++ "\n\n" ++ body.body;
-	top.loc = dcl.location;
+	top.body = body.indentBy ++ substitute("\n", "\n"++body.indentBy,
+		makeStub(forName, docUnparse, grammarName, location) ++ "\n\n" ++ body.body);
+	top.loc = location;
 	top.doEmit = body.doEmit;
 	top.stub = false;
 	top.docNames = [forName];
@@ -43,7 +44,7 @@ top::CommentItem ::= forName::String dcl::Decorated AGDcl body::Decorated DclCom
 abstract production standaloneDclCommentItem
 top::CommentItem ::= body::Decorated DclComment
 {
-	top.body = body.body;
+	top.body = substitute("\n", "\n"++body.indentBy, body.body);
 	top.loc = body.location;
 	top.doEmit = body.doEmit;
 	top.stub = false;
@@ -52,12 +53,18 @@ top::CommentItem ::= body::Decorated DclComment
 }
 
 abstract production undocumentedItem
-top::CommentItem ::= forName::String dcl::Decorated AGDcl
+top::CommentItem ::= forName::String docUnparse::String grammarName::String location::Location 
 {
-	top.body = makeStub(forName, dcl.docUnparse, dcl.grammarName, dcl.location) ++ "\n\n (Undocumented.)";
-	top.loc = dcl.location;
+	top.body = makeStub(forName, docUnparse, grammarName, location) ++ "\n\n (Undocumented.)";
+	top.loc = location;
 	top.doEmit = true;
 	top.stub = true;
 	top.docNames = [];
 	top.undocNames = [forName];
+}
+
+function mkUndocumentedItem
+CommentItem ::= f::String t::Decorated AGDcl
+{
+	return undocumentedItem(f, t.docUnparse, t.grammarName, t.location);
 }

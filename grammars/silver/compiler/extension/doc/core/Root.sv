@@ -6,10 +6,10 @@ synthesized attribute genFiles :: [Pair<String String>] with ++;
 
 -- Used for getting doc comments on AGDcls
 synthesized attribute docs :: [CommentItem] with ++;
-attribute docs occurs on Grammar, Root, AGDcls, AGDcl;
+attribute docs occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 
-inherited attribute downDocConfig :: [DocConfigSetting] occurs on Grammar, Root, AGDcls, AGDcl;
-synthesized attribute upDocConfig :: [DocConfigSetting] with ++ occurs on Grammar, Root, AGDcls, AGDcl;
+inherited attribute downDocConfig :: [DocConfigSetting] occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
+synthesized attribute upDocConfig :: [DocConfigSetting] with ++ occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 synthesized attribute localDocConfig :: [DocConfigSetting] occurs on Root;
 
 synthesized attribute undocumentedNamed :: [String] occurs on Root, Grammar;
@@ -17,11 +17,11 @@ synthesized attribute documentedNamed :: [String] occurs on Root, Grammar;
 
 -- Declarations of documented AGDcls
 synthesized attribute docDcls :: [Pair<String DocDclInfo>] with ++;
-attribute docDcls occurs on Grammar, Root, AGDcls, AGDcl;
+attribute docDcls occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 
 -- Environment of all documented AGDcls
 autocopy attribute docEnv :: tm:Map<String DocDclInfo>;
-attribute docEnv occurs on Grammar, Root, AGDcls, AGDcl;
+attribute docEnv occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
@@ -57,7 +57,7 @@ aspect default production
 top::AGDcl ::=
 {
   top.upDocConfig := [];
-  top.docs := [undocumentedItem(s"<default AGDcl production `${head(explode("(", hackUnparse(top)))}`(fwd)@${top.location.unparse}>", top)];
+  top.docs := [mkUndocumentedItem(s"<default AGDcl production `${head(explode("(", hackUnparse(top)))}`(fwd)@${top.location.unparse}>", top)];
   top.docDcls := [];
   top.docUnparse = head(explode("\n", top.unparse)) ++ "\n{{< hint danger >}}\nNo docUnparse defined for `" ++ hackUnparse(top) ++ "`\n{{< /hint >}}\n\n";
 }

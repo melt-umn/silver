@@ -25,15 +25,18 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
     parsed.downDocConfig = top.downDocConfig;
     parsed.docEnv = top.docEnv;
     parsed.offsetLocation = comment.location;
+    parsed.indentBy = "";
+
+    dcl.downDocConfig = top.downDocConfig;
     
-    top.upDocConfig <- parsed.upDocConfig;
+    top.upDocConfig <- parsed.upDocConfig ++ dcl.upDocConfig;
     top.errors <- parsed.errors;
 
-    local realDclDocs::[CommentItem] = filter((\x::CommentItem->!x.stub), dcl.docs);
-    local isDoubleComment::Boolean = length(realDclDocs) != 0;
+    local isDoubleComment::Boolean = case dcl of documentedAGDcl(_, _) -> true | _ -> false end;
     top.docs := if isDoubleComment
-                  then [standaloneDclCommentItem(parsed)] ++ realDclDocs
-                  else [dclCommentItem(dcl.docForName, dcl, parsed)];
+                  then [standaloneDclCommentItem(parsed)] ++ dcl.docs
+                  else [dclCommentItem(dcl.docForName, dcl.docUnparse, dcl.grammarName, dcl.location, parsed)]
+                       ++ if length(dcl.docs) > 1 then tail(dcl.docs) else [];
     top.errors <- if isDoubleComment
                     then [wrn(parsed.location, "Doc comment not immediately preceding AGDcl, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
                     else [];
@@ -51,6 +54,7 @@ top::AGDcl ::= '@' comment::DocComment_t
     parsed.downDocConfig = top.downDocConfig;
     parsed.docEnv = top.docEnv;
     parsed.offsetLocation = comment.location;
+    parsed.indentBy = "";
     
     top.upDocConfig <- parsed.upDocConfig;
     top.errors <- parsed.errors;

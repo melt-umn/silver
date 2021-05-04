@@ -11,6 +11,7 @@ synthesized attribute doEmit::Boolean occurs on DclComment;
 
 inherited attribute paramNames::[String] occurs on DclComment;
 inherited attribute isForWhat::String occurs on DclComment;
+inherited attribute indentBy::String occurs on DclComment;
 
 synthesized attribute paramBlocks::[Pair<String String>];
 synthesized attribute otherBlocks::[Pair<String String>];
@@ -79,7 +80,7 @@ top::DclComment ::= InitialIgnore_t blocks::DclCommentBlocks FinalIgnore_t
     top.errors := map((\x::String -> wrn(top.offsetLocation, x)), errs);
     top.errors <- blocks.errors;
 
-    top.body =
+    top.body = 
         implode("\n\n",
             warningBlocks ++
             paramBlocks ++
