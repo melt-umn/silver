@@ -18,6 +18,7 @@ top::CmdArgs ::= _
 {
   top.docGeneration = false;
   top.printUndoc = false;
+  top.countUndoc = false;
   top.docOutOption = nothing();
 }
 
