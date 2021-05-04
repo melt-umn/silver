@@ -6,11 +6,9 @@ flowtype lexicalTypeVariables {realSignature, env} on AspectProductionSignature,
 flowtype lexicalTypeVariables {deterministicCount, realSignature, env} on AspectRHSElem;
 
 function addNewLexicalTyVars_ActuallyVariables
-[Def] ::= gn::String sl::Location lk::[Pair<String Integer>] l::[String]
+[Def] ::= gn::String sl::Location lk::[Pair<String Kind>] l::[String]
 {
-  return if null(l) then []
-         else aspectLexTyVarDef(gn, sl, head(l), freshTyVar(fromMaybe(0, lookup(head(l), lk)))) ::
-                  addNewLexicalTyVars_ActuallyVariables(gn, sl, lk, tail(l));
+  return map(\ n::String -> aspectLexTyVarDef(gn, sl, n, freshTyVarNamed(fromMaybe(starKind(), lookup(n, lk)), n)), l);
 }
 
 -- This binds variables that appear in the signature to type variables, rather than skolem constants

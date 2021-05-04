@@ -7,6 +7,10 @@ imports silver:compiler:definition:core;
 
 autocopy attribute flowEnv :: Decorated FlowEnv;
 monoid attribute flowDefs :: [FlowDef];
+-- These are factored out of FlowDefs to avoid a circular dependency,
+-- since they are needed during type checking
+monoid attribute specDefs :: [(String, String, [String])];
+monoid attribute refDefs :: [(String, [String])];
 
 nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree;
 
@@ -16,7 +20,7 @@ inherited attribute defTree :: EnvTree<FlowDef>;
 inherited attribute fwdTree :: EnvTree<FlowDef>;
 inherited attribute fwdInhTree :: EnvTree<FlowDef>;
 inherited attribute prodTree :: EnvTree<FlowDef>;
-inherited attribute refTree :: EnvTree<FlowDef>;
+inherited attribute refTree :: EnvTree<[String]>;
 inherited attribute localInhTree ::EnvTree<FlowDef>;
 inherited attribute localTree :: EnvTree<FlowDef>;
 inherited attribute nonSuspectTree :: EnvTree<[String]>;
@@ -30,7 +34,9 @@ top::FlowEnv ::=
 }
 
 function fromFlowDefs
-Decorated FlowEnv ::= d::FlowDefs
+Decorated FlowEnv ::=
+  specContribs::[(String, String, [String])] refContribs::[(String, [String])]
+  d::FlowDefs
 {
   production attribute e::FlowEnv;
   e = dummyFlowEnv();
@@ -40,12 +46,12 @@ Decorated FlowEnv ::= d::FlowDefs
   e.fwdTree = directBuildTree(d.fwdTreeContribs);
   e.fwdInhTree = directBuildTree(d.fwdInhTreeContribs);
   e.prodTree = directBuildTree(d.prodTreeContribs);
-  e.refTree = directBuildTree(d.refTreeContribs);
+  e.refTree = directBuildTree(refContribs);
   e.localInhTree = directBuildTree(d.localInhTreeContribs);
   e.localTree = directBuildTree(d.localTreeContribs);
   e.nonSuspectTree = directBuildTree(d.nonSuspectContribs);
   e.hostSynTree = directBuildTree(d.hostSynTreeContribs);
-  e.specTree = directBuildTree(d.specContribs);
+  e.specTree = directBuildTree(specContribs);
   e.prodGraphTree = directBuildTree(d.prodGraphContribs);
   
   return e;
@@ -100,9 +106,9 @@ function lookupLocalEq
   return searchEnvTree(crossnames(prod, fName), e.localTree);
 }
 
--- "blessed set" of inherited attribute required/assumed to exist for references
+-- default set of inherited attributes required/assumed to exist for references
 function getInhsForNtRef
-[FlowDef] ::= nt::String  e::Decorated FlowEnv
+[[String]] ::= nt::String  e::Decorated FlowEnv
 {
   return searchEnvTree(nt, e.refTree);
 }
@@ -119,7 +125,7 @@ function getNonforwardingProds
 [String] ::= nt::String  e::Decorated FlowEnv
 {
   local extractProdName :: (String ::= FlowDef) =
-    \p::FlowDef -> case p of prodFlowDef(_, p) -> p end;
+    \p::FlowDef -> case p of prodFlowDef(_, p) -> p | _ -> error("Searches only prod defs") end;
 
   return map(extractProdName, searchEnvTree(nt, e.prodTree));
 }
@@ -129,7 +135,7 @@ function getHostSynsFor
 [String] ::= nt::String  e::Decorated FlowEnv
 {
   local extractHostSynName :: (String ::= FlowDef) =
-    \f::FlowDef -> case f of hostSynFlowDef(_, at) -> at end;
+    \f::FlowDef -> case f of hostSynFlowDef(_, at) -> at | _ -> error("Searches only host defs") end;
 
   return map(extractHostSynName, searchEnvTree(nt, e.hostSynTree));
 }

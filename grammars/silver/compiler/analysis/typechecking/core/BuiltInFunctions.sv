@@ -43,46 +43,6 @@ top::Expr ::= 'toString' '(' e1::Expr ')'
     else [err(top.location, "Operand to toString must be concrete types String, Integer, Float, or Boolean.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
-function containsSkolem
-Boolean ::= ty::Type
-{
-  return case ty of
-         | skolemType(_) -> true
-         | appType(c, a) -> containsSkolem(c) || containsSkolem(a)
-         | decoratedType(ty) -> containsSkolem(ty)
-         | _ -> false
-         end;
-}
-
-aspect production reifyFunctionLiteral
-top::Expr ::= 'reify'
-{
-  top.errors <-
-    case performSubstitution(top.typerep, top.finalSubst) of
-    | appType(appType(functionType(1, []), nonterminalType("silver:core:AST", 0, _)), appType(appType(nonterminalType("silver:core:Either", 2, _), stringType()), resultType)) ->
-       case resultType of
-       | skolemType(_) -> [err(top.location, "reify invocation attempts to reify to a skolem type - this will never succeed, see https://github.com/melt-umn/silver/issues/368")]
-       | ty when containsSkolem(ty) -> [wrn(top.location, "reify invocation attempts to reify to a type containing a skolem - this will only succeed in the case that the value does not actually contain an instance of the skolem type, see https://github.com/melt-umn/silver/issues/368")]
-       | _ -> []
-       end
-    | _ -> error("insane final type for reify implementation")
-    end;
-}
-
-aspect production newFunction
-top::Expr ::= 'new' '(' e1::Expr ')'
-{
-  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-
-  thread downSubst, upSubst on top, e1, errCheck1, top;
-  
-  errCheck1 = checkDecorated(e1.typerep);
-  top.errors <-
-    if errCheck1.typeerror
-    then [err(top.location, "Operand to new must be a decorated nonterminal.  Instead it is of type " ++ errCheck1.leftpp)]
-    else [];
-}
-
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
@@ -92,7 +52,7 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
   thread downSubst, upSubst on top, es, el, errCheck1, errCheck2, top;
   
   errCheck1 = check(es.typerep, stringType());
-  errCheck2 = check(el.typerep, nonterminalType("silver:core:Location", 0, false));
+  errCheck2 = check(el.typerep, nonterminalType("silver:core:Location", [], false));
   top.errors <-
     if errCheck1.typeerror
     then [err(es.location, "Second operand to 'terminal(type,lexeme,location)' must be a String, instead it is " ++ errCheck1.leftpp)]

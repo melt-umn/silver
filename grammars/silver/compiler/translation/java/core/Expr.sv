@@ -160,7 +160,9 @@ aspect production globalValueReference
 top::Expr ::= q::Decorated QName
 {
   local directThunk :: String =
-    s"${makeName(q.lookupValue.dcl.sourceGrammar)}.Init.global_${fullNameToShort(q.lookupValue.fullName)}";
+    s"${makeName(q.lookupValue.dcl.sourceGrammar)}.Init.global_${fullNameToShort(q.lookupValue.fullName)}" ++
+    if null(typeScheme.contexts) then ""
+    else s"(${implode(", ", contexts.transContexts)})";
 
   top.translation = s"((${finalType(top).transType})${directThunk}.eval())";
   top.lazyTranslation = 
@@ -450,8 +452,12 @@ top::Expr ::= '!' e::Expr
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
-  top.translation = s"(${e1.translation} ? ${e2.translation} : ${e3.translation})";
-
+  {-
+    We need to cast the else branch to the correct type, as otherwise
+    Java tries to cast it to the type of the then branch, which
+    doesn't always work.
+  -}
+  top.translation = s"(${e1.translation} ? ${e2.translation} : (${finalType(top).transType})${e3.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 

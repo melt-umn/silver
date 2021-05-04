@@ -33,20 +33,30 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
   local ntTypeScheme::PolyType = nt.lookupType.typeScheme;
   local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
   
-  -- Make sure we get the number of tyvars correct for the NT
+  -- Make sure we get the number and kind of type variables correct for the NT
   top.errors <-
     case nt.lookupType.dcls of
-    | ntDcl(_, arity, _, _) :: _ when arity != length(nttl.types) ->
-        [err(nt.location, nt.name ++ " expects " ++ toString(arity) ++
-                          " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
+    | ntDcl(_, ks, _, _) :: _ when length(ks) != length(nttl.types) ->
+      [err(nt.location,
+        nt.name ++ " expects " ++ toString(length(ks)) ++
+        " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
+    | ntDcl(_, ks, _, _) :: _ when ks != map((.kindrep), nttl.types) ->
+      [err(nt.location,
+        nt.name ++ " had kind " ++ foldr(arrowKind, starKind(), ks).typepp ++
+        "but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), nttl.types)) ++ ".")]
     | _ -> []
     end;
 
-  -- Make sure we get the number of tyvars correct for the ATTR
+  -- Make sure we get the number and kind of type variables correct for the ATTR
   top.errors <-
     if length(atTypeScheme.boundVars) != length(attl.types)
-    then [err(at.location, at.name ++ " expects " ++ toString(length(atTypeScheme.boundVars)) ++
-                           " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
+    then [err(at.location,
+      at.name ++ " expects " ++ toString(length(atTypeScheme.boundVars)) ++
+      " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
+    else if map((.kindrep), atTypeScheme.boundVars) != map((.kindrep), attl.types)
+    then [err(at.location,
+      at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kindrep), atTypeScheme.boundVars))) ++
+        "but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), attl.types)) ++ ".")]
     else [];
 
   -- We have 4 types.
@@ -95,7 +105,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
     else [];
 
   top.errors <-
-    if !nt.lookupType.dcl.isType || !ntTypeScheme.typerep.isDecorable
+    if nt.lookupType.found && (!nt.lookupType.dcl.isType || !ntTypeScheme.typerep.isDecorable)
     then [err(nt.location, nt.name ++ " is not a nonterminal. Attributes can only occur on nonterminals.")]
     else [];
                 
@@ -123,12 +133,17 @@ top::AGDcl ::= msg::[Message] at::Decorated QName attl::BracketedOptTypeExprs nt
     -- The nonterminal type list is strictly type VARIABLES only
     nttl.errorsTyVars;
   
-  -- Make sure we get the number of tyvars correct for the NT
+  -- Make sure we get the number and kinds of tyvars correct for the NT
   top.errors <-
     case nt.lookupType.dcls of
-    | ntDcl(_, arity, _, _) :: _ when arity != length(nttl.types) ->
-        [err(nt.location, nt.name ++ " expects " ++ toString(arity) ++
-                          " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
+    | ntDcl(_, ks, _, _) :: _ when length(ks) != length(nttl.types) ->
+      [err(nt.location,
+        nt.name ++ " expects " ++ toString(length(ks)) ++
+        " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
+    | ntDcl(_, ks, _, _) :: _ when ks != map((.kindrep), nttl.types) ->
+      [err(nt.location,
+        nt.name ++ " had kind " ++ foldr(arrowKind, starKind(), ks).typepp ++
+        "but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), nttl.types)) ++ ".")]
     | _ -> []
     end;
 }

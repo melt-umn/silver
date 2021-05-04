@@ -110,6 +110,7 @@ Pair<[String] [DocConfigSetting]> ::= alreadyErrs::[String] args::[Pair<String C
     local arg::Pair<String ConfigValue> =
         case args of
         | a::_ -> a
+        | _ -> error("(Impossible)")
         end;
 
     local err::[String] =
@@ -139,6 +140,7 @@ Pair<[String] [DocConfigSetting]> ::= alreadyErrs::[String] args::[Pair<String C
         | pair("excludeFile", v) -> [fileNoDocsConfig(v.asBool.fromJust)]
         | pair("excludeGrammar", v) -> [grammarNoDocsConfig(v.asBool.fromJust)]
         | pair("hide", _) -> []
+        | _ -> error("(Impossible)")
         end;
 
     return case args of

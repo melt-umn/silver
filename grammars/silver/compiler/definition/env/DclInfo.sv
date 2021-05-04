@@ -16,6 +16,7 @@ synthesized attribute classMembers :: [Pair<String Boolean>];
 
 inherited attribute givenInstanceType :: Type;
 synthesized attribute superContexts :: [Context];
+synthesized attribute typerep2 :: Type; -- Used for binary constraint instances
 
 -- values
 synthesized attribute namedSignature :: NamedSignature;
@@ -50,8 +51,8 @@ inherited attribute givenSubstitution :: Substitution;
  - hmm, unparsing could probably be fixed...
  -}
 closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
-                         typeScheme, givenNonterminalType, isType, isTypeAlias, isClass, -- types (gNT for occurs)
-                         classMembers, givenInstanceType, superContexts, -- type classes, in the type namespace
+                         typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, isClass, -- types (gNT for occurs)
+                         classMembers, givenInstanceType, superContexts, typerep2, -- type classes, in the type namespace
                          namedSignature, hasForward, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
                          isInherited, isSynthesized, -- attrs
@@ -85,11 +86,15 @@ top::DclInfo ::=
   top.substitutedDclInfo = error("Internal compiler error: must be defined for all value declarations that are production attributes");
   
   -- types
+  top.kindrep = starKind();
   top.isType = false;
   top.isTypeAlias = false;
   top.isClass = false;
   top.classMembers = [];
   top.superContexts = [];
+
+  -- instances
+  top.typerep2 = error("Internal compiler error: must be defined for all binary constraint instances");
   
   -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();
@@ -166,20 +171,20 @@ top::DclInfo ::= fn::String bound::[TyVar] clsHead::Context contexts::[Context] 
   top.typeScheme = constraintType(bound, clsHead :: contexts, ty);
 }
 abstract production globalValueDcl
-top::DclInfo ::= fn::String ty::Type
+top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
 {
   top.fullName = fn;
-
-  top.typeScheme = monoType(ty);
+  top.typeScheme = constraintType(bound, contexts, ty);
 }
 
 -- TypeDclInfos
 abstract production ntDcl
-top::DclInfo ::= fn::String arity::Integer closed::Boolean tracked::Boolean
+top::DclInfo ::= fn::String ks::[Kind] closed::Boolean tracked::Boolean
 {
   top.fullName = fn;
 
-  top.typeScheme = monoType(nonterminalType(fn, arity, tracked));
+  top.typeScheme = monoType(nonterminalType(fn, ks, tracked));
+  top.kindrep = foldr(arrowKind, starKind(), ks);
   top.isType = true;
 }
 abstract production termDcl
@@ -198,6 +203,7 @@ top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar
   -- Lexical type vars in aspects aren't skolemized, since they unify with the real (skolem) types.
   -- See comment in silver:compiler:definition:type:syntax:AspectDcl.sv
   top.typeScheme = monoType(if isAspect then varType(tv) else skolemType(tv));
+  top.kindrep = tv.kindrep;
   top.isType = true;
 }
 abstract production typeAliasDcl
@@ -208,9 +214,10 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type
   top.isType = null(bound);
   top.isTypeAlias = true;
   top.typeScheme = if null(bound) then monoType(ty) else polyType(bound, ty);
+  top.kindrep = foldr(arrowKind, ty.kindrep, map((.kindrep), bound)); 
 }
 abstract production clsDcl
-top::DclInfo ::= fn::String supers::[Context] tv::TyVar k::Integer members::[Pair<String Boolean>]
+top::DclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pair<String Boolean>]
 {
   top.fullName = fn;
   
@@ -311,6 +318,7 @@ top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
 }
 
 -- InstDclInfos
+-- Class instances
 abstract production instDcl
 top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
 {
@@ -319,14 +327,14 @@ top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
   top.typeScheme = constraintType(bound, contexts, ty);
 }
 abstract production instConstraintDcl
-top::DclInfo ::= fntc::String ty::Type
+top::DclInfo ::= fntc::String ty::Type tvs::[TyVar]
 {
   top.fullName = fntc;
   
   top.typeScheme = monoType(ty);
 }
 abstract production sigConstraintDcl
-top::DclInfo ::= fntc::String ty::Type fnsig::String
+top::DclInfo ::= fntc::String ty::Type ns::NamedSignature
 {
   top.fullName = fntc;
   
@@ -340,11 +348,52 @@ top::DclInfo ::= fntc::String ty::Type
   top.typeScheme = monoType(ty);
 }
 abstract production instSuperDcl
-top::DclInfo ::= fntc::String baseDcl::DclInfo ty::Type
+top::DclInfo ::= fntc::String baseDcl::DclInfo
 {
   top.fullName = fntc;
   
   top.typeScheme = baseDcl.typeScheme;
+}
+
+-- typeable instances
+abstract production typeableInstConstraintDcl
+top::DclInfo ::= ty::Type tvs::[TyVar]
+{
+  top.fullName = "typeable";
+  
+  top.typeScheme = monoType(ty);
+}
+abstract production typeableSigConstraintDcl
+top::DclInfo ::= ty::Type ns::NamedSignature
+{
+  top.fullName = "typeable";
+  
+  top.typeScheme = monoType(ty);
+}
+abstract production typeableSuperDcl
+top::DclInfo ::= baseDcl::DclInfo
+{
+  top.fullName = "typeable";
+  
+  top.typeScheme = baseDcl.typeScheme;
+}
+
+-- inhSubset instances
+abstract production inhSubsetInstConstraintDcl
+top::DclInfo ::= i1::Type i2::Type tvs::[TyVar]
+{
+  top.fullName = "subset";
+  
+  top.typeScheme = monoType(i1);
+  top.typerep2 = i2;
+}
+abstract production inhSubsetSigConstraintDcl
+top::DclInfo ::= i1::Type i2::Type ns::NamedSignature
+{
+  top.fullName = "subset";
+  
+  top.typeScheme = monoType(i1);
+  top.typerep2 = i2;
 }
 
 -- TODO: this should probably go elsewhere?

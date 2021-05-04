@@ -153,9 +153,9 @@ Def ::= sg::String  sl::Location  ns::NamedSignature
   return valueDef(defaultEnvItem(funDcl(ns,sourceGrammar=sg,sourceLocation=sl)));
 }
 function globalDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type
+Def ::= sg::String  sl::Location  fn::String bound::[TyVar] contexts::[Context] ty::Type
 {
-  return valueDef(defaultEnvItem(globalValueDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
+  return valueDef(defaultEnvItem(globalValueDcl(fn, bound, contexts, ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function classMemberDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar] head::Context contexts::[Context] ty::Type
@@ -163,9 +163,9 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar] head::Context conte
   return valueDef(defaultEnvItem(classMemberDcl(fn,bound,head,contexts,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function ntDef
-Def ::= sg::String  sl::Location  fn::String  arity::Integer  closed::Boolean  tracked::Boolean
+Def ::= sg::String  sl::Location  fn::String  ks::[Kind]  closed::Boolean  tracked::Boolean
 {
-  return typeDef(defaultEnvItem(ntDcl(fn,arity,closed,tracked,sourceGrammar=sg,sourceLocation=sl)));
+  return typeDef(defaultEnvItem(ntDcl(fn,ks,closed,tracked,sourceGrammar=sg,sourceLocation=sl)));
 }
 function termDef
 Def ::= sg::String  sl::Location  fn::String  regex::Regex  easyName::Maybe<String>
@@ -225,7 +225,7 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
   return attrDef(defaultEnvItem(annoDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function classDef
-Def ::= sg::String  sl::Location  fn::String  supers::[Context]  tv::TyVar  k::Integer  members::[Pair<String Boolean>]
+Def ::= sg::String  sl::Location  fn::String  supers::[Context]  tv::TyVar  k::Kind  members::[Pair<String Boolean>]
 {
   return typeDef(defaultEnvItem(clsDcl(fn,supers,tv,k,members,sourceGrammar=sg,sourceLocation=sl)));
 }
@@ -234,15 +234,10 @@ Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  contexts::[Context
 {
   return tcInstDef(instDcl(fn,bound,contexts,ty,sourceGrammar=sg,sourceLocation=sl));
 }
-function instConstraintDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type
-{
-  return tcInstDef(instConstraintDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl));
-}
 function sigConstraintDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type  fnsig::String
+Def ::= sg::String  sl::Location  fn::String  ty::Type  ns::NamedSignature
 {
-  return tcInstDef(sigConstraintDcl(fn,ty,fnsig,sourceGrammar=sg,sourceLocation=sl));
+  return tcInstDef(sigConstraintDcl(fn,ty,ns,sourceGrammar=sg,sourceLocation=sl));
 }
 function currentInstDef
 Def ::= sg::String  sl::Location  fn::String  ty::Type
@@ -250,9 +245,14 @@ Def ::= sg::String  sl::Location  fn::String  ty::Type
   return tcInstDef(currentInstDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl));
 }
 function instSuperDef
-Def ::= sg::String  sl::Location  fn::String  baseDcl::DclInfo  ty::Type
+Def ::= sg::String  sl::Location  fn::String  baseDcl::DclInfo
 {
-  return tcInstDef(instSuperDcl(fn,baseDcl,ty,sourceGrammar=sg,sourceLocation=sl));
+  return tcInstDef(instSuperDcl(fn,baseDcl,sourceGrammar=sg,sourceLocation=sl));
+}
+function typeableSuperDef
+Def ::= sg::String  sl::Location  baseDcl::DclInfo
+{
+  return tcInstDef(typeableSuperDcl(baseDcl,sourceGrammar=sg,sourceLocation=sl));
 }
 
 

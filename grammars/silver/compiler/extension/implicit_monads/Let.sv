@@ -14,15 +14,16 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.compiledGrammars = top.compiledGrammars;
   ne.flowEnv = top.flowEnv;
   ne.frame = top.frame;
-  ne.mDownSubst = top.mDownSubst;
-  ne.downSubst = top.mDownSubst;
+  ne.mDownSubst = la.mUpSubst;
+  ne.downSubst = la.mUpSubst;
   ne.finalSubst = top.mUpSubst;
   ne.env = newScopeEnv(la.mdefs, top.env);
   ne.expectedMonad = top.expectedMonad;
+  ne.originRules = top.originRules;
+  ne.isRoot = top.isRoot;
 
-  propagate mDownSubst, mUpSubst;
-
-  e.expectedMonad = top.expectedMonad;
+  la.mDownSubst = top.mDownSubst;
+  top.mUpSubst = ne.mUpSubst;
 
   top.mtyperep = if null(la.bindInList) || fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst))
                  then ne.mtyperep
@@ -34,8 +35,8 @@ top::Expr ::= la::AssignExpr  e::Expr
   ne.monadicallyUsed = false;
   top.monadicNames = la.monadicNames ++ ne.monadicNames;
 
-  local mreturn::Expr = monadReturn(top.expectedMonad, top.location);
-  local mbind::Expr = monadBind(top.expectedMonad, top.location);
+  local mreturn::Expr = monadReturn(top.location);
+  local mbind::Expr = monadBind(top.location);
 
   {-
     Our rewriting here binds in anything after the let to keep names from
@@ -52,14 +53,17 @@ top::Expr ::= la::AssignExpr  e::Expr
      letp(la.fixedAssigns,
           boundIn,
           location=top.location);
-  local inside::Expr = if isMonad(e.mtyperep) || null(la.bindInList)
-                       then e.monadRewritten
-                       else Silver_Expr { $Expr{mreturn}($Expr{e.monadRewritten}) };
+  local inside::Expr = if isMonad(ne.mtyperep, top.env) || null(la.bindInList)
+                       then ne.monadRewritten
+                       else Silver_Expr { $Expr{mreturn}($Expr{ne.monadRewritten}) };
   local boundIn::Expr =
          foldr(\x::Pair<Name TypeExpr> y::Expr ->
                  buildApplication(mbind,
                      [baseExpr(qName(top.location, x.fst.name), location=top.location),
-                      buildLambda(x.fst.name, x.snd.typerep, y, top.location)], top.location),
+                      buildLambda(x.fst.name,
+                                  decorate x.snd with
+                                     {env=top.env; grammarName=top.grammarName; config=top.config;}.typerep,
+                                  y, top.location)], top.location),
                inside, la.bindInList);
 }
 
@@ -94,13 +98,11 @@ aspect production assignExpr
 top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
   top.merrors := e.merrors;
-  top.merrors <- if isMonad(t.typerep) && fst(monadsMatch(top.expectedMonad, t.typerep, top.mDownSubst))
+  top.merrors <- if isMonad(t.typerep, top.env) && fst(monadsMatch(top.expectedMonad, t.typerep, top.mDownSubst))
                  then [err(top.location, "Let bindings may not use a monad type")]
                  else [];
-  local errCheck::TypeCheck = if isMonad(e.mtyperep) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst))
-                              then if isMonad(t.typerep) && fst(monadsMatch(t.typerep, top.expectedMonad, top.mDownSubst))
-                                   then check(t.typerep, e.mtyperep)
-                                   else check(t.typerep, monadInnerType(e.mtyperep))
+  local errCheck::TypeCheck = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst))
+                              then check(t.typerep, monadInnerType(e.mtyperep, top.location))
                               else check(t.typerep, e.mtyperep);
   e.mDownSubst = top.mDownSubst;
   errCheck.downSubst = e.mUpSubst;
@@ -111,7 +113,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   --to write (?), and redfining it monadically.  This would happen if the person
   --was putting in a let after let insertion failed, but then this should be the
   --only place where the name occurs, so it wouldn't affect anything then either.
-  e.monadicallyUsed = isMonad(e.mtyperep) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst)) && !isMonad(t.typerep);
+  e.monadicallyUsed = isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst)) && !isMonad(t.typerep, top.env);
   top.monadicNames = e.monadicNames;
 
   e.expectedMonad = top.expectedMonad;
@@ -120,11 +122,11 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
                                performSubstitution(t.typerep, top.mUpSubst),
                                e.flowVertexInfo, e.flowDeps)];
 
-  top.bindInList = if isMonad(e.mtyperep) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
+  top.bindInList = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                    then [pair(id, t)]
                    else [];
 
-  top.fixedAssigns = if isMonad(e.mtyperep) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
+  top.fixedAssigns = if isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                      --use t.typerep to get typechecking when we create the ultimate monadRewritten
                      then assignExpr(id, '::', typerepTypeExpr(monadOfType(top.expectedMonad, t.typerep),
                                                                location=top.location),

@@ -121,7 +121,7 @@ instance ShowTestValue a {
   showTestValue = \ x::a -> show(80, reflect(x).pp);
 }
 
-instance ShowTestValue a => ShowTestValue Decorated a {
-  showTestValue = \ x::Decorated a -> showTestValue(new(x));
+instance ShowTestValue a => ShowTestValue Decorated a with i {
+  showTestValue = \ x::Decorated a with i -> showTestValue(new(x));
 }
 

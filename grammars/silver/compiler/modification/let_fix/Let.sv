@@ -1,6 +1,7 @@
 grammar silver:compiler:modification:let_fix;
 
 import silver:compiler:definition:flow:ast only ExprVertexInfo, FlowVertex;
+import silver:util:treeset as ts;
 
 --- Concrete Syntax for lets
 --------------------------------------------------------------------------------
@@ -41,6 +42,7 @@ abstract production letp
 top::Expr ::= la::AssignExpr  e::Expr
 {
   top.unparse = "let " ++ la.unparse ++ " in " ++ e.unparse ++ " end";
+  top.freeVars := ts:removeAll(la.boundNames, e.freeVars);
   
   propagate errors;
   
@@ -53,8 +55,10 @@ top::Expr ::= la::AssignExpr  e::Expr
   e.env = newScopeEnv(la.defs, top.env);
 }
 
+monoid attribute boundNames::[String];
+
 nonterminal AssignExpr with location, config, grammarName, env, compiledGrammars, 
-                            unparse, defs, errors, upSubst, 
+                            unparse, defs, errors, boundNames, freeVars, upSubst, 
                             downSubst, finalSubst, frame, isRoot, originRules;
 
 propagate errors, defs on AssignExpr;
@@ -63,8 +67,9 @@ abstract production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
 {
   top.unparse = a1.unparse ++ ", " ++ a2.unparse;
+  top.freeVars := a1.freeVars ++ ts:removeAll(a1.boundNames, a2.freeVars);
 
-  propagate downSubst, upSubst;
+  propagate boundNames, downSubst, upSubst;
 }
 
 -- TODO: Well, okay, so this isn't really abstract syntax...
@@ -72,6 +77,8 @@ concrete production assignExpr
 top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 {
   top.unparse = id.unparse ++ " :: " ++ t.unparse ++ " = " ++ e.unparse;
+  propagate freeVars;
+  top.boundNames := [id.name];
   
   -- Right now some things (pattern matching) abuse us by giving type variables
   -- for `t`. So we want to do a little inference before we stuff this into
@@ -95,7 +102,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
     then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
     else [];
 
-  top.errors <- t.errorsFullyApplied;
+  top.errors <- t.errorsKindStar;
 
   thread downSubst, upSubst on top, e, errCheck1, top;
 
@@ -113,6 +120,7 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
   top.unparse = q.unparse;
   top.errors := [];
+  top.freeVars := ts:fromList([q.name]);
   
   -- We're adding the "unusual" behavior that types like "Decorated Foo" in LETs
   -- will auto-undecorate if you want a Foo.
@@ -128,12 +136,13 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
   -- i.e.  "let x :: a = someLocal in wantsUndecorated(x) end"
   --       will mean "let x = decorated version of someLocal in wantsUndecorated(x.undecorate())"
   --       and not "let x = undecorated someLocal in wantsUndecorated(x)"
-  
+
   top.typerep = 
-    -- isDecorated should return true if it's a ntOrDecType.
-    if q.lookupValue.typeScheme.isDecorated
-    then ntOrDecType(q.lookupValue.typeScheme.monoType.decoratedType, freshType())
-    else q.lookupValue.typeScheme.monoType;
+    case q.lookupValue.typeScheme.monoType of
+    | ntOrDecType(t, i, _) -> ntOrDecType(t, i, freshType())
+    | decoratedType(t, i) -> ntOrDecType(t, i, freshType())
+    | t -> t
+    end;
 
   propagate downSubst, upSubst;
 }

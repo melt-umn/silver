@@ -52,7 +52,7 @@ top::Type ::= fn::String
 }
 
 aspect production decoratedType
-top::Type ::= te::Type
+top::Type ::= te::Type _
 {
   top.typeName = te.typeName;
 }

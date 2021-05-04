@@ -1,6 +1,7 @@
 grammar silver_features;
 
 import silver_features:myeq;
+import silver:reflect;
 
 class CFoo a
 {
@@ -82,6 +83,15 @@ MyEq a, MyEq b => top::EqPair<a b> ::= x::a y::b
 
 equalityTest(decorate eqPair(42, [1, 2, 3]) with {isEqTo=eqPair(42, [1, 2, 3]);}.isEq, true, Boolean, silver_tests);
 equalityTest(decorate eqPair(42, [1, 2, 3]) with {isEqTo=eqPair(42, [1, 23, 3]);}.isEq, false, Boolean, silver_tests);
+equalityTest(case eqPair(42, [1, 2, 3]), eqPair(42, [1, 2, 3]) of eqPair(w, x), eqPair(y, z) -> myeq(w, y) && myeq(x, z) end, true, Boolean, silver_tests);
+
+nonterminal EqRank1;
+production eqR1
+Eq a => top::EqRank1 ::= x::a
+{}
+
+global eqR1Res::Boolean = case eqR1([1, 2, 3]) of eqR1(a) -> a == a end; 
+equalityTest(eqR1Res, true, Boolean, silver_tests);
 
 wrongCode "Could not find an instance for silver_features:CBaz Float (arising from the instance for silver_features:CFoo [Float], arising from the use of cx)" {
   global cxf::[Float] = cx;
@@ -199,15 +209,17 @@ class MyFunctor f {
 instance MyFunctor Maybe {
   myfmap = mapMaybe;
 }
-
-function mapEither
-Either<a c> ::= fn::(c ::= b) x::Either<a b>
+function mapMaybe
+Maybe<b> ::= f::(b ::= a) m::Maybe<a>
 {
-  return case x of left(l) -> left(l) | right(r) -> right(fn(r)) end;
+  return case m of
+  | just(x)   -> just(f(x))
+  | nothing() -> nothing()
+  end;
 }
 
 instance MyFunctor Either<a _> {
-  myfmap = mapEither;
+  myfmap = \ fn::(c ::= b) x::Either<a b> -> case x of left(l) -> left(l) | right(r) -> right(fn(r)) end;
 }
 
 instance MyFunctor [] {
@@ -217,13 +229,17 @@ instance MyFunctor [] {
 equalityTest(myfmap(\ x::Integer -> toFloat(x), [1, 2, 3]), [1.0, 2.0, 3.0], [Float], silver_tests);
 equalityTest(myfmap(\ x::Integer -> toFloat(x), just(42)).fromJust, 42.0, Float, silver_tests);
 equalityTest(myfmap(\ x::Integer -> toFloat(x), left("abc")).fromLeft, "abc", String, silver_tests);
-equalityTest(myfmap(\ x::Integer -> toFloat(x), right(42)).fromRight, 42.0, Float, silver_tests);
+equalityTest(myfmap(\ x::Integer -> toFloat(x), let e::Either<String Integer> = right(42) in e end).fromRight, 42.0, Float, silver_tests);
 
-wrongCode "Either has kind arity 2, but the class MyFunctor expected kind arity 1" {
+wrongCode "Ambiguous type variable a (arising from the use of myfmap) prevents the constraint silver_features:MyFunctor silver:core:Either<a _> from being solved" {
+  global ambRes::String = hackUnparse(myfmap(\ x::Integer -> toFloat(x), right(42)).fromRight);
+}
+
+wrongCode "Either has kind * -> * -> *, but the class MyFunctor expected kind * -> *" {
   instance MyFunctor Either {}
 }
 
-wrongCode "f has kind arity 1, but there are 2 type arguments supplied here" {
+wrongCode "f has kind * -> *, but there are 2 type arguments supplied here" {
   class MyFunctorBad f {
     myfmap2 :: (f<b> ::= (b ::= a) f<a b>);
   }
@@ -271,7 +287,7 @@ global isSingleDigit::(Boolean ::= String) = contains(_, ["1", "2", "3", "4", "5
 equalityTest(isSingleDigit("5"), true, Boolean, silver_tests);
 equalityTest(isSingleDigit("42"), false, Boolean, silver_tests);
 
-class Semigroupoid a {
+class Semigroupoid (a :: * -> * -> *) {
   sgcompose :: (a<b d> ::= a<c d> a<b c>);
 }
 
@@ -281,7 +297,7 @@ instance Semigroupoid (_ ::= _) {
 
 equalityTest(sgcompose(\ x::Integer -> x * 2, \ s::String -> toInteger(s))("42"), 84, Integer, silver_tests);
 
-wrongCode "(_ ::= _ _) has kind arity 3, but the class Semigroupoid expected kind arity 2" {
+wrongCode "(_ ::= _ _) has kind * -> * -> * -> *, but the class Semigroupoid expected kind * -> * -> *" {
   instance Semigroupoid (_ ::= _ _) {
     sgcompose = compose;
   }
@@ -301,6 +317,14 @@ wrongCode "is a type alias" {
   }
 }
 
+wrongCode "a has kind * -> * -> *, but kind * is expected here" {
+  function badKind
+  Semigroupoid a => Integer ::= a
+  {
+    return 42;
+  }
+}
+
 class BoolThing a {
   bteq :: Eq b => (a ::= b b);
 }
@@ -312,3 +336,78 @@ instance BoolThing Maybe<Unit> {
 equalityTest(bteq(42, 42), just(unit()), Maybe<Unit>, silver_tests);
 equalityTest(bteq(234, 42), nothing(), Maybe<Unit>, silver_tests);
 
+class runtimeTypeable a => MyTypeable a {
+  myreify :: (a ::= AST) = reifyUnchecked;
+}
+
+instance runtimeTypeable a => MyTypeable a {}
+
+instance MyTypeable Integer {
+  myreify = \ a::AST -> case a of integerAST(i) -> i | _ -> error("not integer") end;
+}
+
+instance runtimeTypeable a, MyTypeable b => MyTypeable Pair<a b> {
+  myreify = \ a::AST -> case a of AST { silver:core:pair(fst, snd) } -> pair(reifyUnchecked(fst), myreify(snd)) | _ -> error("not pair") end;
+}
+
+equalityTest(myreify(reflect(42)), 42, Integer, silver_tests);
+equalityTest(myreify(reflect("hello")), "hello", String, silver_tests);
+equalityTest(myreify(reflect(pair("abc", 123))), pair("abc", 123), Pair<String Integer>, silver_tests);
+
+wrongCode "a has kind * -> * -> *, but kind * is expected here" {
+  function badKind
+  Semigroupoid a, runtimeTypeable a => Integer ::=
+  {
+    return 42;
+  }
+}
+
+nonterminal RTNT;
+production rtProd
+runtimeTypeable a => top::RTNT ::= fn::(Integer ::= a)
+{}
+
+global rtCaseRes::Integer =
+  case rtProd(\ xs::[Integer] -> length(xs)) of
+  | rtProd(f) -> f(reifyUnchecked(reflect([1, 2, 3])))
+  end;
+equalityTest(rtCaseRes, 3, Integer, silver_tests);
+
+nonterminal SNT;
+production sProd
+i1 subset i2 => top::SNT ::= x::Decorated a with i2  f::([String] ::= Decorated a with i1)
+{}
+
+global sCaseRes::[String] =
+  case sProd(decorate mkDExpr() with {env1 = ["a"]; env2 = ["2"];}, \ x::Decorated DExpr with {env2} -> x.env2) of
+  | sProd(x, f) -> f(partialUndecorate(x))
+  end;
+equalityTest(sCaseRes, ["2"], [String], silver_tests);
+
+function transitiveSubset
+i1 subset i2, i2 subset i3, i3 subset i4 => Decorated a with i1 ::= x::Decorated a with i4
+{
+  return partialUndecorate(x);
+}
+
+function transitiveSubset2
+i1 subset {env1}, {env1, env2} subset i2 => Decorated a with i1 ::= x::Decorated a with i2
+{
+  return partialUndecorate(x);
+}
+
+wrongCode "i3 is not a subset of i2 (arising from the use of partialUndecorate)" {
+  function transitiveSubsetBad
+  i1 subset i2, i2 subset i3, i3 subset i4 => Decorated a with i3 ::= x::Decorated a with i2
+  {
+    return partialUndecorate(x);
+  }
+}
+
+wrongCode "i1 is not a subset of i2 (arising from the use of partialUndecorate)" {
+  function transitiveSubsetBad2
+  i1 subset {env1, env2}, {env1} subset i2 => Decorated a with i1 ::= x::Decorated a with i2
+  {
+    return partialUndecorate(x);
+  }
+}

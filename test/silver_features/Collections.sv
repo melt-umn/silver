@@ -186,3 +186,26 @@ equalityTest( colTest3().colFun.isJust, true, Boolean, silver_tests );
 equalityTest( fromMaybe(4, colTest3().colFun), 1, Integer, silver_tests );
 equalityTest( colTest3().colProd.colSyn, "( a  c ) j  k  b ", String, silver_tests );
 
+-- Regression test for #209
+
+nonterminal NT209 with colSyn;
+
+production prod209
+top::NT209 ::=
+{
+  top.colSyn := "foo";
+}
+
+aspect production prod209
+top::NT209 ::=
+{
+  top.colSyn <- "bar";
+}
+
+aspect default production
+top::NT209 ::=
+{
+  top.colSyn <- "baz";
+}
+
+equalityTest(prod209().colSyn, "foobarbaz", String, silver_tests);

@@ -11,12 +11,12 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   production tv :: TyVar =
     case var.typerep.freeVariables of
     | v :: _ -> v
-    | _ -> freshTyVar(0)
+    | _ -> freshTyVar(starKind())
     end;
   production supers::[Context] = cl.contexts; -- *Direct* super classes only, not transitive
   production boundVars::[TyVar] = [tv];
   
-  top.defs := classDef(top.grammarName, id.location, fName, supers, tv, var.typerep.kindArity, body.classMembers) :: body.defs;
+  top.defs := classDef(top.grammarName, id.location, fName, supers, tv, var.typerep.kindrep, body.classMembers) :: body.defs;
   
   -- id *should* be just a Name, but it has to be a QNameType to avoid a reduce/reduce conflict
   top.errors <-
@@ -49,9 +49,7 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   headDefs := cl.defs;
   headDefs <- [currentInstDef(top.grammarName, id.location, fName, var.typerep)];
 
-  cl.instanceHead = nothing();
-  cl.constraintSigName = nothing();
-  cl.classDefName = just(fName);
+  cl.constraintPos = classPos(fName, var.freeVariables);
   cl.env = newScopeEnv(headPreDefs, top.env);
   
   var.env = cl.env;
@@ -106,20 +104,13 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
   
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production boundVars :: [TyVar] =
-    setUnionTyVars(top.classHead.freeVariables, ty.typerep.freeVariables);
+    setUnionTyVarsAll(top.classHead.freeVariables :: map((.freeVariables), cl.contexts) ++ [ty.typerep.freeVariables]);
   top.classMembers = [pair(fName, false)];
   
-  cl.instanceHead =
+  cl.constraintPos =
     case top.classHead of
-    -- A bit strange, but class member constraints are sort of like instance constraints.
-    -- However we don't know what the instance type actually is, and want to skip the
-    -- decidability check, so just put errorType here for now.
-    | instContext(cls, _) -> just(instContext(cls, errorType()))
-    end;
-  cl.constraintSigName = nothing();
-  cl.classDefName =
-    case top.classHead of
-    | instContext(cls, _) -> just(cls)
+    | instContext(cls, _) -> classMemberPos(cls, boundVars)
+    | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
   
@@ -144,20 +135,13 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
   
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production boundVars :: [TyVar] =
-    setUnionTyVars(top.classHead.freeVariables, ty.typerep.freeVariables);
+    setUnionTyVarsAll(top.classHead.freeVariables :: map((.freeVariables), cl.contexts) ++ [ty.typerep.freeVariables]);
   top.classMembers = [pair(fName, true)];
   
-  cl.instanceHead =
+  cl.constraintPos =
     case top.classHead of
-    -- A bit strange, but class member constraints are sort of like instance constraints.
-    -- However we don't know what the instance type actually is, and want to skip the
-    -- decidability check, so just put errorType here for now.
-    | instContext(cls, _) -> just(instContext(cls, errorType()))
-    end;
-  cl.constraintSigName = nothing();
-  cl.classDefName =
-    case top.classHead of
-    | instContext(cls, _) -> just(cls)
+    | instContext(cls, _) -> classMemberPos(cls, boundVars)
+    | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
   

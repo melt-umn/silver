@@ -9,11 +9,11 @@ top::Type ::= tv::TyVar
 {
   top.unify = 
     case top.unifyWith of
-    | varType(j) ->
+    | varType(j) when j.kindrep == tv.kindrep ->
         if tv == j
         then emptySubst()
         else subst(tv, top.unifyWith)
-    | t when t.kindArity == tv.kindArity ->
+    | t when t.kindrep == tv.kindrep ->
         if contains(tv, top.unifyWith.freeVariables)
         then errorSubst("Infinite type! Tried to unify with " ++ prettyType(top.unifyWith))
         else subst(tv, top.unifyWith)
@@ -26,7 +26,7 @@ top::Type ::= tv::TyVar
 {
   top.unify = 
     case top.unifyWith of
-    | skolemType(otv) ->
+    | skolemType(otv) when tv.kindrep == otv.kindrep ->
         if tv == otv
         then emptySubst()
         else errorSubst("Tried to unify skolem constant with incompatible skolem constant")
@@ -104,19 +104,19 @@ top::Type ::=
 }
 
 aspect production nonterminalType
-top::Type ::= fn::String k::Integer tracked::Boolean
+top::Type ::= fn::String ks::[Kind] tracked::Boolean
 {
   top.unify = 
     case top.unifyWith of
-    | nonterminalType(ofn, ok, otracked) ->
+    | nonterminalType(ofn, oks, otracked) ->
         if fn == ofn
-        then if k == ok
+        then if ks == oks
           then if tracked!=otracked 
             then error("Internal Error: Mismatching trackedness for " ++ fn ++ " when unifying. Try rebuilding with --clean. \nSee https://github.com/melt-umn/silver/pull/333 and https://github.com/melt-umn/silver/issues/36 .")
             else emptySubst()
           else error("kind mismatch during unification for " ++ prettyType(top) ++ " and " ++ prettyType(top.unifyWith)) -- Should be impossible
         else errorSubst("Tried to unify conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
-    | ntOrDecType(_, _) -> errorSubst("nte-nodte: try again")
+    | ntOrDecType(_, _, _) -> errorSubst("nte-nodte: try again")
     | _ -> errorSubst("Tried to unify nonterminal type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
     end;
 }
@@ -134,37 +134,47 @@ top::Type ::= fn::String
     end;
 }
 
+aspect production inhSetType
+top::Type ::= inhs::[String]
+{
+  top.unify =
+    case top.unifyWith of
+    | inhSetType(oinhs) when inhs == oinhs -> emptySubst()
+    | _ -> errorSubst("Tried to unify inh set type " ++ prettyType(top) ++ " with " ++ prettyType(top.unifyWith))
+    end;
+}
+
 aspect production decoratedType
-top::Type ::= te::Type
+top::Type ::= te::Type i::Type
 {
   top.unify = 
     case top.unifyWith of
-    | decoratedType(ote) -> unify(te, ote)
-    | ntOrDecType(_,_) -> errorSubst("dte-nodte: try again")
+    | decoratedType(ote, oi) -> composeSubst(unify(te, ote), unify(i, oi))
+    | ntOrDecType(_,_,_) -> errorSubst("dte-nodte: try again")
     | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
     end;
 }
 
 aspect production ntOrDecType
-top::Type ::= nt::Type  hidden::Type
+top::Type ::= nt::Type inhs::Type hidden::Type
 {
-  -- If were being asked to unify, then we know hidden is still a type variable,
+  -- If we're being asked to unify, then we know hidden is still a type variable,
   -- since we shouldn't be unifying with anything but fully-substituted types.
   -- And we kill off this type once hidden is specialized.
   top.unify =
     case top.unifyWith.baseType of
-    | decoratedType(ote) ->
+    | decoratedType(ote, oi) ->
         -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
-        unifyAllShortCircuit([ote, top.unifyWith],
-                             [nt,  hidden])
+        unifyAllShortCircuit([ote, oi,   top.unifyWith],
+                             [nt,  inhs, hidden])
     | nonterminalType(_, _, _) ->
         -- Ensure compatibility between nonterminal types, then specialize ourselves
         unifyAllShortCircuit([top.unifyWith, top.unifyWith],
                              [nt,            hidden])
-    | ntOrDecType(ont1, ohidden1) ->
-        -- Ensure compatibility between nonterminal types, then merge our specializations
-        unifyAllShortCircuit([ont1, ohidden1],
-                             [nt,   hidden])
+    | ntOrDecType(ont1, oi, ohidden1) ->
+        -- Ensure compatibility between nonterminal types and inh sets, then merge our specializations
+        unifyAllShortCircuit([ont1, oi,   ohidden1],
+                             [nt,   inhs, hidden])
     | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
     end;
 }

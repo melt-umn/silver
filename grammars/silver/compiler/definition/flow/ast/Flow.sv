@@ -10,8 +10,8 @@ grammar silver:compiler:definition:flow:ast;
  -  - extraEq (handling collections '<-')
  - which the thesis does not address.
  -}
-nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, flowEdges, refTreeContribs, localInhTreeContribs, suspectFlowEdges, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, specContribs;
-nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, refTreeContribs, localInhTreeContribs, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, specContribs;
+nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, flowEdges, localInhTreeContribs, suspectFlowEdges, hostSynTreeContribs, nonSuspectContribs, localTreeContribs;
+nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, localInhTreeContribs, hostSynTreeContribs, nonSuspectContribs, localTreeContribs;
 
 {-- lookup (production, attribute) to find synthesized equations
  - Used to ensure a necessary lhs.syn equation exists.
@@ -46,9 +46,6 @@ synthesized attribute localTreeContribs :: [Pair<String FlowDef>];
  - ONLY used to determine all productions that need an equation for a new attribute. -}
 synthesized attribute prodTreeContribs :: [Pair<String FlowDef>];
 
-{-- lookup (nonterminal) to find all inherited attributes in the host -}
-synthesized attribute refTreeContribs :: [Pair<String FlowDef>];
-
 {-- find all equations having to do DIRECTLY with a production
     (directly meaning e.g. no default equations, even if they might
     affect it)  These FlowDefs MUST have a flowEdges for this production. -}
@@ -70,9 +67,6 @@ synthesized attribute hostSynTreeContribs :: [Pair<String FlowDef>];
 {-- A list of attributes for a production that are non-suspect -}
 synthesized attribute nonSuspectContribs :: [Pair<String [String]>];
 
-{-- Explicit flow type specificiations -}
-synthesized attribute specContribs :: [Pair<String Pair<String [String]>>];
-
 abstract production consFlow
 top::FlowDefs ::= h::FlowDef  t::FlowDefs
 {
@@ -83,12 +77,10 @@ top::FlowDefs ::= h::FlowDef  t::FlowDefs
   top.fwdInhTreeContribs = h.fwdInhTreeContribs ++ t.fwdInhTreeContribs;
   top.prodTreeContribs = h.prodTreeContribs ++ t.prodTreeContribs;
   top.prodGraphContribs = h.prodGraphContribs ++ t.prodGraphContribs;
-  top.refTreeContribs = h.refTreeContribs ++ t.refTreeContribs;
   top.localInhTreeContribs = h.localInhTreeContribs ++ t.localInhTreeContribs;
   top.localTreeContribs = h.localTreeContribs ++ t.localTreeContribs;
   top.hostSynTreeContribs = h.hostSynTreeContribs ++ t.hostSynTreeContribs;
   top.nonSuspectContribs = h.nonSuspectContribs ++ t.nonSuspectContribs;
-  top.specContribs = h.specContribs ++ t.specContribs;
 }
 
 abstract production nilFlow
@@ -101,12 +93,10 @@ top::FlowDefs ::=
   top.fwdInhTreeContribs = [];
   top.prodTreeContribs = [];
   top.prodGraphContribs = [];
-  top.refTreeContribs = [];
   top.localInhTreeContribs = [];
   top.localTreeContribs = [];
   top.hostSynTreeContribs = [];
   top.nonSuspectContribs = [];
-  top.specContribs = [];
 }
 
 -- At the time of writing, this is one giant work in progress.
@@ -124,12 +114,10 @@ top::FlowDef ::=
   top.fwdTreeContribs = [];
   top.fwdInhTreeContribs = [];
   top.prodTreeContribs = [];
-  top.refTreeContribs = [];
   top.localInhTreeContribs = [];
   top.localTreeContribs = [];
   top.hostSynTreeContribs = [];
   top.nonSuspectContribs = [];
-  top.specContribs = [];
   top.suspectFlowEdges = []; -- flowEdges is required, but suspect is typically not!
   -- require prodGraphContibs, flowEdges
 }
@@ -179,38 +167,6 @@ top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
   top.defTreeContribs = [pair(crossnames(nt, attr), top)];
   top.prodGraphContribs = []; -- defaults don't show up in the prod graph!!
   top.flowEdges = map(pair(lhsSynVertex(attr), _), deps); -- but their edges WILL end up added to graphs in fixup-phase!!
-}
-
-{--
- - Declaration of the inherited attributes known from the host language
- -
- - @param nt  The full name of a nonterminal declaration
- - @param inhs  The Blessed Ref Set, to be used for decorated nodes of this type.
- -}
-abstract production ntRefFlowDef
-top::FlowDef ::= nt::String  inhs::[String]
-{
-  top.refTreeContribs = [pair(nt, top)];
-  top.prodGraphContribs = [];
-  top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
-}
-
-{--
- - Explicit specification of the flow type on a nonterminal for
- - 1. A synthesized attributes
- - 2. The forward
- - 3. The reference set?
- -
- - @param nt  the full name of the nonterminal
- - @param attr  the full name of the synthesized attribute (or "forward", or "decorate")
- - @param inhs  the full names of inherited attributes to use as the flow type
- -}
-abstract production specificationFlowDef
-top::FlowDef ::= nt::String  attr::String  inhs::[String]
-{
-  top.specContribs = [pair(nt, pair(attr, inhs))];
-  top.prodGraphContribs = [];
-  top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
 }
 
 {--

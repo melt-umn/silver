@@ -97,7 +97,7 @@ top::Type ::= tv::TyVar
   -- Perform one iteration of substitution
   local partialsubst :: Maybe<Type> =
     case findSubst(tv, top.substitution) of
-    | just(s) when s.kindArity != tv.kindArity -> error("Kind mismatch in applying substitution!")
+    | just(s) when s.kindrep != tv.kindrep -> error("Kind mismatch in applying substitution!")
     | ps -> ps
     end;
   
@@ -131,7 +131,7 @@ top::Type ::= tv::TyVar
   
   local partialsubst :: Maybe<Type> =
     case findSubst(tv, top.substitution) of
-    | just(s) when s.kindArity != tv.kindArity -> nothing()
+    | just(s) when s.kindrep != tv.kindrep -> nothing()
     | ps -> ps
     end;
   
@@ -147,17 +147,17 @@ top::Type ::= tv::TyVar
 }
 
 aspect production ntOrDecType
-top::Type ::= nt::Type  hidden::Type
+top::Type ::= nt::Type inhs::Type hidden::Type
 {
   -- We rely very carefully on eliminating ourselves once we've specialized!
   -- Note: we're matching on hidden.subsituted, not just hidden. Important!
   top.substituted =
     case hidden.substituted of
-    | varType(_) -> ntOrDecType(nt.substituted, hidden.substituted)
+    | varType(_) -> ntOrDecType(nt.substituted, inhs.substituted, hidden.substituted)
     | _          -> hidden.substituted
     end;
   -- For a renaming, we don't need to specialize.
-  top.flatRenamed = ntOrDecType(nt.flatRenamed, hidden.flatRenamed);
+  top.flatRenamed = ntOrDecType(nt.flatRenamed, inhs.flatRenamed, hidden.flatRenamed);
 }
 
 --------------------------------------------------------------------------------
@@ -210,7 +210,7 @@ function mapRenameSubst
 function freshTyVars
 [TyVar] ::= tvs::[TyVar]
 {
-  return map(freshTyVar, map((.kindArity), tvs));
+  return map(freshTyVar, map((.kindrep), tvs));
 }
 
 function zipVarsIntoSubstitution

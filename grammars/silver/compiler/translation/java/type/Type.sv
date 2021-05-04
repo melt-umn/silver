@@ -12,14 +12,30 @@ synthesized attribute transCovariantType :: String;
 -- If we want to statically refer to the class of this type, we cannot use
 -- the <> part of the type!! e.g. "Foo<Bar>.class" is illegal, should be "Foo.class"
 synthesized attribute transClassType :: String;
--- The runtime representation of a type, used for reification
+-- An environment mapping skolem constants to their runtime representation translations
+autocopy attribute skolemTypeReps :: [Pair<TyVar String>];
+-- The runtime representation of a type, where all skolems are replaced with their provided representations, used for reification
 synthesized attribute transTypeRep :: String;
 -- The runtime representation of a type, where all skolems are replaced with flexible vars, used for reification
 synthesized attribute transFreshTypeRep :: String;
 -- A valid Java identifier, unique to the type
 synthesized attribute transTypeName :: String;
 
-attribute transType, transCovariantType, transClassType, transTypeRep, transFreshTypeRep, transTypeName occurs on Type;
+function transTypeName
+String ::= te::Type
+{
+  te.boundVariables = te.freeVariables;
+  return te.transTypeName;
+}
+
+function transTypeNameWith
+String ::= te::Type tvs::[TyVar]
+{
+  te.boundVariables = tvs;
+  return te.transTypeName;
+}
+
+attribute transType, transCovariantType, transClassType, transTypeRep, skolemTypeReps, transFreshTypeRep, transTypeName occurs on Type;
 
 aspect default production
 top::Type ::=
@@ -34,16 +50,16 @@ top::Type ::= tv::TyVar
   top.transClassType = "Object";
   top.transTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
   top.transFreshTypeRep = top.transTypeRep;
-  top.transTypeName = "a" ++ toString(tv.extractTyVarRep);
+  top.transTypeName = "a" ++ toString(positionOf(tv, top.boundVariables));
 }
 
 aspect production skolemType
 top::Type ::= tv::TyVar
 {
   top.transClassType = "Object";
-  top.transTypeRep = s"new common.BaseTypeRep(\"b${toString(tv.extractTyVarRep)}\")";
+  top.transTypeRep = lookup(tv, top.skolemTypeReps).fromJust;
   top.transFreshTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
-  top.transTypeName = "a" ++ toString(tv.extractTyVarRep);
+  top.transTypeName = "a" ++ toString(positionOf(tv, top.boundVariables));
 }
 
 aspect production appType
@@ -140,8 +156,17 @@ top::Type ::= fn::String
   top.transTypeName = substitute(":", "_", fn);
 }
 
+aspect production inhSetType
+top::Type ::= inhs::[String]
+{
+  top.transClassType = error("Demanded translation of InhSet type");
+  top.transTypeRep = error("Demanded TypeRep translation of InhSet type");
+  top.transFreshTypeRep = top.transTypeRep;
+  top.transTypeName = substitute(":", "_", implode("_", inhs));
+}
+
 aspect production decoratedType
-top::Type ::= te::Type
+top::Type ::= te::Type i::Type
 {
   -- TODO: this should probably be a generic.  e.g. "DecoratedNode<something>"
   top.transType = "common.DecoratedNode";

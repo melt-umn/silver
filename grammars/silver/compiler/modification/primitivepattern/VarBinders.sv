@@ -5,21 +5,21 @@ import silver:compiler:translation:java:type;
 
 import silver:compiler:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef;
 
-import silver:compiler:definition:flow:ast only hasVertex, noVertex, PatternVarProjection, patternVarProjection, anonVertexType, ExprVertexInfo, FlowVertex;
+import silver:compiler:definition:flow:ast only hasVertex, noVertex, PatternVarProjection, patternVarProjection, anonVertexType, ExprVertexInfo, FlowVertex, inhVertex;
 -- also unfortunately placed references to flowEnv
 
 nonterminal VarBinders with 
   config, grammarName, env, compiledGrammars, frame,
-  location, unparse, errors, defs,
+  location, unparse, errors, defs, boundNames,
   bindingTypes, bindingIndex, translation, varBinderCount,
   finalSubst, flowProjections, bindingNames, flowEnv, matchingAgainst;
 nonterminal VarBinder with
   config, grammarName, env, compiledGrammars, frame,
-  location, unparse, errors, defs,
+  location, unparse, errors, defs, boundNames,
   bindingType, bindingIndex, translation,
   finalSubst, flowProjections, bindingName, flowEnv, matchingAgainst;
 
-propagate errors, defs on VarBinders, VarBinder;
+propagate errors, defs, boundNames on VarBinders, VarBinder;
 
 --- Types of each child
 inherited attribute bindingTypes :: [Type];
@@ -37,6 +37,7 @@ autocopy attribute matchingAgainst :: Maybe<DclInfo>;
 
 synthesized attribute varBinderCount :: Integer;
 
+monoid attribute boundNames::[String];
 
 concrete production oneVarBinder
 top::VarBinders ::= v::VarBinder
@@ -109,8 +110,10 @@ top::VarBinder ::= n::Name
   -- NOT automatically decorated!)
   local ty :: Type =
     if top.bindingType.isDecorable
-    then decoratedType(top.bindingType)
+    then decoratedType(top.bindingType, freshInhSet())
     else top.bindingType;
+  production finalTy::Type = performSubstitution(ty, top.finalSubst);
+  production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
 
   production fName :: String = "__pv" ++ toString(genInt()) ++ ":" ++ n.name;
   
@@ -131,10 +134,11 @@ top::VarBinder ::= n::Name
     else noVertex();
   local deps :: [FlowVertex] =
     if top.bindingType.isDecorable
-    then depsForTakingRef(anonVertexType(fName), ty.typeName, top.flowEnv)
+    then map(anonVertexType(fName).inhVertex, fromMaybe([], refSet))
     else [];
 
   top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps)];
+  top.boundNames <- [n.name];
 
   -- finalSubst is not necessary, downSubst would work fine, but is not threaded through here.
   -- the point is that 'ty' for Pair<String Integer> would currently show Pair<a b>

@@ -1,10 +1,12 @@
 grammar silver:compiler:modification:primitivepattern;
 
+imports silver:util:treeset as ts;
+
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 
-import silver:compiler:definition:type:syntax only typerepType, TypeExpr, errorsFullyApplied;
+import silver:compiler:definition:type:syntax only typerepType, TypeExpr, errorsKindStar;
 import silver:compiler:extension:patternmatching only Arrow_kwd, Vbar_kwd, ensureDecoratedExpr; -- TODO remove
 
 import silver:compiler:translation:java:core;
@@ -20,12 +22,12 @@ terminal Match_kwd 'match' lexer classes {KEYWORD,RESERVED}; -- temporary!!!
 
 nonterminal PrimPatterns with 
   config, grammarName, env, compiledGrammars, frame,
-  location, unparse, errors,
+  location, unparse, errors, freeVars,
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation, isRoot, originRules;
 nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
-  location, unparse, errors,
+  location, unparse, errors, freeVars,
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation, isRoot, originRules;
 
@@ -33,6 +35,7 @@ autocopy attribute scrutineeType :: Type;
 autocopy attribute returnType :: Type;
 
 propagate errors on PrimPatterns, PrimPattern;
+propagate freeVars on PrimPatterns;
 
 concrete production matchPrimitiveConcrete
 top::Expr ::= 'match' e::Expr 'return' t::TypeExpr 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
@@ -66,10 +69,10 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
   
-  propagate errors;
+  propagate errors, freeVars;
   top.typerep = t.typerep;
 
-  top.errors <- t.errorsFullyApplied;
+  top.errors <- t.errorsKindStar;
   
   {--
    - Invariant: if we were given an undecorated expression, it should have been
@@ -183,6 +186,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
   
+  top.freeVars := ts:removeAll(ns.boundNames, e.freeVars);
+  
   local chk :: [Message] =
     if null(qn.lookupValue.dcls) || ns.varBinderCount == prod_type.arity then []
     else [err(qn.location, qn.name ++ " has " ++ toString(prod_type.arity) ++ " parameters but " ++ toString(ns.varBinderCount) ++ " patterns were provided")];
@@ -210,7 +215,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   
-  errCheck1 = check(decoratedType(prod_type.outputType), top.scrutineeType);
+  errCheck1 = check(decoratedType(prod_type.outputType, freshInhSet()), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -223,19 +228,30 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   -- Thread NORMALLY! YAY!
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
   
-  local contextDefs::[Def] = map(
-    \ c::Context -> c.contextPatternDef(top.grammarName, top.location, qn.lookupValue.fullName),
-    prod_contexts);
+  -- If there are contexts on the production, then we need to make the scrutinee available
+  -- in the RHS to access their implementations.
+  local scrutineeName::String = "__scrutineeNode_" ++ toString(genInt());
+  local contextDefs::[Def] = zipWith(
+    \ c::Context oc::Context ->
+      tcInstDef(
+        performContextSubstitution(c, e.finalSubst).contextPatternDcl(
+          oc,
+          if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
+          scrutineeName, top.location, top.grammarName)),
+    prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts);
   e.env = newScopeEnv(contextDefs ++ ns.defs, top.env);
   
-  top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++
-    ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
+  top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++ ") { " ++
+    (if null(prod_contexts) then "" else s"final ${makeProdName(qn.lookupValue.fullName)} ${scrutineeName} = (${makeProdName(qn.lookupValue.fullName)})scrutineeNode; ") ++
+    ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
 }
 
 abstract production prodPatternGadt
 top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
+  
+  top.freeVars := ts:removeAll(ns.boundNames, e.freeVars);
   
   local chk :: [Message] =
     if null(qn.lookupValue.dcls) || ns.varBinderCount == prod_type.arity then []
@@ -261,7 +277,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- part of the
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = composeSubst(errCheck2.upSubst, top.finalSubst); -- threading hack
   
-  errCheck1 = check(decoratedType(prod_type.outputType), top.scrutineeType);
+  errCheck1 = check(decoratedType(prod_type.outputType, freshInhSet()), top.scrutineeType);
   top.errors <- if errCheck1.typeerror
                 then [err(top.location, qn.name ++ " has type " ++ errCheck1.leftpp ++ " but we're trying to match against " ++ errCheck1.rightpp)]
                 else [];
@@ -278,20 +294,29 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.upSubst = top.downSubst;
   
   -- AFTER everything is done elsewhere, we come back with finalSubst, and we produce the refinement, and thread THAT through everything.
-  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, decoratedType(prod_type.outputType)));
+  errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, decoratedType(prod_type.outputType, freshInhSet())));
   e.downSubst = errCheck1.upSubst;
   errCheck2.downSubst = e.upSubst;
   -- Okay, now update the finalSubst....
   e.finalSubst = errCheck2.upSubst;
   -- Here ends the hack
   
-  local contextDefs::[Def] = map(
-    \ c::Context -> c.contextPatternDef(top.grammarName, top.location, qn.lookupValue.fullName),
-    prod_contexts);
+  -- If there are contexts on the production, then we need to make the scrutinee available
+  -- in the RHS to access their implementations.
+  local scrutineeName::String = "__scrutinee_" ++ toString(genInt());
+  local contextDefs::[Def] = zipWith(
+    \ c::Context oc::Context ->
+      tcInstDef(
+        performContextSubstitution(c, e.finalSubst).contextPatternDcl(
+          oc,
+          if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
+          scrutineeName, top.location, top.grammarName)),
+    prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts);
   e.env = newScopeEnv(contextDefs ++ ns.defs, top.env);
   
-  top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++
-    ") { " ++ ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
+  top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++ ") { " ++
+    (if null(prod_contexts) then "" else s"final ${makeProdName(qn.lookupValue.fullName)} ${scrutineeName} = (${makeProdName(qn.lookupValue.fullName)})scrutineeNode; ") ++
+    ns.translation ++ " return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++ e.translation ++ "; }";
 }
 
 -- TODO: We currently provide the below for ease of translation from complex case exprs, but
@@ -416,6 +441,8 @@ abstract production conslstPattern
 top::PrimPattern ::= h::Name t::Name e::Expr
 {
   top.unparse = "cons(" ++ h.unparse ++ ", " ++ t.unparse ++ ") -> " ++ e.unparse;
+  
+  top.freeVars := ts:removeAll([h.name, t.name], e.freeVars);
 
   local h_fName :: String = toString(genInt()) ++ ":" ++ h.name;
   local t_fName :: String = toString(genInt()) ++ ":" ++ t.name;

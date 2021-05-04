@@ -1,6 +1,7 @@
 grammar silver:compiler:modification:primitivepattern;
 
 import silver:compiler:modification:ffi only foreignType; -- so we cover foreignType with the 'refine' hack below. TODO
+import silver:compiler:translation:java:type;
 
 {--
  - Turns the existential variables of a production type into skolem constants,
@@ -70,11 +71,11 @@ top::Type ::= tv::TyVar
 {
   top.refine = 
     case top.refineWith of
-    | varType(j) ->
+    | varType(j) when j.kindrep == tv.kindrep ->
         if tv == j
         then emptySubst()
         else subst(tv, top.refineWith)
-    | t when t.kindArity == tv.kindArity ->
+    | t when t.kindrep == tv.kindrep ->
         if contains(tv, t.freeVariables)
         then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
         else subst(tv, t)
@@ -87,11 +88,11 @@ top::Type ::= tv::TyVar
 {
   top.refine = 
     case top.refineWith of
-    | skolemType(j) -> 
+    | skolemType(j) when j.kindrep == tv.kindrep -> 
         if tv == j
         then emptySubst()
         else subst(tv, top.refineWith)
-    | t when t.kindArity == tv.kindArity ->
+    | t when t.kindrep == tv.kindrep ->
         if contains(tv, t.freeVariables)
         then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
         else subst(tv, t)
@@ -168,13 +169,23 @@ top::Type ::=
     end;
 }
 
+aspect production inhSetType
+top::Type ::= inhs::[String]
+{
+  top.refine =
+    case top.refineWith of
+    | inhSetType(oinhs) when inhs == oinhs -> emptySubst()
+    | _ -> errorSubst("Tried to refine inh set type " ++ prettyType(top) ++ " with " ++ prettyType(top.unifyWith))
+    end;
+}
+
 aspect production nonterminalType
-top::Type ::= fn::String k::Integer _
+top::Type ::= fn::String ks::[Kind] _
 {
   top.refine = 
     case top.refineWith of
-    | nonterminalType(ofn, ok, _) ->
-        if fn == ofn && k == ok
+    | nonterminalType(ofn, oks, _) ->
+        if fn == ofn && ks == oks
         then emptySubst()
         else errorSubst("Tried to refine conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
     | _ -> errorSubst("Tried to refine nonterminal type " ++ fn ++ " with " ++ prettyType(top.refineWith))
@@ -195,11 +206,11 @@ top::Type ::= fn::String
 }
 
 aspect production decoratedType
-top::Type ::= te::Type
+top::Type ::= te::Type i::Type
 {
   top.refine = 
     case top.refineWith of
-    | decoratedType(ote) -> refine(te, ote)
+    | decoratedType(oi, ote) -> composeSubst(refine(te, ote), refine(i, oi))
     | _ -> errorSubst("Tried to refine decorated type with " ++ prettyType(top.refineWith))
     end;
 }
@@ -241,10 +252,10 @@ Substitution ::= scrutineeType::Type  constructorType::Type
   -- If you look at the type rules, you'll notice they're requiring "T" be the same,
   -- and this refinement only happens on the parameters (i.e. fmgu(T p = T a))
   return case scrutineeType, constructorType of
-         | decoratedType(t1), decoratedType(t2) ->
+         | decoratedType(t1, i1), decoratedType(t2, i2) ->
            case t1.baseType, t2.baseType of
            | nonterminalType(n1, _, _), nonterminalType(n2, _, _) when n1 == n2 ->
-             refineAll(t1.argTypes, t2.argTypes)
+             refineAll(i1 :: t1.argTypes, i2 :: t2.argTypes)
            | _, _ -> emptySubst()
            end
          | _, _ -> emptySubst()
@@ -295,22 +306,53 @@ Boolean ::= ls::[Type]
 
 
 --------
-synthesized attribute contextPatternDef::(Def ::= String Location String) occurs on Context;
+synthesized attribute contextPatternDcl::(DclInfo ::= Context [TyVar] String Location String) occurs on Context;
 
 aspect production instContext
 top::Context ::= cls::String t::Type
 {
-  top.contextPatternDef = instPatternConstraintDef(_, _, cls, t, _);
+  top.contextPatternDcl = instPatternConstraintDcl(cls, t, _, _, _, sourceLocation=_, sourceGrammar=_);
+}
+
+aspect production typeableContext
+top::Context ::= t::Type
+{
+  top.contextPatternDcl = typeablePatternConstraintDcl(t, _, _, _, sourceLocation=_, sourceGrammar=_);
+}
+
+aspect production inhSubsetContext
+top::Context ::= i1::Type i2::Type
+{
+  top.contextPatternDcl = inhSubsetPatternConstraintDcl(i1, i2, _, _, _, sourceLocation=_, sourceGrammar=_);
 }
 
 abstract production instPatternConstraintDcl
-top::DclInfo ::= fnTC::String ty::Type fnProd::String 
+top::DclInfo ::= fntc::String ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
 {
-  top.fullName = fnTC;
+  top.fullName = fntc;
   top.typeScheme = monoType(ty);
+  
+  oc.boundVariables = tvs;
+  top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
 }
-function instPatternConstraintDef
-Def ::= sg::String  sl::Location  fn::String  ty::Type fnProd::String
+
+abstract production typeablePatternConstraintDcl
+top::DclInfo ::= ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
 {
-  return tcInstDef(instPatternConstraintDcl(fn,ty,fnProd,sourceGrammar=sg,sourceLocation=sl));
+  top.fullName = "typeable";
+  top.typeScheme = monoType(ty);
+  
+  oc.boundVariables = tvs;
+  top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
+}
+
+abstract production inhSubsetPatternConstraintDcl
+top::DclInfo ::= i1::Type i2::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
+{
+  top.fullName = "subset";
+  top.typeScheme = monoType(i1);
+  top.typerep2 = i2;
+  
+  oc.boundVariables = tvs;
+  top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
 }

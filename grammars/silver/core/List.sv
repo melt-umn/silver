@@ -1,22 +1,44 @@
 grammar silver:core;
 
-{-comment
-  Applies a function to each element of the list.
 
-  This is a list of links.
-  @link[map]
-  @link[foldr]
-
-  param f  The function to apply
-  param l  The list to map over
-  return  The list containing the results of applying the function to l
--}
-function map
-[b] ::= f::(b ::= a)  l::[a]
-{
-  return if null(l) then []
-         else f(head(l)) :: map(f, tail(l));
+instance Functor [] {
+  map = \ f::(b ::= a) l::[a] ->
+    if null(l) then []
+    else f(head(l)) :: map(f, tail(l));
 }
+
+instance Apply [] {
+  ap = apM;
+}
+
+
+instance Applicative [] {
+  pure = \ x::a -> [x];
+}
+
+instance Bind [] {
+  bind = \ x::[a] y::([b] ::= a) -> flatMap(y, x);
+}
+
+instance Monad [] {}
+
+instance MonadFail [] {
+  fail = \ String -> [];
+}
+
+instance Alt List {
+  alt = appendList;
+}
+
+instance Plus [] {
+  empty = [];
+}
+
+instance Alternative [] {}
+
+instance MonadZero [] {}
+instance MonadPlus [] {}
+
 
 {--
  - Applies an operator right-associatively over a list.

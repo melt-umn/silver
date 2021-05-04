@@ -22,13 +22,14 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   top.defs := [];
 
   production namedSig :: NamedSignature = 
-    namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName, [], [],
+    namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName,
+      nilContext(), nilNamedSignatureElement(),
       namedSignatureElement(lhs.name, te.typerep),
-      annotationsForNonterminal(te.typerep, top.env));
+      foldNamedSignatureElements(annotationsForNonterminal(te.typerep, top.env)));
 
   propagate errors, flowDefs;
 
-  top.errors <- te.errorsFullyApplied;
+  top.errors <- te.errorsKindStar;
 
   local fakedDefs :: [Def] =
     [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];

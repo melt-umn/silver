@@ -63,7 +63,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   forwards to
     monoidAttributeDcl(
       $1, $2, a, tl, $5, te, 'with',
-      baseExpr(qName(te.location, "silver:core:empty"), location=te.location), ',',
+      baseExpr(qName(te.location, "silver:core:mempty"), location=te.location), ',',
       exprOperator(baseExpr(qName(te.location, "silver:core:append"), location=te.location), location=te.location), $7,
       location=top.location);
 }

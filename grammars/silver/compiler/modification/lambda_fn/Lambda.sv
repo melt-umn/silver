@@ -1,5 +1,6 @@
 import silver:compiler:definition:flow:ast only ExprVertexInfo, FlowVertex;
 import silver:compiler:definition:env;
+import silver:util:treeset as ts;
 
 --- Concrete Syntax for lambdas
 --------------------------------------------------------------------------------
@@ -17,15 +18,11 @@ top::Expr ::= '\' params::ProductionRHS '->' e::Expr
   forwards to lambdap(params, e, location=top.location);
 }
 
--- TODO: New type variables are not currently allowed on the params.  This isn't a big deal for
--- writing code since lambdas aren't generalized anyway, but it would be nice to have for generated
--- code involving lambdas.  This isn't implemented at the moment due to a mess right now with how
--- this works for ProductionDcl
--- Also issues here with lexically scoped type variables
 abstract production lambdap
 top::Expr ::= params::ProductionRHS e::Expr
 {
   top.unparse = "\\ " ++ params.unparse ++ " -> " ++ e.unparse;
+  top.freeVars := ts:removeAll(params.lambdaBoundVars, e.freeVars);
   
   propagate errors;
   
@@ -47,9 +44,10 @@ top::Expr ::= params::ProductionRHS e::Expr
 }
 
 monoid attribute lambdaDefs::[Def];
-attribute lambdaDefs occurs on ProductionRHS, ProductionRHSElem;
+monoid attribute lambdaBoundVars::[String];
+attribute lambdaDefs, lambdaBoundVars occurs on ProductionRHS, ProductionRHSElem;
 
-propagate lambdaDefs on ProductionRHS;
+propagate lambdaDefs, lambdaBoundVars on ProductionRHS;
 
 aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
@@ -57,6 +55,7 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
   production fName :: String = toString(genInt()) ++ ":" ++ id.name;
 --  production transName :: String = "lambda_param" ++ id.name ++ toString(genInt());
   top.lambdaDefs := [lambdaParamDef(top.grammarName, t.location, fName, t.typerep)];
+  top.lambdaBoundVars := [id.name];
 }
 
 abstract production lambdaParamReference

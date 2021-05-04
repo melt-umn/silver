@@ -31,23 +31,15 @@ top::FFIDef ::= name::String_t ':' 'return' code::String_t ';'
 function strictChildAccessor
 String ::= ns::NamedSignatureElement
 {
-  return "((" ++ ns.typerep.transType ++ ")common.Util.demand(c_" ++ ns.elementName ++ "))";
-}
-function lazyChildAccessor
-String ::= ns::NamedSignatureElement
-{
-  return "c_" ++ ns.elementName;
+  return "((" ++ ns.typerep.transType ++ ")common.Util.demand(" ++ ns.childRefElem ++ "))";
 }
 
 function computeSigTranslation
 String ::= str::String sig::NamedSignature
 {
-  return substituteAll(
-    substituteAll(str,
-      map(wrapStrictNotation, sig.inputNames),
-      map(strictChildAccessor, sig.inputElements)),
-    map(wrapLazyNotation, sig.inputNames),
-    map(lazyChildAccessor, sig.inputElements));
+  return substituteAll(str,
+      map(wrapStrictNotation, sig.inputNames) ++ map(wrapLazyNotation, sig.inputNames) ++ map(wrapContextNotation, range(0, length(sig.contexts))),
+      map(strictChildAccessor, sig.inputElements) ++ map((.childRefElem), sig.inputElements) ++ map(\ c::Context -> decorate c with {boundVariables = sig.freeVariables;}.contextRefElem, sig.contexts));
 }
 
 

@@ -19,6 +19,7 @@ public abstract class CollectionAttribute implements Lazy {
 	
 	private ArrayList<Lazy> pieces;
 	private Lazy base;
+	public boolean appliedNTFix;
 
 	public CollectionAttribute() {
 		this.pieces = new ArrayList<Lazy>();

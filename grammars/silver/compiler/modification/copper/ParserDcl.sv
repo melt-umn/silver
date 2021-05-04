@@ -2,7 +2,7 @@ grammar silver:compiler:modification:copper;
 
 import silver:compiler:driver:util only computeDependencies;
 
-terminal Parser_kwd 'parser' lexer classes {KEYWORD}; -- not RESERVED?
+terminal Parser_kwd 'parser' lexer classes {KEYWORD,RESERVED};
 
 -- TODO: You know, maybe parser specs should get moved over here as well.
 
@@ -29,11 +29,12 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   production fName :: String = top.grammarName ++ ":" ++ n.name;
 
   production namedSig :: NamedSignature =
-    namedSignature(fName, [],
-      [namedSignatureElement("stringToParse", stringType()),
-       namedSignatureElement("filenameToReport", stringType())],
-      namedSignatureElement("__func__lhs", appType(nonterminalType("silver:core:ParseResult", 1, false), t.typerep)),
-      []);
+    namedSignature(fName, nilContext(),
+      foldNamedSignatureElements([
+        namedSignatureElement("stringToParse", stringType()),
+        namedSignatureElement("filenameToReport", stringType())]),
+      namedSignatureElement("__func__lhs", appType(nonterminalType("silver:core:ParseResult", [starKind()], false), t.typerep)),
+      nilNamedSignatureElement());
 
   production spec :: ParserSpec =
     parserSpec(fName, t.typerep.typeName, m.moduleNames, m.customLayout, m.terminalPrefixes, m.grammarTerminalPrefixes, m.syntaxAst, sourceGrammar=top.grammarName, location=top.location);

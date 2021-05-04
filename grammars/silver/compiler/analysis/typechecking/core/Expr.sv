@@ -8,7 +8,7 @@ propagate upSubst, downSubst
      undecoratedAccessHandler, forwardAccess, decoratedAccessHandler,
      and, or, not, ifThenElse, plus, minus, multiply, divide, modulus,
      decorateExprWith, exprInh, presentAppExpr,
-     newFunction, terminalConstructor, noteAttachment;
+     terminalConstructor, noteAttachment;
 
 attribute contexts occurs on Expr;
 aspect default production
@@ -27,6 +27,15 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production functionReference
+top::Expr ::= q::Decorated QName
+{
+  contexts.contextLoc = q.location;
+  contexts.contextSource = "the use of " ++ q.name;
+  top.errors <- contexts.contextErrors;
+  top.contexts = typeScheme.contexts;
+}
+
+aspect production globalValueReference
 top::Expr ::= q::Decorated QName
 {
   contexts.contextLoc = q.location;
@@ -82,7 +91,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     then [err(top.location, "Access of " ++ q.name ++ " from a decorated type.")]
     else [];
   
-  thread downSubst, upSubst on top, errCheck1, top;
+  thread downSubst, upSubst on top, errCheck1, forward;
 }
 
 aspect production accessBouncer
@@ -120,7 +129,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     then [err(top.location, "Attribute " ++ q.name ++ " being accessed from an undecorated type.")]
     else [];
 
-  thread downSubst, upSubst on top, errCheck1, top;
+  thread downSubst, upSubst on top, errCheck1, forward;
 }
   
 
@@ -132,7 +141,7 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 
   thread downSubst, upSubst on top, note, e, errCheck1, top;
   
-  errCheck1 = check(note.typerep, nonterminalType("silver:core:OriginNote", 0, false));
+  errCheck1 = check(note.typerep, nonterminalType("silver:core:OriginNote", [], false));
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "First argument to attachNote must be OriginNote, was " ++ errCheck1.leftpp)]

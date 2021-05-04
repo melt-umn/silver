@@ -155,16 +155,17 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
 	top.docs := [undocumentedItem(top.docForName, top)];
 }
 
-aspect production unificationAttributeDcl
-top::AGDcl ::= 'unification' 'attribute' inh::Name ',' synPartial::Name  ',' syn::Name ';'
-{
-	top.docForName = inh.name++" and "++synPartial.name++" and "++syn.name++" (unification set)";
-	top.docUnparse = s"`unification attribute ${inh.name}, ${syn.name}, ${syn.name}`";
-	top.docDcls := [pair(inh.name, docDclInfo(inh.name, top.location, top.grammarName)),
-	                pair(syn.name, docDclInfo(syn.name, top.location, top.grammarName)),
-	                pair(synPartial.name, docDclInfo(synPartial.name, top.location, top.grammarName))];
-	top.docs := [undocumentedItem(top.docForName, top)];
-}
+-- Bizzare mismatching signature errors when uncommented:
+-- aspect production unificationAttributeDcl
+-- top::AGDcl ::= _ _ inh::Name i::TypeExpr _ synPartial::Name _ syn::Name _ _ qs::QNames _
+-- {
+-- 	top.docForName = inh.name++" and "++synPartial.name++" and "++syn.name++" (unification set)";
+-- 	top.docUnparse = s"`unification attribute ${inh.name}, ${syn.name}, ${syn.name}`";
+-- 	top.docDcls := [pair(inh.name, docDclInfo(inh.name, top.location, top.grammarName)),
+-- 	                pair(syn.name, docDclInfo(syn.name, top.location, top.grammarName)),
+-- 	                pair(synPartial.name, docDclInfo(synPartial.name, top.location, top.grammarName))];
+-- 	top.docs := [undocumentedItem(top.docForName, top)];
+-- }
 
 aspect production aspectDefaultProduction
 top::AGDcl ::= 'aspect' 'default' 'production' lhs::Name '::' _ '::=' body::ProductionBody 
@@ -204,7 +205,7 @@ aspect production typeClassDcl
 top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 {
 	top.docForName = id.name;
-	top.docUnparse = s"`class ${id.unparse}"`;
+	top.docUnparse = s"`class ${id.unparse}`";
 	top.docDcls := [pair(id.name, docDclInfo(id.name, top.location, top.grammarName))];
 	top.docs := [undocumentedItem(top.docForName, top)];
 }

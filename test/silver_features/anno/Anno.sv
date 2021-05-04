@@ -78,7 +78,7 @@ wrongCode "Too few arguments provided " {
 }
 
 -- Let's ensure we can still pattern match alright
-global grabstr :: String = case nt5 of moreAnnoNT(s) -> s end;
+global grabstr :: String = case nt5 of moreAnnoNT(s) -> s | _ -> error("match failed") end;
 equalityTest ( grabstr, "str", String, silver_tests ) ;
 
 

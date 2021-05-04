@@ -6,14 +6,20 @@ grammar silver:compiler:translation:java:core;
 synthesized attribute javaSignature :: String occurs on NamedSignature;
 synthesized attribute refInvokeTrans :: String occurs on NamedSignature;
 -- "final ContextName d_contextname"
+synthesized attribute contextSigElems :: [String] occurs on Contexts;
 synthesized attribute contextSigElem :: String occurs on Context;
 -- "final Object c_signame"
+synthesized attribute childSigElems :: [String] occurs on NamedSignatureElements;
+synthesized attribute annoSigElems :: [String] occurs on NamedSignatureElements;
 synthesized attribute childSigElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoSigElem :: String occurs on NamedSignatureElement;
 -- "d_contextname"
+synthesized attribute contextRefElems :: [String] occurs on Contexts;
 synthesized attribute contextRefElem :: String occurs on Context;
 -- "c_signame"
+synthesized attribute childRefElems :: [String] occurs on NamedSignatureElements;
 synthesized attribute childRefElem :: String occurs on NamedSignatureElement;
+synthesized attribute annoRefElems :: [String] occurs on NamedSignatureElements;
 synthesized attribute annoRefElem :: String occurs on NamedSignatureElement;
 -- "inhs[c_signame] = new lazy[]"
 synthesized attribute childStaticElem :: String occurs on NamedSignatureElement;
@@ -26,18 +32,64 @@ synthesized attribute annoNameElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoLookupElem :: String occurs on NamedSignatureElement;
 
 aspect production namedSignature
-top::NamedSignature ::= fn::String contexts::[Context] ie::[NamedSignatureElement] oe::NamedSignatureElement np::[NamedSignatureElement]
+top::NamedSignature ::= fn::String ctxs::Contexts ie::NamedSignatureElements oe::NamedSignatureElement np::NamedSignatureElements
 {
-  top.javaSignature = implode(", ", map((.contextSigElem), contexts) ++ map((.childSigElem), ie) ++ map((.annoSigElem), np));
-  top.refInvokeTrans = implode(", ", map((.contextRefElem), contexts) ++ map((.childRefElem), ie) ++ map((.annoRefElem), np));
+  top.javaSignature = implode(", ", ctxs.contextSigElems ++ ie.childSigElems ++ np.annoSigElems);
+  top.refInvokeTrans = implode(", ", ctxs.contextRefElems ++ ie.childRefElems ++ np.annoRefElems);
+}
+
+aspect production consContext
+top::Contexts ::= h::Context t::Contexts
+{
+  top.contextSigElems = h.contextSigElem :: t.contextSigElems;
+  top.contextRefElems = h.contextRefElem :: t.contextRefElems;
+}
+aspect production nilContext
+top::Contexts ::=
+{
+  top.contextSigElems = [];
+  top.contextRefElems = [];
 }
 
 aspect production instContext
 top::Context ::= fn::String t::Type
 {
-  top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(fn, t)}";
-  top.contextRefElem = makeConstraintDictName(fn, t);
+  top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(fn, t, top.boundVariables)}";
+  top.contextRefElem = makeConstraintDictName(fn, t, top.boundVariables);
 }
+
+aspect production typeableContext
+top::Context ::= t::Type
+{
+  top.contextSigElem = s"final ${top.transType} ${makeTypeableName(t, top.boundVariables)}";
+  top.contextRefElem = makeTypeableName(t, top.boundVariables);
+}
+
+aspect production inhSubsetContext
+top::Context ::= i1::Type i2::Type
+{
+  top.contextSigElem = s"final ${top.transType} ${makeInhSubsetName(i1, i2, top.boundVariables)}";
+  top.contextRefElem = makeInhSubsetName(i1, i2, top.boundVariables);
+}
+
+aspect production consNamedSignatureElement
+top::NamedSignatureElements ::= h::NamedSignatureElement t::NamedSignatureElements
+{
+  top.childSigElems = h.childSigElem :: t.childSigElems;
+  top.annoSigElems = h.annoSigElem :: t.annoSigElems;
+  top.childRefElems = h.childRefElem :: t.childRefElems;
+  top.annoRefElems = h.annoRefElem :: t.annoRefElems;
+}
+
+aspect production nilNamedSignatureElement
+top::NamedSignatureElements ::=
+{
+  top.childSigElems = [];
+  top.annoSigElems = [];
+  top.childRefElems = [];
+  top.annoRefElems = [];
+}
+
 
 -- TODO: It'd be nice to maybe split these into the ordered parameters and the annotations
 aspect production namedSignatureElement

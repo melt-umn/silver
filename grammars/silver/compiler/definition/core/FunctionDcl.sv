@@ -47,15 +47,19 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
 {
   top.unparse = s"${cl.unparse} => ${lhs.unparse} ::= ${rhs.unparse}";
 
-  cl.instanceHead = nothing();
-  cl.constraintSigName = just(top.signatureName);
-  cl.classDefName = nothing();
+  cl.constraintPos = signaturePos(top.namedSignature);
 
   top.defs := lhs.defs ++ rhs.defs;
   top.constraintDefs = cl.defs;
 
-  -- For the moment, functions do not have named parameters (hence, [])
-  top.namedSignature = namedSignature(top.signatureName, cl.contexts, rhs.inputElements, lhs.outputElement, []);
+  top.namedSignature =
+    namedSignature(
+      top.signatureName,
+      foldContexts(cl.contexts),
+      foldNamedSignatureElements(rhs.inputElements),
+      lhs.outputElement,
+      -- For the moment, functions do not have named parameters (hence, nilNamedSignatureElement)
+      nilNamedSignatureElement());
 }
 
 concrete production functionSignatureNoCL

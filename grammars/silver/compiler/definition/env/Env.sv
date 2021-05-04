@@ -15,15 +15,15 @@ grammar silver:compiler:definition:env;
 
 nonterminal Env with typeTree, valueTree, attrTree, instTree, prodOccursTree, occursTree, prodsForNtTree;
 
-synthesized attribute typeTree      :: [EnvScope<DclInfo>]; -- Expr is type tau
-synthesized attribute valueTree     :: [EnvScope<DclInfo>]; -- x has type tau
-synthesized attribute attrTree      :: [EnvScope<DclInfo>]; -- attr a has type tau
+synthesized attribute typeTree      :: [EnvTree<DclInfo>]; -- Expr is type tau
+synthesized attribute valueTree     :: [EnvTree<DclInfo>]; -- x has type tau
+synthesized attribute attrTree      :: [EnvTree<DclInfo>]; -- attr a has type tau
 
-synthesized attribute instTree       :: EnvScope<DclInfo>; -- class on type
-synthesized attribute prodOccursTree :: EnvScope<DclInfo>; -- value on prod
-synthesized attribute occursTree     :: EnvScope<DclInfo>; -- attr on NT
+synthesized attribute instTree       :: EnvTree<DclInfo>; -- class on type
+synthesized attribute prodOccursTree :: EnvTree<DclInfo>; -- value on prod
+synthesized attribute occursTree     :: EnvTree<DclInfo>; -- attr on NT
 
-synthesized attribute prodsForNtTree :: [EnvScope<DclInfo>]; -- maps nt fname to prods known to construct it
+synthesized attribute prodsForNtTree :: [EnvTree<DclInfo>]; -- maps nt fname to prods known to construct it
 
 ----------------------------------------------------------------------------------------------------
 --Environment creation functions--------------------------------------------------------------------
@@ -37,15 +37,15 @@ Decorated Env ::=
 abstract production i_emptyEnv
 top::Env ::=
 {
-  top.typeTree = [emptyEnvScope()];
-  top.valueTree = [emptyEnvScope()];
-  top.attrTree = [emptyEnvScope()];
+  top.typeTree = [emptyEnvTree()];
+  top.valueTree = [emptyEnvTree()];
+  top.attrTree = [emptyEnvTree()];
   
-  top.instTree = emptyEnvScope();
-  top.prodOccursTree = emptyEnvScope();
-  top.occursTree = emptyEnvScope();
+  top.instTree = emptyEnvTree();
+  top.prodOccursTree = emptyEnvTree();
+  top.occursTree = emptyEnvTree();
   
-  top.prodsForNtTree = [emptyEnvScope()];
+  top.prodsForNtTree = [emptyEnvTree()];
 }
 
 function toEnv
@@ -77,9 +77,9 @@ top::Env ::= e1::Decorated Env  e2::Decorated Env
   top.valueTree = e1.valueTree ++ e2.valueTree;
   top.attrTree = e1.attrTree ++ e2.attrTree;
 
-  top.instTree = appendEnvScope(e1.instTree, e2.instTree);
-  top.prodOccursTree = appendEnvScope(e1.prodOccursTree, e2.prodOccursTree);
-  top.occursTree = appendEnvScope(e1.occursTree, e2.occursTree);
+  top.instTree = appendEnvTree(e1.instTree, e2.instTree);
+  top.prodOccursTree = appendEnvTree(e1.prodOccursTree, e2.prodOccursTree);
+  top.occursTree = appendEnvTree(e1.occursTree, e2.occursTree);
 
   top.prodsForNtTree = e1.prodsForNtTree ++ e2.prodsForNtTree;
 }
@@ -95,20 +95,20 @@ Decorated Env ::= d::[Def]  e::Decorated Env
 abstract production i_newScopeEnv
 top::Env ::= d::Defs  e::Decorated Env
 {
-  top.typeTree = oneEnvScope(buildTree(d.typeList)) :: e.typeTree;
-  top.valueTree = oneEnvScope(buildTree(d.valueList)) :: e.valueTree;
-  top.attrTree = oneEnvScope(buildTree(d.attrList)) :: e.attrTree;
+  top.typeTree = buildTree(d.typeList) :: e.typeTree;
+  top.valueTree = buildTree(d.valueList) :: e.valueTree;
+  top.attrTree = buildTree(d.attrList) :: e.attrTree;
 
-  top.instTree = consEnvScope(buildTree(mapFullnameDcls(d.instList)), e.instTree);
-  top.prodOccursTree = consEnvScope(buildTree(mapFullnameDcls(d.prodOccursList)), e.prodOccursTree);
+  top.instTree = consEnvTree(mapFullnameDcls(d.instList), e.instTree);
+  top.prodOccursTree = consEnvTree(mapFullnameDcls(d.prodOccursList), e.prodOccursTree);
   top.occursTree = e.occursTree;
 
-  top.prodsForNtTree = oneEnvScope(buildTree(map(envItemNTFromProdDcl, d.prodDclList))) :: e.prodsForNtTree;
+  top.prodsForNtTree = buildTree(map(envItemNTFromProdDcl, d.prodDclList)) :: e.prodsForNtTree;
 }
 
 {--
  - Introduces new occurs defs to an environment.
- - This is seperate from newEnvScope as we must be able to build the other env trees without having the occurs tree.
+ - This is seperate from newScopeEnv as we must be able to build the other env trees without having the occurs tree.
  -}
 function occursEnv
 Decorated Env ::= d::[DclInfo]  e::Decorated Env
@@ -124,7 +124,7 @@ top::Env ::= d::[DclInfo]  e::Decorated Env
   
   top.instTree = e.instTree;
   top.prodOccursTree = e.prodOccursTree;
-  top.occursTree = consEnvScope(buildTree(mapFullnameDcls(d)), e.occursTree);
+  top.occursTree = consEnvTree(mapFullnameDcls(d), e.occursTree);
   
   top.prodsForNtTree = e.prodsForNtTree;
 }
@@ -134,15 +134,15 @@ top::Env ::= d::[DclInfo]  e::Decorated Env
 ----------------------------------------------------------------------------------------------------
 
 function searchEnvAll
-[a] ::= search::String e::[EnvScope<a>]
+[a] ::= search::String e::[EnvTree<a>]
 {
-  return flatMap(searchEnvScope(search, _), e);
+  return flatMap(searchEnvTree(search, _), e);
 }
 
 function searchEnv
-[a] ::= search::String e::[EnvScope<a>]
+[a] ::= search::String e::[EnvTree<a>]
 {
-  local found :: [a] = searchEnvScope(search, head(e));
+  local found :: [a] = searchEnvTree(search, head(e));
   
   return if null(e) then []
          else if null(found) then searchEnv(search, tail(e))
@@ -152,7 +152,7 @@ function searchEnv
 function getValueDclInScope
 [DclInfo] ::= search::String e::Decorated Env
 {
-  return searchEnvScope(search, head(e.valueTree));
+  return searchEnvTree(search, head(e.valueTree));
 }
 function getValueDcl
 [DclInfo] ::= search::String e::Decorated Env
@@ -168,7 +168,7 @@ function getValueDclAll
 function getTypeDclInScope
 [DclInfo] ::= search::String e::Decorated Env
 {
-  return searchEnvScope(search, head(e.typeTree));
+  return searchEnvTree(search, head(e.typeTree));
 }
 function getTypeDcl
 [DclInfo] ::= search::String e::Decorated Env
@@ -184,7 +184,7 @@ function getTypeDclAll
 function getAttrDclInScope
 [DclInfo] ::= search::String e::Decorated Env
 {
-  return searchEnvScope(search, head(e.attrTree));
+  return searchEnvTree(search, head(e.attrTree));
 }
 function getAttrDcl
 [DclInfo] ::= search::String e::Decorated Env
@@ -201,7 +201,7 @@ function getOccursDcl
 [DclInfo] ::= fnat::String fnnt::String e::Decorated Env
 {
   -- retrieve all attribute Dcls on NT fnnt
-  return occursOnHelp(searchEnvScope(fnnt, e.occursTree), fnat);
+  return occursOnHelp(searchEnvTree(fnnt, e.occursTree), fnat);
 }
 function occursOnHelp
 [DclInfo] ::= i::[DclInfo] fnat::String
@@ -216,7 +216,7 @@ function occursOnHelp
 function getProdAttrs
 [DclInfo] ::= fnprod::String e::Decorated Env
 {
-  return searchEnvScope(fnprod, e.prodOccursTree);
+  return searchEnvTree(fnprod, e.prodOccursTree);
 }
 
 {--
@@ -250,7 +250,7 @@ function getKnownProds
 function getAttrsOn
 [DclInfo] ::= fnnt::String e::Decorated Env
 {
-  return searchEnvScope(fnnt, e.occursTree);
+  return searchEnvTree(fnnt, e.occursTree);
 }
 
 -- This ensure the annotation list is in the properly sorted order!
@@ -272,7 +272,7 @@ NamedSignatureElement ::= nt::Type  anno::DclInfo
   return namedSignatureElement(anno.attrOccurring, anno.typeScheme.typerep);
 }
 
--- Looks up class instnaces matching a type
+-- Looks up class instances matching a type
 function getInstanceDcl
 [DclInfo] ::= fntc::String t::Type e::Decorated Env
 {
@@ -280,3 +280,68 @@ function getInstanceDcl
   c.env = e;
   return c.resolved;
 }
+
+-- Compute a lower bound on the members of an InhSet type, including transitive ones arising from subset constraints
+function getMinInhSetMembers
+([String], [TyVar]) ::= seen::[TyVar] t::Type e::Decorated Env
+{
+  local c::Context = inhSubsetContext(varType(freshTyVar(inhSetKind())), t);
+  c.env = e;
+  
+  local recurse::[([String], [TyVar])] =
+    map(
+      \ d::DclInfo -> getMinInhSetMembers(t.freeVariables ++ seen, d.typeScheme.monoType, e),
+      c.resolved);
+
+  return
+    case t of
+    | skolemType(tv) when contains(tv, seen) -> ([], [])
+    | varType(_) -> ([], [])  -- If an InhSet is unspecialized after type checking, assume it is empty
+    | _ -> (sort(unions(t.inhSetMembers :: map(fst, recurse))), unions(t.freeVariables :: map(snd, recurse))) 
+    end;
+}
+
+function getMinRefSet
+[String] ::= t::Type e::Decorated Env
+{
+  return
+    case t of
+    | decoratedType(_, i) -> getMinInhSetMembers([], i, e).fst
+    | _ -> []
+    end;
+}
+
+-- Try to compute an upper bound on the members of an InhSet type, including transitive ones arising from subset constraints
+function getMaxInhSetMembers
+(Maybe<[String]>, [TyVar]) ::= seen::[TyVar] t::Type e::Decorated Env
+{
+  local c::Context = inhSubsetContext(t, varType(freshTyVar(inhSetKind())));
+  c.env = e;
+  
+  local recurse::[(Maybe<[String]>, [TyVar])] =
+    map(
+      \ d::DclInfo -> getMaxInhSetMembers(t.freeVariables ++ seen, d.typerep2, e),
+      c.resolved);
+  
+  return
+    case t of
+    | skolemType(tv) when contains(tv, seen) -> (nothing(), [])
+    | varType(_) -> (just([]), [])  -- If an InhSet is unspecialized after type checking, assume it is empty
+    | inhSetType(inhs) -> (just(inhs), [])
+    | _ -> (map(sort, foldr(
+        \ inhs1::Maybe<[String]> inhs2::Maybe<[String]> -> alt(lift2(intersect, inhs1, inhs2), alt(inhs1, inhs2)),
+        empty, map(fst, recurse))),
+      unions(t.freeVariables :: map(snd, recurse)))
+    end;
+}
+
+function getMaxRefSet
+Maybe<[String]> ::= t::Type e::Decorated Env
+{
+  return
+    case t of
+    | decoratedType(_, i) -> getMaxInhSetMembers([], i, e).fst
+    | _ -> just([])
+    end;
+}
+ 

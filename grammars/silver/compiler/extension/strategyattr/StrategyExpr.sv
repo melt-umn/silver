@@ -226,14 +226,14 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
       }
     | false, true ->
       Silver_Expr {
-        silver:core:mapMaybe(
+        silver:core:map(
           \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep, location=top.location)} ->
             decorate res with { $ExprInhs{allInhs} }.$name{s2Name},
           $Expr{s1.partialTranslation})
       }
     | false, false ->
       Silver_Expr {
-        silver:core:bindMaybe(
+        silver:core:bind(
           $Expr{s1.partialTranslation},
           \ res::$TypeExpr{typerepTypeExpr(top.frame.signature.outputElement.typerep, location=top.location)} ->
             decorate res with { $ExprInhs{allInhs} }.$name{s2Name})
@@ -334,8 +334,9 @@ top::StrategyExpr ::= s::StrategyExpr
                      top.frame.signature.namedInputElements))})
            },
            location=top.location)],
+        false,
         Silver_Expr { silver:core:nothing() },
-        appType(nonterminalType("silver:core:Maybe", 1, false), top.frame.signature.outputElement.typerep),
+        appType(nonterminalType("silver:core:Maybe", [starKind()], false), top.frame.signature.outputElement.typerep),
         location=top.location);
   top.totalTranslation =
     if sTotal
@@ -471,8 +472,8 @@ top::StrategyExpr ::= s::StrategyExpr
            end
          Could also be implemented as
            orElse(
-             bindMaybe(a.s, \ a_s::Foo -> returnMaybe(prod(a_s, b, c))),
-             bindMaybe(c.s, \ c_s::Bar -> returnMaybe(prod(a, b, c_s)))  -}
+             bind(a.s, \ a_s::Foo -> pure(prod(a_s, b, c))),
+             bind(c.s, \ c_s::Bar -> pure(prod(a, b, c_s)))  -}
       caseExpr(
         map(
           \ a::String -> Silver_Expr { $name{a}.$name{sName} },
@@ -509,8 +510,9 @@ top::StrategyExpr ::= s::StrategyExpr
                 location=top.location)
             end end,
             range(0, length(matchingChildren))),
+        false,
         Silver_Expr { silver:core:nothing() },
-        appType(nonterminalType("silver:core:Maybe", 1, false), top.frame.signature.outputElement.typerep),
+        appType(nonterminalType("silver:core:Maybe", [starKind()], false), top.frame.signature.outputElement.typerep),
         location=top.location);
   top.totalTranslation =
     if sTotal && !null(matchingChildren)
@@ -604,8 +606,9 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
                      top.frame.signature.namedInputElements))})
            },
            location=top.location)],
+        false,
         Silver_Expr { silver:core:nothing() },
-        appType(nonterminalType("silver:core:Maybe", 1, false), top.frame.signature.outputElement.typerep),
+        appType(nonterminalType("silver:core:Maybe", [starKind()], false), top.frame.signature.outputElement.typerep),
         location=top.location)
     else Silver_Expr { silver:core:nothing() };
 }
@@ -704,7 +707,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
       assignExpr(id, '::', ty, '=', errorExpr([], location=top.location), location=top.location),
       caseExpr(
         [hackExprType(ty.typerep, location=top.location)],
-        ml.matchRuleList,
+        ml.matchRuleList, false,
         errorExpr([], location=top.location),
         ty.typerep,
         location=top.location),
@@ -723,7 +726,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
     if !ty.typerep.isDecorable
     then [wrn(ty.location, "Only rules on nonterminals can have an effect")]
     else [];
-  top.errors <- ty.errorsFullyApplied;
+  top.errors <- ty.errorsKindStar;
   
   top.flowDefs <- checkExpr.flowDefs;
   
@@ -732,9 +735,9 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   local res::Expr =
     caseExpr(
       [Silver_Expr { $name{top.frame.signature.outputElement.elementName} }],
-      ml.translation,
+      ml.translation, false,
       Silver_Expr { silver:core:nothing() },
-      appType(nonterminalType("silver:core:Maybe", 1, false), ty.typerep),
+      appType(nonterminalType("silver:core:Maybe", [starKind()], false), ty.typerep),
       location=top.location);
   top.partialTranslation =
     if unify(ty.typerep, top.frame.signature.outputElement.typerep).failure

@@ -24,24 +24,8 @@ attribute flowVertexInfo occurs on Expr;
 propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr
   excluding
     childReference, lhsReference, localReference, forwardReference, forwardAccess, synDecoratedAccessHandler, inhDecoratedAccessHandler,
-    decorateExprWith, newFunction, letp, lexicalLocalReference, matchPrimitiveReal;
+    decorateExprWith, letp, lexicalLocalReference, matchPrimitiveReal;
 propagate flowDefs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
-
-
-function inhsForTakingRef
-[String] ::= nt::String  flowEnv::Decorated FlowEnv
-{
-  return case getInhsForNtRef(nt, flowEnv) of
-         | ntRefFlowDef(_, inhs) :: _ -> inhs
-         | _ -> []
-         end;
-}
-
-function depsForTakingRef
-[FlowVertex] ::= f::VertexType  nt::String  flowEnv::Decorated FlowEnv
-{
-  return map(f.inhVertex, inhsForTakingRef(nt, flowEnv));  
-}
 
 aspect default production
 top::Expr ::=
@@ -57,12 +41,14 @@ top::Expr ::= q::Decorated QName
 {
   -- Note that q should find the actual type written in the signature, and so
   -- isDecorable on that indeed tells us whether it's something autodecorated.
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowDeps :=
-    if q.lookupValue.typeScheme.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
-    then depsForTakingRef(rhsVertexType(q.lookupValue.fullName), q.lookupValue.typeScheme.typeName, top.flowEnv)
+    if q.lookupValue.typeScheme.isDecorable && !finalTy.isDecorable
+    then map(rhsVertexType(q.lookupValue.fullName).inhVertex, fromMaybe([], refSet))
     else [];
   top.flowVertexInfo = 
-    if q.lookupValue.typeScheme.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    if q.lookupValue.typeScheme.isDecorable && !finalTy.isDecorable
     then hasVertex(rhsVertexType(q.lookupValue.fullName))
     else noVertex();
 }
@@ -70,12 +56,14 @@ aspect production lhsReference
 top::Expr ::= q::Decorated QName
 {
   -- Always a decorable type, so just check how it's being used:
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowDeps :=
-    if !performSubstitution(top.typerep, top.finalSubst).isDecorable
-    then depsForTakingRef(lhsVertexType, q.lookupValue.typeScheme.typeName, top.flowEnv)
+    if !finalTy.isDecorable
+    then map(lhsVertexType.inhVertex, fromMaybe([], refSet))
     else [];
   top.flowVertexInfo = 
-    if !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    if !finalTy.isDecorable
     then hasVertex(lhsVertexType)
     else noVertex();
 }
@@ -83,13 +71,15 @@ aspect production localReference
 top::Expr ::= q::Decorated QName
 {
   -- Again, q give the actual type written.
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowDeps := [localEqVertex(q.lookupValue.fullName)] ++
-    if q.lookupValue.typeScheme.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
-    then depsForTakingRef(localVertexType(q.lookupValue.fullName), q.lookupValue.typeScheme.typeName, top.flowEnv)
+    if q.lookupValue.typeScheme.isDecorable && !finalTy.isDecorable
+    then map(localVertexType(q.lookupValue.fullName).inhVertex, fromMaybe([], refSet))
     else [];
     
   top.flowVertexInfo =
-    if q.lookupValue.typeScheme.isDecorable && !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    if q.lookupValue.typeScheme.isDecorable && !finalTy.isDecorable
     then hasVertex(localVertexType(q.lookupValue.fullName))
     else noVertex();
 }
@@ -97,13 +87,15 @@ aspect production forwardReference
 top::Expr ::= q::Decorated QName
 {
   -- Again, always a decorable type.
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowDeps := [forwardEqVertex()]++
-    if !performSubstitution(top.typerep, top.finalSubst).isDecorable
-    then depsForTakingRef(forwardVertexType, q.lookupValue.typeScheme.typeName, top.flowEnv)
+    if !finalTy.isDecorable
+    then map(forwardVertexType.inhVertex, fromMaybe([], refSet))
     else [];
     
   top.flowVertexInfo =
-    if !performSubstitution(top.typerep, top.finalSubst).isDecorable
+    if !finalTy.isDecorable
     then hasVertex(forwardVertexType)
     else noVertex();
 }
@@ -207,8 +199,10 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 
   -- Finally, our standard flow deps mimic those of a local: "taking a reference"
   -- This are of course ignored when treated specially.
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowDeps := [anonEqVertex(inh.decorationVertex)] ++
-    depsForTakingRef(anonVertexType(inh.decorationVertex), performSubstitution(e.typerep, top.finalSubst).typeName, top.flowEnv);
+    map(anonVertexType(inh.decorationVertex).inhVertex, fromMaybe([], refSet));
 }
 
 autocopy attribute decorationVertex :: String occurs on ExprInhs, ExprInh;
@@ -255,17 +249,6 @@ top::Expr ::= e::Decorated Expr
 {
   top.flowDeps <- e.flowDeps;
   top.flowDefs <- e.flowDefs;
-}
-
-aspect production newFunction
-top::Expr ::= 'new' '(' e1::Expr ')'
-{
-  -- Emit nothing except the keepDeps, for a vertex node
-  top.flowDeps :=
-    case e1.flowVertexInfo of
-    | hasVertex(vertex) -> vertex.eqVertex
-    | noVertex() -> e1.flowDeps
-    end;
 }
 
 

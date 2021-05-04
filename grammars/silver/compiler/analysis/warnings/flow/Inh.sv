@@ -397,10 +397,53 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 Step 2: Let's go check on expressions. This has two purposes:
 1. Better error messages for missing equations than the "transitive dependency" ones.
    But technically, unneeded and transititve dependencies are covering this.
-2. We have to ensure that each individual access from a reference fits within the blessed set.
+2. We have to ensure that each individual access from a reference fits within the inferred reference set.
+   Additionally we must check that wherever we take a reference, the required reference set is bounded.
    This is not covered by any other checks.
 -}
 
+aspect production childReference
+top::Expr ::= q::Decorated QName
+{
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
+    && q.lookupValue.typeScheme.isDecorable
+    then if refSet.isJust then []
+         else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.", top.config.runMwda)]
+    else [];
+}
+aspect production lhsReference
+top::Expr ::= q::Decorated QName
+{
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
+    then if refSet.isJust then []
+         else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.", top.config.runMwda)]
+    else [];
+}
+aspect production localReference
+top::Expr ::= q::Decorated QName
+{
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
+    && q.lookupValue.typeScheme.isDecorable
+    then if refSet.isJust then []
+         else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.", top.config.runMwda)]
+    else [];
+}
+aspect production forwardReference
+top::Expr ::= q::Decorated QName
+{
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
+    then if refSet.isJust then []
+         else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.", top.config.runMwda)]
+    else [];
+}
 
 aspect production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
@@ -417,11 +460,10 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   -- oh no again
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
-  local eTypeName :: String = performSubstitution(e.typerep, e.upSubst).typeName;
+  local finalTy :: Type = performSubstitution(e.typerep, e.upSubst);
   local diff :: [String] =
-    set:toList(set:removeAll(
-      inhsForTakingRef(eTypeName, top.flowEnv),  -- blessed inhs for a reference
-      inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow))); -- needed inhs
+    set:toList(set:removeAll(getMinRefSet(finalTy, top.env),  -- blessed inhs for a reference
+      inhDepsForSyn(q.attrDcl.fullName, finalTy.typeName, myFlow))); -- needed inhs
   
   -- CASE 1: References. This check is necessary and won't be caught elsewhere.
   top.errors <- 
@@ -433,7 +475,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       -- without a vertex, we're accessing from a reference, and so...
       | noVertex() ->
           if null(diff) then []
-          else [mwdaWrn(top.location, "Access of " ++ q.name ++ " from reference requires inherited attributes not known to be supplied to references: " ++ implode(", ", diff), top.config.runMwda)]
+          else [mwdaWrn(top.location, "Access of " ++ q.name ++ " from reference of type " ++ prettyType(finalTy) ++ " requires inherited attributes not known to be supplied to this reference: " ++ implode(", ", diff), top.config.runMwda)]
       end
     else [];
 
@@ -458,7 +500,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                       isEquationMissing(
                         lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                         _),
-                      set:toList(inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow))))
+                      set:toList(inhDepsForSyn(q.attrDcl.fullName, finalTy.typeName, myFlow))))
              in if null(inhs) then []
                 else [mwdaWrn(top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied", top.config.runMwda)]
             end
@@ -471,7 +513,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                     isEquationMissing(
                       lookupLocalInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                       _),
-                    set:toList(inhDepsForSyn(q.attrDcl.fullName, eTypeName, myFlow)))
+                    set:toList(inhDepsForSyn(q.attrDcl.fullName, finalTy.typeName, myFlow)))
              in if null(inhs) then []
                 else [mwdaWrn(top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied", top.config.runMwda)]
             end
@@ -487,6 +529,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   -- In this case, ONLY check for references.
   -- The transitive deps error will be less difficult to figure out when there's
   -- an explicit access to the attributes.
+  local finalTy::Type = performSubstitution(e.typerep, e.upSubst);
   top.errors <- 
     if null(e.errors)
     && (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
@@ -495,9 +538,9 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       | hasVertex(_) -> [] -- no check to make, as it was done transitively
       -- without a vertex, we're accessing from a reference, and so...
       | noVertex() ->
-          if contains(q.attrDcl.fullName, inhsForTakingRef(performSubstitution(e.typerep, e.upSubst).typeName, top.flowEnv))
+          if contains(q.attrDcl.fullName, getMinRefSet(finalTy, top.env))
           then []
-          else [mwdaWrn(top.location, "Access of inherited attribute " ++ q.name ++ " from a reference is not permitted, as references are not known to be decorated with this attribute.", top.config.runMwda)]
+          else [mwdaWrn(top.location, "Access of inherited attribute " ++ q.name ++ " on reference of type " ++ prettyType(finalTy) ++ " is not permitted", top.config.runMwda)]
       end
     else [];      
 }
@@ -518,8 +561,7 @@ top::Expr ::= '(' '.' q::QName ')'
   -- We need to check that the flow sets are acceptable to what we're doing
   -- undecorated accesses: flow type for attribute has to be empty
   -- decorated accesses: FT has to be subset of refset
-  local acceptable :: [String] =
-    if inputType.isDecorated then inhsForTakingRef(inputType.typeName, top.flowEnv) else [];
+  local acceptable :: [String] = getMinRefSet(inputType, top.env);
 
   top.errors <- 
     if q.lookupAttribute.found
@@ -563,16 +605,14 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   -- Subtract the ref set from our deps
   local diff :: [String] =
-    set:toList(set:removeAll(
-      inhsForTakingRef(e.typerep.typeName, top.flowEnv),
-      set:add(inhDeps, set:empty())));
+    set:toList(set:removeAll(getMinRefSet(e.typerep, top.env), set:add(inhDeps, set:empty())));
 
   top.errors <-
     if null(e.errors)
     && (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
     && sinkVertexName.isJust
     && !null(diff)
-    then [mwdaWrn(e.location, "Pattern match on reference has transitive dependencies on " ++ implode(", ", diff) ++ " which are not known to be supplied to references", top.config.runMwda)]
+    then [mwdaWrn(e.location, "Pattern match on reference of type " ++ prettyType(e.typerep) ++ " has transitive dependencies on " ++ implode(", ", diff), top.config.runMwda)]
     else [];
 
 }
@@ -596,6 +636,14 @@ autocopy attribute receivedDeps :: [FlowVertex] occurs on VarBinders, VarBinder,
 aspect production varVarBinder
 top::VarBinder ::= n::Name
 {
+  -- Check that we're not taking an unbounded reference
+  top.errors <-
+    if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
+    && top.bindingType.isDecorable
+    then if refSet.isJust then []
+         else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.", top.config.runMwda)]
+    else [];
+
   -- fName is our invented vertex name for the pattern variable
   local requiredInhs :: [String] =
     toAnonInhs(top.receivedDeps, fName, top.env);

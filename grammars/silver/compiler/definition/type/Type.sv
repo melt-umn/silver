@@ -2,7 +2,7 @@ grammar silver:compiler:definition:type;
 
 option silver:compiler:modification:ffi; -- foreign types
 
-synthesized attribute kindArity :: Integer;
+synthesized attribute kindrep :: Kind;
 synthesized attribute freeVariables :: [TyVar];
 synthesized attribute boundVars :: [TyVar];
 synthesized attribute contexts :: [Context];
@@ -53,10 +53,22 @@ top::Context ::= cls::String t::Type
   top.freeVariables = t.freeVariables;
 }
 
+abstract production typeableContext
+top::Context ::= t::Type
+{
+  top.freeVariables = t.freeVariables;
+}
+
+abstract production inhSubsetContext
+top::Context ::= i1::Type i2::Type
+{
+  top.freeVariables = setUnionTyVars(i1.freeVariables, i2.freeVariables);
+}
+
 {--
  - Silver Type Representations.
  -}
-nonterminal Type with kindArity, freeVariables, tracked;
+nonterminal Type with kindrep, freeVariables, tracked;
 synthesized attribute tracked :: Boolean;
 
 aspect default production
@@ -71,7 +83,7 @@ top::Type ::=
 abstract production varType
 top::Type ::= tv::TyVar
 {
-  top.kindArity = tv.kindArity;
+  top.kindrep = tv.kindrep;
   top.freeVariables = [tv];
 }
 
@@ -82,7 +94,7 @@ top::Type ::= tv::TyVar
 abstract production skolemType
 top::Type ::= tv::TyVar
 {
-  top.kindArity = tv.kindArity;
+  top.kindrep = tv.kindrep;
   top.freeVariables = [tv];
 }
 
@@ -92,7 +104,11 @@ top::Type ::= tv::TyVar
 abstract production appType
 top::Type ::= c::Type a::Type
 {
-  top.kindArity = if c.kindArity > 0 then c.kindArity - 1 else 0;
+  top.kindrep =
+    case c.kindrep of
+    | arrowKind(_, k) -> k
+    | _ -> starKind()
+    end;
   top.freeVariables = setUnionTyVars(c.freeVariables, a.freeVariables);
   top.tracked = c.tracked;
 }
@@ -104,7 +120,7 @@ top::Type ::= c::Type a::Type
 abstract production errorType
 top::Type ::=
 {
-  top.kindArity = 0;
+  top.kindrep = starKind();
   top.freeVariables = [];
 }
 
@@ -114,7 +130,7 @@ top::Type ::=
 abstract production intType
 top::Type ::=
 {
-  top.kindArity = 0;
+  top.kindrep = starKind();
   top.freeVariables = [];
 }
 
@@ -124,7 +140,7 @@ top::Type ::=
 abstract production boolType
 top::Type ::=
 {
-  top.kindArity = 0;
+  top.kindrep = starKind();
   top.freeVariables = [];
 }
 
@@ -134,7 +150,7 @@ top::Type ::=
 abstract production floatType
 top::Type ::=
 {
-  top.kindArity = 0;
+  top.kindrep = starKind();
   top.freeVariables = [];
 }
 
@@ -144,7 +160,7 @@ top::Type ::=
 abstract production stringType
 top::Type ::=
 {
-  top.kindArity = 0;
+  top.kindrep = starKind();
   top.freeVariables = [];
 }
 
@@ -156,20 +172,24 @@ top::Type ::=
 abstract production terminalIdType
 top::Type ::=
 {
-  top.kindArity = 0;
+  top.kindrep = starKind();
   top.freeVariables = [];
 }
 
 {--
  - An (undecorated) nonterminal type.
+ - Note that this is the *unapplied* type constructor for a nonterminal type;
+ - e.g. `Pair<String Integer>` would be represented as
+ - `apType(apType(nonterminalType("silver:core:Pair", [starKind(), starKind()], false), stringType()), integerType())`.
+ -
  - @param fn  The fully qualified name of the nonterminal.
- - @param params  The type parameters for that nonterminal.
+ - @param k  The number type parameters for that nonterminal.
  - @param tracked  Might this NT be tracked.
  -}
 abstract production nonterminalType
-top::Type ::= fn::String k::Integer tracked::Boolean
+top::Type ::= fn::String ks::[Kind] tracked::Boolean
 {
-  top.kindArity = k;
+  top.kindrep = foldr(arrowKind, starKind(), ks);
   top.freeVariables = [];
   top.tracked = tracked;
 }
@@ -181,19 +201,32 @@ top::Type ::= fn::String k::Integer tracked::Boolean
 abstract production terminalType
 top::Type ::= fn::String
 {
-  top.kindArity = 0;
+  top.kindrep = starKind();
+  top.freeVariables = [];
+}
+
+
+{--
+ - A type-level inherited attribute set.
+ - @param inhs  The (sorted) list of fully-qualified inherited attribute names. 
+ -}
+abstract production inhSetType
+top::Type ::= inhs::[String]
+{
+  top.kindrep = inhSetKind();
   top.freeVariables = [];
 }
 
 {--
  - A *decorated* nonterminal type.
  - @param te  MUST be a 'nonterminalType' or 'varType'/'skolemType'
+ - @param i  MUST have kind InhSet
  -}
 abstract production decoratedType
-top::Type ::= te::Type
+top::Type ::= te::Type i::Type
 {
-  top.kindArity = 0;
-  top.freeVariables = te.freeVariables;
+  top.kindrep = starKind();
+  top.freeVariables = setUnionTyVars(te.freeVariables, i.freeVariables);
 }
 
 {--
@@ -203,70 +236,99 @@ top::Type ::= te::Type
  - It represents a nonterminal that is *either* decorated or undecorated
  - (e.g. when referencing a child) but has not yet been specialized.
  - @param nt  MUST be a 'nonterminalType'
- - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(nt)'
+ - @param inhs  The inh set that we're decorated with - MUST have kind InhSet
+ - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(inhs, nt)'
  -                representing state: unspecialized, undecorated, or decorated.
  -}
 
 -- This will ONLY appear in the types of expressions, nowhere else!
 abstract production ntOrDecType
-top::Type ::= nt::Type  hidden::Type
+top::Type ::= nt::Type inhs::Type hidden::Type
 {
   top.freeVariables = case hidden of
-                      | varType(_) -> nt.freeVariables
+                      | varType(_) -> nt.freeVariables ++ inhs.freeVariables
                       | _ -> hidden.freeVariables
                       end;
   
   -- If we never specialize, we're decorated.
-  forwards to decoratedType(nt);
+  forwards to
+    case inhs of
+    -- If we never specialize what we're decorated with, we're decorated with nothing.
+    | varType(_) -> decoratedType(nt, inhSetType([]))
+    | _ -> decoratedType(nt, inhs)
+    end;
 }
 
 {--
  - Function type. (Whether production or function.)
+ - Note that this is the *unapplied* type constructor for a nonterminal type,
+ - and argument types are provided before the result type;
+ - e.g. `(Integer ::= String Boolean)` would be represented as
+ - `apType(apType(apType(functionType(3, []), stringType()), booleanType()), integerType())`.
+ -
  - @param params  The number input types of the function
- - @param namedParams  Named parameters for this function.
+ - @param namedParams  The names of named parameters for this function.
  -        NOTE: These must always be *IN SORTED ORDER*
  -}
 abstract production functionType
 top::Type ::= params::Integer namedParams::[String]
 {
-  top.kindArity = params + length(namedParams) + 1;
+  top.kindrep = constructorKind(params + length(namedParams) + 1);
   top.freeVariables = [];
 }
 
 --------------------------------------------------------------------------------
 
-nonterminal TyVar with kindArity;
+nonterminal TyVar with kindrep;
 
 -- In essence, this should be 'private' to this file.
 synthesized attribute extractTyVarRep :: Integer occurs on TyVar;
 
 abstract production tyVar
-top::TyVar ::= k::Integer i::Integer
+top::TyVar ::= k::Kind i::Integer
 {
-  top.kindArity = k;
+  top.kindrep = k;
   top.extractTyVarRep = i;
 }
 
+abstract production tyVarNamed
+top::TyVar ::= k::Kind i::Integer n::String
+{
+  forwards to tyVar(k, i);
+}
+
 function freshTyVar
-TyVar ::= k::Integer
+TyVar ::= k::Kind
 {
   return tyVar(k, genInt());
+}
+
+function freshTyVarNamed
+TyVar ::= k::Kind n::String
+{
+  return tyVarNamed(k, genInt(), n);
 }
 
 function freshType
 Type ::=
 {
-  return varType(freshTyVar(0));
+  return varType(freshTyVar(starKind()));
 }
 
 function newSkolemConstant
 Type ::=
 {
-  return skolemType(freshTyVar(0));
+  return skolemType(freshTyVar(starKind()));
+}
+
+function freshInhSet
+Type ::=
+{
+  return varType(freshTyVar(inhSetKind()));
 }
 
 -- TODO: Replace with propagated default instance
 instance Eq TyVar {
-  eq = \ tv1::TyVar tv2::TyVar -> tv1.kindArity == tv2.kindArity && tv1.extractTyVarRep == tv2.extractTyVarRep;
+  eq = \ tv1::TyVar tv2::TyVar -> tv1.kindrep == tv2.kindrep && tv1.extractTyVarRep == tv2.extractTyVarRep;
 }
 

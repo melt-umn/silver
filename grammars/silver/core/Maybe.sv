@@ -19,6 +19,133 @@ top::Maybe<a> ::=
   top.isJust = false;
 }
 
+instance Functor Maybe {
+  map = \ f::(b ::= a) m::Maybe<a> ->
+    case m of
+    | just(x)   -> just(f(x))
+    | nothing() -> nothing()
+    end;
+}
+
+instance Apply Maybe {
+  ap = \ mf::Maybe<(b ::= a)> m::Maybe<a> ->
+    case mf of
+    | just(f)   -> map(f, m)
+    | nothing() -> nothing()
+    end;
+}
+
+instance Applicative Maybe {
+  pure = just;
+}
+
+instance Bind Maybe {
+  bind = \ m::Maybe<a> fn::(Maybe<b> ::= a) ->
+    case m of
+    | just(x) -> fn(x)
+    | nothing() -> nothing()
+    end;
+}
+
+instance Monad Maybe {}
+
+instance MonadFail Maybe {
+  fail = \ String -> nothing();
+}
+
+instance Alt Maybe {
+  alt = orElse;
+}
+
+instance Plus Maybe {
+  empty = nothing();
+}
+
+instance Alternative Maybe {}
+
+instance MonadZero Maybe {}
+instance MonadPlus Maybe {}
+
+-- Monad transformer for Maybe
+nonterminal MaybeT<(m :: * -> *) a> with run<m<Maybe<a>>>;
+abstract production maybeT
+top::MaybeT<m a> ::= x::m<Maybe<a>>
+{
+  top.run = x;
+}
+
+function mapMaybeT
+MaybeT<n b> ::= f::(n<Maybe<b>> ::= m<Maybe<a>>) x::MaybeT<m a>
+{
+  return maybeT(f(x.run));
+}
+
+instance Functor m => Functor MaybeT<m _> {
+  map = \ f::(b ::= a) x::MaybeT<m a> -> mapMaybeT(map(map(f, _), _), x); 
+}
+
+instance Monad m => Apply MaybeT<m _> {
+  ap = \ mf::MaybeT<m (b ::= a)> mx::MaybeT<m a> -> maybeT(
+    do {
+      maybeF::Maybe<(b ::= a)> <- mf.run;
+      case maybeF of
+      | nothing() -> pure(nothing())
+      | just(f) -> do {
+          maybeX::Maybe<a> <- mx.run;
+          case maybeX of
+          | nothing() -> pure(nothing())
+          | just(x) -> pure(just(f(x)))
+          end;
+        }
+      end;
+    }); 
+}
+
+instance Monad m => Applicative MaybeT<m _> {
+  pure = compose(maybeT, compose(pure, just));
+}
+
+instance Monad m => Bind MaybeT<m _> {
+  bind = \ x::MaybeT<m a> f::(MaybeT<m b> ::= a) -> maybeT(
+    do {
+      maybeVal :: Maybe<a> <- x.run;
+      case maybeVal of
+      | nothing() -> pure(nothing())
+      | just(val) -> f(val).run
+      end;
+    });
+}
+
+instance Monad m => Monad MaybeT<m _> {}
+
+instance Monad m => MonadFail MaybeT<m _> {
+  fail = \ String -> maybeT(pure(nothing()));
+}
+
+instance Monad m => Alt MaybeT<m _> {
+  alt = \ x::MaybeT<m a> y::MaybeT<m a> -> maybeT(
+    do {
+      v :: Maybe<a> <- x.run;
+      case v of
+      | nothing() -> y.run
+      | just(_) -> pure(v)
+      end;
+    });
+}
+
+instance Monad m => Plus MaybeT<m _> {
+  empty = maybeT(pure(nothing()));
+}
+
+instance Monad m => Alternative MaybeT<m _> {}
+
+instance Monad m => MonadZero MaybeT<m _> {}
+instance Monad m => MonadPlus MaybeT<m _> {}
+
+instance MonadTrans MaybeT {
+  lift = \ x::m<a> -> maybeT(map(just, x));
+}
+
 --------------------------------------------------------------------------------
 
 {--
@@ -71,18 +198,6 @@ function catMaybes
 [a] ::= l::[Maybe<a>]
 {
   return foldr(consMaybe, [], l);
-}
-
-{--
- - Maps a function over the value inside of a Maybe, if it exists.
- -}
-function mapMaybe
-Maybe<b> ::= f::(b ::= a) m::Maybe<a>
-{
-  return case m of
-  | just(x)   -> just(f(x))
-  | nothing() -> nothing()
-  end;
 }
 
 {--

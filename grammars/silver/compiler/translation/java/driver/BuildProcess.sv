@@ -99,10 +99,10 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
   extraGrammarsDeps := ["init"];
   
   production attribute classpathCompiler :: [String] with ++;
-  classpathCompiler := [];
+  classpathCompiler := ["${sh}/jars/commonmark-0.17.1.jar"];
   
   production attribute classpathRuntime :: [String] with ++;
-  classpathRuntime := ["${sh}/jars/SilverRuntime.jar"];
+  classpathRuntime := ["${sh}/jars/commonmark-0.17.1.jar", "${sh}/jars/SilverRuntime.jar"];
   
   -- The --XRTjar hack
   classpathRuntime <- top.config.includeRTJars;
@@ -182,7 +182,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 "  </target>\n\n" ++
 
 "  <target name='grammars' depends='" ++ implode(", ", extraGrammarsDeps) ++ "'>\n" ++
-"    <javac debug='on' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false'>\n" ++
+"    <javac debug='on' classpathref='compile.classpath' srcdir='${src}' destdir='${bin}' includeantruntime='false' source='1.8' target='1.8' release='8'>\n" ++
     flatMap(includeJavaFiles, grammarsDependedUpon) ++
 "    </javac>\n" ++
 "  </target>\n" ++

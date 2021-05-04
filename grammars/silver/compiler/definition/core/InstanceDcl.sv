@@ -40,9 +40,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
     | _ -> []
     end;
   
-  cl.instanceHead = just(instContext(fName, ty.typerep));
-  cl.constraintSigName = nothing();
-  cl.classDefName = nothing();
+  cl.constraintPos = instancePos(instContext(fName, ty.typerep), boundVars);
 
   production attribute headPreDefs :: [Def] with ++;
   headPreDefs := [];
@@ -106,6 +104,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
   top.unparse = s"${id.name} = ${e.unparse};";
 
   production typeScheme::PolyType = id.lookupValue.typeScheme;
+  production memberSkolemVars::[TyVar] = freshTyVars(typeScheme.boundVars);
   production instSubst::Substitution =
     case typeScheme.contexts of
     -- Current class context is the first context on the member's type scheme
@@ -113,7 +112,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
       composeSubst(
         unify(ty, top.instanceType),
         -- Skolemize all the other type vars that didn't get instantiated by the instance head
-        zipVarsIntoSkolemizedSubstitution(typeScheme.boundVars, freshTyVars(typeScheme.boundVars)))
+        zipVarsIntoSkolemizedSubstitution(typeScheme.boundVars, memberSkolemVars))
     | _ -> emptySubst() -- Fall back in case of errors
     end;
   production memberContexts::[Context] =
@@ -121,6 +120,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
     | _ :: cs -> map(performContextSubstitution(_, instSubst), cs)
     | _ -> []
     end;
+  production boundVars::[TyVar] = top.instanceType.freeVariables ++ memberSkolemVars;
 
   top.errors <- id.lookupValue.errors;
   top.errors <-
@@ -129,7 +129,11 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 
   top.fullName = id.lookupValue.fullName;
 
-  e.env = newScopeEnv(map(\ c::Context -> c.contextMemberDef(top.grammarName, top.location), memberContexts), top.env);
+  e.env = newScopeEnv(flatMap(\ c::Context ->
+      let instDcl::DclInfo = c.contextMemberDcl(boundVars, top.grammarName, top.location)
+      in tcInstDef(instDcl) :: transitiveSuperDefs(top.env, top.instanceType, [], instDcl)
+      end, memberContexts),
+    top.env);
   e.originRules = [];
   e.isRoot = true;
 
