@@ -1,18 +1,21 @@
 grammar silver:compiler:extension:doc:core;
 
+import silver:util:cmdargs only CmdArgs;
+import silver:compiler:extension:doc:driver;
+
 function parseComment
-DclComment ::= body::DocComment_t
+DclComment ::= conf::Decorated CmdArgs body::DocComment_t
 {
     local docCommentContent::String = body.lexeme;
     local parsed::ParseResult<DclComment> = parseDocComment(docCommentContent, body.location.filename);
     local comment::DclComment = if parsed.parseSuccess then parsed.parseTree else errorDclComment(docCommentContent, parsed.parseError, location=body.location);
-    return comment;
+    return if conf.parseDocs then comment else theEmpyDclComment;
 }
 
 concrete production documentedAGDcl
 top::AGDcl ::= comment::DocComment_t dcl::AGDcl
 {
-    local parsed::DclComment = parseComment(comment);
+    local parsed::DclComment = parseComment(top.config, comment);
 
     local paramNamesAndForWhat::Pair<[String] String> = case dcl of
         | functionDcl(_, _, ns, _) -> pair(ns.argNames, "function")
@@ -47,7 +50,7 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
 concrete production standaloneCommentAGDcl
 top::AGDcl ::= '@' comment::DocComment_t
 {
-    local parsed::DclComment = parseComment(comment);
+    local parsed::DclComment = parseComment(top.config, comment);
 
     parsed.paramNames = [];
     parsed.isForWhat = "standalone";

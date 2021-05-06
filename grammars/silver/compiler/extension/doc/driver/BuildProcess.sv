@@ -11,6 +11,7 @@ import silver:util:cmdargs;
 synthesized attribute docGeneration :: Boolean occurs on CmdArgs;
 synthesized attribute printUndoc :: Boolean occurs on CmdArgs;
 synthesized attribute countUndoc :: Boolean occurs on CmdArgs;
+synthesized attribute parseDocs :: Boolean occurs on CmdArgs;
 synthesized attribute docOutOption :: Maybe<String> occurs on CmdArgs;
 
 aspect production endCmdArgs
@@ -19,6 +20,7 @@ top::CmdArgs ::= _
   top.docGeneration = false;
   top.printUndoc = false;
   top.countUndoc = false;
+  top.parseDocs = false;
   top.docOutOption = nothing();
 }
 
@@ -26,6 +28,7 @@ abstract production docFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.docGeneration = true;
+  top.parseDocs = true;
   forwards to rest;
 }
 
@@ -33,6 +36,7 @@ abstract production printUndocFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.printUndoc = true;
+  top.parseDocs = true;
   forwards to rest;
 }
 
@@ -40,6 +44,7 @@ abstract production countUndocFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.countUndoc = true;
+  top.parseDocs = true;
   forwards to rest;
 }
 

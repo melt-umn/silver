@@ -47,8 +47,10 @@ top::DclComment ::= EmptyDclComment_t
     top.errors := [];
     top.body = "";
     top.upDocConfig := [];
-    top.doEmit = !doesExcludeFile(top.downDocConfig);
+    top.doEmit = false;
 }
+
+global theEmpyDclComment :: DclComment = emptyDclComment(terminal(EmptyDclComment_t, ""), location=txtLoc("<theEmpyDclComment>"));
 
 concrete production normalDclComment
 top::DclComment ::= InitialIgnore_t blocks::DclCommentBlocks FinalIgnore_t

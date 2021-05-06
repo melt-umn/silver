@@ -7,18 +7,15 @@ grammar silver:compiler:extension:doc:extra;
 
 import silver:xml;
 
-import silver:compiler:analysis;
 import silver:compiler:analysis:typechecking:core;
 import silver:compiler:analysis:warnings;
 import silver:compiler:analysis:warnings:flow;
 import silver:compiler:analysis:warnings:exporting;
 
-import silver:compiler:composed;
 import silver:compiler:composed:Default;
 --import silver:compiler:composed:extendedorigins;
 --import silver:compiler:composed:idetest;
 
-import silver:compiler:definition;
 import silver:compiler:definition:concrete_syntax;
 import silver:compiler:definition:concrete_syntax:ast;
 import silver:compiler:definition:core;
@@ -32,7 +29,6 @@ import silver:compiler:definition:type:syntax;
 import silver:compiler:driver;
 import silver:compiler:driver:util;
 
-import silver:compiler:extension;
 -- Individual extensions built by silver:compiler:composed:Default
 
 import silver:compiler:host;
@@ -40,7 +36,6 @@ import silver:compiler:host;
 import silver:langutil;
 import silver:langutil:pp;
 
-import silver:compiler:modification;
 -- Individual modifications built by silver:compiler:composed:Default
 
 import silver:testing;
@@ -55,7 +50,6 @@ import silver:regex;
 
 import silver:util:cmdargs;
 import silver:util:deque as dq;
-import silver:util:fixedmap;
 import silver:util:treemap;
 import silver:util:graph;
 import silver:util:treemap;

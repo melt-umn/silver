@@ -59,7 +59,7 @@ top::ClassBodyItem ::=
 concrete production documentedClassBodyItem
 top::ClassBodyItem ::= comment::DocComment_t item::ClassBodyItem
 {
-	local parsed::DclComment = parseComment(comment);
+	local parsed::DclComment = parseComment(top.config, comment);
 
 	parsed.paramNames = [];
 	parsed.isForWhat = "classBodyItem";
@@ -135,7 +135,7 @@ top::InstanceBodyItem ::=
 concrete production documentedInstanceBodyItem
 top::InstanceBodyItem ::= comment::DocComment_t item::InstanceBodyItem
 {
-	local parsed::DclComment = parseComment(comment);
+	local parsed::DclComment = parseComment(top.config, comment);
 
 	parsed.paramNames = [];
 	parsed.isForWhat = "instanceBodyItem";
