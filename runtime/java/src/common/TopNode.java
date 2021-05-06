@@ -18,6 +18,7 @@ public class TopNode extends DecoratedNode{ // TODO: this should become a Node!
 	
 	private TopNode() {
 		super(0,0,0,0,null,null,null,null);
+		this.originCtx = OriginContext.GLOBAL_CONTEXT;
 	}
 	
 	@Override
