@@ -35,5 +35,8 @@ instance Semigroup a => Semigroup Maybe<a> {
 }
 
 instance Semigroup Unit {
-  append = \ Unit Unit -> unit();
+  append = \ x::Unit  y::Unit ->
+    case x, y of
+    | unit(), unit() -> unit()
+    end;
 }
