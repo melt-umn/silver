@@ -359,7 +359,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
       [])
     | _ ->
       pair(
-        error("Patterns in aspect convenience syntax should be productions,wildcards, or varpatterns only"),
+        emptyAGDcl(location=location),
         [err(location,"Patterns in aspect convenience syntax should be productions,wildcards, or varpatterns only")])
     end;
 }
