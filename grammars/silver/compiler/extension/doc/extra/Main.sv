@@ -13,8 +13,6 @@ import silver:compiler:analysis:warnings:flow;
 import silver:compiler:analysis:warnings:exporting;
 
 import silver:compiler:composed:Default;
---import silver:compiler:composed:extendedorigins;
---import silver:compiler:composed:idetest;
 
 import silver:compiler:definition:concrete_syntax;
 import silver:compiler:definition:concrete_syntax:ast;
@@ -39,7 +37,6 @@ import silver:langutil:pp;
 -- Individual modifications built by silver:compiler:composed:Default
 
 import silver:testing;
---import silver:testing:bin; --Do we want this?
 
 import silver:compiler:translation:java;
 import silver:compiler:translation:java:core;
