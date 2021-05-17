@@ -14,7 +14,8 @@
   - @param b the second number to add
   - @return the value of a + b (possibly plus bias)
   - @prodattr bias a list of integers, the sum of which is added to every addition
-  - @warning NOTE: see the bias prod attr. An extension may have changed the behavior of addition.
+  - @warning NOTE: see the bias prod attr. An extension may have changed the behavior
+  -          of addition.
   -
   - Here is some discussion of why it is a good idea to allow extensible addition:
   - - It was a good idea at the time

@@ -1,6 +1,15 @@
 grammar silver:compiler:extension:doc:core;
 
+{-
+ - Represents a single setting (key = value) of a doc configuration option.
+ - Some are file-scope, and some are grammar-scope (see @link[fileScope].)
+ -}
 nonterminal DocConfigSetting;
+
+{-
+ - Is this @link[DocConfigSetting] local to the file (e.g. @@title) or to the
+ - grammar (e.g. @@grammarTitle)?
+ -}
 synthesized attribute fileScope::Boolean occurs on DocConfigSetting;
 
 abstract production splitConfig

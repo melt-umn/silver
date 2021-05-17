@@ -25,6 +25,10 @@ top::RootSpec ::= g::Grammar  _ _ _ _
   g.downDocConfig = g.upDocConfig;
 }
 
+{- 
+ - Turn the files in a grammar into zero or more single-file docs pages, and collect the rest of the docs
+ - (possibly zero) into the index file.
+ -}
 function toSplitFiles
 [Pair<String String>] ::= g::Decorated Grammar grammarConf::[DocConfigSetting] forIndex::[CommentItem] soFar::[Pair<String String>]
 {

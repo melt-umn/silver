@@ -3,6 +3,15 @@ grammar silver:compiler:extension:doc:core;
 import silver:util:cmdargs only CmdArgs;
 import silver:compiler:extension:doc:driver;
 
+{-
+ - Parse the doc-comment mini language in a DocComment_t, returning a DclComment.
+ -
+ - @param conf Global compiler config, used to see if any of the doc-related options 
+               are set. If none are, comment is not parsed
+ - @param body The Doc-comment token.
+ - @return If we are parsing docs, the actual doc-comment parsed into a DclComment
+ -         (which could be an errorDclComment) or if we aren't then theEmptyDclComment.
+ -}
 function parseComment
 DclComment ::= conf::Decorated CmdArgs body::DocComment_t
 {
@@ -12,6 +21,11 @@ DclComment ::= conf::Decorated CmdArgs body::DocComment_t
     return if conf.parseDocs then comment else theEmpyDclComment;
 }
 
+{-
+ - This wraps an AGDcl to allow it to be prefixed with a doc comment.
+ -
+ - @forward Forwards to the wrapped AGDcl.
+ -}
 concrete production documentedAGDcl
 top::AGDcl ::= comment::DocComment_t dcl::AGDcl
 {
@@ -47,6 +61,11 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
     forwards to dcl;
 }
 
+{-
+ - Doc comment without associated AGDcl.
+ - 
+ - @forward emptyAGDcl.
+ -}
 concrete production standaloneCommentAGDcl
 top::AGDcl ::= '@' comment::DocComment_t
 {
