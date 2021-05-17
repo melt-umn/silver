@@ -7,6 +7,7 @@ imports silver:util:treemap as tm;
 -- Blocks start with a newline or a @param/@return/@prodattr/@forward/...
 -- Initial block is a 'normal' block even if no newline (but is other type if has @tag)
 
+{- Does this doc comment actually result in a markdown block? -}
 synthesized attribute doEmit::Boolean occurs on DclComment;
 
 inherited attribute paramNames::[String] occurs on DclComment;
@@ -397,6 +398,7 @@ top::DclCommentPart ::= '@@'
     top.body = "@";
 }
 
+{- Most of the complexity here is to allow bullet point lists. Be careful :) -}
 
 terminal InitialIgnore_t /@+\{\-[ \t]*\-*[ \t]*([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*/;
 terminal FinalIgnore_t /[\- \r\n]*\-\}/ dominates {CommentContent_t};

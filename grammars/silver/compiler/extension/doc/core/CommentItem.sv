@@ -16,15 +16,15 @@ AGDcl is given
 function sanitizeAnchor
 String ::= n::String
 {
-	return substitute(" ", "_", substitute("[", "_", substitute("]", "_", 
-		   substitute("<", "_", substitute(">", "_", substitute("(", "_", 
-		   substitute(")", "_", n)))))));
+  return substitute(" ", "_", substitute("[", "_", substitute("]", "_", 
+       substitute("<", "_", substitute(">", "_", substitute("(", "_", 
+       substitute(")", "_", n)))))));
 }
 
 function makeStub
 String ::= forName::String docUnparse::String grammarName::String loc::Location
 {
-	return
+  return
 s"""## ${docUnparse} {#${sanitizeAnchor(forName)}}
 Contained in grammar `[${grammarName}]`. Defined at [${substitute(":", "/", grammarName)}/${loc.filename} line ${toString(loc.line)}](https://github.com/melt-umn/silver/blob/develop/grammars/${substitute(":", "/", grammarName)}/${loc.filename}#L${toString(loc.line)}).""";
 }
@@ -32,39 +32,39 @@ Contained in grammar `[${grammarName}]`. Defined at [${substitute(":", "/", gram
 abstract production dclCommentItem
 top::CommentItem ::= forName::String docUnparse::String grammarName::String location::Location body::Decorated DclComment
 {
-	top.body = body.indentBy ++ substitute("\n", "\n"++body.indentBy,
-		makeStub(forName, docUnparse, grammarName, location) ++ "\n\n" ++ body.body);
-	top.loc = location;
-	top.doEmit = body.doEmit;
-	top.stub = false;
-	top.docNames = [forName];
-	top.undocNames = [];
+  top.body = body.indentBy ++ substitute("\n", "\n"++body.indentBy,
+    makeStub(forName, docUnparse, grammarName, location) ++ "\n\n" ++ body.body);
+  top.loc = location;
+  top.doEmit = body.doEmit;
+  top.stub = false;
+  top.docNames = [forName];
+  top.undocNames = [];
 }
 
 abstract production standaloneDclCommentItem
 top::CommentItem ::= body::Decorated DclComment
 {
-	top.body = substitute("\n", "\n"++body.indentBy, body.body);
-	top.loc = body.location;
-	top.doEmit = body.doEmit;
-	top.stub = false;
-	top.docNames = [];
-	top.undocNames = [];
+  top.body = substitute("\n", "\n"++body.indentBy, body.body);
+  top.loc = body.location;
+  top.doEmit = body.doEmit;
+  top.stub = false;
+  top.docNames = [];
+  top.undocNames = [];
 }
 
 abstract production undocumentedItem
 top::CommentItem ::= forName::String docUnparse::String grammarName::String location::Location 
 {
-	top.body = makeStub(forName, docUnparse, grammarName, location) ++ "\n\n (Undocumented.)";
-	top.loc = location;
-	top.doEmit = true;
-	top.stub = true;
-	top.docNames = [];
-	top.undocNames = [forName];
+  top.body = makeStub(forName, docUnparse, grammarName, location) ++ "\n\n (Undocumented.)";
+  top.loc = location;
+  top.doEmit = true;
+  top.stub = true;
+  top.docNames = [];
+  top.undocNames = [forName];
 }
 
 function mkUndocumentedItem
 CommentItem ::= f::String t::Decorated AGDcl
 {
-	return undocumentedItem(f, t.docUnparse, t.grammarName, t.location);
+  return undocumentedItem(f, t.docUnparse, t.grammarName, t.location);
 }

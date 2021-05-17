@@ -32,19 +32,19 @@ top::RootSpec ::= g::Grammar  _ _ _ _
 function toSplitFiles
 [Pair<String String>] ::= g::Decorated Grammar grammarConf::[DocConfigSetting] forIndex::[CommentItem] soFar::[Pair<String String>]
 {
-	return case g of
-		   | consGrammar(this, rest) ->
-	   			if getSplit(this.localDocConfig) then toSplitFiles(rest, grammarConf, forIndex, formatFile(
-		   			substitute(".sv", ".md", this.location.filename),
-		   			getFileTitle(this.localDocConfig, substitute(".sv", "", this.location.filename)),
-		   			getFileWeight(this.localDocConfig), true,
-		   			s"In file `${this.location.filename}`: "++(if getToc(this.localDocConfig) then "{{< toc >}}" else ""), 
-		   			this.docs) ++ soFar) else toSplitFiles(rest, grammarConf, forIndex ++ this.docs, soFar)
-		   | nilGrammar() -> if length(soFar) == 0 && length(grammarConf) == 0 && length(forIndex) == 0 then []
-		   					 else formatFile("_index.md", getGrammarTitle(grammarConf, "["++g.grammarName++"]"),
-		   					 	getGrammarWeight(grammarConf),
-		   					 	false, s"Contents of `[${g.grammarName}]`: {{< toc-tree >}} \n\nDefined in this grammar:", forIndex) ++ soFar
-		   end;
+  return case g of
+       | consGrammar(this, rest) ->
+           if getSplit(this.localDocConfig) then toSplitFiles(rest, grammarConf, forIndex, formatFile(
+             substitute(".sv", ".md", this.location.filename),
+             getFileTitle(this.localDocConfig, substitute(".sv", "", this.location.filename)),
+             getFileWeight(this.localDocConfig), true,
+             s"In file `${this.location.filename}`: "++(if getToc(this.localDocConfig) then "{{< toc >}}" else ""), 
+             this.docs) ++ soFar) else toSplitFiles(rest, grammarConf, forIndex ++ this.docs, soFar)
+       | nilGrammar() -> if length(soFar) == 0 && length(grammarConf) == 0 && length(forIndex) == 0 then []
+                  else formatFile("_index.md", getGrammarTitle(grammarConf, "["++g.grammarName++"]"),
+                    getGrammarWeight(grammarConf),
+                    false, s"Contents of `[${g.grammarName}]`: {{< toc-tree >}} \n\nDefined in this grammar:", forIndex) ++ soFar
+       end;
 }
 
 function formatFile
@@ -52,10 +52,10 @@ function formatFile
                           skipIfEmpty::Boolean pfxText::String
                           comments::[CommentItem]
 {
-	local realDocs::[CommentItem] = filter((.doEmit), comments);
-	local stubDocs::[CommentItem] = filter((.stub), realDocs);
-	local nonStubDocs::[CommentItem] = filter((\x::CommentItem->!x.stub), realDocs);
-	return if length(realDocs) == 0 && skipIfEmpty then [] else [pair(fileName, s"""---
+  local realDocs::[CommentItem] = filter((.doEmit), comments);
+  local stubDocs::[CommentItem] = filter((.stub), realDocs);
+  local nonStubDocs::[CommentItem] = filter((\x::CommentItem->!x.stub), realDocs);
+  return if length(realDocs) == 0 && skipIfEmpty then [] else [pair(fileName, s"""---
 title: "${title}"
 weight: ${toString(weight)}
 geekdocBreadcrumb: false
@@ -80,5 +80,5 @@ ${implode("\n\n<hr/>\n\n", map((.body), stubDocs))}
 function lastPart
 String ::= s::String
 {
-	return last(explode(":", s));
+  return last(explode(":", s));
 }
