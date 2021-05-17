@@ -18,11 +18,13 @@ DclComment ::= conf::Decorated CmdArgs body::DocComment_t
     local docCommentContent::String = body.lexeme;
     local parsed::ParseResult<DclComment> = parseDocComment(docCommentContent, body.location.filename);
     local comment::DclComment = if parsed.parseSuccess then parsed.parseTree else errorDclComment(docCommentContent, parsed.parseError, location=body.location);
-    return if conf.parseDocs then comment else theEmpyDclComment;
+    return if conf.parseDocs then comment else theEmptyDclComment;
 }
 
 {-
- - This wraps an AGDcl to allow it to be prefixed with a doc comment.
+ - This wraps an AGDcl to allow it to be prefixed with a doc comment. AGDcls will by default
+ - emit an doc item that notes that it is undocumented (via mkUndocumentedItem.) This does not
+ - pass those up, since they are documented here.
  -
  - @forward Forwards to the wrapped AGDcl.
  -}
@@ -68,6 +70,7 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
  -}
 concrete production standaloneCommentAGDcl
 top::AGDcl ::= '@' comment::DocComment_t
+layout {}
 {
     local parsed::DclComment = parseComment(top.config, comment);
 
