@@ -10,12 +10,22 @@ imports silver:util:treemap as tm;
 {- Does this doc comment actually result in a markdown block? -}
 synthesized attribute doEmit::Boolean occurs on DclComment;
 
+{- List of parameter/child names used to warn for incorrect number/names on function/production blocks. -}
 inherited attribute paramNames::[String] occurs on DclComment;
+
+{- Enum-like description of what type of construct the comment occurs on, used to warn on using irrelevant blocks. -}
 inherited attribute isForWhat::String occurs on DclComment;
+
+{- String to prepend to emitted markdown lines. -}
 inherited attribute indentBy::String occurs on DclComment;
 
+{- List of pair of (paramname, content) -}
 synthesized attribute paramBlocks::[Pair<String String>];
+
+{- List of pair of (blocktype, content) -}
 synthesized attribute otherBlocks::[Pair<String String>];
+
+{- Config args. -}
 synthesized attribute configArgs::[Pair<String ConfigValue>];
 
 nonterminal DclComment layout {} with docEnv, body, errors, location, downDocConfig, upDocConfig;
@@ -34,6 +44,7 @@ nonterminal DclCommentPart layout {} with body, location, docEnv, errors;
 propagate errors on DclCommentBlocks, DclCommentStrictBlocks, DclCommentBlock,
     DclCommentLines, DclCommentParts, DclCommentPart;
 
+{- The location of the terminal whose text was parsed to create this DclComment, used when displaying errors. -}
 autocopy attribute offsetLocation::Location occurs on 
     DclComment, DclCommentBlocks, DclCommentStrictBlocks, DclCommentBlock,
     DclCommentLines, DclCommentParts, DclCommentPart;
