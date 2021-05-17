@@ -67,4 +67,3 @@ Integer ::=
 {
   return 1;
 }
-

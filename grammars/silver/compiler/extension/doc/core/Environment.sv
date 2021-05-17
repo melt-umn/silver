@@ -9,4 +9,3 @@ top::DocDclInfo ::= id::String loc::Location grammar_::String
 {
   top.scopedName = grammar_ ++ ":" ++ id;
 }
-
