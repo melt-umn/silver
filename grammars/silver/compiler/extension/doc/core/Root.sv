@@ -77,9 +77,9 @@ aspect default production
 top::AGDcl ::=
 {
   top.upDocConfig := [];
-  top.docs := [mkUndocumentedItem(s"<default AGDcl production `${head(explode("(", hackUnparse(top)))}`(fwd)@${top.location.unparse}>", top)];
+  -- top.docs := [mkUndocumentedItem(s"<default AGDcl production `${head(explode("(", hackUnparse(top)))}`(fwd)@${top.location.unparse}>", top)];
   top.docDcls := [];
-  top.docUnparse = head(explode("\n", top.unparse)) ++ "\n{{< hint danger >}}\nNo docUnparse defined for `" ++ hackUnparse(top) ++ "`\n{{< /hint >}}\n\n";
+  -- top.docUnparse = head(explode("\n", top.unparse)) ++ "\n{{< hint danger >}}\nNo docUnparse defined for `" ++ hackUnparse(top) ++ "`\n{{< /hint >}}\n\n";
 }
 
 aspect production appendAGDcl

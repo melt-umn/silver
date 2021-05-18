@@ -1,10 +1,13 @@
 grammar silver:compiler:extension:doc:core;
 
 imports silver:compiler:definition:concrete_syntax;
-imports silver:compiler:modification:copper;
 imports silver:compiler:modification:ffi;
 imports silver:compiler:extension:autoattr;
 imports silver:compiler:modification:defaultattr;
+imports silver:compiler:modification:copper;
+imports silver:compiler:modification:copper_mda;
+imports silver:compiler:definition:flow:syntax;
+imports silver:compiler:modification:collection;
 
 {- INTENDED TO BE INTERFERED WITH like .pp. -}
 synthesized attribute docUnparse::String occurs on AGDcl;
@@ -192,6 +195,7 @@ aspect production defaultAttributionDcl
 top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.docForName = "";
+  top.docUnparse = "";
   top.docs := [];
 }
 
@@ -199,5 +203,133 @@ aspect production emptyAGDcl
 top::AGDcl ::=
 {
   top.docForName = "";
+  top.docUnparse = "";
+  top.docs := [];
+}
+
+aspect production flowtypeDcl
+top::AGDcl ::= 'flowtype' nt::QName '=' specs::FlowSpecs ';'
+{
+  -- TODO: Enable documenting these?
+  top.docForName = "";
+  top.docUnparse = "";
+  top.docs := [];
+}
+
+aspect production flowtypeAttrDcl
+top::AGDcl ::= 'flowtype' attr::FlowSpec 'on' nts::NtList ';'
+{
+  top.docForName = "";
+  top.docUnparse = "";
+  top.docs := [];
+}
+
+aspect production disambiguationGroupDcl
+top::AGDcl ::= 'disambiguate' terms::TermList acode::ActionCode_c
+{
+  top.docForName = "";
+  top.docUnparse = "";
+  top.docs := [];
+}
+
+aspect production attributeDclParser
+top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::ActionCode_c ';'
+{
+  top.docForName = a.name;
+  top.docUnparse = s"`parser attribute ${a.unparse}`";
+  top.docDcls := [pair(a.name, docDclInfo(a.name, top.location, top.grammarName))];
+  top.docs := [mkUndocumentedItem(top.docForName, top)];
+}
+
+aspect production attributeAspectParser
+top::AGDcl ::= 'aspect' 'parser' 'attribute' a::QName 'action' acode::ActionCode_c ';'
+{
+  top.docForName = a.name;
+  top.docUnparse = s"`aspect parser attribute ${a.unparse}`";
+  top.docDcls := [];
+  top.docs := []; -- Not considered to need docs
+}
+
+aspect production errorAGDcl
+top::AGDcl ::= e::[Message]
+{
+  top.docForName = "";
+  top.docUnparse = "";
+  top.docs := [];
+}
+
+aspect production defsAGDcl
+top::AGDcl ::= d::[Def]
+{
+  top.docForName = "";
+  top.docUnparse = "";
+  top.docs := [];
+}
+
+aspect production appendAGDcl
+top::AGDcl ::= h::AGDcl t::AGDcl
+{
+  -- Should be defined on what forwards to this
+  top.docForName = "";
+  top.docUnparse = "";
+}
+
+aspect production jarNameDcl
+top::AGDcl ::= n::Name
+{
+  top.docForName = "";
+  top.docUnparse = "";
+  top.docs := [];
+}
+
+aspect production errorAttributionDcl
+top::AGDcl ::= msg::[Message] at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+{
+  top.docForName = "";
+  top.docUnparse = "";
+  top.docs := [];
+}
+
+aspect production globalValueDclConcrete
+top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e::Expr ';'
+{
+  top.docForName = id.name;
+  top.docUnparse = s"`global ${id.unparse}`";
+  top.docDcls := [pair(id.name, docDclInfo(id.name, top.location, top.grammarName))];
+  top.docs := [mkUndocumentedItem(top.docForName, top)];
+}
+
+aspect production typeAliasDecl
+top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
+{
+  top.docForName = id.name;
+  top.docUnparse = s"`type ${id.unparse}`";
+  top.docDcls := [pair(id.name, docDclInfo(id.name, top.location, top.grammarName))];
+  top.docs := [mkUndocumentedItem(top.docForName, top)];
+}
+
+aspect production collectionAttributeDclSyn
+top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' q::NameOrBOperator ';'
+{
+  top.docForName = a.name;
+  top.docUnparse = s"`synthesized attribute ${a.unparse} (collection)`";
+  top.docDcls := [pair(a.name, docDclInfo(a.name, top.location, top.grammarName))];
+  top.docs := [mkUndocumentedItem(top.docForName, top)];
+}
+
+aspect production collectionAttributeDclInh
+top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' q::NameOrBOperator ';'
+{
+  top.docForName = a.name;
+  top.docUnparse = s"`synthesized attribute ${a.unparse} (collection)`";
+  top.docDcls := [pair(a.name, docDclInfo(a.name, top.location, top.grammarName))];
+  top.docs := [mkUndocumentedItem(top.docForName, top)];
+}
+
+aspect production copperMdaDcl
+top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ParserComponents '}'
+{
+  top.docForName = "";
+  top.docUnparse = "";
   top.docs := [];
 }

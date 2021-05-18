@@ -45,7 +45,11 @@ propagate errors on DclCommentBlocks, DclCommentStrictBlocks, DclCommentBlock,
     DclCommentLines, DclCommentParts, DclCommentPart;
 
 {- The location of the terminal whose text was parsed to create this DclComment, used when displaying errors. -}
-autocopy attribute offsetLocation::Location occurs on 
+inherited attribute offsetLocation::Location occurs on 
+    DclComment, DclCommentBlocks, DclCommentStrictBlocks, DclCommentBlock,
+    DclCommentLines, DclCommentParts, DclCommentPart;
+
+propagate offsetLocation on
     DclComment, DclCommentBlocks, DclCommentStrictBlocks, DclCommentBlock,
     DclCommentLines, DclCommentParts, DclCommentPart;
 

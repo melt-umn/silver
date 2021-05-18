@@ -70,17 +70,18 @@ top::ClassBodyItem ::= comment::DocComment_t item::ClassBodyItem
   parsed.offsetLocation = comment.location;
   parsed.indentBy = ">";
 
+  item.downDocConfig = top.downDocConfig;
   top.upDocConfig <- parsed.upDocConfig ++ item.upDocConfig;
-    top.errors <- parsed.errors;
+  top.errors <- parsed.errors;
 
-    local realDclDocs::[CommentItem] = filter((\x::CommentItem->!x.stub), item.docs);
-    local isDoubleComment::Boolean = length(realDclDocs) != 0;
-    top.docs := if isDoubleComment
-                  then [standaloneDclCommentItem(parsed)] ++ realDclDocs
-                  else [dclCommentItem(top.scopeName ++ "." ++ item.docForName, item.docUnparse, item.grammarName, item.location, parsed)];
-    top.errors <- if isDoubleComment
-                    then [wrn(parsed.location, "Doc comment not immediately preceding ClassBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
-                    else [];
+  local realDclDocs::[CommentItem] = filter((\x::CommentItem->!x.stub), item.docs);
+  local isDoubleComment::Boolean = length(realDclDocs) != 0;
+  top.docs := if isDoubleComment
+                then [standaloneDclCommentItem(parsed)] ++ realDclDocs
+                else [dclCommentItem(top.scopeName ++ "." ++ item.docForName, item.docUnparse, item.grammarName, item.location, parsed)];
+  top.errors <- if isDoubleComment
+                  then [wrn(parsed.location, "Doc comment not immediately preceding ClassBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
+                  else [];
 
   forwards to item;
 }
@@ -146,17 +147,18 @@ top::InstanceBodyItem ::= comment::DocComment_t item::InstanceBodyItem
   parsed.offsetLocation = comment.location;
   parsed.indentBy = ">";
 
+  item.downDocConfig = top.downDocConfig;
   top.upDocConfig <- parsed.upDocConfig ++ item.upDocConfig;
-    top.errors <- parsed.errors;
+  top.errors <- parsed.errors;
 
-    local realDclDocs::[CommentItem] = filter((\x::CommentItem->!x.stub), item.docs);
-    local isDoubleComment::Boolean = length(realDclDocs) != 0;
-    top.docs := if isDoubleComment
-                  then [standaloneDclCommentItem(parsed)] ++ realDclDocs
-                  else [dclCommentItem(top.scopeName ++ "." ++ item.docForName, item.docUnparse, item.grammarName, item.location, parsed)];
-    top.errors <- if isDoubleComment
-                    then [wrn(parsed.location, "Doc comment not immediately preceding InstanceBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
-                    else [];
+  local realDclDocs::[CommentItem] = filter((\x::CommentItem->!x.stub), item.docs);
+  local isDoubleComment::Boolean = length(realDclDocs) != 0;
+  top.docs := if isDoubleComment
+                then [standaloneDclCommentItem(parsed)] ++ realDclDocs
+                else [dclCommentItem(top.scopeName ++ "." ++ item.docForName, item.docUnparse, item.grammarName, item.location, parsed)];
+  top.errors <- if isDoubleComment
+                  then [wrn(parsed.location, "Doc comment not immediately preceding InstanceBodyItem, so association is ambiguous. Treating as standalone comment. Mark with @@{- instead of @{- to silence this warning.")]
+                  else [];
 
   forwards to item;
 }
