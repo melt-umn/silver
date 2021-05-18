@@ -1,87 +1,142 @@
 grammar silver:compiler:extension:doc:core;
 
-synthesized attribute header :: String;
-synthesized attribute splitFiles :: String;
-synthesized attribute noDoc :: Boolean;
-synthesized attribute warnings :: String;
-nonterminal DocConfigs with header, splitFiles, noDoc, warnings;
-nonterminal DocConfig with header, splitFiles, noDoc;
+{-
+ - Represents a single setting (key = value) of a doc configuration option.
+ - Some are file-scope, and some are grammar-scope (see @link[fileScope].)
+ -}
+nonterminal DocConfigSetting;
 
-concrete production config
-top::AGDcl ::= '{@config' items::DocConfigs '@}'
+{-
+ - Is this @link[DocConfigSetting] local to the file (e.g. @@title) or to the
+ - grammar (e.g. @@grammarTitle)?
+ -}
+synthesized attribute fileScope::Boolean occurs on DocConfigSetting;
+
+abstract production splitConfig
+top::DocConfigSetting ::= v::Boolean
 {
-  top.docs := [];
-  top.docsHeader = items.header;
-  top.docsSplit = items.splitFiles;
-  top.docsNoDoc = items.noDoc;
-  forwards to emptyAGDcl(location=top.location);
+  top.fileScope = false;
 }
 
-concrete production consConfigs
-top::DocConfigs ::= c::DocConfig rest::DocConfigs
+abstract production fileSplitConfig
+top::DocConfigSetting ::= v::Boolean
 {
-  local headerWarnings :: String = 
-    if c.header != "" && rest.header != ""
-    then "Multiple header definitions in documentation configuration."
-    else "";
-
-  local splitFilesWarnings :: String = 
-    if c.header != "" && rest.header != ""
-    then "Multpile split-files definitions in documentation configuration."
-    else "";
-
-  top.header = case c.header, rest.header of
-               | "", h -> h
-               | h, _  -> h
-               end;
-
-  top.splitFiles = case c.splitFiles, rest.splitFiles of
-                   | "", s -> s
-                   | s, _  -> s
-                   end;
-
-  top.noDoc = c.noDoc || rest.noDoc;
-  top.warnings = headerWarnings ++ splitFilesWarnings ++ rest.warnings;
+  top.fileScope = true;
 }
 
-concrete production nilConfigs
-top::DocConfigs ::=
+abstract production weightConfig
+top::DocConfigSetting ::= v::Integer
 {
-  top.header = "";
-  top.splitFiles = "";
-  top.noDoc = false;
+  top.fileScope = true;
 }
 
-concrete production headerConfig
-top::DocConfig ::= 'header' ':' value::ConfigValue_t
+abstract production grammarWeightConfig
+top::DocConfigSetting ::= v::Integer
 {
-  top.header = cleanDocValue(value.lexeme);
-  top.splitFiles = "";
-  top.noDoc = false;
+  top.fileScope = false;
 }
 
-concrete production splitFilesConfig
-top::DocConfig ::= 'split-files' ':' value::ConfigValue_t
+abstract production grammarTitleConfig
+top::DocConfigSetting ::= v::String
 {
-  top.header = "";
-  top.splitFiles = cleanDocValue(value.lexeme);
-  top.noDoc = false;
+  top.fileScope = false;
 }
 
-concrete production noDocConfig
-top::DocConfig ::= 'no-doc' ':' value::ConfigValue_t
+abstract production titleConfig
+top::DocConfigSetting ::= v::String
 {
-  top.header = "";
-  top.splitFiles = "";
-  top.noDoc = if "true" == value.lexeme
-              then true
-              else false;
+  top.fileScope = true;
 }
 
-function cleanDocValue
-String ::= s::String
+abstract production grammarNoDocsConfig
+top::DocConfigSetting ::= v::Boolean
 {
-  return substitute("\\n", "\n", substitute("\"", "", substitute("\\t", "\t", s)));
+  top.fileScope = false;
+}
+
+abstract production fileNoDocsConfig
+top::DocConfigSetting ::= v::Boolean
+{
+  top.fileScope = true;
+}
+
+abstract production tocConfig
+top::DocConfigSetting ::= v::Boolean
+{
+  top.fileScope = true;
 }
 
 
+-- a grammar with @excludeGrammar containing file(s) with @excludeFile false will
+-- only emit docs for that file(s)
+function doesExcludeFile
+Boolean ::= args::[DocConfigSetting]
+{
+  return case args of
+       | fileNoDocsConfig(v)::_ -> v
+       | grammarNoDocsConfig(true)::_ -> true
+       | _::r -> doesExcludeFile(r)
+       | [] -> false
+       end;
+}
+
+function getFileTitle
+String ::= args::[DocConfigSetting] fallback::String
+{
+  return case args of
+       | titleConfig(x)::_ -> x
+       | _::r -> getFileTitle(r, fallback)
+       | [] -> fallback
+       end;
+}
+
+function getGrammarTitle
+String ::= args::[DocConfigSetting] fallback::String
+{
+  return case args of
+       | grammarTitleConfig(x)::_ -> x
+       | _::r -> getGrammarTitle(r, fallback)
+       | [] -> fallback
+       end;
+}
+
+function getFileWeight
+Integer ::= args::[DocConfigSetting]
+{
+  return case args of
+       | weightConfig(x)::_ -> x
+       | _::r -> getFileWeight(r)
+       | [] -> 0
+       end;
+}
+
+function getGrammarWeight
+Integer ::= args::[DocConfigSetting]
+{
+  return case args of
+       | grammarWeightConfig(x)::_ -> x
+       | _::r -> getGrammarWeight(r)
+       | [] -> 0
+       end;
+}
+
+function getSplit
+Boolean ::= args::[DocConfigSetting]
+{
+  return case args of
+       | fileSplitConfig(v)::_ -> v
+       | splitConfig(true)::_ -> true
+       | _::r -> getSplit(r)
+       | [] -> false
+       end;
+}
+
+function getToc
+Boolean ::= args::[DocConfigSetting]
+{
+  return case args of
+       | tocConfig(v)::_ -> v
+       | _::r -> getToc(r)
+       | [] -> false
+       end;
+}

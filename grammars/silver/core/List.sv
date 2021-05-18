@@ -1,5 +1,6 @@
 grammar silver:core;
 
+
 instance Functor [] {
   map = \ f::(b ::= a) l::[a] ->
     if null(l) then []
@@ -9,6 +10,7 @@ instance Functor [] {
 instance Apply [] {
   ap = apM;
 }
+
 
 instance Applicative [] {
   pure = \ x::a -> [x];

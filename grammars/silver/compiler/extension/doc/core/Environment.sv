@@ -1,39 +1,11 @@
 grammar silver:compiler:extension:doc:core;
 
-nonterminal DocDclInfo with id, file, path;
+nonterminal DocDclInfo;
 
-synthesized attribute id :: String;
-synthesized attribute path :: String;
+synthesized attribute scopedName::String occurs on DocDclInfo;
 
-abstract production functionDocDclInfo
-top::DocDclInfo ::= id::String file::String
+abstract production docDclInfo
+top::DocDclInfo ::= id::String loc::Location grammar_::String
 {
-  top.id = id;
-  top.file = file;
-  top.path = "";
+  top.scopedName = grammar_ ++ ":" ++ id;
 }
-
-abstract production functionDocDclInfoP
-top::DocDclInfo ::= id::String file::String path::String
-{
-  top.id = id;
-  top.file = file;
-  top.path = path;
-}
-
-abstract production productionDocDclInfo
-top::DocDclInfo ::= id::String file::String
-{
-  top.id = id;
-  top.file = file;
-  top.path = "";
-}
-
-abstract production productionDocDclInfoP
-top::DocDclInfo ::= id::String file::String path::String
-{
-  top.id = id;
-  top.file = file;
-  top.path = path;
-}
-
