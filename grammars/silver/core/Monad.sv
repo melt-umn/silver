@@ -1,6 +1,6 @@
 grammar silver:core;
 
-{-
+@{-
 Monads support both lifting functions/values of arbitrary arity and sequential compostion.
 
 Instances should satisfy the following:
@@ -32,7 +32,7 @@ function unlessM
 Monad m => m<Unit> ::= cond::m<Boolean>  body::m<Unit>
 { return bind(cond, unless(_, body)); }
 
-{-
+@{-
 Monads that support failure with an error message.
 
 Instances should satisfy the following:
@@ -44,7 +44,7 @@ class Monad m => MonadFail m {
   fail :: (m<a> ::= String);
 }
 
-{-
+@{-
 The MonadZero type class has no members of its own; it just specifies that the type has both Monad and Alternative instances.
 
 Instances should satisfy the following:
@@ -54,7 +54,7 @@ Annihilation
 -}
 class Monad m, Alternative m => MonadZero m {}
 
-{-
+@{-
 The MonadPlus type class has no members of its own; it just extends MonadZero with an additional law.
 
 Instances should satisfy the following:
@@ -64,7 +64,7 @@ Distributivity
 -}
 class MonadZero m, Alternative m => MonadPlus m {}
 
-{-
+@{-
 Monad transformers lift a monadic computation into an additional monad.
 
 Instances should satisfy the following:
@@ -75,7 +75,7 @@ class MonadTrans (t :: (* -> *) -> * -> *) {
   lift :: Monad m => (t<m a> ::= m<a>);
 }
 
-{-
+@{-
 Can be used to extract the monadic value from a MonadTrans instance value.
  -}
 synthesized attribute run<a>::a;

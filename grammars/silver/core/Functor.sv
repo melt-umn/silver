@@ -1,6 +1,6 @@
 grammar silver:core;
 
-{-
+@{-
 A type f is a Functor if it provides a function map which, given any types a and b lets you apply
 any function from (a -> b) to turn an f<a> into an f<b>, preserving the structure of f. 
 Furthermore f needs to adhere to the following:

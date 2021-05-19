@@ -1,38 +1,38 @@
 grammar silver:core;
 
-{--
+@{--
  - true if parsing successfully produced a syntax tree. false if a parse error occurred.
  -}
 synthesized attribute parseSuccess :: Boolean;
 
-{--
+@{--
  - The ParseError which parseErrors is generated from.
  -}
 synthesized attribute parseError :: ParseError;
 
-{--
+@{--
  - A string containing the parse errors reported by copper.  The format is unspecified, yet.
  -}
 synthesized attribute parseErrors :: String;
 
-{--
+@{--
  - The parse tree, if parsing was successful.
  -}
 synthesized attribute parseTree<a> :: a;
 
-{--
+@{--
  - A list of terminals parsed.
  -}
 synthesized attribute parseTerminals :: [TerminalDescriptor];
 
-{--
+@{--
  - A container type for the result of calling a parser.
  -
  - @param a  The start nonterminal type.
  -}
 nonterminal ParseResult<a> with parseSuccess, parseError, parseErrors, parseTree<a>, parseTerminals;
 
-{--
+@{--
  - Parse failure constructor.
  -
  - @param e  The error string reported by the parser.
@@ -47,7 +47,7 @@ top::ParseResult<a> ::= e::ParseError terminals::[TerminalDescriptor]
   top.parseTerminals = terminals;
 }
 
-{--
+@{--
  - Parse success constructor.
  -
  - @param t  The syntax tree returned by the parser.
@@ -63,12 +63,12 @@ top::ParseResult<a> ::= t::a terminals::[TerminalDescriptor]
 }
 
 
-{--
+@{--
  - Make parsers behave like they used to in previous versions of Silver.
  -
  - Exits and prints parse errors if parsing fails, without a stack trace.
  -
- - @deprecated
+ - @warning Deprecated!
  - @param pr  The ParseResult returned by the parser
  - @return  The syntax tree reported by the parser.  Does not return if parsing fails.
  -}
@@ -79,12 +79,12 @@ a ::= pr::ParseResult<a>
 }
 
 
-{--
+@{--
  - Representation of a parser error.
  -}
 nonterminal ParseError with parseErrors;
 
-{--
+@{--
  - This production as currently designed matches up exactly with what copper raises in its syntax error exception.
  -
  - @param diagnosticString  An un-pretty but convenient way of printing out this parser error.
@@ -102,7 +102,7 @@ top::ParseError ::=
   top.parseErrors = diagnosticString;
 }
 
-{--
+@{--
  - This production accomodates an unknown type of parser error.
  -
  - @param diagnosticString  A string describing the error

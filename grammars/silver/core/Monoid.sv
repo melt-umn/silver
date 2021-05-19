@@ -1,6 +1,6 @@
 grammar silver:core;
 
-{-
+@{-
 The class of monoids (types with an associative binary operation that has an identity). Instances should satisfy the following:
 
 Right identity
@@ -36,7 +36,7 @@ instance Monoid Unit {
   mempty = unit();
 }
 
-{--
+@{--
  - Map a function over a list, and then concatenates the results together.
  -
  - @param f  A function to apply to each element of a list, returning a monoid.

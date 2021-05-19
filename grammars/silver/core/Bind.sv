@@ -1,6 +1,6 @@
 grammar silver:core;
 
-{-
+@{-
 Extends the Apply type class with a "bind" operation that composes computations in sequence,
 using the return value of one computation to determine the next computation.
 
