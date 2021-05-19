@@ -38,7 +38,7 @@ function toSplitFiles
              substitute(".sv", ".md", this.location.filename),
              getFileTitle(this.localDocConfig, substitute(".sv", "", this.location.filename)),
              getFileWeight(this.localDocConfig), true,
-             s"In file `${this.location.filename}`: "++(if getToc(this.localDocConfig) then "{{< toc >}}" else ""), 
+             s"In grammar `${g.grammarName}` file `${this.location.filename}`: "++(if getToc(this.localDocConfig) then "{{< toc >}}" else ""), 
              this.docs) ++ soFar) else toSplitFiles(rest, grammarConf, forIndex ++ this.docs, soFar)
        | nilGrammar() -> let skel::Boolean = (length(soFar) == 0 && length(grammarConf) == 0 && length(forIndex) == 0) in
              formatFile("_index.md",

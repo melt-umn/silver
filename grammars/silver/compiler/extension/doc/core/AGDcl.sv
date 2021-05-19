@@ -72,7 +72,7 @@ aspect production nonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
   top.docForName = id.name;
-  top.docUnparse = s"`nonterminal ${id.name}`";
+  top.docUnparse = s"`nonterminal ${id.name}${tl.unparse}`";
   top.docDcls := [pair(id.name, docDclInfo(id.name, top.location, top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
@@ -269,9 +269,9 @@ top::AGDcl ::= d::[Def]
 aspect production appendAGDcl
 top::AGDcl ::= h::AGDcl t::AGDcl
 {
-  -- Should be defined on what forwards to this
-  top.docForName = "";
-  top.docUnparse = "";
+  -- Should be overridden if relevant on what forwards to this
+  top.docForName = h.docForName;
+  top.docUnparse = h.docUnparse;
 }
 
 aspect production jarNameDcl
