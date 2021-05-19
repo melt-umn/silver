@@ -27,7 +27,7 @@ Set<a> ::= comparator::(Integer ::= a a)
   "java" : return "common.rawlib.RawTreeSet.empty(%comparator%)";
 }
 
-@{- @warning An 'insert' function is deliberating omitted due to its inefficiency, but there's add: -}
+@@{- @warning An 'insert' function is deliberating omitted due to its inefficiency, but there's add: -}
 
 @{--
  - Adds a list of elements to a set.

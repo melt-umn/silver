@@ -6,9 +6,9 @@ imports silver:util:treemap as tm;
 @@{-
    - Comment is sequence of blocks
 
-   - Blocks start with a newline or a @param/@return/@prodattr/@forward/...
+   - Blocks start with a newline or a @@param/@@return/@@prodattr/@@forward/...
 
-   - Initial block is a 'normal' block even if no newline (but is other type if has @tag)
+   - Initial block is a 'normal' block even if no newline (but is other type if has @@tag)
    -}
 
 @{- Does this doc comment actually result in a markdown block? -}
