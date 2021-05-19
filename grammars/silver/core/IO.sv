@@ -1,15 +1,16 @@
 grammar silver:core;
 
-{--
- - The resulting world-state token of an IO action.
+@{--
+ - The type representing the world-state token of an IO action.
  -}
 synthesized attribute io :: IO;
-{--
+
+@{--
  - The resulting value of an IO action.
  -}
 synthesized attribute iovalue<a> :: a;
 
-{--
+@{--
  - A container for the results of IO actions.
  -
  - @param a  The type of value returned by the IO action.

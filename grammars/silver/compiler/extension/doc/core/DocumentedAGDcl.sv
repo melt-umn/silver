@@ -2,6 +2,7 @@ grammar silver:compiler:extension:doc:core;
 
 import silver:util:cmdargs only CmdArgs;
 import silver:compiler:extension:doc:driver;
+import silver:compiler:definition:type;
 
 {-
  - Parse the doc-comment mini language in a DocComment_t, returning a DclComment.
@@ -21,6 +22,25 @@ DclComment ::= conf::Decorated CmdArgs body::DocComment_t
     return if conf.parseDocs then comment else theEmptyDclComment;
 }
 
+function getFreeTypeNames
+[String] ::= l::[TyVar]
+{
+    return case l of
+           | tyVarNamed(_, _, s)::xs -> s :: getFreeTypeNames(xs)
+           | _::xs -> getFreeTypeNames(xs)
+           | [] -> []
+           end;
+}
+
+function getFirstAGDcl
+AGDcl ::= a::AGDcl
+{
+    return case a of
+           | appendAGDcl(x, _) -> getFirstAGDcl(x)
+           | x -> x
+           end;
+}
+
 {-
  - This wraps an AGDcl to allow it to be prefixed with a doc comment. AGDcls will by default
  - emit an doc item that notes that it is undocumented (via mkUndocumentedItem.) This does not
@@ -33,10 +53,13 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
 {
     local parsed::DclComment = parseComment(top.config, comment);
 
-    local paramNamesAndForWhat::Pair<[String] String> = case dcl of
-        | functionDcl(_, _, ns, _) -> pair(ns.argNames, "function")
-        | productionDcl(_, _, _, ns, _) -> pair(ns.argNames, "production")
-        | _ -> pair([], if isDoubleComment then "standalone" else "other")
+    local paramNamesAndForWhat::Pair<Maybe<[String]> String> = case getFirstAGDcl(dcl) of
+        | functionDcl(_, _, ns, _) -> pair(just(ns.argNames), "function")
+        | productionDcl(_, _, _, ns, _) -> pair(just(ns.argNames), "production")
+        | nonterminalDcl(_, _, _, tl, _, _) -> pair(just(getFreeTypeNames(tl.freeVariables)), "nonterminal")
+        | attributeDclInh(_, _, _, tl, _, _, _) -> pair(just(getFreeTypeNames(tl.freeVariables)), "attribute")
+        | attributeDclSyn(_, _, _, tl, _, _, _) -> pair(just(getFreeTypeNames(tl.freeVariables)), "attribute")
+        | _ -> pair(just([]), if isDoubleComment then "standalone" else "other")
         end;
 
     parsed.paramNames = paramNamesAndForWhat.fst;
@@ -74,7 +97,7 @@ layout {}
 {
     local parsed::DclComment = parseComment(top.config, comment);
 
-    parsed.paramNames = [];
+    parsed.paramNames = nothing();
     parsed.isForWhat = "standalone";
     parsed.downDocConfig = top.downDocConfig;
     parsed.docEnv = top.docEnv;

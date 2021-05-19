@@ -1,10 +1,5 @@
 grammar silver:compiler:extension:doc:extra;
 
-{- This grammar is just a bunch of imports. It is run by the generate-documentation script, and just builds documentation. The jar it produces is just thrown away. -}
-
-
---import ide;
-
 import silver:xml;
 
 import silver:compiler:analysis:typechecking:core;
@@ -52,13 +47,16 @@ import silver:util:graph;
 import silver:util:treemap;
 import silver:util:treeset;
 
-@{- Dummy main function that does nothing @link[dummyFunction] -}
+@@{- This grammar is just a bunch of imports. It is run by the generate-documentation script, and just builds documentation. The jar it produces is just thrown away. -}
+
+@{- Dummy main function that does nothing. Example link: @link[dummyFunction] -}
 function main
 IOVal<Integer> ::= args::[String] ioIn::IO
 {
   return ioval(ioIn, 0);
 }
 
+@{- Also a dummy function that does nothing -}
 function dummyFunction
 Integer ::=
 {

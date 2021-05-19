@@ -63,7 +63,7 @@ top::ClassBodyItem ::= comment::DocComment_t item::ClassBodyItem
 {
   local parsed::DclComment = parseComment(top.config, comment);
 
-  parsed.paramNames = [];
+  parsed.paramNames = nothing();
   parsed.isForWhat = "classBodyItem";
   parsed.downDocConfig = top.downDocConfig;
   parsed.docEnv = top.docEnv;
@@ -140,7 +140,7 @@ top::InstanceBodyItem ::= comment::DocComment_t item::InstanceBodyItem
 {
   local parsed::DclComment = parseComment(top.config, comment);
 
-  parsed.paramNames = [];
+  parsed.paramNames = nothing();
   parsed.isForWhat = "instanceBodyItem";
   parsed.downDocConfig = top.downDocConfig;
   parsed.docEnv = top.docEnv;

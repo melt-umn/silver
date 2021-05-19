@@ -11,7 +11,7 @@ imports silver:util:treemap as tm;
 synthesized attribute doEmit::Boolean occurs on DclComment;
 
 {- List of parameter/child names used to warn for incorrect number/names on function/production blocks. -}
-inherited attribute paramNames::[String] occurs on DclComment;
+inherited attribute paramNames::Maybe<[String]> occurs on DclComment;
 
 {- Enum-like description of what type of construct the comment occurs on, used to warn on using irrelevant blocks. -}
 inherited attribute isForWhat::String occurs on DclComment;
@@ -77,22 +77,24 @@ top::DclComment ::= InitialIgnore_t blocks::DclCommentBlocks FinalIgnore_t
     local forwardBlocks::[String] = getBlocksNamed(blocks.otherBlocks, "forward");
     local normalBlocks::[String] = getBlocksNamed(blocks.otherBlocks, "normal");
 
+    local paramNamesOrEmpty::[String] = fromMaybe([], top.paramNames);
+
     local paramBlocks::[String] = 
         map(snd, sortBy(
             (\x::Pair<String String> y::Pair<String String> ->
-                positionOf(x.fst, top.paramNames) < positionOf(y.fst, top.paramNames)),
+                positionOf(x.fst, paramNamesOrEmpty) < positionOf(y.fst, paramNamesOrEmpty)),
             blocks.paramBlocks));
 
     local errs::[String] =
-        (if (length(paramBlocks) != length(top.paramNames)) && (length(paramBlocks) != 0)
+        (if (length(paramBlocks) != length(paramNamesOrEmpty) && (length(paramBlocks) != 0))
         then ["Arity doesn't match in doc-comment"]
-        else checkParams(top.paramNames, map(fst, blocks.paramBlocks))) ++
+        else checkParams(paramNamesOrEmpty, map(fst, blocks.paramBlocks))) ++
         (if length(forwardBlocks) > 1 then ["More than one forward block in doc-comment"] else []) ++
         (if length(returnBlocks) > 1 then ["More than one return block in doc-comment"] else []) ++
         (if length(returnBlocks) > 0 && top.isForWhat!="function" then ["@return in non-function doc-comment"] else []) ++
         (if length(forwardBlocks) > 0 && top.isForWhat!="production" then ["@forward in non-production doc-comment"] else []) ++
         (if length(prodAttrBlocks) > 0 && !(top.isForWhat=="function" || top.isForWhat == "production") then ["@prodattr in non function-or-production doc comment"] else []) ++
-        (if length(paramBlocks) > 0 && !(top.isForWhat=="function" || top.isForWhat == "production") then ["@param in non function-or-production doc comment"] else []) ++
+        (if length(paramBlocks) > 0 && !top.paramNames.isJust then ["@param does belong in this doc comment"] else []) ++
         confResult.fst;
 
     top.errors := map((\x::String -> wrn(top.offsetLocation, x)), errs);
