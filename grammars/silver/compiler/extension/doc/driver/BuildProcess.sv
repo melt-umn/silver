@@ -150,7 +150,7 @@ IO ::= i::IO  r::Decorated RootSpec  outputLoc::String
   return wr;
 }
 
-{--
+@{--
  - Given a path (with terminating /) and list of (file names relative to that root, contents),
  - write these out.
  -}

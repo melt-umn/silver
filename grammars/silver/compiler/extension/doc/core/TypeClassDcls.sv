@@ -3,7 +3,7 @@ grammar silver:compiler:extension:doc:core;
 attribute docUnparse occurs on ClassBodyItem, InstanceBodyItem;
 attribute docForName occurs on ClassBodyItem, InstanceBodyItem;
 
-{- What to prefix 'child' declaration names with in docs and for hyperlinking. -}
+@{- What to prefix 'child' declaration names with in docs and for hyperlinking. -}
 autocopy attribute scopeName :: String occurs on ClassBody, ClassBodyItem, InstanceBody, InstanceBodyItem;
 
 aspect production typeClassDcl

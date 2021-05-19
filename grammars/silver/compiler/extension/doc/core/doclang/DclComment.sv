@@ -3,29 +3,33 @@ imports silver:compiler:extension:doc:core;
 imports silver:langutil;
 imports silver:util:treemap as tm;
 
--- Comment is sequence of blocks
--- Blocks start with a newline or a @param/@return/@prodattr/@forward/...
--- Initial block is a 'normal' block even if no newline (but is other type if has @tag)
+@@{-
+   - Comment is sequence of blocks
 
-{- Does this doc comment actually result in a markdown block? -}
+   - Blocks start with a newline or a @param/@return/@prodattr/@forward/...
+
+   - Initial block is a 'normal' block even if no newline (but is other type if has @tag)
+   -}
+
+@{- Does this doc comment actually result in a markdown block? -}
 synthesized attribute doEmit::Boolean occurs on DclComment;
 
-{- List of parameter/child names used to warn for incorrect number/names on function/production blocks. -}
+@{- List of parameter/child names used to warn for incorrect number/names on function/production blocks. -}
 inherited attribute paramNames::Maybe<[String]> occurs on DclComment;
 
-{- Enum-like description of what type of construct the comment occurs on, used to warn on using irrelevant blocks. -}
+@{- Enum-like description of what type of construct the comment occurs on, used to warn on using irrelevant blocks. -}
 inherited attribute isForWhat::String occurs on DclComment;
 
-{- String to prepend to emitted markdown lines. -}
+@{- String to prepend to emitted markdown lines. -}
 inherited attribute indentBy::String occurs on DclComment;
 
-{- List of pair of (paramname, content) -}
+@{- List of pair of (paramname, content) -}
 synthesized attribute paramBlocks::[Pair<String String>];
 
-{- List of pair of (blocktype, content) -}
+@{- List of pair of (blocktype, content) -}
 synthesized attribute otherBlocks::[Pair<String String>];
 
-{- Config args. -}
+@{- Config args. -}
 synthesized attribute configArgs::[Pair<String ConfigValue>];
 
 nonterminal DclComment layout {} with docEnv, body, errors, location, downDocConfig, upDocConfig;
@@ -44,7 +48,7 @@ nonterminal DclCommentPart layout {} with body, location, docEnv, errors;
 propagate errors on DclCommentBlocks, DclCommentStrictBlocks, DclCommentBlock,
     DclCommentLines, DclCommentParts, DclCommentPart;
 
-{- The location of the terminal whose text was parsed to create this DclComment, used when displaying errors. -}
+@{- The location of the terminal whose text was parsed to create this DclComment, used when displaying errors. -}
 inherited attribute offsetLocation::Location occurs on 
     DclComment, DclCommentBlocks, DclCommentStrictBlocks, DclCommentBlock,
     DclCommentLines, DclCommentParts, DclCommentPart;
@@ -415,7 +419,7 @@ top::DclCommentPart ::= '@@'
     top.body = "@";
 }
 
-{- Most of the complexity here is to allow bullet point lists. Be careful :) -}
+@@{- Most of the complexity in terminals here is to allow bullet point lists. Be careful :) -}
 
 terminal InitialIgnore_t /@+\{\-[ \t]*\-*[ \t]*([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*/;
 terminal FinalIgnore_t /[\- \r\n]*\-\}/ dominates {CommentContent_t};

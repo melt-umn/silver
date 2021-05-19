@@ -4,7 +4,7 @@ import silver:util:cmdargs only CmdArgs;
 import silver:compiler:extension:doc:driver;
 import silver:compiler:definition:type;
 
-{-
+@{-
  - Parse the doc-comment mini language in a DocComment_t, returning a DclComment.
  -
  - @param conf Global compiler config, used to see if any of the doc-related options 
@@ -41,7 +41,7 @@ AGDcl ::= a::AGDcl
            end;
 }
 
-{-
+@{-
  - This wraps an AGDcl to allow it to be prefixed with a doc comment. AGDcls will by default
  - emit an doc item that notes that it is undocumented (via mkUndocumentedItem.) This does not
  - pass those up, since they are documented here.
@@ -86,7 +86,7 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
     forwards to dcl;
 }
 
-{-
+@{-
  - Doc comment without associated AGDcl.
  - 
  - @forward emptyAGDcl.
