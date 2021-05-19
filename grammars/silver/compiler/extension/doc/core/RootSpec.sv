@@ -25,7 +25,7 @@ top::RootSpec ::= g::Grammar  _ _ _ _
   g.downDocConfig = g.upDocConfig;
 }
 
-{- 
+@{- 
  - Turn the files in a grammar into zero or more single-file docs pages, and collect the rest of the docs
  - (possibly zero) into the index file.
  -}

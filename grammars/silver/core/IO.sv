@@ -451,7 +451,7 @@ a ::= val::a act::IO
  -
  - @param val  The value to evaluate to, after the IO action is performed.
  - @param str  The string to print.
- - @return  val, unchanged.
+ - @return val, unchanged.
  - @warning see @link[unsafeIO]
  -}
 function unsafeTracePrint

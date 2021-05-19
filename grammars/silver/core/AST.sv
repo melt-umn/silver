@@ -1,7 +1,7 @@
 grammar silver:core;
 
 @@{-
-   - @warning This grammar contains only the defintions of the AST nonterminals, needed by the runtime library.
+   - @warning This grammar contains only the definitions of the AST nonterminals, needed by the runtime library.
    -          The full reflection library that users should import is `silver:reflect`
    -}
 

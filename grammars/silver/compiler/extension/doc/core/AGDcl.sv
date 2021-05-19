@@ -9,9 +9,9 @@ imports silver:compiler:modification:copper_mda;
 imports silver:compiler:definition:flow:syntax;
 imports silver:compiler:modification:collection;
 
-@@{- ## INTENDED TO BE INTERFERED WITH like .pp. -}
+@@{- @warning INTENDED TO BE INTERFERED WITH like .pp. -}
 synthesized attribute docUnparse::String occurs on AGDcl;
-@@{- ## INTENDED TO BE INTERFERED WITH like .pp. -}
+@@{- @warning INTENDED TO BE INTERFERED WITH like .pp. -}
 synthesized attribute docForName::String occurs on AGDcl;
 
 aspect production functionDcl
