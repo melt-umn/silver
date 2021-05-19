@@ -19,7 +19,7 @@ String ::= width::Integer d::Document
 
 --------------------------------------------------------------------------------
 
-{--
+@{--
  - Concatenates a list of fragments into one fragment.
  -}
 function ppConcat
@@ -28,7 +28,8 @@ Document ::= ds::[Document]
   return if null(ds) then notext()
          else foldl(cat, head(ds), tail(ds));
 }
-{--
+
+@{--
  - Intersperse a separator fragment between a list of fragments.
  - e.g. implode(text(", "), list)
  -}
@@ -39,7 +40,8 @@ Document ::= sep::Document ds::[Document]
          else if null(tail(ds)) then head(ds)
          else cat(cat(head(ds), sep), ppImplode(sep, tail(ds)));
 }
-{--
+
+@{--
  - Introduce a separator fragment after every element of a list of fragments.
  - Including the last.
  -}
@@ -50,7 +52,8 @@ Document ::= sep::Document ds::[Document]
          then notext()
          else cat(cat(head(ds), sep), terminate(sep, tail(ds)));
 }
-{--
+
+@{--
  - Introduce a separator fragment before every element of a list of fragments.
  - Including the first.
  -}
@@ -61,7 +64,8 @@ Document ::= sep::Document ds::[Document]
          then notext()
          else cat(cat(sep, head(ds)), initiate(sep, tail(ds)));
 }
-{--
+
+@{--
  - Insert lines before and after the inner fragment, with proper nesting.
  - (That is, usually you want the first line inside the nest, but the second
  - OUTSIDE the nest.)
@@ -119,7 +123,7 @@ Document ::= d::Document
   return cat(cat(text("["), d), text("]"));
 }
 
-{- Below this line:
+@@{- Below this line:
 text     Document ::= String
 cat      Document ::= Document Document
 line     Document ::= 
@@ -155,7 +159,7 @@ synthesized attribute outRemaining :: Integer;
 
 synthesized attribute result :: String; -- output of printing process
 
-{-
+@@{-
 Some notes on deciphering all this:
 
 in/out Position is some hypothetical value that's part of the "scanning process"
@@ -177,7 +181,7 @@ meant to be consumed by a pre-order scan of the tree.
 -}
 
 
-{--
+@{--
  - Literal text. (Do not use with newlines!)
  -}
 abstract production text
@@ -194,7 +198,7 @@ top::Document ::= s::String
   top.horizontals = pr.snd;
 }
 
-{--
+@{--
  - Concatenate two documents.
  -}
 abstract production cat
@@ -219,7 +223,7 @@ top::Document ::= d1::Document d2::Document
   top.horizontals = d1.horizontals ++ d2.horizontals;
 }
 
-{--
+@{--
  - Either a space, or a linebreak plus indentation.
  - The behavior of EVERY line in a group is identical.
  -}
@@ -238,7 +242,7 @@ top::Document ::=
   top.horizontals = pr.snd;
 }
 
-{--
+@{--
  - Does nothing but control the behavior of all lines that have this group
  - as their closest enclosing group.
  -}
@@ -265,7 +269,7 @@ top::Document ::= d::Document
   top.horizontals = d.horizontals ++ le.snd;
 }
 
-{--
+@{--
  - Increase the indentation level (but does not directly indent itself!)
  -}
 abstract production nest

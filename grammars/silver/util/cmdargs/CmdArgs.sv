@@ -46,7 +46,7 @@ top::CmdArgs ::= errmsg::String
   forwards to endCmdArgs([]); -- Well, this is an abuse, but this whole thing is an abuse, really.
 }
 
-{--
+@{--
  - Flags are a representation of what to do with command line flags/options.
  - It should not be necessary to define any new flags.
  -}
@@ -57,7 +57,7 @@ synthesized attribute flagOutput::[String];
 inherited attribute flagOriginal::CmdArgs;
 synthesized attribute flagModified::CmdArgs;
 
-{--
+@{--
  - In the terminology I've just made up, a 'flag' is a cmd line option
  - with no parameters.
  -}
@@ -68,7 +68,7 @@ top::Flag ::= ast::(CmdArgs ::= CmdArgs)
   top.flagModified = ast(top.flagOriginal);
 }
 
-{--
+@{--
  - In the terminology I've just made up, an 'option' is a cmd line option
  - with one, single parameter.
  -}
@@ -81,7 +81,7 @@ top::Flag ::= ast::(CmdArgs ::= String CmdArgs)
                      else ast(head(tail(top.flagInput)), top.flagOriginal);
 }
 
-{--
+@{--
  - In the terminology I've just made up, 'nOptions' is a cmd line option
  - with n parameters.
  -}

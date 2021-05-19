@@ -4,7 +4,7 @@ grammar silver:util:subprocess;
 type ProcessHandle foreign = "common.rawlib.RawProcessHandle";
 
 
-{--
+@{--
  - Start a subprocess to run in the background with which to communicate.
  - To run `cmd a1 a2`, call `spawnProcess("cmd", ["a1", "a2"])`
  -
@@ -22,7 +22,7 @@ IOVal<ProcessHandle> ::= cmd::String args::[String] i::IO
 }
 
 
-{--
+@{--
  - Send a string message to a subprocess
  -
  - @param p  The process to which to send the message
@@ -39,7 +39,7 @@ IO ::= p::ProcessHandle msg::String i::IO
 }
 
 
-{--
+@{--
  - Read a line of output from a subprocess
  -
  - @param p  The process from which to read
@@ -55,7 +55,7 @@ IOVal<String> ::= p::ProcessHandle i::IO
 }
 
 
-{--
+@{--
  - Read everything available in the output from a subprocess.
  - Returns an empty string if nothing is available.
  -
@@ -72,7 +72,7 @@ IOVal<String> ::= p::ProcessHandle i::IO
 }
 
 
-{--
+@{--
  - Read everything in the stdout from a subprocess until reaching the string "ending".
  - The ending string is included in the output.  If the process never outputs the
  - ending string to stdout, this function never returns.
@@ -91,7 +91,7 @@ IOVal<String> ::= p::ProcessHandle ending::String i::IO
 }
 
 
-{--
+@{--
  - Read a line of output from stderr of a subprocess
  -
  - @param p  The process from which to read
@@ -107,7 +107,7 @@ IOVal<String> ::= p::ProcessHandle i::IO
 }
 
 
-{--
+@{--
  - Read everything available in the stderr from a subprocess.
  - Returns an empty string if nothing is available.
  -
@@ -124,7 +124,7 @@ IOVal<String> ::= p::ProcessHandle i::IO
 }
 
 
-{--
+@{--
  - Read everything in the stderr from a subprocess until reaching the string "ending".
  - The ending string is included in the output.  If the process never outputs the
  - ending string to stderr, this function never returns.
@@ -143,7 +143,7 @@ IOVal<String> ::= p::ProcessHandle ending::String i::IO
 }
 
 
-{--
+@{--
  - Wait for a running subprocess to end.  There should be a reason to
  - expect it to end; this does not kill it.
  -
