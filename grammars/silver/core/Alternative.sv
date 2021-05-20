@@ -1,6 +1,6 @@
 grammar silver:core;
 
-{-
+@{-
 The Alt type class identifies an associative operation on a type constructor.
 It is similar to Semigroup, except that it applies to types of kind arity 1,
 like Maybe or [], rather than concrete types String or [a].
@@ -16,7 +16,7 @@ class Functor f => Alt f {
   alt :: (f<a> ::= f<a> f<a>);
 }
 
-{-
+@{-
 The Plus type class extends the Alt type class with a value that should be the
 left and right identity for (<|>).
 
@@ -36,7 +36,7 @@ class Alt f => Plus f {
   empty :: f<a>;
 }
 
-{-
+@{-
 The Alternative class is for members of Plus that are also Applicative functors,
 and specifies some additional laws:
 

@@ -1,6 +1,6 @@
 grammar silver:core;
 
-{-
+@{-
 Eq represents equality/inequality relationships between data.
 
 Laws are based on Haskell's Eq type class:

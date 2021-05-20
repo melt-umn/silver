@@ -148,7 +148,7 @@ instance MonadTrans MaybeT {
 
 --------------------------------------------------------------------------------
 
-{--
+@{--
  - The corresponding fold for Maybes.
  -
  - @param otherwise  The element to return if 'ifJust' is 'nothing'
@@ -161,7 +161,7 @@ a ::= otherwise::a ifJust::Maybe<a>
   return if ifJust.isJust then ifJust.fromJust else otherwise;
 }
 
-{--
+@{--
  - Selects the first existing element, favoring the left.
  -
  - @param l  The first element
@@ -174,7 +174,7 @@ Maybe<a> ::= l::Maybe<a> r::Maybe<a>
   return if l.isJust then l else r;
 }
 
-{--
+@{--
  - Maybe cons a value to a list, or not.
  -
  - @param h  If a value, the value to cons onto the list.
@@ -187,7 +187,7 @@ function consMaybe
   return if h.isJust then h.fromJust :: t else t;
 }
 
-{--
+@{--
  - Turn a list of possible values into a list of values, skipping over
  - any 'nothing's.
  -
@@ -200,7 +200,7 @@ function catMaybes
   return foldr(consMaybe, [], l);
 }
 
-{--
+@{--
  - Finds the first value matching a predicate.
  -}
 function find

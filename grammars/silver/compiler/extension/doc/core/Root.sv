@@ -4,42 +4,42 @@ import silver:compiler:driver;
 
 synthesized attribute genFiles :: [Pair<String String>] with ++;
 
-{-
+@{-
  - Used for getting doc comments on AGDcls to emit.
  - Note that not every item really should be emitted, see doEmit.
  -}
 synthesized attribute docs :: [CommentItem] with ++;
 attribute docs occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 
-{-
+@@{-
  - Doc config is managed in both a per-file, and per-grammar way. Directives are either file-scope
  - or grammar-scope. A file-scoped directive for the same setting beats a grammar-scoped one. To do
- - this, directives flow up via @link[upDocConfig] from AGDcls to reach @link[grammarRootSpec] and
- - then flow back down via @link[downDocConfig]. However, when passing through @link[root] the only
+ - this, directives flow up via @link[upDocConfig] from AGDcls to reach `grammarRootSpec` and
+ - then flow back down via @link[downDocConfig]. However, when passing through `Root` the only
  - doc directives that flow up to the Grammar scope are those with .fileScope = true. Then when
  - flowing back down, those with .fileScope = false are re-added in front of grammar scope directives
- - in @link[downDocConfig] (and stored on the @link[Root] as @link[localDocConfig].) -}
+ - in @link[downDocConfig] (and stored on the `Root` as @link[localDocConfig].) -}
 
-{- Final doc config flowing back down, inside files (Roots) will include file scoped settings first. -}
+@{- Final doc config flowing back down, inside files (Roots) will include file scoped settings first. -}
 inherited attribute downDocConfig :: [DocConfigSetting] occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 
-{- Doc config information flowing up. File scoped settings are stripped at the Root level. -}
+@{- Doc config information flowing up. File scoped settings are stripped at the Root level. -}
 synthesized attribute upDocConfig :: [DocConfigSetting] with ++ occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 
-{- Snapshot of @link[downDocConfig] stored on @link[Root]. -}
+@{- Snapshot of @link[downDocConfig] stored on `Root`. -}
 synthesized attribute localDocConfig :: [DocConfigSetting] occurs on Root;
 
 synthesized attribute undocumentedNamed :: [String] occurs on Root, Grammar;
 synthesized attribute documentedNamed :: [String] occurs on Root, Grammar;
 
-{-
+@{-
  - Declarations of documented AGDcls, flowing up. Used for linking and counting documented items.
  - Flows back down as @link[docEnv].
  -}
 synthesized attribute docDcls :: [Pair<String DocDclInfo>] with ++;
 attribute docDcls occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 
-{- Environment of all documented AGDcls, flowing back down after being computed from @link[docDcls].  -}
+@{- Environment of all documented AGDcls, flowing back down after being computed from @link[docDcls].  -}
 autocopy attribute docEnv :: tm:Map<String DocDclInfo>;
 attribute docEnv occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 

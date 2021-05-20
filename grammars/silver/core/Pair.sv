@@ -3,7 +3,7 @@ grammar silver:core;
 synthesized attribute fst<a> :: a;
 synthesized attribute snd<a> :: a;
 
-{--
+@{--
  - The basic product type, counterpart to Either.
  -}
 nonterminal Pair<a b> with fst<a>, snd<b>;
@@ -23,7 +23,7 @@ function snd
 b ::= p::Pair<a b>
 { return p.snd; }
 
-{--
+@{--
  - Look up an element in an association list, using the specified equality
  - function.
  -
@@ -43,7 +43,7 @@ Maybe<b> ::= eqf::(Boolean ::= a a)  elem::a  lst::[Pair<a b>]
               else lookupBy(eqf, elem, tail(lst));
 }
 
-{--
+@{--
  - Look up an element in an association list, using ==.
  -
  - @param elem   The element to look up
@@ -73,13 +73,12 @@ Eq a => [b] ::= elem::a  lst::[Pair<a b>]
   return lookupAllBy(eq, elem, lst);
 }
 
-{--
+@{--
  - Decomposes a list of pairs into a pair of lists.
  -
  - unzipPairs(zipWith(pair, lst)) == lst
  -
  - @param lst  A list to decompose into two lists.
- - @return 
  -}
 function unzipPairs
 Pair<[a] [b]> ::= lst::[Pair<a b>]

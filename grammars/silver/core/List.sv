@@ -1,6 +1,5 @@
 grammar silver:core;
 
-
 instance Functor [] {
   map = \ f::(b ::= a) l::[a] ->
     if null(l) then []
@@ -40,7 +39,7 @@ instance MonadZero [] {}
 instance MonadPlus [] {}
 
 
-{--
+@{--
  - Applies an operator right-associatively over a list.
  - (i.e. replaces cons with 'f', nil with 'i' in the list)
  -
@@ -56,7 +55,7 @@ b ::= f::(b ::= a b)  i::b  l::[a]
          else f(head(l), foldr(f, i, tail(l)));
 }
 
-{--
+@{--
  - Applies an operator left-associatively over a list.
  -
  - @param f  The operator to apply
@@ -71,11 +70,9 @@ b ::= f::(b ::= b a)  i::b  l::[a]
          else foldl(f, f(i, head(l)), tail(l));
 }
 
-{--
+@{--
  - Right-fold, assuming there is always one element, and leaving that element
- - unchanged for single element lists.
- -
- - @see foldr
+ - unchanged for single element lists. See @link[foldr].
  -}
 function foldr1
 a ::= f::(a ::= a a)  l::[a]
@@ -85,11 +82,9 @@ a ::= f::(a ::= a a)  l::[a]
          else f(head(l), foldr1(f, tail(l)));
 }
 
-{--
+@{--
  - Left-fold, assuming there is always one element, and leaving that element
- - unchanged for single element lists.
- -
- - @see foldl
+ - unchanged for single element lists. See @link[foldl].
  -}
 function foldl1
 a ::= f::(a ::= a a)  l::[a]
@@ -98,7 +93,7 @@ a ::= f::(a ::= a a)  l::[a]
          else foldl(f, head(l), tail(l));
 }
 
-{--
+@{--
  - Filter out elements of a list.
  -
  - @param f  The filter function
@@ -116,7 +111,7 @@ function filter
               else filter(f, tail(lst));
 }
 
-{--
+@{--
  - Partition a list in two
  -
  - @param f  Decision function
@@ -135,7 +130,7 @@ Pair<[a] [a]> ::= f::(Boolean ::= a) lst::[a]
               else pair(recurse.fst, head(lst) :: recurse.snd);
 }
 
-{--
+@{--
  - Determine if an element appears in a list.
  -
  - @param eq  The equality function to use
@@ -150,7 +145,7 @@ Boolean ::= eq::(Boolean ::= a a)  elem::a  lst::[a]
   return (!null(lst)) && (eq(elem, head(lst)) || containsBy(eq, elem, tail(lst)));
 }
 
-{--
+@{--
  - Determine if an element appears in a list.
  -
  - @param elem  The element to search for
@@ -163,7 +158,7 @@ Eq a => Boolean ::= elem::a  lst::[a]
   return containsBy(eq, elem, lst);
 }
 
-{--
+@{--
  - Removes all duplicates from a list.
  -
  - @param eq  The equality function to use
@@ -177,7 +172,7 @@ function nubBy
         else head(xs) :: nubBy(eq, removeBy(eq, head(xs), tail(xs)));
 }
 
-{--
+@{--
  - Removes all duplicates from a list.
  -
  - @param xs  The list to remove duplicates from
@@ -189,7 +184,7 @@ Eq a => [a] ::= xs::[a]
   return nubBy(eq, xs);
 }
 
-{--
+@{--
  - Removes all instances of an element from a list.
  -
  - @param eq  The equality function to use
@@ -204,7 +199,7 @@ function removeBy
         else (if eq(x,head(xs)) then [] else [head(xs)]) ++ removeBy(eq, x, tail(xs));
 }
 
-{--
+@{--
  - Removes all instances of an element from a list.
  -
  - @param x  The element to remove
@@ -217,7 +212,7 @@ Eq a => [a] ::= x::a  xs::[a]
   return removeBy(eq, x, xs);
 }
 
-{--
+@{--
  - Removes all instances of several elements from a list: xs - ys
  -
  - @param eq  The equality function to use
@@ -232,7 +227,7 @@ function removeAllBy
         else removeAllBy(eq, tail(ys), removeBy(eq, head(ys), xs));
 }
 
-{--
+@{--
  - Removes all instances of several elements from a list: xs - ys
  -
  - @param ys  The list of elements to remove
@@ -245,7 +240,7 @@ Eq a => [a] ::= ys::[a]  xs::[a]
   return removeAllBy(eq, ys, xs);
 }
 
-{--
+@{--
  - Returns the initial elements of a list.
  -
  - @param lst  The list to examine
@@ -259,7 +254,7 @@ function init
          else head(lst)::init(tail(lst));
 }
 
-{--
+@{--
  - Returns the last element of a list.
  -
  - @param lst  The list to examine
@@ -423,7 +418,7 @@ Eq a => [[a]] ::= l::[a]
   return groupBy(eq, l);
 }  
 
-{--
+@{--
  - Inserts the separator in between all elements of the list.
  -}
 function intersperse

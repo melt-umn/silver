@@ -1,22 +1,29 @@
 grammar silver:core;
 
-{--
- - The resulting world-state token of an IO action.
+@@{-
+
+The silver IO system is a IO-token based system.
+
+# IO Types -}
+
+@{--
+ - The type representing the world-state token of an IO action.
  -}
 synthesized attribute io :: IO;
-{--
+
+@{--
  - The resulting value of an IO action.
  -}
 synthesized attribute iovalue<a> :: a;
 
-{--
+@{--
  - A container for the results of IO actions.
  -
  - @param a  The type of value returned by the IO action.
  -}
 nonterminal IOVal<a> with io, iovalue<a>;
 
-{--
+@{--
  - The sole constructor of IOVal results.
  -
  - @param i  The resulting world-state token.
@@ -29,14 +36,14 @@ top::IOVal<a> ::= i::IO v::a
   top.iovalue = v;
 }
 
-{--
+@{--
  - IO is the IO Token used to sequence actions.
  -}
 type IO foreign = "common.IOToken";
 
------- IO Actions:
+@@{- # IO Actions -}
 
-{--
+@{--
  - Displays a string on standard out. Newlines are NOT automatically added.
  -
  - @param s  The string to print.
@@ -51,6 +58,12 @@ IO ::= s::String i::IO
   "java" : return "%i%.print(%s%)";
 }
 
+@{--
+ - Read a line from standard input.
+ -
+ - @param i  The "before" world-state token.
+ - @return  The "after" world-state token.
+ -}
 function readLineStdin
 IOVal<String> ::= i::IO
 {
@@ -59,8 +72,10 @@ IOVal<String> ::= i::IO
   "java" : return "%i%.readLineStdin()";
 }
 
-{--
+@{--
  - Terminates with the specified error code.
+ -
+ - @warning Never returns! Does not do any cleanup!
  -
  - @param val  The error code to terminate with. (0 is considered "success")
  - @param i  The "before" world-state token.
@@ -74,7 +89,7 @@ IO ::= val::Integer i::IO
   "java" : return "%i%.exit(%val%)";
 }
 
-{--
+@{--
  - Creates a directory, including any parents that need to be created along the way.
  - Similar to 'mkdir -p'. If it fails, it may create only some of them.
  -
@@ -90,10 +105,10 @@ IOVal<Boolean> ::= s::String i::IO
   "java" : return "%i%.mkdir(%s%)";
 }
 
-{--
+@{--
  - Executes a shell command.  Specifically executes 'bash -c'.  So, not fully cross-platform.
  -
- - Avoid using this if possible.  If you need an IO action not present, request it, please.
+ - @warning Avoid using this if possible.  If you need an IO action not present, request it, please.
  -
  - Access to command's output is not directly available, but it is run in a shell. You can
  - redirect to a file and read that.
@@ -110,7 +125,7 @@ IOVal<Integer> ::= s::String i::IO
   "java" : return "%i%.system(%s%)";
 }
 
-{--
+@{--
  - Write a string to a file, replacing whatever is there already.
  -
  - @param file  The filename to write to.
@@ -126,7 +141,7 @@ IO ::= file::String contents::String i::IO
   "java" : return "%i%.writeFile(%file%, %contents%)";
 }
 
-{--
+@{--
  - Append a string to a file.
  -
  - @param file  The filename to append to.
@@ -142,9 +157,7 @@ IO ::= file::String contents::String i::IO
   "java" : return "%i%.appendFile(%file%, %contents%)";
 }
 
-------- IO Read Actions:
-
-{--
+@{--
  - The time, in seconds since 1970, when this file (or directory) was last modified.
  -
  - @param s  The file to query.
@@ -159,7 +172,7 @@ IOVal<Integer> ::= s::String i::IO
   "java" : return "%i%.fileTime(%s%)";
 }
 
-{--
+@{--
  - Checks if a file is an ordinary file.  (non-directory, non-special)
  -
  - @param s  The file to query.
@@ -174,7 +187,7 @@ IOVal<Boolean> ::= s::String i::IO
   "java" : return "%i%.isFile(%s%)";
 }
 
-{--
+@{--
  - Checks if a path is a directory.
  -
  - @param s  The path to query.
@@ -189,7 +202,7 @@ IOVal<Boolean> ::= s::String i::IO
   "java" : return "%i%.isDirectory(%s%)";
 }
 
-{--
+@{--
  - Read the entire contents of a file.  All instances of "\r\n" are replaced by "\n"
  - for compatibility reasons.
  -
@@ -205,7 +218,7 @@ IOVal<String> ::= s::String i::IO
   "java" : return "%i%.readFile(%s%)";
 }
 
-{--
+@{--
  - Return the current working directory.
  -
  - @param i  The "before" world-state token.
@@ -219,7 +232,7 @@ IOVal<String> ::= i::IO
   "java" : return "%i%.cwd()";
 }
 
-{--
+@{--
  - Obtain the value of an environment variable.
  -
  - @param s  The name of the environment variable to read.
@@ -234,7 +247,7 @@ IOVal<String> ::= s::String i::IO
   "java" : return "%i%.envVar(%s%)";
 }
 
-{--
+@{--
  - List the contents of a directory. Returns empty list if not a directory or
  - other IO error.
  -
@@ -250,7 +263,7 @@ IOVal<[String]> ::= s::String i::IO
   "java" : return "%i%.listContents(%s%)";
 }
 
-{--
+@{--
  - Delete a file, or an empty directory.
  -
  - @param s  The path to file to delete.
@@ -264,7 +277,8 @@ IOVal<Boolean> ::= s::String i::IO
 } foreign {
   "java" : return "%i%.deleteFile(%s%)";
 }
-{--
+
+@{--
  - Delete a set of files.
  -
  - @param s  The list of paths to files to delete.
@@ -278,7 +292,8 @@ IOVal<Boolean> ::= s::[String] i::IO
 } foreign {
   "java" : return "%i%.deleteFiles(%s%)";
 }
-{--
+
+@{--
  - Empty a directory of all normal files (i.e. leaving subdirectories alone)
  -
  - @param s  The path to the directory to empty
@@ -293,7 +308,7 @@ IOVal<Boolean> ::= s::String i::IO
   "java" : return "%i%.deleteDirFiles(%s%)";
 }
 
-{--
+@{--
  - Delete a non-empty directory and all subdirectories and files.
  -
  - @param s  The path to the directory to delete
@@ -308,11 +323,12 @@ IO ::= s::String  i::IO
   "java" : return "%i%.deleteTree(%s%)";
 }
 
-{--
+@{--
  - Copy a file from src to dst.
  -
  - @param src  The path of the file to copy.
  - @param dst  The path of the file to write, or the directory to copy the file to.
+ - @param i  The "before" world-state token.
  - @return  the IO token. Errors are fatal.
  -}
 function copyFile
@@ -323,7 +339,7 @@ IO ::= src::String  dst::String  i::IO
   "java" : return "%i%.copyFile(%src%, %dst%)";
 }
 
-{--
+@{--
  - Update a file's modification time to the current time.
  - 
  - @param file  The file to update the modification time of.
@@ -337,7 +353,8 @@ IO ::= file::String i::IO
 } foreign {
   "java" : return "%i%.touchFile(%file%)";
 }
-{--
+
+@{--
  - Update a set of files' modification time to the current time.
  - 
  - @param files  The list of files to update the modification time of.
@@ -353,11 +370,13 @@ IO ::= files::[String] i::IO
 }
 
 
------- IO Misc.
+@@{- # IO Misc -}
 
-{--
+@{--
  - Die with the stated error message and a stack trace.  Note that Silver stacks
  - may be hard to read (it's a lazy language.)
+ -
+ - @warning Does not return! Does not do any cleanup!
  -
  - @param msg  The path to list the contents of.
  - @return  Does not return.
@@ -370,11 +389,10 @@ a ::= msg::String
   "java" : return "common.Util.error(%msg%.toString())";
 }
 
-{--
- - Create a bogus world-state token, for use with unsafeTrace.
+@{--
+ - Create a bogus world-state token, for use with @link[unsafeTrace].
  -
  - @return  A fake world-state token.
- - @see unsafeTrace
  -}
 function unsafeIO
 IO ::=
@@ -384,7 +402,7 @@ IO ::=
   "java" : return "common.IOToken.singleton";
 }
 
-{--
+@{--
  - Generate an integer unique to this run of this process.  Starts from 0 and just
  - counts up each call.
  -
@@ -398,7 +416,7 @@ Integer ::=
   "java" : return "common.Util.genInt()";
 }
 
-{--
+@{--
  - Generates a random number between [0, 1)
  -}
 function genRand
@@ -410,14 +428,14 @@ Float ::=
 }
 
 
-{--
+@{--
  - Execute an IO action when a value is demanded by the Silver runtime.
  - When this gets executed may be unpredictable.
  -
  - @param val  The value to evaluate to, after the IO action is performed.
  - @param act  The world-state token to demand and consume.
  - @return  val, unchanged.
- - @see unsafeIO
+ - @warning see @link[unsafeIO]
  -}
 function unsafeTrace
 a ::= val::a act::IO
@@ -427,14 +445,29 @@ a ::= val::a act::IO
   "java" : return "common.Util.io(%act%, %val%)";
 }
 
-
+@{--
+ - Print string when a value is demanded by the Silver runtime.
+ - When this gets executed may be unpredictable.
+ -
+ - @param val  The value to evaluate to, after the IO action is performed.
+ - @param str  The string to print.
+ - @return val, unchanged.
+ - @warning see @link[unsafeIO]
+ -}
 function unsafeTracePrint
-a ::= val::a s::String
+a ::= val::a str::String
 {
-  return unsafeTrace(val, print(s, unsafeIO()));
+  return unsafeTrace(val, print(str, unsafeIO()));
 }
 
-
+@{--
+ - Print a stringification of a value when it is demanded by the Silver runtime.
+ - When this gets executed may be unpredictable.
+ -
+ - @param val  The value to evaluate to, printed when evaluated.
+ - @return  val, unchanged.
+ - @warning see @link[unsafeIO]
+ -}
 function unsafeTraceDump
 a ::= val::a
 {

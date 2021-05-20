@@ -1,28 +1,37 @@
-{- A Universal error/warning message data structure -}
 grammar silver:langutil;
 
-{--
+@@{-
+   - @config fileSplit
+   -
+   - ## A Universal error/warning message data structure
+   -}
+
+@{--
  - A Message represents a compiler output message (error/warning)
  -}
 tracked nonterminal Message with message, where, noLocOutput, output, severity;
 
-{--
+@{--
  - The location of an error message.
  -}
 synthesized attribute where :: Location;
-{--
+
+@{--
  - The contents of the error message.
  -}
 synthesized attribute message :: String;
-{--
+
+@{--
  - A recommended way to turn this message into console output with location info.
  -}
 synthesized attribute output :: String;
-{--
+
+@{--
  - A recommended way to turn this message into console output without location info.
  -}
 synthesized attribute noLocOutput :: String;
-{--
+
+@{--
  - A convention for determining message severity.
  - err=2, wrn=1, info=0
  -}
@@ -34,7 +43,7 @@ top::Message ::=
   top.output = s"${top.where.unparse}: ${top.noLocOutput}";
 }
 
-{--
+@{--
  - A error that should halt compilation before translation proceeds on the 
  - compilation unit the error occurs in.
  -}
@@ -53,7 +62,7 @@ Message ::= a::a m::String
   return err(getParsedOriginLocationOrFallback(a), m);
 }
 
-{--
+@{--
  - A warning that is not required to halt compilation before translation
  - proceeds on the compilation unit the warning occurs in.
  -}
@@ -72,7 +81,7 @@ Message ::= a::a m::String
   return wrn(getParsedOriginLocationOrFallback(a), m);
 }
 
-{--
+@{--
  - An informational message that does not halt compilation, but is usually
  - attached to an error or warning.
  -}
@@ -91,7 +100,7 @@ Message ::= a::a m::String
   return info(getParsedOriginLocationOrFallback(a), m);
 }
 
-{--
+@{--
  - A group of messages.
  -}
 abstract production nested
@@ -106,7 +115,7 @@ top::Message ::= l::Location m::String others::[Message]
 -- Users can extend Message with more messages (e.g. dbg) as they desire
 -- map, filter, etc should all be quite useful on messages
 
-{--
+@{--
  - Determines if a list has any errors (or, optionally, warnings, too)
  - Note: user extended messages that forward to err or wrn will have
  - the same effect, and unknown completely messages will be skipped as
@@ -124,7 +133,7 @@ Boolean ::= l::[Message] wError::Boolean
          end;
 }
 
-{--
+@{--
  - Returns a list of strings, ready to be printed to the command line.
  -}
 function messagesToString

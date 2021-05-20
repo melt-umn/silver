@@ -1,6 +1,6 @@
 grammar silver:core;
 
-{-
+@{-
 The class of semigroups (types with an associative binary operation).
 
 Instances should satisfy the following:

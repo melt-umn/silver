@@ -2,7 +2,7 @@ grammar silver:core;
 
 annotation location :: Location;
 
-{--
+@{--
  - Data structure storing location information on tree nodes from a parse.
  -}
 nonterminal Location with filename, line, column, endLine, endColumn, index, endIndex;
@@ -15,7 +15,7 @@ synthesized attribute endColumn :: Integer;
 synthesized attribute index :: Integer;
 synthesized attribute endIndex :: Integer;
 
-{--
+@{--
  - The main constructor for location information.
  -
  - filename, line and column can be mutated by action blocks during parsing,
@@ -30,7 +30,7 @@ synthesized attribute endIndex :: Integer;
  - @param endIndex (Ending) character index, exclusive.
  -
  - e.g. "Hi" as an entire file contents would have its entire location as:
- - (_, 1, 0, 1, 2, 0, 2)
+ - `(_, 1, 0, 1, 2, 0, 2)`
  -}
 abstract production loc
 top::Location ::= filename::String  line::Integer  column::Integer
@@ -46,7 +46,7 @@ top::Location ::= filename::String  line::Integer  column::Integer
   top.endIndex = endIndex;
 }
 
-{--
+@{--
  - A secondary constructor for location information, for locations not from source code
  -
  - @param text The text to return as unparse as defined in langutil
@@ -64,7 +64,7 @@ top::Location ::= text::String
 }
 
 
-{--
+@{--
  - Offset one location "inside" another. For use when e.g. parsing a doc comment grammar out of a single
  -  terminal in the host language. use linesOffset, firstLineColsOffset, allLinesColsOffset, indexOffset if some
  -  part of the terminal is munged before being passed to the child parser (e.g. the {- and -} are removed from a comment.)
@@ -84,7 +84,7 @@ Location ::= parent::Location child::Location linesOffset::Integer firstLineCols
 }
 
 
-{--
+@{--
  - A helper constructor for location information, for built-in locations
  -
  - @param module The name of the extension/modifcation/module defining the location
@@ -95,7 +95,7 @@ Location ::= module::String
   return txtLoc("Built in from " ++ module);
 }
 
-{--
+@{--
  - A helper constructor for location information, for invalid or undefined bogus locations
  -}
 function bogusLoc

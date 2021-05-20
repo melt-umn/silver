@@ -5,16 +5,22 @@ synthesized attribute fromRight<a> :: a;
 synthesized attribute isLeft :: Boolean;
 synthesized attribute isRight :: Boolean;
 
-{--
+@{--
  - The basic sum type, counterpart to Pair.
  -
  - Occasionally used as a poor-quality "result or error" type.
  - By convention, the error type is the FIRST type, and the 
  - expected return value is the second.
- - e.g. Either<String Tree>
+ - e.g. `Either<String Tree>`
+ -
+ - Inspect it's state with isLeft::Boolean and isRight::Boolean, and
+ - access it's state with fromLeft::a, fromRight::b (which panic if incorrect)
  -}
 nonterminal Either<a b> with fromLeft<a>, fromRight<b>, isLeft, isRight;
 
+@{-
+  - Left case for Either.
+  -}
 abstract production left
 top::Either<a b> ::= value::a
 {
@@ -24,6 +30,9 @@ top::Either<a b> ::= value::a
   top.isRight = false;
 }
 
+@{-
+  - Right case for Either.
+  -}
 abstract production right
 top::Either<a b> ::= value::b
 {
@@ -77,7 +86,7 @@ instance Alt Either<a _> {
     end;
 }
 
-{--
+@{--
  - Order preserving partitioning of a list of eithers into a pair
  - of lists of the two different results.
  -}
@@ -93,8 +102,11 @@ Pair<[a] [b]> ::= l::[Either<a b>]
   end;
 }
 
-{--
+@{--
  - Returns the left value, or the default if there is no left value.
+ - 
+ - @param e The either being discriminated
+ - @param o The fallback value
  -}
 function fromLeft
 a ::= e::Either<a b> o::a
@@ -105,8 +117,11 @@ a ::= e::Either<a b> o::a
   end;
 }
 
-{--
+@{--
  - Returns the right value, or the default if there is no right value.
+ - 
+ - @param e The either being discriminated
+ - @param o The fallback value
  -}
 function fromRight
 b ::= e::Either<a b> o::b
