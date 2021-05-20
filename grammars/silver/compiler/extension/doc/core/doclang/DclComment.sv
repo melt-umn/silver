@@ -428,7 +428,7 @@ terminal EmptyDclComment_t /@+{\-[ \-]*\-}/;
 terminal EmptyLines_t /\r?\n([ \t]*\-*[ \t]*\r?\n)+[ \t]*\-*[ \t]*/;
 terminal Newline_t /\r?\n[ \t]*\-*[ \t]*/;
 
-terminal CommentContent_t /([^@\r\n\-]|\-[^\r\n}])+/;
+terminal CommentContent_t /([^@\r\n])+/;
 
 terminal EscapedAt_t '@@';
 

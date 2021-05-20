@@ -67,7 +67,7 @@ top::Location ::= text::String
 @{--
  - Offset one location "inside" another. For use when e.g. parsing a doc comment grammar out of a single
  -  terminal in the host language. use linesOffset, firstLineColsOffset, allLinesColsOffset, indexOffset if some
- -  part of the terminal is munged before being passed to the child parser (e.g. the { - and - } are removed from a comment.)
+ -  part of the terminal is munged before being passed to the child parser (e.g. the {- and -} are removed from a comment.)
  -}
 function childParserLoc
 Location ::= parent::Location child::Location linesOffset::Integer firstLineColsOffset::Integer allLinesColsOffset::Integer indexOffset::Integer
