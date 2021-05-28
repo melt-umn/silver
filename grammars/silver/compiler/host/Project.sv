@@ -38,7 +38,6 @@ exports silver:compiler:extension:auto_ast;
 exports silver:compiler:extension:templating;
 exports silver:compiler:extension:patternmatching;
 exports silver:compiler:extension:treegen;
-exports silver:compiler:extension:doc;
 exports silver:compiler:extension:autoattr;
 exports silver:compiler:extension:strategyattr;
 exports silver:compiler:extension:do_notation;
@@ -49,6 +48,7 @@ exports silver:compiler:extension:constructparser;
 exports silver:compiler:extension:tuple;
 exports silver:compiler:extension:regex;
 exports silver:compiler:extension:convenienceaspects;
+exports silver:compiler:extension:abella_compilation;
 
 -- Other generally useful stuff:
 exports silver:compiler:translation:java;
