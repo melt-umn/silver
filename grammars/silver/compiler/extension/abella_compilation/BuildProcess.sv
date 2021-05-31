@@ -49,9 +49,13 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 }
 
 aspect production compilation
-top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
+top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::BuildEnv
 {
-  local outputLoc::String = fromMaybe(benv.silverGen ++ "/abella/", top.config.abellaOutOption) ++ "/";
+  local outputLoc::String = --fromMaybe(benv.silverGen ++ "/abella/", top.config.abellaOutOption) ++ "/";
+        case top.config.abellaOutOption of
+        | nothing() -> "./"
+        | just(path) -> path ++ "/"
+        end;
   top.postOps <-
       if top.config.abellaGen
       then [genAbella(top.config, grammarsToTranslate, outputLoc)]
@@ -81,29 +85,26 @@ IO ::= i::IO  a::Decorated CmdArgs  l::[Decorated RootSpec]  outputLoc::String
 function writeSpec
 IO ::= i::IO  r::Decorated RootSpec  outputLoc::String
 {
-  local path::String =
-        outputLoc ++ grammarToPath(r.declaredName);
-
   local filename::String =
-        path ++ r.declaredName ++ "_definition.thm";
+        outputLoc ++ r.declaredName ++ "_definition.thm";
 
   local mkiotest::IOVal<Boolean> =
-    isDirectory(path, i);
+    isDirectory(outputLoc, i);
   
   local mkio::IOVal<Boolean> =
     if mkiotest.iovalue
     then mkiotest
-    else mkdir(path, mkiotest.io);
+    else mkdir(outputLoc, mkiotest.io);
   
   local pr::IO =
     if mkio.iovalue
     then print("\t[" ++ r.declaredName ++ "]\n", mkio.io)
-    else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ path ++ "\n\n", mkio.io));
-  
+    else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ outputLoc ++ "\n\n", mkio.io));
+
   local wr::IO =
         if r.shouldOutput
         then writeFile(filename, r.output, pr)
-        else pr;
+        else i;
 
   return wr;
 }

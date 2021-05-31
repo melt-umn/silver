@@ -10,11 +10,17 @@ synthesized attribute argumentTypes::[AbellaType];
 --The is relation for a given type
 synthesized attribute isRelation::String;
 
+--Replace a variable with a type
+inherited attribute replaceVar::TyVar;
+inherited attribute replaceTy::AbellaType;
+synthesized attribute replacedTy::AbellaType;
+
 
 nonterminal AbellaType with
    unparse, isAtomic,
    resultType, headTypeName, argumentTypes,
-   isRelation;
+   isRelation,
+   replaceVar, replaceTy, replacedTy;
 
 abstract production arrowAbellaType
 top::AbellaType ::= ty1::AbellaType ty2::AbellaType
@@ -31,6 +37,12 @@ top::AbellaType ::= ty1::AbellaType ty2::AbellaType
   top.argumentTypes = ty1::ty2.argumentTypes;
 
   top.isRelation = error("Cannot generate is relation for arrow type");
+
+  ty1.replaceVar = top.replaceVar;
+  ty2.replaceVar = top.replaceVar;
+  ty1.replaceTy = top.replaceTy;
+  ty2.replaceTy = top.replaceTy;
+  top.replacedTy = arrowAbellaType(ty1.replacedTy, ty2.replacedTy);
 }
 
 abstract production nameAbellaType
@@ -51,6 +63,8 @@ top::AbellaType ::= name::String
       | "bool" -> "is_bool"
       | _ -> "is_something_else(" ++ name ++ ")" --error("Cannot generate is relation for type " ++ name)
       end;
+
+  top.replacedTy = top;
 }
 
 abstract production functorAbellaType
@@ -75,6 +89,48 @@ top::AbellaType ::= functorTy::AbellaType argTy::AbellaType
         "$split " ++ wpdTypeName(nt)
       | _, _ -> functorTy.isRelation ++ " (" ++ argTy.isRelation ++ ")"
       end;
+
+  functorTy.replaceVar = top.replaceVar;
+  argTy.replaceVar = top.replaceVar;
+  functorTy.replaceTy = top.replaceTy;
+  argTy.replaceTy = top.replaceTy;
+  top.replacedTy = functorAbellaType(functorTy.replacedTy, argTy.replacedTy);
+}
+
+abstract production varAbellaType
+top::AbellaType ::= var::TyVar
+{
+  top.unparse =
+      case var of
+      | tyVar(k, i) -> toString(i)
+      end;
+  top.isAtomic = true;
+
+  top.resultType = top;
+  top.headTypeName = just(top.unparse);
+  top.argumentTypes = [];
+
+  top.isRelation = error("Cannot generate is relation for var type");
+
+  top.replacedTy =
+      if var == top.replaceVar
+      then top.replaceTy
+      else top;
+}
+
+
+
+function replaceVars
+AbellaType ::= vars::[TyVar] replaceTys::[AbellaType] original::AbellaType
+{
+  return
+     case vars, replaceTys of
+     | v::vrest, t::tysrest ->
+       replaceVars(vrest, tysrest,
+                   decorate original with
+                      {replaceVar = v; replaceTy = t;}.replacedTy)
+     | _, _ -> original
+     end;
 }
 
 

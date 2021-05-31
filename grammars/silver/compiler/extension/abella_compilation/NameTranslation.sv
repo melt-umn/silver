@@ -60,7 +60,7 @@ String ::= ty::AbellaType
   return
      case ty of
      | nameAbellaType(nt) -> nonterminalToName(nt)
-     | _ -> error("Must call this on a nonterminal type")
+     | _ -> "Something_else(" ++ ty.unparse ++ ")" --error("Must call this on a nonterminal type (" ++ ty.unparse ++ ")")
      end;
 }
 

@@ -78,14 +78,14 @@ occurs on Type;
 aspect production varType
 top::Type ::= tv::TyVar
 {
-  top.abellaType = nameAbellaType("varType");
+  top.abellaType = varAbellaType(tv);
       --error("Should not access abellaType on varType");
 }
 
 aspect production skolemType
 top::Type ::= tv::TyVar
 {
-  top.abellaType = nameAbellaType("skolemType");
+  top.abellaType = varAbellaType(tv);
       --error("Should not access abellaType on skolemType");
 }
 
@@ -127,6 +127,13 @@ top::Type ::=
   top.abellaType = stringAbellaType;
 }
 
+abstract production listType
+top::Type ::= el::Type
+{
+  top.abellaType =
+      functorAbellaType(nameAbellaType("list"), el.abellaType);
+}
+
 aspect production terminalIdType
 top::Type ::=
 {
@@ -137,7 +144,12 @@ top::Type ::=
 aspect production nonterminalType
 top::Type ::= fn::String ks::[Kind] tracked::Boolean
 {
-  top.abellaType = nameToNonterminalType(shortestName(fn));
+  top.abellaType =
+      if fn == "silver:core:List"
+      then nameAbellaType("list")
+      else if fn == "silver:core:Pair"
+           then nameAbellaType("$pair")
+           else nameToNonterminalType(shortestName(fn));
 }
 
 aspect production terminalType
@@ -170,5 +182,55 @@ aspect production foreignType
 top::Type ::= fn::String  transType::String  params::[Type]
 {
   top.abellaType = nameAbellaType("foreign(" ++ fn ++ ", " ++ transType ++ ")");
+}
+
+
+
+
+synthesized attribute abellaTys::[AbellaType];
+
+attribute
+   abellaTys
+occurs on BracketedOptTypeExprs;
+
+attribute
+   abellaTys
+occurs on BracketedTypeExprs;
+
+attribute
+   abellaTys
+occurs on TypeExprs;
+
+
+aspect production botlSome
+top::BracketedOptTypeExprs ::= btl::BracketedTypeExprs
+{
+  top.abellaTys = btl.abellaTys;
+}
+
+aspect production bTypeList
+top::BracketedTypeExprs ::= '<' tl::TypeExprs '>'
+{
+  top.abellaTys = tl.abellaTys;
+}
+
+
+
+aspect production typeListNone
+top::TypeExprs ::=
+{
+  top.abellaTys = [];
+}
+
+aspect production typeListCons
+top::TypeExprs ::= t::TypeExpr list::TypeExprs
+{
+  top.abellaTys = t.typerep.abellaType::list.abellaTys;
+}
+
+aspect production typeListConsMissing
+top::TypeExprs ::= '_' list::TypeExprs
+{
+  top.abellaTys = error("This shouldn't show up in our use cases");
 }
 

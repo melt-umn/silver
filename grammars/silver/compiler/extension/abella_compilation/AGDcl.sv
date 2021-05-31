@@ -13,22 +13,26 @@ imports silver:compiler:modification:collection;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, associatedAttrs
+   inheritedAttrs, associatedAttrs,
+   attrTypeSchemas_up, attrTypeSchemas
 occurs on Grammar;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, associatedAttrs
+   inheritedAttrs, associatedAttrs,
+   attrTypeSchemas_up, attrTypeSchemas
 occurs on Root;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, associatedAttrs
+   inheritedAttrs, associatedAttrs,
+   attrTypeSchemas_up, attrTypeSchemas
 occurs on AGDcls;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, associatedAttrs
+   inheritedAttrs, associatedAttrs,
+   attrTypeSchemas_up, attrTypeSchemas
 occurs on AGDcl;
 
 
@@ -62,6 +66,8 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name
                tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.attrs <- [a.name];
+  top.attrTypeSchemas_up <-
+      [(a.name, te.typerep.abellaType, tl.freeVariables)];
 }
 
 aspect production attributeDclInh
@@ -70,6 +76,21 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs
 {
   top.attrs <- [a.name];
   top.inheritedAttrs <- [a.name];
+  top.attrTypeSchemas_up <-
+      [(a.name, te.typerep.abellaType, tl.freeVariables)];
+}
+
+aspect production defaultAttributionDcl
+top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+{
+  top.attrOccurrences <-
+      case findAssociated(at.name, top.attrTypeSchemas) of
+      | just((attrTy, vars)) ->
+        [(at.name, [(nt.name, replaceVars(vars, attl.abellaTys, attrTy))])]
+      | nothing() ->
+        error("Abella encoding not defined in presence of errors " ++
+              "(could not find attribute " ++ at.name ++ " in top.attrTypeSchemas")
+      end;
 }
 
 aspect production nonterminalDcl
@@ -131,13 +152,6 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' '='
 {
 }
 
-
-aspect production defaultAttributionDcl
-top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName
-               nttl::BracketedOptTypeExprs
-{
-}
-
 aspect production emptyAGDcl
 top::AGDcl ::=
 {
@@ -181,19 +195,6 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>'
 aspect production typeAliasDecl
 top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '='
                te::TypeExpr ';'
-{
-}
-
-aspect production collectionAttributeDclSyn
-top::AGDcl ::= 'synthesized' 'attribute' a::Name
-               tl::BracketedOptTypeExprs '::' te::TypeExpr 'with'
-               q::NameOrBOperator ';'
-{
-}
-
-aspect production collectionAttributeDclInh
-top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs
-               '::' te::TypeExpr 'with' q::NameOrBOperator ';'
 {
 }
 

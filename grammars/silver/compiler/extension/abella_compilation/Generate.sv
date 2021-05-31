@@ -135,31 +135,26 @@ String ::= prods::[(String, AbellaType)] component::String
   local grouped::[[(String, AbellaType)]] =
         groupBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
                   tysEqual(p1.2.resultType, p2.2.resultType), sorted);
-  local ret::String =
-     implode(".\n",
-        map(\ g::[(String, AbellaType)] ->
-              generateStructureEqComponentGroup(g, component),
-            grouped));
-  return
-     if ret == ""
-     then ret
-     else ret ++ ".\n";
+  return foldr(\ g::[(String, AbellaType)] rest::String ->
+                 generateStructureEqComponentGroup(g, component) ++
+                 ".\n" ++ rest,
+               "", grouped);
 }
 function generateStructureEqComponentGroup
 String ::= group::[(String, AbellaType)] component::String
 {
   local nt::AbellaType =
         case group of
-        | [] -> error("Impossible if called after grouping")
+        | [] -> nameAbellaType("Impossible if called after grouping (structure eq)")
         | (_, prodTy)::_ -> prodTy.resultType
         end;
   return
      "Define " ++ typeToStructureEqName(nt) ++ "__" ++ component ++
      " : " ++ nt.unparse ++ " -> " ++ nt.unparse ++ " -> prop by\n" ++
-     implode(";\n",
-         map(\ p::(String, AbellaType) ->
-               generateStructureEqComponentBodies(p.1, p.2,
-                  nt, component), group));
+     foldr(\ p::(String, AbellaType) rest::String ->
+             generateStructureEqComponentBodies(p.1, p.2,
+                nt, component) ++ ".\n" ++ rest,
+           "", group);
 }
 function generateStructureEqComponentBodies
 String ::= prod::String prodTy::AbellaType nt::AbellaType component::String
@@ -386,7 +381,7 @@ String ::= group::[(String, AbellaType)] component::String
 {
   local nt::AbellaType =
         case group of
-        | [] -> error("Impossible if called after grouping")
+        | [] -> error("Impossible if called after grouping (WPD NT components)")
         | (_, prodTy)::_ -> prodTy.resultType
         end;
   return
