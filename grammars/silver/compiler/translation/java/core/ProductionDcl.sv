@@ -25,7 +25,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   local dupX :: (String ::= NamedSignatureElement String) =
     (\x::NamedSignatureElement gc::String -> 
-        (if x.typerep.transType == "Object" then s"(${gc} instanceof common.TrackedNode?((common.TrackedNode)${gc}).duplicate(null, notes):${gc})"
+        (if x.typerep.transType == "Object" then s"(${gc} instanceof common.Tracked?((common.Tracked)${gc}).duplicate(null, notes):${gc})"
             else if !x.typerep.tracked then gc
             else gc++".duplicate(null, notes)"));
 
@@ -77,17 +77,16 @@ ${makeIndexDcls(0, namedSig.inputElements)}
 ${implode("", map((.childStaticElem), namedSig.inputElements))}
     }
 
-    public ${className}(${if wantsTracking then "final NOriginInfo origin"++commaIfKidsOrAnnos else ""} ${namedSig.javaSignature}) {
+    public ${className}(final NOriginInfo origin ${commaIfKidsOrAnnos} ${namedSig.javaSignature}) {
         super(${if wantsTracking then "origin"++commaIfAnnos else ""}${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
 ${contexts.contextInitTrans}
     }
 
-${if !null(namedSig.contexts) then "//no rtConstruct because contexts" else s"""
-    public static ${className} rtConstruct(final NOriginInfo origin ${commaIfKidsOrAnnos} ${namedSig.javaSignature}) {
-        return new ${className}(${if wantsTracking then "origin"++commaIfKids else ""} ${implode(", ", map((\x::NamedSignatureElement -> "c_"++makeIdName(x.elementName)), namedSig.inputElements))} ${commaIfKidsAndAnnos} ${implode(", ", map((\x::NamedSignatureElement -> "a_"++makeIdName(x.elementName)), namedSig.namedInputElements))});
+
+    public ${className}(${namedSig.javaSignature}) {
+        this(null ${if length(namedSig.refInvokeTrans)!=0 then ", " ++ namedSig.refInvokeTrans else ""});
     }
-"""}
 
 ${implode("", map((.childDeclElem), namedSig.inputElements))}
 
@@ -243,7 +242,6 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
 """)];
 
   local otImpl :: String = if wantsTracking then s"""
-    @Override
     public ${fnnt} duplicate(Object redex, Object notes) {
         if (redex == null || ${if top.config.noRedex then "true" else "false"}) {
             return new ${className}(new PoriginOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, true) ${commaIfKids}
@@ -254,12 +252,10 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
         }
     }
 
-    @Override
     public ${fnnt} duplicate(common.OriginContext oc) {
         return this.duplicate(oc.lhs, oc.rulesAsSilverList());
     }
 
-    @Override
     public ${fnnt} copy(Object newRedex, Object newRule) {
         Object origin, originNotes, newlyConstructed;
         Object roi = this.origin;
@@ -285,7 +281,6 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
             ${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(copyAnno, namedSig.namedInputElements))});
     }
 
-    @Override
     public ${fnnt} duplicateForForwarding(Object redex, String note) {
         return new ${className}(new PoriginOriginInfo(common.OriginsUtil.SET_AT_FORWARDING_OIT, this, new common.ConsCell(new silver.core.PoriginDbgNote(new common.StringCatter(note)), common.ConsCell.nil), true) ${commaIfKids}
             ${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(copyAnno, namedSig.namedInputElements))});

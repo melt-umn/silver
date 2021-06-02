@@ -108,7 +108,7 @@ String ::= top::Decorated Expr expr::String
   --  - polyCopy is the slowpath that uses java instanceof to check if it's tracked, and then send OI if it is
 
   local polyCopy   :: String = s"((${ty.transType})${makeOriginContextRef(top)}.attrAccessCopyPoly(${expr}))";
-  local directCopy :: String = s"((${ty.transType})${makeOriginContextRef(top)}.attrAccessCopy((common.TrackedNode)${expr}))";
+  local directCopy :: String = s"((${ty.transType})${makeOriginContextRef(top)}.attrAccessCopy((common.Tracked)${expr}))";
   local noop       :: String = s"((${ty.transType})${expr})";
 
   local impl :: String = if ty.transType == "Object" then polyCopy else

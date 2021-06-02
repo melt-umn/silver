@@ -2,13 +2,8 @@ package common;
 
 import silver.core.NOriginInfo;
 
-public abstract class TrackedNode extends Node {
-
-	public final NOriginInfo origin;
-
-	public TrackedNode (NOriginInfo origin) {
-		this.origin = origin;
-	}
+public interface Tracked {
+	public abstract NOriginInfo getOrigin();
 
 	public abstract Object duplicate(Object redex, Object rule);
 

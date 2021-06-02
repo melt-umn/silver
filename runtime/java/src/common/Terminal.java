@@ -22,8 +22,7 @@ public abstract class Terminal implements Typed {
 		final int line = vl.getLine();
 		final int column = vl.getColumn();
 		vl.defaultUpdate(lexeme);
-		this.location = Ploc.rtConstruct(null, 
-				new StringCatter(vl.getFileName()),
+		this.location = new Ploc(new StringCatter(vl.getFileName()),
 				line,
 				column,
 				vl.getLine(),
@@ -67,8 +66,7 @@ public abstract class Terminal implements Typed {
 		final DecoratedNode x = a.decorate(TopNode.singleton, (Lazy[])null);
 		final DecoratedNode y = b.decorate(TopNode.singleton, (Lazy[])null);
 		
-		return Ploc.rtConstruct(null, 
-				x.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location),
+		return new Ploc(x.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location),
 				x.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location),
 				x.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location),
 				y.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location),
@@ -79,7 +77,7 @@ public abstract class Terminal implements Typed {
 	// Ditto
 	public static NLocation createSpan(final Object[] children, VirtualLocation l, int index) {
 		if(children.length == 0) {
-			return Ploc.rtConstruct(null, new StringCatter(l.getFileName()), l.getLine(), l.getColumn(), l.getLine(), l.getColumn(), index, index);
+			return new Ploc(new StringCatter(l.getFileName()), l.getLine(), l.getColumn(), l.getLine(), l.getColumn(), index, index);
 		} else if(children.length == 1) {
 			return extractLocation(children[0]);
 		} else {
@@ -91,8 +89,8 @@ public abstract class Terminal implements Typed {
 			return ((Terminal)o).location;
 		} else if(o instanceof Alocation) {
 			return (NLocation) ((Alocation)o).getAnno_silver_core_location();
-		} else if(o instanceof TrackedNode) {
-			silver.core.NOriginInfo oi = ((TrackedNode)o).origin;
+		} else if(o instanceof Tracked) {
+			silver.core.NOriginInfo oi = ((Tracked)o).getOrigin();
 			if (oi!=null && oi instanceof silver.core.PparsedOriginInfo) {
 				return ((silver.core.PparsedOriginInfo)oi).getChild_source();
 			}
