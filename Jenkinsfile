@@ -109,7 +109,7 @@ melt.trynode('silver') {
                            "/melt-umn/lambda-calculus", "/melt-umn/rewriting-regex-matching", "/melt-umn/rewriting-optimization-demo",
                            "/internal/ring"]
     // Specific other jobs to build
-    def specific_jobs = ["/internal/matlab/master", "/internal/metaII/master", "/internal/simple/master"]
+    def specific_jobs = ["/internal/matlab/master", "/internal/metaII/master", "/internal/simple/master", "/melt-umn/melt-website/master"]
     // AbleP is now downstream from Silver-AbleC, so we don't need to build it here: "/melt-umn/ableP/master"
 
     def tasks = [:]
