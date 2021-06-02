@@ -11,5 +11,5 @@ fi
 
 rm -rf ./generated/doc
 
-./support/bin/silver-custom ./build/silver.compiler.composed.Default.jar --dont-translate --doc --clean --warn-error $DOCGRAMMAR
+./support/bin/silver --dont-translate --doc --clean --warn-error $DOCGRAMMAR
 
