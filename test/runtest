@@ -1,5 +1,7 @@
 #!/bin/bash
 
+: ${1="."} # First argument overrides test path
+
 silver --clean silver:testing:bin && \
-  java -Xss8M -Xmx2000M -jar silver.testing.bin.jar .
+  java -Xss8M -Xmx2000M -jar silver.testing.bin.jar $1
 

@@ -108,7 +108,7 @@ public final class OriginsUtil {
 	}
 
 	public static NOriginInfo getOriginOrNull(final Object arg) {
-		if (arg instanceof TrackedNode) return ((TrackedNode)arg).origin;
+		if (arg instanceof Tracked) return ((Tracked)arg).getOrigin();
 		return null;
 	}
 
@@ -140,7 +140,7 @@ public final class OriginsUtil {
 	}
 
 	public static Object duplicatePoly(Object x, OriginContext c) {
-		if (x instanceof TrackedNode) return ((TrackedNode)x).duplicate(c);
+		if (x instanceof Tracked) return ((Tracked)x).duplicate(c);
 		else return x;
 	}
 }

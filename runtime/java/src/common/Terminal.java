@@ -91,8 +91,8 @@ public abstract class Terminal implements Typed {
 			return ((Terminal)o).location;
 		} else if(o instanceof Alocation) {
 			return (NLocation) ((Alocation)o).getAnno_silver_core_location();
-		} else if(o instanceof TrackedNode) {
-			silver.core.NOriginInfo oi = ((TrackedNode)o).origin;
+		} else if(o instanceof Tracked) {
+			silver.core.NOriginInfo oi = ((Tracked)o).getOrigin();
 			if (oi!=null && oi instanceof silver.core.PparsedOriginInfo) {
 				return ((silver.core.PparsedOriginInfo)oi).getChild_source();
 			}
