@@ -34,5 +34,5 @@ find ./runtime/imp/main/src/ide $1
 find ./runtime/imp/main/target $1
 
 if [ "$2" == "all" ]; then
-  rm -rf generated/src/* generated/bin/* runtime/java/bin/* generated/ide/*
+  rm -rf generated/src/* generated/bin/* runtime/java/bin/* generated/ide/* generated/doc/*
 fi

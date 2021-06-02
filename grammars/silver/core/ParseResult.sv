@@ -36,6 +36,7 @@ nonterminal ParseResult<a> with parseSuccess, parseError, parseErrors, parseTree
  - Parse failure constructor.
  -
  - @param e  The error string reported by the parser.
+ - @param terminals TODO
  -}
 abstract production parseFailed
 top::ParseResult<a> ::= e::ParseError terminals::[TerminalDescriptor]
@@ -51,6 +52,7 @@ top::ParseResult<a> ::= e::ParseError terminals::[TerminalDescriptor]
  - Parse success constructor.
  -
  - @param t  The syntax tree returned by the parser.
+ - @param terminals TODO
  -}
 abstract production parseSucceeded
 top::ParseResult<a> ::= t::a terminals::[TerminalDescriptor]

@@ -70,6 +70,8 @@ melt.trynode('silver') {
     sh "./deep-rebuild"
     // Clean (but leave generated files)
     sh "./deep-clean -delete"
+    // Generate docs
+    sh "./make-docs"
     // Package
     sh "rm -rf silver-latest* || true" // Robustness to past failures
     sh "./make-dist latest"
@@ -130,6 +132,10 @@ melt.trynode('silver') {
       // --delete-excluded  Remove files from dest that we're excluding
       // NOTE: we exclude generated, which means there's no generated dir in the custom
       // location, which means if you don't set it, things should blow up.
+
+      sh "rsync -a --delete generated/doc/ ${silver.SILVER_WORKSPACE}/../custom-silver-doc/"
+
+      parallel [melt.buildJob("/melt-umn/website/master")]
 
       sh "cp silver-latest.tar.gz ${melt.ARTIFACTS}/"
       sh "cp jars/*.jar ${melt.ARTIFACTS}/"
