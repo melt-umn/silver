@@ -83,8 +83,9 @@ ${implode("", map(makeChildAssign, namedSig.inputElements))}
 ${contexts.contextInitTrans}
     }
 
+
     public ${className}(${namedSig.javaSignature}) {
-        this(null ${commaIfKidsOrAnnos} ${implode(", ", map((.childRefElem), namedSig.inputElements))} ${commaIfKidsAndAnnos} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
+        this(null ${if length(namedSig.refInvokeTrans)!=0 then ", " ++ namedSig.refInvokeTrans else ""});
     }
 
 ${implode("", map((.childDeclElem), namedSig.inputElements))}
