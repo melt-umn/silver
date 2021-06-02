@@ -52,6 +52,8 @@ import silver:xml;
 
 @@{- This grammar is just a bunch of imports. It is run by the generate-documentation script, and just builds documentation. The jar it produces is just thrown away. -}
 
+@@{- ## Example top-level doc comment -}
+
 @{- Dummy main function that does nothing. Example link: @link[dummyFunction] -}
 function main
 IOVal<Integer> ::= args::[String] ioIn::IO
