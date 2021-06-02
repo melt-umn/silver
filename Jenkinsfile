@@ -109,7 +109,7 @@ melt.trynode('silver') {
                            "/melt-umn/lambda-calculus", "/melt-umn/rewriting-regex-matching", "/melt-umn/rewriting-optimization-demo",
                            "/internal/ring"]
     // Specific other jobs to build
-    def specific_jobs = ["/internal/matlab/master", "/internal/metaII/master", "/internal/simple/master", "/melt-umn/melt-website/master"]
+    def specific_jobs = ["/internal/matlab/master", "/internal/metaII/master", "/internal/simple/master"]
     // AbleP is now downstream from Silver-AbleC, so we don't need to build it here: "/melt-umn/ableP/master"
 
     def tasks = [:]
@@ -132,6 +132,10 @@ melt.trynode('silver') {
       // --delete-excluded  Remove files from dest that we're excluding
       // NOTE: we exclude generated, which means there's no generated dir in the custom
       // location, which means if you don't set it, things should blow up.
+
+      sh "rsync -a --delete generated/doc/ ${silver.SILVER_WORKSPACE}/../custom-silver-doc/"
+
+      parallel [melt.buildJob("/melt-umn/website/master")]
 
       sh "cp silver-latest.tar.gz ${melt.ARTIFACTS}/"
       sh "cp jars/*.jar ${melt.ARTIFACTS}/"
