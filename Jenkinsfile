@@ -135,7 +135,7 @@ melt.trynode('silver') {
 
       sh "rsync -a --delete generated/doc/ ${silver.SILVER_WORKSPACE}/../custom-silver-doc/"
 
-      parallel [melt.buildJob("/melt-umn/website/master")]
+      build "/melt-umn/website/master"
 
       sh "cp silver-latest.tar.gz ${melt.ARTIFACTS}/"
       sh "cp jars/*.jar ${melt.ARTIFACTS}/"
