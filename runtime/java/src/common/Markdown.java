@@ -30,13 +30,11 @@ public final class Markdown {
 
             // TODO: SourceSpan only provides line/column, but it provides a
             // length in UTF-16 code units; do we have a utility for this?
-            Ploc location = Ploc.rtConstruct(
-                null, path, span.getLineIndex(), span.getColumnIndex(),
+            Ploc location = new Ploc(path, span.getLineIndex(), span.getColumnIndex(),
                 span.getLineIndex(), span.getColumnIndex(), 0, 0);
 
-            out.add(Ppair.rtConstruct(
-                null, new StringCatter(node.getInfo()),
-                Ppair.rtConstruct(null, location,
+            out.add(new Ppair(new StringCatter(node.getInfo()),
+                new Ppair(location,
                                   new StringCatter(node.getLiteral()))));
           }
         });

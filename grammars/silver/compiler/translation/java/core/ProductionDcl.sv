@@ -77,17 +77,15 @@ ${makeIndexDcls(0, namedSig.inputElements)}
 ${implode("", map((.childStaticElem), namedSig.inputElements))}
     }
 
-    public ${className}(${if wantsTracking then "final NOriginInfo origin"++commaIfKidsOrAnnos else ""} ${namedSig.javaSignature}) {
+    public ${className}(final NOriginInfo origin ${commaIfKidsOrAnnos} ${namedSig.javaSignature}) {
         super(${if wantsTracking then "origin"++commaIfAnnos else ""}${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
 ${contexts.contextInitTrans}
     }
 
-${if !null(namedSig.contexts) then "//no rtConstruct because contexts" else s"""
-    public static ${className} rtConstruct(final NOriginInfo origin ${commaIfKidsOrAnnos} ${namedSig.javaSignature}) {
-        return new ${className}(${if wantsTracking then "origin"++commaIfKids else ""} ${implode(", ", map((\x::NamedSignatureElement -> "c_"++makeIdName(x.elementName)), namedSig.inputElements))} ${commaIfKidsAndAnnos} ${implode(", ", map((\x::NamedSignatureElement -> "a_"++makeIdName(x.elementName)), namedSig.namedInputElements))});
+    public ${className}(${namedSig.javaSignature}) {
+        this(null ${commaIfKidsOrAnnos} ${implode(", ", map((.childRefElem), namedSig.inputElements))} ${commaIfKidsAndAnnos} ${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
     }
-"""}
 
 ${implode("", map((.childDeclElem), namedSig.inputElements))}
 

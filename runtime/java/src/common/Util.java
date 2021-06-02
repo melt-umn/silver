@@ -93,9 +93,9 @@ public final class Util {
 
 	public static silver.core.NMaybe safetoInt(String s) {
 		try {
-			return silver.core.Pjust.rtConstruct(null, Integer.valueOf(s) );
+			return new silver.core.Pjust(Integer.valueOf(s) );
 		} catch(NumberFormatException e) {
-			return silver.core.Pnothing.rtConstruct(null);
+			return new silver.core.Pnothing();
 		}
 	}
 
@@ -365,28 +365,26 @@ public final class Util {
 		try {
 			ROOT tree = parser.parse(new StringReader(javaString), javaFile);
 			Object terminals = getTerminals(parser);
-			return silver.core.PparseSucceeded.rtConstruct(null, tree, terminals);
+			return new silver.core.PparseSucceeded(tree, terminals);
 		} catch(CopperSyntaxError e) {
 			// To create a space, we increment the ending columns and indexes by 1.
-			NLocation loc = Ploc.rtConstruct(null, 
-				new StringCatter(e.getVirtualFileName()),
+			NLocation loc = new Ploc(new StringCatter(e.getVirtualFileName()),
 				e.getVirtualLine(),
 				e.getVirtualColumn(),
 				e.getVirtualLine(),
 				e.getVirtualColumn() + 1,
 				(int)(e.getRealCharIndex()),
 				(int)(e.getRealCharIndex()) + 1);
-			NParseError err = PsyntaxError.rtConstruct(null, 
-					new common.StringCatter(e.getMessage()),
+			NParseError err = new PsyntaxError(new common.StringCatter(e.getMessage()),
 					loc,
 					convertStrings(e.getExpectedTerminalsDisplay().iterator()),
 					convertStrings(e.getMatchedTerminalsDisplay().iterator()));
 			Object terminals = getTerminals(parser);
-			return PparseFailed.rtConstruct(null, err, terminals);
+			return new PparseFailed(err, terminals);
 		} catch(CopperParserException e) {
 			// Currently this is dead code, but perhaps in the future we'll see IOException wrapped in here.
-			NParseError err = PunknownParseError.rtConstruct(null, new StringCatter(e.getMessage()), file);
-			return PparseFailed.rtConstruct(null, err, null);
+			NParseError err = new PunknownParseError(new StringCatter(e.getMessage()), file);
+			return new PparseFailed(err, null);
 		} catch(Throwable t) {
 			throw new TraceException("An error occured while parsing", t);
 		}
@@ -416,8 +414,7 @@ public final class Util {
 	 * Converts a common.Terminal to a Silver silver:core:TerminalDescriptor.
 	 */
 	private static NTerminalDescriptor terminalToTerminalDescriptor(Terminal t) {
-        return PterminalDescriptor.rtConstruct(null, 
-            t.lexeme,
+        return new PterminalDescriptor(t.lexeme,
             convertStrings(Arrays.stream(t.getLexerClasses()).iterator()),
             new StringCatter(t.getName()),
             Terminal.extractLocation(t));

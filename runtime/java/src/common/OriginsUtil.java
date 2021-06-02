@@ -117,18 +117,18 @@ public final class OriginsUtil {
 	public static silver.core.NMaybe polyGetOrigin(Object o) {
 		if (o instanceof DecoratedNode) o = ((DecoratedNode)o).undecorate();
 		NOriginInfo r = getOriginOrNull(o);
-		if (r == null) return silver.core.Pnothing.rtConstruct(null);
-		return silver.core.Pjust.rtConstruct(null, r);
+		if (r == null) return new silver.core.Pnothing();
+		return new silver.core.Pjust(r);
 	}
 
 	public static silver.core.NMaybe getOriginLink(silver.core.NOriginInfo o) {
 		if (o instanceof PoriginOriginInfo)
-			return silver.core.Pjust.rtConstruct(null, ((PoriginOriginInfo)o).getChild_origin());
+			return new silver.core.Pjust(((PoriginOriginInfo)o).getChild_origin());
 
 		if (o instanceof PoriginAndRedexOriginInfo)
-			return silver.core.Pjust.rtConstruct(null, ((PoriginAndRedexOriginInfo)o).getChild_origin());
+			return new silver.core.Pjust(((PoriginAndRedexOriginInfo)o).getChild_origin());
 
-		return silver.core.Pnothing.rtConstruct(null);
+		return new silver.core.Pnothing();
 	}
 
 	// Misc helper

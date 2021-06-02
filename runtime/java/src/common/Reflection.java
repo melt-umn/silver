@@ -56,9 +56,9 @@ public final class Reflection {
 		} else if(o instanceof Thunk) {
 			throw new SilverInternalError("Runtime type of an unevaluated Thunk should never be demanded.");
 		} else {
-			return Pnothing.rtConstruct(null);
+			return new Pnothing();
 		}
-		return Pjust.rtConstruct(null, new StringCatter(result));
+		return new Pjust(new StringCatter(result));
 	}
 	
 	/**
@@ -72,41 +72,41 @@ public final class Reflection {
 		silver.core.NOriginInfo origin = (rules!=null)?new silver.core.PoriginOriginInfo(OriginsUtil.SET_FROM_REFLECTION_OIT, o, rules, true):null;
 		if(o instanceof Node) {
 			Node n = (Node)o;
-			NASTs children = PnilAST.rtConstruct(origin);
+			NASTs children = new PnilAST(origin);
 			for (int i = n.getNumberOfChildren() - 1; i >= 0; i--) {
 				Object value = reflect(rules, n.getChild(i));
-				children = PconsAST.rtConstruct(origin, value, children);
+				children = new PconsAST(origin, value, children);
 			}
 			String[] annotationNames = n.getAnnoNames();
-			NNamedASTs annotations = PnilNamedAST.rtConstruct(origin);
+			NNamedASTs annotations = new PnilNamedAST(origin);
 			for (int i = annotationNames.length - 1; i >= 0; i--) {
 				String name = annotationNames[i];
 				Object value = reflect(rules, n.getAnno(name));
-				annotations = PconsNamedAST.rtConstruct(origin, PnamedAST.rtConstruct(origin, new StringCatter(name), value), annotations);
+				annotations = new PconsNamedAST(origin, new PnamedAST(origin, new StringCatter(name), value), annotations);
 			}
-			return PnonterminalAST.rtConstruct(origin, new StringCatter(n.getName()), children, annotations);
+			return new PnonterminalAST(origin, new StringCatter(n.getName()), children, annotations);
 		} else if(o instanceof Terminal) {
 			Terminal t = (Terminal)o;
-			return PterminalAST.rtConstruct(origin, new StringCatter(t.getName()), t.lexeme, t.location);
+			return new PterminalAST(origin, new StringCatter(t.getName()), t.lexeme, t.location);
 		} else if(o instanceof ConsCell) {
-			return PlistAST.rtConstruct(origin, reflectList(rules, origin, (ConsCell)o));
+			return new PlistAST(origin, reflectList(rules, origin, (ConsCell)o));
 		} else if(o instanceof StringCatter) {
-			return PstringAST.rtConstruct(origin, (StringCatter)o);
+			return new PstringAST(origin, (StringCatter)o);
 		} else if(o instanceof Integer) {
-			return PintegerAST.rtConstruct(origin, (Integer)o);
+			return new PintegerAST(origin, (Integer)o);
 		} else if(o instanceof Float) {
-			return PfloatAST.rtConstruct(origin, (Float)o);
+			return new PfloatAST(origin, (Float)o);
 		} else if(o instanceof Boolean) {
-			return PbooleanAST.rtConstruct(origin, (Boolean)o);
+			return new PbooleanAST(origin, (Boolean)o);
 		} else {
-			return PanyAST.rtConstruct(origin, o);
+			return new PanyAST(origin, o);
 		}
 	}
 	private static NASTs reflectList(ConsCell rules, silver.core.NOriginInfo origin, final ConsCell l) {
 		if (!l.nil()) {
-			return PconsAST.rtConstruct(origin, reflect(rules, l.head()), reflectList(rules, origin, l.tail()));
+			return new PconsAST(origin, reflect(rules, l.head()), reflectList(rules, origin, l.tail()));
 		} else {
-			return PnilAST.rtConstruct(origin);
+			return new PnilAST(origin);
 		}
 	}
 	
@@ -119,11 +119,11 @@ public final class Reflection {
 	 */
 	public static NEither reifyChecked(final ConsCell rules, final TypeRep resultType, final NAST ast) {
 		try {
-			return Pright.rtConstruct(null, reify(rules, resultType, ast));
+			return new Pright(reify(rules, resultType, ast));
 		} catch (SilverException e) {
 			Throwable rootCause = SilverException.getRootCause(e);
 			if (rootCause instanceof SilverError) {
-				return Pleft.rtConstruct(null, new StringCatter("Reification error at " + ReifyTraceException.getASTRepr(e) + ":\n" + rootCause.getMessage()));
+				return new Pleft(new StringCatter("Reification error at " + ReifyTraceException.getASTRepr(e) + ":\n" + rootCause.getMessage()));
 			} else {
 				throw e;
 			}
@@ -293,7 +293,7 @@ public final class Reflection {
 	public static NEither applyAST(final OriginContext ctx, final NAST fn, final ConsCell args, final ConsCell namedArgs) {
 		// Unpack function
 		if (!(fn instanceof PanyAST) || !(fn.getChild(0) instanceof NodeFactory)) {
-			return Pleft.rtConstruct(null, new StringCatter("Expected a function AST"));
+			return new Pleft(new StringCatter("Expected a function AST"));
 		}
 		NodeFactory<?> givenFn = (NodeFactory<?>)(fn.getChild(0));
 		
@@ -316,7 +316,7 @@ public final class Reflection {
 		int i = 0;
 		for (ConsCell current = args; !current.nil(); current = current.tail()) {
 			if (i >= fnType.params) {
-				return Pleft.rtConstruct(null, new StringCatter("Expected only " + fnType.params + " arguments, but got " + args.length()));
+				return new Pleft(new StringCatter("Expected only " + fnType.params + " arguments, but got " + args.length()));
 			}
 			final NMaybe item = (NMaybe)current.head();
 			if (item instanceof Pjust) {
@@ -326,7 +326,7 @@ public final class Reflection {
 				} catch (SilverException e) {
 					Throwable rootCause = SilverException.getRootCause(e);
 					if (rootCause instanceof SilverError) {
-						return Pleft.rtConstruct(null, new StringCatter("Reification error in argument " + i + " at " + ReifyTraceException.getASTRepr(e) + ":\n" + rootCause.getMessage()));
+						return new Pleft(new StringCatter("Reification error in argument " + i + " at " + ReifyTraceException.getASTRepr(e) + ":\n" + rootCause.getMessage()));
 					} else {
 						throw e;
 					}
@@ -335,7 +335,7 @@ public final class Reflection {
 			i++;
 		}
 		if (i < fnType.params) {
-			return Pleft.rtConstruct(null, new StringCatter("Expected " + fnType.params + " arguments, but got only " + i));
+			return new Pleft(new StringCatter("Expected " + fnType.params + " arguments, but got only " + i));
 		}
 		
 		// Unpack named args
@@ -348,7 +348,7 @@ public final class Reflection {
 			final String name = entry.getChild(0).toString();
 			int index = Arrays.asList(fnType.namedParams).indexOf(name);
 			if (index == -1) {
-				return Pleft.rtConstruct(null, new StringCatter("Unexpected named argument " + name));
+				return new Pleft(new StringCatter("Unexpected named argument " + name));
 			}
 			final NMaybe item = (NMaybe)entry.getChild(1);
 			if (item instanceof Pjust) {
@@ -358,7 +358,7 @@ public final class Reflection {
 				} catch (SilverException e) {
 					Throwable rootCause = SilverException.getRootCause(e);
 					if (rootCause instanceof SilverError) {
-						return Pleft.rtConstruct(null, new StringCatter("Reification error in named argument " + name + " at " + ReifyTraceException.getASTRepr(e) + ":\n" + rootCause.getMessage()));
+						return new Pleft(new StringCatter("Reification error in named argument " + name + " at " + ReifyTraceException.getASTRepr(e) + ":\n" + rootCause.getMessage()));
 					} else {
 						throw e;
 					}
@@ -385,6 +385,6 @@ public final class Reflection {
 			// Apply regular
 			result = givenFn.invoke(ctx, argList.toArray(), reorderedNamedArgs);
 		}
-		return Pright.rtConstruct(null, reflect(rules, result));
+		return new Pright(reflect(rules, result));
 	}
 }
