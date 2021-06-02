@@ -31,6 +31,29 @@ Maybe<[(String, a)]> ::= key::String newVal::a container::[(String, a)]
 
 
 
+function buildApplication
+Term ::= fun::Term args::[Term]
+{
+  return if null(args)
+         then fun
+         else applicationTerm(fun, buildApplicationArgs(args));
+}
+
+function buildApplicationArgs
+TermList ::= args::[Term]
+{
+  return
+     case args of
+     | [] ->
+       error("Should not call buildApplicationArgs with an empty list")
+     | [x] -> singleTermList(x)
+     | h::t -> consTermList(h, buildApplicationArgs(t))
+     end;
+}
+
+
+
+
 --Make a name that isn't in usedNames, based on the type
 function makeUniqueNameFromTy
 String ::= ty::AbellaType usedNames::[String]

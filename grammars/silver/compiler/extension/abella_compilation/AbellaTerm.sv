@@ -116,14 +116,17 @@ top::Binder::=
 nonterminal Term with
    unparse, isAtomic;
 
-abstract production aunparselicationTerm
-top::Term ::= f::Term args::TermList
+{-
+  A varTerm is used to represent a name generated in encoding.  We
+  want to distinguish between varTerms and nameTerms because nameTerms
+  are set names which cannot change (e.g. productions, children) and
+  varTerms are just placeholders which we might change in unification
+  later.
+-}
+abstract production varTerm
+top::Term ::= name::String
 {
-  top.unparse =
-    ( if f.isAtomic
-      then f.unparse
-      else "(" ++ f.unparse ++ ")" ) ++ " " ++ args.unparse;
-  top.isAtomic = false;
+  forwards to nameTerm(name);
 }
 
 abstract production nameTerm
@@ -131,6 +134,16 @@ top::Term ::= name::String
 {
   top.unparse = name;
   top.isAtomic = true;
+}
+
+abstract production applicationTerm
+top::Term ::= f::Term args::TermList
+{
+  top.unparse =
+    ( if f.isAtomic
+      then f.unparse
+      else "(" ++ f.unparse ++ ")" ) ++ " " ++ args.unparse;
+  top.isAtomic = false;
 }
 
 abstract production consTerm

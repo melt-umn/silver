@@ -69,3 +69,31 @@ propagate attrTypeSchemas_up on AGDcl, AGDcls, Grammar, Root;
 
 autocopy attribute attrTypeSchemas::[(String, AbellaType, [TyVar])];
 
+
+
+{-
+  For metaterms, the inner lists are conceptually and-ed together.  We
+  don't actually and them together so it is easier to work with later.
+-}
+synthesized attribute encodedExpr::[[Metaterm]];
+--Encoding arguments for application
+synthesized attribute encodedArgs::[[Metaterm]];
+
+--the result of the encoded expression
+synthesized attribute result::Term;
+--the results of the encoded arguments
+synthesized attribute resultArgs::[Term];
+
+--Names used in the encoding somewhere--so we can have better names
+--   without accidentally reusing
+inherited attribute usedNames_down::[String];
+synthesized attribute usedNames::[String];
+
+--[(Silver name, (tree structure name, tree node name))]
+--If it isn't a tree, we won't ever need the node, but it is easier to
+--   include it for all than separate it out
+inherited attribute encodingEnv::[(String, (String, String))];
+
+--(tree name, node name, tree type, current production name) for the root
+inherited attribute top::(String, String, AbellaType, String);
+

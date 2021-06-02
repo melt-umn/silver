@@ -244,3 +244,46 @@ String ::= s::String
   return "$fun__" ++ s;
 }
 
+
+
+
+
+--Turn an integer into an Abella term
+function integerToIntegerTerm
+Term ::= i::Integer
+{
+  return if i >= 0
+         then buildApplication(nameTerm("$posInt"),
+                               [integerToNatTerm(i)])
+         else buildApplication(nameTerm("$negSuccInt"),
+                               [integerToNatTerm((i * -1) - 1)]);
+}
+
+function integerToNatTerm
+Term ::= i::Integer
+{
+  return if i == 0
+         then nameTerm(natZeroName)
+         else buildApplication(nameTerm(natSuccName),
+                               [integerToNatTerm(i-1)]);
+}
+
+
+
+--Turn a number into the char constructor
+function stringToAbellaTerm
+Term ::= contents::String
+{
+  local charOrdinals::[Integer] = stringToChars(contents);
+  local charConstants::[String] =
+        map(ordinalToCharConstructor, charOrdinals);
+  local charTerms::[Term] =
+        map(nameTerm(_), charConstants);
+  return foldr(consTerm, nilTerm(), charTerms);
+}
+function ordinalToCharConstructor
+String ::= ord::Integer
+{
+  return "$c_" ++ toString(ord);
+}
+
