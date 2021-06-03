@@ -2,6 +2,8 @@ package common;
 
 import common.javainterop.ConsCellCollection;
 import edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.*;
+import edu.umn.cs.melt.copper.main.ParserCompiler;
+import edu.umn.cs.melt.copper.main.ParserCompilerParameters;
 import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;
 import edu.umn.cs.melt.copper.runtime.io.Location;
 import edu.umn.cs.melt.copper.runtime.logging.CopperException;
@@ -12,8 +14,20 @@ import java.util.Set;
 public final class CopperUtil {
     private static Location LOCATION = new VirtualLocation("<silver>", -1, -1);
 
-    public static DisambiguationFunction makeDisambiguationFunction(String id,
-            String code, ConsCellCollection<CopperElementReference> members, Boolean applicableToSubsets) {
+    public static IOToken compile(ParserBean parser, IOToken tok) {
+        ParserCompilerParameters params = new ParserCompilerParameters();
+        try {
+            ParserCompiler.compile(parser, params);
+        } catch(CopperException exc) {
+            throw new RuntimeException(exc);
+        }
+        return tok;
+    }
+
+    public static DisambiguationFunction
+    makeDisambiguationFunction(String id, String code,
+                               ConsCellCollection<CopperElementReference> members,
+                               Boolean applicableToSubsets) {
         try {
             DisambiguationFunction f = new DisambiguationFunction();
             f.setName(id);
@@ -31,6 +45,7 @@ public final class CopperUtil {
 
     public static CopperElementReference makeElementReference(String grammarName,
             String name) {
+        System.out.println("element reference " + grammarName + " " + name);
         try {
             return CopperElementReference.ref(CopperElementName.newName(grammarName),
                                               name, LOCATION);
@@ -76,6 +91,7 @@ public final class CopperUtil {
                    String preambleCode, Grammar grammar) {
         try {
             ParserBean parserBean = new ParserBean();
+            parserBean.setLocation(LOCATION);
             parserBean.setName(id);
             parserBean.setDisplayName(pp);
             parserBean.setUnitary(true);
