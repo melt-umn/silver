@@ -9,7 +9,7 @@ Regex ::=
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.EmptyStringRegex()";
+  "java": return "new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.EmptyStringRegex()";
 }
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ChoiceRegex
@@ -18,7 +18,7 @@ Regex ::= subexps::[Regex]
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ChoiceRegex().addSubexps(new java.util.ArrayList<edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Regex>(new common.javainterop.ConsCellCollection(%subexps%)))";
+  "java": return "new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ChoiceRegex().addSubexps(new java.util.ArrayList<edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Regex>(new common.javainterop.ConsCellCollection(%subexps%)))";
 }
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ConcatenationRegex
@@ -27,7 +27,7 @@ Regex ::= subexps::[Regex]
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ConcatenationRegex().addSubexps(new java.util.ArrayList<edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Regex>(new common.javainterop.ConsCellCollection(%subexps%)))";
+  "java": return "new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ConcatenationRegex().addSubexps(new java.util.ArrayList<edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Regex>(new common.javainterop.ConsCellCollection(%subexps%)))";
 }
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.KleeneStarRegex
@@ -36,7 +36,7 @@ Regex ::= r::Regex
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.KleeneStarRegex((edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Regex) %r%)";
+  "java": return "new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.KleeneStarRegex((edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Regex) %r%)";
 }
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CharacterSetRegex
@@ -45,25 +45,41 @@ Regex ::= cs::CharSet
 {
   return error("copper FFI function");
 } foreign {
-  -- "java" : return "common.rawlib.RawTreeSet.isEmpty((java.util.TreeSet<Object>)%s%)";
-  "java" : return "new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CharacterSetRegex()"; -- TODO
+  "java": return "%cs%";
 }
 
-nonterminal CharSet;
+-- common.copperutil.CharSet
+type CharSet foreign;
 
 -- This should always be called with a single-char string.
-abstract production singleChar
-top::CharSet ::= c::String
-{}
+function singleChar
+CharSet ::= c::String
+{
+  return error("copper FFI function");
+} foreign {
+  "java": return "common.CopperUtil.makeSingleChar(%c%.toString())";
+}
 
-abstract production invertCharSet
-top::CharSet ::= inner::CharSet
-{}
+function invertCharSet
+CharSet ::= inner::CharSet
+{
+  return error("copper FFI function");
+} foreign {
+  "java": return "((edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CharacterSetRegex)%inner%).invert()";
+}
 
-abstract production charRange
-top::CharSet ::= lower::String upper::String
-{}
+function charRange
+CharSet ::= lower::String  upper::String
+{
+  return error("copper FFI function");
+} foreign {
+  "java": return "common.CopperUtil.makeCharRange(%lower%.toString(), %upper%.toString())";
+}
 
-abstract production unionCharSets
-top::CharSet ::= l::CharSet  r::CharSet
-{}
+function unionCharSets
+CharSet ::= l::CharSet  r::CharSet
+{
+  return error("copper FFI function");
+} foreign {
+  "java": return "edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CharacterSetRegex.union((edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CharacterSetRegex)%l%, (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CharacterSetRegex)%r%)";
+}

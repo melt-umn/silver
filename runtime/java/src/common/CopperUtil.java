@@ -24,6 +24,18 @@ public final class CopperUtil {
         return tok;
     }
 
+    public static CharacterSetRegex makeCharRange(String lo, String hi) {
+        CharacterSetRegex re = new CharacterSetRegex();
+        re.addRange(lo.charAt(0), hi.charAt(0));
+        return re;
+    }
+
+    public static CharacterSetRegex makeSingleChar(String ch) {
+        CharacterSetRegex re = new CharacterSetRegex();
+        re.addLooseChar(ch.charAt(0));
+        return re;
+    }
+
     public static DisambiguationFunction
     makeDisambiguationFunction(String id, String code,
                                ConsCellCollection<CopperElementReference> members,
@@ -45,7 +57,6 @@ public final class CopperUtil {
 
     public static CopperElementReference makeElementReference(String grammarName,
             String name) {
-        System.out.println("element reference " + grammarName + " " + name);
         try {
             return CopperElementReference.ref(CopperElementName.newName(grammarName),
                                               name, LOCATION);
