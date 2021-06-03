@@ -134,7 +134,7 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   top.hasCustomLayout = modifiers.customLayout.isJust;
   top.layoutContribs := map(pair(t.typeName, _), fromMaybe(exportedLayoutTerms, modifiers.customLayout));
 
-  top.copperElementReference = copper:elementReference(makeCopperName(t.typeName), top.containingGrammar);
+  top.copperElementReference = copper:elementReference(top.containingGrammar, makeCopperName(t.typeName));
   top.copperGrammarElements = [copper:nonterminal_(makeCopperName(t.typeName),
     t.typeName, makeNTName(t.typeName))];
 
@@ -190,7 +190,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     | _ -> prettyName ++ " (" ++ n ++ ")"
     end;
 
-  top.copperElementReference = copper:elementReference(makeCopperName(n), top.containingGrammar);
+  top.copperElementReference = copper:elementReference(top.containingGrammar, makeCopperName(n));
   top.copperGrammarElements = [copper:terminal_(makeCopperName(n),
     disambiguatedPrettyName, regex.copperRegex, modifiers.opPrecedence.isJust,
     modifiers.opPrecedence.fromJust, modifiers.opAssociation.isJust,
@@ -304,7 +304,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
                                "new silver.core.PparsedOriginInfo(common.OriginsUtil.SET_FROM_PARSER_OIT, common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos()), common.ConsCell.nil)"  ++ commaIfArgsOrAnnos
                                else "";
 
-  top.copperElementReference = copper:elementReference(makeCopperName(ns.fullName), top.containingGrammar);
+  top.copperElementReference = copper:elementReference(top.containingGrammar, makeCopperName(ns.fullName));
   top.copperGrammarElements = error("TODO Production copperGrammarElements");
 
   top.xmlCopper =
@@ -402,7 +402,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.lexerClassRefDcls :=
     s"    protected common.ConsCell ${makeCopperName(n)} = ${termsInit};\n";
 
-  top.copperElementReference = copper:elementReference(makeCopperName(n), top.containingGrammar);
+  top.copperElementReference = copper:elementReference(top.containingGrammar, makeCopperName(n));
   top.copperGrammarElements = [copper:terminalClass(makeCopperName(n))];
   
   top.xmlCopper =
@@ -481,7 +481,7 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
 
   top.cstNormalize := [top];
 
-  top.copperElementReference = copper:elementReference(makeCopperName(n), top.containingGrammar);
+  top.copperElementReference = copper:elementReference(top.containingGrammar, makeCopperName(n));
   local members::[copper:ElementReference] =
     map(\dcl::[Decorated SyntaxDcl] -> head(dcl).copperElementReference,
         trefs);
