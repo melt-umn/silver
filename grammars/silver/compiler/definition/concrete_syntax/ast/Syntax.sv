@@ -51,14 +51,12 @@ monoid attribute prettyNamesAccum::[Pair<String String>];
 autocopy attribute prettyNames::tm:Map<String String>;
 
 synthesized attribute copperElementReference::copper:ElementReference;
-synthesized attribute copperGrammar::copper:Grammar;
-synthesized attribute copperGrammarElement::copper:GrammarElement;
 synthesized attribute copperGrammarElements::[copper:GrammarElement];
 
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperGrammar, copperGrammarElements;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperGrammarElements;
 
 propagate cstDcls, cstErrors, cstProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs, prettyNamesAccum
   on Syntax;
@@ -74,7 +72,7 @@ top::Syntax ::=
 abstract production consSyntax
 top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {
-  top.copperGrammarElements = s1.copperGrammarElement :: s2.copperGrammarElements;
+  top.copperGrammarElements = s1.copperGrammarElements ++ s2.copperGrammarElements;
 
   top.xmlCopper = s1.xmlCopper ++ s2.xmlCopper;
 }
@@ -82,7 +80,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribsXML, classSubContribsXML, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperElementReference, copperGrammarElement;
+nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribsXML, classSubContribsXML, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperElementReference, copperGrammarElements;
 
 synthesized attribute sortKey :: String;
 
@@ -127,8 +125,8 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   top.layoutContribs := map(pair(t.typeName, _), fromMaybe(exportedLayoutTerms, modifiers.customLayout));
 
   top.copperElementReference = copper:elementReference(makeCopperName(t.typeName), top.containingGrammar);
-  top.copperGrammarElement = copper:nonterminal_(makeCopperName(t.typeName),
-    t.typeName, makeNTName(t.typeName));
+  top.copperGrammarElements = [copper:nonterminal_(makeCopperName(t.typeName),
+    t.typeName, makeNTName(t.typeName))];
 
   top.xmlCopper =
     "\n  <Nonterminal id=\"" ++ makeCopperName(t.typeName) ++ "\">\n" ++
@@ -181,13 +179,13 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     end;
 
   top.copperElementReference = copper:elementReference(makeCopperName(n), top.containingGrammar);
-  top.copperGrammarElement = copper:terminal_(makeCopperName(n),
+  top.copperGrammarElements = [copper:terminal_(makeCopperName(n),
     disambiguatedPrettyName, regex.copperRegex, modifiers.opPrecedence.isJust,
-    error("precedence"), modifiers.opAssociation.isJust,
-    error("associativity"), makeTerminalName(n), 
+    modifiers.opPrecedence.fromJust, modifiers.opAssociation.isJust,
+    fromMaybe("", modifiers.opAssociation), makeTerminalName(n), 
     "RESULT = new " ++ makeTerminalName(n) ++ "(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());tokenList.add(RESULT);\n" ++ modifiers.acode,
     modifiers.lexerClasses,
-    !null(pfx), error("TODO pfx"), modifiers.submits_, modifiers.dominates_);
+    !null(pfx), error("TODO pfx"), modifiers.submits_, modifiers.dominates_)];
 
   top.xmlCopper =
     "  <Terminal id=\"" ++ makeCopperName(n) ++ "\">\n" ++
@@ -294,6 +292,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
                                else "";
 
   top.copperElementReference = copper:elementReference(makeCopperName(ns.fullName), top.containingGrammar);
+  top.copperGrammarElements = error("TODO Production copperGrammarElements");
 
   top.xmlCopper =
     "  <Production id=\"" ++ makeCopperName(ns.fullName) ++ "\">\n" ++
@@ -391,7 +390,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
     s"    protected common.ConsCell ${makeCopperName(n)} = ${termsInit};\n";
 
   top.copperElementReference = copper:elementReference(makeCopperName(n), top.containingGrammar);
-  top.copperGrammarElement = copper:terminalClass(makeCopperName(n));
+  top.copperGrammarElements = [copper:terminalClass(makeCopperName(n))];
   
   top.xmlCopper =
     "  <TerminalClass id=\"" ++ makeCopperName(n) ++ "\" />\n";
@@ -410,6 +409,8 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
                    else ["Name conflict with parser attribute " ++ n];
 
   top.cstNormalize := [top];
+
+  top.copperGrammarElements = error("TODO ParserAttribute copperGrammarElements");
 
   top.xmlCopper =
     "  <ParserAttribute id=\"" ++ makeCopperName(n) ++ "\">\n" ++
@@ -468,6 +469,11 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
   top.cstNormalize := [top];
 
   top.copperElementReference = copper:elementReference(makeCopperName(n), top.containingGrammar);
+  local members::[copper:ElementReference] =
+    map(\dcl::[Decorated SyntaxDcl] -> head(dcl).copperElementReference,
+        trefs);
+  top.copperGrammarElements = [copper:disambiguationFunction(makeCopperName(n), acode, members,
+    applicableToSubsets)];
 
   top.xmlCopper =
     "  <DisambiguationFunction id=\"" ++ makeCopperName(n) ++ "\" applicableToSubsets=\"" ++ toString(applicableToSubsets) ++ "\">\n" ++
