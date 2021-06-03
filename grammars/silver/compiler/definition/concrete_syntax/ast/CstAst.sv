@@ -119,7 +119,7 @@ ${s2.lexerClassRefDcls}
     parserClassAuxCode, parserInitCode, preambleCode,
     copper:grammar_(s2.containingGrammar, s2.copperGrammarElements));
 
-  top.xmlCopper = unsafeTracePrint(xmlCopper, hackUnparse(top.copperParser));
+  top.xmlCopper = unsafeTrace(xmlCopper, copper:compileParserBean(top.copperParser, unsafeIO()));
   local xmlCopper::String =
 s"""<?xml version="1.0" encoding="UTF-8"?>
 
