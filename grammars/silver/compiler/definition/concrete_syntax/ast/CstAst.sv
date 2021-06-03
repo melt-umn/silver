@@ -116,7 +116,8 @@ ${s2.lexerClassRefDcls}
 
   top.copperParser = copper:parserBean(makeCopperName(parsername), parsername,
     head(startFound).copperElementReference, startLayoutCopper,
-    parserClassAuxCode, parserInitCode, preambleCode, s2.copperGrammar);
+    parserClassAuxCode, parserInitCode, preambleCode,
+    copper:grammar_(s2.containingGrammar, s2.copperGrammarElements));
 
   top.xmlCopper = unsafeTracePrint(xmlCopper, hackUnparse(top.copperParser));
   local xmlCopper::String =
