@@ -1,6 +1,7 @@
 grammar silver:compiler:modification:impide:cstast;
 
 --import (see grammar-wide import in cstast.sv)
+import silver:compiler:definition:concrete_syntax:copper as copper;
 
 monoid attribute fontList :: [Pair<String Font>];
 monoid attribute classFontList :: [Pair<String String>];
@@ -34,5 +35,6 @@ top::SyntaxDcl ::= fontName::String fnt::Font -- TODO: we probably? need to fact
   top.cstDcls := [pair(fontName, top)];
   top.cstNormalize := [top];
   
+  top.copperGrammarElements = [];
   top.xmlCopper = "";
 }

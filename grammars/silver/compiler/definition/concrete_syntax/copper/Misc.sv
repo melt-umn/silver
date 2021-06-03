@@ -17,7 +17,10 @@ ParserBean ::= id::String  name::String  startSymbol::ElementReference
 type Grammar foreign;
 
 function grammar_
-Grammar ::= id::String  name::String
+Grammar ::= id::String  copperGrammarElements::[GrammarElement]
+-- TODO: setGrammarLayout?
 {
   return error("copper FFI function");
+} foreign {
+  "java": return "common.CopperUtil.makeGrammar(%id%.toString(), new common.javainterop.ConsCellCollection(%copperGrammarElements%))";
 }

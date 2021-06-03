@@ -10,83 +10,141 @@ import java.util.HashSet;
 import java.util.Set;
 
 public final class CopperUtil {
-  private static Location LOCATION = new VirtualLocation("<silver>", -1, -1);
+    private static Location LOCATION = new VirtualLocation("<silver>", -1, -1);
 
-  public static CopperElementReference makeElementReference(String grammarName,
-                                                            String name) {
-    try {
-      return CopperElementReference.ref(CopperElementName.newName(grammarName),
-                                        name, LOCATION);
-    } catch (ParseException exc) {
-      throw new RuntimeException(exc);
+    public static DisambiguationFunction makeDisambiguationFunction(String id,
+            String code, ConsCellCollection<CopperElementReference> members, Boolean applicableToSubsets) {
+        try {
+            DisambiguationFunction f = new DisambiguationFunction();
+            f.setName(id);
+            f.setCode(code);
+            Set<CopperElementReference> memberSet =
+                new HashSet<CopperElementReference>();
+            members.iterator().forEachRemaining(memberSet::add);
+            f.setMembers(memberSet);
+            f.setApplicableToSubsets(applicableToSubsets);
+            return f;
+        } catch (ParseException exc) {
+            throw new RuntimeException(exc);
+        }
     }
-  }
 
-  public static NonTerminal makeNonTerminal(String id, String pp,
-                                            String type_) {
-    throw new RuntimeException("TODO CopperUtil.makeNonTerminal");
-  }
-
-  public static ParserBean
-  makeParserBean(String id, String pp, CopperElementReference startSymbol,
-                 ConsCellCollection<CopperElementReference> startLayout,
-                 String parserClassAuxCode, String parserInitCode,
-                 String preambleCode, Grammar grammar) {
-    try {
-      System.err.println("bruh 36");
-      ParserBean parserBean = new ParserBean();
-      System.err.println("bruh 38");
-      parserBean.setName(id);
-      System.err.println("bruh 40");
-      parserBean.setDisplayName(pp);
-      System.err.println("bruh 42");
-      parserBean.setUnitary(true);
-      System.err.println("bruh 44");
-      parserBean.addGrammar(grammar);
-      System.err.println("bruh 46");
-      parserBean.setStartSymbol(startSymbol);
-      System.err.println("bruh 48");
-
-      Set<CopperElementReference> startLayoutSet =
-          new HashSet<CopperElementReference>();
-      System.err.println("bruh 52");
-      System.out.println(startLayout);
-      System.err.println("bruh 54");
-      System.out.println(startLayoutSet);
-      System.err.println("bruh 56");
-      startLayout.iterator().forEachRemaining(startLayoutSet::add);
-      System.err.println("bruh 58");
-      System.out.println(startLayout);
-      System.err.println("bruh 60");
-      System.out.println(startLayoutSet);
-      System.err.println("bruh 62");
-      parserBean.setStartLayout(startLayoutSet);
-      System.err.println("bruh 64");
-
-      throw new RuntimeException("TODO CopperUtil.makeParserBean");
-    } catch (CopperException exc) {
-      throw new RuntimeException(exc);
-    } catch (ParseException exc) {
-      throw new RuntimeException(exc);
+    public static CopperElementReference makeElementReference(String grammarName,
+            String name) {
+        try {
+            return CopperElementReference.ref(CopperElementName.newName(grammarName),
+                                              name, LOCATION);
+        } catch (ParseException exc) {
+            throw new RuntimeException(exc);
+        }
     }
-  }
 
-  public static Terminal
-  makeTerminal(String id, String pp, Regex regex, Integer precedence,
-               Object associativity, String type_, String code,
-               ConsCellCollection<StringCatter> classes, String prefix,
-               ConsCellCollection<StringCatter> submits,
-               ConsCellCollection<StringCatter> dominates) {
-    throw new RuntimeException("TODO CopperUtil.makeTerminal");
-  }
-
-  public static TerminalClass makeTerminalClass(String id) {
-    TerminalClass out = new TerminalClass();
-    try {
-      out.setName(id);
-    } catch (ParseException exc) {
-      throw new RuntimeException(exc);
+    public static Grammar makeGrammar(String id, ConsCellCollection<GrammarElement> grammarElements) {
+        try {
+            Grammar grammar = new Grammar();
+            grammar.setName(id);
+            grammarElements.iterator().forEachRemaining((ele) ->  {
+                try {
+                    grammar.addGrammarElement(ele);
+                } catch(CopperException exc) {
+                    throw new RuntimeException(exc);
+                }
+            });
+            return grammar;
+        } catch (ParseException exc) {
+            throw new RuntimeException(exc);
+        }
     }
-    return out;
-  }
+
+    public static NonTerminal makeNonTerminal(String id, String pp,
+            String type_) {
+        try {
+            NonTerminal nt = new NonTerminal();
+            nt.setName(id);
+            nt.setDisplayName(pp);
+            nt.setReturnType(type_);
+            return nt;
+        } catch (ParseException exc) {
+            throw new RuntimeException(exc);
+        }
+    }
+
+    public static ParserBean
+    makeParserBean(String id, String pp, CopperElementReference startSymbol,
+                   ConsCellCollection<CopperElementReference> startLayout,
+                   String parserClassAuxCode, String parserInitCode,
+                   String preambleCode, Grammar grammar) {
+        try {
+            ParserBean parserBean = new ParserBean();
+            parserBean.setName(id);
+            parserBean.setDisplayName(pp);
+            parserBean.setUnitary(true);
+            parserBean.setStartSymbol(startSymbol);
+
+            Set<CopperElementReference> startLayoutSet =
+                new HashSet<CopperElementReference>();
+            startLayout.iterator().forEachRemaining(startLayoutSet::add);
+            parserBean.setStartLayout(startLayoutSet);
+
+            // TODO: parserClassAuxCode
+            // TODO: parserInitCode
+            // TODO: preambleCode
+
+            parserBean.addGrammar(grammar);
+            return parserBean;
+        } catch (CopperException exc) {
+            throw new RuntimeException(exc);
+        } catch (ParseException exc) {
+            throw new RuntimeException(exc);
+        }
+    }
+
+    public static edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Terminal
+    makeTerminal(String id, String pp, Regex regex, Integer precedence,
+                 String associativity, String type_, String code,
+                 ConsCellCollection<CopperElementReference> classes,
+                 CopperElementReference prefix,
+                 ConsCellCollection<CopperElementReference> submits,
+                 ConsCellCollection<CopperElementReference> dominates) {
+        try {
+            edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Terminal terminal =
+                new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Terminal();
+            terminal.setName(id);
+            terminal.setDisplayName(pp);
+            terminal.setRegex(regex);
+            // TODO: operatorClass?
+            terminal.setOperatorPrecedence(precedence);
+            if(associativity!= null) {
+                switch(associativity) {
+                case "left":
+                    terminal.setOperatorAssociativity(OperatorAssociativity.LEFT);
+                    break;
+                case "right":
+                    terminal.setOperatorAssociativity(OperatorAssociativity.RIGHT);
+                    break;
+                default:
+                    throw new RuntimeException("associativity = " + associativity);
+                }
+            }
+            // TODO: type_
+            // TODO: code
+            // TODO: classes
+            // TODO: prefix
+            // TODO: submits
+            // TODO: dominates
+            return terminal;
+        } catch (ParseException exc) {
+            throw new RuntimeException(exc);
+        }
+    }
+
+    public static TerminalClass makeTerminalClass(String id) {
+        TerminalClass out = new TerminalClass();
+        try {
+            out.setName(id);
+        } catch (ParseException exc) {
+            throw new RuntimeException(exc);
+        }
+        return out;
+    }
 }
