@@ -95,8 +95,7 @@ DefClause ::= attr::String nt::AbellaType treename::String
               nameTerm(equationName(attr, nt)),
               [nameTerm(treename), tree, nodetree]));
   local node::Term = nodetreeToNode(nodetree);
-  return
-     ruleClause(clauseHead,
+  local body::Metaterm =
         foldl(\ rest::Metaterm here::Metaterm ->
                 andMetaterm(rest, here),
               termMetaterm(
@@ -105,7 +104,16 @@ DefClause ::= attr::String nt::AbellaType treename::String
                     [nameTerm(treename), node,
                      buildApplication(nameTerm(attributeExistsName),
                                       [result])])),
-              cleaned));
+              cleaned);
+  local bound::Metaterm =
+        if null(body.freeVars)
+        then body
+        else bindingMetaterm(existsBinder(),
+                map(\ x::String -> (x, nothing()),
+                    nub(body.freeVars)),
+                body);
+  return
+     ruleClause(clauseHead, bound);
 }
 
 function cleanMetaterms

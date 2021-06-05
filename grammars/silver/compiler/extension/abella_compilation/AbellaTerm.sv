@@ -1,8 +1,13 @@
 grammar silver:compiler:extension:abella_compilation;
 
 
+monoid attribute freeVars::[String] with [], ++;
+propagate freeVars on Metaterm, Term, TermList
+   excluding varTerm;
+
+
 nonterminal Metaterm with
-   unparse, isAtomic;
+   unparse, isAtomic, freeVars;
 
 abstract production termMetaterm
 top::Metaterm ::= t::Term
@@ -86,7 +91,8 @@ top::Metaterm ::= b::Binder
      if null(bindings)
      then error("Empty bindings not allowed; production bindingsMetaterm (" ++ body.unparse ++ ")")
      else foldr1(\ a::String b::String -> a ++ " " ++ b, bindings);
-  top.unparse = b.unparse ++ " " ++ bindingsString ++ ", " ++ body.unparse;
+  top.unparse = b.unparse ++ " " ++ bindingsString ++ ",\n      " ++
+                body.unparse;
   top.isAtomic = false;
 }
 
@@ -117,7 +123,7 @@ top::Binder::=
 
 
 nonterminal Term with
-   unparse, isAtomic;
+   unparse, isAtomic, freeVars;
 
 {-
   A varTerm is used to represent a name generated in encoding.  We
@@ -129,6 +135,7 @@ nonterminal Term with
 abstract production varTerm
 top::Term ::= name::String
 {
+  top.freeVars := [name];
   forwards to nameTerm(name);
 }
 
@@ -184,7 +191,7 @@ top::Term ::= ty::Maybe<AbellaType>
 
 
 nonterminal TermList with
-   unparse;
+   unparse, freeVars;
 
 abstract production nilTermList
 top::TermList ::=
