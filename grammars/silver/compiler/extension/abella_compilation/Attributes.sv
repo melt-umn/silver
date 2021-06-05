@@ -26,7 +26,10 @@ propagate attrOccurrences on AGDcl, AGDcls, Grammar, Root, RootSpec;
 --[(local name, [(production name, local type)])]
 monoid attribute localAttrs::[(String, [(String, AbellaType)])]
    with [], combineAssociations(_, _);
-propagate localAttrs on AGDcl, AGDcls, Grammar, Root, RootSpec;
+propagate localAttrs on AGDcl, AGDcls, Grammar, Root, RootSpec,
+             ProductionBody, ProductionStmts, ProductionStmt
+   excluding aspectDefaultProduction, aspectFunctionDcl,
+             functionDclFFI, functionDcl;
 
 function combineAssociations
 [(String, [a])] ::= l1::[(String, [a])] l2::[(String, [a])]
@@ -54,6 +57,15 @@ propagate inheritedAttrs on AGDcl, AGDcls, Grammar, Root, RootSpec;
 monoid attribute associatedAttrs::[(String, [String])]
    with [], ++;
 propagate associatedAttrs on AGDcl, AGDcls, Grammar, Root, RootSpec;
+
+
+--[(attribute, nonterminal type, [definition clauses])]
+monoid attribute attrEqClauses::[(String, AbellaType, [DefClause])]
+   with [], ++;
+propagate attrEqClauses on AGDcl, AGDcls, Grammar, Root, RootSpec,
+             ProductionBody, ProductionStmts, ProductionStmt
+   excluding aspectDefaultProduction, aspectFunctionDcl,
+             functionDclFFI, functionDcl, ifElseStmt, blockStmt;
 
 
 
@@ -92,8 +104,23 @@ synthesized attribute usedNames::[String];
 --[(Silver name, (tree structure name, tree node name))]
 --If it isn't a tree, we won't ever need the node, but it is easier to
 --   include it for all than separate it out
-inherited attribute encodingEnv::[(String, (String, String))];
+autocopy attribute encodingEnv::[(String, (String, String))];
+--
+synthesized attribute encodingEnv_up::[(String, (String, String))];
 
 --(tree name, node name, tree type, current production name) for the root
-inherited attribute top::(String, String, AbellaType, String);
+autocopy attribute top::(String, String, AbellaType, String);
+--
+synthesized attribute top_up::(String, String, AbellaType);
+
+--Name used for root tree of current production
+inherited attribute topName::String;
+
+--Root tree of current production
+inherited attribute treeTerm::Term;
+synthesized attribute treeTerm_up<a>::a;
+
+--Root node tree of current production
+inherited attribute nodetreeTerm::Term;
+synthesized attribute nodetreeTerm_up<a>::a;
 

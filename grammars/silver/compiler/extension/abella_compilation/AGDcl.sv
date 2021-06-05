@@ -8,30 +8,31 @@ imports silver:compiler:modification:copper;
 imports silver:compiler:modification:copper_mda;
 imports silver:compiler:definition:flow:syntax;
 imports silver:compiler:modification:collection;
+imports silver:compiler:definition:env;
 
 
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, associatedAttrs,
+   inheritedAttrs, attrEqClauses, associatedAttrs,
    attrTypeSchemas_up, attrTypeSchemas
 occurs on Grammar;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, associatedAttrs,
+   inheritedAttrs, attrEqClauses, associatedAttrs,
    attrTypeSchemas_up, attrTypeSchemas
 occurs on Root;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, associatedAttrs,
+   inheritedAttrs, attrEqClauses, associatedAttrs,
    attrTypeSchemas_up, attrTypeSchemas
 occurs on AGDcls;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, associatedAttrs,
+   inheritedAttrs, attrEqClauses, associatedAttrs,
    attrTypeSchemas_up, attrTypeSchemas
 occurs on AGDcl;
 
@@ -65,19 +66,45 @@ aspect production attributeDclSyn
 top::AGDcl ::= 'synthesized' 'attribute' a::Name
                tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
+  --Apparently there are equations missing in the host language
+  local newtl::BracketedOptTypeExprs = tl;
+  local newte::TypeExpr = te;
+  newtl.config = top.config;
+  newtl.grammarName = top.grammarName;
+  newtl.env = top.env;
+  newtl.flowEnv = top.flowEnv;
+  newte.config = top.config;
+  newte.onNt = error("Is onNt needed?  I don't know what it is. (attributeDclInh)");
+  newte.grammarName = top.grammarName;
+  newte.env = top.env;
+  newte.flowEnv = top.flowEnv;
+  --
   top.attrs <- [a.name];
   top.attrTypeSchemas_up <-
-      [(a.name, te.typerep.abellaType, tl.freeVariables)];
+      [(a.name, newte.typerep.abellaType, newtl.freeVariables)];
 }
 
 aspect production attributeDclInh
 top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs
                '::' te::TypeExpr ';'
 {
+  --Apparently there are equations missing in the host language
+  local newtl::BracketedOptTypeExprs = tl;
+  local newte::TypeExpr = te;
+  newtl.config = top.config;
+  newtl.grammarName = top.grammarName;
+  newtl.env = top.env;
+  newtl.flowEnv = top.flowEnv;
+  newte.config = top.config;
+  newte.onNt = error("Is onNt needed?  I don't know what it is. (attributeDclInh)");
+  newte.grammarName = top.grammarName;
+  newte.env = top.env;
+  newte.flowEnv = top.flowEnv;
+  --
   top.attrs <- [a.name];
   top.inheritedAttrs <- [a.name];
   top.attrTypeSchemas_up <-
-      [(a.name, te.typerep.abellaType, tl.freeVariables)];
+      [(a.name, newte.typerep.abellaType, newtl.freeVariables)];
 }
 
 aspect production defaultAttributionDcl

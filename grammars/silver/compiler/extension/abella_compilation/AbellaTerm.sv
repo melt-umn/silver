@@ -60,7 +60,10 @@ top::Metaterm ::= t1::Metaterm t2::Metaterm
   top.unparse =
     ( if t1.isAtomic
       then t1.unparse
-      else "(" ++ t1.unparse ++ ")" ) ++ " /\\ " ++
+      else "(" ++ t1.unparse ++ ")" ) ++
+    --Since these are for definitions, these are usually better read
+    --   by putting each conjunct on its own line
+    " /\\\n      " ++
     ( if t2.isAtomic
       then t2.unparse
       else "(" ++ t2.unparse ++ ")" );
@@ -182,6 +185,12 @@ top::Term ::= ty::Maybe<AbellaType>
 
 nonterminal TermList with
    unparse;
+
+abstract production nilTermList
+top::TermList ::=
+{
+  top.unparse = "";
+}
 
 abstract production singleTermList
 top::TermList ::= t::Term

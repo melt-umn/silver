@@ -13,7 +13,7 @@ synthesized attribute output::String;
 attribute
    shouldOutput, output,
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, associatedAttrs
+   inheritedAttrs, associatedAttrs, attrEqClauses
 occurs on RootSpec;
 
 
@@ -41,6 +41,6 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
   top.output =
       generateContents(g.nonterminals, g.attrs, g.attrOccurrences,
          g.inheritedAttrs, g.localAttrs, g.associatedAttrs, g.prods,
-         shortestName(grammarName));
+         g.attrEqClauses, shortestName(grammarName));
 }
 

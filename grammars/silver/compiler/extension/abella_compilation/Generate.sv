@@ -151,10 +151,10 @@ String ::= group::[(String, AbellaType)] component::String
   return
      "Define " ++ typeToStructureEqName(nt) ++ "__" ++ component ++
      " : " ++ nt.unparse ++ " -> " ++ nt.unparse ++ " -> prop by\n" ++
-     foldr(\ p::(String, AbellaType) rest::String ->
-             generateStructureEqComponentBodies(p.1, p.2,
-                nt, component) ++ ".\n" ++ rest,
-           "", group);
+     implode(";\n",
+             map(\ p::(String, AbellaType) ->
+                   generateStructureEqComponentBodies(p.1, p.2,
+                      nt, component), group));
 }
 function generateStructureEqComponentBodies
 String ::= prod::String prodTy::AbellaType nt::AbellaType component::String
@@ -795,6 +795,71 @@ String ::= prods::[(String, AbellaType)] component::String
 }
 
 
+function generateAttrEquationComponentRelations
+String ::= clauses::[(String, AbellaType, [DefClause])]
+           component::String inheritedAttrs::[String]
+{
+  local attrGroups::[(String, AbellaType, [DefClause])] =
+        --Sort first to get all clauses for attr and NT together
+        let sorted::[(String, AbellaType, [DefClause])] =
+            sortBy(\ p1::(String, AbellaType, [DefClause])
+                     p2::(String, AbellaType, [DefClause]) ->
+                     p1.1 <= p2.1 &&
+                     case p1.2, p2.2 of
+                     | nameAbellaType(x), nameAbellaType(y) -> x <= y
+                     | _, _ -> error("Should only have name types")
+                     end,
+                   clauses)
+        in
+        let grouped::[[(String, AbellaType, [DefClause])]] =
+            groupBy(\ p1::(String, AbellaType, [DefClause])
+                      p2::(String, AbellaType, [DefClause]) ->
+                      p1.1 == p2.1 && tysEqual(p1.2, p2.2),
+                    sorted)
+        in
+          map(\ l::[(String, AbellaType, [DefClause])] ->
+                ( head(l).1, head(l).2,
+                  foldr(\ p::(String, AbellaType, [DefClause])
+                          rest::[DefClause] ->
+                          p.3 ++ rest,
+                        [], l) ),
+              grouped)
+        end end;
+  return generateAttrEquationComponentRelations_help(attrGroups,
+            component, inheritedAttrs);
+
+}
+function generateAttrEquationComponentRelations_help
+String ::= attrs::[(String, AbellaType, [DefClause])]
+           component::String inheritedAttrs::[String]
+{
+  local here::(String, AbellaType, [DefClause]) = head(attrs);
+  local body::Defs =
+        if null(here.3)
+        then singleAbellaDefs(factClause(trueMetaterm()))
+        else
+           foldr(consAbellaDefs(_, _), singleAbellaDefs(last(here.3)),
+                 take(length(here.3) - 1, here.3));
+  local equationRelation::String =
+        equationName(here.1, here.2) ++ "__" ++ component;
+  local relType::AbellaType =
+        arrowAbellaType(here.2,
+        arrowAbellaType(here.2,
+        arrowAbellaType(nodeTreeType,
+                        nameAbellaType("prop"))));
+  local defn::Definition =
+        definition([(equationRelation, new(relType))], body);
+  return
+     case attrs of
+     | [] -> ""
+     | hd::tl ->
+       defn.unparse ++ "\n" ++
+       generateAttrEquationComponentRelations_help(tl, component,
+                                                   inheritedAttrs)
+     end;
+}
+
+
 {-
   The associatedAttrs are the attributes which don't occur on the
   nonterminals associated with them, but which are set by some
@@ -810,6 +875,8 @@ String ::= nonterminals::[String] attrs::[String]
            --(attr, [nonterminals])
            associatedAttrs::[(String, [String])]
            prods::[(String, AbellaType)]
+           --[(attr, nonterminal, [definitional clauses])]
+           attrEqClauses::[(String, AbellaType, [DefClause])]
            componentName::String
 {
   local associatedAttrsExpanded::[(String, [(String, AbellaType)])] =
@@ -830,7 +897,9 @@ String ::= nonterminals::[String] attrs::[String]
      generateEquationsFull(
         attrOccurrences ++ associatedAttrsExpanded) ++ "\n" ++
      generateWpdRelationsFull(nonterminals) ++ "\n\n" ++
-     --Here's where the component equation relations would go
+     generateAttrEquationComponentRelations(attrEqClauses,
+        componentName, inheritedAttrs) ++ "\n\n" ++
+     --Here's where the relations for locals would go
      "Define $split : (A -> B -> prop) -> ($pair A B) -> prop by\n" ++
      "  $split SubRel ($pair_c A B) :=\n" ++
      "     SubRel A B.\n\n" ++

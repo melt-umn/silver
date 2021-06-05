@@ -54,6 +54,68 @@ TermList ::= args::[Term]
 
 
 
+function capitalize
+String ::= s::String
+{
+    return
+     if s == ""
+     then ""
+     else case substring(0, 1, s) of
+          | "a" -> "A" | "b" -> "B" | "c" -> "C" | "d" -> "D" | "e" -> "E"
+          | "f" -> "F" | "g" -> "G" | "h" -> "H" | "i" -> "I" | "j" -> "J"
+          | "k" -> "K" | "l" -> "L" | "m" -> "M" | "n" -> "N" | "o" -> "O"
+          | "p" -> "P" | "q" -> "Q" | "r" -> "R" | "s" -> "S" | "t" -> "T"
+          | "u" -> "U" | "v" -> "V" | "w" -> "W" | "x" -> "X" | "y" -> "Y"
+          | "z" -> "Z" |  _  -> substring(0, 1, s)
+          end ++ substring(1, length(s), s);
+}
+
+
+
+--Get the root node from a node tree term
+function nodetreeToNode
+Term ::= ntr::Term
+{
+  return
+     case ntr of
+     | applicationTerm(_, consTermList(node, _)) -> node
+     | _ -> error("Impossible nodetree structure")
+     end;
+}
+
+--
+function cleanBuildDefs
+DefClause ::= attr::String nt::AbellaType treename::String
+              tree::Term nodetree::Term result::Term mts::[Metaterm]
+{
+  local cleaned::[Metaterm] = cleanMetaterms(mts);
+  local clauseHead::Metaterm =
+        termMetaterm(
+           buildApplication(
+              nameTerm(equationName(attr, nt)),
+              [nameTerm(treename), tree, nodetree]));
+  local node::Term = nodetreeToNode(nodetree);
+  return
+     ruleClause(clauseHead,
+        foldl(\ rest::Metaterm here::Metaterm ->
+                andMetaterm(rest, here),
+              termMetaterm(
+                 buildApplication(
+                    nameTerm(accessRelationName(nt, attr)),
+                    [nameTerm(treename), node,
+                     buildApplication(nameTerm(attributeExistsName),
+                                      [result])])),
+              cleaned));
+}
+
+function cleanMetaterms
+[Metaterm] ::= mts::[Metaterm]
+{
+  return mts; --TEMPORARY
+}
+
+
+
 --Make a name that isn't in usedNames, based on the type
 function makeUniqueNameFromTy
 String ::= ty::AbellaType usedNames::[String]
