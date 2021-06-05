@@ -113,9 +113,6 @@ autocopy attribute top::(String, String, AbellaType, String);
 --
 synthesized attribute top_up::(String, String, AbellaType);
 
---Name used for root tree of current production
-inherited attribute topName::String;
-
 --Root tree of current production
 inherited attribute treeTerm::Term;
 synthesized attribute treeTerm_up<a>::a;

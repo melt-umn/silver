@@ -6,8 +6,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 {
   body.encodingEnv = ns.encodingEnv_up;
   body.top = (ns.top_up.1, ns.top_up.2, ns.top_up.3, id.name);
-  body.usedNames_down = body.topName::ns.usedNames;
-  body.topName = makeUniqueNameFromBase("TreeName", ns.usedNames);
+  body.usedNames_down = ns.usedNames;
   body.treeTerm =
        applicationTerm(nameTerm(nameToProd(id.name)), ns.treeTerm_up);
   body.nodetreeTerm = ns.nodetreeTerm_up;
@@ -19,8 +18,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature
 {
   body.encodingEnv = ns.encodingEnv_up;
   body.top = (ns.top_up.1, ns.top_up.2, ns.top_up.3, id.name);
-  body.usedNames_down = body.topName::ns.usedNames;
-  body.topName = makeUniqueNameFromBase("TreeName", ns.usedNames);
+  body.usedNames_down = ns.usedNames;
   body.treeTerm =
        applicationTerm(nameTerm(nameToProd(id.name)), ns.treeTerm_up);
   body.nodetreeTerm = ns.nodetreeTerm_up;
@@ -31,8 +29,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 {
   body.encodingEnv = ns.encodingEnv_up;
   body.top = (ns.top_up.1, ns.top_up.2, ns.top_up.3, id.name);
-  body.usedNames_down = body.topName::ns.usedNames;
-  body.topName = makeUniqueNameFromBase("TreeName", ns.usedNames);
+  body.usedNames_down = ns.usedNames;
   body.treeTerm =
        applicationTerm(nameTerm(nameToProd(id.name)), ns.treeTerm_up);
   body.nodetreeTerm = ns.nodetreeTerm_up;
@@ -50,12 +47,12 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 
 
 attribute
-   localAttrs, top, encodingEnv, usedNames_down, topName, treeTerm,
+   localAttrs, top, encodingEnv, usedNames_down, treeTerm,
    nodetreeTerm, attrEqClauses
 occurs on ProductionBody;
 
 attribute
-   localAttrs, top, encodingEnv, usedNames_down, topName, treeTerm,
+   localAttrs, top, encodingEnv, usedNames_down, treeTerm,
    nodetreeTerm, attrEqClauses
 occurs on ProductionStmts;
 
@@ -65,7 +62,6 @@ top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
   stmts.top = top.top;
   stmts.usedNames_down = top.usedNames_down;
-  stmts.topName = top.topName;
   stmts.treeTerm = top.treeTerm;
   stmts.nodetreeTerm = top.nodetreeTerm;
 }
@@ -80,12 +76,10 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 {
   h.top = top.top;
   h.usedNames_down = top.usedNames_down;
-  h.topName = top.topName;
   h.treeTerm = top.treeTerm;
   h.nodetreeTerm = top.nodetreeTerm;
   t.top = top.top;
   t.usedNames_down = top.usedNames_down;
-  t.topName = top.topName;
   t.treeTerm = top.treeTerm;
   t.nodetreeTerm = top.nodetreeTerm;
 }
@@ -93,7 +87,7 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 ----------
 
 attribute
-   localAttrs, top, encodingEnv, usedNames_down, usedNames, topName,
+   localAttrs, top, encodingEnv, usedNames_down, usedNames,
    treeTerm, nodetreeTerm, attrEqClauses
 occurs on ProductionStmt;
 
@@ -105,10 +99,8 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   t.usedNames_down = h.usedNames;
   h.treeTerm = top.treeTerm;
   h.nodetreeTerm = top.nodetreeTerm;
-  h.topName = top.topName;
   t.treeTerm = top.treeTerm;
   t.nodetreeTerm = top.nodetreeTerm;
-  t.topName = top.topName;
 }
 
 aspect production errorProductionStmt
@@ -161,7 +153,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   e.usedNames_down = top.usedNames_down;
   local cleanedClauses::[DefClause] =
         map(cleanBuildDefs(shortestName(attr.name), top.top.3,
-               top.topName, top.treeTerm, top.nodetreeTerm, e.result, _),
+               top.top.1, top.treeTerm, top.nodetreeTerm, e.result, _),
             e.encodedExpr);
   top.attrEqClauses <-
       [(shortestName(attr.name), top.top.3, cleanedClauses)];
@@ -175,7 +167,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   e.usedNames_down = top.usedNames_down;
   local cleanedClauses::[DefClause] =
         map(cleanBuildDefs(shortestName(attr.name), top.top.3,
-               top.topName, top.treeTerm, top.nodetreeTerm, e.result, _),
+               top.top.1, top.treeTerm, top.nodetreeTerm, e.result, _),
             e.encodedExpr);
   top.attrEqClauses <-
       [(shortestName(attr.name), top.top.3, cleanedClauses)];

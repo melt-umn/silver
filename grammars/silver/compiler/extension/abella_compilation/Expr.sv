@@ -294,7 +294,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   newe.usedNames_down = top.usedNames_down;
   --
   local synname::String =
-        makeUniqueNameFromBase(shortestName(q.name),
+        makeUniqueNameFromBase(capitalize(shortestName(q.name)),
                                top.usedNames_down);
   local synnode::String =
          makeUniqueNameFromBase("Node", top.usedNames_down);
@@ -305,11 +305,12 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
              [nameTerm(synname), nameTerm(synnode)])
         | _ -> varTerm(synname)
         end;
+  local treeTy::AbellaType = e.typerep.abellaType;
   local access::Metaterm =
         termMetaterm(
            buildApplication(
-              nameTerm(localAccessRelationName(top.top.3,
-                          shortestName(q.name), top.top.4)),
+              nameTerm(accessRelationName(treeTy,
+                          shortestName(q.name))),
               [nameTerm(top.top.1), nameTerm(top.top.2),
                buildApplication(nameTerm(attributeExistsName),
                                 [synTerm])]));
@@ -338,7 +339,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   newe.usedNames_down = top.usedNames_down;
   --
   local inhname::String =
-        makeUniqueNameFromBase(shortestName(q.name),
+        makeUniqueNameFromBase(capitalize(shortestName(q.name)),
                                top.usedNames_down);
   local inhnode::String =
          makeUniqueNameFromBase("Node", top.usedNames_down);
@@ -349,11 +350,12 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
              [nameTerm(inhname), nameTerm(inhnode)])
         | _ -> varTerm(inhname)
         end;
+  local treeTy::AbellaType = e.typerep.abellaType;
   local access::Metaterm =
         termMetaterm(
            buildApplication(
-              nameTerm(localAccessRelationName(top.top.3,
-                          shortestName(q.name), top.top.4)),
+              nameTerm(accessRelationName(treeTy,
+                          shortestName(q.name))),
               [nameTerm(top.top.1), nameTerm(top.top.2),
                buildApplication(nameTerm(attributeExistsName),
                                 [inhTerm])]));
