@@ -162,7 +162,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
 {
 
   local lookupProdInputTypes::([Type] ::= String) = \prodName::String ->
-      case (getValueDclInScope(prodName,env)) of
+      case (getValueDcl(prodName,env)) of
       | [] -> []
       | dcl:: _ ->
         let dcl :: Decorated DclInfo with {givenNonterminalType} =
