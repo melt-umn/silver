@@ -77,6 +77,7 @@ melt.trynode('silver') {
     sh "./make-dist latest"
     // Upon succeeding at initial build, archive for future builds
     archiveArtifacts(artifacts: "jars/*.jar", fingerprint: true)
+    melt.archiveCommitArtifacts("jars/*.jar")
   }
 
   stage("Test") {
