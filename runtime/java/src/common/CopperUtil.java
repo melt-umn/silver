@@ -2,12 +2,15 @@ package common;
 
 import common.javainterop.ConsCellCollection;
 import edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.*;
+import edu.umn.cs.melt.copper.main.CopperIOType;
+import edu.umn.cs.melt.copper.main.CopperPipelineType;
 import edu.umn.cs.melt.copper.main.ParserCompiler;
 import edu.umn.cs.melt.copper.main.ParserCompilerParameters;
 import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;
 import edu.umn.cs.melt.copper.runtime.io.Location;
 import edu.umn.cs.melt.copper.runtime.logging.CopperException;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -16,8 +19,12 @@ public final class CopperUtil {
 
     public static IOToken compile(ParserBean parser, IOToken tok) {
         ParserCompilerParameters params = new ParserCompilerParameters();
+        params.setOutputFile(new java.io.File("/tmp/copper-out.java"));
+        params.setOutputType(CopperIOType.FILE);
+        params.setUsePipeline(CopperPipelineType.GRAMMARBEANS);
         try {
-            ParserCompiler.compile(parser, params);
+            int ret = ParserCompiler.compile(parser, params);
+            System.out.println("status = " + ret);
         } catch(CopperException exc) {
             throw new RuntimeException(exc);
         }
@@ -42,6 +49,7 @@ public final class CopperUtil {
                                Boolean applicableToSubsets) {
         try {
             DisambiguationFunction f = new DisambiguationFunction();
+            f.setLocation(LOCATION);
             f.setName(id);
             f.setCode(code);
             Set<CopperElementReference> memberSet =
@@ -68,6 +76,7 @@ public final class CopperUtil {
     public static Grammar makeGrammar(String id, ConsCellCollection<GrammarElement> grammarElements) {
         try {
             Grammar grammar = new Grammar();
+            grammar.setLocation(LOCATION);
             grammar.setName(id);
             grammarElements.iterator().forEachRemaining((ele) ->  {
                 try {
@@ -86,6 +95,7 @@ public final class CopperUtil {
             String type_) {
         try {
             NonTerminal nt = new NonTerminal();
+            nt.setLocation(LOCATION);
             nt.setName(id);
             nt.setDisplayName(pp);
             nt.setReturnType(type_);
@@ -126,6 +136,25 @@ public final class CopperUtil {
         }
     }
 
+    public static Production
+    makeProduction(String id, Integer precedence, String operator, String code,
+                   CopperElementReference lhs, ConsCellCollection<CopperElementReference> rhs) {
+        try {
+            Production prod = new Production();
+            prod.setLocation(LOCATION);
+            prod.setName(id);
+            prod.setDisplayName(id);
+            if(precedence != null)
+                prod.setPrecedence(precedence);
+            prod.setCode(code);
+            prod.setLhs(lhs);
+            prod.setRhs(new ArrayList(rhs));
+            return prod;
+        } catch (ParseException exc) {
+            throw new RuntimeException(exc);
+        }
+    }
+
     public static edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Terminal
     makeTerminal(String id, String pp, Regex regex, Integer precedence,
                  String associativity, String type_, String code,
@@ -136,6 +165,7 @@ public final class CopperUtil {
         try {
             edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Terminal terminal =
                 new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Terminal();
+            terminal.setLocation(LOCATION);
             terminal.setName(id);
             terminal.setDisplayName(pp);
             terminal.setRegex(regex);
@@ -153,12 +183,12 @@ public final class CopperUtil {
                     throw new RuntimeException("associativity = " + associativity);
                 }
             }
-            // TODO: type_
-            // TODO: code
-            // TODO: classes
-            // TODO: prefix
-            // TODO: submits
-            // TODO: dominates
+            terminal.setReturnType(type_);
+            terminal.setCode(code);
+            classes.iterator().forEachRemaining(terminal::addTerminalClass);
+            terminal.setPrefix(prefix);
+            submits.iterator().forEachRemaining(terminal::addSubmitsTo);
+            dominates.iterator().forEachRemaining(terminal::addDominates);
             return terminal;
         } catch (ParseException exc) {
             throw new RuntimeException(exc);
@@ -166,12 +196,13 @@ public final class CopperUtil {
     }
 
     public static TerminalClass makeTerminalClass(String id) {
-        TerminalClass out = new TerminalClass();
         try {
+            TerminalClass out = new TerminalClass();
+            out.setLocation(LOCATION);
             out.setName(id);
+            return out;
         } catch (ParseException exc) {
             throw new RuntimeException(exc);
         }
-        return out;
     }
 }
