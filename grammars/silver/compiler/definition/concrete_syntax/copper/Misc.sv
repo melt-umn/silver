@@ -10,7 +10,7 @@ ParserBean ::= id::String  name::String  startSymbol::ElementReference
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "common.CopperUtil.makeParserBean(%id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection(%startLayout%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)(%grammar_%))";
+  "java" : return "common.CopperUtil.makeParserBean(%id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection(%startLayout%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%grammar_%)";
 }
 
 function compileParserBean
