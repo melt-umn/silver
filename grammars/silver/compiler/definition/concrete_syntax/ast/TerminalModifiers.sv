@@ -49,18 +49,21 @@ top::SyntaxTerminalModifiers ::=
 {--
  - Modifiers for terminals.
  -}
-closed nonterminal SyntaxTerminalModifier with cstEnv, cstErrors, classTerminalContribs, superClasses, subClasses, dominatesXML,
-  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply, componentGrammarMarkingTerminals,
-  marking, terminalName, prettyName;
+closed nonterminal SyntaxTerminalModifier with cstEnv, cstErrors,
+  classTerminalContribs, superClasses, subClasses, dominatesXML, submitsXML,
+  dominates_, submits_, ignored, acode, lexerclassesXML, opPrecedence,
+  opAssociation, prefixSeperator, prefixSeperatorToApply,
+  componentGrammarMarkingTerminals, marking, terminalName, prettyName;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
 top::SyntaxTerminalModifier ::=
 {
   -- Empty values as defaults
-  propagate cstErrors, classTerminalContribs, dominatesXML,
-    submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
-    marking, prettyName;
+  propagate cstErrors, classTerminalContribs, dominatesXML, submitsXML,
+    dominates_, submits_, ignored, acode, lexerclassesXML, opPrecedence,
+    opAssociation, prefixSeperator, prefixSeperatorToApply, marking,
+    prettyName;
 }
 
 {--
@@ -127,7 +130,8 @@ top::SyntaxTerminalModifier ::= cls::[String]
   top.submitsXML := implode("", map((.classSubContribsXML), allClsRefs));
   top.lexerclassesXML := implode("", map(xmlCopperRef, allClsRefs));
 
-  -- top.dominates_ := 
+  top.dominates_ := flatMap((.domContribs), allClsRefs);
+  top.submits_ := flatMap((.subContribs), allClsRefs);
   
   local termSeps :: [Maybe<String>] = map((.prefixSeperator), allClsRefs);
   top.prefixSeperator := foldr(orElse, nothing(), termSeps);
@@ -151,6 +155,7 @@ top::SyntaxTerminalModifier ::= sub::[String]
                            "this grammar was not included in this parser. (Referenced from submit clause on terminal " ++ top.terminalName ++ ")"],
                    zipWith(pair, sub, subRefs)); 
   top.submitsXML := implode("", map(xmlCopperRef, map(head, subRefs)));
+  top.submits_ := flatMap((.subContribs), map(head, subRefs));
 }
 {--
  - The dominates list for the terminal. Either lexer classes or terminals.
@@ -167,6 +172,7 @@ top::SyntaxTerminalModifier ::= dom::[String]
                            "this grammar was not included in this parser. (Referenced from dominates clause on terminal " ++ top.terminalName ++ ")"],
                    zipWith(pair, dom, domRefs)); 
   top.dominatesXML := implode("", map(xmlCopperRef, map(head, domRefs)));
+  top.dominates_ := flatMap((.domContribs), map(head, domRefs));
 }
 {--
  - The action to take whenever this terminal is SHIFTed.

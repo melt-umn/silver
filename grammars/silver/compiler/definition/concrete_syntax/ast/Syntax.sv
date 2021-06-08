@@ -42,6 +42,8 @@ monoid attribute allNonterminals :: [Decorated SyntaxDcl];
 monoid attribute disambiguationClasses :: [Decorated SyntaxDcl];
 synthesized attribute classDomContribsXML :: String;
 synthesized attribute classSubContribsXML :: String;
+synthesized attribute domContribs :: [copper:ElementReference];
+synthesized attribute subContribs :: [copper:ElementReference];
 autocopy attribute containingGrammar :: String;
 monoid attribute lexerClassRefDcls :: String;
 synthesized attribute exportedProds :: [String];
@@ -90,7 +92,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-closed nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribsXML, classSubContribsXML, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperElementReference, copperGrammarElements;
+closed nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribsXML, classSubContribsXML, domContribs, subContribs, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperElementReference, copperGrammarElements;
 
 synthesized attribute sortKey :: String;
 
@@ -103,6 +105,8 @@ top::SyntaxDcl ::=
   propagate cstProds, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs, prettyNamesAccum;
   top.classDomContribsXML = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.classSubContribsXML = error("Internal compiler error: should only ever be demanded of lexer classes");
+  top.domContribs = error("Internal compiler error: should only ever be demanded of lexer classes or terminals");
+  top.subContribs = error("Internal compiler error: should only ever be demanded of lexer classes or terminals");
   top.exportedProds = error("Internal compiler error: should only ever be demanded of nonterminals");
   top.hasCustomLayout = false;
 }
@@ -189,6 +193,9 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     | 1 -> prettyName
     | _ -> prettyName ++ " (" ++ n ++ ")"
     end;
+
+  top.domContribs = [top.copperElementReference];
+  top.subContribs = [top.copperElementReference];
 
   top.copperElementReference = copper:elementReference(top.containingGrammar, makeCopperName(n));
   top.copperGrammarElements = [copper:terminal_(makeCopperName(n),
@@ -392,6 +399,8 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   -- that's UUUUGLY.
   top.classDomContribsXML = modifiers.dominatesXML;
   top.classSubContribsXML = modifiers.submitsXML;
+  top.domContribs = modifiers.dominates_;
+  top.subContribs = modifiers.submits_;
 
   top.cstNormalize := [top];
   top.superClassContribs := modifiers.superClassContribs;
