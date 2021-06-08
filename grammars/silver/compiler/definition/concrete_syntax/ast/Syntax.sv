@@ -126,7 +126,7 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
 
   top.copperElementReference = copper:elementReference(top.containingGrammar, makeCopperName(t.typeName));
   top.copperGrammarElements = [copper:nonterminal_(makeCopperName(t.typeName),
-    t.typeName, makeNTName(t.typeName))];
+    t.typeName, makeNTName(t.typeName))] ++ subdcls.copperGrammarElements;
 
   top.xmlCopper =
     "\n  <Nonterminal id=\"" ++ makeCopperName(t.typeName) ++ "\">\n" ++
@@ -291,8 +291,18 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
                                "new silver.core.PparsedOriginInfo(common.OriginsUtil.SET_FROM_PARSER_OIT, common.Terminal.createSpan(_children, virtualLocation, (int)_pos.getPos()), common.ConsCell.nil)"  ++ commaIfArgsOrAnnos
                                else "";
 
+  local code::String =
+    -- Annoying workaround for if a lambda in an action block needs to capture RESULT when accessing a child.
+    -- Java complains when we capture something that is non-final.
+    "final " ++ makeProdName(ns.fullName) ++ " RESULTfinal = new " ++ makeProdName(ns.fullName) ++ "(" ++ originImpl ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
+    "RESULT = RESULTfinal;\n" ++
+    modifiers.acode;
+
   top.copperElementReference = copper:elementReference(top.containingGrammar, makeCopperName(ns.fullName));
-  top.copperGrammarElements = error("TODO Production copperGrammarElements");
+  top.copperGrammarElements = [copper:production_(makeCopperName(ns.fullName),
+    modifiers.productionPrecedence.isJust, modifiers.productionPrecedence.fromJust,
+    modifiers.productionOperator.isJust, modifiers.productionOperator.fromJust,
+    code, head(lhsRef).copperElementReference, map((.copperElementReference), map(head, rhsRefs)))];
 
   top.xmlCopper =
     "  <Production id=\"" ++ makeCopperName(ns.fullName) ++ "\">\n" ++
@@ -300,13 +310,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 --    "    <Class><OperatorClassRef id=\"main\"/></Class>\n" ++
     "    <Precedence>" ++ toString(modifiers.productionPrecedence.fromJust) ++ "</Precedence>\n"
     else "") ++
-    "    <Code><![CDATA[\n" ++
-    -- Annoying workaround for if a lambda in an action block needs to capture RESULT when accessing a child.
-    -- Java complains when we capture something that is non-final.
-    "final " ++ makeProdName(ns.fullName) ++ " RESULTfinal = new " ++ makeProdName(ns.fullName) ++ "(" ++ originImpl ++ fetchChildren(0, ns.inputElements) ++ insertLocationAnnotation(ns) ++ ");\n" ++
-    "RESULT = RESULTfinal;\n" ++
-      modifiers.acode ++
-    "]]></Code>\n" ++
+    "    <Code><![CDATA[\n" ++ code ++ "]]></Code>\n" ++
     "    <LHS>" ++ xmlCopperRef(head(lhsRef)) ++ "</LHS>\n" ++
     "    <RHS>" ++ implode("", map(xmlCopperRef, map(head, rhsRefs))) ++ "</RHS>\n" ++
     "    <Layout>" ++ prodLayout ++ "</Layout>\n" ++
