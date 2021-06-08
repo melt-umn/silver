@@ -40,7 +40,8 @@ aspect default production
 top::SyntaxLexerClassModifier ::=
 {
   -- Empty values as defaults
-  propagate cstErrors, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator;
+  propagate cstErrors, superClassContribs, disambiguationClasses, dominatesXML,
+    submitsXML, dominates_, submits_, prefixSeperator;
 }
 
 {--
@@ -75,7 +76,7 @@ top::SyntaxLexerClassModifier ::= sub::[String]
                            "this grammar was not included in this parser. (Referenced from submit clause for lexer class)"], --TODO: come up with a way to reference a given lexer class (line numbers would be great)
                    zipWith(pair, sub, subRefs)); 
   
-  top.submits_ := map(error("TODO"), map(head, subRefs));
+  top.submits_ := map((.copperElementReference), map(head, subRefs));
 
   top.submitsXML := implode("", map(xmlCopperRef, map(head, subRefs)));
 }
@@ -94,7 +95,7 @@ top::SyntaxLexerClassModifier ::= dom::[String]
                            "this grammar was not included in this parser. (Referenced from dominates clause for lexer class)"],
                    zipWith(pair, dom, domRefs));
 
-  top.dominates_ := map(error("TODO"), map(head, domRefs));
+  top.dominates_ := map((.copperElementReference), map(head, domRefs));
 
   top.dominatesXML := implode("", map(xmlCopperRef, map(head, domRefs)));
 }
