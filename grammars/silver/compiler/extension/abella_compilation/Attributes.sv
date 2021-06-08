@@ -86,15 +86,13 @@ autocopy attribute attrTypeSchemas::[(String, AbellaType, [TyVar])];
 {-
   For metaterms, the inner lists are conceptually and-ed together.  We
   don't actually and them together so it is easier to work with later.
--}
-synthesized attribute encodedExpr::[[Metaterm]];
---Encoding arguments for application
-synthesized attribute encodedArgs::[[Metaterm]];
 
---the result of the encoded expression
-synthesized attribute result::Term;
---the results of the encoded arguments
-synthesized attribute resultArgs::[Term];
+  [([encoding metaterms], result)]
+-}
+synthesized attribute encodedExpr::[([Metaterm], Term)];
+--Encoding arguments for application
+--List of encoding for each argument separately
+synthesized attribute encodedArgs::[[([Metaterm], Term)]];
 
 --Names used in the encoding somewhere--so we can have better names
 --   without accidentally reusing

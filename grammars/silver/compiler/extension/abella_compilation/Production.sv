@@ -92,6 +92,13 @@ attribute
 occurs on ProductionStmt;
 
 
+aspect default production
+top::ProductionStmt ::=
+{
+  top.usedNames = error("Accessed usedNames on default production");
+}
+
+
 aspect production productionStmtAppend
 top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 {
@@ -153,7 +160,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   e.usedNames_down = top.usedNames_down;
   local cleanedClauses::[DefClause] =
         map(cleanBuildDefs(shortestName(attr.name), top.top.3,
-               top.top.1, top.treeTerm, top.nodetreeTerm, e.result, _),
+               top.top.1, top.treeTerm, top.nodetreeTerm, _),
             e.encodedExpr);
   top.attrEqClauses <-
       [(shortestName(attr.name), top.top.3, cleanedClauses)];
@@ -167,7 +174,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   e.usedNames_down = top.usedNames_down;
   local cleanedClauses::[DefClause] =
         map(cleanBuildDefs(shortestName(attr.name), top.top.3,
-               top.top.1, top.treeTerm, top.nodetreeTerm, e.result, _),
+               top.top.1, top.treeTerm, top.nodetreeTerm, _),
             e.encodedExpr);
   top.attrEqClauses <-
       [(shortestName(attr.name), top.top.3, cleanedClauses)];

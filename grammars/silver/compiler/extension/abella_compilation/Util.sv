@@ -86,9 +86,9 @@ Term ::= ntr::Term
 --
 function cleanBuildDefs
 DefClause ::= attr::String nt::AbellaType treename::String
-              tree::Term nodetree::Term result::Term mts::[Metaterm]
+              tree::Term nodetree::Term mts::([Metaterm], Term)
 {
-  local cleaned::[Metaterm] = cleanMetaterms(mts);
+  local cleaned::([Metaterm], Term) = cleanMetaterms(mts);
   local clauseHead::Metaterm =
         termMetaterm(
            buildApplication(
@@ -97,14 +97,14 @@ DefClause ::= attr::String nt::AbellaType treename::String
   local node::Term = nodetreeToNode(nodetree);
   local body::Metaterm =
         foldl(\ rest::Metaterm here::Metaterm ->
-                andMetaterm(rest, here),
+                 andMetaterm(rest, here),
               termMetaterm(
                  buildApplication(
                     nameTerm(accessRelationName(nt, attr)),
                     [nameTerm(treename), node,
                      buildApplication(nameTerm(attributeExistsName),
-                                      [result])])),
-              cleaned);
+                                      [cleaned.2])])),
+              cleaned.1);
   local bound::Metaterm =
         if null(body.freeVars)
         then body
@@ -117,7 +117,7 @@ DefClause ::= attr::String nt::AbellaType treename::String
 }
 
 function cleanMetaterms
-[Metaterm] ::= mts::[Metaterm]
+([Metaterm], Term) ::= mts::([Metaterm], Term)
 {
   return mts; --TEMPORARY
 }

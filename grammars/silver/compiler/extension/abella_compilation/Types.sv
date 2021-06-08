@@ -216,6 +216,20 @@ top::Type ::= inhs::[String]
 
 
 
+function isNonterminal
+Boolean ::= ty::Type
+{
+  return
+     case ty of
+     | nonterminalType(_, _, _) -> true
+     | decoratedType(_, _) -> true
+     | ntOrDecType(_, _, _) -> true
+     | _ -> false
+     end;
+}
+
+
+
 
 synthesized attribute abellaTys::[AbellaType];
 
