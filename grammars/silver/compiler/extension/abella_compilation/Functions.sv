@@ -6,6 +6,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
   top.localAttrs := [];
   top.attrEqClauses := [];
+  top.attrEqInfo := [];
 }
 
 aspect production aspectFunctionDcl
@@ -14,6 +15,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   top.localAttrs :=
       error("Abella encoding cannot handle aspect functions");
   top.attrEqClauses := [];
+  top.attrEqInfo := [];
 }
 
 aspect production functionDclFFI
@@ -22,6 +24,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   top.localAttrs :=
       error("Abella encoding cannot handle foreign functions");
   top.attrEqClauses := [];
+  top.attrEqInfo := [];
 }
 
 aspect production returnDef

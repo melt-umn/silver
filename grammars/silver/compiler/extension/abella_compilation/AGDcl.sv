@@ -14,52 +14,29 @@ imports silver:compiler:definition:env;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, attrEqClauses, associatedAttrs,
-   attrTypeSchemas_up, attrTypeSchemas
+   inheritedAttrs, attrEqClauses, attrEqInfo, associatedAttrs
 occurs on Grammar;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, attrEqClauses, associatedAttrs,
-   attrTypeSchemas_up, attrTypeSchemas
+   inheritedAttrs, attrEqClauses, attrEqInfo, associatedAttrs
 occurs on Root;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, attrEqClauses, associatedAttrs,
-   attrTypeSchemas_up, attrTypeSchemas
+   inheritedAttrs, attrEqClauses, attrEqInfo, associatedAttrs
 occurs on AGDcls;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, attrEqClauses, associatedAttrs,
-   attrTypeSchemas_up, attrTypeSchemas
+   inheritedAttrs, attrEqClauses, attrEqInfo, associatedAttrs
 occurs on AGDcl;
 
 
-aspect production functionDcl
-top::AGDcl ::= 'function' id::Name ns::FunctionSignature
-               body::ProductionBody 
-{
-}
-
-aspect production aspectFunctionDcl
-top::AGDcl ::= 'aspect' 'function' id::QName
-               ns::AspectFunctionSignature body::ProductionBody 
-{
-}
-
 aspect production productionDcl
-top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature
-               body::ProductionBody
+top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
   top.prods <- [(id.name, ns.abellaType)];
-}
-
-aspect production concreteProductionDcl
-top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature
-               pm::ProductionModifiers body::ProductionBody
-{
 }
 
 aspect production attributeDclSyn
@@ -80,8 +57,6 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name
   newte.flowEnv = top.flowEnv;
   --
   top.attrs <- [a.name];
-  top.attrTypeSchemas_up <-
-      [(a.name, newte.typerep.abellaType, newtl.freeVariables)];
 }
 
 aspect production attributeDclInh
@@ -103,21 +78,13 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs
   --
   top.attrs <- [a.name];
   top.inheritedAttrs <- [a.name];
-  top.attrTypeSchemas_up <-
-      [(a.name, newte.typerep.abellaType, newtl.freeVariables)];
 }
 
 aspect production defaultAttributionDcl
 top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.attrOccurrences <-
-      case findAssociated(at.name, top.attrTypeSchemas) of
-      | just((attrTy, vars)) ->
-        [(at.name, [(nt.name, replaceVars(vars, attl.abellaTys, attrTy))])]
-      | nothing() ->
-        error("Abella encoding not defined in presence of errors " ++
-              "(could not find attribute " ++ at.name ++ " in top.attrTypeSchemas")
-      end;
+      [(at.name, [(nt.name, protoatty.abellaType)])];
 }
 
 aspect production nonterminalDcl

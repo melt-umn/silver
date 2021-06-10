@@ -90,7 +90,8 @@ String ::= localAttrs::[(String, [(String, AbellaType)])]
        functorAbellaType(nameAbellaType(attrValTypeName), attrTy).unparse ++
        " -> prop.\n" ++
        generateLocalAccessRelations((attr, tl)::rest, prods)
-     | _ -> error("Impossible for a well-typed grammar")
+     | (attr, (prod, attrTy)::tl)::rest ->
+       error("Impossible for a well-typed grammar")
      end;
 }
 

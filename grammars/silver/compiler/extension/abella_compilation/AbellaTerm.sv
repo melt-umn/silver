@@ -1,13 +1,21 @@
 grammar silver:compiler:extension:abella_compilation;
 
 
-monoid attribute freeVars::[String] with [], ++;
+monoid attribute freeVars::[(String, Integer)] with [], ++;
 propagate freeVars on Metaterm, Term, TermList
+   excluding varTerm;
+
+--Replace variables
+autocopy attribute replaceTermVar::(String, Integer);
+autocopy attribute replaceTerm::Term;
+functor attribute replaced;
+propagate replaced on Metaterm, Term, TermList
    excluding varTerm;
 
 
 nonterminal Metaterm with
-   unparse, isAtomic, freeVars;
+   unparse, isAtomic, freeVars,
+   replaceTermVar, replaceTerm, replaced;
 
 abstract production termMetaterm
 top::Metaterm ::= t::Term
@@ -98,7 +106,6 @@ top::Metaterm ::= b::Binder
 
 
 
-
 nonterminal Binder with unparse;
 
 abstract production forallBinder
@@ -123,20 +130,29 @@ top::Binder::=
 
 
 nonterminal Term with
-   unparse, isAtomic, freeVars;
+   unparse, isAtomic, freeVars,
+   replaceTermVar, replaceTerm, replaced;
 
 {-
   A varTerm is used to represent a name generated in encoding.  We
   want to distinguish between varTerms and nameTerms because nameTerms
-  are set names which cannot change (e.g. productions, children) and
-  varTerms are just placeholders which we might change in unification
-  later.
+  are set names which cannot change (e.g. productions) and varTerms
+  are just placeholders which we might change in unification later.
+
+  The base is the suggested base for name generation.  The index is
+  for distinguishing between varTerms with the same suggested base.
 -}
 abstract production varTerm
-top::Term ::= name::String
+top::Term ::= base::String index::Integer
 {
-  top.freeVars := [name];
-  forwards to nameTerm(name);
+  top.unparse = "var(" ++ base ++ ", " ++ toString(index) ++ ")";
+  top.isAtomic = true;
+  top.freeVars := [(base, index)];
+
+  top.replaced =
+      if top.replaceTermVar.1 == base && top.replaceTermVar.2 == index
+      then top.replaceTerm
+      else top;
 }
 
 abstract production nameTerm
@@ -190,13 +206,17 @@ top::Term ::= ty::Maybe<AbellaType>
 
 
 
+synthesized attribute argList::[Term];
+
 nonterminal TermList with
-   unparse, freeVars;
+   unparse, freeVars, argList,
+   replaceTermVar, replaceTerm, replaced;
 
 abstract production nilTermList
 top::TermList ::=
 {
   top.unparse = "";
+  top.argList = [];
 }
 
 abstract production singleTermList
@@ -206,6 +226,7 @@ top::TermList ::= t::Term
       if t.isAtomic
       then t.unparse
       else "(" ++ t.unparse ++ ")";
+  top.argList = [t];
 }
 
 abstract production consTermList
@@ -216,5 +237,29 @@ top::TermList ::= t::Term rest::TermList
         then t.unparse
         else "(" ++ t.unparse ++ ")" ) ++
       " " ++ rest.unparse;
+  top.argList = t::rest.argList;
+}
+
+
+
+--Helper functions for more easily replacing variables
+function replaceVar
+Metaterm ::= replaceTermVar::(String, Integer) replaceResult::Term
+             replaceIn::Metaterm
+{
+  return
+     decorate replaceIn with
+     { replaceTermVar = replaceTermVar;
+       replaceTerm = replaceResult; }.replaced;
+}
+
+function replaceVar_Term
+Term ::= replaceTermVar::(String, Integer) replaceResult::Term
+         replaceIn::Term
+{
+  return
+     decorate replaceIn with
+     { replaceTermVar = replaceTermVar;
+       replaceTerm = replaceResult; }.replaced;
 }
 

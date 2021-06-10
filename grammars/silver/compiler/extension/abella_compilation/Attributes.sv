@@ -66,20 +66,15 @@ propagate attrEqClauses on AGDcl, AGDcls, Grammar, Root, RootSpec,
              ProductionBody, ProductionStmts, ProductionStmt
    excluding aspectDefaultProduction, aspectFunctionDcl,
              functionDclFFI, functionDcl, ifElseStmt, blockStmt;
-
-
-
-{-
-  To be able to gather the types for the attributes at the attribute
-  occurrences, we need to know what type schema the attribute is
-  declared to have, which is what these two attributes are.
-
-  [(attr name, attr type, [type variables])]
--}
-monoid attribute attrTypeSchemas_up::[(String, AbellaType, [TyVar])] with [], ++;
-propagate attrTypeSchemas_up on AGDcl, AGDcls, Grammar, Root;
-
-autocopy attribute attrTypeSchemas::[(String, AbellaType, [TyVar])];
+--[( attribute, top nonterminal type, production,
+--   head term (rel tree nodetree), [clause bodies] )]
+monoid attribute attrEqInfo::[(String, AbellaType, String,
+                               Term, [[Metaterm]])]
+   with [], ++;
+propagate attrEqInfo on AGDcl, AGDcls, Grammar, Root, RootSpec,
+             ProductionBody, ProductionStmts, ProductionStmt
+   excluding aspectDefaultProduction, aspectFunctionDcl,
+             functionDclFFI, functionDcl, ifElseStmt, blockStmt;
 
 
 
@@ -94,22 +89,17 @@ synthesized attribute encodedExpr::[([Metaterm], Term)];
 --List of encoding for each argument separately
 synthesized attribute encodedArgs::[[([Metaterm], Term)]];
 
---Names used in the encoding somewhere--so we can have better names
---   without accidentally reusing
-inherited attribute usedNames_down::[String];
-synthesized attribute usedNames::[String];
-
---[(Silver name, (tree structure name, tree node name))]
+--[(Silver name, (tree structure, tree node))]
 --If it isn't a tree, we won't ever need the node, but it is easier to
 --   include it for all than separate it out
-autocopy attribute encodingEnv::[(String, (String, String))];
+autocopy attribute encodingEnv::[(String, (Term, Term))];
 --
-synthesized attribute encodingEnv_up::[(String, (String, String))];
+synthesized attribute encodingEnv_up::[(String, (Term, Term))];
 
---(tree name, node name, tree type, current production name) for the root
-autocopy attribute top::(String, String, AbellaType, String);
+--(tree, node, tree type, current production name) for the root
+autocopy attribute top::(Term, Term, AbellaType, String);
 --
-synthesized attribute top_up::(String, String, AbellaType);
+synthesized attribute top_up::(Term, Term, AbellaType);
 
 --Root tree of current production
 inherited attribute treeTerm::Term;

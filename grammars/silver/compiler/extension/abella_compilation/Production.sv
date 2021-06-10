@@ -6,7 +6,6 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 {
   body.encodingEnv = ns.encodingEnv_up;
   body.top = (ns.top_up.1, ns.top_up.2, ns.top_up.3, id.name);
-  body.usedNames_down = ns.usedNames;
   body.treeTerm =
        applicationTerm(nameTerm(nameToProd(id.name)), ns.treeTerm_up);
   body.nodetreeTerm = ns.nodetreeTerm_up;
@@ -18,7 +17,6 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature
 {
   body.encodingEnv = ns.encodingEnv_up;
   body.top = (ns.top_up.1, ns.top_up.2, ns.top_up.3, id.name);
-  body.usedNames_down = ns.usedNames;
   body.treeTerm =
        applicationTerm(nameTerm(nameToProd(id.name)), ns.treeTerm_up);
   body.nodetreeTerm = ns.nodetreeTerm_up;
@@ -29,7 +27,6 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 {
   body.encodingEnv = ns.encodingEnv_up;
   body.top = (ns.top_up.1, ns.top_up.2, ns.top_up.3, id.name);
-  body.usedNames_down = ns.usedNames;
   body.treeTerm =
        applicationTerm(nameTerm(nameToProd(id.name)), ns.treeTerm_up);
   body.nodetreeTerm = ns.nodetreeTerm_up;
@@ -41,19 +38,20 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 {
   top.localAttrs := [];
   top.attrEqClauses := [];
+  top.attrEqInfo := [];
 }
 
 
 
 
 attribute
-   localAttrs, top, encodingEnv, usedNames_down, treeTerm,
-   nodetreeTerm, attrEqClauses
+   localAttrs, top, encodingEnv, treeTerm,
+   nodetreeTerm, attrEqClauses, attrEqInfo
 occurs on ProductionBody;
 
 attribute
-   localAttrs, top, encodingEnv, usedNames_down, treeTerm,
-   nodetreeTerm, attrEqClauses
+   localAttrs, top, encodingEnv, treeTerm,
+   nodetreeTerm, attrEqClauses, attrEqInfo
 occurs on ProductionStmts;
 
 
@@ -61,7 +59,6 @@ aspect production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
   stmts.top = top.top;
-  stmts.usedNames_down = top.usedNames_down;
   stmts.treeTerm = top.treeTerm;
   stmts.nodetreeTerm = top.nodetreeTerm;
 }
@@ -75,11 +72,9 @@ aspect production productionStmtsSnoc
 top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 {
   h.top = top.top;
-  h.usedNames_down = top.usedNames_down;
   h.treeTerm = top.treeTerm;
   h.nodetreeTerm = top.nodetreeTerm;
   t.top = top.top;
-  t.usedNames_down = top.usedNames_down;
   t.treeTerm = top.treeTerm;
   t.nodetreeTerm = top.nodetreeTerm;
 }
@@ -87,23 +82,20 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 ----------
 
 attribute
-   localAttrs, top, encodingEnv, usedNames_down, usedNames,
-   treeTerm, nodetreeTerm, attrEqClauses
+   localAttrs, top, encodingEnv,
+   treeTerm, nodetreeTerm, attrEqClauses, attrEqInfo
 occurs on ProductionStmt;
 
 
 aspect default production
 top::ProductionStmt ::=
 {
-  top.usedNames = error("Accessed usedNames on default production");
 }
 
 
 aspect production productionStmtAppend
 top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
 {
-  h.usedNames_down = top.usedNames_down;
-  t.usedNames_down = h.usedNames;
   h.treeTerm = top.treeTerm;
   h.nodetreeTerm = top.nodetreeTerm;
   t.treeTerm = top.treeTerm;
@@ -157,13 +149,25 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 {
   e.encodingEnv = top.encodingEnv;
   e.top = top.top;
-  e.usedNames_down = top.usedNames_down;
-  local cleanedClauses::[DefClause] =
-        map(cleanBuildDefs(shortestName(attr.name), top.top.3,
-               top.top.1, top.treeTerm, top.nodetreeTerm, _),
-            e.encodedExpr);
-  top.attrEqClauses <-
-      [(shortestName(attr.name), top.top.3, cleanedClauses)];
+  local clauseHead::Term =
+        buildApplication(
+           nameTerm(equationName(shortestName(attr.name), top.top.3) ++
+              "__" ++ shortestName(top.grammarName)),
+           [top.top.1, top.treeTerm,
+            nodetreeToNode(top.nodetreeTerm)]);
+  --synthesized can only be defined on root
+  top.attrEqInfo <-
+      [ (shortestName(attr.name), top.top.3, top.top.4, clauseHead,
+         map(\ p::([Metaterm], Term) ->
+               termMetaterm(
+                  buildApplication(
+                     nameTerm(accessRelationName(top.top.3,
+                                           shortestName(attr.name))),
+                     [top.top.1,
+                      nodetreeToNode(top.nodetreeTerm),
+                      buildApplication(nameTerm(attributeExistsName),
+                                       [p.2])]))::p.1,
+             e.encodedExpr)) ];
 }
 
 aspect production inheritedAttributeDef
@@ -171,13 +175,32 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 {
   e.encodingEnv = top.encodingEnv;
   e.top = top.top;
-  e.usedNames_down = top.usedNames_down;
-  local cleanedClauses::[DefClause] =
-        map(cleanBuildDefs(shortestName(attr.name), top.top.3,
-               top.top.1, top.treeTerm, top.nodetreeTerm, _),
-            e.encodedExpr);
-  top.attrEqClauses <-
-      [(shortestName(attr.name), top.top.3, cleanedClauses)];
+  local tree::(Term, Term) =
+        findAssociated(dl.name, top.encodingEnv).fromJust;
+  local treeTy::AbellaType = dl.typerep.abellaType;
+  local clauseHead::Term =
+        buildApplication(
+           nameTerm(equationName(shortestName(attr.name), top.top.3) ++
+              "__" ++ shortestName(top.grammarName)),
+           [top.top.1, top.treeTerm,
+            nodetreeToNode(top.nodetreeTerm)]);
+  --attrs set on locals and forwards need to be handled differently
+  top.attrEqInfo <-
+      case dl of
+      | localDefLHS(_) -> []
+      | forwardDefLHS(_) -> []
+      | _ ->
+        [ (shortestName(attr.name), top.top.3, top.top.4, clauseHead,
+           map(\ p::([Metaterm], Term) ->
+                 termMetaterm(
+                    buildApplication(
+                       nameTerm(accessRelationName(treeTy,
+                                             shortestName(attr.name))),
+                       [tree.1, tree.2,
+                        buildApplication(nameTerm(attributeExistsName),
+                                         [p.2])]))::p.1,
+               e.encodedExpr)) ]
+      end;
 }
 
 aspect production errorDefLHS

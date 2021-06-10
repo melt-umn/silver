@@ -83,45 +83,6 @@ Term ::= ntr::Term
      end;
 }
 
---
-function cleanBuildDefs
-DefClause ::= attr::String nt::AbellaType treename::String
-              tree::Term nodetree::Term mts::([Metaterm], Term)
-{
-  local cleaned::([Metaterm], Term) = cleanMetaterms(mts);
-  local clauseHead::Metaterm =
-        termMetaterm(
-           buildApplication(
-              nameTerm(equationName(attr, nt)),
-              [nameTerm(treename), tree, nodetree]));
-  local node::Term = nodetreeToNode(nodetree);
-  local body::Metaterm =
-        foldl(\ rest::Metaterm here::Metaterm ->
-                 andMetaterm(rest, here),
-              termMetaterm(
-                 buildApplication(
-                    nameTerm(accessRelationName(nt, attr)),
-                    [nameTerm(treename), node,
-                     buildApplication(nameTerm(attributeExistsName),
-                                      [cleaned.2])])),
-              cleaned.1);
-  local bound::Metaterm =
-        if null(body.freeVars)
-        then body
-        else bindingMetaterm(existsBinder(),
-                map(\ x::String -> (x, nothing()),
-                    nub(body.freeVars)),
-                body);
-  return
-     ruleClause(clauseHead, bound);
-}
-
-function cleanMetaterms
-([Metaterm], Term) ::= mts::([Metaterm], Term)
-{
-  return mts; --TEMPORARY
-}
-
 
 
 --Make a name that isn't in usedNames, based on the type
