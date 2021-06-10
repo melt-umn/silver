@@ -47,6 +47,7 @@ synthesized attribute aspectType::TypeExpr;
 @{-
   - Nonterminal for the name and type of the term for which you're constructing aspect productions for. -}
 nonterminal ConvAspectLHS with aspectName, aspectType, unparse;
+@{- @hide -}
 concrete productions top::ConvAspectLHS
 | name::Name '::' ty::TypeExpr
 {
@@ -62,18 +63,13 @@ concrete productions top::ConvAspectLHS
 }
 
 
-@{-
-  - @param aspect The aspect keyword
-  - @param attr The attribute you're defining aspect productions for.
-  - @param '' keyword, concrete syntax
-  - @param aspectLHS the type for your aspect productions, as well as a custom name for if you define it.
-  - @param eqKind The binding method for defining the new attribute within the generated aspect productions.
-  - @param '' keyword, concrete syntax.
-  - @param '' vertical bar
-  - @param ml The Match Rules defining the aspect productions you'd like to make
-  - @param '' the end keyword, concrete syntax.
-  - @param '' a literal semicolon.
-  - A single AgDcl defining all the aspect productions according to the parameters given.
+@{- Takes in the following:
+  - - attr: The attribute you're defining aspect productions for.
+  - - aspectLHS: the type for your aspect productions, as well as a custom name for if you define it.
+  - - eqKind: The binding method for defining the new attribute within the generated aspect productions.
+  - - ml: A List of MatchRules that describe the aspects productions you'd like to make.
+
+  - And returns a a single AgDcl defining all the aspect productions according to the parameters given.
   - This is the concrete syntax for defining convenience aspects.
 -}
 concrete production convenienceAspects_c

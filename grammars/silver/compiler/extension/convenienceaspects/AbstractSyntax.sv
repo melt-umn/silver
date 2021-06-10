@@ -3,10 +3,10 @@ grammar silver:compiler:extension:convenienceaspects;
 import silver:compiler:modification:let_fix;
 
 @{-
+  - From a list of Patterns, makes a PatternList with the right list-shaped productions.
   - @param l the list of patterns to modify
   - @param defaultLoc the location to provide for the patternListNil construct (which needs a location).
   - @return A patternList List-Like Nonterminal instance.
-  From a list of Patterns, makes a PatternList with the right list-shaped productions.
   -}
 function makePatternListfromListofPatterns
 PatternList ::= l::[Pattern] defaultLoc::Location
@@ -40,9 +40,9 @@ function collectPatternsFromPatternList
 
 
 @{-
+  - Extracts out the subpatterns of productions in a patternList, but in a way that doesn't demand attributes.
   - @param pl The patternList List-like construct we're extracting subpatterns from.
   - @return A patternList List-like construct containing only the subpatterns of the list that was provided.
-  - Extracts out the subpatterns of productions in a patternList, but in a way that doesn't demand attributes.
   - @warning Note that the subpatterns being extracted here are only applications of productions.
 -}
 function extractSubPatternListsFromProdPatterns
@@ -63,10 +63,10 @@ PatternList ::= pl::PatternList
 
 
 @{-
+  - Takes in a regular list of Expr, turns them into an instance of the Exprs production.
   - @param l A list of Expr's.
   - @param defaultLoc The default location to provide for the ExprsEmpty production (nil-like construct).
   - @return A combined Exprs List-like construct made from the Expr's in the input list.
-  - Takes in a regular list of Expr, turns them into an instance of the Exprs production.
 -}
 function makeExprsFromExprList
 Exprs ::= l::[Expr] defaultLoc::Location
@@ -82,8 +82,9 @@ Exprs ::= l::[Expr] defaultLoc::Location
 
 
 @{-
-  - @param l A list of match rules.
   - Takes in a regular list of MatchRule, turns them into an instance of the MRuleList production.
+  - @param l A list of match rules.
+  - @return A MRuleList list-like construct from the list of match rules.
 -}
 function makeMRuleListFromListMatchRules
 MRuleList ::= l::[MatchRule]
@@ -96,10 +97,10 @@ MRuleList ::= l::[MatchRule]
 }
 
 @{-
+  - Given a MRuleList element, transforms it into a regular list of MatchRules
   - @param l A List-like construct MRuleList instance.
   - @param accum An accumulated list of MatchRule's
   - @return A regular list of MatchRule's
-  - Given a MRuleList element, transforms it into a regular list of MatchRules
 -}
 function collectMatchRulesfromMRuleList
 [MatchRule] ::= l::MRuleList accum::[MatchRule]
@@ -111,11 +112,11 @@ function collectMatchRulesfromMRuleList
 }
 
 @{-
+  - This function goes into a production pattern (if it is one), extracts out the sub pattern for that production, and generates names for each element of that sub pattern.
+  - e.g Given `silver_matchRule {foo(bar(3,x),y) -> y+1 }` where `foo`,`bar` are productions, it returns `[_gen1,_gen2]`  (where the numbers are generated from genInt)
   - @param mr An instance of MatchRule
   - @param loc A default location to provide for when we use the patternList_nil production.
   - @return A list of names where each name corresponds to an argument to the production subpattern.
-  - This function goes into a production pattern (if it is one), extracts out the sub pattern for that production, and generates names for each element of that sub pattern.
-  - e.g Given `silver_matchRule {foo(bar(3,x),y) -> y+1 }` where `foo`,`bar` are productions, it returns `[_gen1,_gen2]`  (where the numbers are generated from genInt)
 -}
 function makeGeneratedNamesFromMatchRule
 [Name] ::= mr::MatchRule loc::Location
@@ -137,10 +138,10 @@ function makeGeneratedNamesFromMatchRule
 
 
 @{-
+  - This function takes in a name and location and returns a concrete definition LHS element that is the result of applying the concrete definition production to them.
   - @param name The name being defined.
   - @param loc the location of the definition.
   - @return a concrete definition LHS element that uses the name and location provided.
-  - This function takes in a name and location and returns a concrete definition LHS element that is the result of applying the concrete definition production to them.
 -}
 function makeDefinitionLHSFromName
 DefLHS ::= name::Name loc::Location
@@ -371,11 +372,11 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
 
 
 @{-
+  - Compares patterns, if they're both production patterns, compares production name otherwise compares the kind of pattern, (varname or wildcard, mostly).
+  - As a note, patterns with kinds other than varPattern,Wildcard, or prodAppPattern compare favorably with eachother even if they dont have the same kind, as this function is intended to sort patterns for convenience aspect purposes.
   - @param l first pattern we're comparing
   - @param r second pattern we're comparing
   - @return boolean telling us if two production patterns have the same name, otherwise compares the kind of pattern.
-  - Compares patterns, if they're both production patterns, compares production name otherwise compares the kind of pattern, (varname or wildcard, mostly).
-  - As a note, patterns with kinds other than varPattern,Wildcard, or prodAppPattern compare favorably with eachother even if they dont have the same kind, as this function is intended to sort patterns for convenience aspect purposes.
 -}
 function eqProdNamePattern
 Boolean ::= l::Pattern r::Pattern
@@ -396,10 +397,10 @@ Boolean ::= l::Pattern r::Pattern
 
 
 @{-
+  - Extracts out the head pattern from the given PatternList.
   - @param pList a PatternList construct
   - @return The head pattern from the given PatternList
   - @warning throws an error if the pattern list is nil.
-  - Extracts out the head pattern from the given PatternList.
 -}
 function extractHeadPatternFromPatternList
 Pattern ::= pList::PatternList
@@ -415,9 +416,9 @@ Pattern ::= pList::PatternList
 
 
 @{-
+  - Extracts out the head pattern from the given matchRule.
   - @param mRule a MatchRule construct
   - @return The head pattern from the given MatchRule
-  - Extracts out the head pattern from the given matchRule.
 -}
 function extractHeadPatternFromMatchRule
 Pattern ::= mRule::MatchRule
@@ -431,11 +432,11 @@ Pattern ::= mRule::MatchRule
 
 
 @{-
+  - Compares the head pattern of two match rules, but without demanding attributes
+  - Modeled after comparison used for AbstractMatchRules
   - @param l first match rule
   - @param r second match rule
   - @return Boolean telling us if the head pattern of two match rules uses the same production (or are equivalent in terms of being a wildcard or varpattern).
-  - Compares the head pattern of two match rules, but without demanding attributes
-  - Modeled after comparison used for AbstractMatchRules
 -}
 function eqHeadPatternMatchRule
 Boolean ::= l::MatchRule r::MatchRule
@@ -473,13 +474,13 @@ Boolean ::= mRule::MatchRule
 
 
 @{-
+  - Gives back a single AgDcl defining all the aspect productions according to the parameters given.
+  - This is the abstract production for convenience aspects.
+  - It's generally advised if you intend to use convenience aspects to use them as concrete syntax (using the concrete production starting with `aspect <attr> on ...` )
   - @param attr The attribute for which you'd like to define aspect productions for.
   - @param aspectLHS a convenience aspect LHS expression that contains the name and type of the term that our generated aspect production returns.
   - @param eqKind The operator that assigns or binds to the attribute
   - @param ml The Match Rules that define what aspects we'd like to generate.
-  - Gives back a single AgDcl defining all the aspect productions according to the parameters given.
-  - Abstract production for convenience aspects.
-  - It's generally advised if you intend to use convenience aspects to use them as concrete syntax (using the concrete production starting with `aspect <attr> on ...` )
 -}
 abstract production convenienceAspects
 top::AGDcl ::= attr::QNameAttrOccur aspectLHS::ConvAspectLHS eqKind::ConvenienceAspectEquationKind ml::MRuleList
