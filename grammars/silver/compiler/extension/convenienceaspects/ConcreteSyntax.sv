@@ -65,14 +65,14 @@ concrete productions top::ConvAspectLHS
 @{-
   - @param aspect The aspect keyword
   - @param attr The attribute you're defining aspect productions for.
-  - @param on keyword, concrete syntax
+  - @param '' keyword, concrete syntax
   - @param aspectLHS the type for your aspect productions, as well as a custom name for if you define it.
   - @param eqKind The binding method for defining the new attribute within the generated aspect productions.
-  - @param of keyword, concrete syntax.
-  - @param Opt_Vbar_t vertical bar
+  - @param '' keyword, concrete syntax.
+  - @param '' vertical bar
   - @param ml The Match Rules defining the aspect productions you'd like to make
-  - @param end the end keyword, concrete syntax.
-  - @param semicolon a literal semicolon.
+  - @param '' the end keyword, concrete syntax.
+  - @param '' a literal semicolon.
   - A single AgDcl defining all the aspect productions according to the parameters given.
   - This is the concrete syntax for defining convenience aspects.
 -}
