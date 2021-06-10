@@ -97,6 +97,7 @@ MRuleList ::= l::[MatchRule]
 
 @{-
   - @param l A List-like construct MRuleList instance.
+  - @param accum An accumulated list of MatchRule's
   - @return A regular list of MatchRule's
   - Given a MRuleList element, transforms it into a regular list of MatchRules
 -}
@@ -476,7 +477,7 @@ Boolean ::= mRule::MatchRule
   - @param aspectLHS a convenience aspect LHS expression that contains the name and type of the term that our generated aspect production returns.
   - @param eqKind The operator that assigns or binds to the attribute
   - @param ml The Match Rules that define what aspects we'd like to generate.
-  - @return A single AgDcl defining all the aspect productions according to the parameters given.
+  - Gives back a single AgDcl defining all the aspect productions according to the parameters given.
   - Abstract production for convenience aspects.
   - It's generally advised if you intend to use convenience aspects to use them as concrete syntax (using the concrete production starting with `aspect <attr> on ...` )
 -}
