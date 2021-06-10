@@ -61,21 +61,6 @@ PatternList ::= pl::PatternList
     pl.location);
 }
 
-@{-
-  - @param f The fold function for combining an element and your accumulator
-  - @param i The last element function to apply to the last single element in your list
-  - @return An element that is the result of your combining functions applied to the list elements.
-  - Right-Fold, assuming there is always at least one element, and also takes in a function a->b to apply to the last element of a list, and applies that function to the last element.
--}
-function foldrLastElem
-b ::= f::(b ::= a b)  i::(b ::= a) l::[a]
-{
-  return case l of
-  | [elem] -> i(elem)
-  | h::t -> f(h, foldrLastElem(f,i,t))
-  | [] -> error("You can't call foldrLastElem with an empty list")
-  end;
-}
 
 @{-
   - @param l A list of Expr's.
