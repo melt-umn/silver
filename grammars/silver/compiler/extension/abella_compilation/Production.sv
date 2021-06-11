@@ -153,8 +153,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
         buildApplication(
            nameTerm(equationName(shortestName(attr.name), top.top.3) ++
               "__" ++ shortestName(top.grammarName)),
-           [top.top.1, top.treeTerm,
-            nodetreeToNode(top.nodetreeTerm)]);
+           [top.top.1, top.treeTerm, top.nodetreeTerm]);
   --synthesized can only be defined on root
   top.attrEqInfo <-
       [ (shortestName(attr.name), top.top.3, top.top.4, clauseHead,
@@ -182,8 +181,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
         buildApplication(
            nameTerm(equationName(shortestName(attr.name), top.top.3) ++
               "__" ++ shortestName(top.grammarName)),
-           [top.top.1, top.treeTerm,
-            nodetreeToNode(top.nodetreeTerm)]);
+           [top.top.1, top.treeTerm, top.nodetreeTerm]);
   --attrs set on locals and forwards need to be handled differently
   top.attrEqInfo <-
       case dl of

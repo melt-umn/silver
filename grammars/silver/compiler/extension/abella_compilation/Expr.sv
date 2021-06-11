@@ -62,13 +62,11 @@ top::Expr ::= q::Decorated QName
   local localname::String = capitalize(shortestName(q.name));
   local localnode::String = "Node";
   local localTerm::Term =
-        case top.typerep of
-        | nonterminalType(_, _, _) ->
-          buildApplication(nameTerm(pairConstructorName),
-             [varTerm(localname, genInt()),
-              varTerm(localnode, genInt())])
-        | _ -> varTerm(localname, genInt())
-        end;
+        if isNonterminal(top.typerep)
+        then buildApplication(nameTerm(pairConstructorName),
+                [varTerm(localname, genInt()),
+                 varTerm(localnode, genInt())])
+        else varTerm(localname, genInt());
   top.encodedExpr =
       [([ termMetaterm(
              buildApplication(
@@ -246,20 +244,14 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   newe.encodingEnv = top.encodingEnv;
   newe.top = top.top;
   --
-  local treename::String = "Tree";
-  local treeterm::Term = varTerm(treename, genInt());
-  local treenode::String = "TreeNode";
-  local treenodeterm::Term = varTerm(treenode, genInt());
   local synname::String = capitalize(shortestName(q.name));
   local synnode::String = "Node";
   local synTerm::Term =
-        case top.typerep of
-        | nonterminalType(_, _, _) ->
-          buildApplication(nameTerm(pairConstructorName),
-             [varTerm(synname, genInt()),
-              varTerm(synnode, genInt())])
-        | _ -> varTerm(synname, genInt())
-        end;
+        if isNonterminal(top.typerep)
+        then buildApplication(nameTerm(pairConstructorName),
+                [varTerm(synname, genInt()),
+                 varTerm(synnode, genInt())])
+        else varTerm(synname, genInt());
   local treeTy::AbellaType = e.typerep.abellaType;
   top.encodedExpr =
       map(\ ep::([Metaterm], Term) ->
@@ -276,18 +268,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                                           [synTerm])])) ],
                 new(synTerm) )
             | _ ->
-              ( ep.1 ++
-                [ eqMetaterm(ep.2,
-                     buildApplication(nameTerm("$pair_c"),
-                        [treeterm, treenodeterm])),
-                  termMetaterm(
-                     buildApplication(
-                        nameTerm(accessRelationName(treeTy,
-                                    shortestName(q.name))),
-                        [treeterm, treenodeterm,
-                         buildApplication(nameTerm(attributeExistsName),
-                                          [synTerm])])) ],
-                new(synTerm) )
+              error("Must have a pair for an access in a well-typed grammar")
             end,
           newe.encodedExpr);
 }
@@ -1173,16 +1154,13 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
   e.encodingEnv = top.encodingEnv;
   es.top = top.top;
   e.top = top.top;
-  top.encodedArgs = unsafeTrace(
+  top.encodedArgs =
       foldr(\ ep::([Metaterm], Term) rest1::[([Metaterm], [Term])] ->
               foldr(\ esp::([Metaterm], [Term])
                       rest2::[([Metaterm], [Term])] ->
                       ( esp.1 ++ ep.1, esp.2 ++ [ep.2] )::rest2,
                     rest1, es.encodedArgs),
-            [], e.encodedExpr),
- print("Adding expr arg for " ++ e.unparse ++ ":  [" ++ foldr(\ ep::([Metaterm], Term) rest::String ->
-  "([" ++ implode(", ", map((.unparse), ep.1)) ++ "], " ++ ep.2.unparse ++ ");  " ++ rest,
-  "]\n\n", e.encodedExpr), unsafeIO()));
+            [], e.encodedExpr);
 }
 
 aspect production oneAppExprs

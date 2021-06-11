@@ -122,73 +122,89 @@ function makeConsistentNames
 (Term, [[Metaterm]]) ::= hd1::Term body1::[[Metaterm]]
                          hd2::Term body2::[[Metaterm]]
 {
-  local call::([Term], [[Metaterm]]) =
-        makeConsistentNames_help([hd1], body1, [hd2], body2);
-  return ( head(call.1), call.2 );
+  local call::(Term, [[Metaterm]], [[Metaterm]]) =
+        makeConsistentNames_help(hd1, body1, hd2, body2);
+  local joined::[[Metaterm]] =
+        foldr(\ b1::[Metaterm] rest::[[Metaterm]] ->
+                map(\ l::[Metaterm] -> b1 ++ l,
+                    call.3) ++ rest,
+              [], call.2);
+  return ( call.1, joined );
 }
 {-
   Make the names in the two heads be consistent, also replacing them
-  in the bodies to keep the same semantic meaning.  Also joins the two
-  bodies to form one body which is all possible combinations of those
-  contained in body1 and body2.
-
-  Invariant:  length(hd1) == length(hd2)
-  Guarantee:  length(return value.1) == length(hd1)  
+  in the bodies to keep the same semantic meaning.
 -}
 function makeConsistentNames_help
-([Term], [[Metaterm]]) ::= hd1::[Term] body1::[[Metaterm]]
-                           hd2::[Term] body2::[[Metaterm]]
+(Term, [[Metaterm]], [[Metaterm]]) ::= hd1::Term body1::[[Metaterm]]
+                                       hd2::Term body2::[[Metaterm]]
 {
   return
      case hd1, hd2 of
-     | [], [] ->
-       ( [], foldr(\ b1::[Metaterm] rest::[[Metaterm]] ->
-                     map(\ l::[Metaterm] -> b1 ++ l,
-                         body2) ++ rest,
-                   [], body1) )
-     | consTerm(t11, t12)::rest1, consTerm(t21, t22)::rest2 ->
-       let sub::([Term], [[Metaterm]]) =
-           makeConsistentNames_help(t11::t12::rest1, body1,
-                                    t21::t22::rest2, body2)
+     | nilTerm(), nilTerm() ->
+       ( nilTerm(), body1, body2 )
+     | consTerm(t11, t12), consTerm(t21, t22) ->
+       let sub1::(Term, [[Metaterm]], [[Metaterm]]) =
+           makeConsistentNames_help(t11, body1, t21, body2)
        in
-         ( consTerm(head(sub.1), head(sub.1))::tail(tail(sub.1)),
-           sub.2 )
-       end
-     | applicationTerm(f1, args1)::rest1,
-       applicationTerm(f2, args2)::rest2 ->
-       let sub::([Term], [[Metaterm]]) =
-           makeConsistentNames_help(f1::args1.argList ++ rest1, body1,
-                                    f2::args2.argList ++ rest2, body2)
+       let sub2::(Term, [[Metaterm]], [[Metaterm]]) =
+           makeConsistentNames_help(t12, sub1.2, t22, sub1.3)
        in
-         ( buildApplication(head(sub.1),
-              take(length(args1.argList), tail(sub.1)))::
-           drop(length(args1.argList), tail(sub.1)), sub.2 )
-       end
-     | nameTerm(name1)::rest1, nameTerm(name2)::rest2 ->
+         ( consTerm(sub1.1, sub2.1), sub2.2, sub2.3 )
+       end end
+     | applicationTerm(f1, args1), applicationTerm(f2, args2) ->
+       let fsub::(Term, [[Metaterm]], [[Metaterm]]) =
+           makeConsistentNames_help(f1, body1, f2, body2)
+       in
+       let argsub::(TermList, [[Metaterm]], [[Metaterm]]) =
+           makeConsistentNames_help_list(args1, fsub.2, args2, fsub.3)
+       in
+         ( applicationTerm(fsub.1, argsub.1), argsub.2, argsub.3 )
+       end end
+     | nameTerm(name1), nameTerm(name2) ->
        if name1 == name2
-       then let sub::([Term], [[Metaterm]]) =
-                makeConsistentNames_help(rest1, body1, rest2, body2)
-            in
-              ( nameTerm(name1)::sub.1, sub.2 )
-            end
+       then ( nameTerm(name1), body1, body2 )
        else error("Name terms must match because they are constants")
-     | varTerm(name1, i1)::rest1, varTerm(name2, i2)::rest2 ->
+     | varTerm(name1, i1), varTerm(name2, i2) ->
        if name1 == name2 && i1 == i2
-       then let sub::([Term], [[Metaterm]]) =
-                makeConsistentNames_help(rest1, body1, rest2, body2)
-            in
-              ( varTerm(name1, i1)::sub.1, sub.2 )
-            end
+       then ( varTerm(name1, i1), body1, body2 )
        else --I should try to fix the names here
             error("Did you define an inherited attribute on two " ++
                   "different children in two different aspects?  " ++
                   "Why would you do that?  Perhaps I'll help you " ++
                   "in the future, but for now, put them in the " ++
                   "same production.")
-     | _, _ -> error("Unexpected case in makeConsistentNames_help")
+     | _, _ ->
+       error("Unexpected case in makeConsistentNames_help" ++
+             " (" ++ hd1.unparse ++ "  ;  " ++ hd2.unparse ++ ")")
      end;
 }
-
+function makeConsistentNames_help_list
+(TermList, [[Metaterm]], [[Metaterm]]) ::= hd1::TermList body1::[[Metaterm]]
+                                           hd2::TermList body2::[[Metaterm]]
+{
+  return
+     case hd1, hd2 of
+     | nilTermList(), nilTermList() ->
+       ( nilTermList(), body1, body2 )
+     | singleTermList(t1), singleTermList(t2) ->
+       let sub::(Term, [[Metaterm]], [[Metaterm]]) =
+           makeConsistentNames_help(t1, body1, t2, body2)
+       in
+         ( singleTermList(sub.1), sub.2, sub.3 )
+       end
+     | consTermList(t1, rest1), consTermList(t2, rest2) ->
+       let tsub::(Term, [[Metaterm]], [[Metaterm]]) =
+           makeConsistentNames_help(t1, body1, t2, body2)
+       in
+       let restsub::(TermList, [[Metaterm]], [[Metaterm]]) =
+           makeConsistentNames_help_list(rest1, tsub.2, rest2, tsub.3)
+       in
+         ( consTermList(tsub.1, restsub.1), restsub.2, restsub.3 )
+       end end
+     | _, _ -> error("Unexpected case in makeConsistentNames_help_list")
+     end;
+}
 
 --Replace all varTerms with nameTerms with unique names
 function fillVars
@@ -206,7 +222,7 @@ function fillVars
                 map(replaceVar(p.1, nameTerm(p.2), _), rest),
               bodies, zippedHeadNames);
   local filledBodies::[Metaterm] =
-        fillVarsBodies(bodies, headNames);
+        fillVarsBodies(cleanedBodies, headNames);
   return ( filledHead, filledBodies );
 }
 
