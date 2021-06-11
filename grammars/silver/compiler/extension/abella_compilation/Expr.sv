@@ -1076,7 +1076,7 @@ top::Expr ::= e1::Expr '++' e2::Expr
             [], newe1.encodedExpr);
 }
 
-{-aspect production emptyList
+aspect production emptyList
 top::Expr ::= '[' ']'
 {
   top.encodedExpr = [ ([], nilTerm()) ];
@@ -1097,16 +1097,11 @@ top::Expr ::= h::Expr '::' t::Expr
 aspect production fullList
 top::Expr ::= '[' es::Exprs ']'
 {
-  local args::[([Metaterm], [Term])] =
-        foldr(\ l::[([Metaterm], Term)] rest::[([Metaterm], [Term])] ->
-                [ foldr(\ p::([Metaterm], Term)
-                          rest::([Metaterm], [Term]) ->
-                          (p.1 ++ rest.1, p.2::rest.2),
-                        ([], []), l) ] ++ rest,
-              [], es.encodedArgs);
-  top.encodedExpr = error("Not done yet");
-      
-}-}
+  top.encodedExpr =
+      map(\ esp::([Metaterm], [Term]) ->
+            ( esp.1, foldr(consTerm(_, _), nilTerm(), esp.2) ),
+          es.encodedArgs);
+}
 
 
 
