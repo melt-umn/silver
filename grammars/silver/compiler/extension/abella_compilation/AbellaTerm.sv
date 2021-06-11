@@ -14,8 +14,15 @@ propagate replaced on Metaterm, Term, TermList
 
 
 nonterminal Metaterm with
-   unparse, isAtomic, freeVars,
+   unparse, isAtomic, isAnd,
+   freeVars,
    replaceTermVar, replaceTerm, replaced;
+
+aspect default production
+top::Metaterm ::=
+{
+  top.isAnd = false;
+}
 
 abstract production termMetaterm
 top::Metaterm ::= t::Term
@@ -71,16 +78,17 @@ abstract production andMetaterm
 top::Metaterm ::= t1::Metaterm t2::Metaterm
 {
   top.unparse =
-    ( if t1.isAtomic
+    ( if t1.isAtomic || t1.isAnd
       then t1.unparse
       else "(" ++ t1.unparse ++ ")" ) ++
     --Since these are for definitions, these are usually better read
     --   by putting each conjunct on its own line
     " /\\\n      " ++
-    ( if t2.isAtomic
+    ( if t2.isAtomic || t2.isAnd
       then t2.unparse
       else "(" ++ t2.unparse ++ ")" );
   top.isAtomic = false;
+  top.isAnd = true;
 }
 
 abstract production bindingMetaterm

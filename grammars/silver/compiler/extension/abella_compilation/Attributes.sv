@@ -1,8 +1,10 @@
 grammar silver:compiler:extension:abella_compilation;
 
 
---Whether parentheses are needed in printing something
+--Whether parentheses are possibly needed in printing something
 synthesized attribute isAtomic::Boolean;
+--Because we print a lot of sequences of conjunctions
+synthesized attribute isAnd::Boolean;
 
 
 
@@ -86,8 +88,7 @@ propagate attrEqInfo on AGDcl, AGDcls, Grammar, Root, RootSpec,
 -}
 synthesized attribute encodedExpr::[([Metaterm], Term)];
 --Encoding arguments for application
---List of encoding for each argument separately
-synthesized attribute encodedArgs::[[([Metaterm], Term)]];
+synthesized attribute encodedArgs::[([Metaterm], [Term])];
 
 --[(Silver name, (tree structure, tree node))]
 --If it isn't a tree, we won't ever need the node, but it is easier to

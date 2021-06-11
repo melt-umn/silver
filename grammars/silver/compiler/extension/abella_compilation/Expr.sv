@@ -149,22 +149,16 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   --
   local resultName::String = "FunResult";
   local resultTerm::Term = varTerm(resultName, genInt());
-  local args::[([Metaterm], [Term])] =
-        foldr(\ l::[([Metaterm], Term)] rest::[([Metaterm], [Term])] ->
-                [ foldr(\ p::([Metaterm], Term)
-                          rest::([Metaterm], [Term]) ->
-                          (p.1 ++ rest.1, p.2::rest.2),
-                        ([], []), l) ],
-              [], newes.encodedArgs);
   top.encodedExpr =
       foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
               foldr(\ argp::([Metaterm], [Term])
                       rest::[([Metaterm], Term)] ->
-                      ( [termMetaterm(
+                      ( ep.1 ++ argp.1 ++
+                        [termMetaterm(
                             buildApplication(ep.2,
                                argp.2 ++ [resultTerm]))],
                         new(resultTerm) )::rest,
-                    rest, args),
+                    rest, newes.encodedArgs),
             [], newe.encodedExpr);
 }
 
@@ -1082,6 +1076,38 @@ top::Expr ::= e1::Expr '++' e2::Expr
             [], newe1.encodedExpr);
 }
 
+{-aspect production emptyList
+top::Expr ::= '[' ']'
+{
+  top.encodedExpr = [ ([], nilTerm()) ];
+}
+
+aspect production consListOp
+top::Expr ::= h::Expr '::' t::Expr
+{
+  top.encodedExpr =
+      foldr(\ hp::([Metaterm], Term) rest::[([Metaterm], Term)] ->
+              foldr(\ tp::([Metaterm], Term)
+                      rest::[([Metaterm], Term)] ->
+                      ( hp.1 ++ tp.1, consTerm(hp.2, tp.2) )::rest,
+                    rest, t.encodedExpr),
+            [], h.encodedExpr);
+}
+
+aspect production fullList
+top::Expr ::= '[' es::Exprs ']'
+{
+  local args::[([Metaterm], [Term])] =
+        foldr(\ l::[([Metaterm], Term)] rest::[([Metaterm], [Term])] ->
+                [ foldr(\ p::([Metaterm], Term)
+                          rest::([Metaterm], [Term]) ->
+                          (p.1 ++ rest.1, p.2::rest.2),
+                        ([], []), l) ] ++ rest,
+              [], es.encodedArgs);
+  top.encodedExpr = error("Not done yet");
+      
+}-}
+
 
 
 
@@ -1092,7 +1118,7 @@ occurs on Exprs;
 aspect production exprsEmpty
 top::Exprs ::=
 {
-  top.encodedArgs = [[]];
+  top.encodedArgs = [([], [])];
 }
 
 aspect production exprsSingle
@@ -1100,7 +1126,8 @@ top::Exprs ::= e::Expr
 {
   e.encodingEnv = top.encodingEnv;
   e.top = top.top;
-  top.encodedArgs = [e.encodedExpr];
+  top.encodedArgs =
+      map(\ ep::([Metaterm], Term) -> (ep.1, [ep.2]), e.encodedExpr);
 }
 
 aspect production exprsCons
@@ -1110,7 +1137,13 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
   e2.encodingEnv = top.encodingEnv;
   e1.top = top.top;
   e2.top = top.top;
-  top.encodedArgs = e1.encodedExpr::e2.encodedArgs;
+  top.encodedArgs =
+      foldr(\ e1p::([Metaterm], Term) rest1::[([Metaterm], [Term])] ->
+              foldr(\ e2p::([Metaterm], [Term])
+                      rest2::[([Metaterm], [Term])] ->
+                      ( e1p.1 ++ e2p.1, e1p.2::e2p.2 )::rest2,
+                    rest1, e2.encodedArgs),
+            [], e1.encodedExpr);
 }
 
 
@@ -1145,7 +1178,16 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
   e.encodingEnv = top.encodingEnv;
   es.top = top.top;
   e.top = top.top;
-  top.encodedArgs = es.encodedArgs ++ [e.encodedExpr];
+  top.encodedArgs = unsafeTrace(
+      foldr(\ ep::([Metaterm], Term) rest1::[([Metaterm], [Term])] ->
+              foldr(\ esp::([Metaterm], [Term])
+                      rest2::[([Metaterm], [Term])] ->
+                      ( esp.1 ++ ep.1, esp.2 ++ [ep.2] )::rest2,
+                    rest1, es.encodedArgs),
+            [], e.encodedExpr),
+ print("Adding expr arg for " ++ e.unparse ++ ":  [" ++ foldr(\ ep::([Metaterm], Term) rest::String ->
+  "([" ++ implode(", ", map((.unparse), ep.1)) ++ "], " ++ ep.2.unparse ++ ");  " ++ rest,
+  "]\n\n", e.encodedExpr), unsafeIO()));
 }
 
 aspect production oneAppExprs
@@ -1153,13 +1195,14 @@ top::AppExprs ::= e::AppExpr
 {
   e.encodingEnv = top.encodingEnv;
   e.top = top.top;
-  top.encodedArgs = [e.encodedExpr];
+  top.encodedArgs =
+      map(\ ep::([Metaterm], Term) -> (ep.1, [ep.2]), e.encodedExpr);
 }
 
 aspect production emptyAppExprs
 top::AppExprs ::=
 {
-  top.encodedArgs = [[]];
+  top.encodedArgs = [([], [])];
 }
 
 
