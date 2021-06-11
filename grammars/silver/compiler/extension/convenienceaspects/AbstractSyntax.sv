@@ -2,10 +2,12 @@ grammar silver:compiler:extension:convenienceaspects;
 
 import silver:compiler:modification:let_fix;
 
-
-{-
-From a list of Patterns, makes a PatternList with the right list-shaped productions.
--}
+@{-
+  - From a list of Patterns, makes a PatternList with the right list-shaped productions.
+  - @param l the list of patterns to modify
+  - @param defaultLoc the location to provide for the patternListNil construct (which needs a location).
+  - @return A patternList List-Like Nonterminal instance.
+  -}
 function makePatternListfromListofPatterns
 PatternList ::= l::[Pattern] defaultLoc::Location
 {
@@ -17,8 +19,13 @@ PatternList ::= l::[Pattern] defaultLoc::Location
 }
 
 
-{-
-From a PatternList, makes a "regular" list of the patterns in them.
+
+
+@{-
+  - @param l The next patternList element to extract out patterns from.
+  - @param accum The accumulating list of patterns.
+  - @return A list containing the patterns
+  From a PatternList, makes a proper list of the patterns in them.
 -}
 function collectPatternsFromPatternList
 [Pattern] ::= l::PatternList accum::[Pattern]
@@ -31,11 +38,14 @@ function collectPatternsFromPatternList
   end;
 }
 
-{-
-Extracts out the subpatterns of productions in a patternList, but in a way
-that doesn't demand attributes.
+
+@{-
+  - Extracts out the subpatterns of productions in a patternList, but in a way that doesn't demand attributes.
+  - @param pl The patternList List-like construct we're extracting subpatterns from.
+  - @return A patternList List-like construct containing only the subpatterns of the list that was provided.
+  - @warning Note that the subpatterns being extracted here are only applications of productions.
 -}
-function extractSubPatternListsFromPatterns
+function extractSubPatternListsFromProdPatterns
 PatternList ::= pl::PatternList
 {
   return makePatternListfromListofPatterns(
@@ -51,23 +61,12 @@ PatternList ::= pl::PatternList
     pl.location);
 }
 
-{-
-A foldr function that requires the list to be nonEmpty.
-It takes in a function a->b->b to combine two elements as is usual, but also takes
-in a function a->b, and applies that function to the last element.
--}
-function foldrLastElem
-b ::= f::(b ::= a b)  i::(b ::= a) l::[a]
-{
-  return case l of
-  | [elem] -> i(elem)
-  | h::t -> f(h, foldrLastElem(f,i,t))
-  | [] -> error("You can't call foldrLastElem with an empty list")
-  end;
-}
 
-{-
-Takes in a regular list of Expr, turns them into an instance of the Exprs production.
+@{-
+  - Takes in a regular list of Expr, turns them into an instance of the Exprs production.
+  - @param l A list of Expr's.
+  - @param defaultLoc The default location to provide for the ExprsEmpty production (nil-like construct).
+  - @return A combined Exprs List-like construct made from the Expr's in the input list.
 -}
 function makeExprsFromExprList
 Exprs ::= l::[Expr] defaultLoc::Location
@@ -82,11 +81,13 @@ Exprs ::= l::[Expr] defaultLoc::Location
 }
 
 
-{-
-Takes in a regular list of MatchRule, turns them into an instance of the MRuleList production.
+@{-
+  - Takes in a regular list of MatchRule, turns them into an instance of the MRuleList production.
+  - @param l A list of match rules.
+  - @return A MRuleList list-like construct from the list of match rules.
 -}
 function makeMRuleListFromListMatchRules
-MRuleList ::= l::[MatchRule] loc::Location
+MRuleList ::= l::[MatchRule]
 {
   return foldrLastElem(
    \leftelem::MatchRule accum::MRuleList -> mRuleList_cons(leftelem,'|',accum, location=leftelem.location),
@@ -95,8 +96,11 @@ MRuleList ::= l::[MatchRule] loc::Location
 
 }
 
-{-
-Given a MRuleList element, transforms it into a regular list of MatchRules
+@{-
+  - Given a MRuleList element, transforms it into a regular list of MatchRules
+  - @param l A List-like construct MRuleList instance.
+  - @param accum An accumulated list of MatchRule's
+  - @return A regular list of MatchRule's
 -}
 function collectMatchRulesfromMRuleList
 [MatchRule] ::= l::MRuleList accum::[MatchRule]
@@ -107,11 +111,12 @@ function collectMatchRulesfromMRuleList
   end;
 }
 
-{-
-This function goes into a production pattern (if it is one), extracts out the sub pattern
-for that production, and generates names for each element of that sub pattern.
-e.g Given silver_matchRule {foo(bar(3,x),y) -> y+1 } where foo,bar are productions,
-   it returns [_gen1,_gen2] (where the numbers are generated from genInt)
+@{-
+  - This function goes into a production pattern (if it is one), extracts out the sub pattern for that production, and generates names for each element of that sub pattern.
+  - e.g Given `silver_matchRule {foo(bar(3,x),y) -> y+1 }` where `foo`,`bar` are productions, it returns `[_gen1,_gen2]`  (where the numbers are generated from genInt)
+  - @param mr An instance of MatchRule
+  - @param loc A default location to provide for when we use the patternList_nil production.
+  - @return A list of names where each name corresponds to an argument to the production subpattern.
 -}
 function makeGeneratedNamesFromMatchRule
 [Name] ::= mr::MatchRule loc::Location
@@ -132,9 +137,11 @@ function makeGeneratedNamesFromMatchRule
 }
 
 
-{-
-This function takes in a name and location and returns a concrete definition LHS
-element.
+@{-
+  - This function takes in a name and location and returns a concrete definition LHS element that is the result of applying the concrete definition production to them.
+  - @param name The name being defined.
+  - @param loc the location of the definition.
+  - @return a concrete definition LHS element that uses the name and location provided.
 -}
 function makeDefinitionLHSFromName
 DefLHS ::= name::Name loc::Location
@@ -146,16 +153,14 @@ DefLHS ::= name::Name loc::Location
 
 
 
-{-
-This function takes in a list of MatchRules which should represent a grouping of
-match rules with similar patterns (rules), an aspectLHS (the expression that
-usually goes like this in an aspect production top::<Type-of-production> ...),
-the aspect attribute we're generating productions for (aspectAttr), the operator
-that assigns or binds to the attribute (eqKind), a location for where all this
-is defined, and an environment for looking up production types.
-
-From all this, it returns a single AgDcl that defines the aspect production we're generating, paired with
-a list of warnings or errors it generated.
+@{-
+  - @param rules A list of matchrules that represents a grouping of match rules with similar patterns.
+  - @param aspectLHS a convenience aspect LHS expression that contains the name and type of the term that our generated aspect production returns.
+  - @param aspectAttr The aspect attribute we're generating productions for
+  - @param eqKind The operator that assigns or binds to the attribute
+  - @param location The location where the aspect pattern is defined
+  - @param env A decorated environment for looking up production types.
+  - @return A pair of a single AgDcl that defines the aspect production we're generating, and a list of warnings or errors that came from generating the AgDcl.
 -}
 function extractAspectAgDclFromRuleList
 Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr::QNameAttrOccur  eqKind::ConvenienceAspectEquationKind location::Location env::Decorated Env
@@ -193,13 +198,13 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
   local transformPatternMatchRule::([MatchRule]::=[MatchRule]) =
     map((\mRule::MatchRule -> case mRule of
       | matchRule_c(pl,arrow,e) -> matchRule_c(
-        extractSubPatternListsFromPatterns(pl),
+        extractSubPatternListsFromProdPatterns(pl),
         arrow,
         e,
         location=location)
       | matchRuleWhen_c(pl,whenKWD,cond,arrow,e) ->
         matchRuleWhen_c(
-          extractSubPatternListsFromPatterns(pl),
+          extractSubPatternListsFromProdPatterns(pl),
           whenKWD,
           cond,
           arrow,
@@ -207,7 +212,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
           location=location)
       | matchRuleWhenMatches_c(pl,whenKWD,cond,matches,p,arrow,e) ->
         matchRuleWhenMatches_c(
-          extractSubPatternListsFromPatterns(pl),
+          extractSubPatternListsFromProdPatterns(pl),
           whenKWD,
           cond,
           matches,
@@ -229,7 +234,7 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
         makeExprsFromExprList(paramsCaseSubExpr,location),
         'of',
         terminal(Opt_Vbar_t, "|"),
-        makeMRuleListFromListMatchRules(transformPatternMatchRule(mRules), location),
+        makeMRuleListFromListMatchRules(transformPatternMatchRule(mRules)),
         'end',
         location=location);
 
@@ -366,12 +371,14 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
 
 
 
-{-
-Compares patterns, if they're
-both production patterns, compares production name
-otherwise compares the kind of pattern, (varname or wildcard, mostly).
+@{-
+  - Compares patterns, if they're both production patterns, compares production name otherwise compares the kind of pattern, (varname or wildcard, mostly).
+  - As a note, patterns with kinds other than varPattern,Wildcard, or prodAppPattern compare favorably with eachother even if they dont have the same kind, as this function is intended to sort patterns for convenience aspect purposes.
+  - @param l first pattern we're comparing
+  - @param r second pattern we're comparing
+  - @return boolean telling us if two production patterns have the same name, otherwise compares the kind of pattern.
 -}
-function eqKindPattern
+function eqProdNamePattern
 Boolean ::= l::Pattern r::Pattern
 {
   return case l,r of
@@ -389,8 +396,11 @@ Boolean ::= l::Pattern r::Pattern
 }
 
 
-{-
-Extracts out the head pattern from the given PatternList.
+@{-
+  - Extracts out the head pattern from the given PatternList.
+  - @param pList a PatternList construct
+  - @return The head pattern from the given PatternList
+  - @warning throws an error if the pattern list is nil.
 -}
 function extractHeadPatternFromPatternList
 Pattern ::= pList::PatternList
@@ -405,8 +415,10 @@ Pattern ::= pList::PatternList
 
 
 
-{-
-Extracts out the head pattern from the given matchRule.
+@{-
+  - Extracts out the head pattern from the given matchRule.
+  - @param mRule a MatchRule construct
+  - @return The head pattern from the given MatchRule
 -}
 function extractHeadPatternFromMatchRule
 Pattern ::= mRule::MatchRule
@@ -419,11 +431,14 @@ Pattern ::= mRule::MatchRule
 }
 
 
-{-
-Compares the head pattern of two match rules, but without demanding attributes
-Modeled after comparison used for AbstractMatchRules
+@{-
+  - Compares the head pattern of two match rules, but without demanding attributes
+  - Modeled after comparison used for AbstractMatchRules
+  - @param l first match rule
+  - @param r second match rule
+  - @return Boolean telling us if the head pattern of two match rules uses the same production (or are equivalent in terms of being a wildcard or varpattern).
 -}
-function eqPatternMatchRule
+function eqHeadPatternMatchRule
 Boolean ::= l::MatchRule r::MatchRule
 {
   -- The reason this isn't done with attributes is that demanding attributes
@@ -431,15 +446,17 @@ Boolean ::= l::MatchRule r::MatchRule
   -- for me (due to me working with concrete syntax elements, I'm presuming), so I've been
   -- avoiding demanding attributes as much as possible.
   return
-    eqKindPattern(
+    eqProdNamePattern(
       extractHeadPatternFromMatchRule(l),
       extractHeadPatternFromMatchRule(r));
 }
 
 
-{-
-Given a MatchRule, tells you if its a "wildcard" match rule.
-varpatterns aren't called wildcards, but they match everything just the same.
+@{-
+  - @param mRule a MatchRule construct
+  - @return Boolean indicating whether its a wildcard match rule
+  - Given a MatchRule, tells you if its a "wildcard" match rule.
+  - varpatterns aren't called wildcards, but they match everything just the same so they return true here.
 -}
 function isWildCardMatchRule
 Boolean ::= mRule::MatchRule
@@ -456,10 +473,14 @@ Boolean ::= mRule::MatchRule
 }
 
 
-{-
-Abstract production for convenience aspects. It's generally advised if you
-intend to use convenience aspects to use them as concrete syntax (using the
-concrete production starting with 'aspect' <attr> on ... )
+@{-
+  - Gives back a single AgDcl defining all the aspect productions according to the parameters given.
+  - This is the abstract production for convenience aspects.
+  - It's generally advised if you intend to use convenience aspects to use them as concrete syntax (using the concrete production starting with `aspect <attr> on ...` )
+  - @param attr The attribute for which you'd like to define aspect productions for.
+  - @param aspectLHS a convenience aspect LHS expression that contains the name and type of the term that our generated aspect production returns.
+  - @param eqKind The operator that assigns or binds to the attribute
+  - @param ml The Match Rules that define what aspects we'd like to generate.
 -}
 abstract production convenienceAspects
 top::AGDcl ::= attr::QNameAttrOccur aspectLHS::ConvAspectLHS eqKind::ConvenienceAspectEquationKind ml::MRuleList
@@ -483,7 +504,7 @@ top::AGDcl ::= attr::QNameAttrOccur aspectLHS::ConvAspectLHS eqKind::Convenience
     if null(mListWildcardAndAfter) then [] else tail(mListWildcardAndAfter);
 
   -- groups MatchRules by their kind, which for our purposes is production name, wildcard, or varpattern.
-  local groupedMRules::[[MatchRule]] = groupBy(eqPatternMatchRule, mListUpToFirstWildcard);
+  local groupedMRules::[[MatchRule]] = groupBy(eqHeadPatternMatchRule, mListUpToFirstWildcard);
 
   local groupExtractResults::[Pair<AGDcl [Message]>] = map(
     extractAspectAgDclFromRuleList(_,aspectLHS,attr,eqKind,top.location, top.env),
