@@ -261,6 +261,13 @@ Metaterm ::= replaceTermVar::(String, Integer) replaceResult::Term
        replaceTerm = replaceResult; }.replaced;
 }
 
+function replaceVar_list
+[Metaterm] ::= replaceTermVar::(String, Integer) replaceResult::Term
+               replaceIn::[Metaterm]
+{
+  return map(replaceVar(replaceTermVar, replaceResult, _), replaceIn);
+}
+
 function replaceVar_Term
 Term ::= replaceTermVar::(String, Integer) replaceResult::Term
          replaceIn::Term

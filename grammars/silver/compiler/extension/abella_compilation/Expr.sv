@@ -381,49 +381,22 @@ top::Expr ::= e1::Expr '&&' e2::Expr
   top.encodedExpr =
       foldr(\ el1::([Metaterm], Term) rest::[([Metaterm], Term)] ->
               foldr(\ el2::([Metaterm], Term) rest::[([Metaterm], Term)] ->
-                      case el1.2, el2.2 of
-                      | nameTerm("$btrue"), nameTerm("$btrue") ->
-                        [ ( el1.1 ++ el2.1,
-                            nameTerm(trueName) ) ] ++ rest
-                      | nameTerm("$btrue"), nameTerm("$bfalse") ->
-                        [ ( el1.1 ++ el2.1,
+                     case el1.2 of
+                      | nameTerm("$btrue") ->
+                        [ ( el1.1 ++ el2.1, el2.2 ) ] ++ rest
+                      | nameTerm("$bfalse") ->
+                        [ ( el1.1, nameTerm(falseName) ) ] ++ rest
+                      | varTerm(n, i) ->
+                        [ ( replaceVar_list((n, i), nameTerm(trueName),
+                                            el1.1) ++ el2.1,
+                            el2.2 ),
+                          ( replaceVar_list((n, i), nameTerm(falseName),
+                                            el1.1),
                             nameTerm(falseName) ) ] ++ rest
-                      | nameTerm("$btrue"), _ ->
-                        [ ( el1.1 ++ el2.1 ++
-                            [eqMetaterm(el2.2, nameTerm(trueName))],
-                            nameTerm(trueName) ),
-                          ( el1.1 ++ el2.1 ++
-                            [eqMetaterm(el2.2, nameTerm(falseName))],
-                            nameTerm(falseName) ) ] ++ rest
-                      | nameTerm("$bfalse"), _ ->
-                        [ ( el1.1,
-                            nameTerm(falseName) ) ] ++ rest
-                      | _, nameTerm("$btrue") ->
-                        [ ( el1.1 ++ el2.1 ++
-                            [eqMetaterm(el2.2, nameTerm(trueName))],
-                            nameTerm(trueName) ),
-                          ( el1.1 ++
-                            [eqMetaterm(el1.2, nameTerm(falseName))],
-                            nameTerm(falseName) ) ] ++ rest
-                      | _, nameTerm("$bfalse") ->
-                        [ ( el1.1 ++
-                            [eqMetaterm(el1.2, nameTerm(falseName))],
-                            nameTerm(falseName) ),
-                          ( el1.1 ++ el2.1 ++
-                            [eqMetaterm(el1.2, nameTerm(trueName))],
-                            nameTerm(falseName) ) ] ++ rest
-                      | _, _ ->
-                        [ ( el1.1 ++ el2.1 ++
-                            [eqMetaterm(el1.2, nameTerm(trueName)),
-                             eqMetaterm(el2.2, nameTerm(trueName))],
-                            nameTerm(trueName) ),
-                          ( el1.1 ++
-                            [eqMetaterm(el1.2, nameTerm(falseName))],
-                            nameTerm(falseName) ),
-                          ( el1.1 ++ el2.1 ++
-                            [eqMetaterm(el1.2, nameTerm(trueName)),
-                             eqMetaterm(el2.2, nameTerm(falseName))],
-                            nameTerm(falseName) ) ] ++ rest
+                      | _ ->
+                        error("Results of Boolean-typed encoding " ++
+                              "must be either Boolean constants or" ++
+                              " varTerms")
                       end,
                   [], e2.encodedExpr) ++ rest,
             [], e1.encodedExpr);
@@ -439,49 +412,22 @@ top::Expr ::= e1::Expr '||' e2::Expr
   top.encodedExpr =
       foldr(\ el1::([Metaterm], Term) rest::[([Metaterm], Term)] ->
               foldr(\ el2::([Metaterm], Term) rest::[([Metaterm], Term)] ->
-                      case el1.2, el2.2 of
-                      | nameTerm("$bfalse"), nameTerm("$btrue") ->
+                      case el1.2 of
+                      | nameTerm("$btrue") ->
                         [ ( el1.1,
                             nameTerm(trueName) ) ] ++ rest
-                      | nameTerm("$bfalse"), nameTerm("$bfalse") ->
-                        [ ( el1.1 ++ el2.1,
-                            nameTerm(falseName) ) ] ++ rest
-                      | nameTerm("$btrue"), _ ->
-                        [ ( el1.1,
-                            nameTerm(trueName) ) ] ++ rest
-                      | nameTerm("$bfalse"), _ ->
-                        [ ( el1.1 ++ el2.1 ++
-                            [eqMetaterm(el2.2, nameTerm(trueName))],
+                      | nameTerm("$bfalse") ->
+                        [ ( el1.1 ++ el2.1, el2.2 ) ] ++ rest
+                      | varTerm(n, i) ->
+                        [ ( replaceVar_list((n, i), nameTerm(trueName), el1.1),
                             nameTerm(trueName) ),
-                          ( el1.1 ++ el2.1 ++
-                            [eqMetaterm(el2.2, nameTerm(falseName))],
-                            nameTerm(falseName) ) ] ++ rest
-                      | _, nameTerm("$btrue") ->
-                        [ ( el1.1 ++
-                            [eqMetaterm(el1.2, nameTerm(trueName))],
-                            nameTerm(trueName) ),
-                          ( el1.1 ++
-                            [eqMetaterm(el1.2, nameTerm(falseName))],
-                            nameTerm(trueName) ) ] ++ rest
-                      | _, nameTerm("$bfalse") ->
-                        [ ( el1.1 ++
-                            [eqMetaterm(el1.2, nameTerm(trueName))],
-                            nameTerm(trueName) ),
-                          ( el1.1 ++ el2.1 ++
-                            [eqMetaterm(el1.2, nameTerm(falseName))],
-                            nameTerm(falseName) ) ] ++ rest
-                      | _, _ ->
-                        [ ( el1.1 ++
-                            [eqMetaterm(el1.2, nameTerm(trueName))],
-                            nameTerm(trueName) ),
-                          ( el1.1 ++
-                            [eqMetaterm(el1.2, nameTerm(falseName)),
-                             eqMetaterm(el2.2, nameTerm(trueName))],
-                            nameTerm(trueName) ),
-                          ( el1.1 ++ el2.1 ++
-                            [eqMetaterm(el1.2, nameTerm(falseName)),
-                             eqMetaterm(el2.2, nameTerm(falseName))],
-                            nameTerm(falseName) ) ] ++ rest
+                          ( replaceVar_list((n, i), nameTerm(falseName),
+                                            el1.1) ++ el2.1,
+                            el2.2 ) ] ++ rest
+                      | _ ->
+                        error("Results of Boolean-typed encoding " ++
+                              "must be either Boolean constants or" ++
+                              " varTerms")
                       end,
                   [], e2.encodedExpr) ++ rest,
             [], e1.encodedExpr);
@@ -499,13 +445,14 @@ top::Expr ::= '!' e::Expr
                 [ (ep.1, nameTerm(falseName)) ]
               | nameTerm("$bfalse") ->
                 [ (ep.1, nameTerm(trueName)) ]
-              | _ ->
-                [ ( ep.1 ++
-                    [eqMetaterm(ep.2, nameTerm(trueName))],
+              | varTerm(n, i) ->
+                [ ( replaceVar_list((n, i), nameTerm(trueName), ep.1),
                     nameTerm(falseName) ),
-                  ( ep.1 ++
-                    [eqMetaterm(ep.2, nameTerm(falseName))],
+                  ( replaceVar_list((n, i), nameTerm(falseName), ep.1),
                     nameTerm(trueName) ) ]
+              | _ ->
+                error("Results of Boolean-typed encoding must be " ++
+                      "either Boolean constants or varTerms")
               end,
             [], e.encodedExpr);
 }
@@ -826,10 +773,13 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
                       | nameTerm("$btrue") ->
                         ( ep1.1 ++ ep2.1, ep2.2 )::rest
                       | nameTerm("$bfalse") -> rest
+                      | varTerm(n, i) ->
+                        ( map(replaceVar((n, i), nameTerm("$btrue"), _),
+                              ep1.1) ++ ep2.1, ep2.2 )::rest
                       | _ ->
-                        ( ep1.1 ++ ep2.1 ++
-                          [eqMetaterm(ep1.2, nameTerm(trueName))],
-                          ep2.2 )::rest
+                        error("Results of Boolean-typed encoding " ++
+                              "must be either Boolean constants or" ++
+                              " varTerms")
                       end,
                     [], e2.encodedExpr) ++
               foldr(\ ep3::([Metaterm], Term)
@@ -838,10 +788,13 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
                       | nameTerm("$bfalse") ->
                         ( ep1.1 ++ ep3.1, ep3.2 )::rest
                       | nameTerm("$btrue") -> rest
+                      | varTerm(n, i) ->
+                        ( map(replaceVar((n, i), nameTerm("$bfalse"), _),
+                              ep1.1) ++ ep3.1, ep3.2 )::rest
                       | _ ->
-                        ( ep1.1 ++ ep3.1 ++
-                          [eqMetaterm(ep1.2, nameTerm(falseName))],
-                          ep3.2 )::rest
+                        error("Results of Boolean-typed encoding " ++
+                              "must be either Boolean constants or" ++
+                              " varTerms")
                       end,
                     [], e3.encodedExpr) ++ rest,
             [], e1.encodedExpr);
