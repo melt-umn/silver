@@ -151,11 +151,14 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
       foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
               foldr(\ argp::([Metaterm], [Term])
                       rest::[([Metaterm], Term)] ->
-                      ( ep.1 ++ argp.1 ++
-                        [termMetaterm(
-                            buildApplication(ep.2,
-                               argp.2 ++ [resultTerm]))],
-                        new(resultTerm) )::rest,
+                      ( if termIsProd(ep.2)
+                        then ( ep.1 ++ argp.1,
+                               buildApplication(ep.2, argp.2) )
+                        else ( ep.1 ++ argp.1 ++
+                               [termMetaterm(
+                                   buildApplication(ep.2,
+                                      argp.2 ++ [resultTerm]))],
+                               new(resultTerm) ) )::rest,
                     rest, newes.encodedArgs),
             [], newe.encodedExpr);
 }

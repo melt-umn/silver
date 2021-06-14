@@ -104,6 +104,13 @@ String ::= treeTy::AbellaType attrName::String
 {
   return "$access_$_" ++ attrName ++ "_$_" ++ treeTy.unparse;
 }
+function accessToAttrName
+String ::= str::String
+{
+  local firstSplit::Integer = indexOf("_$_", str);
+  local lastSplit::Integer = lastIndexOf("_$_", str);
+  return substring(firstSplit + 3, lastSplit, str);
+}
 
 
 --Access Theorems
@@ -234,6 +241,15 @@ function nameToProd
 String ::= s::String
 {
   return "$prod_" ++ s;
+}
+function termIsProd
+Boolean ::= tm::Term
+{
+  return
+     case tm of
+     | nameTerm(str) -> startsWith("$prod_", str)
+     | _ -> false
+     end;
 }
 
 

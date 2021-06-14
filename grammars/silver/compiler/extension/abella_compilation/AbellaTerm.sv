@@ -200,7 +200,7 @@ top::Term ::=
   top.isAtomic = true;
 }
 
-abstract production underscoreTerm
+{-abstract production underscoreTerm
 top::Term ::= ty::Maybe<AbellaType>
 {
   top.unparse =
@@ -209,7 +209,7 @@ top::Term ::= ty::Maybe<AbellaType>
       | nothing() -> "_"
       end;
   top.isAtomic = true;
-}
+}-}
 
 
 

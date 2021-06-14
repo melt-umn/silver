@@ -67,11 +67,11 @@ function produceClauses
         map(combineEquations(_), groupedInhs);
   local syns::[(String, AbellaType, String, Term, [[Metaterm]])] =
         splitInhSyn.2;
-  --Cleaning not implemented yet
+  --Clean clauses to get only one access of each attr
   local cleanInhs::[(String, AbellaType, String, Term, [[Metaterm]])] =
-        inhs;
+        cleanClauses(inhs);
   local cleanSyns::[(String, AbellaType, String, Term, [[Metaterm]])] =
-        syns;
+        cleanClauses(syns);
   --Replace all the varTerms with nameTerms and add bindings
   local noVars::[(String, AbellaType, String, Term, [Metaterm])] =
         map(\ p::(String, AbellaType, String, Term, [[Metaterm]]) ->
@@ -85,7 +85,7 @@ function produceClauses
               in
                 ( p.1, p.2, p.3, call.1, call.2 )
               end,
-            inhs ++ syns);
+            cleanInhs ++ cleanSyns);
   --
   return
      map(\ p::(String, AbellaType, String, Term, [Metaterm]) ->
@@ -203,6 +203,103 @@ function makeConsistentNames_help_list
          ( consTermList(tsub.1, restsub.1), restsub.2, restsub.3 )
        end end
      | _, _ -> error("Unexpected case in makeConsistentNames_help_list")
+     end;
+}
+
+--Remove duplicate accesses of attributes, making their results equal
+function cleanClauses
+[(String, AbellaType, String, Term, [[Metaterm]])] ::=
+               eqs::[(String, AbellaType, String, Term, [[Metaterm]])]
+{
+  return
+     case eqs of
+     | [] -> []
+     | (attr, ty, prod, hd, bodies)::rest ->
+       (attr, ty, prod, hd, cleanBodies(bodies))::cleanClauses(rest)
+     end;
+}
+function cleanBodies
+[[Metaterm]] ::= bodies::[[Metaterm]]
+{
+  local body::[Metaterm] = head(bodies);
+  --[(attr, tree var, result value, index in body list)]
+  local attrEqs::[(String, (String, Integer), Term, Integer)] =
+        foldl(\ rest::([(String, (String, Integer), Term, Integer)], Integer)
+                m::Metaterm ->
+                case m of
+                | termMetaterm(
+                     applicationTerm(nameTerm(accessRel),
+                        consTermList(varTerm(tree, i),
+                        consTermList(_,
+                        singleTermList(
+                           applicationTerm(attrex, valList))))))
+                  when startsWith("$access_", accessRel) ->
+                  ( (accessToAttrName(accessRel), (tree, i),
+                     head(valList.argList), rest.2)::rest.1,
+                    rest.2 + 1 )
+                | _ -> (rest.1, rest.2 + 1)
+                end,
+              ([], 0), body).1;
+  --Grouped by attribute and tree
+  local grouped::[[(String, (String, Integer), Term, Integer)]] =
+        let sorted::[(String, (String, Integer), Term, Integer)] =
+            sortBy(\ p1::(String, (String, Integer), Term, Integer)
+                     p2::(String, (String, Integer), Term, Integer) ->
+                     p1.1 <= p2.1 && p1.2.1 <= p2.2.1 && p1.2.2 <= p2.2.2,
+                   attrEqs)
+        in
+          groupBy(\ p1::(String, (String, Integer), Term, Integer)
+                     p2::(String, (String, Integer), Term, Integer) ->
+                     p1.1 == p2.1 && p1.2.1 == p2.2.1 && p1.2.2 == p2.2.2,
+                  sorted)
+        end;
+  --Remove duplicates accesses
+  local removeIndices::[Integer] =
+        flatMap(\ l::[(String, (String, Integer), Term, Integer)] ->
+                  let x::[Integer] =
+                      map(\ p::(String, (String, Integer), Term, Integer) ->
+                            p.4, l)
+                  in
+                    tail(x) --leave one occurrence of the access
+                  end,
+                grouped);
+  local removed::[Metaterm] =
+        foldl(\ prev::(Integer, [Metaterm]) m::Metaterm ->
+                if contains(prev.1, removeIndices)
+                then (prev.1 + 1, prev.2)
+                else (prev.1 + 1, m::prev.2),
+              (0, []), body).2;
+  --Unify attribute access results
+  local eqs::[(Term, Term)] =
+        flatMap(\ l::[(String, (String, Integer), Term, Integer)] ->
+                  let x::[Term] =
+                      map(\ p::(String, (String, Integer), Term, Integer) ->
+                            p.3, l)
+                  in
+                    allPairs(x)
+                  end,
+                grouped);
+  local unified::Maybe<[( (String, Integer), Term )]> =
+        unifyTermEqs(eqs);
+  local substituted::[Metaterm] =
+        case unified of
+        | nothing() -> removed
+        | just( substs ) ->
+          --foldl to do earlier substitutions first, with results
+          --which might then be further replaced
+          foldl(\ prev::[Metaterm] subst::((String, Integer), Term) ->
+                  map(replaceVar(subst.1, subst.2, _), prev),
+                removed, substs)
+        end;
+  --
+  return
+     case bodies of
+     | [] -> []
+     | _::rest ->
+       case unified of
+       | nothing() -> cleanBodies(rest)
+       | just(_) -> substituted::cleanBodies(rest)
+       end
      end;
 }
 
