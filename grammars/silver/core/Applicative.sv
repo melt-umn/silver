@@ -1,6 +1,6 @@
 grammar silver:core;
 
-{-
+@{-
 Applicative functors extend Apply with a means to lift a value of type a into an f<a>;
 thus together with the apply operation, it is possible to lift a function of artibrary arity to
 work on values wrapped in the type constructor f.
@@ -20,8 +20,10 @@ class Apply f => Applicative f {
   pure :: (f<a> ::= a);
 }
 
--- Prefer `map` to this function. However, it can be useful to get a `Functor`
--- instance for free, given an existing `Applicative` instance.
+@{-
+  - Prefer `map` to this function. However, it can be useful to get a `Functor`
+  - instance for free, given an existing `Applicative` instance.
+  -}
 function liftA1
 Applicative f => f<b> ::= f::(b ::= a)  x::f<a>
 { return ap(pure(f), x); }

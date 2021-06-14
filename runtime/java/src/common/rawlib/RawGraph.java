@@ -70,7 +70,7 @@ public final class RawGraph {
 		for(Entry<Object, TreeSet<Object>> e : g.entrySet()) {
 			final Object key = e.getKey();
 			for(Object value : e.getValue()) {
-				ret = new ConsCell(silver.core.Ppair.rtConstruct(null, key, value), ret);
+				ret = new ConsCell(new silver.core.Ppair(key, value), ret);
 			}
 		}
 		return ret;

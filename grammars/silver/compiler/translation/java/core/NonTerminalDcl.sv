@@ -17,6 +17,8 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   top.initWeaving := s"""
 	public static int ${inhVar} = 0;
 	public static int ${synVar} = 0;""";
+
+  local interfaces::[String] = map(makeAnnoName, map((.elementName), myAnnos)) ++ if wantsTracking then ["common.Tracked"] else [];
   
   top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
@@ -24,9 +26,9 @@ package ${makeName(top.grammarName)};
 import java.util.*;
 import silver.core.*;
 
-public abstract class ${className} extends common.${if wantsTracking then "TrackedNode" else "Node"}${
-  (if null(myAnnos) then "" else 
-    " implements " ++ implode(", ", map(makeAnnoName, map((.elementName), myAnnos)))
+public abstract class ${className} extends common.Node ${
+  (if null(interfaces) then "" else 
+    " implements " ++ implode(", ", interfaces)
   )} {
 
 	public static final int num_inh_attrs = Init.${inhVar};
@@ -39,7 +41,7 @@ public abstract class ${className} extends common.${if wantsTracking then "Track
 	public static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];
 
 	protected ${className}(${if wantsTracking then "final NOriginInfo origin"++commaIfAnnos else ""} ${implode(", ", map((.annoSigElem), myAnnos))}) {
-		${if wantsTracking then "super(origin)" else ""};
+		${if wantsTracking then "this.origin = origin;" else ""}
 ${implode("", map(makeAnnoAssign, myAnnos))}
 	}
 
@@ -81,7 +83,17 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 			throw new common.exceptions.SilverInternalError("Invalid annotation " + name);
 		}
 	}
+
+	${otImpl}
 }
 """)];
+
+  local otImpl::String = if wantsTracking then s"""
+  	protected final silver.core.NOriginInfo origin;
+
+	public final silver.core.NOriginInfo getOrigin() {
+		return this.origin;
+	}
+""" else "";
 
 }

@@ -25,7 +25,7 @@ top::RootSpec ::= g::Grammar  _ _ _ _
   g.downDocConfig = g.upDocConfig;
 }
 
-{- 
+@{- 
  - Turn the files in a grammar into zero or more single-file docs pages, and collect the rest of the docs
  - (possibly zero) into the index file.
  -}
@@ -38,12 +38,13 @@ function toSplitFiles
              substitute(".sv", ".md", this.location.filename),
              getFileTitle(this.localDocConfig, substitute(".sv", "", this.location.filename)),
              getFileWeight(this.localDocConfig), true,
-             s"In file `${this.location.filename}`: "++(if getToc(this.localDocConfig) then "{{< toc >}}" else ""), 
+             s"In grammar `${g.grammarName}` file `${this.location.filename}`: "++(if getToc(this.localDocConfig) then "{{< toc >}}" else ""), 
              this.docs) ++ soFar) else toSplitFiles(rest, grammarConf, forIndex ++ this.docs, soFar)
-       | nilGrammar() -> if length(soFar) == 0 && length(grammarConf) == 0 && length(forIndex) == 0 then []
-                  else formatFile("_index.md", getGrammarTitle(grammarConf, "["++g.grammarName++"]"),
-                    getGrammarWeight(grammarConf),
-                    false, s"Contents of `[${g.grammarName}]`: {{< toc-tree >}} \n\nDefined in this grammar:", forIndex) ++ soFar
+       | nilGrammar() -> let skel::Boolean = (length(soFar) == 0 && length(grammarConf) == 0 && length(forIndex) == 0) in
+             formatFile("_index.md",
+                getGrammarTitle(grammarConf, "["++g.grammarName++"]"++(if skel then " (skel)" else "")),
+                getGrammarWeight(grammarConf) + (if skel then 10000 else 0),
+                false, s"Contents of `[${g.grammarName}]`: {{< toc-tree >}} \n\nDefined in this grammar:", forIndex) ++ soFar end
        end;
 }
 

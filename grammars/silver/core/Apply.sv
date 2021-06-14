@@ -1,6 +1,6 @@
 grammar silver:core;
 
-{-
+@{-
 Functors with an apply operation, that can be used to lift functions of two or more arguments to
 work on values wrapped in the type constructor f.
 

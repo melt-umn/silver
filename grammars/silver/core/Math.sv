@@ -1,6 +1,6 @@
 grammar silver:core;
 
-{--
+@{--
  - Returns the greatest common divisor of two numbers.
  -}
 function gcd

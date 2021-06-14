@@ -1,6 +1,6 @@
 grammar silver:core;
 
-{--
+@{--
  - Fold a list of strings into one string, by interspersing a separator.
  -
  - @param sep  The separator to place between each string.
@@ -17,7 +17,7 @@ String ::= sep::String lst::[String]
                            else sep ++ implode(sep, tail(lst));
 }
 
-{--
+@{--
  - Split a string into a list of strings by a separator.  If the separtor
  - is the empty string then the string is split into single character strings.
  -
@@ -52,7 +52,7 @@ function explodeSingle -- do not use
               explodeSingle (substring(1,length(str),str));
 }
 
-{--
+@{--
  - Find the index of a needle in the haystack.  (Indices are 0-based.)
  -
  - @param needle  The string to find.
@@ -67,7 +67,7 @@ Integer ::= needle::String haystack::String
   "java" : return "Integer.valueOf(%haystack%.toString().indexOf(%needle%.toString()))";
 }
 
-{--
+@{--
  - Find the LAST index of a needle in the haystack.  (Indices are 0-based.)
  -
  - @param needle  The string to find.
@@ -82,7 +82,7 @@ Integer ::= needle::String haystack::String
   "java" : return "Integer.valueOf(%haystack%.toString().lastIndexOf(%needle%.toString()))";
 }
 
-{--
+@{--
  - Return a substring of the original.  Indices are 0-based.
  -
  - @param start  The 0-based index to start at. Inclusive.
@@ -98,7 +98,7 @@ String ::= start::Integer endl::Integer str::String
   "java" : return "(new common.StringCatter(%str%.toString().substring(%start%, %endl%)))";
 }
 
-{--
+@{--
  - Tests if one string is a prefix of another
  -
  - @param pre  The prefix.
@@ -113,7 +113,7 @@ Boolean ::= pre::String s::String
   "java" : return "Boolean.valueOf(%s%.toString().startsWith(%pre%.toString()))";
 }
 
-{--
+@{--
  - Tests if one string is a postfix of another
  -
  - @param post  The postfix.
@@ -128,7 +128,7 @@ Boolean ::= post::String s::String
   "java" : return "Boolean.valueOf(%s%.toString().endsWith(%post%.toString()))";
 }
 
-{--
+@{--
  - Replaces all instances of 'search' with 'replace' in 'str'
  -
  - @param search  The string to replace
@@ -144,7 +144,7 @@ String ::= search::String replace::String str::String
   "java" : return "new common.StringCatter(%str%.toString().replace((CharSequence)%search%.toString(),(CharSequence)%replace%.toString()))";
 }
 
-{--
+@{--
  - Return a string with 's' repeated 'n' times.
  -
  - @param n  The number of times to repeat the string
@@ -159,7 +159,7 @@ foreign {
 }
 
 
-{--
+@{--
  - Tests if all characters of a string are digits.  Partially unicode aware.
  - See java's Character.isDigit(char).
  -
@@ -174,7 +174,7 @@ Boolean ::= str::String
   "java" : return "common.Util.isDigit(%str%.toString())";
 }
 
-{--
+@{--
  - Tests if all characters of a string are letters.  Partially unicode aware.
  - See java's Character.isLetter(char).
  -
@@ -189,7 +189,7 @@ Boolean ::= str::String
   "java" : return "common.Util.isAlpha(%str%.toString())";
 }
 
-{--
+@{--
  - Tests if all characters of a string are whitespace.  Partially unicode aware.
  - See java's Character.isWhitespace(char).
  -
@@ -206,7 +206,7 @@ Boolean ::= str::String
   "java" : return "common.Util.isSpace(%str%.toString())";
 }
 
-{--
+@{--
  - Tests if all characters of a string are lower case.  Partially unicode aware.
  - See java's Character.isLowerCase(char).
  -
@@ -221,7 +221,7 @@ Boolean ::= str::String
   "java" : return "common.Util.isLower(%str%.toString())";
 }
 
-{--
+@{--
  - Tests if all characters of a string are upper case.  Partially unicode aware.
  - See java's Character.isUpperCase(char).
  -
@@ -236,7 +236,7 @@ Boolean ::= str::String
   "java" : return "common.Util.isUpper(%str%.toString())";
 }
 
-{--
+@{--
  - Safely converts a string to an integer.
  -
  - @param str  The string to convert
@@ -251,7 +251,7 @@ Maybe<Integer> ::= str::String
   "java" : return "common.Util.safetoInt(%str%.toString())";
 }
 
-{--
+@{--
  - String append. Use overloaded append or ++ instead.
  -}
 function stringAppend
@@ -262,7 +262,7 @@ String ::= s1::String s2::String
   "java" : return "new common.StringCatter(%s1%, %s2%)";
 }
 
-{--
+@{--
  - Converts a list of code points to a string. Note that due to Java's use of
  - UCS-2, code points greater than 0xFFFF (i.e. and characters outside the Basic
  - Multilingual Plane) aren't supported.
@@ -275,7 +275,7 @@ String ::= chars::[Integer]
   "java" : return "common.StringCatter.fromChars(%chars%)";
 }
 
-{--
+@{--
  - Converts a string to a list of its UCS-2 characters. Note that this means
  - that surrogate pairs are (probably?) not supported, and characters outside
  - the Basic Multilingual Plane aren't as a consequence.
@@ -288,7 +288,7 @@ function stringToChars
   "java" : return "%str%.toChars()";
 }
 
-{--
+@{--
  - Replace all special characters in a string with their escape sequences.
  -}
 function escapeString
@@ -299,7 +299,7 @@ String ::= s::String
   "java" : return "(common.Util.escapeString(%s%))";
 }
 
-{--
+@{--
  - Replace all escape sequences in a string with corresponding special characters.
  -}
 function unescapeString
@@ -310,7 +310,7 @@ String ::= s::String
   "java" : return "(common.Util.unescapeString(%s%))";
 }
 
-{--
+@{--
  - Strips extra leading and trailing whitespace from a string.
  -}
 function stripExtraWhiteSpace 
@@ -347,7 +347,7 @@ function stripExtraWhiteSpaceHelper
   nxt = head(tail(ss)) ;
 }
 
-{--
+@{--
  - Strips all whitespace from a string.
  -}
 function stripWhiteSpace
@@ -367,7 +367,7 @@ function stripWhiteSpaceHelper
   hd = head(ss) ;
 }
 
-{--
+@{--
  - Adds line numbers to a string
  -}
 function addLineNumbers

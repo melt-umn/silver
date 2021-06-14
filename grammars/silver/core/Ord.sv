@@ -1,6 +1,6 @@
 grammar silver:core;
 
-{-
+@{-
 Ord represents ordering relationships between data.
 
 Laws are based on Haskell's Ord type class:

@@ -87,7 +87,7 @@ public final class OriginContext {
 		throw new RuntimeException("Impossible state: this.variety not recognized.");
 	}
 
-	public <T extends TrackedNode> T attrAccessCopy(final T arg) {
+	public <T extends Tracked> T attrAccessCopy(final T arg) {
 		switch (this.variety) {
 			case NORMAL: //We only copy if this is a 'normal' origin (i.e. it originates from a node)
 				return (T)arg.copy(this.lhs, this.rulesAsSilverList());
@@ -99,7 +99,7 @@ public final class OriginContext {
 
 	// Used by code that does some manipulation on a type-erased generic object that might be a nonterminal.
 	public Object attrAccessCopyPoly(final Object arg) {
-		if (arg instanceof TrackedNode) return attrAccessCopy((TrackedNode)arg);
+		if (arg instanceof Tracked) return attrAccessCopy((Tracked)arg);
 		return arg;
 	}
 
