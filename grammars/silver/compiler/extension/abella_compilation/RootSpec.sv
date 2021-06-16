@@ -37,8 +37,108 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
 {
   top.shouldOutput = grammarName != "silver:core";
   local componentName::String = shortestName(grammarName);
+  --[(nonterminal type name (with $nt_), [(production name, production type)])]
+  local prodsByType::[(String, [(String, AbellaType)])] =
+        let byType::[(AbellaType, String, AbellaType)] =
+            map(\ p::(String, AbellaType) ->
+                  ( p.2.resultType, p.1, p.2 ), g.prods)
+        in
+        let sorted::[(AbellaType, String, AbellaType)] =
+            sortBy(\ p1::(AbellaType, String, AbellaType)
+                     p2::(AbellaType, String, AbellaType) ->
+                     case p1.1, p2.1 of
+                     | nameAbellaType(n1), nameAbellaType(n2) -> n1 <= n2
+                     | _, _ -> error("Not possible")
+                     end,
+                   byType)
+        in
+        let grouped::[[(AbellaType, String, AbellaType)]] =
+            groupBy(\ p1::(AbellaType, String, AbellaType)
+                      p2::(AbellaType, String, AbellaType) ->
+                      case p1.1, p2.1 of
+                      | nameAbellaType(n1), nameAbellaType(n2) -> n1 == n2
+                      | _, _ -> error("Not possible")
+                      end,
+                    sorted)
+        in
+          map(\ l::[(AbellaType, String, AbellaType)] ->
+                ( case head(l).1 of
+                  | nameAbellaType(n) -> n
+                  | _ -> error("Not possible")
+                  end,
+                  map(\ p::(AbellaType, String, AbellaType) ->
+                        ( p.2, p.3 ), l) ),
+              grouped)
+        end end end;
+  --Find the productions which are missing equations for each
+  --   attribute and produce empty clauses
+  local sortedAttrEquations::[(String, AbellaType, String)] =
+        let filtered::[(String, AbellaType, String)] =
+            map(\ p::(String, AbellaType, String, Term, [[Metaterm]]) ->
+                  (p.1, p.2, p.3), g.attrEqInfo)
+        in
+          sortBy(\ p1::(String, AbellaType, String)
+                   p2::(String, AbellaType, String) ->
+                   p1.1 <= p2.1 &&
+                   case p1.2, p2.2 of
+                   | nameAbellaType(n1), nameAbellaType(n2) -> n1 <= n2
+                   | _, _ -> error("Not possible")
+                   end,
+                 filtered)
+        end;
+  local groupedAttrsProds::[[(String, AbellaType, String)]] =
+        groupBy(\ p1::(String, AbellaType, String)
+                  p2::(String, AbellaType, String) ->
+                  p1.1 == p2.1 && tysEqual(p1.2, p2.2),
+                sortedAttrEquations);
+  local foundProds::[(String, AbellaType, [String])] =
+        map(\ l::[(String, AbellaType, String)] ->
+              (head(l).1, head(l).2,
+               map(\ p::(String, AbellaType, String) -> p.3, l)),
+            groupedAttrsProds);
+  local missingProdsByAttr::[(String, AbellaType, [(String, AbellaType)])] =
+        map(\ eqs::(String, AbellaType, [String]) ->
+              case eqs.2 of
+              | nameAbellaType(nt) ->
+                let prods::[(String, AbellaType)] =
+                    findAssociated(nt, prodsByType).fromJust
+                in
+                  ( eqs.1, eqs.2,
+                    foldr(\ p::(String, AbellaType)
+                            rest::[(String, AbellaType)] ->
+                            if contains(p.1, eqs.3)
+                            then rest
+                            else p::rest,
+                          [], prods) )
+                end
+              | _ -> error("Not possible")
+              end,
+            foundProds);
+  local missingClauses::[(String, AbellaType, [DefClause])] =
+        map(\ p::(String, AbellaType, [(String, AbellaType)]) ->
+              ( p.1, p.2,
+                map(\ prod::(String, AbellaType) ->
+                      let treeTm::Term =
+                          buildApplication(
+                             nameTerm(nameToProd(prod.1)),
+                             foldr(\ t::AbellaType
+                                     rest::(Integer, [Term]) ->
+                                     ( rest.1 + 1,
+                                       nameTerm("$T" ++ toString(rest.1))::rest.2 ),
+                                   (0, []), prod.2.argumentTypes).2)
+                      in
+                        factClause(
+                           termMetaterm(
+                              buildApplication(
+                                 nameTerm(equationName(p.1, p.2)),
+                                 [treeTm, nameTerm("$NodeTree")])))
+                      end,
+                    p.3) ),
+            missingProdsByAttr);
   local attrClauses::[(String, AbellaType, [DefClause])] =
-        produceClauses(g.attrEqInfo, g.inheritedAttrs);
+        produceClauses(g.attrEqInfo, g.inheritedAttrs) ++
+        missingClauses;
+  --
   top.output =
       generateContents(g.nonterminals, g.attrs, g.attrOccurrences,
          g.inheritedAttrs, g.localAttrs, g.associatedAttrs, g.prods,
