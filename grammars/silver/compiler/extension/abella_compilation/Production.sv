@@ -37,7 +37,6 @@ top::AGDcl ::= 'aspect' 'default' 'production'
                lhs::Name '::' te::TypeExpr '::=' body::ProductionBody 
 {
   top.localAttrs := [];
-  top.attrEqClauses := [];
   top.attrEqInfo := [];
 }
 
@@ -46,12 +45,12 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 
 attribute
    localAttrs, top, encodingEnv, treeTerm,
-   nodetreeTerm, attrEqClauses, attrEqInfo
+   nodetreeTerm, attrEqInfo
 occurs on ProductionBody;
 
 attribute
    localAttrs, top, encodingEnv, treeTerm,
-   nodetreeTerm, attrEqClauses, attrEqInfo
+   nodetreeTerm, attrEqInfo
 occurs on ProductionStmts;
 
 
@@ -83,7 +82,7 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 
 attribute
    localAttrs, top, encodingEnv,
-   treeTerm, nodetreeTerm, attrEqClauses, attrEqInfo
+   treeTerm, nodetreeTerm, attrEqInfo
 occurs on ProductionStmt;
 
 

@@ -53,21 +53,7 @@ function combineAssociations
 monoid attribute inheritedAttrs::[String] with [], ++;
 propagate inheritedAttrs on AGDcl, AGDcls, Grammar, Root, RootSpec;
 
---[(attribute name, [nonterminal name])]
---Attributes which need to be defined by the nonterminal but
---   which don't occur on the nonterminal
-monoid attribute associatedAttrs::[(String, [String])]
-   with [], ++;
-propagate associatedAttrs on AGDcl, AGDcls, Grammar, Root, RootSpec;
 
-
---[(attribute, nonterminal type, [definition clauses])]
-monoid attribute attrEqClauses::[(String, AbellaType, [DefClause])]
-   with [], ++;
-propagate attrEqClauses on AGDcl, AGDcls, Grammar, Root, RootSpec,
-             ProductionBody, ProductionStmts, ProductionStmt
-   excluding aspectDefaultProduction, aspectFunctionDcl,
-             functionDclFFI, functionDcl, ifElseStmt, blockStmt;
 --[( attribute, top nonterminal type, production,
 --   head term (rel tree nodetree), [clause bodies] )]
 monoid attribute attrEqInfo::[(String, AbellaType, String,

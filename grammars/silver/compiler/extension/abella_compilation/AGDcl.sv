@@ -14,22 +14,22 @@ imports silver:compiler:definition:env;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, attrEqClauses, attrEqInfo, associatedAttrs
+   inheritedAttrs, attrEqInfo
 occurs on Grammar;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, attrEqClauses, attrEqInfo, associatedAttrs
+   inheritedAttrs, attrEqInfo
 occurs on Root;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, attrEqClauses, attrEqInfo, associatedAttrs
+   inheritedAttrs, attrEqInfo
 occurs on AGDcls;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, attrEqClauses, attrEqInfo, associatedAttrs
+   inheritedAttrs, attrEqInfo
 occurs on AGDcl;
 
 

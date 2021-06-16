@@ -13,7 +13,7 @@ synthesized attribute output::String;
 attribute
    shouldOutput, output,
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, associatedAttrs, attrEqClauses, attrEqInfo
+   inheritedAttrs, attrEqInfo
 occurs on RootSpec;
 
 
@@ -138,10 +138,52 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
   local attrClauses::[(String, AbellaType, [DefClause])] =
         produceClauses(g.attrEqInfo, g.inheritedAttrs) ++
         missingClauses;
+  --Find the attributes which need to be set by a nonterminal on which
+  --   they do not occur so we know we need to make a full relation
+  --e.g. Root sets env on children even though it has no env itself
+  local associatedAttrs::[(String, [String])] =
+        let filtered::[(String, AbellaType)] =
+            map(\ p::(String, AbellaType, String, Term, [[Metaterm]]) ->
+                  (p.1, p.2), g.attrEqInfo)
+        in
+        let cleaned::[(String, AbellaType)] =
+            nubBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
+                    p1.1 == p2.1 && tysEqual(p1.2, p2.2), filtered)
+        in
+        let sorted::[(String, AbellaType)] =
+            sortBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
+                     p1.1 <= p2.1, cleaned)
+        in
+        let grouped::[[(String, AbellaType)]] =    
+            groupBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
+                      p1.1 == p2.1, sorted)
+        in
+        let paired::[(String, [String])] =
+            map(\ l::[(String, AbellaType)] ->
+                  ( head(l).1, map(\ p::(String, AbellaType) ->
+                                     nonterminalTypeToName(p.2),
+                                   l) ), grouped)
+        in
+          map(\ p::(String, [String]) ->
+                case findAssociated(p.1, g.attrOccurrences) of
+                | nothing() -> error("Attr must exist")
+                | just(nts_tys) ->
+                  let nts::[String] = map(fst(_), nts_tys)
+                  in
+                    ( p.1,
+                      foldr(\ nt::String rest::[String] ->
+                              if contains(nt, nts)
+                              then rest
+                              else nt::rest,
+                            [], p.2) )
+                  end
+                end,
+              paired)
+        end end end end end;
   --
   top.output =
       generateContents(g.nonterminals, g.attrs, g.attrOccurrences,
-         g.inheritedAttrs, g.localAttrs, g.associatedAttrs, g.prods,
+         g.inheritedAttrs, g.localAttrs, associatedAttrs, g.prods,
          attrClauses, shortestName(grammarName));
 }
 
@@ -268,12 +310,17 @@ function makeConsistentNames_help
      | varTerm(name1, i1), varTerm(name2, i2) ->
        if name1 == name2 && i1 == i2
        then ( varTerm(name1, i1), body1, body2 )
-       else --I should try to fix the names here
-            error("Did you define an inherited attribute on two " ++
-                  "different children in two different aspects?  " ++
-                  "Why would you do that?  Perhaps I'll help you " ++
-                  "in the future, but for now, put them in the " ++
-                  "same production.")
+       else let newVar::Integer = genInt() in
+                ( varTerm(name1, newVar),
+                  map(\ l::[Metaterm] ->
+                        map(replaceVar((name1, i1),
+                               varTerm(name1, newVar), _), l),
+                      body1),
+                  map(\ l::[Metaterm] ->
+                        map(replaceVar((name2, i2),
+                               varTerm(name1, newVar), _), l),
+                      body2) )
+            end
      | _, _ ->
        error("Unexpected case in makeConsistentNames_help" ++
              " (" ++ hd1.unparse ++ "  ;  " ++ hd2.unparse ++ ")")
@@ -333,7 +380,7 @@ function cleanBodies
                         consTermList(_,
                         singleTermList(
                            applicationTerm(attrex, valList))))))
-                  when startsWith("$access_", accessRel) ->
+                  when nameIsAccess(accessRel) ->
                   ( (accessToAttrName(accessRel), (tree, i),
                      head(valList.argList), rest.2)::rest.1,
                     rest.2 + 1 )

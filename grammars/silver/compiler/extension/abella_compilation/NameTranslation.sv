@@ -303,3 +303,13 @@ String ::= ord::Integer
   return "$c_" ++ toString(ord);
 }
 
+
+
+--find both normal accesses and locals
+function nameIsAccess
+Boolean ::= rel::String
+{
+  return
+     startsWith("$access_", rel) || startsWith("$local__acess_", rel);
+}
+
