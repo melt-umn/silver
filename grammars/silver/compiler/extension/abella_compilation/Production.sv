@@ -115,6 +115,101 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature
   body.treeTerm =
        applicationTerm(nameTerm(nameToProd(id.name)), ns.treeTerm_up);
   body.nodetreeTerm = ns.nodetreeTerm_up;
+  --
+  local treeTy::AbellaType = ns.top_up.3;
+  local localGroups::[(String, [[Metaterm]])] =
+        let sorted::[(String, [[Metaterm]])] =
+            sortBy(\ p1::(String, [[Metaterm]])
+                     p2::(String, [[Metaterm]]) -> p1.1 <= p2.1,
+                   body.localAttrEqInfo)
+        in
+        let grouped::[[(String, [[Metaterm]])]] =
+            groupBy(\ p1::(String, [[Metaterm]])
+                      p2::(String, [[Metaterm]]) -> p1.1 == p2.1,
+                    sorted)
+        in
+          map(\ l::[(String, [[Metaterm]])] ->
+                ( head(l).1,
+                  combineBodies(map(snd(_), l)) ),
+              grouped)
+        end end;
+  local cleanedLocals::[(String, [[Metaterm]])] =
+        map(\ p::(String, [[Metaterm]]) ->
+              ( p.1, cleanBodies(p.2) ),
+            localGroups);
+  local filledLocals::[(String, Term, [Metaterm])] =
+        map(\ p::(String, [[Metaterm]]) ->
+              let rel::String = localEquationName(p.1, id.name)
+              in
+              let clauseHead::Term =
+                  buildApplication(nameTerm(rel),
+                    [ns.top_up.1, body.treeTerm, ns.nodetreeTerm_up])
+              in
+              let filled::(Term, [Metaterm]) =
+                  fillVars(clauseHead,
+                           map(\ l::[Metaterm] ->
+                                 foldl(andMetaterm(_, _), head(l),
+                                       tail(l)),
+                               p.2))
+              in
+                ( p.1, filled.1, filled.2 )
+              end end end,
+            cleanedLocals);
+  top.localAttrDefs <-
+      map(\ p::(String, Term, [Metaterm]) ->
+            let rel::String = localEquationName(p.1, id.name)
+            in
+              definition([( rel,
+                            arrowAbellaType(treeTy,
+                            arrowAbellaType(treeTy,
+                            arrowAbellaType(nodeTreeType,
+                                            nameAbellaType("prop")))) )],
+                 --not-this-production clause
+                 let childNames::[String] =
+                     generateNames_n("C", ns.argLength)
+                 in
+                 let otherClause::DefClause =
+                     ruleClause(
+                        termMetaterm(
+                           buildApplication(nameTerm(rel),
+                              [nameTerm("TreeName"), nameTerm("Term"),
+                               buildApplication(
+                                  nameTerm(nodeTreeConstructorName(treeTy)),
+                                  [nameTerm("Node"), nameTerm("CL")])])),
+                        andMetaterm(
+                           --tree = prod -> false
+                           impliesMetaterm(
+                              bindingMetaterm(existsBinder(),
+                                 map(pair(_, nothing()), childNames),
+                                 eqMetaterm(nameTerm("Term"),
+                                    buildApplication(
+                                       nameTerm(nameToProd(id.name)),
+                                       map(nameTerm(_), childNames)))),
+                              falseMetaterm()),
+                           --local has no value
+                           termMetaterm(
+                              buildApplication(
+                                 nameTerm(
+                                    localAccessRelationName(treeTy,
+                                       p.1, id.name)),
+                                 [nameTerm("TreeName"), nameTerm("Node"),
+                                  nameTerm(attributeNotExistsName)]))))
+                 in
+                    if null(p.3)
+                    then singleAbellaDefs(otherClause)
+                    else --build all clauses together
+                       let clauses::[DefClause] =
+                           map(ruleClause(termMetaterm(p.2), _), p.3)
+                       in
+                       let rev::[DefClause] = reverse(clauses)
+                       in
+                         foldr(consAbellaDefs(_, _),
+                               singleAbellaDefs(head(rev)),
+                               otherClause::reverse(tail(rev)))
+                        end end
+                 end end)
+            end,
+          filledLocals);
 }
 
 aspect production aspectProductionDcl
@@ -125,6 +220,101 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   body.treeTerm =
        applicationTerm(nameTerm(nameToProd(id.name)), ns.treeTerm_up);
   body.nodetreeTerm = ns.nodetreeTerm_up;
+  --
+  local treeTy::AbellaType = ns.top_up.3;
+  local localGroups::[(String, [[Metaterm]])] =
+        let sorted::[(String, [[Metaterm]])] =
+            sortBy(\ p1::(String, [[Metaterm]])
+                     p2::(String, [[Metaterm]]) -> p1.1 <= p2.1,
+                   body.localAttrEqInfo)
+        in
+        let grouped::[[(String, [[Metaterm]])]] =
+            groupBy(\ p1::(String, [[Metaterm]])
+                      p2::(String, [[Metaterm]]) -> p1.1 == p2.1,
+                    sorted)
+        in
+          map(\ l::[(String, [[Metaterm]])] ->
+                ( head(l).1,
+                  combineBodies(map(snd(_), l)) ),
+              grouped)
+        end end;
+  local cleanedLocals::[(String, [[Metaterm]])] =
+        map(\ p::(String, [[Metaterm]]) ->
+              ( p.1, cleanBodies(p.2) ),
+            localGroups);
+  local filledLocals::[(String, Term, [Metaterm])] =
+        map(\ p::(String, [[Metaterm]]) ->
+              let rel::String = localEquationName(p.1, id.name)
+              in
+              let clauseHead::Term =
+                  buildApplication(nameTerm(rel),
+                    [ns.top_up.1, body.treeTerm, ns.nodetreeTerm_up])
+              in
+              let filled::(Term, [Metaterm]) =
+                  fillVars(clauseHead,
+                           map(\ l::[Metaterm] ->
+                                 foldl(andMetaterm(_, _), head(l),
+                                       tail(l)),
+                               p.2))
+              in
+                ( p.1, filled.1, filled.2 )
+              end end end,
+            cleanedLocals);
+  top.localAttrDefs <-
+      map(\ p::(String, Term, [Metaterm]) ->
+            let rel::String = localEquationName(p.1, id.name)
+            in
+              definition([( rel,
+                            arrowAbellaType(treeTy,
+                            arrowAbellaType(treeTy,
+                            arrowAbellaType(nodeTreeType,
+                                            nameAbellaType("prop")))) )],
+                 --not-this-production clause
+                 let childNames::[String] =
+                     generateNames_n("C", ns.argLength)
+                 in
+                 let otherClause::DefClause =
+                     ruleClause(
+                        termMetaterm(
+                           buildApplication(nameTerm(rel),
+                              [nameTerm("TreeName"), nameTerm("Term"),
+                               buildApplication(
+                                  nameTerm(nodeTreeConstructorName(treeTy)),
+                                  [nameTerm("Node"), nameTerm("CL")])])),
+                        andMetaterm(
+                           --tree = prod -> false
+                           impliesMetaterm(
+                              bindingMetaterm(existsBinder(),
+                                 map(pair(_, nothing()), childNames),
+                                 eqMetaterm(nameTerm("Term"),
+                                    buildApplication(
+                                       nameTerm(nameToProd(id.name)),
+                                       map(nameTerm(_), childNames)))),
+                              falseMetaterm()),
+                           --local has no value
+                           termMetaterm(
+                              buildApplication(
+                                 nameTerm(
+                                    localAccessRelationName(treeTy,
+                                       p.1, id.name)),
+                                 [nameTerm("TreeName"), nameTerm("Node"),
+                                  nameTerm(attributeNotExistsName)]))))
+                 in
+                    if null(p.3)
+                    then singleAbellaDefs(otherClause)
+                    else --build all clauses together
+                       let clauses::[DefClause] =
+                           map(ruleClause(termMetaterm(p.2), _), p.3)
+                       in
+                       let rev::[DefClause] = reverse(clauses)
+                       in
+                         foldr(consAbellaDefs(_, _),
+                               singleAbellaDefs(head(rev)),
+                               otherClause::reverse(tail(rev)))
+                        end end
+                 end end)
+            end,
+          filledLocals);
 }
 
 aspect production aspectDefaultProduction
