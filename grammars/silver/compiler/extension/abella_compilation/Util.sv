@@ -43,6 +43,33 @@ function allPairs
 }
 
 
+--Get all the combinations of bodies from the different lists
+--e.g. [ [A, B], [C, D] ] => [ A ++ C, B ++ C, A ++ D, B ++ D ]
+function combineBodies
+[[Metaterm]] ::= bodies::[ [[Metaterm]] ]
+{
+  return
+     case bodies of
+     | [] -> []
+     | h::rest ->
+       combineBodies_head(h, rest) ++
+       combineBodies(rest)
+     end;
+}
+function combineBodies_head
+[[Metaterm]] ::= current::[[Metaterm]] rest::[ [[Metaterm]] ]
+{
+  return
+     case current of
+     | [] -> []
+     | hd::tl ->
+       foldr(\ l::[[Metaterm]] rest::[[Metaterm]] ->
+               map(\ x::[Metaterm] -> hd ++ x, l),
+             [], rest) ++ combineBodies_head(tl, rest)
+     end;
+}
+
+
 
 
 function buildApplication
@@ -139,6 +166,16 @@ String ::= base::String index::Integer usedNames::[String]
      if contains(base ++ toString(index), usedNames)
      then makeUniqueName(base, index + 1, usedNames)
      else base ++ toString(index);
+}
+
+
+--Generate n different names from the given base
+function generateNames_n
+[String] ::= base::String n::Integer
+{
+  return if n == 0
+         then []
+         else (base ++ toString(n))::generateNames_n(base, n - 1);
 }
 
 

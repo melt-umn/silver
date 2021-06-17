@@ -878,6 +878,8 @@ String ::= nonterminals::[String] attrs::[String]
            prods::[(String, AbellaType)]
            --[(attr, nonterminal, [definitional clauses])]
            attrEqClauses::[(String, AbellaType, [DefClause])]
+           --fully-made definitions for local attributes
+           localDefs::[Definition]
            componentName::String
 {
   local associatedAttrsExpanded::[(String, [(String, AbellaType)])] =
@@ -895,12 +897,15 @@ String ::= nonterminals::[String] attrs::[String]
      generateInheritedInformation(inheritedAttrs) ++ "\n\n" ++
      generateStructureEqFull(nonterminals) ++ "\n" ++
      generateStructureEqComponent(prods, componentName) ++ "\n\n" ++
+     --
      generateEquationsFull(
         attrOccurrences ++ associatedAttrsExpanded) ++ "\n" ++
      generateWpdRelationsFull(nonterminals) ++ "\n\n" ++
      generateAttrEquationComponentRelations(attrEqClauses,
         componentName, inheritedAttrs) ++ "\n\n" ++
-     --Here's where the relations for locals would go
+     foldr(\ d::Definition rest::String -> d.unparse ++ rest,
+           "", localDefs) ++ "\n\n" ++
+     --
      "Define $split : (A -> B -> prop) -> ($pair A B) -> prop by\n" ++
      "  $split SubRel ($pair_c A B) :=\n" ++
      "     SubRel A B.\n\n" ++

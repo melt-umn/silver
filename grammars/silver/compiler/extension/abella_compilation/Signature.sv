@@ -6,6 +6,10 @@ attribute
    nodetreeTerm_up<Term>, top_up
 occurs on ProductionSignature;
 
+synthesized attribute argLength::Integer occurs on
+   ProductionSignature, ProductionRHS,
+   AspectProductionSignature, AspectRHS;
+
 aspect production productionSignature
 top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rhs::ProductionRHS
 {
@@ -18,6 +22,8 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
   top.treeTerm_up = rhs.treeTerm_up;
   top.nodetreeTerm_up = lhs.nodetreeTerm_up(rhs.nodetreeTerm_up);
   top.top_up = lhs.top_up;
+
+  top.argLength = rhs.argLength;
 }
 
 
@@ -67,6 +73,8 @@ top::ProductionRHS ::=
   top.encodingEnv_up = [];
   top.treeTerm_up = nilTermList();
   top.nodetreeTerm_up = nilTerm();
+
+  top.argLength = 0;
 }
 
 aspect production productionRHSCons
@@ -80,6 +88,8 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
       | just(x) -> consTerm(x, t.nodetreeTerm_up)
       | nothing() -> t.nodetreeTerm_up
       end;
+
+  top.argLength = 1 + t.argLength;
 }
 
 aspect production productionRHSElem
@@ -124,6 +134,8 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
   top.treeTerm_up = rhs.treeTerm_up;
   top.nodetreeTerm_up = lhs.nodetreeTerm_up(rhs.nodetreeTerm_up);
   top.top_up = lhs.top_up;
+
+  top.argLength = rhs.argLength;
 }
 
 
@@ -164,6 +176,8 @@ top::AspectRHS ::=
   top.encodingEnv_up = [];
   top.treeTerm_up = nilTermList();
   top.nodetreeTerm_up = nilTerm();
+
+  top.argLength = 0;
 }
 
 aspect production aspectRHSElemCons
@@ -177,6 +191,8 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
       | just(x) -> consTerm(x, t.nodetreeTerm_up)
       | nothing() -> t.nodetreeTerm_up
       end;
+
+  top.argLength = 1 + t.argLength;
 }
 
 aspect production aspectRHSElemFull

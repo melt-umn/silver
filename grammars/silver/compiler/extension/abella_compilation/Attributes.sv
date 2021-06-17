@@ -65,6 +65,16 @@ propagate attrEqInfo on AGDcl, AGDcls, Grammar, Root, RootSpec,
              functionDclFFI, functionDcl, ifElseStmt, blockStmt;
 
 
+--[(local, production, [clause bodies])]
+monoid attribute localAttrEqInfo::[(String, [[Metaterm]])]
+   with [], ++;
+propagate localAttrEqInfo on ProductionStmt, ProductionStmts,
+             ProductionBody;
+--
+monoid attribute localAttrDefs::[Definition] with [], ++;
+propagate localAttrDefs on AGDcl, AGDcls, Grammar, Root;
+
+
 
 {-
   For metaterms, the inner lists are conceptually and-ed together.  We

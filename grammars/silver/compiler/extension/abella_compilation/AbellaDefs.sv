@@ -32,6 +32,12 @@ top::Defs ::= clause::DefClause rest::Defs
   top.unparse = clause.unparse ++ ";\n" ++ rest.unparse;
 }
 
+abstract production snocAbellaDefs
+top::Defs ::= rest::Defs clause::DefClause
+{
+  top.unparse = rest.unparse ++ ";\n" ++ clause.unparse;
+}
+
 
 
 nonterminal Definition with unparse;

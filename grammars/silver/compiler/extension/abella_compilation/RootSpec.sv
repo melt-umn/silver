@@ -184,7 +184,7 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
   top.output =
       generateContents(g.nonterminals, g.attrs, g.attrOccurrences,
          g.inheritedAttrs, g.localAttrs, associatedAttrs, g.prods,
-         attrClauses, shortestName(grammarName));
+         attrClauses, g.localAttrDefs, shortestName(grammarName));
 }
 
 
