@@ -92,7 +92,11 @@ top::Expr ::= q::Decorated QName
 aspect production functionReference
 top::Expr ::= q::Decorated QName
 {
-  top.encodedExpr = [([], nameTerm(nameToFun(shortestName(q.name))))];
+  top.encodedExpr =
+      --error(<str>) cannot succeed, so don't translate it
+      if q.lookupValue.fullName == "silver:core:error"
+      then []
+      else [([], nameTerm(nameToFun(shortestName(q.name))))];
 }
 
 aspect production classMemberReference
