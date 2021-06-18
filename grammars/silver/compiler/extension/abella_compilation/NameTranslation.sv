@@ -310,6 +310,6 @@ function nameIsAccess
 Boolean ::= rel::String
 {
   return
-     startsWith("$access_", rel) || startsWith("$local__acess_", rel);
+     startsWith("$access_", rel) || startsWith("$local_access_", rel);
 }
 

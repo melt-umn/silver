@@ -275,6 +275,13 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                                           [synTerm])])) ],
                 new(synTerm) )
             | _ ->
+              {-
+                It is probably possible for this to occur.  In that case,
+                one would need to generate a node and WPD assumption for
+                this new node with the tree, but this would be accessing
+                an attribute on a tree which was *just constructed* (e.g.
+                plus(int(1), int(2)).value) which I think is unlikely.
+              -}
               error("Must have a pair for an access in a well-typed grammar")
             end,
           newe.encodedExpr);
@@ -1104,7 +1111,21 @@ top::AppExpr ::= e::Expr
 {
   e.encodingEnv = top.encodingEnv;
   e.top = top.top;
-  top.encodedExpr = e.encodedExpr;
+  top.encodedExpr =
+      if isNonterminal(top.appExprTyperep)
+      then --give only the term if not looking for decorated
+           if isDecorated(top.appExprTyperep)
+           then e.encodedExpr
+           else map(\ p::([Metaterm], Term) ->
+                      ( p.1,
+                        case p.2 of
+                        | applicationTerm(nameTerm("$pair_c"),
+                             consTermList(tree, _)) ->
+                          tree
+                        | _ -> p.2
+                        end ),
+                    e.encodedExpr)
+      else e.encodedExpr;
 }
 
 aspect production snocAppExprs

@@ -228,6 +228,16 @@ Boolean ::= ty::Type
      end;
 }
 
+function isDecorated
+Boolean ::= ty::Type
+{
+  return
+     case ty of
+     | decoratedType(_, _) -> true
+     | _ -> false
+     end;
+}
+
 
 
 

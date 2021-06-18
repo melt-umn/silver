@@ -378,11 +378,10 @@ function cleanBodies
                      applicationTerm(nameTerm(accessRel),
                         consTermList(varTerm(tree, i),
                         consTermList(_,
-                        singleTermList(
-                           applicationTerm(attrex, valList))))))
+                        singleTermList(aval)))))
                   when nameIsAccess(accessRel) ->
                   ( (accessToAttrName(accessRel), (tree, i),
-                     head(valList.argList), rest.2)::rest.1,
+                     aval, rest.2)::rest.1,
                     rest.2 + 1 )
                 | _ -> (rest.1, rest.2 + 1)
                 end,
