@@ -36,5 +36,5 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 aspect production productionRHSElemType
 top::ProductionRHSElem ::= t::TypeExpr
 {
-  top.argNames = [""];
+  top.argNames = []; -- Don't consider unnamed parameters against count
 }
