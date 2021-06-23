@@ -130,8 +130,10 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
                         factClause(
                            termMetaterm(
                               buildApplication(
-                                 nameTerm(equationName(p.1, p.2)),
-                                 [treeTm, nameTerm("NodeTree")])))
+                                 nameTerm(equationName(p.1, p.2) ++
+                                          "__" ++ componentName),
+                                 [nameTerm("TreeName"), treeTm,
+                                  nameTerm("NodeTree")])))
                       end,
                     p.3) ),
             missingProdsByAttr);
