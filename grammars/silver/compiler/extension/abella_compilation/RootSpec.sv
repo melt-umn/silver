@@ -124,14 +124,14 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
                              foldr(\ t::AbellaType
                                      rest::(Integer, [Term]) ->
                                      ( rest.1 + 1,
-                                       nameTerm("$T" ++ toString(rest.1))::rest.2 ),
+                                       nameTerm("T" ++ toString(rest.1))::rest.2 ),
                                    (0, []), prod.2.argumentTypes).2)
                       in
                         factClause(
                            termMetaterm(
                               buildApplication(
                                  nameTerm(equationName(p.1, p.2)),
-                                 [treeTm, nameTerm("$NodeTree")])))
+                                 [treeTm, nameTerm("NodeTree")])))
                       end,
                     p.3) ),
             missingProdsByAttr);
@@ -184,7 +184,8 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
   top.output =
       generateContents(g.nonterminals, g.attrs, g.attrOccurrences,
          g.inheritedAttrs, g.localAttrs, associatedAttrs, g.prods,
-         attrClauses, g.localAttrDefs, shortestName(grammarName));
+         attrClauses, g.localAttrDefs, g.funRelClauses,
+         shortestName(grammarName));
 }
 
 
@@ -449,7 +450,14 @@ function cleanBodies
      end;
 }
 
---Replace all varTerms with nameTerms with unique names
+{-
+  Replace all varTerms with nameTerms with unique names
+  @param hd The head term of the definition clauses
+  @param bodies The bodies of the separate definition clauses
+  @returns The head and bodies of the clauses with the varTerms
+           replaced by unique names and all free names from each body
+           bound over the top of it
+-}
 function fillVars
 (Term, [Metaterm]) ::= hd::Term bodies::[Metaterm]
 {

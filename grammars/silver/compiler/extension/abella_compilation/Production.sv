@@ -16,22 +16,6 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
                        body.localAttrEqInfo);
 }
 
-aspect production concreteProductionDcl
-top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature
-               pm::ProductionModifiers body::ProductionBody
-{
-  body.encodingEnv = ns.encodingEnv_up;
-  body.top = (ns.top_up.1, ns.top_up.2, ns.top_up.3, id.name);
-  body.treeTerm =
-       applicationTerm(nameTerm(nameToProd(id.name)), ns.treeTerm_up);
-  body.nodetreeTerm = ns.nodetreeTerm_up;
-  --
-  top.localAttrDefs <-
-      buildLocalEqRelations(ns.top_up.3, id.name, ns.argLength,
-                       ns.top_up.1, body.treeTerm, ns.nodetreeTerm_up,
-                       body.localAttrEqInfo);
-}
-
 aspect production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody
 {
@@ -52,6 +36,7 @@ top::AGDcl ::= 'aspect' 'default' 'production'
                lhs::Name '::' te::TypeExpr '::=' body::ProductionBody 
 {
   top.localAttrs := [];
+  top.localAttrDefs := [];
   top.attrEqInfo := [];
 }
 

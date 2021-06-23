@@ -72,7 +72,23 @@ propagate localAttrEqInfo on ProductionStmt, ProductionStmts,
              ProductionBody;
 --
 monoid attribute localAttrDefs::[Definition] with [], ++;
-propagate localAttrDefs on AGDcl, AGDcls, Grammar, Root;
+propagate localAttrDefs on AGDcl, AGDcls, Grammar, Root
+   excluding aspectDefaultProduction, aspectFunctionDcl,
+             functionDclFFI, functionDcl;
+
+
+--[(true if is return statement, encoded expr)]
+--answer terms are ignored for anything but return
+monoid attribute funRelInfo::[(Boolean, [([Metaterm], Term)])]
+   with [], ++;
+propagate funRelInfo on ProductionStmt, ProductionStmts, ProductionBody;
+--Can't just build definitions because functions could be mutually
+--   recursive, and thus all need to be defined mutually
+--We could do analysis to define them separately if necessary.
+--[(function name, encoded type, defining clauses)]
+monoid attribute funRelClauses::[(String, AbellaType, [DefClause])]
+   with [], ++;
+propagate funRelClauses on Grammar, Root, AGDcls, AGDcl;
 
 
 

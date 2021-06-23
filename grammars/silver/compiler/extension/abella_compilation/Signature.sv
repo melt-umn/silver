@@ -8,7 +8,7 @@ occurs on ProductionSignature;
 
 synthesized attribute argLength::Integer occurs on
    ProductionSignature, ProductionRHS,
-   AspectProductionSignature, AspectRHS;
+   AspectProductionSignature, AspectRHS, FunctionSignature;
 
 aspect production productionSignature
 top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rhs::ProductionRHS
@@ -75,6 +75,11 @@ top::ProductionRHS ::=
   top.nodetreeTerm_up = nilTerm();
 
   top.argLength = 0;
+
+  top.functionType =
+      arrowAbellaType(top.functionResultType, nameAbellaType("prop"));
+
+  top.args = [];
 }
 
 aspect production productionRHSCons
@@ -90,6 +95,11 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
       end;
 
   top.argLength = 1 + t.argLength;
+
+  t.functionResultType = top.functionResultType;
+  top.functionType = arrowAbellaType(h.abellaType, t.functionType);
+
+  top.args = h.args ++ t.args;
 }
 
 aspect production productionRHSElem
@@ -117,6 +127,8 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
                    nameTerm(nodeTreeConstructorName(newtSig.typerep.abellaType)),
                    [treenodeterm, childlistterm]))
       else nothing();
+
+  top.args = [treeterm];
 }
 
 
@@ -212,5 +224,55 @@ top::AspectRHSElem ::= id::Name t::Type
                    nameTerm(nodeTreeConstructorName(t.abellaType)),
                    [treenodeterm, childlistterm]))
       else nothing();
+}
+
+
+
+
+inherited attribute functionResultType::AbellaType occurs on
+   ProductionRHS;
+synthesized attribute functionType::AbellaType occurs on
+   FunctionSignature, ProductionRHS;
+synthesized attribute args::[Term] occurs on
+   FunctionSignature, ProductionRHS, ProductionRHSElem;
+
+attribute
+   encodingEnv_up
+occurs on FunctionSignature;
+
+aspect production functionSignature
+top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::ProductionRHS 
+{
+  top.encodingEnv_up =
+      case cl of
+      | nilConstraint() -> rhs.encodingEnv_up
+      | _ -> error("Cannot handle type classes")
+      end;
+
+  top.argLength = rhs.argLength;
+
+  rhs.functionResultType = lhs.abellaType;
+  top.functionType = rhs.functionType;
+
+  top.args = rhs.args;
+}
+
+
+attribute
+   abellaType
+occurs on FunctionLHS;
+
+aspect production functionLHS
+top::FunctionLHS ::= t::TypeExpr
+{
+  --Missing equation in host
+  local newt::TypeExpr = t;
+  newt.onNt = error("Is onNt needed? (productionRHSElem)");
+  newt.grammarName = top.grammarName;
+  newt.env = top.env;
+  newt.flowEnv = top.flowEnv;
+  newt.config = top.config;
+  --
+  top.abellaType = newt.typerep.abellaType;
 }
 

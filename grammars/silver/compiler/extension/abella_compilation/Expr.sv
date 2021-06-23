@@ -1,5 +1,7 @@
 grammar silver:compiler:extension:abella_compilation;
 
+imports silver:compiler:extension:tuple;
+
 
 attribute
    encodedExpr, encodingEnv, top
@@ -10,7 +12,7 @@ occurs on Expr;
 aspect default production
 top::Expr ::=
 {
-  top.encodedExpr = error("Default production");
+  top.encodedExpr = error("Default production (" ++ top.unparse ++ ")");
 }
 
 
@@ -152,19 +154,85 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   local resultName::String = "FunResult";
   local resultTerm::Term = varTerm(resultName, genInt());
   top.encodedExpr =
-      foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
-              foldr(\ argp::([Metaterm], [Term])
-                      rest::[([Metaterm], Term)] ->
-                      ( if termIsProd(ep.2)
-                        then ( ep.1 ++ argp.1,
-                               buildApplication(ep.2, argp.2) )
-                        else ( ep.1 ++ argp.1 ++
-                               [termMetaterm(
-                                   buildApplication(ep.2,
-                                      argp.2 ++ [resultTerm]))],
-                               new(resultTerm) ) )::rest,
-                    rest, newes.encodedArgs),
-            [], newe.encodedExpr);
+      case e of
+      --Special list functions
+      | functionReference(q)
+        when q.lookupValue.fullName == "silver:core:head" ->
+        let newhead::Term = varTerm("Hd", genInt())
+        in
+          foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
+                  foldr(\ argp::([Metaterm], [Term])
+                          rest::[([Metaterm], Term)] ->
+                          case argp.2 of
+                          | [consTerm(hd, _)] -> ( argp.1, new(hd) )
+                          | [res] ->
+                            ( argp.1 ++
+                              [eqMetaterm(res,
+                                  consTerm(newhead, varTerm("Tl", genInt())))],
+                              newhead )
+                          | _ -> error("Cannot have other lists with head")
+                          end::rest,
+                        rest, newes.encodedArgs),
+                [], newe.encodedExpr)
+        end
+      | functionReference(q)
+        when q.lookupValue.fullName == "silver:core:tail" ->
+        let newtail::Term = varTerm("Tl", genInt())
+        in
+          foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
+                  foldr(\ argp::([Metaterm], [Term])
+                          rest::[([Metaterm], Term)] ->
+                          case argp.2 of
+                          | [consTerm(_, tl)] -> ( argp.1, new(tl) )
+                          | [res] ->
+                            ( argp.1 ++
+                              [eqMetaterm(res,
+                                  consTerm(varTerm("Hd", genInt()), newtail))],
+                              newtail )
+                          | _ -> error("Cannot have other lists with tail")
+                          end::rest,
+                        rest, newes.encodedArgs),
+                [], newe.encodedExpr)
+        end
+      | functionReference(q)
+        when q.lookupValue.fullName == "silver:core:null" ->
+        foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
+                foldr(\ argp::([Metaterm], [Term])
+                        rest::[([Metaterm], Term)] ->
+                        case argp.2 of
+                        | [consTerm(_, _)] ->
+                          [( argp.1, nameTerm(falseName) )]
+                        | [nilTerm()] ->
+                          [( argp.1, nameTerm(trueName) )]
+                        | [res] ->
+                          [( argp.1 ++
+                             [eqMetaterm(res,
+                                 consTerm(varTerm("Hd", genInt()),
+                                          varTerm("Tl", genInt())))],
+                             nameTerm(falseName) ),
+                           ( argp.1 ++
+                             [eqMetaterm(res, nilTerm())],
+                             nameTerm(trueName) )]
+                        | _ -> error("Cannot have other lists with head")
+                        end ++ rest,
+                      rest, newes.encodedArgs),
+                [], newe.encodedExpr)
+      --Nothing special
+      | _ ->
+        foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
+                foldr(\ argp::([Metaterm], [Term])
+                        rest::[([Metaterm], Term)] ->
+                        ( if termIsProd(ep.2)
+                          then ( ep.1 ++ argp.1,
+                                 buildApplication(ep.2, argp.2) )
+                          else ( ep.1 ++ argp.1 ++
+                                 [termMetaterm(
+                                     buildApplication(ep.2,
+                                        argp.2 ++ [resultTerm]))],
+                                 new(resultTerm) ) )::rest,
+                      rest, newes.encodedArgs),
+              [], newe.encodedExpr)
+      end;
 }
 
 aspect production partialApplication
@@ -1049,6 +1117,64 @@ top::Expr ::= '[' es::Exprs ']'
       map(\ esp::([Metaterm], [Term]) ->
             ( esp.1, foldr(consTerm(_, _), nilTerm(), esp.2) ),
           es.encodedArgs);
+}
+
+aspect production selector
+top::Expr ::= tuple::Expr '.' a::IntConst
+{
+  local acc::Integer = toInteger(a.lexeme);
+  -- Copied from original
+  local typ::Type = performSubstitution(tuple.typerep, tuple.upSubst);
+  local typlen::Integer = case typ of
+    | decoratedType(t, _) -> length(t.tupleElems)
+    | t -> length(typ.tupleElems)
+    end;
+
+  --Check if the current term has enough explicit members
+  local longEnoughPair::(Maybe<Term> ::= Term Integer) =
+        \ t::Term a::Integer ->
+          case t of
+          | applicationTerm(nameTerm("$pair_c"),
+               consTermList(fst, singleTermList(snd))) ->
+            if a == 1
+            then just(fst)
+            else longEnoughPair(snd, a - 1)
+          | applicationTerm(nameTerm("$pair_c"),
+               consTermList(fst, consTermList(snd,
+                  nilTermList()))) ->
+            if a == 1
+            then just(fst)
+            else longEnoughPair(snd, a - 1)
+          | _ -> nothing()
+          end;
+  --Generate the correct length for the type and the result
+  local generatePairTerm::((Term, Term) ::= Integer Integer) =
+        \ tylen::Integer access::Integer ->
+          let newvar::Term = varTerm("P", genInt())
+          in
+            if tylen == 1
+            then --if access == 0, good, else ignored
+                 (newvar, newvar)
+            else let sub::(Term, Term) =
+                     generatePairTerm(tylen - 1, access - 1)
+                 in
+                   ( buildApplication(nameTerm(pairConstructorName),
+                        [newvar, sub.1]),
+                     if access == 1
+                     then newvar
+                     else sub.2 )
+                 end
+          end;
+  top.encodedExpr =
+      map(\ p::([Metaterm], Term) ->
+            case longEnoughPair(p.2, acc) of
+            | just(tm) -> (p.1, tm)
+            | nothing() ->
+              case generatePairTerm(typlen, acc) of
+              | (pr, res) -> ( p.1 ++ [eqMetaterm(p.2, pr)], res )
+              end
+            end,
+          tuple.encodedExpr);
 }
 
 

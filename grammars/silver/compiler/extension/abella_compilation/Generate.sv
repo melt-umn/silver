@@ -880,6 +880,8 @@ String ::= nonterminals::[String] attrs::[String]
            attrEqClauses::[(String, AbellaType, [DefClause])]
            --fully-made definitions for local attributes
            localDefs::[Definition]
+           --[(fun name, fun type, fun clauses)]
+           funClauses::[(String, AbellaType, [DefClause])]
            componentName::String
 {
   local associatedAttrsExpanded::[(String, [(String, AbellaType)])] =
@@ -901,6 +903,42 @@ String ::= nonterminals::[String] attrs::[String]
      generateEquationsFull(
         attrOccurrences ++ associatedAttrsExpanded) ++ "\n" ++
      generateWpdRelationsFull(nonterminals) ++ "\n\n" ++
+     ( let funSplit::( [(String, AbellaType)],
+                       [(String, AbellaType, [DefClause])] ) =
+           foldr(\ p::(String, AbellaType, [DefClause])
+                   rest::( [(String, AbellaType)],
+                           [(String, AbellaType, [DefClause])] ) ->
+                   if null(p.3)
+                   then ( (p.1, p.2)::rest.1, rest.2 )
+                   else ( rest.1, p::rest.2 ),
+                 ([], []), funClauses)
+       in
+       let allDefClauses::[DefClause] =
+           flatMap(\ p::(String, AbellaType, [DefClause]) -> p.3,
+                   funSplit.2)
+       in --Define functions which cannot have results
+         foldr(\ p::(String, AbellaType) rest::String ->
+                 let args::String =
+                     foldr(\ t::AbellaType rest::(Integer, String) ->
+                             ( rest.1 + 1,
+                               "A" ++ toString(rest.1) ++ " " ++ rest.2 ),
+                           (0, ""), p.2.argumentTypes).2
+                 in
+                   "Define " ++ nameToFun(p.1) ++ " : " ++ p.2.unparse ++ " by\n" ++
+                   "   " ++ nameToFun(p.1) ++ " " ++ args ++ " := false.\n" ++
+                   rest
+                 end,
+               "", funSplit.1) ++
+         if null(allDefClauses)
+         then ""
+         else definition(map(\ p::(String, AbellaType, [DefClause]) ->
+                               (nameToFun(p.1), p.2), funSplit.2),
+                 let rev::[DefClause] = reverse(allDefClauses)
+                 in
+                   foldr(consAbellaDefs(_, _), singleAbellaDefs(head(rev)),
+                         reverse(tail(rev)))
+                 end).unparse
+       end end ) ++ "\n\n" ++
      generateAttrEquationComponentRelations(attrEqClauses,
         componentName, inheritedAttrs) ++ "\n\n" ++
      foldr(\ d::Definition rest::String -> d.unparse ++ rest,
