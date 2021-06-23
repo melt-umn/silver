@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Ensure the META-INF directory exists and is empty.
+test ! -d build/META-INF || rm -r build/META-INF
+mkdir -p build/META-INF
+
+# Build Silver, directing the native-image agent to output reflection
+# information to META-INF.
+# TODO: Silver should eventually just generate this itself.
+cd build
+SVJVM_FLAGS="${SVJVM_FLAGS:-"-Xmx4G -Xss16M"} -agentlib:native-image-agent=config-output-dir=META-INF/native-image"
+time java ${SVJVM_FLAGS} -cp ../jars/CopperCompiler.jar -jar ../jars/silver.compiler.composed.Default.jar --clean silver:compiler:composed:Default
+
+# Ensure the reflection config files were generated.
+test -d META-INF/native-image
+
+# Build the actual JAR.
+export ANT_OPTS=-Xss10M
+ant
+
+# Pack the reflection config files into our JAR.
+zip silver.compiler.composed.Default.jar -r META-INF
+
+# Build to a native binary with native-image.
+time native-image \
+	-cp ../jars/CopperCompiler.jar \
+	-cp ../jars/SilverRuntime.jar \
+	-jar silver.compiler.composed.Default.jar \
+	-H:Name=silver-native \
+	-H:InitialCollectionPolicy='com.oracle.svm.core.genscavenge.CollectionPolicy$NeverCollect' \
+	--no-fallback
+
+# Move the binary to the jars directory.
+install silver-native ../jars
