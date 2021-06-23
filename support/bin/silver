@@ -20,15 +20,24 @@ ME=$(${READLINK} -f "${BASH_SOURCE}")
 # Set our home
 export SILVER_HOME=${ME/support\/bin\/silver/}
 
-# Find the silver jar
-SILVER="$SILVER_HOME/jars/silver.compiler.composed.Default.jar"
+# Check if a native version of Silver exists.
+SILVER_NATIVE="$SILVER_HOME/jars/silver-native"
+if [[ -x "$SILVER_NATIVE" ]]; then
+  echo "Congrats, you're using Silver Native!"
+  "$SILVER_NATIVE" "$@" && ant
+else
+  echo "Boo, no Silver Native for you!"
 
-if [ ! -f "$SILVER" ]; then
-  echo "Couldn't find the Silver jars to execute, aborting."
-  exit 2
+  # Find the silver jar
+  SILVER="$SILVER_HOME/jars/silver.compiler.composed.Default.jar"
+
+  if [ ! -f "$SILVER" ]; then
+    echo "Couldn't find the Silver jars to execute, aborting."
+    exit 2
+  fi
+
+  # Set flags if not overriden in environment
+  SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx4000M -Xss20M"}
+
+  java $SVJVM_FLAGS -jar "$SILVER" "$@" && ant
 fi
-
-# Set flags if not overriden in environment
-SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx4000M -Xss20M"}
-
-java $SVJVM_FLAGS -jar "$SILVER" "$@" && ant
