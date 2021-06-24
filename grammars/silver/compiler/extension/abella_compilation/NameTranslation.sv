@@ -26,7 +26,11 @@ global stringAbellaType::AbellaType =
        functorAbellaType(nameAbellaType("list"),
                          nameAbellaType("$char"));
 
-global appendName::String = "$append";
+global appendName::String = "$fun__append";
+global headName::String = "$fun__head";
+global tailName::String = "$fun__tail";
+global lengthName::String = "$fun__length";
+global nullName::String = "$fun__null";
 
 global pairConstructorName::String = "$pair_c";
 

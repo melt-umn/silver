@@ -101,6 +101,16 @@ top::Expr ::= q::Decorated QName
       --error(<str>) cannot succeed, so don't translate it
       if q.lookupValue.fullName == "silver:core:error"
       then []
+      --some special functions for primitive types have special relations
+      else if q.lookupValue.fullName == "silver:core:head"
+      then [([], nameTerm(headName))]
+      else if q.lookupValue.fullName == "silver:core:tail"
+      then [([], nameTerm(tailName))]
+      else if q.lookupValue.fullName == "silver:core:length"
+      then [([], nameTerm(lengthName))]
+      else if q.lookupValue.fullName == "silver:core:null"
+      then [([], nameTerm(nullName))]
+      --nothing special
       else [([], nameTerm(nameToFun(shortestName(q.name))))];
 }
 
@@ -157,86 +167,20 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   local resultName::String = "FunResult";
   local resultTerm::Term = varTerm(resultName, genInt());
   top.encodedExpr =
-      case e of
-      --Special list functions
-      | functionReference(q)
-        when q.lookupValue.fullName == "silver:core:head" ->
-        let newhead::Term = varTerm("Hd", genInt())
-        in
-          foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
-                  foldr(\ argp::([Metaterm], [Term])
-                          rest::[([Metaterm], Term)] ->
-                          case argp.2 of
-                          | [consTerm(hd, _)] -> ( argp.1, new(hd) )
-                          | [res] ->
-                            ( argp.1 ++
-                              [eqMetaterm(res,
-                                  consTerm(newhead, varTerm("Tl", genInt())))],
-                              newhead )
-                          | _ -> error("Cannot have other lists with head")
-                          end::rest,
-                        rest, newes.encodedArgs),
-                [], newe.encodedExpr)
-        end
-      | functionReference(q)
-        when q.lookupValue.fullName == "silver:core:tail" ->
-        let newtail::Term = varTerm("Tl", genInt())
-        in
-          foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
-                  foldr(\ argp::([Metaterm], [Term])
-                          rest::[([Metaterm], Term)] ->
-                          case argp.2 of
-                          | [consTerm(_, tl)] -> ( argp.1, new(tl) )
-                          | [res] ->
-                            ( argp.1 ++
-                              [eqMetaterm(res,
-                                  consTerm(varTerm("Hd", genInt()), newtail))],
-                              newtail )
-                          | _ -> error("Cannot have other lists with tail")
-                          end::rest,
-                        rest, newes.encodedArgs),
-                [], newe.encodedExpr)
-        end
-      | functionReference(q)
-        when q.lookupValue.fullName == "silver:core:null" ->
-        foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
-                foldr(\ argp::([Metaterm], [Term])
-                        rest::[([Metaterm], Term)] ->
-                        case argp.2 of
-                        | [consTerm(_, _)] ->
-                          [( argp.1, nameTerm(falseName) )]
-                        | [nilTerm()] ->
-                          [( argp.1, nameTerm(trueName) )]
-                        | [res] ->
-                          [( argp.1 ++
-                             [eqMetaterm(res,
-                                 consTerm(varTerm("Hd", genInt()),
-                                          varTerm("Tl", genInt())))],
-                             nameTerm(falseName) ),
-                           ( argp.1 ++
-                             [eqMetaterm(res, nilTerm())],
-                             nameTerm(trueName) )]
-                        | _ -> error("Cannot have other lists with head")
-                        end ++ rest,
-                      rest, newes.encodedArgs),
-                [], newe.encodedExpr)
-      --Nothing special
-      | _ ->
-        foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
-                foldr(\ argp::([Metaterm], [Term])
-                        rest::[([Metaterm], Term)] ->
-                        ( if termIsProd(ep.2) ||
-                             ep.2.unparse == pairConstructorName
-                          then ( ep.1 ++ argp.1,
-                                 buildApplication(ep.2, argp.2) )
-                          else ( ep.1 ++ argp.1 ++
-                                 [termMetaterm(
-                                     buildApplication(ep.2,
-                                        argp.2 ++ [resultTerm]))],
-                                 new(resultTerm) ) )::rest,
-                      rest, newes.encodedArgs),
-              [], newe.encodedExpr)
-      end;
+      foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
+              foldr(\ argp::([Metaterm], [Term])
+                      rest::[([Metaterm], Term)] ->
+                      ( if termIsProd(ep.2) ||
+                           ep.2.unparse == pairConstructorName
+                        then ( ep.1 ++ argp.1,
+                               buildApplication(ep.2, argp.2) )
+                        else ( ep.1 ++ argp.1 ++
+                               [termMetaterm(
+                                   buildApplication(ep.2,
+                                      argp.2 ++ [resultTerm]))],
+                               new(resultTerm) ) )::rest,
+                    rest, newes.encodedArgs),
+            [], newe.encodedExpr);
 }
 
 aspect production partialApplication

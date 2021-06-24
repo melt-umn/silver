@@ -9,10 +9,6 @@ Bugs
   definitions
 * When generating is relations for nonterminals, we need to throw in
   the WPD relation instead
-* The check for which function we have is not actually robust enough.
-  We need to catch e.g. `(if x then silver:core:head else
-  silver:core:tail)(l)` in addition to `silver:core:head(l)`.  Perhaps
-  I should use these as regular functions.
 
 
 Features
@@ -22,7 +18,7 @@ Features
 * Unification of eqMetaterms in cleaning clauses
 * Unification/general cleaning for function clauses
 * Special functions for pairs need to be added (`fst`, `snd`) as well
-  as accessing `fst` or `snd` on a pair
+  as accessing `.fst` or `.snd` on a pair
 * Local attributes in functions---might require not using
   `encodedExpr` for functions, or perhaps a flag for production
   vs. function
