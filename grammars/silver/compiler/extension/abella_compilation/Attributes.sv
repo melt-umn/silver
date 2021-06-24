@@ -22,7 +22,7 @@ propagate attrs on AGDcl, AGDcls, Grammar, Root, RootSpec;
 
 --[(attribute name, [(nonterminal name, attribute type)])]
 monoid attribute attrOccurrences::[(String, [(String, AbellaType)])]
-   with [], ++;
+   with [], combineAssociations(_, _);
 propagate attrOccurrences on AGDcl, AGDcls, Grammar, Root, RootSpec;
 
 --[(local name, [(production name, local type)])]

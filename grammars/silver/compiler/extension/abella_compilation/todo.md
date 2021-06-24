@@ -1,7 +1,6 @@
 
 Bugs
 ======================================================================
-* Some full equations are getting output twice
 * Production check needs to be put back in `functionInvocation`
 * Locals with nonterminal types need to have access relations
   generated with pair types
@@ -11,6 +10,10 @@ Bugs
   definitions
 * When generating is relations for nonterminals, we need to throw in
   the WPD relation instead
+* The check for which function we have is not actually robust enough.
+  We need to catch e.g. `(if x then silver:core:head else
+  silver:core:tail)(l)` in addition to `silver:core:head(l)`.  Perhaps
+  I should use these as regular functions.
 
 
 Features
