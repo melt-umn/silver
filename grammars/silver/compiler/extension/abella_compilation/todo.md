@@ -1,7 +1,6 @@
 
 Bugs
 ======================================================================
-* Production check needs to be put back in `functionInvocation`
 * Locals with nonterminal types need to have access relations
   generated with pair types
 * Locals with nonterminal types are accessed paired with a node

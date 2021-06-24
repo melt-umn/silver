@@ -88,7 +88,10 @@ top::Expr ::= q::Decorated QName
 aspect production productionReference
 top::Expr ::= q::Decorated QName
 {
-  top.encodedExpr = [([], nameTerm(nameToProd(shortestName(q.name))))];
+  top.encodedExpr =
+      if q.lookupValue.fullName == "silver:core:pair"
+      then [([], nameTerm(pairConstructorName))]
+      else [([], nameTerm(nameToProd(shortestName(q.name))))];
 }
 
 aspect production functionReference
@@ -222,7 +225,8 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
         foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
                 foldr(\ argp::([Metaterm], [Term])
                         rest::[([Metaterm], Term)] ->
-                        ( if termIsProd(ep.2)
+                        ( if termIsProd(ep.2) ||
+                             ep.2.unparse == pairConstructorName
                           then ( ep.1 ++ argp.1,
                                  buildApplication(ep.2, argp.2) )
                           else ( ep.1 ++ argp.1 ++
