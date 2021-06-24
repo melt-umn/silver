@@ -805,9 +805,9 @@ String ::= clauses::[(String, AbellaType, [DefClause])]
         let sorted::[(String, AbellaType, [DefClause])] =
             sortBy(\ p1::(String, AbellaType, [DefClause])
                      p2::(String, AbellaType, [DefClause]) ->
-                     p1.1 <= p2.1 &&
                      case p1.2, p2.2 of
-                     | nameAbellaType(x), nameAbellaType(y) -> x <= y
+                     | nameAbellaType(x), nameAbellaType(y) ->
+                       p1.1 < p2.1 || (p1.1 == p2.1 && x <= y)
                      | _, _ -> error("Should only have name types")
                      end,
                    clauses)

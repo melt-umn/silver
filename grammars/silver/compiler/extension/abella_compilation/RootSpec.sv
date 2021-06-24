@@ -79,9 +79,9 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
         in
           sortBy(\ p1::(String, AbellaType, String)
                    p2::(String, AbellaType, String) ->
-                   p1.1 <= p2.1 &&
                    case p1.2, p2.2 of
-                   | nameAbellaType(n1), nameAbellaType(n2) -> n1 <= n2
+                   | nameAbellaType(n1), nameAbellaType(n2) ->
+                     p1.1 < p2.1 || (p1.1 == p2.1 && n1 <= n2)
                    | _, _ -> error("Not possible")
                    end,
                  filtered)
@@ -394,7 +394,9 @@ function cleanBodies
         let sorted::[(String, (String, Integer), Term, Integer)] =
             sortBy(\ p1::(String, (String, Integer), Term, Integer)
                      p2::(String, (String, Integer), Term, Integer) ->
-                     p1.1 <= p2.1 && p1.2.1 <= p2.2.1 && p1.2.2 <= p2.2.2,
+                     p1.1 < p2.1 ||
+                     (p1.1 == p2.1 && p1.2.1 < p2.2.1) ||
+                     (p1.1 == p2.1 && p1.2.1 == p2.2.1 && p1.2.2 < p2.2.2),
                    attrEqs)
         in
           groupBy(\ p1::(String, (String, Integer), Term, Integer)
