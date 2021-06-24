@@ -61,14 +61,23 @@ top::Expr ::= q::Decorated QName
 aspect production localReference
 top::Expr ::= q::Decorated QName
 {
-  local localname::String = capitalize(shortestName(q.name));
-  local localnode::String = "Node";
-  local localTerm::Term =
+  local localname::Term =
+        varTerm(capitalize(shortestName(q.name)), genInt());
+  local localnode::Term = varTerm("Node", genInt());
+  local localchildlist::Term = varTerm("ChildList", genInt());
+  local fullLocalTerm::Term =
         if isNonterminal(top.typerep)
         then buildApplication(nameTerm(pairConstructorName),
-                [varTerm(localname, genInt()),
-                 varTerm(localnode, genInt())])
-        else varTerm(localname, genInt());
+                [localname,
+                 buildApplication(
+                    nameTerm(nodeTreeConstructorName(top.typerep.abellaType)),
+                    [localnode, localchildlist])])
+        else localname;
+  local resultLocalTerm::Term =
+        if isNonterminal(top.typerep)
+        then buildApplication(nameTerm(pairConstructorName),
+                [localname, localnode])
+        else localname;
   top.encodedExpr =
       [([ termMetaterm(
              buildApplication(
@@ -76,7 +85,8 @@ top::Expr ::= q::Decorated QName
                             shortestName(q.name), top.top.4)),
                 [top.top.1, top.top.2,
                  buildApplication(nameTerm(attributeExistsName),
-                                  [localTerm])])) ], new(localTerm))];
+                                  [fullLocalTerm])])) ],
+        new(resultLocalTerm))];
 }
 
 aspect production forwardReference

@@ -32,6 +32,8 @@ global tailName::String = "$fun__tail";
 global lengthName::String = "$fun__length";
 global nullName::String = "$fun__null";
 
+global pairTypeName::String = "$pair";
+global pairType::AbellaType = nameAbellaType(pairTypeName);
 global pairConstructorName::String = "$pair_c";
 
 global orName::String = "$or_bool";

@@ -1,12 +1,6 @@
 
 Bugs
 ======================================================================
-* Locals with nonterminal types need to have access relations
-  generated with pair types
-* Locals with nonterminal types are accessed paired with a node
-  instead of a node tree
-* When generating is relations for nonterminals, we need to throw in
-  the WPD relation instead
 
 
 Features

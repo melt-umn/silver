@@ -229,7 +229,13 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   newte.flowEnv = top.flowEnv;
   --
   top.localAttrs <-
-      [(a.name, [(top.top.4, newte.typerep.abellaType)])];
+      if isNonterminal(newte.typerep)
+      then [(a.name, [(top.top.4,
+                       functorAbellaType(
+                       functorAbellaType(pairType,
+                                         newte.typerep.abellaType),
+                                         nodeTreeType))])]
+      else [(a.name, [(top.top.4, newte.typerep.abellaType)])];
 }
 
 aspect production forwardsTo
