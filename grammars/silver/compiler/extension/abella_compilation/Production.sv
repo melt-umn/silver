@@ -67,7 +67,7 @@ function buildLocalEqRelations
         end end;
   local cleanedLocals::[(String, [[Metaterm]])] =
         map(\ p::(String, [[Metaterm]]) ->
-              ( p.1, cleanBodies(p.2) ),
+              ( p.1, unifyBodies(p.2) ),
             localGroups);
   local filledLocals::[(String, Term, [Metaterm])] =
         map(\ p::(String, [[Metaterm]]) ->

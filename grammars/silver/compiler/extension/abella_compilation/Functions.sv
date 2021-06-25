@@ -35,21 +35,23 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
                 then [p.1]
                 else map(\ l::[Metaterm] -> p.1 ++ l, allRest) ),
             ret);
-  local defClauses::[DefClause] =
-        flatMap(\ p::(Term, [[Metaterm]]) ->
-                  map(\ l::[Metaterm] ->
-                        let filled::(Term, [Metaterm]) =
-                            fillVars(p.1,
-                               [foldl(andMetaterm(_, _), head(l),
-                                      tail(l))])
-                        in
-                          if null(l)
-                          then factClause(termMetaterm(filled.1))
-                          else ruleClause(termMetaterm(filled.1),
-                                  head(filled.2))
-                        end,
-                      p.2),
+  --Unify equalities away
+  local unified::[(Term, [Metaterm])] =
+        flatMap(\ p::(Term, [[Metaterm]]) -> cleanFunction(p.1, p.2),
                 combined);
+  local defClauses::[DefClause] =
+        map(\ p::(Term, [Metaterm]) ->
+              let filled::(Term, [Metaterm]) =
+                  fillVars(p.1,
+                     [foldl(andMetaterm(_, _), head(p.2),
+                            tail(p.2))])
+              in
+                if null(p.2)
+                then factClause(termMetaterm(filled.1))
+                else ruleClause(termMetaterm(filled.1),
+                        head(filled.2))
+              end,
+            unified);
   top.funRelClauses <- [(id.name, ns.functionType, defClauses)];
 }
 

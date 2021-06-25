@@ -181,68 +181,6 @@ function generateNames_n
 
 
 
---Unify all the pairs, resulting in the given variable substitutions
---nothing() indicates an inability to unify
-function unifyTermEqs
-Maybe<[( (String, Integer), Term )]> ::= eqs::[(Term, Term)]
-{
-  local eq_result::
-        (Boolean, Maybe<((String, Integer), Term)>, [(Term, Term)]) =
-        unifyTerms(head(eqs).1, head(eqs).2);
-  local newEqs::[(Term, Term)] = eq_result.3 ++ tail(eqs);
-  local replacedEqs::[(Term, Term)] =
-        case eq_result.2 of
-        | nothing() -> newEqs
-        | just((v, tm)) ->
-          map(\ p::(Term, Term) ->
-                ( replaceVar_Term(v, tm, p.1),
-                  replaceVar_Term(v, tm, p.2) ),
-              newEqs)
-        end;
-  return
-     case eqs of
-     | [] -> just([])
-     | _::_ ->
-      if eq_result.1
-      then case unifyTermEqs(replacedEqs), eq_result.2 of
-           | nothing(), _ -> nothing()
-           | just(subst), nothing() -> just(subst)
-           | just(subst), just(here) -> just(here::subst)
-           end
-      else nothing()
-    end;
-}
---(successful unification, substitution generated, new equations)
-function unifyTerms
-( Boolean, Maybe<((String, Integer), Term)>, [(Term, Term)] ) ::=
-      tm1::Term tm2::Term
-{
-  return
-     case tm1, tm2 of
-     | varTerm(s1, i1), varTerm(s2, i2) ->
-       if s1 == s2 && i1 == i2
-       then ( true, nothing(), [] )
-       else ( true, just(( (s1, i1), varTerm(s2, i2) )), [] )
-     | varTerm(s, i), tm ->
-       ( true, just(((s, i), new(tm))), [] )
-     | tm, varTerm(s, i) ->
-       ( true, just(((s, i), new(tm))), [] )
-     | nameTerm(s1), nameTerm(s2) ->
-       if s1 == s2
-       then ( true, nothing(), [] )
-       else ( false, nothing(), [] )
-     | consTerm(t11, t12), consTerm(t21, t22) ->
-       ( true, nothing(), [(new(t11), new(t21)), (new(t12), new(t22))] )
-     | nilTerm(), nilTerm() ->
-       ( true, nothing(), [] )
-     | applicationTerm(f1, args1), applicationTerm(f2, args2) ->
-       ( length(args1.argList) == length(args2.argList),
-         nothing(),
-         (new(f1), new(f2))::zipWith(pair(_, _), args1.argList, args2.argList) )
-     | _, _ -> ( false, nothing(), [] )
-     end;
-}
-
 function termsEqual
 Boolean ::= tm1::Term tm2::Term
 {
