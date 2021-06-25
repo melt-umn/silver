@@ -266,6 +266,15 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   --synthesized can only be defined on root
   top.attrEqInfo <-
       [ (shortestName(attr.name), top.top.3, top.top.4, clauseHead,
+         map(\ l::[Metaterm] ->
+               termMetaterm(
+                  buildApplication(
+                     nameTerm(accessRelationName(top.top.3,
+                                           shortestName(attr.name))),
+                     [top.top.1,
+                      nodetreeToNode(top.nodetreeTerm),
+                      nameTerm(attributeNotExistsName)]))::l,
+             e.encodedFailure) ++
          map(\ p::([Metaterm], Term) ->
                termMetaterm(
                   buildApplication(
@@ -275,7 +284,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
                       nodetreeToNode(top.nodetreeTerm),
                       buildApplication(nameTerm(attributeExistsName),
                                        [p.2])]))::p.1,
-             e.encodedExpr)) ];
+             e.encodedExpr) )];
 }
 
 aspect production inheritedAttributeDef
@@ -298,6 +307,14 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
       | forwardDefLHS(_) -> []
       | _ ->
         [ (shortestName(attr.name), top.top.3, top.top.4, clauseHead,
+           map(\ l::[Metaterm] ->
+                 termMetaterm(
+                    buildApplication(
+                       nameTerm(accessRelationName(treeTy,
+                                             shortestName(attr.name))),
+                       [tree.1, tree.2,
+                        nameTerm(attributeNotExistsName)]))::l,
+               e.encodedFailure) ++
            map(\ p::([Metaterm], Term) ->
                  termMetaterm(
                     buildApplication(
@@ -306,7 +323,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
                        [tree.1, tree.2,
                         buildApplication(nameTerm(attributeExistsName),
                                          [p.2])]))::p.1,
-               e.encodedExpr)) ]
+               e.encodedExpr) )]
       end;
   --
   local localStructureVar::Term =
@@ -315,11 +332,38 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   local localNodetree::Term =
         buildApplication(
            nameTerm(nodeTreeConstructorName(treeTy)),
-           [localNode, varTerm("NTr", genInt())]);
+           [localNode, varTerm("CL", genInt())]);
   top.localAttrEqInfo <-
       case dl of
       | localDefLHS(_) ->
         [( shortestName(dl.name),
+           --In order to get any cases where the local is not defined
+           --   when we combine the definition and inh defs, we need
+           --   to include a case where it is not defined here
+           [ [termMetaterm(
+                 buildApplication(
+                    nameTerm(localAccessRelationName(top.top.3,
+                       shortestName(dl.name), top.top.4)),
+                    [top.top.1, top.top.2,
+                     nameTerm(attributeNotExistsName)]))] ] ++
+           map(\ l::[Metaterm] ->
+                 termMetaterm(
+                    buildApplication(
+                       nameTerm(localAccessRelationName(top.top.3,
+                          shortestName(dl.name), top.top.4)),
+                       [top.top.1, top.top.2,
+                        buildApplication(
+                           nameTerm(attributeExistsName),
+                           [buildApplication(
+                               nameTerm(pairConstructorName),
+                               [localStructureVar, localNodetree])])]))::
+                 termMetaterm(
+                    buildApplication(
+                       nameTerm(accessRelationName(treeTy,
+                                   shortestName(attr.name))),
+                       [localStructureVar, localNode,
+                        nameTerm(attributeNotExistsName)]))::l,
+               e.encodedFailure) ++
            map(\ p::([Metaterm], Term) ->
                  termMetaterm(
                     buildApplication(
@@ -395,6 +439,14 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
            [localNode, varTerm("ChildList", genInt())]);
   top.localAttrEqInfo <-
       [( shortestName(val.name),
+         map(\ p::([Metaterm], Term) ->
+               termMetaterm(
+                  buildApplication(
+                     nameTerm(localAccessRelationName(top.top.3,
+                        shortestName(val.name), top.top.4)),
+                     [top.top.1, top.top.2,
+                      nameTerm(attributeNotExistsName)]))::p.1,
+             e.encodedExpr) ++
          map(\ p::([Metaterm], Term) ->
                if isNonterminal(e.typerep)
                then termMetaterm(

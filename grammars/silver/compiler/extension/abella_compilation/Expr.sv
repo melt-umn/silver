@@ -4,7 +4,7 @@ imports silver:compiler:extension:tuple;
 
 
 attribute
-   encodedExpr, encodingEnv, top
+   encodedExpr, encodedFailure, encodingEnv, top
 occurs on Expr;
 
 
@@ -13,6 +13,7 @@ aspect default production
 top::Expr ::=
 {
   top.encodedExpr = error("Default production (" ++ top.unparse ++ ")");
+  top.encodedFailure = error("Default production (" ++ top.unparse ++ ")");
 }
 
 
@@ -22,12 +23,16 @@ top::Expr ::= e::[Message]
 {
   top.encodedExpr =
       error("Abella encoding not defined in the presence of errors");
+  top.encodedFailure =
+      error("Abella encoding not defined in the presence of errors");
 }
 
 aspect production errorReference
 top::Expr ::= msg::[Message]  q::Decorated QName
 {
   top.encodedExpr =
+      error("Abella encoding not defined in the presence of errors");
+  top.encodedFailure =
       error("Abella encoding not defined in the presence of errors");
 }
 
@@ -43,6 +48,7 @@ top::Expr ::= q::Decorated QName
       | just((tree, node)) -> tree
       | nothing() -> error("Child must exist")
       end)];
+  top.encodedFailure = [];
 }
 
 aspect production lhsReference
@@ -56,6 +62,7 @@ top::Expr ::= q::Decorated QName
            [treename, nodename])
       | nothing() -> error("LHS must exist")
       end)];
+  top.encodedFailure = [];
 }
 
 aspect production localReference
@@ -87,12 +94,21 @@ top::Expr ::= q::Decorated QName
                  buildApplication(nameTerm(attributeExistsName),
                                   [fullLocalTerm])])) ],
         new(resultLocalTerm))];
+  --Only way to fail is local is undefined
+  top.encodedFailure =
+      [[termMetaterm(
+           buildApplication(
+              nameTerm(localAccessRelationName(top.top.3,
+                          shortestName(q.name), top.top.4)),
+              [top.top.1, top.top.2,
+               nameTerm(attributeNotExistsName)]))]];
 }
 
 aspect production forwardReference
 top::Expr ::= q::Decorated QName
 {
   top.encodedExpr = error("I don't know what forwardReference is");
+  top.encodedFailure = error("I don't know what forwardReference is");
 }
 
 aspect production productionReference
@@ -102,6 +118,7 @@ top::Expr ::= q::Decorated QName
       if q.lookupValue.fullName == "silver:core:pair"
       then [([], nameTerm(pairConstructorName))]
       else [([], nameTerm(nameToProd(shortestName(q.name))))];
+  top.encodedFailure = [];
 }
 
 aspect production functionReference
@@ -128,24 +145,32 @@ top::Expr ::= q::Decorated QName
       then [([], nameTerm(appendName))]
       --nothing special
       else [([], nameTerm(nameToFun(shortestName(q.name))))];
+  top.encodedFailure =
+      if q.lookupValue.fullName == "silver:core:error"
+      then [[]]
+      else [];
 }
 
 aspect production classMemberReference
 top::Expr ::= q::Decorated QName
 {
   top.encodedExpr = error("classMemberReference not done yet");
+  top.encodedFailure = error("classMemberReference not done yet");
 }
 
 aspect production globalValueReference
 top::Expr ::= q::Decorated QName
 {
   top.encodedExpr = error("globalValueReference not done yet");
+  top.encodedFailure = error("globalValueReference not done yet");
 }
 
 aspect production errorApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.encodedExpr =
+      error("Abella encoding not defined in the presence of errors");
+  top.encodedFailure =
       error("Abella encoding not defined in the presence of errors");
 }
 
@@ -197,24 +222,47 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
                                new(resultTerm) ) )::rest,
                     rest, newes.encodedArgs),
             [], newe.encodedExpr);
+  top.encodedFailure =
+      --for each encoding of function and args, might not return
+      foldr(\ ep::([Metaterm], Term) rest::[[Metaterm]] ->
+              foldr(\ argp::([Metaterm], [Term])
+                      rest::[[Metaterm]] ->
+                      if termIsProd(ep.2) ||
+                         ep.2.unparse == pairConstructorName
+                      then --productions always return
+                           rest
+                      else ( ep.1 ++ argp.1 ++
+                             [impliesMetaterm(
+                                 bindingMetaterm(existsBinder(),
+                                    [("Res", nothing())],
+                                    termMetaterm(
+                                       buildApplication(ep.2,
+                                          argp.2 ++ [nameTerm("Res")]))),
+                                 falseMetaterm())] )::rest,
+                    rest, newes.encodedArgs),
+            [], newe.encodedExpr) ++
+      newe.encodedFailure ++ newes.encodedFailure;
 }
 
 aspect production partialApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.encodedExpr = error("partialApplication not done yet");
+  top.encodedFailure = error("partialApplication not done yet");
 }
 
 aspect production noteAttachment
 top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 {
   top.encodedExpr = error("I don't know what noteAttachment is");
+  top.encodedFailure = error("I don't know what noteAttachment is");
 }
 
 aspect production attributeSection
 top::Expr ::= '(' '.' q::QName ')'
 {
   top.encodedExpr = error("attributeSection not done yet");
+  top.encodedFailure = error("attributeSection not done yet");
 }
 
 aspect production forwardAccess
@@ -245,6 +293,21 @@ top::Expr ::= e::Expr '.' 'forward'
               error("Is this possible, not to have a pair for an access?")
             end,
           e.encodedExpr);
+  top.encodedFailure =
+      map(\ ep::([Metaterm], Term) ->
+            case ep.2 of
+            | applicationTerm(nameTerm("$pair_c"),
+                 consTermList(tree, singleTermList(node))) ->
+              ep.1 ++
+              [ termMetaterm(
+                   buildApplication(
+                      nameTerm(accessRelationName(treeTy, "forward")),
+                      [tree, node, nameTerm(attributeNotExistsName)])) ]
+            | _ ->
+              error("Is this possible, not to have a pair for an access?")
+            end,
+          e.encodedExpr) ++
+      e.encodedFailure;
 }
 
 aspect production errorAccessHandler
@@ -252,18 +315,22 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.encodedExpr =
       error("Abella encoding not defined in the presence of errors");
+  top.encodedFailure =
+      error("Abella encoding not defined in the presence of errors");
 }
 
 aspect production annoAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.encodedExpr = error("annoAccessHandler not done yet");
+  top.encodedFailure = error("annoAccessHandler not done yet");
 }
 
 aspect production terminalAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.encodedExpr = error("terminalAccessHandler not done yet");
+  top.encodedFailure = error("terminalAccessHandler not done yet");
 }
 
 aspect production synDecoratedAccessHandler
@@ -317,6 +384,23 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
               error("Must have a pair for an access in a well-typed grammar")
             end,
           newe.encodedExpr);
+  top.encodedFailure =
+      map(\ ep::([Metaterm], Term) ->
+            case ep.2 of
+            | applicationTerm(nameTerm("$pair_c"),
+                 consTermList(tree, singleTermList(node))) ->
+              ep.1 ++
+              [ termMetaterm(
+                   buildApplication(
+                      nameTerm(accessRelationName(treeTy,
+                                  shortestName(q.name))),
+                      [tree, node,
+                       nameTerm(attributeNotExistsName)])) ]
+            | _ ->
+              error("Must have a pair for an access in a well-typed grammar")
+            end,
+          newe.encodedExpr) ++
+      newe.encodedFailure;
 }
 
 aspect production inhDecoratedAccessHandler
@@ -364,12 +448,31 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
               error("I don't think we can access on a non-pair")
             end,
           newe.encodedExpr);
+  top.encodedFailure =
+      map(\ ep::([Metaterm], Term) ->
+            case ep.2 of
+            | applicationTerm(nameTerm("$pair_c"),
+                 consTermList(tree, singleTermList(node))) ->
+              ep.1 ++
+              [ termMetaterm(
+                   buildApplication(
+                      nameTerm(accessRelationName(treeTy,
+                                  shortestName(q.name))),
+                      [tree, node,
+                       nameTerm(attributeNotExistsName)])) ]
+            | _ ->
+              error("I don't think we can access on a non-pair")
+            end,
+          newe.encodedExpr) ++
+      newe.encodedFailure;
 }
 
 aspect production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.encodedExpr =
+      error("Abella encoding not defined in the presence of errors");
+  top.encodedFailure =
       error("Abella encoding not defined in the presence of errors");
 }
 
@@ -378,6 +481,7 @@ aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.encodedExpr = error("decorateExprWith not done");
+  top.encodedFailure = error("decorateExprWith not done");
 }
 
 aspect production exprInhsEmpty
@@ -409,12 +513,14 @@ aspect production trueConst
 top::Expr ::= 'true'
 {
   top.encodedExpr = [([], nameTerm(trueName))];
+  top.encodedFailure = [];
 }
 
 aspect production falseConst
 top::Expr ::= 'false'
 {
   top.encodedExpr = [([], nameTerm(falseName))];
+  top.encodedFailure = [];
 }
 
 aspect production and
@@ -426,25 +532,45 @@ top::Expr ::= e1::Expr '&&' e2::Expr
   e2.top = top.top;
   top.encodedExpr =
       foldr(\ el1::([Metaterm], Term) rest::[([Metaterm], Term)] ->
-              foldr(\ el2::([Metaterm], Term) rest::[([Metaterm], Term)] ->
-                     case el1.2 of
-                      | nameTerm("$btrue") ->
-                        [ ( el1.1 ++ el2.1, el2.2 ) ] ++ rest
-                      | nameTerm("$bfalse") ->
-                        [ ( el1.1, nameTerm(falseName) ) ] ++ rest
-                      | varTerm(n, i) ->
-                        [ ( replaceVar_list((n, i), nameTerm(trueName),
-                                            el1.1) ++ el2.1,
-                            el2.2 ),
-                          ( replaceVar_list((n, i), nameTerm(falseName),
-                                            el1.1),
-                            nameTerm(falseName) ) ] ++ rest
-                      | _ ->
-                        error("Results of Boolean-typed encoding " ++
-                              "must be either Boolean constants or" ++
-                              " varTerms")
-                      end,
-                  [], e2.encodedExpr) ++ rest,
+              case el1.2 of
+              | nameTerm("$btrue") ->
+                foldr(\ el2::([Metaterm], Term)
+                        rest::[([Metaterm], Term)] ->
+                        [( el1.1 ++ el2.1, el2.2 )] ++ rest,
+                      [], e2.encodedExpr)
+              | nameTerm("$bfalse") ->
+                [(el1.1, nameTerm(falseName))]
+              | varTerm(n, i) ->
+                let trueReplaced::[Metaterm] =
+                    replaceVar_list((n, i), nameTerm(trueName), el1.1)
+                in
+                  foldr(\ el2::([Metaterm], Term)
+                          rest::[([Metaterm], Term)] ->
+                          ( trueReplaced ++ el2.1, el2.2 )::rest,
+                        [], e2.encodedExpr)
+                end ++
+                [( replaceVar_list((n, i), nameTerm(falseName), el1.1),
+                   nameTerm(falseName) )]
+              | _ ->
+                error("Results of Boolean-typed encoding must be " ++
+                      "either Boolean constants or varTerms")
+              end ++ rest,
+            [], e1.encodedExpr);
+  top.encodedFailure =
+      e1.encodedFailure ++
+      foldr(\ el1::([Metaterm], Term) rest::[[Metaterm]] ->
+              case el1.2 of
+              | nameTerm("$bfalse") -> []
+              | nameTerm("$btrue") ->
+                map(\ l::[Metaterm] -> el1.1 ++ l, e2.encodedFailure)
+              | varTerm(n, i) ->
+                map(\ l::[Metaterm] ->
+                      replaceVar_list((n, i), nameTerm(trueName), el1.1) ++ l,
+                    e2.encodedFailure)
+              | _ ->
+                error("Results of Boolean-typed encoding must be " ++
+                      "either Boolean constants or varTerms")
+              end ++ rest,
             [], e1.encodedExpr);
 }
 
@@ -457,25 +583,45 @@ top::Expr ::= e1::Expr '||' e2::Expr
   e2.top = top.top;
   top.encodedExpr =
       foldr(\ el1::([Metaterm], Term) rest::[([Metaterm], Term)] ->
-              foldr(\ el2::([Metaterm], Term) rest::[([Metaterm], Term)] ->
-                      case el1.2 of
-                      | nameTerm("$btrue") ->
-                        [ ( el1.1,
-                            nameTerm(trueName) ) ] ++ rest
-                      | nameTerm("$bfalse") ->
-                        [ ( el1.1 ++ el2.1, el2.2 ) ] ++ rest
-                      | varTerm(n, i) ->
-                        [ ( replaceVar_list((n, i), nameTerm(trueName), el1.1),
-                            nameTerm(trueName) ),
-                          ( replaceVar_list((n, i), nameTerm(falseName),
-                                            el1.1) ++ el2.1,
-                            el2.2 ) ] ++ rest
-                      | _ ->
-                        error("Results of Boolean-typed encoding " ++
-                              "must be either Boolean constants or" ++
-                              " varTerms")
-                      end,
-                  [], e2.encodedExpr) ++ rest,
+              case el1.2 of
+              | nameTerm("$bfalse") ->
+                foldr(\ el2::([Metaterm], Term)
+                        rest::[([Metaterm], Term)] ->
+                        [( el1.1 ++ el2.1, el2.2 )] ++ rest,
+                      [], e2.encodedExpr)
+              | nameTerm("$btrue") ->
+                [(el1.1, nameTerm(trueName))]
+              | varTerm(n, i) ->
+                let falseReplaced::[Metaterm] =
+                    replaceVar_list((n, i), nameTerm(falseName), el1.1)
+                in
+                  foldr(\ el2::([Metaterm], Term)
+                          rest::[([Metaterm], Term)] ->
+                          ( falseReplaced ++ el2.1, el2.2 )::rest,
+                        [], e2.encodedExpr)
+                end ++
+                [( replaceVar_list((n, i), nameTerm(trueName), el1.1),
+                   nameTerm(trueName) )]
+              | _ ->
+                error("Results of Boolean-typed encoding must be " ++
+                      "either Boolean constants or varTerms")
+              end ++ rest,
+            [], e1.encodedExpr);
+  top.encodedFailure =
+      e1.encodedFailure ++
+      foldr(\ el1::([Metaterm], Term) rest::[[Metaterm]] ->
+              case el1.2 of
+              | nameTerm("$btrue") -> []
+              | nameTerm("$bfalse") ->
+                map(\l::[Metaterm] -> el1.1 ++ l, e2.encodedFailure)
+              | varTerm(n, i) ->
+                map(\ l::[Metaterm] ->
+                      replaceVar_list((n, i), nameTerm(falseName), el1.1) ++ l,
+                    e2.encodedFailure)
+              | _ ->
+                error("Results of Boolean-typed encoding must be " ++
+                      "either Boolean constants or varTerms")
+              end ++ rest,
             [], e1.encodedExpr);
 }
 
@@ -501,6 +647,7 @@ top::Expr ::= '!' e::Expr
                       "either Boolean constants or varTerms")
               end,
             [], e.encodedExpr);
+  top.encodedFailure = e.encodedFailure;
 }
 
 aspect production gtOp
@@ -550,6 +697,7 @@ top::Expr ::= e1::Expr '>' e2::Expr
                         new(result) )::rest,
                     [], newe2.encodedExpr) ++ rest,
             [], newe1.encodedExpr);
+  top.encodedFailure = newe1.encodedFailure ++ newe2.encodedFailure;
 }
 
 aspect production ltOp
@@ -599,6 +747,7 @@ top::Expr ::= e1::Expr '<' e2::Expr
                         new(result) )::rest,
                     [], newe2.encodedExpr) ++ rest,
             [], newe1.encodedExpr);
+  top.encodedFailure = newe1.encodedFailure ++ newe2.encodedFailure;
 }
 
 aspect production gteOp
@@ -648,6 +797,7 @@ top::Expr ::= e1::Expr '>=' e2::Expr
                         new(result) )::rest,
                     [], newe2.encodedExpr) ++ rest,
             [], newe1.encodedExpr);
+  top.encodedFailure = newe1.encodedFailure ++ newe2.encodedFailure;
 }
 
 aspect production lteOp
@@ -697,6 +847,7 @@ top::Expr ::= e1::Expr '<=' e2::Expr
                         new(result) )::rest,
                     [], newe2.encodedExpr) ++ rest,
             [], newe1.encodedExpr);
+  top.encodedFailure = newe1.encodedFailure ++ newe2.encodedFailure;
 }
 
 {-
@@ -750,6 +901,7 @@ top::Expr ::= e1::Expr '==' e2::Expr
                         nameTerm(falseName) )::rest,
                     [], newe2.encodedExpr) ++ rest,
             [], newe1.encodedExpr);
+  top.encodedFailure = newe1.encodedFailure ++ newe2.encodedFailure;
 }
 
 aspect production neqOp
@@ -799,6 +951,7 @@ top::Expr ::= e1::Expr '!=' e2::Expr
                         nameTerm(trueName) )::rest,
                     [], newe2.encodedExpr) ++ rest,
             [], newe1.encodedExpr);
+  top.encodedFailure = newe1.encodedFailure ++ newe2.encodedFailure;
 }
 
 aspect production ifThenElse
@@ -844,18 +997,45 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
                       end,
                     [], e3.encodedExpr) ++ rest,
             [], e1.encodedExpr);
+  top.encodedFailure =
+      foldr(\ ep1::([Metaterm], Term) rest::[[Metaterm]] ->
+              case ep1.2 of
+              | nameTerm("$btrue") ->
+                map(\ l::[Metaterm] -> ep1.1 ++ l, e2.encodedFailure)
+              | nameTerm("$bfalse") ->
+                map(\ l::[Metaterm] -> ep1.1 ++ l, e3.encodedFailure)
+              | varTerm(n, i) ->
+                let trueReplaced::[Metaterm] =
+                    replaceVar_list((n, i), nameTerm(trueName), ep1.1)
+                in
+                let falseReplaced::[Metaterm] =
+                    replaceVar_list((n, i), nameTerm(falseName), ep1.1)
+                in
+                  map(\ l::[Metaterm] -> trueReplaced ++ l,
+                      e2.encodedFailure) ++
+                  map(\ l::[Metaterm] -> falseReplaced ++ l,
+                      e3.encodedFailure)
+                end end
+              | _ ->
+                error("Results of Boolean-typed encoding must be " ++
+                      "either Boolean constants or varTerms")
+              end ++ rest,
+            [], e1.encodedExpr) ++
+      e1.encodedFailure;
 }
 
 aspect production intConst
 top::Expr ::= i::Int_t
 {
   top.encodedExpr = [([], integerToIntegerTerm(toInteger(i.lexeme)))];
+  top.encodedFailure = [];
 }
 
 aspect production floatConst
 top::Expr ::= f::Float_t
 {
   top.encodedExpr = error("floatConst not done yet");
+  top.encodedFailure = error("floatConst not done yet");
 } 
 
 aspect production plus
@@ -880,6 +1060,7 @@ top::Expr ::= e1::Expr '+' e2::Expr
                         new(result) )::rest,
                     [], e2.encodedExpr) ++ rest,
             [], e1.encodedExpr);
+  top.encodedFailure = e1.encodedFailure ++ e2.encodedFailure;
 }
 
 aspect production minus
@@ -904,6 +1085,7 @@ top::Expr ::= e1::Expr '-' e2::Expr
                         new(result) )::rest,
                     [], e2.encodedExpr) ++ rest,
             [], e1.encodedExpr);
+  top.encodedFailure = e1.encodedFailure ++ e2.encodedFailure;
 }
 
 aspect production multiply
@@ -928,6 +1110,7 @@ top::Expr ::= e1::Expr '*' e2::Expr
                         new(result) )::rest,
                     [], e2.encodedExpr) ++ rest,
             [], e1.encodedExpr);
+  top.encodedFailure = e1.encodedFailure ++ e2.encodedFailure;
 }
 
 aspect production divide
@@ -952,6 +1135,16 @@ top::Expr ::= e1::Expr '/' e2::Expr
                         new(result) )::rest,
                     [], e2.encodedExpr) ++ rest,
             [], e1.encodedExpr);
+  top.encodedFailure =
+      foldr(\ ep1::([Metaterm], Term) rest::[[Metaterm]] ->
+              foldr(\ ep2::([Metaterm], Term)
+                      rest::[[Metaterm]] ->
+                      ( ep1.1 ++ ep2.1 ++
+                        [eqMetaterm(ep2.2,
+                            integerToIntegerTerm(0))] )::rest,
+                    [], e2.encodedExpr) ++ rest,
+            [], e1.encodedExpr) ++
+      e1.encodedFailure ++ e2.encodedFailure;
 }
 
 aspect production modulus
@@ -976,6 +1169,16 @@ top::Expr ::= e1::Expr '%' e2::Expr
                         new(result) )::rest,
                     [], e2.encodedExpr) ++ rest,
             [], e1.encodedExpr);
+  top.encodedFailure =
+      foldr(\ ep1::([Metaterm], Term) rest::[[Metaterm]] ->
+              foldr(\ ep2::([Metaterm], Term)
+                      rest::[[Metaterm]] ->
+                      ( ep1.1 ++ ep2.1 ++
+                        [eqMetaterm(ep2.2,
+                            integerToIntegerTerm(0))] )::rest,
+                    [], e2.encodedExpr) ++ rest,
+            [], e1.encodedExpr) ++
+      e1.encodedFailure ++ e2.encodedFailure;
 }
 
 aspect production neg
@@ -995,6 +1198,7 @@ top::Expr ::= '-' e::Expr
                      [ep.2, result]))],
               new(result) ),
           e.encodedExpr);
+  top.encodedFailure = e.encodedFailure;
 }
 
 aspect production stringConst
@@ -1004,6 +1208,7 @@ top::Expr ::= s::String_t
   local contents::String =
         substring(1, length(s.lexeme) - 1, s.lexeme);
   top.encodedExpr = [([], stringToAbellaTerm(contents))];
+  top.encodedFailure = [];
 }
 
 --We're not handling typeclasses, so this is just list append
@@ -1054,12 +1259,14 @@ top::Expr ::= e1::Expr '++' e2::Expr
                         new(result) )::rest,
                     [], newe2.encodedExpr) ++ rest,
             [], newe1.encodedExpr);
+  top.encodedFailure = newe1.encodedFailure ++ newe2.encodedFailure;
 }
 
 aspect production emptyList
 top::Expr ::= '[' ']'
 {
   top.encodedExpr = [ ([], nilTerm()) ];
+  top.encodedFailure = [];
 }
 
 aspect production consListOp
@@ -1072,6 +1279,7 @@ top::Expr ::= h::Expr '::' t::Expr
                       ( hp.1 ++ tp.1, consTerm(hp.2, tp.2) )::rest,
                     rest, t.encodedExpr),
             [], h.encodedExpr);
+  top.encodedFailure = h.encodedFailure ++ t.encodedFailure;
 }
 
 aspect production fullList
@@ -1081,6 +1289,7 @@ top::Expr ::= '[' es::Exprs ']'
       map(\ esp::([Metaterm], [Term]) ->
             ( esp.1, foldr(consTerm(_, _), nilTerm(), esp.2) ),
           es.encodedArgs);
+  top.encodedFailure = es.encodedFailure;
 }
 
 aspect production selector
@@ -1139,19 +1348,21 @@ top::Expr ::= tuple::Expr '.' a::IntConst
               end
             end,
           tuple.encodedExpr);
+  top.encodedFailure = tuple.encodedFailure;
 }
 
 
 
 
 attribute
-   encodedArgs, encodingEnv, top
+   encodedArgs, encodedFailure, encodingEnv, top
 occurs on Exprs;
 
 aspect production exprsEmpty
 top::Exprs ::=
 {
   top.encodedArgs = [([], [])];
+  top.encodedFailure = [];
 }
 
 aspect production exprsSingle
@@ -1161,6 +1372,7 @@ top::Exprs ::= e::Expr
   e.top = top.top;
   top.encodedArgs =
       map(\ ep::([Metaterm], Term) -> (ep.1, [ep.2]), e.encodedExpr);
+  top.encodedFailure = e.encodedFailure;
 }
 
 aspect production exprsCons
@@ -1177,23 +1389,25 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
                       ( e1p.1 ++ e2p.1, e1p.2::e2p.2 )::rest2,
                     rest1, e2.encodedArgs),
             [], e1.encodedExpr);
+  top.encodedFailure = e1.encodedFailure ++ e2.encodedFailure;
 }
 
 
 
 
 attribute
-   encodedArgs, encodingEnv, top
+   encodedArgs, encodedFailure, encodingEnv, top
 occurs on AppExprs;
 
 attribute
-   encodedExpr, encodingEnv, top
+   encodedExpr, encodedFailure, encodingEnv, top
 occurs on AppExpr;
 
 aspect production missingAppExpr
 top::AppExpr ::= '_'
 {
   top.encodedExpr = error("missingAppExpr not done");
+  top.encodedFailure = error("missingAppExpr not done");
 }
 
 aspect production presentAppExpr
@@ -1216,6 +1430,7 @@ top::AppExpr ::= e::Expr
                         end ),
                     e.encodedExpr)
       else e.encodedExpr;
+  top.encodedFailure = e.encodedFailure;
 }
 
 aspect production snocAppExprs
@@ -1232,6 +1447,7 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
                       ( esp.1 ++ ep.1, esp.2 ++ [ep.2] )::rest2,
                     rest1, es.encodedArgs),
             [], e.encodedExpr);
+  top.encodedFailure = es.encodedFailure ++ e.encodedFailure;
 }
 
 aspect production oneAppExprs
@@ -1241,12 +1457,14 @@ top::AppExprs ::= e::AppExpr
   e.top = top.top;
   top.encodedArgs =
       map(\ ep::([Metaterm], Term) -> (ep.1, [ep.2]), e.encodedExpr);
+  top.encodedFailure = e.encodedFailure;
 }
 
 aspect production emptyAppExprs
 top::AppExprs ::=
 {
   top.encodedArgs = [([], [])];
+  top.encodedFailure = [];
 }
 
 
@@ -1291,5 +1509,6 @@ top::Expr ::= e::Decorated Expr
   newe.top = top.top;
   --
   top.encodedExpr = newe.encodedExpr;
+  top.encodedFailure = newe.encodedFailure;
 }
 

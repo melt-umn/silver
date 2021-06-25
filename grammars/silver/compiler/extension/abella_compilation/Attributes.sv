@@ -65,7 +65,7 @@ propagate attrEqInfo on AGDcl, AGDcls, Grammar, Root, RootSpec,
              functionDclFFI, functionDcl, ifElseStmt, blockStmt;
 
 
---[(local, production, [clause bodies])]
+--[(local, [clause bodies])]
 monoid attribute localAttrEqInfo::[(String, [[Metaterm]])]
    with [], ++;
 propagate localAttrEqInfo on ProductionStmt, ProductionStmts,
@@ -101,6 +101,12 @@ propagate funRelClauses on Grammar, Root, AGDcls, AGDcl;
 synthesized attribute encodedExpr::[([Metaterm], Term)];
 --Encoding arguments for application
 synthesized attribute encodedArgs::[([Metaterm], [Term])];
+
+--The cases where an attribute equation yields no value
+--If it always succeeds, encodedFailure = []
+--If it always fails, encodedFailure = [[]]
+--We don't need a result because the result is that there is no result
+synthesized attribute encodedFailure::[[Metaterm]];
 
 --[(Silver name, (tree structure, tree node))]
 --If it isn't a tree, we won't ever need the node, but it is easier to
