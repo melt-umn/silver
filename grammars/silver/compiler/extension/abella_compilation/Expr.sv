@@ -120,6 +120,12 @@ top::Expr ::= q::Decorated QName
       then [([], nameTerm(lengthName))]
       else if q.lookupValue.fullName == "silver:core:null"
       then [([], nameTerm(nullName))]
+      else if q.lookupValue.fullName == "silver:core:fst"
+      then [([], nameTerm(fstName))]
+      else if q.lookupValue.fullName == "silver:core:snd"
+      then [([], nameTerm(sndName))]
+      else if q.lookupValue.fullName == "silver:core:append"
+      then [([], nameTerm(appendName))]
       --nothing special
       else [([], nameTerm(nameToFun(shortestName(q.name))))];
 }

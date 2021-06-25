@@ -26,7 +26,7 @@ global stringAbellaType::AbellaType =
        functorAbellaType(nameAbellaType("list"),
                          nameAbellaType("$char"));
 
-global appendName::String = "$fun__append";
+global appendName::String = "$append";
 global headName::String = "$fun__head";
 global tailName::String = "$fun__tail";
 global lengthName::String = "$fun__length";
@@ -35,6 +35,8 @@ global nullName::String = "$fun__null";
 global pairTypeName::String = "$pair";
 global pairType::AbellaType = nameAbellaType(pairTypeName);
 global pairConstructorName::String = "$pair_c";
+global fstName::String = "$fun__fst";
+global sndName::String = "$fun__snd";
 
 global orName::String = "$or_bool";
 global andName::String = "$and_bool";
