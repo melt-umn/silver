@@ -238,6 +238,18 @@ Boolean ::= ty::Type
      end;
 }
 
+function isPair
+Boolean ::= ty::Type
+{
+  return
+     case ty of
+     | nonterminalType(fn, _, _) -> fn == "silver:core:Pair"
+     | decoratedType(t, _) -> isPair(t)
+     | ntOrDecType(t, _, _) -> isPair(t)
+     | _ -> false
+     end;
+}
+
 
 
 

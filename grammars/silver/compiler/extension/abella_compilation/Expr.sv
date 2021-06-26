@@ -360,47 +360,83 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
         else varTerm(synname, genInt());
   local treeTy::AbellaType = e.typerep.abellaType;
   top.encodedExpr =
-      map(\ ep::([Metaterm], Term) ->
-            case ep.2 of
-            | applicationTerm(nameTerm("$pair_c"),
-                 consTermList(tree, singleTermList(node))) ->
-              ( ep.1 ++
-                [ termMetaterm(
-                     buildApplication(
-                        nameTerm(accessRelationName(treeTy,
-                                    shortestName(q.name))),
-                        [tree, node,
-                         buildApplication(nameTerm(attributeExistsName),
-                                          [synTerm])])) ],
-                new(synTerm) )
-            | _ ->
-              {-
-                It is probably possible for this to occur.  In that case,
-                one would need to generate a node and WPD assumption for
-                this new node with the tree, but this would be accessing
-                an attribute on a tree which was *just constructed* (e.g.
-                plus(int(1), int(2)).value) which I think is unlikely.
-              -}
-              error("Must have a pair for an access in a well-typed grammar")
-            end,
-          newe.encodedExpr);
+      if isPair(e.typerep)
+      then let p1::Term = varTerm("Fst", genInt())
+           in
+           let p2::Term = varTerm("Snd", genInt())
+           in
+           let pr::Term =
+               buildApplication(nameTerm(pairConstructorName), [p1, p2])
+           in
+             if q.attrDcl.fullName == "silver:core:fst"
+             then map(\ ep::([Metaterm], Term) ->
+                        case ep.2 of
+                        | applicationTerm(nameTerm("$pair_c"),
+                             consTermList(fst, singleTermList(snd))) ->
+                          ( ep.1, new(fst) )
+                        | varTerm(n, i) ->
+                          ( replaceVar_list((n, i), pr, ep.1), p1 )
+                        | _ -> error("Impossible for pair-typed term")
+                        end,
+                      newe.encodedExpr)
+             else if q.attrDcl.fullName == "silver:core:snd"
+             then map(\ ep::([Metaterm], Term) ->
+                        case ep.2 of
+                        | applicationTerm(nameTerm("$pair_c"),
+                             consTermList(fst, singleTermList(snd))) ->
+                          ( ep.1, new(snd) )
+                        | varTerm(n, i) ->
+                          ( replaceVar_list((n, i), pr, ep.1), p2 )
+                        | _ -> error("Impossible for pair-typed term")
+                        end,
+                      newe.encodedExpr)
+             else error("Cannot handle accesses of attributes on " ++
+                        "pairs other than fst and snd (tried to " ++
+                        "access " ++ q.name ++ ")")
+           end end end
+      else map(\ ep::([Metaterm], Term) ->
+                 case ep.2 of
+                 | applicationTerm(nameTerm("$pair_c"),
+                      consTermList(tree, singleTermList(node))) ->
+                   ( ep.1 ++
+                     [ termMetaterm(
+                          buildApplication(
+                             nameTerm(accessRelationName(treeTy,
+                                         shortestName(q.name))),
+                             [tree, node,
+                              buildApplication(nameTerm(attributeExistsName),
+                                               [synTerm])])) ],
+                     new(synTerm) )
+                 | _ ->
+                   {-
+                     It is probably possible for this to occur.  In that case,
+                     one would need to generate a node and WPD assumption for
+                     this new node with the tree, but this would be accessing
+                     an attribute on a tree which was *just constructed* (e.g.
+                     plus(int(1), int(2)).value) which I think is unlikely.
+                   -}
+                   error("Must have a pair for an access in a well-typed grammar")
+                 end,
+               newe.encodedExpr);
   top.encodedFailure =
-      map(\ ep::([Metaterm], Term) ->
-            case ep.2 of
-            | applicationTerm(nameTerm("$pair_c"),
-                 consTermList(tree, singleTermList(node))) ->
-              ep.1 ++
-              [ termMetaterm(
-                   buildApplication(
-                      nameTerm(accessRelationName(treeTy,
-                                  shortestName(q.name))),
-                      [tree, node,
-                       nameTerm(attributeNotExistsName)])) ]
-            | _ ->
-              error("Must have a pair for an access in a well-typed grammar")
-            end,
-          newe.encodedExpr) ++
-      newe.encodedFailure;
+      if isPair(e.typerep)
+      then newe.encodedFailure --no other failure points for pairs
+      else map(\ ep::([Metaterm], Term) ->
+                 case ep.2 of
+                 | applicationTerm(nameTerm("$pair_c"),
+                      consTermList(tree, singleTermList(node))) ->
+                   ep.1 ++
+                   [ termMetaterm(
+                        buildApplication(
+                           nameTerm(accessRelationName(treeTy,
+                                       shortestName(q.name))),
+                           [tree, node,
+                            nameTerm(attributeNotExistsName)])) ]
+                 | _ ->
+                   error("Must have a pair for an access in a well-typed grammar")
+                 end,
+               newe.encodedExpr) ++
+           newe.encodedFailure;
 }
 
 aspect production inhDecoratedAccessHandler
