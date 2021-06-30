@@ -8,8 +8,9 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local className :: String = "P" ++ id.name;
 
   top.setupInh := body.setupInh;
-  top.initProd := s"\t\t${makeName(top.grammarName)}.${className}.initProductionAttributeDefinitions();\n";
-  top.postInit := s"\t\tcommon.Decorator.applyDecorators(${fnnt}.decorators, ${className}.class);\n";
+  top.initProd := s"\t\t${className}.initProductionAttributeDefinitions();\n"
+               ++ s"\t\tcommon.RTTI.registerProduction(${className}.prodleton);\n\n";
+  top.postInit := s"\t\tcommon.Decorator.applyDecorators(${fnnt}.decorators, ${className}.prodleton);\n";
 
   top.initWeaving := s"\tpublic static int ${localVar} = 0;\n";
   top.valueWeaving := body.valueWeaving;
@@ -41,6 +42,12 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local copyAnno :: (String ::= NamedSignatureElement) =
     (\x::NamedSignatureElement -> s"anno_${makeIdName(x.elementName)}");
 
+  local getChildTypes :: (String ::= NamedSignatureElement) =
+    (\x::NamedSignatureElement -> case x.typerep of
+                                  | nonterminalType(fn, _, _) -> s"\"${fn}\""
+                                  | _ -> "null"
+                                  end);
+
   local commaIfKids :: String = if length(namedSig.inputElements)!=0 then "," else "";
   local commaIfAnnos :: String = if length(namedSig.namedInputElements)!=0 then "," else "";
   local commaIfKidsOrAnnos :: String = if length(namedSig.inputElements)!=0 || length(namedSig.namedInputElements)!=0 then "," else "";
@@ -60,7 +67,7 @@ public final class ${className} extends ${fnnt} {
 
 ${makeIndexDcls(0, namedSig.inputElements)}
 
-    public static final Class<?> childTypes[] = {${implode(",", map(makeChildTypes, namedSig.inputElements))}};
+    public static final String childTypes[] = {${implode(",", map(getChildTypes, namedSig.inputElements))}};
 
     public static final int num_local_attrs = Init.${localVar};
     public static final String[] occurs_local = new String[num_local_attrs];
@@ -180,36 +187,48 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 ${body.translation}
     }
 
-    public static ${className} reify(
-        final silver.core.NAST origAST,
-        final common.ConsCell rules,
-        final common.TypeRep resultType,
-        final silver.core.NAST[] childASTs,
-        final String[] annotationNames,
-        final silver.core.NAST[] annotationASTs) {
-        assert annotationNames.length == annotationASTs.length;
-${makeAnnoIndexDcls(0, namedSig.namedInputElements)}
-${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
+    public static final common.Prodleton<${className}> prodleton = new Prodleton();
 
-        common.TypeRep givenType = ${namedSig.outputElement.typerep.transFreshTypeRep};
-        if (!common.TypeRep.unify(resultType, givenType)) {
-            throw new common.exceptions.SilverError("reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " production ${fName} AST.");
-        }
+    public static final class Prodleton extends common.Prodleton<${className}> {
+        public ${className} reify(
+            final silver.core.NAST origAST,
+            final common.ConsCell rules,
+            final common.TypeRep resultType,
+            final silver.core.NAST[] childASTs,
+            final String[] annotationNames,
+            final silver.core.NAST[] annotationASTs)
+        {
+            assert annotationNames.length == annotationASTs.length;
+            ${makeAnnoIndexDcls(0, namedSig.namedInputElements)}
+            ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
+
+            common.TypeRep givenType = ${namedSig.outputElement.typerep.transFreshTypeRep};
+            if (!common.TypeRep.unify(resultType, givenType)) {
+                throw new common.exceptions.SilverError("reify is constructing " + resultType.toString() + ", but found " + givenType.toString() + " production ${fName} AST.");
+            }
+            
+            if (childASTs.length != ${toString(length(namedSig.inputElements))}) {
+                throw new common.exceptions.SilverError("Production ${fName} expected ${toString(length(namedSig.inputElements))} child(ren), but got " + childASTs.length + ".");
+            }
+            
+            String[] expectedAnnotationNames = new String[] {${implode(", ", map((.annoNameElem), annotationsForNonterminal(namedSig.outputElement.typerep, top.env)))}};
+            if (!java.util.Arrays.equals(annotationNames, expectedAnnotationNames)) {
+                throw new common.exceptions.SilverError("Production ${fName} expected " + common.Util.namesToString(expectedAnnotationNames, "no") + " annotation(s), but got " + common.Util.namesToString(annotationNames, "none") + ".");
+            }
+            
+            ${implode("\n\t\t", map(makeChildReify(fName, length(namedSig.inputElements), _), namedSig.inputElements))}
+            ${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
         
-        if (childASTs.length != ${toString(length(namedSig.inputElements))}) {
-            throw new common.exceptions.SilverError("Production ${fName} expected ${toString(length(namedSig.inputElements))} child(ren), but got " + childASTs.length + ".");
+            ${if !null(namedSig.contexts) then s"""throw new common.exceptions.SilverError("Production ${fName} containes type contexts, which are not supported by reify"); // TODO""" else
+                s"""return new ${className}(${if wantsTracking then "new silver.core.PoriginOriginInfo(common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)"++commaIfKidsOrAnnos else ""} ${namedSig.refInvokeTrans});"""}
         }
-        
-        String[] expectedAnnotationNames = new String[] {${implode(", ", map((.annoNameElem), annotationsForNonterminal(namedSig.outputElement.typerep, top.env)))}};
-        if (!java.util.Arrays.equals(annotationNames, expectedAnnotationNames)) {
-            throw new common.exceptions.SilverError("Production ${fName} expected " + common.Util.namesToString(expectedAnnotationNames, "no") + " annotation(s), but got " + common.Util.namesToString(annotationNames, "none") + ".");
-        }
-        
-        ${implode("\n\t\t", map(makeChildReify(fName, length(namedSig.inputElements), _), namedSig.inputElements))}
-        ${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
-    
-        ${if !null(namedSig.contexts) then s"""throw new common.exceptions.SilverError("Production ${fName} containes type contexts, which are not supported by reify"); // TODO""" else
-            s"""return new ${className}(${if wantsTracking then "new silver.core.PoriginOriginInfo(common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)"++commaIfKidsOrAnnos else ""} ${namedSig.refInvokeTrans});"""}
+
+        public String getProdName(){ return "${fName}"; }
+        public String getNTName(){ return "${ntName}"; }
+
+        public String[] getOccursInh() { return ${className}.occurs_inh; }
+        public String[] getChildTypes() { return ${className}.childTypes; }
+        public common.Lazy[][] getChildInheritedAttributes() { return ${className}.childInheritedAttributes; }
     }
 
 	${if null(namedSig.contexts) then s"public static final common.NodeFactory<${fnnt}> factory = new Factory();" else ""}

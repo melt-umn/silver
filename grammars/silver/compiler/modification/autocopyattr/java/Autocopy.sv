@@ -27,7 +27,7 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te:
 
 "public static final " ++ className ++ " singleton = new " ++ className ++ "();\n\n" ++
 
-"\tpublic void decorate(Class production) {\n" ++
+"\tpublic void decorate(common.Prodleton production) {\n" ++
 "\t\tdecorateAutoCopy(production, \"" ++ fName ++ "\");\n" ++
 "\t}\n" ++
 "}\n")];

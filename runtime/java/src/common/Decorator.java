@@ -15,9 +15,9 @@ import common.exceptions.SilverInternalError;
  * @author tedinski
  */
 abstract public class Decorator {
-	abstract public void decorate(Class<?> production);
+	abstract public void decorate(Prodleton production);
 	
-	public static void applyDecorators(List<Decorator> nonterminal, Class<?> production) {
+	public static void applyDecorators(List<Decorator> nonterminal, Prodleton production) {
 		for( Decorator decorator : nonterminal ) {
 			decorator.decorate(production);
 		}
@@ -28,42 +28,30 @@ abstract public class Decorator {
 	}
 	
 	// Default actions for autocopy
-	static protected void decorateAutoCopy(final Class<?> production, final String attribute) {
+	static protected void decorateAutoCopy(final Prodleton production, final String attribute) {
 		
 		// Find the index of the inh attribute on this production's NT
 		int attrindex;
-		try {
-			String[] oi = (String[])production.getField("occurs_inh").get(null);
-			attrindex = Arrays.asList(oi).indexOf(attribute);
-			if(attrindex == -1)
-				throw new SilverInternalError("Attribute doesn't occur on NT it is supposed to?");
-		} catch(Throwable t) {
-			throw new SilverInternalError("Error while applying autocopy decorators.", t);
-		}
+		String[] oi = production.getOccursInh();
+		attrindex = Arrays.asList(oi).indexOf(attribute);
+		if(attrindex == -1)
+			throw new SilverInternalError("Attribute doesn't occur on NT it is supposed to?");
 		
 		// Create the lazy that we'll be putting on children.
 		Lazy eq = new acLazy(attrindex);
 		
 		// Get information about the children
-		Class<?> childTypes[];
+		String childTypes[];
 		Lazy[][] inheritedAttributes;
-		try {
-			childTypes = (Class<?>[]) production.getField("childTypes").get(null);
-			inheritedAttributes = (Lazy[][])production.getField("childInheritedAttributes").get(null);
-		} catch (Throwable t) {
-			throw new SilverInternalError("Attempting to decorate a nonproduction?",t);
-		}
+		childTypes = production.getChildTypes();
+		inheritedAttributes = production.getChildInheritedAttributes();
 
 		for(int i = 0; i < childTypes.length; i++) {
+			if (childTypes[i] == null) continue;
+
 			String[] occurs;
-			try {
-				occurs = (String[])childTypes[i].getField("occurs_inh").get(null);
-			} catch (NoSuchFieldException e) {
-				// This is a non-error. We expect there to be children that aren't NTs
-				continue;
-			} catch (Throwable t) {
-				throw new SilverInternalError("Problem fetching class information through reflection.",t);
-			}
+			occurs = RTTI.getProdletonsForNonterminal(childTypes[i]).get(0).getOccursInh();
+
 			int loc = Arrays.asList(occurs).indexOf(attribute);
 			if(loc != -1) {
 				// The nonterminal of this child contains the attribute in question
