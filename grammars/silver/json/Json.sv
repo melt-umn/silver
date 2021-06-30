@@ -3,9 +3,36 @@
 -- as silver:json, with proper concrete syntax and everything.
 grammar silver:json;
 
+@{- Json is the type of JSON values. -}
 nonterminal Json with jsonString;
-synthesized attribute json :: Json;
+
+@{- Converts the JSON value to a string. -}
 synthesized attribute jsonString :: String;
+
+@{- ToJson represents conversion to JSON. -}
+class ToJson a {
+  toJson :: (Json ::= a);
+}
+
+instance ToJson Boolean {
+  toJson = jsonBoolean;
+}
+
+instance ToJson Float {
+  toJson = jsonFloat;
+}
+
+instance ToJson Integer {
+  toJson = jsonInteger;
+}
+
+instance ToJson String {
+  toJson = jsonString;
+}
+
+instance ToJson a => ToJson [a] {
+  toJson = jsonArray(map(toJson, _));
+}
 
 abstract production jsonString
 top::Json ::= str::String
