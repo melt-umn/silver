@@ -9,8 +9,8 @@ import java.util.*;
  * terminal/nonterminal/production. These are meant to be usable for all the same functions we
  * previously did via java reflection. So a Terminalton<T> is akin to a Class<T extends Terminal>, a
  * Nonterminalton<T> to a Class<T extends Node>, and Prodleton<T> to a Class<T extends N extends Node>
- * where .getNonterminalton() -> Nonterminalton<N>. These are registered into these lookup tables at
- * init time.
+ * where .getNonterminalton() -> Nonterminalton<N super T>. These are registered into these lookup
+ * tables at silver init time.
  * 
  * This is used for the following:
  *  - silver reflection
@@ -61,7 +61,7 @@ public final class RTTIManager {
 			final silver.core.NAST[] annotationASTs);
 
 		public abstract String getName();
-		public abstract Nonterminalton<?> getNonterminalton();
+		public abstract Nonterminalton<? super T> getNonterminalton();
 		
 		public abstract String[] getChildTypes();
 		public abstract Lazy[][] getChildInheritedAttributes();
