@@ -104,10 +104,10 @@ top::Json ::= vals::[Json]
 }
 
 abstract production jsonObject
-top::Json ::= vals::[Pair<String Json>]
+top::Json ::= vals::[(String, Json)]
 {
   local strs :: [String] = map(
-    \p::Pair<String Json> -> jsonString(p.fst).jsonString ++ ":" ++ p.snd.jsonString,
+    \p::(String, Json) -> jsonString(p.fst).jsonString ++ ":" ++ p.snd.jsonString,
     vals);
   top.jsonString = "{" ++ implode(",", strs) ++ "}";
 }
