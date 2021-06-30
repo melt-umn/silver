@@ -224,7 +224,7 @@ ${body.translation}
         }
 
         public String getName(){ return "${fName}"; }
-        public common.RTTIManager.Nonterminalton getNonterminalton(){ return ${fnnt}.nonterminalton; }
+        public common.RTTIManager.Nonterminalton<${fnnt}> getNonterminalton(){ return ${fnnt}.nonterminalton; }
 
         public String[] getOccursInh() { return ${className}.occurs_inh; }
         public String[] getChildTypes() { return ${className}.childTypes; }
