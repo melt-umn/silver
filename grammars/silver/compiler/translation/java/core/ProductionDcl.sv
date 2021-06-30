@@ -219,7 +219,7 @@ ${body.translation}
             ${implode("\n\t\t", map(makeChildReify(fName, length(namedSig.inputElements), _), namedSig.inputElements))}
             ${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
         
-            ${if !null(namedSig.contexts) then s"""throw new common.exceptions.SilverError("Production ${fName} containes type contexts, which are not supported by reify"); // TODO""" else
+            ${if !null(namedSig.contexts) then s"""throw new common.exceptions.SilverError("Production ${fName} contains type contexts, which are not supported by reify"); // TODO""" else
                 s"""return new ${className}(${if wantsTracking then "new silver.core.PoriginOriginInfo(common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)"++commaIfKidsOrAnnos else ""} ${namedSig.refInvokeTrans});"""}
         }
 
