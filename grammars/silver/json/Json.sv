@@ -31,7 +31,7 @@ instance ToJson String {
 }
 
 instance ToJson a => ToJson [a] {
-  toJson = jsonArray(map(toJson, _));
+  toJson = \xs::[a] -> jsonArray(map(toJson, xs));
 }
 
 abstract production jsonString
