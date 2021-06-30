@@ -50,7 +50,13 @@ abstract public class Decorator {
 			if (childTypes[i] == null) continue;
 
 			String[] occurs;
-			occurs = RTTI.getProdletonsForNonterminal(childTypes[i]).get(0).getOccursInh();
+			List<Prodleton> ts = RTTI.getProdletonsForNonterminal(childTypes[i]);
+			if (ts == null) throw new SilverInternalError("Cannot find Prodleton for nonterminal " + childTypes[i]);
+			Prodleton t = ts.get(0);
+			if (t == null) continue; //Theoretically possible? if no prods and child is a lazy error i guess :barf:
+			                         //Yes this is ugly but the alternative is Nonterminaltons i guess ...
+
+			occurs = t.getOccursInh();
 
 			int loc = Arrays.asList(occurs).indexOf(attribute);
 			if(loc != -1) {
