@@ -15,9 +15,9 @@ import common.exceptions.SilverInternalError;
  * @author tedinski
  */
 abstract public class Decorator {
-	abstract public void decorate(Prodleton production);
+	abstract public void decorate(RTTIManager.Prodleton<?> production);
 	
-	public static void applyDecorators(List<Decorator> nonterminal, Prodleton production) {
+	public static void applyDecorators(List<Decorator> nonterminal, RTTIManager.Prodleton<?> production) {
 		for( Decorator decorator : nonterminal ) {
 			decorator.decorate(production);
 		}
@@ -28,11 +28,11 @@ abstract public class Decorator {
 	}
 	
 	// Default actions for autocopy
-	static protected void decorateAutoCopy(final Prodleton production, final String attribute) {
+	static protected void decorateAutoCopy(final RTTIManager.Prodleton<?> production, final String attribute) {
 		
 		// Find the index of the inh attribute on this production's NT
 		int attrindex;
-		String[] oi = production.getOccursInh();
+		String[] oi = production.getNonterminalton().getOccursInh();
 		attrindex = Arrays.asList(oi).indexOf(attribute);
 		if(attrindex == -1)
 			throw new SilverInternalError("Attribute doesn't occur on NT it is supposed to?");
@@ -47,16 +47,12 @@ abstract public class Decorator {
 		inheritedAttributes = production.getChildInheritedAttributes();
 
 		for(int i = 0; i < childTypes.length; i++) {
-			if (childTypes[i] == null) continue;
+			if (childTypes[i] == null) continue; // Not a nonterminal
 
 			String[] occurs;
-			List<Prodleton> ts = RTTI.getProdletonsForNonterminal(childTypes[i]);
-			if (ts == null) throw new SilverInternalError("Cannot find Prodleton for nonterminal " + childTypes[i]);
-			Prodleton t = ts.get(0);
-			if (t == null) continue; //Theoretically possible? if no prods and child is a lazy error i guess :barf:
-			                         //Yes this is ugly but the alternative is Nonterminaltons i guess ...
-
-			occurs = t.getOccursInh();
+			RTTIManager.Nonterminalton<?> nt = RTTIManager.getNonterminalton(childTypes[i]);
+			if (nt == null) throw new SilverInternalError("Cannot find nonterminal " + childTypes[i]);
+			occurs = nt.getOccursInh();
 
 			int loc = Arrays.asList(occurs).indexOf(attribute);
 			if(loc != -1) {

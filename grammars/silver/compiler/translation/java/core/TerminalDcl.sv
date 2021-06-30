@@ -6,7 +6,7 @@ imports silver:compiler:modification:copper;
 aspect production terminalDclDefault
 top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifiers
 {
-  top.initProd := s"\t\tcommon.RTTI.registerTerminal(${makeName(top.grammarName)}.T${id.name}.terminalton);\n\n";
+  top.initProd := s"\t\tcommon.RTTIManager.registerTerminal(${makeName(top.grammarName)}.T${id.name}.terminalton);\n\n";
   top.genFiles := terminalTranslation(id.name, top.grammarName, tm.lexerClasses);
 }
 
@@ -45,9 +45,9 @@ public class ${className} extends common.Terminal {
     return lexerclasses;
   }
 
-  public static final common.Terminalton<${className}> terminalton = new Terminalton();
+  public static final common.RTTIManager.Terminalton<${className}> terminalton = new Terminalton();
 
-  public static final class Terminalton extends common.Terminalton<${className}> {
+  public static final class Terminalton extends common.RTTIManager.Terminalton<${className}> {
     public ${className} construct(final common.StringCatter lexeme, final silver.core.NLocation location) {
       return new ${className}(lexeme, location);
     }

@@ -9,7 +9,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   top.setupInh := body.setupInh;
   top.initProd := s"\t\t${className}.initProductionAttributeDefinitions();\n"
-               ++ s"\t\tcommon.RTTI.registerProduction(${className}.prodleton);\n\n";
+               ++ s"\t\tcommon.RTTIManager.registerProduction(${className}.prodleton);\n\n";
   top.postInit := s"\t\tcommon.Decorator.applyDecorators(${fnnt}.decorators, ${className}.prodleton);\n";
 
   top.initWeaving := s"\tpublic static int ${localVar} = 0;\n";
@@ -187,9 +187,9 @@ ${makeTyVarDecls(2, namedSig.typerep.freeVariables)}
 ${body.translation}
     }
 
-    public static final common.Prodleton<${className}> prodleton = new Prodleton();
+    public static final common.RTTIManager.Prodleton<${className}> prodleton = new Prodleton();
 
-    public static final class Prodleton extends common.Prodleton<${className}> {
+    public static final class Prodleton extends common.RTTIManager.Prodleton<${className}> {
         public ${className} reify(
             final silver.core.NAST origAST,
             final common.ConsCell rules,
@@ -223,8 +223,8 @@ ${body.translation}
                 s"""return new ${className}(${if wantsTracking then "new silver.core.PoriginOriginInfo(common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)"++commaIfKidsOrAnnos else ""} ${namedSig.refInvokeTrans});"""}
         }
 
-        public String getProdName(){ return "${fName}"; }
-        public String getNTName(){ return "${ntName}"; }
+        public String getName(){ return "${fName}"; }
+        public common.RTTIManager.Nonterminalton getNonterminalton(){ return ${fnnt}.nonterminalton; }
 
         public String[] getOccursInh() { return ${className}.occurs_inh; }
         public String[] getChildTypes() { return ${className}.childTypes; }

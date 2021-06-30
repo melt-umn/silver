@@ -177,7 +177,7 @@ public final class Reflection {
 				annotationASTs[i] = annotationASTList.get(i).ast;
 			}
 
-			Prodleton pton = RTTI.getProdleton(prodName);
+			RTTIManager.Prodleton<?> pton = RTTIManager.getProdleton(prodName);
 			if (pton==null) {
 				throw new SilverError("Undefined production " + prodName);
 			}
@@ -195,13 +195,13 @@ public final class Reflection {
 				throw new SilverError("reify is constructing " + resultType.toString() + ", but found terminal " + terminalName + " AST.");
 			}
 
-			Terminalton tton = RTTI.getTerminalton(terminalName);
+			RTTIManager.Terminalton<?> tton = RTTIManager.getTerminalton(terminalName);
 			if (tton==null) {
 				throw new SilverError("Undefined terminal " + terminalName);
 			}
 
 			return tton.construct(lexeme, location);
-			
+
 		} else if (ast instanceof PlistAST) {
 			final TypeRep paramType = new VarTypeRep();
 			if (!TypeRep.unify(resultType, new AppTypeRep(new BaseTypeRep("[]"), paramType))) {
