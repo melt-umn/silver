@@ -56,9 +56,21 @@ ant
 zip silver.compiler.composed.Default.jar -r META-INF
 cd ..
 
+NATIVE_IMAGE_FLAGS="${NATIVE_IMAGE_FLAGS:---no-fallback}"
+
 # Default to using the Epsilon GC... Hope you've got spare RAM!
-epsilon_gc_flag=-H:InitialCollectionPolicy="com.oracle.svm.core.genscavenge.CollectionPolicy\$NeverCollect"
-NATIVE_IMAGE_FLAGS="${NATIVE_IMAGE_FLAGS:-$epsilon_gc_flag --no-fallback}"
+if [[ "${SELF_COMPILE_NATIVE_EPSILON:-1}" -gt 0 ]]; then
+	NATIVE_IMAGE_FLAGS="${NATIVE_IMAGE_FLAGS} -H:InitialCollectionPolicy=com.oracle.svm.core.genscavenge.CollectionPolicy\$NeverCollect"
+fi
+
+# Default to storing debug info. If you really care about storage space,
+# perhaps strip it? Almost certainly not worth it to do so, though.
+if [[ "${SELF_COMPILE_NATIVE_DEBUG:-0}" -gt 0 ]]; then
+	NATIVE_IMAGE_FLAGS="${NATIVE_IMAGE_FLAGS} -H:GenerateDebugInfo=1"
+	# Currently (2021-06-30) recommended; otherwise, "addresses" are
+	# actually offsets from r14 (amd64) or r29 (AArch64).
+	NATIVE_IMAGE_FLAGS="${NATIVE_IMAGE_FLAGS} -H:-SpawnIsolates"
+fi
 
 # Build to a native binary with native-image.
 time native-image \
