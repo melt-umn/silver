@@ -14,6 +14,10 @@ class ToJson a {
   toJson :: (Json ::= a);
 }
 
+instance ToJson Json {
+  toJson = id;
+}
+
 instance ToJson Boolean {
   toJson = jsonBoolean;
 }
