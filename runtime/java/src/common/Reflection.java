@@ -381,8 +381,6 @@ public final class Reflection {
 
 	public static NEither nativeSerialize(Object x) {
 		try{
-			if (x instanceof DecoratedNode) x = ((DecoratedNode)x).undecorate();
-
 			ByteArrayOutputStream arr = new ByteArrayOutputStream(10_000_000);
 			DataOutputStream o = new DataOutputStream(arr);
 
@@ -401,9 +399,9 @@ public final class Reflection {
 
 			nSerItem(o, prodset, x);
 
-			return new Pleft(arr.toByteArray());
+			return new Pright(arr.toByteArray());
 		} catch (Exception e) {
-			return new Pright(new StringCatter(e.toString()));
+			return new Pleft(new StringCatter(e.toString()));
 		}
 	}
 
@@ -424,6 +422,12 @@ public final class Reflection {
 			}
 		} else if (x instanceof Terminal) {
 			nSerGetProdSet(s, ((Terminal)x).location);
+		} else if (x instanceof ConsCell) {
+			ConsCell c = (ConsCell) x;
+			while (c != ConsCell.nil) {
+				nSerGetProdSet(s, c.head());
+				c = c.tail();
+			}
 		}
 	}
 
@@ -459,8 +463,8 @@ public final class Reflection {
 			o.writeShort(c.length());
 
 			while (c!=ConsCell.nil) {
-				nSerItem(o, s, c.head);
-				c = (ConsCell)c.tail;
+				nSerItem(o, s, c.head());
+				c = (ConsCell)c.tail();
 			}
 		} else if(x instanceof StringCatter) {
 			o.writeByte(0);
@@ -474,8 +478,10 @@ public final class Reflection {
 		} else if(x instanceof Boolean) {
 			if ((boolean)x) o.writeByte(3);
 			else o.writeByte(2);
+		} else if(x instanceof DecoratedNode) {
+			throw new IOException("Cannot serialize DecoratedNodes (prod " + x.toString() + ")");
 		} else {
-			throw new IOException("Unserializable type encountered: " + x.toString() + " : " + x.getClass().toString());
+			throw new IOException("Unserializable type encountered: " + x.toString());
 		}
 	}
 
@@ -487,6 +493,8 @@ public final class Reflection {
 			byte header[] = "SVB\0\n\0".getBytes("ASCII");
 			byte[] buf = new byte[6];
 			i.readFully(buf, 0, 6);
+
+			if (!Arrays.equals(header, buf)) throw new IOException("Not a SVB serialization");
 
 			int prodCount = i.readShort();
 
@@ -505,37 +513,27 @@ public final class Reflection {
 			Object v = nDeserItem(lookup, i);
 
 			if (!TypeRep.unify(expected, getType(v))) {
-				return new Pright(new StringCatter("nativeDeserialize is constructing " + expected.toString() + ", but found " + getType(v).toString()));
+				return new Pleft(new StringCatter("nativeDeserialize is constructing " + expected.toString() + ", but found " + getType(v).toString()));
 			}
 
-			return new Pleft(v);
+			return new Pright(v);
 		} catch (IOException e) {
-			return new Pright(new StringCatter(e.toString()));
+			return new Pleft(new StringCatter(e.toString()));
 		}
 	}
 
 	public static Object nDeserItem(ArrayList<RTTIManager.Prodleton<?>> s, DataInputStream i) throws IOException {
 		int typeId = i.readByte();
 
-		System.out.print("  ..nDeserItem, typeId = ");
-		System.out.println(typeId);
-
 		if (typeId == 5) { // prod
 			int orderedIndex = i.readShort();
 
-			System.out.print("Index = ");
-			System.out.println(orderedIndex);
-
 			RTTIManager.Prodleton<?> pton = s.get(orderedIndex);
-
-			System.out.print("Type OK: ");
-			System.out.println(pton.getName());
 
 			int childCount = pton.getChildCount();
 			Object children[] = new Object[childCount];
 
 			for (int n = 0; n < childCount; n++) {
-				System.out.println("Constructing child:");
 				children[n] = nDeserItem(s, i);
 			}
 
@@ -545,8 +543,6 @@ public final class Reflection {
 			for (int n = 0; n < annoCount; n++) {
 				annos[n] = nDeserItem(s, i);
 			}
-
-			System.out.println("Constructing and returning");
 
 			return pton.constructDirect(children, annos);
 		} else if (typeId == 6) { // terminal

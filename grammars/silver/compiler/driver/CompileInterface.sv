@@ -1,6 +1,7 @@
 grammar silver:compiler:driver;
 
 import silver:reflect;
+import silver:reflect:nativeserialize;
 
 {--
  - Find an interface file, if it exists, and it's valid (parsable and modification time is newer).
@@ -24,9 +25,9 @@ IOVal<Maybe<RootSpec>> ::= grammarName::String  silverHostGen::[String]  grammar
   
   -- IO Step 3: Let's say so, and parse it
   local pr :: IO = print("Found " ++ grammarName ++ "\n\t[" ++ file ++ "]\n", modTime.io);
-  local text :: IOVal<String> = readFile(file, pr);
+  local text :: IOVal<ByteArray> = readByteFile(file, pr);
 
-  local ir :: Either<String InterfaceItems> = deserialize("Silver.svi", text.iovalue);
+  local ir :: Either<String InterfaceItems> = nativeDeserialize(text.iovalue);
   
   -- IO Step 4: Perhaps complain it failed to parse
   local pr2 :: IO =

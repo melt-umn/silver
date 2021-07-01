@@ -14,13 +14,13 @@ function main
 IOVal<Integer> ::= largs::[String] ioin::IO
 {
   local v :: NT = bar(foo(1, 0.5, false, "AAA"), foo(2, 0.25, true, "BBB"));
-  local r :: Either<ByteArray String> = nativeSerialize([1, 2, 3]);
+  local r :: Either<ByteArray String> = nativeSerialize(new(v));
 
   local p1 :: IO = if r.isLeft
                then print("OK\n", writeByteFile("out.svb", r.fromLeft, ioin))
                else print(r.fromRight ++ "\n", ioin);
 
-  local res :: Either<[Integer] String> = nativeDeserialize(r.fromLeft);
+  local res :: Either<NT String> = nativeDeserialize(r.fromLeft);
   local p2 :: IO = if r.isLeft then print(hackUnparse(res) ++ "\n", p1)
                    else p1;
 

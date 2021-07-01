@@ -37,7 +37,7 @@ top::InterfaceItem ::= val::[ParserSpec]
 }
 
 aspect function unparseRootSpec
-String ::= r::Decorated RootSpec
+ByteArray ::= r::Decorated RootSpec
 {
   interfaceItems <- [syntaxAstInterfaceItem(r.syntaxAst)];
   interfaceItems <- [parserSpecsInterfaceItem(r.parserSpecs)];
