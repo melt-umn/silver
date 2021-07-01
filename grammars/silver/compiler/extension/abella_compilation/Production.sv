@@ -439,14 +439,16 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
            [localNode, varTerm("ChildList", genInt())]);
   top.localAttrEqInfo <-
       [( shortestName(val.name),
-         map(\ p::([Metaterm], Term) ->
+         --Failure definitions
+         map(\ l::[Metaterm] ->
                termMetaterm(
                   buildApplication(
                      nameTerm(localAccessRelationName(top.top.3,
                         shortestName(val.name), top.top.4)),
                      [top.top.1, top.top.2,
-                      nameTerm(attributeNotExistsName)]))::p.1,
-             e.encodedExpr) ++
+                      nameTerm(attributeNotExistsName)]))::l,
+             e.encodedFailure) ++
+         --Successful definitions
          map(\ p::([Metaterm], Term) ->
                if isNonterminal(e.typerep)
                then termMetaterm(

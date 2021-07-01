@@ -1096,7 +1096,12 @@ top::Expr ::= e1::Expr '+' e2::Expr
                         new(result) )::rest,
                     [], e2.encodedExpr) ++ rest,
             [], e1.encodedExpr);
-  top.encodedFailure = e1.encodedFailure ++ e2.encodedFailure;
+  top.encodedFailure =
+      e1.encodedFailure ++
+      foldr(\ ep1::([Metaterm], Term) rest::[[Metaterm]]->
+              map(\ l::[Metaterm] -> ep1.1 ++ l,
+                    e2.encodedFailure) ++ rest,
+            [], e1.encodedExpr);
 }
 
 aspect production minus
@@ -1121,7 +1126,12 @@ top::Expr ::= e1::Expr '-' e2::Expr
                         new(result) )::rest,
                     [], e2.encodedExpr) ++ rest,
             [], e1.encodedExpr);
-  top.encodedFailure = e1.encodedFailure ++ e2.encodedFailure;
+  top.encodedFailure =
+      e1.encodedFailure ++
+      foldr(\ ep1::([Metaterm], Term) rest::[[Metaterm]]->
+              map(\ l::[Metaterm] -> ep1.1 ++ l,
+                    e2.encodedFailure) ++ rest,
+            [], e1.encodedExpr);
 }
 
 aspect production multiply
@@ -1146,7 +1156,12 @@ top::Expr ::= e1::Expr '*' e2::Expr
                         new(result) )::rest,
                     [], e2.encodedExpr) ++ rest,
             [], e1.encodedExpr);
-  top.encodedFailure = e1.encodedFailure ++ e2.encodedFailure;
+  top.encodedFailure =
+      e1.encodedFailure ++
+      foldr(\ ep1::([Metaterm], Term) rest::[[Metaterm]]->
+              map(\ l::[Metaterm] -> ep1.1 ++ l,
+                    e2.encodedFailure) ++ rest,
+            [], e1.encodedExpr);
 }
 
 aspect production divide
@@ -1180,7 +1195,11 @@ top::Expr ::= e1::Expr '/' e2::Expr
                             integerToIntegerTerm(0))] )::rest,
                     [], e2.encodedExpr) ++ rest,
             [], e1.encodedExpr) ++
-      e1.encodedFailure ++ e2.encodedFailure;
+      e1.encodedFailure ++
+      foldr(\ ep1::([Metaterm], Term) rest::[[Metaterm]] ->
+              map(\ l::[Metaterm] -> ep1.1 ++ l,
+                    e2.encodedFailure) ++ rest,
+            [], e1.encodedExpr);
 }
 
 aspect production modulus
@@ -1214,7 +1233,11 @@ top::Expr ::= e1::Expr '%' e2::Expr
                             integerToIntegerTerm(0))] )::rest,
                     [], e2.encodedExpr) ++ rest,
             [], e1.encodedExpr) ++
-      e1.encodedFailure ++ e2.encodedFailure;
+      e1.encodedFailure ++
+      foldr(\ ep1::([Metaterm], Term) rest::[[Metaterm]] ->
+              map(\ l::[Metaterm] -> ep1.1 ++ l,
+                    e2.encodedFailure) ++ rest,
+            [], e1.encodedExpr);
 }
 
 aspect production neg
@@ -1295,7 +1318,12 @@ top::Expr ::= e1::Expr '++' e2::Expr
                         new(result) )::rest,
                     [], newe2.encodedExpr) ++ rest,
             [], newe1.encodedExpr);
-  top.encodedFailure = newe1.encodedFailure ++ newe2.encodedFailure;
+  top.encodedFailure =
+      newe1.encodedFailure ++
+      foldr(\ ep1::([Metaterm], Term) rest::[[Metaterm]]->
+              map(\ l::[Metaterm] -> ep1.1 ++ l,
+                    newe2.encodedFailure) ++ rest,
+            [], newe1.encodedExpr);
 }
 
 aspect production emptyList
@@ -1315,7 +1343,12 @@ top::Expr ::= h::Expr '::' t::Expr
                       ( hp.1 ++ tp.1, consTerm(hp.2, tp.2) )::rest,
                     rest, t.encodedExpr),
             [], h.encodedExpr);
-  top.encodedFailure = h.encodedFailure ++ t.encodedFailure;
+  top.encodedFailure =
+      h.encodedFailure ++
+      foldr(\ ep1::([Metaterm], Term) rest::[[Metaterm]]->
+              map(\ l::[Metaterm] -> ep1.1 ++ l,
+                    t.encodedFailure) ++ rest,
+            [], h.encodedExpr);
 }
 
 aspect production fullList
@@ -1425,7 +1458,12 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
                       ( e1p.1 ++ e2p.1, e1p.2::e2p.2 )::rest2,
                     rest1, e2.encodedArgs),
             [], e1.encodedExpr);
-  top.encodedFailure = e1.encodedFailure ++ e2.encodedFailure;
+  top.encodedFailure =
+      e1.encodedFailure ++
+      foldr(\ e1p::([Metaterm], Term) rest::[[Metaterm]] ->
+              map(\ l::[Metaterm] -> e1p.1 ++ l,
+                    e2.encodedFailure) ++ rest,
+            [], e1.encodedExpr);
 }
 
 
@@ -1483,7 +1521,12 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
                       ( esp.1 ++ ep.1, esp.2 ++ [ep.2] )::rest2,
                     rest1, es.encodedArgs),
             [], e.encodedExpr);
-  top.encodedFailure = es.encodedFailure ++ e.encodedFailure;
+  top.encodedFailure =
+      es.encodedFailure ++
+      foldr(\ ep::([Metaterm], [Term]) rest::[[Metaterm]] ->
+              map(\ l::[Metaterm] -> ep.1 ++ l,
+                    e.encodedFailure) ++ rest,
+            [], es.encodedArgs);
 }
 
 aspect production oneAppExprs
