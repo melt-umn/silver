@@ -3,9 +3,40 @@
 -- as silver:json, with proper concrete syntax and everything.
 grammar silver:json;
 
+@{- Json is the type of JSON values. -}
 nonterminal Json with jsonString;
-synthesized attribute json :: Json;
+
+@{- Converts the JSON value to a string. -}
 synthesized attribute jsonString :: String;
+
+@{- ToJson represents conversion to JSON. -}
+class ToJson a {
+  toJson :: (Json ::= a);
+}
+
+instance ToJson Json {
+  toJson = id;
+}
+
+instance ToJson Boolean {
+  toJson = jsonBoolean;
+}
+
+instance ToJson Float {
+  toJson = jsonFloat;
+}
+
+instance ToJson Integer {
+  toJson = jsonInteger;
+}
+
+instance ToJson String {
+  toJson = jsonString;
+}
+
+instance ToJson a => ToJson [a] {
+  toJson = \xs::[a] -> jsonArray(map(toJson, xs));
+}
 
 abstract production jsonString
 top::Json ::= str::String
@@ -73,10 +104,10 @@ top::Json ::= vals::[Json]
 }
 
 abstract production jsonObject
-top::Json ::= vals::[Pair<String Json>]
+top::Json ::= vals::[(String, Json)]
 {
   local strs :: [String] = map(
-    \p::Pair<String Json> -> jsonString(p.fst).jsonString ++ ":" ++ p.snd.jsonString,
+    \p::(String, Json) -> jsonString(p.fst).jsonString ++ ":" ++ p.snd.jsonString,
     vals);
   top.jsonString = "{" ++ implode(",", strs) ++ "}";
 }
