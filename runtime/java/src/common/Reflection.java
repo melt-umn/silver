@@ -364,7 +364,7 @@ public final class Reflection {
 	}
 
 
-    // File: SVB\0<\n><1b version (0)><index array><type><item>
+    // File: SVB\0<\n><1b version (0)><index array><item>
     // item: <0><string>                                - String
     //       <1><4b integer>                            - Integer
     //       <2>                                        - false
@@ -374,20 +374,10 @@ public final class Reflection {
     //       <6><name string><lexeme><location (item)>  - terminal (location = item)
     //       <7><2b length><data>                       - list (data = items)
 
-    // type: <0><string>      - basetyperep
-    //       <1><4b int>      - vartyperep
-
     // index array: <2b nt count><ntrec...>
     // ntrec: <name string><type string>
 
     // strings, ints, etc are writeUTF/readUTF format
-
-    // Don't need type i think
-    // short has in each prodleton of child types, anno types, anno names, make sure that matches instead of
-    //    ^or: just use .typerep.unparse
-    // can hash those too in RTTIManager and if that matches can skip checking
-    // pathological case: X<a b> then later refined to X<a a>, erased so not caught
-    // do need to check each because type erased to Object cuz thunks...
 
 	public static NEither nativeSerialize(Object x) {
 		try{
@@ -397,8 +387,6 @@ public final class Reflection {
 			DataOutputStream o = new DataOutputStream(arr);
 
 			o.writeBytes("SVB\0\n\0"); // Header
-			
-			// nSerTypeRep(getType(x));
 
 			ArrayList<RTTIManager.Prodleton<?>> prodset = new ArrayList<RTTIManager.Prodleton<?>>();
 
@@ -491,22 +479,6 @@ public final class Reflection {
 		}
 	}
 
-	// public static void nSerTypeRep(DataOutputStream o, TypeRep x) throws IOException {
-	// 	if(x instanceof BaseTypeRep) {
-	// 		o.writeByte(0);
-	// 		o.writeUTF(((BaseTypeRep)x).name);
-	// 	} else if (x instanceof VarTypeRep) {
-	// 		VarTypeRep v = (VarTypeRep)x;
-	// 		if (v.substitution != null) nSerTypeRep(o, v.substitution);
-	// 		else {
-	// 			o.writeByte(1);
-	// 			o.writeInt(v.id);
-	// 		}
-	// 	} else {
-	// 		throw new IOException("Unsupported type");
-	// 	}
-	// }
-
 	public static NEither nativeDeserialize(final TypeRep expected, final byte[] ast) {
 		try{
 			ByteArrayInputStream arr = new ByteArrayInputStream(ast);
@@ -529,8 +501,6 @@ public final class Reflection {
 			}
 
 			if (!Arrays.equals(header, buf)) throw new IOException("Mismatched SVB header");
-
-			// TypeRep resType = nDeserTypeRep(i);
 
 			Object v = nDeserItem(lookup, i);
 
@@ -621,8 +591,4 @@ public final class Reflection {
 			throw new IOException("Unknown type id");
 		}
 	}
-
-	// public static TypeRep nDeserTypeRep(DataInputStream i) throws IOException {
-	// 	return null;
-	// }
 }

@@ -77,12 +77,12 @@ public final class RTTIManager {
 
 		public abstract T constructDirect(
 			final Object[] children,
-			final Object[] annos);
+			final Object[] annos); // NO reify or other checking, used by native[De]Serialize
 
 		public abstract String getName();
 		public abstract Nonterminalton<? super T> getNonterminalton();
 		
-		public abstract String getTypeUnparse();
+		public abstract String getTypeUnparse(); // Nominally opaque representation of the type
 		public abstract int getChildCount();
 		public abstract int getAnnoCount();
 		

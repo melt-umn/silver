@@ -52,16 +52,6 @@ function explodeSingle -- do not use
               explodeSingle (substring(1,length(str),str));
 }
 
-function sha8
-Integer ::= t::String
-{
-  return 0;
-}
---   return error("Not Yet Implemented: sha32");
--- } foreign {
---   "java" : return "common.Util.sha8(%t%)";
--- }
-
 @{--
  - Find the index of a needle in the haystack.  (Indices are 0-based.)
  -
