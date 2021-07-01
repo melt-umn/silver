@@ -1,6 +1,6 @@
 
 function nativeSerialize
-Either<ByteArray String> ::= x::a
+Either<String ByteArray> ::= x::a
 {
   return error("Not impl");
 } foreign {
@@ -8,7 +8,7 @@ Either<ByteArray String> ::= x::a
 }
 
 function nativeDeserialize
-runtimeTypeable a => Either<a String> ::= x::ByteArray
+runtimeTypeable a => Either<String a> ::= x::ByteArray
 {
   return error("Not impl");
 } foreign {
@@ -39,7 +39,7 @@ IO ::= file::String contents::ByteArray i::IO
  - @param i  The "before" world-state token.
  - @return  The contents of the file. May throw a java IO exception, which cannot be caught by Silver.
  -}
-function readFile
+function readByteFile
 IOVal<ByteArray> ::= s::String i::IO
 {
   return error("Not Yet Implemented: readByteFile");

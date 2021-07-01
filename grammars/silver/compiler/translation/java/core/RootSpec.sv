@@ -3,25 +3,31 @@ grammar silver:compiler:translation:java:core;
 import silver:compiler:driver:util;
 
 attribute genFiles occurs on RootSpec;
+attribute genBytesFiles occurs on RootSpec;
 
 aspect production interfaceRootSpec
 top::RootSpec ::= _ _ _
 {
   top.genFiles := [];
+  top.genBytesFiles := [];
 }
 
 aspect production errorRootSpec
 top::RootSpec ::= _ _ _ _ _
 {
   top.genFiles := [];
+  top.genBytesFiles := [];
 }
 
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _ _ _ _
 {
+	top.genBytesFiles := [
+		pair("Silver.svi", unparseRootSpec(top))
+	];
+
   top.genFiles := g.genFiles ++
-  [pair("Silver.svi", unparseRootSpec(top)),
-  pair("Init.java", s"""
+  [pair("Init.java", s"""
 package ${makeName(g.declaredName)};
 
 public class Init{

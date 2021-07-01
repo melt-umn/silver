@@ -5,6 +5,10 @@ grammar silver:compiler:translation:java:core;
  -}
 monoid attribute genFiles :: [Pair<String String>];
 {--
+ - Used for svib files.
+ -}
+monoid attribute genBytesFiles :: [Pair<String ByteArray>];
+{--
  - Early initializers: occurs.add, local's inh attr map creation, decorators.add, collection object creation
  -}
 monoid attribute setupInh :: String;

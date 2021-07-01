@@ -83,6 +83,8 @@ public final class RTTIManager {
 		public abstract Nonterminalton<? super T> getNonterminalton();
 		
 		public abstract String getTypeUnparse(); // Nominally opaque representation of the type
+		                                         //  for making sure that something nativeSerialized
+		                                         //  is still valid.
 		public abstract int getChildCount();
 		public abstract int getAnnoCount();
 		
