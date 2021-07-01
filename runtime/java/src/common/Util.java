@@ -324,7 +324,7 @@ public final class Util {
 		} else if(o instanceof ConsCell) {
 			hackyhackyUnparseList((ConsCell)o, sb);
 		} else {
-			sb.append("<OBJ>");
+			sb.append("<OBJ " + o.toString() + ">");
 		}
 	}
 	private static void hackyhackyUnparseNode(Node n, StringBuilder sb) {
