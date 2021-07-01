@@ -419,7 +419,7 @@ top::DclCommentPart ::= '@@'
     top.body = "@";
 }
 
-@@{- Most of the complexity in terminals here is to allow bullet point lists. Be careful :) -}
+@@{- Most of the complexity in terminals here is to allow bullet point lists and nested comments. Be careful :) -}
 
 terminal InitialIgnore_t /@+\{\-[ \t]*\-*[ \t]*([ \t]*\-*[ \t]*\r?\n)*[ \t]*\-*[ \t]*/;
 terminal FinalIgnore_t /[\- \r\n]*\-\}/ dominates {CommentContent_t};
@@ -428,7 +428,7 @@ terminal EmptyDclComment_t /@+{\-[ \-]*\-}/;
 terminal EmptyLines_t /\r?\n([ \t]*\-*[ \t]*\r?\n)+[ \t]*\-*[ \t]*/;
 terminal Newline_t /\r?\n[ \t]*\-*[ \t]*/;
 
-terminal CommentContent_t /([^@\r\n])+/;
+terminal CommentContent_t /([^@\r\n\-]|\-[^\r\n\}]|\-\}.)+/;
 
 terminal EscapedAt_t '@@';
 

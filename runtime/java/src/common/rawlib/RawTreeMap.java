@@ -33,7 +33,7 @@ public final class RawTreeMap {
 		ConsCell ret = ConsCell.nil;
 		for(Object key : t.descendingKeySet()) {
 			for(Object value : new ConsCellCollection<Object>(t.get(key))) {
-				ret = new ConsCell(silver.core.Ppair.rtConstruct(null, key, value), ret);
+				ret = new ConsCell(new silver.core.Ppair(key, value), ret);
 			}
 		}
 		return ret;
