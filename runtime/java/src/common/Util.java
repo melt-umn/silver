@@ -21,6 +21,11 @@ import edu.umn.cs.melt.copper.runtime.engines.CopperParser;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
 
+import java.security.MessageDigest;
+import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
+
 
 /**
  * Many places in Silver's translation are bits of code that need factoring out, somehow.

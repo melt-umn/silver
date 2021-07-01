@@ -4,6 +4,7 @@ import java.util.*;
 
 import common.exceptions.*;
 import silver.core.*;
+import java.io.*;
 
 /**
  * Implementation of the Silver reflection library
@@ -361,4 +362,267 @@ public final class Reflection {
 		}
 		return new Pright(reflect(rules, result));
 	}
+
+
+    // File: SVB\0<\n><1b version (0)><index array><type><item>
+    // item: <0><string>                                - String
+    //       <1><4b integer>                            - Integer
+    //       <2>                                        - false
+    //       <3>                                        - true
+    //       <4><4b float>                              - float
+    //       <5><name string><children><annos>          - production (children, annos = items)
+    //       <6><name string><lexeme><location (item)>  - terminal (location = item)
+    //       <7><2b length><data>                       - list (data = items)
+
+    // type: <0><string>      - basetyperep
+    //       <1><4b int>      - vartyperep
+
+    // index array: <2b nt count><ntrec...>
+    // ntrec: <name string><type string>
+
+    // strings, ints, etc are writeUTF/readUTF format
+
+    // Don't need type i think
+    // short has in each prodleton of child types, anno types, anno names, make sure that matches instead of
+    //    ^or: just use .typerep.unparse
+    // can hash those too in RTTIManager and if that matches can skip checking
+    // pathological case: X<a b> then later refined to X<a a>, erased so not caught
+    // do need to check each because type erased to Object cuz thunks...
+
+	public static NEither nativeSerialize(Object x) {
+		try{
+			if (x instanceof DecoratedNode) x = ((DecoratedNode)x).undecorate();
+
+			ByteArrayOutputStream arr = new ByteArrayOutputStream(10_000_000);
+			DataOutputStream o = new DataOutputStream(arr);
+
+			o.writeBytes("SVB\0\n\0"); // Header
+			
+			// nSerTypeRep(getType(x));
+
+			ArrayList<RTTIManager.Prodleton<?>> prodset = new ArrayList<RTTIManager.Prodleton<?>>();
+
+			nSerGetProdSet(prodset, x);
+
+			o.writeShort(prodset.size());
+
+			for (RTTIManager.Prodleton p : prodset) {
+				o.writeUTF(p.getName());
+				o.writeUTF(p.getTypeUnparse());
+			}
+
+			nSerItem(o, prodset, x);
+
+			return new Pleft(arr.toByteArray());
+		} catch (Exception e) {
+			return new Pright(new StringCatter(e.toString()));
+		}
+	}
+
+	public static void nSerGetProdSet(ArrayList<RTTIManager.Prodleton<?>> s, Object x) {
+		if(x instanceof Node) {
+			Node n = (Node)x;
+			if (s.indexOf(n.getProdleton()) == -1) s.add(n.getProdleton());
+
+			for (int i = 0; i < n.getNumberOfChildren(); i++) {
+				nSerGetProdSet(s, n.getChild(i));
+			}
+
+			String[] annotationNames = n.getAnnoNames();
+			
+			for (int i = 0; i < annotationNames.length; i++) {
+				String name = annotationNames[i];
+				nSerGetProdSet(s, n.getAnno(name));
+			}
+		} else if (x instanceof Terminal) {
+			nSerGetProdSet(s, ((Terminal)x).location);
+		}
+	}
+
+	public static void nSerItem(DataOutputStream o, ArrayList<RTTIManager.Prodleton<?>> s, Object x) throws IOException {
+		if(x instanceof Node) {
+			Node n = (Node)x;
+
+			o.writeByte(5);
+			o.writeShort(s.indexOf(n.getProdleton()));
+
+			String[] annotationNames = n.getAnnoNames();
+
+			for (int i = 0; i < n.getNumberOfChildren(); i++) {
+				nSerItem(o, s, n.getChild(i));
+			}
+			
+			for (int i = 0; i < annotationNames.length; i++) {
+				String name = annotationNames[i];
+				nSerItem(o, s, n.getAnno(name));
+			}
+		} else if(x instanceof Terminal) {
+			Terminal t = (Terminal)x;
+			
+			o.writeByte(6);
+			o.writeUTF(t.getTerminalton().getName());
+			o.writeUTF(t.lexeme.toString());
+			nSerItem(o, s, t.location);
+
+		} else if(x instanceof ConsCell) {
+			ConsCell c = (ConsCell)x;
+
+			o.writeByte(7);
+			o.writeShort(c.length());
+
+			while (c!=ConsCell.nil) {
+				nSerItem(o, s, c.head);
+				c = (ConsCell)c.tail;
+			}
+		} else if(x instanceof StringCatter) {
+			o.writeByte(0);
+			o.writeUTF(((StringCatter)x).toString());
+		} else if(x instanceof Integer) {
+			o.writeByte(1);
+			o.writeInt((int)x);
+		} else if(x instanceof Float) {
+			o.writeByte(4);
+			o.writeFloat((float)x);
+		} else if(x instanceof Boolean) {
+			if ((boolean)x) o.writeByte(3);
+			else o.writeByte(2);
+		} else {
+			throw new IOException("Unserializable type encountered: " + x.toString() + " : " + x.getClass().toString());
+		}
+	}
+
+	// public static void nSerTypeRep(DataOutputStream o, TypeRep x) throws IOException {
+	// 	if(x instanceof BaseTypeRep) {
+	// 		o.writeByte(0);
+	// 		o.writeUTF(((BaseTypeRep)x).name);
+	// 	} else if (x instanceof VarTypeRep) {
+	// 		VarTypeRep v = (VarTypeRep)x;
+	// 		if (v.substitution != null) nSerTypeRep(o, v.substitution);
+	// 		else {
+	// 			o.writeByte(1);
+	// 			o.writeInt(v.id);
+	// 		}
+	// 	} else {
+	// 		throw new IOException("Unsupported type");
+	// 	}
+	// }
+
+	public static NEither nativeDeserialize(final TypeRep expected, final byte[] ast) {
+		try{
+			ByteArrayInputStream arr = new ByteArrayInputStream(ast);
+			DataInputStream i = new DataInputStream(arr);
+
+			byte header[] = "SVB\0\n\0".getBytes("ASCII");
+			byte[] buf = new byte[6];
+			i.readFully(buf, 0, 6);
+
+			int prodCount = i.readShort();
+
+			ArrayList<RTTIManager.Prodleton<?>> lookup = new ArrayList<RTTIManager.Prodleton<?>>();
+			for (int c = 0; c < prodCount; c++) {
+				String name = i.readUTF();
+				String typeUnparse = i.readUTF();
+				RTTIManager.Prodleton<?> pton = RTTIManager.getProdleton(name);
+				if (pton == null) throw new IOException("Unknown production: " + name);
+				if (!pton.getTypeUnparse().equals(typeUnparse)) throw new IOException("Production " + name + " changed type (was '" + typeUnparse + "' now '" + pton.getTypeUnparse()+"')");
+				lookup.add(pton);
+			}
+
+			if (!Arrays.equals(header, buf)) throw new IOException("Mismatched SVB header");
+
+			// TypeRep resType = nDeserTypeRep(i);
+
+			Object v = nDeserItem(lookup, i);
+
+			if (!TypeRep.unify(expected, getType(v))) {
+				return new Pright(new StringCatter("nativeDeserialize is constructing " + expected.toString() + ", but found " + getType(v).toString()));
+			}
+
+			return new Pleft(v);
+		} catch (IOException e) {
+			return new Pright(new StringCatter(e.toString()));
+		}
+	}
+
+	public static Object nDeserItem(ArrayList<RTTIManager.Prodleton<?>> s, DataInputStream i) throws IOException {
+		int typeId = i.readByte();
+
+		System.out.print("  ..nDeserItem, typeId = ");
+		System.out.println(typeId);
+
+		if (typeId == 5) { // prod
+			int orderedIndex = i.readShort();
+
+			System.out.print("Index = ");
+			System.out.println(orderedIndex);
+
+			RTTIManager.Prodleton<?> pton = s.get(orderedIndex);
+
+			System.out.print("Type OK: ");
+			System.out.println(pton.getName());
+
+			int childCount = pton.getChildCount();
+			Object children[] = new Object[childCount];
+
+			for (int n = 0; n < childCount; n++) {
+				System.out.println("Constructing child:");
+				children[n] = nDeserItem(s, i);
+			}
+
+			int annoCount = pton.getAnnoCount();
+			Object annos[] = new Object[annoCount];
+
+			for (int n = 0; n < annoCount; n++) {
+				annos[n] = nDeserItem(s, i);
+			}
+
+			System.out.println("Constructing and returning");
+
+			return pton.constructDirect(children, annos);
+		} else if (typeId == 6) { // terminal
+			String name = i.readUTF();
+
+			RTTIManager.Terminalton<?> tton = RTTIManager.getTerminalton(name);
+
+			if (tton == null)
+				throw new IOException("Can't find terminal " + name);
+
+			String lexeme = i.readUTF();
+			Object location = nDeserItem(s, i);
+
+			return tton.construct(new StringCatter(lexeme), (NLocation)location);
+		} else if (typeId == 7) { // list
+			int length = i.readShort();
+
+			Object values[] = new Object[length];
+
+			for (int c=0; c<length; c++) {
+				values[c] = nDeserItem(s, i);
+			}
+
+			ConsCell l = ConsCell.nil;
+
+			for (int c=length-1; c>=0; c--) {
+				l = new ConsCell(values[c], l);
+			}
+
+			return l;
+		} else if (typeId == 0) {
+			return new StringCatter(i.readUTF());
+		} else if (typeId == 1) {
+			return i.readInt();
+		} else if (typeId == 4) {
+			return i.readFloat();
+		} else if (typeId == 3) {
+			return true;
+		} else if (typeId == 2) {
+			return false;
+		} else {
+			throw new IOException("Unknown type id");
+		}
+	}
+
+	// public static TypeRep nDeserTypeRep(DataInputStream i) throws IOException {
+	// 	return null;
+	// }
 }

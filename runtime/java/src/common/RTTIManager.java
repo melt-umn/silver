@@ -1,6 +1,10 @@
 package common;
 
 import java.util.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
+
 
 /**
  * Collects maps between fully-qualified silver names (some:package:NT) and singletons for terminals,
@@ -19,9 +23,16 @@ import java.util.*;
  * @author louisg
  */
 public final class RTTIManager {
-	private static final Map<String, Prodleton<?>> productionsByName = new HashMap<String, Prodleton<?>>(4096, 0.5f); // guesstimates from silver
-	private static final Map<String, Nonterminalton<?>> nonterminalsByName = new HashMap<String, Nonterminalton<?>>(512, 0.5f);
-	private static final Map<String, Terminalton<?>> terminalsByName = new HashMap<String, Terminalton<?>>(512, 0.5f);
+	private static final int estimateProductionCount = 4096;
+	private static final int estimateNonterminalCount = 512;
+	private static final int estimateTerminalCount = 512;
+
+	private static final Map<String, Prodleton<?>> productionsByName = new HashMap<String, Prodleton<?>>(estimateProductionCount, 0.5f); // guesstimates from silver
+
+	private static final Map<String, Nonterminalton<?>> nonterminalsByName = new HashMap<String, Nonterminalton<?>>(estimateNonterminalCount, 0.5f);
+
+	private static final Map<String, Terminalton<?>> terminalsByName = new HashMap<String, Terminalton<?>>(estimateTerminalCount, 0.5f);
+
 
 	public static void registerNonterminal(Nonterminalton<?> nton) {
 		nonterminalsByName.put(nton.getName(), nton);
@@ -31,6 +42,7 @@ public final class RTTIManager {
 		return nonterminalsByName.get(name);
 	}
 
+
 	public static void registerProduction(Prodleton<?> pton) {
 		productionsByName.put(pton.getName(), pton);
 	}
@@ -39,13 +51,16 @@ public final class RTTIManager {
 		return productionsByName.get(name);
 	}
 
-	public static Terminalton<?> getTerminalton(String name) {
-		return terminalsByName.get(name);
-	}
 
 	public static void registerTerminal(Terminalton<?> tton) {
 		terminalsByName.put(tton.getName(), tton);
 	}
+
+	public static Terminalton<?> getTerminalton(String name) {
+		return terminalsByName.get(name);
+	}
+
+	
 
 	// Represents a production (not an instance of the production, but the production itself.)
 	// So implements reify and access to static fields (childtypes, childinheritedattributes) on
@@ -60,8 +75,16 @@ public final class RTTIManager {
 			final String[] annotationNames,
 			final silver.core.NAST[] annotationASTs);
 
+		public abstract T constructDirect(
+			final Object[] children,
+			final Object[] annos);
+
 		public abstract String getName();
 		public abstract Nonterminalton<? super T> getNonterminalton();
+		
+		public abstract String getTypeUnparse();
+		public abstract int getChildCount();
+		public abstract int getAnnoCount();
 		
 		public abstract String[] getChildTypes();
 		public abstract Lazy[][] getChildInheritedAttributes();

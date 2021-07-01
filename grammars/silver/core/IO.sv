@@ -23,6 +23,8 @@ synthesized attribute iovalue<a> :: a;
  -}
 nonterminal IOVal<a> with io, iovalue<a>;
 
+type ByteArray foreign = "byte[]";
+
 @{--
  - The sole constructor of IOVal results.
  -
