@@ -398,6 +398,7 @@ public final class Util {
 	 * Returns the terminals from a parser.
 	 */
 	private static <ROOT> Object getTerminals(CopperParser<ROOT, CopperParserException> parser) {
+<<<<<<< HEAD
 
 		// This is the WRONG WAY to do this
 		// The right way would be to subclass CopperParser to SilverCompatCopperParser, make our
