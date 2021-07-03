@@ -233,7 +233,8 @@ ${body.translation}
             counter = 0;
             ${implode("\n\t\t", map(makeConstructDirectAnno,     namedSig.namedInputElements))}
 
-            return new ${className}(${namedSig.refInvokeTrans});
+            ${if !null(namedSig.contexts) then s"""throw new common.exceptions.SilverError("Production ${fName} contains type contexts, which are not supported by reify"); // TODO""" else
+                s"return new ${className}(${namedSig.refInvokeTrans});"}
         }
 
         public String getName(){ return "${fName}"; }
