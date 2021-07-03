@@ -12,7 +12,7 @@ runtimeTypeable a => Either<String a> ::= x::ByteArray
 {
   return error("Not impl");
 } foreign {
-  "java" : return "common.Reflection.nativeDeserialize(typeRep_a0, %x%)"; -- TODO: Hack
+  "java" : return "common.Reflection.nativeDeserialize(%@0@%, %x%)";
 }
 
 @{--
