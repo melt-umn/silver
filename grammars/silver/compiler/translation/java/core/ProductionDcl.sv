@@ -240,7 +240,7 @@ ${body.translation}
         public String getName(){ return "${fName}"; }
         public common.RTTIManager.Nonterminalton<${fnnt}> getNonterminalton(){ return ${fnnt}.nonterminalton; }
 
-        public String getTypeUnparse() { return "${ns.unparse}"; }
+        public String getTypeUnparse() { return "${substitute("\"", "\\\"", substitute("\\, "\\\\", ns.unparse))}"; }
         public int getChildCount() { return ${toString(length(namedSig.inputElements))}; }
         public int getAnnoCount() { return ${toString(length(namedSig.namedInputElements))}; }
 
