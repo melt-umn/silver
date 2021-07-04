@@ -196,12 +196,6 @@ String ::= i::Integer s::[NamedSignatureElement]
   else s"\tpublic static final int i_${head(s).elementName} = ${toString(i)};\n" ++ makeIndexDcls(i+1, tail(s));
 }
 
--- TODO I'd really like to just get rid of this.
-function makeChildTypes
-String ::= ns::NamedSignatureElement
-{ return ns.typerep.transClassType ++ ".class";
-}
-
 function unpackChildren
 [String] ::= i::Integer  ns::[NamedSignatureElement]
 {

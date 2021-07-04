@@ -1,6 +1,5 @@
 package common;
 
-import java.lang.reflect.*;
 import java.util.*;
 
 import common.exceptions.*;
@@ -164,6 +163,7 @@ public final class Reflection {
 			        return name.compareTo(other.name);
 			    }
 			}
+
 			final List<AnnotationEntry> annotationASTList = new ArrayList<>();
 			for (NNamedASTs current = (NNamedASTs)ast.getChild(2); !(current instanceof PnilNamedAST); current = (NNamedASTs)current.getChild(1)) {
 				NNamedAST item = (NNamedAST)current.getChild(0);
@@ -176,27 +176,14 @@ public final class Reflection {
 				annotationNames[i] = annotationASTList.get(i).name;
 				annotationASTs[i] = annotationASTList.get(i).ast;
 			}
-			
-			// Invoke the reify function for the appropriate production class
-			final String[] path = prodName.split(":");
-			path[path.length - 1] = "P" + path[path.length - 1];
-			final String className = String.join(".", path);
-			try {
-				@SuppressWarnings("unchecked")
-				Method prodReify =
-						((Class<Node>)Class.forName(className)).getMethod("reify", silver.core.NAST.class, ConsCell.class, TypeRep.class, NAST[].class, String[].class, NAST[].class);
-				return prodReify.invoke(null, ast, rules, resultType, childASTs, annotationNames, annotationASTs);
-			} catch (ClassNotFoundException e) {
+
+			RTTIManager.Prodleton<?> pton = RTTIManager.getProdleton(prodName);
+			if (pton==null) {
 				throw new SilverError("Undefined production " + prodName);
-			} catch (ClassCastException | NoSuchMethodException | IllegalAccessException e) {
-				throw new SilverInternalError("Error invoking reify for class " + className, e);
-			} catch (InvocationTargetException e) {
-				if (e.getTargetException() instanceof SilverException) {
-					throw (SilverException)e.getTargetException();
-				} else {
-					throw new SilverInternalError("Error invoking reify for class " + className, e.getTargetException());
-				}
 			}
+
+			return pton.reify(ast, rules, resultType, childASTs, annotationNames, annotationASTs);
+
 		} else if (ast instanceof PterminalAST) {
 			// Unpack components
 			final String terminalName = ((StringCatter)ast.getChild(0)).toString();
@@ -207,27 +194,14 @@ public final class Reflection {
 			if (!TypeRep.unify(resultType, new BaseTypeRep(terminalName))) {
 				throw new SilverError("reify is constructing " + resultType.toString() + ", but found terminal " + terminalName + " AST.");
 			}
-			
-			// Invoke the reify function for the appropriate terminal class
-			final String[] path = terminalName.split(":");
-			path[path.length - 1] = "T" + path[path.length - 1];
-			final String className = String.join(".", path);
-			try {
-				@SuppressWarnings("unchecked")
-				Constructor<Terminal> terminalConstructor =
-						((Class<Terminal>)Class.forName(className)).getConstructor(StringCatter.class, NLocation.class);
-				return terminalConstructor.newInstance(lexeme, location);
-			} catch (ClassNotFoundException e) {
+
+			RTTIManager.Terminalton<?> tton = RTTIManager.getTerminalton(terminalName);
+			if (tton==null) {
 				throw new SilverError("Undefined terminal " + terminalName);
-			} catch (ClassCastException | NoSuchMethodException | InstantiationException | IllegalAccessException e) {
-				throw new SilverInternalError("Error constructing class " + className, e);
-			} catch (InvocationTargetException e) {
-				if (e.getTargetException() instanceof SilverException) {
-					throw (SilverException)e.getTargetException();
-				} else {
-					throw new SilverInternalError("Error constructing class " + className, e.getTargetException());
-				}
 			}
+
+			return tton.construct(lexeme, location);
+
 		} else if (ast instanceof PlistAST) {
 			final TypeRep paramType = new VarTypeRep();
 			if (!TypeRep.unify(resultType, new AppTypeRep(new BaseTypeRep("[]"), paramType))) {

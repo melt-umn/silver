@@ -62,8 +62,6 @@ public final class ${className} extends common.FunctionNode {
 
 ${makeIndexDcls(0, whatSig.inputElements)}
 
-	public static final Class<?> childTypes[] = { ${implode(",", map(makeChildTypes, whatSig.inputElements))} };
-
 	public static final int num_local_attrs = Init.${localVar};
 	public static final String[] occurs_local = new String[num_local_attrs];
 

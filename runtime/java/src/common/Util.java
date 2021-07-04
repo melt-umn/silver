@@ -1,7 +1,6 @@
 package common;
 
 import java.io.*;
-import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.net.URI;
@@ -394,20 +393,27 @@ public final class Util {
 	 * Returns the terminals from a parser.
 	 */
 	private static <ROOT> Object getTerminals(CopperParser<ROOT, CopperParserException> parser) {
-		Class<? extends CopperParser> parserClass = parser.getClass();
-		try {
-			Method getTokens = parserClass.getMethod("getTokens");
-			List<Terminal> tokens = (List<Terminal>) getTokens.invoke(parser);
-			return new Thunk<ConsCell>(() -> {
-				List<NTerminalDescriptor> tds = tokens
-					.stream()
-					.map(Util::terminalToTerminalDescriptor)
-					.collect(Collectors.toList());
-				return ConsCellCollection.fromList(tds);
-			});
-		} catch(Throwable t) {
-			throw new TraceException("Failed to reflect to getTokens()", t);
-		}
+		// This is the WRONG WAY to do this
+		// The right way would be to subclass CopperParser to SilverCompatCopperParser, make our
+		//  generated parsers inherit from that, and use that here
+		
+		// Class<? extends CopperParser> parserClass = parser.getClass();
+		// try {
+		// 	Method getTokens = parserClass.getMethod("getTokens");
+		// 	List<Terminal> tokens = (List<Terminal>) getTokens.invoke(parser);
+		// 	return new Thunk<ConsCell>(() -> {
+		// 		List<NTerminalDescriptor> tds = tokens
+		// 			.stream()
+		// 			.map(Util::terminalToTerminalDescriptor)
+		// 			.collect(Collectors.toList());
+		// 		return ConsCellCollection.fromList(tds);
+		// 	});
+		// } catch(Throwable t) {
+		// 	throw new TraceException("Failed to reflect to getTokens()", t);
+		// }
+
+		 return new Lazy.Trap("getTerminals not implemented: see source");
+		//TODO: FIXME
 	}
 
 	/**

@@ -14,6 +14,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   local commaIfAnnos :: String = if length(myAnnos)!=0 then "," else "";
   local wantsTracking :: Boolean = typeWantsTracking(nonterminalType(fName, map((.kindrep), tl.types), quals.tracked), top.config, top.env);
 
+  top.initProd := s"\t\tcommon.RTTIManager.registerNonterminal(${className}.nonterminalton);\n\n";
   top.initWeaving := s"""
 	public static int ${inhVar} = 0;
 	public static int ${synVar} = 0;""";
@@ -83,6 +84,13 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 			throw new common.exceptions.SilverInternalError("Invalid annotation " + name);
 		}
 	}
+
+	public static final common.RTTIManager.Nonterminalton<${className}> nonterminalton = new Nonterminalton();
+
+  public static final class Nonterminalton extends common.RTTIManager.Nonterminalton<${className}> {
+      public String getName(){ return "${top.grammarName}:${id.name}"; }
+      public String[] getOccursInh() { return ${className}.occurs_inh; }
+  }
 
 	${otImpl}
 }
