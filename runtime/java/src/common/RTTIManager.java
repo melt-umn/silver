@@ -1,10 +1,6 @@
 package common;
 
 import java.util.*;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.nio.charset.StandardCharsets;
-
 
 /**
  * Collects maps between fully-qualified silver names (some:package:NT) and singletons for terminals,
@@ -17,20 +13,19 @@ import java.nio.charset.StandardCharsets;
  * tables at silver init time.
  * 
  * This is used for the following:
- *  - silver reflection
+ *  - silver reflection (and transitively, reflective de/serialization, rewriting stuff, etc)
  *  - decorators (read: implementing autocopy)
+ *  - native de/serialization (see Reflection.java:nativeSerialize)
  * 
  * @author louisg
  */
 public final class RTTIManager {
-	private static final int estimateProductionCount = 4096;
+	private static final int estimateProductionCount = 4096; // guesstimates from the silver compiler
 	private static final int estimateNonterminalCount = 512;
 	private static final int estimateTerminalCount = 512;
 
-	private static final Map<String, Prodleton<?>> productionsByName = new HashMap<String, Prodleton<?>>(estimateProductionCount, 0.5f); // guesstimates from silver
-
+	private static final Map<String, Prodleton<?>> productionsByName = new HashMap<String, Prodleton<?>>(estimateProductionCount, 0.5f);
 	private static final Map<String, Nonterminalton<?>> nonterminalsByName = new HashMap<String, Nonterminalton<?>>(estimateNonterminalCount, 0.5f);
-
 	private static final Map<String, Terminalton<?>> terminalsByName = new HashMap<String, Terminalton<?>>(estimateTerminalCount, 0.5f);
 
 

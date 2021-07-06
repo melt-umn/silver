@@ -363,7 +363,53 @@ public final class Reflection {
 		return new Pright(reflect(rules, result));
 	}
 
-
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// This is the machinery for nativeSerialize/nativeDeserialize. It is a bespoke binary
+	//  format written/read via java's DataOutputStream/DataInputStream machinery.
+	//  
+	//  This is an OPAQUE serialization format, and must not be modified. Type-safety
+	//  of nativeDeserialize (silver type-safety) depends on the stored value being
+	//  well-formed (i.e., produced by nativeSerialize from a well-typed silver value.)
+	//
+	//  We use the writeUTF/readUTF helpers from java to write and read strings. This internally
+	//  is length+data, and allows us to treat strings as units.
+	//
+	//  Files start with a header to make sure we don't try to interpret garbage. Then there
+	//  is a lookup table of production names, which are indexed into by serialized production
+	//  values. This means that names are only looked up as strings once in the prodleton dictionary.
+	//  This table also contains opaque string representations of the types of the productions, which are
+	//  compared to the string type reps of productions in the deserializing silver (stored on
+	//  prodletons.) This prevents type confusion if the definition of a serialized nonterminal is
+	//  changed.
+	//
+	//  Serialized values start with a one-byte type tag, then some body. Primitives are stored
+	//  directly. Lists have a special-case serialization (length+items). Terminals are stored
+	//  with their full name, looked up at deserialization. [If we started serializing lots of CSTs
+	//  we could do the same lookup table thing we do with productions to speed this up. We could also
+	//  make that faster by special-casing storing the Location value (currently it is stored as a
+	//  'normal' nonterminal value.) But we don't really ever serialize terminals so it dosen't matter 
+	//  much.] Productions store the index of the entry in the production table, and then the children
+	//  and annotations. Deserialization machinery must interrogate the prodleton to know how many
+	//  children and annos to read (we are guaranteed it has not changed by the type rep check when
+	//  loading the prod table.) Nonterminals are then constructed via constructDirect with NO
+	//  typechecking on erased values (so it is important that this is an opaque format, since then
+	//  the type-safety is guaranteed by it's having been produced from a valid silver value.)
+	//  Annotations are in whatever arbitrary order they are in in the translation, and the opaque
+	//  type identifier prevents this from violating type safety. If we ever use more than `location`,
+	//  revisit this.
+	//
+	//  One final reify is invoked to make sure that the types match for polymorphic serialized types.
+	//  No typedata is stored, so this is reifying the expected type with the getType of the deserialized
+	//  type.
+	//
+	//  Decorated nodes are not supported. Foreign types are not supported.
+	//
+	//  This is a more fragile format w/r/t changes in the silver program saving/loading it than the
+	//   textual one (e.g. reordering annotations, changing children names, will cause a deserialization
+	//   failure) and should only be used for caching. But it is MUCH faster and about 50% more
+	//   space-efficient than the textual one.
+	//
     // File: SVB\0<\n><1b version (0)><index array><item>
     // item: <0><string>                                - String
     //       <1><4b integer>                            - Integer
@@ -373,12 +419,22 @@ public final class Reflection {
     //       <5><name string><children><annos>          - production (children, annos = items)
     //       <6><name string><lexeme><location (item)>  - terminal (location = item)
     //       <7><2b length><data>                       - list (data = items)
-
-    // index array: <2b nt count><ntrec...>
+    //
+    // index array: <2b nt count><that many ntrecs...>
     // ntrec: <name string><type string>
+    // 
+    // strings, ints, etc are writeUTF/writeInt/writeShort format (so integers are big-endian), see
+    //  https://docs.oracle.com/javase/7/docs/api/java/io/DataOutputStream.html#writeUTF(java.lang.String)
+    //  for details on writeUTF (basically a 2b length then UTF-8).
+    //
+    // @author louisg
 
-    // strings, ints, etc are writeUTF/readUTF format
+    private static class NativeSerializationException extends IOException {
+    	public NativeSerializationException(String x) { super(x); }
+    }
 
+    // Serialize x into a bytearray
+    // x::a -> Either<String ByteArrray>
 	public static NEither nativeSerialize(Object x) {
 		try{
 			ByteArrayOutputStream arr = new ByteArrayOutputStream(10_000_000);
@@ -388,23 +444,30 @@ public final class Reflection {
 
 			ArrayList<RTTIManager.Prodleton<?>> prodset = new ArrayList<RTTIManager.Prodleton<?>>();
 
-			nSerGetProdSet(prodset, x);
+			nSerGetProdSet(prodset, x); // Compute set of productions
 
-			o.writeShort(prodset.size());
+			if (prodset.size() > 1<<15) throw new NativeSerializationException("Too many productions for native serialize");
+			o.writeShort(prodset.size()); // Write lookup table size
 
-			for (RTTIManager.Prodleton p : prodset) {
-				o.writeUTF(p.getName());
-				o.writeUTF(p.getTypeUnparse());
+			for (RTTIManager.Prodleton p : prodset) { // Write lookup table. For each prod:
+				o.writeUTF(p.getName());              //  fully qualified silver prod name 
+				o.writeUTF(p.getTypeUnparse());       //  opaque typerep
 			}
 
-			nSerItem(o, prodset, x);
+			nSerItem(o, prodset, x); // Serialize the value
 
 			return new Pright(arr.toByteArray());
+		} catch (NativeSerializationException e) {
+			return new Pleft(new StringCatter("Native serialize failed: " + e.toString()));
 		} catch (Exception e) {
-			return new Pleft(new StringCatter(e.toString()));
+			String m = "Native serialize failed: Unknown error: " + e.toString();
+			System.err.println(m);
+			return new Pleft(new StringCatter(m));
 		}
 	}
 
+	// Recursively compute the set of productions used in the object, adding their prodletons once to `s`.
+	//  This forms the production lookup table.
 	public static void nSerGetProdSet(ArrayList<RTTIManager.Prodleton<?>> s, Object x) {
 		if(x instanceof Node) {
 			Node n = (Node)x;
@@ -431,160 +494,171 @@ public final class Reflection {
 		}
 	}
 
+
+	// Serialize a single value `x` into `o`, using `s` as production lookup table
 	public static void nSerItem(DataOutputStream o, ArrayList<RTTIManager.Prodleton<?>> s, Object x) throws IOException {
 		if(x instanceof Node) {
 			Node n = (Node)x;
 
-			o.writeByte(5);
-			o.writeShort(s.indexOf(n.getProdleton()));
+			o.writeByte(5); // type tag
+			o.writeShort(s.indexOf(n.getProdleton())); // index of this production in prod lookup table
 
 			String[] annotationNames = n.getAnnoNames();
 
 			for (int i = 0; i < n.getNumberOfChildren(); i++) {
-				nSerItem(o, s, n.getChild(i));
+				nSerItem(o, s, n.getChild(i)); // serialize all children
 			}
 			
 			for (int i = 0; i < annotationNames.length; i++) {
 				String name = annotationNames[i];
-				nSerItem(o, s, n.getAnno(name));
+				nSerItem(o, s, n.getAnno(name)); // serialize all annos
 			}
 		} else if(x instanceof Terminal) {
 			Terminal t = (Terminal)x;
 			
-			o.writeByte(6);
-			o.writeUTF(t.getTerminalton().getName());
-			o.writeUTF(t.lexeme.toString());
-			nSerItem(o, s, t.location);
+			o.writeByte(6); // type tag
+			o.writeUTF(t.getTerminalton().getName()); // store name of terminal
+			o.writeUTF(t.lexeme.toString()); // store lexeme
+			nSerItem(o, s, t.location); // store location (which is a NT, so recurse to store it as an item)
 
 		} else if(x instanceof ConsCell) {
 			ConsCell c = (ConsCell)x;
 
-			o.writeByte(7);
-			o.writeShort(c.length());
+			o.writeByte(7); // type tag
+
+			if (c.length() > 1<<15) throw new NativeSerializationException("List too long for native serialize");
+			o.writeShort(c.length()); // store length of list
 
 			while (c!=ConsCell.nil) {
-				nSerItem(o, s, c.head());
+				nSerItem(o, s, c.head()); // store items of list ("forward")
 				c = (ConsCell)c.tail();
 			}
 		} else if(x instanceof StringCatter) {
-			o.writeByte(0);
-			o.writeUTF(((StringCatter)x).toString());
+			o.writeByte(0); // type tag
+			o.writeUTF(((StringCatter)x).toString()); // string value
 		} else if(x instanceof Integer) {
-			o.writeByte(1);
-			o.writeInt((int)x);
+			o.writeByte(1); // type tag
+			o.writeInt((int)x); // integer value
 		} else if(x instanceof Float) {
-			o.writeByte(4);
-			o.writeFloat((float)x);
+			o.writeByte(4); // type tag
+			o.writeFloat((float)x); // float value
 		} else if(x instanceof Boolean) {
-			if ((boolean)x) o.writeByte(3);
-			else o.writeByte(2);
+			if ((boolean)x) o.writeByte(3); // type tag/value for true
+			else o.writeByte(2); // type tag/value for false
 		} else if(x instanceof DecoratedNode) {
-			throw new IOException("Cannot serialize DecoratedNodes (prod " + x.toString() + ")");
+			throw new NativeSerializationException("Cannot serialize DecoratedNodes (prod " + x.toString() + ")");
 		} else {
-			throw new IOException("Unserializable type encountered: " + x.toString());
+			throw new NativeSerializationException("Unserializable type encountered: " + x.toString());
 		}
 	}
 
-	public static NEither nativeDeserialize(final TypeRep expected, final byte[] ast) {
+	// Deserialize `arr` into a silver object
+	// RuntimeTypable x => ByteArray -> Either<String x>
+	public static NEither nativeDeserialize(final TypeRep expected, final byte[] arr) {
 		try{
-			ByteArrayInputStream arr = new ByteArrayInputStream(ast);
-			DataInputStream i = new DataInputStream(arr);
+			ByteArrayInputStream ins = new ByteArrayInputStream(arr);
+			DataInputStream i = new DataInputStream(ins);
 
 			byte header[] = "SVB\0\n\0".getBytes("ASCII");
 			byte[] buf = new byte[6];
-			i.readFully(buf, 0, 6);
+			i.readFully(buf, 0, 6); // Read header
 
-			if (!Arrays.equals(header, buf)) throw new IOException("Not a SVB serialization");
+			if (!Arrays.equals(header, buf)) throw new NativeSerializationException("Not a SVB serialization");
 
-			int prodCount = i.readShort();
+			int prodCount = i.readShort(); // length of prod lookup table
 
-			ArrayList<RTTIManager.Prodleton<?>> lookup = new ArrayList<RTTIManager.Prodleton<?>>();
+			ArrayList<RTTIManager.Prodleton<?>> lookup = new ArrayList<RTTIManager.Prodleton<?>>(prodCount);
 			for (int c = 0; c < prodCount; c++) {
-				String name = i.readUTF();
-				String typeUnparse = i.readUTF();
+				String name = i.readUTF(); // Read name of prod
+				String opaqueTypeIdentifier = i.readUTF(); // Read opaque type identifier
+
 				RTTIManager.Prodleton<?> pton = RTTIManager.getProdleton(name);
-				if (pton == null) throw new IOException("Unknown production: " + name);
-				if (!pton.getTypeUnparse().equals(typeUnparse)) throw new IOException("Production " + name + " changed type (was '" + typeUnparse + "' now '" + pton.getTypeUnparse()+"')");
+				if (pton == null) throw new NativeSerializationException("Unknown production: " + name);
+				if (!pton.getTypeUnparse().equals(opaqueTypeIdentifier))
+					throw new NativeSerializationException("Production " + name + " changed type since serialization (from `" + opaqueTypeIdentifier + "` to `" + pton.getTypeUnparse() + "`)");
+				
 				lookup.add(pton);
 			}
 
-			if (!Arrays.equals(header, buf)) throw new IOException("Mismatched SVB header");
+			Object v = nDeserItem(lookup, i); // Deserialize the stored item
 
-			Object v = nDeserItem(lookup, i);
-
-			if (!TypeRep.unify(expected, getType(v))) {
+			if (!TypeRep.unify(expected, getType(v))) { // Run a unification check to ensure silver type-safety
 				return new Pleft(new StringCatter("nativeDeserialize is constructing " + expected.toString() + ", but found " + getType(v).toString()));
 			}
 
 			return new Pright(v);
+		} catch (NativeSerializationException e) {
+			return new Pleft(new StringCatter("Native deserialize failed: " + e.toString()));
 		} catch (IOException e) {
-			return new Pleft(new StringCatter(e.toString()));
+			String m = "Native deserialize failed: Unknown Error: " + e.toString();
+			System.err.println(m);
+			return new Pleft(new StringCatter(m));
 		}
 	}
 
+	// Deserialize a single item from stream `i` using prod lookup table `s`
 	public static Object nDeserItem(ArrayList<RTTIManager.Prodleton<?>> s, DataInputStream i) throws IOException {
-		int typeId = i.readByte();
+		int typeId = i.readByte(); // read type-tag
 
-		if (typeId == 5) { // prod
-			int orderedIndex = i.readShort();
+		if (typeId == 5) { // production
 
+			int orderedIndex = i.readShort(); // read index and retrieve prodleton from lookup
 			RTTIManager.Prodleton<?> pton = s.get(orderedIndex);
 
-			int childCount = pton.getChildCount();
+			int childCount = pton.getChildCount(); // get number of children to load
 			Object children[] = new Object[childCount];
 
 			for (int n = 0; n < childCount; n++) {
-				children[n] = nDeserItem(s, i);
+				children[n] = nDeserItem(s, i); // ...and load them
 			}
 
-			int annoCount = pton.getAnnoCount();
+			int annoCount = pton.getAnnoCount(); // get number of annos to load
 			Object annos[] = new Object[annoCount];
 
 			for (int n = 0; n < annoCount; n++) {
-				annos[n] = nDeserItem(s, i);
+				annos[n] = nDeserItem(s, i); // ...and load them
 			}
 
-			return pton.constructDirect(children, annos);
+			return pton.constructDirect(children, annos); // construct value
 		} else if (typeId == 6) { // terminal
-			String name = i.readUTF();
-
+			String name = i.readUTF(); // read the terminal name
 			RTTIManager.Terminalton<?> tton = RTTIManager.getTerminalton(name);
 
 			if (tton == null)
-				throw new IOException("Can't find terminal " + name);
+				throw new NativeSerializationException("Can't find terminal " + name);
 
 			String lexeme = i.readUTF();
-			Object location = nDeserItem(s, i);
+			Object location = nDeserItem(s, i); // deserialize the location as an item
 
 			return tton.construct(new StringCatter(lexeme), (NLocation)location);
 		} else if (typeId == 7) { // list
-			int length = i.readShort();
+			int length = i.readShort(); // length of stored list
 
 			Object values[] = new Object[length];
 
 			for (int c=0; c<length; c++) {
-				values[c] = nDeserItem(s, i);
+				values[c] = nDeserItem(s, i); // stored in "forwards" order
 			}
 
 			ConsCell l = ConsCell.nil;
 
 			for (int c=length-1; c>=0; c--) {
-				l = new ConsCell(values[c], l);
+				l = new ConsCell(values[c], l); // traverse "backwards" to construct cons-list
 			}
 
 			return l;
-		} else if (typeId == 0) {
+		} else if (typeId == 0) { // string primitive
 			return new StringCatter(i.readUTF());
-		} else if (typeId == 1) {
+		} else if (typeId == 1) { // int primitive
 			return i.readInt();
-		} else if (typeId == 4) {
+		} else if (typeId == 4) { // float primitive
 			return i.readFloat();
-		} else if (typeId == 3) {
+		} else if (typeId == 3) { // bool primitive
 			return true;
-		} else if (typeId == 2) {
+		} else if (typeId == 2) { // bool primitive
 			return false;
 		} else {
-			throw new IOException("Unknown type id");
+			throw new NativeSerializationException("Unknown type id (" + Integer.toString(typeId) + ")");
 		}
 	}
 }
