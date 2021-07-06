@@ -25,7 +25,7 @@ IOVal<Maybe<RootSpec>> ::= grammarName::String  silverHostGen::[String]  grammar
   
   -- IO Step 3: Let's say so, and parse it
   local pr :: IO = print("Found " ++ grammarName ++ "\n\t[" ++ file ++ "]\n", modTime.io);
-  local text :: IOVal<ByteArray> = readByteFile(file, pr);
+  local text :: IOVal<ByteArray> = readBinaryFile(file, pr);
 
   local ir :: Either<String InterfaceItems> = nativeDeserialize(text.iovalue);
   

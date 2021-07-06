@@ -3,28 +3,28 @@ grammar silver:compiler:translation:java:core;
 import silver:compiler:driver:util;
 
 attribute genFiles occurs on RootSpec;
-attribute genBytesFiles occurs on RootSpec;
+attribute genBinaryFiles occurs on RootSpec;
 
 aspect production interfaceRootSpec
 top::RootSpec ::= _ _ _
 {
   top.genFiles := [];
-  top.genBytesFiles := [];
+  top.genBinaryFiles := [];
 }
 
 aspect production errorRootSpec
 top::RootSpec ::= _ _ _ _ _
 {
   top.genFiles := [];
-  top.genBytesFiles := [];
+  top.genBinaryFiles := [];
 }
 
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _ _ _ _
 {
-	top.genBytesFiles := [
-		pair("Silver.svi", unparseRootSpec(top))
-	];
+  top.genBinaryFiles := [
+    pair("Silver.svi", unparseRootSpec(top))
+  ];
 
   top.genFiles := g.genFiles ++
   [pair("Init.java", s"""

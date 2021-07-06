@@ -236,7 +236,7 @@ IO ::= i::IO  r::Decorated RootSpec  silverGen::String
     then print("\t[" ++ r.declaredName ++ "]\n", clean)
     else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ srcPath ++ "\nWarning: if some interface file writes were successful, but others not, Silver's temporaries are in an inconsistent state. Use the --clean flag next run.\n\n", mksrc.io));
 
-  return writeByteFiles(srcPath, r.genBytesFiles, writeFiles(srcPath, r.genFiles, printio));
+  return writeBinaryFiles(srcPath, r.genBinaryFiles, writeFiles(srcPath, r.genFiles, printio));
 }
 
 {--
@@ -249,10 +249,10 @@ IO ::= path::String s::[Pair<String String>] i::IO
   return if null(s) then i else writeFile(path ++ head(s).fst, head(s).snd, writeFiles(path, tail(s), i));
 }
 
-function writeByteFiles
+function writeBinaryFiles
 IO ::= path::String s::[Pair<String ByteArray>] i::IO
 {
-  return if null(s) then i else writeByteFile(path ++ head(s).fst, head(s).snd, writeByteFiles(path, tail(s), i));
+  return if null(s) then i else writeBinaryFile(path ++ head(s).fst, head(s).snd, writeBinaryFiles(path, tail(s), i));
 }
 
 function zipfileset

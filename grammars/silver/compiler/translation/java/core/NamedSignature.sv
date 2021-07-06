@@ -98,11 +98,10 @@ top::NamedSignatureElement ::= n::String ty::Type
   top.childSigElem = "final Object c_" ++ n;
   top.childRefElem = "c_" ++ n;
   top.childDeclElem =
-s"""	private Object child_${n};
-	public final ${ty.transType} getChild_${n}() {
-		return (${ty.transType}) (child_${n} = common.Util.demand(child_${n}));
-	}
-
+s"""private Object child_${n};
+  public final ${ty.transType} getChild_${n}() {
+    return (${ty.transType}) (child_${n} = common.Util.demand(child_${n}));
+  }
 """;
   
   top.childStaticElem =
@@ -210,11 +209,11 @@ String ::= fn::String numChildren::Integer n::NamedSignatureElement
 {
   return
 s"""Object ${n.childRefElem} = null;
-    try {
-      ${n.childRefElem} = common.Reflection.reify(rules, ${n.typerep.transFreshTypeRep}, childASTs[i_${n.elementName}]);
-    } catch (common.exceptions.SilverException e) {
-      throw new common.exceptions.ChildReifyTraceException("${fn}", "${n.elementName}", ${toString(numChildren)}, i_${n.elementName}, e);
-    }
+      try {
+        ${n.childRefElem} = common.Reflection.reify(rules, ${n.typerep.transFreshTypeRep}, childASTs[i_${n.elementName}]);
+      } catch (common.exceptions.SilverException e) {
+        throw new common.exceptions.ChildReifyTraceException("${fn}", "${n.elementName}", ${toString(numChildren)}, i_${n.elementName}, e);
+      }
 """;
 }
 function makeAnnoReify
