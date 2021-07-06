@@ -1,5 +1,5 @@
 #!/bin/bash
 
 silver --clean silver:testing:bin && \
-  java -Xss8M -Xmx2000M -jar silver.testing.bin.jar ${1:-"."}
+  java -Xss10M -Xmx4G -jar silver.testing.bin.jar ${1:-"."}
 
