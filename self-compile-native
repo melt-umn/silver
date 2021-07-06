@@ -34,38 +34,24 @@ fi
 test ! -d build/META-INF || rm -r build/META-INF
 mkdir -p build/META-INF
 
-# Build Silver, directing the native-image agent to output reflection
-# information to META-INF.
-# TODO: We might be able to just hardcode this? We just need the serialization
-# stuff, because Copper uses ObjectInputStream.
-SVJVM_FLAGS="${SVJVM_FLAGS:-"-Xmx4G -Xss16M"} -agentlib:native-image-agent=config-output-dir=build/META-INF/native-image"
-time java $SVJVM_FLAGS \
-	-cp $copper_jar \
-	-cp $silver_runtime_jar \
-	-jar $silver_jar \
-	-o build/silver.compiler.composed.Default.jar \
-	silver:compiler:composed:Default
-
-# Ensure the reflection config files were generated.
-test -d build/META-INF/native-image
-
-# Build the actual JAR and pack the reflection config files in.
-export ANT_OPTS=-Xss10M
-cd build
-ant
-zip silver.compiler.composed.Default.jar -r META-INF
-cd ..
+# Pack the serialization config files into Silver.
+cd support/native-image
+zip ../../jars/silver.compiler.composed.Default.jar \
+	-O ../../build/silver.compiler.composed.Default.jar \
+	-r \
+	META-INF
+cd ../..
 
 NATIVE_IMAGE_FLAGS="${NATIVE_IMAGE_FLAGS:---no-fallback}"
 
-# Default to using the Epsilon GC... Hope you've got spare RAM!
-if [[ "${SELF_COMPILE_NATIVE_EPSILON:-1}" -gt 0 ]]; then
+# Allow using the Epsilon GC... Hope you've got spare RAM if you use it!
+if [[ "${SELF_COMPILE_NATIVE_EPSILON:-0}" -gt 0 ]]; then
 	NATIVE_IMAGE_FLAGS="${NATIVE_IMAGE_FLAGS} -H:InitialCollectionPolicy=com.oracle.svm.core.genscavenge.CollectionPolicy\$NeverCollect"
 fi
 
 # Default to storing debug info. If you really care about storage space,
 # perhaps strip it? Almost certainly not worth it to do so, though.
-if [[ "${SELF_COMPILE_NATIVE_DEBUG:-0}" -gt 0 ]]; then
+if [[ "${SELF_COMPILE_NATIVE_DEBUG:-1}" -gt 0 ]]; then
 	NATIVE_IMAGE_FLAGS="${NATIVE_IMAGE_FLAGS} -H:GenerateDebugInfo=1"
 	# Currently (2021-06-30) recommended; otherwise, "addresses" are
 	# actually offsets from r14 (amd64) or r29 (AArch64).
