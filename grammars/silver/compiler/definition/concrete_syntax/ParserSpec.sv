@@ -55,7 +55,7 @@ top::ParserSpec ::=
   -- containing the parser spec (and thus the ParserSpec itself) does not get rebuilt when only its
   -- dependencies are modified, thus the set of marking terminals exported by a grammar when the
   -- ParserSpec is built may be out of date.
-  -- componentGrammarMarkingTerminals is also needed to help determine the prefix seperator.
+  -- componentGrammarMarkingTerminals is also needed to help determine the prefix separator.
   production componentGrammarMarkingTerminals::[Pair<String [String]>] =
     map(
       \ g::String ->

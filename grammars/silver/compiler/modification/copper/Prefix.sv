@@ -70,18 +70,18 @@ top::TerminalPrefix ::= t::String_t
       -- Specify which terminals this prefix prefixes.  This is used to find the separator to
       -- append to the regex when normalizing the CST AST
       terminalModifierSingle(
-        terminalModifierUsePrefixSeperatorFor(top.prefixedTerminals, top.prefixedGrammars, location=top.location),
+        terminalModifierUsePrefixSeparatorFor(top.prefixedTerminals, top.prefixedGrammars, location=top.location),
         location=top.location),
       location=top.location);
 }
 
 -- Needed when generating seperated terminal declarations, this is pretty useless otherwise so abstract only
-abstract production terminalModifierUsePrefixSeperatorFor
+abstract production terminalModifierUsePrefixSeparatorFor
 top::TerminalModifier ::= terms::[String]  grams::[String]
 {
   top.unparse = s"use prefix separator for {${implode(", ", terms)}} {${implode(", ", grams)}}";
 
-  top.terminalModifiers := [termUsePrefixSeperatorFor(terms, grams)];
+  top.terminalModifiers := [termUsePrefixSeparatorFor(terms, grams)];
   top.errors := [];
 }
 
@@ -182,21 +182,21 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
 -- Prefix separator
 terminal Separator_kwd 'separator' lexer classes {KEYWORD};
 
-concrete production lexerClassModifierPrefixSeperator
+concrete production lexerClassModifierPrefixSeparator
 top::LexerClassModifier ::= 'prefix' 'separator' s::String_t
 {
   top.unparse = s"prefix separator ${s.lexeme}";
 
-  top.lexerClassModifiers := [lexerClassPrefixSeperator(substring(1, length(s.lexeme) - 1, s.lexeme))];
+  top.lexerClassModifiers := [lexerClassPrefixSeparator(substring(1, length(s.lexeme) - 1, s.lexeme))];
 }
 
 {- Not supported due to ambiguity with modifiers on prefix terminal defined
  - inside parser spec.  But not really that useful anyway?
-concrete production terminalModifierPrefixSeperator
+concrete production terminalModifierPrefixSeparator
 top::TerminalModifier ::= 'prefix' 'separator' s::String_t
 {
   top.unparse = s"prefix separator ${s.lexeme}";
 
-  top.terminalModifiers := [termPrefixSeperator(substring(1, length(s.lexeme) - 1, s.lexeme))];
+  top.terminalModifiers := [termPrefixSeparator(substring(1, length(s.lexeme) - 1, s.lexeme))];
 }
 -}

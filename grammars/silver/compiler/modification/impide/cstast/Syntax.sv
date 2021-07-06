@@ -21,7 +21,7 @@ top::SyntaxDcl ::= fontName::String fnt::Font -- TODO: we probably? need to fact
 {
   top.fontList <- [pair(makeCopperName(fontName), fnt)];
   
-  propagate cstErrors, prefixSeperator;
+  propagate cstErrors, prefixSeparator;
 
   top.fullName = fontName;
   top.sortKey = "111"; -- Doesn't really matter, it doesn't show up in the copper XML

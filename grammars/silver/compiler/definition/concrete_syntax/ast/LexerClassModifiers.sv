@@ -3,23 +3,23 @@ grammar silver:compiler:definition:concrete_syntax:ast;
 -- From TerminalModifiers
 --synthesized attribute dominatesXML :: String;
 --synthesized attribute submitsXML :: String;
---synthesized attribute prefixSeperator :: Maybe<String>;
+--synthesized attribute prefixSeparator :: Maybe<String>;
 
 autocopy attribute className :: String;
 
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator, containingGrammar;
+nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeparator, containingGrammar;
 
-propagate cstErrors, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator
+propagate cstErrors, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeparator
   on SyntaxLexerClassModifiers;
 
 abstract production consLexerClassMod
 top::SyntaxLexerClassModifiers ::= h::SyntaxLexerClassModifier  t::SyntaxLexerClassModifiers
 {
   top.cstErrors <-
-    if h.prefixSeperator.isJust && t.prefixSeperator.isJust
+    if h.prefixSeparator.isJust && t.prefixSeparator.isJust
     then ["Multiple prefix separators for class " ++ top.className]
     else [];
 }
@@ -33,14 +33,14 @@ top::SyntaxLexerClassModifiers ::=
 {--
  - Modifiers for lexer classes.
  -}
-closed nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator, containingGrammar;
+closed nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeparator, containingGrammar;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
 top::SyntaxLexerClassModifier ::=
 {
   -- Empty values as defaults
-  propagate cstErrors, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator;
+  propagate cstErrors, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeparator;
 }
 
 {--
@@ -123,9 +123,9 @@ ${acode}
 {--
  - The default prefix separator for the members of a lexer class.
  -}
-abstract production lexerClassPrefixSeperator
+abstract production lexerClassPrefixSeparator
 top::SyntaxLexerClassModifier ::= sep::String
 {
   top.cstErrors := [];
-  top.prefixSeperator := just(sep);
+  top.prefixSeparator := just(sep);
 }
