@@ -144,7 +144,7 @@ top::ProductionStmt ::= attr::Decorated QName
 }
 
 
--- Need a seperate nonterminal since this can be empty and needs env to check errors
+-- Need a separate nonterminal since this can be empty and needs env to check errors
 nonterminal ProdNameList with config, grammarName, env, location, unparse, names, errors;
 propagate errors on ProdNameList;
 

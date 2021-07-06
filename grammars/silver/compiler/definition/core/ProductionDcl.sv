@@ -22,7 +22,7 @@ inherited attribute deterministicCount :: Integer;
 inherited attribute signatureName :: String;
 
 {--
- - Defs from the constraint list are passed seperately from the rest of the signature defs,
+ - Defs from the constraint list are passed separately from the rest of the signature defs,
  - to avoid an infinite recursion.
  -}
 synthesized attribute constraintDefs::[Def];

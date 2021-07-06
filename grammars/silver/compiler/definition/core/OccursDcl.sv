@@ -157,7 +157,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
   -- Nothing used to build the env namespaces on which we dispatch can depend on
   -- the forward here.
   -- Attribution (occurs) defs, which obviously must depend on this forward, are
-  -- specified by a seperate occursDefs attribute.
+  -- specified by a separate occursDefs attribute.
   -- Attribution dispatch productions should only define occursDefs (i.e. no new
   -- nonterminals, productions, attributes, etc.)
   top.defs := [];

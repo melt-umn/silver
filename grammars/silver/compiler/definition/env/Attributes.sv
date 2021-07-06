@@ -50,7 +50,7 @@ monoid attribute condBuild :: [[String]];
 monoid attribute allGrammarDependencies :: [String];
 {--
  - A list of attribute occurences that are exported by this particular grammar.
- - Seperate from defs as a workaround for circular dependency issues.
+ - Separate from defs as a workaround for circular dependency issues.
  -}
 monoid attribute occursDefs :: [DclInfo];
 

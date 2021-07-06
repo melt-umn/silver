@@ -1,6 +1,6 @@
 # Tuple Syntax
 
-Tuples use a comma "`,`" to seperate individual tuple elements. They are implemented inductively using the construction of ordered pairs, e.g. we forward a tuple `(a, b, c, d)` to `Pair<a Pair<b Pair<c d>>>`.
+Tuples use a comma "`,`" to separate individual tuple elements. They are implemented inductively using the construction of ordered pairs, e.g. we forward a tuple `(a, b, c, d)` to `Pair<a Pair<b Pair<c d>>>`.
 
 ## Implementation
 

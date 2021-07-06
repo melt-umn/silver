@@ -225,7 +225,7 @@ top::SyntaxTerminalModifier ::= terms::[String] grams::[String]
   top.cstErrors <-
     if length(distinctSepTermRefs) > 1
     then ["Terminals " ++ implode(", ", map((.fullName), distinctSepTermRefs)) ++
-          " have different prefix separators, so their prefixes must be specified seperately"]
+          " have different prefix separators, so their prefixes must be specified separately"]
     else [];
 }
 

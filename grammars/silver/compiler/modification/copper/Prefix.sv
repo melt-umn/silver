@@ -59,7 +59,7 @@ top::TerminalPrefix ::= r::RegExpr
   forwards to newTermModifiersTerminalPrefix(r, terminalModifiersNone(location=top.location), location=top.location);
 }
 
-concrete production seperatedTerminalPrefix
+concrete production separatedTerminalPrefix
 top::TerminalPrefix ::= t::String_t
 {
   top.unparse = t.lexeme;
@@ -75,7 +75,7 @@ top::TerminalPrefix ::= t::String_t
       location=top.location);
 }
 
--- Needed when generating seperated terminal declarations, this is pretty useless otherwise so abstract only
+-- Needed when generating separated terminal declarations, this is pretty useless otherwise so abstract only
 abstract production terminalModifierUsePrefixSeparatorFor
 top::TerminalModifier ::= terms::[String]  grams::[String]
 {

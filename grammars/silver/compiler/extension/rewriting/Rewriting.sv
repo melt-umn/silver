@@ -20,7 +20,7 @@ imports silver:compiler:modification:let_fix;
 
 -- Note that these being infix operators means that this wouldn't pass the MDA,
 -- despite being a Silver "extension".  This could be fixed by refactoring the
--- Silver Expr grammar into an "ETF" style with seperate operator nonterminals.
+-- Silver Expr grammar into an "ETF" style with separate operator nonterminals.
 terminal Sequence_t '<*'  precedence = 12, association = left; -- Same as *
 terminal Choice_t   '<+'  precedence = 11, association = left; -- Same as +
 

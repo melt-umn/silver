@@ -22,7 +22,7 @@ top::Expr ::= q::Decorated QName _ _
 {
   -- In regular pattern matching nonterminal values are always effectively decorated, but we are
   -- using the same typing behavior while matching on *undecorated* trees.  So when a variable is
-  -- referenced as decorated we must seperately handle the cases of when it was already decorated
+  -- referenced as decorated we must separately handle the cases of when it was already decorated
   -- or was decorated implicitly (in which case we need to explicitly decorate it here.)  The same
   -- problem exists when dealing with implicit undecoration.
   top.transform =

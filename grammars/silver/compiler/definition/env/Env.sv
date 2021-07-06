@@ -108,7 +108,7 @@ top::Env ::= d::Defs  e::Decorated Env
 
 {--
  - Introduces new occurs defs to an environment.
- - This is seperate from newScopeEnv as we must be able to build the other env trees without having the occurs tree.
+ - This is separate from newScopeEnv as we must be able to build the other env trees without having the occurs tree.
  -}
 function occursEnv
 Decorated Env ::= d::[DclInfo]  e::Decorated Env
