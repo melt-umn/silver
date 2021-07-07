@@ -53,6 +53,8 @@ public class ${className} extends common.Terminal {
     }
     public String getName() { return "${fName}"; }
   }
+
+  public common.RTTIManager.Terminalton<${className}> getTerminalton() { return terminalton; }
 }
 
 """)];
