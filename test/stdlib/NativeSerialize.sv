@@ -24,7 +24,7 @@ global fin1 :: String = if des1.isRight then hackUnparse(des1.fromRight) else de
 
 equalityTest(
   hackUnparse(val1), fin1,
-  String, silver_tests);
+  String, core_tests);
 
 
 
@@ -35,7 +35,7 @@ global fin2 :: String = if des2.isRight then hackUnparse(des2.fromRight) else de
 
 equalityTest(
   hackUnparse(val2), fin2,
-  String, silver_tests);
+  String, core_tests);
 
 
 
@@ -46,7 +46,7 @@ global fin3 :: String = if des3.isRight then hackUnparse(des3.fromRight) else de
 
 equalityTest(
   "nativeDeserialize is constructing [String], but found [Integer]", fin3,
-  String, silver_tests);
+  String, core_tests);
 
 
 
@@ -57,4 +57,4 @@ global bytefiletest::IOMonad<ByteArray> = do {
 };
 
 equalityTest(hackUnparse(nativeDeserialize(evalIO(bytefiletest, unsafeIO()).iovalue).fromRight), hackUnparse(val1),
-  String, silver_tests);
+  String, core_tests);
