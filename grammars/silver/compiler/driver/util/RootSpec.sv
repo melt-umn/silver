@@ -1,6 +1,7 @@
 grammar silver:compiler:driver:util;
 
 import silver:reflect;
+import silver:reflect:nativeserialize;
 import silver:langutil only pp;
 import silver:langutil:pp only show;
 
@@ -288,7 +289,7 @@ top::InterfaceItem ::= val::[DclInfo]
  - to the productions, instead of as an attribute.
  -}
 function unparseRootSpec
-String ::= r::Decorated RootSpec
+ByteArray ::= r::Decorated RootSpec
 {
   production attribute interfaceItems :: [InterfaceItem] with ++;
   interfaceItems := [
@@ -305,7 +306,7 @@ String ::= r::Decorated RootSpec
   ];
   
   return
-    case serialize(foldr(consInterfaceItem, nilInterfaceItem(), interfaceItems)) of
+    case nativeSerialize(foldr(consInterfaceItem, nilInterfaceItem(), interfaceItems)) of
     | left(msg) -> error("Fatal internal error generating interface file: \n" ++ show(80, reflect(foldr(consInterfaceItem, nilInterfaceItem(), interfaceItems)).pp) ++ "\n" ++ msg)
     | right(txt) -> txt
     end;

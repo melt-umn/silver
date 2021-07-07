@@ -230,13 +230,34 @@ ${body.translation}
                 s"""return new ${className}(${if wantsTracking then "new silver.core.PoriginOriginInfo(common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)"++commaIfKidsOrAnnos else ""} ${namedSig.refInvokeTrans});"""}
         }
 
+        public ${className} constructDirect(
+            final Object[] children,
+            final Object[] annos)
+        {
+            int counter = 0;
+            ${implode("\n\t\t", map(makeConstructDirectChildren, namedSig.inputElements))}
+
+            counter = 0;
+            ${implode("\n\t\t", map(makeConstructDirectAnno,     namedSig.namedInputElements))}
+
+            ${if !null(namedSig.contexts) then s"""throw new common.exceptions.SilverError("Production ${fName} contains type contexts, which are not supported by reify"); // TODO""" else
+                s"return new ${className}(${namedSig.refInvokeTrans});"}
+        }
+
         public String getName(){ return "${fName}"; }
         public common.RTTIManager.Nonterminalton<${fnnt}> getNonterminalton(){ return ${fnnt}.nonterminalton; }
+
+        public String getTypeUnparse() { return "${substitute("\"", "\\\"", substitute("\\", "\\\\", ns.unparse))}"; }
+        public int getChildCount() { return ${toString(length(namedSig.inputElements))}; }
+        public int getAnnoCount() { return ${toString(length(namedSig.namedInputElements))}; }
 
         public String[] getOccursInh() { return ${className}.occurs_inh; }
         public String[] getChildTypes() { return ${className}.childTypes; }
         public common.Lazy[][] getChildInheritedAttributes() { return ${className}.childInheritedAttributes; }
     }
+
+    public common.RTTIManager.Prodleton<${className}> getProdleton() { return prodleton; }
+
 
 	${if null(namedSig.contexts) then s"public static final common.NodeFactory<${fnnt}> factory = new Factory();" else ""}
 

@@ -202,6 +202,7 @@ public class Main {
 		${package}.Init.initAllStatics();
 		${package}.Init.init();
 		${package}.Init.postInit();
+
 		try {
 			common.Node rv = (common.Node) ${package}.Pmain.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args), common.IOToken.singleton);
 			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
