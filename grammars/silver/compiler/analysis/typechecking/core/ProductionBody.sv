@@ -139,14 +139,14 @@ top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNa
 aspect production childDefLHS
 top::DefLHS ::= q::Decorated QName
 {
-  top.errors <- if top.typerep.isDecorable then []
+  top.errors <- if isDecorable(top.typerep, top.env) then []
                 else [err(top.location, "Inherited attributes can only be defined on (undecorated) nonterminals.")];
 }
 
 aspect production localDefLHS
 top::DefLHS ::= q::Decorated QName
 {
-  top.errors <- if top.typerep.isDecorable then []
+  top.errors <- if isDecorable(top.typerep, top.env) then []
                 else [err(top.location, "Inherited attributes can only be defined on (undecorated) nonterminals.")];
 }
 

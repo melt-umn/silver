@@ -84,10 +84,10 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
     already).-}
   local eMTyDecorable::Boolean =
         if eIsMonadic
-        then performSubstitution(monadInnerType(e.mtyperep, top.location), e.mUpSubst).isDecorable ||
-             (!performSubstitution(monadInnerType(e.mtyperep, top.location), e.mUpSubst).isDecorated && pr.patternType.isDecorable)
-        else performSubstitution(e.mtyperep, e.mUpSubst).isDecorable ||
-             (!performSubstitution(e.mtyperep, e.mUpSubst).isDecorated && pr.patternType.isDecorable);
+        then isDecorable(performSubstitution(monadInnerType(e.mtyperep, top.location), e.mUpSubst), top.env) ||
+             (!performSubstitution(monadInnerType(e.mtyperep, top.location), e.mUpSubst).isDecorated && isDecorable(pr.patternType, top.env))
+        else isDecorable(performSubstitution(e.mtyperep, e.mUpSubst), top.env) ||
+             (!performSubstitution(e.mtyperep, e.mUpSubst).isDecorated && isDecorable(pr.patternType, top.env));
   local decName::Expr =
         if eMTyDecorable
         then decorateExprWithEmpty('decorate', baseExpr(qName(top.location, freshname), location=top.location),

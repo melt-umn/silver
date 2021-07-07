@@ -83,7 +83,7 @@ Boolean ::= sigName::String  e::Decorated Env
   -- Suggested fix: maybe we can directly look at the signature, instead of looking
   -- up the name in the environment?
   
-  return if null(d) then true else head(d).typeScheme.isDecorable;
+  return if null(d) then true else isDecorable(head(d).typeScheme.typerep, e);
 }
 
 {--
@@ -408,7 +408,7 @@ top::Expr ::= q::Decorated QName
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
-    && q.lookupValue.typeScheme.isDecorable
+    && isDecorable(q.lookupValue.typeScheme.typerep, top.env)
     then if refSet.isJust then []
          else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.", top.config.runMwda)]
     else [];
@@ -429,7 +429,7 @@ top::Expr ::= q::Decorated QName
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
-    && q.lookupValue.typeScheme.isDecorable
+    && isDecorable(q.lookupValue.typeScheme.typerep, top.env)
     then if refSet.isJust then []
          else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.", top.config.runMwda)]
     else [];
@@ -490,7 +490,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     then
       case e of
       | childReference(lq) ->
-          if lq.lookupValue.typeScheme.isDecorable
+          if isDecorable(lq.lookupValue.typeScheme.typerep, top.env)
           then
             let inhs :: [String] = 
                   -- N.B. we're filtering out autocopies here
@@ -506,7 +506,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
             end
           else []
       | localReference(lq) ->
-          if lq.lookupValue.typeScheme.isDecorable
+          if isDecorable(lq.lookupValue.typeScheme.typerep, top.env)
           then
             let inhs :: [String] = 
                   filter(
@@ -639,7 +639,7 @@ top::VarBinder ::= n::Name
   -- Check that we're not taking an unbounded reference
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
-    && top.bindingType.isDecorable
+    && isDecorable(top.bindingType, top.env)
     then if refSet.isJust then []
          else [mwdaWrn(top.location, s"Cannot take a reference of type ${prettyType(finalTy)}, as the reference set is not bounded.", top.config.runMwda)]
     else [];
@@ -657,7 +657,7 @@ top::VarBinder ::= n::Name
 
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
-    && top.bindingType.isDecorable
+    && isDecorable(top.bindingType, top.env)
     && top.matchingAgainst.isJust
     && !null(missingInhs)
     then [mwdaWrn(top.location, s"Pattern variable '${n.name}' has transitive dependencies with missing remote equations.\n\tRemote production: ${top.matchingAgainst.fromJust.fullName}\n\tChild: ${top.bindingName}\n\tMissing inherited equations for: ${implode(", ", missingInhs)}", top.config.runMwda)]

@@ -53,6 +53,40 @@ top::Context ::= fn::String t::Type
 """;
 }
 
+aspect production inhOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.transType = "int";
+  
+  resolvedDcl.transContextDeps = requiredContexts.transContexts;
+  top.transContext = resolvedDcl.transContext;
+  
+  top.transContextMemberName = makeConstraintDictName(attr, ntty, top.boundVariables);
+  top.transContextSuperAccessorName = makeInstanceSuperAccessorName(attr);
+  top.transContextSuperAccessor = s"""
+	public final ${top.transType} ${top.transContextSuperAccessorName}() {
+		return ${top.transContext};
+	}
+""";
+}
+
+aspect production synOccursContext
+top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
+{
+  top.transType = "int";
+  
+  resolvedDcl.transContextDeps = requiredContexts.transContexts;
+  top.transContext = resolvedDcl.transContext;
+  
+  top.transContextMemberName = makeConstraintDictName(attr, ntty, top.boundVariables);
+  top.transContextSuperAccessorName = makeInstanceSuperAccessorName(attr);
+  top.transContextSuperAccessor = s"""
+	public final ${top.transType} ${top.transContextSuperAccessorName}() {
+		return ${top.transContext};
+	}
+""";
+}
+
 aspect production typeableContext
 top::Context ::= t::Type
 {
@@ -137,6 +171,27 @@ top::DclInfo ::= fntc::String baseDcl::DclInfo
 {
   baseDcl.transContextDeps = top.transContextDeps;
   top.transContext = baseDcl.transContext ++ s".${makeInstanceSuperAccessorName(fntc)}()";
+}
+aspect production occursDcl
+top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
+{
+  top.transContext = top.attrOccursIndex;
+}
+aspect production occursInstConstraintDcl
+top::DclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
+{
+  top.transContext = makeConstraintDictName(fnat, ntty, tvs);
+}
+aspect production occursSigConstraintDcl
+top::DclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
+{
+  top.transContext = s"((${makeProdName(ns.fullName)})(context.undecorate())).${makeConstraintDictName(fnat, ntty, ns.freeVariables)}";
+}
+aspect production occursSuperDcl
+top::DclInfo ::= fnat::String atty::Type baseDcl::DclInfo
+{
+  baseDcl.transContextDeps = top.transContextDeps;
+  top.transContext = baseDcl.transContext ++ s".${makeInstanceSuperAccessorName(fnat)}()";
 }
 aspect production typeableInstConstraintDcl
 top::DclInfo ::= ty::Type tvs::[TyVar]

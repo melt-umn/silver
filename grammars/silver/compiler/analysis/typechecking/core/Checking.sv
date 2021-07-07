@@ -27,14 +27,18 @@ top::TypeCheck ::= l::Type r::Type
 }
 
 abstract production checkNonterminal
-top::TypeCheck ::= l::Type
+top::TypeCheck ::= e::Decorated Env allowDecorableSkolems::Boolean l::Type
 {
   local refined :: Type =
     performSubstitution(l, top.downSubst);
 
   top.upSubst = composeSubst(ignoreFailure(top.downSubst), refined.unifyInstanceNonterminal);
 
-  top.typeerror = top.upSubst.failure && !refined.isError;
+  top.typeerror =
+    case performSubstitution(refined, top.upSubst) of
+    | skolemType(_) -> !allowDecorableSkolems || null(searchEnvTree(refined.typeName, e.occursTree))
+    | _ -> top.upSubst.failure && !refined.isError
+    end;
 
   top.leftpp = prettyType(performSubstitution(l, top.finalSubst));
   top.rightpp = "a nonterminal";

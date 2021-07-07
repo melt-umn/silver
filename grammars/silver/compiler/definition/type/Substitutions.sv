@@ -86,7 +86,21 @@ functor attribute substituted occurs on Context, Type;
 functor attribute flatRenamed occurs on Context, Type;
 
 propagate substituted, flatRenamed on Context, Type
-  excluding varType, skolemType, ntOrDecType;
+  excluding inhOccursContext, synOccursContext, varType, skolemType, ntOrDecType;
+
+aspect production inhOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.substituted = inhOccursContext(attr, map(performSubstitution(_, top.substitution), args), atty.substituted, ntty.substituted);
+  top.flatRenamed = inhOccursContext(attr, map(performRenaming(_, top.substitution), args), atty.flatRenamed, ntty.flatRenamed);
+}
+
+aspect production synOccursContext
+top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
+{
+  top.substituted = synOccursContext(attr, map(performSubstitution(_, top.substitution), args), atty.substituted, inhs.substituted, ntty.substituted);
+  top.flatRenamed = synOccursContext(attr, map(performRenaming(_, top.substitution), args), atty.flatRenamed, inhs.flatRenamed, ntty.flatRenamed);
+}
 
 aspect production varType
 top::Type ::= tv::TyVar

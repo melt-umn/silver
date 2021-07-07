@@ -201,7 +201,7 @@ top::QNameAttrOccur ::= at::QName
     else if null(dclsNarrowed) then
       -- This is a heuristic error message for the situation where you have a type, but haven't imported
       -- the grammar declaring that type.
-      (if top.attrFor.typeName != "" && null(getTypeDcl(top.attrFor.typeName, top.env)) then
+      (if lastIndexOf(":", top.attrFor.typeName) > 0 && null(getTypeDcl(top.attrFor.typeName, top.env)) then
          [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Perhaps import '" ++ substring(0, lastIndexOf(":", top.attrFor.typeName), top.attrFor.typeName)  ++ "'?")]
        else
          [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Looked at:\n" ++ printPossibilities(attrs))]

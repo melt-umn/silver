@@ -45,6 +45,12 @@ top::Type ::= c::Type a::Type
   top.lengthDispatcher = c.lengthDispatcher;
 }
 
+aspect production skolemType
+top::Type ::= _
+{
+  top.accessHandler = undecoratedAccessHandler(_, _, location=_);
+}
+
 aspect production intType
 top::Type ::=
 {

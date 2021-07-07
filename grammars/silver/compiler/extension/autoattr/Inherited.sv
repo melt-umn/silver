@@ -9,7 +9,7 @@ top::ProductionStmt ::= attr::Decorated QName
   local inputsWithAttr::[NamedSignatureElement] =
     filter(
       \ input::NamedSignatureElement ->
-        input.typerep.isDecorable &&
+        isDecorable(input.typerep, top.env) &&
         !null(getOccursDcl(attrFullName, input.typerep.typeName, top.env)),
       top.frame.signature.inputElements);
   forwards to
