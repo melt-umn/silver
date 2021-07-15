@@ -29,19 +29,6 @@ top::CmdArgs ::= rest::CmdArgs
   forwards to rest;
 }
 
-abstract production abellaOutFlag
-top::CmdArgs ::= loc::String rest::CmdArgs
-{
-  top.abellaGen = rest.abellaGen;
-  top.abellaOutOption =
-      case rest.abellaOutOption of
-      | nothing() -> just(loc)
-      | _ -> error("Duplicate arguments for abellaOutOption")
-      end;
-  top.abellaLibraryLocation = rest.abellaLibraryLocation;
-  forwards to rest;
-}
-
 abstract production abellaLibraryFlag
 top::CmdArgs ::= loc::String rest::CmdArgs
 {
@@ -59,22 +46,16 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--abella-compile", flag(abellaCompileFlag)),
-            pair("--abella-out", option(abellaOutFlag)),
             pair("--abella-library", option(abellaLibraryFlag))];
   flagdescs <-
      ["\t--abella-compile : build the Abella encoding",
-      "\t--abella-out   : output location for Abella encoding",
       "\t--abella-library : location of Abella library files (required when encoding to Abella"];
 }
 
 aspect production compilation
 top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::BuildEnv
 {
-  local outputLoc::String =
-        case top.config.abellaOutOption of
-        | nothing() -> "./"
-        | just(path) -> path ++ "/"
-        end;
+  local outputLoc::String = benv.silverGen ++ "/thm/";
   local libraryLoc::String =
         case top.config.abellaLibraryLocation of
         | nothing() ->
@@ -112,21 +93,21 @@ IO ::= i::IO  a::Decorated CmdArgs  l::[Decorated RootSpec]
 function writeSpec
 IO ::= i::IO  r::Decorated RootSpec  outputLoc::String  libraryLoc::String
 {
-  local filename::String =
-        outputLoc ++ r.declaredName ++ "_definition.thm";
+  local path::String =
+        outputLoc ++ grammarToPath(r.declaredName);
 
   local mkiotest::IOVal<Boolean> =
-    isDirectory(outputLoc, i);
+    isDirectory(path, i);
   
   local mkio::IOVal<Boolean> =
     if mkiotest.iovalue
     then mkiotest
-    else mkdir(outputLoc, mkiotest.io);
+    else mkdir(path, mkiotest.io);
   
   local pr::IO =
     if mkio.iovalue
     then print("\t[" ++ r.declaredName ++ "]\n", mkio.io)
-    else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ outputLoc ++ "\n\n", mkio.io));
+    else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ path ++ "\n\n", mkio.io));
 
   local importsString::String =
         "Kind bool   type.\n" ++
@@ -141,6 +122,8 @@ IO ::= i::IO  r::Decorated RootSpec  outputLoc::String  libraryLoc::String
         "Import \"" ++ libraryLoc ++ "pairs\".\n" ++
         "Kind $attrVal   type -> type.\n" ++
         "Import \"" ++ libraryLoc ++ "attr_val\".\n\n";
+
+  local filename::String = path ++ "/definitions.thm";
 
   local wr::IO =
         if r.shouldOutput

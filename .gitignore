@@ -6,6 +6,7 @@ generated/bin
 generated/doc
 generated/ide
 generated/src
+generated/thm
 
 # build.xml files
 build.xml
