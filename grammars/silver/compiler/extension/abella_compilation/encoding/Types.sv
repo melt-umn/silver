@@ -1,10 +1,4 @@
-grammar silver:compiler:extension:abella_compilation;
-
-
-imports silver:compiler:definition:core;
-imports silver:compiler:definition:type;
-imports silver:compiler:definition:type:syntax;
-imports silver:compiler:extension:list;
+grammar silver:compiler:extension:abella_compilation:encoding;
 
 
 --Translating types and production signatures

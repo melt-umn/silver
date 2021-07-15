@@ -1,4 +1,4 @@
-grammar silver:compiler:extension:abella_compilation;
+grammar silver:compiler:extension:abella_compilation:encoding;
 
 
 aspect production productionDcl

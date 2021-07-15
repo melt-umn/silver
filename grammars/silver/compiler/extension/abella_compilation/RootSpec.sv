@@ -1,9 +1,6 @@
 grammar silver:compiler:extension:abella_compilation;
 
 
-imports silver:compiler:driver:util;
-
-
 --Whether we should try to output anything
 synthesized attribute shouldOutput::Boolean;
 --The text we should output for the grammar
@@ -15,6 +12,9 @@ attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
    inheritedAttrs, attrEqInfo
 occurs on RootSpec;
+
+propagate nonterminals, attrs, attrOccurrences, localAttrs,
+          inheritedAttrs, attrEqInfo on RootSpec;
 
 
 aspect production interfaceRootSpec
@@ -353,74 +353,6 @@ function makeConsistentNames_help_list
          ( consTermList(tsub.1, restsub.1), restsub.2, restsub.3 )
        end end
      | _, _ -> error("Unexpected case in makeConsistentNames_help_list")
-     end;
-}
-
-{-
-  Replace all varTerms with nameTerms with unique names
-  @param hd The head term of the definition clauses
-  @param bodies The bodies of the separate definition clauses
-  @returns The head and bodies of the clauses with the varTerms
-           replaced by unique names and all free names from each body
-           bound over the top of it
--}
-function fillVars
-(Term, [Metaterm]) ::= hd::Term bodies::[Metaterm]
-{
-  local headNames::[String] = generateNamesFromVars(hd.freeVars, []);
-  local zippedHeadNames::[((String, Integer), String)] =
-        zipWith(pair(_, _), hd.freeVars, headNames);
-  local filledHead::Term =
-        foldr(\ p::((String, Integer), String) rest::Term ->
-                replaceVar_Term(p.1, nameTerm(p.2), rest),
-              hd, zippedHeadNames);
-  local cleanedBodies::[Metaterm] =
-        foldr(\ p::((String, Integer), String) rest::[Metaterm] ->
-                map(replaceVar(p.1, nameTerm(p.2), _), rest),
-              bodies, zippedHeadNames);
-  local filledBodies::[Metaterm] =
-        fillVarsBodies(cleanedBodies, headNames);
-  return ( filledHead, filledBodies );
-}
-
---Replace all varTerms in each clause body with a nameTerm and add
---   bindings for the names
-function fillVarsBodies
-[Metaterm] ::= bodies::[Metaterm] usedNames::[String]
-{
-  local body::Metaterm = head(bodies);
-  local freevars::[(String, Integer)] = nub(body.freeVars);
-  local newNames::[String] =
-        generateNamesFromVars(freevars, usedNames);
-  local filledBody::Metaterm =
-        foldr(\ p::((String, Integer), String) rest::Metaterm ->
-                replaceVar(p.1, nameTerm(p.2), rest),
-              body, zipWith(pair(_, _), freevars, newNames));
-  local boundBody::Metaterm =
-        if null(newNames)
-        then filledBody
-        else bindingMetaterm(existsBinder(),
-                map(\ x::String -> (x, nothing()), newNames),
-                filledBody);
-  return
-     case bodies of
-     | [] -> []
-     | _::rest -> boundBody::fillVarsBodies(rest, usedNames)
-     end;
-}
-
---Returns the new names in order corresponding to the vars
-function generateNamesFromVars
-[String] ::= vars::[(String, Integer)] usedNames::[String]
-{
-  return
-     case vars of
-     | [] -> []
-     | (name, _)::rest ->
-       let newName::String = makeUniqueNameFromBase(name, usedNames)
-       in
-         newName::generateNamesFromVars(rest, newName::usedNames)
-       end
      end;
 }
 

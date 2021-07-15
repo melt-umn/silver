@@ -1,15 +1,4 @@
-grammar silver:compiler:extension:abella_compilation;
-
-imports silver:compiler:definition:concrete_syntax;
-imports silver:compiler:modification:ffi;
-imports silver:compiler:extension:autoattr;
-imports silver:compiler:modification:defaultattr;
-imports silver:compiler:modification:copper;
-imports silver:compiler:modification:copper_mda;
-imports silver:compiler:definition:flow:syntax;
-imports silver:compiler:modification:collection;
-imports silver:compiler:definition:env;
-
+grammar silver:compiler:extension:abella_compilation:encoding;
 
 
 attribute

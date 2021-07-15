@@ -1,4 +1,4 @@
-grammar silver:compiler:extension:abella_compilation;
+grammar silver:compiler:extension:abella_compilation:abella;
 
 
 monoid attribute freeVars::[(String, Integer)] with [], ++;

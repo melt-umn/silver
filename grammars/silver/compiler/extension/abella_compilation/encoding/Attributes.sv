@@ -1,34 +1,27 @@
-grammar silver:compiler:extension:abella_compilation;
-
-
---Whether parentheses are possibly needed in printing something
-synthesized attribute isAtomic::Boolean;
---Because we print a lot of sequences of conjunctions
-synthesized attribute isAnd::Boolean;
-
+grammar silver:compiler:extension:abella_compilation:encoding;
 
 
 --[(production name, production type)]
 monoid attribute prods::[(String, AbellaType)] with [], ++;
-propagate prods on AGDcl, AGDcls, Grammar, Root, RootSpec;
+propagate prods on AGDcl, AGDcls, Grammar, Root;
 
 --[nonterminal name]
 monoid attribute nonterminals::[String] with [], ++;
-propagate nonterminals on AGDcl, AGDcls, Grammar, Root, RootSpec;
+propagate nonterminals on AGDcl, AGDcls, Grammar, Root;
 
 --[attribute name]
 monoid attribute attrs::[String] with [], ++;
-propagate attrs on AGDcl, AGDcls, Grammar, Root, RootSpec;
+propagate attrs on AGDcl, AGDcls, Grammar, Root;
 
 --[(attribute name, [(nonterminal name, attribute type)])]
 monoid attribute attrOccurrences::[(String, [(String, AbellaType)])]
    with [], combineAssociations(_, _);
-propagate attrOccurrences on AGDcl, AGDcls, Grammar, Root, RootSpec;
+propagate attrOccurrences on AGDcl, AGDcls, Grammar, Root;
 
 --[(local name, [(production name, local type)])]
 monoid attribute localAttrs::[(String, [(String, AbellaType)])]
    with [], combineAssociations(_, _);
-propagate localAttrs on AGDcl, AGDcls, Grammar, Root, RootSpec,
+propagate localAttrs on AGDcl, AGDcls, Grammar, Root,
              ProductionBody, ProductionStmts, ProductionStmt
    excluding aspectDefaultProduction, aspectFunctionDcl,
              functionDclFFI, functionDcl;
@@ -51,7 +44,7 @@ function combineAssociations
 
 --[attribute name]
 monoid attribute inheritedAttrs::[String] with [], ++;
-propagate inheritedAttrs on AGDcl, AGDcls, Grammar, Root, RootSpec;
+propagate inheritedAttrs on AGDcl, AGDcls, Grammar, Root;
 
 
 --[( attribute, top nonterminal type, production,
@@ -59,7 +52,7 @@ propagate inheritedAttrs on AGDcl, AGDcls, Grammar, Root, RootSpec;
 monoid attribute attrEqInfo::[(String, AbellaType, String,
                                Term, [[Metaterm]])]
    with [], ++;
-propagate attrEqInfo on AGDcl, AGDcls, Grammar, Root, RootSpec,
+propagate attrEqInfo on AGDcl, AGDcls, Grammar, Root,
              ProductionBody, ProductionStmts, ProductionStmt
    excluding aspectDefaultProduction, aspectFunctionDcl,
              functionDclFFI, functionDcl, ifElseStmt, blockStmt;

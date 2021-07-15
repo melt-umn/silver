@@ -1,4 +1,4 @@
-grammar silver:compiler:extension:abella_compilation;
+grammar silver:compiler:extension:abella_compilation:encoding;
 
 
 function generateNonterminalTypes
@@ -835,7 +835,7 @@ String ::= attrs::[(String, AbellaType, [DefClause])]
            component::String inheritedAttrs::[String]
 {
   local here::(String, AbellaType, [DefClause]) = head(attrs);
-  local body::Defs =
+  local body::silver:compiler:extension:abella_compilation:abella:Defs =
         if null(here.3)
         then singleAbellaDefs(factClause(trueMetaterm()))
         else

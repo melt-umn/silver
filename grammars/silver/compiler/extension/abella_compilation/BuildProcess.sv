@@ -1,9 +1,6 @@
 grammar silver:compiler:extension:abella_compilation;
 
 import silver:compiler:driver;
-import silver:compiler:definition:env;
-import silver:compiler:definition:core;
-
 import silver:util:cmdargs;
 
 

@@ -1,8 +1,9 @@
-grammar silver:compiler:extension:abella_compilation;
+grammar silver:compiler:extension:abella_compilation:encoding;
 
 
 attribute
-   encodingEnv_up, treeTerm_up<TermList>,
+   encodingEnv_up,
+   treeTerm_up<silver:compiler:extension:abella_compilation:abella:TermList>,
    nodetreeTerm_up<Term>, top_up
 occurs on ProductionSignature;
 
@@ -58,7 +59,8 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
 
 
 attribute
-   encodingEnv_up, treeTerm_up<TermList>,
+   encodingEnv_up,
+   treeTerm_up<silver:compiler:extension:abella_compilation:abella:TermList>,
    nodetreeTerm_up<Term>
 occurs on ProductionRHS;
 
@@ -135,7 +137,8 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 
 
 attribute
-   encodingEnv_up, treeTerm_up<TermList>,
+   encodingEnv_up,
+   treeTerm_up<silver:compiler:extension:abella_compilation:abella:TermList>,
    nodetreeTerm_up<Term>, top_up
 occurs on AspectProductionSignature;
 
@@ -173,7 +176,8 @@ top::AspectProductionLHS ::= id::Name t::Type
 
 
 attribute
-   encodingEnv_up, treeTerm_up<TermList>,
+   encodingEnv_up,
+   treeTerm_up<silver:compiler:extension:abella_compilation:abella:TermList>,
    nodetreeTerm_up<Term>
 occurs on AspectRHS;
 
