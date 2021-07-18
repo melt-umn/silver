@@ -5,5 +5,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="var" path="SILVER_HOME/jars/CopperRuntime.jar"/>
 	<classpathentry kind="var" path="SILVER_HOME/generated/bin"/>
+	<classpathentry kind="var" path="SILVER_HOME/jars/commonmark-0.17.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -8,6 +8,7 @@ Bundle-ClassPath: .,
  @LANG_COMPOSED@.jar,
  CopperCompiler.jar,
  SilverRuntime.jar,
+ commonmark-0.17.1.jar,
  IDEPluginRuntime.jar
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources,
