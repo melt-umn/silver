@@ -1,12 +1,6 @@
 package common;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Writer;
+import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -124,6 +118,31 @@ public final class IOToken implements Typed {
 	 */
 	public IOToken writeFile(StringCatter filename, StringCatter content) {
 		return writeFileActual(filename, content, false);
+	}
+
+	public NIOVal readByteFile(StringCatter filename) {
+		try {
+			Path path = Paths.get(filename.toString());
+      		byte[] data = Files.readAllBytes(path);
+      		return this.wrap(data);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * <pre>IO ::= file::String contents::ByteArray i::IO</pre>
+	 */
+	public IOToken writeByteFile(StringCatter filename, byte[] content) {
+		try {
+			File outputFile = new File(filename.toString());
+			FileOutputStream outputStream = new FileOutputStream(outputFile);
+			outputStream.write(content);
+			outputStream.flush();
+			return this;
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**

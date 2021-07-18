@@ -114,6 +114,13 @@ top::IOMonad<Unit> ::= file::String contents::String
   top.stateVal = unit();
 }
 
+abstract production writeBinaryFileM
+top::IOMonad<Unit> ::= file::String contents::ByteArray
+{
+  top.stateOut = writeBinaryFile(file, contents, top.stateIn);
+  top.stateVal = unit();
+}
+
 abstract production appendFileM
 top::IOMonad<Unit> ::= file::String contents::String
 {
@@ -149,6 +156,14 @@ abstract production readFileM
 top::IOMonad<String> ::= s::String
 {
   local res::IOVal<String> = readFile(s, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
+}
+
+abstract production readBinaryFileM
+top::IOMonad<ByteArray> ::= s::String
+{
+  local res::IOVal<ByteArray> = readBinaryFile(s, top.stateIn);
   top.stateOut = res.io;
   top.stateVal = res.iovalue;
 }

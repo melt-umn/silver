@@ -41,7 +41,7 @@ top::InterfaceItem ::= val::[(String, String, [String])]
 }
 
 aspect function unparseRootSpec
-String ::= r::Decorated RootSpec
+ByteArray ::= r::Decorated RootSpec
 {
   interfaceItems <- [flowDefsInterfaceItem(r.flowDefs)];
   interfaceItems <- [refDefsInterfaceItem(r.refDefs)];

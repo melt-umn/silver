@@ -21,7 +21,6 @@ import edu.umn.cs.melt.copper.runtime.engines.CopperParser;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
 
-
 /**
  * Many places in Silver's translation are bits of code that need factoring out, somehow.
  * 
@@ -393,10 +392,11 @@ public final class Util {
 	 * Returns the terminals from a parser.
 	 */
 	private static <ROOT> Object getTerminals(CopperParser<ROOT, CopperParserException> parser) {
+
 		// This is the WRONG WAY to do this
 		// The right way would be to subclass CopperParser to SilverCompatCopperParser, make our
 		//  generated parsers inherit from that, and use that here
-		
+
 		// Class<? extends CopperParser> parserClass = parser.getClass();
 		// try {
 		// 	Method getTokens = parserClass.getMethod("getTokens");
@@ -412,7 +412,7 @@ public final class Util {
 		// 	throw new TraceException("Failed to reflect to getTokens()", t);
 		// }
 
-		 return new Lazy.Trap("getTerminals not implemented: see source");
+		return new Lazy.Trap("getTerminals not implemented: see source");
 		//TODO: FIXME
 	}
 
