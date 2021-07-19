@@ -2,7 +2,6 @@ package common;
 
 import common.javainterop.ConsCellCollection;
 import java.util.ArrayList;
-import java.util.List;
 import org.commonmark.node.AbstractVisitor;
 import org.commonmark.node.FencedCodeBlock;
 import org.commonmark.node.SourceSpan;
