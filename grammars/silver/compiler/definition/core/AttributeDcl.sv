@@ -43,4 +43,3 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
 
   top.errors <- tl.errorsTyVars;
 }
-
