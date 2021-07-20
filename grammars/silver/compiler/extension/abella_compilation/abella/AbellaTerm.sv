@@ -9,14 +9,22 @@ propagate freeVars on Metaterm, Term, TermList
 autocopy attribute replaceTermVar::(String, Integer);
 autocopy attribute replaceTerm::Term;
 functor attribute replaced;
-propagate replaced on Metaterm, Term, TermList
+propagate replaced on Metaterm, Term, TermList,
+             ParenthesizedArgs, ListContents, PairContents
    excluding varTerm;
+
+--Expand names to their fully-qualified version
+autocopy attribute replaceName::String;
+functor attribute replacedName;
+propagate replacedName on Metaterm, Term, TermList,
+             ParenthesizedArgs, ListContents, PairContents
+   excluding nameTerm;
 
 
 nonterminal Metaterm with
    unparse, isAtomic, isAnd,
    freeVars,
-   replaceTermVar, replaceTerm, replaced;
+   replaceTermVar, replaceTerm, replaced, replaceName, replacedName;
 
 aspect default production
 top::Metaterm ::=
@@ -139,7 +147,7 @@ top::Binder::=
 
 nonterminal Term with
    unparse, isAtomic, freeVars,
-   replaceTermVar, replaceTerm, replaced;
+   replaceTermVar, replaceTerm, replaced, replaceName, replacedName;
 
 {-
   A varTerm is used to represent a name generated in encoding.  We
@@ -168,6 +176,11 @@ top::Term ::= name::String
 {
   top.unparse = name;
   top.isAtomic = true;
+
+  top.replacedName =
+      if top.replaceName == name
+      then top.replaceTerm
+      else top;
 }
 
 abstract production applicationTerm
@@ -207,7 +220,7 @@ synthesized attribute argList::[Term];
 
 nonterminal TermList with
    unparse, freeVars, argList,
-   replaceTermVar, replaceTerm, replaced;
+   replaceTermVar, replaceTerm, replaced, replaceName, replacedName;
 
 abstract production nilTermList
 top::TermList ::=
@@ -265,5 +278,27 @@ Term ::= replaceTermVar::(String, Integer) replaceResult::Term
      decorate replaceIn with
      { replaceTermVar = replaceTermVar;
        replaceTerm = replaceResult; }.replaced;
+}
+
+
+--Helper functions for more easily replacing names
+function replaceName
+Metaterm ::= replaceName::String replaceResult::Term replaceIn::Metaterm
+{
+  return
+     decorate replaceIn with
+     { replaceName = replaceName;
+       replaceTerm = replaceResult; }.replacedName;
+}
+
+function replaceNames
+Metaterm ::= lst::[(String, Term)] replaceIn::Metaterm
+{
+  return
+     case lst of
+     | [] -> replaceIn
+     | (name, term)::rest ->
+       replaceNames(rest, replaceName(name, term, replaceIn))
+     end;
 }
 

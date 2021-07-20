@@ -106,26 +106,16 @@ IO ::= i::IO  r::Decorated RootSpec  outputLoc::String  libraryLoc::String
     then print("\t[" ++ r.declaredName ++ "]\n", mkio.io)
     else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ path ++ "\n\n", mkio.io));
 
-  local importsString::String =
-        "Kind bool   type.\n" ++
-        "Import \"" ++ libraryLoc ++ "bools\".\n" ++
-        "Kind nat   type.\n" ++
-        "Import \"" ++ libraryLoc ++ "integer_addition\".\n" ++
-        "Import \"" ++ libraryLoc ++ "integer_multiplication\".\n" ++
-        "Import \"" ++ libraryLoc ++ "integer_comparison\".\n" ++
-        "Import \"" ++ libraryLoc ++ "lists\".\n" ++
-        "Import \"" ++ libraryLoc ++ "strings\".\n" ++
-        "Kind $pair   type -> type -> type.\n" ++
-        "Import \"" ++ libraryLoc ++ "pairs\".\n" ++
-        "Kind $attrVal   type -> type.\n" ++
-        "Import \"" ++ libraryLoc ++ "attr_val\".\n\n";
-
   local filename::String = path ++ "/definitions.thm";
+  local interface_filename::String = path ++ "/thm_interface.svthmi";
 
   local wr::IO =
         if r.shouldOutput
-        then writeFile(filename, importsString ++ r.output, pr)
-        else i;
+        then let one::IO = writeFile(filename, r.output, pr)
+             in
+                writeFile(interface_filename, r.interface_output, one)
+             end
+        else print(r.error_output, i);
 
   return wr;
 }

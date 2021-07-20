@@ -7,4 +7,5 @@ imports silver:compiler:driver:util;
 
 imports silver:compiler:extension:abella_compilation:encoding;
 imports silver:compiler:extension:abella_compilation:abella;
+imports silver:compiler:extension:abella_compilation:parsing_thms;
 

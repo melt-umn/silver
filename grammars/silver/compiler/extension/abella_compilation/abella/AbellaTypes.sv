@@ -118,6 +118,25 @@ top::AbellaType ::= var::TyVar
       else top;
 }
 
+{-
+  I'm not sure if I should include this---nobody should be writing
+  this in anything we care about, but I will include this anyway.
+-}
+abstract production underscoreAbellaType
+top::AbellaType ::=
+{
+  top.unparse = "_";
+  top.isAtomic = true;
+
+  top.resultType = top;
+  top.headTypeName = just("_");
+  top.argumentTypes = [];
+
+  top.isRelation = "is_underscore";
+
+  top.replacedTy = top;
+}
+
 
 
 function replaceVars

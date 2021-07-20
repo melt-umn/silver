@@ -285,3 +285,17 @@ function generateNamesFromVars
      end;
 }
 
+
+
+{-
+  Turn the short name, defined in the current grammar, into a
+  fully-qualified name.
+
+  TODO This actually needs to be a different form, but for now.
+-}
+function makeFullSilverName
+String ::= currentGrammar::String shortName::String
+{
+  return currentGrammar ++ ":" ++ shortName;
+}
+
