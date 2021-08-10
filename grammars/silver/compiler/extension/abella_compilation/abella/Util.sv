@@ -132,7 +132,7 @@ String ::= ty::AbellaType usedNames::[String]
 {
   local base::String =
         if tyIsNonterminal(ty)
-        then substring(3, 4, ty.headTypeName.fromJust)
+        then splitEncodedName(ty.headTypeName.fromJust).2
         else case ty.headTypeName of
              | nothing() -> "A"
              | just("integer") -> "N"
@@ -290,12 +290,30 @@ function generateNamesFromVars
 {-
   Turn the short name, defined in the current grammar, into a
   fully-qualified name.
-
-  TODO This actually needs to be a different form, but for now.
 -}
-function makeFullSilverName
-String ::= currentGrammar::String shortName::String
+function buildEncodedName
+String ::= grammarName::String shortName::String
 {
-  return currentGrammar ++ ":" ++ shortName;
+  return substitute(":", "$*$", grammarName) ++ "$*$" ++ shortName;
+}
+
+
+function encodeName
+String ::= q::String
+{
+  return substitute(":", "$*$", q);
+}
+
+
+--(grammar, short name)
+function splitEncodedName
+(String, String) ::= name::String
+{
+  local lastInd::Integer = lastIndexOf("$*$", name);
+  return
+     if lastInd < 0
+     then error("Not an encoded name (" ++ name ++ ")")
+     else ( substring(0, lastInd, name),
+            substring(lastInd + 3, length(name), name) );
 }
 

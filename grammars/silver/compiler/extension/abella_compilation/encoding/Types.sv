@@ -116,8 +116,8 @@ top::Type ::= c::Type a::Type
 aspect production errorType
 top::Type ::=
 {
-  top.abellaType = nameAbellaType("Whence is an errorType coming?");
---      error("Cannot translate to Abella in presence of errors");
+  top.abellaType = --nameAbellaType("Whence is an errorType coming?");
+      error("Cannot translate to Abella in presence of errors");
 }
 
 aspect production intType
@@ -155,8 +155,8 @@ top::Type ::= el::Type
 aspect production terminalIdType
 top::Type ::=
 {
-  top.abellaType = nameAbellaType("terminalIdType");
-      --error("Should not access abellaType for terminalIdType");
+  top.abellaType = --nameAbellaType("terminalIdType");
+      error("Should not access abellaType for terminalIdType");
 }
 
 aspect production nonterminalType
@@ -167,7 +167,7 @@ top::Type ::= fn::String ks::[Kind] tracked::Boolean
       then nameAbellaType("list")
       else if fn == "silver:core:Pair"
            then nameAbellaType("$pair")
-           else nameToNonterminalType(shortestName(fn));
+           else nameToNonterminalType(encodeName(fn));
 }
 
 aspect production terminalType

@@ -283,5 +283,6 @@ abstract production emptySilverApplicationTerm
 top::Term ::= f::Term
 {
   top.unparse = f.unparse ++ "()";
+  top.isAtomic = true;
 }
 

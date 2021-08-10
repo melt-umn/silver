@@ -1,27 +1,36 @@
 grammar silver:compiler:extension:abella_compilation:encoding;
 
 
+import silver:compiler:driver:util;
+
+--occurs on needs to be done in this grammar for MWDA
+attribute
+   prods, nonterminals, attrs, attrOccurrences, localAttrs,
+   inheritedAttrs, attrEqInfo
+occurs on RootSpec;
+
+
 --[(production name, production type)]
 monoid attribute prods::[(String, AbellaType)] with [], ++;
-propagate prods on AGDcl, AGDcls, Grammar, Root;
+propagate prods on AGDcl, AGDcls, Grammar, Root, RootSpec;
 
 --[nonterminal name]
 monoid attribute nonterminals::[String] with [], ++;
-propagate nonterminals on AGDcl, AGDcls, Grammar, Root;
+propagate nonterminals on AGDcl, AGDcls, Grammar, Root, RootSpec;
 
 --[attribute name]
 monoid attribute attrs::[String] with [], ++;
-propagate attrs on AGDcl, AGDcls, Grammar, Root;
+propagate attrs on AGDcl, AGDcls, Grammar, Root, RootSpec;
 
 --[(attribute name, [(nonterminal name, attribute type)])]
 monoid attribute attrOccurrences::[(String, [(String, AbellaType)])]
    with [], combineAssociations(_, _);
-propagate attrOccurrences on AGDcl, AGDcls, Grammar, Root;
+propagate attrOccurrences on AGDcl, AGDcls, Grammar, Root, RootSpec;
 
 --[(local name, [(production name, local type)])]
 monoid attribute localAttrs::[(String, [(String, AbellaType)])]
    with [], combineAssociations(_, _);
-propagate localAttrs on AGDcl, AGDcls, Grammar, Root,
+propagate localAttrs on AGDcl, AGDcls, Grammar, Root, RootSpec,
              ProductionBody, ProductionStmts, ProductionStmt
    excluding aspectDefaultProduction, aspectFunctionDcl,
              functionDclFFI, functionDcl;
@@ -44,7 +53,7 @@ function combineAssociations
 
 --[attribute name]
 monoid attribute inheritedAttrs::[String] with [], ++;
-propagate inheritedAttrs on AGDcl, AGDcls, Grammar, Root;
+propagate inheritedAttrs on AGDcl, AGDcls, Grammar, Root, RootSpec;
 
 
 --[( attribute, top nonterminal type, production,
@@ -52,7 +61,7 @@ propagate inheritedAttrs on AGDcl, AGDcls, Grammar, Root;
 monoid attribute attrEqInfo::[(String, AbellaType, String,
                                Term, [[Metaterm]])]
    with [], ++;
-propagate attrEqInfo on AGDcl, AGDcls, Grammar, Root,
+propagate attrEqInfo on AGDcl, AGDcls, Grammar, Root, RootSpec,
              ProductionBody, ProductionStmts, ProductionStmt
    excluding aspectDefaultProduction, aspectFunctionDcl,
              functionDclFFI, functionDcl, ifElseStmt, blockStmt;

@@ -25,7 +25,7 @@ occurs on AGDcl;
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
-  top.prods <- [(id.name, ns.abellaType)];
+  top.prods <- [(buildEncodedName(top.grammarName, id.name), ns.abellaType)];
 }
 
 aspect production attributeDclSyn
@@ -45,7 +45,7 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name
   newte.env = top.env;
   newte.flowEnv = top.flowEnv;
   --
-  top.attrs <- [a.name];
+  top.attrs <- [buildEncodedName(top.grammarName, a.name)];
 }
 
 aspect production attributeDclInh
@@ -65,22 +65,22 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs
   newte.env = top.env;
   newte.flowEnv = top.flowEnv;
   --
-  top.attrs <- [a.name];
-  top.inheritedAttrs <- [a.name];
+  top.attrs <- [buildEncodedName(top.grammarName, a.name)];
+  top.inheritedAttrs <- [buildEncodedName(top.grammarName, a.name)];
 }
 
 aspect production defaultAttributionDcl
 top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.attrOccurrences <-
-      [(at.name, [(nt.name, protoatty.abellaType)])];
+      [(encodeName(at.lookupAttribute.fullName), [(encodeName(nt.lookupType.fullName), protoatty.abellaType)])];
 }
 
 aspect production nonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name
                tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
-  top.nonterminals <- [shortestName(id.name)];
+  top.nonterminals <- [buildEncodedName(top.grammarName, shortestName(id.name))];
 }
 
 aspect production aspectProductionDcl

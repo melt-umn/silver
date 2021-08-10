@@ -100,7 +100,7 @@ IO ::= i::IO  r::Decorated RootSpec  outputLoc::String  libraryLoc::String
     if mkiotest.iovalue
     then mkiotest
     else mkdir(path, mkiotest.io);
-  
+
   local pr::IO =
     if mkio.iovalue
     then print("\t[" ++ r.declaredName ++ "]\n", mkio.io)

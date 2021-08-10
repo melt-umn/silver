@@ -16,13 +16,8 @@ synthesized attribute error_output::String;
 
 
 attribute
-   shouldOutput, output, interface_output, error_output,
-   prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, attrEqInfo
+   shouldOutput, output, interface_output, error_output
 occurs on RootSpec;
-
-propagate nonterminals, attrs, attrOccurrences, localAttrs,
-          inheritedAttrs, attrEqInfo on RootSpec;
 
 
 aspect production interfaceRootSpec
@@ -31,6 +26,7 @@ top::RootSpec ::= _ _ _
   top.shouldOutput = false;
   top.output = "";
   top.interface_output = "";
+  top.error_output = "";
 }
 
 aspect production errorRootSpec
@@ -39,13 +35,14 @@ top::RootSpec ::= _ _ _ _ _
   top.shouldOutput = false;
   top.output = "";
   top.interface_output = "";
+  top.error_output = "";
 }
 
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
                   grammarTime::Integer generateLocation::String
 {
-  local componentName::String = shortestName(grammarName);
+  local componentName::String = encodeName(grammarName);
   --[(nonterminal type name (with $nt_), [(production name, production type)])]
   local prodsByType::[(String, [(String, AbellaType)])] =
         let byType::[(AbellaType, String, AbellaType)] =
@@ -153,28 +150,34 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
   --   they do not occur so we know we need to make a full relation
   --e.g. Root sets env on children even though it has no env itself
   local associatedAttrs::[(String, [String])] =
+        --Cut down the equation information to attr and tree root type
         let filtered::[(String, AbellaType)] =
             map(\ p::(String, AbellaType, String, Term, [[Metaterm]]) ->
                   (p.1, p.2), g.attrEqInfo)
         in
+        --Cut down to unique pairs of attr and tree root type
         let cleaned::[(String, AbellaType)] =
             nubBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
                     p1.1 == p2.1 && tysEqual(p1.2, p2.2), filtered)
         in
+        --Sort by attribute
         let sorted::[(String, AbellaType)] =
             sortBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
                      p1.1 <= p2.1, cleaned)
         in
+        --Group by attribute
         let grouped::[[(String, AbellaType)]] =    
             groupBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
                       p1.1 == p2.1, sorted)
         in
+        --Put into groups of (attr, [nonterminals])
         let paired::[(String, [String])] =
             map(\ l::[(String, AbellaType)] ->
                   ( head(l).1, map(\ p::(String, AbellaType) ->
                                      nonterminalTypeToName(p.2),
                                    l) ), grouped)
         in
+          --Check if each nonterminal is in the occurrences; if not, add to final list
           map(\ p::(String, [String]) ->
                 case findAssociated(p.1, g.attrOccurrences) of
                 | nothing() -> error("Attr must exist")
@@ -196,7 +199,7 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
       generateContents(g.nonterminals, g.attrs, g.attrOccurrences,
          g.inheritedAttrs, g.localAttrs, associatedAttrs, g.prods,
          attrClauses, g.localAttrDefs, g.funRelClauses,
-         shortestName(grammarName));
+         encodeName(grammarName));
 
 
   local no_core_module_names::[String] =
@@ -526,14 +529,14 @@ Either<String [(String, [DefinitionElement], [ParsedElement])]> ::=
               | defineElement(rels, bodies) ->
                 defineElement(
                    map(\ p::(String, AbellaType) ->
-                         (makeFullSilverName(thisGrammar, p.1), p.2),
+                         (buildEncodedName(thisGrammar, p.1), p.2),
                        rels),
                    --We need a way to expand all short names, based on where they came from
                    --For now, just replace the defined names
                    let replaces::[(String, Term)] =
                        map(\ p::(String, AbellaType) ->
                              ( p.1, nameTerm(
-                                       makeFullSilverName(thisGrammar,
+                                       buildEncodedName(thisGrammar,
                                                           p.1)) ),
                            rels)
                    in
@@ -633,7 +636,7 @@ Either<String [ParsedElement]> ::=
        | left(msg) -> left(msg)
        | right(rest) ->
          right(nonextensibleTheorem(
-                  makeFullSilverName(currentGrammar, name),
+                  buildEncodedName(currentGrammar, name),
                   stmt)::rest)
        end
      | extensibleMutualTheoremGroup(interfaceThms, [])::intRest,
@@ -652,7 +655,7 @@ Either<String [ParsedElement]> ::=
        | right(rest) ->
          right(extensibleMutualTheoremGroup(
                   map(\ p::(String, Metaterm, String) ->
-                        ( makeFullSilverName(currentGrammar, p.1),
+                        ( buildEncodedName(currentGrammar, p.1),
                           p.2, p.3 ),
                       thmThms), [])::rest)
        end
@@ -691,7 +694,7 @@ Either<String [ParsedElement]> ::=
                 right(extensibleMutualTheoremGroup(
                          interfaceThms ++ 
                          map(\ p::(String, Metaterm, String) ->
-                               ( makeFullSilverName(currentGrammar, p.1),
+                               ( buildEncodedName(currentGrammar, p.1),
                                  p.2, p.3 ),
                              thmThms), [])::rest)
               end

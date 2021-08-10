@@ -117,7 +117,7 @@ top::Expr ::= q::Decorated QName
   top.encodedExpr =
       if q.lookupValue.fullName == "silver:core:pair"
       then [([], nameTerm(pairConstructorName))]
-      else [([], nameTerm(nameToProd(shortestName(q.name))))];
+      else [([], nameTerm(nameToProd(encodeName(q.lookupValue.fullName))))];
   top.encodedFailure = [];
 }
 
@@ -128,23 +128,8 @@ top::Expr ::= q::Decorated QName
       --error(<str>) cannot succeed, so don't translate it
       if q.lookupValue.fullName == "silver:core:error"
       then []
-      --some special functions for primitive types have special relations
-      else if q.lookupValue.fullName == "silver:core:head"
-      then [([], nameTerm(headName))]
-      else if q.lookupValue.fullName == "silver:core:tail"
-      then [([], nameTerm(tailName))]
-      else if q.lookupValue.fullName == "silver:core:length"
-      then [([], nameTerm(lengthName))]
-      else if q.lookupValue.fullName == "silver:core:null"
-      then [([], nameTerm(nullName))]
-      else if q.lookupValue.fullName == "silver:core:fst"
-      then [([], nameTerm(fstName))]
-      else if q.lookupValue.fullName == "silver:core:snd"
-      then [([], nameTerm(sndName))]
-      else if q.lookupValue.fullName == "silver:core:append"
-      then [([], nameTerm(appendName))]
       --nothing special
-      else [([], nameTerm(nameToFun(shortestName(q.name))))];
+      else [([], nameTerm(nameToFun(encodeName(q.lookupValue.fullName))))];
   top.encodedFailure =
       if q.lookupValue.fullName == "silver:core:error"
       then [[]]
@@ -350,6 +335,11 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   newe.encodingEnv = top.encodingEnv;
   newe.top = top.top;
   --
+  local attrName::String =
+        case q of
+        | qNameAttrOccur(at) ->
+          encodeName(at.lookupAttribute.fullName)
+        end;
   local synname::String = capitalize(shortestName(q.name));
   local synnode::String = "Node";
   local synTerm::Term =
@@ -402,7 +392,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                      [ termMetaterm(
                           buildApplication(
                              nameTerm(accessRelationName(treeTy,
-                                         shortestName(q.name))),
+                                         attrName)),
                              [tree, node,
                               buildApplication(nameTerm(attributeExistsName),
                                                [synTerm])])) ],
@@ -429,7 +419,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                    [ termMetaterm(
                         buildApplication(
                            nameTerm(accessRelationName(treeTy,
-                                       shortestName(q.name))),
+                                       attrName)),
                            [tree, node,
                             nameTerm(attributeNotExistsName)])) ]
                  | _ ->
@@ -456,6 +446,11 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   newe.encodingEnv = top.encodingEnv;
   newe.top = top.top;
   --
+  local attrName::String =
+        case q of
+        | qNameAttrOccur(at) ->
+          encodeName(at.lookupAttribute.fullName)
+        end;
   local inhname::String = capitalize(shortestName(q.name));
   local inhnode::String = "Node";
   local inhTerm::Term =
@@ -475,7 +470,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                 [ termMetaterm(
                      buildApplication(
                         nameTerm(accessRelationName(treeTy,
-                                    shortestName(q.name))),
+                                    attrName)),
                         [tree, node,
                          buildApplication(nameTerm(attributeExistsName),
                                           [inhTerm])])) ],
@@ -493,7 +488,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
               [ termMetaterm(
                    buildApplication(
                       nameTerm(accessRelationName(treeTy,
-                                  shortestName(q.name))),
+                                  attrName)),
                       [tree, node,
                        nameTerm(attributeNotExistsName)])) ]
             | _ ->

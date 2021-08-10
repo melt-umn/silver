@@ -12,6 +12,8 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   body.top = error("Cannot need top in a function");
   body.treeTerm = error("Cannot need root tree in a function");
   body.nodetreeTerm = error("Cannot need root node tree in a function");
+
+  local funName::String = buildEncodedName(top.grammarName, id.name);
   --Put return statement first
   local sorted::[(Boolean, [([Metaterm], Term)])] =
         sortBy(\ p1::(Boolean, [([Metaterm], Term)])
@@ -29,7 +31,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   --Put the return statement together with all definitions for locals
   local combined::[(Term, [[Metaterm]])] =
         map(\ p::([Metaterm], Term) ->
-              ( buildApplication(nameTerm(nameToFun(id.name)),
+              ( buildApplication(nameTerm(nameToFun(funName)),
                    ns.args ++ [p.2]),
                 if null(allRest)
                 then [p.1]
@@ -52,7 +54,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
                         head(filled.2))
               end,
             unified);
-  top.funRelClauses <- [(id.name, ns.functionType, defClauses)];
+  top.funRelClauses <- [(funName, ns.functionType, defClauses)];
 }
 
 aspect production aspectFunctionDcl
