@@ -9,7 +9,9 @@ Export-Package: edu.umn.cs.melt.ide.copper;version="1.0.0",
  edu.umn.cs.melt.ide.silver.misc;version="1.0.0",
  edu.umn.cs.melt.ide.silver.property;version="1.0.0",
  edu.umn.cs.melt.ide.util;version="1.0.0",
- edu.umn.cs.melt.ide.silver.property.ui;version="1.0.0"
+ edu.umn.cs.melt.ide.silver.property.ui;version="1.0.0",
+ org.commonmark.node;version="0.17.1",
+ org.commonmark.parser;version="0.17.1"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: .
 Require-Bundle: org.eclipse.core.runtime,

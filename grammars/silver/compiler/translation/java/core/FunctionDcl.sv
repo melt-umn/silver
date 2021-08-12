@@ -62,8 +62,6 @@ public final class ${className} extends common.FunctionNode {
 
 ${makeIndexDcls(0, whatSig.inputElements)}
 
-	public static final Class<?> childTypes[] = { ${implode(",", map(makeChildTypes, whatSig.inputElements))} };
-
 	public static final int num_local_attrs = Init.${localVar};
 	public static final String[] occurs_local = new String[num_local_attrs];
 
@@ -197,6 +195,7 @@ public class Main {
 		${package}.Init.initAllStatics();
 		${package}.Init.init();
 		${package}.Init.postInit();
+
 		try {
 			common.Node rv = (common.Node) ${package}.Pmain.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args), common.IOToken.singleton);
 			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);

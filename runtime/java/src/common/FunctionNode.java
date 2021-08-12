@@ -85,4 +85,8 @@ public abstract class FunctionNode extends Node {
 	public final common.BaseTypeRep getType() {
 		throw new SilverInternalError("Function nodes do not have a type!");
 	}
+
+	public RTTIManager.Prodleton<? extends Node> getProdleton() {
+		throw new SilverInternalError("Function nodes do not have prodletons!");
+	}
 }

@@ -71,6 +71,7 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
       <copy file="$${lang.composed}.jar" tofile="$${ide.proj.plugin.path}/$${lang.composed}.jar"/>
       <copy file="$${sh}/jars/CopperCompiler.jar" tofile="$${ide.proj.plugin.path}/CopperCompiler.jar"/>
       <copy file="$${sh}/jars/SilverRuntime.jar" tofile="$${ide.proj.plugin.path}/SilverRuntime.jar"/>
+      <copy file="$${sh}/jars/commonmark-0.17.1.jar" tofile="$${ide.proj.plugin.path}/commonmark-0.17.1.jar"/>
       <copy file="$${sh}/jars/IDEPluginRuntime.jar" tofile="$${ide.proj.plugin.path}/IDEPluginRuntime.jar"/>
     <!-- 10. Ide resources -->
 ${implode("", map(copyIdeResource, ide.ideResources))}

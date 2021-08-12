@@ -1,10 +1,10 @@
 package common;
 
-import java.lang.reflect.*;
 import java.util.*;
 
 import common.exceptions.*;
 import silver.core.*;
+import java.io.*;
 
 /**
  * Implementation of the Silver reflection library
@@ -164,6 +164,7 @@ public final class Reflection {
 			        return name.compareTo(other.name);
 			    }
 			}
+
 			final List<AnnotationEntry> annotationASTList = new ArrayList<>();
 			for (NNamedASTs current = (NNamedASTs)ast.getChild(2); !(current instanceof PnilNamedAST); current = (NNamedASTs)current.getChild(1)) {
 				NNamedAST item = (NNamedAST)current.getChild(0);
@@ -176,27 +177,14 @@ public final class Reflection {
 				annotationNames[i] = annotationASTList.get(i).name;
 				annotationASTs[i] = annotationASTList.get(i).ast;
 			}
-			
-			// Invoke the reify function for the appropriate production class
-			final String[] path = prodName.split(":");
-			path[path.length - 1] = "P" + path[path.length - 1];
-			final String className = String.join(".", path);
-			try {
-				@SuppressWarnings("unchecked")
-				Method prodReify =
-						((Class<Node>)Class.forName(className)).getMethod("reify", silver.core.NAST.class, ConsCell.class, TypeRep.class, NAST[].class, String[].class, NAST[].class);
-				return prodReify.invoke(null, ast, rules, resultType, childASTs, annotationNames, annotationASTs);
-			} catch (ClassNotFoundException e) {
+
+			RTTIManager.Prodleton<?> pton = RTTIManager.getProdleton(prodName);
+			if (pton==null) {
 				throw new SilverError("Undefined production " + prodName);
-			} catch (ClassCastException | NoSuchMethodException | IllegalAccessException e) {
-				throw new SilverInternalError("Error invoking reify for class " + className, e);
-			} catch (InvocationTargetException e) {
-				if (e.getTargetException() instanceof SilverException) {
-					throw (SilverException)e.getTargetException();
-				} else {
-					throw new SilverInternalError("Error invoking reify for class " + className, e.getTargetException());
-				}
 			}
+
+			return pton.reify(ast, rules, resultType, childASTs, annotationNames, annotationASTs);
+
 		} else if (ast instanceof PterminalAST) {
 			// Unpack components
 			final String terminalName = ((StringCatter)ast.getChild(0)).toString();
@@ -207,27 +195,14 @@ public final class Reflection {
 			if (!TypeRep.unify(resultType, new BaseTypeRep(terminalName))) {
 				throw new SilverError("reify is constructing " + resultType.toString() + ", but found terminal " + terminalName + " AST.");
 			}
-			
-			// Invoke the reify function for the appropriate terminal class
-			final String[] path = terminalName.split(":");
-			path[path.length - 1] = "T" + path[path.length - 1];
-			final String className = String.join(".", path);
-			try {
-				@SuppressWarnings("unchecked")
-				Constructor<Terminal> terminalConstructor =
-						((Class<Terminal>)Class.forName(className)).getConstructor(StringCatter.class, NLocation.class);
-				return terminalConstructor.newInstance(lexeme, location);
-			} catch (ClassNotFoundException e) {
+
+			RTTIManager.Terminalton<?> tton = RTTIManager.getTerminalton(terminalName);
+			if (tton==null) {
 				throw new SilverError("Undefined terminal " + terminalName);
-			} catch (ClassCastException | NoSuchMethodException | InstantiationException | IllegalAccessException e) {
-				throw new SilverInternalError("Error constructing class " + className, e);
-			} catch (InvocationTargetException e) {
-				if (e.getTargetException() instanceof SilverException) {
-					throw (SilverException)e.getTargetException();
-				} else {
-					throw new SilverInternalError("Error constructing class " + className, e.getTargetException());
-				}
 			}
+
+			return tton.construct(lexeme, location);
+
 		} else if (ast instanceof PlistAST) {
 			final TypeRep paramType = new VarTypeRep();
 			if (!TypeRep.unify(resultType, new AppTypeRep(new BaseTypeRep("[]"), paramType))) {
@@ -386,5 +361,304 @@ public final class Reflection {
 			result = givenFn.invoke(ctx, argList.toArray(), reorderedNamedArgs);
 		}
 		return new Pright(reflect(rules, result));
+	}
+
+	
+	////////////////////////////////////////////////////////////////////////////////////////////////
+	// This is the machinery for nativeSerialize/nativeDeserialize. It is a bespoke binary
+	//  format written/read via java's DataOutputStream/DataInputStream machinery.
+	//  
+	//  This is an OPAQUE serialization format, and must not be modified. Type-safety
+	//  of nativeDeserialize (silver type-safety) depends on the stored value being
+	//  well-formed (i.e., produced by nativeSerialize from a well-typed silver value.)
+	//
+	//  We use the writeUTF/readUTF helpers from java to write and read strings. This internally
+	//  is length+data, and allows us to treat strings as units.
+	//
+	//  Files start with a header to make sure we don't try to interpret garbage. Then there
+	//  is a lookup table of production names, which are indexed into by serialized production
+	//  values. This means that names are only looked up as strings once in the prodleton dictionary.
+	//  This table also contains opaque string representations of the types of the productions, which are
+	//  compared to the string type reps of productions in the deserializing silver (stored on
+	//  prodletons.) This prevents type confusion if the definition of a serialized nonterminal is
+	//  changed.
+	//
+	//  Serialized values start with a one-byte type tag, then some body. Primitives are stored
+	//  directly. Lists have a special-case serialization (length+items). Terminals are stored
+	//  with their full name, looked up at deserialization. [If we started serializing lots of CSTs
+	//  we could do the same lookup table thing we do with productions to speed this up. We could also
+	//  make that faster by special-casing storing the Location value (currently it is stored as a
+	//  'normal' nonterminal value.) But we don't really ever serialize terminals so it dosen't matter 
+	//  much.] Productions store the index of the entry in the production table, and then the children
+	//  and annotations. Deserialization machinery must interrogate the prodleton to know how many
+	//  children and annos to read (we are guaranteed it has not changed by the type rep check when
+	//  loading the prod table.) Nonterminals are then constructed via constructDirect with NO
+	//  typechecking on erased values (so it is important that this is an opaque format, since then
+	//  the type-safety is guaranteed by it's having been produced from a valid silver value.)
+	//  Annotations are in whatever arbitrary order they are in in the translation, and the opaque
+	//  type identifier prevents this from violating type safety. If we ever use more than `location`,
+	//  revisit this.
+	//
+	//  One final reify is invoked to make sure that the types match for polymorphic serialized types.
+	//  No typedata is stored, so this is reifying the expected type with the getType of the deserialized
+	//  type.
+	//
+	//  Decorated nodes are not supported. Foreign types are not supported.
+	//
+	//  This is a more fragile format w/r/t changes in the silver program saving/loading it than the
+	//   textual one (e.g. reordering annotations, changing children names, will cause a deserialization
+	//   failure) and should only be used for caching. But it is MUCH faster and about 50% more
+	//   space-efficient than the textual one.
+	//
+    // File: SVB\0<\n><1b version (0)><index array><item>
+    // item: <0><string>                                - String
+    //       <1><4b integer>                            - Integer
+    //       <2>                                        - false
+    //       <3>                                        - true
+    //       <4><4b float>                              - float
+    //       <5><name string><children><annos>          - production (children, annos = items)
+    //       <6><name string><lexeme><location (item)>  - terminal (location = item)
+    //       <7><2b length><data>                       - list (data = items)
+    //
+    // index array: <2b nt count><that many ntrecs...>
+    // ntrec: <name string><type string>
+    // 
+    // strings, ints, etc are writeUTF/writeInt/writeShort format (so integers are big-endian), see
+    //  https://docs.oracle.com/javase/7/docs/api/java/io/DataOutputStream.html#writeUTF(java.lang.String)
+    //  for details on writeUTF (basically a 2b length then UTF-8).
+    //
+    // @author louisg
+
+    private static class NativeSerializationException extends IOException {
+    	public NativeSerializationException(String x) { super(x); }
+    }
+
+    // Serialize x into a bytearray
+    // x::a -> Either<String ByteArrray>
+	public static NEither nativeSerialize(Object x) {
+		try{
+			ByteArrayOutputStream arr = new ByteArrayOutputStream(10_000_000);
+			DataOutputStream o = new DataOutputStream(arr);
+
+			o.writeBytes("SVB\0\n\0"); // Header
+
+			ArrayList<RTTIManager.Prodleton<?>> prodset = new ArrayList<RTTIManager.Prodleton<?>>();
+
+			nSerGetProdSet(prodset, x); // Compute set of productions
+
+			if (prodset.size() > 1<<15) throw new NativeSerializationException("Too many productions for native serialize");
+			o.writeShort(prodset.size()); // Write lookup table size
+
+			for (RTTIManager.Prodleton p : prodset) { // Write lookup table. For each prod:
+				o.writeUTF(p.getName());              //  fully qualified silver prod name 
+				o.writeUTF(p.getTypeUnparse());       //  opaque typerep
+			}
+
+			nSerItem(o, prodset, x); // Serialize the value
+
+			return new Pright(arr.toByteArray());
+		} catch (NativeSerializationException e) {
+			return new Pleft(new StringCatter("Native serialize failed: " + e.toString()));
+		} catch (Exception e) {
+			String m = "Native serialize failed: Unknown error: " + e.toString();
+			System.err.println(m);
+			return new Pleft(new StringCatter(m));
+		}
+	}
+
+	// Recursively compute the set of productions used in the object, adding their prodletons once to `s`.
+	//  This forms the production lookup table.
+	public static void nSerGetProdSet(ArrayList<RTTIManager.Prodleton<?>> s, Object x) {
+		if(x instanceof Node) {
+			Node n = (Node)x;
+			if (s.indexOf(n.getProdleton()) == -1) s.add(n.getProdleton());
+
+			for (int i = 0; i < n.getNumberOfChildren(); i++) {
+				nSerGetProdSet(s, n.getChild(i));
+			}
+
+			String[] annotationNames = n.getAnnoNames();
+			
+			for (int i = 0; i < annotationNames.length; i++) {
+				String name = annotationNames[i];
+				nSerGetProdSet(s, n.getAnno(name));
+			}
+		} else if (x instanceof Terminal) {
+			nSerGetProdSet(s, ((Terminal)x).location);
+		} else if (x instanceof ConsCell) {
+			ConsCell c = (ConsCell) x;
+			while (c != ConsCell.nil) {
+				nSerGetProdSet(s, c.head());
+				c = c.tail();
+			}
+		}
+	}
+
+
+	// Serialize a single value `x` into `o`, using `s` as production lookup table
+	public static void nSerItem(DataOutputStream o, ArrayList<RTTIManager.Prodleton<?>> s, Object x) throws IOException {
+		if(x instanceof Node) {
+			Node n = (Node)x;
+
+			o.writeByte(5); // type tag
+			o.writeShort(s.indexOf(n.getProdleton())); // index of this production in prod lookup table
+
+			String[] annotationNames = n.getAnnoNames();
+
+			for (int i = 0; i < n.getNumberOfChildren(); i++) {
+				nSerItem(o, s, n.getChild(i)); // serialize all children
+			}
+			
+			for (int i = 0; i < annotationNames.length; i++) {
+				String name = annotationNames[i];
+				nSerItem(o, s, n.getAnno(name)); // serialize all annos
+			}
+		} else if(x instanceof Terminal) {
+			Terminal t = (Terminal)x;
+			
+			o.writeByte(6); // type tag
+			o.writeUTF(t.getTerminalton().getName()); // store name of terminal
+			o.writeUTF(t.lexeme.toString()); // store lexeme
+			nSerItem(o, s, t.location); // store location (which is a NT, so recurse to store it as an item)
+
+		} else if(x instanceof ConsCell) {
+			ConsCell c = (ConsCell)x;
+
+			o.writeByte(7); // type tag
+
+			if (c.length() > 1<<15) throw new NativeSerializationException("List too long for native serialize");
+			o.writeShort(c.length()); // store length of list
+
+			while (c!=ConsCell.nil) {
+				nSerItem(o, s, c.head()); // store items of list ("forward")
+				c = (ConsCell)c.tail();
+			}
+		} else if(x instanceof StringCatter) {
+			o.writeByte(0); // type tag
+			o.writeUTF(((StringCatter)x).toString()); // string value
+		} else if(x instanceof Integer) {
+			o.writeByte(1); // type tag
+			o.writeInt((int)x); // integer value
+		} else if(x instanceof Float) {
+			o.writeByte(4); // type tag
+			o.writeFloat((float)x); // float value
+		} else if(x instanceof Boolean) {
+			if ((boolean)x) o.writeByte(3); // type tag/value for true
+			else o.writeByte(2); // type tag/value for false
+		} else if(x instanceof DecoratedNode) {
+			throw new NativeSerializationException("Cannot serialize DecoratedNodes (prod " + x.toString() + ")");
+		} else {
+			throw new NativeSerializationException("Unserializable type encountered: " + x.toString());
+		}
+	}
+
+	// Deserialize `arr` into a silver object
+	// RuntimeTypable x => ByteArray -> Either<String x>
+	public static NEither nativeDeserialize(final TypeRep expected, final byte[] arr) {
+		try{
+			ByteArrayInputStream ins = new ByteArrayInputStream(arr);
+			DataInputStream i = new DataInputStream(ins);
+
+			byte header[] = "SVB\0\n\0".getBytes("ASCII");
+			byte[] buf = new byte[6];
+			i.readFully(buf, 0, 6); // Read header
+
+			if (!Arrays.equals(header, buf)) throw new NativeSerializationException("Not a SVB serialization");
+
+			int prodCount = i.readShort(); // length of prod lookup table
+
+			ArrayList<RTTIManager.Prodleton<?>> lookup = new ArrayList<RTTIManager.Prodleton<?>>(prodCount);
+			for (int c = 0; c < prodCount; c++) {
+				String name = i.readUTF(); // Read name of prod
+				String opaqueTypeIdentifier = i.readUTF(); // Read opaque type identifier
+
+				RTTIManager.Prodleton<?> pton = RTTIManager.getProdleton(name);
+				if (pton == null) throw new NativeSerializationException("Unknown production: " + name);
+				if (!pton.getTypeUnparse().equals(opaqueTypeIdentifier))
+					throw new NativeSerializationException("Production " + name + " changed type since serialization (from `" + opaqueTypeIdentifier + "` to `" + pton.getTypeUnparse() + "`)");
+				
+				lookup.add(pton);
+			}
+
+			Object v = nDeserItem(lookup, i); // Deserialize the stored item
+
+			if (!TypeRep.unify(expected, getType(v))) { // Run a unification check to ensure silver type-safety
+				return new Pleft(new StringCatter("nativeDeserialize is constructing " + expected.toString() + ", but found " + getType(v).toString()));
+			}
+
+			return new Pright(v);
+		} catch (NativeSerializationException e) {
+			return new Pleft(new StringCatter("Native deserialize failed: " + e.toString()));
+		} catch (IOException e) {
+			String m = "Native deserialize failed: Unknown Error: " + e.toString();
+			System.err.println(m);
+			return new Pleft(new StringCatter(m));
+		}
+	}
+
+	// Deserialize a single item from stream `i` using prod lookup table `s`
+	public static Object nDeserItem(ArrayList<RTTIManager.Prodleton<?>> s, DataInputStream i) throws IOException {
+		int typeId = i.readByte(); // read type-tag
+
+		if (typeId == 5) { // production
+
+			int orderedIndex = i.readShort(); // read index and retrieve prodleton from lookup
+			RTTIManager.Prodleton<?> pton = s.get(orderedIndex);
+
+			int childCount = pton.getChildCount(); // get number of children to load
+			Object children[] = new Object[childCount];
+
+			for (int n = 0; n < childCount; n++) {
+				children[n] = nDeserItem(s, i); // ...and load them
+			}
+
+			int annoCount = pton.getAnnoCount(); // get number of annos to load
+			Object annos[] = new Object[annoCount];
+
+			for (int n = 0; n < annoCount; n++) {
+				annos[n] = nDeserItem(s, i); // ...and load them
+			}
+
+			return pton.constructDirect(children, annos); // construct value
+		} else if (typeId == 6) { // terminal
+			String name = i.readUTF(); // read the terminal name
+			RTTIManager.Terminalton<?> tton = RTTIManager.getTerminalton(name);
+
+			if (tton == null)
+				throw new NativeSerializationException("Can't find terminal " + name);
+
+			String lexeme = i.readUTF();
+			Object location = nDeserItem(s, i); // deserialize the location as an item
+
+			return tton.construct(new StringCatter(lexeme), (NLocation)location);
+		} else if (typeId == 7) { // list
+			int length = i.readShort(); // length of stored list
+
+			Object values[] = new Object[length];
+
+			for (int c=0; c<length; c++) {
+				values[c] = nDeserItem(s, i); // stored in "forwards" order
+			}
+
+			ConsCell l = ConsCell.nil;
+
+			for (int c=length-1; c>=0; c--) {
+				l = new ConsCell(values[c], l); // traverse "backwards" to construct cons-list
+			}
+
+			return l;
+		} else if (typeId == 0) { // string primitive
+			return new StringCatter(i.readUTF());
+		} else if (typeId == 1) { // int primitive
+			return i.readInt();
+		} else if (typeId == 4) { // float primitive
+			return i.readFloat();
+		} else if (typeId == 3) { // bool primitive
+			return true;
+		} else if (typeId == 2) { // bool primitive
+			return false;
+		} else {
+			throw new NativeSerializationException("Unknown type id (" + Integer.toString(typeId) + ")");
+		}
 	}
 }

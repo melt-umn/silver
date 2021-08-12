@@ -77,6 +77,16 @@ wrongCode "[Integer] has kind *, but there are 1 type arguments supplied here" {
   global badCtrList2::[Integer]<Integer> = [1, 2, 3];
 }
 
+wrongCode "ast has kind * -> * but type variable(s) have kind(s) * -> *." {
+  synthesized attribute ast<a>::a;
+  nonterminal Nt with ast<[]>;
+
+  -- We can still write an equation for the attr with the kind error in its occurs-on
+  abstract production ntThing
+  top::Nt ::=
+  { top.ast = [1]; }
+}
+
 -------------------------------------- Type variables are named properly in error messages
 wrongCode "(bar, baz)" {
   global foo::(bar, baz) = 42;

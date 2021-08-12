@@ -29,8 +29,6 @@ runtime/imp/main/target
 runtime/java/bin/
 *.test.output
 test/**/test.jar
-test/silver.testing.bin.jar
-test/silver_features/test_out.txt
 tutorials/**/output.c
 
 # Useful spot to stash your experiments

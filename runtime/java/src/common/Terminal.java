@@ -117,4 +117,6 @@ public abstract class Terminal implements Typed {
 	public final BaseTypeRep getType() {
 		return new BaseTypeRep(getName());
 	}
+
+	public abstract RTTIManager.Terminalton<? extends Terminal> getTerminalton();
 }
