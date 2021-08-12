@@ -108,7 +108,17 @@ public class ConsCell implements Typed {
 	 * @return The length of the list.
 	 */
 	public int length() {
-		return 1 + tail().length();
+		// return 1 + tail().length(); // Blows up the stack on big lists
+
+		ConsCell x = this;
+		int count = 0;
+
+		while (!(x instanceof NilConsCell)) {
+			x = x.tail();
+			count++;
+		}
+
+		return count;
 	}
 	
 	@Override
@@ -116,12 +126,26 @@ public class ConsCell implements Typed {
 		try {
 			// The type of a list is the type of its tail, but the type of its tail may be [a].
 			// Unify the parameter with the type of the head to constrain this type variable.
-			AppTypeRep tailType = tail().getType();
-			if (!TypeRep.unify(tailType.arg, Reflection.getType(head()))) {
-				throw new SilverInternalError("Unification failed.");
-			} else {
-				return tailType;
+
+			// AppTypeRep tailType = tail().getType(); // Blows up the stack on big lists
+			// if (!TypeRep.unify(tailType.arg, Reflection.getType(head()))) {
+			// 	throw new SilverInternalError("Unification failed.");
+			// } else {
+			// 	return tailType;
+			// }
+
+			TypeRep tvar = new VarTypeRep();
+			ConsCell x = this;
+
+			while (!(x instanceof NilConsCell)) {
+				if (!TypeRep.unify(tvar, Reflection.getType(x.head()))) {
+					throw new SilverInternalError("Unification failed.");
+				}
+				x = x.tail();
 			}
+
+			return new AppTypeRep(new BaseTypeRep("[]"), tvar);
+
 		} catch (SilverException e) {
 			throw new TraceException("While constructing type of list", e);
 		}
@@ -148,6 +172,7 @@ public class ConsCell implements Typed {
 		public int length() {
 			return 0;
 		}
+
 		@Override
 		public AppTypeRep getType() {
 			return new AppTypeRep(new BaseTypeRep("[]"), new VarTypeRep());
