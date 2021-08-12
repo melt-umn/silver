@@ -46,6 +46,7 @@ import silver:util:treemap;
 import silver:util:graph;
 import silver:util:treemap;
 import silver:util:treeset;
+import silver:util:subprocess;
 
 import silver:xml;
 
