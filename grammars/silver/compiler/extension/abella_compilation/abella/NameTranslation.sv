@@ -44,7 +44,7 @@ global falseName::String = "$bfalse";
 function nameToNonterminal
 String ::= name::String
 {
-  return "nt_" ++ name;
+  return "$nt_" ++ name;
 }
 function nameToNonterminalType
 AbellaType ::= name::String
@@ -54,7 +54,7 @@ AbellaType ::= name::String
 function nonterminalToName
 String ::= nt::String
 {
-  return substring(3, length(nt), nt);
+  return substring(4, length(nt), nt);
 }
 function nonterminalTypeToName
 String ::= ty::AbellaType
@@ -74,8 +74,8 @@ String ::= name::String
 function typeToNodeType
 String ::= ty::AbellaType
 {
-  --drop "nt_" from beginning
-  return nameToNodeType(substring(3, length(ty.unparse), ty.unparse));
+  --drop "$nt_" from beginning
+  return nameToNodeType(substring(4, length(ty.unparse), ty.unparse));
 }
 
 

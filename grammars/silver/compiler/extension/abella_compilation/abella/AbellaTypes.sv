@@ -174,7 +174,7 @@ Boolean ::= ty::AbellaType
 {
   return
      case ty of
-     | nameAbellaType(name) when startsWith("nt_", name) -> true
+     | nameAbellaType(name) when startsWith("$nt_", name) -> true
      | _ -> false
      end;
 }
