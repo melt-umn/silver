@@ -49,6 +49,14 @@ equalityTest(
   String, core_tests);
 
 
+global val4 :: [Integer] = repeat(123, 65537); -- Test long lists
+global ser4 :: Either<String ByteArray> = nativeSerialize(val4);
+global des4 :: Either<String [Integer]> = if ser4.isRight then nativeDeserialize(ser4.fromRight) else left(ser4.fromLeft);
+global fin4 :: String = if des4.isRight then hackUnparse(des4.fromRight) else des4.fromLeft;
+
+equalityTest(
+  hackUnparse(val4), fin4,
+  String, core_tests);
 
 
 global bytefiletest::IOMonad<ByteArray> = do {

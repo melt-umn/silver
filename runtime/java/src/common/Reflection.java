@@ -419,6 +419,7 @@ public final class Reflection {
     //       <5><name string><children><annos>          - production (children, annos = items)
     //       <6><name string><lexeme><location (item)>  - terminal (location = item)
     //       <7><2b length><data>                       - list (data = items)
+    //       <8><4b length><data>                       - long list for dawn :) -- separate for backwards compat because it was easy
     //
     // index array: <2b nt count><that many ntrecs...>
     // ntrec: <name string><type string>
@@ -524,10 +525,17 @@ public final class Reflection {
 		} else if(x instanceof ConsCell) {
 			ConsCell c = (ConsCell)x;
 
-			o.writeByte(7); // type tag
+			int listLen = c.length();
 
-			if (c.length() > 1<<15) throw new NativeSerializationException("List too long for native serialize");
-			o.writeShort(c.length()); // store length of list
+			if (listLen > 1<<30 || listLen < 0) throw new NativeSerializationException("List too long for native serialize");
+
+			if (listLen > 1<<15) {
+				o.writeByte(8); // type tag for 32-bit-count list
+				o.writeInt(listLen); // store length of list
+			} else {
+				o.writeByte(7); // type tag for 16-bit-count (original) list
+				o.writeShort(listLen); // store length of list
+			}
 
 			while (c!=ConsCell.nil) {
 				nSerItem(o, s, c.head()); // store items of list ("forward")
@@ -631,8 +639,11 @@ public final class Reflection {
 			Object location = nDeserItem(s, i); // deserialize the location as an item
 
 			return tton.construct(new StringCatter(lexeme), (NLocation)location);
-		} else if (typeId == 7) { // list
-			int length = i.readShort(); // length of stored list
+		} else if (typeId == 7 || typeId == 8) { // list
+			int length;
+
+			if (typeId == 7) length = i.readShort(); // 16-bit-count (original) list
+			else             length = i.readInt();   // 32-bit-count list
 
 			Object values[] = new Object[length];
 
