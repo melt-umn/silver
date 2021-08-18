@@ -186,9 +186,6 @@ concrete productions top::PAId_c
 nonterminal PTy_c with ast<AbellaType>;
 nonterminal ATy_c with ast<AbellaType>;
 nonterminal Ty_c with ast<AbellaType>;
-nonterminal UTy_c with ast<AbellaType>;
-nonterminal UTyList_c with ast<[AbellaType]>;
-nonterminal ATyList_c with ast<[AbellaType]>;
 
 
 concrete productions top::PTy_c
@@ -212,27 +209,6 @@ concrete productions top::Ty_c
   { top.ast = arrowAbellaType(t1.ast, t2.ast); }
 | '(' t::Ty_c ')'
   { top.ast = t.ast; }
-
-
-concrete productions top::UTy_c
-| t::Ty_c
-  { top.ast = t.ast; }
-| '_'
-  { top.ast = underscoreAbellaType(); }
-
-
-concrete productions top::UTyList_c
-| u::UTy_c
-  { top.ast = [u.ast]; }
-| u::UTy_c ',' rest::UTyList_c
-  { top.ast = u.ast::rest.ast; }
-
-
-concrete productions top::ATyList_c
-| a::ATy_c
-  { top.ast = [a.ast]; }
-| a::ATy_c ',' rest::ATyList_c
-  { top.ast = a.ast::rest.ast; }
 
 
 

@@ -506,10 +506,10 @@ Either<String [(String, [DefinitionElement], [ParsedElement])]> ::=
   local thisGrammar::String = head(moduleNames);
   local grammarDir::String = substitute(":", "/", thisGrammar);
   local interfaceFile::String =
-        generatedLoc ++ grammarDir ++ "thm_interface.svthmi";
+        generatedLoc ++ "thm/" ++ grammarDir ++ "/thm_interface.svthmi";
   local interfaceIsFile::IOVal<Boolean> = isFile(interfaceFile, ioin);
   local theoremFile::String =
-        grammarLoc ++ grammarDir ++ "theorems.svthm";
+        generatedLoc ++ "thm/" ++ grammarDir ++ "/thm_outerface.svthmi";
   local theoremIsFile::IOVal<Boolean> =
         isFile(theoremFile, interfaceIsFile.io);
 
@@ -519,8 +519,8 @@ Either<String [(String, [DefinitionElement], [ParsedElement])]> ::=
         interface_parser(interfaceContents.iovalue, interfaceFile);
   local theoremContents::IOVal<String> =
         readFile(theoremFile, interfaceContents.io);
-  local parsedTheorem::ParseResult<TheoremFile_c> =
-        theorem_file_parser(theoremContents.iovalue, theoremFile);
+  local parsedTheorem::ParseResult<Interface_c> =
+        interface_parser(theoremContents.iovalue, theoremFile);
 
   local thisDefs::[DefinitionElement] =
         parsedInterface.parseTree.ast.3 ++
@@ -548,11 +548,11 @@ Either<String [(String, [DefinitionElement], [ParsedElement])]> ::=
                          bodies)
                    end)
               end,
-            parsedTheorem.parseTree.defs);
+            parsedTheorem.parseTree.ast.3);
   local thisThms::Either<String [ParsedElement]> =
         combineGrammarThms(thisGrammar, theoremFile,
                            parsedInterface.parseTree.ast.4,
-                           parsedTheorem.parseTree.thms);
+                           parsedTheorem.parseTree.ast.4);
 
   local subcall::Either<String [(String, [DefinitionElement], [ParsedElement])]> =
         gatherGrammarInfo(tail(moduleNames), generatedLoc,
@@ -564,7 +564,8 @@ Either<String [(String, [DefinitionElement], [ParsedElement])]> ::=
      | _::_ ->
        if !interfaceIsFile.iovalue
        then left("Could not find interface file for grammar " ++
-                 thisGrammar ++ "; compile grammar again")
+                 thisGrammar ++ "; compile grammar again(" ++
+                 interfaceFile ++ ")")
        else if !theoremIsFile.iovalue
        then left("Could not find theorem file \"" ++ theoremFile ++
                  "\"; assuming no new theorems introduced by grammar " ++
