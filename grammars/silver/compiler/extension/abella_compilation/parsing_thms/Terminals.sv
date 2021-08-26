@@ -1,7 +1,9 @@
 grammar silver:compiler:extension:abella_compilation:parsing_thms;
 
 
-terminal Qname_colon_t  /([a-zA-Z0-9_]+:)*[-A-Za-z^=`'?][-A-Za-z^=`'?$0-9_*@+#!~\/]*/;
+terminal Qname_colon_t  /([A-Za-z0-9_]+:)+[-A-Za-z^=`'?$][-A-Za-z^=`'?$0-9_*@+#!~\/]*/
+   submits to {Exists_t, False_t, Forall_t, Nabla_t, True_t, Nil_t,
+               Modulus_t, No_t, Value_t, Minus_t, Eq_t};
 terminal Separate_t     '&';
 terminal SplitInterf_t  '$Spl';
 terminal DefInterf_t    '$Def';
@@ -40,9 +42,7 @@ terminal Star_t         '*'     precedence=10, association=left;
 
 terminal Id_t  /[-A-Za-z^=`'?][-A-Za-z^=`'?$0-9_*@+#!~\/]*/
    submits to {Exists_t, False_t, Forall_t, Nabla_t, True_t, Nil_t,
-               Modulus_t, No_t, Value_t, ExtTheorem_t, On_t, Prove_t,
-               With_t, Theorem_t, Grammar_t, Minus_t, Eq_t, Define_t,
-               By_t, Split_t, As_t};
+               Modulus_t, No_t, Value_t, Minus_t, Eq_t};
 terminal QString_t  /"[^"]*"/;
 terminal Number_t  /[0-9]+/;
 
@@ -66,32 +66,11 @@ terminal Append_t     '++'   precedence=8, association=left;
 terminal SilverOr_t   '||'   precedence=3, association=left;
 terminal SilverAnd_t  '&&'   precedence=4, association=left;
 terminal SilverNot_t  '!'    precedence=5;
+terminal Tilde_t      '~';
 --Attributes not having any value
 terminal No_t         'no';
 terminal Value_t      'value';
 
 
-terminal ExtTheorem_t  'Extensible_Theorem';
-terminal On_t          'on';
-terminal Prove_t       'Prove';
-terminal With_t        'with';
-terminal Theorem_t     'Theorem';
-terminal Define_t      'Define';
-terminal By_t          'by';
-terminal ColonEq_t     ':=';
-terminal Split_t       'Split';
-terminal As_t          'as';
-terminal Grammar_t     'Grammar';
-
-
-terminal ProofWater_t  /[a-zA-Z0-9=:+\-*<>|&!,;.()\[\]^'"?$#@`~\/\\]+/
-   submits to {ExtTheorem_t, Prove_t, Theorem_t,
-               Define_t, Split_t,
-               BlockComment_t, OneLineComment_t};
-
-
 ignore terminal Whitespace_t /[\ \t\n\r]+/;
--- Allows (one level of) nested comments.  Based on Silver comments.
-ignore terminal BlockComment_t /\/\*(\/\*([^\*]|\*+[^\/\*])*\*+\/|[^\*]|\*+[^\/\*])*\*+\//;
-ignore terminal OneLineComment_t /(%.*)/;
 

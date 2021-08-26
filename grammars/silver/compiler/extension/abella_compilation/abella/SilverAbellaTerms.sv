@@ -106,6 +106,13 @@ top::Metaterm ::= funName::String args::ParenthesizedArgs result::Term
   top.isAtomic = true;
 }
 
+abstract production treeEqMetaterm
+top::Metaterm ::= t1::Term t2::Term
+{
+  top.unparse = t1.unparse ++ " ~ " ++ t2.unparse;
+  top.isAtomic = true;
+}
+
 abstract production attrAccessMetaterm
 top::Metaterm ::= tree::String attr::String val::Term
 {

@@ -23,6 +23,8 @@ concrete productions top::Metaterm_c
 concrete productions top::SubMetaterm_c
 | t1::Term_c '=' t2::Term_c
   { top.ast = eqMetaterm(t1.ast, t2.ast); }
+| t1::Term_c '~' t2::Term_c
+  { top.ast = treeEqMetaterm(t1.ast, t2.ast); }
 | b::Binder_c bl::BindingList_c ',' m::Metaterm_c
   { top.ast = bindingMetaterm(b.ast, bl.ast, m.ast); }
 | m1::Metaterm_c '->' m2::Metaterm_c
@@ -176,6 +178,8 @@ concrete productions top::ListBody_c
 concrete productions top::PAId_c
 | l::Id_t
   { top.ast = nameTerm(l.lexeme); }
+| l::Qname_colon_t
+  { top.ast = nameTerm(l.lexeme); }
 | '(' l::Id_t ':' t::Ty_c ')'
   { top.ast = nameTerm(l.lexeme); }
 
@@ -191,12 +195,16 @@ nonterminal Ty_c with ast<AbellaType>;
 concrete productions top::PTy_c
 | i::Id_t
   { top.ast = nameAbellaType(i.lexeme); }
+| i::Qname_colon_t
+  { top.ast = nameAbellaType(i.lexeme); }
 | '(' t::Ty_c ')'
   { top.ast = t.ast; }
 
 
 concrete productions top::ATy_c
 | i::Id_t
+  { top.ast = nameAbellaType(i.lexeme); }
+| i::Qname_colon_t
   { top.ast = nameAbellaType(i.lexeme); }
 | a::ATy_c p::PTy_c
   { top.ast = functorAbellaType(a.ast, p.ast); }
