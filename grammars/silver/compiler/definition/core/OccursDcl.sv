@@ -13,7 +13,10 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
   top.occursDefs := [
     (if !at.lookupAttribute.dcl.isAnnotation then occursDcl else annoInstanceDcl)(
       nt.lookupType.fullName, at.lookupAttribute.fullName,
-      protontty, protoatty,
+      protontty,
+      if ntParamKinds == map((.kindrep), nttl.types) && map((.kindrep), atTypeScheme.boundVars) == map((.kindrep), attl.types)
+      then protoatty
+      else errorType(),
       sourceGrammar=top.grammarName, sourceLocation=at.location)];
 
   -- binding errors in looking up these names.
@@ -34,18 +37,24 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
   local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
   
   -- Make sure we get the number and kind of type variables correct for the NT
-  top.errors <-
+  local ntParamKinds :: [Kind] =
     case nt.lookupType.dcls of
-    | ntDcl(_, ks, _, _) :: _ when length(ks) != length(nttl.types) ->
-      [err(nt.location,
-        nt.name ++ " expects " ++ toString(length(ks)) ++
-        " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
-    | ntDcl(_, ks, _, _) :: _ when ks != map((.kindrep), nttl.types) ->
-      [err(nt.location,
-        nt.name ++ " had kind " ++ foldr(arrowKind, starKind(), ks).typepp ++
-        "but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), nttl.types)) ++ ".")]
+    | ntDcl(_, ks, _, _) :: _ -> ks
     | _ -> []
     end;
+  top.errors <-
+    if null(nt.lookupType.dcls) then []
+    else if length(ntParamKinds) != length(nttl.types)
+    then
+      [err(nt.location,
+        nt.name ++ " expects " ++ toString(length(ntParamKinds)) ++
+        " type variables, but " ++ toString(length(nttl.types)) ++ " were provided.")]
+    else if ntParamKinds != map((.kindrep), nttl.types)
+    then
+      [err(nt.location,
+        nt.name ++ " had kind " ++ foldr(arrowKind, starKind(), ntParamKinds).typepp ++
+        " but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), nttl.types)) ++ ".")]
+    else [];
 
   -- Make sure we get the number and kind of type variables correct for the ATTR
   top.errors <-
@@ -56,7 +65,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
     else if map((.kindrep), atTypeScheme.boundVars) != map((.kindrep), attl.types)
     then [err(at.location,
       at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kindrep), atTypeScheme.boundVars))) ++
-        "but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), attl.types)) ++ ".")]
+        " but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), attl.types)) ++ ".")]
     else [];
 
   -- We have 4 types.
@@ -143,7 +152,7 @@ top::AGDcl ::= msg::[Message] at::Decorated QName attl::BracketedOptTypeExprs nt
     | ntDcl(_, ks, _, _) :: _ when ks != map((.kindrep), nttl.types) ->
       [err(nt.location,
         nt.name ++ " had kind " ++ foldr(arrowKind, starKind(), ks).typepp ++
-        "but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), nttl.types)) ++ ".")]
+        " but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), nttl.types)) ++ ".")]
     | _ -> []
     end;
 }
