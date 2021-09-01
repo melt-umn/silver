@@ -893,7 +893,6 @@ String ::= nonterminals::[String] attrs::[String]
      generateNonterminalTypes(nonterminals) ++ "\n" ++
      generateProductions(prods) ++ "\n\n" ++
      generateNodeTypes(nonterminals) ++ "\n\n" ++
-     "Kind $node_tree   type.\n\n" ++
      generateNodeTreeConstructors(nonterminals) ++ "\n\n" ++
      generateAccessRelations(attrOccurrences) ++ "\n" ++
      generateLocalAccessRelations(localAttrs, env) ++ "\n\n" ++
@@ -945,9 +944,6 @@ String ::= nonterminals::[String] attrs::[String]
      foldr(\ d::Definition rest::String -> d.unparse ++ rest,
            "", localDefs) ++ "\n\n" ++
      --
-     "Define $split : (A -> B -> prop) -> ($pair A B) -> prop by\n" ++
-     "  $split SubRel ($pair_c A B) :=\n" ++
-     "     SubRel A B.\n\n" ++
      generateWpdNodeRelationsComponent(attrOccurrences, localAttrs,
         associatedAttrs, env, componentName) ++ "\n" ++
      generateWpdNtRelationsComponent(prods, componentName) ++ "\n\n" ++

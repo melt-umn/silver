@@ -242,7 +242,7 @@ String ::= ty::AbellaType component::String
 function nameToProd
 String ::= s::String
 {
-  return "$prod_" ++ s;
+  return "$prod_" ++ colonsToEncoded(s);
 }
 function termIsProd
 Boolean ::= tm::Term

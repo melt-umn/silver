@@ -146,7 +146,7 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
   local foundProds::[(String, AbellaType, [String])] =
         map(\ l::[(String, AbellaType, String)] ->
               (head(l).1, head(l).2,
-               map(\ p::(String, AbellaType, String) -> p.3, l)),
+               map(\ p::(String, AbellaType, String) -> colonsToEncoded(p.3), l)),
             groupedAttrsProds);
   local missingProdsByAttr::[(String, AbellaType, [(String, AbellaType)])] =
         map(\ eqs::(String, AbellaType, [String]) ->

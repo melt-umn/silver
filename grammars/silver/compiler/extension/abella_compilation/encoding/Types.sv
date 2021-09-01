@@ -90,9 +90,17 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 
 
 attribute
-   abellaType, numExpectedArgs
+   abellaType, numExpectedArgs, tyArgs
 occurs on Type;
+{-
+  These let us turn a function type, which is strangely a function
+  form applied to types to fill it in, into an appropriate arrow type
+  for Abella.  They let us know if we should make something into an
+  arrow type or a normal application, and grab the argument types for
+  the arrow type we want to build.
+-}
 synthesized attribute numExpectedArgs::Integer;
+synthesized attribute tyArgs::[AbellaType];
 
 aspect production varType
 top::Type ::= tv::TyVar
@@ -100,6 +108,7 @@ top::Type ::= tv::TyVar
   top.abellaType = varAbellaType(tv);
       --error("Should not access abellaType on varType");
   top.numExpectedArgs = 0;
+  top.tyArgs = [];
 }
 
 aspect production skolemType
@@ -108,6 +117,7 @@ top::Type ::= tv::TyVar
   top.abellaType = varAbellaType(tv);
       --error("Should not access abellaType on skolemType");
   top.numExpectedArgs = 0;
+  top.tyArgs = [];
 }
 
 aspect production appType
@@ -116,13 +126,9 @@ top::Type ::= c::Type a::Type
   top.abellaType =
       if c.numExpectedArgs <= 0
       then functorAbellaType(c.abellaType, a.abellaType)
-      else case c of
-           --the first one in appType sequence ignores function type
-           | functionType(_, _) -> a.abellaType
-           --rest turn into arrows
-           | _ -> arrowAbellaType(c.abellaType, a.abellaType)
-           end;
+      else foldr(arrowAbellaType(_, _), a.abellaType, c.tyArgs);
   top.numExpectedArgs = c.numExpectedArgs - 1;
+  top.tyArgs = c.tyArgs ++ [a.abellaType];
 }
 
 aspect production errorType
@@ -131,6 +137,7 @@ top::Type ::=
   top.abellaType = nameAbellaType("Whence is an errorType coming?");
       --error("Cannot translate to Abella in presence of errors");
   top.numExpectedArgs = 0;
+  top.tyArgs = [];
 }
 
 aspect production intType
@@ -138,6 +145,7 @@ top::Type ::=
 {
   top.abellaType = nameAbellaType("integer");
   top.numExpectedArgs = 0;
+  top.tyArgs = [];
 }
 
 aspect production boolType
@@ -145,6 +153,7 @@ top::Type ::=
 {
   top.abellaType = nameAbellaType("bool");
   top.numExpectedArgs = 0;
+  top.tyArgs = [];
 }
 
 aspect production floatType
@@ -153,6 +162,7 @@ top::Type ::=
   top.abellaType = nameAbellaType("float");
       --error("Cannot translate float types to Abella yet");
   top.numExpectedArgs = 0;
+  top.tyArgs = [];
 }
 
 aspect production stringType
@@ -160,6 +170,7 @@ top::Type ::=
 {
   top.abellaType = stringAbellaType;
   top.numExpectedArgs = 0;
+  top.tyArgs = [];
 }
 
 aspect production listType
@@ -168,6 +179,7 @@ top::Type ::= el::Type
   top.abellaType =
       functorAbellaType(nameAbellaType("list"), el.abellaType);
   top.numExpectedArgs = 0;
+  top.tyArgs = [];
 }
 
 aspect production terminalIdType
@@ -176,6 +188,7 @@ top::Type ::=
   top.abellaType = --nameAbellaType("terminalIdType");
       error("Should not access abellaType for terminalIdType");
   top.numExpectedArgs = 0;
+  top.tyArgs = [];
 }
 
 aspect production nonterminalType
@@ -188,6 +201,7 @@ top::Type ::= fn::String ks::[Kind] tracked::Boolean
            then nameAbellaType("$pair")
            else nameToNonterminalType(encodeName(fn));
   top.numExpectedArgs = 0;
+  top.tyArgs = [];
 }
 
 aspect production terminalType
@@ -196,6 +210,7 @@ top::Type ::= fn::String
   top.abellaType = nameAbellaType("terminalType(" ++ fn ++ ")");
       --error("Should not access abellaType for terminalType");
   top.numExpectedArgs = 0;
+  top.tyArgs = [];
 }
 
 aspect production decoratedType
@@ -203,6 +218,7 @@ top::Type ::= te::Type i::Type
  {
    top.abellaType = te.abellaType;
   top.numExpectedArgs = 0;
+  top.tyArgs = [];
 }
 
 aspect production ntOrDecType
@@ -210,6 +226,7 @@ top::Type ::= nt::Type inhs::Type hidden::Type
 {
   top.abellaType = nt.abellaType;
   top.numExpectedArgs = 0;
+  top.tyArgs = [];
 }
 
 aspect production functionType
@@ -218,6 +235,7 @@ top::Type ::= params::Integer namedParams::[String]
   top.abellaType = nameAbellaType("functionType(" ++ toString(params) ++ ")");
       --error("Should not access abellaType on functionType");
   top.numExpectedArgs = params + 1; --result type
+  top.tyArgs = [];
 }
 
 aspect production foreignType
@@ -225,6 +243,7 @@ top::Type ::= fn::String  transType::String  params::[Type]
 {
   top.abellaType = nameAbellaType("foreign(" ++ fn ++ ", " ++ transType ++ ")");
   top.numExpectedArgs = 0;
+  top.tyArgs = [];
 }
 
 aspect production inhSetType
@@ -232,6 +251,7 @@ top::Type ::= inhs::[String]
 {
   top.abellaType = error("I don't know what inhSetType is");
   top.numExpectedArgs = 0;
+  top.tyArgs = [];
 }
 
 
