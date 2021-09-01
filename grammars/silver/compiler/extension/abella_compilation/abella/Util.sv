@@ -120,7 +120,7 @@ Term ::= ntr::Term
   return
      case ntr of
      | applicationTerm(_, consTermList(node, _)) -> node
-     | _ -> error("Impossible nodetree structure")
+     | _ -> error("Impossible nodetree structure:  " ++ ntr.unparse)
      end;
 }
 

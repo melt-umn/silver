@@ -170,7 +170,7 @@ top::AspectProductionLHS ::= id::Name t::Type
       \ x::Term ->
         buildApplication(
            nameTerm(nodeTreeConstructorName(t.abellaType)),
-           [x]);
+           [treenodeterm, x]);
   top.top_up = (treeterm, treenodeterm, t.abellaType);
 }
 

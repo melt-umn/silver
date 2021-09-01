@@ -139,8 +139,8 @@ top::Expr ::= q::Decorated QName
 aspect production classMemberReference
 top::Expr ::= q::Decorated QName
 {
-  top.encodedExpr = error("classMemberReference not done yet");
-  top.encodedFailure = error("classMemberReference not done yet");
+  top.encodedExpr = error("classMemberReference not done yet:  " ++ q.name);
+  top.encodedFailure = error("classMemberReference not done yet:  " ++ q.name);
 }
 
 aspect production globalValueReference
