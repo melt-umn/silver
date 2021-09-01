@@ -305,7 +305,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   e.encodingEnv = top.encodingEnv;
   e.top = top.top;
   local tree::(Term, Term) =
-        findAssociated(dl.name, top.encodingEnv).fromJust;
+        case findAssociated(dl.name, top.encodingEnv) of | just(x) -> x | nothing() -> error("It is here") end; --.fromJust;
   local treeTy::AbellaType = dl.typerep.abellaType;
   local clauseHead::Term =
         buildApplication(

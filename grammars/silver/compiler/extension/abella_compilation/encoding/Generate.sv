@@ -75,23 +75,23 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
 
 function generateLocalAccessRelations
 String ::= localAttrs::[(String, [(String, AbellaType)])]
-           prods::[(String, AbellaType)]
+           env::Decorated Env
 {
   return
      case localAttrs of
      | [] -> ""
      | (attr, [])::rest ->
-       generateLocalAccessRelations(rest, prods)
-     | (attr, (prod, attrTy)::tl)::rest
-       when findAssociated(prod, prods) matches just(prodTy) ->
-       "Type " ++ localAccessRelationName(prodTy.resultType, attr, prod) ++
-       "   " ++ prodTy.resultType.unparse ++ " -> " ++
-       typeToNodeType(prodTy.resultType) ++ " -> " ++
-       functorAbellaType(nameAbellaType(attrValTypeName), attrTy).unparse ++
-       " -> prop.\n" ++
-       generateLocalAccessRelations((attr, tl)::rest, prods)
+       generateLocalAccessRelations(rest, env)
      | (attr, (prod, attrTy)::tl)::rest ->
-       error("Impossible for a well-typed grammar")
+       let prodTy::AbellaType = lookupProdType(prod, env)
+       in
+         "Type " ++ localAccessRelationName(prodTy.resultType, attr, prod) ++
+         "   " ++ prodTy.resultType.unparse ++ " -> " ++
+         typeToNodeType(prodTy.resultType) ++ " -> " ++
+         functorAbellaType(nameAbellaType(attrValTypeName), attrTy).unparse ++
+         " -> prop.\n" ++
+         generateLocalAccessRelations((attr, tl)::rest, env)
+       end
      end;
 }
 
@@ -235,7 +235,7 @@ function generateWpdNodeRelationsComponent
 String ::= attrOccurrences::[(String, [(String, AbellaType)])]
            localAttrs::[(String, [(String, AbellaType)])]
            associatedAttrs::[(String, [String])]
-           prods::[(String, AbellaType)] component::String
+           env::Decorated Env component::String
 {
   --(tag, attr, attr type, nonterminal type on which it occurs, blank)
   local expanded::[(String, String, AbellaType, String, String)] =
@@ -247,11 +247,11 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
   local locals::[(String, String, AbellaType, String, String)] =
         flatMap(\ p::(String, [(String, AbellaType)]) ->
                   map(\ x::(String, AbellaType) ->
-                        case findAssociated(x.1, prods).fromJust.resultType of
+                        case lookupProdType(x.1, env).resultType of
                         | nameAbellaType(prodTy) ->
                           ("local", p.1, x.2, nonterminalToName(prodTy), x.1)
-                        | _ ->
-                          error("Production must build nonterminal")
+                        | ty ->
+                          error("Production must build nonterminal; got " ++ ty.unparse ++ " for production " ++ x.1)
                         end, p.2),
                 localAttrs);
   local sorted::[(String, String, AbellaType, String, String)] =
@@ -448,7 +448,7 @@ String ::= prod::String prodTy::AbellaType nt::AbellaType component::String
 function generateAccessUniquenessAxioms
 String ::= attrOccurrences::[(String, [(String, AbellaType)])]
            localAttrs::[(String, [(String, AbellaType)])]
-           prods::[(String, AbellaType)]
+           env::Decorated Env
 {
   local attrs::[String] =
         flatMap(\ p::(String, [(String, AbellaType)]) ->
@@ -459,7 +459,7 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
         flatMap(\ p::(String, [(String, AbellaType)]) ->
                   map(\ pt::(String, AbellaType) ->
                         localAccessRelationName(
-                           findAssociated(pt.1, prods).fromJust.resultType,
+                           lookupProdType(pt.1, env).resultType,
                            p.1, pt.1),
                       p.2), localAttrs);
   return
@@ -473,10 +473,10 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
 }
 
 
-function generateAccessIAxioms
+function generateAccessIsAxioms
 String ::= attrOccurrences::[(String, [(String, AbellaType)])]
            localAttrs::[(String, [(String, AbellaType)])]
-           prods::[(String, AbellaType)]
+           env::Decorated Env
 {
   --[(access relation, attr type, nonterminal)]
   local attrInfos::[(String, AbellaType, AbellaType)] =
@@ -491,9 +491,9 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
         flatMap(\ p::(String, [(String, AbellaType)]) ->
                   map(\ pt::(String, AbellaType) ->
                         (localAccessRelationName(
-                            findAssociated(pt.1, prods).fromJust.resultType,
+                            lookupProdType(pt.1, env).resultType,
                             p.1, pt.1), pt.2,
-                         findAssociated(pt.1, prods).fromJust.resultType),
+                         lookupProdType(pt.1, env).resultType),
                       p.2), localAttrs);
   return
      foldr(\ p::(String, AbellaType, AbellaType) rest::String ->
@@ -687,7 +687,7 @@ String ::= nonterminals::[String]
 function generateWpdToAttrEquationTheorems
 String ::= attrOccurrences::[(String, [(String, AbellaType)])]
            localAttrs::[(String, [(String, AbellaType)])]
-           prods::[(String, AbellaType)]
+           env::Decorated Env
 {
   --[(equation relation, attr, attr type, nonterminal)]
   local attrInfos::[(String, String, AbellaType, AbellaType)] =
@@ -704,7 +704,7 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
         flatMap(\ p::(String, [(String, AbellaType)]) ->
                   map(\ pt::(String, AbellaType) ->
                         (localEquationName(p.1, pt.1), pt.1, p.1, pt.2,
-                         findAssociated(pt.1, prods).fromJust.resultType),
+                         lookupProdType(pt.1, env).resultType),
                       p.2), localAttrs);
   return
      --attrs
@@ -883,6 +883,7 @@ String ::= nonterminals::[String] attrs::[String]
            --[(fun name, fun type, fun clauses)]
            funClauses::[(String, AbellaType, [DefClause])]
            componentName::String
+           env::Decorated Env
 {
   local associatedAttrsExpanded::[(String, [(String, AbellaType)])] =
         map(\ p::(String, [String]) ->
@@ -895,7 +896,7 @@ String ::= nonterminals::[String] attrs::[String]
      "Kind $node_tree   type.\n\n" ++
      generateNodeTreeConstructors(nonterminals) ++ "\n\n" ++
      generateAccessRelations(attrOccurrences) ++ "\n" ++
-     generateLocalAccessRelations(localAttrs, prods) ++ "\n\n" ++
+     generateLocalAccessRelations(localAttrs, env) ++ "\n\n" ++
      generateInheritedInformation(inheritedAttrs) ++ "\n\n" ++
      generateStructureEqFull(nonterminals) ++ "\n" ++
      generateStructureEqComponent(prods, componentName) ++ "\n\n" ++
@@ -948,15 +949,15 @@ String ::= nonterminals::[String] attrs::[String]
      "  $split SubRel ($pair_c A B) :=\n" ++
      "     SubRel A B.\n\n" ++
      generateWpdNodeRelationsComponent(attrOccurrences, localAttrs,
-        associatedAttrs, prods, componentName) ++ "\n" ++
+        associatedAttrs, env, componentName) ++ "\n" ++
      generateWpdNtRelationsComponent(prods, componentName) ++ "\n\n" ++
      --
      --Switch over to generating axioms
      --
      generateAccessUniquenessAxioms(attrOccurrences,
-                                    localAttrs, prods) ++ "\n\n" ++
-     generateAccessIAxioms(attrOccurrences,
-                           localAttrs, prods) ++ "\n\n" ++
+                                    localAttrs, env) ++ "\n\n" ++
+     generateAccessIsAxioms(attrOccurrences,
+                            localAttrs, env) ++ "\n\n" ++
      generatePrimaryComponentTheorems(
         attrOccurrences ++ associatedAttrsExpanded,
         prods, componentName) ++
@@ -966,7 +967,7 @@ String ::= nonterminals::[String] attrs::[String]
      generateNodeTreeFormTheorems(nonterminals) ++ "\n\n" ++
      generateWpdToAttrEquationTheorems(
         attrOccurrences ++ associatedAttrsExpanded,
-        localAttrs, prods) ++ "\n\n" ++
+        localAttrs, env) ++ "\n\n" ++
      generateStructureEqNtTheorems(nonterminals, [componentName]) ++
         "\n\n" ++
      generateStructureEqPrimaryComponentTheorems(prods, componentName);

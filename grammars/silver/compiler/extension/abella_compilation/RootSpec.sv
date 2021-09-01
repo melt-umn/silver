@@ -3,6 +3,7 @@ grammar silver:compiler:extension:abella_compilation;
 
 import silver:util:treeset as set;
 import silver:util:graph as graph;
+import silver:util:treemap as tmap;
 
 
 --Whether we should try to output anything
@@ -43,8 +44,50 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
                   grammarTime::Integer generateLocation::String
 {
   local componentName::String = encodeName(grammarName);
-  --[(nonterminal type name (with $nt_), [(production name, production type)])]
+
+  --Everything from the current grammar AND imported by it
+  local relevantEnv::Decorated Env =
+        appendEnv(g.globalImports, g.env);
+
   local prodsByType::[(String, [(String, AbellaType)])] =
+        let prodsByNT::[EnvTree<DclInfo>] =
+            relevantEnv.prodsForNtTree
+        in
+        let prodsLst::[(String, DclInfo)] =
+            flatMap(tmap:toList(_), prodsByNT)
+        in
+        let sorted::[(String, DclInfo)] =
+            sortBy(\ p1::(String, DclInfo) p2::(String, DclInfo) ->
+                     p1.1 <= p2.1,
+                   prodsLst)
+        in
+        let grouped::[[(String, DclInfo)]] =
+            groupBy(\ p1::(String, DclInfo) p2::(String, DclInfo) ->
+                      p1.1 == p2.1,
+                    sorted)
+        in
+        let prods::[(String, [DclInfo])] =
+            map(\ l::[(String, DclInfo)] ->
+                  ( nameToNonterminal(colonsToEncoded(head(l).1)),
+                    map(snd, l) ),
+                grouped)
+        in
+        let expandProd::[(String, [(String, AbellaType)])] =
+            map(\ p::(String, [DclInfo]) ->
+                  ( p.1,
+                    map(\ d::DclInfo ->
+                          let pname::String = d.fullName
+                          in
+                            ( colonsToEncoded(pname),
+                              lookupProdType(pname, relevantEnv) )
+                          end,
+                        p.2) ),
+                prods)
+        in
+          expandProd
+        end end end end end end;
+  --[(nonterminal type name (with $nt_), [(production name, production type)])]
+  local prodsByType1::[(String, [(String, AbellaType)])] =
         let byType::[(AbellaType, String, AbellaType)] =
             map(\ p::(String, AbellaType) ->
                   ( p.2.resultType, p.1, p.2 ), g.prods)
@@ -67,15 +110,18 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
                       end,
                     sorted)
         in
-          map(\ l::[(AbellaType, String, AbellaType)] ->
-                ( case head(l).1 of
-                  | nameAbellaType(n) -> n
-                  | _ -> error("Not possible")
-                  end,
-                  map(\ p::(AbellaType, String, AbellaType) ->
-                        ( p.2, p.3 ), l) ),
-              grouped)
-        end end end;
+        let x::[(String, [(String, AbellaType)])] =
+            map(\ l::[(AbellaType, String, AbellaType)] ->
+                  ( case head(l).1 of
+                    | nameAbellaType(n) -> n
+                    | _ -> error("Not possible")
+                    end,
+                    map(\ p::(AbellaType, String, AbellaType) ->
+                          ( p.2, p.3 ), l) ),
+                grouped)
+        in
+          x
+        end end end end;
   --Find the productions which are missing equations for each
   --   attribute and produce empty clauses
   local sortedAttrEquations::[(String, AbellaType, String)] =
@@ -199,7 +245,7 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
       generateContents(g.nonterminals, g.attrs, g.attrOccurrences,
          g.inheritedAttrs, g.localAttrs, associatedAttrs, g.prods,
          attrClauses, g.localAttrDefs, g.funRelClauses,
-         encodeName(grammarName));
+         encodeName(grammarName), relevantEnv);
 
 
   local no_core_module_names::[String] =

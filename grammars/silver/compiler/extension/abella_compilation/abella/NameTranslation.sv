@@ -315,3 +315,17 @@ Boolean ::= rel::String
      startsWith("$access_", rel) || startsWith("$local_access_", rel);
 }
 
+
+
+--Turn a colon-qualified name into an Abella-qualified name
+function colonsToEncoded
+String ::= name::String
+{
+  return substitute(":", "$*$", name);
+}
+function encodedToColons
+String ::= name::String
+{
+  return substitute("$*$", ":", name);
+}
+
