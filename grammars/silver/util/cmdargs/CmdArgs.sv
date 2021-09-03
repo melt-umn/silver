@@ -117,6 +117,7 @@ top::Flag ::= ast::(CmdArgs ::= String CmdArgs)
  - In the terminology I've just made up, 'nOptions' is a cmd line option
  - with n parameters.
  -
+ - @param n  The number of arguments expected by the flag
  - @param ast  Production for handling this commandline option being given
  -}
 abstract production nOptions
