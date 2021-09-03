@@ -128,11 +128,11 @@ top::Flag ::= n::Integer  ast::(CmdArgs ::= [String] CmdArgs)
       then []
       else drop(n + 1, top.flagInput);
   top.flagModified =
-      if length(top.flagInput) <= n + 1
+      if length(top.flagInput) < n + 1
       then errorCmdArgs(head(top.flagInput) ++ " only has " ++
                         toString(length(top.flagInput)) ++
                         " parameters, when it should have " ++
-                        toString(n - 1))
+                        toString(n))
       else ast(take(n, drop(1, top.flagInput)), top.flagOriginal);
 }
 
