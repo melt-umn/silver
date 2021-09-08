@@ -446,12 +446,10 @@ function localStitchPoints
   | [] -> []
   -- We add the forward stitch point here, too!
   | fwdEq(_, _, _) :: rest -> nonterminalStitchPoint(nt, forwardVertexType) :: localStitchPoints(nt, rest)
-  -- Ignore locals that aren't nonterminal types!
-  | localEq(_, fN, "", _) :: rest -> localStitchPoints(nt, rest)
   -- Add locals that are nonterminal types.
-  | localEq(_, fN, tN, _) :: rest -> nonterminalStitchPoint(tN, localVertexType(fN)) :: localStitchPoints(nt, rest)
-  -- Add all anon decoration sites
-  | anonEq(_, fN, tN, _, _) :: rest -> nonterminalStitchPoint(tN, anonVertexType(fN)) :: localStitchPoints(nt, rest)
+  | localEq(_, fN, tN, true, _) :: rest -> nonterminalStitchPoint(tN, localVertexType(fN)) :: localStitchPoints(nt, rest)
+  -- Add anon decoration sites that are nonterminal types
+  | anonEq(_, fN, tN, true, _, _) :: rest -> nonterminalStitchPoint(tN, anonVertexType(fN)) :: localStitchPoints(nt, rest)
   -- Ignore all other flow def info
   | _ :: rest -> localStitchPoints(nt, rest)
   end;

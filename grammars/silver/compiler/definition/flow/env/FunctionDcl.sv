@@ -1,5 +1,6 @@
 grammar silver:compiler:definition:flow:env;
 
+import silver:compiler:definition:type only typerep;
 import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructFunctionGraph;
 import silver:compiler:driver:util only RootSpec; -- actually we just want the occurrences
 
@@ -15,6 +16,10 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
   {-- Used by core to send down with .frame -}
   production myFlowGraph :: ProductionGraph = 
     constructFunctionGraph(namedSig, top.flowEnv, top.env, myProds, myFlow);
+
+  top.flowDefs <- flatMap(
+    \ ie::NamedSignatureElement -> occursContextDeps(namedSig, ie.typerep, rhsVertexType(ie.elementName)),
+    namedSig.inputElements);
 }
 
 aspect production aspectFunctionDcl

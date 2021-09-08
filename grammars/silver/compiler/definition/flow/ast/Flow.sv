@@ -259,11 +259,12 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
  - @param prod  the full name of the production
  - @param fName  the name of the local/production attribute
  - @param typeName  the full name of the type, or empty string if not a decorable type!
+ - @param isNT  true if the type is a nonterminal
  - @param deps  the dependencies of this equation on other flow graph elements
  - CONTRIBUTIONS ARE POSSIBLE
  -}
 abstract production localEq
-top::FlowDef ::= prod::String  fName::String  typeName::String  deps::[FlowVertex]
+top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  deps::[FlowVertex]
 {
   top.localTreeContribs = [pair(crossnames(prod, fName), top)];
   top.prodGraphContribs = [pair(prod, top)];
@@ -309,12 +310,13 @@ top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]  mayAffectFlo
  -
  - @param prod  the full name of the production
  - @param fName  the generated anonymous name for this decoration site
- - @param typeName  the full name of the nonterminal
+ - @param typeName  the full name of the type (usually a nonterminal, but may be a decorable type var)
+ - @param isNT  true if the type is a nonterminal
  - @param deps  the dependencies of this equation on other flow graph elements
  - (no contributions are possible)
  -}
 abstract production anonEq
-top::FlowDef ::= prod::String  fName::String  typeName::String  loc::Location  deps::[FlowVertex]
+top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  loc::Location  deps::[FlowVertex]
 {
   top.localTreeContribs = [pair(crossnames(prod, fName), top)];
   top.prodGraphContribs = [pair(prod, top)];
@@ -336,6 +338,21 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
   top.localInhTreeContribs = [pair(crossnames(prod, crossnames(fName, attr)), top)];
   top.prodGraphContribs = [pair(prod, top)];
   top.flowEdges = map(pair(anonVertex(fName, attr), _), deps);
+}
+
+{--
+ - A synthesized occurs-on context for a decoration site of a type variable.
+ -
+ - @param prod  the full name of the production
+ - @param vt    the decoration site
+ - @param attr  the full name of the synthesized attribute
+ - @param deps  the full names of the inherited attribute dependencies specified in the occurs-on context.
+ -}
+abstract production synOccursContextEq
+top::FlowDef ::= prod::String  vt::VertexType  attr::String  deps::[String]
+{
+  top.prodGraphContribs = [pair(prod, top)];
+  top.flowEdges = map(pair(vt.synVertex(attr), _), map(vt.inhVertex, deps));
 }
 
 {--
@@ -378,7 +395,7 @@ function collectAnonOriginItem
 [Pair<String  Location>] ::= f::FlowDef  rest::[Pair<String  Location>]
 {
   return case f of
-  | anonEq(_, fN, _, l, _) ->
+  | anonEq(_, fN, _, _, l, _) ->
       -- Small hack to improve error messages. Ignore anonEq's that come from patterns
       if startsWith("__scrutinee", fN)
       then rest

@@ -190,8 +190,9 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- Next, emit the "local equation" for this anonymous flow vertex.
   -- This means only the deps in 'e', see above conceptual transformation to see why.
   -- N.B. 'inh.flowDefs' will emit 'localInhEq's for this anonymous flow vertex.
+  local eTy::Type = performSubstitution(e.typerep, top.finalSubst);
   top.flowDefs <-
-    [anonEq(top.frame.fullName, inh.decorationVertex, performSubstitution(e.typerep, top.finalSubst).typeName, top.location, e.flowDeps)];
+    [anonEq(top.frame.fullName, inh.decorationVertex, eTy.typeName, eTy.isNonterminal, top.location, e.flowDeps)];
 
   -- Now, we represent ourselves to anything that might use us specially
   -- as though we were a reference to this anonymous local
@@ -203,6 +204,9 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowDeps := [anonEqVertex(inh.decorationVertex)] ++
     map(anonVertexType(inh.decorationVertex).inhVertex, fromMaybe([], refSet));
+
+  -- If we have a type var with occurs-on contexts, add the specified syn -> inh deps for the new vertex
+  top.flowDefs <- occursContextDeps(top.frame.signature, finalTy, anonVertexType(inh.decorationVertex));
 }
 
 autocopy attribute decorationVertex :: String occurs on ExprInhs, ExprInh;
@@ -319,10 +323,11 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   top.flowDeps := pr.flowDeps ++ f.flowDeps ++
     (pr.scrutineeVertexType.fwdVertex :: pr.scrutineeVertexType.eqVertex);
 
+  local eTy::Type = performSubstitution(e.typerep, top.finalSubst);
   top.flowDefs <-
     case e.flowVertexInfo of
     | hasVertex(vertex) -> []
-    | noVertex() -> [anonEq(top.frame.fullName, anonName, performSubstitution(e.typerep, top.finalSubst).typeName, top.location, e.flowDeps)]
+    | noVertex() -> [anonEq(top.frame.fullName, anonName, eTy.typeName, eTy.isNonterminal, top.location, e.flowDeps)]
     end;
   -- We want to use anonEq here because that introduces the nonterminal stitch point for our vertex.
 }
