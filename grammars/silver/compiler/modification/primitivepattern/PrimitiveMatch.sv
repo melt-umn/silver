@@ -234,7 +234,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   local contextDefs::[Def] = concat(
     zipWith(
       \ c::Context oc::Context ->
-        performContextSubstitution(c, e.finalSubst).contextPatternDefs(
+        performContextSubstitution(c, e.downSubst).contextPatternDefs(
           oc,
           if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.freeVariables,
           scrutineeName, top.location, top.grammarName),
