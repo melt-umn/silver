@@ -206,7 +206,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
     map(anonVertexType(inh.decorationVertex).inhVertex, fromMaybe([], refSet));
 
   -- If we have a type var with occurs-on contexts, add the specified syn -> inh deps for the new vertex
-  top.flowDefs <- occursContextDeps(top.frame.signature, finalTy, anonVertexType(inh.decorationVertex));
+  top.flowDefs <- occursContextDeps(top.frame.signature, top.env, finalTy, anonVertexType(inh.decorationVertex));
 }
 
 autocopy attribute decorationVertex :: String occurs on ExprInhs, ExprInh;

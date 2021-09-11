@@ -18,7 +18,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
     constructFunctionGraph(namedSig, top.flowEnv, top.env, myProds, myFlow);
 
   top.flowDefs <- flatMap(
-    \ ie::NamedSignatureElement -> occursContextDeps(namedSig, ie.typerep, rhsVertexType(ie.elementName)),
+    \ ie::NamedSignatureElement -> occursContextDeps(namedSig, top.env, ie.typerep, rhsVertexType(ie.elementName)),
     namedSig.inputElements);
 }
 

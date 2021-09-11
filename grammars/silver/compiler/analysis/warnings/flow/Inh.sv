@@ -62,9 +62,20 @@ Boolean ::= f::([FlowDef] ::= String)  attr::String
  - remove "missing equations" that are actually implicit autocopies.
  -}
 function ignoreIfAutoCopyOnLhs
-Boolean ::= lhsNt::String  env::Decorated Env  attr::String
+Boolean ::= lhsNt::String  sigName::String  env::Decorated Env  attr::String
 {
-  return !(isAutocopy(attr, env) && !null(getOccursDcl(attr, lhsNt, env)));
+  local d :: [DclInfo] = getValueDcl(sigName, env);
+  
+  -- TODO BUG: it's actually possible for this to to fail to lookup
+  -- due to aspects renaming the sig name!!  We're conservative here and return true if that happens
+  -- but this could lead to spurious errors.
+  
+  -- Suggested fix: maybe we can directly look at the signature, instead of looking
+  -- up the name in the environment?
+  
+  return !(isAutocopy(attr, env) && !null(getOccursDcl(attr, lhsNt, env)) &&
+           -- Only ignore autocopies if the sig item is a nonterminal and not a type variable with an occurs-on context
+           !null(d) && head(d).typeScheme.isNonterminal);
 }
 
 {--
@@ -103,7 +114,7 @@ Boolean ::= sigName::String  e::Decorated Env
  - @param v  A value we need an equation for.
  - @param l  Where to report an error, if it's missing
  - @param prodName  The full name of the production we're in
- - @param prodNt  The nonterminal is production belongs to. (For functions, a dummy value is ok)
+ - @param prodNt  The nonterminal this production belongs to. (For functions, a dummy value is ok)
  - @param flowEnv  The local flow environment
  - @param realEnv  The local real environment
  - @returns  Errors for missing equations
@@ -125,7 +136,7 @@ function checkEqDeps
   | rhsVertex(sigName, attrName) ->
       if isInherited(attrName, realEnv)
       then if !null(lookupInh(prodName, sigName, attrName, flowEnv))
-           || !ignoreIfAutoCopyOnLhs(prodNt, realEnv, attrName)
+           || !ignoreIfAutoCopyOnLhs(prodNt, sigName, realEnv, attrName)
            || !sigNotAReference(sigName, realEnv)
            then []
            else [mwdaWrn(l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.", runMwda)]
@@ -168,6 +179,30 @@ function checkAllEqDeps
 [Message] ::= v::[FlowVertex]  l::Location  prodName::String  prodNt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env  anonResolve::[Pair<String  Location>] runMwda::Boolean
 {
   return flatMap(checkEqDeps(_, l, prodName, prodNt, flowEnv, realEnv, anonResolve, runMwda), v);
+}
+
+{--
+ - Look up flow types, either from the flow environment (for a nonterminal) or the occurs-on contexts (for a type var).
+ - @param syn  A synthesized attribute's full name
+ - @param t  The type to look up this attribute on
+ - @param flow  The flow type environment (NOTE: TODO: this is currently 'myFlow' or something, NOT top.flowEnv)
+ - @param ns    The named signature of the enclosing production
+ - @param env   The regular (type) environment
+ - @return A set of inherited attributes (if the inh dependencies for the attribute are bounded) and a list of type variables of kind InhSet,
+ - needed to compute this synthesized attribute on this type.
+ -}
+function inhDepsForSynOnType
+(Maybe<set:Set<String>>, [TyVar]) ::= syn::String  t::Type  flow::EnvTree<FlowType>  ns::NamedSignature env::Decorated Env
+{
+  local contexts::Contexts = foldContexts(ns.contexts);
+  contexts.env = env;
+  
+  return
+    if t.isNonterminal || (t.isDecorated && t.decoratedType.isNonterminal)
+    then (just(inhDepsForSyn(syn, t.typeName, flow)), [])
+    else (
+      map(set:fromList, lookup(syn, lookupAll(t.typeName, contexts.occursContextInhDeps))),
+      concat(lookupAll(syn, lookupAll(t.typeName, contexts.occursContextInhSetDeps))));
 }
 
 
@@ -454,16 +489,24 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
--- This aspect is in two parts. First: we *must* check that any accesses
--- on a unknown decorated tree are in the ref-set.
-
   -- oh no again
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
   local finalTy :: Type = performSubstitution(e.typerep, e.upSubst);
+  local deps :: (Maybe<set:Set<String>>, [TyVar]) =
+    inhDepsForSynOnType(q.attrDcl.fullName, finalTy, myFlow, top.frame.signature, top.env);
+  local inhDeps :: set:Set<String> = fromMaybe(set:empty(), deps.1);  -- Need to check that we have bounded inh deps, i.e. deps.1 == just(...)
+
+-- This aspect is in two parts. First: we *must* check that any accesses
+-- on a unknown decorated tree are in the ref-set.
+  local acceptable :: ([String], [TyVar]) =
+    case finalTy of
+    | decoratedType(_, i) -> getMinInhSetMembers([], i, top.env)
+    | _ -> ([], [])
+    end;
   local diff :: [String] =
-    set:toList(set:removeAll(getMinRefSet(finalTy, top.env),  -- blessed inhs for a reference
-      inhDepsForSyn(q.attrDcl.fullName, finalTy.typeName, myFlow))); -- needed inhs
+    set:toList(set:removeAll(acceptable.1,  -- blessed inhs for a reference
+      inhDeps)); -- needed inhs
   
   -- CASE 1: References. This check is necessary and won't be caught elsewhere.
   top.errors <- 
@@ -471,10 +514,22 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     && (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
     then
       case e.flowVertexInfo of
-      | hasVertex(_) -> [] -- no check to make, as it was done transitively
+      -- We don't track dependencies on inh sets transitively, so we need to check that the inh deps are bounded here;
+      -- an access with unbounded inh deps only ever makes sense on a reference. 
+      | hasVertex(_) ->
+          if deps.1.isJust then []
+          else [mwdaWrn(top.location, "Access of " ++ q.name ++ " from " ++ prettyType(finalTy) ++ " requires an unbounded set of inherited attributes", top.config.runMwda)]
       -- without a vertex, we're accessing from a reference, and so...
       | noVertex() ->
-          if null(diff) then []
+          if any(map(contains(_, deps.2), acceptable.2)) then []  -- The deps are supplied as a common InhSet var
+          -- We didn't find the deps as an InhSet var
+          else if null(diff)
+            then if deps.fst.isJust then []  -- We have a bound on the inh deps, and they are all present
+            -- We don't have a bound on the inh deps, flag the unsatisfied InhSet deps
+            else if null(acceptable.2)
+            then [mwdaWrn(top.location, "Access of " ++ q.name ++ " from " ++ prettyType(finalTy) ++ " requires an unbounded set of inherited attributes", top.config.runMwda)]
+            else [mwdaWrn(top.location, "Access of " ++ q.name ++ " from reference of type " ++ prettyType(finalTy) ++ " requires one of the following sets of inherited attributes not known to be supplied to this reference: " ++ implode(", ", map(findAbbrevFor(_, top.frame.signature.freeVariables), deps.snd)), top.config.runMwda)]
+          -- We didn't find the inh deps
           else [mwdaWrn(top.location, "Access of " ++ q.name ++ " from reference of type " ++ prettyType(finalTy) ++ " requires inherited attributes not known to be supplied to this reference: " ++ implode(", ", diff), top.config.runMwda)]
       end
     else [];
@@ -495,12 +550,12 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
             let inhs :: [String] = 
                   -- N.B. we're filtering out autocopies here
                   filter(
-                    ignoreIfAutoCopyOnLhs(top.frame.lhsNtName, top.env, _),
+                    ignoreIfAutoCopyOnLhs(top.frame.lhsNtName, lq.name, top.env, _),
                     filter(
                       isEquationMissing(
                         lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                         _),
-                      set:toList(inhDepsForSyn(q.attrDcl.fullName, finalTy.typeName, myFlow))))
+                      set:toList(inhDeps)))
              in if null(inhs) then []
                 else [mwdaWrn(top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied", top.config.runMwda)]
             end
@@ -513,7 +568,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                     isEquationMissing(
                       lookupLocalInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                       _),
-                    set:toList(inhDepsForSyn(q.attrDcl.fullName, finalTy.typeName, myFlow)))
+                    set:toList(inhDeps))
              in if null(inhs) then []
                 else [mwdaWrn(top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied", top.config.runMwda)]
             end
@@ -542,7 +597,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
           then []
           else [mwdaWrn(top.location, "Access of inherited attribute " ++ q.name ++ " on reference of type " ++ prettyType(finalTy) ++ " is not permitted", top.config.runMwda)]
       end
-    else [];      
+    else [];
 }
 
 aspect production decorateExprWith
@@ -557,23 +612,37 @@ top::Expr ::= '(' '.' q::QName ')'
 {
   -- oh no again
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  
+  local deps :: (Maybe<set:Set<String>>, [TyVar]) =
+    inhDepsForSynOnType(q.lookupAttribute.fullName, inputType, myFlow, top.frame.signature, top.env);
 
   -- We need to check that the flow sets are acceptable to what we're doing
   -- undecorated accesses: flow type for attribute has to be empty
   -- decorated accesses: FT has to be subset of refset
-  local acceptable :: [String] = getMinRefSet(inputType, top.env);
+  local acceptable :: ([String], [TyVar]) =
+    case inputType of
+    | decoratedType(_, i) -> getMinInhSetMembers([], i, top.env)
+    | _ -> ([], [])
+    end;
+  local diff :: [String] =
+    set:toList(set:removeAll(acceptable.1,  -- blessed inhs for a reference
+      inhDeps)); -- needed inhs
+  local inhDeps :: set:Set<String> = fromMaybe(set:empty(), deps.1);  -- Need to check that we have bounded inh deps, i.e. deps.1 == just(...)
 
   top.errors <- 
     if q.lookupAttribute.found
     && (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
     then
-      let inhs :: [String] = 
-            filter(
-              \ x::String -> !contains(x, acceptable),
-              set:toList(inhDepsForSyn(q.lookupAttribute.fullName, inputType.typeName, myFlow)))
-       in if null(inhs) then []
-          else [mwdaWrn(top.location, s"Attribute section (.${q.name}) requires attributes not known to be on '${prettyType(inputType)}': ${implode(", ", inhs)}", top.config.runMwda)]
-      end
+      if any(map(contains(_, deps.2), acceptable.2)) then []  -- The deps are supplied as a common InhSet var
+      -- We didn't find the deps as an InhSet var
+      else if null(diff)
+        then if deps.fst.isJust then []  -- We have a bound on the inh deps, and they are all present
+          -- We don't have a bound on the inh deps, flag the unsatisfied InhSet deps
+          else if null(acceptable.2)
+          then [mwdaWrn(top.location, s"Attribute section (.${q.name}) on ${prettyType(inputType)} requires an unbounded set of inherited attributes", top.config.runMwda)]
+          else [mwdaWrn(top.location, s"Attribute section (.${q.name}) requires one of the following sets of inherited attributes not known to be on '${prettyType(inputType)}': ${implode(", ", map(findAbbrevFor(_, top.frame.signature.freeVariables), deps.snd))}", top.config.runMwda)]
+        -- We didn't find the inh deps
+        else [mwdaWrn(top.location, s"Attribute section (.${q.name}) requires attributes not known to be on '${prettyType(inputType)}': ${implode(", ", diff)}", top.config.runMwda)]
     else [];
 }
 
@@ -669,7 +738,7 @@ Boolean ::= prod::DclInfo  sigName::String  attrName::String  realEnv::Decorated
 {
   return
     null(lookupInh(prod.fullName, sigName, attrName, flowEnv)) && -- no equation
-    ignoreIfAutoCopyOnLhs(prod.namedSignature.outputElement.typerep.typeName, realEnv, attrName); -- not autocopy (and on lhs)
+    ignoreIfAutoCopyOnLhs(prod.namedSignature.outputElement.typerep.typeName, sigName, realEnv, attrName); -- not autocopy (and on lhs)
 }
 
 --------------------------------------------------------------------------------

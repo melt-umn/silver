@@ -96,7 +96,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
     [localEq(top.frame.fullName, val.lookupValue.fullName, val.lookupValue.typeScheme.typeName, val.lookupValue.typeScheme.typerep.isNonterminal, e.flowDeps)];
 
   -- If we have a type var with occurs-on contexts, add the specified syn -> inh deps for the new vertex
-  top.flowDefs <- occursContextDeps(top.frame.signature, val.lookupValue.typeScheme.typerep, localVertexType(val.lookupValue.fullName));
+  top.flowDefs <- occursContextDeps(top.frame.signature, top.env, val.lookupValue.typeScheme.typerep, localVertexType(val.lookupValue.fullName));
 }
 
 -- FROM COLLECTIONS TODO
