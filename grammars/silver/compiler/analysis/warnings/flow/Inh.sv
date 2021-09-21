@@ -1,5 +1,7 @@
 grammar silver:compiler:analysis:warnings:flow;
 
+import silver:compiler:extension:list;
+
 synthesized attribute warnMissingInh :: Boolean occurs on CmdArgs;
 
 aspect production endCmdArgs
@@ -197,9 +199,20 @@ function inhDepsForSynOnType
   local contexts::Contexts = foldContexts(ns.contexts);
   contexts.env = env;
   
+  local isList::Boolean =
+    case t of
+    | appType(listCtrType(), _) -> true
+    | decoratedType(appType(listCtrType(), _), _) -> true
+    | _ -> false
+    end;
+
   return
     if t.isNonterminal || (t.isDecorated && t.decoratedType.isNonterminal)
     then (just(inhDepsForSyn(syn, t.typeName, flow)), [])
+    -- TODO: Hack for lists, since these pretend not to be not be nonterminals yet use attributes in the nonspecialized implementation.
+    -- These attributes (i_headList, i_tailList, i_nullList, i_lengthList) have no inherited dependencies.
+    -- This can go away if we make lists a built-in/modification and scrap the unspecialized implementations.
+    else if isList then (just(mempty), [])
     else (
       map(set:fromList, lookup(syn, lookupAll(t.typeName, contexts.occursContextInhDeps))),
       concat(lookupAll(syn, lookupAll(t.typeName, contexts.occursContextInhSetDeps))));
