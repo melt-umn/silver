@@ -136,6 +136,13 @@ Integer ::= s::String l::[NamedSignatureElement] z::Integer
   else findNamedSigElem(s, tail(l), z+1);
 }
 
+function findNamedSigElemType
+Type ::= n::String l::[NamedSignatureElement]
+{
+  local elems::NamedSignatureElements = foldNamedSignatureElements(l);
+  return fromMaybe(errorType(), lookup(n, zipWith(pair, elems.elementNames, elems.elementTypes)));
+}
+
 --------------
 
 attribute substitution, flatRenamed occurs on NamedSignature, Contexts, NamedSignatureElements, NamedSignatureElement;

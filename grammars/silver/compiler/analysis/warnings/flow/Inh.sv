@@ -59,25 +59,17 @@ Boolean ::= f::([FlowDef] ::= String)  attr::String
 }
 
 {--
- - False if 'attr' occurs on 'lhsNt' and is an autocopy attribute,
+ - False if 'attr' is an autocopy attribute, occurs on the LHS nonterminal,
+ - and child 'sigName' is a nonterminal (not a type var with an occurs-on context);
  - true otherwise.  Used in conjunction with 'filter' to get
  - remove "missing equations" that are actually implicit autocopies.
  -}
 function ignoreIfAutoCopyOnLhs
-Boolean ::= lhsNt::String  sigName::String  env::Decorated Env  attr::String
+Boolean ::= sigName::String  ns::NamedSignature  env::Decorated Env  attr::String
 {
-  local d :: [DclInfo] = getValueDcl(sigName, env);
-  
-  -- TODO BUG: it's actually possible for this to to fail to lookup
-  -- due to aspects renaming the sig name!!  We're conservative here and return true if that happens
-  -- but this could lead to spurious errors.
-  
-  -- Suggested fix: maybe we can directly look at the signature, instead of looking
-  -- up the name in the environment?
-  
-  return !(isAutocopy(attr, env) && !null(getOccursDcl(attr, lhsNt, env)) &&
+  return !(isAutocopy(attr, env) && !null(getOccursDcl(attr, ns.outputElement.typerep.typeName, env)) &&
            -- Only ignore autocopies if the sig item is a nonterminal and not a type variable with an occurs-on context
-           !null(d) && head(d).typeScheme.isNonterminal);
+           findNamedSigElemType(sigName, ns.inputElements).isNonterminal);
 }
 
 {--
@@ -85,17 +77,20 @@ Boolean ::= lhsNt::String  sigName::String  env::Decorated Env  attr::String
  - nonterminal type. False if nonsensicle.
  -}
 function sigNotAReference
+Boolean ::= sigName::String  ns::NamedSignature  e::Decorated Env
+{
+  return isDecorable(findNamedSigElemType(sigName, ns.inputElements), e);
+}
+
+{--
+ - Given a name of a local, return whether it has an undecorated
+ - nonterminal type. False if nonsensicle.
+ -}
+function localNotAReference
 Boolean ::= sigName::String  e::Decorated Env
 {
   local d :: [DclInfo] = getValueDcl(sigName, e);
-  
-  -- TODO BUG: it's actually possible for this to to fail to lookup
-  -- due to aspects renaming the sig name!!  We're conservative here and return true if that happens
-  -- but this could lead to spurious errors.
-  
-  -- Suggested fix: maybe we can directly look at the signature, instead of looking
-  -- up the name in the environment?
-  
+
   return if null(d) then true else isDecorable(head(d).typeScheme.typerep, e);
 }
 
@@ -122,10 +117,17 @@ Boolean ::= sigName::String  e::Decorated Env
  - @returns  Errors for missing equations
  -}
 function checkEqDeps
-[Message] ::= v::FlowVertex  l::Location  prodName::String  prodNt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env  anonResolve::[Pair<String  Location>] runMwda::Boolean
+[Message] ::= v::FlowVertex  l::Location  prodName::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env  anonResolve::[Pair<String  Location>] runMwda::Boolean
 {
   -- We're concerned with missing inherited equations on RHS, LOCAL, and ANON. (Implicitly, FORWARD.)
   
+  local prodDcl :: [DclInfo] = getValueDcl(prodName, realEnv);
+  local ns :: NamedSignature =
+    case prodDcl of
+    | d :: _ -> d.namedSignature
+    | [] -> bogusNamedSignature()
+    end;
+
   return case v of
   -- A dependency on an LHS.INH is a flow issue: these equations do not exist
   -- locally, so we cannot check them.
@@ -138,8 +140,8 @@ function checkEqDeps
   | rhsVertex(sigName, attrName) ->
       if isInherited(attrName, realEnv)
       then if !null(lookupInh(prodName, sigName, attrName, flowEnv))
-           || !ignoreIfAutoCopyOnLhs(prodNt, sigName, realEnv, attrName)
-           || !sigNotAReference(sigName, realEnv)
+           || !ignoreIfAutoCopyOnLhs(sigName, ns, realEnv, attrName)
+           || !sigNotAReference(sigName, ns, realEnv)
            then []
            else [mwdaWrn(l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.", runMwda)]
       else []
@@ -153,7 +155,7 @@ function checkEqDeps
       if isInherited(attrName, realEnv)
       then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
            || fName == "forward"
-           || !sigNotAReference(fName, realEnv)
+           || !localNotAReference(fName, realEnv)
            then []
            else [mwdaWrn(l, "Equation has transitive dependency on local " ++ fName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.", runMwda)]
       else []
@@ -178,9 +180,9 @@ function checkEqDeps
   end;
 }
 function checkAllEqDeps
-[Message] ::= v::[FlowVertex]  l::Location  prodName::String  prodNt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env  anonResolve::[Pair<String  Location>] runMwda::Boolean
+[Message] ::= v::[FlowVertex]  l::Location  prodName::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env  anonResolve::[Pair<String  Location>] runMwda::Boolean
 {
-  return flatMap(checkEqDeps(_, l, prodName, prodNt, flowEnv, realEnv, anonResolve, runMwda), v);
+  return flatMap(checkEqDeps(_, l, prodName, flowEnv, realEnv, anonResolve, runMwda), v);
 }
 
 {--
@@ -237,7 +239,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors <-
     if dl.found && attr.found
     && (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
-    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda) ++
+    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda) ++
       if null(lhsInhExceedsFlowType) then []
       else [mwdaWrn(top.location, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType), top.config.runMwda)]
     else [];
@@ -254,7 +256,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   -- check transitive deps only. Nothing to check for flow types
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
-    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda)
+    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda)
     else [];
 }
 
@@ -274,7 +276,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors <-
     if dl.found && attr.found
     && (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
-    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda) ++
+    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda) ++
       if null(lhsInhExceedsFlowType) then []
       else [mwdaWrn(top.location, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType), top.config.runMwda)]
     else [];
@@ -294,7 +296,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   top.errors <-
     if dl.found && attr.found
     && (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
-    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda) ++
+    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda) ++
       if null(lhsInhExceedsFlowType) then []
       else [mwdaWrn(top.location, "Synthesized equation " ++ attr.name ++ " exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType), top.config.runMwda)]
     else [];
@@ -308,7 +310,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   -- check transitive deps only. Nothing to be done for flow types
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
-    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda)
+    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda)
     else [];
 }
 aspect production inhAppendColAttributeDef
@@ -320,7 +322,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
   -- check transitive deps only. Nothing to be done for flow types
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
-    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda)
+    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda)
     else [];
 }
 ------ END AWFUL COPY & PASTE SESSION
@@ -339,7 +341,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
-    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda) ++
+    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda) ++
          if null(lhsInhExceedsFlowType) then []
          else [mwdaWrn(top.location, "Forward equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType), top.config.runMwda)]
     else [];
@@ -367,7 +369,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
-    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda) ++
+    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda) ++
          if null(lhsInhExceedsFlowType) then []
          else [mwdaWrn(top.location, "Forward inherited equation exceeds flow type with dependencies on " ++ implode(", ", lhsInhExceedsFlowType), top.config.runMwda)]
     else [];
@@ -382,7 +384,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
   -- check transitive deps only. No worries about flow types.
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
-    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda)
+    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda)
     else [];
 }
 
@@ -394,7 +396,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
-    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda)
+    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda)
     else [];
 }
 
@@ -406,7 +408,7 @@ top::ProductionStmt ::= 'attachNote' e::Expr ';'
 
   top.errors <-
     if (top.config.warnAll || top.config.warnMissingInh || top.config.runMwda)
-    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.frame.lhsNtName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda)
+    then checkAllEqDeps(transitiveDeps, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda)
     else [];
 }
 
@@ -563,7 +565,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
             let inhs :: [String] = 
                   -- N.B. we're filtering out autocopies here
                   filter(
-                    ignoreIfAutoCopyOnLhs(top.frame.lhsNtName, lq.name, top.env, _),
+                    ignoreIfAutoCopyOnLhs(lq.name, top.frame.signature, top.env, _),
                     filter(
                       isEquationMissing(
                         lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
@@ -751,7 +753,7 @@ Boolean ::= prod::DclInfo  sigName::String  attrName::String  realEnv::Decorated
 {
   return
     null(lookupInh(prod.fullName, sigName, attrName, flowEnv)) && -- no equation
-    ignoreIfAutoCopyOnLhs(prod.namedSignature.outputElement.typerep.typeName, sigName, realEnv, attrName); -- not autocopy (and on lhs)
+    ignoreIfAutoCopyOnLhs(sigName, prod.namedSignature, realEnv, attrName); -- not autocopy (and on lhs)
 }
 
 --------------------------------------------------------------------------------
