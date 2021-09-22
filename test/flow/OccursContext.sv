@@ -116,3 +116,22 @@ top::Expr ::= x::Decorated a with i1
   top.value = x.value;
 }
 }
+
+-- Attribute sections
+production valueThing5
+attribute env1 occurs on a,
+attribute value {env1} occurs on a =>
+top::Expr ::= x::Decorated a with {env1}
+{
+  top.value = head(map((.value), [x, x]));
+}
+
+warnCode "Attribute section (.value) requires attributes not known to be on 'Decorated a with {flow:env1}': flow:env2" {
+production valueThing5Bad
+attribute env1 occurs on a,
+attribute value {env1, env2} occurs on a =>
+top::Expr ::= x::Decorated a with {env1}
+{
+  top.value = head(map((.value), [x, x]));
+}
+}

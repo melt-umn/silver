@@ -48,6 +48,7 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
   top.unparse = s"${cl.unparse} => ${lhs.unparse} ::= ${rhs.unparse}";
 
   cl.constraintPos = signaturePos(top.namedSignature);
+  rhs.env = occursEnv(cl.occursDefs, top.env);
 
   top.defs := lhs.defs ++ rhs.defs;
   top.constraintDefs = cl.defs;
