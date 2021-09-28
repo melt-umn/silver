@@ -25,12 +25,12 @@ class Eq a {
 
 destruct attribute compareTo;
 equality attribute isEqual with compareTo;
-{- TODO: once we have occurence constraints...
-instance isEqual {compareTo} occurs on a => Eq a {
+
+instance attribute compareTo<a> occurs on a,
+         attribute isEqual {compareTo} occurs on a
+         => Eq a {
   eq = \ x::a y::a -> decorate x with {compareTo = y;}.isEqual;
 }
-Do something similar for Ord.
--}
 
 instance Eq Integer {
   eq = eqInteger;
