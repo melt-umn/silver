@@ -33,15 +33,15 @@ top::SStmt ::= n::String e::SExpr
   propagate elimPlusZero;
 }
 
-attribute isEqualTo, isEqual occurs on SExpr, SStmt;
-propagate isEqualTo, isEqual on SExpr, SStmt;
+attribute compareTo, isEqual occurs on SExpr, SStmt;
+propagate compareTo, isEqual on SExpr, SStmt;
 
 -- TODO: Remove these once default instance exists
 instance Eq SExpr {
-  eq = \ a::SExpr b::SExpr -> decorate a with {isEqualTo = b;}.isEqual;
+  eq = \ a::SExpr b::SExpr -> decorate a with {compareTo = b;}.isEqual;
 }
 instance Eq SStmt {
-  eq = \ a::SStmt b::SStmt -> decorate a with {isEqualTo = b;}.isEqual;
+  eq = \ a::SStmt b::SStmt -> decorate a with {compareTo = b;}.isEqual;
 }
 
 

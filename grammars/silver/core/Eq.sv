@@ -23,10 +23,11 @@ class Eq a {
   neq :: (Boolean ::= a a) = \ x::a y::a -> !(x == y);
 }
 
-equality attribute isEqualTo, isEqual;
+destruct attribute compareTo;
+equality attribute isEqual with compareTo;
 {- TODO: once we have occurence constraints...
-instance isEqual {isEqualTo} occurs on a => Eq a {
-  eq = \ x::a y::a -> decorate x with {isEqualTo = y;}.isEqual;
+instance isEqual {compareTo} occurs on a => Eq a {
+  eq = \ x::a y::a -> decorate x with {compareTo = y;}.isEqual;
 }
 Do something similar for Ord.
 -}
