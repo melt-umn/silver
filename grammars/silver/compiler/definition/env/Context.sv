@@ -52,6 +52,7 @@ top::Context ::= cls::String t::Type
   -- so we can't allow this to match an instance for the undecorated type.
   production decT::Type =
     case t of
+    | ntOrDecType(nt, varType(_), _) -> decoratedType(nt, inhSetType([]))
     | ntOrDecType(nt, inhs, _) -> decoratedType(nt, inhs)
     | _ -> t
     end;
