@@ -2,8 +2,21 @@
 
 set -eu
 
-LOCAL_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
-REMOTE_STORE="http://melt.cs.umn.edu/downloads/silver-dev/jars"
+# Usage: ./fetch-jars [rev-name] [--copper]
+
+
+if [[ $* != *--copper* && $# -gt 0 || $# -gt 1 ]]; then
+    rev=$(git rev-parse $1)
+    echo "Warning: Fetching unstable jars!  (commit $rev)"
+
+    LOCAL_STORE=
+    REMOTE_STORE="https://foundry.remexre.xyz/commit-artifacts/$rev"
+    JARS_BAK="JARS-BAK/$rev"
+else
+    LOCAL_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
+    REMOTE_STORE="http://melt.cs.umn.edu/downloads/silver-dev/jars"
+    JARS_BAK=JARS-BAK
+fi
 
 if [[ $* == *--copper* ]]; then
     # Only fetch the Copper jars, if requested
@@ -14,7 +27,7 @@ fi
 
 mkdir -p jars
 
-if [ -d $LOCAL_STORE ]; then
+if [[ -n "$LOCAL_STORE" && -d $LOCAL_STORE ]]; then
   for file in $FILES; do
       cp $LOCAL_STORE/$file jars/
   done
@@ -29,16 +42,16 @@ else
   done
   
   # We're going to download them to here
-  mkdir -p JARS-BAK
+  mkdir -p $JARS_BAK
   
   # -N Pay attention to timestamps, to avoid needless redownloads.
   # -P jars/  Put the files in jars/
   # -nv Don't be so verbose!
-  wget -N -P JARS-BAK/ -nv $URLS
+  wget -N -P $JARS_BAK/ -nv $URLS
   
   # Always overwrite all the files in jars.
   for file in $FILES; do
-      cp JARS-BAK/$file jars/
+      cp $JARS_BAK/$file jars/
   done
 fi
 
