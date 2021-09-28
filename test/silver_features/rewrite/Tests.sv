@@ -75,20 +75,20 @@ global s7::s:Strategy =
 equalityTest(s:rewriteWith(s7, pair(123, 456)), just(pair(456, 123)), Maybe<Pair<Integer Integer>>, silver_tests);
 equalityTest(s:rewriteWith(s7, pair(123, "hello")), nothing(), Maybe<Pair<Integer String>>, silver_tests);
 
-nonterminal Foo with isEqual, isEqualTo;
+nonterminal Foo with isEqual, compareTo;
 abstract production foo
 top::Foo ::= n::Integer
 {}
 
-propagate isEqualTo, isEqual on Foo;
+propagate compareTo, isEqual on Foo;
 -- TODO: Remove this instance once default exists
 instance Eq Foo {
-  eq = \ f1::Foo f2::Foo -> decorate f1 with {isEqualTo = f2;}.isEqual;
+  eq = \ f1::Foo f2::Foo -> decorate f1 with {compareTo = f2;}.isEqual;
 }
 
 global s8::s:Strategy =
   rule on [Foo] of
-  | f1 :: f2 :: rest when decorate f1 with {isEqualTo = f2;}.isEqual -> f1 :: rest 
+  | f1 :: f2 :: rest when decorate f1 with {compareTo = f2;}.isEqual -> f1 :: rest 
   end;
 
 equalityTest(s:rewriteWith(s8, [foo(1), foo(2), foo(3)]), nothing(), Maybe<[Foo]>, silver_tests);
