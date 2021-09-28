@@ -53,7 +53,7 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append::Operatio
   top.propagateDispatcher = propagateMonoid(_, location=_);
 }
 
-abstract production equalityInhDcl
+abstract production destructDcl
 top::DclInfo ::= fn::String tyVar::TyVar
 {
   top.fullName = fn;
@@ -65,7 +65,7 @@ top::DclInfo ::= fn::String tyVar::TyVar
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: should probably be an error handler! access inh from undecorated?
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_); -- Allow normal inh equations
   top.attributionDispatcher = functorAttributionDcl(_, _, _, _, location=_); -- Same as functor
-  top.propagateDispatcher = propagateEqualityInh(_, location=_);
+  top.propagateDispatcher = propagateDestruct(_, location=_);
 }
 
 abstract production equalitySynDcl
@@ -80,7 +80,7 @@ top::DclInfo ::= inh::String syn::String
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
-  top.propagateDispatcher = propagateEqualitySyn(inh, _, location=_);
+  top.propagateDispatcher = propagateEquality(inh, _, location=_);
 }
 
 abstract production unificationInhDcl
@@ -95,7 +95,7 @@ top::DclInfo ::= fn::String tyVar::TyVar inhs::[String]
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: should probably be an error handler! access inh from undecorated?
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_); -- Allow normal inh equations
   top.attributionDispatcher = unificationInhAttributionDcl(_, _, _, _, location=_); -- Same as functor, except decorated
-  top.propagateDispatcher = propagateEqualityInh(_, location=_);
+  top.propagateDispatcher = propagateDestruct(_, location=_);
 }
 
 abstract production unificationSynPartialDcl

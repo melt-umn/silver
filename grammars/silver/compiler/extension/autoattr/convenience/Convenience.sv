@@ -42,17 +42,47 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
       location=top.location);
 }
 
+concrete production destructAttributeDclMultiple
+top::AGDcl ::= 'destruct' 'attribute' a::Name 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "destruct attribute " ++ a.name ++ " occurs on " ++ qs.unparse ++ ";";
+  forwards to
+    appendAGDcl(
+      destructAttributeDcl($1, $2, a, $7, location=a.location),
+      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location)), qs.qnames),
+      location=top.location);
+}
+
 concrete production equalityAttributeDclMultiple
+top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::Name 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "equality attribute " ++ syn.name ++ " with " ++ inh.unparse ++ " occurs on " ++ qs.unparse ++ ";";
+  forwards to
+    appendAGDcl(
+      equalityAttributeDcl($1, $2, syn, $4, inh, $9, location=top.location),
+      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
+      location=top.location);
+}
+
+-- Deprecate?  Eric suggested keeping this: https://github.com/melt-umn/silver/issues/431#issuecomment-760552226
+concrete production destructEqualityAttributeDcl
+top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name ';'
+{
+  top.unparse = "equality attribute " ++ inh.unparse ++ ", " ++ syn.name ++ ";";
+  forwards to
+    appendAGDcl(
+      destructAttributeDcl('destruct', $2, inh, $6, location=top.location),
+      equalityAttributeDcl($1, $2, syn, 'with', inh, $6, location=top.location),
+      location=top.location);
+}
+concrete production destructEqualityAttributeDclMultiple
 top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name 'occurs' 'on' qs::QNames ';'
 {
   top.unparse = "equality attribute " ++ inh.unparse ++ ", " ++ syn.name ++ " occurs on " ++ qs.unparse ++ ";";
   forwards to
     appendAGDcl(
-      equalityAttributeDcl($1, $2, inh, $4, syn, $9, location=top.location),
-      appendAGDcl(
-        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location)), qs.qnames),
-        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
-        location=top.location),
+      destructAttributeDclMultiple('destruct', $2, inh, $6, $7, qs, $9, location=top.location),
+      equalityAttributeDclMultiple($1, $2, syn, 'with', inh, $6, $7, qs, $9, location=top.location),
       location=top.location);
 }
 
