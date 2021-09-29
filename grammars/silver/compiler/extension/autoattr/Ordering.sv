@@ -1,9 +1,9 @@
 grammar silver:compiler:extension:autoattr;
 
-concrete production equalityAttributeDcl
-top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::Name ';'
+concrete production orderingAttributeDcl
+top::AGDcl ::= 'ordering' 'attribute' syn::Name 'with' inh::Name ';'
 {
-  top.unparse = s"equality attribute ${syn.unparse} with ${inh.unparse};";
+  top.unparse = s"ordering attribute ${syn.unparse} with ${inh.unparse};";
   top.moduleNames := [];
 
   production attribute inhFName :: String;
@@ -18,15 +18,15 @@ top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::Name ';'
   
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(equalityDcl(inhFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
+      [attrDef(defaultEnvItem(orderingDcl(inhFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
       location=top.location);
 }
 
 {--
- - Propagate a equality synthesized attribute on the enclosing production
+ - Propagate a ordering synthesized attribute on the enclosing production
  - @param attr  The name of the attribute to propagate
  -}
-abstract production propagateEquality
+abstract production propagateOrdering
 top::ProductionStmt ::= inh::String syn::Decorated QName
 {
   top.unparse = s"propagate ${syn.unparse};";
@@ -48,15 +48,18 @@ top::ProductionStmt ::= inh::String syn::Decorated QName
               ')',
               location=top.location)} ->
           $Expr{
-            foldr(
-              and(_, '&&', _, location=top.location),
-              trueConst('true', location=top.location),
-              map(
-                \ ie::NamedSignatureElement ->
-                  if null(getOccursDcl(syn.lookupAttribute.dcl.fullName, ie.typerep.typeName, top.env))
-                  then Silver_Expr { silver:core:eq($name{ie.elementName}, $name{ie.elementName ++ "2"}) }
-                  else Silver_Expr { $name{ie.elementName}.$QName{new(syn)} },
-                top.frame.signature.inputElements))}
+            if null(top.frame.signature.inputElements)
+            then Silver_Expr { 0 }
+            else
+              foldr1(
+                \ e1::Expr e2::Expr ->
+                  Silver_Expr { if $Expr{e1} == 0 then $Expr{e2} else $Expr{e1} },
+                map(
+                  \ ie::NamedSignatureElement ->
+                    if null(getOccursDcl(syn.lookupAttribute.dcl.fullName, ie.typerep.typeName, top.env))
+                    then Silver_Expr { silver:core:compare($name{ie.elementName}, $name{ie.elementName ++ "2"}) }
+                    else Silver_Expr { $name{ie.elementName}.$QName{new(syn)} },
+                  top.frame.signature.inputElements))}
         | _ -> false
         end;
     };
