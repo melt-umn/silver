@@ -18,10 +18,11 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type
 }
 
 abstract production functorDcl
-top::DclInfo ::= fn::String tyVar::TyVar
+top::DclInfo ::= fn::String
 {
   top.fullName = fn;
 
+  production tyVar::TyVar = freshTyVar(starKind());
   top.typeScheme = polyType([tyVar], varType(tyVar));
   top.isSynthesized = true;
   
@@ -54,11 +55,12 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append::Operatio
 }
 
 abstract production destructDcl
-top::DclInfo ::= fn::String tyVar::TyVar
+top::DclInfo ::= fn::String inhs::[String]
 {
   top.fullName = fn;
 
-  top.typeScheme = polyType([tyVar], varType(tyVar));
+  production tyVar::TyVar = freshTyVar(starKind());
+  top.typeScheme = polyType([tyVar], decoratedType(varType(tyVar), inhSetType(inhs)));
   top.isInherited = true;
   
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);

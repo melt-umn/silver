@@ -43,12 +43,12 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
 }
 
 concrete production destructAttributeDclMultiple
-top::AGDcl ::= 'destruct' 'attribute' a::Name 'occurs' 'on' qs::QNames ';'
+top::AGDcl ::= 'destruct' 'attribute' a::Name 'with' i::TypeExpr 'occurs' 'on' qs::QNames ';'
 {
   top.unparse = "destruct attribute " ++ a.name ++ " occurs on " ++ qs.unparse ++ ";";
   forwards to
     appendAGDcl(
-      destructAttributeDcl($1, $2, a, $7, location=a.location),
+      destructAttributeDcl($1, $2, a, $4, i, $9, location=a.location),
       makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location)), qs.qnames),
       location=top.location);
 }
@@ -82,7 +82,7 @@ top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name ';'
   top.unparse = "equality attribute " ++ inh.unparse ++ ", " ++ syn.name ++ ";";
   forwards to
     appendAGDcl(
-      destructAttributeDcl('destruct', $2, inh, $6, location=top.location),
+      destructAttributeDcl('destruct', $2, inh, 'with', typerepTypeExpr(inhSetType([]), location=top.location), $6, location=top.location),
       equalityAttributeDcl($1, $2, syn, 'with', qNameId(inh, location=top.location), $6, location=top.location),
       location=top.location);
 }
@@ -92,7 +92,7 @@ top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name 'occurs' 'on' qs::
   top.unparse = "equality attribute " ++ inh.unparse ++ ", " ++ syn.name ++ " occurs on " ++ qs.unparse ++ ";";
   forwards to
     appendAGDcl(
-      destructAttributeDclMultiple('destruct', $2, inh, $6, $7, qs, $9, location=top.location),
+      destructAttributeDclMultiple('destruct', $2, inh, 'with', typerepTypeExpr(inhSetType([]), location=top.location), $6, $7, qs, $9, location=top.location),
       equalityAttributeDclMultiple($1, $2, syn, 'with', qNameId(inh, location=top.location), $6, $7, qs, $9, location=top.location),
       location=top.location);
 }
@@ -102,7 +102,7 @@ top::AGDcl ::= 'ordering' 'attribute' inh::Name ',' keySyn::Name ',' syn::Name '
   top.unparse = "ordering attribute " ++ inh.unparse ++ ", " ++ keySyn.name ++ ", " ++ syn.name ++ ";";
   forwards to
     appendAGDcl(
-      destructAttributeDcl('destruct', $2, inh, $8, location=top.location),
+      destructAttributeDcl('destruct', $2, inh, 'with', typerepTypeExpr(inhSetType([]), location=top.location), $8, location=top.location),
       orderingAttributeDcl($1, $2, keySyn, $6, syn, 'with', qNameId(inh, location=top.location), $8, location=top.location),
       location=top.location);
 }
@@ -112,7 +112,7 @@ top::AGDcl ::= 'ordering' 'attribute' inh::Name ',' keySyn::Name ',' syn::Name '
   top.unparse = "ordering attribute " ++ inh.unparse ++ ", " ++ keySyn.name ++ ", " ++ syn.name ++ " occurs on " ++ qs.unparse ++ ";";
   forwards to
     appendAGDcl(
-      destructAttributeDclMultiple('destruct', $2, inh, $8, $9, qs, $11, location=top.location),
+      destructAttributeDclMultiple('destruct', $2, inh, 'with', typerepTypeExpr(inhSetType([]), location=top.location), $8, $9, qs, $11, location=top.location),
       orderingAttributeDclMultiple($1, $2, keySyn, $6, syn, 'with', qNameId(inh, location=top.location), $8, $9, qs, $11, location=top.location),
       location=top.location);
 }

@@ -31,7 +31,7 @@ top::Kind ::= k1::Kind k2::Kind
 
 -- TODO: Replace with default instance
 instance Eq Kind {
-  eq = \ k1::Kind k2::Kind -> decorate k1 with {compareTo = k2;}.isEqual;
+  eq = \ k1::Kind k2::Kind -> decorate k1 with {compareTo = decorate k2 with {};}.isEqual;
 }
 
 global constructorKind::(Kind ::= Integer) = \ arity::Integer ->

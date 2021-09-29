@@ -1,9 +1,9 @@
 grammar silver:compiler:extension:autoattr;
 
 concrete production destructAttributeDcl
-top::AGDcl ::= 'destruct' 'attribute' inh::Name ';'
+top::AGDcl ::= 'destruct' 'attribute' inh::Name 'with' i::TypeExpr ';'
 {
-  top.unparse = s"destruct attribute ${inh.unparse};";
+  top.unparse = s"destruct attribute ${inh.unparse} with ${i.unparse};";
   top.moduleNames := [];
 
   production attribute inhFName :: String;
@@ -13,10 +13,11 @@ top::AGDcl ::= 'destruct' 'attribute' inh::Name ';'
     if length(getAttrDclAll(inhFName, top.env)) > 1
     then [err(inh.location, "Attribute '" ++ inhFName ++ "' is already bound.")]
     else [];
+  top.errors <- i.errors;
   
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(destructDcl(inhFName, freshTyVar(starKind()), sourceGrammar=top.grammarName, sourceLocation=inh.location)))],
+      [attrDef(defaultEnvItem(destructDcl(inhFName, i.typerep.inhSetMembers, sourceGrammar=top.grammarName, sourceLocation=inh.location)))],
       location=top.location);
 }
 
