@@ -83,8 +83,23 @@ top::DclInfo ::= inh::String syn::String
   top.propagateDispatcher = propagateEquality(inh, _, location=_);
 }
 
+abstract production orderingKeyDcl
+top::DclInfo ::= syn::String
+{
+  top.fullName = syn;
+
+  top.typeScheme = monoType(stringType());
+  top.isSynthesized = true;
+  
+  top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+  top.propagateDispatcher = propagateOrderingKey(_, location=_);
+}
+
 abstract production orderingDcl
-top::DclInfo ::= inh::String syn::String
+top::DclInfo ::= inh::String keySyn::String syn::String
 {
   top.fullName = syn;
 
@@ -95,7 +110,7 @@ top::DclInfo ::= inh::String syn::String
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
-  top.propagateDispatcher = propagateOrdering(inh, _, location=_);
+  top.propagateDispatcher = propagateOrdering(inh, keySyn, _, location=_);
 }
 
 abstract production unificationInhDcl
