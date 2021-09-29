@@ -1,40 +1,63 @@
 grammar silver:compiler:extension:autoattr;
 
 concrete production orderingAttributeDcl
-top::AGDcl ::= 'ordering' 'attribute' syn::Name 'with' inh::Name ';'
+top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QName ';'
 {
-  top.unparse = s"ordering attribute ${syn.unparse} with ${inh.unparse};";
+  top.unparse = s"ordering attribute ${keySyn.unparse}, ${syn.unparse} with ${inh.unparse};";
   top.moduleNames := [];
 
   production attribute inhFName :: String;
-  inhFName = top.grammarName ++ ":" ++ inh.name;
+  inhFName = inh.lookupAttribute.fullName;
+  production attribute keySynFName :: String;
+  keySynFName = top.grammarName ++ ":" ++ keySyn.name;
   production attribute synFName :: String;
   synFName = top.grammarName ++ ":" ++ syn.name;
-  
+
   top.errors <-
     if length(getAttrDclAll(synFName, top.env)) > 1
     then [err(syn.location, "Attribute '" ++ synFName ++ "' is already bound.")]
     else [];
-  
+
+  top.errors <-
+    if length(getAttrDclAll(keySynFName, top.env)) > 1
+    then [err(syn.location, "Attribute '" ++ keySynFName ++ "' is already bound.")]
+    else [];
+
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(orderingDcl(inhFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
+      [attrDef(defaultEnvItem(orderingKeyDcl(keySynFName, sourceGrammar=top.grammarName, sourceLocation=syn.location))),
+       attrDef(defaultEnvItem(orderingDcl(inhFName, keySynFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
       location=top.location);
 }
 
 {--
- - Propagate a ordering synthesized attribute on the enclosing production
- - @param attr  The name of the attribute to propagate
+ - Propagate a ordering key synthesized attribute on the enclosing production
  -}
-abstract production propagateOrdering
-top::ProductionStmt ::= inh::String syn::Decorated QName
+abstract production propagateOrderingKey
+top::ProductionStmt ::= syn::Decorated QName
 {
   top.unparse = s"propagate ${syn.unparse};";
-  
+
   forwards to
     Silver_ProductionStmt {
       $name{top.frame.signature.outputElement.elementName}.$QName{new(syn)} =
-        case $name{top.frame.signature.outputElement.elementName}.$name{inh} of
+        $Expr{stringConst(terminal(String_t, s"\"${top.frame.fullName}\""), location=top.location)};
+    };
+}
+
+{--
+ - Propagate a ordering synthesized attribute on the enclosing production
+ -}
+abstract production propagateOrdering
+top::ProductionStmt ::= inh::String keySyn::String syn::Decorated QName
+{
+  top.unparse = s"propagate ${syn.unparse};";
+  
+  local topName::String = top.frame.signature.outputElement.elementName;
+  forwards to
+    Silver_ProductionStmt {
+      $name{topName}.$QName{new(syn)} =
+        case $name{topName}.$name{inh} of
         | $Pattern{
             prodAppPattern(
               qName(top.location, top.frame.signature.fullName),
@@ -60,7 +83,7 @@ top::ProductionStmt ::= inh::String syn::Decorated QName
                     then Silver_Expr { silver:core:compare($name{ie.elementName}, $name{ie.elementName ++ "2"}) }
                     else Silver_Expr { $name{ie.elementName}.$QName{new(syn)} },
                   top.frame.signature.inputElements))}
-        | _ -> false
+        | _ -> silver:core:compare($name{topName}.$name{keySyn}, $name{topName}.$name{inh}.$name{keySyn})
         end;
     };
 }

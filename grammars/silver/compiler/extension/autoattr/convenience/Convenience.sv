@@ -54,7 +54,7 @@ top::AGDcl ::= 'destruct' 'attribute' a::Name 'occurs' 'on' qs::QNames ';'
 }
 
 concrete production equalityAttributeDclMultiple
-top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::Name 'occurs' 'on' qs::QNames ';'
+top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName 'occurs' 'on' qs::QNames ';'
 {
   top.unparse = "equality attribute " ++ syn.name ++ " with " ++ inh.unparse ++ " occurs on " ++ qs.unparse ++ ";";
   forwards to
@@ -65,12 +65,12 @@ top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::Name 'occurs' 'on' q
 }
 
 concrete production orderingAttributeDclMultiple
-top::AGDcl ::= 'ordering' 'attribute' syn::Name 'with' inh::Name 'occurs' 'on' qs::QNames ';'
+top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QName 'occurs' 'on' qs::QNames ';'
 {
-  top.unparse = "ordering attribute " ++ syn.name ++ " with " ++ inh.unparse ++ " occurs on " ++ qs.unparse ++ ";";
+  top.unparse = "ordering attribute " ++ keySyn.name ++ ", " ++ syn.name ++ " with " ++ inh.unparse ++ " occurs on " ++ qs.unparse ++ ";";
   forwards to
     appendAGDcl(
-      orderingAttributeDcl($1, $2, syn, $4, inh, $9, location=top.location),
+      orderingAttributeDcl($1, $2, keySyn, $4, syn, $6, inh, $11, location=top.location),
       makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
       location=top.location);
 }
@@ -83,7 +83,7 @@ top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name ';'
   forwards to
     appendAGDcl(
       destructAttributeDcl('destruct', $2, inh, $6, location=top.location),
-      equalityAttributeDcl($1, $2, syn, 'with', inh, $6, location=top.location),
+      equalityAttributeDcl($1, $2, syn, 'with', qNameId(inh, location=top.location), $6, location=top.location),
       location=top.location);
 }
 concrete production destructEqualityAttributeDclMultiple
@@ -93,27 +93,27 @@ top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name 'occurs' 'on' qs::
   forwards to
     appendAGDcl(
       destructAttributeDclMultiple('destruct', $2, inh, $6, $7, qs, $9, location=top.location),
-      equalityAttributeDclMultiple($1, $2, syn, 'with', inh, $6, $7, qs, $9, location=top.location),
+      equalityAttributeDclMultiple($1, $2, syn, 'with', qNameId(inh, location=top.location), $6, $7, qs, $9, location=top.location),
       location=top.location);
 }
 concrete production destructOrderingAttributeDcl
-top::AGDcl ::= 'ordering' 'attribute' inh::Name ',' syn::Name ';'
+top::AGDcl ::= 'ordering' 'attribute' inh::Name ',' keySyn::Name ',' syn::Name ';'
 {
-  top.unparse = "ordering attribute " ++ inh.unparse ++ ", " ++ syn.name ++ ";";
+  top.unparse = "ordering attribute " ++ inh.unparse ++ ", " ++ keySyn.name ++ ", " ++ syn.name ++ ";";
   forwards to
     appendAGDcl(
-      destructAttributeDcl('destruct', $2, inh, $6, location=top.location),
-      orderingAttributeDcl($1, $2, syn, 'with', inh, $6, location=top.location),
+      destructAttributeDcl('destruct', $2, inh, $8, location=top.location),
+      orderingAttributeDcl($1, $2, keySyn, $6, syn, 'with', qNameId(inh, location=top.location), $8, location=top.location),
       location=top.location);
 }
 concrete production destructOrderingAttributeDclMultiple
-top::AGDcl ::= 'ordering' 'attribute' inh::Name ',' syn::Name 'occurs' 'on' qs::QNames ';'
+top::AGDcl ::= 'ordering' 'attribute' inh::Name ',' keySyn::Name ',' syn::Name 'occurs' 'on' qs::QNames ';'
 {
-  top.unparse = "ordering attribute " ++ inh.unparse ++ ", " ++ syn.name ++ " occurs on " ++ qs.unparse ++ ";";
+  top.unparse = "ordering attribute " ++ inh.unparse ++ ", " ++ keySyn.name ++ ", " ++ syn.name ++ " occurs on " ++ qs.unparse ++ ";";
   forwards to
     appendAGDcl(
-      destructAttributeDclMultiple('destruct', $2, inh, $6, $7, qs, $9, location=top.location),
-      orderingAttributeDclMultiple($1, $2, syn, 'with', inh, $6, $7, qs, $9, location=top.location),
+      destructAttributeDclMultiple('destruct', $2, inh, $8, $9, qs, $11, location=top.location),
+      orderingAttributeDclMultiple($1, $2, keySyn, $6, syn, 'with', qNameId(inh, location=top.location), $8, $9, qs, $11, location=top.location),
       location=top.location);
 }
 

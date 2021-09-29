@@ -1,13 +1,13 @@
 grammar silver:compiler:extension:autoattr;
 
 concrete production equalityAttributeDcl
-top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::Name ';'
+top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName ';'
 {
   top.unparse = s"equality attribute ${syn.unparse} with ${inh.unparse};";
   top.moduleNames := [];
 
   production attribute inhFName :: String;
-  inhFName = top.grammarName ++ ":" ++ inh.name;
+  inhFName = inh.lookupAttribute.fullName;
   production attribute synFName :: String;
   synFName = top.grammarName ++ ":" ++ syn.name;
   

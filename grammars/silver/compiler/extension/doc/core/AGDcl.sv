@@ -123,11 +123,20 @@ top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr
 }
 
 aspect production equalityAttributeDcl
-top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name ';'
+top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName ';'
 {
-  top.docForName = inh.name++" and "++syn.name++" (equality pair)";
-  top.docUnparse = s"`equality attribute ${inh.name}, ${syn.name}`";
-  top.docDcls := [pair(inh.name, docDclInfo(inh.name, top.location, top.grammarName)),
+  top.docForName = syn.name;
+  top.docUnparse = s"`equality attribute ${syn.name} with ${inh.name}`";
+  top.docDcls := [pair(syn.name, docDclInfo(syn.name, top.location, top.grammarName))];
+  top.docs := [mkUndocumentedItem(top.docForName, top)];
+}
+
+aspect production orderingAttributeDcl
+top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QName ';'
+{
+  top.docForName = keySyn.name++" and "++syn.name++" (ordering pair)";
+  top.docUnparse = s"`ordering attribute ${keySyn.name}, ${syn.name} with ${inh.name}`";
+  top.docDcls := [pair(keySyn.name, docDclInfo(keySyn.name, top.location, top.grammarName)),
                   pair(syn.name, docDclInfo(syn.name, top.location, top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
