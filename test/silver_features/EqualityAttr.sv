@@ -1,30 +1,30 @@
 grammar silver_features;
 
-nonterminal EqExpr with compareTo, isEqual;
+nonterminal EqExpr with compareTo, isEqual, compare;
 
 abstract production addEqExpr
 top::EqExpr ::= e1::EqExpr e2::EqExpr
 {
-  propagate compareTo, isEqual;
+  propagate compareTo, isEqual, compare;
 }
 
 abstract production intEqExpr
 top::EqExpr ::= i::Integer
 {
-  propagate compareTo, isEqual;
+  propagate compareTo, isEqual, compare;
 }
 
 abstract production appEqExpr
 top::EqExpr ::= n::String e::EqExpr
 {
-  propagate compareTo, isEqual;
+  propagate compareTo, isEqual, compare;
 }
 
-{- TODO: This gives an error in generated code
+{- TODO: This should give an error, but the error is in generated code at the moment so we can't test for it
 abstract production polyEqExpr
 Eq a => top::EqExpr ::= x::a
 {
-  propagate compareTo, isEqual;
+  propagate compareTo, isEqual, compare;
 }
 -}
 

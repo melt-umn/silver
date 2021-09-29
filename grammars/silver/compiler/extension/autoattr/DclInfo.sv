@@ -68,7 +68,7 @@ top::DclInfo ::= fn::String tyVar::TyVar
   top.propagateDispatcher = propagateDestruct(_, location=_);
 }
 
-abstract production equalitySynDcl
+abstract production equalityDcl
 top::DclInfo ::= inh::String syn::String
 {
   top.fullName = syn;
@@ -81,6 +81,21 @@ top::DclInfo ::= inh::String syn::String
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateEquality(inh, _, location=_);
+}
+
+abstract production orderingDcl
+top::DclInfo ::= inh::String syn::String
+{
+  top.fullName = syn;
+
+  top.typeScheme = monoType(intType());
+  top.isSynthesized = true;
+  
+  top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+  top.propagateDispatcher = propagateOrdering(inh, _, location=_);
 }
 
 abstract production unificationInhDcl
