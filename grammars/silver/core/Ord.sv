@@ -39,8 +39,6 @@ class Eq a => Ord a {
   min :: (a ::= a a) = \ x::a y::a -> if x >= y then y else x;
 }
 
-ordering attribute compare with compareTo;
-
 instance Ord Integer {
   compare = \ x::Integer y::Integer -> x - y;
   lt = ltInteger;
