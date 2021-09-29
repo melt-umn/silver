@@ -82,12 +82,12 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're UNdecorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  errCheck1 = checkNonterminal(e.typerep);
+  errCheck1 = checkNonterminal(top.env, true, e.typerep);
 
   -- TECHNICALLY, I think the current implementation makes this impossible,
   -- But let's leave it since it's the right thing to do.
   top.errors <-
-    if errCheck1.typeerror
+    if errCheck1.typeerror && q.found
     then [err(top.location, "Access of " ++ q.name ++ " from a decorated type.")]
     else [];
   
@@ -330,7 +330,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 
   thread downSubst, upSubst on top, e, errCheck1, inh, top;
 
-  errCheck1 = checkNonterminal(e.typerep);
+  errCheck1 = checkNonterminal(top.env, true, e.typerep);
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Operand to decorate must be a nonterminal.  Instead it is of type " ++ errCheck1.leftpp)]

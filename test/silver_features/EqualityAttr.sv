@@ -20,6 +20,14 @@ top::EqExpr ::= n::String e::EqExpr
   propagate isEqualTo, isEqual;
 }
 
+{- TODO: This gives an error in generated code
+abstract production polyEqExpr
+Eq a => top::EqExpr ::= x::a
+{
+  propagate isEqualTo, isEqual;
+}
+-}
+
 global ee1::EqExpr = addEqExpr(intEqExpr(42), appEqExpr("abc", intEqExpr(5)));
 global ee2::EqExpr = addEqExpr(intEqExpr(42), appEqExpr("c", intEqExpr(5)));
 global ee3::EqExpr = addEqExpr(appEqExpr("c", intEqExpr(5)), intEqExpr(42));

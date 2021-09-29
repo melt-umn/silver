@@ -7,10 +7,10 @@ nonterminal ConstraintList
   -- syntax doesn't "know about" the core layout terminals.
   -- Thus we have to set the layout explicitly for the "root" nonterminal here.
   layout {BlockComments, Comments, WhiteSpace}
-  with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, lexicalTyVarKinds, constraintPos;
-nonterminal Constraint with config, grammarName, env, flowEnv, location, unparse, errors, defs, contexts, lexicalTypeVariables, lexicalTyVarKinds, constraintPos;
+  with config, grammarName, env, flowEnv, location, unparse, errors, defs, occursDefs, contexts, lexicalTypeVariables, lexicalTyVarKinds, constraintPos;
+nonterminal Constraint with config, grammarName, env, flowEnv, location, unparse, errors, defs, occursDefs, contexts, lexicalTypeVariables, lexicalTyVarKinds, constraintPos;
 
-propagate errors, defs, lexicalTypeVariables, lexicalTyVarKinds on ConstraintList, Constraint;
+propagate errors, defs, occursDefs, lexicalTypeVariables, lexicalTyVarKinds on ConstraintList, Constraint;
 
 concrete production consConstraint
 top::ConstraintList ::= h::Constraint ',' t::ConstraintList
@@ -62,6 +62,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
   local instDcl::DclInfo = top.constraintPos.classInstDcl(fName, t.typerep, top.grammarName, top.location);
   top.defs <- [tcInstDef(instDcl)];
   top.defs <- transitiveSuperDefs(top.env, t.typerep, [], instDcl);
+  top.occursDefs <- transitiveSuperOccursDefs(top.env, t.typerep, [], instDcl);
 
   top.lexicalTyVarKinds <-
     case t of
@@ -69,6 +70,101 @@ top::Constraint ::= c::QNameType t::TypeExpr
       -- Avoid circular inference if someone uses a class constraint within its own definition
       when top.constraintPos.classDefName != just(fName) ->
       [pair(tv.lexeme, c.lookupType.typeScheme.monoType.kindrep)]
+    | _ -> []
+    end;
+}
+
+concrete production inhOccursConstraint
+top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' t::TypeExpr
+{
+  top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ t.unparse;
+  top.contexts = [inhOccursContext(fName, attl.types, attrTy, t.typerep)];
+  
+  production dcl::DclInfo = at.lookupAttribute.dcl;
+  production fName::String = at.lookupAttribute.fullName;
+
+  top.errors <- at.lookupAttribute.errors;
+  top.errors <-
+    if at.lookupAttribute.found && !dcl.isInherited
+    then [err(at.location, fName ++ " is not an inherited attribute")]
+    else [];
+  
+  top.errors <-
+    if attl.missingCount > 0
+    then [err(attl.location, "Attribute type arguments cannot contain _")]
+    else [];
+
+  -- Make sure we get the number and kind of type variables correct for the ATTR
+  top.errors <-
+    if length(atTypeScheme.boundVars) != length(attl.types)
+    then [err(at.location,
+      at.name ++ " expects " ++ toString(length(atTypeScheme.boundVars)) ++
+      " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
+    else if map((.kindrep), atTypeScheme.boundVars) != map((.kindrep), attl.types)
+    then [err(at.location,
+      at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kindrep), atTypeScheme.boundVars))) ++
+        "but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), attl.types)) ++ ".")]
+    else [];
+  
+  top.errors <- t.errorsKindStar;
+  
+  local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
+  local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
+  production attrTy::Type = performRenaming(atTypeScheme.typerep, rewrite);
+
+  local instDcl::DclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy, top.grammarName, top.location);
+  top.occursDefs <- [instDcl];
+}
+
+concrete production synOccursConstraint
+top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExpr 'occurs' 'on' t::TypeExpr
+{
+  top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " " ++ i.unparse ++ " occurs on " ++ t.unparse;
+  top.contexts = [synOccursContext(fName, attl.types, attrTy, i.typerep, t.typerep)];
+  
+  production dcl::DclInfo = at.lookupAttribute.dcl;
+  production fName::String = at.lookupAttribute.fullName;
+
+  top.errors <- at.lookupAttribute.errors;
+  top.errors <-
+    if at.lookupAttribute.found && !dcl.isSynthesized
+    then [err(at.location, fName ++ " is not a synthesized attribute")]
+    else [];
+  
+  top.errors <-
+    if attl.missingCount > 0
+    then [err(attl.location, "Attribute type arguments cannot contain _")]
+    else [];
+
+  -- Make sure we get the number and kind of type variables correct for the ATTR
+  top.errors <-
+    if length(atTypeScheme.boundVars) != length(attl.types)
+    then [err(at.location,
+      at.name ++ " expects " ++ toString(length(atTypeScheme.boundVars)) ++
+      " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
+    else if map((.kindrep), atTypeScheme.boundVars) != map((.kindrep), attl.types)
+    then [err(at.location,
+      at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kindrep), atTypeScheme.boundVars))) ++
+        "but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), attl.types)) ++ ".")]
+    else [];
+
+  top.errors <-
+    if i.typerep.kindrep != inhSetKind()
+    then [err(i.location, s"${i.unparse} has kind ${prettyKind(i.typerep.kindrep)}, but kind InhSet is expected here")]
+    else [];
+    
+  top.errors <- t.errorsKindStar;
+  
+  local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
+  local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
+  production attrTy::Type = performRenaming(atTypeScheme.typerep, rewrite);
+
+  local instDcl::DclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy, top.grammarName, top.location);
+  top.occursDefs <- [instDcl];
+
+  top.lexicalTyVarKinds <-
+    case i of
+    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, inhSetKind())]
     | _ -> []
     end;
 }
@@ -126,11 +222,12 @@ top::Constraint ::= i1::TypeExpr 'subset' i2::TypeExpr
 }
 
 synthesized attribute classInstDcl::(DclInfo ::= String Type String Location);
+synthesized attribute occursInstDcl::(DclInfo ::= String Type Type String Location);
 synthesized attribute typeableInstDcl::(DclInfo ::= Type String Location);
 synthesized attribute inhSubsetInstDcl::(DclInfo ::= Type Type String Location);
 synthesized attribute classDefName::Maybe<String>;
 synthesized attribute instanceHead::Maybe<Context>;
-nonterminal ConstraintPosition with classInstDcl, typeableInstDcl, inhSubsetInstDcl, classDefName, instanceHead;
+nonterminal ConstraintPosition with classInstDcl, occursInstDcl, typeableInstDcl, inhSubsetInstDcl, classDefName, instanceHead;
 
 aspect default production
 top::ConstraintPosition ::=
@@ -142,6 +239,7 @@ abstract production instancePos
 top::ConstraintPosition ::= instHead::Context tvs::[TyVar]
 {
   top.classInstDcl = instConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
+  top.occursInstDcl = occursInstConstraintDcl(_, _, _, tvs, sourceGrammar=_, sourceLocation=_);
   top.typeableInstDcl = typeableInstConstraintDcl(_, tvs, sourceGrammar=_, sourceLocation=_);
   top.inhSubsetInstDcl = inhSubsetInstConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
   top.instanceHead = just(instHead);
@@ -151,11 +249,15 @@ top::ConstraintPosition ::= className::String tvs::[TyVar]
 {
   top.classInstDcl = \ fName::String t::Type g::String l::Location ->
     instSuperDcl(fName,
-      currentInstDcl(error("Class name shouldn't be needed"), t, sourceGrammar=g, sourceLocation=l),
+      currentInstDcl(className, t, sourceGrammar=g, sourceLocation=l),
+      sourceGrammar=g, sourceLocation=l);
+  top.occursInstDcl = \ fName::String ntty::Type atty::Type g::String l::Location ->
+    occursSuperDcl(fName, atty,
+      currentInstDcl(className, ntty, sourceGrammar=g, sourceLocation=l),
       sourceGrammar=g, sourceLocation=l);
   top.typeableInstDcl = \ t::Type g::String l::Location ->
     typeableSuperDcl(
-      currentInstDcl(error("Class name shouldn't be needed"), t, sourceGrammar=g, sourceLocation=l),
+      currentInstDcl(className, t, sourceGrammar=g, sourceLocation=l),
       sourceGrammar=g, sourceLocation=l);
   top.inhSubsetInstDcl = error("subset constraint not permitted as superclass");
   top.classDefName = just(className);
@@ -164,6 +266,7 @@ abstract production classMemberPos
 top::ConstraintPosition ::= className::String tvs::[TyVar]
 {
   top.classInstDcl = instConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
+  top.occursInstDcl = occursInstConstraintDcl(_, _, _, tvs, sourceGrammar=_, sourceLocation=_);
   top.typeableInstDcl = typeableInstConstraintDcl(_, tvs, sourceGrammar=_, sourceLocation=_);
   top.inhSubsetInstDcl = inhSubsetInstConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
   top.classDefName = just(className);
@@ -176,6 +279,7 @@ abstract production signaturePos
 top::ConstraintPosition ::= sig::NamedSignature
 {
   top.classInstDcl = sigConstraintDcl(_, _, sig, sourceGrammar=_, sourceLocation=_);
+  top.occursInstDcl = occursSigConstraintDcl(_, _, _, sig, sourceGrammar=_, sourceLocation=_);
   top.typeableInstDcl = typeableSigConstraintDcl(_, sig, sourceGrammar=_, sourceLocation=_);
   top.inhSubsetInstDcl = inhSubsetSigConstraintDcl(_, _, sig, sourceGrammar=_, sourceLocation=_);
 }
@@ -184,6 +288,7 @@ top::ConstraintPosition ::= tvs::[TyVar]
 {
   -- These are translated the same as instance constraints.
   top.classInstDcl = instConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
+  top.occursInstDcl = occursInstConstraintDcl(_, _, _, tvs, sourceGrammar=_, sourceLocation=_);
   top.typeableInstDcl = typeableInstConstraintDcl(_, tvs, sourceGrammar=_, sourceLocation=_);
   top.inhSubsetInstDcl = inhSubsetInstConstraintDcl(_, _, tvs, sourceGrammar=_, sourceLocation=_);
 }
@@ -211,6 +316,8 @@ Boolean ::= c1::Context c2::Context
   return
     case c1, c2 of
     | instContext(c1, _), instContext(c2, _) -> c1 == c2
+    | inhOccursContext(a1, _, _, _), inhOccursContext(a2, _, _, _) -> a1 == a2
+    | synOccursContext(a1, _, _, _, _), synOccursContext(a2, _, _, _, _) -> a1 == a2
     | typeableContext(_), typeableContext(_) -> true
     | _, _ -> false
     end;
@@ -233,6 +340,27 @@ function transitiveSuperDefs
     else
       -- This might introduce duplicate defs in "diamond subclassing" cases,
       -- but that shouldn't actually be an issue besides the (minor) added lookup overhead.
-      map(\ c::Context -> tcInstDef(c.contextSuperDcl(instDcl, dcl.sourceGrammar, dcl.sourceLocation)), dcl.superContexts) ++
+      flatMap(\ c::Context -> c.contextSuperDefs(instDcl, dcl.sourceGrammar, dcl.sourceLocation), dcl.superContexts) ++
       flatMap(transitiveSuperDefs(env, ty, dcl.fullName :: seenClasses, _), superInstDcls);
+}
+
+function transitiveSuperOccursDefs
+[DclInfo] ::= env::Decorated Env ty::Type seenClasses::[String] instDcl::DclInfo
+{
+  local dcls::[DclInfo] = getTypeDcl(instDcl.fullName, env);
+  local dcl::DclInfo = head(dcls);
+  dcl.givenInstanceType = ty;
+  local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
+  local superInstDcls::[DclInfo] =
+    map(
+      instSuperDcl(_, instDcl, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
+      superClassNames);
+  return
+    if null(dcls) || contains(dcl.fullName, seenClasses)
+    then []
+    else
+      -- This might introduce duplicate defs in "diamond subclassing" cases,
+      -- but that shouldn't actually be an issue besides the (minor) added lookup overhead.
+      flatMap(\ c::Context -> c.contextSuperOccursDefs(instDcl, dcl.sourceGrammar, dcl.sourceLocation), dcl.superContexts) ++
+      flatMap(transitiveSuperOccursDefs(env, ty, dcl.fullName :: seenClasses, _), superInstDcls);
 }

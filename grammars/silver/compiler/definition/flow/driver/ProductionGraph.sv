@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:flow:driver;
 
-import silver:compiler:definition:type only isDecorable, typerep;
+import silver:compiler:definition:type only isNonterminal, typerep;
 
 nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, suspectEdgeMap, cullSuspect, flowTypeVertexes, prodGraphs;
 
@@ -198,7 +198,7 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
 
   -- RHS and locals and forward.
   local stitchPoints :: [StitchPoint] =
-    rhsStitchPoints(dcl.namedSignature.inputElements) ++
+    flatMap(rhsStitchPoints, dcl.namedSignature.inputElements) ++
     localStitchPoints(nt, defs) ++
     patternStitchPoints(realEnv, defs);
   
@@ -246,7 +246,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv  realEnv::Dec
 
   -- RHS and locals and forward.
   local stitchPoints :: [StitchPoint] =
-    rhsStitchPoints(ns.inputElements) ++
+    flatMap(rhsStitchPoints, ns.inputElements) ++
     localStitchPoints(error("functions shouldn't have a forwarding equation?"), defs) ++
     patternStitchPoints(realEnv, defs);
 
@@ -446,26 +446,22 @@ function localStitchPoints
   | [] -> []
   -- We add the forward stitch point here, too!
   | fwdEq(_, _, _) :: rest -> nonterminalStitchPoint(nt, forwardVertexType) :: localStitchPoints(nt, rest)
-  -- Ignore locals that aren't nonterminal types!
-  | localEq(_, fN, "", _) :: rest -> localStitchPoints(nt, rest)
   -- Add locals that are nonterminal types.
-  | localEq(_, fN, tN, _) :: rest -> nonterminalStitchPoint(tN, localVertexType(fN)) :: localStitchPoints(nt, rest)
-  -- Add all anon decoration sites
-  | anonEq(_, fN, tN, _, _) :: rest -> nonterminalStitchPoint(tN, anonVertexType(fN)) :: localStitchPoints(nt, rest)
+  | localEq(_, fN, tN, true, _) :: rest -> nonterminalStitchPoint(tN, localVertexType(fN)) :: localStitchPoints(nt, rest)
+  -- Add anon decoration sites that are nonterminal types
+  | anonEq(_, fN, tN, true, _, _) :: rest -> nonterminalStitchPoint(tN, anonVertexType(fN)) :: localStitchPoints(nt, rest)
   -- Ignore all other flow def info
   | _ :: rest -> localStitchPoints(nt, rest)
   end;
 }
 function rhsStitchPoints
-[StitchPoint] ::= rhs::[NamedSignatureElement]
+[StitchPoint] ::= rhs::NamedSignatureElement
 {
-  return if null(rhs) then []
-  -- We want only NONTERMINAL stitch points!
-  else if head(rhs).typerep.isDecorable
-       then nonterminalStitchPoint(
-              head(rhs).typerep.typeName,
-              rhsVertexType(head(rhs).elementName)) :: rhsStitchPoints(tail(rhs))
-       else rhsStitchPoints(tail(rhs));
+  return
+    -- We want only NONTERMINAL stitch points!
+    if rhs.typerep.isNonterminal
+    then [nonterminalStitchPoint(rhs.typerep.typeName, rhsVertexType(rhs.elementName))]
+    else [];
 }
 function patternStitchPoints
 [StitchPoint] ::= realEnv::Decorated Env  defs::[FlowDef]

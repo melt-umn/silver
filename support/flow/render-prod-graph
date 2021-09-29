@@ -1,0 +1,3 @@
+#!/bin/bash
+
+gvpr "E[$.name==\"($1/*)\" || $.name==\"(Phantom for $1/*)\"]" flow-deps-direct.dot | dot -Tpdf -o out.pdf # ${*:2}

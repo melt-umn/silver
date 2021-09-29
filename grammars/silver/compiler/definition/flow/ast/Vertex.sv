@@ -52,7 +52,7 @@ top::FlowVertex ::= sigName::String  attrName::String
 {--
  - A vertex representing a local equation. i.e. forward, local attribute, production
  - attribute, etc.  Note that this may be defined for MORE than just those with
- - nonterminal type!! (e.g. local foo :: String  will appear!)
+ - decorable type!! (e.g. local foo :: String  will appear!)
  - This is because the dependencies for these local equations still matter, of coursee.
  -
  - @param fName  the full name of the NTA/FWD being defined
@@ -66,7 +66,7 @@ top::FlowVertex ::= fName::String
 {--
  - A vertex representing an attribute on a local equation. i.e. forward, local
  - attribute, production attribute, etc.  Note this this implies the equation
- - above IS a nonterminal type!
+ - above IS a decorable type!
  -
  - @param fName  the full name of the NTA/FWD
  - @param attrName  the full name of the attribute on that element

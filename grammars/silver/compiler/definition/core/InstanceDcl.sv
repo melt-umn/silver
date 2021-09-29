@@ -52,7 +52,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   cl.env = newScopeEnv(headPreDefs, top.env);
   ty.env = cl.env;
   
-  body.env = newScopeEnv(headDefs, cl.env);
+  body.env = occursEnv(cl.occursDefs, newScopeEnv(headDefs, cl.env));
   body.className = id.lookupType.fullName;
   body.instanceType = ty.typerep; 
   body.expectedClassMembers = if id.lookupType.found then dcl.classMembers else [];
@@ -129,11 +129,20 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 
   top.fullName = id.lookupValue.fullName;
 
-  e.env = newScopeEnv(flatMap(\ c::Context ->
-      let instDcl::DclInfo = c.contextMemberDcl(boundVars, top.grammarName, top.location)
-      in tcInstDef(instDcl) :: transitiveSuperDefs(top.env, top.instanceType, [], instDcl)
-      end, memberContexts),
-    top.env);
+  local cmDefs::[Def] =
+    flatMap(
+      \ c::Context -> c.contextMemberDefs(boundVars, top.grammarName, top.location),
+      memberContexts);
+  local cmOccursDefs::[DclInfo] =
+    flatMap(
+      \ c::Context -> c.contextMemberOccursDefs(boundVars, top.grammarName, top.location),
+      memberContexts);
+  e.env =
+    newScopeEnv(
+      cmDefs ++ flatMap(transitiveSuperDefs(top.env, top.instanceType, [], _), flatMap((.instList), cmDefs)),
+      occursEnv(
+        cmOccursDefs ++ flatMap(transitiveSuperOccursDefs(top.env, top.instanceType, [], _), flatMap((.instList), cmDefs)),
+        top.env));
   e.originRules = [];
   e.isRoot = true;
 

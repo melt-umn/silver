@@ -47,6 +47,7 @@ top::AGDcl ::= attrs::NameList nt::QName ps::ProdNameList
   top.defs := [];
   top.occursDefs := [];
   top.moduleNames := [];
+  top.specDefs := [];
   
   local includedProds::[DclInfo] =
     filter(

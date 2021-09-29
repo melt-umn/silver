@@ -4,6 +4,8 @@ imports silver:compiler:definition:flow:ast;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:core;
 
+import silver:compiler:definition:type;
+
 
 autocopy attribute flowEnv :: Decorated FlowEnv;
 monoid attribute flowDefs :: [FlowDef];
@@ -158,3 +160,37 @@ function getGraphContribsFor
   return searchEnvTree(prod, e.prodGraphTree);
 }
 
+monoid attribute occursContextInhDeps::[(String, String, [String])]  -- (type name, syn, inhs)
+  occurs on Contexts, Context;
+monoid attribute occursContextInhSetDeps::[(String, String, [TyVar])]  -- (type name, syn, InhSet tyvars)
+  occurs on Contexts, Context;
+propagate occursContextInhDeps, occursContextInhSetDeps on Contexts;
+
+aspect default production
+top::Context ::=
+{
+  top.occursContextInhDeps := [];
+  top.occursContextInhSetDeps := [];
+}
+aspect production synOccursContext
+top::Context ::= syn::String _ _ inhs::Type ntty::Type
+{
+  local maxInhSetMembers::(Maybe<[String]>, [TyVar]) = getMaxInhSetMembers([], inhs, top.env);
+  top.occursContextInhDeps :=
+    case maxInhSetMembers.fst of
+    | just(inhAttrs) -> [(ntty.typeName, syn, inhAttrs)]
+    | nothing() -> []
+    end;
+  top.occursContextInhSetDeps := [(ntty.typeName, syn, maxInhSetMembers.snd)];
+}
+
+-- Defs for the dependencies introduced by syn occurs-on contexts at a decoration site
+function occursContextDeps
+[FlowDef] ::= ns::NamedSignature env::Decorated Env t::Type vt::VertexType
+{
+  local contexts::Contexts = foldContexts(ns.contexts);
+  contexts.env = env;
+  return map(
+    \ synDeps::(String, [String]) -> synOccursContextEq(ns.fullName, vt, synDeps.fst, synDeps.snd),
+    lookupAll(t.typeName, contexts.occursContextInhDeps));
+}

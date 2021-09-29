@@ -9,6 +9,12 @@ production zero
 top::Expr ::=
 {}
 
+production succ
+top::Expr ::= e::Expr
+{
+  e.env1 = top.env1;
+}
+
 function getRef
 Decorated Expr ::= x::Expr
 {
@@ -63,7 +69,7 @@ wrongCode "Expected return type is Decorated flow:Expr with i, but the expressio
   }
 }
 
-synthesized attribute getRefWith<a (i :: InhSet)>::Decorated a with i;
+synthesized attribute getRefWith<a (i :: InhSet)> :: Decorated a with i;
 nonterminal RExpr<(i :: InhSet)> with env1, env2, getRefWith<RExpr<i> i>;
 warnCode "Cannot take a reference of type Decorated flow:RExpr<i> with i, as the reference set is not bounded." {
   production mkRExprUnbounded

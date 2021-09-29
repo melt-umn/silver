@@ -723,7 +723,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   
   top.errors <- checkExpr.errors;
   top.errors <-
-    if !ty.typerep.isDecorable
+    if !isDecorable(ty.typerep, top.env)
     then [wrn(ty.location, "Only rules on nonterminals can have an effect")]
     else [];
   top.errors <- ty.errorsKindStar;

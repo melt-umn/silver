@@ -131,7 +131,6 @@ top::TypeExpr ::= InhSetLCurly_t inhs::FlowSpecInhs '}'
 
   -- When we are in a refTypeExpr where we know the nonterminal type,
   -- decorate the inhSetTypeExpr with onNt for better errors and lookup disambiguation.
-  -- TODO: Make this ref(inhs)
   production ntInhs::FlowSpecInhs = inhs;
   ntInhs.config = top.config;
   ntInhs.grammarName = top.grammarName;
