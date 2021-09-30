@@ -32,7 +32,13 @@ top::Context ::= cls::String t::Type
     -- Only refine to the *undecorated* type based on instances, since if left
     -- unrefined the type will be treated as decorated, anyway (and leaving it
     -- unrefined will result in less confusing behavior.)
-    | ntOrDecType(nt, inhs, _) when !null(getInstanceDcl(cls, nt, top.env)) && null(getInstanceDcl(cls, decoratedType(nt, inhs), top.env)) ->
+    -- If there is an instance for the undecorated type, and all instances for
+    -- the decorated type are typeError instances (or there are none),
+    -- then specialize to the undecorated type, since the decorated type will
+    -- always give a type error.
+    | ntOrDecType(nt, inhs, _) when
+        !null(getInstanceDcl(cls, nt, top.env)) &&
+        all(map((.isTypeError), getInstanceDcl(cls, decoratedType(nt, inhs), top.env))) ->
       composeSubst(top.downSubst, substT.unifyInstanceNonterminal)
     | _ -> top.downSubst
     end;
@@ -118,6 +124,14 @@ top::Context ::= i1::Type i2::Type
       | (_, tvs1), (_, tvs2) when any(map(contains(_, tvs2), tvs1)) -> []
       | _, _ -> [err(top.contextLoc, s"${prettyTypeWith(i1, top.freeVariables)} is not a subset of ${prettyTypeWith(i2, top.freeVariables)} (arising from ${top.contextSource})")]
       end;
+
+  top.upSubst = top.downSubst; -- No effect on decoratedness
+}
+
+aspect production typeErrorContext
+top::Context ::= msg::String
+{
+  top.contextErrors := [err(top.contextLoc, msg ++ " (arising from " ++ top.contextSource ++ ")")];
 
   top.upSubst = top.downSubst; -- No effect on decoratedness
 }

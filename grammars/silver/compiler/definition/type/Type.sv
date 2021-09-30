@@ -77,6 +77,12 @@ top::Context ::= i1::Type i2::Type
   top.freeVariables = setUnionTyVars(i1.freeVariables, i2.freeVariables);
 }
 
+abstract production typeErrorContext
+top::Context ::= msg::String
+{
+  top.freeVariables = [];
+}
+
 {--
  - Silver Type Representations.
  -}

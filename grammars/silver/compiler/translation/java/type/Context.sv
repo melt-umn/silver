@@ -136,6 +136,17 @@ top::Context ::= i1::Type i2::Type
 """;
 }
 
+aspect production typeErrorContext
+top::Context ::= msg::String
+{
+  -- This should never get translated
+  top.transType = error("Translation demanded for typeError context!");
+  top.transContext = error("Translation demanded for typeError context!");
+  top.transContextMemberName = error("Translation demanded for typeError context!");
+  top.transContextSuperAccessorName = error("Translation demanded for typeError context!");
+  top.transContextSuperAccessor = error("Translation demanded for typeError context!");
+}
+
 -- The translations of the narrowed forms of the instDcl's contexts are fed back as dcl.transContextDeps 
 inherited attribute transContextDeps::[String] occurs on DclInfo;
 attribute transContext occurs on DclInfo;

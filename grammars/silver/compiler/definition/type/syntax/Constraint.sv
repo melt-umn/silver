@@ -221,6 +221,19 @@ top::Constraint ::= i1::TypeExpr 'subset' i2::TypeExpr
     end;
 }
 
+concrete production typeErrorConstraint
+top::Constraint ::= 'typeError' msg::String_t
+{
+  top.unparse = "typeError " ++ msg.lexeme;
+  top.contexts = [typeErrorContext(unescapeString(substring(1, length(msg.lexeme) - 1, msg.lexeme)))];
+
+  top.errors <-
+    case top.constraintPos of
+    | instancePos(_, _) -> []
+    | _ -> [err(top.location, "typeError constraint is only permitted on instances")]
+    end;
+}
+
 synthesized attribute classInstDcl::(DclInfo ::= String Type String Location);
 synthesized attribute occursInstDcl::(DclInfo ::= String Type Type String Location);
 synthesized attribute typeableInstDcl::(DclInfo ::= Type String Location);
