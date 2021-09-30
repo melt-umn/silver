@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [ ! -d jars ]; then
   echo "Run from silver root as './support/profile/run.sh'"
