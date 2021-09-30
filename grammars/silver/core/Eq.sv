@@ -32,6 +32,11 @@ instance attribute compareTo<a> occurs on a,
   eq = \ x::a y::a -> decorate x with {compareTo = decorate y with {};}.isEqual;
 }
 
+instance typeError "Equality is not supported for Decorated types"
+         => Eq Decorated a with i {
+  eq = error("type error");
+}
+
 instance Eq Integer {
   eq = eqInteger;
   neq = neqInteger;
