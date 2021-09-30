@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script will use Silver to build an AG evaluator for the
 # tutorials grammar and run ant to compile the resulting Java code.
