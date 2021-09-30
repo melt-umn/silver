@@ -115,22 +115,7 @@ top::DclInfo ::= inh::String keySyn::String syn::String
   top.propagateDispatcher = propagateOrdering(inh, keySyn, _, location=_);
 }
 
-abstract production unificationInhDcl
-top::DclInfo ::= fn::String tyVar::TyVar inhs::[String]
-{
-  top.fullName = fn;
-
-  top.typeScheme = polyType([tyVar], decoratedType(varType(tyVar), inhSetType(sort(nub(fn :: inhs)))));
-  top.isInherited = true;
-  
-  top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: should probably be an error handler! access inh from undecorated?
-  top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_); -- Allow normal inh equations
-  top.attributionDispatcher = unificationInhAttributionDcl(_, _, _, _, location=_); -- Same as functor, except decorated
-  top.propagateDispatcher = propagateDestruct(_, location=_);
-}
-
-abstract production unificationSynPartialDcl
+abstract production unificationPartialDcl
 top::DclInfo ::= inh::String synPartial::String syn::String
 {
   top.fullName = synPartial;
@@ -145,7 +130,7 @@ top::DclInfo ::= inh::String synPartial::String syn::String
   top.propagateDispatcher = propagateUnificationSynPartial(inh, _, syn, location=_);
 }
 
-abstract production unificationSynDcl
+abstract production unificationDcl
 top::DclInfo ::= inh::String synPartial::String syn::String
 {
   top.fullName = syn;

@@ -71,7 +71,10 @@ top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QNa
   forwards to
     appendAGDcl(
       orderingAttributeDcl($1, $2, keySyn, $4, syn, $6, inh, $11, location=top.location),
-      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
+      appendAGDcl(
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(keySyn, location=syn.location), botlNone(location=top.location)), qs.qnames),
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
+        location=top.location),
       location=top.location);
 }
 
@@ -118,18 +121,15 @@ top::AGDcl ::= 'ordering' 'attribute' inh::Name ',' keySyn::Name ',' syn::Name '
 }
 
 concrete production unificationAttributeDclMultiple
-top::AGDcl ::= 'unification' 'attribute' inh::Name i::TypeExpr ',' synPartial::Name ',' syn::Name 'occurs' 'on' qs::QNames ';'
+top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' inh::QName 'occurs' 'on' qs::QNames ';'
 {
-  top.unparse = "equality attribute " ++ inh.unparse ++ " " ++ i.unparse ++ ", " ++ synPartial.name ++ ", " ++ syn.name ++ " occurs on " ++ qs.unparse ++ ";";
+  top.unparse = "unification attribute " ++ synPartial.name ++ ", " ++ syn.name ++ " with " ++ inh.unparse ++ " occurs on " ++ qs.unparse ++ ";";
   forwards to
     appendAGDcl(
-      unificationAttributeDcl($1, $2, inh, i, $5, syn, $7, synPartial, $12, location=top.location),
+      unificationAttributeDcl($1, $2, synPartial, ',', syn, 'with', inh, ';', location=top.location),
       appendAGDcl(
-        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location)), qs.qnames),
-        appendAGDcl(
-          makeOccursDclsHelp($1.location, qNameWithTL(qNameId(synPartial, location=synPartial.location), botlNone(location=top.location)), qs.qnames),
-          makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
-          location=top.location),
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(synPartial, location=synPartial.location), botlNone(location=top.location)), qs.qnames),
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
         location=top.location),
       location=top.location);
 }
