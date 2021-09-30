@@ -12,7 +12,8 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   production dcl::DclInfo = id.lookupType.dcl;
   dcl.givenInstanceType = ty.typerep;
   
-  production superContexts::Contexts = foldContexts(if id.lookupType.found then dcl.superContexts else []);
+  production superContexts::Contexts =
+    foldContexts(if id.lookupType.found && !foldContexts(cl.contexts).isTypeError then dcl.superContexts else []);
   superContexts.env = body.env;
   
   top.defs := [instDef(top.grammarName, id.location, fName, boundVars, cl.contexts, ty.typerep)];
