@@ -32,6 +32,9 @@ synthesized attribute contextClassName::Maybe<String> occurs on Context;
 
 synthesized attribute resolved::[DclInfo] occurs on Context;
 
+monoid attribute isTypeError::Boolean with false, || occurs on Contexts, Context;
+propagate isTypeError on Contexts, Context;
+
 aspect production instContext
 top::Context ::= cls::String t::Type
 {
@@ -154,12 +157,10 @@ top::Context ::= t::Type
 }
 
 synthesized attribute isTypeable::Boolean occurs on Type;
-aspect default production
-top::Type ::=
-{ top.isTypeable = true; }
-aspect production skolemType
-top::Type ::= _
-{ top.isTypeable = false; }
+aspect isTypeable on Type of
+| skolemType(_) -> false
+| _ -> true
+end;
 
 aspect production inhSubsetContext
 top::Context ::= i1::Type i2::Type
@@ -180,6 +181,20 @@ top::Context ::= i1::Type i2::Type
         !unifyDirectional(d.typeScheme.monoType, i1).failure && !d.typeScheme.monoType.isError &&
         !unifyDirectional(d.typerep2, i2).failure && !d.typerep2.isError,
       searchEnvTree("subset", top.env.instTree));
+}
+
+aspect production typeErrorContext
+top::Context ::= msg::String
+{
+  top.contextSuperDefs = \ DclInfo String Location -> [];
+  top.contextMemberDefs = \ [TyVar] String Location -> [];
+  top.contextSigDefs = \ NamedSignature String Location -> [];
+  top.contextSuperOccursDefs = \ d::DclInfo g::String l::Location -> [];
+  top.contextMemberOccursDefs = \ tvs::[TyVar] g::String l::Location -> [];
+  top.contextSigOccursDefs = \ ns::NamedSignature g::String l::Location -> [];
+  top.contextClassName = nothing();
+  top.resolved = [];
+  top.isTypeError <- true;
 }
 
 -- Invariant: This should be called when a and b are unifyable

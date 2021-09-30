@@ -61,6 +61,8 @@ public class AppTypeRep extends TypeRep {
 			}
 			String resultToString = it.hasNext()? it.next().toString() : "_";
 			result = "(" + resultToString + " ::= " + argsToString + ")";
+		} else {
+			result = a.toString();
 		}
 		if (it.hasNext()) {
 			result += "<" + it.next();

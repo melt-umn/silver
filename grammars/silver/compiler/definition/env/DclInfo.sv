@@ -55,6 +55,7 @@ closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- ever
                          classMembers, givenInstanceType, superContexts, typerep2, -- type classes, in the type namespace
                          namedSignature, hasForward, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
+                         isTypeError, -- instances
                          isInherited, isSynthesized, -- attrs
                          prodDefs, -- production attributes
                          substitutedDclInfo, givenSubstitution -- type substitutions on dcls
@@ -94,6 +95,7 @@ top::DclInfo ::=
   top.superContexts = [];
 
   -- instances
+  top.isTypeError := false;
   top.typerep2 = error("Internal compiler error: must be defined for all binary constraint instances");
   
   -- Values that are not fun/prod have this valid default.
@@ -354,6 +356,8 @@ top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
   top.fullName = fn;
   
   top.typeScheme = constraintType(bound, contexts, ty);
+
+  top.isTypeError := any(map((.isTypeError), contexts));
 }
 abstract production instConstraintDcl
 top::DclInfo ::= fntc::String ty::Type tvs::[TyVar]

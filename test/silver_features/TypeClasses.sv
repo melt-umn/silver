@@ -423,3 +423,32 @@ wrongCode "i1 is not a subset of i2 (arising from the use of partialUndecorate)"
     return partialUndecorate(x);
   }
 }
+
+class NotDecThing a {
+  consumeNDT :: (String ::= a);
+}
+instance NotDecThing a {
+  consumeNDT = \ x::a -> reflectTypeName(x).fromJust;
+}
+instance typeError "Not decorated" => NotDecThing Decorated a with i {
+  consumeNDT = error("type error");
+}
+
+global ndt1::String = consumeNDT(pair(12, false));
+equalityTest(ndt1, "silver:core:Pair<Integer Boolean>", String, silver_tests);
+
+wrongCode "Not decorated (arising from the instance for silver_features:NotDecThing Decorated silver:core:Pair<Integer Boolean> with {}, arising from the use of consumeNDT)" {
+  global ndt2::String = consumeNDT(decorate pair(12, false) with {});
+}
+
+function ndtMaybeDec
+String ::= l::Location
+{
+  -- Should specialize to undecorated Location
+  return consumeNDT(l);
+}
+equalityTest(ndtMaybeDec(txtLoc("foo")), "silver:core:Location", String, silver_tests);
+
+wrongCode "typeError constraint is only permitted on instances" {
+  class typeError "bad" => TEClass a {}
+}
