@@ -20,6 +20,8 @@ terminal InhSet_tkwd     'InhSet'     lexer classes {TYPE}; -- Well, actually a 
 
 terminal RuntimeTypeable_kwd 'runtimeTypeable' lexer classes {KEYWORD,RESERVED};
 terminal Subset_kwd          'subset'          lexer classes {KEYWORD};
+terminal TypeError_kwd       'typeError'       lexer classes {KEYWORD};
 
--- Avoid making 'subset' reserved, for now
+-- Avoid making these reserved, for now
 disambiguate Subset_kwd, IdLower_t { pluck Subset_kwd; }
+disambiguate TypeError_kwd, IdLower_t { pluck TypeError_kwd; }
