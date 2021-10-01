@@ -121,7 +121,7 @@ equalityTest(ocEq(ocEqPair(ee1, ee2), ocEqPair(ee1, ee3)), false, Boolean, silve
 wrongCode "Could not find an instance for attribute silver:core:isEqual {silver:core:compareTo} occurs on String (arising from the use of ocEqPair)" {
   global err::OCEqPair<EqExpr String> = ocEqPair(ee1, "abc");
 }
-wrongCode "Could not find an instance for attribute silver:core:compareTo<String> occurs on String (arising from the use of ocEqPair)" {
+wrongCode "Could not find an instance for attribute silver:core:compareTo<String {}> occurs on String (arising from the use of ocEqPair)" {
   global err::OCEqPair<EqExpr String> = ocEqPair(ee1, "abc");
 }
 

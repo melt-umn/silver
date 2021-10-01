@@ -11,7 +11,7 @@ top::Expr ::=
 { top.isEqual = false; }
 
 function isEqual
-attribute compareTo<a> occurs on a,
+attribute compareTo<a {}> occurs on a,
 attribute isEqual {compareTo} occurs on a =>
 Boolean ::= x::a y::a
 {
