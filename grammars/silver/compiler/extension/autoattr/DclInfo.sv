@@ -55,18 +55,19 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append::Operatio
 }
 
 abstract production destructDcl
-top::DclInfo ::= fn::String inhs::[String]
+top::DclInfo ::= fn::String
 {
   top.fullName = fn;
 
   production tyVar::TyVar = freshTyVar(starKind());
-  top.typeScheme = polyType([tyVar], decoratedType(varType(tyVar), inhSetType(inhs)));
+  production inhsTyVar::TyVar = freshTyVar(inhSetKind());
+  top.typeScheme = polyType([tyVar, inhsTyVar], decoratedType(varType(tyVar), varType(inhsTyVar)));
   top.isInherited = true;
   
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: should probably be an error handler! access inh from undecorated?
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_); -- Allow normal inh equations
-  top.attributionDispatcher = functorAttributionDcl(_, _, _, _, location=_); -- Same as functor
+  top.attributionDispatcher = destructAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateDestruct(_, location=_);
 }
 

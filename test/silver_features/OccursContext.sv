@@ -4,7 +4,7 @@ inherited attribute extraInh1::String occurs on EqExpr;
 inherited attribute extraInh2::Integer occurs on EqExpr;
 
 function eqA
-attribute compareTo<a> occurs on a, attribute isEqual {compareTo} occurs on a =>
+attribute compareTo<a {}> occurs on a, attribute isEqual {compareTo} occurs on a =>
 Boolean ::= x::a y::a
 {
   x.compareTo = y;
@@ -22,7 +22,7 @@ equalityTest(eqA(ee3, ee2), false, Boolean, silver_tests);
 equalityTest(eqA(ee3, ee3), true, Boolean, silver_tests);
 
 function eqB
-attribute compareTo<a> occurs on a, attribute isEqual {compareTo} occurs on a =>
+attribute compareTo<a {}> occurs on a, attribute isEqual {compareTo} occurs on a =>
 Boolean ::= x::a y::a
 {
   production z::a = x;
@@ -42,7 +42,7 @@ equalityTest(eqB(ee3, ee2), false, Boolean, silver_tests);
 equalityTest(eqB(ee3, ee3), true, Boolean, silver_tests);
 
 function eqC
-attribute compareTo<a> occurs on a, attribute isEqual {compareTo} occurs on a =>
+attribute compareTo<a {}> occurs on a, attribute isEqual {compareTo} occurs on a =>
 Boolean ::= x::(a ::= ) y::(a ::= )
 {
   production z::a = x();
@@ -75,7 +75,7 @@ instance OCEq String
   ocEq = \ x::String y::String -> x == y;
 }
 
-instance attribute compareTo<a> occurs on a, attribute isEqual {compareTo} occurs on a => OCEq a {
+instance attribute compareTo<a {}> occurs on a, attribute isEqual {compareTo} occurs on a => OCEq a {
   ocEq = \ x::a y::a -> decorate x with {compareTo = decorate y with {};}.isEqual; 
 }
 
@@ -91,8 +91,8 @@ equalityTest(ocEq(ee3, ee3), true, Boolean, silver_tests);
 
 nonterminal OCEqPair<a b> with compareTo, isEqual;
 production ocEqPair
-attribute compareTo<a> occurs on a, attribute isEqual {compareTo} occurs on a,
-attribute compareTo<b> occurs on b, attribute isEqual {compareTo} occurs on b =>
+attribute compareTo<a {}> occurs on a, attribute isEqual {compareTo} occurs on a,
+attribute compareTo<b {}> occurs on b, attribute isEqual {compareTo} occurs on b =>
 top::OCEqPair<a b> ::= x::a y::b
 {
   propagate compareTo, isEqual;

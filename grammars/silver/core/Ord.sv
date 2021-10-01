@@ -41,7 +41,7 @@ class Eq a => Ord a {
 
 ordering attribute compareKey, compare with compareTo;
 
-instance attribute compareTo<a> occurs on a,
+instance attribute compareTo<a {}> occurs on a,
          attribute isEqual {compareTo} occurs on a, -- Needed by Eq superclass
          attribute compareKey {compareTo} occurs on a,
          attribute compare {compareTo} occurs on a

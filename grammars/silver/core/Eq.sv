@@ -23,10 +23,10 @@ class Eq a {
   neq :: (Boolean ::= a a) = \ x::a y::a -> !(x == y);
 }
 
-destruct attribute compareTo with {};
+destruct attribute compareTo;
 equality attribute isEqual with compareTo;
 
-instance attribute compareTo<a> occurs on a,
+instance attribute compareTo<a {}> occurs on a,
          attribute isEqual {compareTo} occurs on a
          => Eq a {
   eq = \ x::a y::a -> decorate x with {compareTo = decorate y with {};}.isEqual;

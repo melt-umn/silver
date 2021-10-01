@@ -1,9 +1,9 @@
 grammar silver:compiler:extension:autoattr;
 
 concrete production destructAttributeDcl
-top::AGDcl ::= 'destruct' 'attribute' inh::Name 'with' i::TypeExpr ';'
+top::AGDcl ::= 'destruct' 'attribute' inh::Name ';'
 {
-  top.unparse = s"destruct attribute ${inh.unparse} with ${i.unparse};";
+  top.unparse = s"destruct attribute ${inh.unparse};";
   top.moduleNames := [];
 
   production attribute inhFName :: String;
@@ -13,11 +13,62 @@ top::AGDcl ::= 'destruct' 'attribute' inh::Name 'with' i::TypeExpr ';'
     if length(getAttrDclAll(inhFName, top.env)) > 1
     then [err(inh.location, "Attribute '" ++ inhFName ++ "' is already bound.")]
     else [];
-  top.errors <- i.errors;
   
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(destructDcl(inhFName, i.typerep.inhSetMembers, sourceGrammar=top.grammarName, sourceLocation=inh.location)))],
+      [attrDef(defaultEnvItem(destructDcl(inhFName, sourceGrammar=top.grammarName, sourceLocation=inh.location)))],
+      location=top.location);
+}
+
+abstract production destructAttributionDcl
+top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+{
+  top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
+  top.moduleNames := [];
+  
+  forwards to
+    defaultAttributionDcl(
+      at,
+      case attl.types of
+      | [] ->
+        botlSome(
+          bTypeList(
+            '<',
+            typeListCons(
+              case nttl of
+              | botlSome(tl) -> 
+                appTypeExpr(
+                  nominalTypeExpr(nt.qNameType, location=top.location),
+                  tl, location=top.location)
+              | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
+              end,
+              typeListSingle(
+                typerepTypeExpr(inhSetType([]), location=top.location), 
+                location=top.location),
+              location=top.location),
+            '>', location=top.location),
+          location=top.location)
+      | [i] ->
+        botlSome(
+          bTypeList(
+            '<',
+            typeListCons(
+              case nttl of
+              | botlSome(tl) -> 
+                appTypeExpr(
+                  nominalTypeExpr(nt.qNameType, location=top.location),
+                  tl, location=top.location)
+              | botlNone() -> nominalTypeExpr(nt.qNameType, location=top.location)
+              end,
+              typeListSingle(
+                typerepTypeExpr(i, location=top.location), 
+                location=top.location),
+              location=top.location),
+            '>', location=top.location),
+          location=top.location)
+      | _ -> attl
+      end,
+      nt, nttl,
       location=top.location);
 }
 
