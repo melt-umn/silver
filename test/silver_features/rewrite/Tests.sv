@@ -81,14 +81,10 @@ top::Foo ::= n::Integer
 {}
 
 propagate compareTo, isEqual on Foo;
--- TODO: Remove this instance once default exists
-instance Eq Foo {
-  eq = \ f1::Foo f2::Foo -> decorate f1 with {compareTo = f2;}.isEqual;
-}
 
 global s8::s:Strategy =
   rule on [Foo] of
-  | f1 :: f2 :: rest when decorate f1 with {compareTo = f2;}.isEqual -> f1 :: rest 
+  | f1 :: f2 :: rest when decorate f1 with {compareTo = decorate f2 with {};}.isEqual -> f1 :: rest 
   end;
 
 equalityTest(s:rewriteWith(s8, [foo(1), foo(2), foo(3)]), nothing(), Maybe<[Foo]>, silver_tests);

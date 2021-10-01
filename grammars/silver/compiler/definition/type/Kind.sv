@@ -28,11 +28,5 @@ top::Kind ::= k1::Kind k2::Kind
   top.argKinds = k1 :: k2.argKinds;
 }
 
-
--- TODO: Replace with default instance
-instance Eq Kind {
-  eq = \ k1::Kind k2::Kind -> decorate k1 with {compareTo = decorate k2 with {};}.isEqual;
-}
-
 global constructorKind::(Kind ::= Integer) = \ arity::Integer ->
   foldr(arrowKind, starKind(), repeat(starKind(), arity));

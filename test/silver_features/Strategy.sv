@@ -36,15 +36,6 @@ top::SStmt ::= n::String e::SExpr
 attribute compareTo, isEqual occurs on SExpr, SStmt;
 propagate compareTo, isEqual on SExpr, SStmt;
 
--- TODO: Remove these once default instance exists
-instance Eq SExpr {
-  eq = \ a::SExpr b::SExpr -> decorate a with {compareTo = b;}.isEqual;
-}
-instance Eq SStmt {
-  eq = \ a::SStmt b::SStmt -> decorate a with {compareTo = b;}.isEqual;
-}
-
-
 equalityTest(
   addSExpr(constSExpr(42), constSExpr(0)).elimPlusZero,
   constSExpr(42),

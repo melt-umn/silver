@@ -73,8 +73,9 @@ MyEq a => [a] ::= x::a xs::[a]
 }
 equalityTest(myRemove(3, [1, 2, 3, 4]), [1, 2, 4], [Integer], silver_tests);
 
-equality attribute isEqTo, isEq;
-nonterminal EqPair<a b> with fst<a>, snd<b>, isEqTo, isEq;
+inherited attribute isEqTo<a>::a;
+synthesized attribute isEq::Boolean;
+nonterminal EqPair<a b> with fst<a>, snd<b>, isEqTo<EqPair<a b>>, isEq;
 production eqPair
 MyEq a, MyEq b => top::EqPair<a b> ::= x::a y::b
 {

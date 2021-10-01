@@ -76,7 +76,7 @@ instance OCEq String
 }
 
 instance attribute compareTo<a> occurs on a, attribute isEqual {compareTo} occurs on a => OCEq a {
-  ocEq = \ x::a y::a -> decorate x with {compareTo = y;}.isEqual; 
+  ocEq = \ x::a y::a -> decorate x with {compareTo = decorate y with {};}.isEqual; 
 }
 
 equalityTest(ocEq(ee1, ee1), true, Boolean, silver_tests);
@@ -103,7 +103,7 @@ top::OCEqPair<a b> ::= x::a y::b
   -}
 }
 
-equalityTest(decorate ocEqPair(ee1, ee2) with {compareTo = ocEqPair(ee1, ee2);}.isEqual, true, Boolean, silver_tests);
+equalityTest(decorate ocEqPair(ee1, ee2) with {compareTo = decorate ocEqPair(ee1, ee2) with {};}.isEqual, true, Boolean, silver_tests);
 
 -- Not supported: decorated match on polymorphic child
 -- equalityTest(case decorate ocEqPair(ee1, ee2) with {compareTo = ocEqPair(ee1, ee2);} of ocEqPair(x, y) -> x.isEqual && y.isEqual end, true, Boolean, silver_tests);
@@ -125,7 +125,7 @@ top::OCEqPair<a b> ::= x::a y::b
   top.isEqual2 = x.isEqual && y.isEqual;
 }
 
-equalityTest(decorate ocEqPair(ee1, ee2) with {compareTo = ocEqPair(ee1, ee2);}.isEqual2, true, Boolean, silver_tests);
+equalityTest(decorate ocEqPair(ee1, ee2) with {compareTo = decorate ocEqPair(ee1, ee2) with {};}.isEqual2, true, Boolean, silver_tests);
 
 synthesized attribute prodName::String;
 nonterminal OCExpr with prodName;
