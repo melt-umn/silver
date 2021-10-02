@@ -172,7 +172,7 @@ function checkEqDeps
            then []
            else let
              anonl :: Maybe<Location> = lookup(fName, anonResolve)
-           in if anonl.isJust 
+           in if anonl.isJust
               then [mwdaWrn(anonl.fromJust, "Decoration requires inherited attribute for " ++ attrName ++ ".", runMwda)]
               else [] -- If it's not in the list, then it's a transitive dep from a DIFFERENT equation (and thus reported there)
            end
@@ -223,6 +223,39 @@ function inhDepsForSynOnType
 
 --------------------------------------------------------------------------------
 
+
+aspect production globalValueDclConcrete
+top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e::Expr ';'
+{
+  local transitiveDeps :: [FlowVertex] = expandGraph(e.flowDeps, e.frame.flowGraph);
+
+  top.errors <-
+    if top.config.warnAll || top.config.warnMissingInh || top.config.runMwda
+    then checkAllEqDeps(transitiveDeps, top.location, fName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda)
+    else [];
+}
+
+aspect production defaultConstraintClassBodyItem
+top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
+{
+  local transitiveDeps :: [FlowVertex] = expandGraph(e.flowDeps, e.frame.flowGraph);
+
+  top.errors <-
+    if top.config.warnAll || top.config.warnMissingInh || top.config.runMwda
+    then checkAllEqDeps(transitiveDeps, top.location, fName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda)
+    else [];
+}
+
+aspect production instanceBodyItem
+top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
+{
+  local transitiveDeps :: [FlowVertex] = expandGraph(e.flowDeps, e.frame.flowGraph);
+
+  top.errors <-
+    if top.config.warnAll || top.config.warnMissingInh || top.config.runMwda
+    then checkAllEqDeps(transitiveDeps, top.location, id.lookupValue.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs), top.config.runMwda)
+    else [];
+}
 
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr

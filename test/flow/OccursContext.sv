@@ -36,11 +36,35 @@ global isEqualGlobal ::
   (Boolean ::= a a) = \ x::a y::a ->
     decorate x with {isEqualTo = y;}.isEqual;
 
+warnCode "Decoration requires inherited attribute for flow:env1." {
 global isEqualGlobalBad ::
   attribute isEqualTo<a> occurs on a,
   attribute isEqual {isEqualTo, env1} occurs on a =>
   (Boolean ::= a a) = \ x::a y::a ->
     decorate x with {isEqualTo = y;}.isEqual;
+}
+
+class Equal1 a {
+  isEqual1 :: (Boolean ::= a a);
+}
+
+warnCode "Decoration requires inherited attribute for flow:env1." {
+instance attribute isEqualTo<a> occurs on a,
+         attribute isEqual {isEqualTo, env1} occurs on a =>
+         Equal1 a {
+  isEqual1 = \ x::a y::a ->
+    decorate x with {isEqualTo = y;}.isEqual;
+}
+}
+
+warnCode "Decoration requires inherited attribute for flow:env1." {
+class attribute isEqualTo<a> occurs on a,
+      attribute isEqual {isEqualTo, env1} occurs on a =>
+      Equal2 a {
+  isEqual2 :: (Boolean ::= a a) = \ x::a y::a ->
+    decorate x with {isEqualTo = y;}.isEqual;
+}
+}
 
 synthesized attribute value::Integer occurs on Expr;
 flowtype value {env1} on Expr;
