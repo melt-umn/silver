@@ -30,6 +30,17 @@ Boolean ::= x::a y::a
 }
 }
 
+global isEqualGlobal ::
+  attribute isEqualTo<a> occurs on a,
+  attribute isEqual {isEqualTo} occurs on a =>
+  (Boolean ::= a a) = \ x::a y::a ->
+    decorate x with {isEqualTo = y;}.isEqual;
+
+global isEqualGlobalBad ::
+  attribute isEqualTo<a> occurs on a,
+  attribute isEqual {isEqualTo, env1} occurs on a =>
+  (Boolean ::= a a) = \ x::a y::a ->
+    decorate x with {isEqualTo = y;}.isEqual;
 
 synthesized attribute value::Integer occurs on Expr;
 flowtype value {env1} on Expr;

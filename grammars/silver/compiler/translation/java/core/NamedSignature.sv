@@ -63,6 +63,20 @@ top::NamedSignature ::= fn::String ctxs::Contexts ie::NamedSignatureElements oe:
   ie.sigInhOccurs = ctxs.contextInhOccurs;
 }
 
+aspect production globalSignature
+top::NamedSignature ::= fn::String ctxs::Contexts ty::Type
+{
+  top.javaSignature = error("Translation shouldn't be demanded from global signature");
+  top.refInvokeTrans = error("Translation shouldn't be demanded from global signature");
+  top.childTypeVarElems = error("Translation shouldn't be demanded from global signature");
+  top.childStatic = error("Translation shouldn't be demanded from global signature");
+  top.childDecls = error("Translation shouldn't be demanded from global signature");
+
+  top.inhOccursContextTypes = error("Translation shouldn't be demanded from global signature");
+  top.inhOccursIndexDecls := error("Translation shouldn't be demanded from global signature");
+  top.contextInhOccurs := error("Translation shouldn't be demanded from global signature");
+}
+
 propagate contextInhOccurs, inhOccursIndexDecls on Contexts, Context;
 
 aspect production consContext
