@@ -24,7 +24,7 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
   cl.env = newScopeEnv(typeExprDefs, top.env);
   t.env = cl.env;
   -- The expression also requires the constraint list definitions in its env
-  e.env = newScopeEnv(cl.defs, cl.env);
+  e.env = occursEnv(cl.occursDefs, newScopeEnv(cl.defs, cl.env));
 
   top.defs := [globalDef(top.grammarName, id.location, fName, boundVars, cl.contexts, t.typerep)];
 
@@ -42,10 +42,9 @@ top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e:
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
-  local myFlowGraph :: ProductionGraph = 
-    constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
+  local myFlowGraph :: ProductionGraph = constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
 
-  e.frame = globalExprContext(myFlowGraph, sourceGrammar=top.grammarName);
+  e.frame = globalExprContext(fName, foldContexts(cl.contexts), t.typerep, myFlowGraph, sourceGrammar=top.grammarName);
 }
 
 -- If the global declaration does not have constraints, we unparse appropriately 

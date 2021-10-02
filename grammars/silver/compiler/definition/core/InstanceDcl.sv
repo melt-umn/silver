@@ -57,6 +57,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   body.className = id.lookupType.fullName;
   body.instanceType = ty.typerep; 
   body.expectedClassMembers = if id.lookupType.found then dcl.classMembers else [];
+  body.frameContexts = superContexts.contexts ++ cl.contexts;
 }
 
 concrete production instanceDclNoCL
@@ -72,11 +73,11 @@ autocopy attribute instanceType::Type;
 inherited attribute expectedClassMembers::[Pair<String Boolean>];
 
 nonterminal InstanceBody with
-  config, grammarName, env, defs, flowEnv, location, unparse, errors, compiledGrammars, className, instanceType, expectedClassMembers;
+  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers;
 nonterminal InstanceBodyItem with
-  config, grammarName, env, defs, flowEnv, location, unparse, errors, compiledGrammars, className, instanceType, expectedClassMembers, fullName;
+  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, fullName;
 
-propagate defs, errors on InstanceBody, InstanceBodyItem;
+propagate defs, flowDefs, errors on InstanceBody, InstanceBodyItem;
 
 concrete production consInstanceBody
 top::InstanceBody ::= h::InstanceBodyItem t::InstanceBody
@@ -151,8 +152,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
-  local myFlowGraph :: ProductionGraph = 
-    constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
+  local myFlowGraph :: ProductionGraph = constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
 
-  e.frame = globalExprContext(myFlowGraph, sourceGrammar=top.grammarName);
+  e.frame = globalExprContext(top.fullName, foldContexts(top.frameContexts), typeScheme.typerep, myFlowGraph, sourceGrammar=top.grammarName);
 }

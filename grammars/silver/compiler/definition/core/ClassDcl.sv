@@ -57,6 +57,7 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   body.env = occursEnv(cl.occursDefs, newScopeEnv(headDefs, cl.env));
   body.constraintEnv = cl.env;
   body.classHead = instContext(fName, var.typerep);
+  body.frameContexts = supers;
 }
 
 concrete production typeClassDclNoCL
@@ -69,13 +70,14 @@ top::AGDcl ::= 'class' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 
 autocopy attribute classHead::Context;
 autocopy attribute constraintEnv::Decorated Env;
+autocopy attribute frameContexts::[Context];  -- Only used for computing frame in members
 
 nonterminal ClassBody with
-  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, compiledGrammars, classMembers;
+  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
 nonterminal ClassBodyItem with
-  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, compiledGrammars, classMembers;
+  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
 
-propagate errors, lexicalTypeVariables, lexicalTyVarKinds on ClassBody, ClassBodyItem;
+propagate flowDefs, errors, lexicalTypeVariables, lexicalTyVarKinds on ClassBody, ClassBodyItem;
 propagate defs on ClassBody;
 
 concrete production consClassBody
@@ -152,10 +154,9 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
-  local myFlowGraph :: ProductionGraph = 
-    constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
+  local myFlowGraph :: ProductionGraph = constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
 
-  e.frame = globalExprContext(myFlowGraph, sourceGrammar=top.grammarName);
+  e.frame = globalExprContext(fName, foldContexts(top.frameContexts ++ cl.contexts), ty.typerep, myFlowGraph, sourceGrammar=top.grammarName);
   e.env = occursEnv(cl.occursDefs, newScopeEnv(cl.defs, top.env));
   
   top.defs := [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, cl.contexts, ty.typerep)];

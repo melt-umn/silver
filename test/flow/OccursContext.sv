@@ -21,7 +21,7 @@ Boolean ::= x::a y::a
 
 warnCode "Equation has transitive dependency on child x's inherited attribute for flow:env1 but this equation appears to be missing." {
 function isEqualBad
-attribute compareTo<a> occurs on a,
+attribute compareTo<a {}> occurs on a,
 attribute isEqual {compareTo, env1} occurs on a =>
 Boolean ::= x::a y::a
 {
@@ -30,6 +30,41 @@ Boolean ::= x::a y::a
 }
 }
 
+global isEqualGlobal ::
+  attribute compareTo<a {}> occurs on a,
+  attribute isEqual {compareTo} occurs on a =>
+  (Boolean ::= a a) = \ x::a y::a ->
+    decorate x with {compareTo = decorate y with {};}.isEqual;
+
+warnCode "Decoration requires inherited attribute for flow:env1." {
+global isEqualGlobalBad ::
+  attribute compareTo<a {}> occurs on a,
+  attribute isEqual {compareTo, env1} occurs on a =>
+  (Boolean ::= a a) = \ x::a y::a ->
+    decorate x with {compareTo = decorate y with {};}.isEqual;
+}
+
+class Equal1 a {
+  isEqual1 :: (Boolean ::= a a);
+}
+
+warnCode "Decoration requires inherited attribute for flow:env1." {
+instance attribute compareTo<a {}> occurs on a,
+         attribute isEqual {compareTo, env1} occurs on a =>
+         Equal1 a {
+  isEqual1 = \ x::a y::a ->
+    decorate x with {compareTo = decorate y with {};}.isEqual;
+}
+}
+
+warnCode "Decoration requires inherited attribute for flow:env1." {
+class attribute compareTo<a {}> occurs on a,
+      attribute isEqual {compareTo, env1} occurs on a =>
+      Equal2 a {
+  isEqual2 :: (Boolean ::= a a) = \ x::a y::a ->
+    decorate x with {compareTo = decorate y with {};}.isEqual;
+}
+}
 
 synthesized attribute value::Integer occurs on Expr;
 flowtype value {env1} on Expr;
