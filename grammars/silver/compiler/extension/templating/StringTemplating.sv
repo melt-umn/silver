@@ -193,5 +193,5 @@ aspect production nonwater
 top::NonWater ::= '${' e::Expr '}'
 {
   top.stringTemplate = [e];
-  top.ppTemplate = [e];
+  top.ppTemplate = [mkStrFunctionInvocation(top.location, "silver:langutil:pp:pp", [e])];
 }
