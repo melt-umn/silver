@@ -1,9 +1,9 @@
 grammar silver:langutil:pp;
 
-import silver:core with group as groupList;
+imports silver:core with group as groupList;
 import silver:util:deque as dq;
 
-function show
+function showDoc
 String ::= width::Integer d::Document
 {
   d.indent = 0;
