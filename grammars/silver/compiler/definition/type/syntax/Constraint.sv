@@ -36,10 +36,8 @@ top::Constraint ::= c::QNameType t::TypeExpr
 {
   top.unparse = c.unparse ++ " " ++ t.unparse;
   top.contexts =
-    case top.constraintPos.instanceHead of
-    | just(instContext(_, skolemType(_))) -> [] -- Avoid a cycle in instance resolution checking
-    | _ -> [instContext(fName, t.typerep)]
-    end;
+    if !null(undecidableInstanceErrors) then [] -- Avoid a cycle in instance resolution checking
+    else [instContext(fName, t.typerep)];
   
   production dcl::DclInfo = c.lookupType.dcl;
   production fName::String = c.lookupType.fullName;
@@ -51,14 +49,23 @@ top::Constraint ::= c::QNameType t::TypeExpr
   top.errors <- t.errorsTyVars;
   
   -- We essentially permit FlexibleInstances but not UndecidableInstnaces,
-  -- so we need to check that there are no class constraints if instance head is a type variable.
-  top.errors <-
+  -- check that there are no class constraints if instance head is a type variable.
+  -- This is required to ensure that instance resolution will terminate, otherwise
+  -- one could write e.g. instance Eq a => Eq a.
+  -- HOWEVER, this is sometimes really handy in some places (that we know are safe)
+  -- within the standard library; turn off this check for those instances
+  -- (equivalent to writing {-# LANGUAGE UndecidableInstances #-} in Haskell):
+  production attribute undecidableInstanceClasses::[String] with ++;
+  undecidableInstanceClasses := ["silver:langutil:pp:Show"];
+  
+  production undecidableInstanceErrors::[Message] =
     case top.constraintPos.instanceHead of
-    | just(h) when h matches instContext(_, skolemType(_)) ->
+    | just(h) when (h, contains(fName, undecidableInstanceClasses)) matches (instContext(_, skolemType(_)), false) ->
       [err(top.location, s"The constraint ${top.unparse} is no smaller than the instance head ${prettyContext(h)}")]
     | _ -> []
     end;
-  
+  top.errors <- undecidableInstanceErrors;
+
   local instDcl::DclInfo = top.constraintPos.classInstDcl(fName, t.typerep, top.grammarName, top.location);
   top.defs <- [tcInstDef(instDcl)];
   top.defs <- transitiveSuperDefs(top.env, t.typerep, [], instDcl);
