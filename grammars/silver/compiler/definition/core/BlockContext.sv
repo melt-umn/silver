@@ -138,10 +138,16 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
 }
 
 abstract production globalExprContext
+top::BlockContext ::= fn::String  ctxs::Contexts  ty::Type  g::ProductionGraph
+{
+  top.fullName = fn;
+  top.signature = globalSignature(fn, ctxs, ty);
+  top.flowGraph = g;
+}
+
+abstract production bogusContext
 top::BlockContext ::= g::ProductionGraph
 {
-  top.fullName = "_NULL_"; -- maybe we should actually error?
-  top.signature = bogusNamedSignature(); -- TODO: do something about this?
-  top.flowGraph = g;
+  forwards to globalExprContext("_NULL_", nilContext(), errorType(), g, sourceGrammar=top.sourceGrammar);
 }
 
