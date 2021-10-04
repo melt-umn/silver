@@ -3,7 +3,7 @@ grammar silver:testing:bin ;
 function traverseDirectoriesAndPerform
 IOVal<a> ::= startDir::String paths::[String] 
                 f::(IOVal<a> ::= String IOVal<a>) 
-                skipDir::(IOVal<Boolean> ::= String IO)
+                skipDir::(IOVal<Boolean> ::= String IOToken)
                 ioIn::IOVal<a>
 {
  return
@@ -29,7 +29,7 @@ IOVal<a> ::= startDir::String paths::[String]
  -}
  local headIsLink::IOVal<Boolean> = ioval(ioIn.io, false) ;  -- maybe add later.
 
- local headIsDir::IOVal<Boolean> = isDirectory( head(paths), headIsLink.io );
+ local headIsDir::IOVal<Boolean> = isDirectoryT( head(paths), headIsLink.io );
 
  local skipIt::IOVal<Boolean> 
   = if   endsWith("/generated",head(paths))
@@ -42,7 +42,7 @@ IOVal<a> ::= startDir::String paths::[String]
     then skipDir(head(paths), headIsDir.io)
     else ioval(headIsDir.io, false) ;
 
- local dirContents::IOVal< [String] > = listContents ( head(paths), 
+ local dirContents::IOVal< [String] > = listContentsT ( head(paths),
                                                        headIsDir.io ) ;
 }
 

@@ -55,15 +55,15 @@ r::Run ::= f::OptionalFail run_kwd::'run' ':' rest::CommandAlt_t
 concrete production run
 r::Run ::= f::OptionalFail 'run' c::Command_t
 {
- local msgBefore :: IO  =
-  print ("............................................................\n" ++
+ local msgBefore :: IOToken  =
+  printT ("............................................................\n" ++
          "Test \n  " ++ r.testFileName ++ " in directory \n  " ++
          prettyDirName(r.testFileDir) ++ "\n", r.ioInput.io ) ;
 
  local cmd :: String = substring(1,length(c.lexeme)-1,c.lexeme) ;
 
  local cmdResult :: IOVal<Integer> 
-   = system ("cd " ++ r.testFileDir ++ ";" ++
+   = systemT ("cd " ++ r.testFileDir ++ ";" ++
              "rm -f " ++ r.testFileName ++ ".output ; " ++ 
              cmd ++ " >& " ++ r.testFileName ++ ".output"
              , msgBefore ) ;
@@ -71,8 +71,8 @@ r::Run ::= f::OptionalFail 'run' c::Command_t
  r.ioResult =
    if   (cmdResult.iovalue == 0 && ! f.fail) ||
         (cmdResult.iovalue != 0 && f.fail) 
-   then ioval( print( "passed (rc = 0).\n", cmdResult.io), 0 )
-   else ioval( print( "failed (rc = " ++ toString(cmdResult.iovalue) ++ ").\n",
+   then ioval( printT( "passed (rc = 0).\n", cmdResult.io), 0 )
+   else ioval( printT( "failed (rc = " ++ toString(cmdResult.iovalue) ++ ").\n",
                       cmdResult.io),
                1 ) ;
 }
@@ -80,8 +80,8 @@ r::Run ::= f::OptionalFail 'run' c::Command_t
 concrete production runTestSuite
 ts::Run ::= 'test' 'suite' jar::Jar_t
 {
- local msgBefore :: IO  =
-  print ("............................................................\n" ++
+ local msgBefore :: IOToken  =
+  printT ("............................................................\n" ++
          "Test Suite jar \"" ++ jar.lexeme ++ "\" in \n  " ++ 
          ts.testFileName ++ " in directory \n  " ++
          prettyDirName(ts.testFileDir) ++ "\n", ts.ioInput.io ) ;
@@ -89,14 +89,14 @@ ts::Run ::= 'test' 'suite' jar::Jar_t
  -- probably should check that jar file by this name exists
 
  local testSuiteResults :: IOVal<Integer> 
-   = system ("cd " ++ ts.testFileDir ++ ";" ++
+   = systemT ("cd " ++ ts.testFileDir ++ ";" ++
              "rm -f " ++ ts.testFileName ++ ".output ; " ++ 
              " java -Xss6M -jar " ++ jar.lexeme ++
              " >& " ++ ts.testFileName ++ ".output" ,
              msgBefore ) ;
 
- local afterMsg :: IO 
-   = print ( if testSuiteResults.iovalue == 0
+ local afterMsg :: IOToken
+   = printT ( if testSuiteResults.iovalue == 0
              then "all tests passed (rc = 0).\n"
              else toString(testSuiteResults.iovalue) ++ 
              if testSuiteResults.iovalue == 1
