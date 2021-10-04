@@ -59,7 +59,7 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
    functionDcl(
     -- function main
     'function', name("main", top.location),
-    -- IOVal<Integer> ::= args::[String]  mainIO::IO
+    -- IOVal<Integer> ::= args::[String]  mainIO::IOToken
     functionSignature(
       nilConstraint(location=top.location), '=>',
      functionLHS(
@@ -97,9 +97,9 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
      returnDef('return',
         mkStrFunctionInvocation(top.location, "ioval",
          [
-          mkStrFunctionInvocation(top.location, "exit",
+          mkStrFunctionInvocation(top.location, "exitT",
            [ attrAcc("testResults","numFailed", top.location),
-             mkStrFunctionInvocation(top.location, "print", 
+             mkStrFunctionInvocation(top.location, "printT",
               [ foldStringExprs(
                  [ strCnst("\n\n"),
                    strCnst("============================================================\n"),
@@ -128,14 +128,14 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
 
 {-
 function main
-IO ::= args::String mainIO::IO
+IOToken ::= args::String mainIO::IOToken
 {
  local testResults :: TestSuite = core_tests();
  testResults.ioIn = mainIO;
 
  return
-   exit( testResults.numTests - testResults.numPassed,
-     print("\n\n" ++
+   exitT( testResults.numTests - testResults.numPassed,
+     printT("\n\n" ++
             "============================================================\n" ++
             "Test results: \n" ++
             testResults.msg ++ "\n\n" ++ 

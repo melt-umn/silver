@@ -59,10 +59,10 @@ equalityTest(
   String, core_tests);
 
 
-global bytefiletest::IOMonad<ByteArray> = do {
-  writeBinaryFileM("test_svb.svb", nativeSerialize(val1).fromRight);
-  readBinaryFileM("test_svb.svb");
+global bytefiletest::IO<ByteArray> = do {
+  writeBinaryFile("test_svb.svb", nativeSerialize(val1).fromRight);
+  readBinaryFile("test_svb.svb");
 };
 
-equalityTest(hackUnparse(nativeDeserialize(evalIO(bytefiletest, unsafeIO()).iovalue).fromRight), hackUnparse(val1),
+equalityTest(hackUnparse(nativeDeserialize(evalIO(bytefiletest, unsafeIOT()).iovalue).fromRight), hackUnparse(val1),
   String, core_tests);

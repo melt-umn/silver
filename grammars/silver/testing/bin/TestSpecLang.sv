@@ -113,24 +113,24 @@ ts::Run ::= 'test' 'suite' jar::Jar_t
 
 {-
 function runCommandOnFile
-IO ::= absoluteFilePath::String ioIn::IO 
+IOToken ::= absoluteFilePath::String ioIn::IOToken
 {
  return runCommandOnFileRC(absoluteFilePath, ioval(ioIn,0) ) .io ;
 }
 
 
 function runCommandOnFile
-IO ::= absoluteFilePath::String ioIn::IO 
+IOToken ::= absoluteFilePath::String ioIn::IOToken
 {
- local isDir :: IOVal<Boolean> = isDirectory( absoluteFilePath, ioIn );
- local isF   :: IOVal<Boolean> = isFile(absoluteFilePath, ioIn);
- local text  :: IOVal<String>  = readFile(absoluteFilePath, isF.io);
+ local isDir :: IOVal<Boolean> = isDirectoryT( absoluteFilePath, ioIn );
+ local isF   :: IOVal<Boolean> = isFileT(absoluteFilePath, ioIn);
+ local text  :: IOVal<String>  = readFileT(absoluteFilePath, isF.io);
 
  local parseResult :: ParseResult<Run> = parse(text.iovalue, absoluteFilePath);
  local r_cst :: Run = parseResult.parseTree ;
  
- local parseFailure :: IO =
-   print ("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" ++
+ local parseFailure :: IOToken =
+   printT ("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" ++
           "Parsing of .test file \n   " ++ absoluteFilePath ++ "\n" ++
           "failed.\n" ++ parseResult.parseErrors ++ "\n" ++
           "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" ,
@@ -138,14 +138,14 @@ IO ::= absoluteFilePath::String ioIn::IO
 
 
  r_cst.ioInput = text.io ;
- r_cst.testFileName = fileNameInFilePath(absoluteFilePath) ;
- r_cst.testFileDir = dirNameInFilePath(absoluteFilePath) ;
+ r_cst.testFileName = fileNameInFilePathT(absoluteFilePath) ;
+ r_cst.testFileDir = dirNameInFilePathT(absoluteFilePath) ;
  
  local testResult :: IOVal<Integer> = r_cst.ioResult ;
 
- local attribute msgAfter :: IO ;
+ local attribute msgAfter :: IOToken ;
  msgAfter = 
-   print ((if   testResult.iovalue == 0 
+   printT ((if   testResult.iovalue == 0
            then "passed (rc == 0)."
            else "failed (rc == " ++ toString(testResult.iovalue) ++ ").") ++
          "\n" ,

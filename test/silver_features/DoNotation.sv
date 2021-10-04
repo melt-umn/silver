@@ -31,13 +31,13 @@ equalityTest(res3.fst, 3, Integer, silver_tests);
 equalityTest(res3.snd, 4, Integer, silver_tests);
 
 -- Test IO
-global doRes4::IOMonad<String> = do {
-  writeFileM("test_out.txt", "Hello");
-  appendFileM("test_out.txt", ", World!");
-  readFileM("test_out.txt");
+global doRes4::IO<String> = do {
+  writeFile("test_out.txt", "Hello");
+  appendFile("test_out.txt", ", World!");
+  readFile("test_out.txt");
 };
 
-equalityTest(evalIO(doRes4, unsafeIO()).iovalue, "Hello, World!", String, silver_tests);
+equalityTest(evalIO(doRes4, unsafeIOT()).iovalue, "Hello, World!", String, silver_tests);
 
 -- Test something that is Applicative but not Monad
 nonterminal AMaybe<a>;
