@@ -8,7 +8,7 @@ parser hostparse :: Root_c
 }
 
 function main
-IOVal<Integer> ::= largs::[String] ioin::IO
+IOVal<Integer> ::= largs::[String] ioin::IOToken
 {
   local attribute args::String;
   args = implode(" ", largs);
@@ -21,16 +21,16 @@ IOVal<Integer> ::= largs::[String] ioin::IO
 
   local attribute r::Root = r_cst.ast;
 
-  local attribute print_success :: IO;
+  local attribute print_success :: IOToken;
   print_success =
-       print("Expression:  " ++ r.pp ++ "\n" ++
+       printT("Expression:  " ++ r.pp ++ "\n" ++
              "Type:        " ++ typeToString(r.type) ++ "\n" ++
              "Errors:      " ++ errorsToString(r.errors) ++ "\n" ++
              "SingleSteps Attribute (Evaluation Trace):\n   " ++ listToString_Expression(r.singleSteps),
              ioin);
 
-  local attribute print_failure :: IO;
-  print_failure = print("Encountered a parse error:\n" ++
+  local attribute print_failure :: IOToken;
+  print_failure = printT("Encountered a parse error:\n" ++
                         result.parseErrors ++ "\n",
                         ioin);
 
