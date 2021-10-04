@@ -242,7 +242,7 @@ Boolean ::= x::TerminalId y::TerminalId
 instance Ord a => Ord [a] {
   lte = \ x::[a] y::[a] ->
     case x, y of
-    | h1::t1, h2::t2 -> h1 <= h2 && t1 <= t2
+    | h1::t1, h2::t2 -> if h1 == h2 then t1 <= t2 else h1 < h2
     | [], _ -> true
     | _, _ -> false
     end;
