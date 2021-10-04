@@ -24,7 +24,7 @@ parser hostParse :: Root_c {
 } 
 
 function main 
-IOVal<Integer> ::= largs::[String] io_in::IO
+IOVal<Integer> ::= largs::[String] io_in::IOToken
 {
   return driver(largs, hostParse, io_in) ;
 }
