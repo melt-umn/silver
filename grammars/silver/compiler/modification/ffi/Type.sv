@@ -26,5 +26,5 @@ top::Type ::= fn::String  transType::String  params::[Type]
 
 -- What we get from the standard library's declaration, so we don't need to repeat it
 global ioForeignType :: Type =
-  foreignType("silver:core:IO", "common.IOToken", []);
+  foreignType("silver:core:IOToken", "common.IOToken", []);
 

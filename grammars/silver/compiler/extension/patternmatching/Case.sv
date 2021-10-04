@@ -181,7 +181,7 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
   {--
    - All constructors? Then do a real primitive match.
    -}
-  local freshCurrName :: String = "__curr_match_" ++ toString(genInt());
+  local freshCurrName :: String = "__curr_match_" ++ toString(genIntT());
   local freshCurrNameRef :: Expr =
     baseExpr(qName(loc, freshCurrName), location=loc);
   local allConCase :: Pair<Expr [Message]> =
@@ -256,7 +256,7 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
 function buildMixedCaseMatches
 Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
 {
-  local freshFailName :: String = "__fail_" ++ toString(genInt());
+  local freshFailName :: String = "__fail_" ++ toString(genIntT());
   return if null(ml)
          then pair(failExpr, [])
          else let segments::Pair<[AbstractMatchRule] [AbstractMatchRule]> =
@@ -911,8 +911,8 @@ Name ::= p::Decorated Pattern
 {
   local n :: String =
     case p of
-    | varPattern(pvn) -> "__sv_pv_" ++ toString(genInt()) ++ "_" ++ pvn.name
-    | h -> "__sv_tmp_pv_" ++ toString(genInt())
+    | varPattern(pvn) -> "__sv_pv_" ++ toString(genIntT()) ++ "_" ++ pvn.name
+    | h -> "__sv_tmp_pv_" ++ toString(genIntT())
     end;
   return name(n, p.location);
 }

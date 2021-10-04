@@ -16,12 +16,12 @@ top::DriverAction ::= grams::EnvTree<Decorated RootSpec> ide::IdeSpec ideGenPath
 {
   ide.compiledGrammars = grams;
   
-  local io0::IO = print("[IDE plugin] Generating IDE plugin.\n", top.ioIn);
-  local io1::IO = deleteTree(ideGenPath, io0);
-  local io2::IO =
+  local io0::IOToken = printT("[IDE plugin] Generating IDE plugin.\n", top.ioIn);
+  local io1::IOToken = deleteTreeT(ideGenPath, io0);
+  local io2::IOToken =
     mkdirs(s"${ideGenPath}/plugin/src/${pkgToPath(pkgName)}/",
       ["imp/coloring", "eclipse/property", "eclipse/wizard/newproject", "eclipse/wizard/newfile"], io1);
-  local io3::IO = writeFiles(ideGenPath ++ "/plugin/", ide.pluginFiles, io2);
+  local io3::IOToken = writeFiles(ideGenPath ++ "/plugin/", ide.pluginFiles, io2);
 
   top.io = io3;
 
@@ -30,10 +30,10 @@ top::DriverAction ::= grams::EnvTree<Decorated RootSpec> ide::IdeSpec ideGenPath
 }
 
 function mkdirs
-IO ::= path::String  paths::[String]  i::IO
+IOToken ::= path::String  paths::[String]  i::IOToken
 {
   return if null(paths) then i
   else mkdirs(path, tail(paths),
-         mkdir(path ++ head(paths), i).io);
+         mkdirT(path ++ head(paths), i).io);
 }
 

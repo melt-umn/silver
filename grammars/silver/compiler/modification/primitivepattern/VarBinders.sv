@@ -127,7 +127,7 @@ top::VarBinder ::= n::Name
   production finalTy::Type = performSubstitution(ty, top.finalSubst);
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
 
-  production fName :: String = "__pv" ++ toString(genInt()) ++ ":" ++ n.name;
+  production fName :: String = "__pv" ++ toString(genIntT()) ++ ":" ++ n.name;
   
   -- If it's decorable, then we do projections through the production
   -- if it's not, then we treat it like a generic reference.

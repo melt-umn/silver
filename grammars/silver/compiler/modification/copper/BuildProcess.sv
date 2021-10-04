@@ -100,23 +100,23 @@ top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverG
 
   local specCst :: SyntaxRoot = spec.cstAst;
 
-  local ex :: IOVal<Boolean> = isFile(file, top.ioIn);
-  local oldSpec :: IOVal<String> = readFile(file, ex.io);
+  local ex :: IOVal<Boolean> = isFileT(file, top.ioIn);
+  local oldSpec :: IOVal<String> = readFileT(file, ex.io);
   
-  local join :: IO = if ex.iovalue then oldSpec.io else ex.io;
+  local join :: IOToken = if ex.iovalue then oldSpec.io else ex.io;
 
-  local err :: IO = 
-    print("CST errors while generating parser " ++ spec.fullName ++ ":\n" ++
+  local err :: IOToken =
+    printT("CST errors while generating parser " ++ spec.fullName ++ ":\n" ++
       implode("\n", specCst.cstErrors) ++ "\n", join);
 
-  local doUTD :: IO =
-    print("Parser " ++ spec.fullName ++ " up to date.\n", join);
+  local doUTD :: IOToken =
+    printT("Parser " ++ spec.fullName ++ " up to date.\n", join);
   
-  local doWR :: IO =
-    writeFile(file, newSpec,
-      print("Generating parser " ++ spec.fullName ++ ".\n",
+  local doWR :: IOToken =
+    writeFileT(file, newSpec,
+      printT("Generating parser " ++ spec.fullName ++ ".\n",
         -- hack to ensure directory exists (for --dont-translate)
-        mkdir(dir, join).io));
+        mkdirT(dir, join).io));
 
   top.io = if null(specCst.cstErrors) then 
              if ex.iovalue && oldSpec.iovalue == newSpec then doUTD 

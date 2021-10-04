@@ -7,7 +7,7 @@ parser svParse::Root {
 }
 
 function main 
-IOVal<Integer> ::= args::[String] ioin::IO
+IOVal<Integer> ::= args::[String] ioin::IOToken
 {
   return cmdLineRun(args, svParse, ioin);
 }

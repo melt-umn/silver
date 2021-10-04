@@ -172,7 +172,7 @@ function monadicMatchTypesNames
             end;
   local ntail::[String] = if null(names) then [] else tail(names);
   local newName::String = if null(names)
-                          then "__sv_expression_in_case" ++ toString(index) ++ "_" ++ toString(genInt())
+                          then "__sv_expression_in_case" ++ toString(index) ++ "_" ++ toString(genIntT())
                           else head(names);
   return case elst, tylst of
          | [], _ -> pair([], [])
@@ -266,7 +266,7 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
   {--
    - All constructors? Then do a real primitive match.
    -}
-  local freshCurrName :: String = "__curr_match_" ++ toString(genInt());
+  local freshCurrName :: String = "__curr_match_" ++ toString(genIntT());
   local freshCurrNameRef :: Expr =
     baseExpr(qName(loc, freshCurrName), location=loc);
   local allConCase :: Pair<Expr [Message]> =
@@ -377,7 +377,7 @@ Pair<PrimPattern [Message]> ::= currExpr::Expr restExprs::[Expr]  failCase::Expr
 function monadBuildMixedCaseMatches
 Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
 {
-  local freshFailName :: String = "__fail_" ++ toString(genInt());
+  local freshFailName :: String = "__fail_" ++ toString(genIntT());
   return if null(ml)
          then pair(failExpr, [])
          else let segments::Pair<[AbstractMatchRule] [AbstractMatchRule]> =
@@ -422,7 +422,7 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
         "MonadPlus and cannot be used with case_any";
 
   --we need fresh names for the expressions being matched on, which we will use to only evaluate them once
-  local newNames::[String] = map(\ x::Expr -> "__sv_mcase_var_" ++ toString(genInt()), es.rawExprs);
+  local newNames::[String] = map(\ x::Expr -> "__sv_mcase_var_" ++ toString(genIntT()), es.rawExprs);
   local params::[Pair<String Type>] = zipWith(pair, newNames, ml.patternTypeList);
   local nameExprs::[Expr] = map(\x::String -> baseExpr(qName(top.location, x), location=top.location),
                                 newNames);

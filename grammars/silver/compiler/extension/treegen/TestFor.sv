@@ -19,7 +19,7 @@ top::AGDcl ::= 'testFor' testSuite::Name ':' n::Name '::' id::QName ',' e::Expr 
   local prods :: [ValueDclInfo] = getKnownProds(id.lookupType.fullName, top.env);
 
   local l :: Location = top.location;
-  local generatedName :: String = "checkPropOn" ++ id.name ++ toString(genInt());
+  local generatedName :: String = "checkPropOn" ++ id.name ++ toString(genIntT());
   
   local fundcl :: AGDcl =
     functionDcl(
@@ -60,7 +60,7 @@ top::AGDcl ::= 'testFor' testSuite::Name ':' n::Name '::' id::QName ',' e::Expr 
 function generateTestFor
 AGDcl ::= d::ValueDclInfo  testfunname::String  l::Location  testSuite::Name
 {
-  local generatedName :: String = "genSpecificProduction" ++ substring(lastIndexOf(":", d.fullName) + 1, length(d.fullName), d.fullName) ++ toString(genInt());
+  local generatedName :: String = "genSpecificProduction" ++ substring(lastIndexOf(":", d.fullName) + 1, length(d.fullName), d.fullName) ++ toString(genIntT());
   
   local sig :: FunctionSignature =
     -- id ::= 

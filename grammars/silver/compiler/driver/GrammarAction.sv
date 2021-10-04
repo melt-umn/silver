@@ -31,7 +31,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
 abstract production touchIfaces
 top::DriverAction ::= r::[Decorated RootSpec] genPath::String
 {
-  top.io = touchFiles(map(sviPath(_, genPath), r), top.ioIn);
+  top.io = touchFilesT(map(sviPath(_, genPath), r), top.ioIn);
   top.code = 0;
   top.order = 3;
 }
@@ -45,7 +45,7 @@ abstract production printAllBindingErrors
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
   -- Force printing of status before doing error checks
-  top.code = unsafeTrace(forward.code, forward.ioIn);
+  top.code = unsafeTraceT(forward.code, forward.ioIn);
   -- For anyone encountering this hack for the first time,
   -- IO-token passing can force linearity of actions, but
   -- interleaves pure computation in annoying ways.
@@ -55,7 +55,7 @@ top::DriverAction ::= specs::[Decorated RootSpec]
 
   forwards to printAllBindingErrorsHelp(specs)
   with {
-    ioIn = print("Checking For Errors.\n", top.ioIn);
+    ioIn = printT("Checking For Errors.\n", top.ioIn);
   };
 }
 
@@ -64,10 +64,10 @@ top::DriverAction ::= specs::[Decorated RootSpec]
 {
   local errs :: [Pair<String [Message]>] = head(specs).grammarErrors;
 
-  local i :: IO =
+  local i :: IOToken =
     if null(errs)
     then top.ioIn
-    else print("Errors for " ++ head(specs).declaredName ++ "\n" ++ flatMap(renderMessages(head(specs).grammarSource, _), errs) ++ "\n", top.ioIn);
+    else printT("Errors for " ++ head(specs).declaredName ++ "\n" ++ flatMap(renderMessages(head(specs).grammarSource, _), errs) ++ "\n", top.ioIn);
 
   local recurse :: DriverAction = printAllBindingErrorsHelp(tail(specs));
   recurse.ioIn = i;
@@ -87,10 +87,10 @@ top::DriverAction ::= specs::[Decorated RootSpec]
 {
   local errs :: [Pair<String [Message]>] = head(specs).parsingErrors;
 
-  local i :: IO =
+  local i :: IOToken =
     if null(errs)
     then top.ioIn
-    else print("Errors for " ++ head(specs).declaredName ++ "\n" ++ flatMap(renderMessages(head(specs).grammarSource, _), errs) ++ "\n", top.ioIn);
+    else printT("Errors for " ++ head(specs).declaredName ++ "\n" ++ flatMap(renderMessages(head(specs).grammarSource, _), errs) ++ "\n", top.ioIn);
 
   local recurse :: DriverAction = printAllParsingErrors(tail(specs));
   recurse.ioIn = i;

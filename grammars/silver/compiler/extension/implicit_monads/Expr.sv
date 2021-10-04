@@ -243,7 +243,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   local lambda_fun::Expr = buildMonadApplicationLambda(nes.realTypes, nes.monadTypesLocations, ety, wrapReturn, top.location);
   local expanded_args::AppExprs = snocAppExprs(nes.monadRewritten, ',', presentAppExpr(ne.monadRewritten, location=top.location),
                                                location=top.location);
-  local bind_name::String = "__bindFun_" ++ toString(genInt());
+  local bind_name::String = "__bindFun_" ++ toString(genIntT());
   -- fun >>= \ bind_name -> lambda_fun(args, bind_name)
   local bind_fun_in::Expr =
         Silver_Expr {
@@ -796,7 +796,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
                      inhSetType(sort(nub(inh.suppliedInhs)))))
                  else decoratedType(performSubstitution(e.mtyperep, e.mUpSubst), inhSetType(sort(nub(inh.suppliedInhs))));
 
-  local newname::String = "__sv_bind_" ++ toString(genInt());
+  local newname::String = "__sv_bind_" ++ toString(genIntT());
   local params::ProductionRHS =
      productionRHSCons(productionRHSElem(name(newname, top.location),
                                          '::',

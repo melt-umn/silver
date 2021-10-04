@@ -174,13 +174,13 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 
 -- This uses Either backwards. TODO: flip order? "right is correct" also TODO: use RunError?
 function determineBuildEnv
-IOVal<Either<BuildEnv [String]>> ::= a::Decorated CmdArgs  ioin::IO
+IOVal<Either<BuildEnv [String]>> ::= a::Decorated CmdArgs  ioin::IOToken
 {
   -- Let's locally set up and verify the environment
-  local envSH :: IOVal<String> = envVar("SILVER_HOME", ioin);
-  local envGP :: IOVal<String> = envVar("GRAMMAR_PATH", envSH.io);
-  local envSHG :: IOVal<String> = envVar("SILVER_HOST_GEN", envGP.io);
-  local envSG :: IOVal<String> = envVar("SILVER_GEN", envSHG.io);
+  local envSH :: IOVal<String> = envVarT("SILVER_HOME", ioin);
+  local envGP :: IOVal<String> = envVarT("GRAMMAR_PATH", envSH.io);
+  local envSHG :: IOVal<String> = envVarT("SILVER_HOST_GEN", envGP.io);
+  local envSG :: IOVal<String> = envVarT("SILVER_GEN", envSHG.io);
   
   -- If SILVER_HOME isn't set, determine it from where this jar is
   local derivedSH :: IOVal<String> =
@@ -206,10 +206,10 @@ IOVal<Either<BuildEnv [String]>> ::= a::Decorated CmdArgs  ioin::IO
 }
 
 function checkEnvironment
-IOVal<[String]> ::= benv::BuildEnv ioin::IO
+IOVal<[String]> ::= benv::BuildEnv ioin::IOToken
 {
-  local isGenDir :: IOVal<Boolean> = isDirectory(benv.silverGen, ioin);
-  local isGramDir :: IOVal<Boolean> = isDirectory(benv.defaultGrammarPath, isGenDir.io);
+  local isGenDir :: IOVal<Boolean> = isDirectoryT(benv.silverGen, ioin);
+  local isGramDir :: IOVal<Boolean> = isDirectoryT(benv.defaultGrammarPath, isGenDir.io);
 
   local errors :: [String] =
     if benv.silverHome == "/" -- because we called 'endWithSlash' on empty string
@@ -232,7 +232,7 @@ IOVal<[String]> ::=
   a::Decorated CmdArgs
   benv::BuildEnv
   buildGrammar::String
-  ioin::IO
+  ioin::IOToken
 {
   local errors :: [String] =
     if null(a.cmdRemaining) then ["No grammar to build was specified.\n"]
@@ -250,7 +250,7 @@ IOVal<[String]> ::=
 -- standard library may someday return the location of the standard library jar instead
 -- of us
 function determineDefaultSilverHome
-IOVal<String> ::=  i::IO
+IOVal<String> ::=  i::IOToken
 {
   return error("NYI");
 } foreign {

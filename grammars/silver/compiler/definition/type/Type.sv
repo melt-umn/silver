@@ -329,13 +329,13 @@ top::TyVar ::= k::Kind i::Integer n::String
 function freshTyVar
 TyVar ::= k::Kind
 {
-  return tyVar(k, genInt());
+  return tyVar(k, genIntT());
 }
 
 function freshTyVarNamed
 TyVar ::= k::Kind n::String
 {
-  return tyVarNamed(k, genInt(), n);
+  return tyVarNamed(k, genIntT(), n);
 }
 
 function freshType
