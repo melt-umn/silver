@@ -425,7 +425,7 @@ a ::= msg::String
 }
 
 @{--
- - Create a bogus world-state token, for use with @link[unsafeTraceT].
+ - Create a bogus world-state token, for use with @link[unsafeTrace].
  -
  - @return  A fake world-state token.
  -}
