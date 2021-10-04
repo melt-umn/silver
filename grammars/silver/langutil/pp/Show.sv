@@ -44,13 +44,14 @@ instance Show Boolean {
 }
 
 instance Show String {
-  pp = \ x::String -> text(escapeString(x));
+  pp = \ x::String -> text("\"" ++ escapeString(x) ++ "\"");
 }
 
 instance Show a => Show [a] {
   pp = \ xs::[a] -> pp"[${ppImplode(pp", ", map(pp, xs))}]";
 }
 
+-- tuples
 instance Show a, ShowTuple b => Show (a, b) {
   pp = \ x::(a, b) -> pp"(${pp(x.fst)}, ${ppTuple(x.snd)})";
 }
@@ -69,4 +70,22 @@ instance Show a => ShowTuple a {
 
 instance Show () {
   pp = \ () -> pp"()";
+}
+
+-- Other standard lib types.
+-- Note that these can't be done with attributes due to the polymorphic children requiring a Show context.
+instance Show a => Show Maybe<a> {
+  pp = \ x::Maybe<a> ->
+    case x of
+    | just(y) -> pp"just(${pp(y)})"
+    | nothing() -> pp"nothing()"
+    end;
+}
+
+instance Show a, Show b => Show Either<a b> {
+  pp = \ x::Either<a b> ->
+    case x of
+    | left(y) -> pp"left(${pp(y)})"
+    | right(y) -> pp"right(${pp(y)})"
+    end;
 }

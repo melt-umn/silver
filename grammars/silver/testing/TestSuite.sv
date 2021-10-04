@@ -112,13 +112,14 @@ Boolean ::= f::(Boolean ::=)  times::Integer
     f() && repeatTestTimes(f, times - 1);
 }
 
--- TODO: Use show typeclass
+-- TODO: Consider replacing this with the regular Show type class,
+-- would require some way of propagating the pp attribute.
 class ShowTestValue a {
   showTestValue :: (String ::= a);
 }
 
 instance ShowTestValue a {
-  showTestValue = \ x::a -> show(80, reflect(x).pp);
+  showTestValue = \ x::a -> show(80, reflect(x));
 }
 
 instance ShowTestValue a => ShowTestValue Decorated a with i {
