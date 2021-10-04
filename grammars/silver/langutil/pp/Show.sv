@@ -30,6 +30,10 @@ instance Show Document {
   pp = id;
 }
 
+instance Show Decorated Document with i {
+  pp = new;
+}
+
 -- Instances for primitive types
 instance Show Integer {
   pp = \ x::Integer -> text(toString(x));
