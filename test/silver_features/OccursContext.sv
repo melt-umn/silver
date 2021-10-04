@@ -105,8 +105,15 @@ top::OCEqPair<a b> ::= x::a y::b
 
 equalityTest(decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);}.isEqual, true, Boolean, silver_tests);
 
--- Not supported: decorated match on polymorphic child
--- equalityTest(case decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);} of ocEqPair(x, y) -> x.isEqual && y.isEqual end, true, Boolean, silver_tests);
+function requireDec
+Decorated a with i ::= x::Decorated a with i
+{ return x; }
+
+-- decorated match on polymorphic child
+equalityTest(
+  case decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);} of
+  | ocEqPair(x, y) -> requireDec(x).isEqual && requireDec(y).isEqual
+  end, true, Boolean, silver_tests);
 
 equalityTest(ocEq(ocEqPair(ee1, ee2), ocEqPair(ee1, ee2)), true, Boolean, silver_tests);
 equalityTest(ocEq(ocEqPair(ee1, ee2), ocEqPair(ee1, ee3)), false, Boolean, silver_tests);
@@ -175,3 +182,19 @@ wrongCode "error: Attribute 'prodName' does not occur on 'a'" {
   String ::= x::a
   { return x.prodName; }
 }
+
+nonterminal OCPolyWrap with prodNameIn, prodName;
+production ocPolyWrap
+attribute prodNameIn occurs on a, attribute prodName {prodNameIn} occurs on a =>
+top::OCPolyWrap ::= x::a
+{
+  x.prodNameIn = top.prodNameIn;
+  top.prodName = x.prodName;
+}
+
+equalityTest(decorate ocPolyWrap(ocThing()) with {prodName = "blah";}.prodName, "blah", String, silver_tests);
+equalityTest(decorate ocPolyWrap(ocPolyWrap(ocThing())) with {prodName = "blah";}.prodName, "blah", String, silver_tests);
+equalityTest(
+  case decorate ocPolyWrap(ocThing()) with {prodName = "blah";} of
+  | ocPolyWrap(thing) -> thing.prodName
+  end, "blah", String, silver_tests);
