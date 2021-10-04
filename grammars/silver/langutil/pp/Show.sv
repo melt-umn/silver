@@ -10,8 +10,14 @@ For nonterminals, this class should typically be implemented by defining the pp 
 Minimal complete definition: pp
 -}
 class Show a {
+  @{-
+    Pretty-print a value of type a into a Document representation.
+  -}
   pp :: (Document ::= a);
 
+  @{-
+    Pretty-print a value of type a as a String with a desired maximum line width.
+  -}
   show :: (String ::= Integer a) =
     \ width::Integer x::a -> showDoc(width, pp(x));
 }
@@ -68,6 +74,8 @@ instance Show a, ShowTuple b => ShowTuple (a, b) {
   ppTuple = \ x::(a, b) -> pp"${pp(x.fst)}, ${ppTuple(x.snd)}";
 }
 
+-- This instance would normally be disallowed; we are exempting it in silver/definition/type/syntax/Constraint.sv
+-- since we know it is safe - this is like enabling the UndecidableInstances extension in Haskell
 instance Show a => ShowTuple a {
   ppTuple = pp;
 }
