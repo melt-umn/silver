@@ -56,7 +56,10 @@ top::Constraint ::= c::QNameType t::TypeExpr
   -- within the standard library; turn off this check for those instances
   -- (equivalent to writing {-# LANGUAGE UndecidableInstances #-} in Haskell):
   production attribute undecidableInstanceClasses::[String] with ++;
-  undecidableInstanceClasses := ["silver:langutil:pp:Show"];
+  undecidableInstanceClasses := [
+    -- Safe because instance for Show a has no further class constraints
+    "silver:langutil:pp:Show"
+  ];
   
   production undecidableInstanceErrors::[Message] =
     case top.constraintPos.instanceHead of
