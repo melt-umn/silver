@@ -141,4 +141,10 @@ equalityTest ( show(0, ppImplode(text(", "), doclist1)), "a, b, c", String, core
 equalityTest ( show(0, terminate(text(";"), doclist1)), "a;b;c;", String, core_tests );
 equalityTest ( show(0, initiate(text(";"), doclist1)), ";a;b;c", String, core_tests );
 
+-- show things besides Document types
+equalityTest ( show(0, [("abcd", 42, 3.14), ("hello", 123, 6.28)]), "[(\"abcd\", 42, 3.14), (\"hello\", 123, 6.28)]", String, core_tests );
+equalityTest ( show(0, [left(true), right(just(())), right(nothing())]), "[left(true), right(just(())), right(nothing())]", String, core_tests );
+
+-- templates
+equalityTest ( show(0, pp"abc${123} ${just(3.14)}"), "abc123 just(3.14)", String, core_tests );
 
