@@ -1,47 +1,47 @@
 grammar flow;
 
-attribute isEqual, isEqualTo occurs on Expr;
-flowtype isEqual {isEqualTo} on Expr;
+attribute isEqual, compareTo occurs on Expr;
+flowtype isEqual {compareTo} on Expr;
 aspect production zero top::Expr ::=
-{ propagate isEqual, isEqualTo; }
+{ propagate isEqual, compareTo; }
 aspect production succ top::Expr ::= _
-{ propagate isEqual, isEqualTo; }
+{ propagate isEqual, compareTo; }
 aspect default production
 top::Expr ::=
 { top.isEqual = false; }
 
 function isEqual
-attribute isEqualTo<a> occurs on a,
-attribute isEqual {isEqualTo} occurs on a =>
+attribute compareTo<a {}> occurs on a,
+attribute isEqual {compareTo} occurs on a =>
 Boolean ::= x::a y::a
 {
-  x.isEqualTo = y;
+  x.compareTo = y;
   return x.isEqual;
 }
 
 warnCode "Equation has transitive dependency on child x's inherited attribute for flow:env1 but this equation appears to be missing." {
 function isEqualBad
-attribute isEqualTo<a> occurs on a,
-attribute isEqual {isEqualTo, env1} occurs on a =>
+attribute compareTo<a {}> occurs on a,
+attribute isEqual {compareTo, env1} occurs on a =>
 Boolean ::= x::a y::a
 {
-  x.isEqualTo = y;
+  x.compareTo = y;
   return x.isEqual;
 }
 }
 
 global isEqualGlobal ::
-  attribute isEqualTo<a> occurs on a,
-  attribute isEqual {isEqualTo} occurs on a =>
+  attribute compareTo<a {}> occurs on a,
+  attribute isEqual {compareTo} occurs on a =>
   (Boolean ::= a a) = \ x::a y::a ->
-    decorate x with {isEqualTo = y;}.isEqual;
+    decorate x with {compareTo = decorate y with {};}.isEqual;
 
 warnCode "Decoration requires inherited attribute for flow:env1." {
 global isEqualGlobalBad ::
-  attribute isEqualTo<a> occurs on a,
-  attribute isEqual {isEqualTo, env1} occurs on a =>
+  attribute compareTo<a {}> occurs on a,
+  attribute isEqual {compareTo, env1} occurs on a =>
   (Boolean ::= a a) = \ x::a y::a ->
-    decorate x with {isEqualTo = y;}.isEqual;
+    decorate x with {compareTo = decorate y with {};}.isEqual;
 }
 
 class Equal1 a {
@@ -49,20 +49,20 @@ class Equal1 a {
 }
 
 warnCode "Decoration requires inherited attribute for flow:env1." {
-instance attribute isEqualTo<a> occurs on a,
-         attribute isEqual {isEqualTo, env1} occurs on a =>
+instance attribute compareTo<a {}> occurs on a,
+         attribute isEqual {compareTo, env1} occurs on a =>
          Equal1 a {
   isEqual1 = \ x::a y::a ->
-    decorate x with {isEqualTo = y;}.isEqual;
+    decorate x with {compareTo = decorate y with {};}.isEqual;
 }
 }
 
 warnCode "Decoration requires inherited attribute for flow:env1." {
-class attribute isEqualTo<a> occurs on a,
-      attribute isEqual {isEqualTo, env1} occurs on a =>
+class attribute compareTo<a {}> occurs on a,
+      attribute isEqual {compareTo, env1} occurs on a =>
       Equal2 a {
   isEqual2 :: (Boolean ::= a a) = \ x::a y::a ->
-    decorate x with {isEqualTo = y;}.isEqual;
+    decorate x with {compareTo = decorate y with {};}.isEqual;
 }
 }
 

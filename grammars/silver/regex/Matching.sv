@@ -17,7 +17,7 @@ strategy attribute simpl =
     | alt(r, empty()) -> r
     | alt(epsilon(), r) when r.nullable -> r
     | alt(r, epsilon()) when r.nullable -> r
-    | alt(r1, r2) when decorate r1 with { isEqualTo = r2; }.isEqual -> r1
+    | alt(r1, r2) when r1 == r2 -> r1
     | star(empty()) -> epsilon()
     | star(epsilon()) -> epsilon()
     end)

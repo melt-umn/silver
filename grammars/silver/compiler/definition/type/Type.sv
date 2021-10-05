@@ -297,7 +297,8 @@ top::Type ::= params::Integer namedParams::[String]
 
 --------------------------------------------------------------------------------
 
-nonterminal TyVar with kindrep;
+nonterminal TyVar with kindrep, compareTo, isEqual;
+propagate compareTo, isEqual on TyVar;
 
 -- In essence, this should be 'private' to this file.
 synthesized attribute extractTyVarRep :: Integer occurs on TyVar;
@@ -344,9 +345,3 @@ Type ::=
 {
   return varType(freshTyVar(inhSetKind()));
 }
-
--- TODO: Replace with propagated default instance
-instance Eq TyVar {
-  eq = \ tv1::TyVar tv2::TyVar -> tv1.kindrep == tv2.kindrep && tv1.extractTyVarRep == tv2.extractTyVarRep;
-}
-

@@ -42,33 +42,94 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
       location=top.location);
 }
 
-concrete production equalityAttributeDclMultiple
-top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name 'occurs' 'on' qs::QNames ';'
+concrete production destructAttributeDclMultiple
+top::AGDcl ::= 'destruct' 'attribute' a::Name 'occurs' 'on' qs::QNames ';'
 {
-  top.unparse = "equality attribute " ++ inh.unparse ++ ", " ++ syn.name ++ " occurs on " ++ qs.unparse ++ ";";
+  top.unparse = "destruct attribute " ++ a.name ++ " occurs on " ++ qs.unparse ++ ";";
   forwards to
     appendAGDcl(
-      equalityAttributeDcl($1, $2, inh, $4, syn, $9, location=top.location),
+      destructAttributeDcl($1, $2, a, ';', location=a.location),
+      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location)), qs.qnames),
+      location=top.location);
+}
+
+concrete production equalityAttributeDclMultiple
+top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "equality attribute " ++ syn.name ++ " with " ++ inh.unparse ++ " occurs on " ++ qs.unparse ++ ";";
+  forwards to
+    appendAGDcl(
+      equalityAttributeDcl($1, $2, syn, $4, inh, $9, location=top.location),
+      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
+      location=top.location);
+}
+
+concrete production orderingAttributeDclMultiple
+top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QName 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "ordering attribute " ++ keySyn.name ++ ", " ++ syn.name ++ " with " ++ inh.unparse ++ " occurs on " ++ qs.unparse ++ ";";
+  forwards to
+    appendAGDcl(
+      orderingAttributeDcl($1, $2, keySyn, $4, syn, $6, inh, $11, location=top.location),
       appendAGDcl(
-        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location)), qs.qnames),
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(keySyn, location=syn.location), botlNone(location=top.location)), qs.qnames),
         makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
         location=top.location),
       location=top.location);
 }
 
-concrete production unificationAttributeDclMultiple
-top::AGDcl ::= 'unification' 'attribute' inh::Name i::TypeExpr ',' synPartial::Name ',' syn::Name 'occurs' 'on' qs::QNames ';'
+-- Deprecate?  Eric suggested keeping this: https://github.com/melt-umn/silver/issues/431#issuecomment-760552226
+concrete production destructEqualityAttributeDcl
+top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name ';'
 {
-  top.unparse = "equality attribute " ++ inh.unparse ++ " " ++ i.unparse ++ ", " ++ synPartial.name ++ ", " ++ syn.name ++ " occurs on " ++ qs.unparse ++ ";";
+  top.unparse = "equality attribute " ++ inh.unparse ++ ", " ++ syn.name ++ ";";
   forwards to
     appendAGDcl(
-      unificationAttributeDcl($1, $2, inh, i, $5, syn, $7, synPartial, $12, location=top.location),
+      destructAttributeDcl('destruct', $2, inh, $6, location=top.location),
+      equalityAttributeDcl($1, $2, syn, 'with', qNameId(inh, location=top.location), $6, location=top.location),
+      location=top.location);
+}
+concrete production destructEqualityAttributeDclMultiple
+top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "equality attribute " ++ inh.unparse ++ ", " ++ syn.name ++ " occurs on " ++ qs.unparse ++ ";";
+  forwards to
+    appendAGDcl(
+      destructAttributeDclMultiple('destruct', $2, inh, $6, $7, qs, $9, location=top.location),
+      equalityAttributeDclMultiple($1, $2, syn, 'with', qNameId(inh, location=top.location), $6, $7, qs, $9, location=top.location),
+      location=top.location);
+}
+concrete production destructOrderingAttributeDcl
+top::AGDcl ::= 'ordering' 'attribute' inh::Name ',' keySyn::Name ',' syn::Name ';'
+{
+  top.unparse = "ordering attribute " ++ inh.unparse ++ ", " ++ keySyn.name ++ ", " ++ syn.name ++ ";";
+  forwards to
+    appendAGDcl(
+      destructAttributeDcl('destruct', $2, inh, $8, location=top.location),
+      orderingAttributeDcl($1, $2, keySyn, $6, syn, 'with', qNameId(inh, location=top.location), $8, location=top.location),
+      location=top.location);
+}
+concrete production destructOrderingAttributeDclMultiple
+top::AGDcl ::= 'ordering' 'attribute' inh::Name ',' keySyn::Name ',' syn::Name 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "ordering attribute " ++ inh.unparse ++ ", " ++ keySyn.name ++ ", " ++ syn.name ++ " occurs on " ++ qs.unparse ++ ";";
+  forwards to
+    appendAGDcl(
+      destructAttributeDclMultiple('destruct', $2, inh, $8, $9, qs, $11, location=top.location),
+      orderingAttributeDclMultiple($1, $2, keySyn, $6, syn, 'with', qNameId(inh, location=top.location), $8, $9, qs, $11, location=top.location),
+      location=top.location);
+}
+
+concrete production unificationAttributeDclMultiple
+top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' inh::QName 'occurs' 'on' qs::QNames ';'
+{
+  top.unparse = "unification attribute " ++ synPartial.name ++ ", " ++ syn.name ++ " with " ++ inh.unparse ++ " occurs on " ++ qs.unparse ++ ";";
+  forwards to
+    appendAGDcl(
+      unificationAttributeDcl($1, $2, synPartial, ',', syn, 'with', inh, ';', location=top.location),
       appendAGDcl(
-        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location)), qs.qnames),
-        appendAGDcl(
-          makeOccursDclsHelp($1.location, qNameWithTL(qNameId(synPartial, location=synPartial.location), botlNone(location=top.location)), qs.qnames),
-          makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
-          location=top.location),
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(synPartial, location=synPartial.location), botlNone(location=top.location)), qs.qnames),
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
         location=top.location),
       location=top.location);
 }

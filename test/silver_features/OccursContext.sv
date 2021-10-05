@@ -4,10 +4,10 @@ inherited attribute extraInh1::String occurs on EqExpr;
 inherited attribute extraInh2::Integer occurs on EqExpr;
 
 function eqA
-attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a =>
+attribute compareTo<a {}> occurs on a, attribute isEqual {compareTo} occurs on a =>
 Boolean ::= x::a y::a
 {
-  x.isEqualTo = y;
+  x.compareTo = y;
   return x.isEqual;
 }
 
@@ -22,12 +22,12 @@ equalityTest(eqA(ee3, ee2), false, Boolean, silver_tests);
 equalityTest(eqA(ee3, ee3), true, Boolean, silver_tests);
 
 function eqB
-attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a =>
+attribute compareTo<a {}> occurs on a, attribute isEqual {compareTo} occurs on a =>
 Boolean ::= x::a y::a
 {
   production z::a = x;
   production w::a = z;
-  w.isEqualTo = y;
+  w.compareTo = y;
   return w.isEqual;
 }
 
@@ -42,12 +42,12 @@ equalityTest(eqB(ee3, ee2), false, Boolean, silver_tests);
 equalityTest(eqB(ee3, ee3), true, Boolean, silver_tests);
 
 function eqC
-attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a =>
+attribute compareTo<a {}> occurs on a, attribute isEqual {compareTo} occurs on a =>
 Boolean ::= x::(a ::= ) y::(a ::= )
 {
   production z::a = x();
   production w::a = y();
-  w.isEqualTo = z;
+  w.compareTo = z;
   return w.isEqual;
 }
 
@@ -75,8 +75,8 @@ instance OCEq String
   ocEq = \ x::String y::String -> x == y;
 }
 
-instance attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a => OCEq a {
-  ocEq = \ x::a y::a -> decorate x with {isEqualTo = y;}.isEqual; 
+instance attribute compareTo<a {}> occurs on a, attribute isEqual {compareTo} occurs on a => OCEq a {
+  ocEq = \ x::a y::a -> decorate x with {compareTo = decorate y with {};}.isEqual; 
 }
 
 equalityTest(ocEq(ee1, ee1), true, Boolean, silver_tests);
@@ -89,21 +89,21 @@ equalityTest(ocEq(ee3, ee1), false, Boolean, silver_tests);
 equalityTest(ocEq(ee3, ee2), false, Boolean, silver_tests);
 equalityTest(ocEq(ee3, ee3), true, Boolean, silver_tests);
 
-nonterminal OCEqPair<a b> with isEqualTo, isEqual;
+nonterminal OCEqPair<a b> with compareTo, isEqual;
 production ocEqPair
-attribute isEqualTo<a> occurs on a, attribute isEqual {isEqualTo} occurs on a,
-attribute isEqualTo<b> occurs on b, attribute isEqual {isEqualTo} occurs on b =>
+attribute compareTo<a {}> occurs on a, attribute isEqual {compareTo} occurs on a,
+attribute compareTo<b {}> occurs on b, attribute isEqual {compareTo} occurs on b =>
 top::OCEqPair<a b> ::= x::a y::b
 {
-  propagate isEqualTo, isEqual;
+  propagate compareTo, isEqual;
 {-
-  x.isEqualTo = case top.isEqualTo of ocEqPair(a, _) -> a end;
-  y.isEqualTo = case top.isEqualTo of ocEqPair(_, a) -> a end;
+  x.compareTo = case top.compareTo of ocEqPair(a, _) -> a end;
+  y.compareTo = case top.compareTo of ocEqPair(_, a) -> a end;
   top.isEqual = x.isEqual && y.isEqual;
   -}
 }
 
-equalityTest(decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);}.isEqual, true, Boolean, silver_tests);
+equalityTest(decorate ocEqPair(ee1, ee2) with {compareTo = decorate ocEqPair(ee1, ee2) with {};}.isEqual, true, Boolean, silver_tests);
 
 function requireDec
 Decorated a with i ::= x::Decorated a with i
@@ -111,17 +111,17 @@ Decorated a with i ::= x::Decorated a with i
 
 -- decorated match on polymorphic child
 equalityTest(
-  case decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);} of
+  case decorate ocEqPair(ee1, ee2) with {compareTo = decorate ocEqPair(ee1, ee2) with {};} of
   | ocEqPair(x, y) -> requireDec(x).isEqual && requireDec(y).isEqual
   end, true, Boolean, silver_tests);
 
 equalityTest(ocEq(ocEqPair(ee1, ee2), ocEqPair(ee1, ee2)), true, Boolean, silver_tests);
 equalityTest(ocEq(ocEqPair(ee1, ee2), ocEqPair(ee1, ee3)), false, Boolean, silver_tests);
 
-wrongCode "Could not find an instance for attribute silver:core:isEqual {silver:core:isEqualTo} occurs on String (arising from the use of ocEqPair)" {
+wrongCode "Could not find an instance for attribute silver:core:isEqual {silver:core:compareTo} occurs on String (arising from the use of ocEqPair)" {
   global err::OCEqPair<EqExpr String> = ocEqPair(ee1, "abc");
 }
-wrongCode "Could not find an instance for attribute silver:core:isEqualTo<String> occurs on String (arising from the use of ocEqPair)" {
+wrongCode "Could not find an instance for attribute silver:core:compareTo<String {}> occurs on String (arising from the use of ocEqPair)" {
   global err::OCEqPair<EqExpr String> = ocEqPair(ee1, "abc");
 }
 
@@ -132,7 +132,7 @@ top::OCEqPair<a b> ::= x::a y::b
   top.isEqual2 = x.isEqual && y.isEqual;
 }
 
-equalityTest(decorate ocEqPair(ee1, ee2) with {isEqualTo = ocEqPair(ee1, ee2);}.isEqual2, true, Boolean, silver_tests);
+equalityTest(decorate ocEqPair(ee1, ee2) with {compareTo = decorate ocEqPair(ee1, ee2) with {};}.isEqual2, true, Boolean, silver_tests);
 
 synthesized attribute prodName::String;
 nonterminal OCExpr with prodName;
