@@ -117,23 +117,31 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   top.transform =
     case e, es of
     | productionReference(q), _ -> prodCallASTExpr(q.lookupValue.fullName, es.transform, anns.transform)
-    
+
     -- Special cases for efficiency (and workaround for inability to use applyAST on functions with constraints)
     | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
-      when q.name == "silver:core:eq" -> eqeqASTExpr(e1.transform, e2.transform)
+      when q.lookupValue.fullName == "silver:core:eq" -> eqeqASTExpr(e1.transform, e2.transform)
     | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
-      when q.name == "silver:core:neq" -> neqASTExpr(e1.transform, e2.transform)
+      when q.lookupValue.fullName == "silver:core:neq" -> neqASTExpr(e1.transform, e2.transform)
     | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
-      when q.name == "silver:core:lt" -> ltASTExpr(e1.transform, e2.transform)
+      when q.lookupValue.fullName == "silver:core:lt" -> ltASTExpr(e1.transform, e2.transform)
     | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
-      when q.name == "silver:core:lte" -> lteqASTExpr(e1.transform, e2.transform)
+      when q.lookupValue.fullName == "silver:core:lte" -> lteqASTExpr(e1.transform, e2.transform)
     | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
-      when q.name == "silver:core:gt" -> gtASTExpr(e1.transform, e2.transform)
+      when q.lookupValue.fullName == "silver:core:gt" -> gtASTExpr(e1.transform, e2.transform)
     | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
-      when q.name == "silver:core:gte" -> gteqASTExpr(e1.transform, e2.transform)
+      when q.lookupValue.fullName == "silver:core:gte" -> gteqASTExpr(e1.transform, e2.transform)
     | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
-      when q.name == "silver:core:append" -> appendASTExpr(e1.transform, e2.transform)
-    
+      when q.lookupValue.fullName == "silver:core:append" -> appendASTExpr(e1.transform, e2.transform)
+    | classMemberReference(q), oneAppExprs(presentAppExpr(e))
+      when q.lookupValue.fullName == "silver:core:toString" -> toStringASTExpr(e.transform)
+    | classMemberReference(q), oneAppExprs(presentAppExpr(e))
+      when q.lookupValue.fullName == "silver:core:toInteger" -> toIntegerASTExpr(e.transform)
+    | classMemberReference(q), oneAppExprs(presentAppExpr(e))
+      when q.lookupValue.fullName == "silver:core:toFloat" -> toFloatASTExpr(e.transform)
+    | classMemberReference(q), oneAppExprs(presentAppExpr(e))
+      when q.lookupValue.fullName == "silver:core:toBoolean" -> toBooleanASTExpr(e.transform)
+
     | _, _ -> applyASTExpr(e.transform, es.transform, anns.transform)
     end;
 }
