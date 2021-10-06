@@ -38,7 +38,9 @@ instance Alternative [] {}
 instance MonadZero [] {}
 instance MonadPlus [] {}
 
--- Things with a length.
+@{-
+  Types with a notion of length.
+-}
 -- TODO: In Haskell, length is defined by the Foldable type class.
 -- Consider moving this if we add Foldable in the future.
 class Length a {

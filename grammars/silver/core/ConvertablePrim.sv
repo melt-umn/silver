@@ -1,9 +1,21 @@
 grammar silver:core;
 
+@{-
+  Primitive types that can be converted into other primitive types.
+
+  This class provides the overloaded toString, toInteger, toFloat and toBoolean functions.
+-}
 class ConvertablePrim a {
+  @{- Convert a value into a String -}
   toString :: (String ::= a);
+
+  @{- Convert a value into an Integer -}
   toInteger :: (Integer ::= a);
+
+  @{- Convert a value into a Float -}
   toFloat :: (Float ::= a);
+
+  @{- Convert a value into a Boolean -}
   toBoolean :: (Boolean ::= a);
 }
 
