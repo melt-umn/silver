@@ -1,11 +1,5 @@
 grammar silver:compiler:analysis:typechecking:core;
 
-aspect production lengthFunction
-top::Expr ::= 'length' '(' e::Expr ')'
-{
-  propagate upSubst, downSubst;
-}
-
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {

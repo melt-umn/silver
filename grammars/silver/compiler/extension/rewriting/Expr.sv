@@ -141,6 +141,8 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
       when q.lookupValue.fullName == "silver:core:toFloat" -> toFloatASTExpr(e.transform)
     | classMemberReference(q), oneAppExprs(presentAppExpr(e))
       when q.lookupValue.fullName == "silver:core:toBoolean" -> toBooleanASTExpr(e.transform)
+    | classMemberReference(q), oneAppExprs(presentAppExpr(e))
+      when q.lookupValue.fullName == "silver:core:length" -> lengthASTExpr(e.transform)
 
     | _, _ -> applyASTExpr(e.transform, es.transform, anns.transform)
     end;
@@ -489,18 +491,6 @@ top::Expr ::= s::String_t
   top.transform = stringASTExpr(unescapeString(substring(1, length(s.lexeme) - 1, s.lexeme)));
 }
 
-aspect production errorLength
-top::Expr ::= e::Decorated Expr
-{
-  top.transform = lengthASTExpr(e.transform);
-}
-
-aspect production stringLength
-top::Expr ::= e::Decorated Expr
-{
-  top.transform = lengthASTExpr(e.transform);
-}
-
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
@@ -537,12 +527,6 @@ aspect production listPlusPlus
 top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
   top.transform = appendASTExpr(e1.transform, e2.transform);
-}
-
-aspect production listLengthBouncer
-top::Expr ::= e::Decorated Expr
-{
-  top.transform = lengthASTExpr(e.transform);
 }
 
 -- TODO: Awful hack to allow case to appear on rule RHS.

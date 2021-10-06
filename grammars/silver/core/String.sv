@@ -1,5 +1,23 @@
 grammar silver:core;
 
+instance Length String {
+  length = stringLength;
+}
+
+@{--
+ - Compute the length of a string.
+ -
+ - @param s The string to compute the length of.
+ - @return  The length of the string.
+ -}
+function stringLength
+Integer ::= s::String
+{
+  return error("foreign function");
+} foreign {
+  "java": return "Integer.valueOf(%s%.length())";
+}
+
 @{--
  - Fold a list of strings into one string, by interspersing a separator.
  -

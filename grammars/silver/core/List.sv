@@ -38,6 +38,16 @@ instance Alternative [] {}
 instance MonadZero [] {}
 instance MonadPlus [] {}
 
+-- Things with a length.
+-- TODO: In Haskell, length is defined by the Foldable type class.
+-- Consider moving this if we add Foldable in the future.
+class Length a {
+  length :: (Integer ::= a);
+}
+
+instance Length [a] {
+  length = listLength;
+}
 
 @{--
  - Applies an operator right-associatively over a list.

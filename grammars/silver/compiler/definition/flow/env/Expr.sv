@@ -239,23 +239,6 @@ top::Expr ::= e::Decorated Expr
   -- i.e. whether this has already been included. shouldn't hurt to do so though.
 }
 
-
--- builtins
-
-aspect production stringLength
-top::Expr ::= e::Decorated Expr
-{
-  top.flowDeps <- e.flowDeps;
-  top.flowDefs <- e.flowDefs;
-}
-aspect production errorLength
-top::Expr ::= e::Decorated Expr
-{
-  top.flowDeps <- e.flowDeps;
-  top.flowDefs <- e.flowDefs;
-}
-
-
 -- FROM LET TODO
 attribute flowDefs, flowEnv occurs on AssignExpr;
 propagate flowDefs on AssignExpr;
