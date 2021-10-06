@@ -40,46 +40,6 @@ top::Expr ::= e::Decorated Expr
   top.errors <- e.errors;
 }
 
-concrete production toIntegerFunction
-top::Expr ::= 'toInteger' '(' e::Expr ')'
-{
-  top.unparse = "toInteger(" ++ e.unparse ++ ")";
-
-  top.typerep = intType();
-
-  e.isRoot = false;
-}
-
-concrete production toBooleanFunction
-top::Expr ::= 'toBoolean' '(' e::Expr ')'
-{
-  top.unparse = "toBoolean(" ++ e.unparse ++ ")";
-
-  top.typerep = boolType();
-
-  e.isRoot = false;
-}
-
-concrete production toFloatFunction
-top::Expr ::= 'toFloat' '(' e::Expr ')'
-{
-  top.unparse = "toFloat(" ++ e.unparse ++ ")";
-
-  top.typerep = floatType();
-
-  e.isRoot = false;
-}
-
-concrete production toStringFunction
-top::Expr ::= 'toString' '(' e::Expr ')'
-{
-  top.unparse = "toString(" ++ e.unparse ++ ")";
-
-  top.typerep = stringType();
-
-  e.isRoot = false;
-}
-
 {--
  - The standard terminal constructor. This is *abstract* because 3-arg
  - syntax is ambiguous without type-based disambiguation with a legacy syntax.
@@ -99,17 +59,6 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 
 --------------------------------------------------------------------------------
 -- Deprecated variants of built-in functions
-
-
-concrete production toIntFunction
-top::Expr ::= 'toInt' '(' e::Expr ')'
-{
-  top.unparse = "toInt(" ++ e.unparse ++ ")";
-
-  top.errors <- [wrn($1.location, "'toInt' is deprecated syntax, please use 'toInteger' instead.")];
-
-  forwards to toIntegerFunction('toInteger', '(', e, ')', location=top.location);
-}
 
 {--
  - Three-argument `terminal` is either:

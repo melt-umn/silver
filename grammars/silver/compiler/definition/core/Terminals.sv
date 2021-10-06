@@ -62,18 +62,7 @@ terminal Type_t          'type'         lexer classes {KEYWORD};
 terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED}, precedence = 3; -- Precedence to fix Decorated Decorated Expr with {}, which is a semantic error either way
 
 terminal Length_kwd     'length'     lexer classes {BUILTIN,RESERVED};
-terminal ToBoolean_kwd  'toBoolean'  lexer classes {BUILTIN};
-terminal ToFloat_kwd    'toFloat'    lexer classes {BUILTIN};
-terminal ToInt_kwd      'toInt'      lexer classes {BUILTIN}; -- Legacy
-terminal ToInteger_kwd  'toInteger'  lexer classes {BUILTIN};
-terminal ToString_kwd   'toString'   lexer classes {BUILTIN};
 terminal AttachNote_kwd 'attachNote' lexer classes {BUILTIN,RESERVED};
-
-disambiguate ToBoolean_kwd, IdLower_t { pluck ToBoolean_kwd; }
-disambiguate ToFloat_kwd, IdLower_t { pluck ToFloat_kwd; }
-disambiguate ToInt_kwd, IdLower_t { pluck ToInt_kwd; }
-disambiguate ToInteger_kwd, IdLower_t { pluck ToInteger_kwd; }
-disambiguate ToString_kwd, IdLower_t { pluck ToString_kwd; }
 
 terminal Comma_t       ','  precedence = 4;
 terminal Or_t          '||' precedence = 5, association = left;

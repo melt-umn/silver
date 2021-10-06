@@ -6,43 +6,6 @@ top::Expr ::= 'length' '(' e::Expr ')'
   propagate upSubst, downSubst;
 }
 
-aspect production toBooleanFunction
-top::Expr ::= 'toBoolean' '(' e1::Expr ')'
-{
-  top.errors <-
-    if performSubstitution(e1.typerep, top.finalSubst).instanceConvertible
-    then []
-    else [err(top.location, "Operand to toBoolean must be concrete types String, Integer, Float, or Boolean.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
-}
-
-aspect production toIntegerFunction
-top::Expr ::= 'toInteger' '(' e1::Expr ')'
-{
-  top.errors <-
-    if performSubstitution(e1.typerep, top.finalSubst).instanceConvertible
-    then []
-    else [err(top.location, "Operand to toInteger must be concrete types String, Integer, Float, or Boolean.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
-}
-
-aspect production toFloatFunction
-top::Expr ::= 'toFloat' '(' e1::Expr ')'
-{
-  
-  top.errors <-
-    if performSubstitution(e1.typerep, top.finalSubst).instanceConvertible
-    then []
-    else [err(top.location, "Operand to toFloat must be concrete types String, Integer, Float, or Boolean.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
-}
-
-aspect production toStringFunction
-top::Expr ::= 'toString' '(' e1::Expr ')'
-{
-  top.errors <-
-    if performSubstitution(e1.typerep, top.finalSubst).instanceConvertible
-    then []
-    else [err(top.location, "Operand to toString must be concrete types String, Integer, Float, or Boolean.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
-}
-
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {

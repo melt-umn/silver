@@ -493,30 +493,6 @@ top::Expr ::= e::Decorated Expr
   top.transform = lengthASTExpr(e.transform);
 }
 
-aspect production toIntegerFunction
-top::Expr ::= 'toInteger' '(' e::Expr ')'
-{
-  top.transform = toIntegerASTExpr(e.transform);
-}
-
-aspect production toBooleanFunction
-top::Expr ::= 'toBoolean' '(' e::Expr ')'
-{
-  top.transform = toBooleanASTExpr(e.transform);
-}
-
-aspect production toFloatFunction
-top::Expr ::= 'toFloat' '(' e::Expr ')'
-{
-  top.transform = toFloatASTExpr(e.transform);
-}
-
-aspect production toStringFunction
-top::Expr ::= 'toString' '(' e::Expr ')'
-{
-  top.transform = toStringASTExpr(e.transform);
-}
-
 aspect production terminalConstructor
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
 {
