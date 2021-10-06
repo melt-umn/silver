@@ -112,7 +112,7 @@ ignore terminal LocationTag_t /#line -?[0-9]+/
   };
 ignore terminal WarnTag_t /#warn [^\r\n]+/
   action {
-    print "WARNING:" ++ substring(6, length(lexeme), lexeme);
+    print s"${filename}:${toString(line)}: warning: ${substring(6, length(lexeme), lexeme)}";
   };
 
 terminal IdLower_t /[a-z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
