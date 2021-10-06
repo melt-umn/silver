@@ -854,6 +854,38 @@ top::Expr ::= e1::Expr '++' e2::Expr
       location=top.location);
 }
 
+concrete production terminalConstructor
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
+{
+  top.unparse = "terminal(" ++ t.unparse ++ ", " ++ es.unparse ++ ", " ++ el.unparse ++ ")";
+
+  top.typerep = t.typerep;
+
+  es.isRoot = false;
+  el.isRoot = false;
+}
+
+-- TODO: Remove
+abstract production terminalConstructorTemporaryDispatcher
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
+{
+  forwards to terminalConstructor($1, $2, t, $4, es, $6, el, $8, location=top.location);
+}
+
+concrete production terminalFunction
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' e::Expr ')'
+{
+  -- So, *maybe* this is deprecated? But let's not complain for now, because
+  -- it's too widely used.
+
+  --top.errors <- [wrn(t.location, "terminal(type,lexeme) is deprecated. Use terminal(type,lexeme,location) instead.")];
+
+  local bogus :: Expr =
+    mkStrFunctionInvocation($6.location, "silver:core:bogusLoc", []);
+
+  forwards to terminalConstructor($1, $2, t, $4, e, ',', bogus, $6, location=top.location);
+}
+
 -- These sorta seem obsolete, but there are some important differences from AppExprs.
 -- For one, AppExprs expects a fixed, imposed list of types. Here we're flexible!
 -- This is used by both pattern matching and list literals.
