@@ -865,13 +865,6 @@ top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
   el.isRoot = false;
 }
 
--- TODO: Remove
-abstract production terminalConstructorTemporaryDispatcher
-top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
-{
-  forwards to terminalConstructor($1, $2, t, $4, es, $6, el, $8, location=top.location);
-}
-
 concrete production terminalFunction
 top::Expr ::= 'terminal' '(' t::TypeExpr ',' e::Expr ')'
 {
