@@ -96,6 +96,19 @@ wrongCode "Attribute section (.sec2) has inferred output type Integer that does 
   global s :: [Integer] = map((.sec2), sections);
 }
 
+synthesized attribute sec5<a> :: a;
+nonterminal SectionPoly<a> with sec5<a>;
+production sectionPoly
+top::SectionPoly<a> ::= x::a
+{ top.sec5 = x; }
+
+global requireSP :: (SectionPoly<a> ::= SectionPoly<a>) = id;
+
+-- Here the check that the output type is unambiguous is the only error:
+wrongCode "The attribute section (.sec5) has an ambiguous inferred output type silver_features:SectionPoly<a>, where a is unspecialized" {
+  global sp::String = (.sec5)(requireSP((.sec5)(sectionPoly(sectionPoly(42)))));
+}
+
 -------------------------------
 -- Partial function application
 
