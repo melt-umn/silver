@@ -107,9 +107,9 @@ top::AGDcl ::= 'mainTestSuite' nme::IdLower_t ';'
                    attrAcc("testResults","msg", top.location),
                    strCnst("\n\n"), 
                    strCnst("Passed "), 
-                   Silver_Expr { toString(testResults.numPassed) },
+                   Silver_Expr { silver:core:integerToString(testResults.numPassed) },
                    strCnst(" tests out of "), 
-                   Silver_Expr { toString(testResults.numTests) },
+                   Silver_Expr { silver:core:integerToString(testResults.numTests) },
                    strCnst("\n"), 
                    strCnst("============================================================\n") 
                  ]),
