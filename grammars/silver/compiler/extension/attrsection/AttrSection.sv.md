@@ -21,8 +21,10 @@ In constructing the forward we need to know on what type the attribute will be a
 This requires knowing the final substitution, thus the forward here depends on top.finalSubst.
 Thus type inference must take place without looking at the forward to avoid a circularity.
   
-First, try to determine the type of the type of the attribute if it can be looked up unambiguously.
+First, try to determine the type of the attribute if it can be looked up unambiguously.
 Note that this will have fresh type variables filled in if the attribute has type arguments.
+E.g. with `synthesized attribute bar<a>::[a];`, `attrType` for `(.bar)` will always be
+`listType(freshType())`.
 ```silver
   local attrType::Type =
     case q of
@@ -59,7 +61,7 @@ specific type that differs from the output type is safe to use for the attribute
     if !null(outputTy.freeFlexibleVars)
     then [err(top.location, s"The attribute section ${top.unparse} has an ambiguous inferred output type ${prettyType(outputTy)}, where ${implode(", ", map(findAbbrevFor(_, outputTy.freeVariables), outputTy.freeFlexibleVars))} ${if length(outputTy.freeFlexibleVars) > 1 then "are" else "is"} unspecialized")]
     else forward.errors;
-````
+```
 
 Finally, check that the output type that was inferred matches the type that was actually computed
 on the forward (where the type of the attribute was properly looked up knowing the input type that
