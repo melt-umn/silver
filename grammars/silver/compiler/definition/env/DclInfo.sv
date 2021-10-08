@@ -321,6 +321,37 @@ top::OccursDclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
   -- UGH - bit of a short hand here...
   top.isAnnotation = true;
 }
+abstract production annoInstConstraintDcl
+top::OccursDclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
+{
+  top.fullName = ntty.typeName;
+  top.attrOccurring = fnat;
+  top.isAnnotation = true;
+  
+  top.typeScheme = monoType(atty);
+  
+  ntty.boundVariables = tvs;
+}
+abstract production annoSigConstraintDcl
+top::OccursDclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
+{
+  top.fullName = ntty.typeName;
+  top.attrOccurring = fnat;
+  top.isAnnotation = true;
+  
+  top.typeScheme = monoType(atty);
+  
+  ntty.boundVariables = ns.freeVariables;
+}
+abstract production annoSuperDcl
+top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
+{
+  top.fullName = baseDcl.typeScheme.typerep.typeName;
+  top.attrOccurring = fnat;
+  top.isAnnotation = true;
+  
+  top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, atty);
+}
 
 nonterminal InstDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, typerep2, isTypeError;
 

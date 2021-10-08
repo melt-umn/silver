@@ -100,14 +100,14 @@ top::QNameLookup<a> ::= msg::[Message]
 
 function printPossibilities
 attribute fullName {} occurs on a,
-attribute sourceLocation {} occurs on a =>
+annotation sourceLocation occurs on a =>
 String ::= lst::[a]
 {
   return implode("\n", map(dclinfo2possibility, lst));
 }
 function dclinfo2possibility
 attribute fullName {} occurs on a,
-attribute sourceLocation {} occurs on a =>
+annotation sourceLocation occurs on a =>
 String ::= dcl::a
 {
   -- TODO: perhaps some way of including types, when they are relevant (attributes, values)

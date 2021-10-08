@@ -129,6 +129,30 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
   requiredContexts.env = top.env;
 }
 
+aspect production annoOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.contextSuperDefs = \ DclInfo String Location -> [];
+  top.contextMemberDefs = \ [TyVar] String Location -> [];
+  top.contextSigDefs = \ NamedSignature String Location -> [];
+  top.contextSuperOccursDefs = \ d::DclInfo g::String l::Location ->
+    [annoSuperDcl(attr, atty, d, sourceGrammar=g, sourceLocation=l)];
+  top.contextMemberOccursDefs = \ tvs::[TyVar] g::String l::Location ->
+    [annoInstConstraintDcl(attr, ntty, atty, tvs, sourceGrammar=g, sourceLocation=l)];
+  top.contextSigOccursDefs = \ ns::NamedSignature g::String l::Location ->
+    [annoSigConstraintDcl(attr, ntty, atty, ns, sourceGrammar=g, sourceLocation=l)];
+  top.contextClassName = nothing();
+  
+  top.resolved = getOccursDcl(attr, ntty.typeName, top.env);
+  production resolvedDcl::DclInfo = head(top.resolved);
+  resolvedDcl.givenNonterminalType = ntty;
+  production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
+  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
+  production requiredContexts::Contexts =
+    foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
+  requiredContexts.env = top.env;
+}
+
 aspect production typeableContext
 top::Context ::= t::Type
 {

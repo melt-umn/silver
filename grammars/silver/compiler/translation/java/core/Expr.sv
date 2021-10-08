@@ -326,7 +326,7 @@ aspect production annoAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   -- Note that the transType is specific to the nonterminal we're accessing from.
-  top.translation = s"((${finalType(top).transType})${e.translation}.getAnno_${makeIdName(q.attrDcl.fullName)}())";
+  top.translation = s"((${finalType(top).transType})((${makeAnnoName(q.attrDcl.fullName)})${e.translation}).getAnno_${makeIdName(q.attrDcl.fullName)}())";
   
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
