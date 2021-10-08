@@ -348,6 +348,38 @@ top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
   top.isAnnotation = true;
 }
 
+abstract production annoInstConstraintDcl
+top::DclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
+{
+  top.fullName = ntty.typeName;
+  top.attrOccurring = fnat;
+  top.isAnnotation = true;
+  
+  top.typeScheme = monoType(atty);
+  
+  ntty.boundVariables = tvs;
+}
+abstract production annoSigConstraintDcl
+top::DclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
+{
+  top.fullName = ntty.typeName;
+  top.attrOccurring = fnat;
+  top.isAnnotation = true;
+  
+  top.typeScheme = monoType(atty);
+  
+  ntty.boundVariables = ns.freeVariables;
+}
+abstract production annoSuperDcl
+top::DclInfo ::= fnat::String atty::Type baseDcl::DclInfo
+{
+  top.fullName = baseDcl.typeScheme.typerep.typeName;
+  top.attrOccurring = fnat;
+  top.isAnnotation = true;
+  
+  top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, atty);
+}
+
 -- InstDclInfos
 -- Class instances
 abstract production instDcl
