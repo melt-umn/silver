@@ -100,14 +100,3 @@ top::Expr ::= e1::Decorated Expr e2::Decorated Expr
 {
   forwards to mkStrFunctionInvocationDecorated(e1.location, "silver:core:append", [e1,e2]);
 }
-
-abstract production listLengthBouncer
-top::Expr ::= e::Decorated Expr
-{
-  -- Because `e` will get wrapped in `exprRef`, it's errors will not appear in the
-  -- forward tree.
-  top.errors := forward.errors ++ e.errors;
-
-  forwards to mkStrFunctionInvocationDecorated(e.location, "silver:core:listLength", [e]);
-}
-
