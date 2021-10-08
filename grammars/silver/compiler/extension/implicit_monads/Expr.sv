@@ -396,16 +396,6 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
   top.monadRewritten = top;
 }
 
-aspect production attributeSection
-top::Expr ::= '(' '.' q::QName ')'
-{
-  top.merrors := [];
-  propagate mDownSubst, mUpSubst;
-  top.mtyperep = appTypes(functionType(1, []), [freshType(), q.lookupAttribute.typeScheme.typerep]);
-  top.monadicNames = [];
-  top.monadRewritten = attributeSection('(', '.', q, ')', location=top.location);
-}
-
 aspect production noteAttachment
 top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 {

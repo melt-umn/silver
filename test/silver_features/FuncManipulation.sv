@@ -52,37 +52,61 @@ equalityTest( head([twoArgFunction])("s", 1), 1, Integer, silver_tests ) ;
 
 nonterminal Section;
 
-synthesized attribute sec_valid :: Integer occurs on Section;
-synthesized attribute sec_inv<a> :: a; attribute sec_inv<String> occurs on Section;
-synthesized attribute sec_inv2 :: String; -- no occurs
-inherited attribute sec_inv3 :: Integer occurs on Section; -- inh
+synthesized attribute sec1 :: Integer occurs on Section;
+synthesized attribute sec2<a> :: a; attribute sec2<String> occurs on Section;
+inherited attribute sec3 :: Integer occurs on Section; -- inh
+
+synthesized attribute sec_inv1 :: String; -- no occurs
 
 abstract production section
 top::Section ::=
 {
-  top.sec_valid = 2;
-  top.sec_inv = "hi";
+  top.sec1 = 2;
+  top.sec2 = "hi";
 }
 
-equalityTest( (.sec_valid)(decorate section() with {}), 2, Integer, silver_tests );
-equalityTest( (.sec_valid)(section()), 2, Integer, silver_tests );
+equalityTest( (.sec1)(decorate section() with {}), 2, Integer, silver_tests );
+equalityTest( (.sec1)(section()), 2, Integer, silver_tests );
 
 global sections :: [Section] = [section(), section()];
+global decSections :: [Decorated Section with {sec3}] =
+  [decorate section() with {sec3 = 42;}, decorate section() with {sec3 = 221;}];
 
-equalityTest( map((.sec_valid), sections), [2,2], [Integer], silver_tests );
+equalityTest( map((.sec1), sections), [2,2], [Integer], silver_tests );
+equalityTest( map((.sec2), sections), ["hi", "hi"], [String], silver_tests );
+equalityTest( map((.sec1), decSections), [2,2], [Integer], silver_tests );
+equalityTest( map((.sec2), decSections), ["hi", "hi"], [String], silver_tests );
+equalityTest( map((.sec3), decSections), [42,221], [Integer], silver_tests );
 
-wrongCode "attribute sections currently do not work with parameterized attributes" {
- -- Valid, but for the moment does not work! TODO
- global s :: [String] = map((.sec_inv), sections);
+equalityTest( map((.fst), [(1, "a"), (2, "b")]), [1,2], [Integer], silver_tests );
+equalityTest( map((.fromRight), [right(1), right(2)]), [1,2], [Integer], silver_tests );
+
+wrongCode "The attribute section (.fromLeft) has an ambiguous inferred output type a, where a is unspecialized" {
+  global b::Boolean = null(map((.fromLeft), [right(1), right(2)]));
 }
 
 wrongCode "does not occur on" {
- global s :: [String] = map((.sec_inv2), sections);
+  global s :: [String] = map((.sec_inv1), sections);
 }
 
-wrongCode "Only synthesized attributes are currently supported" {
- -- Valid, but for the moment does not work! TODO
- global s :: [Integer] = map((.sec_inv3), sections);
+wrongCode "'x' has type a and cannot have attributes." {
+  global s :: [Integer] = map((.sec1), []);
+}
+wrongCode "Attribute section (.sec2) has inferred output type Integer that does not match the attribute's type String" {
+  global s :: [Integer] = map((.sec2), sections);
+}
+
+synthesized attribute sec5<a> :: a;
+nonterminal SectionPoly<a> with sec5<a>;
+production sectionPoly
+top::SectionPoly<a> ::= x::a
+{ top.sec5 = x; }
+
+global requireSP :: (SectionPoly<a> ::= SectionPoly<a>) = id;
+
+-- Here the check that the output type is unambiguous is the only error:
+wrongCode "The attribute section (.sec5) has an ambiguous inferred output type silver_features:SectionPoly<a>, where a is unspecialized" {
+  global sp::String = (.sec5)(requireSP((.sec5)(sectionPoly(sectionPoly(42)))));
 }
 
 -------------------------------
