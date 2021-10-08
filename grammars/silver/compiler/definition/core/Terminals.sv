@@ -61,12 +61,6 @@ terminal To_kwd          'to'           lexer classes {KEYWORD,RESERVED};
 terminal Type_t          'type'         lexer classes {KEYWORD};
 terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED}, precedence = 3; -- Precedence to fix Decorated Decorated Expr with {}, which is a semantic error either way
 
-terminal Length_kwd     'length'     lexer classes {BUILTIN,RESERVED};
-terminal ToBoolean_kwd  'toBoolean'  lexer classes {BUILTIN,RESERVED};
-terminal ToFloat_kwd    'toFloat'    lexer classes {BUILTIN,RESERVED};
-terminal ToInt_kwd      'toInt'      lexer classes {BUILTIN,RESERVED}; -- Legacy
-terminal ToInteger_kwd  'toInteger'  lexer classes {BUILTIN,RESERVED};
-terminal ToString_kwd   'toString'   lexer classes {BUILTIN,RESERVED};
 terminal AttachNote_kwd 'attachNote' lexer classes {BUILTIN,RESERVED};
 
 terminal Comma_t       ','  precedence = 4;
@@ -115,7 +109,7 @@ ignore terminal LocationTag_t /#line -?[0-9]+/
   };
 ignore terminal WarnTag_t /#warn [^\r\n]+/
   action {
-    print "WARNING:" ++ substring(6, length(lexeme), lexeme);
+    print s"${filename}:${toString(line)}: warning: ${substring(6, length(lexeme), lexeme)}";
   };
 
 terminal IdLower_t /[a-z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};

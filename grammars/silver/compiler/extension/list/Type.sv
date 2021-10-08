@@ -34,7 +34,6 @@ top::Type ::=
   top.isNonterminal = false;
   top.isDecorated = false;
   --top.accessHandler = errorAccessHandler; -- permit this, since we need it for default, non-specialized java version
-  top.lengthDispatcher = listLengthBouncer(_, location=_);
   
   --top.transType -- for translation.
   
