@@ -109,6 +109,15 @@ wrongCode "The attribute section (.sec5) has an ambiguous inferred output type s
   global sp::String = (.sec5)(requireSP((.sec5)(sectionPoly(sectionPoly(42)))));
 }
 
+annotation sec6::Integer;
+nonterminal AnnoSection with sec6;
+production annoSection
+top::AnnoSection ::=
+{}
+
+global annoSections :: [AnnoSection] = [annoSection(sec6=12), annoSection(sec6=34)];
+equalityTest( map((.sec6), annoSections), [12, 34], [Integer], silver_tests );
+
 -------------------------------
 -- Partial function application
 
