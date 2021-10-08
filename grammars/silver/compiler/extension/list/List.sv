@@ -13,7 +13,7 @@ top::TypeExpr ::= '[' te::TypeExpr ']'
 
   top.typerep = listType(te.typerep);
   
-  top.errorsKindStar =
+  top.errorsKindStar :=
     if top.typerep.kindrep != starKind()
     then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
     else [];
@@ -32,7 +32,7 @@ top::TypeExpr ::= '[' ']'
 
   top.typerep = listCtrType();
   
-  top.errorsKindStar =
+  top.errorsKindStar :=
     if top.typerep.kindrep != starKind()
     then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
     else [];

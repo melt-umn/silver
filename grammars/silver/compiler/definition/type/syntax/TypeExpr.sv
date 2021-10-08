@@ -5,10 +5,10 @@ imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:flow:syntax;
 
-nonterminal TypeExpr  with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsKindStar, onNt, errorsInhSet, typerepInhSet;
+nonterminal TypeExpr  with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, errorsKindStar, freeVariables, onNt, errorsInhSet, typerepInhSet;
 nonterminal Signature with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds;
 nonterminal SignatureLHS with config, location, grammarName, errors, env, flowEnv, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds;
-nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, flowEnv, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables;
+nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, flowEnv, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, errorsKindStar, freeVariables;
 nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 
@@ -31,7 +31,7 @@ monoid attribute errorsTyVars :: [Message];
 inherited attribute initialEnv :: Decorated Env;
 synthesized attribute envBindingTyVars :: Decorated Env;
 
-synthesized attribute errorsKindStar::[Message];
+monoid attribute errorsKindStar::[Message];
 
 synthesized attribute errorsInhSet::[Message];
 synthesized attribute typerepInhSet::Type;
@@ -40,6 +40,7 @@ propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeE
 propagate lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate appLexicalTyVarKinds on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
+propagate errorsKindStar on TypeExprs;
 
 function addNewLexicalTyVars
 [Def] ::= gn::String sl::Location lk::[Pair<String Kind>] l::[String]
@@ -55,7 +56,7 @@ top::TypeExpr ::=
   -- "semantic" errors, rather than parse errors for this.
   top.errorsTyVars := [err(top.location, top.unparse ++ " is not permitted here, only type variables are")];
   top.freeVariables = top.typerep.freeVariables;
-  top.errorsKindStar =
+  top.errorsKindStar :=
     if top.typerep.kindrep != starKind()
     then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
     else [];
@@ -329,6 +330,7 @@ top::Signature ::= l::SignatureLHS '::=' list::TypeExprs
       functionType(length(list.types) + list.missingCount, []),
       list.types ++ case l.maybeType of just(t) -> [t] | nothing() -> [] end);
   
+  top.errors <- list.errorsKindStar;
   top.errors <-
     if l.maybeType.isJust && list.missingCount > 0
     then [err($1.location, "Return type cannot be present when argument types are missing")]
@@ -340,6 +342,8 @@ top::SignatureLHS ::= t::TypeExpr
 {
   top.unparse = t.unparse;
   top.maybeType = just(t.typerep);
+
+  top.errors <- t.errorsKindStar;
 }
 
 concrete production missingSignatureLhs
