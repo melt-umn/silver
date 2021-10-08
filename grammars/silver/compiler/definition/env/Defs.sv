@@ -3,18 +3,18 @@ grammar silver:compiler:definition:env;
 nonterminal Defs with typeList, valueList, attrList, instList, prodOccursList, prodDclList;
 
 -- The standard namespaces
-synthesized attribute typeList :: [EnvItem];
-synthesized attribute valueList :: [EnvItem];
-synthesized attribute attrList :: [EnvItem];
+synthesized attribute typeList :: [EnvItem<TypeDclInfo>];
+synthesized attribute valueList :: [EnvItem<ValueDclInfo>];
+synthesized attribute attrList :: [EnvItem<AttributeDclInfo>];
 
 -- Type class instances
-synthesized attribute instList :: [DclInfo];
+synthesized attribute instList :: [InstDclInfo];
 
 -- Production attributes.
-synthesized attribute prodOccursList :: [DclInfo];
+synthesized attribute prodOccursList :: [ProductionAttrDclInfo];
 
 -- Extra space for production list
-synthesized attribute prodDclList :: [DclInfo];
+synthesized attribute prodDclList :: [ValueDclInfo];
 
 
 abstract production nilDefs 
@@ -48,9 +48,9 @@ top::Defs ::= e1::Def e2::Defs
 -- Transformations on lists of Def
 -- This is to support computing the defs introduced by qualified imports
 -- (import foo only bar, import foo as bar, import foo with bar as baz)
-inherited attribute filterFn::(Boolean ::= EnvItem);
+inherited attribute filterFn::(Boolean ::= EnvItem<a>);
 synthesized attribute filterDef::Boolean;
-inherited attribute mapFn::(EnvItem ::= EnvItem);
+inherited attribute mapFn::(EnvItem<a> ::= EnvItem<a>);
 synthesized attribute mapDef::Def;
 
 closed nonterminal Def with typeList, valueList, attrList, instList, prodOccursList, prodDclList, dcl, filterFn, filterDef, mapFn, mapDef;
@@ -71,7 +71,7 @@ top::Def ::=
   top.mapDef = top; -- ditto
 }
 abstract production typeDef
-top::Def ::= d::EnvItem
+top::Def ::= d::EnvItem<TypeDclInfo>
 {
   top.dcl = d.dcl;
   top.typeList = [d];
@@ -79,7 +79,7 @@ top::Def ::= d::EnvItem
   top.mapDef = typeDef(top.mapFn(d));
 }
 abstract production valueDef
-top::Def ::= d::EnvItem
+top::Def ::= d::EnvItem<ValueDclInfo>
 {
   top.dcl = d.dcl;
   top.valueList = [d];
@@ -87,16 +87,16 @@ top::Def ::= d::EnvItem
   top.mapDef = valueDef(top.mapFn(d));
 }
 abstract production typeValueDef
-top::Def ::= d::EnvItem
+top::Def ::= td::EnvItem<TypeDclInfo> vd::EnvItem<ValueDclInfo> 
 {
   top.dcl = d.dcl;
-  top.typeList = [d];
-  top.valueList = [d];
+  top.typeList = [td];
+  top.valueList = [vd];
   top.filterDef = top.filterFn(d);
   top.mapDef = typeValueDef(top.mapFn(d));
 }
 abstract production attrDef
-top::Def ::= d::EnvItem
+top::Def ::= d::EnvItem<AttributeDcl>
 {
   top.dcl = d.dcl;
   top.attrList = [d];
@@ -104,7 +104,7 @@ top::Def ::= d::EnvItem
   top.mapDef = attrDef(top.mapFn(d));
 }
 abstract production prodDclDef
-top::Def ::= d::EnvItem
+top::Def ::= d::EnvItem<ValueDclInfo>
 {
   top.dcl = d.dcl;
   top.valueList = [d];
@@ -114,13 +114,13 @@ top::Def ::= d::EnvItem
   top.mapDef = prodDclDef(top.mapFn(d));
 }
 abstract production paDef
-top::Def ::= d::DclInfo
+top::Def ::= d::ProductionAttrDclInfo
 {
   top.dcl = d;
   top.prodOccursList = [d];
 }
 abstract production tcInstDef
-top::Def ::= d::DclInfo
+top::Def ::= d::InstDclInfo
 {
   top.dcl = d;
   top.instList = [d];
@@ -171,7 +171,9 @@ function termDef
 Def ::= sg::String  sl::Location  fn::String  regex::Regex  easyName::Maybe<String>
 {
   -- Terminals are also in the value namespace as terminal identifiers
-  return typeValueDef(defaultEnvItem(termDcl(fn,regex,easyName,sourceGrammar=sg,sourceLocation=sl)));
+  return typeValueDef(
+    defaultEnvItem(termDcl(fn,regex,easyName,sourceGrammar=sg,sourceLocation=sl)),
+    defaultEnvItem(termIdDcl(fn,sourceGrammar=sg,sourceLocation=sl)));
 }
 function lexTyVarDef
 Def ::= sg::String  sl::Location  fn::String  tv::TyVar
@@ -245,12 +247,12 @@ Def ::= sg::String  sl::Location  fn::String  ty::Type
   return tcInstDef(currentInstDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl));
 }
 function instSuperDef
-Def ::= sg::String  sl::Location  fn::String  baseDcl::DclInfo
+Def ::= sg::String  sl::Location  fn::String  baseDcl::InstDclInfo
 {
   return tcInstDef(instSuperDcl(fn,baseDcl,sourceGrammar=sg,sourceLocation=sl));
 }
 function typeableSuperDef
-Def ::= sg::String  sl::Location  baseDcl::DclInfo
+Def ::= sg::String  sl::Location  baseDcl::InstDclInfo
 {
   return tcInstDef(typeableSuperDcl(baseDcl,sourceGrammar=sg,sourceLocation=sl));
 }
@@ -274,13 +276,13 @@ Def ::= d::Def  s::Substitution
 }
 
 function filterDefOnEnvItem
-Boolean ::= fn::(Boolean ::= EnvItem)  d::Def
+Boolean ::= fn::(Boolean ::= EnvItem<a>)  d::Def
 {
   d.filterFn = fn;
   return d.filterDef;
 }
 function mapDefOnEnvItem
-Def ::= fn::(EnvItem ::= EnvItem)  d::Def
+Def ::= fn::(EnvItem<a> ::= EnvItem<a>)  d::Def
 {
   d.mapFn = fn;
   return d.mapDef;

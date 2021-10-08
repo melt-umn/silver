@@ -3,18 +3,19 @@ grammar silver:compiler:definition:env;
 {--
  - An entry in the environment.
  -}
-nonterminal EnvItem with itemName, dcl, envContribs;
+nonterminal EnvItem<a> with itemName, dcl<a>, envContribs<a>;
 
 synthesized attribute itemName :: String;
-synthesized attribute dcl :: DclInfo;
-synthesized attribute envContribs :: [Pair<String DclInfo>];
+synthesized attribute dcl<a> :: a;
+synthesized attribute envContribs<a> :: [Pair<String a>];
 
 {--
  - Rare case: use of `import _ with _ as _` or `import _ as _` to rename.
  - Common case: `grammar:full:name` aka `name`. See `defaultEnvItem`.
  -}
 abstract production renamedEnvItem
-ei::EnvItem ::= newname::String di::DclInfo
+attribute fullName {} occurs on a =>
+ei::EnvItem<a> ::= newname::String di::a
 {
   ei.itemName = newname;
   ei.dcl = di;
@@ -29,7 +30,8 @@ ei::EnvItem ::= newname::String di::DclInfo
  - by the full nonterminal name (or production name) only, and a shortname is nonsense.
  -}
 abstract production fullNameEnvItem
-ei::EnvItem ::= di::DclInfo
+attribute fullName {} occurs on a =>
+ei::EnvItem<a> ::= di::a
 {
   ei.itemName = di.fullName;
   ei.dcl = di;
@@ -41,7 +43,7 @@ ei::EnvItem ::= di::DclInfo
  - We should *not* see `newname` in the environment in those cases.
  -}
 abstract production onlyRenamedEnvItem
-ei::EnvItem ::= newname::String di::DclInfo
+ei::EnvItem<a> ::= newname::String di::a
 {
   ei.itemName = newname;
   ei.dcl = di;
@@ -52,7 +54,8 @@ ei::EnvItem ::= newname::String di::DclInfo
  - The common case, normal shortnames.
  -}
 function defaultEnvItem
-EnvItem ::= di::DclInfo
+attribute fullName {} occurs on a =>
+EnvItem<a> ::= di::a
 {
   return renamedEnvItem(fullNameToShort(di.fullName), di);
 }
@@ -65,43 +68,33 @@ String ::= s::String
 
 
 
-function mapGetDcls
-[DclInfo] ::= i::[EnvItem]
-{
-  return map((.dcl), i);
-}
-
-function mapFullnameDcls
-[EnvItem] ::= i::[DclInfo]
-{
-  return map(fullNameEnvItem, i);
-}
-
-function mapDefaultWrapDcls
-[EnvItem] ::= i::[DclInfo]
-{
-  return map(defaultEnvItem, i);
-}
+global mapGetDcls :: ([a] ::= [EnvItem<a>]) = map((.dcl), _);
+global mapFullnameDcls :: attribute fullName {} occurs on a => ([EnvItem<a>] ::= [a]) =
+  map(fullNameEnvItem, _);
+global mapDefaultWrapDcls :: attribute fullName {} occurs on a => ([EnvItem<a>] ::= [a]) =
+  map(defaultEnvItem, _);
 
 function envItemExclude
-Boolean ::= ei::EnvItem  exclude::[String]
+Boolean ::= ei::EnvItem<a>  exclude::[String]
 {
   return !contains(ei.itemName, exclude);
 }
 function envItemInclude
-Boolean ::= ei::EnvItem  include::[String]
+Boolean ::= ei::EnvItem<a>  include::[String]
 {
   return contains(ei.itemName, include);
 }
 function envItemPrepend
-EnvItem ::= ei::EnvItem  pfx::String
+attribute fullName {} occurs on a =>
+EnvItem<a> ::= ei::EnvItem<a>  pfx::String
 {
   -- This clobbers 'onlyRenamed' but that's okay because this is only used
   -- by imports, where that doesn't appear.
   return renamedEnvItem(pfx ++ ei.itemName, ei.dcl);
 }
 function envItemApplyRenaming
-EnvItem ::= ei::EnvItem  renames::[Pair<String String>]
+attribute fullName {} occurs on a =>
+EnvItem<a> ::= ei::EnvItem<a>  renames::[Pair<String String>]
 {
   local result :: Maybe<String> = lookup(ei.itemName, renames);
   
@@ -115,7 +108,7 @@ EnvItem ::= ei::EnvItem  renames::[Pair<String String>]
  - Maps a production's DclInfo into an EnvItem named for the nonterminal it constructs.
  -}
 function envItemNTFromProdDcl
-EnvItem ::= di::DclInfo
+EnvItem<DclInfo> ::= di::DclInfo
 {
   -- loooking up the full name of the nonterminal it creates will resolve this prodDcl
   return onlyRenamedEnvItem(di.namedSignature.outputElement.typerep.typeName, di);
