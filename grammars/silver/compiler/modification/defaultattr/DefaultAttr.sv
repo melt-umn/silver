@@ -44,8 +44,9 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   local myFlowGraph :: ProductionGraph = 
     constructDefaultProductionGraph(namedSig, body.flowDefs, top.env, myProds, myFlow);
 
+  te.env = newScopeEnv(sigDefs, top.env);
 
-  body.env = newScopeEnv(fakedDefs ++ sigDefs, top.env);
+  body.env = newScopeEnv(fakedDefs, te.env);
   body.frame = defaultAspectContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName);
 
   body.downSubst = emptySubst();
