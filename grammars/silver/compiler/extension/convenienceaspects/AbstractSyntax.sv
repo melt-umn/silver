@@ -180,7 +180,7 @@ DefLHS ::= name::Name loc::Location
   - This function takes in a name, aspectRHS, and expr, returning a let expression that binds the name we provide to the name of
   - the "top" term in our aspect production. This allows one to define convenience aspects that make use of variable named wildcards, and
   - have those names be usable in our convenience aspect definition to access other attributes of the top level term.
-  - @param name The name being defined.
+  - @param newName The name being defined.
   - @param aspectLHS a convenience aspect LHS expression that contains the name and type of the term that our generated aspect production returns.
   - @param e The expression that uses the name we're defining and will be surrounded by let.
   - @param loc the location of the definition.
@@ -207,7 +207,7 @@ Expr ::= newName::Name aspectLHS::Decorated ConvAspectLHS e::Expr loc::Location
   - @param patList A list of matchrules that represents a grouping of match rules with similar patterns.
   - @param aspectLHS a convenience aspect LHS expression that contains the name and type of the term that our generated aspect production returns.
   - @param e The Expr on the other side of the arrow of the match rule
-  - @param location The location where the aspect pattern is defined
+  - @param loc The location where the aspect pattern is defined
   - @return An expression from the wildcard matchrule we can use in making convenience aspects.
 -}
 function makeWildcardExprFromPatternList
@@ -237,6 +237,8 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
 
   local lookupProdInputTypes::([Type] ::= String) = \prodName::String ->
       case (getValueDcl(prodName,env)) of
+      -- Productions that aren't in scope, and names that
+      -- aren't productions will be caught later in the primitive match.
       | [] -> []
       | dcl:: _ ->
         let dcl :: Decorated DclInfo with {givenNonterminalType} =
@@ -244,8 +246,6 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::Decorated ConvAspectLHS 
         in
           if dcl.typeScheme.typerep.isApplicable
           then dcl.typeScheme.typerep.inputTypes
-          -- Productions that aren't in scope, and names that
-          -- aren't productions will be caught later in the primitive match.
           else []
         end
       end;
@@ -542,10 +542,7 @@ Boolean ::= mRule::MatchRule
 abstract production convenienceAspects
 top::AGDcl ::= attr::QNameAttrOccur aspectLHS::Decorated ConvAspectLHS eqKind::ConvenienceAspectEquationKind ml::MRuleList
 {
-  top.defs := [];
   top.moduleNames := [];
-  top.occursDefs := [];
-
   top.unparse = "aspect " ++ attr.unparse ++ " on " ++ aspectLHS.unparse ++ " " ++ eqKind.unparse ++ " of |" ++ ml.unparse ++ " end";
 
 
