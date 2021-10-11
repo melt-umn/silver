@@ -121,7 +121,7 @@ function checkEqDeps
 {
   -- We're concerned with missing inherited equations on RHS, LOCAL, and ANON. (Implicitly, FORWARD.)
   
-  local prodDcl :: [DclInfo] = getValueDcl(prodName, realEnv);
+  local prodDcl :: [ValueDclInfo] = getValueDcl(prodName, realEnv);
   local ns :: NamedSignature =
     case prodDcl of
     | d :: _ -> d.namedSignature

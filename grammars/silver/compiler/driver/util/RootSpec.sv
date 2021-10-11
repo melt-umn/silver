@@ -278,7 +278,7 @@ top::InterfaceItem ::= val::[Def]
 }
 
 abstract production occursDefsInterfaceItem
-top::InterfaceItem ::= val::[DclInfo]
+top::InterfaceItem ::= val::[OccursDclInfo]
 {
   top.maybeOccursDefs := just(val);
 }

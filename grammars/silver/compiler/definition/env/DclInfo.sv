@@ -3,7 +3,7 @@ grammar silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 imports silver:regex;
 
--- The DclInfo nonterminals are all closed, but the dispatch attributes are
+-- Some of these nonterminals are closed, but the dispatch attributes are
 -- defined in silver:compiler:definition:core, and we don't want to have defaults for those:
 option silver:compiler:definition:core;
 
@@ -231,7 +231,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.isAnnotation = true;
 }
 
-closed nonterminal ProductionAttrDclInfo with sourceGrammar, sourceLocation, fullName, prodDefs, namedSignature;
+nonterminal ProductionAttrDclInfo with sourceGrammar, sourceLocation, fullName, prodDefs, namedSignature;
 
 abstract production paDcl
 top::ProductionAttrDclInfo ::= ns::NamedSignature{-fn::String outty::Type intys::[Type]-} dcls::[Def]
@@ -244,7 +244,7 @@ top::ProductionAttrDclInfo ::= ns::NamedSignature{-fn::String outty::Type intys:
   top.namedSignature = ns;
 }
 
-closed nonterminal OccursDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, givenNonterminalType, attrOccurring, isAnnotation;
+nonterminal OccursDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, givenNonterminalType, attrOccurring, isAnnotation;
 
 aspect default production
 top::OccursDclInfo ::=
@@ -357,7 +357,7 @@ top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
   top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, atty);
 }
 
-closed nonterminal InstDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, typerep2, isTypeError;
+nonterminal InstDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, typerep2, isTypeError;
 
 aspect default production
 top::InstDclInfo ::=
