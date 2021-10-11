@@ -625,6 +625,12 @@ top::AGDcl ::= attr::QNameAttrOccur aspectLHS::Decorated ConvAspectLHS eqKind::C
                 else [wrn(((head(mListAfterWildcard)).location),"This pattern and the ones that follow are being ignored.")]
                   ++ groupExtractErrors;
 
+  -- Errors are filtered out here in a move we call in the business "an infelicity"
+  -- The errors here arise from inserting the first wildcard pattern we find into
+  -- the non-default aspect productions we generate. This means that we get semantics
+  -- of not having incomplete cases in some productions but because we can't check case completeness from
+  -- The convenience aspects side it produces more errors about overlapping cases, causing us to filter here.
+  -- If pattern matching and case completeness change this approach might no longer be necessary.
   top.errors := filter(
     \message::Message ->
       -- Note: If you see this error unexpectedly that might mean the string for this error has changed.
