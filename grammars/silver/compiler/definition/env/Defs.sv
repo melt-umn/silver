@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:env;
 
-nonterminal Defs with typeList, valueList, attrList, instList, prodOccursList, prodDclList;
+nonterminal Defs with defs, typeList, valueList, attrList, instList, prodOccursList, prodDclList, filterItems, filterOnly, filterHiding, withRenames, renamed, pfx, prepended;
 
 -- The standard namespaces
 synthesized attribute typeList :: [EnvItem<TypeDclInfo>];
@@ -16,10 +16,19 @@ synthesized attribute prodOccursList :: [ProductionAttrDclInfo];
 -- Extra space for production list
 synthesized attribute prodDclList :: [ValueDclInfo];
 
+-- Transformations on lists of Def
+-- This is to support computing the defs introduced by qualified imports
+-- (import foo only bar, import foo as bar, import foo with bar as baz)
+synthesized attribute filterOnly :: Defs;
+synthesized attribute filterHiding :: Defs;
+
+propagate withRenames, renamed, pfx, prepended on Defs;
 
 abstract production nilDefs 
 top::Defs ::= 
 {
+  top.defs := [];
+
   top.typeList = [];
   top.valueList = [];
   top.attrList = [];
@@ -28,11 +37,16 @@ top::Defs ::=
   top.prodOccursList = [];
   
   top.prodDclList = [];
+  
+  top.filterOnly = top;
+  top.filterHiding = top;
 }
 
 abstract production consDefs 
 top::Defs ::= e1::Def e2::Defs
 {
+  top.defs := e1 :: e2.defs;
+
   top.typeList = e1.typeList ++ e2.typeList;
   top.valueList = e1.valueList ++ e2.valueList;
   top.attrList = e1.attrList ++ e2.attrList;
@@ -41,19 +55,14 @@ top::Defs ::= e1::Def e2::Defs
   top.prodOccursList = e1.prodOccursList ++ e2.prodOccursList;
   
   top.prodDclList = e1.prodDclList ++ e2.prodDclList;
+
+  top.filterOnly = if e1.filterIncludeOnly then consDefs(e1, e2.filterOnly) else e2.filterOnly;
+  top.filterHiding = if e1.filterIncludeHiding then consDefs(e1, e2.filterHiding) else e2.filterHiding;
 }
 
 --------------------------------------------------------------------------------
 
--- Transformations on lists of Def
--- This is to support computing the defs introduced by qualified imports
--- (import foo only bar, import foo as bar, import foo with bar as baz)
-inherited attribute filterFn::(Boolean ::= EnvItem<a>);
-synthesized attribute filterDef::Boolean;
-inherited attribute mapFn::(EnvItem<a> ::= EnvItem<a>);
-synthesized attribute mapDef::Def;
-
-closed nonterminal Def with typeList, valueList, attrList, instList, prodOccursList, prodDclList, dcl, filterFn, filterDef, mapFn, mapDef;
+closed nonterminal Def with typeList, valueList, attrList, instList, prodOccursList, prodDclList, filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended;
 
 aspect default production
 top::Def ::=
@@ -66,66 +75,45 @@ top::Def ::=
   top.prodOccursList = [];
   
   top.prodDclList = [];
-  
-  top.filterDef = true; -- We don't do any renaming for production attribute or occurs defs
-  top.mapDef = top; -- ditto
 }
 abstract production typeDef
 top::Def ::= d::EnvItem<TypeDclInfo>
 {
-  top.dcl = d.dcl;
   top.typeList = [d];
-  top.filterDef = top.filterFn(d);
-  top.mapDef = typeDef(top.mapFn(d));
 }
 abstract production valueDef
 top::Def ::= d::EnvItem<ValueDclInfo>
 {
-  top.dcl = d.dcl;
   top.valueList = [d];
-  top.filterDef = top.filterFn(d);
-  top.mapDef = valueDef(top.mapFn(d));
 }
 abstract production typeValueDef
 top::Def ::= td::EnvItem<TypeDclInfo> vd::EnvItem<ValueDclInfo> 
 {
-  top.dcl = d.dcl;
   top.typeList = [td];
   top.valueList = [vd];
-  top.filterDef = top.filterFn(d);
-  top.mapDef = typeValueDef(top.mapFn(d));
 }
 abstract production attrDef
-top::Def ::= d::EnvItem<AttributeDcl>
+top::Def ::= d::EnvItem<AttributeDclInfo>
 {
-  top.dcl = d.dcl;
   top.attrList = [d];
-  top.filterDef = top.filterFn(d);
-  top.mapDef = attrDef(top.mapFn(d));
 }
 abstract production prodDclDef
 top::Def ::= d::EnvItem<ValueDclInfo>
 {
-  top.dcl = d.dcl;
   top.valueList = [d];
   -- unlike normal valueDef, also affect production lookups:
   top.prodDclList = [d.dcl];
-  top.filterDef = top.filterFn(d);
-  top.mapDef = prodDclDef(top.mapFn(d));
 }
 abstract production paDef
 top::Def ::= d::ProductionAttrDclInfo
 {
-  top.dcl = d;
   top.prodOccursList = [d];
 }
 abstract production tcInstDef
 top::Def ::= d::InstDclInfo
 {
-  top.dcl = d;
   top.instList = [d];
 }
-
 
 function childDef
 Def ::= sg::String  sl::Location  fn::String  ty::Type
@@ -274,17 +262,3 @@ Def ::= d::Def  s::Substitution
 {
   return valueDef(defaultEnvItem(performSubstitutionDclInfo(d.dcl, s)));
 }
-
-function filterDefOnEnvItem
-Boolean ::= fn::(Boolean ::= EnvItem<a>)  d::Def
-{
-  d.filterFn = fn;
-  return d.filterDef;
-}
-function mapDefOnEnvItem
-Def ::= fn::(EnvItem<a> ::= EnvItem<a>)  d::Def
-{
-  d.mapFn = fn;
-  return d.mapDef;
-}
-
