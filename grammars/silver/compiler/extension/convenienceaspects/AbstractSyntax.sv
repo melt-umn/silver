@@ -155,24 +155,12 @@ PatternList ::= mr::MatchRule loc::Location
     | _ -> patternList_nil(location=loc)
     end;
 
-  -- local prodName::QName =
-  --   case mr of
-  --   | matchRule_c(patternList_one(prodAppPattern(name,_,_,_)),_,_) -> name
-  --   | matchRuleWhen_c(patternList_one(prodAppPattern(name,_,_,_)),_,_,_,_) -> name
-  --   | matchRuleWhenMatches_c(patternList_one(prodAppPattern(name,_,_,_)),_,_,_,_,_,_) -> name
-  --   | _ -> error("This shouldnt be seen by the user.")
-  --   end;
-
-  local patListOut::PatternList =
-    (makePatternListfromListofPatterns(
+    return (makePatternListfromListofPatterns(
       map(\pat::Pattern ->
         wildcPattern('_', location=loc),
         -- name("__generated_" ++ toString(genInt()), loc),
         collectPatternsFromPatternList(patList,[])),
         loc));
-
-  return patListOut;
-
 }
 
 
@@ -188,6 +176,16 @@ DefLHS ::= name::Name loc::Location
   return concreteDefLHS(qNameId(name,location=loc), location=loc);
 }
 
+@{-
+  - This function takes in a name, aspectRHS, and expr, returning a let expression that binds the name we provide to the name of
+  - the "top" term in our aspect production. This allows one to define convenience aspects that make use of variable named wildcards, and
+  - have those names be usable in our convenience aspect definition to access other attributes of the top level term.
+  - @param name The name being defined.
+  - @param aspectLHS a convenience aspect LHS expression that contains the name and type of the term that our generated aspect production returns.
+  - @param e The expression that uses the name we're defining and will be surrounded by let.
+  - @param loc the location of the definition.
+  - @return A Let expr that binds the name we provide to the "top" term in our aspect production with let, and surrounds the expression we gave.
+-}
 function makeLetExprForTopRenaming
 Expr ::= newName::Name aspectLHS::Decorated ConvAspectLHS e::Expr loc::Location
 {
@@ -205,7 +203,14 @@ Expr ::= newName::Name aspectLHS::Decorated ConvAspectLHS e::Expr loc::Location
 }
 
 
-function makeWildCardExprFromPatternList
+@{- @hide
+  - @param patList A list of matchrules that represents a grouping of match rules with similar patterns.
+  - @param aspectLHS a convenience aspect LHS expression that contains the name and type of the term that our generated aspect production returns.
+  - @param e The Expr on the other side of the arrow of the match rule
+  - @param location The location where the aspect pattern is defined
+  - @return An expression from the wildcard matchrule we can use in making convenience aspects.
+-}
+function makeWildcardExprFromPatternList
 Expr ::= patList::PatternList aspectLHS::Decorated ConvAspectLHS e::Expr loc::Location
 {
   return case patList of
@@ -216,19 +221,6 @@ Expr ::= patList::PatternList aspectLHS::Decorated ConvAspectLHS e::Expr loc::Lo
   | _ -> errorExpr([],location=loc)
   end;
 }
-
-
-
-
-
-
---TODO: Add wildcard expression parameter
--- Add function to generate production patterns with wildcards in every arg (should need only length)
--- Use that function, plus the wildcard expression param to add an extra case to the param list.
--- Might even be able to just shove that param as another matchrule into the matchrule list without even dealing with passing the args in,
--- in this case making a rule like so: matchRule_c(patternList_one(prodAppPattern(name,_,_,_)),_,e), and shoving that
--- in before we pass the RuleList in.
-
 
 @{-
   - @param rules A list of matchrules that represents a grouping of match rules with similar patterns.
@@ -522,7 +514,7 @@ Boolean ::= l::MatchRule r::MatchRule
   - Given a MatchRule, tells you if its a "wildcard" match rule.
   - varpatterns aren't called wildcards, but they match everything just the same so they return true here.
 -}
-function isWildCardMatchRule
+function isWildcardMatchRule
 Boolean ::= mRule::MatchRule
 { return
       case mRule of
@@ -557,27 +549,15 @@ top::AGDcl ::= attr::QNameAttrOccur aspectLHS::Decorated ConvAspectLHS eqKind::C
   top.unparse = "aspect " ++ attr.unparse ++ " on " ++ aspectLHS.unparse ++ " " ++ eqKind.unparse ++ " of |" ++ ml.unparse ++ " end";
 
 
-  -- local makeLetExprForTopRenaming::(Expr ::= Name Expr Location) = \newName::Name e::Expr loc::Location ->
-  --   letp(
-  --     assignExpr(
-  --       newName,
-  --       '::',
-  --       aspectLHS.aspectType,
-  --       '=',
-  --       baseExpr(qNameId(aspectLHS.aspectName,location=loc),location=loc),
-  --       location=loc),
-  --     e,
-  --     location=loc);
-
   -- Everything past the first wildcard (or varpattern) gets dropped before grouping of match patterns
   local mList::[MatchRule] = reverse(collectMatchRulesfromMRuleList(ml,[]));
   local mListUpToFirstWildcard::[MatchRule] =
     foldr(\next::MatchRule accum::[MatchRule] ->
-      if !isWildCardMatchRule(next) then next::accum else [next],
+      if !isWildcardMatchRule(next) then next::accum else [next],
       [],
       mList);
   local mListWildcardAndAfter::[MatchRule] =
-    dropWhile(\mRule::MatchRule -> !isWildCardMatchRule(mRule),mList);
+    dropWhile(\mRule::MatchRule -> !isWildcardMatchRule(mRule),mList);
   local mListAfterWildcard::[MatchRule] =
     if null(mListWildcardAndAfter) then [] else tail(mListWildcardAndAfter);
 
@@ -592,24 +572,24 @@ top::AGDcl ::= attr::QNameAttrOccur aspectLHS::Decorated ConvAspectLHS eqKind::C
       \mList::[MatchRule] ->
         case mList of
         | matchRule_c(patternList_one(prodAppPattern(name,leftparen,patternList,rightparen)),arrow,_) :: _ ->
-          let wildCardPatternList :: PatternList = makeWildcardsFromMatchRule(head(mList),(head(mListWildcardAndAfter)).location)
+          let wildcardPatternList :: PatternList = makeWildcardsFromMatchRule(head(mList),(head(mListWildcardAndAfter)).location)
           in
-            let expr :: Expr = makeWildCardExprFromPatternList(patList, aspectLHS, e, (head(mListWildcardAndAfter)).location)
+            let expr :: Expr = makeWildcardExprFromPatternList(patList, aspectLHS, e, (head(mListWildcardAndAfter)).location)
             in
-            mList ++ [matchRule_c(patternList_one(prodAppPattern(name,leftparen,wildCardPatternList,rightparen, location=(head(mListWildcardAndAfter)).location),location=(head(mListWildcardAndAfter)).location),arrow,expr,location=(head(mListWildcardAndAfter)).location)]
+            mList ++ [matchRule_c(patternList_one(prodAppPattern(name,leftparen,wildcardPatternList,rightparen, location=(head(mListWildcardAndAfter)).location),location=(head(mListWildcardAndAfter)).location),arrow,expr,location=(head(mListWildcardAndAfter)).location)]
             end
           end
-        | matchRule_c(patternList_more(prodAppPattern(name,_,wildCardPatternList,_),_,_),arrow,_) :: _ ->
-          let wildCardPatternList :: PatternList = makeWildcardsFromMatchRule(head(mList),(head(mListWildcardAndAfter)).location)
+        | matchRule_c(patternList_more(prodAppPattern(name,_,wildcardPatternList,_),_,_),arrow,_) :: _ ->
+          let wildcardPatternList :: PatternList = makeWildcardsFromMatchRule(head(mList),(head(mListWildcardAndAfter)).location)
           in
-            let expr :: Expr = makeWildCardExprFromPatternList(patList, aspectLHS, e, (head(mListWildcardAndAfter)).location)
+            let expr :: Expr = makeWildcardExprFromPatternList(patList, aspectLHS, e, (head(mListWildcardAndAfter)).location)
             in
             mList ++ [matchRule_c(
               patternList_one(
                 prodAppPattern(
                   name,
                   '(',
-                  wildCardPatternList,
+                  wildcardPatternList,
                   ')',
                   location=(head(mListWildcardAndAfter)).location),
                 location=(head(mListWildcardAndAfter)).location),
@@ -641,9 +621,6 @@ top::AGDcl ::= attr::QNameAttrOccur aspectLHS::Decorated ConvAspectLHS eqKind::C
    combinedAspectProds);
 
 
-  local fwrd::AGDcl = makeAppendAGDclOfAGDcls(combinedAspectDcls);
-
-
   top.errors <- if null(mListAfterWildcard)
                 -- This means that nothing is past the wildcard pattern, which is good.
                 then groupExtractErrors
@@ -658,9 +635,7 @@ top::AGDcl ::= attr::QNameAttrOccur aspectLHS::Decorated ConvAspectLHS eqKind::C
       | err(l, "Pattern has overlapping cases!") when l == top.location -> false
       | _ -> true
       end,
-      fwrd.errors);
+      forward.errors);
 
-  forwards to unsafeTracePrint(fwrd,fwrd.unparse);
-
-  -- forwards to makeAppendAGDclOfAGDcls(combinedAspectDcls);
+  forwards to makeAppendAGDclOfAGDcls(combinedAspectDcls);
 }
