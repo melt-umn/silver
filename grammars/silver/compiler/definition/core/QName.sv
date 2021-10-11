@@ -67,7 +67,8 @@ synthesized attribute lookupAttribute :: Decorated QNameLookup<AttributeDclInfo>
 
 abstract production customLookup
 attribute fullName {} occurs on a,
-attribute typeScheme {} occurs on a =>
+attribute typeScheme {} occurs on a,
+annotation sourceLocation occurs on a =>
 top::QNameLookup<a> ::= kindOfLookup::String dcls::[a] name::String l::Location 
 {
   top.dcls = dcls;

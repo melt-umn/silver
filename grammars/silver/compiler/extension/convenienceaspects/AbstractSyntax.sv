@@ -170,15 +170,11 @@ Pair<AGDcl [Message]> ::= rules::[MatchRule] aspectLHS::ConvAspectLHS aspectAttr
       case (getValueDcl(prodName,env)) of
       | [] -> []
       | dcl:: _ ->
-        let dcl :: Decorated DclInfo with {givenNonterminalType} =
-          decorate dcl with {givenNonterminalType = error("Not actually needed");}
-        in
           if dcl.typeScheme.typerep.isApplicable
           then dcl.typeScheme.typerep.inputTypes
           -- Productions that aren't in scope, and names that
           -- aren't productions will be caught later in the primitive match.
           else []
-        end
       end;
 
   local makeAspectRHSElemListFromNameAndTypeLists::([AspectRHSElem] ::= [Name] [Type]) =

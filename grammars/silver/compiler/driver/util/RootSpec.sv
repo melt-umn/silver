@@ -179,7 +179,7 @@ monoid attribute maybeOptionalGrammars::Maybe<[String]> with nothing(), orElse;
 monoid attribute maybeCondBuild::Maybe<[[String]]> with nothing(), orElse;
 monoid attribute maybeAllGrammarDependencies::Maybe<[String]> with nothing(), orElse;
 monoid attribute maybeDefs::Maybe<[Def]> with nothing(), orElse;
-monoid attribute maybeOccursDefs::Maybe<[DclInfo]> with nothing(), orElse;
+monoid attribute maybeOccursDefs::Maybe<[OccursDclInfo]> with nothing(), orElse;
 
 monoid attribute interfaceErrors::[String];
 

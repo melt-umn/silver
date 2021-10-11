@@ -260,5 +260,9 @@ Def ::= sg::String  sl::Location  baseDcl::InstDclInfo
 function performSubstitutionDef
 Def ::= d::Def  s::Substitution
 {
-  return valueDef(defaultEnvItem(performSubstitutionDclInfo(d.dcl, s)));
+  return 
+    case d of
+    | valueDef(ei) -> valueDef(defaultEnvItem(performSubstitutionDclInfo(ei.dcl, s)))
+    | _ -> error("Prod attr def not a valueDef")
+    end;
 }

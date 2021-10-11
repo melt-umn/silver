@@ -1,16 +1,16 @@
 grammar silver:compiler:extension:strategyattr;
 
-synthesized attribute isStrategy::Boolean occurs on DclInfo;
-attribute isTotal occurs on DclInfo;
-synthesized attribute containsErrors::Boolean occurs on DclInfo;
-synthesized attribute liftedStrategyNames::[String] occurs on DclInfo;
-synthesized attribute givenRecVarNameEnv::[Pair<String String>] occurs on DclInfo;
-synthesized attribute givenRecVarTotalEnv::[Pair<String Boolean>] occurs on DclInfo;
-attribute partialRefs, totalRefs occurs on DclInfo;
-synthesized attribute strategyExpr :: StrategyExpr occurs on DclInfo;
+synthesized attribute isStrategy::Boolean occurs on AttributeDclInfo;
+attribute isTotal occurs on AttributeDclInfo;
+synthesized attribute containsErrors::Boolean occurs on AttributeDclInfo;
+synthesized attribute liftedStrategyNames::[String] occurs on AttributeDclInfo;
+synthesized attribute givenRecVarNameEnv::[Pair<String String>] occurs on AttributeDclInfo;
+synthesized attribute givenRecVarTotalEnv::[Pair<String Boolean>] occurs on AttributeDclInfo;
+attribute partialRefs, totalRefs occurs on AttributeDclInfo;
+synthesized attribute strategyExpr :: StrategyExpr occurs on AttributeDclInfo;
 
 aspect default production
-top::DclInfo ::=
+top::AttributeDclInfo ::=
 {
   top.isStrategy = false;
   top.isTotal = true;
@@ -24,7 +24,7 @@ top::DclInfo ::=
 }
 
 abstract production strategyDcl
-top::DclInfo ::=
+top::AttributeDclInfo ::=
   fn::String isTotal::Boolean tyVar::TyVar
   containsErrors::Boolean liftedStrategyNames::[String] givenRecVarNameEnv::[Pair<String String>] givenRecVarTotalEnv::[Pair<String Boolean>] partialRefs::[String] totalRefs::[String]
   e::StrategyExpr

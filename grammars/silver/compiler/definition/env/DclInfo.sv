@@ -3,6 +3,10 @@ grammar silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 imports silver:regex;
 
+-- The DclInfo nonterminals are all closed, but the dispatch attributes are
+-- defined in silver:compiler:definition:core, and we don't want to have defaults for those:
+option silver:compiler:definition:core;
+
 annotation sourceGrammar :: String;
 annotation sourceLocation :: Location;
 synthesized attribute fullName :: String;
@@ -38,7 +42,7 @@ synthesized attribute prodDefs :: [Def];
 synthesized attribute substitutedDclInfo :: ValueDclInfo;
 inherited attribute givenSubstitution :: Substitution;
 
-nonterminal ValueDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, namedSignature, hasForward, substitutedDclInfo, givenSubstitution;
+closed nonterminal ValueDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, namedSignature, hasForward, substitutedDclInfo, givenSubstitution;
 
 aspect default production
 top::ValueDclInfo ::=
@@ -126,7 +130,7 @@ top::ValueDclInfo ::= fn::String
   top.typeScheme = monoType(terminalIdType());
 }
 
-nonterminal TypeDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, isClass, classMembers, givenInstanceType, superContexts;
+closed nonterminal TypeDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, isClass, classMembers, givenInstanceType, superContexts;
 
 aspect default production
 top::TypeDclInfo ::=
@@ -192,7 +196,7 @@ top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pa
   top.classMembers = members;
 }
 
-nonterminal AttributeDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, isInherited, isSynthesized, isAnnotation;
+closed nonterminal AttributeDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, isInherited, isSynthesized, isAnnotation;
 
 aspect default production
 top::AttributeDclInfo ::=
@@ -227,7 +231,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.isAnnotation = true;
 }
 
-nonterminal ProductionAttrDclInfo with sourceGrammar, sourceLocation, fullName, prodDefs, namedSignature;
+closed nonterminal ProductionAttrDclInfo with sourceGrammar, sourceLocation, fullName, prodDefs, namedSignature;
 
 abstract production paDcl
 top::ProductionAttrDclInfo ::= ns::NamedSignature{-fn::String outty::Type intys::[Type]-} dcls::[Def]
@@ -240,7 +244,7 @@ top::ProductionAttrDclInfo ::= ns::NamedSignature{-fn::String outty::Type intys:
   top.namedSignature = ns;
 }
 
-nonterminal OccursDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, givenNonterminalType, attrOccurring, isAnnotation;
+closed nonterminal OccursDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, givenNonterminalType, attrOccurring, isAnnotation;
 
 aspect default production
 top::OccursDclInfo ::=
@@ -353,7 +357,7 @@ top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
   top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, atty);
 }
 
-nonterminal InstDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, typerep2, isTypeError;
+closed nonterminal InstDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, typerep2, isTypeError;
 
 aspect default production
 top::InstDclInfo ::=
@@ -459,12 +463,12 @@ ValueDclInfo ::= valueDclInfo::ValueDclInfo s::Substitution
 }
 
 function defsFromPADcls
-[Def] ::= valueDclInfos::[ValueDclInfo] s::NamedSignature
+[Def] ::= dcls::[ProductionAttrDclInfo] s::NamedSignature
 {
   -- We want to rewrite FROM the sig these PAs were declared with, TO the given sig
-  local subst :: Substitution = unifyNamedSignature(head(valueDclInfos).namedSignature, s);
+  local subst :: Substitution = unifyNamedSignature(head(dcls).namedSignature, s);
   
-  return if null(valueDclInfos) then []
-         else map(performSubstitutionDef(_, subst), head(valueDclInfos).prodDefs) ++ defsFromPADcls(tail(valueDclInfos), s);
+  return if null(dcls) then []
+         else map(performSubstitutionDef(_, subst), head(dcls).prodDefs) ++ defsFromPADcls(tail(dcls), s);
 }
 

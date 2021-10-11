@@ -163,7 +163,7 @@ top::TypeExpr ::= tv::IdLower_t
 {
   top.unparse = tv.lexeme;
   
-  local attribute hack::QNameLookup;
+  local attribute hack::QNameLookup<TypeDclInfo>;
   hack = customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme, top.location);
   
   top.typerep = hack.typeScheme.monoType;
@@ -178,7 +178,7 @@ top::TypeExpr ::= '(' tv::IdLower_t '::' k::KindExpr ')'
 {
   top.unparse = s"(${tv.lexeme} :: ${k.unparse})";
   
-  local attribute hack::QNameLookup;
+  local attribute hack::QNameLookup<TypeDclInfo>;
   hack = customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme, top.location);
   
   top.typerep = hack.typeScheme.monoType;

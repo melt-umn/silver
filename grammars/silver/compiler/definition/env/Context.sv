@@ -31,9 +31,17 @@ synthesized attribute contextSigOccursDefs::([OccursDclInfo] ::= NamedSignature 
 synthesized attribute contextClassName::Maybe<String> occurs on Context;
 
 synthesized attribute resolved::[InstDclInfo] occurs on Context;
+synthesized attribute resolvedOccurs::[OccursDclInfo] occurs on Context;
 
 monoid attribute isTypeError::Boolean with false, || occurs on Contexts, Context;
 propagate isTypeError on Contexts, Context;
+
+aspect default production
+top::Context ::=
+{
+  top.resolved = [];
+  top.resolvedOccurs = [];
+}
 
 aspect production instContext
 top::Context ::= cls::String t::Type
@@ -95,8 +103,8 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
     [occursSigConstraintDcl(attr, ntty, atty, ns, sourceGrammar=g, sourceLocation=l)];
   top.contextClassName = nothing();
   
-  top.resolved = getOccursDcl(attr, ntty.typeName, top.env);
-  production resolvedDcl::OccursDclInfo = head(top.resolved);
+  top.resolvedOccurs = getOccursDcl(attr, ntty.typeName, top.env);
+  production resolvedDcl::OccursDclInfo = head(top.resolvedOccurs);
   resolvedDcl.givenNonterminalType = ntty;
   production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
   production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
@@ -119,8 +127,8 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
     [occursSigConstraintDcl(attr, ntty, atty, ns, sourceGrammar=g, sourceLocation=l)];
   top.contextClassName = nothing();
 
-  top.resolved = getOccursDcl(attr, ntty.typeName, top.env);
-  production resolvedDcl::OccursDclInfo = head(top.resolved);
+  top.resolvedOccurs = getOccursDcl(attr, ntty.typeName, top.env);
+  production resolvedDcl::OccursDclInfo = head(top.resolvedOccurs);
   resolvedDcl.givenNonterminalType = ntty;
   production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
   production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
@@ -132,10 +140,10 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 aspect production annoOccursContext
 top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
-  top.contextSuperDefs = \ DclInfo String Location -> [];
+  top.contextSuperDefs = \ InstDclInfo String Location -> [];
   top.contextMemberDefs = \ [TyVar] String Location -> [];
   top.contextSigDefs = \ NamedSignature String Location -> [];
-  top.contextSuperOccursDefs = \ d::DclInfo g::String l::Location ->
+  top.contextSuperOccursDefs = \ d::InstDclInfo g::String l::Location ->
     [annoSuperDcl(attr, atty, d, sourceGrammar=g, sourceLocation=l)];
   top.contextMemberOccursDefs = \ tvs::[TyVar] g::String l::Location ->
     [annoInstConstraintDcl(attr, ntty, atty, tvs, sourceGrammar=g, sourceLocation=l)];
@@ -143,8 +151,8 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
     [annoSigConstraintDcl(attr, ntty, atty, ns, sourceGrammar=g, sourceLocation=l)];
   top.contextClassName = nothing();
   
-  top.resolved = getOccursDcl(attr, ntty.typeName, top.env);
-  production resolvedDcl::DclInfo = head(top.resolved);
+  top.resolvedOccurs = getOccursDcl(attr, ntty.typeName, top.env);
+  production resolvedDcl::OccursDclInfo = head(top.resolvedOccurs);
   resolvedDcl.givenNonterminalType = ntty;
   production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
   production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);

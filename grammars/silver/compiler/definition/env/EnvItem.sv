@@ -89,20 +89,8 @@ String ::= s::String
 }
 
 
-
 global mapGetDcls :: ([a] ::= [EnvItem<a>]) = map((.dcl), _);
 global mapFullnameDcls :: attribute fullName {} occurs on a => ([EnvItem<a>] ::= [a]) =
   map(fullNameEnvItem, _);
 global mapDefaultWrapDcls :: attribute fullName {} occurs on a => ([EnvItem<a>] ::= [a]) =
   map(defaultEnvItem, _);
-
-{--
- - Maps a production's DclInfo into an EnvItem named for the nonterminal it constructs.
- -}
-function envItemNTFromProdDcl
-EnvItem<DclInfo> ::= di::DclInfo
-{
-  -- loooking up the full name of the nonterminal it creates will resolve this prodDcl
-  return onlyRenamedEnvItem(di.namedSignature.outputElement.typerep.typeName, di);
-}
-

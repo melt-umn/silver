@@ -103,7 +103,9 @@ top::Env ::= d::Defs  e::Decorated Env
   top.prodOccursTree = consEnvTree(mapFullnameDcls(d.prodOccursList), e.prodOccursTree);
   top.occursTree = e.occursTree;
 
-  top.prodsForNtTree = buildTree(map(envItemNTFromProdDcl, d.prodDclList)) :: e.prodsForNtTree;
+  top.prodsForNtTree =
+    directBuildTree(map(\ di::ValueDclInfo -> (di.namedSignature.outputElement.typerep.typeName, di), d.prodDclList)) ::
+    e.prodsForNtTree;
 }
 
 {--

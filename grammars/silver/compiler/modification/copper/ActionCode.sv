@@ -98,16 +98,21 @@ top::ProductionStmt ::= 'if' '(' c::Expr ')' th::ProductionStmt 'else' el::Produ
 function hacklocaldeclarations
 String ::= d::Def
 {
-  return d.dcl.typeScheme.monoType.transType ++ " " ++ makeCopperName(d.dcl.fullName) ++ ";\n";
+  return
+    case d of
+    | valueDef(item) -> item.dcl.typeScheme.monoType.transType ++ " " ++ makeCopperName(item.dcl.fullName) ++ ";\n"
+    | _ -> "" -- TODO: possibly error??
+    end;
 }
 
 function hackTransformLocals
 [Def] ::= d::Def
 {
-  return case d.dcl of
-         | localDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl) -> [parserLocalDef(sg,sl,fn,ty)]
-         | _ -> [] -- TODO: possibly error??
-         end;
+  return
+    case d of
+    | valueDef(item) when item.dcl matches localDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl) -> [parserLocalDef(sg,sl,fn,ty)]
+    | _ -> [] -- TODO: possibly error??
+    end;
 }
 
 --------------------------------------------------------------------------------

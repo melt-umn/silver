@@ -32,8 +32,8 @@ inherited attribute bindingName :: String;
 --- Extractions of decoration sites from children
 synthesized attribute flowProjections :: [PatternVarProjection];
 
--- The name of the production we're matching against
-autocopy attribute matchingAgainst :: Maybe<DclInfo>;
+-- The DclInfo of the production we're matching against
+autocopy attribute matchingAgainst :: Maybe<ValueDclInfo>;
 
 synthesized attribute varBinderCount :: Integer;
 

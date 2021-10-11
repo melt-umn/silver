@@ -201,7 +201,7 @@ top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 {
   top.unparse = "\tforwarding with {" ++ inh.unparse ++ "};";
 
-  production attribute fwdDcls :: [DclInfo];
+  production attribute fwdDcls :: [ValueDclInfo];
   fwdDcls = getValueDcl("forward", top.env);
   
   top.errors <- if null(fwdDcls)

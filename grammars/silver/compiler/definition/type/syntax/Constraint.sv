@@ -39,7 +39,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
     if !null(undecidableInstanceErrors) then [] -- Avoid a cycle in instance resolution checking
     else [instContext(fName, t.typerep)];
   
-  production dcl::DclInfo = c.lookupType.dcl;
+  production dcl::TypeDclInfo = c.lookupType.dcl;
   production fName::String = c.lookupType.fullName;
   
   top.errors <- c.lookupType.errors;
@@ -69,7 +69,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
     end;
   top.errors <- undecidableInstanceErrors;
 
-  local instDcl::DclInfo = top.constraintPos.classInstDcl(fName, t.typerep, top.grammarName, top.location);
+  local instDcl::InstDclInfo = top.constraintPos.classInstDcl(fName, t.typerep, top.grammarName, top.location);
   top.defs <- [tcInstDef(instDcl)];
   top.defs <- transitiveSuperDefs(top.env, t.typerep, [], instDcl);
   top.occursDefs <- transitiveSuperOccursDefs(top.env, t.typerep, [], instDcl);
@@ -90,7 +90,7 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' '
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ t.unparse;
   top.contexts = [inhOccursContext(fName, attl.types, attrTy, t.typerep)];
   
-  production dcl::DclInfo = at.lookupAttribute.dcl;
+  production dcl::AttributeDclInfo = at.lookupAttribute.dcl;
   production fName::String = at.lookupAttribute.fullName;
 
   top.errors <- at.lookupAttribute.errors;
@@ -122,7 +122,7 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' '
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
   production attrTy::Type = performRenaming(atTypeScheme.typerep, rewrite);
 
-  local instDcl::DclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy, top.grammarName, top.location);
+  local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy, top.grammarName, top.location);
   top.occursDefs <- [instDcl];
 }
 
@@ -132,7 +132,7 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExp
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " " ++ i.unparse ++ " occurs on " ++ t.unparse;
   top.contexts = [synOccursContext(fName, attl.types, attrTy, i.typerep, t.typerep)];
   
-  production dcl::DclInfo = at.lookupAttribute.dcl;
+  production dcl::AttributeDclInfo = at.lookupAttribute.dcl;
   production fName::String = at.lookupAttribute.fullName;
 
   top.errors <- at.lookupAttribute.errors;
@@ -169,7 +169,7 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExp
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
   production attrTy::Type = performRenaming(atTypeScheme.typerep, rewrite);
 
-  local instDcl::DclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy, top.grammarName, top.location);
+  local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy, top.grammarName, top.location);
   top.occursDefs <- [instDcl];
 
   top.lexicalTyVarKinds <-
@@ -185,7 +185,7 @@ top::Constraint ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 
   top.unparse = "annotation " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ t.unparse;
   top.contexts = [annoOccursContext(fName, attl.types, attrTy, t.typerep)];
   
-  production dcl::DclInfo = at.lookupAttribute.dcl;
+  production dcl::AttributeDclInfo = at.lookupAttribute.dcl;
   production fName::String = at.lookupAttribute.fullName;
 
   top.errors <- at.lookupAttribute.errors;
@@ -217,7 +217,7 @@ top::Constraint ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
   production attrTy::Type = performRenaming(atTypeScheme.typerep, rewrite);
 
-  local instDcl::DclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy, top.grammarName, top.location);
+  local instDcl::OccursDclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy, top.grammarName, top.location);
   top.occursDefs <- [instDcl];
 }
 
@@ -230,7 +230,7 @@ top::Constraint ::= 'runtimeTypeable' t::TypeExpr
   top.errors <- t.errorsTyVars;
   top.errors <- t.errorsKindStar;
 
-  local instDcl::DclInfo = top.constraintPos.typeableInstDcl(t.typerep, top.grammarName, top.location);
+  local instDcl::InstDclInfo = top.constraintPos.typeableInstDcl(t.typerep, top.grammarName, top.location);
   top.defs <- [tcInstDef(instDcl)];
 }
 
@@ -249,7 +249,7 @@ top::Constraint ::= i1::TypeExpr 'subset' i2::TypeExpr
     then [err(top.location, s"${top.unparse} has kind ${prettyKind(i2.typerep.kindrep)}, but kind InhSet is expected here")]
     else [];
 
-  local instDcl::DclInfo = top.constraintPos.inhSubsetInstDcl(i1.typerep, i2.typerep, top.grammarName, top.location);
+  local instDcl::InstDclInfo = top.constraintPos.inhSubsetInstDcl(i1.typerep, i2.typerep, top.grammarName, top.location);
   top.defs <-
     case top.constraintPos of
     | classPos(_, _) -> []
@@ -286,10 +286,10 @@ top::Constraint ::= 'typeError' msg::String_t
     end;
 }
 
-synthesized attribute classInstDcl::(DclInfo ::= String Type String Location);
-synthesized attribute occursInstDcl::(DclInfo ::= String Type Type String Location);
-synthesized attribute typeableInstDcl::(DclInfo ::= Type String Location);
-synthesized attribute inhSubsetInstDcl::(DclInfo ::= Type Type String Location);
+synthesized attribute classInstDcl::(InstDclInfo ::= String Type String Location);
+synthesized attribute occursInstDcl::(OccursDclInfo ::= String Type Type String Location);
+synthesized attribute typeableInstDcl::(InstDclInfo ::= Type String Location);
+synthesized attribute inhSubsetInstDcl::(InstDclInfo ::= Type Type String Location);
 synthesized attribute classDefName::Maybe<String>;
 synthesized attribute instanceHead::Maybe<Context>;
 nonterminal ConstraintPosition with classInstDcl, occursInstDcl, typeableInstDcl, inhSubsetInstDcl, classDefName, instanceHead;
@@ -361,8 +361,8 @@ top::ConstraintPosition ::= tvs::[TyVar]
 function transitiveSuperContexts
 [Context] ::= env::Decorated Env ty::Type seenClasses::[String] className::String
 {
-  local dcls::[DclInfo] = getTypeDcl(className, env);
-  local dcl::DclInfo = head(dcls);
+  local dcls::[TypeDclInfo] = getTypeDcl(className, env);
+  local dcl::TypeDclInfo = head(dcls);
   dcl.givenInstanceType = ty;
   local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
   return
@@ -389,13 +389,13 @@ Boolean ::= c1::Context c2::Context
 }
 
 function transitiveSuperDefs
-[Def] ::= env::Decorated Env ty::Type seenClasses::[String] instDcl::DclInfo
+[Def] ::= env::Decorated Env ty::Type seenClasses::[String] instDcl::InstDclInfo
 {
-  local dcls::[DclInfo] = getTypeDcl(instDcl.fullName, env);
-  local dcl::DclInfo = head(dcls);
+  local dcls::[TypeDclInfo] = getTypeDcl(instDcl.fullName, env);
+  local dcl::TypeDclInfo = head(dcls);
   dcl.givenInstanceType = ty;
   local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
-  local superInstDcls::[DclInfo] =
+  local superInstDcls::[InstDclInfo] =
     map(
       instSuperDcl(_, instDcl, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
       superClassNames);
@@ -410,13 +410,13 @@ function transitiveSuperDefs
 }
 
 function transitiveSuperOccursDefs
-[DclInfo] ::= env::Decorated Env ty::Type seenClasses::[String] instDcl::DclInfo
+[OccursDclInfo] ::= env::Decorated Env ty::Type seenClasses::[String] instDcl::InstDclInfo
 {
-  local dcls::[DclInfo] = getTypeDcl(instDcl.fullName, env);
-  local dcl::DclInfo = head(dcls);
+  local dcls::[TypeDclInfo] = getTypeDcl(instDcl.fullName, env);
+  local dcl::TypeDclInfo = head(dcls);
   dcl.givenInstanceType = ty;
   local superClassNames::[String] = catMaybes(map((.contextClassName), dcl.superContexts));
-  local superInstDcls::[DclInfo] =
+  local superInstDcls::[InstDclInfo] =
     map(
       instSuperDcl(_, instDcl, sourceGrammar=instDcl.sourceGrammar, sourceLocation=instDcl.sourceLocation),
       superClassNames);
