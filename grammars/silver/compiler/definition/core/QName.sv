@@ -65,6 +65,8 @@ synthesized attribute lookupValue :: Decorated QNameLookup<ValueDclInfo> occurs 
 synthesized attribute lookupType :: Decorated QNameLookup<TypeDclInfo> occurs on QName;
 synthesized attribute lookupAttribute :: Decorated QNameLookup<AttributeDclInfo> occurs on QName;
 
+flowtype QName = lookupValue {env}, lookupType {env}, lookupAttribute {env};
+
 abstract production customLookup
 attribute fullName {} occurs on a,
 attribute typeScheme {} occurs on a,
@@ -141,6 +143,8 @@ top::QNameType ::= id::Name ':' qn::QNameType
  - Qualified name looked up CONTEXTUALLY
  -}
 nonterminal QNameAttrOccur with config, name, location, grammarName, env, unparse, attrFor, errors, typerep, dcl<OccursDclInfo>, attrDcl, found, attrFound;
+
+flowtype QNameAttrOccur = dcl {grammarName, env, attrFor}, attrDcl {grammarName, env, attrFor};
 
 {--
  - For QNameAttrOccur, the name of the LHS to look up this attribute on.

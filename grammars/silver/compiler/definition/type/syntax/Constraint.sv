@@ -10,6 +10,8 @@ nonterminal ConstraintList
   with config, grammarName, env, flowEnv, location, unparse, errors, defs, occursDefs, contexts, lexicalTypeVariables, lexicalTyVarKinds, constraintPos;
 nonterminal Constraint with config, grammarName, env, flowEnv, location, unparse, errors, defs, occursDefs, contexts, lexicalTypeVariables, lexicalTyVarKinds, constraintPos;
 
+flowtype Constraint = decorate {grammarName, env, flowEnv, constraintPos};
+
 propagate errors, defs, occursDefs, lexicalTypeVariables, lexicalTyVarKinds on ConstraintList, Constraint;
 
 concrete production consConstraint

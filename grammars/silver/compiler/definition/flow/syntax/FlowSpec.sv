@@ -170,6 +170,8 @@ nonterminal FlowSpecInh with config, location, grammarName, errors, env, unparse
 
 synthesized attribute inhList :: [String];
 
+flowtype FlowSpecInh = inhList {grammarName, env, flowEnv, onNt};
+
 propagate errors on FlowSpecInh;
 
 concrete production flowSpecInh

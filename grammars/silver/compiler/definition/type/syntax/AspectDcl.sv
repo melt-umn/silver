@@ -2,8 +2,8 @@ grammar silver:compiler:definition:type:syntax;
 
 attribute lexicalTypeVariables, lexicalTyVarKinds occurs on AspectProductionSignature, AspectProductionLHS, AspectRHS, AspectRHSElem, AspectFunctionSignature, AspectFunctionLHS;
 
-flowtype lexicalTypeVariables {realSignature, env} on AspectProductionSignature, AspectProductionLHS, AspectRHS, AspectFunctionSignature, AspectFunctionLHS;
-flowtype lexicalTypeVariables {deterministicCount, realSignature, env} on AspectRHSElem;
+flowtype lexicalTypeVariables {realSignature, env, flowEnv, grammarName} on AspectProductionSignature, AspectProductionLHS, AspectRHS, AspectFunctionSignature, AspectFunctionLHS;
+flowtype lexicalTypeVariables {realSignature, env, flowEnv, grammarName, deterministicCount} on AspectRHSElem;
 
 function addNewLexicalTyVars_ActuallyVariables
 [Def] ::= gn::String sl::Location lk::[Pair<String Kind>] l::[String]

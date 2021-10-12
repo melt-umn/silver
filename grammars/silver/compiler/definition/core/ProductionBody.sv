@@ -411,7 +411,9 @@ abstract production errorValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
-  
+
+  e.isRoot = true;
+
   top.errors <-
     if val.lookupValue.typeScheme.isError then []
     else [err(val.location, val.name ++ " cannot be assigned to.")];

@@ -26,6 +26,7 @@ top::Def ::=
 abstract production lxrClsDef
 top::Def ::= d::EnvItem<ValueDclInfo>
 {
+  propagate filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended;
   top.lexerClassList = [d];
   top.valueList = [d];
 }

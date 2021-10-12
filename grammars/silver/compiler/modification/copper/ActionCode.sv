@@ -94,6 +94,12 @@ top::ProductionStmt ::= 'if' '(' c::Expr ')' th::ProductionStmt 'else' el::Produ
   top.containsPluck = th.containsPluck && el.containsPluck;
 }
 
+aspect production attributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
+{
+  top.containsPluck = false;  -- Required by MWDA
+}
+
 -- TODO hacky. ideally we'd do this where local attributes are declared, not here.
 function hacklocaldeclarations
 String ::= d::Def

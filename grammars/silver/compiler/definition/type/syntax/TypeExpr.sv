@@ -36,6 +36,18 @@ monoid attribute errorsKindStar::[Message];
 synthesized attribute errorsInhSet::[Message];
 synthesized attribute typerepInhSet::Type;
 
+flowtype TypeExpr =
+  decorate {grammarName, env, flowEnv}, forward {decorate},
+  freeVariables {decorate}, lexicalTypeVariables {decorate}, lexicalTyVarKinds {decorate},
+  errorsTyVars {decorate}, errorsKindStar {decorate};
+
+-- typerep requires flowEnv to look up default ref sets
+flowtype typerep {grammarName, env, flowEnv} on TypeExpr, Signature;
+flowtype maybeType {grammarName, env, flowEnv} on SignatureLHS;
+flowtype types {grammarName, env, flowEnv} on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
+
+flowtype typerepInhSet {decorate, onNt} on TypeExpr;
+
 propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs excluding refTypeExpr;
 propagate lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate appLexicalTyVarKinds on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
@@ -207,7 +219,7 @@ top::TypeExpr ::= ty::TypeExpr tl::BracketedTypeExprs
 }
 
 abstract production aliasAppTypeExpr
-top::TypeExpr ::= q::Decorated QNameType tl::BracketedTypeExprs
+top::TypeExpr ::= q::Decorated QNameType with {env} tl::BracketedTypeExprs
 {
   top.unparse = q.unparse ++ tl.unparse;
 
