@@ -63,6 +63,27 @@ top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
   top.attrOccursInitIndex = error("Not actually an attribute");
   top.attrOccursIndex = error("Not actually an attribute");
 }
+aspect production annoInstConstraintDcl
+top::DclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
+{
+  top.attrOccursIndexName = error("Not actually an attribute");
+  top.attrOccursInitIndex = error("Not actually an attribute");
+  top.attrOccursIndex = error("Not actually an attribute");
+}
+aspect production annoSigConstraintDcl
+top::DclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
+{
+  top.attrOccursIndexName = error("Not actually an attribute");
+  top.attrOccursInitIndex = error("Not actually an attribute");
+  top.attrOccursIndex = error("Not actually an attribute");
+}
+aspect production annoSuperDcl
+top::DclInfo ::= fnat::String atty::Type baseDcl::DclInfo
+{
+  top.attrOccursIndexName = error("Not actually an attribute");
+  top.attrOccursInitIndex = error("Not actually an attribute");
+  top.attrOccursIndex = error("Not actually an attribute");
+}
 
 
 aspect production localDcl

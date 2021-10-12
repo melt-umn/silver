@@ -65,6 +65,12 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
   top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args ++ [inhs, ntty]));
 }
 
+abstract production annoOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args ++ [ntty]));
+}
+
 abstract production typeableContext
 top::Context ::= t::Type
 {

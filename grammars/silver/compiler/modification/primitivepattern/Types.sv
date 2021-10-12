@@ -337,6 +337,13 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
     [occursPatternConstraintDcl(attr, ntty, atty, oc, tvs, st, sourceLocation=l, sourceGrammar=g)];
 }
 
+aspect production annoOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.contextPatternOccursDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
+    [annoPatternConstraintDcl(attr, ntty, atty, oc, tvs, st, sourceLocation=l, sourceGrammar=g)];
+}
+
 aspect production typeableContext
 top::Context ::= t::Type
 {
@@ -367,6 +374,18 @@ top::DclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVar] scr
   top.fullName = ntty.typeName;
   top.attrOccurring = fnat;
   top.typeScheme = monoType(atty);
+  
+  oc.boundVariables = tvs;
+  top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
+}
+
+abstract production annoPatternConstraintDcl
+top::DclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
+{
+  top.fullName = ntty.typeName;
+  top.attrOccurring = fnat;
+  top.typeScheme = monoType(atty);
+  top.isAnnotation = true;
   
   oc.boundVariables = tvs;
   top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";

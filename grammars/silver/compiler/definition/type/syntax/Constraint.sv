@@ -179,6 +179,48 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExp
     end;
 }
 
+concrete production annoOccursConstraint
+top::Constraint ::= 'annotation' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' t::TypeExpr
+{
+  top.unparse = "annotation " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ t.unparse;
+  top.contexts = [annoOccursContext(fName, attl.types, attrTy, t.typerep)];
+  
+  production dcl::DclInfo = at.lookupAttribute.dcl;
+  production fName::String = at.lookupAttribute.fullName;
+
+  top.errors <- at.lookupAttribute.errors;
+  top.errors <-
+    if at.lookupAttribute.found && !dcl.isAnnotation
+    then [err(at.location, fName ++ " is not an annotation")]
+    else [];
+  
+  top.errors <-
+    if attl.missingCount > 0
+    then [err(attl.location, "Annotation type arguments cannot contain _")]
+    else [];
+
+  -- Make sure we get the number and kind of type variables correct for the ATTR
+  top.errors <-
+    if length(atTypeScheme.boundVars) != length(attl.types)
+    then [err(at.location,
+      at.name ++ " expects " ++ toString(length(atTypeScheme.boundVars)) ++
+      " type variables, but " ++ toString(length(attl.types)) ++ " were provided.")]
+    else if map((.kindrep), atTypeScheme.boundVars) != map((.kindrep), attl.types)
+    then [err(at.location,
+      at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kindrep), atTypeScheme.boundVars))) ++
+        "but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), attl.types)) ++ ".")]
+    else [];
+  
+  top.errors <- t.errorsKindStar;
+  
+  local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
+  local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
+  production attrTy::Type = performRenaming(atTypeScheme.typerep, rewrite);
+
+  local instDcl::DclInfo = top.constraintPos.occursInstDcl(fName, t.typerep, attrTy, top.grammarName, top.location);
+  top.occursDefs <- [instDcl];
+}
+
 concrete production typeableConstraint
 top::Constraint ::= 'runtimeTypeable' t::TypeExpr
 {

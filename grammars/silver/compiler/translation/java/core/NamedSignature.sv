@@ -116,6 +116,13 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
   top.contextRefElem = makeConstraintDictName(attr, ntty, top.boundVariables);
 }
 
+aspect production annoOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(attr, ntty, top.boundVariables)}";
+  top.contextRefElem = makeConstraintDictName(attr, ntty, top.boundVariables);
+}
+
 aspect production typeableContext
 top::Context ::= t::Type
 {
