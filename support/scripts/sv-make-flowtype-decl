@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # A simple utility to generate a skeleton flowtype declaration for an attribute.
 
