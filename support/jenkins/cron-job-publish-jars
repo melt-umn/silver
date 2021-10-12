@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # example cron config:
 # */10 * * * * /export/scratch/melt-jenkins/custom-silver/support/jenkins/cron-job-publish-jars

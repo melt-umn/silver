@@ -30,6 +30,21 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   propagate errors, flowDefs;
 
   top.errors <- te.errorsKindStar;
+  top.errors <-
+    case te of
+    -- LHS must be either NT or NT<a b ...> where a b ... are all ty vars
+    | appTypeExpr(_, tl) -> tl.errorsTyVars
+    | _ -> []
+    end;
+
+  local checkNT::TypeCheck = checkNonterminal(top.env, false, te.typerep);
+  checkNT.downSubst = emptySubst();
+  checkNT.finalSubst = emptySubst();
+
+  top.errors <-
+    if checkNT.typeerror
+    then [err(top.location, "Default production LHS type must be a nonterminal.  Instead it is of type " ++ checkNT.leftpp)]
+    else [];
 
   local fakedDefs :: [Def] =
     [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];
@@ -99,4 +114,3 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
   top.flowGraph = g;
   top.originsContextSource = useContextLhsAndRules();
 }
-
