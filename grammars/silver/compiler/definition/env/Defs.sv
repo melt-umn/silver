@@ -22,7 +22,7 @@ synthesized attribute prodDclList :: [ValueDclInfo];
 synthesized attribute filterOnly :: Defs;
 synthesized attribute filterHiding :: Defs;
 
-propagate withRenames, renamed, pfx, prepended on Defs;
+propagate filterItems, withRenames, renamed, pfx, prepended on Defs;
 
 abstract production nilDefs 
 top::Defs ::= 

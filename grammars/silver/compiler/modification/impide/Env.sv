@@ -41,6 +41,7 @@ top::Def ::=
 abstract production fontStyleDef
 top::Def ::= d::EnvItem<FontDclInfo>
 {
+  propagate filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended;
   top.fontDefList = [d];
 }
 
