@@ -184,6 +184,13 @@ warnCode "This pattern and the ones that follow are being ignored." {
     end;
 }
 
+
+synthesized attribute bagList4 :: [String] with ++ occurs on BazExpr;
+    aspect bagList2 on top::BazExpr using <- of
+    | bazInit2(h::t,value) -> [h, toString(value)]
+    | coolName -> [coolName.hiddenAttr]
+    end;
+
 synthesized attribute gAttribute :: String occurs on BazExpr;
 aspect gAttribute on BazExpr of
     | bazInit2(h::t,value) -> h ++ toString(value)

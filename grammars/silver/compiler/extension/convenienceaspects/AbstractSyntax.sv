@@ -8,7 +8,7 @@ import silver:compiler:modification:let_fix;
   - @param defaultLoc the location to provide for the patternListNil construct (which needs a location).
   - @return A patternList List-Like Nonterminal instance.
   -}
-function makePatternListfromListofPatterns
+function makePatternListFromListofPatterns
 PatternList ::= l::[Pattern] defaultLoc::Location
 {
   return
@@ -48,7 +48,7 @@ function collectPatternsFromPatternList
 function extractSubPatternListsFromProdPatterns
 PatternList ::= pl::PatternList
 {
-  return makePatternListfromListofPatterns(
+  return makePatternListFromListofPatterns(
     foldr(
       append,
       [],
@@ -155,12 +155,11 @@ PatternList ::= mr::MatchRule loc::Location
     | _ -> patternList_nil(location=loc)
     end;
 
-    return (makePatternListfromListofPatterns(
-      map(\pat::Pattern ->
-        wildcPattern('_', location=loc),
-        -- name("__generated_" ++ toString(genInt()), loc),
-        collectPatternsFromPatternList(patList,[])),
-        loc));
+  return makePatternListFromListofPatterns(
+    map(\pat::Pattern ->
+      wildcPattern('_', location=loc),
+      collectPatternsFromPatternList(patList,[])),
+      loc);
 }
 
 
