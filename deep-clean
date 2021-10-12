@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ./deep-clean              to test the waters (dry run)
 # ./deep-clean -delete      to blow it away
