@@ -69,9 +69,9 @@ top::IOMonad<Unit> ::= s::String
 }
 
 abstract production readLineStdinM
-top::IOMonad<String> ::=
+top::IOMonad<Maybe<String>> ::=
 {
-  local res::IOVal<String> = readLineStdin(top.stateIn);
+  local res::IOVal<Maybe<String>> = readLineStdin(top.stateIn);
   top.stateOut = res.io;
   top.stateVal = res.iovalue;
 }

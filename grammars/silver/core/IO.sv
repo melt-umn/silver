@@ -67,7 +67,7 @@ IO ::= s::String i::IO
  - @return  The "after" world-state token.
  -}
 function readLineStdin
-IOVal<String> ::= i::IO
+IOVal<Maybe<String>> ::= i::IO
 {
   return error ("Not Yet Implemented: getStr");
 } foreign {
