@@ -90,6 +90,29 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
   top.upSubst = top.downSubst;
 }
 
+aspect production annoOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  requiredContexts.contextLoc = top.contextLoc;
+  requiredContexts.contextSource = s"the instance for ${prettyContext(top)}, arising from ${top.contextSource}";
+  
+  top.contextErrors :=
+    -- Check for ambiguous type variables.
+    -- Since we've already computed the final substitution, if t has any,
+    -- they could unify with something more specific in instance resolution here,
+    -- and unify with something else in solving another instance later on.
+    if !null(ntty.freeFlexibleVars)
+    then map(
+      \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
+      ntty.freeFlexibleVars)
+    else if null(top.resolved)
+    then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
+    else requiredContexts.contextErrors;
+
+  -- Not refining based on occurs-on constraints for now, since the appropriate inference should happen on the associated decoration
+  top.upSubst = top.downSubst;
+}
+
 aspect production typeableContext
 top::Context ::= t::Type
 {

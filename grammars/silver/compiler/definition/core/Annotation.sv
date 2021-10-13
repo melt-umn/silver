@@ -2,6 +2,8 @@ grammar silver:compiler:definition:core;
 
 terminal Annotation_kwd 'annotation' lexer classes {KEYWORD};
 
+disambiguate Annotation_kwd, IdLower_t { pluck Annotation_kwd; }
+
 concrete production annotationDcl
 top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
