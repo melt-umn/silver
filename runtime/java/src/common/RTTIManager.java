@@ -55,6 +55,10 @@ public final class RTTIManager {
 		return terminalsByName.get(name);
 	}
 
+
+	public static void registerOccurs(String nt, String attr, int index) {
+		getNonterminalton(nt).occursIndices.put(attr, index);
+	}
 	
 
 	// Represents a production (not an instance of the production, but the production itself.)
@@ -99,6 +103,11 @@ public final class RTTIManager {
 	public static abstract class Nonterminalton<T> {
 		public abstract String[] getOccursInh();
 		public abstract String getName();
+
+		private final Map<String, Integer> occursIndices = new HashMap<String, Integer>(16, 0.5f);
+		public int getOccursIndex(String attrName) {
+			return occursIndices.get(attrName);
+		}
 	}
 
 }
