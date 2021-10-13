@@ -61,13 +61,13 @@ IO ::= s::String i::IO
 }
 
 @{--
- - Read a line from standard input.
+ - Read a line from standard input. Returns `nothing()` on EOF.
  -
  - @param i  The "before" world-state token.
  - @return  The "after" world-state token.
  -}
 function readLineStdin
-IOVal<String> ::= i::IO
+IOVal<Maybe<String>> ::= i::IO
 {
   return error ("Not Yet Implemented: getStr");
 } foreign {

@@ -10,6 +10,8 @@ import java.nio.file.Paths;
 import common.exceptions.SilverExit;
 import silver.core.NIOVal;
 import silver.core.Pioval;
+import silver.core.Pjust;
+import silver.core.Pnothing;
 
 /**
  * This class represents the `<code>IO</code>` type in Silver.
@@ -74,7 +76,11 @@ public final class IOToken implements Typed {
 				// Persist this, since it might buffer bytes for the NEXT line
 				our_stdin = new BufferedReader(new InputStreamReader(System.in));
 			}
-			return this.wrap(new StringCatter(our_stdin.readLine()));
+			String line = our_stdin.readLine();
+			if(line == null)
+				return this.wrap(new Pnothing());
+			else
+				return this.wrap(new Pjust(new StringCatter(line)));
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
