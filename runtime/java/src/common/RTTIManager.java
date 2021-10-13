@@ -2,6 +2,8 @@ package common;
 
 import java.util.*;
 
+import common.exceptions.SilverError;
+
 /**
  * Collects maps between fully-qualified silver names (some:package:NT) and singletons for terminals,
  * nonterminals, and productions. The singletons represent the terminal/nonterminal/production itself,
@@ -106,6 +108,9 @@ public final class RTTIManager {
 
 		private final Map<String, Integer> occursIndices = new HashMap<String, Integer>(16, 0.5f);
 		public int getOccursIndex(String attrName) {
+			if (!occursIndices.containsKey(attrName)) {
+				throw new SilverError("Attribute " + attrName + " does not occur on " + getName() + ".");
+			}
 			return occursIndices.get(attrName);
 		}
 	}

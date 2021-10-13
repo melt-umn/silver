@@ -25,6 +25,7 @@ top::Contexts ::=
 attribute transType occurs on Context;
 synthesized attribute transContext::String occurs on Context;
 synthesized attribute transTypeableContext::String occurs on Context;
+synthesized attribute transContextDummyInit::String occurs on Context;
 
 synthesized attribute transContextMemberName::String occurs on Context;
 synthesized attribute transContextSuperAccessorName::String occurs on Context;
@@ -34,6 +35,7 @@ aspect default production
 top::Context ::=
 {
   top.transTypeableContext = top.transContext; -- Shouldn't be demanded?
+  top.transContextDummyInit = "null";
 }
 
 aspect production instContext
@@ -60,6 +62,7 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
   
   resolvedDcl.transContextDeps = requiredContexts.transContexts;
   top.transContext = resolvedDcl.transContext;
+  top.transContextDummyInit = "0";
   
   top.transContextMemberName = makeConstraintDictName(attr, ntty, top.boundVariables);
   top.transContextSuperAccessorName = makeInstanceSuperAccessorName(attr);
@@ -77,6 +80,7 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
   
   resolvedDcl.transContextDeps = requiredContexts.transContexts;
   top.transContext = resolvedDcl.transContext;
+  top.transContextDummyInit = "0";
   
   top.transContextMemberName = makeConstraintDictName(attr, ntty, top.boundVariables);
   top.transContextSuperAccessorName = makeInstanceSuperAccessorName(attr);

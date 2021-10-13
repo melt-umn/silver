@@ -37,6 +37,11 @@ public abstract class TypeRep {
 		return t1.unifyPartial(t2.getSubstitution()) || t2.unifyPartial(t1.getSubstitution());
 	}
 	
+	/**
+	 * @return The base name of the type.
+	 */
+	public abstract String typeName();
+	
 	@Override
 	public abstract String toString();
 }

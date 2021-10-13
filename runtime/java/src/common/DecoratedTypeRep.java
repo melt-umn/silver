@@ -26,6 +26,11 @@ public class DecoratedTypeRep extends TypeRep {
 	}
 	
 	@Override
+	public final String typeName() {
+		return param.typeName();
+	}
+	
+	@Override
 	public final String toString() {
 		return "Decorated " + param;
 	}
