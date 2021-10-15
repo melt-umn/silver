@@ -16,6 +16,10 @@ nonterminal ExprLHSExpr with
   config, grammarName, env, location, unparse, errors, freeVars, name, typerep, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
 
 flowtype freeVars {} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+flowtype Expr = decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config}, forward {decorate};
+
+flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config} on Exprs, ExprInhs, ExprInh;
+flowtype forward {} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
 propagate errors, freeVars on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
@@ -267,6 +271,9 @@ abstract production errorApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  top.freeVars <- e.freeVars;
+  top.freeVars <- es.freeVars;
+  top.freeVars <- anns.freeVars;
   
   top.errors <- e.errors;
   top.errors <-
@@ -285,7 +292,7 @@ abstract production functionApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
-  propagate freeVars;
+  top.freeVars := e.freeVars ++ es.freeVars ++ anns.freeVars;
   
   -- TODO: we have an ambiguity here in the longer term.
   -- How to distinguish between
@@ -301,6 +308,9 @@ abstract production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  top.freeVars <- e.freeVars;
+  top.freeVars <- es.freeVars;
+  top.freeVars <- anns.freeVars;
   
   top.errors <- e.errors ++ es.errors ++ anns.errors;
 
@@ -313,6 +323,9 @@ abstract production partialApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  top.freeVars <- e.freeVars;
+  top.freeVars <- es.freeVars;
+  top.freeVars <- anns.freeVars;
   
   top.errors <- e.errors ++ es.errors ++ anns.errors;
 
@@ -371,6 +384,7 @@ abstract production errorAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  top.freeVars <- e.freeVars;
   
   top.typerep = errorType();
   top.errors <- q.errors;
@@ -387,6 +401,7 @@ abstract production annoAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  top.freeVars <- e.freeVars;
   
   production index :: Integer =
     findNamedSigElem(q.name, annotationsForNonterminal(q.attrFor, top.env), 0);
@@ -423,7 +438,7 @@ abstract production undecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  propagate freeVars;
+  top.freeVars := e.freeVars;
 
   top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
   
@@ -442,6 +457,7 @@ abstract production accessBouncer
 top::Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e::Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  propagate freeVars;
 
   -- Basically the only purpose here is to decorate 'e'.
   forwards to target(e, q, top.location);
@@ -461,7 +477,7 @@ abstract production decoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  propagate freeVars;
+  top.freeVars := e.freeVars;
 
   top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
   
@@ -478,6 +494,7 @@ abstract production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  top.freeVars <- e.freeVars;
   
   top.typerep = q.typerep;
 }
@@ -486,6 +503,7 @@ abstract production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  top.freeVars <- e.freeVars;
   
   top.typerep = q.typerep;
 }
@@ -495,6 +513,7 @@ abstract production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  top.freeVars <- e.freeVars;
 
   top.typerep = errorType();
 }
