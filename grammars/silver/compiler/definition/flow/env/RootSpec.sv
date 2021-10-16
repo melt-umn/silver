@@ -34,7 +34,7 @@ abstract production refDefsInterfaceItem
 top::InterfaceItem ::= val::[(String, [String])]
 {
   top.refDefs <- val;
-  top.hasFlowDefs <- true;
+  top.hasRefDefs <- true;
 }
 
 abstract production specDefsInterfaceItem
