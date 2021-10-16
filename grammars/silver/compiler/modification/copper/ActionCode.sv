@@ -100,6 +100,12 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
   top.containsPluck = false;  -- Required by MWDA
 }
 
+aspect production errorAttributeDef
+top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+{
+  top.containsPluck = false;  -- Required by MWDA
+}
+
 -- TODO hacky. ideally we'd do this where local attributes are declared, not here.
 function hacklocaldeclarations
 String ::= d::Def
@@ -127,6 +133,8 @@ function hackTransformLocals
 -- We don't care about the LHS.
 
 synthesized attribute actionDefs :: [Def] occurs on ProductionSignature, ProductionRHS, ProductionRHSElem;
+
+flowtype actionDefs {decorate} on ProductionRHSElem;
 
 aspect production productionSignature
 top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rhs::ProductionRHS 

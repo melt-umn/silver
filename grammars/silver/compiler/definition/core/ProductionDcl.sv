@@ -8,6 +8,8 @@ nonterminal ProductionRHSElem with config, grammarName, env, location, unparse, 
 flowtype forward {env} on ProductionSignature, ProductionLHS, ProductionRHS;
 flowtype forward {deterministicCount, env} on ProductionRHSElem;
 
+flowtype decorate {grammarName, env, flowEnv, deterministicCount} on ProductionRHSElem;
+
 propagate errors on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 propagate defs on ProductionRHS;
 

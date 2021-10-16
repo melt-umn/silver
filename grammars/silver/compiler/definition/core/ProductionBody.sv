@@ -275,6 +275,8 @@ top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNa
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
+  e.isRoot = true;
+
   forwards to errorProductionStmt(msg ++ e.errors, location=top.location);
 }
 
