@@ -161,7 +161,7 @@ top::Expr ::= x::Decorated a with {env1}
   top.value = head(map((.value), [x, x]));
 }
 
-warnCode "Attribute section (.value) requires attributes not known to be on 'Decorated a with {flow:env1}': flow:env2" {
+warnCode "Access of value from reference of type Decorated a with {flow:env1} requires inherited attributes not known to be supplied to this reference: flow:env2" {
 production valueThing5Bad
 attribute env1 occurs on a,
 attribute value {env1, env2} occurs on a =>

@@ -251,27 +251,6 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
-aspect production attributeSection
-top::Expr ::= '(' '.' q::QName ')'
-{
-  local outTy :: String = finalType(top).outputType.transType;
-
-  top.translation =
-    if inputType.isDecorated then
-      s"new common.AttributeSection<${outTy}>(${occursCheck.dcl.attrOccursIndex})"
-    else
-      -- Please note: context is not actually required here, we do so to make runtime error messages
-      -- more comprehensible. This is a similar situation to the code for 'decorate E with {}'.
-      -- Rather pin more memory than necessary than make errors bad. For now.
-      -- TODO: This is a good candidate for removing if we make the well-definedness error check required, though!
-      -- That error would be more comprehensible! (the trouble with this is that we're reporting as context the
-      -- function/production we appear within here. The function *may* be applied elsewhere. However, the most common
-      -- case is something like map((.attr), list) so, that's probably best to report here instead of within map.)
-      s"new common.AttributeSection.Undecorated<${outTy}>(${occursCheck.dcl.attrOccursIndex}, context)";
-
-  top.lazyTranslation = top.translation;
-}
-
 aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
@@ -347,7 +326,7 @@ aspect production annoAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   -- Note that the transType is specific to the nonterminal we're accessing from.
-  top.translation = s"((${finalType(top).transType})${e.translation}.getAnno_${makeIdName(q.attrDcl.fullName)}())";
+  top.translation = s"((${finalType(top).transType})((${makeAnnoName(q.attrDcl.fullName)})${e.translation}).getAnno_${makeIdName(q.attrDcl.fullName)}())";
   
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
@@ -521,6 +500,13 @@ aspect production neg
 top::Expr ::= '-' e::Expr
 {
   top.translation = s"(-${e.translation})";
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+
+aspect production terminalConstructor
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
+{
+  top.translation = s"new ${makeTerminalName(t.typerep.typeName)}(${es.translation}, (silver.core.NLocation)${el.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 

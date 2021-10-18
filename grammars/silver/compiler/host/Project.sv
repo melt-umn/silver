@@ -49,6 +49,7 @@ exports silver:compiler:extension:constructparser;
 exports silver:compiler:extension:tuple;
 exports silver:compiler:extension:regex;
 exports silver:compiler:extension:convenienceaspects;
+exports silver:compiler:extension:attrsection;
 
 -- Other generally useful stuff:
 exports silver:compiler:translation:java;

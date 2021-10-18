@@ -87,6 +87,21 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 """;
 }
 
+aspect production annoOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  -- This doesn't actually encode any runtime information, for now...
+  top.transType = "Object";
+  top.transContext = "null";
+  top.transContextMemberName = makeConstraintDictName(attr, ntty, top.boundVariables);
+  top.transContextSuperAccessorName = makeInstanceSuperAccessorName(attr);
+  top.transContextSuperAccessor = s"""
+	public final ${top.transType} ${top.transContextSuperAccessorName}() {
+		return ${top.transContext};
+	}
+""";
+}
+
 aspect production typeableContext
 top::Context ::= t::Type
 {
@@ -130,7 +145,7 @@ top::Context ::= i1::Type i2::Type
   top.transContextMemberName = makeInhSubsetName(i1, i2, top.boundVariables);
   top.transContextSuperAccessorName = "getInhSubset";
   top.transContextSuperAccessor = s"""
-	public final common.TypeRep getInhSubset() {
+	public final Object getInhSubset() {
 		return ${top.transContext};
 	}
 """;
@@ -203,6 +218,26 @@ top::DclInfo ::= fnat::String atty::Type baseDcl::DclInfo
 {
   baseDcl.transContextDeps = top.transContextDeps;
   top.transContext = baseDcl.transContext ++ s".${makeInstanceSuperAccessorName(fnat)}()";
+}
+aspect production annoInstanceDcl
+top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
+{
+  top.transContext = "null";
+}
+aspect production annoInstConstraintDcl
+top::DclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
+{
+  top.transContext = "null";
+}
+aspect production annoSigConstraintDcl
+top::DclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
+{
+  top.transContext = "null";
+}
+aspect production annoSuperDcl
+top::DclInfo ::= fnat::String atty::Type baseDcl::DclInfo
+{
+  top.transContext = "null";
 }
 aspect production typeableInstConstraintDcl
 top::DclInfo ::= ty::Type tvs::[TyVar]

@@ -336,37 +336,6 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
   e.originRules = top.originRules ++ [note];
 }
 
-concrete production attributeSection
-top::Expr ::= '(' '.' q::QName ')'
-{
-  top.unparse = "(." ++ q.unparse ++ ")";
-  
-  -- Fresh variable for the input type, and we'll come back later and check that it occurs on that type.
-  
-  local rawInputType :: Type = freshType();
-  top.typerep = appTypes(functionType(1, []), [rawInputType, q.lookupAttribute.typeScheme.typerep]);
-  
-  top.errors <- q.lookupAttribute.errors;
-  
-  top.errors <- if null(q.lookupAttribute.typeScheme.boundVars) then []
-                else [err(q.location, "Attribute " ++ q.name ++ " is parameterized, and attribute sections currently do not work with parameterized attributes, yet.")]; -- TODO The type inference system is too weak, currently.
-  
-  top.errors <- if !q.lookupAttribute.found || q.lookupAttribute.dcl.isSynthesized then []
-                else [err(q.location, "Only synthesized attributes are currently supported in attribute sections.")];
-  
-  -- Only known after the inference pass (uses final subst)
-  production attribute inputType :: Type;
-  inputType = performSubstitution(rawInputType, top.finalSubst);
-  
-  -- We're not using QNameAttrOccur right now because that assumes we know the nonterminal
-  -- so we can filter down to just attributes occurring on that. We could probably fix this
-  -- to make it work either way.
-  production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(q, if inputType.isDecorated then inputType.decoratedType else inputType);
-
-  top.errors <- occursCheck.errors;
-}
-
 -- NOTE: this is not intended to be used normally.
 -- Its purpose is for test cases. Essentially all other situations should never care what the forward tree is.
 concrete production forwardAccess
@@ -852,6 +821,31 @@ top::Expr ::= e1::Expr '++' e2::Expr
         presentAppExpr(e2, location=top.location),
         location=top.location),')',
       location=top.location);
+}
+
+concrete production terminalConstructor
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
+{
+  top.unparse = "terminal(" ++ t.unparse ++ ", " ++ es.unparse ++ ", " ++ el.unparse ++ ")";
+
+  top.typerep = t.typerep;
+
+  es.isRoot = false;
+  el.isRoot = false;
+}
+
+concrete production terminalFunction
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' e::Expr ')'
+{
+  -- So, *maybe* this is deprecated? But let's not complain for now, because
+  -- it's too widely used.
+
+  --top.errors <- [wrn(t.location, "terminal(type,lexeme) is deprecated. Use terminal(type,lexeme,location) instead.")];
+
+  local bogus :: Expr =
+    mkStrFunctionInvocation($6.location, "silver:core:bogusLoc", []);
+
+  forwards to terminalConstructor($1, $2, t, $4, e, ',', bogus, $6, location=top.location);
 }
 
 -- These sorta seem obsolete, but there are some important differences from AppExprs.
