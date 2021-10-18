@@ -117,7 +117,7 @@ Boolean ::= sigName::String  e::Decorated Env
  - @returns  Errors for missing equations
  -}
 function checkEqDeps
-[Message] ::= v::FlowVertex  l::Location  prodName::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env  anonResolve::[Pair<String  Location>] runMwda::Boolean
+[Message] ::= v::FlowVertex  l::Location  prodName::String  flowEnv::FlowEnv  realEnv::Decorated Env  anonResolve::[Pair<String  Location>] runMwda::Boolean
 {
   -- We're concerned with missing inherited equations on RHS, LOCAL, and ANON. (Implicitly, FORWARD.)
   
@@ -180,7 +180,7 @@ function checkEqDeps
   end;
 }
 function checkAllEqDeps
-[Message] ::= v::[FlowVertex]  l::Location  prodName::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env  anonResolve::[Pair<String  Location>] runMwda::Boolean
+[Message] ::= v::[FlowVertex]  l::Location  prodName::String  flowEnv::FlowEnv  realEnv::Decorated Env  anonResolve::[Pair<String  Location>] runMwda::Boolean
 {
   return flatMap(checkEqDeps(_, l, prodName, flowEnv, realEnv, anonResolve, runMwda), v);
 }
@@ -741,7 +741,7 @@ top::VarBinder ::= n::Name
 }
 
 function remoteProdMissingEq
-Boolean ::= prod::ValueDclInfo  sigName::String  attrName::String  realEnv::Decorated Env  flowEnv::Decorated FlowEnv
+Boolean ::= prod::ValueDclInfo  sigName::String  attrName::String  realEnv::Decorated Env  flowEnv::FlowEnv
 {
   return
     null(lookupInh(prod.fullName, sigName, attrName, flowEnv)) && -- no equation

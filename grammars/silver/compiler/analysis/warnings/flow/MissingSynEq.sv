@@ -61,7 +61,7 @@ top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' n
  - @returns      An error message from the attribute occurrence's perspective, if any
  -}
 function raiseMissingProds
-[Message] ::= l::Location  attr::String  prod::String  e::Decorated FlowEnv runMwda::Boolean
+[Message] ::= l::Location  attr::String  prod::String  e::FlowEnv runMwda::Boolean
 {
   -- Because the location is of the attribute occurrence, deliberately use the attribute's shortname
   local shortName :: String = substring(lastIndexOf(":", attr) + 1, length(attr), attr);
@@ -108,7 +108,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
  - @returns      An error message from the production's perspective, if any
  -}
 function raiseMissingAttrs
-[Message] ::= l::Location  prod::String  attr::OccursDclInfo  e::Decorated FlowEnv runMwda::Boolean
+[Message] ::= l::Location  prod::String  attr::OccursDclInfo  e::FlowEnv runMwda::Boolean
 {
   -- Because the location is of the production, deliberately use the production's shortname
   local shortName :: String = substring(lastIndexOf(":", prod) + 1, length(prod), prod);

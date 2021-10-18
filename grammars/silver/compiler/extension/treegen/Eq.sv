@@ -23,13 +23,13 @@ top::AGDcl ::= 'derive' 'Eq' 'on' names::QNames ';'
 }
 
 function nonforwardingProd
-Boolean ::= d::ValueDclInfo  fe::Decorated FlowEnv
+Boolean ::= d::ValueDclInfo  fe::FlowEnv
 {
   return null(lookupFwd(d.fullName, fe));
 }
 
 function deriveEqOn
-AGDcl ::= id::QName  env::Decorated Env  fenv::Decorated FlowEnv
+AGDcl ::= id::QName  env::Decorated Env  fenv::FlowEnv
 {
   id.env = env;
   

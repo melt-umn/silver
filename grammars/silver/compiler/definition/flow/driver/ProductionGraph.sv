@@ -107,7 +107,7 @@ ProductionGraph ::=
 
 -- construct a production graph for each production
 function computeAllProductionGraphs
-[ProductionGraph] ::= prods::[ValueDclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+[ProductionGraph] ::= prods::[ValueDclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::FlowEnv  realEnv::Decorated Env
 {
   return if null(prods) then []
   else constructProductionGraph(head(prods), searchEnvTree(head(prods).fullName, prodTree), flowEnv, realEnv) ::
@@ -154,7 +154,7 @@ function computeAllProductionGraphs
  - @return A fixed up graph.
  -}
 function constructProductionGraph
-ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEnv::Decorated Env
 {
   -- The name of this production
   local prod :: String = dcl.fullName;
@@ -228,7 +228,7 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::Decorated FlowE
  - @param ntEnv  The flow types we've previously computed
  -}
 function constructFunctionGraph
-ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
+ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
 {
   local prod :: String = ns.fullName;
   local nt :: NtName = "::nolhs"; -- the same hack we use elsewhere
@@ -342,7 +342,7 @@ ProductionGraph ::= ns::NamedSignature  defs::[FlowDef]  realEnv::Decorated Env 
  - @return A fixed up graph.
  -}
 function constructPhantomProductionGraph
-ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Decorated Env
 {
   -- All attributes occurrences
   local attrs :: [OccursDclInfo] = getAttrsOn(nt, realEnv);
@@ -380,7 +380,7 @@ Pair<FlowVertex FlowVertex> ::= at::String
  - Called twice: once for safe edges, later for SUSPECT edges!
  -}
 function addFwdSynEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName syns::[String] flowEnv::Decorated FlowEnv
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName syns::[String] flowEnv::FlowEnv
 {
   return if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv))
@@ -393,7 +393,7 @@ function addFwdSynEqs
  - Inherited equations are never suspect.
  -}
 function addFwdInhEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName inhs::[String] flowEnv::Decorated FlowEnv
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName inhs::[String] flowEnv::FlowEnv
 {
   return if null(inhs) then []
   else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [pair(forwardVertex(head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
@@ -403,7 +403,7 @@ function addFwdInhEqs
  - Introduces default equations deps. Realistically, should be empty, always.
  -}
 function addDefEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName nt::NtName syns::[String] flowEnv :: Decorated FlowEnv
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName nt::NtName syns::[String] flowEnv :: FlowEnv
 {
   return if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv)) 
@@ -418,14 +418,14 @@ function addDefEqs
  - Inherited equations are never suspect.
  -}
 function addAllAutoCopyEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName sigNames::[NamedSignatureElement] inhs::[String] flowEnv::Decorated FlowEnv realEnv::Decorated Env
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName sigNames::[NamedSignatureElement] inhs::[String] flowEnv::FlowEnv realEnv::Decorated Env
 {
   return if null(sigNames) then []
   else addAutocopyEqs(prod, head(sigNames), inhs, flowEnv, realEnv) ++ addAllAutoCopyEqs(prod, tail(sigNames), inhs, flowEnv, realEnv);
 }
 -- Helper for above.
 function addAutocopyEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName sigName::NamedSignatureElement inhs::[String] flowEnv::Decorated FlowEnv realEnv::Decorated Env
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName sigName::NamedSignatureElement inhs::[String] flowEnv::FlowEnv realEnv::Decorated Env
 {
   return if null(inhs) then []
   else (if null(lookupInh(prod, sigName.elementName, head(inhs), flowEnv))  -- no equation
