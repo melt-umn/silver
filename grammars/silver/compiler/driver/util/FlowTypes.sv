@@ -13,7 +13,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
 {
   -- aggregate all flow def information
   local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), flatMap((.flowDefs), g.grammarList));
-  local allSpecDefs :: [(String, String, [String])] = flatMap((.specDefs), g.grammarList);
+  local allSpecDefs :: [(String, String, [String], [String])] = flatMap((.specDefs), g.grammarList);
   local allRefDefs :: [(String, [String])] = flatMap((.refDefs), g.grammarList);
   local allFlowEnv :: Decorated FlowEnv = fromFlowDefs(allSpecDefs, allRefDefs, allFlowDefs);
   
