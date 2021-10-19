@@ -38,7 +38,7 @@ top::InterfaceItem ::= val::[(String, [String])]
 }
 
 abstract production specDefsInterfaceItem
-top::InterfaceItem ::= val::[(String, String, [String])]
+top::InterfaceItem ::= val::[(String, String, [String], [String])]
 {
   top.specDefs <- val;
   top.hasSpecDefs <- true;
