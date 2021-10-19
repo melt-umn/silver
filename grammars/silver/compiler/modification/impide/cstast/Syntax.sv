@@ -8,6 +8,12 @@ monoid attribute classFontList :: [Pair<String String>];
 attribute fontList, classFontList occurs on Syntax, SyntaxDcl, SyntaxRoot;
 propagate fontList, classFontList on Syntax, SyntaxDcl;
 
+aspect default production
+top::SyntaxDcl ::=
+{
+  propagate fontList, classFontList;
+}
+
 aspect production syntaxLexerClass
 top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 {
@@ -30,4 +36,3 @@ top::SyntaxDcl ::= fontName::String fnt::Font -- TODO: we probably? need to fact
   
   top.xmlCopper = "";
 }
-

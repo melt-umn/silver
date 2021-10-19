@@ -11,9 +11,12 @@ nonterminal ProductionStmt with
   productionAttributes, uniqueSignificantExpression, originRules;
 
 flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst}
-  on ProductionBody, ProductionStmts;
-flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst, finalSubst}
+  on ProductionBody;
+flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst, originRules}
+  on ProductionStmts;
+flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst, finalSubst, originRules}
   on ProductionStmt;
+flowtype forward {decorate} on ProductionBody, ProductionStmts, ProductionStmt;
 
 nonterminal DefLHS with 
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found, originRules;

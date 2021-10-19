@@ -103,5 +103,11 @@ top::QName ::= id::Name ':' qn::QName
   top.lookupFont = decorate customLookup("font style", getFontDcl(top.name, top.env), top.name, top.location) with {};
 }
 
+aspect production qNameError
+top::QName ::= msg::[Message]
+{
+  top.lookupFont = decorate errorLookup(msg) with {};
+}
+
 synthesized attribute lookupFont :: Decorated QNameLookup<FontDclInfo> occurs on QName;
 

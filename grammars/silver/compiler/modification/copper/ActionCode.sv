@@ -52,6 +52,7 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
     [err(top.location, "Disambiguation function without pluck")] else [];
   
   stmts.downSubst = emptySubst();
+  stmts.originRules = [];
 }
 
 
@@ -59,52 +60,31 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 -- contained in the snoc-list (so this statement or before) are a pluck. Handles
 -- raising errors if there are statements after a pluck.
 synthesized attribute containsPluck :: Boolean occurs on ProductionStmts, ProductionStmt;
-flowtype containsPluck {decorate} on ProductionStmts, ProductionStmt;
+flowtype containsPluck {forward} on ProductionStmts, ProductionStmt;
 
-aspect production productionStmtsSnoc
-top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
-{
-  top.containsPluck = t.containsPluck || h.containsPluck;
+aspect containsPluck on ProductionStmts of
+| productionStmtsSnoc(h, t) -> t.containsPluck || h.containsPluck
+| productionStmtsNil() -> false
+end;
 
-  top.errors <- if top.frame.permitPluck && h.containsPluck then [err(t.location, "Statement after pluck")] else [];
-}
+aspect containsPluck on ProductionStmt of
+| pluckDef(_, _, _) -> true
 
-aspect production productionStmtsNil
-top::ProductionStmts ::=
-{
-  top.containsPluck = false;
-}
-
-aspect default production
-top::ProductionStmt ::=
-{
-  top.containsPluck = false;
-}
-
-aspect production pluckDef
-top::ProductionStmt ::= 'pluck' e::Expr ';'
-{
-  top.containsPluck = true;
-}
-
-aspect production ifElseStmt
-top::ProductionStmt ::= 'if' '(' c::Expr ')' th::ProductionStmt 'else' el::ProductionStmt
-{
   -- Only guaranteed to pluck a terminal if both th and el contain a pluck
-  top.containsPluck = th.containsPluck && el.containsPluck;
-}
+| ifElseStmt(_, _, _, _, th, _, el) -> th.containsPluck && el.containsPluck
 
-aspect production attributeDef
-top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
-{
-  top.containsPluck = false;  -- Required by MWDA
-}
+  -- Required by MWDA
+| attributeDef(_, _, _, _, _, _) -> false
+| errorAttributeDef(_, _, _, _) -> false
+| valueEq(_, _, _, _) -> false
 
-aspect production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
-{
-  top.containsPluck = false;  -- Required by MWDA
-}
+| _ -> false
+end;
+
+aspect errors on top::ProductionStmts using <- of
+| productionStmtsSnoc(h, t) ->
+  if top.frame.permitPluck && h.containsPluck then [err(t.location, "Statement after pluck")] else []
+end;
 
 -- TODO hacky. ideally we'd do this where local attributes are declared, not here.
 function hacklocaldeclarations
