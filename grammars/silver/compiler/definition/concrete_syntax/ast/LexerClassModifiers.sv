@@ -1,5 +1,7 @@
 grammar silver:compiler:definition:concrete_syntax:ast;
 
+import silver:util:treemap as tm;
+
 -- From TerminalModifiers
 --synthesized attribute dominatesXML :: String;
 --synthesized attribute submitsXML :: String;
@@ -113,6 +115,17 @@ ${acode}
 """);
   syntaxDcl.cstEnv = top.cstEnv;
   syntaxDcl.containingGrammar = top.containingGrammar;
+  syntaxDcl.classTerminals = top.classTerminals;
+  syntaxDcl.superClasses = top.superClasses;
+  syntaxDcl.subClasses = top.subClasses;
+
+  -- These are required by the flow type of xmlCopper,
+  -- but aren't really required by the syntaxDisambiguationGroup production.
+  syntaxDcl.parserAttributeAspects = tm:empty();
+  syntaxDcl.layoutTerms = tm:empty();
+  syntaxDcl.prefixesForTerminals = tm:empty();
+  syntaxDcl.componentGrammarMarkingTerminals = tm:empty();
+  syntaxDcl.prettyNames = tm:empty();
 
   -- TODO: Check for duplicate disambiguation for a lexer class
   

@@ -25,6 +25,13 @@ autocopy attribute subClasses::EnvTree<String>;
 monoid attribute parserAttributeAspectContribs::[Pair<String String>];
 autocopy attribute parserAttributeAspects::EnvTree<String>;
 
+-- TODO: Attributes that lift out various sorts of SyntaxDcls all extract references
+-- of type Decorated SyntaxDcl.  The actual set of attributes needed for translation
+-- varies between different SyntaxDcl productions, however the flow analysis forces
+-- all these references to have the entire set of possible inh attributes.
+-- We should perhaps consider factoring out different sorts of SyntaxDcls into seperate
+-- nonterminals, e.g. SyntaxNonterminal, SyntaxProduction, etc. and collect references
+-- to these various nonterminals with only the relevant attributes instead.
 monoid attribute allTerminals :: [Decorated SyntaxDcl];
 monoid attribute allIgnoreTerminals :: [String];
 monoid attribute allMarkingTerminals :: [String];
@@ -126,6 +133,8 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
       "    <Type><![CDATA[" ++ makeNTName(t.typeName) ++ "]]></Type>\n" ++
       "  </Nonterminal>\n" ++
     subdcls.xmlCopper;
+
+  modifiers.nonterminalName = t.typeName;
 
   t.boundVariables = t.freeVariables;
 }
