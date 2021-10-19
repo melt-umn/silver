@@ -557,6 +557,6 @@ function findAdmissibleEdges
     filter(isLhsInhSet(_, currentDeps), set:toList(targetNotSource));
   
   return if set:isEmpty(currentDeps) then [] -- just a quick optimization.
-  else map((edge.fst, _), validDeps);
+  else map(pair(edge.fst, _), validDeps);
 }
 

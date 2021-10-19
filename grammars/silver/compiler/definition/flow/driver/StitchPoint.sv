@@ -69,7 +69,7 @@ function projectAttribute
   prod::ProductionGraph
 {
   -- emit edges from the src vertex of this production
-  return map((sourceType.inhVertex(attr), _),
+  return map(pair(sourceType.inhVertex(attr), _),
     -- Turn into inh vertexes (in this production) on targetType
     map(targetType.inhVertex,
       -- Filter down to just LHS Inh in that production, (string names)
