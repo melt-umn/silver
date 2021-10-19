@@ -198,7 +198,7 @@ top::FlowSpecInh ::= inh::QNameAttrOccur
  -        be kinda tricky: probably we'd need to remove this attribute
  -        from the normal 'infer' process EXCEPT on the phantom production,
  -        where we'd stash the info given here as edges...)
- - 2. I'm only implementing 'decorate' and not 'forward'/syns.
+ - 2. We only support 'decorate' and 'forward' here, not syns.
  -    It's the only version demanded so far, let's wait until there's
  -    motivation to consider that extension.
  -}
@@ -222,6 +222,24 @@ top::FlowSpecInh ::= 'decorate'
     end;
   
   top.inhList = fromMaybe([], decSpec);
+}
+
+concrete production flowSpecForward
+top::FlowSpecInh ::= 'forward'
+{
+  top.unparse = "forward";
+  
+  local specs :: [Pair<String [String]>] = getFlowTypeSpecFor(top.onNt.typeName, top.flowEnv);
+  local forwardSpec :: Maybe<[String]> = lookup("forward", specs);
+  
+  top.errors <-
+    case forwardSpec of
+    | just(_) -> []
+    | nothing() -> 
+      [err(top.location, s"to use the forward set for nonterminal ${top.onNt.typeName} in a flow type, 'forward' must also have an explicit flow type")]
+    end;
+  
+  top.inhList = fromMaybe([], forwardSpec);
 }
 
 
