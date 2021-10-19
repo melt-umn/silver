@@ -111,7 +111,6 @@ for (int i = nextMember(0, shiftable); i >= 0; i = nextMember(i+1, shiftable)) {
 final common.ConsCell shiftableList = tempShiftableList;
 ${acode}
 """);
-  -- TODO: Figure out the actual flowtype here
   syntaxDcl.cstEnv = top.cstEnv;
   syntaxDcl.containingGrammar = top.containingGrammar;
 
