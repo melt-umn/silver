@@ -11,7 +11,7 @@ autocopy attribute flowEnv :: FlowEnv;
 monoid attribute flowDefs :: [FlowDef];
 -- These are factored out of FlowDefs to avoid a circular dependency,
 -- since they are needed during type checking
-monoid attribute specDefs :: [(String, String, [String])];
+monoid attribute specDefs :: [(String, String, [String], [String])];  -- (nt, attr, [inhs], [referenced flow specs])
 monoid attribute refDefs :: [(String, [String])];
 
 nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree;
@@ -27,7 +27,7 @@ annotation localInhTree ::EnvTree<FlowDef>;
 annotation localTree :: EnvTree<FlowDef>;
 annotation nonSuspectTree :: EnvTree<[String]>;
 annotation hostSynTree :: EnvTree<FlowDef>;
-annotation specTree :: EnvTree<Pair<String [String]>>;
+annotation specTree :: EnvTree<(String, [String], [String])>;
 annotation prodGraphTree :: EnvTree<FlowDef>;
 
 abstract production flowEnv
@@ -36,7 +36,7 @@ top::FlowEnv ::=
 
 function fromFlowDefs
 FlowEnv ::=
-  specContribs::[(String, String, [String])] refContribs::[(String, [String])]
+  specContribs::[(String, String, [String], [String])] refContribs::[(String, [String])]
   d::FlowDefs
 {
   return flowEnv(
@@ -146,7 +146,7 @@ function getSpecifiedSynsForNt
   return map(fst, searchEnvTree(nt, e.specTree));
 }
 function getFlowTypeSpecFor
-[Pair<String [String]>] ::= nt::String  e::FlowEnv
+[(String, [String], [String])] ::= nt::String  e::FlowEnv
 {
   return searchEnvTree(nt, e.specTree);
 }
