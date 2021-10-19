@@ -107,7 +107,7 @@ ProductionGraph ::=
 
 -- construct a production graph for each production
 function computeAllProductionGraphs
-[ProductionGraph] ::= prods::[DclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+[ProductionGraph] ::= prods::[ValueDclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
 {
   return if null(prods) then []
   else constructProductionGraph(head(prods), searchEnvTree(head(prods).fullName, prodTree), flowEnv, realEnv) ::
@@ -154,14 +154,14 @@ function computeAllProductionGraphs
  - @return A fixed up graph.
  -}
 function constructProductionGraph
-ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
 {
   -- The name of this production
   local prod :: String = dcl.fullName;
   -- The LHS nonterminal full name
   local nt :: NtName = dcl.namedSignature.outputElement.typerep.typeName;
   -- All attributes occurrences
-  local attrs :: [DclInfo] = getAttrsOn(nt, realEnv);
+  local attrs :: [OccursDclInfo] = getAttrsOn(nt, realEnv);
   -- Just synthesized attributes.
   local syns :: [String] = map((.attrOccurring), filter(isOccursSynthesized(_, realEnv), attrs));
   -- Just inherited.
@@ -345,7 +345,7 @@ function constructPhantomProductionGraph
 ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
 {
   -- All attributes occurrences
-  local attrs :: [DclInfo] = getAttrsOn(nt, realEnv);
+  local attrs :: [OccursDclInfo] = getAttrsOn(nt, realEnv);
   -- Just synthesized attributes.
   local syns :: [String] = map((.attrOccurring), filter(isOccursSynthesized(_, realEnv), attrs));
   -- Those syns that are not part of the host, and so should have edges to fwdeq
@@ -501,7 +501,7 @@ Pair<String ProductionGraph> ::= p::ProductionGraph
   return pair(p.prod, p);
 }
 function isOccursInherited
-Boolean ::= occs::DclInfo  e::Decorated Env
+Boolean ::= occs::OccursDclInfo  e::Decorated Env
 {
   return case getAttrDcl(occs.attrOccurring, e) of
          | at :: _ -> at.isInherited

@@ -1,6 +1,7 @@
 grammar silver:compiler:modification:collection;
 
-attribute operation, attrBaseDefDispatcher, attrAppendDefDispatcher, baseDefDispatcher, appendDefDispatcher occurs on DclInfo;
+attribute operation, attrBaseDefDispatcher, attrAppendDefDispatcher occurs on AttributeDclInfo;
+attribute operation, baseDefDispatcher, appendDefDispatcher occurs on ValueDclInfo;
 
 synthesized attribute attrBaseDefDispatcher :: (ProductionStmt ::= Decorated DefLHS  Decorated QNameAttrOccur  Expr  Location);
 synthesized attribute attrAppendDefDispatcher :: (ProductionStmt ::= Decorated DefLHS  Decorated QNameAttrOccur  Expr  Location);
@@ -9,7 +10,7 @@ synthesized attribute baseDefDispatcher :: (ProductionStmt ::= Decorated QName  
 synthesized attribute appendDefDispatcher :: (ProductionStmt ::= Decorated QName  Expr  Location);
 
 aspect default production
-top::DclInfo ::=
+top::AttributeDclInfo ::=
 {
   top.operation = error("Internal compiler error: must be defined for all collection attribute declarations");
   
@@ -19,13 +20,19 @@ top::DclInfo ::=
   top.attrAppendDefDispatcher =
     \ dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr  l::Location ->
       errorAttributeDef([err(l, "The '<-' operator can only be used for collections. " ++ attr.name ++ " is not a collection.")], dl, attr, e, location=l);
+}
 
+aspect default production
+top::ValueDclInfo ::=
+{
+  top.operation = error("Internal compiler error: must be defined for all collection attribute declarations");
+  
   top.baseDefDispatcher = errorCollectionValueDef(_, _, location=_);
   top.appendDefDispatcher = errorCollectionValueDef(_, _, location=_);
 }
 
 abstract production synCollectionDcl
-top::DclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
+top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
 {
   top.fullName = fn;
 
@@ -44,7 +51,7 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
   top.attrAppendDefDispatcher = synAppendColAttributeDef(_, _, _, location=_);
 }
 abstract production inhCollectionDcl
-top::DclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
+top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
 {
   top.fullName = fn;
 
@@ -64,7 +71,7 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
 }
 
 abstract production localCollectionDcl
-top::DclInfo ::= fn::String ty::Type o::Operation
+top::ValueDclInfo ::= fn::String ty::Type o::Operation
 {
   top.fullName = fn;
 

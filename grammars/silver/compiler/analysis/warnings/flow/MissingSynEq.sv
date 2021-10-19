@@ -83,7 +83,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 {
   -- All locally known synthesized attributes. This does not need to be exhaustive,
   -- because this error message is a courtesy, not the basis of the analysis.
-  local attrs :: [DclInfo] = 
+  local attrs :: [OccursDclInfo] = 
     filter(isOccursSynthesized(_, top.env),
       getAttrsOn(namedSig.outputElement.typerep.typeName, top.env));
 
@@ -102,13 +102,13 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
  - for the synthesized attribute `attr`.
  -
  - @param l      Location to raise the error message (of the production)
- - @param attr   Full name of a synthesized attribute
- - @param prod   DclInfo for the non-forwarding production in question
+ - @param attr   DclInfo of a synthesized attribute occurrence
+ - @param prod   Full name of the non-forwarding production in question
  - @param e      The local flow environment
  - @returns      An error message from the production's perspective, if any
  -}
 function raiseMissingAttrs
-[Message] ::= l::Location  prod::String  attr::DclInfo  e::Decorated FlowEnv runMwda::Boolean
+[Message] ::= l::Location  prod::String  attr::OccursDclInfo  e::Decorated FlowEnv runMwda::Boolean
 {
   -- Because the location is of the production, deliberately use the production's shortname
   local shortName :: String = substring(lastIndexOf(":", prod) + 1, length(prod), prod);

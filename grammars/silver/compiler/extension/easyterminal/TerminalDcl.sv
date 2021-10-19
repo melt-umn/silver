@@ -34,7 +34,7 @@ top::RegExpr ::= t::Terminal_t
 }
 
 {-- Abstracts away looking up terminals in the environment -}
-nonterminal EasyTerminalRef with config, location, grammarName, unparse, errors, typerep, easyString, env, dcls;
+nonterminal EasyTerminalRef with config, location, grammarName, unparse, errors, typerep, easyString, env, dcls<TypeDclInfo>;
 
 {-- String literal between quotes. e.g. 'hi"' is hi" -}
 synthesized attribute easyString :: String;

@@ -307,7 +307,7 @@ Boolean ::= ls::[Type]
 
 --------
 synthesized attribute contextPatternDefs::([Def] ::= Context [TyVar] String Location String) occurs on Context;
-synthesized attribute contextPatternOccursDefs::([DclInfo] ::= Context [TyVar] String Location String) occurs on Context;
+synthesized attribute contextPatternOccursDefs::([OccursDclInfo] ::= Context [TyVar] String Location String) occurs on Context;
 
 aspect default production
 top::Context ::=
@@ -359,7 +359,7 @@ top::Context ::= i1::Type i2::Type
 }
 
 abstract production instPatternConstraintDcl
-top::DclInfo ::= fntc::String ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
+top::InstDclInfo ::= fntc::String ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
 {
   top.fullName = fntc;
   top.typeScheme = monoType(ty);
@@ -369,7 +369,7 @@ top::DclInfo ::= fntc::String ty::Type oc::Context tvs::[TyVar] scrutineeTrans::
 }
 
 abstract production occursPatternConstraintDcl
-top::DclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
+top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
 {
   top.fullName = ntty.typeName;
   top.attrOccurring = fnat;
@@ -380,7 +380,7 @@ top::DclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVar] scr
 }
 
 abstract production annoPatternConstraintDcl
-top::DclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
+top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
 {
   top.fullName = ntty.typeName;
   top.attrOccurring = fnat;
@@ -392,7 +392,7 @@ top::DclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVar] scr
 }
 
 abstract production typeablePatternConstraintDcl
-top::DclInfo ::= ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
+top::InstDclInfo ::= ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
 {
   top.fullName = "typeable";
   top.typeScheme = monoType(ty);
@@ -402,7 +402,7 @@ top::DclInfo ::= ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
 }
 
 abstract production inhSubsetPatternConstraintDcl
-top::DclInfo ::= i1::Type i2::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
+top::InstDclInfo ::= i1::Type i2::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
 {
   top.fullName = "subset";
   top.typeScheme = monoType(i1);

@@ -3,7 +3,7 @@ grammar silver:compiler:modification:copper;
 --------------------------------------------------------------------------------
 -- Defs.sv
 
-synthesized attribute lexerClassList :: [EnvItem] occurs on Defs, Def;
+synthesized attribute lexerClassList :: [EnvItem<ValueDclInfo>] occurs on Defs, Def;
 
 aspect production nilDefs 
 top::Defs ::= 
@@ -24,13 +24,11 @@ top::Def ::=
 }
 
 abstract production lxrClsDef
-top::Def ::= d::EnvItem
+top::Def ::= d::EnvItem<ValueDclInfo>
 {
-  top.dcl = d.dcl;
+  propagate filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended;
   top.lexerClassList = [d];
   top.valueList = [d];
-  top.filterDef = top.filterFn(d);
-  top.mapDef = lxrClsDef(top.mapFn(d));
 }
 
 function parserAttrDef
@@ -72,7 +70,7 @@ Def ::= sg::String sl::Location fn::String ty::Type
 --------------------------------------------------------------------------------
 -- Env.sv
 
-synthesized attribute lexerClassTree :: EnvTree<DclInfo> occurs on Env;
+synthesized attribute lexerClassTree :: EnvTree<ValueDclInfo> occurs on Env;
 
 aspect production i_emptyEnv
 top::Env ::=
@@ -99,7 +97,7 @@ top::Env ::= _  e::Decorated Env
 }
 
 function getLexerClassDcl
-[DclInfo] ::= search::String e::Decorated Env
+[ValueDclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvTree(search, e.lexerClassTree);
 }
@@ -107,7 +105,7 @@ function getLexerClassDcl
 --------------------------------------------------------------------------------
 -- QName.sv
 
-synthesized attribute lookupLexerClass :: Decorated QNameLookup occurs on QName;
+synthesized attribute lookupLexerClass :: Decorated QNameLookup<ValueDclInfo> occurs on QName;
 
 aspect production qNameId
 top::QName ::= id::Name

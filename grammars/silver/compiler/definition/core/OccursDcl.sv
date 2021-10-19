@@ -106,7 +106,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
   production protoatty :: Type = performRenaming(performRenaming(atTypeScheme.typerep, rewrite_from), rewrite_to);
   
   -- Now, finally, make sure we're not "redefining" the occurs.
-  production occursCheck :: [DclInfo] = getOccursDcl(at.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
+  production occursCheck :: [OccursDclInfo] = getOccursDcl(at.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
   
   top.errors <-
     if length(occursCheck) > 1

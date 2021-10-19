@@ -26,6 +26,11 @@ public class BaseTypeRep extends TypeRep {
 	}
 	
 	@Override
+	public final String typeName() {
+		return name;
+	}
+	
+	@Override
 	public final String toString() {
 		return name;
 	}

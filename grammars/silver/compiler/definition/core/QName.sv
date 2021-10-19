@@ -12,7 +12,7 @@ nonterminal QNameType with config, name, location, grammarName, env, unparse;
 {--
  - The list of declarations resulting from looking up this QName
  -}
-synthesized attribute dcls :: [DclInfo];
+synthesized attribute dcls<a> :: [a];
 
 synthesized attribute qNameType::QNameType;
 
@@ -59,14 +59,19 @@ top::QName ::= msg::[Message]
   top.lookupAttribute = decorate errorLookup(msg) with {};
 }
 
-nonterminal QNameLookup with fullName, typeScheme, errors, dcls, dcl, found;
+nonterminal QNameLookup<a> with fullName, typeScheme, errors, dcls<a>, dcl<a>, found;
 
-synthesized attribute lookupValue :: Decorated QNameLookup occurs on QName;
-synthesized attribute lookupType :: Decorated QNameLookup occurs on QName;
-synthesized attribute lookupAttribute :: Decorated QNameLookup occurs on QName;
+synthesized attribute lookupValue :: Decorated QNameLookup<ValueDclInfo> occurs on QName;
+synthesized attribute lookupType :: Decorated QNameLookup<TypeDclInfo> occurs on QName;
+synthesized attribute lookupAttribute :: Decorated QNameLookup<AttributeDclInfo> occurs on QName;
+
+flowtype QName = lookupValue {env}, lookupType {env}, lookupAttribute {env};
 
 abstract production customLookup
-top::QNameLookup ::= kindOfLookup::String dcls::[DclInfo] name::String l::Location 
+attribute fullName {} occurs on a,
+attribute typeScheme {} occurs on a,
+annotation sourceLocation occurs on a =>
+top::QNameLookup<a> ::= kindOfLookup::String dcls::[a] name::String l::Location 
 {
   top.dcls = dcls;
   top.found = !null(top.dcls); -- currently accurate
@@ -86,7 +91,7 @@ top::QNameLookup ::= kindOfLookup::String dcls::[DclInfo] name::String l::Locati
 }
 
 abstract production errorLookup
-top::QNameLookup ::= msg::[Message]
+top::QNameLookup<a> ::= msg::[Message]
 {
   top.dcls = [];
   top.found = true;
@@ -97,12 +102,16 @@ top::QNameLookup ::= msg::[Message]
 }
 
 function printPossibilities
-String ::= lst::[DclInfo]
+attribute fullName {} occurs on a,
+annotation sourceLocation occurs on a =>
+String ::= lst::[a]
 {
   return implode("\n", map(dclinfo2possibility, lst));
 }
 function dclinfo2possibility
-String ::= dcl::DclInfo
+attribute fullName {} occurs on a,
+annotation sourceLocation occurs on a =>
+String ::= dcl::a
 {
   -- TODO: perhaps some way of including types, when they are relevant (attributes, values)
   return "\t" ++ dcl.fullName ++ " (" ++ dcl.sourceLocation.filename ++ ":" ++ toString(dcl.sourceLocation.line) ++ ")";
@@ -133,14 +142,16 @@ top::QNameType ::= id::Name ':' qn::QNameType
 {--
  - Qualified name looked up CONTEXTUALLY
  -}
-nonterminal QNameAttrOccur with config, name, location, grammarName, env, unparse, attrFor, errors, typerep, dcl, attrDcl, found, attrFound;
+nonterminal QNameAttrOccur with config, name, location, grammarName, env, unparse, attrFor, errors, typerep, dcl<OccursDclInfo>, attrDcl, found, attrFound;
+
+flowtype QNameAttrOccur = dcl {grammarName, env, attrFor}, attrDcl {grammarName, env, attrFor};
 
 {--
  - For QNameAttrOccur, the name of the LHS to look up this attribute on.
  - i.e. 
  -}
 inherited attribute attrFor :: Type;
-synthesized attribute attrDcl :: DclInfo;
+synthesized attribute attrDcl :: AttributeDclInfo;
 
 {--
  - Whether lookup was successful. Better than `null(_.errors)` because errors may be suppressed
@@ -164,10 +175,10 @@ top::QNameAttrOccur ::= at::QName
   top.unparse = at.unparse;
   
   -- We start with all attributes we find with the name `at`:
-  local attrs :: [DclInfo] = at.lookupAttribute.dcls;
+  local attrs :: [AttributeDclInfo] = at.lookupAttribute.dcls;
   
   -- Then we filter to just those that appear to have an occurrence on `top.attrFor`:
-  local narrowed :: [[DclInfo]] = 
+  local narrowed :: [[OccursDclInfo]] = 
     -- The occurs dcls on this nonterminal for
     map(getOccursDcl(_, top.attrFor.typeName, top.env),
       -- the full names of each candidate
@@ -176,10 +187,10 @@ top::QNameAttrOccur ::= at::QName
   -- i.e. 'import somthing as prefixed;  something.a' won't find prefixed:a.
 
   -- Occurs dcls for `at` on `top.attrFor` (there should be only one)
-  local dclsNarrowed :: [DclInfo] = concat(narrowed);
+  local dclsNarrowed :: [OccursDclInfo] = concat(narrowed);
   
   -- Attribute dcls
-  local attrsNarrowed :: [DclInfo] = zipFilterDcls(attrs, narrowed);
+  local attrsNarrowed :: [AttributeDclInfo] = zipFilterDcls(attrs, narrowed);
   
   -- This basically has to mirror the logic in errors below!
   top.found = 
@@ -231,7 +242,7 @@ top::QNameAttrOccur ::= at::QName
  - we return only those `at` which have a non-empty element in `occ`
  -}
 function zipFilterDcls
-[DclInfo] ::= at::[DclInfo]  occ::[[DclInfo]]
+[AttributeDclInfo] ::= at::[AttributeDclInfo]  occ::[[OccursDclInfo]]
 {
   return if null(at) then []
   else if null(head(occ)) then zipFilterDcls(tail(at), tail(occ))

@@ -43,6 +43,11 @@ public class FunctionTypeRep extends TypeRep {
 	}
 	
 	@Override
+	public final String typeName() {
+		return "::=";
+	}
+	
+	@Override
 	public final String toString() {
 		String paramsToString = "";
 		for (int i = 0; i < params; i++) {

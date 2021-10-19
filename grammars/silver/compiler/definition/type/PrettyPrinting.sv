@@ -1,5 +1,6 @@
 grammar silver:compiler:definition:type;
 
+import silver:langutil:pp;
 
 synthesized attribute typepp :: String occurs on PolyType, Context, Type, Kind;
 autocopy attribute boundVariables :: [TyVar] occurs on Context, Type;
@@ -36,6 +37,14 @@ function prettyKind
 String ::= k::Kind
 {
   return k.typepp;
+}
+
+instance Show Type {
+  pp = compose(text, prettyType);
+}
+
+instance Show Kind {
+  pp = compose(text, prettyKind);
 }
 
 --------------------------------------------------------------------------------
@@ -95,6 +104,12 @@ aspect production inhSubsetContext
 top::Context ::= i1::Type i2::Type
 {
   top.typepp = i1.typepp ++ " subset " ++ i2.typepp;
+}
+
+aspect production typeErrorContext
+top::Context ::= msg::String
+{
+  top.typepp = "typeError \"" ++ escapeString(msg) ++ "\"";
 }
 
 aspect production varType

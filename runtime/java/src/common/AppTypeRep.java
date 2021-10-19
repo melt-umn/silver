@@ -30,6 +30,11 @@ public class AppTypeRep extends TypeRep {
 	}
 	
 	@Override
+	public final String typeName() {
+		return cons.typeName();
+	}
+	
+	@Override
 	public final String toString() {
 		List<TypeRep> args = new LinkedList<>();
 		TypeRep a = this;

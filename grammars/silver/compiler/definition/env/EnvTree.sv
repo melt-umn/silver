@@ -21,7 +21,7 @@ function searchEnvTree
  - Obey's EnvItem's rules for what names should appear for each item.
  -}
 function buildTree
-EnvTree<DclInfo> ::= eis::[EnvItem]
+EnvTree<a> ::= eis::[EnvItem<a>]
 {
   return directBuildTree(flatMap((.envContribs), eis));
 }
@@ -48,7 +48,7 @@ EnvTree<a> ::= e1::EnvTree<a> e2::EnvTree<a>
 }
 
 function consEnvTree
-EnvTree<DclInfo> ::= eis::[EnvItem] et::EnvTree<DclInfo>
+EnvTree<a> ::= eis::[EnvItem<a>] et::EnvTree<a>
 {
   return rtm:add(flatMap((.envContribs), eis), et);
 }

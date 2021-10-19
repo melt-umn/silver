@@ -2,42 +2,46 @@ grammar silver:compiler:definition:flow:env;
 
 import silver:compiler:driver:util;
 
-monoid attribute maybeFlowDefs::Maybe<[FlowDef]> with nothing(), orElse;
-monoid attribute maybeRefDefs::Maybe<[(String, [String])]> with nothing(), orElse;
-monoid attribute maybeSpecDefs::Maybe<[(String, String, [String])]> with nothing(), orElse;
-attribute maybeFlowDefs, maybeRefDefs, maybeSpecDefs occurs on InterfaceItems, InterfaceItem;
-propagate maybeFlowDefs, maybeRefDefs, maybeSpecDefs on InterfaceItems;
+monoid attribute hasFlowDefs::Boolean with false, ||;
+monoid attribute hasRefDefs::Boolean with false, ||;
+monoid attribute hasSpecDefs::Boolean with false, ||;
+
+attribute flowDefs, refDefs, specDefs, hasFlowDefs, hasRefDefs, hasSpecDefs occurs on InterfaceItems, InterfaceItem;
+propagate flowDefs, refDefs, specDefs, hasFlowDefs, hasRefDefs, hasSpecDefs on InterfaceItems, InterfaceItem;
 
 aspect production consInterfaceItem
 top::InterfaceItems ::= h::InterfaceItem t::InterfaceItems
 {
-  top.interfaceErrors <- if !top.maybeFlowDefs.isJust then ["Missing item flowDefs"] else [];
-  top.interfaceErrors <- if !top.maybeRefDefs.isJust then ["Missing item refDefs"] else [];
-  top.interfaceErrors <- if !top.maybeSpecDefs.isJust then ["Missing item specDefs"] else [];
+  top.interfaceErrors <- if !top.hasFlowDefs then ["Missing item flowDefs"] else [];
+  top.interfaceErrors <- if !top.hasRefDefs then ["Missing item refDefs"] else [];
+  top.interfaceErrors <- if !top.hasSpecDefs then ["Missing item specDefs"] else [];
 }
 
 aspect default production
 top::InterfaceItem ::=
 {
-  propagate maybeFlowDefs, maybeRefDefs, maybeSpecDefs;
+  propagate flowDefs, refDefs, specDefs, hasFlowDefs, hasRefDefs, hasSpecDefs;
 }
 
 abstract production flowDefsInterfaceItem
 top::InterfaceItem ::= val::[FlowDef]
 {
-  top.maybeFlowDefs := just(val);
+  top.flowDefs <- val;
+  top.hasFlowDefs <- true;
 }
 
 abstract production refDefsInterfaceItem
 top::InterfaceItem ::= val::[(String, [String])]
 {
-  top.maybeRefDefs := just(val);
+  top.refDefs <- val;
+  top.hasRefDefs <- true;
 }
 
 abstract production specDefsInterfaceItem
 top::InterfaceItem ::= val::[(String, String, [String])]
 {
-  top.maybeSpecDefs := just(val);
+  top.specDefs <- val;
+  top.hasSpecDefs <- true;
 }
 
 aspect function unparseRootSpec
@@ -49,28 +53,4 @@ ByteArray ::= r::Decorated RootSpec
 }
 
 attribute flowDefs, refDefs, specDefs occurs on RootSpec;
-
-aspect production errorRootSpec
-top::RootSpec ::= _ _ _ _ _
-{
-  top.flowDefs := [];
-  top.refDefs := [];
-  top.specDefs := [];
-}
-
-aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar  _ _ _ _
-{
-  top.flowDefs := g.flowDefs;
-  top.refDefs := g.refDefs;
-  top.specDefs := g.specDefs;
-}
-
-aspect production interfaceRootSpec
-top::RootSpec ::= i::InterfaceItems  interfaceTime::Integer _
-{
-  top.flowDefs := i.maybeFlowDefs.fromJust;
-  top.refDefs := i.maybeRefDefs.fromJust;
-  top.specDefs := i.maybeSpecDefs.fromJust;
-}
-
+propagate flowDefs, refDefs, specDefs on RootSpec;

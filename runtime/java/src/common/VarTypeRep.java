@@ -51,6 +51,15 @@ public class VarTypeRep extends TypeRep {
 			return true;
 		}
 	}
+
+	@Override
+	public final String typeName() {
+		if (this.substitution != null) {
+			return substitution.typeName();
+		} else {
+			return "a" + id;
+		}
+	}
 	
 	@Override
 	public final String toString() {

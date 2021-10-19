@@ -3,12 +3,16 @@ grammar silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 imports silver:regex;
 
+-- Some of these nonterminals are closed, but the dispatch attributes are
+-- defined in silver:compiler:definition:core, and we don't want to have defaults for those:
+option silver:compiler:definition:core;
+
 annotation sourceGrammar :: String;
 annotation sourceLocation :: Location;
 synthesized attribute fullName :: String;
+synthesized attribute typeScheme :: PolyType;
 
 -- types
-synthesized attribute typeScheme :: PolyType;
 synthesized attribute isType :: Boolean;
 synthesized attribute isTypeAlias :: Boolean;
 synthesized attribute isClass :: Boolean;
@@ -33,93 +37,33 @@ synthesized attribute isSynthesized :: Boolean;
 synthesized attribute isInherited :: Boolean;
 
 -- production attribute
-inherited attribute givenSignatureForDefs :: NamedSignature;
 synthesized attribute prodDefs :: [Def];
 -- production attribute substitutions
-synthesized attribute substitutedDclInfo :: DclInfo; -- really ValueDclInfo
+synthesized attribute substitutedDclInfo :: ValueDclInfo;
 inherited attribute givenSubstitution :: Substitution;
 
-
-{--
- - DclInfo SHOULD be several different types: TypeDclInfo, Value, Attribute,
- - Occurs, ProductionAttr, etc.
- -
- - The reason it's not is we lack the ability to abstract over different types
- - with "the same" interface (need typeclasses tia): this is necessary for some
- - things that make use of e.g. fullName.
- -
- - hmm, unparsing could probably be fixed...
- -}
-closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- everyone
-                         typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, isClass, -- types (gNT for occurs)
-                         classMembers, givenInstanceType, superContexts, typerep2, -- type classes, in the type namespace
-                         namedSignature, hasForward, -- values that are fun/prod
-                         attrOccurring, isAnnotation, -- occurs
-                         isTypeError, -- instances
-                         isInherited, isSynthesized, -- attrs
-                         prodDefs, -- production attributes
-                         substitutedDclInfo, givenSubstitution -- type substitutions on dcls
-                         ;
+closed nonterminal ValueDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, namedSignature, hasForward, substitutedDclInfo, givenSubstitution;
 
 aspect default production
-top::DclInfo ::=
+top::ValueDclInfo ::=
 {
-  -- All Dcls must provide fullName
-
-  -- All values must provide typeScheme.
-  -- All attributes must provide typeScheme.
-  -- All types must provide typeScheme.
-  
-  -- All production attributes must provide attrDcl.
-  -- All values that may be production attributes must provide substitutedDclInfo
-  -- All occurs must provide attrOccurring. (And now, typeScheme, which depends on givenNonterminalType)
-  
-  -- See silver:compiler:definition:core for more "musts"
-  
-  -- TODO: DESIGN PROBLEM:
-  -- The following defaults are provided to account for this one type (dclinfo)
-  -- being used, when there really SHOULD be different types.
-  -- (The only reason we use one type right now is that we like to have
-  -- e.g. fullName on all declarations, and we currently can't write a type
-  -- like "anything with a fullName".)
-  top.attrOccurring = error("Internal compiler error: must be defined for all occurs declarations");
-  top.prodDefs = error("Internal compiler error: must be defined for all production attribute declarations");
-  top.substitutedDclInfo = error("Internal compiler error: must be defined for all value declarations that are production attributes");
-  
-  -- types
-  top.kindrep = starKind();
-  top.isType = false;
-  top.isTypeAlias = false;
-  top.isClass = false;
-  top.classMembers = [];
-  top.superContexts = [];
-
-  -- instances
-  top.isTypeError := false;
-  top.typerep2 = error("Internal compiler error: must be defined for all binary constraint instances");
-  
   -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();
   top.hasForward = false;
-
-  -- On Occurs declarations and attrs
-  top.isAnnotation = false;
   
-  -- attrs
-  top.isSynthesized = false;
-  top.isInherited = false;
+  top.substitutedDclInfo = error("Internal compiler error: must be defined for all value declarations that are production attributes");
 }
 
 -- ValueDclInfos that can NEVER appear in interface files:
 abstract production childDcl
-top::DclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
 
   top.typeScheme = monoType(ty);
 }
 abstract production lhsDcl
-top::DclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
 
@@ -128,7 +72,7 @@ top::DclInfo ::= fn::String ty::Type
 
 -- ValueDclInfos that CAN appear in interface files, but only via "production attributes:"
 abstract production localDcl
-top::DclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
   
@@ -137,7 +81,7 @@ top::DclInfo ::= fn::String ty::Type
   top.substitutedDclInfo = localDcl( fn, performRenaming(ty, top.givenSubstitution), sourceGrammar=top.sourceGrammar, sourceLocation=top.sourceLocation);
 }
 abstract production forwardDcl
-top::DclInfo ::= ty::Type
+top::ValueDclInfo ::= ty::Type
 {
   top.fullName = "forward";
   
@@ -148,7 +92,7 @@ top::DclInfo ::= ty::Type
 
 -- ValueDclInfos that DO appear in interface files:
 abstract production prodDcl
-top::DclInfo ::= ns::NamedSignature hasForward::Boolean
+top::ValueDclInfo ::= ns::NamedSignature hasForward::Boolean
 {
   top.fullName = ns.fullName;
   
@@ -157,7 +101,7 @@ top::DclInfo ::= ns::NamedSignature hasForward::Boolean
   top.hasForward = hasForward;
 }
 abstract production funDcl
-top::DclInfo ::= ns::NamedSignature
+top::ValueDclInfo ::= ns::NamedSignature
 {
   top.fullName = ns.fullName;
   
@@ -166,22 +110,41 @@ top::DclInfo ::= ns::NamedSignature
   top.hasForward = false;
 }
 abstract production classMemberDcl
-top::DclInfo ::= fn::String bound::[TyVar] clsHead::Context contexts::[Context] ty::Type
+top::ValueDclInfo ::= fn::String bound::[TyVar] clsHead::Context contexts::[Context] ty::Type
 {
   top.fullName = fn;
   
   top.typeScheme = constraintType(bound, clsHead :: contexts, ty);
 }
 abstract production globalValueDcl
-top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
+top::ValueDclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
 {
   top.fullName = fn;
   top.typeScheme = constraintType(bound, contexts, ty);
 }
+abstract production termIdDcl
+top::ValueDclInfo ::= fn::String
+{
+  top.fullName = fn;
 
--- TypeDclInfos
+  top.typeScheme = monoType(terminalIdType());
+}
+
+closed nonterminal TypeDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, isClass, classMembers, givenInstanceType, superContexts;
+
+aspect default production
+top::TypeDclInfo ::=
+{
+  top.kindrep = starKind();
+  top.isType = false;
+  top.isTypeAlias = false;
+  top.isClass = false;
+  top.classMembers = [];
+  top.superContexts = [];
+}
+
 abstract production ntDcl
-top::DclInfo ::= fn::String ks::[Kind] closed::Boolean tracked::Boolean
+top::TypeDclInfo ::= fn::String ks::[Kind] closed::Boolean tracked::Boolean
 {
   top.fullName = fn;
 
@@ -190,7 +153,7 @@ top::DclInfo ::= fn::String ks::[Kind] closed::Boolean tracked::Boolean
   top.isType = true;
 }
 abstract production termDcl
-top::DclInfo ::= fn::String regex::Regex easyName::Maybe<String>
+top::TypeDclInfo ::= fn::String regex::Regex easyName::Maybe<String>
 {
   top.fullName = fn;
 
@@ -198,7 +161,7 @@ top::DclInfo ::= fn::String regex::Regex easyName::Maybe<String>
   top.isType = true;
 }
 abstract production lexTyVarDcl
-top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar
+top::TypeDclInfo ::= fn::String isAspect::Boolean tv::TyVar
 {
   top.fullName = fn;
 
@@ -209,7 +172,7 @@ top::DclInfo ::= fn::String isAspect::Boolean tv::TyVar
   top.isType = true;
 }
 abstract production typeAliasDcl
-top::DclInfo ::= fn::String bound::[TyVar] ty::Type
+top::TypeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.fullName = fn;
 
@@ -219,7 +182,7 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type
   top.kindrep = foldr(arrowKind, ty.kindrep, map((.kindrep), bound)); 
 }
 abstract production clsDcl
-top::DclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pair<String Boolean>]
+top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pair<String Boolean>]
 {
   top.fullName = fn;
   
@@ -233,9 +196,18 @@ top::DclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pair<S
   top.classMembers = members;
 }
 
--- AttributeDclInfos
+closed nonterminal AttributeDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, isInherited, isSynthesized, isAnnotation;
+
+aspect default production
+top::AttributeDclInfo ::=
+{
+  top.isSynthesized = false;
+  top.isInherited = false;
+  top.isAnnotation = false;
+}
+
 abstract production synDcl
-top::DclInfo ::= fn::String bound::[TyVar] ty::Type
+top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.fullName = fn;
 
@@ -243,7 +215,7 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type
   top.isSynthesized = true;
 }
 abstract production inhDcl
-top::DclInfo ::= fn::String bound::[TyVar] ty::Type
+top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.fullName = fn;
 
@@ -251,7 +223,7 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type
   top.isInherited = true;
 }
 abstract production annoDcl
-top::DclInfo ::= fn::String bound::[TyVar] ty::Type
+top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.fullName = fn;
 
@@ -259,23 +231,29 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type
   top.isAnnotation = true;
 }
 
--- ProductionAttrDclInfo
+nonterminal ProductionAttrDclInfo with sourceGrammar, sourceLocation, fullName, prodDefs, namedSignature;
+
 abstract production paDcl
-top::DclInfo ::= ns::NamedSignature{-fn::String outty::Type intys::[Type]-} dcls::[Def]
+top::ProductionAttrDclInfo ::= ns::NamedSignature{-fn::String outty::Type intys::[Type]-} dcls::[Def]
 {
   top.fullName = ns.fullName;
   
   top.prodDefs = dcls;
   
-  top.typeScheme = error("typeScheme not defined for production attributes");
-  
   -- This is used by the function that computes the substituted defs.
   top.namedSignature = ns;
 }
 
--- OccursDclInfo
+nonterminal OccursDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, givenNonterminalType, attrOccurring, isAnnotation;
+
+aspect default production
+top::OccursDclInfo ::=
+{
+  top.isAnnotation = false;
+}
+
 abstract production occursDcl
-top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
+top::OccursDclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
 {
   top.fullName = fnnt;
   
@@ -296,7 +274,7 @@ top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
 }
 
 abstract production occursInstConstraintDcl
-top::DclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
+top::OccursDclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
 {
   top.fullName = ntty.typeName;
   top.attrOccurring = fnat;
@@ -306,7 +284,7 @@ top::DclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
   ntty.boundVariables = tvs;
 }
 abstract production occursSigConstraintDcl
-top::DclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
+top::OccursDclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
 {
   top.fullName = ntty.typeName;
   top.attrOccurring = fnat;
@@ -316,7 +294,7 @@ top::DclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
   ntty.boundVariables = ns.freeVariables;
 }
 abstract production occursSuperDcl
-top::DclInfo ::= fnat::String atty::Type baseDcl::DclInfo
+top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
 {
   top.fullName = baseDcl.typeScheme.typerep.typeName;
   top.attrOccurring = fnat;
@@ -325,7 +303,7 @@ top::DclInfo ::= fnat::String atty::Type baseDcl::DclInfo
 }
 
 abstract production annoInstanceDcl
-top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
+top::OccursDclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
 {
   top.fullName = fnnt;
   
@@ -347,9 +325,8 @@ top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
   -- UGH - bit of a short hand here...
   top.isAnnotation = true;
 }
-
 abstract production annoInstConstraintDcl
-top::DclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
+top::OccursDclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
 {
   top.fullName = ntty.typeName;
   top.attrOccurring = fnat;
@@ -360,7 +337,7 @@ top::DclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
   ntty.boundVariables = tvs;
 }
 abstract production annoSigConstraintDcl
-top::DclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
+top::OccursDclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
 {
   top.fullName = ntty.typeName;
   top.attrOccurring = fnat;
@@ -371,7 +348,7 @@ top::DclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
   ntty.boundVariables = ns.freeVariables;
 }
 abstract production annoSuperDcl
-top::DclInfo ::= fnat::String atty::Type baseDcl::DclInfo
+top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
 {
   top.fullName = baseDcl.typeScheme.typerep.typeName;
   top.attrOccurring = fnat;
@@ -380,10 +357,18 @@ top::DclInfo ::= fnat::String atty::Type baseDcl::DclInfo
   top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, atty);
 }
 
--- InstDclInfos
+nonterminal InstDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, typerep2, isTypeError;
+
+aspect default production
+top::InstDclInfo ::=
+{
+  top.isTypeError := false;
+  top.typerep2 = error("Internal compiler error: must be defined for all binary constraint instances");
+}
+
 -- Class instances
 abstract production instDcl
-top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
+top::InstDclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
 {
   top.fullName = fn;
   
@@ -392,28 +377,28 @@ top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
   top.isTypeError := any(map((.isTypeError), contexts));
 }
 abstract production instConstraintDcl
-top::DclInfo ::= fntc::String ty::Type tvs::[TyVar]
+top::InstDclInfo ::= fntc::String ty::Type tvs::[TyVar]
 {
   top.fullName = fntc;
   
   top.typeScheme = monoType(ty);
 }
 abstract production sigConstraintDcl
-top::DclInfo ::= fntc::String ty::Type ns::NamedSignature
+top::InstDclInfo ::= fntc::String ty::Type ns::NamedSignature
 {
   top.fullName = fntc;
   
   top.typeScheme = monoType(ty);
 }
 abstract production currentInstDcl
-top::DclInfo ::= fntc::String ty::Type
+top::InstDclInfo ::= fntc::String ty::Type
 {
   top.fullName = fntc;
   
   top.typeScheme = monoType(ty);
 }
 abstract production instSuperDcl
-top::DclInfo ::= fntc::String baseDcl::DclInfo
+top::InstDclInfo ::= fntc::String baseDcl::InstDclInfo
 {
   top.fullName = fntc;
   
@@ -422,21 +407,21 @@ top::DclInfo ::= fntc::String baseDcl::DclInfo
 
 -- typeable instances
 abstract production typeableInstConstraintDcl
-top::DclInfo ::= ty::Type tvs::[TyVar]
+top::InstDclInfo ::= ty::Type tvs::[TyVar]
 {
   top.fullName = "typeable";
   
   top.typeScheme = monoType(ty);
 }
 abstract production typeableSigConstraintDcl
-top::DclInfo ::= ty::Type ns::NamedSignature
+top::InstDclInfo ::= ty::Type ns::NamedSignature
 {
   top.fullName = "typeable";
   
   top.typeScheme = monoType(ty);
 }
 abstract production typeableSuperDcl
-top::DclInfo ::= baseDcl::DclInfo
+top::InstDclInfo ::= baseDcl::InstDclInfo
 {
   top.fullName = "typeable";
   
@@ -445,7 +430,7 @@ top::DclInfo ::= baseDcl::DclInfo
 
 -- inhSubset instances
 abstract production inhSubsetInstConstraintDcl
-top::DclInfo ::= i1::Type i2::Type tvs::[TyVar]
+top::InstDclInfo ::= i1::Type i2::Type tvs::[TyVar]
 {
   top.fullName = "subset";
   
@@ -453,7 +438,7 @@ top::DclInfo ::= i1::Type i2::Type tvs::[TyVar]
   top.typerep2 = i2;
 }
 abstract production inhSubsetSigConstraintDcl
-top::DclInfo ::= i1::Type i2::Type ns::NamedSignature
+top::InstDclInfo ::= i1::Type i2::Type ns::NamedSignature
 {
   top.fullName = "subset";
   
@@ -463,28 +448,27 @@ top::DclInfo ::= i1::Type i2::Type ns::NamedSignature
 
 -- TODO: this should probably go elsewhere?
 function determineAttributeType
-Type ::= occursDclInfo::DclInfo ntty::Type
+Type ::= occursDclInfo::OccursDclInfo ntty::Type
 {
   occursDclInfo.givenNonterminalType = ntty;
   return occursDclInfo.typeScheme.typerep;
 }
 
--- Dealing with substitutions for production attributes. Really ValueDclInfos
+-- Dealing with substitutions for production attributes.
 function performSubstitutionDclInfo
-DclInfo ::= valueDclInfo::DclInfo s::Substitution
+ValueDclInfo ::= valueDclInfo::ValueDclInfo s::Substitution
 {
   valueDclInfo.givenSubstitution = s;
   return valueDclInfo.substitutedDclInfo;
 }
 
--- This function really takes a list of ValueDclInfos
 function defsFromPADcls
-[Def] ::= valueDclInfos::[DclInfo] s::NamedSignature
+[Def] ::= dcls::[ProductionAttrDclInfo] s::NamedSignature
 {
   -- We want to rewrite FROM the sig these PAs were declared with, TO the given sig
-  local subst :: Substitution = unifyNamedSignature(head(valueDclInfos).namedSignature, s);
+  local subst :: Substitution = unifyNamedSignature(head(dcls).namedSignature, s);
   
-  return if null(valueDclInfos) then []
-         else map(performSubstitutionDef(_, subst), head(valueDclInfos).prodDefs) ++ defsFromPADcls(tail(valueDclInfos), s);
+  return if null(dcls) then []
+         else map(performSubstitutionDef(_, subst), head(dcls).prodDefs) ++ defsFromPADcls(tail(dcls), s);
 }
 

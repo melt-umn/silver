@@ -84,7 +84,7 @@ Boolean ::= ns::NamedSignatureElement  env::Decorated Env
 function astType
 Type ::= ns::NamedSignatureElement  env::Decorated Env
 {
-  local occursCheck :: [DclInfo] =
+  local occursCheck :: [OccursDclInfo] =
     getOccursDcl("silver:langutil:ast", ns.typerep.typeName, env);
   
   return 

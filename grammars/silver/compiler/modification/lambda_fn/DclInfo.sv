@@ -1,7 +1,7 @@
 import silver:compiler:definition:flow:ast only ExprVertexInfo, FlowVertex;
 
 abstract production lambdaParamDcl
-top::DclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
 

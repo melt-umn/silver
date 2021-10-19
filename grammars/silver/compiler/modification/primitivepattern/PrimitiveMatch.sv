@@ -213,7 +213,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   ns.matchingAgainst = if null(qn.lookupValue.dcls) then nothing() else just(qn.lookupValue.dcl);
   
   -- VarBinders need occurs-on contexts in their env to determine whether var types are decorable
-  local contextOccursDefs::[DclInfo] = concat(
+  local contextOccursDefs::[OccursDclInfo] = concat(
     zipWith(
       \ c::Context oc::Context ->
         c.contextPatternOccursDefs(
@@ -286,7 +286,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   ns.matchingAgainst = if null(qn.lookupValue.dcls) then nothing() else just(qn.lookupValue.dcl);
   
   -- VarBinders need occurs-on contexts in their env to determine whether var types are decorable
-  local contextOccursDefs::[DclInfo] = concat(
+  local contextOccursDefs::[OccursDclInfo] = concat(
     zipWith(
       \ c::Context oc::Context ->
         c.contextPatternOccursDefs(

@@ -59,7 +59,7 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
     then map(
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
       ntty.freeFlexibleVars)
-    else if null(top.resolved)
+    else if null(top.resolvedOccurs)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
 
@@ -82,7 +82,7 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
     then map(
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
       ntty.freeFlexibleVars)
-    else if null(top.resolved)
+    else if null(top.resolvedOccurs)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
 
@@ -105,7 +105,7 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
     then map(
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
       ntty.freeFlexibleVars)
-    else if null(top.resolved)
+    else if null(top.resolvedOccurs)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
 
