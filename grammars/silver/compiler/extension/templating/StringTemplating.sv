@@ -9,6 +9,8 @@ imports silver:compiler:translation:java:core;
 
 exports silver:compiler:extension:templating:syntax;
 
+import silver:util:treeset as ts;
+
 terminal Template_kwd   's"""' lexer classes {LITERAL};
 terminal SLTemplate_kwd 's"'   lexer classes {LITERAL};
 
@@ -46,6 +48,9 @@ layout {}
 production stringAppendCall
 top::Expr ::= a::Expr b::Expr
 {
+  top.unparse = s"${a.unparse} ++ ${b.unparse}";
+  propagate freeVars;
+
   -- TODO: We really need eagerness analysis in Silver.
   -- Otherwise the translation for a large string template block contains
   -- new common.Thunk<Object>(new common.Thunk.Evaluable() { public final Object eval() { return ((common.StringCatter)silver.core.PstringAppend.invoke(${a.translation}, ${b.translation}); } })

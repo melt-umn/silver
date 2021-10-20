@@ -1,5 +1,7 @@
 grammar silver:compiler:extension:treegen;
 
+-- TODO: Rework this to use type classes
+
 terminal Derive_t 'derive' lexer classes {KEYWORD};
 
 terminal Arbitrary_t 'Arbitrary' lexer classes {KEYWORD};
@@ -8,6 +10,9 @@ terminal Arbitrary_t 'Arbitrary' lexer classes {KEYWORD};
 concrete production deriveagdcl
 top::AGDcl ::= 'derive' 'Arbitrary' 'on' names::QNames ';'
 {
+  top.unparse = s"derive Arbitrary on ${names.unparse};";
+  top.moduleNames := [];
+
   forwards to 
     foldr(
       appendAGDcl(_, _, location=top.location),
