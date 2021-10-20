@@ -13,13 +13,12 @@ nonterminal LambdaParams with config, grammarName, env, location, unparse, error
 nonterminal LambdaParam with config, grammarName, env, location, unparse, errors, defs, inputElements, deterministicCount,
                               lambdaDefs, lambdaBoundVars, lexicalTyVarKinds, lexicalTypeVariables;
 
-concrete production lambdaParamsOne
+concrete production lambdaParamsNil
 top::LambdaParams ::= p::LambdaParam {
 
-  top.unparse = p.unparse;
-  top.inputElements = p.inputElements;
+  top.unparse = "";
 
-  p.deterministicCount = 0;
+  top.inputElements = [];
 
 }
 
@@ -58,7 +57,7 @@ top::LambdaParam ::= id::Name
 
 -- Using ProductionRHS here, it is basically just a list of names with type expressions
 -- It is also used for the parameter definitions in functions, so using it here for consistancy
-concrete production lambda_c
+abstract production lambda_c
 top::Expr ::= '\' params::ProductionRHS '->' e::Expr
 {
   top.unparse = "\\ " ++ params.unparse ++ " -> " ++ e.unparse;
