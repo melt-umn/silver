@@ -8,6 +8,8 @@ import silver:compiler:definition:concrete_syntax;
 
 import silver:regex only Regex, regexLiteral;
 
+import silver:util:treeset as ts;
+
 terminal Terminal_t /\'[^\'\r\n]*\'/ lexer classes {LITERAL};
 
 -- TODO: refactor this to actually create two separate terminal declarations, one regular regex, one single quote.
