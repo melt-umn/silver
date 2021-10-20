@@ -15,6 +15,7 @@ concrete production attributeSection
 top::Expr ::= '(' '.' q::QNameAttrOccur ')'
 {
   top.unparse = s"(.${q.unparse})";
+  propagate freeVars;
 ```
 
 In constructing the forward we need to know on what type the attribute will be accessed.

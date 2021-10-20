@@ -99,6 +99,7 @@ concrete production terminalExprReg
 top::Expr ::= reg::EasyTerminalRef
 {
   top.unparse = reg.unparse;
+  propagate freeVars;
   top.errors <- reg.errors;
   
   local escapedName :: String = escapeString(reg.easyString);

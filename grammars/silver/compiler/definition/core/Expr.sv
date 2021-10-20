@@ -13,14 +13,14 @@ nonterminal ExprInhs with
 nonterminal ExprInh with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
 nonterminal ExprLHSExpr with
-  config, grammarName, env, location, unparse, errors, freeVars, name, typerep, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, name, typerep, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
 
-flowtype freeVars {} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+flowtype freeVars {frame} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype Expr = decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config}, forward {decorate};
 
 flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config} on Exprs;
 flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config, decoratingnt, allSuppliedInhs} on ExprInhs, ExprInh;
-flowtype decorate {grammarName, env, isRoot, originRules, config, decoratingnt, allSuppliedInhs} on ExprLHSExpr;
+flowtype decorate {grammarName, env, frame, isRoot, originRules, config, decoratingnt, allSuppliedInhs} on ExprLHSExpr;
 flowtype forward {} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
 flowtype errors {decorate} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;

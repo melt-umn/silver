@@ -17,7 +17,7 @@ synthesized attribute result::Expr;
 synthesized attribute applicativeTransform::Expr;
 synthesized attribute transform::Expr;
 
-nonterminal DoBody with location, unparse, bindingFreeVars, isApplicative, bindings, exprs, result, applicativeTransform, transform;
+nonterminal DoBody with location, unparse, frame, bindingFreeVars, isApplicative, bindings, exprs, result, applicativeTransform, transform;
 
 aspect default production
 top::DoBody ::=

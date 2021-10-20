@@ -21,6 +21,9 @@ flowtype forward {decorate} on ProductionBody, ProductionStmts, ProductionStmt;
 nonterminal DefLHS with 
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found, originRules;
 
+flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, defLHSattr, originRules}
+  on DefLHS;
+
 nonterminal ForwardInhs with 
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, originRules;
 nonterminal ForwardInh with 

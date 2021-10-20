@@ -22,6 +22,8 @@ nonterminal RootSpec with
   defs, occursDefs, grammarErrors, grammarSource, grammarTime, interfaceTime, recheckGrammars, translateGrammars,
   parsingErrors, jarName, generateLocation;
 
+flowtype RootSpec = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes};
+
 propagate exportedGrammars, optionalGrammars, condBuild, defs, occursDefs on RootSpec;
 
 {--
