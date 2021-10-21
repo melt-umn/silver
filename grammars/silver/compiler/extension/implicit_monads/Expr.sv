@@ -519,7 +519,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
                                then case q.attrDcl of
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
+                                    | _ -> [(q.unparse, top.location)]
                                     end
                                else [];
 }
@@ -547,7 +547,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                                then case q.attrDcl of
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
+                                    | _ -> [(q.unparse, top.location)]
                                     end
                                else [];
 }
@@ -593,7 +593,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                                then case q.attrDcl of
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
+                                    | _ -> [(q.unparse, top.location)]
                                     end
                                else [];
 }
@@ -676,7 +676,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                                then case q.attrDcl of
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
+                                    | _ -> [(q.unparse, top.location)]
                                     end
                                else [];
 }
@@ -722,7 +722,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                                then case q.attrDcl of
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
+                                    | _ -> [(q.unparse, top.location)]
                                     end
                                else [];
 }
@@ -765,7 +765,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                                then case q.attrDcl of
                                     | restrictedSynDcl(_, _, _) -> []
                                     | restrictedInhDcl(_, _, _) -> []
-                                    | _ -> [pair(q.unparse, top.location)]
+                                    | _ -> [(q.unparse, top.location)]
                                     end
                                else [];
 }
@@ -1873,7 +1873,7 @@ top::AppExpr ::= e::Expr
 
   top.realTypes = [e.mtyperep];
   top.monadTypesLocations = if isMonadic
-                            then [pair(e.mtyperep, top.appExprIndex+1)]
+                            then [(e.mtyperep, top.appExprIndex+1)]
                             else [];
   e.monadicallyUsed = isMonadic;
   top.monadicNames = e.monadicNames;

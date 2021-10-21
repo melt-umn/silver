@@ -80,7 +80,7 @@ top::Grammars ::=
 function grammarPairing
 Pair<String Decorated RootSpec> ::= r::Decorated RootSpec
 {
-  return pair(r.declaredName, r);
+  return (r.declaredName, r);
 }
 
 {--

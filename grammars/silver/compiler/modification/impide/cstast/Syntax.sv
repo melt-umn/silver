@@ -13,19 +13,19 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 {
   top.classFontList <-
     if modifiers.fontAttr == "" then []
-    else [pair(n, modifiers.fontAttr)];
+    else [(n, modifiers.fontAttr)];
 }
 
 abstract production syntaxFont
 top::SyntaxDcl ::= fontName::String fnt::Font -- TODO: we probably? need to factor out this data structure somehow?
 {
-  top.fontList <- [pair(makeCopperName(fontName), fnt)];
+  top.fontList <- [(makeCopperName(fontName), fnt)];
   
   propagate cstErrors, prefixSeperator;
 
   top.fullName = fontName;
   top.sortKey = "111"; -- Doesn't really matter, it doesn't show up in the copper XML
-  top.cstDcls := [pair(fontName, top)];
+  top.cstDcls := [(fontName, top)];
   top.cstNormalize := [top];
   
   top.xmlCopper = "";

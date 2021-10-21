@@ -1108,9 +1108,9 @@ Pair<Maybe<Pair<String Type>> [Pair<String Type>]> ::= n::String  l::[Pair<Strin
   local recurse :: Pair<Maybe<Pair<String Type>> [Pair<String Type>]> =
     extractNamedArg(n, tail(l));
 
-  return if null(l) then pair(nothing(), [])
-  else if head(l).fst == n then pair(just(head(l)), tail(l))
-  else pair(recurse.fst, head(l) :: recurse.snd);
+  return if null(l) then (nothing(), [])
+  else if head(l).fst == n then (just(head(l)), tail(l))
+  else (recurse.fst, head(l) :: recurse.snd);
 }
 
 function findNamedArgType

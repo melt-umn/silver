@@ -14,7 +14,7 @@ function filterAndConvertTermDcls
 [Pair<String TypeDclInfo>] ::= ei::EnvItem<TypeDclInfo> sofar::[Pair<String TypeDclInfo>]
 {
   return case ei.dcl of
-         | termDcl(fn, _, just(en)) -> pair(en, ei.dcl) :: sofar
+         | termDcl(fn, _, just(en)) -> (en, ei.dcl) :: sofar
          | _ -> sofar
          end;
 }

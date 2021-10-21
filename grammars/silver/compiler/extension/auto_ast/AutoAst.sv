@@ -63,7 +63,7 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
         baseExpr(v, location=v.location),
         map(accessAst(_, top.location), elems),
         if hasLoc then
-         [pair("location", 
+         [("location", 
             access(
               baseExpr(lhsQName, location=top.location),
               '.',

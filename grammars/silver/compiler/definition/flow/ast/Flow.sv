@@ -132,7 +132,7 @@ top::FlowDef ::=
 abstract production prodFlowDef
 top::FlowDef ::= nt::String  prod::String
 {
-  top.prodTreeContribs = [pair(nt, top)];
+  top.prodTreeContribs = [(nt, top)];
   top.prodGraphContribs = [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
 }
@@ -148,7 +148,7 @@ top::FlowDef ::= nt::String  prod::String
 abstract production hostSynFlowDef
 top::FlowDef ::= nt::String  attr::String
 {
-  top.hostSynTreeContribs = [pair(nt, top)];
+  top.hostSynTreeContribs = [(nt, top)];
   top.prodGraphContribs = [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
 }
@@ -164,9 +164,9 @@ top::FlowDef ::= nt::String  attr::String
 abstract production defaultSynEq
 top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
 {
-  top.defTreeContribs = [pair(crossnames(nt, attr), top)];
+  top.defTreeContribs = [(crossnames(nt, attr), top)];
   top.prodGraphContribs = []; -- defaults don't show up in the prod graph!!
-  top.flowEdges = map(pair(lhsSynVertex(attr), _), deps); -- but their edges WILL end up added to graphs in fixup-phase!!
+  top.flowEdges = map((lhsSynVertex(attr), _), deps); -- but their edges WILL end up added to graphs in fixup-phase!!
 }
 
 {--
@@ -180,9 +180,9 @@ top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
 abstract production synEq
 top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
-  top.synTreeContribs = [pair(crossnames(prod, attr), top)];
-  top.prodGraphContribs = [pair(prod, top)];
-  local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(lhsSynVertex(attr), _), deps);
+  top.synTreeContribs = [(crossnames(prod, attr), top)];
+  top.prodGraphContribs = [(prod, top)];
+  local edges :: [Pair<FlowVertex FlowVertex>] = map((lhsSynVertex(attr), _), deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
 }
@@ -199,9 +199,9 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]  mayAffectFlowTy
 abstract production inhEq
 top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
 {
-  top.inhTreeContribs = [pair(crossnames(prod, crossnames(sigName, attr)), top)];
-  top.prodGraphContribs = [pair(prod, top)];
-  top.flowEdges = map(pair(rhsVertex(sigName, attr), _), deps);
+  top.inhTreeContribs = [(crossnames(prod, crossnames(sigName, attr)), top)];
+  top.prodGraphContribs = [(prod, top)];
+  top.flowEdges = map((rhsVertex(sigName, attr), _), deps);
 }
 
 {--
@@ -214,9 +214,9 @@ top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
 abstract production fwdEq
 top::FlowDef ::= prod::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
-  top.fwdTreeContribs = [pair(prod, top)];
-  top.prodGraphContribs = [pair(prod, top)];
-  local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(forwardEqVertex(), _), deps);
+  top.fwdTreeContribs = [(prod, top)];
+  top.prodGraphContribs = [(prod, top)];
+  local edges :: [Pair<FlowVertex FlowVertex>] = map((forwardEqVertex(), _), deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
 }
@@ -231,7 +231,7 @@ top::FlowDef ::= prod::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
 abstract production implicitFwdAffects
 top::FlowDef ::= prod::String  attrs::[String]
 {
-  top.nonSuspectContribs = [pair(prod, attrs)];
+  top.nonSuspectContribs = [(prod, attrs)];
   top.prodGraphContribs = [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
 }
@@ -247,9 +247,9 @@ top::FlowDef ::= prod::String  attrs::[String]
 abstract production fwdInhEq
 top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
 {
-  top.fwdInhTreeContribs = [pair(crossnames(prod, attr), top)];
-  top.prodGraphContribs = [pair(prod, top)];
-  top.flowEdges = map(pair(forwardVertex(attr), _), deps);
+  top.fwdInhTreeContribs = [(crossnames(prod, attr), top)];
+  top.prodGraphContribs = [(prod, top)];
+  top.flowEdges = map((forwardVertex(attr), _), deps);
 }
 
 {--
@@ -266,9 +266,9 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
 abstract production localEq
 top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  deps::[FlowVertex]
 {
-  top.localTreeContribs = [pair(crossnames(prod, fName), top)];
-  top.prodGraphContribs = [pair(prod, top)];
-  top.flowEdges = map(pair(localEqVertex(fName), _), deps);
+  top.localTreeContribs = [(crossnames(prod, fName), top)];
+  top.prodGraphContribs = [(prod, top)];
+  top.flowEdges = map((localEqVertex(fName), _), deps);
 }
 
 {--
@@ -283,9 +283,9 @@ top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  d
 abstract production localInhEq
 top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 {
-  top.localInhTreeContribs = [pair(crossnames(prod, crossnames(fName, attr)), top)];
-  top.prodGraphContribs = [pair(prod, top)];
-  top.flowEdges = map(pair(localVertex(fName, attr), _), deps);
+  top.localInhTreeContribs = [(crossnames(prod, crossnames(fName, attr)), top)];
+  top.prodGraphContribs = [(prod, top)];
+  top.flowEdges = map((localVertex(fName, attr), _), deps);
 }
 
 {--
@@ -299,8 +299,8 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 abstract production extraEq
 top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
-  top.prodGraphContribs = [pair(prod, top)];
-  local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(src, _), deps);
+  top.prodGraphContribs = [(prod, top)];
+  local edges :: [Pair<FlowVertex FlowVertex>] = map((src, _), deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
 }
@@ -318,9 +318,9 @@ top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]  mayAffectFlo
 abstract production anonEq
 top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  loc::Location  deps::[FlowVertex]
 {
-  top.localTreeContribs = [pair(crossnames(prod, fName), top)];
-  top.prodGraphContribs = [pair(prod, top)];
-  top.flowEdges = map(pair(anonEqVertex(fName), _), deps);
+  top.localTreeContribs = [(crossnames(prod, fName), top)];
+  top.prodGraphContribs = [(prod, top)];
+  top.flowEdges = map((anonEqVertex(fName), _), deps);
 }
 
 {--
@@ -335,9 +335,9 @@ top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  l
 abstract production anonInhEq
 top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 {
-  top.localInhTreeContribs = [pair(crossnames(prod, crossnames(fName, attr)), top)];
-  top.prodGraphContribs = [pair(prod, top)];
-  top.flowEdges = map(pair(anonVertex(fName, attr), _), deps);
+  top.localInhTreeContribs = [(crossnames(prod, crossnames(fName, attr)), top)];
+  top.prodGraphContribs = [(prod, top)];
+  top.flowEdges = map((anonVertex(fName, attr), _), deps);
 }
 
 {--
@@ -351,8 +351,8 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 abstract production synOccursContextEq
 top::FlowDef ::= prod::String  vt::VertexType  attr::String  deps::[String]
 {
-  top.prodGraphContribs = [pair(prod, top)];
-  top.flowEdges = map(pair(vt.synVertex(attr), _), map(vt.inhVertex, deps));
+  top.prodGraphContribs = [(prod, top)];
+  top.flowEdges = map((vt.synVertex(attr), _), map(vt.inhVertex, deps));
 }
 
 {--
@@ -363,7 +363,7 @@ top::FlowDef ::= prod::String  vt::VertexType  attr::String  deps::[String]
 abstract production patternRuleEq
 top::FlowDef ::= prod::String  matchProd::String  scrutinee::VertexType  vars::[PatternVarProjection]
 {
-  top.prodGraphContribs = [pair(prod, top)];
+  top.prodGraphContribs = [(prod, top)];
   top.flowEdges = [];
 }
 
@@ -399,7 +399,7 @@ function collectAnonOriginItem
       -- Small hack to improve error messages. Ignore anonEq's that come from patterns
       if startsWith("__scrutinee", fN)
       then rest
-      else pair(fN, l) :: rest
+      else (fN, l) :: rest
   | _ -> rest
   end;
 }

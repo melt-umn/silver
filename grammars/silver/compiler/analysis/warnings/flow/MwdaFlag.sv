@@ -17,7 +17,7 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--mwda", flag(mwdaFlag))];
+  flags <- [("--mwda", flag(mwdaFlag))];
   flagdescs <- ["\t--mwda  : report MWDA violations as errors"];
 }
 

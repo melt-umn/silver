@@ -56,7 +56,7 @@ function formatFile
   local realDocs::[CommentItem] = filter((.doEmit), comments);
   local stubDocs::[CommentItem] = filter((.stub), realDocs);
   local nonStubDocs::[CommentItem] = filter((\x::CommentItem->!x.stub), realDocs);
-  return if length(realDocs) == 0 && skipIfEmpty then [] else [pair(fileName, s"""---
+  return if length(realDocs) == 0 && skipIfEmpty then [] else [(fileName, s"""---
 title: "${title}"
 weight: ${toString(weight)}
 geekdocBreadcrumb: false

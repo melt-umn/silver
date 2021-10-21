@@ -299,7 +299,7 @@ concrete production resourceIdeStmt
 top::IdeStmt ::= 'resource' id::Name path::String_t ';'
 {
   top.errors := []; -- TODO: duplicate name check or something?
-  top.ideResources = [pair(id.name, substring(1, length(path.lexeme) - 1, path.lexeme))];
+  top.ideResources = [(id.name, substring(1, length(path.lexeme) - 1, path.lexeme))];
 }
 
 -- Wizards

@@ -244,7 +244,7 @@ attribute traversalResult<NamedAST> occurs on NamedAST;
 aspect production namedAST
 top::NamedAST ::= n::String v::AST
 {
-  top.binding = pair(n, v);
+  top.binding = (n, v);
   top.allResult =
     do {
       vResult::AST <- decorate top.givenStrategy with { term = v; }.result;

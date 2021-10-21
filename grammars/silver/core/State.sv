@@ -67,7 +67,7 @@ function runState
 Pair<s a> ::= st::State<s a> initialState::s
 {
   st.stateIn = initialState;
-  return pair(st.stateOut, st.stateVal);
+  return (st.stateOut, st.stateVal);
 }
 
 function evalState

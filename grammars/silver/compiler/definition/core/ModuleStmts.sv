@@ -358,7 +358,7 @@ concrete production withElement
 top::WithElem ::= n::QName 'as' newname::QName 
 {
   top.unparse = n.unparse ++ " as " ++ newname.unparse;
-  top.envMaps = [pair(n.name, newname.name)];
+  top.envMaps = [(n.name, newname.name)];
 }
 
 -----------

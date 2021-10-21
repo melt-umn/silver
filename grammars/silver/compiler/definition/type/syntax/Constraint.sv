@@ -81,7 +81,7 @@ top::Constraint ::= c::QNameType t::TypeExpr
     | typeVariableTypeExpr(tv)
       -- Avoid circular inference if someone uses a class constraint within its own definition
       when top.constraintPos.classDefName != just(fName) ->
-      [pair(tv.lexeme, c.lookupType.typeScheme.monoType.kindrep)]
+      [(tv.lexeme, c.lookupType.typeScheme.monoType.kindrep)]
     | _ -> []
     end;
 }
@@ -176,7 +176,7 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExp
 
   top.lexicalTyVarKinds <-
     case i of
-    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, inhSetKind())]
+    | typeVariableTypeExpr(tv) -> [(tv.lexeme, inhSetKind())]
     | _ -> []
     end;
 }
@@ -265,12 +265,12 @@ top::Constraint ::= i1::TypeExpr 'subset' i2::TypeExpr
 
   top.lexicalTyVarKinds <-
     case i1 of
-    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, inhSetKind())]
+    | typeVariableTypeExpr(tv) -> [(tv.lexeme, inhSetKind())]
     | _ -> []
     end;
   top.lexicalTyVarKinds <-
     case i2 of
-    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, inhSetKind())]
+    | typeVariableTypeExpr(tv) -> [(tv.lexeme, inhSetKind())]
     | _ -> []
     end;
 }

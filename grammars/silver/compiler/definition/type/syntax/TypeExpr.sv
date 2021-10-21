@@ -198,7 +198,7 @@ top::TypeExpr ::= '(' tv::IdLower_t '::' k::KindExpr ')'
   top.errorsTyVars := [];
 
   top.lexicalTypeVariables <- [tv.lexeme];
-  top.lexicalTyVarKinds <- [pair(tv.lexeme, k.kindrep)];
+  top.lexicalTyVarKinds <- [(tv.lexeme, k.kindrep)];
 }
 
 concrete production appTypeExpr
@@ -266,7 +266,7 @@ top::TypeExpr ::= ty::Decorated TypeExpr tl::BracketedTypeExprs
       -- This assumes that all type args have kind *.
       -- If that is not the case, then an explcit kind signature is needed on ty,
       -- which will shadow this entry in the lexicalTyVarKinds list.
-      [pair(tv.lexeme, constructorKind(tlCount))]
+      [(tv.lexeme, constructorKind(tlCount))]
 
     | nominalTypeExpr(q) when q.lookupType.found -> tl.appLexicalTyVarKinds
     | _ -> []
@@ -297,7 +297,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr 'with' i::TypeExpr
 
   top.lexicalTyVarKinds <-
     case i of
-    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, inhSetKind())]
+    | typeVariableTypeExpr(tv) -> [(tv.lexeme, inhSetKind())]
     | _ -> []
     end;
 }
@@ -454,7 +454,7 @@ top::TypeExprs ::= t::TypeExpr list::TypeExprs
     end;
   top.appLexicalTyVarKinds <-
     case t, top.appArgKinds of
-    | typeVariableTypeExpr(tv), k :: _ -> [pair(tv.lexeme, k)]
+    | typeVariableTypeExpr(tv), k :: _ -> [(tv.lexeme, k)]
     | _, _ -> []
     end;
 }

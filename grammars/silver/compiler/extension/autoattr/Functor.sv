@@ -129,7 +129,7 @@ Pair<String Expr> ::= loc::Location baseName::String input::NamedSignatureElemen
   local annoName :: String = last(explode(":", input.elementName));
 
   return
-    pair(annoName,
+    (annoName,
       access(
         baseExpr(qName(loc, baseName), location=loc), '.',
         qNameAttrOccur(qName(loc, annoName), location=loc),

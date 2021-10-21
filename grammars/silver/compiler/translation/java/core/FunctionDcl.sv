@@ -23,8 +23,8 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
 """;
 
   top.genFiles :=
-    [pair(s"P${id.name}.java", generateFunctionClassString(top.grammarName, id.name, namedSig, funBody))] ++
-    if id.name == "main" then [pair("Main.java", generateMainClassString(top.grammarName))]
+    [(s"P${id.name}.java", generateFunctionClassString(top.grammarName, id.name, namedSig, funBody))] ++
+    if id.name == "main" then [("Main.java", generateMainClassString(top.grammarName))]
     else [];
 
   -- main function signature check TODO: this should probably be elsewhere!

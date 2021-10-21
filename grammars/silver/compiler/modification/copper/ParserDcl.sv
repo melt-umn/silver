@@ -127,7 +127,7 @@ top::AGDcl ::= 'parser' n::Name '::' t::TypeExpr '{' m::ParserComponents '}'
   -- TODO: As a hack, even though we don't propogates defs up to the top level, we
   -- do generate files for the lifted dcl. Needed to generate terminal class files.
   top.genFiles := m.genFiles ++
-    [pair(className ++ ".java",
+    [(className ++ ".java",
           generateFunctionClassString(top.grammarName, n.name, namedSig, parseResult))];
   
   local parseResult :: String =

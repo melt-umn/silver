@@ -8,7 +8,7 @@ global books :: XML_Document = parseXMLFileF("xml/books.xml").parseTree;
 
 global smallxhtml :: XMLDocument = parseXMLFileN("xml/smallxhtml.xml").parseTree;
 
-global mynamespaces :: [Pair<String String>] = [pair("x", "http://www.asdfexample.com/books")];
+global mynamespaces :: [Pair<String String>] = [("x", "http://www.asdfexample.com/books")];
 
 -- querying tests
 global query1 :: XMLNodeList = xmlNodeListF2N(nodeListXPathQueryFns("//x:book[x:author=\"Neal Stephenson\"]", mynamespaces, books));

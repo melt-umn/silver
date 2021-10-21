@@ -57,7 +57,7 @@ top::SyntaxLexerClassModifier ::= super::[String]
                      else ["Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from extends clause for lexer class)"],
                    zipWith(pair, super, superRefsL));
-  top.superClassContribs := map(pair(top.className, _), super);
+  top.superClassContribs := map((top.className, _), super);
 }
 
 {--

@@ -24,12 +24,12 @@ IOVal<Pair<[Root] [ParseError]>> ::= svParser::SVParser  gpath::String  files::[
   -- Continue parsing the rest of the files.
   local recurse :: IOVal<Pair<[Root] [ParseError]>> = compileFiles(svParser, gpath, tail(files), text.io);
 
-  return if null(files) then ioval(ioin, pair([], []))
+  return if null(files) then ioval(ioin, ([], []))
          -- Using [] in this case because there seems to be no end to io token demanding issues:
          else case r of
          | parseSucceeded(rtree, _) ->
-             ioval(recurse.io, pair(rtree :: recurse.iovalue.fst, recurse.iovalue.snd))
+             ioval(recurse.io, (rtree :: recurse.iovalue.fst, recurse.iovalue.snd))
          | parseFailed(errval, _) -> 
-             ioval(recurse.io, pair(recurse.iovalue.fst, errval :: recurse.iovalue.snd))
+             ioval(recurse.io, (recurse.iovalue.fst, errval :: recurse.iovalue.snd))
          end;
 }

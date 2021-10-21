@@ -88,7 +88,7 @@ top::IdeSpec ::=
   local sourceGrammarName :: String = makeName(pspec.sourceGrammar);
   
   top.pluginFiles =
-    [pair(s"${pluginPkgPath}SVIdeInterface.java", s"""
+    [(s"${pluginPkgPath}SVIdeInterface.java", s"""
 package ${package};
 
 import java.io.IOException;
@@ -142,7 +142,7 @@ public class SVIdeInterface extends SVDefault {
 ${wizs.svIdeInterface}
 }
 """),
-    pair("plugin.xml", s"""<?xml version="1.0" encoding="UTF-8"?>
+    ("plugin.xml", s"""<?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.0"?>
 <plugin>
 
@@ -255,7 +255,7 @@ ${funcs.pluginXml}
 -- context.getBundle().getHeaders().get("Silver-Eclipse-Grammar")
 -- and then using that to call Init and new SVIdeInterface.
 -- (Plus adding that line to the MANIFEST.MF, with the appropriate value...)
-  pair(s"${pluginPkgPath}Plugin.java",
+  (s"${pluginPkgPath}Plugin.java",
     s"""
 package ${package};
 
@@ -280,9 +280,9 @@ public class Plugin implements BundleActivator {
     }
 }
 """),
-  pair(s"${pluginPkgPath}eclipse/property/PropertyControlsProvider.java",
+  (s"${pluginPkgPath}eclipse/property/PropertyControlsProvider.java",
     getPropertyProvider(package, idePropDcls, "property")),
-  pair(s"${pluginPkgPath}eclipse/wizard/newproject/PropertyGenerator.java",
+  (s"${pluginPkgPath}eclipse/wizard/newproject/PropertyGenerator.java",
     getPropertyGenerator(package, idePropDcls, "newproject"))
   ] ++
   wizs.pluginFiles;

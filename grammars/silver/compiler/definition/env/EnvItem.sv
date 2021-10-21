@@ -30,8 +30,8 @@ ei::EnvItem<a> ::= newname::String di::a
   ei.dcl = di;
   ei.envContribs =
     if newname != di.fullName
-    then [pair(newname, di), pair(di.fullName, di)]
-    else [pair(newname, di)];
+    then [(newname, di), (di.fullName, di)]
+    else [(newname, di)];
 
   ei.filterIncludeOnly := contains(newname, ei.filterItems);
   ei.filterIncludeHiding := !contains(newname, ei.filterItems);
@@ -53,7 +53,7 @@ ei::EnvItem<a> ::= di::a
 {
   ei.itemName = di.fullName;
   ei.dcl = di;
-  ei.envContribs = [pair(di.fullName, di)];
+  ei.envContribs = [(di.fullName, di)];
   
   propagate filterIncludeOnly, filterIncludeHiding, renamed, prepended;  -- Always imported & not renamed
 }
@@ -67,7 +67,7 @@ ei::EnvItem<a> ::= newname::String di::a
 {
   ei.itemName = newname;
   ei.dcl = di;
-  ei.envContribs = [pair(newname, di)];
+  ei.envContribs = [(newname, di)];
   
   propagate filterIncludeOnly, filterIncludeHiding, renamed, prepended;  -- Should never be imported
 }

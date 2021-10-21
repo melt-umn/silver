@@ -181,7 +181,7 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::Decorated FlowE
     (if nonForwarding
      then addDefEqs(prod, nt, syns, flowEnv)
      else -- This first pair is used sometimes as an alias:
-          pair(lhsSynVertex("forward"), forwardEqVertex()) ::
+          (lhsSynVertex("forward"), forwardEqVertex()) ::
           addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ 
           addFwdInhEqs(prod, inhs, flowEnv)) ++
     addAllAutoCopyEqs(prod, dcl.namedSignature.inputElements, autos, flowEnv, realEnv);
@@ -354,7 +354,7 @@ ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated E
   -- The phantom edges: ext syn -> fwd.eq
   local phantomEdges :: [Pair<FlowVertex FlowVertex>] =
     -- apparently this alias may sometimes be used. we should get rid of this by making good use of vertex types
-    pair(lhsSynVertex("forward"), forwardEqVertex()) ::
+    (lhsSynVertex("forward"), forwardEqVertex()) ::
     map(getPhantomEdge, extSyns);
   
   -- The stitch point: oddball. LHS stitch point. Normally, the LHS is not.
@@ -370,7 +370,7 @@ ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated E
 function getPhantomEdge
 Pair<FlowVertex FlowVertex> ::= at::String
 {
-  return pair(lhsSynVertex(at), forwardEqVertex());
+  return (lhsSynVertex(at), forwardEqVertex());
 }
 
 ---- Begin helpers for fixing up graphs ----------------------------------------
@@ -384,8 +384,8 @@ function addFwdSynEqs
 {
   return if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv))
-    then [pair(lhsSynVertex(head(syns)), forwardVertex(head(syns))),
-          pair(lhsSynVertex(head(syns)), forwardEqVertex())] else []) ++
+    then [(lhsSynVertex(head(syns)), forwardVertex(head(syns))),
+          (lhsSynVertex(head(syns)), forwardEqVertex())] else []) ++
     addFwdSynEqs(prod, tail(syns), flowEnv);
 }
 {--
@@ -396,7 +396,7 @@ function addFwdInhEqs
 [Pair<FlowVertex FlowVertex>] ::= prod::ProdName inhs::[String] flowEnv::Decorated FlowEnv
 {
   return if null(inhs) then []
-  else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [pair(forwardVertex(head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
+  else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [(forwardVertex(head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
     addFwdInhEqs(prod, tail(inhs), flowEnv);
 }
 {--
@@ -430,7 +430,7 @@ function addAutocopyEqs
   return if null(inhs) then []
   else (if null(lookupInh(prod, sigName.elementName, head(inhs), flowEnv))  -- no equation
         && !null(getOccursDcl(head(inhs), sigName.typerep.typeName, realEnv)) -- and it occurs on this type
-        then [pair(rhsVertex(sigName.elementName, head(inhs)), lhsInhVertex(head(inhs)))]
+        then [(rhsVertex(sigName.elementName, head(inhs)), lhsInhVertex(head(inhs)))]
         else []) ++
     addAutocopyEqs(prod, sigName, tail(inhs), flowEnv, realEnv);
 }
@@ -498,7 +498,7 @@ function getInhsForNtForPatternVars
 function prodGraphToEnv
 Pair<String ProductionGraph> ::= p::ProductionGraph
 {
-  return pair(p.prod, p);
+  return (p.prod, p);
 }
 function isOccursInherited
 Boolean ::= occs::OccursDclInfo  e::Decorated Env
@@ -557,6 +557,6 @@ function findAdmissibleEdges
     filter(isLhsInhSet(_, currentDeps), set:toList(targetNotSource));
   
   return if set:isEmpty(currentDeps) then [] -- just a quick optimization.
-  else map(pair(edge.fst, _), validDeps);
+  else map((edge.fst, _), validDeps);
 }
 

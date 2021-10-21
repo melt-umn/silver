@@ -98,7 +98,7 @@ wrongCode "(a1, a)" {
   global foo::(a1, a) = 42;
 }
 wrongCode "(a, b) has initialization expression with type (silver:core:Pair<c a> ::= c a)" {
-  global foo::(a, b) = pair(_, _);
+  global foo::(a, b) = (_, _);
 }
 
 -------------------------------------- Type Decls
@@ -158,7 +158,7 @@ equalityTest(toString(false), "false", String, silver_tests);
 type MyType3 = Pair<Integer String>;
 
 wrongCode "Could not find an instance for silver:core:ConvertablePrim silver:core:Pair<Integer String> (arising from the use of toString)" {
-  global m3t :: MyType3 = pair(0, "");
+  global m3t :: MyType3 = (0, "");
   equalityTest(toString(m3t), "<this fails>", String, silver_tests);
 }
 

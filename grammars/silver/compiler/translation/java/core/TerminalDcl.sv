@@ -17,7 +17,7 @@ function terminalTranslation
   local fName :: String = grammarName ++ ":" ++ name;
   local lexerClassesStr :: String = implode(", ", map(\ s::String -> s"\"${s}\"", lexerClasses));
 
-  return [pair(className ++ ".java", s"""
+  return [(className ++ ".java", s"""
 package ${makeName(grammarName)};
 
 import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;

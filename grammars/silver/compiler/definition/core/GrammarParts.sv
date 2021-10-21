@@ -52,7 +52,7 @@ top::Grammar ::= h::Root  t::Grammar
   top.declaredName = if h.declaredName == t.declaredName then h.declaredName else top.grammarName;
   top.grammarErrors =
     if null(h.errors ++ jarNameErrors) then t.grammarErrors
-     else pair(h.location.filename, h.errors ++ jarNameErrors) :: t.grammarErrors;
+     else (h.location.filename, h.errors ++ jarNameErrors) :: t.grammarErrors;
 
   local jarNameErrors :: [Message] = warnIfMultJarName(h.jarName, t.jarName, h.location);
 }

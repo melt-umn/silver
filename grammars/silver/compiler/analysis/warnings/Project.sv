@@ -20,7 +20,7 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--warn-all", flag(warnAllFlag))];
+  flags <- [("--warn-all", flag(warnAllFlag))];
   flagdescs <- ["\t--warn-all  : enable all warnings"];
 }
 

@@ -22,8 +22,8 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--dump-flow-graph", flag(dumpFlowGraphFlag)),
-            pair("--dump-flow-graphs", flag(dumpFlowGraphFlag))]; -- I mistype this a lot.
+  flags <- [("--dump-flow-graph", flag(dumpFlowGraphFlag)),
+            ("--dump-flow-graphs", flag(dumpFlowGraphFlag))]; -- I mistype this a lot.
   -- omitting from descriptions deliberately!
 }
 
@@ -46,9 +46,9 @@ function unList
   return if null(l) then
     []
   else if !null(recurse) && head(recurse).fst == head(l).fst then
-    pair(head(l).fst, head(l).snd :: head(recurse).snd) :: tail(recurse)
+    (head(l).fst, head(l).snd :: head(recurse).snd) :: tail(recurse)
   else
-    pair(head(l).fst, [head(l).snd]) :: recurse;
+    (head(l).fst, [head(l).snd]) :: recurse;
 }
 
 

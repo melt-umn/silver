@@ -61,10 +61,10 @@ top::CmdArgs ::= loc::String rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--doc", flag(docFlag)),
-            pair("--print-undoc", flag(printUndocFlag)),
-            pair("--count-undoc", flag(countUndocFlag)),
-            pair("--doc-out", option(docOutFlag))];
+  flags <- [("--doc", flag(docFlag)),
+            ("--print-undoc", flag(printUndocFlag)),
+            ("--count-undoc", flag(countUndocFlag)),
+            ("--doc-out", option(docOutFlag))];
   flagdescs <- ["\t--doc       : build the documentation",
                 "\t--count-undoc : print names of undocumented items",
                 "\t--print-undoc : print names of undocumented items",

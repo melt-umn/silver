@@ -101,7 +101,7 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
 {
   top.fullName = t.typeName;
   top.sortKey = "EEE" ++ t.typeName;
-  top.cstDcls := [pair(t.typeName, top)] ++ subdcls.cstDcls;
+  top.cstDcls := [(t.typeName, top)] ++ subdcls.cstDcls;
   top.allNonterminals := [top];
   
   top.cstErrors <- if length(searchEnvTree(t.typeName, top.cstEnv)) == 1 then []
@@ -115,7 +115,7 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   
   top.exportedProds = exportedProds;
   top.hasCustomLayout = modifiers.customLayout.isJust;
-  top.layoutContribs := map(pair(t.typeName, _), fromMaybe(exportedLayoutTerms, modifiers.customLayout));
+  top.layoutContribs := map((t.typeName, _), fromMaybe(exportedLayoutTerms, modifiers.customLayout));
 
   top.xmlCopper =
     "\n  <Nonterminal id=\"" ++ makeCopperName(t.typeName) ++ "\">\n" ++
@@ -135,7 +135,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
 {
   top.fullName = n;
   top.sortKey = "CCC" ++ n;
-  top.cstDcls := [pair(n, top)];
+  top.cstDcls := [(n, top)];
   top.cstErrors <-
     if length(searchEnvTree(n, top.cstEnv)) == 1 then []
     else ["Name conflict with terminal " ++ n];
@@ -160,7 +160,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     end;
 
   local prettyName :: String = fromMaybe(fromMaybe(n, asPrettyName(regex)), modifiers.prettyName);
-  top.prettyNamesAccum := [pair(prettyName, n)];
+  top.prettyNamesAccum := [(prettyName, n)];
   local disambiguatedPrettyName :: String =
     case length(tm:lookup(prettyName, top.prettyNames)) of
     | 1 -> prettyName
@@ -211,7 +211,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 {
   top.fullName = ns.fullName;
   top.sortKey = "FFF" ++ ns.fullName;
-  top.cstDcls := [pair(ns.fullName, top)];
+  top.cstDcls := [(ns.fullName, top)];
   top.allProductions := [top];
   
   modifiers.productionName = ns.fullName;
@@ -233,14 +233,14 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 
   top.cstErrors <- checkRHS(ns.fullName, map((.typerep), ns.inputElements), rhsRefs);
 
-  top.cstProds := [pair(ns.outputElement.typerep.typeName, top)];
+  top.cstProds := [(ns.outputElement.typerep.typeName, top)];
   top.cstNormalize := [];
   
   top.hasCustomLayout = modifiers.customLayout.isJust;
   top.layoutContribs :=
-    map(pair(ns.fullName, _), fromMaybe([], modifiers.customLayout)) ++
+    map((ns.fullName, _), fromMaybe([], modifiers.customLayout)) ++
     -- The production inherits its LHS nonterminal's layout, unless overridden.
-    (if top.hasCustomLayout then [] else [pair(ns.fullName, head(lhsRef).fullName)]) ++
+    (if top.hasCustomLayout then [] else [(ns.fullName, head(lhsRef).fullName)]) ++
     -- All nonterminals on the RHS that export this production inherit this
     -- production's layout, unless overriden on the nonterminal.
     flatMap(
@@ -249,7 +249,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
         | syntaxNonterminal(_,_,_,_,_)
           when !head(rhsRef).hasCustomLayout &&
                contains(top.fullName, head(rhsRef).exportedProds) ->
-          [pair(head(rhsRef).fullName, ns.fullName)]
+          [(head(rhsRef).fullName, ns.fullName)]
         | _ -> []
         end,
       rhsRefs);
@@ -342,7 +342,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 {
   top.fullName = n;
   top.sortKey = "AAA" ++ n;
-  top.cstDcls := [pair(n, top)];
+  top.cstDcls := [(n, top)];
   top.cstErrors <-
     if length(searchEnvTree(n, top.cstEnv)) == 1 then []
     else ["Name conflict with lexer class " ++ n];
@@ -378,7 +378,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
 {
   top.fullName = n;
   top.sortKey = "BBB" ++ n;
-  top.cstDcls := [pair(n, top)];
+  top.cstDcls := [(n, top)];
   top.cstErrors <- if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with parser attribute " ++ n];
 
@@ -413,7 +413,7 @@ top::SyntaxDcl ::= n::String acode::String
 
   top.cstNormalize := [top];
 
-  top.parserAttributeAspectContribs := [pair(n, acode)];
+  top.parserAttributeAspectContribs := [(n, acode)];
   top.xmlCopper = "";
 }
 

@@ -122,7 +122,7 @@ Expr ::= id::ValueDclInfo  l::Location
       []
     else
       -- we just erroneously assume the annotation must be location, for now
-      [pair("location", mkStrFunctionInvocation(l, "bogusLoc", []))];
+      [("location", mkStrFunctionInvocation(l, "bogusLoc", []))];
 
   return
     mkFullFunctionInvocation(

@@ -81,7 +81,7 @@ IOErrorable<Pair<Decorated CmdArgs  BuildEnv>> ::=
       "GRAMMAR_PATH:\n" ++ implode("\n", benv.grammarPath) ++ "\n\n" ++
       implode("\n", envErrors))))
   else
-    ioval(benvResult.io, right(pair(a, benv)));
+    ioval(benvResult.io, right((a, benv)));
 }
 
 -- Upon deciding that we're to build a single grammar into a jar, we do this

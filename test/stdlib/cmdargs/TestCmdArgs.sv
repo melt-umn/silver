@@ -34,9 +34,9 @@ top::CmdArgs ::= rest::CmdArgs
 
 
 global flags1 :: [Pair<String Flag>] =
-  [pair("-verbose", flag(verboseFlag)),
-   pair("-silly", flag(sillyFlag)),
-   pair("-nosilly", flag(noSillyFlag))];
+  [("-verbose", flag(verboseFlag)),
+   ("-silly", flag(sillyFlag)),
+   ("-nosilly", flag(noSillyFlag))];
 
 -- Don't parse anything unrecognized.
 equalityTest( interpretCmdArgs(flags1, ["a", "b", "c"]).cmdRemaining, 
@@ -84,7 +84,7 @@ equalityTest( interpretCmdArgs(flags1, ["-silly", "-nosilly", "-silly"]).isSilly
 
 -- an "option" is a flag with one parameter.
 global flags2 :: [Pair<String Flag>] =
-  [pair("-I", option(includeFlag))] ++ flags1;
+  [("-I", option(includeFlag))] ++ flags1;
 
 synthesized attribute includePaths :: [String] occurs on CmdArgs;
 

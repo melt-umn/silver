@@ -123,18 +123,18 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   -- e.g. -I my/grammars is obvious because it refers to a location to include.
 
   flags <-
-    [pair("-I",        option(includeFlag)),
-     pair("-o",        option(outFlag)),
-     pair("-G",        option(genFlag)),
-     pair("--silver-home", option(homeFlag)),
-     pair("--version", flag(versionFlag)),
-     pair("--clean",   flag(cleanFlag)),
-     pair("--dont-analyze", flag(nobindingFlag)),
-     pair("--warn-error", flag(warnErrorFlag)),
-     pair("--no-origins", flag(noOriginsFlag)),
-     pair("--force-origins", flag(forceOriginsFlag)),
-     pair("--no-redex", flag(noRedexFlag)),
-     pair("--tracing-origins", flag(tracingOriginsFlag))
+    [("-I",        option(includeFlag)),
+     ("-o",        option(outFlag)),
+     ("-G",        option(genFlag)),
+     ("--silver-home", option(homeFlag)),
+     ("--version", flag(versionFlag)),
+     ("--clean",   flag(cleanFlag)),
+     ("--dont-analyze", flag(nobindingFlag)),
+     ("--warn-error", flag(warnErrorFlag)),
+     ("--no-origins", flag(noOriginsFlag)),
+     ("--force-origins", flag(forceOriginsFlag)),
+     ("--no-redex", flag(noRedexFlag)),
+     ("--tracing-origins", flag(tracingOriginsFlag))
     ];
   -- Always start with \t, name options descriptively in <>, do not end with \n!
   flagdescs <- 

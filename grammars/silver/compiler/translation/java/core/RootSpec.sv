@@ -23,11 +23,11 @@ aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _ _ _ _
 {
   top.genBinaryFiles := [
-    pair("Silver.svi", unparseRootSpec(top))
+    ("Silver.svi", unparseRootSpec(top))
   ];
 
   top.genFiles := g.genFiles ++
-  [pair("Init.java", s"""
+  [("Init.java", s"""
 package ${makeName(g.declaredName)};
 
 public class Init{

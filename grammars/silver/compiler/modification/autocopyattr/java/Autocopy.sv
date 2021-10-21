@@ -17,7 +17,7 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te:
   local attribute className :: String;
   className = "D" ++ a.name;
 
-  top.genFiles := [pair(className ++ ".java",
+  top.genFiles := [(className ++ ".java",
 		
 "package " ++ makeName(top.grammarName) ++ ";\n\n" ++
 

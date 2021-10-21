@@ -52,7 +52,7 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   es.appExprApplied = n.unparse;
   anns.appExprApplied = n.unparse;
   anns.funcAnnotations =
-    map(pair(_, nonterminalType("silver:rewrite:Strategy", [], false)), annotations);
+    map((_, nonterminalType("silver:rewrite:Strategy", [], false)), annotations);
   anns.remainingFuncAnnotations = anns.funcAnnotations;
  
   local localErrors::[Message] =
@@ -165,7 +165,7 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
     if !extractNamedArg(qn.name, top.funcAnnotations).fst.isJust
     then [err(qn.location, "Named parameter '" ++ qn.name ++ "' is not appropriate for '" ++ top.appExprApplied ++ "'")]
     else [];
-  top.traverseTransform = pair(qn.lookupAttribute.fullName, e.traverseTransform);
+  top.traverseTransform = (qn.lookupAttribute.fullName, e.traverseTransform);
 }
 
 aspect production snocAnnoAppExprs

@@ -79,7 +79,7 @@ top::Expression ::= name::String
 abstract production abs
 top::Expression ::= name::String ty::Type body::Expression
 {
-  body.gamma = [pair(name, ty)] ++ top.gamma;
+  body.gamma = [(name, ty)] ++ top.gamma;
   top.type = arrow(ty, body.type);
   top.errors = case top.type, body.type of
                | left(s), right(_) -> [s] ++ body.errors

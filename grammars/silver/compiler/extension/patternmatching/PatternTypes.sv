@@ -388,7 +388,7 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
     else [];
   
   top.patternVars = p.patternVars;
-  top.namedPatternList = [pair(qn.lookupAttribute.fullName, p)];
+  top.namedPatternList = [(qn.lookupAttribute.fullName, p)];
 }
 
 

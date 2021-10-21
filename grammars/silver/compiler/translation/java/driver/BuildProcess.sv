@@ -59,12 +59,12 @@ top::CmdArgs ::= s::String rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--dont-translate", flag(xjFlag)),
-            pair("--onejar", flag(onejarFlag)),
-            pair("--one-jar", flag(onejarFlag)),
-            pair("--relative-jar", flag(relativejarFlag)),
-            pair("--include-jar", option(includeRTJarFlag)),
-            pair("--build-xml-location", option(buildXmlFlag))
+  flags <- [("--dont-translate", flag(xjFlag)),
+            ("--onejar", flag(onejarFlag)),
+            ("--one-jar", flag(onejarFlag)),
+            ("--relative-jar", flag(relativejarFlag)),
+            ("--include-jar", option(includeRTJarFlag)),
+            ("--build-xml-location", option(buildXmlFlag))
            ];
   flagdescs <- ["\t--one-jar  : include runtime libraries in the jar"];
 }

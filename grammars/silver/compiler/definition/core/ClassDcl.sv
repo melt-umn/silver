@@ -107,7 +107,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production boundVars :: [TyVar] =
     setUnionTyVarsAll(top.classHead.freeVariables :: map((.freeVariables), cl.contexts) ++ [ty.typerep.freeVariables]);
-  top.classMembers = [pair(fName, false)];
+  top.classMembers = [(fName, false)];
   
   cl.constraintPos =
     case top.classHead of
@@ -138,7 +138,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production boundVars :: [TyVar] =
     setUnionTyVarsAll(top.classHead.freeVariables :: map((.freeVariables), cl.contexts) ++ [ty.typerep.freeVariables]);
-  top.classMembers = [pair(fName, true)];
+  top.classMembers = [(fName, true)];
   
   cl.constraintPos =
     case top.classHead of

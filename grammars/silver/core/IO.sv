@@ -537,8 +537,8 @@ String ::= filePath::String
 function splitFileNameAndExtension
 Pair<String String> ::= filePath::String
 {
-  return if indexOfLastDot == -1 then pair(filePath, "")
-         else pair(substring(0, indexOfLastDot, filePath) ,
+  return if indexOfLastDot == -1 then (filePath, "")
+         else (substring(0, indexOfLastDot, filePath) ,
                    substring(indexOfLastDot+1, length(filePath), filePath));
 
   local attribute indexOfLastDot :: Integer;

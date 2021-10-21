@@ -5,7 +5,7 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
 {
   local className :: String = "C" ++ last(explode(":", fName));
 
-  top.genFiles := [pair(className ++ ".java", s"""
+  top.genFiles := [(className ++ ".java", s"""
 
 package ${makeName(top.grammarName)};
 

@@ -49,7 +49,7 @@ top::IdeWizardDcl ::= func::String props::[IdeProperty]
   </wizard>
 """;
   top.pluginFiles = [
-    pair(s"${top.pluginPkgPath}eclipse/wizard/newfile/PropertyControlsProvider.java",
+    (s"${top.pluginPkgPath}eclipse/wizard/newfile/PropertyControlsProvider.java",
       getPropertyProvider(top.package, props, "wizard.newfile"))];
 }
 

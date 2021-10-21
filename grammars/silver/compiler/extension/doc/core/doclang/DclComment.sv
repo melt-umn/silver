@@ -140,36 +140,36 @@ Pair<[String] [DocConfigSetting]> ::= alreadyErrs::[String] args::[Pair<String C
 
     local err::[String] =
         case arg of
-        | pair("split", v) -> if !v.asBool.isJust then ["@config split takes a boolean value (or just @config split)"] else []
-        | pair("fileSplit", v) -> if !v.asBool.isJust then ["@config fileSplit takes a boolean value (or just @config fileSplit)"] else []
-        | pair("noToc", v) -> if !v.asBool.isJust then ["@config noToc takes a boolean value (or just @config noToc)"] else []
-        | pair("weight", v) -> if !v.asInteger.isJust then ["@config weight takes an integer"] else []
-        | pair("grammarWeight", v) -> if !v.asInteger.isJust then ["@config grammarWeight takes an integer"] else []
-        | pair("title", v) -> if !v.asString.isJust then ["@config title takes a string in quotes"] else []
-        | pair("grammarTitle", v) -> if !v.asString.isJust then ["@config grammarTitle takes a string in quotes"] else []
-        | pair("excludeFile", v) -> if !v.asBool.isJust then ["@config excludeFile takes a boolean value (or just @config excludeFile)"] else []
-        | pair("excludeGrammar", v) -> if !v.asBool.isJust then ["@config excludeGrammar takes a boolean value (or just @config excludeGrammar)"] else []
-        | pair("hide", v) -> if !v.asBool.isJust then ["@config hide takes a boolean value (or just @config hide or @hide)"] else []
-        | pair(k, _) -> ["Unknown @config directive '"++k++"'"]
+        | ("split", v) -> if !v.asBool.isJust then ["@config split takes a boolean value (or just @config split)"] else []
+        | ("fileSplit", v) -> if !v.asBool.isJust then ["@config fileSplit takes a boolean value (or just @config fileSplit)"] else []
+        | ("noToc", v) -> if !v.asBool.isJust then ["@config noToc takes a boolean value (or just @config noToc)"] else []
+        | ("weight", v) -> if !v.asInteger.isJust then ["@config weight takes an integer"] else []
+        | ("grammarWeight", v) -> if !v.asInteger.isJust then ["@config grammarWeight takes an integer"] else []
+        | ("title", v) -> if !v.asString.isJust then ["@config title takes a string in quotes"] else []
+        | ("grammarTitle", v) -> if !v.asString.isJust then ["@config grammarTitle takes a string in quotes"] else []
+        | ("excludeFile", v) -> if !v.asBool.isJust then ["@config excludeFile takes a boolean value (or just @config excludeFile)"] else []
+        | ("excludeGrammar", v) -> if !v.asBool.isJust then ["@config excludeGrammar takes a boolean value (or just @config excludeGrammar)"] else []
+        | ("hide", v) -> if !v.asBool.isJust then ["@config hide takes a boolean value (or just @config hide or @hide)"] else []
+        | (k, _) -> ["Unknown @config directive '"++k++"'"]
         end;
 
     local boundConf::[DocConfigSetting] =
         case arg of
-        | pair("split", v) -> [splitConfig(v.asBool.fromJust)]
-        | pair("fileSplit", v) -> [fileSplitConfig(v.asBool.fromJust)]
-        | pair("noToc", v) -> [tocConfig(!v.asBool.fromJust)]
-        | pair("weight", v) -> [weightConfig(v.asInteger.fromJust)]
-        | pair("grammarWeight", v) -> [grammarWeightConfig(v.asInteger.fromJust)]
-        | pair("title", v) -> [titleConfig(v.asString.fromJust)]
-        | pair("grammarTitle", v) -> [grammarTitleConfig(v.asString.fromJust)]
-        | pair("excludeFile", v) -> [fileNoDocsConfig(v.asBool.fromJust)]
-        | pair("excludeGrammar", v) -> [grammarNoDocsConfig(v.asBool.fromJust)]
-        | pair("hide", _) -> []
+        | ("split", v) -> [splitConfig(v.asBool.fromJust)]
+        | ("fileSplit", v) -> [fileSplitConfig(v.asBool.fromJust)]
+        | ("noToc", v) -> [tocConfig(!v.asBool.fromJust)]
+        | ("weight", v) -> [weightConfig(v.asInteger.fromJust)]
+        | ("grammarWeight", v) -> [grammarWeightConfig(v.asInteger.fromJust)]
+        | ("title", v) -> [titleConfig(v.asString.fromJust)]
+        | ("grammarTitle", v) -> [grammarTitleConfig(v.asString.fromJust)]
+        | ("excludeFile", v) -> [fileNoDocsConfig(v.asBool.fromJust)]
+        | ("excludeGrammar", v) -> [grammarNoDocsConfig(v.asBool.fromJust)]
+        | ("hide", _) -> []
         | _ -> error("(Impossible)")
         end;
 
     return case args of
-           | [] -> pair(alreadyErrs, conf)
+           | [] -> (alreadyErrs, conf)
            | _::r when length(err)!=0 -> processConfigOptions(err++alreadyErrs, r, conf)
            | _::r -> processConfigOptions(alreadyErrs, r, boundConf ++ conf)
            end;
@@ -218,7 +218,7 @@ concrete production initialCommentBlocks
 top::DclCommentBlocks ::= block::DclCommentLines blocks::DclCommentStrictBlocks
 {
     top.otherBlocks = 
-        pair("normal", block.body) :: blocks.otherBlocks;
+        ("normal", block.body) :: blocks.otherBlocks;
     top.paramBlocks = blocks.paramBlocks;
     top.configArgs = blocks.configArgs;
 }
@@ -256,7 +256,7 @@ concrete production commentBlock
 top::DclCommentBlock ::= EmptyLines_t content::DclCommentLines
 {
     top.body = content.body;
-    top.otherBlocks = [pair("normal", top.body)];
+    top.otherBlocks = [("normal", top.body)];
     top.paramBlocks = [];
     top.configArgs = [];
 }
@@ -266,7 +266,7 @@ top::DclCommentBlock ::= Param_t Whitespace_t id::Id_t Whitespace_t content::Dcl
 {
     top.body = "{{< hint info >}}\n**Parameter `"++id.lexeme++"`**\\\n " ++ content.body ++ "\n{{< /hint >}}";
     top.otherBlocks = [];
-    top.paramBlocks = [pair(id.lexeme, top.body)];
+    top.paramBlocks = [(id.lexeme, top.body)];
     top.configArgs = [];
 }
 
@@ -274,7 +274,7 @@ concrete production prodattrBlock
 top::DclCommentBlock ::= Prodattr_t Whitespace_t id::Id_t Whitespace_t content::DclCommentLines
 {
     top.body = "{{< hint warning >}}\n**Production Attribute `"++id.lexeme++"`**\\\n " ++ content.body ++ "\n{{< /hint >}}";
-    top.otherBlocks = [pair("prodAttr", top.body)];
+    top.otherBlocks = [("prodAttr", top.body)];
     top.paramBlocks = [];
     top.configArgs = [];
 }
@@ -283,7 +283,7 @@ concrete production returnBlock
 top::DclCommentBlock ::= Return_t Whitespace_t content::DclCommentLines
 {
     top.body = "{{< hint info >}}\n**Return**\\\n " ++ content.body ++ "\n{{< /hint >}}";
-    top.otherBlocks = [pair("return", top.body)];
+    top.otherBlocks = [("return", top.body)];
     top.paramBlocks = [];
     top.configArgs = [];
 }
@@ -292,7 +292,7 @@ concrete production forwardBlock
 top::DclCommentBlock ::= Forward_t Whitespace_t content::DclCommentLines
 {
     top.body = "{{< hint warning >}}\n**Forward**\\\n " ++ content.body ++ "\n{{< /hint >}}";
-    top.otherBlocks = [pair("forward", top.body)];
+    top.otherBlocks = [("forward", top.body)];
     top.paramBlocks = [];
     top.configArgs = [];
 }
@@ -301,7 +301,7 @@ concrete production warningBlock
 top::DclCommentBlock ::= Warning_t Whitespace_t content::DclCommentLines
 {
     top.body = "{{< hint danger >}}\n**WARNING!**\\\n " ++ content.body ++ "\n{{< /hint >}}";
-    top.otherBlocks = [pair("warning", top.body)];
+    top.otherBlocks = [("warning", top.body)];
     top.paramBlocks = [];
     top.configArgs = [];
 }
@@ -320,7 +320,7 @@ top::DclCommentBlock ::= Config_t Whitespace_t param::Id_t Whitespace_t Equals_t
     top.body = "@config " ++ param.lexeme ++ " = " ++ hackUnparse(value); --not emitted
     top.otherBlocks = [];
     top.paramBlocks = [];
-    top.configArgs = [pair(param.lexeme, value)];
+    top.configArgs = [(param.lexeme, value)];
 }
 
 concrete production configBlockImplicitTrue

@@ -16,7 +16,7 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--warn-eqdef", flag(warnEqdefFlag))];
+  flags <- [("--warn-eqdef", flag(warnEqdefFlag))];
 }
 
 aspect production synthesizedAttributeDef

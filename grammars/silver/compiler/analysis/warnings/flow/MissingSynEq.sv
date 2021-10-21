@@ -16,7 +16,7 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--warn-missing-syn", flag(warnMissingSynFlag))];
+  flags <- [("--warn-missing-syn", flag(warnMissingSynFlag))];
 }
 
 {- This is the primary check for missing synthesized equations.

@@ -21,7 +21,7 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--copperdump", flag(copperdumpFlag))];
+  flags <- [("--copperdump", flag(copperdumpFlag))];
   flagdescs <- ["\t--copperdump  : force Copper to dump parse table information"];
 }
 aspect production compilation

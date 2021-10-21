@@ -86,7 +86,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   local monadLocal::Expr =
         buildMultiLambda(map(\ p::Pair<Type Pair<Expr String>> ->
                          case p of
-                         | pair(ty, pair(e, n)) -> pair(n, dropDecorated(ty))
+                         | (ty, (e, n)) -> (n, dropDecorated(ty))
                          end, monadStuff.fst), monadLocalBody, top.location);
   local monadLocalBody::Expr =
     buildMonadicBinds(monadStuff.1,
@@ -109,7 +109,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
       buildApplication(monadLocal.monadRewritten,
                        map(\ p::Pair<Type Pair<Expr String>> ->
                              case p of
-                             | pair(ty, pair(e, n)) -> e
+                             | (ty, (e, n)) -> e
                              end,
                            monadStuff.fst), top.location);
   top.mtyperep = monadLocal.mtyperep.outputType;
@@ -134,7 +134,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                      expectedMonad=top.expectedMonad; isRoot=top.isRoot; originRules=top.originRules;}.monadicNames
                 else []
              end ++ l,
-           monadLocal.monadicNames, zipWith(\x::Expr y::Type -> pair(x,y), es.rawExprs, ml.patternTypeList));
+           monadLocal.monadicNames, zipWith(\x::Expr y::Type -> (x,y), es.rawExprs, ml.patternTypeList));
 }
 --find if any of the expressions are being matched as their inner type
 --if returns (true, ty), ty will be used to find the correct Fail()
@@ -175,8 +175,8 @@ function monadicMatchTypesNames
                           then "__sv_expression_in_case" ++ toString(index) ++ "_" ++ toString(genInt())
                           else head(names);
   return case elst, tylst of
-         | [], _ -> pair([], [])
-         | _, [] -> pair([], elst)
+         | [], _ -> ([], [])
+         | _, [] -> ([], elst)
          | e::etl, t::ttl ->
            let ety::Type = decorate e with {env=env; mDownSubst=sub; frame=f; grammarName=gn;
                                             downSubst=sub; finalSubst=sub;
@@ -197,7 +197,7 @@ Expr ::= bindlst::[(Type, Expr, String)] base::Expr loc::Location
 {
   return case bindlst of
          | [] -> base
-         | pair(ty, pair(e, n))::rest ->
+         | (ty, (e, n))::rest ->
            buildApplication(monadBind(loc),
                 [baseExpr(qNameId(name(n, loc), location=loc), location=loc),
                  buildLambda(n, monadInnerType(ty, loc), buildMonadicBinds(rest, base, loc), loc)],
@@ -279,7 +279,7 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
       let errs::[Message] =
           foldr(\ p::Pair<PrimPattern [Message]> l::[Message] -> p.snd ++ l,
                 [], mappedPatternsErrs) in
-        pair(
+        (
           -- Annoyingly, this now needs to be a let in case of annotation patterns.
           makeLet(loc,
             freshCurrName, freshType(), head(es), 
@@ -304,7 +304,7 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
              -- A quick note about that freshType() hack: putting it here means there's ONE fresh type
              -- generated, puching it inside 'bindHeadPattern' would generate multiple fresh types.
              -- So don't try that!
-     in pair(p.fst, errors ++ p.snd) end;
+     in (p.fst, errors ++ p.snd) end;
 
   {--
     - Mixed con/var? Partition into segments and build nested case expressions
@@ -317,11 +317,11 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
   -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules
   return
     case ml of
-    | matchRule([], c, e) :: _ -> pair(buildMatchWhenConditionals(ml, failExpr), -- valid or error case
+    | matchRule([], c, e) :: _ -> (buildMatchWhenConditionals(ml, failExpr), -- valid or error case
                                        errors)
     -- No match rules, only possible through abstract syntax
-    | [] -> pair(Silver_Expr { let res :: $TypeExpr{typerepTypeExpr(retType, location=loc)} = $Expr{failExpr} in res end }, [])
-    | _ -> if null(es) then pair(failExpr, []) -- error case
+    | [] -> (Silver_Expr { let res :: $TypeExpr{typerepTypeExpr(retType, location=loc)} = $Expr{failExpr} in res end }, [])
+    | _ -> if null(es) then (failExpr, []) -- error case
            else if null(varRules) then allConCase
            else if null(prodRules) then allVarCase
            else mixedCase
@@ -358,14 +358,14 @@ Pair<PrimPattern [Message]> ::= currExpr::Expr restExprs::[Expr]  failCase::Expr
   return
     case head(mrs).headPattern of
     | prodAppPattern_named(qn,_,_,_,_,_) -> 
-        pair(prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
-    | intPattern(it) -> pair(integerPattern(it, terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
-    | fltPattern(it) -> pair(floatPattern(it, terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
-    | strPattern(it) -> pair(stringPattern(it, terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
-    | truePattern(_) -> pair(booleanPattern("true", terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
-    | falsePattern(_) -> pair(booleanPattern("false", terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
-    | nilListPattern(_,_) -> pair(nilPattern(subcase, location=l), subCaseCompile.snd)
-    | consListPattern(h,_,t) -> pair(conslstPattern(head(names), head(tail(names)), subcase, location=l), subCaseCompile.snd)
+        (prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
+    | intPattern(it) -> (integerPattern(it, terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
+    | fltPattern(it) -> (floatPattern(it, terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
+    | strPattern(it) -> (stringPattern(it, terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
+    | truePattern(_) -> (booleanPattern("true", terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
+    | falsePattern(_) -> (booleanPattern("false", terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
+    | nilListPattern(_,_) -> (nilPattern(subcase, location=l), subCaseCompile.snd)
+    | consListPattern(h,_,t) -> (conslstPattern(head(names), head(tail(names)), subcase, location=l), subCaseCompile.snd)
     | _ -> error("Can only have constructor patterns in monadAllConCaseTransform")
     end;
 }
@@ -379,7 +379,7 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
 {
   local freshFailName :: String = "__fail_" ++ toString(genInt());
   return if null(ml)
-         then pair(failExpr, [])
+         then (failExpr, [])
          else let segments::Pair<[AbstractMatchRule] [AbstractMatchRule]> =
                             initialSegmentPatternType(ml)
               in
@@ -390,7 +390,7 @@ Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retTy
                   let pairCompiled::Pair<Expr [Message]> =
                       monadCompileCaseExpr(es, segments.fst, pairMixed.fst, retType, loc)
                   in
-                    pair(pairCompiled.fst, pairMixed.snd ++ pairCompiled.snd)
+                    (pairCompiled.fst, pairMixed.snd ++ pairCompiled.snd)
                   end
                 end
               end;

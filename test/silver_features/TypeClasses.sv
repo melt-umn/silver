@@ -57,14 +57,14 @@ equalityTest(bazEq("abc"), false, Boolean, silver_tests);
 equalityTest(myeq([1, 2, 3], [1, 2, 3]), true, Boolean, silver_tests);
 equalityTest(myeq([1, 2, 3], [1, 2, 3, 2, 1]), false, Boolean, silver_tests);
 equalityTest(myeq([1, 2, 3], [1, 2, 1]), false, Boolean, silver_tests);
-equalityTest(myeq(pair([1, 2], 3), pair([1, 2], 3)), true, Boolean, silver_tests);
-equalityTest(myeq(pair([1, 2], 3), pair([1, 4], 3)), false, Boolean, silver_tests);
+equalityTest(myeq(([1, 2], 3), ([1, 2], 3)), true, Boolean, silver_tests);
+equalityTest(myeq(([1, 2], 3), ([1, 4], 3)), false, Boolean, silver_tests);
 
 equalityTest(myneq([1, 2, 3], [1, 2, 3]), false, Boolean, silver_tests);
 equalityTest(myneq([1, 2, 3], [1, 2, 3, 2, 1]), true, Boolean, silver_tests);
 equalityTest(myneq([1, 2, 3], [1, 2, 1]), true, Boolean, silver_tests);
-equalityTest(myneq(pair([1, 2], 3), pair([1, 2], 3)), false, Boolean, silver_tests);
-equalityTest(myneq(pair([1, 2], 3), pair([1, 4], 3)), true, Boolean, silver_tests);
+equalityTest(myneq(([1, 2], 3), ([1, 2], 3)), false, Boolean, silver_tests);
+equalityTest(myneq(([1, 2], 3), ([1, 4], 3)), true, Boolean, silver_tests);
 
 function myRemove
 MyEq a => [a] ::= x::a xs::[a]
@@ -264,7 +264,7 @@ class CDefaultVal a {
 }
 
 instance CDefaultVal String {
-  cdv1 = pair(42, "abc");
+  cdv1 = (42, "abc");
 }
 
 equalityTest(cdv2, "abc", String, silver_tests);
@@ -360,12 +360,12 @@ instance MyTypeable Integer {
 }
 
 instance runtimeTypeable a, MyTypeable b => MyTypeable Pair<a b> {
-  myreify = \ a::AST -> case a of AST { silver:core:pair(fst, snd) } -> pair(reifyUnchecked(fst), myreify(snd)) | _ -> error("not pair") end;
+  myreify = \ a::AST -> case a of AST { silver:core:pair(fst, snd) } -> (reifyUnchecked(fst), myreify(snd)) | _ -> error("not pair") end;
 }
 
 equalityTest(myreify(reflect(42)), 42, Integer, silver_tests);
 equalityTest(myreify(reflect("hello")), "hello", String, silver_tests);
-equalityTest(myreify(reflect(pair("abc", 123))), pair("abc", 123), Pair<String Integer>, silver_tests);
+equalityTest(myreify(reflect(("abc", 123))), ("abc", 123), Pair<String Integer>, silver_tests);
 
 wrongCode "a has kind * -> * -> *, but kind * is expected here" {
   function badKind
@@ -435,11 +435,11 @@ instance typeError "Not decorated" => NotDecThing Decorated a with i {
   consumeNDT = error("type error");
 }
 
-global ndt1::String = consumeNDT(pair(12, false));
+global ndt1::String = consumeNDT((12, false));
 equalityTest(ndt1, "silver:core:Pair<Integer Boolean>", String, silver_tests);
 
 wrongCode "Not decorated (arising from the instance for silver_features:NotDecThing Decorated silver:core:Pair<Integer Boolean> with {}, arising from the use of consumeNDT)" {
-  global ndt2::String = consumeNDT(decorate pair(12, false) with {});
+  global ndt2::String = consumeNDT(decorate (12, false) with {});
 }
 
 function ndtMaybeDec

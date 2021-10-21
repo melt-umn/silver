@@ -24,7 +24,7 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--dump-import-graph", flag(dumpDepGraphFlag))];
+  flags <- [("--dump-import-graph", flag(dumpDepGraphFlag))];
   -- omitting from descriptions deliberately!
 }
 aspect production compilation

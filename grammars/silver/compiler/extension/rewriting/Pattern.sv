@@ -10,10 +10,10 @@ attribute transform<Strategy> occurs on MRuleList, MatchRule;
  - variables - such rules require an additional run-time type check before
  - attempting to match.  For example,
  -   rule on Pair<a a> of
- -     pair(x, y) -> pair(y, x)
+ -     (x, y) -> (y, x)
  -   end
  - matches only pairs where the parameters are the same type; this rule must
- - fail when applied to pair(3, "a") because performing the rewrite would lead
+ - fail when applied to (3, "a") because performing the rewrite would lead
  - to the construction of a type-unsafe tree.  More generally, a rule is
  - polymorphic if the type of a variable/wildcard pattern depends on the rule
  - type.
@@ -108,7 +108,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr _ e::Expr
   top.wrappedMatchRuleList =
     [matchRule(
       pt.patternList,
-      just(pair(hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond, location=e.location), nothing())),
+      just((hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond, location=e.location), nothing())),
       hackWrapKey(toString(top.ruleIndex), e, location=e.location),
       location=top.location)];
 }
@@ -138,7 +138,7 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern _ e::E
   top.wrappedMatchRuleList =
     [matchRule(
       pt.patternList,
-      just(pair(hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond, location=e.location), just(p))),
+      just((hackWrapKey(toString(top.ruleIndex) ++ "_cond", cond, location=e.location), just(p))),
       hackWrapKey(toString(top.ruleIndex), e, location=e.location),
       location=top.location)];
 }
@@ -147,7 +147,7 @@ abstract production hackWrapKey
 top::Expr ::= key::String e::Expr
 {
   top.unparse = s"key(${key}, ${e.unparse})";
-  top.decRuleExprs = [pair(key, forward)];
+  top.decRuleExprs = [(key, forward)];
   forwards to e;
 }
 
@@ -251,7 +251,7 @@ top::Pattern ::= prod::QName '(' ps::PatternList ',' nps::NamedPatternList ')'
   nps.namedTypesHaveUniversalVars =
     map(
       \ t::Pair<String Type> ->
-        pair(t.fst, !null(intersect(outputFreeVars, t.snd.freeVariables))),
+        (t.fst, !null(intersect(outputFreeVars, t.snd.freeVariables))),
       prodType.namedTypes);
 } 
 
@@ -408,7 +408,7 @@ top::VarBinders ::=
 aspect production varVarBinder
 top::VarBinder ::= n::Name
 {
-  top.varBindings = [pair(n.name, performSubstitution(top.bindingType, top.finalSubst).isDecorated)];
+  top.varBindings = [(n.name, performSubstitution(top.bindingType, top.finalSubst).isDecorated)];
 }
 aspect production ignoreVarBinder
 top::VarBinder ::= '_'
