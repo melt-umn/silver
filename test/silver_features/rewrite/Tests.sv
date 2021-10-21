@@ -92,7 +92,7 @@ equalityTest(s:rewriteWith(s8, [foo(2), foo(2), foo(3)]), just([foo(2), foo(3)])
 
 global s9::s:Strategy =
   rule on Pair<Integer Integer> of
-  | (a, b) -> (b, _)(a)
+  | (a, b) -> pair(fst=b, snd=_)(a)
   end;
 
 equalityTest(s:rewriteWith(s9, (123, 456)), just((456, 123)), Maybe<Pair<Integer Integer>>, silver_tests);
@@ -152,7 +152,7 @@ equalityTest(s:rewriteWith(s13, [["a"]]), nothing(), Maybe<[[String]]>, silver_t
 
 global inc::s:Strategy = rule on Integer of i -> i + 1 end;
 
-global s15::s:Strategy = traverse (_, inc);
+global s15::s:Strategy = traverse pair(fst=_, snd=inc);
 
 equalityTest(s:rewriteWith(s15, (1, 2)), just((1, 3)), Maybe<Pair<Integer Integer>>, silver_tests);
 equalityTest(s:rewriteWith(s15, ("a", "b")), nothing(), Maybe<Pair<String String>>, silver_tests);
@@ -162,7 +162,7 @@ global s16::s:Strategy = traverse barI(inc, a1=inc, a1=_, a1=inc);
 
 equalityTest(s:rewriteWith(s16, barI(1, a1=2, a2=3)), just(barI(2, a1=4, a2=3)), Maybe<Bar>, silver_tests);
 
-global s17::s:Strategy = s:rec(\ s::s:Strategy -> traverse (s, s) <+ s:try(inc));
+global s17::s:Strategy = s:rec(\ s::s:Strategy -> traverse pair(fst=s, snd=s) <+ s:try(inc));
 
 equalityTest(s:rewriteWith(s17, (1, 2)), just((2, 3)), Maybe<Pair<Integer Integer>>, silver_tests);
 equalityTest(

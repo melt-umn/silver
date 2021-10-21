@@ -264,11 +264,11 @@ global terminalReifyRes::Either<String Pair<[Foo_t] Maybe<Bar_t>>> = reify(case 
 
 equalityTest(
   lessHackyUnparse(terminalTestValue),
-  s"""silver:core:pair([terminal(silver_features:Foo_t, "foo", ??:-1:-1), terminal(silver_features:Foo_t, "foo", ??:-1:-1)], silver:core:just(terminal(silver_features:Bar_t, "bar42", a:1:2)))""",
+  s"""silver:core:pair(fst=[terminal(silver_features:Foo_t, "foo", ??:-1:-1), terminal(silver_features:Foo_t, "foo", ??:-1:-1)], snd=silver:core:just(terminal(silver_features:Bar_t, "bar42", a:1:2)))""",
   String, silver_tests);
 equalityTest(
   case terminalSerializeRes of left(msg) -> msg | right(a) -> a end,
-  s"""silver:core:pair([terminal(silver_features:Foo_t, "foo", silver:core:loc("??", -1, -1, -1, -1, -1, -1)), terminal(silver_features:Foo_t, "foo", silver:core:loc("??", -1, -1, -1, -1, -1, -1))], silver:core:just(terminal(silver_features:Bar_t, "bar42", silver:core:loc("a", 1, 2, 3, 4, 5, 6))))""",
+  s"""silver:core:pair(fst=[terminal(silver_features:Foo_t, "foo", silver:core:loc("??", -1, -1, -1, -1, -1, -1)), terminal(silver_features:Foo_t, "foo", silver:core:loc("??", -1, -1, -1, -1, -1, -1))], snd=silver:core:just(terminal(silver_features:Bar_t, "bar42", silver:core:loc("a", 1, 2, 3, 4, 5, 6))))""",
   String, silver_tests);
 equalityTest(case terminalDeserializeRes of left(msg) -> msg | right(a) -> show(80, a.pp) end, lessHackyUnparse(terminalTestValue), String, silver_tests);
 equalityTest(reifyResToString(terminalReifyRes), lessHackyUnparse(terminalTestValue), String, silver_tests);
@@ -289,11 +289,11 @@ global reifyRes12::Either<String Pair<String [Integer]>> = deserialize("test", f
 
 equalityTest(
   case serializeRes1 of left(msg) -> msg | right(a) -> a end,
-  s"""silver:core:pair("hello", [1, 2, 3, 4])""",
+  s"""silver:core:pair(fst="hello", snd=[1, 2, 3, 4])""",
   String, silver_tests);
 equalityTest(
   reifyResToString(reifyRes12),
-  s"""silver:core:pair("hello", [1, 2, 3, 4])""",
+  s"""silver:core:pair(fst="hello", snd=[1, 2, 3, 4])""",
   String, silver_tests);
 
 type ForeignString foreign = "String";

@@ -320,12 +320,12 @@ public final class Reflection {
 		final Object[] reorderedNamedArgs = new Object[fnType.namedParams.length];
 		for (ConsCell current = namedArgs; !current.nil(); current = current.tail()) {
 			final NPair entry = (NPair)current.head();
-			final String name = entry.getChild(0).toString();
+			final String name = entry.getAnno_silver_core_fst().toString();
 			int index = Arrays.asList(fnType.namedParams).indexOf(name);
 			if (index == -1) {
 				return new Pleft(new StringCatter("Unexpected named argument " + name));
 			}
-			final NMaybe item = (NMaybe)entry.getChild(1);
+			final NMaybe item = (NMaybe)entry.getAnno_silver_core_snd();
 			if (item instanceof Pjust) {
 				Object o;
 				try {

@@ -126,7 +126,7 @@ function makeDate
   return (day, month, year);
 } 
 
-equalityTest(hackUnparse(makeDate(1, 12, 2021)), "silver:core:pair(1, silver:core:pair(12, 2021))", String, silver_tests);
+equalityTest(hackUnparse(makeDate(1, 12, 2021)), "silver:core:pair(fst=1, snd=silver:core:pair(12, 2021))", String, silver_tests);
 
 function temp
 String ::=

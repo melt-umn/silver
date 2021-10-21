@@ -28,7 +28,7 @@ Pattern ::= v1::Boolean v2::Boolean
 {
     local a::Pattern = if v1 then Silver_Pattern {true} else Silver_Pattern {false};
     local b::Pattern = if v2 then Silver_Pattern {true} else Silver_Pattern {false};
-    return Silver_Pattern { silver:core:pair($Pattern{a}, $Pattern{b}) };
+    return Silver_Pattern { silver:core:pair(fst=$Pattern{a}, snd=$Pattern{b}) };
 }
 
 equalityTest(hackUnparse(testPatternBools(true, true)), "silver:compiler:extension:patternmatching:prodAppPattern(silver:compiler:definition:core:qNameCons(silver:compiler:definition:core:nameIdLower('silver'), ':', silver:compiler:definition:core:qNameCons(silver:compiler:definition:core:nameIdLower('core'), ':', silver:compiler:definition:core:qNameId(silver:compiler:definition:core:nameIdLower('pair')))), '(', silver:compiler:extension:patternmatching:patternList_snoc(silver:compiler:extension:patternmatching:patternList_one(silver:compiler:extension:patternmatching:truePattern('true')), ',', silver:compiler:extension:patternmatching:truePattern('true')), ')')", String, silver_construction_tests);

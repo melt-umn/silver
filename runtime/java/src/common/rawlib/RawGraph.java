@@ -58,10 +58,10 @@ public final class RawGraph {
 	// contains :: (Boolean ::= Pair<a a>  Graph<a>)
 	public static boolean contains(silver.core.NPair p, TreeMap<Object,TreeSet<Object>> g) {
 		assert(p instanceof silver.core.Ppair); // document as an assert why not
-		final TreeSet<Object> set = g.get(p.getChild(0));
+		final TreeSet<Object> set = g.get(p.getAnno_silver_core_fst());
 		if(set == null)
 			return false;
-		return set.contains(p.getChild(1));
+		return set.contains(p.getAnno_silver_core_snd());
 	}
 	
 	// toList :: ([Pair<a a>] ::= Graph<a>)

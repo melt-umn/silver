@@ -75,12 +75,14 @@ equalityTest(myRemove(3, [1, 2, 3, 4]), [1, 2, 4], [Integer], silver_tests);
 
 inherited attribute isEqTo<a>::a;
 synthesized attribute isEq::Boolean;
-nonterminal EqPair<a b> with fst<a>, snd<b>, isEqTo<EqPair<a b>>, isEq;
+synthesized attribute fstAttr<a>::a;
+synthesized attribute sndAttr<a>::a;
+nonterminal EqPair<a b> with fstAttr<a>, sndAttr<b>, isEqTo<EqPair<a b>>, isEq;
 production eqPair
 MyEq a, MyEq b => top::EqPair<a b> ::= x::a y::b
 {
-  top.fst = x;
-  top.snd = y;
+  top.fstAttr = x;
+  top.sndAttr = y;
   top.isEq = case top.isEqTo of eqPair(x1, y1) -> myeq(x1, x) && myeq(y1, y) end;
 }
 
@@ -92,7 +94,7 @@ synthesized attribute isEq2::Boolean occurs on EqPair<a b>;
 aspect production eqPair
 top::EqPair<a b> ::= x::a y::b
 {
-  top.isEq2 = myeq(top.isEqTo.fst, x) && myeq(top.isEqTo.snd, y);
+  top.isEq2 = myeq(top.isEqTo.fstAttr, x) && myeq(top.isEqTo.sndAttr, y);
 }
 
 equalityTest(decorate eqPair(42, [1, 2, 3]) with {isEqTo=eqPair(42, [1, 2, 3]);}.isEq2, true, Boolean, silver_tests);
@@ -360,7 +362,7 @@ instance MyTypeable Integer {
 }
 
 instance runtimeTypeable a, MyTypeable b => MyTypeable Pair<a b> {
-  myreify = \ a::AST -> case a of AST { silver:core:pair(fst, snd) } -> (reifyUnchecked(fst), myreify(snd)) | _ -> error("not pair") end;
+  myreify = \ a::AST -> case a of AST { silver:core:pair(fst=fst, snd=snd) } -> (reifyUnchecked(fst), myreify(snd)) | _ -> error("not pair: " ++ hackUnparse(a)) end;
 }
 
 equalityTest(myreify(reflect(42)), 42, Integer, silver_tests);
@@ -438,7 +440,7 @@ instance typeError "Not decorated" => NotDecThing Decorated a with i {
 global ndt1::String = consumeNDT((12, false));
 equalityTest(ndt1, "silver:core:Pair<Integer Boolean>", String, silver_tests);
 
-wrongCode "Not decorated (arising from the instance for silver_features:NotDecThing Decorated silver:core:Pair<Integer Boolean> with {}, arising from the use of consumeNDT)" {
+wrongCode "Not decorated (arising from the instance for silver_features:NotDecThing Decorated (Integer, Boolean) with {}, arising from the use of consumeNDT)" {
   global ndt2::String = consumeNDT(decorate (12, false) with {});
 }
 
