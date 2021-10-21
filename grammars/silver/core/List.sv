@@ -362,6 +362,12 @@ function range
   return if lower >= upper then [] else lower :: range(lower + 1, upper);
 }
 
+function zip
+[(a, b)] ::= l1::[a]  l2::[b]
+{
+  return zipWith(pair, l1, l2);
+}
+
 function zipWith
 [c] ::= f::(c ::= a b)  l1::[a]  l2::[b]
 {

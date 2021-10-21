@@ -76,7 +76,7 @@ Eq a => [b] ::= elem::a  lst::[Pair<a b>]
 @{--
  - Decomposes a list of pairs into a pair of lists.
  -
- - unzipPairs(zipWith(pair, lst)) == lst
+ - unzipPairs(zip(l1, l2)) == (l1, l2)
  -
  - @param lst  A list to decompose into two lists.
  -}
