@@ -26,8 +26,8 @@ public final class RawGraph {
 		TreeMap<Object,TreeSet<Object>> ret = (TreeMap<Object,TreeSet<Object>>)g.clone();
 		for(silver.core.NPair elem : new ConsCellCollection<silver.core.NPair>(l)) {
 			assert(elem instanceof silver.core.Ppair); // document as an assert why not
-			final Object src = elem.getChild(0);
-			final Object dst = elem.getChild(1);
+			final Object src = elem.getAnno_silver_core_fst();
+			final Object dst = elem.getAnno_silver_core_snd();
 			
 			TreeSet<Object> target = ret.get(src);
 			if(target == null) {
@@ -129,8 +129,8 @@ public final class RawGraph {
 		
 		for(silver.core.NPair elem : new ConsCellCollection<silver.core.NPair>(l)) {
 			assert(elem instanceof silver.core.Ppair); // document as an assert why not
-			final Object src = elem.getChild(0);
-			final Object dst = elem.getChild(1);
+			final Object src = elem.getAnno_silver_core_fst();
+			final Object dst = elem.getAnno_silver_core_snd();
 
 			// So we have a transitively closed graph, currently, and we
 			// suddenly want to add the edge (src, dst), and repair the closure.
