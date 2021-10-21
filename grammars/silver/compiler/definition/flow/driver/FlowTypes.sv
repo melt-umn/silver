@@ -53,7 +53,7 @@ function ntListCoalesce
 function toFlatEdges
 [Pair<String String>] ::= x::Pair<String [String]>
 {
-  return map(pair(x.fst, _), x.snd);
+  return map(pair(fst=x.fst, snd=_), x.snd);
 }
 
 
@@ -124,7 +124,7 @@ function findBrandNewEdges
   -- TODO: we might take '[Pair<String Set<String>>]' insteadof [String] and gain speed?
   local newinhs :: [String] = removeAll(set:toList(g:edgesFrom(syn, currentFlowType)), inhs);
   
-  local newEdges :: [Pair<String String>] = map(pair(syn, _), newinhs);
+  local newEdges :: [Pair<String String>] = map(pair(fst=syn, snd=_), newinhs);
   
   return if null(candidates) then [] else newEdges ++ findBrandNewEdges(tail(candidates), currentFlowType);
 }

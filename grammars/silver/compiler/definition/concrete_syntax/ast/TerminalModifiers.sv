@@ -115,7 +115,7 @@ top::SyntaxTerminalModifier ::= cls::[String]
                      else ["Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from lexer class on terminal " ++ top.terminalName ++ ")"],
                    zip(allCls, allClsRefsL)); 
-  top.classTerminalContribs := map(pair(_, top.terminalName), allCls);
+  top.classTerminalContribs := map(pair(fst=_, snd=top.terminalName), allCls);
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
   top.dominatesXML := implode("", map((.classDomContribs), allClsRefs));
   top.submitsXML := implode("", map((.classSubContribs), allClsRefs));

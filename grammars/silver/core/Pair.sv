@@ -1,7 +1,7 @@
 grammar silver:core;
 
-synthesized attribute fst<a> :: a;
-synthesized attribute snd<a> :: a;
+annotation fst<a> :: a;
+annotation snd<a> :: a;
 
 @{--
  - The basic product type, counterpart to Either.
@@ -9,11 +9,8 @@ synthesized attribute snd<a> :: a;
 nonterminal Pair<a b> with fst<a>, snd<b>;
 
 abstract production pair
-top::Pair<a b> ::= f::a  s::b
-{
-  top.fst = f;
-  top.snd = s;
-}
+top::Pair<a b> ::=
+{}
 
 function fst
 a ::= p::Pair<a b>

@@ -365,7 +365,7 @@ function range
 function zip
 [(a, b)] ::= l1::[a]  l2::[b]
 {
-  return zipWith(pair, l1, l2);
+  return zipWith(pair(fst=_, snd=_), l1, l2);
 }
 
 function zipWith
