@@ -23,12 +23,12 @@ concrete production patternTuple_two
 top::TuplePatternList ::= fst::Pattern ',' snd::Pattern
 {
   top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-  top.asTuplePattern = Silver_Pattern { silver:core:pair($Pattern{fst}, $Pattern{snd}) };
+  top.asTuplePattern = Silver_Pattern { silver:core:pair(fst=$Pattern{fst}, snd=$Pattern{snd}) };
 }
 
 concrete production patternTuple_more
 top::TuplePatternList ::= fst::Pattern ',' snd::TuplePatternList
 {
   top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-  top.asTuplePattern = Silver_Pattern { silver:core:pair($Pattern{fst}, $Pattern{snd.asTuplePattern}) };
+  top.asTuplePattern = Silver_Pattern { silver:core:pair(fst=$Pattern{fst}, snd=$Pattern{snd.asTuplePattern}) };
 }

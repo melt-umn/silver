@@ -91,7 +91,7 @@ concrete production tupleList_2Elements
 top::TupleList ::= fst::Expr ',' snd::Expr
 {
   top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-  top.translation = Silver_Expr { silver:core:pair($Expr{fst}, $Expr{snd}) };
+  top.translation = Silver_Expr { silver:core:pair(fst=$Expr{fst}, snd=$Expr{snd}) };
 }
 
 -- There are more than two elements in the tuple
@@ -99,5 +99,5 @@ concrete production tupleList_nElements
 top::TupleList ::= fst::Expr ',' snd::TupleList
 {
   top.unparse = fst.unparse ++ ", " ++ snd.unparse;
-  top.translation = Silver_Expr { silver:core:pair($Expr{fst}, $Expr{snd.translation}) };
+  top.translation = Silver_Expr { silver:core:pair(fst=$Expr{fst}, snd=$Expr{snd.translation}) };
 }
