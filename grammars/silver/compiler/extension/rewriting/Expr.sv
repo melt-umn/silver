@@ -7,7 +7,7 @@ autocopy attribute boundVars::[Pair<String Boolean>] occurs on Expr, Exprs, Expr
 
 attribute transform<ASTExpr> occurs on Expr;
 
-synthesized attribute decRuleExprs::[Pair<String Decorated Expr>] occurs on Expr, AssignExpr, PrimPatterns, PrimPattern;
+synthesized attribute decRuleExprs::[(String, Decorated Expr with {decorate, boundVars})] occurs on Expr, AssignExpr, PrimPatterns, PrimPattern;
 
 aspect default production
 top::Expr ::=
