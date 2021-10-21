@@ -436,7 +436,7 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
       if !null(p.snd) then []
       else ["Terminal " ++ p.fst ++ " was referenced but " ++
             "this grammar was not included in this parser. (Referenced from disambiguation group " ++ n ++ ")"],
-    zipWith(pair, terms, trefs));
+    zip(terms, trefs));
 
   top.cstNormalize := [top];
 

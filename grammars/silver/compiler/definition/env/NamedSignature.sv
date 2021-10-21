@@ -165,7 +165,7 @@ function findNamedSigElemType
 Type ::= n::String l::[NamedSignatureElement]
 {
   local elems::NamedSignatureElements = foldNamedSignatureElements(l);
-  return fromMaybe(errorType(), lookup(n, zipWith(pair, elems.elementNames, elems.elementTypes)));
+  return fromMaybe(errorType(), lookup(n, zip(elems.elementNames, elems.elementTypes)));
 }
 
 --------------

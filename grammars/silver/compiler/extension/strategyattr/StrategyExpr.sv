@@ -557,7 +557,7 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
   
   -- (child name, if attr occurs on child then just(attr name) else nothing())
   local childAccesses::[Pair<String Maybe<String>>] =
-    zipWith(pair, top.frame.signature.inputNames, s.attrRefNames);
+    zip(top.frame.signature.inputNames, s.attrRefNames);
   top.partialTranslation = -- This is never total
     if prod.lookupValue.fullName == top.frame.fullName
     then

@@ -78,7 +78,7 @@ top::SyntaxProductionModifier ::= terms::[String]
                      if !null(a.snd) then []
                      else ["Terminal " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from layout clause on production " ++ top.productionName ++ ")"],
-                   zipWith(pair, terms, termRefs));
+                   zip(terms, termRefs));
 
   top.customLayout := just(terms);
 }

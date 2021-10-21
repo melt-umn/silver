@@ -114,7 +114,7 @@ top::SyntaxTerminalModifier ::= cls::[String]
                      if !null(a.snd) then []
                      else ["Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from lexer class on terminal " ++ top.terminalName ++ ")"],
-                   zipWith(pair, allCls, allClsRefsL)); 
+                   zip(allCls, allClsRefsL)); 
   top.classTerminalContribs := map(pair(_, top.terminalName), allCls);
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
   top.dominatesXML := implode("", map((.classDomContribs), allClsRefs));
@@ -141,7 +141,7 @@ top::SyntaxTerminalModifier ::= sub::[String]
                      if !null(a.snd) then []
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from submit clause on terminal " ++ top.terminalName ++ ")"],
-                   zipWith(pair, sub, subRefs)); 
+                   zip(sub, subRefs)); 
   top.submitsXML := implode("", map(xmlCopperRef, map(head, subRefs)));
 }
 {--
@@ -157,7 +157,7 @@ top::SyntaxTerminalModifier ::= dom::[String]
                      if !null(a.snd) then []
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from dominates clause on terminal " ++ top.terminalName ++ ")"],
-                   zipWith(pair, dom, domRefs)); 
+                   zip(dom, domRefs)); 
   top.dominatesXML := implode("", map(xmlCopperRef, map(head, domRefs)));
 }
 {--
@@ -197,7 +197,7 @@ top::SyntaxTerminalModifier ::= terms::[String] grams::[String]
                      if !null(a.snd) then []
                      else ["Terminal " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from use prefix seperator for clause for terminal)"],
-                   zipWith(pair, terms, termRefs));
+                   zip(terms, termRefs));
   
   top.cstErrors <-
     flatMap(

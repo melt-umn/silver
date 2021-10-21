@@ -56,7 +56,7 @@ top::SyntaxLexerClassModifier ::= super::[String]
                      if !null(a.snd) then []
                      else ["Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from extends clause for lexer class)"],
-                   zipWith(pair, super, superRefsL));
+                   zip(super, superRefsL));
   top.superClassContribs := map(pair(top.className, _), super);
 }
 
@@ -73,7 +73,7 @@ top::SyntaxLexerClassModifier ::= sub::[String]
                      if !null(a.snd) then []
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from submit clause for lexer class)"], --TODO: come up with a way to reference a given lexer class (line numbers would be great)
-                   zipWith(pair, sub, subRefs)); 
+                   zip(sub, subRefs)); 
   top.submitsXML := implode("", map(xmlCopperRef, map(head, subRefs)));
 }
 {--
@@ -89,7 +89,7 @@ top::SyntaxLexerClassModifier ::= dom::[String]
                      if !null(a.snd) then []
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from dominates clause for lexer class)"],
-                   zipWith(pair, dom, domRefs));
+                   zip(dom, domRefs));
   top.dominatesXML := implode("", map(xmlCopperRef, map(head, domRefs)));
 }
 
