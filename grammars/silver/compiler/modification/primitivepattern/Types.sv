@@ -181,6 +181,16 @@ top::Type ::= inhs::[String]
     end;
 }
 
+aspect production inhSetConstType
+top::Type ::= fn::String
+{
+  top.refine =
+    case top.refineWith of
+    | inhSetConstType(ofn) when fn == ofn -> emptySubst()
+    | _ -> errorSubst("Tried to refine inh set const type " ++ prettyType(top) ++ " with " ++ prettyType(top.refineWith))
+    end;
+}
+
 aspect production nonterminalType
 top::Type ::= fn::String ks::[Kind] _
 {

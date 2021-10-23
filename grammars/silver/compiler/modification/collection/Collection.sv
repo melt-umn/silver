@@ -347,9 +347,6 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 
 -- The use syntax --------------------------------------------------------------
 
-terminal Contains_t      '<-' lexer classes {SPECOP};
-terminal BaseContains_t  ':=' lexer classes {SPECOP};
-
 concrete production attrContainsAppend
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
 {

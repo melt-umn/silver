@@ -317,6 +317,7 @@ function getMinInhSetMembers
     end;
 }
 
+-- Compute a lower bound on the members of the reference set for a reference type
 function getMinRefSet
 [String] ::= t::Type e::Decorated Env
 {
@@ -351,6 +352,7 @@ function getMaxInhSetMembers
     end;
 }
 
+-- Try to compute an upper bound on the members of the reference set for a reference type
 function getMaxRefSet
 Maybe<[String]> ::= t::Type e::Decorated Env
 {

@@ -233,13 +233,23 @@ top::Type ::= fn::String
   top.freeVariables = [];
 }
 
-
 {--
  - A type-level inherited attribute set.
  - @param inhs  The (sorted) list of fully-qualified inherited attribute names. 
  -}
 abstract production inhSetType
 top::Type ::= inhs::[String]
+{
+  top.kindrep = inhSetKind();
+  top.freeVariables = [];
+}
+
+{--
+ - A type constant standing for some set of inherited attributes, that may be extended elsewhere.
+ - @param fn  The fully qualified name of the type constant. 
+ -}
+abstract production inhSetConstType
+top::Type ::= fn::String
 {
   top.kindrep = inhSetKind();
   top.freeVariables = [];

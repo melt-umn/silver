@@ -14,7 +14,7 @@ monoid attribute flowDefs :: [FlowDef];
 monoid attribute specDefs :: [(String, String, [String], [String])];  -- (nt, attr, [inhs], [referenced flow specs])
 monoid attribute refDefs :: [(String, [String])];
 
-nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree;
+nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree, inhSetMemberTree, inhSetRefTree;
 
 annotation synTree :: EnvTree<FlowDef>;
 annotation inhTree :: EnvTree<FlowDef>;
@@ -29,6 +29,8 @@ annotation nonSuspectTree :: EnvTree<[String]>;
 annotation hostSynTree :: EnvTree<FlowDef>;
 annotation specTree :: EnvTree<(String, [String], [String])>;
 annotation prodGraphTree :: EnvTree<FlowDef>;
+annotation inhSetMemberTree :: EnvTree<String>;
+annotation inhSetRefTree :: EnvTree<(VertexType, Location)>;
 
 abstract production flowEnv
 top::FlowEnv ::=
@@ -52,7 +54,9 @@ FlowEnv ::=
     nonSuspectTree = directBuildTree(d.nonSuspectContribs),
     hostSynTree = directBuildTree(d.hostSynTreeContribs),
     specTree = directBuildTree(specContribs),
-    prodGraphTree = directBuildTree(d.prodGraphContribs)
+    prodGraphTree = directBuildTree(d.prodGraphContribs),
+    inhSetMemberTree = directBuildTree(d.inhSetMemberContribs),
+    inhSetRefTree = directBuildTree(d.inhSetRefContribs)
   );
 }
 
