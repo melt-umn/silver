@@ -142,7 +142,7 @@ top::Context ::= i1::Type i2::Type
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
       i1.freeFlexibleVars ++ i2.freeFlexibleVars)
     else
-      case getMaxInhSetMembers([], i1, top.env), getMinInhSetMembers([], i2, top.env) of
+      case getMaxInhSetMembers([], i1, top.env, top.flowEnv), getMinInhSetMembers([], i2, top.env, top.flowEnv) of
       | (just(inhs1), _), (inhs2, _) when all(map(contains(_, inhs2), inhs1)) -> []
       | (_, tvs1), (_, tvs2) when any(map(contains(_, tvs2), tvs1)) -> []
       | _, _ -> [err(top.contextLoc, s"${prettyTypeWith(i1, top.freeVariables)} is not a subset of ${prettyTypeWith(i2, top.freeVariables)} (arising from ${top.contextSource})")]

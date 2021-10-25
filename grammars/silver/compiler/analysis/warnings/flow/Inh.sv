@@ -185,6 +185,14 @@ function checkAllEqDeps
   return flatMap(checkEqDeps(_, l, prodName, flowEnv, realEnv, anonResolve, runMwda), v);
 }
 
+function checkRemoteRefInhDeps
+[Message] ::= inhSetName::String  attrName::String  flowEnv::FlowEnv  realEnv::Decorated Env runMwda::Boolean
+{
+  return flatMap(
+    \ ref::(String, VertexType, Location) -> checkEqDeps(ref.2.inhVertex(attrName), ref.3, ref.1, flowEnv, realEnv, [], runMwda),
+    getInhSetRefs(attrName, flowEnv));
+}
+
 {--
  - Look up flow types, either from the flow environment (for a nonterminal) or the occurs-on contexts (for a type var).
  - @param syn  A synthesized attribute's full name
@@ -223,6 +231,20 @@ function inhDepsForSynOnType
 
 --------------------------------------------------------------------------------
 
+
+aspect production inhSetConstContribDecl
+top::AGDcl ::= 'inhset' q::QNameType '<-' _ inhs::FlowSpecInhs '}' ';'
+{
+  top.errors <-
+    if top.config.warnAll || top.config.warnMissingInh || top.config.runMwda
+    then flatMap(
+      \ attrName::String ->
+        let errs::[Message] = checkRemoteRefInhDeps(q.lookupType.fullName, attrName, top.flowEnv, top.env, top.config.runMwda)
+        in if null(errs) then [] else [nested(top.location, s"In addition of attribute ${attrName} to ${q.lookupType.fullName}:", errs)]
+        end,
+      inhs.inhList)
+    else [];
+}
 
 aspect production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e::Expr ';'
@@ -549,7 +571,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 -- on a unknown decorated tree are in the ref-set.
   local acceptable :: ([String], [TyVar]) =
     case finalTy of
-    | decoratedType(_, i) -> getMinInhSetMembers([], i, top.env)
+    | decoratedType(_, i) -> getMinInhSetMembers([], i, top.env, top.flowEnv)
     | _ -> ([], [])
     end;
   local diff :: [String] =
@@ -641,7 +663,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
       | hasVertex(_) -> [] -- no check to make, as it was done transitively
       -- without a vertex, we're accessing from a reference, and so...
       | noVertex() ->
-          if contains(q.attrDcl.fullName, getMinRefSet(finalTy, top.env))
+          if contains(q.attrDcl.fullName, getMinInhsOnRef(finalTy, top.env, top.flowEnv))
           then []
           else [mwdaWrn(top.location, "Access of inherited attribute " ++ q.name ++ " on reference of type " ++ prettyType(finalTy) ++ " is not permitted", top.config.runMwda)]
       end
@@ -681,7 +703,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   -- Subtract the ref set from our deps
   local diff :: [String] =
-    set:toList(set:removeAll(getMinRefSet(e.typerep, top.env), set:add(inhDeps, set:empty())));
+    set:toList(set:removeAll(getMinInhsOnRef(e.typerep, top.env, top.flowEnv), set:add(inhDeps, set:empty())));
 
   top.errors <-
     if null(e.errors)
@@ -753,7 +775,7 @@ Boolean ::= prod::ValueDclInfo  sigName::String  attrName::String  realEnv::Deco
 
 -- TODO: There are a few final places where we need to `checkEqDeps` for the sake of `anonVertex`s
 
--- global declarations, action blocks (production, terminal, disam, etc)
+-- action blocks (production, terminal, disam, etc)
 
 -- But we don't create flowEnv information for these locations so they can't be checked... oops
 -- (e.g. `checkEqDeps` wants a production fName to look things up about.)

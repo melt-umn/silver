@@ -31,7 +31,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
 }
 
 concrete production inhSetConstBaseDecl
-top::AGDcl ::= 'inhset' id::Name ':=' InhSetLCurly_t inhs::FlowSpecInhs '}'
+top::AGDcl ::= 'inhset' id::Name ':=' InhSetLCurly_t inhs::FlowSpecInhs '}' ';'
 {
   top.unparse = s"inhset ${id.unparse} := {${inhs.unparse}};";
 
@@ -54,7 +54,7 @@ top::AGDcl ::= 'inhset' id::Name ':=' InhSetLCurly_t inhs::FlowSpecInhs '}'
 }
 
 concrete production inhSetConstContribDecl
-top::AGDcl ::= 'inhset' q::QNameType '<-' InhSetLCurly_t inhs::FlowSpecInhs '}'
+top::AGDcl ::= 'inhset' q::QNameType '<-' InhSetLCurly_t inhs::FlowSpecInhs '}' ';'
 {
   top.unparse = s"inhset ${q.unparse} <- {${inhs.unparse}};";
 
