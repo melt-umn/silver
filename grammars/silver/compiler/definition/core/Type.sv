@@ -4,7 +4,7 @@ grammar silver:compiler:definition:core;
 synthesized attribute applicationDispatcher :: (Expr ::= Decorated Expr  Decorated AppExprs  Decorated AnnoAppExprs  Location);
 -- LHS type gives this to 'access' for "foo.some" accesses.
 -- (See DclInfo for the next step)
-synthesized attribute accessHandler :: (Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location);
+synthesized attribute accessHandler :: (Expr ::= Decorated Expr with AccessInhs  Decorated QNameAttrOccur  Location);
 
 -- Used for poor man's type classes
 -- TODO: Finish removing these and replace with real type classes

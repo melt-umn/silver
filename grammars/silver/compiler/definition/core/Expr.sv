@@ -362,6 +362,8 @@ top::Expr ::= e::Expr '.' 'forward'
   top.typerep = e.typerep;
 }
 
+inhset AccessInhs := {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config};
+
 concrete production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
@@ -385,7 +387,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 }
 
 abstract production errorAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   top.freeVars <- e.freeVars;
@@ -402,7 +404,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 abstract production annoAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   top.freeVars <- e.freeVars;
@@ -416,7 +418,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 abstract production terminalAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
@@ -439,7 +441,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 abstract production undecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   top.freeVars := e.freeVars;
@@ -458,7 +460,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
  - This production is intended to permit that.
  -}
 abstract production accessBouncer
-top::Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e::Expr  q::Decorated QNameAttrOccur
+top::Expr ::= target::(Expr ::= Decorated Expr with AccessInhs  Decorated QNameAttrOccur  Location) e::Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   propagate freeVars;
@@ -467,18 +469,18 @@ top::Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Locati
   forwards to target(e, q, top.location);
 }
 function accessBounceDecorate
-Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e::Decorated Expr  q::Decorated QNameAttrOccur  l::Location
+Expr ::= target::(Expr ::= Decorated Expr with AccessInhs  Decorated QNameAttrOccur  Location) e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur  l::Location
 {
-  return accessBouncer(target, decorateExprWithEmpty('decorate', exprRef(e, location=l), 'with', '{', '}', location=l), q, location=l);
+  return accessBouncer(target, decorateExprWithEmpty('decorate', exprRef(castRef(e), location=l), 'with', '{', '}', location=l), q, location=l);
 }
 function accessBounceUndecorate
-Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e::Decorated Expr  q::Decorated QNameAttrOccur  l::Location
+Expr ::= target::(Expr ::= Decorated Expr with AccessInhs  Decorated QNameAttrOccur  Location) e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur  l::Location
 {
-  return accessBouncer(target, mkStrFunctionInvocationDecorated(l, "silver:core:new", [e]), q, location=l);
+  return accessBouncer(target, mkStrFunctionInvocationDecorated(l, "silver:core:new", [castRef(e)]), q, location=l);
 }
 
 abstract production decoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   top.freeVars := e.freeVars;
@@ -495,7 +497,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 abstract production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   top.freeVars <- e.freeVars;
@@ -504,7 +506,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 abstract production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   top.freeVars <- e.freeVars;
@@ -514,7 +516,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 
 -- TODO: change name. really "unknownDclAccessHandler"
 abstract production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   top.freeVars <- e.freeVars;

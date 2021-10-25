@@ -557,7 +557,7 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   -- oh no again
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -649,7 +649,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   -- In this case, ONLY check for references.
   -- The transitive deps error will be less difficult to figure out when there's

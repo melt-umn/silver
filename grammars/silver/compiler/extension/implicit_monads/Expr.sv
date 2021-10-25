@@ -525,7 +525,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.mtyperep = errorType();
   propagate mDownSubst, mUpSubst;
@@ -553,7 +553,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   local ne::Expr = new(e);
   ne.mDownSubst = top.mDownSubst;
@@ -599,7 +599,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   local ne::Expr = new(e);
   ne.mDownSubst = top.mDownSubst;
@@ -636,7 +636,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   local ne::Expr = new(e);
   ne.mDownSubst = top.mDownSubst;
@@ -682,7 +682,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   local ne::Expr = new(e);
   ne.mDownSubst = top.mDownSubst;
@@ -728,7 +728,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   local ne::Expr = new(e);
   ne.mDownSubst = top.mDownSubst;

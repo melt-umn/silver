@@ -20,13 +20,13 @@ synthesized attribute defLHSDispatcher :: (DefLHS ::= Decorated QName  Location)
  - @see accessDispather in TypeExp.sv, for the first step in that process...
  - @see decoratedAccessHandler production for where this is used
  -}
-synthesized attribute decoratedAccessHandler :: (Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) occurs on AttributeDclInfo;
+synthesized attribute decoratedAccessHandler :: (Expr ::= Decorated Expr with AccessInhs  Decorated QNameAttrOccur  Location) occurs on AttributeDclInfo;
 {--
  - The handler for 'x.a' for 'a', given that 'x' is UNdecorated.
  - @see accessDispather in TypeExp.sv, for the first step in that process...
  - @see undecoratedAccessHandler production for where this is used
  -}
-synthesized attribute undecoratedAccessHandler :: (Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) occurs on AttributeDclInfo;
+synthesized attribute undecoratedAccessHandler :: (Expr ::= Decorated Expr with AccessInhs  Decorated QNameAttrOccur  Location) occurs on AttributeDclInfo;
 {--
  - The production an "equation" should forward to for this type of attribute (i.e. the 'a' in 'x.a = e')
  -}

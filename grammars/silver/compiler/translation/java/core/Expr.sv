@@ -252,14 +252,14 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
@@ -273,7 +273,7 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.translation = wrapAccessWithOT(top, s"${e.translation}.synthesized(${q.dcl.attrOccursIndex})");
 
@@ -292,7 +292,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.translation = wrapAccessWithOT(top, s"${e.translation}.inherited(${q.dcl.attrOccursIndex})");
 
@@ -304,7 +304,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   local accessor :: String =
     if q.name == "lexeme" || q.name == "location"
@@ -323,7 +323,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   -- Note that the transType is specific to the nonterminal we're accessing from.
   top.translation = s"((${finalType(top).transType})((${makeAnnoName(q.attrDcl.fullName)})${e.translation}).getAnno_${makeIdName(q.attrDcl.fullName)}())";

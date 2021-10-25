@@ -176,43 +176,45 @@ top::Expr ::= e::Expr '.' 'forward'
       nilNamedASTExpr());
 }
 
+inhset AccessInhs <- {boundVars};
+
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.transform =
     applyASTExpr(
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(finalType(e), location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(finalType(castRef(e)), location=builtin)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
 }
 
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.transform =
     applyASTExpr(
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(finalType(e), location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(finalType(castRef(e)), location=builtin)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
 }
 
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.transform =
     applyASTExpr(
       antiquoteASTExpr(
         Silver_Expr {
           silver:rewrite:anyASTExpr(
-            \ e::$TypeExpr{typerepTypeExpr(finalType(e), location=builtin)} -> e.$qName{q.name})
+            \ e::$TypeExpr{typerepTypeExpr(finalType(castRef(e)), location=builtin)} -> e.$qName{q.name})
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
@@ -220,12 +222,12 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
   local finalTy::Type =
-    case finalType(e) of
+    case finalType(castRef(e)) of
     | decoratedType(nt, varType(_)) ->
       decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
     | t -> t
@@ -267,7 +269,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
         antiquoteASTExpr(
           Silver_Expr {
             silver:rewrite:anyASTExpr(
-              \ e::$TypeExpr{typerepTypeExpr(finalType(e).decoratedType, location=builtin)} -> e.$qName{q.name})
+              \ e::$TypeExpr{typerepTypeExpr(finalType(castRef(e)).decoratedType, location=builtin)} -> e.$qName{q.name})
           }),
         consASTExpr(varASTExpr(qn.name), nilASTExpr()),
         nilNamedASTExpr())
@@ -284,12 +286,12 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
   local finalTy::Type =
-    case finalType(e) of
+    case finalType(castRef(e)) of
     | decoratedType(nt, varType(_)) ->
       decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
     | t -> t
@@ -306,12 +308,12 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
   local finalTy::Type =
-    case finalType(e) of
+    case finalType(castRef(e)) of
     | decoratedType(nt, varType(_)) ->
       decoratedType(nt, inhSetType(sort(concat(getInhsForNtRef(nt.typeName, top.flowEnv)))))
     | t -> t

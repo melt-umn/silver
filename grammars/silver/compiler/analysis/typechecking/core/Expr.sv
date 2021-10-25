@@ -78,7 +78,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 }
 
 aspect production undecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're UNdecorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
@@ -96,7 +96,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production accessBouncer
-top::Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e::Expr  q::Decorated QNameAttrOccur
+top::Expr ::= target::(Expr ::= Decorated Expr with AccessInhs  Decorated QNameAttrOccur  Location) e::Expr  q::Decorated QNameAttrOccur
 {
   propagate upSubst, downSubst;
 }
@@ -116,7 +116,7 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production decoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're decorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
@@ -132,7 +132,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 
   thread downSubst, upSubst on top, errCheck1, forward;
 }
-  
+
 
 aspect production noteAttachment
 top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'

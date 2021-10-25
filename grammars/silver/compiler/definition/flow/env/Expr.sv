@@ -176,14 +176,14 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.flowDefs <- e.flowDefs;
 }
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
 -- this is because by default the lhs will have 'taking ref' flow deps (see above)
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.flowDeps := 
     case e.flowVertexInfo of
@@ -193,7 +193,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.flowDefs <- e.flowDefs;
 }
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.flowDeps :=
     case e.flowVertexInfo of
@@ -203,19 +203,19 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.flowDefs <- e.flowDefs;
 }
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.flowDeps <- []; -- errors, who cares?
   top.flowDefs <- e.flowDefs;
 }
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.flowDeps <- e.flowDeps;
   top.flowDefs <- e.flowDefs;
 }
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::Decorated Expr with AccessInhs  q::Decorated QNameAttrOccur
 {
   top.flowDeps <- e.flowDeps;
   top.flowDefs <- e.flowDefs;
