@@ -125,7 +125,7 @@ top::VarBinder ::= n::Name
     then decoratedType(top.bindingType, freshInhSet())
     else top.bindingType;
   production finalTy::Type = performSubstitution(ty, top.finalSubst);
-  production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
+  production refSet::Maybe<[String]> = getDepsForTakingRef(finalTy, top.env, top.flowEnv);
 
   production fName :: String = "__pv" ++ toString(genInt()) ++ ":" ++ n.name;
   

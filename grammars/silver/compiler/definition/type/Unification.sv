@@ -144,6 +144,16 @@ top::Type ::= inhs::[String]
     end;
 }
 
+aspect production inhSetConstType
+top::Type ::= fn::String
+{
+  top.unify =
+    case top.unifyWith of
+    | inhSetConstType(ofn) when fn == ofn -> emptySubst()
+    | _ -> errorSubst("Tried to unify inh set constant type " ++ prettyType(top) ++ " with " ++ prettyType(top.unifyWith))
+    end;
+}
+
 aspect production decoratedType
 top::Type ::= te::Type i::Type
 {

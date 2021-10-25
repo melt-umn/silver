@@ -180,6 +180,11 @@ Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
 {
   return typeDef(defaultEnvItem(typeAliasDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
+function inhSetConstDef
+Def ::= sg::String sl::Location fn::String
+{
+  return typeDef(defaultEnvItem(inhSetConstDcl(fn,sourceGrammar=sg,sourceLocation=sl)));
+}
 function synDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
 {

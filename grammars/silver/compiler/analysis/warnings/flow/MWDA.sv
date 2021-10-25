@@ -6,7 +6,7 @@ imports silver:util:treeset as set;
 -- driver stuff
 imports silver:util:cmdargs;
 imports silver:compiler:driver only parseArgs;
-imports silver:compiler:driver:util only isExportedBy;
+imports silver:compiler:driver:util only isExportedBy, RootSpec;
 imports silver:compiler:analysis:warnings;
 
 -- silver
@@ -14,6 +14,7 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:env;
+imports silver:compiler:definition:flow:syntax;
 
 -- flow analysis
 imports silver:compiler:definition:flow:ast;

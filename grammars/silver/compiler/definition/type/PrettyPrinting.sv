@@ -207,6 +207,12 @@ top::Type ::= inhs::[String]
         groupBy(\ i1::String i2::String -> init(explode(":", i1)) == init(explode(":", i2)), inhs)))}}";
 }
 
+aspect production inhSetConstType
+top::Type ::= fn::String
+{
+  top.typepp = fn;
+}
+
 aspect production decoratedType
 top::Type ::= t::Type i::Type
 {

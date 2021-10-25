@@ -14,7 +14,7 @@ monoid attribute flowDefs :: [FlowDef];
 monoid attribute specDefs :: [(String, String, [String], [String])];  -- (nt, attr, [inhs], [referenced flow specs])
 monoid attribute refDefs :: [(String, [String])];
 
-nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree;
+nonterminal FlowEnv with synTree, inhTree, defTree, fwdTree, prodTree, fwdInhTree, refTree, localInhTree, localTree, nonSuspectTree, hostSynTree, specTree, prodGraphTree, inhSetBaseMemberTree, inhSetMemberTree, inhSetRefTree;
 
 annotation synTree :: EnvTree<FlowDef>;
 annotation inhTree :: EnvTree<FlowDef>;
@@ -29,6 +29,9 @@ annotation nonSuspectTree :: EnvTree<[String]>;
 annotation hostSynTree :: EnvTree<FlowDef>;
 annotation specTree :: EnvTree<(String, [String], [String])>;
 annotation prodGraphTree :: EnvTree<FlowDef>;
+annotation inhSetBaseMemberTree :: EnvTree<String>;
+annotation inhSetMemberTree :: EnvTree<String>;
+annotation inhSetRefTree :: EnvTree<(String, VertexType, Location)>;
 
 abstract production flowEnv
 top::FlowEnv ::=
@@ -52,7 +55,10 @@ FlowEnv ::=
     nonSuspectTree = directBuildTree(d.nonSuspectContribs),
     hostSynTree = directBuildTree(d.hostSynTreeContribs),
     specTree = directBuildTree(specContribs),
-    prodGraphTree = directBuildTree(d.prodGraphContribs)
+    prodGraphTree = directBuildTree(d.prodGraphContribs),
+    inhSetBaseMemberTree = directBuildTree(d.inhSetBaseMemberContribs),
+    inhSetMemberTree = directBuildTree(d.inhSetMemberContribs),
+    inhSetRefTree = directBuildTree(d.inhSetRefContribs)
   );
 }
 
@@ -157,6 +163,95 @@ function getGraphContribsFor
   return searchEnvTree(prod, e.prodGraphTree);
 }
 
+function getInhSetConstBaseMembers
+[String] ::= fn::String  e::FlowEnv
+{
+  return sort(nub(searchEnvTree(fn, e.inhSetBaseMemberTree)));
+}
+
+function getInhSetConstMembers
+[String] ::= fn::String  e::FlowEnv
+{
+  return sort(nub(searchEnvTree(fn, e.inhSetMemberTree)));
+}
+
+function getInhSetRefs
+[(String, VertexType, Location)] ::= fn::String  e::FlowEnv
+{
+  return searchEnvTree(fn, e.inhSetRefTree);
+}
+
+-- Compute a lower bound on the members of an InhSet type, including transitive ones arising from subset constraints
+function getMinInhSetMembers
+([String], [TyVar]) ::= seen::[TyVar] t::Type env::Decorated Env flowEnv::FlowEnv
+{
+  local c::Context = inhSubsetContext(varType(freshTyVar(inhSetKind())), t);
+  c.env = env;
+
+  local recurse::[([String], [TyVar])] =
+    map(
+      \ d::InstDclInfo -> getMinInhSetMembers(t.freeVariables ++ seen, d.typeScheme.monoType, env, flowEnv),
+      c.resolved);
+
+  return
+    case t of
+    | skolemType(tv) when contains(tv, seen) -> ([], [])
+    | varType(_) -> ([], [])  -- If an InhSet is unspecialized after type checking, assume it is empty
+    | inhSetConstType(fn) -> (getInhSetConstMembers(fn, flowEnv), [])
+    | _ -> (sort(unions(t.inhSetMembers :: map(fst, recurse))), unions(t.freeVariables :: map(snd, recurse))) 
+    end;
+}
+
+-- Compute a lower bound on the members of the reference set for a reference type
+function getMinInhsOnRef
+[String] ::= t::Type env::Decorated Env flowEnv::FlowEnv
+{
+  return
+    case t of
+    | decoratedType(_, i) -> getMinInhSetMembers([], i, env, flowEnv).fst
+    | _ -> []
+    end;
+}
+
+-- Try to compute an upper bound on the members of an InhSet type, including transitive ones arising from subset constraints
+function getMaxInhSetMembers
+(Maybe<[String]>, [TyVar]) ::= seen::[TyVar] t::Type env::Decorated Env flowEnv::FlowEnv
+{
+  local c::Context = inhSubsetContext(t, varType(freshTyVar(inhSetKind())));
+  c.env = env;
+
+  local recurse::[(Maybe<[String]>, [TyVar])] =
+    map(
+      \ d::InstDclInfo -> getMaxInhSetMembers(t.freeVariables ++ seen, d.typerep2, env, flowEnv),
+      c.resolved);
+
+  return
+    case t of
+    | skolemType(tv) when contains(tv, seen) -> (nothing(), [])
+    | varType(_) -> (just([]), [])  -- If an InhSet is unspecialized after type checking, assume it is empty
+    | inhSetType(inhs) -> (just(inhs), [])
+    | inhSetConstType(_) -> (nothing(), [])  -- We can never compute an upper bound for the contributions
+    | _ -> (map(sort, foldr(
+        \ inhs1::Maybe<[String]> inhs2::Maybe<[String]> -> alt(lift2(intersect, inhs1, inhs2), alt(inhs1, inhs2)),
+        empty, map(fst, recurse))),
+      unions(t.freeVariables :: map(snd, recurse)))
+    end;
+}
+
+-- Try to compute an upper bound on the members of the reference set for a reference type
+function getDepsForTakingRef
+Maybe<[String]> ::= t::Type env::Decorated Env flowEnv::FlowEnv
+{
+  return
+    case t of
+    | decoratedType(_, inhSetConstType(fn)) -> just(getInhSetConstBaseMembers(fn, flowEnv))  -- Not all the inhs on the ref, but all the ones we need to supply here
+    | decoratedType(_, i) -> getMaxInhSetMembers([], i, env, flowEnv).fst
+    | _ -> just([])
+    end;
+}
+
+attribute flowEnv occurs on Contexts, Context;
+
 monoid attribute occursContextInhDeps::[(String, String, [String])]  -- (type name, syn, inhs)
   occurs on Contexts, Context;
 monoid attribute occursContextInhSetDeps::[(String, String, [TyVar])]  -- (type name, syn, InhSet tyvars)
@@ -172,7 +267,7 @@ top::Context ::=
 aspect production synOccursContext
 top::Context ::= syn::String _ _ inhs::Type ntty::Type
 {
-  local maxInhSetMembers::(Maybe<[String]>, [TyVar]) = getMaxInhSetMembers([], inhs, top.env);
+  local maxInhSetMembers::(Maybe<[String]>, [TyVar]) = getMaxInhSetMembers([], inhs, top.env, top.flowEnv);
   top.occursContextInhDeps :=
     case maxInhSetMembers.fst of
     | just(inhAttrs) -> [(ntty.typeName, syn, inhAttrs)]

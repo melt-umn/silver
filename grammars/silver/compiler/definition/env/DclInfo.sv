@@ -15,6 +15,7 @@ synthesized attribute typeScheme :: PolyType;
 -- types
 synthesized attribute isType :: Boolean;
 synthesized attribute isTypeAlias :: Boolean;
+synthesized attribute isInhSetConst :: Boolean;
 synthesized attribute isClass :: Boolean;
 synthesized attribute classMembers :: [Pair<String Boolean>];
 
@@ -130,13 +131,14 @@ top::ValueDclInfo ::= fn::String
   top.typeScheme = monoType(terminalIdType());
 }
 
-closed nonterminal TypeDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, isClass, classMembers, givenInstanceType, superContexts;
+closed nonterminal TypeDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, isInhSetConst, isClass, classMembers, givenInstanceType, superContexts;
 
 aspect default production
 top::TypeDclInfo ::=
 {
   top.kindrep = starKind();
   top.isType = false;
+  top.isInhSetConst = false;
   top.isTypeAlias = false;
   top.isClass = false;
   top.classMembers = [];
@@ -180,6 +182,16 @@ top::TypeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.isTypeAlias = true;
   top.typeScheme = if null(bound) then monoType(ty) else polyType(bound, ty);
   top.kindrep = foldr(arrowKind, ty.kindrep, map((.kindrep), bound)); 
+}
+abstract production inhSetConstDcl
+top::TypeDclInfo ::= fn::String
+{
+  top.fullName = fn;
+
+  top.isType = true;
+  top.isInhSetConst = true;
+  top.typeScheme = monoType(inhSetConstType(fn));
+  top.kindrep = inhSetKind();
 }
 abstract production clsDcl
 top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pair<String Boolean>]
