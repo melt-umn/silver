@@ -233,7 +233,7 @@ function inhDepsForSynOnType
 
 
 aspect production inhSetConstContribDecl
-top::AGDcl ::= 'inhset' q::QNameType '<-' _ inhs::FlowSpecInhs '}'
+top::AGDcl ::= 'inhset' q::QNameType '<-' _ inhs::FlowSpecInhs '}' ';'
 {
   top.errors <-
     if top.config.warnAll || top.config.warnMissingInh || top.config.runMwda
