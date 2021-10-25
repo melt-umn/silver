@@ -185,14 +185,6 @@ function checkAllEqDeps
   return flatMap(checkEqDeps(_, l, prodName, flowEnv, realEnv, anonResolve, runMwda), v);
 }
 
-function checkRemoteRefInhDeps
-[Message] ::= inhSetName::String  attrName::String  flowEnv::FlowEnv  realEnv::Decorated Env runMwda::Boolean
-{
-  return flatMap(
-    \ ref::(String, VertexType, Location) -> checkEqDeps(ref.2.inhVertex(attrName), ref.3, ref.1, flowEnv, realEnv, [], runMwda),
-    getInhSetRefs(attrName, flowEnv));
-}
-
 {--
  - Look up flow types, either from the flow environment (for a nonterminal) or the occurs-on contexts (for a type var).
  - @param syn  A synthesized attribute's full name
@@ -239,7 +231,9 @@ top::AGDcl ::= 'inhset' q::QNameType '<-' _ inhs::FlowSpecInhs '}' ';'
     if top.config.warnAll || top.config.warnMissingInh || top.config.runMwda
     then flatMap(
       \ attrName::String ->
-        let errs::[Message] = checkRemoteRefInhDeps(q.lookupType.fullName, attrName, top.flowEnv, top.env, top.config.runMwda)
+        let errs::[Message] = flatMap(
+              \ ref::(String, VertexType, Location) -> checkEqDeps(ref.2.inhVertex(attrName), ref.3, ref.1, top.flowEnv, top.env, [], top.config.runMwda),
+              getInhSetRefs(q.lookupType.fullName, top.flowEnv))
         in if null(errs) then [] else [nested(top.location, s"In addition of attribute ${attrName} to ${q.lookupType.fullName}:", errs)]
         end,
       inhs.inhList)
