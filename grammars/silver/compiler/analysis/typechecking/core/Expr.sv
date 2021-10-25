@@ -66,6 +66,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   -- contexts in the environment.
   production infContexts::Contexts = foldContexts(e.contexts);
   infContexts.env = top.env;
+  infContexts.flowEnv = top.flowEnv;
 
   thread downSubst, upSubst on top, e, es, anns, infContexts, forward;
 }

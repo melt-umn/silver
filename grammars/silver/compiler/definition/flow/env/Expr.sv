@@ -103,6 +103,7 @@ top::Expr ::= q::Decorated QName
     | _ -> []
     end;
 }
+
 aspect production forwardReference
 top::Expr ::= q::Decorated QName
 {
@@ -124,6 +125,30 @@ top::Expr ::= q::Decorated QName
       [inhSetTakeRefFlowDef(fn, top.frame.fullName, forwardVertexType, top.location)]
     | _ -> []
     end;
+}
+
+aspect production productionReference
+top::Expr ::= q::Decorated QName
+{
+  contexts.flowEnv = top.flowEnv;
+}
+
+aspect production functionReference
+top::Expr ::= q::Decorated QName
+{
+  contexts.flowEnv = top.flowEnv;
+}
+
+aspect production classMemberReference
+top::Expr ::= q::Decorated QName
+{
+  contexts.flowEnv = top.flowEnv;
+}
+
+aspect production globalValueReference
+top::Expr ::= q::Decorated QName
+{
+  contexts.flowEnv = top.flowEnv;
 }
 
 -- Still need these equations since propagate ignores decorated references
