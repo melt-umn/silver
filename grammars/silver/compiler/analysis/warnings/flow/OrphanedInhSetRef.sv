@@ -72,18 +72,6 @@ top::Expr ::= q::Decorated QName
     else [];
 }
 
-aspect production decorateExprWith
-top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
-{
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.errors <-
-    case finalTy of
-    | decoratedType(_, inhSetConstType(fn)) when top.config.warnAll || top.config.warnInhSetRef || top.config.runMwda ->
-      [mwdaWrn(top.location, s"Creating a reference of type ${prettyType(finalTy)} using decorate ... with ... is not permitted as this decoration site cannot be aspected when more attributes are included in ${fn}", top.config.runMwda)]
-    | _ -> []
-    end;
-}
-
 aspect production varVarBinder
 top::VarBinder ::= n::Name
 {
