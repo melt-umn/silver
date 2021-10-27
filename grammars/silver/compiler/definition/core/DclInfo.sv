@@ -104,6 +104,8 @@ aspect production termIdDcl
 top::ValueDclInfo ::= fn::String
 {
   top.refDispatcher = terminalIdReference(_, location=_);
+  top.defDispatcher = errorValueDef(_, _, location=_);
+  top.defLHSDispatcher = errorDefLHS(_, location=_);
 }
 
 -- -- interface Attributes

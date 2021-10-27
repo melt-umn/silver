@@ -17,4 +17,3 @@ Def ::= sg::String sl::Location fn::String ty::Type
 {
   return valueDef(defaultEnvItem(lambdaParamDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
-

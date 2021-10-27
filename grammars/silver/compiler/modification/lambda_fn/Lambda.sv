@@ -47,6 +47,8 @@ monoid attribute lambdaDefs::[Def];
 monoid attribute lambdaBoundVars::[String];
 attribute lambdaDefs, lambdaBoundVars occurs on ProductionRHS, ProductionRHSElem;
 
+flowtype ProductionRHSElem = lambdaDefs {decorate}, lambdaBoundVars {decorate};
+
 propagate lambdaDefs, lambdaBoundVars on ProductionRHS;
 
 aspect production productionRHSElem
@@ -63,6 +65,7 @@ top::Expr ::= q::Decorated QName
 {
   top.unparse = q.unparse;
   propagate errors;
+  top.freeVars := ts:fromList([q.name]);
   
   top.typerep = q.lookupValue.typeScheme.monoType;
 

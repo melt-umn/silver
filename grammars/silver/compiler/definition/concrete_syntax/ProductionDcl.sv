@@ -87,6 +87,8 @@ monoid attribute concreteSyntaxTypeErrors :: [Message];
 attribute concreteSyntaxTypeErrors occurs on ProductionSignature, ProductionRHS, ProductionRHSElem;
 propagate concreteSyntaxTypeErrors on ProductionSignature, ProductionRHS, ProductionRHSElem;
 
+flowtype concreteSyntaxTypeErrors {grammarName, env, flowEnv, deterministicCount} on ProductionRHSElem;
+
 aspect production productionSignature
 top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rhs::ProductionRHS 
 {

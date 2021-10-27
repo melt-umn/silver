@@ -33,7 +33,7 @@ function getFreeTypeNames
 }
 
 function getFirstAGDcl
-AGDcl ::= a::AGDcl
+Decorated AGDcl ::= a::Decorated AGDcl
 {
     return case a of
            | appendAGDcl(x, _) -> getFirstAGDcl(x)

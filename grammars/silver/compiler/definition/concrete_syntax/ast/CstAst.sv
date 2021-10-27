@@ -52,6 +52,7 @@ top::SyntaxRoot ::=
       s.layoutContribs);
   s.prefixesForTerminals = directBuildTree(terminalPrefixes);
   s.componentGrammarMarkingTerminals = directBuildTree(componentGrammarMarkingTerminals);
+  s.prettyNames = tm:add(s.prettyNamesAccum, tm:empty());
   
   -- Move productions under their nonterminal, and sort the declarations
   production s2 :: Syntax =
@@ -66,7 +67,6 @@ top::SyntaxRoot ::=
   s2.layoutTerms = s.layoutTerms;
   s2.prefixesForTerminals = s.prefixesForTerminals;
   s2.componentGrammarMarkingTerminals = s.componentGrammarMarkingTerminals;
-
   s2.prettyNames = tm:add(s2.prettyNamesAccum, tm:empty());
   
   -- This should be on s1, because the s2 transform assumes everything is well formed.

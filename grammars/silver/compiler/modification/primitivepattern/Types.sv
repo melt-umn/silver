@@ -66,6 +66,8 @@ Pair<[Context] Type> ::= te::PolyType
 inherited attribute refineWith :: Type occurs on Type;
 synthesized attribute refine :: Substitution occurs on Type;
 
+flowtype Type = refine {refineWith};
+
 aspect production varType
 top::Type ::= tv::TyVar
 {
@@ -79,7 +81,7 @@ top::Type ::= tv::TyVar
         if contains(tv, t.freeVariables)
         then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
         else subst(tv, t)
-    | t -> errorSubst("Kind mismatch!  Tried to unify with " ++ prettyType(top.unifyWith))
+    | t -> errorSubst("Kind mismatch!  Tried to refine with " ++ prettyType(top.refineWith))
     end;
 }
 
@@ -96,7 +98,7 @@ top::Type ::= tv::TyVar
         if contains(tv, t.freeVariables)
         then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
         else subst(tv, t)
-    | t -> errorSubst("Kind mismatch!  Tried to unify with " ++ prettyType(top.unifyWith))
+    | t -> errorSubst("Kind mismatch!  Tried to refine with " ++ prettyType(top.refineWith))
     end;
 }
 
@@ -175,7 +177,7 @@ top::Type ::= inhs::[String]
   top.refine =
     case top.refineWith of
     | inhSetType(oinhs) when inhs == oinhs -> emptySubst()
-    | _ -> errorSubst("Tried to refine inh set type " ++ prettyType(top) ++ " with " ++ prettyType(top.unifyWith))
+    | _ -> errorSubst("Tried to refine inh set type " ++ prettyType(top) ++ " with " ++ prettyType(top.refineWith))
     end;
 }
 
@@ -377,6 +379,10 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVa
   
   oc.boundVariables = tvs;
   top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
+
+  -- Never appears for anything on which we can define an equation
+  top.attrOccursIndexName = error("Not needed");
+  top.attrOccursInitIndex = error("Not needed");
 }
 
 abstract production annoPatternConstraintDcl
@@ -389,6 +395,9 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVa
   
   oc.boundVariables = tvs;
   top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
+
+  top.attrOccursIndexName = error("Not actually an attribute");
+  top.attrOccursInitIndex = error("Not actually an attribute");
 }
 
 abstract production typeablePatternConstraintDcl

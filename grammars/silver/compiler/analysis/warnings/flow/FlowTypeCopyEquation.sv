@@ -35,7 +35,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
 
 function raiseImplicitFwdEqFlowTypes
-[Message] ::= l::Location  lhsNt::String  prod::String  attr::String  e::Decorated FlowEnv  fwdFlowDeps::set:Set<String>  myFlow::EnvTree<FlowType> runMwda::Boolean
+[Message] ::= l::Location  lhsNt::String  prod::String  attr::String  e::FlowEnv  fwdFlowDeps::set:Set<String>  myFlow::EnvTree<FlowType> runMwda::Boolean
 {
   -- The flow type for `attr` on `lhsNt`
   local depsForThisAttr :: set:Set<String> = inhDepsForSyn(attr, lhsNt, myFlow);

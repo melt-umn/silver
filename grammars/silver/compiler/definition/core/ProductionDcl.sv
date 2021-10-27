@@ -5,8 +5,11 @@ nonterminal ProductionLHS with config, grammarName, env, location, unparse, erro
 nonterminal ProductionRHS with config, grammarName, env, location, unparse, errors, defs, inputElements;
 nonterminal ProductionRHSElem with config, grammarName, env, location, unparse, errors, defs, inputElements, deterministicCount;
 
-flowtype forward {env} on ProductionSignature, ProductionLHS, ProductionRHS;
+flowtype forward {env, signatureName} on ProductionSignature;
+flowtype forward {env} on ProductionLHS, ProductionRHS;
 flowtype forward {deterministicCount, env} on ProductionRHSElem;
+
+flowtype decorate {forward, grammarName, flowEnv} on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 
 propagate errors on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 propagate defs on ProductionRHS;

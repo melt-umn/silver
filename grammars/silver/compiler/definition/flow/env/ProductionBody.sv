@@ -177,7 +177,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
     else [];
 }
 
--- TODO: Copper ProductuionStmts
+-- TODO: Copper ProductionStmts
 
 -- We're in the unfortunate position of HAVING to compute values for 'flowDefs'
 -- even if there are errors in the larger grammar, as remote errors in binding

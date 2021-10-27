@@ -9,6 +9,8 @@ nonterminal QName with config, name, location, grammarName, env, unparse, qNameT
  -}
 nonterminal QNameType with config, name, location, grammarName, env, unparse;
 
+flowtype decorate {env} on QName, QNameType;
+
 {--
  - The list of declarations resulting from looking up this QName
  -}

@@ -173,7 +173,7 @@ top::FlowSpecInhs ::= h::FlowSpecInh  ','  t::FlowSpecInhs
 
 nonterminal FlowSpecInh with config, location, grammarName, errors, env, unparse, onNt, inhList, refList, flowEnv;
 
-flowtype FlowSpecInh = inhList {grammarName, env, flowEnv, onNt};
+flowtype FlowSpecInh = forward {grammarName, env, flowEnv, onNt}, inhList {forward};
 
 propagate errors on FlowSpecInh;
 

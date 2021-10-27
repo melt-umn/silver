@@ -11,12 +11,18 @@ nonterminal ProductionStmt with
   productionAttributes, uniqueSignificantExpression, originRules;
 
 flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst}
-  on ProductionBody, ProductionStmts;
-flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst, finalSubst}
+  on ProductionBody;
+flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst, originRules}
+  on ProductionStmts;
+flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst, finalSubst, originRules}
   on ProductionStmt;
+flowtype forward {decorate} on ProductionBody, ProductionStmts, ProductionStmt;
 
 nonterminal DefLHS with 
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, name, typerep, defLHSattr, found, originRules;
+
+flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, defLHSattr, originRules}
+  on DefLHS;
 
 nonterminal ForwardInhs with 
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, originRules;
@@ -274,6 +280,8 @@ abstract production errorAttributeDef
 top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+
+  e.isRoot = true;
 
   forwards to errorProductionStmt(msg ++ e.errors, location=top.location);
 }

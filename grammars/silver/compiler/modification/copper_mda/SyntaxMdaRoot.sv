@@ -119,7 +119,6 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
           decorate new(d) with {
             containingGrammar = "ext";
             cstEnv = host.cstEnv;
-            cstNTProds = error("TODO: this should only be used by normalize"); -- TODO
             classTerminals = host.classTerminals;
             superClasses = host.superClasses;
             subClasses = host.subClasses;

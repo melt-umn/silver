@@ -15,7 +15,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), flatMap((.flowDefs), g.grammarList));
   local allSpecDefs :: [(String, String, [String], [String])] = flatMap((.specDefs), g.grammarList);
   local allRefDefs :: [(String, [String])] = flatMap((.refDefs), g.grammarList);
-  local allFlowEnv :: Decorated FlowEnv = fromFlowDefs(allSpecDefs, allRefDefs, allFlowDefs);
+  local allFlowEnv :: FlowEnv = fromFlowDefs(allSpecDefs, allRefDefs, allFlowDefs);
   
   -- Look up tree for production info
   local prodTree :: EnvTree<FlowDef> = directBuildTree(allFlowDefs.prodGraphContribs);
