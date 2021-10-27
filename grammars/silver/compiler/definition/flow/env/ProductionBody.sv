@@ -23,7 +23,7 @@ propagate flowDefs on ProductionBody, ProductionStmts, ProductionStmt, ForwardIn
  - An occurs dcl info 's flow type can be affected here
  -}
 function isAffectable
-Boolean ::= prodgram::String  ntgram::String  cg::EnvTree<Decorated RootSpec>  d::DclInfo
+Boolean ::= prodgram::String  ntgram::String  cg::EnvTree<Decorated RootSpec>  d::OccursDclInfo
 {
   return isExportedBy(prodgram, [ntgram, d.sourceGrammar], cg);
 }
@@ -202,7 +202,7 @@ String ::= qn::Decorated QNameAttrOccur
 }
 -- Source grammar of a lookup of a local dcl
 function hackGramFromQName
-String ::= qn::Decorated QNameLookup
+String ::= qn::Decorated QNameLookup<ValueDclInfo>
 {
   return if qn.found then qn.dcl.sourceGrammar else "";
 }

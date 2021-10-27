@@ -1,24 +1,24 @@
 grammar silver:compiler:extension:autoattr;
 
-synthesized attribute propagateDispatcher :: (ProductionStmt ::= Decorated QName  Location) occurs on DclInfo;
+synthesized attribute propagateDispatcher :: (ProductionStmt ::= Decorated QName  Location) occurs on AttributeDclInfo;
 
-synthesized attribute emptyVal::Expr occurs on DclInfo;
+synthesized attribute emptyVal::Expr occurs on AttributeDclInfo;
 
 aspect default production
-top::DclInfo ::=
+top::AttributeDclInfo ::=
 {
   top.propagateDispatcher = propagateError(_, location=_);
   top.emptyVal = error("Internal compiler error: must be defined for all monoid attribute declarations");
 }
 
 aspect production inhDcl
-top::DclInfo ::= fn::String bound::[TyVar] ty::Type
+top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.propagateDispatcher = propagateInh(_, location=_);
 }
 
 abstract production functorDcl
-top::DclInfo ::= fn::String
+top::AttributeDclInfo ::= fn::String
 {
   top.fullName = fn;
 
@@ -34,7 +34,7 @@ top::DclInfo ::= fn::String
 }
 
 abstract production monoidDcl
-top::DclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append::Operation
+top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append::Operation
 {
   top.fullName = fn;
 
@@ -55,7 +55,7 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append::Operatio
 }
 
 abstract production destructDcl
-top::DclInfo ::= fn::String
+top::AttributeDclInfo ::= fn::String
 {
   top.fullName = fn;
 
@@ -72,7 +72,7 @@ top::DclInfo ::= fn::String
 }
 
 abstract production equalityDcl
-top::DclInfo ::= inh::String syn::String
+top::AttributeDclInfo ::= inh::String syn::String
 {
   top.fullName = syn;
 
@@ -87,7 +87,7 @@ top::DclInfo ::= inh::String syn::String
 }
 
 abstract production orderingKeyDcl
-top::DclInfo ::= syn::String
+top::AttributeDclInfo ::= syn::String
 {
   top.fullName = syn;
 
@@ -102,7 +102,7 @@ top::DclInfo ::= syn::String
 }
 
 abstract production orderingDcl
-top::DclInfo ::= inh::String keySyn::String syn::String
+top::AttributeDclInfo ::= inh::String keySyn::String syn::String
 {
   top.fullName = syn;
 
@@ -117,7 +117,7 @@ top::DclInfo ::= inh::String keySyn::String syn::String
 }
 
 abstract production unificationPartialDcl
-top::DclInfo ::= inh::String synPartial::String syn::String
+top::AttributeDclInfo ::= inh::String synPartial::String syn::String
 {
   top.fullName = synPartial;
 
@@ -132,7 +132,7 @@ top::DclInfo ::= inh::String synPartial::String syn::String
 }
 
 abstract production unificationDcl
-top::DclInfo ::= inh::String synPartial::String syn::String
+top::AttributeDclInfo ::= inh::String synPartial::String syn::String
 {
   top.fullName = syn;
 
@@ -147,7 +147,7 @@ top::DclInfo ::= inh::String synPartial::String syn::String
 }
 
 abstract production threadedInhDcl
-top::DclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
+top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
 {
   top.fullName = inh;
 
@@ -162,7 +162,7 @@ top::DclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
 }
 
 abstract production threadedSynDcl
-top::DclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
+top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
 {
   top.fullName = syn;
 

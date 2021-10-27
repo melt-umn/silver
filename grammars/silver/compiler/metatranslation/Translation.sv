@@ -80,11 +80,11 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
   antiquoteTranslation <-
     do {
       -- (antiquote production name, antiquote expr AST, rest AST)
-      antiquote::(String, AST, Decorated AST) <-
+      antiquote::(String, AST, Decorated AST with {givenLocation}) <-
         case children of
         | consAST(
             nonterminalAST(n, consAST(a, _), _),
-            consAST(rest, nilAST())) -> just((n, a, rest))
+            consAST(rest, nilAST())) -> just((n, a, let decRest :: Decorated AST with {givenLocation} = rest in decRest end))  -- let is a workaround for type inference bug with case
         | _ -> nothing()
         end;
       -- (nonterminal short name, cons production name, append production name)

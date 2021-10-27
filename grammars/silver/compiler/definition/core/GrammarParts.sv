@@ -26,7 +26,7 @@ autocopy attribute globalImports :: Decorated Env;
  - At the top of a grammar, these are echoed down as globalImports
  -}
 monoid attribute importedDefs :: [Def];
-monoid attribute importedOccursDefs :: [DclInfo];
+monoid attribute importedOccursDefs :: [OccursDclInfo];
 {--
  - An overall listing of error messages for a grammar
  -}

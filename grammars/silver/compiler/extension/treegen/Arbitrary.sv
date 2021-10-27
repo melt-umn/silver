@@ -20,12 +20,12 @@ top::AGDcl ::= 'derive' 'Arbitrary' 'on' names::QNames ';'
 
 
 function prodDclInfoNumChildLte
-Boolean ::= l::DclInfo  r::DclInfo
+Boolean ::= l::ValueDclInfo  r::ValueDclInfo
 {
   return l.typeScheme.arity <= r.typeScheme.arity;
 }
 function prodDclInfoNumChildEq
-Boolean ::= l::DclInfo  r::DclInfo
+Boolean ::= l::ValueDclInfo  r::ValueDclInfo
 {
   return l.typeScheme.arity == r.typeScheme.arity;
 }
@@ -48,7 +48,7 @@ AGDcl ::= id::QName  env::Decorated Env
 
   id.env = env;
   
-  local prods :: [DclInfo] = 
+  local prods :: [ValueDclInfo] = 
     sortBy(prodDclInfoNumChildLte,
       getKnownProds(id.lookupType.fullName, env));
   
@@ -99,7 +99,7 @@ We then map deriveGenerateOn over the list of productions and generate a big if-
 }
 
 function generateExprChain
-Expr ::= index::Integer  lst::[DclInfo]  total::Integer  l::Location
+Expr ::= index::Integer  lst::[ValueDclInfo]  total::Integer  l::Location
 {
   return if null(lst) then error("no productions for nonterminal at " ++ l.filename ++ ":" ++ toString(l.line) ++ "." ++ toString(l.column))
   else if null(tail(lst)) then
@@ -115,7 +115,7 @@ Expr ::= index::Integer  lst::[DclInfo]  total::Integer  l::Location
 
 -- construct a production, calling 'generateArbitraryID' for each child
 function deriveGenerateOn
-Expr ::= id::DclInfo  l::Location
+Expr ::= id::ValueDclInfo  l::Location
 {
   local annos :: [Pair<String Expr>] =
     if null(id.typeScheme.typerep.namedTypes) then

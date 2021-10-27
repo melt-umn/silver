@@ -95,8 +95,9 @@ top::TermPrecList ::= h::QName t::TermPrecList
   -- Since we're looking it up in two ways, do the errors ourselves
   top.errors <- if null(h.lookupType.dcls) && null(h.lookupLexerClass.dcls)
                 then [err(h.location, "Undeclared terminal or lexer class '" ++ h.name ++ "'.")]
-                else if length(h.lookupType.dcls ++ h.lookupLexerClass.dcls) > 1
-                then [err(h.location, "Ambiguous reference to terminal or lexer class '" ++ h.name ++ "'. Possibilities are:\n" ++ printPossibilities(h.lookupType.dcls ++ h.lookupLexerClass.dcls))]
+                else if length(h.lookupType.dcls) + length(h.lookupLexerClass.dcls) > 1
+                then [err(h.location, "Ambiguous reference to terminal or lexer class '" ++ h.name ++ "'. Possibilities are:\n" ++
+                            printPossibilities(h.lookupType.dcls) ++ if !null(h.lookupLexerClass.dcls) then ", " ++ printPossibilities(h.lookupLexerClass.dcls) else "")]
                 else [];
 }
 

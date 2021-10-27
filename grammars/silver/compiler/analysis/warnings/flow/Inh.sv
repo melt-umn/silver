@@ -89,7 +89,7 @@ Boolean ::= sigName::String  ns::NamedSignature  e::Decorated Env
 function localNotAReference
 Boolean ::= sigName::String  e::Decorated Env
 {
-  local d :: [DclInfo] = getValueDcl(sigName, e);
+  local d :: [ValueDclInfo] = getValueDcl(sigName, e);
 
   return if null(d) then true else isDecorable(head(d).typeScheme.typerep, e);
 }
@@ -121,7 +121,7 @@ function checkEqDeps
 {
   -- We're concerned with missing inherited equations on RHS, LOCAL, and ANON. (Implicitly, FORWARD.)
   
-  local prodDcl :: [DclInfo] = getValueDcl(prodName, realEnv);
+  local prodDcl :: [ValueDclInfo] = getValueDcl(prodName, realEnv);
   local ns :: NamedSignature =
     case prodDcl of
     | d :: _ -> d.namedSignature
@@ -741,7 +741,7 @@ top::VarBinder ::= n::Name
 }
 
 function remoteProdMissingEq
-Boolean ::= prod::DclInfo  sigName::String  attrName::String  realEnv::Decorated Env  flowEnv::Decorated FlowEnv
+Boolean ::= prod::ValueDclInfo  sigName::String  attrName::String  realEnv::Decorated Env  flowEnv::Decorated FlowEnv
 {
   return
     null(lookupInh(prod.fullName, sigName, attrName, flowEnv)) && -- no equation

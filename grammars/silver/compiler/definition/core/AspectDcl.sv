@@ -55,7 +55,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
     flatMap(
       \ c::Context -> c.contextSigDefs(realSig, top.grammarName, top.location),
       realSig.contexts);
-  local contextSigOccursDefs::[DclInfo] =
+  local contextSigOccursDefs::[OccursDclInfo] =
     flatMap(
       \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, top.location),
       realSig.contexts);
@@ -103,7 +103,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
     flatMap(
       \ c::Context -> c.contextSigDefs(realSig, top.grammarName, top.location),
       realSig.contexts);
-  local contextSigOccursDefs::[DclInfo] =
+  local contextSigOccursDefs::[OccursDclInfo] =
     flatMap(
       \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, top.location),
       realSig.contexts);

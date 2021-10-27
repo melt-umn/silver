@@ -76,7 +76,7 @@ Def ::= sg::String sl::Location fn::String ty::Type
   return valueDef(defaultEnvItem(defaultLhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 abstract production defaultLhsDcl
-top::DclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
 

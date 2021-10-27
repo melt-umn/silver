@@ -93,7 +93,7 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
 aspect production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 {
-  local attribute ugh_dcl_hack :: DclInfo;
+  local attribute ugh_dcl_hack :: ValueDclInfo;
   ugh_dcl_hack = head(getValueDclAll(fName, top.env)); -- TODO really, we should have a DclInfo for ourselves no problem. but out current approach of constructing it via localDef makes this annoyingly difficult. this suggests a probably environment refactoring...
   
   top.valueWeaving := s"public static final int ${ugh_dcl_hack.attrOccursIndexName} = ${top.frame.prodLocalCountName}++;\n";

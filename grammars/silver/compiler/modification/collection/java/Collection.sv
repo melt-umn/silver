@@ -82,7 +82,7 @@ top::Operation ::=
 aspect production collectionAttributeDclProd
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with' q::NameOrBOperator ';'
 {
-  local attribute ugh_dcl_hack :: DclInfo;
+  local attribute ugh_dcl_hack :: ValueDclInfo;
   ugh_dcl_hack = head(getValueDclAll(fName, top.env)); -- TODO
 
   -- Unlike synthesized and inherited attributes, locals can cheat because we know exactly

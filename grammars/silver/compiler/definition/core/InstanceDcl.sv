@@ -9,7 +9,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
 
   production fName :: String = id.lookupType.fullName;
   production boundVars::[TyVar] = ty.freeVariables;
-  production dcl::DclInfo = id.lookupType.dcl;
+  production dcl::TypeDclInfo = id.lookupType.dcl;
   dcl.givenInstanceType = ty.typerep;
   
   production superContexts::Contexts =
@@ -35,7 +35,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
     | t when id.lookupType.found &&
         !isExportedBy(
           top.grammarName,
-          dcl.sourceGrammar :: map(\ d::DclInfo -> d.sourceGrammar, getTypeDcl(t.typeName, top.env)),
+          dcl.sourceGrammar :: map(\ d::TypeDclInfo -> d.sourceGrammar, getTypeDcl(t.typeName, top.env)),
           top.compiledGrammars) ->
       [wrn(top.location, s"Orphaned instance declaration for ${fName} ${prettyType(t)}")]
     | _ -> []
@@ -135,7 +135,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
     flatMap(
       \ c::Context -> c.contextMemberDefs(boundVars, top.grammarName, top.location),
       memberContexts);
-  local cmOccursDefs::[DclInfo] =
+  local cmOccursDefs::[OccursDclInfo] =
     flatMap(
       \ c::Context -> c.contextMemberOccursDefs(boundVars, top.grammarName, top.location),
       memberContexts);

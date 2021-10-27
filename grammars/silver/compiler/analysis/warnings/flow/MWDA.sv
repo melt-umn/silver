@@ -27,7 +27,7 @@ imports silver:compiler:modification:primitivepattern;
 imports silver:compiler:modification:copper only parserAttributeDefLHS;
 
 function isOccursSynthesized
-Boolean ::= occs::DclInfo  e::Decorated Env
+Boolean ::= occs::OccursDclInfo  e::Decorated Env
 {
   return case getAttrDcl(occs.attrOccurring, e) of
   | at :: _ -> at.isSynthesized
