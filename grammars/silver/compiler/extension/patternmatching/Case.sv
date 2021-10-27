@@ -16,6 +16,8 @@ import silver:compiler:definition:flow:env only getNonforwardingProds;
 import silver:compiler:definition:type:syntax only typerepTypeExpr;
 import silver:compiler:modification:let_fix;
 
+import silver:util:cmdargs;
+
 terminal Case_kwd 'case' lexer classes {KEYWORD,RESERVED};
 terminal Of_kwd 'of' lexer classes {KEYWORD,RESERVED};
 terminal Arrow_kwd '->' lexer classes {SPECOP};
@@ -128,14 +130,25 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
     With the addition of completeness checking, we cannot
     incrementally forward through a series of caseExpr, compiling
     toward primitive matching as we go.  That would lead to a lot of
-    false incompletes.  Instead, we compile it in a function.  This
-    function also checks for overlapping cases in patterns (best
-    detected through compilation), hence the [Message] part of the
-    return value.
+    false incompletes.  Instead, we compile it in a function.
+
+    We bind the expressions being matched with let expressions for
+    efficiency.
+
+    TODO:  Check for overlapping cases elsewhere
   -}
-  local fwdResult::Pair<Expr [Message]> = compileCaseExpr(es, ml, failExpr, retType, top.location);
-  top.errors <- fwdResult.snd;
-  forwards to fwdResult.fst;
+  local names::[String] =
+        map(\ x::Expr -> "__match_expr_" ++ toString(genInt()), es);
+  local nameExprs::[Expr] =
+        map(\ x::String -> baseExpr(qName(bogusLoc(), x),
+                                    location=bogusLoc()), names);
+  local compiledCase::Expr =
+        compileCaseExpr(nameExprs, ml, failExpr, retType, top.location);
+  local fwdResult::Expr =
+        foldr(\ p::(String, Expr) rest::Expr ->
+                makeLet(top.location, p.1, freshType(), p.2, rest),
+              compiledCase, zipWith(pair(_, _), names, es));
+  forwards to fwdResult;
 }
 
 
@@ -159,118 +172,129 @@ Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
 }
 
 --Compile a case expression `case es of ml` down into primitive matches
---Also check for overlapping patterns, which show up by this compilation
 function compileCaseExpr
-Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
+Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
 {
-  local errors::[Message] =
-    case ml of
-    -- are there multiple match rules, with no patterns/conditions left in them to distinguish between them?
-    | matchRule([], _, e) :: _ :: _ ->
-      if areUselessPatterns(ml)
-      then [err(loc, "Pattern has overlapping cases!")]
-      else []
-    | _ -> []
-    end;
+  local compileRest::Expr =
+        compileCaseExpr(es, tail(ml), failExpr, retType, loc);
 
-  local partMRs :: Pair<[AbstractMatchRule] [AbstractMatchRule]> =
-    partition((.isVarMatchRule), ml);
-  local varRules :: [AbstractMatchRule] = partMRs.fst;
-  local prodRules :: [AbstractMatchRule] = partMRs.snd;
+  --If the first pattern does not match, we fall back to our "failure"
+  --   of checking the rest of the patterns
+  local failName::String = "__match_fail_" ++ toString(genInt());
+  local compileFirstPattern::Expr =
+        compileMatchRule(es, head(ml),
+           baseExpr(qName(loc, failName), location=loc), retType, loc);
+  local bindFailName::Expr =
+        makeLet(loc, failName, retType, compileRest, compileFirstPattern);
 
-  {--
-   - All constructors? Then do a real primitive match.
-   -}
-  local freshCurrName :: String = "__curr_match_" ++ toString(genInt());
-  local freshCurrNameRef :: Expr =
-    baseExpr(qName(loc, freshCurrName), location=loc);
-  local allConCase :: Pair<Expr [Message]> =
-      let constructorGroups::[[AbstractMatchRule]] = groupMRules(prodRules) in
-      let mappedPatternsErrs::[Pair<PrimPattern [Message]>] =
-          map(allConCaseTransform(freshCurrNameRef, tail(es), failExpr, retType, _),
-              constructorGroups) in
-      let primPatterns::[PrimPattern] =
-          map(\ p::Pair<PrimPattern [Message]> -> p.fst, mappedPatternsErrs) in
-      let errs::[Message] =
-          foldr(\ p::Pair<PrimPattern [Message]> l::[Message] -> p.snd ++ l,
-                [], mappedPatternsErrs) in
-        pair(
-          -- Annoyingly, this now needs to be a let in case of annotation patterns.
-          makeLet(loc,
-            freshCurrName, freshType(), head(es), 
-            matchPrimitive(
-              freshCurrNameRef,
-              typerepTypeExpr(retType, location=loc),
-              foldPrimPatterns(primPatterns),
-              failExpr, location=loc)),
-          errors ++ errs)
-      end end end end;
-
-  {--
-   - All variables? Just push a let binding inside each branch.
-   -}
-  local allVarCase :: Pair<Expr [Message]> =
-     let p::Pair<Expr [Message]> =
-        compileCaseExpr(
-             tail(es),
-             map(bindHeadPattern(head(es), freshType(){-whatever the first expression's type is?-}, _),
-                 ml),
-             failExpr, retType, loc)
-             -- A quick note about that freshType() hack: putting it here means there's ONE fresh type
-             -- generated, puching it inside 'bindHeadPattern' would generate multiple fresh types.
-             -- So don't try that!
-     in pair(p.fst, errors ++ p.snd) end;
-
-  {--
-    - Mixed con/var? Partition into segments and build nested case expressions
-    - The whole segment partitioning is done in a function rather than grabbing the initial segment
-      and forwarding to do the rest of the segments (another workable option) for efficiency
-   -}
-  local mixedCase :: Pair<Expr [Message]> = buildMixedCaseMatches(es, ml, failExpr, retType, loc);
-
-  -- 4 cases: no patterns left, all constructors, all variables, or mixed con/var.
-  -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules
   return
-    case ml of
-    | matchRule([], c, e) :: _ -> pair(buildMatchWhenConditionals(ml, failExpr), -- valid or error case
-                                       errors)
-    -- No match rules, only possible through abstract syntax
-    | [] -> pair(Silver_Expr { let res :: $TypeExpr{typerepTypeExpr(retType, location=loc)} = $Expr{failExpr} in res end }, [])
-    | _ -> if null(es) then pair(failExpr, []) -- error case
-           else if null(varRules) then allConCase
-           else if null(prodRules) then allVarCase
-           else mixedCase
-    end;
-  -- TODO: BUG: we're using the left of patterns in the first match rule as a guide here
-  -- which means we run into serious problems if not all match rules agree on the length
-  -- of the pattern list. We don't report some errors related to not having enough
-  -- variable binders
+     case ml of
+     | [] -> failExpr
+     | _ -> bindFailName
+     end;
 }
 
-{-
-  Build the correct match expression when we are mixing constructor
-  and variable patterns for the first match.  We do this by
-  partitioning the list into segments of only constructor or variable
-  patterns in order, then putting each segment into its own match.
--}
-function buildMixedCaseMatches
-Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
+--Compile a single match rule into a primitive match
+function compileMatchRule
+Expr ::= es::[Expr] patts::[Decorated Patt] cond::Maybe<(Expr Maybe<Patt>)> body::Expr failExpr::Expr retType::Type loc::Location
 {
-  local freshFailName :: String = "__fail_" ++ toString(genInt());
-  return if null(ml)
-         then pair(failExpr, [])
-         else let segments::Pair<[AbstractMatchRule] [AbstractMatchRule]> =
-                            initialSegmentPatternType(ml)
-              in
-                case buildMixedCaseMatches(es, segments.snd, failExpr, retType, loc),
-                     compileCaseExpr(es, segments.fst, baseExpr(qName(loc, freshFailName), location=loc),
-                                     retType, loc) of
-                | pair(bmexpr, bmerrs), pair(ccexpr, ccerrs) ->
-                  pair(makeLet(loc, freshFailName, retType, bmexpr, ccexpr),
-                       bmerrs ++ ccerrs)
-                end
-              end;
+  --First pattern is a variable
+  local varCase::Expr =
+        let rest::Expr =
+            case m of
+            | matchRule(_::tl, cond, e) ->
+              compileMatchRule(tail(es), matchRule(tl, cond, e, location=loc),
+                 failExpr, retType, loc, frame, config, env,
+                 case m.headPattern.patternVariableName of
+                 | nothing() -> patternVarEnv
+                 | just(name) -> name::patternVarEnv
+                 end)
+            | _ -> error("Cannot have an empty set of patterns in varCase")
+            end
+        in
+          case m.headPattern.patternVariableName of
+          | nothing() -> --wildcard, so just match the rest
+            rest
+          | just(name) -> --actual variable, so make a let
+            makeLet(loc, name, freshType(), head(es), rest)
+          end
+        end;
+
+  --First pattern is a constructor
+  local names::[Name] = map(patternListVars, m.headPattern.patternSubPatternList);
+  local l::Location = m.headPattern.location;
+  local annos::[String] =
+        nub(map(fst, m.headPattern.patternNamedSubPatternList));
+  local annoAccesses::[Expr] =
+        map(\ n::String ->
+              access(head(es), '.', qNameAttrOccur(qName(l, n), location=l), location=l),
+            annos);
+  local constructorCase::Expr =
+        case m of
+        | matchRule(hd::tl, cond, e) ->
+          let rest::Expr =
+              compileMatchRule(
+                 map(exprFromName, names) ++ annoAccesses ++ tail(es),
+                 m.expandHeadPattern(annos), failExpr, retType, loc,
+                 frame, config, env, map((.name), names) ++ patternVarEnv)
+          in
+          let primPatt::PrimPattern =
+            case hd of
+            | prodAppPattern_named(qn,_,_,_,_,_) -> 
+              prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', '->',
+                          rest, location=l)
+            | intPattern(it) ->
+              integerPattern(it, '->', rest, location=l)
+            | fltPattern(it) ->
+              floatPattern(it, '->', rest, location=l)
+            | strPattern(it) ->
+              stringPattern(it, '->', rest, location=l)
+            | truePattern(_) ->
+              booleanPattern("true", '->', rest, location=l)
+            | falsePattern(_) ->
+              booleanPattern("false", '->', rest, location=l)
+            | nilListPattern(_,_) ->
+              nilPattern(rest, location=l)
+            | consListPattern(h,_,t) ->
+              conslstPattern(head(names), head(tail(names)), rest, location=l)
+            | _ -> error("Can only have constructor patterns in constructorCase")
+            end
+          in
+            matchPrimitiveReal(head(es), typerepTypeExpr(retType, location=loc),
+               onePattern(primPatt, location=l), rest, location=l)
+          end end
+        | _ -> error("Cannot have empty set of patterns in constructorCase")
+        end;
+
+  return
+     case patts, cond of
+     | [], nothing() -> body
+     | [], just((cond, nothing())) ->
+       ifThenElse('if', cond, 'then', body, 'else', failExpr,
+                  location=cond.location)
+     | [], just((cond, just(patt))) ->
+       caseExpr([cond],
+          [ matchRule([decorate patt with {
+                          frame=frame;
+                          config=config;
+                          env=env;
+                          patternVarEnv=patternVarEnv;
+                       }], nothing(), e, location=patt.location),
+            matchRule([decorate wildcPattern('_', location=patt.location) with {
+                          frame=frame;
+                          config=config;
+                          env=env;
+                          patternVarEnv=patternVarEnv;
+                       }],
+                      nothing(), failExpr, location=patt.location) ],
+          true, failExpr, retType, location=cond.location)
+     | hd::tl, cond ->
+       if hd.patternIsVariable
+       then varCase
+       else constructorCase
+     end;
 }
+
 
 
 {-
@@ -821,7 +845,10 @@ top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern '->' e
 }
 
 abstract production matchRule
-top::AbstractMatchRule ::= pl::[Decorated Pattern] cond::Maybe<Pair<Expr Maybe<Pattern>>> e::Expr
+top::AbstractMatchRule ::= pl::[Decorated Pattern]
+     --Condition, if it exists, is either a Boolean expression or a
+     --   pair of an expression and a pattern for it to match
+     cond::Maybe<Pair<Expr Maybe<Pattern>>> e::Expr
 {
   top.unparse =
     implode(", ", map((.unparse), pl)) ++
@@ -927,58 +954,6 @@ function exprFromName
 Expr ::= n::Name
 {
   return baseExpr(qNameId(n, location=n.location), location=n.location);
-}
-
-{--
- - Takes a set of matchrules that all match against the SAME CONSTRUCTOR and pushes
- - a complex case-expr within a primitive pattern that matches this constructor.
- -
- - @param currExpr  (The current expression to match against in the overall complex case-expr)
- - @param restExprs  (The remaining expressions to match against in the overall complex case-expr)
- - @param failCase  (The failure expression)
- - @param retType  (The return type of the overall case-expr, and thus this)
- - @param mrs  (Match rules that all share the same head-pattern)
- -
- - @return  A primitive pattern matching the constructor, with the overall case-expr pushed down into it and compiled, along with any errors for overlapping patterns.
- -}
-function allConCaseTransform
-Pair<PrimPattern [Message]> ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[AbstractMatchRule]
-{
-  -- TODO: potential source of buggy error messages. We're using head(mrs) as the source of
-  -- authority for the length of pattern variables to match against. But each match rule may
-  -- actually have a different length (and .expandHeadPattern just applies whatever is there)
-  -- This is an erroneous condition, but it means we transform into a maybe-more erroneous condition.
-  local names :: [Name] = map(patternListVars, head(mrs).headPattern.patternSubPatternList);
-
-  local subcase :: Expr = subCaseCompile.fst;
-  local subCaseCompile::Pair<Expr [Message]> =
-    compileCaseExpr(
-      map(exprFromName, names) ++ annoAccesses ++ restExprs,
-      map(\ mr::AbstractMatchRule -> mr.expandHeadPattern(annos), mrs),
-      failCase, retType, head(mrs).location);
-  -- TODO: head(mrs).location is probably not the correct thing to use here?? (generally)
-
-  local annos :: [String] =
-    nub(map(fst, flatMap((.patternNamedSubPatternList), map((.headPattern), mrs))));
-  local annoAccesses :: [Expr] =
-    map(\ n::String -> access(currExpr, '.', qNameAttrOccur(qName(l, n), location=l), location=l), annos);
-  
-  -- Maybe this one is more reasonable? We need to test examples and see what happens...
-  local l :: Location = head(mrs).headPattern.location;
-
-  return
-    case head(mrs).headPattern of
-    | prodAppPattern_named(qn,_,_,_,_,_) -> 
-        pair(prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', '->', subcase, location=l), subCaseCompile.snd)
-    | intPattern(it) -> pair(integerPattern(it, '->', subcase, location=l), subCaseCompile.snd)
-    | fltPattern(it) -> pair(floatPattern(it, '->', subcase, location=l), subCaseCompile.snd)
-    | strPattern(it) -> pair(stringPattern(it, '->', subcase, location=l), subCaseCompile.snd)
-    | truePattern(_) -> pair(booleanPattern("true", '->', subcase, location=l), subCaseCompile.snd)
-    | falsePattern(_) -> pair(booleanPattern("false", '->', subcase, location=l), subCaseCompile.snd)
-    | nilListPattern(_,_) -> pair(nilPattern(subcase, location=l), subCaseCompile.snd)
-    | consListPattern(h,_,t) -> pair(conslstPattern(head(names), head(tail(names)), subcase, location=l), subCaseCompile.snd)
-    | _ -> error("Can only have constructor patterns in allConCaseTransform")
-    end;
 }
 
 function foldPrimPatterns
