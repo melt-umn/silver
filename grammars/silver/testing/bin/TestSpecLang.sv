@@ -91,7 +91,7 @@ ts::Run ::= 'test' 'suite' jar::Jar_t
  local testSuiteResults :: IOVal<Integer> 
    = system ("cd " ++ ts.testFileDir ++ ";" ++
              "rm -f " ++ ts.testFileName ++ ".output ; " ++ 
-             " java -Xss6M -jar " ++ jar.lexeme ++
+             " java -Xss10M -jar " ++ jar.lexeme ++
              " >& " ++ ts.testFileName ++ ".output" ,
              msgBefore ) ;
 
