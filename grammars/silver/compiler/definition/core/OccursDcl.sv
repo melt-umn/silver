@@ -114,7 +114,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
     else [];
 
   top.errors <-
-    if nt.lookupType.found && (!nt.lookupType.dcl.isType || !ntTypeScheme.typerep.isDecorable)
+    if nt.lookupType.found && (!nt.lookupType.dcl.isType || !isDecorable(ntTypeScheme.typerep, top.env))
     then [err(nt.location, nt.name ++ " is not a nonterminal. Attributes can only occur on nonterminals.")]
     else [];
                 

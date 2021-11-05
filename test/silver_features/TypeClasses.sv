@@ -73,17 +73,30 @@ MyEq a => [a] ::= x::a xs::[a]
 }
 equalityTest(myRemove(3, [1, 2, 3, 4]), [1, 2, 4], [Integer], silver_tests);
 
-equality attribute isEqTo, isEq;
-nonterminal EqPair<a b> with isEqTo, isEq;
+inherited attribute isEqTo<a>::a;
+synthesized attribute isEq::Boolean;
+nonterminal EqPair<a b> with fst<a>, snd<b>, isEqTo<EqPair<a b>>, isEq;
 production eqPair
 MyEq a, MyEq b => top::EqPair<a b> ::= x::a y::b
 {
+  top.fst = x;
+  top.snd = y;
   top.isEq = case top.isEqTo of eqPair(x1, y1) -> myeq(x1, x) && myeq(y1, y) end;
 }
 
 equalityTest(decorate eqPair(42, [1, 2, 3]) with {isEqTo=eqPair(42, [1, 2, 3]);}.isEq, true, Boolean, silver_tests);
 equalityTest(decorate eqPair(42, [1, 2, 3]) with {isEqTo=eqPair(42, [1, 23, 3]);}.isEq, false, Boolean, silver_tests);
 equalityTest(case eqPair(42, [1, 2, 3]), eqPair(42, [1, 2, 3]) of eqPair(w, x), eqPair(y, z) -> myeq(w, y) && myeq(x, z) end, true, Boolean, silver_tests);
+
+synthesized attribute isEq2::Boolean occurs on EqPair<a b>;
+aspect production eqPair
+top::EqPair<a b> ::= x::a y::b
+{
+  top.isEq2 = myeq(top.isEqTo.fst, x) && myeq(top.isEqTo.snd, y);
+}
+
+equalityTest(decorate eqPair(42, [1, 2, 3]) with {isEqTo=eqPair(42, [1, 2, 3]);}.isEq2, true, Boolean, silver_tests);
+equalityTest(decorate eqPair(42, [1, 2, 3]) with {isEqTo=eqPair(42, [1, 23, 3]);}.isEq2, false, Boolean, silver_tests);
 
 nonterminal EqRank1;
 production eqR1
@@ -410,4 +423,33 @@ wrongCode "i1 is not a subset of i2 (arising from the use of partialUndecorate)"
   {
     return partialUndecorate(x);
   }
+}
+
+class NotDecThing a {
+  consumeNDT :: (String ::= a);
+}
+instance NotDecThing a {
+  consumeNDT = \ x::a -> reflectTypeName(x).fromJust;
+}
+instance typeError "Not decorated" => NotDecThing Decorated a with i {
+  consumeNDT = error("type error");
+}
+
+global ndt1::String = consumeNDT(pair(12, false));
+equalityTest(ndt1, "silver:core:Pair<Integer Boolean>", String, silver_tests);
+
+wrongCode "Not decorated (arising from the instance for silver_features:NotDecThing Decorated silver:core:Pair<Integer Boolean> with {}, arising from the use of consumeNDT)" {
+  global ndt2::String = consumeNDT(decorate pair(12, false) with {});
+}
+
+function ndtMaybeDec
+String ::= l::Location
+{
+  -- Should specialize to undecorated Location
+  return consumeNDT(l);
+}
+equalityTest(ndtMaybeDec(txtLoc("foo")), "silver:core:Location", String, silver_tests);
+
+wrongCode "typeError constraint is only permitted on instances" {
+  class typeError "bad" => TEClass a {}
 }

@@ -1,26 +1,18 @@
 grammar silver:compiler:extension:autoattr;
 
 concrete production unificationAttributeDcl
-top::AGDcl ::= 'unification' 'attribute' inh::Name i::TypeExpr ',' synPartial::Name  ',' syn::Name ';'
+top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' inh::QName ';'
 {
-  top.unparse = s"unification attribute ${inh.unparse} ${i.unparse}, ${synPartial.unparse}, ${syn.unparse};";
+  top.unparse = s"unification attribute ${synPartial.unparse}, ${syn.unparse} with ${inh.unparse};";
   top.moduleNames := [];
 
   production attribute inhFName :: String;
-  inhFName = top.grammarName ++ ":" ++ inh.name;
+  inhFName = inh.lookupAttribute.fullName;
   production attribute synPartialFName :: String;
   synPartialFName = top.grammarName ++ ":" ++ synPartial.name;
   production attribute synFName :: String;
   synFName = top.grammarName ++ ":" ++ syn.name;
-  
-  top.errors <-
-    if length(getAttrDclAll(inhFName, top.env)) > 1
-    then [err(inh.location, "Attribute '" ++ inhFName ++ "' is already bound.")]
-    else [];
-  top.errors <-
-    if i.typerep.kindrep != inhSetKind()
-    then [err(i.location, s"${i.unparse} has kind ${prettyKind(i.typerep.kindrep)}, but kind InhSet is expected here")]
-    else [];
+
   top.errors <-
     if length(getAttrDclAll(synPartialFName, top.env)) > 1
     then [err(syn.location, "Attribute '" ++ synPartialFName ++ "' is already bound.")]
@@ -29,12 +21,11 @@ top::AGDcl ::= 'unification' 'attribute' inh::Name i::TypeExpr ',' synPartial::N
     if length(getAttrDclAll(synFName, top.env)) > 1
     then [err(syn.location, "Attribute '" ++ synFName ++ "' is already bound.")]
     else [];
-  
+
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(unificationInhDcl(inhFName, freshTyVar(starKind()), i.typerep.inhSetMembers, sourceGrammar=top.grammarName, sourceLocation=inh.location))),
-       attrDef(defaultEnvItem(unificationSynPartialDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=synPartial.location))),
-       attrDef(defaultEnvItem(unificationSynDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
+      [attrDef(defaultEnvItem(unificationPartialDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=synPartial.location))),
+       attrDef(defaultEnvItem(unificationDcl(inhFName, synPartialFName, synFName, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
       location=top.location);
 }
 

@@ -11,7 +11,7 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
 {
   top.errors <- t.errorsKindStar;
   
-  local checkNT::TypeCheck = checkNonterminal(t.typerep);
+  local checkNT::TypeCheck = checkNonterminal(top.env, false, t.typerep);
   checkNT.downSubst = emptySubst();
   checkNT.finalSubst = emptySubst();
   

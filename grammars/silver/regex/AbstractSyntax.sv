@@ -10,9 +10,9 @@ synthesized attribute seqPP::Document;
 synthesized attribute basePP::Document;
 implicit synthesized attribute classPP::Maybe<Document>;
 
-nonterminal Regex with pp, altPP, seqPP, basePP, classPP, isEqualTo, isEqual;
+nonterminal Regex with pp, altPP, seqPP, basePP, classPP, compareTo, isEqual;
 
-propagate isEqual, isEqualTo on Regex;
+propagate isEqual, compareTo on Regex;
 
 aspect default production
 top::Regex ::=

@@ -15,12 +15,13 @@ synthesized attribute namedInputElements :: [NamedSignatureElement];
 synthesized attribute inputNames :: [String];
 -- inputTypes comes from the types grammar.
 
-{--
+@{-
  - Represents the signature of a production (or function).
- - @param fn  The full name
- - @param ie  The input elements
- - @param oe  The output element
- - @param np  Named parameters (or annotations)
+ - @param fn   The full name
+ - @param ctxs The type constraint contexts
+ - @param ie   The input elements
+ - @param oe   The output element
+ - @param np   Named parameters (or annotations)
  -}
 abstract production namedSignature
 top::NamedSignature ::= fn::String ctxs::Contexts ie::NamedSignatureElements oe::NamedSignatureElement np::NamedSignatureElements
@@ -41,6 +42,30 @@ top::NamedSignature ::= fn::String ctxs::Contexts ie::NamedSignatureElements oe:
   ie.boundVariables = top.freeVariables;
   oe.boundVariables = top.freeVariables;
   np.boundVariables = top.freeVariables;
+}
+
+@{-
+ - Represents the signature of a global (or class member).
+ - @param fn   The full name
+ - @param ctxs The type constraint contexts
+ - @param ty   The type of the global
+ -}
+abstract production globalSignature
+top::NamedSignature ::= fn::String ctxs::Contexts ty::Type
+{
+  top.fullName = fn;
+  top.contexts = ctxs.contexts;
+  top.inputElements = error("Not a production or function");
+  top.outputElement = error("Not a production or function");
+  top.namedInputElements = error("Not a production or function");
+  top.inputNames = error("Not a production or function");
+  top.inputTypes = ty.inputTypes; -- Does anything actually use this? TODO: eliminate?
+  top.typeScheme = (if null(ctxs.contexts) then polyType else constraintType(_, ctxs.contexts, _))(top.freeVariables, ty);
+  top.freeVariables = setUnionTyVars(ctxs.freeVariables, ty.freeVariables);
+  top.typerep = ty;
+  
+  ctxs.boundVariables = top.freeVariables;
+  ty.boundVariables = top.freeVariables;
 }
 
 {--
@@ -134,6 +159,13 @@ Integer ::= s::String l::[NamedSignatureElement] z::Integer
   return if null(l) then -1
   else if s == head(l).elementName then z
   else findNamedSigElem(s, tail(l), z+1);
+}
+
+function findNamedSigElemType
+Type ::= n::String l::[NamedSignatureElement]
+{
+  local elems::NamedSignatureElements = foldNamedSignatureElements(l);
+  return fromMaybe(errorType(), lookup(n, zipWith(pair, elems.elementNames, elems.elementTypes)));
 }
 
 --------------

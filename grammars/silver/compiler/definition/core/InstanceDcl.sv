@@ -12,7 +12,8 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   production dcl::DclInfo = id.lookupType.dcl;
   dcl.givenInstanceType = ty.typerep;
   
-  production superContexts::Contexts = foldContexts(if id.lookupType.found then dcl.superContexts else []);
+  production superContexts::Contexts =
+    foldContexts(if id.lookupType.found && !foldContexts(cl.contexts).isTypeError then dcl.superContexts else []);
   superContexts.env = body.env;
   
   top.defs := [instDef(top.grammarName, id.location, fName, boundVars, cl.contexts, ty.typerep)];
@@ -52,10 +53,11 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   cl.env = newScopeEnv(headPreDefs, top.env);
   ty.env = cl.env;
   
-  body.env = newScopeEnv(headDefs, cl.env);
+  body.env = occursEnv(cl.occursDefs, newScopeEnv(headDefs, cl.env));
   body.className = id.lookupType.fullName;
   body.instanceType = ty.typerep; 
   body.expectedClassMembers = if id.lookupType.found then dcl.classMembers else [];
+  body.frameContexts = superContexts.contexts ++ cl.contexts;
 }
 
 concrete production instanceDclNoCL
@@ -71,11 +73,11 @@ autocopy attribute instanceType::Type;
 inherited attribute expectedClassMembers::[Pair<String Boolean>];
 
 nonterminal InstanceBody with
-  config, grammarName, env, defs, flowEnv, location, unparse, errors, compiledGrammars, className, instanceType, expectedClassMembers;
+  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers;
 nonterminal InstanceBodyItem with
-  config, grammarName, env, defs, flowEnv, location, unparse, errors, compiledGrammars, className, instanceType, expectedClassMembers, fullName;
+  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, fullName;
 
-propagate defs, errors on InstanceBody, InstanceBodyItem;
+propagate defs, flowDefs, errors on InstanceBody, InstanceBodyItem;
 
 concrete production consInstanceBody
 top::InstanceBody ::= h::InstanceBodyItem t::InstanceBody
@@ -129,11 +131,20 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
 
   top.fullName = id.lookupValue.fullName;
 
-  e.env = newScopeEnv(flatMap(\ c::Context ->
-      let instDcl::DclInfo = c.contextMemberDcl(boundVars, top.grammarName, top.location)
-      in tcInstDef(instDcl) :: transitiveSuperDefs(top.env, top.instanceType, [], instDcl)
-      end, memberContexts),
-    top.env);
+  local cmDefs::[Def] =
+    flatMap(
+      \ c::Context -> c.contextMemberDefs(boundVars, top.grammarName, top.location),
+      memberContexts);
+  local cmOccursDefs::[DclInfo] =
+    flatMap(
+      \ c::Context -> c.contextMemberOccursDefs(boundVars, top.grammarName, top.location),
+      memberContexts);
+  e.env =
+    newScopeEnv(
+      cmDefs ++ flatMap(transitiveSuperDefs(top.env, top.instanceType, [], _), flatMap((.instList), cmDefs)),
+      occursEnv(
+        cmOccursDefs ++ flatMap(transitiveSuperOccursDefs(top.env, top.instanceType, [], _), flatMap((.instList), cmDefs)),
+        top.env));
   e.originRules = [];
   e.isRoot = true;
 
@@ -141,8 +152,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
   local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
 
-  local myFlowGraph :: ProductionGraph = 
-    constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
+  local myFlowGraph :: ProductionGraph = constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
 
-  e.frame = globalExprContext(myFlowGraph, sourceGrammar=top.grammarName);
+  e.frame = globalExprContext(top.fullName, foldContexts(top.frameContexts), typeScheme.typerep, myFlowGraph, sourceGrammar=top.grammarName);
 }

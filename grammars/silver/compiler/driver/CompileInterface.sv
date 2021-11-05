@@ -49,7 +49,7 @@ IOVal<Maybe<RootSpec>> ::= grammarName::String  silverHostGen::[String]  grammar
     if !gen.iovalue.isJust then
       -- Didn't find one. Stop short, return nothing.
       ioval(gen.io, nothing())
-    else if modTime.iovalue <= grammarTime then
+    else if modTime.iovalue < grammarTime then
       -- Interface file is too old, stop short, return nothing.
       ioval(modTime.io, nothing())
     else if ir.isLeft || !null(ir.fromRight.interfaceErrors) then

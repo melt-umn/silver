@@ -67,6 +67,24 @@ top::Context ::= cls::String t::Type
   top.typepp = cls ++ " " ++ t.typepp;
 }
 
+aspect production inhOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.typepp = s"attribute ${attr}${if null(args) then "" else s"<${implode(" ", map(prettyTypeWith(_, top.boundVariables), args))}>"} occurs on ${ntty.typepp}";
+}
+
+aspect production synOccursContext
+top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
+{
+  top.typepp = s"attribute ${attr}${if null(args) then "" else s"<${implode(" ", map(prettyTypeWith(_, top.boundVariables), args))}>"} ${inhs.typepp} occurs on ${ntty.typepp}";
+}
+
+aspect production annoOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.typepp = s"annotation ${attr}${if null(args) then "" else s"<${implode(" ", map(prettyTypeWith(_, top.boundVariables), args))}>"} occurs on ${ntty.typepp}";
+}
+
 aspect production typeableContext
 top::Context ::= t::Type
 {

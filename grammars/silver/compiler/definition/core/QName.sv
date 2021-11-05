@@ -201,7 +201,7 @@ top::QNameAttrOccur ::= at::QName
     else if null(dclsNarrowed) then
       -- This is a heuristic error message for the situation where you have a type, but haven't imported
       -- the grammar declaring that type.
-      (if top.attrFor.typeName != "" && null(getTypeDcl(top.attrFor.typeName, top.env)) then
+      (if lastIndexOf(":", top.attrFor.typeName) > 0 && null(getTypeDcl(top.attrFor.typeName, top.env)) then
          [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Perhaps import '" ++ substring(0, lastIndexOf(":", top.attrFor.typeName), top.attrFor.typeName)  ++ "'?")]
        else
          [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(top.attrFor) ++ "'. Looked at:\n" ++ printPossibilities(attrs))]
@@ -237,25 +237,3 @@ function zipFilterDcls
   else if null(head(occ)) then zipFilterDcls(tail(at), tail(occ))
   else head(at) :: zipFilterDcls(tail(at), tail(occ));
 }
-
-
--- TODO THIS SHOULD BE OBSOLETED BY THE ABOVE
-nonterminal OccursCheck with errors, typerep, dcl;
-
--- Doc note: be sure you've included at.errors, as well as this production's errors!
-abstract production occursCheckQName
-top::OccursCheck ::= at::Decorated QName  ntty::Type
-{
-  local occursCheck :: [DclInfo] =
-    getOccursDcl(at.lookupAttribute.fullName, ntty.typeName, at.env); -- cheating to get env! :) Must be decorated!
-
-  top.errors := if null(at.lookupAttribute.errors) && null(occursCheck) && !ntty.isError
-                then [err(at.location, "Attribute '" ++ at.name ++ "' does not occur on '" ++ prettyType(ntty) ++ "'")]
-                else [];
-  top.typerep = if null(at.lookupAttribute.errors) && null(top.errors)
-                then determineAttributeType(head(occursCheck), ntty)
-                else errorType();
-  top.dcl = head(occursCheck);
-}
-
-

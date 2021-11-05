@@ -64,8 +64,8 @@ ag::AGDcl ::= kwd::'equalityTest'
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(ag.grammarName, ag.compiledGrammars)).grammarFlowTypes;
   local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(ag.grammarName, ag.compiledGrammars)).productionFlowGraphs;
 
-  value.frame = globalExprContext(constructAnonymousGraph(value.flowDefs, ag.env, myProds, myFlow), sourceGrammar=ag.grammarName);
-  expected.frame = globalExprContext(constructAnonymousGraph(expected.flowDefs, ag.env, myProds, myFlow), sourceGrammar=ag.grammarName);
+  value.frame = bogusContext(constructAnonymousGraph(value.flowDefs, ag.env, myProds, myFlow), sourceGrammar=ag.grammarName);
+  expected.frame = bogusContext(constructAnonymousGraph(expected.flowDefs, ag.env, myProds, myFlow), sourceGrammar=ag.grammarName);
 
 {- Causes some circularities with the environment. TODO
   forwards to if !errCheck1.typeerror && !errCheck2.typeerror && !errCheck3.typeerror

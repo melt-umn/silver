@@ -23,13 +23,19 @@ class Eq a {
   neq :: (Boolean ::= a a) = \ x::a y::a -> !(x == y);
 }
 
-equality attribute isEqualTo, isEqual;
-{- TODO: once we have occurence constraints...
-instance isEqual {isEqualTo} occurs on a => Eq a {
-  eq = \ x::a y::a -> decorate x with {isEqualTo = y;}.isEqual;
+destruct attribute compareTo;
+equality attribute isEqual with compareTo;
+
+instance attribute compareTo<a {}> occurs on a,
+         attribute isEqual {compareTo} occurs on a
+         => Eq a {
+  eq = \ x::a y::a -> decorate x with {compareTo = decorate y with {};}.isEqual;
 }
-Do something similar for Ord.
--}
+
+instance typeError "Equality is not supported for Decorated types"
+         => Eq Decorated a with i {
+  eq = error("type error");
+}
 
 instance Eq Integer {
   eq = eqInteger;

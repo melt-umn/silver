@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [ ! -d ~/bin ]; then
   echo "This script is intended to place the 'sv-nailgun' script in ~/bin."

@@ -55,6 +55,7 @@ closed nonterminal DclInfo with sourceGrammar, sourceLocation, fullName, -- ever
                          classMembers, givenInstanceType, superContexts, typerep2, -- type classes, in the type namespace
                          namedSignature, hasForward, -- values that are fun/prod
                          attrOccurring, isAnnotation, -- occurs
+                         isTypeError, -- instances
                          isInherited, isSynthesized, -- attrs
                          prodDefs, -- production attributes
                          substitutedDclInfo, givenSubstitution -- type substitutions on dcls
@@ -94,6 +95,7 @@ top::DclInfo ::=
   top.superContexts = [];
 
   -- instances
+  top.isTypeError := false;
   top.typerep2 = error("Internal compiler error: must be defined for all binary constraint instances");
   
   -- Values that are not fun/prod have this valid default.
@@ -293,6 +295,35 @@ top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
   top.attrOccurring = fnat;
 }
 
+abstract production occursInstConstraintDcl
+top::DclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
+{
+  top.fullName = ntty.typeName;
+  top.attrOccurring = fnat;
+  
+  top.typeScheme = monoType(atty);
+  
+  ntty.boundVariables = tvs;
+}
+abstract production occursSigConstraintDcl
+top::DclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
+{
+  top.fullName = ntty.typeName;
+  top.attrOccurring = fnat;
+  
+  top.typeScheme = monoType(atty);
+  
+  ntty.boundVariables = ns.freeVariables;
+}
+abstract production occursSuperDcl
+top::DclInfo ::= fnat::String atty::Type baseDcl::DclInfo
+{
+  top.fullName = baseDcl.typeScheme.typerep.typeName;
+  top.attrOccurring = fnat;
+  
+  top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, atty);
+}
+
 abstract production annoInstanceDcl
 top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
 {
@@ -317,6 +348,38 @@ top::DclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
   top.isAnnotation = true;
 }
 
+abstract production annoInstConstraintDcl
+top::DclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
+{
+  top.fullName = ntty.typeName;
+  top.attrOccurring = fnat;
+  top.isAnnotation = true;
+  
+  top.typeScheme = monoType(atty);
+  
+  ntty.boundVariables = tvs;
+}
+abstract production annoSigConstraintDcl
+top::DclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
+{
+  top.fullName = ntty.typeName;
+  top.attrOccurring = fnat;
+  top.isAnnotation = true;
+  
+  top.typeScheme = monoType(atty);
+  
+  ntty.boundVariables = ns.freeVariables;
+}
+abstract production annoSuperDcl
+top::DclInfo ::= fnat::String atty::Type baseDcl::DclInfo
+{
+  top.fullName = baseDcl.typeScheme.typerep.typeName;
+  top.attrOccurring = fnat;
+  top.isAnnotation = true;
+  
+  top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, atty);
+}
+
 -- InstDclInfos
 -- Class instances
 abstract production instDcl
@@ -325,6 +388,8 @@ top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
   top.fullName = fn;
   
   top.typeScheme = constraintType(bound, contexts, ty);
+
+  top.isTypeError := any(map((.isTypeError), contexts));
 }
 abstract production instConstraintDcl
 top::DclInfo ::= fntc::String ty::Type tvs::[TyVar]

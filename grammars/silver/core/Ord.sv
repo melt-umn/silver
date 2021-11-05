@@ -39,6 +39,21 @@ class Eq a => Ord a {
   min :: (a ::= a a) = \ x::a y::a -> if x >= y then y else x;
 }
 
+ordering attribute compareKey, compare with compareTo;
+
+instance attribute compareTo<a {}> occurs on a,
+         attribute isEqual {compareTo} occurs on a, -- Needed by Eq superclass
+         attribute compareKey {compareTo} occurs on a,
+         attribute compare {compareTo} occurs on a
+         => Ord a {
+  compare = \ x::a y::a -> decorate x with {compareTo = decorate y with {};}.compare;
+}
+
+instance typeError "Comparison is not supported for Decorated types"
+         => Ord Decorated a with i {
+  compare = error("type error");
+}
+
 instance Ord Integer {
   compare = \ x::Integer y::Integer -> x - y;
   lt = ltInteger;
@@ -227,7 +242,7 @@ Boolean ::= x::TerminalId y::TerminalId
 instance Ord a => Ord [a] {
   lte = \ x::[a] y::[a] ->
     case x, y of
-    | h1::t1, h2::t2 -> h1 <= h2 && t1 <= t2
+    | h1::t1, h2::t2 -> if h1 == h2 then t1 <= t2 else h1 < h2
     | [], _ -> true
     | _, _ -> false
     end;

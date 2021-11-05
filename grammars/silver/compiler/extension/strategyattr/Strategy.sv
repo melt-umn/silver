@@ -31,7 +31,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
   local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
   local myFlowGraph :: ProductionGraph = 
     constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
-  e.frame = globalExprContext(myFlowGraph, sourceGrammar=top.grammarName);
+  e.frame = bogusContext(myFlowGraph, sourceGrammar=top.grammarName);
   
   e.recVarNameEnv = recVarNameEnv;
   e.recVarTotalEnv = recVarTotalEnv;

@@ -213,6 +213,20 @@ function occursOnHelp
               else occursOnHelp(tail(i), fnat);
 }
 
+-- Determines whether a type is automatically promoted to a decorated type
+-- and whether a type may be supplied with inherited attributes.
+-- Used by expression (id refs), decorate type checking, and translations.
+function isDecorable
+Boolean ::= t::Type e::Decorated Env
+{
+  return
+    case t of
+    | skolemType(_) -> !null(searchEnvTree(t.typeName, e.occursTree))
+    | varType(_) -> !null(searchEnvTree(t.typeName, e.occursTree))  -- Can happen when pattern matching on a prod with occurs contexts
+    | _ -> t.isNonterminal
+    end;
+}
+
 function getProdAttrs
 [DclInfo] ::= fnprod::String e::Decorated Env
 {
@@ -344,4 +358,3 @@ Maybe<[String]> ::= t::Type e::Decorated Env
     | _ -> just([])
     end;
 }
- 

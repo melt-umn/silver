@@ -70,8 +70,13 @@ ${makeIndexDcls(0, whatSig.inputElements)}
 	public static final common.Lazy[] localAttributes = new common.Lazy[num_local_attrs];
 	public static final common.Lazy[][] localInheritedAttributes = new common.Lazy[num_local_attrs][];
 
+${whatSig.inhOccursIndexDecls}
+
+	public static final int[] childInhContextTypeVars = {${implode(",", whatSig.childTypeVarElems)}};
+	public static final int[] localInhContextTypeVars = new int[num_local_attrs];
+
 	static {
-${implode("", map((.childStaticElem), whatSig.inputElements))}
+${whatSig.childStatic}
 	}
 
 	public ${className}(${whatSig.javaSignature}) {
@@ -79,7 +84,7 @@ ${implode("", map(makeChildAssign, whatSig.inputElements))}
 ${contexts.contextInitTrans}
 	}
 
-${implode("", map((.childDeclElem), whatSig.inputElements))}
+${whatSig.childDecls}
 
 ${contexts.contextMemberDeclTrans}
 
@@ -106,11 +111,13 @@ ${implode("", map(makeChildAccessCaseLazy, whatSig.inputElements))}
 
 	@Override
 	public common.Lazy[] getLocalInheritedAttributes(final int key) {
+${flatMap(makeInhOccursContextAccess(whatSig.freeVariables, whatSig.contextInhOccurs, "localInhContextTypeVars", "localInheritedAttributes", _), whatSig.inhOccursContextTypes)}
 		return localInheritedAttributes[key];
 	}
 
 	@Override
 	public common.Lazy[] getChildInheritedAttributes(final int key) {
+${flatMap(makeInhOccursContextAccess(whatSig.freeVariables, whatSig.contextInhOccurs, "childInhContextTypeVars", "childInheritedAttributes", _), whatSig.inhOccursContextTypes)}
 		return childInheritedAttributes[key];
 	}
 

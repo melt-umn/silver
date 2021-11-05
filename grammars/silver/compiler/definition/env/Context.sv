@@ -22,17 +22,31 @@ top::Contexts ::=
 
 global foldContexts::(Contexts ::= [Context]) = foldr(consContext, nilContext(), _);
 
-synthesized attribute contextSuperDcl::(DclInfo ::= DclInfo String Location) occurs on Context;  -- Instances from context's superclasses
-synthesized attribute contextMemberDcl::(DclInfo ::= [TyVar] String Location) occurs on Context; -- Instances from a context on a class member
+synthesized attribute contextSuperDefs::([Def] ::= DclInfo String Location) occurs on Context;  -- Instances from context's superclasses
+synthesized attribute contextMemberDefs::([Def] ::= [TyVar] String Location) occurs on Context; -- Instances from a context on a class member
+synthesized attribute contextSigDefs::([Def] ::= NamedSignature String Location) occurs on Context;  -- Instances from a context in an aspect signature
+synthesized attribute contextSuperOccursDefs::([DclInfo] ::= DclInfo String Location) occurs on Context;  -- Attribute occurences from context's superclasses
+synthesized attribute contextMemberOccursDefs::([DclInfo] ::= [TyVar] String Location) occurs on Context; -- Attribute occurences from a context on a class member
+synthesized attribute contextSigOccursDefs::([DclInfo] ::= NamedSignature String Location) occurs on Context;  -- Attribute occurences from a context in an aspect signature
 synthesized attribute contextClassName::Maybe<String> occurs on Context;
 
 synthesized attribute resolved::[DclInfo] occurs on Context;
 
+monoid attribute isTypeError::Boolean with false, || occurs on Contexts, Context;
+propagate isTypeError on Contexts, Context;
+
 aspect production instContext
 top::Context ::= cls::String t::Type
 {
-  top.contextSuperDcl = instSuperDcl(cls, _, sourceGrammar=_, sourceLocation=_);
-  top.contextMemberDcl = instConstraintDcl(cls, t, _, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextSuperDefs = \ d::DclInfo g::String l::Location ->
+    [tcInstDef(instSuperDcl(cls, d, sourceGrammar=g, sourceLocation=l))];
+  top.contextMemberDefs = \ tvs::[TyVar] g::String l::Location ->
+    [tcInstDef(instConstraintDcl(cls, t, tvs, sourceGrammar=g, sourceLocation=l))]; -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextSigDefs = \ ns::NamedSignature g::String l::Location ->
+    [tcInstDef(sigConstraintDcl(cls, t, ns, sourceGrammar=g, sourceLocation=l))];
+  top.contextSuperOccursDefs = \ DclInfo String Location -> [];
+  top.contextMemberOccursDefs = \ [TyVar] String Location -> [];
+  top.contextSigOccursDefs = \ NamedSignature String Location -> [];
   top.contextClassName = just(cls);
   
   -- Here possibly-decorated types that are still unspecialized at this point
@@ -41,6 +55,7 @@ top::Context ::= cls::String t::Type
   -- so we can't allow this to match an instance for the undecorated type.
   production decT::Type =
     case t of
+    | ntOrDecType(nt, varType(_), _) -> decoratedType(nt, inhSetType([]))
     | ntOrDecType(nt, inhs, _) -> decoratedType(nt, inhs)
     | _ -> t
     end;
@@ -66,11 +81,90 @@ top::Context ::= cls::String t::Type
   requiredContexts.env = top.env;
 }
 
+aspect production inhOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.contextSuperDefs = \ DclInfo String Location -> [];
+  top.contextMemberDefs = \ [TyVar] String Location -> [];
+  top.contextSigDefs = \ NamedSignature String Location -> [];
+  top.contextSuperOccursDefs = \ d::DclInfo g::String l::Location ->
+    [occursSuperDcl(attr, atty, d, sourceGrammar=g, sourceLocation=l)];
+  top.contextMemberOccursDefs = \ tvs::[TyVar] g::String l::Location ->
+    [occursInstConstraintDcl(attr, ntty, atty, tvs, sourceGrammar=g, sourceLocation=l)];
+  top.contextSigOccursDefs = \ ns::NamedSignature g::String l::Location ->
+    [occursSigConstraintDcl(attr, ntty, atty, ns, sourceGrammar=g, sourceLocation=l)];
+  top.contextClassName = nothing();
+  
+  top.resolved = getOccursDcl(attr, ntty.typeName, top.env);
+  production resolvedDcl::DclInfo = head(top.resolved);
+  resolvedDcl.givenNonterminalType = ntty;
+  production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
+  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
+  production requiredContexts::Contexts =
+    foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
+  requiredContexts.env = top.env;
+}
+
+aspect production synOccursContext
+top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
+{
+  top.contextSuperDefs = \ DclInfo String Location -> [];
+  top.contextMemberDefs = \ [TyVar] String Location -> [];
+  top.contextSigDefs = \ NamedSignature String Location -> [];
+  top.contextSuperOccursDefs = \ d::DclInfo g::String l::Location ->
+    [occursSuperDcl(attr, atty, d, sourceGrammar=g, sourceLocation=l)];
+  top.contextMemberOccursDefs = \ tvs::[TyVar] g::String l::Location ->
+    [occursInstConstraintDcl(attr, ntty, atty, tvs, sourceGrammar=g, sourceLocation=l)];
+  top.contextSigOccursDefs = \ ns::NamedSignature g::String l::Location ->
+    [occursSigConstraintDcl(attr, ntty, atty, ns, sourceGrammar=g, sourceLocation=l)];
+  top.contextClassName = nothing();
+
+  top.resolved = getOccursDcl(attr, ntty.typeName, top.env);
+  production resolvedDcl::DclInfo = head(top.resolved);
+  resolvedDcl.givenNonterminalType = ntty;
+  production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
+  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
+  production requiredContexts::Contexts =
+    foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
+  requiredContexts.env = top.env;
+}
+
+aspect production annoOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.contextSuperDefs = \ DclInfo String Location -> [];
+  top.contextMemberDefs = \ [TyVar] String Location -> [];
+  top.contextSigDefs = \ NamedSignature String Location -> [];
+  top.contextSuperOccursDefs = \ d::DclInfo g::String l::Location ->
+    [annoSuperDcl(attr, atty, d, sourceGrammar=g, sourceLocation=l)];
+  top.contextMemberOccursDefs = \ tvs::[TyVar] g::String l::Location ->
+    [annoInstConstraintDcl(attr, ntty, atty, tvs, sourceGrammar=g, sourceLocation=l)];
+  top.contextSigOccursDefs = \ ns::NamedSignature g::String l::Location ->
+    [annoSigConstraintDcl(attr, ntty, atty, ns, sourceGrammar=g, sourceLocation=l)];
+  top.contextClassName = nothing();
+  
+  top.resolved = getOccursDcl(attr, ntty.typeName, top.env);
+  production resolvedDcl::DclInfo = head(top.resolved);
+  resolvedDcl.givenNonterminalType = ntty;
+  production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
+  production resolvedSubst::Substitution = unifyDirectional(resolvedTypeScheme.typerep, atty);
+  production requiredContexts::Contexts =
+    foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
+  requiredContexts.env = top.env;
+}
+
 aspect production typeableContext
 top::Context ::= t::Type
 {
-  top.contextSuperDcl = typeableSuperDcl(_, sourceGrammar=_, sourceLocation=_);
-  top.contextMemberDcl = typeableInstConstraintDcl(t, _, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextSuperDefs = \ d::DclInfo g::String l::Location ->
+    [tcInstDef(typeableSuperDcl(d, sourceGrammar=g, sourceLocation=l))];
+  top.contextMemberDefs = \ tvs::[TyVar] g::String l::Location ->
+    [tcInstDef(typeableInstConstraintDcl(t, tvs, sourceGrammar=g, sourceLocation=l))]; -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextSigDefs = \ ns::NamedSignature g::String l::Location ->
+    [tcInstDef(typeableSigConstraintDcl(t, ns, sourceGrammar=g, sourceLocation=l))];
+  top.contextSuperOccursDefs = \ DclInfo String Location -> [];
+  top.contextMemberOccursDefs = \ [TyVar] String Location -> [];
+  top.contextSigOccursDefs = \ NamedSignature String Location -> [];
   top.contextClassName = nothing();
 
   top.resolved =
@@ -88,18 +182,22 @@ top::Context ::= t::Type
 }
 
 synthesized attribute isTypeable::Boolean occurs on Type;
-aspect default production
-top::Type ::=
-{ top.isTypeable = true; }
-aspect production skolemType
-top::Type ::= _
-{ top.isTypeable = false; }
+aspect isTypeable on Type of
+| skolemType(_) -> false
+| _ -> true
+end;
 
 aspect production inhSubsetContext
 top::Context ::= i1::Type i2::Type
 {
-  top.contextSuperDcl = error("subset can't appear as superclass");
-  top.contextMemberDcl = inhSubsetInstConstraintDcl(i1, i2, _, sourceGrammar=_, sourceLocation=_); -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextSuperDefs = error("subset can't appear as superclass");
+  top.contextMemberDefs = \ tvs::[TyVar] g::String l::Location ->
+    [tcInstDef(inhSubsetInstConstraintDcl(i1, i2, tvs, sourceGrammar=g, sourceLocation=l))]; -- Could be a different kind of def, but these are essentially the same as regular instance constraints
+  top.contextSigDefs = \ ns::NamedSignature g::String l::Location ->
+    [tcInstDef(inhSubsetSigConstraintDcl(i1, i2, ns, sourceGrammar=g, sourceLocation=l))];
+  top.contextSuperOccursDefs = \ DclInfo String Location -> [];
+  top.contextMemberOccursDefs = \ [TyVar] String Location -> [];
+  top.contextSigOccursDefs = \ NamedSignature String Location -> [];
   top.contextClassName = nothing();
 
   top.resolved =
@@ -108,6 +206,20 @@ top::Context ::= i1::Type i2::Type
         !unifyDirectional(d.typeScheme.monoType, i1).failure && !d.typeScheme.monoType.isError &&
         !unifyDirectional(d.typerep2, i2).failure && !d.typerep2.isError,
       searchEnvTree("subset", top.env.instTree));
+}
+
+aspect production typeErrorContext
+top::Context ::= msg::String
+{
+  top.contextSuperDefs = \ DclInfo String Location -> [];
+  top.contextMemberDefs = \ [TyVar] String Location -> [];
+  top.contextSigDefs = \ NamedSignature String Location -> [];
+  top.contextSuperOccursDefs = \ d::DclInfo g::String l::Location -> [];
+  top.contextMemberOccursDefs = \ tvs::[TyVar] g::String l::Location -> [];
+  top.contextSigOccursDefs = \ ns::NamedSignature g::String l::Location -> [];
+  top.contextClassName = nothing();
+  top.resolved = [];
+  top.isTypeError <- true;
 }
 
 -- Invariant: This should be called when a and b are unifyable
