@@ -33,8 +33,15 @@ synthesized attribute envBindingTyVars :: Decorated Env;
 
 monoid attribute errorsKindStar::[Message];
 
+-- Better error checking and type information if this type expression is an inherited attribute set
+-- for a particular nonterminal (e.g. the {env} in Decorated Expr with {env}).
+-- We can check that the attributes actually occur on the nonterminal,
+-- and also can interpret {decorate} or {forward} since we can look up those flow types.
+-- The nonterminal type is specified by the attribute onNt, which should only be used by these attributes.
 synthesized attribute errorsInhSet::[Message];
 synthesized attribute typerepInhSet::Type;
+flowtype errorsInhSet {decorate, onNt} on TypeExpr;
+flowtype typerepInhSet {decorate, onNt} on TypeExpr;
 
 flowtype TypeExpr =
   decorate {grammarName, env, flowEnv}, forward {decorate},
@@ -45,8 +52,6 @@ flowtype TypeExpr =
 flowtype typerep {grammarName, env, flowEnv} on TypeExpr, Signature;
 flowtype maybeType {grammarName, env, flowEnv} on SignatureLHS;
 flowtype types {grammarName, env, flowEnv} on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
-
-flowtype typerepInhSet {decorate, onNt} on TypeExpr;
 
 propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs excluding refTypeExpr;
 propagate lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
