@@ -102,7 +102,7 @@ top::AGDcl ::= 'annotation' a::QName tl::BracketedOptTypeExprs '::'
 }
 
 aspect production equalityAttributeDcl
-top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::Name ';'
+top::AGDcl ::= 'equality' 'attribute' inh::Name ',' syn::QName ';'
 {
 }
 

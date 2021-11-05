@@ -243,13 +243,6 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
   top.encodedFailure = error("I don't know what noteAttachment is");
 }
 
-aspect production attributeSection
-top::Expr ::= '(' '.' q::QName ')'
-{
-  top.encodedExpr = error("attributeSection not done yet");
-  top.encodedFailure = error("attributeSection not done yet");
-}
-
 aspect production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
 {
