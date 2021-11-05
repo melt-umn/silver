@@ -35,14 +35,6 @@ occurs on ProductionLHS;
 aspect production productionLHS
 top::ProductionLHS ::= id::Name '::' t::TypeExpr
 {
-  --Missing equation in host
-  local newtSig::TypeExpr = t;
-  newtSig.onNt = error("Is onNt needed? (productionLHS)");
-  newtSig.grammarName = top.grammarName;
-  newtSig.env = top.env;
-  newtSig.flowEnv = top.flowEnv;
-  newtSig.config = top.config;
-  --
   local treename::String = capitalize(id.name);
   local treeterm::Term = varTerm(treename, genInt());
   local treenode::String = treename ++ "$Node";
@@ -51,10 +43,10 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
   top.nodetreeTerm_up =
       \ x::Term ->
         buildApplication(
-           nameTerm(nodeTreeConstructorName(newtSig.typerep.abellaType)),
+           nameTerm(nodeTreeConstructorName(t.typerep.abellaType)),
            [treenodeterm, x]);
   top.top_up =
-      (treeterm, treenodeterm, newtSig.typerep.abellaType);
+      (treeterm, treenodeterm, t.typerep.abellaType);
 }
 
 
@@ -107,14 +99,6 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
-  --Missing equation in host
-  local newtSig::TypeExpr = t;
-  newtSig.onNt = error("Is onNt needed? (productionRHSElem)");
-  newtSig.grammarName = top.grammarName;
-  newtSig.env = top.env;
-  newtSig.flowEnv = top.flowEnv;
-  newtSig.config = top.config;
-  --
   local treename::String = capitalize(id.name);
   local treeterm::Term = varTerm(treename, genInt());
   local treenode::String = treename ++ "$Node";
@@ -124,9 +108,9 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
   top.encodingEnv_up = [(id.name, (treeterm, new(treenodeterm)))];
   top.treeTerm_up = treeterm;
   top.nodetreeTerm_up =
-      if tyIsNonterminal(newtSig.typerep.abellaType)
+      if tyIsNonterminal(t.typerep.abellaType)
       then just(buildApplication(
-                   nameTerm(nodeTreeConstructorName(newtSig.typerep.abellaType)),
+                   nameTerm(nodeTreeConstructorName(t.typerep.abellaType)),
                    [treenodeterm, childlistterm]))
       else nothing();
 
@@ -269,14 +253,6 @@ occurs on FunctionLHS;
 aspect production functionLHS
 top::FunctionLHS ::= t::TypeExpr
 {
-  --Missing equation in host
-  local newt::TypeExpr = t;
-  newt.onNt = error("Is onNt needed? (productionRHSElem)");
-  newt.grammarName = top.grammarName;
-  newt.env = top.env;
-  newt.flowEnv = top.flowEnv;
-  newt.config = top.config;
-  --
-  top.abellaType = newt.typerep.abellaType;
+  top.abellaType = t.typerep.abellaType;
 }
 

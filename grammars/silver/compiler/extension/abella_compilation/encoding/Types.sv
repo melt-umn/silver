@@ -34,15 +34,7 @@ occurs on ProductionLHS;
 aspect production productionLHS
 top::ProductionLHS ::= id::Name '::' t::TypeExpr
 {
-  --Missing equation in host
-  local newt::TypeExpr = t;
-  newt.onNt = error("Is onNt needed? (productionLHS)");
-  newt.grammarName = top.grammarName;
-  newt.env = top.env;
-  newt.flowEnv = top.flowEnv;
-  newt.config = top.config;
-  --
-  top.abellaType = newt.typerep.abellaType;
+  top.abellaType = t.typerep.abellaType;
 }
 
 
@@ -73,15 +65,7 @@ occurs on ProductionRHSElem;
 aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
-  --Missing equation in host
-  local newt::TypeExpr = t;
-  newt.onNt = error("Is onNt needed? (productionRHSElem)");
-  newt.grammarName = top.grammarName;
-  newt.env = top.env;
-  newt.flowEnv = top.flowEnv;
-  newt.config = top.config;
-  --
-  top.abellaType = newt.typerep.abellaType;
+  top.abellaType = t.typerep.abellaType;
 }
 
 
@@ -331,15 +315,7 @@ top::TypeExprs ::=
 aspect production typeListCons
 top::TypeExprs ::= t::TypeExpr list::TypeExprs
 {
-  --Missing equation in host
-  local newt::TypeExpr = t;
-  newt.onNt = error("Is onNt needed? (typeListCons)");
-  newt.grammarName = top.grammarName;
-  newt.env = top.env;
-  newt.flowEnv = top.flowEnv;
-  newt.config = top.config;
-  --
-  top.abellaTys = newt.typerep.abellaType::list.abellaTys;
+  top.abellaTys = t.typerep.abellaType::list.abellaTys;
 }
 
 aspect production typeListConsMissing

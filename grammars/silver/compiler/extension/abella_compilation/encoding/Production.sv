@@ -222,22 +222,14 @@ top::ProductionStmt ::= 'attachNote' note::Expr ';'
 aspect production localAttributeDcl
 top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 {
-  --Host is missing equation for onNt
-  local newte::TypeExpr = te;
-  newte.config = top.config;
-  newte.onNt = error("I don't know what onNt is (localAttributeDcl)");
-  newte.grammarName = top.grammarName;
-  newte.env = top.env;
-  newte.flowEnv = top.flowEnv;
-  --
   top.localAttrs <-
-      if isNonterminal(newte.typerep)
+      if isNonterminal(te.typerep)
       then [(a.name, [(top.top.4,
                        functorAbellaType(
                        functorAbellaType(pairType,
-                                         newte.typerep.abellaType),
+                                         te.typerep.abellaType),
                                          nodeTreeType))])]
-      else [(a.name, [(top.top.4, newte.typerep.abellaType)])];
+      else [(a.name, [(top.top.4, te.typerep.abellaType)])];
 }
 
 aspect production forwardsTo

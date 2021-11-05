@@ -50,32 +50,32 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
         appendEnv(g.globalImports, g.env);
 
   local prodsByType::[(String, [(String, AbellaType)])] =
-        let prodsByNT::[EnvTree<DclInfo>] =
+        let prodsByNT::[EnvTree<ValueDclInfo>] =
             relevantEnv.prodsForNtTree
         in
-        let prodsLst::[(String, DclInfo)] =
+        let prodsLst::[(String, ValueDclInfo)] =
             flatMap(tmap:toList(_), prodsByNT)
         in
-        let sorted::[(String, DclInfo)] =
-            sortBy(\ p1::(String, DclInfo) p2::(String, DclInfo) ->
+        let sorted::[(String, ValueDclInfo)] =
+            sortBy(\ p1::(String, ValueDclInfo) p2::(String, ValueDclInfo) ->
                      p1.1 <= p2.1,
                    prodsLst)
         in
-        let grouped::[[(String, DclInfo)]] =
-            groupBy(\ p1::(String, DclInfo) p2::(String, DclInfo) ->
+        let grouped::[[(String, ValueDclInfo)]] =
+            groupBy(\ p1::(String, ValueDclInfo) p2::(String, ValueDclInfo) ->
                       p1.1 == p2.1,
                     sorted)
         in
-        let prods::[(String, [DclInfo])] =
-            map(\ l::[(String, DclInfo)] ->
+        let prods::[(String, [ValueDclInfo])] =
+            map(\ l::[(String, ValueDclInfo)] ->
                   ( nameToNonterminal(colonsToEncoded(head(l).1)),
                     map(snd, l) ),
                 grouped)
         in
         let expandProd::[(String, [(String, AbellaType)])] =
-            map(\ p::(String, [DclInfo]) ->
+            map(\ p::(String, [ValueDclInfo]) ->
                   ( p.1,
-                    map(\ d::DclInfo ->
+                    map(\ d::ValueDclInfo ->
                           let pname::String = d.fullName
                           in
                             ( colonsToEncoded(pname),

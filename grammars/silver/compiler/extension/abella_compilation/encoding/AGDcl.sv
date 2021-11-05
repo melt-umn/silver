@@ -32,19 +32,6 @@ aspect production attributeDclSyn
 top::AGDcl ::= 'synthesized' 'attribute' a::Name
                tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
-  --Apparently there are equations missing in the host language
-  local newtl::BracketedOptTypeExprs = tl;
-  local newte::TypeExpr = te;
-  newtl.config = top.config;
-  newtl.grammarName = top.grammarName;
-  newtl.env = top.env;
-  newtl.flowEnv = top.flowEnv;
-  newte.config = top.config;
-  newte.onNt = error("Is onNt needed?  I don't know what it is. (attributeDclInh)");
-  newte.grammarName = top.grammarName;
-  newte.env = top.env;
-  newte.flowEnv = top.flowEnv;
-  --
   top.attrs <- [buildEncodedName(top.grammarName, a.name)];
 }
 
@@ -52,19 +39,6 @@ aspect production attributeDclInh
 top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs
                '::' te::TypeExpr ';'
 {
-  --Apparently there are equations missing in the host language
-  local newtl::BracketedOptTypeExprs = tl;
-  local newte::TypeExpr = te;
-  newtl.config = top.config;
-  newtl.grammarName = top.grammarName;
-  newtl.env = top.env;
-  newtl.flowEnv = top.flowEnv;
-  newte.config = top.config;
-  newte.onNt = error("Is onNt needed?  I don't know what it is. (attributeDclInh)");
-  newte.grammarName = top.grammarName;
-  newte.env = top.env;
-  newte.flowEnv = top.flowEnv;
-  --
   top.attrs <- [buildEncodedName(top.grammarName, a.name)];
   top.inheritedAttrs <- [buildEncodedName(top.grammarName, a.name)];
 }
