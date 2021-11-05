@@ -341,3 +341,26 @@ equalityTest(
 global applyRes8::Either<String AST> = applyAST(reflect(baz), [], [pair("anno1", just(reflect(3.14))), pair("anno2", just(reflect(42)))]);
 equalityTest(applyRes8.isLeft, true, Boolean, silver_tests);
 
+-- Reflection of productions with type constraints
+equalityTest(decorate let res :: OCEqPair<EqExpr EqExpr> = reifyUnchecked(reflect(ocEqPair(ee1, ee2))) in res end with {compareTo = decorate ocEqPair(ee1, ee2) with {};}.isEqual, true, Boolean, silver_tests);
+
+nonterminal WrapTypeable;
+production wrapTypeable
+runtimeTypeable a => top::WrapTypeable ::= x::a
+{}
+
+equalityTest(
+  let res :: WrapTypeable = reifyUnchecked(reflect(wrapTypeable(pair("hi", 42)))) in case res of wrapTypeable(x) -> reifyUnchecked(reflect(x)) end end,
+  pair("hi", 42),
+  Pair<String Integer>, silver_tests);
+
+equalityTest(
+  let res :: Either<String RTNT> = reify(reflect(rtProd(\ xs::[Integer] -> length(xs)))) in res.fromLeft end,
+  "Reification error at ?:\nCan't construct production silver_features:rtProd because context runtimeTypeable a cannot be resolved at runtime",
+  String, silver_tests);
+
+equalityTest(
+  let res :: Either<String EqPair<Integer [Integer]>> = reify(reflect(eqPair(42, [1, 2, 3]))) in res.fromLeft end,
+  "Reification error at ?:\nCan't construct production silver_features:eqPair because context silver_features:myeq:MyEq a cannot be resolved at runtime",
+  String, silver_tests);
+

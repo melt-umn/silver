@@ -6,6 +6,8 @@ imports silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
 imports silver:compiler:modification:lambda_fn;
+
+import silver:util:treeset as ts;
 ```
 
 Attribute sections are a shorthand syntax for a lambda function that simply access an attribute on their argument. 
@@ -15,6 +17,7 @@ concrete production attributeSection
 top::Expr ::= '(' '.' q::QNameAttrOccur ')'
 {
   top.unparse = s"(.${q.unparse})";
+  propagate freeVars;
 ```
 
 In constructing the forward we need to know on what type the attribute will be accessed.

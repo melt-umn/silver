@@ -4,6 +4,8 @@ import silver:compiler:driver:util;
 
 synthesized attribute mdaSpecs :: [MdaSpec] occurs on Root, AGDcls, AGDcl, RootSpec, Grammar;
 
+flowtype mdaSpecs {decorate} on Root, AGDcls, AGDcl, RootSpec, Grammar;
+
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 {

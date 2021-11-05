@@ -15,7 +15,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
       getAttrsOn(fName, top.env));
   
   local specInhs :: Maybe<[String]> =
-    lookup("decorate", getFlowTypeSpecFor(fName, top.flowEnv));
+    map(fst, lookup("decorate", getFlowTypeSpecFor(fName, top.flowEnv)));
 
   -- Notice the circularity: refDefs uses flowEnv. Works fine because only
   -- the (lazy) parameter of pair isn't computable until later.
@@ -25,7 +25,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
 
 -- If it is inherited and exported by this grammar (according to authority)
 function filterOccursForReferences
-[String] ::= occ::DclInfo  e::Decorated Env  authority::(Boolean ::= String)
+[String] ::= occ::OccursDclInfo  e::Decorated Env  authority::(Boolean ::= String)
 {
   return case getAttrDcl(occ.attrOccurring, e) of
          | at :: _ ->

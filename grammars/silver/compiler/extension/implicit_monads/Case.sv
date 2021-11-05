@@ -140,7 +140,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
 --if returns (true, ty), ty will be used to find the correct Fail()
 function monadicallyUsedExpr
 Boolean ::= elst::[Expr] env::Decorated Env sub::Substitution f::BlockContext gn::String
-  cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::Decorated FlowEnv em::Type
+  cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::FlowEnv em::Type
   iR::Boolean oR::[Decorated Expr]
 {
   return case elst of
@@ -161,7 +161,7 @@ Boolean ::= elst::[Expr] env::Decorated Env sub::Substitution f::BlockContext gn
 function monadicMatchTypesNames
 ([(Type, (Expr, String))], [Expr]) ::=
   elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext gn::String
-  cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::Decorated FlowEnv names::[String]
+  cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::FlowEnv names::[String]
   loc::Location index::Integer em::Type iR::Boolean oR::[Decorated Expr]
 {
   local attribute subcall::([(Type, Expr, String)], [Expr]);
@@ -500,7 +500,7 @@ function mcaseBindsApps
 Expr ::= exprs::[Expr] names::[String] loc::Location base::Expr
          env::Decorated Env sub::Substitution f::BlockContext
          gn::String cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs
-         fe::Decorated FlowEnv em::Type iR::Boolean oR::[Decorated Expr]
+         fe::FlowEnv em::Type iR::Boolean oR::[Decorated Expr]
 {
   local subcall::Expr =
         mcaseBindsApps(tail(exprs), tail(names), loc, base,
@@ -532,7 +532,7 @@ Expr ::= exprs::[Expr] names::[String] loc::Location base::Expr
 
 --There are several thing we need for mtyperep on e which don't occur on match rules
 --Therefore we need to pass them here
-inherited attribute temp_flowEnv::Decorated FlowEnv;
+inherited attribute temp_flowEnv::FlowEnv;
 inherited attribute temp_env::Decorated Env;
 inherited attribute temp_config::Decorated CmdArgs;
 inherited attribute temp_compiledGrammars::EnvTree<Decorated RootSpec>;

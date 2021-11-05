@@ -1,5 +1,7 @@
 grammar silver:compiler:modification:primitivepattern;
 
+option silver:compiler:analysis:warnings:flow;  -- needed due to receivedDeps attribute
+
 import silver:compiler:translation:java:core;
 import silver:compiler:translation:java:type;
 
@@ -7,6 +9,8 @@ import silver:compiler:modification:let_fix only makeSpecialLocalBinding, lexica
 
 import silver:compiler:definition:flow:ast only hasVertex, noVertex, PatternVarProjection, patternVarProjection, anonVertexType, ExprVertexInfo, FlowVertex, inhVertex;
 -- also unfortunately placed references to flowEnv
+
+import silver:compiler:analysis:warnings:flow only receivedDeps;  -- Used in computing flow errors
 
 nonterminal VarBinders with 
   config, grammarName, env, compiledGrammars, frame,
@@ -18,6 +22,14 @@ nonterminal VarBinder with
   location, unparse, errors, defs, boundNames,
   bindingType, bindingIndex, translation,
   finalSubst, flowProjections, bindingName, flowEnv, matchingAgainst;
+
+flowtype decorate {grammarName, env, flowEnv, finalSubst, frame, compiledGrammars, config, bindingTypes, bindingIndex, bindingNames, matchingAgainst} on VarBinders;
+flowtype decorate {grammarName, env, flowEnv, finalSubst, frame, compiledGrammars, config, bindingType, bindingIndex, bindingName, matchingAgainst} on VarBinder;
+
+flowtype forward {decorate} on VarBinders, VarBinder;
+flowtype errors {decorate, receivedDeps} on VarBinders, VarBinder;
+flowtype defs {decorate} on VarBinders, VarBinder;
+flowtype boundNames {} on VarBinders, VarBinder;
 
 propagate errors, defs, boundNames on VarBinders, VarBinder;
 
@@ -32,8 +44,8 @@ inherited attribute bindingName :: String;
 --- Extractions of decoration sites from children
 synthesized attribute flowProjections :: [PatternVarProjection];
 
--- The name of the production we're matching against
-autocopy attribute matchingAgainst :: Maybe<DclInfo>;
+-- The DclInfo of the production we're matching against
+autocopy attribute matchingAgainst :: Maybe<ValueDclInfo>;
 
 synthesized attribute varBinderCount :: Integer;
 

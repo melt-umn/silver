@@ -13,6 +13,11 @@ monoid attribute contextInhOccurs :: [(Type, String)] occurs on NamedSignature, 
 autocopy attribute sigInhOccurs :: [(Type, String)] occurs on NamedSignatureElements, NamedSignatureElement;
 synthesized attribute inhOccursContextTypes :: [Type] occurs on NamedSignature;
 monoid attribute inhOccursIndexDecls :: String occurs on NamedSignature, Contexts, Context;
+-- Track what children can be used to resolve contexts at runtime
+monoid attribute typeChildren :: [(Type, String)] occurs on NamedSignatureElements, NamedSignatureElement;
+inherited attribute typeChildrenIn :: [(Type, String)] occurs on Contexts, Context;
+monoid attribute contextRuntimeResolve :: String occurs on NamedSignature, Contexts, Context;
+synthesized attribute contextRuntimeResolveFailure :: String occurs on Context;
 -- "final Object c_signame"
 synthesized attribute childSigElems :: [String] occurs on NamedSignatureElements;
 synthesized attribute annoSigElems :: [String] occurs on NamedSignatureElements;
@@ -61,6 +66,9 @@ top::NamedSignature ::= fn::String ctxs::Contexts ie::NamedSignatureElements oe:
     ctxs.inhOccursIndexDecls;
   top.contextInhOccurs := ctxs.contextInhOccurs;
   ie.sigInhOccurs = ctxs.contextInhOccurs;
+  
+  ctxs.typeChildrenIn = ie.typeChildren;
+  propagate contextRuntimeResolve;
 }
 
 aspect production globalSignature
@@ -78,6 +86,7 @@ top::NamedSignature ::= fn::String ctxs::Contexts ty::Type
 }
 
 propagate contextInhOccurs, inhOccursIndexDecls on Contexts, Context;
+propagate typeChildrenIn, contextRuntimeResolve on Contexts;
 
 aspect production consContext
 top::Contexts ::= h::Context t::Contexts
@@ -90,6 +99,16 @@ top::Contexts ::=
 {
   top.contextSigElems = [];
   top.contextRefElems = [];
+}
+
+aspect default production
+top::Context ::=
+{
+  top.contextRuntimeResolveFailure = s"""
+			if (true) throw new common.exceptions.SilverError("Can't construct production " + getName() + " because context ${prettyContext(top)} cannot be resolved at runtime");
+			final ${top.transType} ${top.transContextMemberName} = ${top.transContextDummyInit};
+""";
+  top.contextRuntimeResolve := top.contextRuntimeResolveFailure;
 }
 
 aspect production instContext
@@ -107,6 +126,17 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
   top.contextInhOccurs <- [(ntty, attr)];
   top.inhOccursIndexDecls <-
     s"\tpublic static final int ${makeIdName(attr)}__ON__${ntty.transTypeName} = count_inh__ON__${ntty.transTypeName}++;\n";
+  top.contextRuntimeResolve :=
+    case lookupBy(typeNameEq, ntty, top.typeChildrenIn) of
+    | just(child) -> s"""
+			final common.RTTIManager.Nonterminalton ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt = common.RTTIManager.getNonterminalton(common.Reflection.getType(${child}).typeName());
+			if (${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt == null) {
+				throw new common.exceptions.SilverError(common.Reflection.getType(${child}) + " is not a nonterminal.");
+			}
+			final int ${makeConstraintDictName(attr, ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt.getOccursIndex("${attr}");
+"""
+    | nothing() -> top.contextRuntimeResolveFailure
+    end;
 }
 
 aspect production synOccursContext
@@ -114,6 +144,17 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 {
   top.contextSigElem = s"final int ${makeConstraintDictName(attr, ntty, top.boundVariables)}";
   top.contextRefElem = makeConstraintDictName(attr, ntty, top.boundVariables);
+  top.contextRuntimeResolve :=
+    case lookupBy(typeNameEq, ntty, top.typeChildrenIn) of
+    | just(child) -> s"""
+			final common.RTTIManager.Nonterminalton ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt = common.RTTIManager.getNonterminalton(common.Reflection.getType(${child}).typeName());
+			if (${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt == null) {
+				throw new common.exceptions.SilverError(common.Reflection.getType(${child}) + " is not a nonterminal.");
+			}
+			final int ${makeConstraintDictName(attr, ntty, top.boundVariables)} = ${makeConstraintDictName(attr, ntty, top.boundVariables)}_nt.getOccursIndex("${attr}");
+"""
+    | nothing() -> top.contextRuntimeResolveFailure
+    end;
 }
 
 aspect production annoOccursContext
@@ -121,6 +162,16 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
 {
   top.contextSigElem = s"final ${top.transType} ${makeConstraintDictName(attr, ntty, top.boundVariables)}";
   top.contextRefElem = makeConstraintDictName(attr, ntty, top.boundVariables);
+  top.contextRuntimeResolve :=
+    case lookupBy(typeNameEq, ntty, top.typeChildrenIn) of
+    | just(child) -> s"""
+			if (!${child} instanceof makeAnnoName(${attr})) {
+				throw new common.exceptions.SilverError(common.Reflection.getType(${child}) + " does not have annotation ${attr}.");
+			}
+			final ${top.transType} ${makeConstraintDictName(attr, ntty, top.boundVariables)} = null;
+"""
+    | nothing() -> top.contextRuntimeResolveFailure
+    end;
 }
 
 aspect production typeableContext
@@ -128,6 +179,11 @@ top::Context ::= t::Type
 {
   top.contextSigElem = s"final ${top.transType} ${makeTypeableName(t, top.boundVariables)}";
   top.contextRefElem = makeTypeableName(t, top.boundVariables);
+  top.contextRuntimeResolve :=
+    case lookupBy(typeNameEq, t, top.typeChildrenIn) of
+    | just(child) -> s"\t\t\tfinal ${top.transType} ${makeTypeableName(t, top.boundVariables)} = common.Reflection.getType(${child});\n"
+    | nothing() -> top.contextRuntimeResolveFailure
+    end;
 }
 
 aspect production inhSubsetContext
@@ -135,7 +191,10 @@ top::Context ::= i1::Type i2::Type
 {
   top.contextSigElem = s"final ${top.transType} ${makeInhSubsetName(i1, i2, top.boundVariables)}";
   top.contextRefElem = makeInhSubsetName(i1, i2, top.boundVariables);
+  top.contextRuntimeResolve := s"final ${top.transType} ${makeInhSubsetName(i1, i2, top.boundVariables)} = null;";
 }
+
+propagate typeChildren on NamedSignatureElements;
 
 aspect production consNamedSignatureElement
 top::NamedSignatureElements ::= h::NamedSignatureElement t::NamedSignatureElements
@@ -186,6 +245,8 @@ s"""private Object child_${n};
     else if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ty.transTypeName}];\n"
     else "";
+
+  top.typeChildren := [(ty, top.childRefElem)];
   
   -- annos are full names:
   

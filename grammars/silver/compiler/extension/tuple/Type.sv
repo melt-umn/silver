@@ -36,6 +36,13 @@ top::Type ::= c::Type a::Type
 
 }
 
+-- Avoid specializing possibly-decorated types
+aspect production ntOrDecType
+top::Type ::= nt::Type inhs::Type hidden::Type
+{
+  top.tupleElems = [top];
+}
+
 -- Aspect productions needed to avoid discarding 
 -- the forwarding list type when we extract tupleElems
 aspect production listType

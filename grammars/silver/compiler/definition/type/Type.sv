@@ -14,6 +14,8 @@ synthesized attribute monoType :: Type; -- Raises on error when we encounter a p
  -}
 nonterminal PolyType with boundVars, contexts, typerep, monoType;
 
+flowtype PolyType = decorate {}, forward {};
+
 abstract production monoType
 top::PolyType ::= ty::Type
 {
@@ -94,6 +96,8 @@ top::Context ::= msg::String
  -}
 nonterminal Type with kindrep, freeVariables, tracked;
 synthesized attribute tracked :: Boolean;
+
+flowtype Type = decorate {}, forward {};
 
 aspect default production
 top::Type ::=

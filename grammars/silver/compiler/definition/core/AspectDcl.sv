@@ -9,8 +9,8 @@ nonterminal AspectFunctionLHS with config, grammarName, env, location, unparse, 
 nonterminal AspectRHS with config, grammarName, env, location, unparse, errors, defs, inputElements, realSignature;
 nonterminal AspectRHSElem with config, grammarName, env, location, unparse, errors, defs, realSignature, inputElements, deterministicCount;
 
-flowtype forward {realSignature, env} on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS;
-flowtype forward {deterministicCount, realSignature, env} on AspectRHSElem;
+flowtype forward {realSignature, grammarName, env, flowEnv} on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS;
+flowtype forward {deterministicCount, realSignature, grammarName, env, flowEnv} on AspectRHSElem;
 
 {--
  - The signature elements from the fun/produciton being aspected.
@@ -55,7 +55,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
     flatMap(
       \ c::Context -> c.contextSigDefs(realSig, top.grammarName, top.location),
       realSig.contexts);
-  local contextSigOccursDefs::[DclInfo] =
+  local contextSigOccursDefs::[OccursDclInfo] =
     flatMap(
       \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, top.location),
       realSig.contexts);
@@ -103,7 +103,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
     flatMap(
       \ c::Context -> c.contextSigDefs(realSig, top.grammarName, top.location),
       realSig.contexts);
-  local contextSigOccursDefs::[DclInfo] =
+  local contextSigOccursDefs::[OccursDclInfo] =
     flatMap(
       \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, top.location),
       realSig.contexts);

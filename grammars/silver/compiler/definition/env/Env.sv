@@ -15,15 +15,15 @@ grammar silver:compiler:definition:env;
 
 nonterminal Env with typeTree, valueTree, attrTree, instTree, prodOccursTree, occursTree, prodsForNtTree;
 
-synthesized attribute typeTree      :: [EnvTree<DclInfo>]; -- Expr is type tau
-synthesized attribute valueTree     :: [EnvTree<DclInfo>]; -- x has type tau
-synthesized attribute attrTree      :: [EnvTree<DclInfo>]; -- attr a has type tau
+synthesized attribute typeTree      :: [EnvTree<TypeDclInfo>]; -- Expr is type tau
+synthesized attribute valueTree     :: [EnvTree<ValueDclInfo>]; -- x has type tau
+synthesized attribute attrTree      :: [EnvTree<AttributeDclInfo>]; -- attr a has type tau
 
-synthesized attribute instTree       :: EnvTree<DclInfo>; -- class on type
-synthesized attribute prodOccursTree :: EnvTree<DclInfo>; -- value on prod
-synthesized attribute occursTree     :: EnvTree<DclInfo>; -- attr on NT
+synthesized attribute instTree       :: EnvTree<InstDclInfo>; -- class on type
+synthesized attribute prodOccursTree :: EnvTree<ProductionAttrDclInfo>; -- value on prod
+synthesized attribute occursTree     :: EnvTree<OccursDclInfo>; -- attr on NT
 
-synthesized attribute prodsForNtTree :: [EnvTree<DclInfo>]; -- maps nt fname to prods known to construct it
+synthesized attribute prodsForNtTree :: [EnvTree<ValueDclInfo>]; -- maps nt fname to prods known to construct it
 
 ----------------------------------------------------------------------------------------------------
 --Environment creation functions--------------------------------------------------------------------
@@ -103,7 +103,9 @@ top::Env ::= d::Defs  e::Decorated Env
   top.prodOccursTree = consEnvTree(mapFullnameDcls(d.prodOccursList), e.prodOccursTree);
   top.occursTree = e.occursTree;
 
-  top.prodsForNtTree = buildTree(map(envItemNTFromProdDcl, d.prodDclList)) :: e.prodsForNtTree;
+  top.prodsForNtTree =
+    directBuildTree(map(\ di::ValueDclInfo -> (di.namedSignature.outputElement.typerep.typeName, di), d.prodDclList)) ::
+    e.prodsForNtTree;
 }
 
 {--
@@ -111,12 +113,12 @@ top::Env ::= d::Defs  e::Decorated Env
  - This is seperate from newScopeEnv as we must be able to build the other env trees without having the occurs tree.
  -}
 function occursEnv
-Decorated Env ::= d::[DclInfo]  e::Decorated Env
+Decorated Env ::= d::[OccursDclInfo]  e::Decorated Env
 {
   return decorate i_occursEnv(d, e) with {};
 }
 abstract production i_occursEnv
-top::Env ::= d::[DclInfo]  e::Decorated Env
+top::Env ::= d::[OccursDclInfo]  e::Decorated Env
 {
   top.typeTree = e.typeTree;
   top.valueTree = e.valueTree;
@@ -150,61 +152,61 @@ function searchEnv
 }
 
 function getValueDclInScope
-[DclInfo] ::= search::String e::Decorated Env
+[ValueDclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvTree(search, head(e.valueTree));
 }
 function getValueDcl
-[DclInfo] ::= search::String e::Decorated Env
+[ValueDclInfo] ::= search::String e::Decorated Env
 {
   return searchEnv(search, e.valueTree);
 }
 function getValueDclAll
-[DclInfo] ::= search::String e::Decorated Env
+[ValueDclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvAll(search, e.valueTree);
 }
 
 function getTypeDclInScope
-[DclInfo] ::= search::String e::Decorated Env
+[TypeDclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvTree(search, head(e.typeTree));
 }
 function getTypeDcl
-[DclInfo] ::= search::String e::Decorated Env
+[TypeDclInfo] ::= search::String e::Decorated Env
 {
   return searchEnv(search, e.typeTree);
 }
 function getTypeDclAll
-[DclInfo] ::= search::String e::Decorated Env
+[TypeDclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvAll(search, e.typeTree);
 }
 
 function getAttrDclInScope
-[DclInfo] ::= search::String e::Decorated Env
+[AttributeDclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvTree(search, head(e.attrTree));
 }
 function getAttrDcl
-[DclInfo] ::= search::String e::Decorated Env
+[AttributeDclInfo] ::= search::String e::Decorated Env
 {
   return searchEnv(search, e.attrTree);
 }
 function getAttrDclAll
-[DclInfo] ::= search::String e::Decorated Env
+[AttributeDclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvAll(search, e.attrTree);
 }
 
 function getOccursDcl
-[DclInfo] ::= fnat::String fnnt::String e::Decorated Env
+[OccursDclInfo] ::= fnat::String fnnt::String e::Decorated Env
 {
   -- retrieve all attribute Dcls on NT fnnt
   return occursOnHelp(searchEnvTree(fnnt, e.occursTree), fnat);
 }
 function occursOnHelp
-[DclInfo] ::= i::[DclInfo] fnat::String
+[OccursDclInfo] ::= i::[OccursDclInfo] fnat::String
 {
   -- Inefficiency. Linear search for attribute on a nonterminal
   return if null(i) then []
@@ -228,7 +230,7 @@ Boolean ::= t::Type e::Decorated Env
 }
 
 function getProdAttrs
-[DclInfo] ::= fnprod::String e::Decorated Env
+[ProductionAttrDclInfo] ::= fnprod::String e::Decorated Env
 {
   return searchEnvTree(fnprod, e.prodOccursTree);
 }
@@ -247,7 +249,7 @@ function getProdAttrs
  - You should probably have a good reason for using this, and document it here if you do.
  -}
 function getKnownProds
-[DclInfo] ::= fnnt::String e::Decorated Env
+[ValueDclInfo] ::= fnnt::String e::Decorated Env
 {
   return searchEnvAll(fnnt, e.prodsForNtTree);
 }
@@ -262,7 +264,7 @@ function getKnownProds
  - any reason.
  -}
 function getAttrsOn
-[DclInfo] ::= fnnt::String e::Decorated Env
+[OccursDclInfo] ::= fnnt::String e::Decorated Env
 {
   return searchEnvTree(fnnt, e.occursTree);
 }
@@ -271,14 +273,14 @@ function getAttrsOn
 function annotationsForNonterminal
 [NamedSignatureElement] ::= nt::Type  env::Decorated Env
 {
-  local annos :: [DclInfo] =
+  local annos :: [OccursDclInfo] =
     filter((.isAnnotation), getAttrsOn(nt.typeName, env));
   
   return sortBy(namedSignatureElementLte, map(annoInstanceToNamed(nt, _), annos));
 }
 -- only used by the above
 function annoInstanceToNamed
-NamedSignatureElement ::= nt::Type  anno::DclInfo
+NamedSignatureElement ::= nt::Type  anno::OccursDclInfo
 {
   -- Used to compute the local typerep for this nonterminal
   anno.givenNonterminalType = nt;
@@ -288,7 +290,7 @@ NamedSignatureElement ::= nt::Type  anno::DclInfo
 
 -- Looks up class instances matching a type
 function getInstanceDcl
-[DclInfo] ::= fntc::String t::Type e::Decorated Env
+[InstDclInfo] ::= fntc::String t::Type e::Decorated Env
 {
   local c::Context = instContext(fntc, t);
   c.env = e;
@@ -304,7 +306,7 @@ function getMinInhSetMembers
   
   local recurse::[([String], [TyVar])] =
     map(
-      \ d::DclInfo -> getMinInhSetMembers(t.freeVariables ++ seen, d.typeScheme.monoType, e),
+      \ d::InstDclInfo -> getMinInhSetMembers(t.freeVariables ++ seen, d.typeScheme.monoType, e),
       c.resolved);
 
   return
@@ -334,7 +336,7 @@ function getMaxInhSetMembers
   
   local recurse::[(Maybe<[String]>, [TyVar])] =
     map(
-      \ d::DclInfo -> getMaxInhSetMembers(t.freeVariables ++ seen, d.typerep2, e),
+      \ d::InstDclInfo -> getMaxInhSetMembers(t.freeVariables ++ seen, d.typerep2, e),
       c.resolved);
   
   return

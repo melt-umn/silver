@@ -163,6 +163,7 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
   pluckTAction.frame = error("Not needed");
   pluckTAction.downSubst = emptySubst();
   pluckTAction.finalSubst = emptySubst();
+  pluckTAction.originRules = [];
   
   local tName::String = t.lookupType.dcl.fullName;
   top.syntaxAst <-

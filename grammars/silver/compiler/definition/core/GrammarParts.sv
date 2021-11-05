@@ -9,6 +9,8 @@ nonterminal Grammar with
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild,
   defs, occursDefs, importedDefs, importedOccursDefs, grammarErrors, jarName;
 
+flowtype Grammar = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, grammarName, env, globalImports, grammarDependencies};
+
 {--
 - A list of grammars that this grammar depends upon,
 - directly or indirectly. (i.e. based on other grammar's exports)
@@ -26,7 +28,7 @@ autocopy attribute globalImports :: Decorated Env;
  - At the top of a grammar, these are echoed down as globalImports
  -}
 monoid attribute importedDefs :: [Def];
-monoid attribute importedOccursDefs :: [DclInfo];
+monoid attribute importedOccursDefs :: [OccursDclInfo];
 {--
  - An overall listing of error messages for a grammar
  -}

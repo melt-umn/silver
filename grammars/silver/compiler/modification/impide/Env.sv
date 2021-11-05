@@ -5,18 +5,20 @@ grammar silver:compiler:modification:impide;
 
 -- We actually don't need to put font info on this, do we? cool!
 
+-- Ugh, typeScheme needs to occur here since we are (ab)using QNameLookup
+nonterminal FontDclInfo with fullName, typeScheme, sourceGrammar, sourceLocation;
+
 abstract production fontDcl
-top::DclInfo ::= fn::String
+top::FontDclInfo ::= fn::String
 {
   top.fullName = fn;
-  
   top.typeScheme = error("Internal compiler error: font style do not have types");
 }
 
 --------------------------------------------------------------------------------
 -- Defs.sv
 
-synthesized attribute fontDefList :: [EnvItem] occurs on Defs, Def;
+synthesized attribute fontDefList :: [EnvItem<FontDclInfo>] occurs on Defs, Def;
 
 aspect production nilDefs 
 top::Defs ::= 
@@ -37,9 +39,9 @@ top::Def ::=
 }
 
 abstract production fontStyleDef
-top::Def ::= d::EnvItem
+top::Def ::= d::EnvItem<FontDclInfo>
 {
-  top.dcl = d.dcl;
+  propagate filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended;
   top.fontDefList = [d];
 }
 
@@ -54,7 +56,7 @@ Def ::= sg::String sl::Location fn::String
 --------------------------------------------------------------------------------
 -- Env.sv
 
-synthesized attribute fontDefTree :: EnvTree<DclInfo> occurs on Env;
+synthesized attribute fontDefTree :: EnvTree<FontDclInfo> occurs on Env;
 
 aspect production i_emptyEnv
 top::Env ::=
@@ -81,7 +83,7 @@ top::Env ::= _  e::Decorated Env
 }
 
 function getFontDcl
-[DclInfo] ::= search::String e::Decorated Env
+[FontDclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvTree(search, e.fontDefTree);
 }
@@ -101,5 +103,11 @@ top::QName ::= id::Name ':' qn::QName
   top.lookupFont = decorate customLookup("font style", getFontDcl(top.name, top.env), top.name, top.location) with {};
 }
 
-synthesized attribute lookupFont :: Decorated QNameLookup occurs on QName;
+aspect production qNameError
+top::QName ::= msg::[Message]
+{
+  top.lookupFont = decorate errorLookup(msg) with {};
+}
+
+synthesized attribute lookupFont :: Decorated QNameLookup<FontDclInfo> occurs on QName;
 

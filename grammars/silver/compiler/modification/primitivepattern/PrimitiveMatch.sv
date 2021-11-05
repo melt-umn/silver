@@ -35,7 +35,7 @@ autocopy attribute scrutineeType :: Type;
 autocopy attribute returnType :: Type;
 
 propagate errors on PrimPatterns, PrimPattern;
-propagate freeVars on PrimPatterns;
+propagate freeVars on PrimPatterns, PrimPattern excluding prodPatternNormal, prodPatternGadt, conslstPattern;
 
 concrete production matchPrimitiveConcrete
 top::Expr ::= 'match' e::Expr 'return' t::TypeExpr 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
@@ -48,6 +48,8 @@ abstract production matchPrimitive
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
+  
+  propagate freeVars;
 
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
@@ -161,6 +163,8 @@ top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
 
+  top.freeVars := ts:removeAll(ns.boundNames, e.freeVars);
+
   local t::Type = qn.lookupValue.typeScheme.typerep.outputType;
   local isGadt :: Boolean =
     case t.baseType of
@@ -213,7 +217,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   ns.matchingAgainst = if null(qn.lookupValue.dcls) then nothing() else just(qn.lookupValue.dcl);
   
   -- VarBinders need occurs-on contexts in their env to determine whether var types are decorable
-  local contextOccursDefs::[DclInfo] = concat(
+  local contextOccursDefs::[OccursDclInfo] = concat(
     zipWith(
       \ c::Context oc::Context ->
         c.contextPatternOccursDefs(
@@ -286,7 +290,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   ns.matchingAgainst = if null(qn.lookupValue.dcls) then nothing() else just(qn.lookupValue.dcl);
   
   -- VarBinders need occurs-on contexts in their env to determine whether var types are decorable
-  local contextOccursDefs::[DclInfo] = concat(
+  local contextOccursDefs::[OccursDclInfo] = concat(
     zipWith(
       \ c::Context oc::Context ->
         c.contextPatternOccursDefs(

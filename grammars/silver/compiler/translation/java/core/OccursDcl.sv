@@ -15,6 +15,12 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
     else
       s"\t\t${makeNTName(ntfn)}.occurs_${occursType}[${head(occursCheck).attrOccursInitIndex}] = \"${at.lookupAttribute.fullName}\";\n";
 
+  top.postInit :=
+    if at.lookupAttribute.dcl.isAnnotation then
+      ""
+    else
+      s"\t\tcommon.RTTIManager.registerOccurs(\"${ntfn}\", \"${at.lookupAttribute.fullName}\", ${head(occursCheck).attrOccursInitIndex});\n";
+
   top.valueWeaving :=
     if at.lookupAttribute.dcl.isAnnotation then
       ""

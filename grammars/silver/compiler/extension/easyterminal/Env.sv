@@ -3,15 +3,15 @@ grammar silver:compiler:extension:easyterminal;
 import silver:compiler:definition:env;
 
 function getTerminalRegexDclAll
-[DclInfo] ::= search::String e::Decorated Env
+[TypeDclInfo] ::= search::String e::Decorated Env
 {
   return searchEnv(search, e.terminalTree);
 }
 
-synthesized attribute terminalTree :: [EnvTree<DclInfo>] occurs on Env; -- must be kept in sync with typeTree's type!! (whether its a [] or not)
+synthesized attribute terminalTree :: [EnvTree<TypeDclInfo>] occurs on Env; -- must be kept in sync with typeTree's type!! (whether its a [] or not)
 
 function filterAndConvertTermDcls
-[Pair<String DclInfo>] ::= ei::EnvItem sofar::[Pair<String DclInfo>]
+[Pair<String TypeDclInfo>] ::= ei::EnvItem<TypeDclInfo> sofar::[Pair<String TypeDclInfo>]
 {
   return case ei.dcl of
          | termDcl(fn, _, just(en)) -> pair(en, ei.dcl) :: sofar
@@ -20,7 +20,7 @@ function filterAndConvertTermDcls
 }
 
 function buildTerminalTree
-EnvTree<DclInfo> ::= eis::[EnvItem]
+EnvTree<TypeDclInfo> ::= eis::[EnvItem<TypeDclInfo>]
 {
   return directBuildTree(foldr(filterAndConvertTermDcls,[],eis));
 }

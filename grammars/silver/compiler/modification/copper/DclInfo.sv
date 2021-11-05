@@ -4,7 +4,7 @@ grammar silver:compiler:modification:copper;
  - Reference to something declared as "parser attribute foo ..."
  -}
 abstract production parserAttrDcl
-top::DclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
 
@@ -19,7 +19,7 @@ top::DclInfo ::= fn::String ty::Type
  - The names of possible pluckable terminals are jammed in the environment using this dcl.
  -}
 abstract production pluckTermDcl
-top::DclInfo ::= fn::String
+top::ValueDclInfo ::= fn::String
 {
   top.fullName = fn;
 
@@ -36,7 +36,7 @@ top::DclInfo ::= fn::String
  - Reference to a lexer class declaration. Has its own namespace in the environment, for now.
  -}
 abstract production lexerClassDcl
-top::DclInfo ::= fn::String
+top::ValueDclInfo ::= fn::String
 {
   top.fullName = fn;
   
@@ -53,7 +53,7 @@ top::DclInfo ::= fn::String
  - lexeme/filename/line/column. Used in terminal and production action code.
  -}
 abstract production termAttrValueDcl
-top::DclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
 
@@ -68,7 +68,7 @@ top::DclInfo ::= fn::String ty::Type
  - Reference to production's children from production action code.
  -}
 abstract production actionChildDcl
-top::DclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
 
@@ -83,7 +83,7 @@ top::DclInfo ::= fn::String ty::Type
  - Reference to a local variable ("local foo :: Type = ...") inside an action block.
  -}
 abstract production parserLocalDcl
-top::DclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
 

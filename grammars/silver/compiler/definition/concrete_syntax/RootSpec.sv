@@ -3,37 +3,38 @@ grammar silver:compiler:definition:concrete_syntax;
 import silver:compiler:driver:util;
 
 attribute syntaxAst, parserSpecs occurs on RootSpec, ModuleExportedDefs, Grammar;
-propagate syntaxAst, parserSpecs on Grammar;
+propagate syntaxAst, parserSpecs on RootSpec, Grammar;
 
-monoid attribute maybeSyntaxAst::Maybe<[SyntaxDcl]> with nothing(), orElse;
-monoid attribute maybeParserSpecs::Maybe<[ParserSpec]> with nothing(), orElse;
-attribute maybeSyntaxAst, maybeParserSpecs occurs on InterfaceItems, InterfaceItem;
-propagate maybeSyntaxAst, maybeParserSpecs on InterfaceItems;
+monoid attribute hasSyntaxAst::Boolean with false, ||;
+monoid attribute hasParserSpecs::Boolean with false, ||;
+attribute syntaxAst, parserSpecs, hasSyntaxAst, hasParserSpecs occurs on InterfaceItems, InterfaceItem;
+propagate syntaxAst, parserSpecs, hasSyntaxAst, hasParserSpecs on InterfaceItems, InterfaceItem;
 
 aspect production consInterfaceItem
 top::InterfaceItems ::= h::InterfaceItem t::InterfaceItems
 {
-  top.interfaceErrors <- if !top.maybeSyntaxAst.isJust then ["Missing item syntaxAst"] else [];
-  top.interfaceErrors <- if !top.maybeParserSpecs.isJust then ["Missing item parserSpecs"] else [];
+  top.interfaceErrors <- if !top.hasSyntaxAst then ["Missing item syntaxAst"] else [];
+  top.interfaceErrors <- if !top.hasParserSpecs then ["Missing item parserSpecs"] else [];
 }
 
 aspect default production
 top::InterfaceItem ::=
 {
-  top.maybeSyntaxAst := nothing();
-  top.maybeParserSpecs := nothing();
+  propagate syntaxAst, parserSpecs, hasSyntaxAst, hasParserSpecs;
 }
 
 abstract production syntaxAstInterfaceItem
 top::InterfaceItem ::= val::[SyntaxDcl]
 {
-  top.maybeSyntaxAst := just(val);
+  top.syntaxAst <- val;
+  top.hasSyntaxAst <- true;
 }
 
 abstract production parserSpecsInterfaceItem
 top::InterfaceItem ::= val::[ParserSpec]
 {
-  top.maybeParserSpecs := just(val);
+  top.parserSpecs <- val;
+  top.hasParserSpecs <- true;
 }
 
 aspect function unparseRootSpec
@@ -41,25 +42,6 @@ ByteArray ::= r::Decorated RootSpec
 {
   interfaceItems <- [syntaxAstInterfaceItem(r.syntaxAst)];
   interfaceItems <- [parserSpecsInterfaceItem(r.parserSpecs)];
-}
-
-aspect production errorRootSpec
-top::RootSpec ::= _ _ _ _ _
-{
-  propagate syntaxAst, parserSpecs;
-}
-
-aspect production grammarRootSpec
-top::RootSpec ::= c1::Grammar  _ _ _ _
-{
-  propagate syntaxAst, parserSpecs;
-}
-
-aspect production interfaceRootSpec
-top::RootSpec ::= i::InterfaceItems  interfaceTime::Integer _
-{
-  top.syntaxAst := i.maybeSyntaxAst.fromJust;
-  top.parserSpecs := i.maybeParserSpecs.fromJust;
 }
 
 aspect production moduleExportedDefs

@@ -23,19 +23,19 @@ top::AGDcl ::= 'derive' 'Eq' 'on' names::QNames ';'
 }
 
 function nonforwardingProd
-Boolean ::= d::DclInfo  fe::Decorated FlowEnv
+Boolean ::= d::ValueDclInfo  fe::FlowEnv
 {
   return null(lookupFwd(d.fullName, fe));
 }
 
 function deriveEqOn
-AGDcl ::= id::QName  env::Decorated Env  fenv::Decorated FlowEnv
+AGDcl ::= id::QName  env::Decorated Env  fenv::FlowEnv
 {
   id.env = env;
   
   local l :: Location = id.location;
   
-  local prods :: [DclInfo] = filter(nonforwardingProd(_, fenv), getKnownProds(id.lookupType.fullName, env));
+  local prods :: [ValueDclInfo] = filter(nonforwardingProd(_, fenv), getKnownProds(id.lookupType.fullName, env));
 
   local sig :: FunctionSignature =
     functionSignature(
@@ -86,7 +86,7 @@ PatternList ::= l::[Pattern]
 
 
 function generateCheckEqMRuleList
-MatchRule ::= prod::DclInfo  l::Location
+MatchRule ::= prod::ValueDclInfo  l::Location
 {
   local children :: [Type] = prod.typeScheme.typerep.inputTypes;
   

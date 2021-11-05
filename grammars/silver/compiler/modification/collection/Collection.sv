@@ -44,6 +44,8 @@ top::NameOrBOperator ::= e::Expr
     constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
 
   e.frame = bogusContext(myFlowGraph, sourceGrammar=top.grammarName);
+  e.originRules = [];
+  e.isRoot = false;
 }
 
 concrete production plusplusOperator

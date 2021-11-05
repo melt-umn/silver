@@ -8,6 +8,8 @@ import silver:compiler:definition:concrete_syntax;
 
 import silver:regex only Regex, regexLiteral;
 
+import silver:util:treeset as ts;
+
 terminal Terminal_t /\'[^\'\r\n]*\'/ lexer classes {LITERAL};
 
 -- TODO: refactor this to actually create two separate terminal declarations, one regular regex, one single quote.
@@ -34,7 +36,7 @@ top::RegExpr ::= t::Terminal_t
 }
 
 {-- Abstracts away looking up terminals in the environment -}
-nonterminal EasyTerminalRef with config, location, grammarName, unparse, errors, typerep, easyString, env, dcls;
+nonterminal EasyTerminalRef with config, location, grammarName, unparse, errors, typerep, easyString, env, dcls<TypeDclInfo>;
 
 {-- String literal between quotes. e.g. 'hi"' is hi" -}
 synthesized attribute easyString :: String;
@@ -99,6 +101,7 @@ concrete production terminalExprReg
 top::Expr ::= reg::EasyTerminalRef
 {
   top.unparse = reg.unparse;
+  propagate freeVars;
   top.errors <- reg.errors;
   
   local escapedName :: String = escapeString(reg.easyString);

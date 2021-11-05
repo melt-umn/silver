@@ -23,7 +23,7 @@ propagate flowDefs on ProductionBody, ProductionStmts, ProductionStmt, ForwardIn
  - An occurs dcl info 's flow type can be affected here
  -}
 function isAffectable
-Boolean ::= prodgram::String  ntgram::String  cg::EnvTree<Decorated RootSpec>  d::DclInfo
+Boolean ::= prodgram::String  ntgram::String  cg::EnvTree<Decorated RootSpec>  d::OccursDclInfo
 {
   return isExportedBy(prodgram, [ntgram, d.sourceGrammar], cg);
 }
@@ -177,7 +177,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
     else [];
 }
 
--- TODO: Copper ProductuionStmts
+-- TODO: Copper ProductionStmts
 
 -- We're in the unfortunate position of HAVING to compute values for 'flowDefs'
 -- even if there are errors in the larger grammar, as remote errors in binding
@@ -202,7 +202,7 @@ String ::= qn::Decorated QNameAttrOccur
 }
 -- Source grammar of a lookup of a local dcl
 function hackGramFromQName
-String ::= qn::Decorated QNameLookup
+String ::= qn::Decorated QNameLookup<ValueDclInfo>
 {
   return if qn.found then qn.dcl.sourceGrammar else "";
 }

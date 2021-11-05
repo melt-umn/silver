@@ -9,6 +9,8 @@ grammar silver:compiler:definition:env;
  -}
 nonterminal NamedSignature with fullName, contexts, inputElements, outputElement, namedInputElements, typeScheme, freeVariables, inputNames, inputTypes, typerep;
 
+flowtype NamedSignature = decorate {};
+
 synthesized attribute inputElements :: [NamedSignatureElement];
 synthesized attribute outputElement :: NamedSignatureElement;
 synthesized attribute namedInputElements :: [NamedSignatureElement];

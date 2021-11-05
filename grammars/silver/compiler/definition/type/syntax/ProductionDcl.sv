@@ -2,8 +2,7 @@ grammar silver:compiler:definition:type:syntax;
 
 attribute lexicalTypeVariables, lexicalTyVarKinds occurs on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 
-flowtype lexicalTypeVariables {env} on ProductionSignature, ProductionLHS, ProductionRHS;
-flowtype lexicalTypeVariables {deterministicCount, env} on ProductionRHSElem;
+flowtype lexicalTypeVariables {decorate} on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
@@ -29,4 +28,3 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
 {
   top.lexicalTypeVariables := nub(h.lexicalTypeVariables ++ t.lexicalTypeVariables);
 }
-

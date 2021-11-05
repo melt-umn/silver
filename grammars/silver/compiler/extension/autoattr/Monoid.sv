@@ -49,6 +49,8 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
     constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
 
   e.frame = globalExprContext(fName, nilContext(), te.typerep, myFlowGraph, sourceGrammar=top.grammarName);
+  e.isRoot = false;
+  e.originRules = [];
   
   forwards to
     collectionAttributeDclSyn(
