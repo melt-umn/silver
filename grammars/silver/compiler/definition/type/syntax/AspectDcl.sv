@@ -2,8 +2,8 @@ grammar silver:compiler:definition:type:syntax;
 
 attribute lexicalTypeVariables, lexicalTyVarKinds occurs on AspectProductionSignature, AspectProductionLHS, AspectRHS, AspectRHSElem, AspectFunctionSignature, AspectFunctionLHS;
 
-flowtype lexicalTypeVariables {realSignature, env} on AspectProductionSignature, AspectProductionLHS, AspectRHS, AspectFunctionSignature, AspectFunctionLHS;
-flowtype lexicalTypeVariables {deterministicCount, realSignature, env} on AspectRHSElem;
+flowtype lexicalTypeVariables {realSignature, env, flowEnv, grammarName} on AspectProductionSignature, AspectProductionLHS, AspectRHS, AspectFunctionSignature, AspectFunctionLHS;
+flowtype lexicalTypeVariables {realSignature, env, flowEnv, grammarName, deterministicCount} on AspectRHSElem;
 
 function addNewLexicalTyVars_ActuallyVariables
 [Def] ::= gn::String sl::Location lk::[Pair<String Kind>] l::[String]
@@ -22,7 +22,6 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   allLexicalTyVars = nub(ns.lexicalTypeVariables);
   
   sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
-  -- TODO sigDefs <- realSig.contexts as defs
 }
 
 aspect production aspectFunctionDcl
@@ -32,7 +31,6 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   allLexicalTyVars = nub(ns.lexicalTypeVariables);
   
   sigDefs <- addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, ns.lexicalTyVarKinds, allLexicalTyVars);
-  -- TODO sigDefs <- realSig.contexts as defs
 }
 
 propagate lexicalTypeVariables on AspectProductionLHS, AspectFunctionLHS, AspectRHS, AspectRHSElem excluding aspectRHSElemCons;

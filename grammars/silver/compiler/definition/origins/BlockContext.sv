@@ -50,7 +50,7 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
 }
 
 aspect production globalExprContext
-top::BlockContext ::= g::ProductionGraph
+top::BlockContext ::= _ _ _ _
 {
 	top.originsContextSource = useBogusInfo("GLOBAL_CONTEXT"); --This is a java implementation detail but...
 }

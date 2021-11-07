@@ -52,7 +52,7 @@ monoid attribute allGrammarDependencies :: [String];
  - A list of attribute occurences that are exported by this particular grammar.
  - Seperate from defs as a workaround for circular dependency issues.
  -}
-monoid attribute occursDefs :: [DclInfo];
+monoid attribute occursDefs :: [OccursDclInfo];
 
 
 --

@@ -1,27 +1,28 @@
 grammar silver:compiler:extension:autoattr;
 
-synthesized attribute propagateDispatcher :: (ProductionStmt ::= Decorated QName  Location) occurs on DclInfo;
+synthesized attribute propagateDispatcher :: (ProductionStmt ::= Decorated QName  Location) occurs on AttributeDclInfo;
 
-synthesized attribute emptyVal::Expr occurs on DclInfo;
+synthesized attribute emptyVal::Expr occurs on AttributeDclInfo;
 
 aspect default production
-top::DclInfo ::=
+top::AttributeDclInfo ::=
 {
   top.propagateDispatcher = propagateError(_, location=_);
   top.emptyVal = error("Internal compiler error: must be defined for all monoid attribute declarations");
 }
 
 aspect production inhDcl
-top::DclInfo ::= fn::String bound::[TyVar] ty::Type
+top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.propagateDispatcher = propagateInh(_, location=_);
 }
 
 abstract production functorDcl
-top::DclInfo ::= fn::String tyVar::TyVar
+top::AttributeDclInfo ::= fn::String
 {
   top.fullName = fn;
 
+  production tyVar::TyVar = freshTyVar(starKind());
   top.typeScheme = polyType([tyVar], varType(tyVar));
   top.isSynthesized = true;
   
@@ -33,7 +34,7 @@ top::DclInfo ::= fn::String tyVar::TyVar
 }
 
 abstract production monoidDcl
-top::DclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append::Operation
+top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append::Operation
 {
   top.fullName = fn;
 
@@ -53,23 +54,25 @@ top::DclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append::Operatio
   top.propagateDispatcher = propagateMonoid(_, location=_);
 }
 
-abstract production equalityInhDcl
-top::DclInfo ::= fn::String tyVar::TyVar
+abstract production destructDcl
+top::AttributeDclInfo ::= fn::String
 {
   top.fullName = fn;
 
-  top.typeScheme = polyType([tyVar], varType(tyVar));
+  production tyVar::TyVar = freshTyVar(starKind());
+  production inhsTyVar::TyVar = freshTyVar(inhSetKind());
+  top.typeScheme = polyType([tyVar, inhsTyVar], decoratedType(varType(tyVar), varType(inhsTyVar)));
   top.isInherited = true;
   
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: should probably be an error handler! access inh from undecorated?
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_); -- Allow normal inh equations
-  top.attributionDispatcher = functorAttributionDcl(_, _, _, _, location=_); -- Same as functor
-  top.propagateDispatcher = propagateEqualityInh(_, location=_);
+  top.attributionDispatcher = destructAttributionDcl(_, _, _, _, location=_);
+  top.propagateDispatcher = propagateDestruct(_, location=_);
 }
 
-abstract production equalitySynDcl
-top::DclInfo ::= inh::String syn::String
+abstract production equalityDcl
+top::AttributeDclInfo ::= inh::String syn::String
 {
   top.fullName = syn;
 
@@ -80,26 +83,41 @@ top::DclInfo ::= inh::String syn::String
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
-  top.propagateDispatcher = propagateEqualitySyn(inh, _, location=_);
+  top.propagateDispatcher = propagateEquality(inh, _, location=_);
 }
 
-abstract production unificationInhDcl
-top::DclInfo ::= fn::String tyVar::TyVar inhs::[String]
+abstract production orderingKeyDcl
+top::AttributeDclInfo ::= syn::String
 {
-  top.fullName = fn;
+  top.fullName = syn;
 
-  top.typeScheme = polyType([tyVar], decoratedType(varType(tyVar), inhSetType(sort(nub(fn :: inhs)))));
-  top.isInherited = true;
+  top.typeScheme = monoType(stringType());
+  top.isSynthesized = true;
   
-  top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: should probably be an error handler! access inh from undecorated?
-  top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_); -- Allow normal inh equations
-  top.attributionDispatcher = unificationInhAttributionDcl(_, _, _, _, location=_); -- Same as functor, except decorated
-  top.propagateDispatcher = propagateEqualityInh(_, location=_);
+  top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+  top.propagateDispatcher = propagateOrderingKey(_, location=_);
 }
 
-abstract production unificationSynPartialDcl
-top::DclInfo ::= inh::String synPartial::String syn::String
+abstract production orderingDcl
+top::AttributeDclInfo ::= inh::String keySyn::String syn::String
+{
+  top.fullName = syn;
+
+  top.typeScheme = monoType(intType());
+  top.isSynthesized = true;
+  
+  top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
+  top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
+  top.propagateDispatcher = propagateOrdering(inh, keySyn, _, location=_);
+}
+
+abstract production unificationPartialDcl
+top::AttributeDclInfo ::= inh::String synPartial::String syn::String
 {
   top.fullName = synPartial;
 
@@ -113,8 +131,8 @@ top::DclInfo ::= inh::String synPartial::String syn::String
   top.propagateDispatcher = propagateUnificationSynPartial(inh, _, syn, location=_);
 }
 
-abstract production unificationSynDcl
-top::DclInfo ::= inh::String synPartial::String syn::String
+abstract production unificationDcl
+top::AttributeDclInfo ::= inh::String synPartial::String syn::String
 {
   top.fullName = syn;
 
@@ -129,7 +147,7 @@ top::DclInfo ::= inh::String synPartial::String syn::String
 }
 
 abstract production threadedInhDcl
-top::DclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
+top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
 {
   top.fullName = inh;
 
@@ -144,7 +162,7 @@ top::DclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
 }
 
 abstract production threadedSynDcl
-top::DclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
+top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
 {
   top.fullName = syn;
 

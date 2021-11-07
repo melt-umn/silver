@@ -9,8 +9,8 @@ nonterminal AspectFunctionLHS with config, grammarName, env, location, unparse, 
 nonterminal AspectRHS with config, grammarName, env, location, unparse, errors, defs, inputElements, realSignature;
 nonterminal AspectRHSElem with config, grammarName, env, location, unparse, errors, defs, realSignature, inputElements, deterministicCount;
 
-flowtype forward {realSignature, env} on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS;
-flowtype forward {deterministicCount, realSignature, env} on AspectRHSElem;
+flowtype forward {realSignature, grammarName, env, flowEnv} on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS;
+flowtype forward {deterministicCount, realSignature, grammarName, env, flowEnv} on AspectRHSElem;
 
 {--
  - The signature elements from the fun/produciton being aspected.
@@ -51,7 +51,19 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
              then defsFromPADcls(getProdAttrs(id.lookupValue.fullName, top.env), namedSig)
              else [];
 
-  body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
+  local contextSigDefs::[Def] =
+    flatMap(
+      \ c::Context -> c.contextSigDefs(realSig, top.grammarName, top.location),
+      realSig.contexts);
+  local contextSigOccursDefs::[OccursDclInfo] =
+    flatMap(
+      \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, top.location),
+      realSig.contexts);
+
+  body.env =
+    occursEnv(contextSigOccursDefs,
+      newScopeEnv(body.defs ++ sigDefs ++ contextSigDefs,
+        newScopeEnv(prodAtts, top.env)));
   body.frame = aspectProductionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
 }
 
@@ -87,7 +99,19 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
              then defsFromPADcls(getProdAttrs(id.lookupValue.fullName, top.env), namedSig)
              else [];
 
-  body.env = newScopeEnv(body.defs ++ sigDefs, newScopeEnv(prodAtts, top.env));
+  local contextSigDefs::[Def] =
+    flatMap(
+      \ c::Context -> c.contextSigDefs(realSig, top.grammarName, top.location),
+      realSig.contexts);
+  local contextSigOccursDefs::[OccursDclInfo] =
+    flatMap(
+      \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, top.location),
+      realSig.contexts);
+
+  body.env =
+    occursEnv(contextSigOccursDefs,
+      newScopeEnv(body.defs ++ sigDefs ++ contextSigDefs,
+        newScopeEnv(prodAtts, top.env)));
   body.frame = aspectFunctionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
 }
 
@@ -149,7 +173,7 @@ top::AspectProductionLHS ::= id::Name t::Type
 
   top.outputElement = namedSignatureElement(id.name, t);
   
-  top.defs := [aliasedLhsDef(top.grammarName, id.location, fName, t, id.name)];
+  top.defs := [aliasedLhsDef(top.grammarName, id.location, fName, performSubstitution(t, top.upSubst), id.name)];
 
   top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
                 then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
@@ -228,7 +252,7 @@ top::AspectRHSElem ::= id::Name t::Type
 
   top.inputElements = [namedSignatureElement(id.name, t)];
 
-  top.defs := [aliasedChildDef(top.grammarName, id.location, fName, t, id.name)];
+  top.defs := [aliasedChildDef(top.grammarName, id.location, fName, performSubstitution(t, top.upSubst), id.name)];
 
   top.errors <- if length(getValueDclInScope(id.name, top.env)) > 1
                 then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
@@ -267,5 +291,5 @@ top::AspectFunctionLHS ::= t::TypeExpr
   top.outputElement = namedSignatureElement(fName, t.typerep);
   
   -- TODO: this needs thinking. is it broken? maybe __return? or wait, it's doing that automatically isnt it...
-  top.defs := [aliasedLhsDef(top.grammarName, t.location, fName, t.typerep, fName)];
+  top.defs := [aliasedLhsDef(top.grammarName, t.location, fName, performSubstitution(t.typerep, top.upSubst), fName)];
 }

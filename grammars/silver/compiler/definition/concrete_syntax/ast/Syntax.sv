@@ -25,10 +25,18 @@ autocopy attribute subClasses::EnvTree<String>;
 monoid attribute parserAttributeAspectContribs::[Pair<String String>];
 autocopy attribute parserAttributeAspects::EnvTree<String>;
 
+-- TODO: Attributes that lift out various sorts of SyntaxDcls all extract references
+-- of type Decorated SyntaxDcl.  The actual set of attributes needed for translation
+-- varies between different SyntaxDcl productions, however the flow analysis forces
+-- all these references to have the entire set of possible inh attributes.
+-- We should perhaps consider factoring out different sorts of SyntaxDcls into seperate
+-- nonterminals, e.g. SyntaxNonterminal, SyntaxProduction, etc. and collect references
+-- to these various nonterminals with only the relevant attributes instead.
 monoid attribute allTerminals :: [Decorated SyntaxDcl];
 monoid attribute allIgnoreTerminals :: [String];
 monoid attribute allMarkingTerminals :: [String];
 monoid attribute allProductions :: [Decorated SyntaxDcl];
+monoid attribute allProductionNames :: [String];  -- Doesn't depend on anything
 monoid attribute allNonterminals :: [Decorated SyntaxDcl];
 monoid attribute disambiguationClasses :: [Decorated SyntaxDcl];
 synthesized attribute classDomContribs :: String;
@@ -53,9 +61,11 @@ autocopy attribute prettyNames::tm:Map<String String>;
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, xmlCopper, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames;
 
-propagate cstDcls, cstErrors, cstProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs, prettyNamesAccum
+flowtype decorate {cstEnv, classTerminals, superClasses, subClasses, containingGrammar, layoutTerms, prefixesForTerminals, componentGrammarMarkingTerminals, parserAttributeAspects, prettyNames} on Syntax, SyntaxDcl;
+
+propagate cstDcls, cstErrors, cstProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs, prettyNamesAccum
   on Syntax;
 
 abstract production nilSyntax
@@ -73,7 +83,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames;
+closed nonterminal SyntaxDcl with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, xmlCopper, classDomContribs, classSubContribs, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames;
 
 synthesized attribute sortKey :: String;
 
@@ -83,7 +93,7 @@ aspect default production
 top::SyntaxDcl ::=
 {
   -- Empty values as defaults
-  propagate cstProds, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allNonterminals, disambiguationClasses, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs, prettyNamesAccum;
+  propagate cstProds, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs, prettyNamesAccum;
   top.classDomContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.classSubContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.exportedProds = error("Internal compiler error: should only ever be demanded of nonterminals");
@@ -123,6 +133,8 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
       "    <Type><![CDATA[" ++ makeNTName(t.typeName) ++ "]]></Type>\n" ++
       "  </Nonterminal>\n" ++
     subdcls.xmlCopper;
+
+  modifiers.nonterminalName = t.typeName;
 
   t.boundVariables = t.freeVariables;
 }
@@ -213,6 +225,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   top.sortKey = "FFF" ++ ns.fullName;
   top.cstDcls := [pair(ns.fullName, top)];
   top.allProductions := [top];
+  top.allProductionNames := [ns.fullName];
   
   modifiers.productionName = ns.fullName;
 

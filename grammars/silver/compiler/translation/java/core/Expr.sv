@@ -61,8 +61,8 @@ top::Expr ::= q::Decorated QName
     top.frame.className ++ ".i_" ++ q.lookupValue.fullName;
 
   top.translation =
-    if q.lookupValue.typeScheme.isDecorable
-    then if finalType(top).isDecorable
+    if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
+    then if isDecorable(finalType(top), top.env)
          then s"((${finalType(top).transType})context.childDecorated(${childIDref}).undecorate())"
          else s"((${finalType(top).transType})context.childDecorated(${childIDref}))"
     else s"((${finalType(top).transType})context.childAsIs(${childIDref}))";
@@ -71,8 +71,8 @@ top::Expr ::= q::Decorated QName
 
   top.lazyTranslation =
     if !top.frame.lazyApplication then top.translation else
-    if q.lookupValue.typeScheme.isDecorable
-    then if finalType(top).isDecorable
+    if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
+    then if isDecorable(finalType(top), top.env)
          then s"common.Thunk.transformUndecorate(context.childDecoratedLazy(${childIDref}))"
          else s"context.childDecoratedLazy(${childIDref})"
     else s"context.childAsIsLazy(${childIDref})";
@@ -82,8 +82,8 @@ aspect production localReference
 top::Expr ::= q::Decorated QName
 {
   top.translation =
-    if q.lookupValue.typeScheme.isDecorable
-    then if finalType(top).isDecorable
+    if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
+    then if isDecorable(finalType(top), top.env)
          then s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
          else s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}))"
     else s"((${finalType(top).transType})context.localAsIs(${q.lookupValue.dcl.attrOccursIndex}))";
@@ -91,8 +91,8 @@ top::Expr ::= q::Decorated QName
 
   top.lazyTranslation =
     if !top.frame.lazyApplication then top.translation else
-    if q.lookupValue.typeScheme.isDecorable
-    then if finalType(top).isDecorable
+    if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
+    then if isDecorable(finalType(top), top.env)
          then s"common.Thunk.transformUndecorate(context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex}))"
          else s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})"
     else s"context.localAsIsLazy(${q.lookupValue.dcl.attrOccursIndex})";
@@ -102,7 +102,7 @@ aspect production lhsReference
 top::Expr ::= q::Decorated QName
 {
   top.translation =
-    if finalType(top).isDecorable
+    if isDecorable(finalType(top), top.env)
     then s"((${finalType(top).transType})context.undecorate())"
     else "context";
 
@@ -113,7 +113,7 @@ aspect production forwardReference
 top::Expr ::= q::Decorated QName
 {
   top.translation =
-    if finalType(top).isDecorable
+    if isDecorable(finalType(top), top.env)
     then s"((${finalType(top).transType})context.forward().undecorate())"
     else "context.forward()";
 
@@ -251,27 +251,6 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppE
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
-aspect production attributeSection
-top::Expr ::= '(' '.' q::QName ')'
-{
-  local outTy :: String = finalType(top).outputType.transType;
-
-  top.translation =
-    if inputType.isDecorated then
-      s"new common.AttributeSection<${outTy}>(${occursCheck.dcl.attrOccursIndex})"
-    else
-      -- Please note: context is not actually required here, we do so to make runtime error messages
-      -- more comprehensible. This is a similar situation to the code for 'decorate E with {}'.
-      -- Rather pin more memory than necessary than make errors bad. For now.
-      -- TODO: This is a good candidate for removing if we make the well-definedness error check required, though!
-      -- That error would be more comprehensible! (the trouble with this is that we're reporting as context the
-      -- function/production we appear within here. The function *may* be applied elsewhere. However, the most common
-      -- case is something like map((.attr), list) so, that's probably best to report here instead of within map.)
-      s"new common.AttributeSection.Undecorated<${outTy}>(${occursCheck.dcl.attrOccursIndex}, context)";
-
-  top.lazyTranslation = top.translation;
-}
-
 aspect production errorAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
@@ -301,7 +280,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of
     | childReference(cqn), true -> 
-        if cqn.lookupValue.typeScheme.isDecorable
+        if isDecorable(cqn.lookupValue.typeScheme.typerep, top.env)
         then
           s"context.childDecoratedSynthesizedLazy(${top.frame.className}.i_${cqn.lookupValue.fullName}, ${q.dcl.attrOccursIndex})"
         else
@@ -347,7 +326,7 @@ aspect production annoAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   -- Note that the transType is specific to the nonterminal we're accessing from.
-  top.translation = s"((${finalType(top).transType})${e.translation}.getAnno_${makeIdName(q.attrDcl.fullName)}())";
+  top.translation = s"((${finalType(top).transType})((${makeAnnoName(q.attrDcl.fullName)})${e.translation}).getAnno_${makeIdName(q.attrDcl.fullName)}())";
   
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
@@ -356,7 +335,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
-  top.translation = e.translation ++ 
+  top.translation = s"((common.Node)${e.translation})" ++ 
     case inh of
     | exprInhsEmpty() -> ".decorate(context, (common.Lazy[])null)"
       -- Note: we don't NEED to pass context here, but it's good for error messages!
@@ -364,9 +343,14 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
       -- (especially important because we're implicitly inserted when accessing attributes
       --  from undecorated nodes, and this is a common error for new silverers.)
     | _ -> ".decorate(context, common.Util.populateInh(" ++
-             s"${makeNTName(finalType(e).typeName)}.num_inh_attrs, " ++
-             s"new int[]{${implode(", ", inh.nameTrans)}}, " ++ 
-             s"new common.Lazy[]{${implode(", ", inh.valueTrans)}}))"
+      case finalType(e) of
+      -- Don't know the actual number of attributes for skolems with occurs-on contexts,
+      -- fall back to using the max index.
+      | skolemType(_) -> foldr1(\ i1::String i2::String -> s"max(${i1}, ${i2})", inh.nameTrans) ++ " + 1"
+      | t -> s"${makeNTName(t.typeName)}.num_inh_attrs"
+      end ++ ", " ++
+      s"new int[]{${implode(", ", inh.nameTrans)}}, " ++ 
+      s"new common.Lazy[]{${implode(", ", inh.valueTrans)}}))"
     end;
 
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
@@ -516,6 +500,13 @@ aspect production neg
 top::Expr ::= '-' e::Expr
 {
   top.translation = s"(-${e.translation})";
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+
+aspect production terminalConstructor
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
+{
+  top.translation = s"new ${makeTerminalName(t.typerep.typeName)}(${es.translation}, (silver.core.NLocation)${el.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 

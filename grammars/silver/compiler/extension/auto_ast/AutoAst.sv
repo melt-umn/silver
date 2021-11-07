@@ -78,13 +78,13 @@ top::ProductionStmt ::= 'abstract' v::QName ';'
 function hasAst
 Boolean ::= ns::NamedSignatureElement  env::Decorated Env
 {
-  return ns.typerep.isDecorable &&
+  return isDecorable(ns.typerep, env) &&
     !null(getOccursDcl("silver:langutil:ast", ns.typerep.typeName, env));
 }
 function astType
 Type ::= ns::NamedSignatureElement  env::Decorated Env
 {
-  local occursCheck :: [DclInfo] =
+  local occursCheck :: [OccursDclInfo] =
     getOccursDcl("silver:langutil:ast", ns.typerep.typeName, env);
   
   return 

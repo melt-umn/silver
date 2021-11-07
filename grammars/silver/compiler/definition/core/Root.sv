@@ -13,6 +13,8 @@ nonterminal Root with
   declaredName, unparse, location, errors, defs, occursDefs, moduleNames, importedDefs, importedOccursDefs,
   exportedGrammars, optionalGrammars, condBuild, jarName;
 
+flowtype Root = decorate {config, compiledGrammars, grammarName, env, globalImports, grammarDependencies, flowEnv};
+
 nonterminal GrammarDcl with 
   declaredName, grammarName, location, unparse, errors;
 

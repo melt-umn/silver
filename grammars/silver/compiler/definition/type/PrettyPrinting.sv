@@ -1,5 +1,6 @@
 grammar silver:compiler:definition:type;
 
+import silver:langutil:pp;
 
 synthesized attribute typepp :: String occurs on PolyType, Context, Type, Kind;
 autocopy attribute boundVariables :: [TyVar] occurs on Context, Type;
@@ -38,6 +39,14 @@ String ::= k::Kind
   return k.typepp;
 }
 
+instance Show Type {
+  pp = compose(text, prettyType);
+}
+
+instance Show Kind {
+  pp = compose(text, prettyKind);
+}
+
 --------------------------------------------------------------------------------
 
 aspect production monoType
@@ -67,6 +76,24 @@ top::Context ::= cls::String t::Type
   top.typepp = cls ++ " " ++ t.typepp;
 }
 
+aspect production inhOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.typepp = s"attribute ${attr}${if null(args) then "" else s"<${implode(" ", map(prettyTypeWith(_, top.boundVariables), args))}>"} occurs on ${ntty.typepp}";
+}
+
+aspect production synOccursContext
+top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
+{
+  top.typepp = s"attribute ${attr}${if null(args) then "" else s"<${implode(" ", map(prettyTypeWith(_, top.boundVariables), args))}>"} ${inhs.typepp} occurs on ${ntty.typepp}";
+}
+
+aspect production annoOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.typepp = s"annotation ${attr}${if null(args) then "" else s"<${implode(" ", map(prettyTypeWith(_, top.boundVariables), args))}>"} occurs on ${ntty.typepp}";
+}
+
 aspect production typeableContext
 top::Context ::= t::Type
 {
@@ -77,6 +104,12 @@ aspect production inhSubsetContext
 top::Context ::= i1::Type i2::Type
 {
   top.typepp = i1.typepp ++ " subset " ++ i2.typepp;
+}
+
+aspect production typeErrorContext
+top::Context ::= msg::String
+{
+  top.typepp = "typeError \"" ++ escapeString(msg) ++ "\"";
 }
 
 aspect production varType

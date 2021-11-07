@@ -25,6 +25,7 @@ top::Contexts ::=
 attribute transType occurs on Context;
 synthesized attribute transContext::String occurs on Context;
 synthesized attribute transTypeableContext::String occurs on Context;
+synthesized attribute transContextDummyInit::String occurs on Context;
 
 synthesized attribute transContextMemberName::String occurs on Context;
 synthesized attribute transContextSuperAccessorName::String occurs on Context;
@@ -34,6 +35,7 @@ aspect default production
 top::Context ::=
 {
   top.transTypeableContext = top.transContext; -- Shouldn't be demanded?
+  top.transContextDummyInit = "null";
 }
 
 aspect production instContext
@@ -46,6 +48,57 @@ top::Context ::= fn::String t::Type
   
   top.transContextMemberName = makeConstraintDictName(fn, t, top.boundVariables);
   top.transContextSuperAccessorName = makeInstanceSuperAccessorName(fn);
+  top.transContextSuperAccessor = s"""
+	public final ${top.transType} ${top.transContextSuperAccessorName}() {
+		return ${top.transContext};
+	}
+""";
+}
+
+aspect production inhOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.transType = "int";
+  
+  resolvedDcl.transContextDeps = requiredContexts.transContexts;
+  top.transContext = resolvedDcl.transContext;
+  top.transContextDummyInit = "0";
+  
+  top.transContextMemberName = makeConstraintDictName(attr, ntty, top.boundVariables);
+  top.transContextSuperAccessorName = makeInstanceSuperAccessorName(attr);
+  top.transContextSuperAccessor = s"""
+	public final ${top.transType} ${top.transContextSuperAccessorName}() {
+		return ${top.transContext};
+	}
+""";
+}
+
+aspect production synOccursContext
+top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
+{
+  top.transType = "int";
+  
+  resolvedDcl.transContextDeps = requiredContexts.transContexts;
+  top.transContext = resolvedDcl.transContext;
+  top.transContextDummyInit = "0";
+  
+  top.transContextMemberName = makeConstraintDictName(attr, ntty, top.boundVariables);
+  top.transContextSuperAccessorName = makeInstanceSuperAccessorName(attr);
+  top.transContextSuperAccessor = s"""
+	public final ${top.transType} ${top.transContextSuperAccessorName}() {
+		return ${top.transContext};
+	}
+""";
+}
+
+aspect production annoOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  -- This doesn't actually encode any runtime information, for now...
+  top.transType = "Object";
+  top.transContext = "null";
+  top.transContextMemberName = makeConstraintDictName(attr, ntty, top.boundVariables);
+  top.transContextSuperAccessorName = makeInstanceSuperAccessorName(attr);
   top.transContextSuperAccessor = s"""
 	public final ${top.transType} ${top.transContextSuperAccessorName}() {
 		return ${top.transContext};
@@ -96,71 +149,118 @@ top::Context ::= i1::Type i2::Type
   top.transContextMemberName = makeInhSubsetName(i1, i2, top.boundVariables);
   top.transContextSuperAccessorName = "getInhSubset";
   top.transContextSuperAccessor = s"""
-	public final common.TypeRep getInhSubset() {
+	public final Object getInhSubset() {
 		return ${top.transContext};
 	}
 """;
 }
 
--- The translations of the narrowed forms of the instDcl's contexts are fed back as dcl.transContextDeps 
-inherited attribute transContextDeps::[String] occurs on DclInfo;
-attribute transContext occurs on DclInfo;
-
-aspect default production
-top::DclInfo ::=
+aspect production typeErrorContext
+top::Context ::= msg::String
 {
-  -- See TODO in the env DclInfo
-  top.transContext = error("Internal compiler error: must be defined for all instance declarations");
+  -- This should never get translated
+  top.transType = error("Translation demanded for typeError context!");
+  top.transContext = error("Translation demanded for typeError context!");
+  top.transContextMemberName = error("Translation demanded for typeError context!");
+  top.transContextSuperAccessorName = error("Translation demanded for typeError context!");
+  top.transContextSuperAccessor = error("Translation demanded for typeError context!");
 }
+
+-- The translations of the narrowed forms of the instDcl's contexts are fed back as dcl.transContextDeps 
+inherited attribute transContextDeps::[String] occurs on InstDclInfo, OccursDclInfo;
+attribute transContext occurs on InstDclInfo, OccursDclInfo;
+
 aspect production instDcl
-top::DclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
+top::InstDclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
 {
   top.transContext = s"new ${makeInstanceName(top.sourceGrammar, fn, ty)}(${implode(", ", top.transContextDeps)})";
 }
 aspect production instConstraintDcl
-top::DclInfo ::= fntc::String ty::Type tvs::[TyVar]
+top::InstDclInfo ::= fntc::String ty::Type tvs::[TyVar]
 {
   top.transContext = makeConstraintDictName(fntc, ty, tvs);
 }
 aspect production sigConstraintDcl
-top::DclInfo ::= fntc::String ty::Type ns::NamedSignature
+top::InstDclInfo ::= fntc::String ty::Type ns::NamedSignature
 {
   top.transContext = s"((${makeProdName(ns.fullName)})(context.undecorate())).${makeConstraintDictName(fntc, ty, ns.freeVariables)}";
 }
 aspect production currentInstDcl
-top::DclInfo ::= fntc::String ty::Type
+top::InstDclInfo ::= fntc::String ty::Type
 {
   top.transContext = s"currentInstance()";
 }
 aspect production instSuperDcl
-top::DclInfo ::= fntc::String baseDcl::DclInfo
+top::InstDclInfo ::= fntc::String baseDcl::InstDclInfo
 {
   baseDcl.transContextDeps = top.transContextDeps;
   top.transContext = baseDcl.transContext ++ s".${makeInstanceSuperAccessorName(fntc)}()";
 }
 aspect production typeableInstConstraintDcl
-top::DclInfo ::= ty::Type tvs::[TyVar]
+top::InstDclInfo ::= ty::Type tvs::[TyVar]
 {
   top.transContext = makeTypeableName(ty, tvs);
 }
 aspect production typeableSigConstraintDcl
-top::DclInfo ::= ty::Type ns::NamedSignature
+top::InstDclInfo ::= ty::Type ns::NamedSignature
 {
   top.transContext = s"((${makeProdName(ns.fullName)})(context.undecorate())).${makeTypeableName(ty, ns.freeVariables)}"; 
 }
 aspect production typeableSuperDcl
-top::DclInfo ::= baseDcl::DclInfo
+top::InstDclInfo ::= baseDcl::InstDclInfo
 {
   baseDcl.transContextDeps = top.transContextDeps;
   top.transContext = baseDcl.transContext ++ ".getType()";
 }
 aspect production inhSubsetInstConstraintDcl
-top::DclInfo ::= i1::Type i2::Type tvs::[TyVar]
+top::InstDclInfo ::= i1::Type i2::Type tvs::[TyVar]
 {
   top.transContext = "null";
 }
 aspect production inhSubsetSigConstraintDcl
-top::DclInfo ::= i1::Type i2::Type fnsig::NamedSignature
+top::InstDclInfo ::= i1::Type i2::Type fnsig::NamedSignature
+{
+  top.transContext = "null";
+}
+
+aspect production occursDcl
+top::OccursDclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
+{
+  top.transContext = top.attrOccursIndex;
+}
+aspect production occursInstConstraintDcl
+top::OccursDclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
+{
+  top.transContext = makeConstraintDictName(fnat, ntty, tvs);
+}
+aspect production occursSigConstraintDcl
+top::OccursDclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
+{
+  top.transContext = s"((${makeProdName(ns.fullName)})(context.undecorate())).${makeConstraintDictName(fnat, ntty, ns.freeVariables)}";
+}
+aspect production occursSuperDcl
+top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
+{
+  baseDcl.transContextDeps = top.transContextDeps;
+  top.transContext = baseDcl.transContext ++ s".${makeInstanceSuperAccessorName(fnat)}()";
+}
+aspect production annoInstanceDcl
+top::OccursDclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
+{
+  top.transContext = "null";
+}
+aspect production annoInstConstraintDcl
+top::OccursDclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
+{
+  top.transContext = "null";
+}
+aspect production annoSigConstraintDcl
+top::OccursDclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
+{
+  top.transContext = "null";
+}
+aspect production annoSuperDcl
+top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
 {
   top.transContext = "null";
 }

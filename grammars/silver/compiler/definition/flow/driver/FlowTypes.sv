@@ -18,15 +18,19 @@ type NtName = String;
 
 -- from explicit specifications
 function computeInitialFlowTypes
-EnvTree<FlowType> ::= specDefs::[(String, String, [String])]
+EnvTree<FlowType> ::= specDefs::[(String, String, [String], [String])]
 {
-  local specs :: [Pair<NtName [Pair<String [String]>]>] =
-    ntListCoalesce(groupBy(ntListEq, sortBy(ntListLte, specDefs)));
+  -- We don't care what flow specs reference what
+  local dropRefs::[(String, String, [String])] =
+    map(\ d::(String, String, [String], [String]) -> (d.1, d.2, d.3), specDefs);
+
+  local specs :: [(NtName, [(String, [String])])] =
+    ntListCoalesce(groupBy(ntListEq, sortBy(ntListLte, dropRefs)));
   
   return rtm:add(map(initialFlowType, specs), rtm:empty());
 }
 function initialFlowType
-Pair<NtName FlowType> ::= x::Pair<NtName [Pair<String [String]>]>
+Pair<NtName FlowType> ::= x::(NtName, [(String, [String])])
 {
   return pair(x.fst, g:add(flatMap(toFlatEdges, x.snd), g:empty()));
 }
@@ -41,7 +45,7 @@ Boolean ::= a::Pair<NtName a>  b::Pair<NtName b>
   return a.fst == b.fst;
 }
 function ntListCoalesce
-[Pair<NtName [Pair<String [String]>]>] ::= l::[[Pair<NtName Pair<String [String]>>]]
+[(NtName, [(String, [String])])] ::= l::[[(NtName, String, [String])]]
 {
   return if null(l) then []
   else pair(head(head(l)).fst, map(snd, head(l))) :: ntListCoalesce(tail(l));
@@ -209,4 +213,3 @@ top::FlowVertex ::= fName::String  attrName::String
 {
   top.flowTypeName = error("Internal compiler error: shouldn't be solving flow types for anon inherited attributes?");
 }
-

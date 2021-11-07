@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   echo "Script must be 'sourced' in a *bash* shell. Run as '. sv-nailgun' not 'sv-nailgun' nor './sv-nailgun'"

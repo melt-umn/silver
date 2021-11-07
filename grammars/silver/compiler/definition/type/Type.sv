@@ -14,6 +14,8 @@ synthesized attribute monoType :: Type; -- Raises on error when we encounter a p
  -}
 nonterminal PolyType with boundVars, contexts, typerep, monoType;
 
+flowtype PolyType = decorate {}, forward {};
+
 abstract production monoType
 top::PolyType ::= ty::Type
 {
@@ -53,6 +55,24 @@ top::Context ::= cls::String t::Type
   top.freeVariables = t.freeVariables;
 }
 
+abstract production inhOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args ++ [ntty]));
+}
+
+abstract production synOccursContext
+top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
+{
+  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args ++ [inhs, ntty]));
+}
+
+abstract production annoOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.freeVariables = setUnionTyVarsAll(map((.freeVariables), args ++ [ntty]));
+}
+
 abstract production typeableContext
 top::Context ::= t::Type
 {
@@ -65,11 +85,19 @@ top::Context ::= i1::Type i2::Type
   top.freeVariables = setUnionTyVars(i1.freeVariables, i2.freeVariables);
 }
 
+abstract production typeErrorContext
+top::Context ::= msg::String
+{
+  top.freeVariables = [];
+}
+
 {--
  - Silver Type Representations.
  -}
 nonterminal Type with kindrep, freeVariables, tracked;
 synthesized attribute tracked :: Boolean;
+
+flowtype Type = decorate {}, forward {};
 
 aspect default production
 top::Type ::=
@@ -279,7 +307,8 @@ top::Type ::= params::Integer namedParams::[String]
 
 --------------------------------------------------------------------------------
 
-nonterminal TyVar with kindrep;
+nonterminal TyVar with kindrep, compareTo, isEqual;
+propagate compareTo, isEqual on TyVar;
 
 -- In essence, this should be 'private' to this file.
 synthesized attribute extractTyVarRep :: Integer occurs on TyVar;
@@ -326,9 +355,3 @@ Type ::=
 {
   return varType(freshTyVar(inhSetKind()));
 }
-
--- TODO: Replace with propagated default instance
-instance Eq TyVar {
-  eq = \ tv1::TyVar tv2::TyVar -> tv1.kindrep == tv2.kindrep && tv1.extractTyVarRep == tv2.extractTyVarRep;
-}
-

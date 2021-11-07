@@ -1,6 +1,8 @@
 grammar silver:langutil;
 
-attribute unparse occurs on Location;
+import silver:langutil:pp;
+
+attribute unparse, pp occurs on Location;
 
 aspect production loc
 top::Location ::= filename::String  line::Integer  column::Integer
@@ -8,10 +10,12 @@ top::Location ::= filename::String  line::Integer  column::Integer
                   index::Integer  endIndex::Integer
 {
   top.unparse = filename ++ ":" ++ toString(line) ++ ":" ++ toString(column);
+  top.pp = text(top.unparse);
 }
 
 aspect production txtLoc
-top::Location ::= text::String
+top::Location ::= txt::String
 {
-  top.unparse = text;
+  top.unparse = txt;
+  top.pp = text(txt);
 }

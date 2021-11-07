@@ -134,45 +134,20 @@ top::ExprLHSExpr ::= attr::QNameAttrOccur
  - A lookup for other instances of this equation on this DefLHS.
  -}
 synthesized attribute lookupEqDefLHS :: [FlowDef] occurs on DefLHS;
+flowtype lookupEqDefLHS {decorate} on DefLHS;
 
-aspect production childDefLHS
-top::DefLHS ::= q::Decorated QName
-{
+aspect lookupEqDefLHS on top::DefLHS of
   -- prod, child, attr
-  top.lookupEqDefLHS = lookupInh(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
-}
-aspect production lhsDefLHS
-top::DefLHS ::= q::Decorated QName
-{
+| childDefLHS(q) -> lookupInh(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
   -- prod, attr
-  top.lookupEqDefLHS = lookupSyn(top.frame.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
-}
-aspect production localDefLHS
-top::DefLHS ::= q::Decorated QName
-{
+| lhsDefLHS(q) -> lookupSyn(top.frame.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
   -- prod, local, attr
-  top.lookupEqDefLHS = lookupLocalInh(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
-}
-aspect production forwardDefLHS
-top::DefLHS ::= q::Decorated QName
-{
+| localDefLHS(q) -> lookupLocalInh(top.frame.fullName, q.lookupValue.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
   -- prod, attr
-  top.lookupEqDefLHS = lookupFwdInh(top.frame.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
-}
-aspect production defaultLhsDefLHS
-top::DefLHS ::= q::Decorated QName
-{
+| forwardDefLHS(q) -> lookupFwdInh(top.frame.fullName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
   -- nt, attr
-  top.lookupEqDefLHS = lookupDef(top.frame.lhsNtName, top.defLHSattr.attrDcl.fullName, top.flowEnv);
-}
-aspect production errorDefLHS
-top::DefLHS ::= q::Decorated QName
-{
-  top.lookupEqDefLHS = [];
-}
-aspect production parserAttributeDefLHS
-top::DefLHS ::= q::Decorated QName
-{
-  top.lookupEqDefLHS = []; -- TODO: maybe error?
-}
+| defaultLhsDefLHS(q) -> lookupDef(top.frame.lhsNtName, top.defLHSattr.attrDcl.fullName, top.flowEnv)
 
+| errorDefLHS(q) -> []
+| parserAttributeDefLHS(q) -> [] -- TODO: maybe error?
+end;

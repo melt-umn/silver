@@ -5,10 +5,8 @@ grammar silver:compiler:definition:flow:ast;
  -
  - See VertexType for some extra information organizing these vertexes somewhat.
  -}
-nonterminal FlowVertex with vertexComparisonKey;
-
--- It's kinda hard to implement a comparison of a type like this, so we serialize to string and compare that.
-synthesized attribute vertexComparisonKey :: String;
+nonterminal FlowVertex with compareTo, isEqual, compareKey, compare;
+propagate compareTo, isEqual, compareKey, compare on FlowVertex;
 
 {--
  - A vertex representing a synthesized attribute on the nonterminal being constructed by this production.
@@ -17,9 +15,7 @@ synthesized attribute vertexComparisonKey :: String;
  -}
 abstract production lhsSynVertex
 top::FlowVertex ::= attrName::String
-{
-  top.vertexComparisonKey = "lhsSynV(" ++ (attrName) ++ ")";
-}
+{}
 
 {--
  - A vertex representing an inherited attribute on the nonterminal being constructed by this production.
@@ -31,9 +27,7 @@ top::FlowVertex ::= attrName::String
  -}
 abstract production lhsInhVertex
 top::FlowVertex ::= attrName::String
-{
-  top.vertexComparisonKey = "lhsInhV(" ++ (attrName) ++ ")";
-}
+{}
 
 -- TODO: we should do the above syn/inh separation for everything below too.
 
@@ -45,37 +39,31 @@ top::FlowVertex ::= attrName::String
  -}
 abstract production rhsVertex
 top::FlowVertex ::= sigName::String  attrName::String
-{
-  top.vertexComparisonKey = "rhsV(" ++ (sigName) ++ ", " ++ (attrName) ++ ")";
-}
+{}
 
 {--
  - A vertex representing a local equation. i.e. forward, local attribute, production
  - attribute, etc.  Note that this may be defined for MORE than just those with
- - nonterminal type!! (e.g. local foo :: String  will appear!)
+ - decorable type!! (e.g. local foo :: String  will appear!)
  - This is because the dependencies for these local equations still matter, of coursee.
  -
  - @param fName  the full name of the NTA/FWD being defined
  -}
 abstract production localEqVertex
 top::FlowVertex ::= fName::String
-{
-  top.vertexComparisonKey = "localEqV(" ++ (fName) ++ ")";
-}
+{}
 
 {--
  - A vertex representing an attribute on a local equation. i.e. forward, local
  - attribute, production attribute, etc.  Note this this implies the equation
- - above IS a nonterminal type!
+ - above IS a decorable type!
  -
  - @param fName  the full name of the NTA/FWD
  - @param attrName  the full name of the attribute on that element
  -}
 abstract production localVertex
 top::FlowVertex ::= fName::String  attrName::String
-{
-  top.vertexComparisonKey = "localV(" ++ (fName) ++ ", " ++ (attrName) ++ ")";
-}
+{}
 
 -- TODO: we should distinguish these!
 
@@ -101,9 +89,7 @@ FlowVertex ::= attrName::String
  -}
 abstract production anonEqVertex
 top::FlowVertex ::= fName::String
-{
-  top.vertexComparisonKey = "anonEqV(" ++ (fName) ++ ")";
-}
+{}
 
 {--
  - A vertex representing an attribute on an anonymous equation.
@@ -114,28 +100,4 @@ top::FlowVertex ::= fName::String
  -}
 abstract production anonVertex
 top::FlowVertex ::= fName::String  attrName::String
-{
-  top.vertexComparisonKey = "anonV(" ++ (fName) ++ ", " ++ (attrName) ++ ")";
-}
-
---------------------------------------------------------------------------------
-
--- TODO: Replace with propagated equality/ordering attributes
-instance Eq FlowVertex {
-  eq = \ a::FlowVertex  b::FlowVertex -> case a, b of
-    | lhsSynVertex(a1), lhsSynVertex(a2) -> a1 == a2
-    | lhsInhVertex(a1), lhsInhVertex(a2) -> a1 == a2
-    | rhsVertex(s1, a1), rhsVertex(s2, a2) -> s1 == s2 && a1 == a2
-    | localEqVertex(f1), localEqVertex(f2) -> f1 == f2
-    | localVertex(f1, a1), localVertex(f2, a2) -> f1 == f2 && a1 == a2
-    | anonEqVertex(f1), anonEqVertex(f2) -> f1 == f2
-    | anonVertex(f1, a1), anonVertex(f2, a2) -> f1 == f2 && a1 == a2
-    | _, _ -> false
-    end;
-}
-
-instance Ord FlowVertex {
-  compare = \ a::FlowVertex b::FlowVertex ->
-    compare(a.vertexComparisonKey, b.vertexComparisonKey);
-}
-
+{}

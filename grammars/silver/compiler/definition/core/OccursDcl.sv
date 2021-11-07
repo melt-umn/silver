@@ -106,7 +106,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
   production protoatty :: Type = performRenaming(performRenaming(atTypeScheme.typerep, rewrite_from), rewrite_to);
   
   -- Now, finally, make sure we're not "redefining" the occurs.
-  production occursCheck :: [DclInfo] = getOccursDcl(at.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
+  production occursCheck :: [OccursDclInfo] = getOccursDcl(at.lookupAttribute.fullName, nt.lookupType.fullName, top.env);
   
   top.errors <-
     if length(occursCheck) > 1
@@ -114,7 +114,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
     else [];
 
   top.errors <-
-    if nt.lookupType.found && (!nt.lookupType.dcl.isType || !ntTypeScheme.typerep.isDecorable)
+    if nt.lookupType.found && (!nt.lookupType.dcl.isType || !isDecorable(ntTypeScheme.typerep, top.env))
     then [err(nt.location, nt.name ++ " is not a nonterminal. Attributes can only occur on nonterminals.")]
     else [];
                 

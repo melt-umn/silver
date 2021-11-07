@@ -47,10 +47,11 @@ top::AGDcl ::= attrs::NameList nt::QName ps::ProdNameList
   top.defs := [];
   top.occursDefs := [];
   top.moduleNames := [];
+  top.specDefs := [];
   
-  local includedProds::[DclInfo] =
+  local includedProds::[ValueDclInfo] =
     filter(
-      \ d::DclInfo -> !d.hasForward && !contains(d.fullName, ps.names),
+      \ d::ValueDclInfo -> !d.hasForward && !contains(d.fullName, ps.names),
       getKnownProds(nt.lookupType.fullName, top.env));
   local dcl::AGDcl =
     foldr(
@@ -64,7 +65,7 @@ top::AGDcl ::= attrs::NameList nt::QName ps::ProdNameList
 }
 
 abstract production propagateAspectDcl
-top::AGDcl ::= d::DclInfo attrs::NameList
+top::AGDcl ::= d::ValueDclInfo attrs::NameList
 {
   top.errors :=
     if null(forward.errors)

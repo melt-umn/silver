@@ -13,9 +13,17 @@ nonterminal ExprInhs with
 nonterminal ExprInh with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
 nonterminal ExprLHSExpr with
-  config, grammarName, env, location, unparse, errors, freeVars, name, typerep, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, name, typerep, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
 
-flowtype freeVars {} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+flowtype freeVars {frame} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+flowtype Expr = decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config}, forward {decorate};
+
+flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config} on Exprs;
+flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config, decoratingnt, allSuppliedInhs} on ExprInhs, ExprInh;
+flowtype decorate {grammarName, env, frame, isRoot, originRules, config, decoratingnt, allSuppliedInhs} on ExprLHSExpr;
+flowtype forward {} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+
+flowtype errors {decorate} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
 propagate errors, freeVars on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
@@ -92,7 +100,7 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  top.typerep = if q.lookupValue.typeScheme.isDecorable
+  top.typerep = if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
                 then q.lookupValue.typeScheme.asNtOrDecType
                 else q.lookupValue.typeScheme.monoType;
 }
@@ -113,7 +121,7 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  top.typerep = if q.lookupValue.typeScheme.isDecorable
+  top.typerep = if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
                 then q.lookupValue.typeScheme.asNtOrDecType
                 else q.lookupValue.typeScheme.monoType;
 }
@@ -267,6 +275,9 @@ abstract production errorApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  top.freeVars <- e.freeVars;
+  top.freeVars <- es.freeVars;
+  top.freeVars <- anns.freeVars;
   
   top.errors <- e.errors;
   top.errors <-
@@ -285,7 +296,7 @@ abstract production functionApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
-  propagate freeVars;
+  top.freeVars := e.freeVars ++ es.freeVars ++ anns.freeVars;
   
   -- TODO: we have an ambiguity here in the longer term.
   -- How to distinguish between
@@ -301,6 +312,9 @@ abstract production functionInvocation
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  top.freeVars <- e.freeVars;
+  top.freeVars <- es.freeVars;
+  top.freeVars <- anns.freeVars;
   
   top.errors <- e.errors ++ es.errors ++ anns.errors;
 
@@ -313,6 +327,9 @@ abstract production partialApplication
 top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
+  top.freeVars <- e.freeVars;
+  top.freeVars <- es.freeVars;
+  top.freeVars <- anns.freeVars;
   
   top.errors <- e.errors ++ es.errors ++ anns.errors;
 
@@ -334,37 +351,6 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
   note.isRoot = false;
   e.isRoot = false;
   e.originRules = top.originRules ++ [note];
-}
-
-concrete production attributeSection
-top::Expr ::= '(' '.' q::QName ')'
-{
-  top.unparse = "(." ++ q.unparse ++ ")";
-  
-  -- Fresh variable for the input type, and we'll come back later and check that it occurs on that type.
-  
-  local rawInputType :: Type = freshType();
-  top.typerep = appTypes(functionType(1, []), [rawInputType, q.lookupAttribute.typeScheme.typerep]);
-  
-  top.errors <- q.lookupAttribute.errors;
-  
-  top.errors <- if null(q.lookupAttribute.typeScheme.boundVars) then []
-                else [err(q.location, "Attribute " ++ q.name ++ " is parameterized, and attribute sections currently do not work with parameterized attributes, yet.")]; -- TODO The type inference system is too weak, currently.
-  
-  top.errors <- if !q.lookupAttribute.found || q.lookupAttribute.dcl.isSynthesized then []
-                else [err(q.location, "Only synthesized attributes are currently supported in attribute sections.")];
-  
-  -- Only known after the inference pass (uses final subst)
-  production attribute inputType :: Type;
-  inputType = performSubstitution(rawInputType, top.finalSubst);
-  
-  -- We're not using QNameAttrOccur right now because that assumes we know the nonterminal
-  -- so we can filter down to just attributes occurring on that. We could probably fix this
-  -- to make it work either way.
-  production attribute occursCheck :: OccursCheck;
-  occursCheck = occursCheckQName(q, if inputType.isDecorated then inputType.decoratedType else inputType);
-
-  top.errors <- occursCheck.errors;
 }
 
 -- NOTE: this is not intended to be used normally.
@@ -402,6 +388,7 @@ abstract production errorAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  top.freeVars <- e.freeVars;
   
   top.typerep = errorType();
   top.errors <- q.errors;
@@ -418,6 +405,7 @@ abstract production annoAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  top.freeVars <- e.freeVars;
   
   production index :: Integer =
     findNamedSigElem(q.name, annotationsForNonterminal(q.attrFor, top.env), 0);
@@ -454,12 +442,9 @@ abstract production undecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  propagate freeVars;
+  top.freeVars := e.freeVars;
 
   top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
-  
-  -- TODO: We should consider disambiguating based on what dcls *actually*
-  -- occur on the LHS here.
   
   -- Note: LHS is UNdecorated, here we dispatch based on the kind of attribute.
   forwards to if !q.found then errorDecoratedAccessHandler(e, q, location=top.location)
@@ -476,6 +461,7 @@ abstract production accessBouncer
 top::Expr ::= target::(Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location) e::Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  propagate freeVars;
 
   -- Basically the only purpose here is to decorate 'e'.
   forwards to target(e, q, top.location);
@@ -495,12 +481,9 @@ abstract production decoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  propagate freeVars;
+  top.freeVars := e.freeVars;
 
   top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
-  
-  -- TODO: We should consider disambiguating based on what dcls *actually*
-  -- occur on the LHS here.
   
   -- Note: LHS is decorated, here we dispatch based on the kind of attribute.
   forwards to if !q.found then errorDecoratedAccessHandler(e, q, location=top.location)
@@ -515,6 +498,7 @@ abstract production synDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  top.freeVars <- e.freeVars;
   
   top.typerep = q.typerep;
 }
@@ -523,6 +507,7 @@ abstract production inhDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  top.freeVars <- e.freeVars;
   
   top.typerep = q.typerep;
 }
@@ -532,6 +517,7 @@ abstract production errorDecoratedAccessHandler
 top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
+  top.freeVars <- e.freeVars;
 
   top.typerep = errorType();
 }
@@ -858,6 +844,31 @@ top::Expr ::= e1::Expr '++' e2::Expr
         presentAppExpr(e2, location=top.location),
         location=top.location),')',
       location=top.location);
+}
+
+concrete production terminalConstructor
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
+{
+  top.unparse = "terminal(" ++ t.unparse ++ ", " ++ es.unparse ++ ", " ++ el.unparse ++ ")";
+
+  top.typerep = t.typerep;
+
+  es.isRoot = false;
+  el.isRoot = false;
+}
+
+concrete production terminalFunction
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' e::Expr ')'
+{
+  -- So, *maybe* this is deprecated? But let's not complain for now, because
+  -- it's too widely used.
+
+  --top.errors <- [wrn(t.location, "terminal(type,lexeme) is deprecated. Use terminal(type,lexeme,location) instead.")];
+
+  local bogus :: Expr =
+    mkStrFunctionInvocation($6.location, "silver:core:bogusLoc", []);
+
+  forwards to terminalConstructor($1, $2, t, $4, e, ',', bogus, $6, location=top.location);
 }
 
 -- These sorta seem obsolete, but there are some important differences from AppExprs.

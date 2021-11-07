@@ -1,5 +1,7 @@
 grammar silver:compiler:modification:primitivepattern;
 
+option silver:compiler:analysis:warnings:flow;  -- needed due to receivedDeps attribute
+
 import silver:compiler:translation:java:core;
 import silver:compiler:translation:java:type;
 
@@ -7,6 +9,8 @@ import silver:compiler:modification:let_fix only makeSpecialLocalBinding, lexica
 
 import silver:compiler:definition:flow:ast only hasVertex, noVertex, PatternVarProjection, patternVarProjection, anonVertexType, ExprVertexInfo, FlowVertex, inhVertex;
 -- also unfortunately placed references to flowEnv
+
+import silver:compiler:analysis:warnings:flow only receivedDeps;  -- Used in computing flow errors
 
 nonterminal VarBinders with 
   config, grammarName, env, compiledGrammars, frame,
@@ -18,6 +22,14 @@ nonterminal VarBinder with
   location, unparse, errors, defs, boundNames,
   bindingType, bindingIndex, translation,
   finalSubst, flowProjections, bindingName, flowEnv, matchingAgainst;
+
+flowtype decorate {grammarName, env, flowEnv, finalSubst, frame, compiledGrammars, config, bindingTypes, bindingIndex, bindingNames, matchingAgainst} on VarBinders;
+flowtype decorate {grammarName, env, flowEnv, finalSubst, frame, compiledGrammars, config, bindingType, bindingIndex, bindingName, matchingAgainst} on VarBinder;
+
+flowtype forward {decorate} on VarBinders, VarBinder;
+flowtype errors {decorate, receivedDeps} on VarBinders, VarBinder;
+flowtype defs {decorate} on VarBinders, VarBinder;
+flowtype boundNames {} on VarBinders, VarBinder;
 
 propagate errors, defs, boundNames on VarBinders, VarBinder;
 
@@ -32,8 +44,8 @@ inherited attribute bindingName :: String;
 --- Extractions of decoration sites from children
 synthesized attribute flowProjections :: [PatternVarProjection];
 
--- The name of the production we're matching against
-autocopy attribute matchingAgainst :: Maybe<DclInfo>;
+-- The DclInfo of the production we're matching against
+autocopy attribute matchingAgainst :: Maybe<ValueDclInfo>;
 
 synthesized attribute varBinderCount :: Integer;
 
@@ -104,12 +116,12 @@ top::VarBinder ::= n::Name
   
   -- top.bindingType comes straight from the type in the production signature.
   -- Consequently, the child is only auto-decorated if
-  -- top.bindingType.isDecorable, and never otherwise.
+  -- isDecorable(top.bindingType, top.env), and never otherwise.
   -- (We *DO NOT* want to substitute first... because that will turn the type
   -- variables into concrete types! and type variables in a production are
   -- NOT automatically decorated!)
   local ty :: Type =
-    if top.bindingType.isDecorable
+    if isDecorable(top.bindingType, top.env)
     then decoratedType(top.bindingType, freshInhSet())
     else top.bindingType;
   production finalTy::Type = performSubstitution(ty, top.finalSubst);
@@ -120,7 +132,7 @@ top::VarBinder ::= n::Name
   -- If it's decorable, then we do projections through the production
   -- if it's not, then we treat it like a generic reference.
   top.flowProjections =
-    if top.bindingType.isDecorable
+    if isDecorable(top.bindingType, top.env)
     then [patternVarProjection(top.bindingName, top.bindingType.typeName, fName)]
     else [];
   -- because we don't have an 'anonEq' (the nonterminal stitch point gets generated for us by the above contribution) we won't be reported as missing in this production. Checks for presence in remote productions have to be done explicitly
@@ -129,11 +141,11 @@ top::VarBinder ::= n::Name
   -- and the correct value is computed based on how this gets used.
   -- (e.g. if 'new'
   local vt :: ExprVertexInfo =
-    if top.bindingType.isDecorable
+    if isDecorable(top.bindingType, top.env)
     then hasVertex(anonVertexType(fName))
     else noVertex();
   local deps :: [FlowVertex] =
-    if top.bindingType.isDecorable
+    if isDecorable(top.bindingType, top.env)
     then map(anonVertexType(fName).inhVertex, fromMaybe([], refSet))
     else [];
 
@@ -151,7 +163,7 @@ top::VarBinder ::= n::Name
   top.translation = 
     makeSpecialLocalBinding(fName, 
       "(" ++ actualTy.transType ++ ")scrutinee." ++ 
-        (if top.bindingType.isDecorable
+        (if isDecorable(top.bindingType, top.env)
          then "childDecorated("
          else "childAsIs(") ++
         toString(top.bindingIndex) ++ ")",

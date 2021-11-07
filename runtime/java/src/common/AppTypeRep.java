@@ -30,6 +30,11 @@ public class AppTypeRep extends TypeRep {
 	}
 	
 	@Override
+	public final String typeName() {
+		return cons.typeName();
+	}
+	
+	@Override
 	public final String toString() {
 		List<TypeRep> args = new LinkedList<>();
 		TypeRep a = this;
@@ -61,6 +66,8 @@ public class AppTypeRep extends TypeRep {
 			}
 			String resultToString = it.hasNext()? it.next().toString() : "_";
 			result = "(" + resultToString + " ::= " + argsToString + ")";
+		} else {
+			result = a.toString();
 		}
 		if (it.hasNext()) {
 			result += "<" + it.next();

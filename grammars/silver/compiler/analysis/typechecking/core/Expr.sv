@@ -82,12 +82,12 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   -- We might have gotten here via a 'ntOrDec' type. So let's make certain we're UNdecorated,
   -- ensuring that type's specialization, otherwise we could end up in trouble!
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
-  errCheck1 = checkNonterminal(e.typerep);
+  errCheck1 = checkNonterminal(top.env, true, e.typerep);
 
   -- TECHNICALLY, I think the current implementation makes this impossible,
   -- But let's leave it since it's the right thing to do.
   top.errors <-
-    if errCheck1.typeerror
+    if errCheck1.typeerror && q.found
     then [err(top.location, "Access of " ++ q.name ++ " from a decorated type.")]
     else [];
   
@@ -323,6 +323,32 @@ top::Expr ::= '-' e1::Expr
        else [err(top.location, "Operand to unary - must be concrete types Integer or Float.  Instead it is of type " ++ prettyType(performSubstitution(e1.typerep, top.finalSubst)))];
 }
 
+aspect production terminalConstructor
+top::Expr ::= 'terminal' '(' t::TypeExpr ',' es::Expr ',' el::Expr ')'
+{
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
+
+  thread downSubst, upSubst on top, es, el, errCheck1, errCheck2, top;
+  
+  errCheck1 = check(es.typerep, stringType());
+  errCheck2 = check(el.typerep, nonterminalType("silver:core:Location", [], false));
+  top.errors <-
+    if errCheck1.typeerror
+    then [err(es.location, "Second operand to 'terminal(type,lexeme,location)' must be a String, instead it is " ++ errCheck1.leftpp)]
+    else [];
+
+  top.errors <-
+    if errCheck2.typeerror
+    then [err(el.location, "Third operand to 'terminal(type,lexeme,location)' must be a Location, instead it is " ++ errCheck2.leftpp)]
+    else [];
+  
+  top.errors <-
+    if t.typerep.isTerminal || t.typerep.isError
+    then []
+    else [err(t.location, "First operand to 'terminal(type,lexeme,location)' must be a Terminal type, instead it is " ++ prettyType(t.typerep))];
+}
+
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
@@ -330,7 +356,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 
   thread downSubst, upSubst on top, e, errCheck1, inh, top;
 
-  errCheck1 = checkNonterminal(e.typerep);
+  errCheck1 = checkNonterminal(top.env, true, e.typerep);
   top.errors <-
        if errCheck1.typeerror
        then [err(top.location, "Operand to decorate must be a nonterminal.  Instead it is of type " ++ errCheck1.leftpp)]

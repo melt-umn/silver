@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -eu
 
@@ -14,7 +14,7 @@ if [[ $* != *--copper* && $# -gt 0 || $# -gt 1 ]]; then
     JARS_BAK="JARS-BAK/$rev"
 else
     LOCAL_STORE=/web/research/melt.cs.umn.edu/downloads/silver-dev/jars
-    REMOTE_STORE="http://melt.cs.umn.edu/downloads/silver-dev/jars"
+    REMOTE_STORE="https://melt.cs.umn.edu/downloads/silver-dev/jars"
     JARS_BAK=JARS-BAK
 fi
 

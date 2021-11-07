@@ -24,6 +24,8 @@ top::AGDcl ::= 'temp_imp_ide_font' id::Name 'color' '(' r::Int_t ',' g::Int_t ',
                         fontStyles.isItalic)
 		  )];
 
+  propagate moduleNames, jarName;
+
   forwards to defsAGDcl([fontDef(top.grammarName, top.location, fName)], location=top.location);
 }
 

@@ -1,7 +1,7 @@
 grammar silver:compiler:modification:primitivepattern;
 
 import silver:compiler:modification:ffi only foreignType; -- so we cover foreignType with the 'refine' hack below. TODO
-import silver:compiler:translation:java:type;
+import silver:compiler:translation:java;
 
 {--
  - Turns the existential variables of a production type into skolem constants,
@@ -66,6 +66,8 @@ Pair<[Context] Type> ::= te::PolyType
 inherited attribute refineWith :: Type occurs on Type;
 synthesized attribute refine :: Substitution occurs on Type;
 
+flowtype Type = refine {refineWith};
+
 aspect production varType
 top::Type ::= tv::TyVar
 {
@@ -79,7 +81,7 @@ top::Type ::= tv::TyVar
         if contains(tv, t.freeVariables)
         then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
         else subst(tv, t)
-    | t -> errorSubst("Kind mismatch!  Tried to unify with " ++ prettyType(top.unifyWith))
+    | t -> errorSubst("Kind mismatch!  Tried to refine with " ++ prettyType(top.refineWith))
     end;
 }
 
@@ -96,7 +98,7 @@ top::Type ::= tv::TyVar
         if contains(tv, t.freeVariables)
         then errorSubst("Infinite type! Tried to refine with " ++ prettyType(t))
         else subst(tv, t)
-    | t -> errorSubst("Kind mismatch!  Tried to unify with " ++ prettyType(top.unifyWith))
+    | t -> errorSubst("Kind mismatch!  Tried to refine with " ++ prettyType(top.refineWith))
     end;
 }
 
@@ -175,7 +177,7 @@ top::Type ::= inhs::[String]
   top.refine =
     case top.refineWith of
     | inhSetType(oinhs) when inhs == oinhs -> emptySubst()
-    | _ -> errorSubst("Tried to refine inh set type " ++ prettyType(top) ++ " with " ++ prettyType(top.unifyWith))
+    | _ -> errorSubst("Tried to refine inh set type " ++ prettyType(top) ++ " with " ++ prettyType(top.refineWith))
     end;
 }
 
@@ -306,38 +308,100 @@ Boolean ::= ls::[Type]
 
 
 --------
-synthesized attribute contextPatternDcl::(DclInfo ::= Context [TyVar] String Location String) occurs on Context;
+synthesized attribute contextPatternDefs::([Def] ::= Context [TyVar] String Location String) occurs on Context;
+synthesized attribute contextPatternOccursDefs::([OccursDclInfo] ::= Context [TyVar] String Location String) occurs on Context;
+
+aspect default production
+top::Context ::=
+{
+  top.contextPatternDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String -> [];
+  top.contextPatternOccursDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String -> [];
+}
 
 aspect production instContext
 top::Context ::= cls::String t::Type
 {
-  top.contextPatternDcl = instPatternConstraintDcl(cls, t, _, _, _, sourceLocation=_, sourceGrammar=_);
+  top.contextPatternDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
+    [tcInstDef(instPatternConstraintDcl(cls, t, oc, tvs, st, sourceLocation=l, sourceGrammar=g))];
+}
+
+aspect production inhOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.contextPatternOccursDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
+    [occursPatternConstraintDcl(attr, ntty, atty, oc, tvs, st, sourceLocation=l, sourceGrammar=g)];
+}
+
+aspect production synOccursContext
+top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
+{
+  top.contextPatternOccursDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
+    [occursPatternConstraintDcl(attr, ntty, atty, oc, tvs, st, sourceLocation=l, sourceGrammar=g)];
+}
+
+aspect production annoOccursContext
+top::Context ::= attr::String args::[Type] atty::Type ntty::Type
+{
+  top.contextPatternOccursDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
+    [annoPatternConstraintDcl(attr, ntty, atty, oc, tvs, st, sourceLocation=l, sourceGrammar=g)];
 }
 
 aspect production typeableContext
 top::Context ::= t::Type
 {
-  top.contextPatternDcl = typeablePatternConstraintDcl(t, _, _, _, sourceLocation=_, sourceGrammar=_);
+  top.contextPatternDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
+    [tcInstDef(typeablePatternConstraintDcl(t, oc, tvs, st, sourceLocation=l, sourceGrammar=g))];
 }
 
 aspect production inhSubsetContext
 top::Context ::= i1::Type i2::Type
 {
-  top.contextPatternDcl = inhSubsetPatternConstraintDcl(i1, i2, _, _, _, sourceLocation=_, sourceGrammar=_);
+  top.contextPatternDefs = \ oc::Context tvs::[TyVar] st::String l::Location g::String ->
+    [tcInstDef(inhSubsetPatternConstraintDcl(i1, i2, oc, tvs, st, sourceLocation=l, sourceGrammar=g))];
 }
 
 abstract production instPatternConstraintDcl
-top::DclInfo ::= fntc::String ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
+top::InstDclInfo ::= fntc::String ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
 {
   top.fullName = fntc;
   top.typeScheme = monoType(ty);
-  
+
   oc.boundVariables = tvs;
   top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
 }
 
+abstract production occursPatternConstraintDcl
+top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
+{
+  top.fullName = ntty.typeName;
+  top.attrOccurring = fnat;
+  top.typeScheme = monoType(atty);
+  
+  oc.boundVariables = tvs;
+  top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
+
+  -- Never appears for anything on which we can define an equation
+  top.attrOccursIndexName = error("Not needed");
+  top.attrOccursInitIndex = error("Not needed");
+}
+
+abstract production annoPatternConstraintDcl
+top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
+{
+  top.fullName = ntty.typeName;
+  top.attrOccurring = fnat;
+  top.typeScheme = monoType(atty);
+  top.isAnnotation = true;
+  
+  oc.boundVariables = tvs;
+  top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
+
+  top.attrOccursIndexName = error("Not actually an attribute");
+  top.attrOccursInitIndex = error("Not actually an attribute");
+}
+
 abstract production typeablePatternConstraintDcl
-top::DclInfo ::= ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
+top::InstDclInfo ::= ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
 {
   top.fullName = "typeable";
   top.typeScheme = monoType(ty);
@@ -347,7 +411,7 @@ top::DclInfo ::= ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
 }
 
 abstract production inhSubsetPatternConstraintDcl
-top::DclInfo ::= i1::Type i2::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
+top::InstDclInfo ::= i1::Type i2::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
 {
   top.fullName = "subset";
   top.typeScheme = monoType(i1);

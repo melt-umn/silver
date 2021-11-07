@@ -30,12 +30,26 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   propagate errors, flowDefs;
 
   top.errors <- te.errorsKindStar;
+  top.errors <-
+    case te of
+    -- LHS must be either NT or NT<a b ...> where a b ... are all ty vars
+    | appTypeExpr(_, tl) -> tl.errorsTyVars
+    | _ -> []
+    end;
+
+  local checkNT::TypeCheck = checkNonterminal(top.env, false, te.typerep);
+  checkNT.downSubst = emptySubst();
+  checkNT.finalSubst = emptySubst();
+
+  top.errors <-
+    if checkNT.typeerror
+    then [err(top.location, "Default production LHS type must be a nonterminal.  Instead it is of type " ++ checkNT.leftpp)]
+    else [];
 
   local fakedDefs :: [Def] =
     [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];
   
-  local sigDefs :: [Def] =
-    addNewLexicalTyVars_ActuallyVariables(top.grammarName, top.location, te.lexicalTyVarKinds, te.lexicalTypeVariables);
+  local sigDefs :: [Def] = addNewLexicalTyVars(top.grammarName, top.location, te.lexicalTyVarKinds, te.lexicalTypeVariables);
 
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -44,8 +58,9 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   local myFlowGraph :: ProductionGraph = 
     constructDefaultProductionGraph(namedSig, body.flowDefs, top.env, myProds, myFlow);
 
+  te.env = newScopeEnv(sigDefs, top.env);
 
-  body.env = newScopeEnv(fakedDefs ++ sigDefs, top.env);
+  body.env = newScopeEnv(fakedDefs, te.env);
   body.frame = defaultAspectContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName);
 
   body.downSubst = emptySubst();
@@ -61,7 +76,7 @@ Def ::= sg::String sl::Location fn::String ty::Type
   return valueDef(defaultEnvItem(defaultLhsDcl(fn,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 abstract production defaultLhsDcl
-top::DclInfo ::= fn::String ty::Type
+top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
 
@@ -99,4 +114,3 @@ top::BlockContext ::= sig::NamedSignature  g::ProductionGraph
   top.flowGraph = g;
   top.originsContextSource = useContextLhsAndRules();
 }
-

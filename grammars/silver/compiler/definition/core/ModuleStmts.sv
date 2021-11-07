@@ -47,23 +47,25 @@ top::Module ::= l::Location
   production med :: ModuleExportedDefs =
     moduleExportedDefs(l, compiledGrammars, grammarDependencies, need, seen);
   
-  local defs_after_only :: [Def] =
-    if null(onlyFilter) then med.defs
-    else filter(filterDefOnEnvItem(envItemInclude(_, onlyFilter), _), med.defs);
+  local defs :: Defs = foldr(consDefs, nilDefs(), med.defs);
+  defs.filterItems = onlyFilter;
 
-  local defs_after_hiding :: [Def] =
-    if null(hidingFilter) then defs_after_only
-    else filter(filterDefOnEnvItem(envItemExclude(_, hidingFilter), _), defs_after_only);
+  local defs_after_only :: Defs =
+    if null(onlyFilter) then defs else defs.filterOnly;
+  defs_after_only.filterItems = hidingFilter;
 
-  local defs_after_renames :: [Def] =
-    if null(withRenames) then defs_after_hiding
-    else map(mapDefOnEnvItem(envItemApplyRenaming(_, withRenames), _), defs_after_hiding);
+  local defs_after_hiding :: Defs =
+    if null(hidingFilter) then defs_after_only else defs_after_only.filterHiding;
+  defs_after_hiding.withRenames = withRenames;
 
-  local defs_after_prepend :: [Def] =
-    if asPrepend == "" then defs_after_renames
-    else map(mapDefOnEnvItem(envItemPrepend(_, asPrepend ++ ":"), _), defs_after_renames);
+  local defs_after_renames :: Defs =
+    if null(withRenames) then defs_after_hiding else defs_after_hiding.renamed;
+  defs_after_renames.pfx = asPrepend ++ ":";
 
-  top.defs := defs_after_prepend;
+  local defs_after_prepend :: Defs =
+    if asPrepend == "" then defs_after_renames else defs_after_renames.prepended;
+
+  top.defs := defs_after_prepend.defs;
   top.occursDefs := med.occursDefs;
   top.errors := med.errors;
 }

@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:flow:driver;
 
-import silver:compiler:definition:type only isDecorable, typerep;
+import silver:compiler:definition:type only isNonterminal, typerep;
 
 nonterminal ProductionGraph with flowTypes, stitchedGraph, prod, lhsNt, transitiveClosure, edgeMap, suspectEdgeMap, cullSuspect, flowTypeVertexes, prodGraphs;
 
@@ -107,7 +107,7 @@ ProductionGraph ::=
 
 -- construct a production graph for each production
 function computeAllProductionGraphs
-[ProductionGraph] ::= prods::[DclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+[ProductionGraph] ::= prods::[ValueDclInfo]  prodTree::EnvTree<FlowDef>  flowEnv::FlowEnv  realEnv::Decorated Env
 {
   return if null(prods) then []
   else constructProductionGraph(head(prods), searchEnvTree(head(prods).fullName, prodTree), flowEnv, realEnv) ::
@@ -154,14 +154,14 @@ function computeAllProductionGraphs
  - @return A fixed up graph.
  -}
 function constructProductionGraph
-ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEnv::Decorated Env
 {
   -- The name of this production
   local prod :: String = dcl.fullName;
   -- The LHS nonterminal full name
   local nt :: NtName = dcl.namedSignature.outputElement.typerep.typeName;
   -- All attributes occurrences
-  local attrs :: [DclInfo] = getAttrsOn(nt, realEnv);
+  local attrs :: [OccursDclInfo] = getAttrsOn(nt, realEnv);
   -- Just synthesized attributes.
   local syns :: [String] = map((.attrOccurring), filter(isOccursSynthesized(_, realEnv), attrs));
   -- Just inherited.
@@ -198,7 +198,7 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
 
   -- RHS and locals and forward.
   local stitchPoints :: [StitchPoint] =
-    rhsStitchPoints(dcl.namedSignature.inputElements) ++
+    flatMap(rhsStitchPoints, dcl.namedSignature.inputElements) ++
     localStitchPoints(nt, defs) ++
     patternStitchPoints(realEnv, defs);
   
@@ -228,7 +228,7 @@ ProductionGraph ::= dcl::DclInfo  defs::[FlowDef]  flowEnv::Decorated FlowEnv  r
  - @param ntEnv  The flow types we've previously computed
  -}
 function constructFunctionGraph
-ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
+ProductionGraph ::= ns::NamedSignature  flowEnv::FlowEnv  realEnv::Decorated Env  prodEnv::EnvTree<ProductionGraph>  ntEnv::EnvTree<FlowType>
 {
   local prod :: String = ns.fullName;
   local nt :: NtName = "::nolhs"; -- the same hack we use elsewhere
@@ -246,7 +246,7 @@ ProductionGraph ::= ns::NamedSignature  flowEnv::Decorated FlowEnv  realEnv::Dec
 
   -- RHS and locals and forward.
   local stitchPoints :: [StitchPoint] =
-    rhsStitchPoints(ns.inputElements) ++
+    flatMap(rhsStitchPoints, ns.inputElements) ++
     localStitchPoints(error("functions shouldn't have a forwarding equation?"), defs) ++
     patternStitchPoints(realEnv, defs);
 
@@ -342,10 +342,10 @@ ProductionGraph ::= ns::NamedSignature  defs::[FlowDef]  realEnv::Decorated Env 
  - @return A fixed up graph.
  -}
 function constructPhantomProductionGraph
-ProductionGraph ::= nt::String  flowEnv::Decorated FlowEnv  realEnv::Decorated Env
+ProductionGraph ::= nt::String  flowEnv::FlowEnv  realEnv::Decorated Env
 {
   -- All attributes occurrences
-  local attrs :: [DclInfo] = getAttrsOn(nt, realEnv);
+  local attrs :: [OccursDclInfo] = getAttrsOn(nt, realEnv);
   -- Just synthesized attributes.
   local syns :: [String] = map((.attrOccurring), filter(isOccursSynthesized(_, realEnv), attrs));
   -- Those syns that are not part of the host, and so should have edges to fwdeq
@@ -380,7 +380,7 @@ Pair<FlowVertex FlowVertex> ::= at::String
  - Called twice: once for safe edges, later for SUSPECT edges!
  -}
 function addFwdSynEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName syns::[String] flowEnv::Decorated FlowEnv
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName syns::[String] flowEnv::FlowEnv
 {
   return if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv))
@@ -393,7 +393,7 @@ function addFwdSynEqs
  - Inherited equations are never suspect.
  -}
 function addFwdInhEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName inhs::[String] flowEnv::Decorated FlowEnv
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName inhs::[String] flowEnv::FlowEnv
 {
   return if null(inhs) then []
   else (if null(lookupFwdInh(prod, head(inhs), flowEnv)) then [pair(forwardVertex(head(inhs)), lhsInhVertex(head(inhs)))] else []) ++
@@ -403,7 +403,7 @@ function addFwdInhEqs
  - Introduces default equations deps. Realistically, should be empty, always.
  -}
 function addDefEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName nt::NtName syns::[String] flowEnv :: Decorated FlowEnv
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName nt::NtName syns::[String] flowEnv :: FlowEnv
 {
   return if null(syns) then []
   else (if null(lookupSyn(prod, head(syns), flowEnv)) 
@@ -418,14 +418,14 @@ function addDefEqs
  - Inherited equations are never suspect.
  -}
 function addAllAutoCopyEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName sigNames::[NamedSignatureElement] inhs::[String] flowEnv::Decorated FlowEnv realEnv::Decorated Env
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName sigNames::[NamedSignatureElement] inhs::[String] flowEnv::FlowEnv realEnv::Decorated Env
 {
   return if null(sigNames) then []
   else addAutocopyEqs(prod, head(sigNames), inhs, flowEnv, realEnv) ++ addAllAutoCopyEqs(prod, tail(sigNames), inhs, flowEnv, realEnv);
 }
 -- Helper for above.
 function addAutocopyEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName sigName::NamedSignatureElement inhs::[String] flowEnv::Decorated FlowEnv realEnv::Decorated Env
+[Pair<FlowVertex FlowVertex>] ::= prod::ProdName sigName::NamedSignatureElement inhs::[String] flowEnv::FlowEnv realEnv::Decorated Env
 {
   return if null(inhs) then []
   else (if null(lookupInh(prod, sigName.elementName, head(inhs), flowEnv))  -- no equation
@@ -446,26 +446,22 @@ function localStitchPoints
   | [] -> []
   -- We add the forward stitch point here, too!
   | fwdEq(_, _, _) :: rest -> nonterminalStitchPoint(nt, forwardVertexType) :: localStitchPoints(nt, rest)
-  -- Ignore locals that aren't nonterminal types!
-  | localEq(_, fN, "", _) :: rest -> localStitchPoints(nt, rest)
   -- Add locals that are nonterminal types.
-  | localEq(_, fN, tN, _) :: rest -> nonterminalStitchPoint(tN, localVertexType(fN)) :: localStitchPoints(nt, rest)
-  -- Add all anon decoration sites
-  | anonEq(_, fN, tN, _, _) :: rest -> nonterminalStitchPoint(tN, anonVertexType(fN)) :: localStitchPoints(nt, rest)
+  | localEq(_, fN, tN, true, _) :: rest -> nonterminalStitchPoint(tN, localVertexType(fN)) :: localStitchPoints(nt, rest)
+  -- Add anon decoration sites that are nonterminal types
+  | anonEq(_, fN, tN, true, _, _) :: rest -> nonterminalStitchPoint(tN, anonVertexType(fN)) :: localStitchPoints(nt, rest)
   -- Ignore all other flow def info
   | _ :: rest -> localStitchPoints(nt, rest)
   end;
 }
 function rhsStitchPoints
-[StitchPoint] ::= rhs::[NamedSignatureElement]
+[StitchPoint] ::= rhs::NamedSignatureElement
 {
-  return if null(rhs) then []
-  -- We want only NONTERMINAL stitch points!
-  else if head(rhs).typerep.isDecorable
-       then nonterminalStitchPoint(
-              head(rhs).typerep.typeName,
-              rhsVertexType(head(rhs).elementName)) :: rhsStitchPoints(tail(rhs))
-       else rhsStitchPoints(tail(rhs));
+  return
+    -- We want only NONTERMINAL stitch points!
+    if rhs.typerep.isNonterminal
+    then [nonterminalStitchPoint(rhs.typerep.typeName, rhsVertexType(rhs.elementName))]
+    else [];
 }
 function patternStitchPoints
 [StitchPoint] ::= realEnv::Decorated Env  defs::[FlowDef]
@@ -505,7 +501,7 @@ Pair<String ProductionGraph> ::= p::ProductionGraph
   return pair(p.prod, p);
 }
 function isOccursInherited
-Boolean ::= occs::DclInfo  e::Decorated Env
+Boolean ::= occs::OccursDclInfo  e::Decorated Env
 {
   return case getAttrDcl(occs.attrOccurring, e) of
          | at :: _ -> at.isInherited

@@ -3,7 +3,7 @@ grammar silver:compiler:modification:let_fix;
 import silver:compiler:definition:flow:ast only ExprVertexInfo, FlowVertex;
 
 abstract production lexicalLocalDcl
-top::DclInfo ::= fn::String ty::Type fi::ExprVertexInfo fd::[FlowVertex]
+top::ValueDclInfo ::= fn::String ty::Type fi::ExprVertexInfo fd::[FlowVertex]
 {
   top.fullName = fn;
 

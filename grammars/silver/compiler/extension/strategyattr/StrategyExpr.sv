@@ -203,7 +203,7 @@ top::StrategyExpr ::= s1::StrategyExpr s2::StrategyExpr
       exprInhsCons(_, _, location=top.location),
       exprInhsEmpty(location=top.location),
       map(
-        \ a::DclInfo ->
+        \ a::AttributeDclInfo ->
           Silver_ExprInh {
             $name{a.fullName} = $name{top.frame.signature.outputElement.elementName}.$name{a.fullName};
           },
@@ -723,7 +723,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   
   top.errors <- checkExpr.errors;
   top.errors <-
-    if !ty.typerep.isDecorable
+    if !isDecorable(ty.typerep, top.env)
     then [wrn(ty.location, "Only rules on nonterminals can have an effect")]
     else [];
   top.errors <- ty.errorsKindStar;
@@ -829,8 +829,7 @@ top::StrategyExpr ::= id::QName
   top.attrRefName = just(fromMaybe(id.name, lookup(id.name, top.recVarNameEnv)));
   top.isId = false;
   
-  local attrDcl::DclInfo = id.lookupAttribute.dcl;
-  attrDcl.givenNonterminalType = error("Not actually needed"); -- Ugh environment needs refactoring
+  local attrDcl::AttributeDclInfo = id.lookupAttribute.dcl;
   forwards to
     if lookup(id.name, top.recVarNameEnv).isJust
     then recVarRef(id, genName=top.genName, location=top.location)
@@ -876,8 +875,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   top.unparse = attr.unparse;
   
   -- Lookup for error checking is *not* contextual, since we don't know the frame here
-  local attrDcl::DclInfo = case attr of qNameAttrOccur(a) -> a.lookupAttribute.dcl end;
-  attrDcl.givenNonterminalType = error("Not actually needed"); -- Ugh environment needs refactoring
+  local attrDcl::AttributeDclInfo = case attr of qNameAttrOccur(a) -> a.lookupAttribute.dcl end;
   local attrTypeScheme::PolyType = attrDcl.typeScheme;
   top.errors :=
     if !attrDcl.isSynthesized
@@ -911,8 +909,7 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   top.unparse = attr.unparse;
   
   -- Lookup for error checking is *not* contextual, since we don't know the frame here
-  local attrDcl::DclInfo = case attr of qNameAttrOccur(a) -> a.lookupAttribute.dcl end;
-  attrDcl.givenNonterminalType = error("Not actually needed"); -- Ugh environment needs refactoring
+  local attrDcl::AttributeDclInfo = case attr of qNameAttrOccur(a) -> a.lookupAttribute.dcl end;
   local attrTypeScheme::PolyType = attrDcl.typeScheme;
   top.errors :=
     if !attrDcl.isSynthesized
@@ -971,12 +968,12 @@ top::QNameAttrOccur ::= at::QName
 function attrIsTotal
 Boolean ::= env::Decorated Env attrName::String
 {
-  local dcls::[DclInfo] = getAttrDcl(attrName, env);
+  local dcls::[AttributeDclInfo] = getAttrDcl(attrName, env);
   return
     case dcls of
     | [] -> false
     | d :: _ ->
-      case decorate d with { givenNonterminalType = error("Not actually needed"); }.typeScheme.typerep of -- Ugh environment needs refactoring
+      case d.typeScheme.typerep of
       | appType(nonterminalType("silver:core:Maybe", _, _), _) -> false
       | _ -> true
       end

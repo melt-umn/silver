@@ -24,6 +24,10 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     if null(body.uniqueSignificantExpression)
     then [prodFlowDef(namedSig.outputElement.typerep.typeName, fName)]
     else [];
+
+  top.flowDefs <- flatMap(
+    \ ie::NamedSignatureElement -> occursContextDeps(namedSig, body.env, ie.typerep, rhsVertexType(ie.elementName)),
+    namedSig.inputElements);
 }
 
 aspect production aspectProductionDcl

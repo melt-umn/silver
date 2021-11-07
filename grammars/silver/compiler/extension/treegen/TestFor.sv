@@ -16,7 +16,7 @@ top::AGDcl ::= 'testFor' testSuite::Name ':' n::Name '::' id::QName ',' e::Expr 
 
 
   -- all known productions, including forwarding ones
-  local prods :: [DclInfo] = getKnownProds(id.lookupType.fullName, top.env);
+  local prods :: [ValueDclInfo] = getKnownProds(id.lookupType.fullName, top.env);
 
   local l :: Location = top.location;
   local generatedName :: String = "checkPropOn" ++ id.name ++ toString(genInt());
@@ -58,7 +58,7 @@ top::AGDcl ::= 'testFor' testSuite::Name ':' n::Name '::' id::QName ',' e::Expr 
 }
 
 function generateTestFor
-AGDcl ::= d::DclInfo  testfunname::String  l::Location  testSuite::Name
+AGDcl ::= d::ValueDclInfo  testfunname::String  l::Location  testSuite::Name
 {
   local generatedName :: String = "genSpecificProduction" ++ substring(lastIndexOf(":", d.fullName) + 1, length(d.fullName), d.fullName) ++ toString(genInt());
   

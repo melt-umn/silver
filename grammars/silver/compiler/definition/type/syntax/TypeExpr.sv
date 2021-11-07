@@ -5,10 +5,10 @@ imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:flow:syntax;
 
-nonterminal TypeExpr  with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, freeVariables, errorsKindStar, onNt, errorsInhSet, typerepInhSet;
+nonterminal TypeExpr  with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, errorsKindStar, freeVariables, onNt, errorsInhSet, typerepInhSet;
 nonterminal Signature with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds;
 nonterminal SignatureLHS with config, location, grammarName, errors, env, flowEnv, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds;
-nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, flowEnv, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables;
+nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, flowEnv, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, errorsKindStar, freeVariables;
 nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
 
@@ -31,15 +31,28 @@ monoid attribute errorsTyVars :: [Message];
 inherited attribute initialEnv :: Decorated Env;
 synthesized attribute envBindingTyVars :: Decorated Env;
 
-synthesized attribute errorsKindStar::[Message];
+monoid attribute errorsKindStar::[Message];
 
 synthesized attribute errorsInhSet::[Message];
 synthesized attribute typerepInhSet::Type;
+
+flowtype TypeExpr =
+  decorate {grammarName, env, flowEnv}, forward {decorate},
+  freeVariables {decorate}, lexicalTypeVariables {decorate}, lexicalTyVarKinds {decorate},
+  errorsTyVars {decorate}, errorsKindStar {decorate};
+
+-- typerep requires flowEnv to look up default ref sets
+flowtype typerep {grammarName, env, flowEnv} on TypeExpr, Signature;
+flowtype maybeType {grammarName, env, flowEnv} on SignatureLHS;
+flowtype types {grammarName, env, flowEnv} on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
+
+flowtype typerepInhSet {decorate, onNt} on TypeExpr;
 
 propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs excluding refTypeExpr;
 propagate lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate appLexicalTyVarKinds on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
+propagate errorsKindStar on TypeExprs;
 
 function addNewLexicalTyVars
 [Def] ::= gn::String sl::Location lk::[Pair<String Kind>] l::[String]
@@ -55,7 +68,7 @@ top::TypeExpr ::=
   -- "semantic" errors, rather than parse errors for this.
   top.errorsTyVars := [err(top.location, top.unparse ++ " is not permitted here, only type variables are")];
   top.freeVariables = top.typerep.freeVariables;
-  top.errorsKindStar =
+  top.errorsKindStar :=
     if top.typerep.kindrep != starKind()
     then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
     else [];
@@ -131,7 +144,6 @@ top::TypeExpr ::= InhSetLCurly_t inhs::FlowSpecInhs '}'
 
   -- When we are in a refTypeExpr where we know the nonterminal type,
   -- decorate the inhSetTypeExpr with onNt for better errors and lookup disambiguation.
-  -- TODO: Make this ref(inhs)
   production ntInhs::FlowSpecInhs = inhs;
   ntInhs.config = top.config;
   ntInhs.grammarName = top.grammarName;
@@ -163,7 +175,7 @@ top::TypeExpr ::= tv::IdLower_t
 {
   top.unparse = tv.lexeme;
   
-  local attribute hack::QNameLookup;
+  local attribute hack::QNameLookup<TypeDclInfo>;
   hack = customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme, top.location);
   
   top.typerep = hack.typeScheme.monoType;
@@ -178,7 +190,7 @@ top::TypeExpr ::= '(' tv::IdLower_t '::' k::KindExpr ')'
 {
   top.unparse = s"(${tv.lexeme} :: ${k.unparse})";
   
-  local attribute hack::QNameLookup;
+  local attribute hack::QNameLookup<TypeDclInfo>;
   hack = customLookup("type", getTypeDcl(tv.lexeme, top.env), tv.lexeme, top.location);
   
   top.typerep = hack.typeScheme.monoType;
@@ -207,7 +219,7 @@ top::TypeExpr ::= ty::TypeExpr tl::BracketedTypeExprs
 }
 
 abstract production aliasAppTypeExpr
-top::TypeExpr ::= q::Decorated QNameType tl::BracketedTypeExprs
+top::TypeExpr ::= q::Decorated QNameType with {env} tl::BracketedTypeExprs
 {
   top.unparse = q.unparse ++ tl.unparse;
 
@@ -330,6 +342,7 @@ top::Signature ::= l::SignatureLHS '::=' list::TypeExprs
       functionType(length(list.types) + list.missingCount, []),
       list.types ++ case l.maybeType of just(t) -> [t] | nothing() -> [] end);
   
+  top.errors <- list.errorsKindStar;
   top.errors <-
     if l.maybeType.isJust && list.missingCount > 0
     then [err($1.location, "Return type cannot be present when argument types are missing")]
@@ -341,6 +354,8 @@ top::SignatureLHS ::= t::TypeExpr
 {
   top.unparse = t.unparse;
   top.maybeType = just(t.typerep);
+
+  top.errors <- t.errorsKindStar;
 }
 
 concrete production missingSignatureLhs

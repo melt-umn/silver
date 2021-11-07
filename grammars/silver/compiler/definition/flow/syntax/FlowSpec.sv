@@ -91,12 +91,17 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
        null(missingFt)
     then []
     else [err(attr.location, attr.name ++ " is an extension synthesized attribute, and must contain at least the forward flow type. It is missing " ++ implode(", ", missingFt))];
+
+  top.errors <-
+    if contains(attr.synName, inhs.refList)
+    then [err(top.location, s"circularity in flow specification for ${attr.name} on ${top.onNt.typeName}")]
+    else [];
   
   -- We want to put the spec in even if there are errors in 'inhs' so that
   -- we can look up specs from inhs.
   top.specDefs :=
     if !attr.found then []
-    else [(top.onNt.typeName, attr.synName, inhs.inhList)];
+    else [(top.onNt.typeName, attr.synName, if contains(attr.synName, inhs.refList) then [] else inhs.inhList, inhs.refList)];
 }
 
 nonterminal FlowSpecId with config, location, grammarName, errors, env, unparse, onNt, synName, authorityGrammar, found, name;
@@ -143,32 +148,32 @@ top::FlowSpecId ::= 'decorate'
 }
 
 
-nonterminal FlowSpecInhs with config, location, grammarName, errors, env, unparse, onNt, inhList, flowEnv;
+nonterminal FlowSpecInhs with config, location, grammarName, errors, env, unparse, onNt, inhList, refList, flowEnv;
 
-propagate errors on FlowSpecInhs;
+monoid attribute inhList :: [String];  -- The attributes in the flow specification
+monoid attribute refList :: [String];  -- Flow specifications referenced in this one (currently can only contain "decorate" / "forward")
+
+propagate errors, inhList, refList on FlowSpecInhs;
 
 concrete production nilFlowSpecInhs
 top::FlowSpecInhs ::=
 {
   top.unparse = "";
-  top.inhList = [];
 }
 concrete production oneFlowSpecInhs
 top::FlowSpecInhs ::= h::FlowSpecInh
 {
   top.unparse = h.unparse;
-  top.inhList = h.inhList;
 }
 concrete production consFlowSpecInhs
 top::FlowSpecInhs ::= h::FlowSpecInh  ','  t::FlowSpecInhs
 {
   top.unparse = h.unparse ++ ", " ++ t.unparse;
-  top.inhList = h.inhList ++ t.inhList;
 }
 
-nonterminal FlowSpecInh with config, location, grammarName, errors, env, unparse, onNt, inhList, flowEnv;
+nonterminal FlowSpecInh with config, location, grammarName, errors, env, unparse, onNt, inhList, refList, flowEnv;
 
-synthesized attribute inhList :: [String];
+flowtype FlowSpecInh = forward {grammarName, env, flowEnv, onNt}, inhList {forward};
 
 propagate errors on FlowSpecInh;
 
@@ -176,7 +181,8 @@ concrete production flowSpecInh
 top::FlowSpecInh ::= inh::QNameAttrOccur
 {
   top.unparse = inh.unparse;
-  top.inhList = if inh.attrFound then [inh.attrDcl.fullName] else [];
+  top.inhList := if inh.attrFound then [inh.attrDcl.fullName] else [];
+  top.refList := [];
   
   inh.attrFor = top.onNt;
 
@@ -196,7 +202,7 @@ top::FlowSpecInh ::= inh::QNameAttrOccur
  -        be kinda tricky: probably we'd need to remove this attribute
  -        from the normal 'infer' process EXCEPT on the phantom production,
  -        where we'd stash the info given here as edges...)
- - 2. I'm only implementing 'decorate' and not 'forward'/syns.
+ - 2. We only support 'decorate' and 'forward' here, not syns.
  -    It's the only version demanded so far, let's wait until there's
  -    motivation to consider that extension.
  -}
@@ -205,8 +211,8 @@ top::FlowSpecInh ::= 'decorate'
 {
   top.unparse = "decorate";
   
-  local specs :: [Pair<String [String]>] = getFlowTypeSpecFor(top.onNt.typeName, top.flowEnv);
-  local decSpec :: Maybe<[String]> = lookup("decorate", specs);
+  local specs :: [(String, [String], [String])] = getFlowTypeSpecFor(top.onNt.typeName, top.flowEnv);
+  local decSpec :: Maybe<([String], [String])> = lookup("decorate", specs);
   
   -- This error message also shows up for Decorated Foo when Foo lacks a spec for 'decorate',
   -- so be sufficiently general here.
@@ -219,7 +225,27 @@ top::FlowSpecInh ::= 'decorate'
     | _, _ -> [err(top.location, s"default reference set can only be used with nonterminal types, not ${prettyType(top.onNt)}")]
     end;
   
-  top.inhList = fromMaybe([], decSpec);
+  top.inhList := fromMaybe(([], []), decSpec).fst;
+  top.refList := "decorate" :: fromMaybe(([], []), decSpec).snd;
+}
+
+concrete production flowSpecForward
+top::FlowSpecInh ::= 'forward'
+{
+  top.unparse = "forward";
+  
+  local specs :: [(String, [String], [String])] = getFlowTypeSpecFor(top.onNt.typeName, top.flowEnv);
+  local forwardSpec :: Maybe<([String], [String])> = lookup("forward", specs);
+  
+  top.errors <-
+    case forwardSpec of
+    | just(_) -> []
+    | nothing() -> 
+      [err(top.location, s"to use the forward set for nonterminal ${top.onNt.typeName} in a flow type, 'forward' must also have an explicit flow type")]
+    end;
+  
+  top.inhList := fromMaybe(([], []), forwardSpec).fst;
+  top.refList := "forward" :: fromMaybe(([], []), forwardSpec).snd;
 }
 
 
