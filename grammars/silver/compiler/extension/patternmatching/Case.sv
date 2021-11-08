@@ -148,7 +148,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
         foldr(\ p::(String, Expr) rest::Expr ->
                 makeLet(top.location, p.1, freshType(), p.2, rest),
               compiledCase, zipWith(pair(_, _), names, es));
-  forwards to fwdResult;
+  forwards to unsafeTrace(fwdResult, print(fwdResult.unparse ++ "\n\n", unsafeIO()));
 }
 
 
@@ -182,8 +182,11 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Lo
   --   of checking the rest of the patterns
   local failName::String = "__match_fail_" ++ toString(genInt());
   local compileFirstPattern::Expr =
-        compileMatchRule(es, head(ml),
-           baseExpr(qName(loc, failName), location=loc), retType, loc);
+        case head(ml) of
+        | matchRule(pl, cond, e) ->
+          compileMatchRule(es, map(new, pl), cond, e,
+             baseExpr(qName(loc, failName), location=loc), retType, loc)
+        end;
   local bindFailName::Expr =
         makeLet(loc, failName, retType, compileRest, compileFirstPattern);
 
@@ -196,47 +199,49 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Lo
 
 --Compile a single match rule into a primitive match
 function compileMatchRule
-Expr ::= es::[Expr] patts::[Decorated Patt] cond::Maybe<(Expr Maybe<Patt>)> body::Expr failExpr::Expr retType::Type loc::Location
+Expr ::= es::[Expr] patts::[Pattern] cond::Maybe<(Expr, Maybe<Pattern>)>
+         body::Expr failExpr::Expr retType::Type loc::Location
 {
   --First pattern is a variable
   local varCase::Expr =
-        let rest::Expr =
-            case m of
-            | matchRule(_::tl, cond, e) ->
-              compileMatchRule(tail(es), matchRule(tl, cond, e, location=loc),
-                 failExpr, retType, loc, frame, config, env,
-                 case m.headPattern.patternVariableName of
-                 | nothing() -> patternVarEnv
-                 | just(name) -> name::patternVarEnv
-                 end)
-            | _ -> error("Cannot have an empty set of patterns in varCase")
+        case patts of
+        | p::tl ->
+          let rest::Expr =
+              compileMatchRule(tail(es), tl, cond, body, failExpr, retType, loc)
+          in
+            case p.patternVariableName of
+            | nothing() -> --wildcarde, so just match the rest
+              rest
+            | just(name) -> --actual variable, so make a let
+              makeLet(loc, name, freshType(), head(es), rest)
             end
-        in
-          case m.headPattern.patternVariableName of
-          | nothing() -> --wildcard, so just match the rest
-            rest
-          | just(name) -> --actual variable, so make a let
-            makeLet(loc, name, freshType(), head(es), rest)
           end
+        | _ -> error("Cannot have an empty set of patterns in varCase")
         end;
 
   --First pattern is a constructor
-  local names::[Name] = map(patternListVars, m.headPattern.patternSubPatternList);
-  local l::Location = m.headPattern.location;
+  local names::[Name] = map(patternListVars, head(patts).patternSubPatternList);
+  local l::Location = head(patts).location;
   local annos::[String] =
-        nub(map(fst, m.headPattern.patternNamedSubPatternList));
+        nub(map(fst, head(patts).patternNamedSubPatternList));
   local annoAccesses::[Expr] =
         map(\ n::String ->
               access(head(es), '.', qNameAttrOccur(qName(l, n), location=l), location=l),
             annos);
   local constructorCase::Expr =
-        case m of
-        | matchRule(hd::tl, cond, e) ->
+        case patts of
+        | hd::tl ->
           let rest::Expr =
               compileMatchRule(
                  map(exprFromName, names) ++ annoAccesses ++ tail(es),
-                 m.expandHeadPattern(annos), failExpr, retType, loc,
-                 frame, config, env, map((.name), names) ++ patternVarEnv)
+                 map(new, hd.patternSubPatternList) ++
+                 map(\ n::String ->
+                       case lookup(n, hd.patternNamedSubPatternList) of
+                       | nothing() -> wildcPattern('_', location=loc)
+                       | just(p) -> new(p)
+                       end,
+                     annos) ++ tl,
+                 cond, body, failExpr, retType, loc)
           in
           let primPatt::PrimPattern =
             case hd of
@@ -261,7 +266,7 @@ Expr ::= es::[Expr] patts::[Decorated Patt] cond::Maybe<(Expr Maybe<Patt>)> body
             end
           in
             matchPrimitiveReal(head(es), typerepTypeExpr(retType, location=loc),
-               onePattern(primPatt, location=l), rest, location=l)
+               onePattern(primPatt, location=l), failExpr, location=l)
           end end
         | _ -> error("Cannot have empty set of patterns in constructorCase")
         end;
@@ -273,21 +278,9 @@ Expr ::= es::[Expr] patts::[Decorated Patt] cond::Maybe<(Expr Maybe<Patt>)> body
        ifThenElse('if', cond, 'then', body, 'else', failExpr,
                   location=cond.location)
      | [], just((cond, just(patt))) ->
-       caseExpr([cond],
-          [ matchRule([decorate patt with {
-                          frame=frame;
-                          config=config;
-                          env=env;
-                          patternVarEnv=patternVarEnv;
-                       }], nothing(), e, location=patt.location),
-            matchRule([decorate wildcPattern('_', location=patt.location) with {
-                          frame=frame;
-                          config=config;
-                          env=env;
-                          patternVarEnv=patternVarEnv;
-                       }],
-                      nothing(), failExpr, location=patt.location) ],
-          true, failExpr, retType, location=cond.location)
+       compileMatchRule([cond],
+          [patt, wildcPattern('_', location=patt.location)],
+          nothing(), body, failExpr, retType, patt.location)
      | hd::tl, cond ->
        if hd.patternIsVariable
        then varCase
