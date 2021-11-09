@@ -126,6 +126,18 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
       | _ -> []
       end;
 
+
+  {-Checking Pattern Overlaps
+
+    We want to check if a set of patterns has cases which do not have
+    any patterns to distinguish between them.  We do this by grouping
+    patterns as if we were compiling a pattern match from a conventional
+    (non-extensible) functional language, reducing until we have no
+    patterns left.
+  -}
+  top.errors <- checkOverlappingPatterns(es, ml);
+
+
   {-
     With the addition of completeness checking, we cannot
     incrementally forward through a series of caseExpr, compiling
@@ -134,8 +146,6 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
 
     We bind the expressions being matched with let expressions for
     efficiency.
-
-    TODO:  Check for overlapping cases elsewhere
   -}
   local names::[String] =
         map(\ x::Expr -> "__match_expr_" ++ toString(genInt()), es);
@@ -148,7 +158,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
         foldr(\ p::(String, Expr) rest::Expr ->
                 makeLet(top.location, p.1, freshType(), p.2, rest),
               compiledCase, zipWith(pair(_, _), names, es));
-  forwards to unsafeTrace(fwdResult, print(fwdResult.unparse ++ "\n\n", unsafeIO()));
+  forwards to fwdResult;
 }
 
 
@@ -184,7 +194,7 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Lo
   local compileFirstPattern::Expr =
         case head(ml) of
         | matchRule(pl, cond, e) ->
-          compileMatchRule(es, map(new, pl), cond, e,
+          compileMatchRule(es, pl, cond, e,
              baseExpr(qName(loc, failName), location=loc), retType, loc)
         end;
   local bindFailName::Expr =
@@ -199,7 +209,7 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Lo
 
 --Compile a single match rule into a primitive match
 function compileMatchRule
-Expr ::= es::[Expr] patts::[Pattern] cond::Maybe<(Expr, Maybe<Pattern>)>
+Expr ::= es::[Expr] patts::[Decorated Pattern] cond::Maybe<(Expr, Maybe<Pattern>)>
          body::Expr failExpr::Expr retType::Type loc::Location
 {
   --First pattern is a variable
@@ -210,7 +220,7 @@ Expr ::= es::[Expr] patts::[Pattern] cond::Maybe<(Expr, Maybe<Pattern>)>
               compileMatchRule(tail(es), tl, cond, body, failExpr, retType, loc)
           in
             case p.patternVariableName of
-            | nothing() -> --wildcarde, so just match the rest
+            | nothing() -> --wildcard, so just match the rest
               rest
             | just(name) -> --actual variable, so make a let
               makeLet(loc, name, freshType(), head(es), rest)
@@ -234,11 +244,15 @@ Expr ::= es::[Expr] patts::[Pattern] cond::Maybe<(Expr, Maybe<Pattern>)>
           let rest::Expr =
               compileMatchRule(
                  map(exprFromName, names) ++ annoAccesses ++ tail(es),
-                 map(new, hd.patternSubPatternList) ++
+                 hd.patternSubPatternList ++
                  map(\ n::String ->
                        case lookup(n, hd.patternNamedSubPatternList) of
-                       | nothing() -> wildcPattern('_', location=loc)
-                       | just(p) -> new(p)
+                       | nothing() ->
+                         decorate wildcPattern('_', location=loc) with {
+                            frame=hd.frame; config=hd.config; env=hd.env;
+                            patternVarEnv=hd.patternVarEnv;
+                         }
+                       | just(p) -> p
                        end,
                      annos) ++ tl,
                  cond, body, failExpr, retType, loc)
@@ -265,7 +279,7 @@ Expr ::= es::[Expr] patts::[Pattern] cond::Maybe<(Expr, Maybe<Pattern>)>
             | _ -> error("Can only have constructor patterns in constructorCase")
             end
           in
-            matchPrimitiveReal(head(es), typerepTypeExpr(retType, location=loc),
+            matchPrimitive(head(es), typerepTypeExpr(retType, location=loc),
                onePattern(primPatt, location=l), failExpr, location=l)
           end end
         | _ -> error("Cannot have empty set of patterns in constructorCase")
@@ -274,19 +288,130 @@ Expr ::= es::[Expr] patts::[Pattern] cond::Maybe<(Expr, Maybe<Pattern>)>
   return
      case patts, cond of
      | [], nothing() -> body
-     | [], just((cond, nothing())) ->
+     | [], just((cond, nothing())) -> --cond is a Boolean
        ifThenElse('if', cond, 'then', body, 'else', failExpr,
                   location=cond.location)
-     | [], just((cond, just(patt))) ->
-       compileMatchRule([cond],
-          [patt, wildcPattern('_', location=patt.location)],
-          nothing(), body, failExpr, retType, patt.location)
+     | [], just((cond, just(patt))) -> --another match
+       Silver_Expr {
+         case $Expr{cond} of
+         | $Pattern{patt} -> $Expr{body}
+         | _ -> $Expr{failExpr}
+         end
+       }
      | hd::tl, cond ->
        if hd.patternIsVariable
        then varCase
        else constructorCase
      end;
 }
+
+
+
+
+
+--Check for overlapping patterns, which show up by standard pattern-matching compilation
+function checkOverlappingPatterns
+[Message] ::= es::[Expr] ml::[AbstractMatchRule]
+{
+  local errors::[Message] =
+    case ml of
+    --check for multiple match rules, with no patterns/conditions left to distinguish them
+    | matchRule([], _, e) :: _ :: _ ->
+      if areUselessPatterns(ml)
+      then [err(head(ml).location, "Pattern has overlapping cases!")]
+      else []
+    | _ -> []
+    end;
+
+  local partMRs :: Pair<[AbstractMatchRule] [AbstractMatchRule]> =
+    partition((.isVarMatchRule), ml);
+  local varRules :: [AbstractMatchRule] = partMRs.fst;
+  local prodRules :: [AbstractMatchRule] = partMRs.snd;
+
+  {--
+   - All constructors?  Check children of each constructor together, plus rest
+   -}
+  local allConCase :: [Message] =
+      let constructorGroups::[[AbstractMatchRule]] = groupMRules(prodRules) in
+      let mappedErrs::[Message] =
+          flatMap(allConCaseCheckOverlapping(es, _), constructorGroups) in
+        errors ++ mappedErrs
+      end end;
+
+  {--
+   - All variables? Drop the first pattern, and check the rest
+   -}
+  local allVarCase :: [Message] =
+     errors ++
+     checkOverlappingPatterns(tail(es), map(dropHeadPattern(_), ml));
+
+  {--
+    - Mixed con/var? Partition into segments
+   -}
+  local mixedCase :: [Message] = checkOverlappingMixedCaseMatches(es, ml);
+
+  -- 4 cases: no patterns left, all constructors, all variables, or mixed con/var.
+  -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules
+  return
+    case ml of
+    | matchRule([], c, e) :: _ -> errors
+    -- No match rules, only possible through abstract syntax
+    | [] -> []
+    | _ -> if null(es) then []
+           else if null(varRules) then allConCase
+           else if null(prodRules) then allVarCase
+           else mixedCase
+    end;
+}
+
+{-
+  Check for overlapping patterns when we are mixing constructor and
+  variable patterns for first match.  We do this by partitioning the
+  list into segments of only constructor or variable patterns in
+  order, then checking each segment as its own match.
+-}
+function checkOverlappingMixedCaseMatches
+[Message] ::= es::[Expr] ml::[AbstractMatchRule]
+{
+  return if null(ml)
+         then []
+         else let segments::Pair<[AbstractMatchRule] [AbstractMatchRule]> =
+                            initialSegmentPatternType(ml)
+              in
+                checkOverlappingMixedCaseMatches(es, segments.snd) ++
+                checkOverlappingPatterns(es, segments.fst)
+              end;
+}
+
+{--
+ - Expand the head of a match rule as if matched, and check for
+ - overlapping patterns based on the expansion.
+ -}
+function allConCaseCheckOverlapping
+[Message] ::= es::[Expr]  mrs::[AbstractMatchRule]
+{
+  -- TODO: potential source of buggy error messages. We're using head(mrs) as the source of
+  -- authority for the length of pattern variables to match against. But each match rule may
+  -- actually have a different length (and .expandHeadPattern just applies whatever is there)
+  -- This is an erroneous condition, but it means we transform into a maybe-more erroneous condition.
+  local names :: [Name] = map(patternListVars, head(mrs).headPattern.patternSubPatternList);
+
+  local l :: Location = head(mrs).headPattern.location;
+  local annos :: [String] =
+        nub(map(fst, flatMap((.patternNamedSubPatternList), map((.headPattern), mrs))));
+  local annoAccesses :: [Expr] =
+        map(\ n::String -> access(head(es), '.', qNameAttrOccur(qName(l, n), location=l), location=l), annos);
+
+  local subCaseCheck::[Message] =
+        checkOverlappingPatterns(
+           map(exprFromName, names) ++ annoAccesses ++ tail(es),
+           map(\ mr::AbstractMatchRule -> mr.expandHeadPattern(annos), mrs));
+  -- TODO: head(mrs).location is probably not the correct thing to use here?? (generally)
+
+  return subCaseCheck;
+}
+
+
 
 
 
@@ -983,6 +1108,19 @@ AbstractMatchRule ::= headExpr::Expr  headType::Type  absRule::AbstractMatchRule
         location=absRule.location)
     | nothing() -> matchRule(restPat, cond, e, location=absRule.location)
     end
+  | r -> r -- Don't crash when we see a rule with too few patterns (should be an error)
+  end;
+}
+
+{-
+ - Drop the first pattern from a match rule
+-}
+function dropHeadPattern
+AbstractMatchRule ::= absRule::AbstractMatchRule
+{
+  return case absRule of
+  | matchRule(headPat :: restPat, cond, e) ->
+    matchRule(restPat, cond, e, location=absRule.location)
   | r -> r -- Don't crash when we see a rule with too few patterns (should be an error)
   end;
 }
