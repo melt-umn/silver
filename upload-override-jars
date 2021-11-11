@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
+if [[ -n "$(git status --porcelain)" ]]; then
+	echo "You have uncommitted changes! Refusing to run."
+	exit 1
+fi
+
+branch_name="$(git rev-parse --abbrev-ref HEAD)"
+commit_hash="$(git rev-parse HEAD)"
+
+rsync -Pa jars/ foundry.remexre.xyz:/melt/jenkins/export-scratch/melt-jenkins/${commit_hash}-jars/
+
+echo "Now go to https://foundry.remexre.xyz/jenkins/job/melt-umn/job/silver/job/$branch_name/build and"
+echo "pass /export/scratch/melt-jenkins/${commit_hash}-jars as OVERRIDE_JARS"
