@@ -57,7 +57,7 @@ import silver:xml;
 
 @{- Dummy main function that does nothing. Example link: @link[dummyFunction] -}
 function main
-IOVal<Integer> ::= args::[String] ioIn::IO
+IOVal<Integer> ::= args::[String] ioIn::IOToken
 {
   return ioval(ioIn, 0);
 }
