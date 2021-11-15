@@ -31,7 +31,7 @@ IOVal<ProcessHandle> ::= cmd::String args::[String] i::IOToken
  - @return  The IO token
 -}
 function sendToProcess
-IO ::= p::ProcessHandle msg::String i::IOToken
+IOToken ::= p::ProcessHandle msg::String i::IOToken
 {
   return error("Not Yet Implemented:  sendToProcess");
 } foreign {
@@ -152,7 +152,7 @@ IOVal<String> ::= p::ProcessHandle ending::String i::IOToken
  - @return  The IO token
 -}
 function waitForProcess
-IO ::= p::ProcessHandle i::IOToken
+IOToken ::= p::ProcessHandle i::IOToken
 {
   return error("Not Yet Implemented:  waitForProcess");
 } foreign {
