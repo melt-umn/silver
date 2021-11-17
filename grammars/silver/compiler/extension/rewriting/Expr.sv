@@ -452,7 +452,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
   top.transform = orASTExpr(e1.transform, e2.transform);
 }
 
-aspect production not
+aspect production notOp
 top::Expr ::= '!' e::Expr
 {
   top.transform = notASTExpr(e.transform);

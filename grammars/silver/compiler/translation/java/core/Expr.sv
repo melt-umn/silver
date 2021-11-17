@@ -444,7 +444,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
-aspect production not
+aspect production notOp
 top::Expr ::= '!' e::Expr
 {
   top.translation = s"(!${e.translation})";

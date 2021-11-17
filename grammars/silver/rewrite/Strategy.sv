@@ -4,7 +4,7 @@ grammar silver:rewrite;
 -- Users must explicitly import silver:core hiding these names, or perform a qualified import,
 -- e.g. import silver:rewrite as s;
 
-imports silver:core hiding id, all, repeat, sequence, fail;
+imports silver:core hiding all, fail, id, one, repeat, sequence;
 
 function rewriteWith
 runtimeTypeable a => Maybe<a> ::= s::Strategy x::a
