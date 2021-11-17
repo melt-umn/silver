@@ -4,9 +4,9 @@ grammar silver:core;
   -
   - Laws:
   -
-  - * Non-Zero Ring: `one != zero`
-  - * Non-Zero Multiplicative Left Inverse: `(a != 0) -> mul(recip(a), a) = one`
-  - * Non-Zero Multiplicative Right Inverse: `(a != 0) -> mul(a, recip(a)) = one`
+  - * Non-Zero Ring: `oneSR != zero`
+  - * Non-Zero Multiplicative Left Inverse: `(a != 0) -> mul(recip(a), a) = oneSR`
+  - * Non-Zero Multiplicative Right Inverse: `(a != 0) -> mul(a, recip(a)) = oneSR`
   -}
 class Ring a => DivisionRing a {
   @{- The reciprocal, i.e. the inverse for the multiplicative group. -}

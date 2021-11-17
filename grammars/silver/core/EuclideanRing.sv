@@ -5,7 +5,7 @@ grammar silver:core;
   - Laws:
   -
   - * Integral Domain (TODO: are these equivalent?):
-  -   * `one != zero`
+  -   * `oneSR != zero`
   -   * `(a != zero && b != zero) -> mul(a, b) != zero`
   - * Non-negativity of `degree`: `degree(x) >= 0`
   - * Quotient: `(b != zero) -> (add(mul(div(a, b), b), mod(a, b)) = a)`
