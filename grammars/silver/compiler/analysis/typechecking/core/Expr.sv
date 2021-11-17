@@ -6,7 +6,7 @@ propagate upSubst, downSubst
    on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs
    excluding
      undecoratedAccessHandler, forwardAccess, decoratedAccessHandler,
-     and, or, not, ifThenElse, plus, minus, multiply, divide, modulus,
+     and, or, notOp, ifThenElse, plus, minus, multiply, divide, modulus,
      decorateExprWith, exprInh, presentAppExpr,
      terminalConstructor, noteAttachment;
 
@@ -189,7 +189,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
        else [];
 }
 
-aspect production not
+aspect production notOp
 top::Expr ::= '!' e1::Expr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
