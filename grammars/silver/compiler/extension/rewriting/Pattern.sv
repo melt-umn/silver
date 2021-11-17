@@ -229,7 +229,11 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
   top.isPolymorphic = p.isPolymorphic;
   p.typeHasUniversalVars =
     fromMaybe(
-      error("transform undefined in the presence of errors"),
+      -- Should be an internal error, but error checking for annotation patterns is broken,
+      -- so we might demand a transform from a pattern that mentions an annotation that the
+      -- nonterminal type doesn't have.
+      -- See the comment on the silver:compiler:extension:patternmatching:namedPattern production.
+      false,
       lookup(last(explode(":", qn.name)), top.namedTypesHaveUniversalVars));
 }
 
