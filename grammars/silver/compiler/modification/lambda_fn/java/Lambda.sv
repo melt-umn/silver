@@ -24,7 +24,7 @@ top::Expr ::= params::ProductionRHS e::Expr
   local context :: Context = typeableContext(finTy);
   context.env = top.env;
   
-  top.translation = 
+  local lambdaTrans :: (String ::= String) = \ runtimeTypeTrans::String ->
 s"""(new common.NodeFactory<${finTy.outputType.transType}>() {
 				@Override
 				public final ${finTy.outputType.transType} invoke(final common.OriginContext originCtx, final Object[] args, final Object[] namedArgs) {
@@ -35,7 +35,7 @@ ${params.lambdaTranslation}
 				@Override
 				public final common.TypeRep getType() {
 ${makeTyVarDecls(5, finTy.freeVariables)}
-					return ${context.transTypeableContext};
+					return ${runtimeTypeTrans};
 				}
 
 				@Override
@@ -43,7 +43,14 @@ ${makeTyVarDecls(5, finTy.freeVariables)}
 					return "lambda at ${top.grammarName}:${top.location.unparse}";
 				}
 			})""";
+
+  top.translation = lambdaTrans(context.transTypeableContext);
   top.lazyTranslation = top.translation;
+
+  -- Same as above, except that we know that this is a top-level generalized binding
+  -- (e.g. global id :: (a ::= a) = \ x::a -> x;)
+  -- so freshen all skolem type vars in the run-time type representation.
+  top.generalizedTranslation = lambdaTrans(transFreshTypeRep(finTy));
   
   params.accessIndex = 0;
 }
