@@ -30,6 +30,13 @@ class Semiring a {
   oneSR :: a;
 }
 
+instance Semiring Integer {
+  add = \a::Integer b::Integer -> a + b;
+  zero = 0;
+  mul = \a::Integer b::Integer -> a * b;
+  oneSR = 1;
+}
+
 @{- Converts a non-negative integer into an arbitrary semiring. -}
 function fromNonnegativeInteger
 Semiring a => a ::= n::Integer

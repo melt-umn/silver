@@ -7,3 +7,5 @@ grammar silver:core;
   - * Commutativity of Multiplication: `mul(x, y) = mul(y, x)`
   -}
 class Ring a => CommutativeRing a {}
+
+instance CommutativeRing Integer {}

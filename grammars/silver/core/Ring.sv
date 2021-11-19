@@ -12,6 +12,10 @@ class Semiring a => Ring a {
   sub :: (a ::= a a);
 }
 
+instance Ring Integer {
+  sub = \a::Integer b::Integer -> a - b;
+}
+
 @{- The function corresponding to the unary `-` operator. -}
 function negate
 Ring a => a ::= x::a
