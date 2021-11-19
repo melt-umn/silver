@@ -31,7 +31,7 @@ concrete productions e::Expr
  | l::Expr '||' r::Expr  { e.unparse = "(" ++  l.unparse ++ " || " ++ r.unparse ++ ")";
                            e.ast = ast:or(l.ast, r.ast); }
  | '!' ne::Expr          { e.unparse = "( !" ++  ne.unparse ++ ")";
-                           e.ast = ast:not(ne.ast); }
+                           e.ast = ast:notOp(ne.ast); }
 
 -- Relational Operations
 ------------------------
@@ -71,13 +71,13 @@ concrete productions e::Expr
 
 
  | l::Expr op::'+' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                              e.ast = ast:add(l.ast, r.ast); }
+                              e.ast = ast:addOp(l.ast, r.ast); }
  | l::Expr op::'-' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                              e.ast = ast:sub(l.ast, r.ast); }
+                              e.ast = ast:subOp(l.ast, r.ast); }
  | l::Expr op::'*' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                              e.ast = ast:mul(l.ast, r.ast); }
+                              e.ast = ast:mulOp(l.ast, r.ast); }
  | l::Expr op::'/' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                              e.ast = ast:div(l.ast, r.ast); }
+                              e.ast = ast:divOp(l.ast, r.ast); }
 
 
 -- Variable reference

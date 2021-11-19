@@ -28,28 +28,28 @@ r::Root ::= e::Expr
 
 nonterminal Expr with pp, value;
 
-abstract production add
+abstract production addOp
 sum::Expr ::= l::Expr r::Expr
 {
  sum.pp = "(" ++ l.pp ++ " + " ++ r.pp ++ ")";
  sum.value = l.value + r.value ;
 }
 
-abstract production sub
+abstract production subOp
 dff::Expr ::= l::Expr r::Expr
 {
  dff.pp = "(" ++ l.pp ++ " - " ++ r.pp ++ ")";
  dff.value = l.value - r.value ;
 }
 
-abstract production mul
+abstract production mulOp
 prd::Expr ::= l::Expr r::Expr
 {
  prd.pp = "(" ++ l.pp ++ " * " ++ r.pp ++ ")";
  prd.value = l.value * r.value ;
 }
 
-abstract production div
+abstract production divOp
 quo::Expr ::= l::Expr r::Expr
 {
  quo.pp = "(" ++ l.pp ++ " / " ++ r.pp ++ ")";
