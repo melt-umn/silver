@@ -18,6 +18,12 @@ class CommutativeRing a => EuclideanRing a {
   mod :: (a ::= a a);
 }
 
+instance EuclideanRing Integer {
+  degree = \n::Integer -> if n < 0 then -n else n;
+  div = \a::Integer b::Integer -> a / b;
+  mod = \a::Integer b::Integer -> a % b;
+}
+
 @{- Computes the greatest common divisor of two numbers. -}
 function gcd
 Eq a, EuclideanRing a => a ::= a::a  b::a
