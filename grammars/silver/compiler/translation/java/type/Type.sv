@@ -13,13 +13,25 @@ synthesized attribute transCovariantType :: String;
 -- the <> part of the type!! e.g. "Foo<Bar>.class" is illegal, should be "Foo.class"
 synthesized attribute transClassType :: String;
 -- An environment mapping skolem constants to their runtime representation translations
-autocopy attribute skolemTypeReps :: [Pair<TyVar String>];
+autocopy attribute skolemTypeReps :: [(TyVar, String)];
 -- The runtime representation of a type, where all skolems are replaced with their provided representations, used for reification
 synthesized attribute transTypeRep :: String;
--- The runtime representation of a type, where all skolems are replaced with flexible vars, used for reification
-synthesized attribute transFreshTypeRep :: String;
 -- A valid Java identifier, unique to the type
 synthesized attribute transTypeName :: String;
+
+function transFreshTypeRep
+String ::= t::Type
+{
+  t.skolemTypeReps = map(\ tv::TyVar -> (tv, s"freshTypeVar_${toString(tv.extractTyVarRep)}"), t.freeSkolemVars);
+  return t.transTypeRep;
+}
+
+function transTypeRepWith
+String ::= t::Type skolemTypeReps::[(TyVar, String)]
+{
+  t.skolemTypeReps = skolemTypeReps;
+  return t.transTypeRep;
+}
 
 function transTypeName
 String ::= te::Type
@@ -35,7 +47,7 @@ String ::= te::Type tvs::[TyVar]
   return te.transTypeName;
 }
 
-attribute transType, transCovariantType, transClassType, transTypeRep, skolemTypeReps, transFreshTypeRep, transTypeName occurs on Type;
+attribute transType, transCovariantType, transClassType, transTypeRep, skolemTypeReps, transTypeName occurs on Type;
 
 aspect default production
 top::Type ::=
@@ -49,7 +61,6 @@ top::Type ::= tv::TyVar
 {
   top.transClassType = "Object";
   top.transTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
-  top.transFreshTypeRep = top.transTypeRep;
   top.transTypeName = "a" ++ toString(positionOf(tv, top.boundVariables));
 }
 
@@ -58,7 +69,6 @@ top::Type ::= tv::TyVar
 {
   top.transClassType = "Object";
   top.transTypeRep = lookup(tv, top.skolemTypeReps).fromJust;
-  top.transFreshTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
   top.transTypeName = "a" ++ toString(positionOf(tv, top.boundVariables));
 }
 
@@ -77,7 +87,6 @@ top::Type ::= c::Type a::Type
     end;
   top.transClassType = c.transClassType;
   top.transTypeRep = s"new common.AppTypeRep(${c.transTypeRep}, ${a.transTypeRep})";
-  top.transFreshTypeRep = s"new common.AppTypeRep(${c.transFreshTypeRep}, ${a.transFreshTypeRep})";
   top.transTypeName = c.transTypeName ++ "_" ++ a.transTypeName;
 }
 
@@ -87,7 +96,6 @@ top::Type ::=
   local oops :: String = error("Attempting to translate in presence of errors");
   top.transClassType = oops;
   top.transTypeRep = oops;
-  top.transFreshTypeRep = oops;
   top.transTypeName = oops;
 }
 
@@ -96,7 +104,6 @@ top::Type ::=
 {
   top.transClassType = "Integer";
   top.transTypeRep = "new common.BaseTypeRep(\"Integer\")";
-  top.transFreshTypeRep = top.transTypeRep;
   top.transTypeName = "Integer";
 }
 
@@ -105,7 +112,6 @@ top::Type ::=
 {
   top.transClassType = "Boolean";
   top.transTypeRep = "new common.BaseTypeRep(\"Boolean\")";
-  top.transFreshTypeRep = top.transTypeRep;
   top.transTypeName = "Boolean";
 }
 
@@ -114,7 +120,6 @@ top::Type ::=
 {
   top.transClassType = "Float";
   top.transTypeRep = "new common.BaseTypeRep(\"Float\")";
-  top.transFreshTypeRep = top.transTypeRep;
   top.transTypeName = "Float";
 }
 
@@ -123,7 +128,6 @@ top::Type ::=
 {
   top.transClassType = "common.StringCatter";
   top.transTypeRep = "new common.BaseTypeRep(\"String\")";
-  top.transFreshTypeRep = top.transTypeRep;
   top.transTypeName = "String";
 }
 
@@ -132,7 +136,6 @@ top::Type ::=
 {
   top.transClassType = "Integer";
   top.transTypeRep = "new common.BaseTypeRep(\"TerminalId\")";
-  top.transFreshTypeRep = top.transTypeRep;
   top.transTypeName = "TerminalId";
 }
 
@@ -143,7 +146,6 @@ top::Type ::= fn::String _ _
   -- class, e.g. silver.definition.core.NExpr
   top.transClassType = makeNTName(fn);
   top.transTypeRep = s"new common.BaseTypeRep(\"${fn}\")";
-  top.transFreshTypeRep = top.transTypeRep;
   top.transTypeName = substitute(":", "_", fn);
 }
 
@@ -152,7 +154,6 @@ top::Type ::= fn::String
 {
   top.transClassType = makeTerminalName(fn);
   top.transTypeRep = s"new common.BaseTypeRep(\"${fn}\")";
-  top.transFreshTypeRep = top.transTypeRep;
   top.transTypeName = substitute(":", "_", fn);
 }
 
@@ -161,7 +162,6 @@ top::Type ::= inhs::[String]
 {
   top.transClassType = error("Demanded translation of InhSet type");
   top.transTypeRep = error("Demanded TypeRep translation of InhSet type");
-  top.transFreshTypeRep = top.transTypeRep;
   top.transTypeName = substitute(":", "_", implode("_", inhs));
 }
 
@@ -172,7 +172,6 @@ top::Type ::= te::Type i::Type
   top.transType = "common.DecoratedNode";
   top.transClassType = "common.DecoratedNode";
   top.transTypeRep = s"new common.DecoratedTypeRep(${te.transTypeRep})";
-  top.transFreshTypeRep = s"new common.DecoratedTypeRep(${te.transFreshTypeRep})";
   top.transTypeName = "Decorated_" ++ te.transTypeName;
 }
 
@@ -182,6 +181,5 @@ top::Type ::= params::Integer namedParams::[String]
   top.transClassType = "common.NodeFactory";
   top.transTypeRep =
     s"new common.FunctionTypeRep(${toString(params)}, new String[] {${implode(", ", map(\ n::String -> s"\"${n}\"", namedParams))}})";
-  top.transFreshTypeRep = top.transTypeRep;
   top.transTypeName = "Fn_" ++ toString(params) ++ "_" ++ implode("_", namedParams);
 }
