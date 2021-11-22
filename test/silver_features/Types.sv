@@ -217,13 +217,13 @@ global d6 :: Decorated DExpr with {decorate, env2} = decorate mkDExpr() with {en
 type Inhs1 = {env1};
 global d7 :: Decorated DExpr with Inhs1 = decorate mkDExpr() with {env1 = [];};
 
-global d8 :: Decorated DExpr with {env1} = partialUndecorate(decorate mkDExpr() with {env1 = []; env2 = [];});
-global d9 :: Decorated DExpr with {env1} = partialUndecorate(decorate mkDExpr() with {env1 = [];});
+global d8 :: Decorated DExpr with {env1} = castRef(decorate mkDExpr() with {env1 = []; env2 = [];});
+global d9 :: Decorated DExpr with {env1} = castRef(decorate mkDExpr() with {env1 = [];});
 
 function getEnv1
 {env1} subset i => [String] ::= x::Decorated DExpr with i
 {
-  return let y::Decorated DExpr with {env1} = partialUndecorate(x) in y.env1 end;
+  return let y::Decorated DExpr with {env1} = castRef(x) in y.env1 end;
 }
 global d10 :: [String] = getEnv1(decorate mkDExpr() with {env1 = []; env2 = [];});
 global d11 :: [String] = getEnv1(decorate mkDExpr() with {env1 = [];});
@@ -293,11 +293,11 @@ wrongCode "Expected return type is Decorated silver_features:DExpr with {silver_
   }
 }
 
-wrongCode "{silver_features:env1, :env2} is not a subset of {silver_features:env1} (arising from the use of partialUndecorate)" {
-  global dSuper :: Decorated DExpr with {env1, env2} = partialUndecorate(decorate mkDExpr() with {env1 = [];});
+wrongCode "{silver_features:env1, :env2} is not a subset of {silver_features:env1} (arising from the use of castRef)" {
+  global dSuper :: Decorated DExpr with {env1, env2} = castRef(decorate mkDExpr() with {env1 = [];});
 }
-wrongCode "{silver_features:env2} is not a subset of {silver_features:env1} (arising from the use of partialUndecorate)" {
-  global dDisjoint :: Decorated DExpr with {env2} = partialUndecorate(decorate mkDExpr() with {env1 = [];});
+wrongCode "{silver_features:env2} is not a subset of {silver_features:env1} (arising from the use of castRef)" {
+  global dDisjoint :: Decorated DExpr with {env2} = castRef(decorate mkDExpr() with {env1 = [];});
 }
 wrongCode "{silver_features:env1} is not a subset of {silver_features:env2} (arising from the use of getEnv1)" {
   global dDisjoint2 :: [String] = getEnv1(decorate mkDExpr() with {env2 = [];});

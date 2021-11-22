@@ -16,40 +16,40 @@ nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwd
 {-- lookup (production, attribute) to find synthesized equations
  - Used to ensure a necessary lhs.syn equation exists.
  - Also decides whether to add a forward or default equation while computing flow types. -}
-synthesized attribute synTreeContribs :: [Pair<String FlowDef>];
+monoid attribute synTreeContribs :: [Pair<String FlowDef>];
 
 {-- lookup (production, sig, attribute) to find inherited equation
  - Used to ensure a necessary rhs.inh equation exists.
  - Also decides whether to add a copy equation for autocopy attributes to rhs elements. -}
-synthesized attribute inhTreeContribs :: [Pair<String FlowDef>];
+monoid attribute inhTreeContribs :: [Pair<String FlowDef>];
 
 {-- lookup (nonterminal, attribute) to find default syn equations
  - Used to obtain default equation dependencies, when it exists. -}
-synthesized attribute defTreeContribs :: [Pair<String FlowDef>];
+monoid attribute defTreeContribs :: [Pair<String FlowDef>];
 
 {-- lookup (production) to find forward equations.
  - Decides whether default or forward equations should be added. -}
-synthesized attribute fwdTreeContribs :: [Pair<String FlowDef>];
+monoid attribute fwdTreeContribs :: [Pair<String FlowDef>];
 
 {-- lookup (production, attr) to find forward INHERITED equations
  - Used to ensure equations for inherited attributes exist for all inh of a fwd. -}
-synthesized attribute fwdInhTreeContribs :: [Pair<String FlowDef>];
+monoid attribute fwdInhTreeContribs :: [Pair<String FlowDef>];
 
 {-- lookup (production, local, attr) to find local INHERITED equations.
  - ONLY used to check whether an equation exists. -}
-synthesized attribute localInhTreeContribs :: [Pair<String FlowDef>];
+monoid attribute localInhTreeContribs :: [Pair<String FlowDef>];
 
 {-- lookup (production, local) to find the local equation -}
-synthesized attribute localTreeContribs :: [Pair<String FlowDef>];
+monoid attribute localTreeContribs :: [Pair<String FlowDef>];
 
 {-- lookup (nonterminal) to find all non-forwarding production.
  - ONLY used to determine all productions that need an equation for a new attribute. -}
-synthesized attribute prodTreeContribs :: [Pair<String FlowDef>];
+monoid attribute prodTreeContribs :: [Pair<String FlowDef>];
 
 {-- find all equations having to do DIRECTLY with a production
     (directly meaning e.g. no default equations, even if they might
     affect it)  These FlowDefs MUST have a flowEdges for this production. -}
-synthesized attribute prodGraphContribs :: [Pair<String FlowDef>];
+monoid attribute prodGraphContribs :: [Pair<String FlowDef>];
 
 {-- Edge lists from equations
  - ONLY used to extract edges for a production graph from production-internal flowDefs. -}
@@ -62,42 +62,21 @@ synthesized attribute flowEdges :: [Pair<FlowVertex FlowVertex>];
 synthesized attribute suspectFlowEdges :: [Pair<FlowVertex FlowVertex>];
 
 {-- A list of extension syn attr occurrences, subject to ft lower bounds. -}
-synthesized attribute hostSynTreeContribs :: [Pair<String FlowDef>];
+monoid attribute hostSynTreeContribs :: [Pair<String FlowDef>];
 
 {-- A list of attributes for a production that are non-suspect -}
-synthesized attribute nonSuspectContribs :: [Pair<String [String]>];
+monoid attribute nonSuspectContribs :: [Pair<String [String]>];
+
+propagate synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, prodTreeContribs, prodGraphContribs, hostSynTreeContribs, nonSuspectContribs
+  on FlowDefs;
 
 abstract production consFlow
 top::FlowDefs ::= h::FlowDef  t::FlowDefs
-{
-  top.synTreeContribs = h.synTreeContribs ++ t.synTreeContribs;
-  top.inhTreeContribs = h.inhTreeContribs ++ t.inhTreeContribs;
-  top.defTreeContribs = h.defTreeContribs ++ t.defTreeContribs;
-  top.fwdTreeContribs = h.fwdTreeContribs ++ t.fwdTreeContribs;
-  top.fwdInhTreeContribs = h.fwdInhTreeContribs ++ t.fwdInhTreeContribs;
-  top.prodTreeContribs = h.prodTreeContribs ++ t.prodTreeContribs;
-  top.prodGraphContribs = h.prodGraphContribs ++ t.prodGraphContribs;
-  top.localInhTreeContribs = h.localInhTreeContribs ++ t.localInhTreeContribs;
-  top.localTreeContribs = h.localTreeContribs ++ t.localTreeContribs;
-  top.hostSynTreeContribs = h.hostSynTreeContribs ++ t.hostSynTreeContribs;
-  top.nonSuspectContribs = h.nonSuspectContribs ++ t.nonSuspectContribs;
-}
+{}
 
 abstract production nilFlow
 top::FlowDefs ::=
-{
-  top.synTreeContribs = [];
-  top.inhTreeContribs = [];
-  top.defTreeContribs = [];
-  top.fwdTreeContribs = [];
-  top.fwdInhTreeContribs = [];
-  top.prodTreeContribs = [];
-  top.prodGraphContribs = [];
-  top.localInhTreeContribs = [];
-  top.localTreeContribs = [];
-  top.hostSynTreeContribs = [];
-  top.nonSuspectContribs = [];
-}
+{}
 
 -- At the time of writing, this is one giant work in progress.
 -- Currently, all we're going to report is whether a synthesized
@@ -108,16 +87,16 @@ top::FlowDefs ::=
 aspect default production
 top::FlowDef ::=
 {
-  top.synTreeContribs = [];
-  top.inhTreeContribs = [];
-  top.defTreeContribs = [];
-  top.fwdTreeContribs = [];
-  top.fwdInhTreeContribs = [];
-  top.prodTreeContribs = [];
-  top.localInhTreeContribs = [];
-  top.localTreeContribs = [];
-  top.hostSynTreeContribs = [];
-  top.nonSuspectContribs = [];
+  top.synTreeContribs := [];
+  top.inhTreeContribs := [];
+  top.defTreeContribs := [];
+  top.fwdTreeContribs := [];
+  top.fwdInhTreeContribs := [];
+  top.prodTreeContribs := [];
+  top.localInhTreeContribs := [];
+  top.localTreeContribs := [];
+  top.hostSynTreeContribs := [];
+  top.nonSuspectContribs := [];
   top.suspectFlowEdges = []; -- flowEdges is required, but suspect is typically not!
   -- require prodGraphContibs, flowEdges
 }
@@ -132,8 +111,8 @@ top::FlowDef ::=
 abstract production prodFlowDef
 top::FlowDef ::= nt::String  prod::String
 {
-  top.prodTreeContribs = [pair(nt, top)];
-  top.prodGraphContribs = [];
+  top.prodTreeContribs := [pair(nt, top)];
+  top.prodGraphContribs := [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
 }
 
@@ -148,8 +127,8 @@ top::FlowDef ::= nt::String  prod::String
 abstract production hostSynFlowDef
 top::FlowDef ::= nt::String  attr::String
 {
-  top.hostSynTreeContribs = [pair(nt, top)];
-  top.prodGraphContribs = [];
+  top.hostSynTreeContribs := [pair(nt, top)];
+  top.prodGraphContribs := [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
 }
 
@@ -164,8 +143,8 @@ top::FlowDef ::= nt::String  attr::String
 abstract production defaultSynEq
 top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
 {
-  top.defTreeContribs = [pair(crossnames(nt, attr), top)];
-  top.prodGraphContribs = []; -- defaults don't show up in the prod graph!!
+  top.defTreeContribs := [pair(crossnames(nt, attr), top)];
+  top.prodGraphContribs := []; -- defaults don't show up in the prod graph!!
   top.flowEdges = map(pair(lhsSynVertex(attr), _), deps); -- but their edges WILL end up added to graphs in fixup-phase!!
 }
 
@@ -180,8 +159,8 @@ top::FlowDef ::= nt::String  attr::String  deps::[FlowVertex]
 abstract production synEq
 top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
-  top.synTreeContribs = [pair(crossnames(prod, attr), top)];
-  top.prodGraphContribs = [pair(prod, top)];
+  top.synTreeContribs := [pair(crossnames(prod, attr), top)];
+  top.prodGraphContribs := [pair(prod, top)];
   local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(lhsSynVertex(attr), _), deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
@@ -199,8 +178,8 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]  mayAffectFlowTy
 abstract production inhEq
 top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
 {
-  top.inhTreeContribs = [pair(crossnames(prod, crossnames(sigName, attr)), top)];
-  top.prodGraphContribs = [pair(prod, top)];
+  top.inhTreeContribs := [pair(crossnames(prod, crossnames(sigName, attr)), top)];
+  top.prodGraphContribs := [pair(prod, top)];
   top.flowEdges = map(pair(rhsVertex(sigName, attr), _), deps);
 }
 
@@ -214,8 +193,8 @@ top::FlowDef ::= prod::String  sigName::String  attr::String  deps::[FlowVertex]
 abstract production fwdEq
 top::FlowDef ::= prod::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
-  top.fwdTreeContribs = [pair(prod, top)];
-  top.prodGraphContribs = [pair(prod, top)];
+  top.fwdTreeContribs := [pair(prod, top)];
+  top.prodGraphContribs := [pair(prod, top)];
   local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(forwardEqVertex(), _), deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
@@ -231,8 +210,8 @@ top::FlowDef ::= prod::String  deps::[FlowVertex]  mayAffectFlowType::Boolean
 abstract production implicitFwdAffects
 top::FlowDef ::= prod::String  attrs::[String]
 {
-  top.nonSuspectContribs = [pair(prod, attrs)];
-  top.prodGraphContribs = [];
+  top.nonSuspectContribs := [pair(prod, attrs)];
+  top.prodGraphContribs := [];
   top.flowEdges = error("Internal compiler error: this sort of def should not be in a context where edges are requested.");
 }
 
@@ -247,8 +226,8 @@ top::FlowDef ::= prod::String  attrs::[String]
 abstract production fwdInhEq
 top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
 {
-  top.fwdInhTreeContribs = [pair(crossnames(prod, attr), top)];
-  top.prodGraphContribs = [pair(prod, top)];
+  top.fwdInhTreeContribs := [pair(crossnames(prod, attr), top)];
+  top.prodGraphContribs := [pair(prod, top)];
   top.flowEdges = map(pair(forwardVertex(attr), _), deps);
 }
 
@@ -266,8 +245,8 @@ top::FlowDef ::= prod::String  attr::String  deps::[FlowVertex]
 abstract production localEq
 top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  deps::[FlowVertex]
 {
-  top.localTreeContribs = [pair(crossnames(prod, fName), top)];
-  top.prodGraphContribs = [pair(prod, top)];
+  top.localTreeContribs := [pair(crossnames(prod, fName), top)];
+  top.prodGraphContribs := [pair(prod, top)];
   top.flowEdges = map(pair(localEqVertex(fName), _), deps);
 }
 
@@ -283,8 +262,8 @@ top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  d
 abstract production localInhEq
 top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 {
-  top.localInhTreeContribs = [pair(crossnames(prod, crossnames(fName, attr)), top)];
-  top.prodGraphContribs = [pair(prod, top)];
+  top.localInhTreeContribs := [pair(crossnames(prod, crossnames(fName, attr)), top)];
+  top.prodGraphContribs := [pair(prod, top)];
   top.flowEdges = map(pair(localVertex(fName, attr), _), deps);
 }
 
@@ -299,7 +278,7 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 abstract production extraEq
 top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]  mayAffectFlowType::Boolean
 {
-  top.prodGraphContribs = [pair(prod, top)];
+  top.prodGraphContribs := [pair(prod, top)];
   local edges :: [Pair<FlowVertex FlowVertex>] = map(pair(src, _), deps);
   top.flowEdges = if mayAffectFlowType then edges else [];
   top.suspectFlowEdges = if mayAffectFlowType then [] else edges;
@@ -318,8 +297,8 @@ top::FlowDef ::= prod::String  src::FlowVertex  deps::[FlowVertex]  mayAffectFlo
 abstract production anonEq
 top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  loc::Location  deps::[FlowVertex]
 {
-  top.localTreeContribs = [pair(crossnames(prod, fName), top)];
-  top.prodGraphContribs = [pair(prod, top)];
+  top.localTreeContribs := [pair(crossnames(prod, fName), top)];
+  top.prodGraphContribs := [pair(prod, top)];
   top.flowEdges = map(pair(anonEqVertex(fName), _), deps);
 }
 
@@ -335,8 +314,8 @@ top::FlowDef ::= prod::String  fName::String  typeName::String  isNT::Boolean  l
 abstract production anonInhEq
 top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 {
-  top.localInhTreeContribs = [pair(crossnames(prod, crossnames(fName, attr)), top)];
-  top.prodGraphContribs = [pair(prod, top)];
+  top.localInhTreeContribs := [pair(crossnames(prod, crossnames(fName, attr)), top)];
+  top.prodGraphContribs := [pair(prod, top)];
   top.flowEdges = map(pair(anonVertex(fName, attr), _), deps);
 }
 
@@ -351,7 +330,7 @@ top::FlowDef ::= prod::String  fName::String  attr::String  deps::[FlowVertex]
 abstract production synOccursContextEq
 top::FlowDef ::= prod::String  vt::VertexType  attr::String  deps::[String]
 {
-  top.prodGraphContribs = [pair(prod, top)];
+  top.prodGraphContribs := [pair(prod, top)];
   top.flowEdges = map(pair(vt.synVertex(attr), _), map(vt.inhVertex, deps));
 }
 
@@ -363,7 +342,7 @@ top::FlowDef ::= prod::String  vt::VertexType  attr::String  deps::[String]
 abstract production patternRuleEq
 top::FlowDef ::= prod::String  matchProd::String  scrutinee::VertexType  vars::[PatternVarProjection]
 {
-  top.prodGraphContribs = [pair(prod, top)];
+  top.prodGraphContribs := [pair(prod, top)];
   top.flowEdges = [];
 }
 
