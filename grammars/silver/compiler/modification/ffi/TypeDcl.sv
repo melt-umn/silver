@@ -38,7 +38,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' '=' trans::St
   -- Strip quotes
   local transType :: String = substring(1, length(trans.lexeme) - 1, trans.lexeme);
 
-  top.defs := [typeAliasDef(top.grammarName, id.location, fName, tl.freeVariables, foreignType(fName, transType, tl.types))];
+  top.defs := [typeAliasDef(top.grammarName, id.location, fName, [], tl.freeVariables, foreignType(fName, transType, tl.types))];
 
   propagate errors, flowDefs;
   top.errors <- tl.errorsTyVars;

@@ -9,7 +9,7 @@ nonterminal Grammar with
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild,
   defs, occursDefs, importedDefs, importedOccursDefs, grammarErrors, jarName;
 
-flowtype Grammar = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, grammarName, env, globalImports, grammarDependencies};
+flowtype Grammar = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, grammarName, env, flowEnv, globalImports, grammarDependencies};
 
 {--
 - A list of grammars that this grammar depends upon,

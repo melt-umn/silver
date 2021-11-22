@@ -5,12 +5,12 @@ imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:flow:syntax;
 
-nonterminal TypeExpr  with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, errorsKindStar, freeVariables, onNt, errorsInhSet, typerepInhSet;
-nonterminal Signature with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds;
-nonterminal SignatureLHS with config, location, grammarName, errors, env, flowEnv, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds;
-nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, flowEnv, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, errorsKindStar, freeVariables;
-nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
-nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, envBindingTyVars, initialEnv;
+nonterminal TypeExpr  with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, errorsTyVars, errorsKindStar, freeVariables, mentionedAliases, onNt, errorsInhSet, typerepInhSet;
+nonterminal Signature with config, location, grammarName, errors, env, flowEnv, unparse, typerep, lexicalTypeVariables, lexicalTyVarKinds, mentionedAliases;
+nonterminal SignatureLHS with config, location, grammarName, errors, env, flowEnv, unparse, maybeType, lexicalTypeVariables, lexicalTyVarKinds, mentionedAliases;
+nonterminal TypeExprs with config, location, grammarName, errors, env, unparse, flowEnv, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, errorsKindStar, freeVariables, mentionedAliases;
+nonterminal BracketedTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, mentionedAliases, envBindingTyVars, initialEnv;
+nonterminal BracketedOptTypeExprs with config, location, grammarName, errors, env, flowEnv, unparse, types, missingCount, lexicalTypeVariables, lexicalTyVarKinds, appArgKinds, appLexicalTyVarKinds, errorsTyVars, freeVariables, mentionedAliases, envBindingTyVars, initialEnv;
 
 synthesized attribute maybeType :: Maybe<Type>;
 synthesized attribute types :: [Type];
@@ -33,8 +33,19 @@ synthesized attribute envBindingTyVars :: Decorated Env;
 
 monoid attribute errorsKindStar::[Message];
 
+-- The set of full names of type aliases that are mentioned by/transitively depended on by this type expression.
+monoid attribute mentionedAliases :: [String];
+
+
+-- Better error checking and type information if this type expression is an inherited attribute set
+-- for a particular nonterminal (e.g. the {env} in Decorated Expr with {env}).
+-- We can check that the attributes actually occur on the nonterminal,
+-- and also can interpret {decorate} or {forward} since we can look up those flow types.
+-- The nonterminal type is specified by the attribute onNt, which should only be used by these attributes.
 synthesized attribute errorsInhSet::[Message];
 synthesized attribute typerepInhSet::Type;
+flowtype errorsInhSet {decorate, onNt} on TypeExpr;
+flowtype typerepInhSet {decorate, onNt} on TypeExpr;
 
 flowtype TypeExpr =
   decorate {grammarName, env, flowEnv}, forward {decorate},
@@ -46,13 +57,12 @@ flowtype typerep {grammarName, env, flowEnv} on TypeExpr, Signature;
 flowtype maybeType {grammarName, env, flowEnv} on SignatureLHS;
 flowtype types {grammarName, env, flowEnv} on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
-flowtype typerepInhSet {decorate, onNt} on TypeExpr;
-
 propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs excluding refTypeExpr;
 propagate lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate appLexicalTyVarKinds on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsKindStar on TypeExprs;
+propagate mentionedAliases on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
 function addNewLexicalTyVars
 [Def] ::= gn::String sl::Location lk::[Pair<String Kind>] l::[String]
@@ -160,6 +170,11 @@ top::TypeExpr ::= q::QNameType
 {
   top.unparse = q.unparse;
 
+  top.mentionedAliases <-
+    if q.lookupType.dcl.isTypeAlias
+    then q.lookupType.fullName :: q.lookupType.dcl.mentionedAliases
+    else [];
+
   top.errors <- q.lookupType.errors;
   top.errors <-
     if !q.lookupType.found || q.lookupType.dcl.isType then []
@@ -219,12 +234,14 @@ top::TypeExpr ::= ty::TypeExpr tl::BracketedTypeExprs
 }
 
 abstract production aliasAppTypeExpr
-top::TypeExpr ::= q::Decorated QNameType with {env} tl::BracketedTypeExprs
+top::TypeExpr ::= q::Decorated QNameType with {env}  tl::BracketedTypeExprs
 {
   top.unparse = q.unparse ++ tl.unparse;
 
   production ts::PolyType = q.lookupType.typeScheme;
   top.typerep = performRenaming(ts.typerep, zipVarsAndTypesIntoSubstitution(ts.boundVars, tl.types));
+
+  top.mentionedAliases <- q.lookupType.fullName :: q.lookupType.dcl.mentionedAliases;
 
   local tlCount::Integer = length(tl.types) + tl.missingCount;
   top.errors <-
@@ -243,6 +260,8 @@ top::TypeExpr ::= ty::Decorated TypeExpr tl::BracketedTypeExprs
   top.unparse = ty.unparse ++ tl.unparse;
 
   top.typerep = appTypes(ty.typerep, tl.types);
+
+  top.mentionedAliases <- ty.mentionedAliases;
 
   top.errors <- ty.errors;
 

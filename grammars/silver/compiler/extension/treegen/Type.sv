@@ -56,6 +56,11 @@ top::Type ::=
 {
   top.idNameForGenArb = "String";
 }
+aspect production terminalIdType
+top::Type ::=
+{
+  top.idNameForGenArb = "TerminalId";
+}
 aspect production nonterminalType
 top::Type ::= fn::String _ _
 {
@@ -70,6 +75,12 @@ aspect production decoratedType
 top::Type ::= te::Type _
 {
   top.idNameForGenArb = "Decorated" ++ te.idNameForGenArb;
+}
+aspect production inhSetType
+top::Type ::= _
+{
+  -- err, shouldn't happen?
+  top.idNameForGenArb = "INH_SET";
 }
 aspect production ntOrDecType
 top::Type ::= _ _ _

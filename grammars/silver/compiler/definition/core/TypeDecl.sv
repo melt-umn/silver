@@ -8,7 +8,10 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
   
-  top.defs := [typeAliasDef(top.grammarName, id.location, fName, tl.freeVariables, te.typerep)];
+  local isCircular::Boolean = contains(fName, te.mentionedAliases);
+  top.defs := [typeAliasDef(
+    top.grammarName, id.location, fName, te.mentionedAliases, tl.freeVariables,
+    if isCircular then errorType() else te.typerep)];
 
   top.errors <- tl.errorsTyVars;
   
@@ -26,4 +29,6 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
        if isLower(substring(0,1,id.name))
        then [err(id.location, "Types must be capitalized. Invalid nonterminal name " ++ id.name)]
        else [];
+
+  top.errors <- if isCircular then [err(te.location, s"Definition of ${fName} is self-referential")] else [];
 }
