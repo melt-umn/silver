@@ -147,6 +147,16 @@ wrongCode "repeats type variable names" {
  type TypeTwo<a a> = Integer;
 }
 
+wrongCode "Definition of silver_features:RecAliasFoo is self-referential" {
+  type RecAliasFoo = RecAliasBar;
+  type RecAliasBar = RecAliasFoo;
+}
+
+wrongCode "Definition of silver_features:RecAliasBaz is self-referential" {
+  type RecAliasBaz<a> = RecAliasQux<a>;
+  type RecAliasQux<a> = Either<a RecAliasBaz<Integer>>;
+}
+
 ----------------------------------------- toString implementations
 
 equalityTest(toString("foo"), "foo",   String, silver_tests);
