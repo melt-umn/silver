@@ -33,6 +33,7 @@ synthesized attribute envBindingTyVars :: Decorated Env;
 
 monoid attribute errorsKindStar::[Message];
 
+-- The set of full names of type aliases that are mentioned by/transitively depended on by this type expression.
 monoid attribute mentionedAliases :: [String];
 
 
