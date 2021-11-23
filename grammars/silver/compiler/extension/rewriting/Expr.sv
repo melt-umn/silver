@@ -16,7 +16,10 @@ top::Expr ::=
     antiquoteASTExpr(Silver_Expr {
       -- Constrain the type of the wrapped expression to the type that was inferred here,
       -- to allow for any type class constraints to be resolved in the translation.
-      silver:rewrite:anyASTExpr(let val_::$TypeExpr{typerepTypeExpr(finalType(top), location=top.location)} = $Expr{top} in val_ end)
+      silver:rewrite:anyASTExpr(
+        let rewrite_rule_anyAST_val__::$TypeExpr{typerepTypeExpr(finalType(top), location=top.location)} = $Expr{top}
+        in rewrite_rule_anyAST_val__
+        end)
     });
   top.decRuleExprs = []; -- Only needed on things resulting from the translation of caseExpr
 }
