@@ -13,7 +13,14 @@ aspect default production
 top::Expr ::=
 {
   top.transform =
-    antiquoteASTExpr(Silver_Expr { silver:rewrite:anyASTExpr($Expr{top}) });
+    antiquoteASTExpr(Silver_Expr {
+      -- Constrain the type of the wrapped expression to the type that was inferred here,
+      -- to allow for any type class constraints to be resolved in the translation.
+      silver:rewrite:anyASTExpr(
+        let rewrite_rule_anyAST_val__::$TypeExpr{typerepTypeExpr(finalType(top), location=top.location)} = $Expr{top}
+        in rewrite_rule_anyAST_val__
+        end)
+    });
   top.decRuleExprs = []; -- Only needed on things resulting from the translation of caseExpr
 }
 
@@ -118,7 +125,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
     case e, es of
     | productionReference(q), _ -> prodCallASTExpr(q.lookupValue.fullName, es.transform, anns.transform)
 
-    -- Special cases for efficiency (and workaround for inability to use applyAST on functions with constraints)
+    -- Special cases for efficiency
     | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
       when q.lookupValue.fullName == "silver:core:eq" -> eqeqASTExpr(e1.transform, e2.transform)
     | classMemberReference(q), snocAppExprs(oneAppExprs(presentAppExpr(e1)), _, presentAppExpr(e2))
