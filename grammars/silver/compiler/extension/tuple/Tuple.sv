@@ -53,15 +53,9 @@ top::Expr ::= tuple::Expr '.' a::IntConst
   top.unparse = tuple.unparse ++ "." ++ a.lexeme;
   top.errors <- tuple.errors;
 
-  -- If tuple is decorated, the length of its tupleElems 
-  -- will be 1, so we must pattern match to get at the 
-  -- underlying tupleType and compute correct length of 
-  -- its tupleElems
+  -- Ensure that we extract the tupleElems from the underlying chain of pair types if the tuple type is decorated.
   local ty :: Type = performSubstitution(tuple.typerep, tuple.upSubst);
-  local len::Integer = case ty of
-    | decoratedType(t, _) -> length(t.tupleElems)
-    | t -> length(t.tupleElems)
-    end;
+  local len::Integer = length((if ty.isDecorated then ty.decoratedType else ty).tupleElems);
   
   forwards to if (accessIndex > len || accessIndex < 1) then
       errorExpr([err(top.location, "Invalid tuple selector index.")], location=top.location)

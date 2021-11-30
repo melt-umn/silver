@@ -323,6 +323,7 @@ function getMinRefSet
   return
     case t of
     | decoratedType(_, i) -> getMinInhSetMembers([], i, e).fst
+    | partiallyDecoratedType(_, i) -> getMinInhSetMembers([], i, e).fst
     | _ -> []
     end;
 }
@@ -357,6 +358,7 @@ Maybe<[String]> ::= t::Type e::Decorated Env
   return
     case t of
     | decoratedType(_, i) -> getMaxInhSetMembers([], i, e).fst
+    | partiallyDecoratedType(_, i) -> getMaxInhSetMembers([], i, e).fst
     | _ -> just([])
     end;
 }

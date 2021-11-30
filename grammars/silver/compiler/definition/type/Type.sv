@@ -247,10 +247,26 @@ top::Type ::= inhs::[String]
 
 {--
  - A *decorated* nonterminal type.
+ - Represents a reference with at least some set of provided inherited attributes,
+ - cannot be decorated with additional attributes.
  - @param te  MUST be a 'nonterminalType' or 'varType'/'skolemType'
  - @param i  MUST have kind InhSet
  -}
 abstract production decoratedType
+top::Type ::= te::Type i::Type
+{
+  top.kindrep = starKind();
+  top.freeVariables = setUnionTyVars(te.freeVariables, i.freeVariables);
+}
+
+{--
+ - A *partially decorated* nonterminal type.
+ - Represents a reference with some exact set of provided inherited attributes,
+ - may be decorated with additional attributes.
+ - @param te  MUST be a 'nonterminalType' or 'varType'/'skolemType'
+ - @param i  MUST have kind InhSet
+ -}
+abstract production partiallyDecoratedType
 top::Type ::= te::Type i::Type
 {
   top.kindrep = starKind();
@@ -265,7 +281,7 @@ top::Type ::= te::Type i::Type
  - (e.g. when referencing a child) but has not yet been specialized.
  - @param nt  MUST be a 'nonterminalType'
  - @param inhs  The inh set that we're decorated with - MUST have kind InhSet
- - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(inhs, nt)'
+ - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(nt, inhs)' (d) 'partiallyDecoratedType(nt, inhs)'
  -                representing state: unspecialized, undecorated, or decorated.
  -}
 

@@ -192,6 +192,15 @@ top::Type ::= te::Type i::Type
   top.unifyInstanceDecorated = emptySubst();
 }
 
+aspect production partiallyDecoratedType
+top::Type ::= te::Type i::Type
+{
+  top.isDecorated = true;
+  top.decoratedType = te;
+  top.inhSetMembers = i.inhSetMembers;
+  top.unifyInstanceDecorated = emptySubst();
+}
+
 aspect production ntOrDecType
 top::Type ::= nt::Type inhs::Type hidden::Type
 {

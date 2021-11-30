@@ -38,7 +38,7 @@ top::Context ::= cls::String t::Type
     -- always give a type error.
     | ntOrDecType(nt, inhs, _) when
         !null(getInstanceDcl(cls, nt, top.env)) &&
-        all(map((.isTypeError), getInstanceDcl(cls, decoratedType(nt, inhs), top.env))) ->
+        all(map((.isTypeError), getInstanceDcl(cls, decoratedType(nt, inhs), top.env))) -> -- TODO: should probably check for the lack of a partially decorated ref instance?
       composeSubst(top.downSubst, substT.unifyInstanceNonterminal)
     | _ -> top.downSubst
     end;
