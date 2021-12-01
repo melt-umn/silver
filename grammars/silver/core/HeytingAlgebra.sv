@@ -25,7 +25,7 @@ grammar silver:core;
   -   * `conj(x, implies(x, y)) = conj(x, y)`
   -   * `conj(y, implies(x, y)) = y`
   -   * `implies(x, conj(y, z)) = conj(implies(x, y), implies(x, z))`
-  - * Complement: `notHA(x) = implies(x, false)`
+  - * Complement: `not(x) = implies(x, false)`
   -}
 class HeytingAlgebra a {
   -- TODO: Rename to false
@@ -36,7 +36,7 @@ class HeytingAlgebra a {
   tt :: a;
   @{- Implication.
     -
-    - Note that it is not the case that `implies(x, y) = disj(notHA(p), q)` for
+    - Note that it is not the case that `implies(x, y) = disj(not(p), q)` for
     - all Heyting algebras. If you require this property, you want a
     - `BooleanAlgebra`.
     -}
@@ -47,8 +47,8 @@ class HeytingAlgebra a {
   disj :: (a ::= a a);
   @{- Complement. This function corresponds to the `!` operator.
     -
-    - Note that it is not the case that `notHA(notHA(x)) = x` for all Heyting
+    - Note that it is not the case that `not(not(x)) = x` for all Heyting
     - algebras. If you require this property, you want a `BooleanAlgebra`.
     -}
-  notHA :: (a ::= a);
+  not :: (a ::= a);
 }
