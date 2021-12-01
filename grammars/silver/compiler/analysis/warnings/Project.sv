@@ -3,17 +3,10 @@ grammar silver:compiler:analysis:warnings;
 imports silver:util:cmdargs;
 imports silver:compiler:driver only parseArgs;
 
-synthesized attribute warnAll :: Boolean occurs on CmdArgs;
-
-aspect production endCmdArgs
-top::CmdArgs ::= l::[String]
-{
-  top.warnAll = false;
-}
 abstract production warnAllFlag
 top::CmdArgs ::= rest::CmdArgs
 {
-  top.warnAll = true;
+  -- This prod should be aspected to turn on all relevant warning flags
   forwards to rest;
 }
 

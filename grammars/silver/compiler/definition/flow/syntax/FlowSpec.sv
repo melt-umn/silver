@@ -86,7 +86,7 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
 
   top.errors <-
     if !attr.found ||
-       !(top.config.warnAll || top.config.warnMissingInh) || -- we don't want to compute flow graphs unless told to
+       !top.config.warnMissingInh || -- we don't want to compute flow graphs unless told to
        isExportedBy(attr.authorityGrammar, [hackGramFromFName(top.onNt.typeName)], top.compiledGrammars) ||
        null(missingFt)
     then []
