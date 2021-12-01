@@ -11,8 +11,8 @@ grammar silver:core;
   -   * Commutativity: `add(x, y) = add(y, x)`
   - * Monoid under multiplication:
   -   * Associativity: `mul(mul(x, y), z) = mul(x, mul(y, z))`
-  -   * Left Identity: `mul(oneSR, x) = x`
-  -   * Right Identity: `mul(x, oneSR) = x`
+  -   * Left Identity: `mul(one, x) = x`
+  -   * Right Identity: `mul(x, one) = x`
   - * Multiplication distributes over addition:
   -   * Left Distributivity: `mul(x, add(y, z)) = add(mul(x, y), mul(x, z))`
   -   * Right Distributivity: `mul(add(x, y), z) = add(mul(x, z), mul(y, z))`
@@ -27,14 +27,14 @@ class Semiring a {
   @{- The function corresponding to the `*` operator. -}
   mul :: (a ::= a a);
   @{- The value corresponding to the `1` constant. -}
-  oneSR :: a;
+  one :: a;
 }
 
 instance Semiring Integer {
   add = \a::Integer b::Integer -> a + b;
   zero = 0;
   mul = \a::Integer b::Integer -> a * b;
-  oneSR = 1;
+  one = 1;
 }
 
 @{- Converts a non-negative integer into an arbitrary semiring. -}
@@ -48,5 +48,5 @@ Semiring a => a ::= n::Integer
     else if n % 2 == 0 then
       add(fromN2, fromN2)
     else
-      add(add(fromN2, oneSR), fromN2);
+      add(add(fromN2, one), fromN2);
 }
