@@ -10,8 +10,8 @@ grammar silver:compiler:definition:flow:ast;
  -  - extraEq (handling collections '<-')
  - which the thesis does not address.
  -}
-nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, flowEdges, localInhTreeContribs, suspectFlowEdges, hostSynTreeContribs, nonSuspectContribs, localTreeContribs;
-nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, localInhTreeContribs, hostSynTreeContribs, nonSuspectContribs, localTreeContribs;
+nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, flowEdges, localInhTreeContribs, suspectFlowEdges, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, partialRefContribs;
+nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, localInhTreeContribs, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, partialRefContribs;
 
 {-- lookup (production, attribute) to find synthesized equations
  - Used to ensure a necessary lhs.syn equation exists.
@@ -67,7 +67,10 @@ monoid attribute hostSynTreeContribs :: [Pair<String FlowDef>];
 {-- A list of attributes for a production that are non-suspect -}
 monoid attribute nonSuspectContribs :: [Pair<String [String]>];
 
-propagate synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, prodTreeContribs, prodGraphContribs, hostSynTreeContribs, nonSuspectContribs
+{-- A list of decoration sites where partial references are taken, and the attributes on those partial references -}
+monoid attribute partialRefContribs :: [(String, Location, [String])];
+
+propagate synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, prodTreeContribs, prodGraphContribs, hostSynTreeContribs, nonSuspectContribs, partialRefContribs
   on FlowDefs;
 
 abstract production consFlow
@@ -98,6 +101,7 @@ top::FlowDef ::=
   top.hostSynTreeContribs := [];
   top.nonSuspectContribs := [];
   top.suspectFlowEdges = []; -- flowEdges is required, but suspect is typically not!
+  top.partialRefContribs := [];
   -- require prodGraphContibs, flowEdges
 }
 
@@ -352,6 +356,25 @@ nonterminal PatternVarProjection;
 abstract production patternVarProjection
 top::PatternVarProjection ::= child::String  typeName::String  patternVar::String
 {
+}
+
+{--
+ - The taking of a partially decorated reference to a child or local/production attribute.
+ - Since taking a partially decorated reference means that inherited equations
+ - on the decoration site for attributes not in the reference set are forbidden,
+ - this info tracks what decoration sites have partial references taken.
+ -
+ - @param prod  the full name of the production
+ - @param fName the full name of the child or local
+ - @param loc   the location of where the reference was taken
+ - @param attrs the attributes in the type of the taken reference
+ -}
+abstract production partialRef
+top::FlowDef ::= prod::String  fName::String  loc::Location  attrs::[String]
+{
+  top.partialRefContribs := [(crossnames(prod, fName), loc, attrs)];
+  top.prodGraphContribs := [];
+  top.flowEdges = [];
 }
 
 --

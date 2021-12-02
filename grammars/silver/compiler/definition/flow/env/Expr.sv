@@ -7,6 +7,8 @@ import silver:compiler:modification:primitivepattern;
 import silver:compiler:extension:patternmatching only Arrow_kwd, Vbar_kwd; -- TODO remove
 import silver:compiler:modification:let_fix;
 
+import silver:compiler:driver:util only isExportedBy;
+
 {--
  - Direct (potential) dependencies this expression has on nodes in the production flow graph.
  -}
@@ -51,6 +53,14 @@ top::Expr ::= q::Decorated QName
     if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !isDecorable(finalTy, top.env)
     then hasVertex(rhsVertexType(q.lookupValue.fullName))
     else noVertex();
+
+  top.flowDefs <-
+    case finalTy, refSet of
+    | partiallyDecoratedType(_, _), just(inhs)
+      when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
+      [partialRef(top.frame.fullName, q.lookupValue.fullName, q.location, inhs)]
+    | _, _ -> []
+    end;
 }
 aspect production lhsReference
 top::Expr ::= q::Decorated QName
@@ -82,6 +92,14 @@ top::Expr ::= q::Decorated QName
     if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !isDecorable(finalTy, top.env)
     then hasVertex(localVertexType(q.lookupValue.fullName))
     else noVertex();
+
+  top.flowDefs <-
+    case finalTy, refSet of
+    | partiallyDecoratedType(_, _), just(inhs)
+      when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
+      [partialRef(top.frame.fullName, q.lookupValue.fullName, q.location, inhs)]
+    | _, _ -> []
+    end;
 }
 aspect production forwardReference
 top::Expr ::= q::Decorated QName
