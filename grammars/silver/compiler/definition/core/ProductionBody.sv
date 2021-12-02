@@ -146,13 +146,13 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   top.unparse = "\tlocal attribute " ++ a.unparse ++ "::" ++ te.unparse ++ ";";
 
   production attribute fName :: String;
-  fName = top.frame.fullName ++ ":local:" ++ a.name;
+  fName = s"${top.frame.fullName}:local:${top.grammarName}:${substitute(".", "_", top.location.filename)}:${toString(top.location.line)}:${toString(top.location.column)}:" ++ a.name;
 
   top.defs := [localDef(top.grammarName, a.location, fName, te.typerep)];
 
   top.errors <-
-        if length(getValueDclAll(fName, top.env)) > 1 
-        then [err(a.location, "Value '" ++ fName ++ "' is already bound.")]
+        if length(getValueDclInScope(a.name, top.env)) > 1 
+        then [err(a.location, "Value '" ++ a.name ++ "' is already bound.")]
         else [];
 
   top.errors <- if !top.frame.permitLocalAttributes
@@ -163,17 +163,21 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 concrete production productionAttributeDcl
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
 {
-  -- TODO: we should unparse the production keyword, not local here!!
-  --top.unparse = "\tproduction attribute " ++ a.unparse ++ "::" ++ te.unparse ++ ";";
+  top.unparse = "\tproduction attribute " ++ a.unparse ++ "::" ++ te.unparse ++ ";";
 
-  top.productionAttributes := forward.defs;
-  top.defs := [];
+  production attribute fName :: String;
+  fName = top.frame.fullName ++ ":local:" ++ top.grammarName ++ ":" ++ a.name;
+
+  top.productionAttributes := [localDef(top.grammarName, a.location, fName, te.typerep)];
+
+  top.errors <-
+        if length(getValueDclAll(fName, top.env)) > 1 
+        then [err(a.location, "Value '" ++ fName ++ "' is already bound.")]
+        else [];
 
   top.errors <- if !top.frame.permitProductionAttributes
                 then [err(top.location, "Production attributes are not valid in this context.")]
                 else [];
-
-  forwards to localAttributeDcl('local', $2, a, $4, te, $6, location=top.location);
 }
 
 concrete production forwardsTo
