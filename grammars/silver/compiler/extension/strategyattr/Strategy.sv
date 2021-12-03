@@ -7,6 +7,9 @@ abstract production strategyAttributeDcl
 top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] recVarTotalEnv::[Pair<String Boolean>] e::StrategyExpr
 {
   top.unparse = (if isTotal then "" else "partial ") ++ "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
+  top.occursDefs := [];
+  top.specDefs := [];
+  top.refDefs := [];
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -35,6 +38,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
   
   e.recVarNameEnv = recVarNameEnv;
   e.recVarTotalEnv = recVarTotalEnv;
+  e.recVarTotalNoEnvEnv = recVarTotalEnv;
   e.outerAttr = just(a.name);
   
   local fwrd::AGDcl =
@@ -49,21 +53,15 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
                sourceGrammar=top.grammarName, sourceLocation=a.location)))],
         location=top.location),
       map(
-        \ d::Pair<String Decorated StrategyExpr> ->
+        \ d::Pair<String LiftedStrategy> ->
           strategyAttributeDcl(
-            d.snd.isTotal, name(d.fst, top.location), d.snd.recVarNameEnv, d.snd.recVarTotalEnv, new(d.snd),
+            d.snd.isTotalNoEnv, name(d.fst, top.location), d.snd.recVarNameEnv, d.snd.recVarTotalNoEnvEnv, new(d.snd),
             location=top.location),
-        decorate e with {
-          env = emptyEnv(); -- Forward (and thus lifting) cannot depend on top.env to avoid circular dependency
-          config = e.config; grammarName = e.grammarName; recVarNameEnv = recVarNameEnv; recVarTotalEnv = recVarTotalEnv; outerAttr = e.outerAttr;
-        }.liftedStrategies));
+        e.liftedStrategies));
   
   -- Uncomment for debugging
   --forwards to unsafeTrace(fwrd, print(a.name ++ " = " ++ e.unparse ++ "; lifted  " ++ implode(",  ", map(fst, e.liftedStrategies)) ++ "\n\n", unsafeIO()));
-  
-  -- Flow errors here due to exceeding the allowable host forward flow type.
-  -- I'm not actually sure where we depend on flowEnv, config or compiledGrammars.
-  -- This could be fixed by seeding the host flow type or tracking down those dependencies and substituting dummy values.
+
   forwards to fwrd;
 }
 
@@ -149,6 +147,7 @@ top::ProductionStmt ::= attr::Decorated QName
   e2.recVarTotalEnv = e.recVarTotalEnv;
   e2.outerAttr = e.outerAttr;
   e2.inlinedStrategies = e.inlinedStrategies;
+  e2.flowEnv = top.flowEnv;
   
   -- Can't do this with forwarding to avoid circular dependency of
   -- forward -> dcl.containsErrors -> dcl.flowEnv -> forward.flowDefs

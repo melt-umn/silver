@@ -1,5 +1,7 @@
 grammar silver:compiler:extension:treegen;
 
+-- TODO: Remove this noew that we have an Eq type class
+
 import silver:compiler:modification:let_fix;
 import silver:compiler:extension:patternmatching;
 import silver:compiler:modification:primitivepattern;
@@ -10,8 +12,10 @@ terminal Eq_t 'Eq' lexer classes {KEYWORD};
 concrete production deriveEqagdcl
 top::AGDcl ::= 'derive' 'Eq' 'on' names::QNames ';'
 {
+  top.unparse = s"derive Eq on ${names.unparse};";
   -- bug: stupid hack. Find some other way to fix this, maybe?
   top.flowDefs := [];
+  top.moduleNames := [];
 
   forwards to 
     foldr(

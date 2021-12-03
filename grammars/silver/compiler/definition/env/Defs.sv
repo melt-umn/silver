@@ -176,9 +176,9 @@ Def ::= sg::String  sl::Location  fn::String  tv::TyVar
   return typeDef(defaultEnvItem(lexTyVarDcl(fn,true,tv,sourceGrammar=sg,sourceLocation=sl)));
 }
 function typeAliasDef
-Def ::= sg::String sl::Location fn::String bound::[TyVar] ty::Type
+Def ::= sg::String sl::Location fn::String mentionedAliases::[String] bound::[TyVar] ty::Type
 {
-  return typeDef(defaultEnvItem(typeAliasDcl(fn,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
+  return typeDef(defaultEnvItem(typeAliasDcl(fn,mentionedAliases,bound,ty,sourceGrammar=sg,sourceLocation=sl)));
 }
 function synDef
 Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  ty::Type
