@@ -146,7 +146,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   top.unparse = "\tlocal attribute " ++ a.unparse ++ "::" ++ te.unparse ++ ";";
 
   production attribute fName :: String;
-  fName = s"${top.frame.fullName}:local:${top.grammarName}:${implode("_", filter(isAlpha, explode(".", top.location.filename)))}:${toString(top.location.line)}:${toString(top.location.column)}:" ++ a.name;
+  fName = s"${top.frame.fullName}:local:${top.grammarName}:${implode("_", filter(isAlpha, explode(".", top.location.filename)))}:${toString(top.location.line)}:${toString(top.location.column)}:${a.name}";
 
   top.defs := [localDef(top.grammarName, a.location, fName, te.typerep)];
 

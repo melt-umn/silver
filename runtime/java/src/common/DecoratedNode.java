@@ -1,6 +1,8 @@
 package common;
 
 import common.exceptions.MissingDefinitionException;
+import common.exceptions.MissingInheritedDefinitionException;
+import common.exceptions.SilverException;
 import common.exceptions.TraceException;
 
 /**
@@ -51,6 +53,10 @@ public class DecoratedNode implements Typed {
 	 * @see TopNode
 	 */
 	protected final DecoratedNode parent;
+	/**
+	 * The DecoratedNode for a partially decorated reference that is here being decorated with additional inherited attributes. (May be null)
+	 */
+	protected final DecoratedNode base;
 	
 	/**
 	 * The cache of children (e.g. the DecoratedNodes)
@@ -115,12 +121,13 @@ public class DecoratedNode implements Typed {
 	DecoratedNode(
 			final int cc, final int ic, final int sc, final int lc,
 			final Node self, final DecoratedNode parent,
-			final Lazy[] inhs, final DecoratedNode forwardParent) {
+			final Lazy[] inhs, final DecoratedNode forwardParent, final DecoratedNode base) {
 		this.self = self;
 		this.parent = parent;
 		this.originCtx = parent!=null?parent.originCtx:null;
 		this.inheritedAttributes = inhs;
 		this.forwardParent = forwardParent;
+		this.base = base;
 		
 		// create caches
 		this.childrenValues =    (cc > 0) ? new Object[cc] : null;
@@ -147,6 +154,7 @@ public class DecoratedNode implements Typed {
 		this.parent = TopNode.singleton;
 		this.inheritedAttributes = null;
 		this.forwardParent = null;
+		this.base = null;
 		
 		this.childrenValues = new Object[cc];
 		this.inheritedValues = null;
@@ -165,6 +173,21 @@ public class DecoratedNode implements Typed {
 	 */
 	public final Node undecorate() {
 		return self;
+	}
+	
+	/**
+	 * Decorate this (partially decorated) node with additional inherited attributes.
+	 * 
+	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
+	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @return A DecoratedNode with the additional attributes supplied, referencing this DecoratedNode as 'base'
+	 */
+	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
+		return new DecoratedNode(self.getNumberOfChildren(),
+				                 self.getNumberOfInhAttrs(),
+				                 self.getNumberOfSynAttrs(),
+				                 self.getNumberOfLocalAttrs(),
+				                 self, parent, inhs, null, this);
 	}
 
 	/**
@@ -209,7 +232,11 @@ public class DecoratedNode implements Typed {
 	 * This is, after all, the "slow path."
 	 */
 	private final DecoratedNode createDecoratedChild(final int child) {
-		return ((Node)self.getChild(child)).decorate(this, self.getChildInheritedAttributes(child));
+		if(base == null) {
+			return ((Node)self.getChild(child)).decorate(this, self.getChildInheritedAttributes(child));
+		} else {
+			return base.childDecorated(child).decorate(this, self.getChildInheritedAttributes(child));
+		}
 	}
 	
 	/**
@@ -283,7 +310,11 @@ public class DecoratedNode implements Typed {
 	 * Another case of keeping the slow paths out of here, so it can be inlined.
 	 */
 	private final DecoratedNode evalLocalDecorated(final int attribute) {
-		return ((Node)evalLocalAsIs(attribute)).decorate(this, self.getLocalInheritedAttributes(attribute));
+		if(base == null) {
+			return ((Node)evalLocalAsIs(attribute)).decorate(this, self.getLocalInheritedAttributes(attribute));
+		} else {
+			return base.evalLocalDecorated(attribute).decorate(this, self.getLocalInheritedAttributes(attribute));
+		}
 	}
 
 	/**
@@ -311,6 +342,18 @@ public class DecoratedNode implements Typed {
 	
 	private final Object evalSyn(final int attribute) {
 		// TODO: Try to break this up into < 37 byte methods?
+		if(base != null) {
+			try {
+				return base.synthesized(attribute);
+			} catch(Throwable t) {
+				if (SilverException.getRootCause(t) instanceof MissingInheritedDefinitionException) {
+					// We hit a missing inherited attribute. Fall back to evaluating on the new tree.
+				} else {
+					throw new TraceException("While evaling syn '" + self.getNameOfSynAttr(attribute) + " via partially decorated reference ' in " + getDebugID(), t);
+				}
+			}
+		}
+		
 		Lazy l = self.getSynthesized(attribute);
 		if(l != null) {
 			try {
@@ -418,6 +461,17 @@ public class DecoratedNode implements Typed {
 	}
 	
 	private final Object evalInhSomehow(final int attribute) {
+		if(base != null) {
+			try {
+				return base.inherited(attribute);
+			} catch(Throwable t) {
+				if (SilverException.getRootCause(t) instanceof MissingInheritedDefinitionException) {
+					// We hit a missing inherited attribute. Fall back to evaluating on the new tree.
+				} else {
+					throw new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + " via partially decorated reference ' in " + getDebugID(), t);
+				}
+			}
+		}
 		if(forwardParent == null)
 			return evalInhHere(attribute);
 		else
@@ -433,7 +487,7 @@ public class DecoratedNode implements Typed {
 	private final RuntimeException handleInhFwdPError(final int attribute, Throwable t) {
 		//This seems impossible since we're checking if forwardParent==null earlier up there!
 		//if(forwardParent == null) {
-		//	return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
+		//	return new MissingInheritedDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
 		//}
 		return new TraceException("While evaling inh via forward in " + getDebugID(), t);
 	}
@@ -457,7 +511,7 @@ public class DecoratedNode implements Typed {
 		// so the user omitting some inherited equations for attributes with higher indices
 		// could mean the resulting array that we are passed is too short.  Sigh.
 		if(inheritedAttributes == null || attribute >= inheritedAttributes.length || inheritedAttributes[attribute] == null) {
-			return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
+			return new MissingInheritedDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
 		}
 		return new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' in " + getDebugID(), t);
 	}

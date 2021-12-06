@@ -26,7 +26,7 @@ public abstract class Node implements Typed {
 				                 getNumberOfInhAttrs(),
 				                 getNumberOfSynAttrs(),
 				                 getNumberOfLocalAttrs(),
-				                 this, parent, inhs, null);
+				                 this, parent, inhs, null, null);
 	}
 
 	/**
@@ -42,7 +42,7 @@ public abstract class Node implements Typed {
                                  getNumberOfInhAttrs(),
                                  getNumberOfSynAttrs(),
                                  getNumberOfLocalAttrs(),
-                                 this, parent, null, fwdParent);
+                                 this, parent, null, fwdParent, null);
 	}
 	
 	/**
