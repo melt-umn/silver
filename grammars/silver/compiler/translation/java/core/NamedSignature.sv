@@ -349,7 +349,7 @@ String ::= fn::String n::NamedSignatureElement
 {
   return
 s"""try {
-			if (!common.TypeRep.unify(${n.typerep.transFreshTypeRep}, common.Reflection.getType(getChild_${n.elementName}()))) {
+			if (!common.TypeRep.unify(${transFreshTypeRep(n.typerep)}, common.Reflection.getType(getChild_${n.elementName}()))) {
 				throw new common.exceptions.SilverInternalError("Unification failed.");
 			}
 		} catch (common.exceptions.SilverException e) {
@@ -363,7 +363,7 @@ String ::= fn::String numChildren::Integer n::NamedSignatureElement
   return
 s"""Object ${n.childRefElem} = null;
       try {
-        ${n.childRefElem} = common.Reflection.reify(rules, ${n.typerep.transFreshTypeRep}, childASTs[i_${n.elementName}]);
+        ${n.childRefElem} = common.Reflection.reify(rules, ${transFreshTypeRep(n.typerep)}, childASTs[i_${n.elementName}]);
       } catch (common.exceptions.SilverException e) {
         throw new common.exceptions.ChildReifyTraceException("${fn}", "${n.elementName}", ${toString(numChildren)}, i_${n.elementName}, e);
       }
@@ -375,7 +375,7 @@ String ::= fn::String n::NamedSignatureElement
   return
 s"""Object ${n.annoRefElem} = null;
     try {
-      ${n.annoRefElem} = common.Reflection.reify(rules, ${n.typerep.transFreshTypeRep}, annotationASTs[i${n.annoRefElem}]);
+      ${n.annoRefElem} = common.Reflection.reify(rules, ${transFreshTypeRep(n.typerep)}, annotationASTs[i${n.annoRefElem}]);
     } catch (common.exceptions.SilverException e) {
       throw new common.exceptions.AnnotationReifyTraceException("${fn}", "${n.elementName}", e);
     }

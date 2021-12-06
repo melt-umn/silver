@@ -56,7 +56,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
 	default ${ty.typerep.transCovariantType} ${makeInstanceMemberAccessorName(id.name)}(${contexts.contextParamTrans}) {
 		final common.DecoratedNode context = common.TopNode.singleton;
 		//${e.unparse}
-		return ${e.translation};
+		return ${e.generalizedTranslation};
 	}
 """;
 }

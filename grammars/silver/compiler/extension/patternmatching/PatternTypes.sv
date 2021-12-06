@@ -337,7 +337,7 @@ top::PatternList ::=
 
 synthesized attribute namedPatternList::[Pair<String Decorated Pattern>];
 
-nonterminal NamedPatternList with location, config, unparse, env, errors, patternVars, patternVarEnv, namedPatternList;
+nonterminal NamedPatternList with location, config, unparse, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
 
 concrete production namedPatternList_one
 top::NamedPatternList ::= p::NamedPattern
@@ -370,7 +370,7 @@ top::NamedPatternList ::=
   top.namedPatternList = [];
 }
 
-nonterminal NamedPattern with location, config, unparse, env, errors, patternVars, patternVarEnv, namedPatternList;
+nonterminal NamedPattern with location, config, unparse, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
 
 concrete production namedPattern
 top::NamedPattern ::= qn::QName '=' p::Pattern

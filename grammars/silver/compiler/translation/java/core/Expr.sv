@@ -32,12 +32,20 @@ inherited attribute invokeArgs :: Decorated AppExprs occurs on Expr;
 inherited attribute invokeNamedArgs :: Decorated AnnoAppExprs occurs on Expr;
 inherited attribute sameProdAsProductionDefinedOn :: Boolean occurs on Expr;
 
+{--
+ - A translation string where skolems in run-time type info should be generalized.
+ - E.g. global id :: (a ::= a) = \ x::a -> x; it is safe and more general for the lambda
+ - to have runtime type (var ::= var) rather than (skolem ::= skolem).
+ -}
+synthesized attribute generalizedTranslation :: String occurs on Expr;
+
 aspect default production
 top::Expr ::=
 {
   top.invokeTranslation =
     -- dynamic method invocation
     s"((${finalType(top).outputType.transType})${top.translation}.invoke(${makeOriginContextRef(top)}, new Object[]{${argsTranslation(top.invokeArgs)}}, ${namedargsTranslation(top.invokeNamedArgs)}))";
+  top.generalizedTranslation = top.translation;
 }
 
 aspect production errorExpr

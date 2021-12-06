@@ -393,35 +393,35 @@ i1 subset i2 => top::SNT ::= x::Decorated a with i2  f::([String] ::= Decorated 
 
 global sCaseRes::[String] =
   case sProd(decorate mkDExpr() with {env1 = ["a"]; env2 = ["2"];}, \ x::Decorated DExpr with {env2} -> x.env2) of
-  | sProd(x, f) -> f(partialUndecorate(x))
+  | sProd(x, f) -> f(castRef(x))
   end;
 equalityTest(sCaseRes, ["2"], [String], silver_tests);
 
 function transitiveSubset
 i1 subset i2, i2 subset i3, i3 subset i4 => Decorated a with i1 ::= x::Decorated a with i4
 {
-  return partialUndecorate(x);
+  return castRef(x);
 }
 
 function transitiveSubset2
 i1 subset {env1}, {env1, env2} subset i2 => Decorated a with i1 ::= x::Decorated a with i2
 {
-  return partialUndecorate(x);
+  return castRef(x);
 }
 
-wrongCode "i3 is not a subset of i2 (arising from the use of partialUndecorate)" {
+wrongCode "i3 is not a subset of i2 (arising from the use of castRef)" {
   function transitiveSubsetBad
   i1 subset i2, i2 subset i3, i3 subset i4 => Decorated a with i3 ::= x::Decorated a with i2
   {
-    return partialUndecorate(x);
+    return castRef(x);
   }
 }
 
-wrongCode "i1 is not a subset of i2 (arising from the use of partialUndecorate)" {
+wrongCode "i1 is not a subset of i2 (arising from the use of castRef)" {
   function transitiveSubsetBad2
   i1 subset {env1, env2}, {env1} subset i2 => Decorated a with i1 ::= x::Decorated a with i2
   {
-    return partialUndecorate(x);
+    return castRef(x);
   }
 }
 

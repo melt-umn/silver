@@ -14,7 +14,6 @@ top::Type ::=
   top.transCovariantType = "common.ConsCell";
   top.transClassType = "common.ConsCell";
   top.transTypeRep = "new common.BaseTypeRep(\"[]\")";
-  top.transFreshTypeRep = top.transTypeRep;
   top.transTypeName = "List";
 }
 
