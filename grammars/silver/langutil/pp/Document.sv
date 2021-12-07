@@ -19,6 +19,15 @@ String ::= width::Integer d::Document
 
 --------------------------------------------------------------------------------
 
+instance Semigroup Document {
+  append = cat;
+}
+
+instance Monoid Document {
+  mempty = notext();
+  concat = ppConcat;
+}
+
 @{--
  - Concatenates a list of fragments into one fragment.
  -}
