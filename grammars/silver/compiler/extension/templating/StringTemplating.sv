@@ -130,6 +130,7 @@ aspect production bodyOneWater
 top::TemplateStringBody ::= w::Water
 {
   top.stringTemplate = [stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)];
+  -- Generate the Silver Expr constructing the Document value given by w.waterDoc
   top.ppTemplate = [translate(top.location, reflect(w.waterDoc))];
 }
 
@@ -151,6 +152,7 @@ aspect production singleLineBodyOneWater
 top::SingleLineTemplateStringBody ::= w::SingleLineWater
 {
   top.stringTemplate = [stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)];
+  -- Generate the Silver Expr constructing the Document value given by w.waterDoc
   top.ppTemplate = [translate(top.location, reflect(w.waterDoc))];
 }
 
@@ -160,6 +162,7 @@ top::TemplateStringBodyItem ::= w::Water nw::NonWater
   top.stringTemplate = [
     stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)] ++
       nw.stringTemplate;
+  -- Generate the Silver Expr constructing the Document value given by w.waterDoc
   top.ppTemplate = translate(top.location, reflect(w.waterDoc)) :: nw.ppTemplate;
 }
 
@@ -176,6 +179,7 @@ top::SingleLineTemplateStringBodyItem ::= w::SingleLineWater nw::NonWater
   top.stringTemplate = [
     stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)] ++
       nw.stringTemplate;
+  -- Generate the Silver Expr constructing the Document value given by w.waterDoc
   top.ppTemplate = translate(top.location, reflect(w.waterDoc)) :: nw.ppTemplate;
 }
 
