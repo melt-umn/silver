@@ -4,6 +4,8 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:type:syntax;
+imports silver:compiler:metatranslation;
+imports silver:reflect;
 
 imports silver:compiler:translation:java:core;
 
@@ -128,9 +130,7 @@ aspect production bodyOneWater
 top::TemplateStringBody ::= w::Water
 {
   top.stringTemplate = [stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)];
-  top.ppTemplate = [
-    mkStrFunctionInvocation(w.location, "silver:langutil:pp:text", [
-      stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)])];
+  top.ppTemplate = [translate(top.location, reflect(w.waterDoc))];
 }
 
 aspect production singleLineBodyCons
@@ -151,9 +151,7 @@ aspect production singleLineBodyOneWater
 top::SingleLineTemplateStringBody ::= w::SingleLineWater
 {
   top.stringTemplate = [stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)];
-  top.ppTemplate = [
-    mkStrFunctionInvocation(w.location, "silver:langutil:pp:text", [
-      stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)])];
+  top.ppTemplate = [translate(top.location, reflect(w.waterDoc))];
 }
 
 aspect production itemWaterEscape
@@ -162,10 +160,7 @@ top::TemplateStringBodyItem ::= w::Water nw::NonWater
   top.stringTemplate = [
     stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)] ++
       nw.stringTemplate;
-  top.ppTemplate = [
-    mkStrFunctionInvocation(w.location, "silver:langutil:pp:text", [
-      stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)])] ++
-      nw.ppTemplate;
+  top.ppTemplate = translate(top.location, reflect(w.waterDoc)) :: nw.ppTemplate;
 }
 
 aspect production itemEscape
@@ -181,10 +176,7 @@ top::SingleLineTemplateStringBodyItem ::= w::SingleLineWater nw::NonWater
   top.stringTemplate = [
     stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)] ++
       nw.stringTemplate;
-  top.ppTemplate = [
-    mkStrFunctionInvocation(w.location, "silver:langutil:pp:text", [
-      stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)])] ++
-      nw.ppTemplate;
+  top.ppTemplate = translate(top.location, reflect(w.waterDoc)) :: nw.ppTemplate;
 }
 
 aspect production singleLineItemEscape

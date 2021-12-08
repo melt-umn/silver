@@ -92,7 +92,7 @@ Document ::= n::Integer inner::Document
 function groupnestlines
 Document ::= n::Integer inner::Document
 {
-  return cat(groupnest(n, cat(line(), inner)), line());
+  return group(cat(nest(n, cat(line(), inner)), line()));
 }
 function softbreak
 Document ::=
