@@ -196,7 +196,7 @@ concrete production singleLineWater
 top::SingleLineWaterItem ::= w::SingleLineQuoteWater
 {
   top.waterString = w.lexeme;
-  top.waterDoc = text(w.lexeme);
+  top.waterDoc = text(unescapeString(w.lexeme));  -- Need to interpret escape sequences besides \\
 }
 
 concrete production singleLineWaterDollar
