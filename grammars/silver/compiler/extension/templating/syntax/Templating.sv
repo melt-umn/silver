@@ -6,11 +6,12 @@ imports silver:langutil:pp;
 terminal TripleQuote /\"\"\"/ lexer classes {LITERAL};
 terminal DoubleDollar '$$' lexer classes {LITERAL};
 terminal QuoteWater /[^$\r\n\t\"\\]+/ lexer classes {LITERAL};
-terminal SingleLineQuoteWater /([^$\r\n\t\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]n|[\\]r|[\\]f|[\\]t)+/ lexer classes {LITERAL};
+terminal SingleLineQuoteWater /([^$\r\n\t\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]r|[\\]f|[\\]t)+/ lexer classes {LITERAL};
 terminal LiteralNewline /(\n|\r\n)/ lexer classes {LITERAL};
 terminal LiteralTab /\t/ lexer classes {LITERAL};
 terminal LiteralQuote /\"/ lexer classes {LITERAL};
 terminal LiteralBackslash /\\/ lexer classes {LITERAL};
+terminal LiteralBackslashN /\\n/ lexer classes {LITERAL};
 
 terminal OpenEscape '${';
 
@@ -204,6 +205,14 @@ top::SingleLineWaterItem ::= '$$'
 {
   top.waterString = "$";
   top.waterDoc = text("$");
+}
+
+-- Seperated from singleLineWater since we don't want newlines in text()
+concrete production singleLineWaterNewline
+top::SingleLineWaterItem ::= LiteralBackslashN
+{
+  top.waterString = "\\n";
+  top.waterDoc = realLine();
 }
 
 concrete production singleLineWaterBackSlash
