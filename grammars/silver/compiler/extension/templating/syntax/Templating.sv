@@ -123,7 +123,7 @@ concrete production waterCons
 top::Water ::= h::Water  t::WaterItem
 {
   top.waterString = h.waterString ++ t.waterString;
-  top.waterDoc = cat(h.waterDoc, t.waterDoc);
+  top.waterDoc = flatCat(h.waterDoc, t.waterDoc);
 }
 
 concrete production waterOne
@@ -183,7 +183,7 @@ concrete production singleLineWaterCons
 top::SingleLineWater ::= h::SingleLineWater  t::SingleLineWaterItem
 {
   top.waterString = h.waterString ++ t.waterString;
-  top.waterDoc = cat(h.waterDoc, t.waterDoc);
+  top.waterDoc = flatCat(h.waterDoc, t.waterDoc);
 }
 
 concrete production singleLineWaterOne
@@ -221,4 +221,14 @@ top::SingleLineWaterItem ::= LiteralBackslash
   -- Same as waterBackSlash
   top.waterString = "\\\\";
   top.waterDoc = text("\\");
+}
+
+function flatCat
+Document ::= d1::Document d2::Document
+{
+  return
+    case d1, d2 of
+    | text(s1), text(s2) -> text(s1 ++ s2)
+    | _, _ -> cat(d1, d2)
+    end;
 }

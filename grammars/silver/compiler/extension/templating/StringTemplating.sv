@@ -6,6 +6,7 @@ imports silver:compiler:definition:type;
 imports silver:compiler:definition:type:syntax;
 imports silver:compiler:metatranslation;
 imports silver:reflect;
+imports silver:langutil:pp;
 
 imports silver:compiler:translation:java:core;
 
@@ -28,23 +29,6 @@ top::Expr ::= SLTemplate_kwd t::SingleLineTemplateString
 layout {}
 {
   forwards to foldr1(stringAppendCall(_, _, location=top.location), t.stringTemplate);
-}
-
-terminal PPTemplate_kwd   'pp"""' lexer classes {LITERAL};
-terminal SLPPTemplate_kwd 'pp"'   lexer classes {LITERAL};
-
-concrete production pptemplateExpr
-top::Expr ::= PPTemplate_kwd t::TemplateString
-layout {}
-{
-  forwards to foldr1(catcall(_, _, top.location), t.ppTemplate);
-}
-
-concrete production singleLinepptemplateExpr
-top::Expr ::= SLPPTemplate_kwd t::SingleLineTemplateString
-layout {}
-{
-  forwards to foldr1(catcall(_, _, top.location), t.ppTemplate);
 }
 
 production stringAppendCall
@@ -71,18 +55,40 @@ top::Expr ::= a::Expr b::Expr
       [exprRef(a, location=a.location), exprRef(b, location=b.location)]);
 }
 
-function catcall
-Expr ::= a::Expr b::Expr l::Location
+terminal PPTemplate_kwd   'pp"""' lexer classes {LITERAL};
+terminal SLPPTemplate_kwd 'pp"'   lexer classes {LITERAL};
+
+-- These are translated by building a Document value and meta-translating the whole thing into an Expr
+concrete production pptemplateExpr
+top::Expr ::= PPTemplate_kwd t::TemplateString
+layout {}
 {
-  return mkStrFunctionInvocation(l, "silver:langutil:pp:cat", [a, b]);
+  forwards to translate(top.location, reflect(t.ppTemplate));
+}
+
+concrete production singleLinepptemplateExpr
+top::Expr ::= SLPPTemplate_kwd t::SingleLineTemplateString
+layout {}
+{
+  forwards to translate(top.location, reflect(t.ppTemplate));
+}
+
+production antiquoteDoc
+top::Document ::= e::Expr
+{ forwards to error("No forward"); }
+
+aspect production nonterminalAST
+top::AST ::= _ _ _
+{
+  directAntiquoteProductions <- ["silver:compiler:extension:templating:antiquoteDoc"];
 }
 
 synthesized attribute stringTemplate :: [Expr] occurs on TemplateString, SingleLineTemplateString,
                                                          TemplateStringBody, SingleLineTemplateStringBody,
                                                          TemplateStringBodyItem, SingleLineTemplateStringBodyItem, NonWater;
-synthesized attribute ppTemplate :: [Expr] occurs on TemplateString, SingleLineTemplateString,
-                                                     TemplateStringBody, SingleLineTemplateStringBody,
-                                                     TemplateStringBodyItem, SingleLineTemplateStringBodyItem, NonWater;
+synthesized attribute ppTemplate :: Document occurs on TemplateString, SingleLineTemplateString,
+                                                       TemplateStringBody, SingleLineTemplateStringBody,
+                                                       TemplateStringBodyItem, SingleLineTemplateStringBodyItem, NonWater;
 
 aspect production templateString
 top::TemplateString ::= b::TemplateStringBody _
@@ -95,7 +101,7 @@ aspect production templateStringEmpty
 top::TemplateString ::= _
 {
   top.stringTemplate = [stringConst(terminal(String_t, "\"\"", top.location), location=top.location)];
-  top.ppTemplate = [mkStrFunctionInvocation(top.location, "silver:langutil:pp:notext", [])];
+  top.ppTemplate = notext();
 }
 
 aspect production singleLineTemplateString
@@ -109,14 +115,14 @@ aspect production singleLineTemplateStringEmpty
 top::SingleLineTemplateString ::= _
 {
   top.stringTemplate = [stringConst(terminal(String_t, "\"\"", top.location), location=top.location)];
-  top.ppTemplate = [mkStrFunctionInvocation(top.location, "silver:langutil:pp:notext", [])];
+  top.ppTemplate = notext();
 }
 
 aspect production bodyCons
 top::TemplateStringBody ::= h::TemplateStringBodyItem  t::TemplateStringBody
 {
   top.stringTemplate = h.stringTemplate ++ t.stringTemplate;
-  top.ppTemplate = h.ppTemplate ++ t.ppTemplate;
+  top.ppTemplate = cat(h.ppTemplate, t.ppTemplate);
 }
 
 aspect production bodyOne
@@ -130,15 +136,14 @@ aspect production bodyOneWater
 top::TemplateStringBody ::= w::Water
 {
   top.stringTemplate = [stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)];
-  -- Generate the Silver Expr constructing the Document value given by w.waterDoc
-  top.ppTemplate = [translate(top.location, reflect(w.waterDoc))];
+  top.ppTemplate = w.waterDoc;
 }
 
 aspect production singleLineBodyCons
 top::SingleLineTemplateStringBody ::= h::SingleLineTemplateStringBodyItem  t::SingleLineTemplateStringBody
 {
   top.stringTemplate = h.stringTemplate ++ t.stringTemplate;
-  top.ppTemplate = h.ppTemplate ++ t.ppTemplate;
+  top.ppTemplate = cat(h.ppTemplate, t.ppTemplate);
 }
 
 aspect production singleLineBodyOne
@@ -152,8 +157,7 @@ aspect production singleLineBodyOneWater
 top::SingleLineTemplateStringBody ::= w::SingleLineWater
 {
   top.stringTemplate = [stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)];
-  -- Generate the Silver Expr constructing the Document value given by w.waterDoc
-  top.ppTemplate = [translate(top.location, reflect(w.waterDoc))];
+  top.ppTemplate = w.waterDoc;
 }
 
 aspect production itemWaterEscape
@@ -162,8 +166,7 @@ top::TemplateStringBodyItem ::= w::Water nw::NonWater
   top.stringTemplate = [
     stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)] ++
       nw.stringTemplate;
-  -- Generate the Silver Expr constructing the Document value given by w.waterDoc
-  top.ppTemplate = translate(top.location, reflect(w.waterDoc)) :: nw.ppTemplate;
+  top.ppTemplate = w.waterDoc;
 }
 
 aspect production itemEscape
@@ -179,8 +182,7 @@ top::SingleLineTemplateStringBodyItem ::= w::SingleLineWater nw::NonWater
   top.stringTemplate = [
     stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)] ++
       nw.stringTemplate;
-  -- Generate the Silver Expr constructing the Document value given by w.waterDoc
-  top.ppTemplate = translate(top.location, reflect(w.waterDoc)) :: nw.ppTemplate;
+  top.ppTemplate = w.waterDoc;
 }
 
 aspect production singleLineItemEscape
@@ -194,5 +196,5 @@ aspect production nonwater
 top::NonWater ::= '${' e::Expr '}'
 {
   top.stringTemplate = [e];
-  top.ppTemplate = [mkStrFunctionInvocation(top.location, "silver:langutil:pp:pp", [e])];
+  top.ppTemplate = antiquoteDoc(mkStrFunctionInvocation(top.location, "silver:langutil:pp:pp", [e]));
 }
