@@ -166,7 +166,7 @@ top::TemplateStringBodyItem ::= w::Water nw::NonWater
   top.stringTemplate = [
     stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)] ++
       nw.stringTemplate;
-  top.ppTemplate = w.waterDoc;
+  top.ppTemplate = cat(w.waterDoc, nw.ppTemplate);
 }
 
 aspect production itemEscape
@@ -182,7 +182,7 @@ top::SingleLineTemplateStringBodyItem ::= w::SingleLineWater nw::NonWater
   top.stringTemplate = [
     stringConst(terminal(String_t, "\"" ++ w.waterString ++ "\"", w.location), location=w.location)] ++
       nw.stringTemplate;
-  top.ppTemplate = w.waterDoc;
+  top.ppTemplate = cat(w.waterDoc, nw.ppTemplate);
 }
 
 aspect production singleLineItemEscape
