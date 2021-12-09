@@ -73,6 +73,8 @@ layout {}
   forwards to translate(top.location, reflect(t.ppTemplate));
 }
 
+-- Antiquote production used in translating nonwater Exprs that should get directly embedded in the result.
+-- See fig 9 of https://doi.org/10.1016/j.cola.2021.101033 (https://www-users.cse.umn.edu/~evw/pubs/kramer21cola/kramer21cola.pdf)
 production antiquoteDoc
 top::Document ::= e::Expr
 { forwards to error("No forward"); }
