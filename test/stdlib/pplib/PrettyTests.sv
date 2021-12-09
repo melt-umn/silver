@@ -146,5 +146,9 @@ equalityTest ( show(0, [("abcd", 42, 3.14), ("hello", 123, 6.28)]), "[(\"abcd\",
 equalityTest ( show(0, [left(true), right(just(())), right(nothing())]), "[left(true), right(just(())), right(nothing())]", String, core_tests );
 
 -- templates
-equalityTest ( show(0, pp"abc${123} ${just(3.14)}"), "abc123 just(3.14)", String, core_tests );
+equalityTest ( pp"abc${123} ${just(3.14)}", cat(cat(text("abc"), text("123")), cat(text(" "), cat(cat(text("just("), text("3.14")), text(")")))), Document, core_tests );
+equalityTest ( pp"abc\ndef", cat(cat(text("abc"), realLine()), text("def")), Document, core_tests );
+equalityTest ( pp"""abc
+def""", cat(cat(text("abc"), realLine()), text("def")), Document, core_tests );
 
+equalityTest ( show(0, pp"abc${123} ${just(3.14)}"), "abc123 just(3.14)", String, core_tests );

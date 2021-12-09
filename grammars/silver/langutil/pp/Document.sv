@@ -147,7 +147,8 @@ realLine Document ::=
 nonterminal Document with indent, width,
                           inPosition, inDq, inCHorizontals, inRemaining,
                           outPosition, outDq, outCHorizontals, outRemaining,
-                          result, horizontals;
+                          result, horizontals,
+			  compareTo, isEqual;
 
 autocopy attribute indent :: Integer;
 autocopy attribute width :: Integer;
@@ -167,6 +168,9 @@ synthesized attribute outCHorizontals :: [Boolean];
 synthesized attribute outRemaining :: Integer;
 
 synthesized attribute result :: String; -- output of printing process
+
+-- Strict equality of Document terms, for testing purposes
+propagate compareTo, isEqual on Document;
 
 @@{-
 Some notes on deciphering all this:
