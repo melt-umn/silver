@@ -25,7 +25,7 @@ If it's a Literate Silver file instead, we extract the relevant code blocks, the
     then implode("\n", extractSilverCodeBlocks(path, contents))
 ```
 
-Since these are the only extensions allowed by `isValidSilverFile` in `CompileGrammar.sv`, they're the only two we need to handle.
+Since these are the only extensions allowed by `isValidSilverFile` in `CompileGrammar.sv`, they're the only ones we need to handle.
 
 ```silver
     else error("Unknown filetype for " ++ path);
