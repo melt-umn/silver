@@ -1,6 +1,7 @@
 (defvar silver-mode-hook nil)
 
 (add-to-list 'auto-mode-alist '("\\.sv\\'" . silver-mode))
+(add-to-list 'auto-mode-alist '("\\.ag\\'" . silver-mode))
 
 (defun silver-comment-dwim (arg)
 "Comment or uncomment current line or region in a smart way but with silver's -- syntax
