@@ -25,6 +25,15 @@ top::RootSpec ::= g::Grammar  _ _ _ _
   g.downDocConfig = g.upDocConfig;
 }
 
+function silverToMdFilename
+String ::= fileName::String
+{
+  return foldr(
+    \ ext::String file::String ->
+      if endsWith(file, ext) then substitute(ext, ".md", file) else file,
+    fileName, allowedSilverFileExtensions);
+}
+
 @{- 
  - Turn the files in a grammar into zero or more single-file docs pages, and collect the rest of the docs
  - (possibly zero) into the index file.
@@ -35,8 +44,8 @@ function toSplitFiles
   return case g of
        | consGrammar(this, rest) ->
            if getSplit(this.localDocConfig) then toSplitFiles(rest, grammarConf, forIndex, formatFile(
-             substitute(".sv", ".md", this.location.filename),
-             getFileTitle(this.localDocConfig, substitute(".sv", "", this.location.filename)),
+             silverToMdFilename(this.location.filename),
+             getFileTitle(this.localDocConfig, silverToMdFilename(this.location.filename)),
              getFileWeight(this.localDocConfig), true,
              s"In grammar `${g.grammarName}` file `${this.location.filename}`: "++(if getToc(this.localDocConfig) then "{{< toc >}}" else ""), 
              this.docs) ++ soFar) else toSplitFiles(rest, grammarConf, forIndex ++ this.docs, soFar)
