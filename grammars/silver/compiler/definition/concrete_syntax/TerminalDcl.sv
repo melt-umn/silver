@@ -36,7 +36,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
 
   -- This is a crude check, but effective.
   top.errors <-
-    if indexOf("\\n", r.unparse) != -1 && indexOf("\\r", r.unparse) == -1
+    if indexOf("\n", unescapeString(r.unparse)) != -1 && indexOf("\r", unescapeString(r.unparse)) == -1
     then [wrn(r.location, "Regex contains '\\n' but not '\\r'. This is your reminder about '\\r\\n' newlines.")]
     else [];
 

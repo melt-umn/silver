@@ -1,6 +1,7 @@
 (defvar silver-mode-hook nil)
 
 (add-to-list 'auto-mode-alist '("\\.sv\\'" . silver-mode))
+(add-to-list 'auto-mode-alist '("\\.ag\\'" . silver-mode))
 
 (defun silver-comment-dwim (arg)
 "Comment or uncomment current line or region in a smart way but with silver's -- syntax
@@ -14,13 +15,13 @@ For detail, see `comment-dwim'."
   (list
    '("[\']\\(\\([\\\\].\\)\\|[^\']\\)*[\']". font-lock-string-face)
    '("[\/]\\(\\([\\\\].\\)\\|[^\/]\\)*[\/]". font-lock-string-face)
-   '("\\<\\(production\\|productions\\|occurs\\|on\\|nonterminal\\|attribute\\|propagate\\|if\\|then\\|else\\|option\\|exports\\|close\\|closed\\)\\>" . font-lock-keyword-face)
+   '("\\<\\(production\\|productions\\|occurs\\|on\\|nonterminal\\|attribute\\|propagate\\|if\\|then\\|else\\|option\\|exports\\|close\\|closed\\|tracked\\)\\>" . font-lock-keyword-face)
    '("\\<\\(local\\|global\\|terminal\\|concrete\\|abstract\\|default\\|ignore\\|start\\|lexer\\|class\\|classes\\|dominates\\|submits\\|aspect\\|decorate\\|autocopy\\)\\>" . font-lock-keyword-face)
-   '("\\<\\(import\\|imports\\|grammar\\|association\\|precedence\\|synthesized\\|inherited\\|functor\\|monoid\\|with\\|as\\|include\\)\\>" . font-lock-keyword-face)
-   '("\\<\\(only\\|hiding\\|using\\|forwards\\|to\\|use\\|syntax\\|forwarding\\|function\\|return\\)\\>" . font-lock-keyword-face)
-   '("\\<\\(Integer*\\|Boolean\\|String\\|Float\\|Reference\\|Production\\|Decorated\\)\\>" . font-lock-type-face)
+   '("\\<\\(import\\|imports\\|grammar\\|association\\|precedence\\|synthesized\\|inherited\\|functor\\|monoid\\|strategy\\|with\\|as\\|include\\)\\>" . font-lock-keyword-face)
+   '("\\<\\(only\\|hiding\\|using\\|forwards\\|to\\|use\\|syntax\\|forwarding\\|function\\|return\\|instance\\|flowtype\\|let\\|do\\)\\>" . font-lock-keyword-face)
+   '("\\<\\(Integer*\\|Boolean\\|String\\|Float\\|Decorated\\)\\>" . font-lock-type-face)
    '("\\<\\(reference\\|length\\|substring\\|indexof\\|parser\\|error\\|cast\\|toInt\\|toReal\\|toString\\|new\\)\\>" . font-lock-builtin-face)
-   '("\\<\\(cons\\|null\\|head\\|tail\\|let\\)\\>" . font-lock-builtin-face)
+   '("\\<\\(cons\\|null\\|head\\|tail\\)\\>" . font-lock-builtin-face)
    '("\\<\\(true\\|false\\|left\\|right\\|none\\)\\>" . font-lock-constant-face)
    '("\\<\\(case\\|rule\\|of\\|end\\)\\>" . font-lock-keyword-face)
    '("\\<grammar\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-function-name-face)
@@ -38,7 +39,6 @@ For detail, see `comment-dwim'."
    '("\\<type\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-type-face)
    '("\\<\\<\\(type\\)\\>\\ [A-Za-z_0-9:]+" 1 font-lock-keyword-face)
 ;   '("\\<type\\ [A-Za-z_0-9:]+\\ = \\<\\([^;]*\\)\\>" 1 font-lock-type-face)
-   '("\\<Reference\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-type-face)
    '("\\<Decorated\\ \\<\\([A-Za-z_0-9:]+\\)\\>" 1 font-lock-type-face)
    '("\\<\\(reference\\)\\>([A-Za-z_0-9:\\ \n\t\r]+" 1 font-lock-builtin-face t)
    '("\\<on[\\ \t]+{?\\([A-Za-z_0-9:,\\ \t]+\\)}?[\\ \t]*;" 1 font-lock-type-face)
