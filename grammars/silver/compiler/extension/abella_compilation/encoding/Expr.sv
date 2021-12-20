@@ -504,8 +504,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
-  top.encodedExpr = error("decorateExprWith not done");
-  top.encodedFailure = error("decorateExprWith not done");
+  top.encodedExpr = error("decorateExprWith not done " ++ top.location.filename ++ " " ++ toString(top.location.line) ++ ":" ++ toString(top.location.column));
+  top.encodedFailure = error("decorateExprWith not done " ++ top.location.filename ++ " " ++ toString(top.location.line) ++ ":" ++ toString(top.location.column));
 }
 
 aspect production exprInhsEmpty

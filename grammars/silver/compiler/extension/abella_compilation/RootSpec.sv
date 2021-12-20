@@ -223,22 +223,23 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
                                      nonterminalTypeToName(p.2),
                                    l) ), grouped)
         in
-          --Check if each nonterminal is in the occurrences; if not, add to final list
-          map(\ p::(String, [String]) ->
-                case findAssociated(p.1, g.attrOccurrences) of
-                | nothing() -> error("Attr must exist")
-                | just(nts_tys) ->
-                  let nts::[String] = map(fst(_), nts_tys)
-                  in
-                    ( p.1,
-                      foldr(\ nt::String rest::[String] ->
-                              if contains(nt, nts)
-                              then rest
-                              else nt::rest,
-                            [], p.2) )
-                  end
-                end,
-              paired)
+          --Get just the ones without any occurrence already, either here or in a previous grammar
+          flatMap(\ p::(String, [String]) ->
+                    let pOccurs::[String] =
+                        case findAssociated(p.1, g.attrOccurrences) of
+                        | nothing() -> [] --unknown because not declared in this grammar
+                        | just(nts_tys) -> map(fst, nts_tys)
+                        end
+                    in
+                      [( p.1,
+                         foldr(\ nt::String rest::[String] ->
+                                 if contains(nt, pOccurs)
+                                 then rest
+                                 else if checkAttrNtFullRelationExists(p.1, nt, grammarName, relevantEnv, g.flowEnv)
+                                 then rest
+                                 else nt::rest,
+                               [], p.2) )]
+                    end, paired)
         end end end end end;
   --
   top.output =
@@ -308,6 +309,43 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
       then ""
       else "Error:  Could not generate for grammar " ++ grammarName ++
            ":  " ++ grammarInformation.fromLeft ++ "\n\n";
+}
+
+
+--Check whether attr is ever set on a child by a production building
+--   nt not introduced by this grammar or if attr occurs on nonterminal
+--Determines whether we need to introduce a new full relation
+--Note:  abella_nt is something like gr$*$am$*$mar$*$Nt, as is abella_attr
+function checkAttrNtFullRelationExists
+Boolean ::= abella_attr::String abella_nt::String currentGrammar::String e::Decorated Env f::FlowEnv
+{
+  --convert to gr:am:mar:Nt
+  local nt::String = encodedToColons(abella_nt);
+  local attr::String = encodedToColons(abella_attr);
+
+  --Find whether attr is declared to occur on nt anywhere
+  local occursOn::Boolean = length(getOccursDcl(attr, nt, e)) > 0;
+
+  --find known productions for nt to search for setting attr on child
+  local knownProds::[ValueDclInfo] = getKnownProds(nt, e);
+  --only interested in prods from other grammars
+  local notThisGrammarProds::[ValueDclInfo] =
+        filter(\ v::ValueDclInfo -> v.sourceGrammar != currentGrammar, knownProds);
+  --prod names and child names for the prods
+  local namesChildren::[(String, [String])] =
+        map(\ v::ValueDclInfo -> (v.fullName, v.namedSignature.inputNames),
+            notThisGrammarProds);
+  --whether the prods has an equation for attr on any child
+  local equationForAttr::[Boolean] =
+        map(\ p::(String, [String]) ->
+              any(map(\ name::String ->
+                        !null(lookupInh(p.1, name, attr, f)),
+                      p.2)),
+            namesChildren);
+  --only care if any of them have an equation
+  local attrSet::Boolean = any(equationForAttr);
+
+  return occursOn || attrSet;
 }
 
 
