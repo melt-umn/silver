@@ -15,7 +15,7 @@ concrete productions e::cst:Expr
 abstract production implies
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} => ${r.pp})";
+  e.pp = pp"(${l} => ${r})";
   --   l => r   is equivalent to   !l || r
   forwards to or(not(l), r);
 }

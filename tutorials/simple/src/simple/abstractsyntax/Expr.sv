@@ -19,35 +19,39 @@ n::Name ::= s::String
   n.lookup = lookupValue(s, n.env);
 }
 
+instance Arbitrary Name {
+  genArb = \ depth::Integer -> name(charsToString(randShuffle(stringToChars("abcd"))), location=genArb(depth));
+}
+
 nonterminal Expr with pp, env, errors;
 
 -- Constants
 ------------
 abstract production intLit   
-e::Expr ::= s::String
+e::Expr ::= i::Integer
 {
-  e.pp = text(s);
+  e.pp = text(toString(i));
   e.errors := [];
 }
 
 abstract production floatLit 
-e::Expr ::= s::String
+e::Expr ::= f::Float
 {
-  e.pp = text(s);
+  e.pp = text(toString(f));
   e.errors := [];
 }
 
 abstract production boolLit   
-e::Expr ::= s::String
+e::Expr ::= b::Boolean
 {
-  e.pp = text(s);
+  e.pp = if b then pp"True" else pp"False";
   e.errors := [];
 }
 
 abstract production stringLit 
 e::Expr ::= s::String
 {
-  e.pp = text(s);
+  e.pp = pp"\"${text(escapeString(s))}\"";
   e.errors := [];
 }
 
@@ -88,25 +92,25 @@ e::Expr ::= id::Name
 abstract production add 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} + ${r.pp})";
+  e.pp = pp"(${l} + ${r})";
   e.errors := l.errors ++ r.errors;
 }
 abstract production sub 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} - ${r.pp})";
+  e.pp = pp"(${l} - ${r})";
   e.errors := l.errors ++ r.errors;
 }
 abstract production mul 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} * ${r.pp})";
+  e.pp = pp"(${l} * ${r})";
   e.errors := l.errors ++ r.errors;
 }
 abstract production div 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} / ${r.pp})";
+  e.pp = pp"(${l} / ${r})";
   e.errors := l.errors ++ r.errors; 
 }
 
@@ -130,21 +134,21 @@ e::Expr ::= l::Expr r::Expr
 abstract production eqOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} == ${r.pp})";
+  e.pp = pp"(${l} == ${r})";
   e.errors := l.errors ++ r.errors;
 }
 
 abstract production ltOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} < ${r.pp})";
+  e.pp = pp"(${l} < ${r})";
   e.errors := l.errors ++ r.errors;
 }
 
 abstract production neqOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} != ${r.pp})";
+  e.pp = pp"(${l} != ${r})";
   forwards to not (eqOp(l,r));
   -- e.errors is copied from the forwarded-to tree
   -- Similarly, type checking attributes defined TypeChecking.sv are
@@ -153,19 +157,19 @@ e::Expr ::= l::Expr r::Expr
 abstract production lteOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} <= ${r.pp})";
+  e.pp = pp"(${l} <= ${r})";
   forwards to or( ltOp(l,r), eqOp(l,r) );
 }
 abstract production gtOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} > ${r.pp})";
+  e.pp = pp"(${l} > ${r})";
   forwards to not(lteOp(l,r));
 }
 abstract production gteOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} >= ${r.pp})";
+  e.pp = pp"(${l} >= ${r})";
   forwards to not(ltOp(l,r));
 }
 
@@ -175,13 +179,13 @@ e::Expr ::= l::Expr r::Expr
 abstract production and 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} && ${r.pp})";
+  e.pp = pp"(${l} && ${r})";
   e.errors := l.errors ++ r.errors;
 }
 abstract production not 
 e::Expr ::= ne::Expr 
 {
-  e.pp = pp"!(${ne.pp})";
+  e.pp = pp"!(${ne})";
   e.errors := ne.errors;
 }
 
@@ -189,7 +193,7 @@ e::Expr ::= ne::Expr
 abstract production or 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} || ${r.pp})";
+  e.pp = pp"(${l} || ${r})";
   forwards to not( and(not(l), not(r)) );
 }
 

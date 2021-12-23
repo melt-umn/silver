@@ -1,6 +1,7 @@
 grammar simple:extensions:repeat_until;
 
 imports silver:langutil;
+imports silver:langutil:pp;
 imports simple:concretesyntax as cst;
 imports simple:abstractsyntax;
 
@@ -15,7 +16,7 @@ concrete productions s::cst:StmtMatched
 abstract production repeatStmt
 s::Stmt ::= body::Stmt cond::Expr
 {
-  -- s.pp = "repeat \n" ++ body.pp ++ "\n" ++ "until " ++ cond.pp ++ "; \n";
+  s.pp = pp"repeat ${ppblock(body)}until ${cond};";
   forwards to 
     {-  body
         while (! cond) { body }

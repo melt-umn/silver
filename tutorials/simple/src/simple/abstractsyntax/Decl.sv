@@ -8,7 +8,7 @@ nonterminal Decl with pp, env, defs, errors;
 abstract production decl
 d::Decl ::= t::TypeExpr id::Name 
 {
-  d.pp = pp"${t.pp} ${id.pp};";
+  d.pp = pp"${t} ${id};";
   d.defs = [valueDef(id.name, t)];
   d.errors := [];
 }
