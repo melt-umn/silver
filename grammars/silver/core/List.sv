@@ -356,6 +356,17 @@ function repeat
          else v :: repeat(v, times-1);
 }
 
+function randShuffle
+[a] ::= elems::[a]
+{
+  local i::Integer = toInteger(genRand() * toFloat(length(elems) - 1));
+  local hd::[a] = take(i, elems);
+  local tl::[a] = drop(i, elems);
+  return
+    if null(elems) then []
+    else head(tl) :: randShuffle(hd ++ tail(tl));
+}
+
 function range
 [Integer] ::= lower::Integer upper::Integer
 {
