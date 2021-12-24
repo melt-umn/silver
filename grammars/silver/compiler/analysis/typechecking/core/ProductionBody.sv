@@ -156,6 +156,12 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
   top.errors <- te.errorsKindStar;
 }
 
+aspect production productionAttributeDcl
+top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
+{
+  top.errors <- te.errorsKindStar;
+}
+
 aspect production localValueDef
 top::ProductionStmt ::= val::Decorated QName  e::Expr
 {

@@ -33,14 +33,14 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   top.errors <-
     if null(body.errors ++ ns.errors)
-    && (top.config.warnAll || top.config.warnFwd || top.config.runMwda)
+    && top.config.warnFwd
     -- If this production does not forward
     && null(body.uniqueSignificantExpression)
     -- AND this is not a closed nonterminal
     && !isClosedNt
     -- AND this production is not exported by the nonterminal definition grammar... even including options
     && !isExportedBy(top.grammarName, [ntDefGram], top.compiledGrammars)
-    then [mwdaWrn(top.location, "Orphaned production: " ++ id.name ++ " on " ++ namedSig.outputElement.typerep.typeName, top.config.runMwda)]
+    then [mwdaWrn(top.config, top.location, "Orphaned production: " ++ id.name ++ " on " ++ namedSig.outputElement.typerep.typeName)]
     else [];
 }
 
