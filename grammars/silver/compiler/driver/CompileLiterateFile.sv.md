@@ -14,18 +14,18 @@ String ::= path::String  contents::String
 If the file is a normal Silver file, we return the contents unchanged.
 
 ```silver
-    if endsWith(".sv", path)
+    if endsWith(".sv", path) || endsWith(".ag", path)
     then contents
 ```
 
 If it's a Literate Silver file instead, we extract the relevant code blocks, then join them with newlines.
 
 ```silver
-    else if endsWith(".sv.md", path)
+    else if endsWith(".sv.md", path) || endsWith(".ag.md", path)
     then implode("\n", extractSilverCodeBlocks(path, contents))
 ```
 
-Since these are the only two extensions allowed by `isValidSilverFile` in `CompileGrammar.sv`, they're the only two we need to handle.
+Since these are the only extensions allowed by `isValidSilverFile` in `CompileGrammar.sv`, they're the only ones we need to handle.
 
 ```silver
     else error("Unknown filetype for " ++ path);
