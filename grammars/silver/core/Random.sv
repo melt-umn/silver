@@ -101,7 +101,7 @@ instance Monad RandomGen {}
 
 @{-
   Run a RandomGen computation, using an arbitrary seed.
-  Warning: this function is nondeterministic (may vary between runs) and thus impure -
+  Warning: this function is nondeterministic (may vary between runs) and thus impure;
   use at your own risk!
   
   @param r  The computation to run
@@ -117,7 +117,7 @@ a ::= r::RandomGen<a>
 
 @{-
   Run a RandomGen computation, using an arbitrary seed.
-  Warning: this function is nondeterministic (may vary between runs) and thus impure -
+  Warning: this function is nondeterministic (may vary between runs) and thus impure;
   use at your own risk!
 
   @param seed  The initial seed value for the random number generator
