@@ -440,6 +440,7 @@ IO ::=
 @{--
  - Generate an integer unique to this run of this process.  Starts from 0 and just
  - counts up each call.
+ - Warning: This function is impure!
  -
  - @return  An integer unique to this process.
  -}
@@ -452,7 +453,8 @@ Integer ::=
 }
 
 @{--
- - Generates a random number between [0, 1)
+ - Generates a random number between [0, 1).
+ - @deprecated This function is impure!  Consider using the RandomGen monad.
  -}
 function genRand
 Float ::=
