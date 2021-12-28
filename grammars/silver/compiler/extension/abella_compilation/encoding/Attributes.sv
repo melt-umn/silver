@@ -46,7 +46,7 @@ function combineAssociations
        | nothing() -> combineAssociations(t, (s, lst)::l2)
        | just(lst2) ->
          combineAssociations(t,
-            case replaceAssociated(s, lst ++ lst2, l2) of | just(x) -> x | nothing() -> error("This combineAssociations here") end) --.fromJust)
+            case replaceAssociated(s, lst ++ lst2, l2) of | just(x) -> x | nothing() -> error("This combineAssociations here") end)
        end
      end;
 }

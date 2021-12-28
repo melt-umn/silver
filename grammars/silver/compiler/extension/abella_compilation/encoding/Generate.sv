@@ -1,6 +1,9 @@
 grammar silver:compiler:extension:abella_compilation:encoding;
 
 
+import silver:util:treemap as tmap;
+
+
 function generateNonterminalTypes
 String ::= nonterminals::[String]
 {
@@ -800,6 +803,7 @@ function generateAttrEquationComponentRelations
 String ::= clauses::[(String, AbellaType, [DefClause])]
            component::String inheritedAttrs::[String]
 {
+  --grouped by attr and nonterminal
   local attrGroups::[(String, AbellaType, [DefClause])] =
         --Sort first to get all clauses for attr and NT together
         let sorted::[(String, AbellaType, [DefClause])] =
@@ -812,6 +816,7 @@ String ::= clauses::[(String, AbellaType, [DefClause])]
                      end,
                    clauses)
         in
+        --Group by attr and nonterminal
         let grouped::[[(String, AbellaType, [DefClause])]] =
             groupBy(\ p1::(String, AbellaType, [DefClause])
                       p2::(String, AbellaType, [DefClause]) ->
@@ -828,7 +833,6 @@ String ::= clauses::[(String, AbellaType, [DefClause])]
         end end;
   return generateAttrEquationComponentRelations_help(attrGroups,
             component, inheritedAttrs);
-
 }
 function generateAttrEquationComponentRelations_help
 String ::= attrs::[(String, AbellaType, [DefClause])]
@@ -862,47 +866,441 @@ String ::= attrs::[(String, AbellaType, [DefClause])]
 
 
 {-
-  The associatedAttrs are the attributes which don't occur on the
-  nonterminals associated with them, but which are set by some
-  production of that nonterminal on some child.
+  Find the new associated attrs (attrs which do not occur on the NT,
+  but which are set by at least one of its prods on a child) induced
+  by this grammar---need these to create new full relations
+  Produces [(attr, [NT])]
+-}
+function findNewAssociatedAttrs
+[(String, [String])] ::=
+     --[(attr, [(NT, attr ty)])]
+     new_attrOccurrences::[(String, [(String, AbellaType)])]
+     --[(attr, top NT type, prod, head term (rel tree nodetree), [clause bodies])]
+     attrEqInfo::[(String, AbellaType, String, Term, [[Metaterm]])]
+     grammarName::String env::Decorated Env fenv::FlowEnv
+{
+  --Cut down the equation information to attr and tree root type
+  local filtered::[(String, AbellaType)] =
+      map(\ p::(String, AbellaType, String, Term, [[Metaterm]]) ->
+            (p.1, p.2), attrEqInfo);
+  --Cut down to unique pairs of attr and tree root type
+  local cleaned::[(String, AbellaType)] =
+      nubBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
+              p1.1 == p2.1 && tysEqual(p1.2, p2.2), filtered);
+  --Sort by attribute
+  local sorted::[(String, AbellaType)] =
+      sortBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
+               p1.1 <= p2.1, cleaned);
+  --Group by attribute
+  local grouped::[[(String, AbellaType)]] =    
+      groupBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
+                p1.1 == p2.1, sorted);
+  --Put into groups of (attr, [nonterminals])
+  local paired::[(String, [String])] =
+      map(\ l::[(String, AbellaType)] ->
+            ( head(l).1, map(\ p::(String, AbellaType) ->
+                               nonterminalTypeToName(p.2),
+                             l) ), grouped);
+  --Get just the ones without any occurrence already, either here or in a previous grammar
+  return
+    flatMap(\ p::(String, [String]) ->
+              let pOccurs::[String] =
+                  case findAssociated(p.1, new_attrOccurrences) of
+                  | nothing() -> [] --unknown because not declared in this grammar
+                  | just(nts_tys) -> map(fst, nts_tys)
+                  end
+              in
+                [( p.1,
+                   foldr(\ nt::String rest::[String] ->
+                           if contains(nt, pOccurs)
+                           then rest
+                           else if checkAttrNtFullRelationExists(p.1, nt, grammarName, env, fenv)
+                           then rest
+                           else nt::rest,
+                         [], p.2) )]
+              end, paired);
+}
+
+
+--Check whether attr is ever set on a child by a production building
+--   nt not introduced by this grammar or if attr occurs on nonterminal
+--Determines whether we need to introduce a new full relation
+--Note:  abella_nt is something like gr$*$am$*$mar$*$Nt, as is abella_attr
+function checkAttrNtFullRelationExists
+Boolean ::= abella_attr::String abella_nt::String currentGrammar::String e::Decorated Env f::FlowEnv
+{
+  --convert to gr:am:mar:Nt
+  local nt::String = encodedToColons(abella_nt);
+  local attr::String = encodedToColons(abella_attr);
+
+  --Find whether attr is declared to occur on nt anywhere
+  local occursOn::Boolean = length(getOccursDcl(attr, nt, e)) > 0;
+
+  --find known productions for nt to search for setting attr on child
+  local knownProds::[ValueDclInfo] = getKnownProds(nt, e);
+  --only interested in prods from other grammars
+  local notThisGrammarProds::[ValueDclInfo] =
+        filter(\ v::ValueDclInfo -> v.sourceGrammar != currentGrammar, knownProds);
+  --prod names and child names for the prods
+  local namesChildren::[(String, [String])] =
+        map(\ v::ValueDclInfo -> (v.fullName, v.namedSignature.inputNames),
+            notThisGrammarProds);
+  --whether the prods has an equation for attr on any child
+  local equationForAttr::[Boolean] =
+        map(\ p::(String, [String]) ->
+              any(map(\ name::String ->
+                        !null(lookupInh(p.1, name, attr, f)),
+                      p.2)),
+            namesChildren);
+  --only care if any of them have an equation
+  local attrSet::Boolean = any(equationForAttr);
+
+  return occursOn || attrSet;
+}
+
+
+--Build the clauses based on information for attribute equations
+function produceClauses
+[(String, AbellaType, [DefClause])] ::=
+              info::[(String, AbellaType, String, Term, [[Metaterm]])]
+              inhAttrs::[String]
+{
+  local splitInhSyn::([(String, AbellaType, String, Term, [[Metaterm]])],
+                      [(String, AbellaType, String, Term, [[Metaterm]])]) =
+        partition(\ p::(String, AbellaType, String, Term, [[Metaterm]]) ->
+                    contains(p.1, inhAttrs),
+                  info);
+  --Group into things that need to be single clauses (same attr, same prod)
+  local groupedInhs::[[(String, AbellaType, String, Term, [[Metaterm]])]] =
+        groupBy(\ p1::(String, AbellaType, String, Term, [[Metaterm]])
+                  p2::(String, AbellaType, String, Term, [[Metaterm]]) ->
+                  p1.1 == p2.1 && p1.3 == p2.3,
+                splitInhSyn.1);
+  local inhs::[(String, AbellaType, String, Term, [[Metaterm]])] =
+        map(combineEquations(_), groupedInhs);
+  local syns::[(String, AbellaType, String, Term, [[Metaterm]])] =
+        splitInhSyn.2;
+  --Clean clauses to get only one access of each attr
+  local cleanInhs::[(String, AbellaType, String, Term, [[Metaterm]])] =
+        cleanClauses(inhs);
+  local cleanSyns::[(String, AbellaType, String, Term, [[Metaterm]])] =
+        cleanClauses(syns);
+  --Replace all the varTerms with nameTerms and add bindings
+  local noVars::[(String, AbellaType, String, Term, [Metaterm])] =
+        map(\ p::(String, AbellaType, String, Term, [[Metaterm]]) ->
+              let call::(Term, [Metaterm]) =
+                  fillVars(p.4, map(\ body::[Metaterm] ->
+                                      if null(body)
+                                      then trueMetaterm() --possible?
+                                      else foldl(andMetaterm(_, _),
+                                                 head(body),
+                                                 tail(body)), p.5))
+              in
+                ( p.1, p.2, p.3, call.1, call.2 )
+              end,
+            cleanInhs ++ cleanSyns);
+  --
+  return
+     map(\ p::(String, AbellaType, String, Term, [Metaterm]) ->
+           ( p.1, p.2,
+             map(\ b::Metaterm -> ruleClause(termMetaterm(p.4), b),
+                 p.5) ),
+         noVars);
+}
+
+--Take the information for different inh equations and combine them
+function combineEquations
+(String, AbellaType, String, Term, [[Metaterm]]) ::=
+   eqs::[(String, AbellaType, String, Term, [[Metaterm]])]
+{
+  local rest::(String, AbellaType, String, Term, [[Metaterm]]) =
+        combineEquations(tail(eqs));
+  local first::(String, AbellaType, String, Term, [[Metaterm]]) =
+        head(eqs);
+  --We need to make the names in the clause heads consistent with each other
+  --This also requires changing names in the bodies, and we will
+  --   combine the two bodies into a single body
+  local consistentNames::(Term, [[Metaterm]]) =
+        makeConsistentNames(rest.4, rest.5, first.4, first.5);
+  return
+     case eqs of
+     | [] -> error("Impossible empty (combineEquations)")
+     | [p] -> p
+     | _ -> (first.1, first.2, first.3,
+             consistentNames.1, consistentNames.2)
+     end;
+}
+
+function makeConsistentNames
+(Term, [[Metaterm]]) ::= hd1::Term body1::[[Metaterm]]
+                         hd2::Term body2::[[Metaterm]]
+{
+  local call::(Term, [[Metaterm]], [[Metaterm]]) =
+        makeConsistentNames_help(hd1, body1, hd2, body2);
+  local joined::[[Metaterm]] =
+        foldr(\ b1::[Metaterm] rest::[[Metaterm]] ->
+                map(\ l::[Metaterm] -> b1 ++ l,
+                    call.3) ++ rest,
+              [], call.2);
+  return ( call.1, joined );
+}
+{-
+  Make the names in the two heads be consistent, also replacing them
+  in the bodies to keep the same semantic meaning.
+-}
+function makeConsistentNames_help
+(Term, [[Metaterm]], [[Metaterm]]) ::= hd1::Term body1::[[Metaterm]]
+                                       hd2::Term body2::[[Metaterm]]
+{
+  return
+     case hd1, hd2 of
+     | nilTerm(), nilTerm() ->
+       ( nilTerm(), body1, body2 )
+     | consTerm(t11, t12), consTerm(t21, t22) ->
+       let sub1::(Term, [[Metaterm]], [[Metaterm]]) =
+           makeConsistentNames_help(t11, body1, t21, body2)
+       in
+       let sub2::(Term, [[Metaterm]], [[Metaterm]]) =
+           makeConsistentNames_help(t12, sub1.2, t22, sub1.3)
+       in
+         ( consTerm(sub1.1, sub2.1), sub2.2, sub2.3 )
+       end end
+     | applicationTerm(f1, args1), applicationTerm(f2, args2) ->
+       let fsub::(Term, [[Metaterm]], [[Metaterm]]) =
+           makeConsistentNames_help(f1, body1, f2, body2)
+       in
+       let argsub::(silver:compiler:extension:abella_compilation:abella:TermList, [[Metaterm]], [[Metaterm]]) =
+           makeConsistentNames_help_list(args1, fsub.2, args2, fsub.3)
+       in
+         ( applicationTerm(fsub.1, argsub.1), argsub.2, argsub.3 )
+       end end
+     | nameTerm(name1), nameTerm(name2) ->
+       if name1 == name2
+       then ( nameTerm(name1), body1, body2 )
+       else error("Name terms must match because they are constants")
+     | varTerm(name1, i1), varTerm(name2, i2) ->
+       if name1 == name2 && i1 == i2
+       then ( varTerm(name1, i1), body1, body2 )
+       else let newVar::Integer = genInt() in
+                ( varTerm(name1, newVar),
+                  map(\ l::[Metaterm] ->
+                        map(replaceVar((name1, i1),
+                               varTerm(name1, newVar), _), l),
+                      body1),
+                  map(\ l::[Metaterm] ->
+                        map(replaceVar((name2, i2),
+                               varTerm(name1, newVar), _), l),
+                      body2) )
+            end
+     | _, _ ->
+       error("Unexpected case in makeConsistentNames_help" ++
+             " (" ++ hd1.unparse ++ "  ;  " ++ hd2.unparse ++ ")")
+     end;
+}
+function makeConsistentNames_help_list
+(silver:compiler:extension:abella_compilation:abella:TermList, [[Metaterm]], [[Metaterm]]) ::=
+     hd1::silver:compiler:extension:abella_compilation:abella:TermList body1::[[Metaterm]]
+     hd2::silver:compiler:extension:abella_compilation:abella:TermList body2::[[Metaterm]]
+{
+  return
+     case hd1, hd2 of
+     | nilTermList(), nilTermList() ->
+       ( nilTermList(), body1, body2 )
+     | singleTermList(t1), singleTermList(t2) ->
+       let sub::(Term, [[Metaterm]], [[Metaterm]]) =
+           makeConsistentNames_help(t1, body1, t2, body2)
+       in
+         ( singleTermList(sub.1), sub.2, sub.3 )
+       end
+     | consTermList(t1, rest1), consTermList(t2, rest2) ->
+       let tsub::(Term, [[Metaterm]], [[Metaterm]]) =
+           makeConsistentNames_help(t1, body1, t2, body2)
+       in
+       let restsub::(silver:compiler:extension:abella_compilation:abella:TermList, [[Metaterm]], [[Metaterm]]) =
+           makeConsistentNames_help_list(rest1, tsub.2, rest2, tsub.3)
+       in
+         ( consTermList(tsub.1, restsub.1), restsub.2, restsub.3 )
+       end end
+     | _, _ -> error("Unexpected case in makeConsistentNames_help_list")
+     end;
+}
+
+
+--Produce clauses allowing anything for attr eq relations for prods
+--which don't have an equation for the attr
+--[(attr, nonterminal, [definition clauses for missing prods])]
+function produceMissingClauses
+[(String, AbellaType, [DefClause])] ::=
+     --[(attr, top NT type, prod, head term (rel tree nodetree), [clause bodies])]
+     attrEqInfo::[(String, AbellaType, String, Term, [[Metaterm]])]
+     componentName::String env::Decorated Env
+{
+  --[(nonterminal name, [(prod name, prod type)])]
+  local prodsByType::[(String, [(String, AbellaType)])] =
+        let prodsByNT::[EnvTree<ValueDclInfo>] =
+            env.prodsForNtTree
+        in
+        let prodsLst::[(String, ValueDclInfo)] =
+            flatMap(tmap:toList(_), prodsByNT)
+        in
+        let sorted::[(String, ValueDclInfo)] =
+            sortBy(\ p1::(String, ValueDclInfo) p2::(String, ValueDclInfo) ->
+                     p1.1 <= p2.1,
+                   prodsLst)
+        in
+        let grouped::[[(String, ValueDclInfo)]] =
+            groupBy(\ p1::(String, ValueDclInfo) p2::(String, ValueDclInfo) ->
+                      p1.1 == p2.1,
+                    sorted)
+        in
+        let prods::[(String, [ValueDclInfo])] =
+            map(\ l::[(String, ValueDclInfo)] ->
+                  ( nameToNonterminal(colonsToEncoded(head(l).1)),
+                    map(snd, l) ),
+                grouped)
+        in
+        let expandProd::[(String, [(String, AbellaType)])] =
+            map(\ p::(String, [ValueDclInfo]) ->
+                  ( p.1,
+                    map(\ d::ValueDclInfo ->
+                          let pname::String = d.fullName
+                          in
+                            ( colonsToEncoded(pname),
+                              lookupProdType(pname, env) )
+                          end,
+                        p.2) ),
+                prods)
+        in
+          expandProd
+        end end end end end end;
+  --Filter down to only the relevant information about equations
+  local filtered::[(String, AbellaType, String)] =
+        map(\ p::(String, AbellaType, String, Term, [[Metaterm]]) ->
+              (p.1, p.2, p.3), attrEqInfo);
+  --Find the productions which are missing equations for each
+  --   attribute and produce empty clauses
+  local sortedAttrEquations::[(String, AbellaType, String)] =
+        sortBy(\ p1::(String, AbellaType, String)
+                 p2::(String, AbellaType, String) ->
+                 case p1.2, p2.2 of
+                 | nameAbellaType(n1), nameAbellaType(n2) ->
+                   p1.1 < p2.1 || (p1.1 == p2.1 && n1 <= n2)
+                 | _, _ -> error("Not possible")
+                 end,
+               filtered);
+  --[[(attr, nonterminal, prod)]]
+  local groupedAttrsProds::[[(String, AbellaType, String)]] =
+        groupBy(\ p1::(String, AbellaType, String)
+                  p2::(String, AbellaType, String) ->
+                  p1.1 == p2.1 && tysEqual(p1.2, p2.2),
+                sortedAttrEquations);
+  --[(attr, nonterminal, [prod])]
+  local foundProds::[(String, AbellaType, [String])] =
+        map(\ l::[(String, AbellaType, String)] ->
+              (head(l).1, head(l).2,
+               map(\ p::(String, AbellaType, String) -> colonsToEncoded(p.3), l)),
+            groupedAttrsProds);
+  --[(attr, nonterminal, [(prod, prod type)])]
+  local missingProdsByAttr::[(String, AbellaType, [(String, AbellaType)])] =
+        map(\ eqs::(String, AbellaType, [String]) ->
+              case eqs.2 of
+              | nameAbellaType(nt) ->
+                let prods::[(String, AbellaType)] =
+                    findAssociated(nt, prodsByType).fromJust
+                in
+                  ( eqs.1, eqs.2,
+                    foldr(\ p::(String, AbellaType)
+                            rest::[(String, AbellaType)] ->
+                            if contains(p.1, eqs.3)
+                            then rest
+                            else p::rest,
+                          [], prods) )
+                end
+              | _ -> error("Not possible")
+              end,
+            foundProds);
+  return
+     map(\ p::(String, AbellaType, [(String, AbellaType)]) ->
+           ( p.1, p.2,
+             map(\ prod::(String, AbellaType) ->
+                   let treeTm::Term =
+                       buildApplication(
+                          nameTerm(nameToProd(prod.1)),
+                          foldr(\ t::AbellaType
+                                  rest::(Integer, [Term]) ->
+                                  ( rest.1 + 1,
+                                    nameTerm("T" ++ toString(rest.1))::rest.2 ),
+                                (0, []), prod.2.argumentTypes).2)
+                   in
+                     factClause(
+                        termMetaterm(
+                           buildApplication(
+                              nameTerm(equationName(p.1, p.2) ++
+                                       "__" ++ componentName),
+                              [nameTerm("TreeName"), treeTm,
+                               nameTerm("NodeTree")])))
+                   end,
+                 p.3) ),
+         missingProdsByAttr);
+}
+
+
+{-
+  Generate a string of the Abella encoding based on the given information
 -}
 function generateContents
-String ::= nonterminals::[String] attrs::[String]
+String ::= new_nonterminals::[String] new_attrs::[String]
            --(attribute name, [(nonterminal name, attr ty)])
-           attrOccurrences::[(String, [(String, AbellaType)])]
-           inheritedAttrs::[String]
+           new_attrOccurrences::[(String, [(String, AbellaType)])]
+           --[attr name]
+           new_inheritedAttrs::[String]
            --(local name, [(production name, attr type)])
-           localAttrs::[(String, [(String, AbellaType)])]
-           --(attr, [nonterminals])
-           associatedAttrs::[(String, [String])]
-           prods::[(String, AbellaType)]
-           --[(attr, nonterminal, [definitional clauses])]
-           attrEqClauses::[(String, AbellaType, [DefClause])]
+           new_localAttrs::[(String, [(String, AbellaType)])]
+           --[(prod name, prod type)]
+           new_prods::[(String, AbellaType)]
+           --[(attr, top NT type, prod, head term (rel tree nodetree), [clause bodies])]
+           attrEqInfo::[(String, AbellaType, String, Term, [[Metaterm]])]
            --fully-made definitions for local attributes
            localDefs::[Definition]
            --[(fun name, fun type, fun clauses)]
            funClauses::[(String, AbellaType, [DefClause])]
            componentName::String
-           env::Decorated Env
+           env::Decorated Env fenv::FlowEnv
 {
+  --[(attr, [NT])]
+  local associatedAttrs::[(String, [String])] =
+        findNewAssociatedAttrs(new_attrOccurrences, attrEqInfo,
+           encodedToColons(componentName), env, fenv);
+  --[(attr, [(nonterminal, attr ty)])]
   local associatedAttrsExpanded::[(String, [(String, AbellaType)])] =
         map(\ p::(String, [String]) ->
               (p.1, map(\ nt::String -> (nt, nameAbellaType("")), p.2)),
             associatedAttrs);
+
+  --[(attr, nonterminal, [definitional clauses])]
+  local attrEqClauses::[(String, AbellaType, [DefClause])] =
+        produceClauses(attrEqInfo, new_inheritedAttrs) ++
+        produceMissingClauses(attrEqInfo, componentName, env);
+
   return
-     generateNonterminalTypes(nonterminals) ++ "\n" ++
-     generateProductions(prods) ++ "\n\n" ++
-     generateNodeTypes(nonterminals) ++ "\n\n" ++
-     generateNodeTreeConstructors(nonterminals) ++ "\n\n" ++
-     generateAccessRelations(attrOccurrences) ++ "\n" ++
-     generateLocalAccessRelations(localAttrs, env) ++ "\n\n" ++
-     generateInheritedInformation(inheritedAttrs) ++ "\n\n" ++
-     generateStructureEqFull(nonterminals) ++ "\n" ++
-     generateStructureEqComponent(prods, componentName) ++ "\n\n" ++
+     "%New syntax definitions\n" ++
+     generateNonterminalTypes(new_nonterminals) ++ "\n" ++
+     generateProductions(new_prods) ++ "\n\n" ++
+     generateNodeTypes(new_nonterminals) ++ "\n\n" ++
+     generateNodeTreeConstructors(new_nonterminals) ++ "\n\n" ++
+     "%New attributes\n" ++
+     generateAccessRelations(new_attrOccurrences) ++ "\n" ++
+     generateLocalAccessRelations(new_localAttrs, env) ++ "\n\n" ++
+     generateInheritedInformation(new_inheritedAttrs) ++ "\n\n" ++
+     "%New structural equality\n" ++
+     generateStructureEqFull(new_nonterminals) ++ "\n" ++
+     generateStructureEqComponent(new_prods, componentName) ++ "\n\n" ++
      --
+     "%New equation relations\n" ++
      generateEquationsFull(
-        attrOccurrences ++ associatedAttrsExpanded) ++ "\n" ++
-     generateWpdRelationsFull(nonterminals) ++ "\n\n" ++
+        new_attrOccurrences ++ associatedAttrsExpanded) ++ "\n" ++
+     generateWpdRelationsFull(new_nonterminals) ++ "\n\n" ++
+     "%New function relations\n" ++
      ( let funSplit::( [(String, AbellaType)],
                        [(String, AbellaType, [DefClause])] ) =
            foldr(\ p::(String, AbellaType, [DefClause])
@@ -939,33 +1337,44 @@ String ::= nonterminals::[String] attrs::[String]
                          reverse(tail(rev)))
                  end).unparse
        end end ) ++ "\n\n" ++
+     "%New component equation relations\n" ++
      generateAttrEquationComponentRelations(attrEqClauses,
-        componentName, inheritedAttrs) ++ "\n\n" ++
+        componentName, new_inheritedAttrs) ++ "\n\n" ++
+     "%New local equation relations\n" ++
      foldr(\ d::Definition rest::String -> d.unparse ++ rest,
            "", localDefs) ++ "\n\n" ++
      --
-     generateWpdNodeRelationsComponent(attrOccurrences, localAttrs,
+     "%New WPD relations\n" ++
+     generateWpdNodeRelationsComponent(new_attrOccurrences, new_localAttrs,
         associatedAttrs, env, componentName) ++ "\n" ++
-     generateWpdNtRelationsComponent(prods, componentName) ++ "\n\n" ++
+     generateWpdNtRelationsComponent(new_prods, componentName) ++ "\n\n" ++
      --
      --Switch over to generating axioms
      --
-     generateAccessUniquenessAxioms(attrOccurrences,
-                                    localAttrs, env) ++ "\n\n" ++
-     generateAccessIsAxioms(attrOccurrences,
-                            localAttrs, env) ++ "\n\n" ++
+     "%Access uniqueness axioms\n" ++
+     generateAccessUniquenessAxioms(new_attrOccurrences,
+                                    new_localAttrs, env) ++ "\n\n" ++
+     "%Access is axioms\n" ++
+     generateAccessIsAxioms(new_attrOccurrences,
+                            new_localAttrs, env) ++ "\n\n" ++
+     "%Equation primary component theorems\n" ++
      generatePrimaryComponentTheorems(
-        attrOccurrences ++ associatedAttrsExpanded,
-        prods, componentName) ++
+        new_attrOccurrences ++ associatedAttrsExpanded,
+        new_prods, componentName) ++
         "\n\n" ++
-     generateWPDPrimaryComponentTheorems(prods, componentName) ++
+     "%WPD primary component theorems\n" ++
+     generateWPDPrimaryComponentTheorems(new_prods, componentName) ++
         "\n\n" ++
-     generateNodeTreeFormTheorems(nonterminals) ++ "\n\n" ++
+     "%Node tree form theorems\n" ++
+     generateNodeTreeFormTheorems(new_nonterminals) ++ "\n\n" ++
+     "%WPD to attribute equation relation theorems\n" ++
      generateWpdToAttrEquationTheorems(
-        attrOccurrences ++ associatedAttrsExpanded,
-        localAttrs, env) ++ "\n\n" ++
-     generateStructureEqNtTheorems(nonterminals, [componentName]) ++
+        new_attrOccurrences ++ associatedAttrsExpanded,
+        new_localAttrs, env) ++ "\n\n" ++
+     "%Structure equality theorems\n" ++
+     generateStructureEqNtTheorems(new_nonterminals, [componentName]) ++
         "\n\n" ++
-     generateStructureEqPrimaryComponentTheorems(prods, componentName);
+     "%Structure equality primary component theorems\n" ++
+     generateStructureEqPrimaryComponentTheorems(new_prods, componentName);
 }
 
