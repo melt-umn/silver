@@ -10,7 +10,7 @@ class Random a {
   random :: RandomGen<a>;
 }
 
--- Uniform random integer on [0, INT_MAX]
+-- Uniform random integer on [INT_MIN, INT_MAX]
 instance Random Integer {
   random = randomInteger();
 }
@@ -45,7 +45,7 @@ instance RandomRange Integer {
     -- The right method is something like
     -- do { x = the low ceil(log2(n)) bits of uniformInt(); } while(x >= n); return x;
     -- but that might be slower and Silver doesn't (yet) have bitwise operators.
-    else map(\ i::Integer -> i % (max - min + 1) + min, random);
+    else map(\ i::Integer -> (if i > 0 then i else -i) % (max - min + 1) + min, random);
 }
 
 -- Does not allow for generating NaN or infinities, at the moment
