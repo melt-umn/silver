@@ -239,12 +239,12 @@ equalityTest(("one", 2).1, "one", String, silver_tests);
 
 -- tests that tuple selectors do not hide child errors
 
-wrongCode "Undeclared value 'random'" {
+wrongCode "Undeclared value 'notdefined'" {
 
 function fun
 String ::=
 {
-  return random.1;
+  return notdefined.1;
 }
 
 }
