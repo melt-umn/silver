@@ -1208,14 +1208,25 @@ function produceMissingClauses
                 let prods::[(String, AbellaType)] =
                     findAssociated(nt, prodsByType).fromJust
                 in
+                --attr introduced in this grammar
+                let attrNew::Boolean =
+                    nameToGrammar(eqs.1) == componentName
+                in
+                --nonterminal introduced in this grammar
+                let ntNew::Boolean =
+                    nameToGrammar(nonterminalToName(nt)) == componentName
+                in
                   ( eqs.1, eqs.2,
                     foldr(\ p::(String, AbellaType)
                             rest::[(String, AbellaType)] ->
                             if contains(p.1, eqs.3)
                             then rest
-                            else p::rest,
+                            --only add it if its equation must be defined in this grammar
+                            else if attrNew || ntNew || nameToGrammar(p.1) == componentName
+                            then p::rest
+                            else rest,
                           [], prods) )
-                end
+                end end end
               | _ -> error("Not possible")
               end,
             foundProds);

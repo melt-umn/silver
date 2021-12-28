@@ -1,8 +1,6 @@
 
 Bugs
 ======================================================================
-* Extensions generate clauses in equation relations for
-  host-introduced productions for host-introduced attributes
 * Component theorems are not being generated for host attributes on
   host nonterminals for extension productions (should have names like
   `$imp$*$host$*$env__$nt_imp$*$host$*$C__$prod_imp$*$host$*$noop`),

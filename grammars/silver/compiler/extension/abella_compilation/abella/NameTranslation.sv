@@ -329,3 +329,15 @@ String ::= name::String
   return substitute("$*$", ":", name);
 }
 
+--Get just the grammar from a fully-qualified name
+--Works with either colons or encoded, but must be fully-qualified
+function nameToGrammar
+String ::= name::String
+{
+  local lastEncodedSep::Integer = lastIndexOf("$*$", name);
+  local lastColon::Integer = lastIndexOf(":", name);
+  return if lastColon >= 0
+         then substring(0, lastColon, name)
+         else substring(0, lastEncodedSep, name);
+}
+
