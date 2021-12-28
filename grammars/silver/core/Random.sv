@@ -20,7 +20,7 @@ instance Random Boolean {
 }
 
 @{-
-Types for which random values can be generated, uniformly distributed over some range.
+Types for which random values can be generated, uniformly distributed over some closed range [min, max].
 
 Note that this is not a subclass of Ord since we may have instances for partial orders.
 
@@ -33,11 +33,15 @@ class Random a => RandomRange a {
 }
 
 instance RandomRange Integer {
-  randomRange = \ min::Integer max::Integer -> map(\ i::Integer -> i % (max - min) + min, random);
+  randomRange = \ min::Integer max::Integer ->
+    if min > max then error(s"Empty Integer range [${toString(min)}, ${toString(max)}]")
+    else map(\ i::Integer -> i % (max - min + 1) + min, random);
 }
 
 instance RandomRange Float {
-  randomRange = \ min::Float max::Float -> map(\ f::Float -> f * (max - min) + min, random);
+  randomRange = \ min::Float max::Float ->
+    if min > max then error(s"Empty Float range [${toString(min)}, ${toString(max)}]")
+    else map(\ f::Float -> f * (max - min) + min, random);
 }
 
 instance RandomRange Boolean {
@@ -45,7 +49,7 @@ instance RandomRange Boolean {
     case min, max of
     | false, false -> pure(false)
     | false, true -> random
-    | true, false -> error("Invalid range")
+    | true, false -> error("Empty Boolean range")
     | true, true -> pure(true)
     end;
 }
