@@ -2,19 +2,25 @@ grammar silver:core;
 
 @{-
 Types for which random values can be generated.
+
+This class imposes no restrictions on the range or distribution of random values,
+as there may be instances for types with no notion of ordering/equality.
 -}
 class Random a {
   random :: RandomGen<a>;
 }
 
+-- Uniform random integer on [0, INT_MAX]
 instance Random Integer {
   random = randomInteger();
 }
 
+-- Uniform random float on [0.0, 1.0)
 instance Random Float {
   random = randomFloat();
 }
 
+-- 50/50 true or false
 instance Random Boolean {
   random = randomBoolean();
 }
@@ -26,7 +32,7 @@ Note that this is not a subclass of Ord since we may have instances for partial 
 
 If a has an instance for Ord, then instances should satisfy:
   runRandomGen(randomRange(min, max)) >= min
-  runRandomGen(randomRange(min, max)) < max
+  runRandomGen(randomRange(min, max)) <= max
 -}
 class Random a => RandomRange a {
   randomRange :: (RandomGen<a> ::= a a);
@@ -35,9 +41,14 @@ class Random a => RandomRange a {
 instance RandomRange Integer {
   randomRange = \ min::Integer max::Integer ->
     if min > max then error(s"Empty Integer range [${toString(min)}, ${toString(max)}]")
+    -- TODO: Using modulo here isn't actually uniform for big ranges.
+    -- The right method is something like
+    -- do { x = the low ceil(log2(n)) bits of uniformInt(); } while(x >= n); return x;
+    -- but that might be slower and Silver doesn't (yet) have bitwise operators.
     else map(\ i::Integer -> i % (max - min + 1) + min, random);
 }
 
+-- Does not allow for generating NaN or infinities, at the moment
 instance RandomRange Float {
   randomRange = \ min::Float max::Float ->
     if min > max then error(s"Empty Float range [${toString(min)}, ${toString(max)}]")
