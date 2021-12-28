@@ -454,7 +454,7 @@ Integer ::=
 
 @{--
  - Generates a random number between [0, 1).
- - @deprecated This function is impure!  Consider using the RandomGen monad.
+ - This function is impure!  Consider using the RandomGen monad.
  -}
 function genRand
 Float ::=
