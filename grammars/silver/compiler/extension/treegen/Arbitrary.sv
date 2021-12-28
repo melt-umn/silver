@@ -27,13 +27,13 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
 
   production specEnv::Decorated Env = newScopeEnv(grammars.defs, emptyEnv());
   production specNTs::[TypeDclInfo] =
-    filter(\
-      d::TypeDclInfo -> d.isType && !d.isTypeAlias && d.typeScheme.monoType.isNonterminal,
+    filter(
+      \ d::TypeDclInfo -> d.isType && !d.isTypeAlias && d.typeScheme.monoType.isNonterminal,
       map((.dcl), foldr(consDefs, nilDefs(), grammars.defs).typeList));
 
   forwards to Silver_AGDcl {
     function $Name{n}
-    $TypeExpr{t} ::= depth::Integer
+    silver:core:RandomGen<$TypeExpr{t}> ::= depth::Integer
     {
       $ProductionStmt{
         foldr(
@@ -69,7 +69,6 @@ concrete production generatorComponent
 top::GeneratorComponent ::= m::ModuleName ';'
 {
   top.unparse = m.unparse ++ ";";
-  top.defs <- unsafeTracePrint([], hackUnparse(m) ++ ": " ++ hackUnparse(m.defs) ++ "\n\n\n");
 }
 
 -- Generate the expression for constructing a type
@@ -88,14 +87,17 @@ Expr ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  depth::Expr 
     -- e.g. lists of nonterminals in a production RHS.
     | appType(listCtrType(), elemT) ->
       Silver_Expr {
-        map(
-          \ depth::Integer -> $Expr{genForType(loc, env, specEnv, Silver_Expr { depth - 1 }, elemT)},
-          take(toInteger(genRand() * toFloat($Expr{depth}))), reverse(range(0, $Expr{depth})))
+        silver:core:bind(random, \ len::Integer ->
+          silver:core:sequence(
+            \ depth::Integer -> $Expr{genForType(loc, env, specEnv, Silver_Expr { depth - 1 }, elemT)},
+            silver:core:take(
+              silver:core:toInteger(len * silver:core:toFloat($Expr{depth}))),
+              silver:core:reverse(silver:core:range(0, $Expr{depth}))))
       }
 
     -- Primitives and polymorphic nonterminals (e.g. Pair for tuples) are
     -- handled by the Arbitrary type class.
-    | _ -> Silver_Expr { $Name{name("genArb", loc)}($Expr{depth}) }
+    | _ -> Silver_Expr { $Name{name("silver:core:genArb", loc)}($Expr{depth}) }
     end; 
 }
 
@@ -122,16 +124,21 @@ Boolean ::= env::Decorated Env  specEnv::Decorated Env  p::ValueDclInfo
     all(map(isTypeGeneratable(env, specEnv, _), prodType.inputTypes ++ map(snd, prodType.namedTypes)));
 }
 
--- Used to sort productions according to their arity (number of children)
+-- Used to sort productions according to their number of nonterminal children
+function nonterminalArity
+Integer ::= t::Type
+{
+  return length(filter((.isNonterminal), t.inputTypes));
+}
 function prodDclInfoNumChildLte
 Boolean ::= l::ValueDclInfo  r::ValueDclInfo
 {
-  return l.typeScheme.arity <= r.typeScheme.arity;
+  return nonterminalArity(l.typeScheme.typerep) <= nonterminalArity(r.typeScheme.typerep);
 }
 function prodDclInfoNumChildEq
 Boolean ::= l::ValueDclInfo  r::ValueDclInfo
 {
-  return l.typeScheme.arity == r.typeScheme.arity;
+  return nonterminalArity(l.typeScheme.typerep) == nonterminalArity(r.typeScheme.typerep);
 }
 
 -- splits where operator becomes false in list
@@ -144,7 +151,7 @@ function takeWhile2
   else [head(l)];
 }
 
--- local genExpr::(Expr ::= Integer) = \ depth::Integer -> ...;
+-- local genExpr::(RandomGen<Expr> ::= Integer) = \ depth::Integer -> ...;
 function genNtLocalDecl
 ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  nt::String
 {
@@ -158,19 +165,19 @@ ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  nt
   
   local result::Expr =
     if null(prods)
+    -- TODO: This could be a compile-time error, in theory
     then Silver_Expr { error($Expr{stringConst(terminal(String_t, "\"no generatable productions for nonterminal " ++ nt ++ "\""), location=loc)}) }
     else Silver_Expr {
-      let pval::Float =
+      silver:core:bind(
         if depth <= 0
-        then genRand() * $Expr{floatConst(terminal(Float_t, toString(toFloat(num_lowest_arity) / toFloat(length(prods)))), location=loc)}
-        else genRand()
-      in $Expr{generateExprChain(loc, env, specEnv, nt, 0, prods, length(prods))}
-      end
+        then randomRange(0, $Expr{intConst(terminal(Int_t, toString(num_lowest_arity - 1)), location=loc)})
+        else randomRange(0, $Expr{intConst(terminal(Int_t, toString(length(prods) - 1)), location=loc)}),
+        \ i::Integer -> $Expr{generateExprChain(loc, env, specEnv, nt, 0, prods)})
     };
   
   return
     Silver_ProductionStmt {
-      local $name{"gen_" ++ substitute(":", "_", nt)}::($TypeExpr{nominalTypeExpr(qName(loc, nt).qNameType, location=loc)} ::= Integer) =
+      local $name{"gen_" ++ substitute(":", "_", nt)}::(silver:core:RandomGen<$TypeExpr{nominalTypeExpr(qName(loc, nt).qNameType, location=loc)}> ::= Integer) =
         \ depth::Integer -> $Expr{result};
     };
 }
@@ -179,28 +186,46 @@ ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  nt
 
 We got the id 'Expr' incoming.
 
-We should look up 'Expr' and get a list of productions, from that we get the probabilities.
+We should look up 'Expr' and get a list of productions, from that we get the indices.
 
-We then map genForType over the list of productions and generate a big if-then-else tree based on the genRand()
+We then map genForType over the list of productions and generate a big if-then-else tree based on the randomRange()
+
+Note that this expects lst to be non-empty!
 
 -}
 
 function generateExprChain
-Expr ::= loc::Location env::Decorated Env  specEnv::Decorated Env  nt::String index::Integer  lst::[ValueDclInfo]  total::Integer
+Expr ::= loc::Location env::Decorated Env  specEnv::Decorated Env  nt::String index::Integer  lst::[ValueDclInfo]
 {
   local prod::ValueDclInfo = head(lst);
   local prodType::Type = prod.typeScheme.typerep;
+  local args::[(String, Type)] =
+    zipWith(pair, map(\ i::Integer -> "a" ++ toString(i), range(0, length(prodType.inputTypes))), prodType.inputTypes) ++
+    prodType.namedTypes;
+  local argGenExprs::[Expr] =
+    map(genForType(loc, env, specEnv, Silver_Expr { depth - 1 }, _), map(snd, args));
+  local genRes::Expr =
+    mkFullFunctionInvocation(
+      loc, Silver_Expr { $name{prod.fullName} },
+      map(\ i::Integer -> Silver_Expr { $name{"a" ++ toString(i)} }, range(0, length(prodType.inputTypes))),
+      map(\ a::String -> (a, Silver_Expr { $name{a} }), map(fst, prodType.namedTypes)));
+  local lambdaChain::Expr =
+    foldr(
+      \ arg::(String, Type) res::Expr ->
+        Silver_Expr { \ $name{arg.1}::$TypeExpr{typerepTypeExpr(arg.2, location=loc)} -> $Expr{res} },
+      genRes, args);
   local genProd::Expr =
-    mkFullFunctionInvocation(loc, Silver_Expr { $name{prod.fullName} },
-      map(genForType(loc, env, specEnv, Silver_Expr { depth - 1 }, _), prodType.inputTypes),
-      zipWith(pair,
-        map(fst, prodType.namedTypes),
-        map(genForType(loc, env, specEnv, Silver_Expr { depth - 1 }, _), map(snd, prodType.namedTypes))));
+    if null(argGenExprs)
+    then Silver_Expr { silver:core:pure($Expr{genRes}) }
+    else foldl(
+      \ e1::Expr e2::Expr -> Silver_Expr { silver:core:ap($Expr{e1}, $Expr{e2}) },
+      Silver_Expr { silver:core:map($Expr{lambdaChain}, $Expr{head(argGenExprs)}) },
+      tail(argGenExprs));
 
   return if null(tail(lst)) then genProd
   else Silver_Expr {
-    if pval < $Expr{floatConst(terminal(Float_t, toString(toFloat(index+ 1) / toFloat(total))), location=loc)}
+    if i == $Expr{intConst(terminal(Int_t, toString(index)), location=loc)}
     then $Expr{genProd}
-    else $Expr{generateExprChain(loc, env, specEnv, nt, index + 1, tail(lst), total)}
+    else $Expr{generateExprChain(loc, env, specEnv, nt, index + 1, tail(lst))}
   };
 }

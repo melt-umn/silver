@@ -20,7 +20,11 @@ n::Name ::= s::String
 }
 
 instance Arbitrary Name {
-  genArb = \ depth::Integer -> name(charsToString(randShuffle(stringToChars("abcd"))), location=genArb(depth));
+  genArb = \ depth::Integer -> do {
+    chars :: [Integer] <- randomShuffle(stringToChars("abcd"));
+    loc :: Location <- genArb(depth);
+    return name(charsToString(chars), location=loc);
+  };
 }
 
 nonterminal Expr with pp, env, errors;

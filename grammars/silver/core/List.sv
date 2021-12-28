@@ -356,15 +356,18 @@ function repeat
          else v :: repeat(v, times-1);
 }
 
-function randShuffle
-[a] ::= elems::[a]
+function randomShuffle
+RandomGen<[a]> ::= elems::[a]
 {
-  local i::Integer = toInteger(genRand() * toFloat(length(elems) - 1));
-  local hd::[a] = take(i, elems);
-  local tl::[a] = drop(i, elems);
   return
-    if null(elems) then []
-    else head(tl) :: randShuffle(hd ++ tail(tl));
+    if null(elems) then pure([])
+    else do {
+      i :: Integer <- randomRange(0, length(elems) - 1);
+      let hd :: [a] = take(i, elems);
+      let tl :: [a] = drop(i, elems);
+      rest :: [a] <- randomShuffle(hd ++ tail(tl));
+      return head(tl) :: rest;
+    };
 }
 
 function range

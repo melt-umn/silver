@@ -8,10 +8,10 @@ import silver:reflect;
 function arbDriver
 IO ::= args::[String]
        io_in::IO 
-       generator::(ast:Root ::= Integer)
+       generator::(RandomGen<ast:Root> ::= Integer)
 {
   local depth::Integer = toInteger(head(args));
-  local r_ast :: ast:Root = generator(depth);
+  local r_ast :: ast:Root = runRandomGen(generator(depth));
 
   local print_success :: IO = 
     print( "AST: \n" ++ pp:show(100, reflect(new(r_ast))) ++
