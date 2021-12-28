@@ -55,12 +55,41 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
          g.attrEqInfo, g.localAttrDefs, g.funRelClauses,
          encodeName(grammarName), relevantEnv, g.flowEnv);
 
+  --left for error in producing it, right for file contents
+  local interfaceFileBuild::Either<String String> =
+        buildInterfaceFile(grammarName, top.compiledGrammars,
+                           top.moduleNames, top.generateLocation,
+                           top.grammarSource);
 
+  top.interface_output = interfaceFileBuild.fromRight;
+
+  top.shouldOutput =
+      grammarName != "silver:core" &&
+      interfaceFileBuild.isRight;
+  top.error_output =
+      if grammarName == "silver:core"
+      then ""
+      else "Error:  Could not generate for grammar " ++ grammarName ++
+           ":  " ++ interfaceFileBuild.fromLeft ++ "\n\n";
+}
+
+
+--Build the full contents of the interface file
+--left for an error from gathering imported things
+--right for the file contents
+function buildInterfaceFile
+Either<String String> ::= grammarName::String
+                          compiledGrammars::EnvTree<Decorated RootSpec>
+                          moduleNames::[String]
+                          generateLocation::String
+                          grammarSource::String
+{
+  --Remove core until the issues with it are sorted out
   local no_core_module_names::[String] =
-        remove("silver:core", top.moduleNames);
+        remove("silver:core", moduleNames);
   --Figure out the import order for the imported grammars
   local dependencyGraph::graph:Graph<String> =
-        buildDependencyGraph(graph:empty(), top.compiledGrammars,
+        buildDependencyGraph(graph:empty(), compiledGrammars,
                              grammarName, no_core_module_names);
   local full_import_order::[String] =
         graphToOrder(grammarName, dependencyGraph);
@@ -76,8 +105,8 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
                    tail(unique_import_order)) ++ ". ";
   --Figure out the theorem order for imported theorems and set up the imported definitions
   local grammarInformation::Either<String [(String, [DefinitionElement], [ParsedElement])]> =
-        gatherGrammarInfo(no_core_module_names, top.generateLocation,
-                          top.grammarSource, unsafeIO());
+        gatherGrammarInfo(no_core_module_names, generateLocation,
+                          grammarSource, unsafeIO());
   --Clean it up so each definition only shows up once
   local combined_defs::[DefinitionElement] =
         foldr(\ d::DefinitionElement rest::[DefinitionElement] ->
@@ -102,20 +131,12 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
                                 ordered_grammar_information));
   local theorem_string::String =
         implode("", map((.encode), combined_thms));
-
-  --Build the full contents of the interface file
-  top.interface_output =
-      grammarName ++ ". " ++ order_string ++ definition_string ++ theorem_string;
-
-
-  top.shouldOutput =
-      grammarName != "silver:core" &&
-      grammarInformation.isRight;
-  top.error_output =
-      if grammarName == "silver:core"
-      then ""
-      else "Error:  Could not generate for grammar " ++ grammarName ++
-           ":  " ++ grammarInformation.fromLeft ++ "\n\n";
+  return
+     case grammarInformation of
+     | left(x) -> left(x)
+     | right(_) -> right(grammarName ++ ". " ++ order_string ++
+                         definition_string ++ theorem_string)
+     end;
 }
 
 
