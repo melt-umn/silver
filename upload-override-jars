@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -eu
 
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 
-if [[ -n "$(git status --porcelain)" ]]; then
-	echo "You have uncommitted changes! Refusing to run."
-	exit 1
-fi
+# if [[ -n "$(git status --porcelain)" ]]; then
+# 	echo "You have uncommitted changes! Refusing to run."
+# 	exit 1
+# fi
 
 branch_name="$(git rev-parse --abbrev-ref HEAD)"
+encoded_branch_name="$(curl -Gso /dev/null -w %{url_effective} --data-urlencode $branch_name "" | cut -c 3-)"
 commit_hash="$(git rev-parse HEAD)"
 
 # If your username on the your development machine doesn't match your username
@@ -19,5 +20,5 @@ commit_hash="$(git rev-parse HEAD)"
 #   User nathan
 rsync -Pa jars/ foundry.remexre.xyz:/melt/jenkins/export-scratch/melt-jenkins/${commit_hash}-jars/
 
-echo "Now go to https://foundry.remexre.xyz/jenkins/job/melt-umn/job/silver/job/$branch_name/build and"
+echo "Now go to https://foundry.remexre.xyz/jenkins/job/melt-umn/job/silver/job/$encoded_branch_name/build and"
 echo "pass /export/scratch/melt-jenkins/${commit_hash}-jars as OVERRIDE_JARS"
