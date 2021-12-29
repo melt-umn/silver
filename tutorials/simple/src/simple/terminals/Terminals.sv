@@ -73,15 +73,8 @@ terminal Id  /[a-zA-Z][a-zA-Z0-9_]*/  submits to { KEYWORDS };
 
 -- Literals
 
-terminal IntegerLiteral /[0-9]+/; 
-terminal FloatLiteral   /[0-9]+\.[0-9]+/; 
+terminal IntegerLiteral /[0-9]+/  genRepeatProb = 0.5;
+terminal FloatLiteral   /[0-9]+\.[0-9]+/ genRepeatProb = 0.5;
 terminal BooleanLiteral /(True)|(False)/ lexer classes { KEYWORDS };
 
-terminal StringLiteral /"([^"\n\\]|\\"|\\\\|\\n|\\r|\\t)*"/;
-
-instance Arbitrary IntegerLiteral {
-  genArb = \ depth::Integer -> bind(genArb(depth), genArbTerminal(IntegerLiteral, 0.5, _));
-}
-instance Arbitrary FloatLiteral {
-  genArb = \ depth::Integer -> bind(genArb(depth), genArbTerminal(FloatLiteral, 0.5, _));
-}
+terminal StringLiteral /"([^"\n\\]|\\"|\\\\|\\n|\\r|\\t)*"/  genRepeatProb=0.9;

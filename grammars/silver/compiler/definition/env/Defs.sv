@@ -158,11 +158,11 @@ Def ::= sg::String  sl::Location  fn::String  ks::[Kind]  closed::Boolean  track
   return typeDef(defaultEnvItem(ntDcl(fn,ks,closed,tracked,sourceGrammar=sg,sourceLocation=sl)));
 }
 function termDef
-Def ::= sg::String  sl::Location  fn::String  regex::Regex  easyName::Maybe<String>
+Def ::= sg::String  sl::Location  fn::String  regex::Regex  easyName::Maybe<String>  genRepeatProb::Maybe<Float>
 {
   -- Terminals are also in the value namespace as terminal identifiers
   return typeValueDef(
-    defaultEnvItem(termDcl(fn,regex,easyName,sourceGrammar=sg,sourceLocation=sl)),
+    defaultEnvItem(termDcl(fn,regex,easyName,genRepeatProb,sourceGrammar=sg,sourceLocation=sl)),
     defaultEnvItem(termIdDcl(fn,sourceGrammar=sg,sourceLocation=sl)));
 }
 function lexTyVarDef

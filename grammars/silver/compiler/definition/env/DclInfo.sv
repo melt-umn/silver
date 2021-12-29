@@ -155,7 +155,7 @@ top::TypeDclInfo ::= fn::String ks::[Kind] closed::Boolean tracked::Boolean
   top.isType = true;
 }
 abstract production termDcl
-top::TypeDclInfo ::= fn::String regex::Regex easyName::Maybe<String>
+top::TypeDclInfo ::= fn::String regex::Regex easyName::Maybe<String> genRepeatProb::Maybe<Float>
 {
   top.fullName = fn;
 

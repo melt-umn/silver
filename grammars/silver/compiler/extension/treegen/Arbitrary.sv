@@ -205,13 +205,13 @@ ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  nt
 }
 
 function genTermLocalDecl
-ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  nt::String
+ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  t::String
 {
-  local te::TypeExpr = nominalTypeExpr(qName(loc, nt).qNameType, location=loc);
+  local te::TypeExpr = nominalTypeExpr(qName(loc, t).qNameType, location=loc);
   return
     Silver_ProductionStmt {
-      local $name{"gen_" ++ substitute(":", "_", nt)}::(silver:core:RandomGen<$TypeExpr{te}> ::= Integer) =
-        let genTerm::(silver:core:RandomGen<$TypeExpr{te}> ::= Location) = genArbTerminal($TypeExpr{te}, 0.7, _)
+      local $name{"gen_" ++ substitute(":", "_", t)}::(silver:core:RandomGen<$TypeExpr{te}> ::= Integer) =
+        let genTerm::(silver:core:RandomGen<$TypeExpr{te}> ::= Location) = genArbTerminal($TypeExpr{te}, _)
         in \ depth::Integer -> silver:core:bind(silver:core:genArb(depth), genTerm)
         end;
     };
