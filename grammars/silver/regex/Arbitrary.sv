@@ -37,13 +37,13 @@ top::Regex ::=
 aspect production char
 top::Regex ::= c::Integer
 {
-  top.genArbMatch = charsToString([c]);
+  top.genArbMatch = char;
 }
 
 aspect production wildChar
 top::Regex ::=
 {
-  -- Generate ASCII chars, excluding \n
+  -- Generate any ASCII char, excluding \x00 and \n
   top.genArbMatch =
     let i::Integer = randomRange(1, 126)
     in charsToString([if i < newlineChar then i else i + 1])
@@ -58,12 +58,12 @@ top::Regex ::= l::Integer u::Integer
   top.altCount = top.altCountIn + u - l + 1;
 }
 
+global asciiChars::[String] = map(\ c::Integer -> charsToString([c]), range(1, 128));
 aspect production negChars
 top::Regex ::= r::Regex
 {
-  production validAsciiChars::[Integer] =
-    filter(\ c::Integer -> decorate r with {wrt = c;}.deriv.nullable, range(1, 128));
-  top.genArbMatch = charsToString([head(drop(randomRange(0, length(validAsciiChars) - 1), validAsciiChars))]);
+  production validAsciiChars::[String] = filter(\ c::String -> !(c =~ r), asciiChars);
+  top.genArbMatch = head(drop(randomRange(0, length(validAsciiChars) - 1), validAsciiChars));
   top.altCount = top.altCountIn + length(validAsciiChars);
   r.altCountIn = 0;
 }
