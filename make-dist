@@ -36,6 +36,7 @@ tar -zcvf $SV.tar.gz \
  $SV/grammars/silver/core/ \
  $SV/grammars/silver/xml/ \
  $SV/grammars/silver/regex/ \
+ $SV/grammars/silver/rewrite/ \
  $SV/grammars/silver/testing/ \
  $SV/grammars/silver/util/cmdargs/ \
  $SV/grammars/silver/util/deque/ \
