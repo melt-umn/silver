@@ -1,12 +1,18 @@
 grammar silver:regex;
 
+-- Generate a random string matching a regex
 implicit synthesized attribute genArbMatch::RandomGen<String>;
 
+-- The desired probability of generating an additional repeat from a Kleene *
 restricted inherited attribute starProb::Float;
 
+-- The total number of alternatives up to (altCountIn) and including (altCount) this regex
+-- in this chain/tree of alts.
+-- Invariant: any Regex that is not the direct child of an alt should have altCountIn == 0. 
 restricted inherited attribute altCountIn::Integer;
 restricted synthesized attribute altCount::Integer;
 
+-- All the "leaf" regexes of some chain/tree of alts
 type GenInhs = {starProb, altCountIn};
 restricted synthesized attribute altOptions::[Decorated Regex with GenInhs];
 
@@ -62,6 +68,7 @@ global asciiChars::[String] = map(\ c::Integer -> charsToString([c]), range(1, 1
 aspect production negChars
 top::Regex ::= r::Regex
 {
+  -- Generate any ASCII char that doesn't match r
   production validAsciiChars::[String] = filter(\ c::String -> !(c =~ r), asciiChars);
   top.genArbMatch = head(drop(randomRange(0, length(validAsciiChars) - 1), validAsciiChars));
   top.altCount = top.altCountIn + length(validAsciiChars);
@@ -82,10 +89,15 @@ top::Regex ::= r1::Regex r2::Regex
 aspect production alt
 top::Regex ::= r1::Regex r2::Regex
 {
+  -- Choose some "leaf" regex in this chain of alts, weighted by the number of alternatives in each leaf.
   top.genArbMatch =
+    -- Invariant: this should only be computed at the *top* of a chain/tree of alts,
+    -- i.e. when top.altCountIn == 0.
+    if top.altCountIn != 0 then error("genArbMatch on alt when top.altCount != 0") else
     let i::Integer = randomRange(0, top.altCount - 1)
     in head(dropWhile(\ r::Decorated Regex with GenInhs -> r.altCount < i, top.altOptions)).genArbMatch
     end;
+
   thread altCountIn, altCount on top, r1, r2, top;
   top.altOptions = r1.altOptions ++ r2.altOptions;
 
