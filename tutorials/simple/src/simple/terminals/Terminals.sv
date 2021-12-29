@@ -1,5 +1,7 @@
 grammar simple:terminals;
 
+imports silver:regex;
+
 {- Ignore terminals define the whitespace for the grammar, as a whole.
  - We also typically include comments.
  -}
@@ -77,4 +79,9 @@ terminal BooleanLiteral /(True)|(False)/ lexer classes { KEYWORDS };
 
 terminal StringLiteral /"([^"\n\\]|\\"|\\\\|\\n|\\r|\\t)*"/;
 
-
+instance Arbitrary IntegerLiteral {
+  genArb = \ depth::Integer -> bind(genArb(depth), genArbTerminal(IntegerLiteral, 0.5, _));
+}
+instance Arbitrary FloatLiteral {
+  genArb = \ depth::Integer -> bind(genArb(depth), genArbTerminal(FloatLiteral, 0.5, _));
+}

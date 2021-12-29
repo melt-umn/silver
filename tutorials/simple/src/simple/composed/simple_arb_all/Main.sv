@@ -3,7 +3,7 @@ grammar simple:composed:simple_arb_all;
 imports simple:host;
 imports simple:arb:driver;
 
-generator generate :: simple:abstractsyntax:Root {
+generator generate :: simple:concretesyntax:Root {
   simple:host;
   simple:extensions:do_while;
   simple:extensions:repeat_until;

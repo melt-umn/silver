@@ -3,8 +3,8 @@ grammar simple:arb;
 imports simple:host;
 imports simple:arb:driver;
 
-generator generate :: simple:abstractsyntax:Root {
-  simple:abstractsyntax;
+generator generate :: simple:concretesyntax:Root {
+  simple:host;
 }
 
 function main 

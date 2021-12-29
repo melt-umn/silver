@@ -3,15 +3,20 @@ grammar simple:arb:driver;
 import silver:langutil;
 import silver:langutil:pp as pp;
 import simple:abstractsyntax as ast;
+import simple:concretesyntax as cst;
 import silver:reflect;
 
 function arbDriver
 IO ::= args::[String]
        io_in::IO 
-       generator::(RandomGen<ast:Root> ::= Integer)
+       generator::(RandomGen<cst:Root> ::= Integer)
 {
-  local depth::Integer = toInteger(head(args));
-  local r_ast :: ast:Root = runRandomGen(generator(depth));
+  local depth :: Integer = toInteger(head(args));
+  
+  local r_cst :: cst:Root = runRandomGen(generator(depth));
+
+  --local r_ast :: ast:Root = runRandomGen(generator(depth));
+  local r_ast :: ast:Root = r_cst.ast;
 
   local print_success :: IO = 
     print( "AST: \n" ++ pp:show(100, reflect(new(r_ast))) ++
