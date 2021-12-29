@@ -1,7 +1,5 @@
 grammar simple:terminals;
 
-imports silver:regex;
-
 {- Ignore terminals define the whitespace for the grammar, as a whole.
  - We also typically include comments.
  -}
