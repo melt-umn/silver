@@ -4,13 +4,13 @@ import silver:langutil:pp;
 import silver:regex as abs;
 import silver:regex:concrete_syntax;
 
-terminal Ignore_kwd        'ignore'        lexer classes {KEYWORD};
-terminal Marking_kwd       'marking'       lexer classes {KEYWORD};
-terminal Named_kwd         'named'         lexer classes {KEYWORD};
-terminal Left_kwd          'left'          lexer classes {KEYWORD};
-terminal Association_kwd   'association'   lexer classes {KEYWORD};
-terminal Right_kwd         'right'         lexer classes {KEYWORD};
-terminal GenRepeatProb_kwd 'genRepeatProb' lexer classes {KEYWORD};
+terminal Ignore_kwd      'ignore'      lexer classes {KEYWORD};
+terminal Marking_kwd     'marking'     lexer classes {KEYWORD};
+terminal Named_kwd       'named'       lexer classes {KEYWORD};
+terminal Left_kwd        'left'        lexer classes {KEYWORD};
+terminal Association_kwd 'association' lexer classes {KEYWORD};
+terminal Right_kwd       'right'       lexer classes {KEYWORD};
+terminal RepeatProb_kwd  'repeatProb'  lexer classes {KEYWORD};
 
 -- We actually need to reserved this due to its appearance in PRODUCTION modifiers.
 terminal Precedence_kwd  'precedence'  lexer classes {KEYWORD,RESERVED};
@@ -169,10 +169,10 @@ top::TerminalModifier ::= 'precedence' '=' i::Int_t
   top.errors := [];
 }
 
-concrete production terminalModifierGenRepeatProb
-top::TerminalModifier ::= 'genRepeatProb' '=' f::Float_t
+concrete production terminalModifierRepeatProb
+top::TerminalModifier ::= 'repeatProb' '=' f::Float_t
 {
-  top.unparse = "genRepeatProb = " ++ f.lexeme;
+  top.unparse = "repeatProb = " ++ f.lexeme;
 
   top.terminalModifiers := [];
   top.genRepeatProb := just(toFloat(f.lexeme));
