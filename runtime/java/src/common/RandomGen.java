@@ -31,6 +31,13 @@ public final class RandomGen {
   			return runRandomGen(ctx, rng, ((NodeFactory<NRandomGen>)r.getChild(1)).invoke(ctx, new Object[] {val}, null));
   		} else if (r instanceof PrandomInteger) {
   			return rng.nextInt();
+  		} else if (r instanceof PrandomRangeInteger) {
+  			final int lower = (Integer)r.getChild(0);
+  			final int upper = (Integer)r.getChild(1);
+  			if (lower > upper) {
+  				throw new SilverError("Empty Integer range [" + lower + ", " + upper + "]");
+  			}
+  			return rng.nextInt(upper - lower + 1) + lower;  // TODO: I think this could be more robust against signed overflow.
   		} else if (r instanceof PrandomFloat) {
   			return rng.nextFloat();
   		} else if (r instanceof PrandomBoolean) {

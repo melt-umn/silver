@@ -39,13 +39,8 @@ class Random a => RandomRange a {
 }
 
 instance RandomRange Integer {
-  randomRange = \ min::Integer max::Integer ->
-    if min > max then error(s"Empty Integer range [${toString(min)}, ${toString(max)}]")
-    -- TODO: Using modulo here isn't actually uniform for big ranges.
-    -- The right method is something like
-    -- do { x = the low ceil(log2(n)) bits of uniformInt(); } while(x >= n); return x;
-    -- but that might be slower and Silver doesn't (yet) have bitwise operators.
-    else map(\ i::Integer -> (if i > 0 then i else -i) % (max - min + 1) + min, random);
+  -- Uniform integer in range is actually kinda tricky to do correctly, so this is a primitive
+  randomRange = randomRangeInteger;
 }
 
 -- Does not allow for generating NaN or infinities, at the moment
@@ -86,6 +81,10 @@ top::RandomGen<b> ::= RandomGen<a> (RandomGen<b> ::= a)
 
 production randomInteger
 top::RandomGen<Integer> ::=
+{}
+
+production randomRangeInteger
+top::RandomGen<Integer> ::= Integer Integer
 {}
 
 production randomFloat
