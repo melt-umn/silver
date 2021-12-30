@@ -153,7 +153,7 @@ String ::= group::[(String, AbellaType)] component::String
         | (_, prodTy)::_ -> prodTy.resultType
         end;
   return
-     "Define " ++ typeToStructureEqName(nt) ++ "__" ++ component ++
+     "Define " ++ typeToStructureEqName(nt) ++ name_sep ++ component ++
      " : " ++ nt.unparse ++ " -> " ++ nt.unparse ++ " -> prop by\n" ++
      implode(";\n",
              map(\ p::(String, AbellaType) ->
@@ -175,7 +175,7 @@ String ::= prod::String prodTy::AbellaType nt::AbellaType component::String
                 end end,
               ([], []), prodTy.argumentTypes).1;
   local clauseHead::String =
-        typeToStructureEqName(nt) ++ "__" ++ component ++ " " ++
+        typeToStructureEqName(nt) ++ name_sep ++ component ++ " " ++
         "(" ++ nameToProd(prod) ++ " " ++
             implode(" ", map(\ p::(String, String, AbellaType) ->
                                p.1, children)) ++ ") " ++
@@ -311,9 +311,9 @@ String ::= group::[(String, String, AbellaType, String, String)]
                 "", lst)
         end;
   return
-     "Define " ++ wpdNodeTypeName(nt) ++ "__" ++ component ++ " : " ++
+     "Define " ++ wpdNodeTypeName(nt) ++ name_sep ++ component ++ " : " ++
      nt.unparse ++ " -> $node_tree -> prop by\n" ++
-     "   " ++ wpdNodeTypeName(nt) ++ "__" ++ component ++ " Tree (" ++
+     "   " ++ wpdNodeTypeName(nt) ++ name_sep ++ component ++ " Tree (" ++
               nodeTreeConstructorName(nt) ++ " Node CL) :=\n" ++
      "      exists " ++ implode(" ", bodyCall.2) ++ ",\n" ++
      bodyCall.1 ++
@@ -389,7 +389,7 @@ String ::= group::[(String, AbellaType)] component::String
         | (_, prodTy)::_ -> prodTy.resultType
         end;
   return
-     "Define " ++ wpdTypeName(nt) ++ "__" ++ component ++
+     "Define " ++ wpdTypeName(nt) ++ name_sep ++ component ++
      " : " ++ nt.unparse ++ " -> $node_tree -> prop by\n" ++
      implode(";\n",
          map(\ p::(String, AbellaType) ->
@@ -407,7 +407,7 @@ String ::= prod::String prodTy::AbellaType nt::AbellaType component::String
                 end,
               ([], []), prodTy.argumentTypes).1;
   local clauseHead::String =
-        wpdTypeName(nt) ++ "__" ++ component ++ " " ++
+        wpdTypeName(nt) ++ name_sep ++ component ++ " " ++
         "(" ++ nameToProd(prod) ++ " " ++
             implode(" ", map(\ p::(String, AbellaType) ->
                                p.1, children)) ++ ") " ++
@@ -467,7 +467,7 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
                       p.2), localAttrs);
   return
      foldr(\ acc::String rest::String ->
-             "Theorem " ++ acc ++ "__unique : forall Tree Node V V',\n" ++
+             "Theorem " ++ acc ++ name_sep ++ "unique : forall Tree Node V V',\n" ++
              "   " ++ acc ++ " Tree Node V ->\n" ++
              "   " ++ acc ++ " Tree Node V' -> V = V'.\n" ++
              "skip.\n" ++
@@ -515,7 +515,7 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
                  | _ -> error("Should not access this")
                  end
              in
-               "Theorem " ++ p.1 ++ "__is : forall Tree Node CL "  ++
+               "Theorem " ++ p.1 ++ name_sep ++ "is : forall Tree Node CL "  ++
                   ( if isTree
                     then "VTr VNode"
                     else "V" ) ++ ",\n" ++
@@ -591,13 +591,13 @@ String ::=
         | _ -> error("Must be an application with enough arguments")
         end;
   local here::String =
-        "Theorem " ++ equationName(attr, nt) ++ "__" ++
+        "Theorem " ++ equationName(attr, nt) ++ name_sep ++
            prod ++ " : forall " ++ implode(" ", children) ++
            " Node TreeName T,\n   " ++
         typeToStructureEqName(nt) ++ " T (" ++
            prod ++ " " ++ implode(" ", children) ++") ->\n   " ++
         equationName(attr, nt) ++ " TreeName T Node ->\n   " ++
-        equationName(attr, nt) ++ "__" ++ component ++
+        equationName(attr, nt) ++ name_sep ++ component ++
            " TreeName (" ++ prod ++ " " ++ implode(" ", children) ++
            ") Node.\n" ++
         "skip.\n";
@@ -632,7 +632,7 @@ String ::= attrGroups::[(String, [String])]
                        [], p.2.argumentTypes)
              in
                foldr(\ a::String rest::String ->
-                       "Theorem " ++ equationName(a, nt) ++ "__" ++
+                       "Theorem " ++ equationName(a, nt) ++ name_sep ++
                           nameToProd(p.1) ++ " : forall " ++
                           implode(" ", children) ++
                           " Node TreeName T,\n   " ++
@@ -641,7 +641,7 @@ String ::= attrGroups::[(String, [String])]
                           implode(" ", children) ++ ") ->\n   " ++
                        equationName(a, nt) ++ " TreeName T Node ->" ++
                        "\n   " ++
-                       equationName(a, nt) ++ "__" ++ component ++
+                       equationName(a, nt) ++ name_sep ++ component ++
                           " TreeName (" ++ nameToProd(p.1) ++ " " ++
                           implode(" ", children) ++ ") Node.\n" ++
                        "skip.\n" ++ rest,
@@ -673,13 +673,13 @@ String ::= prods::[(String, AbellaType)] component::String
                       "T"::"NodeTree"::rest)::rest,
                  [], ty.argumentTypes)
        in
-         "Theorem " ++ wpdTypeName(nt) ++ "__" ++ nameToProd(pr) ++
+         "Theorem " ++ wpdTypeName(nt) ++ name_sep ++ nameToProd(pr) ++
             " : forall T " ++ implode(" ", children) ++ " NodeTree," ++
             "\n   " ++
          typeToStructureEqName(nt) ++ " T (" ++ nameToProd(pr) ++
             " " ++ implode(" ", children) ++ ") ->\n   " ++
          wpdTypeName(nt) ++ " T NodeTree ->\n   " ++
-         wpdTypeName(nt) ++ "__" ++ component ++ " (" ++
+         wpdTypeName(nt) ++ name_sep ++ component ++ " (" ++
             nameToProd(pr) ++ " " ++ implode(" ", children) ++
             ") NodeTree.\n" ++ "skip.\n" ++
          generateWPDPrimaryComponentTheorems(rest, component)
@@ -696,7 +696,7 @@ String ::= nonterminals::[String]
      | [] -> ""
      | nt::rest ->
        "Theorem " ++ wpdTypeName(nameToNonterminalType(nt)) ++
-          "__ntr_" ++
+          name_sep ++ "ntr_" ++
           nameToNonterminal(nt) ++ " : forall Tree NodeTree,\n   " ++
        wpdTypeName(nameToNonterminalType(nt)) ++
           " Tree NodeTree ->\n   " ++
@@ -734,7 +734,8 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
   return
      --attrs
      foldr(\ p::(String, String, AbellaType, AbellaType) rest::String ->
-             "Theorem $wpd__to__" ++ p.2 ++ "__" ++ p.4.unparse ++
+             "Theorem $wpd" ++ name_sep ++ "to" ++ name_sep ++ p.2 ++
+                name_sep ++ p.4.unparse ++
                 " : forall Tree NodeTree,\n   " ++
              wpdTypeName(p.4) ++ " Tree NodeTree ->\n   " ++
              p.1 ++ " Tree Tree NodeTree.\n" ++
@@ -743,8 +744,9 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
            "", attrInfos) ++
      --locals
      foldr(\ p::(String, String, String, AbellaType, AbellaType) rest::String ->
-             "Theorem $wpd__to__" ++ p.2 ++ "_local_" ++ p.3 ++
-                "__" ++ p.5.unparse ++ " : forall Tree Tree' NodeTree," ++
+             "Theorem $wpd" ++ name_sep ++ "to" ++ name_sep ++ p.2 ++
+                "_local_" ++ p.3 ++
+                name_sep ++ p.5.unparse ++ " : forall Tree Tree' NodeTree," ++
                 "\n   " ++
              typeToStructureEqName(p.5) ++ " Tree Tree' ->\n   " ++
              wpdTypeName(p.5) ++ " Tree NodeTree ->\n   " ++
@@ -763,16 +765,16 @@ String ::= nonterminals::[String] components::[String]
      | [] -> ""
      | nt::rest ->
        let ntTy::AbellaType = nameToNonterminalType(nt) in
-         "Theorem " ++ typeToStructureEqName(ntTy) ++ "__equal" ++
+         "Theorem " ++ typeToStructureEqName(ntTy) ++ name_sep ++ "equal" ++
             " : forall T1 T2,\n   " ++
          typeToStructureEqName(ntTy) ++ " T1 T2 -> T1 = T2.\n" ++
          "skip.\n" ++
-         "Theorem " ++ typeToStructureEqName(ntTy) ++ "__symm" ++
+         "Theorem " ++ typeToStructureEqName(ntTy) ++ name_sep ++ "symm" ++
             " : forall T1 T2,\n   " ++
          typeToStructureEqName(ntTy) ++ " T1 T2 ->\n   " ++
          typeToStructureEqName(ntTy) ++ " T2 T1.\n" ++
          "skip.\n" ++
-         "Theorem " ++ typeToStructureEqName(ntTy) ++ "__wpd" ++
+         "Theorem " ++ typeToStructureEqName(ntTy) ++ name_sep ++ "wpd" ++
             " : forall T NTr,\n   " ++
          wpdTypeName(ntTy) ++ " T NTr -> " ++
             typeToStructureEqName(ntTy) ++ " T T.\n" ++
@@ -780,7 +782,7 @@ String ::= nonterminals::[String] components::[String]
          foldr(\ c::String rest::String ->
                  "Theorem " ++ structureEqExpansionTheorem(ntTy, c) ++
                     " : forall T1 T2,\n   " ++
-                 typeToStructureEqName(ntTy) ++ "__" ++ c ++
+                 typeToStructureEqName(ntTy) ++ name_sep ++ c ++
                     " T1 T2 ->\n   " ++
                  typeToStructureEqName(ntTy) ++ " T1 T2.\n" ++
                  "skip.\n" ++
@@ -806,12 +808,12 @@ String ::= prods::[(String, AbellaType)] component::String
                    makeUniqueNameFromTy(ty, "T"::rest)::rest,
                  [], ty.argumentTypes)
        in
-         "Theorem $structure_eq__" ++
+         "Theorem $structure_eq" ++ name_sep ++
             nameToProd(prod) ++ " : forall T " ++
             implode(" ", children) ++ ",\n   " ++
          typeToStructureEqName(nt) ++ " T (" ++ nameToProd(prod) ++
             " " ++ implode(" ", children) ++ ") -> \n   " ++
-         typeToStructureEqName(nt) ++ "__" ++ component ++
+         typeToStructureEqName(nt) ++ name_sep ++ component ++
             " T (" ++ nameToProd(prod) ++ " " ++
             implode(" ", children) ++ ").\n" ++
          "skip.\n" ++
@@ -868,7 +870,7 @@ String ::= attrs::[(String, AbellaType, [DefClause])]
            foldr(consAbellaDefs(_, _), singleAbellaDefs(last(here.3)),
                  take(length(here.3) - 1, here.3));
   local equationRelation::String =
-        equationName(here.1, here.2) ++ "__" ++ component;
+        equationName(here.1, here.2) ++ name_sep ++ component;
   local relType::AbellaType =
         arrowAbellaType(here.2,
         arrowAbellaType(here.2,
@@ -1275,7 +1277,7 @@ function produceMissingEquationInfo
                        ( p.1, p.2, prod.1,
                          buildApplication(
                             nameTerm(equationName(p.1, p.2) ++
-                                     "__" ++ componentName),
+                                     name_sep ++ componentName),
                             [nameTerm("TreeName"), treeTm,
                              nameTerm("NodeTree")]),
                          [[trueMetaterm()]] )
@@ -1358,6 +1360,8 @@ String ::= new_nonterminals::[String] new_attrs::[String]
            flatMap(\ p::(String, AbellaType, [DefClause]) -> p.3,
                    funSplit.2)
        in --Define functions which cannot have results
+          --Safe to define these non-mutually-recursively because they
+          --   can't call any other functions
          foldr(\ p::(String, AbellaType) rest::String ->
                  let args::String =
                      foldr(\ t::AbellaType rest::(Integer, String) ->

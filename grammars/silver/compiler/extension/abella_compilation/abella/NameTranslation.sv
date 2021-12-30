@@ -1,6 +1,10 @@
 grammar silver:compiler:extension:abella_compilation:abella;
 
 
+--To make a consistent separator for names, I'm going to set it here
+global name_sep::String = "_$$$$$_";
+
+
 global attrValTypeName::String = "$attrVal";
 global attributeExistsName::String = "$attr_ex";
 global attributeNotExistsName::String = "$attr_no";
@@ -26,7 +30,7 @@ global stringAbellaType::AbellaType =
        functorAbellaType(nameAbellaType("list"),
                          nameAbellaType("$char"));
 
-global appendName::String = "$fun__silver$*$core$*$append";
+global appendName::String = "$fun" ++ name_sep ++ "silver$*$core$*$append";
 
 global pairTypeName::String = "$pair";
 global pairType::AbellaType = nameAbellaType(pairTypeName);
@@ -119,12 +123,12 @@ String ::= str::String
 function accessUniqueThm
 String ::= attr::String ty::String
 {
-  return "$access_$_" ++ attr ++ "_$_" ++ ty ++ "__unique";
+  return "$access_$_" ++ attr ++ "_$_" ++ ty ++ name_sep ++ "unique";
 }
 function accessIsThm
 String ::= attr::String ty::String
 {
-  return "$access_$_" ++ attr ++ "_$_" ++ ty ++ "__is";
+  return "$access_$_" ++ attr ++ "_$_" ++ ty ++ name_sep ++ "is";
 }
 
 
@@ -139,14 +143,16 @@ String ::= treeTy::AbellaType attrName::String prodName::String
 function wpdNt_to_LocalAttrEq
 String ::= prod::String attr::String ty::AbellaType
 {
-  --$wpd__to__<prod>_local_<attr>__<ty>
-  return "$wpd__to__" ++ prod ++ "_local_" ++ attr ++ "__" ++ ty.unparse;
+  --$wpd to <prod>_local_<attr> <ty>
+  return "$wpd" ++ name_sep ++ "to" ++ name_sep ++ prod ++
+         "_local_" ++ attr ++ name_sep ++ ty.unparse;
 }
 function localAccessUniqueThm
 String ::= prod::String attr::String ty::String
 {
-  --$local_access_$_<$prod_prod>_$_<attr>_$_<ty>__unique
-  return "$local_access_$_$prod_" ++ prod ++ "_$_" ++ attr ++ "_$_" ++ ty ++ "__unique";
+  --$local_access_$_<$prod_prod>_$_<attr>_$_<ty> unique
+  return "$local_access_$_$prod_" ++ prod ++ "_$_" ++ attr ++ "_$_" ++
+         ty ++ name_sep ++ "unique";
 }
 
 
@@ -159,13 +165,13 @@ String ::= treeTy::AbellaType
 function wpdPrimaryComponent
 String ::= prod::String builtTy::AbellaType
 {
-  return "$wpd_" ++ builtTy.unparse ++ "__" ++ prod;
+  return "$wpd_" ++ builtTy.unparse ++ name_sep ++ prod;
 }
 
 function wpdNodeTreeForm
 String ::= ty::AbellaType
 {
-  return "$wpd_" ++ ty.unparse ++ "__ntr_" ++ ty.unparse;
+  return "$wpd_" ++ ty.unparse ++ name_sep ++ "ntr_" ++ ty.unparse;
 }
 
 
@@ -181,7 +187,7 @@ String ::= treeTy::AbellaType
 function equationName
 String ::= attr::String ty::AbellaType
 {
-  return "$" ++ attr ++ "__" ++ ty.unparse;
+  return "$" ++ attr ++ name_sep ++ ty.unparse;
 }
 function localEquationName
 String ::= attr::String prod::String
@@ -191,17 +197,19 @@ String ::= attr::String prod::String
 function wpdNode_to_AttrEq
 String ::= attr::String ty::AbellaType
 {
-  return "$wpd_node__to__" ++ attr ++ "__" ++ ty.unparse;
+  return "$wpd_node" ++ name_sep ++ "to" ++ name_sep ++ attr ++
+         name_sep ++ ty.unparse;
 }
 function wpdNt_to_AttrEq
 String ::= attr::String ty::AbellaType
 {
-  return "$wpd__to__" ++ attr ++ "__" ++ ty.unparse;
+  return "$wpd" ++ name_sep ++ "to" ++ name_sep ++ attr ++ name_sep ++
+         ty.unparse;
 }
 function primaryComponent
 String ::= attr::String ty::AbellaType prod::String
 {
-  return "$" ++ attr ++ "__" ++ ty.unparse ++ "__" ++ prod;
+  return "$" ++ attr ++ name_sep ++ ty.unparse ++ name_sep ++ prod;
 }
 
 
@@ -209,32 +217,33 @@ String ::= attr::String ty::AbellaType prod::String
 function typeToStructureEqName
 String ::= ty::AbellaType
 {
-  return "$structure_eq__" ++ ty.unparse;
+  return "$structure_eq" ++ name_sep ++ ty.unparse;
 }
 function structureEqWPD
 String ::= ty::AbellaType
 {
-  return "$structure_eq__" ++ ty.unparse ++ "__wpd";
+  return "$structure_eq" ++ name_sep ++ ty.unparse ++ name_sep ++ "wpd";
 }
 function structureEqEqualTheorem
 String ::= ty::AbellaType
 {
-  return "$structure_eq__" ++ ty.unparse ++ "__equal";
+  return "$structure_eq" ++ name_sep ++ ty.unparse ++ name_sep ++ "equal";
 }
 function typeToStructureEq_Symm
 String ::= ty::AbellaType
 {
-  return "$structure_eq__" ++ ty.unparse ++ "__symm";
+  return "$structure_eq" ++ name_sep ++ ty.unparse ++ name_sep ++ "symm";
 }
 function structureEqProdComponent
 String ::= prod::String
 {
-  return "$structure_eq__" ++ prod;
+  return "$structure_eq" ++ name_sep ++ prod;
 }
 function structureEqExpansionTheorem
 String ::= ty::AbellaType component::String
 {
-  return "$structure_eq__" ++ ty.unparse ++ "__" ++ component ++ "__expand";
+  return "$structure_eq" ++ name_sep ++ ty.unparse ++ name_sep ++
+         component ++ name_sep ++ "expand";
 }
 
 
@@ -259,7 +268,7 @@ Boolean ::= tm::Term
 function nameToFun
 String ::= s::String
 {
-  return "$fun__" ++ s;
+  return "$fun" ++ name_sep ++ s;
 }
 
 
