@@ -1,6 +1,9 @@
 
 import silver:compiler:extension:testing;
 
+-- TODO: Resurrect this at some point
+
+{-
 terminal TestFor_T 'testFor';
 
 
@@ -103,6 +106,6 @@ AGDcl ::= d::ValueDclInfo  testfunname::String  l::Location  testSuite::Name
       ]
       );
 }
-
+-}
 
 

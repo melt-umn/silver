@@ -10,6 +10,7 @@ terminal Named_kwd       'named'       lexer classes {KEYWORD};
 terminal Left_kwd        'left'        lexer classes {KEYWORD};
 terminal Association_kwd 'association' lexer classes {KEYWORD};
 terminal Right_kwd       'right'       lexer classes {KEYWORD};
+terminal RepeatProb_kwd  'repeatProb'  lexer classes {KEYWORD};  -- For use by the treegen extension
 
 -- We actually need to reserved this due to its appearance in PRODUCTION modifiers.
 terminal Precedence_kwd  'precedence'  lexer classes {KEYWORD,RESERVED};
@@ -22,7 +23,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs := [termDef(top.grammarName, id.location, fName, r.terminalRegExprSpec, r.easyName)];
+  top.defs := [termDef(top.grammarName, id.location, fName, r.terminalRegExprSpec, r.easyName, tm.genRepeatProb)];
 
   top.errors <-
     if length(getTypeDclAll(fName, top.env)) > 1
@@ -112,12 +113,19 @@ top::TerminalKeywordModifier ::=
 }
 
 
-nonterminal TerminalModifiers with config, location, unparse, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
-closed nonterminal TerminalModifier with config, location, unparse, terminalModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+nonterminal TerminalModifiers with config, location, unparse, terminalModifiers, genRepeatProb, errors, env, grammarName, compiledGrammars, flowEnv;
+closed nonterminal TerminalModifier with config, location, unparse, terminalModifiers, genRepeatProb, errors, env, grammarName, compiledGrammars, flowEnv;
 
 monoid attribute terminalModifiers :: [SyntaxTerminalModifier];
+monoid attribute genRepeatProb :: Maybe<Float> with nothing(), orElse;
 
-propagate terminalModifiers, errors on TerminalModifiers;
+propagate terminalModifiers, genRepeatProb, errors on TerminalModifiers;
+
+aspect default production
+top::TerminalModifier ::=
+{
+  top.genRepeatProb := nothing();
+}
 
 abstract production terminalModifiersNone
 top::TerminalModifiers ::=
@@ -159,6 +167,21 @@ top::TerminalModifier ::= 'precedence' '=' i::Int_t
 
   top.terminalModifiers := [termPrecedence(toInteger(i.lexeme))];
   top.errors := [];
+}
+
+-- For use by the treegen extension.
+-- Has to be in the "host language" since it goes in the regular env and not the CST AST.
+concrete production terminalModifierRepeatProb
+top::TerminalModifier ::= 'repeatProb' '=' f::Float_t
+{
+  top.unparse = "repeatProb = " ++ f.lexeme;
+
+  top.terminalModifiers := [];
+  top.genRepeatProb := just(toFloat(f.lexeme));
+  top.errors :=
+    if toFloat(f.lexeme) >= 1.0
+    then [err(f.location, "Repeat probability must be < 1.0")]
+    else [];
 }
 
 concrete production terminalModifierNamed
