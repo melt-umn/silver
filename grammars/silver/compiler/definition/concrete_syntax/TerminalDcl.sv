@@ -10,7 +10,7 @@ terminal Named_kwd       'named'       lexer classes {KEYWORD};
 terminal Left_kwd        'left'        lexer classes {KEYWORD};
 terminal Association_kwd 'association' lexer classes {KEYWORD};
 terminal Right_kwd       'right'       lexer classes {KEYWORD};
-terminal RepeatProb_kwd  'repeatProb'  lexer classes {KEYWORD};
+terminal RepeatProb_kwd  'repeatProb'  lexer classes {KEYWORD};  -- For use by the treegen extension
 
 -- We actually need to reserved this due to its appearance in PRODUCTION modifiers.
 terminal Precedence_kwd  'precedence'  lexer classes {KEYWORD,RESERVED};
@@ -169,6 +169,8 @@ top::TerminalModifier ::= 'precedence' '=' i::Int_t
   top.errors := [];
 }
 
+-- For use by the treegen extension.
+-- Has to be in the "host language" since it goes in the regular env and not the CST AST.
 concrete production terminalModifierRepeatProb
 top::TerminalModifier ::= 'repeatProb' '=' f::Float_t
 {

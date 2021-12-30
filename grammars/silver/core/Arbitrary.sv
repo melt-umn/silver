@@ -1,5 +1,8 @@
 grammar silver:core;
 
+-- TODO: Consider adding a Shrink type class for use in conjuction with Arbitrary in randomized testing.
+-- See https://hackage.haskell.org/package/QuickCheck-2.14.2/docs/Test-QuickCheck.html#v:shrink
+
 @{--
   - Represents primitive (terminal) types for which arbitrary random values can be generated.
   -}
