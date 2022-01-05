@@ -30,6 +30,6 @@ if [ ! -f "$SILVER" ]; then
 fi
 
 # Set flags if not overriden in environment
-SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx5000M -Xss20M"}
+SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx4000M -Xss20M"}
 
 java $SVJVM_FLAGS -jar "$SILVER" "$@" && ant
