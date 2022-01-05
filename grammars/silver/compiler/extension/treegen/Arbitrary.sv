@@ -49,7 +49,7 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
 
   forwards to Silver_AGDcl {
     function $Name{n}
-    silver:core:RandomGen<$TypeExpr{t}> ::= depth::Integer
+    silver:core:RandomGen<$TypeExpr{t}> ::= minDepth::Integer maxDepth::Integer
     {
       $ProductionStmt{
         foldr(
@@ -57,7 +57,7 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
           errorProductionStmt([], location=top.location), -- TODO: No nullProductionStmt?
           map(genNtLocalDecl(top.location, forward.env, specEnv, _), map((.fullName), specNTs)) ++
           map(genTermLocalDecl(top.location, forward.env, specEnv, _), map((.fullName), specTerms)))}
-      return $Expr{genForType(top.location, forward.env, specEnv, Silver_Expr { depth }, t.typerep)};
+      return $Expr{genForType(top.location, forward.env, specEnv, Silver_Expr { 0 }, t.typerep)};
     }
   };
 
@@ -162,6 +162,11 @@ Boolean ::= l::ValueDclInfo  r::ValueDclInfo
 {
   return nonterminalArity(l.typeScheme.typerep) == nonterminalArity(r.typeScheme.typerep);
 }
+function prodDclInfoNumChildNonzero
+Boolean ::= v::ValueDclInfo
+{
+  return nonterminalArity(v.typeScheme.typerep) > 0;
+}
 
 -- splits where operator becomes false in list
 function takeWhile2
@@ -184,6 +189,7 @@ ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  nt
         getKnownProds(nt, specEnv)));
   
   local num_lowest_arity :: Integer = length(takeWhile2(prodDclInfoNumChildEq, prods));
+  local num_nonzero_arity :: Integer = length(filter(prodDclInfoNumChildNonzero, prods));
   
   local result::Expr =
     if null(prods)
@@ -191,8 +197,15 @@ ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  nt
     then Silver_Expr { error($Expr{stringConst(terminal(String_t, "\"no generatable productions for nonterminal " ++ nt ++ "\""), location=loc)}) }
     else Silver_Expr {
       silver:core:bind(
-        if depth <= 0
+        if depth >= maxDepth
+        -- Exclude all but the lowest-arity productions
         then randomRange(0, $Expr{intConst(terminal(Int_t, toString(num_lowest_arity - 1)), location=loc)})
+        else if depth < minDepth
+        -- Exclude all arity-0 productions
+        then randomRange(
+          $Expr{intConst(terminal(Int_t, toString(if num_nonzero_arity == length(prods) then 0 else num_nonzero_arity)), location=loc)},
+          $Expr{intConst(terminal(Int_t, toString(length(prods) - 1)), location=loc)})
+        -- All productions
         else randomRange(0, $Expr{intConst(terminal(Int_t, toString(length(prods) - 1)), location=loc)}),
         \ i::Integer -> $Expr{generateExprChain(loc, env, specEnv, nt, 0, prods)})
     };
@@ -238,7 +251,7 @@ Expr ::= loc::Location env::Decorated Env  specEnv::Decorated Env  nt::String in
     zipWith(pair, map(\ i::Integer -> "a" ++ toString(i), range(0, length(prodType.inputTypes))), prodType.inputTypes) ++
     prodType.namedTypes;
   local argGenExprs::[Expr] =
-    map(genForType(loc, env, specEnv, Silver_Expr { depth - 1 }, _), map(snd, args));
+    map(genForType(loc, env, specEnv, Silver_Expr { depth + 1 }, _), map(snd, args));
   local genRes::Expr =
     mkFullFunctionInvocation(
       loc, Silver_Expr { $name{prod.fullName} },
