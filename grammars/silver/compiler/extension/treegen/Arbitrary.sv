@@ -198,14 +198,14 @@ ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  nt
     else Silver_Expr {
       silver:core:bind(
         if depth >= maxDepth
-	-- Exclude all but the lowest-arity productions
+        -- Exclude all but the lowest-arity productions
         then randomRange(0, $Expr{intConst(terminal(Int_t, toString(num_lowest_arity - 1)), location=loc)})
         else if depth < minDepth
-	-- Exclude all arity-0 productions
-	then randomRange(
-	  $Expr{intConst(terminal(Int_t, toString(if num_nonzero_arity == length(prods) then 0 else num_nonzero_arity)), location=loc)},
-	  $Expr{intConst(terminal(Int_t, toString(length(prods) - 1)), location=loc)})
-	-- All productions
+        -- Exclude all arity-0 productions
+        then randomRange(
+          $Expr{intConst(terminal(Int_t, toString(if num_nonzero_arity == length(prods) then 0 else num_nonzero_arity)), location=loc)},
+          $Expr{intConst(terminal(Int_t, toString(length(prods) - 1)), location=loc)})
+        -- All productions
         else randomRange(0, $Expr{intConst(terminal(Int_t, toString(length(prods) - 1)), location=loc)}),
         \ i::Integer -> $Expr{generateExprChain(loc, env, specEnv, nt, 0, prods)})
     };
