@@ -119,10 +119,9 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
   top.errors <-
       case completenessCounterExample of
       | just(lst) when complete ->
-        [mwdaWrn(top.location,
+        [mwdaWrn(top.config, top.location,
                  "This pattern-matching is not exhaustive.  Here is an example of a " ++
-                   "case that is not matched:  " ++ implode(", ", map((.unparse), lst)),
-                 top.config.runMwda)]
+                   "case that is not matched:  " ++ implode(", ", map((.unparse), lst)))]
       | _ -> []
       end;
 

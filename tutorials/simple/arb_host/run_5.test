@@ -1,0 +1,1 @@
+run: java -jar simple.arb.jar 5

@@ -65,20 +65,7 @@ Boolean ::= ty::Type env::Decorated Env
 function dropDecorated
 Type ::= ty::Type
 {
-  return case ty of
-         | decoratedType(t, _) -> t
-         | listType(t) -> listType(t)
-         | t -> t
-         end;
-}
-
-function isDecorated
-Boolean ::= ty::Type
-{
-  return case ty of
-         | decoratedType(t, _) -> true
-         | t -> false
-         end;
+  return if ty.isDecorated then ty.decoratedType else ty;
 }
 
 
