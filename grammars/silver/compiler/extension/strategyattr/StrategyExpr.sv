@@ -747,7 +747,10 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
       assignExpr(id, '::', ty, '=', errorExpr([], location=top.location), location=top.location),
       caseExpr(
         [hackExprType(ty.typerep, location=top.location)],
-        ml.matchRuleList, false,
+        decorate ml with {
+	  matchRulePatternSize = 1;
+	  frame = error("not needed");  -- TODO: .matchRuleList shouldn't need this?
+	}.matchRuleList, false,
         errorExpr([], location=top.location),
         ty.typerep,
         location=top.location),
@@ -775,9 +778,6 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
     then [wrn(ty.location, "Only rules on nonterminals can have an effect")]
     else [];
   top.errors <- ty.errorsKindStar;
-  
-  ml.matchRulePatternSize = 1;
-  ml.frame = error("not needed");  -- TODO: ml.matchRuleList shouldn't need this?
   
   local res::Expr =
     caseExpr(
