@@ -2,6 +2,9 @@ grammar silver:compiler:extension:strategyattr;
 
 import silver:compiler:metatranslation;
 
+import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph;
+import silver:compiler:driver:util;
+
 annotation genName::String; -- Used to generate the names of lifted strategy attributes
 
 autocopy attribute recVarNameEnv::[Pair<String String>]; -- name, (isTotal, genName)
@@ -81,7 +84,17 @@ partial strategy attribute prodStep =
 attribute prodStep occurs on MRuleList;
 
 strategy attribute genericSimplify = innermost(genericStep);
-strategy attribute ntSimplify = innermost(genericStep <+ ntStep);
+strategy attribute ntSimplify =
+  (sequence(ntSimplify, ntSimplify) <+
+   choice(ntSimplify, ntSimplify) <+
+   allTraversal(genericSimplify) <+
+   someTraversal(genericSimplify) <+
+   oneTraversal(genericSimplify) <+
+   prodTraversal(id, genericSimplify) <+
+   recComb(id, ntSimplify) <+
+   inlined(id, ntSimplify) <+
+   id) <*
+  try((genericStep <+ ntStep) <* ntSimplify);
 strategy attribute optimize =
   (sequence(optimize, ntSimplify) <+
    choice(optimize, optimize) <+
@@ -95,27 +108,30 @@ strategy attribute optimize =
   try((genericStep <+ ntStep <+ prodStep) <* optimize);
 
 nonterminal StrategyExpr with
-  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
+  config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, -- Normal expression stuff
   genName, outerAttr, recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, liftedStrategies, attrRefName, isId, isFail, isTotal, isTotalNoEnv, freeRecVars, partialRefs, totalRefs, -- Frame-independent attrs
   partialTranslation, totalTranslation, matchesFrame, -- Frame-dependent attrs
   inlinedStrategies, genericStep, ntStep, prodStep, genericSimplify, ntSimplify, optimize; -- Optimization stuff
 
 nonterminal StrategyExprs with
-  config, grammarName, env, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
+  config, grammarName, env, unparse, errors, compiledGrammars, flowEnv, -- Normal expression stuff
   recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, givenInputElements, liftedStrategies, attrRefNames, containsFail, allId, freeRecVars, partialRefs, totalRefs, -- Frame-independent attrs
-  inlinedStrategies, genericSimplify, ntSimplify; -- Optimization stuff
+  inlinedStrategies, genericSimplify; -- Optimization stuff
 
 flowtype StrategyExpr =
   decorate {env, grammarName, config, recVarNameEnv, recVarTotalEnv, outerAttr}, -- NOT frame
   forward {decorate},
   -- Normal expression stuff
-  unparse {}, errors {decorate, frame, compiledGrammars, flowEnv}, flowDefs {decorate, frame, compiledGrammars, flowEnv},
+  unparse {}, errors {decorate, compiledGrammars, flowEnv},
   -- Frame-independent attrs
   liftedStrategies {recVarNameEnv, recVarTotalNoEnvEnv, outerAttr}, isTotalNoEnv {recVarNameEnv, recVarTotalNoEnvEnv, outerAttr},
   attrRefName {recVarNameEnv}, isId {}, isFail {},
   isTotal {decorate}, freeRecVars {decorate}, partialRefs {decorate}, totalRefs {decorate},
+  genericStep {decorate, inlinedStrategies}, genericSimplify {decorate, inlinedStrategies},
   -- Frame-dependent attrs
-  partialTranslation {decorate, flowEnv, frame}, totalTranslation {decorate, flowEnv, frame}, matchesFrame {decorate, frame};
+  partialTranslation {decorate, flowEnv, frame}, totalTranslation {decorate, flowEnv, frame}, matchesFrame {decorate, frame},
+  ntStep {decorate, inlinedStrategies, frame}, prodStep {decorate, inlinedStrategies, frame},
+  ntSimplify {decorate, inlinedStrategies, frame}, optimize {decorate, inlinedStrategies, frame};
 
 flowtype StrategyExprs =
   decorate {env, grammarName, config, recVarNameEnv, recVarTotalEnv}, -- NOT frame
@@ -126,12 +142,11 @@ flowtype StrategyExprs =
   attrRefNames {env, recVarNameEnv, givenInputElements},
   containsFail {}, allId {}, freeRecVars {decorate}, partialRefs {decorate}, totalRefs {decorate};
 
-propagate errors on StrategyExpr, StrategyExprs excluding partialRef, totalRef;
-propagate flowDefs on StrategyExpr, StrategyExprs;
+propagate errors on StrategyExpr, StrategyExprs excluding partialRef, totalRef, rewriteRule;
 propagate containsFail, allId on StrategyExprs;
 propagate freeRecVars on StrategyExpr, StrategyExprs excluding recComb;
 propagate partialRefs, totalRefs on StrategyExpr, StrategyExprs;
-propagate genericSimplify, ntSimplify on StrategyExprs;
+propagate genericSimplify on StrategyExprs;
 propagate prodStep on MRuleList;
 propagate genericStep, ntStep, prodStep, genericSimplify, ntSimplify, optimize on StrategyExpr;
 
@@ -300,6 +315,7 @@ top::StrategyExpr ::= s::StrategyExpr
   top.isTotalNoEnv = s.isTotalNoEnv;
   
   s.outerAttr = nothing();
+  s.frame = error("No frame for traversal strategies");  -- TODO: This equation shouldn't exist, but frame is an autocopy
   
   local sBaseName::String = last(explode(":", sName));
   -- pair(child name, attr occurs on child)
@@ -387,6 +403,7 @@ top::StrategyExpr ::= s::StrategyExpr
     else [pair(sName, s)];
   
   s.outerAttr = nothing();
+  s.frame = error("No frame for traversal strategies");  -- TODO: This equation shouldn't exist, but frame is an autocopy
   
   -- pair(child name, attr occurs on child)
   local childAccesses::[Pair<String Boolean>] =
@@ -464,6 +481,7 @@ top::StrategyExpr ::= s::StrategyExpr
     else [pair(sName, s)];
   
   s.outerAttr = nothing();
+  s.frame = error("No frame for traversal strategies");  -- TODO: This equation shouldn't exist, but frame is an autocopy
   
   local sBaseName::String = last(explode(":", sName));
   -- pair(child name, attr occurs on child)
@@ -739,22 +757,27 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   checkExpr.downSubst = emptySubst();
   checkExpr.finalSubst = checkExpr.upSubst;
   checkExpr.grammarName = top.grammarName;
-  checkExpr.frame = top.frame;
   checkExpr.config = top.config;
   checkExpr.compiledGrammars = top.compiledGrammars;
   checkExpr.originRules = [];
   checkExpr.isRoot = false;
+
+  -- Frame doesn't really matter, since we will re-check any expressions occuring in ml when propagated.
+  -- Need all this to construct a bogus frame...
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+  local myFlowGraph :: ProductionGraph = constructAnonymousGraph(checkExpr.flowDefs, top.env, myProds, myFlow);
+  checkExpr.frame = bogusContext(myFlowGraph, sourceGrammar=top.grammarName);
   
-  top.errors <- checkExpr.errors;
+  top.errors := checkExpr.errors;
   top.errors <-
     if !isDecorable(ty.typerep, top.env)
     then [wrn(ty.location, "Only rules on nonterminals can have an effect")]
     else [];
   top.errors <- ty.errorsKindStar;
   
-  top.flowDefs <- checkExpr.flowDefs;
-  
   ml.matchRulePatternSize = 1;
+  ml.frame = error("not needed");  -- TODO: ml.matchRuleList shouldn't need this?
   
   local res::Expr =
     caseExpr(
