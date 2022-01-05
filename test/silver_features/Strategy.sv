@@ -162,6 +162,14 @@ equalityTest(
   just(seqSStmt(assignSStmt("a", addSExpr(constSExpr(2), constSExpr(1))), assignSStmt("b", constSExpr(2)))),
   Maybe<SStmt>, silver_tests);
 
+partial strategy attribute onlySStmt = assignSStmt(id, onlySExpr)
+  occurs on SStmt;
+propagate onlySStmt on SStmt;
+partial strategy attribute onlySExpr = rule on SExpr of constSExpr(i) -> constSExpr(i + 1) end
+  occurs on SExpr;
+propagate onlySExpr on SExpr;
+equalityTest(assignSStmt("a", constSExpr(42)).onlySStmt, just(assignSStmt("a", constSExpr(43))), Maybe<SStmt>, silver_tests);
+
 -- Negative tests
 inherited attribute badInh<a>::a;
 wrongCode "cannot be used as a total strategy" {
