@@ -80,14 +80,15 @@ partial strategy attribute prodStep =
       end));
 attribute prodStep occurs on MRuleList;
 
-strategy attribute simplify = innermost(genericStep <+ ntStep);
+strategy attribute genericSimplify = innermost(genericStep);
+strategy attribute ntSimplify = innermost(genericStep <+ ntStep);
 strategy attribute optimize =
-  (sequence(optimize, simplify) <+
+  (sequence(optimize, ntSimplify) <+
    choice(optimize, optimize) <+
-   allTraversal(simplify) <+
-   someTraversal(simplify) <+
-   oneTraversal(simplify) <+
-   prodTraversal(id, simplify) <+
+   allTraversal(genericSimplify) <+
+   someTraversal(genericSimplify) <+
+   oneTraversal(genericSimplify) <+
+   prodTraversal(id, genericSimplify) <+
    recComb(id, optimize) <+
    inlined(id, optimize) <+
    id) <*
@@ -97,12 +98,12 @@ nonterminal StrategyExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
   genName, outerAttr, recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, liftedStrategies, attrRefName, isId, isFail, isTotal, isTotalNoEnv, freeRecVars, partialRefs, totalRefs, -- Frame-independent attrs
   partialTranslation, totalTranslation, matchesFrame, -- Frame-dependent attrs
-  inlinedStrategies, genericStep, ntStep, prodStep, simplify, optimize; -- Optimization stuff
+  inlinedStrategies, genericStep, ntStep, prodStep, genericSimplify, ntSimplify, optimize; -- Optimization stuff
 
 nonterminal StrategyExprs with
   config, grammarName, env, unparse, errors, frame, compiledGrammars, flowEnv, flowDefs, -- Normal expression stuff
   recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, givenInputElements, liftedStrategies, attrRefNames, containsFail, allId, freeRecVars, partialRefs, totalRefs, -- Frame-independent attrs
-  inlinedStrategies, simplify; -- Optimization stuff
+  inlinedStrategies, genericSimplify, ntSimplify; -- Optimization stuff
 
 flowtype StrategyExpr =
   decorate {env, grammarName, config, recVarNameEnv, recVarTotalEnv, outerAttr}, -- NOT frame
@@ -130,9 +131,9 @@ propagate flowDefs on StrategyExpr, StrategyExprs;
 propagate containsFail, allId on StrategyExprs;
 propagate freeRecVars on StrategyExpr, StrategyExprs excluding recComb;
 propagate partialRefs, totalRefs on StrategyExpr, StrategyExprs;
-propagate simplify on StrategyExprs;
+propagate genericSimplify, ntSimplify on StrategyExprs;
 propagate prodStep on MRuleList;
-propagate genericStep, ntStep, prodStep, simplify, optimize on StrategyExpr;
+propagate genericStep, ntStep, prodStep, genericSimplify, ntSimplify, optimize on StrategyExpr;
 
 -- Convert an expression of type a to Maybe<a>
 function asPartial
