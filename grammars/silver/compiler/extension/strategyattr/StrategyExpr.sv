@@ -747,9 +747,13 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
       assignExpr(id, '::', ty, '=', errorExpr([], location=top.location), location=top.location),
       caseExpr(
         [hackExprType(ty.typerep, location=top.location)],
+	-- TODO: matchRuleList on MRuleList depends on frame for some reason.
+	-- Re-decorate ml here as a workaround to avoid checkExpr depending on top.frame
         decorate ml with {
+	  env = top.env;
+	  config = top.config;
 	  matchRulePatternSize = 1;
-	  frame = error("not needed");  -- TODO: .matchRuleList shouldn't need this?
+	  frame = error("not needed");
 	}.matchRuleList, false,
         errorExpr([], location=top.location),
         ty.typerep,
