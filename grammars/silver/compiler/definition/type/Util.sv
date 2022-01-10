@@ -20,6 +20,10 @@ monoid attribute freeFlexibleVars :: [TyVar] with [], setUnionTyVars;
 -- Also used by 'new()'
 synthesized attribute isDecorated :: Boolean;
 
+-- Determines whether a type is a partially decorated nonterminal type
+-- Used in determining whether a type may be supplied with inherited attributes.
+synthesized attribute isPartiallyDecorated :: Boolean;
+
 -- Determines whether a type is an (undecorated) nonterminal type
 -- Used in determining whether a type may be supplied with inherited attributes.
 synthesized attribute isNonterminal :: Boolean;
@@ -36,8 +40,9 @@ synthesized attribute asNtOrDecType :: Type;
 -- Used instead of unify() when we want to just know its decorated or undecorated
 synthesized attribute unifyInstanceNonterminal :: Substitution;
 synthesized attribute unifyInstanceDecorated :: Substitution;
+synthesized attribute unifyInstanceDecorable :: Substitution;  -- NT or partially decorated, specializes ntOrDec to nt
 
-attribute arity, isError, isDecorated, isNonterminal, isTerminal, asNtOrDecType occurs on PolyType;
+attribute arity, isError, isDecorated, isPartiallyDecorated, isNonterminal, isTerminal, asNtOrDecType occurs on PolyType;
 
 aspect production monoType
 top::PolyType ::= ty::Type
@@ -45,9 +50,10 @@ top::PolyType ::= ty::Type
   top.arity = ty.arity;
   top.isError = ty.isError;
   top.isDecorated = ty.isDecorated;
+  top.isPartiallyDecorated = ty.isPartiallyDecorated;
   top.isNonterminal = ty.isNonterminal;
   top.isTerminal = ty.isTerminal;
-  top.asNtOrDecType = ntOrDecType(ty, freshInhSet(), freshType());
+  top.asNtOrDecType = ntOrDecType(if ty.isDecorated then ty.decoratedType else ty, freshInhSet(), freshType());
 }
 
 aspect production polyType
@@ -56,6 +62,7 @@ top::PolyType ::= bound::[TyVar] ty::Type
   top.arity = ty.arity;
   top.isError = ty.isError;
   top.isDecorated = ty.isDecorated;
+  top.isPartiallyDecorated = ty.isPartiallyDecorated;
   top.isNonterminal = ty.isNonterminal;
   top.isTerminal = ty.isTerminal;
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
@@ -67,12 +74,13 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
   top.arity = ty.arity;
   top.isError = ty.isError;
   top.isDecorated = ty.isDecorated;
+  top.isPartiallyDecorated = ty.isPartiallyDecorated;
   top.isNonterminal = ty.isNonterminal;
   top.isTerminal = ty.isTerminal;
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
 }
 
-attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isNonterminal, isTerminal, isApplicable, decoratedType, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated occurs on Type;
+attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isPartiallyDecorated, isNonterminal, isTerminal, isApplicable, decoratedType, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated, unifyInstanceDecorable occurs on Type;
 
 propagate freeSkolemVars, freeFlexibleVars on Type;
 
@@ -88,6 +96,7 @@ top::Type ::=
   top.inhSetMembers = [];
   
   top.isDecorated = false;
+  top.isPartiallyDecorated = false;
   top.isNonterminal = false;
   top.isTerminal = false;
   top.isError = false;
@@ -97,6 +106,7 @@ top::Type ::=
   
   top.unifyInstanceNonterminal = errorSubst("not nt");
   top.unifyInstanceDecorated = errorSubst("not dec");
+  top.unifyInstanceDecorable = errorSubst("not dec");
 }
 
 aspect production varType
@@ -112,6 +122,7 @@ top::Type ::= tv::TyVar
 
   -- Skolems with occurs-on contexts act like nonterminals, so use that behavior in unification
   top.unifyInstanceNonterminal = emptySubst();
+  top.unifyInstanceDecorable = emptySubst();
 }
 
 aspect production appType
@@ -121,6 +132,7 @@ top::Type ::= c::Type a::Type
   top.argTypes = c.argTypes ++ [a];
   top.isNonterminal = c.isNonterminal;
   top.unifyInstanceNonterminal = c.unifyInstanceNonterminal;
+  top.unifyInstanceDecorable = c.unifyInstanceDecorable;
   top.arity = c.arity;
   top.isApplicable = c.isApplicable;
   
@@ -169,6 +181,7 @@ top::Type ::= fn::String _ _
 {
   top.isNonterminal = true;
   top.unifyInstanceNonterminal = emptySubst();
+  top.unifyInstanceDecorable = emptySubst();
 }
 
 aspect production terminalType
@@ -196,9 +209,11 @@ aspect production partiallyDecoratedType
 top::Type ::= te::Type i::Type
 {
   top.isDecorated = true;
+  top.isPartiallyDecorated = true;
   top.decoratedType = te;
   top.inhSetMembers = i.inhSetMembers;
   top.unifyInstanceDecorated = emptySubst();
+  top.unifyInstanceDecorable = emptySubst();
 }
 
 aspect production ntOrDecType
@@ -209,6 +224,7 @@ top::Type ::= nt::Type inhs::Type hidden::Type
   top.unifyInstanceNonterminal = unify(hidden, nt);
   --  freshInhSet(), NOT inhs - we are specializing to be decorated, but not to a specific decorated type
   top.unifyInstanceDecorated = unify(hidden, decoratedType(nt, freshInhSet()));
+  top.unifyInstanceDecorable = unify(hidden, nt);
 }
 
 aspect production functionType

@@ -13,7 +13,7 @@ import common.exceptions.TraceException;
  * @author tedinski
  * @see Node
  */
-public class DecoratedNode implements Typed {
+public class DecoratedNode implements Decorable, Typed {
 	// TODO list:
 	// - Delete parent / forwardParent. Or coalesce them (only NEED for debugging purposes, if inh become thunks!)
 	// - Delete forwardValue (make it a local/production attribute)
@@ -98,6 +98,27 @@ public class DecoratedNode implements Typed {
 	 */
 	protected final Object[] localValues;
 
+	/**
+	 * The cache of the exception thrown in a previous attempt to evaluate the forward,
+	 * or null if evaluation has not previously failed.
+	 */
+	protected SilverException forwardFailed;
+	/**
+	 * The cache of the exception thrown in a previous attempt to evaluate an inherited attribute,
+	 * or null if evaluation has not previously failed.
+	 */
+	protected SilverException[] inheritedFailed;
+	/**
+	 * The cache of the exception thrown in a previous attempt to evaluate an synthesized attribute,
+	 * or null if evaluation has not previously failed.
+	 */
+	protected SilverException[] synthesizedFailed;
+	/**
+	 * The cache of the exception thrown in a previous attempt to evaluate a local attribute,
+	 * or null if evaluation has not previously failed.
+	 */
+	protected SilverException[] localFailed;
+
 	
 	/**
 	 * Construct a decorated form of a Node. Called only via Node.
@@ -180,14 +201,32 @@ public class DecoratedNode implements Typed {
 	 * 
 	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
 	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
-	 * @return A DecoratedNode with the additional attributes supplied, referencing this DecoratedNode as 'base'
+	 * @return A DecoratedNode with the additional attributes supplied, referencing this DecoratedNode as 'base'.
 	 */
-	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
+	@Override
+	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
 		return new DecoratedNode(self.getNumberOfChildren(),
 				                 self.getNumberOfInhAttrs(),
 				                 self.getNumberOfSynAttrs(),
 				                 self.getNumberOfLocalAttrs(),
 				                 self, parent, inhs, null, this);
+	}
+
+	/**
+	 * Decorate this forward node with additional inherited attributes provided by fwdParent.
+	 * This should only be used in evalForward for a DecoratedNode created by DecoratedNode.decorate().
+	 * 
+	 * @param parent The "true parent" of this node (same as the fwdParent's parent) 
+	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
+	 * @return A DecoratedNode with the specified forwardParent, referencing this DecoratedNode as 'base'.
+	 */
+	@Override
+	public DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
+		return new DecoratedNode(self.getNumberOfChildren(),
+                                 self.getNumberOfInhAttrs(),
+                                 self.getNumberOfSynAttrs(),
+                                 self.getNumberOfLocalAttrs(),
+                                 self, parent, null, fwdParent, this);
 	}
 
 	/**
@@ -225,20 +264,17 @@ public class DecoratedNode implements Typed {
 		}
 		return (DecoratedNode)o;
 	}
-	
+
 	/**
 	 * Create the DecoratedNode for a child.
 	 * Separate function to keep {@link #childDecorated} small and inlineable.
 	 * This is, after all, the "slow path."
 	 */
 	private final DecoratedNode createDecoratedChild(final int child) {
-		if(base == null) {
-			return ((Node)self.getChild(child)).decorate(this, self.getChildInheritedAttributes(child));
-		} else {
-			return base.childDecorated(child).decorate(this, self.getChildInheritedAttributes(child));
-		}
+		Decorable d = base == null? (Decorable)self.getChild(child) : base.childDecorated(child);
+		return d.decorate(this, self.getChildInheritedAttributes(child));
 	}
-	
+
 	/**
 	 * Get the value of a local, caching it for re-use.
 	 * 
@@ -265,23 +301,32 @@ public class DecoratedNode implements Typed {
 	 * Slow path to eval a local, kept separate for inlining reasons.
 	 */
 	private final Object evalLocalAsIs(final int attribute) {
+		if(localFailed != null && localFailed[attribute] != null) {
+			throw localFailed[attribute];
+		}
 		try {
 			return self.getLocal(attribute).eval(this);
 		} catch(Throwable t) {
 			throw handleLocalError(attribute, t);
-		}		
+		}
 	}
 	
 	/**
 	 * Error generation code for local attribute evaluation.
 	 * Kept separate so as not to impact inlining decisions.
 	 */
-	private final RuntimeException handleLocalError(final int attribute, final Throwable t) {
+	private final SilverException handleLocalError(final int attribute, final Throwable t) {
 		// Rather than checking in the fast path, we try to reconstruct what went wrong in the slow path.
+		SilverException e;
 		if(self.getLocal(attribute) == null) {
-			return new MissingDefinitionException("Local '" + self.getNameOfLocalAttr(attribute) + "' not defined in " + getDebugID());
+			e = new MissingDefinitionException("Local '" + self.getNameOfLocalAttr(attribute) + "' not defined in " + getDebugID());
+		} else {
+			e = new TraceException("While evaling local '" + self.getNameOfLocalAttr(attribute) + "' in " + getDebugID(), t);
 		}
-		return new TraceException("While evaling local '" + self.getNameOfLocalAttr(attribute) + "' in " + getDebugID(), t);
+
+		if(localFailed == null) localFailed = new SilverException[localValues.length];
+		localFailed[attribute] = e;
+		return e;
 	}
 
 	/**
@@ -310,11 +355,8 @@ public class DecoratedNode implements Typed {
 	 * Another case of keeping the slow paths out of here, so it can be inlined.
 	 */
 	private final DecoratedNode evalLocalDecorated(final int attribute) {
-		if(base == null) {
-			return ((Node)evalLocalAsIs(attribute)).decorate(this, self.getLocalInheritedAttributes(attribute));
-		} else {
-			return base.evalLocalDecorated(attribute).decorate(this, self.getLocalInheritedAttributes(attribute));
-		}
+		Decorable d = base == null? (Decorable)evalLocalAsIs(attribute) : base.evalLocalDecorated(attribute);
+		return d.decorate(this, self.getLocalInheritedAttributes(attribute));
 	}
 
 	/**
@@ -342,14 +384,22 @@ public class DecoratedNode implements Typed {
 	
 	private final Object evalSyn(final int attribute) {
 		// TODO: Try to break this up into < 37 byte methods?
-		if(base != null) {
+		if(hasSynError(attribute)) {
+			throw synthesizedFailed[attribute];
+		}
+
+		if(base != null && !base.hasSynError(attribute)) {
 			try {
 				return base.synthesized(attribute);
 			} catch(Throwable t) {
 				if (SilverException.getRootCause(t) instanceof MissingInheritedDefinitionException) {
 					// We hit a missing inherited attribute. Fall back to evaluating on the new tree.
+					// Note that this CAN happen if the base tree actually has a missing inherited equation!
+					// This can lead to strange runtime error messages, as we might then report a
+					// missing equation on the new tree, but in these cases the actual missing equation
+					// should have been caught by the flow analysis.
 				} else {
-					throw new TraceException("While evaling syn '" + self.getNameOfSynAttr(attribute) + " via partially decorated reference ' in " + getDebugID(), t);
+					throw cacheSynError(attribute, new TraceException("While evaling syn '" + self.getNameOfSynAttr(attribute) + " via partially decorated reference ' in " + getDebugID(), t));
 				}
 			}
 		}
@@ -372,13 +422,13 @@ public class DecoratedNode implements Typed {
 				}
 				return l.eval(this);
 			} catch(Throwable t) {
-				throw new TraceException("While evaling syn '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t);
+				throw cacheSynError(attribute, new TraceException("While evaling syn '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t));
 			}
 		} else if(self.hasForward()) {
 			try {
 				return forward().synthesized(attribute);
 			} catch(Throwable t) {
-				throw new TraceException("While evaling syn via forward in " + getDebugID(), t);
+				throw cacheSynError(attribute, new TraceException("While evaling syn via forward in " + getDebugID(), t));
 			}
 		} else {
 			l = self.getDefaultSynthesized(attribute);
@@ -386,12 +436,20 @@ public class DecoratedNode implements Typed {
 				try {
 					return l.eval(this);
 				} catch(Throwable t) {
-					throw new TraceException("While evaling default for '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t);
+					throw cacheSynError(attribute, new TraceException("While evaling default for '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t));
 				}
 			} else {
-				throw new MissingDefinitionException("Synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' not defined in " + getDebugID());	
+				throw cacheSynError(attribute, new MissingDefinitionException("Synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' not defined in " + getDebugID()));
 			}
 		}
+	}
+	private final SilverException cacheSynError(final int attribute, final SilverException e) {
+		if(synthesizedFailed == null) synthesizedFailed = new SilverException[synthesizedValues.length];
+		synthesizedFailed[attribute] = e;
+		return e;
+	}
+	private final boolean hasSynError(final int attribute) {
+		return synthesizedFailed != null && synthesizedFailed[attribute] != null;
 	}
 	
 	/**
@@ -422,14 +480,16 @@ public class DecoratedNode implements Typed {
 	 */
 	private final DecoratedNode evalForward() {
 		try {
-			return self.evalForward(this).decorate(parent, this);
+			Decorable d = base == null? self.evalForward(this) : base.evalForward();
+			return d.decorate(parent, this);
 		} catch(Throwable t) {
 			throw handleFwdError(t);
 		}
 	}
 	
 	private final RuntimeException handleFwdError(Throwable t) {
-		return new TraceException("While evaling forward equation in " + getDebugID(), t);
+		forwardFailed = new TraceException("While evaling forward equation in " + getDebugID(), t);
+		return forwardFailed;
 	}
 
 	/**
@@ -461,14 +521,18 @@ public class DecoratedNode implements Typed {
 	}
 	
 	private final Object evalInhSomehow(final int attribute) {
-		if(base != null) {
+		if(hasInhError(attribute)) {
+			throw inheritedFailed[attribute];
+		}
+
+		if(base != null && !base.hasInhError(attribute)) {
 			try {
 				return base.inherited(attribute);
 			} catch(Throwable t) {
 				if (SilverException.getRootCause(t) instanceof MissingInheritedDefinitionException) {
 					// We hit a missing inherited attribute. Fall back to evaluating on the new tree.
 				} else {
-					throw new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + " via partially decorated reference ' in " + getDebugID(), t);
+					throw cacheInhError(attribute, new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + " via partially decorated reference ' in " + getDebugID(), t));
 				}
 			}
 		}
@@ -481,10 +545,10 @@ public class DecoratedNode implements Typed {
 		try {
 			return forwardParent.inheritedForwarded(attribute);
 		} catch(Throwable t) {
-			throw handleInhFwdPError(attribute, t); 
+			throw cacheInhError(attribute, handleInhFwdPError(attribute, t));
 		}
 	}
-	private final RuntimeException handleInhFwdPError(final int attribute, Throwable t) {
+	private final SilverException handleInhFwdPError(final int attribute, Throwable t) {
 		//This seems impossible since we're checking if forwardParent==null earlier up there!
 		//if(forwardParent == null) {
 		//	return new MissingInheritedDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
@@ -495,10 +559,10 @@ public class DecoratedNode implements Typed {
 		try {
 			return inheritedAttributes[attribute].eval(parent);
 		} catch(Throwable t) {
-			throw handleInhHereError(attribute, t);
+			throw cacheInhError(attribute, handleInhHereError(attribute, t));
 		}
 	}
-	private final RuntimeException handleInhHereError(final int attribute, Throwable t) {
+	private final SilverException handleInhHereError(final int attribute, Throwable t) {
 		// We specifically have to check here for inheritedAttributes == null, because
 		// that's what happens when we don't supply any inherited attributes...
 		// That is, unlike the unconditional access earlier for inheritedValues[attribute]
@@ -538,12 +602,21 @@ public class DecoratedNode implements Typed {
 			// No need for caching here, it'll be cached by the inherited() that called us
 			return l.eval(this);
 		} catch(Throwable t) {
-			throw handleInhFwdError(attribute, t);
+			throw cacheInhError(attribute, handleInhFwdError(attribute, t));
 		}
 	}
 	
-	private final RuntimeException handleInhFwdError(final int attribute, Throwable t) {
+	private final SilverException handleInhFwdError(final int attribute, Throwable t) {
 		return new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' for forward in " + getDebugID(), t);
+	}
+
+	private final SilverException cacheInhError(final int attribute, final SilverException e) {
+		if(inheritedFailed == null) inheritedFailed = new SilverException[inheritedValues.length];
+		inheritedFailed[attribute] = e;
+		return e;
+	}
+	private final boolean hasInhError(final int attribute) {
+		return inheritedFailed != null && inheritedFailed[attribute] != null;
 	}
 
 	// The following are very common types of thunks.

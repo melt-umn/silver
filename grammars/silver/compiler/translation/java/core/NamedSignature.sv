@@ -240,7 +240,7 @@ s"""private Object child_${n};
     else "-1";
   
   top.childStaticElem =
-    if ty.isNonterminal
+    if ty.isNonterminal || ty.isPartiallyDecorated
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ty.typeName)}.num_inh_attrs];\n"
     else if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ty.transTypeName}];\n"

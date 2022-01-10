@@ -536,10 +536,13 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.unparse = "decorate " ++ e.unparse ++ " with {" ++ inh.unparse ++ "}";
 
-  top.typerep = decoratedType(performSubstitution(e.typerep, e.upSubst), inhSetType(sort(nub(inh.suppliedInhs)))); -- .decoratedForm?
+  production eType::Type = performSubstitution(e.typerep, e.upSubst);
+  production ntType::Type = if eType.isDecorated then eType.decoratedType else eType;
+
+  top.typerep = decoratedType(ntType, inhSetType(sort(nub(inh.suppliedInhs ++ eType.inhSetMembers)))); -- .decoratedForm?
   e.isRoot = false;
   
-  inh.decoratingnt = performSubstitution(e.typerep, e.upSubst);
+  inh.decoratingnt = ntType;
   inh.allSuppliedInhs = inh.suppliedInhs;
 }
 

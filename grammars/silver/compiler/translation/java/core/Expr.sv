@@ -70,9 +70,9 @@ top::Expr ::= q::Decorated QName
 
   top.translation =
     if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
-    then if isDecorable(finalType(top), top.env)
-         then s"((${finalType(top).transType})context.childDecorated(${childIDref}).undecorate())"
-         else s"((${finalType(top).transType})context.childDecorated(${childIDref}))"
+    then if finalType(top).isDecorated
+         then s"((${finalType(top).transType})context.childDecorated(${childIDref}))"
+         else s"((${finalType(top).transType})context.childDecorated(${childIDref}).undecorate())"
     else s"((${finalType(top).transType})context.childAsIs(${childIDref}))";
   -- the reason we do .childDecorated().undecorate() is that it's not safe to mix as-is/decorated accesses to the same child.
   -- this is a potential source of minor inefficiency for functions that do not decorate.
@@ -80,9 +80,9 @@ top::Expr ::= q::Decorated QName
   top.lazyTranslation =
     if !top.frame.lazyApplication then top.translation else
     if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
-    then if isDecorable(finalType(top), top.env)
-         then s"common.Thunk.transformUndecorate(context.childDecoratedLazy(${childIDref}))"
-         else s"context.childDecoratedLazy(${childIDref})"
+    then if finalType(top).isDecorated
+         then s"context.childDecoratedLazy(${childIDref})"
+         else s"common.Thunk.transformUndecorate(context.childDecoratedLazy(${childIDref}))"
     else s"context.childAsIsLazy(${childIDref})";
 }
 
@@ -91,18 +91,18 @@ top::Expr ::= q::Decorated QName
 {
   top.translation =
     if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
-    then if isDecorable(finalType(top), top.env)
-         then s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
-         else s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}))"
+    then if finalType(top).isDecorated
+         then s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}))"
+         else s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
     else s"((${finalType(top).transType})context.localAsIs(${q.lookupValue.dcl.attrOccursIndex}))";
   -- reminder: look at comments for childReference
 
   top.lazyTranslation =
     if !top.frame.lazyApplication then top.translation else
     if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
-    then if isDecorable(finalType(top), top.env)
-         then s"common.Thunk.transformUndecorate(context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex}))"
-         else s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})"
+    then if finalType(top).isDecorated
+         then s"context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex})"
+         else s"common.Thunk.transformUndecorate(context.localDecoratedLazy(${q.lookupValue.dcl.attrOccursIndex}))"
     else s"context.localAsIsLazy(${q.lookupValue.dcl.attrOccursIndex})";
 }
 
@@ -343,7 +343,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
-  top.translation = s"((common.Node)${e.translation})" ++ 
+  top.translation = s"((common.Decorable)${e.translation})" ++ 
     case inh of
     | exprInhsEmpty() -> ".decorate(context, (common.Lazy[])null)"
       -- Note: we don't NEED to pass context here, but it's good for error messages!

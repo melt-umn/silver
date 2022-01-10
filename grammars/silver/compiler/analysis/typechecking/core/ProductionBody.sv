@@ -140,14 +140,14 @@ aspect production childDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   top.errors <- if isDecorable(top.typerep, top.env) then []
-                else [err(top.location, "Inherited attributes can only be defined on (undecorated) nonterminals.")];
+                else [err(top.location, s"Inherited attributes can only be defined on (undecorated) nonterminal and partially decorated types, not ${prettyType(top.typerep)}.")];
 }
 
 aspect production localDefLHS
 top::DefLHS ::= q::Decorated QName
 {
   top.errors <- if isDecorable(top.typerep, top.env) then []
-                else [err(top.location, "Inherited attributes can only be defined on (undecorated) nonterminals.")];
+                else [err(top.location, s"Inherited attributes can only be defined on (undecorated) nonterminal and partially decorated types, not ${prettyType(top.typerep)}.")];
 }
 
 aspect production localAttributeDcl

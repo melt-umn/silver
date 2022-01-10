@@ -17,10 +17,20 @@ public class TopNode extends DecoratedNode{ // TODO: this should become a Node!
 	public static final TopNode singleton = new TopNode();
 	
 	private TopNode() {
-		super(0,0,0,0,null,null,null,null);
+		super(0,0,0,0,null,null,null,null,null);
 		this.originCtx = OriginContext.GLOBAL_CONTEXT;
 	}
-	
+
+	@Override
+	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
+		throw new SilverInternalError("TopNode cannot be decorated.");
+	}
+
+	@Override
+	public final DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
+		throw new SilverInternalError("TopNode cannot be decorated.");
+	}
+
 	@Override
 	public Object inherited(final int attribute) {		
 		throw new SilverInternalError("No inherited attributes given to TopNode.");

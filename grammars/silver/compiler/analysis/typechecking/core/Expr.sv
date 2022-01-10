@@ -17,6 +17,16 @@ top::Expr ::=
   top.contexts = [];
 }
 
+aspect production forwardReference
+top::Expr ::= q::Decorated QName
+{
+  top.errors <-
+    case performSubstitution(top.typerep, top.finalSubst) of
+    | partiallyDecoratedType(_, _) -> [err(top.location, "Cannot take a partially decorated reference to forward")]
+    | _ -> []
+    end;
+}
+
 aspect production productionReference
 top::Expr ::= q::Decorated QName
 {
@@ -131,7 +141,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 
   thread downSubst, upSubst on top, errCheck1, forward;
 }
-  
+
 
 aspect production noteAttachment
 top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
@@ -356,10 +366,10 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 
   thread downSubst, upSubst on top, e, errCheck1, inh, top;
 
-  errCheck1 = checkNonterminal(top.env, true, e.typerep);
+  errCheck1 = checkDecorable(top.env, e.typerep);
   top.errors <-
        if errCheck1.typeerror
-       then [err(top.location, "Operand to decorate must be a nonterminal.  Instead it is of type " ++ errCheck1.leftpp)]
+       then [err(top.location, "Operand to decorate must be a nonterminal or partially decorated type.  Instead it is of type " ++ errCheck1.leftpp)]
        else [];
 }
 

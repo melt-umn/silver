@@ -56,4 +56,21 @@ top::TypeCheck ::= l::Type
   top.leftpp = prettyType(performSubstitution(l, top.finalSubst));
   top.rightpp = "a decorated nonterminal";
 }
+abstract production checkDecorable
+top::TypeCheck ::= e::Decorated Env l::Type
+{
+  local refined :: Type =
+    performSubstitution(l, top.downSubst);
+
+  top.upSubst = composeSubst(ignoreFailure(top.downSubst), refined.unifyInstanceDecorable);
+
+  top.typeerror =
+    case performSubstitution(refined, top.upSubst) of
+    | skolemType(_) -> null(searchEnvTree(refined.typeName, e.occursTree))
+    | _ -> top.upSubst.failure && !refined.isError
+    end;
+
+  top.leftpp = prettyType(performSubstitution(l, top.finalSubst));
+  top.rightpp = "a decorable type";
+}
 
