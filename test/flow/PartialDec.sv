@@ -100,3 +100,26 @@ PartiallyDecorated PDExpr with {env2} ::= e::PDExpr
   return e;
 }
 }
+
+warnCode "Partially decorated reference of type Decorated flow:PDExpr with only {} does not contain all attributes in the reference set of e's type Decorated flow:PDExpr with only {flow:env1}" {
+aspect production dispatchThing
+top::PDExpr ::= e::Decorated PDExpr with only {env1}
+{
+  local otherRef::Decorated PDExpr with only {} = e;
+}
+}
+
+function thingWithBoundedRefArg
+{env1, env2} subset i, i subset {env1} =>  -- Uninhabited, but shouldn't give an error
+Decorated PDExpr with only {env1} ::= e::Decorated PDExpr with only i
+{
+  return e;
+}
+
+warnCode "Cannot take a partially decorated reference to e of type Decorated flow:PDExpr with only i, as the reference set is not bounded" {
+function thingWithUnboundedRefArg
+{env1, env2} subset i => Decorated PDExpr with only {env1} ::= e::Decorated PDExpr with only i
+{
+  return e;
+}
+}

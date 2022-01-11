@@ -220,7 +220,7 @@ top::Type ::= t::Type i::Type
 }
 
 aspect production ntOrDecType
-top::Type ::= nt::Type inhs::Type hidden::Type
+top::Type ::= nt::Type inhs::Type hidden::Type defaultPartialDec::Boolean defaultInhs::Type
 {
 -- Sometimes useful for debugging.
 --  top.typepp = "Undecorable " ++ nt.typepp ++ " with  " ++ inhs.typepp ++ " specialized " ++ prettyTypeWith(hidden, []));
