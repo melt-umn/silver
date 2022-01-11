@@ -59,14 +59,9 @@ top::Context ::= cls::String t::Type
   
   -- Here possibly-decorated types that are still unspecialized at this point
   -- are specialized as decorated.  Why?  Instance resolution happens after
-  -- final types have been computed, and the default is to be decorated with nothing,
+  -- final types have been computed, and the default is to be decorated,
   -- so we can't allow this to match an instance for the undecorated type.
-  production decT::Type =
-    case t of
-    | ntOrDecType(nt, varType(_), _) -> decoratedType(nt, inhSetType([]))
-    | ntOrDecType(nt, inhs, _) -> decoratedType(nt, inhs)
-    | _ -> t
-    end;
+  production decT::Type = t.defaultSpecialization;
 
   -- Somewhat inefficient, since we try unifying with all the instances of the class.
   -- But occurs-on lookup works this way too and isn't too bad?

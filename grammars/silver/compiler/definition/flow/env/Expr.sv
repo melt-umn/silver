@@ -45,12 +45,13 @@ top::Expr ::= q::Decorated QName
   -- isDecorable on that indeed tells us whether it's something autodecorated.
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
+  production origRefSet::[String] = getMinRefSet(q.lookupValue.typeScheme.monoType, top.env);
   top.flowDeps :=
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !isDecorable(finalTy, top.env)
-    then map(rhsVertexType(q.lookupValue.fullName).inhVertex, fromMaybe([], refSet))
+    if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && finalTy.isDecorated
+    then map(rhsVertexType(q.lookupValue.fullName).inhVertex, removeAll(origRefSet, fromMaybe([], refSet)))
     else [];
   top.flowVertexInfo = 
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !isDecorable(finalTy, top.env)
+    if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && finalTy.isDecorated
     then hasVertex(rhsVertexType(q.lookupValue.fullName))
     else noVertex();
 
@@ -69,11 +70,11 @@ top::Expr ::= q::Decorated QName
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowDeps :=
-    if !isDecorable(finalTy, top.env)
+    if finalTy.isDecorated
     then map(lhsVertexType.inhVertex, fromMaybe([], refSet))
     else [];
   top.flowVertexInfo = 
-    if !isDecorable(finalTy, top.env)
+    if finalTy.isDecorated
     then hasVertex(lhsVertexType)
     else noVertex();
 }
@@ -83,13 +84,14 @@ top::Expr ::= q::Decorated QName
   -- Again, q give the actual type written.
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
+  production origRefSet::[String] = getMinRefSet(q.lookupValue.typeScheme.monoType, top.env);
   top.flowDeps := [localEqVertex(q.lookupValue.fullName)] ++
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !isDecorable(finalTy, top.env)
-    then map(localVertexType(q.lookupValue.fullName).inhVertex, fromMaybe([], refSet))
+    if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && finalTy.isDecorated
+    then map(rhsVertexType(q.lookupValue.fullName).inhVertex, removeAll(origRefSet, fromMaybe([], refSet)))
     else [];
     
   top.flowVertexInfo =
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !isDecorable(finalTy, top.env)
+    if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && finalTy.isDecorated
     then hasVertex(localVertexType(q.lookupValue.fullName))
     else noVertex();
 
@@ -108,12 +110,12 @@ top::Expr ::= q::Decorated QName
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowDeps := [forwardEqVertex()]++
-    if !isDecorable(finalTy, top.env)
+    if finalTy.isDecorated
     then map(forwardVertexType.inhVertex, fromMaybe([], refSet))
     else [];
     
   top.flowVertexInfo =
-    if !isDecorable(finalTy, top.env)
+    if finalTy.isDecorated
     then hasVertex(forwardVertexType)
     else noVertex();
 }

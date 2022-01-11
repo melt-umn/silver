@@ -170,6 +170,12 @@ top::Expr ::= q::Decorated QName
   top.errors <-
     case finalTy, refSet of
     | partiallyDecoratedType(_, _), just(inhs) when top.config.warnEqdef && q.lookupValue.found ->
+      case getMaxRefSet(q.lookupValue.typeScheme.typerep, top.env) of
+      | just(origInhs) ->
+        if all(map(contains(_, inhs), origInhs)) then []
+        else [mwdaWrn(top.config, top.location, s"Partially decorated reference of type ${prettyType(finalTy)} does not contain all attributes in the reference set of ${q.name}'s type ${prettyType(q.lookupValue.typeScheme.monoType)}")]
+      | nothing() -> [mwdaWrn(top.config, top.location, s"Cannot take a partially decorated reference to ${q.name} of type ${prettyType(q.lookupValue.typeScheme.monoType)}, as the reference set is not bounded")]
+      end ++
       if !null(partialRefs)
       -- There is an exported partial reference taken to this decoration site (might be somewhere else!),
       -- check that we are consistent with any exported partial refs:
@@ -191,6 +197,12 @@ top::Expr ::= q::Decorated QName
   top.errors <-
     case finalTy, refSet of
     | partiallyDecoratedType(_, _), just(inhs) when top.config.warnEqdef && q.lookupValue.found ->
+      case getMaxRefSet(q.lookupValue.typeScheme.typerep, top.env) of
+      | just(origInhs) ->
+        if all(map(contains(_, inhs), origInhs)) then []
+        else [mwdaWrn(top.config, top.location, s"Partially decorated reference of type ${prettyType(finalTy)} does not contain all attributes in the reference set of ${q.name}'s type ${prettyType(q.lookupValue.typeScheme.monoType)}")]
+      | nothing() -> [mwdaWrn(top.config, top.location, s"Cannot take a partially decorated reference to ${q.name} of type ${prettyType(q.lookupValue.typeScheme.monoType)}, as the reference set is not bounded")]
+      end ++
       if !null(partialRefs)
       -- There is an exported partial reference taken to this decoration site (might be somewhere else!),
       -- check that we are consistent with any exported partial refs:

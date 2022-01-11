@@ -43,7 +43,23 @@ top::PDExpr ::= e::Decorated PDExpr with only {env1}
   top.errors2 = e2.errors2;
 }
 
-global pdTerm::PDExpr = pdOp1(pdOp2(pdVar("foo")));
+production pdOp3
+top::PDExpr ::= e::PDExpr
+{
+  --forwards to pdOp3Impl(decorate e with {env1 = top.env1;});  -- TODO
+  e.env1 = top.env1;
+  forwards to pdOp3Impl(e);
+}
+
+production pdOp3Impl
+top::PDExpr ::= e::Decorated PDExpr with only {env1}
+{
+  local e2::Decorated PDExpr with {env1, env2} = decorate e with {env2 = top.env2;};
+  top.errors1 = e2.errors1;
+  top.errors2 = e2.errors2;
+}
+
+global pdTerm::PDExpr = pdOp1(pdOp2(pdOp3(pdVar("foo"))));
 equalityTest(decorate pdTerm with { env1 = ["foo"]; env2 = ["foo"]; }.errors1, false, Boolean, silver_tests);
 equalityTest(decorate pdTerm with { env1 = ["foo"]; env2 = ["foo"]; }.errors2, false, Boolean, silver_tests);
 equalityTest(decorate pdTerm with { env1 = ["foo"]; env2 = []; }.errors1, false, Boolean, silver_tests);
