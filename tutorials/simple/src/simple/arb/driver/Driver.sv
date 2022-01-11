@@ -9,13 +9,13 @@ import silver:reflect;
 function arbDriver
 IO ::= args::[String]
        io_in::IO 
-       generator::(RandomGen<cst:Root> ::= Integer)
+       generator::(RandomGen<cst:Root> ::= Integer Integer)
 {
   local depth :: Integer = toInteger(head(args));
   
-  local r_cst :: cst:Root = runRandomGen(generator(depth));
+  local r_cst :: cst:Root = runRandomGen(generator(3, depth));
 
-  --local r_ast :: ast:Root = runRandomGen(generator(depth));
+  --local r_ast :: ast:Root = runRandomGen(generator(3, depth));
   local r_ast :: ast:Root = r_cst.ast;
 
   local print_success :: IO = 
