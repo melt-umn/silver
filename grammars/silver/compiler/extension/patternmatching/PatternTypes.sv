@@ -200,6 +200,7 @@ top::Pattern ::=
 concrete production nestedPatterns
 top::Pattern ::= '(' p::Pattern ')'
 {
+  top.unparse = s"(${p.unparse})";
   forwards to p;
 }
 
