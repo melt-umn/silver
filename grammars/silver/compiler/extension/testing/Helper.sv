@@ -6,7 +6,7 @@ import silver:compiler:definition:concrete_syntax;
 import silver:compiler:definition:type;
 import silver:compiler:definition:type:syntax;
 import silver:compiler:modification:collection;
-import silver:compiler:extension:list;
+import silver:compiler:modification:list;
 
 -- Expression creating functions
 

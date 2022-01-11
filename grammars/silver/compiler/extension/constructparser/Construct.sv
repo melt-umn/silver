@@ -4,7 +4,7 @@ import silver:compiler:definition:env;
 import silver:compiler:definition:type;
 import silver:compiler:definition:type:syntax;
 import silver:compiler:modification:copper;
-import silver:compiler:extension:list;
+import silver:compiler:modification:list;
 
 terminal Construct_t 'construct' lexer classes {KEYWORD};
 terminal Translator_t 'translator' lexer classes {KEYWORD};

@@ -1,4 +1,4 @@
-grammar silver:compiler:extension:list;
+grammar silver:compiler:modification:list;
 
 import silver:compiler:definition:type:syntax;
 
@@ -37,7 +37,7 @@ top::TypeExpr ::= '[' ']'
     then [err(top.location, s"${top.unparse} has kind ${prettyKind(top.typerep.kindrep)}, but kind * is expected here")]
     else [];
 
-  forwards to nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "silver:core:List"), location=top.location), location=top.location);
+  forwards to typerepTypeExpr(listCtrType(),location=top.location);
 }
 
 -- The expressions -------------------------------------------------------------

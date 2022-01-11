@@ -6,7 +6,7 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 imports silver:compiler:modification:primitivepattern;
-imports silver:compiler:extension:list;
+imports silver:compiler:modification:list;
 
 --Get mwdaWrn production for completeness analysis
 import silver:compiler:analysis:warnings:flow;

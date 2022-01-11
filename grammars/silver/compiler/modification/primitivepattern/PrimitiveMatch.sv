@@ -16,7 +16,7 @@ import silver:compiler:translation:java:type;
 import silver:compiler:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef;
 import silver:compiler:definition:flow:ast only noVertex;
 
-import silver:compiler:extension:list; -- Oh no, this is a hack! TODO
+import silver:compiler:modification:list; -- Oh no, this is a hack! TODO
 
 terminal Match_kwd 'match' lexer classes {KEYWORD,RESERVED}; -- temporary!!!
 
