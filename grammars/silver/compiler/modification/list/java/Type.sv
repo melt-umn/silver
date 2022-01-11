@@ -1,6 +1,6 @@
-grammar silver:compiler:extension:list:java;
+grammar silver:compiler:modification:list:java;
 
-import silver:compiler:extension:list;
+import silver:compiler:modification:list;
 import silver:compiler:definition:type;
 import silver:compiler:definition:env;
 import silver:compiler:definition:core;

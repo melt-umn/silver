@@ -8,7 +8,7 @@ import silver:compiler:definition:type:syntax;
 
 import silver:compiler:modification:ffi;
 import silver:compiler:modification:collection;
-import silver:compiler:extension:list;
+import silver:compiler:modification:list;
 
 terminal MainTestSuite_t 'mainTestSuite' lexer classes {KEYWORD};
 terminal MakeTestSuite_t 'makeTestSuite' lexer classes {KEYWORD};
