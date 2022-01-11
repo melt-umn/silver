@@ -60,3 +60,17 @@ equalityTest ( nestedprods( nest_empty() ), "nest_empty", String, pat_tests ) ;
 equalityTest ( nestedprods( nest_int(2) ), "nest_int_2", String, pat_tests ) ;
 equalityTest ( nestedprods( nest_double( nest_empty(), nest_int(2)) ), "nest_double_specific", String, pat_tests ) ;
 equalityTest ( nestedprods( nest_double( nest_int(3), nest_empty()) ), "nest_double_general", String, pat_tests ) ;
+
+
+wrongCode "1.0 is a Float but we're trying to match against Integer" {
+ nonterminal CompletelyValidNonterminal;
+ 
+ function funfoo
+ String ::= n::Integer
+ {
+  return case n of
+         | (1.0) -> "Fail"
+         | _ -> "OK"
+         end;
+ }
+}
