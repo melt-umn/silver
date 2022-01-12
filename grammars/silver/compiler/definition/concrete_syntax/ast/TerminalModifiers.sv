@@ -156,7 +156,7 @@ top::SyntaxTerminalModifier ::= sub::[String]
                            "this grammar was not included in this parser. (Referenced from submit clause on terminal " ++ top.terminalName ++ ")"],
                    zipWith(pair, sub, subRefs)); 
   top.submitsXML := implode("", map(xmlCopperRef, map(head, subRefs)));
-  top.submits_ := flatMap((.subContribs), map(head, subRefs));
+  top.submits_ := map((.copperElementReference), map(head, subRefs));
 }
 {--
  - The dominates list for the terminal. Either lexer classes or terminals.
@@ -173,7 +173,7 @@ top::SyntaxTerminalModifier ::= dom::[String]
                            "this grammar was not included in this parser. (Referenced from dominates clause on terminal " ++ top.terminalName ++ ")"],
                    zipWith(pair, dom, domRefs)); 
   top.dominatesXML := implode("", map(xmlCopperRef, map(head, domRefs)));
-  top.dominates_ := flatMap((.domContribs), map(head, domRefs));
+  top.dominates_ := map((.copperElementReference), map(head, domRefs));
 }
 {--
  - The action to take whenever this terminal is SHIFTed.

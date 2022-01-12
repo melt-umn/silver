@@ -155,6 +155,7 @@ public final class CopperUtil {
         }
     }
 
+    // The full path needs to be given, since common.Terminal exists...
     public static edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Terminal
     makeTerminal(String id, String pp, Regex regex, Integer precedence,
                  String associativity, String type_, String code,
