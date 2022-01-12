@@ -196,6 +196,14 @@ top::Pattern ::=
   top.patternTypeName = "";
 }
 
+-- arbitrary nesting of patterns
+concrete production nestedPatterns
+top::Pattern ::= '(' p::Pattern ')'
+{
+  top.unparse = s"(${p.unparse})";
+  forwards to p;
+}
+
 --------------------------------------------------------------------------------
 
 -- Below are the non-canonical patterns, i.e. those for other types
@@ -390,8 +398,6 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
   top.patternVars = p.patternVars;
   top.namedPatternList = [pair(qn.lookupAttribute.fullName, p)];
 }
-
-
 
 --helper function for building patternLists from lists of patterns
 function buildPatternList
