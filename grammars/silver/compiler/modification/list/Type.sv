@@ -32,4 +32,12 @@ top::Type ::=
 
   top.tracked = false;
   top.kindrep = foldr(arrowKind,starKind(),[starKind()]);
+
+  top.unify =
+    case top.unifyWith of
+    | listCtrType() -> emptySubst()
+    | _ -> errorSubst("Tried to unify List with " ++ prettyType(top.unifyWith))
+    end;
+
+  top.freeFlexibleVars := [];
 }
