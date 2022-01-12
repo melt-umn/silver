@@ -184,123 +184,148 @@ Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
 function compileCaseExpr
 Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
 {
-  local compileRest::Expr =
-        compileCaseExpr(es, tail(ml), failExpr, retType, loc);
+  --Split the rules into groups with the same head pattern
+  --Note:  group() groups in order, so [a, a, b, a] will give [[a, a], [b], [a]]
+  --       This behavior is important to correct semantics here
+  local groups::[[AbstractMatchRule]] = group(ml);
 
-  --If the first pattern does not match, we fall back to our "failure"
-  --   of checking the rest of the patterns
-  local failName::String = "__match_fail_" ++ toString(genInt());
-  local compileFirstPattern::Expr =
-        case head(ml) of
-        | matchRule(pl, cond, e) ->
-          compileMatchRule(es, pl, cond, e,
-             baseExpr(qName(loc, failName), location=loc), retType, loc)
-        end;
-  local bindFailName::Expr =
-        makeLet(loc, failName, retType, compileRest, compileFirstPattern);
+  local compiledGroups::Expr =
+        compilePatternGroups(es, groups, failExpr, retType, loc);
+
+  --Check if there is any match rule with empty patterns
+  local anyEmptyRules::Boolean =
+        any(map(\ m::AbstractMatchRule ->
+                  case m of
+                  | matchRule([], _, _) -> true
+                  | _ -> false
+                  end, ml));
+
+  --Assume all the rules are devoid of patterns
+  local finalStep::Expr =
+        foldr(\ mrule::AbstractMatchRule rest::Expr ->
+                case mrule of
+                | matchRule(_, nothing(), e) -> e
+                --cond is a Boolean
+                | matchRule(_, just((cond, nothing())), e) ->
+                  ifThenElse('if', cond, 'then', e, 'else', rest, location=loc)
+                --cond is the expression for another match
+                | matchRule(_, just((cond, just(patt))), e) ->
+                  Silver_Expr {
+                     case $Expr{cond} of
+                     | $Pattern{patt} -> $Expr{e}
+                     | _ -> $Expr{failExpr}
+                     end
+                  }
+                end,
+              failExpr, ml);
 
   return
      case ml of
      | [] -> failExpr
-     | _ -> bindFailName
+     | _ -> if anyEmptyRules then finalStep else compiledGroups
      end;
 }
 
---Compile a single match rule into a primitive match
-function compileMatchRule
-Expr ::= es::[Expr] patts::[Decorated Pattern] cond::Maybe<(Expr, Maybe<Pattern>)>
-         body::Expr failExpr::Expr retType::Type loc::Location
+
+--Compile a match where the sets of patterns are grouped based on
+--having the same first pattern, create a series of primitive match
+--expressions to implement the match
+function compilePatternGroups
+Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr retType::Type loc::Location
 {
-  --First pattern is a variable
-  local varCase::Expr =
-        case patts of
-        | p::tl ->
-          let rest::Expr =
-              compileMatchRule(tail(es), tl, cond, body, failExpr, retType, loc)
-          in
-            case p.patternVariableName of
-            | nothing() -> --wildcard, so just match the rest
-              rest
-            | just(name) -> --actual variable, so make a let
-              makeLet(loc, name, freshType(), head(es), rest)
-            end
-          end
-        | _ -> error("Cannot have an empty set of patterns in varCase")
+  local compileRest::Expr =
+        compilePatternGroups(matchEs, tail(ruleGroups), finalFail, retType, loc);
+
+  local firstGroup::[AbstractMatchRule] =
+        case ruleGroups of
+        | [] -> error("Shouldn't access firstGroup with empty ruleGroups")
+        | []::tl ->
+          error("Shouldn't have empty list of patterns in compilePatternGroups")
+        | hd::tl -> hd
+        end;
+  local firstPatt::Decorated Pattern = head(firstGroup).headPattern;
+  local failName::String = "__match_fail_" ++ toString(genInt());
+  local firstMatchExpr::Expr =
+        case matchEs of
+        | [] ->
+          error("Shouldn't call compilePatternGroups with empty match expressions")
+        | e::tl -> e
         end;
 
-  --First pattern is a constructor
-  local names::[Name] = map(patternListVars, head(patts).patternSubPatternList);
-  local l::Location = head(patts).location;
+  local names::[Name] = map(patternListVars, firstPatt.patternSubPatternList);
+  local l::Location = firstPatt.location;
   local annos::[String] =
-        nub(map(fst, head(patts).patternNamedSubPatternList));
+        nub(map(fst, firstPatt.patternNamedSubPatternList));
   local annoAccesses::[Expr] =
         map(\ n::String ->
-              access(head(es), '.', qNameAttrOccur(qName(l, n), location=l), location=l),
+              access(firstMatchExpr, '.', qNameAttrOccur(qName(l, n), location=l),
+                     location=l),
             annos);
-  local constructorCase::Expr =
-        case patts of
-        | hd::tl ->
-          let rest::Expr =
-              compileMatchRule(
-                 map(exprFromName, names) ++ annoAccesses ++ tail(es),
-                 hd.patternSubPatternList ++
-                 map(\ n::String ->
-                       case lookup(n, hd.patternNamedSubPatternList) of
-                       | nothing() ->
-                         decorate wildcPattern('_', location=loc) with {
-                            frame=hd.frame; config=hd.config; env=hd.env;
-                            patternVarEnv=hd.patternVarEnv;
-                         }
-                       | just(p) -> p
-                       end,
-                     annos) ++ tl,
-                 cond, body, failExpr, retType, loc)
-          in
-          let primPatt::PrimPattern =
-            case hd of
-            | prodAppPattern_named(qn,_,_,_,_,_) -> 
-              prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', '->',
-                          rest, location=l)
-            | intPattern(it) ->
-              integerPattern(it, '->', rest, location=l)
-            | fltPattern(it) ->
-              floatPattern(it, '->', rest, location=l)
-            | strPattern(it) ->
-              stringPattern(it, '->', rest, location=l)
-            | truePattern(_) ->
-              booleanPattern("true", '->', rest, location=l)
-            | falsePattern(_) ->
-              booleanPattern("false", '->', rest, location=l)
-            | nilListPattern(_,_) ->
-              nilPattern(rest, location=l)
-            | consListPattern(h,_,t) ->
-              conslstPattern(head(names), head(tail(names)), rest, location=l)
-            | _ -> error("Can only have constructor patterns in constructorCase")
-            end
-          in
-            matchPrimitive(head(es), typerepTypeExpr(retType, location=loc),
-               onePattern(primPatt, location=l), failExpr, location=l)
-          end end
-        | _ -> error("Cannot have empty set of patterns in constructorCase")
+  local restConCase::Expr =
+        compileCaseExpr(
+           map(exprFromName, names) ++ annoAccesses ++ tail(matchEs),
+           map(\ x::AbstractMatchRule -> x.expandHeadPattern(annos), firstGroup),
+           baseExpr(qName(loc, failName), location=loc), retType, loc);
+  local primPatt::PrimPattern =
+        case firstPatt of
+        | prodAppPattern_named(qn,_,_,_,_,_) -> 
+          prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', '->',
+                      restConCase, location=l)
+        | intPattern(it) ->
+          integerPattern(it, '->', restConCase, location=l)
+        | fltPattern(it) ->
+          floatPattern(it, '->', restConCase, location=l)
+        | strPattern(it) ->
+          stringPattern(it, '->', restConCase, location=l)
+        | truePattern(_) ->
+          booleanPattern("true", '->', restConCase, location=l)
+        | falsePattern(_) ->
+          booleanPattern("false", '->', restConCase, location=l)
+        | nilListPattern(_,_) ->
+          nilPattern(restConCase, location=l)
+        | consListPattern(h,_,t) ->
+          case names of
+          | [hd, tl] ->
+            conslstPattern(hd, tl, restConCase, location=l)
+          | _ -> error("Must have at least two names for consListPattern")
+          end
+        | _ -> error("Can only have constructor patterns in constructor case")
         end;
+  --Note it is important we match against a *single pattern* in each primitive match
+  --This ensures we take the first one which _can be_ matched, not the old notion of
+  --   taking the "best match"
+  local currentConCase::Expr =
+        matchPrimitive(firstMatchExpr, typerepTypeExpr(retType, location=loc),
+               onePattern(primPatt, location=primPatt.location),
+               baseExpr(qName(loc, failName), location=loc), location=l);
+
+  -- A quick note about that freshType() hack: putting it here means there's ONE fresh type
+  -- generated, puching it inside 'bindHeadPattern' would generate multiple fresh types.
+  -- So don't try that!
+  local boundVarRules::[AbstractMatchRule] =
+        map(bindHeadPattern(firstMatchExpr, freshType(), _), firstGroup);
+  local currentVarCase::Expr =
+        compileCaseExpr(tail(matchEs), boundVarRules,
+           baseExpr(qName(loc, failName), location=loc), retType, loc);
+  --Need to go through all the match rules and push the binding inside them
+  {-local currentVarCase::Expr =
+        case firstPatt.patternVariableName of
+        | nothing() -> restVarCase
+        | just(name) ->
+          makeLet(firstPatt.location, name, freshType(),
+             firstMatchExpr, restVarCase)
+        end;-}
+
+  local bindFailName::Expr =
+        makeLet(loc, failName, retType, compileRest,
+                if firstPatt.patternIsVariable
+                then currentVarCase
+                else currentConCase);
 
   return
-     case patts, cond of
-     | [], nothing() -> body
-     | [], just((cond, nothing())) -> --cond is a Boolean
-       ifThenElse('if', cond, 'then', body, 'else', failExpr,
-                  location=cond.location)
-     | [], just((cond, just(patt))) -> --another match
-       Silver_Expr {
-         case $Expr{cond} of
-         | $Pattern{patt} -> $Expr{body}
-         | _ -> $Expr{failExpr}
-         end
-       }
-     | hd::tl, cond ->
-       if hd.patternIsVariable
-       then varCase
-       else constructorCase
+     case ruleGroups of
+     | [] -> finalFail
+     | _::_ -> bindFailName
      end;
 }
 
