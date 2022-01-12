@@ -36,12 +36,12 @@ GrammarElement ::= id::String  type_::String  code::String
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Production
 function production_
 GrammarElement ::= id::String  hasPrecedence::Boolean  precedence_::Integer
-    hasOperator::Boolean  operator_::String  code::String  lhs::ElementReference
-    rhs::[ElementReference]
+    hasOperator::Boolean  operator_::ElementReference  code::String
+    lhs::ElementReference  rhs::[ElementReference]
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "common.CopperUtil.makeProduction(%id%.toString(), %hasPrecedence% ? %precedence_% : null, %hasOperator% ? %operator_%.toString() : null, %code%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%lhs%, new common.javainterop.ConsCellCollection(%rhs%))";
+  "java" : return "common.CopperUtil.makeProduction(%id%.toString(), %hasPrecedence% ? %precedence_% : null, %hasOperator% ? (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%operator_% : null, %code%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%lhs%, new common.javainterop.ConsCellCollection(%rhs%))";
 }
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Terminal
