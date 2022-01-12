@@ -1,7 +1,9 @@
 package common;
 
 import common.javainterop.ConsCellCollection;
+import edu.umn.cs.melt.copper.compiletime.dumpers.XMLSpecDumper;
 import edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.*;
+import edu.umn.cs.melt.copper.main.CopperDumpType;
 import edu.umn.cs.melt.copper.main.CopperIOType;
 import edu.umn.cs.melt.copper.main.CopperPipelineType;
 import edu.umn.cs.melt.copper.main.ParserCompiler;
@@ -9,19 +11,31 @@ import edu.umn.cs.melt.copper.main.ParserCompilerParameters;
 import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;
 import edu.umn.cs.melt.copper.runtime.io.Location;
 import edu.umn.cs.melt.copper.runtime.logging.CopperException;
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class CopperUtil {
   private static Location LOCATION = new VirtualLocation("<silver>", -1, -1);
 
-  public static IOToken compile(ParserBean parser, IOToken tok) {
+  public static IOToken compile(ParserBean parser, String packageName,
+                                String parserName, String outFile,
+                                IOToken tok) {
     ParserCompilerParameters params = new ParserCompilerParameters();
-    params.setOutputFile(new java.io.File("/tmp/copper-out.java"));
+    params.setPackageName(packageName);
+    params.setParserName(parserName);
+    params.setOutputFile(new java.io.File(outFile));
     params.setOutputType(CopperIOType.FILE);
     params.setUsePipeline(CopperPipelineType.GRAMMARBEANS);
+
+    try {
+      new XMLSpecDumper(parser).dump(CopperDumpType.XML_SPEC, System.out);
+    } catch (IOException exc) {
+    }
+
     try {
       int ret = ParserCompiler.compile(parser, params);
       System.out.println("status = " + ret);
@@ -125,11 +139,9 @@ public final class CopperUtil {
           new HashSet<CopperElementReference>();
       startLayout.iterator().forEachRemaining(startLayoutSet::add);
       parserBean.setStartLayout(startLayoutSet);
-
-      // TODO: parserClassAuxCode
-      // TODO: parserInitCode
-      // TODO: preambleCode
-
+      parserBean.setParserClassAuxCode(parserClassAuxCode);
+      parserBean.setParserInitCode(parserInitCode);
+      parserBean.setPreambleCode(preambleCode);
       parserBean.addGrammar(grammar);
       return parserBean;
     } catch (CopperException exc) {
@@ -157,7 +169,7 @@ public final class CopperUtil {
   public static Production
   makeProduction(String id, Integer precedence, CopperElementReference operator,
                  String code, CopperElementReference lhs,
-                 ConsCellCollection<CopperElementReference> rhs) {
+                 ConsCellCollection<CopperElementReference> rhsConsList) {
     try {
       Production prod = new Production();
       prod.setLocation(LOCATION);
@@ -168,7 +180,12 @@ public final class CopperUtil {
       prod.setOperator(operator);
       prod.setCode(code);
       prod.setLhs(lhs);
-      prod.setRhs(new ArrayList(rhs));
+      ArrayList<CopperElementReference> rhs = new ArrayList(rhsConsList);
+      prod.setRhs(rhs);
+      ArrayList<String> rhsVarNames = new ArrayList<String>();
+      for (int i = 0; i < rhs.size(); i++)
+        rhsVarNames.add(String.format("rhsVar_%d", i));
+      prod.setRhsVarNames(rhsVarNames);
       return prod;
     } catch (ParseException exc) {
       throw new RuntimeException(exc);

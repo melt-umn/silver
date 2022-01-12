@@ -121,8 +121,7 @@ ${s2.lexerClassRefDcls}
     parserClassAuxCode, parserInitCode, preambleCode,
     copper:grammar_(s2.containingGrammar, grammarElements));
 
-  top.xmlCopper = unsafeTrace(xmlCopper, copper:compileParserBean(top.copperParser, unsafeIO()));
-  local xmlCopper::String =
+  top.xmlCopper =
 s"""<?xml version="1.0" encoding="UTF-8"?>
 
 <CopperSpec xmlns="http://melt.cs.umn.edu/copper/xmlns/skins/xml/0.9">

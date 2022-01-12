@@ -1,5 +1,6 @@
 grammar silver:compiler:modification:copper;
 
+import silver:compiler:definition:concrete_syntax:copper as copper;
 import silver:compiler:driver;
 import silver:compiler:translation:java:driver;
 
@@ -67,9 +68,11 @@ String ::= p::ParserSpec  a::Decorated CmdArgs
       "avoidRecompile='true' dump='ERROR_ONLY'";
 
   return s"""
+    <!--
     <copper packageName='${makeName(p.sourceGrammar)}' parserName='${parserName}' outputFile='$${src}/${packagepath ++ parserName}.java' useSkin='XML' warnUselessNTs='false' ${varyingopts} dumpFormat='HTML' dumpFile='${parserName}.copperdump.html'>
       <inputs file='$${src}/${packagepath ++ parserName}.copper'/>
     </copper>
+    -->
 """;
 }
 
@@ -91,8 +94,9 @@ top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverG
 {
   local dir :: String =
     silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar);
-  local file :: String =
-    dir ++ makeParserName(spec.fullName) ++ ".copper";
+  local className :: String = makeParserName(spec.fullName);
+  local file :: String = dir ++ className ++ ".copper";
+  local javaFile :: String = dir ++ className ++ ".java";
 
   spec.compiledGrammars = cg;
   local newSpec :: String =
@@ -118,9 +122,13 @@ top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverG
         -- hack to ensure directory exists (for --dont-translate)
         mkdirT(dir, join).io));
 
+  local doJavaWR :: IO =
+    copper:compileParserBean(spec.cstAst.copperParser,
+      makeName(spec.sourceGrammar), className, javaFile, doWR);
+
   top.io = if null(specCst.cstErrors) then 
              if ex.iovalue && oldSpec.iovalue == newSpec then doUTD 
-               else doWR
+               else doJavaWR
              else err;
              
   top.code = if null(specCst.cstErrors) then 0 else 1;

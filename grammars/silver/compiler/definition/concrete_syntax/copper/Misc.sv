@@ -14,11 +14,11 @@ ParserBean ::= id::String  name::String  startSymbol::ElementReference
 }
 
 function compileParserBean
-IO ::= parser_::ParserBean  io::IO
+IOToken ::= parser_::ParserBean  packageName::String  parserName::String  outFile::String  io::IOToken
 {
   return error("copper FFI function");
 } foreign {
-  "java": return "common.CopperUtil.compile((edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ParserBean)%parser_%, %io%)";
+  "java": return "common.CopperUtil.compile((edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ParserBean)%parser_%, %packageName%.toString(), %parserName%.toString(), %outFile%.toString(), %io%)";
 }
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar
