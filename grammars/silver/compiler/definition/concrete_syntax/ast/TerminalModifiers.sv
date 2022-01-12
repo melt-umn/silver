@@ -51,8 +51,8 @@ top::SyntaxTerminalModifiers ::=
  -}
 closed nonterminal SyntaxTerminalModifier with cstEnv, cstErrors,
   classTerminalContribs, superClasses, subClasses, dominatesXML, submitsXML,
-  dominates_, submits_, ignored, acode, lexerclassesXML, opPrecedence,
-  opAssociation, prefixSeperator, prefixSeperatorToApply,
+  dominates_, submits_, lexerClasses, ignored, acode, lexerclassesXML,
+  opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
   componentGrammarMarkingTerminals, marking, terminalName, prettyName;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
@@ -61,9 +61,9 @@ top::SyntaxTerminalModifier ::=
 {
   -- Empty values as defaults
   propagate cstErrors, classTerminalContribs, dominatesXML, submitsXML,
-    dominates_, submits_, ignored, acode, lexerclassesXML, opPrecedence,
-    opAssociation, prefixSeperator, prefixSeperatorToApply, marking,
-    prettyName;
+    dominates_, submits_, lexerClasses, ignored, acode, lexerclassesXML,
+    opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
+    marking, prettyName;
 }
 
 {--
@@ -132,6 +132,7 @@ top::SyntaxTerminalModifier ::= cls::[String]
 
   top.dominates_ := flatMap((.domContribs), allClsRefs);
   top.submits_ := flatMap((.subContribs), allClsRefs);
+  top.lexerClasses := map((.copperElementReference), allClsRefs);
   
   local termSeps :: [Maybe<String>] = map((.prefixSeperator), allClsRefs);
   top.prefixSeperator := foldr(orElse, nothing(), termSeps);
