@@ -155,8 +155,8 @@ public final class CopperUtil {
   }
 
   public static Production
-  makeProduction(String id, Integer precedence, String operator, String code,
-                 CopperElementReference lhs,
+  makeProduction(String id, Integer precedence, CopperElementReference operator,
+                 String code, CopperElementReference lhs,
                  ConsCellCollection<CopperElementReference> rhs) {
     try {
       Production prod = new Production();
@@ -165,6 +165,7 @@ public final class CopperUtil {
       prod.setDisplayName(id);
       if (precedence != null)
         prod.setPrecedence(precedence);
+      prod.setOperator(operator);
       prod.setCode(code);
       prod.setLhs(lhs);
       prod.setRhs(new ArrayList(rhs));
