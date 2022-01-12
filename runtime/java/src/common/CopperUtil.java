@@ -25,6 +25,8 @@ public final class CopperUtil {
         try {
             int ret = ParserCompiler.compile(parser, params);
             System.out.println("status = " + ret);
+            if(ret != 0)
+              System.exit(ret);
         } catch(CopperException exc) {
             throw new RuntimeException(exc);
         }
