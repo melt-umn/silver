@@ -114,10 +114,12 @@ ${s2.lexerClassRefDcls}
   local parserInitCode::String = "reset();";
   local preambleCode::String = "import java.util.ArrayList;\nimport java.util.List;\n";
 
+  local grammarElements::[copper:GrammarElement] = s2.copperGrammarElements
+    ++ flatMap((.copperGrammarElements), s2.disambiguationClasses);
   top.copperParser = copper:parserBean(makeCopperName(parsername), parsername,
     head(startFound).copperElementReference, startLayoutCopper,
     parserClassAuxCode, parserInitCode, preambleCode,
-    copper:grammar_(s2.containingGrammar, s2.copperGrammarElements));
+    copper:grammar_(s2.containingGrammar, grammarElements));
 
   top.xmlCopper = unsafeTrace(xmlCopper, copper:compileParserBean(top.copperParser, unsafeIO()));
   local xmlCopper::String =

@@ -25,6 +25,13 @@ GrammarElement ::= id::String  pp::String  type_::String
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.OperatorClass
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ParserAttribute
+function parserAttribute
+GrammarElement ::= id::String  type_::String  code::String
+{
+  return error("copper FFI function");
+} foreign {
+  "java": return "common.CopperUtil.makeParserAttribute(%id%.toString(), %type_%.toString(), %code%.toString())";
+}
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Production
 function production_
