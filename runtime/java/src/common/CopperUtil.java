@@ -209,7 +209,6 @@ public final class CopperUtil {
       terminal.setPrefix(prefix);
       submits.iterator().forEachRemaining(terminal::addSubmitsTo);
       dominates.iterator().forEachRemaining(terminal::addDominates);
-      System.err.printf("%s -> %s\n", pp, precedence);
       return terminal;
     } catch (ParseException exc) {
       throw new RuntimeException(exc);

@@ -321,8 +321,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   top.copperElementReference = copper:elementReference(top.containingGrammar, makeCopperName(ns.fullName));
   top.copperGrammarElements = [copper:production_(makeCopperName(ns.fullName),
     modifiers.productionPrecedence.isJust, modifiers.productionPrecedence.fromJust,
-    modifiers.productionOperator.isJust,
-    copper:elementReference(top.containingGrammar, modifiers.productionOperator.fromJust),
+    modifiers.productionOperator.isJust, modifiers.productionOperator.fromJust.copperElementReference,
     code, head(lhsRef).copperElementReference, map((.copperElementReference), map(head, rhsRefs)))];
 
   top.xmlCopper =
@@ -336,7 +335,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     "    <RHS>" ++ implode("", map(xmlCopperRef, map(head, rhsRefs))) ++ "</RHS>\n" ++
     "    <Layout>" ++ prodLayout ++ "</Layout>\n" ++
     (if modifiers.productionOperator.isJust then
-    "    <Operator>" ++ modifiers.productionOperator.fromJust ++ "</Operator>\n"
+    "    <Operator>" ++ xmlCopperRef(modifiers.productionOperator.fromJust) ++ "</Operator>\n"
     else "") ++
     "  </Production>\n";
 }
