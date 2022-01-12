@@ -203,8 +203,8 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     modifiers.opPrecedence.fromJust, modifiers.opAssociation.isJust,
     fromMaybe("", modifiers.opAssociation), makeTerminalName(n), 
     "RESULT = new " ++ makeTerminalName(n) ++ "(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());tokenList.add(RESULT);\n" ++ modifiers.acode,
-    modifiers.lexerClasses,
-    !null(pfx), error("TODO pfx"), modifiers.submits_, modifiers.dominates_)];
+    modifiers.lexerClasses, !null(pfx), copper:elementReference(top.containingGrammar, head(pfx)),
+    modifiers.submits_, modifiers.dominates_)];
 
   top.xmlCopper =
     "  <Terminal id=\"" ++ makeCopperName(n) ++ "\">\n" ++
@@ -436,7 +436,8 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
 
   top.cstNormalize := [top];
 
-  top.copperGrammarElements = error("TODO ParserAttribute copperGrammarElements");
+  top.copperGrammarElements = [copper:parserAttribute(makeCopperName(n), ty.transType,
+    acode ++ implode("\n", searchEnvTree(n, top.parserAttributeAspects)))];
 
   top.xmlCopper =
     "  <ParserAttribute id=\"" ++ makeCopperName(n) ++ "\">\n" ++
@@ -468,6 +469,8 @@ top::SyntaxDcl ::= n::String acode::String
   top.cstNormalize := [top];
 
   top.parserAttributeAspectContribs := [pair(n, acode)];
+  -- The Copper information for these gets picked up by the main syntaxParserAttribute declaration.
+  top.copperGrammarElements = [];
   top.xmlCopper = "";
 }
 
