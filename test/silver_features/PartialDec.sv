@@ -20,7 +20,7 @@ top::PDExpr ::= e::PDExpr
 }
 
 production pdOp1Impl
-top::PDExpr ::= e::Decorated PDExpr with only {env1}
+top::PDExpr ::= e::PartiallyDecorated PDExpr with {env1}
 {
   e.env2 = top.env2;
   top.errors1 = e.errors1;
@@ -35,9 +35,9 @@ top::PDExpr ::= e::PDExpr
 }
 
 production pdOp2Impl
-top::PDExpr ::= e::Decorated PDExpr with only {env1}
+top::PDExpr ::= e::PartiallyDecorated PDExpr with {env1}
 {
-  local e2::Decorated PDExpr with only {env1} = e;
+  local e2::PartiallyDecorated PDExpr with {env1} = e;
   e2.env2 = top.env2;
   top.errors1 = e2.errors1;
   top.errors2 = e2.errors2;
@@ -52,7 +52,7 @@ top::PDExpr ::= e::PDExpr
 }
 
 production pdOp3Impl
-top::PDExpr ::= e::Decorated PDExpr with only {env1}
+top::PDExpr ::= e::PartiallyDecorated PDExpr with {env1}
 {
   local e2::Decorated PDExpr with {env1, env2} = decorate e with {env2 = top.env2;};
   top.errors1 = e2.errors1;

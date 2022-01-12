@@ -2,9 +2,6 @@ grammar silver:compiler:definition:type:syntax;
 
 -- '<' has precedence 9, assoc = left
 
- -- Precedence to fix Decorated Decorated Expr with only {}, which is a semantic error either way
-terminal DecOnly_kwd     'only'         lexer classes {KEYWORD}, precedence = 3;
-
 terminal Arrow_t '->' association = right, lexer classes {SPECOP};
 
 -- Ambiguity at '{' in production signature between an inh set type and the production body.
@@ -15,6 +12,7 @@ disambiguate LCurly_t, InhSetLCurly_t { pluck LCurly_t; }
 
 terminal Boolean_tkwd    'Boolean'    lexer classes {TYPE,RESERVED};
 terminal Decorated_tkwd  'Decorated'  lexer classes {TYPE,RESERVED}, precedence=1;
+terminal PartiallyDecorated_tkwd 'PartiallyDecorated' lexer classes {TYPE,RESERVED}, precedence=1;
 terminal Float_tkwd      'Float'      lexer classes {TYPE,RESERVED};
 terminal Integer_tkwd    'Integer'    lexer classes {TYPE,RESERVED};
 terminal String_tkwd     'String'     lexer classes {TYPE,RESERVED};

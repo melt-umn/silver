@@ -339,9 +339,9 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
 }
 
 concrete production partialRefTypeExpr
-top::TypeExpr ::= 'Decorated' t::TypeExpr 'with' 'only' i::TypeExpr
+top::TypeExpr ::= 'PartiallyDecorated' t::TypeExpr 'with' i::TypeExpr
 {
-  top.unparse = "Decorated " ++ t.unparse ++ " with only " ++ i.unparse;
+  top.unparse = "PartiallyDecorated " ++ t.unparse ++ " with " ++ i.unparse;
   
   i.onNt = t.typerep;
 
@@ -352,7 +352,7 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr 'with' 'only' i::TypeExpr
     case t.typerep.baseType of
     | nonterminalType(_,_,_) -> []
     | skolemType(_) -> []
-    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
+    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be PartiallyDecorated.")]
     end;
   top.errors <-
     if i.typerep.kindrep != inhSetKind()
@@ -364,6 +364,23 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr 'with' 'only' i::TypeExpr
     case i of
     | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, inhSetKind())]
     | _ -> []
+    end;
+}
+
+concrete production partialRefDefaultTypeExpr
+top::TypeExpr ::= 'PartiallyDecorated' t::TypeExpr
+{
+  top.unparse = "PartiallyDecorated " ++ t.unparse;
+
+  top.typerep =
+    partiallyDecoratedType(t.typerep,
+      inhSetType(sort(concat(getInhsForNtRef(t.typerep.typeName, top.flowEnv)))));
+  
+  top.errors <-
+    case t.typerep.baseType of
+    | nonterminalType(_,_,_) -> []
+    | skolemType(_) -> [err(t.location, "polymorphic PartiallyDecorated types must specify an explicit reference set")]
+    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be PartiallyDecorated.")]
     end;
 }
 
