@@ -200,8 +200,8 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.copperElementReference = copper:elementReference(top.containingGrammar, makeCopperName(n));
   top.copperGrammarElements = [copper:terminal_(makeCopperName(n),
     disambiguatedPrettyName, regex.copperRegex, modifiers.opPrecedence.isJust,
-    modifiers.opPrecedence.fromJust, modifiers.opAssociation.isJust,
-    fromMaybe("", modifiers.opAssociation), makeTerminalName(n), 
+    modifiers.opPrecedence.fromJust, fromMaybe("", modifiers.opAssociation),
+    makeTerminalName(n), 
     "RESULT = new " ++ makeTerminalName(n) ++ "(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());tokenList.add(RESULT);\n" ++ modifiers.acode,
     modifiers.lexerClasses, !null(pfx), copper:elementReference(top.containingGrammar, head(pfx)),
     modifiers.submits_, modifiers.dominates_)];

@@ -191,17 +191,16 @@ public final class CopperUtil {
       terminal.setRegex(regex);
       // TODO: operatorClass?
       terminal.setOperatorPrecedence(precedence);
-      if (associativity != null) {
-        switch (associativity) {
-        case "left":
-          terminal.setOperatorAssociativity(OperatorAssociativity.LEFT);
-          break;
-        case "right":
-          terminal.setOperatorAssociativity(OperatorAssociativity.RIGHT);
-          break;
-        default:
-          throw new RuntimeException("associativity = " + associativity);
-        }
+      switch (associativity) {
+      case "left":
+        terminal.setOperatorAssociativity(OperatorAssociativity.LEFT);
+        break;
+      case "right":
+        terminal.setOperatorAssociativity(OperatorAssociativity.RIGHT);
+        break;
+      default:
+        terminal.setOperatorAssociativity(OperatorAssociativity.NONASSOC);
+        break;
       }
       terminal.setReturnType(type_);
       terminal.setCode(code);
@@ -209,6 +208,7 @@ public final class CopperUtil {
       terminal.setPrefix(prefix);
       submits.iterator().forEachRemaining(terminal::addSubmitsTo);
       dominates.iterator().forEachRemaining(terminal::addDominates);
+      System.err.printf("%s -> %s\n", pp, precedence);
       return terminal;
     } catch (ParseException exc) {
       throw new RuntimeException(exc);
