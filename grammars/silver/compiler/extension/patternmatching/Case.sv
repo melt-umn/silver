@@ -152,7 +152,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
         map(\ x::String -> baseExpr(qName(bogusLoc(), x),
                                     location=bogusLoc()), names);
   local compiledCase::Expr =
-        compileCaseExpr(nameExprs, ml, failExpr, retType, top.location);
+        compileCaseExpr(nameExprs, ml, failExpr, retType, top.location, top.env);
   local fwdResult::Expr =
         foldr(\ p::(String, Expr) rest::Expr ->
                 makeLet(top.location, p.1, freshType(), p.2, rest),
@@ -180,17 +180,98 @@ Pair<[AbstractMatchRule] [AbstractMatchRule]> ::= lst::[AbstractMatchRule]
          end;
 }
 
+
+{-
+ - Split rules into separate groups based on segments of the same kind of pattern type
+ - Assumes all match rules have at least one pattern; otherwise, you WILL get an error
+ -
+ - Consecutive variable patterns can go together, as they are simply
+ -    turned into let expressions.
+ - Consecutive non-forwarding patterns (including primitive patterns)
+ -    can go together, since a value can only match one of them.
+ - Consecutive instances of the same forwarding pattern can go together.
+ -    Different forwarding productions need to go separately in case one
+ -    would forward to the other (e.g. patterns `b() -> e1 | c() -> e2`
+ -    where c() forwards to b() would match c() first if in the same
+ -    primitive match).
+-}
+function splitPatternGroups
+[[AbstractMatchRule]] ::= ml::[AbstractMatchRule] env::Decorated Env
+{
+  local firstPatt::Decorated Pattern = head(ml).headPattern;
+
+  --First pattern is a variable
+  local vars::[AbstractMatchRule] = takeWhile((.isVarMatchRule), ml);
+  local varsRest::[[AbstractMatchRule]] =
+        splitPatternGroups(dropWhile((.isVarMatchRule), ml), env);
+
+  --Type of the patterns; "" if primitive
+  local builtType::String = firstPatt.patternTypeName;
+
+  --Primitive patterns, which cannot have forwarding productions and
+  --   thus need a different type of check
+  local primitives::[AbstractMatchRule] =
+        takeWhile(\ r::AbstractMatchRule ->
+                    r.headPattern.patternTypeName == "" &&
+                    !r.isVarMatchRule, ml);
+  local primitivesRest::[[AbstractMatchRule]] =
+        splitPatternGroups(dropWhile(\ r::AbstractMatchRule ->
+                                       r.headPattern.patternTypeName == "" &&
+                                       !r.isVarMatchRule, ml),
+                           env);
+
+  --All nonforwarding production names of the current type
+  local nonforwardingProds::[String] =
+        map((.fullName), filter(\ d::ValueDclInfo -> !d.hasForward, getKnownProds(builtType, env)));
+
+  --Initial segment where the patterns are nonforwarding productions
+  local nonforwarding::[AbstractMatchRule] =
+        takeWhile(\ r::AbstractMatchRule ->
+                    contains(r.headPattern.patternSortKey,
+                             nonforwardingProds), ml);
+  local nonforwardingRest::[[AbstractMatchRule]] =
+        splitPatternGroups(
+           dropWhile(\ r::AbstractMatchRule ->
+                       contains(r.headPattern.patternSortKey,
+                                nonforwardingProds), ml), env);
+
+  --Initial segment where the patterns are forwarding and all the same production
+  local forwardingOnes::[AbstractMatchRule] =
+        takeWhile(\ r::AbstractMatchRule ->
+                    r.headPattern.patternSortKey == firstPatt.patternSortKey,
+                  ml);
+  local forwardingRest::[[AbstractMatchRule]] =
+        splitPatternGroups(
+           dropWhile(\ r::AbstractMatchRule ->
+                       r.headPattern.patternSortKey == firstPatt.patternSortKey,
+                     ml), env);
+
+  return
+     case ml of
+     | [] -> []
+     | _ ->
+       if firstPatt.patternIsVariable
+       then vars::varsRest
+       else if builtType == "" && !firstPatt.patternIsVariable
+       then primitives::primitivesRest
+       else if contains(firstPatt.patternSortKey, nonforwardingProds)
+       then nonforwarding::nonforwardingRest
+       else forwardingOnes::forwardingRest
+     end;
+}
+
+
 --Compile a case expression `case es of ml` down into primitive matches
 function compileCaseExpr
-Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
+Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
+         loc::Location env::Decorated Env
 {
-  --Split the rules into groups with the same head pattern
-  --Note:  group() groups in order, so [a, a, b, a] will give [[a, a], [b], [a]]
-  --       This behavior is important to correct semantics here
-  local groups::[[AbstractMatchRule]] = group(ml);
+  --Split rules into segments of non-forwarding constructors, all same
+  --   forwarding constructor, and variables based on first pattern
+  local groups::[[AbstractMatchRule]] = splitPatternGroups(ml, env);
 
   local compiledGroups::Expr =
-        compilePatternGroups(es, groups, failExpr, retType, loc);
+        compilePatternGroups(es, groups, failExpr, retType, loc, env);
 
   --Check if there is any match rule with empty patterns
   local anyEmptyRules::Boolean =
@@ -228,13 +309,16 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Lo
 
 
 --Compile a match where the sets of patterns are grouped based on
---having the same first pattern, create a series of primitive match
---expressions to implement the match
+--having the same kind of first pattern (can go in the same primitive
+--match together), create a series of primitive match expressions to
+--implement the match
 function compilePatternGroups
-Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr retType::Type loc::Location
+Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
+         retType::Type loc::Location env::Decorated Env
 {
   local compileRest::Expr =
-        compilePatternGroups(matchEs, tail(ruleGroups), finalFail, retType, loc);
+        compilePatternGroups(matchEs, tail(ruleGroups), finalFail,
+                             retType, loc, env);
 
   local firstGroup::[AbstractMatchRule] =
         case ruleGroups of
@@ -252,52 +336,19 @@ Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr retTy
         | e::tl -> e
         end;
 
-  local names::[Name] = map(patternListVars, firstPatt.patternSubPatternList);
-  local l::Location = firstPatt.location;
-  local annos::[String] =
-        nub(map(fst, firstPatt.patternNamedSubPatternList));
-  local annoAccesses::[Expr] =
-        map(\ n::String ->
-              access(firstMatchExpr, '.', qNameAttrOccur(qName(l, n), location=l),
-                     location=l),
-            annos);
-  local restConCase::Expr =
-        compileCaseExpr(
-           map(exprFromName, names) ++ annoAccesses ++ tail(matchEs),
-           map(\ x::AbstractMatchRule -> x.expandHeadPattern(annos), firstGroup),
-           baseExpr(qName(loc, failName), location=loc), retType, loc);
-  local primPatt::PrimPattern =
-        case firstPatt of
-        | prodAppPattern_named(qn,_,_,_,_,_) -> 
-          prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', '->',
-                      restConCase, location=l)
-        | intPattern(it) ->
-          integerPattern(it, '->', restConCase, location=l)
-        | fltPattern(it) ->
-          floatPattern(it, '->', restConCase, location=l)
-        | strPattern(it) ->
-          stringPattern(it, '->', restConCase, location=l)
-        | truePattern(_) ->
-          booleanPattern("true", '->', restConCase, location=l)
-        | falsePattern(_) ->
-          booleanPattern("false", '->', restConCase, location=l)
-        | nilListPattern(_,_) ->
-          nilPattern(restConCase, location=l)
-        | consListPattern(h,_,t) ->
-          case names of
-          | [hd, tl] ->
-            conslstPattern(hd, tl, restConCase, location=l)
-          | _ -> error("Must have at least two names for consListPattern")
-          end
-        | _ -> error("Can only have constructor patterns in constructor case")
-        end;
-  --Note it is important we match against a *single pattern* in each primitive match
-  --This ensures we take the first one which _can be_ matched, not the old notion of
-  --   taking the "best match"
+  --Modifying the order of rules in the same group (from ruleGroups) is fine,
+  --since we either have only the same constructor for a forwarding production
+  --or multiple non-forwarding productions where a value can only match one of them
+  local constructorGroups::[[AbstractMatchRule]] = groupMRules(firstGroup);
+  local mappedPatterns::[PrimPattern] =
+          map(allConCaseTransform(head(matchEs), tail(matchEs),
+                                  baseExpr(qName(loc, failName), location=loc),
+                                  retType, _, env),
+              constructorGroups);
   local currentConCase::Expr =
         matchPrimitive(firstMatchExpr, typerepTypeExpr(retType, location=loc),
-               onePattern(primPatt, location=primPatt.location),
-               baseExpr(qName(loc, failName), location=loc), location=l);
+               foldPrimPatterns(mappedPatterns),
+               baseExpr(qName(loc, failName), location=loc), location=loc);
 
   -- A quick note about that freshType() hack: putting it here means there's ONE fresh type
   -- generated, puching it inside 'bindHeadPattern' would generate multiple fresh types.
@@ -306,7 +357,8 @@ Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr retTy
         map(bindHeadPattern(firstMatchExpr, freshType(), _), firstGroup);
   local currentVarCase::Expr =
         compileCaseExpr(tail(matchEs), boundVarRules,
-           baseExpr(qName(loc, failName), location=loc), retType, loc);
+           baseExpr(qName(loc, failName), location=loc),
+           retType, loc, env);
   --Need to go through all the match rules and push the binding inside them
   {-local currentVarCase::Expr =
         case firstPatt.patternVariableName of
@@ -329,6 +381,53 @@ Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr retTy
      end;
 }
 
+{--
+ - Takes a set of matchrules that all match against the SAME CONSTRUCTOR and pushes
+ - a complex case-expr within a primitive pattern that matches this constructor.
+ -
+ - @param currExpr  (The current expression to match against in the overall complex case-expr)
+ - @param restExprs  (The remaining expressions to match against in the overall complex case-expr)
+ - @param failCase  (The failure expression)
+ - @param retType  (The return type of the overall case-expr, and thus this)
+ - @param mrs  (Match rules that all share the same head-pattern)
+ - @param env  (Known environment)
+ -
+ - @return  A primitive pattern matching the constructor, with the overall case-expr pushed down into it and compiled
+ -}
+function allConCaseTransform
+PrimPattern ::= currExpr::Expr restExprs::[Expr] failCase::Expr
+                retType::Type mrs::[AbstractMatchRule] env::Decorated Env
+{
+  local names :: [Name] = map(patternListVars, head(mrs).headPattern.patternSubPatternList);
+
+  local subcase::Expr =
+        compileCaseExpr(
+           map(exprFromName, names) ++ annoAccesses ++ restExprs,
+           map(\ mr::AbstractMatchRule -> mr.expandHeadPattern(annos), mrs),
+           failCase, retType, head(mrs).location, env);
+
+  local annos :: [String] =
+        nub(map(fst, flatMap((.patternNamedSubPatternList), map((.headPattern), mrs))));
+  local annoAccesses :: [Expr] =
+        map(\ n::String -> access(currExpr, '.', qNameAttrOccur(qName(l, n), location=l), location=l), annos);
+  
+  -- Maybe this one is more reasonable? We need to test examples and see what happens...
+  local l :: Location = head(mrs).headPattern.location;
+
+  return
+    case head(mrs).headPattern of
+    | prodAppPattern_named(qn,_,_,_,_,_) -> 
+      prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', '->', subcase, location=l)
+    | intPattern(it) -> integerPattern(it, '->', subcase, location=l)
+    | fltPattern(it) -> floatPattern(it, '->', subcase, location=l)
+    | strPattern(it) -> stringPattern(it, '->', subcase, location=l)
+    | truePattern(_) -> booleanPattern("true", '->', subcase, location=l)
+    | falsePattern(_) -> booleanPattern("false", '->', subcase, location=l)
+    | nilListPattern(_,_) -> nilPattern(subcase, location=l)
+    | consListPattern(h,_,t) -> conslstPattern(head(names), head(tail(names)), subcase, location=l)
+    | _ -> error("Can only have constructor patterns in allConCaseTransform:  " ++ head(mrs).headPattern.unparse)
+    end;
+}
 
 
 
