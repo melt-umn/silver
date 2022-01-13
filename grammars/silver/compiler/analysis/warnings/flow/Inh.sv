@@ -73,25 +73,31 @@ Boolean ::= sigName::String  ns::NamedSignature  env::Decorated Env  attr::Strin
 }
 
 {--
- - Given a name of a child, return whether it has an undecorated
- - nonterminal type. False if nonsensicle.
+ - Given a name of a child, return whether it has a fully decorated nonterminal
+ - type (covered by the more specific checks on accesses from references) or a
+ - partially decorated nonterminal type decorated with the attr.
+ - True if nonsensicle.
  -}
-function sigNotAReference
-Boolean ::= sigName::String  ns::NamedSignature  e::Decorated Env
+function sigAttrViaReference
+Boolean ::= sigName::String  attrName::String  ns::NamedSignature  e::Decorated Env
 {
-  return isDecorable(findNamedSigElemType(sigName, ns.inputElements), e);
+  local ty :: Type = findNamedSigElemType(sigName, ns.inputElements);
+  return !isDecorable(ty, e) || contains(attrName, getMinRefSet(ty, e));
 }
 
 {--
- - Given a name of a local, return whether it has an undecorated
- - nonterminal type. False if nonsensicle.
+ - Given a name of a local, return whether it has a fully decorated nonterminal
+ - type (covered by the more specific checks on accesses from references) or a
+ - partially decorated nonterminal type decorated with the attr.
+ - True if nonsensicle.
  -}
-function localNotAReference
-Boolean ::= sigName::String  e::Decorated Env
+function localAttrViaReference
+Boolean ::= sigName::String  attrName::String  e::Decorated Env
 {
   local d :: [ValueDclInfo] = getValueDcl(sigName, e);
+  local ty :: Type = head(d).typeScheme.typerep;
 
-  return if null(d) then true else isDecorable(head(d).typeScheme.typerep, e);
+  return null(d) || !isDecorable(ty, e) || contains(attrName, getMinRefSet(ty, e));
 }
 
 {--
@@ -142,7 +148,7 @@ function checkEqDeps
       if isInherited(attrName, realEnv)
       then if !null(lookupInh(prodName, sigName, attrName, flowEnv))
            || !ignoreIfAutoCopyOnLhs(sigName, ns, realEnv, attrName)
-           || !sigNotAReference(sigName, ns, realEnv)
+           || sigAttrViaReference(sigName, attrName, ns, realEnv)
            then []
            else [mwdaWrn(config, l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
       else []
@@ -156,7 +162,7 @@ function checkEqDeps
       if isInherited(attrName, realEnv)
       then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
            || fName == "forward"
-           || !localNotAReference(fName, realEnv)
+           || localAttrViaReference(fName, attrName, realEnv)
            then []
            else [mwdaWrn(config, l, "Equation has transitive dependency on local " ++ fName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
       else []
@@ -600,7 +606,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                       isEquationMissing(
                         lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                         _),
-                      set:toList(inhDeps)))
+                      removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
+                        set:toList(inhDeps))))
              in if null(inhs) then []
                 else [mwdaWrn(top.config, top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
@@ -613,7 +620,8 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                     isEquationMissing(
                       lookupLocalInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
                       _),
-                    set:toList(inhDeps))
+                    removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
+                      set:toList(inhDeps)))
              in if null(inhs) then []
                 else [mwdaWrn(top.config, top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end

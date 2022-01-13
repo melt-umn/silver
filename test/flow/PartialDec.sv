@@ -1,6 +1,9 @@
 grammar flow;
 
-nonterminal PDExpr with env1, env2;
+synthesized attribute errors1::Boolean;
+synthesized attribute errors2::Boolean;
+
+nonterminal PDExpr with env1, env2, errors1, errors2;
 
 production overloadThing
 top::PDExpr ::= e::PDExpr
@@ -12,6 +15,18 @@ top::PDExpr ::= e::PDExpr
 production dispatchThing
 top::PDExpr ::= e::PartiallyDecorated PDExpr with {env1}
 {
+  -- Accesses on partially decorated children should not give flow errors
+  top.errors1 = e.errors1;
+  top.errors2 = !null(e.env1);
+}
+
+function getEnv2FromPartialRef
+[String] ::= e::Expr
+{
+  e.env2 = [];
+  -- Accesses on partially decorated local should not give flow errors
+  local e2::PartiallyDecorated Expr with {env2} = e;
+  return e2.env2;
 }
 
 warnCode "Multiple partially decorated references taken to e in production flow:overloadThing2 (reference has type PartiallyDecorated flow:PDExpr with {flow:env1})." {
