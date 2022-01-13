@@ -96,7 +96,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 -- Overloaded operators --------------------------------------------------------
 
 abstract production listPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
+top::Expr ::= e1::PartiallyDecorated Expr e2::PartiallyDecorated Expr
 {
   forwards to mkStrFunctionInvocationDecorated(e1.location, "silver:core:append", [e1,e2]);
 }

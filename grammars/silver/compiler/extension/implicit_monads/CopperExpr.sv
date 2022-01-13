@@ -6,7 +6,7 @@ grammar silver:compiler:extension:implicit_monads;
 -}
 
 aspect production actionChildReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
@@ -18,7 +18,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production pluckTerminalReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
@@ -30,7 +30,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production terminalIdReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
@@ -42,7 +42,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production parserAttributeReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;
@@ -54,7 +54,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production termAttrValueReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.merrors := [];
   top.mUpSubst = top.mDownSubst;

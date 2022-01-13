@@ -34,7 +34,7 @@ top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QNa
  - Propagate a ordering key synthesized attribute on the enclosing production
  -}
 abstract production propagateOrderingKey
-top::ProductionStmt ::= syn::Decorated QName
+top::ProductionStmt ::= syn::PartiallyDecorated QName
 {
   top.unparse = s"propagate ${syn.unparse};";
 
@@ -49,7 +49,7 @@ top::ProductionStmt ::= syn::Decorated QName
  - Propagate a ordering synthesized attribute on the enclosing production
  -}
 abstract production propagateOrdering
-top::ProductionStmt ::= inh::String keySyn::String syn::Decorated QName
+top::ProductionStmt ::= inh::String keySyn::String syn::PartiallyDecorated QName
 {
   top.unparse = s"propagate ${syn.unparse};";
   

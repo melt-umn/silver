@@ -22,7 +22,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur e::Expr
 {
   local exportedBy :: [String] = 
     if top.frame.hasPartialSignature
@@ -45,7 +45,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur e::
 }
 
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   local exportedBy :: [String] = 
     case dl of
@@ -89,7 +89,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 --- FROM COLLECTIONS
 
 aspect production synBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   local exportedBy :: [String] = 
     if top.frame.hasPartialSignature
@@ -111,7 +111,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     else [];
 }
 aspect production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   local exportedBy :: [String] = 
     case dl of
@@ -163,7 +163,7 @@ top::ExprLHSExpr ::= attr::QNameAttrOccur
 
 -- These checks live here for now, since they are related to duplicate equations:
 aspect production childReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   local partialRefs::[(String, Location, [String])] = getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);
@@ -190,7 +190,7 @@ top::Expr ::= q::Decorated QName
     end;
 }
 aspect production localReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   local partialRefs::[(String, Location, [String])] = getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);
@@ -217,7 +217,7 @@ top::Expr ::= q::Decorated QName
     end;
 }
 aspect production lhsReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.errors <-
@@ -228,7 +228,7 @@ top::Expr ::= q::Decorated QName
     end;
 }
 aspect production forwardReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.errors <-
@@ -239,7 +239,7 @@ top::Expr ::= q::Decorated QName
     end;
 }
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
+top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.errors <-

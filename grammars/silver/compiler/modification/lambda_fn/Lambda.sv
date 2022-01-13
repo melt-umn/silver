@@ -61,7 +61,7 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 }
 
 abstract production lambdaParamReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.unparse = q.unparse;
   propagate errors;

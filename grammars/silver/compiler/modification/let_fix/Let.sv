@@ -116,7 +116,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 }
 
 abstract production lexicalLocalReference
-top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
+top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
   top.unparse = q.unparse;
   top.errors := [];

@@ -138,7 +138,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
+top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;

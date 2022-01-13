@@ -27,7 +27,7 @@ top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName ';'
  - @param attr  The name of the attribute to propagate
  -}
 abstract production propagateEquality
-top::ProductionStmt ::= inh::String syn::Decorated QName
+top::ProductionStmt ::= inh::String syn::PartiallyDecorated QName
 {
   top.unparse = s"propagate ${syn.unparse};";
   

@@ -182,7 +182,7 @@ function buildExplicitAttrErrors
 
 --productions for error checking on restricted attributes
 abstract production restrictedSynAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
 {
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
@@ -205,7 +205,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
 
 
 abstract production restrictedInhAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
 {
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
@@ -231,7 +231,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
 
 --productions for error checking on implicit attributes
 abstract production implicitSynAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
 {
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
@@ -261,7 +261,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
 
 
 abstract production implicitInhAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
 {
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
 
