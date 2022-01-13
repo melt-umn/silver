@@ -63,8 +63,9 @@ production pdOp4
 top::PDExpr ::= e::PDExpr
 {
   e.env1 = top.env1;
-  e.env2 = top.env2;
-  forwards to pdOp4Impl(e);
+  local e2::PartiallyDecorated PDExpr with {env1} = e;
+  e2.env2 = top.env2;
+  forwards to pdOp4Impl(e2);
 }
 
 production pdOp4Impl

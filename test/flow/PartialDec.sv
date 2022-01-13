@@ -14,10 +14,14 @@ top::PDExpr ::= e::PartiallyDecorated PDExpr with {env1}
 {
 }
 
-aspect production overloadThing
+warnCode "Multiple partially decorated references taken to e in production flow:overloadThing2 (reference has type PartiallyDecorated flow:PDExpr with {flow:env1})." {
+production overloadThing2
 top::PDExpr ::= e::PDExpr
 {
-  local otherRef::PartiallyDecorated PDExpr with {env1} = e;  -- OK since the ref set is the same
+  local otherRef::PartiallyDecorated PDExpr with {env1} = e;
+  e.env1 = top.env1;
+  forwards to dispatchThing(e);
+}
 }
 
 warnCode "Attribute env2 with an equation on e is not in the partially decorated reference taken" {
@@ -28,7 +32,7 @@ top::PDExpr ::= e::PDExpr
 }
 }
 
-warnCode "Conflicting partially decorated references to e2" {
+warnCode "Multiple partially decorated references taken to e2 in production flow:overloadThing (reference has type PartiallyDecorated flow:PDExpr with {flow:env1})." {
 aspect production overloadThing
 top::PDExpr ::= e::PDExpr
 {

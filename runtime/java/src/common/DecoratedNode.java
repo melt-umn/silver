@@ -1,10 +1,6 @@
 package common;
 
-import java.io.FileNotFoundException;
-import java.util.Arrays;
-
 import common.exceptions.MissingDefinitionException;
-import common.exceptions.MissingInheritedDefinitionException;
 import common.exceptions.SilverException;
 import common.exceptions.TraceException;
 
@@ -56,10 +52,6 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @see TopNode
 	 */
 	protected final DecoratedNode parent;
-	/**
-	 * The DecoratedNode for a partially decorated reference is here being decorated with additional inherited attributes. (May be null)
-	 */
-	protected final DecoratedNode base;
 	
 	/**
 	 * The cache of children (e.g. the DecoratedNodes)
@@ -90,41 +82,17 @@ public class DecoratedNode implements Decorable, Typed {
 
 	/**
 	 * The inherited attributes supplied to this DecoratedNode, to be evaluated with context 'parent'.
+	 * Not final, because we make a copy of the array if this DecoratedNode is extra-decorated.
 	 * 
 	 * @see #inherited(String)
 	 * @see #inheritedValues
 	 */
-	protected final Lazy[] inheritedAttributes;
+	protected Lazy[] inheritedAttributes;
 
 	/**
 	 * A cache of the values of local attributes on this node. (incl. locals and prod)
 	 */
 	protected final Object[] localValues;
-
-	/**
-	 * The cache of the exception thrown in a previous attempt to evaluate the forward,
-	 * or null if evaluation has not previously failed.
-	 * Either a MissingInheritedDefinitionException, or a TraceException leading to one.
-	 */
-	protected SilverException forwardFailed;
-	/**
-	 * The cache of the exception thrown in a previous attempt to evaluate an inherited attribute,
-	 * or null if evaluation has not previously failed.
-	 * Either a MissingInheritedDefinitionException, or a TraceException leading to one.
-	 */
-	protected SilverException[] inheritedFailed;
-	/**
-	 * The cache of the exception thrown in a previous attempt to evaluate an synthesized attribute,
-	 * or null if evaluation has not previously failed.
-	 * Either a MissingInheritedDefinitionException, or a TraceException leading to one.
-	 */
-	protected SilverException[] synthesizedFailed;
-	/**
-	 * The cache of the exception thrown in a previous attempt to evaluate a local attribute,
-	 * or null if evaluation has not previously failed.
-	 * Either a MissingInheritedDefinitionException, or a TraceException leading to one.
-	 */
-	protected SilverException[] localFailed;
 
 	
 	/**
@@ -142,7 +110,6 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @param parent  The DecoratedNode creating this one, to evaluate inhs in.
 	 * @param inhs  The inherited attributes to decorate this node with.
 	 * @param forwardParent  The node to request inherited attributes from instead of using 'inhs'.
-	 * @param base  The decorated node whose attribute values should be used as defaults.
 	 * 
 	 * @see Node#decorate(DecoratedNode, DecoratedNode)
 	 * @see Node#decorate(DecoratedNode, Lazy[])
@@ -150,13 +117,12 @@ public class DecoratedNode implements Decorable, Typed {
 	DecoratedNode(
 			final int cc, final int ic, final int sc, final int lc,
 			final Node self, final DecoratedNode parent,
-			final Lazy[] inhs, final DecoratedNode forwardParent, final DecoratedNode base) {
+			final Lazy[] inhs, final DecoratedNode forwardParent) {
 		this.self = self;
 		this.parent = parent;
 		this.originCtx = parent!=null?parent.originCtx:null;
 		this.inheritedAttributes = inhs;
 		this.forwardParent = forwardParent;
-		this.base = base;
 		
 		// create caches
 		this.childrenValues =    (cc > 0) ? new Object[cc] : null;
@@ -166,6 +132,7 @@ public class DecoratedNode implements Decorable, Typed {
 		
 		// STATS: Uncomment to enable statistics
 		//Statistics.dnSpawn(self!=null?self.getClass():TopNode.class);
+		// System.err.println("TRACE: " + (parent == null? "null" : parent.getDebugID()) + " creating decorated " + getDebugID());
 	}
 	/**
 	 * Initialize a DecorateNode created by a FunctionNode.
@@ -183,7 +150,6 @@ public class DecoratedNode implements Decorable, Typed {
 		this.parent = TopNode.singleton;
 		this.inheritedAttributes = null;
 		this.forwardParent = null;
-		this.base = null;
 		
 		this.childrenValues = new Object[cc];
 		this.inheritedValues = null;
@@ -203,7 +169,7 @@ public class DecoratedNode implements Decorable, Typed {
 	public final Node undecorate() {
 		return self;
 	}
-	
+
 	/**
 	 * Decorate this (partially decorated) node with additional inherited attributes.
 	 * 
@@ -213,28 +179,19 @@ public class DecoratedNode implements Decorable, Typed {
 	 */
 	@Override
 	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
-		return new DecoratedNode(self.getNumberOfChildren(),
-				                 self.getNumberOfInhAttrs(),
-				                 self.getNumberOfSynAttrs(),
-				                 self.getNumberOfLocalAttrs(),
-				                 self, parent, inhs, null, this);
-	}
-
-	/**
-	 * Decorate this forward node with additional inherited attributes provided by fwdParent.
-	 * This should only be used in evalForward for a DecoratedNode created by DecoratedNode.decorate().
-	 * 
-	 * @param parent The "true parent" of this node (same as the fwdParent's parent) 
-	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
-	 * @return A DecoratedNode with the specified forwardParent, referencing this DecoratedNode as 'base'.
-	 */
-	@Override
-	public DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
-		return new DecoratedNode(self.getNumberOfChildren(),
-                                 self.getNumberOfInhAttrs(),
-                                 self.getNumberOfSynAttrs(),
-                                 self.getNumberOfLocalAttrs(),
-                                 self, parent, null, fwdParent, this);
+		// System.err.println("TRACE: " + parent.getDebugID() + " extra-decorating " + getDebugID());
+		inheritedAttributes = inheritedAttributes.clone();  // Avoid modifying the static inh array from the original parent Node
+		for(int i = 0; i < inhs.length; i++) {
+			final int attribute = i;
+			if(inhs[attribute] != null) {
+				if(inheritedAttributes[attribute] == null) {
+					inheritedAttributes[attribute] = (context) -> inhs[attribute].eval(parent);
+				} else {
+					throw new SilverException(parent.getDebugID() + " cannot decorate " + getDebugID() + " with inh '" + self.getNameOfInhAttr(attribute) + "' as this attribute has already been provided.");
+				}
+			}
+		}
+		return this;
 	}
 
 	/**
@@ -279,22 +236,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * This is, after all, the "slow path."
 	 */
 	private final DecoratedNode createDecoratedChild(final int child) {
-		final Decorable d = (Decorable)self.getChild(child);
-		final Lazy[] inhs = self.getChildInheritedAttributes(child);
-		if(base != null) {
-			if(d instanceof Node) {
-				// We are decorating d, an undecorated Node.
-				// Decorate d, using base's corresponding decorated child as the base.
-				return ((Node)d).decorate(this, inhs, base.childDecorated(child));
-			} else {
-				// We are decorating d, a DecoratedNode.
-				// We already have a base (d), but we also want to default to the inhs on base's decorated child.
-				// Decorate d, using inherited Lazys that default to evaluating on base's decorated child.
-				return d.decorate(this, defaultInhs(base.childDecorated(child), inhs));
-			}
-		} else {
-			return d.decorate(this, inhs);
-		}
+		return ((Decorable)self.getChild(child)).decorate(this, self.getChildInheritedAttributes(child));
 	}
 
 	/**
@@ -323,54 +265,11 @@ public class DecoratedNode implements Decorable, Typed {
 	 * Slow path to eval a local, kept separate for inlining reasons.
 	 */
 	private final Object evalLocalAsIs(final int attribute) {
-		if(localFailed != null && localFailed[attribute] != null) {
-			throw localFailed[attribute];
-		}
-		DecoratedNode baseDecorated = null;
-		if(base != null && !base.hasLocalError(attribute)) {
-			try {
-				// System.err.println("TRACE: " + getDebugID() + " trying base for local '" + self.getNameOfLocalAttr(attribute));
-				Object o = base.evalLocalAsIs(attribute);
-				if(o instanceof DecoratedNode) {
-					// The local is a decorated node.
-					// We need to compute it on the new tree and decorate with the inherited attributes from here. 
-					baseDecorated = (DecoratedNode)o;
-				} else {
-					// The local is not a decorated node, we can safely return it immediately.
-					return o;
-				}
-			} catch(Throwable t) {
-				if (SilverException.getRootCause(t) instanceof MissingInheritedDefinitionException) {
-					// System.err.println("TRACE: " + getDebugID() + " failed base for local '" + self.getNameOfLocalAttr(attribute));
-					// We hit a missing inherited attribute. Fall back to evaluating on the new tree.
-					// Note that this CAN happen if the base tree actually has a missing inherited equation!
-					// This can lead to strange runtime error messages, as we might then report a
-					// missing equation on the new tree, but in these cases the actual missing equation
-					// should have been caught by the flow analysis.
-				} else {
-					// No need to cache the error, since it is fatal
-					throw new TraceException("While evaling local '" + self.getNameOfLocalAttr(attribute) + "' via partially decorated reference in " + getDebugID(), t);
-				}
-			}
-		}
 		try {
-			if(baseDecorated != null) {
-				final Lazy[] inhs = new Lazy[baseDecorated.inheritedAttributes.length];
-				final DecoratedNode baseDec = baseDecorated;
-				for(int i = 0; i < inhs.length; i++) {
-					final int inhAttribute = i;
-					inhs[i] = (context) -> baseDec.inherited(inhAttribute);
-				}
-				return ((DecoratedNode)self.getLocal(attribute).eval(this)).decorate(this, inhs);
-			} else {
-				return self.getLocal(attribute).eval(this);
-			}
+			return self.getLocal(attribute).eval(this);
 		} catch(Throwable t) {
 			throw handleLocalError(attribute, t);
 		}
-	}
-	private final boolean hasLocalError(final int attribute) {
-		return localFailed != null && localFailed[attribute] != null;
 	}
 	
 	/**
@@ -381,11 +280,8 @@ public class DecoratedNode implements Decorable, Typed {
 		// Rather than checking in the fast path, we try to reconstruct what went wrong in the slow path.
 		if(self.getLocal(attribute) == null) {
 			return new MissingDefinitionException("Local '" + self.getNameOfLocalAttr(attribute) + "' not defined in " + getDebugID());
-		} else {
-			if(localFailed == null) localFailed = new SilverException[localValues.length];
-			localFailed[attribute] = new TraceException("While evaling local '" + self.getNameOfLocalAttr(attribute) + "' in " + getDebugID(), t);
-			return localFailed[attribute];
 		}
+		return new TraceException("While evaling local '" + self.getNameOfLocalAttr(attribute) + "' in " + getDebugID(), t);
 	}
 
 	/**
@@ -414,32 +310,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * Another case of keeping the slow paths out of here, so it can be inlined.
 	 */
 	private final DecoratedNode evalLocalDecorated(final int attribute) {
-		final Decorable d = (Decorable)evalLocalAsIs(attribute);
-		final Lazy[] inhs = self.getLocalInheritedAttributes(attribute);
-		if (base != null) {
-			try {
-				// System.err.println("TRACE: " + getDebugID() + " trying base for decorated local '" + self.getNameOfLocalAttr(attribute));
-				if(d instanceof Node) {
-					// We are decorating d, an undecorated Node.
-					// Decorate d, using base's corresponding decorated local as the base.
-					return ((Node)d).decorate(this, inhs, base.localDecorated(attribute));
-				} else {
-					// We are decorating d, a DecoratedNode.
-					// We already have a base (d), but we also want to default to the inhs on base's decorated local.
-					// Decorate d, using inherited Lazys that default to evaluating on base's decorated local.
-					return d.decorate(this, defaultInhs(base.localDecorated(attribute), inhs));
-				}
-			} catch(Throwable t) {
-				if (SilverException.getRootCause(t) instanceof MissingInheritedDefinitionException) {
-					// We hit a missing inherited attribute when calling base.localDecorated().
-					// That just means that we don't have a base when decorating the local.
-				} else {
-					// No need to cache the error, since it is fatal
-					throw new TraceException("While evaling local '" + self.getNameOfLocalAttr(attribute) + "' via partially decorated reference in " + getDebugID(), t);
-				}
-			}
-		}
-		return d.decorate(this, inhs);
+		return ((Decorable)evalLocalAsIs(attribute)).decorate(this, self.getLocalInheritedAttributes(attribute));
 	}
 
 	/**
@@ -467,29 +338,6 @@ public class DecoratedNode implements Decorable, Typed {
 	
 	private final Object evalSyn(final int attribute) {
 		// TODO: Try to break this up into < 37 byte methods?
-		if(hasSynError(attribute)) {
-			throw synthesizedFailed[attribute];
-		}
-
-		if(base != null && !base.hasSynError(attribute)) {
-			try {
-				// System.err.println("TRACE: " + getDebugID() + " trying base for syn '" + self.getNameOfSynAttr(attribute));
-				return base.synthesized(attribute);
-			} catch(Throwable t) {
-				if (SilverException.getRootCause(t) instanceof MissingInheritedDefinitionException) {
-					// System.err.println("TRACE: " + getDebugID() + " failed base for syn '" + self.getNameOfSynAttr(attribute));
-					// We hit a missing inherited attribute. Fall back to evaluating on the new tree.
-					// Note that this CAN happen if the base tree actually has a missing inherited equation!
-					// This can lead to strange runtime error messages, as we might then report a
-					// missing equation on the new tree, but in these cases the actual missing equation
-					// should have been caught by the flow analysis.
-				} else {
-					// No need to cache the error, since it is fatal
-					throw new TraceException("While evaling syn '" + self.getNameOfSynAttr(attribute) + "' via partially decorated reference in " + getDebugID(), t);
-				}
-			}
-		}
-		
 		Lazy l = self.getSynthesized(attribute);
 		if(l != null) {
 			try {
@@ -508,13 +356,13 @@ public class DecoratedNode implements Decorable, Typed {
 				}
 				return l.eval(this);
 			} catch(Throwable t) {
-				throw cacheSynError(attribute, new TraceException("While evaling syn '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t));
+				throw new TraceException("While evaling syn '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t);
 			}
 		} else if(self.hasForward()) {
 			try {
 				return forward().synthesized(attribute);
 			} catch(Throwable t) {
-				throw cacheSynError(attribute, new TraceException("While evaling syn via forward in " + getDebugID(), t));
+				throw new TraceException("While evaling syn via forward in " + getDebugID(), t);
 			}
 		} else {
 			l = self.getDefaultSynthesized(attribute);
@@ -522,21 +370,12 @@ public class DecoratedNode implements Decorable, Typed {
 				try {
 					return l.eval(this);
 				} catch(Throwable t) {
-					throw cacheSynError(attribute, new TraceException("While evaling default for '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t));
+					throw new TraceException("While evaling default for '" + self.getNameOfSynAttr(attribute) + "' in " + getDebugID(), t);
 				}
 			} else {
-				// No need to cache the error, since it is fatal
 				throw new MissingDefinitionException("Synthesized attribute '" + self.getNameOfSynAttr(attribute) + "' not defined in " + getDebugID());
 			}
 		}
-	}
-	private final SilverException cacheSynError(final int attribute, final SilverException e) {
-		if(synthesizedFailed == null) synthesizedFailed = new SilverException[synthesizedValues.length];
-		synthesizedFailed[attribute] = e;
-		return e;
-	}
-	private final boolean hasSynError(final int attribute) {
-		return synthesizedFailed != null && synthesizedFailed[attribute] != null;
 	}
 	
 	/**
@@ -566,35 +405,15 @@ public class DecoratedNode implements Decorable, Typed {
 	 * Also to keep the fast path small and inlineable.
 	 */
 	private final DecoratedNode evalForward() {
-		if(hasForwardError()) {
-			throw forwardFailed;
-		}
-		Node forwardNode;
 		try {
-			forwardNode = self.evalForward(this);
+			return self.evalForward(this).decorate(parent, this);
 		} catch(Throwable t) {
-			forwardFailed = new TraceException("While evaling forward equation in " + getDebugID(), t);
-			throw forwardFailed;
+			throw handleFwdError(t);
 		}
-		if(base != null && !base.hasForwardError()) {
-			try {
-				// System.err.println("TRACE: " + getDebugID() + " trying base for forward");
-				return forwardNode.decorate(parent, this, base.forward());
-			} catch(Throwable t) {
-				if (SilverException.getRootCause(t) instanceof MissingInheritedDefinitionException) {
-					// System.err.println("TRACE: " + getDebugID() + " failed base for forward");
-					// We hit a missing inherited attribute when calling base.forward(). 
-					// That just means that we don't have a base when decorating forwardNode.
-				} else {
-					// No need to cache the error, since it is fatal
-					throw new TraceException("While evaling forward via partially decorated reference ' in " + getDebugID(), t);
-				}
-			}
-		}
-		return forwardNode.decorate(parent, this);
 	}
-	private final boolean hasForwardError() {
-		return forwardFailed != null;
+	
+	private final RuntimeException handleFwdError(Throwable t) {
+		return new TraceException("While evaling forward equation in " + getDebugID(), t);
 	}
 
 	/**
@@ -626,27 +445,6 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 	
 	private final Object evalInhSomehow(final int attribute) {
-		if(hasInhError(attribute)) {
-			throw inheritedFailed[attribute];
-		}
-
-		if(base != null && !base.hasInhError(attribute)) {
-			try {
-				// System.err.println("TRACE: " + getDebugID() + " trying base for inh '" + self.getNameOfInhAttr(attribute));
-				return base.inherited(attribute);
-			} catch(Throwable t) {
-				if (SilverException.getRootCause(t) instanceof MissingInheritedDefinitionException) {
-					// System.err.println("TRACE: " + getDebugID() + " failed base for inh '" + self.getNameOfInhAttr(attribute));
-					// We hit a missing inherited attribute. Fall back to evaluating on the new tree.
-					// Note that this CAN happen if the base tree actually has a missing inherited equation!
-					// This can lead to strange runtime error messages, as we might then report a
-					// missing equation on the new tree, but in these cases the actual missing equation
-					// should have been caught by the flow analysis.
-				} else {
-					throw cacheInhError(attribute, new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' via partially decorated reference ' in " + getDebugID(), t));
-				}
-			}
-		}
 		if(forwardParent == null)
 			return evalInhHere(attribute);
 		else
@@ -656,13 +454,13 @@ public class DecoratedNode implements Decorable, Typed {
 		try {
 			return forwardParent.inheritedForwarded(attribute);
 		} catch(Throwable t) {
-			throw cacheInhError(attribute, handleInhFwdPError(attribute, t));
+			throw handleInhFwdPError(attribute, t); 
 		}
 	}
 	private final SilverException handleInhFwdPError(final int attribute, Throwable t) {
 		//This seems impossible since we're checking if forwardParent==null earlier up there!
 		//if(forwardParent == null) {
-		//	return new MissingInheritedDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
+		//	return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
 		//}
 		return new TraceException("While evaling inh via forward in " + getDebugID(), t);
 	}
@@ -670,7 +468,7 @@ public class DecoratedNode implements Decorable, Typed {
 		try {
 			return inheritedAttributes[attribute].eval(parent);
 		} catch(Throwable t) {
-			throw cacheInhError(attribute, handleInhHereError(attribute, t));
+			throw handleInhHereError(attribute, t);
 		}
 	}
 	private final SilverException handleInhHereError(final int attribute, Throwable t) {
@@ -686,7 +484,7 @@ public class DecoratedNode implements Decorable, Typed {
 		// so the user omitting some inherited equations for attributes with higher indices
 		// could mean the resulting array that we are passed is too short.  Sigh.
 		if(inheritedAttributes == null || attribute >= inheritedAttributes.length || inheritedAttributes[attribute] == null) {
-			return new MissingInheritedDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
+			return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
 		}
 		return new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' in " + getDebugID(), t);
 	}
@@ -713,75 +511,12 @@ public class DecoratedNode implements Decorable, Typed {
 			// No need for caching here, it'll be cached by the inherited() that called us
 			return l.eval(this);
 		} catch(Throwable t) {
-			throw cacheInhError(attribute, handleInhFwdError(attribute, t));
+			throw handleInhFwdError(attribute, t);
 		}
 	}
 	
 	private final SilverException handleInhFwdError(final int attribute, Throwable t) {
 		return new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' for forward in " + getDebugID(), t);
-	}
-
-	private final SilverException cacheInhError(final int attribute, final SilverException e) {
-		if(inheritedFailed == null) inheritedFailed = new SilverException[inheritedValues.length];
-		inheritedFailed[attribute] = e;
-		return e;
-	}
-	private final boolean hasInhError(final int attribute) {
-		return inheritedFailed != null && inheritedFailed[attribute] != null;
-	}
-	
-	/**
-	 * Create an array of inherited attribute Lazys that first default to another tree's inherited
-	 * attributes.
-	 * 
-	 * @param base  The tree whose attributes to default to.
-	 * @param inhs  The attribute equations for the new decoration site.
-	 * @return  An array of Lazys to be used as the inherited attributes for the new decoration site.
-	 */
-	private final Lazy[] defaultInhs(final DecoratedNode base, final Lazy[] inhs) {
-		final Lazy[] fallbackInhs = new Lazy[inhs.length];
-		for(int i = 0; i < inhs.length; i++) {
-			if(base.inheritedAttributes != null && base.inheritedAttributes[i] != null || base.base != null) {
-				// We have an inherited equation for the attribute on base.
-				// It may or may not have its dependencies.
-				final int attribute = i;
-				if(inhs[i] != null) {
-					// We also have an inherited equation for the new decoration site.
-					// Try base first, then fall back to the new decoration site's attributes.
-					fallbackInhs[i] = (context) -> {
-						try {
-							return base.inherited(attribute);
-						} catch(Throwable t) {
-							if (SilverException.getRootCause(t) instanceof MissingInheritedDefinitionException) {
-								// We hit a missing inherited attribute. Fall back to evaluating on the new tree.
-								// Note that this CAN happen if the base tree actually has a missing inherited equation!
-								// This can lead to strange runtime error messages, as we might then report a
-								// missing equation on the new tree, but in these cases the actual missing equation
-								// should have been caught by the flow analysis.
-							} else {
-								// No need to cache the error, since it is fatal
-								throw new TraceException("While evaling inh '" + base.self.getNameOfInhAttr(attribute) + "' via partially decorated reference ' in " + getDebugID(), t);
-							}
-						}
-						return inhs[attribute].eval(context);
-					};
-				} else {
-					// We only have an inherited equation on base.  Demand it.
-					fallbackInhs[i] = (context) -> {
-						try {
-							return base.inherited(attribute);
-						} catch(Throwable t) {
-							throw new TraceException("While evaling inh '" + base.self.getNameOfInhAttr(attribute) + "' via partially decorated reference ' in " + getDebugID(), t);
-						}
-					};
-				}
-			} else {
-				// We only have an inherited equation on the new decoration site, or no equation at all (inhs[i] == null).
-				// Just use that, in either case.
-				fallbackInhs[i] = inhs[i];
-			}
-		}
-		return fallbackInhs;
 	}
 
 	// The following are very common types of thunks.

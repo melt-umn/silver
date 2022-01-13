@@ -176,16 +176,16 @@ top::Expr ::= q::Decorated QName
         else [mwdaWrn(top.config, top.location, s"Partially decorated reference of type ${prettyType(finalTy)} does not contain all attributes in the reference set of ${q.name}'s type ${prettyType(q.lookupValue.typeScheme.monoType)}")]
       | nothing() -> [mwdaWrn(top.config, top.location, s"Cannot take a partially decorated reference to ${q.name} of type ${prettyType(q.lookupValue.typeScheme.monoType)}, as the reference set is not bounded")]
       end ++
-      if !null(partialRefs)
-      -- There is an exported partial reference taken to this decoration site (might be somewhere else!),
-      -- check that we are consistent with any exported partial refs:
-      then flatMap(
-        \ refSite::(Location, [String]) ->
-          if refSite.2 == inhs then []
-          else [mwdaWrn(top.config, top.location, s"Conflicting partially decorated references to ${q.name}: the reference taken here has type ${prettyType(finalTy)}, while at ${refSite.1.unparse} a reference is taken with only ${implode(", ", refSite.2)}.")],
-        partialRefs)
-      -- No exported partial references for this decoration site, so we must be orphaned:
-      else [mwdaWrn(top.config, top.location, s"Orphaned partially decorated reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      -- Check that we are exported by the decoration site.
+      if q.lookupValue.found && top.config.warnEqdef
+      && !isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars)
+      then [mwdaWrn(top.config, top.location, s"Orphaned partially decorated reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      -- Check that there is at most one partial reference taken to this decoration site.
+      -- TODO: This check isn't actually sufficent for well-definedness (e.g. wrapping this ref in
+      -- a term and decorating that more than once), need some sort of "linearity analysis".
+      else if length(partialRefs) > 1
+      then [mwdaWrn(top.config, top.location, s"Multiple partially decorated references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      else []
     | _, _ -> []
     end;
 }
@@ -203,16 +203,16 @@ top::Expr ::= q::Decorated QName
         else [mwdaWrn(top.config, top.location, s"Partially decorated reference of type ${prettyType(finalTy)} does not contain all attributes in the reference set of ${q.name}'s type ${prettyType(q.lookupValue.typeScheme.monoType)}")]
       | nothing() -> [mwdaWrn(top.config, top.location, s"Cannot take a partially decorated reference to ${q.name} of type ${prettyType(q.lookupValue.typeScheme.monoType)}, as the reference set is not bounded")]
       end ++
-      if !null(partialRefs)
-      -- There is an exported partial reference taken to this decoration site (might be somewhere else!),
-      -- check that we are consistent with any exported partial refs:
-      then flatMap(
-        \ refSite::(Location, [String]) ->
-          if refSite.2 == inhs then []
-          else [mwdaWrn(top.config, top.location, s"Conflicting partially decorated references to ${q.name}: the reference taken here has type ${prettyType(finalTy)}, while at ${refSite.1.unparse} a reference is taken with only ${implode(", ", refSite.2)}.")],
-        partialRefs)
-      -- No exported partial references for this decoration site, so we must be orphaned:
-      else [mwdaWrn(top.config, top.location, s"Orphaned partially decorated reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      -- Check that we are exported by the decoration site/
+      if q.lookupValue.found && top.config.warnEqdef
+      && !isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars)
+      then [mwdaWrn(top.config, top.location, s"Orphaned partially decorated reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      -- Check that there is at most one partial reference taken to this decoration site.
+      -- TODO: This check isn't actually sufficent for well-definedness (e.g. wrapping this ref in
+      -- a term and decorating that more than once), need some sort of "linearity analysis".
+      else if length(partialRefs) > 1
+      then [mwdaWrn(top.config, top.location, s"Multiple partially decorated references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      else []
     | _, _ -> []
     end;
 }
@@ -244,7 +244,7 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   top.errors <-
     case finalTy, q.lookupValue.typeScheme.monoType of
-    | partiallyDecoratedType(_, _), partiallyDecoratedType(_, _) -> []
+    | partiallyDecoratedType(_, _), partiallyDecoratedType(_, _) -> []  -- TODO: Need linearity analysis...
     | partiallyDecoratedType(_, _), _ when top.config.warnEqdef ->
       [mwdaWrn(top.config, top.location, s"${q.name} was not bound as a partially decorated reference, but here it is used with type ${prettyType(finalTy)}.")]
     | _, _ -> []

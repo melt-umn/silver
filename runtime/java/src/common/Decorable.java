@@ -16,14 +16,4 @@ public interface Decorable {
 	 * @return A DecoratedNode with the attributes supplied.
 	 */
 	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs);
-
-	/**
-	 * Decorate this forward node with inherited attributes provided by fwdParent.
-	 * This should only be used by DecoratedNode.evalForward().
-	 * 
-	 * @param parent The "true parent" of this node (same as the fwdParent's parent) 
-	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
-	 * @return A DecoratedNode with the specified forwardParent.
-	 */
-	public DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent);
 }
