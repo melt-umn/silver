@@ -23,11 +23,7 @@ public abstract class Node implements Decorable, Typed {
 	 */
 	@Override
 	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
-		return new DecoratedNode(getNumberOfChildren(),
-				                 getNumberOfInhAttrs(),
-				                 getNumberOfSynAttrs(),
-				                 getNumberOfLocalAttrs(),
-				                 this, parent, inhs, null, null);
+		return decorate(parent, inhs, null);
 	}
 
 	/**
@@ -40,11 +36,41 @@ public abstract class Node implements Decorable, Typed {
 	 */
 	@Override
 	public final DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
+		return decorate(parent, fwdParent, null);
+	}
+	
+	/**
+	 * The normal way of decorating a node, where we want to default some equations to another decorated node. 
+	 * (child and local)
+	 * 
+	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
+	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
+	 * @param base  The decorated node whose attribute values should be used as defaults (can be null.)
+	 * @return A "decorated" form of this Node
+	 */
+	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs, final DecoratedNode base) {
+		return new DecoratedNode(getNumberOfChildren(),
+				                 getNumberOfInhAttrs(),
+				                 getNumberOfSynAttrs(),
+				                 getNumberOfLocalAttrs(),
+				                 this, parent, inhs, null, base);
+	}
+
+	/**
+	 * The way of decorating a forward node, where we want to default some equations to another decorated node. 
+	 * (fwd only)
+	 * 
+	 * @param parent The "true parent" of this node (same as the fwdParent's parent) 
+	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
+	 * @param base  The decorated node whose attribute values should be used as defaults (can be null.)
+	 * @return A "decorated" form of this Node 
+	 */
+	public final DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent, final DecoratedNode base) {
 		return new DecoratedNode(getNumberOfChildren(),
                                  getNumberOfInhAttrs(),
                                  getNumberOfSynAttrs(),
                                  getNumberOfLocalAttrs(),
-                                 this, parent, null, fwdParent, null);
+                                 this, parent, null, fwdParent, base);
 	}
 	
 	/**
