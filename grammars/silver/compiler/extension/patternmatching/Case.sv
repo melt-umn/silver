@@ -1270,7 +1270,7 @@ Expr ::= e::Decorated Expr
 {
   local et :: Type = performSubstitution(e.typerep, e.upSubst);
 
-  return if isDecorable(et, e.env) && !et.isPartiallyDecorated  -- Nonterminal or decorable type var
+  return if isDecorable(et, e.env)
          then decorateExprWithEmpty('decorate', exprRef(e, location=e.location), 'with', '{', '}', location=e.location)
          else exprRef(e, location=e.location);
 }
