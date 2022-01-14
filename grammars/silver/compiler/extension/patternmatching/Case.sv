@@ -359,14 +359,6 @@ Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
         compileCaseExpr(tail(matchEs), boundVarRules,
            baseExpr(qName(loc, failName), location=loc),
            retType, loc, env);
-  --Need to go through all the match rules and push the binding inside them
-  {-local currentVarCase::Expr =
-        case firstPatt.patternVariableName of
-        | nothing() -> restVarCase
-        | just(name) ->
-          makeLet(firstPatt.location, name, freshType(),
-             firstMatchExpr, restVarCase)
-        end;-}
 
   local bindFailName::Expr =
         makeLet(loc, failName, retType, compileRest,
