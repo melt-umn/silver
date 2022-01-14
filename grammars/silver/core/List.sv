@@ -620,31 +620,3 @@ function tail
 } foreign {
   "java" : return "%l%.tail()";
 }
-
---------------------------------------------------------------------------------
-
-synthesized attribute i_headList<a> :: a;
-synthesized attribute i_tailList<a> :: List<a>;
-synthesized attribute i_emptyList :: Boolean;
-synthesized attribute i_lengthList :: Integer;
-
-nonterminal List<a> with i_headList<a>, i_tailList<a>, i_emptyList, i_lengthList;
-
-abstract production i_nilList
-l::List<a> ::=
-{
-  l.i_emptyList = true;
-  l.i_lengthList = 0;
-  l.i_headList = error("requested head of nil");
-  l.i_tailList = error("requested tail of nil");
-}
-
-abstract production i_consList
-l::List<a> ::= h::a  t::List<a>
-{
-  l.i_emptyList = false;
-  l.i_lengthList = t.i_lengthList + 1;
-  l.i_headList = h;
-  l.i_tailList = t;
-}
-
