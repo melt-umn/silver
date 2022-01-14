@@ -53,7 +53,7 @@ top::Root ::= gdcl::GrammarDcl  mStmts::ModuleStmts  is::ImportStmts
             location=top.location), location=top.location),
           productionRHSCons(
             productionRHSElem(name("ioIn",  top.location), '::',
-              nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "IO"), location=top.location), location=top.location),
+              nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "IOToken"), location=top.location), location=top.location),
               location=top.location),
             productionRHSNil(location=top.location),
             location=top.location
