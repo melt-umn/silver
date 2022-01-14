@@ -81,3 +81,12 @@ function thingWithUnboundedRefArg
   return e;
 }
 }
+
+warnCode "Duplicate equation for env2 on e in production flow:alreadyDec" {
+function alreadyDec
+() ::= e::PartiallyDecorated Expr with {env2}
+{
+  e.env2 = [];
+  return ();
+}
+}
