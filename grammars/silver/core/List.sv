@@ -25,7 +25,7 @@ instance MonadFail [] {
   fail = \ String -> [];
 }
 
-instance Alt List {
+instance Alt [] {
   alt = appendList;
 }
 
