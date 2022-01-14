@@ -2,7 +2,7 @@ grammar silver:compiler:definition:core;
 
 nonterminal ProductionSignature with config, grammarName, env, location, unparse, errors, defs, constraintDefs, occursDefs, namedSignature, signatureName;
 nonterminal ProductionLHS with config, grammarName, env, location, unparse, errors, defs, outputElement;
-nonterminal ProductionRHS with config, grammarName, env, location, unparse, errors, defs, inputElements;
+nonterminal ProductionRHS with config, grammarName, env, location, unparse, errors, defs, inputElements, elementCount;
 nonterminal ProductionRHSElem with config, grammarName, env, location, unparse, errors, defs, inputElements, deterministicCount;
 
 flowtype forward {env, signatureName} on ProductionSignature;
@@ -18,6 +18,7 @@ propagate defs on ProductionRHS;
  - Used to help give names to children, when names are omitted.
  -}
 inherited attribute deterministicCount :: Integer;
+synthesized attribute elementCount::Integer;
 
 {--
  - Given to signature syntax, so as to construct a named signature representation.
@@ -122,6 +123,7 @@ top::ProductionRHS ::=
   top.unparse = "";
 
   top.inputElements = [];
+  top.elementCount = 0;
 }
 
 concrete production productionRHSCons
@@ -130,7 +132,8 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
   top.unparse = h.unparse ++ " " ++ t.unparse;
 
   top.inputElements = h.inputElements ++ t.inputElements;
-  h.deterministicCount = length(t.inputElements);
+  top.elementCount = 1 + t.elementCount;
+  h.deterministicCount = t.elementCount;
 }
 
 concrete production productionRHSElem

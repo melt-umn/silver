@@ -47,7 +47,9 @@ monoid attribute lambdaDefs::[Def];
 monoid attribute lambdaBoundVars::[String];
 attribute lambdaDefs, lambdaBoundVars occurs on ProductionRHS, ProductionRHSElem;
 
-flowtype ProductionRHSElem = lambdaDefs {decorate}, lambdaBoundVars {};
+flowtype lambdaDefs {decorate} on ProductionRHS, ProductionRHSElem;
+flowtype lambdaBoundVars {} on ProductionRHS;
+flowtype lambdaBoundVars {deterministicCount} on ProductionRHSElem;
 
 propagate lambdaDefs, lambdaBoundVars on ProductionRHS;
 
