@@ -734,7 +734,8 @@ top::VarBinder ::= n::Name
   -- Child: top.bindingName
   -- Inh: each of requiredInhs
   local missingInhs :: [String] =
-    filter(remoteProdMissingEq(top.matchingAgainst.fromJust, top.bindingName, _, top.env, top.flowEnv), requiredInhs);
+    filter(remoteProdMissingEq(top.matchingAgainst.fromJust, top.bindingName, _, top.env, top.flowEnv),
+      removeAll(getMinRefSet(top.bindingType, top.env), requiredInhs));
 
   top.errors <-
     if top.config.warnMissingInh
