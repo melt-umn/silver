@@ -544,7 +544,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 }
 
 aspect production exprRef
-top::Expr ::= e::Decorated Expr
+top::Expr ::= e::PartiallyDecorated Expr
 {
   top.translation = e.translation;
   top.lazyTranslation = e.lazyTranslation;

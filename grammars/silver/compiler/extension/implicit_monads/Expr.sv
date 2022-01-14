@@ -2143,28 +2143,17 @@ top::AppExprs ::=
 
 
 aspect production exprRef
-top::Expr ::= e::Decorated Expr
+top::Expr ::= e::PartiallyDecorated Expr
 {
-  local ne::Expr = new(e);
-  ne.mDownSubst = top.mDownSubst;
-  ne.env = top.env;
-  ne.flowEnv = top.flowEnv;
-  ne.config = top.config;
-  ne.compiledGrammars = top.compiledGrammars;
-  ne.grammarName = top.grammarName;
-  ne.frame = top.frame;
-  ne.finalSubst = top.finalSubst;
-  ne.downSubst = top.downSubst;
-  ne.originRules = top.originRules;
-  ne.isRoot = top.isRoot;
-  ne.expectedMonad = top.expectedMonad;
+  e.mDownSubst = top.mDownSubst;
+  e.expectedMonad = top.expectedMonad;
+  e.monadicallyUsed = top.monadicallyUsed;
 
-  top.merrors := ne.merrors;
-  top.mUpSubst = ne.mUpSubst;
-  top.mtyperep = ne.mtyperep;
-  ne.monadicallyUsed = top.monadicallyUsed;
-  top.monadicNames = ne.monadicNames;
-  top.monadRewritten = ne.monadRewritten;
+  top.merrors := e.merrors;
+  top.mUpSubst = e.mUpSubst;
+  top.mtyperep = e.mtyperep;
+  top.monadicNames = e.monadicNames;
+  top.monadRewritten = e.monadRewritten;
 }
 
 

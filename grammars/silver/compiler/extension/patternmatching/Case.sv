@@ -1266,7 +1266,7 @@ Expr ::= l::Location s::String t::Type e::Expr o::Expr
 }
 
 function ensureDecoratedExpr
-Expr ::= e::Decorated Expr
+Expr ::= e::PartiallyDecorated Expr
 {
   local et :: Type = performSubstitution(e.typerep, e.upSubst);
 

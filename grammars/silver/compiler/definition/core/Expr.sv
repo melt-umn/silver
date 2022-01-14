@@ -1195,12 +1195,12 @@ AnnoExpr ::= p::Pair<String Expr>
  - checks that expr well... just nest those and boom.
  -}
 function mkFunctionInvocationDecorated
-Expr ::= l::Location  e::Expr  es::[Decorated Expr]
+Expr ::= l::Location  e::Expr  es::[PartiallyDecorated Expr]
 {
   return mkFunctionInvocation(l, e, map(exprRef(_, location=l), es));
 }
 function mkStrFunctionInvocationDecorated
-Expr ::= l::Location  e::String  es::[Decorated Expr]
+Expr ::= l::Location  e::String  es::[PartiallyDecorated Expr]
 {
   return mkFunctionInvocation(l, baseExpr(qName(l, e), location=l), map(exprRef(_, location=l), es));
 }
@@ -1220,7 +1220,7 @@ Expr ::= l::Location  e::String  es::[Decorated Expr]
  - references to those children.
  -}
 abstract production exprRef
-top::Expr ::= e::Decorated Expr
+top::Expr ::= e::PartiallyDecorated Expr
 {
   top.unparse = e.unparse;
   top.freeVars <- e.freeVars;

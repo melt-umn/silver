@@ -46,6 +46,9 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 }
 
 
+global partialDefaultAttributeDef::(ProductionStmt ::= PartiallyDecorated DefLHS  PartiallyDecorated QNameAttrOccur  Expr  Location) =
+  \ dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr loc::Location ->
+    attributeDef(newPartial(dl), '.', newPartial(attr), '=', e, ';', location=loc);
 
 concrete production implicitAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
@@ -73,12 +76,12 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
   attr.attrFor = dl.typerep;
 
   local fwd::ProductionStmt =
-           if null(merrors)
-           then if attr.found
-                then attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location)
-                     --if not found, let the normal dispatcher handle it
-                else attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
-           else errorAttributeDef(merrors, dl, attr, e, location=top.location);
+           (if null(merrors)
+            then if attr.found
+                 then attr.attrDcl.attrDefDispatcher
+                      --if not found, let the normal dispatcher handle it
+                 else partialDefaultAttributeDef
+            else errorAttributeDef(merrors, _, _, _, location=_))(dl, attr, e, top.location);
   forwards to fwd;
 }
 
@@ -112,12 +115,12 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
   attr.attrFor = dl.typerep;
 
   local fwd::ProductionStmt =
-           if null(merrors)
-           then if attr.found
-                then attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location)
-                     --if not found, let the normal dispatcher handle it
-                else attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
-           else errorAttributeDef(merrors, dl, attr, e, location=top.location);
+           (if null(merrors)
+            then if attr.found
+                 then attr.attrDcl.attrDefDispatcher
+                      --if not found, let the normal dispatcher handle it
+                 else partialDefaultAttributeDef
+            else errorAttributeDef(merrors, _, _, _, location=_))(dl, attr, e, top.location);
 
   forwards to fwd;
 }
@@ -148,16 +151,16 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
                 "Unrestricted equations can only be used for attributes " ++
                 "not declared to be restricted or implicit; " ++ attr.unparse ++ " is implicit")];
   local fwd::ProductionStmt =
-            if attr.found
-            then case attr.attrDcl of
-                 | restrictedSynDcl(_, _, _) -> errorAttributeDef(restrictedErr, dl, attr, e, location=top.location)
-                 | restrictedInhDcl(_, _, _) -> errorAttributeDef(restrictedErr, dl, attr, e, location=top.location)
-                 | implicitSynDcl(_, _, _) -> errorAttributeDef(implicitErr, dl, attr, e, location=top.location)
-                 | implicitInhDcl(_, _, _) -> errorAttributeDef(implicitErr, dl, attr, e, location=top.location)
-                 | _ -> attributeDef(dl, '.', attr, '=', e, ';', location=top.location)
-                 end
+            (if attr.found
+             then case attr.attrDcl of
+                  | restrictedSynDcl(_, _, _) -> errorAttributeDef(restrictedErr, _, _, _, location=_)
+                  | restrictedInhDcl(_, _, _) -> errorAttributeDef(restrictedErr, _, _, _, location=_)
+                  | implicitSynDcl(_, _, _) -> errorAttributeDef(implicitErr, _, _, _, location=_)
+                  | implicitInhDcl(_, _, _) -> errorAttributeDef(implicitErr, _, _, _, location=_)
+                  | _ -> partialDefaultAttributeDef
+                  end
                  --if not found, let the normal dispatcher handle it
-            else attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
+             else partialDefaultAttributeDef)(dl, attr, e, top.location);
   forwards to fwd;
 }
 
@@ -197,9 +200,10 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
      --gives errors for implicit/unrestricted attributes used
      buildExplicitAttrErrors(e.notExplicitAttributes);
 
-  local fwd::ProductionStmt = if null(merrors)
-                              then synthesizedAttributeDef(dl, attr, e, location=top.location)
-                              else errorAttributeDef(merrors, dl, attr, e, location=top.location);
+  local fwd::ProductionStmt =
+    (if null(merrors)
+     then synthesizedAttributeDef(_, _, _, location=_)
+     else errorAttributeDef(merrors, _, _, _, location=_))(dl, attr, e, top.location);
   forwards to fwd;
 }
 
@@ -220,9 +224,10 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
      --gives errors for implicit/unrestricted attributes used
      buildExplicitAttrErrors(e.notExplicitAttributes);
 
-  local fwd::ProductionStmt = if null(merrors)
-                              then inheritedAttributeDef(dl, attr, e, location=top.location)
-                              else errorAttributeDef(merrors, dl, attr, e, location=top.location);
+  local fwd::ProductionStmt =
+    (if null(merrors)
+     then inheritedAttributeDef(_, _, _, location=_)
+     else errorAttributeDef(merrors, _, _, _, location=_))(dl, attr, e, top.location);
   forwards to fwd;
 }
 
@@ -248,14 +253,14 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
   top.uniqueSignificantExpression := [];
 
   local fwd::ProductionStmt =
-          if null(e.merrors)
+         (if null(e.merrors)
           then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
-               then synthesizedAttributeDef(dl, attr, e.monadRewritten, location=top.location)
-               else synthesizedAttributeDef(dl, attr, Silver_Expr {
-                                                        $Expr {monadReturn(top.location)}
-                                                            ($Expr {e.monadRewritten})
-                                                      }, location=top.location)
-          else errorAttributeDef(e.merrors, dl, attr, e.monadRewritten, location=top.location);
+               then synthesizedAttributeDef(_, _, e.monadRewritten, location=_)
+               else synthesizedAttributeDef(_, _, Silver_Expr {
+                                                    $Expr {monadReturn(top.location)}
+                                                        ($Expr {e.monadRewritten})
+                                                  }, location=_)
+          else errorAttributeDef(e.merrors, _, _, e.monadRewritten, location=_))(dl, attr, top.location);
   forwards to fwd;
 }
 
@@ -278,14 +283,14 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
   top.uniqueSignificantExpression := [];
 
   local fwd::ProductionStmt =
-          if null(e.merrors)
+         (if null(e.merrors)
           then if  fst(monadsMatch(attr.typerep, e.mtyperep, e.mUpSubst))
-               then synthesizedAttributeDef(dl, attr, e.monadRewritten, location=top.location)
-               else synthesizedAttributeDef(dl, attr, Silver_Expr {
-                                                        $Expr {monadReturn(top.location)}
-                                                            ($Expr {e.monadRewritten})
-                                                      }, location=top.location)
-          else errorAttributeDef(e.merrors, dl, attr, e.monadRewritten, location=top.location);
+               then inheritedAttributeDef(_, _, e.monadRewritten, location=_)
+               else inheritedAttributeDef(_, _, Silver_Expr {
+                                                  $Expr {monadReturn(top.location)}
+                                                      ($Expr {e.monadRewritten})
+                                                }, location=_)
+          else errorAttributeDef(e.merrors, _, _, e.monadRewritten, location=_))(dl, attr, top.location);
   forwards to fwd;
 }
 

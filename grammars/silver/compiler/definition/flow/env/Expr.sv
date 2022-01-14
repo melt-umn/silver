@@ -243,7 +243,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
 }
 
 aspect production exprRef
-top::Expr ::= e::Decorated Expr
+top::Expr ::= e::PartiallyDecorated Expr
 {
   -- This production is somewhat special, for example, error is := []
   -- That's because the errors should have already been appeared wherever it's anchored.

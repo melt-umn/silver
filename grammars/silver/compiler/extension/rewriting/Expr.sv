@@ -553,9 +553,14 @@ top::Expr ::= '[' es::Exprs ']'
 aspect production listPlusPlus
 top::Expr ::= e1::PartiallyDecorated Expr e2::PartiallyDecorated Expr
 {
-  top.transform = appendASTExpr(e1.transform, e2.transform);
-  e1.boundVars = top.boundVars;
-  e2.boundVars = top.boundVars;
+  top.transform =
+    -- This is a forwarding prod, so we can't decorate e1 and e2 with boundVars here.
+    -- TODO: need some way for the flow analysis to track that e1 and e2 will be provided with boundVars through the forward.
+    case forward of
+    | application(_, _, snocAppExprs(snocAppExprs(emptyAppExprs(), _, decE1), _, decE2), _, _, _) ->
+      appendASTExpr(decE1.transform, decE2.transform)
+    | _ -> error("Unexpected forward")
+    end;
 }
 
 -- TODO: Awful hack to allow case to appear on rule RHS.
@@ -756,7 +761,8 @@ top::AnnoAppExprs ::=
 }
 
 aspect production exprRef
-top::Expr ::= e::Decorated Expr
+top::Expr ::= e::PartiallyDecorated Expr
 {
   top.transform = e.transform;
+  e.boundVars = top.boundVars;
 }
