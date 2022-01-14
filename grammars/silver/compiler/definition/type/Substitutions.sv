@@ -168,13 +168,13 @@ top::Type ::= tv::TyVar
 }
 
 aspect production ntOrDecType
-top::Type ::= nt::Type inhs::Type hidden::Type defaultPartialDec::Boolean defaultInhs::Type
+top::Type ::= nt::Type inhs::Type hidden::Type
 {
   -- We rely very carefully on eliminating ourselves once we've specialized!
   -- Note: we're matching on hidden.subsituted, not just hidden. Important!
   top.substituted =
     case hidden.substituted of
-    | varType(_) -> ntOrDecType(nt.substituted, inhs.substituted, hidden.substituted, defaultPartialDec, defaultInhs.substituted)
+    | varType(_) -> ntOrDecType(nt.substituted, inhs.substituted, hidden.substituted)
     | _          -> hidden.substituted
     end;
   -- For a renaming, we don't need to specialize.

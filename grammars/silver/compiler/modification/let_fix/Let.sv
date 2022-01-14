@@ -139,9 +139,9 @@ top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 
   top.typerep = 
     case q.lookupValue.typeScheme.monoType of
-    | ntOrDecType(t, i, _, defaultPartialDec, defaultInhs) -> ntOrDecType(t, i, freshType(), defaultPartialDec, defaultInhs)
-    | decoratedType(t, i) -> ntOrDecType(t, i, freshType(), false, i)
-    | partiallyDecoratedType(t, i) -> ntOrDecType(t, i, freshType(), true, i)
+    | ntOrDecType(t, i, _) -> ntOrDecType(t, i, freshType())
+    | decoratedType(t, i) -> ntOrDecType(t, i, freshType())
+    | partiallyDecoratedType(t, i) -> ntOrDecType(t, i, freshType())
     | t -> t
     end;
 

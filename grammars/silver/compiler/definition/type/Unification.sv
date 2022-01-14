@@ -116,7 +116,7 @@ top::Type ::= fn::String ks::[Kind] tracked::Boolean
             else emptySubst()
           else error("kind mismatch during unification for " ++ prettyType(top) ++ " and " ++ prettyType(top.unifyWith)) -- Should be impossible
         else errorSubst("Tried to unify conflicting nonterminal types " ++ fn ++ " and " ++ ofn)
-    | ntOrDecType(_, _, _, _, _) -> errorSubst("nte-nodte: try again")
+    | ntOrDecType(_, _, _) -> errorSubst("nte-nodte: try again")
     | _ -> errorSubst("Tried to unify nonterminal type " ++ fn ++ " with " ++ prettyType(top.unifyWith))
     end;
 }
@@ -150,7 +150,7 @@ top::Type ::= te::Type i::Type
   top.unify = 
     case top.unifyWith of
     | decoratedType(ote, oi) -> composeSubst(unify(te, ote), unify(i, oi))
-    | ntOrDecType(_,_,_,_,_) -> errorSubst("dte-nodte: try again")
+    | ntOrDecType(_,_,_) -> errorSubst("dte-nodte: try again")
     | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
     end;
 }
@@ -161,13 +161,13 @@ top::Type ::= te::Type i::Type
   top.unify = 
     case top.unifyWith of
     | partiallyDecoratedType(ote, oi) -> composeSubst(unify(te, ote), unify(i, oi))
-    | ntOrDecType(_,_,_,_,_) -> errorSubst("dte-nodte: try again")
+    | ntOrDecType(_,_,_) -> errorSubst("dte-nodte: try again")
     | _ -> errorSubst("Tried to unify partially decorated type with " ++ prettyType(top.unifyWith))
     end;
 }
 
 aspect production ntOrDecType
-top::Type ::= nt::Type inhs::Type hidden::Type defaultPartialDec::Boolean defaultInhs::Type
+top::Type ::= nt::Type inhs::Type hidden::Type
 {
   -- If we're being asked to unify, then we know hidden is still a type variable,
   -- since we shouldn't be unifying with anything but fully-substituted types.

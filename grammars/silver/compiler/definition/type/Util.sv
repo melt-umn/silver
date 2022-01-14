@@ -226,7 +226,7 @@ top::Type ::= te::Type i::Type
 }
 
 aspect production ntOrDecType
-top::Type ::= nt::Type inhs::Type hidden::Type defaultPartialDec::Boolean defaultInhs::Type
+top::Type ::= nt::Type inhs::Type hidden::Type
 {
   top.baseType = top;
   top.argTypes = [];
