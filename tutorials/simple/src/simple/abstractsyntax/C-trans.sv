@@ -50,6 +50,7 @@ s::Stmt ::= e::Expr
     | floatType()   -> "%f"
     | booleanType() -> "%d"
     | stringType()  -> "%s"
+    | errorType() -> "%d"
     end;
   s.c_code = s"printf(\"${print_code}\", ${e.c_code}); \n";
 }
@@ -120,24 +121,24 @@ Note that we do not define the c_code attribute for those relational
 and logical operations that (umm that WHAT? hahahaha)
 -}
 aspect production intLit
-e::Expr ::= s::String
+e::Expr ::= i::Integer
 {
-  e.c_code = s;
+  e.c_code = toString(i);
 }
 aspect production floatLit
-e::Expr ::= s::String
+e::Expr ::= f::Float
 {
-  e.c_code = s;
+  e.c_code = toString(f);
 }
 aspect production boolLit
-e::Expr ::= s::String
+e::Expr ::= b::Boolean
 {
-  e.c_code = s;
+  e.c_code = if b then "1" else "0";
 }
 aspect production stringLit
 e::Expr ::= s::String
 {
-  e.c_code = s;
+  e.c_code = s"\"${escapeString(s)}\"";
 }
 
 aspect production varRef

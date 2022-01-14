@@ -19,6 +19,15 @@ String ::= width::Integer d::Document
 
 --------------------------------------------------------------------------------
 
+instance Semigroup Document {
+  append = cat;
+}
+
+instance Monoid Document {
+  mempty = notext();
+  concat = ppConcat;
+}
+
 @{--
  - Concatenates a list of fragments into one fragment.
  -}
@@ -83,7 +92,7 @@ Document ::= n::Integer inner::Document
 function groupnestlines
 Document ::= n::Integer inner::Document
 {
-  return cat(groupnest(n, cat(line(), inner)), line());
+  return group(cat(nest(n, cat(line(), inner)), line()));
 }
 function softbreak
 Document ::=
@@ -138,7 +147,8 @@ realLine Document ::=
 nonterminal Document with indent, width,
                           inPosition, inDq, inCHorizontals, inRemaining,
                           outPosition, outDq, outCHorizontals, outRemaining,
-                          result, horizontals;
+                          result, horizontals,
+			  compareTo, isEqual;
 
 autocopy attribute indent :: Integer;
 autocopy attribute width :: Integer;
@@ -158,6 +168,9 @@ synthesized attribute outCHorizontals :: [Boolean];
 synthesized attribute outRemaining :: Integer;
 
 synthesized attribute result :: String; -- output of printing process
+
+-- Strict equality of Document terms, for testing purposes
+propagate compareTo, isEqual on Document;
 
 @@{-
 Some notes on deciphering all this:

@@ -200,7 +200,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
   top.productionAttributes := [localColDef(top.grammarName, a.location, fName, te.typerep, q.operation)];
 
   production attribute fName :: String;
-  fName = top.frame.fullName ++ ":local:" ++ a.name;
+  fName = top.frame.fullName ++ ":local:" ++ top.grammarName ++ ":" ++ a.name;
 
   top.defs := [];
 

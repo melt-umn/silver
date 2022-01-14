@@ -1,6 +1,7 @@
 grammar silver:compiler:definition:env;
 
 imports silver:compiler:definition:type;
+imports silver:compiler:definition:type:syntax only mentionedAliases;
 imports silver:regex;
 
 -- Some of these nonterminals are closed, but the dispatch attributes are
@@ -130,7 +131,7 @@ top::ValueDclInfo ::= fn::String
   top.typeScheme = monoType(terminalIdType());
 }
 
-closed nonterminal TypeDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, isClass, classMembers, givenInstanceType, superContexts;
+closed nonterminal TypeDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, mentionedAliases, isClass, classMembers, givenInstanceType, superContexts;
 
 aspect default production
 top::TypeDclInfo ::=
@@ -138,6 +139,7 @@ top::TypeDclInfo ::=
   top.kindrep = starKind();
   top.isType = false;
   top.isTypeAlias = false;
+  top.mentionedAliases := [];
   top.isClass = false;
   top.classMembers = [];
   top.superContexts = [];
@@ -153,7 +155,7 @@ top::TypeDclInfo ::= fn::String ks::[Kind] closed::Boolean tracked::Boolean
   top.isType = true;
 }
 abstract production termDcl
-top::TypeDclInfo ::= fn::String regex::Regex easyName::Maybe<String>
+top::TypeDclInfo ::= fn::String regex::Regex easyName::Maybe<String> genRepeatProb::Maybe<Float>
 {
   top.fullName = fn;
 
@@ -172,12 +174,13 @@ top::TypeDclInfo ::= fn::String isAspect::Boolean tv::TyVar
   top.isType = true;
 }
 abstract production typeAliasDcl
-top::TypeDclInfo ::= fn::String bound::[TyVar] ty::Type
+top::TypeDclInfo ::= fn::String mentionedAliases::[String] bound::[TyVar] ty::Type
 {
   top.fullName = fn;
 
   top.isType = null(bound);
   top.isTypeAlias = true;
+  top.mentionedAliases := mentionedAliases;
   top.typeScheme = if null(bound) then monoType(ty) else polyType(bound, ty);
   top.kindrep = foldr(arrowKind, ty.kindrep, map((.kindrep), bound)); 
 }

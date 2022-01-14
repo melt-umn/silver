@@ -247,7 +247,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   -- fun >>= \ bind_name -> lambda_fun(args, bind_name)
   local bind_fun_in::Expr =
         Silver_Expr {
-          bind($Expr {if isDecorated(ne.mtyperep) then mkStrFunctionInvocation(top.location, "silver:core:new", [ne.monadRewritten]) else ne.monadRewritten},
+          bind($Expr {if ne.mtyperep.isDecorated then mkStrFunctionInvocation(top.location, "silver:core:new", [ne.monadRewritten]) else ne.monadRewritten},
                $Expr {buildLambda(bind_name, monadInnerType(ne.mtyperep, top.location), applicationExpr(lambda_fun, '(', expanded_name_args, ')', location=top.location), top.location) })
         };
   local expanded_name_args::AppExprs =
@@ -475,7 +475,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
                      else e.monadicNames;
 
   local eUnDec::Expr =
-        if isDecorated(e.mtyperep)
+        if e.mtyperep.isDecorated
         then Silver_Expr{ silver:core:new($Expr {e.monadRewritten}) }
         else e.monadRewritten;
   local noMonad::Expr = access(e.monadRewritten, '.', q, location=top.location);
@@ -805,7 +805,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
                        productionRHSNil(location=top.location),
                        location=top.location);
   local eUnDec::Expr =
-        if isDecorated(e.mtyperep)
+        if e.mtyperep.isDecorated
         then Silver_Expr {new($Expr {e.monadRewritten})}
         else e.monadRewritten;
   top.monadRewritten =
@@ -942,11 +942,11 @@ top::Expr ::= e1::Expr '&&' e2::Expr
   top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   local e1UnDec::Expr =
-        if isDecorated(e1.mtyperep)
+        if e1.mtyperep.isDecorated
         then Silver_Expr {silver:core:new( $Expr {e1.monadRewritten})}
         else e1.monadRewritten;
   local e2UnDec::Expr =
-        if isDecorated(e2.mtyperep)
+        if e2.mtyperep.isDecorated
         then Silver_Expr {silver:core:new( $Expr {e2.monadRewritten})}
         else e2.monadRewritten;
   --e1 >>= ( (\x y -> if x then y else Return(false))(_, e2) )
@@ -1028,11 +1028,11 @@ top::Expr ::= e1::Expr '||' e2::Expr
   e2.expectedMonad = top.expectedMonad;
 
   local e1UnDec::Expr =
-        if isDecorated(e1.mtyperep)
+        if e1.mtyperep.isDecorated
         then Silver_Expr {silver:core:new( $Expr {e1.monadRewritten})}
         else e1.monadRewritten;
   local e2UnDec::Expr =
-        if isDecorated(e2.mtyperep)
+        if e2.mtyperep.isDecorated
         then Silver_Expr {silver:core:new( $Expr {e2.monadRewritten})}
         else e2.monadRewritten;
   --e1 >>= ( (\x y -> if x then Return(true) else y)(_, e2) )
@@ -1095,7 +1095,7 @@ top::Expr ::= '!' e::Expr
   e.expectedMonad = top.expectedMonad;
 
   local eUnDec::Expr =
-        if isDecorated(e.mtyperep)
+        if e.mtyperep.isDecorated
         then Silver_Expr {silver:core:new($Expr {e.monadRewritten})}
         else e.monadRewritten;
   top.monadRewritten =
@@ -1213,7 +1213,7 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
   local e3Type::Type = performSubstitution(e3.mtyperep, top.finalSubst);
   --
   local e1UnDec::Expr =
-        if isDecorated(e1.mtyperep)
+        if e1.mtyperep.isDecorated
         then Silver_Expr {silver:core:new($Expr {e1.monadRewritten})}
         else e1.monadRewritten;
   --We assume that if e2 or e3 are monads, they are the same as e1 if that is a
@@ -1319,11 +1319,11 @@ top::Expr ::= e1::Expr '+' e2::Expr
   top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   local e1UnDec::Expr =
-        if isDecorated(e1.mtyperep)
+        if e1.mtyperep.isDecorated
         then Silver_Expr {silver:core:new( $Expr {e1.monadRewritten})}
         else e1.monadRewritten;
   local e2UnDec::Expr =
-        if isDecorated(e2.mtyperep)
+        if e2.mtyperep.isDecorated
         then Silver_Expr {silver:core:new( $Expr {e2.monadRewritten})}
         else e2.monadRewritten;
   --e1 >>= ( (\x y -> y >>= \z -> Return(x + z))(_, e2) )
@@ -1412,11 +1412,11 @@ top::Expr ::= e1::Expr '-' e2::Expr
   top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   local e1UnDec::Expr =
-        if isDecorated(e1.mtyperep)
+        if e1.mtyperep.isDecorated
         then Silver_Expr {silver:core:new( $Expr {e1.monadRewritten})}
         else e1.monadRewritten;
   local e2UnDec::Expr =
-        if isDecorated(e2.mtyperep)
+        if e2.mtyperep.isDecorated
         then Silver_Expr {silver:core:new( $Expr {e2.monadRewritten})}
         else e2.monadRewritten;
   --e1 >>= ( (\x y -> y >>= \z -> Return(x - z))(_, e2) )
@@ -1505,11 +1505,11 @@ top::Expr ::= e1::Expr '*' e2::Expr
   top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   local e1UnDec::Expr =
-        if isDecorated(e1.mtyperep)
+        if e1.mtyperep.isDecorated
         then Silver_Expr {silver:core:new( $Expr {e1.monadRewritten})}
         else e1.monadRewritten;
   local e2UnDec::Expr =
-        if isDecorated(e2.mtyperep)
+        if e2.mtyperep.isDecorated
         then Silver_Expr {silver:core:new( $Expr {e2.monadRewritten})}
         else e2.monadRewritten;
   --e1 >>= ( (\x y -> y >>= \z -> Return(x * z))(_, e2) )
@@ -1598,11 +1598,11 @@ top::Expr ::= e1::Expr '/' e2::Expr
   top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   local e1UnDec::Expr =
-        if isDecorated(e1.mtyperep)
+        if e1.mtyperep.isDecorated
         then Silver_Expr {silver:core:new( $Expr {e1.monadRewritten})}
         else e1.monadRewritten;
   local e2UnDec::Expr =
-        if isDecorated(e2.mtyperep)
+        if e2.mtyperep.isDecorated
         then Silver_Expr {silver:core:new( $Expr {e2.monadRewritten})}
         else e2.monadRewritten;
   --e1 >>= ( (\x y -> y >>= \z -> Return(x / z))(_, e2) )
@@ -1691,11 +1691,11 @@ top::Expr ::= e1::Expr '%' e2::Expr
   top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
   local e1UnDec::Expr =
-        if isDecorated(e1.mtyperep)
+        if e1.mtyperep.isDecorated
         then Silver_Expr {silver:core:new( $Expr {e1.monadRewritten})}
         else e1.monadRewritten;
   local e2UnDec::Expr =
-        if isDecorated(e2.mtyperep)
+        if e2.mtyperep.isDecorated
         then Silver_Expr {silver:core:new( $Expr {e2.monadRewritten})}
         else e2.monadRewritten;
   --e1 >>= ( (\x y -> y >>= \z -> Return(x % z))(_, e2) )
@@ -1755,7 +1755,7 @@ top::Expr ::= '-' e::Expr
   propagate mDownSubst, mUpSubst;
 
   local eUnDec::Expr =
-        if isDecorated(e.mtyperep)
+        if e.mtyperep.isDecorated
         then Silver_Expr {silver:core:new($Expr {e.monadRewritten})}
         else e.monadRewritten;
   top.monadRewritten =

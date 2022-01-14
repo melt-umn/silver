@@ -28,8 +28,8 @@ abstract production char
 top::Regex ::= c::Integer
 {
   production char::String = charsToString([c]);
-  top.basePP = text(char);
-  top.classPP = text(char);
+  top.basePP = escapeRegexChar(char);
+  top.classPP = escapeRegexClassChar(char);
 }
 
 abstract production wildChar
@@ -43,8 +43,8 @@ top::Regex ::= l::Integer u::Integer
 {
   production lChar::String = charsToString([l]);
   production uChar::String = charsToString([u]);
-  top.basePP = pp"[${text(lChar)}-${text(uChar)}]";
-  top.classPP = pp"${text(lChar)}-${text(uChar)}";
+  top.basePP = pp"[${escapeRegexChar(lChar)}-${escapeRegexChar(uChar)}]";
+  top.classPP = pp"${escapeRegexClassChar(lChar)}-${escapeRegexClassChar(uChar)}";
 }
 
 abstract production negChars
@@ -130,4 +130,32 @@ Regex ::= s::String
   return
     if s == "" then epsilon()
     else foldr1(seq, map(char, stringToChars(s)));
+}
+
+function escapeRegexChar
+Document ::= char::String
+{
+  return
+    case char of
+    | "+" -> pp"\\+"
+    | "*" -> pp"\\*"
+    | "?" -> pp"\\?"
+    | "|" -> pp"\\|"
+    | "[" -> pp"\\["
+    | "(" -> pp"\\("
+    | ")" -> pp"\\)"
+    | "." -> pp"\\."
+    | _ -> text(escapeString(char))
+    end;
+}
+
+function escapeRegexClassChar
+Document ::= char::String
+{
+  return
+    case char of
+    | "-" -> pp"\\-"
+    | "]" -> pp"\\]"
+    | _ -> text(escapeString(char))
+    end;
 }

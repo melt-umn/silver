@@ -1,12 +1,16 @@
 
 import silver:compiler:extension:testing;
 
+-- TODO: Resurrect this at some point
+
+{-
 terminal TestFor_T 'testFor';
 
 
 concrete production testforagdcl
 top::AGDcl ::= 'testFor' testSuite::Name ':' n::Name '::' id::QName ',' e::Expr ';'
 {
+  top.unparse = s"testFor ${testSuite.unparse} : ${n.unparse} :: ${id.unparse}, ${e.unparse};";
   top.defs := [];
   top.moduleNames := [];
   top.flowDefs := [];
@@ -102,6 +106,6 @@ AGDcl ::= d::ValueDclInfo  testfunname::String  l::Location  testSuite::Name
       ]
       );
 }
-
+-}
 
 

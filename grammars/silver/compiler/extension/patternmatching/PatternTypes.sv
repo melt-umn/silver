@@ -196,6 +196,14 @@ top::Pattern ::=
   top.patternTypeName = "";
 }
 
+-- arbitrary nesting of patterns
+concrete production nestedPatterns
+top::Pattern ::= '(' p::Pattern ')'
+{
+  top.unparse = s"(${p.unparse})";
+  forwards to p;
+}
+
 --------------------------------------------------------------------------------
 
 -- Below are the non-canonical patterns, i.e. those for other types
@@ -337,7 +345,7 @@ top::PatternList ::=
 
 synthesized attribute namedPatternList::[Pair<String Decorated Pattern>];
 
-nonterminal NamedPatternList with location, config, unparse, env, errors, patternVars, patternVarEnv, namedPatternList;
+nonterminal NamedPatternList with location, config, unparse, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
 
 concrete production namedPatternList_one
 top::NamedPatternList ::= p::NamedPattern
@@ -370,7 +378,7 @@ top::NamedPatternList ::=
   top.namedPatternList = [];
 }
 
-nonterminal NamedPattern with location, config, unparse, env, errors, patternVars, patternVarEnv, namedPatternList;
+nonterminal NamedPattern with location, config, unparse, frame, env, errors, patternVars, patternVarEnv, namedPatternList;
 
 concrete production namedPattern
 top::NamedPattern ::= qn::QName '=' p::Pattern
@@ -390,8 +398,6 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
   top.patternVars = p.patternVars;
   top.namedPatternList = [pair(qn.lookupAttribute.fullName, p)];
 }
-
-
 
 --helper function for building patternLists from lists of patterns
 function buildPatternList

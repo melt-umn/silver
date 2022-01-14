@@ -68,7 +68,7 @@ Grammar ::= l::[Root]
 function isValidSilverFile
 Boolean ::= f::String
 {
-  return any(map(endsWith(_, f), [".sv", ".sv.md"])) && !startsWith(".", f);
+  return any(map(endsWith(_, f), allowedSilverFileExtensions)) && !startsWith(".", f);
 }
 function listSilverFiles
 IOVal<[String]> ::= dir::String  ioin::IOToken

@@ -518,7 +518,7 @@ Expr ::= exprs::[Expr] names::[String] loc::Location base::Expr
              if isMonad(ety, env) && fst(monadsMatch(ety, em, sub))
              then buildApplication(
                     monadBind(loc),
-                              [if isDecorated(ety)
+                              [if ety.isDecorated
                                then mkStrFunctionInvocation(loc, "silver:core:new", [head(exprs)])
                                else head(exprs),
                                buildLambda(head(names), monadInnerType(ety, loc), subcall, loc)],

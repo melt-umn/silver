@@ -4,7 +4,7 @@ abstract production for
 s::Stmt ::= i::Name lower::Expr upper::Expr body::Stmt
 {
   -- provide a nicer pretty printing, but nothing else.
-  s.pp = pp"for(${i.pp} = ${lower.pp} to ${upper.pp})${ppblock(body)}";
+  s.pp = pp"for(${i} = ${lower} to ${upper})${ppblock(body)}";
 
   forwards to
     {- i = lower ;
@@ -18,5 +18,5 @@ s::Stmt ::= i::Name lower::Expr upper::Expr body::Stmt
        while(lteOp(varRef(i), upper),
          block(
            seq(body, 
-             assignment(i, add(varRef(i), intLit("1")))))));
+             assignment(i, add(varRef(i), intLit(1)))))));
 }

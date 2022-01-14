@@ -174,7 +174,7 @@ ${contexts.contextInitTrans}
 		@Override
 		public final common.AppTypeRep getType() {
 ${makeTyVarDecls(3, whatSig.typerep.freeVariables)}
-			return ${whatSig.typerep.transFreshTypeRep};
+			return ${transFreshTypeRep(whatSig.typerep)};
 		}
 		
 		@Override
