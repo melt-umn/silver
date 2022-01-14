@@ -180,14 +180,16 @@ public class DecoratedNode implements Decorable, Typed {
 	@Override
 	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
 		// System.err.println("TRACE: " + parent.getDebugID() + " extra-decorating " + getDebugID());
-		inheritedAttributes = inheritedAttributes.clone();  // Avoid modifying the static inh array from the original parent Node
-		for(int i = 0; i < inhs.length; i++) {
-			final int attribute = i;
-			if(inhs[attribute] != null) {
-				if(inheritedAttributes[attribute] == null) {
-					inheritedAttributes[attribute] = (context) -> inhs[attribute].eval(parent);
-				} else {
-					throw new SilverException(parent.getDebugID() + " cannot decorate " + getDebugID() + " with inh '" + self.getNameOfInhAttr(attribute) + "' as this attribute has already been provided.");
+		if (inhs != null) {
+			inheritedAttributes = inheritedAttributes.clone();  // Avoid modifying the static inh array from the original parent Node
+			for(int i = 0; i < inhs.length; i++) {
+				final int attribute = i;
+				if(inhs[attribute] != null) {
+					if(inheritedAttributes[attribute] == null) {
+						inheritedAttributes[attribute] = (context) -> inhs[attribute].eval(parent);
+					} else {
+						throw new SilverException(parent.getDebugID() + " cannot decorate " + getDebugID() + " with inh '" + self.getNameOfInhAttr(attribute) + "' as this attribute has already been provided.");
+					}
 				}
 			}
 		}
