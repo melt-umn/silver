@@ -116,6 +116,9 @@ aspect production errorApplication
 top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
   top.transform = applyASTExpr(e.transform, es.transform, anns.transform);
+  e.boundVars = top.boundVars;
+  es.boundVars = top.boundVars;
+  anns.boundVars = top.boundVars;
 }
 
 aspect production functionInvocation
@@ -157,12 +160,18 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
 
     | _, _ -> applyASTExpr(e.transform, es.transform, anns.transform)
     end;
+  e.boundVars = top.boundVars;
+  es.boundVars = top.boundVars;
+  anns.boundVars = top.boundVars;
 }
 
 aspect production partialApplication
 top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
   top.transform = applyASTExpr(e.transform, es.transform, anns.transform);
+  e.boundVars = top.boundVars;
+  es.boundVars = top.boundVars;
+  anns.boundVars = top.boundVars;
 }
 
 aspect production forwardAccess
@@ -199,6 +208,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
+  e.boundVars = top.boundVars;
 }
 
 aspect production annoAccessHandler
@@ -213,6 +223,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
+  e.boundVars = top.boundVars;
 }
 
 aspect production terminalAccessHandler
@@ -227,6 +238,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
+  e.boundVars = top.boundVars;
 }
 
 
@@ -292,6 +304,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
         consASTExpr(e.transform, nilASTExpr()),
         nilNamedASTExpr())
     end;
+  e.boundVars = top.boundVars;
 }
 
 aspect production inhDecoratedAccessHandler
@@ -314,6 +327,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
+  e.boundVars = top.boundVars;
 }
 
 aspect production errorDecoratedAccessHandler
@@ -336,6 +350,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
         }),
       consASTExpr(e.transform, nilASTExpr()),
       nilNamedASTExpr());
+  e.boundVars = top.boundVars;
 }
 
 aspect production decorateExprWith
@@ -363,6 +378,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
         }),
       consASTExpr(e.transform, inh.transform),
       nilNamedASTExpr());
+  e.boundVars = top.boundVars;
 }
 
 attribute transform<ASTExprs> occurs on ExprInhs;
@@ -538,6 +554,8 @@ aspect production listPlusPlus
 top::Expr ::= e1::PartiallyDecorated Expr e2::PartiallyDecorated Expr
 {
   top.transform = appendASTExpr(e1.transform, e2.transform);
+  e1.boundVars = top.boundVars;
+  e2.boundVars = top.boundVars;
 }
 
 -- TODO: Awful hack to allow case to appear on rule RHS.
@@ -556,6 +574,8 @@ top::Expr ::= 'case' es::Exprs 'of' o::Opt_Vbar_t ml::MRuleList 'end'
   decEs.env = top.env;
   decEs.flowEnv = top.flowEnv;
   decEs.boundVars = top.boundVars;
+  decEs.isRoot = top.isRoot;
+  decEs.originRules = top.originRules;
   
   top.transform =
     applyASTExpr(

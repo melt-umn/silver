@@ -146,7 +146,7 @@ top::QNameType ::= id::Name ':' qn::QNameType
  -}
 nonterminal QNameAttrOccur with config, name, location, grammarName, env, unparse, attrFor, errors, typerep, dcl<OccursDclInfo>, attrDcl, found, attrFound;
 
-flowtype QNameAttrOccur = dcl {grammarName, env, attrFor}, attrDcl {grammarName, env, attrFor};
+flowtype QNameAttrOccur = decorate {grammarName, env, attrFor}, dcl {decorate}, attrDcl {decorate};
 
 {--
  - For QNameAttrOccur, the name of the LHS to look up this attribute on.
