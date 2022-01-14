@@ -1270,18 +1270,9 @@ Expr ::= e::Decorated Expr
 {
   local et :: Type = performSubstitution(e.typerep, e.upSubst);
 
-  return
-    case et of
-    -- Special case: unspecialized ntOrDecTypes that would default to partially decorated.
-    -- We *could* decorate them here. But that would amount to (unnecessarily) taking a
-    -- partially decorated reference. Instead just let the primitive match specialize it
-    -- as fully-decorated.
-    | ntOrDecType(_, _, varType(_), true, _) -> exprRef(e, location=e.location)
-    | _ ->
-      if isDecorable(et, e.env)
-      then decorateExprWithEmpty('decorate', exprRef(e, location=e.location), 'with', '{', '}', location=e.location)
-      else exprRef(e, location=e.location)
-    end;
+  return if isDecorable(et, e.env)
+         then decorateExprWithEmpty('decorate', exprRef(e, location=e.location), 'with', '{', '}', location=e.location)
+         else exprRef(e, location=e.location);
 }
 
 instance Eq AbstractMatchRule {

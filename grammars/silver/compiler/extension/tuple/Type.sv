@@ -38,7 +38,7 @@ top::Type ::= c::Type a::Type
 
 -- Avoid specializing possibly-decorated types
 aspect production ntOrDecType
-top::Type ::= _ _ _ _ _
+top::Type ::= _ _ _
 {
   top.tupleElems = [top];
 }

@@ -304,27 +304,24 @@ top::Type ::= te::Type i::Type
 
 -- This will ONLY appear in the types of expressions, nowhere else!
 abstract production ntOrDecType
-top::Type ::= nt::Type inhs::Type hidden::Type defaultPartialDec::Boolean defaultInhs::Type
+top::Type ::= nt::Type inhs::Type hidden::Type
 {
-  -- Note that we are excluding hidden here
+  -- Note that we are excluding hidden here if it is unspecialized
   top.freeVariables =
     case hidden of
-    | varType(_) -> setUnionTyVarsAll([nt.freeVariables, inhs.freeVariables, defaultInhs.freeVariables])
+    | varType(_) -> setUnionTyVars(nt.freeVariables, inhs.freeVariables)
     | _ -> hidden.freeVariables
     end;
 
-  -- If we know we are specialized to some particular set of attributes, don't default to something else.
+  -- If we never specialize what we're decorated with, we're decorated with nothing.
   production actualInhs::Type =
     case inhs of
-    | varType(_) -> defaultInhs
+    | varType(_) -> inhSetType([])
     | _ -> inhs
     end;
 
    -- If we never specialize, we're decorated.
-  forwards to
-    if defaultPartialDec
-    then partiallyDecoratedType(nt, actualInhs)
-    else decoratedType(nt, actualInhs);
+  forwards to decoratedType(nt, actualInhs);
 }
 
 {--

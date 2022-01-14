@@ -54,10 +54,12 @@ top::PDExpr ::= e::PDExpr
 production pdOp3Impl
 top::PDExpr ::= e::PartiallyDecorated PDExpr with {env1}
 {
-  local e2::Decorated PDExpr = decorate e with {env2 = top.env2;};
+  local e2::Decorated PDExpr = decorate withEnv1(e) with {env2 = top.env2;};
   top.errors1 = e2.errors1;
   top.errors2 = e2.errors2;
 }
+
+global withEnv1::(PartiallyDecorated PDExpr with {env1} ::= PartiallyDecorated PDExpr with {env1}) = id;
 
 production pdOp4
 top::PDExpr ::= e::PDExpr
