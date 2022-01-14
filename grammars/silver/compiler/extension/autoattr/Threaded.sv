@@ -48,6 +48,7 @@ top::ProductionStmt ::= inh::Decorated QName syn::String
           filter(
             \ ie::NamedSignatureElement ->
               isDecorable(ie.typerep, top.env) &&
+              !ie.typerep.isPartiallyDecorated &&  -- Don't thread on partially decorated children
               !null(getOccursDcl(inh.lookupAttribute.fullName, ie.typerep.typeName, top.env)) &&
               !null(getOccursDcl(syn, ie.typerep.typeName, top.env)),
             if null(getOccursDcl(syn, top.frame.lhsNtName, top.env)) && !null(top.frame.signature.inputElements)
@@ -78,6 +79,7 @@ top::ProductionStmt ::= inh::String syn::Decorated QName
           filter(
             \ ie::NamedSignatureElement ->
               isDecorable(ie.typerep, top.env) &&
+              !ie.typerep.isPartiallyDecorated &&  -- Don't thread on partially decorated children
               !null(getOccursDcl(inh, ie.typerep.typeName, top.env)) &&
               !null(getOccursDcl(syn.lookupAttribute.fullName, ie.typerep.typeName, top.env)),
             top.frame.signature.inputElements)) ++
