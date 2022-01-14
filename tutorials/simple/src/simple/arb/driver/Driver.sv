@@ -7,7 +7,7 @@ import simple:concretesyntax as cst;
 import silver:reflect;
 
 function arbDriver
-IO ::= args::[String]
+IOToken ::= args::[String]
        io_in::IOToken 
        generator::(RandomGen<cst:Root> ::= Integer Integer)
 {
