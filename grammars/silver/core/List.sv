@@ -552,7 +552,7 @@ Boolean ::= l::[Boolean]
 function nil
 [a] ::=
 {
-  return i_nilList();
+  return [];
 } foreign {
   "java" : return "common.ConsCell.nil";
 }
@@ -560,7 +560,7 @@ function nil
 function cons
 [a] ::= h::a  t::[a]
 {
-  return i_consList(h, t);
+  return h :: t;
 } foreign {
   "java" : return "new common.ConsCell(%?h?%, %?t?%)";
 }
@@ -568,9 +568,10 @@ function cons
 function appendList
 [a] ::= l1::[a] l2::[a]
 {
-  return if l1.i_emptyList
-         then l2
-         else cons(head(l1), append(tail(l1), l2));
+  return case l1 of
+  | h :: t -> cons(h, append(t, l2))
+  | [] -> l2
+  end;
 } foreign {
   "java" : return "common.AppendCell.append(%l1%, %?l2?%)";
 }
@@ -579,7 +580,10 @@ function appendList
 function null
 Boolean ::= l::[a]
 {
-  return l.i_emptyList;
+  return case l of
+  | [] -> true
+  | _ :: _ -> false
+  end;
 } foreign {
   "java" : return "%l%.nil()";
 }
@@ -587,7 +591,10 @@ Boolean ::= l::[a]
 function listLength  -- not called 'length' since this is a builtin language feature, but thats how you should call it.
 Integer ::= l::[a]
 {
-  return l.i_lengthList;
+  return case l of
+  | _ :: t -> 1 + listLength(t)
+  | [] -> 0
+  end;
 } foreign {
   "java" : return "Integer.valueOf(%l%.length())";
 }
@@ -595,7 +602,10 @@ Integer ::= l::[a]
 function head
 a ::= l::[a]
 {
-  return l.i_headList;
+  return case l of
+  | h :: _ -> h
+  | [] -> error("requested head of nil")
+  end;
 } foreign {
   "java" : return "%l%.head()";
 }
@@ -603,7 +613,10 @@ a ::= l::[a]
 function tail
 [a] ::= l::[a]
 {
-  return l.i_tailList;
+  return case l of
+  | _ :: t -> t
+  | [] -> error("requested tail of nil")
+  end;
 } foreign {
   "java" : return "%l%.tail()";
 }
