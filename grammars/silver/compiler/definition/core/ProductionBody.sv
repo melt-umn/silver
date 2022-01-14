@@ -273,9 +273,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
     -- consider "production foo  top::DoesNotExist ::= { top.errors = ...; }"
     -- where top is a valid reference to a type that is an error type
     -- so there is an error elsewhere
-    if !dl.found || !attr.found || !null(problems)
-    then errorAttributeDef(problems, dl, attr, e, location=top.location)
-    else attr.attrDcl.attrDefDispatcher(dl, attr, e, top.location);
+    (if !dl.found || !attr.found || !null(problems)
+     then errorAttributeDef(problems, _,  _, _, location=_)
+     else attr.attrDcl.attrDefDispatcher)(dl, attr, e, top.location);
 }
 
 {- This is a helper that exist primarily to decorate 'e' and add its error messages to the list.
@@ -314,9 +314,9 @@ top::DefLHS ::= q::QName
 
   top.errors := q.lookupValue.errors ++ forward.errors;
   
-  forwards to if null(q.lookupValue.dcls)
-              then errorDefLHS(q, location=top.location)
-              else q.lookupValue.dcl.defLHSDispatcher(q, top.location);
+  forwards to (if null(q.lookupValue.dcls)
+               then errorDefLHS(_, location=_)
+               else q.lookupValue.dcl.defLHSDispatcher)(q, top.location);
 }
 
 abstract production errorDefLHS
@@ -414,9 +414,9 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
   top.productionAttributes := [];
   top.defs := [];
   
-  forwards to if null(val.lookupValue.dcls)
-              then errorValueDef(val, e, location=top.location)
-              else val.lookupValue.dcl.defDispatcher(val, e, top.location);
+  forwards to (if null(val.lookupValue.dcls)
+               then errorValueDef(_, _, location=_)
+               else val.lookupValue.dcl.defDispatcher)(val, e, top.location);
 }
 
 abstract production errorValueDef

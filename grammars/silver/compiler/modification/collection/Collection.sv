@@ -363,9 +363,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
   attr.attrFor = dl.typerep;
 
   forwards to
-    if !dl.found || !attr.found
-    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e, location=top.location)
-    else attr.attrDcl.attrAppendDefDispatcher(dl, attr, e, top.location);
+    (if !dl.found || !attr.found
+     then errorAttributeDef(dl.errors ++ attr.errors, _, _, _, location=_)
+     else attr.attrDcl.attrAppendDefDispatcher)(dl, attr, e, top.location);
 }
 
 concrete production attrContainsBase
@@ -381,9 +381,9 @@ top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
   attr.attrFor = dl.typerep;
 
   forwards to
-    if !dl.found || !attr.found
-    then errorAttributeDef(dl.errors ++ attr.errors, dl, attr, e, location=top.location)
-    else attr.attrDcl.attrBaseDefDispatcher(dl, attr, e, top.location);
+    (if !dl.found || !attr.found
+     then errorAttributeDef(dl.errors ++ attr.errors, _, _, _, location=_)
+     else attr.attrDcl.attrBaseDefDispatcher)(dl, attr, e, top.location);
 }
 
 concrete production valContainsAppend
@@ -396,9 +396,10 @@ top::ProductionStmt ::= val::QName '<-' e::Expr ';'
   top.productionAttributes := [];
   top.defs := [];
   
-  forwards to if null(val.lookupValue.dcls)
-              then errorValueDef(val, e, location=top.location)
-              else val.lookupValue.dcl.appendDefDispatcher(val, e, top.location);
+  forwards to
+    (if null(val.lookupValue.dcls)
+     then errorValueDef(_, _, location=_)
+     else val.lookupValue.dcl.appendDefDispatcher)(val, e, top.location);
 }
 
 concrete production valContainsBase
@@ -411,8 +412,9 @@ top::ProductionStmt ::= val::QName ':=' e::Expr ';'
   top.productionAttributes := [];
   top.defs := [];
   
-  forwards to if null(val.lookupValue.dcls)
-              then errorValueDef(val, e, location=top.location)
-              else val.lookupValue.dcl.baseDefDispatcher(val, e, top.location);
+  forwards to
+    (if null(val.lookupValue.dcls)
+     then errorValueDef(_, _, location=_)
+     else val.lookupValue.dcl.baseDefDispatcher)(val, e, top.location);
 }
 

@@ -78,9 +78,9 @@ top::Expr ::= q::QName
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
   
-  forwards to if null(q.lookupValue.dcls)
-              then errorReference(q.lookupValue.errors, q, location=top.location)
-              else q.lookupValue.dcl.refDispatcher(q, top.location);
+  forwards to (if null(q.lookupValue.dcls)
+               then errorReference(q.lookupValue.errors, _, location=_)
+               else q.lookupValue.dcl.refDispatcher)(q, top.location);
 }
 
 abstract production errorReference
@@ -303,9 +303,10 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
   -- foo(x) where there is an annotation 'a'?
   -- Is this partial application, give (Foo ::= ;a::Something) or (Foo) + error.
   -- Possibly this can be solved by having somehting like "foo(x,a=?)"
-  forwards to if es.isPartial || anns.isPartial
-              then partialApplication(e, es, anns, location=top.location)
-              else functionInvocation(e, es, anns, location=top.location);
+  forwards to
+    (if es.isPartial || anns.isPartial
+     then partialApplication
+     else functionInvocation)(e, es, anns, location=top.location);
 }
 
 abstract production functionInvocation
@@ -447,8 +448,8 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
   top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
   
   -- Note: LHS is UNdecorated, here we dispatch based on the kind of attribute.
-  forwards to if !q.found then errorDecoratedAccessHandler(e, q, location=top.location)
-              else q.attrDcl.undecoratedAccessHandler(e, q, top.location);
+  forwards to (if !q.found then errorDecoratedAccessHandler(_, _, location=_)
+               else q.attrDcl.undecoratedAccessHandler)(e, q, top.location);
   -- annoAccessHandler
   -- accessBouncer
 }
@@ -486,8 +487,8 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
   top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
   
   -- Note: LHS is decorated, here we dispatch based on the kind of attribute.
-  forwards to if !q.found then errorDecoratedAccessHandler(e, q, location=top.location)
-              else q.attrDcl.decoratedAccessHandler(e, q, top.location);
+  forwards to (if !q.found then errorDecoratedAccessHandler(_, _, location=_)
+               else q.attrDcl.decoratedAccessHandler)(e, q, top.location);
   -- From here we go to:
   -- synDecoratedAccessHandler
   -- inhDecoratedAccessHandler
