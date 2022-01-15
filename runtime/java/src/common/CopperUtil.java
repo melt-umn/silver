@@ -3,6 +3,7 @@ package common;
 import common.javainterop.ConsCellCollection;
 import edu.umn.cs.melt.copper.compiletime.dumpers.XMLSpecDumper;
 import edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.*;
+import edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.visitors.ParserSpecProcessor;
 import edu.umn.cs.melt.copper.main.CopperDumpType;
 import edu.umn.cs.melt.copper.main.CopperIOType;
 import edu.umn.cs.melt.copper.main.CopperPipelineType;
@@ -32,15 +33,17 @@ public final class CopperUtil {
     params.setUsePipeline(CopperPipelineType.GRAMMARBEANS);
 
     try {
-      new XMLSpecDumper(parser).dump(CopperDumpType.XML_SPEC, System.out);
-    } catch (IOException exc) {
-    }
+      ParserSpecProcessor.normalizeParser(parser, null);
 
-    try {
       int ret = ParserCompiler.compile(parser, params);
       System.out.println("status = " + ret);
-      if (ret != 0)
+      if (ret != 0) {
+        try {
+          new XMLSpecDumper(parser).dump(CopperDumpType.XML_SPEC, System.out);
+        } catch (IOException exc) {
+        }
         System.exit(ret);
+      }
     } catch (CopperException exc) {
       throw new RuntimeException(exc);
     }
