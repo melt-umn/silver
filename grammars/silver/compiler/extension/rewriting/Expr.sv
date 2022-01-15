@@ -2,8 +2,9 @@ grammar silver:compiler:extension:rewriting;
 
 -- Environment mapping variables that were defined on the rule RHS to Booleans indicating whether
 -- the variable was explicitly (i.e. not implicitly) decorated in the pattern.
--- TODO: Lots of flow errors in this grammar because we are pretending this attribute is in the reference set 
-autocopy attribute boundVars::[Pair<String Boolean>] occurs on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern;
+inherited attribute boundVars::[Pair<String Boolean>] occurs on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern;
+propagate boundVars on Expr, Exprs, ExprInhs, ExprInh, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr, AssignExpr, PrimPatterns, PrimPattern
+  excluding baseExpr, application, access, letp, prodPatternNormal, prodPatternGadt;
 
 attribute transform<ASTExpr> occurs on Expr;
 
@@ -378,7 +379,6 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
         }),
       consASTExpr(e.transform, inh.transform),
       nilNamedASTExpr());
-  e.boundVars = top.boundVars;
 }
 
 attribute transform<ASTExprs> occurs on ExprInhs;
@@ -557,7 +557,7 @@ top::Expr ::= e1::PartiallyDecorated Expr e2::PartiallyDecorated Expr
     -- This is a forwarding prod, so we can't decorate e1 and e2 with boundVars here.
     -- TODO: need some way for the flow analysis to track that e1 and e2 will be provided with boundVars through the forward.
     case forward of
-    | application(_, _, snocAppExprs(snocAppExprs(emptyAppExprs(), _, decE1), _, decE2), _, _, _) ->
+    | functionInvocation(_, snocAppExprs(snocAppExprs(emptyAppExprs(), _, decE1), _, decE2), _) ->
       appendASTExpr(decE1.transform, decE2.transform)
     | _ -> error("Unexpected forward")
     end;
@@ -607,6 +607,7 @@ top::Expr ::= la::AssignExpr e::Expr
   top.transform = letASTExpr(la.transform, e.transform);
   top.decRuleExprs = la.decRuleExprs ++ e.decRuleExprs;
   
+  la.boundVars = top.boundVars;
   e.boundVars = top.boundVars ++ la.varBindings;
 }
 
