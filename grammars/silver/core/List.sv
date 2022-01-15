@@ -552,7 +552,9 @@ Boolean ::= l::[Boolean]
 function nil
 [a] ::=
 {
-  return [];
+  -- Foreign function expected to handle this here
+  -- Needs a new implementation if non-java translation is made.
+  return error("foreign function");
 } foreign {
   "java" : return "common.ConsCell.nil";
 }
@@ -560,7 +562,9 @@ function nil
 function cons
 [a] ::= h::a  t::[a]
 {
-  return h :: t;
+  -- Foreign function expected to handle this here
+  -- Needs a new implementation if non-java translation is made.
+  return error("foreign function");
 } foreign {
   "java" : return "new common.ConsCell(%?h?%, %?t?%)";
 }
