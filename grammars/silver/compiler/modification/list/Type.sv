@@ -1,14 +1,8 @@
 grammar silver:compiler:modification:list;
 
-{- Everything about this is awful.
-   We want to have `[a]` be able to unify with `f<a>`, while also maintaining the
-   expected [a] pretty-print AND the specialized translation.  
-   This is in itself interfering, but this makes the situation even more complicated:
-   listType exists for pretty-printing, while listCtrType provides something
-   for the `f` variable in `f<a>` to unify with while maintaining the proper
-   semantic behavior and translation. 
+{-
+  listType exists here purely to provide a better pretty print.
  -}
-
 abstract production listType
 top::Type ::= el::Type
 {
