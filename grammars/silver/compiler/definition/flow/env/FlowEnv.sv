@@ -23,7 +23,7 @@ annotation fwdTree :: EnvTree<FlowDef>;
 annotation fwdInhTree :: EnvTree<FlowDef>;
 annotation prodTree :: EnvTree<FlowDef>;
 annotation refTree :: EnvTree<[String]>;
-annotation partialRefTree :: EnvTree<(Location, [String])>;
+annotation partialRefTree :: EnvTree<(String, Location, [String])>;
 annotation localInhTree ::EnvTree<FlowDef>;
 annotation localTree :: EnvTree<FlowDef>;
 annotation nonSuspectTree :: EnvTree<[String]>;
@@ -116,7 +116,7 @@ function getInhsForNtRef
 
 -- partially decorated references taken for a child/local/production attribute
 function getPartialRefs
-[(Location, [String])] ::= prod::String  fName::String  e::FlowEnv
+[(String, Location, [String])] ::= prod::String  fName::String  e::FlowEnv
 {
   return searchEnvTree(crossnames(prod, fName), e.partialRefTree);
 }

@@ -74,9 +74,9 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     if dl.found && attr.found
     && top.config.warnEqdef
     then flatMap(
-      \ refSite::(Location, [String]) ->
-        if contains(attr.attrDcl.fullName, refSite.2) then []
-        else [mwdaWrn(top.config, top.location, "Attribute " ++ attr.name ++ " with an equation on " ++ dl.name ++ " is not in the partially decorated reference taken at " ++ refSite.1.unparse ++ " with only " ++ implode(", ", refSite.2))],
+      \ refSite::(String, Location, [String]) ->
+        if contains(attr.attrDcl.fullName, refSite.3) then []
+        else [mwdaWrn(top.config, top.location, "Attribute " ++ attr.name ++ " with an equation on " ++ dl.name ++ " is not in the partially decorated reference taken at " ++ refSite.1 ++ ":" ++ refSite.2.unparse ++ " with only " ++ implode(", ", refSite.3))],
       case dl of
       | childDefLHS(q) -> getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)
       | localDefLHS(q) -> getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)
@@ -140,9 +140,9 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     if dl.found && attr.found
     && top.config.warnEqdef
     then flatMap(
-      \ refSite::(Location, [String]) ->
-        if contains(attr.attrDcl.fullName, refSite.2) then []
-        else [mwdaWrn(top.config, top.location, "Attribute " ++ attr.name ++ " with an equation for " ++ dl.name ++ " is not in the partially decorated reference taken at " ++ refSite.1.unparse ++ " with only " ++ implode(", ", refSite.2))],
+      \ refSite::(String, Location, [String]) ->
+        if contains(attr.attrDcl.fullName, refSite.3) then []
+        else [mwdaWrn(top.config, top.location, "Attribute " ++ attr.name ++ " with an equation for " ++ dl.name ++ " is not in the partially decorated reference taken at " ++ refSite.1 ++ ":" ++ refSite.2.unparse ++ " with only " ++ implode(", ", refSite.3))],
       case dl of
       | childDefLHS(q) -> getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)
       | localDefLHS(q) -> getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)
@@ -166,7 +166,7 @@ aspect production childReference
 top::Expr ::= q::Decorated QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  local partialRefs::[(Location, [String])] = getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);
+  local partialRefs::[(String, Location, [String])] = getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);
   top.errors <-
     case finalTy, refSet of
     | partiallyDecoratedType(_, _), just(inhs) when top.config.warnEqdef && q.lookupValue.found ->
@@ -193,7 +193,7 @@ aspect production localReference
 top::Expr ::= q::Decorated QName
 {
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  local partialRefs::[(Location, [String])] = getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);
+  local partialRefs::[(String, Location, [String])] = getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);
   top.errors <-
     case finalTy, refSet of
     | partiallyDecoratedType(_, _), just(inhs) when top.config.warnEqdef && q.lookupValue.found ->

@@ -68,7 +68,7 @@ monoid attribute hostSynTreeContribs :: [Pair<String FlowDef>];
 monoid attribute nonSuspectContribs :: [Pair<String [String]>];
 
 {-- A list of decoration sites where partial references are taken, and the attributes on those partial references -}
-monoid attribute partialRefContribs :: [(String, Location, [String])];
+monoid attribute partialRefContribs :: [(String, String, Location, [String])];
 
 propagate synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, prodTreeContribs, prodGraphContribs, hostSynTreeContribs, nonSuspectContribs, partialRefContribs
   on FlowDefs;
@@ -366,13 +366,14 @@ top::PatternVarProjection ::= child::String  typeName::String  patternVar::Strin
  -
  - @param prod  the full name of the production
  - @param fName the full name of the child or local
+ - @param gram  the grammar where the reference was taken
  - @param loc   the location of where the reference was taken
  - @param attrs the attributes in the type of the taken reference
  -}
 abstract production partialRef
-top::FlowDef ::= prod::String  fName::String  loc::Location  attrs::[String]
+top::FlowDef ::= prod::String  fName::String  gram::String  loc::Location  attrs::[String]
 {
-  top.partialRefContribs := [(crossnames(prod, fName), loc, attrs)];
+  top.partialRefContribs := [(crossnames(prod, fName), gram, loc, attrs)];
   top.prodGraphContribs := [];
   top.flowEdges = [];
 }

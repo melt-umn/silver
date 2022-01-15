@@ -59,7 +59,7 @@ top::Expr ::= q::Decorated QName
     case finalTy, refSet of
     | partiallyDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-      [partialRef(top.frame.fullName, q.lookupValue.fullName, q.location, inhs)]
+      [partialRef(top.frame.fullName, q.lookupValue.fullName, top.grammarName, q.location, inhs)]
     | _, _ -> []
     end;
 }
@@ -99,7 +99,7 @@ top::Expr ::= q::Decorated QName
     case finalTy, refSet of
     | partiallyDecoratedType(_, _), just(inhs)
       when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
-      [partialRef(top.frame.fullName, q.lookupValue.fullName, q.location, inhs)]
+      [partialRef(top.frame.fullName, q.lookupValue.fullName, top.grammarName, q.location, inhs)]
     | _, _ -> []
     end;
 }

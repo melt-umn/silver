@@ -84,9 +84,19 @@ function thingWithUnboundedRefArg
 
 warnCode "Duplicate equation for env2 on e in production flow:alreadyDec" {
 function alreadyDec
-() ::= e::PartiallyDecorated Expr with {env2}
+() ::= e::PartiallyDecorated PDExpr with {env2}
 {
   e.env2 = [];
   return ();
+}
+}
+
+warnCode "Attribute env1 with an equation on e is not in the partially decorated reference taken" {
+function eqnNotInRef
+PartiallyDecorated PDExpr with {env2} ::= e::PDExpr
+{
+  e.env1 = [];
+  e.env2 = [];
+  return e;
 }
 }
