@@ -1,6 +1,9 @@
 grammar silver:compiler:modification:primitivepattern;
 
-import silver:compiler:modification:ffi only foreignType; -- so we cover foreignType with the 'refine' hack below. TODO
+ -- so we cover these types with the 'refine' hack below.
+import silver:compiler:modification:ffi only foreignType;
+import silver:compiler:modification:list only listCtrType;
+
 import silver:compiler:translation:java;
 
 {--
@@ -247,6 +250,16 @@ top::Type ::= fn::String  transType::String  params::[Type]
         then refineAll( params, op )
         else errorSubst("Tried to refine conflicting foreign types " ++ fn ++ " and " ++ ofn)
     | _ -> errorSubst("Tried to refine foreign type " ++ fn ++ " with " ++ prettyType(top.refineWith))
+    end;
+}
+
+aspect production listCtrType
+top::Type ::=
+{
+  top.refine =
+    case top.refineWith of
+    | listCtrType() -> emptySubst()
+    | _ -> errorSubst("Tried to refine [] with " ++ prettyType(top.refineWith))
     end;
 }
 

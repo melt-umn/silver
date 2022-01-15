@@ -25,6 +25,7 @@ option silver:compiler:modification:copper;
 option silver:compiler:modification:defaultattr;
 option silver:compiler:modification:collection;
 option silver:compiler:modification:copper_mda;
+option silver:compiler:modification:list;
 
 option silver:compiler:extension:testing; -- TODO this is about that buggy experiment of Eric's...
 

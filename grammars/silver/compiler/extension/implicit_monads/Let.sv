@@ -62,7 +62,7 @@ top::Expr ::= la::AssignExpr  e::Expr
                      [baseExpr(qName(top.location, x.fst.name), location=top.location),
                       buildLambda(x.fst.name,
                                   decorate x.snd with
-                                     {env=top.env; grammarName=top.grammarName; config=top.config;}.typerep,
+                                     {env=top.env; grammarName=top.grammarName; config=top.config; flowEnv=top.flowEnv;}.typerep,
                                   y, top.location)], top.location),
                inside, la.bindInList);
 }
