@@ -2,7 +2,7 @@ grammar silver:compiler:modification:impide;
 
 import silver:compiler:modification:copper_mda only findSpec; -- TODO
 import silver:compiler:driver:util only RootSpec;
-import silver:compiler:extension:list;
+import silver:compiler:modification:list;
 import silver:compiler:analysis:typechecking:core;
 import silver:compiler:modification:ffi;
 import silver:compiler:definition:type;

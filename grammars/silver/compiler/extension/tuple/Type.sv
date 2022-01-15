@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:tuple;
 
-imports silver:compiler:extension:list;
+imports silver:compiler:modification:list;
 
 nonterminal ListOfTypeExprs with location, unparse, te_translation;
 

@@ -1,7 +1,7 @@
 grammar silver:compiler:modification:collection;
 
 import silver:compiler:definition:type:syntax;
-import silver:compiler:extension:list;
+import silver:compiler:modification:list;
 
 --import silver:compiler:analysis:typechecking:core;
 import silver:compiler:driver:util;

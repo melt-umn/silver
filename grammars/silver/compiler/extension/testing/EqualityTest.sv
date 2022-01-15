@@ -6,7 +6,7 @@ import silver:compiler:definition:concrete_syntax;
 import silver:compiler:definition:type;
 import silver:compiler:definition:type:syntax;
 import silver:compiler:modification:collection;
-import silver:compiler:extension:list;
+import silver:compiler:modification:list;
 
 import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph; -- for the "oh no again!" hack below
 import silver:compiler:driver:util only RootSpec; -- ditto

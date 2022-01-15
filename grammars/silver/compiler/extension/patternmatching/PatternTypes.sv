@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:patternmatching;
 
-import silver:compiler:extension:list only LSqr_t, RSqr_t;
+import silver:compiler:modification:list only LSqr_t, RSqr_t;
 
 {--
  - The forms of syntactic patterns that are permissible in (nested) case expresssions.
