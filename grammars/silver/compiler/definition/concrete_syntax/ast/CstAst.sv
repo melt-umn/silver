@@ -79,7 +79,7 @@ top::SyntaxRoot ::=
                          "this grammar was not included in this parser. (Referenced as parser's starting nonterminal)"];
 
   -- The layout before and after the root nonterminal. By default, the layout of the root nonterminal.
-  local startLayoutCopper::[copper:ElementReference] =
+  local startLayout::[copper:ElementReference] =
     map((.copperElementReference),
       map(head,
         lookupStrings(
@@ -106,7 +106,7 @@ ${s2.lexerClassRefDcls}
     ++ [copper:parserAttribute("context", "common.DecoratedNode", "context = common.TopNode.singleton;")]
     ++ flatMap((.copperGrammarElements), s2.disambiguationClasses);
   top.copperParser = copper:parserBean(makeCopperName(parsername), parsername,
-    head(startFound).copperElementReference, startLayoutCopper,
+    head(startFound).copperElementReference, startLayout,
     parserClassAuxCode, parserInitCode, preambleCode,
     copper:grammar_(s2.containingGrammar, grammarElements));
 }

@@ -1,5 +1,6 @@
 grammar silver:compiler:modification:copper_mda;
 
+import silver:compiler:definition:concrete_syntax:copper as copper;
 import silver:util:graph as g;
 import silver:util:treemap as tm;
 
@@ -65,82 +66,17 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
                          "this grammar was not included in this parser. (Referenced as parser's starting nonterminal)"];
 
   -- The layout before and after the root nonterminal. By default, the layout of the root nonterminal.
-  production startLayout :: String =
-    implode("",
-      map(xmlCopperRef,
-        map(head,
-          lookupStrings(
-            fromMaybe(searchEnvTree(startnt, host.layoutTerms), customStartLayout),
-            host.cstEnv))));
+  local startLayout::[copper:ElementReference] =
+    map((.copperElementReference),
+      map(head,
+        lookupStrings(
+          fromMaybe(searchEnvTree(startnt, host.layoutTerms), customStartLayout),
+          host.cstEnv)));
 
-  top.xmlCopper = 
-"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n" ++
-
-"<CopperSpec xmlns=\"http://melt.cs.umn.edu/copper/xmlns/skins/xml/0.9\">\n" ++
-
-"  <ExtendedParser id=\"" ++ makeCopperName(parsername) ++ "\">\n" ++
-"    <PP>" ++ parsername ++ "</PP>\n" ++
-"    <HostGrammar>\n" ++
-"      <GrammarRef id=\"" ++ host.containingGrammar ++ "\"/>\n" ++
-"    </HostGrammar>\n" ++
-"    <ExtensionGrammars>\n" ++
-"      <GrammarRef id=\"" ++ ext.containingGrammar ++ "\"/>\n" ++
-"    </ExtensionGrammars>\n" ++
-"    <StartSymbol>" ++ xmlCopperRef(head(startFound)) ++ "</StartSymbol>\n" ++
-"    <StartLayout>" ++ startLayout ++ "</StartLayout>\n" ++
-"  </ExtendedParser>\n\n" ++
-
-"  <Grammar id=\"" ++ host.containingGrammar ++ "\">\n\n" ++
-"    <PP>" ++ host.containingGrammar ++ "</PP>\n\n" ++
-"    <Declarations>\n" ++
-"      <ParserAttribute id=\"context\">\n" ++
-"        <Type><![CDATA[common.DecoratedNode]]></Type>\n" ++
-"        <Code><![CDATA[context = common.TopNode.singleton;]]></Code>\n" ++
-"      </ParserAttribute>\n" ++
-       host.xmlCopper ++
-"    </Declarations>\n" ++
-"  </Grammar>\n\n" ++
-
-"  <ExtensionGrammar id=\"" ++ ext.containingGrammar ++ "\">\n" ++
-"    <PP>" ++ host.containingGrammar ++ "</PP>\n\n" ++
-"    <MarkingTerminals>\n" ++
-  implode("", map(xmlCopperRef, ext.markingTokens)) ++
-"    </MarkingTerminals>\n" ++
-"    <BridgeProductions>\n" ++
-  implode("", map(xmlCopperRef, ext.bridgeProductions)) ++
-"    </BridgeProductions>\n" ++
-"    <GlueDisambiguationFunctions>\n" ++
-  -- TODO: Workaround hack since host disambiguation functions are moved
-  -- to the extension grammar.
-  implode("",
-    map(xmlCopperRef,
-      map(
-        \ d::Decorated SyntaxDcl ->
-          decorate new(d) with {
-            containingGrammar = "ext";
-            cstEnv = host.cstEnv;
-            classTerminals = host.classTerminals;
-            superClasses = host.superClasses;
-            subClasses = host.subClasses;
-            parserAttributeAspects = host.parserAttributeAspects;
-            layoutTerms = host.layoutTerms;
-            prefixesForTerminals = host.prefixesForTerminals;
-            componentGrammarMarkingTerminals = host.componentGrammarMarkingTerminals;
-            prettyNames = prettyNames;
-          },
-        host.disambiguationClasses))) ++
-  implode("", map(xmlCopperRef, ext.disambiguationClasses)) ++
-"    </GlueDisambiguationFunctions>\n" ++
-"    <Declarations>\n" ++
-  ext.xmlCopper ++
--- All disambiguation classes go in the extension grammar for now,
--- since they reference extension terminals.
-  implode("\n", map((.xmlCopper), host.disambiguationClasses)) ++
-  implode("\n", map((.xmlCopper), ext.disambiguationClasses)) ++
-"    </Declarations>\n" ++
-"  </ExtensionGrammar>\n\n" ++
-
-"</CopperSpec>\n";
+  local grammarElements::[copper:GrammarElement] = host.copperGrammarElements
+    ++ [copper:parserAttribute("context", "common.DecoratedNode", "context = common.TopNode.singleton;")]
+    ++ flatMap((.copperGrammarElements), host.disambiguationClasses);
+  top.copperParser = copper:parserBean(makeCopperName(parsername), parsername,
+    head(startFound).copperElementReference, startLayout, "", "", "",
+    copper:grammar_(host.containingGrammar, grammarElements));
 }
-
-
