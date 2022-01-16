@@ -401,7 +401,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVa
   top.typeScheme = monoType(atty);
   
   oc.boundVariables = tvs;
-  top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
+  top.attrOccursIndex = s"${scrutineeTrans}.${oc.transContextMemberName}";
 
   -- Never appears for anything on which we can define an equation
   top.attrOccursIndexName = error("Not needed");
@@ -417,8 +417,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVa
   top.isAnnotation = true;
   
   oc.boundVariables = tvs;
-  top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
-
+  top.attrOccursIndex = error("Not actually an attribute");
   top.attrOccursIndexName = error("Not actually an attribute");
   top.attrOccursInitIndex = error("Not actually an attribute");
 }

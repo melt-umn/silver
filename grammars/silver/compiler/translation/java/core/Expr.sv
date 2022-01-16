@@ -276,18 +276,18 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production synDecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  top.translation = wrapAccessWithOT(top, s"${e.translation}.synthesized(${q.dcl.attrOccursIndex})");
+  top.translation = wrapAccessWithOT(top, s"${e.translation}.synthesized(${q.attrOccursIndex})");
 
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of
     | childReference(cqn), true -> 
         if isDecorable(cqn.lookupValue.typeScheme.typerep, top.env)
         then
-          s"context.childDecoratedSynthesizedLazy(${top.frame.className}.i_${cqn.lookupValue.fullName}, ${q.dcl.attrOccursIndex})"
+          s"context.childDecoratedSynthesizedLazy(${top.frame.className}.i_${cqn.lookupValue.fullName}, ${q.attrOccursIndex})"
         else
-          s"context.childAsIsSynthesizedLazy(${top.frame.className}.i_${cqn.lookupValue.fullName}, ${q.dcl.attrOccursIndex})"
+          s"context.childAsIsSynthesizedLazy(${top.frame.className}.i_${cqn.lookupValue.fullName}, ${q.attrOccursIndex})"
     | lhsReference(_), true ->
-        s"context.contextSynthesizedLazy(${q.dcl.attrOccursIndex})"
+        s"context.contextSynthesizedLazy(${q.attrOccursIndex})"
     | _, _ -> wrapThunk(top.translation, top.frame.lazyApplication)
     end;
 }
@@ -295,11 +295,11 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  top.translation = wrapAccessWithOT(top, s"${e.translation}.inherited(${q.dcl.attrOccursIndex})");
+  top.translation = wrapAccessWithOT(top, s"${e.translation}.inherited(${q.attrOccursIndex})");
 
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of
-    | lhsReference(_), true -> s"context.contextInheritedLazy(${q.dcl.attrOccursIndex})"
+    | lhsReference(_), true -> s"context.contextInheritedLazy(${q.attrOccursIndex})"
     | _, _ -> wrapThunk(top.translation, top.frame.lazyApplication)
     end;
 }
@@ -395,7 +395,7 @@ top::ExprInhs ::= lhs::ExprInh inh::ExprInhs
 aspect production exprLhsExpr
 top::ExprLHSExpr ::= q::QNameAttrOccur
 {
-  top.nameTrans = [q.dcl.attrOccursIndex];
+  top.nameTrans = [q.attrOccursIndex];
 }
 
 

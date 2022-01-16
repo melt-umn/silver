@@ -87,7 +87,7 @@ top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 aspect production forwardLhsExpr
 top::ForwardLHSExpr ::= q::QNameAttrOccur
 {
-  top.attrName = q.dcl.attrOccursInitIndex;
+  top.attrName = q.attrOccursInitIndex;
 }
 
 aspect production localAttributeDcl
@@ -177,7 +177,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 {
   top.translation = 
     s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
-    s"\t\t${dl.translation}[${attr.dcl.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
+    s"\t\t${dl.translation}[${attr.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
 }
 
 aspect production inheritedAttributeDef
@@ -185,7 +185,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 {
   top.translation = 
     s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
-    s"\t\t${dl.translation}[${attr.dcl.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
+    s"\t\t${dl.translation}[${attr.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
 }
 
 

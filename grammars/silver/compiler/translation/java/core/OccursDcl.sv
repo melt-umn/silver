@@ -13,13 +13,13 @@ top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QNam
     if at.lookupAttribute.dcl.isAnnotation then
       ""
     else
-      s"\t\t${makeNTName(ntfn)}.occurs_${occursType}[${head(occursCheck).attrOccursInitIndex}] = \"${at.lookupAttribute.fullName}\";\n";
+      s"\t\t${makeNTName(ntfn)}.occurs_${occursType}[${head(occursCheck).attrGlobalOccursInitIndex}] = \"${at.lookupAttribute.fullName}\";\n";
 
   top.postInit :=
     if at.lookupAttribute.dcl.isAnnotation then
       ""
     else
-      s"\t\tcommon.RTTIManager.registerOccurs(\"${ntfn}\", \"${at.lookupAttribute.fullName}\", ${head(occursCheck).attrOccursInitIndex});\n";
+      s"\t\tcommon.RTTIManager.registerOccurs(\"${ntfn}\", \"${at.lookupAttribute.fullName}\", ${head(occursCheck).attrGlobalOccursInitIndex});\n";
 
   top.valueWeaving :=
     if at.lookupAttribute.dcl.isAnnotation then
