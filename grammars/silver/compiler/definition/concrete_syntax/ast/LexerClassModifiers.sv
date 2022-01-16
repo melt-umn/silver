@@ -3,8 +3,8 @@ grammar silver:compiler:definition:concrete_syntax:ast;
 import silver:util:treemap as tm;
 
 -- From TerminalModifiers
---synthesized attribute dominatesXML :: String;
---synthesized attribute submitsXML :: String;
+--synthesized attribute dominates_ :: String;
+--synthesized attribute submits_ :: String;
 --synthesized attribute prefixSeperator :: Maybe<String>;
 
 autocopy attribute className :: String;
@@ -12,9 +12,9 @@ autocopy attribute className :: String;
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator, containingGrammar, dominates_, submits_;
+nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, prefixSeperator, containingGrammar, dominates_, submits_;
 
-propagate cstErrors, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator, dominates_, submits_
+propagate cstErrors, superClassContribs, disambiguationClasses, prefixSeperator, dominates_, submits_
   on SyntaxLexerClassModifiers;
 
 abstract production consLexerClassMod
@@ -35,15 +35,14 @@ top::SyntaxLexerClassModifiers ::=
 {--
  - Modifiers for lexer classes.
  -}
-closed nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, dominatesXML, submitsXML, prefixSeperator, containingGrammar, dominates_, submits_;
+closed nonterminal SyntaxLexerClassModifier with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, prefixSeperator, containingGrammar, dominates_, submits_;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
 top::SyntaxLexerClassModifier ::=
 {
   -- Empty values as defaults
-  propagate cstErrors, superClassContribs, disambiguationClasses, dominatesXML,
-    submitsXML, dominates_, submits_, prefixSeperator;
+  propagate cstErrors, superClassContribs, disambiguationClasses, dominates_, submits_, prefixSeperator;
 }
 
 {--
@@ -79,8 +78,6 @@ top::SyntaxLexerClassModifier ::= sub::[String]
                    zipWith(pair, sub, subRefs)); 
   
   top.submits_ := map((.copperElementReference), map(head, subRefs));
-
-  top.submitsXML := implode("", map(xmlCopperRef, map(head, subRefs)));
 }
 {--
  - The dominates list for the lexer class. Either lexer classes or terminals.
@@ -98,8 +95,6 @@ top::SyntaxLexerClassModifier ::= dom::[String]
                    zipWith(pair, dom, domRefs));
 
   top.dominates_ := map((.copperElementReference), map(head, domRefs));
-
-  top.dominatesXML := implode("", map(xmlCopperRef, map(head, domRefs)));
 }
 
 {--

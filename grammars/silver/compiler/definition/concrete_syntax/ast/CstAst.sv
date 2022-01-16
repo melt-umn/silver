@@ -15,14 +15,10 @@ import silver:util:treeset as s;
 {--
  - Encapsulates transformations and analysis of Syntax
  -}
-closed nonterminal SyntaxRoot with cstErrors, xmlCopper, copperParser;
+closed nonterminal SyntaxRoot with cstErrors, copperParser;
 
+@{-- The Copper API object corresponding to the parser. -}
 synthesized attribute copperParser::copper:ParserBean;
-
-{--
- - Translation of a CST AST to Copper XML.
- -}
-synthesized attribute xmlCopper :: String;
 
 abstract production cstRoot
 top::SyntaxRoot ::=
@@ -83,14 +79,6 @@ top::SyntaxRoot ::=
                          "this grammar was not included in this parser. (Referenced as parser's starting nonterminal)"];
 
   -- The layout before and after the root nonterminal. By default, the layout of the root nonterminal.
-  production startLayout :: String =
-    implode("",
-      map(xmlCopperRef,
-        map(head,
-          lookupStrings(
-            fromMaybe(searchEnvTree(startnt, s.layoutTerms), customStartLayout),
-            s.cstEnv))));
-
   local startLayoutCopper::[copper:ElementReference] =
     map((.copperElementReference),
       map(head,
@@ -121,64 +109,6 @@ ${s2.lexerClassRefDcls}
     head(startFound).copperElementReference, startLayoutCopper,
     parserClassAuxCode, parserInitCode, preambleCode,
     copper:grammar_(s2.containingGrammar, grammarElements));
-
-  top.xmlCopper =
-s"""<?xml version="1.0" encoding="UTF-8"?>
-
-<CopperSpec xmlns="http://melt.cs.umn.edu/copper/xmlns/skins/xml/0.9">
-  <Parser id="${makeCopperName(parsername)}" isUnitary="true"> <PP>${parsername}</PP>
-    <Grammars><GrammarRef id="${s2.containingGrammar}"/></Grammars>
-    <StartSymbol>${xmlCopperRef(head(startFound))}</StartSymbol>
-    <StartLayout>${startLayout}</StartLayout>
-""" ++
--- TODO fix: ?
---"    <Package>parsers</Package>\n" ++
---"    <ClassName>SingleParser</ClassName>\n" ++
--- This stuff gets dumped onto the outer class:
---"    <ClassAuxiliaryCode><Code><![CDATA[  ]]></Code></ClassAuxiliaryCode>\n" ++
-
-s"""    <ClassAuxiliaryCode><Code><![CDATA[${parserClassAuxCode}]]></Code></ClassAuxiliaryCode>
-""" ++
--- If not otherwise specified. We always specify.
---"    <DefaultProductionCode><Code><![CDATA[  ]]></Code></DefaultProductionCode>\n" ++
--- If not otherwise specified. We should do this, maybe...
---"    <DefaultTerminalCode><Code><![CDATA[  ]]></Code></DefaultTerminalCode>\n" ++
--- Call just before a parse:
---"    <ParserInitCode><Code><![CDATA[  ]]></Code></ParserInitCode>\n" ++
--- Ditto, after:
---"    <PostParseCode><Code><![CDATA[  ]]></Code></PostParseCode>\n" ++
--- Imports and whatnot:
---"    <Preamble><Code><![CDATA[  ]]></Code></Preamble>\n" ++
--- This stuff gets dumped onto the semantic action container class:
---"    <SemanticActionAuxiliaryCode><Code><![CDATA[  ]]></Code></SemanticActionAuxiliaryCode>\n" ++
-
-s"""    <ParserInitCode>
-      <Code><![CDATA[${parserInitCode}]]></Code>
-    </ParserInitCode>
-    <Preamble>
-<Code><![CDATA[${preambleCode}]]></Code>
-    </Preamble>
-""" ++
-
-s"""  </Parser>
-
-  <Grammar id="${s2.containingGrammar}">
-
-    <PP>${s2.containingGrammar}</PP>
-
-    <Declarations>
-      <ParserAttribute id="context">
-        <Type><![CDATA[common.DecoratedNode]]></Type>
-        <Code><![CDATA[context = common.TopNode.singleton;]]></Code>
-      </ParserAttribute>
-      ${s2.xmlCopper}
-""" ++
--- Disambiguation classes
-implode("\n", map((.xmlCopper), s2.disambiguationClasses)) ++
-s"""
-    </Declarations>
-  </Grammar>
-</CopperSpec>""";
 }
 
 
@@ -215,4 +145,3 @@ EnvTree<String> ::= allTerms::[String] layoutItems::[String] layoutContribs::[Pa
         \ item::Pair<String [String]> -> map(pair(item.fst, _), item.snd),
         layoutTerms));
 }
-

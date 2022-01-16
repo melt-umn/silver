@@ -2,9 +2,6 @@ grammar silver:compiler:definition:concrete_syntax:ast;
 
 import silver:compiler:definition:concrete_syntax:copper as copper;
 
-monoid attribute dominatesXML :: String;
-monoid attribute submitsXML :: String;
-monoid attribute lexerclassesXML :: String;
 monoid attribute ignored :: Boolean with false, ||;
 monoid attribute marking :: Boolean with false, ||;
 monoid attribute acode :: String;
@@ -22,13 +19,15 @@ monoid attribute lexerClasses :: [copper:ElementReference] with [], ++;
 {--
  - Modifiers for terminals.
  -}
-nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors, classTerminalContribs, superClasses, subClasses, dominatesXML,
-  submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply, componentGrammarMarkingTerminals,
-  marking, terminalName, prettyName, dominates_, submits_, lexerClasses;
+nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors,
+  classTerminalContribs, superClasses, subClasses, ignored, acode,
+  opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
+  componentGrammarMarkingTerminals, marking, terminalName, prettyName,
+  dominates_, submits_, lexerClasses;
 
-propagate cstErrors, classTerminalContribs, dominatesXML,
-    submitsXML, ignored, acode, lexerclassesXML, opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
-    marking, prettyName, dominates_, submits_, lexerClasses
+propagate cstErrors, classTerminalContribs, ignored, acode, opPrecedence,
+  opAssociation, prefixSeperator, prefixSeperatorToApply, marking, prettyName,
+  dominates_, submits_, lexerClasses
   on SyntaxTerminalModifiers;
 
 abstract production consTerminalMod
@@ -50,20 +49,19 @@ top::SyntaxTerminalModifiers ::=
  - Modifiers for terminals.
  -}
 closed nonterminal SyntaxTerminalModifier with cstEnv, cstErrors,
-  classTerminalContribs, superClasses, subClasses, dominatesXML, submitsXML,
-  dominates_, submits_, lexerClasses, ignored, acode, lexerclassesXML,
-  opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
-  componentGrammarMarkingTerminals, marking, terminalName, prettyName;
+  classTerminalContribs, superClasses, subClasses, dominates_, submits_,
+  lexerClasses, ignored, acode, opPrecedence, opAssociation, prefixSeperator,
+  prefixSeperatorToApply, componentGrammarMarkingTerminals, marking,
+  terminalName, prettyName;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
 top::SyntaxTerminalModifier ::=
 {
   -- Empty values as defaults
-  propagate cstErrors, classTerminalContribs, dominatesXML, submitsXML,
-    dominates_, submits_, lexerClasses, ignored, acode, lexerclassesXML,
-    opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
-    marking, prettyName;
+  propagate cstErrors, classTerminalContribs, dominates_, submits_,
+    lexerClasses, ignored, acode, opPrecedence, opAssociation, prefixSeperator,
+    prefixSeperatorToApply, marking, prettyName;
 }
 
 {--
@@ -126,10 +124,6 @@ top::SyntaxTerminalModifier ::= cls::[String]
                    zipWith(pair, allCls, allClsRefsL)); 
   top.classTerminalContribs := map(pair(_, top.terminalName), allCls);
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
-  top.dominatesXML := implode("", map((.classDomContribsXML), allClsRefs));
-  top.submitsXML := implode("", map((.classSubContribsXML), allClsRefs));
-  top.lexerclassesXML := implode("", map(xmlCopperRef, allClsRefs));
-
   top.dominates_ := flatMap((.domContribs), allClsRefs);
   top.submits_ := flatMap((.subContribs), allClsRefs);
   top.lexerClasses := map((.copperElementReference), allClsRefs);
@@ -155,7 +149,6 @@ top::SyntaxTerminalModifier ::= sub::[String]
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from submit clause on terminal " ++ top.terminalName ++ ")"],
                    zipWith(pair, sub, subRefs)); 
-  top.submitsXML := implode("", map(xmlCopperRef, map(head, subRefs)));
   top.submits_ := map((.copperElementReference), map(head, subRefs));
 }
 {--
@@ -172,7 +165,6 @@ top::SyntaxTerminalModifier ::= dom::[String]
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from dominates clause on terminal " ++ top.terminalName ++ ")"],
                    zipWith(pair, dom, domRefs)); 
-  top.dominatesXML := implode("", map(xmlCopperRef, map(head, domRefs)));
   top.dominates_ := map((.copperElementReference), map(head, domRefs));
 }
 {--
