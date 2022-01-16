@@ -34,5 +34,4 @@ top::Type ::=
     | listCtrType() -> emptySubst()
     | _ -> errorSubst("Tried to unify List with " ++ prettyType(top.unifyWith))
     end;
-
 }

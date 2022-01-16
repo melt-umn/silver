@@ -1269,10 +1269,11 @@ function ensureDecoratedExpr
 Expr ::= e::PartiallyDecorated Expr
 {
   local et :: Type = performSubstitution(e.typerep, e.upSubst);
+  local eRef :: Expr = exprRef(e, location=e.location);
 
   return if isDecorable(et, e.env)
-         then decorateExprWithEmpty('decorate', exprRef(e, location=e.location), 'with', '{', '}', location=e.location)
-         else exprRef(e, location=e.location);
+         then decorateExprWithEmpty('decorate', eRef, 'with', '{', '}', location=e.location)
+         else eRef;
 }
 
 instance Eq AbstractMatchRule {

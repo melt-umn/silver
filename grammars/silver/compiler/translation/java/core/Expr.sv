@@ -178,21 +178,6 @@ top::Expr ::= q::PartiallyDecorated QName
     then directThunk
     else top.translation;
 }
-
-aspect production application
-top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
-{
-  -- TODO: Flow error here, since these aren't in the reference set of Expr.
-  -- We would like a way to decorate a `Decorated Expr` with additional attributes
-  -- such that these equations could be written on `functionInvocation` instead...
-  e.invokeArgs = es;
-  e.invokeNamedArgs = anns;
-  e.sameProdAsProductionDefinedOn = case e of
-                                    | baseExpr(qn) -> qn.name == last(explode(":", top.frame.fullName))
-                                    | _ -> false
-                                    end;
-}
-
 aspect production errorApplication
 top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::PartiallyDecorated AnnoAppExprs
 {
@@ -205,6 +190,14 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::
 {
   top.translation = e.invokeTranslation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+
+  e.invokeArgs = es;
+  e.invokeNamedArgs = annos;
+  e.sameProdAsProductionDefinedOn =
+    case e of
+    | baseExpr(qn) -> qn.name == last(explode(":", top.frame.fullName))
+    | _ -> false
+    end;
 }
 
 function argsTranslation

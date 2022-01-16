@@ -70,7 +70,7 @@ monoid attribute nonSuspectContribs :: [Pair<String [String]>];
 {-- A list of decoration sites where partial references are taken, and the attributes on those partial references -}
 monoid attribute partialRefContribs :: [(String, String, Location, [String])];
 
-propagate synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, prodTreeContribs, prodGraphContribs, hostSynTreeContribs, nonSuspectContribs, partialRefContribs
+propagate synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, prodGraphContribs, hostSynTreeContribs, nonSuspectContribs, partialRefContribs
   on FlowDefs;
 
 abstract production consFlow

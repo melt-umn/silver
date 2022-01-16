@@ -1,6 +1,7 @@
 grammar silver:compiler:definition:type;
 
 option silver:compiler:modification:ffi; -- foreign types
+option silver:compiler:modification:list; -- list type
 
 synthesized attribute kindrep :: Kind;
 synthesized attribute freeVariables :: [TyVar];

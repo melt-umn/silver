@@ -541,13 +541,35 @@ top::Expr ::= '[' ']'
 aspect production consListOp
 top::Expr ::= h::Expr '::' t::Expr
 {
-  top.transform = consListASTExpr(h.transform, t.transform);
+  top.transform =
+    -- This is a forwarding prod, so we can't decorate e1 and e2 with boundVars here.
+    -- TODO: need some way for the flow analysis to track that e1 and e2 will be provided with boundVars through the forward.
+    case forward of
+    | functionInvocation(_, snocAppExprs(snocAppExprs(emptyAppExprs(), _, decH), _, decT), _) ->
+      consListASTExpr(decH.transform, decT.transform)
+    | _ -> error("Unexpected forward")
+    end;
 }
 
 aspect production fullList
 top::Expr ::= '[' es::Exprs ']'
-{ 
-  top.transform = listASTExpr(es.transform);
+{
+  -- TODO: Consider refactoring listtrans on Exprs to decorate the expressions here
+  -- before forwarding via partially decorated references.
+  local decEs::Exprs = es;
+  decEs.downSubst = top.downSubst;
+  decEs.finalSubst = top.finalSubst;
+  decEs.frame = top.frame;
+  decEs.config = top.config;
+  decEs.compiledGrammars = top.compiledGrammars;
+  decEs.grammarName = top.grammarName;
+  decEs.env = top.env;
+  decEs.flowEnv = top.flowEnv;
+  decEs.boundVars = top.boundVars;
+  decEs.isRoot = top.isRoot;
+  decEs.originRules = top.originRules;
+
+  top.transform = listASTExpr(decEs.transform);
 }
 
 aspect production listPlusPlus

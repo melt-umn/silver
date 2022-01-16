@@ -2145,6 +2145,11 @@ top::AppExprs ::=
 aspect production exprRef
 top::Expr ::= e::PartiallyDecorated Expr
 {
+{- TODO: We should just be able to decorate e with the new attributes here.
+   However due to the (improper) equations on the access production, we may
+   receive an exprRef that is already decorated with these attributes.
+   Thus we must still re-decorate e until this fixed.
+
   e.mDownSubst = top.mDownSubst;
   e.expectedMonad = top.expectedMonad;
   e.monadicallyUsed = top.monadicallyUsed;
@@ -2154,6 +2159,28 @@ top::Expr ::= e::PartiallyDecorated Expr
   top.mtyperep = e.mtyperep;
   top.monadicNames = e.monadicNames;
   top.monadRewritten = e.monadRewritten;
+  -}
+  
+  local ne::Expr = new(e);
+  ne.mDownSubst = top.mDownSubst;
+  ne.env = top.env;
+  ne.flowEnv = top.flowEnv;
+  ne.config = top.config;
+  ne.compiledGrammars = top.compiledGrammars;
+  ne.grammarName = top.grammarName;
+  ne.frame = top.frame;
+  ne.finalSubst = top.finalSubst;
+  ne.downSubst = top.downSubst;
+  ne.originRules = top.originRules;
+  ne.isRoot = top.isRoot;
+  ne.expectedMonad = top.expectedMonad;
+
+  top.merrors := ne.merrors;
+  top.mUpSubst = ne.mUpSubst;
+  top.mtyperep = ne.mtyperep;
+  ne.monadicallyUsed = top.monadicallyUsed;
+  top.monadicNames = ne.monadicNames;
+  top.monadRewritten = ne.monadRewritten;
 }
 
 

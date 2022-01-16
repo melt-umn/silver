@@ -3,6 +3,7 @@ grammar silver:compiler:extension:treegen;
 import silver:compiler:metatranslation;
 import silver:reflect;
 import silver:regex;
+import silver:util:treeset as set;  -- needed for freeVars equation
 
 terminal GenArbTerminal_t 'genArbTerminal' lexer classes {KEYWORD, RESERVED};
 
@@ -10,6 +11,7 @@ concrete production genArbTerminalNoLocExpr
 top::Expr ::= 'genArbTerminal' '(' te::TypeExpr ',' '_' ')'
 {
   top.unparse = s"genArbTerminal(${te.unparse}, _)";
+  propagate freeVars;
   
   local regex::Regex =
     case getTypeDcl(te.typerep.typeName, top.env) of

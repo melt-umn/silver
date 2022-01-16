@@ -15,6 +15,7 @@ nonterminal ExprInh with
 nonterminal ExprLHSExpr with
   config, grammarName, env, location, unparse, errors, freeVars, frame, name, typerep, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
 
+flowtype unparse {} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype freeVars {frame} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype Expr = decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config}, forward {decorate};
 

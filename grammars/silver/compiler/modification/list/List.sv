@@ -57,9 +57,7 @@ concrete production consListOp
 top::Expr ::= h::Expr '::' t::Expr
 {
   top.unparse = "(" ++ h.unparse ++ " :: " ++ t.unparse ++ ")" ;
-  
-  h.downSubst = top.downSubst; t.downSubst = top.downSubst; -- TODO BUG: don't know what this is needed... unparse apparently??
-  
+
   forwards to mkStrFunctionInvocation(top.location, "silver:core:cons", [h, t]);
 }
 
@@ -67,8 +65,6 @@ concrete production fullList
 top::Expr ::= '[' es::Exprs ']'
 { 
   top.unparse = "[ " ++ es.unparse ++ " ]";
-  
-  es.downSubst = top.downSubst; -- TODO again, pretty printing garbage.
 
   forwards to es.listtrans;
 }

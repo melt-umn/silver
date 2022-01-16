@@ -8,7 +8,7 @@ imports silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 
-
+option silver:compiler:modification:list;  -- Special case translation for []
 
 function makeName
 String ::= str::String

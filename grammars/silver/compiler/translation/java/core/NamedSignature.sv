@@ -76,6 +76,7 @@ top::NamedSignature ::= fn::String ctxs::Contexts ty::Type
 {
   top.javaSignature = error("Translation shouldn't be demanded from global signature");
   top.refInvokeTrans = error("Translation shouldn't be demanded from global signature");
+  top.contextRuntimeResolve := error("Translation shouldn't be demanded from global signature");
   top.childTypeVarElems = error("Translation shouldn't be demanded from global signature");
   top.childStatic = error("Translation shouldn't be demanded from global signature");
   top.childDecls = error("Translation shouldn't be demanded from global signature");
@@ -192,6 +193,14 @@ top::Context ::= i1::Type i2::Type
   top.contextSigElem = s"final ${top.transType} ${makeInhSubsetName(i1, i2, top.boundVariables)}";
   top.contextRefElem = makeInhSubsetName(i1, i2, top.boundVariables);
   top.contextRuntimeResolve := s"final ${top.transType} ${makeInhSubsetName(i1, i2, top.boundVariables)} = null;";
+}
+
+aspect production typeErrorContext
+top::Context ::= _
+{
+  top.contextSigElem = error("Translation demanded in the presence of errors");
+  top.contextRefElem = error("Translation demanded in the presence of errors");
+  top.contextRuntimeResolve := error("Translation demanded in the presence of errors");
 }
 
 propagate typeChildren on NamedSignatureElements;
