@@ -75,6 +75,8 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
 {
   spec.compiledGrammars = compiledGrammars;
 
+  local specCst :: SyntaxRoot = spec.cstAst;
+
   -- cmdArgs _could_ be top.config, if the driver were to decorate DriverAction
   -- with config. However, the driver doesn't, and it seems like it'd be a pain
   -- to make it do so.
@@ -82,12 +84,19 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
     let outDir :: String = silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar);
     let parserName :: String = makeParserName(spec.fullName);
 
-    mkdir(outDir);
-    print("Generating parser " ++ spec.fullName ++ ".\n");
-    copper:compileParserBean(spec.cstAst.copperParser,
-      makeName(spec.sourceGrammar), parserName,
-      outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
-      parserName ++ ".html");
+    if null(specCst.cstErrors) then do {
+      mkdir(outDir);
+      print("Generating parser " ++ spec.fullName ++ ".\n");
+      copper:compileParserBean(specCst.copperParser,
+        makeName(spec.sourceGrammar), parserName,
+        outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
+        parserName ++ ".html");
+    } else do {
+      -- Should this be stderr?
+      print("CST errors while generating parser " ++ spec.fullName ++ ":\n" ++
+        implode("\n", specCst.cstErrors) ++ "\n");
+      return 1;
+    };
   }, top.ioIn);
 
   top.code = 0;
