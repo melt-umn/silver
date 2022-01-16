@@ -1,6 +1,8 @@
 package common;
 
 import common.javainterop.ConsCellCollection;
+import edu.umn.cs.melt.copper.compiletime.logging.CompilerLogger;
+import edu.umn.cs.melt.copper.compiletime.pipeline.AuxiliaryMethods;
 import edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.*;
 import edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.visitors.ParserSpecProcessor;
 import edu.umn.cs.melt.copper.main.CopperIOType;
@@ -32,8 +34,10 @@ public final class CopperUtil {
     params.setOutputType(CopperIOType.FILE);
     params.setUsePipeline(CopperPipelineType.GRAMMARBEANS);
 
+    CompilerLogger logger = AuxiliaryMethods.getOrMakeLogger(params);
+
     try {
-      ParserSpecProcessor.normalizeParser(parser, null);
+      ParserSpecProcessor.normalizeParser(parser, logger);
       return tok.wrap(ParserCompiler.compile(parser, params));
     } catch (CopperException exc) {
       throw new RuntimeException(exc);
