@@ -172,7 +172,8 @@ public final class CopperUtil {
   public static Production
   makeProduction(String id, Integer precedence, CopperElementReference operator,
                  String code, CopperElementReference lhs,
-                 ConsCellCollection<CopperElementReference> rhsConsList) {
+                 ConsCellCollection<CopperElementReference> rhsConsList,
+                 ConsCellCollection<CopperElementReference> prodLayout) {
     try {
       Production prod = new Production();
       prod.setLocation(LOCATION);
@@ -189,6 +190,7 @@ public final class CopperUtil {
       for (int i = 0; i < rhs.size(); i++)
         rhsVarNames.add(String.format("rhsVar_%d", i));
       prod.setRhsVarNames(rhsVarNames);
+      prod.setLayout(new HashSet(prodLayout));
       return prod;
     } catch (ParseException exc) {
       throw new RuntimeException(exc);

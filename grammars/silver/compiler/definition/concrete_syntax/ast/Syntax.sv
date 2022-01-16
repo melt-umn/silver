@@ -295,7 +295,10 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
       rhsRefs);
   
   -- Copper doesn't support default layout on nonterminals, so we specify layout on every production.
-  production prodLayout::String =
+  production prodLayout::[copper:ElementReference] =
+    map(\dcl::[Decorated SyntaxDcl] -> head(dcl).copperElementReference,
+        lookupStrings(searchEnvTree(ns.fullName, top.layoutTerms), top.cstEnv));
+  production prodLayoutXML::String =
     implode("",
       map(xmlCopperRef,
         map(head,
@@ -322,7 +325,8 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   top.copperGrammarElements = [copper:production_(makeCopperName(ns.fullName),
     modifiers.productionPrecedence.isJust, modifiers.productionPrecedence.fromJust,
     modifiers.productionOperator.isJust, modifiers.productionOperator.fromJust.copperElementReference,
-    code, head(lhsRef).copperElementReference, map((.copperElementReference), map(head, rhsRefs)))];
+    code, head(lhsRef).copperElementReference, map((.copperElementReference), map(head, rhsRefs)),
+    prodLayout)];
 
   top.xmlCopper =
     "  <Production id=\"" ++ makeCopperName(ns.fullName) ++ "\">\n" ++
@@ -333,7 +337,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     "    <Code><![CDATA[\n" ++ code ++ "]]></Code>\n" ++
     "    <LHS>" ++ xmlCopperRef(head(lhsRef)) ++ "</LHS>\n" ++
     "    <RHS>" ++ implode("", map(xmlCopperRef, map(head, rhsRefs))) ++ "</RHS>\n" ++
-    "    <Layout>" ++ prodLayout ++ "</Layout>\n" ++
+    "    <Layout>" ++ prodLayoutXML ++ "</Layout>\n" ++
     (if modifiers.productionOperator.isJust then
     "    <Operator>" ++ xmlCopperRef(modifiers.productionOperator.fromJust) ++ "</Operator>\n"
     else "") ++
