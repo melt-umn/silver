@@ -36,5 +36,4 @@ top::SyntaxDcl ::= fontName::String fnt::Font -- TODO: we probably? need to fact
   top.cstNormalize := [top];
   
   top.copperGrammarElements = [];
-  top.xmlCopper = "";
 }
