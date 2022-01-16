@@ -13,12 +13,23 @@ ParserBean ::= id::String  name::String  startSymbol::ElementReference
   "java" : return "common.CopperUtil.makeParserBean(%id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection(%startLayout%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%grammar_%)";
 }
 
-function compileParserBean
-IOToken ::= parser_::ParserBean  packageName::String  parserName::String  outFile::String  io::IOToken
+function compileParserBeanT
+IOVal<Integer> ::= parser_::ParserBean  packageName::String  parserName::String
+     outFile::String  dumpHtml::Boolean  dumpHtmlTo::String  io::IOToken
 {
   return error("copper FFI function");
 } foreign {
-  "java": return "common.CopperUtil.compile((edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ParserBean)%parser_%, %packageName%.toString(), %parserName%.toString(), %outFile%.toString(), %io%)";
+  "java": return "common.CopperUtil.compile((edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ParserBean)%parser_%, %packageName%.toString(), %parserName%.toString(), %outFile%.toString(), %dumpHtml%, %dumpHtmlTo%.toString(), %io%)";
+}
+
+abstract production compileParserBean
+top::IO<Integer> ::= parser_::ParserBean  packageName::String
+     parserName::String  outFile::String  dumpHtml::Boolean  dumpHtmlTo::String
+{
+  local val::IOVal<Integer> = compileParserBeanT(parser_, packageName,
+    parserName, outFile, dumpHtml, dumpHtmlTo, top.stateIn);
+  top.stateOut = val.io;
+  top.stateVal = val.iovalue;
 }
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar

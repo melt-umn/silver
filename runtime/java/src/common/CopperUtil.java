@@ -1,10 +1,8 @@
 package common;
 
 import common.javainterop.ConsCellCollection;
-import edu.umn.cs.melt.copper.compiletime.dumpers.XMLSpecDumper;
 import edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.*;
 import edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.visitors.ParserSpecProcessor;
-import edu.umn.cs.melt.copper.main.CopperDumpType;
 import edu.umn.cs.melt.copper.main.CopperIOType;
 import edu.umn.cs.melt.copper.main.CopperPipelineType;
 import edu.umn.cs.melt.copper.main.ParserCompiler;
@@ -18,13 +16,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import silver.core.NIOVal;
 
 public final class CopperUtil {
   private static Location LOCATION = new VirtualLocation("<silver>", -1, -1);
 
-  public static IOToken compile(ParserBean parser, String packageName,
-                                String parserName, String outFile,
-                                IOToken tok) {
+  public static NIOVal compile(ParserBean parser, String packageName,
+                               String parserName, String outFile,
+                               Boolean dumpHtml, String dumpHtmlTo,
+                               IOToken tok) {
     ParserCompilerParameters params = new ParserCompilerParameters();
     params.setPackageName(packageName);
     params.setParserName(parserName);
@@ -34,20 +34,10 @@ public final class CopperUtil {
 
     try {
       ParserSpecProcessor.normalizeParser(parser, null);
-
-      int ret = ParserCompiler.compile(parser, params);
-      System.out.println("status = " + ret);
-      if (ret != 0) {
-        try {
-          new XMLSpecDumper(parser).dump(CopperDumpType.XML_SPEC, System.out);
-        } catch (IOException exc) {
-        }
-        System.exit(ret);
-      }
+      return tok.wrap(ParserCompiler.compile(parser, params));
     } catch (CopperException exc) {
       throw new RuntimeException(exc);
     }
-    return tok;
   }
 
   public static CharacterSetRegex makeCharRange(String lo, String hi) {
