@@ -27,7 +27,7 @@ option silver:compiler:modification:collection;
 option silver:compiler:modification:copper_mda;
 
 -- The list extension doesn't need to be an option here,
--- it only needs to be one of silver:compiler:definition:type and silver:compiler:translation:java:core
+-- it only needs to be one of silver:compiler:definition:type
 -- option silver:compiler:modification:list;
 
 option silver:compiler:extension:testing; -- TODO this is about that buggy experiment of Eric's...
