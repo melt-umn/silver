@@ -585,6 +585,13 @@ Maybe<[Pattern]> ::= conPatts::[[Decorated Pattern]] varPatts::[[Decorated Patte
         | just(lst) -> just(nilListPattern('[', ']', location=bogusLoc())::lst)
         | nothing() ->
           case consSubcall of
+          --If the missing subpattern is also a cons, wrap it in parentheses to display correctly
+          --Otherwise `(a::b)::c` displays as `a::b::c`, which means something different
+          | just(consListPattern(hd1, _, tl1)::tl::lst) ->
+            just(consListPattern(
+                    nestedPatterns('(', consListPattern(hd1, '::', tl1, location=bogusLoc()), ')',
+                                   location=bogusLoc()),
+                    '::', tl, location=bogusLoc())::lst)
           | just(hd::tl::lst) ->
             just(consListPattern(hd, '::', tl, location=bogusLoc())::lst)
           | just(_) -> error("List must include patterns for at least head and tail")

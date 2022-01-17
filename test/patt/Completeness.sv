@@ -169,6 +169,20 @@ noWarnCode "not exhaustive" {
   }
 }
 
+--Correct display of list nesting
+--Nothing else should require special treatment for display, since no
+--   other patterns should rely on grouping
+warnCode "(_::_)::_" {
+  function fun_list_complete_nested
+  String ::=
+  {
+    return case [[1, 2]] of
+           | [] -> "nil"
+           | []::tl -> "1"
+           end;
+  }
+}
+
 
 --Maybe
 warnCode "not exhaustive" {
