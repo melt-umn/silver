@@ -125,6 +125,13 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
       | _ -> []
       end;
 
+  --If we have only conditional rules, it isn't complete
+  top.errors <-
+      if length(conditionlessRules) == 0 && length(ml) > 0
+      then [mwdaWrn(top.config, top.location,
+               "This pattern-matching is not exhaustive because it only has conditional rules")]
+      else [];
+
 
   {-Checking Pattern Overlaps
 
