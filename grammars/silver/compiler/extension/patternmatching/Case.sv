@@ -294,7 +294,7 @@ Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type
                   Silver_Expr {
                      case $Expr{cond} of
                      | $Pattern{patt} -> $Expr{e}
-                     | _ -> $Expr{failExpr}
+                     | _ -> $Expr{rest}
                      end
                   }
                 end,
