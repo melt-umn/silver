@@ -30,7 +30,7 @@ exports silver:compiler:modification:impide;
 -- Pure extensions to Silver
 exports silver:compiler:extension:doc;
 exports silver:compiler:extension:convenience;
-exports silver:compiler:extension:list; -- Not really a pure extension, yuck.
+exports silver:compiler:modification:list; -- Not really a pure extension, yuck.
 exports silver:compiler:extension:easyterminal;
 exports silver:compiler:extension:deprecation;
 exports silver:compiler:extension:testing;

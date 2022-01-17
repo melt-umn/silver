@@ -1,6 +1,7 @@
 grammar silver:compiler:translation:java:core;
 
 import silver:compiler:modification:ffi only ioForeignType; -- for main type check only
+import silver:compiler:modification:list only listCtrType;
 
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
@@ -33,7 +34,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
        unify(namedSig.typerep,
          appTypes(
            functionType(2, []),
-           [appType(nonterminalType("silver:core:List", [starKind()], false), stringType()),
+           [appType(listCtrType(), stringType()),
             ioForeignType,
             appType(nonterminalType("silver:core:IOVal", [starKind()], false), intType())])).failure
     then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IO). Instead it has type " ++ prettyType(namedSig.typerep))]

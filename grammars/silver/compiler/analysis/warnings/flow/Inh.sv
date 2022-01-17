@@ -1,6 +1,6 @@
 grammar silver:compiler:analysis:warnings:flow;
 
-import silver:compiler:extension:list;
+import silver:compiler:modification:list;
 
 synthesized attribute warnMissingInh :: Boolean occurs on CmdArgs;
 
