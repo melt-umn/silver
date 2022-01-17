@@ -16,6 +16,7 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 
   top.productionAttributes := [];
   top.defs := [];
+  top.uniqueSignificantExpression := [];
 
   top.containsPluck = false;
 
@@ -53,6 +54,7 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
 
   top.productionAttributes := [];
   top.defs := [];
+  top.uniqueSignificantExpression := [];
 
   top.containsPluck = false;
 
@@ -91,6 +93,7 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
 
   top.productionAttributes := [];
   top.defs := [];
+  top.uniqueSignificantExpression := [];
 
   top.containsPluck = false;
 
@@ -129,6 +132,7 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
 
   top.productionAttributes := [];
   top.defs := [];
+  top.uniqueSignificantExpression := [];
 
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
@@ -187,6 +191,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
   e.isRoot = true;
 
   top.containsPluck = false;
+  top.uniqueSignificantExpression := [];
 
   local merrors::[Message] =
      --gives errors for implicit/unrestricted attributes used
@@ -209,6 +214,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
   e.isRoot = true;
 
   top.containsPluck = false;
+  top.uniqueSignificantExpression := [];
 
   local merrors::[Message] =
      --gives errors for implicit/unrestricted attributes used
@@ -239,6 +245,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
   e.expectedMonad = attr.typerep;
 
   top.containsPluck = false;
+  top.uniqueSignificantExpression := [];
 
   local fwd::ProductionStmt =
           if null(e.merrors)
@@ -268,6 +275,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS attr::Decorated QNameAttrOccur e::E
   e.expectedMonad = attr.typerep;
 
   top.containsPluck = false;
+  top.uniqueSignificantExpression := [];
 
   local fwd::ProductionStmt =
           if null(e.merrors)
