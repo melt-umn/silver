@@ -208,9 +208,9 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} := ${e.unparse}
-    if (${dl.translation}[${attr.dcl.attrOccursIndex}] == null)
-      ${dl.translation}[${attr.dcl.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}(${attr.dcl.attrOccursIndex});
-    ((common.CollectionAttribute)${dl.translation}[${attr.dcl.attrOccursIndex}]).setBase(${wrapLazy(e)});
+    if (${dl.translation}[${attr.attrOccursIndex}] == null)
+      ${dl.translation}[${attr.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}(${attr.attrOccursIndex});
+    ((common.CollectionAttribute)${dl.translation}[${attr.attrOccursIndex}]).setBase(${wrapLazy(e)});
 """;
 }
 aspect production synAppendColAttributeDef
@@ -218,9 +218,9 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} <- ${e.unparse}
-    if (${dl.translation}[${attr.dcl.attrOccursIndex}] == null)
-      ${dl.translation}[${attr.dcl.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}(${attr.dcl.attrOccursIndex});
-    ((common.CollectionAttribute)${dl.translation}[${attr.dcl.attrOccursIndex}]).addPiece(${wrapLazy(e)});
+    if (${dl.translation}[${attr.attrOccursIndex}] == null)
+      ${dl.translation}[${attr.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}(${attr.attrOccursIndex});
+    ((common.CollectionAttribute)${dl.translation}[${attr.attrOccursIndex}]).addPiece(${wrapLazy(e)});
 """;
 }
 
@@ -230,9 +230,9 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} := ${e.unparse}
-    if (${dl.translation}[${attr.dcl.attrOccursIndex}] == null)
-      ${dl.translation}[${attr.dcl.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}();
-    ((common.CollectionAttribute)${dl.translation}[${attr.dcl.attrOccursIndex}]).setBase(${wrapLazy(e)});
+    if (${dl.translation}[${attr.attrOccursIndex}] == null)
+      ${dl.translation}[${attr.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}();
+    ((common.CollectionAttribute)${dl.translation}[${attr.attrOccursIndex}]).setBase(${wrapLazy(e)});
 """;
 }
 aspect production inhAppendColAttributeDef
@@ -240,9 +240,9 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} <- ${e.unparse}
-    if (${dl.translation}[${attr.dcl.attrOccursIndex}] == null)
-      ${dl.translation}[${attr.dcl.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}();
-    ((common.CollectionAttribute)${dl.translation}[${attr.dcl.attrOccursIndex}]).addPiece(${wrapLazy(e)});
+    if (${dl.translation}[${attr.attrOccursIndex}] == null)
+      ${dl.translation}[${attr.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}();
+    ((common.CollectionAttribute)${dl.translation}[${attr.attrOccursIndex}]).addPiece(${wrapLazy(e)});
 """;
 }
 
