@@ -89,6 +89,8 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 }
 
 
+--Argument `complete` controls whether we check for case completeness or not  (true -> check)
+--This is used so generated case expressions can avoid the incomplete check
 abstract production caseExpr
 top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Expr retType::Type
 {
@@ -127,7 +129,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
 
   --If we have only conditional rules, it isn't complete
   top.errors <-
-      if length(conditionlessRules) == 0 && length(ml) > 0
+      if complete && length(conditionlessRules) == 0 && length(ml) > 0
       then [mwdaWrn(top.config, top.location,
                "This pattern-matching is not exhaustive because it only has conditional rules")]
       else [];
