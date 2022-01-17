@@ -60,7 +60,52 @@ equalityTest ( tNameAll(d()), "d", String, pat_tests ) ;
 
 
 
---- Part 2: GADTS
+--- Part 2: Match Order
+nonterminal MatchOrder;
+
+abstract production mo1
+top::MatchOrder ::=
+{ }
+
+abstract production mo2
+top::MatchOrder ::=
+{ forwards to mo1(); }
+
+abstract production mo3
+top::MatchOrder ::= x::MatchOrder y::MatchOrder
+{ }
+
+function matchOrder1
+String ::= m::MatchOrder
+{
+  return case m of
+         | mo3(mo1(), mo2()) -> "mo3 of mo1, mo2\n"
+         | mo3(mo2(), mo1()) -> "mo3 of mo2, mo1\n"
+         | _ -> "other\n"
+         end;
+}
+
+function matchOrder2
+String ::= m::MatchOrder
+{
+  return case m of
+         | mo3(mo1(), mo2()) -> "mo3 of mo1, mo2\n"
+         | mo3(mo2(), mo3(_, _)) -> "mo3 of mo2, mo3\n"
+         | _ -> "other\n"
+         end;
+}
+
+equalityTest( matchOrder1( mo3(mo2(), mo2()) ), "mo3 of mo1, mo2\n", String, pat_tests ); --matches through forward on first patt
+equalityTest( matchOrder1( mo3(mo2(), mo1()) ), "mo3 of mo2, mo1\n", String, pat_tests ); --misses first patt because mo1 doesn't forward to mo2
+equalityTest( matchOrder1( mo3(mo1(), mo1()) ), "other\n", String, pat_tests ); --misses first two patts because mo1 doesn't forward to mo2
+
+equalityTest( matchOrder2( mo3(mo2(), mo2()) ), "mo3 of mo1, mo2\n", String, pat_tests ); --matches through forward on first patt
+equalityTest( matchOrder2( mo3(mo2(), mo3(mo1(), mo1())) ), "mo3 of mo2, mo3\n", String, pat_tests );
+equalityTest( matchOrder2( mo3(mo1(), mo3(mo1(), mo1())) ), "other\n", String, pat_tests ); --misses second patt because mo1 doesn't forward to mo2
+
+
+
+--- Part 3: GADTS
 
 nonterminal Arrow<a b>;
 

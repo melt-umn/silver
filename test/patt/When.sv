@@ -88,3 +88,32 @@ wrongCode "Pattern has overlapping cases" {
 }
 
 
+--Test that things work correctly with the matches keyword for whens
+function testNonterminalMatchesWhenMatches
+Integer ::= nn1::Nonsense nn2::Nonsense
+{
+  return  case nn1, nn2 of
+          | n3(n1(), i1), n3(c1, i2) when c1 matches n1() -> 0
+          | n3(c1, i1), n3(_, i2) when c1 matches n2(a1, b1) -> 1
+          | n3(_, i1), n3(_, i2) -> 2
+          | n2(vara, n3(varb, i)), _ when i > 5 matches true -> 3
+          | _, _ -> 4
+          end;
+}
+
+equalityTest ( testNonterminalMatchesWhenMatches( n3(n1(), 5),   n3(n1(), 5) ),
+               0, Integer, pat_tests ) ;
+equalityTest ( testNonterminalMatchesWhenMatches( n3(n2(n1(), n1()), 5),   n3(n4(), 5) ),
+               1, Integer, pat_tests ) ;
+equalityTest ( testNonterminalMatchesWhenMatches( n3(n1(), 5),   n3(n4(), 5) ),
+               2, Integer, pat_tests ) ;
+equalityTest ( testNonterminalMatchesWhenMatches( n2(n4(), n3(n4(), 6)),   n4() ),
+               3, Integer, pat_tests ) ;
+equalityTest ( testNonterminalMatchesWhenMatches( n2(n4(),  n3(n4(), 0)), n4() ),
+               4, Integer, pat_tests ) ;
+equalityTest ( testNonterminalMatchesWhenMatches( n1(),   n1() ),
+               4, Integer, pat_tests ) ;
+equalityTest ( testNonterminalMatchesWhenMatches( n2(n4(), n1()),   n2(n4(), n1()) ),
+               4, Integer, pat_tests ) ;
+
+
