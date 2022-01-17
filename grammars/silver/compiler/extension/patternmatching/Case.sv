@@ -544,9 +544,9 @@ function allConCaseCheckOverlapping
   We need the environment to look up any nonterminal matches and see
   if the nonterminal is closed or not.
 
-  We return nothing() if the patterns are complete, and just(plst) if
-  plst is an example of a missing pattern set (matching over multiple
-  values at once).
+  We return nothing() if there are some patterns and the patterns are
+  complete, and just(plst) if plst is an example of a missing pattern
+  set (matching over multiple values at once).
 -}
 function checkCompleteness
 Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env
