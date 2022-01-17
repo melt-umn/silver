@@ -108,18 +108,3 @@ top::PDExpr ::= e::PartiallyDecorated PDExpr with {env1}
   local otherRef::PartiallyDecorated PDExpr with {} = e;
 }
 }
-
-function thingWithBoundedRefArg
-{env1, env2} subset i, i subset {env1} =>  -- Uninhabited, but shouldn't give an error
-PartiallyDecorated PDExpr with {env1} ::= e::PartiallyDecorated PDExpr with i
-{
-  return e;
-}
-
-warnCode "Cannot take a partially decorated reference to e of type PartiallyDecorated flow:PDExpr with i, as the reference set is not bounded" {
-function thingWithUnboundedRefArg
-{env1, env2} subset i => PartiallyDecorated PDExpr with {env1} ::= e::Decorated PDExpr with i
-{
-  return e;
-}
-}
