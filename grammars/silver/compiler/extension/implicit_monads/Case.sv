@@ -485,9 +485,11 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   top.mUpSubst = ml.mUpSubst;
   top.mtyperep = monadOfType(top.expectedMonad, freshType());
 
-  forwards to if isMonadPlus_instance
-              then applied
-              else errorExpr([err(top.location, notMonadPlus)], location=top.location);
+  --We need to forward to an errorExpr rather than the rewritten version to avoid flow errors
+  --Because this should only be used in implicit equations, it should be fine
+  forwards to errorExpr([err(top.location,
+                             "Can only use case_any in implicit equations")],
+                        location=top.location);
 }
 
 {-
