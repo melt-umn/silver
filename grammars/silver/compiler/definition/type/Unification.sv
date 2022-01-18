@@ -163,6 +163,10 @@ top::Type ::= nt::Type inhs::Type hidden::Type
   -- And we kill off this type once hidden is specialized.
   top.unify =
     case top.unifyWith.baseType of
+    | ntOrDecType(ont1, oi, ohidden1) ->
+        -- Ensure compatibility between nonterminal types and inh sets, then merge our specializations
+        unifyAllShortCircuit([ont1, oi,   ohidden1],
+                             [nt,   inhs, hidden])
     | decoratedType(ote, oi) ->
         -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
         unifyAllShortCircuit([ote, oi,   top.unifyWith],
@@ -175,10 +179,6 @@ top::Type ::= nt::Type inhs::Type hidden::Type
         -- Ensure compatibility between skolem types (referring to an unknown nonterminal), then specialize ourselves
         unifyAllShortCircuit([top.unifyWith, top.unifyWith],
                              [nt,            hidden])
-    | ntOrDecType(ont1, oi, ohidden1) ->
-        -- Ensure compatibility between nonterminal types and inh sets, then merge our specializations
-        unifyAllShortCircuit([ont1, oi,   ohidden1],
-                             [nt,   inhs, hidden])
     | _ -> errorSubst("Tried to unify decorated type with " ++ prettyType(top.unifyWith))
     end;
 }

@@ -30,7 +30,7 @@ String ::= fileName::String
 {
   return foldr(
     \ ext::String file::String ->
-      if endsWith(file, ext) then substitute(ext, ".md", file) else file,
+      if endsWith(ext, file) then substitute(ext, ".md", file) else file,
     fileName, allowedSilverFileExtensions);
 }
 

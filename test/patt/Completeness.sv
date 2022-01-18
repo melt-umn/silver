@@ -169,6 +169,20 @@ noWarnCode "not exhaustive" {
   }
 }
 
+--Correct display of list nesting
+--Nothing else should require special treatment for display, since no
+--   other patterns should rely on grouping
+warnCode "(_::_)::_" {
+  function fun_list_complete_nested
+  String ::=
+  {
+    return case [[1, 2]] of
+           | [] -> "nil"
+           | []::tl -> "1"
+           end;
+  }
+}
+
 
 --Maybe
 warnCode "not exhaustive" {
@@ -446,6 +460,22 @@ warnCode "not exhaustive" {
        case (3, 4), 0 of
        | (1, 2), _ -> "first"
        | (_, _), 8 -> "second"
+       end;
+   }
+}
+
+
+--Check not exhaustive if all patterns have conditions
+warnCode "not exhaustive" {
+   function fun_test_incompleteness_all_conditions
+   String ::=
+   {
+     return
+       case 3, 4 of
+       | 1, y when y > 2 -> "first"
+       | x, 3 when x < 4 -> "second"
+       | x, y when y matches 15 -> "third"
+       | x, y when x == y -> "fourth"
        end;
    }
 }

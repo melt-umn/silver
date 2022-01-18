@@ -1120,6 +1120,11 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything
            else [err(top.location, "Can only use " ++ monadToString(top.expectedMonad) ++
                            " implicitly in this 'if-then', not " ++ monadToString(e1.mtyperep))]
       else [];
+  top.merrors <-
+      if isMonadFail(top.expectedMonad, top.env)
+      then []
+      else [err(top.location, monadToString(top.expectedMonad) ++
+                " is not an instance of MonadFail and cannot be used with if-then")];
 
   local ec::TypeCheck = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
                         then check(monadInnerType(e1.mtyperep, top.location), boolType())
@@ -1149,12 +1154,7 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything
                      then e1.mtyperep
                      else top.expectedMonad;
 
-  forwards to
-     if isMonadFail(top.expectedMonad, top.env)
-     then ifThenElse('if', e1, 'then', e2, 'else', monadFail(top.location), location=top.location)
-     else errorExpr([err(top.location, monadToString(top.expectedMonad) ++
-                         " is not an instance of MonadFail and " ++
-                         "cannot be used with if-then")], location=top.location);
+  forwards to ifThenElse('if', e1, 'then', e2, 'else', monadFail(top.location), location=top.location);
 }
 
 aspect production ifThenElse
