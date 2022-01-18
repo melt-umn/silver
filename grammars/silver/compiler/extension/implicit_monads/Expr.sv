@@ -456,8 +456,6 @@ aspect production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
   propagate mDownSubst, mUpSubst;
-  e.expectedMonad = top.expectedMonad;
-  top.merrors := forward.merrors;
 }
 
 aspect production errorAccessHandler
@@ -494,6 +492,9 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                                            " is neither")]
                  end;
 
+  --Why do we rewrite here, in an error production?  We can get here from the basic access
+  --   production based on normal typechecking failing even though our typechecking will
+  --   succeed, and we then need to be able to go back.
   local eUnDec::Expr =
         if ne.mtyperep.isDecorated
         then Silver_Expr{ silver:core:new($Expr {ne.monadRewritten}) }
@@ -875,7 +876,10 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 
   top.monadicNames = [];
 
-  local eUnDec::Expr =
+   --Why do we rewrite here, in an error production?  We can get here from the basic access
+  --   production based on normal typechecking failing even though our typechecking will
+  --   succeed, and we then need to be able to go back.
+ local eUnDec::Expr =
         if ne.mtyperep.isDecorated
         then Silver_Expr{ silver:core:new($Expr {ne.monadRewritten}) }
         else ne.monadRewritten;
