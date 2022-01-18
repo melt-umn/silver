@@ -89,6 +89,8 @@ top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 }
 
 
+--Argument `complete` controls whether we check for case completeness or not  (true -> check)
+--This is used so generated case expressions can avoid the incomplete check
 abstract production caseExpr
 top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Expr retType::Type
 {
@@ -124,6 +126,13 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
                    "case that is not matched:  " ++ implode(", ", map((.unparse), lst)))]
       | _ -> []
       end;
+
+  --If we have only conditional rules, it isn't complete
+  top.errors <-
+      if complete && length(conditionlessRules) == 0 && length(ml) > 0
+      then [mwdaWrn(top.config, top.location,
+               "This pattern-matching is not exhaustive because it only has conditional rules")]
+      else [];
 
 
   {-Checking Pattern Overlaps
@@ -537,9 +546,9 @@ function allConCaseCheckOverlapping
   We need the environment to look up any nonterminal matches and see
   if the nonterminal is closed or not.
 
-  We return nothing() if the patterns are complete, and just(plst) if
-  plst is an example of a missing pattern set (matching over multiple
-  values at once).
+  We return nothing() if there are some patterns and the patterns are
+  complete, and just(plst) if plst is an example of a missing pattern
+  set (matching over multiple values at once).
 -}
 function checkCompleteness
 Maybe<[Pattern]> ::= lst::[[Decorated Pattern]] env::Decorated Env
