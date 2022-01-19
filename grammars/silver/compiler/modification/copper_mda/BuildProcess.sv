@@ -40,17 +40,17 @@ top::DriverAction ::= grams::EnvTree<Decorated RootSpec>  spec::MdaSpec  silverg
   local dir :: String = silvergen ++ grammarToPath(spec.sourceGrammar);
   local copperFile :: String = dir ++ parserName ++ ".copper";
   
-  local err :: IO = 
-    print("CST errors while testing MDA " ++ spec.fullName ++ ":\n" ++
+  local err :: IOToken =
+    printT("CST errors while testing MDA " ++ spec.fullName ++ ":\n" ++
       foldr(\ a::String b::String -> 
         a ++ "\n" ++ b, "", ast.cstErrors) ++
       "\n", top.ioIn);
 
-  local printio::IO = print("MDA test file: " ++ spec.fullName ++ "\n", top.ioIn);
-  local writeio::IO =
-    writeFile(copperFile, ast.xmlCopper,
+  local printio::IOToken = printT("MDA test file: " ++ spec.fullName ++ "\n", top.ioIn);
+  local writeio::IOToken =
+    writeFileT(copperFile, ast.xmlCopper,
       -- hack for when we're --dont-translate'ing, make sure the dir exists.
-      mkdir(dir, printio).io);
+      mkdirT(dir, printio).io);
 
   top.io = if null(ast.cstErrors) then writeio else err;
   top.code = if null(ast.cstErrors) then 0 else 1;

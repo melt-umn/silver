@@ -3,13 +3,13 @@ grammar silver:testing:bin ;
 import silver:testing;
 
 function main
-IOVal<Integer> ::= args::[String] ioIn::IO
+IOVal<Integer> ::= args::[String] ioIn::IOToken
 { return
    -- if true then printDirs(initDirs, ioIn) else
    -- uncomment above line to just experiment with the traverse function
    -- when used for printing directories.
    ioval(
-    print( "============================================================\n" ++
+    printT( "============================================================\n" ++
            (if   runTests.iovalue.numFailed == 0
             then "All tests passed. \n"
             else toString(runTests.iovalue.numFailed) ++ 
@@ -24,7 +24,7 @@ IOVal<Integer> ::= args::[String] ioIn::IO
       ( startDir.iovalue, initDirs, runTest, dirSkip,
         ioval(startDir.io, testingResults(0) ) );
 
- local startDir :: IOVal<String> = cwd(ioIn) ;
+ local startDir :: IOVal<String> = cwdT(ioIn) ;
 
  local attribute initDirs :: [ String ] ;
  initDirs = map(cleanDirName, args) ; -- was  explode(" ",args)) ;

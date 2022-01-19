@@ -86,7 +86,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   -- explicit types. We can't use `finalSubst` here because that requires
   -- having completed type inference which requires `defs` which we're defining.
   local semiTy :: Type = performSubstitution(t.typerep, top.upSubst);
-  production fName :: String = toString(genInt()) ++ ":" ++ id.name;
+  production fName :: String = toString(genIntT()) ++ ":" ++ id.name;
 
   -- Using finalTy here, so our defs requires we have downSubst...
   -- references to this def want to know if its decorated, to enable the

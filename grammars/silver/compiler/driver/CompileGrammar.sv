@@ -9,7 +9,7 @@ IOVal<Maybe<RootSpec>> ::=
   benv::BuildEnv
   grammarName::String
   clean::Boolean
-  ioin::IO
+  ioin::IOToken
 {
   local gramPath :: String = grammarToPath(grammarName);
 
@@ -29,8 +29,8 @@ IOVal<Maybe<RootSpec>> ::=
       compileInterface(grammarName, benv.silverHostGen, grammarTime.iovalue, grammarTime.io);
 
   -- IO Step 4: Build the grammar, and say so
-  local pr :: IO =
-    print("Compiling " ++ grammarName ++ "\n\t[" ++ grammarLocation.iovalue.fromJust ++ "]\n\t[" ++ renderFileNames(files.iovalue, 0) ++ "]\n", ifaceCompile.io);
+  local pr :: IOToken =
+    printT("Compiling " ++ grammarName ++ "\n\t[" ++ grammarLocation.iovalue.fromJust ++ "]\n\t[" ++ renderFileNames(files.iovalue, 0) ++ "]\n", ifaceCompile.io);
   
   local gramCompile :: IOVal<Pair<[Root] [ParseError]>> =
     compileFiles(svParser, grammarLocation.iovalue.fromJust, files.iovalue, pr);
@@ -71,9 +71,9 @@ Boolean ::= f::String
   return any(map(endsWith(_, f), allowedSilverFileExtensions)) && !startsWith(".", f);
 }
 function listSilverFiles
-IOVal<[String]> ::= dir::String  ioin::IO
+IOVal<[String]> ::= dir::String  ioin::IOToken
 {
-  local files :: IOVal<[String]> = listContents(dir, ioin);
+  local files :: IOVal<[String]> = listContentsT(dir, ioin);
 
   return ioval(files.io, filter(isValidSilverFile, files.iovalue));
 }
@@ -83,13 +83,13 @@ IOVal<[String]> ::= dir::String  ioin::IO
  - Including the directory itself, to detect file deletions.
  -}
 function fileTimes
-IOVal<Integer> ::= dir::String is::[String] i::IO 
+IOVal<Integer> ::= dir::String is::[String] i::IOToken
 {
-  local ft :: IOVal<Integer> = fileTime(dir ++ head(is), i);
+  local ft :: IOVal<Integer> = fileTimeT(dir ++ head(is), i);
   local rest :: IOVal<Integer> = fileTimes(dir, tail(is), ft.io);
 
   return if null(is)
-         then fileTime(dir, i) -- check the directory itself. Catches deleted files.
+         then fileTimeT(dir, i) -- check the directory itself. Catches deleted files.
          else if ft.iovalue > rest.iovalue
               then ioval(rest.io, ft.iovalue)
               else rest;
@@ -111,7 +111,7 @@ String ::= files::[String]  depth::Integer
  - path for the first directory that matches.
  -}
 function findGrammarLocation
-IOVal<Maybe<String>> ::= path::String searchPaths::[String] iIn::IO
+IOVal<Maybe<String>> ::= path::String searchPaths::[String] iIn::IOToken
 {
   local exists :: IOVal<Maybe<String>> =
     findGrammarInLocation(path, head(searchPaths), iIn);
@@ -130,7 +130,7 @@ IOVal<Maybe<String>> ::= path::String searchPaths::[String] iIn::IO
  - edu.umn.cs/
  -}
 function findGrammarInLocation
-IOVal<Maybe<String>> ::= gram::String inPath::String iIn::IO
+IOVal<Maybe<String>> ::= gram::String inPath::String iIn::IOToken
 {
   -- Find the first / in the grammar name (turned path) we're looking for.
   local idx :: Integer = indexOf("/", gram);
@@ -138,7 +138,7 @@ IOVal<Maybe<String>> ::= gram::String inPath::String iIn::IO
   -- Replace the first / with a .
   local nextGram :: String = substring(0, idx, gram) ++ "." ++ substring(idx + 1, length(gram), gram);
   
-  local exists :: IOVal<Boolean> = isDirectory(inPath ++ gram, iIn);
+  local exists :: IOVal<Boolean> = isDirectoryT(inPath ++ gram, iIn);
   
   return 
     if idx == -1 then ioval(iIn, nothing())

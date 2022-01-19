@@ -11,7 +11,7 @@ import silver:reflect:nativeserialize;
  - @param grammarTime    The newest modification time of the source files, to compare against
  -}
 function compileInterface
-IOVal<Maybe<RootSpec>> ::= grammarName::String  silverHostGen::[String]  grammarTime::Integer  ioin::IO
+IOVal<Maybe<RootSpec>> ::= grammarName::String  silverHostGen::[String]  grammarTime::Integer  ioin::IOToken
 {
   local gramPath :: String = grammarToPath(grammarName);
 
@@ -21,25 +21,25 @@ IOVal<Maybe<RootSpec>> ::= grammarName::String  silverHostGen::[String]  grammar
   local file :: String = gen.iovalue.fromJust ++ "src/" ++ gramPath ++ "Silver.svi";
 
   -- IO Step 2: See if it's new enough
-  local modTime :: IOVal<Integer> = fileTime(file, gen.io);
+  local modTime :: IOVal<Integer> = fileTimeT(file, gen.io);
   
   -- IO Step 3: Let's say so, and parse it
-  local pr :: IO = print("Found " ++ grammarName ++ "\n\t[" ++ file ++ "]\n", modTime.io);
-  local text :: IOVal<ByteArray> = readBinaryFile(file, pr);
+  local pr :: IOToken = printT("Found " ++ grammarName ++ "\n\t[" ++ file ++ "]\n", modTime.io);
+  local text :: IOVal<ByteArray> = readBinaryFileT(file, pr);
 
   local ir :: Either<String InterfaceItems> = nativeDeserialize(text.iovalue);
   
   -- IO Step 4: Perhaps complain it failed to parse
-  local pr2 :: IO =
+  local pr2 :: IOToken =
     case ir of
     | right(i) ->
       if !null(i.interfaceErrors)
       then
-        print("\n\tErrors unpacking interface file:\n  " ++ implode("\n  ", i.interfaceErrors) ++
+        printT("\n\tErrors unpacking interface file:\n  " ++ implode("\n  ", i.interfaceErrors) ++
               "\n\tRecovering by parsing grammar....\n", text.io)
       else text.io
     | left(msg) ->
-        print("\n\tFailed to deserialize interface file!\n" ++ msg ++
+        printT("\n\tFailed to deserialize interface file!\n" ++ msg ++
               "\n\tRecovering by parsing grammar....\n", text.io)
     end;
 
@@ -62,10 +62,10 @@ IOVal<Maybe<RootSpec>> ::= grammarName::String  silverHostGen::[String]  grammar
  - Takes a grammar name (already converted to a path) and searches for Silver.svi
  -}
 function findInterfaceLocation
-IOVal<Maybe<String>> ::= gramPath::String searchPaths::[String] ioin::IO
+IOVal<Maybe<String>> ::= gramPath::String searchPaths::[String] ioin::IOToken
 {
   local inPath :: String = head(searchPaths);
-  local exists :: IOVal<Boolean> = isFile(inPath ++ "src/" ++ gramPath ++ "Silver.svi", ioin);
+  local exists :: IOVal<Boolean> = isFileT(inPath ++ "src/" ++ gramPath ++ "Silver.svi", ioin);
   
   return 
     if null(searchPaths) then ioval(ioin, nothing())

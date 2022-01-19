@@ -37,7 +37,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
            [appType(listCtrType(), stringType()),
             ioForeignType,
             appType(nonterminalType("silver:core:IOVal", [starKind()], false), intType())])).failure
-    then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IO). Instead it has type " ++ prettyType(namedSig.typerep))]
+    then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IOToken). Instead it has type " ++ prettyType(namedSig.typerep))]
     else [];
 }
 

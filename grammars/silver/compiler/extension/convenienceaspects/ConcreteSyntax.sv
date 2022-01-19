@@ -58,7 +58,7 @@ concrete productions top::ConvAspectLHS
 | ty::TypeExpr
 {
   top.aspectType = ty;
-  top.aspectName = name("__generatedTop_" ++ toString(genInt()), ty.location);
+  top.aspectName = name("__generatedTop_" ++ toString(genIntT()), ty.location);
   top.unparse = ty.unparse;
 }
 

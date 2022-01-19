@@ -57,10 +57,10 @@ abstract production dumpFlowGraphAction
 top::DriverAction ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph]  flowTypes::[Pair<String [FlowType]>]
 {
   top.io = 
-    writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(flowTypes) ++ "}", 
-      writeFile("flow-deps-direct.dot", "digraph flow {\n" ++ generateDotGraph(prodGraph) ++ "}",
-        writeFile("flow-deps-transitive.dot", "digraph flow {\n" ++ generateDotGraph(finalGraph) ++ "}",
-          print("Generating flow graphs\n", top.ioIn))));
+    writeFileT("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(flowTypes) ++ "}",
+      writeFileT("flow-deps-direct.dot", "digraph flow {\n" ++ generateDotGraph(prodGraph) ++ "}",
+        writeFileT("flow-deps-transitive.dot", "digraph flow {\n" ++ generateDotGraph(finalGraph) ++ "}",
+          printT("Generating flow graphs\n", top.ioIn))));
 
   top.code = 0;
   top.order = 0;

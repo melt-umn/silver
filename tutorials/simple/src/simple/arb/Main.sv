@@ -8,7 +8,7 @@ generator generate :: simple:concretesyntax:Root {
 }
 
 function main 
-IOVal<Integer> ::= args::[String] io_in::IO
+IOVal<Integer> ::= args::[String] io_in::IOToken
 {
   return ioval(arbDriver(args, io_in, generate), 0);
 }

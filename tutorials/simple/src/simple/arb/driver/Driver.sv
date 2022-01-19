@@ -7,8 +7,8 @@ import simple:concretesyntax as cst;
 import silver:reflect;
 
 function arbDriver
-IO ::= args::[String]
-       io_in::IO 
+IOToken ::= args::[String]
+       io_in::IOToken 
        generator::(RandomGen<cst:Root> ::= Integer Integer)
 {
   local depth :: Integer = toInteger(head(args));
@@ -18,8 +18,8 @@ IO ::= args::[String]
   --local r_ast :: ast:Root = runRandomGen(generator(3, depth));
   local r_ast :: ast:Root = r_cst.ast;
 
-  local print_success :: IO = 
-    print( "AST: \n" ++ pp:show(100, reflect(new(r_ast))) ++
+  local print_success :: IOToken = 
+    printT( "AST: \n" ++ pp:show(100, reflect(new(r_ast))) ++
            "\n\n" ++
            "AST pretty print: \n" ++ pp:show(100, r_ast) ++
            "\n\n" ++
@@ -30,8 +30,8 @@ IO ::= args::[String]
            )
            , io_in );
 
-  local write_success :: IO =
-    writeFile("output.c", r_ast.ast:c_code, print_success);
+  local write_success :: IOToken =
+    writeFileT("output.c", r_ast.ast:c_code, print_success);
 
   return if null(args) || length(head(args)) == 0 || !isDigit(head(args))
          then error("Expected a depth to generate\n")

@@ -14,7 +14,7 @@ type ProcessHandle foreign = "common.rawlib.RawProcessHandle";
  - @return  The handle to communicate with the process
 -}
 function spawnProcess
-IOVal<ProcessHandle> ::= cmd::String args::[String] i::IO
+IOVal<ProcessHandle> ::= cmd::String args::[String] i::IOToken
 {
   return error("Not Yet Implemented: spawnProcess");
 } foreign {
@@ -31,7 +31,7 @@ IOVal<ProcessHandle> ::= cmd::String args::[String] i::IO
  - @return  The IO token
 -}
 function sendToProcess
-IO ::= p::ProcessHandle msg::String i::IO
+IOToken ::= p::ProcessHandle msg::String i::IOToken
 {
   return error("Not Yet Implemented:  sendToProcess");
 } foreign {
@@ -47,7 +47,7 @@ IO ::= p::ProcessHandle msg::String i::IO
  - @return  The line which was read
 -}
 function readLineFromProcess
-IOVal<String> ::= p::ProcessHandle i::IO
+IOVal<String> ::= p::ProcessHandle i::IOToken
 {
   return error("Not Yet Implemented:  readLineFromProcess");
 } foreign {
@@ -64,7 +64,7 @@ IOVal<String> ::= p::ProcessHandle i::IO
  - @return  The line which was read
 -}
 function readAllFromProcess
-IOVal<String> ::= p::ProcessHandle i::IO
+IOVal<String> ::= p::ProcessHandle i::IOToken
 {
   return error("Not Yet Implemented:  readLineFromProcess");
 } foreign {
@@ -83,7 +83,7 @@ IOVal<String> ::= p::ProcessHandle i::IO
  - @return  The line which was read
 -}
 function readUntilFromProcess
-IOVal<String> ::= p::ProcessHandle ending::String i::IO
+IOVal<String> ::= p::ProcessHandle ending::String i::IOToken
 {
   return error("Not Yet Implemented:  readLineFromProcess");
 } foreign {
@@ -99,7 +99,7 @@ IOVal<String> ::= p::ProcessHandle ending::String i::IO
  - @return  The line which was read
 -}
 function readErrLineFromProcess
-IOVal<String> ::= p::ProcessHandle i::IO
+IOVal<String> ::= p::ProcessHandle i::IOToken
 {
   return error("Not Yet Implemented:  readLineFromProcess");
 } foreign {
@@ -116,7 +116,7 @@ IOVal<String> ::= p::ProcessHandle i::IO
  - @return  The line which was read
 -}
 function readErrAllFromProcess
-IOVal<String> ::= p::ProcessHandle i::IO
+IOVal<String> ::= p::ProcessHandle i::IOToken
 {
   return error("Not Yet Implemented:  readLineFromProcess");
 } foreign {
@@ -135,7 +135,7 @@ IOVal<String> ::= p::ProcessHandle i::IO
  - @return  The line which was read
 -}
 function readErrUntilFromProcess
-IOVal<String> ::= p::ProcessHandle ending::String i::IO
+IOVal<String> ::= p::ProcessHandle ending::String i::IOToken
 {
   return error("Not Yet Implemented:  readLineFromProcess");
 } foreign {
@@ -152,7 +152,7 @@ IOVal<String> ::= p::ProcessHandle ending::String i::IO
  - @return  The IO token
 -}
 function waitForProcess
-IO ::= p::ProcessHandle i::IO
+IOToken ::= p::ProcessHandle i::IOToken
 {
   return error("Not Yet Implemented:  waitForProcess");
 } foreign {

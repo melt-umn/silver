@@ -194,7 +194,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 abstract production genJava
 top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silverGen::String
 {
-  local pr :: IO = print("Generating Translation.\n", top.ioIn);
+  local pr :: IOToken = printT("Generating Translation.\n", top.ioIn);
 
   top.io = writeAll(pr, a, specs, silverGen);
   top.code = 0;
@@ -204,37 +204,37 @@ top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silverG
 abstract production genBuild
 top::DriverAction ::= buildFileLocation::String  buildXml::String
 {
-  top.io = writeFile(buildFileLocation, buildXml, top.ioIn);
+  top.io = writeFileT(buildFileLocation, buildXml, top.ioIn);
   top.code = 0;
   top.order = 6;
 }
 
 function writeAll
-IO ::= i::IO  a::Decorated CmdArgs  l::[Decorated RootSpec]  silverGen::String
+IOToken ::= i::IOToken  a::Decorated CmdArgs  l::[Decorated RootSpec]  silverGen::String
 {
-  local now :: IO = writeSpec(i, head(l), silverGen);
-  local recurse :: IO = writeAll(now, a, tail(l), silverGen);
+  local now :: IOToken = writeSpec(i, head(l), silverGen);
+  local recurse :: IOToken = writeAll(now, a, tail(l), silverGen);
 
   return if null(l) then i else recurse;
 }
 
 function writeSpec
-IO ::= i::IO  r::Decorated RootSpec  silverGen::String
+IOToken ::= i::IOToken  r::Decorated RootSpec  silverGen::String
 {
   local srcPath :: String = silverGen ++ "src/" ++ grammarToPath(r.declaredName);
   local binPath :: String = silverGen ++ "bin/" ++ grammarToPath(r.declaredName);
 
   local mkiotest :: IOVal<Boolean> =
-    isDirectory(srcPath, i);
+    isDirectoryT(srcPath, i);
   local mksrc :: IOVal<Boolean> =
-    if mkiotest.iovalue then mkiotest else mkdir(srcPath, mkiotest.io);
-  local clean :: IO =
-    deleteDirFiles(srcPath, deleteDirFiles(binPath, mksrc.io).io).io;
+    if mkiotest.iovalue then mkiotest else mkdirT(srcPath, mkiotest.io);
+  local clean :: IOToken =
+    deleteDirFilesT(srcPath, deleteDirFilesT(binPath, mksrc.io).io).io;
   
-  local printio :: IO =
+  local printio :: IOToken =
     if mksrc.iovalue
-    then print("\t[" ++ r.declaredName ++ "]\n", clean)
-    else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ srcPath ++ "\nWarning: if some interface file writes were successful, but others not, Silver's temporaries are in an inconsistent state. Use the --clean flag next run.\n\n", mksrc.io));
+    then printT("\t[" ++ r.declaredName ++ "]\n", clean)
+    else exitT(-5, printT("\nUnrecoverable Error: Unable to create directory: " ++ srcPath ++ "\nWarning: if some interface file writes were successful, but others not, Silver's temporaries are in an inconsistent state. Use the --clean flag next run.\n\n", mksrc.io));
 
   return writeBinaryFiles(srcPath, r.genBinaryFiles, writeFiles(srcPath, r.genFiles, printio));
 }
@@ -244,15 +244,15 @@ IO ::= i::IO  r::Decorated RootSpec  silverGen::String
  - write these out.
  -}
 function writeFiles
-IO ::= path::String s::[Pair<String String>] i::IO
+IOToken ::= path::String s::[Pair<String String>] i::IOToken
 {
-  return if null(s) then i else writeFile(path ++ head(s).fst, head(s).snd, writeFiles(path, tail(s), i));
+  return if null(s) then i else writeFileT(path ++ head(s).fst, head(s).snd, writeFiles(path, tail(s), i));
 }
 
 function writeBinaryFiles
-IO ::= path::String s::[Pair<String ByteArray>] i::IO
+IOToken ::= path::String s::[Pair<String ByteArray>] i::IOToken
 {
-  return if null(s) then i else writeBinaryFile(path ++ head(s).fst, head(s).snd, writeBinaryFiles(path, tail(s), i));
+  return if null(s) then i else writeBinaryFileT(path ++ head(s).fst, head(s).snd, writeBinaryFiles(path, tail(s), i));
 }
 
 function zipfileset

@@ -22,7 +22,7 @@ parser parse :: cst:Root {
 } 
 
 function main 
-IOVal<Integer> ::= args::[String] io_in::IO
+IOVal<Integer> ::= args::[String] io_in::IOToken
 {
   return ioval(driver(args, io_in, parse), 0);
 }
