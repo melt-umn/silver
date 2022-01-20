@@ -320,7 +320,7 @@ IOVal<Boolean> ::= s::String i::IOToken
  - @param i  The "before" world-state token.
  - @return  true if all files are deleted successfully.  false otherwise.
  -}
-function deleteFilesT
+function deleteFiles
 IOVal<Boolean> ::= s::[String] i::IOToken
 {
   return error("Not Yet Implemented: deleteFiles");
@@ -335,7 +335,7 @@ IOVal<Boolean> ::= s::[String] i::IOToken
  - @param i  The "before" world-state token.
  - @return  true if contents are deleted successfully.  false otherwise.
  -}
-function deleteDirFilesT
+function deleteDirFiles
 IOVal<Boolean> ::= s::String i::IOToken
 {
   return error("Not Yet Implemented: deleteDirFiles");
@@ -396,7 +396,7 @@ IOToken ::= file::String i::IOToken
  - @param i  The IOToken token.
  - @return The IOToken token. Errors are suppressed.
  -}
-function touchFilesT
+function touchFiles
 IOToken ::= files::[String] i::IOToken
 {
   return error("Not Yet Implemented: touchFiles");
@@ -425,11 +425,11 @@ a ::= msg::String
 }
 
 @{--
- - Create a bogus world-state token, for use with @link[unsafeTraceT].
+ - Create a bogus world-state token, for use with @link[unsafeTrace].
  -
  - @return  A fake world-state token.
  -}
-function unsafeIOT
+function unsafeIO
 IOToken ::=
 {
   return error("Not Yet Implemented: unsafeIO");
@@ -443,7 +443,7 @@ IOToken ::=
  -
  - @return  An integer unique to this process.
  -}
-function genIntT
+function genInt
 Integer ::=
 {
   return error("Not Yet Implemented: genInt");
@@ -454,7 +454,7 @@ Integer ::=
 @{--
  - Generates a random number between [0, 1)
  -}
-function genRandT
+function genRand
 Float ::=
 {
   return error("Not Yet Implemented: genRand");
@@ -470,9 +470,9 @@ Float ::=
  - @param val  The value to evaluate to, after the IO action is performed.
  - @param act  The world-state token to demand and consume.
  - @return  val, unchanged.
- - @warning see @link[unsafeIOT]
+ - @warning see @link[unsafeIO]
  -}
-function unsafeTraceT
+function unsafeTrace
 a ::= val::a act::IOToken
 {
   return error("Not Yet Implemented: unsafeTrace");
@@ -487,12 +487,12 @@ a ::= val::a act::IOToken
  - @param val  The value to evaluate to, after the IO action is performed.
  - @param str  The string to print.
  - @return val, unchanged.
- - @warning see @link[unsafeIOT]
+ - @warning see @link[unsafeIO]
  -}
-function unsafeTracePrintT
+function unsafeTracePrint
 a ::= val::a str::String
 {
-  return unsafeTraceT(val, printT(str, unsafeIOT()));
+  return unsafeTrace(val, printT(str, unsafeIO()));
 }
 
 @{--
@@ -501,19 +501,19 @@ a ::= val::a str::String
  -
  - @param val  The value to evaluate to, printed when evaluated.
  - @return  val, unchanged.
- - @warning see @link[unsafeIOT]
+ - @warning see @link[unsafeIO]
  -}
-function unsafeTraceDumpT
+function unsafeTraceDump
 a ::= val::a
 {
-  return unsafeTraceT(val, printT(hackUnparse(val), unsafeIOT()));
+  return unsafeTrace(val, printT(hackUnparse(val), unsafeIO()));
 }
 
 
 
 -- Function for manipulating strings representing file and directory names.
 
-function dirNameInFilePathT
+function dirNameInFilePath
 String ::= filePath::String
 {
   return if indexOfLastSlash == -1 then filePath
@@ -523,7 +523,7 @@ String ::= filePath::String
   indexOfLastSlash = lastIndexOf("/", filePath);
 }
 
-function fileNameInFilePathT
+function fileNameInFilePath
 String ::= filePath::String
 {
   return if indexOfLastSlash == -1 then filePath
@@ -534,7 +534,7 @@ String ::= filePath::String
 }
 
 
-function splitFileNameAndExtensionT
+function splitFileNameAndExtension
 Pair<String String> ::= filePath::String
 {
   return if indexOfLastDot == -1 then pair(filePath, "")

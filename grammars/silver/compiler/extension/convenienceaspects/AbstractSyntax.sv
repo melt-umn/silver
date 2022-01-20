@@ -131,7 +131,7 @@ function makeGeneratedNamesFromMatchRule
 
   return
     map(\pat::Pattern ->
-      name("__generated_" ++ toString(genIntT()), loc),
+      name("__generated_" ++ toString(genInt()), loc),
       collectPatternsFromPatternList(patList,[]));
 
 }

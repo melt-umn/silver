@@ -54,8 +54,8 @@ propagate lambdaDefs, lambdaBoundVars on ProductionRHS;
 aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
-  production fName :: String = toString(genIntT()) ++ ":" ++ id.name;
---  production transName :: String = "lambda_param" ++ id.name ++ toString(genIntT());
+  production fName :: String = toString(genInt()) ++ ":" ++ id.name;
+--  production transName :: String = "lambda_param" ++ id.name ++ toString(genInt());
   top.lambdaDefs := [lambdaParamDef(top.grammarName, t.location, fName, t.typerep)];
   top.lambdaBoundVars := [id.name];
 }

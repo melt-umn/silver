@@ -639,7 +639,7 @@ top::Exprs ::= e::Expr
 {
   top.transform = consASTExpr(e.transform, nilASTExpr());
   
-  local lambdaParamName::String = "__exprs_param_" ++ toString(genIntT());
+  local lambdaParamName::String = "__exprs_param_" ++ toString(genInt());
   top.lambdaParams =
     productionRHSCons(
       productionRHSElem(
@@ -658,7 +658,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 {
   top.transform = consASTExpr(e1.transform, e2.transform);
   
-  local lambdaParamName::String = "__exprs_param_" ++ toString(genIntT());
+  local lambdaParamName::String = "__exprs_param_" ++ toString(genInt());
   top.lambdaParams =
     productionRHSCons(
       productionRHSElem(

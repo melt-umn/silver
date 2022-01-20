@@ -37,7 +37,7 @@ global doRes4::IO<String> = do {
   readFile("test_out.txt");
 };
 
-equalityTest(evalIO(doRes4, unsafeIOT()).iovalue, "Hello, World!", String, silver_tests);
+equalityTest(evalIO(doRes4, unsafeIO()).iovalue, "Hello, World!", String, silver_tests);
 
 -- Test something that is Applicative but not Monad
 nonterminal AMaybe<a>;

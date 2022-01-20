@@ -64,5 +64,5 @@ global bytefiletest::IO<ByteArray> = do {
   readBinaryFile("test_svb.svb");
 };
 
-equalityTest(hackUnparse(nativeDeserialize(evalIO(bytefiletest, unsafeIOT()).iovalue).fromRight), hackUnparse(val1),
+equalityTest(hackUnparse(nativeDeserialize(evalIO(bytefiletest, unsafeIO()).iovalue).fromRight), hackUnparse(val1),
   String, core_tests);

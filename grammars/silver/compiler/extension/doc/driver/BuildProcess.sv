@@ -166,5 +166,5 @@ IOToken ::= iIn::IOToken outputLoc::String gram::String
 {
   local docPath :: String = outputLoc ++ grammarToPath(gram);
   
-  return deleteDirFilesT(docPath, iIn).io;
+  return deleteDirFiles(docPath, iIn).io;
 }

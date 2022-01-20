@@ -156,7 +156,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
     efficiency.
   -}
   local names::[String] =
-        map(\ x::Expr -> "__match_expr_" ++ toString(genIntT()), es);
+        map(\ x::Expr -> "__match_expr_" ++ toString(genInt()), es);
   local nameExprs::[Expr] =
         map(\ x::String -> baseExpr(qName(bogusLoc(), x),
                                     location=bogusLoc()), names);
@@ -337,7 +337,7 @@ Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
         | hd::tl -> hd
         end;
   local firstPatt::Decorated Pattern = head(firstGroup).headPattern;
-  local failName::String = "__match_fail_" ++ toString(genIntT());
+  local failName::String = "__match_fail_" ++ toString(genInt());
   local firstMatchExpr::Expr =
         case matchEs of
         | [] ->
@@ -1187,8 +1187,8 @@ Name ::= p::Decorated Pattern
 {
   local n :: String =
     case p of
-    | varPattern(pvn) -> "__sv_pv_" ++ toString(genIntT()) ++ "_" ++ pvn.name
-    | h -> "__sv_tmp_pv_" ++ toString(genIntT())
+    | varPattern(pvn) -> "__sv_pv_" ++ toString(genInt()) ++ "_" ++ pvn.name
+    | h -> "__sv_tmp_pv_" ++ toString(genInt())
     end;
   return name(n, p.location);
 }

@@ -172,7 +172,7 @@ function monadicMatchTypesNames
             end;
   local ntail::[String] = if null(names) then [] else tail(names);
   local newName::String = if null(names)
-                          then "__sv_expression_in_case" ++ toString(index) ++ "_" ++ toString(genIntT())
+                          then "__sv_expression_in_case" ++ toString(index) ++ "_" ++ toString(genInt())
                           else head(names);
   return case elst, tylst of
          | [], _ -> pair([], [])
@@ -419,7 +419,7 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
         "MonadPlus and cannot be used with case_any";
 
   --we need fresh names for the expressions being matched on, which we will use to only evaluate them once
-  local newNames::[String] = map(\ x::Expr -> "__sv_mcase_var_" ++ toString(genIntT()), es.rawExprs);
+  local newNames::[String] = map(\ x::Expr -> "__sv_mcase_var_" ++ toString(genInt()), es.rawExprs);
   local params::[Pair<String Type>] = zipWith(pair, newNames, ml.patternTypeList);
   local nameExprs::[Expr] = map(\x::String -> baseExpr(qName(top.location, x), location=top.location),
                                 newNames);

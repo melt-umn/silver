@@ -65,7 +65,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   f.monadicallyUsed = false;
   top.monadicNames = e.monadicNames ++ pr.monadicNames ++ f.monadicNames;
 
-  local freshname::String = "__sv_bindingInAMatchExpression_" ++ toString(genIntT());
+  local freshname::String = "__sv_bindingInAMatchExpression_" ++ toString(genInt());
   local eBind::Expr = monadBind(top.location);
   local eInnerType::TypeExpr = typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location);
   local binde_lambdaparams::ProductionRHS =
