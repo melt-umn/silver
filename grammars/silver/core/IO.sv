@@ -11,8 +11,8 @@ top::IO<b> ::= st::IO<a> fn::(IO<b> ::= a)
   local stateOut::IOToken = newState.stateOut;
   local stateVal::b = newState.stateVal;
   -- Using unsafeTrace here to demand st is evaluated before evaluating fn
-  top.stateOut = unsafeTraceT(stateOut, st.stateOut);
-  top.stateVal = unsafeTraceT(stateVal, st.stateOut);
+  top.stateOut = unsafeTrace(stateOut, st.stateOut);
+  top.stateVal = unsafeTrace(stateVal, st.stateOut);
 }
 
 
@@ -57,7 +57,7 @@ IOVal<a> ::= st::IO<a> ioIn::IOToken
 function unsafeEvalIO
 a ::= st::IO<a>
 {
-  return evalIO(st, unsafeIOT()).iovalue;
+  return evalIO(st, unsafeIO()).iovalue;
 }
 
 -- Monadic IO wrappers
@@ -200,6 +200,22 @@ top::IO<Boolean> ::= s::String
   top.stateVal = res.iovalue;
 }
 
+abstract production deleteFiles
+top::IO<Boolean> ::= files::[String]
+{
+  local res::IOVal<Boolean> = deleteFilesT(files, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
+}
+
+abstract production deleteDirFiles
+top::IO<Boolean> ::= s::String
+{
+  local res::IOVal<Boolean> = deleteDirFilesT(s, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
+}
+
 abstract production deleteTree
 top::IO<Unit> ::= s::String
 {
@@ -218,5 +234,12 @@ abstract production touchFile
 top::IO<Unit> ::= file::String
 {
   top.stateOut = touchFileT(file, top.stateIn);
+  top.stateVal = unit();
+}
+
+abstract production touchFiles
+top::IO<Unit> ::= files::[String]
+{
+  top.stateOut = touchFilesT(files, top.stateIn);
   top.stateVal = unit();
 }

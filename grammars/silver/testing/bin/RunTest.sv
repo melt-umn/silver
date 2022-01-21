@@ -13,7 +13,7 @@ IOVal<TestingResults> ::= absoluteFilePath::String ioIn::IOVal<TestingResults>
 {
  local isDir :: IOVal<Boolean> = isDirectoryT( absoluteFilePath, ioIn.io );
  local isF   :: IOVal<Boolean> = isFileT(absoluteFilePath, ioIn.io);
- local skip  :: IOVal<Boolean> = isFileT(dirNameInFilePathT(absoluteFilePath) ++
+ local skip  :: IOVal<Boolean> = isFileT(dirNameInFilePath(absoluteFilePath) ++
                                         "/tests.skip", ioIn.io);
  local text  :: IOVal<String>  = readFileT(absoluteFilePath, isF.io);
 
@@ -31,8 +31,8 @@ IOVal<TestingResults> ::= absoluteFilePath::String ioIn::IOVal<TestingResults>
 
  -- Inh. attrs. for the test.
  r_cst.ioInput = ioval (text.io, ioIn.iovalue.numFailed) ;
- r_cst.testFileName = fileNameInFilePathT(absoluteFilePath) ;
- r_cst.testFileDir = dirNameInFilePathT(absoluteFilePath) ;
+ r_cst.testFileName = fileNameInFilePath(absoluteFilePath) ;
+ r_cst.testFileDir = dirNameInFilePath(absoluteFilePath) ;
  
  local testResult :: IOVal<TestingResults> 
    = ioval ( r_cst.ioResult.io, testingResults (r_cst.ioResult.iovalue) ) ;

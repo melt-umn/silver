@@ -77,7 +77,7 @@ top::ParseResult<a> ::= t::a terminals::[TerminalDescriptor]
 function parseTreeOrDieWithoutStackTrace
 a ::= pr::ParseResult<a>
 {
-  return unsafeTraceT(pr.parseTree, if pr.parseSuccess then unsafeIOT() else exitT(-1, printT(pr.parseErrors ++ "\n\n", unsafeIOT())));
+  return unsafeTrace(pr.parseTree, if pr.parseSuccess then unsafeIO() else exitT(-1, printT(pr.parseErrors ++ "\n\n", unsafeIO())));
 }
 
 

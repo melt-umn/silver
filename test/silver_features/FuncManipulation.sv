@@ -133,7 +133,7 @@ Integer ::= a::Integer  b::Integer
 
 equalityTest( addTwo(addTwo(1,_)(2),_)(addTwo(_,3)(4)), 10, Integer, silver_tests ) ;
 
-global invoker :: (Integer ::= String) = twoArgFunction(_,genIntT());
+global invoker :: (Integer ::= String) = twoArgFunction(_,genInt());
 
 -- If the arg passed in invoker is getting re-evaluated, this will result in something like
 -- [0,2,3,4,5] [1,1,1,1,1]

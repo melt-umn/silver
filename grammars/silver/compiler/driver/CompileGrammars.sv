@@ -29,7 +29,7 @@ IOVal<[Maybe<RootSpec>]> ::=
     if null(need) then
       ioval(ioin, [])
     else
-      ioval(recurse.io, unsafeTraceT(now.iovalue, now.io) :: recurse.iovalue);
+      ioval(recurse.io, unsafeTrace(now.iovalue, now.io) :: recurse.iovalue);
   -- A short note about that unsafeTrace:
   -- Unfortunately, Silver lacks any way to indicate strictness in the types, and
   -- as a consequence, writing 'now.iovalue :: ...' means we can construct this

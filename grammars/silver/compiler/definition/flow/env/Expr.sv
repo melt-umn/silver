@@ -185,7 +185,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -- this as to the flow analysis, and justifies all the choices below:
 
   -- First, generate our "anonymous" flow vertex name:
-  inh.decorationVertex = "__decorate" ++ toString(genIntT()) ++ ":line" ++ toString(top.location.line);
+  inh.decorationVertex = "__decorate" ++ toString(genInt()) ++ ":line" ++ toString(top.location.line);
 
   -- Next, emit the "local equation" for this anonymous flow vertex.
   -- This means only the deps in 'e', see above conceptual transformation to see why.
@@ -293,7 +293,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   -- so we DO need to be transitive. Unfortunately.
   
   -- hack note: there's a test that depends on this name starting with __scrutinee. grep for it if you have to change this
-  local anonName :: String = "__scrutinee" ++ toString(genIntT()) ++ ":line" ++ toString(e.location.line);
+  local anonName :: String = "__scrutinee" ++ toString(genInt()) ++ ":line" ++ toString(e.location.line);
 
   pr.scrutineeVertexType =
     case e.flowVertexInfo of

@@ -138,8 +138,8 @@ IOToken ::= absoluteFilePath::String ioIn::IOToken
 
 
  r_cst.ioInput = text.io ;
- r_cst.testFileName = fileNameInFilePathT(absoluteFilePath) ;
- r_cst.testFileDir = dirNameInFilePathT(absoluteFilePath) ;
+ r_cst.testFileName = fileNameInFilePath(absoluteFilePath) ;
+ r_cst.testFileDir = dirNameInFilePath(absoluteFilePath) ;
  
  local testResult :: IOVal<Integer> = r_cst.ioResult ;
 

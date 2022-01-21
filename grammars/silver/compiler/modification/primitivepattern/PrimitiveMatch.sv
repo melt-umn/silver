@@ -245,7 +245,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   -- If there are contexts on the production, then we need to make the scrutinee available
   -- in the RHS to access their implementations.
-  local scrutineeName::String = "__scrutineeNode_" ++ toString(genIntT());
+  local scrutineeName::String = "__scrutineeNode_" ++ toString(genInt());
   local contextDefs::[Def] = concat(
     zipWith(
       \ c::Context oc::Context ->
@@ -329,7 +329,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   -- If there are contexts on the production, then we need to make the scrutinee available
   -- in the RHS to access their implementations.
-  local scrutineeName::String = "__scrutinee_" ++ toString(genIntT());
+  local scrutineeName::String = "__scrutinee_" ++ toString(genInt());
   local contextDefs::[Def] = concat(
     zipWith(
       \ c::Context oc::Context ->
@@ -470,8 +470,8 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   
   top.freeVars := ts:removeAll([h.name, t.name], e.freeVars);
 
-  local h_fName :: String = toString(genIntT()) ++ ":" ++ h.name;
-  local t_fName :: String = toString(genIntT()) ++ ":" ++ t.name;
+  local h_fName :: String = toString(genInt()) ++ ":" ++ h.name;
+  local t_fName :: String = toString(genInt()) ++ ":" ++ t.name;
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   local elemType :: Type = freshType();

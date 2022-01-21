@@ -38,7 +38,7 @@ equalityTest( toInteger(0.0) == 0, true, Boolean, silver_tests );
 equalityTest( toFloat(0) == 0.0, true, Boolean, silver_tests );
 
 -- Basic oddball tests, just to have called the functions.
-equalityTest( genIntT() >= 0, true, Boolean, silver_tests );
-equalityTest( genRandT() >= 0.0, true, Boolean, silver_tests );
+equalityTest( genInt() >= 0, true, Boolean, silver_tests );
+equalityTest( genRand() >= 0.0, true, Boolean, silver_tests );
 
 

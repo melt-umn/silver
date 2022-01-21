@@ -157,7 +157,7 @@ abstract production printTerm
 top::Strategy ::=
 {
   top.pp = pp"print()";
-  top.result = unsafeTraceT(just(top.term), printT(show(80, top.term.pp) ++ "\n\n", unsafeIOT()));
+  top.result = unsafeTrace(just(top.term), printT(show(80, top.term.pp) ++ "\n\n", unsafeIO()));
 }
 
 -- Utilities
