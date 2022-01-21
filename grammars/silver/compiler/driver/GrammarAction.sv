@@ -31,7 +31,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
 abstract production touchIfaces
 top::DriverAction ::= r::[Decorated RootSpec] genPath::String
 {
-  top.io = touchFiles(map(sviPath(_, genPath), r), top.ioIn);
+  top.io = touchFilesT(map(sviPath(_, genPath), r), top.ioIn);
   top.code = 0;
   top.order = 3;
 }

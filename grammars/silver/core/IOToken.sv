@@ -55,7 +55,7 @@ type IOToken foreign = "common.IOToken";
 function printT
 IOToken ::= s::String i::IOToken
 {
-  return error("Not Yet Implemented: print");
+  return error("Not Yet Implemented: printT");
 } foreign {
   "java" : return "%i%.print(%s%)";
 }
@@ -69,7 +69,7 @@ IOToken ::= s::String i::IOToken
 function readLineStdinT
 IOVal<Maybe<String>> ::= i::IOToken
 {
-  return error ("Not Yet Implemented: getStr");
+  return error ("Not Yet Implemented: readLineStdinT");
 } foreign {
   "java" : return "%i%.readLineStdin()";
 }
@@ -86,7 +86,7 @@ IOVal<Maybe<String>> ::= i::IOToken
 function exitT
 IOToken ::= val::Integer i::IOToken
 {
-  return error("Not Yet Implemented: exit");
+  return error("Not Yet Implemented: exitT");
 } foreign {
   "java" : return "%i%.exit(%val%)";
 }
@@ -102,7 +102,7 @@ IOToken ::= val::Integer i::IOToken
 function mkdirT
 IOVal<Boolean> ::= s::String i::IOToken
 {
-  return error("Not Yet Implemented: mkdir");
+  return error("Not Yet Implemented: mkdirT");
 } foreign {
   "java" : return "%i%.mkdir(%s%)";
 }
@@ -122,7 +122,7 @@ IOVal<Boolean> ::= s::String i::IOToken
 function systemT
 IOVal<Integer> ::= s::String i::IOToken
 {
-  return error("Not Yet Implemented: system");
+  return error("Not Yet Implemented: systemT");
 } foreign {
   "java" : return "%i%.system(%s%)";
 }
@@ -138,7 +138,7 @@ IOVal<Integer> ::= s::String i::IOToken
 function writeFileT
 IOToken ::= file::String contents::String i::IOToken
 {
-  return error("Not Yet Implemented: writeFile");
+  return error("Not Yet Implemented: writeFileT");
 } foreign {
   "java" : return "%i%.writeFile(%file%, %contents%)";
 }
@@ -154,7 +154,7 @@ IOToken ::= file::String contents::String i::IOToken
 function appendFileT
 IOToken ::= file::String contents::String i::IOToken
 {
-  return error("Not Yet Implemented: appendFile");
+  return error("Not Yet Implemented: appendFileT");
 } foreign {
   "java" : return "%i%.appendFile(%file%, %contents%)";
 }
@@ -170,7 +170,7 @@ IOToken ::= file::String contents::String i::IOToken
 function writeBinaryFileT
 IOToken ::= file::String contents::ByteArray i::IOToken
 {
-  return error("Not Yet Implemented: writeBinaryFile");
+  return error("Not Yet Implemented: writeBinaryFileT");
 } foreign {
   "java" : return "%i%.writeByteFile(%file%, %contents%)";
 }
@@ -186,7 +186,7 @@ IOToken ::= file::String contents::ByteArray i::IOToken
 function readBinaryFileT
 IOVal<ByteArray> ::= s::String i::IOToken
 {
-  return error("Not Yet Implemented: readBinaryFile");
+  return error("Not Yet Implemented: readBinaryFileT");
 } foreign {
   "java" : return "%i%.readByteFile(%s%)";
 }
@@ -202,7 +202,7 @@ IOVal<ByteArray> ::= s::String i::IOToken
 function fileTimeT
 IOVal<Integer> ::= s::String i::IOToken
 {
-  return error("Not Yet Implemented: fileTime");
+  return error("Not Yet Implemented: fileTimeT");
 } foreign {
   "java" : return "%i%.fileTime(%s%)";
 }
@@ -217,7 +217,7 @@ IOVal<Integer> ::= s::String i::IOToken
 function isFileT
 IOVal<Boolean> ::= s::String i::IOToken
 {
-  return error("Not Yet Implemented: isFile");
+  return error("Not Yet Implemented: isFileT");
 } foreign {
   "java" : return "%i%.isFile(%s%)";
 }
@@ -232,7 +232,7 @@ IOVal<Boolean> ::= s::String i::IOToken
 function isDirectoryT
 IOVal<Boolean> ::= s::String i::IOToken
 {
-  return error("Not Yet Implemented: isDirectory");
+  return error("Not Yet Implemented: isDirectoryT");
 } foreign {
   "java" : return "%i%.isDirectory(%s%)";
 }
@@ -248,7 +248,7 @@ IOVal<Boolean> ::= s::String i::IOToken
 function readFileT
 IOVal<String> ::= s::String i::IOToken
 {
-  return error("Not Yet Implemented: readFile");
+  return error("Not Yet Implemented: readFileT");
 } foreign {
   "java" : return "%i%.readFile(%s%)";
 }
@@ -262,7 +262,7 @@ IOVal<String> ::= s::String i::IOToken
 function cwdT
 IOVal<String> ::= i::IOToken
 {
-  return error("Not Yet Implemented: cwd");
+  return error("Not Yet Implemented: cwdT");
 } foreign {
   "java" : return "%i%.cwd()";
 }
@@ -277,7 +277,7 @@ IOVal<String> ::= i::IOToken
 function envVarT
 IOVal<String> ::= s::String i::IOToken
 {
-  return error("Not Yet Implemented: envVar");
+  return error("Not Yet Implemented: envVarT");
 } foreign {
   "java" : return "%i%.envVar(%s%)";
 }
@@ -293,7 +293,7 @@ IOVal<String> ::= s::String i::IOToken
 function listContentsT
 IOVal<[String]> ::= s::String i::IOToken
 {
-  return error("Not Yet Implemented: listContents");
+  return error("Not Yet Implemented: listContentsT");
 } foreign {
   "java" : return "%i%.listContents(%s%)";
 }
@@ -308,7 +308,7 @@ IOVal<[String]> ::= s::String i::IOToken
 function deleteFileT
 IOVal<Boolean> ::= s::String i::IOToken
 {
-  return error("Not Yet Implemented: deleteFile");
+  return error("Not Yet Implemented: deleteFileT");
 } foreign {
   "java" : return "%i%.deleteFile(%s%)";
 }
@@ -320,10 +320,10 @@ IOVal<Boolean> ::= s::String i::IOToken
  - @param i  The "before" world-state token.
  - @return  true if all files are deleted successfully.  false otherwise.
  -}
-function deleteFiles
+function deleteFilesT
 IOVal<Boolean> ::= s::[String] i::IOToken
 {
-  return error("Not Yet Implemented: deleteFiles");
+  return error("Not Yet Implemented: deleteFilesT");
 } foreign {
   "java" : return "%i%.deleteFiles(%s%)";
 }
@@ -335,10 +335,10 @@ IOVal<Boolean> ::= s::[String] i::IOToken
  - @param i  The "before" world-state token.
  - @return  true if contents are deleted successfully.  false otherwise.
  -}
-function deleteDirFiles
+function deleteDirFilesT
 IOVal<Boolean> ::= s::String i::IOToken
 {
-  return error("Not Yet Implemented: deleteDirFiles");
+  return error("Not Yet Implemented: deleteDirFilesT");
 } foreign {
   "java" : return "%i%.deleteDirFiles(%s%)";
 }
@@ -353,7 +353,7 @@ IOVal<Boolean> ::= s::String i::IOToken
 function deleteTreeT
 IOToken ::= s::String  i::IOToken
 {
-  return error("Not Yet Implemented: deleteTree");
+  return error("Not Yet Implemented: deleteTreeT");
 } foreign {
   "java" : return "%i%.deleteTree(%s%)";
 }
@@ -369,7 +369,7 @@ IOToken ::= s::String  i::IOToken
 function copyFileT
 IOToken ::= src::String  dst::String  i::IOToken
 {
-  return error("Not Yet Implemented: copyFile");
+  return error("Not Yet Implemented: copyFileT");
 } foreign {
   "java" : return "%i%.copyFile(%src%, %dst%)";
 }
@@ -384,7 +384,7 @@ IOToken ::= src::String  dst::String  i::IOToken
 function touchFileT
 IOToken ::= file::String i::IOToken
 {
-  return error("Not Yet Implemented: touchFile");
+  return error("Not Yet Implemented: touchFileT");
 } foreign {
   "java" : return "%i%.touchFile(%file%)";
 }
@@ -396,10 +396,10 @@ IOToken ::= file::String i::IOToken
  - @param i  The IOToken token.
  - @return The IOToken token. Errors are suppressed.
  -}
-function touchFiles
+function touchFilesT
 IOToken ::= files::[String] i::IOToken
 {
-  return error("Not Yet Implemented: touchFiles");
+  return error("Not Yet Implemented: touchFilesT");
 } foreign {
   "java" : return "%i%.touchFiles(%files%)";
 }

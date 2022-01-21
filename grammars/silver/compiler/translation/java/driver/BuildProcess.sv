@@ -229,7 +229,7 @@ IOToken ::= i::IOToken  r::Decorated RootSpec  silverGen::String
   local mksrc :: IOVal<Boolean> =
     if mkiotest.iovalue then mkiotest else mkdirT(srcPath, mkiotest.io);
   local clean :: IOToken =
-    deleteDirFiles(srcPath, deleteDirFiles(binPath, mksrc.io).io).io;
+    deleteDirFilesT(srcPath, deleteDirFilesT(binPath, mksrc.io).io).io;
   
   local printio :: IOToken =
     if mksrc.iovalue
