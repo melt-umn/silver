@@ -80,6 +80,10 @@ melt.trynode('silver') {
     melt.archiveCommitArtifacts("jars/*.jar")
   }
 
+  stage("Modular Analyses") {
+    sh "./self-compile --clean --mwda"
+  }
+
   stage("Test") {
     // These test cases and tutorials are run as seperate tasks to allow for parallelism
     def tests = ["silver_features", "copper_features", "patt", "flow", "stdlib", "performance", "csterrors", "silver_construction", "origintracking", "implicit_monads"]
