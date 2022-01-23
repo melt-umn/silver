@@ -685,14 +685,14 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 
   -- Subtract the ref set from our deps
   local diff :: [String] =
-    set:toList(set:removeAll(getMinRefSet(e.typerep, top.env), set:add(inhDeps, set:empty())));
+    set:toList(set:removeAll(getMinRefSet(scrutineeType, top.env), set:add(inhDeps, set:empty())));
 
   top.errors <-
     if null(e.errors)
     && top.config.warnMissingInh
     && sinkVertexName.isJust
     && !null(diff)
-    then [mwdaWrn(top.config, e.location, "Pattern match on reference of type " ++ prettyType(e.typerep) ++ " has transitive dependencies on " ++ implode(", ", diff))]
+    then [mwdaWrn(top.config, e.location, "Pattern match on reference of type " ++ prettyType(scrutineeType) ++ " has transitive dependencies on " ++ implode(", ", diff))]
     else [];
 
 }
