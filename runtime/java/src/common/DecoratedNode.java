@@ -173,7 +173,7 @@ public class DecoratedNode implements Decorable, Typed {
 	/**
 	 * Decorate this (partially decorated) node with additional inherited attributes.
 	 * 
-	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
+	 * @param parent The DecoratedNode extra-decorating this one. (Whether this is a child or a local (or other) of that node.)
 	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @return A DecoratedNode with the additional attributes supplied, referencing this DecoratedNode as 'base'.
 	 */
@@ -188,7 +188,7 @@ public class DecoratedNode implements Decorable, Typed {
 					if(inheritedAttributes[attribute] == null) {
 						inheritedAttributes[attribute] = (context) -> inhs[attribute].eval(parent);
 					} else {
-						throw new SilverException(parent.getDebugID() + " cannot decorate " + getDebugID() + " with inh '" + self.getNameOfInhAttr(attribute) + "' as this attribute has already been provided.");
+						throw new SilverException(parent.getDebugID() + " cannot decorate " + getDebugID() + " with inh '" + self.getNameOfInhAttr(attribute) + "' as this attribute has already been provided by " + this.parent.getDebugID() + ".");
 					}
 				}
 			}
