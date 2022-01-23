@@ -81,7 +81,7 @@ melt.trynode('silver') {
   }
 
   stage("Modular Analyses") {
-    sh "./self-compile --clean --mwda"
+    sh "./self-compile --clean --mwda --dont-translate"
   }
 
   stage("Test") {
