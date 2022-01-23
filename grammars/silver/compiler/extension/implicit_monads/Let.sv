@@ -74,6 +74,7 @@ synthesized attribute bindInList::[Pair<Name TypeExpr>] occurs on AssignExpr;
 synthesized attribute mdefs::[Def] occurs on AssignExpr;
 
 attribute merrors, mDownSubst, mUpSubst, monadicNames, expectedMonad occurs on AssignExpr;
+propagate expectedMonad on AssignExpr;
 
 aspect production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
@@ -81,9 +82,6 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
   top.merrors := a1.merrors ++ a2.merrors;
 
   propagate mDownSubst, mUpSubst;
-
-  a1.expectedMonad = top.expectedMonad;
-  a2.expectedMonad = top.expectedMonad;
 
   top.monadicNames = a1.monadicNames ++ a2.monadicNames;
 
@@ -115,8 +113,6 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   --only place where the name occurs, so it wouldn't affect anything then either.
   e.monadicallyUsed = isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst)) && !isMonad(t.typerep, top.env);
   top.monadicNames = e.monadicNames;
-
-  e.expectedMonad = top.expectedMonad;
 
   top.mdefs = [lexicalLocalDef(top.grammarName, id.location, fName,
                                performSubstitution(t.typerep, top.mUpSubst),

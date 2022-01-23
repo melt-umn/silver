@@ -6,6 +6,7 @@ attribute mtyperep, merrors, patternType, monadRewritten<PrimPatterns>,
 attribute mtyperep, merrors, patternType, monadRewritten<PrimPattern>,
           mDownSubst, mUpSubst, monadicNames, expectedMonad,
           returnFun, returnify<PrimPattern> occurs on PrimPattern;
+propagate expectedMonad on PrimPatterns, PrimPattern;
 
 --returnFun is the monad's defined Return for returnify
 inherited attribute returnFun::Expr;
@@ -56,10 +57,6 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   pr.mDownSubst = e.mUpSubst;
   f.mDownSubst = pr.mUpSubst;
   top.mUpSubst = f.mUpSubst;
-
-  e.expectedMonad = top.expectedMonad;
-  pr.expectedMonad = top.expectedMonad;
-  f.expectedMonad = top.expectedMonad;
 
   e.monadicallyUsed = eIsMonadic;
   f.monadicallyUsed = false;
@@ -196,8 +193,6 @@ top::PrimPatterns ::= p::PrimPattern
 
   propagate mDownSubst, mUpSubst;
 
-  p.expectedMonad = top.expectedMonad;
-
   top.mtyperep = p.mtyperep;
   top.patternType = p.patternType;
 
@@ -217,9 +212,6 @@ top::PrimPatterns ::= p::PrimPattern vbar::Vbar_kwd ps::PrimPatterns
   p.mDownSubst = top.mDownSubst;
   ps.mDownSubst = p.mUpSubst;
   top.mUpSubst = ps.mUpSubst;
-
-  p.expectedMonad = top.expectedMonad;
-  ps.expectedMonad = top.expectedMonad;
 
   top.mtyperep = if isMonad(p.mtyperep, top.env) && monadsMatch(p.mtyperep, top.expectedMonad, top.mDownSubst).fst
                  then if isMonad(ps.mtyperep, top.env) && monadsMatch(ps.mtyperep, top.expectedMonad, top.mDownSubst).fst
@@ -291,8 +283,6 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   top.merrors := e.merrors;
   propagate mDownSubst, mUpSubst;
 
-  e.expectedMonad = top.expectedMonad;
-
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
 
@@ -310,8 +300,6 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
 {
   top.merrors := e.merrors;
   propagate mDownSubst, mUpSubst;
-
-  e.expectedMonad = top.expectedMonad;
 
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
@@ -333,8 +321,6 @@ top::PrimPattern ::= i::Int_t arr::Arrow_kwd e::Expr
   e.mDownSubst = top.mDownSubst;
   top.mUpSubst = e.mUpSubst;
 
-  e.expectedMonad = top.expectedMonad;
-
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
 
@@ -351,8 +337,6 @@ top::PrimPattern ::= f::Float_t arr::Arrow_kwd e::Expr
 {
   top.merrors := e.merrors;
   propagate mDownSubst, mUpSubst;
-
-  e.expectedMonad = top.expectedMonad;
 
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
@@ -371,8 +355,6 @@ top::PrimPattern ::= i::String_t arr::Arrow_kwd e::Expr
   top.merrors := e.merrors;
   propagate mDownSubst, mUpSubst;
 
-  e.expectedMonad = top.expectedMonad;
-
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
   
@@ -389,8 +371,6 @@ top::PrimPattern ::= i::String arr::Arrow_kwd e::Expr
 {
   top.merrors := e.merrors;
   propagate mDownSubst, mUpSubst;
-
-  e.expectedMonad = top.expectedMonad;
 
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
@@ -409,8 +389,6 @@ top::PrimPattern ::= e::Expr
   top.merrors := e.merrors;
   propagate mDownSubst, mUpSubst;
 
-  e.expectedMonad = top.expectedMonad;
-
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
 
@@ -427,8 +405,6 @@ top::PrimPattern ::= h::Name t::Name e::Expr
 {
   top.merrors := e.merrors;
   propagate mDownSubst, mUpSubst;
-
-  e.expectedMonad = top.expectedMonad;
 
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;

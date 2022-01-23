@@ -6,8 +6,6 @@ top::Expr ::= params::ProductionRHS e::Expr
   top.merrors := e.merrors;
   propagate mDownSubst, mUpSubst;
 
-  e.expectedMonad = top.expectedMonad;
-
   top.mtyperep = appTypes(functionType(length(params.inputElements), []), map((.typerep), params.inputElements) ++ [e.typerep]);
 
   e.monadicallyUsed = false;
