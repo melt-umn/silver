@@ -89,7 +89,7 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
       print("Generating parser " ++ spec.fullName ++ ".\n");
       copper:compileParserBean(specCstAst.copperParser,
         makeName(spec.sourceGrammar), parserName,
-        outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
+        false, outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
         parserName ++ ".html");
     } else do {
       -- Should this be stderr?

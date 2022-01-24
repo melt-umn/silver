@@ -73,10 +73,20 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
           fromMaybe(searchEnvTree(startnt, host.layoutTerms), customStartLayout),
           host.cstEnv)));
 
-  local grammarElements::[copper:GrammarElement] = host.copperGrammarElements
-    ++ [copper:parserAttribute("context", "common.DecoratedNode", "context = common.TopNode.singleton;")]
+  local hostGrammarElements::[copper:GrammarElement] = host.copperGrammarElements
     ++ flatMap((.copperGrammarElements), host.disambiguationClasses);
-  top.copperParser = copper:parserBean(makeCopperName(parsername), parsername,
+  local hostGrammar::copper:Grammar =
+    copper:grammar_(host.containingGrammar, hostGrammarElements);
+
+  local extGrammarElements::[copper:GrammarElement] = ext.copperGrammarElements
+    ++ flatMap((.copperGrammarElements), ext.disambiguationClasses);
+  local extGrammar::copper:Grammar =
+    copper:extensionGrammar(ext.containingGrammar, extGrammarElements,
+      map((.copperElementReference), ext.markingTokens),
+      map((.copperElementReference), ext.bridgeProductions),
+      map((.copperElementReference), host.disambiguationClasses));
+
+  top.copperParser = copper:extendedParserBean(makeCopperName(parsername), parsername,
     head(startFound).copperElementReference, startLayout, "", "", "",
-    copper:grammar_(host.containingGrammar, grammarElements));
+    hostGrammar, extGrammar);
 }

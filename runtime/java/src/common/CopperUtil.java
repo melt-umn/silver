@@ -24,15 +24,16 @@ public final class CopperUtil {
   private static Location LOCATION = new VirtualLocation("<silver>", -1, -1);
 
   public static NIOVal compile(ParserBean parser, String packageName,
-                               String parserName, String outFile,
-                               Boolean dumpHtml, String dumpHtmlTo,
-                               IOToken tok) {
+                               String parserName, Boolean runMDA,
+                               String outFile, Boolean dumpHtml,
+                               String dumpHtmlTo, IOToken tok) {
     ParserCompilerParameters params = new ParserCompilerParameters();
     params.setPackageName(packageName);
     params.setParserName(parserName);
     params.setOutputFile(new java.io.File(outFile));
     params.setOutputType(CopperIOType.FILE);
     params.setUsePipeline(CopperPipelineType.GRAMMARBEANS);
+    params.setRunMDA(runMDA);
 
     CompilerLogger logger = AuxiliaryMethods.getOrMakeLogger(params);
 
@@ -81,6 +82,67 @@ public final class CopperUtil {
     try {
       return CopperElementReference.ref(CopperElementName.newName(grammarName),
                                         name, LOCATION);
+    } catch (ParseException exc) {
+      throw new RuntimeException(exc);
+    }
+  }
+
+  public static ExtendedParserBean makeExtendedParserBean(
+      String id, String pp, CopperElementReference startSymbol,
+      ConsCellCollection<CopperElementReference> startLayout,
+      String parserClassAuxCode, String parserInitCode, String preambleCode,
+      Grammar hostGrammar, Grammar extGrammar) {
+    try {
+      ExtendedParserBean parserBean = new ExtendedParserBean();
+      parserBean.setLocation(LOCATION);
+      parserBean.setName(id);
+      parserBean.setDisplayName(pp);
+      parserBean.setUnitary(true);
+      parserBean.setStartSymbol(startSymbol);
+
+      Set<CopperElementReference> startLayoutSet =
+          new HashSet<CopperElementReference>();
+      startLayout.iterator().forEachRemaining(startLayoutSet::add);
+      parserBean.setStartLayout(startLayoutSet);
+      parserBean.setParserClassAuxCode(parserClassAuxCode);
+      parserBean.setParserInitCode(parserInitCode);
+      parserBean.setPreambleCode(preambleCode);
+      parserBean.addGrammar(hostGrammar);
+      parserBean.addGrammar(extGrammar);
+      parserBean.setHostGrammar(hostGrammar);
+      return parserBean;
+    } catch (CopperException exc) {
+      throw new RuntimeException(exc);
+    } catch (ParseException exc) {
+      throw new RuntimeException(exc);
+    }
+  }
+
+  public static ExtensionGrammar makeExtensionGrammar(
+      String id, ConsCellCollection<GrammarElement> grammarElements,
+      ConsCellCollection<CopperElementReference> markingTerminals,
+      ConsCellCollection<CopperElementReference> bridgeProductions,
+      ConsCellCollection<CopperElementReference> glueDisambiguationFunctions) {
+    try {
+      ExtensionGrammar grammar = new ExtensionGrammar();
+      grammar.setLocation(LOCATION);
+      grammar.setName(id);
+      grammarElements.iterator().forEachRemaining((ele) -> {
+        try {
+          grammar.addGrammarElement(ele);
+        } catch (CopperException exc) {
+          throw new RuntimeException(exc);
+        }
+      });
+
+      for (CopperElementReference name : markingTerminals)
+        grammar.addMarkingTerminal(name.getName());
+      for (CopperElementReference name : bridgeProductions)
+        grammar.addBridgeProduction(name.getName());
+      for (CopperElementReference name : glueDisambiguationFunctions)
+        grammar.addGlueDisambiguationFunction(name.getName());
+
+      return grammar;
     } catch (ParseException exc) {
       throw new RuntimeException(exc);
     }

@@ -31,7 +31,7 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
       print("Generating parser " ++ spec.fullName ++ ".\n");
       copper:compileParserBean(specCstAst.copperParser,
         makeName(spec.sourceGrammar), parserName,
-        outDir ++ parserName ++ ".java", false, "");
+        true, outDir ++ parserName ++ ".java", false, "");
     } else do {
       -- Should this be stderr?
       print("CST errors while preparing for MDA " ++ spec.fullName ++ ":\n" ++
