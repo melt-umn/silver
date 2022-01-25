@@ -32,3 +32,18 @@ a ::= seed::Integer r::RandomGen<a>
 } foreign {
   "java": return "common.RandomGen.runRandomGen(originCtx, %seed%, %r%)";
 }
+
+@{-
+  Run a RandomGen computation, using a random token.
+
+  @param toek  The random number generator to use
+  @param r  The computation to run
+  @return  The result of the computation
+-}
+function runTokenRandomGen
+(a, RandomToken) ::= token::RandomToken r::RandomGen<a>
+{
+  return error("foreign function");
+} foreign {
+  "java": return "new silver.core.Ppair(common.RandomGen.runRandomGen(originCtx, %token%, %r%), new java.util.Random(%token%.nextLong()))";
+}

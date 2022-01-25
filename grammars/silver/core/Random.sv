@@ -40,6 +40,10 @@ production randomBoolean
 top::RandomGen<Boolean> ::=
 {}
 
+production randomToken_
+top::RandomGen<RandomToken> ::=
+{}
+
 instance Functor RandomGen {
   map = mapRandomGen;
 }
