@@ -1,7 +1,7 @@
 grammar silver:compiler:extension:autoattr;
 
 abstract production propagateInh
-top::ProductionStmt ::= attr::Decorated QName
+top::ProductionStmt ::= attr::PartiallyDecorated QName
 {
   top.unparse = s"propagate ${attr.unparse};";
   

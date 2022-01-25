@@ -113,7 +113,7 @@ top::Operation ::=
  - @param attr  The name of the attribute to propagate
  -}
 abstract production propagateMonoid
-top::ProductionStmt ::= attr::Decorated QName
+top::ProductionStmt ::= attr::PartiallyDecorated QName
 {
   top.unparse = s"propagate ${attr.unparse};";
   

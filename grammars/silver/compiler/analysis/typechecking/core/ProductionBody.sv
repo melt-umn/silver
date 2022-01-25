@@ -103,7 +103,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
@@ -117,7 +117,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 }
 
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
@@ -131,20 +131,20 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 }
 
 aspect production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= msg::[Message] dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   propagate downSubst, upSubst;
 }
 
 aspect production childDefLHS
-top::DefLHS ::= q::Decorated QName
+top::DefLHS ::= q::PartiallyDecorated QName
 {
   top.errors <- if isDecorable(top.typerep, top.env) then []
                 else [err(top.location, s"Inherited attributes can only be defined on (undecorated) nonterminal and partially decorated types, not ${prettyType(top.typerep)}.")];
 }
 
 aspect production localDefLHS
-top::DefLHS ::= q::Decorated QName
+top::DefLHS ::= q::PartiallyDecorated QName
 {
   top.errors <- if isDecorable(top.typerep, top.env) then []
                 else [err(top.location, s"Inherited attributes can only be defined on (undecorated) nonterminal and partially decorated types, not ${prettyType(top.typerep)}.")];
@@ -163,7 +163,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
 }
 
 aspect production localValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
+top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 

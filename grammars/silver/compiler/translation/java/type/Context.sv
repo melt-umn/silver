@@ -1,6 +1,7 @@
 grammar silver:compiler:translation:java:type;
 
 import silver:compiler:definition:env;
+import silver:compiler:definition:core only QNameAttrOccur, QName, qNameAttrOccur;
 
 -- Translation of *solved* contexts, not *constraint* contexts
 synthesized attribute transContexts::[String] occurs on Contexts;
@@ -61,7 +62,7 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
   top.transType = "int";
   
   resolvedDcl.transContextDeps = requiredContexts.transContexts;
-  top.transContext = resolvedDcl.transContext;
+  top.transContext = resolvedDcl.attrOccursIndex;
   top.transContextDummyInit = "0";
   
   top.transContextMemberName = makeConstraintDictName(attr, ntty, top.boundVariables);
@@ -79,7 +80,7 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
   top.transType = "int";
   
   resolvedDcl.transContextDeps = requiredContexts.transContexts;
-  top.transContext = resolvedDcl.transContext;
+  top.transContext = resolvedDcl.attrOccursIndex;
   top.transContextDummyInit = "0";
   
   top.transContextMemberName = makeConstraintDictName(attr, ntty, top.boundVariables);
@@ -168,7 +169,7 @@ top::Context ::= msg::String
 
 -- The translations of the narrowed forms of the instDcl's contexts are fed back as dcl.transContextDeps 
 inherited attribute transContextDeps::[String] occurs on InstDclInfo, OccursDclInfo;
-attribute transContext occurs on InstDclInfo, OccursDclInfo;
+attribute transContext occurs on InstDclInfo;
 
 aspect production instDcl
 top::InstDclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
@@ -223,46 +224,16 @@ top::InstDclInfo ::= i1::Type i2::Type fnsig::NamedSignature
   top.transContext = "null";
 }
 
-aspect production occursDcl
-top::OccursDclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
-{
-  top.transContext = top.attrOccursIndex;
-}
-aspect production occursInstConstraintDcl
-top::OccursDclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
-{
-  top.transContext = makeConstraintDictName(fnat, ntty, tvs);
-}
-aspect production occursSigConstraintDcl
-top::OccursDclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
-{
-  top.transContext = s"((${makeProdName(ns.fullName)})(context.undecorate())).${makeConstraintDictName(fnat, ntty, ns.freeVariables)}";
-}
 aspect production occursSuperDcl
 top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
 {
   baseDcl.transContextDeps = top.transContextDeps;
-  top.transContext = baseDcl.transContext ++ s".${makeInstanceSuperAccessorName(fnat)}()";
 }
-aspect production annoInstanceDcl
-top::OccursDclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
+
+aspect production qNameAttrOccur
+top::QNameAttrOccur ::= at::QName
 {
-  top.transContext = "null";
-}
-aspect production annoInstConstraintDcl
-top::OccursDclInfo ::= fnat::String ntty::Type atty::Type tvs::[TyVar]
-{
-  top.transContext = "null";
-}
-aspect production annoSigConstraintDcl
-top::OccursDclInfo ::= fnat::String ntty::Type atty::Type ns::NamedSignature
-{
-  top.transContext = "null";
-}
-aspect production annoSuperDcl
-top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
-{
-  top.transContext = "null";
+  resolvedDcl.transContextDeps = requiredContexts.transContexts;
 }
 
 function makeConstraintDictName

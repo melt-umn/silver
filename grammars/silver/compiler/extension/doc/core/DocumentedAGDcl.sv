@@ -74,7 +74,7 @@ top::AGDcl ::= comment::DocComment_t dcl::AGDcl
     dcl.downDocConfig = top.downDocConfig;
     
     top.upDocConfig <- parsed.upDocConfig ++ dcl.upDocConfig;
-    top.errors <- parsed.errors;
+    top.docErrors <- parsed.errors;
 
     local isDoubleComment::Boolean = case dcl of documentedAGDcl(_, _) -> true | _ -> false end;
     top.docs := if isDoubleComment
@@ -107,7 +107,7 @@ layout {}
     parsed.indentBy = "";
     
     top.upDocConfig <- parsed.upDocConfig;
-    top.errors <- parsed.errors;
+    top.docErrors <- parsed.errors;
 
     top.docs := [standaloneDclCommentItem(parsed)];
     top.unparse = "";

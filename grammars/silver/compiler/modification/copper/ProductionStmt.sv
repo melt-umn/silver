@@ -81,7 +81,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 }
 
 abstract production parserAttributeValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
+top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 
@@ -194,7 +194,7 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt
 
 
 abstract production parserAttributeDefLHS
-top::DefLHS ::= q::Decorated QName
+top::DefLHS ::= q::PartiallyDecorated QName
 {
   top.name = q.name;
   top.unparse = q.unparse;
@@ -213,7 +213,7 @@ top::DefLHS ::= q::Decorated QName
 }
 
 abstract production termAttrValueValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
+top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
 

@@ -100,3 +100,11 @@ PartiallyDecorated PDExpr with {env2} ::= e::PDExpr
   return e;
 }
 }
+
+warnCode "Partially decorated reference of type PartiallyDecorated flow:PDExpr with {} does not contain all attributes in the reference set of e's type PartiallyDecorated flow:PDExpr with {flow:env1}" {
+aspect production dispatchThing
+top::PDExpr ::= e::PartiallyDecorated PDExpr with {env1}
+{
+  local otherRef::PartiallyDecorated PDExpr with {} = e;
+}
+}
