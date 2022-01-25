@@ -32,6 +32,30 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   flagdescs <- ["\t--copperdump  : force Copper to dump parse table information"];
 }
 
+{--------------------------------------}
+{- Define the --copper-xml-dump flag. -}
+{--------------------------------------}
+
+synthesized attribute copperXmlDump::Boolean occurs on CmdArgs;
+
+aspect production endCmdArgs
+top::CmdArgs ::= _
+{ top.copperXmlDump = false; }
+
+production copperXmlDumpFlag
+top::CmdArgs ::= rest::CmdArgs
+{
+  top.copperXmlDump = true;
+  forwards to rest;
+}
+
+aspect function parseArgs
+Either<String  Decorated CmdArgs> ::= args::[String]
+{
+  flags <- [pair("--copper-xml-dump", flag(copperXmlDumpFlag))];
+  flagdescs <- ["\t--copper-xml-dump : dump the specification being passed to Copper as XML"];
+}
+
 {--------------------------------}
 {- Request building of parsers. -}
 {--------------------------------}
@@ -96,7 +120,7 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
       ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
         makeName(spec.sourceGrammar), parserName,
         false, outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
-        parserName ++ ".html");
+        parserName ++ ".html", cmdArgs.copperXmlDump);
       writeBinaryFile(dumpFile, dump);
       return ret;
     } else do {

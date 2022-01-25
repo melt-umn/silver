@@ -27,20 +27,20 @@ ParserBean ::= id::String  name::String  startSymbol::ElementReference
 function compileParserBeanT
 IOVal<Integer> ::= parser_::ParserBean  packageName::String  parserName::String
      runMDA::Boolean  outFile::String  dumpHtml::Boolean  dumpHtmlTo::String
-     io::IOToken
+     xmlDump::Boolean  io::IOToken
 {
   return error("copper FFI function");
 } foreign {
-  "java": return "common.CopperUtil.compile((edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ParserBean)%parser_%, %packageName%.toString(), %parserName%.toString(), %runMDA%, %outFile%.toString(), %dumpHtml%, %dumpHtmlTo%.toString(), %io%)";
+  "java": return "common.CopperUtil.compile((edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ParserBean)%parser_%, %packageName%.toString(), %parserName%.toString(), %runMDA%, %outFile%.toString(), %dumpHtml%, %dumpHtmlTo%.toString(), %xmlDump%, %io%)";
 }
 
 abstract production compileParserBean
 top::IO<Integer> ::= parser_::ParserBean  packageName::String
      parserName::String  runMDA::Boolean  outFile::String  dumpHtml::Boolean
-     dumpHtmlTo::String
+     dumpHtmlTo::String  xmlDump::Boolean
 {
   local val::IOVal<Integer> = compileParserBeanT(parser_, packageName,
-    parserName, runMDA, outFile, dumpHtml, dumpHtmlTo, top.stateIn);
+    parserName, runMDA, outFile, dumpHtml, dumpHtmlTo, xmlDump, top.stateIn);
   top.stateOut = val.io;
   top.stateVal = val.iovalue;
 }

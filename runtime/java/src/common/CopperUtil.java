@@ -1,10 +1,12 @@
 package common;
 
 import common.javainterop.ConsCellCollection;
+import edu.umn.cs.melt.copper.compiletime.dumpers.XMLSpecDumper;
 import edu.umn.cs.melt.copper.compiletime.logging.CompilerLogger;
 import edu.umn.cs.melt.copper.compiletime.pipeline.AuxiliaryMethods;
 import edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.*;
 import edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.visitors.ParserSpecProcessor;
+import edu.umn.cs.melt.copper.main.CopperDumpType;
 import edu.umn.cs.melt.copper.main.CopperIOType;
 import edu.umn.cs.melt.copper.main.CopperPipelineType;
 import edu.umn.cs.melt.copper.main.ParserCompiler;
@@ -26,7 +28,16 @@ public final class CopperUtil {
   public static NIOVal compile(ParserBean parser, String packageName,
                                String parserName, Boolean runMDA,
                                String outFile, Boolean dumpHtml,
-                               String dumpHtmlTo, IOToken tok) {
+                               String dumpHtmlTo, Boolean xmlDump,
+                               IOToken tok) {
+    if (xmlDump) {
+      try {
+        new XMLSpecDumper(parser).dump(CopperDumpType.XML_SPEC, System.out);
+      } catch (IOException exc) {
+        throw new RuntimeException(exc);
+      }
+    }
+
     ParserCompilerParameters params = new ParserCompilerParameters();
     params.setPackageName(packageName);
     params.setParserName(parserName);

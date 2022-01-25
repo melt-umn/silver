@@ -36,7 +36,7 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
       mkdir(outDir);
       print("Running MDA for " ++ spec.fullName ++ ".\n");
       ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
-        makeName(spec.sourceGrammar), parserName, true, "", false, "");
+        makeName(spec.sourceGrammar), parserName, true, "", false, "", false);
       writeBinaryFile(dumpFile, dump);
       return ret;
     } else do {
