@@ -155,6 +155,17 @@ top::Type ::= te::Type i::Type
     end;
 }
 
+aspect production partiallyDecoratedType
+top::Type ::= te::Type i::Type
+{
+  top.unify = 
+    case top.unifyWith of
+    | partiallyDecoratedType(ote, oi) -> composeSubst(unify(te, ote), unify(i, oi))
+    | ntOrDecType(_,_,_) -> errorSubst("dte-nodte: try again")
+    | _ -> errorSubst("Tried to unify partially decorated type with " ++ prettyType(top.unifyWith))
+    end;
+}
+
 aspect production ntOrDecType
 top::Type ::= nt::Type inhs::Type hidden::Type
 {
@@ -169,7 +180,11 @@ top::Type ::= nt::Type inhs::Type hidden::Type
                              [nt,   inhs, hidden])
     | decoratedType(ote, oi) ->
         -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
-        unifyAllShortCircuit([ote, oi,   top.unifyWith],
+        unifyAllShortCircuit([ote, oi, top.unifyWith],
+                             [nt,  inhs, hidden])
+    | partiallyDecoratedType(ote, oi) ->
+        -- Ensure compatibility between Decorated nonterminal types, then specialize ourselves
+        unifyAllShortCircuit([ote, oi, top.unifyWith],
                              [nt,  inhs, hidden])
     | nonterminalType(_, _, _) ->
         -- Ensure compatibility between nonterminal types, then specialize ourselves

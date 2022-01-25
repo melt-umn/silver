@@ -71,6 +71,12 @@ top::Type ::= te::Type _
   top.accessHandler = decoratedAccessHandler(_, _, location=_);
 }
 
+aspect production partiallyDecoratedType
+top::Type ::= te::Type _
+{
+  top.accessHandler = decoratedAccessHandler(_, _, location=_);
+}
+
 aspect production functionType
 top::Type ::= _ _
 {

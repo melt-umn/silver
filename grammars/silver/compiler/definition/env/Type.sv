@@ -57,6 +57,12 @@ top::Type ::= te::Type _
   top.typeName = te.typeName;
 }
 
+aspect production partiallyDecoratedType
+top::Type ::= te::Type _
+{
+  top.typeName = te.typeName;
+}
+
 aspect production varType
 top::Type ::= tv::TyVar
 {

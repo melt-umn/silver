@@ -12,6 +12,7 @@ disambiguate LCurly_t, InhSetLCurly_t { pluck LCurly_t; }
 
 terminal Boolean_tkwd    'Boolean'    lexer classes {TYPE,RESERVED};
 terminal Decorated_tkwd  'Decorated'  lexer classes {TYPE,RESERVED}, precedence=1;
+terminal PartiallyDecorated_tkwd 'PartiallyDecorated' lexer classes {TYPE,RESERVED}, precedence=1;
 terminal Float_tkwd      'Float'      lexer classes {TYPE,RESERVED};
 terminal Integer_tkwd    'Integer'    lexer classes {TYPE,RESERVED};
 terminal String_tkwd     'String'     lexer classes {TYPE,RESERVED};

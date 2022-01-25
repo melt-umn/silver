@@ -103,7 +103,7 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
     then
       s"\t\t//${top.unparse}\n" ++
       s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = " ++ 
-      if te.typerep.isNonterminal
+      if te.typerep.isNonterminal || te.typerep.isPartiallyDecorated
       then s"new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
       else s"new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
     else "";
@@ -126,7 +126,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
     then
       s"\t\t//${top.unparse}\n" ++
       s"\t\t${top.frame.className}.localInheritedAttributes[${ugh_dcl_hack.attrOccursInitIndex}] = " ++ 
-      if te.typerep.isNonterminal
+      if te.typerep.isNonterminal || te.typerep.isPartiallyDecorated
       then s"new common.Lazy[${makeNTName(te.typerep.typeName)}.num_inh_attrs];\n"
       else s"new common.Lazy[${top.frame.className}.count_inh__ON__${makeIdName(transTypeNameWith(te.typerep, top.frame.signature.freeVariables))}];\n"
     else "";

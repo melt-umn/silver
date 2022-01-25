@@ -1,5 +1,7 @@
 grammar silver:compiler:analysis:warnings:flow;
 
+import silver:compiler:modification:let_fix only lexicalLocalReference;
+
 synthesized attribute warnEqdef :: Boolean occurs on CmdArgs;
 
 aspect production endCmdArgs
@@ -62,8 +64,24 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     else [];
     
   top.errors <-
-    if length(dl.lookupEqDefLHS) > 1
+    if length(dl.lookupEqDefLHS) > 1 || contains(dl.defLHSattr.attrDcl.fullName, getMinRefSet(dl.typerep, top.env))
     then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
+    else [];
+
+  -- Check that if there is a partially decorated reference taken to this decoration site,
+  -- we aren't defining an equation that isn't in that reference type (Decorated Foo with only {...}).
+  top.errors <-
+    if dl.found && attr.found
+    && top.config.warnEqdef
+    then flatMap(
+      \ refSite::(String, Location, [String]) ->
+        if contains(attr.attrDcl.fullName, refSite.3) then []
+        else [mwdaWrn(top.config, top.location, "Attribute " ++ attr.name ++ " with an equation on " ++ dl.name ++ " is not in the partially decorated reference taken at " ++ refSite.1 ++ ":" ++ refSite.2.unparse ++ " with only " ++ implode(", ", refSite.3))],
+      case dl of
+      | childDefLHS(q) -> getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)
+      | localDefLHS(q) -> getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)
+      | _ -> []
+      end)
     else [];
 }
 
@@ -112,8 +130,24 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
     else [];
     
   top.errors <-
-    if length(dl.lookupEqDefLHS) > 1
+    if length(dl.lookupEqDefLHS) > 1 || contains(dl.defLHSattr.attrDcl.fullName, getMinRefSet(dl.typerep, top.env))
     then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name ++ " on " ++ dl.name ++ " in production " ++ top.frame.fullName)]
+    else [];
+
+  -- Check that if there is a partially decorated reference taken to this decoration site,
+  -- we aren't defining an equation that isn't in that reference type (Decorated Foo with only {...}).
+  top.errors <-
+    if dl.found && attr.found
+    && top.config.warnEqdef
+    then flatMap(
+      \ refSite::(String, Location, [String]) ->
+        if contains(attr.attrDcl.fullName, refSite.3) then []
+        else [mwdaWrn(top.config, top.location, "Attribute " ++ attr.name ++ " with an equation for " ++ dl.name ++ " is not in the partially decorated reference taken at " ++ refSite.1 ++ ":" ++ refSite.2.unparse ++ " with only " ++ implode(", ", refSite.3))],
+      case dl of
+      | childDefLHS(q) -> getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)
+      | localDefLHS(q) -> getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)
+      | _ -> []
+      end)
     else [];
 }
 
@@ -125,6 +159,96 @@ top::ExprLHSExpr ::= attr::QNameAttrOccur
     if attr.attrFound && length(filter(eq(attr.attrDcl.fullName, _), top.allSuppliedInhs)) > 1
     then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name)]
     else [];
+}
+
+-- These checks live here for now, since they are related to duplicate equations:
+aspect production childReference
+top::Expr ::= q::Decorated QName
+{
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  local partialRefs::[(String, Location, [String])] = getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);
+  top.errors <-
+    case finalTy, refSet of
+    | partiallyDecoratedType(_, _), just(inhs) when top.config.warnEqdef && q.lookupValue.found ->
+      case getMaxRefSet(q.lookupValue.typeScheme.typerep, top.env) of
+      | just(origInhs) ->
+        if all(map(contains(_, inhs), origInhs)) then []
+        else [mwdaWrn(top.config, top.location, s"Partially decorated reference of type ${prettyType(finalTy)} does not contain all attributes in the reference set of ${q.name}'s type ${prettyType(q.lookupValue.typeScheme.monoType)}")]
+      | nothing() -> [mwdaWrn(top.config, top.location, s"Cannot take a partially decorated reference to ${q.name} of type ${prettyType(q.lookupValue.typeScheme.monoType)}, as the reference set is not bounded")]
+      end ++
+      -- Check that we are exported by the decoration site.
+      if q.lookupValue.found && top.config.warnEqdef
+      && !isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars)
+      then [mwdaWrn(top.config, top.location, s"Orphaned partially decorated reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      -- Check that there is at most one partial reference taken to this decoration site.
+      -- TODO: This check isn't actually sufficent for well-definedness (e.g. wrapping this ref in
+      -- a term and decorating that more than once), need some sort of "linearity analysis".
+      else if length(partialRefs) > 1
+      then [mwdaWrn(top.config, top.location, s"Multiple partially decorated references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      else []
+    | _, _ -> []
+    end;
+}
+aspect production localReference
+top::Expr ::= q::Decorated QName
+{
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  local partialRefs::[(String, Location, [String])] = getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);
+  top.errors <-
+    case finalTy, refSet of
+    | partiallyDecoratedType(_, _), just(inhs) when top.config.warnEqdef && q.lookupValue.found ->
+      case getMaxRefSet(q.lookupValue.typeScheme.typerep, top.env) of
+      | just(origInhs) ->
+        if all(map(contains(_, inhs), origInhs)) then []
+        else [mwdaWrn(top.config, top.location, s"Partially decorated reference of type ${prettyType(finalTy)} does not contain all attributes in the reference set of ${q.name}'s type ${prettyType(q.lookupValue.typeScheme.monoType)}")]
+      | nothing() -> [mwdaWrn(top.config, top.location, s"Cannot take a partially decorated reference to ${q.name} of type ${prettyType(q.lookupValue.typeScheme.monoType)}, as the reference set is not bounded")]
+      end ++
+      -- Check that we are exported by the decoration site/
+      if q.lookupValue.found && top.config.warnEqdef
+      && !isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars)
+      then [mwdaWrn(top.config, top.location, s"Orphaned partially decorated reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      -- Check that there is at most one partial reference taken to this decoration site.
+      -- TODO: This check isn't actually sufficent for well-definedness (e.g. wrapping this ref in
+      -- a term and decorating that more than once), need some sort of "linearity analysis".
+      else if length(partialRefs) > 1
+      then [mwdaWrn(top.config, top.location, s"Multiple partially decorated references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
+      else []
+    | _, _ -> []
+    end;
+}
+aspect production lhsReference
+top::Expr ::= q::Decorated QName
+{
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  top.errors <-
+    case finalTy of
+    | partiallyDecoratedType(_, _) when top.config.warnEqdef ->
+      [mwdaWrn(top.config, top.location, s"Cannot take a partially decorated reference of type ${prettyType(finalTy)} to ${q.name}.")]
+    | _ -> []
+    end;
+}
+aspect production forwardReference
+top::Expr ::= q::Decorated QName
+{
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  top.errors <-
+    case finalTy of
+    | partiallyDecoratedType(_, _) when top.config.warnEqdef ->
+      [mwdaWrn(top.config, top.location, s"Cannot take a partially decorated reference of type ${prettyType(finalTy)} to the forward tree.")]
+    | _ -> []
+    end;
+}
+aspect production lexicalLocalReference
+top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
+{
+  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
+  top.errors <-
+    case finalTy, q.lookupValue.typeScheme.monoType of
+    | partiallyDecoratedType(_, _), partiallyDecoratedType(_, _) -> []  -- TODO: Need linearity analysis...
+    | partiallyDecoratedType(_, _), _ when top.config.warnEqdef ->
+      [mwdaWrn(top.config, top.location, s"${q.name} was not bound as a partially decorated reference, but here it is used with type ${prettyType(finalTy)}.")]
+    | _, _ -> []
+    end;
 }
 
 

@@ -239,11 +239,12 @@ s"""private Object child_${n};
     then s"type_${ty.transTypeName}"
     else "-1";
   
+  local ntType::Type = if ty.isPartiallyDecorated then ty.decoratedType else ty;
   top.childStaticElem =
-    if ty.isNonterminal
-    then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ty.typeName)}.num_inh_attrs];\n"
-    else if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
+    if lookupBy(typeNameEq, ntType, top.sigInhOccurs).isJust
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ty.transTypeName}];\n"
+    else if ntType.isNonterminal
+    then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ntType.typeName)}.num_inh_attrs];\n"
     else "";
 
   top.typeChildren := [(ty, top.childRefElem)];

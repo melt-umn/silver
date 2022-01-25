@@ -100,7 +100,7 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  top.typerep = if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
+  top.typerep = if isDecorable(q.lookupValue.typeScheme.monoType, top.env)
                 then q.lookupValue.typeScheme.asNtOrDecType
                 else q.lookupValue.typeScheme.monoType;
 }
@@ -121,7 +121,7 @@ top::Expr ::= q::Decorated QName
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
-  top.typerep = if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
+  top.typerep = if isDecorable(q.lookupValue.typeScheme.monoType, top.env)
                 then q.lookupValue.typeScheme.asNtOrDecType
                 else q.lookupValue.typeScheme.monoType;
 }
@@ -536,10 +536,14 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 {
   top.unparse = "decorate " ++ e.unparse ++ " with {" ++ inh.unparse ++ "}";
 
-  top.typerep = decoratedType(performSubstitution(e.typerep, e.upSubst), inhSetType(sort(nub(inh.suppliedInhs)))); -- .decoratedForm?
+  production eType::Type = performSubstitution(e.typerep, inh.downSubst);  -- Specialize e.typerep
+  production ntType::Type = if eType.isDecorated then eType.decoratedType else eType;
+
+  -- TODO: This _could_ be partiallyDecoratedType, but we use decorate in a ton of places where we expect a decoratedType
+  top.typerep = decoratedType(ntType, inhSetType(sort(nub(inh.suppliedInhs ++ eType.inhSetMembers))));
   e.isRoot = false;
   
-  inh.decoratingnt = performSubstitution(e.typerep, e.upSubst);
+  inh.decoratingnt = ntType;
   inh.allSuppliedInhs = inh.suppliedInhs;
 }
 

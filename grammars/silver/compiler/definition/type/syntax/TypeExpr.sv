@@ -57,7 +57,7 @@ flowtype typerep {grammarName, env, flowEnv} on TypeExpr, Signature;
 flowtype maybeType {grammarName, env, flowEnv} on SignatureLHS;
 flowtype types {grammarName, env, flowEnv} on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
-propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs excluding refTypeExpr;
+propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs excluding refTypeExpr, partialRefTypeExpr;
 propagate lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate appLexicalTyVarKinds on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
@@ -295,7 +295,7 @@ top::TypeExpr ::= ty::Decorated TypeExpr tl::BracketedTypeExprs
 concrete production refTypeExpr
 top::TypeExpr ::= 'Decorated' t::TypeExpr 'with' i::TypeExpr
 {
-  top.unparse = "Decorated " ++ i.unparse ++ " " ++ t.unparse;
+  top.unparse = "Decorated " ++ t.unparse ++ " with " ++ i.unparse;
   
   i.onNt = t.typerep;
 
@@ -335,6 +335,52 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
     | nonterminalType(_,_,_) -> []
     | skolemType(_) -> [err(t.location, "polymorphic Decorated types must specify an explicit reference set")]
     | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated.")]
+    end;
+}
+
+concrete production partialRefTypeExpr
+top::TypeExpr ::= 'PartiallyDecorated' t::TypeExpr 'with' i::TypeExpr
+{
+  top.unparse = "PartiallyDecorated " ++ t.unparse ++ " with " ++ i.unparse;
+  
+  i.onNt = t.typerep;
+
+  top.typerep = partiallyDecoratedType(t.typerep, i.typerepInhSet);
+  
+  top.errors := i.errorsInhSet ++ t.errors;
+  top.errors <-
+    case t.typerep.baseType of
+    | nonterminalType(_,_,_) -> []
+    | skolemType(_) -> []
+    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be PartiallyDecorated.")]
+    end;
+  top.errors <-
+    if i.typerep.kindrep != inhSetKind()
+    then [err(i.location, s"${i.unparse} has kind ${prettyKind(i.typerep.kindrep)}, but kind InhSet is expected here")]
+    else [];
+  top.errors <- t.errorsKindStar;
+
+  top.lexicalTyVarKinds <-
+    case i of
+    | typeVariableTypeExpr(tv) -> [pair(tv.lexeme, inhSetKind())]
+    | _ -> []
+    end;
+}
+
+concrete production partialRefDefaultTypeExpr
+top::TypeExpr ::= 'PartiallyDecorated' t::TypeExpr
+{
+  top.unparse = "PartiallyDecorated " ++ t.unparse;
+
+  top.typerep =
+    partiallyDecoratedType(t.typerep,
+      inhSetType(sort(concat(getInhsForNtRef(t.typerep.typeName, top.flowEnv)))));
+  
+  top.errors <-
+    case t.typerep.baseType of
+    | nonterminalType(_,_,_) -> []
+    | skolemType(_) -> [err(t.location, "polymorphic PartiallyDecorated types must specify an explicit reference set")]
+    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be PartiallyDecorated.")]
     end;
 }
 

@@ -178,7 +178,7 @@ top::Type ::= nt::Type inhs::Type hidden::Type
     | _          -> hidden.substituted
     end;
   -- For a renaming, we don't need to specialize.
-  top.flatRenamed = ntOrDecType(nt.flatRenamed, inhs.flatRenamed, hidden.flatRenamed);
+  propagate flatRenamed;
 }
 
 --------------------------------------------------------------------------------
