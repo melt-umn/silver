@@ -24,17 +24,19 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
   -- resorting to a slight interfering workaround for now.
   propagate moduleNames;
   forward.env = occursEnv(extraOccursDefs, newScopeEnv(grammars.defs ++ extraDefs, top.env));
-  
-  production attribute extraDefs::[Def] with ++;
-  extraDefs := [];
-  production attribute extraOccursDefs::[OccursDclInfo] with ++;
-  extraOccursDefs := [];
+
+  production attribute implicitImports::[String] with ++;
+  implicitImports := [];
+  top.moduleNames <- implicitImports;
+  local extraMED::ModuleExportedDefs = moduleExportedDefs(top.location, top.compiledGrammars, top.grammarDependencies, implicitImports, []);
+  production extraDefs::[Def] = extraMED.defs;
+  production extraOccursDefs::[OccursDclInfo] = extraMED.occursDefs;
+
+  -- Implicitly import the random library
+  implicitImports <- ["silver:util:random"];
 
   -- We also depend on the silver:regex library
-  top.moduleNames <- ["silver:regex"];
-  local regexMED::ModuleExportedDefs = moduleExportedDefs(top.location, top.compiledGrammars, top.grammarDependencies, ["silver:regex"], []);
-  extraDefs <- regexMED.defs;
-  extraOccursDefs <- regexMED.occursDefs;
+  implicitImports <- ["silver:regex"];
 
   production specEnv::Decorated Env = newScopeEnv(grammars.defs, emptyEnv());
   production specTypeDcls::[TypeDclInfo] = map((.dcl), foldr(consDefs, nilDefs(), grammars.defs).typeList);
@@ -97,11 +99,11 @@ Expr ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  depth::Expr 
     -- Monomorphic nonterminals that don't have an explicit Arbitrary instance,
     -- call the appropriate local generator function.
     | nonterminalType(ntName, [], _)
-      when (getTypeDcl(ntName, specEnv), getInstanceDcl("silver:core:Arbitrary", t, env))
+      when (getTypeDcl(ntName, specEnv), getInstanceDcl("silver:util:random:Arbitrary", t, env))
       matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", ntName), loc)}($Expr{depth}) }
     
     | terminalType(tName)
-      when (getTypeDcl(tName, specEnv), getInstanceDcl("silver:core:Arbitrary", t, env))
+      when (getTypeDcl(tName, specEnv), getInstanceDcl("silver:util:random:Arbitrary", t, env))
       matches (dcl :: _, []) -> Silver_Expr { $Name{name("gen_" ++ substitute(":", "_", tName), loc)}($Expr{depth}) }
 
     -- Lists are handled specially here, to allow recusively generating for
@@ -118,7 +120,7 @@ Expr ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  depth::Expr 
 
     -- Primitives and polymorphic nonterminals (e.g. Pair for tuples) are
     -- handled by the Arbitrary type class.
-    | _ -> Silver_Expr { $Name{name("silver:core:genArb", loc)}($Expr{depth}) }
+    | _ -> Silver_Expr { $Name{name("silver:util:random:genArb", loc)}($Expr{depth}) }
     end; 
 }
 
@@ -131,7 +133,7 @@ Boolean ::= env::Decorated Env  specEnv::Decorated Env  t::Type
     | nonterminalType(ntName, [], _) when getTypeDcl(ntName, specEnv) matches _ :: _ -> true
     | terminalType(ntName) when getTypeDcl(ntName, specEnv) matches _ :: _ -> true
     | appType(listCtrType(), elemT) -> isTypeGeneratable(env, specEnv, elemT)
-    | _ -> !null(getInstanceDcl("silver:core:Arbitrary", t, env))
+    | _ -> !null(getInstanceDcl("silver:util:random:Arbitrary", t, env))
     end;
 }
 
@@ -225,7 +227,7 @@ ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  t:
     Silver_ProductionStmt {
       local $name{"gen_" ++ substitute(":", "_", t)}::(silver:core:RandomGen<$TypeExpr{te}> ::= Integer) =
         let genTerm::(silver:core:RandomGen<$TypeExpr{te}> ::= Location) = genArbTerminal($TypeExpr{te}, _)
-        in \ depth::Integer -> silver:core:bind(silver:core:genArb(depth), genTerm)
+        in \ depth::Integer -> silver:core:bind(silver:util:random:genArb(depth), genTerm)
         end;
     };
 }

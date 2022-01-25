@@ -5,6 +5,7 @@ import silver:langutil:pp as pp;
 import simple:abstractsyntax as ast;
 import simple:concretesyntax as cst;
 import silver:reflect;
+import silver:util:random;
 
 function arbDriver
 IOToken ::= args::[String]

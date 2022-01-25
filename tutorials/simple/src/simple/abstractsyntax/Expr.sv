@@ -1,5 +1,7 @@
 grammar simple:abstractsyntax;
 
+imports silver:util:random;
+
 {--
  - Names (identifiers) are useful to abstract as nonterminals, because we
  - frequently want to do similar things to them: look them up in the
