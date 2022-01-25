@@ -110,9 +110,9 @@ aspect production lhsReference
 top::Expr ::= q::PartiallyDecorated QName
 {
   top.translation =
-    if isDecorable(finalType(top), top.env)
-    then s"((${finalType(top).transType})context.undecorate())"
-    else "context";
+    if finalType(top).isDecorated
+    then "context"
+    else s"((${finalType(top).transType})context.undecorate())";
 
   top.lazyTranslation = top.translation;
 }
@@ -121,9 +121,9 @@ aspect production forwardReference
 top::Expr ::= q::PartiallyDecorated QName
 {
   top.translation =
-    if isDecorable(finalType(top), top.env)
-    then s"((${finalType(top).transType})context.forward().undecorate())"
-    else "context.forward()";
+    if finalType(top).isDecorated
+    then "context.forward()"
+    else s"((${finalType(top).transType})context.forward().undecorate())";
 
   -- this might evaluate the forward equation, so suspend it as a thunk
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);

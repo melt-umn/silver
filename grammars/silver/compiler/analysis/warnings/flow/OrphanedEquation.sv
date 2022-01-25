@@ -223,7 +223,7 @@ top::Expr ::= q::PartiallyDecorated QName
   top.errors <-
     case finalTy of
     | partiallyDecoratedType(_, _) when top.config.warnEqdef ->
-      [mwdaWrn(top.config, top.location, s"Cannot take a partially decorated reference of type ${prettyType(finalTy)} to the lhs tree.")]
+      [mwdaWrn(top.config, top.location, s"Cannot take a partially decorated reference of type ${prettyType(finalTy)} to ${q.name}.")]
     | _ -> []
     end;
 }
