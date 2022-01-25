@@ -3,6 +3,7 @@ grammar silver:compiler:modification:copper;
 import silver:compiler:definition:concrete_syntax:copper as copper;
 import silver:compiler:driver;
 import silver:compiler:translation:java:driver;
+import silver:reflect:nativeserialize;
 import silver:util:cmdargs;
 
 {---------------------------------}
@@ -75,27 +76,48 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
 {
   spec.compiledGrammars = compiledGrammars;
 
-  local specCstAst :: SyntaxRoot = spec.cstAst;
+  local specCstAst::SyntaxRoot = spec.cstAst;
+  local outDir::String = silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar);
+  local parserName::String = makeParserName(spec.fullName);
+  local dump::ByteArray = case nativeSerialize(new(specCstAst)) of
+  | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper modification: " ++ e)
+  | right(dump) -> dump
+  end;
+  local dumpFile::String = outDir ++ parserName ++ ".copperdump";
+
 
   -- cmdArgs _could_ be top.config, if the driver were to decorate DriverAction
   -- with config. However, the driver doesn't, and it seems like it'd be a pain
   -- to make it do so.
-  local val::IOVal<Integer> = evalIO(do {
-    let outDir :: String = silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar);
-    let parserName :: String = makeParserName(spec.fullName);
-
+  local buildGrammar::IO<Integer> =
     if null(specCstAst.cstErrors) then do {
       mkdir(outDir);
       print("Generating parser " ++ spec.fullName ++ ".\n");
-      copper:compileParserBean(specCstAst.copperParser,
+      ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
         makeName(spec.sourceGrammar), parserName,
         false, outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
         parserName ++ ".html");
+      writeBinaryFile(dumpFile, dump);
+      return ret;
     } else do {
       -- Should this be stderr?
       print("CST errors while generating parser " ++ spec.fullName ++ ":\n" ++
         implode("\n", specCstAst.cstErrors) ++ "\n");
       return 1;
+    };
+
+  local val::IOVal<Integer> = evalIO(do {
+    dumpFileExists :: Boolean <- isFile(dumpFile);
+    if dumpFileExists then do {
+      dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
+      if dumpFileContents == dump then do {
+        print("Copper input did not change; skipping running MDA...\n");
+        return 0;
+      } else do {
+        buildGrammar;
+      };
+    } else do {
+      buildGrammar;
     };
   }, top.ioIn);
 

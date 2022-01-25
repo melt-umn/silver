@@ -73,12 +73,13 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
           fromMaybe(searchEnvTree(startnt, host.layoutTerms), customStartLayout),
           host.cstEnv)));
 
-  local hostGrammarElements::[copper:GrammarElement] = host.copperGrammarElements
-    ++ flatMap((.copperGrammarElements), host.disambiguationClasses);
   local hostGrammar::copper:Grammar =
-    copper:grammar_(host.containingGrammar, hostGrammarElements);
+    copper:grammar_(host.containingGrammar, host.copperGrammarElements);
 
+  -- All disambiguation classes go in the extension grammar for now, since they
+  -- reference extension terminals.
   local extGrammarElements::[copper:GrammarElement] = ext.copperGrammarElements
+    ++ flatMap((.copperGrammarElements), host.disambiguationClasses)
     ++ flatMap((.copperGrammarElements), ext.disambiguationClasses);
   local extGrammar::copper:Grammar =
     copper:extensionGrammar(ext.containingGrammar, extGrammarElements,

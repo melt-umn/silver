@@ -30,8 +30,10 @@ public final class CopperUtil {
     ParserCompilerParameters params = new ParserCompilerParameters();
     params.setPackageName(packageName);
     params.setParserName(parserName);
-    params.setOutputFile(new java.io.File(outFile));
-    params.setOutputType(CopperIOType.FILE);
+    if (!runMDA) {
+      params.setOutputFile(new java.io.File(outFile));
+      params.setOutputType(CopperIOType.FILE);
+    }
     params.setUsePipeline(CopperPipelineType.GRAMMARBEANS);
     params.setRunMDA(runMDA);
 
@@ -97,7 +99,7 @@ public final class CopperUtil {
       parserBean.setLocation(LOCATION);
       parserBean.setName(id);
       parserBean.setDisplayName(pp);
-      parserBean.setUnitary(true);
+      parserBean.setUnitary(false);
       parserBean.setStartSymbol(startSymbol);
 
       Set<CopperElementReference> startLayoutSet =

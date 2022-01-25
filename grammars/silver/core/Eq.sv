@@ -142,6 +142,18 @@ Boolean ::= x::TerminalId y::TerminalId
   "java" : return "(%x% != (int)%y%)";
 }
 
+instance Eq ByteArray {
+  eq = eqByteArray;
+}
+
+function eqByteArray
+Boolean ::= x::ByteArray  y::ByteArray
+{
+  return error("Foreign function");
+} foreign {
+  "java" : return "java.util.Arrays.equals(%x%, %y%)";
+}
+
 instance Eq a => Eq [a] {
   eq = \ x::[a] y::[a] -> length(x) == length(y) && all(zipWith(eq, x, y));
   neq = \ x::[a] y::[a] -> length(x) != length(y) || any(zipWith(neq, x, y));

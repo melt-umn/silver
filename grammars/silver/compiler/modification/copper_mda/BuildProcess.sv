@@ -4,6 +4,7 @@ import silver:compiler:definition:concrete_syntax:copper as copper;
 import silver:compiler:driver;
 import silver:compiler:translation:java:driver;
 import silver:compiler:translation:java:core only makeParserName, makeName;
+import silver:reflect:nativeserialize;
 import silver:util:cmdargs;
 
 aspect production compilation
@@ -22,21 +23,41 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
   spec.compiledGrammars = compiledGrammars;
 
   local specCstAst :: SyntaxRoot = spec.cstAst;
-  local val::IOVal<Integer> = evalIO(do {
-    let outDir :: String = silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar);
-    let parserName :: String = makeParserName(spec.fullName);
+  local outDir :: String = silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar);
+  local parserName :: String = makeParserName(spec.fullName);
+  local dump::ByteArray = case nativeSerialize(new(specCstAst)) of
+  | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper_mda modification: " ++ e)
+  | right(dump) -> dump
+  end;
+  local dumpFile :: String = outDir ++ parserName ++ ".copperdump";
 
+  local buildGrammar::IO<Integer> =
     if null(specCstAst.cstErrors) then do {
       mkdir(outDir);
-      print("Generating parser " ++ spec.fullName ++ ".\n");
-      copper:compileParserBean(specCstAst.copperParser,
-        makeName(spec.sourceGrammar), parserName,
-        true, outDir ++ parserName ++ ".java", false, "");
+      print("Running MDA for " ++ spec.fullName ++ ".\n");
+      ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
+        makeName(spec.sourceGrammar), parserName, true, "", false, "");
+      writeBinaryFile(dumpFile, dump);
+      return ret;
     } else do {
       -- Should this be stderr?
       print("CST errors while preparing for MDA " ++ spec.fullName ++ ":\n" ++
         implode("\n", specCstAst.cstErrors) ++ "\n");
       return 1;
+    };
+
+  local val::IOVal<Integer> = evalIO(do {
+    dumpFileExists :: Boolean <- isFile(dumpFile);
+    if dumpFileExists then do {
+      dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
+      if dumpFileContents == dump then do {
+        print("Copper MDA input did not change; skipping regenerating parser...\n");
+        return 0;
+      } else do {
+        buildGrammar;
+      };
+    } else do {
+      buildGrammar;
     };
   }, top.ioIn);
 
