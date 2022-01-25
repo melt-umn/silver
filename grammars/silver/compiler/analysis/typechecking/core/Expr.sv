@@ -17,16 +17,6 @@ top::Expr ::=
   top.contexts = [];
 }
 
-aspect production forwardReference
-top::Expr ::= q::Decorated QName
-{
-  top.errors <-
-    case performSubstitution(top.typerep, top.finalSubst) of
-    | partiallyDecoratedType(_, _) -> [err(top.location, "Cannot take a partially decorated reference to forward")]
-    | _ -> []
-    end;
-}
-
 aspect production productionReference
 top::Expr ::= q::Decorated QName
 {
