@@ -3,9 +3,9 @@ grammar silver:compiler:definition:concrete_syntax:ast;
 import silver:util:treemap as tm;
 
 -- From TerminalModifiers
---synthesized attribute dominates_ :: String;
---synthesized attribute submits_ :: String;
---synthesized attribute prefixSeperator :: Maybe<String>;
+-- monoid attribute dominates_ :: [copper:ElementReference];
+-- monoid attribute submits_ :: [copper:ElementReference];
+-- synthesized attribute prefixSeperator :: Maybe<String>;
 
 autocopy attribute className :: String;
 
