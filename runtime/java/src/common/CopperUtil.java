@@ -1,5 +1,6 @@
 package common;
 
+import common.exceptions.SilverInternalError;
 import common.javainterop.ConsCellCollection;
 import edu.umn.cs.melt.copper.compiletime.dumpers.XMLSpecDumper;
 import edu.umn.cs.melt.copper.compiletime.logging.CompilerLogger;
@@ -34,7 +35,8 @@ public final class CopperUtil {
       try {
         new XMLSpecDumper(parser).dump(CopperDumpType.XML_SPEC, System.out);
       } catch (IOException exc) {
-        throw new RuntimeException(exc);
+        throw new SilverInternalError(
+            "Failed to dump XML for Copper specification", exc);
       }
     }
 
@@ -54,7 +56,8 @@ public final class CopperUtil {
       ParserSpecProcessor.normalizeParser(parser, logger);
       return tok.wrap(ParserCompiler.compile(parser, params));
     } catch (CopperException exc) {
-      throw new RuntimeException(exc);
+      throw new SilverInternalError("Failed to compile Copper specification",
+                                    exc);
     }
   }
 
@@ -86,7 +89,9 @@ public final class CopperUtil {
       f.setApplicableToSubsets(applicableToSubsets);
       return f;
     } catch (ParseException exc) {
-      throw new RuntimeException(exc);
+      throw new SilverInternalError(
+          "Copper ParseException while constructing DisambiguationFunction",
+          exc);
     }
   }
 
@@ -96,7 +101,8 @@ public final class CopperUtil {
       return CopperElementReference.ref(CopperElementName.newName(grammarName),
                                         name, LOCATION);
     } catch (ParseException exc) {
-      throw new RuntimeException(exc);
+      throw new SilverInternalError(
+          "Copper ParseException while constructing ElementReference", exc);
     }
   }
 
@@ -125,9 +131,11 @@ public final class CopperUtil {
       parserBean.setHostGrammar(hostGrammar);
       return parserBean;
     } catch (CopperException exc) {
-      throw new RuntimeException(exc);
+      throw new SilverInternalError(
+          "CopperException while constructing ExtendedParserBean", exc);
     } catch (ParseException exc) {
-      throw new RuntimeException(exc);
+      throw new SilverInternalError(
+          "Copper ParseException while constructing ExtendedParserBean", exc);
     }
   }
 
@@ -144,7 +152,8 @@ public final class CopperUtil {
         try {
           grammar.addGrammarElement(ele);
         } catch (CopperException exc) {
-          throw new RuntimeException(exc);
+          throw new SilverInternalError(
+              "CopperException while adding elements to ExtensionGrammar", exc);
         }
       });
 
@@ -157,7 +166,8 @@ public final class CopperUtil {
 
       return grammar;
     } catch (ParseException exc) {
-      throw new RuntimeException(exc);
+      throw new SilverInternalError(
+          "Copper ParseException while constructing ExtensionGrammar", exc);
     }
   }
 
@@ -171,12 +181,14 @@ public final class CopperUtil {
         try {
           grammar.addGrammarElement(ele);
         } catch (CopperException exc) {
-          throw new RuntimeException(exc);
+          throw new SilverInternalError(
+              "CopperException while adding elements to Grammar", exc);
         }
       });
       return grammar;
     } catch (ParseException exc) {
-      throw new RuntimeException(exc);
+      throw new SilverInternalError(
+          "Copper ParseException while constructing Grammar", exc);
     }
   }
 
@@ -190,7 +202,8 @@ public final class CopperUtil {
       nt.setReturnType(type_);
       return nt;
     } catch (ParseException exc) {
-      throw new RuntimeException(exc);
+      throw new SilverInternalError(
+          "Copper ParseException while constructing NonTerminal", exc);
     }
   }
 
@@ -217,9 +230,11 @@ public final class CopperUtil {
       parserBean.addGrammar(grammar);
       return parserBean;
     } catch (CopperException exc) {
-      throw new RuntimeException(exc);
+      throw new SilverInternalError(
+          "CopperException while constructing ParserBean", exc);
     } catch (ParseException exc) {
-      throw new RuntimeException(exc);
+      throw new SilverInternalError(
+          "Copper ParseException while constructing ParserBean", exc);
     }
   }
 
@@ -234,7 +249,8 @@ public final class CopperUtil {
       attr.setCode(code);
       return attr;
     } catch (ParseException exc) {
-      throw new RuntimeException(exc);
+      throw new SilverInternalError(
+          "Copper ParseException while constructing ParserAttribute", exc);
     }
   }
 
@@ -262,7 +278,8 @@ public final class CopperUtil {
       prod.setLayout(new HashSet(prodLayout));
       return prod;
     } catch (ParseException exc) {
-      throw new RuntimeException(exc);
+      throw new SilverInternalError(
+          "Copper ParseException while constructing Production", exc);
     }
   }
 
@@ -302,7 +319,8 @@ public final class CopperUtil {
       dominates.iterator().forEachRemaining(terminal::addDominates);
       return terminal;
     } catch (ParseException exc) {
-      throw new RuntimeException(exc);
+      throw new SilverInternalError(
+          "Copper ParseException while constructing Terminal", exc);
     }
   }
 
@@ -313,7 +331,8 @@ public final class CopperUtil {
       out.setName(id);
       return out;
     } catch (ParseException exc) {
-      throw new RuntimeException(exc);
+      throw new SilverInternalError(
+          "Copper ParseException while constructing TerminalClass", exc);
     }
   }
 }
