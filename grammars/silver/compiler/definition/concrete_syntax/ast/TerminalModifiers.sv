@@ -12,9 +12,9 @@ monoid attribute prefixSeperatorToApply :: Maybe<String> with nothing(), orElse;
 monoid attribute prettyName :: Maybe<String> with nothing(), orElse;
 autocopy attribute terminalName :: String;
 
-monoid attribute dominates_ :: [copper:ElementReference] with [], ++;
-monoid attribute submits_ :: [copper:ElementReference] with [], ++;
-monoid attribute lexerClasses :: [copper:ElementReference] with [], ++;
+monoid attribute dominates_ :: [copper:ElementReference];
+monoid attribute submits_ :: [copper:ElementReference];
+monoid attribute lexerClasses :: [copper:ElementReference];
 
 {--
  - Modifiers for terminals.
