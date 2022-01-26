@@ -17,12 +17,12 @@ top::AGDcl ::= 'temp_imp_ide_font' id::Name 'color' '(' r::Int_t ',' g::Int_t ',
                 else [];
 
   -- TODO: Add a way to set this via forward
-  top.syntaxAst := [syntaxFont(
-                   fName, 
-                   font(makeColor(toInteger(r.lexeme),toInteger(g.lexeme),toInteger(b.lexeme)), 
-                        fontStyles.isBold, 
-                        fontStyles.isItalic),
-		   location=top.location)];
+  top.syntaxAst :=
+    [ syntaxFont(fName,
+        font(makeColor(toInteger(r.lexeme),toInteger(g.lexeme),toInteger(b.lexeme)), 
+        fontStyles.isBold, fontStyles.isItalic), location=top.location,
+        sourceGrammar=top.grammarName)
+    ];
 
   propagate moduleNames, jarName;
 

@@ -86,7 +86,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-closed nonterminal SyntaxDcl with location, cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, domContribs, subContribs, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperElementReference, copperGrammarElements;
+closed nonterminal SyntaxDcl with location, sourceGrammar, cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, domContribs, subContribs, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperElementReference, copperGrammarElements;
 
 synthesized attribute sortKey :: String;
 
@@ -123,20 +123,21 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   top.cstNormalize :=
     let myProds :: [SyntaxDcl] = searchEnvTree(t.typeName, top.cstNTProds)
     in if null(myProds) then [] -- Eliminate "Useless nonterminals" as these are expected in Silver code (non-syntax)
-       else [syntaxNonterminal(t,
-               foldr(consSyntax, nilSyntax(), myProds),
-               exportedProds, exportedLayoutTerms, modifiers,
-               location=top.location)]
+       else [ syntaxNonterminal(t, foldr(consSyntax, nilSyntax(), myProds),
+                exportedProds, exportedLayoutTerms, modifiers,
+                location=top.location, sourceGrammar=top.sourceGrammar)
+            ]
     end;
   
   top.exportedProds = exportedProds;
   top.hasCustomLayout = modifiers.customLayout.isJust;
   top.layoutContribs := map(pair(t.typeName, _), fromMaybe(exportedLayoutTerms, modifiers.customLayout));
 
-  top.copperElementReference = copper:elementReference(top.location, top.containingGrammar, makeCopperName(t.typeName));
+  top.copperElementReference = copper:elementReference(top.sourceGrammar,
+    top.location, top.containingGrammar, makeCopperName(t.typeName));
   top.copperGrammarElements =
-    [ copper:nonterminal_(top.location, makeCopperName(t.typeName), t.typeName,
-        makeNTName(t.typeName))
+    [ copper:nonterminal_(top.sourceGrammar, top.location,
+        makeCopperName(t.typeName), t.typeName, makeNTName(t.typeName))
     ] ++ subdcls.copperGrammarElements;
 
   modifiers.nonterminalName = t.typeName;
@@ -172,7 +173,10 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   
   top.cstNormalize :=
     case modifiers.prefixSeperatorToApply of
-    | just(sep) -> [syntaxTerminal(n, seq(regex, regexLiteral(sep)), modifiers, location=top.location)]
+    | just(sep) ->
+        [ syntaxTerminal(n, seq(regex, regexLiteral(sep)), modifiers,
+            location=top.location, sourceGrammar=top.sourceGrammar)
+        ]
     | nothing() -> [top]
     end;
 
@@ -187,15 +191,17 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.domContribs = [top.copperElementReference];
   top.subContribs = [top.copperElementReference];
 
-  top.copperElementReference = copper:elementReference(top.location, top.containingGrammar, makeCopperName(n));
+  top.copperElementReference = copper:elementReference(top.sourceGrammar,
+    top.location, top.containingGrammar, makeCopperName(n));
   top.copperGrammarElements =
-    [ copper:terminal_(top.location, makeCopperName(n),
+    [ copper:terminal_(top.sourceGrammar, top.location, makeCopperName(n),
         disambiguatedPrettyName, regex.copperRegex,
         modifiers.opPrecedence.isJust, modifiers.opPrecedence.fromJust,
         fromMaybe("", modifiers.opAssociation), makeTerminalName(n), 
         "RESULT = new " ++ makeTerminalName(n) ++ "(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());tokenList.add(RESULT);\n" ++ modifiers.acode,
         modifiers.lexerClasses, !null(pfx),
-        copper:elementReference(top.location, top.containingGrammar, head(pfx)),
+        copper:elementReference(top.sourceGrammar, top.location,
+          top.containingGrammar, head(pfx)),
         modifiers.submits_, modifiers.dominates_)
     ];
 }
@@ -274,10 +280,11 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     "RESULT = RESULTfinal;\n" ++
     modifiers.acode;
 
-  top.copperElementReference = copper:elementReference(top.location, top.containingGrammar, makeCopperName(ns.fullName));
+  top.copperElementReference = copper:elementReference(top.sourceGrammar,
+    top.location, top.containingGrammar, makeCopperName(ns.fullName));
   top.copperGrammarElements =
-    [ copper:production_(top.location, makeCopperName(ns.fullName),
-        modifiers.productionPrecedence.isJust,
+    [ copper:production_(top.sourceGrammar, top.location,
+        makeCopperName(ns.fullName), modifiers.productionPrecedence.isJust,
         modifiers.productionPrecedence.fromJust,
         modifiers.productionOperator.isJust,
         modifiers.productionOperator.fromJust.copperElementReference, code,
@@ -359,8 +366,11 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.lexerClassRefDcls :=
     s"    protected common.ConsCell ${makeCopperName(n)} = ${termsInit};\n";
 
-  top.copperElementReference = copper:elementReference(top.location, top.containingGrammar, makeCopperName(n));
-  top.copperGrammarElements = [copper:terminalClass(top.location, makeCopperName(n))];
+  top.copperElementReference = copper:elementReference(top.sourceGrammar,
+    top.location, top.containingGrammar, makeCopperName(n));
+  top.copperGrammarElements =
+    [ copper:terminalClass(top.sourceGrammar, top.location, makeCopperName(n))
+    ];
 }
 
 {--
@@ -377,9 +387,11 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
 
   top.cstNormalize := [top];
 
-  top.copperElementReference = copper:elementReference(top.location, top.containingGrammar, makeCopperName(n));
+  top.copperElementReference = copper:elementReference(top.sourceGrammar,
+    top.location, top.containingGrammar, makeCopperName(n));
   top.copperGrammarElements =
-    [ copper:parserAttribute(top.location, makeCopperName(n), ty.transType,
+    [ copper:parserAttribute(top.sourceGrammar, top.location,
+        makeCopperName(n), ty.transType,
         acode ++ implode("\n", searchEnvTree(n, top.parserAttributeAspects)))
     ];
 
@@ -432,13 +444,14 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
 
   top.cstNormalize := [top];
 
-  top.copperElementReference = copper:elementReference(top.location, top.containingGrammar, makeCopperName(n));
+  top.copperElementReference = copper:elementReference(top.sourceGrammar,
+    top.location, top.containingGrammar, makeCopperName(n));
   local members::[copper:ElementReference] =
     map(\dcl::[Decorated SyntaxDcl] -> head(dcl).copperElementReference,
         trefs);
   top.copperGrammarElements =
-    [ copper:disambiguationFunction(top.location, makeCopperName(n), acode,
-        members, applicableToSubsets)
+    [ copper:disambiguationFunction(top.sourceGrammar, top.location,
+        makeCopperName(n), acode, members, applicableToSubsets)
     ];
 }
 

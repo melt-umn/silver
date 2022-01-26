@@ -25,9 +25,10 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
 
   top.errors := modifiers.errors;
   
-  top.syntaxAst := [syntaxLexerClass(fName, 
-    foldr(consLexerClassMod, nilLexerClassMod(), modifiers.lexerClassModifiers),
-    location=top.location)];
+  top.syntaxAst :=
+    [ syntaxLexerClass(fName, 
+        foldr(consLexerClassMod, nilLexerClassMod(), modifiers.lexerClassModifiers),
+        location=top.location, sourceGrammar=top.grammarName)];
 }
 
 nonterminal LexerClassModifiers with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;

@@ -15,7 +15,7 @@ import silver:util:treeset as s;
 {--
  - Encapsulates transformations and analysis of Syntax
  -}
-closed nonterminal SyntaxRoot with location, cstErrors, copperParser;
+closed nonterminal SyntaxRoot with location, sourceGrammar, cstErrors, copperParser;
 
 @{-- The Copper API object corresponding to the parser. -}
 synthesized attribute copperParser::copper:ParserBean;
@@ -102,15 +102,16 @@ ${s2.lexerClassRefDcls}
   local preambleCode::String = "import java.util.ArrayList;\nimport java.util.List;\n";
 
   local grammarElements::[copper:GrammarElement] = s2.copperGrammarElements
-    ++ [ copper:parserAttribute(builtinLoc("silver:compiler:definition:concrete_syntax:ast"),
+    ++ [ copper:parserAttribute(top.sourceGrammar, builtinLoc("silver:compiler:definition:concrete_syntax:ast"),
            "context", "common.DecoratedNode", "context = common.TopNode.singleton;")
        ]
     ++ flatMap((.copperGrammarElements), s2.disambiguationClasses);
-  top.copperParser = copper:parserBean(top.location,
+  top.copperParser = copper:parserBean(top.sourceGrammar, top.location,
     makeCopperName(parsername), parsername,
     head(startFound).copperElementReference, startLayout, parserClassAuxCode,
     parserInitCode, preambleCode,
-    copper:grammar_(top.location, s2.containingGrammar, grammarElements));
+    copper:grammar_(top.sourceGrammar, top.location, s2.containingGrammar,
+      grammarElements));
 }
 
 

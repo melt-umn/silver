@@ -74,7 +74,8 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
           host.cstEnv)));
 
   local hostGrammar::copper:Grammar =
-    copper:grammar_(top.location, host.containingGrammar, host.copperGrammarElements);
+    copper:grammar_(top.sourceGrammar, top.location, host.containingGrammar,
+      host.copperGrammarElements);
 
   -- All disambiguation classes go in the extension grammar for now, since they
   -- reference extension terminals.
@@ -82,12 +83,13 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
     ++ flatMap((.copperGrammarElements), host.disambiguationClasses)
     ++ flatMap((.copperGrammarElements), ext.disambiguationClasses);
   local extGrammar::copper:Grammar =
-    copper:extensionGrammar(top.location, ext.containingGrammar,
-      extGrammarElements, map((.copperElementReference), ext.markingTokens),
+    copper:extensionGrammar(top.sourceGrammar, top.location,
+      ext.containingGrammar, extGrammarElements,
+      map((.copperElementReference), ext.markingTokens),
       map((.copperElementReference), ext.bridgeProductions),
       map((.copperElementReference), host.disambiguationClasses));
 
-  top.copperParser = copper:extendedParserBean(top.location,
+  top.copperParser = copper:extendedParserBean(top.sourceGrammar, top.location,
     makeCopperName(parsername), parsername,
     head(startFound).copperElementReference, startLayout, "", "", "",
     hostGrammar, extGrammar);

@@ -65,6 +65,7 @@ top::MdaSpec ::= fn::String  snt::String  hostgrams::[String]  extgrams::[String
     cstCopperMdaRoot(fn, snt,
       foldr(consSyntax, nilSyntax(), hostmed.syntaxAst),
       foldr(consSyntax, nilSyntax(), extmed.syntaxAst),
-      customStartLayout, location=top.location);
+      customStartLayout, location=top.location,
+      sourceGrammar=top.sourceGrammar);
 }
 

@@ -45,10 +45,11 @@ top::TerminalPrefix ::= r::RegExpr tm::TerminalModifiers
     end;
   local terminalFullName::String = top.grammarName ++ ":" ++ terminalName;
   top.syntaxAst <-
-    [syntaxTerminal(
-       terminalFullName, regex,
-       foldr(consTerminalMod, nilTerminalMod(), tm.terminalModifiers),
-     location=top.location)];
+    [ syntaxTerminal(
+        terminalFullName, regex,
+        foldr(consTerminalMod, nilTerminalMod(), tm.terminalModifiers),
+        location=top.location, sourceGrammar=top.grammarName)
+    ];
   top.genFiles <- terminalTranslation(terminalName, top.grammarName, tm.lexerClasses);
   top.terminalPrefix = makeCopperName(terminalFullName);
 }
@@ -178,7 +179,7 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
         syntaxDisambiguationGroup(
           s"Prefer_${toString(top.location.line)}_${tName}__${implode("__", tsNames)}",
           tName :: tsNames, false, pluckTAction.translation,
-          location=top.location),
+          location=top.location, sourceGrammar=top.grammarName),
       tail(powerSet(ts.termList)));
 }
 

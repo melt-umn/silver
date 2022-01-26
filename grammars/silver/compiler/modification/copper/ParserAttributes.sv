@@ -26,7 +26,10 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::Ac
   acode.frame = actionContext(myFlowGraph, sourceGrammar=top.grammarName);
   acode.env = newScopeEnv(acode.defs, top.env);
   
-  top.syntaxAst := [syntaxParserAttribute(fName, te.typerep, acode.actionCode, location=top.location)];
+  top.syntaxAst :=
+    [ syntaxParserAttribute(fName, te.typerep, acode.actionCode,
+        location=top.location, sourceGrammar=top.grammarName)
+    ];
 }
 
 concrete production attributeAspectParser
@@ -54,5 +57,8 @@ top::AGDcl ::= 'aspect' 'parser' 'attribute' a::QName 'action' acode::ActionCode
   acode.frame = actionContext(myFlowGraph, sourceGrammar=top.grammarName);
   acode.env = newScopeEnv(acode.defs, top.env);
   
-  top.syntaxAst := [syntaxParserAttributeAspect(fName, acode.actionCode, location=top.location)];
+  top.syntaxAst :=
+    [ syntaxParserAttributeAspect(fName, acode.actionCode,
+        location=top.location, sourceGrammar=top.grammarName)
+    ];
 }

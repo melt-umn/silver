@@ -9,11 +9,11 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
 
-  top.syntaxAst := [
-    syntaxProduction(ns.namedSignature,
-      foldr(consProductionMod, nilProductionMod(), 
-        prodAction(acode.actionCode) :: pm.productionModifiers),
-      location=top.location)];
+  top.syntaxAst :=
+    [ syntaxProduction(ns.namedSignature,
+        foldr(consProductionMod, nilProductionMod(), prodAction(acode.actionCode) :: pm.productionModifiers),
+        location=top.location, sourceGrammar=top.grammarName)
+    ];
 
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;

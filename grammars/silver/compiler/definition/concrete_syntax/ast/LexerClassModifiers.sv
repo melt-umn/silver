@@ -114,7 +114,7 @@ for (int i = nextMember(0, shiftable); i >= 0; i = nextMember(i+1, shiftable)) {
 }
 final common.ConsCell shiftableList = tempShiftableList;
 ${acode}
-""", location=top.location);
+""", location=top.location, sourceGrammar=top.containingGrammar);
   syntaxDcl.cstEnv = top.cstEnv;
   syntaxDcl.containingGrammar = top.containingGrammar;
   syntaxDcl.classTerminals = top.classTerminals;

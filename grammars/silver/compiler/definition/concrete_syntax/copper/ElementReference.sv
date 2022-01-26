@@ -4,9 +4,10 @@ grammar silver:compiler:definition:concrete_syntax:copper;
 type ElementReference foreign;
 
 function elementReference
-ElementReference ::= location::Location  grammarName::String  name::String
+ElementReference ::= sourceGrammar::String  location::Location
+    grammarName::String  name::String
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "common.CopperUtil.makeElementReference(%location%, %grammarName%.toString(), %name%.toString())";
+  "java" : return "common.CopperUtil.makeElementReference(%sourceGrammar%.toString(), %location%, %grammarName%.toString(), %name%.toString())";
 }

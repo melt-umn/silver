@@ -46,7 +46,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
   top.syntaxAst := [
     syntaxTerminal(fName, r.terminalRegExprSpec,
       foldr(consTerminalMod, nilTerminalMod(), t.terminalModifiers ++ tm.terminalModifiers),
-      location=top.location)];
+      location=top.location, sourceGrammar=top.grammarName)];
 }
 
 concrete production terminalDclKwdModifiers

@@ -73,6 +73,7 @@ top::ParserSpec ::=
     cstRoot(
       fn, snt, foldr(consSyntax, nilSyntax(), addedDcls ++ med.syntaxAst),
       customStartLayout, terminalPrefixes ++ markingTerminalPrefixes,
-      componentGrammarMarkingTerminals, location=top.location);
+      componentGrammarMarkingTerminals, location=top.location,
+      sourceGrammar=top.sourceGrammar);
 }
 
