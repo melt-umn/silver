@@ -51,7 +51,7 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
     if dumpFileExists then do {
       dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
       if dumpFileContents == dump then do {
-        print("Copper MDA input did not change; skipping regenerating parser...\n");
+        print("Copper MDA input did not change; skipping running MDA...\n");
         return 0;
       } else do {
         buildGrammar;
