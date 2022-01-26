@@ -94,7 +94,18 @@ top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {- Build the parsers to Java. -}
 {------------------------------}
 
-@{- Writes a parser out to a file. -}
+@{- Writes a parser out to a file.
+  -
+  - We create a separate GrammarAction rather than building this into genJava
+  - because we have a (wrong! bad! needs to go! #36 on GitHub) build
+  - optimization where if a grammar hasn't changed, we don't re-translate it.
+  - This should be, "if none of the grammars in the reflexive transitive
+  - closure of the dependency relation have changed, we don't re-translate."
+  - This is occasionally wrong for normal code, but it's too awful for Copper
+  - parsers: this would result in changes to grammar where the parser is
+  - defined (typically the driver) being required to rebuild after changes to
+  - the host language or extensions!
+  -}
 abstract production buildParserAction
 top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated RootSpec>  silverGen::String  cmdArgs::Decorated CmdArgs
 {
@@ -118,8 +129,8 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
       mkdir(outDir);
       print("Generating parser " ++ spec.fullName ++ ".\n");
       ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
-        makeName(spec.sourceGrammar), parserName,
-        false, outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
+        makeName(spec.sourceGrammar), parserName, false,
+        outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
         parserName ++ ".html", cmdArgs.copperXmlDump);
       writeBinaryFile(dumpFile, dump);
       return ret;
