@@ -21,10 +21,25 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import silver.core.Init;
 import silver.core.NIOVal;
+import silver.core.NLocation;
 
 public final class CopperUtil {
-  private static Location LOCATION = new VirtualLocation("<silver>", -1, -1);
+  private static Location svToCuLocation(NLocation locTerm) {
+    // datatypes when...
+    DecoratedNode locTree = locTerm.decorate();
+
+    String fileName =
+        locTree.synthesized(Init.silver_core_filename__ON__silver_core_Location)
+            .toString();
+    Integer line = (Integer)locTree.synthesized(
+        Init.silver_core_line__ON__silver_core_Location);
+    Integer column = (Integer)locTree.synthesized(
+        Init.silver_core_column__ON__silver_core_Location);
+
+    return new VirtualLocation(fileName, line, column);
+  }
 
   public static NIOVal compile(ParserBean parser, String packageName,
                                String parserName, Boolean runMDA,
@@ -74,12 +89,12 @@ public final class CopperUtil {
   }
 
   public static DisambiguationFunction
-  makeDisambiguationFunction(String id, String code,
+  makeDisambiguationFunction(NLocation location, String id, String code,
                              ConsCellCollection<CopperElementReference> members,
                              Boolean applicableToSubsets) {
     try {
       DisambiguationFunction f = new DisambiguationFunction();
-      f.setLocation(LOCATION);
+      f.setLocation(svToCuLocation(location));
       f.setName(id);
       f.setCode(code);
       Set<CopperElementReference> memberSet =
@@ -95,25 +110,27 @@ public final class CopperUtil {
     }
   }
 
-  public static CopperElementReference makeElementReference(String grammarName,
-                                                            String name) {
+  public static CopperElementReference
+  makeElementReference(NLocation location, String grammarName, String name) {
     try {
       return CopperElementReference.ref(CopperElementName.newName(grammarName),
-                                        name, LOCATION);
+                                        name, svToCuLocation(location));
     } catch (ParseException exc) {
       throw new SilverInternalError(
           "Copper ParseException while constructing ElementReference", exc);
     }
   }
 
-  public static ExtendedParserBean makeExtendedParserBean(
-      String id, String pp, CopperElementReference startSymbol,
-      ConsCellCollection<CopperElementReference> startLayout,
-      String parserClassAuxCode, String parserInitCode, String preambleCode,
-      Grammar hostGrammar, Grammar extGrammar) {
+  public static ExtendedParserBean
+  makeExtendedParserBean(NLocation location, String id, String pp,
+                         CopperElementReference startSymbol,
+                         ConsCellCollection<CopperElementReference> startLayout,
+                         String parserClassAuxCode, String parserInitCode,
+                         String preambleCode, Grammar hostGrammar,
+                         Grammar extGrammar) {
     try {
       ExtendedParserBean parserBean = new ExtendedParserBean();
-      parserBean.setLocation(LOCATION);
+      parserBean.setLocation(svToCuLocation(location));
       parserBean.setName(id);
       parserBean.setDisplayName(pp);
       parserBean.setUnitary(false);
@@ -140,13 +157,14 @@ public final class CopperUtil {
   }
 
   public static ExtensionGrammar makeExtensionGrammar(
-      String id, ConsCellCollection<GrammarElement> grammarElements,
+      NLocation location, String id,
+      ConsCellCollection<GrammarElement> grammarElements,
       ConsCellCollection<CopperElementReference> markingTerminals,
       ConsCellCollection<CopperElementReference> bridgeProductions,
       ConsCellCollection<CopperElementReference> glueDisambiguationFunctions) {
     try {
       ExtensionGrammar grammar = new ExtensionGrammar();
-      grammar.setLocation(LOCATION);
+      grammar.setLocation(svToCuLocation(location));
       grammar.setName(id);
       grammarElements.iterator().forEachRemaining((ele) -> {
         try {
@@ -172,10 +190,11 @@ public final class CopperUtil {
   }
 
   public static Grammar
-  makeGrammar(String id, ConsCellCollection<GrammarElement> grammarElements) {
+  makeGrammar(NLocation location, String id,
+              ConsCellCollection<GrammarElement> grammarElements) {
     try {
       Grammar grammar = new Grammar();
-      grammar.setLocation(LOCATION);
+      grammar.setLocation(svToCuLocation(location));
       grammar.setName(id);
       grammarElements.iterator().forEachRemaining((ele) -> {
         try {
@@ -192,11 +211,11 @@ public final class CopperUtil {
     }
   }
 
-  public static NonTerminal makeNonTerminal(String id, String pp,
-                                            String type_) {
+  public static NonTerminal makeNonTerminal(NLocation location, String id,
+                                            String pp, String type_) {
     try {
       NonTerminal nt = new NonTerminal();
-      nt.setLocation(LOCATION);
+      nt.setLocation(svToCuLocation(location));
       nt.setName(id);
       nt.setDisplayName(pp);
       nt.setReturnType(type_);
@@ -208,13 +227,14 @@ public final class CopperUtil {
   }
 
   public static ParserBean
-  makeParserBean(String id, String pp, CopperElementReference startSymbol,
+  makeParserBean(NLocation location, String id, String pp,
+                 CopperElementReference startSymbol,
                  ConsCellCollection<CopperElementReference> startLayout,
                  String parserClassAuxCode, String parserInitCode,
                  String preambleCode, Grammar grammar) {
     try {
       ParserBean parserBean = new ParserBean();
-      parserBean.setLocation(LOCATION);
+      parserBean.setLocation(svToCuLocation(location));
       parserBean.setName(id);
       parserBean.setDisplayName(pp);
       parserBean.setUnitary(true);
@@ -238,11 +258,12 @@ public final class CopperUtil {
     }
   }
 
-  public static ParserAttribute makeParserAttribute(String id, String type_,
+  public static ParserAttribute makeParserAttribute(NLocation location,
+                                                    String id, String type_,
                                                     String code) {
     try {
       ParserAttribute attr = new ParserAttribute();
-      attr.setLocation(LOCATION);
+      attr.setLocation(svToCuLocation(location));
       attr.setName(id);
       attr.setDisplayName(id);
       attr.setAttributeType(type_);
@@ -255,13 +276,14 @@ public final class CopperUtil {
   }
 
   public static Production
-  makeProduction(String id, Integer precedence, CopperElementReference operator,
-                 String code, CopperElementReference lhs,
+  makeProduction(NLocation location, String id, Integer precedence,
+                 CopperElementReference operator, String code,
+                 CopperElementReference lhs,
                  ConsCellCollection<CopperElementReference> rhsConsList,
                  ConsCellCollection<CopperElementReference> prodLayout) {
     try {
       Production prod = new Production();
-      prod.setLocation(LOCATION);
+      prod.setLocation(svToCuLocation(location));
       prod.setName(id);
       prod.setDisplayName(id);
       if (precedence != null)
@@ -285,16 +307,16 @@ public final class CopperUtil {
 
   // The full path needs to be given, since common.Terminal exists...
   public static edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Terminal
-  makeTerminal(String id, String pp, Regex regex, Integer precedence,
-               String associativity, String type_, String code,
-               ConsCellCollection<CopperElementReference> classes,
+  makeTerminal(NLocation location, String id, String pp, Regex regex,
+               Integer precedence, String associativity, String type_,
+               String code, ConsCellCollection<CopperElementReference> classes,
                CopperElementReference prefix,
                ConsCellCollection<CopperElementReference> submits,
                ConsCellCollection<CopperElementReference> dominates) {
     try {
       edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Terminal terminal =
           new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Terminal();
-      terminal.setLocation(LOCATION);
+      terminal.setLocation(svToCuLocation(location));
       terminal.setName(id);
       terminal.setDisplayName(pp);
       terminal.setRegex(regex);
@@ -324,10 +346,10 @@ public final class CopperUtil {
     }
   }
 
-  public static TerminalClass makeTerminalClass(String id) {
+  public static TerminalClass makeTerminalClass(NLocation location, String id) {
     try {
       TerminalClass out = new TerminalClass();
-      out.setLocation(LOCATION);
+      out.setLocation(svToCuLocation(location));
       out.setName(id);
       return out;
     } catch (ParseException exc) {

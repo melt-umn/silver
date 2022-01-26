@@ -133,9 +133,11 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
   top.hasCustomLayout = modifiers.customLayout.isJust;
   top.layoutContribs := map(pair(t.typeName, _), fromMaybe(exportedLayoutTerms, modifiers.customLayout));
 
-  top.copperElementReference = copper:elementReference(top.containingGrammar, makeCopperName(t.typeName));
-  top.copperGrammarElements = [copper:nonterminal_(makeCopperName(t.typeName),
-    t.typeName, makeNTName(t.typeName))] ++ subdcls.copperGrammarElements;
+  top.copperElementReference = copper:elementReference(top.location, top.containingGrammar, makeCopperName(t.typeName));
+  top.copperGrammarElements =
+    [ copper:nonterminal_(top.location, makeCopperName(t.typeName), t.typeName,
+        makeNTName(t.typeName))
+    ] ++ subdcls.copperGrammarElements;
 
   modifiers.nonterminalName = t.typeName;
 
@@ -185,14 +187,17 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.domContribs = [top.copperElementReference];
   top.subContribs = [top.copperElementReference];
 
-  top.copperElementReference = copper:elementReference(top.containingGrammar, makeCopperName(n));
-  top.copperGrammarElements = [copper:terminal_(makeCopperName(n),
-    disambiguatedPrettyName, regex.copperRegex, modifiers.opPrecedence.isJust,
-    modifiers.opPrecedence.fromJust, fromMaybe("", modifiers.opAssociation),
-    makeTerminalName(n), 
-    "RESULT = new " ++ makeTerminalName(n) ++ "(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());tokenList.add(RESULT);\n" ++ modifiers.acode,
-    modifiers.lexerClasses, !null(pfx), copper:elementReference(top.containingGrammar, head(pfx)),
-    modifiers.submits_, modifiers.dominates_)];
+  top.copperElementReference = copper:elementReference(top.location, top.containingGrammar, makeCopperName(n));
+  top.copperGrammarElements =
+    [ copper:terminal_(top.location, makeCopperName(n),
+        disambiguatedPrettyName, regex.copperRegex,
+        modifiers.opPrecedence.isJust, modifiers.opPrecedence.fromJust,
+        fromMaybe("", modifiers.opAssociation), makeTerminalName(n), 
+        "RESULT = new " ++ makeTerminalName(n) ++ "(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());tokenList.add(RESULT);\n" ++ modifiers.acode,
+        modifiers.lexerClasses, !null(pfx),
+        copper:elementReference(top.location, top.containingGrammar, head(pfx)),
+        modifiers.submits_, modifiers.dominates_)
+    ];
 }
 
 {--
@@ -269,12 +274,16 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
     "RESULT = RESULTfinal;\n" ++
     modifiers.acode;
 
-  top.copperElementReference = copper:elementReference(top.containingGrammar, makeCopperName(ns.fullName));
-  top.copperGrammarElements = [copper:production_(makeCopperName(ns.fullName),
-    modifiers.productionPrecedence.isJust, modifiers.productionPrecedence.fromJust,
-    modifiers.productionOperator.isJust, modifiers.productionOperator.fromJust.copperElementReference,
-    code, head(lhsRef).copperElementReference, map((.copperElementReference), map(head, rhsRefs)),
-    prodLayout)];
+  top.copperElementReference = copper:elementReference(top.location, top.containingGrammar, makeCopperName(ns.fullName));
+  top.copperGrammarElements =
+    [ copper:production_(top.location, makeCopperName(ns.fullName),
+        modifiers.productionPrecedence.isJust,
+        modifiers.productionPrecedence.fromJust,
+        modifiers.productionOperator.isJust,
+        modifiers.productionOperator.fromJust.copperElementReference, code,
+        head(lhsRef).copperElementReference,
+        map((.copperElementReference), map(head, rhsRefs)), prodLayout)
+    ];
 }
 
 function fetchChildren
@@ -350,8 +359,8 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.lexerClassRefDcls :=
     s"    protected common.ConsCell ${makeCopperName(n)} = ${termsInit};\n";
 
-  top.copperElementReference = copper:elementReference(top.containingGrammar, makeCopperName(n));
-  top.copperGrammarElements = [copper:terminalClass(makeCopperName(n))];
+  top.copperElementReference = copper:elementReference(top.location, top.containingGrammar, makeCopperName(n));
+  top.copperGrammarElements = [copper:terminalClass(top.location, makeCopperName(n))];
 }
 
 {--
@@ -368,8 +377,10 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
 
   top.cstNormalize := [top];
 
-  top.copperGrammarElements = [copper:parserAttribute(makeCopperName(n), ty.transType,
-    acode ++ implode("\n", searchEnvTree(n, top.parserAttributeAspects)))];
+  top.copperGrammarElements =
+    [ copper:parserAttribute(top.location, makeCopperName(n), ty.transType,
+        acode ++ implode("\n", searchEnvTree(n, top.parserAttributeAspects)))
+    ];
 
   -- TODO: technically, there should be no free variables in ty.
   ty.boundVariables = [];
@@ -419,12 +430,14 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
 
   top.cstNormalize := [top];
 
-  top.copperElementReference = copper:elementReference(top.containingGrammar, makeCopperName(n));
+  top.copperElementReference = copper:elementReference(top.location, top.containingGrammar, makeCopperName(n));
   local members::[copper:ElementReference] =
     map(\dcl::[Decorated SyntaxDcl] -> head(dcl).copperElementReference,
         trefs);
-  top.copperGrammarElements = [copper:disambiguationFunction(makeCopperName(n), acode, members,
-    applicableToSubsets)];
+  top.copperGrammarElements =
+    [ copper:disambiguationFunction(top.location, makeCopperName(n), acode,
+        members, applicableToSubsets)
+    ];
 }
 
 {-- Sort key PREFIXES are as follows:

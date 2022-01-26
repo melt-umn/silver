@@ -4,24 +4,25 @@ grammar silver:compiler:definition:concrete_syntax:copper;
 type ParserBean foreign;
 
 function parserBean
-ParserBean ::= id::String  name::String  startSymbol::ElementReference
-     startLayout::[ElementReference]  parserClassAuxCode::String
-     parserInitCode::String  preambleCode::String  grammar_::Grammar
+ParserBean ::= location::Location  id::String  name::String
+     startSymbol::ElementReference  startLayout::[ElementReference]
+     parserClassAuxCode::String  parserInitCode::String  preambleCode::String
+     grammar_::Grammar
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "common.CopperUtil.makeParserBean(%id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection(%startLayout%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%grammar_%)";
+  "java" : return "common.CopperUtil.makeParserBean(%location%, %id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection(%startLayout%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%grammar_%)";
 }
 
 function extendedParserBean
-ParserBean ::= id::String  name::String  startSymbol::ElementReference
-     startLayout::[ElementReference]  parserClassAuxCode::String
-     parserInitCode::String  preambleCode::String  hostGrammar::Grammar
-     extGrammar::Grammar
+ParserBean ::= location::Location  id::String  name::String
+     startSymbol::ElementReference  startLayout::[ElementReference]
+     parserClassAuxCode::String  parserInitCode::String  preambleCode::String
+     hostGrammar::Grammar  extGrammar::Grammar
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "common.CopperUtil.makeExtendedParserBean(%id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection(%startLayout%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%hostGrammar%, (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%extGrammar%)";
+  "java" : return "common.CopperUtil.makeExtendedParserBean(%location%, %id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection(%startLayout%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%hostGrammar%, (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%extGrammar%)";
 }
 
 function compileParserBeanT
@@ -49,20 +50,20 @@ top::IO<Integer> ::= parser_::ParserBean  packageName::String
 type Grammar foreign;
 
 function grammar_
-Grammar ::= id::String  grammarElements::[GrammarElement]
+Grammar ::= location::Location  id::String  grammarElements::[GrammarElement]
 -- TODO: setGrammarLayout?
 {
   return error("copper FFI function");
 } foreign {
-  "java": return "common.CopperUtil.makeGrammar(%id%.toString(), new common.javainterop.ConsCellCollection(%grammarElements%))";
+  "java": return "common.CopperUtil.makeGrammar(%location%, %id%.toString(), new common.javainterop.ConsCellCollection(%grammarElements%))";
 }
 
 function extensionGrammar
-Grammar ::= id::String  grammarElements::[GrammarElement]
+Grammar ::= location::Location  id::String  grammarElements::[GrammarElement]
     markingTerminals::[ElementReference]  bridgeProductions::[ElementReference]
     glueDisambiguationFunctions::[ElementReference]
 {
   return error("copper FFI function");
 } foreign {
-  "java": return "common.CopperUtil.makeExtensionGrammar(%id%.toString(), new common.javainterop.ConsCellCollection(%grammarElements%), new common.javainterop.ConsCellCollection(%markingTerminals%), new common.javainterop.ConsCellCollection(%bridgeProductions%), new common.javainterop.ConsCellCollection(%glueDisambiguationFunctions%))";
+  "java": return "common.CopperUtil.makeExtensionGrammar(%location%, %id%.toString(), new common.javainterop.ConsCellCollection(%grammarElements%), new common.javainterop.ConsCellCollection(%markingTerminals%), new common.javainterop.ConsCellCollection(%bridgeProductions%), new common.javainterop.ConsCellCollection(%glueDisambiguationFunctions%))";
 }

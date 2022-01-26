@@ -102,12 +102,15 @@ ${s2.lexerClassRefDcls}
   local preambleCode::String = "import java.util.ArrayList;\nimport java.util.List;\n";
 
   local grammarElements::[copper:GrammarElement] = s2.copperGrammarElements
-    ++ [copper:parserAttribute("context", "common.DecoratedNode", "context = common.TopNode.singleton;")]
+    ++ [ copper:parserAttribute(builtinLoc("silver:compiler:definition:concrete_syntax:ast"),
+           "context", "common.DecoratedNode", "context = common.TopNode.singleton;")
+       ]
     ++ flatMap((.copperGrammarElements), s2.disambiguationClasses);
-  top.copperParser = copper:parserBean(makeCopperName(parsername), parsername,
-    head(startFound).copperElementReference, startLayout,
-    parserClassAuxCode, parserInitCode, preambleCode,
-    copper:grammar_(s2.containingGrammar, grammarElements));
+  top.copperParser = copper:parserBean(top.location,
+    makeCopperName(parsername), parsername,
+    head(startFound).copperElementReference, startLayout, parserClassAuxCode,
+    parserInitCode, preambleCode,
+    copper:grammar_(top.location, s2.containingGrammar, grammarElements));
 }
 
 
