@@ -19,7 +19,8 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
     [syntaxNonterminal(
       nonterminalType(fName, map((.kindrep), tl.types), isThisTracked), nilSyntax(),
       exportedProds, exportedLayoutTerms,
-      foldr(consNonterminalMod, nilNonterminalMod(), nm.nonterminalModifiers))];
+      foldr(consNonterminalMod, nilNonterminalMod(), nm.nonterminalModifiers),
+      location=top.location)];
 }
 
 monoid attribute nonterminalModifiers :: [SyntaxNonterminalModifier];

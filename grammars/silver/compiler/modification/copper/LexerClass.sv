@@ -26,7 +26,8 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
   top.errors := modifiers.errors;
   
   top.syntaxAst := [syntaxLexerClass(fName, 
-    foldr(consLexerClassMod, nilLexerClassMod(), modifiers.lexerClassModifiers))];
+    foldr(consLexerClassMod, nilLexerClassMod(), modifiers.lexerClassModifiers),
+    location=top.location)];
 }
 
 nonterminal LexerClassModifiers with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
@@ -58,7 +59,7 @@ top::LexerClassModifier ::= 'extends' cls::LexerClasses
 {
   top.unparse = "extends " ++ cls.unparse;
 
-  top.lexerClassModifiers := [lexerClassExtends(cls.lexerClasses)];
+  top.lexerClassModifiers := [lexerClassExtends(cls.lexerClasses, location=top.location)];
 }
 
 concrete production lexerClassModifierDominates
@@ -66,7 +67,7 @@ top::LexerClassModifier ::= 'dominates' terms::TermPrecs
 {
   top.unparse = "dominates " ++ terms.unparse;
 
-  top.lexerClassModifiers := [lexerClassDominates(terms.precTermList)];
+  top.lexerClassModifiers := [lexerClassDominates(terms.precTermList, location=top.location)];
 }
 
 concrete production lexerClassModifierSubmitsTo
@@ -74,7 +75,7 @@ top::LexerClassModifier ::= 'submits' 'to' terms::TermPrecs
 {
   top.unparse = "submits to " ++ terms.unparse;
 
-  top.lexerClassModifiers := [lexerClassSubmits(terms.precTermList)];
+  top.lexerClassModifiers := [lexerClassSubmits(terms.precTermList, location=top.location)];
 }
 
 concrete production lexerClassModifierDisambiguate
@@ -82,7 +83,7 @@ top::LexerClassModifier ::= 'disambiguate' acode::ActionCode_c
 {
   top.unparse = "disambiguate " ++ acode.unparse;
 
-  top.lexerClassModifiers := [lexerClassDisambiguate(acode.actionCode)];
+  top.lexerClassModifiers := [lexerClassDisambiguate(acode.actionCode, location=top.location)];
   
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;

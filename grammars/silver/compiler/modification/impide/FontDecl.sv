@@ -21,8 +21,8 @@ top::AGDcl ::= 'temp_imp_ide_font' id::Name 'color' '(' r::Int_t ',' g::Int_t ',
                    fName, 
                    font(makeColor(toInteger(r.lexeme),toInteger(g.lexeme),toInteger(b.lexeme)), 
                         fontStyles.isBold, 
-                        fontStyles.isItalic)
-		  )];
+                        fontStyles.isItalic),
+		   location=top.location)];
 
   propagate moduleNames, jarName;
 

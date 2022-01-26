@@ -20,7 +20,8 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   -- TODO: we should CHANGE syntaxProduction so it just plain takes a NamedSignature!
   top.syntaxAst := [
     syntaxProduction(namedSig,
-      foldr(consProductionMod, nilProductionMod(), pm.productionModifiers))];
+      foldr(consProductionMod, nilProductionMod(), pm.productionModifiers),
+      location=top.location)];
   
   forwards to productionDcl('abstract', $2, id, ns, body, location=top.location);
 }
