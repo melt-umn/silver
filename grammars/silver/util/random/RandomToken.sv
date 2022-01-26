@@ -10,33 +10,6 @@ Utility attribute pair to thread a random token through an abstract syntax tree.
 -}
 threaded attribute randomIn, randomOut :: RandomToken;
 
-@{--
-Utility for creating a random value using the token-based random library.
-Example:
-  production foo::RandomVal<Integer> = randomVal();
-  thread randomIn, randomOut on top, foo, top;
-  local fooVal::Integer = foo.randomValue;
--}
-nonterminal RandomVal<a> with randomIn, randomOut, randomValue<a>;
-
-synthesized attribute randomValue<a>::a;
-
-production randomVal
-Random a => top::RandomVal<a> ::=
-{
-  production result::(a, RandomToken) = randomT(top.randomIn);
-  top.randomValue = result.1;
-  top.randomOut = result.2;
-}
-
-production randomRangeVal
-RandomRange a => top::RandomVal<a> ::= min::a max::a
-{
-  production result::(a, RandomToken) = randomRangeT(min, max, top.randomIn);
-  top.randomValue = result.1;
-  top.randomOut = result.2;
-}
-
 function randomTInteger
 (Integer, RandomToken) ::= token::RandomToken
 {
