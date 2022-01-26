@@ -184,7 +184,7 @@ public class ${className} extends common.CollectionAttribute {
 
 ---------- LOCALS ---
 aspect production baseCollectionValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
+top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
   -- for locals, the CA object was created already
   top.translation = s"""
@@ -193,7 +193,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 """;
 }
 aspect production appendCollectionValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
+top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
   -- for locals, the CA object was created already
   top.translation = s"""
@@ -204,45 +204,45 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 
 ---------- SYNTHESIZED ----
 aspect production synBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- := -} e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  {- := -} e::Expr
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} := ${e.unparse}
-    if (${dl.translation}[${attr.dcl.attrOccursIndex}] == null)
-      ${dl.translation}[${attr.dcl.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}(${attr.dcl.attrOccursIndex});
-    ((common.CollectionAttribute)${dl.translation}[${attr.dcl.attrOccursIndex}]).setBase(${wrapLazy(e)});
+    if (${dl.translation}[${attr.attrOccursIndex}] == null)
+      ${dl.translation}[${attr.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}(${attr.attrOccursIndex});
+    ((common.CollectionAttribute)${dl.translation}[${attr.attrOccursIndex}]).setBase(${wrapLazy(e)});
 """;
 }
 aspect production synAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- <- -} e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  {- <- -} e::Expr
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} <- ${e.unparse}
-    if (${dl.translation}[${attr.dcl.attrOccursIndex}] == null)
-      ${dl.translation}[${attr.dcl.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}(${attr.dcl.attrOccursIndex});
-    ((common.CollectionAttribute)${dl.translation}[${attr.dcl.attrOccursIndex}]).addPiece(${wrapLazy(e)});
+    if (${dl.translation}[${attr.attrOccursIndex}] == null)
+      ${dl.translation}[${attr.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}(${attr.attrOccursIndex});
+    ((common.CollectionAttribute)${dl.translation}[${attr.attrOccursIndex}]).addPiece(${wrapLazy(e)});
 """;
 }
 
 ---------- INHERITED ----
 aspect production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- := -} e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  {- := -} e::Expr
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} := ${e.unparse}
-    if (${dl.translation}[${attr.dcl.attrOccursIndex}] == null)
-      ${dl.translation}[${attr.dcl.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}();
-    ((common.CollectionAttribute)${dl.translation}[${attr.dcl.attrOccursIndex}]).setBase(${wrapLazy(e)});
+    if (${dl.translation}[${attr.attrOccursIndex}] == null)
+      ${dl.translation}[${attr.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}();
+    ((common.CollectionAttribute)${dl.translation}[${attr.attrOccursIndex}]).setBase(${wrapLazy(e)});
 """;
 }
 aspect production inhAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- <- -} e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  {- <- -} e::Expr
 {
   top.translation = s"""
     // ${dl.unparse}.${attr.unparse} <- ${e.unparse}
-    if (${dl.translation}[${attr.dcl.attrOccursIndex}] == null)
-      ${dl.translation}[${attr.dcl.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}();
-    ((common.CollectionAttribute)${dl.translation}[${attr.dcl.attrOccursIndex}]).addPiece(${wrapLazy(e)});
+    if (${dl.translation}[${attr.attrOccursIndex}] == null)
+      ${dl.translation}[${attr.attrOccursIndex}] = new ${makeCAClassName(attr.attrDcl.fullName)}();
+    ((common.CollectionAttribute)${dl.translation}[${attr.attrOccursIndex}]).addPiece(${wrapLazy(e)});
 """;
 }
 

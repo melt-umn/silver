@@ -76,6 +76,7 @@ top::NamedSignature ::= fn::String ctxs::Contexts ty::Type
 {
   top.javaSignature = error("Translation shouldn't be demanded from global signature");
   top.refInvokeTrans = error("Translation shouldn't be demanded from global signature");
+  top.contextRuntimeResolve := error("Translation shouldn't be demanded from global signature");
   top.childTypeVarElems = error("Translation shouldn't be demanded from global signature");
   top.childStatic = error("Translation shouldn't be demanded from global signature");
   top.childDecls = error("Translation shouldn't be demanded from global signature");
@@ -194,6 +195,14 @@ top::Context ::= i1::Type i2::Type
   top.contextRuntimeResolve := s"final ${top.transType} ${makeInhSubsetName(i1, i2, top.boundVariables)} = null;";
 }
 
+aspect production typeErrorContext
+top::Context ::= _
+{
+  top.contextSigElem = error("Translation demanded in the presence of errors");
+  top.contextRefElem = error("Translation demanded in the presence of errors");
+  top.contextRuntimeResolve := error("Translation demanded in the presence of errors");
+}
+
 propagate typeChildren on NamedSignatureElements;
 
 aspect production consNamedSignatureElement
@@ -239,11 +248,12 @@ s"""private Object child_${n};
     then s"type_${ty.transTypeName}"
     else "-1";
   
+  local ntType::Type = if ty.isPartiallyDecorated then ty.decoratedType else ty;
   top.childStaticElem =
-    if ty.isNonterminal
-    then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ty.typeName)}.num_inh_attrs];\n"
-    else if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
+    if lookupBy(typeNameEq, ntType, top.sigInhOccurs).isJust
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ty.transTypeName}];\n"
+    else if ntType.isNonterminal
+    then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ntType.typeName)}.num_inh_attrs];\n"
     else "";
 
   top.typeChildren := [(ty, top.childRefElem)];

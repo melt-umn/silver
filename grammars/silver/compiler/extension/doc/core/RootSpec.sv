@@ -3,25 +3,28 @@ grammar silver:compiler:extension:doc:core;
 import silver:compiler:driver:util;
 
 attribute genFiles occurs on RootSpec;
+attribute docDcls occurs on RootSpec;
 
 aspect production interfaceRootSpec
 top::RootSpec ::= _ _ _
 {
   top.genFiles := [];
+  top.docDcls := [];
 }
 
 aspect production errorRootSpec
 top::RootSpec ::= _ _ _ _ _
 {
   top.genFiles := [];
+  top.docDcls := [];
 }
 
 aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _ _ _ _
 {
   top.genFiles := toSplitFiles(g, g.upDocConfig, [], []);
+  top.docDcls := g.docDcls;
 
-  g.docEnv = tm:add(g.docDcls, tm:empty());
   g.downDocConfig = g.upDocConfig;
 }
 
@@ -30,7 +33,7 @@ String ::= fileName::String
 {
   return foldr(
     \ ext::String file::String ->
-      if endsWith(file, ext) then substitute(ext, ".md", file) else file,
+      if endsWith(ext, file) then substitute(ext, ".md", file) else file,
     fileName, allowedSilverFileExtensions);
 }
 
@@ -39,7 +42,7 @@ String ::= fileName::String
  - (possibly zero) into the index file.
  -}
 function toSplitFiles
-[Pair<String String>] ::= g::Decorated Grammar grammarConf::[DocConfigSetting] forIndex::[CommentItem] soFar::[Pair<String String>]
+[Pair<String String>] ::= g::Decorated Grammar with {decorate, downDocConfig} grammarConf::[DocConfigSetting] forIndex::[CommentItem] soFar::[Pair<String String>]
 {
   return case g of
        | consGrammar(this, rest) ->

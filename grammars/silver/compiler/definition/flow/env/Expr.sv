@@ -7,6 +7,8 @@ import silver:compiler:modification:primitivepattern;
 import silver:compiler:extension:patternmatching only Arrow_kwd, Vbar_kwd; -- TODO remove
 import silver:compiler:modification:let_fix;
 
+import silver:compiler:driver:util only isExportedBy;
+
 {--
  - Direct (potential) dependencies this expression has on nodes in the production flow graph.
  -}
@@ -37,78 +39,96 @@ top::Expr ::=
 }
 
 aspect production childReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   -- Note that q should find the actual type written in the signature, and so
   -- isDecorable on that indeed tells us whether it's something autodecorated.
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
+  production origRefSet::[String] = getMinRefSet(q.lookupValue.typeScheme.monoType, top.env);
   top.flowDeps :=
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !isDecorable(finalTy, top.env)
-    then map(rhsVertexType(q.lookupValue.fullName).inhVertex, fromMaybe([], refSet))
+    if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && finalTy.isDecorated
+    then map(rhsVertexType(q.lookupValue.fullName).inhVertex, removeAll(origRefSet, fromMaybe([], refSet)))
     else [];
   top.flowVertexInfo = 
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !isDecorable(finalTy, top.env)
+    if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && finalTy.isDecorated
     then hasVertex(rhsVertexType(q.lookupValue.fullName))
     else noVertex();
+
+  top.flowDefs <-
+    case finalTy, refSet of
+    | partiallyDecoratedType(_, _), just(inhs)
+      when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
+      [partialRef(top.frame.fullName, q.lookupValue.fullName, top.grammarName, q.location, inhs)]
+    | _, _ -> []
+    end;
 }
 aspect production lhsReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   -- Always a decorable type, so just check how it's being used:
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowDeps :=
-    if !isDecorable(finalTy, top.env)
+    if finalTy.isDecorated
     then map(lhsVertexType.inhVertex, fromMaybe([], refSet))
     else [];
   top.flowVertexInfo = 
-    if !isDecorable(finalTy, top.env)
+    if finalTy.isDecorated
     then hasVertex(lhsVertexType)
     else noVertex();
 }
 aspect production localReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   -- Again, q give the actual type written.
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
+  production origRefSet::[String] = getMinRefSet(q.lookupValue.typeScheme.monoType, top.env);
   top.flowDeps := [localEqVertex(q.lookupValue.fullName)] ++
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !isDecorable(finalTy, top.env)
-    then map(localVertexType(q.lookupValue.fullName).inhVertex, fromMaybe([], refSet))
+    if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && finalTy.isDecorated
+    then map(rhsVertexType(q.lookupValue.fullName).inhVertex, removeAll(origRefSet, fromMaybe([], refSet)))
     else [];
     
   top.flowVertexInfo =
-    if isDecorable(q.lookupValue.typeScheme.typerep, top.env) && !isDecorable(finalTy, top.env)
+    if isDecorable(q.lookupValue.typeScheme.monoType, top.env) && finalTy.isDecorated
     then hasVertex(localVertexType(q.lookupValue.fullName))
     else noVertex();
+
+  top.flowDefs <-
+    case finalTy, refSet of
+    | partiallyDecoratedType(_, _), just(inhs)
+      when isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars) ->
+      [partialRef(top.frame.fullName, q.lookupValue.fullName, top.grammarName, q.location, inhs)]
+    | _, _ -> []
+    end;
 }
 aspect production forwardReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   -- Again, always a decorable type.
   local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
   production refSet::Maybe<[String]> = getMaxRefSet(finalTy, top.env);
   top.flowDeps := [forwardEqVertex()]++
-    if !isDecorable(finalTy, top.env)
+    if finalTy.isDecorated
     then map(forwardVertexType.inhVertex, fromMaybe([], refSet))
     else [];
     
   top.flowVertexInfo =
-    if !isDecorable(finalTy, top.env)
+    if finalTy.isDecorated
     then hasVertex(forwardVertexType)
     else noVertex();
 }
 
 -- Still need these equations since propagate ignores decorated references
 aspect production functionInvocation
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
+top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::PartiallyDecorated AnnoAppExprs
 {
   top.flowDeps <- e.flowDeps ++ es.flowDeps ++ annos.flowDeps;
   top.flowDefs <- e.flowDefs ++ es.flowDefs ++ annos.flowDefs;
 }
 aspect production partialApplication
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs annos::Decorated AnnoAppExprs
+top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::PartiallyDecorated AnnoAppExprs
 {
   top.flowDeps <- e.flowDeps ++ es.flowDeps ++ annos.flowDeps;
   top.flowDefs <- e.flowDefs ++ es.flowDefs ++ annos.flowDefs;
@@ -125,14 +145,14 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.flowDefs <- e.flowDefs;
 }
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
 -- this is because by default the lhs will have 'taking ref' flow deps (see above)
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.flowDeps := 
     case e.flowVertexInfo of
@@ -142,7 +162,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.flowDefs <- e.flowDefs;
 }
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.flowDeps :=
     case e.flowVertexInfo of
@@ -152,19 +172,19 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   top.flowDefs <- e.flowDefs;
 }
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.flowDeps <- []; -- errors, who cares?
   top.flowDefs <- e.flowDefs;
 }
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.flowDeps <- e.flowDeps;
   top.flowDefs <- e.flowDefs;
 }
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.flowDeps <- e.flowDeps;
   top.flowDefs <- e.flowDefs;
@@ -223,7 +243,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
 }
 
 aspect production exprRef
-top::Expr ::= e::Decorated Expr
+top::Expr ::= e::PartiallyDecorated Expr
 {
   -- This production is somewhat special, for example, error is := []
   -- That's because the errors should have already been appeared wherever it's anchored.
@@ -250,7 +270,7 @@ top::Expr ::= la::AssignExpr  e::Expr
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
+top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
   -- Because of the auto-undecorate behavior, we need to check for the case
   -- where `t` should be equivalent to `new(t)` and report accoringly.

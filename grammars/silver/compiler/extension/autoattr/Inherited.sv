@@ -1,7 +1,7 @@
 grammar silver:compiler:extension:autoattr;
 
 abstract production propagateInh
-top::ProductionStmt ::= attr::Decorated QName
+top::ProductionStmt ::= attr::PartiallyDecorated QName
 {
   top.unparse = s"propagate ${attr.unparse};";
   
@@ -10,6 +10,7 @@ top::ProductionStmt ::= attr::Decorated QName
     filter(
       \ input::NamedSignatureElement ->
         isDecorable(input.typerep, top.env) &&
+        !input.typerep.isPartiallyDecorated &&  -- Don't copy on partially decorated children
         !null(getOccursDcl(attrFullName, input.typerep.typeName, top.env)),
       top.frame.signature.inputElements);
   forwards to

@@ -225,6 +225,7 @@ Boolean ::= t::Type e::Decorated Env
     case t of
     | skolemType(_) -> !null(searchEnvTree(t.typeName, e.occursTree))
     | varType(_) -> !null(searchEnvTree(t.typeName, e.occursTree))  -- Can happen when pattern matching on a prod with occurs contexts
+    | partiallyDecoratedType(nt, _) -> isDecorable(nt, e)
     | _ -> t.isNonterminal
     end;
 }
@@ -323,6 +324,7 @@ function getMinRefSet
   return
     case t of
     | decoratedType(_, i) -> getMinInhSetMembers([], i, e).fst
+    | partiallyDecoratedType(_, i) -> getMinInhSetMembers([], i, e).fst
     | _ -> []
     end;
 }
@@ -357,6 +359,7 @@ Maybe<[String]> ::= t::Type e::Decorated Env
   return
     case t of
     | decoratedType(_, i) -> getMaxInhSetMembers([], i, e).fst
+    | partiallyDecoratedType(_, i) -> getMaxInhSetMembers([], i, e).fst
     | _ -> just([])
     end;
 }

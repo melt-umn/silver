@@ -4,10 +4,10 @@ closed nonterminal DriverAction with config, ioIn, io, code, order;
 
 synthesized attribute code :: Integer;
 synthesized attribute order :: Integer;
-inherited attribute ioIn :: IO;
+inherited attribute ioIn :: IOToken;
 
 abstract production wrapUnit
-top::DriverAction ::= f::(IOVal<Integer> ::= IO) order::Integer
+top::DriverAction ::= f::(IOVal<Integer> ::= IOToken) order::Integer
 {
   local call :: IOVal<Integer> = f(top.ioIn);
   top.io = call.io;
@@ -19,7 +19,7 @@ top::DriverAction ::= f::(IOVal<Integer> ::= IO) order::Integer
  - Run units until a non-zero error code is encountered.
  -}
 function runAll
-IOVal<Integer> ::= l::[DriverAction] i::IO
+IOVal<Integer> ::= l::[DriverAction] i::IOToken
 {
   local now :: DriverAction = head(l);
   now.ioIn = i;

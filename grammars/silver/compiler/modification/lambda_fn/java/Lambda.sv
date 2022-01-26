@@ -87,7 +87,7 @@ String ::= s::String
 }
 
 aspect production lambdaParamReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.translation = s"((${top.typerep.transType})common.Util.demand(${makeLambdaParamValueName(q.lookupValue.fullName)}))";
   top.lazyTranslation = top.translation;

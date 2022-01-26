@@ -7,7 +7,7 @@ imports silver:compiler:definition:concrete_syntax:ast;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:type:syntax;
 
-imports silver:compiler:extension:list;
+imports silver:compiler:modification:list;
 
 --imports silver:compiler:analysis:typechecking:core;
 

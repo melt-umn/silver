@@ -21,7 +21,7 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
 }
 
 abstract production functorAttributionDcl
-top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
@@ -55,7 +55,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
  - @param attr  The name of the attribute to propagate
  -}
 abstract production propagateFunctor
-top::ProductionStmt ::= attr::Decorated QName
+top::ProductionStmt ::= attr::PartiallyDecorated QName
 {
   top.unparse = s"propagate ${attr.unparse};";
   
@@ -103,7 +103,7 @@ Expr ::= loc::Location env::Decorated Env attrName::Decorated QName input::Named
   -- Check if the attribute occurs on the first child
   local attrOccursOnHead :: Boolean =
     !null(getOccursDcl(attrName.lookupAttribute.dcl.fullName, input.typerep.typeName, env));
-  local validTypeHead :: Boolean = isDecorable(input.typerep, env);
+  local validTypeHead :: Boolean = isDecorable(input.typerep, env) && !input.typerep.isPartiallyDecorated;
   
   return
     if validTypeHead && attrOccursOnHead

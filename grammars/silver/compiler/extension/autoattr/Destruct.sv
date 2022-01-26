@@ -21,7 +21,7 @@ top::AGDcl ::= 'destruct' 'attribute' inh::Name ';'
 }
 
 abstract production destructAttributionDcl
-top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
@@ -77,7 +77,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
  - @param attr  The name of the attribute to propagate
  -}
 abstract production propagateDestruct
-top::ProductionStmt ::= attr::Decorated QName
+top::ProductionStmt ::= attr::PartiallyDecorated QName
 {
   top.unparse = s"propagate ${attr.unparse};";
   

@@ -4,7 +4,7 @@ import silver:compiler:definition:env;
 import silver:compiler:definition:type;
 import silver:compiler:definition:type:syntax;
 import silver:compiler:modification:copper;
-import silver:compiler:extension:list;
+import silver:compiler:modification:list;
 
 terminal Construct_t 'construct' lexer classes {KEYWORD};
 terminal Translator_t 'translator' lexer classes {KEYWORD};
@@ -53,7 +53,7 @@ top::Root ::= gdcl::GrammarDcl  mStmts::ModuleStmts  is::ImportStmts
             location=top.location), location=top.location),
           productionRHSCons(
             productionRHSElem(name("ioIn",  top.location), '::',
-              nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "IO"), location=top.location), location=top.location),
+              nominalTypeExpr(qNameTypeId(terminal(IdUpper_t, "IOToken"), location=top.location), location=top.location),
               location=top.location),
             productionRHSNil(location=top.location),
             location=top.location

@@ -13,7 +13,7 @@ type SVParser = (ParseResult<Root> ::= String String);
  - Run the silver compiler, as if invoked from the command line.
  -}
 function cmdLineRun
-IOVal<Integer> ::= args::[String]  svParser::SVParser  ioin::IO
+IOVal<Integer> ::= args::[String]  svParser::SVParser  ioin::IOToken
 {
   local unit :: IOErrorable<Decorated Compilation> =
     cmdLineRunInitial(args, svParser, ioin);
@@ -24,7 +24,7 @@ IOVal<Integer> ::= args::[String]  svParser::SVParser  ioin::IO
 -- Compute the environment, and then setup and do a build run. No postOps executed, though.
 function cmdLineRunInitial
 IOErrorable<Decorated Compilation> ::=
-  args::[String]  svParser::SVParser  ioin::IO
+  args::[String]  svParser::SVParser  ioin::IOToken
 {
   return
     runChainArg(
@@ -38,7 +38,7 @@ function performActions
 IOVal<Integer> ::= unitin::IOErrorable<Decorated Compilation>
 {
   return case unitin.iovalue of
-  | left(re) -> ioval(print(re.message ++ "\n", unitin.io), re.code)
+  | left(re) -> ioval(printT(re.message ++ "\n", unitin.io), re.code)
   | right(comp) -> runAll(sortUnits(comp.postOps), unitin.io)
   end;
 }
@@ -47,7 +47,7 @@ IOVal<Integer> ::= unitin::IOErrorable<Decorated Compilation>
 function computeEnv
 IOErrorable<Pair<Decorated CmdArgs  BuildEnv>> ::=
   args::[String]
-  ioin::IO
+  ioin::IOToken
 {
   -- Figure out arguments
   local argResult :: Either<String  Decorated CmdArgs> =
@@ -89,7 +89,7 @@ function setupBuildRun
 IOErrorable<Decorated Compilation> ::=
   svParser::SVParser
   envin::Pair<Decorated CmdArgs  BuildEnv>
-  ioin::IO
+  ioin::IOToken
 {
   local a::Decorated CmdArgs = envin.fst;
   local benv::BuildEnv = envin.snd;
@@ -122,7 +122,7 @@ IOVal<Decorated Compilation> ::=
   a::Decorated CmdArgs
   benv::BuildEnv
   buildGrammar::String
-  ioin::IO
+  ioin::IOToken
 {
   -- Compile grammars. There's some tricky circular program data flow here.
   -- This does an "initial grammar stream" composed of 
@@ -197,7 +197,7 @@ top::RunError ::= c::Integer  m::String
 -- A common return type for IO functions. Does IO and returns error or whatever.
 type IOErrorable<a> = IOVal<Either<RunError a>>;
 -- A function that does IO and either errors or returns a value
-type RunChain<a b> = (IOErrorable<b> ::= a IO);
+type RunChain<a b> = (IOErrorable<b> ::= a IOToken);
 
 -- Function composition of RunChains. IO-y Either monad, of sorts.
 function runChain
@@ -207,7 +207,7 @@ RunChain<a c> ::= l::RunChain<a b>  r::RunChain<b c>
 }
 
 function runChainArg
-IOErrorable<c> ::= l::RunChain<a b>  r::RunChain<b c> x::a ioin::IO
+IOErrorable<c> ::= l::RunChain<a b>  r::RunChain<b c> x::a ioin::IOToken
 {
   -- Apply to left.
   local lcall :: IOErrorable<b> = l(x, ioin);

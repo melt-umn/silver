@@ -16,7 +16,7 @@ import silver:compiler:translation:java:type;
 import silver:compiler:modification:let_fix only makeSpecialLocalBinding, lexicalLocalDef;
 import silver:compiler:definition:flow:ast only noVertex;
 
-import silver:compiler:extension:list; -- Oh no, this is a hack! TODO
+import silver:compiler:modification:list; -- Oh no, this is a hack! TODO
 
 terminal Match_kwd 'match' lexer classes {KEYWORD,RESERVED}; -- temporary!!!
 
@@ -81,8 +81,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
    - decorated by matchPrimitive before we got here, so we should either
    - have a decorated expr, or some other type.
    -}
-  local attribute scrutineeType :: Type;
-  scrutineeType = performSubstitution(e.typerep, e.upSubst);
+  production scrutineeType :: Type = performSubstitution(e.typerep, e.upSubst);
   
   local attribute errCheck2 :: TypeCheck; errCheck2.finalSubst = top.finalSubst;
   errCheck2 = check(f.typerep, t.typerep);

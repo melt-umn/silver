@@ -304,9 +304,9 @@ Location ::= arg::a
   - be specially colored in the visualization diagram.)
   -}
 function printObjectPairForOriginsViz
-IO ::= start::a stop::b io::IO
+IOToken ::= start::a stop::b io::IOToken
 {
-  return print(
+  return printT(
     "\n\n\n---SVDRAW2 START---" ++
     "\n" ++ sexprify(start) ++
     "\n" ++ sexprify(stop) ++

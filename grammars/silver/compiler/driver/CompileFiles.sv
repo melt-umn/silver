@@ -9,12 +9,12 @@ grammar silver:compiler:driver;
  - @return An ioval wrapping the list of parse results and parse errors.
  -}
 function compileFiles
-IOVal<Pair<[Root] [ParseError]>> ::= svParser::SVParser  gpath::String  files::[String]  ioin::IO
+IOVal<Pair<[Root] [ParseError]>> ::= svParser::SVParser  gpath::String  files::[String]  ioin::IOToken
 {
   local file :: String = head(files);
   
   local rawText :: IOVal<String> =
-    readFile(gpath ++ file, ioin);
+    readFileT(gpath ++ file, ioin);
   local text :: IOVal<String> =
     ioval(rawText.io, transformFile(file, rawText.iovalue));
 

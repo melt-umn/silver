@@ -13,7 +13,7 @@ imports silver:compiler:definition:type:syntax;
 imports silver:compiler:definition:env;
 imports silver:compiler:translation:java:core only finalType;
 imports silver:compiler:extension:patternmatching;
-imports silver:compiler:extension:list;
+imports silver:compiler:modification:list;
 imports silver:compiler:modification:primitivepattern;
 imports silver:compiler:modification:lambda_fn;
 imports silver:compiler:modification:let_fix;
@@ -61,7 +61,7 @@ top::Expr ::= 'traverse' n::QName '(' es::AppExprs ',' anns::AnnoAppExprs ')'
     then [err(top.location, "Term rewriting requires import of silver:rewrite")]
     else [];
 
-  propagate downSubst, upSubst;
+  propagate downSubst, upSubst, freeVars;
   
   local transform::Strategy =
     traversal(n.lookupValue.fullName, es.traverseTransform, anns.traverseTransform);
@@ -193,7 +193,7 @@ concrete production ruleExpr
 top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "rule on " ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
-  top.freeVars := checkExpr.freeVars;
+  propagate freeVars;
   
   -- Find the free type variables (i.e. lacking a definition) to add as skolem constants
   local freeTyVars::[String] =
@@ -217,6 +217,8 @@ top::Expr ::= 'rule' 'on' ty::TypeExpr 'of' Opt_Vbar_t ml::MRuleList 'end'
   checkExpr.config = top.config;
   checkExpr.compiledGrammars = top.compiledGrammars;
   checkExpr.boundVars = [];
+  checkExpr.isRoot = top.isRoot;
+  checkExpr.originRules = top.originRules;
   
   ml.matchRulePatternSize = 1;
   ml.ruleIndex = 0;

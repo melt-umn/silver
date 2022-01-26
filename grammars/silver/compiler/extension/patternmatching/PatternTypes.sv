@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:patternmatching;
 
-import silver:compiler:extension:list only LSqr_t, RSqr_t;
+import silver:compiler:modification:list only LSqr_t, RSqr_t;
 
 {--
  - The forms of syntactic patterns that are permissible in (nested) case expresssions.
@@ -194,6 +194,14 @@ top::Pattern ::=
 
   --This should only be accessed on production patterns
   top.patternTypeName = "";
+}
+
+-- arbitrary nesting of patterns
+concrete production nestedPatterns
+top::Pattern ::= '(' p::Pattern ')'
+{
+  top.unparse = s"(${p.unparse})";
+  forwards to p;
 }
 
 --------------------------------------------------------------------------------
@@ -390,8 +398,6 @@ top::NamedPattern ::= qn::QName '=' p::Pattern
   top.patternVars = p.patternVars;
   top.namedPatternList = [pair(qn.lookupAttribute.fullName, p)];
 }
-
-
 
 --helper function for building patternLists from lists of patterns
 function buildPatternList

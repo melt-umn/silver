@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:tuple;
 
-imports silver:compiler:extension:list;
+imports silver:compiler:modification:list;
 
 nonterminal ListOfTypeExprs with location, unparse, te_translation;
 
@@ -38,7 +38,7 @@ top::Type ::= c::Type a::Type
 
 -- Avoid specializing possibly-decorated types
 aspect production ntOrDecType
-top::Type ::= nt::Type inhs::Type hidden::Type
+top::Type ::= _ _ _
 {
   top.tupleElems = [top];
 }
@@ -63,6 +63,7 @@ top::Type ::=
 abstract production tupleType
 top::Type ::= ts::[Type]
 {
+  top.defaultSpecialization = top;
 
   -- to avoid transforming away the tupleType and turning it back 
   -- into a chain of Pairs when performing substitutions

@@ -184,7 +184,7 @@ function monadicMatchTypesNames
                                             expectedMonad=em; isRoot=iR; originRules=oR;}.mtyperep
            in
              if isMonad(ety, env) && fst(monadsMatch(ety, em, sub))
-             then ((ety, e, newName) :: subcall.1, 
+             then ((ety, e, newName) :: subcall.1,
                    baseExpr(qName(loc, newName), location=loc) :: subcall.2)
              else (subcall.1, e::subcall.2)
            end
@@ -212,7 +212,7 @@ Expr ::= bindlst::[(Type, Expr, String)] base::Expr loc::Location
   fails.-}
 aspect production caseExpr
 top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Expr retType::Type {
-  local monadLocal::Expr = result.fst;
+  local monadLocal::Expr = monadCompileCaseExpr(es, ml, failExpr, retType, top.location, top.env);
   monadLocal.mDownSubst = top.mDownSubst;
   monadLocal.frame = top.frame;
   monadLocal.grammarName = top.grammarName;
@@ -227,9 +227,8 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
   monadLocal.isRoot = top.isRoot;
 
   top.monadRewritten = monadLocal.monadRewritten;
-  local result::Pair<Expr [Message]> = monadCompileCaseExpr(es, ml, failExpr, retType, top.location);
 
-  top.merrors <- result.snd;
+  top.merrors <- checkOverlappingPatterns(es, ml);
 }
 
 
@@ -244,108 +243,134 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
 
   This is essentially the standard compilation, but without inserting
   failure lets.
+
+  If there are ever any size problems with the translation here,
+  introduce a new production (probably named mLet) which would be a
+  let but with monadRewritten being just a let, no checking of types
+  and binding them in.  That would be safe, but would still require
+  copying the function format from the patternmatching extension.
 -}
 function monadCompileCaseExpr
-Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
+Expr ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location env::Decorated Env
 {
-  local errors::[Message] =
-    case ml of
-    -- are there multiple match rules, with no patterns/conditions left in them to distinguish between them?
-    | matchRule([], _, e) :: _ :: _ ->
-      if areUselessPatterns(ml)
-      then [err(loc, "Pattern has overlapping cases!")]
-      else []
-    | _ -> []
-    end;
+  --Split rules into segments of non-forwarding constructors, all same
+  --   forwarding constructor, and variables based on first pattern
+  local groups::[[AbstractMatchRule]] = splitPatternGroups(ml, env);
 
-  local partMRs :: Pair<[AbstractMatchRule] [AbstractMatchRule]> =
-    partition((.isVarMatchRule), ml);
-  local varRules :: [AbstractMatchRule] = partMRs.fst;
-  local prodRules :: [AbstractMatchRule] = partMRs.snd;
+  local compiledGroups::Expr =
+        monadCompilePatternGroups(es, groups, failExpr, retType, loc, env);
 
-  {--
-   - All constructors? Then do a real primitive match.
-   -}
-  local freshCurrName :: String = "__curr_match_" ++ toString(genInt());
-  local freshCurrNameRef :: Expr =
-    baseExpr(qName(loc, freshCurrName), location=loc);
-  local allConCase :: Pair<Expr [Message]> =
-      let constructorGroups::[[AbstractMatchRule]] = groupMRules(prodRules) in
-      let mappedPatternsErrs::[Pair<PrimPattern [Message]>] =
-          map(monadAllConCaseTransform(freshCurrNameRef, tail(es), failExpr, retType, _),
-              constructorGroups) in
-      let primPatterns::[PrimPattern] =
-          map(\ p::Pair<PrimPattern [Message]> -> p.fst, mappedPatternsErrs) in
-      let errs::[Message] =
-          foldr(\ p::Pair<PrimPattern [Message]> l::[Message] -> p.snd ++ l,
-                [], mappedPatternsErrs) in
-        pair(
-          -- Annoyingly, this now needs to be a let in case of annotation patterns.
-          makeLet(loc,
-            freshCurrName, freshType(), head(es), 
-            matchPrimitive(
-              freshCurrNameRef,
-              typerepTypeExpr(retType, location=loc),
-              foldPrimPatterns(primPatterns),
-              failExpr, location=loc)),
-          errors ++ errs)
-      end end end end;
+  --Check if there is any match rule with empty patterns
+  local anyEmptyRules::Boolean =
+        any(map(\ m::AbstractMatchRule ->
+                  case m of
+                  | matchRule([], _, _) -> true
+                  | _ -> false
+                  end, ml));
 
-  {--
-   - All variables? Just push a let binding inside each branch.
-   -}
-  local allVarCase :: Pair<Expr [Message]> =
-     let p::Pair<Expr [Message]> =
-        monadCompileCaseExpr(
-             tail(es),
-             map(bindHeadPattern(head(es), freshType(), _),
-                 ml),
-             failExpr, retType, loc)
-             -- A quick note about that freshType() hack: putting it here means there's ONE fresh type
-             -- generated, puching it inside 'bindHeadPattern' would generate multiple fresh types.
-             -- So don't try that!
-     in pair(p.fst, errors ++ p.snd) end;
+  --Assume all the rules are devoid of patterns
+  local finalStep::Expr =
+        foldr(\ mrule::AbstractMatchRule rest::Expr ->
+                case mrule of
+                | matchRule(_, nothing(), e) -> e
+                --cond is a Boolean
+                | matchRule(_, just((cond, nothing())), e) ->
+                  ifThenElse('if', cond, 'then', e, 'else', rest, location=loc)
+                --cond is the expression for another match
+                | matchRule(_, just((cond, just(patt))), e) ->
+                  Silver_Expr {
+                     case $Expr{cond} of
+                     | $Pattern{patt} -> $Expr{e}
+                     | _ -> $Expr{failExpr}
+                     end
+                  }
+                end,
+              failExpr, ml);
 
-  {--
-    - Mixed con/var? Partition into segments and build nested case expressions
-    - The whole segment partitioning is done in a function rather than grabbing the initial segment
-      and forwarding to do the rest of the segments (another workable option) for efficiency
-   -}
-  local mixedCase :: Pair<Expr [Message]> = monadBuildMixedCaseMatches(es, ml, failExpr, retType, loc);
-
-  -- 4 cases: no patterns left, all constructors, all variables, or mixed con/var.
-  -- errors cases: more patterns no scrutinees, more scrutinees no patterns, no scrutinees multiple rules
   return
-    case ml of
-    | matchRule([], c, e) :: _ -> pair(buildMatchWhenConditionals(ml, failExpr), -- valid or error case
-                                       errors)
-    -- No match rules, only possible through abstract syntax
-    | [] -> pair(Silver_Expr { let res :: $TypeExpr{typerepTypeExpr(retType, location=loc)} = $Expr{failExpr} in res end }, [])
-    | _ -> if null(es) then pair(failExpr, []) -- error case
-           else if null(varRules) then allConCase
-           else if null(prodRules) then allVarCase
-           else mixedCase
-    end;
+     case ml of
+     | [] -> failExpr
+     | _ -> if anyEmptyRules then finalStep else compiledGroups
+     end;
 }
+
+
+--Compile a match where the sets of patterns are grouped based on
+--having the same kind of first pattern (can go in the same primitive
+--match together), create a series of primitive match expressions to
+--implement the match
+--
+--The same as the compilePatternGroups function from the patternmatching extension,
+--   but without using lets which would end up being problematic in our implicit use
+function monadCompilePatternGroups
+Expr ::= matchEs::[Expr] ruleGroups::[[AbstractMatchRule]] finalFail::Expr
+         retType::Type loc::Location env::Decorated Env
+{
+  local compileRest::Expr =
+        monadCompilePatternGroups(matchEs, tail(ruleGroups), finalFail,
+                                  retType, loc, env);
+
+  local firstGroup::[AbstractMatchRule] =
+        case ruleGroups of
+        | [] -> error("Shouldn't access firstGroup with empty ruleGroups")
+        | []::tl ->
+          error("Shouldn't have empty list of patterns in monadCompilePatternGroups")
+        | hd::tl -> hd
+        end;
+  local firstPatt::Decorated Pattern = head(firstGroup).headPattern;
+  local firstMatchExpr::Expr =
+        case matchEs of
+        | [] ->
+          error("Shouldn't call monadCompilePatternGroups with empty match expressions")
+        | e::tl -> e
+        end;
+
+  --Modifying the order of rules in the same group (from ruleGroups) is fine,
+  --since we either have only the same constructor for a forwarding production
+  --or multiple non-forwarding productions where a value can only match one of them
+  local constructorGroups::[[AbstractMatchRule]] = groupMRules(firstGroup);
+  local mappedPatterns::[PrimPattern] =
+          map(monadAllConCaseTransform(head(matchEs), tail(matchEs),
+                                       compileRest, retType, _, env),
+              constructorGroups);
+  local currentConCase::Expr =
+        matchPrimitive(firstMatchExpr, typerepTypeExpr(retType, location=loc),
+               foldPrimPatterns(mappedPatterns),
+               compileRest, location=loc);
+
+  -- A quick note about that freshType() hack: putting it here means there's ONE fresh type
+  -- generated, puching it inside 'bindHeadPattern' would generate multiple fresh types.
+  -- So don't try that!
+  local boundVarRules::[AbstractMatchRule] =
+        map(bindHeadPattern(firstMatchExpr, freshType(), _), firstGroup);
+  local currentVarCase::Expr =
+        monadCompileCaseExpr(tail(matchEs), boundVarRules,
+           compileRest, retType, loc, env);
+
+  return
+     case ruleGroups of
+     | [] -> finalFail
+     | _::_ -> if firstPatt.patternIsVariable
+               then currentVarCase
+               else currentConCase
+     end;
+}
+
+
+
 {-
   Turn matching on all constructors into primitive matching.
 -}
 function monadAllConCaseTransform
-Pair<PrimPattern [Message]> ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[AbstractMatchRule]
+PrimPattern ::= currExpr::Expr restExprs::[Expr]  failCase::Expr  retType::Type  mrs::[AbstractMatchRule] env::Decorated Env
 {
-  -- TODO: potential source of buggy error messages. We're using head(mrs) as the source of
-  -- authority for the length of pattern variables to match against. But each match rule may
-  -- actually have a different length (and .expandHeadPattern just applies whatever is there)
-  -- This is an erroneous condition, but it means we transform into a maybe-more erroneous condition.
   local names :: [Name] = map(patternListVars, head(mrs).headPattern.patternSubPatternList);
 
-  local subcase :: Expr = subCaseCompile.fst;
-  local subCaseCompile::Pair<Expr [Message]> =
-    monadCompileCaseExpr(
-      map(exprFromName, names) ++ annoAccesses ++ restExprs,
-      map(\ mr::AbstractMatchRule -> mr.expandHeadPattern(annos), mrs),
-      failCase, retType, head(mrs).location);
-  -- TODO: head(mrs).location is probably not the correct thing to use here?? (generally)
+  local subcase :: Expr =
+        monadCompileCaseExpr(
+          map(exprFromName, names) ++ annoAccesses ++ restExprs,
+          map(\ mr::AbstractMatchRule -> mr.expandHeadPattern(annos), mrs),
+          failCase, retType, head(mrs).location, env);
 
   local annos :: [String] =
     nub(map(fst, flatMap((.patternNamedSubPatternList), map((.headPattern), mrs))));
@@ -358,45 +383,17 @@ Pair<PrimPattern [Message]> ::= currExpr::Expr restExprs::[Expr]  failCase::Expr
   return
     case head(mrs).headPattern of
     | prodAppPattern_named(qn,_,_,_,_,_) -> 
-        pair(prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
-    | intPattern(it) -> pair(integerPattern(it, terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
-    | fltPattern(it) -> pair(floatPattern(it, terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
-    | strPattern(it) -> pair(stringPattern(it, terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
-    | truePattern(_) -> pair(booleanPattern("true", terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
-    | falsePattern(_) -> pair(booleanPattern("false", terminal(Arrow_kwd, "->", l), subcase, location=l), subCaseCompile.snd)
-    | nilListPattern(_,_) -> pair(nilPattern(subcase, location=l), subCaseCompile.snd)
-    | consListPattern(h,_,t) -> pair(conslstPattern(head(names), head(tail(names)), subcase, location=l), subCaseCompile.snd)
+        prodPattern(qn, '(', convStringsToVarBinders(names, l), ')', terminal(Arrow_kwd, "->", l), subcase, location=l)
+    | intPattern(it) -> integerPattern(it, terminal(Arrow_kwd, "->", l), subcase, location=l)
+    | fltPattern(it) -> floatPattern(it, terminal(Arrow_kwd, "->", l), subcase, location=l)
+    | strPattern(it) -> stringPattern(it, terminal(Arrow_kwd, "->", l), subcase, location=l)
+    | truePattern(_) -> booleanPattern("true", terminal(Arrow_kwd, "->", l), subcase, location=l)
+    | falsePattern(_) -> booleanPattern("false", terminal(Arrow_kwd, "->", l), subcase, location=l)
+    | nilListPattern(_,_) -> nilPattern(subcase, location=l)
+    | consListPattern(h,_,t) -> conslstPattern(head(names), head(tail(names)), subcase, location=l)
     | _ -> error("Can only have constructor patterns in monadAllConCaseTransform")
     end;
 }
-{-
-  Build a matching for patterns of a mixed type, but by passing the
-  rest of the match as the failure expression directly rather than
-  using a let to bind it there.
--}
-function monadBuildMixedCaseMatches
-Pair<Expr [Message]> ::= es::[Expr] ml::[AbstractMatchRule] failExpr::Expr retType::Type loc::Location
-{
-  local freshFailName :: String = "__fail_" ++ toString(genInt());
-  return if null(ml)
-         then pair(failExpr, [])
-         else let segments::Pair<[AbstractMatchRule] [AbstractMatchRule]> =
-                            initialSegmentPatternType(ml)
-              in
-                let pairMixed::Pair<Expr [Message]> =
-                    monadBuildMixedCaseMatches(es, segments.snd, failExpr, retType, loc)
-                in
-                  --the failure here is the expression for the other matches
-                  let pairCompiled::Pair<Expr [Message]> =
-                      monadCompileCaseExpr(es, segments.fst, pairMixed.fst, retType, loc)
-                  in
-                    pair(pairCompiled.fst, pairMixed.snd ++ pairCompiled.snd)
-                  end
-                end
-              end;
-}
-
-
 
 --case expression that expands, using mplus, to possibly take multiple cases
 concrete production mcaseExpr_c
@@ -486,9 +483,11 @@ top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   top.mUpSubst = ml.mUpSubst;
   top.mtyperep = monadOfType(top.expectedMonad, freshType());
 
-  forwards to if isMonadPlus_instance
-              then applied
-              else errorExpr([err(top.location, notMonadPlus)], location=top.location);
+  --We need to forward to an errorExpr rather than the rewritten version to avoid flow errors
+  --Because this should only be used in implicit equations, it should be fine
+  forwards to errorExpr([err(top.location,
+                             "Can only use case_any in implicit equations")],
+                        location=top.location);
 }
 
 {-
@@ -518,7 +517,7 @@ Expr ::= exprs::[Expr] names::[String] loc::Location base::Expr
              if isMonad(ety, env) && fst(monadsMatch(ety, em, sub))
              then buildApplication(
                     monadBind(loc),
-                              [if isDecorated(ety)
+                              [if ety.isDecorated
                                then mkStrFunctionInvocation(loc, "silver:core:new", [head(exprs)])
                                else head(exprs),
                                buildLambda(head(names), monadInnerType(ety, loc), subcall, loc)],

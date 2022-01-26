@@ -13,7 +13,7 @@ IOVal<[Maybe<RootSpec>]> ::=
   benv::BuildEnv
   need::[String]
   clean::Boolean
-  ioin::IO
+  ioin::IOToken
 {
   local grammarName :: String = head(need);
   

@@ -30,7 +30,7 @@ top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' i
 }
 
 abstract production unificationInhAttributionDcl
-top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
@@ -60,7 +60,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
 }
 
 abstract production propagateUnificationSynPartial
-top::ProductionStmt ::= inh::String synPartial::Decorated QName syn::String
+top::ProductionStmt ::= inh::String synPartial::PartiallyDecorated QName syn::String
 {
   top.unparse = s"propagate ${synPartial.unparse};";
   
@@ -96,7 +96,7 @@ top::ProductionStmt ::= inh::String synPartial::Decorated QName syn::String
 }
 
 abstract production propagateUnificationSyn
-top::ProductionStmt ::= inh::String synPartial::String syn::Decorated QName
+top::ProductionStmt ::= inh::String synPartial::String syn::PartiallyDecorated QName
 {
   top.unparse = s"propagate ${syn.unparse};";
   

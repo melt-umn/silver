@@ -1,10 +1,10 @@
 grammar silver:compiler:definition:core;
 
 -- LHS type gives this to 'application' for "foo(...)" calls.
-synthesized attribute applicationDispatcher :: (Expr ::= Decorated Expr  Decorated AppExprs  Decorated AnnoAppExprs  Location);
+synthesized attribute applicationDispatcher :: (Expr ::= PartiallyDecorated Expr  PartiallyDecorated AppExprs  PartiallyDecorated AnnoAppExprs  Location);
 -- LHS type gives this to 'access' for "foo.some" accesses.
 -- (See DclInfo for the next step)
-synthesized attribute accessHandler :: (Expr ::= Decorated Expr  Decorated QNameAttrOccur  Location);
+synthesized attribute accessHandler :: (Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location);
 
 -- Used for poor man's type classes
 -- TODO: Finish removing these and replace with real type classes
@@ -66,6 +66,12 @@ top::Type ::= fn::String
 }
 
 aspect production decoratedType
+top::Type ::= te::Type _
+{
+  top.accessHandler = decoratedAccessHandler(_, _, location=_);
+}
+
+aspect production partiallyDecoratedType
 top::Type ::= te::Type _
 {
   top.accessHandler = decoratedAccessHandler(_, _, location=_);

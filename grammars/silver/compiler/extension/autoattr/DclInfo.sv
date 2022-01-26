@@ -1,6 +1,6 @@
 grammar silver:compiler:extension:autoattr;
 
-synthesized attribute propagateDispatcher :: (ProductionStmt ::= Decorated QName  Location) occurs on AttributeDclInfo;
+synthesized attribute propagateDispatcher :: (ProductionStmt ::= PartiallyDecorated QName  Location) occurs on AttributeDclInfo;
 
 synthesized attribute emptyVal::Expr occurs on AttributeDclInfo;
 
@@ -46,7 +46,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append:
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attrDefDispatcher = 
-    \ dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr  l::Location ->
+    \ dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr  l::Location ->
       errorAttributeDef([err(l, attr.name ++ " is a monoid collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);
   top.attrBaseDefDispatcher = synBaseColAttributeDef(_, _, _, location=_);
   top.attrAppendDefDispatcher = synAppendColAttributeDef(_, _, _, location=_);

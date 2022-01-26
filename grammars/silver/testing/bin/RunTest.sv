@@ -11,18 +11,18 @@ tr::TestingResults ::= nf::Integer
 function runTest
 IOVal<TestingResults> ::= absoluteFilePath::String ioIn::IOVal<TestingResults>
 {
- local isDir :: IOVal<Boolean> = isDirectory( absoluteFilePath, ioIn.io );
- local isF   :: IOVal<Boolean> = isFile(absoluteFilePath, ioIn.io);
- local skip  :: IOVal<Boolean> = isFile(dirNameInFilePath(absoluteFilePath) ++
+ local isDir :: IOVal<Boolean> = isDirectoryT( absoluteFilePath, ioIn.io );
+ local isF   :: IOVal<Boolean> = isFileT(absoluteFilePath, ioIn.io);
+ local skip  :: IOVal<Boolean> = isFileT(dirNameInFilePath(absoluteFilePath) ++
                                         "/tests.skip", ioIn.io);
- local text  :: IOVal<String>  = readFile(absoluteFilePath, isF.io);
+ local text  :: IOVal<String>  = readFileT(absoluteFilePath, isF.io);
 
  local parseResult :: ParseResult<Run> = parse(text.iovalue, absoluteFilePath);
  local r_cst :: Run = parseResult.parseTree ;
  
  local parseFailure :: IOVal<TestingResults> =
    ioval (
-     print ("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" ++
+     printT ("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" ++
             "Parsing of .test file \n   " ++ absoluteFilePath ++ "\n" ++
             "failed.\n" ++ parseResult.parseErrors ++ "\n" ++
             "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" ,
@@ -47,7 +47,7 @@ IOVal<TestingResults> ::= absoluteFilePath::String ioIn::IOVal<TestingResults>
         then ioIn  -- nothing to do
         else 
         if   ! isF.iovalue
-        then ioval (exit ( 4, print("\n\nFile \"" ++ absoluteFilePath ++ 
+        then ioval (exitT ( 4, printT("\n\nFile \"" ++ absoluteFilePath ++
                                     "\" not found.\n",
                          isF.io ) ) , testingResults(999) ) 
         else
@@ -69,7 +69,7 @@ String ::= dn::String
 
 
 function dirSkip
-IOVal<Boolean> ::= absoluteFilePath::String ioIn::IO
+IOVal<Boolean> ::= absoluteFilePath::String ioIn::IOToken
 {
- return isFile ( absoluteFilePath ++ "/tests.skip", ioIn ) ;
+ return isFileT ( absoluteFilePath ++ "/tests.skip", ioIn ) ;
 }

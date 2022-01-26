@@ -13,7 +13,7 @@ imports silver:util:cmdargs;
 
 imports silver:compiler:extension:convenience;
 imports silver:compiler:extension:patternmatching;
-imports silver:compiler:extension:list;
+imports silver:compiler:modification:list;
 
 imports silver:compiler:modification:lambda_fn;
 imports silver:compiler:modification:let_fix;

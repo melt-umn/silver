@@ -25,7 +25,7 @@ instance MonadFail [] {
   fail = \ String -> [];
 }
 
-instance Alt List {
+instance Alt [] {
   alt = appendList;
 }
 
@@ -356,6 +356,20 @@ function repeat
          else v :: repeat(v, times-1);
 }
 
+function randomShuffle
+RandomGen<[a]> ::= elems::[a]
+{
+  return
+    if null(elems) then pure([])
+    else do {
+      i :: Integer <- randomRange(0, length(elems) - 1);
+      let hd :: [a] = take(i, elems);
+      let tl :: [a] = drop(i, elems);
+      rest :: [a] <- randomShuffle(hd ++ tail(tl));
+      return head(tl) :: rest;
+    };
+}
+
 function range
 [Integer] ::= lower::Integer upper::Integer
 {
@@ -538,7 +552,9 @@ Boolean ::= l::[Boolean]
 function nil
 [a] ::=
 {
-  return i_nilList();
+  -- Foreign function expected to handle this here
+  -- Needs a new implementation if non-java translation is made.
+  return error("foreign function");
 } foreign {
   "java" : return "common.ConsCell.nil";
 }
@@ -546,7 +562,9 @@ function nil
 function cons
 [a] ::= h::a  t::[a]
 {
-  return i_consList(h, t);
+  -- Foreign function expected to handle this here
+  -- Needs a new implementation if non-java translation is made.
+  return error("foreign function");
 } foreign {
   "java" : return "new common.ConsCell(%?h?%, %?t?%)";
 }
@@ -554,9 +572,10 @@ function cons
 function appendList
 [a] ::= l1::[a] l2::[a]
 {
-  return if l1.i_emptyList
-         then l2
-         else cons(head(l1), append(tail(l1), l2));
+  return case l1 of
+  | h :: t -> cons(h, append(t, l2))
+  | [] -> l2
+  end;
 } foreign {
   "java" : return "common.AppendCell.append(%l1%, %?l2?%)";
 }
@@ -565,7 +584,10 @@ function appendList
 function null
 Boolean ::= l::[a]
 {
-  return l.i_emptyList;
+  return case l of
+  | [] -> true
+  | _ :: _ -> false
+  end;
 } foreign {
   "java" : return "%l%.nil()";
 }
@@ -573,7 +595,10 @@ Boolean ::= l::[a]
 function listLength  -- not called 'length' since this is a builtin language feature, but thats how you should call it.
 Integer ::= l::[a]
 {
-  return l.i_lengthList;
+  return case l of
+  | _ :: t -> 1 + listLength(t)
+  | [] -> 0
+  end;
 } foreign {
   "java" : return "Integer.valueOf(%l%.length())";
 }
@@ -581,7 +606,10 @@ Integer ::= l::[a]
 function head
 a ::= l::[a]
 {
-  return l.i_headList;
+  return case l of
+  | h :: _ -> h
+  | [] -> error("requested head of nil")
+  end;
 } foreign {
   "java" : return "%l%.head()";
 }
@@ -589,35 +617,10 @@ a ::= l::[a]
 function tail
 [a] ::= l::[a]
 {
-  return l.i_tailList;
+  return case l of
+  | _ :: t -> t
+  | [] -> error("requested tail of nil")
+  end;
 } foreign {
   "java" : return "%l%.tail()";
 }
-
---------------------------------------------------------------------------------
-
-synthesized attribute i_headList<a> :: a;
-synthesized attribute i_tailList<a> :: List<a>;
-synthesized attribute i_emptyList :: Boolean;
-synthesized attribute i_lengthList :: Integer;
-
-nonterminal List<a> with i_headList<a>, i_tailList<a>, i_emptyList, i_lengthList;
-
-abstract production i_nilList
-l::List<a> ::=
-{
-  l.i_emptyList = true;
-  l.i_lengthList = 0;
-  l.i_headList = error("requested head of nil");
-  l.i_tailList = error("requested tail of nil");
-}
-
-abstract production i_consList
-l::List<a> ::= h::a  t::List<a>
-{
-  l.i_emptyList = false;
-  l.i_lengthList = t.i_lengthList + 1;
-  l.i_headList = h;
-  l.i_tailList = t;
-}
-

@@ -1,8 +1,5 @@
 grammar silver:compiler:extension:strategyattr;
 
-import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructAnonymousGraph;
-import silver:compiler:driver:util;
-
 abstract production strategyAttributeDcl
 top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] recVarTotalEnv::[Pair<String Boolean>] e::StrategyExpr
 {
@@ -26,16 +23,8 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
     if isTotal && !e.isTotal
     -- Not an error since we can still translate this, but the translation may raise run-time errors in case of failure
     then [wrn(e.location, s"Implementation of total strategy ${a.name} is not total")]
-    else []; 
-  
-  -- Frame doesn't really matter, since we will re-check any expressions occuring in e when propagated.
-  -- Need all this to construct a bogus frame...
-  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
-  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
-  local myFlowGraph :: ProductionGraph = 
-    constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
-  e.frame = bogusContext(myFlowGraph, sourceGrammar=top.grammarName);
-  
+    else [];
+
   e.recVarNameEnv = recVarNameEnv;
   e.recVarTotalEnv = recVarTotalEnv;
   e.recVarTotalNoEnvEnv = recVarTotalEnv;
@@ -66,7 +55,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
 }
 
 abstract production strategyAttributionDcl
-top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   production attribute localErrors::[Message] with ++;
   localErrors :=
@@ -123,7 +112,7 @@ top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::B
  - @param attr  The name of the attribute to propagate
  -}
 abstract production propagateStrategy
-top::ProductionStmt ::= attr::Decorated QName
+top::ProductionStmt ::= attr::PartiallyDecorated QName
 {
   top.unparse = s"propagate ${attr.unparse}";
   

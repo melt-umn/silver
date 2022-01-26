@@ -1,9 +1,9 @@
 grammar hello;
 
 function main 
-IOVal<Integer> ::= largs::[String] ioin::IO
+IOVal<Integer> ::= largs::[String] ioin::IOToken
 {
-  return ioval(print(" World!\n",
-                 print("Hello", ioin)),
+  return ioval(printT(" World!\n",
+                 printT("Hello", ioin)),
                0);
 }

@@ -1,6 +1,9 @@
 grammar silver:compiler:modification:primitivepattern;
 
-import silver:compiler:modification:ffi only foreignType; -- so we cover foreignType with the 'refine' hack below. TODO
+ -- so we cover these types with the 'refine' hack below.
+import silver:compiler:modification:ffi only foreignType;
+import silver:compiler:modification:list only listCtrType;
+
 import silver:compiler:translation:java;
 
 {--
@@ -217,6 +220,16 @@ top::Type ::= te::Type i::Type
     end;
 }
 
+aspect production partiallyDecoratedType
+top::Type ::= te::Type i::Type
+{
+  top.refine = 
+    case top.refineWith of
+    | partiallyDecoratedType(oi, ote) -> composeSubst(refine(te, ote), refine(i, oi))
+    | _ -> errorSubst("Tried to refine partially decorated type with " ++ prettyType(top.refineWith))
+    end;
+}
+
 aspect production functionType
 top::Type ::= params::Integer namedParams::[String]
 {
@@ -237,6 +250,16 @@ top::Type ::= fn::String  transType::String  params::[Type]
         then refineAll( params, op )
         else errorSubst("Tried to refine conflicting foreign types " ++ fn ++ " and " ++ ofn)
     | _ -> errorSubst("Tried to refine foreign type " ++ fn ++ " with " ++ prettyType(top.refineWith))
+    end;
+}
+
+aspect production listCtrType
+top::Type ::=
+{
+  top.refine =
+    case top.refineWith of
+    | listCtrType() -> emptySubst()
+    | _ -> errorSubst("Tried to refine [] with " ++ prettyType(top.refineWith))
     end;
 }
 
@@ -378,7 +401,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVa
   top.typeScheme = monoType(atty);
   
   oc.boundVariables = tvs;
-  top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
+  top.attrOccursIndex = s"${scrutineeTrans}.${oc.transContextMemberName}";
 
   -- Never appears for anything on which we can define an equation
   top.attrOccursIndexName = error("Not needed");
@@ -394,8 +417,7 @@ top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVa
   top.isAnnotation = true;
   
   oc.boundVariables = tvs;
-  top.transContext = s"${scrutineeTrans}.${oc.transContextMemberName}";
-
+  top.attrOccursIndex = error("Not actually an attribute");
   top.attrOccursIndexName = error("Not actually an attribute");
   top.attrOccursInitIndex = error("Not actually an attribute");
 }

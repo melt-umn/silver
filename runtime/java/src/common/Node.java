@@ -10,7 +10,7 @@ package common;
  * @author tedinski
  * @see DecoratedNode
  */
-public abstract class Node implements Typed {	
+public abstract class Node implements Decorable, Typed {
 	// Common manipulators of Node objects.
 	
 	/**
@@ -21,6 +21,7 @@ public abstract class Node implements Typed {
 	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @return A "decorated" form of this Node
 	 */
+	@Override
 	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
 		return new DecoratedNode(getNumberOfChildren(),
 				                 getNumberOfInhAttrs(),

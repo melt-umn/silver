@@ -136,7 +136,7 @@ top::ProductionStmt ::= attr::QName
 }
 
 abstract production propagateError
-top::ProductionStmt ::= attr::Decorated QName
+top::ProductionStmt ::= attr::PartiallyDecorated QName
 {
   forwards to
     errorProductionStmt(

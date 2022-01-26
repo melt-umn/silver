@@ -5,6 +5,7 @@ import silver:compiler:definition:env;
 import silver:compiler:definition:type;
 import silver:compiler:definition:type:syntax;
 import silver:compiler:definition:concrete_syntax;
+import silver:compiler:modification:lambda_fn;
 
 import silver:regex only Regex, regexLiteral;
 
@@ -66,6 +67,8 @@ top::ProductionRHSElem ::= id::Name '::' reg::EasyTerminalRef
   top.unparse = id.unparse ++ "::" ++ reg.unparse;
   top.errors <- reg.errors;
 
+  top.lambdaBoundVars := [id.name];  -- Needed because we are forwrding based on env
+
   forwards to productionRHSElem(id, $2, typerepTypeExpr(reg.typerep, location=reg.location), location=top.location);
 }
 
@@ -74,6 +77,8 @@ top::ProductionRHSElem ::= reg::EasyTerminalRef
 {
   top.unparse = reg.unparse;
   top.errors <- reg.errors;
+
+  top.lambdaBoundVars := [];  -- Needed because we are forwrding based on env
 
   forwards to productionRHSElemType(typerepTypeExpr(reg.typerep, location=top.location), location=top.location);
 }

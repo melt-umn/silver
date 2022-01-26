@@ -36,9 +36,9 @@ top::Context ::= cls::String t::Type
     -- the decorated type are typeError instances (or there are none),
     -- then specialize to the undecorated type, since the decorated type will
     -- always give a type error.
-    | ntOrDecType(nt, inhs, _) when
+    | ntOrDecType(nt, _, _) when
         !null(getInstanceDcl(cls, nt, top.env)) &&
-        all(map((.isTypeError), getInstanceDcl(cls, decoratedType(nt, inhs), top.env))) ->
+        all(map((.isTypeError), getInstanceDcl(cls, substT.defaultSpecialization, top.env))) ->
       composeSubst(top.downSubst, substT.unifyInstanceNonterminal)
     | _ -> top.downSubst
     end;

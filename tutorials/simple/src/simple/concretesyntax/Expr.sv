@@ -88,11 +88,11 @@ concrete productions e::Expr
 -- Literals
 
  | l::IntegerLiteral  { e.unparse = l.lexeme; 
-                        e.ast = ast:intLit(l.lexeme); }
+                        e.ast = ast:intLit(toInteger(l.lexeme)); }
  | l::FloatLiteral    { e.unparse = l.lexeme;
-                        e.ast = ast:floatLit(l.lexeme); }
+                        e.ast = ast:floatLit(toFloat(l.lexeme)); }
  | l::BooleanLiteral  { e.unparse = l.lexeme;
-                        e.ast = ast:boolLit(l.lexeme); }
+                        e.ast = ast:boolLit(l.lexeme == "True"); }
  | l::StringLiteral   { e.unparse = l.lexeme;
-                        e.ast = ast:stringLit(l.lexeme); }
+                        e.ast = ast:stringLit(unescapeString(substring(1, length(l.lexeme) - 1, l.lexeme))); }
 

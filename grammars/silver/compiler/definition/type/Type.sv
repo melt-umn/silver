@@ -1,6 +1,7 @@
 grammar silver:compiler:definition:type;
 
 option silver:compiler:modification:ffi; -- foreign types
+option silver:compiler:modification:list; -- list type
 
 synthesized attribute kindrep :: Kind;
 synthesized attribute freeVariables :: [TyVar];
@@ -247,10 +248,26 @@ top::Type ::= inhs::[String]
 
 {--
  - A *decorated* nonterminal type.
+ - Represents a reference with at least some set of provided inherited attributes,
+ - cannot be decorated with additional attributes.
  - @param te  MUST be a 'nonterminalType' or 'varType'/'skolemType'
  - @param i  MUST have kind InhSet
  -}
 abstract production decoratedType
+top::Type ::= te::Type i::Type
+{
+  top.kindrep = starKind();
+  top.freeVariables = setUnionTyVars(te.freeVariables, i.freeVariables);
+}
+
+{--
+ - A *partially decorated* nonterminal type.
+ - Represents a reference with some exact set of provided inherited attributes,
+ - may be decorated with additional attributes.
+ - @param te  MUST be a 'nonterminalType' or 'varType'/'skolemType'
+ - @param i  MUST have kind InhSet
+ -}
+abstract production partiallyDecoratedType
 top::Type ::= te::Type i::Type
 {
   top.kindrep = starKind();
@@ -263,28 +280,49 @@ top::Type ::= te::Type i::Type
  -
  - It represents a nonterminal that is *either* decorated or undecorated
  - (e.g. when referencing a child) but has not yet been specialized.
+ -
+ - This is annoyingly complicated because there are some cases in which it is
+ - fine for the type to be decorated with any set of inherited attributes
+ - (e.g. taking references to children, locals) and some where we only want to
+ - permit a specific set of attributes if the type does get specialized to decorated
+ - (references to variables bound in let expressions/pattern matching.)
+ - This is what 'inhs' tracks.
+ -
+ - Seperately, we also want to control the default behavior for when we never
+ - specialize - whether we are partially or totally decorated reference
+ - (determined by 'defaultPartialDec') and what set of attributes we should have
+ - (determined by 'defaultInhs'.)  These are not affected by unification, but we
+ - must not specialize to 'defaultInhs' if 'inhs' ultimately unifies with
+ - something incompatible.
+ -
  - @param nt  MUST be a 'nonterminalType'
- - @param inhs  The inh set that we're decorated with - MUST have kind InhSet
- - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(inhs, nt)'
+ - @param inhs  The inh set that we're decorated with, or a free var if we don't care - MUST have kind InhSet
+ - @param hidden  One of: (a) a type variable (b) 'nt' (c) 'decoratedType(nt, inhs)' (d) 'partiallyDecoratedType(nt, inhs)'
  -                representing state: unspecialized, undecorated, or decorated.
+ - @param defaultPartialDec  The default for what we are if we never specialize.
+ - @param inhs  The default for what we're decorated with if we never specialize - MUST have kind InhSet
  -}
 
 -- This will ONLY appear in the types of expressions, nowhere else!
 abstract production ntOrDecType
 top::Type ::= nt::Type inhs::Type hidden::Type
 {
-  top.freeVariables = case hidden of
-                      | varType(_) -> nt.freeVariables ++ inhs.freeVariables
-                      | _ -> hidden.freeVariables
-                      end;
-  
-  -- If we never specialize, we're decorated.
-  forwards to
-    case inhs of
-    -- If we never specialize what we're decorated with, we're decorated with nothing.
-    | varType(_) -> decoratedType(nt, inhSetType([]))
-    | _ -> decoratedType(nt, inhs)
+  -- Note that we are excluding hidden here if it is unspecialized
+  top.freeVariables =
+    case hidden of
+    | varType(_) -> setUnionTyVars(nt.freeVariables, inhs.freeVariables)
+    | _ -> hidden.freeVariables
     end;
+
+  -- If we never specialize what we're decorated with, we're decorated with nothing.
+  production actualInhs::Type =
+    case inhs of
+    | varType(_) -> inhSetType([])
+    | _ -> inhs
+    end;
+
+   -- If we never specialize, we're decorated.
+  forwards to decoratedType(nt, actualInhs);
 }
 
 {--

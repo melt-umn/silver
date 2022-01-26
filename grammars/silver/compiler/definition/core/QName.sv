@@ -146,7 +146,7 @@ top::QNameType ::= id::Name ':' qn::QNameType
  -}
 nonterminal QNameAttrOccur with config, name, location, grammarName, env, unparse, attrFor, errors, typerep, dcl<OccursDclInfo>, attrDcl, found, attrFound;
 
-flowtype QNameAttrOccur = dcl {grammarName, env, attrFor}, attrDcl {grammarName, env, attrFor};
+flowtype QNameAttrOccur = decorate {grammarName, env, attrFor}, dcl {decorate}, attrDcl {decorate};
 
 {--
  - For QNameAttrOccur, the name of the LHS to look up this attribute on.
@@ -228,10 +228,16 @@ top::QNameAttrOccur ::= at::QName
     else [];-}
     -- TODO: This last bit is disabled because we have problems with importing grammars multiple times.
     -- TODO FIXME: enable this, and fix the grammar import issues!
+
+  production resolvedDcl::OccursDclInfo = if top.found then head(dclsNarrowed) else
+    error("INTERNAL ERROR: Accessing dcl of occurrence " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
+  resolvedDcl.givenNonterminalType = top.attrFor;
+  production resolvedTypeScheme::PolyType = resolvedDcl.typeScheme;
+  production requiredContexts::Contexts = foldContexts(resolvedTypeScheme.contexts);
+  requiredContexts.env = top.env;
   
   top.typerep = if top.found then determineAttributeType(head(dclsNarrowed), top.attrFor) else errorType();
-  top.dcl = if top.found then head(dclsNarrowed) else
-    error("INTERNAL ERROR: Accessing dcl of occurrence " ++ at.name ++ " at " ++ top.grammarName ++ " " ++ top.location.unparse);
+  top.dcl = resolvedDcl;
   top.attrDcl = if top.found then head(attrsNarrowed) else
     -- Workaround fix for proper error reporting - appairently there are some places where this is still demanded.
     if !null(attrs) then head(attrs) else

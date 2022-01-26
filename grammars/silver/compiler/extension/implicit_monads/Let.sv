@@ -62,7 +62,7 @@ top::Expr ::= la::AssignExpr  e::Expr
                      [baseExpr(qName(top.location, x.fst.name), location=top.location),
                       buildLambda(x.fst.name,
                                   decorate x.snd with
-                                     {env=top.env; grammarName=top.grammarName; config=top.config;}.typerep,
+                                     {env=top.env; grammarName=top.grammarName; config=top.config; flowEnv=top.flowEnv;}.typerep,
                                   y, top.location)], top.location),
                inside, la.bindInList);
 }
@@ -74,6 +74,7 @@ synthesized attribute bindInList::[Pair<Name TypeExpr>] occurs on AssignExpr;
 synthesized attribute mdefs::[Def] occurs on AssignExpr;
 
 attribute merrors, mDownSubst, mUpSubst, monadicNames, expectedMonad occurs on AssignExpr;
+propagate expectedMonad on AssignExpr;
 
 aspect production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
@@ -81,9 +82,6 @@ top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
   top.merrors := a1.merrors ++ a2.merrors;
 
   propagate mDownSubst, mUpSubst;
-
-  a1.expectedMonad = top.expectedMonad;
-  a2.expectedMonad = top.expectedMonad;
 
   top.monadicNames = a1.monadicNames ++ a2.monadicNames;
 
@@ -116,8 +114,6 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   e.monadicallyUsed = isMonad(e.mtyperep, top.env) && fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst)) && !isMonad(t.typerep, top.env);
   top.monadicNames = e.monadicNames;
 
-  e.expectedMonad = top.expectedMonad;
-
   top.mdefs = [lexicalLocalDef(top.grammarName, id.location, fName,
                                performSubstitution(t.typerep, top.mUpSubst),
                                e.flowVertexInfo, e.flowDeps)];
@@ -138,7 +134,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
+top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;

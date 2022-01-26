@@ -41,18 +41,26 @@ attribute docDcls occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, Instanc
 
 @{- Environment of all documented AGDcls, flowing back down after being computed from @link[docDcls].  -}
 autocopy attribute docEnv :: tm:Map<String DocDclInfo>;
-attribute docEnv occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
+attribute docEnv occurs on Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
+
+@{- Errors arising from ill-formed doc comments.  -}
+monoid attribute docErrors :: [Message];
+attribute docErrors occurs on Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
+propagate docErrors on Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 
 aspect production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 {
   top.docs := ags.docs;
-  ags.downDocConfig = filter((\x::DocConfigSetting -> x.fileScope), ags.upDocConfig) ++ top.downDocConfig;
   top.localDocConfig = ags.downDocConfig;
   top.upDocConfig := filter((\x::DocConfigSetting -> !x.fileScope), ags.upDocConfig);
   top.docDcls := ags.docDcls;
   top.undocumentedNamed = flatMap((.undocNames), top.docs);
   top.documentedNamed = flatMap((.docNames), top.docs);
+
+  ags.downDocConfig = filter((\x::DocConfigSetting -> x.fileScope), ags.upDocConfig) ++ top.downDocConfig;
+  ags.docEnv = tm:add(flatMap((.docDcls), searchEnvTree(top.grammarName, top.compiledGrammars)), tm:empty());
+  top.errors <- ags.docErrors;
 }
 
 aspect production nilAGDcls

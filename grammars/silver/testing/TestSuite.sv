@@ -16,8 +16,8 @@ synthesized attribute numTests :: Integer ;
 synthesized attribute numPassed :: Integer ;
 synthesized attribute numFailed :: Integer ;
 
-synthesized attribute ioOut :: IO ;
-inherited attribute ioIn :: IO ;
+synthesized attribute ioOut :: IOToken ;
+inherited attribute ioIn :: IOToken ;
 
 abstract production defTest
 t::Test ::=
