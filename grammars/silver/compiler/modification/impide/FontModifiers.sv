@@ -19,7 +19,9 @@ top::LexerClassModifier ::= 'font' '=' id::QName
 {
   top.unparse = "font = " ++ id.name;
 
-  top.lexerClassModifiers := [lexerClassFont(id.lookupFont.fullName, location=top.location)];
+  top.lexerClassModifiers :=
+    [ lexerClassFont(id.lookupFont.fullName, location=top.location)
+    ];
   top.errors := id.lookupFont.errors;
 }
 

@@ -191,9 +191,11 @@ top::LexerClassModifier ::= 'prefix' 'separator' s::String_t
 {
   top.unparse = s"prefix separator ${s.lexeme}";
 
-  top.lexerClassModifiers := [lexerClassPrefixSeperator(
-    substring(1, length(s.lexeme) - 1, s.lexeme),
-    location=top.location)];
+  top.lexerClassModifiers :=
+    [ lexerClassPrefixSeperator(
+        substring(1, length(s.lexeme) - 1, s.lexeme),
+        location=top.location, sourceGrammar=top.grammarName)
+    ];
 }
 
 {- Not supported due to ambiguity with modifiers on prefix terminal defined
