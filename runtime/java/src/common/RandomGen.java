@@ -1,6 +1,7 @@
 package common;
 
 import java.util.*;
+import java.util.function.Function;
 
 import common.exceptions.*;
 import silver.core.*;
@@ -38,16 +39,22 @@ public final class RandomGen {
   		} else if (r instanceof PrandomBoolean) {
   			return rng.nextBoolean();
   		} else if (r instanceof PrandomToken_) {
-  			return new Random(rng.nextLong());
+  			return rng.nextLong();
   		} else {
   			throw new SilverError("Unsupported RandomGen constructor: " + r.getName());  // Not SilverInternalError, someone could define a new RandomGen production
   		}
 	}
-	
+
 	public static int randomRangeInteger(final int lower, final int upper, final Random rng) {
 		if (lower > upper) {
 			throw new SilverError("Empty Integer range [" + lower + ", " + upper + "]");
 		}
 		return rng.nextInt(upper - lower + 1) + lower;  // TODO: I think this could be more robust against signed overflow.
+	}
+
+	public static Ppair evalRandomTokenOp(final long token, Function<Random, Object> op) {
+		final Random rng = new Random(token);
+		final Object result = op.apply(rng);
+		return new Ppair(result, rng.nextLong());
 	}
 }

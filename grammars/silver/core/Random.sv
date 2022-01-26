@@ -5,8 +5,8 @@ grammar silver:core;
 -- Associated utilities are defined in silver:util:random.
 nonterminal RandomGen<a>;
 
--- Pure random "token" for use with threaded attributes.
-type RandomToken foreign = "java.util.Random";
+-- Pure random "token" for use with threaded attributes, represented as just a seed value.
+type RandomToken foreign = "Long";
 
 production mapRandomGen
 top::RandomGen<b> ::= (b ::= a) RandomGen<a>

@@ -41,30 +41,30 @@ function randomTInteger
 (Integer, RandomToken) ::= token::RandomToken
 {
   return error("foreign function");
-} foreign {
-  "java": return "new silver.core.Ppair(%token%.nextInt(), new java.util.Random(%token%.nextLong()))";
-}
+} {-foreign {
+  "java": return "common.RandomGen.evalRandomTokenOp(%token%, java.util.Random::nextInt)";
+}-}
 
 function randomTFloat
 (Float, RandomToken) ::= token::RandomToken
 {
   return error("foreign function");
-} foreign {
-  "java": return "new silver.core.Ppair(%token%.nextFloat(), new java.util.Random(%token%.nextLong()))";
-}
+} {-foreign {
+  "java": return "common.RandomGen.evalRandomTokenOp(%token%, java.util.Random::nextFloat)";
+}-}
 
 function randomTBoolean
 (Boolean, RandomToken) ::= token::RandomToken
 {
   return error("foreign function");
-} foreign {
-  "java": return "new silver.core.Ppair(%token%.nextBoolean(), new java.util.Random(%token%.nextLong()))";
-}
+} {-foreign {
+  "java": return "common.RandomGen.evalRandomTokenOp(%token%, java.util.Random::nextBoolean)";
+}-}
 
 function randomRangeTInteger
 (Integer, RandomToken) ::= min::Integer max::Integer token::RandomToken
 {
   return error("foreign function");
-} foreign {
-  "java": return "new silver.core.Ppair(common.RandomGen.randomRangeInteger(%min%, %max%, %token%), new java.util.Random(%token%.nextLong()))";
-}
+} {-foreign {
+  "java": return "common.RandomGen.evalRandomTokenOp(%token%, (rng) -> common.RandomGen.randomRangeInteger(%min%, %max%, rng))";
+}-}

@@ -44,6 +44,6 @@ function runTokenRandomGen
 (a, RandomToken) ::= token::RandomToken r::RandomGen<a>
 {
   return error("foreign function");
-} foreign {
-  "java": return "new silver.core.Ppair(common.RandomGen.runRandomGen(originCtx, %token%, %r%), new java.util.Random(%token%.nextLong()))";
-}
+} {-foreign {
+  "java": return "common.RandomGen.evalRandomTokenOp(%token%, (rng) -> common.RandomGen.runRandomGen(originCtx, rng, %r%))";
+}-}
