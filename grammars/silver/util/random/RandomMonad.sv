@@ -44,6 +44,6 @@ function runTokenRandomGen
 (a, RandomToken) ::= token::RandomToken r::RandomGen<a>
 {
   return error("foreign function");
-} {-foreign {
+} foreign {
   "java": return "common.RandomGen.evalRandomTokenOp(%token%, (rng) -> common.RandomGen.runRandomGen(originCtx, rng, %r%))";
-}-}
+}
