@@ -14,7 +14,7 @@ import silver:compiler:composed:Default only svParse;
 
 -- This function is not used by IDE
 function main 
-IOVal<Integer> ::= args::[String] ioin::IO
+IOVal<Integer> ::= args::[String] ioin::IOToken
 {
   return cmdLineRun(args, svParse, ioin);
 }
@@ -43,7 +43,7 @@ temp_imp_ide_dcl svParse ".sv" {
 -- Declarations of IDE functions referred in decl block.
 
 function analyze
-IOVal<[Message]> ::= project::IdeProject  args::[IdeProperty]  i::IO
+IOVal<[Message]> ::= project::IdeProject  args::[IdeProperty]  i::IOToken
 {
   local argio :: IOVal<[String]> = getArgStrings(args, project, i);
 
@@ -53,7 +53,7 @@ IOVal<[Message]> ::= project::IdeProject  args::[IdeProperty]  i::IO
 }
 
 function generate
-IOVal<[Message]> ::= project::IdeProject  args::[IdeProperty]  i::IO
+IOVal<[Message]> ::= project::IdeProject  args::[IdeProperty]  i::IOToken
 {
   local argio :: IOVal<[String]> = getArgStrings(args, project, i);
 
@@ -66,7 +66,7 @@ IOVal<[Message]> ::= project::IdeProject  args::[IdeProperty]  i::IO
 global system_location :: Location = loc("", -1, -1, -1, -1, -1, -1);
 
 function export
-IOVal<[Message]> ::= project::IdeProject  args::[IdeProperty]  i::IO
+IOVal<[Message]> ::= project::IdeProject  args::[IdeProperty]  i::IOToken
 {
   local proj_path :: IOVal<String> = getProjectPath(project, i);
   local gen_path :: IOVal<String> = getGeneratedPath(project, proj_path.io);
@@ -76,16 +76,16 @@ IOVal<[Message]> ::= project::IdeProject  args::[IdeProperty]  i::IO
   local jarFile :: String = gen_path.iovalue ++ "/" ++ pkgName ++ ".jar";
   local targetFile :: String = proj_path.iovalue ++ "/" ++ pkgName ++ ".jar";
 
-  local fileExists :: IOVal<Boolean> = isFile(buildFile, gen_path.io);
+  local fileExists :: IOVal<Boolean> = isFileT(buildFile, gen_path.io);
 
-  local jarExists :: IOVal<Boolean> = isFile(jarFile, ant(buildFile, "", "", fileExists.io));
+  local jarExists :: IOVal<Boolean> = isFileT(jarFile, ant(buildFile, "", "", fileExists.io));
 
   return if !fileExists.iovalue then
     ioval(fileExists.io, [err(system_location, "build.xml doesn't exist. Has the project been successfully built before?")])
   else if !jarExists.iovalue then
     ioval(jarExists.io, [err(system_location, "Ant failed to generate the jar.")])
   else
-    ioval(refreshProject(project, copyFile(jarFile, targetFile, jarExists.io)), []);
+    ioval(refreshProject(project, copyFileT(jarFile, targetFile, jarExists.io)), []);
 }
 
 function fold
@@ -111,7 +111,7 @@ String ::= args::[IdeProperty]
 }
 
 function getArgStrings
-IOVal<[String]> ::= args::[IdeProperty] project::IdeProject io::IO
+IOVal<[String]> ::= args::[IdeProperty] project::IdeProject io::IOToken
 {
   local jarsio :: IOVal<String> = getIdeResource("jars", io);
   local grammarsio :: IOVal<String> = getIdeResource("grammars", jarsio.io);
