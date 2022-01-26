@@ -36,7 +36,7 @@ a ::= seed::Integer r::RandomGen<a>
 @{-
   Run a RandomGen computation, using a random token.
 
-  @param toek  The random number generator to use
+  @param token  The random number generator to use
   @param r  The computation to run
   @return  The result of the computation
 -}
