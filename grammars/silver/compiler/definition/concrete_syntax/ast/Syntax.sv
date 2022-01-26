@@ -377,6 +377,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
 
   top.cstNormalize := [top];
 
+  top.copperElementReference = copper:elementReference(top.location, top.containingGrammar, makeCopperName(n));
   top.copperGrammarElements =
     [ copper:parserAttribute(top.location, makeCopperName(n), ty.transType,
         acode ++ implode("\n", searchEnvTree(n, top.parserAttributeAspects)))
@@ -404,6 +405,7 @@ top::SyntaxDcl ::= n::String acode::String
 
   top.parserAttributeAspectContribs := [pair(n, acode)];
   -- The Copper information for these gets picked up by the main syntaxParserAttribute declaration.
+  top.copperElementReference = error("can't demand copperElementReference of an aspect");
   top.copperGrammarElements = [];
 }
 

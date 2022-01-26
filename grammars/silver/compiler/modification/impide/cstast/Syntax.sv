@@ -35,5 +35,6 @@ top::SyntaxDcl ::= fontName::String fnt::Font -- TODO: we probably? need to fact
   top.cstDcls := [pair(fontName, top)];
   top.cstNormalize := [top];
   
+  top.copperElementReference = error("can't demand copperElementReference of a font");
   top.copperGrammarElements = [];
 }
