@@ -46,7 +46,7 @@ abstract production genAbella
 top::DriverAction ::= a::Decorated CmdArgs specs::[Decorated RootSpec]
                       outputLoc::String
 {
-  local pr :: IO = print("Generating Abella Encoding.\n", top.ioIn);
+  local pr :: IOToken = printT("Generating Abella Encoding.\n", top.ioIn);
 
   top.io = writeAll(pr, a, specs, outputLoc);
   top.code = 0;
@@ -54,44 +54,44 @@ top::DriverAction ::= a::Decorated CmdArgs specs::[Decorated RootSpec]
 }
 
 function writeAll
-IO ::= i::IO  a::Decorated CmdArgs  l::[Decorated RootSpec]
+IOToken ::= i::IOToken  a::Decorated CmdArgs  l::[Decorated RootSpec]
        outputLoc::String
 {
-  local now :: IO = writeSpec(i, head(l), outputLoc);
-  local recurse :: IO = writeAll(now, a, tail(l), outputLoc);
+  local now :: IOToken = writeSpec(i, head(l), outputLoc);
+  local recurse :: IOToken = writeAll(now, a, tail(l), outputLoc);
 
   return if null(l) then i else recurse;
 }
 
 function writeSpec
-IO ::= i::IO  r::Decorated RootSpec  outputLoc::String
+IOToken ::= i::IOToken  r::Decorated RootSpec  outputLoc::String
 {
   local path::String =
         outputLoc ++ grammarToPath(r.declaredName);
 
   local mkiotest::IOVal<Boolean> =
-    isDirectory(path, i);
+    isDirectoryT(path, i);
   
   local mkio::IOVal<Boolean> =
     if mkiotest.iovalue
     then mkiotest
-    else mkdir(path, mkiotest.io);
+    else mkdirT(path, mkiotest.io);
 
-  local pr::IO =
+  local pr::IOToken =
     if mkio.iovalue
-    then print("\t[" ++ r.declaredName ++ "]\n", mkio.io)
-    else exit(-5, print("\nUnrecoverable Error: Unable to create directory: " ++ path ++ "\n\n", mkio.io));
+    then printT("\t[" ++ r.declaredName ++ "]\n", mkio.io)
+    else exitT(-5, printT("\nUnrecoverable Error: Unable to create directory: " ++ path ++ "\n\n", mkio.io));
 
   local filename::String = path ++ "/definitions.thm";
   local interface_filename::String = path ++ "/thm_interface.svthmi";
 
-  local wr::IO =
+  local wr::IOToken =
         if r.shouldOutput
-        then let one::IO = writeFile(filename, r.output, pr)
+        then let one::IOToken = writeFileT(filename, r.output, pr)
              in
-                writeFile(interface_filename, r.interface_output, one)
+                writeFileT(interface_filename, r.interface_output, one)
              end
-        else print(r.error_output, i);
+        else printT(r.error_output, i);
 
   return wr;
 }

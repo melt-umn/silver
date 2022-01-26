@@ -210,24 +210,24 @@ Either<String [(String, [DefinitionElement], [ParsedElement])]> ::=
       moduleNames::[String]
       --Silver's generated dir,  the root of the grammars
       generatedLoc::String grammarLoc::String
-      ioin::IO
+      ioin::IOToken
 {
   local thisGrammar::String = head(moduleNames);
   local grammarDir::String = substitute(":", "/", thisGrammar);
   local interfaceFile::String =
         generatedLoc ++ "thm/" ++ grammarDir ++ "/thm_interface.svthmi";
-  local interfaceIsFile::IOVal<Boolean> = isFile(interfaceFile, ioin);
+  local interfaceIsFile::IOVal<Boolean> = isFileT(interfaceFile, ioin);
   local theoremFile::String =
         generatedLoc ++ "thm/" ++ grammarDir ++ "/thm_outerface.svthmi";
   local theoremIsFile::IOVal<Boolean> =
-        isFile(theoremFile, interfaceIsFile.io);
+        isFileT(theoremFile, interfaceIsFile.io);
 
   local interfaceContents::IOVal<String> =
-        readFile(interfaceFile, theoremIsFile.io);
+        readFileT(interfaceFile, theoremIsFile.io);
   local parsedInterface::ParseResult<Interface_c> =
         interface_parser(interfaceContents.iovalue, interfaceFile);
   local theoremContents::IOVal<String> =
-        readFile(theoremFile, interfaceContents.io);
+        readFileT(theoremFile, interfaceContents.io);
   local parsedTheorem::ParseResult<Interface_c> =
         interface_parser(theoremContents.iovalue, theoremFile);
 

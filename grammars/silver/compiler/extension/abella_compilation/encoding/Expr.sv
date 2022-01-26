@@ -28,7 +28,7 @@ top::Expr ::= e::[Message]
 }
 
 aspect production errorReference
-top::Expr ::= msg::[Message]  q::Decorated QName
+top::Expr ::= msg::[Message]  q::PartiallyDecorated QName
 {
   top.encodedExpr =
       error("Abella encoding not defined in the presence of errors");
@@ -37,7 +37,7 @@ top::Expr ::= msg::[Message]  q::Decorated QName
 }
 
 aspect production childReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.encodedExpr = [([],
       case findAssociated(q.name, top.encodingEnv) of
@@ -52,7 +52,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production lhsReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.encodedExpr = [([],
       case findAssociated(q.name, top.encodingEnv) of
@@ -66,7 +66,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production localReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   local localname::Term =
         varTerm(capitalize(shortestName(q.name)), genInt());
@@ -105,14 +105,14 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production forwardReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.encodedExpr = error("I don't know what forwardReference is");
   top.encodedFailure = error("I don't know what forwardReference is");
 }
 
 aspect production productionReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.encodedExpr =
       if q.lookupValue.fullName == "silver:core:pair"
@@ -122,7 +122,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production functionReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.encodedExpr =
       --error(<str>) cannot succeed, so don't translate it
@@ -137,21 +137,21 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production classMemberReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.encodedExpr = error("classMemberReference not done yet:  " ++ q.name);
   top.encodedFailure = error("classMemberReference not done yet:  " ++ q.name);
 }
 
 aspect production globalValueReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.encodedExpr = error("globalValueReference not done yet");
   top.encodedFailure = error("globalValueReference not done yet");
 }
 
 aspect production errorApplication
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
+top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
   top.encodedExpr =
       error("Abella encoding not defined in the presence of errors");
@@ -160,7 +160,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
 }
 
 aspect production functionInvocation
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
+top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
   local attribute newe::Expr = new(e);
   newe.grammarName = top.grammarName;
@@ -230,7 +230,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
 }
 
 aspect production partialApplication
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
+top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
   top.encodedExpr = error("partialApplication not done yet");
   top.encodedFailure = error("partialApplication not done yet");
@@ -289,7 +289,7 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.encodedExpr =
       error("Abella encoding not defined in the presence of errors");
@@ -298,21 +298,21 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.encodedExpr = error("annoAccessHandler not done yet");
   top.encodedFailure = error("annoAccessHandler not done yet");
 }
 
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.encodedExpr = error("terminalAccessHandler not done yet");
   top.encodedFailure = error("terminalAccessHandler not done yet");
 }
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   local attribute newe::Expr = new(e);
   newe.grammarName = top.grammarName;
@@ -423,7 +423,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   local attribute newe::Expr = new(e);
   newe.grammarName = top.grammarName;
@@ -492,7 +492,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.encodedExpr =
       error("Abella encoding not defined in the presence of errors");
@@ -1559,7 +1559,7 @@ top::AnnoAppExprs ::=
 
 
 aspect production exprRef
-top::Expr ::= e::Decorated Expr
+top::Expr ::= e::PartiallyDecorated Expr
 {
   local attribute newe::Expr = new(e);
   newe.grammarName = top.grammarName;

@@ -243,12 +243,12 @@ top::ProductionStmt ::= 'forwarding' 'with' '{' inh::ForwardInhs '}' ';'
 }
 
 aspect production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= msg::[Message] dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   local attrName::String =
         case attr of
@@ -287,7 +287,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 }
 
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   local attrName::String =
         case attr of
@@ -393,27 +393,27 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 }
 
 aspect production errorDefLHS
-top::DefLHS ::= q::Decorated QName
+top::DefLHS ::= q::PartiallyDecorated QName
 {
 }
 
 aspect production childDefLHS
-top::DefLHS ::= q::Decorated QName
+top::DefLHS ::= q::PartiallyDecorated QName
 {
 }
 
 aspect production lhsDefLHS
-top::DefLHS ::= q::Decorated QName
+top::DefLHS ::= q::PartiallyDecorated QName
 {
 }
 
 aspect production localDefLHS
-top::DefLHS ::= q::Decorated QName
+top::DefLHS ::= q::PartiallyDecorated QName
 {
 }
 
 aspect production forwardDefLHS
-top::DefLHS ::= q::Decorated QName
+top::DefLHS ::= q::PartiallyDecorated QName
 {
 }
 
@@ -425,12 +425,12 @@ top::ProductionStmt ::= val::QName '=' e::Expr ';'
 }
 
 aspect production errorValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
+top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
 }
 
 aspect production localValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
+top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
   e.encodingEnv = top.encodingEnv;
   e.top = top.top;
