@@ -126,14 +126,19 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
   -- to make it do so.
   local buildGrammar::IO<Integer> =
     if null(specCstAst.cstErrors) then do {
-      mkdir(outDir);
-      print("Generating parser " ++ spec.fullName ++ ".\n");
-      ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
-        makeName(spec.sourceGrammar), parserName, false,
-        outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
-        parserName ++ ".html", cmdArgs.copperXmlDump);
-      writeBinaryFile(dumpFile, dump);
-      return ret;
+      if cmdArgs.noJavaGeneration then do {
+        -- Skip translating to Java.
+        return 0;
+      } else do {
+        mkdir(outDir);
+        print("Generating parser " ++ spec.fullName ++ ".\n");
+        ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
+          makeName(spec.sourceGrammar), parserName, false,
+          outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
+          parserName ++ ".html", cmdArgs.copperXmlDump);
+        writeBinaryFile(dumpFile, dump);
+        return ret;
+      };
     } else do {
       -- Should this be stderr?
       print("CST errors while generating parser " ++ spec.fullName ++ ":\n" ++
@@ -142,24 +147,17 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
     };
 
   local val::IOVal<Integer> = evalIO(do {
-    if cmdArgs.noJavaGeneration then do {
-      -- Skip translating to Java. In theory, we could tweak things a bit to
-      -- still validate the grammar, but "it probably doesn't matter," and the
-      -- caching logic would be a bit more complicated that way.
-      return 0;
-    } else do {
-      dumpFileExists :: Boolean <- isFile(dumpFile);
-      if dumpFileExists then do {
-        dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
-        if dumpFileContents == dump then do {
-          print("Copper input did not change; skipping regenerating parser...\n");
-          return 0;
-        } else do {
-          buildGrammar;
-        };
+    dumpFileExists :: Boolean <- isFile(dumpFile);
+    if dumpFileExists then do {
+      dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
+      if dumpFileContents == dump then do {
+        print("Copper input did not change; skipping regenerating parser...\n");
+        return 0;
       } else do {
         buildGrammar;
       };
+    } else do {
+      buildGrammar;
     };
   }, top.ioIn);
 
