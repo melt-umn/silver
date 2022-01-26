@@ -37,7 +37,7 @@ autocopy attribute matchRulePatternSize :: Integer;
 
 -- P -> E
 nonterminal MatchRule with location, config, unparse, env, frame, errors, freeVars, matchRuleList, matchRulePatternSize;
-nonterminal AbstractMatchRule with location, unparse, headPattern, isVarMatchRule, expandHeadPattern, hasCondition;
+nonterminal AbstractMatchRule with location, unparse, frame, freeVars, headPattern, isVarMatchRule, expandHeadPattern, hasCondition;
 
 -- The head pattern of a match rule
 synthesized attribute headPattern :: Decorated Pattern;
@@ -98,6 +98,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
     "(case " ++ implode(", ", map((.unparse), es)) ++ " of " ++ 
     implode(" | ", map((.unparse), ml)) ++ " | _ -> " ++ failExpr.unparse ++
     " end :: " ++ prettyType(retType) ++ ")";
+  top.freeVars := concat(map(getFreeVars(top.frame, _), es) ++ map(getFreeVars(top.frame, _), ml) ++ [failExpr.freeVars]);
 
   {-Checking Pattern Completeness
 
@@ -167,6 +168,15 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
                 makeLet(top.location, p.1, freshType(), p.2, rest),
               compiledCase, zipWith(pair(_, _), names, es));
   forwards to fwdResult;
+}
+
+function getFreeVars
+attribute frame occurs on a,
+attribute freeVars {frame} occurs on a =>
+ts:Set<String> ::= frame::BlockContext x::a
+{
+  x.frame = frame;
+  return x.freeVars;
 }
 
 
@@ -1107,6 +1117,12 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern]
     | nothing() -> ""
     end ++
     " -> " ++ e.unparse;
+  top.freeVars := ts:removeAll(concat(map((.patternVars), pl)),
+    case cond of
+    | just((e1, just(p))) -> getFreeVars(top.frame, e1) ++ ts:removeAll(p.patternVars, e.freeVars)
+    | just((e1, nothing())) -> getFreeVars(top.frame, e1) ++ e.freeVars
+    | nothing() -> e.freeVars
+    end);
   top.headPattern = head(pl);
   -- If pl is null, and we're consulted, then we're missing patterns, pretend they're _
   top.isVarMatchRule = null(pl) || head(pl).patternIsVariable;
@@ -1266,13 +1282,14 @@ Expr ::= l::Location s::String t::Type e::Expr o::Expr
 }
 
 function ensureDecoratedExpr
-Expr ::= e::Decorated Expr
+Expr ::= e::PartiallyDecorated Expr
 {
   local et :: Type = performSubstitution(e.typerep, e.upSubst);
+  local eRef :: Expr = exprRef(e, location=e.location);
 
   return if isDecorable(et, e.env)
-         then decorateExprWithEmpty('decorate', exprRef(e, location=e.location), 'with', '{', '}', location=e.location)
-         else exprRef(e, location=e.location);
+         then decorateExprWithEmpty('decorate', eRef, 'with', '{', '}', location=e.location)
+         else eRef;
 }
 
 instance Eq AbstractMatchRule {

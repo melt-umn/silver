@@ -184,7 +184,7 @@ function monadicMatchTypesNames
                                             expectedMonad=em; isRoot=iR; originRules=oR;}.mtyperep
            in
              if isMonad(ety, env) && fst(monadsMatch(ety, em, sub))
-             then ((ety, e, newName) :: subcall.1, 
+             then ((ety, e, newName) :: subcall.1,
                    baseExpr(qName(loc, newName), location=loc) :: subcall.2)
              else (subcall.1, e::subcall.2)
            end

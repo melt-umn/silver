@@ -19,7 +19,7 @@ grammar silver:compiler:extension:implicit_monads;
 
 
 --The monad of the attribute the equation for which we are rewriting
-autocopy attribute expectedMonad::Type;
+inherited attribute expectedMonad::Type;
 --The rewritten version of the current expression, exprs, etc.
 synthesized attribute monadRewritten<a>::a;
 --Errors encountered in rewriting

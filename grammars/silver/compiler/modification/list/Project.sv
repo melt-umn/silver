@@ -4,4 +4,5 @@ imports silver:compiler:definition:type;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:core;
 
-exports silver:compiler:modification:list:java with silver:compiler:translation:java:type;
+exports silver:compiler:modification:list:java with silver:compiler:translation:java:core;  -- special case for []
+exports silver:compiler:modification:list:java:type with silver:compiler:translation:java:type;  -- listCtrType translation

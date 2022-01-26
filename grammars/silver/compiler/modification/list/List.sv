@@ -57,9 +57,7 @@ concrete production consListOp
 top::Expr ::= h::Expr '::' t::Expr
 {
   top.unparse = "(" ++ h.unparse ++ " :: " ++ t.unparse ++ ")" ;
-  
-  h.downSubst = top.downSubst; t.downSubst = top.downSubst; -- TODO BUG: don't know what this is needed... unparse apparently??
-  
+
   forwards to mkStrFunctionInvocation(top.location, "silver:core:cons", [h, t]);
 }
 
@@ -67,8 +65,6 @@ concrete production fullList
 top::Expr ::= '[' es::Exprs ']'
 { 
   top.unparse = "[ " ++ es.unparse ++ " ]";
-  
-  es.downSubst = top.downSubst; -- TODO again, pretty printing garbage.
 
   forwards to es.listtrans;
 }
@@ -96,7 +92,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 -- Overloaded operators --------------------------------------------------------
 
 abstract production listPlusPlus
-top::Expr ::= e1::Decorated Expr e2::Decorated Expr
+top::Expr ::= e1::PartiallyDecorated Expr e2::PartiallyDecorated Expr
 {
   forwards to mkStrFunctionInvocationDecorated(e1.location, "silver:core:append", [e1,e2]);
 }

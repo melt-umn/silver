@@ -47,7 +47,9 @@ monoid attribute lambdaDefs::[Def];
 monoid attribute lambdaBoundVars::[String];
 attribute lambdaDefs, lambdaBoundVars occurs on ProductionRHS, ProductionRHSElem;
 
-flowtype ProductionRHSElem = lambdaDefs {decorate}, lambdaBoundVars {decorate};
+flowtype lambdaDefs {decorate} on ProductionRHS, ProductionRHSElem;
+flowtype lambdaBoundVars {} on ProductionRHS;
+flowtype lambdaBoundVars {deterministicCount} on ProductionRHSElem;
 
 propagate lambdaDefs, lambdaBoundVars on ProductionRHS;
 
@@ -61,7 +63,7 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 }
 
 abstract production lambdaParamReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.unparse = q.unparse;
   propagate errors;

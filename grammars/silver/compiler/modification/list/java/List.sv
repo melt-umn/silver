@@ -1,22 +1,8 @@
 grammar silver:compiler:modification:list:java;
 
 import silver:compiler:modification:list;
-import silver:compiler:definition:type;
-import silver:compiler:definition:env;
 import silver:compiler:definition:core;
-import silver:compiler:translation:java:type;
-import silver:compiler:translation:java:core; -- for the nil hack
-
-aspect production listCtrType
-top::Type ::=
-{
-  top.transType = "common.ConsCell";
-  top.transCovariantType = "common.ConsCell";
-  top.transClassType = "common.ConsCell";
-  top.transTypeRep = "new common.BaseTypeRep(\"[]\")";
-  top.transTypeName = "List";
-}
-
+import silver:compiler:translation:java:core;
 
 -- A wonderous hack
 aspect production emptyList

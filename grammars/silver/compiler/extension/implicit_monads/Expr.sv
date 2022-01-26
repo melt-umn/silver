@@ -9,6 +9,7 @@ inherited attribute monadicallyUsed::Boolean occurs on Expr;
 synthesized attribute monadicNames::[Expr] occurs on Expr, AppExpr, AppExprs;
 
 attribute monadRewritten<Expr>, merrors, mtyperep, mDownSubst, mUpSubst, expectedMonad occurs on Expr;
+propagate expectedMonad on Expr;
 
 
 --list of the attributes accessed in an explicit expression not allowed there
@@ -36,7 +37,7 @@ top::Expr ::= e::[Message]
 }
 
 aspect production errorReference
-top::Expr ::= msg::[Message]  q::Decorated QName
+top::Expr ::= msg::[Message]  q::PartiallyDecorated QName
 {
   top.merrors := msg;
   propagate mDownSubst, mUpSubst;
@@ -46,7 +47,7 @@ top::Expr ::= msg::[Message]  q::Decorated QName
 }
 
 aspect production childReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -60,7 +61,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production lhsReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -72,7 +73,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production localReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -86,7 +87,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production forwardReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -99,7 +100,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production productionReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -111,7 +112,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production functionReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -123,7 +124,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production classMemberReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -135,7 +136,7 @@ top::Expr ::= q::Decorated QName
 }
 
 aspect production globalValueReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.merrors := [];
   propagate mDownSubst, mUpSubst;
@@ -263,9 +264,9 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 }
 
 aspect production functionInvocation
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
+top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
-  local t::Expr = application(new(e), '(', new(es), ',', new(anns), ')', location=top.location);
+  local t::Expr = application(e, '(', es, ',', anns, ')', location=top.location);
   t.mDownSubst = top.mDownSubst;
   t.env = top.env;
   t.flowEnv = top.flowEnv;
@@ -373,7 +374,7 @@ Expr ::= monadTysLocs::[Pair<Type Integer>] funargs::AppExprs monadType::Type wr
 
 
 aspect production partialApplication
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
+top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
   top.merrors := error("merrors not defined on partial applications");
   top.mUpSubst = error("mUpSubst not defined on partial applications");
@@ -385,7 +386,7 @@ top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppEx
 }
 
 aspect production errorApplication
-top::Expr ::= e::Decorated Expr es::Decorated AppExprs anns::Decorated AnnoAppExprs
+top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
   top.merrors := [];
 
@@ -452,33 +453,15 @@ top::Expr ::= e::Expr '.' 'forward'
   top.monadRewritten = forwardAccess(ne.monadRewritten, '.', 'forward', location=top.location);
 }
 
-aspect production access
-top::Expr ::= e::Expr '.' q::QNameAttrOccur
-{
-  propagate mDownSubst, mUpSubst;
-}
-
 aspect production errorAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  local ne::Expr = new(e);
-  ne.mDownSubst = top.mDownSubst;
-  ne.env = top.env;
-  ne.flowEnv = top.flowEnv;
-  ne.config = top.config;
-  ne.compiledGrammars = top.compiledGrammars;
-  ne.grammarName = top.grammarName;
-  ne.frame = top.frame;
-  ne.finalSubst = top.finalSubst;
-  ne.downSubst = top.downSubst;
-  ne.originRules = top.originRules;
-  ne.isRoot = false;
-  ne.expectedMonad = top.expectedMonad;
-
-  ne.monadicallyUsed = false; --this needs to change when we decorate monadic trees
+  e.mDownSubst = top.mDownSubst;
+  e.expectedMonad = top.expectedMonad;
+  e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
-                     then [access(new(e), '.', new(q), location=top.location)] ++ ne.monadicNames
-                     else ne.monadicNames;
+                     then [access(e, '.', q, location=top.location)] ++ e.monadicNames
+                     else e.monadicNames;
 
   propagate mDownSubst, mUpSubst;
   top.merrors := [];
@@ -496,15 +479,15 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
   --   production based on normal typechecking failing even though our typechecking will
   --   succeed, and we then need to be able to go back.
   local eUnDec::Expr =
-        if ne.mtyperep.isDecorated
-        then Silver_Expr{ silver:core:new($Expr {ne.monadRewritten}) }
-        else ne.monadRewritten;
-  local noMonad::Expr = access(ne.monadRewritten, '.', new(q), location=top.location);
+        if e.mtyperep.isDecorated
+        then Silver_Expr{ silver:core:new($Expr {e.monadRewritten}) }
+        else e.monadRewritten;
+  local noMonad::Expr = access(e.monadRewritten, '.', q, location=top.location);
   local isEMonad::Expr =
     Silver_Expr {
       $Expr {monadBind(top.location)}
       ($Expr {eUnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne.mtyperep, top.location), location=top.location)} ->
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location)} ->
           $Expr {monadReturn(top.location)}
           (x.$QName {qName(q.location, q.name)})
        )
@@ -514,21 +497,21 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     Silver_Expr {
       $Expr {monadBind(top.location)}
       ($Expr {eUnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne.mtyperep, top.location), location=top.location)} ->
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location)} ->
           (x.$QName {qName(q.location, q.name)})
        )
       )
     };
-  top.monadRewritten = if isMonad(ne.mtyperep, top.env) &&
-                          fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst))
+  top.monadRewritten = if isMonad(e.mtyperep, top.env) &&
+                          fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                        then if isMonad(q.typerep, top.env) &&
                                fst(monadsMatch(q.typerep, top.expectedMonad, top.mUpSubst))
                             then isBothMonad
                             else isEMonad
                        else noMonad;
 
-  top.mtyperep = if isMonad(ne.mtyperep, top.env) &&
-                    fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst))
+  top.mtyperep = if isMonad(e.mtyperep, top.env) &&
+                    fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                  then if isMonad(q.typerep, top.env) &&
                          fst(monadsMatch(q.typerep, top.expectedMonad, top.mUpSubst))
                       then q.typerep
@@ -546,37 +529,25 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production annoAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  local ne::Expr = new(e);
-  ne.mDownSubst = top.mDownSubst;
-  ne.env = top.env;
-  ne.flowEnv = top.flowEnv;
-  ne.config = top.config;
-  ne.compiledGrammars = top.compiledGrammars;
-  ne.grammarName = top.grammarName;
-  ne.frame = top.frame;
-  ne.finalSubst = top.finalSubst;
-  ne.downSubst = top.downSubst;
-  ne.originRules = top.originRules;
-  ne.isRoot = false;
-  ne.expectedMonad = top.expectedMonad;
-
-  ne.monadicallyUsed = false; --this needs to change when we decorate monadic trees
+  e.mDownSubst = top.mDownSubst;
+  e.expectedMonad = top.expectedMonad;
+  e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
-                     then [access(new(e), '.', new(q), location=top.location)] ++ ne.monadicNames
-                     else ne.monadicNames;
+                     then [access(e, '.', q, location=top.location)] ++ e.monadicNames
+                     else e.monadicNames;
 
   local eUnDec::Expr =
-        if ne.mtyperep.isDecorated
-        then Silver_Expr{ silver:core:new($Expr {ne.monadRewritten}) }
-        else ne.monadRewritten;
-  local noMonad::Expr = access(ne.monadRewritten, '.', new(q), location=top.location);
+        if e.mtyperep.isDecorated
+        then Silver_Expr{ silver:core:new($Expr {e.monadRewritten}) }
+        else e.monadRewritten;
+  local noMonad::Expr = access(e.monadRewritten, '.', q, location=top.location);
   local isEMonad::Expr =
     Silver_Expr {
       $Expr {monadBind(top.location)}
       ($Expr {eUnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne.mtyperep, top.location), location=top.location)} ->
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location)} ->
           $Expr {monadReturn(top.location)}
           (x.$QName {qName(q.location, q.name)})
        )
@@ -586,21 +557,21 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     Silver_Expr {
       $Expr {monadBind(top.location)}
       ($Expr {eUnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne.mtyperep, top.location), location=top.location)} ->
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location)} ->
           (x.$QName {qName(q.location, q.name)})
        )
       )
     };
-  top.monadRewritten = if isMonad(ne.mtyperep, top.env) &&
-                          fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst))
+  top.monadRewritten = if isMonad(e.mtyperep, top.env) &&
+                          fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                        then if isMonad(q.typerep, top.env) &&
                                fst(monadsMatch(q.typerep, top.expectedMonad, top.mUpSubst))
                             then isBothMonad
                             else isEMonad
                        else noMonad;
 
-  top.mtyperep = if isMonad(ne.mtyperep, top.env) &&
-                    fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst))
+  top.mtyperep = if isMonad(e.mtyperep, top.env) &&
+                    fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                  then if isMonad(q.typerep, top.env) &&
                          fst(monadsMatch(q.typerep, top.expectedMonad, top.mUpSubst))
                       then q.typerep
@@ -630,52 +601,41 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production terminalAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  local ne::Expr = new(e);
-  ne.mDownSubst = top.mDownSubst;
-  ne.env = top.env;
-  ne.flowEnv = top.flowEnv;
-  ne.config = top.config;
-  ne.compiledGrammars = top.compiledGrammars;
-  ne.grammarName = top.grammarName;
-  ne.frame = top.frame;
-  ne.finalSubst = top.finalSubst;
-  ne.downSubst = top.downSubst;
-  ne.originRules = top.originRules;
-  ne.isRoot = false;
-  ne.expectedMonad = top.expectedMonad;
+  e.mDownSubst = top.mDownSubst;
+  e.expectedMonad = top.expectedMonad;
 
-  top.merrors := ne.merrors;
+  top.merrors := e.merrors;
   top.mUpSubst = top.mDownSubst;
 
-  ne.monadicallyUsed = false; --this needs to change when we decorate monadic trees
+  e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
-                     then [access(new(e), '.', new(q), location=top.location)] ++ ne.monadicNames
-                     else ne.monadicNames;
+                     then [access(e, '.', q, location=top.location)] ++ e.monadicNames
+                     else e.monadicNames;
 
   local eUnDec::Expr =
-        if ne.mtyperep.isDecorated
-        then Silver_Expr{ silver:core:new($Expr {ne.monadRewritten}) }
-        else ne.monadRewritten;
-  local noMonad::Expr = access(ne.monadRewritten, '.', new(q), location=top.location);
+        if e.mtyperep.isDecorated
+        then Silver_Expr{ silver:core:new($Expr {e.monadRewritten}) }
+        else e.monadRewritten;
+  local noMonad::Expr = access(e.monadRewritten, '.', q, location=top.location);
   local isEMonad::Expr =
     Silver_Expr {
       $Expr {monadBind(top.location)}
       ($Expr {eUnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne.mtyperep, top.location), location=top.location)} ->
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location)} ->
           $Expr {monadReturn(top.location)}
           (x.$QName {qName(q.location, q.name)})
        )
       )
     };
-  top.monadRewritten = if isMonad(ne.mtyperep, top.env) &&
-                          fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst))
+  top.monadRewritten = if isMonad(e.mtyperep, top.env) &&
+                          fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                        then isEMonad
                        else noMonad;
 
-  top.mtyperep = if isMonad(ne.mtyperep, top.env) &&
-                    fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst))
+  top.mtyperep = if isMonad(e.mtyperep, top.env) &&
+                    fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                  then monadOfType(top.expectedMonad, baseType)
                  else baseType;
 
@@ -690,37 +650,25 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  local ne::Expr = new(e);
-  ne.mDownSubst = top.mDownSubst;
-  ne.env = top.env;
-  ne.flowEnv = top.flowEnv;
-  ne.config = top.config;
-  ne.compiledGrammars = top.compiledGrammars;
-  ne.grammarName = top.grammarName;
-  ne.frame = top.frame;
-  ne.finalSubst = top.finalSubst;
-  ne.downSubst = top.downSubst;
-  ne.originRules = top.originRules;
-  ne.isRoot = false;
-  ne.expectedMonad = top.expectedMonad;
-
-  ne.monadicallyUsed = false; --this needs to change when we decorate monadic trees
+  e.mDownSubst = top.mDownSubst;
+  e.expectedMonad = top.expectedMonad;
+  e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
-                     then [access(new(e), '.', new(q), location=top.location)] ++ ne.monadicNames
-                     else ne.monadicNames;
+                     then [access(e, '.', q, location=top.location)] ++ e.monadicNames
+                     else e.monadicNames;
 
   local eUnDec::Expr =
-        if ne.mtyperep.isDecorated
-        then Silver_Expr{ silver:core:new($Expr {ne.monadRewritten}) }
-        else ne.monadRewritten;
-  local noMonad::Expr = access(ne.monadRewritten, '.', new(q), location=top.location);
+        if e.mtyperep.isDecorated
+        then Silver_Expr{ silver:core:new($Expr {e.monadRewritten}) }
+        else e.monadRewritten;
+  local noMonad::Expr = access(e.monadRewritten, '.', q, location=top.location);
   local isEMonad::Expr =
     Silver_Expr {
       $Expr {monadBind(top.location)}
       ($Expr {eUnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne.mtyperep, top.location), location=top.location)} ->
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location)} ->
           $Expr {monadReturn(top.location)}
           (x.$QName {qName(q.location, q.name)})
        )
@@ -730,21 +678,21 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     Silver_Expr {
       $Expr {monadBind(top.location)}
       ($Expr {eUnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne.mtyperep, top.location), location=top.location)} ->
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location)} ->
           (x.$QName {qName(q.location, q.name)})
        )
       )
     };
-  top.monadRewritten = if isMonad(ne.mtyperep, top.env) &&
-                          fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst))
+  top.monadRewritten = if isMonad(e.mtyperep, top.env) &&
+                          fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                        then if isMonad(q.typerep, top.env) &&
                                fst(monadsMatch(q.typerep, top.expectedMonad, top.mUpSubst))
                             then isBothMonad
                             else isEMonad
                        else noMonad;
 
-  top.mtyperep = if isMonad(ne.mtyperep, top.env) &&
-                    fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst))
+  top.mtyperep = if isMonad(e.mtyperep, top.env) &&
+                    fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                  then if isMonad(q.typerep, top.env) &&
                          fst(monadsMatch(q.typerep, top.expectedMonad, top.mUpSubst))
                       then q.typerep
@@ -752,7 +700,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                  else q.typerep;
 
   top.mUpSubst = top.mDownSubst;
-  top.merrors := ne.merrors;
+  top.merrors := e.merrors;
   top.merrors <- case q.attrDcl of
                  | restrictedSynDcl(_, _, _) -> []
                  | restrictedInhDcl(_, _, _) -> []
@@ -774,37 +722,25 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  local ne::Expr = new(e);
-  ne.mDownSubst = top.mDownSubst;
-  ne.env = top.env;
-  ne.flowEnv = top.flowEnv;
-  ne.config = top.config;
-  ne.compiledGrammars = top.compiledGrammars;
-  ne.grammarName = top.grammarName;
-  ne.frame = top.frame;
-  ne.finalSubst = top.finalSubst;
-  ne.downSubst = top.downSubst;
-  ne.originRules = top.originRules;
-  ne.isRoot = false;
-  ne.expectedMonad = top.expectedMonad;
-
-  ne.monadicallyUsed = false; --this needs to change when we decorate monadic trees
+  e.mDownSubst = top.mDownSubst;
+  e.expectedMonad = top.expectedMonad;
+  e.monadicallyUsed = false; --this needs to change when we decorate monadic trees
   top.monadicNames = if top.monadicallyUsed
-                     then [access(new(e), '.', new(q), location=top.location)] ++ ne.monadicNames
-                     else ne.monadicNames;
+                     then [access(e, '.', q, location=top.location)] ++ e.monadicNames
+                     else e.monadicNames;
 
   local eUnDec::Expr =
-        if ne.mtyperep.isDecorated
-        then Silver_Expr{ silver:core:new($Expr {ne.monadRewritten}) }
-        else ne.monadRewritten;
-  local noMonad::Expr = access(ne.monadRewritten, '.', new(q), location=top.location);
+        if e.mtyperep.isDecorated
+        then Silver_Expr{ silver:core:new($Expr {e.monadRewritten}) }
+        else e.monadRewritten;
+  local noMonad::Expr = access(e.monadRewritten, '.', q, location=top.location);
   local isEMonad::Expr =
     Silver_Expr {
       $Expr {monadBind(top.location)}
       ($Expr {eUnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne.mtyperep, top.location), location=top.location)} ->
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location)} ->
           $Expr {monadReturn(top.location)}
           (x.$QName {qName(q.location, q.name)})
        )
@@ -814,21 +750,21 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     Silver_Expr {
       $Expr {monadBind(top.location)}
       ($Expr {eUnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne.mtyperep, top.location), location=top.location)} ->
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location)} ->
           (x.$QName {qName(q.location, q.name)})
        )
       )
     };
-  top.monadRewritten = if isMonad(ne.mtyperep, top.env) &&
-                          fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst))
+  top.monadRewritten = if isMonad(e.mtyperep, top.env) &&
+                          fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                        then if isMonad(q.typerep, top.env) &&
                                fst(monadsMatch(q.typerep, top.expectedMonad, top.mUpSubst))
                             then isBothMonad
                             else isEMonad
                        else noMonad;
 
-  top.mtyperep = if isMonad(ne.mtyperep, top.env) &&
-                    fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst))
+  top.mtyperep = if isMonad(e.mtyperep, top.env) &&
+                    fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                  then if isMonad(q.typerep, top.env) &&
                          fst(monadsMatch(q.typerep, top.expectedMonad, top.mUpSubst))
                       then q.typerep
@@ -836,7 +772,7 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
                  else q.typerep;
 
   top.mUpSubst = top.mDownSubst;
-  top.merrors := ne.merrors;
+  top.merrors := e.merrors;
   top.merrors <- case q.attrDcl of
                  | restrictedSynDcl(_, _, _) -> []
                  | restrictedInhDcl(_, _, _) -> []
@@ -858,37 +794,26 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
 }
 
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
+top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  local ne::Expr = new(e);
-  ne.mDownSubst = top.mDownSubst;
-  ne.env = top.env;
-  ne.flowEnv = top.flowEnv;
-  ne.config = top.config;
-  ne.compiledGrammars = top.compiledGrammars;
-  ne.grammarName = top.grammarName;
-  ne.frame = top.frame;
-  ne.finalSubst = top.finalSubst;
-  ne.downSubst = top.downSubst;
-  ne.isRoot = false;
-  ne.originRules = top.originRules;
-  ne.expectedMonad = top.expectedMonad;
+  e.mDownSubst = top.mDownSubst;
+  e.expectedMonad = top.expectedMonad;
 
   top.monadicNames = [];
 
    --Why do we rewrite here, in an error production?  We can get here from the basic access
   --   production based on normal typechecking failing even though our typechecking will
   --   succeed, and we then need to be able to go back.
- local eUnDec::Expr =
-        if ne.mtyperep.isDecorated
-        then Silver_Expr{ silver:core:new($Expr {ne.monadRewritten}) }
-        else ne.monadRewritten;
-  local noMonad::Expr = access(ne.monadRewritten, '.', new(q), location=top.location);
+  local eUnDec::Expr =
+        if e.mtyperep.isDecorated
+        then Silver_Expr{ silver:core:new($Expr {e.monadRewritten}) }
+        else e.monadRewritten;
+  local noMonad::Expr = access(e.monadRewritten, '.', q, location=top.location);
   local isEMonad::Expr =
     Silver_Expr {
       $Expr {monadBind(top.location)}
       ($Expr {eUnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne.mtyperep, top.location), location=top.location)} ->
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location)} ->
           $Expr {monadReturn(top.location)}
           (x.$QName {qName(q.location, q.name)})
        )
@@ -898,28 +823,28 @@ top::Expr ::= e::Decorated Expr  q::Decorated QNameAttrOccur
     Silver_Expr {
       $Expr {monadBind(top.location)}
       ($Expr {eUnDec},
-       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(ne.mtyperep, top.location), location=top.location)} ->
+       (\x::$TypeExpr {typerepTypeExpr(monadInnerType(e.mtyperep, top.location), location=top.location)} ->
           (x.$QName {qName(q.location, q.name)})
        )
       )
     };
-  top.monadRewritten = if isMonad(ne.mtyperep, top.env) &&
-                          fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst))
+  top.monadRewritten = if isMonad(e.mtyperep, top.env) &&
+                          fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                        then if isMonad(q.typerep, top.env) &&
                                fst(monadsMatch(q.typerep, top.expectedMonad, top.mUpSubst))
                             then isBothMonad
                             else isEMonad
                        else noMonad;
 
-  top.mtyperep = if isMonad(ne.mtyperep, top.env) &&
-                    fst(monadsMatch(ne.mtyperep, top.expectedMonad, top.mUpSubst))
+  top.mtyperep = if isMonad(e.mtyperep, top.env) &&
+                    fst(monadsMatch(e.mtyperep, top.expectedMonad, top.mUpSubst))
                  then if isMonad(q.typerep, top.env) &&
                          fst(monadsMatch(q.typerep, top.expectedMonad, top.mUpSubst))
                       then q.typerep
                       else monadOfType(top.expectedMonad, q.typerep)
                  else q.typerep;
 
-  top.merrors := ne.merrors;
+  top.merrors := e.merrors;
   top.merrors <- case q.attrDcl of
                  | restrictedSynDcl(_, _, _) -> []
                  | restrictedInhDcl(_, _, _) -> []
@@ -952,7 +877,6 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   -}
   propagate mDownSubst, mUpSubst;
   top.merrors := e.merrors;
-  e.expectedMonad = top.expectedMonad;
 
   e.monadicallyUsed = if isMonad(e.mtyperep, top.env) && monadsMatch(e.mtyperep, top.expectedMonad, top.mDownSubst).fst
                       then true
@@ -999,7 +923,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 attribute monadRewritten<ExprInhs>, merrors, mDownSubst, mUpSubst, monadicNames, expectedMonad occurs on ExprInhs;
 attribute monadRewritten<ExprInh>, merrors, mDownSubst, mUpSubst, monadicNames, expectedMonad occurs on ExprInh;
 
-propagate mDownSubst, mUpSubst on ExprInhs, ExprInh;
+propagate mDownSubst, mUpSubst, expectedMonad on ExprInhs, ExprInh;
 
 aspect production exprInhsEmpty
 top::ExprInhs ::= 
@@ -1035,8 +959,6 @@ aspect production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 {
   top.merrors := e.merrors;
-
-  e.expectedMonad = top.expectedMonad;
 
   e.monadicallyUsed = false;
   top.monadicNames = e.monadicNames;
@@ -1104,9 +1026,6 @@ top::Expr ::= e1::Expr '&&' e2::Expr
                  else if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
                       then e2.mtyperep
                       else boolType();
-
-  e1.expectedMonad = top.expectedMonad;
-  e2.expectedMonad = top.expectedMonad;
 
   e1.monadicallyUsed = isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst;
   e2.monadicallyUsed = isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst;
@@ -1195,9 +1114,6 @@ top::Expr ::= e1::Expr '||' e2::Expr
   e2.monadicallyUsed = isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst;
   top.monadicNames = e1.monadicNames ++ e2.monadicNames;
 
-  e1.expectedMonad = top.expectedMonad;
-  e2.expectedMonad = top.expectedMonad;
-
   local e1UnDec::Expr =
         if e1.mtyperep.isDecorated
         then Silver_Expr {silver:core:new( $Expr {e1.monadRewritten})}
@@ -1262,8 +1178,6 @@ top::Expr ::= '!' e::Expr
 
   e.monadicallyUsed = isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst;
   top.monadicNames = e.monadicNames;
-
-  e.expectedMonad = top.expectedMonad;
 
   local eUnDec::Expr =
         if e.mtyperep.isDecorated
@@ -1374,10 +1288,6 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
   e3.monadicallyUsed = false;
   top.monadicNames = e1.monadicNames ++ e2.monadicNames ++ e3.monadicNames;
 
-  e1.expectedMonad = top.expectedMonad;
-  e2.expectedMonad = top.expectedMonad;
-  e3.expectedMonad = top.expectedMonad;
-
   --To deal with the case where one type or the other might be "generic" (e.g. Maybe<a>),
   --   we want to do substitution on the types before putting them into the monadRewritten
   local e2Type::Type = performSubstitution(e2.mtyperep, top.finalSubst);
@@ -1470,9 +1380,6 @@ top::Expr ::= e1::Expr '+' e2::Expr
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
 
-  e1.expectedMonad = top.expectedMonad;
-  e2.expectedMonad = top.expectedMonad;
-
   local ec::TypeCheck = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
                         then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
                              then check(e1.mtyperep, e2.mtyperep)
@@ -1562,9 +1469,6 @@ top::Expr ::= e1::Expr '-' e2::Expr
   e2.mDownSubst = e1.mUpSubst;
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
-
-  e1.expectedMonad = top.expectedMonad;
-  e2.expectedMonad = top.expectedMonad;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
                         then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
@@ -1656,9 +1560,6 @@ top::Expr ::= e1::Expr '*' e2::Expr
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
 
-  e1.expectedMonad = top.expectedMonad;
-  e2.expectedMonad = top.expectedMonad;
-
   local ec::TypeCheck = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
                         then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
                              then check(e1.mtyperep, e2.mtyperep)
@@ -1748,9 +1649,6 @@ top::Expr ::= e1::Expr '/' e2::Expr
   e2.mDownSubst = e1.mUpSubst;
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
-
-  e1.expectedMonad = top.expectedMonad;
-  e2.expectedMonad = top.expectedMonad;
 
   local ec::TypeCheck = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
                         then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
@@ -1842,9 +1740,6 @@ top::Expr ::= e1::Expr '%' e2::Expr
   ec.downSubst = e2.mUpSubst;
   top.mUpSubst = ec.upSubst;
 
-  e1.expectedMonad = top.expectedMonad;
-  e2.expectedMonad = top.expectedMonad;
-
   local ec::TypeCheck = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
                         then if isMonad(e2.mtyperep, top.env) && monadsMatch(top.expectedMonad, e2.mtyperep, top.mDownSubst).fst
                              then check(e1.mtyperep, e2.mtyperep)
@@ -1920,8 +1815,6 @@ top::Expr ::= '-' e::Expr
 
   e.monadicallyUsed = isMonad(e.mtyperep, top.env) && monadsMatch(top.expectedMonad, e.mtyperep, top.mDownSubst).fst;
   top.monadicNames = e.monadicNames;
-
-  e.expectedMonad = top.expectedMonad;
 
   propagate mDownSubst, mUpSubst;
 
@@ -2020,6 +1913,7 @@ synthesized attribute monadTypesLocations::[Pair<Type Integer>] occurs on AppExp
 synthesized attribute realTypes::[Type] occurs on AppExpr, AppExprs;
 --The only monad banned from being used as an actual argument
 attribute expectedMonad occurs on AppExpr, AppExprs;
+propagate expectedMonad on AppExpr, AppExprs;
 --Whether we're in a special case where monad arguments are allowed, despite the normal prohibition
 autocopy attribute monadArgumentsAllowed::Boolean occurs on AppExpr, AppExprs;
 
@@ -2040,7 +1934,6 @@ aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
   top.merrors := e.merrors;
-  e.expectedMonad = top.expectedMonad;
 
   top.realTypes = [e.mtyperep];
   top.monadTypesLocations = if isMonadic
@@ -2101,9 +1994,6 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
 {
   top.merrors := es.merrors ++ e.merrors;
 
-  es.expectedMonad = top.expectedMonad;
-  e.expectedMonad = top.expectedMonad;
-
   top.realTypes = es.realTypes ++ e.realTypes;
 
   top.monadTypesLocations = es.monadTypesLocations ++ e.monadTypesLocations;
@@ -2116,8 +2006,6 @@ aspect production oneAppExprs
 top::AppExprs ::= e::AppExpr
 {
   top.merrors := e.merrors;
-
-  e.expectedMonad = top.expectedMonad;
 
   top.realTypes = e.realTypes;
 
@@ -2143,30 +2031,18 @@ top::AppExprs ::=
 
 
 aspect production exprRef
-top::Expr ::= e::Decorated Expr
+top::Expr ::= e::PartiallyDecorated Expr
 {
-  local ne::Expr = new(e);
-  ne.mDownSubst = top.mDownSubst;
-  ne.env = top.env;
-  ne.flowEnv = top.flowEnv;
-  ne.config = top.config;
-  ne.compiledGrammars = top.compiledGrammars;
-  ne.grammarName = top.grammarName;
-  ne.frame = top.frame;
-  ne.finalSubst = top.finalSubst;
-  ne.downSubst = top.downSubst;
-  ne.originRules = top.originRules;
-  ne.isRoot = top.isRoot;
-  ne.expectedMonad = top.expectedMonad;
+  e.mDownSubst = top.mDownSubst;
+  e.expectedMonad = top.expectedMonad;
+  e.monadicallyUsed = top.monadicallyUsed;
 
-  top.merrors := ne.merrors;
-  top.mUpSubst = ne.mUpSubst;
-  top.mtyperep = ne.mtyperep;
-  ne.monadicallyUsed = top.monadicallyUsed;
-  top.monadicNames = ne.monadicNames;
-  top.monadRewritten = ne.monadRewritten;
+  top.merrors := e.merrors;
+  top.mUpSubst = e.mUpSubst;
+  top.mtyperep = e.mtyperep;
+  top.monadicNames = e.monadicNames;
+  top.monadRewritten = e.monadRewritten;
 }
-
 
 
 
@@ -2184,7 +2060,7 @@ top::Expr ::= 'disambiguationFailure'
 
 
 aspect production lexerClassReference
-top::Expr ::= q::Decorated QName
+top::Expr ::= q::PartiallyDecorated QName
 {
   top.mUpSubst = top.mDownSubst;
   top.mtyperep = q.lookupValue.typeScheme.typerep;

@@ -59,7 +59,7 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   local ntDefGram :: String = hackGramFromFName(top.frame.lhsNtName);
 
@@ -75,7 +75,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
       [defaultSynEq(top.frame.lhsNtName, attr.attrDcl.fullName, e.flowDeps)];
 }
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   top.flowDefs <-
     case dl of
@@ -87,7 +87,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 }
 
 aspect production localValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
+top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
   -- TODO: So, I'm just going to assume for the moment that we're always allowed to define the eq for a local...
   -- technically, it's possible to break this if you declare it in one grammar, but define it in another, but
@@ -102,7 +102,7 @@ top::ProductionStmt ::= val::Decorated QName  e::Expr
 -- FROM COLLECTIONS TODO
 
 aspect production synAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- <- -} e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  {- <- -} e::Expr
 {
   local ntDefGram :: String = hackGramFromFName(top.frame.lhsNtName);
 
@@ -114,7 +114,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {-
 }
 
 aspect production inhAppendColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {- <- -} e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  {- <- -} e::Expr
 {
   local vertex :: FlowVertex =
     case dl of
@@ -127,7 +127,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  {-
     [extraEq(top.frame.fullName, vertex, e.flowDeps, true)];
 }
 aspect production synBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   local ntDefGram :: String = hackGramFromFName(top.frame.lhsNtName);
 
@@ -143,7 +143,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
       [defaultSynEq(top.frame.lhsNtName, attr.attrDcl.fullName, e.flowDeps)];
 }
 aspect production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   top.flowDefs <-
     case dl of
@@ -156,7 +156,7 @@ top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e:
 
 
 aspect production appendCollectionValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
+top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
   local locDefGram :: String = hackGramFromQName(val.lookupValue);
   -- TODO: possible bug? this would include ":local" in the gram wouldn't it?

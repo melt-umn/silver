@@ -87,7 +87,7 @@ top::ForwardInhs ::= lhs::ForwardInh rhs::ForwardInhs
 aspect production forwardLhsExpr
 top::ForwardLHSExpr ::= q::QNameAttrOccur
 {
-  top.attrName = q.dcl.attrOccursInitIndex;
+  top.attrName = q.attrOccursInitIndex;
 }
 
 aspect production localAttributeDcl
@@ -137,66 +137,66 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr ';'
 }
 
 aspect production childDefLHS
-top::DefLHS ::= q::Decorated QName
+top::DefLHS ::= q::PartiallyDecorated QName
 {
   top.translation = s"${top.frame.className}.childInheritedAttributes[${top.frame.className}.i_${q.lookupValue.fullName}]";
 }
 
 aspect production lhsDefLHS
-top::DefLHS ::= q::Decorated QName
+top::DefLHS ::= q::PartiallyDecorated QName
 {
   top.translation = s"${top.frame.className}.synthesizedAttributes";
 }
 
 aspect production localDefLHS
-top::DefLHS ::= q::Decorated QName
+top::DefLHS ::= q::PartiallyDecorated QName
 {
   top.translation = s"${top.frame.className}.localInheritedAttributes[${q.lookupValue.dcl.attrOccursIndex}]";
 }
 
 aspect production forwardDefLHS
-top::DefLHS ::= q::Decorated QName
+top::DefLHS ::= q::PartiallyDecorated QName
 {
   top.translation = s"${top.frame.className}.forwardInheritedAttributes";
 }
 
 aspect production errorDefLHS
-top::DefLHS ::= q::Decorated QName
+top::DefLHS ::= q::PartiallyDecorated QName
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 }
 
 aspect production errorAttributeDef
-top::ProductionStmt ::= msg::[Message] dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= msg::[Message] dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 }
 
 aspect production synthesizedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   top.translation = 
     s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
-    s"\t\t${dl.translation}[${attr.dcl.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
+    s"\t\t${dl.translation}[${attr.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
 }
 
 aspect production inheritedAttributeDef
-top::ProductionStmt ::= dl::Decorated DefLHS  attr::Decorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   top.translation = 
     s"\t\t// ${dl.unparse}.${attr.unparse} = ${e.unparse}\n" ++
-    s"\t\t${dl.translation}[${attr.dcl.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
+    s"\t\t${dl.translation}[${attr.attrOccursInitIndex}] = ${wrapLazy(e)};\n";
 }
 
 
 aspect production errorValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
+top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
 }
 
 aspect production localValueDef
-top::ProductionStmt ::= val::Decorated QName  e::Expr
+top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
   top.translation =
 	s"\t\t// ${val.unparse} = ${e.unparse}\n" ++

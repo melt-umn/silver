@@ -88,7 +88,7 @@ top::ValueDclInfo ::= fn::String ty::Type
 }
 
 abstract production defaultLhsDefLHS
-top::DefLHS ::= q::Decorated QName
+top::DefLHS ::= q::PartiallyDecorated QName
 {
   top.name = q.name;
   top.unparse = q.unparse;

@@ -201,7 +201,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' '=' trans::St
 
 
 aspect production defaultAttributionDcl
-top::AGDcl ::= at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.docForName = "";
   top.docUnparse = "";
@@ -292,7 +292,7 @@ top::AGDcl ::= n::Name
 }
 
 aspect production errorAttributionDcl
-top::AGDcl ::= msg::[Message] at::Decorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= msg::[Message] at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   top.docForName = "";
   top.docUnparse = "";
