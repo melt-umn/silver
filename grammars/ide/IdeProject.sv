@@ -7,7 +7,7 @@ type IdeProject foreign;
 
 -- Get the name of the given project.
 function getProjectName
-IOVal<String> ::= proj::IdeProject  i::IO
+IOVal<String> ::= proj::IdeProject  i::IOToken
 {
   return error("Not Yet Implemented: getName");
 } foreign {
@@ -18,7 +18,7 @@ IOVal<String> ::= proj::IdeProject  i::IO
 -- Refresh the given project down to given depth, for which only pre-defined 
 -- constants (0, 1, indefinite) can be used. 
 function refreshProject
-IO ::= proj::IdeProject  i::IO
+IOToken ::= proj::IdeProject  i::IOToken
 {
   return error("Not Yet Implemented: refresh");
 } foreign {
@@ -28,7 +28,7 @@ IO ::= proj::IdeProject  i::IO
 
 -- Get the absoluet path of given project.
 function getProjectPath
-IOVal<String> ::= proj::IdeProject i::IO
+IOVal<String> ::= proj::IdeProject i::IOToken
 {
   return error("Not Yet Implemented: getProjectPath");
 } foreign {
@@ -38,7 +38,7 @@ IOVal<String> ::= proj::IdeProject i::IO
 	
 -- Get the generated path of given project, relative to root.
 function getGeneratedPath
-IOVal<String> ::= proj::IdeProject i::IO
+IOVal<String> ::= proj::IdeProject i::IOToken
 {
   return error("Not Yet Implemented: getGeneratedPath");
 } foreign {
@@ -48,7 +48,7 @@ IOVal<String> ::= proj::IdeProject i::IO
 	
 -- Get members (direct sub-resources) of given project. 
 function getProjectMembers
-IOVal<Maybe<[IdeResource]>> ::= proj::IdeProject i::IO
+IOVal<Maybe<[IdeResource]>> ::= proj::IdeProject i::IOToken
 {
   return error("Not Yet Implemented: getProjectMembers");
 } foreign {
