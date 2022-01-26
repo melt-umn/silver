@@ -166,6 +166,14 @@ top::Type ::= el::Type
   top.tyArgs = [];
 }
 
+aspect production listCtrType
+top::Type ::=
+{
+  top.abellaType = nameAbellaType("list");
+  top.numExpectedArgs = 1;
+  top.tyArgs = [];
+}
+
 aspect production terminalIdType
 top::Type ::=
 {
@@ -199,8 +207,16 @@ top::Type ::= fn::String
 
 aspect production decoratedType
 top::Type ::= te::Type i::Type
- {
-   top.abellaType = te.abellaType;
+{
+  top.abellaType = te.abellaType;
+  top.numExpectedArgs = 0;
+  top.tyArgs = [];
+}
+
+aspect production partiallyDecoratedType
+top::Type ::= te::Type i::Type
+{
+  top.abellaType = te.abellaType;
   top.numExpectedArgs = 0;
   top.tyArgs = [];
 }

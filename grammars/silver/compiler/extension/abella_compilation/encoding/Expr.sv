@@ -1321,34 +1321,6 @@ top::Expr ::= '[' ']'
   top.encodedFailure = [];
 }
 
-aspect production consListOp
-top::Expr ::= h::Expr '::' t::Expr
-{
-  top.encodedExpr =
-      foldr(\ hp::([Metaterm], Term) rest::[([Metaterm], Term)] ->
-              foldr(\ tp::([Metaterm], Term)
-                      rest::[([Metaterm], Term)] ->
-                      ( hp.1 ++ tp.1, consTerm(hp.2, tp.2) )::rest,
-                    rest, t.encodedExpr),
-            [], h.encodedExpr);
-  top.encodedFailure =
-      h.encodedFailure ++
-      foldr(\ ep1::([Metaterm], Term) rest::[[Metaterm]]->
-              map(\ l::[Metaterm] -> ep1.1 ++ l,
-                    t.encodedFailure) ++ rest,
-            [], h.encodedExpr);
-}
-
-aspect production fullList
-top::Expr ::= '[' es::Exprs ']'
-{
-  top.encodedExpr =
-      map(\ esp::([Metaterm], [Term]) ->
-            ( esp.1, foldr(consTerm(_, _), nilTerm(), esp.2) ),
-          es.encodedArgs);
-  top.encodedFailure = es.encodedFailure;
-}
-
 aspect production selector
 top::Expr ::= tuple::Expr '.' a::IntConst
 {
