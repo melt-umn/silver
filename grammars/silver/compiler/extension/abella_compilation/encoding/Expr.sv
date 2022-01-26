@@ -193,40 +193,67 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
   local resultName::String = "FunResult";
   local resultTerm::Term = varTerm(resultName, genInt());
   top.encodedExpr =
-      foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
-              foldr(\ argp::([Metaterm], [Term])
-                      rest::[([Metaterm], Term)] ->
-                      ( if termIsProd(ep.2) ||
-                           ep.2.unparse == pairConstructorName
-                        then ( ep.1 ++ argp.1,
-                               buildApplication(ep.2, argp.2) )
-                        else ( ep.1 ++ argp.1 ++
-                               [termMetaterm(
-                                   buildApplication(ep.2,
-                                      argp.2 ++ [resultTerm]))],
-                               new(resultTerm) ) )::rest,
-                    rest, newes.encodedArgs),
-            [], newe.encodedExpr);
+      case e of
+      --Treat building lists specially for simplicity in encoded spec
+      | functionReference(q)
+        when q.lookupValue.fullName == "silver:core:nil" ->
+        [( [], nilTerm() )]
+      | functionReference(q)
+        when q.lookupValue.fullName == "silver:core:cons" ->
+        map(\ ep::([Metaterm], [Term]) ->
+              case ep.2 of
+              | [hd, tl] -> (ep.1, consTerm(hd, tl))
+              | _ -> error("Should not access encoding in " ++
+                           "presence of errors")
+              end,
+            newes.encodedArgs)
+      --Anything else encode into an application
+      | _ ->
+        foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
+                foldr(\ argp::([Metaterm], [Term])
+                        rest::[([Metaterm], Term)] ->
+                        ( if termIsProd(ep.2) ||
+                             ep.2.unparse == pairConstructorName
+                          then ( ep.1 ++ argp.1,
+                                 buildApplication(ep.2, argp.2) )
+                          else ( ep.1 ++ argp.1 ++
+                                 [termMetaterm(
+                                     buildApplication(ep.2,
+                                        argp.2 ++ [resultTerm]))],
+                                 new(resultTerm) ) )::rest,
+                      rest, newes.encodedArgs),
+              [], newe.encodedExpr)
+      end;
   top.encodedFailure =
+      case e of
+      --Treat building lists specially because they cannot fail as function calls
+      | functionReference(q)
+        when q.lookupValue.fullName == "silver:core:nil" ->
+        [] --nothing can fail
+      | functionReference(q)
+        when q.lookupValue.fullName == "silver:core:cons" ->
+        newes.encodedFailure --only args can fail
       --for each encoding of function and args, might not return
-      foldr(\ ep::([Metaterm], Term) rest::[[Metaterm]] ->
-              foldr(\ argp::([Metaterm], [Term])
-                      rest::[[Metaterm]] ->
-                      if termIsProd(ep.2) ||
-                         ep.2.unparse == pairConstructorName
-                      then --productions always return
-                           rest
-                      else ( ep.1 ++ argp.1 ++
-                             [impliesMetaterm(
-                                 bindingMetaterm(existsBinder(),
-                                    [("Res", nothing())],
-                                    termMetaterm(
-                                       buildApplication(ep.2,
-                                          argp.2 ++ [nameTerm("Res")]))),
-                                 falseMetaterm())] )::rest,
-                    rest, newes.encodedArgs),
-            [], newe.encodedExpr) ++
-      newe.encodedFailure ++ newes.encodedFailure;
+      | _ ->
+        foldr(\ ep::([Metaterm], Term) rest::[[Metaterm]] ->
+                foldr(\ argp::([Metaterm], [Term])
+                        rest::[[Metaterm]] ->
+                        if termIsProd(ep.2) ||
+                           ep.2.unparse == pairConstructorName
+                        then --productions always return
+                             rest
+                        else ( ep.1 ++ argp.1 ++
+                               [impliesMetaterm(
+                                   bindingMetaterm(existsBinder(),
+                                      [("Res", nothing())],
+                                      termMetaterm(
+                                         buildApplication(ep.2,
+                                            argp.2 ++ [nameTerm("Res")]))),
+                                   falseMetaterm())] )::rest,
+                      rest, newes.encodedArgs),
+              [], newe.encodedExpr) ++
+        newe.encodedFailure ++ newes.encodedFailure
+      end;
 }
 
 aspect production partialApplication
