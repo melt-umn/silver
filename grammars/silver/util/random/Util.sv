@@ -32,6 +32,9 @@ nonterminal RandomVal<a> with randomIn, randomOut, randomValue<a>;
 
 synthesized attribute randomValue<a>::a;
 
+@{--
+Create a random value using the default Random instance for the type.
+-}
 production randomVal
 Random a => top::RandomVal<a> ::=
 {
@@ -40,6 +43,12 @@ Random a => top::RandomVal<a> ::=
   top.randomOut = result.2;
 }
 
+@{--
+Create a random value using the default RandomRange instance for the type.
+
+@param min  The minimum bound for the random value.
+@param max  The maximum bound for the random value.
+-}
 production randomRangeVal
 RandomRange a => top::RandomVal<a> ::= min::a max::a
 {
@@ -48,6 +57,11 @@ RandomRange a => top::RandomVal<a> ::= min::a max::a
   top.randomOut = result.2;
 }
 
+@{--
+Create a random value using a monadic RandomGen action.
+
+@param g  The random generator to use to generate a value.
+-}
 production randomGenVal
 top::RandomVal<a> ::= g::RandomGen<a>
 {
