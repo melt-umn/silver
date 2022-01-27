@@ -13,7 +13,7 @@ import silver:rewrite;
 
 -- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
 function ideAnalyze
-IOVal<[Message]> ::= args::[String]  svParser::SVParser ioin::IO
+IOVal<[Message]> ::= args::[String]  svParser::SVParser ioin::IOToken
 {
   -- Figure out arguments
   local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);
@@ -54,7 +54,7 @@ IOVal<[Message]> ::= args::[String]  svParser::SVParser ioin::IO
 
 -- This function is mostly copied from function cmdLineRun in driver/BuildProcess.sv
 function ideGenerate
-IOVal<[Message]> ::= args::[String]  svParser::SVParser  ioin::IO
+IOVal<[Message]> ::= args::[String]  svParser::SVParser  ioin::IOToken
 {
   -- Figure out arguments
   local argResult :: Either<String  Decorated CmdArgs> = parseArgs(args);

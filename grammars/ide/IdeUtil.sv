@@ -11,7 +11,7 @@ import silver:langutil;
   target: the target to be invoked in build file. For now only one target is supported.
 --}
 function ant
-IO ::= buildFile::String arguments::String target::String i::IO
+IOToken ::= buildFile::String arguments::String target::String i::IOToken
 {
   return error("Not Yet Implemented: ant");
 } foreign {
@@ -26,7 +26,7 @@ IO ::= buildFile::String arguments::String target::String i::IO
  - NOT TO BE CONFUSED WITH IdeResource. (i.e. files in the project)
  -}
 function getIdeResource
-IOVal<String> ::= resourceid::String  i::IO
+IOVal<String> ::= resourceid::String  i::IOToken
 {
   return error("Not Yet Implemented: getIdeResource");
 } foreign {
