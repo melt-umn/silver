@@ -64,7 +64,8 @@ synthesized attribute copperGrammarElements::[copper:GrammarElement];
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperGrammarElements;
+nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperGrammarElements, compareTo, isEqual;
+propagate compareTo, isEqual on Syntax;
 
 flowtype decorate {cstEnv, classTerminals, superClasses, subClasses, containingGrammar, layoutTerms, prefixesForTerminals, componentGrammarMarkingTerminals, parserAttributeAspects, prettyNames} on Syntax, SyntaxDcl;
 

@@ -15,7 +15,8 @@ import silver:util:treeset as s;
 {--
  - Encapsulates transformations and analysis of Syntax
  -}
-closed nonterminal SyntaxRoot with location, sourceGrammar, cstErrors, copperParser;
+closed nonterminal SyntaxRoot with location, sourceGrammar, cstErrors, copperParser, compareTo, isEqual;
+propagate compareTo, isEqual on SyntaxRoot;
 
 @{-- The Copper API object corresponding to the parser. -}
 synthesized attribute copperParser::copper:ParserBean;

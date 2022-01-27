@@ -7,6 +7,8 @@ import silver:util:treemap as tm;
 abstract production cstCopperMdaRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Syntax  customStartLayout::Maybe<[String]>
 {
+  propagate compareTo, isEqual;
+
   -- Because there may be references between the grammars, we cannot do the
   -- usual normalization.
   
