@@ -25,10 +25,6 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
   local specCstAst :: SyntaxRoot = spec.cstAst;
   local outDir :: String = silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar);
   local parserName :: String = makeParserName(spec.fullName);
-  local dump::ByteArray = case nativeSerialize(new(specCstAst)) of
-  | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper_mda modification: " ++ e)
-  | right(dump) -> dump
-  end;
   local dumpFile :: String = outDir ++ parserName ++ ".copperdump";
 
   local buildGrammar::IO<Integer> =
@@ -37,7 +33,10 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
       print("Running MDA for " ++ spec.fullName ++ ".\n");
       ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
         makeName(spec.sourceGrammar), parserName, true, "", false, "", false);
-      writeBinaryFile(dumpFile, dump);
+      case nativeSerialize(new(specCstAst)) of
+      | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper_mda modification: " ++ e)
+      | right(dump) -> writeBinaryFile(dumpFile, dump)
+      end;
       return ret;
     } else do {
       -- Should this be stderr?
@@ -50,7 +49,8 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
     dumpFileExists :: Boolean <- isFile(dumpFile);
     if dumpFileExists then do {
       dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
-      if dumpFileContents == dump then do {
+      let dumpMatched::Either<String Boolean> = map(eq(specCstAst, _), nativeDeserialize(dumpFileContents));
+      if dumpMatched == right(true) then do {
         print("Copper MDA input did not change; skipping running MDA...\n");
         return 0;
       } else do {

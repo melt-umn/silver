@@ -114,10 +114,6 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
   local specCstAst::SyntaxRoot = spec.cstAst;
   local outDir::String = silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar);
   local parserName::String = makeParserName(spec.fullName);
-  local dump::ByteArray = case nativeSerialize(new(specCstAst)) of
-  | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper modification: " ++ e)
-  | right(dump) -> dump
-  end;
   local dumpFile::String = outDir ++ parserName ++ ".copperdump";
 
 
@@ -136,7 +132,10 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
           makeName(spec.sourceGrammar), parserName, false,
           outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
           parserName ++ ".html", cmdArgs.copperXmlDump);
-        writeBinaryFile(dumpFile, dump);
+        case nativeSerialize(new(specCstAst)) of
+        | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper modification: " ++ e)
+        | right(dump) -> writeBinaryFile(dumpFile, dump)
+        end;
         return ret;
       };
     } else do {
@@ -150,7 +149,8 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
     dumpFileExists :: Boolean <- isFile(dumpFile);
     if dumpFileExists then do {
       dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
-      if dumpFileContents == dump then do {
+      let dumpMatched::Either<String Boolean> = map(eq(specCstAst, _), nativeDeserialize(dumpFileContents));
+      if dumpMatched == right(true) then do {
         print("Copper input did not change; skipping regenerating parser...\n");
         return 0;
       } else do {
