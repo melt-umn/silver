@@ -151,7 +151,7 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
       dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
       let dumpMatched::Either<String Boolean> = map(eq(specCstAst, _), nativeDeserialize(dumpFileContents));
       if dumpMatched == right(true) then do {
-        print("Copper input did not change; skipping regenerating parser...\n");
+        print("Parser " ++ spec.fullName ++ " is up to date.\n");
         return 0;
       } else do {
         buildGrammar;
