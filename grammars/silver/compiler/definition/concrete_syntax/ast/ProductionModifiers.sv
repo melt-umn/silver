@@ -5,7 +5,7 @@ imports silver:compiler:definition:concrete_syntax only productionName;
 monoid attribute productionPrecedence :: Maybe<Integer> with nothing(), orElse;
 -- acode from terminal modifiers
 monoid attribute customLayout :: Maybe<[String]> with nothing(), orElse;
-monoid attribute productionOperator :: Maybe<String> with nothing(), orElse;
+monoid attribute productionOperator :: Maybe<Decorated SyntaxDcl> with nothing(), orElse;
 
 {--
  - Modifiers for productions.
@@ -56,7 +56,7 @@ top::SyntaxProductionModifier ::= term::String
   top.cstErrors := if !null(termRef) then [] 
                    else ["Terminal " ++ term ++ " was referenced but " ++
                          "this grammar was not included in this parser. (Referenced from operator clause on production " ++ top.productionName ++ ")"];
-  top.productionOperator := just(xmlCopperRef(head(termRef)));
+  top.productionOperator := just(head(termRef));
 }
 {--
  - The action to perform when this production is REDUCEd.

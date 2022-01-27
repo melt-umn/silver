@@ -10,6 +10,8 @@ export ANT_OPTS=-Xss10M
 # One new option: --newcore, for when the core FFI stuff has to change in tandem with the runtime
 # Only I should ever have to use this, as once it's done ONCE, fetch-jars will eliminate anyone else's need to do it.
 
+trap 'echo -e "\a"' EXIT
+
 mkdir -p build
 cd build
 
@@ -82,8 +84,6 @@ ant
 mv silver.compiler.composed.Default.jar ../jars/
 
 # If the last build failed, should restore backup jars
-
-echo -e "\a"
 
 echo "Cleaning out stale runtime class files..."
 rm -rf ../generated/bin/common

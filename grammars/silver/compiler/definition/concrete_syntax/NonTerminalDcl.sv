@@ -16,10 +16,12 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   local exportedProds::[String] = syntax.allProductionNames;
   
   top.syntaxAst :=
-    [syntaxNonterminal(
-      nonterminalType(fName, map((.kindrep), tl.types), isThisTracked), nilSyntax(),
-      exportedProds, exportedLayoutTerms,
-      foldr(consNonterminalMod, nilNonterminalMod(), nm.nonterminalModifiers))];
+    [ syntaxNonterminal(
+        nonterminalType(fName, map((.kindrep), tl.types), isThisTracked),
+        nilSyntax(), exportedProds, exportedLayoutTerms,
+        foldr(consNonterminalMod, nilNonterminalMod(), nm.nonterminalModifiers),
+        location=top.location, sourceGrammar=top.grammarName)
+    ];
 }
 
 monoid attribute nonterminalModifiers :: [SyntaxNonterminalModifier];

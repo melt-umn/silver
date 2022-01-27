@@ -1,6 +1,6 @@
 grammar silver:core;
 
-nonterminal IO<a> with stateIn<IOToken>, stateOut<IOToken>, stateVal<a>;
+closed nonterminal IO<a> with stateIn<IOToken>, stateOut<IOToken>, stateVal<a>;
 
 abstract production bindIO
 top::IO<b> ::= st::IO<a> fn::(IO<b> ::= a)

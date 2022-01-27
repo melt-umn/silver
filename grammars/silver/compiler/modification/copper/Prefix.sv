@@ -45,9 +45,11 @@ top::TerminalPrefix ::= r::RegExpr tm::TerminalModifiers
     end;
   local terminalFullName::String = top.grammarName ++ ":" ++ terminalName;
   top.syntaxAst <-
-    [syntaxTerminal(
-       terminalFullName, regex,
-       foldr(consTerminalMod, nilTerminalMod(), tm.terminalModifiers))];
+    [ syntaxTerminal(
+        terminalFullName, regex,
+        foldr(consTerminalMod, nilTerminalMod(), tm.terminalModifiers),
+        location=top.location, sourceGrammar=top.grammarName)
+    ];
   top.genFiles <- terminalTranslation(terminalName, top.grammarName, tm.lexerClasses);
   top.terminalPrefix = makeCopperName(terminalFullName);
 }
@@ -176,7 +178,8 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
       \ tsNames::[String] -> 
         syntaxDisambiguationGroup(
           s"Prefer_${toString(top.location.line)}_${tName}__${implode("__", tsNames)}",
-          tName :: tsNames, false, pluckTAction.translation),
+          tName :: tsNames, false, pluckTAction.translation,
+          location=top.location, sourceGrammar=top.grammarName),
       tail(powerSet(ts.termList)));
 }
 
@@ -188,7 +191,11 @@ top::LexerClassModifier ::= 'prefix' 'separator' s::String_t
 {
   top.unparse = s"prefix separator ${s.lexeme}";
 
-  top.lexerClassModifiers := [lexerClassPrefixSeperator(substring(1, length(s.lexeme) - 1, s.lexeme))];
+  top.lexerClassModifiers :=
+    [ lexerClassPrefixSeperator(
+        substring(1, length(s.lexeme) - 1, s.lexeme),
+        location=top.location, sourceGrammar=top.grammarName)
+    ];
 }
 
 {- Not supported due to ambiguity with modifiers on prefix terminal defined

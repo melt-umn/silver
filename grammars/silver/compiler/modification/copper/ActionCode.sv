@@ -9,10 +9,11 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
 
-  top.syntaxAst := [
-    syntaxProduction(ns.namedSignature,
-      foldr(consProductionMod, nilProductionMod(), 
-        prodAction(acode.actionCode) :: pm.productionModifiers))];
+  top.syntaxAst :=
+    [ syntaxProduction(ns.namedSignature,
+        foldr(consProductionMod, nilProductionMod(), prodAction(acode.actionCode) :: pm.productionModifiers),
+        location=top.location, sourceGrammar=top.grammarName)
+    ];
 
   -- oh no again!
   local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
@@ -139,4 +140,3 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
   top.actionDefs = [actionChildDef(top.grammarName, t.location, id.name, t.typerep)];
 }
-

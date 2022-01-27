@@ -7,6 +7,7 @@ imports silver:compiler:definition:env;
 imports silver:compiler:translation:java:core only makeIdName, makeProdName, makeNTName;
 imports silver:compiler:translation:java:type only transType;
 
+import silver:compiler:definition:concrete_syntax:copper as copper;
 import silver:util:graph as g;
 import silver:util:treemap as tm;
 import silver:util:treeset as s;
@@ -14,12 +15,11 @@ import silver:util:treeset as s;
 {--
  - Encapsulates transformations and analysis of Syntax
  -}
-closed nonterminal SyntaxRoot with cstErrors, xmlCopper;
+closed nonterminal SyntaxRoot with location, sourceGrammar, cstErrors, copperParser, compareTo, isEqual;
+propagate compareTo, isEqual on SyntaxRoot;
 
-{--
- - Translation of a CST AST to Copper XML.
- -}
-synthesized attribute xmlCopper :: String;
+@{-- The Copper API object corresponding to the parser. -}
+synthesized attribute copperParser::copper:ParserBean;
 
 abstract production cstRoot
 top::SyntaxRoot ::=
@@ -55,8 +55,7 @@ top::SyntaxRoot ::=
   s.prettyNames = tm:add(s.prettyNamesAccum, tm:empty());
   
   -- Move productions under their nonterminal, and sort the declarations
-  production s2 :: Syntax =
-    foldr(consSyntax, nilSyntax(), sort(s.cstNormalize));
+  production s2 :: Syntax = foldr(consSyntax, nilSyntax(), sort(s.cstNormalize));
   s2.cstEnv = s.cstEnv;
   s2.containingGrammar = "host";
   s2.cstNTProds = error("TODO: make this environment not be decorated?"); -- TODO
@@ -80,31 +79,15 @@ top::SyntaxRoot ::=
                          "this grammar was not included in this parser. (Referenced as parser's starting nonterminal)"];
 
   -- The layout before and after the root nonterminal. By default, the layout of the root nonterminal.
-  production startLayout :: String =
-    implode("",
-      map(xmlCopperRef,
-        map(head,
-          lookupStrings(
-            fromMaybe(searchEnvTree(startnt, s.layoutTerms), customStartLayout),
-            s.cstEnv))));
+  local startLayout::[copper:ElementReference] =
+    map((.copperElementReference),
+      map(head,
+        lookupStrings(
+          fromMaybe(searchEnvTree(startnt, s.layoutTerms), customStartLayout),
+          s.cstEnv)));
 
-  top.xmlCopper =
-s"""<?xml version="1.0" encoding="UTF-8"?>
-
-<CopperSpec xmlns="http://melt.cs.umn.edu/copper/xmlns/skins/xml/0.9">
-  <Parser id="${makeCopperName(parsername)}" isUnitary="true">
-    <PP>${parsername}</PP>
-    <Grammars><GrammarRef id="${s2.containingGrammar}"/></Grammars>
-    <StartSymbol>${xmlCopperRef(head(startFound))}</StartSymbol>
-    <StartLayout>${startLayout}</StartLayout>
-""" ++
--- TODO fix: ?
---"    <Package>parsers</Package>\n" ++
---"    <ClassName>SingleParser</ClassName>\n" ++
--- This stuff gets dumped onto the outer class:
---"    <ClassAuxiliaryCode><Code><![CDATA[  ]]></Code></ClassAuxiliaryCode>\n" ++
-
-s"""    <ClassAuxiliaryCode><Code><![CDATA[
+  local parserClassAuxCode::String =
+    s"""
           protected List<common.Terminal> tokenList = null;
 
           public void reset() {
@@ -114,55 +97,22 @@ s"""    <ClassAuxiliaryCode><Code><![CDATA[
           public List<common.Terminal> getTokens() {
             return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
           }
-          
 ${s2.lexerClassRefDcls}
-        ]]></Code></ClassAuxiliaryCode>
-""" ++
--- If not otherwise specified. We always specify.
---"    <DefaultProductionCode><Code><![CDATA[  ]]></Code></DefaultProductionCode>\n" ++
--- If not otherwise specified. We should do this, maybe...
---"    <DefaultTerminalCode><Code><![CDATA[  ]]></Code></DefaultTerminalCode>\n" ++
--- Call just before a parse:
---"    <ParserInitCode><Code><![CDATA[  ]]></Code></ParserInitCode>\n" ++
--- Ditto, after:
---"    <PostParseCode><Code><![CDATA[  ]]></Code></PostParseCode>\n" ++
--- Imports and whatnot:
---"    <Preamble><Code><![CDATA[  ]]></Code></Preamble>\n" ++
--- This stuff gets dumped onto the semantic action container class:
---"    <SemanticActionAuxiliaryCode><Code><![CDATA[  ]]></Code></SemanticActionAuxiliaryCode>\n" ++
+    """;
+  local parserInitCode::String = "reset();";
+  local preambleCode::String = "import java.util.ArrayList;\nimport java.util.List;\n";
 
-s"""    <ParserInitCode>
-      <Code><![CDATA[
-        reset();
-      ]]></Code>
-    </ParserInitCode>
-    <Preamble>
-<Code><![CDATA[
-import java.util.ArrayList;
-import java.util.List;
-]]></Code>
-    </Preamble>
-""" ++
-
-s"""  </Parser>
-
-  <Grammar id="${s2.containingGrammar}">
-
-    <PP>${s2.containingGrammar}</PP>
-
-    <Declarations>
-      <ParserAttribute id="context">
-        <Type><![CDATA[common.DecoratedNode]]></Type>
-        <Code><![CDATA[context = common.TopNode.singleton;]]></Code>
-      </ParserAttribute>
-      ${s2.xmlCopper}
-""" ++
--- Disambiguation classes
-implode("\n", map((.xmlCopper), s2.disambiguationClasses)) ++
-s"""
-    </Declarations>
-  </Grammar>
-</CopperSpec>""";
+  local grammarElements::[copper:GrammarElement] = s2.copperGrammarElements
+    ++ [ copper:parserAttribute(top.sourceGrammar, builtinLoc("silver:compiler:definition:concrete_syntax:ast"),
+           "context", "common.DecoratedNode", "context = common.TopNode.singleton;")
+       ]
+    ++ flatMap((.copperGrammarElements), s2.disambiguationClasses);
+  top.copperParser = copper:parserBean(top.sourceGrammar, top.location,
+    makeCopperName(parsername), parsername,
+    head(startFound).copperElementReference, startLayout, parserClassAuxCode,
+    parserInitCode, preambleCode,
+    copper:grammar_(top.sourceGrammar, top.location, s2.containingGrammar,
+      grammarElements));
 }
 
 
@@ -199,4 +149,3 @@ EnvTree<String> ::= allTerms::[String] layoutItems::[String] layoutContribs::[Pa
         \ item::Pair<String [String]> -> map(pair(item.fst, _), item.snd),
         layoutTerms));
 }
-
