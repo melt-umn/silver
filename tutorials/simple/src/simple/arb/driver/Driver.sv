@@ -14,10 +14,10 @@ IOToken ::= args::[String]
 {
   local depth :: Integer = toInteger(head(args));
   
-  local r_cst :: cst:Root = runRandomGen(generator(3, depth));
+  local r_cst :: IOVal<cst:Root> = runRandomGenT(generator(3, depth), io_in);
 
-  --local r_ast :: ast:Root = runRandomGen(generator(3, depth));
-  local r_ast :: ast:Root = r_cst.ast;
+  --local r_ast :: IOVal<ast:Root> = runRandomGenT(generator(3, depth), io_in);
+  local r_ast :: ast:Root = r_cst.iovalue.ast;
 
   local print_success :: IOToken = 
     printT( "AST: \n" ++ pp:show(100, reflect(new(r_ast))) ++
@@ -29,7 +29,7 @@ IOToken ::= args::[String]
             else "\n" ++
                  messagesToString(r_ast.errors) ++ "\n"
            )
-           , io_in );
+           , r_cst.io );
 
   local write_success :: IOToken =
     writeFileT("output.c", r_ast.ast:c_code, print_success);
