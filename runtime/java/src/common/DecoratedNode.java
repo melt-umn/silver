@@ -364,7 +364,7 @@ public class DecoratedNode implements Decorable, Typed {
 			try {
 				return forward().synthesized(attribute);
 			} catch(Throwable t) {
-				throw new TraceException("While evaling syn via forward in " + getDebugID(), t);
+				throw new TraceException("While evaling syn '" + self.getNameOfSynAttr(attribute) + "' via forward in " + getDebugID(), t);
 			}
 		} else {
 			l = self.getDefaultSynthesized(attribute);
@@ -464,7 +464,7 @@ public class DecoratedNode implements Decorable, Typed {
 		//if(forwardParent == null) {
 		//	return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
 		//}
-		return new TraceException("While evaling inh via forward in " + getDebugID(), t);
+		return new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' via forward in " + getDebugID(), t);
 	}
 	private final Object evalInhHere(final int attribute) {
 		try {

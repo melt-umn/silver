@@ -380,6 +380,13 @@ public final class IOToken implements Typed {
 		return (int)(System.currentTimeMillis() / 1000);
 	}
 
+	/**
+	 * <pre>IOVal<a> ::= r::RandomGen<a> i::IO</pre>
+	 */
+	public NIOVal runRandomGen(final OriginContext ctx, silver.core.NRandomGen r) {
+		return this.wrap(common.RandomGen.runRandomGen(ctx, r));
+	}
+
 	@Override
 	public TypeRep getType() {
 		return new BaseTypeRep("silver:core:IO");

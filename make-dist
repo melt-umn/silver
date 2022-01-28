@@ -43,6 +43,8 @@ tar -zcvf $SV.tar.gz \
  $SV/grammars/silver/util/treemap/ \
  $SV/grammars/silver/util/treeset/ \
  $SV/grammars/silver/util/graph/ \
+ $SV/grammars/silver/util/subprocess/ \
+ $SV/grammars/silver/util/random/ \
  $SV/grammars/silver/langutil/ \
  $SV/grammars/silver/reflect/ \
  $SV/COPYING.LESSER \

@@ -1,5 +1,7 @@
 grammar silver:regex;
 
+import silver:util:random;
+
 -- Generate a random string matching a regex
 implicit synthesized attribute genArbMatch::RandomGen<String>;
 

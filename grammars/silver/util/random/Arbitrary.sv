@@ -1,4 +1,4 @@
-grammar silver:core;
+grammar silver:util:random;
 
 -- TODO: Consider adding a Shrink type class for use in conjuction with Arbitrary in randomized testing.
 -- See https://hackage.haskell.org/package/QuickCheck-2.14.2/docs/Test-QuickCheck.html#v:shrink
