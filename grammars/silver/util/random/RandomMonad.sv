@@ -2,24 +2,34 @@ grammar silver:util:random;
 
 @{-
   Run a RandomGen computation, using an arbitrary seed.
-  Warning: this function is nondeterministic (may vary between runs) and thus impure;
-  use at your own risk!
   
   @param r  The computation to run
-  @return  The result of the computation
+  @param ioIn  The IO token
+  @return  An IOVal containing the result of the computation
 -}
-function runRandomGen
-a ::= r::RandomGen<a>
+function runRandomGenT
+IOVal<a> ::= r::RandomGen<a> ioIn::IOToken
 {
   return error("foreign function");
 } foreign {
-  "java": return "common.RandomGen.runRandomGen(originCtx, %r%)";
+  "java": return "%ioIn%.runRandomGen(originCtx, %r%)";
+}
+
+@{-
+  Run a RandomGen computation, using an arbitrary seed (IO monadic version.)
+  
+  @param r  The computation to run
+-}
+production runRandomGen
+top::IO<a> ::= r::RandomGen<a>
+{
+  local res::IOVal<a> = runRandomGenT(r, top.stateIn);
+  top.stateOut = res.io;
+  top.stateVal = res.iovalue;
 }
 
 @{-
   Run a RandomGen computation, using an arbitrary seed.
-  Warning: this function is nondeterministic (may vary between runs) and thus impure;
-  use at your own risk!
 
   @param seed  The initial seed value for the random number generator
   @param r  The computation to run

@@ -6,6 +6,8 @@ grammar silver:core;
 nonterminal RandomGen<a>;
 
 -- Pure random "token" for use with threaded attributes, represented as just a seed value.
+-- Unlike IOToken, this is essentially safe to reuse, besides the possibility of
+-- repeating random values.
 type RandomToken foreign = "Long";
 
 production mapRandomGen
