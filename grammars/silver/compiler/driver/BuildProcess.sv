@@ -113,7 +113,7 @@ IOErrorable<Decorated Compilation> ::=
 
 {--
  - Given an environment and a grammar to build, returns a Compilation.
- - Note that it's the caller's responsibility to actually evaluation that
+ - Note that it's the caller's responsibility to actually evaluate that
  - compilation's actions.
  -}
 function buildRun
