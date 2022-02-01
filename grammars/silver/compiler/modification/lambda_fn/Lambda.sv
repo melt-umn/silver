@@ -39,6 +39,8 @@ top::Expr ::= params::ProductionRHS e::Expr
   propagate flowDeps, flowDefs;
   
   params.env = newScopeEnv(sigDefs, top.env);
+  params.givenLambdaParamIndex = 0;
+  params.givenLambdaId = genInt();
   e.env = params.env;
   e.frame = inLambdaContext(top.frame, sourceGrammar=top.frame.sourceGrammar); --TODO: Is this sourceGrammar correct?
 }
@@ -53,12 +55,23 @@ flowtype lambdaBoundVars {deterministicCount} on ProductionRHSElem;
 
 propagate lambdaDefs, lambdaBoundVars on ProductionRHS;
 
+inherited attribute givenLambdaParamIndex::Integer occurs on ProductionRHS, ProductionRHSElem;
+inherited attribute givenLambdaId::Integer occurs on ProductionRHS, ProductionRHSElem;
+propagate givenLambdaId on ProductionRHS, ProductionRHSElem;
+
+aspect production productionRHSCons
+top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
+{
+  t.givenLambdaParamIndex = top.givenLambdaParamIndex + 1;
+  h.givenLambdaParamIndex = top.givenLambdaParamIndex;
+}
+
 aspect production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
   production fName :: String = toString(genInt()) ++ ":" ++ id.name;
 --  production transName :: String = "lambda_param" ++ id.name ++ toString(genInt());
-  top.lambdaDefs := [lambdaParamDef(top.grammarName, t.location, fName, t.typerep)];
+  top.lambdaDefs := [lambdaParamDef(top.grammarName, t.location, fName, t.typerep, top.givenLambdaId, top.givenLambdaParamIndex)];
   top.lambdaBoundVars := [id.name];
 }
 
