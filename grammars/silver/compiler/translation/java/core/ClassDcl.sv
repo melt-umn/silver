@@ -43,7 +43,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
   local contexts::Contexts = foldContexts(cl.contexts);
   contexts.boundVariables = boundVars;
 
-  top.translation = s"\t${ty.typerep.transCovariantType} ${makeInstanceMemberAccessorName(id.name)}(${contexts.contextParamTrans});";
+  top.translation = s"\t${ty.typerep.transType} ${makeInstanceMemberAccessorName(id.name)}(${contexts.contextParamTrans});";
 }
 
 aspect production defaultConstraintClassBodyItem
@@ -53,7 +53,7 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
   contexts.boundVariables = boundVars;
 
   top.translation = s"""
-	default ${ty.typerep.transCovariantType} ${makeInstanceMemberAccessorName(id.name)}(${contexts.contextParamTrans}) {
+	default ${ty.typerep.transType} ${makeInstanceMemberAccessorName(id.name)}(${contexts.contextParamTrans}) {
 		final common.DecoratedNode context = common.TopNode.singleton;
 		//${e.unparse}
 		return ${e.generalizedTranslation};

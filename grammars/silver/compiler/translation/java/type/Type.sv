@@ -5,8 +5,8 @@ imports silver:compiler:translation:java:core;
 
 -- The Java type corresponding to the Silver Type
 synthesized attribute transType :: String;
--- The *covariant* Java type corresponding to the Silver Type
--- e.g. common.NodeFactory<? extends Object> instead of common.NodeFactory<Object>
+-- The *covariant* Java generic type argument corresponding to the Silver Type
+-- e.g. ? extends Object instead of Object
 synthesized attribute transCovariantType :: String;
 -- Java has crappy syntax for some things.
 -- If we want to statically refer to the class of this type, we cannot use
@@ -59,6 +59,7 @@ top::Type ::=
 aspect production varType
 top::Type ::= tv::TyVar
 {
+  top.transCovariantType = "? extends Object";
   top.transClassType = "Object";
   top.transTypeRep = s"freshTypeVar_${toString(tv.extractTyVarRep)}";
   top.transTypeName = "a" ++ toString(positionOf(tv, top.boundVariables));
@@ -67,6 +68,7 @@ top::Type ::= tv::TyVar
 aspect production skolemType
 top::Type ::= tv::TyVar
 {
+  top.transCovariantType = "? extends Object";
   top.transClassType = "Object";
   top.transTypeRep = lookup(tv, top.skolemTypeReps).fromJust;
   top.transTypeName = "a" ++ toString(positionOf(tv, top.boundVariables));
@@ -77,12 +79,12 @@ top::Type ::= c::Type a::Type
 {
   top.transType =
     case c.baseType of
-    | functionType(_, _) -> "common.NodeFactory<" ++ top.outputType.transType ++ ">"
+    | functionType(_, _) -> "common.NodeFactory<" ++ top.outputType.transCovariantType ++ ">"
     | _ -> c.transType
     end;
   top.transCovariantType =
     case c.baseType of
-    | functionType(_, _) -> "common.NodeFactory<? extends " ++ top.outputType.transCovariantType ++ ">"
+    | functionType(_, _) -> "common.NodeFactory<" ++ top.outputType.transCovariantType ++ ">"
     | _ -> c.transCovariantType
     end;
   top.transClassType = c.transClassType;
