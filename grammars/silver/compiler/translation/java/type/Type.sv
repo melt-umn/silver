@@ -84,7 +84,7 @@ top::Type ::= c::Type a::Type
     end;
   top.transCovariantType =
     case c.baseType of
-    | functionType(_, _) -> "common.NodeFactory<" ++ top.outputType.transCovariantType ++ ">"
+    | functionType(_, _) -> "? extends common.NodeFactory<" ++ top.outputType.transCovariantType ++ ">"
     | _ -> c.transCovariantType
     end;
   top.transClassType = c.transClassType;
