@@ -49,14 +49,14 @@ monoid attribute lambdaDefs::[Def];
 monoid attribute lambdaBoundVars::[String];
 attribute lambdaDefs, lambdaBoundVars occurs on ProductionRHS, ProductionRHSElem;
 
-flowtype lambdaDefs {decorate} on ProductionRHS, ProductionRHSElem;
+flowtype lambdaDefs {decorate, givenLambdaId, givenLambdaParamIndex} on ProductionRHS, ProductionRHSElem;
 flowtype lambdaBoundVars {} on ProductionRHS;
 flowtype lambdaBoundVars {deterministicCount} on ProductionRHSElem;
 
 propagate lambdaDefs, lambdaBoundVars on ProductionRHS;
 
-inherited attribute givenLambdaParamIndex::Integer occurs on ProductionRHS, ProductionRHSElem;
 inherited attribute givenLambdaId::Integer occurs on ProductionRHS, ProductionRHSElem;
+inherited attribute givenLambdaParamIndex::Integer occurs on ProductionRHS, ProductionRHSElem;
 propagate givenLambdaId on ProductionRHS, ProductionRHSElem;
 
 aspect production productionRHSCons

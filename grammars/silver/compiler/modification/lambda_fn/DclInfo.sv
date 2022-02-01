@@ -6,6 +6,7 @@ synthesized attribute lambdaParamIndex::Integer occurs on ValueDclInfo;
 aspect default production
 top::ValueDclInfo ::=
 {
+  top.lambdaId = error("Should only be demanded on lambda params");
   top.lambdaParamIndex = error("Should only be demanded on lambda params");
 }
 
