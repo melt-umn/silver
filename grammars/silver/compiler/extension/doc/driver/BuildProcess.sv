@@ -100,7 +100,7 @@ top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]
       | _ -> []
       end), specs));
 
-  top.io = printT(report ++ "\n", top.ioIn);
+  top.io = printlnT(report, top.ioIn);
   top.code = 0;
   top.order = 5;
 }
@@ -109,7 +109,7 @@ top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]
 abstract production genDoc
 top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  outputLoc::String
 {
-  local pr :: IOToken = printT("Generating Documentation.\n", top.ioIn);
+  local pr :: IOToken = eprintlnT("Generating Documentation.", top.ioIn);
 
   top.io = writeAll(pr, a, specs, outputLoc);
   top.code = 0;
@@ -140,8 +140,8 @@ IOToken ::= i::IOToken  r::Decorated RootSpec  outputLoc::String
   
   local pr :: IOToken =
     if mkio.iovalue
-    then printT("\t[" ++ r.declaredName ++ "]\n", mkio.io)
-    else exitT(-5, printT("\nUnrecoverable Error: Unable to create directory: " ++ path ++ "\n\n", mkio.io));
+    then eprintlnT("\t[" ++ r.declaredName ++ "]", mkio.io)
+    else exitT(-5, eprintlnT("\nUnrecoverable Error: Unable to create directory: " ++ path ++ "\n", mkio.io));
   
   local rm :: IOToken = deleteStaleDocs(pr, outputLoc, r.declaredName);
 

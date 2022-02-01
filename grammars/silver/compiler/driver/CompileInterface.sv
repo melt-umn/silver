@@ -24,7 +24,7 @@ IOVal<Maybe<RootSpec>> ::= grammarName::String  silverHostGen::[String]  grammar
   local modTime :: IOVal<Integer> = fileTimeT(file, gen.io);
   
   -- IO Step 3: Let's say so, and parse it
-  local pr :: IOToken = printT("Found " ++ grammarName ++ "\n\t[" ++ file ++ "]\n", modTime.io);
+  local pr :: IOToken = eprintlnT("Found " ++ grammarName ++ "\n\t[" ++ file ++ "]", modTime.io);
   local text :: IOVal<ByteArray> = readBinaryFileT(file, pr);
 
   local ir :: Either<String InterfaceItems> = nativeDeserialize(text.iovalue);
@@ -35,12 +35,12 @@ IOVal<Maybe<RootSpec>> ::= grammarName::String  silverHostGen::[String]  grammar
     | right(i) ->
       if !null(i.interfaceErrors)
       then
-        printT("\n\tErrors unpacking interface file:\n  " ++ implode("\n  ", i.interfaceErrors) ++
-              "\n\tRecovering by parsing grammar....\n", text.io)
+        eprintlnT("\n\tErrors unpacking interface file:\n  " ++ implode("\n  ", i.interfaceErrors) ++
+                  "\n\tRecovering by parsing grammar....", text.io)
       else text.io
     | left(msg) ->
-        printT("\n\tFailed to deserialize interface file!\n" ++ msg ++
-              "\n\tRecovering by parsing grammar....\n", text.io)
+        eprintlnT("\n\tFailed to deserialize interface file!\n" ++ msg ++
+                  "\n\tRecovering by parsing grammar....", text.io)
     end;
 
   local rs :: RootSpec = interfaceRootSpec(ir.fromRight, modTime.iovalue, gen.iovalue.fromJust);

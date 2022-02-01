@@ -61,12 +61,41 @@ a ::= st::IO<a>
 }
 
 -- Monadic IO wrappers
+abstract production stateIO
+this::IO<a> ::= f::(IOVal<a> ::= IOToken)
+{
+  local out::IOVal<a> = f(this.stateIn);
+  this.stateOut = out.io;
+  this.stateVal = out.iovalue;
+}
+
+abstract production stateIOUnit
+this::IO<Unit> ::= f::(IOToken ::= IOToken)
+{
+  local out::IOToken = f(this.stateIn);
+  this.stateOut = out;
+  -- Using unsafeTrace here to demand stateOut is evaluated before evaluating stateVal
+  this.stateVal = unsafeTrace((), this.stateOut);
+}
+
 abstract production print
 top::IO<Unit> ::= s::String
 {
   top.stateOut = printT(s, top.stateIn);
   top.stateVal = unit();
 }
+
+function println
+IO<Unit> ::= str::String
+{ return stateIOUnit(printlnT(str, _)); }
+
+function eprint
+IO<Unit> ::= str::String
+{ return stateIOUnit(eprintT(str, _)); }
+
+function eprintln
+IO<Unit> ::= str::String
+{ return stateIOUnit(eprintlnT(str, _)); }
 
 abstract production readLineStdin
 top::IO<Maybe<String>> ::=

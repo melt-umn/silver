@@ -61,6 +61,35 @@ IOToken ::= s::String i::IOToken
 }
 
 @{--
+  - Like printT, but adds a trailing newline automatically.
+  -}
+function printlnT
+IOToken ::= str::String  ioIn::IOToken
+{
+  return printT(str ++ "\n", ioIn);
+}
+
+@{--
+  - Like printT, but for stderr.
+  -}
+function eprintT
+IOToken ::= str::String  ioIn::IOToken
+{
+  return error("Unimplemented foreign function: eprintT");
+} foreign {
+  "java" : return "%ioIn%.eprint(%str%)";
+}
+
+@{--
+  - Like eprintT, but adds a trailing newline automatically.
+  -}
+function eprintlnT
+IOToken ::= str::String  ioIn::IOToken
+{
+  return eprintT(str ++ "\n", ioIn);
+}
+
+@{--
  - Read a line from standard input.
  -
  - @param i  The "before" world-state token.

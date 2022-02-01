@@ -37,7 +37,7 @@ abstract production dumpDepGraphAction
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
   top.io = writeFileT("deps.dot", "digraph deps {\n" ++ generateDotGraph(specs) ++ "}",
-    printT("Generating import graph\n", top.ioIn));
+    eprintlnT("Generating import graph", top.ioIn));
 
   top.code = 0;
   top.order = 0;

@@ -195,7 +195,7 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 abstract production genJava
 top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silverGen::String
 {
-  local pr :: IOToken = printT("Generating Translation.\n", top.ioIn);
+  local pr :: IOToken = eprintlnT("Generating Translation.", top.ioIn);
 
   top.io = writeAll(pr, a, specs, silverGen);
   top.code = 0;
@@ -234,8 +234,8 @@ IOToken ::= i::IOToken  r::Decorated RootSpec  silverGen::String
   
   local printio :: IOToken =
     if mksrc.iovalue
-    then printT("\t[" ++ r.declaredName ++ "]\n", clean)
-    else exitT(-5, printT("\nUnrecoverable Error: Unable to create directory: " ++ srcPath ++ "\nWarning: if some interface file writes were successful, but others not, Silver's temporaries are in an inconsistent state. Use the --clean flag next run.\n\n", mksrc.io));
+    then eprintlnT("\t[" ++ r.declaredName ++ "]", clean)
+    else exitT(-5, eprintlnT("\nUnrecoverable Error: Unable to create directory: " ++ srcPath ++ "\nWarning: if some interface file writes were successful, but others not, Silver's temporaries are in an inconsistent state. Use the --clean flag next run.\n", mksrc.io));
 
   return writeBinaryFiles(srcPath, r.genBinaryFiles, writeFiles(srcPath, r.genFiles, printio));
 }

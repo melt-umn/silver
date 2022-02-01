@@ -38,7 +38,7 @@ function performActions
 IOVal<Integer> ::= unitin::IOErrorable<Decorated Compilation>
 {
   return case unitin.iovalue of
-  | left(re) -> ioval(printT(re.message ++ "\n", unitin.io), re.code)
+  | left(re) -> ioval(eprintlnT(re.message, unitin.io), re.code)
   | right(comp) -> runAll(sortUnits(comp.postOps), unitin.io)
   end;
 }

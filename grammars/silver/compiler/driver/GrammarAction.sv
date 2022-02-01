@@ -55,7 +55,7 @@ top::DriverAction ::= specs::[Decorated RootSpec]
 
   forwards to printAllBindingErrorsHelp(specs)
   with {
-    ioIn = printT("Checking For Errors.\n", top.ioIn);
+    ioIn = eprintlnT("Checking For Errors.", top.ioIn);
   };
 }
 
@@ -67,7 +67,7 @@ top::DriverAction ::= specs::[Decorated RootSpec]
   local i :: IOToken =
     if null(errs)
     then top.ioIn
-    else printT("Errors for " ++ head(specs).declaredName ++ "\n" ++ flatMap(renderMessages(head(specs).grammarSource, _), errs) ++ "\n", top.ioIn);
+    else eprintlnT("Errors for " ++ head(specs).declaredName ++ "\n" ++ flatMap(renderMessages(head(specs).grammarSource, _), errs), top.ioIn);
 
   local recurse :: DriverAction = printAllBindingErrorsHelp(tail(specs));
   recurse.ioIn = i;
@@ -90,7 +90,7 @@ top::DriverAction ::= specs::[Decorated RootSpec]
   local i :: IOToken =
     if null(errs)
     then top.ioIn
-    else printT("Errors for " ++ head(specs).declaredName ++ "\n" ++ flatMap(renderMessages(head(specs).grammarSource, _), errs) ++ "\n", top.ioIn);
+    else eprintlnT("Errors for " ++ head(specs).declaredName ++ "\n" ++ flatMap(renderMessages(head(specs).grammarSource, _), errs), top.ioIn);
 
   local recurse :: DriverAction = printAllParsingErrors(tail(specs));
   recurse.ioIn = i;
