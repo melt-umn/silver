@@ -419,6 +419,21 @@ function mergeBy -- do not use
               else head(l2) :: mergeBy(lte, l1, tail(l2));
 }
 
+function uniq
+Eq a => [a] ::= l::[a]
+{ return uniqBy(eq, l); }
+function uniqBy
+[a] ::= eq::(Boolean ::= a a) l::[a]
+{
+  return case l of
+         | [] -> []
+         | [x] -> [x]
+         | x1::x2::xs -> if eq(x1, x2)
+                         then uniqBy(eq, x2::xs)
+                         else x1::uniqBy(eq, x2::xs)
+         end;
+}
+
 function groupBy
 [[a]] ::= eq::(Boolean ::= a a) l::[a]
 {

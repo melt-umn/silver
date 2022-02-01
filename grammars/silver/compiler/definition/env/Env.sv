@@ -136,9 +136,12 @@ top::Env ::= d::[OccursDclInfo]  e::Decorated Env
 ----------------------------------------------------------------------------------------------------
 
 function searchEnvAll
+attribute fullName {} occurs on a =>
 [a] ::= search::String e::[EnvTree<a>]
 {
-  return flatMap(searchEnvTree(search, _), e);
+  return uniqBy(\l::a r::a -> l.fullName == r.fullName,
+    sortBy(\l::a r::a -> l.fullName <= r.fullName,
+      flatMap(searchEnvTree(search, _), e)));
 }
 
 function searchEnv

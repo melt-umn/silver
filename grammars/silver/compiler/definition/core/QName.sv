@@ -75,7 +75,8 @@ attribute typeScheme {} occurs on a,
 annotation sourceLocation occurs on a =>
 top::QNameLookup<a> ::= kindOfLookup::String dcls::[a] name::String l::Location 
 {
-  top.dcls = dcls;
+  top.dcls = uniqBy(\l::a r::a -> l.fullName == r.fullName,
+                    sortBy(\l::a r::a -> l.fullName <= r.fullName, dcls));
   top.found = !null(top.dcls); -- currently accurate
   top.dcl =
     if top.found then head(top.dcls)
