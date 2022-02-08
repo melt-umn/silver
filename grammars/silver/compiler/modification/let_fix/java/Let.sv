@@ -19,7 +19,7 @@ top::Expr ::= la::AssignExpr  e::Expr
 
   -- We need to create these nested locals, so we have no choice but to create a thunk object so we can declare these things.
   local closureExpr :: String =
-    s"new common.Thunk<${finTy.transType}>(new common.Thunk.Evaluable() { public final ${finTy.transType} eval() { ${la.let_translation} return ${e.translation}; } })";
+    s"new common.Thunk<${finTy.transType}>(new common.Thunk.Evaluable<${finTy.transType}>() { public final ${finTy.transType} eval() { ${la.let_translation} return ${e.translation}; } })";
     --TODO: java lambdas are bugged
     --s"new common.Thunk<${finTy.transType}>(() -> { ${la.let_translation} return ${e.translation};\n})";
   

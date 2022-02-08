@@ -31,7 +31,10 @@ top::FFIDef ::= name::String_t ':' 'return' code::String_t ';'
 function strictChildAccessor
 String ::= ns::NamedSignatureElement
 {
-  return "((" ++ ns.typerep.transType ++ ")common.Util.demand(" ++ ns.childRefElem ++ "))";
+  -- TODO: Slight bug here, if we refer to an argument more than once in an FFI string,
+  -- then we may evaluate argument thunks more than once!
+  -- E.g. "java": "Foo.bar(%x%, %x%)"
+  return "common.Util.<" ++ ns.typerep.transType ++ ">demand(" ++ ns.childRefElem ++ ")";
 }
 
 function computeSigTranslation

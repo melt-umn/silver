@@ -27,8 +27,7 @@ top::Expr ::= params::ProductionRHS e::Expr
   local lambdaTrans :: (String ::= String) = \ runtimeTypeTrans::String ->
 s"""(new common.NodeFactory<${finTy.outputType.transType}>() {
 				@Override
-				public final ${finTy.outputType.transType} invoke(final common.OriginContext originCtx, final Object[] args, final Object[] namedArgs) {
-${params.lambdaTranslation}
+				public final ${finTy.outputType.transType} invoke(final common.OriginContext originCtx, final Object[] lambda_${toString(params.givenLambdaId)}_args, final Object[] namedArgs) {
 					return ${e.translation};
 				}
 
@@ -51,45 +50,13 @@ ${makeTyVarDecls(5, finTy.freeVariables)}
   -- (e.g. global id :: (a ::= a) = \ x::a -> x;)
   -- so freshen all skolem type vars in the run-time type representation.
   top.generalizedTranslation = lambdaTrans(transFreshTypeRep(finTy));
-  
-  params.accessIndex = 0;
-}
-
-synthesized attribute lambdaTranslation::String occurs on ProductionRHS, ProductionRHSElem;
-inherited attribute accessIndex::Integer occurs on ProductionRHS, ProductionRHSElem;
-
-aspect production productionRHSCons
-top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
-{
-  top.lambdaTranslation = h.lambdaTranslation ++ t.lambdaTranslation;
-  t.accessIndex = top.accessIndex + 1;
-  h.accessIndex = top.accessIndex;
-}
-aspect production productionRHSNil
-top::ProductionRHS ::= 
-{
-  top.lambdaTranslation = "";
-}
-
-aspect production productionRHSElem
-top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
-{
-  -- Args are unpacked as objects, they can either be an actual value or a Thunk.
-  -- We don't know which staticly, so they are just stored as Objects until use.
-  -- They are then demanded and converted to the correct type where they are needed.
-  top.lambdaTranslation = s"\t\t\t\t\tfinal Object ${makeLambdaParamValueName(fName)} = args[${toString(top.accessIndex)}];\n";
-}
-
-function makeLambdaParamValueName
-String ::= s::String
-{
-  return "lambdaParam_" ++ makeIdName(s);
 }
 
 aspect production lambdaParamReference
 top::Expr ::= q::PartiallyDecorated QName
 {
-  top.translation = s"((${top.typerep.transType})common.Util.demand(${makeLambdaParamValueName(q.lookupValue.fullName)}))";
+  local paramRef::String = s"lambda_${toString(q.lookupValue.dcl.lambdaId)}_args[${toString(q.lookupValue.dcl.lambdaParamIndex)}]";
+  top.translation = s"((${top.typerep.transType})(${paramRef} = common.Util.demand(${paramRef})))";
   top.lazyTranslation = top.translation;
 }
 
