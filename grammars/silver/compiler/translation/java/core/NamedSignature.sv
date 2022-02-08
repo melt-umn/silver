@@ -239,7 +239,9 @@ top::NamedSignatureElement ::= n::String ty::Type
   top.childDeclElem =
 s"""private Object child_${n};
   public final ${ty.transType} getChild_${n}() {
-    return (${ty.transType}) (child_${n} = common.Util.demand(child_${n}));
+    final ${ty.transType} result = common.Util.<${ty.transType}>demand(child_${n});
+    child_${n} = result;
+    return result;
   }
 """;
 
@@ -268,7 +270,9 @@ s"""private Object child_${n};
 s"""	protected Object anno_${fn};
 	@Override
 	public final ${ty.transType} getAnno_${fn}() {
-		return (${ty.transType}) (anno_${fn} = common.Util.demand(anno_${fn}));
+		final ${ty.transType} result = common.Util.<${ty.transType}>demand(anno_${fn});
+		anno_${fn} = result;
+		return result;
 	}
 
 """;

@@ -552,7 +552,7 @@ String ::= exp::String  beLazy::Boolean
 function wrapThunkText
 String ::= exp::String  ty::String
 {
-  return s"new common.Thunk<${ty}>(new common.Thunk.Evaluable() { public final ${ty} eval() { return ${exp}; } })";
+  return s"new common.Thunk<${ty}>(new common.Thunk.Evaluable<${ty}>() { public final ${ty} eval() { return ${exp}; } })";
   --TODO: java lambdas are bugged
   --return s"new common.Thunk<${ty}>(() -> ${exp})";
 }

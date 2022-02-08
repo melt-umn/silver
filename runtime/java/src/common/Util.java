@@ -7,7 +7,6 @@ import java.net.URI;
 
 import common.exceptions.*;
 import common.javainterop.ConsCellCollection;
-
 import silver.core.NLocation;
 import silver.core.NParseError;
 import silver.core.NParseResult;
@@ -59,10 +58,11 @@ public final class Util {
 	 * @param c  Either a value, or a Closure
 	 * @return The value, either directly, or evaluating the Closure
 	 */
-	public static Object demand(Object c) {
+	@SuppressWarnings("unchecked")
+	public static <T> T demand(Object c) {
 		if(c instanceof Thunk)
-			return ((Thunk<?>)c).eval();
-		return c;
+			return ((Thunk<T>)c).eval();
+		return (T)c;
 	}
 
 	/**

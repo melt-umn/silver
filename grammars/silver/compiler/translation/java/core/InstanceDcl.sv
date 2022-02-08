@@ -75,7 +75,7 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
   contexts.boundVariables = boundVars;
 
   top.translation = s"""
-	public ${id.lookupValue.typeScheme.typerep.transCovariantType} ${makeInstanceMemberAccessorName(top.fullName)}(${contexts.contextParamTrans}) {
+	public ${finalType(e).transType} ${makeInstanceMemberAccessorName(top.fullName)}(${contexts.contextParamTrans}) {
 		//${e.unparse}
 		return ${e.generalizedTranslation};
 	}
