@@ -5,7 +5,7 @@ grammar silver:util:treeset;
    - The names are too general otherwise.
    -}
 
-type Set<a> foreign;
+type Set<a> foreign = "java.util.TreeSet<Object>";
 
 @{--
  - Returns a new, empty, set using Ord for comparison.
@@ -37,7 +37,7 @@ Set<a> ::= lst::[a] set::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeSet.addList(%lst%, (java.util.TreeSet<Object>)%set%)";
+  "java" : return "common.rawlib.RawTreeSet.addList(%lst%, %set%)";
 }
 
 @{--
@@ -57,7 +57,7 @@ function toList
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeSet.toList((java.util.TreeSet<Object>)%set%)";
+  "java" : return "common.rawlib.RawTreeSet.toList(%set%)";
 }
 
 @{--
@@ -68,7 +68,7 @@ Set<a> ::= l::Set<a> r::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeSet.union((java.util.TreeSet<Object>)%l%,(java.util.TreeSet<Object>)%r%)";
+  "java" : return "common.rawlib.RawTreeSet.union(%l%,%r%)";
 }
 
 @{--
@@ -79,7 +79,7 @@ Set<a> ::= l::Set<a> r::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeSet.intersect((java.util.TreeSet<Object>)%l%,(java.util.TreeSet<Object>)%r%)";
+  "java" : return "common.rawlib.RawTreeSet.intersect(%l%,%r%)";
 }
 
 @{--
@@ -90,7 +90,7 @@ Set<a> ::= l::Set<a> r::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeSet.difference((java.util.TreeSet<Object>)%l%,(java.util.TreeSet<Object>)%r%)";
+  "java" : return "common.rawlib.RawTreeSet.difference(%l%,%r%)";
 }
 
 @{--
@@ -101,7 +101,7 @@ Boolean ::= e::a set::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeSet.contains(%e%,(java.util.TreeSet<Object>)%set%)";
+  "java" : return "common.rawlib.RawTreeSet.contains(%e%,%set%)";
 }
 
 @{--
@@ -112,7 +112,7 @@ Boolean ::= e::[a] set::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeSet.containsAll(%e%,(java.util.TreeSet<Object>)%set%)";
+  "java" : return "common.rawlib.RawTreeSet.containsAll(%e%,%set%)";
 }
 
 @{--
@@ -123,7 +123,7 @@ Boolean ::= l::Set<a> r::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeSet.subset((java.util.TreeSet<Object>)%l%,(java.util.TreeSet<Object>)%r%)";
+  "java" : return "common.rawlib.RawTreeSet.subset(%l%,%r%)";
 }
 
 @{--
@@ -134,7 +134,7 @@ Boolean ::= s::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeSet.isEmpty((java.util.TreeSet<Object>)%s%)";
+  "java" : return "common.rawlib.RawTreeSet.isEmpty(%s%)";
 }
 
 @{--
@@ -145,7 +145,7 @@ Integer ::= s::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeSet.size((java.util.TreeSet<Object>)%s%)";
+  "java" : return "common.rawlib.RawTreeSet.size(%s%)";
 }
 
 @{--
@@ -156,7 +156,7 @@ Set<a> ::= f::(Boolean ::= a)  s::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeSet.filter(%f%, (java.util.TreeSet<Object>)%s%)";
+  "java" : return "common.rawlib.RawTreeSet.filter(%f%, %s%)";
 }
 
 @{--
@@ -167,7 +167,7 @@ Set<a> ::= lst::[a] set::Set<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeSet.removeAll(%lst%, (java.util.TreeSet<Object>)%set%)";
+  "java" : return "common.rawlib.RawTreeSet.removeAll(%lst%, %set%)";
 }
 
 instance Eq Set<a> {

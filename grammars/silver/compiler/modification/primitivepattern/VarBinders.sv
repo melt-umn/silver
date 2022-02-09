@@ -163,10 +163,10 @@ top::VarBinder ::= n::Name
 
   top.translation = 
     makeSpecialLocalBinding(fName, 
-      "(" ++ actualTy.transType ++ ")scrutinee." ++ 
+      "scrutinee." ++ 
         (if isDecorable(top.bindingType, top.env)
          then "childDecorated("
-         else "childAsIs(") ++
+         else s"<${actualTy.transType}>childAsIs(") ++
         toString(top.bindingIndex) ++ ")",
       actualTy.transType);
   

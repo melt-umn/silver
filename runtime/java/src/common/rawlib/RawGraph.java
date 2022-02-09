@@ -19,6 +19,7 @@ public final class RawGraph {
 	}
 	
 	// add :: (Graph<a> ::= [Pair<a a>]  Graph<a>)
+	@SuppressWarnings("unchecked")
 	public static TreeMap<Object,TreeSet<Object>> add(ConsCell l, TreeMap<Object,TreeSet<Object>> g) {
 		if(l.nil())
 			return g;
@@ -77,6 +78,7 @@ public final class RawGraph {
 	}
 	
 	// transitiveClosure :: (Graph<a> ::= Graph<a>)
+	@SuppressWarnings("unchecked")
 	public static TreeMap<Object,TreeSet<Object>> transitiveClosure(TreeMap<Object,TreeSet<Object>> g) {
 
 		final TreeMap<Object,TreeSet<Object>> ret = (TreeMap<Object,TreeSet<Object>>)g.clone();
@@ -112,6 +114,7 @@ public final class RawGraph {
 	}
 	
 	// repairClosure :: (Graph<a> ::= [Pair<a a>]  Graph<a>)
+	@SuppressWarnings("unchecked")
 	public static TreeMap<Object,TreeSet<Object>> repairClosure(
 			ConsCell l, 
 			TreeMap<Object,TreeSet<Object>> g) {

@@ -71,6 +71,7 @@ public class ConsCellCollection<T> extends AbstractCollection<T> {
 
 		@Override
 		public T next() {
+			@SuppressWarnings("unchecked")
 			T fst = (T) elem.head();
 			elem = elem.tail();
 			return fst;

@@ -10,7 +10,7 @@ GrammarElement ::= sourceGrammar::String  location::Location  id::String
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "common.CopperUtil.makeDisambiguationFunction(%sourceGrammar%.toString(), %location%, %id%.toString(), %code%.toString(), new common.javainterop.ConsCellCollection(%members%), %applicableToSubsets%)";
+  "java" : return "common.CopperUtil.makeDisambiguationFunction(%sourceGrammar%.toString(), %location%, %id%.toString(), %code%.toString(), new common.javainterop.ConsCellCollection<>(%members%), %applicableToSubsets%)";
 }
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Nonterminal
@@ -42,7 +42,7 @@ GrammarElement ::= sourceGrammar::String  location::Location  id::String
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "common.CopperUtil.makeProduction(%sourceGrammar%.toString(), %location%, %id%.toString(), %hasPrecedence% ? %precedence_% : null, %hasOperator% ? (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%operator_% : null, %code%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%lhs%, new common.javainterop.ConsCellCollection(%rhs%), new common.javainterop.ConsCellCollection(%prodLayout%))";
+  "java" : return "common.CopperUtil.makeProduction(%sourceGrammar%.toString(), %location%, %id%.toString(), %hasPrecedence% ? %precedence_% : null, %hasOperator% ? (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%operator_% : null, %code%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%lhs%, new common.javainterop.ConsCellCollection<>(%rhs%), new common.javainterop.ConsCellCollection<>(%prodLayout%))";
 }
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Terminal
@@ -55,7 +55,7 @@ GrammarElement ::= sourceGrammar::String  location::Location  id::String
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "common.CopperUtil.makeTerminal(%sourceGrammar%.toString(), %location%, %id%.toString(), %pp%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Regex)%regex%, %hasPrecedence% ? %precedence_% : null, %associativity%.toString(), %type_%.toString(), %code%.toString(), new common.javainterop.ConsCellCollection(%classes_%), %hasPrefix% ? (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%prefix_% : null, new common.javainterop.ConsCellCollection(%submits_%), new common.javainterop.ConsCellCollection(%dominates_%))";
+  "java" : return "common.CopperUtil.makeTerminal(%sourceGrammar%.toString(), %location%, %id%.toString(), %pp%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Regex)%regex%, %hasPrecedence% ? %precedence_% : null, %associativity%.toString(), %type_%.toString(), %code%.toString(), new common.javainterop.ConsCellCollection<>(%classes_%), %hasPrefix% ? (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%prefix_% : null, new common.javainterop.ConsCellCollection<>(%submits_%), new common.javainterop.ConsCellCollection<>(%dominates_%))";
 }
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.TerminalClass

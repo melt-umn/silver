@@ -20,7 +20,6 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 import silver.core.Init;
 import silver.core.NIOVal;
 import silver.core.NLocation;
@@ -298,13 +297,13 @@ public final class CopperUtil {
       prod.setOperator(operator);
       prod.setCode(code);
       prod.setLhs(lhs);
-      ArrayList<CopperElementReference> rhs = new ArrayList(rhsConsList);
+      ArrayList<CopperElementReference> rhs = new ArrayList<>(rhsConsList);
       prod.setRhs(rhs);
       ArrayList<String> rhsVarNames = new ArrayList<String>();
       for (int i = 0; i < rhs.size(); i++)
         rhsVarNames.add(String.format("rhsVar_%d", i));
       prod.setRhsVarNames(rhsVarNames);
-      prod.setLayout(new HashSet(prodLayout));
+      prod.setLayout(new HashSet<>(prodLayout));
       return prod;
     } catch (ParseException exc) {
       throw new SilverInternalError(

@@ -5,7 +5,7 @@ grammar silver:util:treemap;
    - The names are too general otherwise.
    -}
 
-type Map<a b> foreign;
+type Map<a b> foreign = "java.util.TreeMap<Object,common.ConsCell>";
 
 @{--
  - Returns a new, empty, multimap using Ord for comparison.
@@ -37,7 +37,7 @@ Map<a b> ::= lst::[Pair<a b>] mp::Map<a b>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeMap.addList(%lst%, (java.util.TreeMap<Object,common.ConsCell>)%mp%)";
+  "java" : return "common.rawlib.RawTreeMap.addList(%lst%, %mp%)";
 }
 
 @{--
@@ -48,7 +48,7 @@ function keys
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeMap.keys((java.util.TreeMap<Object,common.ConsCell>)%mp%)";
+  "java" : return "common.rawlib.RawTreeMap.keys(%mp%)";
 }
 
 @{--
@@ -59,7 +59,7 @@ function lookup
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeMap.lookup(%key%, (java.util.TreeMap<Object,common.ConsCell>)%mp%)";
+  "java" : return "common.rawlib.RawTreeMap.lookup(%key%, %mp%)";
 }
 
 @{--
@@ -70,7 +70,7 @@ function toList
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeMap.toList((java.util.TreeMap<Object, common.ConsCell>)%mp%)";
+  "java" : return "common.rawlib.RawTreeMap.toList(%mp%)";
 }
 
 @{--
@@ -81,6 +81,6 @@ Map<a b> ::= key::a  value::[b]  mp::Map<a b>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawTreeMap.update(%key%, %value%, (java.util.TreeMap<Object,common.ConsCell>)%mp%)";
+  "java" : return "common.rawlib.RawTreeMap.update(%key%, %value%, %mp%)";
 }
 

@@ -1,7 +1,9 @@
 package common;
 
 import silver.core.*;
+
 import java.util.*;
+
 import common.exceptions.*;
 
 
@@ -87,6 +89,7 @@ public final class OriginContext {
 		throw new RuntimeException("Impossible state: this.variety not recognized.");
 	}
 
+	@SuppressWarnings("unchecked")
 	public <T extends Tracked> T attrAccessCopy(final T arg) {
 		switch (this.variety) {
 			case NORMAL: //We only copy if this is a 'normal' origin (i.e. it originates from a node)
@@ -98,12 +101,14 @@ public final class OriginContext {
 	}
 
 	// Used by code that does some manipulation on a type-erased generic object that might be a nonterminal.
-	public Object attrAccessCopyPoly(final Object arg) {
-		if (arg instanceof Tracked) return attrAccessCopy((Tracked)arg);
+	@SuppressWarnings("unchecked")
+	public <T> T attrAccessCopyPoly(final T arg) {
+		if (arg instanceof Tracked) return (T) attrAccessCopy((Tracked)arg);
 		return arg;
 	}
 
 	// Same as above but preserves laziness
+	@SuppressWarnings("unchecked")
 	public Object attrAccessCopyPolyThunk(final Object t) {
 		if (t instanceof Thunk)
 			return new Thunk<Object>(() -> attrAccessCopyPoly(((Thunk<Object>)t).eval()));
