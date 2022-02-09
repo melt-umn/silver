@@ -97,6 +97,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
 
   top.setupInh <- s"""
     ${top.frame.className}.localAttributes[${ugh_dcl_hack.attrOccursIndex}] = new common.CollectionAttribute() {
+  @SuppressWarnings("unchecked")
       public Object eval(common.DecoratedNode context) {
         common.OriginContext originCtx = context.originCtx;
         common.Lazy base = this.getBase();
@@ -134,6 +135,7 @@ public class ${className} extends common.CollectionAttribute {
     super(index);
   }
 
+  @SuppressWarnings("unchecked")
   public Object eval(common.DecoratedNode context) {
     common.OriginContext originCtx = context.originCtx;
     ${te.typerep.transType} result = (${te.typerep.transType})this.getBase().eval(context);
@@ -167,6 +169,7 @@ public class ${className} extends common.CollectionAttribute {
     super();
   }
 
+  @SuppressWarnings("unchecked")
   public Object eval(common.DecoratedNode context) {
     common.OriginContext originCtx = context.originCtx;
     ${te.typerep.transType} result = (${te.typerep.transType})this.getBase().eval(context);

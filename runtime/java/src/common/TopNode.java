@@ -27,7 +27,7 @@ public class TopNode extends DecoratedNode{ // TODO: this should become a Node!
 	}
 
 	@Override
-	public Object inherited(final int attribute) {		
+	public <T> T inherited(final int attribute) {
 		throw new SilverInternalError("No inherited attributes given to TopNode.");
 	}
 
@@ -37,12 +37,12 @@ public class TopNode extends DecoratedNode{ // TODO: this should become a Node!
 	}
 
 	@Override
-	public Lazy synthesized(final int attribute) {		
+	public <T> T synthesized(final int attribute) {
 		throw new SilverInternalError("No synthesized attributes defined on TopNode.");
 	}
 	
 	@Override
-	public Object childAsIs(final int s) {
+	public <T> T childAsIs(final int s) {
 		throw new SilverInternalError("No Children defined on TopNode.");
 	}
 
@@ -52,7 +52,7 @@ public class TopNode extends DecoratedNode{ // TODO: this should become a Node!
 	}
 
 	@Override
-	public Object localAsIs(final int attribute) {
+	public <T> T localAsIs(final int attribute) {
 		throw new SilverInternalError("No local attributes defined on TopNode.");
 	}
 

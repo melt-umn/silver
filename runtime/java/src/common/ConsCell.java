@@ -57,11 +57,13 @@ public class ConsCell implements Typed {
 	 * @return An equivalent Java List.
 	 */
 	public static <T> List<T> toList(ConsCell cons) {
-                List<T> lst = new LinkedList();
+        List<T> lst = new LinkedList<T>();
 		while(! cons.nil()) {
-                        T val = (T) cons.head();
-                        cons = cons.tail();
-                        lst.add(val);
+            @SuppressWarnings("unchecked")
+			T val = (T) cons.head();
+
+            cons = cons.tail();
+            lst.add(val);
 		}
 		return lst;
 	}

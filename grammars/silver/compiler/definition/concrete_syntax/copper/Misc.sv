@@ -11,7 +11,7 @@ ParserBean ::= sourceGrammar::String  location::Location  id::String
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "common.CopperUtil.makeParserBean(%sourceGrammar%.toString(), %location%, %id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection(%startLayout%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%grammar_%)";
+  "java" : return "common.CopperUtil.makeParserBean(%sourceGrammar%.toString(), %location%, %id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection<>(%startLayout%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%grammar_%)";
 }
 
 function extendedParserBean
@@ -23,7 +23,7 @@ ParserBean ::= sourceGrammar::String  location::Location  id::String
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "common.CopperUtil.makeExtendedParserBean(%sourceGrammar%.toString(), %location%, %id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection(%startLayout%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%hostGrammar%, (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%extGrammar%)";
+  "java" : return "common.CopperUtil.makeExtendedParserBean(%sourceGrammar%.toString(), %location%, %id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection<>(%startLayout%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%hostGrammar%, (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%extGrammar%)";
 }
 
 function compileParserBeanT
@@ -57,7 +57,7 @@ Grammar ::= sourceGrammar::String  location::Location  id::String
 {
   return error("copper FFI function");
 } foreign {
-  "java": return "common.CopperUtil.makeGrammar(%sourceGrammar%.toString(), %location%, %id%.toString(), new common.javainterop.ConsCellCollection(%grammarElements%))";
+  "java": return "common.CopperUtil.makeGrammar(%sourceGrammar%.toString(), %location%, %id%.toString(), new common.javainterop.ConsCellCollection<>(%grammarElements%))";
 }
 
 function extensionGrammar
@@ -68,5 +68,5 @@ Grammar ::= sourceGrammar::String  location::Location  id::String
 {
   return error("copper FFI function");
 } foreign {
-  "java": return "common.CopperUtil.makeExtensionGrammar(%sourceGrammar%.toString(), %location%, %id%.toString(), new common.javainterop.ConsCellCollection(%grammarElements%), new common.javainterop.ConsCellCollection(%markingTerminals%), new common.javainterop.ConsCellCollection(%bridgeProductions%), new common.javainterop.ConsCellCollection(%glueDisambiguationFunctions%))";
+  "java": return "common.CopperUtil.makeExtensionGrammar(%sourceGrammar%.toString(), %location%, %id%.toString(), new common.javainterop.ConsCellCollection<>(%grammarElements%), new common.javainterop.ConsCellCollection<>(%markingTerminals%), new common.javainterop.ConsCellCollection<>(%bridgeProductions%), new common.javainterop.ConsCellCollection<>(%glueDisambiguationFunctions%))";
 }

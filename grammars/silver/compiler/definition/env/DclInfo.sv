@@ -19,9 +19,11 @@ synthesized attribute isTypeAlias :: Boolean;
 synthesized attribute isClass :: Boolean;
 synthesized attribute classMembers :: [Pair<String Boolean>];
 
+-- instances
 inherited attribute givenInstanceType :: Type;
 synthesized attribute superContexts :: [Context];
 synthesized attribute typerep2 :: Type; -- Used for binary constraint instances
+synthesized attribute definedMembers :: [String];
 
 -- values
 synthesized attribute namedSignature :: NamedSignature;
@@ -360,24 +362,26 @@ top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
   top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, atty);
 }
 
-nonterminal InstDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, typerep2, isTypeError;
+nonterminal InstDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, typerep2, isTypeError, definedMembers;
 
 aspect default production
 top::InstDclInfo ::=
 {
   top.isTypeError := false;
+  top.definedMembers = [];
   top.typerep2 = error("Internal compiler error: must be defined for all binary constraint instances");
 }
 
 -- Class instances
 abstract production instDcl
-top::InstDclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
+top::InstDclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type definedMembers::[String]
 {
   top.fullName = fn;
   
   top.typeScheme = constraintType(bound, contexts, ty);
 
   top.isTypeError := any(map((.isTypeError), contexts));
+  top.definedMembers = definedMembers;
 }
 abstract production instConstraintDcl
 top::InstDclInfo ::= fntc::String ty::Type tvs::[TyVar]

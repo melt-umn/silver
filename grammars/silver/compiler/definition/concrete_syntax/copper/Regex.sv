@@ -18,7 +18,7 @@ Regex ::= subexps::[Regex]
 {
   return error("copper FFI function");
 } foreign {
-  "java": return "new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ChoiceRegex().addSubexps(new java.util.ArrayList<edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Regex>(new common.javainterop.ConsCellCollection(%subexps%)))";
+  "java": return "new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ChoiceRegex().addSubexps(new java.util.ArrayList<edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Regex>(new common.javainterop.ConsCellCollection<>(%subexps%)))";
 }
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ConcatenationRegex
@@ -27,7 +27,7 @@ Regex ::= subexps::[Regex]
 {
   return error("copper FFI function");
 } foreign {
-  "java": return "new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ConcatenationRegex().addSubexps(new java.util.ArrayList<edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Regex>(new common.javainterop.ConsCellCollection(%subexps%)))";
+  "java": return "new edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.ConcatenationRegex().addSubexps(new java.util.ArrayList<edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Regex>(new common.javainterop.ConsCellCollection<>(%subexps%)))";
 }
 
 -- edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.KleeneStarRegex
