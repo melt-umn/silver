@@ -170,7 +170,7 @@ top::Expr ::= q::PartiallyDecorated QName
     if !null(resolvedDcl.typeScheme.boundVars) || !contains(q.lookupValue.fullName, resolvedDcl.definedMembers)
     -- The resolved instance has a polymorphic implementation for the member,
     -- or relies on a default implementation, which may have a more general type.
-    -- This means that we must insert a cast to the more specific infered result type.
+    -- This means that we must insert a cast to the more specific inferred result type.
     then s"common.Util.<${finalType(top).transType}>uncheckedCast(${transContextMember})"
     else transContextMember;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);

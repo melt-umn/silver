@@ -222,9 +222,9 @@ Def ::= sg::String  sl::Location  fn::String  supers::[Context]  tv::TyVar  k::K
   return typeDef(defaultEnvItem(clsDcl(fn,supers,tv,k,members,sourceGrammar=sg,sourceLocation=sl)));
 }
 function instDef
-Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  contexts::[Context]  ty::Type  dm::[String]
+Def ::= sg::String  sl::Location  fn::String  bound::[TyVar]  contexts::[Context]  ty::Type  definedMembers::[String]
 {
-  return tcInstDef(instDcl(fn,bound,contexts,ty,dm,sourceGrammar=sg,sourceLocation=sl));
+  return tcInstDef(instDcl(fn,bound,contexts,ty,definedMembers,sourceGrammar=sg,sourceLocation=sl));
 }
 function sigConstraintDef
 Def ::= sg::String  sl::Location  fn::String  ty::Type  ns::NamedSignature
