@@ -44,7 +44,7 @@ top::Expr ::=
 {
   top.invokeTranslation =
     -- dynamic method invocation
-    castIfPoly(top, s"${top.translation}.invoke(${makeOriginContextRef(top)}, new Object[]{${argsTranslation(top.invokeArgs)}}, ${namedargsTranslation(top.invokeNamedArgs)})");
+    s"${top.translation}.invoke(${makeOriginContextRef(top)}, new Object[]{${argsTranslation(top.invokeArgs)}}, ${namedargsTranslation(top.invokeNamedArgs)})";
   top.generalizedTranslation = top.translation;
 }
 
@@ -139,7 +139,7 @@ top::Expr ::= q::PartiallyDecorated QName
   top.lazyTranslation = top.translation;
   top.invokeTranslation =
     -- static constructor invocation
-    castIfPoly(top, s"new ${makeProdName(q.lookupValue.fullName)}(${implode(", ", makeNewConstructionOrigin(top, !top.sameProdAsProductionDefinedOn) ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs ++ reorderedAnnoAppExprs(top.invokeNamedArgs)))})");
+    s"new ${makeProdName(q.lookupValue.fullName)}(${implode(", ", makeNewConstructionOrigin(top, !top.sameProdAsProductionDefinedOn) ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs ++ reorderedAnnoAppExprs(top.invokeNamedArgs)))})";
 }
 
 aspect production functionReference
@@ -155,9 +155,14 @@ top::Expr ::= q::PartiallyDecorated QName
     if null(typeScheme.contexts)
     then makeProdName(q.lookupValue.fullName) ++ ".factory"
     else s"${makeProdName(q.lookupValue.fullName)}.getFactory(${implode(", ", contexts.transContexts)})";
-  top.invokeTranslation =
+
+  local invokeTrans::String =
     -- static method invocation
-    castIfPoly(top, s"${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ", [makeOriginContextRef(top)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs))})");
+    s"${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ", [makeOriginContextRef(top)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs))})";
+  top.invokeTranslation =
+    if !null(top.typerep.outputType.freeVariables)
+    then s"common.Util.<${finalType(top).outputType.transType}>uncheckedCast(${invokeTrans})"
+    else invokeTrans;
 }
 
 aspect production classMemberReference
@@ -579,14 +584,4 @@ String ::= e::Decorated Expr
   -- initialization code out across each production. So who knows.
   local swizzleOrigins::String = if e.config.noOrigins then "" else "final common.OriginContext originCtx = context.originCtx;";
   return s"new common.Lazy() { public final Object eval(final common.DecoratedNode context) { ${swizzleOrigins} return ${e.translation}; } }";
-}
-
-function castIfPoly
-String ::= e::Decorated Expr expr::String
-{
-  return
-    if !null(e.typerep.outputType.freeVariables)
-    -- If the function's result type is polymorphic, then we need to insert a cast to the actual type.
-    then s"common.Util.<${finalType(e).outputType.transType}>uncheckedCast(${expr})"
-    else expr;
 }
