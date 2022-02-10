@@ -167,7 +167,7 @@ equalityTest(toString(false), "false", String, silver_tests);
 
 type MyType3 = Pair<Integer String>;
 
-wrongCode "Could not find an instance for silver:core:ConvertablePrim silver:core:Pair<Integer String> (arising from the use of toString)" {
+wrongCode "Could not find an instance for silver:core:ConvertiblePrim silver:core:Pair<Integer String> (arising from the use of toString)" {
   global m3t :: MyType3 = pair(0, "");
   equalityTest(toString(m3t), "<this fails>", String, silver_tests);
 }
