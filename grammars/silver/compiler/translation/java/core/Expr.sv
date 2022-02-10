@@ -148,7 +148,7 @@ top::Expr ::= q::PartiallyDecorated QName
   -- functions, unlike productions, can return a type variable.
   -- as such, we have to cast it to the real inferred final type.
   top.translation =
-    if !null(top.typerep.outputType.freeVariables)
+    if top.typerep.transType != finalType(top).transType
     then s"common.Util.<${finalType(top).transType}>uncheckedCast(${top.lazyTranslation})"
     else top.lazyTranslation;
   top.lazyTranslation =
@@ -160,7 +160,7 @@ top::Expr ::= q::PartiallyDecorated QName
     -- static method invocation
     s"${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ", [makeOriginContextRef(top)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs))})";
   top.invokeTranslation =
-    if !null(top.typerep.outputType.freeVariables)
+    if top.typerep.outputType.transType != finalType(top).outputType.transType
     then s"common.Util.<${finalType(top).outputType.transType}>uncheckedCast(${invokeTrans})"
     else invokeTrans;
 }
