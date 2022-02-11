@@ -13,7 +13,7 @@ pass=0
 
 # Check to ensure all these builds yield the shown string (as an error)
 function cst_test {
-    silver $ARGS $1 | grep "$2" > /dev/null
+    silver $ARGS $1 |& grep "$2" > /dev/null
     if [[ $? != 0 ]]
     then
         echo -e "\nFailure: $1 did not produce output $2"
