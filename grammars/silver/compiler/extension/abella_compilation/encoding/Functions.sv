@@ -6,7 +6,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
   top.localAttrs := [];
   top.localAttrDefs := [];
-  top.attrEqInfo := [];
+  top.synAttrEqInfo := [];
   --
   body.encodingEnv = ns.encodingEnv_up;
   body.top = error("Cannot need top in a function");
@@ -63,7 +63,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   top.localAttrs :=
       error("Abella encoding cannot handle aspect functions");
   top.localAttrDefs := [];
-  top.attrEqInfo := [];
+  top.synAttrEqInfo := [];
 }
 
 aspect production functionDclFFI
@@ -72,7 +72,7 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   top.localAttrs :=
       error("Abella encoding cannot handle foreign functions");
   top.localAttrDefs := [];
-  top.attrEqInfo := [];
+  top.synAttrEqInfo := [];
 }
 
 

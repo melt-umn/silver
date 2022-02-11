@@ -4,7 +4,7 @@ grammar silver:compiler:extension:abella_compilation:encoding;
 attribute
    encodingEnv_up,
    treeTerm_up<silver:compiler:extension:abella_compilation:abella:TermList>,
-   nodetreeTerm_up<Term>, top_up
+   nodetreeTerm_up<Term>, top_up, childNames
 occurs on ProductionSignature;
 
 synthesized attribute argLength::Integer occurs on
@@ -53,12 +53,12 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
 attribute
    encodingEnv_up,
    treeTerm_up<silver:compiler:extension:abella_compilation:abella:TermList>,
-   nodetreeTerm_up<Term>
+   nodetreeTerm_up<Term>, childNames
 occurs on ProductionRHS;
 
 attribute
    encodingEnv_up, treeTerm_up<Term>,
-   nodetreeTerm_up<Maybe<Term>>
+   nodetreeTerm_up<Maybe<Term>>, childNames
 occurs on ProductionRHSElem;
 
 aspect production productionRHSNil
@@ -74,6 +74,8 @@ top::ProductionRHS ::=
       arrowAbellaType(top.functionResultType, nameAbellaType("prop"));
 
   top.args = [];
+
+  top.childNames = [];
 }
 
 aspect production productionRHSCons
@@ -94,6 +96,8 @@ top::ProductionRHS ::= h::ProductionRHSElem t::ProductionRHS
   top.functionType = arrowAbellaType(h.abellaType, t.functionType);
 
   top.args = h.args ++ t.args;
+
+  top.childNames = h.childNames ++ t.childNames;
 }
 
 aspect production productionRHSElem
@@ -115,6 +119,8 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
       else nothing();
 
   top.args = [treeterm];
+
+  top.childNames = [id.name];
 }
 
 
@@ -123,7 +129,7 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 attribute
    encodingEnv_up,
    treeTerm_up<silver:compiler:extension:abella_compilation:abella:TermList>,
-   nodetreeTerm_up<Term>, top_up
+   nodetreeTerm_up<Term>, top_up, childNames
 occurs on AspectProductionSignature;
 
 aspect production aspectProductionSignature
@@ -135,6 +141,8 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
   top.top_up = lhs.top_up;
 
   top.argLength = rhs.argLength;
+
+  top.childNames = [];
 }
 
 
@@ -162,12 +170,12 @@ top::AspectProductionLHS ::= id::Name t::Type
 attribute
    encodingEnv_up,
    treeTerm_up<silver:compiler:extension:abella_compilation:abella:TermList>,
-   nodetreeTerm_up<Term>
+   nodetreeTerm_up<Term>, childNames
 occurs on AspectRHS;
 
 attribute
    encodingEnv_up, treeTerm_up<Term>,
-   nodetreeTerm_up<Maybe<Term>>
+   nodetreeTerm_up<Maybe<Term>>, childNames
 occurs on AspectRHSElem;
 
 aspect production aspectRHSElemNil
@@ -178,6 +186,8 @@ top::AspectRHS ::=
   top.nodetreeTerm_up = nilTerm();
 
   top.argLength = 0;
+
+  top.childNames = [];
 }
 
 aspect production aspectRHSElemCons
@@ -193,6 +203,8 @@ top::AspectRHS ::= h::AspectRHSElem t::AspectRHS
       end;
 
   top.argLength = 1 + t.argLength;
+
+  top.childNames = h.childNames ++ t.childNames;
 }
 
 aspect production aspectRHSElemFull
@@ -212,6 +224,8 @@ top::AspectRHSElem ::= id::Name t::Type
                    nameTerm(nodeTreeConstructorName(t.abellaType)),
                    [treenodeterm, childlistterm]))
       else nothing();
+
+  top.childNames = [id.name];
 }
 
 

@@ -6,7 +6,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 {
   local fullProdName::String = buildEncodedName(top.grammarName, id.name);
   body.encodingEnv = ns.encodingEnv_up;
-  body.top = (ns.top_up.1, ns.top_up.2, ns.top_up.3, fullProdName);
+  body.top = (ns.top_up.1, ns.top_up.2, ns.top_up.3, fullProdName, ns.childNames);
   body.treeTerm =
        applicationTerm(nameTerm(nameToProd(fullProdName)), ns.treeTerm_up);
   body.nodetreeTerm = ns.nodetreeTerm_up;
@@ -22,7 +22,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 {
   local fullProdName::String = id.lookupValue.fullName;
   body.encodingEnv = ns.encodingEnv_up;
-  body.top = (ns.top_up.1, ns.top_up.2, ns.top_up.3, fullProdName);
+  body.top = (ns.top_up.1, ns.top_up.2, ns.top_up.3, fullProdName, ns.childNames);
   body.treeTerm =
        applicationTerm(nameTerm(nameToProd(fullProdName)), ns.treeTerm_up);
   body.nodetreeTerm = ns.nodetreeTerm_up;
@@ -39,7 +39,7 @@ top::AGDcl ::= 'aspect' 'default' 'production'
 {
   top.localAttrs := [];
   top.localAttrDefs := [];
-  top.attrEqInfo := [];
+  top.synAttrEqInfo := [];
 }
 
 
@@ -151,12 +151,12 @@ function buildLocalEqRelations
 
 attribute
    localAttrs, top, encodingEnv, treeTerm, nodetreeTerm,
-   attrEqInfo, localAttrEqInfo
+   synAttrEqInfo, localAttrEqInfo
 occurs on ProductionBody;
 
 attribute
    localAttrs, top, encodingEnv, treeTerm, nodetreeTerm,
-   attrEqInfo, localAttrEqInfo
+   synAttrEqInfo, localAttrEqInfo
 occurs on ProductionStmts;
 
 
@@ -188,7 +188,7 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 
 attribute
    localAttrs, top, encodingEnv, treeTerm, nodetreeTerm,
-   attrEqInfo, localAttrEqInfo
+   synAttrEqInfo, localAttrEqInfo
 occurs on ProductionStmt;
 
 
@@ -263,7 +263,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
               name_sep ++ encodeName(top.grammarName)),
            [top.top.1, top.treeTerm, top.nodetreeTerm]);
   --synthesized can only be defined on root
-  top.attrEqInfo <-
+  top.synAttrEqInfo <-
       [ (attrName, top.top.3, top.top.4, clauseHead,
          map(\ l::[Metaterm] ->
                termMetaterm(
@@ -297,7 +297,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
   e.encodingEnv = top.encodingEnv;
   e.top = top.top;
   local tree::(Term, Term) =
-        case findAssociated(dl.name, top.encodingEnv) of | just(x) -> x | nothing() -> error("It is here") end; --.fromJust;
+        findAssociated(dl.name, top.encodingEnv).fromJust;
   local treeTy::AbellaType = dl.typerep.abellaType;
   local clauseHead::Term =
         buildApplication(
@@ -305,7 +305,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
               name_sep ++ encodeName(top.grammarName)),
            [top.top.1, top.treeTerm, top.nodetreeTerm]);
   --attrs set on locals and forwards need to be handled differently
-  top.attrEqInfo <-
+  local top_attrEqInfo::[(String, AbellaType, String, Term, [[Metaterm]])] =
       case dl of
       | localDefLHS(_) -> []
       | forwardDefLHS(_) -> []

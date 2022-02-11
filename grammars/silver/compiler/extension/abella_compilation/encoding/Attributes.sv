@@ -6,7 +6,7 @@ import silver:compiler:driver:util;
 --occurs on needs to be done in this grammar for MWDA
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, attrEqInfo
+   inheritedAttrs, synAttrEqInfo
 occurs on RootSpec;
 
 
@@ -58,10 +58,10 @@ propagate inheritedAttrs on AGDcl, AGDcls, Grammar, Root, RootSpec;
 
 --[( attribute, top nonterminal type, production,
 --   head term (rel tree nodetree), [clause bodies] )]
-monoid attribute attrEqInfo::[(String, AbellaType, String,
-                               Term, [[Metaterm]])]
+monoid attribute synAttrEqInfo::[(String, AbellaType, String,
+                                  Term, [[Metaterm]])]
    with [], ++;
-propagate attrEqInfo on AGDcl, AGDcls, Grammar, Root, RootSpec,
+propagate synAttrEqInfo on AGDcl, AGDcls, Grammar, Root, RootSpec,
              ProductionBody, ProductionStmts, ProductionStmt
    excluding aspectDefaultProduction, aspectFunctionDcl,
              functionDclFFI, functionDcl, ifElseStmt, blockStmt;
@@ -117,10 +117,12 @@ autocopy attribute encodingEnv::[(String, (Term, Term))];
 --
 synthesized attribute encodingEnv_up::[(String, (Term, Term))];
 
---(tree, node, tree type, current production name) for the root
-autocopy attribute top::(Term, Term, AbellaType, String);
+--(tree, node, tree type, current production name, child names in order) for the root
+autocopy attribute top::(Term, Term, AbellaType, String, [String]);
 --
 synthesized attribute top_up::(Term, Term, AbellaType);
+--names of the children of a production *IN ORDER*, left to right
+synthesized attribute childNames::[String];
 
 --Root tree of current production
 inherited attribute treeTerm::Term;

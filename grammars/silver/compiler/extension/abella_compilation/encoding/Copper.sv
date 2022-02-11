@@ -4,12 +4,12 @@ grammar silver:compiler:extension:abella_compilation:encoding;
 aspect production blockStmt
 top::ProductionStmt ::= '{' stmts::ProductionStmts '}'
 {
-  top.attrEqInfo := [];
+  top.synAttrEqInfo := [];
 }
 
 aspect production ifElseStmt
 top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' el::ProductionStmt
 {
-  top.attrEqInfo := [];
+  top.synAttrEqInfo := [];
 }
 
