@@ -99,6 +99,27 @@ String ::= localAttrs::[(String, [(String, AbellaType)])]
 }
 
 
+function generateForwardAccessRelations
+String ::= new_nonterminals::[String] env::Decorated Env
+{
+  return
+     case new_nonterminals of
+     | [] -> ""
+     | nt::rest ->
+       "Type " ++ accessRelationName(nameToNonterminalType(nt), "forward") ++
+       "   " ++ nameToNonterminal(nt) ++ " -> " ++
+       typeToNodeType(nameToNonterminalType(nt)) ++ " -> " ++
+       functorAbellaType(nameAbellaType(attrValTypeName),
+          functorAbellaType(
+             functorAbellaType(pairType,
+                nameToNonterminalType(nt)),
+             nodeTreeType)).unparse ++
+       " -> prop.\n" ++
+       generateForwardAccessRelations(rest, env)
+     end;
+}
+
+
 function generateInheritedInformation
 String ::= inheritedAttrs::[String]
 {
@@ -1305,7 +1326,7 @@ String ::= new_nonterminals::[String] new_attrs::[String]
               (p.1, map(\ nt::String -> (nt, nameAbellaType("")), p.2)),
             associatedAttrs);
 
-  --All new full equations are new occurrences + new associated
+  --All new full equations are new occurrences + new associated + fwd on new NT
   --Need to make each combination occur only once
   local new_fullEqs::[(String, [(String, AbellaType)])] =
         map(\ p::(String, [(String, AbellaType)]) ->
@@ -1313,8 +1334,16 @@ String ::= new_nonterminals::[String] new_attrs::[String]
                nubBy(\ p1::(String, AbellaType)
                        p2::(String, AbellaType) -> p1.1 == p2.1,
                      p.2)),
-            combineAssociations(new_attrOccurrences,
-                                associatedAttrsExpanded));
+            combineAssociations(
+               combineAssociations(new_attrOccurrences,
+                  associatedAttrsExpanded),
+               [("forward",
+                 map(\ nt::String ->
+                       (nt, functorAbellaType(
+                               functorAbellaType(pairType,
+                                  nameToNonterminalType(nt)),
+                               nodeTreeType)),
+                     new_nonterminals))]));
 
   --All equation information, including for prods missing equations
   local allAttrEqInfo::[(String, AbellaType, String, Term, [[Metaterm]])] =
@@ -1332,7 +1361,8 @@ String ::= new_nonterminals::[String] new_attrs::[String]
      generateNodeTreeConstructors(new_nonterminals) ++ "\n\n" ++
      "%New attributes\n" ++
      generateAccessRelations(new_attrOccurrences) ++ "\n" ++
-     generateLocalAccessRelations(new_localAttrs, env) ++ "\n\n" ++
+     generateLocalAccessRelations(new_localAttrs, env) ++ "\n" ++
+     generateForwardAccessRelations(new_nonterminals, env) ++ "\n\n" ++
      generateInheritedInformation(new_inheritedAttrs) ++ "\n\n" ++
      "%New structural equality\n" ++
      generateStructureEqFull(new_nonterminals) ++ "\n" ++
@@ -1387,7 +1417,7 @@ String ::= new_nonterminals::[String] new_attrs::[String]
      foldr(\ d::Definition rest::String -> d.unparse ++ rest,
            "", localDefs) ++ "\n\n" ++
      --
-     "%New WPD relations\n" ++
+     "%New component WPD relations\n" ++
      generateWpdNodeRelationsComponent(new_attrOccurrences, new_localAttrs,
         associatedAttrs, env, componentName) ++ "\n" ++
      generateWpdNtRelationsComponent(new_prods, componentName) ++ "\n\n" ++
