@@ -889,6 +889,73 @@ String ::= attrs::[(String, AbellaType, [DefClause])]
 }
 
 
+
+{-
+  Build all new groups of (attr, [nonterminal]) which can arise from
+     this grammar for inh attrs
+  This is [(new attr, [existing nt])] + [(old attr, [new nt])]
+
+  We need to create all of these pairs because a new production for an
+  NT introduced in a further extension can set any inh attr on a child
+  at some point in the future, so we need to set up for them becoming
+  associated now.  This makes sure we will have consistent relations
+  for the composition if two extensions both make an attr and NT
+  become associated separately.
+-}
+function findAllPossibleNewAssociatedAttrs
+[(String, [String])] ::= new_nonterminals::[String] new_inhAttrs::[String]
+                         e::Decorated Env
+{
+  return
+     foldr(\ p::(String, [String]) rest::[(String, [String])] ->
+             if contains(p.1, new_inhAttrs)
+             then p::rest
+             else let filtered::[String] =
+                      filter(\ x::String ->
+                               contains(x, new_nonterminals),
+                             p.2)
+                  in
+                    if null(filtered)
+                    then rest
+                    else (p.1, filtered)::rest
+                  end,
+           [], findAllPossibleAssociatedAttrs(e));
+}
+
+
+{-
+  Build the combination of all (inh attr, [NT]) which are possible
+-}
+function findAllPossibleAssociatedAttrs
+[(String, [String])] ::= e::Decorated Env
+{
+  --Until I figure out how I want to handle silver:core, filter those out
+  local known_nonterminals::[String] =
+        filter(\ x::String -> !startsWith("silver:core:", x),
+        flatMap(\ m::tmap:Map<String TypeDclInfo> ->
+                  map((.fullName), map(snd, tmap:toList(m))),
+                e.typeTree));
+  local encoded_known_nonterminals::[String] =
+        map(colonsToEncoded, nub(known_nonterminals));
+
+  local known_inhAttrs::[String] =
+        map(\ p::(String, AttributeDclInfo) -> p.2.fullName,
+            filter(\ p::(String, AttributeDclInfo) ->
+                     case p.2 of
+                     | inhDcl(_, _, _) -> true
+                     | _ -> false
+                     end,
+                   flatMap(\ m::tmap:Map<String AttributeDclInfo> ->
+                             tmap:toList(m), e.attrTree)));
+  local encoded_known_inhAttrs::[String] =
+        map(colonsToEncoded, nub(known_inhAttrs));
+
+  return
+     map(\ attr::String -> (attr, encoded_known_nonterminals),
+         encoded_known_inhAttrs);
+}
+
+
 {-
   Find the new associated attrs (attrs which do not occur on the NT,
   but which are set by at least one of its prods on a child) induced
@@ -1262,7 +1329,7 @@ function produceMissingEquationInfo
               | _ -> error("Not possible")
               end,
             foundProds);
-  return    --(attr,   NT,         [(prod,   prod type )])
+  return        --(attr,   NT,         [(prod,   prod type )])
      flatMap(\ p::(String, AbellaType, [(String, AbellaType)]) ->
                map(\ prod::(String, AbellaType) ->
                      let treeTm::Term =
@@ -1311,13 +1378,24 @@ String ::= new_nonterminals::[String] new_attrs::[String]
 {
   --[(attr, [NT])]
   local associatedAttrs::[(String, [String])] =
-        findNewAssociatedAttrs(new_attrOccurrences, attrEqInfo,
-           encodedToColons(componentName), env, fenv);
+        findAllPossibleNewAssociatedAttrs(new_nonterminals,
+                                          new_inheritedAttrs, env);
   --[(attr, [(nonterminal, attr ty)])]
   local associatedAttrsExpanded::[(String, [(String, AbellaType)])] =
         map(\ p::(String, [String]) ->
               (p.1, map(\ nt::String -> (nt, nameAbellaType("")), p.2)),
             associatedAttrs);
+
+  --All new full equations are new occurrences + new associated
+  --Need to make each combination occur only once
+  local new_fullEqs::[(String, [(String, AbellaType)])] =
+        map(\ p::(String, [(String, AbellaType)]) ->
+              (p.1,
+               nubBy(\ p1::(String, AbellaType)
+                       p2::(String, AbellaType) -> p1.1 == p2.1,
+                     p.2)),
+            combineAssociations(new_attrOccurrences,
+                                associatedAttrsExpanded));
 
   --All equation information, including for prods missing equations
   local allAttrEqInfo::[(String, AbellaType, String, Term, [[Metaterm]])] =
@@ -1342,8 +1420,7 @@ String ::= new_nonterminals::[String] new_attrs::[String]
      generateStructureEqComponent(new_prods, componentName) ++ "\n\n" ++
      --
      "%New equation relations\n" ++
-     generateEquationsFull(
-        new_attrOccurrences ++ associatedAttrsExpanded) ++ "\n" ++
+     generateEquationsFull(new_fullEqs) ++ "\n" ++
      generateWpdRelationsFull(new_nonterminals) ++ "\n\n" ++
      "%New function relations\n" ++
      ( let funSplit::( [(String, AbellaType)],

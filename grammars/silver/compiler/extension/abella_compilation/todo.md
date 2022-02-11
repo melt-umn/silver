@@ -45,15 +45,15 @@ Bugs
       with existing inherited attributes, as well as the combinations
       of new inherited attrs and new nonterminals.  This should ensure
       everything is filled in, albeit with a lot of extra relations
-      which are never used.  It might interfere with telling what
-      attributes occur where, but I'm not sure (that could be fixed
-      with another information-passing constant like we use for
-      inherited attributes).
+      which are never used.
 
 
 Features
 ======================================================================
 * Pattern matching needs to be added
+* Forwarding needs to be added as a special attribute
+  + Also requires copy equations for all inherited attributes and
+    undefined synthesized attributes
 * Local attributes in functions---might require not using
   `encodedExpr` for functions, or perhaps a flag for production
   vs. function
