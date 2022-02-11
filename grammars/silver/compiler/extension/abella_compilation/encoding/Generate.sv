@@ -900,7 +900,8 @@ String ::= attrs::[(String, AbellaType, [DefClause])]
   at some point in the future, so we need to set up for them becoming
   associated now.  This makes sure we will have consistent relations
   for the composition if two extensions both make an attr and NT
-  become associated separately.
+  become associated separately.  If that never happens, we don't hurt
+  anything by having the extras.
 -}
 function findAllPossibleNewAssociatedAttrs
 [(String, [String])] ::= new_nonterminals::[String] new_inhAttrs::[String]
@@ -953,100 +954,6 @@ function findAllPossibleAssociatedAttrs
   return
      map(\ attr::String -> (attr, encoded_known_nonterminals),
          encoded_known_inhAttrs);
-}
-
-
-{-
-  Find the new associated attrs (attrs which do not occur on the NT,
-  but which are set by at least one of its prods on a child) induced
-  by this grammar---need these to create new full relations
-  Produces [(attr, [NT])]
--}
-function findNewAssociatedAttrs
-[(String, [String])] ::=
-     --[(attr, [(NT, attr ty)])]
-     new_attrOccurrences::[(String, [(String, AbellaType)])]
-     --[(attr, top NT type, prod, head term (rel tree nodetree), [clause bodies])]
-     attrEqInfo::[(String, AbellaType, String, Term, [[Metaterm]])]
-     grammarName::String env::Decorated Env fenv::FlowEnv
-{
-  --Cut down the equation information to attr and tree root type
-  local filtered::[(String, AbellaType)] =
-      map(\ p::(String, AbellaType, String, Term, [[Metaterm]]) ->
-            (p.1, p.2), attrEqInfo);
-  --Cut down to unique pairs of attr and tree root type
-  local cleaned::[(String, AbellaType)] =
-      nubBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
-              p1.1 == p2.1 && tysEqual(p1.2, p2.2), filtered);
-  --Sort by attribute
-  local sorted::[(String, AbellaType)] =
-      sortBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
-               p1.1 <= p2.1, cleaned);
-  --Group by attribute
-  local grouped::[[(String, AbellaType)]] =    
-      groupBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
-                p1.1 == p2.1, sorted);
-  --Put into groups of (attr, [nonterminals])
-  local paired::[(String, [String])] =
-      map(\ l::[(String, AbellaType)] ->
-            ( head(l).1, map(\ p::(String, AbellaType) ->
-                               nonterminalTypeToName(p.2),
-                             l) ), grouped);
-  --Get just the ones without any occurrence already, either here or in a previous grammar
-  return
-    flatMap(\ p::(String, [String]) ->
-              let pOccurs::[String] =
-                  case findAssociated(p.1, new_attrOccurrences) of
-                  | nothing() -> [] --unknown because not declared in this grammar
-                  | just(nts_tys) -> map(fst, nts_tys)
-                  end
-              in
-                [( p.1,
-                   foldr(\ nt::String rest::[String] ->
-                           if contains(nt, pOccurs)
-                           then rest
-                           else if checkAttrNtFullRelationExists(p.1, nt, grammarName, env, fenv)
-                           then rest
-                           else nt::rest,
-                         [], p.2) )]
-              end, paired);
-}
-
-
---Check whether attr is ever set on a child by a production building
---   nt not introduced by this grammar or if attr occurs on nonterminal
---Determines whether we need to introduce a new full relation
---Note:  abella_nt is something like gr$*$am$*$mar$*$Nt, as is abella_attr
-function checkAttrNtFullRelationExists
-Boolean ::= abella_attr::String abella_nt::String currentGrammar::String e::Decorated Env f::FlowEnv
-{
-  --convert to gr:am:mar:Nt
-  local nt::String = encodedToColons(abella_nt);
-  local attr::String = encodedToColons(abella_attr);
-
-  --Find whether attr is declared to occur on nt anywhere
-  local occursOn::Boolean = length(getOccursDcl(attr, nt, e)) > 0;
-
-  --find known productions for nt to search for setting attr on child
-  local knownProds::[ValueDclInfo] = getKnownProds(nt, e);
-  --only interested in prods from other grammars
-  local notThisGrammarProds::[ValueDclInfo] =
-        filter(\ v::ValueDclInfo -> v.sourceGrammar != currentGrammar, knownProds);
-  --prod names and child names for the prods
-  local namesChildren::[(String, [String])] =
-        map(\ v::ValueDclInfo -> (v.fullName, v.namedSignature.inputNames),
-            notThisGrammarProds);
-  --whether the prods has an equation for attr on any child
-  local equationForAttr::[Boolean] =
-        map(\ p::(String, [String]) ->
-              any(map(\ name::String ->
-                        !null(lookupInh(p.1, name, attr, f)),
-                      p.2)),
-            namesChildren);
-  --only care if any of them have an equation
-  local attrSet::Boolean = any(equationForAttr);
-
-  return occursOn || attrSet;
 }
 
 
