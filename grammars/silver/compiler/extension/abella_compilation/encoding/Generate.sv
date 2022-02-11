@@ -1273,9 +1273,20 @@ function produceMissingEquationInfo
   local prodsByType::[(String, [(String, AbellaType)])] =
         getProdsByType(env);
   --Filter down to only the relevant information about equations
+  --[(attr, top NT type, prod)]
   local filtered::[(String, AbellaType, String)] =
         map(\ p::(String, AbellaType, String, Term, [[Metaterm]]) ->
               (p.1, p.2, p.3), attrEqInfo);
+  --Need to catch all the possible associated attrs, even if there aren't
+  --   any equations for them, so add here with no actual prods
+  local expandedAssociatedAttrs::[(String, AbellaType, String)] =
+        flatMap(\ p::(String, [String]) ->
+                  map(\ nt::String ->
+                        (p.1, nameToNonterminalType(nt), ""), p.2),
+                findAllPossibleAssociatedAttrs(env));
+  --All the information from which to generate missing eqs
+  local allEqInfo::[(String, AbellaType, String)] =
+        filtered ++ expandedAssociatedAttrs;
   --Find the productions which are missing equations for each
   --   attribute and produce empty clauses
   local sortedAttrEquations::[(String, AbellaType, String)] =
@@ -1286,7 +1297,7 @@ function produceMissingEquationInfo
                    p1.1 < p2.1 || (p1.1 == p2.1 && n1 <= n2)
                  | _, _ -> error("Not possible")
                  end,
-               filtered);
+               allEqInfo);
   --[[(attr, nonterminal, prod)]] for existing equations
   local groupedAttrsProds::[[(String, AbellaType, String)]] =
         groupBy(\ p1::(String, AbellaType, String)
@@ -1321,7 +1332,8 @@ function produceMissingEquationInfo
                             if contains(p.1, eqs.3)
                             then rest
                             --only add it if its equation must be defined in this grammar
-                            else if attrNew || ntNew || nameToGrammar(p.1) == componentName
+                            else if attrNew || ntNew ||
+                                    nameToGrammar(p.1) == componentName
                             then p::rest
                             else rest,
                           [], prods) )
