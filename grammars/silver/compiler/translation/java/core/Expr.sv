@@ -44,7 +44,7 @@ top::Expr ::=
 {
   top.invokeTranslation =
     -- dynamic method invocation
-    s"((${finalType(top).outputType.transType})${top.translation}.invoke(${makeOriginContextRef(top)}, new Object[]{${argsTranslation(top.invokeArgs)}}, ${namedargsTranslation(top.invokeNamedArgs)}))";
+    s"${top.translation}.invoke(${makeOriginContextRef(top)}, new Object[]{${argsTranslation(top.invokeArgs)}}, ${namedargsTranslation(top.invokeNamedArgs)})";
   top.generalizedTranslation = top.translation;
 }
 
@@ -73,7 +73,7 @@ top::Expr ::= q::PartiallyDecorated QName
     then if finalType(top).isDecorated
          then s"((${finalType(top).transType})context.childDecorated(${childIDref}))"
          else s"((${finalType(top).transType})context.childDecorated(${childIDref}).undecorate())"
-    else s"((${finalType(top).transType})context.childAsIs(${childIDref}))";
+    else s"context.<${finalType(top).transType}>childAsIs(${childIDref})";
   -- the reason we do .childDecorated().undecorate() is that it's not safe to mix as-is/decorated accesses to the same child.
   -- this is a potential source of minor inefficiency for functions that do not decorate.
 
@@ -94,7 +94,7 @@ top::Expr ::= q::PartiallyDecorated QName
     then if finalType(top).isDecorated
          then s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}))"
          else s"((${finalType(top).transType})context.localDecorated(${q.lookupValue.dcl.attrOccursIndex}).undecorate())"
-    else s"((${finalType(top).transType})context.localAsIs(${q.lookupValue.dcl.attrOccursIndex}))";
+    else s"context.<${finalType(top).transType}>localAsIs(${q.lookupValue.dcl.attrOccursIndex})";
   -- reminder: look at comments for childReference
 
   top.lazyTranslation =
@@ -139,7 +139,7 @@ top::Expr ::= q::PartiallyDecorated QName
   top.lazyTranslation = top.translation;
   top.invokeTranslation =
     -- static constructor invocation
-    s"((${finalType(top).outputType.transType})new ${makeProdName(q.lookupValue.fullName)}(${implode(", ", makeNewConstructionOrigin(top, !top.sameProdAsProductionDefinedOn) ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs ++ reorderedAnnoAppExprs(top.invokeNamedArgs)))}))";
+    s"new ${makeProdName(q.lookupValue.fullName)}(${implode(", ", makeNewConstructionOrigin(top, !top.sameProdAsProductionDefinedOn) ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs ++ reorderedAnnoAppExprs(top.invokeNamedArgs)))})";
 }
 
 aspect production functionReference
@@ -147,20 +147,37 @@ top::Expr ::= q::PartiallyDecorated QName
 {
   -- functions, unlike productions, can return a type variable.
   -- as such, we have to cast it to the real inferred final type.
-  top.translation = s"((${finalType(top).transType})${top.lazyTranslation})";
+  top.translation =
+    if top.typerep.transType != finalType(top).transType
+    then s"common.Util.<${finalType(top).transType}>uncheckedCast(${top.lazyTranslation})"
+    else top.lazyTranslation;
   top.lazyTranslation =
     if null(typeScheme.contexts)
     then makeProdName(q.lookupValue.fullName) ++ ".factory"
     else s"${makeProdName(q.lookupValue.fullName)}.getFactory(${implode(", ", contexts.transContexts)})";
-  top.invokeTranslation =
+
+  local invokeTrans::String =
     -- static method invocation
-    s"((${finalType(top).outputType.transType})${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ", [makeOriginContextRef(top)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs))}))";
+    s"${makeProdName(q.lookupValue.fullName)}.invoke(${implode(", ", [makeOriginContextRef(top)] ++ contexts.transContexts ++ map((.lazyTranslation), top.invokeArgs.exprs))})";
+  top.invokeTranslation =
+    if top.typerep.outputType.transType != finalType(top).outputType.transType
+    then s"common.Util.<${finalType(top).outputType.transType}>uncheckedCast(${invokeTrans})"
+    else invokeTrans;
 }
 
 aspect production classMemberReference
 top::Expr ::= q::PartiallyDecorated QName
 {
-  top.translation = s"((${finalType(top).transType})${instHead.transContext}.${makeInstanceMemberAccessorName(q.lookupValue.fullName)}(${implode(", ", contexts.transContexts)}))";
+  local transContextMember::String =
+    s"${instHead.transContext}.${makeInstanceMemberAccessorName(q.lookupValue.fullName)}(${implode(", ", contexts.transContexts)})";
+  local resolvedDcl::InstDclInfo = head(instHead.resolved);
+  top.translation =
+    if !null(resolvedDcl.typeScheme.boundVars) || !contains(q.lookupValue.fullName, resolvedDcl.definedMembers)
+    -- The resolved instance has a polymorphic implementation for the member,
+    -- or relies on a default implementation, which may have a more general type.
+    -- This means that we must insert a cast to the more specific inferred result type.
+    then s"common.Util.<${finalType(top).transType}>uncheckedCast(${transContextMember})"
+    else transContextMember;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
@@ -172,11 +189,11 @@ top::Expr ::= q::PartiallyDecorated QName
     if null(typeScheme.contexts) then ""
     else s"(${implode(", ", contexts.transContexts)})";
 
-  top.translation = s"((${finalType(top).transType})${directThunk}.eval())";
+  top.translation = s"common.Util.<${finalType(top).transType}>uncheckedCast(${directThunk}.eval())";
   top.lazyTranslation = 
     if top.frame.lazyApplication
     then directThunk
-    else top.translation;
+    else s"${directThunk}.eval()";
 }
 aspect production errorApplication
 top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::PartiallyDecorated AnnoAppExprs
@@ -276,7 +293,7 @@ top::Expr ::= e::Expr '.' 'forward'
 aspect production synDecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  top.translation = wrapAccessWithOT(top, s"${e.translation}.synthesized(${q.attrOccursIndex})");
+  top.translation = wrapAccessWithOT(top, s"${e.translation}.<${finalType(top).transType}>synthesized(${q.attrOccursIndex})");
 
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of
@@ -295,7 +312,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  top.translation = wrapAccessWithOT(top, s"${e.translation}.inherited(${q.attrOccursIndex})");
+  top.translation = wrapAccessWithOT(top, s"${e.translation}.<${finalType(top).transType}>inherited(${q.attrOccursIndex})");
 
   top.lazyTranslation = 
     case e, top.frame.lazyApplication of
@@ -552,7 +569,7 @@ String ::= exp::String  beLazy::Boolean
 function wrapThunkText
 String ::= exp::String  ty::String
 {
-  return s"new common.Thunk<${ty}>(new common.Thunk.Evaluable() { public final ${ty} eval() { return ${exp}; } })";
+  return s"new common.Thunk<${ty}>(new common.Thunk.Evaluable<${ty}>() { public final ${ty} eval() { return ${exp}; } })";
   --TODO: java lambdas are bugged
   --return s"new common.Thunk<${ty}>(() -> ${exp})";
 }
@@ -568,4 +585,3 @@ String ::= e::Decorated Expr
   local swizzleOrigins::String = if e.config.noOrigins then "" else "final common.OriginContext originCtx = context.originCtx;";
   return s"new common.Lazy() { public final Object eval(final common.DecoratedNode context) { ${swizzleOrigins} return ${e.translation}; } }";
 }
-

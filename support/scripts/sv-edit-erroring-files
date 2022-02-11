@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -eu
+
+# try calling ./support/scripts/sv-edit-erroring-files tmux split-window -v nvim
+
+cd "$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"/../..)"
+
+./self-compile | tee /dev/stderr | grep -o '^ \[.*\]$' | sed 's/ \[\(.*\)\]/\1/' | xargs "${@:-$EDITOR}"

@@ -172,7 +172,7 @@ inherited attribute transContextDeps::[String] occurs on InstDclInfo, OccursDclI
 attribute transContext occurs on InstDclInfo;
 
 aspect production instDcl
-top::InstDclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
+top::InstDclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type definedMembers::[String]
 {
   top.transContext = s"new ${makeInstanceName(top.sourceGrammar, fn, ty)}(${implode(", ", top.transContextDeps)})";
 }

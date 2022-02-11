@@ -39,9 +39,9 @@ top::Expr ::= 'genArbTerminal' '(' te::TypeExpr ',' '_' ')'
 }
 
 concrete production genArbTerminalExpr
-top::Expr ::= 'genArbTerminal' '(' te::TypeExpr ',' starProb::Expr ',' loc::Expr ')'
+top::Expr ::= 'genArbTerminal' '(' te::TypeExpr ',' loc::Expr ')'
 {
-  top.unparse = s"genArbTerminal(${te.unparse}, ${starProb.unparse}, ${loc.unparse})";
+  top.unparse = s"genArbTerminal(${te.unparse}, ${loc.unparse})";
   forwards to
     mkFunctionInvocation(top.location,
       genArbTerminalNoLocExpr('genArbTerminal', '(', te, ',', '_', ')', location=top.location),

@@ -205,8 +205,9 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @param child The number of the child to obtain.
 	 * @return The unmodified value of the child.
 	 */
-	public Object childAsIs(final int child) {
-		return self.getChild(child);
+	@SuppressWarnings("unchecked")
+	public <T> T childAsIs(final int child) {
+		return (T) self.getChild(child);
 	}
 	
 	/**
@@ -249,7 +250,8 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @param attribute The full name of the local to obtain.
 	 * @return The value of the local.
 	 */
-	public Object localAsIs(final int attribute) {
+	@SuppressWarnings("unchecked")
+	public <T> T localAsIs(final int attribute) {
 		Object o = this.localValues[attribute];
 		if(o == null) {
 			o = evalLocalAsIs(attribute);
@@ -260,7 +262,7 @@ public class DecoratedNode implements Decorable, Typed {
 			// not recommended due to IO objects (IOString, etc)
 			this.localValues[attribute] = o;
 		}
-		return o;
+		return (T) o;
 	}
 	
 	/**
@@ -322,7 +324,8 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @param attribute The full name of the attribute.
 	 * @return The value of the attribute.
 	 */
-	public Object synthesized(final int attribute) {
+	@SuppressWarnings("unchecked")
+	public <T> T synthesized(final int attribute) {
 		// common.Util.stackProbe();
 		// System.err.println("TRACE: " + getDebugID() + " demanding syn attribute: " + self.getNameOfSynAttr(attribute));
 		
@@ -335,7 +338,7 @@ public class DecoratedNode implements Decorable, Typed {
 			// CACHE : comment out to disable caching for synthesized attributes
 			this.synthesizedValues[attribute] = o;
 		}
-		return o;
+		return (T) o;
 	}
 	
 	private final Object evalSyn(final int attribute) {
@@ -364,7 +367,7 @@ public class DecoratedNode implements Decorable, Typed {
 			try {
 				return forward().synthesized(attribute);
 			} catch(Throwable t) {
-				throw new TraceException("While evaling syn via forward in " + getDebugID(), t);
+				throw new TraceException("While evaling syn '" + self.getNameOfSynAttr(attribute) + "' via forward in " + getDebugID(), t);
 			}
 		} else {
 			l = self.getDefaultSynthesized(attribute);
@@ -427,7 +430,8 @@ public class DecoratedNode implements Decorable, Typed {
 	 * 
 	 * @see #inheritedForwarded(String)
 	 */
-	public Object inherited(final int attribute) {
+	@SuppressWarnings("unchecked")
+	public <T> T inherited(final int attribute) {
 		// common.Util.stackProbe();
 		// System.err.println("TRACE: " + getDebugID() + " demanding inh attribute: " + self.getNameOfInhAttr(attribute));
 		
@@ -443,7 +447,7 @@ public class DecoratedNode implements Decorable, Typed {
 			// we're recomputing
 			this.inheritedValues[attribute] = o;
 		}
-		return o;
+		return (T) o;
 	}
 	
 	private final Object evalInhSomehow(final int attribute) {
@@ -464,7 +468,7 @@ public class DecoratedNode implements Decorable, Typed {
 		//if(forwardParent == null) {
 		//	return new MissingDefinitionException("Inherited attribute '" + self.getNameOfInhAttr(attribute) + "' not provided to " + getDebugID() + " by " + parent.getDebugID());
 		//}
-		return new TraceException("While evaling inh via forward in " + getDebugID(), t);
+		return new TraceException("While evaling inh '" + self.getNameOfInhAttr(attribute) + "' via forward in " + getDebugID(), t);
 	}
 	private final Object evalInhHere(final int attribute) {
 		try {

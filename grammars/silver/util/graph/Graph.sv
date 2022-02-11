@@ -6,7 +6,7 @@ import silver:util:treeset as set;
  - A primitive graph representation. Edges has no special value
  - they either exist or do not.
  -}
-type Graph<a> foreign;
+type Graph<a> foreign = "java.util.TreeMap<Object,java.util.TreeSet<Object>>";
 
 @{--
  - Returns an empty graph using Ord for comparison.
@@ -36,7 +36,7 @@ Graph<a> ::= lst::[Pair<a a>] graph::Graph<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawGraph.add(%lst%, (java.util.TreeMap<Object,java.util.TreeSet<Object>>)%graph%)";
+  "java" : return "common.rawlib.RawGraph.add(%lst%, %graph%)";
 }
 
 @{--
@@ -47,7 +47,7 @@ set:Set<a> ::= vertex::a graph::Graph<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawGraph.edgesFrom(%vertex%, (java.util.TreeMap<Object,java.util.TreeSet<Object>>)%graph%)";
+  "java" : return "common.rawlib.RawGraph.edgesFrom(%vertex%, %graph%)";
 }
 
 @{--
@@ -58,7 +58,7 @@ Boolean ::= edge::Pair<a a> graph::Graph<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawGraph.contains(%edge%, (java.util.TreeMap<Object,java.util.TreeSet<Object>>)%graph%)";
+  "java" : return "common.rawlib.RawGraph.contains(%edge%, %graph%)";
 }
 
 @{--
@@ -69,7 +69,7 @@ function toList
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawGraph.toList((java.util.TreeMap<Object,java.util.TreeSet<Object>>)%graph%)";
+  "java" : return "common.rawlib.RawGraph.toList(%graph%)";
 }
 
 @{--
@@ -80,7 +80,7 @@ Graph<a> ::= graph::Graph<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawGraph.transitiveClosure((java.util.TreeMap<Object,java.util.TreeSet<Object>>)%graph%)";
+  "java" : return "common.rawlib.RawGraph.transitiveClosure(%graph%)";
 }
 
 @{--
@@ -92,6 +92,6 @@ Graph<a> ::= lst::[Pair<a a>] graph::Graph<a>
 {
   return error("NYI");
 } foreign {
-  "java" : return "common.rawlib.RawGraph.repairClosure(%lst%, (java.util.TreeMap<Object,java.util.TreeSet<Object>>)%graph%)";
+  "java" : return "common.rawlib.RawGraph.repairClosure(%lst%, %graph%)";
 }
 

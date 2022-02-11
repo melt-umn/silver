@@ -16,7 +16,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
     foldContexts(if id.lookupType.found && !foldContexts(cl.contexts).isTypeError then dcl.superContexts else []);
   superContexts.env = body.env;
   
-  top.defs := [instDef(top.grammarName, id.location, fName, boundVars, cl.contexts, ty.typerep)];
+  top.defs := [instDef(top.grammarName, id.location, fName, boundVars, cl.contexts, ty.typerep, body.definedMembers)];
   
   top.errors <- id.lookupType.errors;
   top.errors <-
@@ -73,7 +73,7 @@ autocopy attribute instanceType::Type;
 inherited attribute expectedClassMembers::[Pair<String Boolean>];
 
 nonterminal InstanceBody with
-  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers;
+  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, definedMembers;
 nonterminal InstanceBodyItem with
   config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, fullName;
 
@@ -83,6 +83,7 @@ concrete production consInstanceBody
 top::InstanceBody ::= h::InstanceBodyItem t::InstanceBody
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
+  top.definedMembers = h.fullName :: t.definedMembers;
 
   h.expectedClassMembers = top.expectedClassMembers;
   t.expectedClassMembers =
@@ -92,6 +93,7 @@ concrete production nilInstanceBody
 top::InstanceBody ::= 
 {
   top.unparse = "";
+  top.definedMembers = [];
 
   top.errors <-
     flatMap(

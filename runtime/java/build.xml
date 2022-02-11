@@ -27,6 +27,7 @@
 
   <target name='build' depends='init'>
     <javac debug='on' classpathref='compile.classpath' srcdir='${src}:${grammars}' destdir='${bin}' includeantruntime='false' source='1.8' target='1.8' release='8'>
+      <compilerarg value="-Xlint:unchecked" />
       <include name='common/**/*.java' />
       <include name='silver/core/*.java' />
       <include name='silver/xml/ast/*.java' />

@@ -5,7 +5,7 @@ import silver:compiler:driver:util only computeDependencies; -- TODO this is a b
 {--
  - An abstract representation of a parser declaration.
  -}
-nonterminal ParserSpec with 
+nonterminal ParserSpec with
   sourceGrammar, location, fullName,
   compiledGrammars,
   cstAst, startNT, moduleNames;
@@ -59,9 +59,8 @@ top::ParserSpec ::=
   production componentGrammarMarkingTerminals::[Pair<String [String]>] =
     map(
       \ g::String ->
-        pair(g, 
-          foldr(
-            consSyntax, nilSyntax(),
+        pair(g,
+          foldr(consSyntax, nilSyntax(),
             moduleExportedDefs(top.location, top.compiledGrammars, deps, [g], []).syntaxAst).allMarkingTerminals),
       grams);
   production markingTerminalPrefixes::[Pair<String String>] =
@@ -73,6 +72,8 @@ top::ParserSpec ::=
   top.cstAst =
     cstRoot(
       fn, snt, foldr(consSyntax, nilSyntax(), addedDcls ++ med.syntaxAst),
-      customStartLayout, terminalPrefixes ++ markingTerminalPrefixes, componentGrammarMarkingTerminals);
+      customStartLayout, terminalPrefixes ++ markingTerminalPrefixes,
+      componentGrammarMarkingTerminals, location=top.location,
+      sourceGrammar=top.sourceGrammar);
 }
 

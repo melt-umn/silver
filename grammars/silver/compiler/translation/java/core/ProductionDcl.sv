@@ -50,8 +50,8 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   local commaIfKids :: String = if length(namedSig.inputElements)!=0 then "," else "";
   local commaIfAnnos :: String = if length(namedSig.namedInputElements)!=0 then "," else "";
-  local commaIfKidsOrAnnos :: String = if length(namedSig.inputElements)!=0 || length(namedSig.namedInputElements)!=0 then "," else "";
-  local commaIfKidsAndAnnos :: String = if length(namedSig.inputElements)!=0 && length(namedSig.namedInputElements)!=0 then "," else "";
+  local commaIfContexts :: String = if length(namedSig.contexts)!=0 then "," else "";
+  local commaIfAny :: String = if length(namedSig.inputElements)!=0 || length(namedSig.namedInputElements)!=0 || length(namedSig.contexts)!=0 then "," else "";
 
   local contexts::Contexts = foldContexts(namedSig.contexts);
   contexts.boundVariables = namedSig.freeVariables;
@@ -89,7 +89,7 @@ ${namedSig.inhOccursIndexDecls}
 ${namedSig.childStatic}
     }
 
-    public ${className}(final NOriginInfo origin ${commaIfKidsOrAnnos} ${namedSig.javaSignature}) {
+    public ${className}(final NOriginInfo origin ${commaIfAny} ${namedSig.javaSignature}) {
         super(${if wantsTracking then "origin"++commaIfAnnos else ""}${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
 ${contexts.contextInitTrans}
@@ -227,7 +227,7 @@ ${body.translation}
             ${implode("\n\t\t", map(makeAnnoReify(fName, _), namedSig.namedInputElements))}
             ${namedSig.contextRuntimeResolve}
 
-            return new ${className}(${if wantsTracking then "new silver.core.PoriginOriginInfo(common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)"++commaIfKidsOrAnnos else ""} ${namedSig.refInvokeTrans});
+            return new ${className}(${if wantsTracking then "new silver.core.PoriginOriginInfo(common.OriginsUtil.SET_FROM_REIFICATION_OIT, origAST, rules, true)"++commaIfAny else ""} ${namedSig.refInvokeTrans});
         }
 
         public ${className} constructDirect(

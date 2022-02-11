@@ -7,7 +7,6 @@ import java.net.URI;
 
 import common.exceptions.*;
 import common.javainterop.ConsCellCollection;
-
 import silver.core.NLocation;
 import silver.core.NParseError;
 import silver.core.NParseResult;
@@ -51,18 +50,48 @@ public final class Util {
 		// stackProbe(1_000);
 	}
 
+
 	/**
-	 * Ensures that a (potential) closure is evaluated.
+	 * There are some places in the translation where we need to perform unchecked casts,
+	 * known to be safe via Silver's static type system.
+	 * Java doesn't have a nice way of suppressing warnings on individual subexpressions,
+	 * so this function exists as a proxy.
+	 *
+	 * @param o An object
+	 * @return o
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> T uncheckedCast(final Object o) {
+		return (T) o;
+	}
+
+	/**
+	 * Ensures that a (potential) thunk is evaluated.
 	 *
 	 * Use by writing  (v = Util.demand(v)), never just invoke it!
 	 *
-	 * @param c  Either a value, or a Closure
-	 * @return The value, either directly, or evaluating the Closure
+	 * @param c  Either a value, or a Thunk
+	 * @return The value, either directly, or evaluating the Thunk
 	 */
-	public static Object demand(Object c) {
+	@SuppressWarnings("unchecked")
+	public static <T> T demand(final Object c) {
 		if(c instanceof Thunk)
-			return ((Thunk<?>)c).eval();
-		return c;
+			return ((Thunk<T>)c).eval();
+		return (T)c;
+	}
+
+	/**
+	 * Demand a (potential) thunk in an array of thunks, caching the resulting value.
+	 * This is factored out for the translation of demanding lambda arguments, to avoid unchecked casts.
+	 *
+	 * @param cs  An array that are either values or Thunks
+	 * @param i An index in the array
+	 * @return The value, either directly, or evaluating the Thunk at the index
+	 */
+	public static <T> T demandIndex(final Object[] cs, final int i) {
+		T result = demand(cs[i]);
+		cs[i] = result;
+		return result;
 	}
 
 	/**
@@ -322,7 +351,7 @@ public final class Util {
 		} else if(o instanceof ConsCell) {
 			hackyhackyUnparseList((ConsCell)o, sb);
 		} else {
-			sb.append("<OBJ>");
+			sb.append("<OBJ " + o.toString() + ">");
 		}
 	}
 	private static void hackyhackyUnparseNode(Node n, StringBuilder sb) {

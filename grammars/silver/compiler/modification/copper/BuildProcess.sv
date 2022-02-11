@@ -1,9 +1,14 @@
 grammar silver:compiler:modification:copper;
 
+import silver:compiler:definition:concrete_syntax:copper as copper;
 import silver:compiler:driver;
 import silver:compiler:translation:java:driver;
-
+import silver:reflect:nativeserialize;
 import silver:util:cmdargs;
+
+{---------------------------------}
+{- Define the --copperdump flag. -}
+{---------------------------------}
 
 synthesized attribute forceCopperDump :: Boolean occurs on CmdArgs;
 
@@ -12,37 +17,48 @@ top::CmdArgs ::= _
 {
   top.forceCopperDump = false;
 }
+
 abstract production copperdumpFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.forceCopperDump = true;
   forwards to rest;
 }
+
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [pair("--copperdump", flag(copperdumpFlag))];
   flagdescs <- ["\t--copperdump  : force Copper to dump parse table information"];
 }
-aspect production compilation
-top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
+
+{--------------------------------------}
+{- Define the --copper-xml-dump flag. -}
+{--------------------------------------}
+
+synthesized attribute copperXmlDump::Boolean occurs on CmdArgs;
+
+aspect production endCmdArgs
+top::CmdArgs ::= _
+{ top.copperXmlDump = false; }
+
+production copperXmlDumpFlag
+top::CmdArgs ::= rest::CmdArgs
 {
-  classpathRuntime <- ["${sh}/jars/CopperCompiler.jar"];
-
-  -- Get the parsers
-  production allParsers :: [ParserSpec] =
-    flatMap(obtainParserSpecs(_, benv), grammarsRelevant);
-  
-  -- Have them get compiled by copper
-  extraGrammarsDeps <- ["copper"];
-  extraTopLevelDecls <- [
-    "  <taskdef name='copper' classname='edu.umn.cs.melt.copper.ant.CopperAntTask' classpathref='compile.classpath'/>",
-    "  <target name='copper'>\n" ++ flatMap(buildAntParserPart(_, top.config), allParsers) ++ "  </target>"];
-
-  -- Generate the .copper files
-  top.postOps <-
-    map(parserSpecUnit(_, g.compiledGrammars, benv.silverGen), allParsers);
+  top.copperXmlDump = true;
+  forwards to rest;
 }
+
+aspect function parseArgs
+Either<String  Decorated CmdArgs> ::= args::[String]
+{
+  flags <- [pair("--copper-xml-dump", flag(copperXmlDumpFlag))];
+  flagdescs <- ["\t--copper-xml-dump : dump the specification being passed to Copper as XML"];
+}
+
+{--------------------------------}
+{- Request building of parsers. -}
+{--------------------------------}
 
 -- Skips parser specs from SILVER_HOST_GEN
 -- The way that feature works, they shouldn't need regeneration.
@@ -53,77 +69,99 @@ function obtainParserSpecs
          else g.parserSpecs;
 }
 
-function buildAntParserPart
-String ::= p::ParserSpec  a::Decorated CmdArgs
+aspect production compilation
+top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
 {
-  local parserName :: String = makeParserName(p.fullName);
-  
-  local packagepath :: String = grammarToPath(p.sourceGrammar);
-  
-  local varyingopts :: String =
-    if a.forceCopperDump then
-      "avoidRecompile='false' dump='ON'"
-    else
-      "avoidRecompile='true' dump='ERROR_ONLY'";
+  -- Add the Copper compiler to the CLASSPATH. In theory, this is only
+  -- necessary when building Silver (or other programs that invoke the Copper
+  -- compiler directly), and could be replaced with the Copper runtime
+  -- otherwise. If we re-do the build system, we could make the Copper compiler
+  -- JAR not include the runtime, link against the runtime here, and make
+  -- importing the silver:compiler:definition:concrete_syntax:copper grammar
+  -- add the Copper compiler back.
+  classpathRuntime <- ["${sh}/jars/CopperCompiler.jar"];
 
-  return s"""
-    <copper packageName='${makeName(p.sourceGrammar)}' parserName='${parserName}' outputFile='$${src}/${packagepath ++ parserName}.java' useSkin='XML' warnUselessNTs='false' ${varyingopts} dumpFormat='HTML' dumpFile='${parserName}.copperdump.html'>
-      <inputs file='$${src}/${packagepath ++ parserName}.copper'/>
-    </copper>
-""";
+  -- Get the parsers.
+  production allParsers :: [ParserSpec] =
+    flatMap(obtainParserSpecs(_, benv), grammarsRelevant);
+
+  -- Generate the .java files.
+  top.postOps <-
+    map(buildParserAction(_, g.compiledGrammars, benv.silverGen, top.config), allParsers);
 }
 
-{--
- - At first, it might seem that parsers could be generated along with anything else in a grammar.
- - (i.e. genFiles a .copper file)
- - Unfortunately, it turns out this is not the case, due to a possibly over-aggressive
- - build optimization we do: if the grammar was not directly modified, we assume it doesn't need
- - to be re-translated. (TECHNICALLY, this isn't always the case...)
- -
- - So, parsers can change as a result of the grammars they depend on changing, so these
- - DO need re-translation. So we treat them specially.
- -
- - If we ever fix the overall build process to re-translate grammars that depend on changed grammars,
- - then we might be able to merge this into the normal process, maybe.
- -}
-abstract production parserSpecUnit
-top::DriverAction ::= spec::ParserSpec  cg::EnvTree<Decorated RootSpec>  silverGen::String
+{------------------------------}
+{- Build the parsers to Java. -}
+{------------------------------}
+
+@{- Writes a parser out to a file.
+  -
+  - We create a separate GrammarAction rather than building this into genJava
+  - because we have a (wrong! bad! needs to go! #36 on GitHub) build
+  - optimization where if a grammar hasn't changed, we don't re-translate it.
+  - This should be, "if none of the grammars in the reflexive transitive
+  - closure of the dependency relation have changed, we don't re-translate."
+  - This is occasionally wrong for normal code, but it's too awful for Copper
+  - parsers: this would result in changes to grammar where the parser is
+  - defined (typically the driver) being required to rebuild after changes to
+  - the host language or extensions!
+  -}
+abstract production buildParserAction
+top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated RootSpec>  silverGen::String  cmdArgs::Decorated CmdArgs
 {
-  local dir :: String =
-    silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar);
-  local file :: String =
-    dir ++ makeParserName(spec.fullName) ++ ".copper";
+  spec.compiledGrammars = compiledGrammars;
 
-  spec.compiledGrammars = cg;
-  local newSpec :: String =
-    spec.cstAst.xmlCopper;
+  local specCstAst::SyntaxRoot = spec.cstAst;
+  local outDir::String = silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar);
+  local parserName::String = makeParserName(spec.fullName);
+  local dumpFile::String = outDir ++ parserName ++ ".copperdump";
 
-  local specCst :: SyntaxRoot = spec.cstAst;
 
-  local ex :: IOVal<Boolean> = isFileT(file, top.ioIn);
-  local oldSpec :: IOVal<String> = readFileT(file, ex.io);
-  
-  local join :: IOToken = if ex.iovalue then oldSpec.io else ex.io;
+  -- cmdArgs _could_ be top.config, if the driver were to decorate DriverAction
+  -- with config. However, the driver doesn't, and it seems like it'd be a pain
+  -- to make it do so.
+  local buildGrammar::IO<Integer> =
+    if null(specCstAst.cstErrors) then do {
+      if cmdArgs.noJavaGeneration then do {
+        -- Skip translating to Java.
+        return 0;
+      } else do {
+        mkdir(outDir);
+        print("Generating parser " ++ spec.fullName ++ ".\n");
+        ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
+          makeName(spec.sourceGrammar), parserName, false,
+          outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
+          parserName ++ ".html", cmdArgs.copperXmlDump);
+        case nativeSerialize(new(specCstAst)) of
+        | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper modification: " ++ e)
+        | right(dump) -> writeBinaryFile(dumpFile, dump)
+        end;
+        return ret;
+      };
+    } else do {
+      -- Should this be stderr?
+      print("CST errors while generating parser " ++ spec.fullName ++ ":\n" ++
+        implode("\n", specCstAst.cstErrors) ++ "\n");
+      return 1;
+    };
 
-  local err :: IOToken =
-    printT("CST errors while generating parser " ++ spec.fullName ++ ":\n" ++
-      implode("\n", specCst.cstErrors) ++ "\n", join);
+  local val::IOVal<Integer> = evalIO(do {
+    dumpFileExists :: Boolean <- isFile(dumpFile);
+    if dumpFileExists then do {
+      dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
+      let dumpMatched::Either<String Boolean> = map(eq(specCstAst, _), nativeDeserialize(dumpFileContents));
+      if dumpMatched == right(true) then do {
+        print("Parser " ++ spec.fullName ++ " is up to date.\n");
+        return 0;
+      } else do {
+        buildGrammar;
+      };
+    } else do {
+      buildGrammar;
+    };
+  }, top.ioIn);
 
-  local doUTD :: IOToken =
-    printT("Parser " ++ spec.fullName ++ " up to date.\n", join);
-  
-  local doWR :: IOToken =
-    writeFileT(file, newSpec,
-      printT("Generating parser " ++ spec.fullName ++ ".\n",
-        -- hack to ensure directory exists (for --dont-translate)
-        mkdirT(dir, join).io));
-
-  top.io = if null(specCst.cstErrors) then 
-             if ex.iovalue && oldSpec.iovalue == newSpec then doUTD 
-               else doWR
-             else err;
-             
-  top.code = if null(specCst.cstErrors) then 0 else 1;
+  top.io = val.io;
+  top.code = val.iovalue;
   top.order = 7;
 }
-

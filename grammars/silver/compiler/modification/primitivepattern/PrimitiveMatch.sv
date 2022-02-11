@@ -499,7 +499,9 @@ top::PrimPattern ::= h::Name t::Name e::Expr
       listTrans :: String = performSubstitution(top.scrutineeType, top.finalSubst).transType
     in
       "if(!scrutineeIter.nil()) {" ++
+      "@SuppressWarnings(\"unchecked\") " ++
       makeSpecialLocalBinding(h_fName, s"(${elemTrans})scrutinee.head()", elemTrans) ++
+      "@SuppressWarnings(\"unchecked\") " ++
       makeSpecialLocalBinding(t_fName, s"(${listTrans})scrutinee.tail()", listTrans) ++
       "return " ++ e.translation ++ "; }"
     end;

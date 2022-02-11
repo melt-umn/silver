@@ -57,11 +57,13 @@ public class ConsCell implements Typed {
 	 * @return An equivalent Java List.
 	 */
 	public static <T> List<T> toList(ConsCell cons) {
-                List<T> lst = new LinkedList();
+        List<T> lst = new LinkedList<T>();
 		while(! cons.nil()) {
-                        T val = (T) cons.head();
-                        cons = cons.tail();
-                        lst.add(val);
+            @SuppressWarnings("unchecked")
+			T val = (T) cons.head();
+
+            cons = cons.tail();
+            lst.add(val);
 		}
 		return lst;
 	}
@@ -139,7 +141,7 @@ public class ConsCell implements Typed {
 
 			while (!(x instanceof NilConsCell)) {
 				if (!TypeRep.unify(tvar, Reflection.getType(x.head()))) {
-					throw new SilverInternalError("Unification failed.");
+					throw new SilverInternalError("Failed to construct list type - got a non-homogenous list!");
 				}
 				x = x.tail();
 			}

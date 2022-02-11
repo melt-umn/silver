@@ -142,7 +142,7 @@ ${flatMap(makeInhOccursContextAccess(whatSig.freeVariables, whatSig.contextInhOc
 		return "${whatSig.fullName}";
 	}
 
-	public static ${whatSig.outputElement.typerep.transCovariantType} invoke(final common.OriginContext originCtx ${commaIfArgs} ${whatSig.javaSignature}) {
+	public static ${whatSig.outputElement.typerep.transType} invoke(final common.OriginContext originCtx ${commaIfArgs} ${whatSig.javaSignature}) {
 		try {
 ${whatResult}
 		} catch(Throwable t) {
@@ -152,15 +152,14 @@ ${whatResult}
 
 ${if null(whatSig.contexts) -- Can only use a singleton when there aren't contexts.
   then s"""
-	// Use of ? to permit casting to more specific types
-	public static final common.NodeFactory<? extends ${whatSig.outputElement.typerep.transCovariantType}> factory = new Factory();
+	public static final common.NodeFactory<${whatSig.outputElement.typerep.transCovariantType}> factory = new Factory();
 """ else s"""
-	public static final common.NodeFactory<? extends ${whatSig.outputElement.typerep.transCovariantType}> getFactory(${contexts.contextParamTrans}) {
+	public static final common.NodeFactory<${whatSig.outputElement.typerep.transCovariantType}> getFactory(${contexts.contextParamTrans}) {
 		return new Factory(${implode(", ", map(\ c::Context -> decorate c with {boundVariables = whatSig.freeVariables;}.contextRefElem, whatSig.contexts))});
 	}
 """}
 
-	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transCovariantType}> {
+	public static final class Factory extends common.NodeFactory<${whatSig.outputElement.typerep.transType}> {
 ${contexts.contextMemberDeclTrans}
 
 		public Factory(${contexts.contextParamTrans}) {
@@ -168,7 +167,7 @@ ${contexts.contextInitTrans}
 		}
 
 		@Override
-		public final ${whatSig.outputElement.typerep.transCovariantType} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] namedNotApplicable) {
+		public final ${whatSig.outputElement.typerep.transType} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] namedNotApplicable) {
 			return ${className}.invoke(${implode(", ", ["originCtx"] ++ map(\ c::Context -> decorate c with {boundVariables = whatSig.freeVariables;}.contextRefElem, whatSig.contexts) ++ unpackChildren(0, whatSig.inputElements))});
 		}
 		

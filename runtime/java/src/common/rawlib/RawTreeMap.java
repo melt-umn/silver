@@ -14,6 +14,7 @@ public final class RawTreeMap {
 	public static TreeMap<Object, ConsCell> addList(ConsCell l, TreeMap<Object, ConsCell> t) {
 		if(l.nil())
 			return t;
+		@SuppressWarnings("unchecked")
 		TreeMap<Object,ConsCell> ret = (TreeMap<Object,ConsCell>)t.clone();
 		for(silver.core.NPair elem : new ConsCellCollection<silver.core.NPair>(l)) {
 			assert(elem instanceof silver.core.Ppair); // document as an assert why not
@@ -43,6 +44,7 @@ public final class RawTreeMap {
 		return r == null ? ConsCell.nil : (ConsCell) r;
 	}
 	public static TreeMap<Object,ConsCell> update(Object k, ConsCell v, TreeMap<Object, ConsCell> t) {
+		@SuppressWarnings("unchecked")
 		TreeMap<Object, ConsCell> ret = (TreeMap<Object, ConsCell>) t.clone();
 		ret.put(k, v);
 		return ret;
