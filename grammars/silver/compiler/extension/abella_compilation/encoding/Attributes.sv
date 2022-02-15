@@ -6,7 +6,7 @@ import silver:compiler:driver:util;
 --occurs on needs to be done in this grammar for MWDA
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, synAttrEqInfo
+   inheritedAttrs, synAttrEqInfo, inhAttrEqInfo
 occurs on RootSpec;
 
 
@@ -62,6 +62,20 @@ monoid attribute synAttrEqInfo::[(String, AbellaType, String,
                                   Term, [[Metaterm]])]
    with [], ++;
 propagate synAttrEqInfo on AGDcl, AGDcls, Grammar, Root, RootSpec,
+             ProductionBody, ProductionStmts, ProductionStmt
+   excluding aspectDefaultProduction, aspectFunctionDcl,
+             functionDclFFI, functionDcl, ifElseStmt, blockStmt;
+
+--[( attribute, index (e.g. "child3", "forward"),
+--   top nonterminal type, production,
+--   head term (rel tree nodetree), [clause bodies],
+--   not-this-prod rule clause)]
+--Each of the tuples in this list fully defines a single relation
+monoid attribute inhAttrEqInfo::[(String, String,
+                                  AbellaType, String,
+                                  Term, [[Metaterm]], DefClause)]
+   with [], ++;
+propagate inhAttrEqInfo on AGDcl, AGDcls, Grammar, Root, RootSpec,
              ProductionBody, ProductionStmts, ProductionStmt
    excluding aspectDefaultProduction, aspectFunctionDcl,
              functionDclFFI, functionDcl, ifElseStmt, blockStmt;

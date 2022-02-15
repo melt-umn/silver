@@ -52,8 +52,9 @@ top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
   top.output =
       generateContents(g.nonterminals, g.attrs, g.attrOccurrences,
          g.inheritedAttrs, g.localAttrs, g.prods,
-         g.synAttrEqInfo, g.localAttrDefs, g.funRelClauses,
-         encodeName(grammarName), relevantEnv, g.flowEnv);
+         g.synAttrEqInfo, g.inhAttrEqInfo, g.localAttrDefs,
+         g.funRelClauses, encodeName(grammarName), relevantEnv,
+         g.flowEnv);
 
   --left for error in producing it, right for file contents
   local interfaceFileBuild::Either<String String> =

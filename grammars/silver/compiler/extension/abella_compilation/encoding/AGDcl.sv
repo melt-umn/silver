@@ -3,22 +3,22 @@ grammar silver:compiler:extension:abella_compilation:encoding;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, synAttrEqInfo, localAttrDefs, funRelClauses
+   inheritedAttrs, synAttrEqInfo, inhAttrEqInfo, localAttrDefs, funRelClauses
 occurs on Grammar;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, synAttrEqInfo, localAttrDefs, funRelClauses
+   inheritedAttrs, synAttrEqInfo, inhAttrEqInfo, localAttrDefs, funRelClauses
 occurs on Root;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, synAttrEqInfo, localAttrDefs, funRelClauses
+   inheritedAttrs, synAttrEqInfo, inhAttrEqInfo, localAttrDefs, funRelClauses
 occurs on AGDcls;
 
 attribute
    prods, nonterminals, attrs, attrOccurrences, localAttrs,
-   inheritedAttrs, synAttrEqInfo, localAttrDefs, funRelClauses
+   inheritedAttrs, synAttrEqInfo, inhAttrEqInfo, localAttrDefs, funRelClauses
 occurs on AGDcl;
 
 

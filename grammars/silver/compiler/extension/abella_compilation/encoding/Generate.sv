@@ -3,6 +3,8 @@ grammar silver:compiler:extension:abella_compilation:encoding;
 
 import silver:util:treemap as tmap;
 
+type AbellaDefs = silver:compiler:extension:abella_compilation:abella:Defs;
+
 
 function generateNonterminalTypes
 String ::= nonterminals::[String]
@@ -844,9 +846,9 @@ String ::= prods::[(String, AbellaType)] component::String
 }
 
 
-function generateAttrEquationComponentRelations
+function generateSynAttrEquationComponentRelations
 String ::= clauses::[(String, AbellaType, [DefClause])]
-           component::String inheritedAttrs::[String]
+           component::String
 {
   --grouped by attr and nonterminal
   local attrGroups::[(String, AbellaType, [DefClause])] =
@@ -876,12 +878,12 @@ String ::= clauses::[(String, AbellaType, [DefClause])]
                         [], l) ),
               grouped)
         end end;
-  return generateAttrEquationComponentRelations_help(attrGroups,
-            component, inheritedAttrs);
+  return generateSynAttrEquationComponentRelations_help(attrGroups,
+            component);
 }
-function generateAttrEquationComponentRelations_help
+function generateSynAttrEquationComponentRelations_help
 String ::= attrs::[(String, AbellaType, [DefClause])]
-           component::String inheritedAttrs::[String]
+           component::String
 {
   local here::(String, AbellaType, [DefClause]) = head(attrs);
   local body::silver:compiler:extension:abella_compilation:abella:Defs =
@@ -904,9 +906,115 @@ String ::= attrs::[(String, AbellaType, [DefClause])]
      | [] -> ""
      | hd::tl ->
        defn.unparse ++ "\n" ++
-       generateAttrEquationComponentRelations_help(tl, component,
-                                                   inheritedAttrs)
+       generateSynAttrEquationComponentRelations_help(tl, component)
      end;
+}
+
+
+function generateInhAttrChildEquationRelations
+String ::= --[(attr, index (e.g. "child3", "forward"), top NT,
+           --  prod, head term (rel tree nodetree), [clause bodies],
+           --  def clause for not this prod)]
+           info::[(String, String, AbellaType, String, Term,
+                   [[Metaterm]], DefClause)]
+{
+  local first::(String, String, AbellaType, String, Term,
+                [[Metaterm]], DefClause) =
+        head(info);
+
+  local relName::String =
+        inhChildEquationName(first.1, first.3, first.4, first.2);
+  local relation::[(String, AbellaType)] =
+        [(relName,
+          arrowAbellaType(first.3,
+          arrowAbellaType(first.3,
+          arrowAbellaType(nameAbellaType(typeToNodeType(first.3)),
+                          nameAbellaType("prop")))))];
+
+  local clauses::AbellaDefs =
+        foldr(\ ms::[Metaterm] rest::AbellaDefs ->
+                consAbellaDefs(
+                  ruleClause(termMetaterm(first.5),
+                     foldl(andMetaterm, head(ms), tail(ms))),
+                  rest),
+              singleAbellaDefs(first.7), first.6);
+
+  local thisDef::Definition = definition(relation, clauses);
+
+  local rest::String =
+        generateInhAttrChildEquationRelations(tail(info));
+
+  return case info of
+         | [] -> ""
+         | _::_ -> thisDef.unparse ++ "\n" ++ rest
+         end;
+}
+
+
+function generateInhAttrEquationComponentRelations
+String ::= --[(attr, index (e.g. "child3", "forward"), top NT,
+           --  prod, head term (rel tree nodetree), [clause bodies],
+           --  def clause for not this prod)]
+           info::[(String, String, AbellaType, String, Term,
+                   [[Metaterm]], DefClause)]
+           componentName::String
+{
+  --[(attr, index, top NT, prod)]
+  local reduced::[(String, String, AbellaType, String)] =
+        map(\ p::(String, String, AbellaType, String, Term,
+                  [[Metaterm]], DefClause) ->
+              (p.1, p.2, p.3, p.4),
+            info);
+  --Put all with same attr/NT together (same component rel)
+  local groupedByRel::[[(String, String, AbellaType, String)]] =
+        groupBy(\ p1::(String, String, AbellaType, String)
+                  p2::(String, String, AbellaType, String) ->
+                  p1.1 == p2.1 && tysEqual(p1.3, p2.3),
+                reduced);
+  --[(attr, NT, [rel name])]
+  local groupedRels::[(String, AbellaType, [String])] =
+        map(\ l::[(String, String, AbellaType, String)] ->
+              (head(l).1, head(l).3,
+               map(\ p::(String, String, AbellaType, String) ->
+                     inhChildEquationName(p.1, p.3, p.4, p.2),
+                   l)),
+            groupedByRel);
+  --[(attr, NT, [term applying child rel])]
+  local groupedAppliedRels::[(String, AbellaType, [Metaterm])] =
+        map(\ p::(String, AbellaType, [String]) ->
+              (p.1, p.2,
+               map(\ rel::String ->
+                     termMetaterm(
+                        buildApplication(nameTerm(rel),
+                           [nameTerm("TreeName"), nameTerm("Term"),
+                            nameTerm("NodeTree")])),
+                   p.3)),
+            groupedRels);
+  --
+  local defs::[Definition] =
+        map(\ p::(String, AbellaType, [Metaterm]) ->
+              let relName::String =
+                  equationName(p.1, p.2) ++ name_sep ++
+                  componentName
+              in
+                definition(
+                   [(relName,
+                     arrowAbellaType(p.2,
+                     arrowAbellaType(p.2,
+                     arrowAbellaType(nameAbellaType(typeToNodeType(p.2)),
+                                     nameAbellaType("prop")))))],
+                   singleAbellaDefs(
+                      ruleClause(
+                         termMetaterm(
+                            buildApplication(
+                               nameTerm(relName),
+                               [nameTerm("TreeName"), nameTerm("Term"),
+                                nameTerm("NodeTree")])),
+                         foldr1(andMetaterm, p.3))))
+              end,
+            groupedAppliedRels);
+
+  return implode("\n", map((.unparse), defs));
 }
 
 
@@ -1191,10 +1299,10 @@ function getProdsByType
 --Produce clauses allowing anything for attr eq relations for prods
 --which don't have an equation for the attr
 --[(attr, top NT type, prod, head term (rel tree nodetree), [clause bodies])]
-function produceMissingEquationInfo
+function produceMissingSynEqInfo
 [(String, AbellaType, String, Term, [[Metaterm]])] ::=
      --[(attr, top NT type, prod, head term (rel tree nodetree), [clause bodies])]
-     attrEqInfo::[(String, AbellaType, String, Term, [[Metaterm]])]
+     synAttrEqInfo::[(String, AbellaType, String, Term, [[Metaterm]])]
      componentName::String env::Decorated Env
 {
   --[(nonterminal name, [(prod name, prod type)])]
@@ -1204,17 +1312,7 @@ function produceMissingEquationInfo
   --[(attr, top NT type, prod)]
   local filtered::[(String, AbellaType, String)] =
         map(\ p::(String, AbellaType, String, Term, [[Metaterm]]) ->
-              (p.1, p.2, p.3), attrEqInfo);
-  --Need to catch all the possible associated attrs, even if there aren't
-  --   any equations for them, so add here with no actual prods
-  local expandedAssociatedAttrs::[(String, AbellaType, String)] =
-        flatMap(\ p::(String, [String]) ->
-                  map(\ nt::String ->
-                        (p.1, nameToNonterminalType(nt), ""), p.2),
-                findAllPossibleAssociatedAttrs(env));
-  --All the information from which to generate missing eqs
-  local allEqInfo::[(String, AbellaType, String)] =
-        filtered ++ expandedAssociatedAttrs;
+              (p.1, p.2, p.3), synAttrEqInfo);
   --Find the productions which are missing equations for each
   --   attribute and produce empty clauses
   local sortedAttrEquations::[(String, AbellaType, String)] =
@@ -1225,7 +1323,7 @@ function produceMissingEquationInfo
                    p1.1 < p2.1 || (p1.1 == p2.1 && n1 <= n2)
                  | _, _ -> error("Not possible")
                  end,
-               allEqInfo);
+               filtered);
   --[[(attr, nonterminal, prod)]] for existing equations
   local groupedAttrsProds::[[(String, AbellaType, String)]] =
         groupBy(\ p1::(String, AbellaType, String)
@@ -1308,7 +1406,11 @@ String ::= new_nonterminals::[String] new_attrs::[String]
            --[(prod name, prod type)]
            new_prods::[(String, AbellaType)]
            --[(attr, top NT type, prod, head term (rel tree nodetree), [clause bodies])]
-           attrEqInfo::[(String, AbellaType, String, Term, [[Metaterm]])]
+           synAttrEqInfo::[(String, AbellaType, String, Term, [[Metaterm]])]
+           --[(attr, index (e.g. "child3", "forward"), top NT,
+           --  prod, head term (rel tree nodetree), [clause bodies],
+           --  not-this-prod defining clause)]
+           inhAttrEqInfo::[(String, String, AbellaType, String, Term, [[Metaterm]], DefClause)]
            --fully-made definitions for local attributes
            localDefs::[Definition]
            --[(fun name, fun type, fun clauses)]
@@ -1346,12 +1448,12 @@ String ::= new_nonterminals::[String] new_attrs::[String]
                      new_nonterminals))]));
 
   --All equation information, including for prods missing equations
-  local allAttrEqInfo::[(String, AbellaType, String, Term, [[Metaterm]])] =
-        attrEqInfo ++
-        produceMissingEquationInfo(attrEqInfo, componentName, env);
+  local allSynAttrEqInfo::[(String, AbellaType, String, Term, [[Metaterm]])] =
+        synAttrEqInfo ++
+        produceMissingSynEqInfo(synAttrEqInfo, componentName, env);
   --[(attr, nonterminal, [definitional clauses])]
-  local attrEqClauses::[(String, AbellaType, [DefClause])] =
-        produceClauses(allAttrEqInfo, new_inheritedAttrs);
+  local synAttrEqClauses::[(String, AbellaType, [DefClause])] =
+        produceClauses(allSynAttrEqInfo, new_inheritedAttrs);
 
   return
      "%New syntax definitions\n" ++
@@ -1410,9 +1512,12 @@ String ::= new_nonterminals::[String] new_attrs::[String]
                          reverse(tail(rev)))
                  end).unparse
        end end ) ++ "\n\n" ++
-     "%New component equation relations\n" ++
-     generateAttrEquationComponentRelations(attrEqClauses,
-        componentName, new_inheritedAttrs) ++ "\n\n" ++
+     "%New component and child equation relations\n" ++
+     generateSynAttrEquationComponentRelations(synAttrEqClauses,
+        componentName) ++ "\n" ++
+     generateInhAttrChildEquationRelations(inhAttrEqInfo) ++ "\n" ++ 
+     generateInhAttrEquationComponentRelations(
+        inhAttrEqInfo, componentName) ++ "\n\n" ++
      "%New local equation relations\n" ++
      foldr(\ d::Definition rest::String -> d.unparse ++ rest,
            "", localDefs) ++ "\n\n" ++
@@ -1431,7 +1536,7 @@ String ::= new_nonterminals::[String] new_attrs::[String]
      generateAccessIsAxioms(new_attrOccurrences,
                             new_localAttrs, env) ++ "\n\n" ++
      "%Equation primary component theorems\n" ++
-     generatePrimaryComponentTheorems(allAttrEqInfo, componentName) ++
+     generatePrimaryComponentTheorems(allSynAttrEqInfo, componentName) ++
         "\n\n" ++
      "%WPD primary component theorems\n" ++
      generateWPDPrimaryComponentTheorems(new_prods, componentName) ++

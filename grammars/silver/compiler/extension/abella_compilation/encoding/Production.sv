@@ -40,6 +40,7 @@ top::AGDcl ::= 'aspect' 'default' 'production'
   top.localAttrs := [];
   top.localAttrDefs := [];
   top.synAttrEqInfo := [];
+  top.inhAttrEqInfo := [];
 }
 
 
@@ -151,12 +152,12 @@ function buildLocalEqRelations
 
 attribute
    localAttrs, top, encodingEnv, treeTerm, nodetreeTerm,
-   synAttrEqInfo, localAttrEqInfo
+   synAttrEqInfo, inhAttrEqInfo, localAttrEqInfo
 occurs on ProductionBody;
 
 attribute
    localAttrs, top, encodingEnv, treeTerm, nodetreeTerm,
-   synAttrEqInfo, localAttrEqInfo
+   synAttrEqInfo, inhAttrEqInfo, localAttrEqInfo
 occurs on ProductionStmts;
 
 
@@ -188,7 +189,7 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 
 attribute
    localAttrs, top, encodingEnv, treeTerm, nodetreeTerm,
-   synAttrEqInfo, localAttrEqInfo
+   synAttrEqInfo, inhAttrEqInfo, localAttrEqInfo
 occurs on ProductionStmt;
 
 
@@ -299,36 +300,97 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
   local tree::(Term, Term) =
         findAssociated(dl.name, top.encodingEnv).fromJust;
   local treeTy::AbellaType = dl.typerep.abellaType;
+  local indexName::String =
+      case dl of
+      | localDefLHS(q) ->
+        "local" ++ name_sep ++ top.top.4 ++ name_sep ++ q.name
+      | forwardDefLHS(_) -> "forward"
+      | childDefLHS(q) ->
+        "child" ++ toString(positionOf(q.name, top.top.5))
+      | _ -> error("Cannot set inh on anything else")
+      end;
   local clauseHead::Term =
         buildApplication(
            nameTerm(equationName(attrName, top.top.3) ++
-              name_sep ++ encodeName(top.grammarName)),
+              name_sep ++ indexName),
            [top.top.1, top.treeTerm, top.nodetreeTerm]);
-  --attrs set on locals and forwards need to be handled differently
-  local top_attrEqInfo::[(String, AbellaType, String, Term, [[Metaterm]])] =
-      case dl of
-      | localDefLHS(_) -> []
-      | forwardDefLHS(_) -> []
-      | _ ->
-        [ (attrName, top.top.3, top.top.4, clauseHead,
-           map(\ l::[Metaterm] ->
-                 termMetaterm(
-                    buildApplication(
-                       nameTerm(accessRelationName(treeTy,
-                                             attrName)),
-                       [tree.1, tree.2,
-                        nameTerm(attributeNotExistsName)]))::l,
-               e.encodedFailure) ++
-           map(\ p::([Metaterm], Term) ->
-                 termMetaterm(
-                    buildApplication(
-                       nameTerm(accessRelationName(treeTy,
-                                             attrName)),
-                       [tree.1, tree.2,
-                        buildApplication(nameTerm(attributeExistsName),
-                                         [p.2])]))::p.1,
-               e.encodedExpr) )]
-      end;
+  --appropriate access of the attribute to "set" it
+  --[Metaterm] because local/forward require accessing the local/forward
+  --   first
+  local attrAccess::([Metaterm] ::= Term) =
+        let intIndex::Integer = genInt()
+        in
+          \ result::Term ->
+            case dl of
+            | localDefLHS(q) ->
+              [termMetaterm(
+                  buildApplication(
+                     nameTerm(localAccessRelationName(top.top.3,
+                                 q.name, top.top.4)),
+                     [top.top.1, top.top.2,
+                      buildApplication(
+                         nameTerm(pairConstructorName),
+                         [varTerm(capitalize(q.name), intIndex),
+                          varTerm(capitalize(q.name) ++ "Node",
+                                  intIndex)])])),
+               termMetaterm(
+                  buildApplication(
+                     nameTerm(accessRelationName(treeTy, attrName)),
+                     [varTerm(capitalize(q.name), intIndex),
+                      varTerm(capitalize(q.name) ++ "Node",
+                              intIndex),
+                      result]))]
+            | forwardDefLHS(_) ->
+              [termMetaterm(
+                  buildApplication(
+                     nameTerm(accessRelationName(top.top.3, "forward")),
+                     [top.top.1, top.top.2,
+                      buildApplication(
+                         nameTerm(pairConstructorName),
+                         [varTerm("Fwd", intIndex),
+                          varTerm("FwdNode", intIndex)])])),
+               termMetaterm(
+                  buildApplication(
+                     nameTerm(accessRelationName(treeTy, attrName)),
+                     [varTerm("Fwd", intIndex),
+                      varTerm("FwdNode", intIndex),
+                      result]))]
+            | childDefLHS(q) ->
+              [termMetaterm(
+                  buildApplication(
+                     nameTerm(accessRelationName(treeTy, attrName)),
+                     [tree.1, tree.2, result]))]
+            | _ -> error("Cannot set inh on anything else")
+            end
+        end;
+  top.inhAttrEqInfo <-
+      [ (attrName, indexName, top.top.3, top.top.4, clauseHead,
+         --failure to create a value
+         map(\ l::[Metaterm] ->
+               attrAccess(nameTerm(attributeNotExistsName)) ++ l,
+             e.encodedFailure) ++
+         --actual value
+         map(\ p::([Metaterm], Term) ->
+               attrAccess(
+                  buildApplication(nameTerm(attributeExistsName),
+                                   [p.2])) ++ p.1,
+             e.encodedExpr),
+         --not this prod
+         ruleClause(
+            termMetaterm(
+               buildApplication(
+                  nameTerm(inhChildEquationName(attrName, top.top.3,
+                              top.top.4, indexName)),
+                  [nameTerm("TreeName"), nameTerm("Term"),
+                   nameTerm("NodeTree")])),
+            impliesMetaterm(
+               bindingMetaterm(existsBinder(),
+                  map(pair(_, nothing()), top.top.5),
+                  termMetaterm(
+                     buildApplication(
+                        nameTerm(top.top.4),
+                        map(nameTerm, top.top.5)))),
+               falseMetaterm()))) ];
   --
   local localStructureVar::Term =
         varTerm(capitalize(dl.name), genInt());

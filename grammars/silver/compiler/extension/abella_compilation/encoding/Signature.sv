@@ -25,6 +25,8 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
   top.top_up = lhs.top_up;
 
   top.argLength = rhs.argLength;
+
+  top.childNames = rhs.childNames;
 }
 
 

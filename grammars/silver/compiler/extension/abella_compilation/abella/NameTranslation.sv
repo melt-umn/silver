@@ -189,6 +189,12 @@ String ::= attr::String ty::AbellaType
 {
   return "$" ++ attr ++ name_sep ++ ty.unparse;
 }
+function inhChildEquationName
+String ::= attr::String ty::AbellaType prod::String index::String
+{
+  return equationName(attr, ty) ++ name_sep ++ prod ++ name_sep ++
+         index;
+}
 function localEquationName
 String ::= attr::String prod::String
 {
