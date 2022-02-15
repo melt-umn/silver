@@ -1,10 +1,6 @@
 
 Bugs
 ======================================================================
-* Make it output acceptable Abella code for relations:  `varTerm` is
-  not being replaced by a `nameTerm`, which I think might be done in
-  `RootSpec.sv`; can check where by looking at `synAttrEqInfo`
-  processing
 * Remove inh attrs from local equations
 * Identify children of prods and locals not getting inh attrs defined
   on them and add an empty definition so the child eq relation is

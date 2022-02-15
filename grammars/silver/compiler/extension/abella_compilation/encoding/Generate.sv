@@ -931,13 +931,23 @@ String ::= --[(attr, index (e.g. "child3", "forward"), top NT,
           arrowAbellaType(nameAbellaType(typeToNodeType(first.3)),
                           nameAbellaType("prop")))))];
 
+  --Clean up any equalities/repeated accesses/function calls which
+  --   can be reduced to a single call
+  local cleaned::[(Term, [Metaterm])] =
+        cleanInhAttrChildEq(first.5, first.6);
+  --Replace varTerms with actual names
+  local noVars::[(Term, [Metaterm])] =
+        map(\ p::(Term, [Metaterm]) -> fillVars(p.1, p.2),
+            cleaned);
+  --Actual clauses for defining attr
   local clauses::AbellaDefs =
-        foldr(\ ms::[Metaterm] rest::AbellaDefs ->
+        foldr(\ p::(Term, [Metaterm]) rest::AbellaDefs ->
                 consAbellaDefs(
-                  ruleClause(termMetaterm(first.5),
-                     foldl(andMetaterm, head(ms), tail(ms))),
+                  ruleClause(termMetaterm(p.1),
+                     foldl(andMetaterm, head(p.2), tail(p.2))),
                   rest),
-              singleAbellaDefs(first.7), first.6);
+              --end with not-this-prod clause
+              singleAbellaDefs(first.7), noVars);
 
   local thisDef::Definition = definition(relation, clauses);
 

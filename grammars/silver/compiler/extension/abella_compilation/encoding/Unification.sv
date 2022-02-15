@@ -41,6 +41,17 @@ function cleanFunction
 }
 
 
+--This is just a better name for the use of cleanFunction for things
+--   other than functions
+--We probably don't need to unify the head here, but it's easier than
+--   rewriting everything
+function cleanInhAttrChildEq
+[(Term, [Metaterm])] ::= hd::Term bodies::[[Metaterm]]
+{
+  return cleanFunction(hd, bodies);
+}
+
+
 
 --Clean up duplicate attribute equations and equality hypotheses,
 --   unifying them and replacing them elsewhere
