@@ -1,6 +1,9 @@
 grammar silver:compiler:extension:abella_compilation:encoding;
 
 
+type Defs = silver:compiler:extension:abella_compilation:abella:Defs;
+
+
 aspect production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
@@ -10,11 +13,6 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   body.treeTerm =
        applicationTerm(nameTerm(nameToProd(fullProdName)), ns.treeTerm_up);
   body.nodetreeTerm = ns.nodetreeTerm_up;
-  --
-  top.localAttrDefs <-
-      buildLocalEqRelations(ns.top_up.3, fullProdName, ns.argLength,
-                       ns.top_up.1, body.treeTerm, ns.nodetreeTerm_up,
-                       body.localAttrEqInfo);
 }
 
 aspect production aspectProductionDcl
@@ -26,11 +24,6 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   body.treeTerm =
        applicationTerm(nameTerm(nameToProd(fullProdName)), ns.treeTerm_up);
   body.nodetreeTerm = ns.nodetreeTerm_up;
-  --
-  top.localAttrDefs <-
-      buildLocalEqRelations(ns.top_up.3, fullProdName, ns.argLength,
-                       ns.top_up.1, body.treeTerm, ns.nodetreeTerm_up,
-                       body.localAttrEqInfo);
 }
 
 aspect production aspectDefaultProduction
@@ -152,12 +145,12 @@ function buildLocalEqRelations
 
 attribute
    localAttrs, top, encodingEnv, treeTerm, nodetreeTerm,
-   synAttrEqInfo, inhAttrEqInfo, localAttrEqInfo
+   synAttrEqInfo, inhAttrEqInfo, localAttrDefs
 occurs on ProductionBody;
 
 attribute
    localAttrs, top, encodingEnv, treeTerm, nodetreeTerm,
-   synAttrEqInfo, inhAttrEqInfo, localAttrEqInfo
+   synAttrEqInfo, inhAttrEqInfo, localAttrDefs
 occurs on ProductionStmts;
 
 
@@ -189,7 +182,7 @@ top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 
 attribute
    localAttrs, top, encodingEnv, treeTerm, nodetreeTerm,
-   synAttrEqInfo, inhAttrEqInfo, localAttrEqInfo
+   synAttrEqInfo, inhAttrEqInfo, localAttrDefs
 occurs on ProductionStmt;
 
 
@@ -311,50 +304,74 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
       end;
   local clauseHead::Term =
         buildApplication(
-           nameTerm(equationName(attrName, top.top.3) ++
-              name_sep ++ indexName),
+           nameTerm(inhChildEquationName(attrName, top.top.3,
+                       top.top.4, indexName)),
            [top.top.1, top.treeTerm, top.nodetreeTerm]);
+  --Create the access of the tree on which the attr is being set
+  --Term arg is the (tree, node tree) which is the tree on which attr
+  --   is being set
+  --List result to handle exists or not like Maybe, but easier to use
+  --   in other places
+  local accessToSet::([Metaterm] ::= Term) =
+        \ treePair::Term ->
+          case dl of
+          | localDefLHS(q) ->
+            [termMetaterm(
+                buildApplication(
+                   nameTerm(localAccessRelationName(top.top.3,
+                               q.name, top.top.4)),
+                   [top.top.1, top.top.2, treePair]))]
+          | forwardDefLHS(_) ->
+            [termMetaterm(
+                buildApplication(
+                   nameTerm(accessRelationName(top.top.3, "forward")),
+                   [top.top.1, top.top.2, treePair]))]
+          | _ -> []
+          end;
   --appropriate access of the attribute to "set" it
   --[Metaterm] because local/forward require accessing the local/forward
-  --   first
+  --   before setting it
+  --Term arg is the attribute value from the access
   local attrAccess::([Metaterm] ::= Term) =
         let intIndex::Integer = genInt()
         in
           \ result::Term ->
             case dl of
             | localDefLHS(q) ->
+              accessToSet(
+                 buildApplication(
+                    nameTerm(attributeExistsName),
+                       [buildApplication(
+                           nameTerm(pairConstructorName),
+                           [varTerm(capitalize(q.name), intIndex),
+                            buildApplication(
+                               nameTerm(nodeTreeConstructorName(treeTy)),
+                               [varTerm(capitalize(q.name) ++ "Node",
+                                        intIndex),
+                                varTerm(capitalize(q.name) ++ "CL",
+                                        intIndex)])])])) ++
               [termMetaterm(
-                  buildApplication(
-                     nameTerm(localAccessRelationName(top.top.3,
-                                 q.name, top.top.4)),
-                     [top.top.1, top.top.2,
-                      buildApplication(
-                         nameTerm(pairConstructorName),
-                         [varTerm(capitalize(q.name), intIndex),
-                          varTerm(capitalize(q.name) ++ "Node",
-                                  intIndex)])])),
-               termMetaterm(
                   buildApplication(
                      nameTerm(accessRelationName(treeTy, attrName)),
                      [varTerm(capitalize(q.name), intIndex),
-                      varTerm(capitalize(q.name) ++ "Node",
-                              intIndex),
+                      varTerm(capitalize(q.name) ++ "Node", intIndex),
                       result]))]
             | forwardDefLHS(_) ->
+              accessToSet(
+                 buildApplication(
+                    nameTerm(attributeExistsName),
+                       [buildApplication(
+                           nameTerm(pairConstructorName),
+                           [varTerm("Fwd", intIndex),
+                            buildApplication(
+                               nameTerm(nodeTreeConstructorName(treeTy)),
+                               [varTerm("FwdNode", intIndex),
+                                varTerm("FwdCL", intIndex)])])])) ++
               [termMetaterm(
-                  buildApplication(
-                     nameTerm(accessRelationName(top.top.3, "forward")),
-                     [top.top.1, top.top.2,
-                      buildApplication(
-                         nameTerm(pairConstructorName),
-                         [varTerm("Fwd", intIndex),
-                          varTerm("FwdNode", intIndex)])])),
-               termMetaterm(
                   buildApplication(
                      nameTerm(accessRelationName(treeTy, attrName)),
                      [varTerm("Fwd", intIndex),
-                      varTerm("FwdNode", intIndex),
-                      result]))]
+                      varTerm("FwdNode", intIndex), result]))]
             | childDefLHS(q) ->
               [termMetaterm(
                   buildApplication(
@@ -365,6 +382,8 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
         end;
   top.inhAttrEqInfo <-
       [ (attrName, indexName, top.top.3, top.top.4, clauseHead,
+         --tree on which attr is being set does not exist
+         [accessToSet(nameTerm(attributeNotExistsName))] ++
          --failure to create a value
          map(\ l::[Metaterm] ->
                attrAccess(nameTerm(attributeNotExistsName)) ++ l,
@@ -386,72 +405,11 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
             impliesMetaterm(
                bindingMetaterm(existsBinder(),
                   map(pair(_, nothing()), top.top.5),
-                  termMetaterm(
+                  eqMetaterm(nameTerm("Term"),
                      buildApplication(
-                        nameTerm(top.top.4),
+                        nameTerm(nameToProd(top.top.4)),
                         map(nameTerm, top.top.5)))),
                falseMetaterm()))) ];
-  --
-  local localStructureVar::Term =
-        varTerm(capitalize(dl.name), genInt());
-  local localNode::Term = varTerm("Node", genInt());
-  local localNodetree::Term =
-        buildApplication(
-           nameTerm(nodeTreeConstructorName(treeTy)),
-           [localNode, varTerm("CL", genInt())]);
-  top.localAttrEqInfo <-
-      case dl of
-      | localDefLHS(_) ->
-        [( dl.name,
-           --In order to get any cases where the local is not defined
-           --   when we combine the definition and inh defs, we need
-           --   to include a case where it is not defined here
-           [ [termMetaterm(
-                 buildApplication(
-                    nameTerm(localAccessRelationName(top.top.3,
-                       dl.name, top.top.4)),
-                    [top.top.1, top.top.2,
-                     nameTerm(attributeNotExistsName)]))] ] ++
-           map(\ l::[Metaterm] ->
-                 termMetaterm(
-                    buildApplication(
-                       nameTerm(localAccessRelationName(top.top.3,
-                          dl.name, top.top.4)),
-                       [top.top.1, top.top.2,
-                        buildApplication(
-                           nameTerm(attributeExistsName),
-                           [buildApplication(
-                               nameTerm(pairConstructorName),
-                               [localStructureVar, localNodetree])])]))::
-                 termMetaterm(
-                    buildApplication(
-                       nameTerm(accessRelationName(treeTy,
-                                   attrName)),
-                       [localStructureVar, localNode,
-                        nameTerm(attributeNotExistsName)]))::l,
-               e.encodedFailure) ++
-           map(\ p::([Metaterm], Term) ->
-                 termMetaterm(
-                    buildApplication(
-                       nameTerm(localAccessRelationName(top.top.3,
-                          dl.name, top.top.4)),
-                       [top.top.1, top.top.2,
-                        buildApplication(
-                           nameTerm(attributeExistsName),
-                           [buildApplication(
-                               nameTerm(pairConstructorName),
-                               [localStructureVar, localNodetree])])]))::
-                 termMetaterm(
-                    buildApplication(
-                       nameTerm(accessRelationName(treeTy,
-                                   attrName)),
-                       [localStructureVar, localNode,
-                        buildApplication(
-                           nameTerm(attributeExistsName), [p.2])]))::
-                 p.1,
-               e.encodedExpr) )]
-      | _ -> []
-      end;
 }
 
 aspect production errorDefLHS
@@ -503,55 +461,101 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
   local localNodetree::Term =
         buildApplication(nameTerm(nodeTreeConstructorName(treeTy)),
            [localNode, varTerm("ChildList", genInt())]);
-  top.localAttrEqInfo <-
-      [( val.name,
-         --Failure definitions
-         map(\ l::[Metaterm] ->
-               termMetaterm(
-                  buildApplication(
-                     nameTerm(localAccessRelationName(top.top.3,
-                        val.name, top.top.4)),
-                     [top.top.1, top.top.2,
-                      nameTerm(attributeNotExistsName)]))::l,
-             e.encodedFailure) ++
-         --Successful definitions
-         map(\ p::([Metaterm], Term) ->
-               if isNonterminal(e.typerep)
-               then termMetaterm(
-                       buildApplication(
-                          nameTerm(localAccessRelationName(top.top.3,
-                             val.name, top.top.4)),
-                          [top.top.1, top.top.2,
-                           buildApplication(
-                              nameTerm(attributeExistsName),
-                              [buildApplication(
-                                  nameTerm(pairConstructorName),
-                                  [localStructureVar,
-                                   localNodetree])])]))::
-                    --structure eq for local
-                    termMetaterm(
-                       buildApplication(
-                          nameTerm(typeToStructureEqName(
-                                      e.typerep.abellaType)),
-                          [localStructureVar,
-                           case p.2 of
-                           | applicationTerm(nameTerm("$pair_c"),
-                                consTermList(tree, _)) -> tree
-                           | _ -> p.2
-                           end]))::
-                    --WPD for local
-                    termMetaterm(
-                       buildApplication(
-                          nameTerm(wpdTypeName(treeTy)),
-                          [localStructureVar, localNodetree]))::p.1
-               else termMetaterm(
-                       buildApplication(
-                          nameTerm(localAccessRelationName(top.top.3,
-                             val.name, top.top.4)),
-                          [top.top.1, top.top.2,
-                           buildApplication(
-                              nameTerm(attributeExistsName),
-                              [p.2])]))::p.1,
-             e.encodedExpr) )];
+  --
+  local relStr::String =
+        localEquationName(val.name, top.top.4);
+  local rel::Term = nameTerm(relStr);
+  --
+  local wpd::Metaterm =
+        termMetaterm(
+           buildApplication(
+              nameTerm(wpdTypeName(treeTy)),
+              [localStructureVar, localNodetree]));
+  --Build an access of the local, given the access result
+  local accessMetaterm::(Metaterm ::= Term) =
+        \ result::Term ->
+          termMetaterm(
+             buildApplication(
+                 nameTerm(localAccessRelationName(top.top.3,
+                    val.name, top.top.4)),
+                 [top.top.1, top.top.2, result]));
+  local failureDefs::[[Metaterm]] =
+        map(\ l::[Metaterm] ->
+              accessMetaterm(nameTerm(attributeNotExistsName))::l,
+            e.encodedFailure);
+  local successDefs::[[Metaterm]] =
+        map(\ p::([Metaterm], Term) ->
+              if isNonterminal(e.typerep)
+              then accessMetaterm(
+                      buildApplication(nameTerm(attributeExistsName),
+                         [buildApplication(nameTerm(pairConstructorName),
+                             [localStructureVar, localNodetree])]))::
+                   --structure eq for local
+                   termMetaterm(
+                      buildApplication(
+                         nameTerm(typeToStructureEqName(
+                                     e.typerep.abellaType)),
+                         [localStructureVar,
+                          case p.2 of
+                          | applicationTerm(nameTerm("$pair_c"),
+                               consTermList(tree, _)) -> tree
+                          | x -> x
+                          end]))::wpd::p.1
+              else accessMetaterm(
+                      buildApplication(nameTerm(attributeExistsName),
+                         [p.2]))::p.1,
+            e.encodedExpr);
+  --
+  local jointFailureSuccess::[[Metaterm]] =
+        failureDefs ++ successDefs;
+  local cleanedFailureSuccess::[[Metaterm]] =
+        unifyBodies(jointFailureSuccess);
+  local andedBodies::[Metaterm] =
+        map(\ l::[Metaterm] -> foldl(andMetaterm, head(l), tail(l)),
+            cleanedFailureSuccess);
+  local thisProdHead::Term =
+        buildApplication(rel,
+           [top.top.1, top.treeTerm, top.nodetreeTerm]);
+  local filledHeadBodies::(Term, [Metaterm]) =
+        fillVars(thisProdHead, andedBodies);
+  local thisProdClauses::[DefClause] =
+        map(\ body::Metaterm ->
+              ruleClause(termMetaterm(filledHeadBodies.1), body),
+            filledHeadBodies.2);
+  --
+  local notThisProd::Defs =
+        singleAbellaDefs(
+           ruleClause(
+              termMetaterm(
+                 buildApplication(rel,
+                    [nameTerm("TreeName"), nameTerm("Term"),
+                     buildApplication(
+                        nameTerm(nodeTreeConstructorName(treeTy)),
+                        [nameTerm("Node"), nameTerm("CL")])])),
+              andMetaterm(
+                 --Not this prod
+                 impliesMetaterm(
+                    bindingMetaterm(existsBinder(),
+                       map(pair(_, nothing()), top.top.5),
+                       eqMetaterm(nameTerm("Term"),
+                          buildApplication(
+                             nameTerm(nameToProd(top.top.4)),
+                             map(nameTerm, top.top.5)))),
+                    falseMetaterm()),
+                 --No value in local
+                 termMetaterm(
+                    buildApplication(
+                        nameTerm(localAccessRelationName(top.top.3,
+                           val.name, top.top.4)),
+                        [nameTerm("TreeName"), nameTerm("Node"),
+                         nameTerm(attributeNotExistsName)])))));
+
+  local allDefs::Defs =
+        foldr(consAbellaDefs, notThisProd, thisProdClauses);
+  local fullDef::Definition =
+        definition(
+           [(relStr, equationRelType(treeTy))],
+           allDefs);
+  top.localAttrDefs <- [fullDef];
 }
 

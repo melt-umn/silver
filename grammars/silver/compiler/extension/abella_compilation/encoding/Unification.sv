@@ -46,9 +46,9 @@ function cleanFunction
 --We probably don't need to unify the head here, but it's easier than
 --   rewriting everything
 function cleanInhAttrChildEq
-[(Term, [Metaterm])] ::= hd::Term bodies::[[Metaterm]]
+[[Metaterm]] ::= bodies::[[Metaterm]]
 {
-  return cleanFunction(hd, bodies);
+  return unifyBodies(bodies);
 }
 
 

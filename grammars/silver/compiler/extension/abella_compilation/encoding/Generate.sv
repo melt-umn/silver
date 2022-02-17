@@ -894,11 +894,7 @@ String ::= attrs::[(String, AbellaType, [DefClause])]
                  take(length(here.3) - 1, here.3));
   local equationRelation::String =
         equationName(here.1, here.2) ++ name_sep ++ component;
-  local relType::AbellaType =
-        arrowAbellaType(here.2,
-        arrowAbellaType(here.2,
-        arrowAbellaType(nodeTreeType,
-                        nameAbellaType("prop"))));
+  local relType::AbellaType = equationRelType(here.2);
   local defn::Definition =
         definition([(equationRelation, new(relType))], body);
   return
@@ -925,29 +921,31 @@ String ::= --[(attr, index (e.g. "child3", "forward"), top NT,
   local relName::String =
         inhChildEquationName(first.1, first.3, first.4, first.2);
   local relation::[(String, AbellaType)] =
-        [(relName,
-          arrowAbellaType(first.3,
-          arrowAbellaType(first.3,
-          arrowAbellaType(nameAbellaType(typeToNodeType(first.3)),
-                          nameAbellaType("prop")))))];
+        [(relName, equationRelType(first.3))];
 
   --Clean up any equalities/repeated accesses/function calls which
   --   can be reduced to a single call
-  local cleaned::[(Term, [Metaterm])] =
-        cleanInhAttrChildEq(first.5, first.6);
+  local cleaned::[[Metaterm]] = cleanInhAttrChildEq(first.6);
   --Replace varTerms with actual names
-  local noVars::[(Term, [Metaterm])] =
-        map(\ p::(Term, [Metaterm]) -> fillVars(p.1, p.2),
-            cleaned);
+  local noVars::(Term, [Metaterm]) =
+        fillVars(first.5,
+           map(\ body::[Metaterm] ->
+                 if null(body)
+                 then trueMetaterm() --put in true placeholder
+                 else foldl(andMetaterm, head(body), tail(body)),
+               cleaned));
   --Actual clauses for defining attr
   local clauses::AbellaDefs =
-        foldr(\ p::(Term, [Metaterm]) rest::AbellaDefs ->
+        foldr(\ body::Metaterm rest::AbellaDefs ->
                 consAbellaDefs(
-                  ruleClause(termMetaterm(p.1),
-                     foldl(andMetaterm, head(p.2), tail(p.2))),
+                  case body of
+                  | trueMetaterm() -> --remove true placeholder
+                    factClause(termMetaterm(noVars.1))
+                  | _ -> ruleClause(termMetaterm(noVars.1), body)
+                  end,
                   rest),
               --end with not-this-prod clause
-              singleAbellaDefs(first.7), noVars);
+              singleAbellaDefs(first.7), noVars.2);
 
   local thisDef::Definition = definition(relation, clauses);
 
@@ -1008,11 +1006,7 @@ String ::= --[(attr, index (e.g. "child3", "forward"), top NT,
                   componentName
               in
                 definition(
-                   [(relName,
-                     arrowAbellaType(p.2,
-                     arrowAbellaType(p.2,
-                     arrowAbellaType(nameAbellaType(typeToNodeType(p.2)),
-                                     nameAbellaType("prop")))))],
+                   [(relName, equationRelType(p.2))],
                    singleAbellaDefs(
                       ruleClause(
                          termMetaterm(
@@ -1097,30 +1091,11 @@ function findAllPossibleAssociatedAttrs
 
 
 --Build the clauses based on information for attribute equations
-function produceClauses
+function produceSynClauses
 [(String, AbellaType, [DefClause])] ::=
      --[(attr, top NT type, prod, head term (rel tree nodetree), [clause bodies])]
-     info::[(String, AbellaType, String, Term, [[Metaterm]])]
-     inhAttrs::[String]
+     syns::[(String, AbellaType, String, Term, [[Metaterm]])]
 {
-  local splitInhSyn::([(String, AbellaType, String, Term, [[Metaterm]])],
-                      [(String, AbellaType, String, Term, [[Metaterm]])]) =
-        partition(\ p::(String, AbellaType, String, Term, [[Metaterm]]) ->
-                    contains(p.1, inhAttrs),
-                  info);
-  --Group into things that need to be single clauses (same attr, same prod)
-  local groupedInhs::[[(String, AbellaType, String, Term, [[Metaterm]])]] =
-        groupBy(\ p1::(String, AbellaType, String, Term, [[Metaterm]])
-                  p2::(String, AbellaType, String, Term, [[Metaterm]]) ->
-                  p1.1 == p2.1 && p1.3 == p2.3,
-                splitInhSyn.1);
-  local inhs::[(String, AbellaType, String, Term, [[Metaterm]])] =
-        map(combineEquations(_), groupedInhs);
-  local syns::[(String, AbellaType, String, Term, [[Metaterm]])] =
-        splitInhSyn.2;
-  --Clean clauses to get only one access of each attr
-  local cleanInhs::[(String, AbellaType, String, Term, [[Metaterm]])] =
-        cleanClauses(inhs);
   local cleanSyns::[(String, AbellaType, String, Term, [[Metaterm]])] =
         cleanClauses(syns);
   --Replace all the varTerms with nameTerms and add bindings
@@ -1136,7 +1111,7 @@ function produceClauses
               in
                 ( p.1, p.2, p.3, call.1, call.2 )
               end,
-            cleanInhs ++ cleanSyns);
+            cleanSyns);
   --
   return
      map(\ p::(String, AbellaType, String, Term, [Metaterm]) ->
@@ -1149,123 +1124,6 @@ function produceClauses
                    end,
                  p.5) ),
          noVars);
-}
-
---Take the information for different inh equations and combine them
-function combineEquations
-(String, AbellaType, String, Term, [[Metaterm]]) ::=
-   eqs::[(String, AbellaType, String, Term, [[Metaterm]])]
-{
-  local rest::(String, AbellaType, String, Term, [[Metaterm]]) =
-        combineEquations(tail(eqs));
-  local first::(String, AbellaType, String, Term, [[Metaterm]]) =
-        head(eqs);
-  --We need to make the names in the clause heads consistent with each other
-  --This also requires changing names in the bodies, and we will
-  --   combine the two bodies into a single body
-  local consistentNames::(Term, [[Metaterm]]) =
-        makeConsistentNames(rest.4, rest.5, first.4, first.5);
-  return
-     case eqs of
-     | [] -> error("Impossible empty (combineEquations)")
-     | [p] -> p
-     | _ -> (first.1, first.2, first.3,
-             consistentNames.1, consistentNames.2)
-     end;
-}
-
-function makeConsistentNames
-(Term, [[Metaterm]]) ::= hd1::Term body1::[[Metaterm]]
-                         hd2::Term body2::[[Metaterm]]
-{
-  local call::(Term, [[Metaterm]], [[Metaterm]]) =
-        makeConsistentNames_help(hd1, body1, hd2, body2);
-  local joined::[[Metaterm]] =
-        foldr(\ b1::[Metaterm] rest::[[Metaterm]] ->
-                map(\ l::[Metaterm] -> b1 ++ l,
-                    call.3) ++ rest,
-              [], call.2);
-  return ( call.1, joined );
-}
-{-
-  Make the names in the two heads be consistent, also replacing them
-  in the bodies to keep the same semantic meaning.
--}
-function makeConsistentNames_help
-(Term, [[Metaterm]], [[Metaterm]]) ::= hd1::Term body1::[[Metaterm]]
-                                       hd2::Term body2::[[Metaterm]]
-{
-  return
-     case hd1, hd2 of
-     | nilTerm(), nilTerm() ->
-       ( nilTerm(), body1, body2 )
-     | consTerm(t11, t12), consTerm(t21, t22) ->
-       let sub1::(Term, [[Metaterm]], [[Metaterm]]) =
-           makeConsistentNames_help(t11, body1, t21, body2)
-       in
-       let sub2::(Term, [[Metaterm]], [[Metaterm]]) =
-           makeConsistentNames_help(t12, sub1.2, t22, sub1.3)
-       in
-         ( consTerm(sub1.1, sub2.1), sub2.2, sub2.3 )
-       end end
-     | applicationTerm(f1, args1), applicationTerm(f2, args2) ->
-       let fsub::(Term, [[Metaterm]], [[Metaterm]]) =
-           makeConsistentNames_help(f1, body1, f2, body2)
-       in
-       let argsub::(silver:compiler:extension:abella_compilation:abella:TermList, [[Metaterm]], [[Metaterm]]) =
-           makeConsistentNames_help_list(args1, fsub.2, args2, fsub.3)
-       in
-         ( applicationTerm(fsub.1, argsub.1), argsub.2, argsub.3 )
-       end end
-     | nameTerm(name1), nameTerm(name2) ->
-       if name1 == name2
-       then ( nameTerm(name1), body1, body2 )
-       else error("Name terms must match because they are constants")
-     | varTerm(name1, i1), varTerm(name2, i2) ->
-       if name1 == name2 && i1 == i2
-       then ( varTerm(name1, i1), body1, body2 )
-       else let newVar::Integer = genInt() in
-                ( varTerm(name1, newVar),
-                  map(\ l::[Metaterm] ->
-                        map(replaceVar((name1, i1),
-                               varTerm(name1, newVar), _), l),
-                      body1),
-                  map(\ l::[Metaterm] ->
-                        map(replaceVar((name2, i2),
-                               varTerm(name1, newVar), _), l),
-                      body2) )
-            end
-     | _, _ ->
-       error("Unexpected case in makeConsistentNames_help" ++
-             " (" ++ hd1.unparse ++ "  ;  " ++ hd2.unparse ++ ")")
-     end;
-}
-function makeConsistentNames_help_list
-(silver:compiler:extension:abella_compilation:abella:TermList, [[Metaterm]], [[Metaterm]]) ::=
-     hd1::silver:compiler:extension:abella_compilation:abella:TermList body1::[[Metaterm]]
-     hd2::silver:compiler:extension:abella_compilation:abella:TermList body2::[[Metaterm]]
-{
-  return
-     case hd1, hd2 of
-     | nilTermList(), nilTermList() ->
-       ( nilTermList(), body1, body2 )
-     | singleTermList(t1), singleTermList(t2) ->
-       let sub::(Term, [[Metaterm]], [[Metaterm]]) =
-           makeConsistentNames_help(t1, body1, t2, body2)
-       in
-         ( singleTermList(sub.1), sub.2, sub.3 )
-       end
-     | consTermList(t1, rest1), consTermList(t2, rest2) ->
-       let tsub::(Term, [[Metaterm]], [[Metaterm]]) =
-           makeConsistentNames_help(t1, body1, t2, body2)
-       in
-       let restsub::(silver:compiler:extension:abella_compilation:abella:TermList, [[Metaterm]], [[Metaterm]]) =
-           makeConsistentNames_help_list(rest1, tsub.2, rest2, tsub.3)
-       in
-         ( consTermList(tsub.1, restsub.1), restsub.2, restsub.3 )
-       end end
-     | _, _ -> error("Unexpected case in makeConsistentNames_help_list")
-     end;
 }
 
 
@@ -1463,7 +1321,7 @@ String ::= new_nonterminals::[String] new_attrs::[String]
         produceMissingSynEqInfo(synAttrEqInfo, componentName, env);
   --[(attr, nonterminal, [definitional clauses])]
   local synAttrEqClauses::[(String, AbellaType, [DefClause])] =
-        produceClauses(allSynAttrEqInfo, new_inheritedAttrs);
+        produceSynClauses(allSynAttrEqInfo);
 
   return
      "%New syntax definitions\n" ++

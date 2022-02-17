@@ -200,6 +200,14 @@ String ::= attr::String prod::String
 {
   return "$" ++ prod ++ "_local_" ++ attr;
 }
+function equationRelType
+AbellaType ::= treeTy::AbellaType
+{
+  return arrowAbellaType(treeTy,
+         arrowAbellaType(treeTy,
+         arrowAbellaType(nodeTreeType,
+                         nameAbellaType("prop"))));
+}
 function wpdNode_to_AttrEq
 String ::= attr::String ty::AbellaType
 {

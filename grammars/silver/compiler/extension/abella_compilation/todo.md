@@ -1,12 +1,13 @@
 
 Bugs
 ======================================================================
-* Remove inh attrs from local equations
 * Identify children of prods and locals not getting inh attrs defined
   on them and add an empty definition so the child eq relation is
   defined
 * Add child inh attr equivalent of PC theorems:
   `inh attr eq -> child inh attr`
+  Also remove the PC theorems for inh attrs, maybe, since they won't
+  be needed.
 
 
 Features

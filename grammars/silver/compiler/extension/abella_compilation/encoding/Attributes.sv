@@ -81,14 +81,9 @@ propagate inhAttrEqInfo on AGDcl, AGDcls, Grammar, Root, RootSpec,
              functionDclFFI, functionDcl, ifElseStmt, blockStmt;
 
 
---[(local, [clause bodies])]
-monoid attribute localAttrEqInfo::[(String, [[Metaterm]])]
-   with [], ++;
-propagate localAttrEqInfo on ProductionStmt, ProductionStmts,
-             ProductionBody;
---
 monoid attribute localAttrDefs::[Definition] with [], ++;
-propagate localAttrDefs on AGDcl, AGDcls, Grammar, Root
+propagate localAttrDefs on AGDcl, AGDcls, Grammar, Root,
+      ProductionStmt, ProductionStmts, ProductionBody
    excluding aspectDefaultProduction, aspectFunctionDcl,
              functionDclFFI, functionDcl;
 
