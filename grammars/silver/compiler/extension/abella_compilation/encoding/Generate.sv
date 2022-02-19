@@ -907,6 +907,381 @@ String ::= attrs::[(String, AbellaType, [DefClause])]
 }
 
 
+
+function completeInhEqs
+--[(attr, index (e.g. "child3"), top NT, prod,
+--  head term (rel tree nodetree), [clause bodies],
+--  not-this-prod defining clause)]
+[(String, String, AbellaType, String, Term, [[Metaterm]], DefClause)] ::=
+   inhAttrEqInfo::[(String, String, AbellaType,
+                    String, Term, [[Metaterm]], DefClause)]
+   --[(prod name, prod type)]
+   new_prods::[(String, AbellaType)]
+   new_nonterminals::[String] new_inhAttrs::[String] env::Decorated Env
+{
+  --[(NT, [(prod name, prod type)])]
+  local allProds::[(String, [(String, AbellaType)])] =
+        getProdsByType(env);
+  --All known inherited attrs
+  local inhAttrs::[String] =
+        nub(map(colonsToEncoded, findAllInhAttrs(env)));
+  --[(attr, [NT])]
+  local allNewAssoc::[(String, [String])] =
+        findAllPossibleNewAssociatedAttrs(new_nonterminals,
+           new_inhAttrs, env);
+  --[(attr, NT)]
+  local expandedNewAssoc::[(String, String)] =
+        flatMap(\ p::(String, [String]) -> map(pair(p.1, _), p.2),
+                allNewAssoc);
+
+  {-
+    Find missing eqs for children
+  -}
+  --all equations which need to be defined for new associated attrs
+  --[(attr, NT, prod, prodTy, numeric child index)]
+  local expectedNewAssocEqs::[(String, AbellaType, String, AbellaType,
+                               Integer)] =
+        flatMap(--(inh attr, NT)
+           \ p::(String, String) ->
+             let prods::[(String, AbellaType)] =
+                 case lookup(nameToNonterminal(p.2), allProds) of
+                 | just(p) -> p
+                 | nothing() -> []
+                 end
+             in
+               flatMap(
+                  \ prod::(String, AbellaType) ->
+                    let iChildren::[(Integer, AbellaType)] =
+                        zipWith(pair,
+                           range(0, length(prod.2.argumentTypes)),
+                           prod.2.argumentTypes)
+                    in
+                      map(\ ic::(Integer, AbellaType) ->
+                            (p.1, nameToNonterminalType(p.2), prod.1,
+                             prod.2, ic.1),
+                          --only want NT children
+                          filter(\ ic::(Integer, AbellaType) ->
+                                   tyIsNonterminal(ic.2),
+                                 iChildren))
+                    end,
+                  prods)
+             end,
+           expandedNewAssoc);
+  --all equations which need to be defined for new prods
+  --[(attr, NT, prod, prodTy, child index)]
+  local expectedNewProdsEqs::[(String, AbellaType, String, AbellaType,
+                               Integer)] =
+        flatMap(
+           \ prod::(String, AbellaType) ->
+             let iChildren::[(Integer, AbellaType)] =
+                 zipWith(pair,
+                    range(0, length(prod.2.argumentTypes)),
+                    prod.2.argumentTypes)
+             in
+               flatMap(\ ia::String ->
+                         map(\ ic::(Integer, AbellaType) ->
+                               (ia, prod.2.resultType, prod.1,
+                                prod.2, ic.1),
+                             --only want NT children
+                             filter(\ ic::(Integer, AbellaType) ->
+                                      tyIsNonterminal(ic.2),
+                                    iChildren)),
+                       inhAttrs)
+             end,
+           new_prods);
+  --Because any known inh attrs cannot become occurring in the future,
+  --   only want to set inhs on child when they already occur on NT
+  local filteredChildOccurs::[(String, AbellaType, String, AbellaType, Integer)] =
+        filter(\ p::(String, AbellaType, String, AbellaType, Integer) ->
+                 !null(getOccursDcl(encodedToColons(p.1),
+                          encodedToColons(p.4.resultType.unparse), env)),
+               expectedNewAssocEqs ++ expectedNewProdsEqs);
+
+  local missingChild::[(String, String, AbellaType,
+                        String, Term, [[Metaterm]], DefClause)] =
+        buildMissingChildEqInfo(
+           --Remove duplicates so each rel is only made once
+           nubBy(\ p1::(String, AbellaType, String, AbellaType, Integer)
+                   p2::(String, AbellaType, String, AbellaType, Integer) ->
+                   p1.1 == p2.1 && --top ty determined by prod
+                   p1.3 == p2.3 && --prod ty determined by prod
+                   p1.5 == p2.5,
+                 filteredChildOccurs),
+           inhAttrEqInfo);
+
+  {-
+    Find missing eqs for forward
+  -}
+  local fwdingProdNames::[String] = getForwardingProds(env);
+  --
+  local allFwdingProds::[(String, AbellaType)] =
+        filter(\ p::(String, AbellaType) ->
+                 contains(nameToProd(p.1), fwdingProdNames),
+               flatMap(snd, allProds));
+  --split forwarding prods into new in this grammar vs. imported
+  local fwdingProdsSplit::([(String, AbellaType)],
+                           [(String, AbellaType)]) =
+        partition(\ p::(String, AbellaType) ->
+                 contains(p.1, map(fst, new_prods)),
+               allFwdingProds);
+  --All inh attrs on new forwarding prods
+  --[(attr, NT, prod, prodTy)]
+  local expectedForwardNewProds::[(String, AbellaType, String, AbellaType)] =
+        flatMap(\ prod::(String, AbellaType) ->
+                  map(\ ia::String ->
+                        (ia, prod.2.resultType, prod.1, prod.2),
+                      inhAttrs),
+                fwdingProdsSplit.1);
+  --All new inh attrs on old forwarding prods
+  local expectedForwardOldProds::[(String, AbellaType, String, AbellaType)] =
+        flatMap(\ prod::(String, AbellaType) ->
+                  map(\ ia::String ->
+                        (ia, prod.2.resultType, prod.1, prod.2),
+                      new_inhAttrs),
+                fwdingProdsSplit.2);
+  --Because any known inh attrs cannot become occurring in the future,
+  --   only want to set inhs on forward when they already occur on NT
+  local filteredFwdOccurs::[(String, AbellaType, String, AbellaType)] =
+        filter(\ p::(String, AbellaType, String, AbellaType) ->
+                 !null(getOccursDcl(encodedToColons(p.1),
+                          encodedToColons(p.2.unparse), env)),
+               expectedForwardNewProds ++ expectedForwardOldProds);
+
+  local missingFwds::[(String, String, AbellaType,
+                       String, Term, [[Metaterm]], DefClause)] =
+        buildMissingFwdChildEqInfo(filteredFwdOccurs, inhAttrEqInfo);
+
+  {-
+    Find missing eqs for locals
+  -}
+  local missingLocals::[(String, String, AbellaType,
+                         String, Term, [[Metaterm]], DefClause)] = [];
+
+  {-
+    Final Result:  Includes original entries
+  -}
+  return inhAttrEqInfo ++ missingChild ++ missingFwds ++ missingLocals;
+}
+
+--Given information about the equations expected to be defined and those
+--   that actually were, produce any missing definitions:  For prod children
+--Missing defs just get no value for attr
+function buildMissingChildEqInfo
+--[(attr, index, top NT, prod, head term, [clause bodies],
+--  not-this-prod clause)]
+[(String, String, AbellaType, String, Term, [[Metaterm]], DefClause)] ::=
+   --equations which were expected
+   --[(attr, NT, prod, prod ty, child index)]
+   expected::[(String, AbellaType, String, AbellaType, Integer)]
+   --equations which were given
+   defined::[(String, String, AbellaType, String, Term,
+              [[Metaterm]], DefClause)]
+{
+  local first::(String, AbellaType, String, AbellaType, Integer) =
+        head(expected);
+  local stringIndex::String = "child" ++ toString(first.5);
+  local found::Boolean =
+        any(map(\ d::(String, String, AbellaType, String, Term,
+                      [[Metaterm]], DefClause) ->
+                  d.1 == first.1 && --same attr
+                  d.2 == stringIndex && --same index
+                  d.4 == first.3,   --same prod
+                defined));
+
+  local rel::String =
+        inhChildEquationName(first.1, first.2, first.3, stringIndex);
+  local iChildren::[(Integer, AbellaType)] =
+        zipWith(pair, range(0, length(first.4.argumentTypes)),
+                      first.4.argumentTypes);
+  --We can hardcode the names here rather than use varTerm because the
+  --   way we are generating them is guaranteed to be unique
+  local childNames::[String] =
+        map(\ p::(Integer, AbellaType) ->
+              "C" ++ toString(p.1), iChildren);
+  local prodBuilt::Term =
+        buildApplication(nameTerm(nameToProd(first.3)),
+           map(nameTerm, childNames));
+  local nodetree::Term =
+        buildApplication(nameTerm(nodeTreeConstructorName(first.2)),
+           [nameTerm("Node"),
+            foldr(\ p::(Integer, AbellaType) rest::Term ->
+                    if tyIsNonterminal(p.2)
+                    then consTerm(
+                            buildApplication(
+                               nameTerm(nodeTreeConstructorName(p.2)),
+                               [nameTerm("C" ++ toString(p.1) ++ "Node"),
+                                nameTerm("C" ++ toString(p.1) ++ "CL")]),
+                            rest)
+                    else rest,
+                  nilTerm(), iChildren)]);
+  local accessRel::String =
+        accessRelationName(lookup(first.5, iChildren).fromJust, first.1);
+  local childNode::String = "C" ++ toString(first.5) ++ "Node";
+  --Building the equation information for the current missing equation
+  local here::(String, String, AbellaType, String, Term,
+               [[Metaterm]], DefClause) =
+        ( first.1, stringIndex, first.2, first.3,
+          --head term
+          buildApplication(nameTerm(rel),
+             [nameTerm("TreeName"), prodBuilt, nodetree]),
+          --body for attr is empty on this child
+          [[termMetaterm(
+               buildApplication(nameTerm(accessRel),
+                  [nameTerm("TreeName"), nameTerm(childNode),
+                   nameTerm(attributeNotExistsName)]))]],
+          --other production def clause
+          ruleClause(
+             termMetaterm(
+                buildApplication(nameTerm(rel),
+                   [nameTerm("TreeName"), nameTerm("Term"),
+                    nameTerm("NodeTree")])),
+             impliesMetaterm(
+                bindingMetaterm(existsBinder(),
+                   map(pair(_, nothing()), childNames),
+                   eqMetaterm(nameTerm("Term"), prodBuilt)),
+                falseMetaterm())) );
+
+  local rest::[(String, String, AbellaType, String, Term,
+                [[Metaterm]], DefClause)] =
+        buildMissingChildEqInfo(tail(expected), defined);
+
+  return case expected of
+         | [] -> []
+         | _ -> if found then rest else here::rest
+         end;
+}
+
+--Given information about the equations expected to be defined and those
+--   that actually were, produce any missing definitions:  For forwards
+--Missing defs just get no value for attr
+function buildMissingFwdChildEqInfo
+--[(attr, index, top NT, prod, head term, [clause bodies],
+--  not-this-prod clause)]
+[(String, String, AbellaType, String, Term, [[Metaterm]], DefClause)] ::=
+   --equations which were expected
+   --[(attr, NT, prod, prod ty)]
+   expected::[(String, AbellaType, String, AbellaType)]
+   --equations which were given
+   defined::[(String, String, AbellaType, String, Term,
+              [[Metaterm]], DefClause)]
+{
+  local first::(String, AbellaType, String, AbellaType) =
+        head(expected);
+  local found::Boolean =
+        any(map(\ d::(String, String, AbellaType, String, Term,
+                      [[Metaterm]], DefClause) ->
+                  d.1 == first.1 && --same attr
+                  d.2 == "forward" && --same index
+                  d.4 == first.3, --same prod
+                defined));
+
+  local rel::String =
+        inhChildEquationName(first.1, first.2, first.3, "forward");
+  local iChildren::[(Integer, AbellaType)] =
+        zipWith(pair, range(0, length(first.4.argumentTypes)),
+                      first.4.argumentTypes);
+  local childNames::[String] =
+        map(\ p::(Integer, AbellaType) ->
+              "C" ++ toString(p.1), iChildren);
+  local prodBuilt::Term =
+        buildApplication(nameTerm(nameToProd(first.3)),
+           map(nameTerm, childNames));
+  local nodetree::Term =
+        buildApplication(nameTerm(nodeTreeConstructorName(first.2)),
+           [nameTerm("Node"),
+            foldr(\ p::(Integer, AbellaType) rest::Term ->
+                    if tyIsNonterminal(p.2)
+                    then consTerm(
+                            buildApplication(
+                               nameTerm(nodeTreeConstructorName(p.2)),
+                               [nameTerm("C" ++ toString(p.1) ++ "Node"),
+                                nameTerm("C" ++ toString(p.1) ++ "CL")]),
+                            rest)
+                    else rest,
+                  nilTerm(), iChildren)]);
+  local fwdAccessRel::String = accessRelationName(first.2, "forward");
+  local accessRel::String = accessRelationName(first.2, first.1);
+  --Make all these varTerms so they get put into exists binding for us
+  local fwdName::Term = varTerm("Fwd", genInt());
+  local fwdNode::Term = varTerm("FwdNode", genInt());
+  local fwdCL::Term = varTerm("FwdCL", genInt());
+  local attrVal::Term =
+        varTerm(capitalize(nameToShortName(first.1)), genInt());
+  --
+  local here::(String, String, AbellaType, String, Term,
+               [[Metaterm]], DefClause) =
+        ( first.1, "forward", first.2, first.3,
+          --head term
+          buildApplication(nameTerm(rel),
+             [nameTerm("TreeName"), prodBuilt, nodetree]),
+          --bodies for definition
+          [ --no forward
+            [termMetaterm(
+                buildApplication(nameTerm(fwdAccessRel),
+                   [nameTerm("TreeName"), nameTerm("Node"),
+                    nameTerm(attributeNotExistsName)]))],
+            --forward, copying no attr value from top
+            [termMetaterm(
+                buildApplication(nameTerm(fwdAccessRel),
+                   [nameTerm("TreeName"), nameTerm("Node"),
+                    buildApplication(nameTerm(attributeExistsName),
+                       [buildApplication(nameTerm(pairConstructorName),
+                           [fwdName,
+                            buildApplication(
+                               nameTerm(nodeTreeConstructorName(first.2)),
+                               [fwdNode, fwdCL])])])])),
+             termMetaterm(
+                buildApplication(nameTerm(accessRel),
+                   [nameTerm("TreeName"), nameTerm("Node"),
+                    nameTerm(attributeNotExistsName)])),
+             termMetaterm(
+                buildApplication(nameTerm(accessRel),
+                   [fwdName, fwdNode,
+                    nameTerm(attributeNotExistsName)]))],
+            --forward, copying attr value from top
+            [termMetaterm(
+                buildApplication(nameTerm(fwdAccessRel),
+                   [nameTerm("TreeName"), nameTerm("Node"),
+                    buildApplication(nameTerm(attributeExistsName),
+                       [buildApplication(nameTerm(pairConstructorName),
+                           [fwdName,
+                            buildApplication(
+                               nameTerm(nodeTreeConstructorName(first.2)),
+                               [fwdNode, fwdCL])])])])),
+             termMetaterm(
+                buildApplication(nameTerm(accessRel),
+                   [nameTerm("TreeName"), nameTerm("Node"),
+                    buildApplication(nameTerm(attributeExistsName),
+                       [attrVal])])),
+             termMetaterm(
+                buildApplication(nameTerm(accessRel),
+                   [fwdName, fwdNode,
+                    buildApplication(nameTerm(attributeExistsName),
+                       [attrVal])]))]
+          ],
+          --other production def clause
+          ruleClause(
+             termMetaterm(
+                buildApplication(nameTerm(rel),
+                   [nameTerm("TreeName"), nameTerm("Term"),
+                    nameTerm("NodeTree")])),
+             impliesMetaterm(
+                bindingMetaterm(existsBinder(),
+                   map(pair(_, nothing()), childNames),
+                   eqMetaterm(nameTerm("Term"), prodBuilt)),
+                falseMetaterm())) );
+
+  local rest::[(String, String, AbellaType, String, Term,
+                [[Metaterm]], DefClause)] =
+        buildMissingFwdChildEqInfo(tail(expected), defined);
+
+  return case expected of
+         | [] -> []
+         | _ -> if found then rest else here::rest
+         end;
+}
+
+
 function generateInhAttrChildEquationRelations
 String ::= --[(attr, index (e.g. "child3", "forward"), top NT,
            --  prod, head term (rel tree nodetree), [clause bodies],
@@ -1072,21 +1447,28 @@ function findAllPossibleAssociatedAttrs
   local encoded_known_nonterminals::[String] =
         map(colonsToEncoded, nub(known_nonterminals));
 
-  local known_inhAttrs::[String] =
-        map(\ p::(String, AttributeDclInfo) -> p.2.fullName,
-            filter(\ p::(String, AttributeDclInfo) ->
-                     case p.2 of
-                     | inhDcl(_, _, _) -> true
-                     | _ -> false
-                     end,
-                   flatMap(\ m::tmap:Map<String AttributeDclInfo> ->
-                             tmap:toList(m), e.attrTree)));
+  local known_inhAttrs::[String] = findAllInhAttrs(e);
   local encoded_known_inhAttrs::[String] =
         map(colonsToEncoded, nub(known_inhAttrs));
 
   return
      map(\ attr::String -> (attr, encoded_known_nonterminals),
          encoded_known_inhAttrs);
+}
+
+--
+function findAllInhAttrs
+[String] ::= e::Decorated Env
+{
+  return
+     map(\ p::(String, AttributeDclInfo) -> p.2.fullName,
+         filter(\ p::(String, AttributeDclInfo) ->
+                  case p.2 of
+                  | inhDcl(_, _, _) -> true
+                  | _ -> false
+                  end,
+                flatMap(\ m::tmap:Map<String AttributeDclInfo> ->
+                          tmap:toList(m), e.attrTree)));
 }
 
 
@@ -1132,8 +1514,7 @@ function produceSynClauses
 function getProdsByType
 [(String, [(String, AbellaType)])] ::= env::Decorated Env
 {
-  local prodsByNT::[EnvTree<ValueDclInfo>] =
-        env.prodsForNtTree;
+  local prodsByNT::[EnvTree<ValueDclInfo>] = env.prodsForNtTree;
   local prodsLst::[(String, ValueDclInfo)] =
         flatMap(tmap:toList(_), prodsByNT);
   local sorted::[(String, ValueDclInfo)] =
@@ -1161,6 +1542,20 @@ function getProdsByType
                     p.2) ),
             prods);
   return expandProd;
+}
+
+--Get all known productions which forward
+function getForwardingProds
+[String] ::= env::Decorated Env
+{
+  local prodsByNT::[EnvTree<ValueDclInfo>] = env.prodsForNtTree;
+  local prodsLst::[(String, ValueDclInfo)] =
+        flatMap(tmap:toList(_), prodsByNT);
+  local fwds::[(String, ValueDclInfo)] =
+         filter(\ p::(String, ValueDclInfo) -> p.2.hasForward,
+                prodsLst);
+  return map(\ p::(String, ValueDclInfo) -> nameToProd(p.2.fullName),
+             fwds);
 }
 
 
@@ -1210,7 +1605,7 @@ function produceMissingSynEqInfo
               case eqs.2 of
               | nameAbellaType(nt) ->
                 let prods::[(String, AbellaType)] =
-                    findAssociated(nt, prodsByType).fromJust
+                    findAssociated(nameToNonterminal(nt), prodsByType).fromJust
                 in
                 --attr introduced in this grammar
                 let attrNew::Boolean =
@@ -1323,6 +1718,13 @@ String ::= new_nonterminals::[String] new_attrs::[String]
   local synAttrEqClauses::[(String, AbellaType, [DefClause])] =
         produceSynClauses(allSynAttrEqInfo);
 
+  --All equation information for inh attrs, including those where
+  --   the equation is "no equation"
+  local full_inhAttrEqInfo::[(String, String, AbellaType, String,
+                              Term, [[Metaterm]], DefClause)] =
+        completeInhEqs(inhAttrEqInfo, new_prods, new_nonterminals,
+                       new_inheritedAttrs, env);
+
   return
      "%New syntax definitions\n" ++
      generateNonterminalTypes(new_nonterminals) ++ "\n" ++
@@ -1383,9 +1785,9 @@ String ::= new_nonterminals::[String] new_attrs::[String]
      "%New component and child equation relations\n" ++
      generateSynAttrEquationComponentRelations(synAttrEqClauses,
         componentName) ++ "\n" ++
-     generateInhAttrChildEquationRelations(inhAttrEqInfo) ++ "\n" ++ 
+     generateInhAttrChildEquationRelations(full_inhAttrEqInfo) ++ "\n" ++
      generateInhAttrEquationComponentRelations(
-        inhAttrEqInfo, componentName) ++ "\n\n" ++
+        full_inhAttrEqInfo, componentName) ++ "\n\n" ++
      "%New local equation relations\n" ++
      foldr(\ d::Definition rest::String -> d.unparse ++ rest,
            "", localDefs) ++ "\n\n" ++

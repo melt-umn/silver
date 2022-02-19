@@ -364,3 +364,17 @@ String ::= name::String
          else substring(0, lastEncodedSep, name);
 }
 
+--Get just the short name from a possibly-fully-qualified name
+--Works with either colons or encoded, but must be fully-qualified
+function nameToShortName
+String ::= name::String
+{
+  local lastEncodedSep::Integer = lastIndexOf("$*$", name);
+  local lastColon::Integer = lastIndexOf(":", name);
+  return if lastColon >= 0
+         then substring(lastColon + 1, length(name), name)
+         else if lastEncodedSep >= 0
+              then substring(lastEncodedSep + 3, length(name), name)
+              else name;
+}
+
