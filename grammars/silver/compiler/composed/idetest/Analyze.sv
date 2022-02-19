@@ -26,13 +26,13 @@ IOVal<[Message]> ::= args::[String]  svParser::SVParser ioin::IOToken
   local envErrors :: [String] = case benvResult.iovalue of | right(s) -> s | _ -> [] end;
   
   -- Let's start preparing to build
-  local buildGrammar :: String = head(a.buildGrammar);
+  local buildGrammar :: String = head(a.buildGrammars);
   local checkbuild :: IOVal<[String]> =
-    checkPreBuild(a, benv, buildGrammar, benvResult.io);
+    checkPreBuild(benv, [buildGrammar], benvResult.io);
 
   -- Build!
   local buildrun :: IOVal<Decorated Compilation> =
-    buildRun(svParser, a, benv, buildGrammar, checkbuild.io);
+    buildRun(svParser, a, benv, [buildGrammar], checkbuild.io);
   local unit :: Decorated Compilation = buildrun.iovalue;
 
   ---- DIFFERENCE: We do *not* run the actions in the functions. Only check for errors.
@@ -67,13 +67,13 @@ IOVal<[Message]> ::= args::[String]  svParser::SVParser  ioin::IOToken
   local envErrors :: [String] = case benvResult.iovalue of | right(s) -> s | _ -> [] end;
   
   -- Let's start preparing to build
-  local buildGrammar :: String = head(a.buildGrammar);
+  local buildGrammar :: String = head(a.buildGrammars);
   local checkbuild :: IOVal<[String]> =
-    checkPreBuild(a, benv, buildGrammar, benvResult.io);
+    checkPreBuild(benv, [buildGrammar], benvResult.io);
 
   -- Build!
   local buildrun :: IOVal<Decorated Compilation> =
-    buildRun(svParser, a, benv, buildGrammar, checkbuild.io);
+    buildRun(svParser, a, benv, [buildGrammar], checkbuild.io);
   local unit :: Decorated Compilation = buildrun.iovalue;
 
   -- Run the resulting build actions
