@@ -27,6 +27,8 @@ Features
 * Pattern matching needs to be added
 * Forwarding needs to be added as a special attribute
   + Also requires copy equations for undefined synthesized attributes
+* Add production attributes, which are supported by the new scheme for
+  inherited attributes.
 * Local attributes in functions---might require not using
   `encodedExpr` for functions, or perhaps a flag for production
   vs. function

@@ -917,7 +917,10 @@ function completeInhEqs
                     String, Term, [[Metaterm]], DefClause)]
    --[(prod name, prod type)]
    new_prods::[(String, AbellaType)]
-   new_nonterminals::[String] new_inhAttrs::[String] env::Decorated Env
+   new_nonterminals::[String] new_inhAttrs::[String]
+   --[(local name, [(production name, attr type)])]
+   new_localAttrs::[(String, [(String, AbellaType)])]
+   env::Decorated Env
 {
   --[(NT, [(prod name, prod type)])]
   local allProds::[(String, [(String, AbellaType)])] =
@@ -1054,8 +1057,44 @@ function completeInhEqs
   {-
     Find missing eqs for locals
   -}
+  --We aren't guaranteed to find all the locals which exist in imported
+  --   grammars, so we're only going to guarantee the known attributes
+  --   on the locals in the current grammar, and nothing new being
+  --   added to them.  Since a local can only be used in the current
+  --   grammar, this shouldn't be a problem.
+
+  --[(inh attr, local attr, local type, prod, prod type)]
+  local expectedLocalAttrs::[(String, String, AbellaType,
+                              String, AbellaType)] =
+        flatMap(
+           \ p::(String, [(String, AbellaType)]) ->
+             flatMap(
+                \ prod_localty::(String, AbellaType) ->
+                  map(\ ia::String ->
+                        (ia, p.1,
+                         case prod_localty.2 of
+                         | functorAbellaType(
+                              functorAbellaType(
+                                 nameAbellaType("$pair"), treeTy),
+                               _) -> treeTy
+                         | x -> x
+                         end,
+                         prod_localty.1,
+                         lookup(prod_localty.1,
+                            flatMap(snd, allProds)).fromJust),
+                      inhAttrs),
+                p.2),
+           new_localAttrs);
+  local filteredLocalOccurs::[(String, String, AbellaType,
+                               String, AbellaType)] =
+        filter(\ p::(String, String, AbellaType, String, AbellaType) -> unsafeTrace(
+                 !null(getOccursDcl(encodedToColons(p.1),
+                          encodedToColons(nonterminalToName(p.3.unparse)), env)), printT("Looking for " ++ encodedToColons(p.1) ++ ", " ++ encodedToColons(p.3.unparse) ++ "\n\n", unsafeIO())),
+               expectedLocalAttrs);
   local missingLocals::[(String, String, AbellaType,
-                         String, Term, [[Metaterm]], DefClause)] = [];
+                         String, Term, [[Metaterm]], DefClause)] =
+        buildMissingLocalChildEqInfo(filteredLocalOccurs,
+           inhAttrEqInfo);
 
   {-
     Final Result:  Includes original entries
@@ -1153,7 +1192,6 @@ function buildMissingChildEqInfo
 
 --Given information about the equations expected to be defined and those
 --   that actually were, produce any missing definitions:  For forwards
---Missing defs just get no value for attr
 function buildMissingFwdChildEqInfo
 --[(attr, index, top NT, prod, head term, [clause bodies],
 --  not-this-prod clause)]
@@ -1274,6 +1312,121 @@ function buildMissingFwdChildEqInfo
   local rest::[(String, String, AbellaType, String, Term,
                 [[Metaterm]], DefClause)] =
         buildMissingFwdChildEqInfo(tail(expected), defined);
+
+  return case expected of
+         | [] -> []
+         | _ -> if found then rest else here::rest
+         end;
+}
+
+--Given information about the equations expected to be defined and those
+--   that actually were, produce any missing definitions:  For locals
+function buildMissingLocalChildEqInfo
+--[(attr, index, top NT, prod, head term, [clause bodies],
+--  not-this-prod clause)]
+[(String, String, AbellaType, String, Term, [[Metaterm]], DefClause)] ::=
+   --equations which were expected
+   --[(inh attr, local attr, local type, prod, prod type)]
+   expected::[(String, String, AbellaType, String, AbellaType)]
+   --equations which were given
+   defined::[(String, String, AbellaType, String, Term,
+              [[Metaterm]], DefClause)]
+{
+  local first::(String, String, AbellaType, String, AbellaType) =
+        head(expected);
+  local found::Boolean =
+        any(map(\ d::(String, String, AbellaType, String, Term,
+                      [[Metaterm]], DefClause) ->
+                  d.1 == first.1 && --same attr
+                  d.2 == first.2 && --same index
+                  d.4 == first.4, --same prod
+                defined));
+
+  local rel::String =
+        inhChildEquationName(first.1, first.5.resultType, first.4,
+                             first.2);
+  local iChildren::[(Integer, AbellaType)] =
+        zipWith(pair, range(0, length(first.5.argumentTypes)),
+                      first.5.argumentTypes);
+  local childNames::[String] =
+        map(\ p::(Integer, AbellaType) ->
+              "C" ++ toString(p.1), iChildren);
+  local prodBuilt::Term =
+        buildApplication(nameTerm(nameToProd(first.4)),
+           map(nameTerm, childNames));
+  local nodetree::Term =
+        buildApplication(
+           nameTerm(nodeTreeConstructorName(first.5.resultType)),
+           [nameTerm("Node"),
+            foldr(\ p::(Integer, AbellaType) rest::Term ->
+                    if tyIsNonterminal(p.2)
+                    then consTerm(
+                            buildApplication(
+                               nameTerm(nodeTreeConstructorName(p.2)),
+                               [nameTerm("C" ++ toString(p.1) ++ "Node"),
+                                nameTerm("C" ++ toString(p.1) ++ "CL")]),
+                            rest)
+                    else rest,
+                  nilTerm(), iChildren)]);
+  local localAccessRel::String =
+        localAccessRelationName(first.5.resultType, first.4, first.2);
+  local accessRel::String =
+        accessRelationName(first.5.resultType, first.1);
+  --Make all these varTerms so they get put into exists binding for us
+  local localName::Term =
+        varTerm(capitalize(nameToShortName(first.2)), genInt());
+  local localNode::Term =
+        varTerm(capitalize(nameToShortName(first.2)) ++ "Node",
+                genInt());
+  local localCL::Term =
+        varTerm(capitalize(nameToShortName(first.2)) ++ "CL",
+                genInt());
+  local attrVal::Term =
+        varTerm(capitalize(nameToShortName(first.1)), genInt());
+  --
+  local here::(String, String, AbellaType, String, Term,
+               [[Metaterm]], DefClause) =
+        ( first.1, first.2, first.5.resultType, first.4,
+          --head term
+          buildApplication(nameTerm(rel),
+             [nameTerm("TreeName"), prodBuilt, nodetree]),
+          --bodies for definition
+          [ --no value for local
+            [termMetaterm(
+                buildApplication(nameTerm(localAccessRel),
+                   [nameTerm("TreeName"), nameTerm("Node"),
+                    nameTerm(attributeNotExistsName)]))],
+            --local, with no attr value
+            [termMetaterm(
+                buildApplication(nameTerm(localAccessRel),
+                   [nameTerm("TreeName"), nameTerm("Node"),
+                    buildApplication(nameTerm(attributeExistsName),
+                       [buildApplication(nameTerm(pairConstructorName),
+                           [localName,
+                            buildApplication(
+                               nameTerm(nodeTreeConstructorName(
+                                           first.5.resultType)),
+                               [localNode, localCL])])])])),
+             termMetaterm(
+                buildApplication(nameTerm(accessRel),
+                   [localName, localNode,
+                    nameTerm(attributeNotExistsName)]))]
+          ],
+          --other production def clause
+          ruleClause(
+             termMetaterm(
+                buildApplication(nameTerm(rel),
+                   [nameTerm("TreeName"), nameTerm("Term"),
+                    nameTerm("NodeTree")])),
+             impliesMetaterm(
+                bindingMetaterm(existsBinder(),
+                   map(pair(_, nothing()), childNames),
+                   eqMetaterm(nameTerm("Term"), prodBuilt)),
+                falseMetaterm())) );
+
+  local rest::[(String, String, AbellaType, String, Term,
+                [[Metaterm]], DefClause)] =
+        buildMissingLocalChildEqInfo(tail(expected), defined);
 
   return case expected of
          | [] -> []
@@ -1605,7 +1758,7 @@ function produceMissingSynEqInfo
               case eqs.2 of
               | nameAbellaType(nt) ->
                 let prods::[(String, AbellaType)] =
-                    findAssociated(nameToNonterminal(nt), prodsByType).fromJust
+                    findAssociated(nt, prodsByType).fromJust
                 in
                 --attr introduced in this grammar
                 let attrNew::Boolean =
@@ -1723,7 +1876,7 @@ String ::= new_nonterminals::[String] new_attrs::[String]
   local full_inhAttrEqInfo::[(String, String, AbellaType, String,
                               Term, [[Metaterm]], DefClause)] =
         completeInhEqs(inhAttrEqInfo, new_prods, new_nonterminals,
-                       new_inheritedAttrs, env);
+                       new_inheritedAttrs, new_localAttrs, env);
 
   return
      "%New syntax definitions\n" ++
