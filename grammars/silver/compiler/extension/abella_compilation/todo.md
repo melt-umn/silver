@@ -1,10 +1,6 @@
 
 Bugs
 ======================================================================
-* Add child inh attr equivalent of PC theorems:
-  `inh attr eq -> child inh attr`
-  Also remove the PC theorems for inh attrs, maybe, since they won't
-  be needed.
 * It might be generating strange names for the names used in the
   Abella relation if you access an attribute by a fully-qualified
   name.  For example, `t.gr:am:mar:attr` might be generating an access

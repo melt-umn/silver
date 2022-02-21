@@ -681,6 +681,41 @@ String ::= attrGroups::[(String, [String])]
 }
 
 
+function generateInhAttrChildEqTheorems
+String ::= --[(attr, index (e.g. "child3"), top NT, prod, head term,
+           --  clause bodies, not-this-prod)]
+           inhAttrEqs::[(String, String, AbellaType, String, Term,
+                         [[Metaterm]], DefClause)]
+{
+  local first::(String, String, AbellaType, String, Term,
+                [[Metaterm]], DefClause) =
+        head(inhAttrEqs);
+  local attr::String = first.1;
+  local index::String = first.2;
+  local treeTy::AbellaType = first.3;
+  local prod::String = first.4;
+
+  local eqName::String = equationName(attr, treeTy);
+  local childEqName::String =
+        inhChildEquationName(attr, treeTy, prod, index);
+  local here::String =
+        "Theorem " ++ eqName ++ name_sep ++ "to" ++ name_sep ++ prod ++
+                      name_sep ++ index ++ " : " ++
+           "forall TreeName Term NodeTree,\n" ++
+        eqName ++ " TreeName Term NodeTree ->" ++ "\n" ++
+        childEqName ++ " TreeName Term NodeTree." ++ "\n" ++
+        "skip.\n";
+
+  local rest::String =
+        generateInhAttrChildEqTheorems(tail(inhAttrEqs));
+
+  return case inhAttrEqs of
+         | [] -> ""
+         | _ -> here ++ rest
+         end;
+}
+
+
 function generateWPDPrimaryComponentTheorems
 String ::= prods::[(String, AbellaType)] component::String
 {
@@ -1959,6 +1994,8 @@ String ::= new_nonterminals::[String] new_attrs::[String]
                             new_localAttrs, env) ++ "\n\n" ++
      "%Equation primary component theorems\n" ++
      generatePrimaryComponentTheorems(allSynAttrEqInfo, componentName) ++
+        "\n" ++
+     generateInhAttrChildEqTheorems(full_inhAttrEqInfo) ++
         "\n\n" ++
      "%WPD primary component theorems\n" ++
      generateWPDPrimaryComponentTheorems(new_prods, componentName) ++
