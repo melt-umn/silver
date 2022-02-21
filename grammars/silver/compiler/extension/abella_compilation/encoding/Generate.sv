@@ -1087,9 +1087,9 @@ function completeInhEqs
            new_localAttrs);
   local filteredLocalOccurs::[(String, String, AbellaType,
                                String, AbellaType)] =
-        filter(\ p::(String, String, AbellaType, String, AbellaType) -> unsafeTrace(
+        filter(\ p::(String, String, AbellaType, String, AbellaType) ->
                  !null(getOccursDcl(encodedToColons(p.1),
-                          encodedToColons(nonterminalToName(p.3.unparse)), env)), printT("Looking for " ++ encodedToColons(p.1) ++ ", " ++ encodedToColons(p.3.unparse) ++ "\n\n", unsafeIO())),
+                          encodedToColons(nonterminalToName(p.3.unparse)), env)),
                expectedLocalAttrs);
   local missingLocals::[(String, String, AbellaType,
                          String, Term, [[Metaterm]], DefClause)] =
@@ -1369,9 +1369,8 @@ function buildMissingLocalChildEqInfo
                     else rest,
                   nilTerm(), iChildren)]);
   local localAccessRel::String =
-        localAccessRelationName(first.5.resultType, first.4, first.2);
-  local accessRel::String =
-        accessRelationName(first.5.resultType, first.1);
+        localAccessRelationName(first.5.resultType, first.2, first.4);
+  local accessRel::String = accessRelationName(first.3, first.1);
   --Make all these varTerms so they get put into exists binding for us
   local localName::Term =
         varTerm(capitalize(nameToShortName(first.2)), genInt());
@@ -1405,7 +1404,7 @@ function buildMissingLocalChildEqInfo
                            [localName,
                             buildApplication(
                                nameTerm(nodeTreeConstructorName(
-                                           first.5.resultType)),
+                                           first.3)),
                                [localNode, localCL])])])])),
              termMetaterm(
                 buildApplication(nameTerm(accessRel),

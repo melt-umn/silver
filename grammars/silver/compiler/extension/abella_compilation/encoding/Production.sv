@@ -530,7 +530,7 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
                  buildApplication(rel,
                     [nameTerm("TreeName"), nameTerm("Term"),
                      buildApplication(
-                        nameTerm(nodeTreeConstructorName(treeTy)),
+                        nameTerm(nodeTreeConstructorName(top.top.3)),
                         [nameTerm("Node"), nameTerm("CL")])])),
               andMetaterm(
                  --Not this prod
@@ -554,7 +554,7 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
         foldr(consAbellaDefs, notThisProd, thisProdClauses);
   local fullDef::Definition =
         definition(
-           [(relStr, equationRelType(treeTy))],
+           [(relStr, equationRelType(top.top.3))],
            allDefs);
   top.localAttrDefs <- [fullDef];
 }

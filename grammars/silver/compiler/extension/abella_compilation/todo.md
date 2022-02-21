@@ -1,13 +1,6 @@
 
 Bugs
 ======================================================================
-* Identify children of prods and locals not getting inh attrs defined
-  on them and add an empty definition so the child eq relation is
-  defined
-  + For the next time I start rethink this:  Yes, I need these.  We
-    need to restrict it to setting it to no value, since that is the
-    semantics of Silver and sometimes we want to show things don't
-    exist.
 * Add child inh attr equivalent of PC theorems:
   `inh attr eq -> child inh attr`
   Also remove the PC theorems for inh attrs, maybe, since they won't
