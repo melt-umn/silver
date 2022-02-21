@@ -72,7 +72,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 }
 
 aspect production compilation
-top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
+top::Compilation ::= g::Grammars  _  _  benv::BuildEnv
 {
   local outputLoc::String = fromMaybe(benv.silverGen ++ "/doc/", top.config.docOutOption) ++ "/";
   top.postOps <- if top.config.docGeneration then 

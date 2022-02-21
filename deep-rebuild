@@ -42,16 +42,15 @@ fi
 
 # Should backup old jars here
 
-echo "Before we start, let's get this thing built ..."
 echo ""
 echo "   Silver Build"
 echo " > Silver Build"
 echo "   Runtime Build"
 echo "   Silver Build"
 echo ""
-java $JVM_ARGS --clean silver:xml:ast
 echo "Start ..."
-time java $JVM_ARGS --relative-jar --clean silver:compiler:composed:Default
+# Also building silver:xml:ast here since the runtime depends on that
+time java $JVM_ARGS --relative-jar --clean silver:compiler:composed:Default silver:xml:ast
 
 # Modifications may have been made to the runtime
 

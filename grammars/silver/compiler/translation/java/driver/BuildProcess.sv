@@ -69,8 +69,11 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   flagdescs <- ["\t--one-jar  : include runtime libraries in the jar"];
 }
 aspect production compilation
-top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
+top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
 {
+  -- Main class, jar name, etc. are based on the first specified grammar.
+  local buildGrammar::String = head(buildGrammars);
+
   -- This is a little bit of a hack. It's only job is to allow the Eclipse support
   -- for Silver to put this file elsewhere than the local directory.
   -- e.g. --build-xml-location /path/to/workspace/project/build.xml
