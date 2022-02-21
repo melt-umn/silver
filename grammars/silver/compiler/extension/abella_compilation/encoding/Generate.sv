@@ -699,11 +699,11 @@ String ::= --[(attr, index (e.g. "child3"), top NT, prod, head term,
   local childEqName::String =
         inhChildEquationName(attr, treeTy, prod, index);
   local here::String =
-        "Theorem " ++ eqName ++ name_sep ++ "to" ++ name_sep ++ prod ++
-                      name_sep ++ index ++ " : " ++
+        "Theorem " ++ eqName ++ name_sep ++ "to" ++ name_sep ++
+                      nameToProd(prod) ++ name_sep ++ index ++ " : " ++
            "forall TreeName Term NodeTree,\n" ++
-        eqName ++ " TreeName Term NodeTree ->" ++ "\n" ++
-        childEqName ++ " TreeName Term NodeTree." ++ "\n" ++
+        "   " ++ eqName ++ " TreeName Term NodeTree ->" ++ "\n" ++
+        "   " ++ childEqName ++ " TreeName Term NodeTree." ++ "\n" ++
         "skip.\n";
 
   local rest::String =
