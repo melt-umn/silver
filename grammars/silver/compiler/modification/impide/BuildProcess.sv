@@ -13,10 +13,10 @@ import silver:util:cmdargs;
 --}
 
 aspect production compilation
-top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
+top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
 {
   -- The RootSpec representing the grammar actually being built (specified on the command line)
-  local builtGrammar :: [Decorated RootSpec] = searchEnvTree(buildGrammar, g.compiledGrammars);
+  local builtGrammar :: [Decorated RootSpec] = searchEnvTree(head(buildGrammars), g.compiledGrammars);
   
   -- Empty if no ide decl in that grammar, otherwise has at least one spec... note that
   -- we're going to go with assuming there's just one IDE declaration...

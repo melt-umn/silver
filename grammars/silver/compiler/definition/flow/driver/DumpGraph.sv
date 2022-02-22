@@ -28,7 +28,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 }
 
 aspect production compilation
-top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
+top::Compilation ::= g::Grammars  _  _  benv::BuildEnv
 {
   top.postOps <-
     if top.config.dumpFlowGraph
