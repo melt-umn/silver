@@ -32,7 +32,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
 }
 
 aspect production compilation
-top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::BuildEnv
+top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::[String]  benv::BuildEnv
 {
   local outputLoc::String = benv.silverGen ++ "/thm/";
   top.postOps <-
