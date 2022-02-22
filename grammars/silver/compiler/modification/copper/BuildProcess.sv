@@ -70,7 +70,7 @@ function obtainParserSpecs
 }
 
 aspect production compilation
-top::Compilation ::= g::Grammars  _  buildGrammar::String  benv::BuildEnv
+top::Compilation ::= g::Grammars  _  _  benv::BuildEnv
 {
   -- Add the Copper compiler to the CLASSPATH. In theory, this is only
   -- necessary when building Silver (or other programs that invoke the Copper

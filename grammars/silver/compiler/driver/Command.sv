@@ -1,6 +1,6 @@
 grammar silver:compiler:driver;
 
-attribute genLocation, doClean, displayVersion, warnError, forceOrigins, noOrigins, noRedex, tracingOrigins, searchPath, outName, buildGrammar, silverHomeOption, noBindingChecking occurs on CmdArgs;
+attribute genLocation, doClean, displayVersion, warnError, forceOrigins, noOrigins, noRedex, tracingOrigins, searchPath, outName, buildGrammars, silverHomeOption, noBindingChecking occurs on CmdArgs;
 
 synthesized attribute searchPath :: [String];
 synthesized attribute outName :: [String];
@@ -15,7 +15,7 @@ synthesized attribute noOrigins :: Boolean;
 synthesized attribute noRedex :: Boolean;
 synthesized attribute tracingOrigins :: Boolean;
 
-synthesized attribute buildGrammar :: [String];
+synthesized attribute buildGrammars :: [String];
 
 synthesized attribute noBindingChecking :: Boolean;
 
@@ -29,7 +29,7 @@ top::CmdArgs ::= l::[String]
   top.searchPath = [];
   top.genLocation = [];
   top.silverHomeOption = [];
-  top.buildGrammar= l;
+  top.buildGrammars = l;
   top.noBindingChecking = false;
   top.forceOrigins = false;
   top.noOrigins = false;
@@ -151,7 +151,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
     ];
   
   local usage :: String = 
-    "Usage: silver [options] grammar:to:build\n\nFlag options:\n" ++ implode("\n", sort(flagdescs)) ++ "\n";
+    "Usage: silver [options] [grammar:to:build ...]\n\nFlag options:\n" ++ implode("\n", sort(flagdescs)) ++ "\n";
   
   -- Parse the command line
   production a :: CmdArgs = interpretCmdArgs(flags, args);
@@ -160,8 +160,7 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   errors := if a.cmdError.isJust then [a.cmdError.fromJust] else [];
   
   errors <- 
-    if length(a.cmdRemaining) > 1 then ["Unable to interpret arguments: " ++ implode(" ", a.cmdRemaining)]
-    else if length(a.outName) > 1 then ["Multiple options given for -o flag: " ++ implode(" ", a.outName)]
+    if length(a.outName) > 1 then ["Multiple options given for -o flag: " ++ implode(" ", a.outName)]
     else if length(a.genLocation) > 1 then ["Multiple options given for -G flag: " ++ implode(" ", a.genLocation)]
     else if length(a.silverHomeOption) > 1 then ["Multiple options given for --silver-home flag: " ++ implode(" ", a.silverHomeOption)]
     else if a.noOrigins && a.forceOrigins then ["Can't specify --no-origins and --force-origins"]
@@ -229,18 +228,19 @@ IOVal<[String]> ::= benv::BuildEnv ioin::IOToken
 
 function checkPreBuild
 IOVal<[String]> ::=
-  a::Decorated CmdArgs
   benv::BuildEnv
-  buildGrammar::String
+  buildGrammars::[String]
   ioin::IOToken
 {
   local errors :: [String] =
-    if null(a.cmdRemaining) then ["No grammar to build was specified.\n"]
-    else if indexOf("/", buildGrammar) != -1 -- basic sanity check
-    then ["Build grammar appears to contain slashes: " ++ buildGrammar ++ "\n"]
-    else if indexOf(".", buildGrammar) != -1 -- also, now
-    then ["Build grammar appears to contain dots: " ++ buildGrammar ++ "\n"]
-    else [];
+    if null(buildGrammars) then ["No grammar(s) to build were specified.\n"]
+    else flatMap(\ buildGrammar::String ->
+      if indexOf("/", buildGrammar) != -1 -- basic sanity check
+      then ["Build grammar appears to contain slashes: " ++ buildGrammar ++ "\n"]
+      else if indexOf(".", buildGrammar) != -1 -- also, now
+      then ["Build grammar appears to contain dots: " ++ buildGrammar ++ "\n"]
+      else [],
+      buildGrammars);
   -- TODO: presently, we check whether we find this grammar elsewhere. Maybe it should be here? not sure.
 
   return ioval(ioin, errors);

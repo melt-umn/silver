@@ -21,11 +21,11 @@ synthesized attribute allGrammars :: [Decorated RootSpec];
  -
  - @param g  A list of grammar initially read in
  - @param r  A list of grammars that we re-compiled, due to dirtiness in 'g'
- - @param buildGrammar  The initial grammar requested built
+ - @param buildGrammars  The initial grammars requested built
  - @param benv  The build configuration
  -}
 abstract production compilation
-top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::BuildEnv
+top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::BuildEnv
 {
   -- the list of rootspecs coming out of g
   top.grammarList = g.grammarList;
@@ -43,7 +43,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::Build
   -- For example, it excludes "options" and conditional builds that aren't
   -- actually used / triggered.
   production grammarsDependedUpon :: [String] =
-    expandAllDeps([buildGrammar], [], g.compiledGrammars);
+    expandAllDeps(buildGrammars, [], g.compiledGrammars);
   
   -- Ditto the above, but rootspecs
   production grammarsRelevant :: [Decorated RootSpec] =
