@@ -694,6 +694,19 @@ String ::= --[(attr, index (e.g. "child3"), top NT, prod, head term,
   local index::String = first.2;
   local treeTy::AbellaType = first.3;
   local prod::String = first.4;
+  local headTerm::Term = first.5;
+
+  local children::[String] =
+        --headTerm is <rel treeName prodStructure nodeTree>
+        case headTerm of
+        | applicationTerm(rel,
+             consTermList(_,
+                consTermList(applicationTerm(prodNameTm, args), _))) ->
+          foldr(\ a::Term p::(Integer, [String]) ->
+                  (p.1 + 1, ("C" ++ toString(p.1))::p.2),
+                (0, []), args.argList).2
+        | _ -> error("Impossible")
+        end;
 
   local eqName::String = equationName(attr, treeTy);
   local childEqName::String =
@@ -701,9 +714,15 @@ String ::= --[(attr, index (e.g. "child3"), top NT, prod, head term,
   local here::String =
         "Theorem " ++ eqName ++ name_sep ++ "to" ++ name_sep ++
                       nameToProd(prod) ++ name_sep ++ index ++ " : " ++
-           "forall TreeName Term NodeTree,\n" ++
+           "forall TreeName Term NodeTree " ++
+                   implode(" ", children) ++ ",\n" ++
+        "   " ++ typeToStructureEqName(treeTy) ++ " TreeName " ++
+                    "(" ++ nameToProd(prod) ++ " " ++
+                    implode(" ", children) ++ ") ->" ++ "\n" ++
         "   " ++ eqName ++ " TreeName Term NodeTree ->" ++ "\n" ++
-        "   " ++ childEqName ++ " TreeName Term NodeTree." ++ "\n" ++
+        "   " ++ childEqName ++ " TreeName (" ++ nameToProd(prod) ++
+                    " " ++ implode(" ", children) ++
+                    ") NodeTree." ++ "\n" ++
         "skip.\n";
 
   local rest::String =

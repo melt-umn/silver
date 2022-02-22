@@ -383,7 +383,10 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
   top.inhAttrEqInfo <-
       [ (attrName, indexName, top.top.3, top.top.4, clauseHead,
          --tree on which attr is being set does not exist
-         [accessToSet(nameTerm(attributeNotExistsName))] ++
+         case dl of
+         | childDefLHS(_) -> []
+         | _ -> [accessToSet(nameTerm(attributeNotExistsName))]
+         end ++
          --failure to create a value
          map(\ l::[Metaterm] ->
                attrAccess(nameTerm(attributeNotExistsName)) ++ l,
