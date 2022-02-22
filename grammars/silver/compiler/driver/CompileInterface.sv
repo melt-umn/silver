@@ -11,7 +11,7 @@ import silver:reflect:nativeserialize;
  - @param grammarTime    The newest modification time of the source files, to compare against
  -}
 function compileInterface
-IOVal<Maybe<RootSpec>> ::= grammarName::String  silverHostGen::[String]  grammarTime::Integer  ioin::IOToken
+IOVal<Maybe<RootSpec>> ::= grammarName::String  silverHostGen::[String]  grammarTime::Maybe<Integer>  ioin::IOToken
 {
   local gramPath :: String = grammarToPath(grammarName);
 
@@ -49,7 +49,7 @@ IOVal<Maybe<RootSpec>> ::= grammarName::String  silverHostGen::[String]  grammar
     if !gen.iovalue.isJust then
       -- Didn't find one. Stop short, return nothing.
       ioval(gen.io, nothing())
-    else if modTime.iovalue < grammarTime then
+    else if grammarTime.isJust && modTime.iovalue < grammarTime.fromJust then
       -- Interface file is too old, stop short, return nothing.
       ioval(modTime.io, nothing())
     else if ir.isLeft || !null(ir.fromRight.interfaceErrors) then

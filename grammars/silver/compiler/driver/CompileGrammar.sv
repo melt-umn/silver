@@ -25,8 +25,10 @@ IOVal<Maybe<RootSpec>> ::=
     if clean then
       -- We just skip this search if it's a clean build
       ioval(grammarTime.io, nothing())
+    else if grammarLocation.iovalue.isJust then
+      compileInterface(grammarName, benv.silverHostGen, just(grammarTime.iovalue), grammarTime.io)
     else
-      compileInterface(grammarName, benv.silverHostGen, grammarTime.iovalue, grammarTime.io);
+      compileInterface(grammarName, benv.silverHostGen, nothing(), grammarLocation.io);
 
   -- IO Step 4: Build the grammar, and say so
   local pr :: IOToken =
@@ -42,15 +44,15 @@ IOVal<Maybe<RootSpec>> ::=
       errorRootSpec(gramCompile.iovalue.snd, grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue, benv.silverGen);
   
   return
-    if !grammarLocation.iovalue.isJust then
+    if ifaceCompile.iovalue.isJust then
+      -- Found a valid interface file! Stop short, and return that
+      ifaceCompile
+    else if !grammarLocation.iovalue.isJust then
       -- No grammar found!
       ioval(grammarLocation.io, nothing())
     else if null(files.iovalue) then
       -- Grammar had no files!
       ioval(files.io, nothing())
-    else if ifaceCompile.iovalue.isJust then
-      -- Found a valid interface file! Stop short, and return that
-      ifaceCompile
     else
       -- Return the compiled grammar
       ioval(gramCompile.io, just(rs));

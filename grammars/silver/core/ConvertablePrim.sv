@@ -5,7 +5,7 @@ grammar silver:core;
 
   This class provides the overloaded toString, toInteger, toFloat and toBoolean functions.
 -}
-class ConvertablePrim a {
+class ConvertiblePrim a {
   @{- Convert a value into a String -}
   toString :: (String ::= a);
 
@@ -19,7 +19,7 @@ class ConvertablePrim a {
   toBoolean :: (Boolean ::= a);
 }
 
-instance ConvertablePrim String {
+instance ConvertiblePrim String {
   toString = id;
   toInteger = stringToInteger;
   toFloat = stringToFloat;
@@ -50,7 +50,7 @@ Boolean ::= x::String
   "java" : return "Boolean.valueOf(%x%.toString())";
 }
 
-instance ConvertablePrim Integer {
+instance ConvertiblePrim Integer {
   toString = integerToString;
   toInteger = id;
   toFloat = integerToFloat;
@@ -73,7 +73,7 @@ Float ::= x::Integer
   "java" : return "Float.valueOf(((Integer)%x%).floatValue())";
 }
 
-instance ConvertablePrim Float {
+instance ConvertiblePrim Float {
   toString = floatToString;
   toInteger = floatToInteger;
   toFloat = id;
@@ -96,7 +96,7 @@ Integer ::= x::Float
   "java" : return "Integer.valueOf(((Float)%x%).intValue())";
 }
 
-instance ConvertablePrim Boolean {
+instance ConvertiblePrim Boolean {
   toString = \ x::Boolean -> if x then "true" else "false";
   toInteger = \ x::Boolean -> if x then 1 else 0;
   toFloat = \ x::Boolean -> if x then 1.0 else 0.0;

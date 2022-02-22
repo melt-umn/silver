@@ -95,18 +95,21 @@ IOErrorable<Decorated Compilation> ::=
   local benv::BuildEnv = envin.snd;
 
   -- Check environment stuff specific to building a grammar
-  local buildGrammar :: String = head(a.buildGrammar);
+  local buildGrammars :: [String] = a.buildGrammars;
   local checkbuild :: IOVal<[String]> =
-    checkPreBuild(a, benv, buildGrammar, ioin);
+    checkPreBuild(benv, buildGrammars, ioin);
 
   -- Build!
   local buildrun :: IOVal<Decorated Compilation> =
-    buildRun(svParser, a, benv, buildGrammar, checkbuild.io);
+    buildRun(svParser, a, benv, buildGrammars, checkbuild.io);
+
+  local missingGrammars::[String] =
+    removeAll(map((.declaredName), buildrun.iovalue.grammarList), buildGrammars);
 
   return if !null(checkbuild.iovalue) then
     ioval(checkbuild.io, left(runError(1, implode("\n", checkbuild.iovalue))))
-  else if null(buildrun.iovalue.grammarList) then
-    ioval(buildrun.io, left(runError(1, "The specified grammar (" ++ buildGrammar ++ ") could not be found.\n")))
+  else if !null(missingGrammars) then
+    ioval(buildrun.io, left(runError(1, "The specified grammar(s) " ++ implode(", ", missingGrammars) ++ " could not be found.\n")))
   else
     ioval(buildrun.io, right(buildrun.iovalue));
 }
@@ -121,7 +124,7 @@ IOVal<Decorated Compilation> ::=
   svParser::SVParser
   a::Decorated CmdArgs
   benv::BuildEnv
-  buildGrammar::String
+  buildGrammars::[String]
   ioin::IOToken
 {
   -- Compile grammars. There's some tricky circular program data flow here.
@@ -134,7 +137,8 @@ IOVal<Decorated Compilation> ::=
   -- a list that's terminated when the response count is equal to the number of emitted
   -- grammar names.
   local grammarStream :: [String] =
-    buildGrammar :: eatGrammars(1, [buildGrammar], rootStream.iovalue, unit.grammarList);
+    buildGrammars ++
+    eatGrammars(length(buildGrammars), buildGrammars, rootStream.iovalue, unit.grammarList);
   
   -- This is, essentially, a data structure representing a compilation.
   -- Note that it is pure: it doesn't take any actions.
@@ -142,7 +146,7 @@ IOVal<Decorated Compilation> ::=
     compilation(
       foldr(consGrammars, nilGrammars(), catMaybes(rootStream.iovalue)),
       foldr(consGrammars, nilGrammars(), catMaybes(reRootStream.iovalue)),
-      buildGrammar, benv);
+      buildGrammars, benv);
   -- This is something we should probably get rid of, someday. Somehow. It's hard.
   unit.config = a;
     

@@ -20,7 +20,7 @@ grammar silver:compiler:driver;
  -}
 
 aspect production compilation
-top::Compilation ::= g::Grammars  r::Grammars  buildGrammar::String  benv::BuildEnv
+top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::BuildEnv
 {
   top.postOps <- [printAllParsingErrors(g.grammarList ++ r.grammarList)];
   top.postOps <- if top.config.noBindingChecking then [] else
