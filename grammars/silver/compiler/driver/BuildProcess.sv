@@ -137,7 +137,8 @@ IOVal<Decorated Compilation> ::=
   -- a list that's terminated when the response count is equal to the number of emitted
   -- grammar names.
   local grammarStream :: [String] =
-    buildGrammars ++ eatGrammars(1, buildGrammars, rootStream.iovalue, unit.grammarList);
+    buildGrammars ++
+    eatGrammars(length(buildGrammars), buildGrammars, rootStream.iovalue, unit.grammarList);
   
   -- This is, essentially, a data structure representing a compilation.
   -- Note that it is pure: it doesn't take any actions.
