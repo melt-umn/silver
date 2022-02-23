@@ -32,7 +32,7 @@ IOVal<Maybe<RootSpec>> ::=
 
   -- IO Step 4: Build the grammar, and say so
   local pr :: IOToken =
-    printT("Compiling " ++ grammarName ++ "\n\t[" ++ grammarLocation.iovalue.fromJust ++ "]\n\t[" ++ renderFileNames(files.iovalue, 0) ++ "]\n", ifaceCompile.io);
+    eprintlnT("Compiling " ++ grammarName ++ "\n\t[" ++ grammarLocation.iovalue.fromJust ++ "]\n\t[" ++ renderFileNames(files.iovalue, 0) ++ "]", ifaceCompile.io);
   
   local gramCompile :: IOVal<Pair<[Root] [ParseError]>> =
     compileFiles(svParser, grammarLocation.iovalue.fromJust, files.iovalue, pr);

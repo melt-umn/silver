@@ -16,7 +16,7 @@ top::DriverAction ::= grams::EnvTree<Decorated RootSpec> ide::IdeSpec ideGenPath
 {
   ide.compiledGrammars = grams;
   
-  local io0::IOToken = printT("[IDE plugin] Generating IDE plugin.\n", top.ioIn);
+  local io0::IOToken = eprintlnT("[IDE plugin] Generating IDE plugin.", top.ioIn);
   local io1::IOToken = deleteTreeT(ideGenPath, io0);
   local io2::IOToken =
     mkdirs(s"${ideGenPath}/plugin/src/${pkgToPath(pkgName)}/",
