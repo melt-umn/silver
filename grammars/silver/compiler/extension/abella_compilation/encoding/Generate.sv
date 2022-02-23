@@ -1400,7 +1400,7 @@ function buildMissingLocalChildEqInfo
 
   local rel::String =
         inhChildEquationName(first.1, first.5.resultType, first.4,
-                             first.2);
+           inhChildEquationName_localIndex(first.2));
   local iChildren::[(Integer, AbellaType)] =
         zipWith(pair, range(0, length(first.5.argumentTypes)),
                       first.5.argumentTypes);
