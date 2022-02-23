@@ -296,7 +296,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
   local indexName::String =
       case dl of
       | localDefLHS(q) ->
-        "local" ++ name_sep ++ top.top.4 ++ name_sep ++ q.name
+        inhChildEquationName_localIndex(q.name)
       | forwardDefLHS(_) -> "forward"
       | childDefLHS(q) ->
         "child" ++ toString(positionOf(q.name, top.top.5))

@@ -195,6 +195,11 @@ String ::= attr::String ty::AbellaType prod::String index::String
   return equationName(attr, ty) ++ name_sep ++ prod ++ name_sep ++
          index;
 }
+function inhChildEquationName_localIndex
+String ::= localAttr::String
+{
+  return "local" ++ name_sep ++ localAttr;
+}
 function localEquationName
 String ::= attr::String prod::String
 {

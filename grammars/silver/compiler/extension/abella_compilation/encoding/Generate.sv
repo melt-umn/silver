@@ -962,6 +962,8 @@ String ::= attrs::[(String, AbellaType, [DefClause])]
 
 
 
+--Add the missing relations for undefined attributes
+--Returns the full list, including the ones given and the ones missing
 function completeInhEqs
 --[(attr, index (e.g. "child3"), top NT, prod,
 --  head term (rel tree nodetree), [clause bodies],
@@ -1439,7 +1441,8 @@ function buildMissingLocalChildEqInfo
   --
   local here::(String, String, AbellaType, String, Term,
                [[Metaterm]], DefClause) =
-        ( first.1, first.2, first.5.resultType, first.4,
+        ( first.1, inhChildEquationName_localIndex(first.2),
+          first.5.resultType, first.4,
           --head term
           buildApplication(nameTerm(rel),
              [nameTerm("TreeName"), prodBuilt, nodetree]),
