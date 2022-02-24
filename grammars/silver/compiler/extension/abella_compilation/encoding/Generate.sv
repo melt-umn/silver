@@ -705,7 +705,10 @@ String ::= --[(attr, index (e.g. "child3"), top NT, prod, head term,
           foldr(\ a::Term p::(Integer, [String]) ->
                   (p.1 + 1, ("C" ++ toString(p.1))::p.2),
                 (0, []), args.argList).2
-        | _ -> error("Impossible")
+        | applicationTerm(rel,
+             consTermList(_,
+                consTermList(nameTerm(prodNameTm), _))) -> [] --prod without children
+        | _ -> error("Impossible (generateInhAttrChildEqTheorems)")
         end;
 
   local eqName::String = equationName(attr, treeTy);
@@ -1231,10 +1234,12 @@ function buildMissingChildEqInfo
                    [nameTerm("TreeName"), nameTerm("Term"),
                     nameTerm("NodeTree")])),
              impliesMetaterm(
-                bindingMetaterm(existsBinder(),
-                   map(pair(_, nothing()), childNames),
-                   eqMetaterm(nameTerm("Term"), prodBuilt)),
-                falseMetaterm())) );
+                if null(childNames) --no children, no bindings
+                then eqMetaterm(nameTerm("Term"), prodBuilt)
+                else bindingMetaterm(existsBinder(),
+                        map(pair(_, nothing()), childNames),
+                        eqMetaterm(nameTerm("Term"), prodBuilt)),
+              falseMetaterm())) );
 
   local rest::[(String, String, AbellaType, String, Term,
                 [[Metaterm]], DefClause)] =
@@ -1360,9 +1365,11 @@ function buildMissingFwdChildEqInfo
                    [nameTerm("TreeName"), nameTerm("Term"),
                     nameTerm("NodeTree")])),
              impliesMetaterm(
-                bindingMetaterm(existsBinder(),
-                   map(pair(_, nothing()), childNames),
-                   eqMetaterm(nameTerm("Term"), prodBuilt)),
+                if null(childNames) --no children, no bindings
+                then eqMetaterm(nameTerm("Term"), prodBuilt)
+                else bindingMetaterm(existsBinder(),
+                        map(pair(_, nothing()), childNames),
+                        eqMetaterm(nameTerm("Term"), prodBuilt)),
                 falseMetaterm())) );
 
   local rest::[(String, String, AbellaType, String, Term,
@@ -1475,9 +1482,11 @@ function buildMissingLocalChildEqInfo
                    [nameTerm("TreeName"), nameTerm("Term"),
                     nameTerm("NodeTree")])),
              impliesMetaterm(
-                bindingMetaterm(existsBinder(),
-                   map(pair(_, nothing()), childNames),
-                   eqMetaterm(nameTerm("Term"), prodBuilt)),
+                if null(childNames) --no children, no bindings
+                then eqMetaterm(nameTerm("Term"), prodBuilt)
+                else bindingMetaterm(existsBinder(),
+                        map(pair(_, nothing()), childNames),
+                        eqMetaterm(nameTerm("Term"), prodBuilt)),
                 falseMetaterm())) );
 
   local rest::[(String, String, AbellaType, String, Term,

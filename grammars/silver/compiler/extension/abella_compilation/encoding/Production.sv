@@ -18,7 +18,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 aspect production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody
 {
-  local fullProdName::String = id.lookupValue.fullName;
+  local fullProdName::String = colonsToEncoded(id.lookupValue.fullName);
   body.encodingEnv = ns.encodingEnv_up;
   body.top = (ns.top_up.1, ns.top_up.2, ns.top_up.3, fullProdName, ns.childNames);
   body.treeTerm =
@@ -107,12 +107,15 @@ function buildLocalEqRelations
                         andMetaterm(
                            --tree = prod -> false
                            impliesMetaterm(
-                              bindingMetaterm(existsBinder(),
-                                 map(pair(_, nothing()), childNames),
-                                 eqMetaterm(nameTerm("Term"),
-                                    buildApplication(
-                                       nameTerm(nameToProd(prod)),
-                                       map(nameTerm(_), childNames)))),
+                              if null(childNames) --no children, no binders
+                              then eqMetaterm(nameTerm("Term"),
+                                      nameTerm(nameToProd(prod)))
+                              else bindingMetaterm(existsBinder(),
+                                      map(pair(_, nothing()), childNames),
+                                      eqMetaterm(nameTerm("Term"),
+                                         buildApplication(
+                                            nameTerm(nameToProd(prod)),
+                                            map(nameTerm(_), childNames)))),
                               falseMetaterm()),
                            --local has no value
                            termMetaterm(
@@ -406,12 +409,15 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
                   [nameTerm("TreeName"), nameTerm("Term"),
                    nameTerm("NodeTree")])),
             impliesMetaterm(
-               bindingMetaterm(existsBinder(),
-                  map(pair(_, nothing()), top.top.5),
-                  eqMetaterm(nameTerm("Term"),
-                     buildApplication(
-                        nameTerm(nameToProd(top.top.4)),
-                        map(nameTerm, top.top.5)))),
+               if null(top.top.5) --no children, no bindings
+               then eqMetaterm(nameTerm("Term"),
+                       nameTerm(nameToProd(top.top.4)))
+               else bindingMetaterm(existsBinder(),
+                       map(pair(_, nothing()), top.top.5),
+                       eqMetaterm(nameTerm("Term"),
+                          buildApplication(
+                             nameTerm(nameToProd(top.top.4)),
+                             map(nameTerm, top.top.5)))),
                falseMetaterm()))) ];
 }
 
@@ -538,12 +544,15 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
               andMetaterm(
                  --Not this prod
                  impliesMetaterm(
-                    bindingMetaterm(existsBinder(),
-                       map(pair(_, nothing()), top.top.5),
-                       eqMetaterm(nameTerm("Term"),
-                          buildApplication(
-                             nameTerm(nameToProd(top.top.4)),
-                             map(nameTerm, top.top.5)))),
+                    if null(top.top.5) --no children, no bindings
+                    then eqMetaterm(nameTerm("Term"),
+                            nameTerm(nameToProd(top.top.4)))
+                    else bindingMetaterm(existsBinder(),
+                            map(pair(_, nothing()), top.top.5),
+                            eqMetaterm(nameTerm("Term"),
+                               buildApplication(
+                                  nameTerm(nameToProd(top.top.4)),
+                                  map(nameTerm, top.top.5)))),
                     falseMetaterm()),
                  --No value in local
                  termMetaterm(

@@ -144,7 +144,7 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 
   top.argLength = rhs.argLength;
 
-  top.childNames = [];
+  top.childNames = rhs.childNames;
 }
 
 
