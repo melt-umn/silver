@@ -12,9 +12,9 @@ monoid attribute prefixSeperatorToApply :: Maybe<String> with nothing(), orElse;
 monoid attribute prettyName :: Maybe<String> with nothing(), orElse;
 autocopy attribute terminalName :: String;
 
-monoid attribute dominates_ :: [copper:ElementReference];
-monoid attribute submits_ :: [copper:ElementReference];
-monoid attribute lexerClasses :: [copper:ElementReference];
+monoid attribute dominates_ :: [Decorated SyntaxDcl];
+monoid attribute submits_ :: [Decorated SyntaxDcl];
+monoid attribute lexerClasses :: [Decorated SyntaxDcl];
 
 {--
  - Modifiers for terminals.
@@ -128,7 +128,7 @@ top::SyntaxTerminalModifier ::= cls::[String]
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
   top.dominates_ := flatMap((.domContribs), allClsRefs);
   top.submits_ := flatMap((.subContribs), allClsRefs);
-  top.lexerClasses := map((.copperElementReference), allClsRefs);
+  top.lexerClasses := allClsRefs;
   
   local termSeps :: [Maybe<String>] = map((.prefixSeperator), allClsRefs);
   top.prefixSeperator := foldr(orElse, nothing(), termSeps);
@@ -151,7 +151,7 @@ top::SyntaxTerminalModifier ::= sub::[String]
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from submit clause on terminal " ++ top.terminalName ++ ")"],
                    zipWith(pair, sub, subRefs)); 
-  top.submits_ := map((.copperElementReference), map(head, subRefs));
+  top.submits_ := map(head, subRefs);
 }
 {--
  - The dominates list for the terminal. Either lexer classes or terminals.
@@ -167,7 +167,7 @@ top::SyntaxTerminalModifier ::= dom::[String]
                      else ["Terminal / Lexer Class " ++ a.fst ++ " was referenced but " ++
                            "this grammar was not included in this parser. (Referenced from dominates clause on terminal " ++ top.terminalName ++ ")"],
                    zipWith(pair, dom, domRefs)); 
-  top.dominates_ := map((.copperElementReference), map(head, domRefs));
+  top.dominates_ := map(head, domRefs);
 }
 {--
  - The action to take whenever this terminal is SHIFTed.

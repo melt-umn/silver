@@ -40,8 +40,8 @@ monoid attribute allProductions :: [Decorated SyntaxDcl];
 monoid attribute allProductionNames :: [String];  -- Doesn't depend on anything
 monoid attribute allNonterminals :: [Decorated SyntaxDcl];
 monoid attribute disambiguationClasses :: [Decorated SyntaxDcl];
-synthesized attribute domContribs :: [copper:ElementReference];
-synthesized attribute subContribs :: [copper:ElementReference];
+synthesized attribute domContribs :: [Decorated SyntaxDcl];
+synthesized attribute subContribs :: [Decorated SyntaxDcl];
 autocopy attribute containingGrammar :: String;
 monoid attribute lexerClassRefDcls :: String;
 synthesized attribute exportedProds :: [String];
@@ -189,9 +189,6 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     | _ -> prettyName ++ " (" ++ n ++ ")"
     end;
 
-  top.domContribs = [top.copperElementReference];
-  top.subContribs = [top.copperElementReference];
-
   top.copperElementReference = copper:elementReference(top.sourceGrammar,
     top.location, top.containingGrammar, makeCopperName(n));
   top.copperGrammarElements =
@@ -200,10 +197,10 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
         modifiers.opPrecedence.isJust, modifiers.opPrecedence.fromJust,
         fromMaybe("", modifiers.opAssociation), makeTerminalName(n), 
         "RESULT = new " ++ makeTerminalName(n) ++ "(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());tokenList.add(RESULT);\n" ++ modifiers.acode,
-        modifiers.lexerClasses, !null(pfx),
+        map((.copperElementReference), modifiers.lexerClasses), !null(pfx),
         copper:elementReference(top.sourceGrammar, top.location,
           top.containingGrammar, head(pfx)),
-        modifiers.submits_, modifiers.dominates_)
+        map((.copperElementReference), modifiers.submits_), map((.copperElementReference), modifiers.dominates_))
     ];
 }
 
