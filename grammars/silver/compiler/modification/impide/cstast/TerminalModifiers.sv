@@ -56,6 +56,7 @@ String ::= d::[Decorated SyntaxDcl]
 abstract production termFont
 top::SyntaxTerminalModifier ::= fontName::String
 {
+  propagate isEqual;
   top.cstErrors := [];
 
   top.fontAttr = makeCopperName(fontName);

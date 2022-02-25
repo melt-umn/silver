@@ -30,6 +30,7 @@ top::SyntaxLexerClassModifier ::=
 abstract production lexerClassFont
 top::SyntaxLexerClassModifier ::= fontName::String
 {
+  propagate isEqual;
   top.cstErrors := [];
 
   top.fontAttr = makeCopperName(fontName);

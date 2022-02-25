@@ -64,7 +64,7 @@ synthesized attribute copperGrammarElements::[copper:GrammarElement];
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperGrammarElements, compareTo, isEqual;
+nonterminal Syntax with compareTo, isEqual, cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperGrammarElements;
 propagate compareTo, isEqual on Syntax;
 
 flowtype decorate {cstEnv, classTerminals, superClasses, subClasses, containingGrammar, layoutTerms, prefixesForTerminals, componentGrammarMarkingTerminals, parserAttributeAspects, prettyNames} on Syntax, SyntaxDcl;
@@ -87,11 +87,11 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-closed nonterminal SyntaxDcl with location, sourceGrammar, cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, domContribs, subContribs, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperElementReference, copperGrammarElements;
+closed nonterminal SyntaxDcl with location, sourceGrammar, compareTo, isEqual, cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, domContribs, subContribs, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperElementReference, copperGrammarElements;
 
 synthesized attribute sortKey :: String;
 
-propagate cstErrors, prefixSeperator on SyntaxDcl;
+propagate compareTo, isEqual, cstErrors, prefixSeperator on SyntaxDcl;
 
 aspect default production
 top::SyntaxDcl ::=
@@ -464,9 +464,8 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
     | syntaxNonterminal(_,_)            ->  EEE
     | syntaxProduction(_,_,_,_)         ->  FFF
 -}
-instance Eq SyntaxDcl {
-  eq = \ l::SyntaxDcl r::SyntaxDcl -> l.sortKey == r.sortKey;
-}
-instance Ord SyntaxDcl {
-  lte = \ l::SyntaxDcl r::SyntaxDcl -> l.sortKey <= r.sortKey;
-}
+
+function sortKeyLte
+Boolean ::= l::SyntaxDcl r::SyntaxDcl
+{ return l.sortKey <= r.sortKey; }
+
