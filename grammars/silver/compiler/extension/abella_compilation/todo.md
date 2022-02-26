@@ -1,14 +1,6 @@
 
 Bugs
 ======================================================================
-* It might be generating strange names for the names used in the
-  Abella relation if you access an attribute by a fully-qualified
-  name.  For example, `t.gr:am:mar:attr` might be generating an access
-  of a value variable named `Gr$*$am$*$mar$*$attr`.  Since the user
-  sees this and can't enter it in the prover, this is not good.
-  + If this is happening, use the `nameToShortName` function on the
-    attribute name for generating a name in the encoding of the
-    access.
 
 
 Features
