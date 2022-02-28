@@ -97,7 +97,7 @@ top::Regex ::= r1::Regex r2::Regex
     -- i.e. when top.altCountIn == 0.
     if top.altCountIn != 0 then error("genArbMatch on alt when top.altCount != 0") else
     let i::Integer = randomRange(0, top.altCount - 1)
-    in head(dropWhile(\ r::Decorated Regex with GenInhs -> r.altCount < i, top.altOptions)).genArbMatch
+    in head(dropWhile(\ r::Decorated Regex with GenInhs -> !(r.altCountIn <= i && i < r.altCount), top.altOptions)).genArbMatch
     end;
 
   thread altCountIn, altCount on top, r1, r2, top;
