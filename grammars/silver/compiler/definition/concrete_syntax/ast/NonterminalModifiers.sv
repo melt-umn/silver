@@ -6,9 +6,9 @@ imports silver:compiler:definition:core only nonterminalName;
  - Modifiers for nonterminals.
  -}
 
-nonterminal SyntaxNonterminalModifiers with cstEnv, cstErrors, customLayout, nonterminalName;
+nonterminal SyntaxNonterminalModifiers with compareTo, isEqual, cstEnv, cstErrors, customLayout, nonterminalName;
 
-propagate cstErrors, customLayout on SyntaxNonterminalModifiers;
+propagate compareTo, isEqual, cstErrors, customLayout on SyntaxNonterminalModifiers;
 
 abstract production consNonterminalMod
 top::SyntaxNonterminalModifiers ::= h::SyntaxNonterminalModifier  t::SyntaxNonterminalModifiers
@@ -22,7 +22,9 @@ top::SyntaxNonterminalModifiers ::=
 {--
  - Modifiers for nonterminals.
  -}
-nonterminal SyntaxNonterminalModifier with cstEnv, cstErrors, customLayout, nonterminalName;
+nonterminal SyntaxNonterminalModifier with compareTo, isEqual, cstEnv, cstErrors, customLayout, nonterminalName;
+
+propagate compareTo, isEqual on SyntaxNonterminalModifier;
 
 aspect default production
 top::SyntaxNonterminalModifier ::=

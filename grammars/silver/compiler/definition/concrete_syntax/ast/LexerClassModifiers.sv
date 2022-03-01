@@ -12,9 +12,9 @@ autocopy attribute className :: String;
 {--
  - Modifiers for lexer classes.
  -}
-nonterminal SyntaxLexerClassModifiers with cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, prefixSeperator, containingGrammar, dominates_, submits_;
+nonterminal SyntaxLexerClassModifiers with compareTo, isEqual, cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, prefixSeperator, containingGrammar, dominates_, submits_;
 
-propagate cstErrors, superClassContribs, disambiguationClasses, prefixSeperator, dominates_, submits_
+propagate compareTo, isEqual, cstErrors, superClassContribs, disambiguationClasses, prefixSeperator, dominates_, submits_
   on SyntaxLexerClassModifiers;
 
 abstract production consLexerClassMod
@@ -35,7 +35,9 @@ top::SyntaxLexerClassModifiers ::=
 {--
  - Modifiers for lexer classes.
  -}
-closed nonterminal SyntaxLexerClassModifier with location, sourceGrammar, cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, prefixSeperator, containingGrammar, dominates_, submits_;
+closed nonterminal SyntaxLexerClassModifier with location, sourceGrammar, compareTo, isEqual, cstEnv, cstErrors, className, classTerminals, superClasses, subClasses, superClassContribs, disambiguationClasses, prefixSeperator, containingGrammar, dominates_, submits_;
+
+propagate compareTo, isEqual on SyntaxLexerClassModifier;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production

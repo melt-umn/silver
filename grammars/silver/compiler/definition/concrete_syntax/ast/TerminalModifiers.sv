@@ -19,13 +19,13 @@ monoid attribute lexerClasses :: [copper:ElementReference];
 {--
  - Modifiers for terminals.
  -}
-nonterminal SyntaxTerminalModifiers with cstEnv, cstErrors,
+nonterminal SyntaxTerminalModifiers with compareTo, isEqual, cstEnv, cstErrors,
   classTerminalContribs, superClasses, subClasses, ignored, acode,
   opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
   componentGrammarMarkingTerminals, marking, terminalName, prettyName,
   dominates_, submits_, lexerClasses;
 
-propagate cstErrors, classTerminalContribs, ignored, acode, opPrecedence,
+propagate compareTo, isEqual, cstErrors, classTerminalContribs, ignored, acode, opPrecedence,
   opAssociation, prefixSeperator, prefixSeperatorToApply, marking, prettyName,
   dominates_, submits_, lexerClasses
   on SyntaxTerminalModifiers;
@@ -48,11 +48,13 @@ top::SyntaxTerminalModifiers ::=
 {--
  - Modifiers for terminals.
  -}
-closed nonterminal SyntaxTerminalModifier with cstEnv, cstErrors,
+closed nonterminal SyntaxTerminalModifier with compareTo, isEqual, cstEnv, cstErrors,
   classTerminalContribs, superClasses, subClasses, dominates_, submits_,
   lexerClasses, ignored, acode, opPrecedence, opAssociation, prefixSeperator,
   prefixSeperatorToApply, componentGrammarMarkingTerminals, marking,
   terminalName, prettyName;
+
+propagate compareTo, isEqual on SyntaxTerminalModifier;
 
 {- We default ALL attributes, so we can focus only on those that are interesting in each case... -}
 aspect default production
