@@ -474,6 +474,7 @@ String ::= prod::String prodTy::AbellaType nt::AbellaType component::String
 function generateAccessUniquenessAxioms
 String ::= attrOccurrences::[(String, [(String, AbellaType)])]
            localAttrs::[(String, [(String, AbellaType)])]
+           new_nonterminals::[String]
            env::Decorated Env
 {
   local attrs::[String] =
@@ -481,6 +482,11 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
                   map(\ ntty::(String, AbellaType) ->
                         accessRelationName(nameToNonterminalType(ntty.1), p.1),
                       p.2), attrOccurrences);
+
+  local fwds::[String] =
+        map(\ nt::String ->
+              accessRelationName(nameToNonterminalType(nt), "forward"),
+            new_nonterminals);
   local locals::[String] =
         flatMap(\ p::(String, [(String, AbellaType)]) ->
                   map(\ pt::(String, AbellaType) ->
@@ -495,7 +501,7 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
              "   " ++ acc ++ " Tree Node V' -> V = V'.\n" ++
              "skip.\n" ++
              rest,
-           "", attrs ++ locals);
+           "", attrs ++ locals ++ fwds);
 }
 
 
@@ -804,6 +810,7 @@ String ::= nonterminals::[String]
 function generateWpdToAttrEquationTheorems
 String ::= attrOccurrences::[(String, [(String, AbellaType)])]
            localAttrs::[(String, [(String, AbellaType)])]
+           new_nonterminals::[String]
            env::Decorated Env
 {
   --[(equation relation, attr, attr type, nonterminal)]
@@ -816,6 +823,13 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
                          ntty.2,
                          nameToNonterminalType(ntty.1)),
                       p.2), attrOccurrences);
+  --[(equation relation, attr, attr type, nonterminal)]
+  local fwdInfos::[(String, String, AbellaType, AbellaType)] =
+        map(\ nt::String ->
+              (equationName("forward", nameToNonterminalType(nt)),
+               "forward", nameToNonterminalType(nt),
+               nameToNonterminalType(nt)),
+            new_nonterminals);
   --[(equation relation, prod, attr, attr type, nonterminal)]
   local locals::[(String, String, String, AbellaType, AbellaType)] =
         flatMap(\ p::(String, [(String, AbellaType)]) ->
@@ -833,7 +847,7 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
              p.1 ++ " Tree Tree NodeTree.\n" ++
              "skip.\n" ++
              rest,
-           "", attrInfos) ++
+           "", attrInfos ++ fwdInfos) ++
      --locals
      foldr(\ p::(String, String, String, AbellaType, AbellaType) rest::String ->
              "Theorem $wpd" ++ name_sep ++ "to" ++ name_sep ++ p.2 ++
@@ -1809,12 +1823,13 @@ function produceMissingSynEqInfo
   local prodsByType::[(String, [(String, AbellaType)])] =
         getProdsByType(env);
   --
-  local allKnownSynAttrs::[String] = findAllSynAttrs(env);
+  local allKnownSynAttrs::[String] = findAllSynAttrs(env) ++ ["forward"];
 
   --[(nonterminal name, [occurring syn attrs], [(prod name, prod type)])]
   local allOccurs::[(String, [String], [(String, AbellaType)])] =
         map(\ p::(String, [(String, AbellaType)]) ->
               (p.1, filter(\ attr::String ->
+                             attr == "forward" || --fwd on all NT
                              !null(getOccursDcl(attr,
                                       nonterminalToName(
                                          encodedToColons(p.1)), env)),
@@ -1837,8 +1852,10 @@ function produceMissingSynEqInfo
   local thisGrammar::[(String, String, AbellaType)] =
         flatMap(\ p::(String, [(String, String, AbellaType)]) ->
                   filter(\ p::(String, String, AbellaType) ->
-                           nameToGrammar(p.1) == componentName ||
-                           nameToGrammar(p.2) == componentName,
+                           if p.1 == "forward"
+                           then nameToGrammar(p.2) == componentName
+                           else nameToGrammar(p.1) == componentName ||
+                                nameToGrammar(p.2) == componentName,
                          p.2),
                 expandedAllOccurs);
 
@@ -2127,7 +2144,7 @@ String ::= new_nonterminals::[String] new_attrs::[String]
      --
      "%Access uniqueness axioms\n" ++
      generateAccessUniquenessAxioms(new_attrOccurrences,
-                                    new_localAttrs, env) ++ "\n\n" ++
+        new_localAttrs, new_nonterminals, env) ++ "\n\n" ++
      "%Access is axioms\n" ++
      generateAccessIsAxioms(new_attrOccurrences, new_localAttrs,
                             new_nonterminals, env) ++ "\n\n" ++
@@ -2144,7 +2161,7 @@ String ::= new_nonterminals::[String] new_attrs::[String]
      "%WPD to attribute equation relation theorems\n" ++
      generateWpdToAttrEquationTheorems(
         new_attrOccurrences ++ associatedAttrsExpanded,
-        new_localAttrs, env) ++ "\n\n" ++
+        new_localAttrs, new_nonterminals, env) ++ "\n\n" ++
      "%Structure equality theorems\n" ++
      generateStructureEqNtTheorems(new_nonterminals, [componentName]) ++
         "\n\n" ++

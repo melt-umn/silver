@@ -232,6 +232,61 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
+  e.encodingEnv = top.encodingEnv;
+  e.top = top.top;
+  local clauseHead::Term =
+        buildApplication(
+           nameTerm(equationName("forward", top.top.3) ++ name_sep ++
+              encodeName(top.grammarName)),
+           [top.top.1, top.treeTerm, top.nodetreeTerm]);
+  local accessFwd::(Metaterm ::= Term) =
+        \ result::Term ->
+          termMetaterm(
+             buildApplication(
+                nameTerm(accessRelationName(top.top.3, "forward")),
+                [top.top.1, nodetreeToNode(top.nodetreeTerm),
+                 result]));
+  local fwdPair::([Metaterm] ::= Term) =
+        \ structure::Term ->
+          let nameTm::Term = varTerm("Fwd", genInt())
+          in
+            [
+             --access forward:  (tree name, node tree)
+             accessFwd(
+                buildApplication(
+                   nameTerm(attributeExistsName),
+                   [buildApplication(
+                       nameTerm(pairConstructorName),
+                       [nameTm,
+                        buildApplication(
+                           nameTerm(nodeTreeConstructorName(top.top.3)),
+                           [varTerm("FwdNode", genInt()),
+                            varTerm("FwdCL", genInt())])])])),
+             --forward name ~ structure
+             termMetaterm(
+                buildApplication(
+                   nameTerm(typeToStructureEqName(top.top.3)),
+                   [nameTm, structure]))
+            ]
+          end;
+  top.synAttrEqInfo <-
+      [ ( "forward", top.top.3, top.top.4, clauseHead,
+          --Failure to define
+          map(\ l::[Metaterm] ->
+                accessFwd(nameTerm(attributeNotExistsName))::l,
+              e.encodedFailure) ++
+          --Successful definition
+          map(\ p::([Metaterm], Term) ->
+                case p.2 of
+                  --decorated tree, coming out, so just take structure
+                | applicationTerm(nameTerm(pairC), args)
+                  when pairC == pairConstructorName ->
+                  fwdPair(head(args.argList))
+                  --undecorated tree
+                | _ -> fwdPair(p.2)
+                end ++ p.1,
+              e.encodedExpr) )
+      ];
 }
 
 aspect production forwardingWith
