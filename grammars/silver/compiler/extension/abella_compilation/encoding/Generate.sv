@@ -1132,7 +1132,7 @@ function completeInhEqs
   local filteredFwdOccurs::[(String, AbellaType, String, AbellaType)] =
         filter(\ p::(String, AbellaType, String, AbellaType) ->
                  !null(getOccursDcl(encodedToColons(p.1),
-                          encodedToColons(p.2.unparse), env)),
+                          encodedToColons(nonterminalToName(p.2.unparse)), env)),
                expectedForwardNewProds ++ expectedForwardOldProds);
 
   local missingFwds::[(String, String, AbellaType,
