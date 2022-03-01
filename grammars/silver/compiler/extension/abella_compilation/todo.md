@@ -6,8 +6,6 @@ Bugs
 Features
 ======================================================================
 * Pattern matching needs to be added
-* Forwarding needs to be added as a special attribute
-  + Also requires copy equations for undefined synthesized attributes
 * Add production attributes, which are supported by the new scheme for
   inherited attributes.
 * Local attributes in functions---might require not using

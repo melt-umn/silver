@@ -502,6 +502,7 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
 function generateAccessIsAxioms
 String ::= attrOccurrences::[(String, [(String, AbellaType)])]
            localAttrs::[(String, [(String, AbellaType)])]
+           new_nonterminals::[String]
            env::Decorated Env
 {
   --[(access relation, attr type, nonterminal)]
@@ -521,6 +522,17 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
                             p.1, pt.1), pt.2,
                          lookupProdType(pt.1, env).resultType),
                       p.2), localAttrs);
+  local fwds::[(String, AbellaType, AbellaType)] =
+        map(\ nt::String ->
+              (accessRelationName(nameToNonterminalType(nt),
+                                  "forward"),
+               functorAbellaType(
+                  functorAbellaType(pairType,
+                     nameToNonterminalType(nt)),
+                  nodeTreeType),
+               nameToNonterminalType(nt)),
+            new_nonterminals);
+
   return
      foldr(\ p::(String, AbellaType, AbellaType) rest::String ->
              let isTree::Boolean =
@@ -555,7 +567,7 @@ String ::= attrOccurrences::[(String, [(String, AbellaType)])]
                "skip.\n" ++
                rest
              end end,
-           "", attrInfos ++ locals);
+           "", attrInfos ++ locals ++ fwds);
 }
 
 
@@ -1401,7 +1413,7 @@ function buildMissingLocalChildEqInfo
         any(map(\ d::(String, String, AbellaType, String, Term,
                       [[Metaterm]], DefClause) ->
                   d.1 == first.1 && --same attr
-                  d.2 == first.2 && --same index
+                  d.2 == "local" ++ name_sep ++ first.2 && --same index
                   d.4 == first.4, --same prod
                 defined));
 
@@ -1566,12 +1578,18 @@ String ::= --[(attr, index (e.g. "child3", "forward"), top NT,
                   [[Metaterm]], DefClause) ->
               (p.1, p.2, p.3, p.4),
             info);
+  --sort to get grouping right
+  local sorted::[(String, String, AbellaType, String)] =
+        sortBy(\ p1::(String, String, AbellaType, String)
+                 p2::(String, String, AbellaType, String) ->
+                 p1.3.unparse < p2.3.unparse || p1.1 < p2.1,
+               reduced);
   --Put all with same attr/NT together (same component rel)
   local groupedByRel::[[(String, String, AbellaType, String)]] =
         groupBy(\ p1::(String, String, AbellaType, String)
                   p2::(String, String, AbellaType, String) ->
                   p1.1 == p2.1 && tysEqual(p1.3, p2.3),
-                reduced);
+                sorted);
   --[(attr, NT, [rel name])]
   local groupedRels::[(String, AbellaType, [String])] =
         map(\ l::[(String, String, AbellaType, String)] ->
@@ -1777,8 +1795,9 @@ function getForwardingProds
 }
 
 
---Produce clauses allowing anything for attr eq relations for prods
---which don't have an equation for the attr
+--Produce clauses for syn attr eq relations for prods which don't have
+--   an equation for the attr
+--Generated clauses either copy from forward or make attr have no value
 --[(attr, top NT type, prod, head term (rel tree nodetree), [clause bodies])]
 function produceMissingSynEqInfo
 [(String, AbellaType, String, Term, [[Metaterm]])] ::=
@@ -1789,87 +1808,176 @@ function produceMissingSynEqInfo
   --[(nonterminal name, [(prod name, prod type)])]
   local prodsByType::[(String, [(String, AbellaType)])] =
         getProdsByType(env);
-  --Filter down to only the relevant information about equations
-  --[(attr, top NT type, prod)]
-  local filtered::[(String, AbellaType, String)] =
-        map(\ p::(String, AbellaType, String, Term, [[Metaterm]]) ->
-              (p.1, p.2, p.3), synAttrEqInfo);
-  --Find the productions which are missing equations for each
-  --   attribute and produce empty clauses
-  local sortedAttrEquations::[(String, AbellaType, String)] =
-        sortBy(\ p1::(String, AbellaType, String)
-                 p2::(String, AbellaType, String) ->
-                 case p1.2, p2.2 of
-                 | nameAbellaType(n1), nameAbellaType(n2) ->
-                   p1.1 < p2.1 || (p1.1 == p2.1 && n1 <= n2)
-                 | _, _ -> error("Not possible")
-                 end,
-               filtered);
-  --[[(attr, nonterminal, prod)]] for existing equations
-  local groupedAttrsProds::[[(String, AbellaType, String)]] =
-        groupBy(\ p1::(String, AbellaType, String)
-                  p2::(String, AbellaType, String) ->
-                  p1.1 == p2.1 && tysEqual(p1.2, p2.2),
-                sortedAttrEquations);
-  --[(attr, nonterminal, [prod])] for existing equations
-  local foundProds::[(String, AbellaType, [String])] =
-        map(\ l::[(String, AbellaType, String)] ->
-              (head(l).1, head(l).2,
-               map(\ p::(String, AbellaType, String) -> colonsToEncoded(p.3), l)),
-            groupedAttrsProds);
-  --[(attr, nonterminal, [(prod, prod type)])]
-  local missingProdsByAttr::[(String, AbellaType, [(String, AbellaType)])] =
-        map(\ eqs::(String, AbellaType, [String]) ->
-              case eqs.2 of
-              | nameAbellaType(nt) ->
-                let prods::[(String, AbellaType)] =
-                    findAssociated(nt, prodsByType).fromJust
-                in
-                --attr introduced in this grammar
-                let attrNew::Boolean =
-                    nameToGrammar(eqs.1) == componentName
-                in
-                --nonterminal introduced in this grammar
-                let ntNew::Boolean =
-                    nameToGrammar(nonterminalToName(nt)) == componentName
-                in
-                  ( eqs.1, eqs.2,
-                    foldr(\ p::(String, AbellaType)
-                            rest::[(String, AbellaType)] ->
-                            if contains(p.1, eqs.3)
-                            then rest
-                            --only add it if its equation must be defined in this grammar
-                            else if attrNew || ntNew ||
-                                    nameToGrammar(p.1) == componentName
-                            then p::rest
-                            else rest,
-                          [], prods) )
-                end end end
-              | _ -> error("Not possible")
-              end,
-            foundProds);
-  return        --(attr,   NT,         [(prod,   prod type )])
-     flatMap(\ p::(String, AbellaType, [(String, AbellaType)]) ->
-               map(\ prod::(String, AbellaType) ->
-                     let treeTm::Term =
-                         buildApplication(
-                            nameTerm(nameToProd(prod.1)),
-                            foldr(\ t::AbellaType
-                                    rest::(Integer, [Term]) ->
-                                    ( rest.1 + 1,
-                                      nameTerm("T" ++ toString(rest.1))::rest.2 ),
-                                  (0, []), prod.2.argumentTypes).2)
-                     in
-                       ( p.1, p.2, prod.1,
-                         buildApplication(
-                            nameTerm(equationName(p.1, p.2) ++
-                                     name_sep ++ componentName),
-                            [nameTerm("TreeName"), treeTm,
-                             nameTerm("NodeTree")]),
-                         [[trueMetaterm()]] )
-                     end,
-                   p.3),
-             missingProdsByAttr);
+  --
+  local allKnownSynAttrs::[String] = findAllSynAttrs(env);
+
+  --[(nonterminal name, [occurring syn attrs], [(prod name, prod type)])]
+  local allOccurs::[(String, [String], [(String, AbellaType)])] =
+        map(\ p::(String, [(String, AbellaType)]) ->
+              (p.1, filter(\ attr::String ->
+                             !null(getOccursDcl(attr,
+                                      nonterminalToName(
+                                         encodedToColons(p.1)), env)),
+                           allKnownSynAttrs), p.2),
+            prodsByType);
+  --[(nonterminal name, [(syn attr, prod name, prod type)])]
+  local expandedAllOccurs::[(String, [(String, String, AbellaType)])] =
+        map(\ p::(String, [String], [(String, AbellaType)]) ->
+              (p.1, flatMap(\ attr::String ->
+                              map(\ prod::(String, AbellaType) ->
+                                    (colonsToEncoded(attr),
+                                     prod.1, prod.2),
+                                  p.3),
+                            p.2)),
+            allOccurs);
+
+  --attr/prod combinations we expect to be given in this grammar:
+  --  new attr on any prod, new prod for any attr
+  --[(attr, prod, prod type)]
+  local thisGrammar::[(String, String, AbellaType)] =
+        flatMap(\ p::(String, [(String, String, AbellaType)]) ->
+                  filter(\ p::(String, String, AbellaType) ->
+                           nameToGrammar(p.1) == componentName ||
+                           nameToGrammar(p.2) == componentName,
+                         p.2),
+                expandedAllOccurs);
+
+  --combinations which are not defined
+  local notDefined::[(String, String, AbellaType)] =
+        filter(
+           \ p::(String, String, AbellaType) ->
+             !containsBy(
+                 \ p1::(String, AbellaType, String, Term, [[Metaterm]])
+                   p2::(String, AbellaType, String, Term, [[Metaterm]]) ->
+                   p1.1 == p2.1 && p1.3 == p2.3,
+                 --everything below but attr and prod name are placeholders
+                 (p.1, p.3, p.2, nilTerm(), []),
+                 synAttrEqInfo),
+           thisGrammar);
+  --Get this down to unique occurrences
+  local notDefinedUnique::[(String, String, AbellaType)] =
+        nubBy(\ p1::(String, String, AbellaType)
+                p2::(String, String, AbellaType) ->
+                p1.1 == p2.1 && p1.2 == p2.2,
+              notDefined);
+
+  --
+  local fwdingProdNames::[String] = getForwardingProds(env);
+
+  --actual definitions missing
+  local newDefs::[(String, AbellaType, String, Term, [[Metaterm]])] =
+        map(\ p::(String, String, AbellaType) ->
+              let treeTm::Term =
+                  buildApplication(
+                     nameTerm(nameToProd(p.2)),
+                     foldr(\ t::AbellaType
+                             rest::(Integer, [Term]) ->
+                             ( rest.1 + 1,
+                               nameTerm("T" ++ toString(rest.1))::rest.2 ),
+                           (0, []), p.3.argumentTypes).2)
+              in
+              let nodetreeTm::Term =
+                  buildApplication(
+                     nameTerm(nodeTreeConstructorName(p.3.resultType)),
+                     [nameTerm("Node"), nameTerm("CL")])
+              in
+              let fwdTm::Term = varTerm("Fwd", genInt())
+              in
+              let fwdNode::Term = varTerm("FwdNode", genInt())
+              in
+              let fwdNodetreeTm::Term =
+                  buildApplication(
+                     nameTerm(nodeTreeConstructorName(p.3.resultType)),
+                     [fwdNode, varTerm("FwdCL", genInt())])
+              in
+              let attrVal::Term =
+                  varTerm(capitalize(nameToShortName(p.1)), genInt())
+              in
+                (p.1, p.3.resultType, p.2,
+                 buildApplication(
+                    nameTerm(equationName(p.1, p.3.resultType) ++
+                             name_sep ++ componentName),
+                    [nameTerm("TreeName"), treeTm, nodetreeTm]),
+                 if contains(nameToProd(p.2), fwdingProdNames)
+                 then [
+                       --forward doesn't exist, so attr doesn't either
+                       [termMetaterm(
+                           buildApplication(
+                              nameTerm(accessRelationName(p.3.resultType, "forward")),
+                              [nameTerm("TreeName"), nameTerm("Node"),
+                               nameTerm(attributeNotExistsName)])),
+                        termMetaterm(
+                           buildApplication(
+                              nameTerm(accessRelationName(p.3.resultType, p.1)),
+                              [nameTerm("TreeName"), nameTerm("Node"),
+                               nameTerm(attributeNotExistsName)]))],
+                       --forward exists; copy no value from there
+                       [termMetaterm(
+                           buildApplication(
+                              nameTerm(accessRelationName(p.3.resultType, "forward")),
+                              [nameTerm("TreeName"), nameTerm("Node"),
+                               buildApplication(
+                                  nameTerm(attributeExistsName),
+                                  [buildApplication(
+                                      nameTerm(pairConstructorName),
+                                      [fwdTm, fwdNodetreeTm])])])),
+                        termMetaterm(
+                           buildApplication(
+                              nameTerm(accessRelationName(p.3.resultType, p.1)),
+                              [fwdTm, fwdNode, nameTerm(attributeNotExistsName)])),
+                        termMetaterm(
+                           buildApplication(
+                              nameTerm(accessRelationName(p.3.resultType, p.1)),
+                              [nameTerm("TreeName"), nameTerm("Node"),
+                               nameTerm(attributeNotExistsName)]))],
+                       --forward exists; copy real value from there
+                       [termMetaterm(
+                           buildApplication(
+                              nameTerm(accessRelationName(p.3.resultType, "forward")),
+                              [nameTerm("TreeName"), nameTerm("Node"),
+                               buildApplication(
+                                  nameTerm(attributeExistsName),
+                                  [buildApplication(
+                                      nameTerm(pairConstructorName),
+                                      [fwdTm, fwdNodetreeTm])])])),
+                        termMetaterm(
+                           buildApplication(
+                              nameTerm(accessRelationName(p.3.resultType, p.1)),
+                              [fwdTm, fwdNode,
+                               buildApplication(
+                                  nameTerm(attributeExistsName),
+                                  [attrVal])])),
+                        termMetaterm(
+                           buildApplication(
+                              nameTerm(accessRelationName(p.3.resultType, p.1)),
+                              [nameTerm("TreeName"), nameTerm("Node"),
+                               buildApplication(
+                                  nameTerm(attributeExistsName),
+                                  [attrVal])]))]
+                      ]
+                 else [[termMetaterm(
+                           buildApplication(
+                              nameTerm(accessRelationName(p.3.resultType, p.1)),
+                              [nameTerm("TreeName"), nameTerm("Node"),
+                               nameTerm(attributeNotExistsName)]))]])
+              end end end end end end,
+            notDefinedUnique);
+  return newDefs;
+}
+
+--
+function findAllSynAttrs
+[String] ::= e::Decorated Env
+{
+  return
+     map(\ p::(String, AttributeDclInfo) -> p.2.fullName,
+         filter(\ p::(String, AttributeDclInfo) ->
+                  case p.2 of
+                  | synDcl(_, _, _) -> true
+                  | _ -> false
+                  end,
+                flatMap(\ m::tmap:Map<String AttributeDclInfo> ->
+                          tmap:toList(m), e.attrTree)));
 }
 
 
@@ -2021,8 +2129,8 @@ String ::= new_nonterminals::[String] new_attrs::[String]
      generateAccessUniquenessAxioms(new_attrOccurrences,
                                     new_localAttrs, env) ++ "\n\n" ++
      "%Access is axioms\n" ++
-     generateAccessIsAxioms(new_attrOccurrences,
-                            new_localAttrs, env) ++ "\n\n" ++
+     generateAccessIsAxioms(new_attrOccurrences, new_localAttrs,
+                            new_nonterminals, env) ++ "\n\n" ++
      "%Equation primary component theorems\n" ++
      generatePrimaryComponentTheorems(allSynAttrEqInfo, componentName) ++
         "\n" ++
