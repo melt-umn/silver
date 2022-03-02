@@ -29,8 +29,10 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
       grammars.moduleNames, []);
   production specEnv::Decorated Env = newScopeEnv(med.defs, emptyEnv());
   
-  -- Override defs to suppress production attributes from flowing up,
-  -- to avoid a circularity with the environment.
+  -- Override defs to suppress production attributes from flowing up as a paDef,
+  -- to avoid a circularity as what production attributes are generated depends
+  -- on the environment. Practically this means that we can't aspect a generator
+  -- function and refer to its production attributes, which is probably good anyway.
   top.defs :=
     case forward of
     | functionDcl(_, _, ns, _) -> [funDef(top.grammarName, n.location, ns.namedSignature)]
@@ -238,8 +240,20 @@ ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  do
   local te::TypeExpr = nominalTypeExpr(qName(loc, t).qNameType, location=loc);
 
   -- Filter out cantidate lexemes by checking if they match dominating terminal regexes.
-  -- TODO: This a approach is somewhat infinite, and breaks if a terminal is totally dominated by another.
+  -- TODO: This a approach is somewhat somewhat inefficient, and fails with
+  -- infinite recursion if a terminal is totally dominated by another.
+  -- For example:
+  -- terminal A 'x';
+  -- terminal B 'x' dominates A;
+  -- nonterminal C;
+  -- concrete production d
+  -- C ::= A  {}
+  -- However this almost certainly points to a major problem with the grammar,
+  -- since any productions that mention A can never match any strings.
   -- Is there a better approach involving regex subtraction as a primitive?
+  -- Also note that this does not consider disambiguation functions, and may
+  -- generate trees that could have arisen from different ambigous parses of the
+  -- same source.
   local termDominated::Expr =
     foldr(
       or(_, '||', _, location=loc),
