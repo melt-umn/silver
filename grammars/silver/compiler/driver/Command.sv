@@ -158,8 +158,12 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   local flagDescs :: String =
     flatMap(\desc::String -> s"\t${desc}\n",
             sort(filterMap(\flag::(String, Maybe<String>, Flag) -> flag.2, flags)));
+  local undocumentedFlags :: String =
+    flatMap(\flag::(String, Maybe<String>, Flag) -> s"\t${flag.1}\n",
+            sortByKey(\flag::(String, Maybe<String>, Flag) -> flag.1,
+                      filter(\flag::(String, Maybe<String>, Flag) -> !flag.2.isJust, flags)));
   local usage :: String = 
-    s"Usage: silver [options] [grammar:to:build ...]\n\nFlag options:\n${flagDescs}";
+    s"Usage: silver [options] [grammar:to:build ...]\n\nFlag options:\n${flagDescs}\nUndocumented flags:\n${undocumentedFlags}";
   
   -- Parse the command line
   local cmdArgs :: CmdArgs =
