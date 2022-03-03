@@ -1,13 +1,12 @@
 package common;
 
+import common.exceptions.SilverExit;
 import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import common.exceptions.SilverExit;
 import silver.core.NIOVal;
 import silver.core.Pioval;
 import silver.core.Pjust;
@@ -15,107 +14,117 @@ import silver.core.Pnothing;
 
 /**
  * This class represents the `<code>IO</code>` type in Silver.
- * 
+ *
  * <p>By convention we translate a Silver IO call of the form
  * `<code>IO ::= args IO</code>` to a method with the signature
  * `<code>IOToken f(args)</code>`. We return `this` or `this.wrap`
  * and the final `IO` argument is used to invoke the method.
- * 
+ *
  * <p>`<code>iotoken.print(str)</code>` means the `IOToken` must be demanded
  * before the method can be invoked, which is the desired invariant.
- * 
+ *
  * <p>Silver types are used in argument wherever possible, except for
  * primitives like `int`.
- * 
+ *
  * @author tedinski
  */
 public final class IOToken implements Typed {
-	public static final IOToken singleton = new IOToken();
-	
-	private IOToken() {}
-	
-	/**
-	 * Function that return IOToken can return `this`.
-	 * Those that return `IOVal<>` can return `this.wrap(...)`.
-	 */
-	public NIOVal wrap(Object arg) {
-		return new Pioval(this, arg);
-	}
-	
-	/**
-	 * Used for `unsafeTrace`
-	 */
-	public Object identity(Object arg) {
-		return arg;
-	}
+  public static final IOToken singleton = new IOToken();
 
-	/**
-	 * <pre>IO ::= val::Integer i::IO</pre>
-	 */
-	public IOToken exit(int status) {
-		throw new SilverExit(status);
-	}
+  private IOToken() {}
 
-	/**
-	 * <pre>IO ::= s::String i::IO</pre> 
-	 */
-	public IOToken print(StringCatter str) {
-		// TODO: Should we avoid demanding StringCatter objects?
-		System.out.print(str.toString());
-		return this;
-	}
+  /**
+   * Function that return IOToken can return `this`.
+   * Those that return `IOVal<>` can return `this.wrap(...)`.
+   */
+  public NIOVal wrap(Object arg) { return new Pioval(this, arg); }
 
-	// Used by readLineStdin
-	private static BufferedReader our_stdin = null;
-	/**
-	 * <pre>IOVal<String> ::= i::IO</pre>
-	 */
-	public NIOVal readLineStdin() {
-		try {
-			if(our_stdin == null) {
-				// Persist this, since it might buffer bytes for the NEXT line
-				our_stdin = new BufferedReader(new InputStreamReader(System.in));
-			}
-			String line = our_stdin.readLine();
-			if(line == null)
-				return this.wrap(new Pnothing());
-			else
-				return this.wrap(new Pjust(new StringCatter(line)));
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
+  /**
+   * Used for `unsafeTrace`
+   */
+  public Object identity(Object arg) { return arg; }
 
-	/**
-	 * <pre>IOVal<Boolean> ::= s::String i::IO</pre>
-	 */
-	public NIOVal mkdir(StringCatter filepath) {
-		return this.wrap(new File(filepath.toString()).mkdirs());
-	}
-	
-	/**
-	 * Invokes an external command, channeling all stdin/out/err to the console normally.
-	 *
-	 * N.B. uses 'bash' to invoke the command. There are two major reasons:
-	 * (1) allows redirects in shell command, which is useful
-	 * (2) because this command takes just a single string, we must somehow deal with spaces.
-	 * e.g. 'touch "abc 123"' bash take care of interpreting the quotes for us.
-	 *
-	 * Unfortunate platform dependency though.
-	 * 
-	 * <pre>IOVal<Integer> ::= s::String i::IO</pre>
-	 *
-	 * @param shell_command A string for back to interpret and execute.
-	 * @return The exit status of the process.
-	 */
-	public NIOVal system(StringCatter shell_command) {
-		try {
-			ProcessBuilder pb = new ProcessBuilder("bash", "-c", shell_command.toString());
-			pb.inheritIO();
-			Process p = pb.start();
-			return this.wrap(p.waitFor());
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+  /**
+   * <pre>IO ::= val::Integer i::IO</pre>
+   */
+  public IOToken exit(int status) { throw new SilverExit(status); }
+
+  /**
+   * <pre>IO ::= s::String i::IO</pre>
+   */
+  public IOToken print(StringCatter str) {
+    // TODO: Should we avoid demanding StringCatter objects?
+    System.out.print(str.toString());
+    return this;
+  }
+
+  /**
+   * <pre>IO ::= s::String i::IO</pre>
+   */
+  public IOToken eprint(StringCatter str) {
+    // TODO: Should we avoid demanding StringCatter objects?
+    System.err.print(str.toString());
+    return this;
+  }
+
+  // Used by readLineStdin
+  private static BufferedReader our_stdin = null;
+  /**
+   * <pre>IOVal<String> ::= i::IO</pre>
+   */
+  public NIOVal readLineStdin() {
+    try {
+      if (our_stdin == null) {
+        // Persist this, since it might buffer bytes for the NEXT line
+        our_stdin = new BufferedReader(new InputStreamReader(System.in));
+      }
+      String line = our_stdin.readLine();
+      if (line == null)
+        return this.wrap(new Pnothing());
+      else
+        return this.wrap(new Pjust(new StringCatter(line)));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * <pre>IOVal<Boolean> ::= s::String i::IO</pre>
+   */
+  public NIOVal mkdir(StringCatter filepath) {
+    return this.wrap(new File(filepath.toString()).mkdirs());
+  }
+
+  /**
+   * Invokes an external command, channeling all stdin/out/err to the console
+   * normally.
+   *
+   * N.B. uses 'bash' to invoke the command. There are two major reasons:
+   * (1) allows redirects in shell command, which is useful
+   * (2) because this command takes just a single string, we must somehow deal
+   * with spaces. e.g. 'touch "abc 123"' bash take care of interpreting the
+   * quotes for us.
+   *
+   * Unfortunate platform dependency though.
+   *
+   * <pre>IOVal<Integer> ::= s::String i::IO</pre>
+   *
+   * @param shell_command A string for back to interpret and execute.
+   * @return The exit status of the process.
+   */
+  public NIOVal system(StringCatter shell_command) {
+    try {
+      ProcessBuilder pb =
+          new ProcessBuilder("bash", "-c", shell_command.toString());
+      pb.inheritIO();
+      Process p = pb.start();
+      return this.wrap(p.waitFor());
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
 		}
 	}
 

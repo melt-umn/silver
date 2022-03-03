@@ -193,3 +193,9 @@ Substitution ::= ns1::NamedSignature ns2::NamedSignature
     else errorSubstitution(ns1.typerep);
 }
 
+-- Strict type equality, assuming no type vars - this is only used in comparing syntax ASTs
+instance Eq NamedSignature {
+  eq = \ ns1::NamedSignature ns2::NamedSignature ->
+    ns1.fullName == ns2.fullName &&
+    !unifyDirectional(ns1.typerep, ns2.typerep).failure;
+}

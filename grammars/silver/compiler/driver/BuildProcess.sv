@@ -38,7 +38,7 @@ function performActions
 IOVal<Integer> ::= unitin::IOErrorable<Decorated Compilation>
 {
   return case unitin.iovalue of
-  | left(re) -> ioval(printT(re.message ++ "\n", unitin.io), re.code)
+  | left(re) -> ioval(eprintlnT(re.message, unitin.io), re.code)
   | right(comp) -> runAll(sortUnits(comp.postOps), unitin.io)
   end;
 }
@@ -137,7 +137,8 @@ IOVal<Decorated Compilation> ::=
   -- a list that's terminated when the response count is equal to the number of emitted
   -- grammar names.
   local grammarStream :: [String] =
-    buildGrammars ++ eatGrammars(1, buildGrammars, rootStream.iovalue, unit.grammarList);
+    buildGrammars ++
+    eatGrammars(length(buildGrammars), buildGrammars, rootStream.iovalue, unit.grammarList);
   
   -- This is, essentially, a data structure representing a compilation.
   -- Note that it is pure: it doesn't take any actions.
