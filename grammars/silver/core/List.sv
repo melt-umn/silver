@@ -52,6 +52,22 @@ instance Length [a] {
 }
 
 @{--
+  - Applies a function to each element of a list, and returns a list containing
+  - all the results that are just. The same as Haskell's 'mapMaybe' and Rust's
+  - filter_map.
+  -}
+function filterMap
+[b] ::= f::(Maybe<b> ::= a)  lst::[a]
+{
+  return flatMap(
+    \x::a -> case f(x) of
+             | just(y) -> [y]
+             | nothing() -> []
+             end,
+    lst);
+}
+
+@{--
  - Applies an operator right-associatively over a list.
  - (i.e. replaces cons with 'f', nil with 'i' in the list)
  -
