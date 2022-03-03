@@ -22,9 +22,11 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--dump-flow-graph", flag(dumpFlowGraphFlag)),
-            pair("--dump-flow-graphs", flag(dumpFlowGraphFlag))]; -- I mistype this a lot.
-  -- omitting from descriptions deliberately!
+  flags <- [("--dump-flow-graph",
+             just("--dump-flow-graph           : writes the flowtypes out to several Graphviz files"),
+             flag(dumpFlowGraphFlag)),
+            ("--dump-flow-graphs", nothing(), flag(dumpFlowGraphFlag))]; -- Ted mistyped this a lot.
+  -- not omitting descriptions deliberately!
 }
 
 aspect production compilation

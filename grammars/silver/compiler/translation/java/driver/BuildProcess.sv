@@ -14,6 +14,7 @@ synthesized attribute noJavaGeneration :: Boolean occurs on CmdArgs;
 synthesized attribute buildSingleJar :: Boolean occurs on CmdArgs;
 synthesized attribute relativeJar :: Boolean occurs on CmdArgs;
 synthesized attribute includeRTJars :: [String] occurs on CmdArgs;
+-- TODO: Should this be a Maybe?
 synthesized attribute buildXmlLocation :: [String] occurs on CmdArgs;
 
 aspect production endCmdArgs
@@ -25,7 +26,7 @@ top::CmdArgs ::= _
   top.includeRTJars = [];
   top.buildXmlLocation = [];
 }
-abstract production xjFlag
+abstract production dontTranslateFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.noJavaGeneration = true;
@@ -59,14 +60,23 @@ top::CmdArgs ::= s::String rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--dont-translate", flag(xjFlag)),
-            pair("--onejar", flag(onejarFlag)),
-            pair("--one-jar", flag(onejarFlag)),
-            pair("--relative-jar", flag(relativejarFlag)),
-            pair("--include-jar", option(includeRTJarFlag)),
-            pair("--build-xml-location", option(buildXmlFlag))
+  flags <- [("--dont-translate",
+             just("--dont-translate            : check for errors without producing Java code"),
+             flag(dontTranslateFlag)),
+            ("--onejar", nothing(), flag(onejarFlag)),
+            ("--one-jar", 
+             just("--one-jar                   : include runtime libraries in the JAR"),
+             flag(onejarFlag)),
+            ("--relative-jar",
+             just("--relative-jar              : assume runtime libraries will be in the same directory as the JAR"),
+             flag(relativejarFlag)),
+            ("--include-jar",
+             just("--include-jar <path>        : links to an additional JAR"),
+             option(includeRTJarFlag)),
+            ("--build-xml-location",
+             just("--build-xml-location <path> : sets the path the Ant build.xml will be saved to. Used by Eclipse"),
+             option(buildXmlFlag))
            ];
-  flagdescs <- ["\t--one-jar  : include runtime libraries in the jar"];
 }
 aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv

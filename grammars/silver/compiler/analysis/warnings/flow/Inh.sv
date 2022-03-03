@@ -18,7 +18,9 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--warn-missing-inh", flag(warnMissingInhFlag))];
+  flags <- [("--warn-missing-inh",
+             just("--warn-missing-inh          : warn about any of several MWDA violations involving demanding inhs"),
+             flag(warnMissingInhFlag))];
 }
 
 --------------------------------------------------------------------------------
