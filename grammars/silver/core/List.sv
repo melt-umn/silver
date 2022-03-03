@@ -403,6 +403,13 @@ function sortBy
   return sortByHelp(lte, lst, length(lst));
 }
 
+function sortByKey
+Ord b => [a] ::= key::(b ::= a) lst::[a]
+{
+  return sortBy(\l::a  r::a -> key(l) <= key(r),
+                lst);
+}
+
 function sort
 Ord a => [a] ::= lst::[a]
 {
