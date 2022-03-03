@@ -3,8 +3,8 @@ grammar silver:compiler:definition:concrete_syntax:ast;
 import silver:util:treemap as tm;
 
 -- From TerminalModifiers
--- monoid attribute dominates_ :: [copper:ElementReference];
--- monoid attribute submits_ :: [copper:ElementReference];
+-- monoid attribute dominates_ :: [Decorated SyntaxDcl];
+-- monoid attribute submits_ :: [Decorated SyntaxDcl];
 -- synthesized attribute prefixSeperator :: Maybe<String>;
 
 autocopy attribute className :: String;
@@ -79,7 +79,7 @@ top::SyntaxLexerClassModifier ::= sub::[String]
                            "this grammar was not included in this parser. (Referenced from submit clause for lexer class)"], --TODO: come up with a way to reference a given lexer class (line numbers would be great)
                    zipWith(pair, sub, subRefs)); 
   
-  top.submits_ := map((.copperElementReference), map(head, subRefs));
+  top.submits_ := map(head, subRefs);
 }
 {--
  - The dominates list for the lexer class. Either lexer classes or terminals.
@@ -96,7 +96,7 @@ top::SyntaxLexerClassModifier ::= dom::[String]
                            "this grammar was not included in this parser. (Referenced from dominates clause for lexer class)"],
                    zipWith(pair, dom, domRefs));
 
-  top.dominates_ := map((.copperElementReference), map(head, domRefs));
+  top.dominates_ := map(head, domRefs);
 }
 
 {--

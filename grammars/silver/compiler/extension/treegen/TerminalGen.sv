@@ -1,12 +1,17 @@
 grammar silver:compiler:extension:treegen;
 
-import silver:compiler:metatranslation;
-import silver:reflect;
-import silver:regex;
+imports silver:core hiding empty, alt;
+imports silver:regex;
+imports silver:compiler:metatranslation;
+imports silver:reflect;
+
 import silver:util:treeset as set;  -- needed for freeVars equation
 
 terminal GenArbTerminal_t 'genArbTerminal' lexer classes {KEYWORD, RESERVED};
 
+-- Note that this construct ignores lexical dominates/submits to relationships
+-- with other terminals, since we don't have a parser spec/syntax AST to extract
+-- that information.
 concrete production genArbTerminalNoLocExpr
 top::Expr ::= 'genArbTerminal' '(' te::TypeExpr ',' '_' ')'
 {

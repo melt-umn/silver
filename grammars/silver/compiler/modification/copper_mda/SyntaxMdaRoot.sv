@@ -7,7 +7,7 @@ import silver:util:treemap as tm;
 abstract production cstCopperMdaRoot
 top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Syntax  customStartLayout::Maybe<[String]>
 {
-  propagate compareTo, isEqual;
+  propagate compareTo, isEqual, allNonterminals, allTerminals;
 
   -- Because there may be references between the grammars, we cannot do the
   -- usual normalization.
@@ -66,6 +66,8 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   top.cstErrors <- if !null(startFound) then []
                    else ["Nonterminal " ++ startnt ++ " was referenced but " ++
                          "this grammar was not included in this parser. (Referenced as parser's starting nonterminal)"];
+
+  top.dominatingTerminals = error("Shouldn't be demanded from cstCopperMdaRoot");
 
   -- The layout before and after the root nonterminal. By default, the layout of the root nonterminal.
   local startLayout::[copper:ElementReference] =

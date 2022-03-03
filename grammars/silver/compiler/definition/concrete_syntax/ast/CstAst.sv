@@ -15,11 +15,14 @@ import silver:util:treeset as s;
 {--
  - Encapsulates transformations and analysis of Syntax
  -}
-closed nonterminal SyntaxRoot with location, sourceGrammar, cstErrors, copperParser, compareTo, isEqual;
-propagate compareTo, isEqual on SyntaxRoot;
+closed nonterminal SyntaxRoot with location, sourceGrammar, cstErrors, copperParser, allTerminals, allNonterminals, dominatingTerminals, compareTo, isEqual;
+propagate compareTo, isEqual, allTerminals, allNonterminals on SyntaxRoot;
 
 @{-- The Copper API object corresponding to the parser. -}
 synthesized attribute copperParser::copper:ParserBean;
+
+@{-- An environment containing all terminals that dominate any particular one. -}
+synthesized attribute dominatingTerminals::EnvTree<Decorated SyntaxDcl>;
 
 abstract production cstRoot
 top::SyntaxRoot ::=
@@ -53,6 +56,8 @@ top::SyntaxRoot ::=
   s.prefixesForTerminals = directBuildTree(terminalPrefixes);
   s.componentGrammarMarkingTerminals = directBuildTree(componentGrammarMarkingTerminals);
   s.prettyNames = tm:add(s.prettyNamesAccum, tm:empty());
+  
+  top.dominatingTerminals = directBuildTree(s.dominatingTerminalContribs);
   
   -- Move productions under their nonterminal, and sort the declarations
   production s2 :: Syntax = foldr(consSyntax, nilSyntax(), sortBy(sortKeyLte, s.cstNormalize));

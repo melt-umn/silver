@@ -17,7 +17,6 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   top.errors <- pm.errors;
   top.errors <- ns.concreteSyntaxTypeErrors;
 
-  -- TODO: we should CHANGE syntaxProduction so it just plain takes a NamedSignature!
   top.syntaxAst :=
     [ syntaxProduction(namedSig,
         foldr(consProductionMod, nilProductionMod(), pm.productionModifiers),

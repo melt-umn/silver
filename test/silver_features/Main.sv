@@ -6,6 +6,7 @@ import silver_features:defs;
 import silver_features:cond;
 import silver_features:anno;
 import silver_features:rewrite;
+import silver_features:treegen;
 
 mainTestSuite silver_tests;
 
