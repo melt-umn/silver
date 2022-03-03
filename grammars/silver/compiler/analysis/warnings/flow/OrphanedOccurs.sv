@@ -17,7 +17,7 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [("--warn-orphaned",
-             just("--warn-orphaned             : warn about orphaned attribute occurrences"),
+             just("--warn-orphaned            \twarn about orphaned attribute occurrences"),
              flag(warnOrphanedFlag))];
 }
 

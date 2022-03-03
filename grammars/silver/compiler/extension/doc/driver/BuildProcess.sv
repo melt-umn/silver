@@ -62,16 +62,16 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [("--doc",
-             just("--doc                       : build the documentation"),
+             just("--doc                      \tbuild the documentation"),
              flag(docFlag)),
             ("--print-undoc",
-             just("--print-undoc               : print names of undocumented items"),
+             just("--print-undoc              \tprint names of undocumented items"),
              flag(printUndocFlag)),
             ("--count-undoc",
-             just("--count-undoc               : print names of undocumented items"),
+             just("--count-undoc              \tprint names of undocumented items"),
              flag(countUndocFlag)),
             ("--doc-out",
-             just("--doc-out                   : output location for documentation"),
+             just("--doc-out                  \toutput location for documentation"),
              option(docOutFlag))];
 }
 

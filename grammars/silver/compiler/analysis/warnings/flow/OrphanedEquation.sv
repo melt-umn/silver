@@ -19,7 +19,7 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [("--warn-eqdef",
-             just("--warn-eqdef                : warn about orphaned equations"),
+             just("--warn-eqdef               \twarn about orphaned equations"),
              flag(warnEqdefFlag))];
 }
 

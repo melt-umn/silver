@@ -25,7 +25,7 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [("--dump-import-graph",
-             just("--dump-import-graph         : dump a graph of dependencies between grammars as a Graphviz file"),
+             just("--dump-import-graph        \tdump a graph of dependencies between grammars as a Graphviz file"),
              flag(dumpDepGraphFlag))];
   -- not omitting from descriptions deliberately!
 }

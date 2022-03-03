@@ -29,7 +29,7 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [("--copperdump",
-             just("--copperdump                : force Copper to dump parse table information"),
+             just("--copperdump               \tforce Copper to dump parse table information"),
              flag(copperdumpFlag))];
 }
 
@@ -54,7 +54,7 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [("--copper-xml-dump",
-             just("--copper-xml-dump           : dump the specification being passed to Copper as XML"),
+             just("--copper-xml-dump          \tdump the specification being passed to Copper as XML"),
              flag(copperXmlDumpFlag))];
 }
 

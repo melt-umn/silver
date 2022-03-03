@@ -34,7 +34,7 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [("--mwda",
-             just("--mwda                      : report MWDA violations as errors"),
+             just("--mwda                     \treport MWDA violations as errors"),
              flag(mwdaFlag))];
 }
 

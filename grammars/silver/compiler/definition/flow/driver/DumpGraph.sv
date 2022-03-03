@@ -23,7 +23,7 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [("--dump-flow-graph",
-             just("--dump-flow-graph           : writes the flowtypes out to several Graphviz files"),
+             just("--dump-flow-graph          \twrite the flowtypes out to several Graphviz files"),
              flag(dumpFlowGraphFlag)),
             ("--dump-flow-graphs", nothing(), flag(dumpFlowGraphFlag))]; -- Ted mistyped this a lot.
   -- not omitting descriptions deliberately!

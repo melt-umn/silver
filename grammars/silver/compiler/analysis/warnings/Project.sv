@@ -14,7 +14,7 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [("--warn-all",
-             just("--warn-all                  : enable all warnings"),
+             just("--warn-all                 \tenable all warnings"),
              flag(warnAllFlag))];
 }
 

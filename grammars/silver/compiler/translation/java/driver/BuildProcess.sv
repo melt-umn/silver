@@ -61,20 +61,20 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [("--dont-translate",
-             just("--dont-translate            : check for errors without producing Java code"),
+             just("--dont-translate           \tcheck for errors without producing Java code"),
              flag(dontTranslateFlag)),
             ("--onejar", nothing(), flag(onejarFlag)),
             ("--one-jar", 
-             just("--one-jar                   : include runtime libraries in the JAR"),
+             just("--one-jar                  \tinclude runtime libraries in the JAR"),
              flag(onejarFlag)),
             ("--relative-jar",
-             just("--relative-jar              : assume runtime libraries will be in the same directory as the JAR"),
+             just("--relative-jar             \tassume runtime libraries will be in the same directory as the JAR"),
              flag(relativejarFlag)),
             ("--include-jar",
-             just("--include-jar <path>        : links to an additional JAR"),
+             just("--include-jar <path>       \tlinks to an additional JAR"),
              option(includeRTJarFlag)),
             ("--build-xml-location",
-             just("--build-xml-location <path> : sets the path the Ant build.xml will be saved to. Used by Eclipse"),
+             just("--build-xml-location <path>\tsets the path the Ant build.xml will be saved to. Used by Eclipse"),
              option(buildXmlFlag))
            ];
 }
