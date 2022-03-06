@@ -5,7 +5,7 @@ autocopy attribute nonterminalName :: String;
 concrete production nonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
 {
-  top.unparse = "nonterminal " ++ id.unparse ++ tl.unparse ++ " " ++ nm.unparse ++ ";";
+  top.unparse = quals.unparse ++ "nonterminal " ++ id.unparse ++ tl.unparse ++ " " ++ nm.unparse ++ ";";
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   nm.nonterminalName = fName;
@@ -42,7 +42,7 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
     else [];
 }
 
-nonterminal NTDeclQualifiers with location, errors;
+nonterminal NTDeclQualifiers with location, unparse, errors;
 
 synthesized attribute closed :: Boolean occurs on NTDeclQualifiers;
 synthesized attribute tracked :: Boolean occurs on NTDeclQualifiers;
@@ -55,6 +55,7 @@ top::NTDeclQualifiers ::=
   top.tracked = false;
 
   top.errors := [];
+  top.unparse = "";
 }
 
 concrete production closedNTQualifier
@@ -65,6 +66,7 @@ top::NTDeclQualifiers ::= 'closed' rest::NTDeclQualifiers
 
   top.errors := rest.errors;
   top.errors <- if rest.closed then [err(top.location, "Duplicate 'closed' qualifier")] else [];
+  top.unparse = "closed " ++ rest.unparse;
 }
 
 concrete production trackedNTQualifier
@@ -75,6 +77,7 @@ top::NTDeclQualifiers ::= 'tracked' rest::NTDeclQualifiers
 
   top.errors := rest.errors;
   top.errors <- if rest.tracked then [err(top.location, "Duplicate 'tracked' qualifier")] else [];
+  top.unparse = "tracked " ++ rest.unparse;
 }
 
 nonterminal NonterminalModifiers with config, location, unparse, errors, env, nonterminalName; -- 0 or some
