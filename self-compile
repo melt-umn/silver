@@ -11,6 +11,7 @@ SV_BUILD_TARGET=${SV_BUILD_TARGET:-"silver:compiler:composed:Default"}
 
 export ANT_OPTS=-Xss10M
 
+cd "$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 mkdir -p build
 cd build
 
