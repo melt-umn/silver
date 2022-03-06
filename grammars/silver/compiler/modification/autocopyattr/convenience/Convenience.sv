@@ -13,6 +13,6 @@ top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te:
 {
   top.unparse = "autocopy attribute " ++ a.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " occurs on " ++ qs.unparse ++ ";" ;
   forwards to appendAGDcl(attributeDclAuto($1, $2, a, tl, $5, te, $10, location=a.location),
-                          makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), tl), qs.qnames), location=top.location);
+                          makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), tl, location=top.location), qs.qnames), location=top.location);
 }
 

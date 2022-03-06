@@ -16,7 +16,7 @@ top::AGDcl ::= 'functor' 'attribute' a::Name 'occurs' 'on' qs::QNames ';'
   forwards to
     appendAGDcl(
       functorAttributeDcl($1, $2, a, $7, location=a.location),
-      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location)), qs.qnames),
+      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location), location=top.location), qs.qnames),
       location=top.location);
 }
 
@@ -27,7 +27,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   forwards to
     appendAGDcl(
       monoidAttributeDcl($1, $2, a, tl, $5, te, $7, e, $9, q, $14, location=a.location),
-      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location)), qs.qnames),
+      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location), location=top.location), qs.qnames),
       location=top.location);
 }
 
@@ -38,7 +38,7 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   forwards to
     appendAGDcl(
       tcMonoidAttributeDcl($1, $2, a, tl, $5, te, $10, location=a.location),
-      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location)), qs.qnames),
+      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location), location=top.location), qs.qnames),
       location=top.location);
 }
 
@@ -49,7 +49,7 @@ top::AGDcl ::= 'destruct' 'attribute' a::Name 'occurs' 'on' qs::QNames ';'
   forwards to
     appendAGDcl(
       destructAttributeDcl($1, $2, a, ';', location=a.location),
-      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location)), qs.qnames),
+      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location), location=top.location), qs.qnames),
       location=top.location);
 }
 
@@ -60,7 +60,7 @@ top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName 'occurs' 'on' 
   forwards to
     appendAGDcl(
       equalityAttributeDcl($1, $2, syn, $4, inh, $9, location=top.location),
-      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
+      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location), location=top.location), qs.qnames),
       location=top.location);
 }
 
@@ -72,8 +72,8 @@ top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QNa
     appendAGDcl(
       orderingAttributeDcl($1, $2, keySyn, $4, syn, $6, inh, $11, location=top.location),
       appendAGDcl(
-        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(keySyn, location=syn.location), botlNone(location=top.location)), qs.qnames),
-        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(keySyn, location=syn.location), botlNone(location=top.location), location=top.location), qs.qnames),
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location), location=top.location), qs.qnames),
         location=top.location),
       location=top.location);
 }
@@ -128,8 +128,8 @@ top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' i
     appendAGDcl(
       unificationAttributeDcl($1, $2, synPartial, ',', syn, 'with', inh, ';', location=top.location),
       appendAGDcl(
-        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(synPartial, location=synPartial.location), botlNone(location=top.location)), qs.qnames),
-        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(synPartial, location=synPartial.location), botlNone(location=top.location), location=top.location), qs.qnames),
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location), location=top.location), qs.qnames),
         location=top.location),
       location=top.location);
 }
@@ -142,8 +142,8 @@ top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTy
     appendAGDcl(
       threadedAttributeDcl($1, $2, inh, $4, syn, tl, $7, te, $12, location=top.location),
       appendAGDcl(
-        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location)), qs.qnames),
-        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location), location=top.location), qs.qnames),
+        makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location), location=top.location), qs.qnames),
         location=top.location),
       location=top.location);
 }

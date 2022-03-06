@@ -15,7 +15,7 @@ top::AGDcl ::= 'partial' 'strategy' 'attribute' a::Name '=' e::StrategyExpr_c 'o
   forwards to
     appendAGDcl(
       partialStrategyAttributeDcl($1, $2, $3, a, $5, e, $10, location=a.location),
-      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location)), qs.qnames),
+      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location), location=top.location), qs.qnames),
       location=top.location);
 }
 
@@ -26,6 +26,6 @@ top::AGDcl ::= 'strategy' 'attribute' a::Name '=' e::StrategyExpr_c 'occurs' 'on
   forwards to
     appendAGDcl(
       totalStrategyAttributeDcl($1, $2, a, $4, e, $9, location=a.location),
-      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location)), qs.qnames),
+      makeOccursDclsHelp($1.location, qNameWithTL(qNameId(a, location=a.location), botlNone(location=top.location), location=top.location), qs.qnames),
       location=top.location);
 }

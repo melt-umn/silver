@@ -1,6 +1,7 @@
 grammar silver:compiler:extension:convenience;
 
-nonterminal QNameWithTL with unparse,qnwtQN, qnwtTL;
+-- TODO: Make me a record! Don't name things qnwtQN or qnwtTL!
+nonterminal QNameWithTL with location, unparse, qnwtQN, qnwtTL;
 synthesized attribute qnwtQN :: QName;
 synthesized attribute qnwtTL :: BracketedOptTypeExprs;
 
@@ -17,8 +18,8 @@ top::QNameWithTL ::= qn::QName tl::BracketedOptTypeExprs
    list just one, then it goes to the ordinary, non-convenience extension form.
  -}
  
-nonterminal QNames2 with unparse, qnames;
-nonterminal QNames with unparse, qnames;
+nonterminal QNames2 with location, unparse, qnames;
+nonterminal QNames  with location, unparse, qnames;
 
 synthesized attribute qnames :: [QNameWithTL];
 
