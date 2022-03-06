@@ -254,6 +254,24 @@ Boolean ::= str::String
   "java" : return "common.Util.isUpper(%str%.toString())";
 }
 
+@{- Converts a string to lower-case. -}
+function toLower
+String ::= str::String
+{
+  return error("Not Yet Implemented: toLower");
+} foreign {
+  "java" : return "new common.StringCatter(%str%.toString().toLowerCase())";
+}
+
+@{- Converts a string to upper-case. -}
+function toUpper
+String ::= str::String
+{
+  return error("Not Yet Implemented: toUpper");
+} foreign {
+  "java" : return "new common.StringCatter(%str%.toString().toUpperCase())";
+}
+
 @{--
  - Safely converts a string to an integer.
  -
