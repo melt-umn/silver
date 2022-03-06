@@ -16,7 +16,7 @@ import silver:compiler:definition:flow:env only getNonforwardingProds;
 import silver:compiler:definition:type:syntax only typerepTypeExpr;
 import silver:compiler:modification:let_fix;
 
-import silver:util:cmdargs;
+import silver:util:cmdargs hiding name;
 
 terminal Case_kwd 'case' lexer classes {KEYWORD,RESERVED};
 terminal Of_kwd 'of' lexer classes {KEYWORD,RESERVED};

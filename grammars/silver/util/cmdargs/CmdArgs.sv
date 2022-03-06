@@ -20,32 +20,118 @@ synthesized attribute cmdRemaining :: [String];
   -}
 synthesized attribute cmdError :: Maybe<String>;
 
+@{-
+  - A specification of a flag for @link[interpretCmdArgs].
+  -
+  - This uses the annotations-as-record pattern; when a proper record extension
+  - is merged, this should use that instead.
+  -
+  - The `name` is the string that should be present in the arguments list in
+  - order for this flag to be recognized. In an example `-o` flag, it would be
+  - `"-o"`.
+  -
+  - The `paramString` is a string describing the parameters the flag takes, for
+  - use in the help text. In our running example, this might be
+  - `just("<file>")`. For flags that don't take an argument, this should be
+  - `nothing()`.
+  -
+  - The `help` is a string describing the usage of the flag. Typically, this is
+  - an English-language string that does *not* start with a capital letter, nor
+  - end with a period. Often the imperative voice is used (e.g. "place the
+  - output into <file>" rather than "the output file is <file>").
+  -
+  - The `flagParser` is the `Flag` value used to handle the flag.
+  -
+  - Putting these together, the `FlagSpec` for our example `-o` flag might look
+  - something like:
+  -
+  - ```silver
+  - flagSpec(name="-o", paramString=just("<file>"),
+  -   help="place the output into <file>", flagParser=option(outFlag))
+  - ```
+  -}
+nonterminal FlagSpec with name, paramString, help, flagParser;
+
+annotation name::String;
+annotation paramString::Maybe<String>;
+annotation help::String;
+annotation flagParser::Flag;
+
+@{- The constructor of FlagSpec values. -}
+production flagSpec
+this::FlagSpec ::=
+{}
 
 @{-
   - Produce a parsed list of arguments using the given flags from the given input
   -
-  - @param flags  A list of pairs of flag names (starting with hyphens) and the Flag for handling its parsing
+  - @param flags  A list of FlagSpecs
   - @param input  A list of strings, generally the commandline arguments
   - @return The parsed list of arguments
   - @warning The flag names in the flags parameter MUST start with a hyphen
   -}
 function interpretCmdArgs
-CmdArgs ::= flags::[Pair<String Flag>]  input::[String]
+CmdArgs ::= flags::[FlagSpec]  input::[String]
 {
-  local attribute l :: Maybe<Flag>;
-  l = lookup(head(input), flags);
-  
-  local attribute here :: Flag;
-  here = l.fromJust;
-  here.flagInput = input;
-  here.flagOriginal = interpretCmdArgs(flags, here.flagOutput);
+  local matchingFlagSpec::Maybe<FlagSpec> = lookup(
+    head(input),
+    map(\flag::FlagSpec -> (flag.name, flag), flags));
+
+  -- Partial! Only demand if matchingFlagSpec.isJust
+  local matchingFlag::Flag = matchingFlagSpec.fromJust.flagParser;
+  matchingFlag.flagInput = input;
+  matchingFlag.flagOriginal = interpretCmdArgs(flags, matchingFlag.flagOutput);
   
   return if null(input) then endCmdArgs([])
-         else if !l.isJust
+         else if !matchingFlagSpec.isJust
          then if startsWith("-", head(input))
               then errorCmdArgs("Unrecognized flag: " ++ head(input))
               else endCmdArgs(input)
-         else here.flagModified;
+         else matchingFlag.flagModified;
+}
+
+@{- Formats the --help text for the given FlagSpecs. -}
+function flagSpecsToHelpText
+String ::= flagSpecs::[FlagSpec]
+{
+  -- Output looks like (where _ = space, >>>> = tab):
+  --
+  -- __--flag1________>>>>flag1 help
+  -- __--flag2 <path>_>>>>flag2 help
+  --   \____________/\___/\________/
+  --       \            \         \
+  --        flag part    pad part  help part
+
+  local unpaddedFlagParts::[(String, FlagSpec)] =
+    map(\flagSpec::FlagSpec ->
+          ( flagSpec.name ++ mapOrElse("",
+                                       \paramString::String ->
+                                         " " ++ paramString,
+                                       flagSpec.paramString)
+          , flagSpec
+          ),
+        sortByKey(\flagSpec::FlagSpec -> flagSpec.name,
+                  flagSpecs));
+  local longestUnpaddedFlagPart::Integer =
+    foldl(max, 0,
+          map(\flagPartItem::(String, FlagSpec) -> length(flagPartItem.1),
+              unpaddedFlagParts));
+  local lines::[String] =
+    map(\flagPartItem::(String, FlagSpec) ->
+          -- Leading space
+          "  " ++
+          -- Basic flag part
+          flagPartItem.1 ++
+          -- Flag part padding
+          replicate(longestUnpaddedFlagPart - length(flagPartItem.1), " ") ++
+          -- Pad part
+          " \t" ++
+          -- Help part
+          flagPartItem.2.help ++
+          -- Trailing newline
+          "\n",
+        unpaddedFlagParts);
+   return implode("", lines);
 }
 
 @{--

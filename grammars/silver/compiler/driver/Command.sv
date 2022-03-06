@@ -112,10 +112,8 @@ top::CmdArgs ::= rest::CmdArgs
 function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  production attribute flags::[Pair<String Flag>] with ++;
+  production attribute flags::[FlagSpec] with ++;
   flags := [];
-  production attribute flagdescs::[String] with ++;
-  flagdescs := [];
 
   -- General rules of thumb:
   --  Use -- as your prefix
@@ -123,52 +121,64 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   -- e.g. -I my/grammars is obvious because it refers to a location to include.
 
   flags <-
-    [pair("-I",        option(includeFlag)),
-     pair("-o",        option(outFlag)),
-     pair("-G",        option(genFlag)),
-     pair("--silver-home", option(homeFlag)),
-     pair("--version", flag(versionFlag)),
-     pair("--clean",   flag(cleanFlag)),
-     pair("--dont-analyze", flag(nobindingFlag)),
-     pair("--warn-error", flag(warnErrorFlag)),
-     pair("--no-origins", flag(noOriginsFlag)),
-     pair("--force-origins", flag(forceOriginsFlag)),
-     pair("--no-redex", flag(noRedexFlag)),
-     pair("--tracing-origins", flag(tracingOriginsFlag))
-    ];
-  -- Always start with \t, name options descriptively in <>, do not end with \n!
-  flagdescs <- 
-    ["\t-I <path>  : path to grammars (GRAMMAR_PATH)",
-     "\t-o <file>  : name of binary file",
-     "\t--version  : display version",
-     "\t--clean  : overwrite interface files",
-     "\t-G <path>  : Location to store generate files (SILVER_GEN)",
-     "\t--warn-error  : treat warnings as errors",
-     "\t--no-origins  : treat all nonterminals as un`tracked`",
-     "\t--force-origins  : treat all nonterminals as `tracked`",
-     "\t--no-redex  : do not collect redex information",
-     "\t--tracing-origins  : attach source locations as origin notes to trace control flow"
+    [ flagSpec(name="-I", paramString=just("<path>"),
+        help="path to grammars (GRAMMAR_PATH)",
+        flagParser=option(includeFlag))
+    , flagSpec(name="-o", paramString=just("<file>"),
+        help="name of binary file",
+        flagParser=option(outFlag))
+    , flagSpec(name="-G", paramString=just("<path>"),
+        help="location to store generate files (SILVER_GEN)",
+        flagParser=option(genFlag))
+    , flagSpec(name="--silver-home", paramString=nothing(),
+        help="set the location of the silver repo (SILVER_HOME)",
+        flagParser=option(homeFlag))
+    , flagSpec(name="--version", paramString=nothing(),
+        help="display version",
+        flagParser=flag(versionFlag))
+    , flagSpec(name="--clean", paramString=nothing(),
+        help="overwrite interface files",
+        flagParser=flag(cleanFlag))
+    , flagSpec(name="--dont-analyze", paramString=nothing(),
+        help="", -- TODO
+        flagParser=flag(nobindingFlag))
+    , flagSpec(name="--warn-error", paramString=nothing(),
+        help="treat warnings as errors",
+        flagParser=flag(warnErrorFlag))
+    , flagSpec(name="--no-origins", paramString=nothing(),
+        help="treat all nonterminals as un`tracked`",
+        flagParser=flag(noOriginsFlag))
+    , flagSpec(name="--force-origins", paramString=nothing(),
+        help="treat all nonterminals as tracked",
+        flagParser=flag(forceOriginsFlag))
+    , flagSpec(name="--no-redex", paramString=nothing(),
+        help="do not collect redex information",
+        flagParser=flag(noRedexFlag))
+    , flagSpec(name="--tracing-origins", paramString=nothing(),
+        help="attach source locations as origin notes to trace control flow",
+        flagParser=flag(tracingOriginsFlag))
     ];
   
   local usage :: String = 
-    "Usage: silver [options] [grammar:to:build ...]\n\nFlag options:\n" ++ implode("\n", sort(flagdescs)) ++ "\n";
+    s"Usage: silver [options] [grammar:to:build ...]\n\nFlag options:\n" ++
+    flagSpecsToHelpText(flags);
   
   -- Parse the command line
-  production a :: CmdArgs = interpretCmdArgs(flags, args);
+  local cmdArgs :: CmdArgs = interpretCmdArgs(flags, args);
   
   production attribute errors :: [String] with ++;
-  errors := if a.cmdError.isJust then [a.cmdError.fromJust] else [];
+  errors := if cmdArgs.cmdError.isJust then [cmdArgs.cmdError.fromJust] else [];
   
   errors <- 
-    if length(a.outName) > 1 then ["Multiple options given for -o flag: " ++ implode(" ", a.outName)]
-    else if length(a.genLocation) > 1 then ["Multiple options given for -G flag: " ++ implode(" ", a.genLocation)]
-    else if length(a.silverHomeOption) > 1 then ["Multiple options given for --silver-home flag: " ++ implode(" ", a.silverHomeOption)]
-    else if a.noOrigins && a.forceOrigins then ["Can't specify --no-origins and --force-origins"]
+    if length(cmdArgs.outName) > 1 then ["Multiple options given for -o flag: " ++ implode(" ", cmdArgs.outName)]
+    else if length(cmdArgs.genLocation) > 1 then ["Multiple options given for -G flag: " ++ implode(" ", cmdArgs.genLocation)]
+    else if length(cmdArgs.silverHomeOption) > 1 then ["Multiple options given for --silver-home flag: " ++ implode(" ", cmdArgs.silverHomeOption)]
+    else if cmdArgs.noOrigins && cmdArgs.forceOrigins then ["Can't specify --no-origins and --force-origins"]
     else [];
   
   return if !null(errors)
          then left(implode("\n", errors) ++ "\n\n" ++ usage)
-         else right(a);
+         else right(cmdArgs);
 }
 
 -- This uses Either backwards. TODO: flip order? "right is correct" also TODO: use RunError?

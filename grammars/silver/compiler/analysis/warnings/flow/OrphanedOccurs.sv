@@ -16,7 +16,10 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--warn-orphaned", flag(warnOrphanedFlag))];
+  flags <- [
+    flagSpec(name="--warn-orphaned", paramString=nothing(),
+      help="warn about orphaned attribute occurrences",
+      flagParser=flag(warnOrphanedFlag))];
 }
 
 aspect production attributionDcl

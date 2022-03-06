@@ -14,6 +14,7 @@ synthesized attribute noJavaGeneration :: Boolean occurs on CmdArgs;
 synthesized attribute buildSingleJar :: Boolean occurs on CmdArgs;
 synthesized attribute relativeJar :: Boolean occurs on CmdArgs;
 synthesized attribute includeRTJars :: [String] occurs on CmdArgs;
+-- TODO: Should this be a Maybe?
 synthesized attribute buildXmlLocation :: [String] occurs on CmdArgs;
 
 aspect production endCmdArgs
@@ -25,7 +26,7 @@ top::CmdArgs ::= _
   top.includeRTJars = [];
   top.buildXmlLocation = [];
 }
-abstract production xjFlag
+abstract production dontTranslateFlag
 top::CmdArgs ::= rest::CmdArgs
 {
   top.noJavaGeneration = true;
@@ -59,14 +60,25 @@ top::CmdArgs ::= s::String rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--dont-translate", flag(xjFlag)),
-            pair("--onejar", flag(onejarFlag)),
-            pair("--one-jar", flag(onejarFlag)),
-            pair("--relative-jar", flag(relativejarFlag)),
-            pair("--include-jar", option(includeRTJarFlag)),
-            pair("--build-xml-location", option(buildXmlFlag))
+  flags <- [ flagSpec(name="--dont-translate", paramString=nothing(),
+               help="check for errors without producing Java code",
+               flagParser=flag(dontTranslateFlag))
+           , flagSpec(name="--onejar", paramString=nothing(),
+               help="a typo of --one-jar",
+               flagParser=flag(onejarFlag))
+           , flagSpec(name="--one-jar", paramString=nothing(),
+               help="include runtime libraries in the JAR",
+               flagParser=flag(onejarFlag))
+           , flagSpec(name="--relative-jar", paramString=nothing(),
+               help="assume runtime libraries will be in the same directory as the JAR",
+               flagParser=flag(relativejarFlag))
+           , flagSpec(name="--include-jar", paramString=nothing(),
+               help="links to an additional JAR",
+               flagParser=option(includeRTJarFlag))
+           , flagSpec(name="--build-xml-location", paramString=nothing(),
+               help="sets the path the Ant build.xml will be saved to. Used by Eclipse",
+               flagParser=option(buildXmlFlag))
            ];
-  flagdescs <- ["\t--one-jar  : include runtime libraries in the jar"];
 }
 aspect production compilation
 top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv

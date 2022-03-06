@@ -175,6 +175,20 @@ Maybe<a> ::= l::Maybe<a> r::Maybe<a>
 }
 
 @{--
+  - The eliminator for Maybe. Runs ifJust on the wrapped value if there is one,
+  - otherwise returns ifNothing.
+  -}
+function mapOrElse
+b ::= ifNothing::b  ifJust::(b ::= a)  value::Maybe<a>
+{
+  return
+    case value of
+    | just(x)   -> ifJust(x)
+    | nothing() -> ifNothing
+    end;
+}
+
+@{--
  - Maybe cons a value to a list, or not.
  -
  - @param h  If a value, the value to cons onto the list.

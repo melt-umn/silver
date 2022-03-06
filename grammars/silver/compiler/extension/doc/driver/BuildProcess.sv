@@ -61,14 +61,18 @@ top::CmdArgs ::= loc::String rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--doc", flag(docFlag)),
-            pair("--print-undoc", flag(printUndocFlag)),
-            pair("--count-undoc", flag(countUndocFlag)),
-            pair("--doc-out", option(docOutFlag))];
-  flagdescs <- ["\t--doc       : build the documentation",
-                "\t--count-undoc : print names of undocumented items",
-                "\t--print-undoc : print names of undocumented items",
-                "\t--doc-out   : output location for documentation"];
+  flags <- [ flagSpec(name="--doc", paramString=nothing(),
+               help="build the documentation",
+               flagParser=flag(docFlag))
+           , flagSpec(name="--print-undoc", paramString=nothing(),
+               help="print names of undocumented items",
+               flagParser=flag(printUndocFlag))
+           , flagSpec(name="--count-undoc", paramString=nothing(),
+               help="print names of undocumented items",
+               flagParser=flag(countUndocFlag))
+           , flagSpec(name="--doc-out", paramString=nothing(),
+               help="output location for documentation",
+               flagParser=option(docOutFlag))];
 }
 
 aspect production compilation

@@ -28,8 +28,10 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--copperdump", flag(copperdumpFlag))];
-  flagdescs <- ["\t--copperdump  : force Copper to dump parse table information"];
+  flags <- [
+    flagSpec(name="--copperdump", paramString=nothing(),
+      help="force Copper to dump parse table information",
+      flagParser=flag(copperdumpFlag))];
 }
 
 {--------------------------------------}
@@ -52,8 +54,10 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--copper-xml-dump", flag(copperXmlDumpFlag))];
-  flagdescs <- ["\t--copper-xml-dump : dump the specification being passed to Copper as XML"];
+  flags <- [
+    flagSpec(name="--copper-xml-dump", paramString=nothing(),
+      help="dump the specification being passed to Copper as XML",
+      flagParser=flag(copperXmlDumpFlag))];
 }
 
 {--------------------------------}
