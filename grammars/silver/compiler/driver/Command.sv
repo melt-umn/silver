@@ -121,40 +121,40 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   -- e.g. -I my/grammars is obvious because it refers to a location to include.
 
   flags <-
-    [ flagSpec(name="-I", paramString=" <path>",
+    [ flagSpec(name="-I", paramString=just("<path>"),
         help="path to grammars (GRAMMAR_PATH)",
         flagParser=option(includeFlag))
-    , flagSpec(name="-o", paramString=" <file>",
+    , flagSpec(name="-o", paramString=just("<file>"),
         help="name of binary file",
         flagParser=option(outFlag))
-    , flagSpec(name="-G", paramString=" <path>",
+    , flagSpec(name="-G", paramString=just("<path>"),
         help="location to store generate files (SILVER_GEN)",
         flagParser=option(genFlag))
-    , flagSpec(name="--silver-home", paramString="",
+    , flagSpec(name="--silver-home", paramString=nothing(),
         help="set the location of the silver repo (SILVER_HOME)",
         flagParser=option(homeFlag))
-    , flagSpec(name="--version", paramString="",
+    , flagSpec(name="--version", paramString=nothing(),
         help="display version",
         flagParser=flag(versionFlag))
-    , flagSpec(name="--clean", paramString="",
+    , flagSpec(name="--clean", paramString=nothing(),
         help="overwrite interface files",
         flagParser=flag(cleanFlag))
-    , flagSpec(name="--dont-analyze", paramString="",
+    , flagSpec(name="--dont-analyze", paramString=nothing(),
         help="", -- TODO
         flagParser=flag(nobindingFlag))
-    , flagSpec(name="--warn-error", paramString="",
+    , flagSpec(name="--warn-error", paramString=nothing(),
         help="treat warnings as errors",
         flagParser=flag(warnErrorFlag))
-    , flagSpec(name="--no-origins", paramString="",
+    , flagSpec(name="--no-origins", paramString=nothing(),
         help="treat all nonterminals as un`tracked`",
         flagParser=flag(noOriginsFlag))
-    , flagSpec(name="--force-origins", paramString="",
+    , flagSpec(name="--force-origins", paramString=nothing(),
         help="treat all nonterminals as tracked",
         flagParser=flag(forceOriginsFlag))
-    , flagSpec(name="--no-redex", paramString="",
+    , flagSpec(name="--no-redex", paramString=nothing(),
         help="do not collect redex information",
         flagParser=flag(noRedexFlag))
-    , flagSpec(name="--tracing-origins", paramString="",
+    , flagSpec(name="--tracing-origins", paramString=nothing(),
         help="attach source locations as origin notes to trace control flow",
         flagParser=flag(tracingOriginsFlag))
     ];

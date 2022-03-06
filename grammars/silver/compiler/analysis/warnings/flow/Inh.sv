@@ -19,7 +19,7 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [
-    flagSpec(name="--warn-missing-inh", paramString="",
+    flagSpec(name="--warn-missing-inh", paramString=nothing(),
       help="warn about any of several MWDA violations involving demanding inhs",
       flagParser=flag(warnMissingInhFlag))];
 }

@@ -61,16 +61,16 @@ top::CmdArgs ::= loc::String rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [ flagSpec(name="--doc", paramString="",
+  flags <- [ flagSpec(name="--doc", paramString=nothing(),
                help="build the documentation",
                flagParser=flag(docFlag))
-           , flagSpec(name="--print-undoc", paramString="",
+           , flagSpec(name="--print-undoc", paramString=nothing(),
                help="print names of undocumented items",
                flagParser=flag(printUndocFlag))
-           , flagSpec(name="--count-undoc", paramString="",
+           , flagSpec(name="--count-undoc", paramString=nothing(),
                help="print names of undocumented items",
                flagParser=flag(countUndocFlag))
-           , flagSpec(name="--doc-out", paramString="",
+           , flagSpec(name="--doc-out", paramString=nothing(),
                help="output location for documentation",
                flagParser=option(docOutFlag))];
 }

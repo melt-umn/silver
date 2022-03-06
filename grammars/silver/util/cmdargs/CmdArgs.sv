@@ -30,9 +30,10 @@ synthesized attribute cmdError :: Maybe<String>;
   - order for this flag to be recognized. In an example `-o` flag, it would be
   - `"-o"`.
   -
-  - The `paramString` is a possibly empty string describing the params the flag
-  - takes, for use in the help text. In our running example, this might be
-  - `" <file>"` (note the leading space).
+  - The `paramString` is a string describing the parameters the flag takes, for
+  - use in the help text. In our running example, this might be
+  - `just("<file>")`. For flags that don't take an argument, this should be
+  - `nothing()`.
   -
   - The `help` is a string describing the usage of the flag. Typically, this is
   - an English-language string that does *not* start with a capital letter, nor
@@ -45,14 +46,14 @@ synthesized attribute cmdError :: Maybe<String>;
   - something like:
   -
   - ```silver
-  - flagSpec(name="-o", paramString=" <file>", help="place the output into <file>",
-  -   flagParser=option(outFlag))
+  - flagSpec(name="-o", paramString=just("<file>"),
+  -   help="place the output into <file>", flagParser=option(outFlag))
   - ```
   -}
 nonterminal FlagSpec with name, paramString, help, flagParser;
 
 annotation name::String;
-annotation paramString::String;
+annotation paramString::Maybe<String>;
 annotation help::String;
 annotation flagParser::Flag;
 
@@ -93,7 +94,7 @@ CmdArgs ::= flags::[FlagSpec]  input::[String]
 function flagSpecsToHelpText
 String ::= flagSpecs::[FlagSpec]
 {
-  -- Output looks like (where _ = space, >>>>=tab):
+  -- Output looks like (where _ = space, >>>> = tab):
   --
   -- __--flag1________>>>>flag1 help
   -- __--flag2 <path>_>>>>flag2 help
@@ -102,7 +103,13 @@ String ::= flagSpecs::[FlagSpec]
   --        flag part    pad part  help part
 
   local unpaddedFlagParts::[(String, FlagSpec)] =
-    map(\flagSpec::FlagSpec -> (flagSpec.name ++ flagSpec.paramString, flagSpec),
+    map(\flagSpec::FlagSpec ->
+          ( flagSpec.name ++ mapOrElse("",
+                                       \paramString::String ->
+                                         " " ++ paramString,
+                                       flagSpec.paramString)
+          , flagSpec
+          ),
         sortByKey(\flagSpec::FlagSpec -> flagSpec.name,
                   flagSpecs));
   local longestUnpaddedFlagPart::Integer =

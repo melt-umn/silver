@@ -60,22 +60,22 @@ top::CmdArgs ::= s::String rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [ flagSpec(name="--dont-translate", paramString="",
+  flags <- [ flagSpec(name="--dont-translate", paramString=nothing(),
                help="check for errors without producing Java code",
                flagParser=flag(dontTranslateFlag))
-           , flagSpec(name="--onejar", paramString="",
+           , flagSpec(name="--onejar", paramString=nothing(),
                help="a typo of --one-jar",
                flagParser=flag(onejarFlag))
-           , flagSpec(name="--one-jar", paramString="",
+           , flagSpec(name="--one-jar", paramString=nothing(),
                help="include runtime libraries in the JAR",
                flagParser=flag(onejarFlag))
-           , flagSpec(name="--relative-jar", paramString="",
+           , flagSpec(name="--relative-jar", paramString=nothing(),
                help="assume runtime libraries will be in the same directory as the JAR",
                flagParser=flag(relativejarFlag))
-           , flagSpec(name="--include-jar", paramString="",
+           , flagSpec(name="--include-jar", paramString=nothing(),
                help="links to an additional JAR",
                flagParser=option(includeRTJarFlag))
-           , flagSpec(name="--build-xml-location", paramString="",
+           , flagSpec(name="--build-xml-location", paramString=nothing(),
                help="sets the path the Ant build.xml will be saved to. Used by Eclipse",
                flagParser=option(buildXmlFlag))
            ];

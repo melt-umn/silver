@@ -17,7 +17,7 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [
-    flagSpec(name="--warn-missing-syn", paramString="",
+    flagSpec(name="--warn-missing-syn", paramString=nothing(),
       help="warn about missing synthesized equations",
       flagParser=flag(warnMissingSynFlag))];
 }

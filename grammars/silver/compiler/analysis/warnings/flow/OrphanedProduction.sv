@@ -17,7 +17,7 @@ aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
   flags <- [
-    flagSpec(name="--warn-fwd", paramString="",
+    flagSpec(name="--warn-fwd", paramString=nothing(),
       help="warn about orphaned productions",
       flagParser=flag(warnFwdFlag))];
 }
