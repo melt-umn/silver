@@ -43,6 +43,7 @@ exports silver:compiler:extension:doc;
 exports silver:compiler:extension:easyterminal;
 exports silver:compiler:extension:implicit_monads;
 exports silver:compiler:extension:patternmatching;
+exports silver:compiler:extension:records;
 exports silver:compiler:extension:regex;
 exports silver:compiler:extension:rewriting;
 exports silver:compiler:extension:silverconstruction;
