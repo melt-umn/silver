@@ -13,8 +13,8 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [("--warn-all",
-             just("--warn-all                 \tenable all warnings"),
-             flag(warnAllFlag))];
+  flags <- [flagSpec(name="--warn-all", paramString="",
+              help="enable all warnings",
+              flagParser=flag(warnAllFlag))];
 }
 

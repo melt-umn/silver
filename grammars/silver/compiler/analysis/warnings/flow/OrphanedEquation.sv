@@ -18,9 +18,10 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [("--warn-eqdef",
-             just("--warn-eqdef               \twarn about orphaned equations"),
-             flag(warnEqdefFlag))];
+  flags <- [
+    flagSpec(name="--warn-eqdef", paramString="",
+      help="warn about orphaned equations",
+      flagParser=flag(warnEqdefFlag))];
 }
 
 aspect production synthesizedAttributeDef

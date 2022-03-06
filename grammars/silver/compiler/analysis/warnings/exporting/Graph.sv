@@ -24,9 +24,10 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [("--dump-import-graph",
-             just("--dump-import-graph        \tdump a graph of dependencies between grammars as a Graphviz file"),
-             flag(dumpDepGraphFlag))];
+  flags <- [
+    flagSpec(name="--dump-import-graph", paramString="",
+      help="dump a graph of dependencies between grammars as a Graphviz file",
+      flagParser=flag(dumpDepGraphFlag))];
   -- not omitting from descriptions deliberately!
 }
 aspect production compilation

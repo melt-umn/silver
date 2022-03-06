@@ -112,7 +112,7 @@ top::CmdArgs ::= rest::CmdArgs
 function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  production attribute flags::[(String, Maybe<String>, Flag)] with ++;
+  production attribute flags::[FlagSpec] with ++;
   flags := [];
 
   -- General rules of thumb:
@@ -121,55 +121,50 @@ Either<String  Decorated CmdArgs> ::= args::[String]
   -- e.g. -I my/grammars is obvious because it refers to a location to include.
 
   flags <-
-    [("-I",
-      just("-I <path>                  \tpath to grammars (GRAMMAR_PATH)"),
-      option(includeFlag)),
-     ("-o",
-      just("-o <file>                  \tname of binary file"),
-      option(outFlag)),
-     ("-G",
-      just("-G <path>                  \tlocation to store generate files (SILVER_GEN)"),
-      option(genFlag)),
-     ("--silver-home", nothing(), option(homeFlag)),
-     ("--version",
-      just("--version                  \tdisplay version"),
-      flag(versionFlag)),
-     ("--clean",
-      just("--clean                    \toverwrite interface files"),
-      flag(cleanFlag)),
-     ("--dont-analyze", nothing(), flag(nobindingFlag)),
-     ("--warn-error",
-      just("--warn-error               \ttreat warnings as errors"),
-      flag(warnErrorFlag)),
-     ("--no-origins",
-      just("--no-origins               \ttreat all nonterminals as un`tracked`"),
-      flag(noOriginsFlag)),
-     ("--force-origins",
-      just("--force-origins            \ttreat all nonterminals as `tracked`"),
-      flag(forceOriginsFlag)),
-     ("--no-redex",
-      just("--no-redex                 \tdo not collect redex information"),
-      flag(noRedexFlag)),
-     ("--tracing-origins",
-      just("--tracing-origins          \tattach source locations as origin notes to trace control flow"),
-      flag(tracingOriginsFlag))
+    [ flagSpec(name="-I", paramString=" <path>",
+        help="path to grammars (GRAMMAR_PATH)",
+        flagParser=option(includeFlag))
+    , flagSpec(name="-o", paramString=" <file>",
+        help="name of binary file",
+        flagParser=option(outFlag))
+    , flagSpec(name="-G", paramString=" <path>",
+        help="location to store generate files (SILVER_GEN)",
+        flagParser=option(genFlag))
+    , flagSpec(name="--silver-home", paramString="",
+        help="set the location of the silver repo (SILVER_HOME)",
+        flagParser=option(homeFlag))
+    , flagSpec(name="--version", paramString="",
+        help="display version",
+        flagParser=flag(versionFlag))
+    , flagSpec(name="--clean", paramString="",
+        help="overwrite interface files",
+        flagParser=flag(cleanFlag))
+    , flagSpec(name="--dont-analyze", paramString="",
+        help="", -- TODO
+        flagParser=flag(nobindingFlag))
+    , flagSpec(name="--warn-error", paramString="",
+        help="treat warnings as errors",
+        flagParser=flag(warnErrorFlag))
+    , flagSpec(name="--no-origins", paramString="",
+        help="treat all nonterminals as un`tracked`",
+        flagParser=flag(noOriginsFlag))
+    , flagSpec(name="--force-origins", paramString="",
+        help="treat all nonterminals as tracked",
+        flagParser=flag(forceOriginsFlag))
+    , flagSpec(name="--no-redex", paramString="",
+        help="do not collect redex information",
+        flagParser=flag(noRedexFlag))
+    , flagSpec(name="--tracing-origins", paramString="",
+        help="attach source locations as origin notes to trace control flow",
+        flagParser=flag(tracingOriginsFlag))
     ];
   
-  local flagDescs :: String =
-    flatMap(\desc::String -> s"\t${desc}\n",
-            sort(filterMap(\flag::(String, Maybe<String>, Flag) -> flag.2, flags)));
-  local undocumentedFlags :: String =
-    flatMap(\flag::(String, Maybe<String>, Flag) -> s"\t${flag.1}\n",
-            sortByKey(\flag::(String, Maybe<String>, Flag) -> flag.1,
-                      filter(\flag::(String, Maybe<String>, Flag) -> !flag.2.isJust, flags)));
   local usage :: String = 
-    s"Usage: silver [options] [grammar:to:build ...]\n\nFlag options:\n${flagDescs}\nUndocumented flags:\n${undocumentedFlags}";
+    s"Usage: silver [options] [grammar:to:build ...]\n\nFlag options:\n" ++
+    flagSpecsToHelpText(flags);
   
   -- Parse the command line
-  local cmdArgs :: CmdArgs =
-    interpretCmdArgs(map(\flag::(String, Maybe<String>, Flag) -> (flag.1, flag.3),
-                         flags),
-                     args);
+  local cmdArgs :: CmdArgs = interpretCmdArgs(flags, args);
   
   production attribute errors :: [String] with ++;
   errors := if cmdArgs.cmdError.isJust then [cmdArgs.cmdError.fromJust] else [];

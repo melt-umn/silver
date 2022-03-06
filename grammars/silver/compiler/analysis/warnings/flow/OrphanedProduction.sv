@@ -16,9 +16,10 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [("--warn-fwd",
-             just("--warn-fwd                 \twarn about orphaned productions"),
-             flag(warnFwdFlag))];
+  flags <- [
+    flagSpec(name="--warn-fwd", paramString="",
+      help="warn about orphaned productions",
+      flagParser=flag(warnFwdFlag))];
 }
 
 aspect production productionDcl

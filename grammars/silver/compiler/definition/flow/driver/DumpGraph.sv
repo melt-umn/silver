@@ -22,10 +22,14 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [("--dump-flow-graph",
-             just("--dump-flow-graph          \twrite the flowtypes out to several Graphviz files"),
-             flag(dumpFlowGraphFlag)),
-            ("--dump-flow-graphs", nothing(), flag(dumpFlowGraphFlag))]; -- Ted mistyped this a lot.
+  flags <- [ flagSpec(name="--dump-flow-graph", paramString="",
+               help="write the flowtypes out to several Graphviz files",
+               flagParser=flag(dumpFlowGraphFlag))
+             -- Ted mistyped this a lot.
+           , flagSpec(name="--dump-flow-graphs", paramString="",
+               help="a typo of --dump-flow-graph",
+               flagParser=flag(dumpFlowGraphFlag))
+           ];
   -- not omitting descriptions deliberately!
 }
 
