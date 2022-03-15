@@ -1,5 +1,7 @@
 package common;
 
+import common.exceptions.TraceException;
+
 /**
  * Node represents undecorated nodes.  That is, we have children, but no inherited attributes, yet.
  * 
@@ -54,6 +56,20 @@ public abstract class Node implements Decorable, Typed {
 	 */
 	public DecoratedNode decorate() {
 		return decorate(TopNode.singleton, (Lazy[])null);
+	}
+	
+	private Node undecoratedValue = null;
+	public final Node undecorate(final DecoratedNode context) {
+		if (undecoratedValue != null) {
+			return undecoratedValue;
+		} else {
+			try {
+				undecoratedValue = evalUndecorate(context);
+			} catch(Throwable t) {
+				throw new TraceException("While undecorating " + context.getDebugID(), t);
+			}
+			return undecoratedValue;
+		}
 	}
 
 	// These methods are to be provided by the *nonterminal*
@@ -181,7 +197,7 @@ public abstract class Node implements Decorable, Typed {
 	/**
 	 * Reports whether or not this production forwards.
 	 * 
-	 * @return true is {@link #evalForward} can be called, false if that immediately throws.
+	 * @return true if {@link #evalForward} can be called, false if that immediately throws.
 	 */
 	public abstract boolean hasForward();
 	
@@ -193,6 +209,14 @@ public abstract class Node implements Decorable, Typed {
 	 * @return The Node that context forwards to.
 	 */
 	public abstract Node evalForward(final DecoratedNode context);
+	
+	/**
+	 * Compute the Node that this Node undecorates to.
+	 *
+	 * @param context The DN of this node, to use to evaluate the undecorate equation.
+	 * @return The Node that context undecorates to.
+	 */
+	public abstract Node evalUndecorate(final DecoratedNode context);
 
 	/**
 	 * Get any overridden attributes for this node's forward.  (e.g. forwarding with { inh = foo; })

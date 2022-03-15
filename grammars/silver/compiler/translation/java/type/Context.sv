@@ -184,7 +184,7 @@ top::InstDclInfo ::= fntc::String ty::Type tvs::[TyVar]
 aspect production sigConstraintDcl
 top::InstDclInfo ::= fntc::String ty::Type ns::NamedSignature
 {
-  top.transContext = s"((${makeProdName(ns.fullName)})(context.undecorate())).${makeConstraintDictName(fntc, ty, ns.freeVariables)}";
+  top.transContext = s"((${makeProdName(ns.fullName)})(context.getNode())).${makeConstraintDictName(fntc, ty, ns.freeVariables)}";
 }
 aspect production currentInstDcl
 top::InstDclInfo ::= fntc::String ty::Type
@@ -205,7 +205,7 @@ top::InstDclInfo ::= ty::Type tvs::[TyVar]
 aspect production typeableSigConstraintDcl
 top::InstDclInfo ::= ty::Type ns::NamedSignature
 {
-  top.transContext = s"((${makeProdName(ns.fullName)})(context.undecorate())).${makeTypeableName(ty, ns.freeVariables)}"; 
+  top.transContext = s"((${makeProdName(ns.fullName)})(context.getNode())).${makeTypeableName(ty, ns.freeVariables)}"; 
 }
 aspect production typeableSuperDcl
 top::InstDclInfo ::= baseDcl::InstDclInfo

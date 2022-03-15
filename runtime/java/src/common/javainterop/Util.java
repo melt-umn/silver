@@ -15,11 +15,11 @@ import common.*;
 public final class Util {
 
 	public static String productionName(DecoratedNode n) {
-		return n.undecorate().getName();
+		return n.getNode().getName();
 	}
 	
 	public static int numberOfChildren(DecoratedNode n) {
-		return n.undecorate().getNumberOfChildren();
+		return n.getNode().getNumberOfChildren();
 	}
 	
 	private static String[] getOccursInhFor(Node n) {
@@ -31,7 +31,7 @@ public final class Util {
 	}
 	
 	public static String[] inhAttributesOccurring(DecoratedNode dn) {
-		return getOccursInhFor(dn.undecorate());
+		return getOccursInhFor(dn.getNode());
 	}
 
 	private static String[] getOccursSynFor(Node n) {
@@ -43,11 +43,11 @@ public final class Util {
 	}
 
 	public static String[] synAttributesOccurring(DecoratedNode dn) {
-		return getOccursSynFor(dn.undecorate());
+		return getOccursSynFor(dn.getNode());
 	}
 
 	public static int indexOfSynOn(String syn, DecoratedNode dn) {
-		return indexOfSynOn(syn, dn.undecorate());
+		return indexOfSynOn(syn, dn.getNode());
 	}
 	public static int indexOfSynOn(String syn, Node n) {
 		String[] so = getOccursSynFor(n);
@@ -56,7 +56,7 @@ public final class Util {
 	}
 
 	public static int indexOfInhOn(String inh, DecoratedNode dn) {
-		return indexOfInhOn(inh, dn.undecorate());
+		return indexOfInhOn(inh, dn.getNode());
 	}
 	public static int indexOfInhOn(String inh, Node n) {
 		String[] io = getOccursInhFor(n);

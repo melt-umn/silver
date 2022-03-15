@@ -26,6 +26,11 @@ public abstract class FunctionNode extends Node {
 	}
 
 	@Override
+	public final Node evalUndecorate(final DecoratedNode context) {
+		return this;
+	}
+
+	@Override
 	public final boolean hasForward() {
 		// Functions should never even have this consulted. Ever.
 		throw new SilverInternalError("Functions do not forward!");

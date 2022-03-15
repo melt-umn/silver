@@ -55,7 +55,7 @@ public abstract class CollectionAttribute implements Lazy {
 		}
 		@Override
 		public Object eval(final DecoratedNode context) {
-			final Node un = context.undecorate();
+			final Node un = context.getNode();
 			if(un.hasForward()) {
 				try {
 					return context.forward().synthesized(index);

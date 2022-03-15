@@ -28,7 +28,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     if null(body.errors ++ ns.errors)
     && top.config.warnMissingInh
     -- Must be a forwarding production
-    && !null(body.uniqueSignificantExpression)
+    && !null(body.forwardExpr)
     then flatMap(raiseImplicitFwdEqFlowTypes(top.config, top.location, lhsNt, fName, _, top.flowEnv, fwdFlowDeps, myFlow), hostSyns)
     else [];
 }

@@ -164,10 +164,10 @@ public class DecoratedNode implements Decorable, Typed {
 	//}
 
 	/**
-	 * @return The {@link Node} this decorates.
+	 * @return Turn this DecoratedNode back into an undecorated {@link Node}.
 	 */
 	public final Node undecorate() {
-		return self;
+		return self; // return self.undecorate(this);
 	}
 
 	/**
@@ -197,10 +197,21 @@ public class DecoratedNode implements Decorable, Typed {
 	}
 
 	/**
+	 * Accessor function to access the originally-decorated Node.
+	 * The Node returned by this function must never be decorated - 
+	 * e.g. for use by origin tracking or for debugging purposes.
+	 * One should typically use {@link undecorate} instead to avoid duplicating any unique children.
+	 * 
+	 * @return The {@link Node} this decorates.
+	 */
+	public final Node getNode() {
+		return self;
+	}
+
+	/**
 	 * Returns the child of this DecoratedNode, without potentially decorating it.
 	 * 
-	 * <p>Warning: While it is technically safe to mix calls to {@link #childAsIs} and {@link #childDecorated}
-	 * this behavior should not be relied upon, as it may change later.
+	 * <p>Warning: do not mix {@link #childAsIs} and {@link #childDecorated} on the same child!
 	 * 
 	 * @param child The number of the child to obtain.
 	 * @return The unmodified value of the child.
@@ -214,8 +225,7 @@ public class DecoratedNode implements Decorable, Typed {
 	 * Returns the child of this DecoratedNode, decorating it with whatever inherited attributes
 	 * this production has for it.
 	 * 
-	 * <p>Warning: While it is technically safe to mix calls to {@link #childAsIs} and {@link #childDecorated}
-	 * this behavior should not be relied upon, as it may change later.
+	 * <p>Warning: do not mix {@link #childAsIs} and {@link #childDecorated} on the same child!
 	 * 
 	 * @param child The number of the child to obtain.
 	 * @return The decorated value of the child.
@@ -535,6 +545,9 @@ public class DecoratedNode implements Decorable, Typed {
 			return childrenValues[child];
 		
 		return new Thunk<Object>(() -> this.childDecorated(child));
+	}
+	public final Object childUndecoratedLazy(final int child) {
+		return new Thunk<Object>(() -> this.childDecorated(child).undecorate());
 	}
 	public final Object childAsIsLazy(final int child) {
 		// childAsIs does not store in the childrenValues array, so...

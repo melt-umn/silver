@@ -58,6 +58,7 @@ terminal Terminal_kwd    'terminal'     lexer classes {KEYWORD,RESERVED};
 terminal Then_kwd        'then'         lexer classes {KEYWORD,RESERVED};
 terminal To_kwd          'to'           lexer classes {KEYWORD,RESERVED};
 terminal Type_t          'type'         lexer classes {KEYWORD};
+terminal Undecorates_t   'undecorates'  lexer classes {KEYWORD,RESERVED};
 terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED}, precedence = 3; -- Precedence to fix Decorated Decorated Expr with {}, which is a semantic error either way
 
 terminal AttachNote_kwd 'attachNote' lexer classes {BUILTIN,RESERVED};
