@@ -415,6 +415,25 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
     else [];
 }
 
+aspect production undecoratesTo
+top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
+{
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+
+  local transitiveDeps :: [FlowVertex] =
+    expandGraph(e.flowDeps, top.frame.flowGraph);
+  
+  local lhsInhDeps :: [String] = set:toList(onlyLhsInh(transitiveDeps));
+
+  top.errors <-
+    if top.config.warnMissingInh
+    then checkAllEqDeps(transitiveDeps, top.config, top.location, top.frame.fullName, top.flowEnv, top.env, collectAnonOrigin(e.flowDefs)) ++
+         if null(lhsInhDeps) then []
+         else [mwdaWrn(top.config, top.location, "Undecorates equation has dependencies on " ++ implode(", ", lhsInhDeps))]
+    else [];
+}
+
 aspect production localValueDef
 top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {

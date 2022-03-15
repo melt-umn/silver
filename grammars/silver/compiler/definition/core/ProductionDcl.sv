@@ -39,7 +39,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
 
-  top.defs := prodDef(top.grammarName, id.location, namedSig, length(body.uniqueSignificantExpression) > 0) ::
+  top.defs := prodDef(top.grammarName, id.location, namedSig, length(body.forwardExpr) > 0) ::
     if null(body.productionAttributes) then []
     else [prodOccursDef(top.grammarName, id.location, namedSig, body.productionAttributes)];
 
@@ -53,8 +53,13 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     else [];
   
   top.errors <-
-    if length(body.uniqueSignificantExpression) > 1
+    if length(body.forwardExpr) > 1
     then [err(top.location, "Production '" ++ id.name ++ "' has more than one forward declaration.")]
+    else [];
+  
+  top.errors <-
+    if length(body.undecorateExpr) > 1
+    then [err(top.location, "Production '" ++ id.name ++ "' has more than one undecorate declaration.")]
     else [];
 
   top.errors <-

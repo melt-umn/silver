@@ -24,7 +24,7 @@ synthesized attribute annoSigElems :: [String] occurs on NamedSignatureElements;
 synthesized attribute childSigElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoSigElem :: String occurs on NamedSignatureElement;
 -- "d_contextname"
-synthesized attribute contextRefElems :: [String] occurs on Contexts;
+synthesized attribute contextRefElems :: [String] occurs on NamedSignature, Contexts;
 synthesized attribute contextRefElem :: String occurs on Context;
 -- "c_signame"
 synthesized attribute childRefElems :: [String] occurs on NamedSignatureElements;
@@ -51,6 +51,7 @@ top::NamedSignature ::= fn::String ctxs::Contexts ie::NamedSignatureElements oe:
 {
   top.javaSignature = implode(", ", ctxs.contextSigElems ++ ie.childSigElems ++ np.annoSigElems);
   top.refInvokeTrans = implode(", ", ctxs.contextRefElems ++ ie.childRefElems ++ np.annoRefElems);
+  top.contextRefElems = ctxs.contextRefElems;
   top.childTypeVarElems = ie.childTypeVarElems;
   top.childStatic = ie.childStatic;
   top.childDecls = ie.childDecls;
@@ -77,6 +78,7 @@ top::NamedSignature ::= fn::String ctxs::Contexts ty::Type
   top.javaSignature = error("Translation shouldn't be demanded from global signature");
   top.refInvokeTrans = error("Translation shouldn't be demanded from global signature");
   top.contextRuntimeResolve := error("Translation shouldn't be demanded from global signature");
+  top.contextRefElems = error("Translation shouldn't be demanded from global signature");
   top.childTypeVarElems = error("Translation shouldn't be demanded from global signature");
   top.childStatic = error("Translation shouldn't be demanded from global signature");
   top.childDecls = error("Translation shouldn't be demanded from global signature");

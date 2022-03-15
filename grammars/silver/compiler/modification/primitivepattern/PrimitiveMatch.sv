@@ -115,9 +115,9 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
          then
           "while(true) {" ++
            "final " ++ scrutineeTransType ++ " scrutinee = scrutineeIter; " ++ -- our Lazy needs a final variable
-           "final common.Node scrutineeNode = scrutinee.undecorate(); " ++
+           "final common.Node scrutineeNode = scrutinee.getNode(); " ++
             pr.translation ++
-           "if(!scrutineeIter.undecorate().hasForward()) break;" ++ 
+           "if(!scrutineeIter.getNode().hasForward()) break;" ++ 
            "scrutineeIter = scrutineeIter.forward();" ++
           "}"
          else

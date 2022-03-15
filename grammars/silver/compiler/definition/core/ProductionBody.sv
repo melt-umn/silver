@@ -2,13 +2,13 @@ grammar silver:compiler:definition:core;
 
 nonterminal ProductionBody with
   config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, uniqueSignificantExpression;
+  productionAttributes, forwardExpr, returnExpr, undecorateExpr;
 nonterminal ProductionStmts with 
   config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, uniqueSignificantExpression, originRules;
+  productionAttributes, forwardExpr, returnExpr, undecorateExpr, originRules;
 nonterminal ProductionStmt with
   config, grammarName, env, location, unparse, errors, defs, frame, compiledGrammars,
-  productionAttributes, uniqueSignificantExpression, originRules;
+  productionAttributes, forwardExpr, returnExpr, undecorateExpr, originRules;
 
 flowtype decorate {frame, grammarName, compiledGrammars, config, env, flowEnv, downSubst}
   on ProductionBody;
@@ -42,10 +42,12 @@ autocopy attribute frame :: BlockContext;
  -}
 monoid attribute productionAttributes :: [Def];
 {--
- - Either the 'forward' expression, or the 'return' expression.
- - I gave it an obtuse name so it could easily be renamed in the future.
+ - The forward, return and undecorate expressions for production/function bodies.
+ - These are lists since we check for duplicates at the top level
  -}
-monoid attribute uniqueSignificantExpression :: [Decorated Expr];
+monoid attribute forwardExpr :: [Decorated Expr];
+monoid attribute returnExpr :: [Decorated Expr];
+monoid attribute undecorateExpr :: [Decorated Expr];
 
 {--
  - The attribute we're defining on a DefLHS.
@@ -57,7 +59,7 @@ inherited attribute defLHSattr :: Decorated QNameAttrOccur;
 synthesized attribute originRuleDefs :: [Decorated Expr] occurs on ProductionStmt, ProductionStmts;
 
 propagate errors on ProductionBody, ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr;
-propagate defs, productionAttributes, uniqueSignificantExpression on ProductionBody, ProductionStmts;
+propagate defs, productionAttributes, forwardExpr, returnExpr, undecorateExpr on ProductionBody, ProductionStmts;
 
 
 concrete production productionBody
@@ -92,7 +94,7 @@ top::ProductionStmt ::= h::ProductionStmt t::ProductionStmt
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
 
   top.originRuleDefs = h.originRuleDefs ++ t.originRuleDefs;
-  propagate defs, productionAttributes, uniqueSignificantExpression;
+  propagate defs, productionAttributes, forwardExpr, returnExpr, undecorateExpr;
 }
 
 abstract production errorProductionStmt
@@ -110,7 +112,9 @@ top::ProductionStmt ::=
   -- as is usual for defaults ("base classes")
   -- can't provide unparse or location, errors should NOT be defined!
   top.productionAttributes := [];
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
   
   top.defs := [];
 
@@ -131,7 +135,7 @@ top::ProductionStmt ::= 'return' e::Expr ';'
 {
   top.unparse = "\treturn " ++ e.unparse ++ ";";
   
-  top.uniqueSignificantExpression := [e];
+  top.returnExpr := [e];
   
   top.errors <- if !top.frame.permitReturn
                 then [err(top.location, "Return is not valid in this context. (They are only permitted in function declarations.)")]
@@ -188,7 +192,7 @@ top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
   e.isRoot = true;
 
   top.productionAttributes := [forwardDef(top.grammarName, top.location, top.frame.signature.outputElement.typerep)];
-  top.uniqueSignificantExpression := [e];
+  top.forwardExpr := [e];
 
   top.errors <- if !top.frame.permitForward
                 then [err(top.location, "Forwarding is not permitted in this context. (Only permitted in non-aspect productions.)")]
@@ -249,6 +253,21 @@ top::ForwardLHSExpr ::= q::QNameAttrOccur
   top.typerep = q.typerep;
   
   q.attrFor = top.frame.signature.outputElement.typerep;
+}
+
+concrete production undecoratesTo
+top::ProductionStmt ::= 'undecorates' 'to' e::Expr ';'
+{
+  top.unparse = "\tundecorates to " ++ e.unparse;
+
+  e.isRoot = true;
+  
+  top.undecorateExpr := [e];
+
+  top.errors <-
+    if !top.frame.permitForward  -- Permitted in the same place as forwards to
+    then [err(top.location, "Undecorates is not permitted in this context. (Only permitted in non-aspect productions.)")]
+    else [];
 }
 
 concrete production attributeDef

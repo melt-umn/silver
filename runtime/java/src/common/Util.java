@@ -337,8 +337,8 @@ public final class Util {
 		if(o instanceof Node) {
 			hackyhackyUnparseNode((Node)o, sb);
 		} else if(o instanceof DecoratedNode) {
-			// For the time being, just undecorate it
-			hackyhackyUnparseNode(((DecoratedNode)o).undecorate(), sb);
+			// For the time being, just grab the underlying Node (don't copy-undecorate!)
+			hackyhackyUnparseNode(((DecoratedNode)o).getNode(), sb);
 		} else if(o instanceof Terminal) {
 			Terminal t = (Terminal) o;
 			sb.append("'" + t.lexeme + "'");

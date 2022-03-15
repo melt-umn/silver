@@ -16,7 +16,9 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 
   top.productionAttributes := [];
   top.defs := [];
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
   top.containsPluck = false;
 
@@ -57,7 +59,9 @@ top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Ex
 
   top.productionAttributes := [];
   top.defs := [];
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
   top.containsPluck = false;
 
@@ -96,7 +100,9 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
 
   top.productionAttributes := [];
   top.defs := [];
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
   top.containsPluck = false;
 
@@ -135,7 +141,9 @@ top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e
 
   top.productionAttributes := [];
   top.defs := [];
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
   dl.defLHSattr = attr;
   attr.attrFor = dl.typerep;
@@ -194,7 +202,9 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
   e.isRoot = true;
 
   top.containsPluck = false;
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
   local merrors::[Message] =
      --gives errors for implicit/unrestricted attributes used
@@ -218,7 +228,9 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
   e.isRoot = true;
 
   top.containsPluck = false;
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
   local merrors::[Message] =
      --gives errors for implicit/unrestricted attributes used
@@ -250,7 +262,9 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
   e.expectedMonad = attr.typerep;
 
   top.containsPluck = false;
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
   local fwd::ProductionStmt =
          (if null(e.merrors)
@@ -280,7 +294,9 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
   e.expectedMonad = attr.typerep;
 
   top.containsPluck = false;
-  top.uniqueSignificantExpression := [];
+  top.forwardExpr := [];
+  top.returnExpr := [];
+  top.undecorateExpr := [];
 
   local fwd::ProductionStmt =
          (if null(e.merrors)
