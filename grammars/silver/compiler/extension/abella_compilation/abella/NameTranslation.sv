@@ -42,6 +42,9 @@ global notName::String = "$not_bool";
 global trueName::String = "$btrue";
 global falseName::String = "$bfalse";
 
+global patternMatchResultVar::String = "$pattern_match_result_var";
+global pmvrTy::AbellaType = nameAbellaType(patternMatchingResultVar);
+
 
 
 --Nonterminals
@@ -263,6 +266,43 @@ String ::= ty::AbellaType component::String
 {
   return "$structure_eq" ++ name_sep ++ ty.unparse ++ name_sep ++
          component ++ name_sep ++ "expand";
+}
+
+
+--Pattern Matching
+function typeToMatchName
+String ::= ty::AbellaType
+{
+  return typeNameToMatchName(ty.unparse);
+}
+function typeNameToMatchName
+String ::= ty::String
+{
+  return "$match" ++ name_sep ++ ty;
+}
+function matchRelationType
+AbellaType ::= ty::String
+{
+  return arrowAbellaType(nameAbellaType(ty),
+         arrowAbellaType(nodeTreeType,
+         arrowAbellaType(patternNtType(ty),
+         arrowAbellaType(pmvrTy,
+                         nameAbellaType("prop")))));
+}
+function patternType
+AbellaType ::= ty::String
+{
+  return ty ++ "_$Pattern";
+}
+function pmvrConstructorName
+String ::= ty::String
+{
+  return "$pmvr" ++ name_sep ++ ty;
+}
+function patternConstructorName
+String ::= constructor::String ty::String
+{
+  return constructor ++ name_sep ++ patternType(ty);
 }
 
 

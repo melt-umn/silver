@@ -471,6 +471,144 @@ String ::= prod::String prodTy::AbellaType nt::AbellaType component::String
 }
 
 
+function generateMatchingRelationsFull
+String ::= nonterminals::[String]
+{
+  return
+     case nonterminals of
+     | [] -> ""
+     | nt::rest ->
+       "Type " ++ typeNameToMatchName(nt) ++ "   " ++
+          matchRelationType(nt).unparse ++ ".\n" ++
+       generateMatchingRelationsFull(rest)
+     end;
+}
+
+
+function generateMatchingRelationsComponent
+String ::= prods::[(String, AbellaType)] new_nonterminals::[String]
+           component::String
+{
+  local sortedProds::[(String, AbellaType)] =
+        sortBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
+                 p1.2.resultType.unparse < p2.2.resultType.unparse,
+               prods);
+  local groupedProds::[[(String, AbellaType)]] =
+        groupBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
+                  tysEq(p1.2.resultType, p2.2.resultType),
+                sortedProds);
+  local expandedProds::[(String, [(String, AbellaType)])] =
+        map(\ l::[(String, AbellaType)] -> (head(l).2.resultType, l),
+            groupedProds);
+}
+function generateMatchingRelationsComponent_NtGroup
+String ::= nt::String prods::[(String, AbellaType)]
+           new_nonterminals::[String] component::String
+{
+  
+}
+function generateMatchingRelationsComponent_OneProd
+String ::= prod::String prodTy::AbellaType component::String
+{
+  local childNames::[String] =
+        map(\ i::Integer -> "C" ++ toString(i),
+            range(1, length(prodTy.argumentTypes) + 1));
+  local childPattNames::[String] =
+        map(\ i::Integer -> "P" ++ toString(i),
+            range(1, length(prodTy.argumentTypes) + 1));
+
+  --produces <match_rel> <tree arg> <nodetree arg> <patt> ResultList
+  local headTermString::(String ::= String String) =
+        \ tree::String nodetree::String ->
+           typeToMatchName(prodTy.resultType) ++ name_sep ++ component ++
+              tree ++ " " ++ nodetree ++ " " ++
+              "(" ++ patternConstructorName(prod, prodTy.resultType) ++
+                " " ++ implode(" ", childPattNames) ++ ")";
+
+  --match current prod
+  local childInfo::[(String, AbellaType)] =
+        zipWith(pair, childNames, prodTy.argumentTypes);
+  local prodStructure::String =
+        "(" ++ implode(" ", prod::childNames) ++ ")";
+  local nodetreeStructure::String =
+        "(" ++ nodeTreeConstructorName(prodTy.resultType) ++
+        " Node (" ++
+        foldr(\ p::(String, AbellaType) rest::String ->
+                p.1 ++ "NTr::",
+              "nil", childInfo) ++
+        "))";
+  local matchResultLists::[String] =
+        if null(childInfo)
+        then ["nil"]
+        else if length(childInfo) == 1
+        then ["ResultList"]
+        else map(\ c::String -> c ++ "ResultList", childNames);
+  local matchCurrentProd::String =
+        --head term
+        "   " ++ headTermString(prodStructure, nodetreeStructure) ++
+        (if length(childInfo) <= 1
+         then head(matchResultLists) ++ " :=\n"
+         else " ResultList :=\n     exists " ++
+              implode(" ", matchResultLists) ++ ",\n        ") ++
+        --match children
+        implode(" /\\n        ",
+               --(match res lst, patt name, child name, child ty)
+           map(\ p::(String, String, String, AbellaType) ->
+                 implode(" ", [typeToMatchName(p.4), p.3,
+                               p.3 ++ "NTr ", p.2, p.1]),
+               zipWith(pair, matchResultLists,
+                  zipWith(pair, childPattNames, childInfo)))) ++
+        --append all the lists
+        if length(childInfo) <= 1
+        then ""
+        else 
+  --match through forwarding---not equal to this prod
+  
+}
+{-
+  Rather than nested matching, might it make more sense to do it one
+  piece at a time?  For example, matching `T` to the pattern
+  `prod(a(), b(X))` would be:
+     T matches prod(A, B)
+     A matches a()
+     B matches B(X)
+  Under the hood, this would be:
+     match T TNTr prod_pattern [(A, ANTr), (B, BNTr)]
+     match A ANTr a_pattern []
+     match B BNTr b_pattern [(X, XNTr)]
+  Each pattern is just a pattern of that type without any children.
+  There are no variable patterns in this encoding---that just matches.
+  The match relation matches a single production, producing the
+  children of the production for the match.  We will need a theorem
+  to say `WPD(Tree) /\ Tree matches prod(children) -> WPD(children)`
+  which we can use to get WPD for these new trees.  If we need IH for
+  them, that could get really rough---the approach of creating the
+  fake IH's ahead of time is not going to go well.  To be clear, the
+  IH problem does not rely on the encoding of pattern matching; it is
+  present for any encoding.
+
+  I might need to move to checking the provenance of trees to
+  determine if they would be inductively-smaller (check to find if it
+  came from the original inductive tree), then replay the proof with
+  the appropriate `case`s stuck in to get the smaller one.  Of course,
+  you could follow an arbitrarily-long trail of forwarding, so you
+  coludn't do that.
+
+  Maybe you could do some sort of fake IH for things you match in a
+  pattern to show that it will be inductively smaller?  I'm not quite
+  sure how that would end up stated though, since you could match
+  against a lot of smaller trees and keep getting smaller things.
+  Maybe the induction depth could also be a number of matches going
+  down?  This would be in addition to accesses on them.  That would be
+  a lot of fake IH's, so maybe it's better to do the provenance idea
+  in conjunction with this, or hide the "actual" fake IH's, just show
+  an archetypal one, and figure out which actual IH to apply from
+  there.
+
+  This is getting complicated.
+-}
+
+
 function generateAccessUniquenessAxioms
 String ::= attrOccurrences::[(String, [(String, AbellaType)])]
            localAttrs::[(String, [(String, AbellaType)])]
@@ -2086,6 +2224,10 @@ String ::= new_nonterminals::[String] new_attrs::[String]
      "%New equation relations\n" ++
      generateEquationsFull(new_fullEqs) ++ "\n" ++
      generateWpdRelationsFull(new_nonterminals) ++ "\n\n" ++
+     "%New matching relations\n" ++
+     generateMatchingRelationsFull(new_nonterminals) ++ "\n" ++
+     generateMatchingRelationsComponent(new_prods, new_nonterminals,
+                                        componentName) ++ "\n\n" ++
      "%New function relations\n" ++
      ( let funSplit::( [(String, AbellaType)],
                        [(String, AbellaType, [DefClause])] ) =
