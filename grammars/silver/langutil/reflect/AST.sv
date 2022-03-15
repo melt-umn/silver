@@ -52,9 +52,13 @@ aspect production anyAST
 top::AST ::= x::a
 {
   top.pp =
-    case reflectTypeName(x) of
-      just(n) -> pp"<${text(nativeToString(x))} :: ${text(n)}>"
-    | nothing() -> pp"<${text(nativeToString(x))}>"
+    case reify(top) of
+    | right(decX) -> reflect(new(decX)).pp  -- x is a reference, undecorate and pp it
+    | left(_) ->
+      case reflectTypeName(x) of
+      | just(n) -> pp"<${text(nativeToString(x))} :: ${text(n)}>"
+      | nothing() -> pp"<${text(nativeToString(x))}>"
+      end
     end;
 }
 

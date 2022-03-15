@@ -80,7 +80,7 @@ abstract production propagateDestruct
 top::ProductionStmt ::= attr::PartiallyDecorated QName
 {
   top.unparse = s"propagate ${attr.unparse};";
-  
+
   local numChildren::Integer = length(top.frame.signature.inputElements);
   forwards to
     foldr(

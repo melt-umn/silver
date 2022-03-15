@@ -1,6 +1,7 @@
 grammar silver:compiler:extension:doc:core:doclang;
 imports silver:compiler:extension:doc:core;
 imports silver:langutil;
+imports silver:langutil:pp;
 imports silver:util:treemap as tm;
 
 @@{-

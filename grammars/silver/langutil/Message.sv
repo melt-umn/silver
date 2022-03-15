@@ -1,5 +1,7 @@
 grammar silver:langutil;
 
+import silver:langutil:origins;
+
 @@{-
    - @config fileSplit
    -

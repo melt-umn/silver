@@ -65,21 +65,6 @@ a ::= val::a str::String
   return unsafeTrace(val, printT(str, unsafeIO()));
 }
 
-@{--
- - Print a stringification of a value when it is demanded by the Silver runtime.
- - When this gets executed may be unpredictable.
- -
- - @param val  The value to evaluate to, printed when evaluated.
- - @return  val, unchanged.
- - @warning see @link[unsafeIO]
- -}
-function unsafeTraceDump
-a ::= val::a
-{
-  return unsafeTrace(val, printlnT(hackUnparse(val), unsafeIO()));
-}
-
-
 
 -- Function for manipulating strings representing file and directory names.
 
