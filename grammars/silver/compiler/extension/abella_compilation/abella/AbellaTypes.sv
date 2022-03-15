@@ -61,7 +61,7 @@ top::AbellaType ::= name::String
       | "$pair" -> "is_pair"
       | "integer" -> "is_integer"
       | "bool" -> "is_bool"
-      | _ -> "is_something_else(" ++ name ++ ")" --error("Cannot generate is relation for type " ++ name)
+      | _ -> error("Cannot generate is relation for type " ++ name)
       end;
 
   top.replacedTy = top;
