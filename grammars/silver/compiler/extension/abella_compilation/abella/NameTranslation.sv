@@ -43,7 +43,7 @@ global trueName::String = "$btrue";
 global falseName::String = "$bfalse";
 
 global patternMatchResultVar::String = "$pattern_match_result_var";
-global pmvrTy::AbellaType = nameAbellaType(patternMatchingResultVar);
+global pmvrTy::AbellaType = nameAbellaType(patternMatchResultVar);
 
 
 
@@ -285,14 +285,14 @@ AbellaType ::= ty::String
 {
   return arrowAbellaType(nameAbellaType(ty),
          arrowAbellaType(nodeTreeType,
-         arrowAbellaType(patternNtType(ty),
+         arrowAbellaType(patternType(ty),
          arrowAbellaType(pmvrTy,
                          nameAbellaType("prop")))));
 }
 function patternType
 AbellaType ::= ty::String
 {
-  return ty ++ "_$Pattern";
+  return nameAbellaType(ty ++ "_$Pattern");
 }
 function pmvrConstructorName
 String ::= ty::String
@@ -302,7 +302,7 @@ String ::= ty::String
 function patternConstructorName
 String ::= constructor::String ty::String
 {
-  return constructor ++ name_sep ++ patternType(ty);
+  return constructor ++ name_sep ++ patternType(ty).unparse;
 }
 
 

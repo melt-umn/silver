@@ -493,24 +493,25 @@ String ::= prods::[(String, AbellaType)] new_nonterminals::[String]
         sortBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
                  p1.2.resultType.unparse < p2.2.resultType.unparse,
                prods);
-  local groupedProds::[[(String, AbellaType)]] =
+{-  local groupedProds::[[(String, AbellaType)]] =
         groupBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
                   tysEq(p1.2.resultType, p2.2.resultType),
                 sortedProds);
   local expandedProds::[(String, [(String, AbellaType)])] =
         map(\ l::[(String, AbellaType)] -> (head(l).2.resultType, l),
-            groupedProds);
+            groupedProds);-}
+  return error("");
 }
 function generateMatchingRelationsComponent_NtGroup
 String ::= nt::String prods::[(String, AbellaType)]
            new_nonterminals::[String] component::String
 {
-  
+  return error("");
 }
 function generateMatchingRelationsComponent_OneProd
 String ::= prod::String prodTy::AbellaType component::String
 {
-  local childNames::[String] =
+{-  local childNames::[String] =
         map(\ i::Integer -> "C" ++ toString(i),
             range(1, length(prodTy.argumentTypes) + 1));
   local childPattNames::[String] =
@@ -561,9 +562,9 @@ String ::= prod::String prodTy::AbellaType component::String
         --append all the lists
         if length(childInfo) <= 1
         then ""
-        else 
+        else error("");-}
   --match through forwarding---not equal to this prod
-  
+  return error("");
 }
 {-
   Rather than nested matching, might it make more sense to do it one
