@@ -62,7 +62,9 @@ top::DriverAction ::= specs::[Decorated RootSpec]
 abstract production printAllBindingErrorsHelp
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
-  local errs :: [Pair<String [Message]>] = head(specs).grammarErrors;
+  local errs :: [Pair<String [Message]>] =
+    debugPoint("Errors for " ++ head(specs).declaredName,
+      head(specs).grammarErrors);
 
   local i :: IOToken =
     if null(errs)

@@ -31,6 +31,7 @@ import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
 public final class Util {
 	private static String forceInit;
 	private static ArrayList<Integer> freeThisToPrintErrors;
+	private static String debugTargetLabel = null; // See silver:core:debugPoint.
 
 	public static void init() {
 		// forceInit = "foo" + "bar" + "baz";
@@ -38,6 +39,8 @@ public final class Util {
 		// for (int i=0; i<1_000_000; i++) {
 		// 	freeThisToPrintErrors.add(i);
 		// }
+
+		debugTargetLabel = System.getenv("SILVER_DEBUG_LABEL");
 	}
 
 	public static void stackProbe(int count) {
@@ -486,5 +489,15 @@ public final class Util {
 			result = new ConsCell(i, result);
 		}
 		return result;
+	}
+
+	// See silver:core:debugPoint.
+	@SuppressWarnings("unchecked")
+	public static <T> T debugPoint(Object label, T value) {
+		if(debugTargetLabel != null && ((Thunk<StringCatter>) label).eval().toString().equals(label)) {
+			throw new RuntimeException("TODO: drop into the debugger");
+		} else {
+			return value;
+		}
 	}
 }
