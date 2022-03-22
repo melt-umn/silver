@@ -23,7 +23,10 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   local ntDeclPackage :: String = implode(".", init(explode(".", fnnt)));
   local typeNameSnipped :: String = last(explode(":", namedSig.outputElement.typerep.typeName));
-  
+
+  local decorableChildren :: [NamedSignatureElement] =
+    filter(\ x::NamedSignatureElement -> isDecorable(x.typerep, body.env), namedSig.inputElements);
+
   local undecChild :: (String ::= NamedSignatureElement) =
     \ x::NamedSignatureElement ->
       if x.typerep.isDecorated
@@ -95,7 +98,9 @@ ${namedSig.childStatic}
     }
 
     public ${className}(final NOriginInfo origin ${commaIfAny} ${namedSig.javaSignature}) {
-        super(${implode(", ", (if wantsTracking then ["origin"] else []) ++ map((.annoRefElem), namedSig.namedInputElements))});
+        super(${implode(", ",
+        	(if wantsTracking then ["origin"] else []) ++
+        	map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
 ${contexts.contextInitTrans}
     }
@@ -149,14 +154,18 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
 
     @Override
     public common.Node evalUndecorate(final common.DecoratedNode context) {
-    	${if null(body.undecorateExpr)
+    	${if !null(body.undecorateExpr)
+          then s"return (common.Node)${head(body.undecorateExpr).translation};"
+          else if !null(decorableChildren)
           then s"return new ${className}(${implode(", ",
             -- A production node with no special undecoration behavior has the same origin as the original node when undecorated.
             (if wantsTracking then ["this.origin"] else []) ++
             namedSig.contextRefElems ++
             map(undecChild, namedSig.inputElements) ++
             map(copyAnno, namedSig.namedInputElements))});"
-          else s"return (common.Node)${head(body.undecorateExpr).translation};"}
+    	  -- TODO: Consider if all decorable children are directly undecorable.
+    	  -- This must avoid forcing children that are thunks, and probably also should be cached.
+          else "return this;"}
     }
 
     @Override
