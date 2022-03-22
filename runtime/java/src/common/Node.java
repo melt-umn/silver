@@ -47,7 +47,7 @@ public abstract class Node implements Decorable, Typed {
                                  getNumberOfLocalAttrs(),
                                  this, parent, null, fwdParent);
 	}
-	
+
 	/**
 	 * A convenience method unused by generate Silver code, but useful when working with
 	 * the Silver runtime from Java.

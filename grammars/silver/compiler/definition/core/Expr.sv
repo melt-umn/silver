@@ -298,12 +298,7 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
   top.freeVars := e.freeVars ++ es.freeVars ++ anns.freeVars;
-  
-  -- TODO: we have an ambiguity here in the longer term.
-  -- How to distinguish between
-  -- foo(x) where there is an annotation 'a'?
-  -- Is this partial application, give (Foo ::= ;a::Something) or (Foo) + error.
-  -- Possibly this can be solved by having somehting like "foo(x,a=?)"
+
   forwards to
     (if es.isPartial || anns.isPartial
      then partialApplication
