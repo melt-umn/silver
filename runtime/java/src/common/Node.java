@@ -60,16 +60,14 @@ public abstract class Node implements Decorable, Typed {
 	
 	private Node undecoratedValue = null;
 	public final Node undecorate(final DecoratedNode context) {
-		if (undecoratedValue != null) {
-			return undecoratedValue;
-		} else {
+		if (undecoratedValue == null) {
 			try {
 				undecoratedValue = evalUndecorate(context);
 			} catch(Throwable t) {
 				throw new TraceException("While undecorating " + context.getDebugID(), t);
 			}
-			return undecoratedValue;
 		}
+		return undecoratedValue;
 	}
 
 	// These methods are to be provided by the *nonterminal*
@@ -211,7 +209,7 @@ public abstract class Node implements Decorable, Typed {
 	public abstract Node evalForward(final DecoratedNode context);
 	
 	/**
-	 * Compute the Node that this Node undecorates to.
+	 * Compute the term that this Node undecorates to.
 	 *
 	 * @param context The DN of this node, to use to evaluate the undecorate equation.
 	 * @return The Node that context undecorates to.

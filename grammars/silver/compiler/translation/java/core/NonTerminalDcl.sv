@@ -40,7 +40,9 @@ public abstract class ${className} extends common.Node ${
 
 	public static final common.Lazy[] defaultSynthesizedAttributes = new common.Lazy[num_syn_attrs];
 
-	protected ${className}(${if wantsTracking then "final NOriginInfo origin"++commaIfAnnos else ""} ${implode(", ", map((.annoSigElem), myAnnos))}) {
+	protected ${className}(${implode(", ",
+			(if wantsTracking then ["final NOriginInfo origin"] else []) ++
+			map((.annoSigElem), myAnnos))}) {
 		${if wantsTracking then "this.origin = origin;" else ""}
 ${implode("", map(makeAnnoAssign, myAnnos))}
 	}
