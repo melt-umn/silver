@@ -480,10 +480,11 @@ Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttr
 {
   return accessBouncer(target, decorateExprWithEmpty('decorate', exprRef(e, location=l), 'with', '{', '}', location=l), q, location=l);
 }
+-- Note that this performs the access on the term that was originally decorated, rather than properly undecorating.
 function accessBounceUndecorate
 Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur  l::Location
 {
-  return accessBouncer(target, mkStrFunctionInvocationDecorated(l, "silver:core:new", [e]), q, location=l);
+  return accessBouncer(target, mkStrFunctionInvocationDecorated(l, "silver:core:getTermThatWasDecorated", [e]), q, location=l);
 }
 
 abstract production decoratedAccessHandler
