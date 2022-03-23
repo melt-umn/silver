@@ -471,6 +471,53 @@ String ::= prod::String prodTy::AbellaType nt::AbellaType component::String
 }
 
 
+function generatePatternTypes
+String ::= nonterminals::[String]
+{
+  local nt_nonterminals::[AbellaType] =
+        map(nameToNonterminalType, nonterminals);
+  return
+     implode("",
+        map(\ nt::AbellaType ->
+              "Kind " ++ patternType(nt).unparse ++ "   type.\n",
+            nt_nonterminals)) ++ "\n" ++
+     implode("",
+        map(\ nt::AbellaType ->
+              "Type " ++ varPatternName(nt.unparse) ++ "   " ++
+              patternType(nt).unparse ++ ".\n",
+            nt_nonterminals)) ++ "\n" ++
+     implode("",
+        map(\ nt::AbellaType ->
+              "Type " ++ pmvrConstructorName(nt.unparse) ++ "   " ++
+              arrowAbellaType(nt,
+                 arrowAbellaType(nodeTreeType, pmvrTy)).unparse ++ ".\n",
+            nt_nonterminals));
+}
+
+
+function generatePatternProdConstructors
+String ::= prods::[(String, AbellaType)]
+{
+  local prodName::String = head(prods).1;
+  local prodTy::AbellaType = head(prods).2;
+  local conName::String =
+        patternConstructorName(prodName, prodTy.resultType.unparse);
+  local args::[String] =
+        map(\ a::AbellaType -> patternType(a).unparse,
+            prodTy.argumentTypes);
+  local resultPattTy::String =
+        patternType(prodTy.resultType).unparse;
+  return
+     case prods of
+     | [] -> ""
+     | (prodName, prodTy)::rest ->
+       "Type " ++ conName ++ "   " ++
+       implode(" -> ", args ++ [resultPattTy]) ++ ".\n" ++
+       generatePatternProdConstructors(rest)
+     end;
+}
+
+
 function generateMatchingRelationsFull
 String ::= nonterminals::[String]
 {
@@ -478,136 +525,189 @@ String ::= nonterminals::[String]
      case nonterminals of
      | [] -> ""
      | nt::rest ->
-       "Type " ++ typeNameToMatchName(nt) ++ "   " ++
-          matchRelationType(nt).unparse ++ ".\n" ++
+       "Type " ++
+          typeNameToMatchName(nameToNonterminal(nt)) ++
+          "   " ++ matchRelationType(
+                      nameToNonterminal(nt)).unparse ++ ".\n" ++
        generateMatchingRelationsFull(rest)
      end;
 }
 
 
 function generateMatchingRelationsComponent
-String ::= prods::[(String, AbellaType)] new_nonterminals::[String]
-           component::String
+String ::= prods::[(String, AbellaType)] component::String
 {
+  --prods sorted by type being built to allow grouping
   local sortedProds::[(String, AbellaType)] =
         sortBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
                  p1.2.resultType.unparse < p2.2.resultType.unparse,
                prods);
-{-  local groupedProds::[[(String, AbellaType)]] =
+  --prods grouped by type being built
+  local groupedProds::[[(String, AbellaType)]] =
         groupBy(\ p1::(String, AbellaType) p2::(String, AbellaType) ->
-                  tysEq(p1.2.resultType, p2.2.resultType),
+                  tysEqual(p1.2.resultType, p2.2.resultType),
                 sortedProds);
+  --[(result type string, [(prod, prod type)])]
   local expandedProds::[(String, [(String, AbellaType)])] =
-        map(\ l::[(String, AbellaType)] -> (head(l).2.resultType, l),
-            groupedProds);-}
-  return error("");
+        map(\ l::[(String, AbellaType)] ->
+              (head(l).2.resultType.unparse, l),
+            groupedProds);
+
+  local defs::[String] =
+        map(\ p::(String, [(String, AbellaType)]) ->
+              generateMatchingRelationsComponent_NtGroup(p.1,
+                 p.2, component),
+            expandedProds);
+
+  return implode("\n", defs);
 }
 function generateMatchingRelationsComponent_NtGroup
-String ::= nt::String prods::[(String, AbellaType)]
-           new_nonterminals::[String] component::String
+String ::= nt::String prods::[(String, AbellaType)] component::String
 {
-  return error("");
+  local defineName::String =
+        typeNameToMatchName(nt) ++ name_sep ++ component;
+  local matchTy::AbellaType = matchRelationType(nt);
+  local lst::[String] =
+        map(\ p::(String, AbellaType) ->
+              generateMatchingRelationsComponent_OneProd(p.1,
+                 p.2, component), prods);
+
+  return "Define " ++ defineName ++ " : " ++ matchTy.unparse ++
+            " by\n" ++ implode(";\n", lst) ++ ".";
 }
 function generateMatchingRelationsComponent_OneProd
 String ::= prod::String prodTy::AbellaType component::String
 {
-{-  local childNames::[String] =
+  local buildTy::AbellaType = prodTy.resultType;
+  local childNames::[String] =
         map(\ i::Integer -> "C" ++ toString(i),
             range(1, length(prodTy.argumentTypes) + 1));
   local childPattNames::[String] =
         map(\ i::Integer -> "P" ++ toString(i),
             range(1, length(prodTy.argumentTypes) + 1));
 
-  --produces <match_rel> <tree arg> <nodetree arg> <patt> ResultList
-  local headTermString::(String ::= String String) =
-        \ tree::String nodetree::String ->
-           typeToMatchName(prodTy.resultType) ++ name_sep ++ component ++
-              tree ++ " " ++ nodetree ++ " " ++
-              "(" ++ patternConstructorName(prod, prodTy.resultType) ++
-                " " ++ implode(" ", childPattNames) ++ ")";
+  local matchRel::String =
+        typeToMatchName(buildTy) ++ name_sep ++ component;
+  local prodStructure::String =
+        "(" ++ implode(" ", nameToProd(prod)::childNames) ++ ")";
+  --match Tree <tree structure> <nodetree> <patt> <result list>
+  local headTermString::(String ::= String String String) =
+        \ nodetree::String patt::String lst::String ->
+           matchRel ++ " Tree " ++ prodStructure ++ " " ++
+              nodetree ++ " " ++ patt ++ " " ++ lst;
 
   --match current prod
   local childInfo::[(String, AbellaType)] =
         zipWith(pair, childNames, prodTy.argumentTypes);
-  local prodStructure::String =
-        "(" ++ implode(" ", prod::childNames) ++ ")";
+  local pattString::String =
+        "(" ++ patternConstructorName(prod, buildTy.unparse) ++ " " ++
+        implode(" ", childPattNames) ++ ")";
   local nodetreeStructure::String =
-        "(" ++ nodeTreeConstructorName(prodTy.resultType) ++
+        "(" ++ nodeTreeConstructorName(buildTy) ++
         " Node (" ++
         foldr(\ p::(String, AbellaType) rest::String ->
-                p.1 ++ "NTr::",
+                p.1 ++ "NTr::" ++ rest,
               "nil", childInfo) ++
         "))";
   local matchResultLists::[String] =
         if null(childInfo)
-        then ["nil"]
+        then []
         else if length(childInfo) == 1
-        then ["ResultList"]
-        else map(\ c::String -> c ++ "ResultList", childNames);
+        then [resultList]
+        else map(\ c::String -> c ++ resultList, childNames);
+  local resultList::String =
+        if null(childInfo)
+        then "nil"
+        else "ResultList";
+  local bindings::String =
+        let names::[String] =
+            matchResultLists ++
+            foldr(\ p::(String, AbellaType) rest::[String] ->
+                    if tyIsNonterminal(p.2)
+                    then (p.1 ++ "Struct")::rest
+                    else rest,
+                  [], zipWith(pair, childNames, prodTy.argumentTypes))
+        in
+          if null(names)
+          then ""
+          else "     exists " ++ implode(" ", names) ++ ",\n"
+        end;
   local matchCurrentProd::String =
         --head term
-        "   " ++ headTermString(prodStructure, nodetreeStructure) ++
-        (if length(childInfo) <= 1
-         then head(matchResultLists) ++ " :=\n"
-         else " ResultList :=\n     exists " ++
-              implode(" ", matchResultLists) ++ ",\n        ") ++
-        --match children
-        implode(" /\\n        ",
-               --(match res lst, patt name, child name, child ty)
-           map(\ p::(String, String, String, AbellaType) ->
-                 implode(" ", [typeToMatchName(p.4), p.3,
-                               p.3 ++ "NTr ", p.2, p.1]),
-               zipWith(pair, matchResultLists,
-                  zipWith(pair, childPattNames, childInfo)))) ++
-        --append all the lists
-        if length(childInfo) <= 1
+        headTermString(nodetreeStructure, pattString,
+                       resultList) ++
+        if length(childNames) == 0
         then ""
-        else error("");-}
+        else
+           " :=\n" ++
+           bindings ++
+           --match children
+           implode(" /\\\n        ",
+                  --(match res lst, patt name, child name, child ty)
+              map(\ p::(String, String, String, AbellaType) ->
+                    if tyIsNonterminal(p.4)
+                    then
+                       --structure equality for child
+                       "        " ++
+                       typeToStructureEqName(p.4) ++ " " ++ p.3 ++ " " ++
+                           p.3 ++ "Struct" ++ " /\\\n" ++
+                       --match
+                       "        " ++
+                       typeToMatchName(p.4) ++ " " ++  p.3 ++ " " ++
+                           p.3 ++ "Struct" ++ " " ++
+                           p.3 ++ "NTr" ++ " " ++ p.2 ++ " " ++ p.1
+                    else --just match for primitives
+                       "        " ++
+                       typeToMatchName(p.4) ++
+                       " " ++ p.3 ++ " " ++ p.2 ++ " " ++ p.1,
+                  zipWith(pair, matchResultLists,
+                     zipWith(pair, childPattNames, childInfo)))) ++
+           --combine all the lists
+           if length(childInfo) <= 1
+           then ""
+           else " /\\\n        " ++
+                "$combine_lists (" ++
+                    foldr(\ l::String rest::String -> l ++ "::" ++ rest,
+                          "nil", matchResultLists) ++
+                    ") " ++ resultList;
+
   --match through forwarding---not equal to this prod
-  return error("");
+  local matchFwdProd::String =
+        headTermString(
+           "(" ++ nodeTreeConstructorName(buildTy) ++
+                  " Node CL)", "Patt", "ResultList") ++ " :=\n" ++
+        "   exists Fwd FwdNTr FwdStruct,\n" ++
+        --not this prod patt
+        "      (" ++
+        (if null(childNames) then ""
+         else "exists " ++ implode(" ", childNames) ++ ", ") ++
+         "Patt = " ++ patternConstructorName(prod, buildTy.unparse) ++
+         " " ++ implode(" ", childNames) ++ " -> false) /\\\n" ++
+        --not var patt
+        "      (Patt = " ++ varPatternName(buildTy.unparse) ++
+                " -> false) /\\\n" ++
+        --access forward
+        "      " ++ accessRelationName(buildTy, "forward") ++
+        " Tree Node (" ++ attributeExistsName ++
+                     " (" ++ pairConstructorName ++ " Fwd FwdNTr))" ++
+        "/\\\n" ++
+        --structure eq for forward
+        "      " ++ typeToStructureEqName(buildTy) ++
+        " Fwd FwdStruct /\\\n" ++
+        --match forward
+        "      " ++ matchRel ++ " Fwd FwdStruct FwdNTr Patt " ++
+        "ResultList";
+
+  --match variable pattern
+  local matchVariables::String =
+        headTermString("NTr",
+           varPatternName(buildTy.unparse),
+           "(" ++ pmvrConstructorName(buildTy.unparse) ++
+               " Tree NTr::nil)");
+
+  return "  " ++ matchCurrentProd ++ ";\n  " ++ matchFwdProd ++
+         ";\n  " ++ matchVariables;
 }
-{-
-  Rather than nested matching, might it make more sense to do it one
-  piece at a time?  For example, matching `T` to the pattern
-  `prod(a(), b(X))` would be:
-     T matches prod(A, B)
-     A matches a()
-     B matches B(X)
-  Under the hood, this would be:
-     match T TNTr prod_pattern [(A, ANTr), (B, BNTr)]
-     match A ANTr a_pattern []
-     match B BNTr b_pattern [(X, XNTr)]
-  Each pattern is just a pattern of that type without any children.
-  There are no variable patterns in this encoding---that just matches.
-  The match relation matches a single production, producing the
-  children of the production for the match.  We will need a theorem
-  to say `WPD(Tree) /\ Tree matches prod(children) -> WPD(children)`
-  which we can use to get WPD for these new trees.  If we need IH for
-  them, that could get really rough---the approach of creating the
-  fake IH's ahead of time is not going to go well.  To be clear, the
-  IH problem does not rely on the encoding of pattern matching; it is
-  present for any encoding.
-
-  I might need to move to checking the provenance of trees to
-  determine if they would be inductively-smaller (check to find if it
-  came from the original inductive tree), then replay the proof with
-  the appropriate `case`s stuck in to get the smaller one.  Of course,
-  you could follow an arbitrarily-long trail of forwarding, so you
-  coludn't do that.
-
-  Maybe you could do some sort of fake IH for things you match in a
-  pattern to show that it will be inductively smaller?  I'm not quite
-  sure how that would end up stated though, since you could match
-  against a lot of smaller trees and keep getting smaller things.
-  Maybe the induction depth could also be a number of matches going
-  down?  This would be in addition to accesses on them.  That would be
-  a lot of fake IH's, so maybe it's better to do the provenance idea
-  in conjunction with this, or hide the "actual" fake IH's, just show
-  an archetypal one, and figure out which actual IH to apply from
-  there.
-
-  This is getting complicated.
--}
 
 
 function generateAccessUniquenessAxioms
@@ -2226,8 +2326,10 @@ String ::= new_nonterminals::[String] new_attrs::[String]
      generateEquationsFull(new_fullEqs) ++ "\n" ++
      generateWpdRelationsFull(new_nonterminals) ++ "\n\n" ++
      "%New matching relations\n" ++
+     generatePatternTypes(new_nonterminals) ++ "\n\n" ++
+     generatePatternProdConstructors(new_prods) ++ "\n" ++
      generateMatchingRelationsFull(new_nonterminals) ++ "\n" ++
-     generateMatchingRelationsComponent(new_prods, new_nonterminals,
+     generateMatchingRelationsComponent(new_prods,
                                         componentName) ++ "\n\n" ++
      "%New function relations\n" ++
      ( let funSplit::( [(String, AbellaType)],

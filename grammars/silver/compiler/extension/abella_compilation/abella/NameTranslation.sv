@@ -42,7 +42,7 @@ global notName::String = "$not_bool";
 global trueName::String = "$btrue";
 global falseName::String = "$bfalse";
 
-global patternMatchResultVar::String = "$pattern_match_result_var";
+global patternMatchResultVar::String = "$pattern_match_var_result";
 global pmvrTy::AbellaType = nameAbellaType(patternMatchResultVar);
 
 
@@ -273,7 +273,19 @@ String ::= ty::AbellaType component::String
 function typeToMatchName
 String ::= ty::AbellaType
 {
-  return typeNameToMatchName(ty.unparse);
+  return
+     case ty of
+     | functorAbellaType(nameAbellaType("list"), argty) ->
+       typeNameToMatchName("list") ++ " " ++
+          "(" ++ typeToMatchName(argty) ++ ")"
+     | functorAbellaType(
+          functorAbellaType(nameAbellaType(pty), aty),
+          bty) when pty == pairTypeName ->
+       typeNameToMatchName(pairTypeName) ++ " " ++
+          "(" ++ typeToMatchName(aty) ++ ") " ++
+          "(" ++ typeToMatchName(bty) ++ ")"
+     | _ -> typeNameToMatchName(ty.unparse)
+     end;
 }
 function typeNameToMatchName
 String ::= ty::String
@@ -284,15 +296,22 @@ function matchRelationType
 AbellaType ::= ty::String
 {
   return arrowAbellaType(nameAbellaType(ty),
+         arrowAbellaType(nameAbellaType(ty),
          arrowAbellaType(nodeTreeType,
-         arrowAbellaType(patternType(ty),
-         arrowAbellaType(pmvrTy,
-                         nameAbellaType("prop")))));
+         arrowAbellaType(patternType(nameAbellaType(ty)),
+         arrowAbellaType(functorAbellaType(nameAbellaType("list"),
+                                           pmvrTy),
+                         nameAbellaType("prop"))))));
 }
 function patternType
-AbellaType ::= ty::String
+AbellaType ::= ty::AbellaType
 {
-  return nameAbellaType(ty ++ "_$Pattern");
+  return
+     case ty of
+     | functorAbellaType(fty, aty) ->
+       functorAbellaType(patternType(fty), patternType(aty))
+     | _ -> nameAbellaType(ty.unparse ++ "_$Pattern")
+     end;
 }
 function pmvrConstructorName
 String ::= ty::String
@@ -302,7 +321,12 @@ String ::= ty::String
 function patternConstructorName
 String ::= constructor::String ty::String
 {
-  return constructor ++ name_sep ++ patternType(ty).unparse;
+  return constructor ++ name_sep ++ patternType(nameAbellaType(ty)).unparse;
+}
+function varPatternName
+String ::= ty::String
+{
+  return patternConstructorName("$mvar", ty);
 }
 
 
