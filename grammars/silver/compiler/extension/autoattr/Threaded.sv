@@ -34,6 +34,7 @@ top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTy
 abstract production propagateThreadedInh
 top::ProductionStmt ::= inh::PartiallyDecorated QName syn::String
 {
+  undecorates to propagateOneAttr(inh, location=top.location);
   top.unparse = s"propagate ${inh.unparse};";
   
   local lhsName::String = top.frame.signature.outputElement.elementName;
@@ -65,6 +66,7 @@ top::ProductionStmt ::= inh::PartiallyDecorated QName syn::String
 abstract production propagateThreadedSyn
 top::ProductionStmt ::= inh::String syn::PartiallyDecorated QName
 {
+  undecorates to propagateOneAttr(syn, location=top.location);
   top.unparse = s"propagate ${syn.unparse};";
   
   local lhsName::String = top.frame.signature.outputElement.elementName;

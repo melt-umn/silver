@@ -66,6 +66,10 @@ public abstract class Node implements Decorable, Typed {
 			} catch(Throwable t) {
 				throw new TraceException("While undecorating " + context.getDebugID(), t);
 			}
+			
+			// Optimization: assuming any undecorated term undecorates to itself.
+			// TODO: Is there a way to enforce this?
+			undecoratedValue.undecoratedValue = undecoratedValue;
 		}
 		return undecoratedValue;
 	}
