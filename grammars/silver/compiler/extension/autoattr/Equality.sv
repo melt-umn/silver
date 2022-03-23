@@ -31,6 +31,7 @@ top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName ';'
 abstract production propagateEquality
 top::ProductionStmt ::= inh::String syn::PartiallyDecorated QName
 {
+  undecorates to propagateOneAttr(syn, location=top.location);
   top.unparse = s"propagate ${syn.unparse};";
   
   forwards to

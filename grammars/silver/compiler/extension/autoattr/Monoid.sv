@@ -118,6 +118,7 @@ top::Operation ::=
 abstract production propagateMonoid
 top::ProductionStmt ::= attr::PartiallyDecorated QName
 {
+  undecorates to propagateOneAttr(attr, location=top.location);
   top.unparse = s"propagate ${attr.unparse};";
   
   -- No explicit errors, for now.  The only conceivable issue is the attribute not

@@ -54,6 +54,7 @@ concrete productions top::Direction
 abstract production propagateThreadedInh
 top::ProductionStmt ::= rev::Boolean inh::PartiallyDecorated QName syn::String
 {
+  undecorates to propagateOneAttr(inh, location=top.location);
   top.unparse = s"propagate ${inh.unparse};";
   
   local lhsName::String = top.frame.signature.outputElement.elementName;
@@ -87,6 +88,7 @@ top::ProductionStmt ::= rev::Boolean inh::PartiallyDecorated QName syn::String
 abstract production propagateThreadedSyn
 top::ProductionStmt ::= rev::Boolean inh::String syn::PartiallyDecorated QName
 {
+  undecorates to propagateOneAttr(syn, location=top.location);
   top.unparse = s"propagate ${syn.unparse};";
   
   local lhsName::String = top.frame.signature.outputElement.elementName;

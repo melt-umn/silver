@@ -99,6 +99,7 @@ top::Expr ::= q::QName
 abstract production errorReference
 top::Expr ::= msg::[Message]  q::PartiallyDecorated QName
 {
+  undecorates to errorExpr(msg, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -110,6 +111,7 @@ top::Expr ::= msg::[Message]  q::PartiallyDecorated QName
 abstract production childReference
 top::Expr ::= q::PartiallyDecorated QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -121,6 +123,7 @@ top::Expr ::= q::PartiallyDecorated QName
 abstract production lhsReference
 top::Expr ::= q::PartiallyDecorated QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -131,6 +134,7 @@ top::Expr ::= q::PartiallyDecorated QName
 abstract production localReference
 top::Expr ::= q::PartiallyDecorated QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -142,6 +146,7 @@ top::Expr ::= q::PartiallyDecorated QName
 abstract production forwardReference
 top::Expr ::= q::PartiallyDecorated QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -155,6 +160,7 @@ top::Expr ::= q::PartiallyDecorated QName
 abstract production productionReference
 top::Expr ::= q::PartiallyDecorated QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
@@ -173,6 +179,7 @@ top::Expr ::= q::PartiallyDecorated QName
 abstract production functionReference
 top::Expr ::= q::PartiallyDecorated QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
@@ -191,6 +198,7 @@ top::Expr ::= q::PartiallyDecorated QName
 abstract production classMemberReference
 top::Expr ::= q::PartiallyDecorated QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
@@ -222,6 +230,7 @@ top::Expr ::= q::PartiallyDecorated QName
 abstract production globalValueReference
 top::Expr ::= q::PartiallyDecorated QName
 {
+  undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
 
@@ -307,6 +316,7 @@ top::Expr ::= e::Expr '(' ')'
 abstract production errorApplication
 top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
+  undecorates to application(e, '(', es, ',', anns, ')', location=top.location);
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   top.errors <-
@@ -324,6 +334,7 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
 abstract production functionApplication
 top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
+  undecorates to application(e, '(', es, ',', anns, ')', location=top.location);
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
   top.freeVars := e.freeVars ++ es.freeVars ++ anns.freeVars;
 
@@ -336,6 +347,7 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
 abstract production functionInvocation
 top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
+  undecorates to application(e, '(', es, ',', anns, ')', location=top.location);
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
@@ -346,6 +358,7 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
 abstract production partialApplication
 top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
+  undecorates to application(e, '(', es, ',', anns, ')', location=top.location);
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
@@ -402,6 +415,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 abstract production errorAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = errorType();
@@ -417,6 +431,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 abstract production annoAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   production index :: Integer =
@@ -428,6 +443,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 abstract production terminalAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- NO use of q.errors, as that become nonsensical here.
@@ -452,6 +468,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 abstract production undecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- Note: LHS is UNdecorated, here we dispatch based on the kind of attribute.
@@ -468,6 +485,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 abstract production accessBouncer
 top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::Expr  q::PartiallyDecorated QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
   e.isRoot = false;
@@ -490,6 +508,7 @@ Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttr
 abstract production decoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- Note: LHS is decorated, here we dispatch based on the kind of attribute.
@@ -504,6 +523,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 abstract production synDecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = q.typerep;
@@ -512,6 +532,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 abstract production inhDecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   top.typerep = q.typerep;
@@ -521,6 +542,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 abstract production errorDecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
+  undecorates to access(e, '.', q, location=top.location);
   top.unparse = e.unparse ++ "." ++ q.unparse;
 
   top.typerep = errorType();
@@ -1236,6 +1258,8 @@ Expr ::= l::Location  e::String  es::[PartiallyDecorated Expr]
 abstract production exprRef
 top::Expr ::= e::PartiallyDecorated Expr
 {
+  undecorates to e;
+
   top.unparse = e.unparse;
 
   -- See the major restriction. This should have been checked for error already!

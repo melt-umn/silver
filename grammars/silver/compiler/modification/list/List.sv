@@ -89,11 +89,3 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 {
   top.listtrans = mkStrFunctionInvocation(e1.location, "silver:core:cons", [e1, e2.listtrans]);
 }
-
--- Overloaded operators --------------------------------------------------------
-
-abstract production listPlusPlus
-top::Expr ::= e1::PartiallyDecorated Expr e2::PartiallyDecorated Expr
-{
-  forwards to mkStrFunctionInvocationDecorated(e1.location, "silver:core:append", [e1,e2]);
-}

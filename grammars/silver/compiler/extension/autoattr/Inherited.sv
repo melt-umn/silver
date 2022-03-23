@@ -3,6 +3,7 @@ grammar silver:compiler:extension:autoattr;
 abstract production propagateInh
 top::ProductionStmt ::= attr::PartiallyDecorated QName
 {
+  undecorates to propagateOneAttr(attr, location=top.location);
   top.unparse = s"propagate ${attr.unparse};";
   
   local attrFullName::String = attr.lookupAttribute.dcl.fullName;
