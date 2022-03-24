@@ -204,7 +204,11 @@ public class RawProcessHandle {
      * <pre>IOVal<ProcessHandle> ::= cmd::String args::[String] io::IO</pre>
      */
     public static NIOVal spawnProcess(StringCatter cmd, ConsCell args, IOToken io) {
-        List<String> full_cmd = ConsCell.toList(args);
+        List<StringCatter> args = ConsCell.toList(args);
+        List<String> full_cmd = new ArrayList();
+        for (int i = 0; i < args.size(); i++) {
+            full_cmd.add(i, args.get(i).toString());
+        }
         full_cmd.add(0, cmd.toString());
         return io.wrap(new RawProcessHandle(full_cmd));
     }
