@@ -207,6 +207,7 @@ public class RawProcessHandle {
     public static NIOVal spawnProcess(StringCatter cmd, ConsCell args, IOToken io) {
         List<StringCatter> argsList = ConsCell.toList(args);
         List<String> full_cmd = new ArrayList<String>();
+        //Convert all the args to regular Strings instead of StringCatter
         for (int i = 0; i < argsList.size(); i++) {
             full_cmd.add(i, argsList.get(i).toString());
         }
