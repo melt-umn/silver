@@ -36,6 +36,9 @@ top::Expr ::= params::ProductionRHS e::Expr
       filter(\ tv::String -> null(getTypeDcl(tv, top.env)), nub(params.lexicalTypeVariables)));
 
   propagate downSubst, upSubst;
+
+  top.isUnique = false;
+  
   propagate flowDeps, flowDefs;
   
   params.env = newScopeEnv(sigDefs, top.env);
@@ -86,6 +89,8 @@ top::Expr ::= q::PartiallyDecorated QName
   top.typerep = q.lookupValue.typeScheme.monoType;
 
   propagate downSubst, upSubst;
+  
+  top.isUnique = top.typerep.isUnique;
   
   -- TODO?
   propagate flowDeps, flowDefs;

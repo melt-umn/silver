@@ -6,6 +6,8 @@ imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type;
 
+imports silver:compiler:analysis:uniqueness;
+
 import silver:compiler:definition:type:syntax only typerepType, TypeExpr, errorsKindStar;
 import silver:compiler:extension:patternmatching only Arrow_kwd, Vbar_kwd, ensureDecoratedExpr; -- TODO remove
 
@@ -23,12 +25,12 @@ terminal Match_kwd 'match' lexer classes {KEYWORD,RESERVED}; -- temporary!!!
 nonterminal PrimPatterns with 
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors, freeVars,
-  downSubst, upSubst, finalSubst,
+  downSubst, upSubst, finalSubst, isUnique,
   scrutineeType, returnType, translation, isRoot, originRules;
 nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors, freeVars,
-  downSubst, upSubst, finalSubst,
+  downSubst, upSubst, finalSubst, isUnique,
   scrutineeType, returnType, translation, isRoot, originRules;
 
 autocopy attribute scrutineeType :: Type;
@@ -100,6 +102,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   pr.scrutineeType = scrutineeType;
   pr.returnType = t.typerep;
   
+  top.isUnique = pr.isUnique || f.isUnique;
+  
   local resultTransType :: String = performSubstitution(t.typerep, top.finalSubst).transType;
   -- It is necessary to subst on scrutineeType here for the horrible reason that the type we're matching on
   -- may not be determined until we get to the constructor list. e.g. 'case error("lol") of pair(x,_) -> x end'
@@ -137,8 +141,9 @@ top::PrimPatterns ::= p::PrimPattern
   
   top.translation = p.translation;
   
-  p.downSubst = top.downSubst;
-  top.upSubst = p.upSubst;
+  propagate downSubst, upSubst;
+
+  top.isUnique = p.isUnique;
 }
 concrete production consPattern
 top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
@@ -147,9 +152,9 @@ top::PrimPatterns ::= p::PrimPattern '|' ps::PrimPatterns
   
   top.translation = p.translation ++ "\nelse " ++ ps.translation;
 
-  p.downSubst = top.downSubst;
-  ps.downSubst = p.upSubst;
-  top.upSubst = ps.upSubst;
+  propagate downSubst, upSubst;
+
+  top.isUnique = p.isUnique || ps.isUnique;
 }
 
 -- TODO: Long term, I'd like to switch to having a PrimRule and rename PrimPatterns PrimRules.
@@ -241,6 +246,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   -- Thread NORMALLY! YAY!
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
+
+  top.isUnique = e.isUnique;
   
   -- If there are contexts on the production, then we need to make the scrutinee available
   -- in the RHS to access their implementations.
@@ -325,6 +332,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   -- Okay, now update the finalSubst....
   e.finalSubst = errCheck2.upSubst;
   -- Here ends the hack
+
+  top.isUnique = e.isUnique;
   
   -- If there are contexts on the production, then we need to make the scrutinee available
   -- in the RHS to access their implementations.
@@ -367,6 +376,8 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
+  top.isUnique = e.isUnique;
+
   top.translation = "if(scrutinee == " ++ i.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
 }
@@ -389,6 +400,8 @@ top::PrimPattern ::= f::Float_t '->' e::Expr
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
+
+  top.isUnique = e.isUnique;
 
   top.translation = "if(scrutinee == " ++ f.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -413,6 +426,8 @@ top::PrimPattern ::= i::String_t '->' e::Expr
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
+  top.isUnique = e.isUnique;
+
   top.translation = "if(scrutinee.equals(" ++ i.lexeme ++ ")) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
 }
@@ -436,6 +451,8 @@ top::PrimPattern ::= i::String '->' e::Expr
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
+  top.isUnique = e.isUnique;
+
   top.translation = "if(scrutinee == " ++ i ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
 }
@@ -458,6 +475,8 @@ top::PrimPattern ::= e::Expr
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
+
+  top.isUnique = e.isUnique;
 
   top.translation = "if(scrutinee.nil()) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -486,6 +505,8 @@ top::PrimPattern ::= h::Name t::Name e::Expr
                 else [];
 
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
+
+  top.isUnique = e.isUnique;
   
   local consdefs :: [Def] =
     [lexicalLocalDef(top.grammarName, top.location, h_fName, elemType, noVertex(), []),
