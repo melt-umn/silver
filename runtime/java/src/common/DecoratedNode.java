@@ -167,8 +167,12 @@ public class DecoratedNode implements Decorable, Typed {
 	 * @return Turn this DecoratedNode back into an undecorated {@link Node}.
 	 */
 	public final Node undecorate() {
-		// System.err.println("TRACE: undecorating " + getDebugID());
-		return self.undecorate(this);
+		if (self.isUnique) {
+			// System.err.println("TRACE: undecorating " + getDebugID());
+			return self.undecorate(this);
+		} else {
+			return self;
+		}
 	}
 
 	/**

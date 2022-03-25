@@ -91,7 +91,7 @@ top::Expr ::= q::PartiallyDecorated QName
 
   propagate downSubst, upSubst;
   
-  top.isUnique = top.typerep.isUnique;
+  top.isUnique = finalType(top).isUnique;
   
   -- TODO?
   propagate flowDeps, flowDefs;

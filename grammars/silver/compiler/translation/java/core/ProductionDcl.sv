@@ -99,18 +99,34 @@ ${namedSig.inhOccursIndexDecls}
 ${namedSig.childStatic}
     }
 
-    public ${className}(final NOriginInfo origin ${commaIfAny} ${namedSig.javaSignature}) {
+    public ${className}(final NOriginInfo origin, final boolean isUnique ${commaIfAny} ${namedSig.javaSignature}) {
         super(${implode(", ",
         	(if wantsTracking then ["origin"] else []) ++
+        	"isUnique" ::
         	map((.annoRefElem), namedSig.namedInputElements))});
+		this.isUnique = ${
+		  if any(map(\ x::NamedSignatureElement -> x.typerep.isUnique, namedSig.inputElements))
+		  then "true"
+		  else "isUnique"};
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
 ${contexts.contextInitTrans}
+    }
+
+    public ${className}(final NOriginInfo origin ${commaIfAny} ${namedSig.javaSignature}) {
+        this(origin, false ${if length(namedSig.refInvokeTrans)!=0 then ", " ++ namedSig.refInvokeTrans else ""});
+    }
+
+
+    public ${className}(final boolean isUnique ${commaIfAny} ${namedSig.javaSignature}) {
+        this(null, isUnique ${if length(namedSig.refInvokeTrans)!=0 then ", " ++ namedSig.refInvokeTrans else ""});
     }
 
 
     public ${className}(${namedSig.javaSignature}) {
         this(null ${if length(namedSig.refInvokeTrans)!=0 then ", " ++ namedSig.refInvokeTrans else ""});
     }
+    
+    public final boolean isUnique;
 
 ${namedSig.childDecls}
 
@@ -165,8 +181,8 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
             namedSig.contextRefElems ++
             map(undecChild, namedSig.inputElements) ++
             map(copyAnno, namedSig.namedInputElements))});"
-    	  -- TODO: Consider if all decorable children are directly undecorable.
-    	  -- This must avoid forcing children that are thunks, and probably also should be cached.
+             -- TODO: Consider if all decorable children are directly undecorable.
+             -- This must avoid forcing children that are thunks, and probably also should be cached.
           else "return this;"}
     }
 
@@ -177,7 +193,7 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
 
     @Override
     public common.Node evalForward(final common.DecoratedNode context) {
-        ${if null(body.forwardExpr) 
+        ${if null(body.forwardExpr)
           then s"throw new common.exceptions.SilverInternalError(\"Production ${fName} erroneously claimed to forward\")"
           else s"return ((common.Node)${head(body.forwardExpr).translation}${
             if wantsTracking && !top.config.noRedex
@@ -302,7 +318,10 @@ ${contexts.contextInitTrans}
 	
 		@Override
         public final ${fnnt} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] annotations) {
-            return new ${className}(${implode(", ", (if wantsTracking then [newConstructionOriginUsingCtxRef] else []) ++ map(\ c::Context -> decorate c with {boundVariables = namedSig.freeVariables;}.contextRefElem, namedSig.contexts) ++ unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
+            return new ${className}(
+              ${implode(", ", (if wantsTracking then [newConstructionOriginUsingCtxRef] else []) ++
+              map(\ c::Context -> decorate c with {boundVariables = namedSig.freeVariables;}.contextRefElem, namedSig.contexts) ++
+              unpackChildren(0, namedSig.inputElements) ++ unpackAnnotations(0, namedSig.namedInputElements))});
         }
 		
         @Override

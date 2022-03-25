@@ -179,7 +179,10 @@ ${contexts.contextInitTrans}
 
 		@Override
 		public final ${whatSig.outputElement.typerep.transType} invoke(final common.OriginContext originCtx, final Object[] children, final Object[] namedNotApplicable) {
-			return ${className}.invoke(${implode(", ", ["originCtx"] ++ map(\ c::Context -> decorate c with {boundVariables = whatSig.freeVariables;}.contextRefElem, whatSig.contexts) ++ unpackChildren(0, whatSig.inputElements))});
+			return ${className}.invoke(${implode(", ",
+			  ["originCtx"] ++
+			  map(\ c::Context -> decorate c with {boundVariables = whatSig.freeVariables;}.contextRefElem, whatSig.contexts) ++
+			  unpackChildren(0, whatSig.inputElements))});
 		}
 		
 		@Override
