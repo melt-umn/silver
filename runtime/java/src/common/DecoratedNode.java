@@ -190,11 +190,14 @@ public class DecoratedNode implements Decorable, Typed {
 			for(int i = 0; i < inhs.length; i++) {
 				final int attribute = i;
 				if(inhs[attribute] != null) {
+					/*
 					if(inheritedAttributes[attribute] == null) {
 						inheritedAttributes[attribute] = (context) -> inhs[attribute].eval(parent);
 					} else {
 						throw new SilverException(parent.getDebugID() + " cannot decorate " + getDebugID() + " with inh '" + self.getNameOfInhAttr(attribute) + "' as this attribute has already been provided by " + this.parent.getDebugID() + ".");
-					}
+					}*/
+					// TODO: Above check is disabled due to unwanted autocopy equations; just silently overwrite the equation in case of a duplicate for now.
+					inheritedAttributes[attribute] = (context) -> inhs[attribute].eval(parent);
 				}
 			}
 		}
