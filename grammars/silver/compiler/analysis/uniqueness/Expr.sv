@@ -3,6 +3,7 @@ grammar silver:compiler:analysis:uniqueness;
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:type:syntax;
+imports silver:compiler:translation:java:core only finalType;
 
 -- TODO: Eventually we need 2 seperate notions of uniqueness:
 -- uniqueness w.r.t. decoration (is this a unique value that gets created
@@ -25,13 +26,13 @@ top::Expr ::= msg::[Message]  q::PartiallyDecorated QName
 aspect production childReference
 top::Expr ::= q::PartiallyDecorated QName
 {
-  top.isUnique = top.typerep.isUnique;
+  top.isUnique = finalType(top).isUnique;
 }
 
 aspect production localReference
 top::Expr ::= q::PartiallyDecorated QName
 {
-  top.isUnique = top.typerep.isUnique;
+  top.isUnique = finalType(top).isUnique;
 }
 
 aspect production lhsReference

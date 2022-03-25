@@ -43,7 +43,9 @@ public abstract class ${className} extends common.Node ${
 
 	protected ${className}(${implode(", ",
 			(if wantsTracking then ["final NOriginInfo origin"] else []) ++
+			"final boolean isUnique" ::
 			map((.annoSigElem), myAnnos))}) {
+		super(isUnique);
 		${if wantsTracking then "this.origin = origin;" else ""}
 ${implode("", map(makeAnnoAssign, myAnnos))}
 	}

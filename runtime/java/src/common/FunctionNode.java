@@ -1,7 +1,6 @@
 package common;
 
 import common.exceptions.SilverInternalError;
-import silver.core.*;
 
 /**
  * FunctionNode is a Node, but with a few methods "removed".
@@ -17,6 +16,9 @@ import silver.core.*;
  * @see Node
  */
 public abstract class FunctionNode extends Node {
+	public FunctionNode() {
+		super(false);
+	}
 
 	// Used only when needing origins info on lazily evaluated locals in functions :/
 	public DecoratedNode decorate(OriginContext originCtx) {
@@ -27,7 +29,8 @@ public abstract class FunctionNode extends Node {
 
 	@Override
 	public final Node evalUndecorate(final DecoratedNode context) {
-		return this;
+		// Functions should never even have this consulted. Ever.
+		throw new SilverInternalError("Functions do not undecorate!");
 	}
 
 	@Override
