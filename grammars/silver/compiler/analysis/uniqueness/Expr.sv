@@ -284,3 +284,9 @@ top::Expr ::= e::PartiallyDecorated Expr
 {
   top.isUnique = e.isUnique;
 }
+
+aspect production decHereExpr
+top::Expr ::= e::PartiallyDecorated Expr with {}
+{
+  top.isUnique = e.isUnique;
+}

@@ -569,6 +569,13 @@ top::Expr ::= e::PartiallyDecorated Expr
   top.lazyTranslation = e.lazyTranslation;
 }
 
+aspect production decHereExpr
+top::Expr ::= e::PartiallyDecorated Expr with {}
+{
+  top.translation = e.translation;
+  top.lazyTranslation = e.lazyTranslation;
+}
+
 
 function wrapThunk
 String ::= exp::String  beLazy::Boolean

@@ -20,7 +20,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   
   -- the core dispatchers
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: should probably be an error handler!
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, location=_); -- TODO: should probably be an error handler!
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }

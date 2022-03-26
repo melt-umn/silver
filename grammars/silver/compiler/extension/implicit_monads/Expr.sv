@@ -2044,6 +2044,20 @@ top::Expr ::= e::PartiallyDecorated Expr
   top.monadRewritten = e.monadRewritten;
 }
 
+aspect production decHereExpr
+top::Expr ::= e::PartiallyDecorated Expr with {}
+{
+  e.mDownSubst = top.mDownSubst;
+  e.expectedMonad = top.expectedMonad;
+  e.monadicallyUsed = top.monadicallyUsed;
+
+  top.merrors := e.merrors;
+  top.mUpSubst = e.mUpSubst;
+  top.mtyperep = e.mtyperep;
+  top.monadicNames = e.monadicNames;
+  top.monadRewritten = e.monadRewritten;
+}
+
 
 
 

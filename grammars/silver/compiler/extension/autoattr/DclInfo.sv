@@ -27,7 +27,7 @@ top::AttributeDclInfo ::= fn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = functorAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateFunctor(_, location=_);
@@ -44,7 +44,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append:
   top.operation = append;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attrDefDispatcher = 
     \ dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr  l::Location ->
       errorAttributeDef([err(l, attr.name ++ " is a monoid collection attribute, and you must use ':=' or '<-', not '='.")], dl, attr, e, location=l);
@@ -65,7 +65,7 @@ top::AttributeDclInfo ::= fn::String
   top.isInherited = true;
   
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: should probably be an error handler! access inh from undecorated?
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, location=_); -- TODO: should probably be an error handler! access inh from undecorated?
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_); -- Allow normal inh equations
   top.attributionDispatcher = destructAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateDestruct(_, location=_);
@@ -80,7 +80,7 @@ top::AttributeDclInfo ::= inh::String syn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateEquality(inh, _, location=_);
@@ -95,7 +95,7 @@ top::AttributeDclInfo ::= syn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateOrderingKey(_, location=_);
@@ -110,7 +110,7 @@ top::AttributeDclInfo ::= inh::String keySyn::String syn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateOrdering(inh, keySyn, _, location=_);
@@ -125,7 +125,7 @@ top::AttributeDclInfo ::= inh::String synPartial::String syn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateUnificationSynPartial(inh, _, syn, location=_);
@@ -140,7 +140,7 @@ top::AttributeDclInfo ::= inh::String synPartial::String syn::String
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateUnificationSyn(inh, synPartial, _, location=_);
@@ -155,7 +155,7 @@ top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
   top.isInherited = true;
   
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_); -- Allow normal inh equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateThreadedInh(_, syn, location=_);
@@ -170,7 +170,7 @@ top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
   top.isSynthesized = true;
   
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
   top.propagateDispatcher = propagateThreadedSyn(inh, _, location=_);

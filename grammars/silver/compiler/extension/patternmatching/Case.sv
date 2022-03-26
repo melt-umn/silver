@@ -1281,17 +1281,6 @@ Expr ::= l::Location s::String t::Type e::Expr o::Expr
     o, location=l);
 }
 
-function ensureDecoratedExpr
-Expr ::= e::PartiallyDecorated Expr
-{
-  local et :: Type = performSubstitution(e.typerep, e.upSubst);
-  local eRef :: Expr = exprRef(e, location=e.location);
-
-  return if isDecorable(et, e.env)
-         then decorateExprWithEmpty('decorate', eRef, 'with', '{', '}', location=e.location)
-         else eRef;
-}
-
 instance Eq AbstractMatchRule {
   eq = \ a::AbstractMatchRule b::AbstractMatchRule ->
     a.headPattern.patternSortKey == b.headPattern.patternSortKey;

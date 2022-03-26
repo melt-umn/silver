@@ -113,7 +113,7 @@ aspect production synDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.decoratedAccessHandler = synDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
+  top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
@@ -121,14 +121,14 @@ aspect production inhDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.decoratedAccessHandler = inhDecoratedAccessHandler(_, _, location=_);
-  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _); -- TODO: above should probably be an error handler! access inh from undecorated?
+  top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, location=_); -- TODO: above should probably be an error handler! access inh from undecorated?
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_);
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 }
 aspect production annoDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
-  top.decoratedAccessHandler = accessBounceUndecorate(annoAccessHandler(_, _, location=_), _, _, _);
+  top.decoratedAccessHandler = accessBounceUndecorate(annoAccessHandler(_, _, location=_), _, _, location=_);
   top.undecoratedAccessHandler = annoAccessHandler(_, _, location=_);
   top.attrDefDispatcher =
     \ dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr  l::Location ->

@@ -481,16 +481,18 @@ top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNam
   -- Basically the only purpose here is to decorate 'e'.
   forwards to target(e, q, top.location);
 }
-function accessBounceDecorate
-Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur  l::Location
+abstract production accessBounceDecorate
+top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  return accessBouncer(target, decorateExprWithEmpty('decorate', exprRef(e, location=l), 'with', '{', '}', location=l), q, location=l);
+  undecorates to access(e, '.', q, location=top.location);
+  forwards to accessBouncer(target, decorateExprWithEmpty('decorate', exprRef(e, location=top.location), 'with', '{', '}', location=top.location), q, location=top.location);
 }
 -- Note that this performs the access on the term that was originally decorated, rather than properly undecorating.
-function accessBounceUndecorate
-Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur  l::Location
+abstract production accessBounceUndecorate
+top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  return accessBouncer(target, mkStrFunctionInvocationDecorated(l, "silver:core:getTermThatWasDecorated", [e]), q, location=l);
+  undecorates to access(e, '.', q, location=top.location);
+  forwards to accessBouncer(target, mkStrFunctionInvocationDecorated(top.location, "silver:core:getTermThatWasDecorated", [e]), q, location=top.location);
 }
 
 abstract production decoratedAccessHandler
@@ -548,7 +550,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' '}'
 {
   top.unparse = "decorate " ++ e.unparse ++ " with {}";
 
-  forwards to decorateExprWith($1, e, $3, $4, exprInhsEmpty(location=top.location), $5, location=top.location);
+  forwards to decorateExprWith($1, decHereExpr(e, location=top.location), $3, $4, exprInhsEmpty(location=top.location), $5, location=top.location);
 }
 
 concrete production decorateExprWith
@@ -1255,3 +1257,22 @@ top::Expr ::= e::PartiallyDecorated Expr
   -- To accomplish this, we might want some notion of a decorated forward.
 }
 
+-- TODO: Eventually this sort of production should be a built-in construct in Silver,
+-- e.g. @x to turn x :: PartiallyDecorated a with {} into an a
+abstract production decHereExpr
+top::Expr ::= e::PartiallyDecorated Expr with {}
+{
+  undecorates to e;
+  top.unparse = e.unparse;
+  top.freeVars <- e.freeVars;
+  top.errors <- e.errors;
+  top.typerep = e.typerep;
+  
+  e.frame = top.frame;
+  e.grammarName = top.grammarName;
+  e.isRoot = top.isRoot;
+  e.originRules = top.originRules;
+  e.compiledGrammars = top.compiledGrammars;
+  e.config = top.config;
+  e.env = top.env;
+}
