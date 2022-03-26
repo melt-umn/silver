@@ -228,6 +228,16 @@ top::Expr ::= e::PartiallyDecorated Expr
   top.flowVertexInfo = e.flowVertexInfo;
 }
 
+aspect production decHereExpr
+top::Expr ::= e::PartiallyDecorated Expr with {}
+{
+  top.flowDeps <- e.flowDeps;
+  top.flowVertexInfo = e.flowVertexInfo;
+  top.flowDefs <- e.flowDefs;
+  
+  e.flowEnv = top.flowEnv;
+}
+
 -- FROM LET TODO
 attribute flowDefs, flowEnv occurs on AssignExpr;
 propagate flowDefs, flowEnv on AssignExpr;

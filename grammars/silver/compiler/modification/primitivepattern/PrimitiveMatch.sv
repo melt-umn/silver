@@ -9,7 +9,7 @@ imports silver:compiler:definition:type;
 imports silver:compiler:analysis:uniqueness;
 
 import silver:compiler:definition:type:syntax only typerepType, TypeExpr, errorsKindStar;
-import silver:compiler:extension:patternmatching only Arrow_kwd, Vbar_kwd, ensureDecoratedExpr; -- TODO remove
+import silver:compiler:extension:patternmatching only Arrow_kwd, Vbar_kwd; -- TODO remove
 
 import silver:compiler:translation:java:core;
 import silver:compiler:translation:java:type;
@@ -58,8 +58,17 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
   
-  forwards to matchPrimitiveReal(ensureDecoratedExpr(e), t, pr, f, location=top.location);
+  -- We are wrapping 'e' in 'exprRef' which suppresses errors
+  top.errors <- e.errors;
+  
+  forwards to
+    matchPrimitiveReal(
+      if isDecorable(performSubstitution(e.typerep, e.upSubst), e.env)
+      then decorateExprWithEmpty('decorate', exprRef(e, location=e.location), 'with', '{', '}', location=e.location)
+      else exprRef(e, location=e.location),
+      t, pr, f, location=top.location);
 }
+
 {--
  - @param e  The value to match against (should be DECORATED if it's nonterminal type at all)
  - @param t  The RETURN TYPE, explicitly.

@@ -8,7 +8,8 @@ propagate upSubst, downSubst
      undecoratedAccessHandler, forwardAccess, decoratedAccessHandler,
      and, or, notOp, ifThenElse, plus, minus, multiply, divide, modulus,
      decorateExprWith, exprInh, presentAppExpr,
-     terminalConstructor, noteAttachment;
+     terminalConstructor, noteAttachment,
+     decHereExpr;
 propagate finalSubst on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
 attribute contexts occurs on Expr;
@@ -398,3 +399,10 @@ top::AppExpr ::= e::Expr
 
 -- See documentation for major restriction on use of exprRef.
 -- Essentially, the referred expression MUST have already been type checked.
+
+aspect production decHereExpr
+top::Expr ::= e::PartiallyDecorated Expr with {}
+{
+  thread downSubst, upSubst on top, e, top;
+  e.finalSubst = top.finalSubst;
+}
