@@ -292,7 +292,7 @@ String ::= ty::String
 {
   return "$match" ++ name_sep ++ ty;
 }
-function matchRelationType
+function matchRelationType --for NT only
 AbellaType ::= ty::String
 {
   return arrowAbellaType(nameAbellaType(ty),
