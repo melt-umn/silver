@@ -68,7 +68,7 @@ attribute
    encodingEnv, encodingEnv_up, encodedPatt
 occurs on Pattern;
 
-synthesized attribute encodedPatt::AbellaTerm;
+synthesized attribute encodedPatt::Term;
 
 
 aspect production prodAppPattern_named
