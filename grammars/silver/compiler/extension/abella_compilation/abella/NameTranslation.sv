@@ -42,9 +42,6 @@ global notName::String = "$not_bool";
 global trueName::String = "$btrue";
 global falseName::String = "$bfalse";
 
-global patternMatchResultVar::String = "$pattern_match_var_result";
-global pmvrTy::AbellaType = nameAbellaType(patternMatchResultVar);
-
 
 
 --Nonterminals
@@ -266,67 +263,6 @@ String ::= ty::AbellaType component::String
 {
   return "$structure_eq" ++ name_sep ++ ty.unparse ++ name_sep ++
          component ++ name_sep ++ "expand";
-}
-
-
---Pattern Matching
-function typeToMatchName
-String ::= ty::AbellaType
-{
-  return
-     case ty of
-     | functorAbellaType(nameAbellaType("list"), argty) ->
-       typeNameToMatchName("list") ++ " " ++
-          "(" ++ typeToMatchName(argty) ++ ")"
-     | functorAbellaType(
-          functorAbellaType(nameAbellaType(pty), aty),
-          bty) when pty == pairTypeName ->
-       typeNameToMatchName(pairTypeName) ++ " " ++
-          "(" ++ typeToMatchName(aty) ++ ") " ++
-          "(" ++ typeToMatchName(bty) ++ ")"
-     | _ -> typeNameToMatchName(ty.unparse)
-     end;
-}
-function typeNameToMatchName
-String ::= ty::String
-{
-  return "$match" ++ name_sep ++ ty;
-}
-function matchRelationType --for NT only
-AbellaType ::= ty::String
-{
-  return arrowAbellaType(nameAbellaType(ty),
-         arrowAbellaType(nameAbellaType(ty),
-         arrowAbellaType(nodeTreeType,
-         arrowAbellaType(patternType(nameAbellaType(ty)),
-         arrowAbellaType(functorAbellaType(nameAbellaType("list"),
-                                           pmvrTy),
-                         nameAbellaType("prop"))))));
-}
-function patternType
-AbellaType ::= ty::AbellaType
-{
-  return
-     case ty of
-     | functorAbellaType(fty, aty) ->
-       functorAbellaType(patternType(fty), patternType(aty))
-     | _ -> nameAbellaType(ty.unparse ++ "_$Pattern")
-     end;
-}
-function pmvrConstructorName
-String ::= ty::String
-{
-  return "$pmvr" ++ name_sep ++ ty;
-}
-function patternConstructorName
-String ::= constructor::String ty::String
-{
-  return constructor ++ name_sep ++ patternType(nameAbellaType(ty)).unparse;
-}
-function varPatternName
-String ::= ty::String
-{
-  return patternConstructorName("$mvar", ty);
 }
 
 
