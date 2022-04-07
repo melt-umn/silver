@@ -1,15 +1,33 @@
 package common.rawlib;
 
 import java.util.TreeMap;
+import java.util.List;
+import java.util.Arrays;
 
 import common.ConsCell;
 import common.NodeFactory;
+import common.StringCatter;
 import common.javainterop.ConsCellCollection;
 import common.javainterop.SilverComparator;
 
 public final class RawTreeMap {
 	public static TreeMap<Object,ConsCell> empty(NodeFactory<Integer> cmp) {
 		return new TreeMap<Object,ConsCell>(new SilverComparator<Object>(cmp));
+	}
+	public static TreeMap<String,ConsCell> fromCSVString(StringCatter csvStr, NodeFactory<Integer> cmp) {
+		String[] lines = (csvStr.toString()).split(System.lineSeparator());
+		TreeMap<String,ConsCell> outputMap = new TreeMap<String,ConsCell>(new SilverComparator<Object>(cmp));
+		for (String line : lines) {
+			List<String> tokens = Arrays.asList(line.split(","));
+
+			if (tokens.size() > 1) {
+				String head = ( // new StringCatter
+										(tokens.get(0)) );
+				ConsCell rest = ConsCell.fromList(tokens.subList(1, tokens.size()));
+				outputMap.put(head, rest);
+			}
+		}
+		return outputMap;
 	}
 	public static TreeMap<Object, ConsCell> addList(ConsCell l, TreeMap<Object, ConsCell> t) {
 		if(l.nil())

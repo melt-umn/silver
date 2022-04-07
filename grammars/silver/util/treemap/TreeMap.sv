@@ -62,6 +62,19 @@ function lookup
   "java" : return "common.rawlib.RawTreeMap.lookup(%key%, %mp%)";
 }
 
+
+-- @{--
+--  - Returns a new, multimap (String as keys, String List as values) filled in
+--  - with entries according to the csv string passed in.
+--  -}
+-- function fromCSVString
+-- Map<String String> ::= csvStr::String comparator::(Integer ::= a a)
+-- {
+--   return error("NYI");
+-- } foreign {
+--   "java" : return "common.rawlib.RawTreeMap.fromCSVString(%csvStr%, %comparator%)";
+-- }
+
 @{--
  - Converts a multimap back to a list of pairs, in sorted order by key.
  -}
