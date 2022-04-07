@@ -33,11 +33,11 @@ public final class RawHashMap {
                 System.out.println("head: " + head);
                 System.out.println("length of tail now: " + tokens.size());
                 System.out.println("head now: " + tokens.get(0));
-                ConsCell rest = ConsCell.fromList(tokens);
                 if (outputMap.containsKey(head)) {
                     ConsCell existing = outputMap.get(head);
-                    outputMap.put(head, new ConsCell(rest, existing));
+                    outputMap.put(head, new ConsCell(tokens.get(0), existing));
                 } else {
+                    ConsCell rest = ConsCell.fromList(tokens);
                     outputMap.put(head, rest);
                 }
 			}
