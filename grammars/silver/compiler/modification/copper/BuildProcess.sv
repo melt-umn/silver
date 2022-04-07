@@ -136,10 +136,11 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
           makeName(spec.sourceGrammar), parserName, false,
           outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
           parserName ++ ".html", cmdArgs.copperXmlDump);
-        case nativeSerialize(new(specCstAst)) of
-        | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper modification: " ++ e)
-        | right(dump) -> writeBinaryFile(dumpFile, dump)
-        end;
+        when_(ret == 0,
+          case nativeSerialize(new(specCstAst)) of
+          | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper modification: " ++ e)
+          | right(dump) -> writeBinaryFile(dumpFile, dump)
+          end);
         return ret;
       };
     } else do {
@@ -154,7 +155,7 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
     if dumpFileExists then do {
       dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
       let dumpMatched::Either<String Boolean> = map(eq(specCstAst, _), nativeDeserialize(dumpFileContents));
-      if dumpMatched == right(true) then do {
+      if dumpMatched == right(true) && !cmdArgs.forceCopperDump then do {
         print("Parser " ++ spec.fullName ++ " is up to date.\n");
         return 0;
       } else do {
