@@ -135,12 +135,12 @@ top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' i
 }
 
 concrete production threadedAttributeDclMultiple
-top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'occurs' 'on' qs::QNames ';'
+top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'occurs' 'on' qs::QNames  d::OptDirectionMod ';'
 {
   top.unparse = "threaded attribute " ++ inh.unparse ++ ", " ++ syn.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " occurs on " ++ qs.unparse ++ ";";
   forwards to
     appendAGDcl(
-      threadedAttributeDcl($1, $2, inh, $4, syn, tl, $7, te, $12, location=top.location),
+      threadedAttributeDcl($1, $2, inh, $4, syn, tl, $7, te, d, ';', location=top.location),
       appendAGDcl(
         makeOccursDclsHelp($1.location, qNameWithTL(qNameId(inh, location=inh.location), botlNone(location=top.location)), qs.qnames),
         makeOccursDclsHelp($1.location, qNameWithTL(qNameId(syn, location=syn.location), botlNone(location=top.location)), qs.qnames),

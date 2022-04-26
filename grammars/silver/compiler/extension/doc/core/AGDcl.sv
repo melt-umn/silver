@@ -151,10 +151,10 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
 }
 
 aspect production threadedAttributeDcl
-top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
+top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTypeExprs '::' te::TypeExpr d::OptDirectionMod ';'
 {
   top.docForName = inh.name++" and "++syn.name++" (threaded pair)";
-  top.docUnparse = s"`threaded attribute ${inh.name}, ${syn.name}${tl.unparse} :: ${te.unparse}`";
+  top.docUnparse = s"`threaded attribute ${inh.name}, ${syn.name}${tl.unparse} :: ${te.unparse} direction=${if d.reversed then "right to left" else "left to right"}`";
   top.docDcls := [pair(inh.name, docDclInfo(inh.name, top.location, top.grammarName)),
                   pair(syn.name, docDclInfo(syn.name, top.location, top.grammarName))];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
