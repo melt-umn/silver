@@ -20,6 +20,21 @@ RandomGen<[a]> ::= elems::[a]
     };
 }
 
+@{--
+Select a random element from a list.
+
+@param elems The list from which to select an element.
+@return A RandomGen monadic action to select an element from the list.
+-}
+function randomElem
+RandomGen<a> ::= elems::[a]
+{
+  return do {
+    i :: Integer <- randomRange(0, length(elems) - 1);
+    return head(drop(i, elems));
+  };
+}
+
 
 @{--
 Utility for creating a random value using the token-based random library.
