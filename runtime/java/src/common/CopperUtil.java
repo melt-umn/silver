@@ -7,6 +7,7 @@ import edu.umn.cs.melt.copper.compiletime.logging.CompilerLogger;
 import edu.umn.cs.melt.copper.compiletime.pipeline.AuxiliaryMethods;
 import edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.*;
 import edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.visitors.ParserSpecProcessor;
+import edu.umn.cs.melt.copper.main.CopperDumpControl;
 import edu.umn.cs.melt.copper.main.CopperDumpType;
 import edu.umn.cs.melt.copper.main.CopperIOType;
 import edu.umn.cs.melt.copper.main.CopperPipelineType;
@@ -15,11 +16,14 @@ import edu.umn.cs.melt.copper.main.ParserCompilerParameters;
 import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;
 import edu.umn.cs.melt.copper.runtime.io.Location;
 import edu.umn.cs.melt.copper.runtime.logging.CopperException;
+
+import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+
 import silver.core.Init;
 import silver.core.NIOVal;
 import silver.core.NLocation;
@@ -65,6 +69,10 @@ public final class CopperUtil {
     }
     params.setUsePipeline(CopperPipelineType.GRAMMARBEANS);
     params.setRunMDA(runMDA);
+    params.setDumpOutputType(CopperIOType.FILE);
+    params.setDumpFile(new File(dumpHtmlTo));
+    params.setDumpFormat(CopperDumpType.HTML);
+    params.setDump(dumpHtml? CopperDumpControl.ON : CopperDumpControl.ERROR_ONLY);
 
     CompilerLogger logger = AuxiliaryMethods.getOrMakeLogger(params);
 

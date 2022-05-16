@@ -28,8 +28,10 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--copperdump", flag(copperdumpFlag))];
-  flagdescs <- ["\t--copperdump  : force Copper to dump parse table information"];
+  flags <- [
+    flagSpec(name="--copperdump", paramString=nothing(),
+      help="force Copper to dump parse table information",
+      flagParser=flag(copperdumpFlag))];
 }
 
 {--------------------------------------}
@@ -52,8 +54,10 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--copper-xml-dump", flag(copperXmlDumpFlag))];
-  flagdescs <- ["\t--copper-xml-dump : dump the specification being passed to Copper as XML"];
+  flags <- [
+    flagSpec(name="--copper-xml-dump", paramString=nothing(),
+      help="dump the specification being passed to Copper as XML",
+      flagParser=flag(copperXmlDumpFlag))];
 }
 
 {--------------------------------}
@@ -132,10 +136,11 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
           makeName(spec.sourceGrammar), parserName, false,
           outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
           parserName ++ ".html", cmdArgs.copperXmlDump);
-        case nativeSerialize(new(specCstAst)) of
-        | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper modification: " ++ e)
-        | right(dump) -> writeBinaryFile(dumpFile, dump)
-        end;
+        when_(ret == 0,
+          case nativeSerialize(new(specCstAst)) of
+          | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper modification: " ++ e)
+          | right(dump) -> writeBinaryFile(dumpFile, dump)
+          end);
         return ret;
       };
     } else do {
@@ -150,7 +155,7 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
     if dumpFileExists then do {
       dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
       let dumpMatched::Either<String Boolean> = map(eq(specCstAst, _), nativeDeserialize(dumpFileContents));
-      if dumpMatched == right(true) then do {
+      if dumpMatched == right(true) && !cmdArgs.forceCopperDump then do {
         print("Parser " ++ spec.fullName ++ " is up to date.\n");
         return 0;
       } else do {

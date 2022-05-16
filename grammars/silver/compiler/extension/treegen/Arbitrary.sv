@@ -3,6 +3,7 @@ grammar silver:compiler:extension:treegen;
 imports silver:compiler:definition:core;
 imports silver:compiler:definition:env;
 imports silver:compiler:definition:concrete_syntax;
+imports silver:compiler:definition:concrete_syntax:ast;
 imports silver:compiler:definition:type;
 imports silver:compiler:definition:type:syntax;
 imports silver:compiler:extension:convenience;
@@ -12,6 +13,8 @@ imports silver:compiler:modification:lambda_fn;
 imports silver:compiler:modification:let_fix;
 imports silver:compiler:metatranslation;
 
+import silver:util:treemap as tm;
+
 terminal Generator_t 'generator' lexer classes {KEYWORD};
 
 concrete production generatorDcl
@@ -19,35 +22,47 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
 {
   top.unparse = s"generator ${n.unparse} :: ${t.unparse} { ${grammars.unparse} }";
 
-  -- Generator components must be imported for the translation here,
-  -- but an AGDcl can't (currently) forward to an import ModuleStmt -
-  -- resorting to a slight interfering workaround for now.
-  propagate moduleNames;
-  forward.env = occursEnv(extraOccursDefs, newScopeEnv(grammars.defs ++ extraDefs, top.env));
+  -- Compute the defs exported by the specified grammars
+  local med::ModuleExportedDefs =
+    moduleExportedDefs(
+      top.location, top.compiledGrammars, top.grammarDependencies,
+      grammars.moduleNames, []);
+  production specEnv::Decorated Env = newScopeEnv(med.defs, emptyEnv());
+  
+  -- Override defs to suppress production attributes from flowing up as a paDef,
+  -- to avoid a circularity as what production attributes are generated depends
+  -- on the environment. Practically this means that we can't aspect a generator
+  -- function and refer to its production attributes, which is probably good anyway.
+  top.defs :=
+    case forward of
+    | functionDcl(_, _, ns, _) -> [funDef(top.grammarName, n.location, ns.namedSignature)]
+    | _ -> error("forward should be a function")
+    end;
+
+  -- Build the syntax AST from the specified grammars to extract lexical precedence info 
+  production syntax::SyntaxRoot = cstRoot(
+    n.name, t.typerep.typeName, foldr(consSyntax, nilSyntax(), med.syntaxAst),
+    nothing(), [], [], location=top.location, sourceGrammar=top.grammarName);
 
   production attribute implicitImports::[String] with ++;
   implicitImports := [];
   top.moduleNames <- implicitImports;
-  local extraMED::ModuleExportedDefs = moduleExportedDefs(top.location, top.compiledGrammars, top.grammarDependencies, implicitImports, []);
-  production extraDefs::[Def] = extraMED.defs;
-  production extraOccursDefs::[OccursDclInfo] = extraMED.occursDefs;
+  local extraMED::ModuleExportedDefs =
+    moduleExportedDefs(
+      top.location, top.compiledGrammars, top.grammarDependencies,
+      "silver:core" :: implicitImports, []);
+
+  -- Generator components must be imported for the translation here,
+  -- but an AGDcl can't (currently) forward to an import ModuleStmt -
+  -- resorting to a slight interfering workaround for now.
+  propagate moduleNames;
+  forward.env = occursEnv(extraMED.occursDefs, newScopeEnv(extraMED.defs, specEnv));
 
   -- Implicitly import the random library
   implicitImports <- ["silver:util:random"];
 
   -- We also depend on the silver:regex library
   implicitImports <- ["silver:regex"];
-
-  production specEnv::Decorated Env = newScopeEnv(grammars.defs, emptyEnv());
-  production specTypeDcls::[TypeDclInfo] = map((.dcl), foldr(consDefs, nilDefs(), grammars.defs).typeList);
-  production specNTs::[TypeDclInfo] =
-    filter(
-      \ d::TypeDclInfo -> d.isType && !d.isTypeAlias && d.typeScheme.monoType.isNonterminal,
-      specTypeDcls);
-  production specTerms::[TypeDclInfo] =
-    filter(
-      \ d::TypeDclInfo -> d.isType && !d.isTypeAlias && d.typeScheme.monoType.isTerminal,
-      specTypeDcls);
 
   forwards to Silver_AGDcl {
     function $Name{n}
@@ -57,8 +72,8 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
         foldr(
           productionStmtAppend(_, _, location=top.location),
           errorProductionStmt([], location=top.location), -- TODO: No nullProductionStmt?
-          map(genNtLocalDecl(top.location, forward.env, specEnv, _), map((.fullName), specNTs)) ++
-          map(genTermLocalDecl(top.location, forward.env, specEnv, _), map((.fullName), specTerms)))}
+          map(genNtLocalDecl(top.location, forward.env, specEnv, _), map((.fullName), syntax.allNonterminals)) ++
+          map(genTermLocalDecl(top.location, forward.env, specEnv, syntax.dominatingTerminals, _), map((.fullName), syntax.allTerminals)))}
       return $Expr{genForType(top.location, forward.env, specEnv, Silver_Expr { 0 }, t.typerep)};
     }
   };
@@ -67,10 +82,10 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
   --top.errors := unsafeTracePrint(forward.errors, forward.unparse);
 }
 
-nonterminal GeneratorComponents with config, grammarName, location, unparse, errors, defs, moduleNames, compiledGrammars, grammarDependencies;
-nonterminal GeneratorComponent with config, grammarName, location, unparse, errors, defs, moduleNames, compiledGrammars, grammarDependencies;
+nonterminal GeneratorComponents with config, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies;
+nonterminal GeneratorComponent with config, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies;
 
-propagate errors, defs, moduleNames on GeneratorComponents, GeneratorComponent;
+propagate errors, moduleNames on GeneratorComponents, GeneratorComponent;
 
 concrete production nilGeneratorComponent
 top::GeneratorComponents ::=
@@ -220,15 +235,42 @@ ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  nt
 }
 
 function genTermLocalDecl
-ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  t::String
+ProductionStmt ::= loc::Location  env::Decorated Env  specEnv::Decorated Env  dominatingTerminals::EnvTree<Decorated SyntaxDcl> t::String
 {
   local te::TypeExpr = nominalTypeExpr(qName(loc, t).qNameType, location=loc);
+
+  -- Filter out cantidate lexemes by checking if they match dominating terminal regexes.
+  -- TODO: This a approach is somewhat somewhat inefficient, and fails with
+  -- infinite recursion if a terminal is totally dominated by another.
+  -- For example:
+  -- terminal A 'x';
+  -- terminal B 'x' dominates A;
+  -- nonterminal C;
+  -- concrete production d
+  -- C ::= A  {}
+  -- However this almost certainly points to a major problem with the grammar,
+  -- since any productions that mention A can never match any strings.
+  -- Is there a better approach involving regex subtraction as a primitive?
+  -- Also note that this does not consider disambiguation functions, and may
+  -- generate trees that could have arisen from different ambigous parses of the
+  -- same source.
+  local termDominated::Expr =
+    foldr(
+      or(_, '||', _, location=loc),
+      falseConst('false', location=loc),
+      map(
+        \ term::Decorated SyntaxDcl -> Silver_Expr {
+          silver:regex:matches($Expr{translate(loc, reflect(term.terminalRegex))}, term.lexeme)
+        },
+        searchEnvTree(t, dominatingTerminals)));
   return
     Silver_ProductionStmt {
       local $name{"gen_" ++ substitute(":", "_", t)}::(silver:core:RandomGen<$TypeExpr{te}> ::= Integer) =
-        let genTerm::(silver:core:RandomGen<$TypeExpr{te}> ::= Location) = genArbTerminal($TypeExpr{te}, _)
-        in \ depth::Integer -> silver:core:bind(silver:util:random:genArb(depth), genTerm)
-        end;
+        \ depth::Integer ->
+          silver:core:bind(
+            silver:core:bind(silver:util:random:genArb(depth), genArbTerminal($TypeExpr{te}, _)),
+            \ term::$TypeExpr{te} ->
+              if $Expr{termDominated} then $name{"gen_" ++ substitute(":", "_", t)}(depth) else pure(term));
     };
 }
 

@@ -20,6 +20,23 @@ RandomGen<[a]> ::= elems::[a]
     };
 }
 
+@{--
+Select a random element from a non-empty list.
+An error is raised when the list is empty.
+
+@param elems The list from which to select an element.
+@return A RandomGen monadic action to select an element from the list.
+-}
+function randomElem
+RandomGen<a> ::= elems::[a]
+{
+  return if null(elems) then error("randomElem of empty list!") else
+    do {
+      i :: Integer <- randomRange(0, length(elems) - 1);
+      return head(drop(i, elems));
+    };
+}
+
 
 @{--
 Utility for creating a random value using the token-based random library.

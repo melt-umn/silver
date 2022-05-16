@@ -5,9 +5,11 @@ import java.io.OutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.ArrayList;
 
 import common.IOToken;
 import common.ConsCell;
+import common.javainterop.ConsCellCollection;
 import common.StringCatter;
 import silver.core.NIOVal;
 
@@ -204,8 +206,12 @@ public class RawProcessHandle {
      * <pre>IOVal<ProcessHandle> ::= cmd::String args::[String] io::IO</pre>
      */
     public static NIOVal spawnProcess(StringCatter cmd, ConsCell args, IOToken io) {
-        List<String> full_cmd = ConsCell.toList(args);
-        full_cmd.add(0, cmd.toString());
+        List<String> full_cmd = new ArrayList<String>();
+        full_cmd.add(cmd.toString());
+        //Convert all the args to regular Strings instead of StringCatter
+        for (StringCatter arg : new ConsCellCollection<StringCatter>(args)) {
+            full_cmd.add(arg.toString());
+        }
         return io.wrap(new RawProcessHandle(full_cmd));
     }
 

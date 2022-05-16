@@ -147,7 +147,7 @@ top::AttributeDclInfo ::= inh::String synPartial::String syn::String
 }
 
 abstract production threadedInhDcl
-top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
+top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type rev::Boolean
 {
   top.fullName = inh;
 
@@ -158,11 +158,11 @@ top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_); -- Allow normal inh equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
-  top.propagateDispatcher = propagateThreadedInh(_, syn, location=_);
+  top.propagateDispatcher = propagateThreadedInh(rev, _, syn, location=_);
 }
 
 abstract production threadedSynDcl
-top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
+top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type rev::Boolean
 {
   top.fullName = syn;
 
@@ -173,5 +173,5 @@ top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, _);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
-  top.propagateDispatcher = propagateThreadedSyn(inh, _, location=_);
+  top.propagateDispatcher = propagateThreadedSyn(rev, inh, _, location=_);
 }

@@ -40,8 +40,11 @@ monoid attribute allProductions :: [Decorated SyntaxDcl];
 monoid attribute allProductionNames :: [String];  -- Doesn't depend on anything
 monoid attribute allNonterminals :: [Decorated SyntaxDcl];
 monoid attribute disambiguationClasses :: [Decorated SyntaxDcl];
-synthesized attribute domContribs :: [copper:ElementReference];
-synthesized attribute subContribs :: [copper:ElementReference];
+synthesized attribute domContribs :: [Decorated SyntaxDcl];
+synthesized attribute subContribs :: [Decorated SyntaxDcl];
+monoid attribute memberTerminals :: [Decorated SyntaxDcl];
+monoid attribute dominatingTerminalContribs :: [(String, Decorated SyntaxDcl)];
+synthesized attribute terminalRegex::Regex;
 autocopy attribute containingGrammar :: String;
 monoid attribute lexerClassRefDcls :: String;
 synthesized attribute exportedProds :: [String];
@@ -64,12 +67,12 @@ synthesized attribute copperGrammarElements::[copper:GrammarElement];
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with compareTo, isEqual, cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperGrammarElements;
+nonterminal Syntax with compareTo, isEqual, cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, memberTerminals, dominatingTerminalContribs, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperGrammarElements;
 propagate compareTo, isEqual on Syntax;
 
 flowtype decorate {cstEnv, classTerminals, superClasses, subClasses, containingGrammar, layoutTerms, prefixesForTerminals, componentGrammarMarkingTerminals, parserAttributeAspects, prettyNames} on Syntax, SyntaxDcl;
 
-propagate cstDcls, cstErrors, cstProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs, prettyNamesAccum
+propagate cstDcls, cstErrors, cstProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, memberTerminals, dominatingTerminalContribs, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs, prettyNamesAccum
   on Syntax;
 
 abstract production nilSyntax
@@ -87,7 +90,7 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-closed nonterminal SyntaxDcl with location, sourceGrammar, compareTo, isEqual, cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, domContribs, subContribs, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperElementReference, copperGrammarElements;
+closed nonterminal SyntaxDcl with location, sourceGrammar, compareTo, isEqual, cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, memberTerminals, dominatingTerminalContribs, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, domContribs, subContribs, terminalRegex, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperElementReference, copperGrammarElements;
 
 synthesized attribute sortKey :: String;
 
@@ -97,10 +100,11 @@ aspect default production
 top::SyntaxDcl ::=
 {
   -- Empty values as defaults
-  propagate cstProds, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs, prettyNamesAccum;
-  top.domContribs = error("Internal compiler error: should only ever be demanded of lexer classes or terminals");
-  top.subContribs = error("Internal compiler error: should only ever be demanded of lexer classes or terminals");
+  propagate cstProds, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, memberTerminals, dominatingTerminalContribs, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs, prettyNamesAccum;
+  top.domContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
+  top.subContribs = error("Internal compiler error: should only ever be demanded of lexer classes");
   top.exportedProds = error("Internal compiler error: should only ever be demanded of nonterminals");
+  top.terminalRegex = error("Internal compiler error: should only ever be demanded of terminals");
   top.hasCustomLayout = false;
 }
 
@@ -165,6 +169,11 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
   top.allIgnoreTerminals := if modifiers.ignored then [top.fullName] else [];
   top.allMarkingTerminals := if modifiers.marking then [top.fullName] else [];
   top.classTerminalContribs := modifiers.classTerminalContribs;
+  top.memberTerminals := [top];
+  top.dominatingTerminalContribs :=
+    map(pair(n, _), flatMap((.memberTerminals), modifiers.submits_)) ++
+    map(pair(_, top), map((.fullName), flatMap((.memberTerminals), modifiers.dominates_)));
+  top.terminalRegex = regex;
 
   -- left(terminal name) or right(string prefix)
   production pfx::[String] = searchEnvTree(n, top.prefixesForTerminals);
@@ -189,9 +198,6 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
     | _ -> prettyName ++ " (" ++ n ++ ")"
     end;
 
-  top.domContribs = [top.copperElementReference];
-  top.subContribs = [top.copperElementReference];
-
   top.copperElementReference = copper:elementReference(top.sourceGrammar,
     top.location, top.containingGrammar, makeCopperName(n));
   top.copperGrammarElements =
@@ -200,10 +206,10 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
         modifiers.opPrecedence.isJust, modifiers.opPrecedence.fromJust,
         fromMaybe("", modifiers.opAssociation), makeTerminalName(n), 
         "RESULT = new " ++ makeTerminalName(n) ++ "(lexeme,virtualLocation,(int)getStartRealLocation().getPos(),(int)getEndRealLocation().getPos());tokenList.add(RESULT);\n" ++ modifiers.acode,
-        modifiers.lexerClasses, !null(pfx),
+        map((.copperElementReference), modifiers.lexerClasses), !null(pfx),
         copper:elementReference(top.sourceGrammar, top.location,
           top.containingGrammar, head(pfx)),
-        modifiers.submits_, modifiers.dominates_)
+        map((.copperElementReference), modifiers.submits_), map((.copperElementReference), modifiers.dominates_))
     ];
 }
 
@@ -359,6 +365,8 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.disambiguationClasses := modifiers.disambiguationClasses;
 
   production terms :: [String] = searchEnvTree(n, top.classTerminals);
+  top.memberTerminals := flatMap(searchEnvTree(_, top.cstEnv), terms);
+
   local termsInit::String =
     foldr(
       \ term::String rest::String -> s"new common.ConsCell(Terminals.${makeCopperName(term)}.num(), ${rest})",
