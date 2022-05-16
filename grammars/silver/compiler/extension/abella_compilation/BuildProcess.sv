@@ -26,9 +26,10 @@ top::CmdArgs ::= rest::CmdArgs
 aspect function parseArgs
 Either<String  Decorated CmdArgs> ::= args::[String]
 {
-  flags <- [pair("--abella-compile", flag(abellaCompileFlag))];
-  flagdescs <-
-     ["\t--abella-compile : build the Abella encoding"];
+  flags <- [flagSpec(name="--abella-compile",
+                     paramString=nothing(),
+                     help="build the Abella encoding",
+                     flagParser=flag(abellaCompileFlag))];
 }
 
 aspect production compilation

@@ -88,7 +88,8 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs
 
 aspect production threadedAttributeDcl
 top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name
-               tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
+               tl::BracketedOptTypeExprs '::' te::TypeExpr
+               d::OptDirectionMod ';'
 {
 }
 
