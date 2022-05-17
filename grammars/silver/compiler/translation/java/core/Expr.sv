@@ -364,7 +364,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
       case finalType(e) of
       -- Don't know the actual number of attributes for skolems with occurs-on contexts,
       -- fall back to using the max index.
-      | skolemType(_) -> foldr1(\ i1::String i2::String -> s"max(${i1}, ${i2})", inh.nameTrans) ++ " + 1"
+      | skolemType(_) -> foldr1(\ i1::String i2::String -> s"Math.max(${i1}, ${i2})", inh.nameTrans) ++ " + 1"
       | t -> s"${makeNTName(t.typeName)}.num_inh_attrs"
       end ++ ", " ++
       s"new int[]{${implode(", ", inh.nameTrans)}}, " ++ 
