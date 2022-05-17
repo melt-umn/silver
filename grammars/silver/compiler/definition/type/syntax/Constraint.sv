@@ -117,9 +117,9 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' '
       at.name ++ " has kind " ++ prettyKind(foldr(arrowKind, starKind(), map((.kindrep), atTypeScheme.boundVars))) ++
         "but type variable(s) have kind(s) " ++ implode(", ", map(compose(prettyKind, (.kindrep)), attl.types)) ++ ".")]
     else [];
-  
+
   top.errors <- t.errorsKindStar;
-  
+
   local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
   production attrTy::Type = performRenaming(atTypeScheme.typerep, rewrite);
@@ -164,9 +164,9 @@ top::Constraint ::= 'attribute' at::QName attl::BracketedOptTypeExprs i::TypeExp
     if i.typerep.kindrep != inhSetKind()
     then [err(i.location, s"${i.unparse} has kind ${prettyKind(i.typerep.kindrep)}, but kind InhSet is expected here")]
     else [];
-    
+
   top.errors <- t.errorsKindStar;
-  
+
   local atTypeScheme::PolyType = at.lookupAttribute.typeScheme;
   local rewrite :: Substitution = zipVarsAndTypesIntoSubstitution(atTypeScheme.boundVars, attl.types);
   production attrTy::Type = performRenaming(atTypeScheme.typerep, rewrite);

@@ -6,6 +6,8 @@ monoid attribute contextErrors::[Message] occurs on Contexts, Context;
 attribute downSubst, upSubst occurs on Contexts, Context;
 propagate contextLoc, contextSource, contextErrors, downSubst, upSubst on Contexts;
 
+flowtype contextErrors {contextLoc, contextSource, env, frame, grammarName, compiledGrammars, config} on Context;
+
 aspect production instContext
 top::Context ::= cls::String t::Type
 {

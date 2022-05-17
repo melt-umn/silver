@@ -15,9 +15,19 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   production superContexts::Contexts =
     foldContexts(if id.lookupType.found && !foldContexts(cl.contexts).isTypeError then dcl.superContexts else []);
   superContexts.env = body.env;
-  
+  superContexts.config = top.config;
+  superContexts.grammarName = top.grammarName;
+  superContexts.compiledGrammars = top.compiledGrammars;
+
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = constructAnonymousGraph(body.flowDefs, top.env, myProds, myFlow);
+  superContexts.frame = globalExprContext(fName, foldContexts(body.frameContexts), ty.typerep, myFlowGraph, sourceGrammar=top.grammarName);
+
   top.defs := [instDef(top.grammarName, id.location, fName, boundVars, cl.contexts, ty.typerep, body.definedMembers)];
-  
+
   top.errors <- id.lookupType.errors;
   top.errors <-
     if !id.lookupType.found || dcl.isClass then []

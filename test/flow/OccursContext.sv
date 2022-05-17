@@ -44,6 +44,29 @@ global isEqualGlobalBad ::
     decorate x with {compareTo = decorate y with {};}.isEqual;
 }
 
+function isEqualTooSmall
+attribute compareTo<a {}> occurs on a,
+attribute isEqual {} occurs on a =>
+Boolean ::= x::a y::a
+{
+  x.compareTo = y;
+  return x.isEqual;
+}
+
+warnCode "The instance for attribute silver:core:isEqual {} occurs on flow:Expr (arising from the use of isEqualTooSmall) has a flow type exceeding the constraint with dependencies on silver:core:compareTo" {
+  global isEqualTooSmallErr::Boolean = isEqualTooSmall(zero(), zero());
+}
+
+warnCode "The instance for attribute silver:core:isEqual {} occurs on Decorated a with {} (arising from the use of isEqualTooSmall) depends on an unbounded set of inherited attributes" {
+function isEqualUnboundedError
+attribute compareTo<a {}> occurs on a,
+attribute isEqual i occurs on a =>
+Boolean ::= x::a y::a
+{
+  return isEqualTooSmall(x, y);
+}
+}
+
 class Equal1 a {
   isEqual1 :: (Boolean ::= a a);
 }
@@ -168,5 +191,29 @@ attribute value {env1, env2} occurs on a =>
 top::Expr ::= x::Decorated a with {env1}
 {
   top.value = head(map((.value), [x, x]));
+}
+}
+
+-- Type vars as flow types in syn occurs constraints can be satisfied by contexts
+production valueThing
+attribute value i occurs on a =>
+top::Expr ::= x::Decorated a with i
+{
+  top.value = x.value;
+}
+
+function callValueThing
+attribute value i occurs on a, i subset i1 =>
+Expr ::= x::Decorated a with i1
+{
+  return valueThing(x);
+}
+
+warnCode "The instance for attribute flow:value i1 occurs on a (arising from the use of valueThing) exceeds the flow type constraint with dependencies on one of the following sets of inherited attributes: i" {
+function callValueThingBad
+attribute value i occurs on a =>
+Expr ::= x::Decorated a with i1
+{
+  return valueThing(x);
 }
 }

@@ -210,21 +210,10 @@ function inhDepsForSynOnType
 {
   local contexts::Contexts = foldContexts(ns.contexts);
   contexts.env = env;
-  
-  local isList::Boolean =
-    case t of
-    | appType(listCtrType(), _) -> true
-    | decoratedType(appType(listCtrType(), _), _) -> true
-    | _ -> false
-    end;
 
   return
     if t.isNonterminal || (t.isDecorated && t.decoratedType.isNonterminal)
     then (just(inhDepsForSyn(syn, t.typeName, flow)), [])
-    -- TODO: Hack for lists, since these pretend not to be not be nonterminals yet use attributes in the nonspecialized implementation.
-    -- These attributes (i_headList, i_tailList, i_nullList, i_lengthList) have no inherited dependencies.
-    -- This can go away if we make lists a built-in/modification and scrap the unspecialized implementations.
-    else if isList then (just(mempty), [])
     else (
       map(set:fromList, lookup(syn, lookupAll(t.typeName, contexts.occursContextInhDeps))),
       concat(lookupAll(syn, lookupAll(t.typeName, contexts.occursContextInhSetDeps))));
@@ -757,11 +746,45 @@ Boolean ::= prod::ValueDclInfo  sigName::String  attrName::String  realEnv::Deco
     ignoreIfAutoCopyOnLhs(sigName, prod.namedSignature, realEnv, attrName); -- not autocopy (and on lhs)
 }
 
+-- In places where we solve a synthesized attribute occurs-on context,
+-- check that the actual deps for the attribute do not exceed the one specified for the context.
+aspect production synOccursContext
+top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
+{
+  -- oh no again
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+
+  -- The logic here mirrors the reference case in synDecoratedAccessHandler
+  local deps :: (Maybe<set:Set<String>>, [TyVar]) =
+    inhDepsForSynOnType(attr, ntty, myFlow, top.frame.signature, top.env);
+  local inhDeps :: set:Set<String> = fromMaybe(set:empty(), deps.1);  -- Need to check that we have bounded inh deps, i.e. deps.1 == just(...)
+
+  local acceptable :: ([String], [TyVar]) = getMinInhSetMembers([], inhs, top.env);
+  local diff :: [String] = set:toList(set:removeAll(acceptable.1, inhDeps));
+
+  top.contextErrors <-
+    if top.config.warnMissingInh
+    && null(ntty.freeFlexibleVars)
+    && !null(top.resolvedOccurs)
+    then
+      if any(map(contains(_, deps.2), acceptable.2)) then []  -- The deps are supplied as a common InhSet var
+      -- We didn't find the deps as an InhSet var
+      else if null(diff)
+        then if deps.1.isJust then []  -- We have a bound on the inh deps, and they are all present
+        -- We don't have a bound on the inh deps, flag the unsatisfied InhSet deps
+        else if null(acceptable.2)
+        then [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(top)} (arising from ${top.contextSource}) depends on an unbounded set of inherited attributes")]
+        else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(top)} (arising from ${top.contextSource}) exceeds the flow type constraint with dependencies on one of the following sets of inherited attributes: " ++ implode(", ", map(findAbbrevFor(_, top.frame.signature.freeVariables), deps.2)))]
+      -- We didn't find the inh deps
+      else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(top)} (arising from ${top.contextSource}) has a flow type exceeding the constraint with dependencies on " ++ implode(", ", diff))]
+   else [];
+}
+
 --------------------------------------------------------------------------------
 
 -- TODO: There are a few final places where we need to `checkEqDeps` for the sake of `anonVertex`s
 
--- global declarations, action blocks (production, terminal, disam, etc)
+-- action blocks (production, terminal, disam, etc)
 
 -- But we don't create flowEnv information for these locations so they can't be checked... oops
 -- (e.g. `checkEqDeps` wants a production fName to look things up about.)
