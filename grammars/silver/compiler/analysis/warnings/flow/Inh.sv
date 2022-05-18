@@ -752,7 +752,7 @@ aspect production synOccursContext
 top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 {
   -- oh no again
-  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  production myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
 
   -- The logic here mirrors the reference case in synDecoratedAccessHandler
   local deps :: (Maybe<set:Set<String>>, [TyVar]) =
@@ -764,7 +764,7 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
 
   top.contextErrors <-
     if top.config.warnMissingInh
-    && null(ntty.freeFlexibleVars)
+    && null(ntty.freeFlexibleVars) && null(inhs.freeFlexibleVars)
     && !null(top.resolvedOccurs)
     then
       if any(map(contains(_, deps.2), acceptable.2)) then []  -- The deps are supplied as a common InhSet var

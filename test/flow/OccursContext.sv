@@ -217,3 +217,18 @@ Expr ::= x::Decorated a with i1
   return valueThing(x);
 }
 }
+
+-- Specializing the reference set based on the flow type.
+function getValuePoly
+attribute value i occurs on a =>
+Integer ::= x::Decorated a with i
+{
+  return x.value;
+}
+
+function getValueExpr
+Integer ::= e::Expr
+{
+  e.env1 = [];
+  return getValuePoly(e);
+}
