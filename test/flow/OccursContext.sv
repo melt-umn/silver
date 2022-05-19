@@ -232,3 +232,15 @@ Integer ::= e::Expr
   e.env1 = [];
   return getValuePoly(e);
 }
+
+-- value missing a flowtype
+nonterminal Expr2 with env1, value;
+
+wrongCode "Ambiguous type variable a (arising from the use of getValuePoly) prevents the constraint attribute flow:value a occurs on flow:Expr2 from being solved. Note: this ambiguity might be resolved by specifying an explicit flowtype for flow:value on flow:Expr2" {
+function getValueExpr2
+Integer ::= e::Expr2
+{
+  e.env1 = [];
+  return getValuePoly(e);
+}
+}
