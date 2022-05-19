@@ -47,6 +47,10 @@ ag::AGDcl ::= kwd::'equalityTest'
   eqCtx.env = ag.env;
   eqCtx.contextLoc = valueType.location;
   eqCtx.contextSource = "equalityTest";
+  eqCtx.frame = value.frame;
+  eqCtx.config = ag.config;
+  eqCtx.grammarName = ag.grammarName;
+  eqCtx.compiledGrammars = ag.compiledGrammars;
   localErrors <- eqCtx.contextErrors;
 
   value.downSubst = emptySubst();

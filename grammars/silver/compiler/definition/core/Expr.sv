@@ -56,6 +56,7 @@ autocopy attribute isRoot :: Boolean;
 
 autocopy attribute originRules :: [Decorated Expr];
 
+attribute grammarName, frame occurs on Contexts, Context;
 
 abstract production errorExpr
 top::Expr ::= e::[Message]
@@ -152,6 +153,10 @@ top::Expr ::= q::PartiallyDecorated QName
   production contexts::Contexts =
     foldContexts(map(performContextSubstitution(_, top.finalSubst), typeScheme.contexts));
   contexts.env = top.env;
+  contexts.frame = top.frame;
+  contexts.config = top.config;
+  contexts.grammarName = top.grammarName;
+  contexts.compiledGrammars = top.compiledGrammars;
 }
 
 abstract production functionReference
@@ -166,6 +171,10 @@ top::Expr ::= q::PartiallyDecorated QName
   production contexts::Contexts =
     foldContexts(map(performContextSubstitution(_, top.finalSubst), typeScheme.contexts));
   contexts.env = top.env;
+  contexts.frame = top.frame;
+  contexts.config = top.config;
+  contexts.grammarName = top.grammarName;
+  contexts.compiledGrammars = top.compiledGrammars;
 }
 
 abstract production classMemberReference
@@ -183,12 +192,20 @@ top::Expr ::= q::PartiallyDecorated QName
     | _ -> error("Class member should have at least one context!")
     end;
   instHead.env = top.env;
+  instHead.frame = top.frame;
+  instHead.config = top.config;
+  instHead.grammarName = top.grammarName;
+  instHead.compiledGrammars = top.compiledGrammars;
   production contexts::Contexts =
     case typeScheme.contexts of
     | _ :: cs -> foldContexts(map(performContextSubstitution(_, top.finalSubst), cs))
     | _ -> error("Class member should have at least one context!")
     end;
   contexts.env = top.env;
+  contexts.frame = top.frame;
+  contexts.config = top.config;
+  contexts.grammarName = top.grammarName;
+  contexts.compiledGrammars = top.compiledGrammars;
 }
 
 abstract production globalValueReference
@@ -206,7 +223,10 @@ top::Expr ::= q::PartiallyDecorated QName
   production contexts::Contexts =
     foldContexts(map(performContextSubstitution(_, top.finalSubst), typeScheme.contexts));
   contexts.env = top.env;
-
+  contexts.frame = top.frame;
+  contexts.config = top.config;
+  contexts.grammarName = top.grammarName;
+  contexts.compiledGrammars = top.compiledGrammars;
 }
 
 concrete production concreteForwardExpr

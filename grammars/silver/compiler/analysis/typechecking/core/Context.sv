@@ -1,10 +1,15 @@
 grammar silver:compiler:analysis:typechecking:core;
 
+import silver:compiler:analysis:warnings:flow only inhDepsForSynOnType;
+import silver:util:treeset as set;
+
 inherited attribute contextLoc::Location occurs on Contexts, Context;
 inherited attribute contextSource::String occurs on Contexts, Context;
 monoid attribute contextErrors::[Message] occurs on Contexts, Context;
 attribute downSubst, upSubst occurs on Contexts, Context;
 propagate contextLoc, contextSource, contextErrors, downSubst, upSubst on Contexts;
+
+flowtype contextErrors {contextLoc, contextSource, env, frame, grammarName, compiledGrammars, config} on Context;
 
 aspect production instContext
 top::Context ::= cls::String t::Type
@@ -52,13 +57,16 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
   
   top.contextErrors :=
     -- Check for ambiguous type variables.
-    -- Since we've already computed the final substitution, if t has any,
+    -- Since we've already computed the final substitution, if ntty has any,
     -- they could unify with something more specific in instance resolution here,
     -- and unify with something else in solving another instance later on.
     if !null(ntty.freeFlexibleVars)
     then map(
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
       ntty.freeFlexibleVars)
+    -- atty should never have free type variables if ntty does not.
+    else if !null(atty.freeFlexibleVars)
+    then error(s"got atty with free vars")
     else if null(top.resolvedOccurs)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
@@ -78,16 +86,31 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
     -- Since we've already computed the final substitution, if t has any,
     -- they could unify with something more specific in instance resolution here,
     -- and unify with something else in solving another instance later on.
-    if !null(ntty.freeFlexibleVars)
+    if !null(ntty.freeFlexibleVars ++ inhs.freeFlexibleVars)
     then map(
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
-      ntty.freeFlexibleVars)
+      ntty.freeFlexibleVars ++ inhs.freeFlexibleVars)
+    -- atty should never have free type variables if ntty does not.
+    else if !null(atty.freeFlexibleVars)
+    then error("got atty with free vars")
     else if null(top.resolvedOccurs)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
 
-  -- Not refining based on occurs-on constraints for now, since the appropriate inference should happen on the associated attribute access
-  top.upSubst = top.downSubst;
+  production substNtty::Type = performSubstitution(ntty, top.downSubst);
+  production substInhs::Type = performSubstitution(inhs, top.downSubst);
+  top.upSubst =
+    -- If the nonterminal type is known but the flow type inh set is unspecialized,
+    -- specialize it to the flow type of the attribute on the nonterminal.
+    -- This is a bit of a hack, since we don't properly support functional dependencies.
+    if null(substNtty.freeFlexibleVars) && !null(substInhs.freeFlexibleVars)
+    then
+      case inhDepsForSynOnType(attr, substNtty, myFlow, top.frame.signature, top.env) of
+      | (just(i), _) -> composeSubst(top.downSubst, unify(substInhs, inhSetType(set:toList(i))))
+      | (nothing(), i :: _) -> composeSubst(top.downSubst, unify(substInhs, varType(i)))
+      | _ -> top.downSubst
+      end
+    else top.downSubst;
 }
 
 aspect production annoOccursContext
