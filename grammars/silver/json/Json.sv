@@ -9,33 +9,73 @@ nonterminal Json with jsonString;
 @{- Converts the JSON value to a string. -}
 synthesized attribute jsonString :: String;
 
-@{- ToJson represents conversion to JSON. -}
-class ToJson a {
+@{- JsonRepr represents conversion to and from JSON. -}
+class JsonRepr a {
   toJson :: (Json ::= a);
+  fromJson :: (Either<String a> ::= Json);
 }
 
-instance ToJson Json {
+instance JsonRepr Json {
   toJson = id;
+  fromJson = right;
 }
 
-instance ToJson Boolean {
+instance JsonRepr Boolean {
   toJson = jsonBoolean;
+  fromJson = \ j::Json ->
+    case j of
+    | jsonBoolean(x) -> right(x)
+    | _ -> left(s"Expected boolean, got ${j.jsonString}")
+    end;
 }
 
-instance ToJson Float {
+instance JsonRepr Float {
   toJson = jsonFloat;
+  fromJson = \ j::Json ->
+    case j of
+    | jsonFloat(x) -> right(x)
+    | _ -> left(s"Expected float, got ${j.jsonString}")
+    end;
 }
 
-instance ToJson Integer {
+instance JsonRepr Integer {
   toJson = jsonInteger;
+  fromJson = \ j::Json ->
+    case j of
+    | jsonFloat(x) when x == toFloat(toInteger(x)) -> right(toInteger(x))
+    | _ -> left(s"Expected integer, got ${j.jsonString}")
+    end;
 }
 
-instance ToJson String {
+instance JsonRepr String {
   toJson = jsonString;
+  fromJson = \ j::Json ->
+    case j of
+    | jsonString(x) -> right(x)
+    | _ -> left(s"Expected string, got ${j.jsonString}")
+    end;
 }
 
-instance ToJson a => ToJson [a] {
+instance JsonRepr a => JsonRepr [a] {
   toJson = \xs::[a] -> jsonArray(map(toJson, xs));
+  fromJson = \ j::Json ->
+    case j of
+    | jsonArray(x) -> traverseA(fromJson, x)
+    | _ -> left(s"Expected array, got ${j.jsonString}")
+    end;
+}
+
+instance JsonRepr a => JsonRepr Maybe<a> {
+  toJson = \mx::Maybe<a> ->
+    case mx of
+    | just(x) -> toJson(x)
+    | nothing() -> jsonNull()
+    end;
+  fromJson = \ j::Json ->
+    case j of
+    | jsonNull() -> right(nothing())
+    | _ -> map(just, fromJson(j))
+    end;
 }
 
 abstract production jsonString
