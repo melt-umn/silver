@@ -4,12 +4,20 @@
 grammar silver:json;
 
 @{- Json is the type of JSON values. -}
-nonterminal Json with jsonString;
+nonterminal Json with jsonString, compareTo, isEqual, compareKey, compare;
+propagate compareTo, isEqual, compareKey, compare on Json;
 
 @{- Converts the JSON value to a string. -}
 synthesized attribute jsonString :: String;
 
-@{- JsonRepr represents conversion to and from JSON. -}
+-- TODO: We probably want to also add concrete syntax and a utility function for String -> Json
+
+@{-
+  JsonRepr represents conversion to and from JSON.
+  Laws:
+    fromJson(toJson(x)) == right(x)
+    toJson(fromJson(x).fromRight) == x  when fromJson(x).isRight
+-}
 class JsonRepr a {
   toJson :: (Json ::= a);
   fromJson :: (Either<String a> ::= Json);
