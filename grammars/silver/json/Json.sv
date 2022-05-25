@@ -13,23 +13,38 @@ synthesized attribute jsonString :: String;
 -- TODO: We probably want to also add concrete syntax and a utility function for String -> Json
 
 @{-
-  JsonRepr represents conversion to and from JSON.
-  Laws:
+  ToJson represents conversion to JSON.
+  The following should hold when an instance FromJson a also exists:
     fromJson(toJson(x)) == right(x)
     toJson(fromJson(x).fromRight) == x  when fromJson(x).isRight
 -}
-class JsonRepr a {
+class ToJson a {
   toJson :: (Json ::= a);
+}
+
+@{-
+  FromJson represents conversion from JSON.
+  The following should hold when an instance ToJson a also exists:
+    fromJson(toJson(x)) == right(x)
+    toJson(fromJson(x).fromRight) == x  when fromJson(x).isRight
+-}
+class FromJson a {
   fromJson :: (Either<String a> ::= Json);
 }
 
-instance JsonRepr Json {
+instance ToJson Json {
   toJson = id;
+}
+
+instance FromJson Json {
   fromJson = right;
 }
 
-instance JsonRepr Boolean {
+instance ToJson Boolean {
   toJson = jsonBoolean;
+}
+
+instance FromJson Boolean {
   fromJson = \ j::Json ->
     case j of
     | jsonBoolean(x) -> right(x)
@@ -37,8 +52,11 @@ instance JsonRepr Boolean {
     end;
 }
 
-instance JsonRepr Float {
+instance ToJson Float {
   toJson = jsonFloat;
+}
+
+instance FromJson Float {
   fromJson = \ j::Json ->
     case j of
     | jsonFloat(x) -> right(x)
@@ -46,8 +64,11 @@ instance JsonRepr Float {
     end;
 }
 
-instance JsonRepr Integer {
+instance ToJson Integer {
   toJson = jsonInteger;
+}
+
+instance FromJson Integer {
   fromJson = \ j::Json ->
     case j of
     | jsonFloat(x) when x == toFloat(toInteger(x)) -> right(toInteger(x))
@@ -55,8 +76,11 @@ instance JsonRepr Integer {
     end;
 }
 
-instance JsonRepr String {
+instance ToJson String {
   toJson = jsonString;
+}
+
+instance FromJson String {
   fromJson = \ j::Json ->
     case j of
     | jsonString(x) -> right(x)
@@ -64,8 +88,11 @@ instance JsonRepr String {
     end;
 }
 
-instance JsonRepr a => JsonRepr [a] {
+instance ToJson a => ToJson [a] {
   toJson = \xs::[a] -> jsonArray(map(toJson, xs));
+}
+
+instance FromJson a => FromJson [a] {
   fromJson = \ j::Json ->
     case j of
     | jsonArray(x) -> traverseA(fromJson, x)
@@ -73,12 +100,15 @@ instance JsonRepr a => JsonRepr [a] {
     end;
 }
 
-instance JsonRepr a => JsonRepr Maybe<a> {
+instance ToJson a => ToJson Maybe<a> {
   toJson = \mx::Maybe<a> ->
     case mx of
     | just(x) -> toJson(x)
     | nothing() -> jsonNull()
     end;
+}
+
+instance FromJson a => FromJson Maybe<a> {
   fromJson = \ j::Json ->
     case j of
     | jsonNull() -> right(nothing())
