@@ -4,38 +4,116 @@
 grammar silver:json;
 
 @{- Json is the type of JSON values. -}
-nonterminal Json with jsonString;
+nonterminal Json with jsonString, compareTo, isEqual, compareKey, compare;
+propagate compareTo, isEqual, compareKey, compare on Json;
 
 @{- Converts the JSON value to a string. -}
 synthesized attribute jsonString :: String;
 
-@{- ToJson represents conversion to JSON. -}
+-- TODO: We probably want to also add concrete syntax and a utility function for String -> Json
+
+@{-
+  ToJson represents conversion to JSON.
+  The following should hold when an instance FromJson a also exists:
+    fromJson(toJson(x)) == right(x)
+    toJson(fromJson(x).fromRight) == x  when fromJson(x).isRight
+-}
 class ToJson a {
   toJson :: (Json ::= a);
+}
+
+@{-
+  FromJson represents conversion from JSON.
+  The following should hold when an instance ToJson a also exists:
+    fromJson(toJson(x)) == right(x)
+    toJson(fromJson(x).fromRight) == x  when fromJson(x).isRight
+-}
+class FromJson a {
+  fromJson :: (Either<String a> ::= Json);
 }
 
 instance ToJson Json {
   toJson = id;
 }
 
+instance FromJson Json {
+  fromJson = right;
+}
+
 instance ToJson Boolean {
   toJson = jsonBoolean;
+}
+
+instance FromJson Boolean {
+  fromJson = \ j::Json ->
+    case j of
+    | jsonBoolean(x) -> right(x)
+    | _ -> left(s"Expected boolean, got ${j.jsonString}")
+    end;
 }
 
 instance ToJson Float {
   toJson = jsonFloat;
 }
 
+instance FromJson Float {
+  fromJson = \ j::Json ->
+    case j of
+    | jsonFloat(x) -> right(x)
+    | _ -> left(s"Expected float, got ${j.jsonString}")
+    end;
+}
+
 instance ToJson Integer {
   toJson = jsonInteger;
+}
+
+instance FromJson Integer {
+  fromJson = \ j::Json ->
+    case j of
+    | jsonFloat(x) when x == toFloat(toInteger(x)) -> right(toInteger(x))
+    | _ -> left(s"Expected integer, got ${j.jsonString}")
+    end;
 }
 
 instance ToJson String {
   toJson = jsonString;
 }
 
+instance FromJson String {
+  fromJson = \ j::Json ->
+    case j of
+    | jsonString(x) -> right(x)
+    | _ -> left(s"Expected string, got ${j.jsonString}")
+    end;
+}
+
 instance ToJson a => ToJson [a] {
   toJson = \xs::[a] -> jsonArray(map(toJson, xs));
+}
+
+instance FromJson a => FromJson [a] {
+  fromJson = \ j::Json ->
+    case j of
+    | jsonArray(x) -> traverseA(fromJson, x)
+    | _ -> left(s"Expected array, got ${j.jsonString}")
+    end;
+}
+
+instance ToJson a => ToJson Maybe<a> {
+  toJson = \mx::Maybe<a> ->
+    case mx of
+    | just(x) -> toJson(x)
+    | nothing() -> jsonNull()
+    end;
+}
+
+instance FromJson a => FromJson Maybe<a> {
+  fromJson = \ j::Json ->
+    case j of
+    | jsonNull() -> right(nothing())
+    | _ -> map(just, fromJson(j))
+    end;
 }
 
 abstract production jsonString
