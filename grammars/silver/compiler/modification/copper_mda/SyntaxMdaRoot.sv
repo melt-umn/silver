@@ -95,6 +95,6 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
 
   top.copperParser = copper:extendedParserBean(top.sourceGrammar, top.location,
     makeCopperName(parsername), parsername,
-    head(startFound).copperElementReference, startLayout, "", "", "",
+    head(startFound).copperElementReference, startLayout, [], "", "", "",
     hostGrammar, extGrammar);
 }

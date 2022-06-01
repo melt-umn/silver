@@ -386,7 +386,7 @@ public final class Util {
 	 * @param file The filename to report to the parser (filling in location information)
 	 * @return A silver ParseResult<ROOT> node.
 	 */
-	public static <ROOT> NParseResult callCopperParser(CopperParser<ROOT, CopperParserException> parser, Object string, Object file) {
+	public static <ROOT, PARSER extends CopperParser<ROOT, CopperParserException> & HasTokens> NParseResult callCopperParser(PARSER parser, Object string, Object file) {
 		String javaString = ((StringCatter)demand(string)).toString();
 		String javaFile = ((StringCatter)demand(file)).toString();
 		try {
@@ -420,29 +420,15 @@ public final class Util {
 	/**
 	 * Returns the terminals from a parser.
 	 */
-	private static <ROOT> Object getTerminals(CopperParser<ROOT, CopperParserException> parser) {
-
-		// This is the WRONG WAY to do this
-		// The right way would be to subclass CopperParser to SilverCompatCopperParser, make our
-		//  generated parsers inherit from that, and use that here
-
-		// Class<? extends CopperParser> parserClass = parser.getClass();
-		// try {
-		// 	Method getTokens = parserClass.getMethod("getTokens");
-		// 	List<Terminal> tokens = (List<Terminal>) getTokens.invoke(parser);
-		// 	return new Thunk<ConsCell>(() -> {
-		// 		List<NTerminalDescriptor> tds = tokens
-		// 			.stream()
-		// 			.map(Util::terminalToTerminalDescriptor)
-		// 			.collect(Collectors.toList());
-		// 		return ConsCellCollection.fromList(tds);
-		// 	});
-		// } catch(Throwable t) {
-		// 	throw new TraceException("Failed to reflect to getTokens()", t);
-		// }
-
-		return new Lazy.Trap("getTerminals not implemented: see source");
-		//TODO: FIXME
+	private static Object getTerminals(HasTokens parser) {
+		List<Terminal> tokens = (List<Terminal>) parser.getTokens();
+		return new Thunk<ConsCell>(() -> {
+			List<NTerminalDescriptor> tds = tokens
+				.stream()
+				.map(Util::terminalToTerminalDescriptor)
+				.collect(Collectors.toList());
+			return ConsCellCollection.fromList(tds);
+		});
 	}
 
 	/**

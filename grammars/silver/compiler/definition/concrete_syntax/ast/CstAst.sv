@@ -114,7 +114,7 @@ ${s2.lexerClassRefDcls}
     ++ flatMap((.copperGrammarElements), s2.disambiguationClasses);
   top.copperParser = copper:parserBean(top.sourceGrammar, top.location,
     makeCopperName(parsername), parsername,
-    head(startFound).copperElementReference, startLayout, parserClassAuxCode,
+    head(startFound).copperElementReference, startLayout, ["common.HasTokens"], parserClassAuxCode,
     parserInitCode, preambleCode,
     copper:grammar_(top.sourceGrammar, top.location, s2.containingGrammar,
       grammarElements));
