@@ -137,6 +137,7 @@ public final class CopperUtil {
   makeExtendedParserBean(String sourceGrammar, NLocation location, String id,
                          String pp, CopperElementReference startSymbol,
                          ConsCellCollection<CopperElementReference> startLayout,
+                         ConsCellCollection<StringCatter> interfaceNames,
                          String parserClassAuxCode, String parserInitCode,
                          String preambleCode, Grammar hostGrammar,
                          Grammar extGrammar) {
@@ -148,9 +149,13 @@ public final class CopperUtil {
       parserBean.setUnitary(false);
       parserBean.setStartSymbol(startSymbol);
 
-      Set<CopperElementReference> startLayoutSet =
-          new HashSet<CopperElementReference>();
+      Set<CopperElementReference> startLayoutSet = new HashSet<>();
       startLayout.iterator().forEachRemaining(startLayoutSet::add);
+
+      Set<String> interfaceNameSet = new HashSet<String>();
+      interfaceNames.stream().map(StringCatter::toString).forEach(interfaceNameSet::add);
+      parserBean.setInterfaceNames(interfaceNameSet);
+
       parserBean.setStartLayout(startLayoutSet);
       parserBean.setParserClassAuxCode(parserClassAuxCode);
       parserBean.setParserInitCode(parserInitCode);
@@ -243,6 +248,7 @@ public final class CopperUtil {
   makeParserBean(String sourceGrammar, NLocation location, String id, String pp,
                  CopperElementReference startSymbol,
                  ConsCellCollection<CopperElementReference> startLayout,
+                 ConsCellCollection<StringCatter> interfaceNames,
                  String parserClassAuxCode, String parserInitCode,
                  String preambleCode, Grammar grammar) {
     try {
@@ -253,10 +259,14 @@ public final class CopperUtil {
       parserBean.setUnitary(true);
       parserBean.setStartSymbol(startSymbol);
 
-      Set<CopperElementReference> startLayoutSet =
-          new HashSet<CopperElementReference>();
+      Set<CopperElementReference> startLayoutSet = new HashSet<>();
       startLayout.iterator().forEachRemaining(startLayoutSet::add);
       parserBean.setStartLayout(startLayoutSet);
+
+      Set<String> interfaceNameSet = new HashSet<>();
+      interfaceNames.stream().map(StringCatter::toString).forEach(interfaceNameSet::add);
+      parserBean.setInterfaceNames(interfaceNameSet);
+
       parserBean.setParserClassAuxCode(parserClassAuxCode);
       parserBean.setParserInitCode(parserInitCode);
       parserBean.setPreambleCode(preambleCode);
