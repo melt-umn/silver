@@ -5,7 +5,8 @@ annotation location :: Location;
 @{--
  - Data structure storing location information on tree nodes from a parse.
  -}
-nonterminal Location with filename, line, column, endLine, endColumn, index, endIndex;
+nonterminal Location with filename, line, column, endLine, endColumn, index, endIndex, compareTo, isEqual;
+propagate compareTo, isEqual on Location;
 
 synthesized attribute filename :: String;
 synthesized attribute line :: Integer;

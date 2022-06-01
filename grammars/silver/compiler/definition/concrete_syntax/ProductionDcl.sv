@@ -69,11 +69,27 @@ top::ProductionModifier ::= 'precedence' '=' i::Int_t
 terminal Operator_kwd 'operator' lexer classes {KEYWORD,RESERVED};
 
 concrete production productionModifierOperator
-top::ProductionModifier ::= 'operator' '=' n::QName
+top::ProductionModifier ::= 'operator' '=' n::QNameType
 {
   top.unparse = "operator = " ++ n.unparse;
 
   top.productionModifiers := [prodOperator(n.lookupType.fullName)];
+
+  top.errors <- n.lookupType.errors ++
+                if !n.lookupType.typeScheme.isTerminal
+                then [err(n.location, n.unparse ++ " is not a terminal.")]
+                else [];
+}
+
+terminal SemanticToken_kwd 'semanticToken' lexer classes {KEYWORD};
+disambiguate SemanticToken_kwd, IdLower_t { pluck SemanticToken_kwd; }
+
+concrete production productionModifierSemanticToken
+top::ProductionModifier ::= 'semanticToken' '=' n::QNameType
+{
+  top.unparse = "operator = " ++ n.unparse;
+
+  top.productionModifiers := [prodSemanticToken(n.lookupType.fullName)];
 
   top.errors <- n.lookupType.errors ++
                 if !n.lookupType.typeScheme.isTerminal
