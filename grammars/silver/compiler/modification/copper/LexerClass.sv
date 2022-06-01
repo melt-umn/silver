@@ -1,7 +1,7 @@
 grammar silver:compiler:modification:copper;
 
 terminal Lexer_kwd   'lexer'   lexer classes {KEYWORD};
-terminal Extends_kwd 'extends' lexer classes {KEYWORD};
+terminal Extends_kwd 'extends' lexer classes {MODIFIER};
 
 concrete production lexerClassDclEmpty
 top::AGDcl ::= 'lexer' 'class' id::Name ';'

@@ -2,16 +2,17 @@ grammar silver:compiler:extension:templating:syntax;
 
 imports silver:compiler:definition:core;
 imports silver:langutil:pp;
+imports silver:langutil:lsp as lsp;
 
-terminal TripleQuote /\"\"\"/ lexer classes {LITERAL};
+terminal TripleQuote /\"\"\"/ lexer classes {LITERAL, lsp:String_};
 terminal DoubleDollar '$$' lexer classes {LITERAL};
-terminal QuoteWater /[^$\r\n\t\"\\]+/ lexer classes {LITERAL};
-terminal SingleLineQuoteWater /([^$\r\n\t\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]r|[\\]f|[\\]t)+/ lexer classes {LITERAL};
-terminal LiteralNewline /(\n|\r\n)/ lexer classes {LITERAL};
-terminal LiteralTab /\t/ lexer classes {LITERAL};
-terminal LiteralQuote /\"/ lexer classes {LITERAL};
-terminal LiteralBackslash /\\/ lexer classes {LITERAL};
-terminal LiteralBackslashN /\\n/ lexer classes {LITERAL};
+terminal QuoteWater /[^$\r\n\t\"\\]+/ lexer classes {LITERAL, lsp:String_};
+terminal SingleLineQuoteWater /([^$\r\n\t\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]r|[\\]f|[\\]t)+/ lexer classes {LITERAL, lsp:String_};
+terminal LiteralNewline /(\n|\r\n)/ lexer classes {LITERAL, lsp:String_};
+terminal LiteralTab /\t/ lexer classes {LITERAL, lsp:String_};
+terminal LiteralQuote /\"/ lexer classes {LITERAL, lsp:String_};
+terminal LiteralBackslash /\\/ lexer classes {LITERAL, lsp:String_};
+terminal LiteralBackslashN /\\n/ lexer classes {LITERAL, lsp:String_};
 
 terminal OpenEscape '${';
 

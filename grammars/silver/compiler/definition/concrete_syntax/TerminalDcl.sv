@@ -4,16 +4,16 @@ import silver:langutil:pp;
 import silver:regex as abs;
 import silver:regex:concrete_syntax;
 
-terminal Ignore_kwd      'ignore'      lexer classes {KEYWORD};
-terminal Marking_kwd     'marking'     lexer classes {KEYWORD};
-terminal Named_kwd       'named'       lexer classes {KEYWORD};
-terminal Left_kwd        'left'        lexer classes {KEYWORD};
-terminal Association_kwd 'association' lexer classes {KEYWORD};
-terminal Right_kwd       'right'       lexer classes {KEYWORD};
-terminal RepeatProb_kwd  'repeatProb'  lexer classes {KEYWORD};  -- For use by the treegen extension
+terminal Ignore_kwd      'ignore'      lexer classes {MODIFIER};
+terminal Marking_kwd     'marking'     lexer classes {MODIFIER};
+terminal Named_kwd       'named'       lexer classes {MODIFIER};
+terminal Left_kwd        'left'        lexer classes {MODIFIER};
+terminal Association_kwd 'association' lexer classes {MODIFIER};
+terminal Right_kwd       'right'       lexer classes {MODIFIER};
+terminal RepeatProb_kwd  'repeatProb'  lexer classes {MODIFIER};  -- For use by the treegen extension
 
 -- We actually need to reserved this due to its appearance in PRODUCTION modifiers.
-terminal Precedence_kwd  'precedence'  lexer classes {KEYWORD,RESERVED};
+terminal Precedence_kwd  'precedence'  lexer classes {MODIFIER,RESERVED};
 
 abstract production terminalDclDefault
 top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifiers

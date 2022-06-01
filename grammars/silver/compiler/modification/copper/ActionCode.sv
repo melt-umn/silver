@@ -1,6 +1,6 @@
 grammar silver:compiler:modification:copper;
 
-terminal Action_kwd 'action' lexer classes {KEYWORD};
+terminal Action_kwd 'action' lexer classes {MODIFIER};
 
 concrete production concreteProductionDclAction
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody 'action' acode::ActionCode_c

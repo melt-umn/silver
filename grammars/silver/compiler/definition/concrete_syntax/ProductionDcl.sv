@@ -66,7 +66,7 @@ top::ProductionModifier ::= 'precedence' '=' i::Int_t
   top.productionModifiers := [prodPrecedence(toInteger(i.lexeme))];
 }
 
-terminal Operator_kwd 'operator' lexer classes {KEYWORD,RESERVED};
+terminal Operator_kwd 'operator' lexer classes {MODIFIER,RESERVED};
 
 concrete production productionModifierOperator
 top::ProductionModifier ::= 'operator' '=' n::QNameType
