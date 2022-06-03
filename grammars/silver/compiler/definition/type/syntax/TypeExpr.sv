@@ -187,7 +187,7 @@ top::TypeExpr ::= q::QNameType
 
 concrete production typeVariableTypeExpr
 top::TypeExpr ::= tv::IdLower_t
-semanticToken=IdTypeVar_t
+--semanticToken=IdTypeVar_t
 {
   top.unparse = tv.lexeme;
   

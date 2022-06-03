@@ -23,6 +23,9 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
     constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
 
   ns.signatureName = fName;
+  ns.env = newScopeEnv(ns.defs, top.env);
+  pm.productionSig = ns.namedSignature;
+  pm.env = newScopeEnv(ns.actionDefs, top.env);
   acode.frame = reduceActionContext(ns.namedSignature, myFlowGraph, sourceGrammar=top.grammarName);
   acode.env = newScopeEnv(productionActionVars ++ acode.defs ++ ns.actionDefs, top.env);
 

@@ -1,6 +1,8 @@
 grammar silver:compiler:definition:concrete_syntax;
 
-autocopy attribute productionName :: String;
+import silver:compiler:modification:copper only actionDefs;
+
+autocopy attribute productionSig :: NamedSignature;
 
 concrete production concreteProductionDcl
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody
@@ -10,9 +12,10 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
   
-  pm.productionName = fName;
   ns.signatureName = fName;
   ns.env = newScopeEnv(ns.defs, top.env);
+  pm.productionSig = ns.namedSignature;
+  pm.env = newScopeEnv(ns.actionDefs, top.env);
 
   top.errors <- pm.errors;
   top.errors <- ns.concreteSyntaxTypeErrors;
@@ -26,9 +29,9 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   forwards to productionDcl('abstract', $2, id, ns, body, location=top.location);
 }
 
-nonterminal ProductionModifiers with config, location, unparse, productionModifiers, errors, env, productionName; -- 0 or some
-nonterminal ProductionModifierList with config, location, unparse, productionModifiers, errors, env, productionName; -- 1 or more
-closed nonterminal ProductionModifier with config, location, unparse, productionModifiers, errors, env, productionName; -- 1
+nonterminal ProductionModifiers with config, location, unparse, productionModifiers, errors, env, flowEnv, compiledGrammars, grammarName, productionSig; -- 0 or some
+nonterminal ProductionModifierList with config, location, unparse, productionModifiers, errors, env, flowEnv, compiledGrammars, grammarName, productionSig; -- 1 or more
+closed nonterminal ProductionModifier with config, location, unparse, productionModifiers, errors, env, flowEnv, compiledGrammars, grammarName, productionSig; -- 1
 
 monoid attribute productionModifiers :: [SyntaxProductionModifier];
 
@@ -74,22 +77,6 @@ top::ProductionModifier ::= 'operator' '=' n::QNameType
   top.unparse = "operator = " ++ n.unparse;
 
   top.productionModifiers := [prodOperator(n.lookupType.fullName)];
-
-  top.errors <- n.lookupType.errors ++
-                if !n.lookupType.typeScheme.isTerminal
-                then [err(n.location, n.unparse ++ " is not a terminal.")]
-                else [];
-}
-
-terminal SemanticToken_kwd 'semanticToken' lexer classes {KEYWORD};
-disambiguate SemanticToken_kwd, IdLower_t { pluck SemanticToken_kwd; }
-
-concrete production productionModifierSemanticToken
-top::ProductionModifier ::= 'semanticToken' '=' n::QNameType
-{
-  top.unparse = "operator = " ++ n.unparse;
-
-  top.productionModifiers := [prodSemanticToken(n.lookupType.fullName)];
 
   top.errors <- n.lookupType.errors ++
                 if !n.lookupType.typeScheme.isTerminal

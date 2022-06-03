@@ -225,7 +225,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   top.allProductions := [top];
   top.allProductionNames := [ns.fullName];
   
-  modifiers.productionName = ns.fullName;
+  modifiers.productionSig = ns;
 
   production lhsRef :: [Decorated SyntaxDcl] =
     searchEnvTree(ns.outputElement.typerep.typeName, top.cstEnv);

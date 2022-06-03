@@ -18,14 +18,10 @@ ignore terminal Whitespace /[\ \t\r\n]+/;
 nonterminal Expr;
 concrete productions top::Expr
 | Id_t {}
-| IdFn '(' ')' {}
+| i::Id_t '(' ')'
+  semantic token IdFn_t at i.location
+  {}
 | e1::Expr '+' e2::Expr {}
-
-nonterminal IdFn;
-concrete production idFn
-top::IdFn ::= Id_t
-semanticToken=IdFn_t
-{}
 
 
 parser parse :: Expr {
