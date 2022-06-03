@@ -43,7 +43,7 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
             new SemanticTokensWithRegistrationOptions(
                 new SemanticTokensLegend(
                     SilverTextDocumentService.tokenTypes, SilverTextDocumentService.tokenModifiers),
-                new SemanticTokensServerFull(true), false));
+                new SemanticTokensServerFull(false), false));
 
         final InitializeResult initializeResult = new InitializeResult(capabilities);
         return CompletableFuture.supplyAsync(()->initializeResult);

@@ -87,10 +87,4 @@ public class SilverTextDocumentService implements TextDocumentService {
         System.err.println(params);
         return CompletableFutures.computeAsync((cancelChecker) -> getSemanticTokens(params.getTextDocument()));
     }
-
-    @Override
-    public CompletableFuture<Either<SemanticTokens, SemanticTokensDelta>> semanticTokensFullDelta(SemanticTokensDeltaParams params) {
-        System.err.println(params);
-        return CompletableFutures.computeAsync((cancelChecker) -> Either.forLeft(getSemanticTokens(params.getTextDocument())));
-    }
 }

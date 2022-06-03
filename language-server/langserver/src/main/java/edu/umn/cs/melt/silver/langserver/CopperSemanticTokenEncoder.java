@@ -43,7 +43,7 @@ public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserEx
     private final Map<String, int[]> tokenEncodings = new HashMap<>();
     private List<Integer> encodeTokens(List<Terminal> tokens) {
         List<Integer> result = new ArrayList<>();
-        int prevLine = 0;
+        int prevLine = 1;
         int prevStartChar = 0;
         for (Terminal t : tokens) {
             int type = -1;
@@ -75,11 +75,14 @@ public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserEx
                 }
                 int deltaStartChar = t.getColumn() - prevStartChar;
                 int length = t.getEndOffset() - t.getStartOffset();
+                prevLine = t.getLine();
+                prevStartChar = t.getColumn();
                 result.add(deltaLine);
                 result.add(deltaStartChar);
                 result.add(length);
                 result.add(type);
                 result.add(modifiers);
+                System.err.println(t.getName() + ": " + t.getLine() + " " + t.getColumn());
             }
         }
         return result;
