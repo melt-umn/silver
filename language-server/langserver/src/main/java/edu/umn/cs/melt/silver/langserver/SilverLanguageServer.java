@@ -16,9 +16,8 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
 public class SilverLanguageServer implements LanguageServer, LanguageClientAware {
-    private TextDocumentService textDocumentService;
-    private WorkspaceService workspaceService;
-    private LanguageClient client;
+    private SilverTextDocumentService textDocumentService;
+    private SilverWorkspaceService workspaceService;
     private int errorCode = 1;
 
     public SilverLanguageServer() {
@@ -76,7 +75,6 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
 
     @Override
     public void connect(LanguageClient languageClient) {
-        // Get the client which started this LS.
-        this.client = languageClient;
+        textDocumentService.setClient(languageClient);
     }
 }

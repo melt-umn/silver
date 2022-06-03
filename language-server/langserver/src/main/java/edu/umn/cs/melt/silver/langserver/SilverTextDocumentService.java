@@ -27,36 +27,47 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextDocumentItem;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
 import silver.compiler.composed.Default.Parser_silver_compiler_composed_Default_svParse;
 
 public class SilverTextDocumentService implements TextDocumentService {
+    LanguageClient client;
     Map<String, String> fileContents = new HashMap<>();
+    Map<String, Integer> fileVersions = new HashMap<>();
 
-    @Override
-    public void didOpen(DidOpenTextDocumentParams didOpenTextDocumentParams) {
-        System.err.println("Opened " + didOpenTextDocumentParams);
-        fileContents.put(didOpenTextDocumentParams.getTextDocument().getUri(), didOpenTextDocumentParams.getTextDocument().getText());
+    public void setClient(LanguageClient client) {
+        this.client = client;
     }
 
     @Override
-    public void didChange(DidChangeTextDocumentParams didChangeTextDocumentParams) {
-        System.err.println("Changed " + didChangeTextDocumentParams);
-        for (TextDocumentContentChangeEvent change : didChangeTextDocumentParams.getContentChanges()) {
-            fileContents.put(didChangeTextDocumentParams.getTextDocument().getUri(), change.getText());
+    public void didOpen(DidOpenTextDocumentParams params) {
+        //System.err.println("Opened " + params);
+        String uri = params.getTextDocument().getUri();
+        fileContents.put(uri, params.getTextDocument().getText());
+        fileVersions.put(uri, params.getTextDocument().getVersion());
+    }
+
+    @Override
+    public void didChange(DidChangeTextDocumentParams params) {
+        //System.err.println("Changed " + params);
+        String uri = params.getTextDocument().getUri();
+        for (TextDocumentContentChangeEvent change : params.getContentChanges()) {
+            fileContents.put(uri, change.getText());
+            fileVersions.put(uri, params.getTextDocument().getVersion());
         }
     }
 
     @Override
-    public void didClose(DidCloseTextDocumentParams didCloseTextDocumentParams) {
-        //System.err.println("Closed " + didCloseTextDocumentParams);
-        fileContents.remove(didCloseTextDocumentParams.getTextDocument().getUri());
+    public void didClose(DidCloseTextDocumentParams params) {
+        //System.err.println("Closed " + params);
+        fileContents.remove(params.getTextDocument().getUri());
     }
 
     @Override
-    public void didSave(DidSaveTextDocumentParams didSaveTextDocumentParams) {
-        //System.err.println("Saved " + didSaveTextDocumentParams);
+    public void didSave(DidSaveTextDocumentParams params) {
+        //System.err.println("Saved " + params);
     }
 
     public static final List<String> tokenTypes = Arrays.asList(new String[] {
@@ -69,22 +80,24 @@ public class SilverTextDocumentService implements TextDocumentService {
 
     private CopperSemanticTokenEncoder<?> semanticTokenEncoder =
         new CopperSemanticTokenEncoder<>(new Parser_silver_compiler_composed_Default_svParse(), tokenTypes, tokenModifiers);
-    
-    private SemanticTokens getSemanticTokens(TextDocumentIdentifier document) {
-        String uri = document.getUri();
-        List<Integer> tokens;
-        if (fileContents.containsKey(uri)) {
-            tokens = semanticTokenEncoder.parseTokens(fileContents.get(uri));
-        } else {
-            tokens = new ArrayList<Integer>();
-        }
-        System.err.println("Tokens for " + uri + ": " + tokens);
-        return new SemanticTokens(tokens);
-    }
 
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
-        System.err.println(params);
-        return CompletableFutures.computeAsync((cancelChecker) -> getSemanticTokens(params.getTextDocument()));
+        //System.err.println(params);
+        String uri = params.getTextDocument().getUri();
+        return CompletableFutures.computeAsync((cancelChecker) -> {
+            List<Integer> tokens;
+            int requestVersion;
+            // Recompute tokens if the file is changed while tokens are being computed
+            do {
+                requestVersion = fileVersions.get(uri);
+                if (fileContents.containsKey(uri)) {
+                    tokens = semanticTokenEncoder.parseTokens(fileContents.get(uri));
+                } else {
+                    tokens = new ArrayList<Integer>();
+                }
+            } while (requestVersion != fileVersions.get(uri));
+            return new SemanticTokens(tokens);
+        });
     }
 }

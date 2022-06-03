@@ -78,7 +78,9 @@ public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserEx
                         prevStartChar = 0;
                     }
                     int deltaStartChar = column - prevStartChar;
-                    int length = lines[line - t.getLine()].length();
+                    int length = lines.length > 1?
+                        lines[line - t.getLine()].length() :
+                        t.getEndOffset() - t.getStartOffset();
                     prevLine = line;
                     prevStartChar = column;
                     result.add(deltaLine);
@@ -86,7 +88,7 @@ public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserEx
                     result.add(length);
                     result.add(type);
                     result.add(modifiers);
-                    System.err.println(t.getName() + ": " + line + " " + column);
+                    //System.err.println(t.getName() + ": " + line + " " + column + " " + lines[line - t.getLine()]);
                 }
             }
         }
