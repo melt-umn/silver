@@ -69,20 +69,25 @@ public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserEx
                 tokenEncodings.put(t.getName(), type != -1? new int[]{type, modifiers} : null);
             }
             if (type != -1) {
-                int deltaLine = t.getLine() - prevLine;
-                if (deltaLine != 0) {
-                    prevStartChar = 0;
+                String[] lines = t.lexeme.toString().split("\n");
+                assert lines.length == t.getEndLine() - t.getLine() + 1;
+                for (int line = t.getLine(); line <= t.getEndLine(); line++) {
+                    int column = line == t.getLine()? t.getColumn() : 0;
+                    int deltaLine = line - prevLine;
+                    if (deltaLine != 0) {
+                        prevStartChar = 0;
+                    }
+                    int deltaStartChar = column - prevStartChar;
+                    int length = lines[line - t.getLine()].length();
+                    prevLine = line;
+                    prevStartChar = column;
+                    result.add(deltaLine);
+                    result.add(deltaStartChar);
+                    result.add(length);
+                    result.add(type);
+                    result.add(modifiers);
+                    System.err.println(t.getName() + ": " + line + " " + column);
                 }
-                int deltaStartChar = t.getColumn() - prevStartChar;
-                int length = t.getEndOffset() - t.getStartOffset();
-                prevLine = t.getLine();
-                prevStartChar = t.getColumn();
-                result.add(deltaLine);
-                result.add(deltaStartChar);
-                result.add(length);
-                result.add(type);
-                result.add(modifiers);
-                System.err.println(t.getName() + ": " + t.getLine() + " " + t.getColumn());
             }
         }
         return result;
