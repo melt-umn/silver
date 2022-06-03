@@ -7,7 +7,7 @@ aspect production terminalDclDefault
 top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifiers
 {
   top.initProd := s"\t\tcommon.RTTIManager.registerTerminal(${makeName(top.grammarName)}.T${id.name}.terminalton);\n\n";
-  top.genFiles := terminalTranslation(id.name, top.grammarName, tm.lexerClasses);
+  top.genFiles := terminalTranslation(id.name, top.grammarName, expandTransitiveSuperClasses([], tm.lexerClasses, top.env));
 }
 
 function terminalTranslation

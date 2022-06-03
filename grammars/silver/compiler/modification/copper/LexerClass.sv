@@ -17,7 +17,7 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs := [lexerClassDef(top.grammarName, id.location, fName)];
+  top.defs := [lexerClassDef(top.grammarName, id.location, fName, modifiers.superClasses)];
 
   top.errors <- if length(getLexerClassDcl(fName, top.env)) > 1
                 then [err(id.location, "Lexer class '" ++ fName ++ "' is already bound.")]
@@ -31,13 +31,13 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
         location=top.location, sourceGrammar=top.grammarName)];
 }
 
-nonterminal LexerClassModifiers with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
-closed nonterminal LexerClassModifier with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+nonterminal LexerClassModifiers with config, location, unparse, lexerClassModifiers, superClasses, errors, env, grammarName, compiledGrammars, flowEnv;
+closed nonterminal LexerClassModifier with config, location, unparse, lexerClassModifiers, superClasses, errors, env, grammarName, compiledGrammars, flowEnv;
 
 monoid attribute lexerClassModifiers :: [SyntaxLexerClassModifier];
 
 propagate errors on LexerClassModifiers, LexerClassModifier;
-propagate lexerClassModifiers on LexerClassModifiers;
+propagate lexerClassModifiers, superClasses on LexerClassModifiers;
 
 abstract production lexerClassModifiersNone
 top::LexerClassModifiers ::= 
@@ -55,6 +55,12 @@ top::LexerClassModifiers ::= h::LexerClassModifier ',' t::LexerClassModifiers
   top.unparse = h.unparse ++ " " ++ t.unparse;
 }
 
+aspect default production
+top::LexerClassModifier ::=
+{
+  top.superClasses := [];
+}
+
 concrete production lexerClassModifierExtends
 top::LexerClassModifier ::= 'extends' cls::LexerClasses
 {
@@ -64,6 +70,7 @@ top::LexerClassModifier ::= 'extends' cls::LexerClasses
     [ lexerClassExtends(cls.lexerClasses, location=top.location,
         sourceGrammar=top.grammarName)
     ];
+  top.superClasses := cls.lexerClasses;
 }
 
 concrete production lexerClassModifierDominates
