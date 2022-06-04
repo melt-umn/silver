@@ -1,11 +1,5 @@
 package edu.umn.cs.melt.silver.langserver;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -18,15 +12,9 @@ import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.DidSaveTextDocumentParams;
 import org.eclipse.lsp4j.SemanticTokens;
-import org.eclipse.lsp4j.SemanticTokensDelta;
-import org.eclipse.lsp4j.SemanticTokensDeltaParams;
-import org.eclipse.lsp4j.SemanticTokensEdit;
 import org.eclipse.lsp4j.SemanticTokensParams;
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent;
-import org.eclipse.lsp4j.TextDocumentIdentifier;
-import org.eclipse.lsp4j.TextDocumentItem;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
-import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
@@ -79,11 +67,11 @@ public class SilverTextDocumentService implements TextDocumentService {
     });
 
     private CopperSemanticTokenEncoder<?> semanticTokenEncoder =
-        new CopperSemanticTokenEncoder<>(new Parser_silver_compiler_composed_Default_svParse(), tokenTypes, tokenModifiers);
+        new CopperSemanticTokenEncoder<>(Parser_silver_compiler_composed_Default_svParse::new, tokenTypes, tokenModifiers);
 
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
-        //System.err.println(params);
+        System.err.println(params);
         String uri = params.getTextDocument().getUri();
         return CompletableFutures.computeAsync((cancelChecker) -> {
             List<Integer> tokens;

@@ -4,11 +4,11 @@ import edu.umn.cs.melt.copper.runtime.engines.CopperParser;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -16,13 +16,13 @@ import common.HasTokens;
 import common.Terminal;
 
 public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserException> & HasTokens> {
-    private final P parser;
+    private final Supplier<P> parserFactory;
 
     private final Map<String, Integer> tokenTypes;
     private final Map<String, Integer> tokenModifiers;
 
-    public CopperSemanticTokenEncoder(P parser, List<String> tokenTypes, List<String> tokenModifiers) {
-        this.parser = parser;
+    public CopperSemanticTokenEncoder(Supplier<P> parserFactory, List<String> tokenTypes, List<String> tokenModifiers) {
+        this.parserFactory = parserFactory;
         this.tokenTypes = IntStream.range(0, tokenTypes.size()).boxed()
             .collect(Collectors.toMap(tokenTypes::get, i -> i));
         this.tokenModifiers = IntStream.range(0, tokenModifiers.size()).boxed()
@@ -30,6 +30,7 @@ public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserEx
     }
 
     public List<Integer> parseTokens(String content) {
+        P parser = parserFactory.get();
         try {
             parser.parse(content);
         } catch (CopperParserException e) {
@@ -88,7 +89,7 @@ public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserEx
                     result.add(length);
                     result.add(type);
                     result.add(modifiers);
-                    //System.err.println(t.getName() + ": " + line + " " + column + " " + lines[line - t.getLine()]);
+                    System.err.println(t.getName() + ": " + line + " " + column + " " + (lines.length > 1? lines[line - t.getLine()] : ""));
                 }
             }
         }
