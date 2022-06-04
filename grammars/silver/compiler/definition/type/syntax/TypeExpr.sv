@@ -167,6 +167,7 @@ top::TypeExpr ::= InhSetLCurly_t inhs::FlowSpecInhs '}'
 
 concrete production nominalTypeExpr
 top::TypeExpr ::= q::QNameType
+semantic token IdType_t at q.location
 {
   top.unparse = q.unparse;
 
@@ -187,7 +188,7 @@ top::TypeExpr ::= q::QNameType
 
 concrete production typeVariableTypeExpr
 top::TypeExpr ::= tv::IdLower_t
---semanticToken=IdTypeVar_t
+semantic token IdTypeVar_t at tv.location
 {
   top.unparse = tv.lexeme;
   
@@ -203,6 +204,7 @@ top::TypeExpr ::= tv::IdLower_t
 
 concrete production kindSigTypeVariableTypeExpr
 top::TypeExpr ::= '(' tv::IdLower_t '::' k::KindExpr ')'
+semantic token IdTypeVar_t at tv.location
 {
   top.unparse = s"(${tv.lexeme} :: ${k.unparse})";
   

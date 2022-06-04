@@ -51,12 +51,14 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
 
 concrete production terminalDclKwdModifiers
 top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr ';'
+semantic token IdType_t at id.location
 {
   forwards to terminalDclDefault(t, id, r, terminalModifiersNone(location=$5.location), location=top.location);
 }
 
 concrete production terminalDclAllModifiers
 top::AGDcl ::= t::TerminalKeywordModifier 'terminal' id::Name r::RegExpr tm::TerminalModifiers ';'
+semantic token IdType_t at id.location
 {
   forwards to terminalDclDefault(t, id, r, tm, location=top.location);
 }
@@ -70,9 +72,13 @@ nonterminal RegExpr with config, location, grammarName, unparse, terminalRegExpr
 synthesized attribute terminalRegExprSpec :: abs:Regex;
 synthesized attribute easyName :: Maybe<String>;
 
+terminal RegexSlash_t // lexer classes {lsp:Regexp};
+
 concrete production regExpr_c
-top::RegExpr ::= '/' r::Regex '/'
-layout {}
+top::RegExpr ::= lSlash::'/' r::Regex rSlash::'/'
+layout {},
+semantic token RegexSlash_t at lSlash.location,
+semantic token RegexSlash_t at rSlash.location
 {
   top.unparse = "/" ++ r.unparse ++ "/";
   forwards to regExpr(r.ast, location=top.location);

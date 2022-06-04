@@ -35,6 +35,7 @@ top::ConstraintList ::=
 
 concrete production classConstraint
 top::Constraint ::= c::QNameType t::TypeExpr
+semantic token IdTypeClass_t at c.baseNameLoc
 {
   top.unparse = c.unparse ++ " " ++ t.unparse;
   top.contexts =

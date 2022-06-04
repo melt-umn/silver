@@ -118,11 +118,22 @@ ignore terminal WarnTag_t /#warn [^\r\n]+/
   };
 
 terminal IdLower_t /[a-z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
-terminal IdUpper_t /[A-Z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER, lsp:Type};
+terminal IdUpper_t /[A-Z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
+
+-- Identifier terminals emitted as semantic tokens
+terminal IdGrammarName_t '' lexer classes {IDENTIFIER, lsp:Namespace};
+terminal IdVariable_t '' lexer classes {IDENTIFIER, lsp:Variable};
+terminal IdFnProd_t '' lexer classes {IDENTIFIER, lsp:Function};
+terminal IdFnProdDcl_t '' lexer classes {IDENTIFIER, lsp:Function, lsp:Declaration};
+terminal IdType_t '' lexer classes {IDENTIFIER, lsp:Type};
+terminal IdTypeDcl_t '' lexer classes {IDENTIFIER, lsp:Type, lsp:Declaration};
+terminal IdTypeClass_t '' lexer classes {IDENTIFIER, lsp:Interface};
+terminal IdTypeClassDcl_t '' lexer classes {IDENTIFIER, lsp:Interface, lsp:Declaration};
+terminal IdTypeClassMember_t '' lexer classes {IDENTIFIER, lsp:Method};
+terminal IdTypeClassMemberDcl_t '' lexer classes {IDENTIFIER, lsp:Method, lsp:Declaration};
 
 terminal True_kwd  'true'   lexer classes {LITERAL,RESERVED};
 terminal False_kwd 'false'  lexer classes {LITERAL,RESERVED};
 terminal Int_t     /[\-]?[0-9]+/ lexer classes {LITERAL, lsp:Number};
 terminal Float_t   /[\-]?[0-9]+[\.][0-9]+/ lexer classes {LITERAL, lsp:Number};
 terminal String_t  /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]n|[\\]r|[\\]f|[\\]t)*[\"]/ lexer classes {LITERAL, lsp:String_};
-

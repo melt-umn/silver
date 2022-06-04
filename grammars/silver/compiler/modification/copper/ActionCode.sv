@@ -4,6 +4,7 @@ terminal Action_kwd 'action' lexer classes {MODIFIER};
 
 concrete production concreteProductionDclAction
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody 'action' acode::ActionCode_c
+semantic token IdFnProdDcl_t at id.location
 {
   top.unparse = forward.unparse ++ "action " ++ acode.unparse;
 

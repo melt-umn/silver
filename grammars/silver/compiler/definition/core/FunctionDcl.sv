@@ -6,7 +6,8 @@ nonterminal FunctionLHS with config, grammarName, env, location, unparse, errors
 propagate errors on FunctionSignature, FunctionLHS;
 
 concrete production functionDcl
-top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 
+top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
+semantic token IdFnProdDcl_t at id.location
 {
   top.unparse = "function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse; 
 

@@ -3,6 +3,7 @@ grammar silver:langutil:lsp;
 -- Token types
 lexer class Namespace;
 lexer class Type;
+lexer class Class;
 lexer class Enum;
 lexer class Interface;
 lexer class Struct;

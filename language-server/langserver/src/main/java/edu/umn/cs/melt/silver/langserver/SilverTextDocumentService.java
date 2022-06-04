@@ -59,7 +59,7 @@ public class SilverTextDocumentService implements TextDocumentService {
     }
 
     public static final List<String> tokenTypes = Arrays.asList(new String[] {
-        "namespace", "type", "interface", "typeParameter", "parameter", "variable", "function",
+        "namespace", "type", "interface", "class", "typeParameter", "parameter", "variable", "function",
         "keyword", "modifier", "comment", "string", "number", "regexp", "operator"
     });
     public static final List<String> tokenModifiers = Arrays.asList(new String[] {

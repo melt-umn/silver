@@ -4,6 +4,7 @@ import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, co
 
 concrete production typeClassDcl
 top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' body::ClassBody '}'
+semantic token IdTypeClassDcl_t at id.baseNameLoc
 {
   top.unparse = s"class ${cl.unparse} => ${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}"; 
 
@@ -62,8 +63,9 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
 
 concrete production typeClassDclNoCL
 top::AGDcl ::= 'class' id::QNameType var::TypeExpr '{' body::ClassBody '}'
+semantic token IdTypeClassDcl_t at id.baseNameLoc
 {
-  top.unparse = s"${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}";
+  top.unparse = s"class ${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}";
 
   forwards to typeClassDcl($1, nilConstraint(location=top.location), '=>', id, var, $4, body, $6, location=top.location);
 }
@@ -95,12 +97,14 @@ top::ClassBody ::=
 
 concrete production classBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
+semantic token IdTypeClassMemberDcl_t at id.location
 {
   forwards to constraintClassBodyItem(id, $2, nilConstraint(location=top.location), '=>', ty, $4, location=top.location);
 }
 
 concrete production constraintClassBodyItem
 top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
+semantic token IdTypeClassMemberDcl_t at id.location
 {
   top.unparse = s"${id.name} :: ${cl.unparse} => ${ty.unparse};";
   
@@ -126,12 +130,14 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
 
 concrete production defaultClassBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
+semantic token IdTypeClassMemberDcl_t at id.location
 {
   forwards to defaultConstraintClassBodyItem(id, $2, nilConstraint(location=top.location), '=>', ty, $4, e, $6, location=top.location);
 }
 
 concrete production defaultConstraintClassBodyItem
 top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e::Expr ';'
+semantic token IdTypeClassMemberDcl_t at id.location
 {
   top.unparse = s"${id.name} :: ${cl.unparse} => ${ty.unparse} = ${e.unparse};";
   

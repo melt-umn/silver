@@ -20,7 +20,8 @@ autocopy attribute realSignature :: [NamedSignatureElement];
 propagate errors on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS, AspectRHSElem;
 
 concrete production aspectProductionDcl
-top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
+top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody
+semantic token IdFnProd_t at id.location
 {
   top.unparse = "aspect production " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
 
@@ -68,7 +69,8 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 }
 
 concrete production aspectFunctionDcl
-top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody 
+top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody
+semantic token IdFnProd_t at id.location
 {
   top.unparse = "aspect function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
 

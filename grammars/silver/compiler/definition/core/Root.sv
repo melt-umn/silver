@@ -59,6 +59,7 @@ top::GrammarDcl ::=
 
 concrete production grammarDcl_c
 top::GrammarDcl ::= 'grammar' qn::QName ';'
+semantic token IdGrammarName_t at qn.baseNameLoc
 {
   top.unparse = "grammar " ++ qn.unparse ++ ";";
 

@@ -6,6 +6,7 @@ autocopy attribute productionSig :: NamedSignature;
 
 concrete production concreteProductionDcl
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody
+semantic token IdFnProdDcl_t at id.location
 {
   top.unparse = "concrete production " ++ id.unparse ++ "\n" ++ ns.unparse ++ " " ++ pm.unparse ++ "\n" ++ body.unparse; 
 

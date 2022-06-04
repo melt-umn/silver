@@ -3,14 +3,19 @@ grammar silver:compiler:modification:copper;
 terminal Lexer_kwd   'lexer'   lexer classes {KEYWORD};
 terminal Extends_kwd 'extends' lexer classes {MODIFIER};
 
+terminal IdLexerClass_t '' lexer classes {IDENTIFIER, lsp:Class};
+terminal IdLexerClassDcl_t '' lexer classes {IDENTIFIER, lsp:Class, lsp:Declaration};
+
 concrete production lexerClassDclEmpty
 top::AGDcl ::= 'lexer' 'class' id::Name ';'
+semantic token IdLexerClassDcl_t at id.location
 {
   forwards to lexerClassDecl($1, $2, id, lexerClassModifiersNone(location=$4.location), $4, location=top.location);
 }
 
 concrete production lexerClassDecl
 top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
+semantic token IdLexerClassDcl_t at id.location
 {
   top.unparse = "lexer class " ++ id.name ++ modifiers.unparse ++ ";";
 

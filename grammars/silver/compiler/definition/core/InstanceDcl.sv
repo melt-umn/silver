@@ -4,6 +4,7 @@ import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, co
 
 concrete production instanceDcl
 top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
+semantic token IdTypeClass_t at id.baseNameLoc
 {
   top.unparse = s"instance ${cl.unparse} => ${id.unparse} ${ty.unparse}\n{\n${body.unparse}\n}"; 
 
@@ -72,6 +73,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
 
 concrete production instanceDclNoCL
 top::AGDcl ::= 'instance' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
+semantic token IdTypeClass_t at id.baseNameLoc
 {
   top.unparse = s"instance ${id.unparse} ${ty.unparse}\n{\n${body.unparse}\n}"; 
 
@@ -114,6 +116,7 @@ top::InstanceBody ::=
 
 concrete production instanceBodyItem
 top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
+semantic token IdTypeClassMember_t at id.baseNameLoc
 {
   top.unparse = s"${id.name} = ${e.unparse};";
 

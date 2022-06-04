@@ -2,6 +2,7 @@ grammar silver:compiler:definition:core;
 
 concrete production typeAliasDecl
 top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
+semantic token IdTypeDcl_t at id.location
 {
   top.unparse = "type " ++ id.unparse ++ tl.unparse ++ "=" ++ te.unparse ++ ";";
 

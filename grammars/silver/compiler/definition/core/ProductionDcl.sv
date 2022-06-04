@@ -33,6 +33,7 @@ synthesized attribute constraintDefs::[Def];
 
 concrete production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
+semantic token IdFnProdDcl_t at id.location
 {
   top.unparse = "abstract production " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse; 
 

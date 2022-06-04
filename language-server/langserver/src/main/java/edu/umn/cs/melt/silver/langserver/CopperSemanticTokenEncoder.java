@@ -89,7 +89,6 @@ public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserEx
                     result.add(length);
                     result.add(type);
                     result.add(modifiers);
-                    System.err.println(t.getName() + ": " + line + " " + column + " " + (lines.length > 1? lines[line - t.getLine()] : ""));
                 }
             }
         }

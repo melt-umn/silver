@@ -4,6 +4,7 @@ autocopy attribute nonterminalName :: String;
 
 concrete production nonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
+semantic token IdTypeDcl_t at id.location
 {
   top.unparse = "nonterminal " ++ id.unparse ++ tl.unparse ++ " " ++ nm.unparse ++ ";";
 
