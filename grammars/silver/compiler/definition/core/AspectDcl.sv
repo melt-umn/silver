@@ -21,7 +21,6 @@ propagate errors on AspectProductionSignature, AspectProductionLHS, AspectFuncti
 
 concrete production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody
-semantic token IdFnProd_t at id.location
 {
   top.unparse = "aspect production " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
 
@@ -66,11 +65,12 @@ semantic token IdFnProd_t at id.location
       newScopeEnv(body.defs ++ sigDefs ++ contextSigDefs,
         newScopeEnv(prodAtts, top.env)));
   body.frame = aspectProductionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
+} action {
+  insert semantic token IdFnProd_t at id.location;
 }
 
 concrete production aspectFunctionDcl
 top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody
-semantic token IdFnProd_t at id.location
 {
   top.unparse = "aspect function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
 
@@ -115,6 +115,8 @@ semantic token IdFnProd_t at id.location
       newScopeEnv(body.defs ++ sigDefs ++ contextSigDefs,
         newScopeEnv(prodAtts, top.env)));
   body.frame = aspectFunctionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
+} action {
+  insert semantic token IdFnProd_t at id.location;
 }
 
 concrete production aspectProductionSignature

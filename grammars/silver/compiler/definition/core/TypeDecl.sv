@@ -2,7 +2,6 @@ grammar silver:compiler:definition:core;
 
 concrete production typeAliasDecl
 top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
-semantic token IdTypeDcl_t at id.location
 {
   top.unparse = "type " ++ id.unparse ++ tl.unparse ++ "=" ++ te.unparse ++ ";";
 
@@ -32,4 +31,6 @@ semantic token IdTypeDcl_t at id.location
        else [];
 
   top.errors <- if isCircular then [err(te.location, s"Definition of ${fName} is self-referential")] else [];
+} action {
+  insert semantic token IdTypeDcl_t at id.location;
 }

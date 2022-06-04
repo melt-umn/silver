@@ -62,9 +62,10 @@ propagate errors, precTermList on TermPrecs;
 
 concrete production termPrecsOne
 top::TermPrecs ::= t::QName
-semantic token IdType_t at t.baseNameLoc
 {
   forwards to termPrecs(termPrecList(t,termPrecListNull(location=t.location), location=t.location), location=top.location);
+} action {
+  insert semantic token IdType_t at t.baseNameLoc;
 }
 
 concrete production termPrecsList
@@ -110,16 +111,18 @@ top::TermPrecList ::=
 
 concrete production termPrecListOne
 top::TermPrecList ::= t::QName
-semantic token IdType_t at t.baseNameLoc
 {
   forwards to termPrecList(t, termPrecListNull(location=top.location), location=top.location);
+} action {
+  insert semantic token IdType_t at t.baseNameLoc;
 }
 
 concrete production termPrecListCons
 top::TermPrecList ::= t::QName ',' terms_tail::TermPrecList
-semantic token IdType_t at t.baseNameLoc
 {
   forwards to termPrecList(t, terms_tail,location=top.location);
+} action {
+  insert semantic token IdType_t at t.baseNameLoc;
 }
 
 nonterminal LexerClasses with location, config, unparse, lexerClasses, errors, env;
@@ -127,9 +130,10 @@ propagate errors, lexerClasses on LexerClasses;
 
 concrete production lexerClassesOne
 top::LexerClasses ::= n::QName
-semantic token IdLexerClass_t at n.baseNameLoc
 {
-   forwards to lexerClasses(lexerClassListMain(n, lexerClassListNull(location=top.location), location=top.location), location=top.location);
+  forwards to lexerClasses(lexerClassListMain(n, lexerClassListNull(location=top.location), location=top.location), location=top.location);
+} action {
+  insert semantic token IdLexerClassDcl_t at n.baseNameLoc;
 }
 
 concrete production lexerClassesList
@@ -149,16 +153,18 @@ propagate errors, lexerClasses on LexerClassList;
 
 concrete production lexerClassListOne
 top::LexerClassList ::= n::QName
-semantic token IdLexerClass_t at n.baseNameLoc
 {
   forwards to lexerClassListMain(n,lexerClassListNull(location=n.location), location=n.location);
+} action {
+  insert semantic token IdLexerClassDcl_t at n.baseNameLoc;
 }
 
 concrete production lexerClassListCons
 top::LexerClassList ::= n::QName ',' cl_tail::LexerClassList
-semantic token IdLexerClass_t at n.baseNameLoc
 {
   forwards to lexerClassListMain(n,cl_tail,location=top.location);
+} action {
+  insert semantic token IdLexerClassDcl_t at n.baseNameLoc;
 }
 
 

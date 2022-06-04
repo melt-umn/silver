@@ -41,7 +41,6 @@ top::QName ::= id::Name
 
 concrete production qNameCons
 top::QName ::= id::Name ':' qn::QName
-semantic token IdGrammarName_t at id.location
 {
   top.name = id.name ++ ":" ++ qn.name;
   top.unparse = id.unparse ++ ":" ++ qn.unparse;
@@ -51,6 +50,8 @@ semantic token IdGrammarName_t at id.location
   top.lookupValue = decorate customLookup("value", getValueDcl(top.name, top.env), top.name, top.location) with {};
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
   top.lookupAttribute = decorate customLookup("attribute", getAttrDcl(top.name, top.env), top.name, top.location) with {};
+} action {
+  insert semantic token IdGrammarName_t at id.location;
 }
 
 abstract production qNameError
@@ -140,13 +141,14 @@ top::QNameType ::= id::IdUpper_t
 
 concrete production qNameTypeCons
 top::QNameType ::= id::Name ':' qn::QNameType
-semantic token IdGrammarName_t at id.location
 {
   top.name = id.name ++ ":" ++ qn.name;
   top.baseNameLoc = qn.baseNameLoc;
   top.unparse = id.unparse ++ ":" ++ qn.unparse;
   
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
+} action {
+  insert semantic token IdGrammarName_t at id.location;
 }
 
 {--

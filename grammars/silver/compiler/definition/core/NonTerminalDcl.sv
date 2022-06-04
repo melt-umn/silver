@@ -4,7 +4,6 @@ autocopy attribute nonterminalName :: String;
 
 concrete production nonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
-semantic token IdTypeDcl_t at id.location
 {
   top.unparse = "nonterminal " ++ id.unparse ++ tl.unparse ++ " " ++ nm.unparse ++ ";";
 
@@ -41,6 +40,8 @@ semantic token IdTypeDcl_t at id.location
     if isLower(substring(0,1,id.name))
     then [err(id.location, "Types must be capitalized. Invalid nonterminal name " ++ id.name)]
     else [];
+} action {
+  insert semantic token IdTypeDcl_t at id.location;
 }
 
 nonterminal NTDeclQualifiers with location, errors;

@@ -7,7 +7,6 @@ propagate errors on FunctionSignature, FunctionLHS;
 
 concrete production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
-semantic token IdFnProdDcl_t at id.location
 {
   top.unparse = "function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse; 
 
@@ -41,6 +40,8 @@ semantic token IdFnProdDcl_t at id.location
 
   body.env = occursEnv(ns.occursDefs, newScopeEnv(body.defs ++ sigDefs ++ ns.constraintDefs, newScopeEnv(prodAtts, top.env)));
   body.frame = functionContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName); -- graph from flow:env
+} action {
+  insert semantic token IdFnProdDcl_t at id.location;
 }
 
 concrete production functionSignature

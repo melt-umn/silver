@@ -8,14 +8,14 @@ terminal IdLexerClassDcl_t '' lexer classes {IDENTIFIER, lsp:Class, lsp:Declarat
 
 concrete production lexerClassDclEmpty
 top::AGDcl ::= 'lexer' 'class' id::Name ';'
-semantic token IdLexerClassDcl_t at id.location
 {
   forwards to lexerClassDecl($1, $2, id, lexerClassModifiersNone(location=$4.location), $4, location=top.location);
+} action {
+  insert semantic token IdLexerClassDcl_t at id.location;
 }
 
 concrete production lexerClassDecl
 top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
-semantic token IdLexerClassDcl_t at id.location
 {
   top.unparse = "lexer class " ++ id.name ++ modifiers.unparse ++ ";";
 
@@ -34,6 +34,8 @@ semantic token IdLexerClassDcl_t at id.location
     [ syntaxLexerClass(fName, 
         foldr(consLexerClassMod, nilLexerClassMod(), modifiers.lexerClassModifiers),
         location=top.location, sourceGrammar=top.grammarName)];
+} action {
+  insert semantic token IdLexerClassDcl_t at id.location;
 }
 
 nonterminal LexerClassModifiers with config, location, unparse, lexerClassModifiers, superClasses, errors, env, grammarName, compiledGrammars, flowEnv;

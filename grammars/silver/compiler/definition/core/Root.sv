@@ -59,7 +59,6 @@ top::GrammarDcl ::=
 
 concrete production grammarDcl_c
 top::GrammarDcl ::= 'grammar' qn::QName ';'
-semantic token IdGrammarName_t at qn.baseNameLoc
 {
   top.unparse = "grammar " ++ qn.unparse ++ ";";
 
@@ -67,5 +66,7 @@ semantic token IdGrammarName_t at qn.baseNameLoc
   top.errors <-
     if qn.name == top.grammarName then []
     else [err(top.location, "Grammar declaration is incorrect: " ++ qn.name)];
+} action {
+  insert semantic token IdGrammarName_t at qn.baseNameLoc;
 }
 

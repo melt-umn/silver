@@ -167,7 +167,6 @@ top::TypeExpr ::= InhSetLCurly_t inhs::FlowSpecInhs '}'
 
 concrete production nominalTypeExpr
 top::TypeExpr ::= q::QNameType
-semantic token IdType_t at q.location
 {
   top.unparse = q.unparse;
 
@@ -184,11 +183,12 @@ semantic token IdType_t at q.location
     else [err(top.location, q.name ++ " is not a type.")];
 
   top.typerep = q.lookupType.typeScheme.typerep; -- NOT .monoType since this can be a polyType when an error is raised
+} action {
+  insert semantic token IdType_t at q.baseNameLoc;
 }
 
 concrete production typeVariableTypeExpr
 top::TypeExpr ::= tv::IdLower_t
-semantic token IdTypeVar_t at tv.location
 {
   top.unparse = tv.lexeme;
   
@@ -200,11 +200,12 @@ semantic token IdTypeVar_t at tv.location
   top.errorsTyVars := [];
 
   top.lexicalTypeVariables <- [tv.lexeme];
+} action {
+  insert semantic token IdTypeVar_t at tv.location;
 }
 
 concrete production kindSigTypeVariableTypeExpr
 top::TypeExpr ::= '(' tv::IdLower_t '::' k::KindExpr ')'
-semantic token IdTypeVar_t at tv.location
 {
   top.unparse = s"(${tv.lexeme} :: ${k.unparse})";
   
@@ -217,6 +218,8 @@ semantic token IdTypeVar_t at tv.location
 
   top.lexicalTypeVariables <- [tv.lexeme];
   top.lexicalTyVarKinds <- [pair(tv.lexeme, k.kindrep)];
+} action {
+  insert semantic token IdTypeVar_t at tv.location;
 }
 
 concrete production appTypeExpr

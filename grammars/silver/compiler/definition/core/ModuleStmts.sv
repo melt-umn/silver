@@ -188,8 +188,6 @@ top::ModuleStmt ::= 'exports' m::ModuleName ';'
 
 concrete production exportsWithStmt
 top::ModuleStmt ::= 'exports' m::QName 'with' c::QName ';'
-semantic token IdGrammarName_t at m.baseNameLoc,
-semantic token IdGrammarName_t at c.baseNameLoc
 {
   top.unparse = "exports " ++ m.unparse ++ " with " ++ c.unparse ++ ";";
   
@@ -204,10 +202,12 @@ semantic token IdGrammarName_t at c.baseNameLoc
   top.exportedGrammars := [];
   top.optionalGrammars := [];
   top.condBuild := [[m.name, c.name]];
+} action {
+  insert semantic token IdGrammarName_t at m.baseNameLoc;
+  insert semantic token IdGrammarName_t at c.baseNameLoc;
 }
 concrete production optionalStmt
 top::ModuleStmt ::= 'option' m::QName ';'
-semantic token IdGrammarName_t at m.baseNameLoc
 {
   top.unparse = "option " ++ m.unparse ++ ";";
 
@@ -218,6 +218,8 @@ semantic token IdGrammarName_t at m.baseNameLoc
   top.exportedGrammars := [];
   top.optionalGrammars := [m.name];
   top.condBuild := [];
+} action {
+  insert semantic token IdGrammarName_t at m.baseNameLoc;
 }
   
 
@@ -226,7 +228,6 @@ semantic token IdGrammarName_t at m.baseNameLoc
 
 concrete production moduleName
 top::ModuleName ::= pkg::QName
-semantic token IdGrammarName_t at pkg.baseNameLoc
 {
   top.unparse = pkg.unparse;
   top.moduleNames := [pkg.name];
@@ -237,6 +238,8 @@ semantic token IdGrammarName_t at pkg.baseNameLoc
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
+} action {
+  insert semantic token IdGrammarName_t at pkg.baseNameLoc;
 }
 
 -----------------------
@@ -244,7 +247,6 @@ semantic token IdGrammarName_t at pkg.baseNameLoc
 
 concrete production moduleAll
 top::ModuleExpr ::= pkg::QName
-semantic token IdGrammarName_t at pkg.baseNameLoc
 {
   top.unparse = pkg.unparse;
   top.moduleNames := [pkg.name];
@@ -255,11 +257,12 @@ semantic token IdGrammarName_t at pkg.baseNameLoc
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
+} action {
+  insert semantic token IdGrammarName_t at pkg.baseNameLoc;
 }
 
 concrete production moduleAllWith
 top::ModuleExpr ::= pkg::QName 'with' wc::WithElems
-semantic token IdGrammarName_t at pkg.baseNameLoc
 {
   top.unparse = pkg.unparse ++ " with " ++ wc.unparse;
   top.moduleNames := [pkg.name];
@@ -270,11 +273,12 @@ semantic token IdGrammarName_t at pkg.baseNameLoc
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
+} action {
+  insert semantic token IdGrammarName_t at pkg.baseNameLoc;
 }
 
 concrete production moduleOnly
 top::ModuleExpr ::= pkg::QName 'only' ns::NameList
-semantic token IdGrammarName_t at pkg.baseNameLoc
 {
   top.unparse = pkg.unparse ++ " only " ++ ns.unparse;
   top.moduleNames := [pkg.name];
@@ -285,11 +289,12 @@ semantic token IdGrammarName_t at pkg.baseNameLoc
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
+} action {
+  insert semantic token IdGrammarName_t at pkg.baseNameLoc;
 }
 
 concrete production moduleOnlyWith
 top::ModuleExpr ::= pkg::QName 'only' ns::NameList 'with' wc::WithElems
-semantic token IdGrammarName_t at pkg.baseNameLoc
 {
   top.unparse = pkg.unparse ++ " only " ++ ns.unparse ++ " with " ++ wc.unparse;
   top.moduleNames := [pkg.name];
@@ -300,11 +305,12 @@ semantic token IdGrammarName_t at pkg.baseNameLoc
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
+} action {
+  insert semantic token IdGrammarName_t at pkg.baseNameLoc;
 }
 
 concrete production moduleHiding
 top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList
-semantic token IdGrammarName_t at pkg.baseNameLoc
 {
   top.unparse = pkg.unparse ++ " hiding " ++ ns.unparse;
   top.moduleNames := [pkg.name];
@@ -315,11 +321,12 @@ semantic token IdGrammarName_t at pkg.baseNameLoc
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
+} action {
+  insert semantic token IdGrammarName_t at pkg.baseNameLoc;
 }
 
 concrete production moduleHidingWith
-top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList 'with' wc::WithElems 
-semantic token IdGrammarName_t at pkg.baseNameLoc
+top::ModuleExpr ::= pkg::QName 'hiding' ns::NameList 'with' wc::WithElems
 {
   top.unparse = pkg.unparse ++ " hiding " ++ ns.unparse ++ " with " ++ wc.unparse;
   top.moduleNames := [pkg.name];
@@ -330,12 +337,12 @@ semantic token IdGrammarName_t at pkg.baseNameLoc
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
+} action {
+  insert semantic token IdGrammarName_t at pkg.baseNameLoc;
 }
 
 concrete production moduleAs
 top::ModuleExpr ::= pkg1::QName 'as' pkg2::QName
-semantic token IdGrammarName_t at pkg1.baseNameLoc,
-semantic token IdGrammarName_t at pkg2.baseNameLoc
 {
   top.unparse = pkg1.unparse ++ " as " ++ pkg2.unparse;
   top.moduleNames := [pkg1.name];
@@ -346,6 +353,9 @@ semantic token IdGrammarName_t at pkg2.baseNameLoc
   top.errors := m.errors;
   top.defs := m.defs;
   top.occursDefs := m.occursDefs;
+} action {
+  insert semantic token IdGrammarName_t at pkg1.baseNameLoc;
+  insert semantic token IdGrammarName_t at pkg2.baseNameLoc;
 }
 
 ------------

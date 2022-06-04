@@ -4,7 +4,6 @@ terminal Action_kwd 'action' lexer classes {MODIFIER};
 
 concrete production concreteProductionDclAction
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody 'action' acode::ActionCode_c
-semantic token IdFnProdDcl_t at id.location
 {
   top.unparse = forward.unparse ++ "action " ++ acode.unparse;
 
@@ -36,6 +35,8 @@ semantic token IdFnProdDcl_t at id.location
   -- this seems reasonable since inference should never have effects across this border...
 
   forwards to concreteProductionDcl($1, $2, id, ns, pm, body, location=top.location);
+} action {
+  insert semantic token IdFnProdDcl_t at id.location;
 }
 
 

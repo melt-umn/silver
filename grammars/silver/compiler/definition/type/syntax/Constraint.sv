@@ -35,7 +35,6 @@ top::ConstraintList ::=
 
 concrete production classConstraint
 top::Constraint ::= c::QNameType t::TypeExpr
-semantic token IdTypeClass_t at c.baseNameLoc
 {
   top.unparse = c.unparse ++ " " ++ t.unparse;
   top.contexts =
@@ -85,6 +84,8 @@ semantic token IdTypeClass_t at c.baseNameLoc
       [pair(tv.lexeme, c.lookupType.typeScheme.monoType.kindrep)]
     | _ -> []
     end;
+} action {
+  insert semantic token IdTypeClass_t at c.baseNameLoc;
 }
 
 concrete production inhOccursConstraint

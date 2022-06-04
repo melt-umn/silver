@@ -33,7 +33,6 @@ synthesized attribute constraintDefs::[Def];
 
 concrete production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
-semantic token IdFnProdDcl_t at id.location
 {
   top.unparse = "abstract production " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse; 
 
@@ -73,6 +72,8 @@ semantic token IdFnProdDcl_t at id.location
 
   body.env = occursEnv(ns.occursDefs, newScopeEnv(body.defs ++ sigDefs ++ ns.constraintDefs ++ prodAtts, top.env));
   body.frame = productionContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName); -- graph from flow:env
+} action {
+  insert semantic token IdFnProdDcl_t at id.location;
 }
 
 concrete production productionSignature

@@ -4,7 +4,6 @@ import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, co
 
 concrete production instanceDcl
 top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
-semantic token IdTypeClass_t at id.baseNameLoc
 {
   top.unparse = s"instance ${cl.unparse} => ${id.unparse} ${ty.unparse}\n{\n${body.unparse}\n}"; 
 
@@ -69,15 +68,18 @@ semantic token IdTypeClass_t at id.baseNameLoc
   body.instanceType = ty.typerep; 
   body.expectedClassMembers = if id.lookupType.found then dcl.classMembers else [];
   body.frameContexts = superContexts.contexts ++ cl.contexts;
+} action {
+  insert semantic token IdTypeClass_t at id.baseNameLoc;
 }
 
 concrete production instanceDclNoCL
 top::AGDcl ::= 'instance' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
-semantic token IdTypeClass_t at id.baseNameLoc
 {
   top.unparse = s"instance ${id.unparse} ${ty.unparse}\n{\n${body.unparse}\n}"; 
 
   forwards to instanceDcl($1, nilConstraint(location=top.location), '=>', id, ty, $4, body, $6, location=top.location);
+} action {
+  insert semantic token IdTypeClass_t at id.baseNameLoc;
 }
 
 autocopy attribute className::String;
@@ -116,7 +118,6 @@ top::InstanceBody ::=
 
 concrete production instanceBodyItem
 top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
-semantic token IdTypeClassMember_t at id.baseNameLoc
 {
   top.unparse = s"${id.name} = ${e.unparse};";
 
@@ -170,4 +171,6 @@ semantic token IdTypeClassMember_t at id.baseNameLoc
   local myFlowGraph :: ProductionGraph = constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
 
   e.frame = globalExprContext(top.fullName, foldContexts(top.frameContexts), typeScheme.typerep, myFlowGraph, sourceGrammar=top.grammarName);
+} action {
+  insert semantic token IdTypeClassMember_t at id.baseNameLoc;
 }

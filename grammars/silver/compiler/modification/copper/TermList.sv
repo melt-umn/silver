@@ -13,16 +13,18 @@ propagate errors, termList on TermList;
 
 concrete production termListOne
 terms::TermList ::= t::QName
-semantic token IdType_t at t.baseNameLoc
 {
   forwards to termList(t,termListNull(location=t.location), location=t.location);
+} action {
+  insert semantic token IdType_t at t.baseNameLoc;
 }
 
 concrete production termListCons
 terms::TermList ::= t::QName ',' terms_tail::TermList
-semantic token IdType_t at t.baseNameLoc
 {
   forwards to termList(t,terms_tail,location=terms.location);
+} action {
+  insert semantic token IdType_t at t.baseNameLoc;
 }
 
 

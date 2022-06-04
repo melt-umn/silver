@@ -142,7 +142,6 @@ top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
 
 concrete production insertSemanticTokenStmt
 top::ProductionStmt ::= 'insert' 'semantic' 'token' n::QNameType 'at' loc::Expr ';'
-semantic token IdType_t at n.location
 {
   top.unparse = "\t" ++ "insert semantic token " ++ n.unparse ++ " at " ++ loc.unparse ++ ";";
 
@@ -166,6 +165,8 @@ semantic token IdType_t at n.location
     if errCheck1.typeerror
     then [err(loc.location, s"Semantic token position expected a ${errCheck1.rightpp}, but got ${errCheck1.leftpp}")]
     else [];
+} action {
+  insert semantic token IdType_t at n.location;
 }
 
 concrete production blockStmt
