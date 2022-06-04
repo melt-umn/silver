@@ -61,23 +61,6 @@ top::SyntaxProductionModifier ::= term::String
   top.productionOperator := just(head(termRef));
 }
 {--
- - A terminal to be returned in the token stream when this production is reduced,
- - not included in the parse tree.
- -}
-abstract production prodSemanticToken
-top::SyntaxProductionModifier ::= term::String loc::String
-{
-  local termRef :: [Decorated SyntaxDcl] = searchEnvTree(term, top.cstEnv);
-  
-  top.cstErrors := if !null(termRef) then [] 
-                   else ["Terminal " ++ term ++ " was referenced but " ++
-                         "this grammar was not included in this parser. (Referenced from semanticToken clause on production " ++ top.productionSig.fullName ++ ")"];
-
-  -- TODO: Returning an empty lexeme here
-  top.acode :=
-    s"""insertToken(new ${makeTerminalName(head(termRef).fullName)}(new common.StringCatter(""), ${loc}));""";
-}
-{--
  - The action to perform when this production is REDUCEd.
  -}
 abstract production prodAction

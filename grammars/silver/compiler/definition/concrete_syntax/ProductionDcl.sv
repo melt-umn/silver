@@ -31,9 +31,9 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   insert semantic token IdFnProdDcl_t at id.location;
 }
 
-nonterminal ProductionModifiers with config, location, unparse, productionModifiers, errors, env, flowEnv, compiledGrammars, grammarName, productionSig; -- 0 or some
-nonterminal ProductionModifierList with config, location, unparse, productionModifiers, errors, env, flowEnv, compiledGrammars, grammarName, productionSig; -- 1 or more
-closed nonterminal ProductionModifier with config, location, unparse, productionModifiers, errors, env, flowEnv, compiledGrammars, grammarName, productionSig; -- 1
+nonterminal ProductionModifiers with config, location, unparse, productionModifiers, errors, env, productionSig; -- 0 or some
+nonterminal ProductionModifierList with config, location, unparse, productionModifiers, errors, env, productionSig; -- 1 or more
+closed nonterminal ProductionModifier with config, location, unparse, productionModifiers, errors, env, productionSig; -- 1
 
 monoid attribute productionModifiers :: [SyntaxProductionModifier];
 
