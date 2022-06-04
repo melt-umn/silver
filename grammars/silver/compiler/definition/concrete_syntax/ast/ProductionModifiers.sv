@@ -75,7 +75,7 @@ top::SyntaxProductionModifier ::= term::String loc::String
 
   -- TODO: Returning an empty lexeme here
   top.acode :=
-    s"""tokenList.add(new ${makeTerminalName(head(termRef).fullName)}(new common.StringCatter(""), ${loc}));""";
+    s"""insertToken(new ${makeTerminalName(head(termRef).fullName)}(new common.StringCatter(""), ${loc}));""";
 }
 {--
  - The action to perform when this production is REDUCEd.

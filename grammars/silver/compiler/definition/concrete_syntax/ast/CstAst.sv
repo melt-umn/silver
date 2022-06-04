@@ -102,6 +102,16 @@ top::SyntaxRoot ::=
           public List<common.Terminal> getTokens() {
             return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
           }
+
+          private void insertToken(common.Terminal token) {
+            // Insert semantic tokens in order of start character index
+            for (int i = tokenList.size(); i >= 0; i--) {
+              if (tokenList.get(i - 1).getStartOffset() < token.getStartOffset()) {
+                tokenList.add(i, token);
+                break;
+              }
+            }
+          }
 ${s2.lexerClassRefDcls}
     """;
   local parserInitCode::String = "reset();";
