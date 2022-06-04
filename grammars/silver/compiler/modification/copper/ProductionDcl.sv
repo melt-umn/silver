@@ -1,8 +1,5 @@
 grammar silver:compiler:modification:copper;
 
-terminal Semantic_kwd 'semantic' lexer classes {MODIFIER};
-terminal Token_kwd 'token' lexer classes {MODIFIER};
-terminal At_kwd 'at' lexer classes {MODIFIER};
 disambiguate Semantic_kwd, IdLower_t { pluck Semantic_kwd; }
 
 concrete production productionModifierSemanticToken

@@ -18,9 +18,9 @@ ignore terminal Whitespace /[\ \t\r\n]+/;
 nonterminal Expr;
 concrete productions top::Expr
 | Id_t {}
-| i::Id_t '(' ')'
-  semantic token IdFn_t at i.location
-  {}
+| i::Id_t '(' ')' {} action {
+  insert semantic token IdFn_t at i.location;
+}
 | e1::Expr '+' e2::Expr {}
 
 

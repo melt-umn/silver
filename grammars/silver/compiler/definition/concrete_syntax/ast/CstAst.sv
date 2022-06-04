@@ -104,13 +104,14 @@ top::SyntaxRoot ::=
           }
 
           private void insertToken(common.Terminal token) {
-            // Insert semantic tokens in order of start character index
-            for (int i = tokenList.size(); i >= 0; i--) {
+            // Insert the last token that starts before the new one
+            int i;
+            for (i = tokenList.size(); i > 0; i--) {
               if (tokenList.get(i - 1).getStartOffset() < token.getStartOffset()) {
-                tokenList.add(i, token);
                 break;
               }
             }
+            tokenList.add(i, token);
           }
 ${s2.lexerClassRefDcls}
     """;
