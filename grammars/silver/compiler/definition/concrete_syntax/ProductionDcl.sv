@@ -1,7 +1,5 @@
 grammar silver:compiler:definition:concrete_syntax;
 
-import silver:compiler:modification:copper only actionDefs;
-
 autocopy attribute productionSig :: NamedSignature;
 
 concrete production concreteProductionDcl

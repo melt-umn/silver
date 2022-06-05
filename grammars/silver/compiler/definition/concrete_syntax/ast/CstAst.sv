@@ -104,7 +104,7 @@ top::SyntaxRoot ::=
           }
 
           private void insertToken(common.Terminal token) {
-            // Insert the last token that starts before the new one
+            // Insert after the last token that starts before the new one
             int i;
             for (i = tokenList.size(); i > 0; i--) {
               if (tokenList.get(i - 1).getStartOffset() < token.getStartOffset()) {

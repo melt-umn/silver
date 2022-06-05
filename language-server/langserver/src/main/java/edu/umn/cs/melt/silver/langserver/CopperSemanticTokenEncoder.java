@@ -84,12 +84,14 @@ public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserEx
             int type = -1;
             int modifiers = 0;
             if (tokenEncodings.containsKey(t.getName())) {
+                // We've seen this type of terminal before, look up its type and modifier encoding
                 int[] encoding = tokenEncodings.get(t.getName());
                 if (encoding != null) {
                     type = encoding[0];
                     modifiers = encoding[1];
                 }
             } else {
+                // We've haven't this type of terminal before, look for lsp lexer classes
                 for (String c : t.getLexerClasses()) {
                     if (c.startsWith("silver:langutil:lsp:")) {
                         String baseName = c.split("silver:langutil:lsp:")[1].split("_")[0];
@@ -101,12 +103,16 @@ public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserEx
                         }
                     }
                 }
+                // Cache the encoding (or lack thereof) that we computed
                 tokenEncodings.put(t.getName(), type != -1? new int[]{type, modifiers} : null);
             }
             if (type != -1) {
+                // This terminal has an encoding, add it to the result.
+                // For each line in the parsed terminal, we emit a semantic token.
                 String[] lines = t.lexeme.toString().split("\n");
                 assert lines.length == t.getEndLine() - t.getLine() + 1;
                 for (int line = t.getLine(); line <= t.getEndLine(); line++) {
+                    // Compute delta start line, delta start char and length
                     int column = line == t.getLine()? t.getColumn() : 0;
                     int deltaLine = line - prevLine;
                     if (deltaLine != 0) {
@@ -118,6 +124,8 @@ public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserEx
                         t.getEndOffset() - t.getStartOffset();
                     prevLine = line;
                     prevStartChar = column;
+
+                    // Add the encoded token info to the result
                     result.add(deltaLine);
                     result.add(deltaStartChar);
                     result.add(length);
