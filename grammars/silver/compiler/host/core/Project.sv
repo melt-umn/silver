@@ -20,7 +20,7 @@ exports silver:compiler:analysis:typechecking:core;
 
 --We wish regex to remain a generic grammar, so we resolve the conflict here!
 -- Regexes end with /. Escape it if you want it.
-disambiguate RegexChar_t, Divide_t
+disambiguate RegexChar_t, RegexSlash_t
 {
-  pluck Divide_t;
+  pluck RegexSlash_t;
 }

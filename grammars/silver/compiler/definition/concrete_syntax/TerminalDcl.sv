@@ -74,17 +74,14 @@ nonterminal RegExpr with config, location, grammarName, unparse, terminalRegExpr
 synthesized attribute terminalRegExprSpec :: abs:Regex;
 synthesized attribute easyName :: Maybe<String>;
 
-terminal RegexSlash_t // lexer classes {lsp:Regexp};
+terminal RegexSlash_t '/' lexer classes {lsp:Regexp};
 
 concrete production regExpr_c
-top::RegExpr ::= lSlash::'/' r::Regex rSlash::'/'
+top::RegExpr ::= '/' r::Regex '/'
 layout {}
 {
   top.unparse = "/" ++ r.unparse ++ "/";
   forwards to regExpr(r.ast, location=top.location);
-} action {
-  insert semantic token RegexSlash_t at lSlash.location;
-  insert semantic token RegexSlash_t at rSlash.location;
 }
 
 abstract production regExpr
