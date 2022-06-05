@@ -1,5 +1,11 @@
 grammar silver:langutil:lsp;
 
+@@{-
+ - These lexer classes correspond to the semantic token types and modifiers as
+ - specified in the language server protocol.
+ - See https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens
+ -}
+
 -- Token types
 lexer class Namespace;
 lexer class Type;

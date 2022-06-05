@@ -71,7 +71,7 @@ public class SilverTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
-        System.err.println(params);
+        //System.err.println(params);
         String uri = params.getTextDocument().getUri();
         return CompletableFutures.computeAsync((cancelChecker) -> {
             List<Integer> tokens;
