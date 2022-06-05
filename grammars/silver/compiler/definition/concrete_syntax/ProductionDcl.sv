@@ -29,6 +29,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   forwards to productionDcl('abstract', $2, id, ns, body, location=top.location);
 } action {
   insert semantic token IdFnProdDcl_t at id.location;
+  sigNames = [];
 }
 
 nonterminal ProductionModifiers with config, location, unparse, productionModifiers, errors, env, productionSig; -- 0 or some

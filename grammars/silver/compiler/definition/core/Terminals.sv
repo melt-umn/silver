@@ -123,6 +123,8 @@ terminal IdUpper_t /[A-Z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
 -- Identifier terminals emitted as semantic tokens
 terminal IdGrammarName_t '' lexer classes {IDENTIFIER, lsp:Namespace};
 terminal IdVariable_t '' lexer classes {IDENTIFIER, lsp:Variable};
+terminal IdSigName_t '' lexer classes {IDENTIFIER, lsp:Parameter};
+terminal IdSigNameDcl_t '' lexer classes {IDENTIFIER, lsp:Parameter, lsp:Declaration};
 terminal IdFnProd_t '' lexer classes {IDENTIFIER, lsp:Function};
 terminal IdFnProdDcl_t '' lexer classes {IDENTIFIER, lsp:Function, lsp:Declaration};
 terminal IdType_t '' lexer classes {IDENTIFIER, lsp:Type};

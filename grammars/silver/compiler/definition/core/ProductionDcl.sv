@@ -31,6 +31,11 @@ inherited attribute signatureName :: String;
  -}
 synthesized attribute constraintDefs::[Def];
 
+{--
+ - The signature names of the production body currently being parsed, for use in reporting semantic tokens.
+ -}
+parser attribute sigNames::[String] action { sigNames = []; };
+
 concrete production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
@@ -74,6 +79,7 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   body.frame = productionContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName); -- graph from flow:env
 } action {
   insert semantic token IdFnProdDcl_t at id.location;
+  sigNames = [];
 }
 
 concrete production productionSignature
@@ -94,6 +100,8 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
       foldNamedSignatureElements(rhs.inputElements),
       lhs.outputElement,
       foldNamedSignatureElements(annotationsForNonterminal(lhs.outputElement.typerep, top.env)));
+} action {
+  sigNames = foldNamedSignatureElements(lhs.outputElement :: rhs.inputElements).elementNames;
 }
 
 concrete production productionSignatureNoCL
@@ -102,6 +110,8 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
   top.unparse = s"${lhs.unparse} ::= ${rhs.unparse}";
   
   forwards to productionSignature(nilConstraint(location=top.location), '=>', lhs, $2, rhs, location=top.location);
+} action {
+  sigNames = foldNamedSignatureElements(lhs.outputElement :: rhs.inputElements).elementNames;
 }
 
 concrete production productionLHS
@@ -117,6 +127,8 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
     if length(getValueDclInScope(id.name, top.env)) > 1
     then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
     else [];
+} action {
+  insert semantic token IdSigNameDcl_t at id.location;
 }
 
 concrete production productionRHSNil
@@ -151,6 +163,8 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
     if length(getValueDclInScope(id.name, top.env)) > 1 
     then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
     else [];
+} action {
+  insert semantic token IdSigNameDcl_t at id.location;
 }
 
 concrete production productionRHSElemType

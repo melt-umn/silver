@@ -37,6 +37,7 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   forwards to concreteProductionDcl($1, $2, id, ns, pm, body, location=top.location);
 } action {
   insert semantic token IdFnProdDcl_t at id.location;
+  sigNames = [];
 }
 
 
