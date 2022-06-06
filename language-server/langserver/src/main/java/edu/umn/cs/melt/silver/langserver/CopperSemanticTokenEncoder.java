@@ -16,11 +16,21 @@ import common.HasTokens;
 import common.Terminal;
 
 /**
- * A utility for invoking a Copper parser to obtain semantic tokens,
- * encoded as specified in the LSP spec.
+ * A utility for invoking a Silver-generated Copper parser to obtain semantic
+ * tokens, encoded as specified in the LSP specification.
  * 
- * TODO: This class should move to a seperate utility library for use in LSP
- * server implementations for Silver languages.
+ * Semantic tokens are specified for a grammar by defining the lexer classes
+ * in silver:langutil:lsp on the terminals of the grammar. Additional semantic
+ * tokens that do not directly correspond to a terminal in the grammar can be
+ * included with the `insert semantic token` parser action.
+ * This class provides a utility to run the generated parser, extract the list
+ * of parsed terminals, and encode them as a stream of integers. Terminals with
+ * any of the specified "token type" lexer classes are returned as semantic
+ * tokens in the stream, with their position, length, token type and modifiers
+ * encoded as integers according to the language server protocol specificiation.
+ * 
+ * TODO: This class should move to a generic utility library for use in
+ * implementing LSP servers from languages written in Silver.
  * 
  * @author krame505
  * @see https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens
@@ -35,6 +45,8 @@ public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserEx
 
     /**
      * Construct a CopperSemanticTokenEncoder from a parser constructor and encoding legend.
+     * We pass a parser factory here because Copper parsers are non-reentrant,
+     * so to be thread safe we need to construct a new parser object for every call to parseTokens.
      * 
      * @param parserFactory The constructor for a Copper parser
      * @param tokenTypes Semantic token types that will be used
