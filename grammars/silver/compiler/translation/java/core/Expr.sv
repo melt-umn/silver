@@ -503,7 +503,7 @@ top::Expr ::= e1::Expr '*' e2::Expr
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production divide
-top::Expr ::= e1::Expr '/' e2::Expr
+top::Expr ::= e1::Expr _ e2::Expr
 {
   top.translation = s"(${e1.translation} / ${e2.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);

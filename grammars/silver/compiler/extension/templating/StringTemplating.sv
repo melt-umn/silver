@@ -7,6 +7,7 @@ imports silver:compiler:definition:type:syntax;
 imports silver:compiler:metatranslation;
 imports silver:reflect;
 imports silver:langutil:pp;
+imports silver:langutil:lsp as lsp;
 
 imports silver:compiler:translation:java:core;
 
@@ -14,8 +15,8 @@ exports silver:compiler:extension:templating:syntax;
 
 import silver:util:treeset as ts;
 
-terminal Template_kwd   's"""' lexer classes {LITERAL};
-terminal SLTemplate_kwd 's"'   lexer classes {LITERAL};
+terminal Template_kwd   's"""' lexer classes {LITERAL, lsp:String_};
+terminal SLTemplate_kwd 's"'   lexer classes {LITERAL, lsp:String_};
 
 concrete production templateExpr
 top::Expr ::= Template_kwd t::TemplateString
@@ -55,8 +56,8 @@ top::Expr ::= a::Expr b::Expr
       [exprRef(a, location=a.location), exprRef(b, location=b.location)]);
 }
 
-terminal PPTemplate_kwd   'pp"""' lexer classes {LITERAL};
-terminal SLPPTemplate_kwd 'pp"'   lexer classes {LITERAL};
+terminal PPTemplate_kwd   'pp"""' lexer classes {LITERAL, lsp:String_};
+terminal SLPPTemplate_kwd 'pp"'   lexer classes {LITERAL, lsp:String_};
 
 -- These are translated by building a Document value and meta-translating the whole thing into an Expr
 concrete production pptemplateExpr

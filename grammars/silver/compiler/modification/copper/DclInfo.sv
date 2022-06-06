@@ -1,5 +1,13 @@
 grammar silver:compiler:modification:copper;
 
+monoid attribute superClasses::[String] occurs on ValueDclInfo;
+
+aspect default production
+top::ValueDclInfo ::=
+{
+  top.superClasses := [];
+}
+
 {--
  - Reference to something declared as "parser attribute foo ..."
  -}
@@ -36,9 +44,10 @@ top::ValueDclInfo ::= fn::String
  - Reference to a lexer class declaration. Has its own namespace in the environment, for now.
  -}
 abstract production lexerClassDcl
-top::ValueDclInfo ::= fn::String
+top::ValueDclInfo ::= fn::String  superClasses::[String]
 {
   top.fullName = fn;
+  top.superClasses := superClasses;
   
   -- If we made lexer classes proper types, it might simplify a lot of code.
   -- We wouldn't need a separate namespace, they could just be in the type namespace.

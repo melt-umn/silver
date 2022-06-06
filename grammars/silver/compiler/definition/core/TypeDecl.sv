@@ -31,4 +31,6 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs '=' te::TypeExpr ';'
        else [];
 
   top.errors <- if isCircular then [err(te.location, s"Definition of ${fName} is self-referential")] else [];
+} action {
+  insert semantic token IdTypeDcl_t at id.location;
 }

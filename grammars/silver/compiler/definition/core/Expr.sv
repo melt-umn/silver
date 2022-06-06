@@ -83,6 +83,10 @@ top::Expr ::= q::QName
   forwards to (if null(q.lookupValue.dcls)
                then errorReference(q.lookupValue.errors, _, location=_)
                else q.lookupValue.dcl.refDispatcher)(q, top.location);
+} action {
+  if (contains(q.name, sigNames)) {
+    insert semantic token IdSigName_t at q.baseNameLoc;
+  }
 }
 
 abstract production errorReference

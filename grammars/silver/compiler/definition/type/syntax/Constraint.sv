@@ -84,6 +84,8 @@ top::Constraint ::= c::QNameType t::TypeExpr
       [pair(tv.lexeme, c.lookupType.typeScheme.monoType.kindrep)]
     | _ -> []
     end;
+} action {
+  insert semantic token IdTypeClass_t at c.baseNameLoc;
 }
 
 concrete production inhOccursConstraint

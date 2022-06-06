@@ -317,6 +317,10 @@ top::DefLHS ::= q::QName
   forwards to (if null(q.lookupValue.dcls)
                then errorDefLHS(_, location=_)
                else q.lookupValue.dcl.defLHSDispatcher)(q, top.location);
+} action {
+  if (contains(q.name, sigNames)) {
+    insert semantic token IdSigName_t at q.baseNameLoc;
+  }
 }
 
 abstract production errorDefLHS

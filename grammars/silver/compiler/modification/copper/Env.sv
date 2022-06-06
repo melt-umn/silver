@@ -44,9 +44,9 @@ Def ::= sg::String sl::Location fn::String
 }
 
 function lexerClassDef
-Def ::= sg::String sl::Location fn::String
+Def ::= sg::String sl::Location fn::String sc::[String]
 {
-  return lxrClsDef(defaultEnvItem(lexerClassDcl(fn,sourceGrammar=sg,sourceLocation=sl)));
+  return lxrClsDef(defaultEnvItem(lexerClassDcl(fn,sc,sourceGrammar=sg,sourceLocation=sl)));
 }
 
 function termAttrValueDef
@@ -100,6 +100,20 @@ function getLexerClassDcl
 [ValueDclInfo] ::= search::String e::Decorated Env
 {
   return searchEnvTree(search, e.lexerClassTree);
+}
+
+function expandTransitiveSuperClasses
+[String] ::= seen::[String] toExpand::[String] e::Decorated Env
+{
+  return
+    case toExpand of
+    | [] -> seen
+    | c :: cs ->
+      if contains(c, seen)
+      then expandTransitiveSuperClasses(seen, cs, e)
+      else expandTransitiveSuperClasses(
+        c :: seen, flatMap((.superClasses), getLexerClassDcl(c, e)) ++ cs, e)
+    end;
 }
 
 --------------------------------------------------------------------------------

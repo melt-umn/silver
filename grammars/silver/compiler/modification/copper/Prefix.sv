@@ -4,7 +4,7 @@ grammar silver:compiler:modification:copper;
 import silver:regex;
 import silver:compiler:extension:easyterminal; -- only Terminal_t, EasyTerminalRef;
 
-terminal Prefix_t 'prefix' lexer classes {KEYWORD, RESERVED};
+terminal Prefix_t 'prefix' lexer classes {MODIFIER, RESERVED};
 
 concrete production prefixParserComponentModifier
 top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::TerminalPrefix

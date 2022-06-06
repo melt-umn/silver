@@ -20,7 +20,7 @@ autocopy attribute realSignature :: [NamedSignatureElement];
 propagate errors on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS, AspectRHSElem;
 
 concrete production aspectProductionDcl
-top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
+top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody
 {
   top.unparse = "aspect production " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
 
@@ -65,10 +65,12 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
       newScopeEnv(body.defs ++ sigDefs ++ contextSigDefs,
         newScopeEnv(prodAtts, top.env)));
   body.frame = aspectProductionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
+} action {
+  insert semantic token IdFnProd_t at id.location;
 }
 
 concrete production aspectFunctionDcl
-top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody 
+top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody
 {
   top.unparse = "aspect function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
 
@@ -113,6 +115,8 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
       newScopeEnv(body.defs ++ sigDefs ++ contextSigDefs,
         newScopeEnv(prodAtts, top.env)));
   body.frame = aspectFunctionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
+} action {
+  insert semantic token IdFnProd_t at id.location;
 }
 
 concrete production aspectProductionSignature

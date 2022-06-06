@@ -1,10 +1,11 @@
 grammar silver:regex:concrete_syntax;
 
 imports silver:langutil;
+imports silver:langutil:lsp as lsp;
 imports silver:regex as abs;
 
-lexer class Operator;
-lexer class Escape;
+lexer class Operator extends lsp:Regexp;
+lexer class Escape extends lsp:Regexp;
 
 terminal Plus_t          '+' lexer classes { Operator };
 terminal Kleene_t        '*' lexer classes { Operator };

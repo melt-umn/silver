@@ -2,15 +2,16 @@ grammar silver:compiler:extension:regex;
 
 import silver:util:treeset as ts;
 import silver:compiler:definition:core;
+import silver:compiler:definition:concrete_syntax;
 import silver:compiler:definition:env;
 import silver:compiler:metatranslation;
 import silver:reflect;
 import silver:regex:concrete_syntax;
 
-terminal MatchesOp_t '=~' precedence = 9, association = left;
+terminal MatchesOp_t '=~' precedence = 9, association = left, lexer classes OP;
 
 concrete production literalRegex
-top::Expr ::= '/' reg::Regex '/'
+top::Expr ::= RegexSlash_t reg::Regex RegexSlash_t
 layout {}
 {
   top.unparse = s"/${reg.unparse}/";

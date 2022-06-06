@@ -183,6 +183,8 @@ top::TypeExpr ::= q::QNameType
     else [err(top.location, q.name ++ " is not a type.")];
 
   top.typerep = q.lookupType.typeScheme.typerep; -- NOT .monoType since this can be a polyType when an error is raised
+} action {
+  insert semantic token IdType_t at q.baseNameLoc;
 }
 
 concrete production typeVariableTypeExpr
@@ -198,6 +200,8 @@ top::TypeExpr ::= tv::IdLower_t
   top.errorsTyVars := [];
 
   top.lexicalTypeVariables <- [tv.lexeme];
+} action {
+  insert semantic token IdTypeVar_t at tv.location;
 }
 
 concrete production kindSigTypeVariableTypeExpr
@@ -214,6 +218,8 @@ top::TypeExpr ::= '(' tv::IdLower_t '::' k::KindExpr ')'
 
   top.lexicalTypeVariables <- [tv.lexeme];
   top.lexicalTyVarKinds <- [pair(tv.lexeme, k.kindrep)];
+} action {
+  insert semantic token IdTypeVar_t at tv.location;
 }
 
 concrete production appTypeExpr

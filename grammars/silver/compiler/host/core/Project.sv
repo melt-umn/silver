@@ -13,13 +13,14 @@ exports silver:compiler:definition:concrete_syntax;
 exports silver:compiler:definition:type:syntax;
 exports silver:compiler:definition:flow:syntax;
 exports silver:regex:concrete_syntax;
+exports silver:langutil:lsp;
 
 -- symbols
 exports silver:compiler:analysis:typechecking:core;
 
 --We wish regex to remain a generic grammar, so we resolve the conflict here!
 -- Regexes end with /. Escape it if you want it.
-disambiguate RegexChar_t, Divide_t
+disambiguate RegexChar_t, RegexSlash_t
 {
-  pluck Divide_t;
+  pluck RegexSlash_t;
 }

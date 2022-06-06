@@ -10,8 +10,9 @@ import silver:compiler:modification:lambda_fn;
 import silver:regex only Regex, regexLiteral;
 
 import silver:util:treeset as ts;
+import silver:langutil:lsp as lsp;
 
-terminal Terminal_t /\'[^\'\r\n]*\'/ lexer classes {LITERAL};
+terminal Terminal_t /\'[^\'\r\n]*\'/ lexer classes {LITERAL, lsp:Regexp};
 
 -- TODO: refactor this to actually create two separate terminal declarations, one regular regex, one single quote.
     -- TODO: alternatively, we keep this as a 'RegExpr', but we introduce "added terminal modifiers" synthesized

@@ -1,32 +1,37 @@
 grammar silver:compiler:definition:core;
 
+imports silver:langutil:lsp as lsp;
+
 temp_imp_ide_font font_comments color(82, 141, 115) italic; -- Good: same as java
 temp_imp_ide_font font_literal color(50, 50, 250); -- BAD
 temp_imp_ide_font font_keyword color(123, 0, 82) bold; -- Good: same as java
 temp_imp_ide_font font_modword color(41,95,148) bold; -- maybe good? Unusual but looks good
 temp_imp_ide_font font_type color(41,95,148); -- type coloring
 
-lexer class Silver prefix separator ":";
+lexer class Silver
+  prefix separator ":";
 
 lexer class IDENTIFIER extends Silver;
 lexer class RESERVED dominates IDENTIFIER;
 
-lexer class COMMENT extends Silver, font = font_comments;
+lexer class COMMENT extends {Silver, lsp:Comment}, font = font_comments;
 lexer class LITERAL extends Silver, font = font_literal;
-lexer class KEYWORD extends Silver, font = font_keyword;
-lexer class MODSTMT extends Silver, font = font_modword;
-lexer class SPECOP  extends Silver, font = font_keyword;
-lexer class BUILTIN extends Silver, font = font_keyword;
-lexer class TYPE    extends Silver, font = font_type;
+lexer class KEYWORD extends {Silver, lsp:Keyword}, font = font_keyword;
+lexer class MODSTMT extends {Silver}, font = font_modword;
+lexer class OP      extends {Silver, lsp:Operator}, font = font_keyword;
+lexer class SPECOP  extends {Silver, lsp:Keyword}, font = font_keyword;
+lexer class BUILTIN extends {Silver, lsp:Keyword}, font = font_keyword;
+lexer class TYPE    extends {Silver, lsp:Type}, font = font_type;
+lexer class MODIFIER extends {Silver, lsp:Modifier}, font = font_keyword;
 
-terminal As_kwd       'as'      lexer classes {MODSTMT,RESERVED};
-terminal Exports_kwd  'exports' lexer classes {MODSTMT};
-terminal Grammar_kwd  'grammar' lexer classes {MODSTMT,RESERVED};
-terminal Hiding_kwd   'hiding'  lexer classes {MODSTMT,RESERVED};
-terminal Import_kwd   'import'  lexer classes {MODSTMT};
-terminal Imports_kwd  'imports' lexer classes {MODSTMT};
-terminal Only_kwd     'only'    lexer classes {MODSTMT,RESERVED};
-terminal Optional_kwd 'option'  lexer classes {MODSTMT};
+terminal As_kwd       'as'      lexer classes {MODSTMT, lsp:Modifier, RESERVED};
+terminal Exports_kwd  'exports' lexer classes {MODSTMT, lsp:Keyword};
+terminal Grammar_kwd  'grammar' lexer classes {MODSTMT, lsp:Keyword, RESERVED};
+terminal Hiding_kwd   'hiding'  lexer classes {MODSTMT, lsp:Modifier, RESERVED};
+terminal Import_kwd   'import'  lexer classes {MODSTMT, lsp:Keyword};
+terminal Imports_kwd  'imports' lexer classes {MODSTMT, lsp:Keyword};
+terminal Only_kwd     'only'    lexer classes {MODSTMT, lsp:Modifier, RESERVED};
+terminal Optional_kwd 'option'  lexer classes {MODSTMT, lsp:Keyword};
 -- TODO with 
 
 -- TODO A substantial fraction of these don't need to be reserved!
@@ -64,22 +69,22 @@ terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED}, preced
 terminal AttachNote_kwd 'attachNote' lexer classes {BUILTIN,RESERVED};
 
 terminal Comma_t       ','  precedence = 4;
-terminal Or_t          '||' precedence = 5, association = left;
-terminal And_t         '&&' precedence = 6, association = left;
-terminal Not_t         '!'  precedence = 7;
-terminal GT_t          '>'  precedence = 9, association = left;
-terminal LT_t          '<'  precedence = 9, association = left;
-terminal GTEQ_t        '>=' precedence = 9, association = left;
-terminal LTEQ_t        '<=' precedence = 9, association = left;
-terminal EQEQ_t        '==' precedence = 9, association = left;
-terminal NEQ_t         '!=' precedence = 9, association = left;
-terminal PlusPlus_t    '++' precedence = 10, association = right; -- right because that's generally more efficient.
-terminal Plus_t        '+'  precedence = 11, association = left;
-terminal Minus_t       '-'  precedence = 11, association = left;
-terminal Multiply_t    '*'  precedence = 12, association = left;
-terminal Divide_t      '/'  precedence = 12, association = left;
-terminal Modulus_t     '%'  precedence = 12, association = left;
-terminal ColonColon_t  '::' precedence = 14, association = right; -- HasType AND cons. right due to cons.
+terminal Or_t          '||' lexer classes {OP}, precedence = 5, association = left;
+terminal And_t         '&&' lexer classes {OP}, precedence = 6, association = left;
+terminal Not_t         '!'  lexer classes {OP}, precedence = 7;
+terminal GT_t          '>'  lexer classes {OP}, precedence = 9, association = left;
+terminal LT_t          '<'  lexer classes {OP}, precedence = 9, association = left;
+terminal GTEQ_t        '>=' lexer classes {OP}, precedence = 9, association = left;
+terminal LTEQ_t        '<=' lexer classes {OP}, precedence = 9, association = left;
+terminal EQEQ_t        '==' lexer classes {OP}, precedence = 9, association = left;
+terminal NEQ_t         '!=' lexer classes {OP}, precedence = 9, association = left;
+terminal PlusPlus_t    '++' lexer classes {OP}, precedence = 10, association = right; -- right because that's generally more efficient.
+terminal Plus_t        '+'  lexer classes {OP}, precedence = 11, association = left;
+terminal Minus_t       '-'  lexer classes {OP}, precedence = 11, association = left;
+terminal Multiply_t    '*'  lexer classes {OP}, precedence = 12, association = left;
+terminal Divide_t      '/'  lexer classes {OP}, precedence = 12, association = left;
+terminal Modulus_t     '%'  lexer classes {OP}, precedence = 12, association = left;
+terminal ColonColon_t  '::' lexer classes {OP}, precedence = 14, association = right; -- HasType AND cons. right due to cons.
 terminal LParen_t      '('  precedence = 24;
 terminal RParen_t      ')'  precedence = 1, association = left; -- Precedence and association eeded for dangling else in action code.
 terminal LCurly_t      '{'  ;
@@ -115,9 +120,22 @@ ignore terminal WarnTag_t /#warn [^\r\n]+/
 terminal IdLower_t /[a-z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
 terminal IdUpper_t /[A-Z][A-Za-z0-9\_]*/ lexer classes {IDENTIFIER};
 
+-- Identifier terminals emitted as semantic tokens
+terminal IdGrammarName_t '' lexer classes {IDENTIFIER, lsp:Namespace};
+terminal IdVariable_t '' lexer classes {IDENTIFIER, lsp:Variable};
+terminal IdSigName_t '' lexer classes {IDENTIFIER, lsp:Parameter};
+terminal IdSigNameDcl_t '' lexer classes {IDENTIFIER, lsp:Parameter, lsp:Declaration};
+terminal IdFnProd_t '' lexer classes {IDENTIFIER, lsp:Function};
+terminal IdFnProdDcl_t '' lexer classes {IDENTIFIER, lsp:Function, lsp:Declaration};
+terminal IdType_t '' lexer classes {IDENTIFIER, lsp:Type};
+terminal IdTypeDcl_t '' lexer classes {IDENTIFIER, lsp:Type, lsp:Declaration};
+terminal IdTypeClass_t '' lexer classes {IDENTIFIER, lsp:Interface};
+terminal IdTypeClassDcl_t '' lexer classes {IDENTIFIER, lsp:Interface, lsp:Declaration};
+terminal IdTypeClassMember_t '' lexer classes {IDENTIFIER, lsp:Method};
+terminal IdTypeClassMemberDcl_t '' lexer classes {IDENTIFIER, lsp:Method, lsp:Declaration};
+
 terminal True_kwd  'true'   lexer classes {LITERAL,RESERVED};
 terminal False_kwd 'false'  lexer classes {LITERAL,RESERVED};
-terminal Int_t     /[\-]?[0-9]+/ lexer classes {LITERAL};
-terminal Float_t   /[\-]?[0-9]+[\.][0-9]+/ lexer classes {LITERAL};
-terminal String_t  /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]n|[\\]r|[\\]f|[\\]t)*[\"]/ lexer classes {LITERAL};
-
+terminal Int_t     /[\-]?[0-9]+/ lexer classes {LITERAL, lsp:Number};
+terminal Float_t   /[\-]?[0-9]+[\.][0-9]+/ lexer classes {LITERAL, lsp:Number};
+terminal String_t  /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]n|[\\]r|[\\]f|[\\]t)*[\"]/ lexer classes {LITERAL, lsp:String_};

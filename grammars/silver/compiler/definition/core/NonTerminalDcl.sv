@@ -40,6 +40,8 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
     if isLower(substring(0,1,id.name))
     then [err(id.location, "Types must be capitalized. Invalid nonterminal name " ++ id.name)]
     else [];
+} action {
+  insert semantic token IdTypeDcl_t at id.location;
 }
 
 nonterminal NTDeclQualifiers with location, errors;

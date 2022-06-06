@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:concrete_syntax:ast;
 
-imports silver:compiler:definition:concrete_syntax only productionName;
+imports silver:compiler:definition:concrete_syntax only productionSig;
 
 monoid attribute productionPrecedence :: Maybe<Integer> with nothing(), orElse;
 -- acode from terminal modifiers
@@ -10,7 +10,7 @@ monoid attribute productionOperator :: Maybe<Decorated SyntaxDcl> with nothing()
 {--
  - Modifiers for productions.
  -}
-nonterminal SyntaxProductionModifiers with compareTo, isEqual, cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, productionName;
+nonterminal SyntaxProductionModifiers with compareTo, isEqual, cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, productionSig;
 
 propagate compareTo, isEqual, cstErrors, acode, productionPrecedence, customLayout, productionOperator
   on SyntaxProductionModifiers;
@@ -27,7 +27,7 @@ top::SyntaxProductionModifiers ::=
 {--
  - Modifiers for productions.
  -}
-nonterminal SyntaxProductionModifier with compareTo, isEqual, cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, productionName;
+nonterminal SyntaxProductionModifier with compareTo, isEqual, cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, productionSig;
 
 propagate compareTo, isEqual on SyntaxProductionModifier;
 
@@ -57,7 +57,7 @@ top::SyntaxProductionModifier ::= term::String
   
   top.cstErrors := if !null(termRef) then [] 
                    else ["Terminal " ++ term ++ " was referenced but " ++
-                         "this grammar was not included in this parser. (Referenced from operator clause on production " ++ top.productionName ++ ")"];
+                         "this grammar was not included in this parser. (Referenced from operator clause on production " ++ top.productionSig.fullName ++ ")"];
   top.productionOperator := just(head(termRef));
 }
 {--
@@ -79,7 +79,7 @@ top::SyntaxProductionModifier ::= terms::[String]
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
                      else ["Terminal " ++ a.fst ++ " was referenced but " ++
-                           "this grammar was not included in this parser. (Referenced from layout clause on production " ++ top.productionName ++ ")"],
+                           "this grammar was not included in this parser. (Referenced from layout clause on production " ++ top.productionSig.fullName ++ ")"],
                    zipWith(pair, terms, termRefs));
 
   top.customLayout := just(terms);
