@@ -86,6 +86,95 @@ instance Alt Either<a _> {
     end;
 }
 
+@{-
+ - Monad transformer corresponding to Either.
+ - Note that the type arguments are in this order because Silver type
+ - constructors are curried and must be partially applied in order, and we need to have
+ - instance Functor MaybeT<e m _> (and friends) and instance MonadTrans EitherT<e _ _>.
+ - 
+ - @param e The "error" result type, corresponding to the left constructor
+ - @param m The monad type to be transformed
+ - @param a The "success" result type, corresponding to the right constructor
+ -}
+nonterminal EitherT<e (m :: * -> *) a> with run<m<Either<e a>>>;
+abstract production eitherT
+top::EitherT<e m a> ::= x::m<Either<e a>>
+{
+  top.run = x;
+}
+
+@{--
+ - Transform the computation inside an EitherT.
+ -}
+function mapEitherT
+EitherT<f n b> ::= f::(n<Either<f b>> ::= m<Either<e a>>) x::EitherT<e m a>
+{
+  return eitherT(f(x.run));
+}
+
+instance Functor m => Functor EitherT<e m _> {
+  map = \ f::(b ::= a) x::EitherT<e m a> -> mapEitherT(map(map(f, _), _), x);
+}
+
+instance Monad m => Apply EitherT<e m _> {
+  ap = \ mf::EitherT<e m (b ::= a)> mx::EitherT<e m a> -> eitherT(
+    do {
+      fRes::Either<e (b ::= a)> <- mf.run;
+      case fRes of
+      | left(y) -> pure(left(y))
+      | right(f) -> do {
+          xRes::Either<e a> <- mx.run;
+          case xRes of
+          | left(y) -> pure(left(y))
+          | right(x) -> pure(right(f(x)))
+          end;
+        }
+      end;
+    });
+}
+
+@{--
+ - Return an "error" result. This is analagous to left for Either,
+ - as pure is analagous to right for Either.
+ -}
+global throwError::Applicative m => (EitherT<e m a> ::= e) = compose(eitherT, compose(pure, left));
+
+instance Monad m => Applicative EitherT<e m _> {
+  pure = compose(eitherT, compose(pure, right));
+}
+
+instance Monad m => Bind EitherT<e m _> {
+  bind = \ x::EitherT<e m a> f::(EitherT<e m b> ::= a) -> eitherT(
+    do {
+      res :: Either<e a> <- x.run;
+      case res of
+      | left(y) -> pure(left(y))
+      | right(val) -> f(val).run
+      end;
+    });
+}
+
+instance Monad m => Monad EitherT<e m _> {}
+
+instance Monad m => MonadFail EitherT<String m _> {
+  fail = \ msg::String -> eitherT(pure(left(msg)));
+}
+
+instance Monad m => Alt EitherT<e m _> {
+  alt = \ x::EitherT<e m a> y::EitherT<e m a> -> eitherT(
+    do {
+      v :: Either<e a> <- x.run;
+      case v of
+      | left(_) -> y.run
+      | right(_) -> pure(v)
+      end;
+    });
+}
+
+instance MonadTrans EitherT<e _ _> {
+  lift = \ x::m<a> -> eitherT(map(right, x));
+}
+
 @{--
  - Order preserving partitioning of a list of eithers into a pair
  - of lists of the two different results.
