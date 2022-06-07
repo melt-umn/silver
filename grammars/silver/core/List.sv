@@ -38,6 +38,21 @@ instance Alternative [] {}
 instance MonadZero [] {}
 instance MonadPlus [] {}
 
+function mfixList
+[a] ::= f::([a] ::= a)
+{
+  local x::[a] = f(head(x));
+  return
+    case x of
+    | [] -> []
+    | h :: _ -> h :: mfixList(compose(tail, f))
+    end;
+}
+
+instance MonadFix [] {
+  mfix = mfixList;
+}
+
 @{-
   Types with a notion of length.
 -}

@@ -15,12 +15,21 @@ top::IO<b> ::= st::IO<a> fn::(IO<b> ::= a)
   top.stateVal = unsafeTrace(stateVal, st.stateOut);
 }
 
-
 abstract production returnIO
 top::IO<a> ::= x::a
 {
   top.stateOut = top.stateIn;
   top.stateVal = x;
+}
+
+abstract production fixIO
+top::IO<a> ::= fn::(IO<a> ::= a)
+{
+  -- Note that fn should be lazy in its argument. Not sure how to enforce this?
+  local st::IO<a> = fn(st.stateVal);
+  st.stateIn = top.stateIn;
+  top.stateOut = st.stateOut;
+  top.stateVal = st.stateVal;
 }
 
 instance Functor IO {
@@ -40,6 +49,10 @@ instance Bind IO {
 }
 
 instance Monad IO {}
+
+instance MonadFix IO {
+  mfix = fixIO;
+}
 
 function runIO
 IOToken ::= st::IO<a> ioIn::IOToken

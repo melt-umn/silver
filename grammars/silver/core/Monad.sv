@@ -65,6 +65,27 @@ Distributivity
 class MonadZero m, Alternative m => MonadPlus m {}
 
 @{-
+Monads having fixed points with a 'knot-tying' semantics.
+
+Instances should satisfy the following:
+
+Purity
+  mfix(compose(pure, h)) = pure(fix(h))
+
+Left shrinking (or Tightening)
+  mfix(\x -> bind(a, \y -> f(x, y))) = bind(a, \y -> mfix(\x -> f(x, y)))
+
+Sliding
+  mfix(compose(map(h, _), f)) = map(h, (mfix(compose(f, h)))), for strict h.
+
+Nesting
+  mfix(\x -> mfix(\y -> f(x, y))) = mfix(\x -> f(x, x))
+-}
+class Monad m => MonadFix m {
+  mfix :: (m<a> ::= (m<a> ::= a));
+}
+
+@{-
 Monad transformers lift a monadic computation into an additional monad.
 
 Instances should satisfy the following:

@@ -66,6 +66,17 @@ instance Alternative Maybe {}
 instance MonadZero Maybe {}
 instance MonadPlus Maybe {}
 
+function mfixMaybe
+Maybe<a> ::= f::(Maybe<a> ::= a)
+{
+  local x::Maybe<a> = f(x.fromJust);
+  return x;
+}
+
+instance MonadFix Maybe {
+  mfix = mfixMaybe;
+}
+
 @{-
  - Monad transformer corresponding to Maybe.
  - 

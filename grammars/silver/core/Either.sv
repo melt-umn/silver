@@ -76,6 +76,17 @@ instance MonadFail Either<String _> {
   fail = left;
 }
 
+function mfixEither
+Either<a b> ::= f::(Either<a b> ::= b)
+{
+  local x::Either<a b> = f(x.fromRight);
+  return x;
+}
+
+instance MonadFix Either<a _> {
+  mfix = mfixEither;
+}
+
 instance Alt Either<a _> {
   alt = \ e1::Either<a b> e2::Either<a b> ->
     case e1, e2 of
