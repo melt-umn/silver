@@ -68,3 +68,17 @@ global doRes5::Maybe<Integer> = do {
 };
 
 equalityTest(doRes5, just(3), Maybe<Integer>, silver_tests);
+
+global fThing::State<Boolean (Integer ::= Integer)> = do {
+  b :: Boolean <- getState();
+  rec {
+    res :: (Integer ::= Integer) <- pure(\ x::Integer ->
+      if b
+      then if x == 0 then 1 else x * res(x - 1)
+      else if x == 0 then 0 else x + res(x + 1));
+  }
+  return res;
+};
+
+equalityTest(runState(fThing, false).2(5), 5, Integer, silver_tests);
+equalityTest(runState(fThing, true).2(5), 5, Integer, silver_tests);

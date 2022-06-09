@@ -4,115 +4,223 @@ concrete production do_c
 top::Expr ::= 'do' '{' body::DoBody '}'
 {
   top.unparse = s"do {${body.unparse}}";
+
+  body.bindingFreeVars = mempty;
+  body.isApplicative = false;
+  body.applicativeParams = error("not needed");
+  body.applicativeArgs = error("not needed");
+  body.applicativeResult = error("not needed");
+  body.resultTransform = nothing();
   
-  forwards to body.transform;
+  forwards to unsafeTracePrint(body.transform, top.location.unparse ++ " : " ++ top.unparse ++ " : " ++ body.transform.unparse ++ "\n\n\n");
 }
 
-synthesized attribute bindingFreeVars::ts:Set<String>;
-synthesized attribute isApplicative::Boolean;
-synthesized attribute bindings::[ProductionRHSElem];
-synthesized attribute exprs::[Expr];
-synthesized attribute result::Expr;
+synthesized attribute bindingNames::[String];
+synthesized attribute bindingTypes::[TypeExpr];
 
-synthesized attribute applicativeTransform::Expr;
+inherited attribute bindingFreeVars::ts:Set<String>;
+inherited attribute isApplicative::Boolean;
+inherited attribute applicativeParams::[ProductionRHSElem];
+inherited attribute applicativeArgs::[Expr];
+inherited attribute applicativeResult::Expr;
+
+inherited attribute resultTransform::Maybe<Expr>;
 synthesized attribute transform::Expr;
 
-nonterminal DoBody with location, unparse, frame, bindingFreeVars, isApplicative, bindings, exprs, result, applicativeTransform, transform;
-
-aspect default production
-top::DoBody ::=
-{
-  top.applicativeTransform =
-    foldl(
-      \ trans::Expr e::Expr -> mkStrFunctionInvocation(top.location, "silver:core:ap", [trans, e]),
-      mkStrFunctionInvocation(top.location, "silver:core:map", [
-        foldr(
-          \ el::ProductionRHSElem trans::Expr ->
-            lambdap(
-              productionRHSCons(el, productionRHSNil(location=top.location), location=top.location),
-              trans, location=top.location),
-          top.result, top.bindings),
-        head(top.exprs)]),
-      tail(top.exprs));
-}
+nonterminal DoBody with
+  location, unparse, frame, bindingNames, bindingTypes, bindingFreeVars,
+  isApplicative, applicativeParams, applicativeArgs, applicativeResult,
+  resultTransform, transform;
 
 concrete production bindExprDoBody
-top::DoBody ::= n::Name DoDoubleColon_t t::TypeExpr '<-' e::Expr ';' rest::DoBody
+top::DoBody ::= init::DoBody n::Name DoDoubleColon_t t::TypeExpr '<-' e::Expr ';'
 {
-  top.unparse = s"${n.unparse}::${t.unparse} <- ${e.unparse}; ${rest.unparse}";
-  top.bindingFreeVars = e.freeVars ++ rest.bindingFreeVars;
-  top.isApplicative = !ts:contains(n.name, rest.bindingFreeVars) && rest.isApplicative;
-  top.bindings =
-    productionRHSElem(n, terminal(ColonColon_t, "::"), t, location=top.location) :: rest.bindings;
-  top.exprs = e :: rest.exprs;
-  top.result = rest.result;
-  
+  top.unparse = s"${init.unparse} ${n.unparse}::${t.unparse} <- ${e.unparse};";
+  top.bindingNames = n.name :: init.bindingNames;
+  top.bindingTypes = t :: init.bindingTypes;
+
+  init.bindingFreeVars = e.freeVars ++ ts:removeAll([n.name], top.bindingFreeVars);
+  init.isApplicative = !ts:contains(n.name, top.bindingFreeVars) && top.isApplicative;
+  init.applicativeParams =
+    productionRHSElem(n, terminal(ColonColon_t, "::"), t, location=top.location) ::
+    top.applicativeParams;
+  init.applicativeArgs = e :: top.applicativeArgs;
+  init.applicativeResult = top.applicativeResult;
+
   local cont :: Expr =
     lambdap(
       productionRHSCons(
         productionRHSElem(n, terminal(ColonColon_t, "::"), t, location=top.location),
         productionRHSNil(location=top.location),
         location=top.location),
-      rest.transform,
+      case top.resultTransform of
+      | nothing() -> errorExpr([err(n.location, "Bind cannot be final statement in do body")], location=top.location)
+      | just(res) -> res
+      end,
       location=top.location);
-  top.transform =
-    if top.isApplicative then top.applicativeTransform
-    else mkStrFunctionInvocation(top.location, "silver:core:bind", [e, cont]);
+  init.resultTransform = just(
+    if init.isApplicative
+    then applicativeTransform(init.applicativeParams, init.applicativeArgs, init.applicativeResult, top.location)
+    else mkStrFunctionInvocation(top.location, "silver:core:bind", [e, cont]));
+  top.transform = init.transform;
 }
 
 concrete production sequenceDoBody
-top::DoBody ::= e::Expr ';' rest::DoBody
+top::DoBody ::= init::DoBody e::Expr ';'
 {
-  top.unparse = s"${e.unparse} ${rest.unparse}";
-  top.bindingFreeVars = e.freeVars ++ rest.bindingFreeVars;
-  top.isApplicative = rest.isApplicative;
-  top.bindings =
+  top.unparse = s"${init.unparse} ${e.unparse};";
+  top.bindingNames = init.bindingNames;
+  top.bindingTypes = init.bindingTypes;
+
+  init.bindingFreeVars = e.freeVars ++ top.bindingFreeVars;
+  init.isApplicative = top.isApplicative;
+  init.applicativeParams =
     productionRHSElemType(typerepTypeExpr(freshType(), location=top.location), location=top.location) ::
-    rest.bindings;
-  top.exprs = e :: rest.exprs;
-  top.result = rest.result;
-  top.transform =
-    if top.isApplicative then top.applicativeTransform
-    else mkStrFunctionInvocation(top.location, "silver:core:applySecond", [e, rest.transform]);
+    top.applicativeParams;
+  init.applicativeArgs = e :: top.applicativeArgs;
+  init.applicativeResult = top.applicativeResult;
+
+  init.resultTransform = just(
+    case top.resultTransform of
+    | nothing() -> e
+    | just(_) when top.isApplicative ->
+        applicativeTransform(init.applicativeParams, init.applicativeArgs, init.applicativeResult, top.location)
+    | just(res) -> mkStrFunctionInvocation(top.location, "silver:core:applySecond", [e, res])
+    end);
+  top.transform = init.transform;
 }
 
 concrete production letExprDoBody
-top::DoBody ::= 'let' n::Name '::' t::TypeExpr '=' e::Expr ';' rest::DoBody
+top::DoBody ::= init::DoBody 'let' n::Name '::' t::TypeExpr '=' e::Expr ';'
 {
-  top.unparse = s"let ${n.unparse}::${t.unparse} = ${e.unparse}; ${rest.unparse}";
-  top.bindingFreeVars = e.freeVars ++ rest.bindingFreeVars;
-  top.isApplicative = false;
-  top.bindings = error("Not applicative");
-  top.exprs = error("Not applicative");
-  top.result = error("Not applicative");
-  
+  top.unparse = s"${init.unparse} let ${n.unparse}::${t.unparse} = ${e.unparse};";
+  top.bindingNames = n.name :: init.bindingNames;
+  top.bindingTypes = t :: init.bindingTypes;
+
+  init.bindingFreeVars = e.freeVars ++ ts:removeAll([n.name], top.bindingFreeVars);
+  init.isApplicative = false;
+  init.applicativeParams = error("Not applicative");
+  init.applicativeArgs = error("Not applicative");
+  init.applicativeResult = error("Not applicative");
+
+  init.resultTransform = just(letp(
+    assignExpr(n, terminal(ColonColon_t, "::"), t, '=', e, location=top.location),
+    case top.resultTransform of
+    | nothing() -> errorExpr([err(n.location, "let cannot be final statement in do body")], location=top.location)
+    | just(res) -> res
+    end,
+    location=top.location));
+  top.transform = init.transform;
+}
+
+concrete production recDoBody
+top::DoBody ::= init::DoBody 'rec' '{' recBody::DoBody '}'
+{
+  top.unparse = s"${init.unparse} rec { ${recBody.unparse} }";
+  top.bindingNames = init.bindingNames ++ recBody.bindingNames;
+  top.bindingTypes = init.bindingTypes ++ recBody.bindingTypes;
+
+  init.bindingFreeVars = ts:removeAll(recBody.bindingNames, recBody.bindingFreeVars ++ top.bindingFreeVars);
+  init.isApplicative = false;
+  init.applicativeParams = error("Not applicative");
+  init.applicativeArgs = error("Not applicative");
+  init.applicativeResult = error("Not applicative");
+
+  local recItemsName::String = s"_rec_items_${toString(genInt())}";
+  local recItemsType::TypeExpr =
+    if null(recBody.bindingTypes)
+    then Silver_TypeExpr { silver:core:Unit }
+    else foldr1(
+      \ t1::TypeExpr t2::TypeExpr ->
+        Silver_TypeExpr { silver:core:Pair<$TypeExpr{t1} $TypeExpr{t2}> },
+      recBody.bindingTypes);
+  local recItemsPattern::Pattern =
+    if null(recBody.bindingNames)
+    then Silver_Pattern { silver:core:unit() }
+    else foldr1(
+      \ p1::Pattern p2::Pattern ->
+        Silver_Pattern { silver:core:pair($Pattern{p1}, $Pattern{p2}) },
+      map(\ item::String -> Silver_Pattern { $name{item} }, recBody.bindingNames));
+  local recItemsResult::Expr =
+    if null(recBody.bindingNames)
+    then Silver_Expr { silver:core:unit() }
+    else foldr1(
+      \ e1::Expr e2::Expr -> Silver_Expr { silver:core:pair($Expr{e1}, $Expr{e2}) },
+      map(\ item::String -> Silver_Expr { $name{item} }, recBody.bindingNames));
+
+  recBody.bindingFreeVars = mempty;
+  recBody.isApplicative = true;
+  recBody.applicativeParams = [];
+  recBody.applicativeArgs = [];
+  recBody.applicativeResult = recItemsResult;
+  recBody.resultTransform = just(mkStrFunctionInvocation(top.location, "silver:core:pure", [recItemsResult]));
+
+  init.resultTransform = just(
+    case top.resultTransform of
+    | nothing() -> errorExpr([err(recBody.location, "rec cannot be final statement in do body")], location=top.location)
+    | just(res) -> Silver_Expr {
+      silver:core:bind(
+        mfix(
+          \ $name{recItemsName}::$TypeExpr{recItemsType} ->
+            case $name{recItemsName} of
+            | $Pattern{recItemsPattern} -> $Expr{recBody.transform}
+            end),
+        \ $name{recItemsName}::$TypeExpr{recItemsType} ->
+          case $name{recItemsName} of
+          | $Pattern{recItemsPattern} -> $Expr{res}
+          end)
+    }
+    end);
+  top.transform = init.transform;
+}
+
+concrete production returnDoBody
+top::DoBody ::= init::DoBody 'return' e::Expr ';'
+{
+  top.unparse = s"${init.unparse} return ${e.unparse};";
+  top.bindingNames = init.bindingNames;
+  top.bindingTypes = init.bindingTypes;
+
+  init.bindingFreeVars = mempty;
+  init.isApplicative = !top.resultTransform.isJust;
+  init.applicativeParams = [];
+  init.applicativeArgs = [];
+  init.applicativeResult = e;
+
+  init.resultTransform = just(
+    case top.resultTransform of
+    | nothing() -> mkStrFunctionInvocation(top.location, "silver:core:pure", [e])
+    | just(_) -> errorExpr([err(e.location, "return must be final statement in do body")], location=top.location)
+    end);
+  top.transform = init.transform;
+}
+
+concrete production emptyDoBody
+top::DoBody ::=
+{
+  top.unparse = s"";
+  top.bindingNames = [];
+  top.bindingTypes = [];
   top.transform =
-    letp(
-      assignExpr(n, terminal(ColonColon_t, "::"), t, '=', e, location=top.location),
-      rest.transform,
-    location=top.location);
+    case top.resultTransform of
+    | nothing() -> errorExpr([err(top.location, "do body cannot be empty")], location=top.location)
+    | just(res) -> res
+    end;
 }
 
-concrete production finalExprDoBody
-top::DoBody ::= e::Expr ';'
+function applicativeTransform
+Expr ::= params::[ProductionRHSElem] args::[Expr] res::Expr loc::Location
 {
-  top.unparse = s"${e.unparse};";
-  top.bindingFreeVars = mempty;
-  top.isApplicative = false;
-  top.bindings = error("Not applicative");
-  top.exprs = error("Not applicative");
-  top.result = error("Not applicative");
-  top.transform = e;
-}
-
-concrete production finalReturnDoBody
-top::DoBody ::= 'return' e::Expr ';'
-{
-  top.unparse = s"return ${e.unparse};";
-  top.bindingFreeVars = mempty;
-  top.isApplicative = true;
-  top.bindings = [];
-  top.exprs = [];
-  top.result = e;
-  top.transform = mkStrFunctionInvocation(top.location, "silver:core:pure", [e]);
+  return
+    foldl(
+      \ trans::Expr e::Expr -> mkStrFunctionInvocation(loc, "silver:core:ap", [trans, e]),
+      mkStrFunctionInvocation(loc, "silver:core:map", [
+        foldr(
+          \ el::ProductionRHSElem trans::Expr ->
+            lambdap(
+              productionRHSCons(el, productionRHSNil(location=loc), location=loc),
+              trans, location=loc),
+          res, params),
+        head(args)]),
+      tail(args));
 }
