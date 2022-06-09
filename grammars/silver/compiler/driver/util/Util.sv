@@ -15,3 +15,18 @@ String ::= g::String
   return substitute(":", "/", g) ++ "/";
 }
 
+@{--
+ - Given a path (with terminating /) and list of (file names relative to that root, contents),
+ - write these out.
+ -}
+function writeFiles
+IO<()> ::= path::String s::[(String, String)]
+{
+  return traverse_(\ item::(String, String) -> writeFile(path ++ item.1, item.2), s);
+}
+
+function writeBinaryFiles
+IO<()> ::= path::String s::[(String, ByteArray)]
+{
+  return traverse_(\ item::(String, ByteArray) -> writeBinaryFile(path ++ item.1, item.2), s);
+}

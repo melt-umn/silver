@@ -40,7 +40,7 @@ synthesized attribute parsingErrors :: [Pair<String [Message]>];
 synthesized attribute generateLocation :: String;
 
 {--
- - Create a RootSpec from a real grammar, a set of .sv files.
+ - Create a RootSpec from a real grammar, a set of Silver files.
  -}
 abstract production grammarRootSpec
 top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  grammarTime::Integer  generateLocation::String

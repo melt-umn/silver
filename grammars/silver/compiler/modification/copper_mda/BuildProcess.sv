@@ -30,7 +30,7 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
   local buildGrammar::IO<Integer> =
     if null(specCstAst.cstErrors) then do {
       mkdir(outDir);
-      print("Running MDA for " ++ spec.fullName ++ ".\n");
+      eprintln("Running MDA for " ++ spec.fullName ++ ".");
       ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
         makeName(spec.sourceGrammar), parserName, true, "", false, "", false);
       case nativeSerialize(new(specCstAst)) of
@@ -40,18 +40,18 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
       return ret;
     } else do {
       -- Should this be stderr?
-      print("CST errors while preparing for MDA " ++ spec.fullName ++ ":\n" ++
-        implode("\n", specCstAst.cstErrors) ++ "\n");
+      eprintln("CST errors while preparing for MDA " ++ spec.fullName ++ ":\n" ++
+        implode("\n", specCstAst.cstErrors));
       return 1;
     };
 
-  local val::IOVal<Integer> = evalIO(do {
+  top.run = do {
     dumpFileExists :: Boolean <- isFile(dumpFile);
     if dumpFileExists then do {
       dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
       let dumpMatched::Either<String Boolean> = map(eq(specCstAst, _), nativeDeserialize(dumpFileContents));
       if dumpMatched == right(true) then do {
-        print("MDA test " ++ spec.fullName ++ " is up to date.\n");
+        eprintln("MDA test " ++ spec.fullName ++ " is up to date.");
         return 0;
       } else do {
         buildGrammar;
@@ -59,9 +59,7 @@ top::DriverAction ::= spec::MdaSpec  compiledGrammars::EnvTree<Decorated RootSpe
     } else do {
       buildGrammar;
     };
-  }, top.ioIn);
+  };
 
-  top.io = val.io;
-  top.code = val.iovalue;
   top.order = 5;
 }

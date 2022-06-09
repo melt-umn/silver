@@ -104,8 +104,7 @@ top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]
       | _ -> []
       end), specs));
 
-  top.io = printlnT(report, top.ioIn);
-  top.code = 0;
+  top.run = do { println(report); return 0; };
   top.order = 5;
 }
 
@@ -113,62 +112,31 @@ top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]
 abstract production genDoc
 top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  outputLoc::String
 {
-  local pr :: IOToken = eprintlnT("Generating Documentation.", top.ioIn);
-
-  top.io = writeAll(pr, a, specs, outputLoc);
-  top.code = 0;
+  top.run = do {
+    eprintln("Generating Documentation.");
+    traverse_(writeSpec(_, outputLoc), specs);
+    return 0;
+  };
   top.order = 4;
 }
 
-function writeAll
-IOToken ::= i::IOToken  a::Decorated CmdArgs  l::[Decorated RootSpec]  outputLoc::String
-{
-  local now :: IOToken = writeSpec(i, head(l), outputLoc);
-  local recurse :: IOToken = writeAll(now, a, tail(l), outputLoc);
-
-  return if null(l) then i else recurse;
-}
-
 function writeSpec
-IOToken ::= i::IOToken  r::Decorated RootSpec  outputLoc::String
+IO<()> ::= r::Decorated RootSpec  outputLoc::String
 {
   local path :: String = outputLoc ++ grammarToPath(r.declaredName);
 
-  local mkiotest :: IOVal<Boolean> =
-    isDirectoryT(path, i);
-  
-  local mkio :: IOVal<Boolean> =
-    if mkiotest.iovalue
-    then mkiotest
-    else mkdirT(path, mkiotest.io);
-  
-  local pr :: IOToken =
-    if mkio.iovalue
-    then eprintlnT("\t[" ++ r.declaredName ++ "]", mkio.io)
-    else exitT(-5, eprintlnT("\nUnrecoverable Error: Unable to create directory: " ++ path ++ "\n", mkio.io));
-  
-  local rm :: IOToken = deleteStaleDocs(pr, outputLoc, r.declaredName);
-
-  local wr :: IOToken = writeFiles(path, r.genFiles, rm);
-
-  return wr;
-}
-
-@{--
- - Given a path (with terminating /) and list of (file names relative to that root, contents),
- - write these out.
- -}
-function writeFiles
-IOToken ::= path::String s::[Pair<String String>] i::IOToken
-{
-  return if null(s) then i else writeFileT(path ++ head(s).fst, head(s).snd, writeFiles(path, tail(s), i));
-}
-
--- Copied from 
-function deleteStaleDocs
-IOToken ::= iIn::IOToken outputLoc::String gram::String
-{
-  local docPath :: String = outputLoc ++ grammarToPath(gram);
-  
-  return deleteDirFilesT(docPath, iIn).io;
+  return do {
+    eprintln("\t[" ++ r.declaredName ++ "]");
+    isD::Boolean <- isDirectory(path);
+    unless(isD, do {
+      mkDSuccess::Boolean <- mkdir(path);
+      unless(mkDSuccess, do {
+        eprintln("Unrecoverable Error: Unable to create directory: " ++ path);
+        exit(-5);
+      });
+    });
+    mkdir(path);
+    deleteDirFiles(path);
+    writeFiles(path, r.genFiles);
+  };
 }

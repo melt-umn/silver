@@ -62,13 +62,14 @@ function unList
 abstract production dumpFlowGraphAction
 top::DriverAction ::= prodGraph::[ProductionGraph]  finalGraph::[ProductionGraph]  flowTypes::[Pair<String [FlowType]>]
 {
-  top.io = 
-    writeFileT("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(flowTypes) ++ "}",
-      writeFileT("flow-deps-direct.dot", "digraph flow {\n" ++ generateDotGraph(prodGraph) ++ "}",
-        writeFileT("flow-deps-transitive.dot", "digraph flow {\n" ++ generateDotGraph(finalGraph) ++ "}",
-          eprintlnT("Generating flow graphs", top.ioIn))));
+  top.run = do {
+    eprintln("Generating flow graphs");
+    writeFile("flow-deps-transitive.dot", "digraph flow {\n" ++ generateDotGraph(finalGraph) ++ "}");
+    writeFile("flow-deps-direct.dot", "digraph flow {\n" ++ generateDotGraph(prodGraph) ++ "}");
+    writeFile("flow-types.dot", "digraph flow {\n" ++ generateFlowDotGraph(flowTypes) ++ "}");
+    return 0;
+  };
 
-  top.code = 0;
   top.order = 0;
 }
 
