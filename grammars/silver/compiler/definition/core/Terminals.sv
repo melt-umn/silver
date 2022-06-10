@@ -134,8 +134,8 @@ terminal IdTypeClassDcl_t '' lexer classes {IDENTIFIER, lsp:Interface, lsp:Decla
 terminal IdTypeClassMember_t '' lexer classes {IDENTIFIER, lsp:Method};
 terminal IdTypeClassMemberDcl_t '' lexer classes {IDENTIFIER, lsp:Method, lsp:Declaration};
 
-terminal True_kwd  'true'   lexer classes {LITERAL,RESERVED};
-terminal False_kwd 'false'  lexer classes {LITERAL,RESERVED};
+terminal True_kwd  'true'   lexer classes {LITERAL,RESERVED, lsp:Keyword};
+terminal False_kwd 'false'  lexer classes {LITERAL,RESERVED, lsp:Keyword};
 terminal Int_t     /[\-]?[0-9]+/ lexer classes {LITERAL, lsp:Number};
 terminal Float_t   /[\-]?[0-9]+[\.][0-9]+/ lexer classes {LITERAL, lsp:Number};
 terminal String_t  /[\"]([^\r\n\"\\]|[\\][\"]|[\\][\\]|[\\]b|[\\]n|[\\]r|[\\]f|[\\]t)*[\"]/ lexer classes {LITERAL, lsp:String_};
