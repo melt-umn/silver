@@ -12,7 +12,7 @@ top::Expr ::= 'do' '{' body::DoBody '}'
   body.applicativeResult = error("not needed");
   body.resultTransform = nothing();
   
-  forwards to unsafeTracePrint(body.transform, top.location.unparse ++ " : " ++ top.unparse ++ " : " ++ body.transform.unparse ++ "\n\n\n");
+  forwards to body.transform;
 }
 
 synthesized attribute bindingNames::[String];

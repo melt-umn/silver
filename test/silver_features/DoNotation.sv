@@ -75,7 +75,7 @@ global fThing::State<Boolean (Integer ::= Integer)> = do {
     res :: (Integer ::= Integer) <- pure(\ x::Integer ->
       if b
       then if x == 0 then 1 else x * res(x - 1)
-      else if x == 0 then 0 else x + res(x + 1));
+      else if x == 0 then 0 else x + res(x - 1));
   }
   return res;
 };
