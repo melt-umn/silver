@@ -67,6 +67,7 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
   body.frame = aspectProductionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
 } action {
   insert semantic token IdFnProd_t at id.location;
+  sigNames = [];
 }
 
 concrete production aspectFunctionDcl
@@ -117,6 +118,7 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
   body.frame = aspectFunctionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
 } action {
   insert semantic token IdFnProd_t at id.location;
+  sigNames = [];
 }
 
 concrete production aspectProductionSignature
@@ -135,6 +137,8 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 
   lhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
   rhs.realSignature = if null(top.realSignature) then [] else tail(top.realSignature);
+} action {
+  sigNames = foldNamedSignatureElements(lhs.outputElement :: rhs.inputElements).elementNames;
 }
 
 concrete production aspectProductionLHSNone
