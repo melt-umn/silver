@@ -77,6 +77,7 @@ top::AspectDefaultProductionSignature ::= lhs::Name '::' te::TypeExpr '::='
     | _ -> []
     end;
 } action {
+  insert semantic token IdSigNameDcl_t at lhs.location;
   sigNames = [lhs.name];
 }
 

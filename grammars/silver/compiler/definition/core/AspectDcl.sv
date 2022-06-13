@@ -157,6 +157,8 @@ top::AspectProductionLHS ::= id::Name
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
   forwards to aspectProductionLHSFull(id, rType, location=top.location);
+} action {
+  insert semantic token IdSigNameDcl_t at id.location;
 }
 
 concrete production aspectProductionLHSTyped
@@ -167,6 +169,8 @@ top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
   top.errors <- t.errors;
   
   forwards to aspectProductionLHSFull(id, t.typerep, location=top.location);
+} action {
+  insert semantic token IdSigNameDcl_t at id.location;
 }
 
 abstract production aspectProductionLHSFull
@@ -236,6 +240,8 @@ top::AspectRHSElem ::= id::Name
   top.errors <- [wrn(top.location, "Giving just a name '" ++ id.name ++ "' is deprecated in aspect signature. Please explicitly use a name and type.")];
   
   forwards to aspectRHSElemFull(id, rType, location=top.location);
+} action {
+  insert semantic token IdSigNameDcl_t at id.location;
 }
 
 concrete production aspectRHSElemTyped
@@ -246,6 +252,8 @@ top::AspectRHSElem ::= id::Name '::' t::TypeExpr
   top.errors <- t.errors;
 
   forwards to aspectRHSElemFull(id, t.typerep, location=top.location);
+} action {
+  insert semantic token IdSigNameDcl_t at id.location;
 }
 
 abstract production aspectRHSElemFull
