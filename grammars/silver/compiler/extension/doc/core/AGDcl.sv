@@ -182,10 +182,10 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
 -- }
 
 aspect production aspectDefaultProduction
-top::AGDcl ::= 'aspect' 'default' 'production' lhs::Name '::' _ '::=' body::ProductionBody 
+top::AGDcl ::= 'aspect' 'default' 'production' ns::AspectDefaultProductionSignature body::ProductionBody 
 {
-  top.docForName = "aspect default production "++lhs.name;
-  top.docUnparse = s"`aspect default production ${lhs.unparse}`";
+  top.docForName = "aspect default production "++ns.namedSignature.outputElement.typerep.typeName;
+  top.docUnparse = s"`aspect default production ${ns.unparse}`";
   top.docDcls := [];
   top.docs := [mkUndocumentedItem(top.docForName, top)];
 }
