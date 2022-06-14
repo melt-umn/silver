@@ -14,28 +14,51 @@ import silver:compiler:driver:util only RootSpec; -- ditto
 terminal Default_kwd 'default' lexer classes {KEYWORD, RESERVED};
 
 concrete production aspectDefaultProduction
-top::AGDcl ::= 'aspect' 'default' 'production' 
-               lhs::Name '::' te::TypeExpr '::=' body::ProductionBody 
+top::AGDcl ::= 'aspect' 'default' 'production' ns::AspectDefaultProductionSignature body::ProductionBody 
 {
-  top.unparse = "aspect default production\n" ++ lhs.unparse ++ "::" ++ te.unparse ++ " ::=\n" ++ body.unparse;
+  top.unparse = "aspect default production\n" ++ ns.unparse ++ "\n" ++ body.unparse;
 
   top.defs := [];
 
-  production namedSig :: NamedSignature = 
+  propagate errors, flowDefs;
+  
+  local sigDefs :: [Def] = addNewLexicalTyVars(top.grammarName, top.location, ns.lexicalTyVarKinds, ns.lexicalTypeVariables);
+
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = 
+    constructDefaultProductionGraph(ns.namedSignature, body.flowDefs, top.env, myProds, myFlow);
+
+  ns.env = newScopeEnv(sigDefs, top.env);
+
+  body.env = newScopeEnv(ns.defs, ns.env);
+  body.frame = defaultAspectContext(ns.namedSignature, myFlowGraph, sourceGrammar=top.grammarName);
+
+  body.downSubst = emptySubst();
+
+  top.setupInh := body.setupInh; -- Probably should be empty?
+  top.initProd := "\t\t//ASPECT DEFAULT PRODUCTION for " ++ ns.namedSignature.outputElement.typerep.typeName ++ "\n" ++ body.translation;
+  top.valueWeaving := body.valueWeaving; -- Probably should be empty?
+} action {
+  sigNames = [];
+}
+
+nonterminal AspectDefaultProductionSignature with config, grammarName, env, flowEnv, location, unparse, errors, defs, namedSignature, lexicalTypeVariables, lexicalTyVarKinds;
+
+concrete production aspectDefaultProductionSignature
+top::AspectDefaultProductionSignature ::= lhs::Name '::' te::TypeExpr '::='
+{
+  top.unparse = lhs.unparse ++ "::" ++ te.unparse ++ " ::=";
+  top.defs := [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];
+  top.namedSignature =
     namedSignature(top.grammarName ++ ":default" ++ te.typerep.typeName,
       nilContext(), nilNamedSignatureElement(),
       namedSignatureElement(lhs.name, te.typerep),
       foldNamedSignatureElements(annotationsForNonterminal(te.typerep, top.env)));
 
-  propagate errors, flowDefs;
-
-  top.errors <- te.errorsKindStar;
-  top.errors <-
-    case te of
-    -- LHS must be either NT or NT<a b ...> where a b ... are all ty vars
-    | appTypeExpr(_, tl) -> tl.errorsTyVars
-    | _ -> []
-    end;
+  propagate errors, lexicalTypeVariables, lexicalTyVarKinds;
 
   local checkNT::TypeCheck = checkNonterminal(top.env, false, te.typerep);
   checkNT.downSubst = emptySubst();
@@ -46,28 +69,16 @@ top::AGDcl ::= 'aspect' 'default' 'production'
     then [err(top.location, "Default production LHS type must be a nonterminal.  Instead it is of type " ++ checkNT.leftpp)]
     else [];
 
-  local fakedDefs :: [Def] =
-    [defaultLhsDef(top.grammarName, lhs.location, lhs.name, te.typerep)];
-  
-  local sigDefs :: [Def] = addNewLexicalTyVars(top.grammarName, top.location, te.lexicalTyVarKinds, te.lexicalTypeVariables);
-
-  -- oh no again!
-  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
-  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
-
-  local myFlowGraph :: ProductionGraph = 
-    constructDefaultProductionGraph(namedSig, body.flowDefs, top.env, myProds, myFlow);
-
-  te.env = newScopeEnv(sigDefs, top.env);
-
-  body.env = newScopeEnv(fakedDefs, te.env);
-  body.frame = defaultAspectContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName);
-
-  body.downSubst = emptySubst();
-
-  top.setupInh := body.setupInh; -- Probably should be empty?
-  top.initProd := "\t\t//ASPECT DEFAULT PRODUCTION for " ++ te.unparse ++ "\n" ++ body.translation;
-  top.valueWeaving := body.valueWeaving; -- Probably should be empty?
+  top.errors <- te.errorsKindStar;
+  top.errors <-
+    case te of
+    -- LHS must be either NT or NT<a b ...> where a b ... are all ty vars
+    | appTypeExpr(_, tl) -> tl.errorsTyVars
+    | _ -> []
+    end;
+} action {
+  insert semantic token IdSigNameDcl_t at lhs.location;
+  sigNames = [lhs.name];
 }
 
 function defaultLhsDef

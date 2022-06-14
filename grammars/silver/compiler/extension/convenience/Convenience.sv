@@ -56,6 +56,8 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
     nonterminalDcl(quals, $2, id, tl, nm, $8, location=top.location),
     makeOccursDcls(top.location, attrs.qnames, [qNameWithTL(qNameId(id, location=id.location), tl)]),
     location=top.location);
+} action {
+  insert semantic token IdTypeDcl_t at id.location;
 }
 
 
