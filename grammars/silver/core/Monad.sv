@@ -38,7 +38,7 @@ Monads that support failure with an error message.
 Instances should satisfy the following:
 
 Annihilation
-  bind(empty, f) = empty
+  bind(fail(s), f) = fail(s)
 -}
 class Monad m => MonadFail m {
   fail :: (m<a> ::= String);
@@ -50,7 +50,7 @@ The MonadZero type class has no members of its own; it just specifies that the t
 Instances should satisfy the following:
 
 Annihilation
-  bind(fail(s), f) = fail(s)
+  bind(empty, f) = empty
 -}
 class Monad m, Alternative m => MonadZero m {}
 
