@@ -78,8 +78,8 @@ global mdoThing::State<Boolean (Integer ::= Integer)> = mdo {
   return res;
 };
 
-equalityTest(runState(mdoThing, false).2(5), 15, Integer, silver_tests);
-equalityTest(runState(mdoThing, true).2(5), 120, Integer, silver_tests);
+equalityTest(evalState(mdoThing, false)(5), 15, Integer, silver_tests);
+equalityTest(evalState(mdoThing, true)(5), 120, Integer, silver_tests);
 
 global mutualMDo::Maybe<(Boolean ::= Integer)> = mdo {
   pure(123);
