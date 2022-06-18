@@ -1,5 +1,13 @@
 grammar silver:core;
 
+@{-
+ - Representation of a monadic IO action.
+ -
+ - The stateIn/stateOut threading exists to ensure that IO actions happen in
+ - the proper order, thus the invariant that stateOut should be demanded before stateVal.
+ - Note that unsafeInterleaveIO intentionally violates this, causing IO actions to be evaluated when
+ - their value is demanded.
+ -}
 closed nonterminal IO<a> with stateIn<IOToken>, stateOut<IOToken>, stateVal<a>;
 
 abstract production bindIO
@@ -8,11 +16,10 @@ top::IO<b> ::= st::IO<a> fn::(IO<b> ::= a)
   st.stateIn = top.stateIn;
   local newState::IO<b> = fn(st.stateVal);
   newState.stateIn = st.stateOut;
-  local stateOut::IOToken = newState.stateOut;
-  local stateVal::b = newState.stateVal;
-  -- Using unsafeTrace here to demand st is evaluated before evaluating fn
-  top.stateOut = unsafeTrace(stateOut, st.stateOut);
-  top.stateVal = unsafeTrace(stateVal, st.stateOut);
+  -- Using unsafeTrace here to ensure that when top.stateOut is demanded,
+  -- we demand st.stateOut before st.stateVal
+  top.stateOut = unsafeTrace(newState.stateOut, st.stateOut);
+  top.stateVal = newState.stateVal;
 }
 
 abstract production returnIO
@@ -22,11 +29,19 @@ top::IO<a> ::= x::a
   top.stateVal = x;
 }
 
+@{-
+ - Create a self-referential IO action.
+ - Note that fn should be lazy in its argument, to avoid infinite recursion.
+ - This can be achieved using unsafeInterleaveIO.
+ -
+ - @param fn A function creating an IO action from its own result.
+ -}
 abstract production fixIO
 top::IO<a> ::= fn::(IO<a> ::= a)
 {
-  -- Note that fn should be lazy in its argument. Not sure how to enforce this?
-  local st::IO<a> = fn(st.stateVal);
+  -- Using unsafeTrace here to ensure that when fn demands its argument,
+  -- st.stateOut has been demanded.
+  local st::IO<a> = fn(unsafeTrace(st.stateVal, st.stateOut));
   st.stateIn = top.stateIn;
   top.stateOut = st.stateOut;
   top.stateVal = st.stateVal;
@@ -71,6 +86,19 @@ function unsafeEvalIO
 a ::= st::IO<a>
 {
   return evalIO(st, unsafeIO()).iovalue;
+}
+
+@{-
+ - Defer an IO action to be lazily evaluated when its result value is demanded.
+ -
+ - @param i An IO action to defer.
+ -}
+abstract production unsafeInterleaveIO
+top::IO<a> ::= i::IO<a>
+{
+  i.stateIn = unsafeIO();
+  top.stateOut = top.stateIn;
+  top.stateVal = i.stateVal;
 }
 
 -- Monadic IO wrappers
