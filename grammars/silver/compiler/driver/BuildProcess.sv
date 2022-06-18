@@ -144,6 +144,22 @@ IO<Decorated Compilation> ::=
   };
 }
 
+{--
+ - Eat the stream `need` and produce the output stream of (maybe, if found) `RootSpec`s.
+ -
+ - @param benv   The compiler configuration, including search paths
+ - @param need   A **stream** of grammars to compile.
+ - @param clean  If true, ignore interface files entirely.
+ -}
+function compileGrammars
+IO<[Maybe<RootSpec>]> ::=
+  svParser::SVParser
+  benv::BuildEnv
+  need::[String]
+  clean::Boolean
+{
+  return traverseA(\ g::String -> compileGrammar(svParser, benv, g, clean).run, need);
+}
 
 {--
  - Consumes a stream of parses, outputs a stream of new dependencies.
