@@ -113,7 +113,7 @@ IO<Decorated Compilation> ::=
     -- This does an "initial grammar stream" composed of 
     -- grammars and interface files that *locally* seem good.
     rootStream :: [Maybe<RootSpec>] <-
-      compileGrammars(svParser, benv, grammarStream, a.doClean);
+      unsafeInterleaveIO(compileGrammars(svParser, benv, grammarStream, a.doClean));
 
     -- The list of grammars to build. This is circular with the above, producing
     -- a list that's terminated when the response count is equal to the number of emitted
@@ -138,7 +138,7 @@ IO<Decorated Compilation> ::=
     -- There is a second circularity here where we use unit.recheckGrammars
     -- to supply the second parameter to unit.
     reRootStream :: [Maybe<RootSpec>] <-
-      compileGrammars(svParser, benv, unit.recheckGrammars, true);
+      unsafeInterleaveIO(compileGrammars(svParser, benv, unit.recheckGrammars, true));
 
     return unit;
   };
