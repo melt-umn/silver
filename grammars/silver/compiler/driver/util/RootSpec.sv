@@ -17,19 +17,31 @@ import silver:compiler:definition:core only jarName;
 nonterminal RootSpec with
   -- compiler-wide inherited attributes
   config, compiledGrammars, productionFlowGraphs, grammarFlowTypes,
+  -- driver-specific inherited attributes
+  dependentGrammars,
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
-  defs, occursDefs, grammarErrors, grammarSource, grammarTime, interfaceTime, recheckGrammars, translateGrammars,
+  defs, occursDefs, grammarErrors, grammarSource, grammarTime, interfaceTime, dirtyGrammars, recompiledGrammars,
   parsingErrors, jarName, generateLocation;
 
-flowtype RootSpec = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes};
+flowtype RootSpec = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars};
 
 propagate exportedGrammars, optionalGrammars, condBuild, defs, occursDefs on RootSpec;
 
 {--
- - Grammars that were read from source.
+ - Grammars (a, b) where b depends on a
  -}
-monoid attribute translateGrammars :: [Decorated RootSpec];
+inherited attribute dependentGrammars :: [(String, String)];
+
+{--
+ - Grammars that must be recompiled
+ -}
+monoid attribute dirtyGrammars :: [String];
+
+{--
+ - Grammars that have been recompiled
+ -}
+monoid attribute recompiledGrammars :: [Decorated RootSpec];
 
 {--
  - Parse errors present in this grammar (only for errorRootSpec!)
@@ -43,7 +55,7 @@ synthesized attribute generateLocation :: String;
  - Create a RootSpec from a real grammar, a set of Silver files.
  -}
 abstract production grammarRootSpec
-top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  grammarTime::Integer  generateLocation::String
+top::RootSpec ::= g::Grammar  oldInterface::Maybe<ByteArray>  grammarName::String  grammarSource::String  grammarTime::Integer  generateLocation::String
 {
   g.grammarName = grammarName;
   
@@ -73,6 +85,8 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
       flatMap((.refDefs), rootSpecs),
       foldr(consFlow, nilFlow(), flatMap((.flowDefs), rootSpecs)));
   
+  production newInterface::ByteArray = unparseRootSpec(top);
+
   -- Echo down global compiler info
   g.config = top.config;
   g.compiledGrammars = top.compiledGrammars;
@@ -81,8 +95,11 @@ top::RootSpec ::= g::Grammar  grammarName::String  grammarSource::String  gramma
   top.grammarTime = grammarTime;
   top.interfaceTime = grammarTime;
   top.generateLocation = generateLocation;
-  top.recheckGrammars := [];
-  top.translateGrammars := [top];
+  top.dirtyGrammars :=
+    if oldInterface == just(newInterface)
+    then unsafeTracePrint([], s"Interface for ${grammarName} matches\n")  -- Dependent grammars don't need to be re-translated
+    else unsafeTracePrint(lookupAll(grammarName, top.dependentGrammars), s"Interface for ${grammarName} changed\nDependent grammars: ${implode(", ", lookupAll(grammarName, top.dependentGrammars))}\n");
+  top.recompiledGrammars := [top];
 
   top.declaredName = g.declaredName;
   top.moduleNames := nub(g.moduleNames ++ ["silver:core"]); -- Ensure the prelude is in the deps, always
@@ -105,8 +122,8 @@ top::RootSpec ::= i::InterfaceItems  interfaceTime::Integer  generateLocation::S
   top.generateLocation = generateLocation;
   
   local ood :: Boolean = isOutOfDate(interfaceTime, top.allGrammarDependencies, top.compiledGrammars);
-  top.recheckGrammars := if ood then [i.maybeDeclaredName.fromJust] else [];
-  top.translateGrammars := [];
+  top.dirtyGrammars := if ood then [i.maybeDeclaredName.fromJust] else [];
+  top.recompiledGrammars := [];
 
   top.declaredName = i.maybeDeclaredName.fromJust;
   propagate moduleNames, allGrammarDependencies;
@@ -127,8 +144,8 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
   top.interfaceTime = grammarTime;
   top.generateLocation = generateLocation;
   
-  top.recheckGrammars := [];
-  top.translateGrammars := [];
+  top.dirtyGrammars := [];
+  top.recompiledGrammars := [];
 
   top.declaredName = grammarName; 
   propagate moduleNames, allGrammarDependencies;

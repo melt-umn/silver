@@ -120,7 +120,7 @@ IO<Decorated Compilation> ::=
     -- grammar names.
     let grammarStream :: [String] =
       buildGrammars ++
-      eatGrammars(length(buildGrammars), buildGrammars, rootStream, unit.grammarList);
+      eatGrammars(mentionedGrammars, length(buildGrammars), buildGrammars, rootStream, unit.grammarList);
     
     -- This is, essentially, a data structure representing a compilation.
     -- Note that it is pure: it doesn't take any actions.
@@ -135,10 +135,15 @@ IO<Decorated Compilation> ::=
         config = a;
       };
 
-    -- There is a second circularity here where we use unit.recheckGrammars
+    -- There is a second circularity here where we use unit.recompiledGrammars
     -- to supply the second parameter to unit.
     reRootStream :: [Maybe<RootSpec>] <-
-      unsafeInterleaveIO(compileGrammars(svParser, benv, unit.recheckGrammars, true));
+      unsafeInterleaveIO(compileGrammars(svParser, benv, reGrammarStream, true));
+    
+    let reGrammarStream :: [String] =
+      eatGrammars(
+        (.dirtyGrammars), length(unit.initRecompiledGrammars), map((.declaredName), unit.initRecompiledGrammars),
+        map(compose(just, new), unit.initRecompiledGrammars) ++ reRootStream, unit.recompiledGrammars);
 
     return unit;
   };
@@ -165,6 +170,7 @@ IO<[Maybe<RootSpec>]> ::=
  - Consumes a stream of parses, outputs a stream of new dependencies.
  - Typically used as a circular program with 'compileGrammars'
  -
+ - @param triggered  A function returning a list of grammars that sould be triggered by a grammar
  - @param n  Expected number of new inputs from rootStream
  - @param sofar  Set of grammars already seen, and should not be requested again
  - @param rootStream  Stream of found/not found info. Should not be used except to test presence
@@ -172,11 +178,10 @@ IO<[Maybe<RootSpec>]> ::=
  - @return  A stream of new dependencies
  -}
 function eatGrammars
-[String] ::= n::Integer  sofar::[String]  rootStream::[Maybe<a>]  grammars::[Decorated RootSpec]
+[String] ::= triggered::([String] ::= Decorated RootSpec)  n::Integer  sofar::[String]  rootStream::[Maybe<a>]  grammars::[Decorated RootSpec]
 {
-  local it :: Decorated RootSpec = head(grammars);
-  
-  local directDeps :: [String] = mentionedGrammars(it);
+  local it :: Decorated RootSpec = head(grammars);  
+  local directDeps :: [String] = triggered(it);
   
   local newDeps :: [String] = removeAll(sofar, directDeps);
   
@@ -184,9 +189,9 @@ function eatGrammars
     if n == 0 then
       []
     else if !head(rootStream).isJust then
-      eatGrammars(n-1, sofar, tail(rootStream), grammars)
+      eatGrammars(triggered, n-1, sofar, tail(rootStream), grammars)
     else
-      newDeps ++ eatGrammars(n-1+length(newDeps), newDeps ++ sofar, tail(rootStream), tail(grammars));
+      newDeps ++ eatGrammars(triggered, n-1+length(newDeps), newDeps ++ sofar, tail(rootStream), tail(grammars));
 }
 
 synthesized attribute code::Integer;

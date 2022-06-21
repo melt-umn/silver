@@ -92,7 +92,7 @@ top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]
 {
   local report :: String = "\nUndocumented Items Report:\n" ++ implode("\n",
     flatMap((\x::Decorated RootSpec -> case x of 
-      | grammarRootSpec(g, _, _, _, _) ->
+      | grammarRootSpec(g, _, _, _, _, _) ->
           if (length(g.documentedNamed)+length(g.undocumentedNamed))!=0
           then [s" - [${g.grammarName}]: ${toString(length(g.documentedNamed))}" ++
                 s"/${toString(toInteger(length(g.undocumentedNamed)+length(g.documentedNamed)))} " ++ 

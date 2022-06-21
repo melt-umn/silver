@@ -20,10 +20,10 @@ top::RootSpec ::= _ _ _ _ _
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar  _ _ _ _
+top::RootSpec ::= g::Grammar  _ _ _ _ _
 {
   top.genBinaryFiles := [
-    pair("Silver.svi", unparseRootSpec(top))
+    pair("Silver.svi", newInterface)
   ];
 
   top.genFiles := g.genFiles ++

@@ -39,8 +39,15 @@ MaybeT<IO RootSpec> ::=
         -- IO Step 4: Build the grammar, and say so
         lift(eprintln("Compiling " ++ grammarName ++ "\n\t[" ++ grammarLocation ++ "]\n\t[" ++ renderFileNames(files, 0) ++ "]"));
         gramCompile::([Root], [ParseError]) <- lift(compileFiles(svParser, grammarLocation, files));
+
+        -- IO Step 5: Check for an old interface file, to tell if we need to transitively re-translate
+        oldInterface::Maybe<ByteArray> <- lift(do {
+            file::String <- findInterfaceLocation(grammarName, benv.silverHostGen);
+            lift(readBinaryFile(file));
+          }.run);
+
         return if null(gramCompile.2)
-          then grammarRootSpec(foldRoot(gramCompile.1), grammarName, grammarLocation, grammarTime, benv.silverGen)
+          then grammarRootSpec(foldRoot(gramCompile.1), oldInterface, grammarName, grammarLocation, grammarTime, benv.silverGen)
           else errorRootSpec(gramCompile.2, grammarName, grammarLocation, grammarTime, benv.silverGen);
       });
   };
