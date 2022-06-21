@@ -56,7 +56,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
     keepGrammars(grammarsDependedUpon, g.grammarList);
   
   -- The grammars that we have recompiled, that need to be translated
-  production grammarsToTranslate :: [Decorated RootSpec] = top.initRecompiledGrammars ++ top.recompiledGrammars;
+  production grammarsToTranslate :: [Decorated RootSpec] = top.recompiledGrammars;
 
   top.postOps := [];
 }
