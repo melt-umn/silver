@@ -387,7 +387,7 @@ abstract production instPatternConstraintDcl
 top::InstDclInfo ::= fntc::String ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
 {
   top.fullName = fntc;
-  propagate infoIsEqual;
+  propagate compareTo, isEqual;
   top.typeScheme = monoType(ty);
 
   oc.boundVariables = tvs;
@@ -398,7 +398,7 @@ abstract production occursPatternConstraintDcl
 top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
 {
   top.fullName = ntty.typeName;
-  propagate infoIsEqual;
+  propagate compareTo, isEqual;
   top.attrOccurring = fnat;
   top.typeScheme = monoType(atty);
   
@@ -414,7 +414,7 @@ abstract production annoPatternConstraintDcl
 top::OccursDclInfo ::= fnat::String ntty::Type atty::Type oc::Context tvs::[TyVar] scrutineeTrans::String
 {
   top.fullName = ntty.typeName;
-  propagate infoIsEqual;
+  propagate compareTo, isEqual;
   top.attrOccurring = fnat;
   top.typeScheme = monoType(atty);
   top.isAnnotation = true;
@@ -429,7 +429,7 @@ abstract production typeablePatternConstraintDcl
 top::InstDclInfo ::= ty::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
 {
   top.fullName = "typeable";
-  propagate infoIsEqual;
+  propagate compareTo, isEqual;
   top.typeScheme = monoType(ty);
   
   oc.boundVariables = tvs;
@@ -440,7 +440,7 @@ abstract production inhSubsetPatternConstraintDcl
 top::InstDclInfo ::= i1::Type i2::Type oc::Context tvs::[TyVar] scrutineeTrans::String 
 {
   top.fullName = "subset";
-  propagate infoIsEqual;
+  propagate compareTo, isEqual;
   top.typeScheme = monoType(i1);
   top.typerep2 = i2;
   

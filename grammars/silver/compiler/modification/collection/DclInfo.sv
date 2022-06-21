@@ -35,7 +35,7 @@ abstract production synCollectionDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
 {
   top.fullName = fn;
-  propagate infoIsEqual;
+  propagate compareTo, isEqual;
 
   top.typeScheme = polyType(bound, ty);
   top.isSynthesized = true;
@@ -55,7 +55,7 @@ abstract production inhCollectionDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type o::Operation
 {
   top.fullName = fn;
-  propagate infoIsEqual;
+  propagate compareTo, isEqual;
 
   top.typeScheme = polyType(bound, ty);
   top.isInherited = true;
@@ -76,7 +76,7 @@ abstract production localCollectionDcl
 top::ValueDclInfo ::= fn::String ty::Type o::Operation
 {
   top.fullName = fn;
-  propagate infoIsEqual;
+  propagate compareTo, isEqual;
 
   top.typeScheme = monoType(ty);
   top.operation = o;

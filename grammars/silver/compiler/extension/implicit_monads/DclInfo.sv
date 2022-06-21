@@ -12,7 +12,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 
   top.fullName = fn;
-  propagate infoIsEqual;
+  propagate isEqual;
 
   top.typeScheme = polyType(bound, ty);
 
@@ -32,7 +32,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 
   top.fullName = fn;
-  propagate infoIsEqual;
+  propagate isEqual;
 
   top.typeScheme = polyType(bound, ty);
 
@@ -54,7 +54,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 
   top.fullName = fn;
-  propagate infoIsEqual;
+  propagate isEqual;
 
   top.typeScheme = polyType(bound, ty);
 
@@ -74,7 +74,7 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
 
   top.fullName = fn;
-  propagate infoIsEqual;
+  propagate isEqual;
 
   top.typeScheme = polyType(bound, ty);
 

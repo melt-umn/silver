@@ -90,7 +90,7 @@ abstract production defaultLhsDcl
 top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
-  propagate infoIsEqual;
+  propagate isEqual;
 
   top.typeScheme = monoType(ty);
   
