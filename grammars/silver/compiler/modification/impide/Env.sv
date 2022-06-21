@@ -6,12 +6,13 @@ grammar silver:compiler:modification:impide;
 -- We actually don't need to put font info on this, do we? cool!
 
 -- Ugh, typeScheme needs to occur here since we are (ab)using QNameLookup
-nonterminal FontDclInfo with fullName, typeScheme, sourceGrammar, sourceLocation;
+nonterminal FontDclInfo with fullName, typeScheme, sourceGrammar, sourceLocation, compareTo, isEqual;
 
 abstract production fontDcl
 top::FontDclInfo ::= fn::String
 {
   top.fullName = fn;
+  propagate isEqual;
   top.typeScheme = error("Internal compiler error: font style do not have types");
 }
 
@@ -41,7 +42,7 @@ top::Def ::=
 abstract production fontStyleDef
 top::Def ::= d::EnvItem<FontDclInfo>
 {
-  propagate filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended;
+  propagate filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended, compareTo, isEqual;
   top.fontDefList = [d];
 }
 

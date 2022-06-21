@@ -26,6 +26,7 @@ top::InterfaceItem ::=
 abstract production flowDefsInterfaceItem
 top::InterfaceItem ::= val::[FlowDef]
 {
+  propagate isEqual;
   top.flowDefs <- val;
   top.hasFlowDefs <- true;
 }
@@ -33,6 +34,7 @@ top::InterfaceItem ::= val::[FlowDef]
 abstract production refDefsInterfaceItem
 top::InterfaceItem ::= val::[(String, [String])]
 {
+  propagate isEqual;
   top.refDefs <- val;
   top.hasRefDefs <- true;
 }
@@ -40,12 +42,13 @@ top::InterfaceItem ::= val::[(String, [String])]
 abstract production specDefsInterfaceItem
 top::InterfaceItem ::= val::[(String, String, [String], [String])]
 {
+  propagate isEqual;
   top.specDefs <- val;
   top.hasSpecDefs <- true;
 }
 
-aspect function unparseRootSpec
-ByteArray ::= r::Decorated RootSpec
+aspect function packInterfaceItems
+InterfaceItems ::= r::Decorated RootSpec
 {
   interfaceItems <- [flowDefsInterfaceItem(r.flowDefs)];
   interfaceItems <- [refDefsInterfaceItem(r.refDefs)];

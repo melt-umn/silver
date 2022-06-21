@@ -12,6 +12,7 @@ abstract production autocopyDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
 {
   top.fullName = fn;
+  propagate infoIsEqual;
 
   top.typeScheme = polyType(bound, ty);
 

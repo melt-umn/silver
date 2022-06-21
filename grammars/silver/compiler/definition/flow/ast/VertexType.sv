@@ -7,7 +7,7 @@ grammar silver:compiler:definition:flow:ast;
  - lhsVertexType, rhsVertexType(sigName), localVertexType(fName),
  - forwardVertexType, anonVertexType(x)
  -}
-nonterminal VertexType with synVertex, inhVertex, fwdVertex, eqVertex;
+nonterminal VertexType with compareTo, isEqual, synVertex, inhVertex, fwdVertex, eqVertex;
 
 {-- FlowVertex for a synthesized attribute for this FlowVertex -}
 synthesized attribute synVertex :: (FlowVertex ::= String);
@@ -26,6 +26,7 @@ global forwardEqVertex_singleton :: FlowVertex = localEqVertex("forward");
 -- forwardEqVertex() == localEqVertex("forward")
 -- we consider lhsSynVertex("forward") also equivalent, actually.
 
+propagate isEqual on VertexType;
 
 {--
  - Represents the vertexes for a production lhs. You can use lhsVertexType instead of this production directly.

@@ -1,5 +1,7 @@
 grammar silver:compiler:driver;
 
+import silver:reflect:nativeserialize;
+
 {--
  - Hunts down a grammar and obtains its symbols, either by building or from an interface file.
  -}
@@ -41,9 +43,13 @@ MaybeT<IO RootSpec> ::=
         gramCompile::([Root], [ParseError]) <- lift(compileFiles(svParser, grammarLocation, files));
 
         -- IO Step 5: Check for an old interface file, to tell if we need to transitively re-translate
-        oldInterface::Maybe<ByteArray> <- lift(do {
+        oldInterface::Maybe<InterfaceItems> <- lift(do {
             file::String <- findInterfaceLocation(grammarName, benv.silverHostGen);
-            lift(readBinaryFile(file));
+            content::ByteArray <- lift(readBinaryFile(file));
+            case nativeDeserialize(content) of
+            | left(_) -> empty
+            | right(ii) -> pure(ii)
+            end;
           }.run);
 
         return if null(gramCompile.2)

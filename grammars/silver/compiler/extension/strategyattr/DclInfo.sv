@@ -30,6 +30,7 @@ top::AttributeDclInfo ::=
   e::StrategyExpr
 {
   top.fullName = fn;
+  propagate infoIsEqual;
 
   top.typeScheme = polyType([tyVar],
     if isTotal

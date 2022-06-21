@@ -55,7 +55,7 @@ synthesized attribute generateLocation :: String;
  - Create a RootSpec from a real grammar, a set of Silver files.
  -}
 abstract production grammarRootSpec
-top::RootSpec ::= g::Grammar  oldInterface::Maybe<ByteArray>  grammarName::String  grammarSource::String  grammarTime::Integer  generateLocation::String
+top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::String  grammarSource::String  grammarTime::Integer  generateLocation::String
 {
   g.grammarName = grammarName;
   
@@ -85,7 +85,12 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<ByteArray>  grammarName::Strin
       flatMap((.refDefs), rootSpecs),
       foldr(consFlow, nilFlow(), flatMap((.flowDefs), rootSpecs)));
   
-  production newInterface::ByteArray = unparseRootSpec(top);
+  production newInterface::InterfaceItems = packInterfaceItems(top);
+  production serInterface::ByteArray =
+    case nativeSerialize(new(newInterface)) of
+    | left(msg) -> error("Fatal internal error generating interface file: \n" ++ show(80, reflect(new(newInterface)).pp) ++ "\n" ++ msg)
+    | right(txt) -> txt
+    end;
 
   -- Echo down global compiler info
   g.config = top.config;
@@ -190,12 +195,14 @@ monoid attribute interfaceErrors::[String];
 nonterminal InterfaceItems with
   maybeGrammarSource, maybeGrammarTime, maybeDeclaredName,
   moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies, defs, occursDefs, interfaceErrors,
-  hasModuleNames, hasExportedGrammars, hasOptionalGrammars, hasCondBuild, hasAllGrammarDependencies, hasDefs, hasOccursDefs;
+  hasModuleNames, hasExportedGrammars, hasOptionalGrammars, hasCondBuild, hasAllGrammarDependencies, hasDefs, hasOccursDefs,
+  compareTo, isEqual;
 
 propagate
   maybeGrammarSource, maybeGrammarTime, maybeDeclaredName,
   moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies, defs, occursDefs,
-  hasModuleNames, hasExportedGrammars, hasOptionalGrammars, hasCondBuild, hasAllGrammarDependencies, hasDefs, hasOccursDefs
+  hasModuleNames, hasExportedGrammars, hasOptionalGrammars, hasCondBuild, hasAllGrammarDependencies, hasDefs, hasOccursDefs,
+  compareTo, isEqual
   on InterfaceItems; 
 
 abstract production consInterfaceItem
@@ -223,7 +230,8 @@ top::InterfaceItems ::=
 closed nonterminal InterfaceItem with
   maybeGrammarSource, maybeGrammarTime, maybeDeclaredName,
   moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies, defs, occursDefs,
-  hasModuleNames, hasExportedGrammars, hasOptionalGrammars, hasCondBuild, hasAllGrammarDependencies, hasDefs, hasOccursDefs;
+  hasModuleNames, hasExportedGrammars, hasOptionalGrammars, hasCondBuild, hasAllGrammarDependencies, hasDefs, hasOccursDefs,
+  compareTo, isEqual;
 
 propagate
   moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies, defs, occursDefs,
@@ -242,24 +250,28 @@ top::InterfaceItem ::=
 abstract production grammarSourceInterfaceItem
 top::InterfaceItem ::= val::String
 {
+  propagate isEqual;
   top.maybeGrammarSource := just(val);
 }
 
 abstract production grammarTimeInterfaceItem
 top::InterfaceItem ::= val::Integer
 {
+  top.isEqual = true;  -- Ignore
   top.maybeGrammarTime := just(val);
 }
 
 abstract production declaredNameInterfaceItem
 top::InterfaceItem ::= val::String
 {
+  propagate isEqual;
   top.maybeDeclaredName := just(val);
 }
 
 abstract production moduleNamesInterfaceItem
 top::InterfaceItem ::= val::[String]
 {
+  propagate isEqual;
   top.moduleNames <- val;
   top.hasModuleNames <- true;
 }
@@ -267,6 +279,7 @@ top::InterfaceItem ::= val::[String]
 abstract production exportedGrammarsInterfaceItem
 top::InterfaceItem ::= val::[String]
 {
+  propagate isEqual;
   top.exportedGrammars <- val;
   top.hasExportedGrammars <- true;
 }
@@ -274,6 +287,7 @@ top::InterfaceItem ::= val::[String]
 abstract production optionalGrammarsInterfaceItem
 top::InterfaceItem ::= val::[String]
 {
+  propagate isEqual;
   top.optionalGrammars <- val;
   top.hasOptionalGrammars <- true;
 }
@@ -281,6 +295,7 @@ top::InterfaceItem ::= val::[String]
 abstract production condBuildInterfaceItem
 top::InterfaceItem ::= val::[[String]]
 {
+  propagate isEqual;
   top.condBuild <- val;
   top.hasCondBuild <- true;
 }
@@ -288,6 +303,7 @@ top::InterfaceItem ::= val::[[String]]
 abstract production allDepsInterfaceItem
 top::InterfaceItem ::= val::[String]
 {
+  propagate isEqual;
   top.allGrammarDependencies <- val;
   top.hasAllGrammarDependencies <- true;
 }
@@ -295,6 +311,7 @@ top::InterfaceItem ::= val::[String]
 abstract production defsInterfaceItem
 top::InterfaceItem ::= val::[Def]
 {
+  propagate isEqual;
   top.defs <- val;
   top.hasDefs <- true;
 }
@@ -302,6 +319,7 @@ top::InterfaceItem ::= val::[Def]
 abstract production occursDefsInterfaceItem
 top::InterfaceItem ::= val::[OccursDclInfo]
 {
+  propagate isEqual;
   top.occursDefs <- val;
   top.hasOccursDefs <- true;
 }
@@ -311,8 +329,8 @@ top::InterfaceItem ::= val::[OccursDclInfo]
  - depending on what the source it, so we give this function externally
  - to the productions, instead of as an attribute.
  -}
-function unparseRootSpec
-ByteArray ::= r::Decorated RootSpec
+function packInterfaceItems
+InterfaceItems ::= r::Decorated RootSpec
 {
   production attribute interfaceItems :: [InterfaceItem] with ++;
   interfaceItems := [
@@ -328,11 +346,7 @@ ByteArray ::= r::Decorated RootSpec
     occursDefsInterfaceItem(r.occursDefs)
   ];
   
-  return
-    case nativeSerialize(foldr(consInterfaceItem, nilInterfaceItem(), interfaceItems)) of
-    | left(msg) -> error("Fatal internal error generating interface file: \n" ++ show(80, reflect(foldr(consInterfaceItem, nilInterfaceItem(), interfaceItems)).pp) ++ "\n" ++ msg)
-    | right(txt) -> txt
-    end;
+  return foldr(consInterfaceItem, nilInterfaceItem(), interfaceItems);
 }
 
 {--

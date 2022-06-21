@@ -13,6 +13,11 @@ annotation sourceLocation :: Location;
 synthesized attribute fullName :: String;
 synthesized attribute typeScheme :: PolyType;
 
+-- When comparing DclInfos for equality, we care about the source grammar but not the source location.
+-- Since propagate ignores annotations, use a seperate equality attribute for checking the info is equal,
+-- then default isEqual to check this and the source grammars.
+equality attribute infoIsEqual with compareTo;
+
 -- types
 synthesized attribute isType :: Boolean;
 synthesized attribute isTypeAlias :: Boolean;
@@ -45,11 +50,16 @@ synthesized attribute prodDefs :: [Def];
 synthesized attribute substitutedDclInfo :: ValueDclInfo;
 inherited attribute givenSubstitution :: Substitution;
 
-closed nonterminal ValueDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, namedSignature, hasForward, substitutedDclInfo, givenSubstitution;
+closed nonterminal ValueDclInfo with
+  sourceGrammar, sourceLocation, fullName, compareTo, infoIsEqual, isEqual,
+  typeScheme, namedSignature, hasForward, substitutedDclInfo, givenSubstitution;
+propagate infoIsEqual on ValueDclInfo;
 
 aspect default production
 top::ValueDclInfo ::=
 {
+  top.isEqual = top.sourceGrammar == top.compareTo.sourceGrammar && top.infoIsEqual;
+
   -- Values that are not fun/prod have this valid default.
   top.namedSignature = bogusNamedSignature();
   top.hasForward = false;
@@ -133,11 +143,16 @@ top::ValueDclInfo ::= fn::String
   top.typeScheme = monoType(terminalIdType());
 }
 
-closed nonterminal TypeDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, mentionedAliases, isClass, classMembers, givenInstanceType, superContexts;
+closed nonterminal TypeDclInfo with
+  sourceGrammar, sourceLocation, fullName, compareTo, infoIsEqual, isEqual,
+  typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, mentionedAliases, isClass, classMembers, givenInstanceType, superContexts;
+propagate infoIsEqual on TypeDclInfo;
 
 aspect default production
 top::TypeDclInfo ::=
 {
+  top.isEqual = top.sourceGrammar == top.compareTo.sourceGrammar && top.infoIsEqual;
+
   top.kindrep = starKind();
   top.isType = false;
   top.isTypeAlias = false;
@@ -201,11 +216,16 @@ top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pa
   top.classMembers = members;
 }
 
-closed nonterminal AttributeDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, isInherited, isSynthesized, isAnnotation;
+closed nonterminal AttributeDclInfo with
+  sourceGrammar, sourceLocation, fullName, compareTo, infoIsEqual, isEqual,
+  typeScheme, isInherited, isSynthesized, isAnnotation;
+propagate infoIsEqual on AttributeDclInfo;
 
 aspect default production
 top::AttributeDclInfo ::=
 {
+  top.isEqual = top.sourceGrammar == top.compareTo.sourceGrammar && top.infoIsEqual;
+
   top.isSynthesized = false;
   top.isInherited = false;
   top.isAnnotation = false;
@@ -236,12 +256,14 @@ top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type
   top.isAnnotation = true;
 }
 
-nonterminal ProductionAttrDclInfo with sourceGrammar, sourceLocation, fullName, prodDefs, namedSignature;
+nonterminal ProductionAttrDclInfo with
+  sourceGrammar, sourceLocation, fullName, compareTo, isEqual, prodDefs, namedSignature;
 
 abstract production paDcl
 top::ProductionAttrDclInfo ::= ns::NamedSignature{-fn::String outty::Type intys::[Type]-} dcls::[Def]
 {
   top.fullName = ns.fullName;
+  top.isEqual = top.sourceGrammar == top.compareTo.sourceGrammar && ns == top.compareTo.namedSignature && dcls == top.compareTo.prodDefs;
   
   top.prodDefs = dcls;
   
@@ -249,11 +271,16 @@ top::ProductionAttrDclInfo ::= ns::NamedSignature{-fn::String outty::Type intys:
   top.namedSignature = ns;
 }
 
-nonterminal OccursDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, givenNonterminalType, attrOccurring, isAnnotation;
+nonterminal OccursDclInfo with
+  sourceGrammar, sourceLocation, fullName, compareTo, infoIsEqual, isEqual,
+  typeScheme, givenNonterminalType, attrOccurring, isAnnotation;
+propagate compareTo, infoIsEqual on OccursDclInfo;
 
 aspect default production
 top::OccursDclInfo ::=
 {
+  top.isEqual = top.sourceGrammar == top.compareTo.sourceGrammar && top.infoIsEqual;
+
   top.isAnnotation = false;
 }
 
@@ -362,11 +389,16 @@ top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
   top.typeScheme = constraintType(baseDcl.typeScheme.boundVars, baseDcl.typeScheme.contexts, atty);
 }
 
-nonterminal InstDclInfo with sourceGrammar, sourceLocation, fullName, typeScheme, typerep2, isTypeError, definedMembers;
+nonterminal InstDclInfo with
+  sourceGrammar, sourceLocation, fullName, compareTo, infoIsEqual, isEqual,
+  typeScheme, typerep2, isTypeError, definedMembers;
+propagate compareTo, infoIsEqual on InstDclInfo;
 
 aspect default production
 top::InstDclInfo ::=
 {
+  top.isEqual = top.sourceGrammar == top.compareTo.sourceGrammar && top.infoIsEqual;
+
   top.isTypeError := false;
   top.definedMembers = [];
   top.typerep2 = error("Internal compiler error: must be defined for all binary constraint instances");

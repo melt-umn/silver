@@ -244,7 +244,10 @@ top::Type ::= params::Integer namedParams::[String]
   top.isApplicable = true;
 }
 
--- Strict type equality, assuming no type vars - this is only used in comparing syntax ASTs
+-- Strict type equality, assuming all type vars are skolemized
 instance Eq Type {
   eq = \ t1::Type t2::Type -> !unifyDirectional(t1, t2).failure;
 }
+
+attribute compareTo, isEqual occurs on Context;
+propagate compareTo, isEqual on Context;
