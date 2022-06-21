@@ -66,7 +66,23 @@ instance Alternative Maybe {}
 instance MonadZero Maybe {}
 instance MonadPlus Maybe {}
 
--- Monad transformer for Maybe
+function mfixMaybe
+Maybe<a> ::= f::(Maybe<a> ::= a)
+{
+  local x::Maybe<a> = f(x.fromJust);
+  return x;
+}
+
+instance MonadFix Maybe {
+  mfix = mfixMaybe;
+}
+
+@{-
+ - Monad transformer corresponding to Maybe.
+ - 
+ - @param m The monad type to be transformed
+ - @param a The optional result type
+ -}
 nonterminal MaybeT<(m :: * -> *) a> with run<m<Maybe<a>>>;
 abstract production maybeT
 top::MaybeT<m a> ::= x::m<Maybe<a>>
@@ -74,6 +90,9 @@ top::MaybeT<m a> ::= x::m<Maybe<a>>
   top.run = x;
 }
 
+@{--
+ - Transform the computation inside a MaybeT.
+ -}
 function mapMaybeT
 MaybeT<n b> ::= f::(n<Maybe<b>> ::= m<Maybe<a>>) x::MaybeT<m a>
 {
