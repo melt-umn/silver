@@ -26,7 +26,10 @@ top::InterfaceItem ::=
 abstract production flowDefsInterfaceItem
 top::InterfaceItem ::= val::[FlowDef]
 {
-  propagate isEqual;
+  -- TODO: Ignoring flow defs for now. This isn't consistent between builds due to anon vertexes?
+  -- This shouldn't affect translation, but may cause some flow errors to only show up with --clean.
+  top.isEqual = true;
+
   top.flowDefs <- val;
   top.hasFlowDefs <- true;
 }

@@ -10,8 +10,8 @@ grammar silver:compiler:definition:flow:ast;
  -  - extraEq (handling collections '<-')
  - which the thesis does not address.
  -}
-nonterminal FlowDef with compareTo, isEqual, synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, flowEdges, localInhTreeContribs, suspectFlowEdges, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, partialRefContribs;
-nonterminal FlowDefs with compareTo, isEqual, synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, localInhTreeContribs, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, partialRefContribs;
+nonterminal FlowDef with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, flowEdges, localInhTreeContribs, suspectFlowEdges, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, partialRefContribs;
+nonterminal FlowDefs with synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, prodTreeContribs, prodGraphContribs, localInhTreeContribs, hostSynTreeContribs, nonSuspectContribs, localTreeContribs, partialRefContribs;
 
 {-- lookup (production, attribute) to find synthesized equations
  - Used to ensure a necessary lhs.syn equation exists.
@@ -69,8 +69,6 @@ monoid attribute nonSuspectContribs :: [Pair<String [String]>];
 
 {-- A list of decoration sites where partial references are taken, and the attributes on those partial references -}
 monoid attribute partialRefContribs :: [(String, String, Location, [String])];
-
-propagate compareTo, isEqual on FlowDefs, FlowDef;
 
 propagate synTreeContribs, inhTreeContribs, defTreeContribs, fwdTreeContribs, fwdInhTreeContribs, localInhTreeContribs, localTreeContribs, prodTreeContribs, prodGraphContribs, hostSynTreeContribs, nonSuspectContribs, partialRefContribs
   on FlowDefs;
@@ -353,12 +351,11 @@ top::FlowDef ::= prod::String  matchProd::String  scrutinee::VertexType  vars::[
 }
 
 
-nonterminal PatternVarProjection with compareTo, isEqual;
+nonterminal PatternVarProjection;
 
 abstract production patternVarProjection
 top::PatternVarProjection ::= child::String  typeName::String  patternVar::String
 {
-  propagate compareTo, isEqual;
 }
 
 {--

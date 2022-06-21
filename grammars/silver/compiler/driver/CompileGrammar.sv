@@ -44,10 +44,12 @@ MaybeT<IO RootSpec> ::=
 
         -- IO Step 5: Check for an old interface file, to tell if we need to transitively re-translate
         oldInterface::Maybe<InterfaceItems> <- lift(do {
-            file::String <- findInterfaceLocation(grammarName, benv.silverHostGen);
+            gen :: String <- findInterfaceLocation(gramPath, benv.silverHostGen);
+            let file :: String = gen ++ "src/" ++ gramPath ++ "Silver.svi";
+            lift(eprintln(s"Found old interface ${file}"));
             content::ByteArray <- lift(readBinaryFile(file));
             case nativeDeserialize(content) of
-            | left(_) -> empty
+            | left(msg) -> empty
             | right(ii) -> pure(ii)
             end;
           }.run);

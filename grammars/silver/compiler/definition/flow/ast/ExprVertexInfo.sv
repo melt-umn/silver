@@ -4,8 +4,8 @@ grammar silver:compiler:definition:flow:ast;
  - Information about an expression. Specifically, whether it corresponds to a
  - vertex in the graph, or not.
  -}
-nonterminal ExprVertexInfo with compareTo, isEqual;
-propagate compareTo, isEqual on ExprVertexInfo;
+nonterminal ExprVertexInfo;
+
 
 {--
  - The expression DOES have a corresponding vertex in the production graph.
