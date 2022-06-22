@@ -45,7 +45,7 @@ synthesized attribute unifyInstanceNonterminal :: Substitution;
 synthesized attribute unifyInstanceDecorated :: Substitution;
 synthesized attribute unifyInstanceDecorable :: Substitution;  -- NT or partially decorated
 
-attribute arity, isError, isDecorated, isPartiallyDecorated, isNonterminal, isTerminal, asNtOrDecType occurs on PolyType;
+attribute arity, isError, isDecorated, isPartiallyDecorated, isNonterminal, isTerminal, asNtOrDecType, compareTo, isEqual occurs on PolyType;
 
 aspect production monoType
 top::PolyType ::= ty::Type
@@ -57,6 +57,11 @@ top::PolyType ::= ty::Type
   top.isNonterminal = ty.isNonterminal;
   top.isTerminal = ty.isTerminal;
   top.asNtOrDecType = ty.asNtOrDecType;
+
+  top.isEqual =
+    top.compareTo.boundVars == [] &&
+    top.compareTo.contexts == [] &&
+    top.compareTo.typerep == ty;
 }
 
 aspect production polyType
@@ -69,6 +74,12 @@ top::PolyType ::= bound::[TyVar] ty::Type
   top.isNonterminal = ty.isNonterminal;
   top.isTerminal = ty.isTerminal;
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
+
+  local eqSub::Substitution =
+    zipVarsIntoSubstitution(bound, top.compareTo.boundVars);
+  top.isEqual =
+    top.compareTo.contexts == [] &&
+    top.compareTo.typerep == performRenaming(ty, eqSub);
 }
 
 aspect production constraintType
@@ -81,6 +92,12 @@ top::PolyType ::= bound::[TyVar] contexts::[Context] ty::Type
   top.isNonterminal = ty.isNonterminal;
   top.isTerminal = ty.isTerminal;
   top.asNtOrDecType = error("Only mono types should be possibly-decorated");
+
+  local eqSub::Substitution =
+    zipVarsIntoSubstitution(bound, top.compareTo.boundVars);
+  top.isEqual =
+    top.compareTo.contexts == map(performContextRenaming(_, eqSub), contexts) &&
+    top.compareTo.typerep == performRenaming(ty, eqSub);
 }
 
 attribute isError, inputTypes, outputType, namedTypes, arity, baseType, argTypes, isDecorated, isPartiallyDecorated, isNonterminal, isTerminal, isApplicable, decoratedType, asNtOrDecType, defaultSpecialization, inhSetMembers, freeSkolemVars, freeFlexibleVars, unifyInstanceNonterminal, unifyInstanceDecorated, unifyInstanceDecorable occurs on Type;

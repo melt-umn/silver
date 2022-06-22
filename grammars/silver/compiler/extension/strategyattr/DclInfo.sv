@@ -25,13 +25,14 @@ top::AttributeDclInfo ::=
 
 abstract production strategyDcl
 top::AttributeDclInfo ::=
-  fn::String isTotal::Boolean tyVar::TyVar
+  fn::String isTotal::Boolean
   containsErrors::Boolean liftedStrategyNames::[String] givenRecVarNameEnv::[Pair<String String>] givenRecVarTotalEnv::[Pair<String Boolean>] partialRefs::[String] totalRefs::[String]
   e::StrategyExpr
 {
   top.fullName = fn;
-  propagate compareTo, isEqual;
+  propagate compareKey, isEqual;
 
+  production tyVar::TyVar = freshTyVar(starKind());
   top.typeScheme = polyType([tyVar],
     if isTotal
     then varType(tyVar)

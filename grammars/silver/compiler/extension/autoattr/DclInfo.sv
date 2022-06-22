@@ -21,7 +21,7 @@ abstract production functorDcl
 top::AttributeDclInfo ::= fn::String
 {
   top.fullName = fn;
-  propagate isEqual;
+  propagate compareKey, isEqual;
 
   production tyVar::TyVar = freshTyVar(starKind());
   top.typeScheme = polyType([tyVar], varType(tyVar));
@@ -38,10 +38,11 @@ abstract production monoidDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append::Operation
 {
   top.fullName = fn;
+  propagate compareKey;
   top.isEqual =
     case top.compareTo of
-    | monoidDcl(fn2, bound2, ty2, empty2, append2) ->
-      fn == fn2 && bound == bound2 && ty == ty2 && empty.unparse == empty2.unparse && append == append2
+    | monoidDcl(fn2, _, _, empty2, append2) ->
+      fn == fn2 && top.typeScheme == top.compareTo.typeScheme && empty.unparse == empty2.unparse && append == append2
     | _ -> false
     end;
 
@@ -65,7 +66,7 @@ abstract production destructDcl
 top::AttributeDclInfo ::= fn::String
 {
   top.fullName = fn;
-  propagate isEqual;
+  propagate compareKey, isEqual;
 
   production tyVar::TyVar = freshTyVar(starKind());
   production inhsTyVar::TyVar = freshTyVar(inhSetKind());
@@ -83,7 +84,7 @@ abstract production equalityDcl
 top::AttributeDclInfo ::= inh::String syn::String
 {
   top.fullName = syn;
-  propagate isEqual;
+  propagate compareKey, isEqual;
 
   top.typeScheme = monoType(boolType());
   top.isSynthesized = true;
@@ -99,7 +100,7 @@ abstract production orderingKeyDcl
 top::AttributeDclInfo ::= syn::String
 {
   top.fullName = syn;
-  propagate isEqual;
+  propagate compareKey, isEqual;
 
   top.typeScheme = monoType(stringType());
   top.isSynthesized = true;
@@ -115,7 +116,7 @@ abstract production orderingDcl
 top::AttributeDclInfo ::= inh::String keySyn::String syn::String
 {
   top.fullName = syn;
-  propagate isEqual;
+  propagate compareKey, isEqual;
 
   top.typeScheme = monoType(intType());
   top.isSynthesized = true;
@@ -131,7 +132,7 @@ abstract production unificationPartialDcl
 top::AttributeDclInfo ::= inh::String synPartial::String syn::String
 {
   top.fullName = synPartial;
-  propagate isEqual;
+  propagate compareKey, isEqual;
 
   top.typeScheme = monoType(boolType());
   top.isSynthesized = true;
@@ -147,7 +148,7 @@ abstract production unificationDcl
 top::AttributeDclInfo ::= inh::String synPartial::String syn::String
 {
   top.fullName = syn;
-  propagate isEqual;
+  propagate compareKey, isEqual;
 
   top.typeScheme = monoType(boolType());
   top.isSynthesized = true;
@@ -163,7 +164,13 @@ abstract production threadedInhDcl
 top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type rev::Boolean
 {
   top.fullName = inh;
-  propagate isEqual;
+  propagate compareKey;
+  top.isEqual =
+    case top.compareTo of
+    | threadedInhDcl(inh2, syn2, _, _, rev2) ->
+      inh == inh2 && syn == syn2 && top.typeScheme == top.compareTo.typeScheme && rev == rev2
+    | _ -> false
+    end;
 
   top.typeScheme = polyType(bound, ty);
   top.isInherited = true;
@@ -179,7 +186,13 @@ abstract production threadedSynDcl
 top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type rev::Boolean
 {
   top.fullName = syn;
-  propagate isEqual;
+  propagate compareKey;
+  top.isEqual =
+    case top.compareTo of
+    | threadedSynDcl(inh2, syn2, _, _, rev2) ->
+      inh == inh2 && syn == syn2 && top.typeScheme == top.compareTo.typeScheme && rev == rev2
+    | _ -> false
+    end;
 
   top.typeScheme = polyType(bound, ty);
   top.isSynthesized = true;

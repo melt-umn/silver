@@ -48,7 +48,7 @@ inherited attribute givenSubstitution :: Substitution;
 closed nonterminal ValueDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
   typeScheme, namedSignature, hasForward, substitutedDclInfo, givenSubstitution;
-propagate compareTo, isEqual on ValueDclInfo;
+propagate isEqual on ValueDclInfo excluding globalValueDcl, classMemberDcl;
 
 aspect default production
 top::ValueDclInfo ::=
@@ -119,14 +119,25 @@ abstract production classMemberDcl
 top::ValueDclInfo ::= fn::String bound::[TyVar] clsHead::Context contexts::[Context] ty::Type
 {
   top.fullName = fn;
-  
   top.typeScheme = constraintType(bound, clsHead :: contexts, ty);
+
+  top.isEqual =
+    case top.compareTo of
+    | classMemberDcl(fn2, _, _, _, _) -> fn == fn2 && top.typeScheme == top.compareTo.typeScheme
+    | _ -> false
+    end;
 }
 abstract production globalValueDcl
 top::ValueDclInfo ::= fn::String bound::[TyVar] contexts::[Context] ty::Type
 {
   top.fullName = fn;
   top.typeScheme = constraintType(bound, contexts, ty);
+
+  top.isEqual =
+    case top.compareTo of
+    | globalValueDcl(fn2, _, _, _) -> fn == fn2 && top.typeScheme == top.compareTo.typeScheme
+    | _ -> false
+    end;
 }
 abstract production termIdDcl
 top::ValueDclInfo ::= fn::String
@@ -139,7 +150,7 @@ top::ValueDclInfo ::= fn::String
 closed nonterminal TypeDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
   typeScheme, kindrep, givenNonterminalType, isType, isTypeAlias, mentionedAliases, isClass, classMembers, givenInstanceType, superContexts;
-propagate compareTo, isEqual on TypeDclInfo;
+propagate isEqual, compareTo on TypeDclInfo excluding typeAliasDcl, clsDcl;
 
 aspect default production
 top::TypeDclInfo ::=
@@ -185,6 +196,12 @@ abstract production typeAliasDcl
 top::TypeDclInfo ::= fn::String mentionedAliases::[String] bound::[TyVar] ty::Type
 {
   top.fullName = fn;
+  top.isEqual =
+    case top.compareTo of
+    | typeAliasDcl(fn2, ma2, _, _) ->
+      fn == fn2 && mentionedAliases == ma2 && top.typeScheme == top.compareTo.typeScheme
+    | _ -> false
+    end;
 
   top.isType = null(bound);
   top.isTypeAlias = true;
@@ -196,6 +213,12 @@ abstract production clsDcl
 top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pair<String Boolean>]
 {
   top.fullName = fn;
+  top.isEqual =
+    case top.compareTo of
+    | clsDcl(fn2, s2, tv2, k2, m2) ->
+      fn == fn2 && k == k2 && supers == map(performContextRenaming(_, subst(tv2, skolemType(tv))), s2) && members == m2
+    | _ -> false
+    end;
   
   -- These are in the type namespace but shouldn't actually be used as such,
   -- this is only used to report the kind.
@@ -208,13 +231,18 @@ top::TypeDclInfo ::= fn::String supers::[Context] tv::TyVar k::Kind members::[Pa
 }
 
 closed nonterminal AttributeDclInfo with
-  sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
+  sourceGrammar, sourceLocation, fullName, compareTo, compareKey, isEqual,
   typeScheme, isInherited, isSynthesized, isAnnotation;
-propagate isEqual on AttributeDclInfo;
+propagate compareKey on AttributeDclInfo;
 
 aspect default production
 top::AttributeDclInfo ::=
 {
+  top.isEqual =
+    top.compareKey == top.compareTo.compareKey &&
+    top.fullName == top.compareTo.fullName &&
+    top.typeScheme == top.compareTo.typeScheme;
+
   top.isSynthesized = false;
   top.isInherited = false;
   top.isAnnotation = false;
@@ -252,7 +280,7 @@ abstract production paDcl
 top::ProductionAttrDclInfo ::= ns::NamedSignature{-fn::String outty::Type intys::[Type]-} dcls::[Def]
 {
   top.fullName = ns.fullName;
-  top.isEqual = top.sourceGrammar == top.compareTo.sourceGrammar && ns == top.compareTo.namedSignature && dcls == top.compareTo.prodDefs;
+  top.isEqual = ns == top.compareTo.namedSignature && dcls == defsFromPADcls([new(top.compareTo)], ns);
   
   top.prodDefs = dcls;
   
@@ -263,7 +291,7 @@ top::ProductionAttrDclInfo ::= ns::NamedSignature{-fn::String outty::Type intys:
 nonterminal OccursDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
   typeScheme, givenNonterminalType, attrOccurring, isAnnotation;
-propagate compareTo, isEqual on OccursDclInfo;
+propagate compareTo, isEqual on OccursDclInfo excluding occursDcl;
 
 aspect default production
 top::OccursDclInfo ::=
@@ -275,6 +303,14 @@ abstract production occursDcl
 top::OccursDclInfo ::= fnnt::String fnat::String ntty::Type atty::Type
 {
   top.fullName = fnnt;
+  top.isEqual =
+    case top.compareTo of
+    | occursDcl(fnnt2, fnat2, ntty2, atty2) ->
+      fnnt == fnnt2 && fnat == fnat2 &&
+      polyType(ntty.freeVariables, ntty) == polyType(ntty2.freeVariables, ntty2) &&
+      polyType(ntty.freeVariables, atty) == polyType(ntty2.freeVariables, atty2)
+    | _ -> false
+    end;
   
   -- There should be no type variables in atty that aren't in ntty. (Important constraint!)
   -- that's why we only use ntty.FV above.
@@ -379,7 +415,6 @@ top::OccursDclInfo ::= fnat::String atty::Type baseDcl::InstDclInfo
 nonterminal InstDclInfo with
   sourceGrammar, sourceLocation, fullName, compareTo, isEqual,
   typeScheme, typerep2, isTypeError, definedMembers;
-propagate compareTo, isEqual on InstDclInfo;
 
 aspect default production
 top::InstDclInfo ::=
@@ -387,6 +422,10 @@ top::InstDclInfo ::=
   top.isTypeError := false;
   top.definedMembers = [];
   top.typerep2 = error("Internal compiler error: must be defined for all binary constraint instances");
+  top.isEqual =
+    top.fullName == top.compareTo.fullName &&
+    top.typeScheme == top.compareTo.typeScheme &&
+    top.definedMembers == top.compareTo.definedMembers;
 }
 
 -- Class instances
