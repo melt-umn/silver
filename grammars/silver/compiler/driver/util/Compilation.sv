@@ -43,6 +43,8 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   g.dependentGrammars = flatMap(
     \ r::Decorated RootSpec -> map(\ g::String -> (g, r.declaredName), r.allGrammarDependencies),
     grammarsRelevant);
+  -- See above comments.
+  -- Assumption: if a grammar has an up-to-date interface file, then its dependencies are unchanged.
   r.dependentGrammars = g.dependentGrammars;
   
   -- This determines what is actually needed in this build.

@@ -46,7 +46,7 @@ MaybeT<IO RootSpec> ::=
         oldInterface::Maybe<InterfaceItems> <- lift(do {
             gen :: String <- findInterfaceLocation(gramPath, benv.silverHostGen);
             let file :: String = gen ++ "src/" ++ gramPath ++ "Silver.svi";
-            lift(eprintln(s"Found old interface ${file}"));
+            --lift(eprintln(s"Found old interface ${file}"));
             content::ByteArray <- lift(readBinaryFile(file));
             case nativeDeserialize(content) of
             | left(msg) -> empty

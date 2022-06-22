@@ -102,8 +102,14 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   top.generateLocation = generateLocation;
   top.dirtyGrammars :=
     if oldInterface == just(newInterface)
-    then unsafeTracePrint([], s"Interface for ${grammarName} matches\n")  -- Dependent grammars don't need to be re-translated
-    else unsafeTracePrint(lookupAll(grammarName, top.dependentGrammars), s"Interface for ${grammarName} changed ${toString(oldInterface.isJust)}\nDependent grammars: ${implode(", ", lookupAll(grammarName, top.dependentGrammars))}\n");
+    then []  -- Dependent grammars don't need to be re-translated
+    else lookupAll(grammarName, top.dependentGrammars);
+  {- Useful for debugging:
+  top.dirtyGrammars <- unsafeTracePrint([],
+    if oldInterface == just(newInterface)
+    then s"Interface for ${grammarName} unchanged\n"
+    else s"Interface for ${grammarName} changed\nDependent grammars: ${implode(", ", lookupAll(grammarName, top.dependentGrammars))}\n");-}
+
   top.recompiledGrammars := [top];
 
   top.declaredName = g.declaredName;
