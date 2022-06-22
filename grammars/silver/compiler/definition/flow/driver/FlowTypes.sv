@@ -163,15 +163,6 @@ function collectInhs
   end;
 }
 
-function flowVertexEq
-Boolean ::= a::FlowVertex  b::FlowVertex
-{
-  -- eh, good enough TODO
-  return a.dotName == b.dotName;
-}
-
-
-
 
 {--
  - Flow type lookup names for vertices
