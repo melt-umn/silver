@@ -41,14 +41,6 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                   " " ++ top.location.unparse ++ "\\n\""),
                                 location=top.location)]);
   {-
-    This will add in a Fail() for the appropriate monad (if the
-    expression is well-typed) whenever we are matching against a monad
-    or any clause returns a monad.  This does not cover the case where
-    a monad type is expected out and the clauses are incomplete.  That
-    one will still fail, but I think that will be a rare case.  We
-    would need to pass down an expected type for that to work, and we
-    haven't done that here.
-
     Inserting fails breaks down if the current monad's fail is
     expecting something other than a string, integer, float, or list,
     as we don't really have ways to come up with basic fail arguments
@@ -87,12 +79,8 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
         buildMultiLambda(map(\ p::Pair<Type Pair<Expr String>> ->
                          case p of
                          | pair(ty, pair(e, n)) -> pair(n, dropDecorated(ty))
-                         end, monadStuff.fst), monadLocalBody, top.location);
-  local monadLocalBody::Expr =
-    buildMonadicBinds(monadStuff.1,
-                      caseExpr(monadStuff.snd,
-                               ml.matchRuleList, !isMonadFail(top.expectedMonad, top.env), failure,
-                               outty, location=top.location), top.location);
+                         end, monadStuff.fst), monadLocalBody.monadRewritten,
+                         top.location);
   monadLocal.mDownSubst = ml.mUpSubst;
   monadLocal.frame = top.frame;
   monadLocal.grammarName = top.grammarName;
@@ -105,8 +93,27 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   monadLocal.expectedMonad = top.expectedMonad;
   monadLocal.originRules = top.originRules;
   monadLocal.isRoot = false;
+  local monadLocalBody::Expr =
+        foldr(\ p::(Type, Expr, String) rest::Expr ->
+                makeLet(top.location, p.3, monadInnerType(p.1, top.location), p.2, rest),
+              caseExpr(monadStuff.snd,
+                 ml.matchRuleList, !isMonadFail(top.expectedMonad, top.env), failure,
+                 outty, location=top.location),
+              monadStuff.1);
+  monadLocalBody.mDownSubst = ml.mUpSubst;
+  monadLocalBody.frame = top.frame;
+  monadLocalBody.grammarName = top.grammarName;
+  monadLocalBody.compiledGrammars = top.compiledGrammars;
+  monadLocalBody.config = top.config;
+  monadLocalBody.env = top.env;
+  monadLocalBody.flowEnv = top.flowEnv;
+  monadLocalBody.downSubst = ml.mUpSubst;
+  monadLocalBody.finalSubst = ml.mUpSubst;
+  monadLocalBody.expectedMonad = top.expectedMonad;
+  monadLocalBody.originRules = top.originRules;
+  monadLocalBody.isRoot = false;
   top.monadRewritten =
-      buildApplication(monadLocal.monadRewritten,
+      buildApplication(monadLocal,
                        map(\ p::Pair<Type Pair<Expr String>> ->
                              case p of
                              | pair(ty, pair(e, n)) -> e
@@ -155,8 +162,8 @@ Boolean ::= elst::[Expr] env::Decorated Env sub::Substitution f::BlockContext gn
                 end
               end;
 }
---make a list of the expression types, expressions and names for binding them as
---   well as a new list of expressions for the forward to use
+--make a list of the expression types, rewritten expressions and names for
+--   binding them as well as a new list of expressions for the forward to use
 --use a name from names when that is not empty; when empty, use a new name
 function monadicMatchTypesNames
 ([(Type, (Expr, String))], [Expr]) ::=
@@ -178,30 +185,21 @@ function monadicMatchTypesNames
          | [], _ -> pair([], [])
          | _, [] -> pair([], elst)
          | e::etl, t::ttl ->
-           let ety::Type = decorate e with {env=env; mDownSubst=sub; frame=f; grammarName=gn;
-                                            downSubst=sub; finalSubst=sub;
-                                            compiledGrammars=cg; config=c; flowEnv=fe;
-                                            expectedMonad=em; isRoot=iR; originRules=oR;}.mtyperep
+           let decE::Decorated Expr with {downSubst, finalSubst, frame, grammarName, isRoot,
+                                          originRules, compiledGrammars, config, env, flowEnv,
+                                          expectedMonad, mDownSubst} =
+               decorate e with {env=env; mDownSubst=sub; frame=f; grammarName=gn;
+                                downSubst=sub; finalSubst=sub;
+                                compiledGrammars=cg; config=c; flowEnv=fe;
+                                expectedMonad=em; isRoot=iR; originRules=oR;}
+           in
+           let ety::Type = decE.mtyperep
            in
              if isMonad(ety, env) && fst(monadsMatch(ety, em, sub))
-             then ((ety, e, newName) :: subcall.1,
+             then ((ety, decE.monadRewritten, newName) :: subcall.1,
                    baseExpr(qName(loc, newName), location=loc) :: subcall.2)
              else (subcall.1, e::subcall.2)
-           end
-         end;
-}
---take a list of things to bind and the name to use in binding them, as well as
---   a base for the binding, and create an expression with all of them bound
-function buildMonadicBinds
-Expr ::= bindlst::[(Type, Expr, String)] base::Expr loc::Location
-{
-  return case bindlst of
-         | [] -> base
-         | pair(ty, pair(e, n))::rest ->
-           buildApplication(monadBind(loc),
-                [baseExpr(qNameId(name(n, loc), location=loc), location=loc),
-                 buildLambda(n, monadInnerType(ty, loc), buildMonadicBinds(rest, base, loc), loc)],
-               loc)
+           end end
          end;
 }
 
