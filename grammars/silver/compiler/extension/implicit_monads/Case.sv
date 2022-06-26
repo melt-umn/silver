@@ -70,17 +70,19 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                                       top.location, 1, top.expectedMonad, top.isRoot, top.originRules);
 
   {-
-    We rewrite by creating a function which does the actual case
-    matching, which we do monad rewriting on.  We then pass the actual
-    things to match on into the function as arguments after the
-    rewriting.
+    We rewrite by pulling the monad-typed expressions on which we are matching
+    out, putting them into lets over the case expression, then rewriting that.
+    This second rewriting step turns the lets into binds, binding the monadic
+    expressions into the case that is not matching on monads, which then
+    rewrites everything within the match rules.
   -}
   local monadLocal::Expr =
-        buildMultiLambda(map(\ p::Pair<Type Pair<Expr String>> ->
-                         case p of
-                         | pair(ty, pair(e, n)) -> pair(n, dropDecorated(ty))
-                         end, monadStuff.fst), monadLocalBody.monadRewritten,
-                         top.location);
+        foldr(\ p::(Type, Expr, String) rest::Expr ->
+                makeLet(top.location, p.3, monadInnerType(p.1, top.location), p.2, rest),
+              caseExpr(monadStuff.snd,
+                 ml.matchRuleList, !isMonadFail(top.expectedMonad, top.env), failure,
+                 outty, location=top.location),
+              monadStuff.1);
   monadLocal.mDownSubst = ml.mUpSubst;
   monadLocal.frame = top.frame;
   monadLocal.grammarName = top.grammarName;
@@ -93,33 +95,8 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   monadLocal.expectedMonad = top.expectedMonad;
   monadLocal.originRules = top.originRules;
   monadLocal.isRoot = false;
-  local monadLocalBody::Expr =
-        foldr(\ p::(Type, Expr, String) rest::Expr ->
-                makeLet(top.location, p.3, monadInnerType(p.1, top.location), p.2, rest),
-              caseExpr(monadStuff.snd,
-                 ml.matchRuleList, !isMonadFail(top.expectedMonad, top.env), failure,
-                 outty, location=top.location),
-              monadStuff.1);
-  monadLocalBody.mDownSubst = ml.mUpSubst;
-  monadLocalBody.frame = top.frame;
-  monadLocalBody.grammarName = top.grammarName;
-  monadLocalBody.compiledGrammars = top.compiledGrammars;
-  monadLocalBody.config = top.config;
-  monadLocalBody.env = top.env;
-  monadLocalBody.flowEnv = top.flowEnv;
-  monadLocalBody.downSubst = ml.mUpSubst;
-  monadLocalBody.finalSubst = ml.mUpSubst;
-  monadLocalBody.expectedMonad = top.expectedMonad;
-  monadLocalBody.originRules = top.originRules;
-  monadLocalBody.isRoot = false;
-  top.monadRewritten =
-      buildApplication(monadLocal,
-                       map(\ p::Pair<Type Pair<Expr String>> ->
-                             case p of
-                             | pair(ty, pair(e, n)) -> e
-                             end,
-                           monadStuff.fst), top.location);
-  top.mtyperep = monadLocal.mtyperep.outputType;
+  top.monadRewritten = monadLocal.monadRewritten;
+  top.mtyperep = monadLocal.mtyperep;
   top.mUpSubst = monadLocal.mUpSubst;
 
   monadLocal.monadicallyUsed = false;
