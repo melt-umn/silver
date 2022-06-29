@@ -31,8 +31,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
 abstract production touchIfaces
 top::DriverAction ::= r::[Decorated RootSpec] genPath::String
 {
-  top.io = touchFilesT(map(sviPath(_, genPath), r), top.ioIn);
-  top.code = 0;
+  top.run = do { touchFiles(map(sviPath(_, genPath), r)); return 0; };
   top.order = 3;
 }
 function sviPath
@@ -45,39 +44,28 @@ abstract production printAllBindingErrors
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
   -- Force printing of status before doing error checks
-  top.code = unsafeTrace(forward.code, forward.ioIn);
-  -- For anyone encountering this hack for the first time,
-  -- IO-token passing can force linearity of actions, but
-  -- interleaves pure computation in annoying ways.
-  -- Without the above, all the error checking work gets done
-  -- (to compute return code) before something tries to do IO,
-  -- so we wouldn't print first.
-
-  forwards to printAllBindingErrorsHelp(specs)
-  with {
-    ioIn = eprintlnT("Checking For Errors.", top.ioIn);
+  top.run = do {
+    eprintln("Checking For Errors.");
+    forward.run;
   };
+
+  forwards to printAllBindingErrorsHelp(specs);
 }
 
 abstract production printAllBindingErrorsHelp
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
-  local errs :: [Pair<String [Message]>] = head(specs).grammarErrors;
-
-  local i :: IOToken =
-    if null(errs)
-    then top.ioIn
-    else eprintlnT("Errors for " ++ head(specs).declaredName ++ "\n" ++ flatMap(renderMessages(head(specs).grammarSource, _), errs), top.ioIn);
-
-  local recurse :: DriverAction = printAllBindingErrorsHelp(tail(specs));
-  recurse.ioIn = i;
-
-  top.io = if null(specs) then top.ioIn else recurse.io;
-
-  top.code = 
-    if null(specs) || (!grammarContainsErrors(errs, head(specs).config.warnError) && recurse.code == 0)
-    then 0
-    else 20;
+  top.run =
+    case specs of
+    | [] -> pure(0)
+    | spec :: rest -> do {
+        unless(null(spec.grammarErrors),
+          eprintln("Errors for " ++ spec.declaredName ++ "\n" ++ flatMap(renderMessages(spec.grammarSource, _), spec.grammarErrors)));
+        let containsErrors :: Boolean = grammarContainsErrors(spec.grammarErrors, spec.config.warnError);
+        recurse :: Integer <- printAllBindingErrorsHelp(rest).run;
+        return if containsErrors || recurse != 0 then 20 else 0;
+      }
+    end;
 
   top.order = 1;
 }
@@ -85,22 +73,16 @@ top::DriverAction ::= specs::[Decorated RootSpec]
 abstract production printAllParsingErrors
 top::DriverAction ::= specs::[Decorated RootSpec]
 {
-  local errs :: [Pair<String [Message]>] = head(specs).parsingErrors;
-
-  local i :: IOToken =
-    if null(errs)
-    then top.ioIn
-    else eprintlnT("Errors for " ++ head(specs).declaredName ++ "\n" ++ flatMap(renderMessages(head(specs).grammarSource, _), errs), top.ioIn);
-
-  local recurse :: DriverAction = printAllParsingErrors(tail(specs));
-  recurse.ioIn = i;
-
-  top.io = if null(specs) then top.ioIn else recurse.io;
-
-  top.code = 
-    if null(specs) || (null(errs) && recurse.code == 0)
-    then 0
-    else 21;
+  top.run =
+    case specs of
+    | [] -> pure(0)
+    | spec :: rest -> do {
+        unless(null(spec.parsingErrors),
+          eprintln("Errors for " ++ spec.declaredName ++ "\n" ++ flatMap(renderMessages(spec.grammarSource, _), spec.parsingErrors)));
+        recurse :: Integer <- printAllParsingErrors(rest).run;
+        return if !null(spec.parsingErrors) || recurse != 0 then 21 else 0;
+      }
+    end;
 
   top.order = 0;
 }

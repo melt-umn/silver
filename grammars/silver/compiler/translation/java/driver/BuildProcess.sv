@@ -210,65 +210,43 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 abstract production genJava
 top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silverGen::String
 {
-  local pr :: IOToken = eprintlnT("Generating Translation.", top.ioIn);
-
-  top.io = writeAll(pr, a, specs, silverGen);
-  top.code = 0;
+  top.run = do {
+    eprintln("Generating Translation.");
+    traverse_(writeSpec(_, silverGen), specs);
+    return 0;
+  };
   top.order = 4;
 }
 
 abstract production genBuild
 top::DriverAction ::= buildFileLocation::String  buildXml::String
 {
-  top.io = writeFileT(buildFileLocation, buildXml, top.ioIn);
-  top.code = 0;
+  top.run = do { writeFile(buildFileLocation, buildXml); return 0; };
   top.order = 6;
 }
 
-function writeAll
-IOToken ::= i::IOToken  a::Decorated CmdArgs  l::[Decorated RootSpec]  silverGen::String
-{
-  local now :: IOToken = writeSpec(i, head(l), silverGen);
-  local recurse :: IOToken = writeAll(now, a, tail(l), silverGen);
-
-  return if null(l) then i else recurse;
-}
-
 function writeSpec
-IOToken ::= i::IOToken  r::Decorated RootSpec  silverGen::String
+IO<()> ::= r::Decorated RootSpec  silverGen::String
 {
   local srcPath :: String = silverGen ++ "src/" ++ grammarToPath(r.declaredName);
   local binPath :: String = silverGen ++ "bin/" ++ grammarToPath(r.declaredName);
 
-  local mkiotest :: IOVal<Boolean> =
-    isDirectoryT(srcPath, i);
-  local mksrc :: IOVal<Boolean> =
-    if mkiotest.iovalue then mkiotest else mkdirT(srcPath, mkiotest.io);
-  local clean :: IOToken =
-    deleteDirFilesT(srcPath, deleteDirFilesT(binPath, mksrc.io).io).io;
-  
-  local printio :: IOToken =
-    if mksrc.iovalue
-    then eprintlnT("\t[" ++ r.declaredName ++ "]", clean)
-    else exitT(-5, eprintlnT("\nUnrecoverable Error: Unable to create directory: " ++ srcPath ++ "\nWarning: if some interface file writes were successful, but others not, Silver's temporaries are in an inconsistent state. Use the --clean flag next run.\n", mksrc.io));
-
-  return writeBinaryFiles(srcPath, r.genBinaryFiles, writeFiles(srcPath, r.genFiles, printio));
-}
-
-{--
- - Given a path (with terminating /) and list of (file names relative to that root, contents),
- - write these out.
- -}
-function writeFiles
-IOToken ::= path::String s::[Pair<String String>] i::IOToken
-{
-  return if null(s) then i else writeFileT(path ++ head(s).fst, head(s).snd, writeFiles(path, tail(s), i));
-}
-
-function writeBinaryFiles
-IOToken ::= path::String s::[Pair<String ByteArray>] i::IOToken
-{
-  return if null(s) then i else writeBinaryFileT(path ++ head(s).fst, head(s).snd, writeBinaryFiles(path, tail(s), i));
+  return do {
+    eprintln("\t[" ++ r.declaredName ++ "]");
+    isD::Boolean <- isDirectory(srcPath);
+    unless(isD, do {
+      mkDSuccess::Boolean <- mkdir(srcPath);
+      unless(mkDSuccess, do {
+      eprintln("Unrecoverable Error: Unable to create directory: " ++ srcPath ++
+        "\nWarning: if some interface file writes were successful, but others not, Silver's temporaries are in an inconsistent state. Use the --clean flag next run.");
+        exit(-5);
+      });
+    });
+    deleteDirFiles(srcPath);
+    deleteDirFiles(binPath);
+    writeFiles(srcPath, r.genFiles);
+    writeBinaryFiles(srcPath, r.genBinaryFiles);
+  };
 }
 
 function zipfileset

@@ -131,7 +131,7 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
         return 0;
       } else do {
         mkdir(outDir);
-        print("Generating parser " ++ spec.fullName ++ ".\n");
+        eprintln("Generating parser " ++ spec.fullName ++ ".");
         ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
           makeName(spec.sourceGrammar), parserName, false,
           outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
@@ -144,19 +144,18 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
         return ret;
       };
     } else do {
-      -- Should this be stderr?
-      print("CST errors while generating parser " ++ spec.fullName ++ ":\n" ++
-        implode("\n", specCstAst.cstErrors) ++ "\n");
+      eprintln("CST errors while generating parser " ++ spec.fullName ++ ":\n" ++
+        implode("\n", specCstAst.cstErrors));
       return 1;
     };
 
-  local val::IOVal<Integer> = evalIO(do {
+  top.run = do {
     dumpFileExists :: Boolean <- isFile(dumpFile);
     if dumpFileExists then do {
       dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
       let dumpMatched::Either<String Boolean> = map(eq(specCstAst, _), nativeDeserialize(dumpFileContents));
       if dumpMatched == right(true) && !cmdArgs.forceCopperDump then do {
-        print("Parser " ++ spec.fullName ++ " is up to date.\n");
+        eprintln("Parser " ++ spec.fullName ++ " is up to date.");
         return 0;
       } else do {
         buildGrammar;
@@ -164,9 +163,7 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
     } else do {
       buildGrammar;
     };
-  }, top.ioIn);
+  };
 
-  top.io = val.io;
-  top.code = val.iovalue;
   top.order = 7;
 }
