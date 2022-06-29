@@ -1050,3 +1050,7 @@ Boolean ::= env::Decorated Env attrName::String frame::BlockContext
         \ e::NamedSignatureElement -> attrMatchesFrame(env, attrName, e.typerep),
         frame.signature.inputElements));
 }
+
+instance Eq StrategyExpr {
+  eq = \ s1::StrategyExpr s2::StrategyExpr -> s1.unparse == s2.unparse;
+}

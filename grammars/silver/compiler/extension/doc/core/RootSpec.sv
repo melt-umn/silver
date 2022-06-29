@@ -20,7 +20,7 @@ top::RootSpec ::= _ _ _ _ _
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar  _ _ _ _
+top::RootSpec ::= g::Grammar  _ _ _ _ _
 {
   top.genFiles := toSplitFiles(g, g.upDocConfig, [], []);
   top.docDcls := g.docDcls;

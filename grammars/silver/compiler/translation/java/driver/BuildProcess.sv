@@ -93,9 +93,13 @@ top::Compilation ::= g::Grammars  _  buildGrammars::[String]  benv::BuildEnv
     if null(top.config.buildXmlLocation) then "build.xml"
     else head(top.config.buildXmlLocation);
   
+  production attribute keepFiles :: [String] with ++;
+  keepFiles := [];
+
   top.postOps <-
     [genBuild(buildXmlLocation, buildXml)] ++
-    (if top.config.noJavaGeneration then [] else [genJava(top.config, grammarsToTranslate, benv.silverGen)]);
+    (if top.config.noJavaGeneration then []
+     else [genJava(top.config, benv.silverGen, keepFiles, grammarsToTranslate)]);
 
   -- From here on, it's all build.xml stuff:
 
@@ -208,11 +212,11 @@ implode("\n\n", extraTopLevelDecls) ++ "\n\n" ++
 }
 
 abstract production genJava
-top::DriverAction ::= a::Decorated CmdArgs  specs::[Decorated RootSpec]  silverGen::String
+top::DriverAction ::= a::Decorated CmdArgs  silverGen::String  keepFiles::[String]  specs::[Decorated RootSpec]
 {
   top.run = do {
     eprintln("Generating Translation.");
-    traverse_(writeSpec(_, silverGen), specs);
+    traverse_(writeSpec(silverGen, keepFiles, _), specs);
     return 0;
   };
   top.order = 4;
@@ -226,7 +230,7 @@ top::DriverAction ::= buildFileLocation::String  buildXml::String
 }
 
 function writeSpec
-IO<()> ::= r::Decorated RootSpec  silverGen::String
+IO<()> ::= silverGen::String keepFiles::[String] r::Decorated RootSpec
 {
   local srcPath :: String = silverGen ++ "src/" ++ grammarToPath(r.declaredName);
   local binPath :: String = silverGen ++ "bin/" ++ grammarToPath(r.declaredName);
@@ -242,7 +246,8 @@ IO<()> ::= r::Decorated RootSpec  silverGen::String
         exit(-5);
       });
     });
-    deleteDirFiles(srcPath);
+    oldSrcFiles::[String] <- listContents(srcPath);
+    deleteFiles(removeAll(keepFiles, oldSrcFiles));
     deleteDirFiles(binPath);
     writeFiles(srcPath, r.genFiles);
     writeBinaryFiles(srcPath, r.genBinaryFiles);

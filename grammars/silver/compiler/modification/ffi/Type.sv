@@ -16,8 +16,8 @@ top::Type ::= fn::String  transType::String  params::[Type]
   -- Unification.sv
   top.unify = 
     case top.unifyWith of
-    | foreignType(ofn, _, op) ->
-        if fn == ofn
+    | foreignType(ofn, ott, op) ->
+        if fn == ofn && transType == ott
         then unifyAll( params, op )
         else errorSubst("Tried to unify conflicting foreign types " ++ fn ++ " and " ++ ofn)
     | _ -> errorSubst("Tried to unify foreign type " ++ fn ++ " with " ++ prettyType(top.unifyWith))

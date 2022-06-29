@@ -17,7 +17,7 @@ imports silver:compiler:definition:env;
 
 -- flow analysis
 imports silver:compiler:definition:flow:ast;
-imports silver:compiler:definition:flow:driver only ProductionGraph, FlowType, flowVertexEq, prod, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh;
+imports silver:compiler:definition:flow:driver only ProductionGraph, FlowType, prod, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh;
 
 -- the modifications we need to be aware of
 imports silver:compiler:modification:autocopyattr only isAutocopy;

@@ -26,6 +26,7 @@ top::InterfaceItem ::=
 abstract production syntaxAstInterfaceItem
 top::InterfaceItem ::= val::[SyntaxDcl]
 {
+  propagate isEqual;
   top.syntaxAst <- val;
   top.hasSyntaxAst <- true;
 }
@@ -33,12 +34,13 @@ top::InterfaceItem ::= val::[SyntaxDcl]
 abstract production parserSpecsInterfaceItem
 top::InterfaceItem ::= val::[ParserSpec]
 {
+  propagate isEqual;
   top.parserSpecs <- val;
   top.hasParserSpecs <- true;
 }
 
-aspect function unparseRootSpec
-ByteArray ::= r::Decorated RootSpec
+aspect function packInterfaceItems
+InterfaceItems ::= r::Decorated RootSpec
 {
   interfaceItems <- [syntaxAstInterfaceItem(r.syntaxAst)];
   interfaceItems <- [parserSpecsInterfaceItem(r.parserSpecs)];
