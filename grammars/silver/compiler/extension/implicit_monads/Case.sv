@@ -65,9 +65,21 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                   else freshType(); --absolutely nothing is a monad
   --read the comment on the function below if you want to know what it is
   local attribute monadStuff::([(Type, Expr, String)], [Expr]);
-  monadStuff = monadicMatchTypesNames(es.rawExprs, ml.patternTypeList, top.env, ml.mUpSubst, top.frame,
-                                      top.grammarName, top.compiledGrammars, top.config, top.flowEnv, [],
-                                      top.location, 1, top.expectedMonad, top.isRoot, top.originRules);
+  monadStuff = monadicMatchTypesNames(decExprs, ml.patternTypeList, [], top.env,
+                                      ml.mUpSubst, top.expectedMonad, top.location, 1);
+  local decExprs::[Decorated Expr with {downSubst, finalSubst, frame, grammarName,
+                                        isRoot, originRules, compiledGrammars, config,
+                                        env, flowEnv, expectedMonad, mDownSubst}] =
+        map(\ e::Expr ->
+              decorate e with {
+                 env=top.env; downSubst=ml.mUpSubst; frame=top.frame;
+                 grammarName=top.grammarName; finalSubst=ml.mUpSubst;
+                 compiledGrammars=top.compiledGrammars;
+                 config=top.config; flowEnv=top.flowEnv;
+                 expectedMonad=top.expectedMonad; isRoot=top.isRoot;
+                 originRules=top.originRules;
+                 mDownSubst=ml.mUpSubst;},
+            es.rawExprs);
 
   {-
     We rewrite by pulling the monad-typed expressions on which we are matching
@@ -144,13 +156,15 @@ Boolean ::= elst::[Expr] env::Decorated Env sub::Substitution f::BlockContext gn
 --use a name from names when that is not empty; when empty, use a new name
 function monadicMatchTypesNames
 ([(Type, (Expr, String))], [Expr]) ::=
-  elst::[Expr] tylst::[Type] env::Decorated Env sub::Substitution f::BlockContext gn::String
-  cg::EnvTree<Decorated RootSpec> c::Decorated CmdArgs fe::FlowEnv names::[String]
-  loc::Location index::Integer em::Type iR::Boolean oR::[Decorated Expr]
+      elst::[Decorated Expr with {downSubst, finalSubst, frame, grammarName,
+                                  isRoot, originRules, compiledGrammars, config,
+                                  env, flowEnv, expectedMonad, mDownSubst}]
+      tylst::[Type] names::[String] env::Decorated Env sub::Substitution em::Type
+      loc::Location index::Integer
 {
   local attribute subcall::([(Type, Expr, String)], [Expr]);
   subcall = case elst, tylst of
-            | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, env, sub, f, gn, cg, c, fe, ntail, loc, index+1, em, iR, oR)
+            | _::etl, _::ttl -> monadicMatchTypesNames(etl, ttl, ntail, env, sub, em, loc, index + 1)
             | [], [] -> error("Should not access subcall in monadicMatchTypesNames with empty lists")
             | _, _ -> error("Both lists in monadicMatchTypesNames must be the same length")
             end;
@@ -160,23 +174,15 @@ function monadicMatchTypesNames
                           else head(names);
   return case elst, tylst of
          | [], _ -> pair([], [])
-         | _, [] -> pair([], elst)
-         | e::etl, t::ttl ->
-           let decE::Decorated Expr with {downSubst, finalSubst, frame, grammarName, isRoot,
-                                          originRules, compiledGrammars, config, env, flowEnv,
-                                          expectedMonad, mDownSubst} =
-               decorate e with {env=env; mDownSubst=sub; frame=f; grammarName=gn;
-                                downSubst=sub; finalSubst=sub;
-                                compiledGrammars=cg; config=c; flowEnv=fe;
-                                expectedMonad=em; isRoot=iR; originRules=oR;}
-           in
+         | _, [] -> pair([], map(new, elst))
+         | decE::etl, t::ttl ->
            let ety::Type = decE.mtyperep
            in
              if isMonad(ety, env) && fst(monadsMatch(ety, em, sub))
              then ((ety, decE.monadRewritten, newName) :: subcall.1,
                    baseExpr(qName(loc, newName), location=loc) :: subcall.2)
-             else (subcall.1, e::subcall.2)
-           end end
+             else (subcall.1, new(decE)::subcall.2)
+           end
          end;
 }
 
