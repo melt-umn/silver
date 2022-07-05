@@ -38,7 +38,7 @@ Monads that support failure with an error message.
 Instances should satisfy the following:
 
 Annihilation
-  bind(empty, f) = empty
+  bind(fail(s), f) = fail(s)
 -}
 class Monad m => MonadFail m {
   fail :: (m<a> ::= String);
@@ -50,7 +50,7 @@ The MonadZero type class has no members of its own; it just specifies that the t
 Instances should satisfy the following:
 
 Annihilation
-  bind(fail(s), f) = fail(s)
+  bind(empty, f) = empty
 -}
 class Monad m, Alternative m => MonadZero m {}
 
@@ -63,6 +63,27 @@ Distributivity
   bind(alt(x, y), f) = alt(bind(x, f), bind(y, f))
 -}
 class MonadZero m, Alternative m => MonadPlus m {}
+
+@{-
+Monads having fixed points with a 'knot-tying' semantics.
+
+Instances should satisfy the following:
+
+Purity
+  mfix(compose(pure, h)) = pure(fix(h))
+
+Left shrinking (or Tightening)
+  mfix(\x -> bind(a, \y -> f(x, y))) = bind(a, \y -> mfix(\x -> f(x, y)))
+
+Sliding
+  mfix(compose(map(h, _), f)) = map(h, (mfix(compose(f, h)))), for strict h.
+
+Nesting
+  mfix(\x -> mfix(\y -> f(x, y))) = mfix(\x -> f(x, x))
+-}
+class Monad m => MonadFix m {
+  mfix :: (m<a> ::= (m<a> ::= a));
+}
 
 @{-
 Monad transformers lift a monadic computation into an additional monad.

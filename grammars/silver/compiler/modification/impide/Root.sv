@@ -36,7 +36,7 @@ top::AGDcl ::= ag1::AGDcl ag2::AGDcl
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar  _ _ _ _
+top::RootSpec ::= g::Grammar  _ _ _ _ _
 {
   top.ideSpecs = g.ideSpecs;
 }

@@ -16,7 +16,7 @@ import silver:compiler:composed:Default only svParse;
 function main 
 IOVal<Integer> ::= args::[String] ioin::IOToken
 {
-  return cmdLineRun(args, svParse, ioin);
+  return evalIO(cmdLineRun(args, svParse), ioin);
 }
 
 -- IDE declaration block

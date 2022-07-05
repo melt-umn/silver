@@ -2,7 +2,7 @@ grammar silver:core;
 
 @{-
 The Alt type class identifies an associative operation on a type constructor.
-It is similar to Semigroup, except that it applies to types of kind *,
+It is similar to Semigroup, except that it applies to types of kind * -> *,
 like Maybe or [], rather than concrete types String or [a].
 
 Instances should satisfy the following:
@@ -20,7 +20,7 @@ class Functor f => Alt f {
 The Plus type class extends the Alt type class with a value that should be the
 left and right identity for (<|>).
 
-It is similar to Monoid, except that it applies to types of kind *,
+It is similar to Monoid, except that it applies to types of kind * -> *,
 like Array or List, rather than concrete types like String or Number.
 
 Instances should satisfy the following laws:

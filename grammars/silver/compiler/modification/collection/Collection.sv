@@ -9,7 +9,8 @@ import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, co
 import silver:compiler:translation:java:core;
 
 nonterminal NameOrBOperator with config, location, grammarName, compiledGrammars, flowEnv, productionFlowGraphs, errors, env, unparse, operation, operatorForType;
-nonterminal Operation;
+nonterminal Operation with compareTo, isEqual;
+propagate compareTo, isEqual on Operation excluding functionOperation;
 
 synthesized attribute operation :: Operation;
 inherited attribute operatorForType :: Type;
@@ -116,7 +117,12 @@ top::NameOrBOperator ::= '*'
 -- but this nonterminal must be serializable as part of the environment.
 abstract production functionOperation
 top::Operation ::= e::Expr eTrans::String trackConstruction::Boolean
-{}
+{ top.isEqual =
+    case top.compareTo of
+    | functionOperation(_, et, tc) -> et == eTrans && tc == trackConstruction
+    | _ -> false
+    end;
+}
 abstract production plusPlusOperationString
 top::Operation ::= 
 {}
