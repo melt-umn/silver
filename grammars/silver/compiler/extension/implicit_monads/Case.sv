@@ -65,21 +65,21 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
                   else freshType(); --absolutely nothing is a monad
   --read the comment on the function below if you want to know what it is
   local attribute monadStuff::([(Type, Expr, String)], [Expr]);
-  monadStuff = monadicMatchTypesNames(decExprs, ml.patternTypeList, [], top.env,
+  monadStuff = monadicMatchTypesNames(redeces.monadDecExprs, ml.patternTypeList, [], top.env,
                                       ml.mUpSubst, top.expectedMonad, top.location, 1);
-  local decExprs::[Decorated Expr with {downSubst, finalSubst, frame, grammarName,
-                                        isRoot, originRules, compiledGrammars, config,
-                                        env, flowEnv, expectedMonad, mDownSubst}] =
-        map(\ e::Expr ->
-              decorate e with {
-                 env=top.env; downSubst=ml.mUpSubst; frame=top.frame;
-                 grammarName=top.grammarName; finalSubst=ml.mUpSubst;
-                 compiledGrammars=top.compiledGrammars;
-                 config=top.config; flowEnv=top.flowEnv;
-                 expectedMonad=top.expectedMonad; isRoot=top.isRoot;
-                 originRules=top.originRules;
-                 mDownSubst=ml.mUpSubst;},
-            es.rawExprs);
+  local attribute redeces::Exprs = es;
+  redeces.mDownSubst = ml.mUpSubst;
+  redeces.downSubst = ml.mUpSubst;
+  redeces.finalSubst = ml.mUpSubst;
+  redeces.env = top.env;
+  redeces.frame = top.frame;
+  redeces.grammarName = top.grammarName;
+  redeces.compiledGrammars = top.compiledGrammars;
+  redeces.config = top.config;
+  redeces.flowEnv = top.flowEnv;
+  redeces.expectedMonad = top.expectedMonad;
+  redeces.isRoot = top.isRoot;
+  redeces.originRules = top.originRules;
 
   {-
     We rewrite by pulling the monad-typed expressions on which we are matching
@@ -115,7 +115,7 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   --We get the monadic names out of the expressions bound in here and the rest off the fake forward (monadLocal)
   top.monadicNames =
      foldr(\x::Pair<Expr Type> l::[Expr] ->
-             let a::Decorated Expr with {env, mDownSubst, frame, grammarName, downSubst, finalSubst, compiledGrammars, config, flowEnv, expectedMonad, isRoot, originRules} =
+             let a::Decorated Expr with MonadInhs =
                 decorate x.fst with {env=top.env; mDownSubst=top.mDownSubst;
                                      frame=top.frame; grammarName=top.grammarName; downSubst=top.mDownSubst;
                                      finalSubst=top.mDownSubst; compiledGrammars=top.compiledGrammars;
@@ -156,9 +156,7 @@ Boolean ::= elst::[Expr] env::Decorated Env sub::Substitution f::BlockContext gn
 --use a name from names when that is not empty; when empty, use a new name
 function monadicMatchTypesNames
 ([(Type, (Expr, String))], [Expr]) ::=
-      elst::[Decorated Expr with {downSubst, finalSubst, frame, grammarName,
-                                  isRoot, originRules, compiledGrammars, config,
-                                  env, flowEnv, expectedMonad, mDownSubst}]
+      elst::[Decorated Expr with MonadInhs]
       tylst::[Type] names::[String] env::Decorated Env sub::Substitution em::Type
       loc::Location index::Integer
 {
@@ -506,6 +504,34 @@ Expr ::= exprs::[Expr] names::[String] loc::Location base::Expr
              else buildApplication(buildLambda(head(names), dropDecorated(ety), subcall, loc),
                                    [head(exprs)], loc)
            end;
+}
+
+
+
+
+synthesized attribute monadDecExprs::[Decorated Expr with MonadInhs];
+attribute monadDecExprs, mDownSubst, expectedMonad occurs on Exprs;
+
+aspect production exprsEmpty
+top::Exprs ::=
+{
+  top.monadDecExprs = [];
+}
+aspect production exprsSingle
+top::Exprs ::= e::Expr
+{
+  e.expectedMonad = top.expectedMonad;
+  e.mDownSubst = top.mDownSubst;
+  top.monadDecExprs = [e];
+}
+aspect production exprsCons
+top::Exprs ::= e1::Expr ',' e2::Exprs
+{
+  e1.expectedMonad = top.expectedMonad;
+  e1.mDownSubst = top.mDownSubst;
+  e2.expectedMonad = top.expectedMonad;
+  e2.mDownSubst = top.mDownSubst;
+  top.monadDecExprs = e1::e2.monadDecExprs;
 }
 
 

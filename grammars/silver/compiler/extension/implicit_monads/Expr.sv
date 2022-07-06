@@ -12,6 +12,12 @@ attribute monadRewritten<Expr>, merrors, mtyperep, mDownSubst, mUpSubst, expecte
 propagate expectedMonad on Expr;
 
 
+type MonadInhs = {
+  downSubst, finalSubst, frame, grammarName, isRoot, originRules,
+  compiledGrammars, config, env, flowEnv, expectedMonad, mDownSubst
+};
+
+
 --list of the attributes accessed in an explicit expression not allowed there
 --this is turned into a list of appropriate error messages at the equation
 monoid attribute notExplicitAttributes::[Pair<String Location>];
