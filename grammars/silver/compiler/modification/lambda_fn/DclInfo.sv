@@ -15,6 +15,7 @@ abstract production lambdaParamDcl
 top::ValueDclInfo ::= fn::String ty::Type id::Integer paramIndex::Integer
 {
   top.fullName = fn;
+  propagate isEqual;
 
   top.typeScheme = monoType(ty);
 

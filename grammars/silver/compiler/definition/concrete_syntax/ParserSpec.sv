@@ -6,7 +6,7 @@ import silver:compiler:driver:util only computeDependencies; -- TODO this is a b
  - An abstract representation of a parser declaration.
  -}
 nonterminal ParserSpec with
-  sourceGrammar, location, fullName,
+  sourceGrammar, location, fullName, compareTo, isEqual,
   compiledGrammars,
   cstAst, startNT, moduleNames;
 
@@ -38,6 +38,7 @@ top::ParserSpec ::=
   terminalPrefixes::[Pair<String String>]  grammarTerminalPrefixes::[Pair<String String>]
   addedDcls::[SyntaxDcl]
 {
+  propagate isEqual;
   top.fullName = fn;
   top.startNT = snt;
   top.moduleNames := grams;

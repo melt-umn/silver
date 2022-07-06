@@ -64,10 +64,10 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
     then map(
       \ tv::TyVar -> err(top.contextLoc, s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved."),
       ntty.freeFlexibleVars)
-    -- atty should never have free type variables if ntty does not.
-    else if !null(atty.freeFlexibleVars)
+    -- atty should never have free type variables if ntty does not, except in case of errors elsewhere.
+    else {-if !null(atty.freeFlexibleVars)
     then error(s"got atty with free vars")
-    else if null(top.resolvedOccurs)
+    else-} if null(top.resolvedOccurs)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
 
@@ -98,10 +98,10 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
         top.contextLoc,
         s"Ambiguous type variable ${findAbbrevFor(tv, top.freeVariables)} (arising from ${top.contextSource}) prevents the constraint ${prettyContext(top)} from being solved. Note: this ambiguity might be resolved by specifying an explicit flowtype for ${attr} on ${ntty.typeName}"),
       inhs.freeFlexibleVars)
-    -- atty should never have free type variables if ntty does not.
-    else if !null(atty.freeFlexibleVars)
-    then error("got atty with free vars")
-    else if null(top.resolvedOccurs)
+    -- atty should never have free type variables if ntty does not, except in case of errors elsewhere.
+    else {-if !null(atty.freeFlexibleVars)
+    then error(s"got atty with free vars")
+    else-} if null(top.resolvedOccurs)
     then [err(top.contextLoc, s"Could not find an instance for ${prettyContext(top)} (arising from ${top.contextSource})")]
     else requiredContexts.contextErrors;
 

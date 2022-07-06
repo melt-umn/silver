@@ -3,7 +3,10 @@ grammar silver:compiler:definition:env;
 {--
  - An entry in the environment.
  -}
-nonterminal EnvItem<a> with itemName, dcl<a>, envContribs<a>, filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended;
+nonterminal EnvItem<a> with
+  itemName, dcl<a>, envContribs<a>,
+  filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended,
+  compareTo, isEqual;
 
 synthesized attribute itemName :: String;
 synthesized attribute dcl<a> :: a;
@@ -23,7 +26,9 @@ functor attribute prepended;
  - Common case: `grammar:full:name` aka `name`. See `defaultEnvItem`.
  -}
 abstract production renamedEnvItem
-attribute fullName {} occurs on a =>
+attribute fullName {} occurs on a,
+attribute compareTo<a {}> occurs on a,
+attribute isEqual {compareTo} occurs on a =>
 ei::EnvItem<a> ::= newname::String di::a
 {
   ei.itemName = newname;
@@ -41,6 +46,8 @@ ei::EnvItem<a> ::= newname::String di::a
     | just(result) -> renamedEnvItem(result, di)
     end;
   ei.prepended = renamedEnvItem(ei.pfx ++ newname, di);
+
+  propagate compareTo, isEqual;
 }
 {--
  - Entries at fullname ONLY.
@@ -48,7 +55,9 @@ ei::EnvItem<a> ::= newname::String di::a
  - by the full nonterminal name (or production name) only, and a shortname is nonsense.
  -}
 abstract production fullNameEnvItem
-attribute fullName {} occurs on a =>
+attribute fullName {} occurs on a,
+attribute compareTo<a {}> occurs on a,
+attribute isEqual {compareTo} occurs on a =>
 ei::EnvItem<a> ::= di::a
 {
   ei.itemName = di.fullName;
@@ -56,6 +65,7 @@ ei::EnvItem<a> ::= di::a
   ei.envContribs = [pair(di.fullName, di)];
   
   propagate filterIncludeOnly, filterIncludeHiding, renamed, prepended;  -- Always imported & not renamed
+  propagate compareTo, isEqual;
 }
 {--
  - Used for aspect local variables. The LHS and children have a full name
@@ -63,6 +73,8 @@ ei::EnvItem<a> ::= di::a
  - We should *not* see `newname` in the environment in those cases.
  -}
 abstract production onlyRenamedEnvItem
+attribute compareTo<a {}> occurs on a,
+attribute isEqual {compareTo} occurs on a =>
 ei::EnvItem<a> ::= newname::String di::a
 {
   ei.itemName = newname;
@@ -70,13 +82,16 @@ ei::EnvItem<a> ::= newname::String di::a
   ei.envContribs = [pair(newname, di)];
   
   propagate filterIncludeOnly, filterIncludeHiding, renamed, prepended;  -- Should never be imported
+  propagate compareTo, isEqual;
 }
 
 {--
  - The common case, normal shortnames.
  -}
 function defaultEnvItem
-attribute fullName {} occurs on a =>
+attribute fullName {} occurs on a,
+attribute compareTo<a {}> occurs on a,
+attribute isEqual {compareTo} occurs on a =>
 EnvItem<a> ::= di::a
 {
   return renamedEnvItem(fullNameToShort(di.fullName), di);
@@ -90,7 +105,15 @@ String ::= s::String
 
 
 global mapGetDcls :: ([a] ::= [EnvItem<a>]) = map((.dcl), _);
-global mapFullnameDcls :: attribute fullName {} occurs on a => ([EnvItem<a>] ::= [a]) =
-  map(fullNameEnvItem, _);
-global mapDefaultWrapDcls :: attribute fullName {} occurs on a => ([EnvItem<a>] ::= [a]) =
-  map(defaultEnvItem, _);
+global mapFullnameDcls ::
+  attribute fullName {} occurs on a,
+  attribute compareTo<a {}> occurs on a,
+  attribute isEqual {compareTo} occurs on a =>
+  ([EnvItem<a>] ::= [a]) =
+    map(fullNameEnvItem, _);
+global mapDefaultWrapDcls ::
+  attribute fullName {} occurs on a,
+  attribute compareTo<a {}> occurs on a,
+  attribute isEqual {compareTo} occurs on a =>
+  ([EnvItem<a>] ::= [a]) =
+    map(defaultEnvItem, _);
