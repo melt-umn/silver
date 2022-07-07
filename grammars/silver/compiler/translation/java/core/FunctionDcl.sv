@@ -29,7 +29,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
     else [];
 
   -- main function signature check TODO: this should probably be elsewhere!
-  top.errors <-
+  top.errors <- []; {-
     if id.name == "main" &&
        unify(namedSig.typerep,
          appTypes(
@@ -38,7 +38,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
             ioForeignType,
             appType(nonterminalType("silver:core:IOVal", [starKind()], false), intType())])).failure
     then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IOToken). Instead it has type " ++ prettyType(namedSig.typerep))]
-    else [];
+    else [];-}
 }
 
 function generateFunctionClassString
