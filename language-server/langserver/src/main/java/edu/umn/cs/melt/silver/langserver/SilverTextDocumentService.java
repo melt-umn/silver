@@ -163,7 +163,7 @@ public class SilverTextDocumentService implements TextDocumentService {
         for (File file : root.listFiles()) {
             if (file.isDirectory()) {
                 findGrammars(file);
-            } else if (PisValidSilverFile.invoke(OriginContext.FFI_CONTEXT, new StringCatter(file.getName()))) {
+            } else if (isValidSilverFileName(file.getName())) {
                 Optional<String> fileGrammar = uriToGrammar("file://" + file.getAbsolutePath());
                 fileGrammar.ifPresent(buildGrammars::add);
                 fileGrammar.ifPresent(grammar -> grammarDirs.add(
@@ -279,7 +279,7 @@ public class SilverTextDocumentService implements TextDocumentService {
         Matcher m = grammarDecl.matcher("");
         try {
             Optional<String> fromGrammarDecl = Files.list(Path.of(uri).getParent())
-                .filter(p -> !Files.isDirectory(p))
+                .filter(p -> !Files.isDirectory(p) && isValidSilverFileName(p.toString()))
                 .flatMap((Path p) -> {
                     try {
                         return Files.lines(p).findFirst().flatMap(line ->
@@ -307,5 +307,9 @@ public class SilverTextDocumentService implements TextDocumentService {
 
         return Optional.empty();
 
+    }
+
+    public static boolean isValidSilverFileName(String file) {
+        return PisValidSilverFile.invoke(OriginContext.FFI_CONTEXT, new StringCatter(file));
     }
 }
