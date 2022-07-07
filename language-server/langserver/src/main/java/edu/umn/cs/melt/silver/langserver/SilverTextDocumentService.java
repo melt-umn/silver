@@ -55,10 +55,10 @@ public class SilverTextDocumentService implements TextDocumentService {
     private Map<String, String> fileContents = new HashMap<>();
     private Map<String, Integer> fileVersions = new HashMap<>();
     private Map<String, Integer> savedVersions = new HashMap<>();
-    private Set<String> grammarsToBuild = new HashSet<>();
-    private boolean buildInProgress = false;
+    private boolean buildInProgress = false, buildTriggered = false;
     private String silverGen;
-    private List<String> grammarPath = new ArrayList<>();
+    private Set<String> grammarDirs = new HashSet<>();
+    private Set<String> buildGrammars = new HashSet<>();
 
     public SilverTextDocumentService() {
         try {
@@ -79,7 +79,7 @@ public class SilverTextDocumentService implements TextDocumentService {
         fileContents.put(uri, params.getTextDocument().getText());
         fileVersions.put(uri, params.getTextDocument().getVersion());
         savedVersions.put(uri, params.getTextDocument().getVersion());
-        uriToGrammar(uri).ifPresent(this::triggerGrammar);
+        triggerBuild();
     }
 
     @Override
@@ -109,7 +109,7 @@ public class SilverTextDocumentService implements TextDocumentService {
             throw new IllegalStateException("File saved before it was changed");
         }
         savedVersions.put(uri, fileVersions.get(uri));
-        uriToGrammar(uri).ifPresent(this::triggerGrammar);
+        triggerBuild();
     }
 
     public static final List<String> tokenTypes = Arrays.asList(new String[] {
@@ -144,7 +144,9 @@ public class SilverTextDocumentService implements TextDocumentService {
     }
 
     public void setWorkspaceFolders(List<WorkspaceFolder> folders) {
-        grammarPath.clear();
+        grammarDirs.clear();
+        buildGrammars.clear();
+
         for (WorkspaceFolder folder : folders) {
             URI uri;
             try {
@@ -152,58 +154,39 @@ public class SilverTextDocumentService implements TextDocumentService {
             } catch (URISyntaxException e) {
                 throw new IllegalArgumentException("Invalid URI", e);
             }
-            List<String> result = getGrammarPath(new File(uri));
-            if (result != null) {
-                grammarPath.addAll(result);
-            }
+            findGrammars(new File(uri));
         }
+        triggerBuild();
     }
 
-    /**
-     * Find all folders that may contain Silver files and should be included in the grammar path.
-     * 
-     * @param root
-     * @return The grammar path arising from root, or null if root contains no Silver sources.
-     */
-    public static List<String> getGrammarPath(File root) {
-        boolean foundSources = false;
-        List<String> result = new ArrayList<>();
+    private void findGrammars(File root) {
         for (File file : root.listFiles()) {
             if (file.isDirectory()) {
-                List<String> recurse = getGrammarPath(file);
-                if (recurse != null) {
-                    foundSources = true;
-                    result.addAll(recurse);
-                }
+                findGrammars(file);
             } else if (PisValidSilverFile.invoke(OriginContext.FFI_CONTEXT, new StringCatter(file.getName()))) {
-                // This folder contains Silver sources
-                return List.of();
+                Optional<String> fileGrammar = uriToGrammar("file://" + file.getAbsolutePath());
+                fileGrammar.ifPresent(buildGrammars::add);
+                fileGrammar.ifPresent(grammar -> grammarDirs.add(
+                    root.getAbsolutePath().replace("/", ":").replace(".", ":")
+                    .split(grammar, 2)[0].replace(":", "/")));
             }
-        }
-        if (foundSources) {
-            result.add(root.getAbsolutePath() + "/");
-            return result;
-        } else {
-            return null;
         }
     }
 
-    public synchronized void triggerGrammar(String grammar) {
-        System.err.println("Triggered grammar " + grammar);
-        grammarsToBuild.add(grammar);
+    public synchronized void triggerBuild() {
+        buildTriggered = true;
         if (!buildInProgress) {
             buildInProgress = true;
             new Thread(() -> {
                 while(true) {
-                    Set<String> buildGrammars = grammarsToBuild;
                     Map<String, Integer> buildVersions;
                     synchronized (this) {
-                        grammarsToBuild = new HashSet<>();
+                        buildTriggered = false;
                         buildVersions = new HashMap<>(savedVersions);
                     }
-                    doBuild(buildGrammars, buildVersions);
+                    doBuild(buildVersions);
                     synchronized (this) {
-                        if (grammarsToBuild.isEmpty()) {
+                        if (!buildTriggered) {
                             buildInProgress = false;
                             break;
                         }
@@ -213,9 +196,10 @@ public class SilverTextDocumentService implements TextDocumentService {
         }
     }
 
-    private void doBuild(Set<String> buildGrammars, Map<String, Integer> buildVersions) {
+    private void doBuild(Map<String, Integer> buildVersions) {
         String silverHome = "";
         List<String> args = List.of();
+        List<String> grammarPath = new ArrayList<>(grammarDirs);
         List<String> silverHostGen = List.of(silverGen);
 
         // Set up the build environment
@@ -238,13 +222,16 @@ public class SilverTextDocumentService implements TextDocumentService {
         // Note that we must demand allGrammars from comp before demanding
         // recompiledGrammars to ensure that IO happens properly,
         // due to the circularity in the driver involving unsafeInterleaveIO.
-        buildGrammars.removeAll(
+        Set<String> builtGrammars =
             new ConsCellCollection<DecoratedNode>(
-                comp.synthesized(silver.compiler.driver.util.Init.silver_compiler_driver_util_allGrammars__ON__silver_compiler_driver_util_Compilation)).stream()
+                comp.synthesized(silver.compiler.driver.util.Init.silver_compiler_driver_util_allGrammars__ON__silver_compiler_driver_util_Compilation))
+            .stream()
             .map(r -> r.synthesized(silver.compiler.driver.util.Init.silver_compiler_definition_env_declaredName__ON__silver_compiler_driver_util_RootSpec).toString())
-            .collect(Collectors.toSet()));
-        for (String remainingGrammar : buildGrammars) {
-            System.err.println("Failed to find triggered grammar " + remainingGrammar);
+            .collect(Collectors.toSet());
+        for (String grammar : buildGrammars) {
+            if (!builtGrammars.contains(grammar)) {
+                System.err.println("Failed to find triggered grammar " + grammar);
+            }
         }
 
         // Report diagnostics
@@ -265,11 +252,6 @@ public class SilverTextDocumentService implements TextDocumentService {
                 ConsCell messages = decFileErrors.synthesized(silver.core.Init.silver_core_snd__ON__silver_core_Pair);
                 client.publishDiagnostics(new PublishDiagnosticsParams(uri, Util.messagesToDiagnostics(messages, uri), buildVersions.get(uri)));
             }
-        }
-
-        // Check that we built all triggered grammars
-        for (String remainingGrammar : buildGrammars) {
-            System.err.println("Triggered grammar " + remainingGrammar + " was not built");
         }
 
         // Write updated interface files
@@ -295,9 +277,8 @@ public class SilverTextDocumentService implements TextDocumentService {
 
         // Search for a grammar declaration in a file in the directory
         Matcher m = grammarDecl.matcher("");
-        Optional<String> fromGrammarDecl = Optional.empty();
         try {
-            fromGrammarDecl = Files.list(Path.of(uri).getParent())
+            Optional<String> fromGrammarDecl = Files.list(Path.of(uri).getParent())
                 .filter(p -> !Files.isDirectory(p))
                 .flatMap((Path p) -> {
                     try {
@@ -309,14 +290,22 @@ public class SilverTextDocumentService implements TextDocumentService {
                         return Stream.empty();
                     }
                 }).findFirst();
+            if (fromGrammarDecl.isPresent()) {
+                return fromGrammarDecl;
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         // Fall back: look for "grammars/" in the path
-        return fromGrammarDecl.or(() -> uri.getPath().contains("grammars/")?
-            Optional.of(uri.getPath().split("grammars/", 2)[1].replace("/", ":").replace(".", ":").replaceAll(":$", "")) :
-            Optional.empty());
+        String path = uri.getPath();
+        if (path.contains("grammars/")) {
+            return Optional.of(
+                path.substring(0, path.lastIndexOf("/"))
+                .split("grammars/", 2)[1].replace("/", ":").replace(".", ":"));
+        }
+
+        return Optional.empty();
 
     }
 }

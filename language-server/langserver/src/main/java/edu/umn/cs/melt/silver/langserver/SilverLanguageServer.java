@@ -3,6 +3,10 @@ package edu.umn.cs.melt.silver.langserver;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import org.eclipse.lsp4j.FileOperationFilter;
+import org.eclipse.lsp4j.FileOperationOptions;
+import org.eclipse.lsp4j.FileOperationPattern;
+import org.eclipse.lsp4j.FileOperationsServerCapabilities;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.InitializedParams;
@@ -24,6 +28,7 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
     private SilverTextDocumentService textDocumentService;
     private SilverWorkspaceService workspaceService;
     private int errorCode = 1;
+    private List<WorkspaceFolder> folders;
 
     public SilverLanguageServer() {
         this.textDocumentService = new SilverTextDocumentService();
@@ -39,8 +44,8 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
 
         System.err.println("Initializing Silver language server");
 
-        textDocumentService.setWorkspaceFolders(initializeParams.getWorkspaceFolders());
-        workspaceService.setWorkspaceFolders(initializeParams.getWorkspaceFolders());
+        this.folders = initializeParams.getWorkspaceFolders();
+        refreshWorkspace();
 
         // Set the capabilities of the LS to inform the client.
         ServerCapabilities capabilities = new ServerCapabilities();
@@ -50,11 +55,17 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
                 new SemanticTokensLegend(
                     SilverTextDocumentService.tokenTypes, SilverTextDocumentService.tokenModifiers),
                 new SemanticTokensServerFull(false), false));
-        WorkspaceFoldersOptions workspaceFoldersOptions = new WorkspaceFoldersOptions();
-        workspaceFoldersOptions.setSupported(true);
-        workspaceFoldersOptions.setChangeNotifications(true);
-        WorkspaceServerCapabilities workspaceServerCapabilities = new WorkspaceServerCapabilities(workspaceFoldersOptions);
-        capabilities.setWorkspace(workspaceServerCapabilities);
+
+        FileOperationOptions fileOperationOptions = new FileOperationOptions(
+            List.of(new FileOperationFilter(new FileOperationPattern("**/*.{sv,ag,sv.md,ag.md}")))
+        );
+        FileOperationsServerCapabilities fileOperations = new FileOperationsServerCapabilities();
+        fileOperations.setDidCreate(fileOperationOptions);
+        fileOperations.setDidDelete(fileOperationOptions);
+        fileOperations.setDidRename(fileOperationOptions);
+        WorkspaceServerCapabilities workspaceServer = new WorkspaceServerCapabilities();
+        workspaceServer.setFileOperations(fileOperations);
+        capabilities.setWorkspace(workspaceServer);
 
         final InitializeResult initializeResult = new InitializeResult(capabilities);
         return CompletableFuture.supplyAsync(()->initializeResult);
@@ -90,7 +101,7 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
         textDocumentService.setClient(languageClient);
     }
 
-    public void setWorkspaceFolders(List<WorkspaceFolder> folders) {
+    public void refreshWorkspace() {
         textDocumentService.setWorkspaceFolders(folders);
     }
 }

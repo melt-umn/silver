@@ -1,24 +1,17 @@
 package edu.umn.cs.melt.silver.langserver;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import org.eclipse.lsp4j.CreateFilesParams;
+import org.eclipse.lsp4j.DeleteFilesParams;
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams;
-import org.eclipse.lsp4j.DidChangeWorkspaceFoldersParams;
-import org.eclipse.lsp4j.WorkspaceFolder;
+import org.eclipse.lsp4j.RenameFilesParams;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
 public class SilverWorkspaceService implements WorkspaceService {
-    private SilverLanguageServer languageServer;
-    private List<WorkspaceFolder> workspaceFolders = new ArrayList<>();
+    private SilverLanguageServer server;
 
-    public SilverWorkspaceService(SilverLanguageServer languageServer) {
-        this.languageServer = languageServer;
-    }
-
-    public void setWorkspaceFolders(List<WorkspaceFolder> folders) {
-        workspaceFolders = folders;
+    public SilverWorkspaceService(SilverLanguageServer server) {
+        this.server = server;
     }
 
     @Override
@@ -32,10 +25,17 @@ public class SilverWorkspaceService implements WorkspaceService {
     }
 
     @Override
-    public void didChangeWorkspaceFolders(DidChangeWorkspaceFoldersParams params) {
-        System.err.println(params);
-        workspaceFolders.addAll(params.getEvent().getAdded());
-        workspaceFolders.removeAll(params.getEvent().getRemoved());
-        languageServer.setWorkspaceFolders(workspaceFolders);
-    }
+    public void didCreateFiles(CreateFilesParams params) {
+		server.refreshWorkspace();
+	}
+
+    @Override
+    public void didDeleteFiles(DeleteFilesParams params) {
+		server.refreshWorkspace();
+	}
+
+    @Override
+    public void didRenameFiles(RenameFilesParams params) {
+		server.refreshWorkspace();
+	}
 }
