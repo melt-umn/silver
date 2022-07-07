@@ -112,7 +112,7 @@ melt.trynode('silver') {
     // Projects with 'develop' as main branch, we'll try to build specific branch names if they exist
     def github_projects = ["/melt-umn/ableC", "/melt-umn/Oberon0", "/melt-umn/ableJ14", "/melt-umn/meta-ocaml-lite",
                            "/melt-umn/lambda-calculus", "/melt-umn/rewriting-regex-matching", "/melt-umn/rewriting-optimization-demo",
-                           "/internal/ring"]
+                           "/internal/ring", "/melt-umn/caml-light"]
     // Specific other jobs to build
     def specific_jobs = ["/internal/matlab/master", "/internal/metaII/master", "/internal/simple/master"]
     // AbleP is now downstream from Silver-AbleC, so we don't need to build it here: "/melt-umn/ableP/master"
