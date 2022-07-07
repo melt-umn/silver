@@ -1,15 +1,16 @@
 grammar silver:compiler:driver:util;
 
-import silver:compiler:definition:core only jarName;
+import silver:compiler:definition:core only jarName, grammarErrors;
 
 synthesized attribute initRecompiledGrammars::[Decorated RootSpec];
 
-nonterminal Compilation with config, postOps, grammarList, initRecompiledGrammars, recompiledGrammars;
+nonterminal Compilation with config, postOps, grammarList, allGrammars, initRecompiledGrammars, recompiledGrammars;
 
 flowtype postOps {config} on Compilation;
 
 synthesized attribute postOps :: [DriverAction] with ++;
 synthesized attribute grammarList :: [Decorated RootSpec];
+synthesized attribute allGrammars :: [Decorated RootSpec];
 
 {--
  - This abstractly represents a compilation.
@@ -28,6 +29,8 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
 {
   -- the list of rootspecs coming out of g
   top.grammarList = g.grammarList;
+  -- all compiled rootspecs from g and r
+  top.allGrammars = g.grammarList ++ r.grammarList;
   -- the initial list of rootspecs from g that were re-compiled
   top.initRecompiledGrammars = keepGrammars(grammarsDependedUpon, g.recompiledGrammars);
   -- the list of re-compiled rootspecs from g and r

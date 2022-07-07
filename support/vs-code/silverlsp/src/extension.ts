@@ -23,7 +23,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// path to the launcher.jar
 		let classPath = path.join(__dirname, '..', 'launcher', 'launcher.jar');
-		const args: string[] = ['-cp', classPath];
+		const args: string[] = [
+			'-cp', classPath,
+			'-Xmx5G', '-Xss10M'
+		];
 
 		// Set the server options 
 		// -- java execution path

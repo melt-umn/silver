@@ -23,7 +23,7 @@ aspect production grammarRootSpec
 top::RootSpec ::= g::Grammar  _ _ _ _ _
 {
   top.genBinaryFiles := [
-    pair("Silver.svi", serInterface)
+    pair("Silver.svi", top.serInterface)
   ];
 
   top.genFiles := g.genFiles ++

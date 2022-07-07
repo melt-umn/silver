@@ -1,14 +1,19 @@
 package edu.umn.cs.melt.silver.langserver;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
+import org.eclipse.lsp4j.InitializedParams;
 import org.eclipse.lsp4j.SemanticTokensLegend;
 import org.eclipse.lsp4j.SemanticTokensServerFull;
 import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
+import org.eclipse.lsp4j.WorkspaceFolder;
+import org.eclipse.lsp4j.WorkspaceFoldersOptions;
+import org.eclipse.lsp4j.WorkspaceServerCapabilities;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.LanguageServer;
@@ -22,7 +27,7 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
 
     public SilverLanguageServer() {
         this.textDocumentService = new SilverTextDocumentService();
-        this.workspaceService = new SilverWorkspaceService();
+        this.workspaceService = new SilverWorkspaceService(this);
     }
 
     @Override
@@ -33,7 +38,9 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
 		silver.compiler.composed.Default.Init.postInit();
 
         System.err.println("Initializing Silver language server");
-        System.err.println(initializeParams.getCapabilities().getTextDocument().getSemanticTokens());
+
+        textDocumentService.setWorkspaceFolders(initializeParams.getWorkspaceFolders());
+        workspaceService.setWorkspaceFolders(initializeParams.getWorkspaceFolders());
 
         // Set the capabilities of the LS to inform the client.
         ServerCapabilities capabilities = new ServerCapabilities();
@@ -43,6 +50,11 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
                 new SemanticTokensLegend(
                     SilverTextDocumentService.tokenTypes, SilverTextDocumentService.tokenModifiers),
                 new SemanticTokensServerFull(false), false));
+        WorkspaceFoldersOptions workspaceFoldersOptions = new WorkspaceFoldersOptions();
+        workspaceFoldersOptions.setSupported(true);
+        workspaceFoldersOptions.setChangeNotifications(true);
+        WorkspaceServerCapabilities workspaceServerCapabilities = new WorkspaceServerCapabilities(workspaceFoldersOptions);
+        capabilities.setWorkspace(workspaceServerCapabilities);
 
         final InitializeResult initializeResult = new InitializeResult(capabilities);
         return CompletableFuture.supplyAsync(()->initializeResult);
@@ -76,5 +88,9 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
     @Override
     public void connect(LanguageClient languageClient) {
         textDocumentService.setClient(languageClient);
+    }
+
+    public void setWorkspaceFolders(List<WorkspaceFolder> folders) {
+        textDocumentService.setWorkspaceFolders(folders);
     }
 }

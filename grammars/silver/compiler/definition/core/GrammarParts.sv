@@ -7,7 +7,7 @@ nonterminal Grammar with
   grammarName, env, globalImports, grammarDependencies,
   -- Synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild,
-  defs, occursDefs, importedDefs, importedOccursDefs, grammarErrors, jarName;
+  defs, occursDefs, importedDefs, importedOccursDefs, grammarErrors, allFileErrors, jarName;
 
 flowtype Grammar = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, grammarName, env, flowEnv, globalImports, grammarDependencies};
 
@@ -33,6 +33,10 @@ monoid attribute importedOccursDefs :: [OccursDclInfo];
  - An overall listing of error messages for a grammar
  -}
 synthesized attribute grammarErrors :: [Pair<String [Message]>];
+{--
+ - All files in a grammar, paired with their error messages.
+ -}
+synthesized attribute allFileErrors :: [Pair<String [Message]>];
 
 propagate
     moduleNames, exportedGrammars, optionalGrammars, condBuild, defs,
@@ -46,6 +50,7 @@ top::Grammar ::=
   -- turn into this, and this "aren't found". TODO verify this is true?
   top.declaredName = ":null";
   top.grammarErrors = [];
+  top.allFileErrors = [];
 }
 
 abstract production consGrammar
@@ -55,6 +60,7 @@ top::Grammar ::= h::Root  t::Grammar
   top.grammarErrors =
     if null(h.errors ++ jarNameErrors) then t.grammarErrors
      else pair(h.location.filename, h.errors ++ jarNameErrors) :: t.grammarErrors;
+  top.allFileErrors = (h.location.filename, h.errors ++ jarNameErrors) :: t.allFileErrors;
 
   local jarNameErrors :: [Message] = warnIfMultJarName(h.jarName, t.jarName, h.location);
 }
