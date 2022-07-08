@@ -19,20 +19,13 @@ MaybeT<IO RootSpec> ::= grammarName::String  silverHostGen::[String]  grammarTim
     -- IO Step 1: Find the interface file, if any
     gen :: String <- findInterfaceLocation(gramPath, silverHostGen);
     let file :: String = gen ++ "src/" ++ gramPath ++ "Silver.svi";
-    
-    -- IO Step 2: See if it's new enough
-    modTime :: Integer <- lift(fileTime(file));
-    case grammarTime of
-    | just(t) when modTime < t -> empty
-    | _ -> pure(())
-    end;
 
-    -- IO Step 3: Let's say so, and parse it
+    -- IO Step 2: Let's say so, and parse it
     lift(eprintln("Found " ++ grammarName ++ "\n\t[" ++ file ++ "]"));
     text :: ByteArray <- lift(readBinaryFile(file));
     let ir :: Either<String InterfaceItems> = nativeDeserialize(text);
 
-    -- IO Step 4: Perhaps complain it failed to deserialize
+    -- IO Step 3: Perhaps complain it failed to deserialize
     case ir of
     | left(msg) ->
       do {
@@ -48,7 +41,12 @@ MaybeT<IO RootSpec> ::= grammarName::String  silverHostGen::[String]  grammarTim
           "\n\tRecovering by parsing grammar...."));
         empty;
       }
-    | right(i) -> pure(interfaceRootSpec(i, modTime, gen))
+    | right(i) ->
+      case grammarTime of
+      -- Fail if the grammar sources are newer than the ones used to build the interface file
+      | just(t) when t > i.maybeGrammarTime.fromJust -> empty
+      | _ -> pure(interfaceRootSpec(i, gen))
+      end
     end;
   };
 }

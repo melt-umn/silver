@@ -6,7 +6,7 @@ attribute genFiles occurs on RootSpec;
 attribute genBinaryFiles occurs on RootSpec;
 
 aspect production interfaceRootSpec
-top::RootSpec ::= _ _ _
+top::RootSpec ::= _ _
 {
   top.genFiles := [];
   top.genBinaryFiles := [];

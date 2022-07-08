@@ -21,7 +21,7 @@ nonterminal RootSpec with
   dependentGrammars,
   -- synthesized attributes
   declaredName, moduleNames, exportedGrammars, optionalGrammars, condBuild, allGrammarDependencies,
-  defs, occursDefs, grammarErrors, grammarSource, grammarTime, interfaceTime, dirtyGrammars, recompiledGrammars,
+  defs, occursDefs, grammarErrors, grammarSource, grammarTime, dirtyGrammars, recompiledGrammars,
   parsingErrors, allFileErrors, jarName, generateLocation, serInterface;
 
 flowtype RootSpec = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars};
@@ -101,7 +101,6 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   
   top.grammarSource = grammarSource;
   top.grammarTime = grammarTime;
-  top.interfaceTime = grammarTime;
   top.generateLocation = generateLocation;
   top.dirtyGrammars :=
     if oldInterface == just(newInterface)
@@ -129,14 +128,13 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
  - Create a RootSpec from an interface file, representing a grammar.
  -}
 abstract production interfaceRootSpec
-top::RootSpec ::= i::InterfaceItems  interfaceTime::Integer  generateLocation::String
+top::RootSpec ::= i::InterfaceItems  generateLocation::String
 {
   top.grammarSource = i.maybeGrammarSource.fromJust;
   top.grammarTime = i.maybeGrammarTime.fromJust;
-  top.interfaceTime = interfaceTime;
   top.generateLocation = generateLocation;
   
-  local ood :: Boolean = isOutOfDate(interfaceTime, top.allGrammarDependencies, top.compiledGrammars);
+  local ood :: Boolean = isOutOfDate(i.maybeGrammarTime.fromJust, top.allGrammarDependencies, top.compiledGrammars);
   top.dirtyGrammars := if ood then [i.maybeDeclaredName.fromJust] else [];
   top.recompiledGrammars := [];
 
@@ -162,7 +160,6 @@ top::RootSpec ::= e::[ParseError]  grammarName::String  grammarSource::String  g
 {
   top.grammarSource = grammarSource;
   top.grammarTime = grammarTime;
-  top.interfaceTime = grammarTime;
   top.generateLocation = generateLocation;
   
   top.dirtyGrammars := [];
