@@ -165,6 +165,12 @@ public class SilverTextDocumentService implements TextDocumentService {
     }
 
     private void findGrammars(File root) {
+        // Workaround to avoid copied resource grammars in the maven build
+        // directory in this LSP plugin under the Silver repo.
+        // We might want to add a more intelegent way of specifying grammars to
+        // exclude in case duplicates are found.
+        if (root.getPath().contains("/target/classes/")) return;
+
         for (File file : root.listFiles()) {
             if (file.isDirectory()) {
                 findGrammars(file);
@@ -255,7 +261,7 @@ public class SilverTextDocumentService implements TextDocumentService {
                 r.synthesized(silver.compiler.driver.util.Init.silver_compiler_definition_env_grammarSource__ON__silver_compiler_driver_util_RootSpec).toString();
             String declaredName =
                 r.synthesized(silver.compiler.driver.util.Init.silver_compiler_definition_env_declaredName__ON__silver_compiler_driver_util_RootSpec).toString();
-            //System.err.println("Reporting diagnostics for " + declaredName);
+            System.err.println("Reporting diagnostics for " + declaredName);
 
             Collection<NPair> allFileErrors = new ConsCellCollection<>(
                 r.synthesized(silver.compiler.driver.util.Init.silver_compiler_definition_core_allFileErrors__ON__silver_compiler_driver_util_RootSpec));
@@ -268,6 +274,7 @@ public class SilverTextDocumentService implements TextDocumentService {
         }
 
         // Write updated interface files
+        System.err.println("Writing interface files");
         for (DecoratedNode r : rootSpecs) {
             PunsafeEvalIO.invoke(OriginContext.FFI_CONTEXT,
                 PwriteInterface.invoke(OriginContext.FFI_CONTEXT, new StringCatter(silverGen), r));
