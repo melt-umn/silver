@@ -237,14 +237,16 @@ public class SilverTextDocumentService implements TextDocumentService {
                 a, benv,
                 ConsCellCollection.fromIterator(buildGrammars.stream().<StringCatter>map(StringCatter::new).iterator())));
 
-        // Check that we built all triggered grammars.
         // Note that we must demand allGrammars from comp before demanding
         // recompiledGrammars to ensure that IO happens properly,
         // due to the circularity in the driver involving unsafeInterleaveIO.
-        Set<String> builtGrammars =
-            new ConsCellCollection<DecoratedNode>(
-                comp.synthesized(silver.compiler.driver.util.Init.silver_compiler_driver_util_allGrammars__ON__silver_compiler_driver_util_Compilation))
-            .stream()
+        Collection<DecoratedNode> allGrammars = new ConsCellCollection<>(
+            comp.synthesized(silver.compiler.driver.util.Init.silver_compiler_driver_util_allGrammars__ON__silver_compiler_driver_util_Compilation));
+        Collection<DecoratedNode> recompiledGrammars = new ConsCellCollection<>(
+            comp.synthesized(silver.compiler.driver.util.Init.silver_compiler_driver_util_recompiledGrammars__ON__silver_compiler_driver_util_Compilation));
+
+        // Check that we built all triggered grammars.
+        Set<String> builtGrammars = allGrammars.stream()
             .map(r -> r.synthesized(silver.compiler.driver.util.Init.silver_compiler_definition_env_declaredName__ON__silver_compiler_driver_util_RootSpec).toString())
             .collect(Collectors.toSet());
         for (String grammar : buildGrammars) {
@@ -254,28 +256,27 @@ public class SilverTextDocumentService implements TextDocumentService {
         }
 
         // Report diagnostics
-        Collection<DecoratedNode> rootSpecs = new ConsCellCollection<>(
-            comp.synthesized(silver.compiler.driver.util.Init.silver_compiler_driver_util_recompiledGrammars__ON__silver_compiler_driver_util_Compilation));
-        for (DecoratedNode r : rootSpecs) {
+        System.err.println("Reporting diagnostics");
+        for (DecoratedNode r : allGrammars) {
             String grammarSource =
                 r.synthesized(silver.compiler.driver.util.Init.silver_compiler_definition_env_grammarSource__ON__silver_compiler_driver_util_RootSpec).toString();
-            String declaredName =
-                r.synthesized(silver.compiler.driver.util.Init.silver_compiler_definition_env_declaredName__ON__silver_compiler_driver_util_RootSpec).toString();
-            System.err.println("Reporting diagnostics for " + declaredName);
 
             Collection<NPair> allFileErrors = new ConsCellCollection<>(
                 r.synthesized(silver.compiler.driver.util.Init.silver_compiler_definition_core_allFileErrors__ON__silver_compiler_driver_util_RootSpec));
             for (NPair fileErrors : allFileErrors) {
                 DecoratedNode decFileErrors = fileErrors.decorate();
-                String uri = "file://" + grammarSource + decFileErrors.synthesized(silver.core.Init.silver_core_fst__ON__silver_core_Pair).toString();
+                String fileName = decFileErrors.synthesized(silver.core.Init.silver_core_fst__ON__silver_core_Pair).toString();
                 ConsCell messages = decFileErrors.synthesized(silver.core.Init.silver_core_snd__ON__silver_core_Pair);
+                String uri = "file://" + grammarSource + fileName;
+
+                // System.err.println("Reporting diagnostics for " + grammarSource + fileName);
                 client.publishDiagnostics(new PublishDiagnosticsParams(uri, Util.messagesToDiagnostics(messages, uri), buildVersions.get(uri)));
             }
         }
 
         // Write updated interface files
         System.err.println("Writing interface files");
-        for (DecoratedNode r : rootSpecs) {
+        for (DecoratedNode r : recompiledGrammars) {
             PunsafeEvalIO.invoke(OriginContext.FFI_CONTEXT,
                 PwriteInterface.invoke(OriginContext.FFI_CONTEXT, new StringCatter(silverGen), r));
         }
