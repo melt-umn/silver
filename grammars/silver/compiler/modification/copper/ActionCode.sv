@@ -52,7 +52,11 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
   top.defs := flatMap(hackTransformLocals, stmts.defs);
   propagate flowDefs;
 
-  top.actionCode = flatMap(hacklocaldeclarations, stmts.defs) ++ stmts.translation;
+  top.actionCode =
+    -- action code translation goes in the env/syntax AST, so we might demand it
+    -- when writing interface files in the presence of errors.
+    if !null(top.errors) then ""
+    else flatMap(hacklocaldeclarations, stmts.defs) ++ stmts.translation;
 
   top.errors := stmts.errors;
   top.errors <- if top.frame.permitPluck && !stmts.containsPluck then
