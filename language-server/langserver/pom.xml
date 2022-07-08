@@ -33,4 +33,13 @@
             <version>0.17.2</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>../../grammars/</directory>
+                <targetPath>grammars/</targetPath>
+            </resource>
+        </resources>
+    </build>
 </project>

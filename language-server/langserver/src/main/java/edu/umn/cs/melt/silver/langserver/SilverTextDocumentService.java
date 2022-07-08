@@ -57,6 +57,7 @@ public class SilverTextDocumentService implements TextDocumentService {
     private Map<String, Integer> savedVersions = new HashMap<>();
     private boolean buildInProgress = false, buildTriggered = false;
     private String silverGen;
+    private String silverStdlibGrammars = null;
     private Set<String> grammarDirs = new HashSet<>();
     private Set<String> buildGrammars = new HashSet<>();
 
@@ -70,6 +71,10 @@ public class SilverTextDocumentService implements TextDocumentService {
 
     public void setClient(LanguageClient client) {
         this.client = client;
+    }
+
+    public void setSilverGrammarsPath(Path path) {
+        this.silverStdlibGrammars = path.toString() + "/";
     }
 
     @Override
@@ -197,10 +202,18 @@ public class SilverTextDocumentService implements TextDocumentService {
     }
 
     private void doBuild(Map<String, Integer> buildVersions) {
-        String silverHome = "";
+        String silverHome = "";  // Not needed since we aren't doing translation
         List<String> args = List.of();
         List<String> grammarPath = new ArrayList<>(grammarDirs);
         List<String> silverHostGen = List.of(silverGen);
+
+        if (silverStdlibGrammars == null) {
+            throw new IllegalStateException("Silver host grammars path not set");
+        } else {
+            // Add the silver resource grammars to the end of the grammar path,
+            // so if silver is in the workspace we will find it there first.
+            grammarPath.add(silverStdlibGrammars);
+        }
 
         // Set up the build environment
         NBuildEnv benv = new PbuildEnv(
@@ -210,7 +223,7 @@ public class SilverTextDocumentService implements TextDocumentService {
             ConsCellCollection.fromStringList(silverHostGen)
         );
         DecoratedNode a = PparseArgsOrError.invoke(OriginContext.FFI_CONTEXT, ConsCellCollection.fromStringList(args));
-        
+
         // Build!
         DecoratedNode comp = (DecoratedNode)PunsafeEvalIO.invoke(OriginContext.FFI_CONTEXT,
             PbuildRun.invoke(OriginContext.FFI_CONTEXT,

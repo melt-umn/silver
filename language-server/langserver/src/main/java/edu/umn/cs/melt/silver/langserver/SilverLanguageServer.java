@@ -1,5 +1,9 @@
 package edu.umn.cs.melt.silver.langserver;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -41,6 +45,15 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
 		silver.compiler.composed.Default.Init.postInit();
 
         System.err.println("Initializing Silver language server");
+
+        Path silverGrammars;
+        try {
+            silverGrammars = Files.createTempDirectory("silver_grammars");
+            Util.copyFromJar(getClass(), "grammars/", silverGrammars);
+        } catch (IOException | URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        textDocumentService.setSilverGrammarsPath(silverGrammars);
 
         this.folders = initializeParams.getWorkspaceFolders();
         refreshWorkspace();
