@@ -41,7 +41,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   -- recheck in the .compiledGrammars for the recheck.
   -- That means they don't see "themselves" but their previous interface file.
   r.compiledGrammars = g.compiledGrammars;
-  -- This *should* be okay, because the information should be identical in both.
+  -- This is actually broken and wrong! See https://github.com/melt-umn/silver/issues/673
 
   g.dependentGrammars = flatMap(
     \ r::Decorated RootSpec -> map(\ g::String -> (g, r.declaredName), r.allGrammarDependencies),
