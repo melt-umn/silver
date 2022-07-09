@@ -11,9 +11,9 @@ melt.trynode('silver') {
 
   stage("Build") {
 
-    checkout scm
-
     melt.clearGenerated()
+
+    checkout scm
 
     // Bootstrap logic to obtain jars
     if (params.OVERRIDE_JARS != 'no') {
