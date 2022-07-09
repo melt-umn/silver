@@ -49,6 +49,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 		client.start();
 	}
+
+	// vscode.commands.registerCommand('silver.clean', () => {
+	// 	client.;
+	// });
 }
 
 // this method is called when your extension is deactivated

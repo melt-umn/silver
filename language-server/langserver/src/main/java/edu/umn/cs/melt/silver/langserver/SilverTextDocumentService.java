@@ -56,6 +56,7 @@ public class SilverTextDocumentService implements TextDocumentService {
     private Map<String, Integer> fileVersions = new HashMap<>();
     private Map<String, Integer> savedVersions = new HashMap<>();
     private boolean buildInProgress = false, buildTriggered = false;
+    private boolean cleanBuild = false;
     private String silverGen;
     private String silverStdlibGrammars = null;
     private Set<String> grammarDirs = new HashSet<>();
@@ -84,7 +85,7 @@ public class SilverTextDocumentService implements TextDocumentService {
         fileContents.put(uri, params.getTextDocument().getText());
         fileVersions.put(uri, params.getTextDocument().getVersion());
         savedVersions.put(uri, params.getTextDocument().getVersion());
-        triggerBuild();
+        triggerBuild(false);
     }
 
     @Override
@@ -114,7 +115,7 @@ public class SilverTextDocumentService implements TextDocumentService {
             throw new IllegalStateException("File saved before it was changed");
         }
         savedVersions.put(uri, fileVersions.get(uri));
-        triggerBuild();
+        triggerBuild(false);
     }
 
     public static final List<String> tokenTypes = Arrays.asList(new String[] {
@@ -161,7 +162,7 @@ public class SilverTextDocumentService implements TextDocumentService {
             }
             findGrammars(new File(uri));
         }
-        triggerBuild();
+        triggerBuild(false);
     }
 
     private void findGrammars(File root) {
@@ -184,7 +185,9 @@ public class SilverTextDocumentService implements TextDocumentService {
         }
     }
 
-    public synchronized void triggerBuild() {
+    public synchronized void triggerBuild(boolean cleanBuild) {
+        this.cleanBuild = cleanBuild;
+
         buildTriggered = true;
         if (!buildInProgress) {
             buildInProgress = true;
@@ -209,9 +212,13 @@ public class SilverTextDocumentService implements TextDocumentService {
 
     private void doBuild(Map<String, Integer> buildVersions) {
         String silverHome = "";  // Not needed since we aren't doing translation
-        List<String> args = List.of();
+        List<String> args = new ArrayList<>();
         List<String> grammarPath = new ArrayList<>(grammarDirs);
         List<String> silverHostGen = List.of(silverGen);
+
+        if (cleanBuild) {
+            args.add("--clean");
+        }
 
         if (silverStdlibGrammars == null) {
             throw new IllegalStateException("Silver host grammars path not set");
@@ -280,6 +287,8 @@ public class SilverTextDocumentService implements TextDocumentService {
             PunsafeEvalIO.invoke(OriginContext.FFI_CONTEXT,
                 PwriteInterface.invoke(OriginContext.FFI_CONTEXT, new StringCatter(silverGen), r));
         }
+
+        this.cleanBuild = false;
     }
 
     private static Pattern grammarDecl = Pattern.compile("grammar *([a-zA-Z0-9_:]+) *;");

@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import org.eclipse.lsp4j.ExecuteCommandOptions;
 import org.eclipse.lsp4j.FileOperationFilter;
 import org.eclipse.lsp4j.FileOperationOptions;
 import org.eclipse.lsp4j.FileOperationPattern;
@@ -66,6 +67,9 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
                 new SemanticTokensLegend(
                     SilverTextDocumentService.tokenTypes, SilverTextDocumentService.tokenModifiers),
                 new SemanticTokensServerFull(false), false));
+        capabilities.setExecuteCommandProvider(new ExecuteCommandOptions(List.of(
+            "silver.clean"
+        )));
 
         FileOperationOptions fileOperationOptions = new FileOperationOptions(
             List.of(new FileOperationFilter(new FileOperationPattern("**/*.{sv,ag,sv.md,ag.md}")))
@@ -114,5 +118,9 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
 
     public void refreshWorkspace() {
         textDocumentService.setWorkspaceFolders(folders);
+    }
+
+    public void cleanBuild() {
+        textDocumentService.triggerBuild(true);
     }
 }

@@ -28,6 +28,12 @@
         ],
         "configuration": "./language-configuration.json"
       }
+    ],
+    "commands": [
+      {
+        "command": "silver.clean",
+        "title": "Silver: Clean Silver language server workspace"
+      }
     ]
   },
   "configurationDefaults": {
