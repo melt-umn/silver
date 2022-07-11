@@ -107,8 +107,8 @@ abstract production nested
 top::Message ::= l::Location m::String others::[Message]
 {
   top.where = l;
-  top.message = m;
-  top.noLocOutput = s"${m}\n${messagesToString(others)}\n";
+  top.message = s"${m}\n${messagesToString(others)}";
+  top.noLocOutput = s"${top.message}\n";
   top.severity = foldr(max, 0, map((.severity), others));
 }
 
