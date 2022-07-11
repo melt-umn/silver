@@ -1,6 +1,7 @@
 grammar silver:core;
 
-@{- A typeclass for rings that have a reciprocal operation, which turns 
+@{- A typeclass for rings that have a reciprocal operation, which gives the
+  - multiplicative inverse of non-zero elements.
   -
   - Laws:
   -
