@@ -6,20 +6,19 @@ grammar silver:core;
   -
   - * Left Inverse: `sub(x, x) = zero`
   - * Right Inverse: `add(sub(zero, x), x) = zero`
+  - * Negate: `neg(x) = sub(zero, x)`
   -}
 class Semiring a => Ring a {
   @{- The function corresponding to the binary `-` operator. -}
   sub :: (a ::= a a);
+
+  @{- The function corresponding to the unary `-` operator. -}
+  negate :: (a ::= a) = \x::a -> sub(zero, x);
 }
 
 instance Ring Integer {
   sub = \a::Integer b::Integer -> a - b;
 }
-
-@{- The function corresponding to the unary `-` operator. -}
-function negate
-Ring a => a ::= x::a
-{ return sub(zero, x); }
 
 @{- Converts an integer into an arbitrary ring. -}
 function fromInteger
