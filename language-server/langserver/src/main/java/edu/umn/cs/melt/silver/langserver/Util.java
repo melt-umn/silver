@@ -26,6 +26,14 @@ import common.javainterop.ConsCellCollection;
 import silver.core.NLocation;
 import silver.langutil.NMessage;
 
+/**
+ * Generic utilities for LSP server implementations for languages implemented in Silver.
+ *
+ * TODO: This class should move to a generic utility library for use in
+ * implementing LSP servers from languages written in Silver.
+ *
+ * @author krame505
+ */
 public class Util {
     public static Diagnostic messageToDiagnostic(final NMessage m, final String uri) {
         Diagnostic d = new Diagnostic();

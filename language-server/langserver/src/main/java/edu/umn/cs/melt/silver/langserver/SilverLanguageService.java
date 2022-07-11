@@ -16,16 +16,19 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
+import org.eclipse.lsp4j.CreateFilesParams;
+import org.eclipse.lsp4j.DeleteFilesParams;
+import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
+import org.eclipse.lsp4j.DidChangeWatchedFilesParams;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.DidSaveTextDocumentParams;
+import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
+import org.eclipse.lsp4j.RenameFilesParams;
 import org.eclipse.lsp4j.SemanticTokens;
 import org.eclipse.lsp4j.SemanticTokensParams;
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent;
@@ -33,6 +36,7 @@ import org.eclipse.lsp4j.WorkspaceFolder;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.TextDocumentService;
+import org.eclipse.lsp4j.services.WorkspaceService;
 
 import common.ConsCell;
 import common.DecoratedNode;
@@ -42,7 +46,6 @@ import common.javainterop.ConsCellCollection;
 import silver.compiler.composed.Default.Parser_silver_compiler_composed_Default_svParse;
 import silver.compiler.composed.Default.PsvParse;
 import silver.compiler.driver.PbuildRun;
-import silver.compiler.driver.PisValidSilverFile;
 import silver.compiler.driver.PparseArgsOrError;
 import silver.compiler.driver.util.NBuildEnv;
 import silver.compiler.driver.util.PbuildEnv;
@@ -50,8 +53,14 @@ import silver.compiler.driver.util.PwriteInterface;
 import silver.core.NPair;
 import silver.core.PunsafeEvalIO;
 
-public class SilverTextDocumentService implements TextDocumentService {
+/**
+ * Implementation of LSP text document and workspace services for Silver.
+ * 
+ * @author krame505
+ */
+public class SilverLanguageService implements TextDocumentService, WorkspaceService {
     private LanguageClient client;
+    private List<WorkspaceFolder> folders;
     private Map<String, String> fileContents = new HashMap<>();
     private Map<String, Integer> fileVersions = new HashMap<>();
     private Map<String, Integer> savedVersions = new HashMap<>();
@@ -62,7 +71,7 @@ public class SilverTextDocumentService implements TextDocumentService {
     private Set<String> grammarDirs = new HashSet<>();
     private Set<String> buildGrammars = new HashSet<>();
 
-    public SilverTextDocumentService() {
+    public SilverLanguageService() {
         try {
             silverGen = Files.createTempDirectory("silver_generated").toString() + "/";
         } catch (IOException e) {
@@ -76,6 +85,11 @@ public class SilverTextDocumentService implements TextDocumentService {
 
     public void setSilverGrammarsPath(Path path) {
         this.silverStdlibGrammars = path.toString() + "/";
+    }
+
+    public void setWorkspaceFolders(List<WorkspaceFolder> folders) {
+        this.folders = folders;
+        refreshWorkspace();
     }
 
     @Override
@@ -118,6 +132,41 @@ public class SilverTextDocumentService implements TextDocumentService {
         triggerBuild(false);
     }
 
+    @Override
+    public CompletableFuture<Object> executeCommand(ExecuteCommandParams params) {
+        switch (params.getCommand()) {
+        case "silver.clean":
+            triggerBuild(true);
+            return null;
+        }
+        throw new UnsupportedOperationException("Unsupported command " + params.getCommand());
+    }
+
+    @Override
+    public void didChangeConfiguration(DidChangeConfigurationParams params) {
+
+    }
+
+    @Override
+    public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
+
+    }
+
+    @Override
+    public void didCreateFiles(CreateFilesParams params) {
+        refreshWorkspace();
+    }
+
+    @Override
+    public void didDeleteFiles(DeleteFilesParams params) {
+        refreshWorkspace();
+    }
+
+    @Override
+    public void didRenameFiles(RenameFilesParams params) {
+        refreshWorkspace();
+    }
+
     public static final List<String> tokenTypes = Arrays.asList(new String[] {
         "namespace", "type", "interface", "class", "typeParameter", "parameter", "variable", "function",
         "keyword", "modifier", "comment", "string", "number", "regexp", "operator"
@@ -149,7 +198,7 @@ public class SilverTextDocumentService implements TextDocumentService {
         });
     }
 
-    public void setWorkspaceFolders(List<WorkspaceFolder> folders) {
+    private void refreshWorkspace() {
         grammarDirs.clear();
         buildGrammars.clear();
 
@@ -162,6 +211,7 @@ public class SilverTextDocumentService implements TextDocumentService {
             }
             findGrammars(new File(uri));
         }
+
         triggerBuild(false);
     }
 
@@ -175,8 +225,8 @@ public class SilverTextDocumentService implements TextDocumentService {
         for (File file : root.listFiles()) {
             if (file.isDirectory()) {
                 findGrammars(file);
-            } else if (isValidSilverFileName(file.getName())) {
-                Optional<String> fileGrammar = uriToGrammar("file://" + file.getAbsolutePath());
+            } else if (SilverUtil.isValidSilverFileName(file.getName())) {
+                Optional<String> fileGrammar = SilverUtil.uriToGrammar("file://" + file.getAbsolutePath());
                 fileGrammar.ifPresent(buildGrammars::add);
                 fileGrammar.ifPresent(grammar -> grammarDirs.add(
                     root.getAbsolutePath().replace("/", ":").replace(".", ":")
@@ -289,57 +339,5 @@ public class SilverTextDocumentService implements TextDocumentService {
         }
 
         this.cleanBuild = false;
-    }
-
-    private static Pattern grammarDecl = Pattern.compile("grammar *([a-zA-Z0-9_:]+) *;");
-    /**
-     * Attempt to infer the grammar from a source file URI.
-     * @param uriString  The URI of a source file.
-     * @return  The file's grammar.
-     */
-    public static Optional<String> uriToGrammar(String uriString) {
-        URI uri;
-        try {
-            uri = new URI(uriString);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid URI", e);
-        }
-
-        // Search for a grammar declaration in a file in the directory
-        Matcher m = grammarDecl.matcher("");
-        try {
-            Optional<String> fromGrammarDecl = Files.list(Path.of(uri).getParent())
-                .filter(p -> !Files.isDirectory(p) && isValidSilverFileName(p.toString()))
-                .flatMap((Path p) -> {
-                    try {
-                        return Files.lines(p).findFirst().flatMap(line ->
-                            m.reset(line).find()? Optional.of(m.toMatchResult().group(1)) :
-                            Optional.empty()).stream();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        return Stream.empty();
-                    }
-                }).findFirst();
-            if (fromGrammarDecl.isPresent()) {
-                return fromGrammarDecl;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // Fall back: look for "grammars/" in the path
-        String path = uri.getPath();
-        if (path.contains("grammars/")) {
-            return Optional.of(
-                path.substring(0, path.lastIndexOf("/"))
-                .split("grammars/", 2)[1].replace("/", ":").replace(".", ":"));
-        }
-
-        return Optional.empty();
-
-    }
-
-    public static boolean isValidSilverFileName(String file) {
-        return PisValidSilverFile.invoke(OriginContext.FFI_CONTEXT, new StringCatter(file));
     }
 }

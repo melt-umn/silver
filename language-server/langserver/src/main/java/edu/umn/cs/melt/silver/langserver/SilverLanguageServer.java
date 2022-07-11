@@ -19,7 +19,6 @@ import org.eclipse.lsp4j.SemanticTokensServerFull;
 import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
-import org.eclipse.lsp4j.WorkspaceFolder;
 import org.eclipse.lsp4j.WorkspaceServerCapabilities;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageClientAware;
@@ -28,14 +27,11 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
 public class SilverLanguageServer implements LanguageServer, LanguageClientAware {
-    private SilverTextDocumentService textDocumentService;
-    private SilverWorkspaceService workspaceService;
+    private SilverLanguageService service;
     private int errorCode = 1;
-    private List<WorkspaceFolder> folders;
 
     public SilverLanguageServer() {
-        this.textDocumentService = new SilverTextDocumentService();
-        this.workspaceService = new SilverWorkspaceService(this);
+        this.service = new SilverLanguageService();
     }
 
     @Override
@@ -54,10 +50,9 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
         } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
-        textDocumentService.setSilverGrammarsPath(silverGrammars);
+        service.setSilverGrammarsPath(silverGrammars);
 
-        this.folders = initializeParams.getWorkspaceFolders();
-        refreshWorkspace();
+        service.setWorkspaceFolders(initializeParams.getWorkspaceFolders());
 
         // Set the capabilities of the LS to inform the client.
         ServerCapabilities capabilities = new ServerCapabilities();
@@ -65,7 +60,7 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
         capabilities.setSemanticTokensProvider(
             new SemanticTokensWithRegistrationOptions(
                 new SemanticTokensLegend(
-                    SilverTextDocumentService.tokenTypes, SilverTextDocumentService.tokenModifiers),
+                    SilverLanguageService.tokenTypes, SilverLanguageService.tokenModifiers),
                 new SemanticTokensServerFull(false), false));
         capabilities.setExecuteCommandProvider(new ExecuteCommandOptions(List.of(
             "silver.clean"
@@ -102,25 +97,17 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
     @Override
     public TextDocumentService getTextDocumentService() {
         // Return the endpoint for language features.
-        return this.textDocumentService;
+        return this.service;
     }
 
     @Override
     public WorkspaceService getWorkspaceService() {
         // Return the endpoint for workspace functionality.
-        return this.workspaceService;
+        return this.service;
     }
 
     @Override
     public void connect(LanguageClient languageClient) {
-        textDocumentService.setClient(languageClient);
-    }
-
-    public void refreshWorkspace() {
-        textDocumentService.setWorkspaceFolders(folders);
-    }
-
-    public void cleanBuild() {
-        textDocumentService.triggerBuild(true);
+        service.setClient(languageClient);
     }
 }
