@@ -45,7 +45,7 @@ r::Root ::= e::Expr
                               wrapping without considering associativity -}
 }
 
-aspect production add
+aspect production addOp
 sum::Expr ::= l::Expr r::Expr
 {
  sum.bpp = if wrapInParens ( sum.enclosingOpPrecedence, 1,
@@ -59,7 +59,7 @@ sum::Expr ::= l::Expr r::Expr
  r.leftOrRight = "right" ;
 }
 
-aspect production sub
+aspect production subOp
 dff::Expr ::= l::Expr r::Expr
 {
  dff.bpp = if wrapInParens ( dff.enclosingOpPrecedence, 1,
@@ -73,7 +73,7 @@ dff::Expr ::= l::Expr r::Expr
  r.leftOrRight = "right" ;
 }
 
-aspect production mul
+aspect production mulOp
 prd::Expr ::= l::Expr r::Expr
 {
  prd.bpp = if wrapInParens ( prd.enclosingOpPrecedence, 2,
@@ -87,7 +87,7 @@ prd::Expr ::= l::Expr r::Expr
  r.leftOrRight = "right" ;
 }
 
-aspect production div
+aspect production divOp
 quo::Expr ::= l::Expr r::Expr
 {
  local attribute ourPrecedence :: Integer;

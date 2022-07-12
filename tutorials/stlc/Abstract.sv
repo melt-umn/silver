@@ -230,7 +230,7 @@ top::Expression ::=
 }
 
 
-abstract production not
+abstract production notOp
 top::Expression ::= e::Expression
 {
   e.gamma = top.gamma;
@@ -247,12 +247,12 @@ top::Expression ::= e::Expression
 
   e.substV = top.substV;
   e.substE = top.substE;
-  top.substed = not(e.substed);
+  top.substed = notOp(e.substed);
 
   top.nextStep = case e of
                  | tru_a() -> fals_a()
                  | fals_a() -> tru_a()
-                 | _ -> not(e.nextStep)
+                 | _ -> notOp(e.nextStep)
                  end;
 
   top.pp = "!(" ++ e.pp ++ ")";

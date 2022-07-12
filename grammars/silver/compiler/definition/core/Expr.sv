@@ -655,7 +655,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
   e2.isRoot = false;
 }
 
-concrete production not
+concrete production notOp
 top::Expr ::= '!' e::Expr
 {
   top.unparse = "! " ++ e.unparse;

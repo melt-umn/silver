@@ -29,6 +29,6 @@ s::Stmt ::= body::Stmt cond::Expr
           body
         until (! cond);
      -}
-    repeatStmt(body, not(cond));
+    repeatStmt(body, notOp(cond));
 }
 
