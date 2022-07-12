@@ -6,5 +6,7 @@ grammar silver:core;
   - Laws:
   -
   - * Excluded Middle: `disj(x, not(x)) = true`
+  - * Inverse Excluded Middle: `conj(x, not(x)) = false`
+  - * Double Negation Elimination: `not(not(x)) = x`
   -}
 class HeytingAlgebra a => BooleanAlgebra a {}
