@@ -16,8 +16,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import org.eclipse.lsp4j.ConfigurationItem;
+import org.eclipse.lsp4j.ConfigurationParams;
 import org.eclipse.lsp4j.CreateFilesParams;
 import org.eclipse.lsp4j.DeleteFilesParams;
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
@@ -37,6 +40,8 @@ import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
+
+import com.google.gson.JsonPrimitive;
 
 import common.ConsCell;
 import common.DecoratedNode;
@@ -66,6 +71,7 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     private Map<String, Integer> savedVersions = new HashMap<>();
     private boolean buildInProgress = false, buildTriggered = false;
     private boolean cleanBuild = false;
+    private boolean enableMWDA = false;
     private String silverGen;
     private String silverStdlibGrammars = null;
     private Set<String> grammarDirs = new HashSet<>();
@@ -261,12 +267,28 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     }
 
     private void doBuild(Map<String, Integer> buildVersions) {
+        System.err.println("Building");
         String silverHome = "";  // Not needed since we aren't doing translation
         List<String> args = new ArrayList<>();
         List<String> grammarPath = new ArrayList<>(grammarDirs);
         List<String> silverHostGen = List.of(silverGen);
 
+        // Check the config for whether the MWDA is enabled
+        ConfigurationItem configItem = new ConfigurationItem();
+        configItem.setSection("silver.enableMWDA");
+        try {
+            enableMWDA = ((JsonPrimitive)client.configuration(new ConfigurationParams(List.of(configItem))).get().get(0)).getAsBoolean();
+        } catch (InterruptedException | ExecutionException e) {
+            // Ignore, getting the settings sometimes fails when a build is triggered during initialization
+        }
+        if (enableMWDA) {
+            System.err.println("MWDA enabled");
+            args.add("--warn-all");
+        }
+
+        // Clean build if requested
         if (cleanBuild) {
+            System.err.println("Clean build");
             args.add("--clean");
         }
 

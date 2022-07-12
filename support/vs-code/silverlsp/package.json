@@ -34,6 +34,23 @@
         "command": "silver.clean",
         "title": "Silver: Clean Silver language server workspace"
       }
+    ],
+    "configuration": [
+      {
+        "title": "Silver",
+        "properties": {
+          "silver.enableMWDA": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable the modular well-definedness analysis"
+          },
+          "silver.jvmArgs": {
+            "type": "string",
+            "default": "-Xmx6G -Xss20M",
+            "description": "Language server JVM flags"
+          }
+        }
+      }
     ]
   },
   "configurationDefaults": {
