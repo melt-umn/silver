@@ -19,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
 import org.eclipse.lsp4j.ConfigurationItem;
 import org.eclipse.lsp4j.ConfigurationParams;
 import org.eclipse.lsp4j.CreateFilesParams;
@@ -30,11 +31,16 @@ import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.DidSaveTextDocumentParams;
 import org.eclipse.lsp4j.ExecuteCommandParams;
+import org.eclipse.lsp4j.FileCreate;
+import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.RenameFilesParams;
 import org.eclipse.lsp4j.SemanticTokens;
 import org.eclipse.lsp4j.SemanticTokensParams;
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent;
+import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.WorkspaceFolder;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.services.LanguageClient;
@@ -160,6 +166,17 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
 
     @Override
     public void didCreateFiles(CreateFilesParams params) {
+        Map<String, List<TextEdit>> edits = new HashMap<>();
+        for (FileCreate f : params.getFiles()) {
+            if (!f.getUri().endsWith(".md")) {
+                SilverUtil.uriToGrammar(f.getUri()).ifPresent(grammar -> {
+                    String grammarDecl = "grammar " + grammar + ";\n\n";
+                    TextEdit edit = new TextEdit(new Range(new Position(0, 0), new Position(0, 0)), grammarDecl);
+                    edits.put(f.getUri(), List.of(edit));
+                });
+            }
+        }
+        client.applyEdit(new ApplyWorkspaceEditParams(new WorkspaceEdit(edits)));
         refreshWorkspace();
     }
 
