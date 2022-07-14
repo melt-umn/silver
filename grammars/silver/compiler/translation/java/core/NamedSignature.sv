@@ -246,6 +246,7 @@ s"""private Object child_${n};
 """;
 
   local ntType::Type = if ty.isDecorated then ty.decoratedType else ty;
+  ntType.boundVariables = ty.boundVariables;
 
   top.childTypeVarElem =
     if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
