@@ -245,16 +245,17 @@ s"""private Object child_${n};
   }
 """;
 
+  local ntType::Type = if ty.isDecorated then ty.decoratedType else ty;
+
   top.childTypeVarElem =
     if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
-    then s"type_${ty.transTypeName}"
+    then s"type_${ntType.transTypeName}"
     else "-1";
   
-  local ntType::Type = if ty.isPartiallyDecorated then ty.decoratedType else ty;
   top.childStaticElem =
-    if lookupBy(typeNameEq, ntType, top.sigInhOccurs).isJust
-    then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ty.transTypeName}];\n"
-    else if ntType.isNonterminal
+    if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
+    then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ntType.transTypeName}];\n"
+    else if ty.isNonterminal || ty.isPartiallyDecorated && ntType.isNonterminal
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ntType.typeName)}.num_inh_attrs];\n"
     else "";
 
