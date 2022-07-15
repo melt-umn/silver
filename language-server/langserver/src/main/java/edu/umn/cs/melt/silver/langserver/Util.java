@@ -35,6 +35,23 @@ import silver.langutil.NMessage;
  * @author krame505
  */
 public class Util {
+    public static String locationToFile(final NLocation loc) {
+        DecoratedNode decLoc = loc.decorate();
+        return decLoc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
+    }
+
+    public static Range locationToRange(final NLocation loc) {
+        DecoratedNode decLoc = loc.decorate();
+        return new Range(
+            new Position(
+                (int)decLoc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location) - 1,
+                decLoc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location)),
+            new Position(
+                (int)decLoc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location) - 1,
+                decLoc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location))
+        );
+    }
+
     public static Diagnostic messageToDiagnostic(final NMessage m, final String uri) {
         Diagnostic d = new Diagnostic();
 
@@ -42,17 +59,8 @@ public class Util {
         NLocation loc = decM.synthesized(silver.langutil.Init.silver_langutil_where__ON__silver_langutil_Message);
         d.setMessage(decM.synthesized(silver.langutil.Init.silver_langutil_message__ON__silver_langutil_Message).toString());
 
-        DecoratedNode decLoc = loc.decorate();
-        String locFile = decLoc.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location).toString();
-        if (uri.endsWith(locFile)) {
-            d.setRange(new Range(
-                new Position(
-                    (int)decLoc.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location) - 1,
-                    decLoc.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location)),
-                new Position(
-                    (int)decLoc.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location) - 1,
-                    decLoc.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location))
-            ));
+        if (uri.endsWith(locationToFile(loc))) {
+            d.setRange(locationToRange(loc));
         } else {
             // The error isn't in the file for which we are generating diagnostics.
             // Produce a dummy diagnostic at the beginning of the file containing the actual location in the message.

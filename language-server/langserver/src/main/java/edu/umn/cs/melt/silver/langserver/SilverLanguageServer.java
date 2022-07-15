@@ -65,6 +65,7 @@ public class SilverLanguageServer implements LanguageServer, LanguageClientAware
         capabilities.setExecuteCommandProvider(new ExecuteCommandOptions(List.of(
             "silver.clean"
         )));
+        capabilities.setDeclarationProvider(true);
 
         FileOperationOptions fileOperationOptions = new FileOperationOptions(
             List.of(new FileOperationFilter(new FileOperationPattern("**/*.{sv,ag,sv.md,ag.md}")))

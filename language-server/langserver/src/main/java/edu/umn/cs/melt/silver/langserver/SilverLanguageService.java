@@ -19,10 +19,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import javax.swing.filechooser.FileNameExtensionFilter;
+
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
 import org.eclipse.lsp4j.ConfigurationItem;
 import org.eclipse.lsp4j.ConfigurationParams;
 import org.eclipse.lsp4j.CreateFilesParams;
+import org.eclipse.lsp4j.DeclarationParams;
+import org.eclipse.lsp4j.DefinitionParams;
 import org.eclipse.lsp4j.DeleteFilesParams;
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
@@ -32,6 +36,8 @@ import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.DidSaveTextDocumentParams;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.FileCreate;
+import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.Range;
@@ -43,6 +49,7 @@ import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.WorkspaceFolder;
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
@@ -61,7 +68,11 @@ import silver.compiler.driver.PparseArgsOrError;
 import silver.compiler.driver.util.NBuildEnv;
 import silver.compiler.driver.util.PbuildEnv;
 import silver.compiler.driver.util.PwriteInterface;
+import silver.compiler.langserver.PfindDeclLocation;
+import silver.core.NLocation;
+import silver.core.NMaybe;
 import silver.core.NPair;
+import silver.core.Ppair;
 import silver.core.PunsafeEvalIO;
 
 /**
@@ -80,6 +91,7 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     private boolean enableMWDA = false;
     private String silverGen;
     private String silverStdlibGrammars = null;
+    private DecoratedNode comp = null;
     private Set<String> grammarDirs = new HashSet<>();
     private Set<String> buildGrammars = new HashSet<>();
 
@@ -188,6 +200,28 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     @Override
     public void didRenameFiles(RenameFilesParams params) {
         refreshWorkspace();
+    }
+
+    @Override
+    public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> declaration(DeclarationParams params) {
+        return CompletableFutures.computeAsync((cancelChecker) -> {
+            if (comp == null) {
+                return Either.forLeft(List.of());
+            }
+
+            String fileName = "";
+            try {
+                fileName = new URI(params.getTextDocument().getUri()).getPath();
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
+            return Either.forLeft(new ConsCellCollection<NLocation>(
+                PfindDeclLocation.invoke(OriginContext.FFI_CONTEXT,
+                    new StringCatter(fileName), params.getPosition().getLine() + 1, params.getPosition().getCharacter(), comp))
+                .stream()
+                .map((loc) -> new Location("file://" + Util.locationToFile(loc), Util.locationToRange(loc)))
+                .collect(Collectors.toList()));
+        });
     }
 
     public static final List<String> tokenTypes = Arrays.asList(new String[] {
@@ -377,6 +411,10 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
                 PwriteInterface.invoke(OriginContext.FFI_CONTEXT, new StringCatter(silverGen), r));
         }
 
+        // Only update the compilation result once we are done reporting errors, to avoid race conditions from other attributes being demanded
+        this.comp = comp;
+
+        // Reset option flags
         this.cleanBuild = false;
     }
 }
