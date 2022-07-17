@@ -1,5 +1,7 @@
 grammar flow;
 
+imports silver:core hiding zero;
+
 inherited attribute env1::[String];
 inherited attribute env2::[String];
 nonterminal Expr with env1, env2;

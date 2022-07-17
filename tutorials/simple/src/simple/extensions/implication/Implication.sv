@@ -10,12 +10,12 @@ terminal Implies  '=>'  precedence = 6;
 concrete productions e::cst:Expr
  | l::cst:Expr '=>' r::cst:Expr
      { e.unparse = s"(${l.unparse} => ${r.unparse})";
-       e.ast = implies(l.ast, r.ast); }
+       e.ast = impliesOp(l.ast, r.ast); }
 
-abstract production implies
+abstract production impliesOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} => ${r})";
   --   l => r   is equivalent to   !l || r
-  forwards to or(not(l), r);
+  forwards to or(notOp(l), r);
 }

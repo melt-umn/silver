@@ -125,7 +125,6 @@ top::ProductionStmt ::= attr::PartiallyDecorated QName
     filter(
       \ input::NamedSignatureElement ->
         isDecorable(input.typerep, top.env) &&
-        !input.typerep.isPartiallyDecorated &&  -- Don't include partially decorated children.  TODO make this configurable?
         !null(getOccursDcl(attrFullName, input.typerep.typeName, top.env)),
       top.frame.signature.inputElements);
   local res :: Expr = 
