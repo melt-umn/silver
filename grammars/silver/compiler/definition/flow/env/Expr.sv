@@ -120,20 +120,6 @@ top::Expr ::= q::PartiallyDecorated QName
     else noVertex();
 }
 
--- Still need these equations since propagate ignores decorated references
-aspect production functionInvocation
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::PartiallyDecorated AnnoAppExprs
-{
-  top.flowDeps <- e.flowDeps ++ es.flowDeps ++ annos.flowDeps;
-  top.flowDefs <- e.flowDefs ++ es.flowDefs ++ annos.flowDefs;
-}
-aspect production partialApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::PartiallyDecorated AnnoAppExprs
-{
-  top.flowDeps <- e.flowDeps ++ es.flowDeps ++ annos.flowDeps;
-  top.flowDefs <- e.flowDefs ++ es.flowDefs ++ annos.flowDefs;
-}
-
 aspect production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
 {
@@ -144,11 +130,6 @@ top::Expr ::= e::Expr '.' 'forward'
     end;
 }
 
-aspect production errorAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
-{
-  top.flowDefs <- e.flowDefs;
-}
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
 -- this is because by default the lhs will have 'taking ref' flow deps (see above)
 aspect production synDecoratedAccessHandler
@@ -159,7 +140,6 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
     | hasVertex(vertex) -> vertex.synVertex(q.attrDcl.fullName) :: vertex.eqVertex
     | noVertex() -> e.flowDeps
     end;
-  top.flowDefs <- e.flowDefs;
 }
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
@@ -169,27 +149,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
     | hasVertex(vertex) -> vertex.inhVertex(q.attrDcl.fullName) :: vertex.eqVertex
     | noVertex() -> e.flowDeps
     end;
-  top.flowDefs <- e.flowDefs;
 }
-aspect production errorDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
-{
-  top.flowDeps <- []; -- errors, who cares?
-  top.flowDefs <- e.flowDefs;
-}
-aspect production terminalAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
-{
-  top.flowDeps <- e.flowDeps;
-  top.flowDefs <- e.flowDefs;
-}
-aspect production annoAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
-{
-  top.flowDeps <- e.flowDeps;
-  top.flowDefs <- e.flowDefs;
-}
-
 
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
@@ -245,18 +205,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
 aspect production exprRef
 top::Expr ::= e::PartiallyDecorated Expr
 {
-  -- This production is somewhat special, for example, error is := []
-  -- That's because the errors should have already been appeared wherever it's anchored.
-  
-  -- But, here we DO pass flowDeps through because this affects wherever this expression
-  -- is used, not just where it appears.
-  
-  -- So definitely don't consider making this []!
-  
-  top.flowDeps <- e.flowDeps;
   top.flowVertexInfo = e.flowVertexInfo;
-  top.flowDefs <- e.flowDefs; -- I guess? I haven't thought about this exactly.
-  -- i.e. whether this has already been included. shouldn't hurt to do so though.
 }
 
 -- FROM LET TODO
