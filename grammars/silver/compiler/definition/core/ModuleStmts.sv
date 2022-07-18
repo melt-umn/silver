@@ -11,7 +11,7 @@ nonterminal ImportStmts with config, grammarName, location, unparse, errors, mod
 nonterminal ModuleExpr with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
 nonterminal ModuleName with config, grammarName, location, unparse, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies;
 
-nonterminal NameList with config, grammarName, location, unparse, names;
+nonterminal NameList with config, grammarName, location, unparse, names, env;
 
 nonterminal WithElems with config, grammarName, location, unparse, envMaps;
 nonterminal WithElem with config, grammarName, location, unparse, envMaps;
