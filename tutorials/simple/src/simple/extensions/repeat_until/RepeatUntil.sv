@@ -23,7 +23,7 @@ s::Stmt ::= body::Stmt cond::Expr
      -}
     seq(
       body,
-      while(not(cond), block(body))
+      while(notOp(cond), block(body))
     );
 }
 

@@ -121,7 +121,7 @@ top::Expr_c ::= 'false'
 concrete production not_c
 top::Expr_c ::= '!' e::Expr_c
 {
-  top.ast = not(e.ast);
+  top.ast = notOp(e.ast);
 }
 
 concrete production parens_c

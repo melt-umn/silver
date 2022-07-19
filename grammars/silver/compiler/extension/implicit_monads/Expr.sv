@@ -1161,7 +1161,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
                             else or(e1.monadRewritten, '||', e2.monadRewritten, location=top.location);
 }
 
-aspect production not
+aspect production notOp
 top::Expr ::= '!' e::Expr
 {
   top.merrors := e.merrors;
@@ -1197,7 +1197,7 @@ top::Expr ::= '!' e::Expr
              \x::Boolean -> 
               $Expr {monadReturn(top.location)}(!x))
          }
-    else not('!', e.monadRewritten, location=top.location);
+    else notOp('!', e.monadRewritten, location=top.location);
 }
 
 concrete production ifThen

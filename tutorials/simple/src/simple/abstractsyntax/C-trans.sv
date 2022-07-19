@@ -147,22 +147,22 @@ e::Expr ::= id::Name
   e.c_code = id.name;  
 }
 
-aspect production add
+aspect production addOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.c_code = s"(${l.c_code} + ${r.c_code})";
 }
-aspect production sub
+aspect production subOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.c_code = s"(${l.c_code} - ${r.c_code})";
 }
-aspect production mul
+aspect production mulOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.c_code = s"(${l.c_code} * ${r.c_code})";  
 }
-aspect production div
+aspect production divOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.c_code = s"(${l.c_code} / ${r.c_code})";  
@@ -184,7 +184,7 @@ e::Expr ::= l::Expr r::Expr
 {
   e.c_code = s"(${l.c_code} && ${r.c_code})";  
 }
-aspect production not
+aspect production notOp
 e::Expr ::= ne::Expr 
 {
   e.c_code = s"(!${ne.c_code})";  
