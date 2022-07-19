@@ -78,7 +78,7 @@ e::Expr ::= id::Name
    a generic numeric binary operation.  But we have not done that on
    this simple language.
 -}
-aspect production add
+aspect production addOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.type = resolveNumericTypes (l.type, r.type);
@@ -89,7 +89,7 @@ e::Expr ::= l::Expr r::Expr
                else [err(locUnknown(), "Expression \"" ++ show(100,r.pp) ++ 
                       "\" must be of type Integer or Float.\n")]);
 }
-aspect production sub
+aspect production subOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.type = resolveNumericTypes (l.type, r.type);
@@ -100,7 +100,7 @@ e::Expr ::= l::Expr r::Expr
                else [err(locUnknown(), "Expression \"" ++ show(100,r.pp) ++ 
                       "\" must be of type Integer or Float.\n")]);
 }
-aspect production mul
+aspect production mulOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.type = resolveNumericTypes (l.type, r.type);
@@ -111,7 +111,7 @@ e::Expr ::= l::Expr r::Expr
                else [err(locUnknown(), "Expression \"" ++ show(100,r.pp) ++ 
                       "\" must be of type Integer or Float.\n")]);
 }
-aspect production div
+aspect production divOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.type = resolveNumericTypes (l.type, r.type);
@@ -187,7 +187,7 @@ e::Expr ::= l::Expr r::Expr
                       "\" must be of type Boolean.\n")]);
 }
 
-aspect production not
+aspect production notOp
 e::Expr ::= ne::Expr 
 {
   e.type = booleanType();
