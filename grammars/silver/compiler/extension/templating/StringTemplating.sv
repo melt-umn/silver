@@ -46,9 +46,6 @@ top::Expr ::= a::Expr b::Expr
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
   
   thread downSubst, upSubst on top, a, b, forward;
-  -- These are wrapped in exprRef in the forward, so include their errors here:
-  top.errors <- a.errors;
-  top.errors <- b.errors;
   
   forwards to
     mkStrFunctionInvocation(

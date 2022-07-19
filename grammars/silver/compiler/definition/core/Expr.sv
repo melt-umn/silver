@@ -26,7 +26,9 @@ flowtype forward {} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
 flowtype errors {decorate} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
-propagate errors, freeVars on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+propagate errors on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr
+  excluding terminalAccessHandler;
+propagate freeVars on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
 {--
  - The nonterminal being decorated. (Used for 'decorate with {}')
@@ -300,11 +302,7 @@ abstract production errorApplication
 top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
-  top.freeVars <- e.freeVars;
-  top.freeVars <- es.freeVars;
-  top.freeVars <- anns.freeVars;
-  
-  top.errors <- e.errors;
+
   top.errors <-
     if e.typerep.isError then [] else  
       [err(top.location, e.unparse ++ " has type " ++ prettyType(performSubstitution(e.typerep, e.upSubst)) ++
@@ -338,11 +336,6 @@ abstract production functionInvocation
 top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
-  top.freeVars <- e.freeVars;
-  top.freeVars <- es.freeVars;
-  top.freeVars <- anns.freeVars;
-  
-  top.errors <- e.errors ++ es.errors ++ anns.errors;
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
 
@@ -353,11 +346,6 @@ abstract production partialApplication
 top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
-  top.freeVars <- e.freeVars;
-  top.freeVars <- es.freeVars;
-  top.freeVars <- anns.freeVars;
-  
-  top.errors <- e.errors ++ es.errors ++ anns.errors;
 
   local ety :: Type = performSubstitution(e.typerep, e.upSubst);
 
@@ -394,10 +382,6 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   top.unparse = e.unparse ++ "." ++ q.unparse;
   propagate freeVars;
   
-  -- We don't include 'q' here because this might be a terminal, where
-  -- 'q' shouldn't actually resolve to a name!
-  top.errors := e.errors ++ forward.errors;
-  
   local eTy::Type = performSubstitution(e.typerep, e.upSubst);
   q.attrFor = if eTy.isDecorated then eTy.decoratedType else eTy;
   
@@ -414,10 +398,8 @@ abstract production errorAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  top.freeVars <- e.freeVars;
   
   top.typerep = errorType();
-  top.errors <- q.errors;
   
   top.errors <-
     if e.typerep.isError then [] else
@@ -431,14 +413,11 @@ abstract production annoAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  top.freeVars <- e.freeVars;
   
   production index :: Integer =
     findNamedSigElem(q.name, annotationsForNonterminal(q.attrFor, top.env), 0);
 
   top.typerep = q.typerep;
-  
-  top.errors <- q.errors;
 }
 
 abstract production terminalAccessHandler
@@ -447,6 +426,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
   top.unparse = e.unparse ++ "." ++ q.unparse;
   
   -- NO use of q.errors, as that become nonsensical here.
+  top.errors := e.errors;
   
   top.errors <-
     if q.name == "lexeme" || q.name == "location" || 
@@ -468,9 +448,6 @@ abstract production undecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  top.freeVars := e.freeVars;
-
-  top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
   
   -- Note: LHS is UNdecorated, here we dispatch based on the kind of attribute.
   forwards to (if !q.found then errorDecoratedAccessHandler(_, _, location=_)
@@ -507,9 +484,6 @@ abstract production decoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  top.freeVars := e.freeVars;
-
-  top.errors := q.errors ++ forward.errors; -- so that these errors appear first.
   
   -- Note: LHS is decorated, here we dispatch based on the kind of attribute.
   forwards to (if !q.found then errorDecoratedAccessHandler(_, _, location=_)
@@ -524,7 +498,6 @@ abstract production synDecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  top.freeVars <- e.freeVars;
   
   top.typerep = q.typerep;
 }
@@ -533,7 +506,6 @@ abstract production inhDecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  top.freeVars <- e.freeVars;
   
   top.typerep = q.typerep;
 }
@@ -543,7 +515,6 @@ abstract production errorDecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  top.freeVars <- e.freeVars;
 
   top.typerep = errorType();
 }
@@ -1118,8 +1089,6 @@ top::AnnoAppExprs ::= e::AnnoExpr
     else [err(top.location, "Missing named parameters for function '" ++ top.appExprApplied ++ "': "
       ++ implode(", ", map(fst, top.missingAnnotations)))];
 
-  top.errors <- e.errors;
-
   e.remainingFuncAnnotations = top.remainingFuncAnnotations;
   top.missingAnnotations = e.missingAnnotations;
 
@@ -1248,7 +1217,6 @@ abstract production exprRef
 top::Expr ::= e::PartiallyDecorated Expr
 {
   top.unparse = e.unparse;
-  top.freeVars <- e.freeVars;
 
   -- See the major restriction. This should have been checked for error already!
   top.typerep = e.typerep;
