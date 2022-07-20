@@ -714,6 +714,8 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
     else [pair(sName, s)];
   top.freeRecVars := remove(n.name, s.freeRecVars);
 
+  -- Decorate s assuming that the bound strategy is total, in order to check for totality.
+  -- See Fig 4 of the strategy attributes paper (https://www-users.cse.umn.edu/~evw/pubs/kramer20sle/kramer20sle.pdf)
   local s2::StrategyExpr = s;
   s2.recVarTotalEnv = pair(n.name, true) :: s.recVarTotalEnv;
   s2.recVarTotalNoEnvEnv = pair(n.name, true) :: s.recVarTotalNoEnvEnv;
