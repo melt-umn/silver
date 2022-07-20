@@ -28,7 +28,8 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
   e.recVarNameEnv = recVarNameEnv;
   e.recVarTotalEnv = recVarTotalEnv;
   e.recVarTotalNoEnvEnv = recVarTotalEnv;
-  e.outerAttr = just(a.name);
+  e.outerAttr = a.name;
+  e.isOutermost = true;
   
   local fwrd::AGDcl =
     foldr(
@@ -38,11 +39,11 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
            defaultEnvItem(
              strategyDcl(
                fName, isTotal,
-               !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e,
+               !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e.containsTraversal, e,
                sourceGrammar=top.grammarName, sourceLocation=a.location)))],
         location=top.location),
       map(
-        \ d::Pair<String LiftedStrategy> ->
+        \ d::(String, Decorated StrategyExpr with LiftedInhs) ->
           strategyAttributeDcl(
             d.snd.isTotalNoEnv, name(d.fst, top.location), d.snd.recVarNameEnv, d.snd.recVarTotalNoEnvEnv, new(d.snd),
             location=top.location),
@@ -124,7 +125,8 @@ top::ProductionStmt ::= attr::PartiallyDecorated QName
   e.env = top.env;
   e.recVarNameEnv = attr.lookupAttribute.dcl.givenRecVarNameEnv;
   e.recVarTotalEnv = attr.lookupAttribute.dcl.givenRecVarTotalEnv;
-  e.outerAttr = just(attr.lookupAttribute.fullName);
+  e.outerAttr = attr.lookupAttribute.fullName;
+  e.isOutermost = true;
   e.inlinedStrategies = [attr.lookupAttribute.fullName]; -- Don't unfold the top-level strategy within itself
   
   production e2::StrategyExpr = e.optimize;
@@ -135,6 +137,7 @@ top::ProductionStmt ::= attr::PartiallyDecorated QName
   e2.recVarNameEnv = e.recVarNameEnv;
   e2.recVarTotalEnv = e.recVarTotalEnv;
   e2.outerAttr = e.outerAttr;
+  e2.isOutermost = e.isOutermost;
   e2.inlinedStrategies = e.inlinedStrategies;
   e2.flowEnv = top.flowEnv;
   
