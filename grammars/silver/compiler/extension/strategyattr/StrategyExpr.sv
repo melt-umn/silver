@@ -472,6 +472,7 @@ top::StrategyExpr ::= s::StrategyExpr
            top.frame.signature.namedInputElements))
     else asTotal(top.frame.signature.outputElement.typerep, top.partialTranslation);
 }
+
 abstract production oneTraversal
 top::StrategyExpr ::= s::StrategyExpr
 {
@@ -754,7 +755,7 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
   
   -- Pattern matching error checking (mostly) happens on what caseExpr forwards to,
   -- so we need to decorate one of those here.
-  local checkExpr::Expr =
+  production checkExpr::Expr =
     letp(
       assignExpr(id, '::', ty, '=', errorExpr([], location=top.location), location=top.location),
       caseExpr(
@@ -940,7 +941,8 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   top.unparse = attr.unparse;
   
   -- Lookup for error checking is *not* contextual, since we don't know the frame here
-  local attrDcl::AttributeDclInfo = case attr of qNameAttrOccur(a) -> a.lookupAttribute.dcl end;
+  production attrDclFound::Boolean = case attr of qNameAttrOccur(a) -> a.lookupAttribute.found end;
+  production attrDcl::AttributeDclInfo = case attr of qNameAttrOccur(a) -> a.lookupAttribute.dcl end;
   local attrTypeScheme::PolyType = attrDcl.typeScheme;
   top.errors :=
     if !attrDcl.isSynthesized
@@ -974,7 +976,8 @@ top::StrategyExpr ::= attr::QNameAttrOccur
   top.unparse = attr.unparse;
   
   -- Lookup for error checking is *not* contextual, since we don't know the frame here
-  local attrDcl::AttributeDclInfo = case attr of qNameAttrOccur(a) -> a.lookupAttribute.dcl end;
+  production attrDclFound::Boolean = case attr of qNameAttrOccur(a) -> a.lookupAttribute.found end;
+  production attrDcl::AttributeDclInfo = case attr of qNameAttrOccur(a) -> a.lookupAttribute.dcl end;
   local attrTypeScheme::PolyType = attrDcl.typeScheme;
   top.errors :=
     if !attrDcl.isSynthesized

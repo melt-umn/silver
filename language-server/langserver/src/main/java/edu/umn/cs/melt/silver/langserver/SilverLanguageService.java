@@ -19,14 +19,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-import javax.swing.filechooser.FileNameExtensionFilter;
-
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
 import org.eclipse.lsp4j.ConfigurationItem;
 import org.eclipse.lsp4j.ConfigurationParams;
 import org.eclipse.lsp4j.CreateFilesParams;
 import org.eclipse.lsp4j.DeclarationParams;
-import org.eclipse.lsp4j.DefinitionParams;
 import org.eclipse.lsp4j.DeleteFilesParams;
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
@@ -70,9 +67,7 @@ import silver.compiler.driver.util.PbuildEnv;
 import silver.compiler.driver.util.PwriteInterface;
 import silver.compiler.langserver.PfindDeclLocation;
 import silver.core.NLocation;
-import silver.core.NMaybe;
 import silver.core.NPair;
-import silver.core.Ppair;
 import silver.core.PunsafeEvalIO;
 
 /**
