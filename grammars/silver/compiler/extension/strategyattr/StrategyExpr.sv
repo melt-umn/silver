@@ -28,7 +28,7 @@ monoid attribute freeRecVars::[String];
 monoid attribute partialRefs::[String];
 monoid attribute totalRefs::[String];
 monoid attribute matchesFrame::Boolean with false, ||;
-monoid attribute mentionedNTs::[String];
+monoid attribute containsTraversal::Boolean with false, ||;
 
 synthesized attribute partialTranslation::Expr; -- Maybe<a> on a
 synthesized attribute totalTranslation::Expr; -- a on a, can raise a runtime error if demanded on partial strategy expression
@@ -61,8 +61,7 @@ partial strategy attribute ntStep =
       n.matchesFrame && n.attrDcl.isStrategy &&
       !contains(n.attrDcl.fullName, top.inlinedStrategies) &&
       null(n.attrDcl.givenRecVarNameEnv) &&
-      -- Only inline when this attribute occurs on all mentioned nonterminals in the inlined attribute
-      !any(map(compose(null, getOccursDcl(top.outerAttr, _, top.env)), n.attrDcl.mentionedNTs)) ->
+      !n.attrDcl.containsTraversal ->
     inlined(n, n.attrDcl.strategyExpr, location=top.location, genName=top.genName)
   | partialRef(n) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
   | inlined(n, _) when !n.matchesFrame -> fail(location=top.location, genName=top.genName)
@@ -113,13 +112,13 @@ strategy attribute optimize =
 
 nonterminal StrategyExpr with
   config, grammarName, env, location, unparse, errors, frame, compiledGrammars, flowEnv, -- Normal expression stuff
-  genName, outerAttr, isOutermost, recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, liftedStrategies, attrRefName, isId, isFail, isTotal, isTotalNoEnv, freeRecVars, partialRefs, totalRefs, mentionedNTs, -- Frame-independent attrs
+  genName, outerAttr, isOutermost, recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, liftedStrategies, attrRefName, isId, isFail, isTotal, isTotalNoEnv, freeRecVars, partialRefs, totalRefs, containsTraversal, -- Frame-independent attrs
   partialTranslation, totalTranslation, matchesFrame, -- Frame-dependent attrs
   inlinedStrategies, genericStep, ntStep, prodStep, genericSimplify, ntSimplify, optimize; -- Optimization stuff
 
 nonterminal StrategyExprs with
   config, grammarName, env, unparse, errors, compiledGrammars, flowEnv, -- Normal expression stuff
-  outerAttr, recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, givenInputElements, liftedStrategies, attrRefNames, containsFail, allId, freeRecVars, partialRefs, totalRefs, mentionedNTs, -- Frame-independent attrs
+  outerAttr, recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, givenInputElements, liftedStrategies, attrRefNames, containsFail, allId, freeRecVars, partialRefs, totalRefs, containsTraversal, -- Frame-independent attrs
   inlinedStrategies, genericSimplify; -- Optimization stuff
 
 flowtype StrategyExpr =
@@ -130,7 +129,7 @@ flowtype StrategyExpr =
   -- Frame-independent attrs
   liftedStrategies {recVarNameEnv, recVarTotalNoEnvEnv, outerAttr, isOutermost}, isTotalNoEnv {recVarNameEnv, recVarTotalNoEnvEnv, outerAttr, isOutermost},
   attrRefName {recVarNameEnv}, isId {}, isFail {},
-  isTotal {decorate}, freeRecVars {decorate}, partialRefs {decorate}, totalRefs {decorate}, mentionedNTs {decorate, flowEnv},
+  isTotal {decorate}, freeRecVars {decorate}, partialRefs {decorate}, totalRefs {decorate}, containsTraversal {decorate, flowEnv},
   genericStep {decorate, inlinedStrategies}, genericSimplify {decorate, inlinedStrategies},
   -- Frame-dependent attrs
   partialTranslation {decorate, flowEnv, frame}, totalTranslation {decorate, flowEnv, frame}, matchesFrame {decorate, frame},
@@ -149,7 +148,7 @@ flowtype StrategyExprs =
 propagate errors on StrategyExpr, StrategyExprs excluding partialRef, totalRef, rewriteRule;
 propagate containsFail, allId on StrategyExprs;
 propagate freeRecVars on StrategyExpr, StrategyExprs excluding recComb;
-propagate partialRefs, totalRefs, mentionedNTs on StrategyExpr, StrategyExprs;
+propagate partialRefs, totalRefs, containsTraversal on StrategyExpr, StrategyExprs;
 propagate genericSimplify on StrategyExprs;
 propagate prodStep on MRuleList;
 propagate genericStep, ntStep, prodStep, genericSimplify, ntSimplify, optimize on StrategyExpr;
@@ -317,7 +316,9 @@ top::StrategyExpr ::= s::StrategyExpr
     else [pair(sName, s)];
   top.isTotal = s.isTotal;
   top.isTotalNoEnv = s.isTotalNoEnv;
-  
+
+  top.containsTraversal <- true;
+
   s.isOutermost = false;
   s.frame = error("No frame for traversal strategies");  -- TODO: This equation shouldn't exist, but frame is an autocopy
   
@@ -406,6 +407,8 @@ top::StrategyExpr ::= s::StrategyExpr
     then []
     else [pair(sName, s)];
   
+  top.containsTraversal <- true;
+
   s.isOutermost = false;
   s.frame = error("No frame for traversal strategies");  -- TODO: This equation shouldn't exist, but frame is an autocopy
   
@@ -484,6 +487,8 @@ top::StrategyExpr ::= s::StrategyExpr
     if s.attrRefName.isJust
     then []
     else [pair(sName, s)];
+
+  top.containsTraversal <- true;
   
   s.isOutermost = false;
   s.frame = error("No frame for traversal strategies");  -- TODO: This equation shouldn't exist, but frame is an autocopy
@@ -594,9 +599,7 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
     then prod.lookupValue.dcl.namedSignature.inputElements
     else [];
   
-  top.mentionedNTs <-
-    if !prod.lookupValue.found then []
-    else [prod.lookupValue.dcl.namedSignature.outputElement.typerep.typeName];
+  top.containsTraversal <- true;
   
   -- pair(child name, if attr occurs on child then just(attr name) else nothing())
   local childAccesses::[Pair<String Maybe<String>>] =
@@ -712,6 +715,8 @@ top::StrategyExpr ::= n::Name s::StrategyExpr
     else [pair(sName, s)];
   top.freeRecVars := remove(n.name, s.freeRecVars);
 
+  -- Decorate s assuming that the bound strategy is total, in order to check for totality.
+  -- See Fig 4 of the strategy attributes paper (https://www-users.cse.umn.edu/~evw/pubs/kramer20sle/kramer20sle.pdf)
   local s2::StrategyExpr = s;
   s2.recVarTotalEnv = pair(n.name, true) :: s.recVarTotalEnv;
   s2.recVarTotalNoEnvEnv = pair(n.name, true) :: s.recVarTotalNoEnvEnv;
@@ -750,8 +755,6 @@ top::StrategyExpr ::= id::Name ty::TypeExpr ml::MRuleList
 {
   top.unparse = "rule on " ++ id.name ++ "::" ++ ty.unparse ++ " of " ++ ml.unparse ++ " end";
   propagate liftedStrategies;
-
-  top.mentionedNTs <- [ty.typerep.typeName];
   
   -- Pattern matching error checking (mostly) happens on what caseExpr forwards to,
   -- so we need to decorate one of those here.

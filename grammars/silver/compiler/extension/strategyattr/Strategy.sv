@@ -39,7 +39,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
            defaultEnvItem(
              strategyDcl(
                fName, isTotal,
-               !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e.mentionedNTs, e,
+               !null(top.errors), map(fst, e.liftedStrategies), recVarNameEnv, recVarTotalEnv, e.partialRefs, e.totalRefs, e.containsTraversal, e,
                sourceGrammar=top.grammarName, sourceLocation=a.location)))],
         location=top.location),
       map(
