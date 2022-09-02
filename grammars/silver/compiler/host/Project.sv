@@ -50,11 +50,11 @@ exports silver:compiler:extension:tuple;
 exports silver:compiler:extension:regex;
 exports silver:compiler:extension:convenienceaspects;
 exports silver:compiler:extension:attrsection;
+exports silver:compiler:extension:implicit_monads;
 
 -- Other generally useful stuff:
 exports silver:compiler:translation:java;
 exports silver:compiler:driver;
 exports silver:compiler:analysis:warnings:flow;
 exports silver:compiler:analysis:warnings:exporting;
-
-exports silver:compiler:extension:implicit_monads;
+exports silver:compiler:langserver;

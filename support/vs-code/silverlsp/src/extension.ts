@@ -15,6 +15,9 @@ export function activate(context: vscode.ExtensionContext) {
 	// Get the java home from the process environment.
 	const { JAVA_HOME } = process.env;
 
+	// Get the config settings
+	const config = vscode.workspace.getConfiguration("silver");
+
 	console.log(`Using java from JAVA_HOME: ${JAVA_HOME}`);
 	// If java home is available continue.
 	if (JAVA_HOME) {
@@ -23,7 +26,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// path to the launcher.jar
 		let classPath = path.join(__dirname, '..', 'launcher', 'launcher.jar');
-		const args: string[] = ['-cp', classPath];
+		let jvmArgs: string = config.get('jvmArgs') || "";
+		const args: string[] = [
+			'-cp', classPath,
+		].concat(jvmArgs.split(' '));
 
 		// Set the server options 
 		// -- java execution path
@@ -36,13 +42,15 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// Options to control the language client
 		let clientOptions: LanguageClientOptions = {
-			// Register the server for plain text documents
-			documentSelector: [{ scheme: 'file', language: 'silver' }]
+			documentSelector: [{ scheme: 'file', language: 'silver' }],
+			synchronize: {
+				configurationSection: 'Silver'
+			},
 		};
 
 		// Create the language client and start the client.
 		console.log("Launching language server");
-		client = new LanguageClient('silver-langserver', 'Silver Language Server', serverOptions, clientOptions);
+		client = new LanguageClient('silver-langserver', 'Language Support for Silver', serverOptions, clientOptions);
 
 		client.start();
 	}

@@ -27,5 +27,19 @@
             <artifactId>copper-runtime</artifactId>
             <version>1.0.1-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark</artifactId>
+            <version>0.17.2</version>
+        </dependency>
     </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>../../grammars/</directory>
+                <targetPath>grammars/</targetPath>
+            </resource>
+        </resources>
+    </build>
 </project>

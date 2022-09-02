@@ -43,7 +43,7 @@ ordering attribute compareKey, compare with compareTo;
 
 instance attribute compareTo<a {}> occurs on a,
          attribute isEqual {compareTo} occurs on a, -- Needed by Eq superclass
-         attribute compareKey {compareTo} occurs on a,
+         --attribute compareKey {compareTo} occurs on a, -- Typically present, but not needed as a constraint
          attribute compare {compareTo} occurs on a
          => Ord a {
   compare = \ x::a y::a -> decorate x with {compareTo = decorate y with {};}.compare;
