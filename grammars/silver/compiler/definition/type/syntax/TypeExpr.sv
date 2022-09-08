@@ -171,7 +171,7 @@ top::TypeExpr ::= q::QNameType
   top.unparse = q.unparse;
 
   top.mentionedAliases <-
-    if q.lookupType.dcl.isTypeAlias
+    if q.lookupType.found && q.lookupType.dcl.isTypeAlias
     then q.lookupType.fullName :: q.lookupType.dcl.mentionedAliases
     else [];
 
