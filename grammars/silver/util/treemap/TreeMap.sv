@@ -63,6 +63,15 @@ function lookup
 }
 
 @{--
+ - Converts a list of pairs to a multimap.
+ -}
+function fromList
+Ord a => Map<a b> ::= l::[Pair<a b>]
+{
+  return add(l, empty());
+}
+
+@{--
  - Converts a multimap back to a list of pairs, in sorted order by key.
  -}
 function toList
@@ -84,3 +93,12 @@ Map<a b> ::= key::a  value::[b]  mp::Map<a b>
   "java" : return "common.rawlib.RawTreeMap.update(%key%, %value%, %mp%)";
 }
 
+instance Eq a, Eq b => Eq Map<a b> {
+  -- TODO: This could be more efficient - eagerly converting both maps to lists before comparison.
+  eq = \ m1::Map<a b> m2::Map<a b> -> toList(m1) == toList(m2);
+}
+
+instance Ord a, Ord b => Ord Map<a b> {
+  -- TODO: This could be more efficient - eagerly converting both maps to lists before comparison.
+  compare = \ m1::Map<a b> m2::Map<a b> -> compare(toList(m1), toList(m2));
+}
