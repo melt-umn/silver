@@ -18,7 +18,7 @@
 		<link>
 			<name>generated_src</name>
 			<type>2</type>
-			<location>/home/krame505/lrk/PL_research/silver/generated/src</location>
+			<location>$%7BPARENT-2-PROJECT_LOC%7D/generated/src</location>
 		</link>
 	</linkedResources>
 	<filteredResources>
