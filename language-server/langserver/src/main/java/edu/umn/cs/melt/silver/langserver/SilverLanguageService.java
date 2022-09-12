@@ -227,8 +227,8 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         "declaration", "definition", "documentation", "defaultLibrary"
     });
 
-    private CopperSemanticTokenEncoder<?> semanticTokenEncoder =
-        new CopperSemanticTokenEncoder<>(Parser_silver_compiler_composed_Default_svParse::new, tokenTypes, tokenModifiers);
+    private CopperSemanticTokenEncoder semanticTokenEncoder =
+        new CopperSemanticTokenEncoder(Parser_silver_compiler_composed_Default_svParse::new, tokenTypes, tokenModifiers);
 
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
