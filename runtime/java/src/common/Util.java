@@ -386,7 +386,7 @@ public final class Util {
 	 * @param file The filename to report to the parser (filling in location information)
 	 * @return A silver ParseResult<ROOT> node.
 	 */
-	public static <ROOT, PARSER extends CopperParser<ROOT, CopperParserException> & HasTokens> NParseResult callCopperParser(PARSER parser, Object string, Object file) {
+	public static <ROOT> NParseResult callCopperParser(SilverCopperParser<ROOT> parser, Object string, Object file) {
 		String javaString = ((StringCatter)demand(string)).toString();
 		String javaFile = ((StringCatter)demand(file)).toString();
 		try {
@@ -420,7 +420,7 @@ public final class Util {
 	/**
 	 * Returns the terminals from a parser.
 	 */
-	private static Object getTerminals(HasTokens parser) {
+	private static Object getTerminals(SilverCopperParser<?> parser) {
 		List<Terminal> tokens = (List<Terminal>) parser.getTokens();
 		return new Thunk<ConsCell>(() -> {
 			List<NTerminalDescriptor> tds = tokens

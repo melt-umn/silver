@@ -1,8 +1,5 @@
 package edu.umn.cs.melt.silver.langserver;
 
-import edu.umn.cs.melt.copper.runtime.engines.CopperParser;
-import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,8 +9,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import common.HasTokens;
+import common.SilverCopperParser;
 import common.Terminal;
+import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 
 /**
  * A utility for invoking a Silver-generated Copper parser to obtain semantic
@@ -35,7 +33,7 @@ import common.Terminal;
  * @author krame505
  * @see https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens
  */
-public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserException> & HasTokens> {
+public class CopperSemanticTokenEncoder<P extends SilverCopperParser<?>> {
     // The constructor for the Copper parser
     private final Supplier<P> parserFactory;
 
