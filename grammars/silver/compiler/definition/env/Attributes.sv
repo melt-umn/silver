@@ -94,11 +94,3 @@ synthesized attribute grammarSource :: String;
  - The modification time of the source .sv files of this grammar.
  -}
 synthesized attribute grammarTime :: Integer;
-{--
- - The modification time of the interface file of this grammar.
- - If the grammar was read from source, == grammarTime.
- -}
-synthesized attribute interfaceTime :: Integer;
-
-
-

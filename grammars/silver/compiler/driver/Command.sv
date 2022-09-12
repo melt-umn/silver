@@ -181,6 +181,16 @@ Either<String  Decorated CmdArgs> ::= args::[String]
          else right(cmdArgs);
 }
 
+function parseArgsOrError
+Decorated CmdArgs ::= args::[String]
+{
+  return
+    case parseArgs(args) of
+    | left(msg) -> error("Failed to parse args: " ++ msg)
+    | right(a) -> a
+    end;
+}
+
 function determineBuildEnv
 IOErrorable<BuildEnv> ::= a::Decorated CmdArgs
 {

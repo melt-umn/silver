@@ -637,14 +637,14 @@ top::Expr ::= '!' e::Expr
 }
 
 concrete production gtOp
-top::Expr ::= e1::Expr '>' e2::Expr
+top::Expr ::= e1::Expr op::'>' e2::Expr
 {
   top.unparse = e1.unparse ++ " > " ++ e2.unparse;
 
   forwards to
     -- silver:core:gt(e1, e2)
     applicationExpr(
-      baseExpr(qName(top.location, "silver:core:gt"), location=top.location), '(',
+      baseExpr(qName(op.location, "silver:core:gt"), location=op.location), '(',
       snocAppExprs(
         oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
         presentAppExpr(e2, location=top.location),
@@ -653,14 +653,14 @@ top::Expr ::= e1::Expr '>' e2::Expr
 }
 
 concrete production ltOp
-top::Expr ::= e1::Expr '<' e2::Expr
+top::Expr ::= e1::Expr op::'<' e2::Expr
 {
   top.unparse = e1.unparse ++ " < " ++ e2.unparse;
 
   forwards to
     -- silver:core:lt(e1, e2)
     applicationExpr(
-      baseExpr(qName(top.location, "silver:core:lt"), location=top.location), '(',
+      baseExpr(qName(op.location, "silver:core:lt"), location=op.location), '(',
       snocAppExprs(
         oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
         presentAppExpr(e2, location=top.location),
@@ -669,14 +669,14 @@ top::Expr ::= e1::Expr '<' e2::Expr
 }
 
 concrete production gteOp
-top::Expr ::= e1::Expr '>=' e2::Expr
+top::Expr ::= e1::Expr op::'>=' e2::Expr
 {
   top.unparse = e1.unparse ++ " >= " ++ e2.unparse;
 
   forwards to
     -- silver:core:gte(e1, e2)
     applicationExpr(
-      baseExpr(qName(top.location, "silver:core:gte"), location=top.location), '(',
+      baseExpr(qName(op.location, "silver:core:gte"), location=op.location), '(',
       snocAppExprs(
         oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
         presentAppExpr(e2, location=top.location),
@@ -685,14 +685,14 @@ top::Expr ::= e1::Expr '>=' e2::Expr
 }
 
 concrete production lteOp
-top::Expr ::= e1::Expr '<=' e2::Expr
+top::Expr ::= e1::Expr op::'<=' e2::Expr
 {
   top.unparse = e1.unparse ++ " <= " ++ e2.unparse;
 
   forwards to
     -- silver:core:lte(e1, e2)
     applicationExpr(
-      baseExpr(qName(top.location, "silver:core:lte"), location=top.location), '(',
+      baseExpr(qName(op.location, "silver:core:lte"), location=op.location), '(',
       snocAppExprs(
         oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
         presentAppExpr(e2, location=top.location),
@@ -701,14 +701,14 @@ top::Expr ::= e1::Expr '<=' e2::Expr
 }
 
 concrete production eqOp
-top::Expr ::= e1::Expr '==' e2::Expr
+top::Expr ::= e1::Expr op::'==' e2::Expr
 {
   top.unparse = e1.unparse ++ " == " ++ e2.unparse;
 
   forwards to
     -- silver:core:eq(e1, e2)
     applicationExpr(
-      baseExpr(qName(top.location, "silver:core:eq"), location=top.location), '(',
+      baseExpr(qName(op.location, "silver:core:eq"), location=op.location), '(',
       snocAppExprs(
         oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
         presentAppExpr(e2, location=top.location),
@@ -717,14 +717,14 @@ top::Expr ::= e1::Expr '==' e2::Expr
 }
 
 concrete production neqOp
-top::Expr ::= e1::Expr '!=' e2::Expr
+top::Expr ::= e1::Expr op::'!=' e2::Expr
 {
   top.unparse = e1.unparse ++ " != " ++ e2.unparse;
 
   forwards to
     -- silver:core:neq(e1, e2)
     applicationExpr(
-      baseExpr(qName(top.location, "silver:core:neq"), location=top.location), '(',
+      baseExpr(qName(op.location, "silver:core:neq"), location=op.location), '(',
       snocAppExprs(
         oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
         presentAppExpr(e2, location=top.location),
@@ -832,14 +832,14 @@ top::Expr ::= s::String_t
 }
 
 concrete production plusPlus
-top::Expr ::= e1::Expr '++' e2::Expr
+top::Expr ::= e1::Expr op::'++' e2::Expr
 {
   top.unparse = e1.unparse ++ " ++ " ++ e2.unparse;
 
   forwards to
     -- silver:core:append(e1, e2)
     applicationExpr(
-      baseExpr(qName(top.location, "silver:core:append"), location=top.location), '(',
+      baseExpr(qName(op.location, "silver:core:append"), location=op.location), '(',
       snocAppExprs(
         oneAppExprs(presentAppExpr(e1, location=top.location), location=top.location), ',',
         presentAppExpr(e2, location=top.location),

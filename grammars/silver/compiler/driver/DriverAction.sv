@@ -22,9 +22,9 @@ grammar silver:compiler:driver;
 aspect production compilation
 top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::BuildEnv
 {
-  top.postOps <- [printAllParsingErrors(g.grammarList ++ r.grammarList)];
+  top.postOps <- [printAllParsingErrors(top.allGrammars)];
   top.postOps <- if top.config.noBindingChecking then [] else
-    [printAllBindingErrors(g.grammarList ++ r.grammarList)]; 
+    [printAllBindingErrors(top.allGrammars)]; 
   top.postOps <- [touchIfaces(r.grammarList, benv.silverGen)];
 }
 

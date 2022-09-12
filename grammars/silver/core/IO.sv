@@ -85,7 +85,8 @@ IOVal<a> ::= st::IO<a> ioIn::IOToken
 function unsafeEvalIO
 a ::= st::IO<a>
 {
-  return evalIO(st, unsafeIO()).iovalue;
+  local res::IOVal<a> = evalIO(st, unsafeIO());
+  return unsafeTrace(res.iovalue, res.io);
 }
 
 @{-

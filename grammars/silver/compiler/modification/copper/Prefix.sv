@@ -30,6 +30,8 @@ top::TerminalPrefix ::= s::QName
   top.unparse = s.unparse;
   top.errors <- s.lookupType.errors;
   top.terminalPrefix = makeCopperName(s.lookupType.fullName);
+} action {
+  insert semantic token IdType_t at s.baseNameLoc;
 }
 
 concrete production newTermModifiersTerminalPrefix
@@ -134,6 +136,8 @@ top::TerminalPrefixItem ::= t::QName
   top.unparse = t.unparse;
   top.errors := t.lookupType.errors;
   top.prefixItemNames = [t.lookupType.fullName];
+} action {
+  insert semantic token IdType_t at t.baseNameLoc;
 }
 
 concrete production easyTerminalRefTerminalPrefixItem
@@ -181,6 +185,8 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
           tName :: tsNames, false, pluckTAction.translation,
           location=top.location, sourceGrammar=top.grammarName),
       tail(powerSet(ts.termList)));
+} action {
+  insert semantic token IdType_t at t.baseNameLoc;
 }
 
 -- Prefix separator
