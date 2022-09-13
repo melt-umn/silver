@@ -229,10 +229,10 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
 
     public static final List<String> tokenTypes = Arrays.asList(new String[] {
         "namespace", "type", "interface", "class", "typeParameter", "parameter", "variable", "function",
-        "keyword", "modifier", "comment", "string", "number", "regexp", "operator"
+        "keyword", "modifier", "comment", "string", "number", "regexp", "operator", "macro"
     });
     public static final List<String> tokenModifiers = Arrays.asList(new String[] {
-        "declaration", "definition", "documentation", "defaultLibrary"
+        "declaration", "definition", "documentation", "defaultLibrary", "modification"
     });
 
     private CopperSemanticTokenEncoder semanticTokenEncoder;
