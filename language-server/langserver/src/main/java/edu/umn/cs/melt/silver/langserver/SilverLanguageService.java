@@ -6,6 +6,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,6 +18,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
@@ -35,6 +37,8 @@ import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.FileCreate;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
+import org.eclipse.lsp4j.MessageParams;
+import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.Range;
@@ -56,10 +60,11 @@ import com.google.gson.JsonPrimitive;
 import common.ConsCell;
 import common.DecoratedNode;
 import common.OriginContext;
+import common.SilverCopperParser;
 import common.StringCatter;
 import common.javainterop.ConsCellCollection;
 import silver.compiler.composed.Default.Parser_silver_compiler_composed_Default_svParse;
-import silver.compiler.composed.Default.PsvParse;
+import silver.compiler.definition.core.NRoot;
 import silver.compiler.driver.PbuildRun;
 import silver.compiler.driver.PparseArgsOrError;
 import silver.compiler.driver.util.NBuildEnv;
@@ -84,6 +89,8 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     private boolean buildInProgress = false, buildTriggered = false;
     private boolean cleanBuild = false;
     private boolean enableMWDA = false;
+    private String parserJar = "";
+    private String parserName = "";
     private String silverGen;
     private String silverStdlibGrammars = null;
     private DecoratedNode comp = null;
@@ -96,6 +103,7 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         } catch (IOException e) {
             e.printStackTrace();
         }
+        setParserFactory(Parser_silver_compiler_composed_Default_svParse::new);
     }
 
     public void setClient(LanguageClient client) {
@@ -227,14 +235,44 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         "declaration", "definition", "documentation", "defaultLibrary"
     });
 
-    private CopperSemanticTokenEncoder semanticTokenEncoder =
-        new CopperSemanticTokenEncoder(Parser_silver_compiler_composed_Default_svParse::new, tokenTypes, tokenModifiers);
+    private CopperSemanticTokenEncoder semanticTokenEncoder;
+    private CopperParserNodeFactory parserFn;
+    private void setParserFactory(Supplier<SilverCopperParser<NRoot>> parserFactory) {
+        semanticTokenEncoder = new CopperSemanticTokenEncoder(parserFactory, tokenTypes, tokenModifiers);
+        parserFn = new CopperParserNodeFactory(parserFactory);
+    }
+
+    private CompletableFuture<Void> reloadParser() {
+        ConfigurationItem parserJarConfigItem = new ConfigurationItem();
+        parserJarConfigItem.setSection("silver.parserJar");
+        ConfigurationItem parserNameConfigItem = new ConfigurationItem();
+        parserNameConfigItem.setSection("silver.parserName");
+        ConfigurationParams configParams = new ConfigurationParams(
+            List.of(parserJarConfigItem, parserNameConfigItem));
+        return client.configuration(configParams).thenAccept((configs) -> {
+            String newParserJar = ((JsonPrimitive)configs.get(0)).getAsString();
+            String newParserName = ((JsonPrimitive)configs.get(1)).getAsString();
+            if (!newParserJar.equals(parserJar) || !newParserName.equals(parserName)) {
+                parserJar = newParserJar;
+                parserName = newParserName;
+                if (parserJar.isEmpty() || parserName.isEmpty()) {
+                    setParserFactory(Parser_silver_compiler_composed_Default_svParse::new);
+                } else {
+                    System.err.println("Loading parser " + parserJar + " " + parserName);
+                    try {
+                        setParserFactory(Util.loadCopperParserFactory(Paths.get(parserJar), parserName, NRoot.class));
+                    } catch (SecurityException | ReflectiveOperationException e) {
+                        client.showMessage(new MessageParams(MessageType.Error, "Error loading parser from jar: " + e.toString()));
+                    }
+                }
+            }
+        });
+    }
 
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
-        //System.err.println(params);
         String uri = params.getTextDocument().getUri();
-        return CompletableFutures.computeAsync((cancelChecker) -> {
+        return reloadParser().thenApply((arg) -> {
             List<Integer> tokens;
             int requestVersion;
             // Recompute tokens if the file is changed while tokens are being computed
@@ -314,19 +352,22 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
 
     private void doBuild(Map<String, Integer> buildVersions) {
         System.err.println("Building");
+
         String silverHome = "";  // Not needed since we aren't doing translation
         List<String> args = new ArrayList<>();
         List<String> grammarPath = new ArrayList<>(grammarDirs);
         List<String> silverHostGen = List.of(silverGen);
 
         // Check the config for whether the MWDA is enabled
-        ConfigurationItem configItem = new ConfigurationItem();
-        configItem.setSection("silver.enableMWDA");
+        ConfigurationItem enableMWDAConfigItem = new ConfigurationItem();
+        enableMWDAConfigItem.setSection("silver.enableMWDA");
+        ConfigurationParams configParams = new ConfigurationParams(List.of(enableMWDAConfigItem));
         try {
-            enableMWDA = ((JsonPrimitive)client.configuration(new ConfigurationParams(List.of(configItem))).get().get(0)).getAsBoolean();
+            enableMWDA = ((JsonPrimitive)client.configuration(configParams).get().get(0)).getAsBoolean();
         } catch (InterruptedException | ExecutionException e) {
             // Ignore, getting the settings sometimes fails when a build is triggered during initialization
         }
+
         if (enableMWDA) {
             System.err.println("MWDA enabled");
             args.add("--warn-all");
@@ -358,8 +399,7 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         // Build!
         DecoratedNode comp = (DecoratedNode)PunsafeEvalIO.invoke(OriginContext.FFI_CONTEXT,
             PbuildRun.invoke(OriginContext.FFI_CONTEXT,
-                new PsvParse.Factory(),
-                a, benv,
+                parserFn, a, benv,
                 ConsCellCollection.fromIterator(buildGrammars.stream().<StringCatter>map(StringCatter::new).iterator())));
 
         // Note that we must demand allGrammars from comp before demanding

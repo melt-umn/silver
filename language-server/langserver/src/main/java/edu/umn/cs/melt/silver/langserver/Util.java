@@ -1,8 +1,15 @@
 package edu.umn.cs.melt.silver.langserver;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
@@ -13,6 +20,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Diagnostic;
@@ -22,6 +30,7 @@ import org.eclipse.lsp4j.Range;
 
 import common.ConsCell;
 import common.DecoratedNode;
+import common.SilverCopperParser;
 import common.javainterop.ConsCellCollection;
 import silver.core.NLocation;
 import silver.langutil.NMessage;
@@ -118,5 +127,72 @@ public class Util {
                 return FileVisitResult.CONTINUE;
             }
         });
+    }
+
+    /**
+     * Dynamically load a Copper parser from a compiled Silver grammar.
+     * 
+     * @param <ROOT> The start nonterminal type of the parser
+     * @param jarPath The path to the jar file to be loaded
+     * @param name The name of the declared parser, prefixed by its grammar
+     * @param rootClass The class of the start nonterminal for the parser
+     * @return A factory object for instantiating the parser
+     * @throws SecurityException
+     * @throws ReflectiveOperationException
+     */
+    @SuppressWarnings("unchecked")
+    public static <ROOT> Supplier<SilverCopperParser<ROOT>> loadCopperParserFactory(
+        final Path jarPath, final String name, final Class<ROOT> rootClass)
+        throws SecurityException, ReflectiveOperationException {
+        // Initialize a class loader for the jar
+        URLClassLoader loader;
+        try {
+            loader = new URLClassLoader(new URL[] {jarPath.toUri().toURL()}, Util.class.getClassLoader());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Load the parser class
+        String pkg = String.join(".", name.substring(0, Math.max(name.lastIndexOf(":"), 0)).split(":"));
+        String parserClassName = pkg + ".Parser_" + String.join("_", name.split(":"));
+        Class<?> parserClass = Class.forName(parserClassName, true, loader);
+
+        // Sanity check: make sure it's actually a Silver-declared Copper parser
+        if (!SilverCopperParser.class.isAssignableFrom(parserClass)) {
+            throw new ReflectiveOperationException("Loaded class is not a Silver-generated Copper parser");
+        }
+
+        // Hacky way of determining the actual start nonterminal type of the parser, from its superclass generic type args.
+        Type[] genericParams = ((ParameterizedType)parserClass.getGenericSuperclass()).getActualTypeArguments();
+        if (genericParams.length != 2) {
+            throw new ReflectiveOperationException("Could not determine parser root type");
+        }
+        Class<ROOT> actualRootClass = (Class<ROOT>)genericParams[0];
+
+        // Check that the start nonterminal is correct
+        if (!rootClass.isAssignableFrom(actualRootClass)) {
+            throw new ReflectiveOperationException(
+                "Loaded parser has the wrong start nonterminal: expected " + rootClass.getName() + ", got " + actualRootClass.getName());
+        }
+
+        // Initialize the grammar containing the parser.
+        // This transitively initializes any dependent grammars, e.g. extensions included in the parser.
+        Class<?> initClass = Class.forName(pkg + ".Init", true, loader);
+        initClass.getMethod("initAllStatics").invoke(null);
+        initClass.getMethod("init").invoke(null);
+        initClass.getMethod("postInit").invoke(null);
+
+        // Set up the parser factory
+        Constructor<?> constructor = parserClass.getConstructor();
+        return () -> {
+            try {
+                // Invoke the constructor.
+                // This unchecked cast should be safe due to the above sanity checks.
+                return (SilverCopperParser<ROOT>)constructor.newInstance();
+            } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+                    | InvocationTargetException e) {
+                throw new RuntimeException("Error instantiating Copper parser", e);
+            }
+        };
     }
 }
