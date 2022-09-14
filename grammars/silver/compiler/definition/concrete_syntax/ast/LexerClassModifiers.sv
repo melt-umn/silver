@@ -56,7 +56,7 @@ top::SyntaxLexerClassModifier ::= super::[String]
   -- Lexer classes not included in this parser are ignored
   production superRefs :: [Decorated SyntaxDcl] = concat(lookupStrings(super, top.cstEnv));
 
-  top.superClassContribs := map(pair(top.className, _), super);
+  top.superClassContribs := map(pair(top.className, _), map((.fullName), superRefs));
 }
 
 {--
