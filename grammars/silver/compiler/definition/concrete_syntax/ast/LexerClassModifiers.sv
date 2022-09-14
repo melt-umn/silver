@@ -53,14 +53,9 @@ top::SyntaxLexerClassModifier ::=
 abstract production lexerClassExtends
 top::SyntaxLexerClassModifier ::= super::[String]
 {
-  local superRefsL :: [[Decorated SyntaxDcl]] = lookupStrings(super, top.cstEnv);
-  production superRefs :: [Decorated SyntaxDcl] = map(head, lookupStrings(super, top.cstEnv));
+  -- Lexer classes not included in this parser are ignored
+  production superRefs :: [Decorated SyntaxDcl] = concat(lookupStrings(super, top.cstEnv));
 
-  top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
-                     if !null(a.snd) then []
-                     else ["Lexer Class " ++ a.fst ++ " was referenced but " ++
-                           "this grammar was not included in this parser. (Referenced from extends clause for lexer class)"],
-                   zipWith(pair, super, superRefsL));
   top.superClassContribs := map(pair(top.className, _), super);
 }
 
