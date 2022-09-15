@@ -62,8 +62,8 @@ echo " > Runtime Build"
 echo "   Silver Build"
 echo ""
 cd ../runtime/java
-ant
-mv SilverRuntime.jar ../../jars/
+mvn package
+cp target/silver-runtime-*.jar ../../jars/SilverRuntime.jar
 cd ../../build
 echo "Now finish ..."
 ant

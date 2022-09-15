@@ -4,7 +4,6 @@ set -eu
 
 echo    === BUILD JAVA RUNTIME ===
 cd runtime/java
-ant
+mvn package
 echo    === INSTALL NEW RUNTIME ===
-cd ../..
-cp runtime/java/*.jar jars
+cp target/silver-runtime-*.jar ../../jars/SilverRuntime.jar
