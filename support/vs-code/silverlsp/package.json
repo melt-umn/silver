@@ -49,13 +49,13 @@
             "default": "-Xmx6G -Xss20M",
             "description": "Language server JVM flags"
           },
-          "silver.parserJar": {
+          "silver.compilerJar": {
             "type": "string",
-            "description": "Path to the jar containing the Silver parser to be used"
+            "description": "Path to the jar containing an alternate version of the Silver compiler"
           },
           "silver.parserName": {
             "type": "string",
-            "description": "Full name of the Silver parser to use"
+            "description": "Full name of the Silver parser to use, must be set if compiler jar is specified"
           }
         }
       }

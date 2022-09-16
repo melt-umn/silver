@@ -94,9 +94,9 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     private boolean buildInProgress = false, buildTriggered = false;
     private boolean cleanBuild = false;
     private boolean enableMWDA = false;
-    private String parserJar = "";
+    private String compilerJar = "";
     private String parserName = "";
-    private FileTime parserJarTime;
+    private FileTime compilerJarTime;
     private String silverGen;
     private String silverStdlibGrammars = null;
     private DecoratedNode comp = null;
@@ -249,29 +249,29 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     }
 
     private CompletableFuture<Void> reloadParser() {
-        ConfigurationItem parserJarConfigItem = new ConfigurationItem();
-        parserJarConfigItem.setSection("silver.parserJar");
+        ConfigurationItem compilerJarConfigItem = new ConfigurationItem();
+        compilerJarConfigItem.setSection("silver.compilerJar");
         ConfigurationItem parserNameConfigItem = new ConfigurationItem();
         parserNameConfigItem.setSection("silver.parserName");
         ConfigurationParams configParams = new ConfigurationParams(
-            List.of(parserJarConfigItem, parserNameConfigItem));
+            List.of(compilerJarConfigItem, parserNameConfigItem));
         return client.configuration(configParams).thenAccept((configs) -> {
-            String oldParserJar = parserJar;
+            String oldParserJar = compilerJar;
             String oldParserName = parserName;
-            parserJar = ((JsonPrimitive)configs.get(0)).getAsString();
+            compilerJar = ((JsonPrimitive)configs.get(0)).getAsString();
             parserName = ((JsonPrimitive)configs.get(1)).getAsString();
-            if (parserJar.isEmpty() || parserName.isEmpty()) {
-                if (!parserJar.equals(oldParserJar) || !parserName.equals(oldParserName)) {
+            if (compilerJar.isEmpty() || parserName.isEmpty()) {
+                if (!compilerJar.equals(oldParserJar) || !parserName.equals(oldParserName)) {
                     setParserFactory(Parser_silver_compiler_composed_Default_svParse::new);
                 }
             } else {
                 try {
-                    Path parserJarPath = Paths.get(parserJar);
-                    FileTime newParserJarTime = Files.readAttributes(parserJarPath, BasicFileAttributes.class).lastModifiedTime();
-                    if (!parserJar.equals(oldParserJar) || !parserName.equals(oldParserName) || !newParserJarTime.equals(parserJarTime)) {
-                        parserJarTime = newParserJarTime;
-                        System.err.println("Loading parser " + parserJar + " " + parserName);
-                        setParserFactory(Util.loadCopperParserFactory(parserJarPath, parserName, NRoot.class));
+                    Path compilerJarPath = Paths.get(compilerJar);
+                    FileTime newParserJarTime = Files.readAttributes(compilerJarPath, BasicFileAttributes.class).lastModifiedTime();
+                    if (!compilerJar.equals(oldParserJar) || !parserName.equals(oldParserName) || !newParserJarTime.equals(compilerJarTime)) {
+                        compilerJarTime = newParserJarTime;
+                        System.err.println("Loading parser " + compilerJar + " " + parserName);
+                        setParserFactory(Util.loadCopperParserFactory(compilerJarPath, parserName, NRoot.class));
                     }
                 } catch (SecurityException | ReflectiveOperationException | IOException e) {
                     client.showMessage(new MessageParams(MessageType.Error, "Error loading parser from jar: " + e.toString()));
