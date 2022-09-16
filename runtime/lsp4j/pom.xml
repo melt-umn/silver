@@ -13,6 +13,10 @@
             <artifactId>org.eclipse.lsp4j</artifactId>
             <version>0.14.0</version>
         </dependency>
+        <!-- We really just depend on silver:core and silver:langutil. 
+          Ideally, in the future we should just be able to depend on a single
+          artifact containing the runtime and silver:core, and perhaps bundle
+          this library with silver:langutil. -->
         <dependency>
             <groupId>edu.umn.cs.melt</groupId>
             <artifactId>silver</artifactId>
