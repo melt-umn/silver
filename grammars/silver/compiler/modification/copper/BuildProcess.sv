@@ -157,7 +157,7 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
 
   top.run = do {
     dumpFileExists :: Boolean <- isFile(dumpFile);
-    if dumpFileExists then do {
+    if !cmdArgs.doClean && dumpFileExists then do {
       dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
       let dumpMatched::Either<String Boolean> = map(eq(specCstAst, _), nativeDeserialize(dumpFileContents));
       if dumpMatched == right(true) && !cmdArgs.forceCopperDump then do {
