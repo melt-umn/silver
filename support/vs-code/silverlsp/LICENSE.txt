@@ -1,0 +1,11 @@
+--2022-09-16 12:27:02--  https://www.gnu.org/licenses/lgpl-3.0.txt
+Resolving www.gnu.org (www.gnu.org)... 209.51.188.116, 2001:470:142:5::116
+Connecting to www.gnu.org (www.gnu.org)|209.51.188.116|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 7652 (7.5K) [text/plain]
+Saving to: ‘lgpl-3.0.txt’
+
+     0K .......                                               100%  560M=0s
+
+2022-09-16 12:27:02 (560 MB/s) - ‘lgpl-3.0.txt’ saved [7652/7652]
+
