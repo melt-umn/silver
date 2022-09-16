@@ -1,8 +1,5 @@
 package edu.umn.cs.melt.silver.langserver;
 
-import edu.umn.cs.melt.copper.runtime.engines.CopperParser;
-import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,8 +9,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import common.HasTokens;
+import common.SilverCopperParser;
 import common.Terminal;
+import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 
 /**
  * A utility for invoking a Silver-generated Copper parser to obtain semantic
@@ -35,9 +33,9 @@ import common.Terminal;
  * @author krame505
  * @see https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens
  */
-public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserException> & HasTokens> {
+public class CopperSemanticTokenEncoder {
     // The constructor for the Copper parser
-    private final Supplier<P> parserFactory;
+    private final Supplier<? extends SilverCopperParser<?>> parserFactory;
 
     // The legend mapping semantic token types and modifier names to their encodings
     private final Map<String, Integer> tokenTypes;
@@ -52,7 +50,7 @@ public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserEx
      * @param tokenTypes Semantic token types that will be used
      * @param tokenModifiers Semantic token modifiers that will be used
      */
-    public CopperSemanticTokenEncoder(Supplier<P> parserFactory, List<String> tokenTypes, List<String> tokenModifiers) {
+    public CopperSemanticTokenEncoder(Supplier<? extends SilverCopperParser<?>> parserFactory, List<String> tokenTypes, List<String> tokenModifiers) {
         this.parserFactory = parserFactory;
         this.tokenTypes = IntStream.range(0, tokenTypes.size()).boxed()
             .collect(Collectors.toMap(tokenTypes::get, i -> i));
@@ -67,7 +65,7 @@ public class CopperSemanticTokenEncoder<P extends CopperParser<?, CopperParserEx
      * @return The encoded tokens
      */
     public List<Integer> parseTokens(String content) {
-        P parser = parserFactory.get();
+        SilverCopperParser<?> parser = parserFactory.get();
         try {
             parser.parse(content);
         } catch (CopperParserException e) {
