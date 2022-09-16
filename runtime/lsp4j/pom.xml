@@ -1,23 +1,35 @@
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <groupId>edu.umn.cs.melt</groupId>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>silver-langserver-parent</artifactId>
-    <packaging>pom</packaging>
+    <groupId>edu.umn.cs.melt</groupId>
+    <artifactId>lsp4j-util</artifactId>
     <version>0.1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
     <dependencies>
         <dependency>
             <groupId>org.eclipse.lsp4j</groupId>
             <artifactId>org.eclipse.lsp4j</artifactId>
-            <version>${lsp4j.version}</version>
+            <version>0.14.0</version>
+        </dependency>
+        <dependency>
+            <groupId>edu.umn.cs.melt</groupId>
+            <artifactId>silver</artifactId>
+            <version>0.4.4-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>edu.umn.cs.melt</groupId>
+            <artifactId>silver-runtime</artifactId>
+            <version>0.4.4-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>edu.umn.cs.melt</groupId>
+            <artifactId>copper-runtime</artifactId>
+            <version>1.0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
-    <modules>
-        <module>langserver</module>
-        <module>launcher</module>
-    </modules>
+
     <build>
         <plugins>
             <plugin>
@@ -31,7 +43,4 @@
             </plugin>
         </plugins>
     </build>
-    <properties>
-        <lsp4j.version>0.14.0</lsp4j.version>
-    </properties>
 </project>
