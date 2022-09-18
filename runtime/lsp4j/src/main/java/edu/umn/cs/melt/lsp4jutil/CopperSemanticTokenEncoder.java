@@ -62,15 +62,14 @@ public class CopperSemanticTokenEncoder {
      * @return The encoded tokens
      */
     public List<Integer> parseTokens(String content) {
-        // Copper treats tabs as padding to multiples of 8 chars in the reported column numbers,
-        // while we want the absolute character index.
-        // Workaround: Replace tabs with spaces before parsing.
-        // Note that this fails if for some reason the grammar accepts tabs but not spaces.
-        String stripTabs = content.replaceAll("\t", " ");
-
         SilverCopperParser<?> parser = parserFactory.get();
+
+        // By default, Copper treats tabs as padding to multiples of 8 chars in the
+        // reported column numbers, while we want the absolute character index.
+        parser.setTabStop(1);
+
         try {
-            parser.parse(stripTabs);
+            parser.parse(content);
         } catch (CopperParserException e) {
             // Ignore parse errors
         } catch (IOException e) {
