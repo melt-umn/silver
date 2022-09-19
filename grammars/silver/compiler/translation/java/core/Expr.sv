@@ -364,7 +364,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
       case finalType(e) of
       -- Don't know the actual number of attributes for skolems with occurs-on contexts,
       -- fall back to using the max index.
-      | skolemType(_) -> foldr1(\ i1::String i2::String -> s"max(${i1}, ${i2})", inh.nameTrans) ++ " + 1"
+      | skolemType(_) -> foldr1(\ i1::String i2::String -> s"Math.max(${i1}, ${i2})", inh.nameTrans) ++ " + 1"
       | t -> s"${makeNTName(t.typeName)}.num_inh_attrs"
       end ++ ", " ++
       s"new int[]{${implode(", ", inh.nameTrans)}}, " ++ 
@@ -444,7 +444,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 
-aspect production not
+aspect production notOp
 top::Expr ::= '!' e::Expr
 {
   top.translation = s"(!${e.translation})";
@@ -503,7 +503,7 @@ top::Expr ::= e1::Expr '*' e2::Expr
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
 }
 aspect production divide
-top::Expr ::= e1::Expr '/' e2::Expr
+top::Expr ::= e1::Expr _ e2::Expr
 {
   top.translation = s"(${e1.translation} / ${e2.translation})";
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);

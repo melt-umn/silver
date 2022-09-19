@@ -36,12 +36,12 @@ top::AGDcl ::= ag1::AGDcl ag2::AGDcl
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar  _ _ _ _
+top::RootSpec ::= g::Grammar  _ _ _ _ _
 {
   top.ideSpecs = g.ideSpecs;
 }
 aspect production interfaceRootSpec
-top::RootSpec ::= _ _ _
+top::RootSpec ::= _ _
 {
   top.ideSpecs = []; -- TODO: This, of course, means we're forgetting ide specs in interfaces
 }

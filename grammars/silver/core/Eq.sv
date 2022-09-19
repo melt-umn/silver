@@ -194,3 +194,14 @@ instance Eq Location {
     l1.line == l2.line &&
     l1.column == l2.column;
 }
+
+@{-
+  - Compute the fixed point of a function by repeatedly applying it
+  - until its result remains constant.
+  -}
+function fixpoint
+Eq a => a ::= f::(a ::= a) x::a
+{
+  local fx :: a = f(x);
+  return if fx == x then fx else fixpoint(f, fx);
+}

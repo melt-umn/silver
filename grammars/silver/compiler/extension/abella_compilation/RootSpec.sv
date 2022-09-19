@@ -22,7 +22,7 @@ occurs on RootSpec;
 
 
 aspect production interfaceRootSpec
-top::RootSpec ::= _ _ _
+top::RootSpec ::= _ _
 {
   top.shouldOutput = false;
   top.output = "";
@@ -40,7 +40,8 @@ top::RootSpec ::= _ _ _ _ _
 }
 
 aspect production grammarRootSpec
-top::RootSpec ::= g::Grammar grammarName::String grammarSource::String
+top::RootSpec ::= g::Grammar oldInterface::Maybe<InterfaceItems>
+                  grammarName::String grammarSource::String
                   grammarTime::Integer generateLocation::String
 {
   local componentName::String = encodeName(grammarName);

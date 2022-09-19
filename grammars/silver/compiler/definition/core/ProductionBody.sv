@@ -311,12 +311,14 @@ top::DefLHS ::= q::QName
 {
   top.name = q.name;
   top.unparse = q.unparse;
-
-  top.errors := q.lookupValue.errors ++ forward.errors;
   
   forwards to (if null(q.lookupValue.dcls)
                then errorDefLHS(_, location=_)
                else q.lookupValue.dcl.defLHSDispatcher)(q, top.location);
+} action {
+  if (contains(q.name, sigNames)) {
+    insert semantic token IdSigName_t at q.baseNameLoc;
+  }
 }
 
 abstract production errorDefLHS
@@ -326,6 +328,7 @@ top::DefLHS ::= q::PartiallyDecorated QName
   top.unparse = q.unparse;
   top.found = false;
   
+  top.errors <- q.lookupValue.errors;
   top.errors <-
     if top.typerep.isError then [] else [err(q.location, "Cannot define attributes on " ++ q.name)];
   top.typerep = q.lookupValue.typeScheme.monoType;

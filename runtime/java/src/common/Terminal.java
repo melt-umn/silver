@@ -48,8 +48,14 @@ public abstract class Terminal implements Typed {
 	public Integer getLine() {
 		return (Integer)getFromLoc(silver.core.Init.silver_core_line__ON__silver_core_Location);
 	}
+	public Integer getEndLine() {
+		return (Integer)getFromLoc(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
+	}
 	public Integer getColumn() {
 		return (Integer)getFromLoc(silver.core.Init.silver_core_column__ON__silver_core_Location);
+	}
+	public Integer getEndColumn() {
+		return (Integer)getFromLoc(silver.core.Init.silver_core_endColumn__ON__silver_core_Location);
 	}
 	public StringCatter getFilename() {
 		return (StringCatter)getFromLoc(silver.core.Init.silver_core_filename__ON__silver_core_Location);

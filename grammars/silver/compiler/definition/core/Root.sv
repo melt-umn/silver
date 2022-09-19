@@ -66,5 +66,7 @@ top::GrammarDcl ::= 'grammar' qn::QName ';'
   top.errors <-
     if qn.name == top.grammarName then []
     else [err(top.location, "Grammar declaration is incorrect: " ++ qn.name)];
+} action {
+  insert semantic token IdGrammarName_t at qn.baseNameLoc;
 }
 

@@ -27,8 +27,8 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
 }
 
 aspect production aspectDefaultProduction
-top::AGDcl ::= 'aspect' 'default' 'production' 
-               lhs::Name '::' te::TypeExpr '::=' body::ProductionBody 
+top::AGDcl ::= 'aspect' 'default' 'production'
+               ns::AspectDefaultProductionSignature body::ProductionBody
 {
   top.localAttrs := [];
   top.localAttrDefs := [];

@@ -676,7 +676,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
             [], e1.encodedExpr);
 }
 
-aspect production not
+aspect production notOp
 top::Expr ::= '!' e::Expr
 {
   e.encodingEnv = top.encodingEnv;
@@ -1180,7 +1180,7 @@ top::Expr ::= e1::Expr '*' e2::Expr
 }
 
 aspect production divide
-top::Expr ::= e1::Expr '/' e2::Expr
+top::Expr ::= e1::Expr _ e2::Expr
 {
   e1.encodingEnv = top.encodingEnv;
   e2.encodingEnv = top.encodingEnv;

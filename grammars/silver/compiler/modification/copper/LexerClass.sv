@@ -1,12 +1,17 @@
 grammar silver:compiler:modification:copper;
 
 terminal Lexer_kwd   'lexer'   lexer classes {KEYWORD};
-terminal Extends_kwd 'extends' lexer classes {KEYWORD};
+terminal Extends_kwd 'extends' lexer classes {MODIFIER};
+
+terminal IdLexerClass_t '' lexer classes {IDENTIFIER, lsp:Class};
+terminal IdLexerClassDcl_t '' lexer classes {IDENTIFIER, lsp:Class, lsp:Declaration};
 
 concrete production lexerClassDclEmpty
 top::AGDcl ::= 'lexer' 'class' id::Name ';'
 {
   forwards to lexerClassDecl($1, $2, id, lexerClassModifiersNone(location=$4.location), $4, location=top.location);
+} action {
+  insert semantic token IdLexerClassDcl_t at id.location;
 }
 
 concrete production lexerClassDecl
@@ -17,7 +22,7 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
 
-  top.defs := [lexerClassDef(top.grammarName, id.location, fName)];
+  top.defs := [lexerClassDef(top.grammarName, id.location, fName, modifiers.superClasses)];
 
   top.errors <- if length(getLexerClassDcl(fName, top.env)) > 1
                 then [err(id.location, "Lexer class '" ++ fName ++ "' is already bound.")]
@@ -29,15 +34,17 @@ top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
     [ syntaxLexerClass(fName, 
         foldr(consLexerClassMod, nilLexerClassMod(), modifiers.lexerClassModifiers),
         location=top.location, sourceGrammar=top.grammarName)];
+} action {
+  insert semantic token IdLexerClassDcl_t at id.location;
 }
 
-nonterminal LexerClassModifiers with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
-closed nonterminal LexerClassModifier with config, location, unparse, lexerClassModifiers, errors, env, grammarName, compiledGrammars, flowEnv;
+nonterminal LexerClassModifiers with config, location, unparse, lexerClassModifiers, superClasses, errors, env, grammarName, compiledGrammars, flowEnv;
+closed nonterminal LexerClassModifier with config, location, unparse, lexerClassModifiers, superClasses, errors, env, grammarName, compiledGrammars, flowEnv;
 
 monoid attribute lexerClassModifiers :: [SyntaxLexerClassModifier];
 
 propagate errors on LexerClassModifiers, LexerClassModifier;
-propagate lexerClassModifiers on LexerClassModifiers;
+propagate lexerClassModifiers, superClasses on LexerClassModifiers;
 
 abstract production lexerClassModifiersNone
 top::LexerClassModifiers ::= 
@@ -55,6 +62,12 @@ top::LexerClassModifiers ::= h::LexerClassModifier ',' t::LexerClassModifiers
   top.unparse = h.unparse ++ " " ++ t.unparse;
 }
 
+aspect default production
+top::LexerClassModifier ::=
+{
+  top.superClasses := [];
+}
+
 concrete production lexerClassModifierExtends
 top::LexerClassModifier ::= 'extends' cls::LexerClasses
 {
@@ -64,6 +77,7 @@ top::LexerClassModifier ::= 'extends' cls::LexerClasses
     [ lexerClassExtends(cls.lexerClasses, location=top.location,
         sourceGrammar=top.grammarName)
     ];
+  top.superClasses := cls.lexerClasses;
 }
 
 concrete production lexerClassModifierDominates

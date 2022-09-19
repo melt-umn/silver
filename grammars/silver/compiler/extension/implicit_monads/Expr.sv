@@ -12,6 +12,12 @@ attribute monadRewritten<Expr>, merrors, mtyperep, mDownSubst, mUpSubst, expecte
 propagate expectedMonad on Expr;
 
 
+type MonadInhs = {
+  downSubst, finalSubst, frame, grammarName, isRoot, originRules,
+  compiledGrammars, config, env, flowEnv, expectedMonad, mDownSubst
+};
+
+
 --list of the attributes accessed in an explicit expression not allowed there
 --this is turned into a list of appropriate error messages at the equation
 monoid attribute notExplicitAttributes::[Pair<String Location>];
@@ -1155,7 +1161,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
                             else or(e1.monadRewritten, '||', e2.monadRewritten, location=top.location);
 }
 
-aspect production not
+aspect production notOp
 top::Expr ::= '!' e::Expr
 {
   top.merrors := e.merrors;
@@ -1191,7 +1197,7 @@ top::Expr ::= '!' e::Expr
              \x::Boolean -> 
               $Expr {monadReturn(top.location)}(!x))
          }
-    else not('!', e.monadRewritten, location=top.location);
+    else notOp('!', e.monadRewritten, location=top.location);
 }
 
 concrete production ifThen

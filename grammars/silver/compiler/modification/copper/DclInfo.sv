@@ -1,5 +1,13 @@
 grammar silver:compiler:modification:copper;
 
+monoid attribute superClasses::[String] occurs on ValueDclInfo;
+
+aspect default production
+top::ValueDclInfo ::=
+{
+  top.superClasses := [];
+}
+
 {--
  - Reference to something declared as "parser attribute foo ..."
  -}
@@ -7,6 +15,7 @@ abstract production parserAttrDcl
 top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
+  propagate isEqual;
 
   top.typeScheme = monoType(ty);
   
@@ -22,6 +31,7 @@ abstract production pluckTermDcl
 top::ValueDclInfo ::= fn::String
 {
   top.fullName = fn;
+  propagate isEqual;
 
   -- TODO: Still needs work to prevent returning terminals
   -- that are not part of the disambiguation set.
@@ -36,9 +46,11 @@ top::ValueDclInfo ::= fn::String
  - Reference to a lexer class declaration. Has its own namespace in the environment, for now.
  -}
 abstract production lexerClassDcl
-top::ValueDclInfo ::= fn::String
+top::ValueDclInfo ::= fn::String  superClasses::[String]
 {
   top.fullName = fn;
+  propagate isEqual;
+  top.superClasses := superClasses;
   
   -- If we made lexer classes proper types, it might simplify a lot of code.
   -- We wouldn't need a separate namespace, they could just be in the type namespace.
@@ -56,6 +68,7 @@ abstract production termAttrValueDcl
 top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
+  propagate isEqual;
 
   top.typeScheme = monoType(ty);
   
@@ -71,6 +84,7 @@ abstract production actionChildDcl
 top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
+  propagate isEqual;
 
   top.typeScheme = monoType(ty);
   
@@ -86,6 +100,7 @@ abstract production parserLocalDcl
 top::ValueDclInfo ::= fn::String ty::Type
 {
   top.fullName = fn;
+  propagate isEqual;
 
   top.typeScheme = monoType(ty);
   

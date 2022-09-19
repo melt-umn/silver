@@ -20,7 +20,7 @@ autocopy attribute realSignature :: [NamedSignatureElement];
 propagate errors on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS, AspectRHSElem;
 
 concrete production aspectProductionDcl
-top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
+top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody
 {
   top.unparse = "aspect production " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
 
@@ -65,10 +65,13 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
       newScopeEnv(body.defs ++ sigDefs ++ contextSigDefs,
         newScopeEnv(prodAtts, top.env)));
   body.frame = aspectProductionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
+} action {
+  insert semantic token IdFnProd_t at id.location;
+  sigNames = [];
 }
 
 concrete production aspectFunctionDcl
-top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody 
+top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody
 {
   top.unparse = "aspect function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
 
@@ -113,6 +116,9 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
       newScopeEnv(body.defs ++ sigDefs ++ contextSigDefs,
         newScopeEnv(prodAtts, top.env)));
   body.frame = aspectFunctionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
+} action {
+  insert semantic token IdFnProd_t at id.location;
+  sigNames = [];
 }
 
 concrete production aspectProductionSignature
@@ -131,6 +137,8 @@ top::AspectProductionSignature ::= lhs::AspectProductionLHS '::=' rhs::AspectRHS
 
   lhs.realSignature = if null(top.realSignature) then [] else [head(top.realSignature)];
   rhs.realSignature = if null(top.realSignature) then [] else tail(top.realSignature);
+} action {
+  sigNames = foldNamedSignatureElements(lhs.outputElement :: rhs.inputElements).elementNames;
 }
 
 concrete production aspectProductionLHSNone
@@ -149,6 +157,8 @@ top::AspectProductionLHS ::= id::Name
   rType = if null(top.realSignature) then errorType() else head(top.realSignature).typerep;
 
   forwards to aspectProductionLHSFull(id, rType, location=top.location);
+} action {
+  insert semantic token IdSigNameDcl_t at id.location;
 }
 
 concrete production aspectProductionLHSTyped
@@ -159,6 +169,8 @@ top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
   top.errors <- t.errors;
   
   forwards to aspectProductionLHSFull(id, t.typerep, location=top.location);
+} action {
+  insert semantic token IdSigNameDcl_t at id.location;
 }
 
 abstract production aspectProductionLHSFull
@@ -228,6 +240,8 @@ top::AspectRHSElem ::= id::Name
   top.errors <- [wrn(top.location, "Giving just a name '" ++ id.name ++ "' is deprecated in aspect signature. Please explicitly use a name and type.")];
   
   forwards to aspectRHSElemFull(id, rType, location=top.location);
+} action {
+  insert semantic token IdSigNameDcl_t at id.location;
 }
 
 concrete production aspectRHSElemTyped
@@ -238,6 +252,8 @@ top::AspectRHSElem ::= id::Name '::' t::TypeExpr
   top.errors <- t.errors;
 
   forwards to aspectRHSElemFull(id, t.typerep, location=top.location);
+} action {
+  insert semantic token IdSigNameDcl_t at id.location;
 }
 
 abstract production aspectRHSElemFull

@@ -28,6 +28,9 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'f
   -- TODO this is a BS use of forwarding and should be eliminated. body.env and .frame are all wrong locally...
   
   forwards to functionDcl($1, id, ns, body, location=top.location);
+} action {
+  insert semantic token IdFnProdDcl_t at id.location;
+  sigNames = [];
 }
 
 concrete production ffidefsOne

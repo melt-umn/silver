@@ -13,156 +13,164 @@ type SVParser = (ParseResult<Root> ::= String String);
  - Run the silver compiler, as if invoked from the command line.
  -}
 function cmdLineRun
-IOVal<Integer> ::= args::[String]  svParser::SVParser  ioin::IOToken
+IO<Integer> ::= args::[String]  svParser::SVParser
 {
   local unit :: IOErrorable<Decorated Compilation> =
-    cmdLineRunInitial(args, svParser, ioin);
+    cmdLineRunInitial(args, svParser);
     
   return performActions(unit);
 }
 
 -- Compute the environment, and then setup and do a build run. No postOps executed, though.
 function cmdLineRunInitial
-IOErrorable<Decorated Compilation> ::=
-  args::[String]  svParser::SVParser  ioin::IOToken
+IOErrorable<Decorated Compilation> ::= args::[String]  svParser::SVParser
 {
-  return
-    runChainArg(
-      computeEnv,
-      setupBuildRun(svParser, _, _),
-      args, ioin);
+  return do {
+    env::(Decorated CmdArgs, BuildEnv) <- computeEnv(args);
+    setupBuildRun(svParser, env.1, env.2);
+  };
 }
 
 -- Perform the postOps from a cmdLineRunInitial.
 function performActions
-IOVal<Integer> ::= unitin::IOErrorable<Decorated Compilation>
+IO<Integer> ::= unit::IOErrorable<Decorated Compilation>
 {
-  return case unitin.iovalue of
-  | left(re) -> ioval(eprintlnT(re.message, unitin.io), re.code)
-  | right(comp) -> runAll(sortUnits(comp.postOps), unitin.io)
-  end;
+  return do {
+    res::Either<RunError Decorated Compilation> <- unit.run;
+    case res of
+    | left(re) -> do {
+        eprintln(re.message);
+        return re.code;
+      }
+    | right(comp) -> runAll(comp.postOps)
+    end;
+  };
 }
 
 -- Parser args and environment
 function computeEnv
-IOErrorable<Pair<Decorated CmdArgs  BuildEnv>> ::=
-  args::[String]
-  ioin::IOToken
+IOErrorable<(Decorated CmdArgs, BuildEnv)> ::= args::[String]
 {
-  -- Figure out arguments
-  local argResult :: Either<String  Decorated CmdArgs> =
-    parseArgs(args);
-  local a :: Decorated CmdArgs =
-    case argResult of right(t) -> t | _ -> error("Form is checked elsewhere before use") end;
-  local argErrors :: [String] =
-    case argResult of | left(s) -> [s] | _ -> [] end;
-
-  -- Figure out build env from environment and args
-  local benvResult :: IOVal<Either<BuildEnv  [String]>> =
-    determineBuildEnv(a, ioin);
-  local benv :: BuildEnv =
-    case benvResult.iovalue of left(t) -> t | right(_) -> error("Form is checked elsewhere before use") end;
-  local envErrors :: [String] =
-    case benvResult.iovalue of | right(s) -> s | _ -> [] end;
-
-  return if !null(argErrors) then
-    ioval(ioin, left(runError(1, head(argErrors))))
-  -- Because we want printing the version to work even if the environment is messed up
-  -- we premptively handle that here. This is slightly unfortunate.
-  -- Ideally, version printing would be just another thing we could have the command
-  -- line decide to go do, but currently it's hard to re-use code if we do that.
-  else if !null(envErrors) then
-    ioval(benvResult.io, left(runError(1, implode("\n", envErrors))))
-  else if a.displayVersion then
-    ioval(benvResult.io, left(runError(1, -- error code so 'ant' isnt run
-      "Silver Version 0.4.1-dev\n" ++
-      "SILVER_HOME = " ++ benv.silverHome ++ "\n" ++
-      "SILVER_GEN = " ++ benv.silverGen ++ "\n" ++
-      "GRAMMAR_PATH:\n" ++ implode("\n", benv.grammarPath) ++ "\n\n" ++
-      implode("\n", envErrors))))
-  else
-    ioval(benvResult.io, right(pair(a, benv)));
+  return
+    -- Figure out arguments
+    case parseArgs(args) of
+    | left(argErrors) -> throwRunError(1, argErrors)
+    | right(a) -> do {
+      -- Figure out build env from environment and args
+      benv::BuildEnv <- determineBuildEnv(a);
+      -- Because we want printing the version to work even if the environment is messed up
+      -- we premptively handle that here. This is slightly unfortunate.
+      -- Ideally, version printing would be just another thing we could have the command
+      -- line decide to go do, but currently it's hard to re-use code if we do that.
+      if a.displayVersion then
+        throwRunError(127, -- error code so 'ant' isnt run
+          "Silver Version 0.4.5-dev\n" ++
+          "SILVER_HOME = " ++ benv.silverHome ++ "\n" ++
+          "SILVER_GEN = " ++ benv.silverGen ++ "\n" ++
+          "GRAMMAR_PATH:\n" ++ implode("\n", benv.grammarPath))
+      else pure((a, benv));
+    }
+    end;
 }
 
--- Upon deciding that we're to build a single grammar into a jar, we do this
+-- Upon deciding that we're to build one or more grammars into a jar, we do this
 function setupBuildRun
 IOErrorable<Decorated Compilation> ::=
   svParser::SVParser
-  envin::Pair<Decorated CmdArgs  BuildEnv>
-  ioin::IOToken
+  a::Decorated CmdArgs
+  benv::BuildEnv
 {
-  local a::Decorated CmdArgs = envin.fst;
-  local benv::BuildEnv = envin.snd;
+  return do {
+    -- Check environment stuff specific to building a grammar
+    checkbuild::[String] <- lift(checkPreBuild(benv, a.buildGrammars));
+    when_(!null(checkbuild), throwRunError(1, implode("\n", checkbuild)));
 
-  -- Check environment stuff specific to building a grammar
-  local buildGrammars :: [String] = a.buildGrammars;
-  local checkbuild :: IOVal<[String]> =
-    checkPreBuild(benv, buildGrammars, ioin);
+    -- Build!
+    buildrun :: Decorated Compilation <- lift(buildRun(svParser, a, benv, a.buildGrammars));
+    let missingGrammars::[String] =
+      removeAll(map((.declaredName), buildrun.grammarList), a.buildGrammars);
+    when_(!null(missingGrammars),
+      throwRunError(1, "The specified grammar(s) " ++ implode(", ", missingGrammars) ++ " could not be found.\n"));
 
-  -- Build!
-  local buildrun :: IOVal<Decorated Compilation> =
-    buildRun(svParser, a, benv, buildGrammars, checkbuild.io);
-
-  local missingGrammars::[String] =
-    removeAll(map((.declaredName), buildrun.iovalue.grammarList), buildGrammars);
-
-  return if !null(checkbuild.iovalue) then
-    ioval(checkbuild.io, left(runError(1, implode("\n", checkbuild.iovalue))))
-  else if !null(missingGrammars) then
-    ioval(buildrun.io, left(runError(1, "The specified grammar(s) " ++ implode(", ", missingGrammars) ++ " could not be found.\n")))
-  else
-    ioval(buildrun.io, right(buildrun.iovalue));
+    return buildrun;
+  };
 }
 
 {--
  - Given an environment and a grammar to build, returns a Compilation.
- - Note that it's the caller's responsibility to actually evaluation that
+ - Note that it's the caller's responsibility to actually evaluate that
  - compilation's actions.
  -}
 function buildRun
-IOVal<Decorated Compilation> ::=
+IO<Decorated Compilation> ::=
   svParser::SVParser
   a::Decorated CmdArgs
   benv::BuildEnv
   buildGrammars::[String]
-  ioin::IOToken
 {
-  -- Compile grammars. There's some tricky circular program data flow here.
-  -- This does an "initial grammar stream" composed of 
-  -- grammars and interface files that *locally* seem good.
-  local rootStream :: IOVal<[Maybe<RootSpec>]> =
-    compileGrammars(svParser, benv, grammarStream, a.doClean, ioin);
+  return mdo {
+    -- Compile grammars. There's some tricky circular program data flow here.
+    -- This does an "initial grammar stream" composed of 
+    -- grammars and interface files that *locally* seem good.
+    rootStream :: [Maybe<RootSpec>] <-
+      unsafeInterleaveIO(compileGrammars(svParser, benv, grammarStream, a.doClean));
 
-  -- The list of grammars to build. This is circular with the above, producing
-  -- a list that's terminated when the response count is equal to the number of emitted
-  -- grammar names.
-  local grammarStream :: [String] =
-    buildGrammars ++
-    eatGrammars(length(buildGrammars), buildGrammars, rootStream.iovalue, unit.grammarList);
-  
-  -- This is, essentially, a data structure representing a compilation.
-  -- Note that it is pure: it doesn't take any actions.
-  local unit :: Compilation =
-    compilation(
-      foldr(consGrammars, nilGrammars(), catMaybes(rootStream.iovalue)),
-      foldr(consGrammars, nilGrammars(), catMaybes(reRootStream.iovalue)),
-      buildGrammars, benv);
-  -- This is something we should probably get rid of, someday. Somehow. It's hard.
-  unit.config = a;
+    -- The list of grammars to build. This is circular with the above, producing
+    -- a list that's terminated when the response count is equal to the number of emitted
+    -- grammar names.
+    let grammarStream :: [String] =
+      buildGrammars ++
+      eatGrammars(mentionedGrammars, length(buildGrammars), buildGrammars, rootStream, unit.grammarList);
     
-  -- There is a second circularity here where we use unit.recheckGrammars
-  -- to supply the second parameter to unit.
-  local reRootStream :: IOVal<[Maybe<RootSpec>]> =
-    compileGrammars(svParser, benv, unit.recheckGrammars, true, rootStream.io);
+    -- This is, essentially, a data structure representing a compilation.
+    -- Note that it is pure: it doesn't take any actions.
+    let unit :: Decorated Compilation =
+      decorate
+        compilation(
+          foldr(consGrammars, nilGrammars(), catMaybes(rootStream)),
+          foldr(consGrammars, nilGrammars(), catMaybes(reRootStream)),
+          buildGrammars, benv)
+      with {
+        -- This is something we should probably get rid of, someday. Somehow. It's hard.
+        config = a;
+      };
 
-  return ioval(reRootStream.io, unit);
+    -- There is a second circularity here where we use unit.recompiledGrammars
+    -- to supply the second parameter to unit.
+    reRootStream :: [Maybe<RootSpec>] <-
+      unsafeInterleaveIO(compileGrammars(svParser, benv, reGrammarStream, true));
+    
+    let reGrammarStream :: [String] =
+      eatGrammars(
+        (.dirtyGrammars), length(unit.initRecompiledGrammars), map((.declaredName), unit.initRecompiledGrammars),
+        map(compose(just, new), unit.initRecompiledGrammars) ++ reRootStream, unit.recompiledGrammars);
+
+    return unit;
+  };
 }
 
+{--
+ - Eat the stream `need` and produce the output stream of (maybe, if found) `RootSpec`s.
+ -
+ - @param benv   The compiler configuration, including search paths
+ - @param need   A **stream** of grammars to compile.
+ - @param clean  If true, ignore interface files entirely.
+ -}
+function compileGrammars
+IO<[Maybe<RootSpec>]> ::=
+  svParser::SVParser
+  benv::BuildEnv
+  need::[String]
+  clean::Boolean
+{
+  return traverseA(\ g::String -> compileGrammar(svParser, benv, g, clean).run, need);
+}
 
 {--
  - Consumes a stream of parses, outputs a stream of new dependencies.
  - Typically used as a circular program with 'compileGrammars'
  -
+ - @param triggered  A function returning a list of grammars that sould be triggered by a grammar
  - @param n  Expected number of new inputs from rootStream
  - @param sofar  Set of grammars already seen, and should not be requested again
  - @param rootStream  Stream of found/not found info. Should not be used except to test presence
@@ -170,11 +178,10 @@ IOVal<Decorated Compilation> ::=
  - @return  A stream of new dependencies
  -}
 function eatGrammars
-[String] ::= n::Integer  sofar::[String]  rootStream::[Maybe<a>]  grammars::[Decorated RootSpec]
+[String] ::= triggered::([String] ::= Decorated RootSpec)  n::Integer  sofar::[String]  rootStream::[Maybe<a>]  grammars::[Decorated RootSpec]
 {
-  local it :: Decorated RootSpec = head(grammars);
-  
-  local directDeps :: [String] = mentionedGrammars(it);
+  local it :: Decorated RootSpec = head(grammars);  
+  local directDeps :: [String] = triggered(it);
   
   local newDeps :: [String] = removeAll(sofar, directDeps);
   
@@ -182,11 +189,12 @@ function eatGrammars
     if n == 0 then
       []
     else if !head(rootStream).isJust then
-      eatGrammars(n-1, sofar, tail(rootStream), grammars)
+      eatGrammars(triggered, n-1, sofar, tail(rootStream), grammars)
     else
-      newDeps ++ eatGrammars(n-1+length(newDeps), newDeps ++ sofar, tail(rootStream), tail(grammars));
+      newDeps ++ eatGrammars(triggered, n-1+length(newDeps), newDeps ++ sofar, tail(rootStream), tail(grammars));
 }
 
+synthesized attribute code::Integer;
 
 nonterminal RunError with code, message;
 -- from silver:langutil, and silver:compiler:driver:util;
@@ -199,30 +207,10 @@ top::RunError ::= c::Integer  m::String
 }
 
 -- A common return type for IO functions. Does IO and returns error or whatever.
-type IOErrorable<a> = IOVal<Either<RunError a>>;
--- A function that does IO and either errors or returns a value
-type RunChain<a b> = (IOErrorable<b> ::= a IOToken);
+type IOErrorable<a> = EitherT<RunError IO a>;
 
--- Function composition of RunChains. IO-y Either monad, of sorts.
-function runChain
-RunChain<a c> ::= l::RunChain<a b>  r::RunChain<b c>
+function throwRunError
+IOErrorable<a> ::= c::Integer m::String
 {
-  return runChainArg(l, r, _, _);
+  return throwError(runError(c, m));
 }
-
-function runChainArg
-IOErrorable<c> ::= l::RunChain<a b>  r::RunChain<b c> x::a ioin::IOToken
-{
-  -- Apply to left.
-  local lcall :: IOErrorable<b> = l(x, ioin);
-  
-  -- apply return value to right, if possible. otherwise, propagate error
-  local rcall :: IOErrorable<c> =
-    case lcall.iovalue of
-    | left(re) -> ioval(lcall.io, left(re))
-    | right(y) -> r(y, lcall.io)
-    end;
-  
-  return rcall;
-}
-

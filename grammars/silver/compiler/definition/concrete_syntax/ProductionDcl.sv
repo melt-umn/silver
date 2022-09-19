@@ -1,6 +1,8 @@
 grammar silver:compiler:definition:concrete_syntax;
 
-autocopy attribute productionName :: String;
+import silver:compiler:modification:copper only actionDefs;
+
+autocopy attribute productionSig :: NamedSignature;
 
 concrete production concreteProductionDcl
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody
@@ -10,9 +12,10 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
   
-  pm.productionName = fName;
   ns.signatureName = fName;
   ns.env = newScopeEnv(ns.defs, top.env);
+  pm.productionSig = ns.namedSignature;
+  pm.env = newScopeEnv(ns.actionDefs, top.env);
 
   top.errors <- pm.errors;
   top.errors <- ns.concreteSyntaxTypeErrors;
@@ -24,11 +27,14 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
     ];
   
   forwards to productionDcl('abstract', $2, id, ns, body, location=top.location);
+} action {
+  insert semantic token IdFnProdDcl_t at id.location;
+  sigNames = [];
 }
 
-nonterminal ProductionModifiers with config, location, unparse, productionModifiers, errors, env, productionName; -- 0 or some
-nonterminal ProductionModifierList with config, location, unparse, productionModifiers, errors, env, productionName; -- 1 or more
-closed nonterminal ProductionModifier with config, location, unparse, productionModifiers, errors, env, productionName; -- 1
+nonterminal ProductionModifiers with config, location, unparse, productionModifiers, errors, env, productionSig; -- 0 or some
+nonterminal ProductionModifierList with config, location, unparse, productionModifiers, errors, env, productionSig; -- 1 or more
+closed nonterminal ProductionModifier with config, location, unparse, productionModifiers, errors, env, productionSig; -- 1
 
 monoid attribute productionModifiers :: [SyntaxProductionModifier];
 
@@ -66,10 +72,10 @@ top::ProductionModifier ::= 'precedence' '=' i::Int_t
   top.productionModifiers := [prodPrecedence(toInteger(i.lexeme))];
 }
 
-terminal Operator_kwd 'operator' lexer classes {KEYWORD,RESERVED};
+terminal Operator_kwd 'operator' lexer classes {MODIFIER,RESERVED};
 
 concrete production productionModifierOperator
-top::ProductionModifier ::= 'operator' '=' n::QName
+top::ProductionModifier ::= 'operator' '=' n::QNameType
 {
   top.unparse = "operator = " ++ n.unparse;
 

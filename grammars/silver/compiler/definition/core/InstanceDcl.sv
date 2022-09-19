@@ -15,9 +15,19 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   production superContexts::Contexts =
     foldContexts(if id.lookupType.found && !foldContexts(cl.contexts).isTypeError then dcl.superContexts else []);
   superContexts.env = body.env;
-  
+  superContexts.config = top.config;
+  superContexts.grammarName = top.grammarName;
+  superContexts.compiledGrammars = top.compiledGrammars;
+
+  -- oh no again!
+  local myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+  local myProds :: EnvTree<ProductionGraph> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).productionFlowGraphs;
+
+  local myFlowGraph :: ProductionGraph = constructAnonymousGraph(body.flowDefs, top.env, myProds, myFlow);
+  superContexts.frame = globalExprContext(fName, foldContexts(body.frameContexts), ty.typerep, myFlowGraph, sourceGrammar=top.grammarName);
+
   top.defs := [instDef(top.grammarName, id.location, fName, boundVars, cl.contexts, ty.typerep, body.definedMembers)];
-  
+
   top.errors <- id.lookupType.errors;
   top.errors <-
     if !id.lookupType.found || dcl.isClass then []
@@ -58,6 +68,8 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   body.instanceType = ty.typerep; 
   body.expectedClassMembers = if id.lookupType.found then dcl.classMembers else [];
   body.frameContexts = superContexts.contexts ++ cl.contexts;
+} action {
+  insert semantic token IdTypeClass_t at id.baseNameLoc;
 }
 
 concrete production instanceDclNoCL
@@ -66,6 +78,8 @@ top::AGDcl ::= 'instance' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
   top.unparse = s"instance ${id.unparse} ${ty.unparse}\n{\n${body.unparse}\n}"; 
 
   forwards to instanceDcl($1, nilConstraint(location=top.location), '=>', id, ty, $4, body, $6, location=top.location);
+} action {
+  insert semantic token IdTypeClass_t at id.baseNameLoc;
 }
 
 autocopy attribute className::String;
@@ -157,4 +171,6 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
   local myFlowGraph :: ProductionGraph = constructAnonymousGraph(e.flowDefs, top.env, myProds, myFlow);
 
   e.frame = globalExprContext(top.fullName, foldContexts(top.frameContexts), typeScheme.typerep, myFlowGraph, sourceGrammar=top.grammarName);
+} action {
+  insert semantic token IdTypeClassMember_t at id.baseNameLoc;
 }

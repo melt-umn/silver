@@ -58,14 +58,18 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   body.constraintEnv = cl.env;
   body.classHead = instContext(fName, var.typerep);
   body.frameContexts = supers;
+} action {
+  insert semantic token IdTypeClassDcl_t at id.baseNameLoc;
 }
 
 concrete production typeClassDclNoCL
 top::AGDcl ::= 'class' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 {
-  top.unparse = s"${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}";
+  top.unparse = s"class ${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}";
 
   forwards to typeClassDcl($1, nilConstraint(location=top.location), '=>', id, var, $4, body, $6, location=top.location);
+} action {
+  insert semantic token IdTypeClassDcl_t at id.baseNameLoc;
 }
 
 autocopy attribute classHead::Context;
@@ -97,6 +101,8 @@ concrete production classBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
 {
   forwards to constraintClassBodyItem(id, $2, nilConstraint(location=top.location), '=>', ty, $4, location=top.location);
+} action {
+  insert semantic token IdTypeClassMemberDcl_t at id.location;
 }
 
 concrete production constraintClassBodyItem
@@ -122,12 +128,16 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
     if length(getValueDclAll(fName, top.env)) > 1
     then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
     else [];
+} action {
+  insert semantic token IdTypeClassMemberDcl_t at id.location;
 }
 
 concrete production defaultClassBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
 {
   forwards to defaultConstraintClassBodyItem(id, $2, nilConstraint(location=top.location), '=>', ty, $4, e, $6, location=top.location);
+} action {
+  insert semantic token IdTypeClassMemberDcl_t at id.location;
 }
 
 concrete production defaultConstraintClassBodyItem
@@ -165,6 +175,8 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
     if length(getValueDclAll(fName, top.env)) > 1
     then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
     else [];
+} action {
+  insert semantic token IdTypeClassMemberDcl_t at id.location;
 }
 
 -- TODO: Defaults

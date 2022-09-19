@@ -4,6 +4,12 @@ terminal Pluck_kwd 'pluck' lexer classes {KEYWORD,RESERVED};
 terminal Print_kwd 'print' lexer classes {KEYWORD,RESERVED};
 terminal PushToken_kwd 'pushToken' lexer classes {KEYWORD,RESERVED};
 
+terminal Insert_kwd 'insert' lexer classes {KEYWORD};
+terminal Semantic_kwd 'semantic' lexer classes {KEYWORD};
+terminal Token_kwd 'token' lexer classes {KEYWORD};
+terminal At_kwd 'at' lexer classes {KEYWORD};
+disambiguate Insert_kwd, IdLower_t { pluck Insert_kwd; }
+
 concrete production namePrint
 top::Name ::= 'print'
 { forwards to name("print", top.location); }
@@ -132,6 +138,35 @@ top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
        if errCheck1.typeerror
        then [err(lexeme.location, "Lexeme parameter has type " ++ errCheck1.leftpp ++ " which is not a String")]
        else [];
+}
+
+concrete production insertSemanticTokenStmt
+top::ProductionStmt ::= 'insert' 'semantic' 'token' n::QNameType 'at' loc::Expr ';'
+{
+  top.unparse = "\t" ++ "insert semantic token " ++ n.unparse ++ " at " ++ loc.unparse ++ ";";
+
+  propagate errors;
+  top.errors <-
+    if !top.frame.permitActions
+    then [err(top.location, "Semantic tokens may only be inserted in action blocks")]
+    else [];
+
+  top.translation = s"""insertToken(new ${makeTerminalName(n.lookupType.fullName)}(new common.StringCatter(""), ${loc.translation}));""";
+
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  loc.originRules = [];
+  loc.isRoot = false;
+
+  thread downSubst, upSubst on top, loc, errCheck1, top;
+
+  errCheck1 = check(loc.typerep, nonterminalType("silver:core:Location", [], false));
+  top.errors <-
+    if errCheck1.typeerror
+    then [err(loc.location, s"Semantic token position expected a ${errCheck1.rightpp}, but got ${errCheck1.leftpp}")]
+    else [];
+} action {
+  insert semantic token IdType_t at n.location;
 }
 
 concrete production blockStmt

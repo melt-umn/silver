@@ -99,8 +99,8 @@ top::AGDcl ::= 'functor' 'attribute' a::Name ';'
 }
 
 aspect production aspectDefaultProduction
-top::AGDcl ::= 'aspect' 'default' 'production' lhs::Name '::' _ '::='
-               body::ProductionBody 
+top::AGDcl ::= 'aspect' 'default' 'production'
+               ns::AspectDefaultProductionSignature body::ProductionBody
 {
 }
 

@@ -6,7 +6,7 @@ nonterminal FunctionLHS with config, grammarName, env, location, unparse, errors
 propagate errors on FunctionSignature, FunctionLHS;
 
 concrete production functionDcl
-top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 
+top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
   top.unparse = "function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse; 
 
@@ -40,6 +40,9 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 
   body.env = occursEnv(ns.occursDefs, newScopeEnv(body.defs ++ sigDefs ++ ns.constraintDefs, newScopeEnv(prodAtts, top.env)));
   body.frame = functionContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName); -- graph from flow:env
+} action {
+  insert semantic token IdFnProdDcl_t at id.location;
+  sigNames = [];
 }
 
 concrete production functionSignature
@@ -62,6 +65,8 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
       lhs.outputElement,
       -- For the moment, functions do not have named parameters (hence, nilNamedSignatureElement)
       nilNamedSignatureElement());
+} action {
+  sigNames = foldNamedSignatureElements(rhs.inputElements).elementNames;
 }
 
 concrete production functionSignatureNoCL
@@ -70,6 +75,8 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
   top.unparse = s"${lhs.unparse} ::= ${rhs.unparse}";
 
   forwards to functionSignature(nilConstraint(location=top.location), '=>', lhs, $2, rhs, location=top.location);
+} action {
+  sigNames = foldNamedSignatureElements(rhs.inputElements).elementNames;
 }
 
 concrete production functionLHS
