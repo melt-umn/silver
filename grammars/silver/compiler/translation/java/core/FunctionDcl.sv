@@ -25,25 +25,28 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
 
   top.genFiles :=
     [pair(s"P${id.name}.java", generateFunctionClassString(top.grammarName, id.name, namedSig, funBody))] ++
-    if id.name == "main" then [pair("Main.java", generateMainClassString(top.grammarName, !mainTypeOne))]
+    if id.name == "main" 
+	then [pair("Main.java", generateMainClassString(top.grammarName, !typeIOValFailed))]
     else [];
 
-	local attribute mainTypeOne::Boolean = unify(namedSig.typerep, -- main functions which return IOVal<Integer>
-         appTypes(
-           functionType(2, []),
-           [appType(listCtrType(), stringType()),
-            ioForeignType,
-            appType(nonterminalType("silver:core:IOVal", [starKind()], false), intType())])).failure;
+  -- For main functions which return IOVal<Integer>
+  local attribute typeIOValFailed::Boolean = unify(namedSig.typerep,
+    appTypes(
+      functionType(2, []),
+        [appType(listCtrType(), stringType()),
+          ioForeignType,
+          appType(nonterminalType("silver:core:IOVal", [starKind()], false), intType())])).failure;
 
-	local attribute mainTypeTwo::Boolean = unify(namedSig.typerep, -- main functions which return IO<Integer>
-         appTypes(
-           functionType(1, []),
-           [appType(listCtrType(), stringType()),
-            appType(nonterminalType("silver:core:IO", [starKind()], false), intType())])).failure;
+  -- For main functions which return IO<Integer>:
+  local attribute typeIOMonadFailed::Boolean = unify(namedSig.typerep,
+    appTypes(
+      functionType(1, []),
+        [appType(listCtrType(), stringType()),
+          appType(nonterminalType("silver:core:IO", [starKind()], false), intType())])).failure;
 
   -- main function signature check TODO: this should probably be elsewhere!
   top.errors <- 
-    if id.name == "main" && mainTypeOne && mainTypeTwo
+    if id.name == "main" && typeIOValFailed && typeIOMonadFailed
     then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IOToken) or (IO<Integer> ::= [String]). Instead it has type " ++ prettyType(namedSig.typerep))]
     else [];
 }
@@ -193,13 +196,16 @@ ${makeTyVarDecls(3, whatSig.typerep.freeVariables)}
 }
 
 function generateMainClassString
-String ::= whatGrammar::String whatSignature::Boolean
+String ::= whatGrammar::String isIOValReturn::Boolean
 {
   local attribute package :: String;
   package = makeName(whatGrammar);
 
-	local attribute mainInvocation::String = package ++ ".Pmain.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args), common.IOToken.singleton)";
-	local attribute evalIOInvocation::String = "silver.core.PevalIO.invoke(common.OriginContext.ENTRY_CONTEXT, " ++ package ++ ".Pmain.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args)), common.IOToken.singleton)";
+	local attribute invocationIOVal::String = package ++ 
+		".Pmain.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args), common.IOToken.singleton)";
+	local attribute invokationEvalIO::String = 
+		"silver.core.PevalIO.invoke(common.OriginContext.ENTRY_CONTEXT, " ++ package ++ 
+		".Pmain.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args)), common.IOToken.singleton)";
 
   return s"""
 package ${package};
@@ -214,7 +220,7 @@ public class Main {
 		${package}.Init.postInit();
 
 		try {
-			common.Node rv = (common.Node) ${if whatSignature then mainInvocation else evalIOInvocation};
+			common.Node rv = (common.Node) ${if whatSignature then invocationIOVal else invokationEvalIO};
 			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
 			drv.synthesized(silver.core.Init.silver_core_io__ON__silver_core_IOVal); // demand the io token
 			System.exit( (Integer)drv.synthesized(silver.core.Init.silver_core_iovalue__ON__silver_core_IOVal) );
