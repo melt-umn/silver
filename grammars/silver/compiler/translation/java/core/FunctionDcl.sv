@@ -37,7 +37,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
           ioForeignType,
           appType(nonterminalType("silver:core:IOVal", [starKind()], false), intType())])).failure;
 
-  -- For main functions which return IO<Integer>:
+  -- For main functions which return IO<Integer>
   local attribute typeIOMonadFailed::Boolean = unify(namedSig.typerep,
     appTypes(
       functionType(1, []),
@@ -220,7 +220,7 @@ public class Main {
 		${package}.Init.postInit();
 
 		try {
-			common.Node rv = (common.Node) ${if whatSignature then invocationIOVal else invokationEvalIO};
+			common.Node rv = (common.Node) ${if isIOValReturn then invocationIOVal else invokationEvalIO};
 			common.DecoratedNode drv = rv.decorate(common.TopNode.singleton, (common.Lazy[])null);
 			drv.synthesized(silver.core.Init.silver_core_io__ON__silver_core_IOVal); // demand the io token
 			System.exit( (Integer)drv.synthesized(silver.core.Init.silver_core_iovalue__ON__silver_core_IOVal) );
