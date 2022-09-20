@@ -26,7 +26,7 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
   top.genFiles :=
     [pair(s"P${id.name}.java", generateFunctionClassString(top.grammarName, id.name, namedSig, funBody))] ++
     if id.name == "main" 
-	then [pair("Main.java", generateMainClassString(top.grammarName, !typeIOValFailed))]
+	then [pair("Main.java", generateMainClassString(top.grammarName, !typeIOValFailed))] -- !typeIOValFailed true if main type used was IOVal<Integer>
     else [];
 
   -- For main functions which return IOVal<Integer>
@@ -46,8 +46,9 @@ s"""			final common.DecoratedNode context = new P${id.name}(${argsAccess}).decor
 
   -- main function signature check TODO: this should probably be elsewhere!
   top.errors <- 
-    if id.name == "main" && typeIOValFailed && typeIOMonadFailed
-    then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IOToken) or (IO<Integer> ::= [String]). Instead it has type " ++ prettyType(namedSig.typerep))]
+    if id.name == "main" && typeIOValFailed && typeIOMonadFailed -- Neither legal main function type used
+    then [err(top.location, "main function must have type signature (IOVal<Integer> ::= [String] IOToken) " ++ 
+		"or (IO<Integer> ::= [String]). Instead it has type " ++ prettyType(namedSig.typerep))]
     else [];
 }
 
@@ -201,11 +202,14 @@ String ::= whatGrammar::String isIOValReturn::Boolean
   local attribute package :: String;
   package = makeName(whatGrammar);
 
-	local attribute invocationIOVal::String = package ++ 
-		".Pmain.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args), common.IOToken.singleton)";
-	local attribute invokationEvalIO::String = 
-		"silver.core.PevalIO.invoke(common.OriginContext.ENTRY_CONTEXT, " ++ package ++ 
-		".Pmain.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args)), common.IOToken.singleton)";
+  -- Code used if main function return type is IOVal<Integer>
+  local attribute invocationIOVal::String = package ++ 
+    ".Pmain.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args), common.IOToken.singleton)";
+	
+  -- Code used if main function return type is IO<Integer>
+  local attribute invokationEvalIO::String = 
+    "silver.core.PevalIO.invoke(common.OriginContext.ENTRY_CONTEXT, " ++ package ++ 
+    ".Pmain.invoke(common.OriginContext.ENTRY_CONTEXT, cvargs(args)), common.IOToken.singleton)";
 
   return s"""
 package ${package};
