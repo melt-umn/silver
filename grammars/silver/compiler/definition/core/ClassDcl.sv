@@ -72,9 +72,9 @@ top::AGDcl ::= 'class' id::QNameType var::TypeExpr '{' body::ClassBody '}'
   insert semantic token IdTypeClassDcl_t at id.baseNameLoc;
 }
 
-autocopy attribute classHead::Context;
-autocopy attribute constraintEnv::Decorated Env;
-autocopy attribute frameContexts::[Context];  -- Only used for computing frame in members
+inherited attribute classHead::Context;
+inherited attribute constraintEnv::Decorated Env;
+inherited attribute frameContexts::[Context];  -- Only used for computing frame in members
 
 nonterminal ClassBody with
   config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;

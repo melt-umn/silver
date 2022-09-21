@@ -33,11 +33,11 @@ attribute transform<Strategy> occurs on MRuleList, MatchRule;
 synthesized attribute isPolymorphic :: Boolean occurs on MRuleList, MatchRule, PatternList, Pattern, NamedPatternList, NamedPattern;
 inherited attribute typeHasUniversalVars :: Boolean occurs on Pattern;
 inherited attribute typesHaveUniversalVars :: [Boolean] occurs on PatternList;
-autocopy attribute namedTypesHaveUniversalVars :: [(String, Boolean)] occurs on NamedPatternList, NamedPattern;
+inherited attribute namedTypesHaveUniversalVars :: [(String, Boolean)] occurs on NamedPatternList, NamedPattern;
 
 synthesized attribute wrappedMatchRuleList :: [AbstractMatchRule] occurs on MRuleList, MatchRule;
 
-autocopy attribute decRuleExprsIn::[(String, Decorated Expr with {decorate, boundVars})] occurs on MRuleList, MatchRule;
+inherited attribute decRuleExprsIn::[(String, Decorated Expr with {decorate, boundVars})] occurs on MRuleList, MatchRule;
 inherited attribute ruleIndex::Integer occurs on MRuleList, MatchRule;
 
 aspect production mRuleList_one

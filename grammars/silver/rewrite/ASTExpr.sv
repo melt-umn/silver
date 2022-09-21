@@ -3,7 +3,7 @@ grammar silver:rewrite;
 imports silver:langutil;
 imports silver:langutil:pp;
 
-autocopy attribute substitutionEnv::[Pair<String AST>];
+inherited attribute substitutionEnv::[Pair<String AST>];
 synthesized attribute value::AST;
 
 nonterminal ASTExpr with pp, substitutionEnv, value;

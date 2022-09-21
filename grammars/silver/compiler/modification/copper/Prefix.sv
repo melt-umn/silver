@@ -17,8 +17,8 @@ top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::Term
   s.prefixedGrammars = if ts.isAllMarking then [top.componentGrammarName] else [];
 }
 
-autocopy attribute prefixedTerminals::[String];
-autocopy attribute prefixedGrammars::[String];
+inherited attribute prefixedTerminals::[String];
+inherited attribute prefixedGrammars::[String];
 synthesized attribute terminalPrefix::String;
 nonterminal TerminalPrefix with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, prefixedTerminals, prefixedGrammars, location, unparse, errors, syntaxAst, genFiles, terminalPrefix;
 

@@ -16,13 +16,13 @@ flowtype Grammar = decorate {config, compiledGrammars, productionFlowGraphs, gra
 - directly or indirectly. (i.e. based on other grammar's exports)
 - NOT including options.
 -}
-autocopy attribute grammarDependencies :: [String];
+inherited attribute grammarDependencies :: [String];
 {--
  - Grammar-wide imports definitions.  Exists because we need to place
  - a file's individual imports between grammar definitions and grammar
  - wide imports.
  -}
-autocopy attribute globalImports :: Decorated Env;
+inherited attribute globalImports :: Decorated Env;
 {--
  - The definitions resulting from grammar-wide imports definitions.
  - At the top of a grammar, these are echoed down as globalImports

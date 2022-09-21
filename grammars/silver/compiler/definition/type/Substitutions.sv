@@ -80,7 +80,7 @@ Maybe<Type> ::= tv::TyVar s::Substitution
 --------------------------------------------------------------------------------
 
 -- These are for ordinary tyvar substitutions.
-autocopy attribute substitution :: Substitution occurs on Context, Type;
+inherited attribute substitution :: Substitution occurs on Context, Type;
 functor attribute substituted occurs on Context, Type;
 -- These are for flat, non-recursive replacement of tyvars with something else directly
 functor attribute flatRenamed occurs on Context, Type;

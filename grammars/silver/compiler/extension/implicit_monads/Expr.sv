@@ -1921,7 +1921,7 @@ synthesized attribute realTypes::[Type] occurs on AppExpr, AppExprs;
 attribute expectedMonad occurs on AppExpr, AppExprs;
 propagate expectedMonad on AppExpr, AppExprs;
 --Whether we're in a special case where monad arguments are allowed, despite the normal prohibition
-autocopy attribute monadArgumentsAllowed::Boolean occurs on AppExpr, AppExprs;
+inherited attribute monadArgumentsAllowed::Boolean occurs on AppExpr, AppExprs;
 
 attribute monadRewritten<AppExpr>, merrors, mDownSubst, mUpSubst occurs on AppExpr;
 attribute monadRewritten<AppExprs>, merrors, mDownSubst, mUpSubst occurs on AppExprs;

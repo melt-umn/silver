@@ -15,7 +15,7 @@ flowtype forward {deterministicCount, realSignature, grammarName, env, flowEnv} 
 {--
  - The signature elements from the fun/produciton being aspected.
  -}
-autocopy attribute realSignature :: [NamedSignatureElement];
+inherited attribute realSignature :: [NamedSignatureElement];
 
 propagate errors on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS, AspectRHSElem;
 

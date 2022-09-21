@@ -35,7 +35,7 @@ nonterminal ForwardLHSExpr with
  - Context for ProductionStmt blocks. (Indicates function, production, aspect, etc)
  - Includes singature for those contexts with a signature.
  -}
-autocopy attribute frame :: BlockContext;
+inherited attribute frame :: BlockContext;
 
 {--
  - Defs of attributes that should be wrapped up as production attributes.

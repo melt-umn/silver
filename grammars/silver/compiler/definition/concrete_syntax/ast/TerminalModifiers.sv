@@ -10,7 +10,7 @@ monoid attribute opAssociation :: Maybe<String> with nothing(), orElse; -- TODO 
 monoid attribute prefixSeperator :: Maybe<String> with nothing(), orElse;
 monoid attribute prefixSeperatorToApply :: Maybe<String> with nothing(), orElse;
 monoid attribute prettyName :: Maybe<String> with nothing(), orElse;
-autocopy attribute terminalName :: String;
+inherited attribute terminalName :: String;
 
 monoid attribute dominates_ :: [Decorated SyntaxDcl];
 monoid attribute submits_ :: [Decorated SyntaxDcl];

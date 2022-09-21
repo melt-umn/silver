@@ -14,7 +14,7 @@ nonterminal ProductionDclStmts with unparse, location, proddcls, lhsdcl, grammar
 nonterminal ProductionDclStmt with unparse, location, proddcls, lhsdcl, grammarName;
 
 synthesized attribute proddcls :: AGDcl;
-autocopy attribute lhsdcl :: ProductionLHS;
+inherited attribute lhsdcl :: ProductionLHS;
 
 terminal Productions_kwd 'productions' lexer classes {KEYWORD};
 terminal ProdVBar '|';

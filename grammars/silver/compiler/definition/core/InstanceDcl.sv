@@ -82,8 +82,8 @@ top::AGDcl ::= 'instance' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
   insert semantic token IdTypeClass_t at id.baseNameLoc;
 }
 
-autocopy attribute className::String;
-autocopy attribute instanceType::Type;
+inherited attribute className::String;
+inherited attribute instanceType::Type;
 inherited attribute expectedClassMembers::[Pair<String Boolean>];
 
 nonterminal InstanceBody with

@@ -45,7 +45,7 @@ inherited attribute bindingName :: String;
 synthesized attribute flowProjections :: [PatternVarProjection];
 
 -- The DclInfo of the production we're matching against
-autocopy attribute matchingAgainst :: Maybe<ValueDclInfo>;
+inherited attribute matchingAgainst :: Maybe<ValueDclInfo>;
 
 synthesized attribute varBinderCount :: Integer;
 

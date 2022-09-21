@@ -3,7 +3,7 @@ grammar silver:compiler:definition:type;
 import silver:langutil:pp;
 
 synthesized attribute typepp :: String occurs on PolyType, Context, Type, Kind;
-autocopy attribute boundVariables :: [TyVar] occurs on Context, Type;
+inherited attribute boundVariables :: [TyVar] occurs on Context, Type;
 
 function prettyType
 String ::= te::Type

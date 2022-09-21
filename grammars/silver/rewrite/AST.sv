@@ -2,14 +2,14 @@ grammar silver:rewrite;
 
 exports silver:reflect; -- Needed by the extension, so just export it here.
 
-autocopy attribute givenStrategy::Strategy occurs on AST, ASTs, NamedASTs, NamedAST;
+inherited attribute givenStrategy::Strategy occurs on AST, ASTs, NamedASTs, NamedAST;
 synthesized attribute allResult<a>::Maybe<a>;
 synthesized attribute someResult<a>::Maybe<a>;
 synthesized attribute oneResult<a>::Maybe<a>;
 
 inherited attribute productionName::String occurs on AST;
-autocopy attribute childStrategies::[Strategy] occurs on AST, ASTs;
-autocopy attribute annotationStrategies::[Pair<String Strategy>] occurs on AST, NamedASTs, NamedAST;
+inherited attribute childStrategies::[Strategy] occurs on AST, ASTs;
+inherited attribute annotationStrategies::[Pair<String Strategy>] occurs on AST, NamedASTs, NamedAST;
 synthesized attribute traversalResult<a>::Maybe<a>;
 inherited attribute headStrategy::Strategy occurs on AST;
 inherited attribute tailStrategy::Strategy occurs on AST;

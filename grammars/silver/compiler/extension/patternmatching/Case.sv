@@ -33,7 +33,7 @@ propagate errors, freeVars on MRuleList;
 -- Turns MRuleList (of MatchRules) into [AbstractMatchRule]
 synthesized attribute matchRuleList :: [AbstractMatchRule];
 -- Notification of the number of expressions being matched upon
-autocopy attribute matchRulePatternSize :: Integer;
+inherited attribute matchRulePatternSize :: Integer;
 
 -- P -> E
 nonterminal MatchRule with location, config, unparse, env, frame, errors, freeVars, matchRuleList, matchRulePatternSize;

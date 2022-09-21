@@ -2,7 +2,7 @@ grammar silver:compiler:definition:concrete_syntax;
 
 import silver:compiler:modification:copper only actionDefs;
 
-autocopy attribute productionSig :: NamedSignature;
+inherited attribute productionSig :: NamedSignature;
 
 concrete production concreteProductionDcl
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody

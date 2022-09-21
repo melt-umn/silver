@@ -7,7 +7,7 @@ import silver:util:treemap as tm;
 -- monoid attribute submits_ :: [Decorated SyntaxDcl];
 -- synthesized attribute prefixSeperator :: Maybe<String>;
 
-autocopy attribute className :: String;
+inherited attribute className :: String;
 
 {--
  - Modifiers for lexer classes.

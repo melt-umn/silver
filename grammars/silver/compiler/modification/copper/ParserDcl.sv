@@ -79,7 +79,7 @@ top::ParserComponent ::= m::ModuleName mods::ParserComponentModifiers ';'
   mods.componentGrammarName = head(m.moduleNames);
 }
 
-autocopy attribute componentGrammarName::String;
+inherited attribute componentGrammarName::String;
 
 {-- Have special env built from just this parser component and the global env -}
 nonterminal ParserComponentModifiers with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, terminalPrefixes, grammarTerminalPrefixes, syntaxAst, genFiles;

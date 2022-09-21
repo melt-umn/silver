@@ -14,7 +14,7 @@ synthesized attribute patternVars :: [String];
 {--
  - The names of all var patterns seen so far.
  -}
-autocopy attribute patternVarEnv :: [String];
+inherited attribute patternVarEnv :: [String];
 {--
  - False if it actually matches anything specific, true if it's a variable/wildcard.
  -}

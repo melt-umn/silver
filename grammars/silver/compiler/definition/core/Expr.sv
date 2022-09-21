@@ -33,12 +33,12 @@ propagate freeVars on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 {--
  - The nonterminal being decorated. (Used for 'decorate with {}')
  -}
-autocopy attribute decoratingnt :: Type;
+inherited attribute decoratingnt :: Type;
 {--
  - The inherited attributes being supplied in a decorate expression
  -}
 synthesized attribute suppliedInhs :: [String];
-autocopy attribute allSuppliedInhs :: [String];
+inherited attribute allSuppliedInhs :: [String];
 {--
  - A list of decorated expressions from an Exprs.
  -}
@@ -54,9 +54,9 @@ monoid attribute freeVars :: ts:Set<String>;
 
 -- Is this Expr the logical "root" of the expression? That is, will it's value be the value computed
 --  for the attribute/return value/etc that it is part of?
-autocopy attribute isRoot :: Boolean;
+inherited attribute isRoot :: Boolean;
 
-autocopy attribute originRules :: [Decorated Expr];
+inherited attribute originRules :: [Decorated Expr];
 
 attribute grammarName, frame occurs on Contexts, Context;
 
@@ -923,7 +923,7 @@ synthesized attribute appExprSize :: Integer;
 inherited attribute appExprIndex :: Integer;
 inherited attribute appExprTypereps :: [Type];
 inherited attribute appExprTyperep :: Type;
-autocopy attribute appExprApplied :: String;
+inherited attribute appExprApplied :: String;
 
 -- These are the "new" Exprs syntax. This allows missing (_) arguments, to indicate partial application.
 concrete production missingAppExpr
@@ -1023,7 +1023,7 @@ inherited attribute remainingFuncAnnotations :: [Pair<String Type>];
 {--
  - All annotations of this function
  -}
-autocopy attribute funcAnnotations :: [Pair<String Type>];
+inherited attribute funcAnnotations :: [Pair<String Type>];
 {--
  - Annotations that have not been supplied (by subtracting from remainingFuncAnnotations)
  -}

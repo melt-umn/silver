@@ -40,7 +40,7 @@ synthesized attribute docDcls :: [Pair<String DocDclInfo>] with ++;
 attribute docDcls occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 
 @{- Environment of all documented AGDcls, flowing back down after being computed from @link[docDcls].  -}
-autocopy attribute docEnv :: tm:Map<String DocDclInfo>;
+inherited attribute docEnv :: tm:Map<String DocDclInfo>;
 attribute docEnv occurs on Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 
 @{- Errors arising from ill-formed doc comments.  -}

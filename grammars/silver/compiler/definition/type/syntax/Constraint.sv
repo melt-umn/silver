@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:type:syntax;
 
-autocopy attribute constraintPos::ConstraintPosition;
+inherited attribute constraintPos::ConstraintPosition;
 
 nonterminal ConstraintList
   -- This grammar doesn't export silver:compiler:definition:core, so the type concrete

@@ -189,7 +189,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.flowDefs <- occursContextDeps(top.frame.signature, top.env, finalTy, anonVertexType(inh.decorationVertex));
 }
 
-autocopy attribute decorationVertex :: String occurs on ExprInhs, ExprInh;
+inherited attribute decorationVertex :: String occurs on ExprInhs, ExprInh;
 
 aspect production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
@@ -247,7 +247,7 @@ top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 attribute flowDeps, flowDefs, flowEnv, scrutineeVertexType occurs on PrimPatterns, PrimPattern;
 propagate flowDeps, flowDefs on PrimPatterns, PrimPattern;
 
-autocopy attribute scrutineeVertexType :: VertexType;
+inherited attribute scrutineeVertexType :: VertexType;
 
 aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr

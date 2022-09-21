@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:core;
 
-autocopy attribute nonterminalName :: String;
+inherited attribute nonterminalName :: String;
 
 concrete production nonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'

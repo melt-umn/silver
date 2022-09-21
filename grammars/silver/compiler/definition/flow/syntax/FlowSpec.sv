@@ -58,7 +58,7 @@ top::FlowSpecs ::= h::FlowSpecs  ','  t::FlowSpec
 
 nonterminal FlowSpec with config, location, grammarName, errors, env, unparse, onNt, specDefs, compiledGrammars, flowEnv;
 
-autocopy attribute onNt :: Type;
+inherited attribute onNt :: Type;
 
 propagate errors on FlowSpec;
 
@@ -271,7 +271,7 @@ top::NtList ::= h::NtName  ','  t::NtList
 
 nonterminal NtName with config, location, grammarName, errors, env, unparse, flowSpecSpec, specDefs, compiledGrammars, flowEnv;
 
-autocopy attribute flowSpecSpec :: FlowSpec;
+inherited attribute flowSpecSpec :: FlowSpec;
 
 concrete production ntName
 top::NtName ::= nt::QName

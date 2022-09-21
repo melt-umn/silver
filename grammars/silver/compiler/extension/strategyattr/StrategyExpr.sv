@@ -7,12 +7,12 @@ import silver:compiler:driver:util;
 
 annotation genName::String; -- Used to generate the names of lifted strategy attributes
 
-autocopy attribute recVarNameEnv::[Pair<String String>]; -- name, (isTotal, genName)
-autocopy attribute recVarTotalEnv::[Pair<String Boolean>]; -- name, (isTotal, genName)
-autocopy attribute recVarTotalNoEnvEnv::[Pair<String Boolean>]; -- same as above but doesn't depend on env
+inherited attribute recVarNameEnv::[Pair<String String>]; -- name, (isTotal, genName)
+inherited attribute recVarTotalEnv::[Pair<String Boolean>]; -- name, (isTotal, genName)
+inherited attribute recVarTotalNoEnvEnv::[Pair<String Boolean>]; -- same as above but doesn't depend on env
 inherited attribute isOutermost::Boolean;
-autocopy attribute outerAttr::String;
-autocopy attribute inlinedStrategies::[String];
+inherited attribute outerAttr::String;
+inherited attribute inlinedStrategies::[String];
 type LiftedInhs = {recVarNameEnv, recVarTotalNoEnvEnv, outerAttr, isOutermost};
 monoid attribute liftedStrategies::[(String, Decorated StrategyExpr with LiftedInhs)];
 synthesized attribute attrRefName::Maybe<String>;

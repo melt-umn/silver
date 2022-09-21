@@ -31,8 +31,8 @@ nonterminal PrimPattern with
   downSubst, upSubst, finalSubst,
   scrutineeType, returnType, translation, isRoot, originRules;
 
-autocopy attribute scrutineeType :: Type;
-autocopy attribute returnType :: Type;
+inherited attribute scrutineeType :: Type;
+inherited attribute returnType :: Type;
 
 propagate errors on PrimPatterns, PrimPattern;
 propagate freeVars on PrimPatterns, PrimPattern excluding prodPatternNormal, prodPatternGadt, conslstPattern;

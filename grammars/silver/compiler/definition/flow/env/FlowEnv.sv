@@ -7,7 +7,7 @@ imports silver:compiler:definition:core;
 import silver:compiler:definition:type;
 
 
-autocopy attribute flowEnv :: FlowEnv;
+inherited attribute flowEnv :: FlowEnv;
 monoid attribute flowDefs :: [FlowDef];
 -- These are factored out of FlowDefs to avoid a circular dependency,
 -- since they are needed during type checking

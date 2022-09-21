@@ -150,8 +150,8 @@ nonterminal Document with indent, width,
                           result, horizontals,
 			  compareTo, isEqual;
 
-autocopy attribute indent :: Integer;
-autocopy attribute width :: Integer;
+inherited attribute indent :: Integer;
+inherited attribute width :: Integer;
 
 -- The scanning process
 inherited attribute inPosition :: Integer;

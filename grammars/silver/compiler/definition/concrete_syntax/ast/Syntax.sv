@@ -7,24 +7,24 @@ import silver:util:treeset as s;
 
 -- For looking syntax elements up by name.
 monoid attribute cstDcls :: [Pair<String Decorated SyntaxDcl>];
-autocopy attribute cstEnv :: EnvTree<Decorated SyntaxDcl>;
+inherited attribute cstEnv :: EnvTree<Decorated SyntaxDcl>;
 monoid attribute cstErrors :: [String];
 
 -- Transformation that moves productions underneath their respective nonterminals.
 monoid attribute cstProds :: [Pair<String SyntaxDcl>];
-autocopy attribute cstNTProds :: EnvTree<SyntaxDcl>;
+inherited attribute cstNTProds :: EnvTree<SyntaxDcl>;
 monoid attribute cstNormalize :: [SyntaxDcl];
 
 -- Compute and allow lookup of all terminals in a lexer class
 monoid attribute classTerminalContribs::[Pair<String String>];
-autocopy attribute classTerminals::EnvTree<String>;
+inherited attribute classTerminals::EnvTree<String>;
 monoid attribute superClassContribs::[Pair<String String>];
-autocopy attribute superClasses::EnvTree<String>;
-autocopy attribute subClasses::EnvTree<String>;
+inherited attribute superClasses::EnvTree<String>;
+inherited attribute subClasses::EnvTree<String>;
 
 -- Parser attribute action code aspects
 monoid attribute parserAttributeAspectContribs::[Pair<String String>];
-autocopy attribute parserAttributeAspects::EnvTree<String>;
+inherited attribute parserAttributeAspects::EnvTree<String>;
 
 -- TODO: Attributes that lift out various sorts of SyntaxDcls all extract references
 -- of type Decorated SyntaxDcl.  The actual set of attributes needed for translation
@@ -45,21 +45,21 @@ synthesized attribute subContribs :: [Decorated SyntaxDcl];
 monoid attribute memberTerminals :: [Decorated SyntaxDcl];
 monoid attribute dominatingTerminalContribs :: [(String, Decorated SyntaxDcl)];
 synthesized attribute terminalRegex::Regex;
-autocopy attribute containingGrammar :: String;
+inherited attribute containingGrammar :: String;
 monoid attribute lexerClassRefDcls :: String;
 synthesized attribute exportedProds :: [String];
 synthesized attribute hasCustomLayout :: Boolean;
 monoid attribute layoutContribs :: [Pair<String String>]; -- prod/nt name, prod/nt/term name
-autocopy attribute layoutTerms::EnvTree<String>;
+inherited attribute layoutTerms::EnvTree<String>;
 
-autocopy attribute prefixesForTerminals :: EnvTree<String>;
-autocopy attribute componentGrammarMarkingTerminals :: EnvTree<[String]>;
+inherited attribute prefixesForTerminals :: EnvTree<String>;
+inherited attribute componentGrammarMarkingTerminals :: EnvTree<[String]>;
 
 -- Creating unambiguous <PP>s; this is a multiset used to accumulate all the
 -- names for terminals, and the actual name for <PP> will be modified to
 -- disambiguate if it would be ambiguous.
 monoid attribute prettyNamesAccum::[Pair<String String>];
-autocopy attribute prettyNames::tm:Map<String String>;
+inherited attribute prettyNames::tm:Map<String String>;
 
 synthesized attribute copperElementReference::copper:ElementReference;
 synthesized attribute copperGrammarElements::[copper:GrammarElement];
