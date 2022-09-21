@@ -165,7 +165,8 @@ public class Util {
         // Hacky way of determining the actual start nonterminal type of the parser, from its superclass generic type args.
         Type[] genericParams = ((ParameterizedType)parserClass.getGenericSuperclass()).getActualTypeArguments();
         if (genericParams.length != 2) {
-            throw new ReflectiveOperationException("Could not determine parser root type");
+            // This should only fail if there is a change to the superclass of Copper-generated parsers.
+            throw new ReflectiveOperationException("Could not determine parser root type: Parser class should extend SingleDFAEngine<ROOT, PARSE_EXCEPTION>");
         }
         Class<ROOT> actualRootClass = (Class<ROOT>)genericParams[0];
 
