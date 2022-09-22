@@ -183,6 +183,6 @@ ag::AGDcl ::= kwd::'equalityTest'
   local testName :: String = "generatedTest" ++ "_" ++ 
                             substitute(".","_",kwd.filename) ++ "_" ++ 
                             toString(kwd.line) ++ "_" ++ 
-                            toString(genInt());
+                            toString(kwd.column);
 }
 
