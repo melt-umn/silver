@@ -53,7 +53,9 @@ top::SyntaxLexerClassModifier ::=
 abstract production lexerClassExtends
 top::SyntaxLexerClassModifier ::= super::[String]
 {
-  -- Lexer classes not included in this parser are ignored
+  -- Lexer classes not included in this parser are ignored, so library-defined
+  -- lexer classes can be optionally used without requring the library to be
+  -- included in the parser.  See https://github.com/melt-umn/silver/issues/694
   production superRefs :: [Decorated SyntaxDcl] = concat(lookupStrings(super, top.cstEnv));
 
   top.superClassContribs := map(pair(top.className, _), map((.fullName), superRefs));

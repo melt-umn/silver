@@ -115,7 +115,9 @@ abstract production termClasses
 top::SyntaxTerminalModifier ::= cls::[String]
 {
   production allCls :: [String] = unions(cls :: lookupStrings(cls, top.superClasses));
-  -- Lexer classes not included in this parser are ignored
+  -- Lexer classes not included in this parser are ignored, so library-defined
+  -- lexer classes can be optionally used without requring the library to be
+  -- included in the parser.  See https://github.com/melt-umn/silver/issues/694
   production allClsRefs :: [Decorated SyntaxDcl] = concat(lookupStrings(allCls, top.cstEnv));
 
   top.cstErrors := []; 
