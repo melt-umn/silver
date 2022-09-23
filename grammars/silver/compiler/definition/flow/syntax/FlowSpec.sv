@@ -93,7 +93,7 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
     else [err(attr.location, attr.name ++ " is an extension synthesized attribute, and must contain at least the forward flow type. It is missing " ++ implode(", ", missingFt))];
 
   top.errors <-
-    if contains(attr.synName, inhs.refList)
+    if attr.found && contains(attr.synName, inhs.refList)
     then [err(top.location, s"circularity in flow specification for ${attr.name} on ${top.onNt.typeName}")]
     else [];
   

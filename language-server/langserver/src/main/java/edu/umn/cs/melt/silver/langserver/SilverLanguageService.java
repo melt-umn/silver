@@ -6,6 +6,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams;
@@ -35,6 +39,8 @@ import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.FileCreate;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
+import org.eclipse.lsp4j.MessageParams;
+import org.eclipse.lsp4j.MessageType;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.Range;
@@ -56,10 +62,11 @@ import com.google.gson.JsonPrimitive;
 import common.ConsCell;
 import common.DecoratedNode;
 import common.OriginContext;
+import common.SilverCopperParser;
 import common.StringCatter;
 import common.javainterop.ConsCellCollection;
 import silver.compiler.composed.Default.Parser_silver_compiler_composed_Default_svParse;
-import silver.compiler.composed.Default.PsvParse;
+import silver.compiler.definition.core.NRoot;
 import silver.compiler.driver.PbuildRun;
 import silver.compiler.driver.PparseArgsOrError;
 import silver.compiler.driver.util.NBuildEnv;
@@ -84,6 +91,9 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
     private boolean buildInProgress = false, buildTriggered = false;
     private boolean cleanBuild = false;
     private boolean enableMWDA = false;
+    private String compilerJar = "";
+    private String parserName = "";
+    private FileTime compilerJarTime;
     private String silverGen;
     private String silverStdlibGrammars = null;
     private DecoratedNode comp = null;
@@ -96,6 +106,7 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         } catch (IOException e) {
             e.printStackTrace();
         }
+        setParserFactory(Parser_silver_compiler_composed_Default_svParse::new);
     }
 
     public void setClient(LanguageClient client) {
@@ -221,20 +232,55 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
 
     public static final List<String> tokenTypes = Arrays.asList(new String[] {
         "namespace", "type", "interface", "class", "typeParameter", "parameter", "variable", "function",
-        "keyword", "modifier", "comment", "string", "number", "regexp", "operator"
+        "keyword", "modifier", "comment", "string", "number", "regexp", "operator", "macro"
     });
     public static final List<String> tokenModifiers = Arrays.asList(new String[] {
-        "declaration", "definition", "documentation", "defaultLibrary"
+        "declaration", "definition", "documentation", "defaultLibrary", "modification"
     });
 
-    private CopperSemanticTokenEncoder semanticTokenEncoder =
-        new CopperSemanticTokenEncoder(Parser_silver_compiler_composed_Default_svParse::new, tokenTypes, tokenModifiers);
+    private CopperSemanticTokenEncoder semanticTokenEncoder;
+    private CopperParserNodeFactory parserFn;
+    private void setParserFactory(Supplier<SilverCopperParser<NRoot>> parserFactory) {
+        semanticTokenEncoder = new CopperSemanticTokenEncoder(parserFactory, tokenTypes, tokenModifiers);
+        parserFn = new CopperParserNodeFactory(parserFactory);
+    }
+
+    private CompletableFuture<Void> reloadParser() {
+        ConfigurationItem compilerJarConfigItem = new ConfigurationItem();
+        compilerJarConfigItem.setSection("silver.compilerJar");
+        ConfigurationItem parserNameConfigItem = new ConfigurationItem();
+        parserNameConfigItem.setSection("silver.parserName");
+        ConfigurationParams configParams = new ConfigurationParams(
+            List.of(compilerJarConfigItem, parserNameConfigItem));
+        return client.configuration(configParams).thenAccept((configs) -> {
+            String oldParserJar = compilerJar;
+            String oldParserName = parserName;
+            compilerJar = ((JsonPrimitive)configs.get(0)).getAsString();
+            parserName = ((JsonPrimitive)configs.get(1)).getAsString();
+            if (compilerJar.isEmpty() || parserName.isEmpty()) {
+                if (!compilerJar.equals(oldParserJar) || !parserName.equals(oldParserName)) {
+                    setParserFactory(Parser_silver_compiler_composed_Default_svParse::new);
+                }
+            } else {
+                try {
+                    Path compilerJarPath = Paths.get(compilerJar);
+                    FileTime newParserJarTime = Files.readAttributes(compilerJarPath, BasicFileAttributes.class).lastModifiedTime();
+                    if (!compilerJar.equals(oldParserJar) || !parserName.equals(oldParserName) || !newParserJarTime.equals(compilerJarTime)) {
+                        compilerJarTime = newParserJarTime;
+                        System.err.println("Loading parser " + compilerJar + " " + parserName);
+                        setParserFactory(Util.loadCopperParserFactory(compilerJarPath, parserName, NRoot.class));
+                    }
+                } catch (SecurityException | ReflectiveOperationException | IOException e) {
+                    client.showMessage(new MessageParams(MessageType.Error, "Error loading parser from jar: " + e.toString()));
+                }
+            }
+        });
+    }
 
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
-        //System.err.println(params);
         String uri = params.getTextDocument().getUri();
-        return CompletableFutures.computeAsync((cancelChecker) -> {
+        return reloadParser().thenApply((arg) -> {
             List<Integer> tokens;
             int requestVersion;
             // Recompute tokens if the file is changed while tokens are being computed
@@ -314,19 +360,22 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
 
     private void doBuild(Map<String, Integer> buildVersions) {
         System.err.println("Building");
+
         String silverHome = "";  // Not needed since we aren't doing translation
         List<String> args = new ArrayList<>();
         List<String> grammarPath = new ArrayList<>(grammarDirs);
         List<String> silverHostGen = List.of(silverGen);
 
         // Check the config for whether the MWDA is enabled
-        ConfigurationItem configItem = new ConfigurationItem();
-        configItem.setSection("silver.enableMWDA");
+        ConfigurationItem enableMWDAConfigItem = new ConfigurationItem();
+        enableMWDAConfigItem.setSection("silver.enableMWDA");
+        ConfigurationParams configParams = new ConfigurationParams(List.of(enableMWDAConfigItem));
         try {
-            enableMWDA = ((JsonPrimitive)client.configuration(new ConfigurationParams(List.of(configItem))).get().get(0)).getAsBoolean();
+            enableMWDA = ((JsonPrimitive)client.configuration(configParams).get().get(0)).getAsBoolean();
         } catch (InterruptedException | ExecutionException e) {
             // Ignore, getting the settings sometimes fails when a build is triggered during initialization
         }
+
         if (enableMWDA) {
             System.err.println("MWDA enabled");
             args.add("--warn-all");
@@ -358,8 +407,7 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         // Build!
         DecoratedNode comp = (DecoratedNode)PunsafeEvalIO.invoke(OriginContext.FFI_CONTEXT,
             PbuildRun.invoke(OriginContext.FFI_CONTEXT,
-                new PsvParse.Factory(),
-                a, benv,
+                parserFn, a, benv,
                 ConsCellCollection.fromIterator(buildGrammars.stream().<StringCatter>map(StringCatter::new).iterator())));
 
         // Note that we must demand allGrammars from comp before demanding

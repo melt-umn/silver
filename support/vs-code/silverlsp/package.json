@@ -1,14 +1,24 @@
 {
   "name": "silverlsp",
-  "displayName": "SilverLSP",
+  "displayName": "Silver LSP",
   "description": "Plugin for Silver Language Server Protocol support",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.67.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/melt-umn/silver.git"
+  },
+  "publisher": "MELT",
+  "icon": "silver.png",
   "categories": [
-    "Other"
+    "Programming Languages"
   ],
+  "tags": [
+    "attribute grammar", "parsing", "compiler", "metaprogramming", "extensible language"
+  ],
+  "license": "LGPL-3.0-or-later",
   "activationEvents": [
     "onLanguage:silver"
   ],
@@ -48,6 +58,15 @@
             "type": "string",
             "default": "-Xmx6G -Xss20M",
             "description": "Language server JVM flags"
+          },
+          "silver.compilerJar": {
+            "type": "string",
+            "description": "Path to the jar containing an alternate version of the Silver compiler"
+          },
+          "silver.parserName": {
+            "type": "string",
+            "default": "silver:compiler:composed:Default:svParse",
+            "description": "Full name of the Silver parser to use, must be set if compiler jar is specified"
           }
         }
       }
