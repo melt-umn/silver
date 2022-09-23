@@ -2,27 +2,21 @@ grammar silver:compiler:definition:core;
 
 imports silver:langutil:lsp as lsp;
 
-temp_imp_ide_font font_comments color(82, 141, 115) italic; -- Good: same as java
-temp_imp_ide_font font_literal color(50, 50, 250); -- BAD
-temp_imp_ide_font font_keyword color(123, 0, 82) bold; -- Good: same as java
-temp_imp_ide_font font_modword color(41,95,148) bold; -- maybe good? Unusual but looks good
-temp_imp_ide_font font_type color(41,95,148); -- type coloring
-
 lexer class Silver
   prefix separator ":";
 
 lexer class IDENTIFIER extends Silver;
 lexer class RESERVED dominates IDENTIFIER;
 
-lexer class COMMENT extends {Silver, lsp:Comment}, font = font_comments;
-lexer class LITERAL extends Silver, font = font_literal;
-lexer class KEYWORD extends {Silver, lsp:Keyword}, font = font_keyword;
-lexer class MODSTMT extends {Silver}, font = font_modword;
-lexer class OP      extends {Silver, lsp:Operator}, font = font_keyword;
-lexer class SPECOP  extends {Silver, lsp:Keyword}, font = font_keyword;
-lexer class BUILTIN extends {Silver, lsp:Keyword}, font = font_keyword;
-lexer class TYPE    extends {Silver, lsp:Type}, font = font_type;
-lexer class MODIFIER extends {Silver, lsp:Modifier}, font = font_keyword;
+lexer class COMMENT extends {Silver, lsp:Comment};
+lexer class LITERAL extends Silver;
+lexer class KEYWORD extends {Silver, lsp:Keyword};
+lexer class MODSTMT extends {Silver};
+lexer class OP      extends {Silver, lsp:Operator};
+lexer class SPECOP  extends {Silver, lsp:Keyword};
+lexer class BUILTIN extends {Silver, lsp:Keyword};
+lexer class TYPE    extends {Silver, lsp:Type};
+lexer class MODIFIER extends {Silver, lsp:Modifier};
 
 terminal As_kwd       'as'      lexer classes {MODSTMT, lsp:Modifier, RESERVED};
 terminal Exports_kwd  'exports' lexer classes {MODSTMT, lsp:Keyword};
