@@ -28,7 +28,9 @@ flowtype errors {decorate} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
 propagate errors on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr
   excluding terminalAccessHandler;
-propagate freeVars on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+propagate config, grammarName, env, compiledGrammars, freeVars, frame, originRules, compiledGrammars
+  on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+propagate decoratingnt, allSuppliedInhs on ExprInhs, ExprInh, ExprLHSExpr;
 
 {--
  - The nonterminal being decorated. (Used for 'decorate with {}')
@@ -81,6 +83,7 @@ top::Expr ::= q::QName
 {
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
+  propagate env;
   
   forwards to (if null(q.lookupValue.dcls)
                then errorReference(q.lookupValue.errors, _, location=_)
@@ -250,7 +253,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   -- TODO: fix comma when one or the other is empty
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
-  propagate freeVars;
+  propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
   
   local correctNumTypes :: [Type] =
     if length(t.inputTypes) > es.appExprSize
@@ -380,7 +383,7 @@ concrete production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  propagate freeVars;
+  propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
   
   local eTy::Type = performSubstitution(e.typerep, e.upSubst);
   q.attrFor = if eTy.isDecorated then eTy.decoratedType else eTy;
@@ -464,7 +467,7 @@ abstract production accessBouncer
 top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  propagate freeVars;
+  propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
 
   -- Basically the only purpose here is to decorate 'e'.
   forwards to target(e, q, top.location);
@@ -913,7 +916,7 @@ nonterminal AppExpr with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs,
   isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied, isRoot, originRules;
 
-propagate errors, freeVars on AppExprs, AppExpr;
+propagate config, grammarName, env, freeVars, frame, compiledGrammars, errors, originRules on AppExprs, AppExpr;
 propagate exprs, rawExprs on AppExprs;
 
 synthesized attribute isPartial :: Boolean;
@@ -1013,21 +1016,22 @@ nonterminal AnnoExpr with
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
   missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot, originRules;
-  
-propagate errors, freeVars, exprs on AnnoAppExprs, AnnoExpr;
+
+propagate config, grammarName, env, errors, freeVars, frame, compiledGrammars, exprs, funcAnnotations, originRules
+  on AnnoAppExprs, AnnoExpr;
 
 {--
  - Annotations that have not yet been supplied
  -}
-inherited attribute remainingFuncAnnotations :: [Pair<String Type>];
+inherited attribute remainingFuncAnnotations :: [(String, Type)];
 {--
  - All annotations of this function
  -}
-inherited attribute funcAnnotations :: [Pair<String Type>];
+inherited attribute funcAnnotations :: [(String, Type)];
 {--
  - Annotations that have not been supplied (by subtracting from remainingFuncAnnotations)
  -}
-synthesized attribute missingAnnotations :: [Pair<String Type>];
+synthesized attribute missingAnnotations :: [(String, Type)];
 {--
  - Typereps of those annotations that are partial (_)
  -}
@@ -1041,7 +1045,7 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {
   top.unparse = qn.unparse ++ "=" ++ e.unparse;
   
-  local fq :: Pair<Maybe<Pair<String Type>> [Pair<String Type>]> =
+  local fq :: (Maybe<(String, Type)>, [(String, Type)]) =
     extractNamedArg(qn.name, top.remainingFuncAnnotations);
     
   e.appExprIndex =
@@ -1122,21 +1126,21 @@ function reorderedAnnoAppExprs
   return map(snd, sortBy(reorderedLte, zipWith(pair, d.annoIndexSupplied, d.exprs)));
 }
 function reorderedLte
-Boolean ::= l::Pair<Integer Decorated Expr>  r::Pair<Integer Decorated Expr> { return l.fst <= r.fst; }
+Boolean ::= l::(Integer, Decorated Expr)  r::(Integer, Decorated Expr) { return l.fst <= r.fst; }
 
 function extractNamedArg
-Pair<Maybe<Pair<String Type>> [Pair<String Type>]> ::= n::String  l::[Pair<String Type>]
+(Maybe<(String, Type)>, [(String, Type)]) ::= n::String  l::[(String, Type)]
 {
-  local recurse :: Pair<Maybe<Pair<String Type>> [Pair<String Type>]> =
+  local recurse :: (Maybe<(String, Type)>, [(String, Type)]) =
     extractNamedArg(n, tail(l));
 
-  return if null(l) then pair(nothing(), [])
-  else if head(l).fst == n then pair(just(head(l)), tail(l))
-  else pair(recurse.fst, head(l) :: recurse.snd);
+  return if null(l) then (nothing(), [])
+  else if head(l).fst == n then (just(head(l)), tail(l))
+  else (recurse.fst, head(l) :: recurse.snd);
 }
 
 function findNamedArgType
-Integer ::= s::String l::[Pair<String Type>] z::Integer
+Integer ::= s::String l::[(String, Type)] z::Integer
 {
   return if null(l) then -1
   else if s == head(l).fst then z

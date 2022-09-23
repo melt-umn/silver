@@ -173,7 +173,7 @@ Type ::= n::String l::[NamedSignatureElement]
 --------------
 
 attribute substitution, flatRenamed occurs on NamedSignature, Contexts, NamedSignatureElements, NamedSignatureElement;
-propagate flatRenamed on NamedSignature, Contexts, NamedSignatureElements, NamedSignatureElement;
+propagate substitution, flatRenamed on NamedSignature, Contexts, NamedSignatureElements, NamedSignatureElement;
 
 -- "Freshens" all the signature's type variables with new skolem constants,
 -- to avoid type vars from interface files clashing with new ones from genInt()

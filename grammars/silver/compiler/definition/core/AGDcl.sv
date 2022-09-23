@@ -7,14 +7,16 @@ nonterminal AGDcls with config, grammarName, env, location, unparse, errors, def
 nonterminal AGDcl  with config, grammarName, env, location, unparse, errors, defs, occursDefs, moduleNames, compiledGrammars, grammarDependencies, jarName;
 
 flowtype decorate {config, grammarName, env, flowEnv, compiledGrammars, grammarDependencies} on AGDcls, AGDcl;
-flowtype forward {decorate} on AGDcls, AGDcl;
+flowtype forward {} on AGDcls;
+flowtype forward {decorate} on AGDcl;
 flowtype errors {decorate} on AGDcls, AGDcl;
 flowtype defs {decorate} on AGDcls, AGDcl;
 flowtype occursDefs {decorate} on AGDcls, AGDcl;
 flowtype jarName {decorate} on AGDcls, AGDcl;
 
-propagate errors, moduleNames, jarName on AGDcls, AGDcl;
-propagate defs, occursDefs on AGDcls;
+propagate config, grammarName, compiledGrammars, grammarDependencies, errors, moduleNames, jarName
+  on AGDcls, AGDcl;
+propagate env, defs, occursDefs on AGDcls;
 
 concrete production nilAGDcls
 top::AGDcls ::=
@@ -64,7 +66,7 @@ abstract production appendAGDcl
 top::AGDcl ::= h::AGDcl t::AGDcl
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
-  propagate defs, occursDefs;
+  propagate env, defs, occursDefs;
 
   top.errors <- warnIfMultJarName(h.jarName, t.jarName, top.location);
 }

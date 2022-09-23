@@ -27,7 +27,8 @@ propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoApp
   excluding
     childReference, lhsReference, localReference, forwardReference, forwardAccess, synDecoratedAccessHandler, inhDecoratedAccessHandler,
     decorateExprWith, letp, lexicalLocalReference, matchPrimitiveReal;
-propagate flowDefs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
+propagate flowDefs, flowEnv on
+  Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
 aspect default production
 top::Expr ::=
@@ -120,6 +121,18 @@ top::Expr ::= q::PartiallyDecorated QName
     else noVertex();
 }
 
+aspect production application
+top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
+{
+  propagate flowEnv;
+}
+
+aspect production access
+top::Expr ::= e::Expr '.' q::QNameAttrOccur
+{
+  propagate flowEnv;
+}
+
 aspect production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
 {
@@ -210,7 +223,7 @@ top::Expr ::= e::PartiallyDecorated Expr
 
 -- FROM LET TODO
 attribute flowDefs, flowEnv occurs on AssignExpr;
-propagate flowDefs on AssignExpr;
+propagate flowDefs, flowEnv on AssignExpr;
 
 aspect production letp
 top::Expr ::= la::AssignExpr  e::Expr

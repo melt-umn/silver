@@ -10,7 +10,8 @@ import silver:compiler:driver:util only isExportedBy, RootSpec;
 attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
 attribute flowEnv occurs on DefLHS;
 
-propagate flowDefs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
+propagate flowDefs, flowEnv on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
+propagate flowEnv on DefLHS;
 
 {- A short note on how flowDefs are generated:
 

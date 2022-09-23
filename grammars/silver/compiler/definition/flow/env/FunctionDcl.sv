@@ -5,6 +5,7 @@ import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, co
 import silver:compiler:driver:util only RootSpec; -- actually we just want the occurrences
 
 attribute flowEnv occurs on FunctionSignature, FunctionLHS;
+propagate flowEnv on FunctionSignature, FunctionLHS;
 
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 

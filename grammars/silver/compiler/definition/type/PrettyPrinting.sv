@@ -5,6 +5,8 @@ import silver:langutil:pp;
 synthesized attribute typepp :: String occurs on PolyType, Context, Type, Kind;
 inherited attribute boundVariables :: [TyVar] occurs on Context, Type;
 
+propagate boundVariables on Context, Type;
+
 function prettyType
 String ::= te::Type
 {

@@ -61,6 +61,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   headDefs <- [currentInstDef(top.grammarName, id.location, fName, ty.typerep)];
   
   cl.env = newScopeEnv(headPreDefs, top.env);
+  id.env = cl.env;
   ty.env = cl.env;
   
   body.env = occursEnv(cl.occursDefs, newScopeEnv(headDefs, cl.env));
@@ -87,11 +88,13 @@ inherited attribute instanceType::Type;
 inherited attribute expectedClassMembers::[Pair<String Boolean>];
 
 nonterminal InstanceBody with
-  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, definedMembers;
+  config, grammarName, env, defs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, definedMembers;
 nonterminal InstanceBodyItem with
-  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, fullName;
+  config, grammarName, env, defs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, fullName;
 
-propagate defs, flowDefs, errors on InstanceBody, InstanceBodyItem;
+propagate 
+  config, grammarName, env, compiledGrammars, className, instanceType,
+  defs, flowDefs, errors on InstanceBody, InstanceBodyItem;
 
 concrete production consInstanceBody
 top::InstanceBody ::= h::InstanceBodyItem t::InstanceBody

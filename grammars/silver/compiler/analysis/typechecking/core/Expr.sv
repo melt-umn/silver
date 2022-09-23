@@ -9,6 +9,7 @@ propagate upSubst, downSubst
      and, or, notOp, ifThenElse, plus, minus, multiply, divide, modulus,
      decorateExprWith, exprInh, presentAppExpr,
      terminalConstructor, noteAttachment;
+propagate finalSubst on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
 attribute contexts occurs on Expr;
 aspect default production
@@ -69,12 +70,13 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   infContexts.flowEnv = top.flowEnv;
 
   thread downSubst, upSubst on top, e, es, anns, infContexts, forward;
+  propagate finalSubst;
 }
 
 aspect production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
-  propagate upSubst, downSubst;
+  propagate upSubst, downSubst, finalSubst;
 }
 
 aspect production undecoratedAccessHandler

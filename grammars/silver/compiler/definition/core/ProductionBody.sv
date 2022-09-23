@@ -56,7 +56,8 @@ inherited attribute defLHSattr :: Decorated QNameAttrOccur;
 -- Notes flow 'up' in this from statements and then back 'down' into the via originRules.
 synthesized attribute originRuleDefs :: [Decorated Expr] occurs on ProductionStmt, ProductionStmts;
 
-propagate errors on ProductionBody, ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr;
+propagate config, grammarName, env, errors, frame, compiledGrammars on
+  ProductionBody, ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr;
 propagate defs, productionAttributes, uniqueSignificantExpression on ProductionBody, ProductionStmts;
 
 

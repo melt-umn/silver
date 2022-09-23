@@ -39,6 +39,8 @@ synthesized attribute grammarErrors :: [Pair<String [Message]>];
 synthesized attribute allFileErrors :: [Pair<String [Message]>];
 
 propagate
+    config, compiledGrammars, productionFlowGraphs, grammarFlowTypes,
+    grammarName, env, globalImports, grammarDependencies,
     moduleNames, exportedGrammars, optionalGrammars, condBuild, defs,
     occursDefs, importedDefs, importedOccursDefs, jarName
   on Grammar;

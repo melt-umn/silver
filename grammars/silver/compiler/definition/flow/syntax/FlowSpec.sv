@@ -43,7 +43,7 @@ top::AGDcl ::= 'flowtype' attr::FlowSpec 'on' nts::NtList ';'
 
 nonterminal FlowSpecs with config, location, grammarName, errors, env, unparse, onNt, specDefs, compiledGrammars, flowEnv;
 
-propagate errors, specDefs on FlowSpecs;
+propagate config, grammarName, errors, env, specDefs, compiledGrammars, flowEnv on FlowSpecs;
 
 concrete production oneFlowSpec
 top::FlowSpecs ::= h::FlowSpec
@@ -60,7 +60,7 @@ nonterminal FlowSpec with config, location, grammarName, errors, env, unparse, o
 
 inherited attribute onNt :: Type;
 
-propagate errors on FlowSpec;
+propagate config, grammarName, errors, env, compiledGrammars, flowEnv on FlowSpec;
 
 concrete production flowSpecDcl
 top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
@@ -109,7 +109,7 @@ nonterminal FlowSpecId with config, location, grammarName, errors, env, unparse,
 synthesized attribute synName :: String;
 synthesized attribute authorityGrammar :: String;
 
-propagate errors on FlowSpecId;
+propagate config, grammarName, errors, env, compiledGrammars, flowEnv on FlowSpecId;
 
 concrete production qnameSpecId
 top::FlowSpecId ::= syn::QNameAttrOccur
@@ -153,7 +153,7 @@ nonterminal FlowSpecInhs with config, location, grammarName, errors, env, unpars
 monoid attribute inhList :: [String];  -- The attributes in the flow specification
 monoid attribute refList :: [String];  -- Flow specifications referenced in this one (currently can only contain "decorate" / "forward")
 
-propagate errors, inhList, refList on FlowSpecInhs;
+propagate config, grammarName, errors, env, inhList, refList, flowEnv on FlowSpecInhs;
 
 concrete production nilFlowSpecInhs
 top::FlowSpecInhs ::=
@@ -175,7 +175,7 @@ nonterminal FlowSpecInh with config, location, grammarName, errors, env, unparse
 
 flowtype FlowSpecInh = forward {grammarName, env, flowEnv, onNt}, inhList {forward};
 
-propagate errors on FlowSpecInh;
+propagate config, grammarName, errors, env, inhList, refList, flowEnv on FlowSpecInh;
 
 concrete production flowSpecInh
 top::FlowSpecInh ::= inh::QNameAttrOccur
@@ -251,7 +251,7 @@ top::FlowSpecInh ::= 'forward'
 
 nonterminal NtList with config, location, grammarName, errors, env, unparse, flowSpecSpec, specDefs, compiledGrammars, flowEnv;
 
-propagate errors, specDefs on NtList;
+propagate config, grammarName, errors, env, specDefs, compiledGrammars, flowEnv on NtList;
 
 concrete production nilNtList
 top::NtList ::=
@@ -270,6 +270,8 @@ top::NtList ::= h::NtName  ','  t::NtList
 }
 
 nonterminal NtName with config, location, grammarName, errors, env, unparse, flowSpecSpec, specDefs, compiledGrammars, flowEnv;
+
+propagate config, grammarName, env, compiledGrammars, flowEnv on NtName;
 
 inherited attribute flowSpecSpec :: FlowSpec;
 

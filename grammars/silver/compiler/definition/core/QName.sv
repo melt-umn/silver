@@ -185,6 +185,7 @@ top::QNameAttrOccur ::= at::QName
 {
   top.name = at.name;
   top.unparse = at.unparse;
+  propagate env;
   
   -- We start with all attributes we find with the name `at`:
   local attrs :: [AttributeDclInfo] = at.lookupAttribute.dcls;

@@ -11,8 +11,9 @@ flowtype forward {deterministicCount, env} on ProductionRHSElem;
 
 flowtype decorate {forward, grammarName, flowEnv} on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 
-propagate errors on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
-propagate defs on ProductionRHS;
+propagate config, grammarName, errors on
+  ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
+propagate env, defs on ProductionRHS;
 
 {--
  - Used to help give names to children, when names are omitted.
@@ -87,7 +88,9 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
 {
   top.unparse = s"${cl.unparse} => ${lhs.unparse} ::= ${rhs.unparse}";
   
+  cl.env = top.env;
   cl.constraintPos = signaturePos(top.namedSignature);
+  lhs.env = top.env;
   rhs.env = occursEnv(cl.occursDefs, top.env);
 
   top.defs := lhs.defs ++ rhs.defs;
@@ -118,6 +121,7 @@ concrete production productionLHS
 top::ProductionLHS ::= id::Name '::' t::TypeExpr
 {
   top.unparse = id.unparse ++ "::" ++ t.unparse;
+  propagate env;
 
   top.outputElement = namedSignatureElement(id.name, t.typerep);
 
@@ -154,6 +158,7 @@ concrete production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
   top.unparse = id.unparse ++ "::" ++ t.unparse;
+  propagate env;
 
   top.inputElements = [namedSignatureElement(id.name, t.typerep)];
 

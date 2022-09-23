@@ -5,7 +5,7 @@ import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, co
 concrete production typeClassDcl
 top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 {
-  top.unparse = s"class ${cl.unparse} => ${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}"; 
+  top.unparse = s"class ${cl.unparse} => ${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}";
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production tv :: TyVar =
@@ -77,12 +77,14 @@ inherited attribute constraintEnv::Decorated Env;
 inherited attribute frameContexts::[Context];  -- Only used for computing frame in members
 
 nonterminal ClassBody with
-  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
+  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
 nonterminal ClassBodyItem with
-  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
+  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
 
-propagate flowDefs, errors, lexicalTypeVariables, lexicalTyVarKinds on ClassBody, ClassBodyItem;
-propagate defs on ClassBody;
+propagate
+  config, grammarName, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars
+  on ClassBody, ClassBodyItem;
+propagate env, defs on ClassBody;
 
 concrete production consClassBody
 top::ClassBody ::= h::ClassBodyItem t::ClassBody
@@ -121,6 +123,8 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
     | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
+
+  ty.env = top.env;
   
   top.defs := [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, cl.contexts, ty.typerep)];
 
@@ -156,6 +160,8 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
     | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
+
+  ty.env = top.env;
   
   e.isRoot = true;
   e.originRules = [];

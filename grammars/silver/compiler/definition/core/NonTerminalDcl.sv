@@ -83,7 +83,8 @@ nonterminal NonterminalModifiers with config, location, unparse, errors, env, no
 nonterminal NonterminalModifierList with config, location, unparse, errors, env, nonterminalName; -- 1 or more
 closed nonterminal NonterminalModifier with config, location, unparse, errors, env, nonterminalName; -- 1
 
-propagate errors on NonterminalModifiers, NonterminalModifierList, NonterminalModifier;
+propagate config, errors, env, nonterminalName
+  on NonterminalModifiers, NonterminalModifierList, NonterminalModifier;
 
 concrete production nonterminalModifiersNone
 top::NonterminalModifiers ::=

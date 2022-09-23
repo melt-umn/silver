@@ -4,6 +4,7 @@ grammar silver:compiler:analysis:typechecking:core;
 attribute upSubst, downSubst, finalSubst occurs on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
 propagate upSubst, downSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr
   excluding productionStmtAppend, attachNoteStmt, forwardsTo, forwardInh, returnDef, synthesizedAttributeDef, inheritedAttributeDef, localValueDef;
+propagate finalSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
 
 {--
  - These need an initial state only due to aspects (I think? maybe not. Investigate someday.)
