@@ -100,7 +100,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 aspect production accessBouncer
 top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  propagate upSubst, downSubst;
+  propagate upSubst, downSubst, finalSubst;
 }
 
 aspect production forwardAccess

@@ -178,7 +178,7 @@ concrete production aspectProductionLHSTyped
 top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 {
   top.unparse = id.unparse;
-  propagate env, grammarName;
+  propagate env, grammarName, config;
 
   top.errors <- t.errors;
   
@@ -262,7 +262,7 @@ concrete production aspectRHSElemTyped
 top::AspectRHSElem ::= id::Name '::' t::TypeExpr
 {
   top.unparse = id.unparse ++ "::" ++ t.unparse;
-  propagate env, grammarName;
+  propagate env, grammarName, config;
   
   top.errors <- t.errors;
 

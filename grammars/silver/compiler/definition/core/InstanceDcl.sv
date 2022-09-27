@@ -93,14 +93,16 @@ nonterminal InstanceBodyItem with
   config, grammarName, env, defs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, fullName;
 
 propagate 
-  config, grammarName, env, compiledGrammars, className, instanceType,
-  defs, flowDefs, errors on InstanceBody, InstanceBodyItem;
+  config, grammarName, compiledGrammars, className, instanceType,
+  defs, errors, frameContexts
+  on InstanceBody, InstanceBodyItem;
 
 concrete production consInstanceBody
 top::InstanceBody ::= h::InstanceBodyItem t::InstanceBody
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
   top.definedMembers = h.fullName :: t.definedMembers;
+  propagate env;
 
   h.expectedClassMembers = top.expectedClassMembers;
   t.expectedClassMembers =
@@ -149,6 +151,8 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
     else [err(id.location, s"Unexpected instance member ${id.name} for class ${top.className}")]; 
 
   top.fullName = id.lookupValue.fullName;
+
+  id.env = top.env;
 
   local cmDefs::[Def] =
     flatMap(

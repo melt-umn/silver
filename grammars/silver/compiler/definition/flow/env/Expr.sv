@@ -133,6 +133,12 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
   propagate flowEnv;
 }
 
+aspect production accessBouncer
+top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::Expr  q::PartiallyDecorated QNameAttrOccur
+{
+  propagate flowEnv;
+}
+
 aspect production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
 {

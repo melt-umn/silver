@@ -5,6 +5,7 @@ import silver:compiler:definition:core only frame, grammarName, compiledGrammars
 -- Context lookup/resolution stuff lives here
 
 attribute env occurs on Context;
+propagate env on Context, Contexts;
 
 -- This mostly exists as a convenient way to perform multiple env-dependant operations
 -- on a list of contexts without re-decorating them and repeating context resolution.

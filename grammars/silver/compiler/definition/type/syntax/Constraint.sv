@@ -12,7 +12,7 @@ nonterminal Constraint with config, grammarName, env, flowEnv, location, unparse
 
 flowtype Constraint = decorate {grammarName, env, flowEnv, constraintPos};
 
-propagate config, grammarName, env, flowEnv, errors, defs, occursDefs, lexicalTypeVariables, lexicalTyVarKinds
+propagate config, grammarName, env, flowEnv, errors, defs, occursDefs, lexicalTypeVariables, lexicalTyVarKinds, constraintPos
   on ConstraintList, Constraint;
 
 concrete production consConstraint

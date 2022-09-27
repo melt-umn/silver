@@ -134,7 +134,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 aspect production errorAttributeDef
 top::ProductionStmt ::= msg::[Message] dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
-  propagate downSubst, upSubst;
+  propagate downSubst, upSubst, finalSubst;
 }
 
 aspect production childDefLHS

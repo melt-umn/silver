@@ -185,7 +185,6 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   nes.finalSubst = top.finalSubst;
   nes.downSubst = top.downSubst;
   nes.originRules = top.originRules;
-  nes.isRoot = false;
   nes.appExprTypereps = reverse(performSubstitution(ne.mtyperep, ne.mUpSubst).inputTypes);
   nes.appExprApplied = ne.unparse;
   nes.monadArgumentsAllowed = acceptableMonadFunction(e);

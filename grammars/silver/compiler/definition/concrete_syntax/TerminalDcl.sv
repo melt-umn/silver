@@ -41,7 +41,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
     then [wrn(r.location, "Regex contains '\\n' but not '\\r'. This is your reminder about '\\r\\n' newlines.")]
     else [];
 
-  propagate errors;
+  propagate grammarName, compiledGrammars, env, errors;
 
   top.syntaxAst := [
     syntaxTerminal(fName, r.terminalRegExprSpec,
@@ -126,7 +126,8 @@ closed nonterminal TerminalModifier with config, location, unparse, terminalModi
 monoid attribute terminalModifiers :: [SyntaxTerminalModifier];
 monoid attribute genRepeatProb :: Maybe<Float> with nothing(), orElse;
 
-propagate terminalModifiers, genRepeatProb, errors on TerminalModifiers;
+propagate config, grammarName, compiledGrammars, flowEnv, terminalModifiers, genRepeatProb, errors, env
+  on TerminalModifiers;
 
 aspect default production
 top::TerminalModifier ::=

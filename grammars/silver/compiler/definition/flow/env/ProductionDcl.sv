@@ -2,6 +2,7 @@ grammar silver:compiler:definition:flow:env;
 
 import silver:compiler:definition:type;
 import silver:compiler:definition:type:syntax;
+import silver:compiler:definition:concrete_syntax;
 import silver:compiler:modification:defaultattr;
 import silver:compiler:definition:flow:driver;
 import silver:compiler:driver:util; -- only for productionFlowGraphs occurrence?
@@ -33,6 +34,12 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   top.flowDefs <- flatMap(
     \ ie::NamedSignatureElement -> occursContextDeps(namedSig, body.env, ie.typerep, rhsVertexType(ie.elementName)),
     namedSig.inputElements);
+}
+
+aspect production concreteProductionDcl
+top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody
+{
+  propagate flowEnv;
 }
 
 aspect production aspectProductionDcl

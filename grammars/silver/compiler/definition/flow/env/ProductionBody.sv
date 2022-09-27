@@ -59,6 +59,16 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
     end;
 }
 
+aspect production attributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
+{
+  propagate flowEnv;
+}
+aspect production errorAttributeDef
+top::ProductionStmt ::= msg::[Message] dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+{
+  propagate flowEnv;
+}
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {

@@ -6,30 +6,31 @@ import silver:util:treeset as ts;
 nonterminal Expr with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, typerep, isRoot, originRules;
 nonterminal Exprs with
-  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs, originRules;
 
 nonterminal ExprInhs with
-  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, originRules;
 nonterminal ExprInh with
-  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, originRules;
 nonterminal ExprLHSExpr with
-  config, grammarName, env, location, unparse, errors, freeVars, frame, name, typerep, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, name, typerep, decoratingnt, suppliedInhs, allSuppliedInhs, originRules;
 
 flowtype unparse {} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype freeVars {frame} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype Expr = decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config}, forward {decorate};
 
-flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config} on Exprs;
-flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config, decoratingnt, allSuppliedInhs} on ExprInhs, ExprInh;
-flowtype decorate {grammarName, env, frame, isRoot, originRules, config, decoratingnt, allSuppliedInhs} on ExprLHSExpr;
+flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config} on Exprs;
+flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config, decoratingnt, allSuppliedInhs} on ExprInhs, ExprInh;
+flowtype decorate {grammarName, env, frame, originRules, config, decoratingnt, allSuppliedInhs} on ExprLHSExpr;
 flowtype forward {} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
 flowtype errors {decorate} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
 propagate errors on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr
   excluding terminalAccessHandler;
-propagate config, grammarName, env, compiledGrammars, freeVars, frame, originRules, compiledGrammars
+propagate config, grammarName, env, freeVars, frame, compiledGrammars
   on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+propagate originRules on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr excluding noteAttachment;
 propagate decoratingnt, allSuppliedInhs on ExprInhs, ExprInh, ExprLHSExpr;
 
 {--
@@ -254,6 +255,7 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   -- TODO: fix comma when one or the other is empty
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
   propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
+  e.isRoot = false;
   
   local correctNumTypes :: [Type] =
     if length(t.inputTypes) > es.appExprSize
@@ -367,6 +369,7 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 
   note.isRoot = false;
   e.isRoot = false;
+  note.originRules = top.originRules;
   e.originRules = top.originRules ++ [note];
 }
 
@@ -384,6 +387,7 @@ top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
+  e.isRoot = false;
   
   local eTy::Type = performSubstitution(e.typerep, e.upSubst);
   q.attrFor = if eTy.isDecorated then eTy.decoratedType else eTy;
@@ -468,6 +472,7 @@ top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNam
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
   propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
+  e.isRoot = false;
 
   -- Basically the only purpose here is to decorate 'e'.
   forwards to target(e, q, top.location);
@@ -893,6 +898,8 @@ top::Exprs ::= e::Expr
 
   top.exprs := [e];
   top.rawExprs := [e];
+
+  e.isRoot = false;
 }
 concrete production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
@@ -901,6 +908,8 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 
   top.exprs := [e1] ++ e2.exprs;
   top.rawExprs := [e1] ++ e2.rawExprs;
+
+  e1.isRoot = false;
 }
 
 
@@ -910,14 +919,14 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
  -}
 nonterminal AppExprs with 
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied, isRoot, originRules;
+  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied, originRules;
 
 nonterminal AppExpr with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied, isRoot, originRules;
+  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied, originRules;
 
 propagate config, grammarName, env, freeVars, frame, compiledGrammars, errors, originRules on AppExprs, AppExpr;
-propagate exprs, rawExprs on AppExprs;
+propagate appExprApplied, exprs, rawExprs on AppExprs;
 
 synthesized attribute isPartial :: Boolean;
 synthesized attribute missingTypereps :: [Type];
@@ -952,6 +961,8 @@ top::AppExpr ::= e::Expr
   top.rawExprs := [e];
   top.exprs := [e];
   top.appExprIndicies = [top.appExprIndex];
+
+  e.isRoot = false;
 }
 
 concrete production snocAppExprs
@@ -1010,14 +1021,14 @@ nonterminal AnnoAppExprs with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
-  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot, originRules;
+  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, originRules;
 nonterminal AnnoExpr with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
-  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot, originRules;
+  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, originRules;
 
-propagate config, grammarName, env, errors, freeVars, frame, compiledGrammars, exprs, funcAnnotations, originRules
+propagate config, grammarName, env, errors, freeVars, frame, compiledGrammars, exprs, funcAnnotations, appExprApplied, originRules
   on AnnoAppExprs, AnnoExpr;
 
 {--

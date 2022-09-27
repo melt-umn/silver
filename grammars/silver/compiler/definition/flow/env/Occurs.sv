@@ -6,6 +6,7 @@ import silver:compiler:driver:util only isExportedBy;
 
 -- Needed for specializing inh deps in syn occurs-on contexts
 attribute flowEnv occurs on Contexts, Context;
+propagate flowEnv on Contexts, Context;
 
 aspect production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'

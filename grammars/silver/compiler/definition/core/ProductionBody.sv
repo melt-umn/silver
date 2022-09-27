@@ -59,6 +59,8 @@ synthesized attribute originRuleDefs :: [Decorated Expr] occurs on ProductionStm
 propagate config, grammarName, env, errors, frame, compiledGrammars on
   ProductionBody, ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr;
 propagate defs, productionAttributes, uniqueSignificantExpression on ProductionBody, ProductionStmts;
+propagate originRules on ProductionStmts, ProductionStmt, DefLHS, ForwardInhs, ForwardInh, ForwardLHSExpr
+  excluding attachNoteStmt;
 
 
 concrete production productionBody
@@ -256,6 +258,7 @@ concrete production attributeDef
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+  propagate grammarName, config, env, frame, compiledGrammars, originRules;
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes := [];
@@ -285,7 +288,7 @@ abstract production errorAttributeDef
 top::ProductionStmt ::= msg::[Message] dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
-
+  propagate grammarName, config, env, frame, compiledGrammars, originRules;
   e.isRoot = true;
 
   forwards to errorProductionStmt(msg ++ e.errors, location=top.location);
@@ -312,6 +315,7 @@ top::DefLHS ::= q::QName
 {
   top.name = q.name;
   top.unparse = q.unparse;
+  propagate env;
   
   forwards to (if null(q.lookupValue.dcls)
                then errorDefLHS(_, location=_)
@@ -411,6 +415,7 @@ concrete production valueEq
 top::ProductionStmt ::= val::QName '=' e::Expr ';'
 {
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
+  propagate env;
 
   top.errors <- val.lookupValue.errors;
 

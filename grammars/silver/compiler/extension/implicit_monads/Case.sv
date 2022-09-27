@@ -78,7 +78,6 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   redeces.config = top.config;
   redeces.flowEnv = top.flowEnv;
   redeces.expectedMonad = top.expectedMonad;
-  redeces.isRoot = top.isRoot;
   redeces.originRules = top.originRules;
 
   {-

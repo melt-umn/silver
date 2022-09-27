@@ -7,7 +7,8 @@ inherited attribute productionSig :: NamedSignature;
 concrete production concreteProductionDcl
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody
 {
-  top.unparse = "concrete production " ++ id.unparse ++ "\n" ++ ns.unparse ++ " " ++ pm.unparse ++ "\n" ++ body.unparse; 
+  top.unparse = "concrete production " ++ id.unparse ++ "\n" ++ ns.unparse ++ " " ++ pm.unparse ++ "\n" ++ body.unparse;
+  propagate config, grammarName, compiledGrammars;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;
@@ -39,7 +40,8 @@ closed nonterminal ProductionModifier with config, location, unparse, production
 monoid attribute productionModifiers :: [SyntaxProductionModifier];
 
 propagate productionModifiers on ProductionModifiers, ProductionModifierList;
-propagate errors on ProductionModifiers, ProductionModifierList, ProductionModifier;
+propagate config, errors, env, productionSig
+  on ProductionModifiers, ProductionModifierList, ProductionModifier;
 
 concrete production productionModifiersNone
 top::ProductionModifiers ::=
