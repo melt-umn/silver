@@ -4,13 +4,13 @@ concrete production attributeDclParser
 top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::ActionCode_c ';'
 {
   top.unparse = "parser attribute " ++ a.name ++ " :: " ++ te.unparse ++ " action " ++ acode.unparse ++ " ;" ;
+  propagate config, grammarName, compiledGrammars, env, errors;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
 
   top.defs := [parserAttrDef(top.grammarName, a.location, fName, te.typerep)];
 
-  propagate errors;
   top.errors <- if length(getValueDclAll(fName, top.env)) > 1
                 then [err(a.location, "Attribute '" ++ fName ++ "' is already bound.")]
                 else [];
@@ -36,13 +36,13 @@ concrete production attributeAspectParser
 top::AGDcl ::= 'aspect' 'parser' 'attribute' a::QName 'action' acode::ActionCode_c ';'
 {
   top.unparse = "aspect parser attribute " ++ a.name ++ " action " ++ acode.unparse ++ " ;" ;
+  propagate config, grammarName, compiledGrammars, env, errors;
 
   production attribute fName :: String;
   fName = a.lookupValue.dcl.fullName;
 
   top.defs := [];
 
-  propagate errors;
   top.errors <- if null(a.lookupValue.dcls)
                 then [err(a.location, "Undefined attribute '" ++ a.name ++ "'.")]
                 else [];

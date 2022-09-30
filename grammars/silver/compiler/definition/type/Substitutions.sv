@@ -85,7 +85,8 @@ functor attribute substituted occurs on Context, Type;
 -- These are for flat, non-recursive replacement of tyvars with something else directly
 functor attribute flatRenamed occurs on Context, Type;
 
-propagate substitution, substituted, flatRenamed on Context, Type
+propagate substitution on Context, Type;
+propagate substituted, flatRenamed on Context, Type
   excluding inhOccursContext, synOccursContext, annoOccursContext, varType, skolemType, ntOrDecType;
 
 aspect production inhOccursContext
@@ -178,7 +179,7 @@ top::Type ::= nt::Type inhs::Type hidden::Type
     | _          -> hidden.substituted
     end;
   -- For a renaming, we don't need to specialize.
-  propagate flatRenamed;
+  propagate substitution, flatRenamed;
 }
 
 --------------------------------------------------------------------------------

@@ -50,7 +50,7 @@ flowtype typerepInhSet {decorate, onNt} on TypeExpr;
 flowtype TypeExpr =
   decorate {grammarName, env, flowEnv}, forward {decorate},
   freeVariables {decorate}, lexicalTypeVariables {decorate}, lexicalTyVarKinds {decorate},
-  errorsTyVars {decorate}, errorsKindStar {decorate};
+  errors {decorate}, errorsTyVars {decorate}, errorsKindStar {decorate};
 
 -- typerep requires flowEnv to look up default ref sets
 flowtype typerep {grammarName, env, flowEnv} on TypeExpr, Signature;

@@ -9,6 +9,8 @@ import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, co
 import silver:compiler:translation:java:core;
 
 nonterminal NameOrBOperator with config, location, grammarName, compiledGrammars, flowEnv, productionFlowGraphs, errors, env, unparse, operation, operatorForType;
+propagate config, grammarName, compiledGrammars, flowEnv, productionFlowGraphs, env on NameOrBOperator;
+
 nonterminal Operation with compareTo, isEqual;
 propagate compareTo, isEqual on Operation excluding functionOperation;
 
@@ -147,6 +149,7 @@ concrete production collectionAttributeDclSyn
 top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' q::NameOrBOperator ';'
 {
   top.unparse = "synthesized attribute " ++ a.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " with " ++ q.unparse ++ " ;" ;
+  propagate config, grammarName, compiledGrammars, grammarDependencies, errors;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -156,10 +159,9 @@ top::AGDcl ::= 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' 
   te.env = tl.envBindingTyVars;
   
   q.operatorForType = te.typerep;
+  q.env = top.env;
   
   top.defs := [synColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
-  
-  propagate errors, flowDefs;
   
   top.errors <- tl.errorsTyVars;
   top.errors <- te.errorsKindStar;
@@ -174,6 +176,7 @@ concrete production collectionAttributeDclInh
 top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' q::NameOrBOperator ';'
 {
   top.unparse = "inherited attribute " ++ a.name ++ tl.unparse ++ " :: " ++ te.unparse ++ " with " ++ q.unparse ++ " ;" ;
+  propagate config, grammarName, compiledGrammars, grammarDependencies, errors;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -183,10 +186,9 @@ top::AGDcl ::= 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te
   te.env = tl.envBindingTyVars;
   
   q.operatorForType = te.typerep;
+  q.env = top.env;
 
   top.defs := [inhColDef(top.grammarName, a.location, fName, tl.freeVariables, te.typerep, q.operation)];
-
-  propagate errors, flowDefs;
   
   top.errors <- tl.errorsTyVars;
   top.errors <- te.errorsKindStar;
@@ -202,6 +204,7 @@ concrete production collectionAttributeDclProd
 top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with' q::NameOrBOperator ';'
 {
   top.unparse = "production attribute " ++ a.name ++ " :: " ++ te.unparse ++ " with " ++ q.unparse ++ " ;" ;
+  propagate config, grammarName, compiledGrammars, env, flowEnv;
 
   top.productionAttributes := [localColDef(top.grammarName, a.location, fName, te.typerep, q.operation)];
 
@@ -244,6 +247,7 @@ abstract production baseCollectionValueDef
 top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
   top.unparse = "\t" ++ val.unparse ++ " := " ++ e.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules, flowEnv;
 
   e.isRoot = false;
 
@@ -258,6 +262,7 @@ abstract production appendCollectionValueDef
 top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
   top.unparse = "\t" ++ val.unparse ++ " <- " ++ e.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules, flowEnv;
 
   e.isRoot = false;
 
@@ -275,6 +280,7 @@ abstract production synBaseColAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 
   top.errors := e.errors;
 
@@ -294,6 +300,7 @@ abstract production synAppendColAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 
   top.errors := e.errors;
 
@@ -316,6 +323,7 @@ abstract production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 
   top.errors := e.errors;
 
@@ -335,6 +343,7 @@ abstract production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 
   top.errors := e.errors;
 
@@ -360,6 +369,7 @@ concrete production attrContainsAppend
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '<-' e::Expr ';'
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules, flowEnv;
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes := [];
@@ -378,6 +388,7 @@ concrete production attrContainsBase
 top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur ':=' e::Expr ';'
 {
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules, flowEnv;
 
   -- defs must stay here explicitly, because we dispatch on types in the forward here!
   top.productionAttributes := [];
@@ -396,6 +407,7 @@ concrete production valContainsAppend
 top::ProductionStmt ::= val::QName '<-' e::Expr ';'
 {
   top.unparse = val.unparse ++ " <- " ++ e.unparse ++ ";";
+  propagate compiledGrammars, frame, env, finalSubst, originRules;
   
   top.errors <- val.lookupValue.errors;
 
@@ -412,6 +424,7 @@ concrete production valContainsBase
 top::ProductionStmt ::= val::QName ':=' e::Expr ';'
 {
   top.unparse = val.unparse ++ " := " ++ e.unparse ++ ";";
+  propagate compiledGrammars, frame, env, finalSubst, originRules;
 
   top.errors <- val.lookupValue.errors;
 

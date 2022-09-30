@@ -1,6 +1,9 @@
 grammar silver:compiler:definition:flow:env;
 
 import silver:compiler:definition:type:syntax;
+import silver:compiler:modification:defaultattr;
+import silver:compiler:modification:collection;
+import silver:compiler:modification:copper;
 
 attribute flowDefs, refDefs, specDefs, flowEnv occurs on Root, AGDcls, AGDcl, Grammar;
 flowtype flowDefs {decorate} on Root, AGDcls, AGDcl, Grammar;

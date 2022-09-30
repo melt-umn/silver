@@ -43,7 +43,7 @@ closed nonterminal LexerClassModifier with config, location, unparse, lexerClass
 
 monoid attribute lexerClassModifiers :: [SyntaxLexerClassModifier];
 
-propagate errors on LexerClassModifiers, LexerClassModifier;
+propagate config, grammarName, compiledGrammars, env, flowEnv, errors on LexerClassModifiers, LexerClassModifier;
 propagate lexerClassModifiers, superClasses on LexerClassModifiers;
 
 abstract production lexerClassModifiersNone

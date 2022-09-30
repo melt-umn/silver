@@ -4,6 +4,7 @@ import silver:compiler:definition:type;
 import silver:compiler:definition:type:syntax;
 import silver:compiler:definition:concrete_syntax;
 import silver:compiler:modification:defaultattr;
+import silver:compiler:modification:copper;
 import silver:compiler:definition:flow:driver;
 import silver:compiler:driver:util; -- only for productionFlowGraphs occurrence?
 

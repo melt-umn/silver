@@ -6,6 +6,7 @@ concrete production concreteProductionDclAction
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody 'action' acode::ActionCode_c
 {
   top.unparse = forward.unparse ++ "action " ++ acode.unparse;
+  propagate config, grammarName, compiledGrammars;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
 
@@ -50,7 +51,7 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 {
   top.unparse = "{\n" ++ stmts.unparse ++ "}\n";
   top.defs := flatMap(hackTransformLocals, stmts.defs);
-  propagate flowDefs;
+  propagate config, grammarName, compiledGrammars, env, frame, flowDefs, flowEnv;
 
   top.actionCode =
     -- action code translation goes in the env/syntax AST, so we might demand it
