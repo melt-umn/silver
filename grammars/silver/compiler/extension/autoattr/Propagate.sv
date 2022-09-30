@@ -132,7 +132,7 @@ top::ProductionStmt ::= attr::QName
   -- TOOD: Filtering based on the error message is a bit of a hack. 
   -- With https://github.com/melt-umn/silver/issues/648 we could instead filter on an error code.
   top.errors :=
-    filter(\ m::Message -> !startsWith(m.message, "Orphaned equation:"), forward.errors);
+    filter(\ m::Message -> !startsWith("Orphaned equation:", m.message), forward.errors);
   
   -- Ugh, workaround for circular dependency
   top.defs := [];
