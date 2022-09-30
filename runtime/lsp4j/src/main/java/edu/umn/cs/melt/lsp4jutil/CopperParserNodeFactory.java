@@ -1,4 +1,4 @@
-package edu.umn.cs.melt.silver.langserver;
+package edu.umn.cs.melt.lsp4jutil;
 
 import java.util.function.Supplier;
 
@@ -14,9 +14,6 @@ import silver.core.NParseResult;
 
 /**
 * A wrapper to treat a Silver-generated Copper parser as a Silver function.
-* 
-* TODO: This class should move to a generic utility library for use in
-* implementing LSP servers from languages written in Silver.
 * 
 * @author krame505
 * @see https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens

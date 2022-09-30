@@ -1,4 +1,4 @@
-package edu.umn.cs.melt.silver.langserver;
+package edu.umn.cs.melt.lsp4jutil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,9 +26,6 @@ import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
  * any of the specified "token type" lexer classes are returned as semantic
  * tokens in the stream, with their position, length, token type and modifiers
  * encoded as integers according to the language server protocol specificiation.
- * 
- * TODO: This class should move to a generic utility library for use in
- * implementing LSP servers from languages written in Silver.
  * 
  * @author krame505
  * @see https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_semanticTokens

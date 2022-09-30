@@ -1,4 +1,4 @@
-package edu.umn.cs.melt.silver.langserver;
+package edu.umn.cs.melt.lsp4jutil;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -37,9 +37,6 @@ import silver.langutil.NMessage;
 
 /**
  * Generic utilities for LSP server implementations for languages implemented in Silver.
- *
- * TODO: This class should move to a generic utility library for use in
- * implementing LSP servers from languages written in Silver.
  *
  * @author krame505
  */

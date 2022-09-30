@@ -1,22 +1,22 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <groupId>edu.umn.cs.melt</groupId>
-        <artifactId>silver-langserver-parent</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>silver-langserver</artifactId>
+    <groupId>edu.umn.cs.melt</groupId>
+    <artifactId>lsp4j-util</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
-            <groupId>edu.umn.cs.melt</groupId>
-            <artifactId>lsp4j-util</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
+            <groupId>org.eclipse.lsp4j</groupId>
+            <artifactId>org.eclipse.lsp4j</artifactId>
+            <version>0.14.0</version>
         </dependency>
+        <!-- We really just depend on silver:core and silver:langutil. 
+          Ideally, in the future we should just be able to depend on a single
+          artifact containing the runtime and silver:core, and perhaps bundle
+          this library with silver:langutil. -->
         <dependency>
             <groupId>edu.umn.cs.melt</groupId>
             <artifactId>silver</artifactId>
@@ -32,19 +32,19 @@
             <artifactId>copper-runtime</artifactId>
             <version>1.0.1-SNAPSHOT</version>
         </dependency>
-        <dependency>
-            <groupId>org.commonmark</groupId>
-            <artifactId>commonmark</artifactId>
-            <version>0.17.2</version>
-        </dependency>
     </dependencies>
 
     <build>
-        <resources>
-            <resource>
-                <directory>../../grammars/</directory>
-                <targetPath>grammars/</targetPath>
-            </resource>
-        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+  				<version>3.1</version>
+                <configuration>
+                    <source>11</source>
+                    <target>11</target>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>
