@@ -29,6 +29,8 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   -- Here we bind those type variables.
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
+
+  nm.env = top.env;
   
   -- Redefinition check of the name
   top.errors <- 

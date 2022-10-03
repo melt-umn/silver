@@ -44,14 +44,15 @@ top::Expr ::= la::AssignExpr  e::Expr
   top.unparse = "let " ++ la.unparse ++ " in " ++ e.unparse ++ " end";
   top.freeVars := ts:removeAll(la.boundNames, e.freeVars);
   
-  propagate errors;
+  propagate config, grammarName, compiledGrammars, frame, errors, originRules;
   
   top.typerep = e.typerep;
 
-  propagate downSubst, upSubst;
+  propagate downSubst, upSubst, finalSubst;
   
   -- Semantics for the moment is these are not mutually recursive,
   -- so la does NOT get new environment, only e. Thus, la.defs can depend on downSubst...
+  la.env = top.env;
   e.env = newScopeEnv(la.defs, top.env);
 }
 
@@ -61,7 +62,7 @@ nonterminal AssignExpr with location, config, grammarName, env, compiledGrammars
                             unparse, defs, errors, boundNames, freeVars, upSubst, 
                             downSubst, finalSubst, frame, isRoot, originRules;
 
-propagate errors, defs on AssignExpr;
+propagate config, grammarName, compiledGrammars, frame, env, errors, defs, finalSubst, originRules on AssignExpr;
 
 abstract production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr

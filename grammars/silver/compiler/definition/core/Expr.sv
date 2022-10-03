@@ -62,6 +62,7 @@ inherited attribute isRoot :: Boolean;
 inherited attribute originRules :: [Decorated Expr];
 
 attribute grammarName, frame occurs on Contexts, Context;
+propagate grammarName, frame on Contexts, Context;
 
 abstract production errorExpr
 top::Expr ::= e::[Message]

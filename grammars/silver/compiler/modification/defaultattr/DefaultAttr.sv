@@ -20,7 +20,7 @@ top::AGDcl ::= 'aspect' 'default' 'production' ns::AspectDefaultProductionSignat
 
   top.defs := [];
 
-  propagate errors, flowDefs;
+  propagate config, grammarName, compiledGrammars, errors;
   
   local sigDefs :: [Def] = addNewLexicalTyVars(top.grammarName, top.location, ns.lexicalTyVarKinds, ns.lexicalTypeVariables);
 
@@ -58,7 +58,7 @@ top::AspectDefaultProductionSignature ::= lhs::Name '::' te::TypeExpr '::='
       namedSignatureElement(lhs.name, te.typerep),
       foldNamedSignatureElements(annotationsForNonterminal(te.typerep, top.env)));
 
-  propagate errors, lexicalTypeVariables, lexicalTyVarKinds;
+  propagate config, grammarName, compiledGrammars, errors, lexicalTypeVariables, lexicalTyVarKinds;
 
   local checkNT::TypeCheck = checkNonterminal(top.env, false, te.typerep);
   checkNT.downSubst = emptySubst();

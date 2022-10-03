@@ -209,6 +209,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
 }
 
 inherited attribute decorationVertex :: String occurs on ExprInhs, ExprInh;
+propagate decorationVertex on ExprInhs, ExprInh;
 
 aspect production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
@@ -264,7 +265,7 @@ top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 
 -- FROM PATTERN TODO
 attribute flowDeps, flowDefs, flowEnv, scrutineeVertexType occurs on PrimPatterns, PrimPattern;
-propagate flowDeps, flowDefs on PrimPatterns, PrimPattern;
+propagate flowDeps, flowDefs, flowEnv, scrutineeVertexType on PrimPatterns, PrimPattern;
 
 inherited attribute scrutineeVertexType :: VertexType;
 

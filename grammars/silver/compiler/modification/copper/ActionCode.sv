@@ -6,7 +6,7 @@ concrete production concreteProductionDclAction
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody 'action' acode::ActionCode_c
 {
   top.unparse = forward.unparse ++ "action " ++ acode.unparse;
-  propagate config, grammarName, compiledGrammars;
+  propagate config, grammarName, compiledGrammars, flowEnv;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
 

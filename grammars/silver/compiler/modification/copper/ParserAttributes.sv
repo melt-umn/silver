@@ -4,7 +4,7 @@ concrete production attributeDclParser
 top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::ActionCode_c ';'
 {
   top.unparse = "parser attribute " ++ a.name ++ " :: " ++ te.unparse ++ " action " ++ acode.unparse ++ " ;" ;
-  propagate config, grammarName, compiledGrammars, env, errors;
+  propagate config, grammarName, compiledGrammars, errors;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -23,6 +23,8 @@ top::AGDcl ::= 'parser' 'attribute' a::Name '::' te::TypeExpr 'action' acode::Ac
   local myFlowGraph :: ProductionGraph = 
     constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
 
+  te.env = top.env;
+
   acode.frame = actionContext(myFlowGraph, sourceGrammar=top.grammarName);
   acode.env = newScopeEnv(acode.defs, top.env);
   
@@ -36,7 +38,7 @@ concrete production attributeAspectParser
 top::AGDcl ::= 'aspect' 'parser' 'attribute' a::QName 'action' acode::ActionCode_c ';'
 {
   top.unparse = "aspect parser attribute " ++ a.name ++ " action " ++ acode.unparse ++ " ;" ;
-  propagate config, grammarName, compiledGrammars, env, errors;
+  propagate config, grammarName, compiledGrammars, errors;
 
   production attribute fName :: String;
   fName = a.lookupValue.dcl.fullName;
@@ -53,6 +55,8 @@ top::AGDcl ::= 'aspect' 'parser' 'attribute' a::QName 'action' acode::ActionCode
 
   local myFlowGraph :: ProductionGraph = 
     constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
+
+  a.env = top.env;
 
   acode.frame = actionContext(myFlowGraph, sourceGrammar=top.grammarName);
   acode.env = newScopeEnv(acode.defs, top.env);

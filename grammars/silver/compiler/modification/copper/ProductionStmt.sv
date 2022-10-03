@@ -173,7 +173,7 @@ concrete production blockStmt
 top::ProductionStmt ::= '{' stmts::ProductionStmts '}'
 {
   top.unparse = "\t{\n" ++ stmts.unparse ++ "\n\t}";
-  propagate config, grammarName, compiledGrammars, env, frame, finalSubst;
+  propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
   
   top.errors <-
     if !top.frame.permitActions
@@ -192,7 +192,7 @@ concrete production ifElseStmt
 top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' el::ProductionStmt
 {
   top.unparse = "\t" ++ "if (" ++ condition.unparse ++ ") " ++ th.unparse ++ "\nelse " ++ el.unparse;
-  propagate config, grammarName, compiledGrammars, env, frame, originRules;
+  propagate config, grammarName, compiledGrammars, env, frame, errors;
 
   top.errors <-
     if !top.frame.permitActions
@@ -203,10 +203,14 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' e
 
   condition.originRules = [];
   condition.isRoot = false;
+  th.originRules = [];
+  el.originRules = [];
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   thread downSubst, upSubst on top, condition, errCheck1, top;
+
+  condition.finalSubst = condition.upSubst;
   
   th.downSubst = top.downSubst;
   th.finalSubst = th.upSubst;
