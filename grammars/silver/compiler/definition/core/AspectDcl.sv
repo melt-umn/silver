@@ -59,12 +59,17 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
     flatMap(
       \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, top.location),
       realSig.contexts);
+  local sourceGrammar::String =
+    if id.lookupValue.found
+    then id.lookupValue.dcl.sourceGrammar
+    -- Default since we need to supply something, in case the production doesn't exist.
+    else top.grammarName;
 
   body.env =
     occursEnv(contextSigOccursDefs,
       newScopeEnv(body.defs ++ sigDefs ++ contextSigDefs,
         newScopeEnv(prodAtts, top.env)));
-  body.frame = aspectProductionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
+  body.frame = aspectProductionContext(namedSig, myFlowGraph, sourceGrammar=sourceGrammar); -- graph from flow:env
 } action {
   insert semantic token IdFnProd_t at id.location;
   sigNames = [];
@@ -110,12 +115,17 @@ top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::P
     flatMap(
       \ c::Context -> c.contextSigOccursDefs(realSig, top.grammarName, top.location),
       realSig.contexts);
+  local sourceGrammar::String =
+    if id.lookupValue.found
+    then id.lookupValue.dcl.sourceGrammar
+    -- Default since we need to supply something, in case the production doesn't exist.
+    else top.grammarName;
 
   body.env =
     occursEnv(contextSigOccursDefs,
       newScopeEnv(body.defs ++ sigDefs ++ contextSigDefs,
         newScopeEnv(prodAtts, top.env)));
-  body.frame = aspectFunctionContext(namedSig, myFlowGraph, sourceGrammar=id.lookupValue.dcl.sourceGrammar); -- graph from flow:env
+  body.frame = aspectFunctionContext(namedSig, myFlowGraph, sourceGrammar=sourceGrammar); -- graph from flow:env
 } action {
   insert semantic token IdFnProd_t at id.location;
   sigNames = [];
