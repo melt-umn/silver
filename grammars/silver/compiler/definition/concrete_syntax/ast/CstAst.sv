@@ -94,13 +94,19 @@ top::SyntaxRoot ::=
   local parserClassAuxCode::String =
     s"""
           protected List<common.Terminal> tokenList = null;
+          protected int tabStop = 8;
 
           public void reset() {
             tokenList = new ArrayList<common.Terminal>();
+            virtualLocation.setTabStop(tabStop);
           }
 
           public List<common.Terminal> getTokens() {
             return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
+          }
+
+          public void setTabStop(int tabStop) {
+            this.tabStop = tabStop;
           }
 
           private void insertToken(common.Terminal token) {

@@ -18,4 +18,6 @@ public interface SilverCopperParser<ROOT> extends CopperParser<ROOT, CopperParse
      * @return The parsed terminals, or null if this parser has not been run.
      */
     List<Terminal> getTokens();
+
+    void setTabStop(int tabStop);
 }

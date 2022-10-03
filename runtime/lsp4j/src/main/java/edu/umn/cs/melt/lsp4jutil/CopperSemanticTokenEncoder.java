@@ -63,6 +63,11 @@ public class CopperSemanticTokenEncoder {
      */
     public List<Integer> parseTokens(String content) {
         SilverCopperParser<?> parser = parserFactory.get();
+
+        // By default, Copper treats tabs as padding to multiples of 8 chars in the
+        // reported column numbers, while we want the absolute character index.
+        parser.setTabStop(1);
+
         try {
             parser.parse(content);
         } catch (CopperParserException e) {
@@ -116,19 +121,24 @@ public class CopperSemanticTokenEncoder {
             if (type != -1) {
                 // This terminal has an encoding, add it to the result.
                 // For each line in the parsed terminal, we emit a semantic token.
-                String[] lines = t.lexeme.toString().split("\n");
+                String[] lines = t.lexeme.toString().split("\n", -1);
                 assert lines.length == t.getEndLine() - t.getLine() + 1;
                 for (int line = t.getLine(); line <= t.getEndLine(); line++) {
-                    // Compute delta start line, delta start char and length
+                    // Determine the length of this line of the token
+                    int length = lines.length > 1?
+                        lines[line - t.getLine()].length() :
+                        t.getEndOffset() - t.getStartOffset();
+
+                    // Don't report tokens for empty lines
+                    if (length == 0) continue;
+
+                    // Compute delta start line and delta start char
                     int column = line == t.getLine()? t.getColumn() : 0;
                     int deltaLine = line - prevLine;
                     if (deltaLine != 0) {
                         prevStartChar = 0;
                     }
                     int deltaStartChar = column - prevStartChar;
-                    int length = lines.length > 1?
-                        lines[line - t.getLine()].length() :
-                        t.getEndOffset() - t.getStartOffset();
                     prevLine = line;
                     prevStartChar = column;
 
