@@ -58,7 +58,7 @@ top::AspectDefaultProductionSignature ::= lhs::Name '::' te::TypeExpr '::='
       namedSignatureElement(lhs.name, te.typerep),
       foldNamedSignatureElements(annotationsForNonterminal(te.typerep, top.env)));
 
-  propagate config, grammarName, compiledGrammars, errors, lexicalTypeVariables, lexicalTyVarKinds;
+  propagate config, grammarName, env, compiledGrammars, errors, lexicalTypeVariables, lexicalTyVarKinds, flowEnv;
 
   local checkNT::TypeCheck = checkNonterminal(top.env, false, te.typerep);
   checkNT.downSubst = emptySubst();

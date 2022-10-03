@@ -8,7 +8,8 @@ nonterminal FFIDef with config, location, grammarName, errors, env, unparse;
 concrete production functionDclFFI
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 'foreign' '{' ffidefs::FFIDefs '}'
 {
-  top.unparse = "function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse ++ " foreign {\n" ++ ffidefs.unparse ++ "}"; 
+  top.unparse = "function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse ++ " foreign {\n" ++ ffidefs.unparse ++ "}";
+  propagate grammarName, flowEnv;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production namedSig :: NamedSignature = ns.namedSignature;

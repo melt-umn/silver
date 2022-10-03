@@ -45,6 +45,7 @@ top::Expr ::= la::AssignExpr  e::Expr
   top.freeVars := ts:removeAll(la.boundNames, e.freeVars);
   
   propagate config, grammarName, compiledGrammars, frame, errors, originRules;
+  e.isRoot = false;
   
   top.typerep = e.typerep;
 
@@ -60,7 +61,7 @@ monoid attribute boundNames::[String];
 
 nonterminal AssignExpr with location, config, grammarName, env, compiledGrammars, 
                             unparse, defs, errors, boundNames, freeVars, upSubst, 
-                            downSubst, finalSubst, frame, isRoot, originRules;
+                            downSubst, finalSubst, frame, originRules;
 
 propagate config, grammarName, compiledGrammars, frame, env, errors, defs, finalSubst, originRules on AssignExpr;
 
@@ -114,6 +115,8 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
     if errCheck1.typeerror
     then [err(id.location, "Value " ++ id.name ++ " declared with type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
     else [];
+
+  e.isRoot = false;
 }
 
 abstract production lexicalLocalReference

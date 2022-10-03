@@ -42,7 +42,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' '=' trans::St
 
   top.defs := [typeAliasDef(top.grammarName, id.location, fName, [], tl.freeVariables, foreignType(fName, transType, tl.types))];
 
-  propagate errors, flowDefs;
+  propagate grammarName, errors, flowDefs, flowEnv;
   top.errors <- tl.errorsTyVars;
   
   -- Put the variables listed on the rhs in the environment FOR TL ONLY, so they're all "declared"
