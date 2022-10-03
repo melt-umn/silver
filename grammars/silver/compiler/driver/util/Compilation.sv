@@ -6,6 +6,7 @@ import silver:util:treemap as map;
 synthesized attribute initRecompiledGrammars::[Decorated RootSpec];
 
 nonterminal Compilation with config, postOps, grammarList, allGrammars, initRecompiledGrammars, recompiledGrammars;
+propagate config on Compilation;
 
 flowtype postOps {config} on Compilation;
 
@@ -79,7 +80,7 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
 
 nonterminal Grammars with config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars, grammarList, dirtyGrammars, recompiledGrammars, jarName;
 
-propagate dirtyGrammars, recompiledGrammars, jarName, dependentGrammars on Grammars;
+propagate config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dirtyGrammars, recompiledGrammars, jarName, dependentGrammars on Grammars;
 
 abstract production consGrammars
 top::Grammars ::= h::RootSpec  t::Grammars

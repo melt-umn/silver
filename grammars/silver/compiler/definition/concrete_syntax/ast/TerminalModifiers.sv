@@ -25,8 +25,10 @@ nonterminal SyntaxTerminalModifiers with compareTo, isEqual, cstEnv, cstErrors,
   componentGrammarMarkingTerminals, marking, terminalName, prettyName,
   dominates_, submits_, lexerClasses;
 
-propagate compareTo, isEqual, cstErrors, classTerminalContribs, ignored, acode, opPrecedence,
-  opAssociation, prefixSeperator, prefixSeperatorToApply, marking, prettyName,
+propagate compareTo, isEqual, cstEnv, cstErrors,
+  classTerminalContribs, superClasses, subClasses, ignored, acode,
+  opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
+  componentGrammarMarkingTerminals, marking, terminalName, prettyName,
   dominates_, submits_, lexerClasses
   on SyntaxTerminalModifiers;
 

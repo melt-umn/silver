@@ -67,12 +67,26 @@ synthesized attribute copperGrammarElements::[copper:GrammarElement];
 {--
  - An abstract syntax tree for representing concrete syntax.
  -}
-nonterminal Syntax with compareTo, isEqual, cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, memberTerminals, dominatingTerminalContribs, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, layoutContribs, layoutTerms, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperGrammarElements;
-propagate compareTo, isEqual on Syntax;
+nonterminal Syntax with
+  compareTo, isEqual, cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize,
+  allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals,
+  disambiguationClasses, memberTerminals, dominatingTerminalContribs, classTerminalContribs, classTerminals,
+  superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects,
+  lexerClassRefDcls, layoutContribs, layoutTerms, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals,
+  prettyNamesAccum, prettyNames, copperGrammarElements;
 
-flowtype decorate {cstEnv, classTerminals, superClasses, subClasses, containingGrammar, layoutTerms, prefixesForTerminals, componentGrammarMarkingTerminals, parserAttributeAspects, prettyNames} on Syntax, SyntaxDcl;
+flowtype decorate {
+  cstEnv, classTerminals, superClasses, subClasses, containingGrammar,
+  layoutTerms, prefixesForTerminals, componentGrammarMarkingTerminals, parserAttributeAspects, prettyNames
+} on Syntax, SyntaxDcl;
 
-propagate cstDcls, cstErrors, cstProds, cstNormalize, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, memberTerminals, dominatingTerminalContribs, classTerminalContribs, superClassContribs, parserAttributeAspectContribs, lexerClassRefDcls, layoutContribs, prettyNamesAccum
+propagate
+  compareTo, isEqual, cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize,
+  allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals,
+  disambiguationClasses, memberTerminals, dominatingTerminalContribs, classTerminalContribs, classTerminals,
+  superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects,
+  lexerClassRefDcls, layoutContribs, layoutTerms, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals,
+  prettyNamesAccum, prettyNames
   on Syntax;
 
 abstract production nilSyntax
@@ -90,11 +104,21 @@ top::Syntax ::= s1::SyntaxDcl s2::Syntax
 {--
  - An individual declaration of a concrete syntax element.
  -}
-closed nonterminal SyntaxDcl with location, sourceGrammar, compareTo, isEqual, cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize, fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals, disambiguationClasses, memberTerminals, dominatingTerminalContribs, classTerminalContribs, classTerminals, superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects, lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms, domContribs, subContribs, terminalRegex, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals, prettyNamesAccum, prettyNames, copperElementReference, copperGrammarElements;
+closed nonterminal SyntaxDcl with location, sourceGrammar,
+  compareTo, isEqual, cstDcls, cstEnv, cstErrors, cstProds, cstNTProds, cstNormalize,
+  fullName, sortKey, allTerminals, allIgnoreTerminals, allMarkingTerminals, allProductions, allProductionNames, allNonterminals,
+  disambiguationClasses, memberTerminals, dominatingTerminalContribs, classTerminalContribs, classTerminals,
+  superClassContribs, superClasses, subClasses, parserAttributeAspectContribs, parserAttributeAspects,
+  lexerClassRefDcls, exportedProds, hasCustomLayout, layoutContribs, layoutTerms,
+  domContribs, subContribs, terminalRegex, prefixSeperator, containingGrammar, prefixesForTerminals, componentGrammarMarkingTerminals,
+  prettyNamesAccum, prettyNames, copperElementReference, copperGrammarElements;
 
 synthesized attribute sortKey :: String;
 
-propagate compareTo, isEqual, cstErrors, prefixSeperator on SyntaxDcl;
+propagate
+  compareTo, isEqual, cstEnv, cstErrors, cstNTProds, containingGrammar, layoutTerms, prettyNames, prefixSeperator,
+  classTerminals, parserAttributeAspects, prefixesForTerminals, componentGrammarMarkingTerminals, subClasses, superClasses
+  on SyntaxDcl;
 
 aspect default production
 top::SyntaxDcl ::=

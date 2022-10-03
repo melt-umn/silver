@@ -41,7 +41,7 @@ top::AGDcl ::= t::TerminalKeywordModifier id::Name r::RegExpr tm::TerminalModifi
     then [wrn(r.location, "Regex contains '\\n' but not '\\r'. This is your reminder about '\\r\\n' newlines.")]
     else [];
 
-  propagate grammarName, compiledGrammars, env, errors;
+  propagate config, grammarName, compiledGrammars, env, errors;
 
   top.syntaxAst := [
     syntaxTerminal(fName, r.terminalRegExprSpec,
