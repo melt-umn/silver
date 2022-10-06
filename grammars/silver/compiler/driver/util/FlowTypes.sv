@@ -12,9 +12,9 @@ aspect production compilation
 top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::BuildEnv
 {
   -- aggregate all flow def information
-  local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), flatMap((.flowDefs), g.grammarList));
-  local allSpecDefs :: [(String, String, [String], [String])] = flatMap((.specDefs), g.grammarList);
-  local allRefDefs :: [(String, [String])] = flatMap((.refDefs), g.grammarList);
+  local allFlowDefs :: FlowDefs = foldr(consFlow, nilFlow(), flatMap((.flowDefs), allLatestGrammars));
+  local allSpecDefs :: [(String, String, [String], [String])] = flatMap((.specDefs), allLatestGrammars);
+  local allRefDefs :: [(String, [String])] = flatMap((.refDefs), allLatestGrammars);
   local allFlowEnv :: FlowEnv = fromFlowDefs(allSpecDefs, allRefDefs, allFlowDefs);
   
   -- Look up tree for production info
@@ -22,8 +22,8 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   
   -- We need to know about all attributes and occurences on nonterminals.
   -- It's possible (likely) we could do better than using the overall env here.
-  local allRealDefs :: [Def] = flatMap((.defs), g.grammarList);
-  local allRealOccursDefs :: [OccursDclInfo] = flatMap((.occursDefs), g.grammarList);
+  local allRealDefs :: [Def] = flatMap((.defs), allLatestGrammars);
+  local allRealOccursDefs :: [OccursDclInfo] = flatMap((.occursDefs), allLatestGrammars);
   local allRealEnv :: Decorated Env = occursEnv(allRealOccursDefs, toEnv(allRealDefs));
   
   -- List of all productions

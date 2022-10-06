@@ -1,6 +1,7 @@
 grammar silver:compiler:driver:util;
 
 import silver:compiler:definition:core only jarName, grammarErrors;
+import silver:util:treemap as map;
 
 synthesized attribute initRecompiledGrammars::[Decorated RootSpec];
 
@@ -36,12 +37,16 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   -- the list of re-compiled rootspecs from g and r
   top.recompiledGrammars := top.initRecompiledGrammars ++ r.grammarList;
   
+  -- All grammars that were compiled due to being dirty or dependencies of dirty grammars
+  -- see all the other initially compiled grammars.
   g.compiledGrammars = directBuildTree(map(\ r::Decorated RootSpec -> (r.declaredName, r), g.grammarList));
-  -- However, we are then forced to use the interface files that we are going to
+  -- However, since we don't initially know all the grammars we are going to recheck,
+  -- we are forced to start with the interface files that we are going to
   -- recheck in the .compiledGrammars for the recheck.
-  -- That means they don't see "themselves" but their previous interface file.
   r.compiledGrammars = g.compiledGrammars;
-  -- This is actually broken and wrong! See https://github.com/melt-umn/silver/issues/673
+  -- Since we never compile a grammar more than once, this means in case of mutual dependencies
+  -- between grammars, the initially-compiled grammar may see an outdated interface file.
+  -- See https://github.com/melt-umn/silver/issues/673
 
   g.dependentGrammars = flatMap(
     \ r::Decorated RootSpec -> map(\ g::String -> (g, r.declaredName), r.allGrammarDependencies),
@@ -63,6 +68,12 @@ top::Compilation ::= g::Grammars  r::Grammars  buildGrammars::[String]  benv::Bu
   -- The grammars that we have recompiled, that need to be translated
   production grammarsToTranslate :: [Decorated RootSpec] = top.recompiledGrammars;
 
+  local rGrammarNames :: [String] = map((.declaredName), r.grammarList);
+  -- All grammars from g and r, excluding interface files from r that were later recompiled
+  production allLatestGrammars :: [Decorated RootSpec] =
+    r.grammarList ++
+    filter(\ rs::Decorated RootSpec -> !contains(rs.declaredName, rGrammarNames), g.grammarList);
+
   top.postOps := [];
 }
 
@@ -74,6 +85,10 @@ abstract production consGrammars
 top::Grammars ::= h::RootSpec  t::Grammars
 {
   top.grammarList = h :: t.grammarList;
+
+  -- Once we have compiled a grammar, replace the interface file rootspec when compiling dependent grammars
+  h.compiledGrammars = map:update(h.declaredName, [h], top.compiledGrammars);
+  t.compiledGrammars = h.compiledGrammars;
 }
 
 abstract production nilGrammars
