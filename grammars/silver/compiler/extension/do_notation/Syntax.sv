@@ -96,7 +96,7 @@ nonterminal DoBinding with
   transform, transformIn,
   recBindings;
 
-propagate boundVars on DoBody, DoBinding;
+propagate frame, boundVars on DoBody, DoBinding;
 propagate freeVars on DoBinding;
 
 concrete production consDoBody

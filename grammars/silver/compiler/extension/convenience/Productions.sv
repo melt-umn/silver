@@ -12,6 +12,7 @@ top::AGDcl ::= 'production' id::Name ns::ProductionSignature body::ProductionBod
 -- "concrete productions" syntax
 nonterminal ProductionDclStmts with unparse, location, proddcls, lhsdcl, grammarName;
 nonterminal ProductionDclStmt with unparse, location, proddcls, lhsdcl, grammarName;
+propagate lhsdcl, grammarName on ProductionDclStmts, ProductionDclStmt;
 
 synthesized attribute proddcls :: AGDcl;
 inherited attribute lhsdcl :: ProductionLHS;
@@ -23,7 +24,7 @@ concrete production productionDclC
 top::AGDcl ::= 'concrete' 'productions' lhs::ProductionLHS stmts::ProductionDclStmts 
 {
   top.unparse = "concrete productions " ++ lhs.unparse ++ stmts.unparse;
-  propagate moduleNames, jarName; -- Avoid dependency on forward
+  propagate grammarName, moduleNames, jarName; -- Avoid dependency on forward
   
   stmts.lhsdcl = lhs;
   

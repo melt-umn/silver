@@ -46,7 +46,7 @@ top::Expr ::= tuple::Expr '.' a::IntConst
 {
 
   -- Forward gets the substitution context of the tuple
-  propagate downSubst, upSubst, freeVars;
+  propagate grammarName, config, frame, env, flowEnv, downSubst, upSubst, freeVars, originRules;
 
   local accessIndex::Integer = toInteger(a.lexeme);
 
