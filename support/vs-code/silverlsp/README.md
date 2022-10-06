@@ -11,7 +11,7 @@ This extension provides language server protocol-based editor features for [Silv
 
 ## Requirements
 
-Running this extension requires Java >= 11.
+Running this extension requires Java 11.  Issues have been noted with newer versions of Java.
 
 ## Extension Settings
 
