@@ -25,9 +25,3 @@ This extension contributes the following settings:
 ## Known Issues
 
 The use of Copper for semantic tokens means that in case of a syntax error, highlighting is not shown for the rest of the file after the syntax error.
-
-## Release Notes
-
-### 0.0.1
-
-Initial release of silverlsp.
