@@ -373,11 +373,18 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         ConfigurationItem enableMWDAConfigItem = new ConfigurationItem();
         enableMWDAConfigItem.setSection("silver.enableMWDA");
         ConfigurationParams configParams = new ConfigurationParams(List.of(enableMWDAConfigItem));
+        boolean newEnableMWDA = enableMWDA;
         try {
-            enableMWDA = ((JsonPrimitive)client.configuration(configParams).get().get(0)).getAsBoolean();
+            newEnableMWDA = ((JsonPrimitive)client.configuration(configParams).get().get(0)).getAsBoolean();
         } catch (InterruptedException | ExecutionException e) {
             // Ignore, getting the settings sometimes fails when a build is triggered during initialization
         }
+
+        if (newEnableMWDA && !enableMWDA) {
+            // Do a clean build when the MWDA is initially enabled
+            cleanBuild = true;
+        }
+        enableMWDA = newEnableMWDA;
 
         if (enableMWDA) {
             System.err.println("MWDA enabled");
