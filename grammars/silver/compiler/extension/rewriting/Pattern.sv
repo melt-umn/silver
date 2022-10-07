@@ -40,6 +40,9 @@ synthesized attribute wrappedMatchRuleList :: [AbstractMatchRule] occurs on MRul
 inherited attribute decRuleExprsIn::[(String, Decorated Expr with {decorate, boundVars})] occurs on MRuleList, MatchRule;
 inherited attribute ruleIndex::Integer occurs on MRuleList, MatchRule;
 
+propagate decRuleExprsIn on MRuleList;
+propagate namedTypesHaveUniversalVars on NamedPatternList, NamedPattern;
+
 aspect production mRuleList_one
 top::MRuleList ::= m::MatchRule
 {

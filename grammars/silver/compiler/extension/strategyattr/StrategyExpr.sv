@@ -145,10 +145,12 @@ flowtype StrategyExprs =
   attrRefNames {env, recVarNameEnv, givenInputElements},
   containsFail {}, allId {}, freeRecVars {decorate}, partialRefs {decorate}, totalRefs {decorate};
 
+propagate grammarName, config, compiledGrammars, env, flowEnv, outerAttr, partialRefs, totalRefs, containsTraversal on StrategyExpr, StrategyExprs;
+propagate frame on StrategyExpr excluding allTraversal, someTraversal, oneTraversal, prodTraversal;
 propagate errors on StrategyExpr, StrategyExprs excluding partialRef, totalRef, rewriteRule;
 propagate containsFail, allId on StrategyExprs;
-propagate freeRecVars on StrategyExpr, StrategyExprs excluding recComb;
-propagate partialRefs, totalRefs, containsTraversal on StrategyExpr, StrategyExprs;
+propagate recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, freeRecVars on StrategyExpr, StrategyExprs excluding recComb;
+propagate inlinedStrategies on StrategyExpr, StrategyExprs excluding inlined;
 propagate genericSimplify on StrategyExprs;
 propagate prodStep on MRuleList;
 propagate genericStep, ntStep, prodStep, genericSimplify, ntSimplify, optimize on StrategyExpr;
@@ -320,7 +322,6 @@ top::StrategyExpr ::= s::StrategyExpr
   top.containsTraversal <- true;
 
   s.isOutermost = false;
-  s.frame = error("No frame for traversal strategies");  -- TODO: This equation shouldn't exist, but frame is an autocopy
   
   local sBaseName::String = last(explode(":", sName));
   -- pair(child name, attr occurs on child)
@@ -410,7 +411,6 @@ top::StrategyExpr ::= s::StrategyExpr
   top.containsTraversal <- true;
 
   s.isOutermost = false;
-  s.frame = error("No frame for traversal strategies");  -- TODO: This equation shouldn't exist, but frame is an autocopy
   
   -- pair(child name, attr occurs on child)
   local childAccesses::[Pair<String Boolean>] =
@@ -491,7 +491,6 @@ top::StrategyExpr ::= s::StrategyExpr
   top.containsTraversal <- true;
   
   s.isOutermost = false;
-  s.frame = error("No frame for traversal strategies");  -- TODO: This equation shouldn't exist, but frame is an autocopy
   
   local sBaseName::String = last(explode(":", sName));
   -- pair(child name, attr occurs on child)
@@ -890,6 +889,7 @@ abstract production nameRef
 top::StrategyExpr ::= id::QName
 {
   top.unparse = id.unparse;
+  propagate env;
   
   -- Forwarding depends on env here, these must be computed without env
   propagate liftedStrategies;

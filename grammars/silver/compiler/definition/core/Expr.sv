@@ -381,6 +381,8 @@ top::Expr ::= e::Expr '.' 'forward'
 {
   top.unparse = e.unparse ++ ".forward";
   top.typerep = e.typerep;
+
+  e.isRoot = false;
 }
 
 concrete production access
@@ -583,6 +585,8 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
   top.unparse = lhs.unparse ++ " = " ++ e.unparse ++ ";";
   
   top.suppliedInhs = lhs.suppliedInhs;
+
+  e.isRoot = false;
 }
 
 concrete production exprLhsExpr
@@ -748,6 +752,10 @@ precedence = 0
   top.unparse = "if " ++ e1.unparse ++ " then " ++ e2.unparse ++ " else " ++ e3.unparse;
 
   top.typerep = e2.typerep;
+
+  e1.isRoot=false;
+  e2.isRoot=false;
+  e3.isRoot=false;
 }
 
 concrete production intConst

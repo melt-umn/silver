@@ -13,6 +13,7 @@ concrete production emptyAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' ';'
 {
   top.unparse = "\timplicit " ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
 
   top.productionAttributes := [];
   top.defs := [];
@@ -54,6 +55,7 @@ concrete production implicitAttributeDef
 top::ProductionStmt ::= 'implicit' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.unparse = "\timplicit" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
 
   top.productionAttributes := [];
   top.defs := [];
@@ -93,6 +95,7 @@ top::ProductionStmt ::= 'restricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::
 {
   e.downSubst = top.downSubst;
   top.unparse = "\trestricted" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
 
   top.productionAttributes := [];
   top.defs := [];
@@ -132,6 +135,7 @@ concrete production unrestrictedAttributeDef
 top::ProductionStmt ::= 'unrestricted' dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
 {
   top.unparse = "\tunrestricted" ++ dl.unparse ++ "." ++ attr.unparse ++ " = ;";
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
 
   top.productionAttributes := [];
   top.defs := [];
@@ -188,9 +192,9 @@ abstract production restrictedSynAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
 {
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
 
   e.downSubst = top.downSubst;
-  e.originRules = top.originRules;
   e.isRoot = true;
 
   top.containsPluck = false;
@@ -212,9 +216,9 @@ abstract production restrictedInhAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
 {
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
 
   e.downSubst = top.downSubst;
-  e.originRules = top.originRules;
   e.isRoot = true;
 
   top.containsPluck = false;
@@ -239,12 +243,11 @@ abstract production implicitSynAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
 {
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, originRules;
 
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;
-  e.env = top.env;
-  e.originRules = top.originRules;
   e.isRoot = true;
 
   e.expectedMonad = attr.typerep;
@@ -269,12 +272,11 @@ abstract production implicitInhAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
 {
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
+  propagate grammarName, compiledGrammars, config, frame, env, flowEnv, originRules;
 
   e.downSubst = top.downSubst;
   e.mDownSubst = top.downSubst;
   e.finalSubst = e.mUpSubst;
-  e.env = top.env;
-  e.originRules = top.originRules;
   e.isRoot = true;
 
   e.expectedMonad = attr.typerep;

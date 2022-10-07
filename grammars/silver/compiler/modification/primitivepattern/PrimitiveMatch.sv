@@ -24,12 +24,12 @@ nonterminal PrimPatterns with
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors, freeVars,
   downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation, isRoot, originRules;
+  scrutineeType, returnType, translation, originRules;
 nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors, freeVars,
   downSubst, upSubst, finalSubst,
-  scrutineeType, returnType, translation, isRoot, originRules;
+  scrutineeType, returnType, translation, originRules;
 
 inherited attribute scrutineeType :: Type;
 inherited attribute returnType :: Type;
