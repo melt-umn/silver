@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ./deep-clean              to test the waters (dry run)
 # ./deep-clean -delete      to blow it away
@@ -10,7 +10,7 @@ if [ ! -d grammars ] || [ ! -d tutorials ]; then
   exit 1
 fi
 
-# Note: use ./* rather than .  This avoids looking in .hg
+# Note: use ./* rather than .  This avoids looking in .git
 find ./build/ $1
 find ./grammars/ -name "build.xml" $1
 find ./* -name "*~" $1
@@ -29,10 +29,10 @@ find ./tutorials/ -name "build.xml" $1
 find ./tutorials/ -name "output.c" $1
 find "build.xml" $1
 find "silver.testing.bin.jar" $1
-find ./runtime/imp/main/src/core $1
-find ./runtime/imp/main/src/ide $1
-find ./runtime/imp/main/target $1
+find ./runtime/lsp4j/target $1
+find ./language-server/langserver/target $1
+find ./language-server/launcher/target $1
 
 if [ "$2" == "all" ]; then
-  rm -rf generated/src/* generated/bin/* runtime/java/bin/* generated/ide/*
+  rm -rf generated/src/* generated/bin/* runtime/java/bin/* generated/doc/*
 fi

@@ -1,7 +1,0 @@
-#!/bin/bash
-
-set -eu
-
-for grammar in $(find grammars -name '*.sv' | sed 's#grammars/\(.*\)/.*\.sv#\1#' | sort | uniq | sed 's#/#:#g'); do
-	java -Xss8M -Xmx2000M -jar jars/silver.composed.Default.jar --clean $grammar
-done

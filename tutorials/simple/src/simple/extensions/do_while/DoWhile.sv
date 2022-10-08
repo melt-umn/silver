@@ -8,6 +8,7 @@ grammar simple:extensions:do_while;
    extended language.
 -}
 imports silver:langutil;
+imports silver:langutil:pp;
 imports simple:concretesyntax as cst;
 imports simple:abstractsyntax;
 imports simple:extensions:repeat_until;
@@ -22,12 +23,12 @@ concrete productions s::cst:StmtMatched
 abstract production dowhile
 s::Stmt ::= body::Stmt cond::Expr
 {
-  -- s.pp = "do \n" ++ body.pp ++ "\n" ++ "while " ++ cond.pp ++ "; \n";
+  s.pp = pp"do ${ppblock(body)}while (${cond});";
   forwards to 
     {-  repeat
           body
         until (! cond);
      -}
-    repeatStmt(body, not(cond));
+    repeatStmt(body, notOp(cond));
 }
 

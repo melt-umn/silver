@@ -1,0 +1,1 @@
+run: ../../../support/bin/silver -I .. -o test.jar --clean noflags

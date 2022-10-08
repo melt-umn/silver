@@ -9,7 +9,8 @@
   <property name='version' value='0.0.1'/><!--dummy value for OSGi-->
 
   <path id='compile.classpath'>
-    <fileset dir='../../jars' includes='CopperRuntime.jar CopperCompiler.jar jeromq-0.3.4.jar gson-2.8.0.jar' />
+    <fileset dir='../../jars' includes='CopperCompiler.jar' />
+    <fileset dir='../../jars' includes='commonmark-0.17.1.jar' />
   </path>
 
   <target name='init'>
@@ -17,26 +18,24 @@
       <format property='TIME' pattern='MM/dd/yyyy hh:mm aa'/>
     </tstamp>
     <mkdir dir='${bin}'/>
-    <fail message='Generated java of grammars not found (for core, etc) at ${grammars}'>
+    <fail message='Generated java of grammars not found (for silver:core, etc) at ${grammars}'>
       <condition>
-        <not><available file='${grammars}/core' type='dir' /></not>
+        <not><available file='${grammars}/silver/core' type='dir' /></not>
       </condition>
     </fail>
   </target>
 
   <target name='build' depends='init'>
-    <javac debug='on' classpathref='compile.classpath' srcdir='${src}:${grammars}' destdir='${bin}' includeantruntime='false'>
+    <javac debug='on' classpathref='compile.classpath' srcdir='${src}:${grammars}' destdir='${bin}' includeantruntime='false' source='1.8' target='1.8' release='8'>
+      <compilerarg value="-Xlint:unchecked" />
       <include name='common/**/*.java' />
-      <include name='core/*.java' />
-      <include name='monto/*.java' />
-      <include name='lib/xml/ast/*.java' />
+      <include name='silver/core/*.java' />
+      <include name='silver/xml/ast/*.java' />
     </javac>
   </target>
   
   <target name='dist' depends='build'>
     <jar destfile='${dist}/SilverRuntime.jar' basedir='${bin}' compress='true' level='9'>
-      <zipgroupfileset includes='jeromq-0.3.4.jar gson-2.8.0.jar' dir='../../jars'/>
-      <include name='monto/*.class' />
       <include name='common/**/*.class' />
       <manifest>
         <attribute name='Built-By' value='${user.name}'/>

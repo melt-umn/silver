@@ -96,16 +96,16 @@ equalityTest ( toIntSafe("2147483647").fromJust, 2147483647,
 equalityTest ( toIntSafe("2147483648").isJust, false,
                Boolean, core_tests ) ;
 
--- sconcat
-equalityTest ( sconcat(["12", "34"]), "1234", String, core_tests ) ;
-equalityTest ( sconcat([]), "", String, core_tests ) ;
+-- concat
+equalityTest ( concat(["12", "34"]), "1234", String, core_tests ) ;
+equalityTest ( concat([]), "", String, core_tests ) ;
 
--- sflatMap
+-- flatMap
 function dupItemString
 String ::= i::Integer
 { return toString(i) ++ toString(i); }
 
-equalityTest ( sflatMap(dupItemString, [1, 2]), "1122", String, core_tests ) ;
+equalityTest ( flatMap(dupItemString, [1, 2]), "1122", String, core_tests ) ;
 
 
 -- from lib:extcore!
@@ -116,9 +116,9 @@ equalityTest ( stripWhiteSpace ("asdf qwer \n asdf \t asdf\n"),
 equalityTest ( stripExtraWhiteSpace (" asdf qwer \n asdf \t asdf\n aa"),
                "asdf qwer asdf asdf aa", String, core_tests) ;
 
-equalityTest ( replaceChars ( ".", "_", "sdf..sd_"), "sdf__sd_", String, core_tests) ;
+equalityTest ( substitute ( ".", "_", "sdf..sd_"), "sdf__sd_", String, core_tests) ;
 
-equalityTest ( replaceChars ( ".", "_", ".1.2.3."), "_1_2_3_", String, core_tests) ;
+equalityTest ( substitute ( ".", "_", ".1.2.3."), "_1_2_3_", String, core_tests) ;
 
 
 

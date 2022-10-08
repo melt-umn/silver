@@ -113,6 +113,7 @@ Integer ::= p::MyTriple<Integer Maybe<Integer> Maybe<Integer>>
 return case p of
   mytriple(aa, bb, just(cc)) -> aa + cc
 | mytriple(bb, just(aa), cc) -> aa + bb
+| _ -> error("Added to make this a complete match to avoid a warning")
 end;
 }
 
@@ -125,9 +126,10 @@ Integer ::= p::Pair<Integer Integer>
 {
 return case p of
 | pair(1,2) -> 1
-| core:pair(1,_) -> 2
+| silver:core:pair(1,_) -> 2
 | pair(2,1) -> 3
-| core:pair(_,1) -> 4
+| silver:core:pair(_,1) -> 4
+| _ -> 5
 end;
 }
 

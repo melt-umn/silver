@@ -1,7 +1,6 @@
 
 import silver_features;
 import silver:testing;
-import lib:extcore;
 
 nonterminal AnnoNT with what; -- our target of abuse!
 
@@ -79,9 +78,40 @@ wrongCode "Too few arguments provided " {
 }
 
 -- Let's ensure we can still pattern match alright
-global grabstr :: String = case nt5 of moreAnnoNT(s) -> s end;
+global grabstr :: String = case nt5 of moreAnnoNT(s) -> s | _ -> error("match failed") end;
 equalityTest ( grabstr, "str", String, silver_tests ) ;
 
+-- Occurs-on contexts
+function getWhat
+annotation what occurs on a =>
+Integer ::= x::a
+{
+  return x.what;
+}
+
+equalityTest ( getWhat(nt1), 1, Integer, silver_tests ) ;
+equalityTest ( getWhat(nt2), 2, Integer, silver_tests ) ;
+
+class What a {
+  getWhat2 :: (Integer ::= a);
+}
+
+instance annotation what occurs on a => What a {
+  getWhat2 = (.what);
+}
+
+equalityTest ( getWhat2(nt1), 1, Integer, silver_tests ) ;
+equalityTest ( getWhat2(nt2), 2, Integer, silver_tests ) ;
+
+class annotation what occurs on a => What2 a {}
+instance What2 AnnoNT {}
+
+function getWhat3
+What2 a => Integer ::= x::a
+{ return x.what; }
+
+equalityTest ( getWhat3(nt1), 1, Integer, silver_tests ) ;
+equalityTest ( getWhat3(nt2), 2, Integer, silver_tests ) ;
 
 
 nonterminal AnnoNT2 with anno1, anno2;

@@ -52,7 +52,7 @@ wrongCode "is not a nonterminal" {
 }
 
 wrongCode "Undeclared type 'a'" {
-  synthesized attribute foobad :: Function(a ::= a);
+  synthesized attribute foobad :: (a ::= a);
 }
 
 

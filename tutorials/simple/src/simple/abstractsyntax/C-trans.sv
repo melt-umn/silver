@@ -50,6 +50,7 @@ s::Stmt ::= e::Expr
     | floatType()   -> "%f"
     | booleanType() -> "%d"
     | stringType()  -> "%s"
+    | errorType() -> "%d"
     end;
   s.c_code = s"printf(\"${print_code}\", ${e.c_code}); \n";
 }
@@ -120,24 +121,24 @@ Note that we do not define the c_code attribute for those relational
 and logical operations that (umm that WHAT? hahahaha)
 -}
 aspect production intLit
-e::Expr ::= s::String
+e::Expr ::= i::Integer
 {
-  e.c_code = s;
+  e.c_code = toString(i);
 }
 aspect production floatLit
-e::Expr ::= s::String
+e::Expr ::= f::Float
 {
-  e.c_code = s;
+  e.c_code = toString(f);
 }
 aspect production boolLit
-e::Expr ::= s::String
+e::Expr ::= b::Boolean
 {
-  e.c_code = s;
+  e.c_code = if b then "1" else "0";
 }
 aspect production stringLit
 e::Expr ::= s::String
 {
-  e.c_code = s;
+  e.c_code = s"\"${escapeString(s)}\"";
 }
 
 aspect production varRef
@@ -146,33 +147,33 @@ e::Expr ::= id::Name
   e.c_code = id.name;  
 }
 
-aspect production add
+aspect production addOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.c_code = s"(${l.c_code} + ${r.c_code})";
 }
-aspect production sub
+aspect production subOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.c_code = s"(${l.c_code} - ${r.c_code})";
 }
-aspect production mul
+aspect production mulOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.c_code = s"(${l.c_code} * ${r.c_code})";  
 }
-aspect production div
+aspect production divOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.c_code = s"(${l.c_code} / ${r.c_code})";  
 }
 
-aspect production eq
+aspect production eqOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.c_code = s"(${l.c_code} == ${r.c_code})";  
 }
-aspect production lt
+aspect production ltOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.c_code = s"(${l.c_code} < ${r.c_code})";  
@@ -183,7 +184,7 @@ e::Expr ::= l::Expr r::Expr
 {
   e.c_code = s"(${l.c_code} && ${r.c_code})";  
 }
-aspect production not
+aspect production notOp
 e::Expr ::= ne::Expr 
 {
   e.c_code = s"(!${ne.c_code})";  

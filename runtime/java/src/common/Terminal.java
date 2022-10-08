@@ -1,9 +1,9 @@
 package common;
 
 import edu.umn.cs.melt.copper.runtime.engines.semantics.VirtualLocation;
-import core.NLocation;
-import core.Ploc;
-import core.Alocation;
+import silver.core.NLocation;
+import silver.core.Ploc;
+import silver.core.Alocation;
 
 /**
  * The terminal representation object, containing a lexeme and a location.
@@ -22,8 +22,7 @@ public abstract class Terminal implements Typed {
 		final int line = vl.getLine();
 		final int column = vl.getColumn();
 		vl.defaultUpdate(lexeme);
-		this.location = new Ploc(
-				new StringCatter(vl.getFileName()),
+		this.location = new Ploc(new StringCatter(vl.getFileName()),
 				line,
 				column,
 				vl.getLine(),
@@ -47,19 +46,25 @@ public abstract class Terminal implements Typed {
 		return d.synthesized(syn);
 	}
 	public Integer getLine() {
-		return (Integer)getFromLoc(core.Init.core_line__ON__core_Location);
+		return (Integer)getFromLoc(silver.core.Init.silver_core_line__ON__silver_core_Location);
+	}
+	public Integer getEndLine() {
+		return (Integer)getFromLoc(silver.core.Init.silver_core_endLine__ON__silver_core_Location);
 	}
 	public Integer getColumn() {
-		return (Integer)getFromLoc(core.Init.core_column__ON__core_Location);
+		return (Integer)getFromLoc(silver.core.Init.silver_core_column__ON__silver_core_Location);
+	}
+	public Integer getEndColumn() {
+		return (Integer)getFromLoc(silver.core.Init.silver_core_endColumn__ON__silver_core_Location);
 	}
 	public StringCatter getFilename() {
-		return (StringCatter)getFromLoc(core.Init.core_filename__ON__core_Location);
+		return (StringCatter)getFromLoc(silver.core.Init.silver_core_filename__ON__silver_core_Location);
 	}
 	public Integer getStartOffset() {
-		return (Integer)getFromLoc(core.Init.core_index__ON__core_Location);
+		return (Integer)getFromLoc(silver.core.Init.silver_core_index__ON__silver_core_Location);
 	}
 	public Integer getEndOffset() {
-		return (Integer)getFromLoc(core.Init.core_endIndex__ON__core_Location);
+		return (Integer)getFromLoc(silver.core.Init.silver_core_endIndex__ON__silver_core_Location);
 	}
 	
 	// This is a utility that I put here because why not. Perhaps it should be moved?
@@ -67,14 +72,13 @@ public abstract class Terminal implements Typed {
 		final DecoratedNode x = a.decorate(TopNode.singleton, (Lazy[])null);
 		final DecoratedNode y = b.decorate(TopNode.singleton, (Lazy[])null);
 		
-		return new Ploc(
-				x.synthesized(core.Init.core_filename__ON__core_Location),
-				x.synthesized(core.Init.core_line__ON__core_Location),
-				x.synthesized(core.Init.core_column__ON__core_Location),
-				y.synthesized(core.Init.core_endLine__ON__core_Location),
-				y.synthesized(core.Init.core_endColumn__ON__core_Location),
-				x.synthesized(core.Init.core_index__ON__core_Location),
-				y.synthesized(core.Init.core_endIndex__ON__core_Location));
+		return new Ploc(x.synthesized(silver.core.Init.silver_core_filename__ON__silver_core_Location),
+				x.synthesized(silver.core.Init.silver_core_line__ON__silver_core_Location),
+				x.synthesized(silver.core.Init.silver_core_column__ON__silver_core_Location),
+				y.synthesized(silver.core.Init.silver_core_endLine__ON__silver_core_Location),
+				y.synthesized(silver.core.Init.silver_core_endColumn__ON__silver_core_Location),
+				x.synthesized(silver.core.Init.silver_core_index__ON__silver_core_Location),
+				y.synthesized(silver.core.Init.silver_core_endIndex__ON__silver_core_Location));
 	}
 	// Ditto
 	public static NLocation createSpan(final Object[] children, VirtualLocation l, int index) {
@@ -90,10 +94,15 @@ public abstract class Terminal implements Typed {
 		if(o instanceof Terminal) {
 			return ((Terminal)o).location;
 		} else if(o instanceof Alocation) {
-			return (NLocation) ((Alocation)o).getAnno_core_location();
+			return (NLocation) ((Alocation)o).getAnno_silver_core_location();
+		} else if(o instanceof Tracked) {
+			silver.core.NOriginInfo oi = ((Tracked)o).getOrigin();
+			if (oi!=null && oi instanceof silver.core.PparsedOriginInfo) {
+				return ((silver.core.PparsedOriginInfo)oi).getChild_source();
+			}
 		}
 		// TODO: a better error, maybe? Eh, it should never happen.
-		throw new RuntimeException("Attempting to extract location from locationless object");
+		throw new RuntimeException("Attempting to extract location from locationless object: "+o.toString());
 	}
 
 	/**
@@ -114,4 +123,6 @@ public abstract class Terminal implements Typed {
 	public final BaseTypeRep getType() {
 		return new BaseTypeRep(getName());
 	}
+
+	public abstract RTTIManager.Terminalton<? extends Terminal> getTerminalton();
 }

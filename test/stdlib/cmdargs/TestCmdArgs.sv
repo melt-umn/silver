@@ -1,7 +1,6 @@
 
 import silver:util:cmdargs;
 import silver:testing ;
-import lib:extcore ;
 import stdlib;
 
 synthesized attribute isVerbose :: Boolean occurs on CmdArgs;
@@ -34,10 +33,10 @@ top::CmdArgs ::= rest::CmdArgs
 }
 
 
-global flags1 :: [Pair<String Flag>] =
-  [pair("-verbose", flag(verboseFlag)),
-   pair("-silly", flag(sillyFlag)),
-   pair("-nosilly", flag(noSillyFlag))];
+global flags1 :: [FlagSpec] =
+  [flagSpec(name="-verbose", paramString=nothing(), help="", flagParser=flag(verboseFlag)),
+   flagSpec(name="-silly", paramString=nothing(), help="", flagParser=flag(sillyFlag)),
+   flagSpec(name="-nosilly", paramString=nothing(), help="", flagParser=flag(noSillyFlag))];
 
 -- Don't parse anything unrecognized.
 equalityTest( interpretCmdArgs(flags1, ["a", "b", "c"]).cmdRemaining, 
@@ -84,8 +83,8 @@ equalityTest( interpretCmdArgs(flags1, ["-silly", "-nosilly", "-silly"]).isSilly
 
 
 -- an "option" is a flag with one parameter.
-global flags2 :: [Pair<String Flag>] =
-  [pair("-I", option(includeFlag))] ++ flags1;
+global flags2 :: [FlagSpec] =
+  [flagSpec(name="-I", paramString=nothing(), help="", flagParser=option(includeFlag))] ++ flags1;
 
 synthesized attribute includePaths :: [String] occurs on CmdArgs;
 

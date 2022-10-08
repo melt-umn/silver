@@ -1,7 +1,6 @@
 grammar silver_features:rewrite:expreval;
 
 import silver:testing;
-import lib:extcore;
 import silver_features;
 
 global test1::Expr = parseExpr("1 + (2 * 3)");

@@ -20,7 +20,7 @@ parser parse :: Root_c
  - world' and each value used only once.
  -}
 function main 
-IOVal<Integer> ::= largs::[String] ioin::IO
+IO<Integer> ::= largs::[String]
 {
   local attribute args :: String;
   args = implode(" ", largs);
@@ -34,7 +34,7 @@ IOVal<Integer> ::= largs::[String] ioin::IO
   local attribute r_ast :: Root ;
   r_ast = r_cst.ast_Root ;
 
-  local attribute print_success :: IO;
+  local attribute print_success :: IO<Unit>;
   print_success = 
     print( "Command line expression: " ++ args ++
            "\n\n" ++
@@ -45,15 +45,16 @@ IOVal<Integer> ::= largs::[String] ioin::IO
            "AST better pretty print: " ++ r_ast.bpp ++
            "\n\n" ++
            "Value: " ++ toString(r_ast.value) ++
-           "\n\n" 
-           , ioin );
+           "\n\n");
 
-  local attribute print_failure :: IO;
+  local attribute print_failure :: IO<Unit>;
   print_failure =
-    print("Encountered a parse error:\n" ++ result.parseErrors ++ "\n", ioin);
+    print("Encountered a parse error:\n" ++ result.parseErrors ++ "\n");
 
-  return ioval(if result.parseSuccess then print_success else print_failure,
-               0);
+  return do { 
+    new(if result.parseSuccess then print_success else print_failure); 
+    return 0; 
+  };
 }
 
 

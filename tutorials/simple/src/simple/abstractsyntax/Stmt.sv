@@ -4,10 +4,10 @@ nonterminal Stmt with pp, env, defs, errors;
 
 -- Decides how best to pretty print a statement following if/while/etc
 function ppblock
-Document ::= s::Stmt
+Document ::= s::Decorated Stmt
 {
   return case s of
-         | block(_) -> pp" ${s.pp}" -- the block will do it itself.
+         | block(_) -> pp" ${s} " -- the block will do it itself.
          | _ -> nestlines(3, s.pp)
          end;
 }
@@ -31,7 +31,7 @@ s::Stmt ::= body::Stmt
 abstract production seq
 s::Stmt ::= s1::Stmt s2::Stmt 
 {
-  s.pp = pp"${s1.pp}${line()}${s2.pp}";
+  s.pp = pp"${s1}${line()}${s2}";
   s.defs = s1.defs ++ s2.defs;
   s.errors := s1.errors ++ s2.errors;
 
@@ -41,7 +41,7 @@ s::Stmt ::= s1::Stmt s2::Stmt
 abstract production printStmt
 s::Stmt ::= e::Expr 
 {
-  s.pp = pp"print(${e.pp});";
+  s.pp = pp"print(${e});";
   s.defs = [];
   s.errors := e.errors;
 }
@@ -57,7 +57,7 @@ s::Stmt ::=
 abstract production while
 s::Stmt ::= c::Expr b::Stmt 
 {
-  s.pp = pp"while(${c.pp})${ppblock(b)}";
+  s.pp = pp"while(${c})${ppblock(b)}";
   s.defs = [];
   s.errors := c.errors ++ b.errors;
 }
@@ -65,7 +65,7 @@ s::Stmt ::= c::Expr b::Stmt
 abstract production ifthen
 s::Stmt ::= c::Expr t::Stmt 
 {
-  s.pp = pp"if(${c.pp})${ppblock(t)}";
+  s.pp = pp"if(${c})${ppblock(t)}";
   s.defs = [];
   s.errors := c.errors ++ t.errors;
 }
@@ -73,7 +73,7 @@ s::Stmt ::= c::Expr t::Stmt
 abstract production ifelse
 s::Stmt ::= c::Expr t::Stmt e::Stmt 
 {
-  s.pp = pp"if(${c.pp})${ppblock(t)}else${ppblock(e)}";
+  s.pp = pp"if(${c})${ppblock(t)}else${ppblock(e)}";
   s.defs = [];
   s.errors := c.errors ++ t.errors ++ e.errors;
 }
@@ -81,7 +81,7 @@ s::Stmt ::= c::Expr t::Stmt e::Stmt
 abstract production assignment
 s::Stmt ::= id::Name e::Expr 
 {
-  s.pp = pp"${id.pp} = ${e.pp};";
+  s.pp = pp"${id} = ${e};";
   s.defs = [];
   s.errors :=
     case id.lookup of

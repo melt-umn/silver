@@ -22,6 +22,7 @@ public class Thunk<T> {
 		o = e;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public T eval() {
 		if(o instanceof Evaluable) {
 			o = ((Evaluable<T>)o).eval();
@@ -40,6 +41,7 @@ public class Thunk<T> {
 	 * @param t  Either a DecoratedNode or a Thunk<DecoratedNode>
 	 * @return  Either a Node or a Thunk<Node>
 	 */
+	@SuppressWarnings("unchecked")
 	public static Object transformUndecorate(final Object t) {
 		// DecoratedNode
 		if(t instanceof DecoratedNode)

@@ -6,6 +6,7 @@ import java.util.ListIterator;
 import java.util.List;
 
 import common.ConsCell;
+import common.StringCatter;
 
 /**
  * Converts Silver lists into Java iterators.
@@ -57,6 +58,10 @@ public class ConsCellCollection<T> extends AbstractCollection<T> {
 		return ret;
 	}
 
+	public static ConsCell fromStringList(List<String> l) {
+		return fromIterator(l.stream().map(StringCatter::new).iterator());
+	}
+
 	public static class ConsCellIterator<T> implements Iterator<T> {
 
 		private ConsCell elem;
@@ -71,6 +76,7 @@ public class ConsCellCollection<T> extends AbstractCollection<T> {
 
 		@Override
 		public T next() {
+			@SuppressWarnings("unchecked")
 			T fst = (T) elem.head();
 			elem = elem.tail();
 			return fst;

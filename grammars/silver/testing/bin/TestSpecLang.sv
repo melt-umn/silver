@@ -55,15 +55,15 @@ r::Run ::= f::OptionalFail run_kwd::'run' ':' rest::CommandAlt_t
 concrete production run
 r::Run ::= f::OptionalFail 'run' c::Command_t
 {
- local msgBefore :: IO  =
-  print ("............................................................\n" ++
+ local msgBefore :: IOToken  =
+  printT ("............................................................\n" ++
          "Test \n  " ++ r.testFileName ++ " in directory \n  " ++
          prettyDirName(r.testFileDir) ++ "\n", r.ioInput.io ) ;
 
  local cmd :: String = substring(1,length(c.lexeme)-1,c.lexeme) ;
 
  local cmdResult :: IOVal<Integer> 
-   = system ("cd " ++ r.testFileDir ++ ";" ++
+   = systemT ("cd " ++ r.testFileDir ++ ";" ++
              "rm -f " ++ r.testFileName ++ ".output ; " ++ 
              cmd ++ " >& " ++ r.testFileName ++ ".output"
              , msgBefore ) ;
@@ -71,8 +71,8 @@ r::Run ::= f::OptionalFail 'run' c::Command_t
  r.ioResult =
    if   (cmdResult.iovalue == 0 && ! f.fail) ||
         (cmdResult.iovalue != 0 && f.fail) 
-   then ioval( print( "passed (rc = 0).\n", cmdResult.io), 0 )
-   else ioval( print( "failed (rc = " ++ toString(cmdResult.iovalue) ++ ").\n",
+   then ioval( printT( "passed (rc = 0).\n", cmdResult.io), 0 )
+   else ioval( printT( "failed (rc = " ++ toString(cmdResult.iovalue) ++ ").\n",
                       cmdResult.io),
                1 ) ;
 }
@@ -80,8 +80,8 @@ r::Run ::= f::OptionalFail 'run' c::Command_t
 concrete production runTestSuite
 ts::Run ::= 'test' 'suite' jar::Jar_t
 {
- local msgBefore :: IO  =
-  print ("............................................................\n" ++
+ local msgBefore :: IOToken  =
+  printT ("............................................................\n" ++
          "Test Suite jar \"" ++ jar.lexeme ++ "\" in \n  " ++ 
          ts.testFileName ++ " in directory \n  " ++
          prettyDirName(ts.testFileDir) ++ "\n", ts.ioInput.io ) ;
@@ -89,14 +89,14 @@ ts::Run ::= 'test' 'suite' jar::Jar_t
  -- probably should check that jar file by this name exists
 
  local testSuiteResults :: IOVal<Integer> 
-   = system ("cd " ++ ts.testFileDir ++ ";" ++
+   = systemT ("cd " ++ ts.testFileDir ++ ";" ++
              "rm -f " ++ ts.testFileName ++ ".output ; " ++ 
-             " java -jar " ++ jar.lexeme ++
+             " java -Xss6M -jar " ++ jar.lexeme ++
              " >& " ++ ts.testFileName ++ ".output" ,
              msgBefore ) ;
 
- local afterMsg :: IO 
-   = print ( if testSuiteResults.iovalue == 0
+ local afterMsg :: IOToken
+   = printT ( if testSuiteResults.iovalue == 0
              then "all tests passed (rc = 0).\n"
              else toString(testSuiteResults.iovalue) ++ 
              if testSuiteResults.iovalue == 1
@@ -113,24 +113,24 @@ ts::Run ::= 'test' 'suite' jar::Jar_t
 
 {-
 function runCommandOnFile
-IO ::= absoluteFilePath::String ioIn::IO 
+IOToken ::= absoluteFilePath::String ioIn::IOToken
 {
  return runCommandOnFileRC(absoluteFilePath, ioval(ioIn,0) ) .io ;
 }
 
 
 function runCommandOnFile
-IO ::= absoluteFilePath::String ioIn::IO 
+IOToken ::= absoluteFilePath::String ioIn::IOToken
 {
- local isDir :: IOVal<Boolean> = isDirectory( absoluteFilePath, ioIn );
- local isF   :: IOVal<Boolean> = isFile(absoluteFilePath, ioIn);
- local text  :: IOVal<String>  = readFile(absoluteFilePath, isF.io);
+ local isDir :: IOVal<Boolean> = isDirectoryT( absoluteFilePath, ioIn );
+ local isF   :: IOVal<Boolean> = isFileT(absoluteFilePath, ioIn);
+ local text  :: IOVal<String>  = readFileT(absoluteFilePath, isF.io);
 
  local parseResult :: ParseResult<Run> = parse(text.iovalue, absoluteFilePath);
  local r_cst :: Run = parseResult.parseTree ;
  
- local parseFailure :: IO =
-   print ("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" ++
+ local parseFailure :: IOToken =
+   printT ("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" ++
           "Parsing of .test file \n   " ++ absoluteFilePath ++ "\n" ++
           "failed.\n" ++ parseResult.parseErrors ++ "\n" ++
           "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n" ,
@@ -143,9 +143,9 @@ IO ::= absoluteFilePath::String ioIn::IO
  
  local testResult :: IOVal<Integer> = r_cst.ioResult ;
 
- local attribute msgAfter :: IO ;
+ local attribute msgAfter :: IOToken ;
  msgAfter = 
-   print ((if   testResult.iovalue == 0 
+   printT ((if   testResult.iovalue == 0
            then "passed (rc == 0)."
            else "failed (rc == " ++ toString(testResult.iovalue) ++ ").") ++
          "\n" ,

@@ -1,33 +1,48 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 export SILVER_HOME=../..
 
 silver() { "$SILVER_HOME/support/bin/silver" "$@"; }
 
 # Always clean build
-ARGS="$@ --clean"
+ARGS="$@ --clean --dont-translate"
 
 count=0
+fail=0
+pass=0
 
 # Check to ensure all these builds yield the shown string (as an error)
+function cst_test {
+    silver $ARGS $1 |& grep "$2" > /dev/null
+    if [[ $? != 0 ]]
+    then
+        echo -e "\nFailure: $1 did not produce output $2"
+        ((fail++))
+    else
+        echo -n "."
+        ((pass++))
+    fi
+    ((count++))
+}
 
-silver $ARGS rhs | grep "B_t" > /dev/null || ((count++))
-silver $ARGS disamb | grep "B_t" > /dev/null || ((count++))
-silver $ARGS startMissing | grep "nonterm_b:B" > /dev/null || ((count++))
-silver $ARGS prodMod | grep "B_t" > /dev/null || ((count++))
-silver $ARGS mda | grep "nonterm_b:B" > /dev/null || ((count++))
-silver $ARGS missingLHS | grep "nonterm_b:B" > /dev/null || ((count++))
-# terminalLHS doesn't contain a reference to B_t or B
-silver $ARGS terminalLHS | grep "terminalLHS:terminalLHS" > /dev/null || ((count++))
-silver $ARGS terminalSubmit | grep "B_t" > /dev/null || ((count++))
-silver $ARGS terminalDominate | grep "B_t" > /dev/null || ((count++))
-silver $ARGS terminalLexer | grep "lexer_b:B" > /dev/null || ((count++))
-silver $ARGS lexerSubmit | grep "B_t" > /dev/null || ((count++))
-silver $ARGS lexerDominate | grep "B_t" > /dev/null || ((count++))
-silver $ARGS missingSeparator | grep "test:nonterm_b:Mangle_t" > /dev/null || ((count++))
-silver $ARGS multipleSeparators | grep "multipleSeparators:A_t, multipleSeparators:B_t" > /dev/null || ((count++))
+cst_test rhs "B_t"
+cst_test disamb "B_t"
+cst_test startMissing "nonterm_b:B"
+cst_test prodMod "B_t"
+cst_test mda "nonterm_b:B"
+cst_test missingLHS "nonterm_b:B"
+cst_test terminalLHS "terminalLHS:A_t"
+cst_test terminalSubmit "B_t"
+cst_test terminalDominate "B_t"
+cst_test terminalSubmitLexer "lexer_b:B"
+cst_test lexerSubmit "B_t"
+cst_test lexerDominate "B_t"
+cst_test missingSeparator "test:nonterm_b:Mangle_t"
+cst_test multipleSeparators "multipleSeparators:A_t, multipleSeparators:B_t"
 
+echo ""
+echo "$pass out of $count tests passed"
 
 rm -f build.xml
 
-test $count == 0
+exit $fail

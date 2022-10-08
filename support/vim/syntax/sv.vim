@@ -10,7 +10,7 @@ endif
 
 syn keyword svlangExternals grammar import imports exports build hiding as only option
 
-syn keyword svlangDeclarations parser attribute annotation function local closed nonterminal type occurs on production terminal marking foreign layout disambiguate action global productions lexer class default propagate
+syn keyword svlangDeclarations parser attribute annotation function local closed nonterminal type occurs on production terminal marking foreign layout disambiguate action global productions lexer class default propagate tracked
 
 syn keyword svlangPrimitiveTypes IO Boolean Decorated Float Function Integer Production String
 
@@ -22,9 +22,7 @@ syn keyword svlangFlowOther forwarding forwards to return pluck
 
 syn keyword svlangFlow case rule of let in end decorate with prefix else forward if new then
 
-syn keyword svlangFunction print toString toInt toFloat length reference substring indexOf error cast left right partitionEithers hackUnparse print readLineStdin exit mkdir system writeFile appendFile fileTime isFile isDirectory readFile cwd envVar listContents deleteFile deleteTree copyFile touchFile error unsafeIO genInt genRand unsafeTrace dirNameInFilePath fileNameInFilePath splitFileNameAndExtension map foldr foldl foldr1 foldl1 filter partition containsBy nubBy removeBy removeAllBy last drop take dropWhile takeWhile takeUntil positionOf positionOfHelper repeat zipWith reverse sortBy groupBy intersperse unionBy intersectBy unionsBy nil cons append null listLength head tail locationLte fromMaybe orElse consMaybe catMaybes fst snd lookupBy lookupAllBy unzipPairs parseTreeOrDieWithoutStackTrace implode explode indexOf lastIndexOf substring startsWith endsWith substitute replicate isDigit isAlpha isSpace isLower isUpper toIntSafe compareString stringConcat stringEq stringLte runIO evalIO unsafeEvalIO bindList returnList bindMaybe returnMaybe runState evalState ioval
-
-"syn keyword svlangIde temp_imp_ide_dcl temp_imp_ide_font font color italic bold
+syn keyword svlangFunction print toString toInteger toFloat length reference substring indexOf error cast left right partitionEithers hackUnparse print readLineStdin exit mkdir system writeFile appendFile fileTime isFile isDirectory readFile cwd envVar listContents deleteFile deleteTree copyFile touchFile error unsafeIO genInt genRand unsafeTrace dirNameInFilePath fileNameInFilePath splitFileNameAndExtension map foldr foldl foldr1 foldl1 filter partition containsBy nubBy removeBy removeAllBy last drop take dropWhile takeWhile takeUntil positionOf positionOfHelper repeat zipWith reverse sortBy groupBy intersperse unionBy intersectBy unionsBy nil cons append null listLength head tail locationLte fromMaybe orElse consMaybe catMaybes fst snd lookupBy lookupAllBy unzipPairs parseTreeOrDieWithoutStackTrace implode explode indexOf lastIndexOf substring startsWith endsWith substitute replicate isDigit isAlpha isSpace isLower isUpper toIntSafe compareString stringConcat stringEq stringLte runIO evalIO unsafeEvalIO bindList returnList bindMaybe returnMaybe runState evalState ioval
 
 "syn keyword svlangIdeInner contained builder postbuilder exporter folder property string required string wizard new file stub generator product name version option resource
 

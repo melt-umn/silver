@@ -1,11 +1,16 @@
 grammar silver:rewrite;
 
 -- Some of these Strategy productions have very generic names that conflict with core.
--- Users must explicitly import core hiding these names, or perform a qualified import,
+-- Users must explicitly import silver:core hiding these names, or perform a qualified import,
 -- e.g. import silver:rewrite as s;
 
-imports core hiding all, repeat;
-imports core:monad;
+imports silver:core hiding all, fail, id, one, repeat, sequence;
+
+function rewriteWith
+runtimeTypeable a => Maybe<a> ::= s::Strategy x::a
+{
+  return map(reifyUnchecked, decorate s with {term = reflect(x);}.result);
+}
 
 inherited attribute term::AST;
 synthesized attribute result::Maybe<AST>;
@@ -33,7 +38,7 @@ top::Strategy ::= s1::Strategy s2::Strategy
   top.pp = pp"(${s1.pp} <* ${s2.pp})";
   s1.term = top.term;
   s2.term = s1.result.fromJust;
-  top.result = bindMaybe(s1.result, \ AST -> s2.result);
+  top.result = bind(s1.result, \ AST -> s2.result);
 }
 
 abstract production choice
@@ -113,11 +118,7 @@ top::Strategy ::= pattern::ASTPattern result::ASTExpr
   top.pp = pp"rule(${pattern.pp} -> ${result.pp})";
   pattern.matchWith = top.term;
   result.substitutionEnv = pattern.substitution.fromJust;
-  top.result =
-    do (bindMaybe, returnMaybe) {
-      pattern.substitution;
-      return result.value;
-    };
+  top.result = do { pattern.substitution; return result.value; };
 }
 
 abstract production require
@@ -127,7 +128,7 @@ top::Strategy ::= pattern::ASTPattern cond::ASTExpr
   pattern.matchWith = top.term;
   cond.substitutionEnv = pattern.substitution.fromJust;
   top.result =
-    do (bindMaybe, returnMaybe) {
+    do {
       pattern.substitution;
       case cond.value of
       | booleanAST(b) -> if b then just(unit()) else nothing()
@@ -156,7 +157,7 @@ abstract production printTerm
 top::Strategy ::=
 {
   top.pp = pp"print()";
-  top.result = unsafeTrace(just(top.term), print(show(80, top.term.pp) ++ "\n\n", unsafeIO()));
+  top.result = unsafeTrace(just(top.term), printT(show(80, top.term.pp) ++ "\n\n", unsafeIO()));
 }
 
 -- Utilities

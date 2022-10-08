@@ -1,169 +1,104 @@
 grammar silver:util:treemap;
 
--- The API:
+@@{-
+   - One should always import this via 'import silver:util:treemap as ...'
+   - The names are too general otherwise.
+   -}
 
-{--
- - Creates a new (empty) tree.
- - 
- - @param TLEop  The "less that or equal to" operator on the key values for this tree
- - @param EQop  The "equal to" operator on the key values for this tree
- - @return A new empty tree.
+type Map<a b> foreign = "java.util.TreeMap<Object,common.ConsCell>";
+
+@{--
+ - Returns a new, empty, multimap using Ord for comparison.
  -}
-function treeNew
-TreeMap<a b> ::= CMP :: (Integer ::= a a)
+function empty
+Ord a => Map<a b> ::=
 {
-  return leaf(CMP);
+  return emptyWith(compare);
 }
 
-{--
- - Inserts a key-value into the tree. If the key exists already, it will be
- - associated with multiple values, not replaced.
- - 
- - @param x  The key to insert
- - @param v  The value to insert
- - @param t  The existing tree
- - @return  The tree with (x,v) inserted.
+@{--
+ - Returns a new, empty, multimap using the specified comparator.
  -}
-function treeInsert
-TreeMap<a b> ::= x::a v::b t::TreeMap<a b>
+function emptyWith
+Map<a b> ::= comparator::(Integer ::= a a)
 {
-  t.treeKey = x;
-  t.treeValue = v;
-  return t.treeInsert.makeBlack;
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawTreeMap.empty(%comparator%)";
 }
 
-{--
- - Retrieves all values associated with a key in the tree.
- - 
- - @param x  The key to loopup
- - @param t  The tree
- - @return  All values inserted for that key in the tree.
+@@{- @warning An 'insert' function is deliberating omitted due to its inefficiency, but there's add: -}
+
+@{--
+ - Adds a list of elements to a map.
  -}
-function treeLookup
-[b] ::= x::a t::TreeMap<a b>
+function add
+Map<a b> ::= lst::[Pair<a b>] mp::Map<a b>
 {
-  t.treeKey = x;
-  return t.treeLookup;
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawTreeMap.addList(%lst%, %mp%)";
 }
 
-{--
- - Inserts multiple key-value pairs into the tree.
- - 
- - @param l  A list of key-value pairs.
- - @param t  The existing tree
- - @return  The tree with all new key-value pairs inserted.
+@{--
+ - Returns a list of keys that are present in the map, in sorted order.
  -}
-function treeConvert
-TreeMap<a b> ::= l::[Pair<a b>] t::TreeMap<a b>
+function keys
+[a] ::= mp::Map<a b>
 {
-  return if null(l) then t
-         else treeConvert(tail(l), treeInsert(head(l).fst, head(l).snd, t));
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawTreeMap.keys(%mp%)";
 }
 
-{--
- - Reverts a tree back into an association list. Any key associated with
- - multiple values will appear multiple times in the list, for each value.
- - 
- - @param t  The existing tree
- - @return  A list of key-value pairs.
+@{--
+ - Looks up an element from the map, empty list if not contained.
  -}
-function treeDeconvert
-[Pair<a b>] ::= t::TreeMap<a b>
+function lookup
+[b] ::= key::a mp::Map<a b>
 {
-  return t.treeToList;
-}
--- The implementation:
-
-nonterminal TreeMap<a b> with treeKey<a>, treeLookup<b>, treeValue<b>, treeInsert<a b>, makeBlack<a b>, treeToList<a b>;
-
-inherited attribute treeKey<a> :: a;
-synthesized attribute treeLookup<b> :: [b]; -- key
-
-inherited attribute treeValue<b> :: b;
-synthesized attribute treeInsert<a b> :: TreeMap<a b>; -- key, value
-
-synthesized attribute makeBlack<a b> :: TreeMap<a b>;
-
-synthesized attribute treeToList<a b> :: [Pair<a b>];
-
-abstract production leaf
-top::TreeMap<a b> ::= CMP :: (Integer ::= a a)
-{
-  top.treeLookup = [];
-  top.treeInsert = node(false, top, top, top.treeKey, [top.treeValue], CMP);
-  top.makeBlack = top;
-  top.treeToList = [];
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawTreeMap.lookup(%key%, %mp%)";
 }
 
-abstract production node
-top::TreeMap<a b> ::= black::Boolean lefttree::TreeMap<a b> righttree::TreeMap<a b>
-                      label::a  values::[b] 
-                      CMP :: (Integer ::= a a)
+@{--
+ - Converts a list of pairs to a multimap.
+ -}
+function fromList
+Ord a => Map<a b> ::= l::[Pair<a b>]
 {
-  top.treeLookup = let cmpr :: Integer = CMP(top.treeKey, label)
-                   in if cmpr <= 0
-                   then if cmpr == 0
-                        then values
-                        else lefttree.treeLookup
-                   else righttree.treeLookup
-                   end;
-
-  top.treeInsert = let cmpr :: Integer = CMP(top.treeKey, label)
-                   in if cmpr <= 0
-                   then if cmpr == 0
-                        then     node(black, lefttree,            righttree,            label, top.treeValue :: values, CMP)
-                        else 
-                        if black
-                        then balanceL(       lefttree.treeInsert, righttree,            label, values,                  CMP)
-                        else     node(false, lefttree.treeInsert, righttree,            label, values,                  CMP)
-                   else if black
-                        then balanceR(       lefttree,            righttree.treeInsert, label, values,                  CMP)
-                        else     node(false, lefttree,            righttree.treeInsert, label, values,                  CMP)
-                   end;
-
-  top.makeBlack = if black then top else node(true, lefttree, righttree, label, values, CMP);
-  top.treeToList = lefttree.treeToList ++ treeMapKeyValues(label, values) ++ righttree.treeToList;
-  
-  lefttree.treeKey = top.treeKey;
-  lefttree.treeValue = top.treeValue;
-  righttree.treeKey = top.treeKey;
-  righttree.treeValue = top.treeValue;
+  return add(l, empty());
 }
 
-function treeMapKeyValues
-[Pair<a b>] ::= k::a v::[b]
+@{--
+ - Converts a multimap back to a list of pairs, in sorted order by key.
+ -}
+function toList
+[Pair<a b>] ::= mp::Map<a b>
 {
-  return if null(v) then [] else pair(k, head(v)) :: treeMapKeyValues(k, tail(v));
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawTreeMap.toList(%mp%)";
 }
 
--- Invariant: every black node does not have double reds below it (on any of the 4 paths)
--- Whenever we're reconstructing after an insert, all black nodes will examine the modified subtree
--- to see if there are any double-reds, and act accordingly.
--- These functions are only called by black nodes.
-function balanceL
-TreeMap<a b> ::= lefttree::TreeMap<a b> righttree::TreeMap<a b>
-                 label::a  values::[b]
-                 CMP :: (Integer ::= a a)
+@{--
+ - Updates the value returned by a key
+ -}
+function update
+Map<a b> ::= key::a  value::[b]  mp::Map<a b>
 {
-return case lefttree of
-  node(false, node(false, a, b, x1, x2,_), c, y1, y2,_) -> 
-                                                    node(false, node(true, a, b, x1, x2, CMP), node(true, c, righttree, label, values, CMP), y1, y2, CMP)
-| node(false, a, node(false, b, c, y1, y2,_), x1, x2,_) -> 
-                                                    node(false, node(true, a, b, x1, x2, CMP), node(true, c, righttree, label, values, CMP), y1, y2, CMP)
-| a -> node(true, a, righttree, label, values, CMP)
-end;
-}
-function balanceR
-TreeMap<a b> ::= lefttree::TreeMap<a b> righttree::TreeMap<a b>
-                 label::a  values::[b]
-                 CMP :: (Integer ::= a a)
-{
-return case righttree of
-  node(false, node(false, b, c, y1, y2,_), d, z1, z2,_) -> 
-                                                    node(false, node(true, lefttree, b, label, values, CMP), node(true, c, d, z1, z2, CMP), y1, y2, CMP)
-| node(false, b, node(false, c, d, z1, z2,_), y1, y2,_) -> 
-                                                    node(false, node(true, lefttree, b, label, values, CMP), node(true, c, d, z1, z2, CMP), y1, y2, CMP)
-| b -> node(true, lefttree, b, label, values, CMP)
-end;
+  return error("NYI");
+} foreign {
+  "java" : return "common.rawlib.RawTreeMap.update(%key%, %value%, %mp%)";
 }
 
+instance Eq a, Eq b => Eq Map<a b> {
+  -- TODO: This could be more efficient - eagerly converting both maps to lists before comparison.
+  eq = \ m1::Map<a b> m2::Map<a b> -> toList(m1) == toList(m2);
+}
+
+instance Ord a, Ord b => Ord Map<a b> {
+  -- TODO: This could be more efficient - eagerly converting both maps to lists before comparison.
+  compare = \ m1::Map<a b> m2::Map<a b> -> compare(toList(m1), toList(m2));
+}

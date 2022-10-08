@@ -6,15 +6,15 @@ import simple:concretesyntax as cst;
 import simple:abstractsyntax as ast;
 
 function driver
-IO ::= args::[String]
-       io_in::IO 
+IOToken ::= args::[String]
+       io_in::IOToken
        the_parser::(ParseResult<cst:Root> ::= String String)
 {
   local filename :: String = if null(args) then "" else head(args);
   
-  local isF :: IOVal<Boolean> = isFile(filename, io_in);
+  local isF :: IOVal<Boolean> = isFileT(filename, io_in);
    
-  local text :: IOVal<String> = readFile(filename, isF.io);
+  local text :: IOVal<String> = readFileT(filename, isF.io);
 
   local result :: ParseResult<cst:Root> = the_parser(text.iovalue, filename);
 
@@ -22,8 +22,9 @@ IO ::= args::[String]
 
   local r_ast :: ast:Root = r_cst.ast;
 
-  local print_success :: IO = 
-    print( "Command line arguments: " ++ filename ++
+  local print_success :: IOToken =
+    printObjectPairForOriginsViz(r_cst, r_ast,
+    printT( "Command line arguments: " ++ filename ++
            "\n\n" ++
            "CST pretty print: \n" ++ r_cst.unparse ++
            "\n\n" ++ 
@@ -34,13 +35,13 @@ IO ::= args::[String]
             else "\n" ++
                  messagesToString(r_ast.errors) ++ "\n"
            )
-           , text.io );
+           , text.io ));
 
-  local write_success :: IO =
-    writeFile("output.c", r_ast.ast:c_code, print_success);
+  local write_success :: IOToken =
+    writeFileT("output.c", r_ast.ast:c_code, print_success);
 
-  local print_failure :: IO =
-    print("Encountered a parse error:\n" ++ result.parseErrors ++ "\n", text.io);
+  local print_failure :: IOToken =
+    printT("Encountered a parse error:\n" ++ result.parseErrors ++ "\n", text.io);
 
   return if !isF.iovalue 
          then error("\n\nFile \"" ++ filename ++ "\" not found.\n")

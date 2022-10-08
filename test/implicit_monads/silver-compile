@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -eu
+silver() { "../../support/bin/silver" "$@"; }
+
+SRC=..
+GRAMMAR=implicit_monads
+
+silver -I $SRC $@ -o test.jar $GRAMMAR
+

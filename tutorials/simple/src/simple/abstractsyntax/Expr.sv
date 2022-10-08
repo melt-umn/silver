@@ -1,5 +1,7 @@
 grammar simple:abstractsyntax;
 
+imports silver:util:random;
+
 {--
  - Names (identifiers) are useful to abstract as nonterminals, because we
  - frequently want to do similar things to them: look them up in the
@@ -19,35 +21,43 @@ n::Name ::= s::String
   n.lookup = lookupValue(s, n.env);
 }
 
+instance Arbitrary Name {
+  genArb = \ depth::Integer -> do {
+    chars :: [Integer] <- randomShuffle(stringToChars("abcd"));
+    loc :: Location <- genArb(depth);
+    return name(charsToString(chars), location=loc);
+  };
+}
+
 nonterminal Expr with pp, env, errors;
 
 -- Constants
 ------------
 abstract production intLit   
-e::Expr ::= s::String
+e::Expr ::= i::Integer
 {
-  e.pp = text(s);
+  e.pp = text(toString(i));
   e.errors := [];
 }
 
 abstract production floatLit 
-e::Expr ::= s::String
+e::Expr ::= f::Float
 {
-  e.pp = text(s);
+  e.pp = text(toString(f));
   e.errors := [];
 }
 
 abstract production boolLit   
-e::Expr ::= s::String
+e::Expr ::= b::Boolean
 {
-  e.pp = text(s);
+  e.pp = if b then pp"True" else pp"False";
   e.errors := [];
 }
 
 abstract production stringLit 
 e::Expr ::= s::String
 {
-  e.pp = text(s);
+  e.pp = pp"\"${text(escapeString(s))}\"";
   e.errors := [];
 }
 
@@ -85,28 +95,28 @@ e::Expr ::= id::Name
 ------------------------
 -- Only name declaration errors are computed here, thus we simply collect
 -- the errors attributes from the children.
-abstract production add 
+abstract production addOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} + ${r.pp})";
+  e.pp = pp"(${l} + ${r})";
   e.errors := l.errors ++ r.errors;
 }
-abstract production sub 
+abstract production subOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} - ${r.pp})";
+  e.pp = pp"(${l} - ${r})";
   e.errors := l.errors ++ r.errors;
 }
-abstract production mul 
+abstract production mulOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} * ${r.pp})";
+  e.pp = pp"(${l} * ${r})";
   e.errors := l.errors ++ r.errors;
 }
-abstract production div 
+abstract production divOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} / ${r.pp})";
+  e.pp = pp"(${l} / ${r})";
   e.errors := l.errors ++ r.errors; 
 }
 
@@ -127,46 +137,46 @@ e::Expr ::= l::Expr r::Expr
    lt.  The rest (neq, lte, gt, gte) can be handled by forwarding.  
 -}
 
-abstract production eq 
+abstract production eqOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} == ${r.pp})";
+  e.pp = pp"(${l} == ${r})";
   e.errors := l.errors ++ r.errors;
 }
 
-abstract production lt 
+abstract production ltOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} < ${r.pp})";
+  e.pp = pp"(${l} < ${r})";
   e.errors := l.errors ++ r.errors;
 }
 
-abstract production neq 
+abstract production neqOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} != ${r.pp})";
-  forwards to not (eq(l,r));
+  e.pp = pp"(${l} != ${r})";
+  forwards to notOp(eqOp(l,r));
   -- e.errors is copied from the forwarded-to tree
   -- Similarly, type checking attributes defined TypeChecking.sv are
   -- automatically copied, as are other yet-to-be defined attributes.
 }
-abstract production lte 
+abstract production lteOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} <= ${r.pp})";
-  forwards to or( lt(l,r), eq(l,r) );
+  e.pp = pp"(${l} <= ${r})";
+  forwards to or( ltOp(l,r), eqOp(l,r) );
 }
-abstract production gt 
+abstract production gtOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} > ${r.pp})";
-  forwards to not(lte(l,r));
+  e.pp = pp"(${l} > ${r})";
+  forwards to notOp(lteOp(l,r));
 }
-abstract production gte 
+abstract production gteOp
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} >= ${r.pp})";
-  forwards to not(lt(l,r));
+  e.pp = pp"(${l} >= ${r})";
+  forwards to notOp(ltOp(l,r));
 }
 
 
@@ -175,13 +185,13 @@ e::Expr ::= l::Expr r::Expr
 abstract production and 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} && ${r.pp})";
+  e.pp = pp"(${l} && ${r})";
   e.errors := l.errors ++ r.errors;
 }
-abstract production not 
+abstract production notOp
 e::Expr ::= ne::Expr 
 {
-  e.pp = pp"!(${ne.pp})";
+  e.pp = pp"!(${ne})";
   e.errors := ne.errors;
 }
 
@@ -189,8 +199,8 @@ e::Expr ::= ne::Expr
 abstract production or 
 e::Expr ::= l::Expr r::Expr 
 {
-  e.pp = pp"(${l.pp} || ${r.pp})";
-  forwards to not( and(not(l), not(r)) );
+  e.pp = pp"(${l} || ${r})";
+  forwards to notOp( and(notOp(l), notOp(r)) );
 }
 
 

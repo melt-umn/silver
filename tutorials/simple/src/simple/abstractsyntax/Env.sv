@@ -1,6 +1,6 @@
 grammar simple:abstractsyntax;
 
-import silver:util:raw:treemap as tm;
+import silver:util:treemap as tm;
 
 {- This is slightly overkill for simple, however it's an ideal way to set up the
    environment for larger projects and more realistic languages. -}
@@ -66,7 +66,7 @@ synthesized attribute valueContribs :: [Pair<String Decorated TypeExpr>] occurs 
 aspect production emptyEnv_i
 top::Env ::=
 {
-  top.values = tm:empty(compareString);
+  top.values = tm:empty();
 }
 aspect production addEnv_i
 top::Env ::= dlist::[Def]  e::Decorated Env

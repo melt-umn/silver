@@ -1,7 +1,6 @@
 grammar copper_features:test_layout;
 
 imports silver:testing ;
-imports lib:extcore ;
 imports copper_features hiding A;
 imports copper_features:test_layout:quoting;
 imports copper_features:test_layout:lookahead;

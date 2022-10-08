@@ -1,5 +1,9 @@
 grammar silver:testing ;
 
+imports silver:reflect;
+imports silver:langutil;
+imports silver:langutil:pp;
+
 nonterminal Test 
   with msg, pass, ioIn, ioOut ;
 
@@ -12,8 +16,8 @@ synthesized attribute numTests :: Integer ;
 synthesized attribute numPassed :: Integer ;
 synthesized attribute numFailed :: Integer ;
 
-synthesized attribute ioOut :: IO ;
-inherited attribute ioIn :: IO ;
+synthesized attribute ioOut :: IOToken ;
+inherited attribute ioIn :: IOToken ;
 
 abstract production defTest
 t::Test ::=
@@ -108,4 +112,17 @@ Boolean ::= f::(Boolean ::=)  times::Integer
     f() && repeatTestTimes(f, times - 1);
 }
 
+-- TODO: Consider replacing this with the regular Show type class,
+-- would require some way of propagating the pp attribute.
+class ShowTestValue a {
+  showTestValue :: (String ::= a);
+}
+
+instance ShowTestValue a {
+  showTestValue = \ x::a -> show(80, reflect(x));
+}
+
+instance ShowTestValue a => ShowTestValue Decorated a with i {
+  showTestValue = \ x::Decorated a with i -> showTestValue(new(x));
+}
 

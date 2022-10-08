@@ -1,39 +1,9 @@
 grammar silver:reflect;
 
+exports silver:reflect:util;
+
 imports silver:reflect:concretesyntax;
 import silver:langutil;
-
-function reflect
-AST ::= x::a
-{
-  return error("Foreign function");
-} foreign {
-  "java" : return "(common.Reflection.reflect(%x%))";
-}
-
-function reflectTypeName
-Maybe<String> ::= x::a
-{
-  return error("Foreign function");
-} foreign {
-  "java" : return "(common.Reflection.reflectTypeName(%x%))";
-}
-
-function nativeToString
-String ::= x::a
-{
-  return error("Foreign function");
-} foreign {
-  "java" : return "(new common.StringCatter(%x%.toString()))";
-}
-
-function applyAST
-Either<String AST> ::= fn::AST args::[Maybe<AST>] namedArgs::[Pair<String Maybe<AST>>]
-{
-  return error("Foreign function");
-} foreign {
-  "java" : return "(common.Reflection.applyAST(%fn%, %args%, %namedArgs%))";
-}
 
 function serialize
 Either<String String> ::= x::a
@@ -57,4 +27,10 @@ Either<String AST> ::= fileName::String text::String
     else if !null(parseTree.errors)
     then left(messagesToString(parseTree.errors))
     else right(parseTree.ast);
+}
+
+function deserialize
+runtimeTypeable a => Either<String a> ::= fileName::String text::String
+{
+  return bind(deserializeAST(fileName, text), reify);
 }

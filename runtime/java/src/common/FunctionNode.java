@@ -1,6 +1,7 @@
 package common;
 
 import common.exceptions.SilverInternalError;
+import silver.core.*;
 
 /**
  * FunctionNode is a Node, but with a few methods "removed".
@@ -17,13 +18,11 @@ import common.exceptions.SilverInternalError;
  */
 public abstract class FunctionNode extends Node {
 
-	/**
-	 * The normal way of decorating a function node. 
-	 * 
-	 * @return A "decorated" form of this FunctionNode
-	 */
-	public final DecoratedNode decorate() {
-		return new DecoratedNode(getNumberOfChildren(), getNumberOfLocalAttrs(), this);
+	// Used only when needing origins info on lazily evaluated locals in functions :/
+	public DecoratedNode decorate(OriginContext originCtx) {
+		DecoratedNode tmp = decorate();
+		tmp.originCtx = originCtx;
+		return tmp;
 	}
 
 	@Override
@@ -85,5 +84,9 @@ public abstract class FunctionNode extends Node {
 	@Override
 	public final common.BaseTypeRep getType() {
 		throw new SilverInternalError("Function nodes do not have a type!");
+	}
+
+	public RTTIManager.Prodleton<? extends Node> getProdleton() {
+		throw new SilverInternalError("Function nodes do not have prodletons!");
 	}
 }

@@ -71,10 +71,8 @@ terminal Id  /[a-zA-Z][a-zA-Z0-9_]*/  submits to { KEYWORDS };
 
 -- Literals
 
-terminal IntegerLiteral /[0-9]+/; 
-terminal FloatLiteral   /[0-9]+\.[0-9]+/; 
+terminal IntegerLiteral /[0-9]+/  repeatProb = 0.5;
+terminal FloatLiteral   /[0-9]+\.[0-9]+/ repeatProb = 0.5;
 terminal BooleanLiteral /(True)|(False)/ lexer classes { KEYWORDS };
 
-terminal StringLiteral /"([^"\n\\]|\\"|\\\\|\\n|\\r|\\t)*"/;
-
-
+terminal StringLiteral /"([^"\n\\]|\\"|\\\\|\\n|\\r|\\t)*"/  repeatProb=0.95;

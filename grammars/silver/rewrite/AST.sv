@@ -36,7 +36,7 @@ aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   top.allResult =
-    do (bindMaybe, returnMaybe) {
+    do {
       childrenResult::ASTs <- children.allResult;
       annotationsResult::NamedASTs <- annotations.allResult;
       return nonterminalAST(prodName, childrenResult, annotationsResult);
@@ -60,8 +60,8 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
     | nothing(), nothing() -> nothing()
     end;
   top.traversalResult =
-    do (bindMaybe, returnMaybe) {
-      if prodName != top.productionName then nothing();
+    do {
+      if prodName != top.productionName then nothing() else just(unit());
       childrenResult::ASTs <- children.traversalResult;
       annotationsResult::NamedASTs <- annotations.traversalResult;
       return nonterminalAST(prodName, childrenResult, annotationsResult);
@@ -71,11 +71,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 aspect production terminalAST
 top::AST ::= terminalName::String lexeme::String location::Location
 {
-  top.allResult =
-    do (bindMaybe, returnMaybe) {
-      locationResult::Location <- rewriteWith(top.givenStrategy, location);
-      return terminalAST(terminalName, lexeme, locationResult);
-    };
+  top.allResult = map(terminalAST(terminalName, lexeme, _), rewriteWith(top.givenStrategy, location));
   -- Exactly one rewritable child
   top.someResult = top.allResult;
   top.oneResult = top.allResult;
@@ -84,12 +80,12 @@ top::AST ::= terminalName::String lexeme::String location::Location
 aspect production listAST
 top::AST ::= vals::ASTs
 {
-  local h::AST = case vals of consAST(h, _) -> h end;
-  local t::AST = case vals of consAST(_, t) -> listAST(t) end;
+  local h::AST = case vals of consAST(h, _) -> h | _ -> error("not consAST") end;
+  local t::AST = case vals of consAST(_, t) -> listAST(t) | _ -> error("not consAST") end;
   top.allResult =
     case vals of
     | consAST(_, _) ->
-      do (bindMaybe, returnMaybe) {
+      do {
         hResult::AST <- decorate top.givenStrategy with { term = h; }.result;
         tResult::AST <- decorate top.givenStrategy with { term = t; }.result;
         return
@@ -106,9 +102,9 @@ top::AST ::= vals::ASTs
       case decorate top.givenStrategy with { term = h; }.result,
            decorate top.givenStrategy with { term = t; }.result of
       | just(hResult), just(listAST(tResult)) -> just(listAST(consAST(hResult, tResult)))
-      | just(hResult), nothing() -> just(listAST(consAST(hResult, case vals of consAST(_, t) -> t end)))
+      | just(hResult), nothing() -> just(listAST(consAST(hResult, case vals of consAST(_, t) -> t | _ -> error("not consAST") end)))
       | nothing(), just(listAST(tResult)) -> just(listAST(consAST(h, tResult)))
-      | nothing(), _ -> nothing()
+      | _, _ -> nothing()
       end
     | nilAST() -> nothing()
     end;
@@ -117,7 +113,7 @@ top::AST ::= vals::ASTs
     | consAST(_, _) ->
       case decorate top.givenStrategy with { term = h; }.result,
            decorate top.givenStrategy with { term = t; }.result of
-      | just(hResult), _ -> just(listAST(consAST(hResult, case vals of consAST(_, t) -> t end)))
+      | just(hResult), _ -> just(listAST(consAST(hResult, case vals of consAST(_, t) -> t | _ -> error("not consAST") end)))
       | nothing(), just(listAST(tResult)) -> just(listAST(consAST(h, tResult)))
       | nothing(), _ -> nothing()
       end
@@ -127,7 +123,7 @@ top::AST ::= vals::ASTs
   top.consListCongruenceResult =
     case vals of
     | consAST(_, _) ->
-      do (bindMaybe, returnMaybe) {
+      do {
         hResult::AST <- decorate top.headStrategy with { term = h; }.result;
         tResult::AST <- decorate top.tailStrategy with { term = t; }.result;
         return
@@ -154,7 +150,7 @@ aspect production consAST
 top::ASTs ::= h::AST t::ASTs
 {
   top.allResult =
-    do (bindMaybe, returnMaybe) {
+    do {
       hResult::AST <- decorate top.givenStrategy with { term = h; }.result;
       tResult::ASTs <- t.allResult;
       return consAST(hResult, tResult);
@@ -173,7 +169,7 @@ top::ASTs ::= h::AST t::ASTs
     | nothing(), nothing() -> nothing()
     end;
   top.traversalResult =
-    do (bindMaybe, returnMaybe) {
+    do {
       hResult::AST <- decorate head(top.childStrategies) with { term = h; }.result;
       tResult::ASTs <- t.traversalResult;
       return consAST(hResult, tResult);
@@ -202,7 +198,7 @@ top::NamedASTs ::= h::NamedAST t::NamedASTs
 {
   top.bindings = h.binding :: t.bindings;
   top.allResult =
-    do (bindMaybe, returnMaybe) {
+    do {
       hResult::NamedAST <- h.allResult;
       tResult::NamedASTs <- t.allResult;
       return consNamedAST(hResult, tResult);
@@ -221,7 +217,7 @@ top::NamedASTs ::= h::NamedAST t::NamedASTs
     | nothing(), nothing() -> nothing()
     end;
   top.traversalResult =
-    do (bindMaybe, returnMaybe) {
+    do {
       hResult::NamedAST <- h.traversalResult;
       tResult::NamedASTs <- t.traversalResult;
       return consNamedAST(hResult, tResult);
@@ -250,7 +246,7 @@ top::NamedAST ::= n::String v::AST
 {
   top.binding = pair(n, v);
   top.allResult =
-    do (bindMaybe, returnMaybe) {
+    do {
       vResult::AST <- decorate top.givenStrategy with { term = v; }.result;
       return namedAST(n, vResult);
     };
@@ -261,11 +257,11 @@ top::NamedAST ::= n::String v::AST
   top.traversalResult =
     -- Look up and apply all strategies for the annotation
     -- (it's easier to just handle duplicates than to disallow them.)
-    mapMaybe(
+    map(
       namedAST(n, _),
       foldl(
         \ ma::Maybe<AST> s::Strategy ->
-          bindMaybe(ma, \ a::AST -> decorate s with { term = a; }.result),
+          bind(ma, \ a::AST -> decorate s with { term = a; }.result),
         just(v),
-        lookupAllBy(stringEq, n, top.annotationStrategies)));
+        lookupAll(n, top.annotationStrategies)));
 }

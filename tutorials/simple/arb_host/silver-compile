@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -eu
+silver() { "../../../support/bin/silver" "$@"; }
+
+SRC=../src
+GRAMMAR=simple:arb
+
+silver -I $SRC $@ $GRAMMAR
+

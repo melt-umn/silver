@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -eu
 
@@ -17,7 +17,7 @@ if [ ! -d jars ]; then
 fi
 
 # I like to keep a backup series of our jars...
-cp $JARS_STORE/silver.composed.Default.jar $JARS_BACKUP/silver.composed.Default.jar.${DT}
+cp $JARS_STORE/silver.compiler.composed.Default.jar $JARS_BACKUP/silver.compiler.composed.Default.jar.${DT}
 
 # Do the copy with rsync, so we only copy if the file changed...
 # -c  Use checksums and avoid copying if it's the same.

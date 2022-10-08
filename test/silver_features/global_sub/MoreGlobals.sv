@@ -1,7 +1,6 @@
 
 import silver_features;
 import silver:testing;
-import lib:extcore;
 
 global globalint1 :: Integer = 1 + 2 + 3;
 

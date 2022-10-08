@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -eu
+
+if [ $0 != "./make-docs" ]; then
+  echo "Run as ./make-docs"
+  exit 1
+fi
+
+: ${DOCGRAMMAR="silver:compiler:extension:doc:extra"}
+
+rm -rf ./generated/doc
+
+./support/bin/silver --dont-translate --doc --clean --warn-error $DOCGRAMMAR
+

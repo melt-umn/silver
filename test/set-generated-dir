@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+escaped=${1//\//\\\/}
+
+find $2 -name '*.test' -exec sed -i'' "s/\(run: [^ ]*silver[^ ]*\) /\1 -G $escaped /g" {} \;

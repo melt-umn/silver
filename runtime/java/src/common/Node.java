@@ -10,8 +10,7 @@ package common;
  * @author tedinski
  * @see DecoratedNode
  */
-public abstract class Node implements Typed {
-	
+public abstract class Node implements Decorable, Typed {
 	// Common manipulators of Node objects.
 	
 	/**
@@ -22,6 +21,7 @@ public abstract class Node implements Typed {
 	 * @param inhs A map from attribute names to Lazys that define them.  These Lazys will be supplied with 'parent' as their context for evaluation.
 	 * @return A "decorated" form of this Node
 	 */
+	@Override
 	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
 		return new DecoratedNode(getNumberOfChildren(),
 				                 getNumberOfInhAttrs(),
@@ -207,8 +207,6 @@ public abstract class Node implements Typed {
 	 * @return A Lazy to evaluate on a decorated form of this Node, to get the value of the attribute
 	 */
 	public abstract Lazy getSynthesized(final int index);
-	
-	// Override with a more specific return type
-	@Override
-	public abstract BaseTypeRep getType();
+
+	public abstract RTTIManager.Prodleton<? extends Node> getProdleton();
 }

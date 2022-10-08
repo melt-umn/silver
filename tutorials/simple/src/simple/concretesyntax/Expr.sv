@@ -31,7 +31,7 @@ concrete productions e::Expr
  | l::Expr '||' r::Expr  { e.unparse = "(" ++  l.unparse ++ " || " ++ r.unparse ++ ")";
                            e.ast = ast:or(l.ast, r.ast); }
  | '!' ne::Expr          { e.unparse = "( !" ++  ne.unparse ++ ")";
-                           e.ast = ast:not(ne.ast); }
+                           e.ast = ast:notOp(ne.ast); }
 
 -- Relational Operations
 ------------------------
@@ -40,17 +40,17 @@ concrete productions e::Expr
    its lexeme and thus make all assignments to unparse be the same.  -}
 
  | l::Expr op::'==' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                               e.ast = ast:eq(l.ast, r.ast); }
+                               e.ast = ast:eqOp(l.ast, r.ast); }
  | l::Expr op::'!=' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                               e.ast = ast:neq(l.ast, r.ast); }
+                               e.ast = ast:neqOp(l.ast, r.ast); }
  | l::Expr op::'<'  r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                               e.ast = ast:lt(l.ast, r.ast); }
+                               e.ast = ast:ltOp(l.ast, r.ast); }
  | l::Expr op::'<=' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                               e.ast = ast:lte(l.ast, r.ast); }
+                               e.ast = ast:lteOp(l.ast, r.ast); }
  | l::Expr op::'>'  r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                               e.ast = ast:gt(l.ast, r.ast); }
+                               e.ast = ast:gtOp(l.ast, r.ast); }
  | l::Expr op::'>=' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                               e.ast = ast:gte(l.ast, r.ast); }
+                               e.ast = ast:gteOp(l.ast, r.ast); }
 
 -- Arithmetic Operations
 ------------------------
@@ -71,13 +71,13 @@ concrete productions e::Expr
 
 
  | l::Expr op::'+' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                              e.ast = ast:add(l.ast, r.ast); }
+                              e.ast = ast:addOp(l.ast, r.ast); }
  | l::Expr op::'-' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                              e.ast = ast:sub(l.ast, r.ast); }
+                              e.ast = ast:subOp(l.ast, r.ast); }
  | l::Expr op::'*' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                              e.ast = ast:mul(l.ast, r.ast); }
+                              e.ast = ast:mulOp(l.ast, r.ast); }
  | l::Expr op::'/' r::Expr  { e.unparse = "(" ++  l.unparse ++ " " ++ op.lexeme ++ " " ++ r.unparse ++ ")";
-                              e.ast = ast:div(l.ast, r.ast); }
+                              e.ast = ast:divOp(l.ast, r.ast); }
 
 
 -- Variable reference
@@ -88,11 +88,11 @@ concrete productions e::Expr
 -- Literals
 
  | l::IntegerLiteral  { e.unparse = l.lexeme; 
-                        e.ast = ast:intLit(l.lexeme); }
+                        e.ast = ast:intLit(toInteger(l.lexeme)); }
  | l::FloatLiteral    { e.unparse = l.lexeme;
-                        e.ast = ast:floatLit(l.lexeme); }
+                        e.ast = ast:floatLit(toFloat(l.lexeme)); }
  | l::BooleanLiteral  { e.unparse = l.lexeme;
-                        e.ast = ast:boolLit(l.lexeme); }
+                        e.ast = ast:boolLit(l.lexeme == "True"); }
  | l::StringLiteral   { e.unparse = l.lexeme;
-                        e.ast = ast:stringLit(l.lexeme); }
+                        e.ast = ast:stringLit(unescapeString(substring(1, length(l.lexeme) - 1, l.lexeme))); }
 

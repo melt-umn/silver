@@ -12,4 +12,16 @@ package common;
 public interface Lazy {
 	// TODO: probably make this Lazy<T>...
 	public Object eval(DecoratedNode context);
+
+    public static class Trap implements Lazy {
+        String m;
+
+        public Trap(String m) {
+            this.m = m;
+        }
+
+        public Object eval(DecoratedNode context) {
+            return Util.error(m);
+        }
+    }
 }

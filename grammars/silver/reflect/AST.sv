@@ -1,9 +1,5 @@
 grammar silver:reflect;
 
-exports core:reflect;
-
-import core:monad;
-
 -- left(error message) or right(result)
 synthesized attribute serialize<a>::Either<String a>;
 
@@ -13,7 +9,7 @@ aspect production nonterminalAST
 top::AST ::= prodName::String children::ASTs annotations::NamedASTs
 {
   top.serialize =
-    do (bindEither, returnEither) {
+    do {
       childrenSerialize::[String] <- children.serialize;
       annotationSerialize::[String] <- annotations.serialize;
       return s"${prodName}(${implode(", ", childrenSerialize ++ annotationSerialize)})";
@@ -24,7 +20,7 @@ aspect production terminalAST
 top::AST ::= terminalName::String lexeme::String location::Location
 {
   top.serialize =
-    do (bindEither, returnEither) {
+    do {
       locationSerialize::String <- serialize(new(location));
       return s"terminal(${terminalName}, \"${escapeString(lexeme)}\", ${locationSerialize})";
     }; 
@@ -34,7 +30,7 @@ aspect production listAST
 top::AST ::= vals::ASTs
 {
   top.serialize =
-    do (bindEither, returnEither) {
+    do {
       serializeVals::[String] <- vals.serialize;
       return s"[${implode(", ", serializeVals)}]";
     };
@@ -82,7 +78,7 @@ top::ASTs ::= h::AST t::ASTs
 {
   top.astsLength = 1 + t.astsLength;
   top.serialize =
-    do (bindEither, returnEither) {
+    do {
       hSerialize::String <- h.serialize;
       tSerialize::[String] <- t.serialize;
       return hSerialize :: tSerialize;
@@ -103,7 +99,7 @@ top::NamedASTs ::= h::NamedAST t::NamedASTs
 {
   top.astsLength = 1 + t.astsLength;
   top.serialize =
-    do (bindEither, returnEither) {
+    do {
       hSerialize::String <- h.serialize;
       tSerialize::[String] <- t.serialize;
       return hSerialize :: tSerialize;
@@ -123,7 +119,7 @@ aspect production namedAST
 top::NamedAST ::= n::String v::AST
 {
   top.serialize =
-    do (bindEither, returnEither) {
+    do {
       vSerialize::String <- v.serialize;
       return s"${n}=${vSerialize}";
     };

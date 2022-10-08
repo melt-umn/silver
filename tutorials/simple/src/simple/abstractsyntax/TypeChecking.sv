@@ -23,25 +23,25 @@ attribute type occurs on Expr;
    attribute directly.  
 -}
 aspect production intLit
-e::Expr ::= s::String
+e::Expr ::= _
 {
   e.type = integerType();
 }
 
 aspect production floatLit
-e::Expr ::= s::String
+e::Expr ::= _
 {
   e.type = floatType();
 }
 
 aspect production boolLit
-e::Expr ::= s::String
+e::Expr ::= _
 {
   e.type = booleanType();
 }
 
 aspect production stringLit
-e::Expr ::= s::String
+e::Expr ::= _
 {
   e.type = stringType();
 }
@@ -78,7 +78,7 @@ e::Expr ::= id::Name
    a generic numeric binary operation.  But we have not done that on
    this simple language.
 -}
-aspect production add
+aspect production addOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.type = resolveNumericTypes (l.type, r.type);
@@ -89,7 +89,7 @@ e::Expr ::= l::Expr r::Expr
                else [err(locUnknown(), "Expression \"" ++ show(100,r.pp) ++ 
                       "\" must be of type Integer or Float.\n")]);
 }
-aspect production sub
+aspect production subOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.type = resolveNumericTypes (l.type, r.type);
@@ -100,7 +100,7 @@ e::Expr ::= l::Expr r::Expr
                else [err(locUnknown(), "Expression \"" ++ show(100,r.pp) ++ 
                       "\" must be of type Integer or Float.\n")]);
 }
-aspect production mul
+aspect production mulOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.type = resolveNumericTypes (l.type, r.type);
@@ -111,7 +111,7 @@ e::Expr ::= l::Expr r::Expr
                else [err(locUnknown(), "Expression \"" ++ show(100,r.pp) ++ 
                       "\" must be of type Integer or Float.\n")]);
 }
-aspect production div
+aspect production divOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.type = resolveNumericTypes (l.type, r.type);
@@ -150,9 +150,9 @@ Boolean ::= t::Type
 -- Relational and Logical Operations
 ------------------------------------ 
 {- Because of forwarding in Expr.sv, we do not need to write aspect
-   productions for "or", "neq", "lte", "gt", or "gte", only these below.
+   productions for "or", "neqOp", "lteOp", "gtOp", or "gteOp", only these below.
 -}
-aspect production eq
+aspect production eqOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.type = booleanType();
@@ -163,7 +163,7 @@ e::Expr ::= l::Expr r::Expr
                else [err(locUnknown(), "Expression \"" ++ show(100,r.pp) ++ 
                       "\" must be of type Integer or Float.\n")]);
 }
-aspect production lt
+aspect production ltOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.type = booleanType();
@@ -187,7 +187,7 @@ e::Expr ::= l::Expr r::Expr
                       "\" must be of type Boolean.\n")]);
 }
 
-aspect production not
+aspect production notOp
 e::Expr ::= ne::Expr 
 {
   e.type = booleanType();

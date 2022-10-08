@@ -35,14 +35,14 @@ concrete production add_c
 sum::Expr_c ::= e::Expr_c '+' t::Term_c
 {
  sum.pp = e.pp ++ " + " ++ t.pp ;
- sum.ast_Expr = add(e.ast_Expr, t.ast_Expr );
+ sum.ast_Expr = addOp(e.ast_Expr, t.ast_Expr );
 }
 
 concrete production sub_c
 dff::Expr_c ::= e::Expr_c '-' t::Term_c
 {
  dff.pp = e.pp ++ " - " ++ t.pp ;
- dff.ast_Expr = sub(e.ast_Expr, t.ast_Expr);
+ dff.ast_Expr = subOp(e.ast_Expr, t.ast_Expr);
 }
 
 concrete production exprTerm_c
@@ -56,14 +56,14 @@ concrete production mul_c
 prd::Term_c ::= t::Term_c '*' f::Factor_c
 {
  prd.pp = t.pp ++ " * " ++ f.pp ;
- prd.ast_Expr = mul(t.ast_Expr, f.ast_Expr);
+ prd.ast_Expr = mulOp(t.ast_Expr, f.ast_Expr);
 }
 
 concrete production div_c
 d::Term_c ::= t::Term_c '/' f::Factor_c
 {
  d.pp = t.pp ++ " / " ++ f.pp ;
- d.ast_Expr = div(t.ast_Expr, f.ast_Expr);
+ d.ast_Expr = divOp(t.ast_Expr, f.ast_Expr);
 }
 
 concrete production termFactor_c

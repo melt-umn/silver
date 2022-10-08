@@ -1,7 +1,6 @@
 grammar patt;
 
 imports silver:testing ;
-imports lib:extcore ;
 
 
 nonterminal T;
@@ -61,7 +60,52 @@ equalityTest ( tNameAll(d()), "d", String, pat_tests ) ;
 
 
 
---- Part 2: GADTS
+--- Part 2: Match Order
+nonterminal MatchOrder;
+
+abstract production mo1
+top::MatchOrder ::=
+{ }
+
+abstract production mo2
+top::MatchOrder ::=
+{ forwards to mo1(); }
+
+abstract production mo3
+top::MatchOrder ::= x::MatchOrder y::MatchOrder
+{ }
+
+function matchOrder1
+String ::= m::MatchOrder
+{
+  return case m of
+         | mo3(mo1(), mo2()) -> "mo3 of mo1, mo2\n"
+         | mo3(mo2(), mo1()) -> "mo3 of mo2, mo1\n"
+         | _ -> "other\n"
+         end;
+}
+
+function matchOrder2
+String ::= m::MatchOrder
+{
+  return case m of
+         | mo3(mo1(), mo2()) -> "mo3 of mo1, mo2\n"
+         | mo3(mo2(), mo3(_, _)) -> "mo3 of mo2, mo3\n"
+         | _ -> "other\n"
+         end;
+}
+
+equalityTest( matchOrder1( mo3(mo2(), mo2()) ), "mo3 of mo1, mo2\n", String, pat_tests ); --matches through forward on first patt
+equalityTest( matchOrder1( mo3(mo2(), mo1()) ), "mo3 of mo2, mo1\n", String, pat_tests ); --misses first patt because mo1 doesn't forward to mo2
+equalityTest( matchOrder1( mo3(mo1(), mo1()) ), "other\n", String, pat_tests ); --misses first two patts because mo1 doesn't forward to mo2
+
+equalityTest( matchOrder2( mo3(mo2(), mo2()) ), "mo3 of mo1, mo2\n", String, pat_tests ); --matches through forward on first patt
+equalityTest( matchOrder2( mo3(mo2(), mo3(mo1(), mo1())) ), "mo3 of mo2, mo3\n", String, pat_tests );
+equalityTest( matchOrder2( mo3(mo1(), mo3(mo1(), mo1())) ), "other\n", String, pat_tests ); --misses second patt because mo1 doesn't forward to mo2
+
+
+
+--- Part 3: GADTS
 
 nonterminal Arrow<a b>;
 
@@ -70,14 +114,14 @@ abstract production unitT   t::Type<Unit> ::= {}
 abstract production arrow  t::Type<Arrow<a b>> ::= Type<a> Type<b> {}
 
 nonterminal Eq<a b>;
-abstract production eq   e::Eq<a a> ::= {}
+abstract production refl   e::Eq<a a> ::= {}
 
 function typeEquals
 Maybe<Eq<a b>> ::= ta::Type<a>  tb::Type<b>
 {
   return match ta return Maybe<Eq<a b>> with
            unitT() -> match tb return Maybe<Eq<a b>> with
-                       unitT() -> just(eq())
+                       unitT() -> just(refl())
                        else -> nothing()
                      end
          | arrow(aa, ab) ->
@@ -85,11 +129,11 @@ Maybe<Eq<a b>> ::= ta::Type<a>  tb::Type<b>
                        arrow(ba, bb) -> match decorate typeEquals(aa, ba) with {} return Maybe<Eq<a b>> with
                                           just(lrn1) -> 
                                               match decorate lrn1 with {} return Maybe<Eq<a b>> with
-                                                eq() ->
+                                                refl() ->
                                                         match decorate typeEquals(ab, bb) with {} return Maybe<Eq<a b>> with
                                                           just(lrn2) ->
                                                              match decorate lrn2 with {} return Maybe<Eq<a b>> with
-                                                               eq() -> just(eq())
+                                                               refl() -> just(refl())
                                                                else -> nothing()
                                                              end
                                                           else -> nothing()
@@ -132,7 +176,7 @@ wrongCode "pattern expression should have type" {
   return match ta return Maybe<Eq<a b>> with
           arrow(aa, ab) ->
             match tb return Maybe<Eq<a b>> with
-              arrow(ba, bb) -> just(eq())
+              arrow(ba, bb) -> just(refl())
               else -> error("")
             end
           else -> error("")

@@ -1,8 +1,6 @@
 
 import silver:testing;
-import lib:extcore;
 import silver:langutil:pp;
-import silver:util:deque;
 
 -- empty
 equalityTest ( s"""""", "", String, silver_tests ) ;

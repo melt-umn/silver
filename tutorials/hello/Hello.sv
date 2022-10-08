@@ -1,9 +1,10 @@
 grammar hello;
 
 function main 
-IOVal<Integer> ::= largs::[String] ioin::IO
+IO<Integer> ::= largs::[String]
 {
-  return ioval(print(" World!\n",
-                 print("Hello", ioin)),
-               0);
+  return do {
+    print("Hello, world!\n");
+    return 0;
+  };
 }

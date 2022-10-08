@@ -2,6 +2,7 @@ package common;
 
 import java.util.*;
 
+
 /**
  * Here we are concerning ONLY with partially applying named arguments.
  * 
@@ -49,7 +50,7 @@ public class PartialNameNodeFactory<T> extends NodeFactory<T> {
 	}
 	
 	@Override
-	public T invoke(final Object[] restargs, final Object[] namedArgs) {
+	public T invoke(final common.OriginContext originCtx, final Object[] restargs, final Object[] namedArgs) {
 		// STEP 1 : cut 'args' down to the true args we'll be supplying to 'ref'
 		final int numConverted = iConvertedToOrdered.length;
 		final int newArgsLength = restargs.length - numConverted;
@@ -83,18 +84,27 @@ public class PartialNameNodeFactory<T> extends NodeFactory<T> {
 			}
 		}
 		
-		return ref.invoke(finalArgs, fullNamedArgs);
+		return ref.invoke(originCtx, finalArgs, fullNamedArgs);
 	}
 	
 	@Override
-	public final FunctionTypeRep getType() {
-		FunctionTypeRep baseType = ref.getType();
+	public final TypeRep getType() {
+		// Unpack the function type
+		List<TypeRep> typeArgs = new LinkedList<>();
+		TypeRep a = ref.getType();
+		for (; a instanceof AppTypeRep; a = ((AppTypeRep)a).cons) {
+			typeArgs.add(0, ((AppTypeRep)a).arg);
+		}
+		FunctionTypeRep fnType = (FunctionTypeRep)a;
+		List<TypeRep> params = typeArgs.subList(0, fnType.params);
+		List<TypeRep> namedParamTypes = typeArgs.subList(fnType.params, fnType.params + fnType.namedParams.length);
+		TypeRep resultType = typeArgs.get(fnType.params + fnType.namedParams.length);
 		
-		// Construct new parameter array by copying params and appending named parameters converted to ordered params
-		final TypeRep[] newParams = new TypeRep[baseType.params.length + iConvertedToOrdered.length];
-		System.arraycopy(baseType.params, 0, newParams, 0, baseType.params.length);
+		// Take existing params and append named parameters converted to ordered params
+		List<TypeRep> newArgs = new LinkedList<>();
+		newArgs.addAll(params);
 		for (int i = 0; i < iConvertedToOrdered.length; i++) {
-			newParams[baseType.params.length + i] = baseType.namedParamTypes[iConvertedToOrdered[i]];
+			newArgs.add(namedParamTypes.get(iConvertedToOrdered[i]));
 		}
 
 		// Build a set of converted parameter indices
@@ -103,22 +113,31 @@ public class PartialNameNodeFactory<T> extends NodeFactory<T> {
 	    	iConvertedToOrderedSet.add(i);
 	    }
 	    // Construct new named parameter arrays by copying items not supplied or converted
-		final String[] newNamedParamNames = new String[baseType.namedParamNames.length - (iConvertedToOrdered.length + iSuppliedHere.length)];
-		final TypeRep[] newNamedParamTypes = new TypeRep[newNamedParamNames.length];
+		final String[] newNamedParams = new String[fnType.namedParams.length - (iConvertedToOrdered.length + iSuppliedHere.length)];
+		final List<TypeRep> newNamedParamTypes = new ArrayList<>(newNamedParams.length);
 		int i = 0, j = 0, k = 0;
-		while (k < newNamedParamNames.length) {
+		while (k < newNamedParams.length) {
 			if (i < iSuppliedHere.length && i + j + k == iSuppliedHere[i]) {
 				i++;
 			} else if (iConvertedToOrderedSet.contains(j)) {
 				j++;
 			} else {
-				newNamedParamNames[k] = baseType.namedParamNames[i + j + k];
-				newNamedParamTypes[k] = baseType.namedParamTypes[i + j + k];
+				newNamedParams[k] = fnType.namedParams[i + j + k];
+				newNamedParamTypes.set(k, namedParamTypes.get(i + j + k));
 				k++;
 			}
 		}
 		
-		return new FunctionTypeRep(baseType.result, newParams, newNamedParamNames, newNamedParamTypes);
+		// Add the remaining named params and result to the type arg list
+		newArgs.addAll(newNamedParamTypes);
+		newArgs.add(resultType);
+		
+		// Re-pack the function type
+		TypeRep result = new FunctionTypeRep(fnType.params + iConvertedToOrdered.length, newNamedParams);
+		for (TypeRep arg : newArgs) {
+			result = new AppTypeRep(result, arg);
+		}
+		return result;
 	}
 	
 	@Override

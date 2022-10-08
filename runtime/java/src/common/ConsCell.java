@@ -1,6 +1,7 @@
 package common;
 
 import java.util.List;
+import java.util.LinkedList;
 
 import common.exceptions.*;
 
@@ -48,6 +49,24 @@ public class ConsCell implements Typed {
 		}
 		return cons;
 	}
+
+	/**
+	 * Creates a Java List from a cons list.
+	 *
+	 * @param l The cons list.
+	 * @return An equivalent Java List.
+	 */
+	public static <T> List<T> toList(ConsCell cons) {
+        List<T> lst = new LinkedList<T>();
+		while(! cons.nil()) {
+            @SuppressWarnings("unchecked")
+			T val = (T) cons.head();
+
+            cons = cons.tail();
+            lst.add(val);
+		}
+		return lst;
+	}
 	
 	/**
 	 * Obtain the head of the cons cell, possibly evaluating that thunk to get it.
@@ -91,20 +110,44 @@ public class ConsCell implements Typed {
 	 * @return The length of the list.
 	 */
 	public int length() {
-		return 1 + tail().length();
+		// return 1 + tail().length(); // Blows up the stack on big lists
+
+		ConsCell x = this;
+		int count = 0;
+
+		while (!(x instanceof NilConsCell)) {
+			x = x.tail();
+			count++;
+		}
+
+		return count;
 	}
 	
 	@Override
-	public ListTypeRep getType() {
+	public AppTypeRep getType() {
 		try {
 			// The type of a list is the type of its tail, but the type of its tail may be [a].
 			// Unify the parameter with the type of the head to constrain this type variable.
-			ListTypeRep tailType = tail().getType();
-			if (!TypeRep.unify(tailType.param, Reflection.getType(head()))) {
-				throw new SilverInternalError("Unification failed.");
-			} else {
-				return tailType;
+
+			// AppTypeRep tailType = tail().getType(); // Blows up the stack on big lists
+			// if (!TypeRep.unify(tailType.arg, Reflection.getType(head()))) {
+			// 	throw new SilverInternalError("Unification failed.");
+			// } else {
+			// 	return tailType;
+			// }
+
+			TypeRep tvar = new VarTypeRep();
+			ConsCell x = this;
+
+			while (!(x instanceof NilConsCell)) {
+				if (!TypeRep.unify(tvar, Reflection.getType(x.head()))) {
+					throw new SilverInternalError("Failed to construct list type - got a non-homogenous list!");
+				}
+				x = x.tail();
 			}
+
+			return new AppTypeRep(new BaseTypeRep("[]"), tvar);
+
 		} catch (SilverException e) {
 			throw new TraceException("While constructing type of list", e);
 		}
@@ -131,9 +174,10 @@ public class ConsCell implements Typed {
 		public int length() {
 			return 0;
 		}
+
 		@Override
-		public ListTypeRep getType() {
-			return new ListTypeRep(new VarTypeRep());
+		public AppTypeRep getType() {
+			return new AppTypeRep(new BaseTypeRep("[]"), new VarTypeRep());
 		}
 	}
 	

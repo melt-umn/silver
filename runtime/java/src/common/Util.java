@@ -1,27 +1,24 @@
 package common;
 
 import java.io.*;
-import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.net.URI;
 
 import common.exceptions.*;
 import common.javainterop.ConsCellCollection;
-
-import core.NLocation;
-import core.NParseError;
-import core.NParseResult;
-import core.NTerminalDescriptor;
-import core.Ploc;
-import core.PparseFailed;
-import core.PsyntaxError;
-import core.PterminalDescriptor;
-import core.PunknownParseError;
+import silver.core.NLocation;
+import silver.core.NParseError;
+import silver.core.NParseResult;
+import silver.core.NTerminalDescriptor;
+import silver.core.Ploc;
+import silver.core.PparseFailed;
+import silver.core.PsyntaxError;
+import silver.core.PterminalDescriptor;
+import silver.core.PunknownParseError;
 import edu.umn.cs.melt.copper.runtime.engines.CopperParser;
 import edu.umn.cs.melt.copper.runtime.logging.CopperParserException;
 import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
-
 
 /**
  * Many places in Silver's translation are bits of code that need factoring out, somehow.
@@ -32,18 +29,69 @@ import edu.umn.cs.melt.copper.runtime.logging.CopperSyntaxError;
  * @author tedinski, bodin, krame505
  */
 public final class Util {
+	private static String forceInit;
+	private static ArrayList<Integer> freeThisToPrintErrors;
+
+	public static void init() {
+		// forceInit = "foo" + "bar" + "baz";
+		// freeThisToPrintErrors = new ArrayList<Integer>();
+		// for (int i=0; i<1_000_000; i++) {
+		// 	freeThisToPrintErrors.add(i);
+		// }
+	}
+
+	public static void stackProbe(int count) {
+		long a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z;
+		long aa, bb, cc, dd, ee, ff, gg, hh, ii, jj, kk, ll, mm, nn, oo, pp, qq, rr, ss, tt, uu, vv, ww, xx, yy, zz;
+		if (count!=0) stackProbe(count-1);
+	}
+
+	public static void stackProbe() {
+		// stackProbe(1_000);
+	}
+
+
 	/**
-	 * Ensures that a (potential) closure is evaluated.
+	 * There are some places in the translation where we need to perform unchecked casts,
+	 * known to be safe via Silver's static type system.
+	 * Java doesn't have a nice way of suppressing warnings on individual subexpressions,
+	 * so this function exists as a proxy.
+	 *
+	 * @param o An object
+	 * @return o
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> T uncheckedCast(final Object o) {
+		return (T) o;
+	}
+
+	/**
+	 * Ensures that a (potential) thunk is evaluated.
 	 *
 	 * Use by writing  (v = Util.demand(v)), never just invoke it!
 	 *
-	 * @param c  Either a value, or a Closure
-	 * @return The value, either directly, or evaluating the Closure
+	 * @param c  Either a value, or a Thunk
+	 * @return The value, either directly, or evaluating the Thunk
 	 */
-	public static Object demand(Object c) {
+	@SuppressWarnings("unchecked")
+	public static <T> T demand(final Object c) {
 		if(c instanceof Thunk)
-			return ((Thunk<?>)c).eval();
-		return c;
+			return ((Thunk<T>)c).eval();
+		return (T)c;
+	}
+
+	/**
+	 * Demand a (potential) thunk in an array of thunks, caching the resulting value.
+	 * This is factored out for the translation of demanding lambda arguments, to avoid unchecked casts.
+	 *
+	 * @param cs  An array that are either values or Thunks
+	 * @param i An index in the array
+	 * @return The value, either directly, or evaluating the Thunk at the index
+	 */
+	public static <T> T demandIndex(final Object[] cs, final int i) {
+		T result = demand(cs[i]);
+		cs[i] = result;
+		return result;
 	}
 
 	/**
@@ -70,11 +118,11 @@ public final class Util {
 		throw new SilverError(o.toString());
 	}
 
-	public static core.NMaybe safetoInt(String s) {
+	public static silver.core.NMaybe safetoInt(String s) {
 		try {
-			return new core.Pjust( Integer.valueOf(s) );
+			return new silver.core.Pjust(Integer.valueOf(s) );
 		} catch(NumberFormatException e) {
-			return new core.Pnothing();
+			return new silver.core.Pnothing();
 		}
 	}
 
@@ -140,6 +188,8 @@ public final class Util {
 	}
 
 	public static void printStackCauses(Throwable e) {
+		freeThisToPrintErrors = null;
+
 		System.err.println("\nAn error occured.  Silver stack trace follows. (To see full traces including java elements, SILVERTRACE=1)\n");
 
 		if(! "1".equals(System.getenv("SILVERTRACE"))) {
@@ -301,7 +351,7 @@ public final class Util {
 		} else if(o instanceof ConsCell) {
 			hackyhackyUnparseList((ConsCell)o, sb);
 		} else {
-			sb.append("<OBJ>");
+			sb.append("<OBJ " + o.toString() + ">");
 		}
 	}
 	private static void hackyhackyUnparseNode(Node n, StringBuilder sb) {
@@ -336,25 +386,23 @@ public final class Util {
 	 * @param file The filename to report to the parser (filling in location information)
 	 * @return A silver ParseResult<ROOT> node.
 	 */
-	public static <ROOT> NParseResult callCopperParser(CopperParser<ROOT, CopperParserException> parser, Object string, Object file) {
+	public static <ROOT> NParseResult callCopperParser(SilverCopperParser<ROOT> parser, Object string, Object file) {
 		String javaString = ((StringCatter)demand(string)).toString();
 		String javaFile = ((StringCatter)demand(file)).toString();
 		try {
 			ROOT tree = parser.parse(new StringReader(javaString), javaFile);
 			Object terminals = getTerminals(parser);
-			return new core.PparseSucceeded(tree, terminals);
+			return new silver.core.PparseSucceeded(tree, terminals);
 		} catch(CopperSyntaxError e) {
 			// To create a space, we increment the ending columns and indexes by 1.
-			NLocation loc = new Ploc(
-				new StringCatter(e.getVirtualFileName()),
+			NLocation loc = new Ploc(new StringCatter(e.getVirtualFileName()),
 				e.getVirtualLine(),
 				e.getVirtualColumn(),
 				e.getVirtualLine(),
 				e.getVirtualColumn() + 1,
 				(int)(e.getRealCharIndex()),
 				(int)(e.getRealCharIndex()) + 1);
-			NParseError err = new PsyntaxError(
-					new common.StringCatter(e.getMessage()),
+			NParseError err = new PsyntaxError(new common.StringCatter(e.getMessage()),
 					loc,
 					convertStrings(e.getExpectedTerminalsDisplay().iterator()),
 					convertStrings(e.getMatchedTerminalsDisplay().iterator()));
@@ -372,29 +420,22 @@ public final class Util {
 	/**
 	 * Returns the terminals from a parser.
 	 */
-	private static <ROOT> Object getTerminals(CopperParser<ROOT, CopperParserException> parser) {
-		Class<? extends CopperParser> parserClass = parser.getClass();
-		try {
-			Method getTokens = parserClass.getMethod("getTokens");
-			List<Terminal> tokens = (List<Terminal>) getTokens.invoke(parser);
-			return new Thunk<ConsCell>(() -> {
-				List<NTerminalDescriptor> tds = tokens
-					.stream()
-					.map(Util::terminalToTerminalDescriptor)
-					.collect(Collectors.toList());
-				return ConsCellCollection.fromList(tds);
-			});
-		} catch(Throwable t) {
-			throw new TraceException("Failed to reflect to getTokens()", t);
-		}
+	private static Object getTerminals(SilverCopperParser<?> parser) {
+		List<Terminal> tokens = (List<Terminal>) parser.getTokens();
+		return new Thunk<ConsCell>(() -> {
+			List<NTerminalDescriptor> tds = tokens
+				.stream()
+				.map(Util::terminalToTerminalDescriptor)
+				.collect(Collectors.toList());
+			return ConsCellCollection.fromList(tds);
+		});
 	}
 
 	/**
-	 * Converts a common.Terminal to a Silver core:TerminalDescriptor.
+	 * Converts a common.Terminal to a Silver silver:core:TerminalDescriptor.
 	 */
 	private static NTerminalDescriptor terminalToTerminalDescriptor(Terminal t) {
-        return new PterminalDescriptor(
-            t.lexeme,
+        return new PterminalDescriptor(t.lexeme,
             convertStrings(Arrays.stream(t.getLexerClasses()).iterator()),
             new StringCatter(t.getName()),
             Terminal.extractLocation(t));

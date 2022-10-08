@@ -7,8 +7,11 @@ melt.setProperties(overrideJars: true)
 melt.trynode('silver') {
   def WS = pwd()
   def SILVER_GEN = "${WS}/generated"
+  def newenv = silver.getSilverEnv(WS)
 
   stage("Build") {
+
+    melt.clearGenerated()
 
     checkout scm
 
@@ -69,20 +72,35 @@ melt.trynode('silver') {
     sh "./deep-rebuild"
     // Clean (but leave generated files)
     sh "./deep-clean -delete"
+    // Generate docs
+    sh "./make-docs"
     // Package
     sh "rm -rf silver-latest* || true" // Robustness to past failures
     sh "./make-dist latest"
     // Upon succeeding at initial build, archive for future builds
     archiveArtifacts(artifacts: "jars/*.jar", fingerprint: true)
+    melt.archiveCommitArtifacts("jars/*.jar")
+  }
+
+  stage("Modular Analyses") {
+    sh "./self-compile --clean --mwda --dont-translate"
   }
 
   stage("Test") {
-    def tests = ["silver_features", "copper_features", "patt", "stdlib", "performance", "csterrors"]
-    def tuts = ["simple/with_all", "simple/with_do_while", "simple/with_repeat_until", "simple/with_implication", "simple/host", "dc", "lambda", "turing", "hello"]
+    // These test cases and tutorials are run as seperate tasks to allow for parallelism
+    def tests = ["silver_features", "copper_features", "patt", "flow", "stdlib", "performance", "csterrors", "silver_construction", "origintracking", "implicit_monads"]
+    def tuts = ["simple/with_all", "simple/with_do_while", "simple/with_repeat_until", "simple/with_implication", "simple/host", "simple/arb_host", "simple/arb_with_all", "dc", "lambda", "turing", "hello", "stlc"]
 
     def tasks = [:]
     tasks << tests.collectEntries { t -> [(t): task_test(t, WS)] }
     tasks << tuts.collectEntries { t -> [(t): task_tutorial(t, WS)] }
+
+    // Build test driver
+    withEnv (newenv) {
+      dir ("${WS}/test") {
+        sh "silver --clean silver:testing:bin"
+      }
+    }
 
     // Unpack tarball (into ./silver-latest/) (for tutorial testing)
     sh "tar zxf silver-latest.tar.gz"
@@ -96,7 +114,7 @@ melt.trynode('silver') {
     // Projects with 'develop' as main branch, we'll try to build specific branch names if they exist
     def github_projects = ["/melt-umn/ableC", "/melt-umn/Oberon0", "/melt-umn/ableJ14", "/melt-umn/meta-ocaml-lite",
                            "/melt-umn/lambda-calculus", "/melt-umn/rewriting-regex-matching", "/melt-umn/rewriting-optimization-demo",
-                           "/internal/ring"]
+                           "/internal/ring", "/melt-umn/caml-light"]
     // Specific other jobs to build
     def specific_jobs = ["/internal/matlab/master", "/internal/metaII/master", "/internal/simple/master"]
     // AbleP is now downstream from Silver-AbleC, so we don't need to build it here: "/melt-umn/ableP/master"
@@ -122,8 +140,12 @@ melt.trynode('silver') {
       // NOTE: we exclude generated, which means there's no generated dir in the custom
       // location, which means if you don't set it, things should blow up.
 
+      sh "rsync -a --delete generated/doc/ ${silver.SILVER_WORKSPACE}/../custom-silver-doc/"
+
       sh "cp silver-latest.tar.gz ${melt.ARTIFACTS}/"
       sh "cp jars/*.jar ${melt.ARTIFACTS}/"
+
+      build "/melt-umn/melt-website/master"
     }
   }
 
@@ -142,16 +164,19 @@ def getMergedBranch() {
 
 // Test in local workspace
 def task_test(String testname, String WS) {
+  def newenv = silver.getSilverEnv(WS)
   return {
     node {
       sh "touch ensure_workspace" // convince jenkins to create our workspace
       def GEN = pwd() // This node's workspace
-      // Go back to our "parent" workspace, into the test
-      dir(WS + '/test/' + testname) {
-        sh "./silver-compile --clean -G ${GEN}"
-        if (fileExists("test.jar")) {
-          sh "java -Xss2M -jar test.jar"
-          sh "rm test.jar"
+      // Go back to our "parent" workspace, into the tests directory
+      dir(WS + '/test/') {
+        // HACK: edit the test specs to specify the generated directory
+        sh "./set-generated-dir ${GEN} ${testname}"
+        // Run the tests
+        withEnv (newenv) {
+          echo "Running test ${testname}"
+          sh "java -jar silver.testing.bin.jar ${testname}"
         }
       }
       // Blow away these generated files in our private workspace

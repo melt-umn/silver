@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -eu
+silver() { "../../support/bin/silver" "$@"; }
+
+SRC=..
+GRAMMAR=flow
+
+silver -I $SRC --warn-all --dont-translate $@ $GRAMMAR
+

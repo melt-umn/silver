@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -eu
 
@@ -33,16 +33,18 @@ tar -zcvf $SV.tar.gz \
  $SV/support/gedit \
  $SV/support/nailgun \
  $SV/tutorials/ \
- $SV/grammars/core/ \
- $SV/grammars/lib/extcore/ \
- $SV/grammars/lib/xml/ \
+ $SV/grammars/silver/core/ \
+ $SV/grammars/silver/xml/ \
+ $SV/grammars/silver/regex/ \
+ $SV/grammars/silver/rewrite/ \
  $SV/grammars/silver/testing/ \
  $SV/grammars/silver/util/cmdargs/ \
  $SV/grammars/silver/util/deque/ \
  $SV/grammars/silver/util/treemap/ \
- $SV/grammars/silver/util/raw/treemap/ \
- $SV/grammars/silver/util/raw/treeset/ \
- $SV/grammars/silver/util/raw/graph/ \
+ $SV/grammars/silver/util/treeset/ \
+ $SV/grammars/silver/util/graph/ \
+ $SV/grammars/silver/util/subprocess/ \
+ $SV/grammars/silver/util/random/ \
  $SV/grammars/silver/langutil/ \
  $SV/grammars/silver/reflect/ \
  $SV/COPYING.LESSER \

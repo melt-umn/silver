@@ -1,7 +1,6 @@
 grammar copper_features:test_layout:quoting;
 
 imports silver:testing ;
-imports lib:extcore ;
 imports copper_features hiding A;
 
 -- This grammar mimics embedding one host language as an extension to another,

@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -eu
 
 # Make sure any compiler changes make it before we build
 ./self-compile
-cp build/silver.composed.Default.jar jars/
+cp build/silver.compiler.composed.Default.jar jars/
 
 # Rebuild the IDE-specific runtime jars
 cd runtime/imp
@@ -12,15 +12,15 @@ cd runtime/imp
 cd ../..
 
 # Create plug-in sources and .class files.
-# this creates a silver.composed.idetest.jar that is not used, but
+# this creates a silver.compiler.composed.idetest.jar that is not used, but
 # this does create stuff in the generated directory that is used in
 # the next step
-SV_BUILD_TARGET="silver:composed:idetest" ./self-compile --clean
+SV_BUILD_TARGET="silver:compiler:composed:idetest" ./self-compile --clean
 
 # Create the Eclipse repository.  
-# The repository is in the generated/ide/silver.composed.idetest
+# The repository is in the generated/ide/silver.compiler.composed.idetest
 # directory.  To make it public run the make-ide-dist script.
-cd generated/ide/silver.composed.idetest
+cd generated/ide/silver.compiler.composed.idetest
 mvn package
 
 TARGET=$(pwd)/updatesite/target/repository
@@ -28,7 +28,7 @@ TARGET=$(pwd)/updatesite/target/repository
 echo "..."
 echo "..."
 echo "..."
-echo "Be sure to increment IDE version number in silver:composed:idetest:Main.sv"
+echo "Be sure to increment IDE version number in silver:compiler:composed:idetest:Main.sv"
 echo "..."
 echo "..."
 echo "Reminder: add $TARGET as path to find update site in eclipse, if using directly"

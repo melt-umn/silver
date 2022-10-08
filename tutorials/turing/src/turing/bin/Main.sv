@@ -7,13 +7,13 @@ parser parse::Dcls {
 }
 
 function main 
-IOVal<Integer> ::= largs::[String] i::IO
+IOVal<Integer> ::= largs::[String] i::IOToken
 {
   local attribute args :: String;
   args = implode(" ", largs);
 
   local attribute file :: IOVal<String>;
-  file = readFile(args, i);
+  file = readFileT(args, i);
 
   local attribute result :: Dcls;
   result = parse(file.iovalue, args).parseTree; -- If we run into a parse error, it won't be pretty!
@@ -33,18 +33,18 @@ IOVal<Integer> ::= largs::[String] i::IO
 		 allMachines,
 		 result.tape);
 		 
-  local attribute doneio::IO;
+  local attribute doneio::IOToken;
   doneio =
-	      print(t.pp ++ "\n-------------------------------------------------------------\n", 
-	      print(result.tape.pp ++ "\n-------------------------------------------------------------\n", 
-	      print("Results for " ++ args ++ ":\n-------------------------------------------------------------\n",
+	      printT(t.pp ++ "\n-------------------------------------------------------------\n",
+	      printT(result.tape.pp ++ "\n-------------------------------------------------------------\n",
+	      printT("Results for " ++ args ++ ":\n-------------------------------------------------------------\n",
 	      extras.ioOut)));
 
   return ioval(doneio, 0);
 }
 
-inherited attribute ioIn :: IO;
-synthesized attribute ioOut :: IO;
+inherited attribute ioIn :: IOToken;
+synthesized attribute ioOut :: IOToken;
 nonterminal IOAMachineList with ioIn, ioOut, machines;
 
 function getImports
@@ -57,7 +57,7 @@ abstract production getImportsHelp
 top::IOAMachineList ::= seen::[String] need::[String]
 {
   local attribute text :: IOVal<String>;
-  text = readFile(head(need), top.ioIn);
+  text = readFileT(head(need), top.ioIn);
 
   local attribute result :: Dcls;
   result = parse(text.iovalue, head(need)).parseTree;

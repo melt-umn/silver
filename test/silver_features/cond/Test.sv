@@ -5,7 +5,6 @@ import silver_features:cond:b;
 
 import silver_features;
 import silver:testing;
-import lib:extcore;
 
 
 -- should get :c.

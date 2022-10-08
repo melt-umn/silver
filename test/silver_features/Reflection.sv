@@ -173,16 +173,31 @@ equalityTest(reifyResToString(reify(anyAST(baz(anno2=_, anno1=_)))), "<OBJECT ::
 equalityTest(reifyResToString(reify(anyAST(baz(anno1=1, anno2=_)))), "<OBJECT :: (silver_features:Baz ::= Float)>", String, silver_tests);
 equalityTest(reifyResToString(reify(anyAST(baz(anno1=_, anno2=2.0)))), "<OBJECT :: (silver_features:Baz ::= Integer)>", String, silver_tests);
 
-wrongCode "skolem" {
-  function reifySkolem
+function reifySkolem
+runtimeTypeable a => Either<String a> ::= x::AST
+{
+  return reify(x);
+}
+
+wrongCode "runtimeTypeable" {
+  function reifySkolemErr
   Either<String a> ::= x::AST
   {
     return reify(x);
   }
 }
 
-warnCode "skolem" {
-  function reifySkolem2
+equalityTest(reifySkolem(reflect(pair("abc", 123))), right(pair("abc", 123)), Either<String Pair<String Integer>>, silver_tests);
+
+function reifySkolem2
+runtimeTypeable a => Either<String (a ::= Integer)> ::= 
+{
+  local fn::(a ::= Integer) = \ i::Integer -> error(toString(i));
+  return reify(anyAST(fn));
+}
+
+wrongCode "runtimeTypeable" {
+  function reifySkolemErr2
   Either<String (a ::= Integer)> ::= 
   {
     local fn::(a ::= Integer) = \ i::Integer -> error(toString(i));
@@ -191,6 +206,24 @@ warnCode "skolem" {
 }
 
 equalityTest(case reifySkolem2() of left(_) -> false | right(_) -> true end, true, Boolean, silver_tests);
+
+function makeSpecializedId
+(a ::= a) ::= a
+{
+  return \x::a -> x;
+}
+
+equalityTest(applyAST(anyAST(makeSpecializedId(42)), [just(reflect(12))], []).isLeft, true, Boolean, silver_tests);
+equalityTest(applyAST(anyAST(makeSpecializedId(42)), [just(reflect(3.14))], []).isLeft, true, Boolean, silver_tests);
+
+function makeSpecializedId2
+runtimeTypeable a => (a ::= a) ::= a
+{
+  return \x::a -> x;
+}
+
+equalityTest(case applyAST(anyAST(makeSpecializedId2(42)), [just(reflect(12))], []) of left(m) -> m | right(a) -> reifyResToString(reify(a)) end, "12", String, silver_tests);
+equalityTest(case applyAST(anyAST(makeSpecializedId2(42)), [just(reflect(3.14))], []) of left(m) -> m | right(a) -> reifyResToString(reify(a)) end, "Reification error in argument 0 at ?:\nreify is constructing Integer, but found Float AST.", String, silver_tests);
 
 global testValue::Pair<[Expr] Baz> = pair([testExpr, intConstExpr(5, lineNum=4)], baz(anno1=1, anno2=2.0));
 global serializeRes::Either<String String> = reflect(testValue).serialize;
@@ -231,11 +264,11 @@ global terminalReifyRes::Either<String Pair<[Foo_t] Maybe<Bar_t>>> = reify(case 
 
 equalityTest(
   lessHackyUnparse(terminalTestValue),
-  s"""core:pair([terminal(silver_features:Foo_t, "foo", ??:-1:-1), terminal(silver_features:Foo_t, "foo", ??:-1:-1)], core:just(terminal(silver_features:Bar_t, "bar42", a:1:2)))""",
+  s"""silver:core:pair([terminal(silver_features:Foo_t, "foo", ??:-1:-1), terminal(silver_features:Foo_t, "foo", ??:-1:-1)], silver:core:just(terminal(silver_features:Bar_t, "bar42", a:1:2)))""",
   String, silver_tests);
 equalityTest(
   case terminalSerializeRes of left(msg) -> msg | right(a) -> a end,
-  s"""core:pair([terminal(silver_features:Foo_t, "foo", core:loc("??", -1, -1, -1, -1, -1, -1)), terminal(silver_features:Foo_t, "foo", core:loc("??", -1, -1, -1, -1, -1, -1))], core:just(terminal(silver_features:Bar_t, "bar42", core:loc("a", 1, 2, 3, 4, 5, 6))))""",
+  s"""silver:core:pair([terminal(silver_features:Foo_t, "foo", silver:core:loc("??", -1, -1, -1, -1, -1, -1)), terminal(silver_features:Foo_t, "foo", silver:core:loc("??", -1, -1, -1, -1, -1, -1))], silver:core:just(terminal(silver_features:Bar_t, "bar42", silver:core:loc("a", 1, 2, 3, 4, 5, 6))))""",
   String, silver_tests);
 equalityTest(case terminalDeserializeRes of left(msg) -> msg | right(a) -> show(80, a.pp) end, lessHackyUnparse(terminalTestValue), String, silver_tests);
 equalityTest(reifyResToString(terminalReifyRes), lessHackyUnparse(terminalTestValue), String, silver_tests);
@@ -244,11 +277,11 @@ global reifyRes10::Either<String Baz> = reify(terminalAST("silver_features:Foo_t
 equalityTest(reifyResToString(reifyRes10), "Reification error at ?:\nreify is constructing silver_features:Baz, but found terminal silver_features:Foo_t AST.", String, silver_tests);
 
 global reifyRes11::Either<String Pair<String Location>> = reify(reflect(pair("asdf", 'foo')));
-equalityTest(reifyResToString(reifyRes11), "Reification error at core:pair(_, ?):\nreify is constructing core:Location, but found terminal silver_features:Foo_t AST.", String, silver_tests);
+equalityTest(reifyResToString(reifyRes11), "Reification error at silver:core:pair(_, ?):\nreify is constructing silver:core:Location, but found terminal silver_features:Foo_t AST.", String, silver_tests);
 
 equalityTest(
-  case deserializeAST("test", "terminal(asdf, \"a\", core:loc(\"a\", 2, 3.14, 4, 5, 6, 7))") of left(msg) -> msg | right(a) -> show(80, a.pp) end,
-  "test:1:20: error: Reification error at core:loc(_, _, ?, _, _, _, _):\nreify is constructing Integer, but found Float AST.",
+  case deserializeAST("test", "terminal(asdf, \"a\", silver:core:loc(\"a\", 2, 3.14, 4, 5, 6, 7))") of left(msg) -> msg | right(a) -> show(80, a.pp) end,
+  "test:1:20: error: Reification error at silver:core:loc(_, _, ?, _, _, _, _):\nreify is constructing Integer, but found Float AST.",
   String, silver_tests);
 
 global serializeRes1::Either<String String> = serialize(pair("hello", [1, 2, 3, 4]));
@@ -256,20 +289,27 @@ global reifyRes12::Either<String Pair<String [Integer]>> = deserialize("test", f
 
 equalityTest(
   case serializeRes1 of left(msg) -> msg | right(a) -> a end,
-  s"""core:pair("hello", [1, 2, 3, 4])""",
+  s"""silver:core:pair("hello", [1, 2, 3, 4])""",
   String, silver_tests);
 equalityTest(
   reifyResToString(reifyRes12),
-  s"""core:pair("hello", [1, 2, 3, 4])""",
+  s"""silver:core:pair("hello", [1, 2, 3, 4])""",
   String, silver_tests);
+
+type ForeignString foreign = "String";
+wrongCode "Could not find an instance for runtimeTypeable silver_features:ForeignString (arising from the use of reifyUnchecked)" {
+  function reifyForeignString
+  ForeignString ::= x::AST
+  { return reifyUnchecked(x); }
+}
 
 global add::(Integer ::= Integer Integer) = \ i::Integer j::Integer -> i + j;
 
 global applyRes1::Either<String AST> = applyAST(reflect(add), [just(reflect(1)), just(reflect(2))], []);
-equalityTest(lessHackyUnparse(applyRes1), "core:right(core:reflect:integerAST(3))", String, silver_tests);
+equalityTest(lessHackyUnparse(applyRes1), "silver:core:right(silver:core:integerAST(3))", String, silver_tests);
 
 global applyRes2::Either<String AST> = applyAST(applyAST(reflect(add), [nothing(), just(reflect(2))], []).fromRight, [just(reflect(1))], []);
-equalityTest(lessHackyUnparse(applyRes2), "core:right(core:reflect:integerAST(3))", String, silver_tests);
+equalityTest(lessHackyUnparse(applyRes2), "silver:core:right(silver:core:integerAST(3))", String, silver_tests);
 
 global applyRes3::Either<String AST> = applyAST(reflect(add), [just(reflect(1)), nothing(), just(reflect(2))], []);
 equalityTest(applyRes3.isLeft, true, Boolean, silver_tests);
@@ -300,4 +340,27 @@ equalityTest(
 
 global applyRes8::Either<String AST> = applyAST(reflect(baz), [], [pair("anno1", just(reflect(3.14))), pair("anno2", just(reflect(42)))]);
 equalityTest(applyRes8.isLeft, true, Boolean, silver_tests);
+
+-- Reflection of productions with type constraints
+equalityTest(decorate let res :: OCEqPair<EqExpr EqExpr> = reifyUnchecked(reflect(ocEqPair(ee1, ee2))) in res end with {compareTo = decorate ocEqPair(ee1, ee2) with {};}.isEqual, true, Boolean, silver_tests);
+
+nonterminal WrapTypeable;
+production wrapTypeable
+runtimeTypeable a => top::WrapTypeable ::= x::a
+{}
+
+equalityTest(
+  let res :: WrapTypeable = reifyUnchecked(reflect(wrapTypeable(pair("hi", 42)))) in case res of wrapTypeable(x) -> reifyUnchecked(reflect(x)) end end,
+  pair("hi", 42),
+  Pair<String Integer>, silver_tests);
+
+equalityTest(
+  let res :: Either<String RTNT> = reify(reflect(rtProd(\ xs::[Integer] -> length(xs)))) in res.fromLeft end,
+  "Reification error at ?:\nCan't construct production silver_features:rtProd because context runtimeTypeable a cannot be resolved at runtime",
+  String, silver_tests);
+
+equalityTest(
+  let res :: Either<String EqPair<Integer [Integer]>> = reify(reflect(eqPair(42, [1, 2, 3]))) in res.fromLeft end,
+  "Reification error at ?:\nCan't construct production silver_features:eqPair because context silver_features:myeq:MyEq a cannot be resolved at runtime",
+  String, silver_tests);
 

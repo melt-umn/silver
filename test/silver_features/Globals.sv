@@ -61,3 +61,31 @@ wrongCode "[String] has initialization expression with type [Integer]" {
   global globIntList :: [Integer] = [1,2];
   global globStrList :: [String] = tail(globIntList); -- thread type state properly to detect Str!=Int
 }
+
+-- Testing polymorphism
+global myMap::([b] ::= (b ::= a) [a]) = map;
+global globLst::[Integer] = myMap((\x::Integer -> x + 3), [1,2,3,4,5]);
+equalityTest (head(globLst), 4, Integer, silver_tests );
+
+function thirdOfFour
+c ::= tuple::(a,b,c,d)
+{
+  return tuple.3;
+}
+
+global getThird::(c ::= (a,b,c,d)) = thirdOfFour;
+equalityTest(getThird((1, 2, "three", 4)), "three", String, silver_tests);
+
+-- With constraints
+global myEq::Eq a => (Boolean ::= a a) = eq;
+equalityTest (myEq(1, 2), false, Boolean, silver_tests);
+
+function strComp
+Boolean ::= a::String b::String
+{
+  return if a == b then true else false;
+}
+
+global elem::Eq a => (Boolean ::= (Boolean ::= a a) a [a]) = containsBy;
+equalityTest(elem(strComp, "ABC", ["A", "B", "C"]), false, Boolean, silver_tests);
+equalityTest(elem(strComp, "B", ["A", "B", "C"]), true, Boolean, silver_tests);

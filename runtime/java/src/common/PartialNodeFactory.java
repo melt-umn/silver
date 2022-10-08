@@ -1,5 +1,8 @@
 package common;
 
+import java.util.*;
+
+
 /**
  * Takes a NodeFactory, and transforms it into a NodeFactory with a few
  * argument positions filled in already. (i.e. partial function application)
@@ -42,7 +45,7 @@ public class PartialNodeFactory<T> extends NodeFactory<T> {
 	}
 	
 	@Override
-	public T invoke(final Object[] restargs, final Object[] namedArgs) {
+	public T invoke(final common.OriginContext originCtx, final Object[] restargs, final Object[] namedArgs) {
 		final int fullsize = args.length + restargs.length;
 		final Object[] fullargs = new Object[fullsize];
 		
@@ -57,25 +60,44 @@ public class PartialNodeFactory<T> extends NodeFactory<T> {
 			}
 		}
 		// We pass through namedArgs unchanged here.
-		return ref.invoke(fullargs, namedArgs);
+		return ref.invoke(originCtx, fullargs, namedArgs);
 	}
 	
 	@Override
-	public final FunctionTypeRep getType() {
-		final FunctionTypeRep baseType = ref.getType();
-		
-		final TypeRep[] newParams = new TypeRep[baseType.params.length - indices.length];
+	public final TypeRep getType() {
+		// Unpack the function type
+		List<TypeRep> typeArgs = new LinkedList<>();
+		TypeRep a = ref.getType();
+		for (; a instanceof AppTypeRep; a = ((AppTypeRep)a).cons) {
+			typeArgs.add(0, ((AppTypeRep)a).arg);
+		}
+		FunctionTypeRep fnType = (FunctionTypeRep)a;
+		List<TypeRep> params = typeArgs.subList(0, fnType.params);
+		List<TypeRep> namedParamTypes = typeArgs.subList(fnType.params, fnType.params + fnType.namedParams.length);
+		TypeRep resultType = typeArgs.get(fnType.params + fnType.namedParams.length);
+
+		// Copy the unapplied named args
+		List<TypeRep> newArgs = new LinkedList<>();
 		int i = 0, j = 0;
-		while (j < newParams.length) {
+		while (j < fnType.params - indices.length) {
 			if (i < indices.length && indices[i] == i + j) {
 				i++;
 			} else {
-				newParams[j] = baseType.params[i + j];
+				newArgs.add(params.get(i + j));
 				j++;
 			}
 		}
-		// We pass through namedParams unchanged here.
-		return new FunctionTypeRep(baseType.result, newParams, baseType.namedParamNames, baseType.namedParamTypes);
+		
+		// We pass through namedParams and result unchanged here.
+		newArgs.addAll(namedParamTypes);
+		newArgs.add(resultType);
+
+		// Re-pack the function type
+		TypeRep result = new FunctionTypeRep(fnType.params - indices.length, fnType.namedParams);
+		for (TypeRep arg : newArgs) {
+			result = new AppTypeRep(result, arg);
+		}
+		return result;
 	}
 	
 	@Override

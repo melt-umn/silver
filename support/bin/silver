@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-case `uname` in
+case "$(uname)" in
 *Darwin*)
   READLINK=greadlink
-  if [ ! -f `which greadlink` ]; then
+  if [ ! -f "$(which greadlink)" ]; then
     echo "Missing greadlink. Please install coreutils:"
-    echo -e "\tbrew install coreutils"
+    printf "\tbrew install coreutils\n"
     exit 4
   fi
   ;;
@@ -15,13 +15,13 @@ case `uname` in
 esac
 
 # ~/bin/silver should be a link to somewhere, find out where!
-ME=$(${READLINK} -f "${BASH_SOURCE}")
+ME=$(${READLINK} -f "${BASH_SOURCE[0]}")
 
 # Set our home
 export SILVER_HOME=${ME/support\/bin\/silver/}
 
 # Find the silver jar
-SILVER="$SILVER_HOME/jars/silver.composed.Default.jar"
+SILVER="$SILVER_HOME/jars/silver.compiler.composed.Default.jar"
 
 if [ ! -f "$SILVER" ]; then
   echo "Couldn't find the Silver jars to execute, aborting."
@@ -29,6 +29,7 @@ if [ ! -f "$SILVER" ]; then
 fi
 
 # Set flags if not overriden in environment
-SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx3000M -Xss20M"}
+SVJVM_FLAGS=${SVJVM_FLAGS:-"-Xmx5000M -Xss20M"}
 
+# shellcheck disable=SC2086
 java $SVJVM_FLAGS -jar "$SILVER" "$@" && ant

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+JARFILE=stlc.jar
+
+
+if [ ! -f $JARFILE ]; then
+    echo -e "File $JARFILE not found; building it"
+    if ! ./silver-compile; then #exit on Silver compiler error
+        exit 1
+    fi
+    echo ""
+fi
+
+echo -e -n "Enter an expression:  "
+read entered
+
+while [ -n "$entered" ]; do
+    java -jar $JARFILE "$entered"
+    echo ""
+    echo ""
+    echo -e -n "Enter an expression:  "
+    read entered
+done
+
+echo ""
