@@ -58,6 +58,7 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
 import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonElement;
 
 import common.ConsCell;
 import common.DecoratedNode;
@@ -248,6 +249,15 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         parserFn = new CopperParserNodeFactory(parserFactory);
     }
 
+    private String getJsonStringFromConfigList(List<Object> configs, int index){
+        Object itemGet = configs.get(index);
+        if (itemGet != null && !((JsonElement)itemGet).isJsonNull()) {
+            return ((JsonPrimitive)itemGet).getAsString();
+        } else {
+            return "";
+        }
+    }
+
     private CompletableFuture<Void> reloadParser() {
         ConfigurationItem compilerJarConfigItem = new ConfigurationItem();
         compilerJarConfigItem.setSection("silver.compilerJar");
@@ -258,8 +268,8 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         return client.configuration(configParams).thenAccept((configs) -> {
             String oldParserJar = compilerJar;
             String oldParserName = parserName;
-            compilerJar = ((JsonPrimitive)configs.get(0)).getAsString();
-            parserName = ((JsonPrimitive)configs.get(1)).getAsString();
+            compilerJar = this.getJsonStringFromConfigList(configs, 0);
+            parserName = this.getJsonStringFromConfigList(configs, 1);
             if (compilerJar.isEmpty() || parserName.isEmpty()) {
                 if (!compilerJar.equals(oldParserJar) || !parserName.equals(oldParserName)) {
                     setParserFactory(Parser_silver_compiler_composed_Default_svParse::new);
@@ -375,7 +385,10 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         ConfigurationParams configParams = new ConfigurationParams(List.of(enableMWDAConfigItem));
         boolean newEnableMWDA = enableMWDA;
         try {
-            newEnableMWDA = ((JsonPrimitive)client.configuration(configParams).get().get(0)).getAsBoolean();
+            Object configMWDAGet = client.configuration(configParams).get().get(0);
+            if (configMWDAGet != null && !((JsonElement)configMWDAGet).isJsonNull()) {
+                newEnableMWDA = ((JsonPrimitive)configMWDAGet).getAsBoolean();
+            }
         } catch (InterruptedException | ExecutionException e) {
             // Ignore, getting the settings sometimes fails when a build is triggered during initialization
         }
