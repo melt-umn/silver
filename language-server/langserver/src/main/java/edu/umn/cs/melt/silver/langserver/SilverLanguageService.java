@@ -249,6 +249,10 @@ public class SilverLanguageService implements TextDocumentService, WorkspaceServ
         parserFn = new CopperParserNodeFactory(parserFactory);
     }
 
+    // This method is meant to deal with jsonNull, an element that is technically
+    // not null according to java but is a null element passed through json.
+    // It gets a string from a list containing json elements and returns "" if the element
+    // is null.
     private String getJsonStringFromConfigList(List<Object> configs, int index){
         Object itemGet = configs.get(index);
         if (itemGet != null && !((JsonElement)itemGet).isJsonNull()) {
