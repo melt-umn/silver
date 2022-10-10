@@ -42,6 +42,7 @@ attribute docDcls occurs on Grammar, Root, AGDcls, AGDcl, ClassBodyItem, Instanc
 @{- Environment of all documented AGDcls, flowing back down after being computed from @link[docDcls].  -}
 inherited attribute docEnv :: tm:Map<String DocDclInfo>;
 attribute docEnv occurs on Root, AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
+propagate docEnv on AGDcls, AGDcl, ClassBodyItem, InstanceBodyItem, ClassBody, InstanceBody;
 
 @{- Errors arising from ill-formed doc comments.  -}
 monoid attribute docErrors :: [Message];

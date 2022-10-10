@@ -84,6 +84,7 @@ top::NamedSignature ::=
  - Represents a collection of NamedSignatureElements
  -}
 nonterminal NamedSignatureElements with elements, elementNames, elementShortNames, elementTypes, freeVariables, boundVariables;
+propagate boundVariables on NamedSignatureElements;
 
 synthesized attribute elements::[NamedSignatureElement];
 synthesized attribute elementNames::[String];
@@ -117,6 +118,7 @@ global foldNamedSignatureElements::(NamedSignatureElements ::= [NamedSignatureEl
  - Represents an elements of a signature, whether input, output, or annotation.
  -}
 nonterminal NamedSignatureElement with elementName, elementShortName, typerep, freeVariables, boundVariables;
+propagate boundVariables on NamedSignatureElement;
 
 synthesized attribute elementName :: String;
 synthesized attribute elementShortName :: String;

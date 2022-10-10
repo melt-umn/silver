@@ -52,6 +52,7 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   cl.constraintPos = classPos(fName, var.freeVariables);
   cl.env = newScopeEnv(headPreDefs, top.env);
   
+  id.env = cl.env;
   var.env = cl.env;
   
   body.env = occursEnv(cl.occursDefs, newScopeEnv(headDefs, cl.env));

@@ -21,6 +21,7 @@ concrete production generatorDcl
 top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorComponents '}'
 {
   top.unparse = s"generator ${n.unparse} :: ${t.unparse} { ${grammars.unparse} }";
+  propagate config, grammarName, compiledGrammars, grammarDependencies, env, flowEnv;
 
   -- Compute the defs exported by the specified grammars
   local med::ModuleExportedDefs =
@@ -85,7 +86,7 @@ top::AGDcl ::= 'generator' n::Name '::' t::TypeExpr '{' grammars::GeneratorCompo
 nonterminal GeneratorComponents with config, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies;
 nonterminal GeneratorComponent with config, grammarName, location, unparse, errors, moduleNames, compiledGrammars, grammarDependencies;
 
-propagate errors, moduleNames on GeneratorComponents, GeneratorComponent;
+propagate config, grammarName, compiledGrammars, grammarDependencies, env, errors, moduleNames on GeneratorComponents, GeneratorComponent;
 
 concrete production nilGeneratorComponent
 top::GeneratorComponents ::=

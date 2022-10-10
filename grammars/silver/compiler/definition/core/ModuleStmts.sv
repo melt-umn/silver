@@ -19,6 +19,7 @@ nonterminal WithElem with config, grammarName, location, unparse, envMaps;
 propagate config, grammarName, errors, moduleNames, defs, occursDefs, compiledGrammars, grammarDependencies
   on ModuleStmts, ModuleStmt, ImportStmt, ImportStmts;
 propagate exportedGrammars, optionalGrammars, condBuild on ModuleStmts;
+propagate env on NameList;
 
 {--
  - A list of QName strings. Used for 'only' and 'hiding'.

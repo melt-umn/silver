@@ -152,6 +152,7 @@ nonterminal Document with indent, width,
 
 inherited attribute indent :: Integer;
 inherited attribute width :: Integer;
+propagate indent, width on Document;
 
 -- The scanning process
 inherited attribute inPosition :: Integer;

@@ -21,6 +21,8 @@ attribute someResult<AST> occurs on AST;
 attribute oneResult<AST> occurs on AST;
 attribute traversalResult<AST> occurs on AST;
 
+propagate givenStrategy on AST, ASTs, NamedASTs, NamedAST;
+
 aspect default production
 top::AST ::=
 {
@@ -59,6 +61,8 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
       just(nonterminalAST(prodName, children, annotationsResult))
     | nothing(), nothing() -> nothing()
     end;
+  children.childStrategies = top.childStrategies;
+  annotations.annotationStrategies = top.annotationStrategies;
   top.traversalResult =
     do {
       if prodName != top.productionName then nothing() else just(unit());
@@ -216,6 +220,7 @@ top::NamedASTs ::= h::NamedAST t::NamedASTs
     | nothing(), just(tResult) -> just(consNamedAST(h, tResult))
     | nothing(), nothing() -> nothing()
     end;
+  propagate annotationStrategies;
   top.traversalResult =
     do {
       hResult::NamedAST <- h.traversalResult;

@@ -48,6 +48,7 @@ String ::= te::Type tvs::[TyVar]
 }
 
 attribute transType, transCovariantType, transClassType, transTypeRep, skolemTypeReps, transTypeName occurs on Type;
+propagate skolemTypeReps on Type;
 
 aspect default production
 top::Type ::=

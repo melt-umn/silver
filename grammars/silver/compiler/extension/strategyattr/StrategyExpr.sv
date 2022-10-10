@@ -77,14 +77,14 @@ partial strategy attribute prodStep =
   | prodTraversal(p, s) when p.lookupValue.fullName != top.frame.fullName -> fail(location=top.location, genName=top.genName)
   | rewriteRule(_, _, ml) when !ml.matchesFrame -> fail(location=top.location, genName=top.genName)
   end <+
-  rewriteRule(
-    id, id,
-    onceBottomUp(
-      rule on top::MRuleList of
-      | mRuleList_cons(h, _, t) when !h.matchesFrame -> t
-      | mRuleList_cons(h, _, mRuleList_one(t)) when !t.matchesFrame -> mRuleList_one(h, location=top.location)
-      end));
-attribute prodStep occurs on MRuleList;
+  rewriteRule(id, id, elimInfeasibleMRules);
+partial strategy attribute elimInfeasibleMRules =
+  onceBottomUp(
+    rule on top::MRuleList of
+    | mRuleList_cons(h, _, t) when !h.matchesFrame -> t
+    | mRuleList_cons(h, _, mRuleList_one(t)) when !t.matchesFrame -> mRuleList_one(h, location=top.location)
+    end);
+attribute elimInfeasibleMRules occurs on MRuleList;
 
 strategy attribute genericSimplify = innermost(genericStep);
 strategy attribute ntSimplify =
@@ -152,8 +152,8 @@ propagate containsFail, allId on StrategyExprs;
 propagate recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, freeRecVars on StrategyExpr, StrategyExprs excluding recComb;
 propagate inlinedStrategies on StrategyExpr, StrategyExprs excluding inlined;
 propagate genericSimplify on StrategyExprs;
-propagate prodStep on MRuleList;
 propagate genericStep, ntStep, prodStep, genericSimplify, ntSimplify, optimize on StrategyExpr;
+propagate elimInfeasibleMRules on MRuleList;
 
 -- Convert an expression of type a to Maybe<a>
 function asPartial
@@ -612,7 +612,7 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
            | just(a_s1), just(c_s3) -> just(prod(a_s1, b, c_s3, d.s4))
            | _, _ -> nothing()
            end
-         Could also be implemented as chained monadic binds.  Maybe more efficient this way? -}
+         Could also be implemented using the Applicative instance for Maybe.  Maybe more efficient this way? -}
       caseExpr(
         flatMap(
           \ a::Pair<String Maybe<String>> ->

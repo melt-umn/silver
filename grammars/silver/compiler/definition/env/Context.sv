@@ -10,6 +10,8 @@ propagate env, config, compiledGrammars, grammarFlowTypes on Context, Contexts;
 -- This mostly exists as a convenient way to perform multiple env-dependant operations
 -- on a list of contexts without re-decorating them and repeating context resolution.
 nonterminal Contexts with env, config, compiledGrammars, grammarFlowTypes, contexts, freeVariables, boundVariables;
+propagate boundVariables on Contexts;
+
 abstract production consContext
 top::Contexts ::= h::Context t::Contexts
 {

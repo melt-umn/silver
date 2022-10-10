@@ -46,6 +46,8 @@ synthesized attribute annoNameElem :: String occurs on NamedSignatureElement;
 -- "if (name.equals("signame")) { return getAnno_signame(); }"
 synthesized attribute annoLookupElem :: String occurs on NamedSignatureElement;
 
+propagate sigInhOccurs on NamedSignatureElements, NamedSignatureElement;
+
 aspect production namedSignature
 top::NamedSignature ::= fn::String ctxs::Contexts ie::NamedSignatureElements oe::NamedSignatureElement np::NamedSignatureElements
 {

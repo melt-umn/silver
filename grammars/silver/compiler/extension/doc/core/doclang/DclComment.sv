@@ -46,6 +46,9 @@ nonterminal DclCommentLines layout {} with body, location, docEnv, errors;
 nonterminal DclCommentParts layout {} with body, location, docEnv, errors;
 nonterminal DclCommentPart layout {} with body, location, docEnv, errors;
 
+propagate docEnv on
+    DclComment, DclCommentBlocks, DclCommentStrictBlocks, DclCommentBlock,
+    DclCommentLines, DclCommentParts, DclCommentPart;
 propagate errors on DclCommentBlocks, DclCommentStrictBlocks, DclCommentBlock,
     DclCommentLines, DclCommentParts, DclCommentPart;
 
