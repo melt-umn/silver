@@ -126,15 +126,15 @@ global simplifyFrac::Strategy =
 global eval::Strategy = innermost(evalStep <+ simplifyConstIdent <+ simplifyFrac);
 
 -- Strategy attributes
-autocopy attribute substName::String;
-autocopy attribute substExpr::Expr;
+inherited attribute substName::String;
+inherited attribute substExpr::Expr;
 strategy attribute substRes =
   allTopDown(
     rule on top::Expr of
     | var(n1) when top.substName == n1 -> top.substExpr
     end);
 attribute substName, substExpr, substRes occurs on Expr;
-propagate substRes on Expr;
+propagate substName, substExpr, substRes on Expr;
 
 partial strategy attribute evalStep =
   rule on Expr of

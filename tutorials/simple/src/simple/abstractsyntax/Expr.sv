@@ -30,6 +30,8 @@ instance Arbitrary Name {
 }
 
 nonterminal Expr with pp, env, errors;
+flowtype Expr = pp {}, errors {env};
+propagate env, errors on Expr;
 
 -- Constants
 ------------
@@ -37,28 +39,24 @@ abstract production intLit
 e::Expr ::= i::Integer
 {
   e.pp = text(toString(i));
-  e.errors := [];
 }
 
 abstract production floatLit 
 e::Expr ::= f::Float
 {
   e.pp = text(toString(f));
-  e.errors := [];
 }
 
 abstract production boolLit   
 e::Expr ::= b::Boolean
 {
   e.pp = if b then pp"True" else pp"False";
-  e.errors := [];
 }
 
 abstract production stringLit 
 e::Expr ::= s::String
 {
   e.pp = pp"\"${text(escapeString(s))}\"";
-  e.errors := [];
 }
 
 -- Variable Reference
@@ -82,7 +80,7 @@ e::Expr ::= id::Name
 {
   e.pp = id.pp;
 
-  e.errors :=
+  e.errors <-
     case id.lookup of
     | just(_)   -> []
     | nothing() ->
@@ -99,25 +97,21 @@ abstract production addOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} + ${r})";
-  e.errors := l.errors ++ r.errors;
 }
 abstract production subOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} - ${r})";
-  e.errors := l.errors ++ r.errors;
 }
 abstract production mulOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} * ${r})";
-  e.errors := l.errors ++ r.errors;
 }
 abstract production divOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} / ${r})";
-  e.errors := l.errors ++ r.errors; 
 }
 
 -- Relational Operators
@@ -141,14 +135,12 @@ abstract production eqOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} == ${r})";
-  e.errors := l.errors ++ r.errors;
 }
 
 abstract production ltOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} < ${r})";
-  e.errors := l.errors ++ r.errors;
 }
 
 abstract production neqOp
@@ -186,13 +178,11 @@ abstract production and
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} && ${r})";
-  e.errors := l.errors ++ r.errors;
 }
 abstract production notOp
 e::Expr ::= ne::Expr 
 {
   e.pp = pp"!(${ne})";
-  e.errors := ne.errors;
 }
 
 -- Using De Morgan's Law we can use forwarding on "or".

@@ -16,7 +16,6 @@ import common.exceptions.SilverError;
  * 
  * This is used for the following:
  *  - silver reflection (and transitively, reflective de/serialization, rewriting stuff, etc)
- *  - decorators (read: implementing autocopy)
  *  - native de/serialization (see Reflection.java:nativeSerialize)
  * 
  * @author louisg
@@ -90,7 +89,7 @@ public final class RTTIManager {
 		public abstract int getAnnoCount();
 		
 		public abstract String[] getChildTypes();
-		public abstract Lazy[][] getChildInheritedAttributes();
+		public abstract Lazy[][] getChildInheritedAttributes(); // Originally for autocopy, not currently used
 	}
 
 	// Represents a terminal (not an instance of the terminal, but the terminal itself.)

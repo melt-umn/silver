@@ -32,7 +32,7 @@ synthesized attribute undecoratedAccessHandler :: (Expr ::= PartiallyDecorated E
  -}
 synthesized attribute attrDefDispatcher :: (ProductionStmt ::= PartiallyDecorated DefLHS  PartiallyDecorated QNameAttrOccur  Expr  Location) occurs on AttributeDclInfo;
 {--
- - The production an "occurs on" decl should forward to for this type of attribute (for extension use, defaultAttributionDcl for all syn/inh/autocopy attrs.)
+ - The production an "occurs on" decl should forward to for this type of attribute (for extension use, defaultAttributionDcl for all syn/inh attrs.)
  -}
 synthesized attribute attributionDispatcher :: (AGDcl ::= PartiallyDecorated QName  BracketedOptTypeExprs  QName  BracketedOptTypeExprs  Location) occurs on AttributeDclInfo;
 

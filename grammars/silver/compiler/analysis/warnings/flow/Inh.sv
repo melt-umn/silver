@@ -62,20 +62,6 @@ Boolean ::= f::([FlowDef] ::= String)  attr::String
 }
 
 {--
- - False if 'attr' is an autocopy attribute, occurs on the LHS nonterminal,
- - and child 'sigName' is a nonterminal (not a type var with an occurs-on context);
- - true otherwise.  Used in conjunction with 'filter' to get
- - remove "missing equations" that are actually implicit autocopies.
- -}
-function ignoreIfAutoCopyOnLhs
-Boolean ::= sigName::String  ns::NamedSignature  env::Decorated Env  attr::String
-{
-  return !(isAutocopy(attr, env) && !null(getOccursDcl(attr, ns.outputElement.typerep.typeName, env)) &&
-           -- Only ignore autocopies if the sig item is a nonterminal and not a type variable with an occurs-on context
-           findNamedSigElemType(sigName, ns.inputElements).isNonterminal);
-}
-
-{--
  - Given a name of a child, return whether it has a fully decorated nonterminal
  - type (covered by the more specific checks on accesses from references) or a
  - partially decorated nonterminal type decorated with the attr.
@@ -109,8 +95,7 @@ Boolean ::= sigName::String  attrName::String  e::Decorated Env
  - ensure such an equation exists, accounting for:
  -  1. Defaults
  -  2. Forwards
- -  3. Autocopy
- -  4. Reference accesses
+ -  3. Reference accesses
  - 
  - This gives rise to 'missing transitive dependency' errors.
  - The reason this exists is to handle 'taking a reference'
@@ -146,11 +131,10 @@ function checkEqDeps
   -- All productions must have all SYN equations, so those errors are raised elsewhere.
   | lhsSynVertex(attrName) -> []
   -- A dependency on an RHS.ATTR. SYN are always present, so we only care about INH here.
-  -- Filter missing equations for autocopy or for RHS that are references.
+  -- Filter missing equations for RHS that are references.
   | rhsVertex(sigName, attrName) ->
       if isInherited(attrName, realEnv)
       then if !null(lookupInh(prodName, sigName, attrName, flowEnv))
-           || !ignoreIfAutoCopyOnLhs(sigName, ns, realEnv, attrName)
            || sigAttrViaReference(sigName, attrName, ns, realEnv)
            then []
            else [mwdaWrn(config, l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
@@ -160,7 +144,7 @@ function checkEqDeps
   | localEqVertex(fName) -> []
   -- A dependency on a LOCAL.ATTR. SYN always exist again, so we only care about INH here.
   -- Ignore the FORWARD (a special case of LOCAL), which always has both SYN/INH.
-  -- And again ignore references. Autocopy isn't relevant to locals, though.
+  -- And again ignore references.
   | localVertex(fName, attrName) -> 
       if isInherited(attrName, realEnv)
       then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
@@ -590,16 +574,13 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
       | childReference(lq) ->
           if isDecorable(lq.lookupValue.typeScheme.typerep, top.env)
           then
-            let inhs :: [String] = 
-                  -- N.B. we're filtering out autocopies here
+            let inhs :: [String] =
                   filter(
-                    ignoreIfAutoCopyOnLhs(lq.name, top.frame.signature, top.env, _),
-                    filter(
-                      isEquationMissing(
-                        lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
-                        _),
-                      removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
-                        set:toList(inhDeps))))
+                    isEquationMissing(
+                      lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
+                      _),
+                    removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
+                      set:toList(inhDeps)))
              in if null(inhs) then []
                 else [mwdaWrn(top.config, top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
@@ -741,9 +722,7 @@ top::VarBinder ::= n::Name
 function remoteProdMissingEq
 Boolean ::= prod::ValueDclInfo  sigName::String  attrName::String  realEnv::Decorated Env  flowEnv::FlowEnv
 {
-  return
-    null(lookupInh(prod.fullName, sigName, attrName, flowEnv)) && -- no equation
-    ignoreIfAutoCopyOnLhs(sigName, prod.namedSignature, realEnv, attrName); -- not autocopy (and on lhs)
+  return null(lookupInh(prod.fullName, sigName, attrName, flowEnv)); -- no equation
 }
 
 -- In places where we solve a synthesized attribute occurs-on context,

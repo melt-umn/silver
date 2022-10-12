@@ -143,7 +143,6 @@ function computeAllProductionGraphs
  - 2. All synthesized attributes missing equations have dep on their corresponding fwd.
  - 2b. OR use their default if not forwarding and it exists.
  - 3. All inherited attributes not supplied to forward have copies.
- - 4. All autocopy attributes not supplied to childred have copies.
  -
  - @param dcl  The DclInfo of the production
  - @param defs  The set of defs from prodGraphContribs
@@ -166,8 +165,6 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
   local syns :: [String] = map((.attrOccurring), filter(isOccursSynthesized(_, realEnv), attrs));
   -- Just inherited.
   local inhs :: [String] = map((.attrOccurring), filter(isOccursInherited(_, realEnv), attrs));
-  -- Autocopy.
-  local autos :: [String] = filter(isAutocopy(_, realEnv), inhs);
   -- Does this production forward?
   local nonForwarding :: Boolean = null(lookupFwd(prod, flowEnv));
     
@@ -183,8 +180,7 @@ ProductionGraph ::= dcl::ValueDclInfo  defs::[FlowDef]  flowEnv::FlowEnv  realEn
      else -- This first pair is used sometimes as an alias:
           pair(lhsSynVertex("forward"), forwardEqVertex()) ::
           addFwdSynEqs(prod, synsBySuspicion.fst, flowEnv) ++ 
-          addFwdInhEqs(prod, inhs, flowEnv)) ++
-    addAllAutoCopyEqs(prod, dcl.namedSignature.inputElements, autos, flowEnv, realEnv);
+          addFwdInhEqs(prod, inhs, flowEnv));
   
   -- (safe, suspect)
   local synsBySuspicion :: Pair<[String] [String]> =
@@ -412,27 +408,6 @@ function addDefEqs
              end
         else []) ++
     addDefEqs(prod, nt, tail(syns), flowEnv);
-}
-{--
- - Introduces 'rhs.inh = lhs.inh' wherever not present.
- - Inherited equations are never suspect.
- -}
-function addAllAutoCopyEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName sigNames::[NamedSignatureElement] inhs::[String] flowEnv::FlowEnv realEnv::Decorated Env
-{
-  return if null(sigNames) then []
-  else addAutocopyEqs(prod, head(sigNames), inhs, flowEnv, realEnv) ++ addAllAutoCopyEqs(prod, tail(sigNames), inhs, flowEnv, realEnv);
-}
--- Helper for above.
-function addAutocopyEqs
-[Pair<FlowVertex FlowVertex>] ::= prod::ProdName sigName::NamedSignatureElement inhs::[String] flowEnv::FlowEnv realEnv::Decorated Env
-{
-  return if null(inhs) then []
-  else (if null(lookupInh(prod, sigName.elementName, head(inhs), flowEnv))  -- no equation
-        && !null(getOccursDcl(head(inhs), sigName.typerep.typeName, realEnv)) -- and it occurs on this type
-        then [pair(rhsVertex(sigName.elementName, head(inhs)), lhsInhVertex(head(inhs)))]
-        else []) ++
-    addAutocopyEqs(prod, sigName, tail(inhs), flowEnv, realEnv);
 }
 
 ---- End helpers for fixing up graphs ------------------------------------------
