@@ -246,7 +246,8 @@ IO<()> ::= silverGen::String keepFiles::[String] r::Decorated RootSpec
         exit(-5);
       });
     });
-    oldSrcFiles::[String] <- listContents(srcPath);
+    srcDirContents::[String] <- listContents(srcPath);
+    oldSrcFiles::[String] <- filterM(isFile, map(append(srcPath, _), srcDirContents));
     deleteFiles(removeAll(keepFiles, oldSrcFiles));
     deleteDirFiles(binPath);
     writeFiles(srcPath, r.genFiles);
