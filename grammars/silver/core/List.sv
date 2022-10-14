@@ -173,6 +173,29 @@ function filter
 }
 
 @{--
+ - Monadic (actually Applicative) version of filter
+ -
+ - @param f  The filter function
+ - @param lst  The input list to filter
+ - @return  Only those elements of 'lst' that 'f' returns true for, in the
+ -   same order as they appeared in 'lst'
+ -}
+function filterM
+Applicative m =>
+m<[a]> ::= f::(m<Boolean> ::= a) lst::[a]
+{
+  return
+    case lst of
+    | [] -> pure([])
+    | h :: t -> do {
+        cond::Boolean <- f(h);
+        rest::[a] <- filterM(f, t);
+        return if cond then h :: rest else rest;
+      }
+    end;
+}
+
+@{--
  - Partition a list in two
  -
  - @param f  Decision function
