@@ -32,7 +32,7 @@ propagate compareTo, isEqual, cstErrors, classTerminalContribs, ignored, acode, 
 
 abstract production consTerminalMod
 top::SyntaxTerminalModifiers ::= h::SyntaxTerminalModifier  t::SyntaxTerminalModifiers
-{  
+{
   top.cstErrors <-
     if h.prefixSeperator.isJust && t.prefixSeperator.isJust
     then ["Multiple prefix separators for terminal " ++ top.terminalName]
@@ -115,15 +115,12 @@ abstract production termClasses
 top::SyntaxTerminalModifier ::= cls::[String]
 {
   production allCls :: [String] = unions(cls :: lookupStrings(cls, top.superClasses));
-  local allClsRefsL :: [[Decorated SyntaxDcl]] = lookupStrings(allCls, top.cstEnv);
-  production allClsRefs :: [Decorated SyntaxDcl] =
-    flatMap(\ sds::[Decorated SyntaxDcl] -> if null(sds) then [] else [head(sds)], allClsRefsL);
+  -- Lexer classes not included in this parser are ignored, so library-defined
+  -- lexer classes can be optionally used without requring the library to be
+  -- included in the parser.  See https://github.com/melt-umn/silver/issues/694
+  production allClsRefs :: [Decorated SyntaxDcl] = concat(lookupStrings(allCls, top.cstEnv));
 
-  top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
-                     if !null(a.snd) then []
-                     else ["Lexer Class " ++ a.fst ++ " was referenced but " ++
-                           "this grammar was not included in this parser. (Referenced from lexer class on terminal " ++ top.terminalName ++ ")"],
-                   zipWith(pair, allCls, allClsRefsL)); 
+  top.cstErrors := []; 
   top.classTerminalContribs := map(pair(_, top.terminalName), allCls);
   -- We "translate away" lexer classes dom/sub, by moving that info to the terminals (here)
   top.dominates_ := flatMap((.domContribs), allClsRefs);

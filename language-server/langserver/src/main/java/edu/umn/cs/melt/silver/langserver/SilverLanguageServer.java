@@ -26,6 +26,8 @@ import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+import edu.umn.cs.melt.lsp4jutil.Util;
+
 public class SilverLanguageServer implements LanguageServer, LanguageClientAware {
     private SilverLanguageService service;
     private int errorCode = 1;

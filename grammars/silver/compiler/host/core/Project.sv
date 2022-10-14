@@ -13,7 +13,6 @@ exports silver:compiler:definition:concrete_syntax;
 exports silver:compiler:definition:type:syntax;
 exports silver:compiler:definition:flow:syntax;
 exports silver:regex:concrete_syntax;
-exports silver:langutil:lsp;
 
 -- symbols
 exports silver:compiler:analysis:typechecking:core;

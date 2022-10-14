@@ -125,6 +125,14 @@ abstract production propagateOneAttr
 top::ProductionStmt ::= attr::QName
 {
   top.unparse = s"propagate ${attr.unparse};";
+
+  -- We make an exception to permit propagated equations in places that would otherwise be orphaned.
+  -- Since this is the only possible equation permitted in these contexts, having duplicates will
+  -- still yield a well-defined specification.
+  -- TOOD: Filtering based on the error message is a bit of a hack. 
+  -- With https://github.com/melt-umn/silver/issues/648 we could instead filter on an error code.
+  top.errors :=
+    filter(\ m::Message -> !startsWith("Orphaned equation:", m.message), forward.errors);
   
   -- Ugh, workaround for circular dependency
   top.defs := [];

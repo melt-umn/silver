@@ -11,6 +11,8 @@ import silver:compiler:definition:flow:ast only nilFlow, consFlow, FlowDef;
 
 import silver:compiler:definition:core only jarName;
 
+import silver:compiler:analysis:warnings:flow only warnMissingInh;
+
 {--
  - A representation of a grammar, from an unknown source. TODO: rename GrammarSpec
  -}
@@ -103,7 +105,15 @@ top::RootSpec ::= g::Grammar  oldInterface::Maybe<InterfaceItems>  grammarName::
   top.grammarTime = grammarTime;
   top.generateLocation = generateLocation;
   top.dirtyGrammars :=
-    if oldInterface == just(newInterface)
+    -- If the interface file is unchanged and we aren't running the flow analysis,
+    -- we don't need to rebuild the dependent grammars.
+    -- If we are running the flow analysis, then we unconditionally rebuild all
+    -- dependent grammars to propagate changes in flow deps, since we ignore flow
+    -- defs when comparing interface files.
+    -- This also avoids a circularity issue: computing whether an interface file
+    -- changed depends on error checking, which depends on computed flow types when
+    -- the flow analysis is enabled, which depends on which grammars were compiled.
+    if !top.config.warnMissingInh && oldInterface == just(newInterface)
     then []  -- Dependent grammars don't need to be re-translated
     else lookupAll(grammarName, top.dependentGrammars);
   {- Useful for debugging:

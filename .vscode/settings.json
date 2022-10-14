@@ -1,0 +1,3 @@
+{
+    "silver.jvmArgs": "-Xmx10G -Xss40M"
+}

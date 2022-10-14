@@ -7,8 +7,7 @@ marking terminal SilverAGDcl_t          'Silver_AGDcl'          lexer classes {K
 marking terminal SilverProductionStmt_t 'Silver_ProductionStmt' lexer classes {KEYWORD, RESERVED};
 marking terminal SilverTypeExpr_t       'Silver_TypeExpr'       lexer classes {KEYWORD, RESERVED};
 
-temp_imp_ide_font font_escape color(160, 32, 240) bold italic;
-lexer class Antiquote extends SPECOP, font=font_escape;
+lexer class Antiquote extends SPECOP;
 
 terminal AntiquoteExpr_t              '$Expr'              lexer classes {Antiquote};
 terminal AntiquoteExprInhs_t          '$ExprInhs'          lexer classes {Antiquote};

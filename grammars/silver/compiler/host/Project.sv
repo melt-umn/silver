@@ -25,7 +25,6 @@ exports silver:compiler:modification:copper;
 exports silver:compiler:modification:defaultattr;
 -- slight hacks, for the moment
 exports silver:compiler:modification:copper_mda;
-exports silver:compiler:modification:impide;
 
 -- Pure extensions to Silver
 exports silver:compiler:extension:doc;
