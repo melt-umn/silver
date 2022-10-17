@@ -1,10 +1,14 @@
 grammar silver:compiler:extension:autoattr;
 
+import silver:compiler:definition:concrete_syntax only Left_kwd, Right_kwd;
+
 concrete production threadedAttributeDcl
-top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
+top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTypeExprs '::' te::TypeExpr d::OptDirectionMod ';'
 {
   top.unparse = s"threaded attribute ${inh.unparse}, ${syn.unparse} ${tl.unparse} :: ${te.unparse};";
   top.moduleNames := [];
+
+  propagate grammarName, flowEnv;
 
   production attribute inhFName :: String;
   inhFName = top.grammarName ++ ":" ++ inh.name;
@@ -26,35 +30,53 @@ top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTy
   
   forwards to
     defsAGDcl(
-      [attrDef(defaultEnvItem(threadedInhDcl(inhFName, synFName, tl.freeVariables, te.typerep, sourceGrammar=top.grammarName, sourceLocation=inh.location))),
-       attrDef(defaultEnvItem(threadedSynDcl(inhFName, synFName, tl.freeVariables, te.typerep, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
+      [attrDef(defaultEnvItem(threadedInhDcl(inhFName, synFName, tl.freeVariables, te.typerep, d.reversed, sourceGrammar=top.grammarName, sourceLocation=inh.location))),
+       attrDef(defaultEnvItem(threadedSynDcl(inhFName, synFName, tl.freeVariables, te.typerep, d.reversed, sourceGrammar=top.grammarName, sourceLocation=syn.location)))],
       location=top.location);
 }
 
+synthesized attribute reversed::Boolean;
+
+nonterminal OptDirectionMod with reversed;
+concrete productions top::OptDirectionMod
+| 'direction' '=' d::Direction
+  { top.reversed = d.reversed; }
+|
+  { top.reversed = false; }
+
+nonterminal Direction with reversed;
+concrete productions top::Direction
+| 'left' 'to' 'right'
+  { top.reversed = false; }
+| 'right' 'to' 'left'
+  { top.reversed = true; }
+
 abstract production propagateThreadedInh
-top::ProductionStmt ::= inh::PartiallyDecorated QName syn::String
+top::ProductionStmt ::= rev::Boolean inh::PartiallyDecorated QName syn::String
 {
   undecorates to propagateOneAttr(inh, location=top.location);
   top.unparse = s"propagate ${inh.unparse};";
   
   local lhsName::String = top.frame.signature.outputElement.elementName;
+  local occursChildren::[String] =
+    map(
+      (.elementName),
+      filter(
+        \ ie::NamedSignatureElement ->
+          isDecorable(ie.typerep, top.env) &&
+          !ie.typerep.isPartiallyDecorated &&  -- Don't thread on partially decorated children
+          !null(getOccursDcl(inh.lookupAttribute.fullName, ie.typerep.typeName, top.env)) &&
+          !null(getOccursDcl(syn, ie.typerep.typeName, top.env)),
+        if null(getOccursDcl(syn, top.frame.lhsNtName, top.env)) && !null(top.frame.signature.inputElements)
+        then init(top.frame.signature.inputElements)
+        else top.frame.signature.inputElements));
   forwards to
     threadInhDcl(
       inh.name, syn,
       map(
         name(_, top.location),
         lhsName ::
-        map(
-          (.elementName),
-          filter(
-            \ ie::NamedSignatureElement ->
-              isDecorable(ie.typerep, top.env) &&
-              !ie.typerep.isPartiallyDecorated &&  -- Don't thread on partially decorated children
-              !null(getOccursDcl(inh.lookupAttribute.fullName, ie.typerep.typeName, top.env)) &&
-              !null(getOccursDcl(syn, ie.typerep.typeName, top.env)),
-            if null(getOccursDcl(syn, top.frame.lhsNtName, top.env)) && !null(top.frame.signature.inputElements)
-            then init(top.frame.signature.inputElements)
-            else top.frame.signature.inputElements)) ++
+        (if rev then reverse(occursChildren) else occursChildren) ++
         if null(getOccursDcl(syn, top.frame.lhsNtName, top.env)) && !null(top.frame.signature.inputElements)
         then if !null(getOccursDcl(inh.lookupAttribute.fullName, last(top.frame.signature.inputElements).typerep.typeName, top.env))
           then [last(top.frame.signature.inputElements).elementName]
@@ -64,27 +86,29 @@ top::ProductionStmt ::= inh::PartiallyDecorated QName syn::String
 }
 
 abstract production propagateThreadedSyn
-top::ProductionStmt ::= inh::String syn::PartiallyDecorated QName
+top::ProductionStmt ::= rev::Boolean inh::String syn::PartiallyDecorated QName
 {
   undecorates to propagateOneAttr(syn, location=top.location);
   top.unparse = s"propagate ${syn.unparse};";
   
   local lhsName::String = top.frame.signature.outputElement.elementName;
+  local occursChildren::[String] =
+    map(
+      (.elementName),
+      filter(
+        \ ie::NamedSignatureElement ->
+          isDecorable(ie.typerep, top.env) &&
+          !ie.typerep.isPartiallyDecorated &&  -- Don't thread on partially decorated children
+          !null(getOccursDcl(inh, ie.typerep.typeName, top.env)) &&
+          !null(getOccursDcl(syn.lookupAttribute.fullName, ie.typerep.typeName, top.env)),
+        top.frame.signature.inputElements));
   forwards to
     threadSynDcl(
       inh, syn.name,
       map(
         name(_, top.location),
         lhsName ::
-        map(
-          (.elementName),
-          filter(
-            \ ie::NamedSignatureElement ->
-              isDecorable(ie.typerep, top.env) &&
-              !ie.typerep.isPartiallyDecorated &&  -- Don't thread on partially decorated children
-              !null(getOccursDcl(inh, ie.typerep.typeName, top.env)) &&
-              !null(getOccursDcl(syn.lookupAttribute.fullName, ie.typerep.typeName, top.env)),
-            top.frame.signature.inputElements)) ++
+        (if rev then reverse(occursChildren) else occursChildren) ++
         [if !null(getValueDcl("forward", top.env)) then "forward" else lhsName]),
       location=top.location);
 }

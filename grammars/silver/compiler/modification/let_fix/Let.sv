@@ -44,16 +44,18 @@ top::Expr ::= la::AssignExpr  e::Expr
   top.unparse = "let " ++ la.unparse ++ " in " ++ e.unparse ++ " end";
   top.freeVars := ts:removeAll(la.boundNames, e.freeVars);
   
-  propagate errors;
+  propagate config, grammarName, compiledGrammars, frame, errors, originRules;
+  e.isRoot = false;
   
   top.typerep = e.typerep;
 
-  propagate downSubst, upSubst;
+  propagate downSubst, upSubst, finalSubst;
   
   top.isUnique = e.isUnique;
   
   -- Semantics for the moment is these are not mutually recursive,
   -- so la does NOT get new environment, only e. Thus, la.defs can depend on downSubst...
+  la.env = top.env;
   e.env = newScopeEnv(la.defs, top.env);
 }
 
@@ -61,9 +63,9 @@ monoid attribute boundNames::[String];
 
 nonterminal AssignExpr with location, config, grammarName, env, compiledGrammars, 
                             unparse, defs, errors, boundNames, freeVars, upSubst, 
-                            downSubst, finalSubst, frame, isRoot, originRules;
+                            downSubst, finalSubst, frame, originRules;
 
-propagate errors, defs on AssignExpr;
+propagate config, grammarName, compiledGrammars, frame, env, errors, defs, finalSubst, originRules on AssignExpr;
 
 abstract production appendAssignExpr
 top::AssignExpr ::= a1::AssignExpr a2::AssignExpr
@@ -115,6 +117,8 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
     if errCheck1.typeerror
     then [err(id.location, "Value " ++ id.name ++ " declared with type " ++ errCheck1.rightpp ++ " but the expression being assigned to it has type " ++ errCheck1.leftpp)]
     else [];
+
+  e.isRoot = false;
 }
 
 abstract production lexicalLocalReference

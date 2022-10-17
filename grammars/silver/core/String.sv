@@ -403,3 +403,11 @@ String ::= next::Integer width::Integer lines::[String]
   local ln::String = toString(next); 
   local pad::String = implode("", repeat(" ", width - length(ln)) ) ;
 }
+
+function hashString
+Integer ::= s::String
+{
+  return error("Foreign function");
+} foreign {
+  "java": return "%s%.toString().hashCode()";
+}

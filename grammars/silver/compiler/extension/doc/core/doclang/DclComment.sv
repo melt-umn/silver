@@ -1,5 +1,6 @@
 grammar silver:compiler:extension:doc:core:doclang;
 imports silver:compiler:extension:doc:core;
+imports silver:compiler:definition:env;
 imports silver:langutil;
 imports silver:util:treemap as tm;
 
@@ -45,6 +46,9 @@ nonterminal DclCommentLines layout {} with body, location, docEnv, errors;
 nonterminal DclCommentParts layout {} with body, location, docEnv, errors;
 nonterminal DclCommentPart layout {} with body, location, docEnv, errors;
 
+propagate docEnv on
+    DclComment, DclCommentBlocks, DclCommentStrictBlocks, DclCommentBlock,
+    DclCommentLines, DclCommentParts, DclCommentPart;
 propagate errors on DclCommentBlocks, DclCommentStrictBlocks, DclCommentBlock,
     DclCommentLines, DclCommentParts, DclCommentPart;
 
@@ -398,7 +402,7 @@ top::DclCommentPart ::= '@link' '[' id::Id_t ']'
 {
     local res::[DocDclInfo] = tm:lookup(id.lexeme, top.docEnv);
     top.body = case res of
-               | [docDclInfo(_, location, grammarName)] -> id.lexeme ++ " at " ++ grammarName ++ "/" ++ location.filename ++ "#" ++ toString(location.line)
+               | [dcl] -> id.lexeme ++ " at " ++ dcl.sourceGrammar ++ "/" ++ dcl.sourceLocation.filename ++ "#" ++ toString(dcl.sourceLocation.line)
                | _ -> s"${id.lexeme} (**BROKEN LINK**)"
                end;
     top.errors <- case res of

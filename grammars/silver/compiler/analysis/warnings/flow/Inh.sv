@@ -62,20 +62,6 @@ Boolean ::= f::([FlowDef] ::= String)  attr::String
 }
 
 {--
- - False if 'attr' is an autocopy attribute, occurs on the LHS nonterminal,
- - and child 'sigName' is a nonterminal (not a type var with an occurs-on context);
- - true otherwise.  Used in conjunction with 'filter' to get
- - remove "missing equations" that are actually implicit autocopies.
- -}
-function ignoreIfAutoCopyOnLhs
-Boolean ::= sigName::String  ns::NamedSignature  env::Decorated Env  attr::String
-{
-  return !(isAutocopy(attr, env) && !null(getOccursDcl(attr, ns.outputElement.typerep.typeName, env)) &&
-           -- Only ignore autocopies if the sig item is a nonterminal and not a type variable with an occurs-on context
-           findNamedSigElemType(sigName, ns.inputElements).isNonterminal);
-}
-
-{--
  - Given a name of a child, return whether it has a fully decorated nonterminal
  - type (covered by the more specific checks on accesses from references) or a
  - partially decorated nonterminal type decorated with the attr.
@@ -109,8 +95,7 @@ Boolean ::= sigName::String  attrName::String  e::Decorated Env
  - ensure such an equation exists, accounting for:
  -  1. Defaults
  -  2. Forwards
- -  3. Autocopy
- -  4. Reference accesses
+ -  3. Reference accesses
  - 
  - This gives rise to 'missing transitive dependency' errors.
  - The reason this exists is to handle 'taking a reference'
@@ -146,11 +131,10 @@ function checkEqDeps
   -- All productions must have all SYN equations, so those errors are raised elsewhere.
   | lhsSynVertex(attrName) -> []
   -- A dependency on an RHS.ATTR. SYN are always present, so we only care about INH here.
-  -- Filter missing equations for autocopy or for RHS that are references.
+  -- Filter missing equations for RHS that are references.
   | rhsVertex(sigName, attrName) ->
       if isInherited(attrName, realEnv)
       then if !null(lookupInh(prodName, sigName, attrName, flowEnv))
-           || !ignoreIfAutoCopyOnLhs(sigName, ns, realEnv, attrName)
            || sigAttrViaReference(sigName, attrName, ns, realEnv)
            then []
            else [mwdaWrn(config, l, "Equation has transitive dependency on child " ++ sigName ++ "'s inherited attribute for " ++ attrName ++ " but this equation appears to be missing.")]
@@ -160,7 +144,7 @@ function checkEqDeps
   | localEqVertex(fName) -> []
   -- A dependency on a LOCAL.ATTR. SYN always exist again, so we only care about INH here.
   -- Ignore the FORWARD (a special case of LOCAL), which always has both SYN/INH.
-  -- And again ignore references. Autocopy isn't relevant to locals, though.
+  -- And again ignore references.
   | localVertex(fName, attrName) -> 
       if isInherited(attrName, realEnv)
       then if !null(lookupLocalInh(prodName, fName, attrName, flowEnv))
@@ -210,21 +194,10 @@ function inhDepsForSynOnType
 {
   local contexts::Contexts = foldContexts(ns.contexts);
   contexts.env = env;
-  
-  local isList::Boolean =
-    case t of
-    | appType(listCtrType(), _) -> true
-    | decoratedType(appType(listCtrType(), _), _) -> true
-    | _ -> false
-    end;
 
   return
     if t.isNonterminal || (t.isDecorated && t.decoratedType.isNonterminal)
     then (just(inhDepsForSyn(syn, t.typeName, flow)), [])
-    -- TODO: Hack for lists, since these pretend not to be not be nonterminals yet use attributes in the nonspecialized implementation.
-    -- These attributes (i_headList, i_tailList, i_nullList, i_lengthList) have no inherited dependencies.
-    -- This can go away if we make lists a built-in/modification and scrap the unspecialized implementations.
-    else if isList then (just(mempty), [])
     else (
       map(set:fromList, lookup(syn, lookupAll(t.typeName, contexts.occursContextInhDeps))),
       concat(lookupAll(syn, lookupAll(t.typeName, contexts.occursContextInhSetDeps))));
@@ -620,16 +593,13 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
       | childReference(lq) ->
           if isDecorable(lq.lookupValue.typeScheme.typerep, top.env)
           then
-            let inhs :: [String] = 
-                  -- N.B. we're filtering out autocopies here
+            let inhs :: [String] =
                   filter(
-                    ignoreIfAutoCopyOnLhs(lq.name, top.frame.signature, top.env, _),
-                    filter(
-                      isEquationMissing(
-                        lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
-                        _),
-                      removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
-                        set:toList(inhDeps))))
+                    isEquationMissing(
+                      lookupInh(top.frame.fullName, lq.lookupValue.fullName, _, top.flowEnv),
+                      _),
+                    removeAll(getMinRefSet(lq.lookupValue.typeScheme.typerep, top.env),
+                      set:toList(inhDeps)))
              in if null(inhs) then []
                 else [mwdaWrn(top.config, top.location, "Access of syn attribute " ++ q.name ++ " on " ++ e.unparse ++ " requires missing inherited attributes " ++ implode(", ", inhs) ++ " to be supplied")]
             end
@@ -771,16 +741,48 @@ top::VarBinder ::= n::Name
 function remoteProdMissingEq
 Boolean ::= prod::ValueDclInfo  sigName::String  attrName::String  realEnv::Decorated Env  flowEnv::FlowEnv
 {
-  return
-    null(lookupInh(prod.fullName, sigName, attrName, flowEnv)) && -- no equation
-    ignoreIfAutoCopyOnLhs(sigName, prod.namedSignature, realEnv, attrName); -- not autocopy (and on lhs)
+  return null(lookupInh(prod.fullName, sigName, attrName, flowEnv)); -- no equation
+}
+
+-- In places where we solve a synthesized attribute occurs-on context,
+-- check that the actual deps for the attribute do not exceed the one specified for the context.
+aspect production synOccursContext
+top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
+{
+  -- oh no again
+  production myFlow :: EnvTree<FlowType> = head(searchEnvTree(top.grammarName, top.compiledGrammars)).grammarFlowTypes;
+
+  -- The logic here mirrors the reference case in synDecoratedAccessHandler
+  local deps :: (Maybe<set:Set<String>>, [TyVar]) =
+    inhDepsForSynOnType(attr, ntty, myFlow, top.frame.signature, top.env);
+  local inhDeps :: set:Set<String> = fromMaybe(set:empty(), deps.1);  -- Need to check that we have bounded inh deps, i.e. deps.1 == just(...)
+
+  local acceptable :: ([String], [TyVar]) = getMinInhSetMembers([], inhs, top.env);
+  local diff :: [String] = set:toList(set:removeAll(acceptable.1, inhDeps));
+
+  top.contextErrors <-
+    if top.config.warnMissingInh
+    && null(ntty.freeFlexibleVars) && null(inhs.freeFlexibleVars)
+    && !null(top.resolvedOccurs)
+    then
+      if any(map(contains(_, deps.2), acceptable.2)) then []  -- The deps are supplied as a common InhSet var
+      -- We didn't find the deps as an InhSet var
+      else if null(diff)
+        then if deps.1.isJust then []  -- We have a bound on the inh deps, and they are all present
+        -- We don't have a bound on the inh deps, flag the unsatisfied InhSet deps
+        else if null(acceptable.2)
+        then [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(top)} (arising from ${top.contextSource}) depends on an unbounded set of inherited attributes")]
+        else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(top)} (arising from ${top.contextSource}) exceeds the flow type constraint with dependencies on one of the following sets of inherited attributes: " ++ implode(", ", map(findAbbrevFor(_, top.frame.signature.freeVariables), deps.2)))]
+      -- We didn't find the inh deps
+      else [mwdaWrn(top.config, top.contextLoc, s"The instance for ${prettyContext(top)} (arising from ${top.contextSource}) has a flow type exceeding the constraint with dependencies on " ++ implode(", ", diff))]
+   else [];
 }
 
 --------------------------------------------------------------------------------
 
 -- TODO: There are a few final places where we need to `checkEqDeps` for the sake of `anonVertex`s
 
--- global declarations, action blocks (production, terminal, disam, etc)
+-- action blocks (production, terminal, disam, etc)
 
 -- But we don't create flowEnv information for these locations so they can't be checked... oops
 -- (e.g. `checkEqDeps` wants a production fName to look things up about.)

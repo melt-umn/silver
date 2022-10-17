@@ -26,18 +26,19 @@ nonterminal PrimPatterns with
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors, freeVars,
   downSubst, upSubst, finalSubst, isUnique,
-  scrutineeType, returnType, translation, isRoot, originRules;
+  scrutineeType, returnType, translation, originRules;
 nonterminal PrimPattern with 
   config, grammarName, env, compiledGrammars, frame,
   location, unparse, errors, freeVars,
   downSubst, upSubst, finalSubst, isUnique,
-  scrutineeType, returnType, translation, isRoot, originRules;
+  scrutineeType, returnType, translation, originRules;
 
-autocopy attribute scrutineeType :: Type;
-autocopy attribute returnType :: Type;
+inherited attribute scrutineeType :: Type;
+inherited attribute returnType :: Type;
 
-propagate errors on PrimPatterns, PrimPattern;
-propagate freeVars on PrimPatterns, PrimPattern excluding prodPatternNormal, prodPatternGadt, conslstPattern;
+propagate config, grammarName, compiledGrammars, frame, errors, scrutineeType, returnType, originRules
+  on PrimPatterns, PrimPattern;
+propagate env, finalSubst, freeVars on PrimPatterns, PrimPattern excluding prodPatternNormal, prodPatternGadt, conslstPattern;
 
 concrete production matchPrimitiveConcrete
 top::Expr ::= 'match' e::Expr 'return' t::TypeExpr 'with' pr::PrimPatterns 'else' '->' f::Expr 'end'
@@ -51,7 +52,8 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
   
-  propagate freeVars;
+  propagate config, grammarName, env, freeVars, frame, compiledGrammars, finalSubst, originRules, flowEnv;
+  e.isRoot = false;
 
   e.downSubst = top.downSubst;
   forward.downSubst = e.upSubst;
@@ -78,7 +80,7 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
 {
   top.unparse = "match " ++ e.unparse ++ " return " ++ t.unparse ++ " with " ++ pr.unparse ++ " else -> " ++ f.unparse ++ "end";
   
-  propagate errors, freeVars;
+  propagate config, grammarName, env, freeVars, frame, errors, compiledGrammars, finalSubst, originRules;
   top.typerep = t.typerep;
 
   top.errors <- t.errorsKindStar;
@@ -106,6 +108,9 @@ top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr
   
   pr.scrutineeType = scrutineeType;
   pr.returnType = t.typerep;
+
+  e.isRoot = false;
+  f.isRoot = false;
   
   top.isUnique = pr.isUnique || f.isUnique;
   
@@ -171,6 +176,7 @@ concrete production prodPattern
 top::PrimPattern ::= qn::QName '(' ns::VarBinders ')' '->' e::Expr
 {
   top.unparse = qn.unparse ++ "(" ++ ns.unparse ++ ") -> " ++ e.unparse;
+  propagate frame, env, compiledGrammars, grammarName;
 
   top.freeVars := ts:removeAll(ns.boundNames, e.freeVars);
 
@@ -251,6 +257,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   
   -- Thread NORMALLY! YAY!
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
+  propagate finalSubst;
 
   top.isUnique = e.isUnique;
   
@@ -266,6 +273,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
           scrutineeName, top.location, top.grammarName),
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   e.env = newScopeEnv(contextDefs ++ ns.defs, ns.env);
+  e.isRoot = false;
   
   top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++ ") { " ++
     (if null(prod_contexts) then "" else s"final ${makeProdName(qn.lookupValue.fullName)} ${scrutineeName} = (${makeProdName(qn.lookupValue.fullName)})scrutineeNode; ") ++
@@ -329,6 +337,7 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
   --       but for now for simplicity, we avoid that.
   -- So for now, we're just skipping over this case entirely:
   top.upSubst = top.downSubst;
+  ns.finalSubst = top.finalSubst;
   
   -- AFTER everything is done elsewhere, we come back with finalSubst, and we produce the refinement, and thread THAT through everything.
   errCheck1.downSubst = composeSubst(top.finalSubst, produceRefinement(top.scrutineeType, decoratedType(prod_type.outputType, freshInhSet())));
@@ -352,6 +361,8 @@ top::PrimPattern ::= qn::Decorated QName  ns::VarBinders  e::Expr
           scrutineeName, top.location, top.grammarName),
       prod_contexts, if null(qn.lookupValue.dcls) then [] else qn.lookupValue.dcl.namedSignature.contexts));
   e.env = newScopeEnv(contextDefs ++ ns.defs, ns.env);
+
+  e.isRoot = false;
   
   top.translation = "if(scrutineeNode instanceof " ++ makeProdName(qn.lookupValue.fullName) ++ ") { " ++
     (if null(prod_contexts) then "" else s"final ${makeProdName(qn.lookupValue.fullName)} ${scrutineeName} = (${makeProdName(qn.lookupValue.fullName)})scrutineeNode; ") ++
@@ -383,6 +394,8 @@ top::PrimPattern ::= i::Int_t '->' e::Expr
 
   top.isUnique = e.isUnique;
 
+  e.isRoot = false;
+
   top.translation = "if(scrutinee == " ++ i.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
 }
@@ -407,6 +420,8 @@ top::PrimPattern ::= f::Float_t '->' e::Expr
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
   top.isUnique = e.isUnique;
+
+  e.isRoot = false;
 
   top.translation = "if(scrutinee == " ++ f.lexeme ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -433,6 +448,8 @@ top::PrimPattern ::= i::String_t '->' e::Expr
 
   top.isUnique = e.isUnique;
 
+  e.isRoot = false;
+
   top.translation = "if(scrutinee.equals(" ++ i.lexeme ++ ")) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
 }
@@ -458,6 +475,8 @@ top::PrimPattern ::= i::String '->' e::Expr
 
   top.isUnique = e.isUnique;
 
+  e.isRoot = false;
+
   top.translation = "if(scrutinee == " ++ i ++ ") { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
 }
@@ -482,6 +501,8 @@ top::PrimPattern ::= e::Expr
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
   top.isUnique = e.isUnique;
+
+  e.isRoot = false;
 
   top.translation = "if(scrutinee.nil()) { return (" ++ performSubstitution(top.returnType, top.finalSubst).transType ++ ")" ++
                          e.translation ++ "; }";
@@ -512,12 +533,14 @@ top::PrimPattern ::= h::Name t::Name e::Expr
   thread downSubst, upSubst on top, errCheck1, e, errCheck2, top;
 
   top.isUnique = e.isUnique;
+  propagate finalSubst;
   
   local consdefs :: [Def] =
     [lexicalLocalDef(top.grammarName, top.location, h_fName, elemType, noVertex(), []),
      lexicalLocalDef(top.grammarName, top.location, t_fName, top.scrutineeType, noVertex(), [])];
   
   e.env = newScopeEnv(consdefs, top.env);
+  e.isRoot = false;
   
   top.translation =
     let

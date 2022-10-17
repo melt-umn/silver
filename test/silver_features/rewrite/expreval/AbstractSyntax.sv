@@ -1,5 +1,6 @@
 grammar silver_features:rewrite:expreval;
 
+imports silver:core hiding add, sub, mul, div;
 imports silver:langutil;
 imports silver:langutil:pp;
 imports silver:rewrite;
@@ -73,14 +74,16 @@ Strategy ::= n::String e::Expr
     end));
 }
 
+global intGCD::(Integer ::= Integer Integer) = gcd;
+
 global evalStep::Strategy =
   rule on Expr of
   | add(const(a), const(b)) -> const(a + b)
   | sub(const(a), const(b)) -> const(a - b)
   | mul(const(a), const(b)) -> const(a * b)
   | div(const(a), const(b)) when b != 0 && a % b == 0 -> const(a / b)
-  | div(const(a), const(b)) when b != 0 && gcd(a, b) > 1 ->
-     let g::Integer = gcd(a, b) in div(const(a / g), const(b / g)) end
+  | div(const(a), const(b)) when b != 0 && intGCD(a, b) > 1 ->
+     let g::Integer = intGCD(a, b) in div(const(a / g), const(b / g)) end
   -- This rule does not respect lexical shadowing;
   -- it is assumed that the overall rewrite will be done in an innermost order.
   | letE(n, e1, e2) -> rewriteWith(subst(n, e1), e2).fromJust
@@ -123,15 +126,15 @@ global simplifyFrac::Strategy =
 global eval::Strategy = innermost(evalStep <+ simplifyConstIdent <+ simplifyFrac);
 
 -- Strategy attributes
-autocopy attribute substName::String;
-autocopy attribute substExpr::Expr;
+inherited attribute substName::String;
+inherited attribute substExpr::Expr;
 strategy attribute substRes =
   allTopDown(
     rule on top::Expr of
     | var(n1) when top.substName == n1 -> top.substExpr
     end);
 attribute substName, substExpr, substRes occurs on Expr;
-propagate substRes on Expr;
+propagate substName, substExpr, substRes on Expr;
 
 partial strategy attribute evalStep =
   rule on Expr of

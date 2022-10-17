@@ -12,6 +12,8 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' ';'
   local obj :: String_t = terminal(String_t, "\"Object\"");
   --forwards to ffiTypeDcl('foreign', 'type', id, tl, '=', obj, ';', location=top.location);
   forwards to ffiTypeDclUgly('type', id, tl, 'foreign', '=', obj, ';', location=top.location);
+} action {
+  insert semantic token IdTypeDcl_t at id.location;
 }
 
 
@@ -40,7 +42,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' '=' trans::St
 
   top.defs := [typeAliasDef(top.grammarName, id.location, fName, [], tl.freeVariables, foreignType(fName, transType, tl.types))];
 
-  propagate errors, flowDefs;
+  propagate grammarName, errors, flowDefs, flowEnv;
   top.errors <- tl.errorsTyVars;
   
   -- Put the variables listed on the rhs in the environment FOR TL ONLY, so they're all "declared"
@@ -57,5 +59,7 @@ top::AGDcl ::= 'type' id::Name tl::BracketedOptTypeExprs 'foreign' '=' trans::St
     if isLower(substring(0, 1, id.name))
     then [err(id.location, "Types must be capitalized. Invalid foreign type name " ++ id.name)]
     else [];
+} action {
+  insert semantic token IdTypeDcl_t at id.location;
 }
 

@@ -6,24 +6,24 @@ type ParserBean foreign;
 function parserBean
 ParserBean ::= sourceGrammar::String  location::Location  id::String
      name::String  startSymbol::ElementReference
-     startLayout::[ElementReference]  parserClassAuxCode::String
+     startLayout::[ElementReference]  interfaceNames::[String]  parserClassAuxCode::String
      parserInitCode::String  preambleCode::String  grammar_::Grammar
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "common.CopperUtil.makeParserBean(%sourceGrammar%.toString(), %location%, %id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection<>(%startLayout%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%grammar_%)";
+  "java" : return "common.CopperUtil.makeParserBean(%sourceGrammar%.toString(), %location%, %id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection<>(%startLayout%), new common.javainterop.ConsCellCollection<>(%interfaceNames%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%grammar_%)";
 }
 
 function extendedParserBean
 ParserBean ::= sourceGrammar::String  location::Location  id::String
      name::String  startSymbol::ElementReference
-     startLayout::[ElementReference]  parserClassAuxCode::String
+     startLayout::[ElementReference]  interfaceNames::[String]  parserClassAuxCode::String
      parserInitCode::String  preambleCode::String  hostGrammar::Grammar
      extGrammar::Grammar
 {
   return error("copper FFI function");
 } foreign {
-  "java" : return "common.CopperUtil.makeExtendedParserBean(%sourceGrammar%.toString(), %location%, %id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection<>(%startLayout%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%hostGrammar%, (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%extGrammar%)";
+  "java" : return "common.CopperUtil.makeExtendedParserBean(%sourceGrammar%.toString(), %location%, %id%.toString(), %name%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.CopperElementReference)%startSymbol%, new common.javainterop.ConsCellCollection<>(%startLayout%), new common.javainterop.ConsCellCollection<>(%interfaceNames%), %parserClassAuxCode%.toString(), %parserInitCode%.toString(), %preambleCode%.toString(), (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%hostGrammar%, (edu.umn.cs.melt.copper.compiletime.spec.grammarbeans.Grammar)%extGrammar%)";
 }
 
 function compileParserBeanT

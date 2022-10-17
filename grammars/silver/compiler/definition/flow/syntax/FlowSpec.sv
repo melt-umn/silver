@@ -18,6 +18,8 @@ concrete production flowtypeDcl
 top::AGDcl ::= 'flowtype' nt::QName '=' specs::FlowSpecs ';'
 {
   top.unparse = "flowtype " ++ nt.unparse ++ " = " ++ specs.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, env, flowEnv;
+
   top.errors :=
     if nt.lookupType.found
     then specs.errors
@@ -34,6 +36,8 @@ concrete production flowtypeAttrDcl
 top::AGDcl ::= 'flowtype' attr::FlowSpec 'on' nts::NtList ';'
 {
   top.unparse = "flowtype " ++ attr.unparse ++ " on " ++ nts.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, env, flowEnv;
+
   top.errors := nts.errors;
   top.specDefs := nts.specDefs;
   
@@ -43,7 +47,7 @@ top::AGDcl ::= 'flowtype' attr::FlowSpec 'on' nts::NtList ';'
 
 nonterminal FlowSpecs with config, location, grammarName, errors, env, unparse, onNt, specDefs, compiledGrammars, flowEnv;
 
-propagate errors, specDefs on FlowSpecs;
+propagate config, grammarName, errors, env, onNt, specDefs, compiledGrammars, flowEnv on FlowSpecs;
 
 concrete production oneFlowSpec
 top::FlowSpecs ::= h::FlowSpec
@@ -58,9 +62,9 @@ top::FlowSpecs ::= h::FlowSpecs  ','  t::FlowSpec
 
 nonterminal FlowSpec with config, location, grammarName, errors, env, unparse, onNt, specDefs, compiledGrammars, flowEnv;
 
-autocopy attribute onNt :: Type;
+inherited attribute onNt :: Type;
 
-propagate errors on FlowSpec;
+propagate config, grammarName, errors, env, onNt, compiledGrammars, flowEnv on FlowSpec;
 
 concrete production flowSpecDcl
 top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
@@ -93,7 +97,7 @@ top::FlowSpec ::= attr::FlowSpecId  '{' inhs::FlowSpecInhs '}'
     else [err(attr.location, attr.name ++ " is an extension synthesized attribute, and must contain at least the forward flow type. It is missing " ++ implode(", ", missingFt))];
 
   top.errors <-
-    if contains(attr.synName, inhs.refList)
+    if attr.found && contains(attr.synName, inhs.refList)
     then [err(top.location, s"circularity in flow specification for ${attr.name} on ${top.onNt.typeName}")]
     else [];
   
@@ -109,7 +113,7 @@ nonterminal FlowSpecId with config, location, grammarName, errors, env, unparse,
 synthesized attribute synName :: String;
 synthesized attribute authorityGrammar :: String;
 
-propagate errors on FlowSpecId;
+propagate config, grammarName, errors, env, compiledGrammars, flowEnv on FlowSpecId;
 
 concrete production qnameSpecId
 top::FlowSpecId ::= syn::QNameAttrOccur
@@ -153,7 +157,7 @@ nonterminal FlowSpecInhs with config, location, grammarName, errors, env, unpars
 monoid attribute inhList :: [String];  -- The attributes in the flow specification
 monoid attribute refList :: [String];  -- Flow specifications referenced in this one (currently can only contain "decorate" / "forward")
 
-propagate errors, inhList, refList on FlowSpecInhs;
+propagate config, grammarName, errors, env, onNt, inhList, refList, flowEnv on FlowSpecInhs;
 
 concrete production nilFlowSpecInhs
 top::FlowSpecInhs ::=
@@ -173,9 +177,9 @@ top::FlowSpecInhs ::= h::FlowSpecInh  ','  t::FlowSpecInhs
 
 nonterminal FlowSpecInh with config, location, grammarName, errors, env, unparse, onNt, inhList, refList, flowEnv;
 
-flowtype FlowSpecInh = forward {grammarName, env, flowEnv, onNt}, inhList {forward};
+flowtype FlowSpecInh = forward {grammarName, env, flowEnv, onNt}, inhList {forward}, errors {forward};
 
-propagate errors on FlowSpecInh;
+propagate config, grammarName, errors, env, flowEnv on FlowSpecInh;
 
 concrete production flowSpecInh
 top::FlowSpecInh ::= inh::QNameAttrOccur
@@ -251,7 +255,7 @@ top::FlowSpecInh ::= 'forward'
 
 nonterminal NtList with config, location, grammarName, errors, env, unparse, flowSpecSpec, specDefs, compiledGrammars, flowEnv;
 
-propagate errors, specDefs on NtList;
+propagate config, grammarName, errors, env, flowSpecSpec, specDefs, compiledGrammars, flowEnv on NtList;
 
 concrete production nilNtList
 top::NtList ::=
@@ -271,7 +275,9 @@ top::NtList ::= h::NtName  ','  t::NtList
 
 nonterminal NtName with config, location, grammarName, errors, env, unparse, flowSpecSpec, specDefs, compiledGrammars, flowEnv;
 
-autocopy attribute flowSpecSpec :: FlowSpec;
+propagate config, grammarName, env, compiledGrammars, flowEnv on NtName;
+
+inherited attribute flowSpecSpec :: FlowSpec;
 
 concrete production ntName
 top::NtName ::= nt::QName

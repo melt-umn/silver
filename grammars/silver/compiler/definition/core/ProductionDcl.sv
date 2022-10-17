@@ -11,8 +11,9 @@ flowtype forward {deterministicCount, env} on ProductionRHSElem;
 
 flowtype decorate {forward, grammarName, flowEnv} on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
 
-propagate errors on ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
-propagate defs on ProductionRHS;
+propagate config, grammarName, errors on
+  ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem;
+propagate env, defs on ProductionRHS;
 
 {--
  - Used to help give names to children, when names are omitted.
@@ -30,6 +31,11 @@ inherited attribute signatureName :: String;
  - to avoid an infinite recursion.
  -}
 synthesized attribute constraintDefs::[Def];
+
+{--
+ - The signature names of the production body currently being parsed, for use in reporting semantic tokens.
+ -}
+parser attribute sigNames::[String] action { sigNames = []; };
 
 concrete production productionDcl
 top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
@@ -77,6 +83,9 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
 
   body.env = occursEnv(ns.occursDefs, newScopeEnv(body.defs ++ sigDefs ++ ns.constraintDefs ++ prodAtts, top.env));
   body.frame = productionContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName); -- graph from flow:env
+} action {
+  insert semantic token IdFnProdDcl_t at id.location;
+  sigNames = [];
 }
 
 concrete production productionSignature
@@ -84,7 +93,9 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
 {
   top.unparse = s"${cl.unparse} => ${lhs.unparse} ::= ${rhs.unparse}";
   
+  cl.env = top.env;
   cl.constraintPos = signaturePos(top.namedSignature);
+  lhs.env = top.env;
   rhs.env = occursEnv(cl.occursDefs, top.env);
 
   top.defs := lhs.defs ++ rhs.defs;
@@ -97,6 +108,8 @@ top::ProductionSignature ::= cl::ConstraintList '=>' lhs::ProductionLHS '::=' rh
       foldNamedSignatureElements(rhs.inputElements),
       lhs.outputElement,
       foldNamedSignatureElements(annotationsForNonterminal(lhs.outputElement.typerep, top.env)));
+} action {
+  sigNames = foldNamedSignatureElements(lhs.outputElement :: rhs.inputElements).elementNames;
 }
 
 concrete production productionSignatureNoCL
@@ -105,12 +118,15 @@ top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
   top.unparse = s"${lhs.unparse} ::= ${rhs.unparse}";
   
   forwards to productionSignature(nilConstraint(location=top.location), '=>', lhs, $2, rhs, location=top.location);
+} action {
+  sigNames = foldNamedSignatureElements(lhs.outputElement :: rhs.inputElements).elementNames;
 }
 
 concrete production productionLHS
 top::ProductionLHS ::= id::Name '::' t::TypeExpr
 {
   top.unparse = id.unparse ++ "::" ++ t.unparse;
+  propagate env;
 
   top.outputElement = namedSignatureElement(id.name, t.typerep);
 
@@ -120,6 +136,8 @@ top::ProductionLHS ::= id::Name '::' t::TypeExpr
     if length(getValueDclInScope(id.name, top.env)) > 1
     then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
     else [];
+} action {
+  insert semantic token IdSigNameDcl_t at id.location;
 }
 
 concrete production productionRHSNil
@@ -145,6 +163,7 @@ concrete production productionRHSElem
 top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 {
   top.unparse = id.unparse ++ "::" ++ t.unparse;
+  propagate env;
 
   top.inputElements = [namedSignatureElement(id.name, t.typerep)];
 
@@ -154,6 +173,8 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
     if length(getValueDclInScope(id.name, top.env)) > 1 
     then [err(id.location, "Value '" ++ id.name ++ "' is already bound.")]
     else [];
+} action {
+  insert semantic token IdSigNameDcl_t at id.location;
 }
 
 concrete production productionRHSElemType

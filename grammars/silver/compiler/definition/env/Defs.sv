@@ -62,9 +62,12 @@ top::Defs ::= e1::Def e2::Defs
 
 --------------------------------------------------------------------------------
 
-closed nonterminal Def with typeList, valueList, attrList, instList, prodOccursList, prodDclList, filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended;
+closed nonterminal Def with
+  typeList, valueList, attrList, instList, prodOccursList, prodDclList,
+  filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended,
+  compareTo, isEqual;
 
-propagate filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended on Def;
+propagate filterItems, filterIncludeOnly, filterIncludeHiding, withRenames, renamed, pfx, prepended, compareTo, isEqual on Def;
 
 aspect default production
 top::Def ::=

@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:core;
 
-autocopy attribute nonterminalName :: String;
+inherited attribute nonterminalName :: String;
 
 concrete production nonterminalDcl
 top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTypeExprs nm::NonterminalModifiers ';'
@@ -29,6 +29,8 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
   -- Here we bind those type variables.
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
+
+  nm.env = top.env;
   
   -- Redefinition check of the name
   top.errors <- 
@@ -40,6 +42,8 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
     if isLower(substring(0,1,id.name))
     then [err(id.location, "Types must be capitalized. Invalid nonterminal name " ++ id.name)]
     else [];
+} action {
+  insert semantic token IdTypeDcl_t at id.location;
 }
 
 nonterminal NTDeclQualifiers with location, errors;
@@ -81,7 +85,8 @@ nonterminal NonterminalModifiers with config, location, unparse, errors, env, no
 nonterminal NonterminalModifierList with config, location, unparse, errors, env, nonterminalName; -- 1 or more
 closed nonterminal NonterminalModifier with config, location, unparse, errors, env, nonterminalName; -- 1
 
-propagate errors on NonterminalModifiers, NonterminalModifierList, NonterminalModifier;
+propagate config, errors, env, nonterminalName
+  on NonterminalModifiers, NonterminalModifierList, NonterminalModifier;
 
 concrete production nonterminalModifiersNone
 top::NonterminalModifiers ::=

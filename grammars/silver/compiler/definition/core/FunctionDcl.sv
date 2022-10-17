@@ -3,10 +3,10 @@ grammar silver:compiler:definition:core;
 nonterminal FunctionSignature with config, grammarName, env, location, unparse, errors, defs, constraintDefs, occursDefs, namedSignature, signatureName;
 nonterminal FunctionLHS with config, grammarName, env, location, unparse, errors, defs, outputElement;
 
-propagate errors on FunctionSignature, FunctionLHS;
+propagate config, grammarName, errors on FunctionSignature, FunctionLHS;
 
 concrete production functionDcl
-top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 
+top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 {
   top.unparse = "function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse; 
 
@@ -40,6 +40,9 @@ top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody
 
   body.env = occursEnv(ns.occursDefs, newScopeEnv(body.defs ++ sigDefs ++ ns.constraintDefs, newScopeEnv(prodAtts, top.env)));
   body.frame = functionContext(namedSig, myFlowGraph, sourceGrammar=top.grammarName); -- graph from flow:env
+} action {
+  insert semantic token IdFnProdDcl_t at id.location;
+  sigNames = [];
 }
 
 concrete production functionSignature
@@ -48,6 +51,8 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
   top.unparse = s"${cl.unparse} => ${lhs.unparse} ::= ${rhs.unparse}";
 
   cl.constraintPos = signaturePos(top.namedSignature);
+  cl.env = top.env;
+  lhs.env = top.env;
   rhs.env = occursEnv(cl.occursDefs, top.env);
 
   top.defs := lhs.defs ++ rhs.defs;
@@ -62,6 +67,8 @@ top::FunctionSignature ::= cl::ConstraintList '=>' lhs::FunctionLHS '::=' rhs::P
       lhs.outputElement,
       -- For the moment, functions do not have named parameters (hence, nilNamedSignatureElement)
       nilNamedSignatureElement());
+} action {
+  sigNames = foldNamedSignatureElements(rhs.inputElements).elementNames;
 }
 
 concrete production functionSignatureNoCL
@@ -70,12 +77,15 @@ top::FunctionSignature ::= lhs::FunctionLHS '::=' rhs::ProductionRHS
   top.unparse = s"${lhs.unparse} ::= ${rhs.unparse}";
 
   forwards to functionSignature(nilConstraint(location=top.location), '=>', lhs, $2, rhs, location=top.location);
+} action {
+  sigNames = foldNamedSignatureElements(rhs.inputElements).elementNames;
 }
 
 concrete production functionLHS
 top::FunctionLHS ::= t::TypeExpr
 {
   top.unparse = t.unparse;
+  propagate env;
 
   production attribute fName :: String;
   fName = "__func__lhs";

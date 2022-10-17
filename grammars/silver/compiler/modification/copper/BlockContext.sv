@@ -27,6 +27,7 @@ top::BlockContext ::= g::ProductionGraph
   top.fullName = "__action__"; -- Used as part of naming locals... maybe we should fix that? TODO
   top.signature = bogusNamedSignature();
   top.flowGraph = g;
+  top.lhsNtName = "::nolhs"; -- unfortunately this is sometimes accessed, and a dummy value works okay
   
   top.lazyApplication = false;
   top.permitActions = true;

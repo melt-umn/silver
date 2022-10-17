@@ -21,6 +21,7 @@ abstract production functorDcl
 top::AttributeDclInfo ::= fn::String
 {
   top.fullName = fn;
+  propagate compareKey, isEqual;
 
   production tyVar::TyVar = freshTyVar(starKind());
   top.typeScheme = polyType([tyVar], varType(tyVar));
@@ -37,6 +38,13 @@ abstract production monoidDcl
 top::AttributeDclInfo ::= fn::String bound::[TyVar] ty::Type empty::Expr append::Operation
 {
   top.fullName = fn;
+  propagate compareKey;
+  top.isEqual =
+    case top.compareTo of
+    | monoidDcl(fn2, _, _, empty2, append2) ->
+      fn == fn2 && top.typeScheme == top.compareTo.typeScheme && empty.unparse == empty2.unparse && append == append2
+    | _ -> false
+    end;
 
   top.typeScheme = polyType(bound, ty);
   top.isSynthesized = true;
@@ -58,6 +66,7 @@ abstract production destructDcl
 top::AttributeDclInfo ::= fn::String
 {
   top.fullName = fn;
+  propagate compareKey, isEqual;
 
   production tyVar::TyVar = freshTyVar(starKind());
   production inhsTyVar::TyVar = freshTyVar(inhSetKind());
@@ -75,6 +84,7 @@ abstract production equalityDcl
 top::AttributeDclInfo ::= inh::String syn::String
 {
   top.fullName = syn;
+  propagate compareKey, isEqual;
 
   top.typeScheme = monoType(boolType());
   top.isSynthesized = true;
@@ -90,6 +100,7 @@ abstract production orderingKeyDcl
 top::AttributeDclInfo ::= syn::String
 {
   top.fullName = syn;
+  propagate compareKey, isEqual;
 
   top.typeScheme = monoType(stringType());
   top.isSynthesized = true;
@@ -105,6 +116,7 @@ abstract production orderingDcl
 top::AttributeDclInfo ::= inh::String keySyn::String syn::String
 {
   top.fullName = syn;
+  propagate compareKey, isEqual;
 
   top.typeScheme = monoType(intType());
   top.isSynthesized = true;
@@ -120,6 +132,7 @@ abstract production unificationPartialDcl
 top::AttributeDclInfo ::= inh::String synPartial::String syn::String
 {
   top.fullName = synPartial;
+  propagate compareKey, isEqual;
 
   top.typeScheme = monoType(boolType());
   top.isSynthesized = true;
@@ -135,6 +148,7 @@ abstract production unificationDcl
 top::AttributeDclInfo ::= inh::String synPartial::String syn::String
 {
   top.fullName = syn;
+  propagate compareKey, isEqual;
 
   top.typeScheme = monoType(boolType());
   top.isSynthesized = true;
@@ -147,9 +161,16 @@ top::AttributeDclInfo ::= inh::String synPartial::String syn::String
 }
 
 abstract production threadedInhDcl
-top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
+top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type rev::Boolean
 {
   top.fullName = inh;
+  propagate compareKey;
+  top.isEqual =
+    case top.compareTo of
+    | threadedInhDcl(inh2, syn2, _, _, rev2) ->
+      inh == inh2 && syn == syn2 && top.typeScheme == top.compareTo.typeScheme && rev == rev2
+    | _ -> false
+    end;
 
   top.typeScheme = polyType(bound, ty);
   top.isInherited = true;
@@ -158,13 +179,20 @@ top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
   top.undecoratedAccessHandler = accessBounceDecorate(inhDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attrDefDispatcher = inheritedAttributeDef(_, _, _, location=_); -- Allow normal inh equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
-  top.propagateDispatcher = propagateThreadedInh(_, syn, location=_);
+  top.propagateDispatcher = propagateThreadedInh(rev, _, syn, location=_);
 }
 
 abstract production threadedSynDcl
-top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
+top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type rev::Boolean
 {
   top.fullName = syn;
+  propagate compareKey;
+  top.isEqual =
+    case top.compareTo of
+    | threadedSynDcl(inh2, syn2, _, _, rev2) ->
+      inh == inh2 && syn == syn2 && top.typeScheme == top.compareTo.typeScheme && rev == rev2
+    | _ -> false
+    end;
 
   top.typeScheme = polyType(bound, ty);
   top.isSynthesized = true;
@@ -173,5 +201,5 @@ top::AttributeDclInfo ::= inh::String syn::String bound::[TyVar] ty::Type
   top.undecoratedAccessHandler = accessBounceDecorate(synDecoratedAccessHandler(_, _, location=_), _, _, location=_);
   top.attrDefDispatcher = synthesizedAttributeDef(_, _, _, location=_); -- Allow normal syn equations
   top.attributionDispatcher = defaultAttributionDcl(_, _, _, _, location=_);
-  top.propagateDispatcher = propagateThreadedSyn(inh, _, location=_);
+  top.propagateDispatcher = propagateThreadedSyn(rev, inh, _, location=_);
 }

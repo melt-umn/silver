@@ -27,7 +27,8 @@ propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoApp
   excluding
     childReference, lhsReference, localReference, forwardReference, forwardAccess, synDecoratedAccessHandler, inhDecoratedAccessHandler,
     decorateExprWith, letp, lexicalLocalReference, matchPrimitiveReal;
-propagate flowDefs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
+propagate flowDefs, flowEnv on
+  Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
 aspect default production
 top::Expr ::=
@@ -120,18 +121,22 @@ top::Expr ::= q::PartiallyDecorated QName
     else noVertex();
 }
 
--- Still need these equations since propagate ignores decorated references
-aspect production functionInvocation
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::PartiallyDecorated AnnoAppExprs
+aspect production application
+top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
-  top.flowDeps <- e.flowDeps ++ es.flowDeps ++ annos.flowDeps;
-  top.flowDefs <- e.flowDefs ++ es.flowDefs ++ annos.flowDefs;
+  propagate flowEnv;
 }
-aspect production partialApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::PartiallyDecorated AnnoAppExprs
+
+aspect production access
+top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
-  top.flowDeps <- e.flowDeps ++ es.flowDeps ++ annos.flowDeps;
-  top.flowDefs <- e.flowDefs ++ es.flowDefs ++ annos.flowDefs;
+  propagate flowEnv;
+}
+
+aspect production accessBouncer
+top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::Expr  q::PartiallyDecorated QNameAttrOccur
+{
+  propagate flowEnv;
 }
 
 aspect production forwardAccess
@@ -144,11 +149,6 @@ top::Expr ::= e::Expr '.' 'forward'
     end;
 }
 
-aspect production errorAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
-{
-  top.flowDefs <- e.flowDefs;
-}
 -- Note that below we IGNORE the flow deps of the lhs if we know what it is
 -- this is because by default the lhs will have 'taking ref' flow deps (see above)
 aspect production synDecoratedAccessHandler
@@ -159,7 +159,6 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
     | hasVertex(vertex) -> vertex.synVertex(q.attrDcl.fullName) :: vertex.eqVertex
     | noVertex() -> e.flowDeps
     end;
-  top.flowDefs <- e.flowDefs;
 }
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
@@ -169,27 +168,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
     | hasVertex(vertex) -> vertex.inhVertex(q.attrDcl.fullName) :: vertex.eqVertex
     | noVertex() -> e.flowDeps
     end;
-  top.flowDefs <- e.flowDefs;
 }
-aspect production errorDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
-{
-  top.flowDeps <- []; -- errors, who cares?
-  top.flowDefs <- e.flowDefs;
-}
-aspect production terminalAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
-{
-  top.flowDeps <- e.flowDeps;
-  top.flowDefs <- e.flowDefs;
-}
-aspect production annoAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
-{
-  top.flowDeps <- e.flowDeps;
-  top.flowDefs <- e.flowDefs;
-}
-
 
 aspect production decorateExprWith
 top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
@@ -229,7 +208,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.flowDefs <- occursContextDeps(top.frame.signature, top.env, finalTy, anonVertexType(inh.decorationVertex));
 }
 
-autocopy attribute decorationVertex :: String occurs on ExprInhs, ExprInh;
+inherited attribute decorationVertex :: String occurs on ExprInhs, ExprInh;
+propagate decorationVertex on ExprInhs, ExprInh;
 
 aspect production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
@@ -245,18 +225,7 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
 aspect production exprRef
 top::Expr ::= e::PartiallyDecorated Expr
 {
-  -- This production is somewhat special, for example, error is := []
-  -- That's because the errors should have already been appeared wherever it's anchored.
-  
-  -- But, here we DO pass flowDeps through because this affects wherever this expression
-  -- is used, not just where it appears.
-  
-  -- So definitely don't consider making this []!
-  
-  top.flowDeps <- e.flowDeps;
   top.flowVertexInfo = e.flowVertexInfo;
-  top.flowDefs <- e.flowDefs; -- I guess? I haven't thought about this exactly.
-  -- i.e. whether this has already been included. shouldn't hurt to do so though.
 }
 
 aspect production decHereExpr
@@ -271,7 +240,7 @@ top::Expr ::= e::PartiallyDecorated Expr with {}
 
 -- FROM LET TODO
 attribute flowDefs, flowEnv occurs on AssignExpr;
-propagate flowDefs on AssignExpr;
+propagate flowDefs, flowEnv on AssignExpr;
 
 aspect production letp
 top::Expr ::= la::AssignExpr  e::Expr
@@ -306,9 +275,9 @@ top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 
 -- FROM PATTERN TODO
 attribute flowDeps, flowDefs, flowEnv, scrutineeVertexType occurs on PrimPatterns, PrimPattern;
-propagate flowDeps, flowDefs on PrimPatterns, PrimPattern;
+propagate flowDeps, flowDefs, flowEnv, scrutineeVertexType on PrimPatterns, PrimPattern;
 
-autocopy attribute scrutineeVertexType :: VertexType;
+inherited attribute scrutineeVertexType :: VertexType;
 
 aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr

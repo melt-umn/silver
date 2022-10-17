@@ -94,13 +94,30 @@ top::SyntaxRoot ::=
   local parserClassAuxCode::String =
     s"""
           protected List<common.Terminal> tokenList = null;
+          protected int tabStop = 8;
 
           public void reset() {
             tokenList = new ArrayList<common.Terminal>();
+            virtualLocation.setTabStop(tabStop);
           }
 
           public List<common.Terminal> getTokens() {
             return tokenList; // The way we reset this iterator when parsing again is to create a new list, so this is defacto immutable
+          }
+
+          public void setTabStop(int tabStop) {
+            this.tabStop = tabStop;
+          }
+
+          private void insertToken(common.Terminal token) {
+            // Insert after the last token that starts before the new one
+            int i;
+            for (i = tokenList.size(); i > 0; i--) {
+              if (tokenList.get(i - 1).getStartOffset() < token.getStartOffset()) {
+                break;
+              }
+            }
+            tokenList.add(i, token);
           }
 ${s2.lexerClassRefDcls}
     """;
@@ -114,8 +131,9 @@ ${s2.lexerClassRefDcls}
     ++ flatMap((.copperGrammarElements), s2.disambiguationClasses);
   top.copperParser = copper:parserBean(top.sourceGrammar, top.location,
     makeCopperName(parsername), parsername,
-    head(startFound).copperElementReference, startLayout, parserClassAuxCode,
-    parserInitCode, preambleCode,
+    head(startFound).copperElementReference, startLayout,
+    [s"common.SilverCopperParser<${makeNTName(head(startFound).fullName)}>"],
+    parserClassAuxCode, parserInitCode, preambleCode,
     copper:grammar_(top.sourceGrammar, top.location, s2.containingGrammar,
       grammarElements));
 }

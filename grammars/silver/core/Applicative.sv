@@ -41,6 +41,10 @@ function traverseA
 Applicative m => m<[b]> ::= f::(m<b> ::= a) lst::[a]
 { return foldr(lift2(cons, _, _), pure([]), map(f, lst)); }
 
+function traverse_
+Applicative m => m<()> ::= f::(m<()> ::= a) lst::[a]
+{ return foldr(applySecond, pure(()), map(f, lst)); }
+
 function sequence
 Applicative m => m<[a]> ::= lst::[m<a>]
 { return foldr(lift2(cons, _, _), pure([]), lst); }

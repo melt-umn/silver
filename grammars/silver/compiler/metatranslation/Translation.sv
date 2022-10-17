@@ -27,11 +27,13 @@ Pattern ::= loc::Location ast::AST
 synthesized attribute translation<a>::a;
 synthesized attribute patternTranslation<a>::a;
 synthesized attribute foundLocation::Maybe<Location>;
-autocopy attribute givenLocation::Location;
+inherited attribute givenLocation::Location;
 
 flowtype translation {givenLocation} on AST, ASTs, NamedASTs, NamedAST;
 flowtype patternTranslation {givenLocation} on AST, ASTs;
 flowtype foundLocation {} on ASTs, NamedASTs, NamedAST;
+
+propagate givenLocation on AST, ASTs, NamedASTs, NamedAST excluding nonterminalAST;
 
 attribute givenLocation, translation<Expr>, patternTranslation<Pattern> occurs on AST;
 

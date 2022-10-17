@@ -10,6 +10,7 @@ concrete production autoAstDcl
 top::ProductionStmt ::= 'abstract' v::QName ';'
 {
   top.unparse = "abstract " ++ v.unparse ++ ";";
+  propagate env;
 
   local vty :: Type = v.lookupValue.typeScheme.typerep;
   

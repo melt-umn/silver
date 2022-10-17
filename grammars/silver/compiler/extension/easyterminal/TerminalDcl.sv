@@ -10,8 +10,9 @@ import silver:compiler:modification:lambda_fn;
 import silver:regex only Regex, regexLiteral;
 
 import silver:util:treeset as ts;
+import silver:langutil:lsp as lsp;
 
-terminal Terminal_t /\'[^\'\r\n]*\'/ lexer classes {LITERAL};
+terminal Terminal_t /\'[^\'\r\n]*\'/ lexer classes {LITERAL, lsp:Regexp};
 
 -- TODO: refactor this to actually create two separate terminal declarations, one regular regex, one single quote.
     -- TODO: alternatively, we keep this as a 'RegExpr', but we introduce "added terminal modifiers" synthesized
@@ -65,6 +66,7 @@ concrete production productionRhsElemEasyReg
 top::ProductionRHSElem ::= id::Name '::' reg::EasyTerminalRef
 {
   top.unparse = id.unparse ++ "::" ++ reg.unparse;
+  propagate env;
   top.errors <- reg.errors;
 
   top.lambdaBoundVars := [id.name];  -- Needed because we are forwrding based on env
@@ -76,6 +78,7 @@ concrete production productionRhsElemTypeEasyReg
 top::ProductionRHSElem ::= reg::EasyTerminalRef
 {
   top.unparse = reg.unparse;
+  propagate env;
   top.errors <- reg.errors;
 
   top.lambdaBoundVars := [];  -- Needed because we are forwrding based on env
@@ -87,6 +90,7 @@ concrete production aspectRHSElemEasyReg
 top::AspectRHSElem ::= reg::EasyTerminalRef
 {
   top.unparse = reg.unparse;
+  propagate env;
   top.errors <- reg.errors;
 
   forwards to aspectRHSElemNone('_', location=reg.location); -- TODO This isn't checking if the type is right!!
@@ -96,6 +100,7 @@ concrete production aspectRHSElemTypedEasyReg
 top::AspectRHSElem ::= id::Name '::' reg::EasyTerminalRef
 {
   top.unparse = id.unparse ++ " :: " ++ reg.unparse;
+  propagate env;
   top.errors <- reg.errors;
 
   forwards to aspectRHSElemTyped(id, $2, typerepTypeExpr(reg.typerep, location=reg.location), location=top.location);
@@ -106,7 +111,7 @@ concrete production terminalExprReg
 top::Expr ::= reg::EasyTerminalRef
 {
   top.unparse = reg.unparse;
-  propagate freeVars;
+  propagate env, freeVars;
   top.errors <- reg.errors;
   
   local escapedName :: String = escapeString(reg.easyString);

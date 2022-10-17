@@ -10,7 +10,7 @@ synthesized attribute contextSigElems :: [String] occurs on Contexts;
 synthesized attribute contextSigElem :: String occurs on Context;
 -- Track what children with inh occurs-on contexts need to have indices generated
 monoid attribute contextInhOccurs :: [(Type, String)] occurs on NamedSignature, Contexts, Context;
-autocopy attribute sigInhOccurs :: [(Type, String)] occurs on NamedSignatureElements, NamedSignatureElement;
+inherited attribute sigInhOccurs :: [(Type, String)] occurs on NamedSignatureElements, NamedSignatureElement;
 synthesized attribute inhOccursContextTypes :: [Type] occurs on NamedSignature;
 monoid attribute inhOccursIndexDecls :: String occurs on NamedSignature, Contexts, Context;
 -- Track what children can be used to resolve contexts at runtime
@@ -45,6 +45,8 @@ synthesized attribute childDecls :: String occurs on NamedSignature, NamedSignat
 synthesized attribute annoNameElem :: String occurs on NamedSignatureElement;
 -- "if (name.equals("signame")) { return getAnno_signame(); }"
 synthesized attribute annoLookupElem :: String occurs on NamedSignatureElement;
+
+propagate sigInhOccurs on NamedSignatureElements, NamedSignatureElement;
 
 aspect production namedSignature
 top::NamedSignature ::= fn::String ctxs::Contexts ie::NamedSignatureElements oe::NamedSignatureElement np::NamedSignatureElements
@@ -247,16 +249,18 @@ s"""private Object child_${n};
   }
 """;
 
+  local ntType::Type = if ty.isDecorated then ty.decoratedType else ty;
+  ntType.boundVariables = ty.boundVariables;
+
   top.childTypeVarElem =
     if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
-    then s"type_${ty.transTypeName}"
+    then s"type_${ntType.transTypeName}"
     else "-1";
   
-  local ntType::Type = if ty.isPartiallyDecorated then ty.decoratedType else ty;
   top.childStaticElem =
-    if lookupBy(typeNameEq, ntType, top.sigInhOccurs).isJust
-    then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ty.transTypeName}];\n"
-    else if ntType.isNonterminal
+    if lookupBy(typeNameEq, ty, top.sigInhOccurs).isJust
+    then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[count_inh__ON__${ntType.transTypeName}];\n"
+    else if ty.isNonterminal || ty.isPartiallyDecorated && ntType.isNonterminal
     then s"\t\tchildInheritedAttributes[i_${n}] = new common.Lazy[${makeNTName(ntType.typeName)}.num_inh_attrs];\n"
     else "";
 
@@ -335,7 +339,7 @@ String ::= bv::[TyVar] sigInhOccurs::[(Type, String)] typeVarArray::String inhAr
   t.boundVariables = bv;
   local inhs::[String] = lookupAllBy(typeNameEq, t, sigInhOccurs);
   return s"""		if (${typeVarArray}[key] == type_${t.transTypeName}) {
-			common.Lazy[] res = new common.Lazy[${foldr1(\ i1::String i2::String -> s"max(${i1}, ${i2})", map(makeConstraintDictName(_, t, bv), inhs))} + 1];
+			common.Lazy[] res = new common.Lazy[${foldr1(\ i1::String i2::String -> s"Math.max(${i1}, ${i2})", map(makeConstraintDictName(_, t, bv), inhs))} + 1];
 ${flatMap(\ inh::String -> s"\t\t\tres[${makeConstraintDictName(inh, t, bv)}] = ${inhArray}[key][${makeIdName(inh)}__ON__${t.transTypeName}];\n", inhs)}
 			return res;
 		}

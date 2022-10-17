@@ -30,6 +30,8 @@ instance Arbitrary Name {
 }
 
 nonterminal Expr with pp, env, errors;
+flowtype Expr = pp {}, errors {env};
+propagate env, errors on Expr;
 
 -- Constants
 ------------
@@ -37,28 +39,24 @@ abstract production intLit
 e::Expr ::= i::Integer
 {
   e.pp = text(toString(i));
-  e.errors := [];
 }
 
 abstract production floatLit 
 e::Expr ::= f::Float
 {
   e.pp = text(toString(f));
-  e.errors := [];
 }
 
 abstract production boolLit   
 e::Expr ::= b::Boolean
 {
   e.pp = if b then pp"True" else pp"False";
-  e.errors := [];
 }
 
 abstract production stringLit 
 e::Expr ::= s::String
 {
   e.pp = pp"\"${text(escapeString(s))}\"";
-  e.errors := [];
 }
 
 -- Variable Reference
@@ -82,7 +80,7 @@ e::Expr ::= id::Name
 {
   e.pp = id.pp;
 
-  e.errors :=
+  e.errors <-
     case id.lookup of
     | just(_)   -> []
     | nothing() ->
@@ -95,29 +93,25 @@ e::Expr ::= id::Name
 ------------------------
 -- Only name declaration errors are computed here, thus we simply collect
 -- the errors attributes from the children.
-abstract production add 
+abstract production addOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} + ${r})";
-  e.errors := l.errors ++ r.errors;
 }
-abstract production sub 
+abstract production subOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} - ${r})";
-  e.errors := l.errors ++ r.errors;
 }
-abstract production mul 
+abstract production mulOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} * ${r})";
-  e.errors := l.errors ++ r.errors;
 }
-abstract production div 
+abstract production divOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} / ${r})";
-  e.errors := l.errors ++ r.errors; 
 }
 
 -- Relational Operators
@@ -141,21 +135,19 @@ abstract production eqOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} == ${r})";
-  e.errors := l.errors ++ r.errors;
 }
 
 abstract production ltOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} < ${r})";
-  e.errors := l.errors ++ r.errors;
 }
 
 abstract production neqOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} != ${r})";
-  forwards to not (eqOp(l,r));
+  forwards to notOp(eqOp(l,r));
   -- e.errors is copied from the forwarded-to tree
   -- Similarly, type checking attributes defined TypeChecking.sv are
   -- automatically copied, as are other yet-to-be defined attributes.
@@ -170,13 +162,13 @@ abstract production gtOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} > ${r})";
-  forwards to not(lteOp(l,r));
+  forwards to notOp(lteOp(l,r));
 }
 abstract production gteOp
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} >= ${r})";
-  forwards to not(ltOp(l,r));
+  forwards to notOp(ltOp(l,r));
 }
 
 
@@ -186,13 +178,11 @@ abstract production and
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} && ${r})";
-  e.errors := l.errors ++ r.errors;
 }
-abstract production not 
+abstract production notOp
 e::Expr ::= ne::Expr 
 {
   e.pp = pp"!(${ne})";
-  e.errors := ne.errors;
 }
 
 -- Using De Morgan's Law we can use forwarding on "or".
@@ -200,7 +190,7 @@ abstract production or
 e::Expr ::= l::Expr r::Expr 
 {
   e.pp = pp"(${l} || ${r})";
-  forwards to not( and(not(l), not(r)) );
+  forwards to notOp( and(notOp(l), notOp(r)) );
 }
 
 

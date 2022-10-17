@@ -6,6 +6,8 @@ top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QNa
   top.unparse = s"ordering attribute ${keySyn.unparse}, ${syn.unparse} with ${inh.unparse};";
   top.moduleNames := [];
 
+  propagate env;
+
   production attribute inhFName :: String;
   inhFName = inh.lookupAttribute.fullName;
   production attribute keySynFName :: String;

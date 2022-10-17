@@ -38,6 +38,21 @@ instance Alternative [] {}
 instance MonadZero [] {}
 instance MonadPlus [] {}
 
+function mfixList
+[a] ::= f::([a] ::= a)
+{
+  local x::[a] = f(head(x));
+  return
+    case x of
+    | [] -> []
+    | h :: _ -> h :: mfixList(compose(tail, f))
+    end;
+}
+
+instance MonadFix [] {
+  mfix = mfixList;
+}
+
 @{-
   Types with a notion of length.
 -}
@@ -155,6 +170,29 @@ function filter
          else if f(head(lst))
               then head(lst) :: filter(f, tail(lst))
               else filter(f, tail(lst));
+}
+
+@{--
+ - Monadic (actually Applicative) version of filter
+ -
+ - @param f  The filter function
+ - @param lst  The input list to filter
+ - @return  Only those elements of 'lst' that 'f' returns true for, in the
+ -   same order as they appeared in 'lst'
+ -}
+function filterM
+Applicative m =>
+m<[a]> ::= f::(m<Boolean> ::= a) lst::[a]
+{
+  return
+    case lst of
+    | [] -> pure([])
+    | h :: t -> do {
+        cond::Boolean <- f(h);
+        rest::[a] <- filterM(f, t);
+        return if cond then h :: rest else rest;
+      }
+    end;
 }
 
 @{--

@@ -45,6 +45,15 @@ top::State<s Unit> ::= fun::(s ::= s)
   top.stateVal = unit();
 }
 
+abstract production fixState
+top::State<s a> ::= fn::(State<s a> ::= a)
+{
+  local st::State<s a> = fn(st.stateVal);
+  st.stateIn = top.stateIn;
+  top.stateOut = st.stateOut;
+  top.stateVal = st.stateVal;
+}
+
 instance Functor State<a _> {
   map = liftM1;
 }
@@ -62,6 +71,10 @@ instance Bind State<a _> {
 }
 
 instance Monad State<a _> {}
+
+instance MonadFix State<a _> {
+  mfix = fixState;
+}
 
 function runState
 Pair<s a> ::= st::State<s a> initialState::s

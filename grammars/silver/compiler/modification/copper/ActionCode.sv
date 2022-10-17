@@ -1,11 +1,12 @@
 grammar silver:compiler:modification:copper;
 
-terminal Action_kwd 'action' lexer classes {KEYWORD};
+terminal Action_kwd 'action' lexer classes {MODIFIER};
 
 concrete production concreteProductionDclAction
 top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody 'action' acode::ActionCode_c
 {
   top.unparse = forward.unparse ++ "action " ++ acode.unparse;
+  propagate config, grammarName, compiledGrammars, flowEnv;
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
 
@@ -23,6 +24,9 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
     constructAnonymousGraph(acode.flowDefs, top.env, myProds, myFlow);
 
   ns.signatureName = fName;
+  ns.env = newScopeEnv(ns.defs, top.env);
+  pm.productionSig = ns.namedSignature;
+  pm.env = newScopeEnv(ns.actionDefs, top.env);
   acode.frame = reduceActionContext(ns.namedSignature, myFlowGraph, sourceGrammar=top.grammarName);
   acode.env = newScopeEnv(productionActionVars ++ acode.defs ++ ns.actionDefs, top.env);
 
@@ -32,6 +36,9 @@ top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::Prod
   -- this seems reasonable since inference should never have effects across this border...
 
   forwards to concreteProductionDcl($1, $2, id, ns, pm, body, location=top.location);
+} action {
+  insert semantic token IdFnProdDcl_t at id.location;
+  sigNames = [];
 }
 
 
@@ -44,9 +51,13 @@ top::ActionCode_c ::= '{' stmts::ProductionStmts '}'
 {
   top.unparse = "{\n" ++ stmts.unparse ++ "}\n";
   top.defs := flatMap(hackTransformLocals, stmts.defs);
-  propagate flowDefs;
+  propagate config, grammarName, compiledGrammars, env, frame, flowDefs, flowEnv;
 
-  top.actionCode = flatMap(hacklocaldeclarations, stmts.defs) ++ stmts.translation;
+  top.actionCode =
+    -- action code translation goes in the env/syntax AST, so we might demand it
+    -- when writing interface files in the presence of errors.
+    if !null(top.errors) then ""
+    else flatMap(hacklocaldeclarations, stmts.defs) ++ stmts.translation;
 
   top.errors := stmts.errors;
   top.errors <- if top.frame.permitPluck && !stmts.containsPluck then

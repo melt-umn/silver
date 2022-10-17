@@ -89,6 +89,14 @@ top::Compilation ::= g::Grammars  _  _  benv::BuildEnv
   production allParsers :: [ParserSpec] =
     flatMap(obtainParserSpecs(_, benv), grammarsRelevant);
 
+  -- Don't delete generated parsers from past builds
+  keepFiles <-
+    flatMap(\ spec::ParserSpec ->
+      let baseName::String = benv.silverGen ++ "src/" ++ grammarToPath(spec.sourceGrammar) ++ makeParserName(spec.fullName)
+      in [baseName ++ ".copperdump", baseName ++ ".java"]
+      end,
+      allParsers);
+
   -- Generate the .java files.
   top.postOps <-
     map(buildParserAction(_, g.compiledGrammars, benv.silverGen, top.config), allParsers);
@@ -101,14 +109,12 @@ top::Compilation ::= g::Grammars  _  _  benv::BuildEnv
 @{- Writes a parser out to a file.
   -
   - We create a separate GrammarAction rather than building this into genJava
-  - because we have a (wrong! bad! needs to go! #36 on GitHub) build
-  - optimization where if a grammar hasn't changed, we don't re-translate it.
-  - This should be, "if none of the grammars in the reflexive transitive
-  - closure of the dependency relation have changed, we don't re-translate."
-  - This is occasionally wrong for normal code, but it's too awful for Copper
-  - parsers: this would result in changes to grammar where the parser is
-  - defined (typically the driver) being required to rebuild after changes to
-  - the host language or extensions!
+  - as an optimization. The build process iteratively rebuilds all dependent
+  - grammars whenever an interface file change, which may happen for a number of
+  - reasons (e.g. defining a new attribute) that do not affect the concrete
+  - syntax used to build a parser in a rebuilt grammar.
+  - To avoid this, we cache the concrete syntax AST used to build the parser,
+  - and skip parser generation if the syntax AST is unchanged.
   -}
 abstract production buildParserAction
 top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated RootSpec>  silverGen::String  cmdArgs::Decorated CmdArgs
@@ -131,31 +137,31 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
         return 0;
       } else do {
         mkdir(outDir);
-        print("Generating parser " ++ spec.fullName ++ ".\n");
+        eprintln("Generating parser " ++ spec.fullName ++ ".");
         ret::Integer <- copper:compileParserBean(specCstAst.copperParser,
           makeName(spec.sourceGrammar), parserName, false,
           outDir ++ parserName ++ ".java", cmdArgs.forceCopperDump,
           parserName ++ ".html", cmdArgs.copperXmlDump);
-        case nativeSerialize(new(specCstAst)) of
-        | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper modification: " ++ e)
-        | right(dump) -> writeBinaryFile(dumpFile, dump)
-        end;
+        when_(ret == 0,
+          case nativeSerialize(new(specCstAst)) of
+          | left(e) -> error("BUG: specCstAst was not serializable; hopefully this was caused by the most recent change to the copper modification: " ++ e)
+          | right(dump) -> writeBinaryFile(dumpFile, dump)
+          end);
         return ret;
       };
     } else do {
-      -- Should this be stderr?
-      print("CST errors while generating parser " ++ spec.fullName ++ ":\n" ++
-        implode("\n", specCstAst.cstErrors) ++ "\n");
+      eprintln("CST errors while generating parser " ++ spec.fullName ++ ":\n" ++
+        implode("\n", specCstAst.cstErrors));
       return 1;
     };
 
-  local val::IOVal<Integer> = evalIO(do {
+  top.run = do {
     dumpFileExists :: Boolean <- isFile(dumpFile);
-    if dumpFileExists then do {
+    if !cmdArgs.doClean && dumpFileExists then do {
       dumpFileContents::ByteArray <- readBinaryFile(dumpFile);
       let dumpMatched::Either<String Boolean> = map(eq(specCstAst, _), nativeDeserialize(dumpFileContents));
-      if dumpMatched == right(true) then do {
-        print("Parser " ++ spec.fullName ++ " is up to date.\n");
+      if dumpMatched == right(true) && !cmdArgs.forceCopperDump then do {
+        eprintln("Parser " ++ spec.fullName ++ " is up to date.");
         return 0;
       } else do {
         buildGrammar;
@@ -163,9 +169,7 @@ top::DriverAction ::= spec::ParserSpec  compiledGrammars::EnvTree<Decorated Root
     } else do {
       buildGrammar;
     };
-  }, top.ioIn);
+  };
 
-  top.io = val.io;
-  top.code = val.iovalue;
   top.order = 7;
 }

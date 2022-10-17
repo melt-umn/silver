@@ -17,10 +17,9 @@ imports silver:compiler:definition:env;
 
 -- flow analysis
 imports silver:compiler:definition:flow:ast;
-imports silver:compiler:definition:flow:driver only ProductionGraph, FlowType, flowVertexEq, prod, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh;
+imports silver:compiler:definition:flow:driver only ProductionGraph, FlowType, prod, inhDepsForSyn, findProductionGraph, expandGraph, onlyLhsInh;
 
 -- the modifications we need to be aware of
-imports silver:compiler:modification:autocopyattr only isAutocopy;
 imports silver:compiler:modification:collection;
 imports silver:compiler:modification:defaultattr;
 imports silver:compiler:modification:primitivepattern;
@@ -35,15 +34,6 @@ Boolean ::= occs::OccursDclInfo  e::Decorated Env
   end;
 }
 
--- TODO: this should probably not be a thing I have to write here
-function isAutocopy
-Boolean ::= attr::String  e::Decorated Env
-{
-  return case getAttrDclAll(attr, e) of
-  | at :: _ -> at.isAutocopy
-  | _ -> false
-  end;
-}
 -- TODO: why is this a thing I have to write here. Sheesh. FIX THIS.
 -- The real fix is for our vertexes to remember whether they are syn/inh.
 function isInherited

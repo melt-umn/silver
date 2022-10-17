@@ -3,11 +3,11 @@ grammar silver:compiler:definition:core;
 {--
  - Qualified names of the form 'a:b:c:d...'
  -}
-nonterminal QName with config, name, location, grammarName, env, unparse, qNameType;
+nonterminal QName with config, name, location, grammarName, env, unparse, qNameType, baseNameLoc;
 {--
  - Qualified names where the LAST name has an upper case first letter.
  -}
-nonterminal QNameType with config, name, location, grammarName, env, unparse;
+nonterminal QNameType with config, name, location, grammarName, env, unparse, baseNameLoc;
 
 flowtype decorate {env} on QName, QNameType;
 
@@ -17,6 +17,7 @@ flowtype decorate {env} on QName, QNameType;
 synthesized attribute dcls<a> :: [a];
 
 synthesized attribute qNameType::QNameType;
+synthesized attribute baseNameLoc::Location;
 
 -- TODO: for consistency, the order of these args should be flipped:
 function qName
@@ -31,6 +32,7 @@ top::QName ::= id::Name
   top.name = id.name;
   top.unparse = id.unparse;
   top.qNameType = qNameTypeId(terminal(IdUpper_t, id.name, id.location), location=id.location);
+  top.baseNameLoc = id.location;
   
   top.lookupValue = decorate customLookup("value", getValueDcl(top.name, top.env), top.name, top.location) with {};
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
@@ -43,10 +45,13 @@ top::QName ::= id::Name ':' qn::QName
   top.name = id.name ++ ":" ++ qn.name;
   top.unparse = id.unparse ++ ":" ++ qn.unparse;
   top.qNameType = qNameTypeCons(id, ':', qn.qNameType, location=top.location);
+  top.baseNameLoc = qn.baseNameLoc;
   
   top.lookupValue = decorate customLookup("value", getValueDcl(top.name, top.env), top.name, top.location) with {};
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
   top.lookupAttribute = decorate customLookup("attribute", getAttrDcl(top.name, top.env), top.name, top.location) with {};
+} action {
+  insert semantic token IdGrammarName_t at id.location;
 }
 
 abstract production qNameError
@@ -55,6 +60,7 @@ top::QName ::= msg::[Message]
   top.name = "err";
   top.unparse = "<err>";
   top.qNameType = qNameTypeId(terminal(IdUpper_t, "Err", top.location), location=top.location);
+  top.baseNameLoc = top.location;
   
   top.lookupValue = decorate errorLookup(msg) with {};
   top.lookupType = decorate errorLookup(msg) with {};
@@ -128,6 +134,7 @@ top::QNameType ::= id::IdUpper_t
 {
   top.name = id.lexeme;
   top.unparse = id.lexeme;
+  top.baseNameLoc = id.location;
   
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
 }
@@ -136,9 +143,12 @@ concrete production qNameTypeCons
 top::QNameType ::= id::Name ':' qn::QNameType
 {
   top.name = id.name ++ ":" ++ qn.name;
+  top.baseNameLoc = qn.baseNameLoc;
   top.unparse = id.unparse ++ ":" ++ qn.unparse;
   
   top.lookupType = decorate customLookup("type", getTypeDcl(top.name, top.env), top.name, top.location) with {};
+} action {
+  insert semantic token IdGrammarName_t at id.location;
 }
 
 {--
@@ -146,7 +156,7 @@ top::QNameType ::= id::Name ':' qn::QNameType
  -}
 nonterminal QNameAttrOccur with config, name, location, grammarName, env, unparse, attrFor, errors, typerep, dcl<OccursDclInfo>, attrDcl, found, attrFound;
 
-flowtype QNameAttrOccur = decorate {grammarName, env, attrFor}, dcl {decorate}, attrDcl {decorate};
+flowtype QNameAttrOccur = decorate {grammarName, config, env, attrFor}, dcl {grammarName, env, attrFor}, attrDcl {grammarName, env, attrFor};
 
 {--
  - For QNameAttrOccur, the name of the LHS to look up this attribute on.
@@ -175,6 +185,7 @@ top::QNameAttrOccur ::= at::QName
 {
   top.name = at.name;
   top.unparse = at.unparse;
+  propagate env;
   
   -- We start with all attributes we find with the name `at`:
   local attrs :: [AttributeDclInfo] = at.lookupAttribute.dcls;

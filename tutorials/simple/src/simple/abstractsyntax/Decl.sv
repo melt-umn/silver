@@ -4,6 +4,7 @@ grammar simple:abstractsyntax;
  - Declaration statement ast
  -}
 nonterminal Decl with pp, env, defs, errors;
+flowtype Decl = pp {}, defs {env}, errors {env};
 
 abstract production decl
 d::Decl ::= t::TypeExpr id::Name 

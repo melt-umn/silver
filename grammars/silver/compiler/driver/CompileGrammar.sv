@@ -1,61 +1,64 @@
 grammar silver:compiler:driver;
 
+import silver:reflect:nativeserialize;
+
 {--
  - Hunts down a grammar and obtains its symbols, either by building or from an interface file.
  -}
 function compileGrammar
-IOVal<Maybe<RootSpec>> ::=
+MaybeT<IO RootSpec> ::=
   svParser::SVParser
   benv::BuildEnv
   grammarName::String
   clean::Boolean
-  ioin::IOToken
 {
   local gramPath :: String = grammarToPath(grammarName);
 
-  -- IO Step 1: Look for the grammar's source files
-  local grammarLocation :: IOVal<Maybe<String>> = findGrammarLocation(gramPath, benv.grammarPath, ioin);
+  return do {
+    findGrammar::Maybe<(Integer, String, [String])> <- lift(do {
+        -- IO Step 1: Look for the grammar's source files
+        grammarLocation :: String <- findGrammarLocation(gramPath, benv.grammarPath);
 
-  -- IO Step 2: List those files, and obtain their newest modification time
-  local files :: IOVal<[String]> = listSilverFiles(grammarLocation.iovalue.fromJust, grammarLocation.io);
-  local grammarTime :: IOVal<Integer> = fileTimes(grammarLocation.iovalue.fromJust, files.iovalue, files.io);
+        -- IO Step 2: List those files, and obtain their newest modification time
+        files :: [String] <- lift(listSilverFiles(grammarLocation));
+        when_(null(files), empty); -- Grammar had no files!
+        grammarTime :: Integer <- lift(fileTimes(grammarLocation, files));
 
-  -- IO Step 3: Let's look for a valid interface file
-  local ifaceCompile :: IOVal<Maybe<RootSpec>> =
-    if clean then
-      -- We just skip this search if it's a clean build
-      ioval(grammarTime.io, nothing())
-    else if grammarLocation.iovalue.isJust then
-      compileInterface(grammarName, benv.silverHostGen, just(grammarTime.iovalue), grammarTime.io)
-    else
-      compileInterface(grammarName, benv.silverHostGen, nothing(), grammarLocation.io);
+        return (grammarTime, grammarLocation, files);
+      }.run);
+    alt(
+      -- IO Step 3: Let's look for a valid interface file
+      if clean
+        then empty  -- We just skip this search if it's a clean build
+        else compileInterface(grammarName, benv.silverHostGen, map(fst, findGrammar)),
+      do {
+        -- We didn't find a valid interface file
+        foundGrammar::(Integer, String, [String]) <- maybeT(pure(findGrammar));
+        let grammarTime::Integer = foundGrammar.1;
+        let grammarLocation::String = foundGrammar.2;
+        let files::[String] = foundGrammar.3;
 
-  -- IO Step 4: Build the grammar, and say so
-  local pr :: IOToken =
-    eprintlnT("Compiling " ++ grammarName ++ "\n\t[" ++ grammarLocation.iovalue.fromJust ++ "]\n\t[" ++ renderFileNames(files.iovalue, 0) ++ "]", ifaceCompile.io);
-  
-  local gramCompile :: IOVal<Pair<[Root] [ParseError]>> =
-    compileFiles(svParser, grammarLocation.iovalue.fromJust, files.iovalue, pr);
+        -- IO Step 4: Build the grammar, and say so
+        lift(eprintln("Compiling " ++ grammarName ++ "\n\t[" ++ grammarLocation ++ "]\n\t[" ++ renderFileNames(files, 0) ++ "]"));
+        gramCompile::([Root], [ParseError]) <- lift(compileFiles(svParser, grammarLocation, files));
 
-  local rs :: RootSpec =
-    if null(gramCompile.iovalue.snd) then
-      grammarRootSpec(foldRoot(gramCompile.iovalue.fst), grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue, benv.silverGen)
-    else
-      errorRootSpec(gramCompile.iovalue.snd, grammarName, grammarLocation.iovalue.fromJust, grammarTime.iovalue, benv.silverGen);
-  
-  return
-    if ifaceCompile.iovalue.isJust then
-      -- Found a valid interface file! Stop short, and return that
-      ifaceCompile
-    else if !grammarLocation.iovalue.isJust then
-      -- No grammar found!
-      ioval(grammarLocation.io, nothing())
-    else if null(files.iovalue) then
-      -- Grammar had no files!
-      ioval(files.io, nothing())
-    else
-      -- Return the compiled grammar
-      ioval(gramCompile.io, just(rs));
+        -- IO Step 5: Check for an old interface file, to tell if we need to transitively re-translate
+        oldInterface::Maybe<InterfaceItems> <- lift(do {
+            gen :: String <- findInterfaceLocation(gramPath, benv.silverHostGen);
+            let file :: String = gen ++ "src/" ++ gramPath ++ "Silver.svi";
+            --lift(eprintln(s"Found old interface ${file}"));
+            content::ByteArray <- lift(readBinaryFile(file));
+            case nativeDeserialize(content) of
+            | left(msg) -> empty
+            | right(ii) -> pure(ii)
+            end;
+          }.run);
+
+        return if null(gramCompile.2)
+          then grammarRootSpec(foldRoot(gramCompile.1), oldInterface, grammarName, grammarLocation, grammarTime, benv.silverGen)
+          else errorRootSpec(gramCompile.2, grammarName, grammarLocation, grammarTime, benv.silverGen);
+      });
+  };
 }
 
 function foldRoot
@@ -73,11 +76,12 @@ Boolean ::= f::String
   return any(map(endsWith(_, f), allowedSilverFileExtensions)) && !startsWith(".", f);
 }
 function listSilverFiles
-IOVal<[String]> ::= dir::String  ioin::IOToken
+IO<[String]> ::= dir::String
 {
-  local files :: IOVal<[String]> = listContentsT(dir, ioin);
-
-  return ioval(files.io, filter(isValidSilverFile, files.iovalue));
+  return do {
+    files :: [String] <- listContents(dir);
+    return filter(isValidSilverFile, files);
+  };
 }
 
 {--
@@ -85,16 +89,17 @@ IOVal<[String]> ::= dir::String  ioin::IOToken
  - Including the directory itself, to detect file deletions.
  -}
 function fileTimes
-IOVal<Integer> ::= dir::String is::[String] i::IOToken
+IO<Integer> ::= dir::String is::[String]
 {
-  local ft :: IOVal<Integer> = fileTimeT(dir ++ head(is), i);
-  local rest :: IOVal<Integer> = fileTimes(dir, tail(is), ft.io);
-
-  return if null(is)
-         then fileTimeT(dir, i) -- check the directory itself. Catches deleted files.
-         else if ft.iovalue > rest.iovalue
-              then ioval(rest.io, ft.iovalue)
-              else rest;
+  return
+    case is of
+    | [] -> fileTime(dir) -- check the directory itself. Catches deleted files.
+    | h :: t -> do {
+        ft :: Integer <- fileTime(dir ++ h);
+        rest :: Integer <- fileTimes(dir, t);
+        return max(ft, rest);
+      }
+    end;
 }
 
 -- A crude approximation of line wrapping
@@ -113,15 +118,13 @@ String ::= files::[String]  depth::Integer
  - path for the first directory that matches.
  -}
 function findGrammarLocation
-IOVal<Maybe<String>> ::= path::String searchPaths::[String] iIn::IOToken
+MaybeT<IO String> ::= path::String searchPaths::[String]
 {
-  local exists :: IOVal<Maybe<String>> =
-    findGrammarInLocation(path, head(searchPaths), iIn);
-
-  return 
-    if null(searchPaths) then ioval(iIn, nothing())
-    else if exists.iovalue.isJust then exists
-    else findGrammarLocation(path, tail(searchPaths), exists.io);
+  return
+    case searchPaths of
+    | h :: t -> alt(findGrammarInLocation(path, h), findGrammarLocation(path, t))
+    | [] -> empty
+    end;
 }
 
 {--
@@ -132,7 +135,7 @@ IOVal<Maybe<String>> ::= path::String searchPaths::[String] iIn::IOToken
  - edu.umn.cs/
  -}
 function findGrammarInLocation
-IOVal<Maybe<String>> ::= gram::String inPath::String iIn::IOToken
+MaybeT<IO String> ::= gram::String inPath::String
 {
   -- Find the first / in the grammar name (turned path) we're looking for.
   local idx :: Integer = indexOf("/", gram);
@@ -140,11 +143,10 @@ IOVal<Maybe<String>> ::= gram::String inPath::String iIn::IOToken
   -- Replace the first / with a .
   local nextGram :: String = substring(0, idx, gram) ++ "." ++ substring(idx + 1, length(gram), gram);
   
-  local exists :: IOVal<Boolean> = isDirectoryT(inPath ++ gram, iIn);
-  
-  return 
-    if idx == -1 then ioval(iIn, nothing())
-    else if exists.iovalue then ioval(exists.io, just(inPath ++ gram))
-    else findGrammarInLocation(nextGram, inPath, exists.io);
+  return do {
+    exists :: Boolean <- lift(isDirectory(inPath ++ gram));
+    if exists then pure(inPath ++ gram)
+      else if idx == -1 then empty
+      else findGrammarInLocation(nextGram, inPath);
+  };
 }
-

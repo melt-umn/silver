@@ -23,6 +23,7 @@ ag::AGDcl ::= kwd::'equalityTest'
 {
   ag.unparse = "equalityTest (" ++ value.unparse ++ "," ++ expected.unparse ++ ",\n" ++ 
           "              " ++ valueType.unparse ++ ", " ++ testSuite.unparse ++ ");\n";
+  propagate grammarName, compiledGrammars, config, env, flowEnv;
 
   local attribute errCheck1 :: TypeCheck; 
   local attribute errCheck2 :: TypeCheck; 
@@ -47,6 +48,10 @@ ag::AGDcl ::= kwd::'equalityTest'
   eqCtx.env = ag.env;
   eqCtx.contextLoc = valueType.location;
   eqCtx.contextSource = "equalityTest";
+  eqCtx.frame = value.frame;
+  eqCtx.config = ag.config;
+  eqCtx.grammarName = ag.grammarName;
+  eqCtx.compiledGrammars = ag.compiledGrammars;
   localErrors <- eqCtx.contextErrors;
 
   value.downSubst = emptySubst();
@@ -177,8 +182,9 @@ ag::AGDcl ::= kwd::'equalityTest'
             ';', location=ag.location), location=ag.location), '}', location=ag.location), location=ag.location);
 
   local testName :: String = "generatedTest" ++ "_" ++ 
+                            substitute(":","_",ag.grammarName) ++ "_" ++ 
                             substitute(".","_",kwd.filename) ++ "_" ++ 
                             toString(kwd.line) ++ "_" ++ 
-                            toString(genInt());
+                            toString(kwd.column);
 }
 

@@ -19,16 +19,11 @@ nonterminal GrammarDcl with
   declaredName, grammarName, location, unparse, errors;
 
 propagate errors on Root, GrammarDcl;
-propagate moduleNames on Root;
+propagate config, compiledGrammars, grammarName, globalImports, grammarDependencies, moduleNames on Root;
 
 concrete production root
 top::Root ::= gdcl::GrammarDcl ms::ModuleStmts ims::ImportStmts ags::AGDcls
 {
-  ims.compiledGrammars = top.compiledGrammars;
-  ims.grammarDependencies = top.grammarDependencies;
-  ims.grammarName = top.grammarName;
-  ims.config = top.config;
-
   top.unparse = gdcl.unparse ++ "\n\n" ++ ms.unparse ++ "\n\n" ++ ims.unparse ++ "\n\n" ++ ags.unparse;
   top.declaredName = gdcl.declaredName;
 
@@ -66,5 +61,7 @@ top::GrammarDcl ::= 'grammar' qn::QName ';'
   top.errors <-
     if qn.name == top.grammarName then []
     else [err(top.location, "Grammar declaration is incorrect: " ++ qn.name)];
+} action {
+  insert semantic token IdGrammarName_t at qn.baseNameLoc;
 }
 

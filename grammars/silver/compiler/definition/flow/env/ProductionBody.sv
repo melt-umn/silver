@@ -10,7 +10,8 @@ import silver:compiler:driver:util only isExportedBy, RootSpec;
 attribute flowDefs, flowEnv occurs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
 attribute flowEnv occurs on DefLHS;
 
-propagate flowDefs on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
+propagate flowDefs, flowEnv on ProductionBody, ProductionStmts, ProductionStmt, ForwardInhs, ForwardInh;
+propagate flowEnv on DefLHS;
 
 {- A short note on how flowDefs are generated:
 
@@ -58,6 +59,16 @@ top::ForwardInh ::= lhs::ForwardLHSExpr '=' e::Expr ';'
     end;
 }
 
+aspect production attributeDef
+top::ProductionStmt ::= dl::DefLHS '.' attr::QNameAttrOccur '=' e::Expr ';'
+{
+  propagate flowEnv;
+}
+aspect production errorAttributeDef
+top::ProductionStmt ::= msg::[Message] dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+{
+  propagate flowEnv;
+}
 aspect production synthesizedAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {

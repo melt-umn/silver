@@ -68,3 +68,28 @@ global doRes5::Maybe<Integer> = do {
 };
 
 equalityTest(doRes5, just(3), Maybe<Integer>, silver_tests);
+
+global mdoThing::State<Boolean (Integer ::= Integer)> = mdo {
+  b :: Boolean <- getState();
+  res :: (Integer ::= Integer) <- pure(\ x::Integer ->
+    if b
+    then if x == 0 then 1 else x * res(x - 1)
+    else if x == 0 then 0 else x + res(x - 1));
+  return res;
+};
+
+equalityTest(evalState(mdoThing, false)(5), 15, Integer, silver_tests);
+equalityTest(evalState(mdoThing, true)(5), 120, Integer, silver_tests);
+
+global mutualMDo::Maybe<(Boolean ::= Integer)> = mdo {
+  pure(123);
+  even :: (Boolean ::= Integer) <- pure(\ x::Integer -> if x == 0 then true else odd(x - 1, ()));
+  pure(456);
+  let odd :: (Boolean ::= Integer ()) = \ x::Integer () -> if x == 0 then false else even(x - 1);
+  res::Boolean <- just(even(43));
+  return even;
+};
+equalityTest(mutualMDo.fromJust(0), true, Boolean, silver_tests);
+equalityTest(mutualMDo.fromJust(1), false, Boolean, silver_tests);
+equalityTest(mutualMDo.fromJust(2), true, Boolean, silver_tests);
+equalityTest(mutualMDo.fromJust(3), false, Boolean, silver_tests);

@@ -1,12 +1,17 @@
 grammar silver:compiler:definition:env;
 
+import silver:compiler:definition:core only frame, grammarName, compiledGrammars;
+
 -- Context lookup/resolution stuff lives here
 
-attribute env occurs on Context;
+attribute env, config, compiledGrammars, grammarFlowTypes occurs on Context;
+propagate env, config, compiledGrammars, grammarFlowTypes on Context, Contexts;
 
 -- This mostly exists as a convenient way to perform multiple env-dependant operations
 -- on a list of contexts without re-decorating them and repeating context resolution.
-nonterminal Contexts with env, contexts, freeVariables, boundVariables;
+nonterminal Contexts with env, config, compiledGrammars, grammarFlowTypes, contexts, freeVariables, boundVariables;
+propagate boundVariables on Contexts;
+
 abstract production consContext
 top::Contexts ::= h::Context t::Contexts
 {
@@ -82,6 +87,10 @@ top::Context ::= cls::String t::Type
   production requiredContexts::Contexts =
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
   requiredContexts.env = top.env;
+  requiredContexts.frame = top.frame;
+  requiredContexts.config = top.config;
+  requiredContexts.grammarName = top.grammarName;
+  requiredContexts.compiledGrammars = top.compiledGrammars;
 }
 
 aspect production inhOccursContext
@@ -106,6 +115,10 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
   production requiredContexts::Contexts =
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
   requiredContexts.env = top.env;
+  requiredContexts.frame = top.frame;
+  requiredContexts.config = top.config;
+  requiredContexts.grammarName = top.grammarName;
+  requiredContexts.compiledGrammars = top.compiledGrammars;
 }
 
 aspect production synOccursContext
@@ -130,6 +143,10 @@ top::Context ::= attr::String args::[Type] atty::Type inhs::Type ntty::Type
   production requiredContexts::Contexts =
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
   requiredContexts.env = top.env;
+  requiredContexts.frame = top.frame;
+  requiredContexts.config = top.config;
+  requiredContexts.grammarName = top.grammarName;
+  requiredContexts.compiledGrammars = top.compiledGrammars;
 }
 
 aspect production annoOccursContext
@@ -154,6 +171,10 @@ top::Context ::= attr::String args::[Type] atty::Type ntty::Type
   production requiredContexts::Contexts =
     foldContexts(map(performContextRenaming(_, resolvedSubst), resolvedTypeScheme.contexts));
   requiredContexts.env = top.env;
+  requiredContexts.frame = top.frame;
+  requiredContexts.config = top.config;
+  requiredContexts.grammarName = top.grammarName;
+  requiredContexts.compiledGrammars = top.compiledGrammars;
 }
 
 aspect production typeableContext
@@ -182,6 +203,10 @@ top::Context ::= t::Type
       then map(compose(typeableContext, skolemType), t.freeSkolemVars)
       else resolvedDcl.typeScheme.contexts);
   requiredContexts.env = top.env;
+  requiredContexts.frame = top.frame;
+  requiredContexts.config = top.config;
+  requiredContexts.grammarName = top.grammarName;
+  requiredContexts.compiledGrammars = top.compiledGrammars;
 }
 
 synthesized attribute isTypeable::Boolean occurs on Type;

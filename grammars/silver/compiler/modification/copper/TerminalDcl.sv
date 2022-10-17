@@ -1,8 +1,8 @@
 grammar silver:compiler:modification:copper;
 
-terminal Dominates_t 'dominates' lexer classes {KEYWORD};
-terminal Submits_t   'submits'   lexer classes {KEYWORD};
-terminal Classes_kwd 'classes'   lexer classes {KEYWORD};
+terminal Dominates_t 'dominates' lexer classes {MODIFIER};
+terminal Submits_t   'submits'   lexer classes {MODIFIER};
+terminal Classes_kwd 'classes'   lexer classes {MODIFIER};
 
 monoid attribute lexerClasses :: [String];
 attribute lexerClasses occurs on TerminalModifier, TerminalModifiers;
@@ -12,33 +12,34 @@ concrete production terminalModifierDominates
 top::TerminalModifier ::= 'dominates' terms::TermPrecs
 {
   top.unparse = "dominates { " ++ terms.unparse ++ " } ";
+  propagate env, errors;
 
   top.terminalModifiers := [termDominates(terms.precTermList)];
-  propagate errors;
 }
 
 concrete production terminalModifierSubmitsTo
 top::TerminalModifier ::= 'submits' 'to' terms::TermPrecs
 {
   top.unparse = "submits to { " ++ terms.unparse ++ " } " ;
+  propagate env, errors;
 
   top.terminalModifiers := [termSubmits(terms.precTermList)];
-  propagate errors;
 }
 
 concrete production terminalModifierClassSpec
 top::TerminalModifier ::= 'lexer' 'classes' cl::LexerClasses
 {
   top.unparse = "lexer classes { " ++ cl.unparse ++ " } " ;
+  propagate env, errors;
 
   top.terminalModifiers := [termClasses(cl.lexerClasses)];
-  propagate errors;
 }
 
 concrete production terminalModifierActionCode
 top::TerminalModifier ::= 'action' acode::ActionCode_c
 {
   top.unparse = "action " ++ acode.unparse;
+  propagate config, grammarName, compiledGrammars, flowEnv, errors;
 
   top.terminalModifiers := [termAction(acode.actionCode)];
 
@@ -51,19 +52,19 @@ top::TerminalModifier ::= 'action' acode::ActionCode_c
 
   acode.frame = actionContext(myFlowGraph, sourceGrammar=top.grammarName);
   acode.env = newScopeEnv(terminalActionVars ++ acode.defs, top.env);
-  
-  propagate errors;
 }
 
 monoid attribute precTermList :: [String];
 
 nonterminal TermPrecs with config, grammarName, unparse, location, precTermList, errors, env;
-propagate errors, precTermList on TermPrecs;
+propagate config, grammarName, env, errors, precTermList on TermPrecs;
 
 concrete production termPrecsOne
 top::TermPrecs ::= t::QName
 {
   forwards to termPrecs(termPrecList(t,termPrecListNull(location=t.location), location=t.location), location=top.location);
+} action {
+  insert semantic token IdType_t at t.baseNameLoc;
 }
 
 concrete production termPrecsList
@@ -79,7 +80,7 @@ top::TermPrecs ::= terms::TermPrecList
 }
 
 nonterminal TermPrecList with config, grammarName, unparse, location, precTermList, errors, env;
-propagate errors, precTermList on TermPrecList;
+propagate config, grammarName, env, errors, precTermList on TermPrecList;
 
 abstract production termPrecList
 top::TermPrecList ::= h::QName t::TermPrecList
@@ -111,21 +112,27 @@ concrete production termPrecListOne
 top::TermPrecList ::= t::QName
 {
   forwards to termPrecList(t, termPrecListNull(location=top.location), location=top.location);
+} action {
+  insert semantic token IdType_t at t.baseNameLoc;
 }
 
 concrete production termPrecListCons
 top::TermPrecList ::= t::QName ',' terms_tail::TermPrecList
 {
   forwards to termPrecList(t, terms_tail,location=top.location);
+} action {
+  insert semantic token IdType_t at t.baseNameLoc;
 }
 
 nonterminal LexerClasses with location, config, unparse, lexerClasses, errors, env;
-propagate errors, lexerClasses on LexerClasses;
+propagate config, env, errors, lexerClasses on LexerClasses;
 
 concrete production lexerClassesOne
 top::LexerClasses ::= n::QName
 {
-   forwards to lexerClasses(lexerClassListMain(n, lexerClassListNull(location=top.location), location=top.location), location=top.location);
+  forwards to lexerClasses(lexerClassListMain(n, lexerClassListNull(location=top.location), location=top.location), location=top.location);
+} action {
+  insert semantic token IdLexerClassDcl_t at n.baseNameLoc;
 }
 
 concrete production lexerClassesList
@@ -141,18 +148,22 @@ top::LexerClasses ::= cls::LexerClassList
 }
 
 nonterminal LexerClassList with location, config, unparse, lexerClasses, errors, env;
-propagate errors, lexerClasses on LexerClassList;
+propagate config, env, errors, lexerClasses on LexerClassList;
 
 concrete production lexerClassListOne
 top::LexerClassList ::= n::QName
 {
   forwards to lexerClassListMain(n,lexerClassListNull(location=n.location), location=n.location);
+} action {
+  insert semantic token IdLexerClassDcl_t at n.baseNameLoc;
 }
 
 concrete production lexerClassListCons
 top::LexerClassList ::= n::QName ',' cl_tail::LexerClassList
 {
   forwards to lexerClassListMain(n,cl_tail,location=top.location);
+} action {
+  insert semantic token IdLexerClassDcl_t at n.baseNameLoc;
 }
 
 

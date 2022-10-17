@@ -6,10 +6,11 @@ propagate upSubst, downSubst
    on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs
    excluding
      undecoratedAccessHandler, forwardAccess, decoratedAccessHandler,
-     and, or, not, ifThenElse, plus, minus, multiply, divide, modulus,
+     and, or, notOp, ifThenElse, plus, minus, multiply, divide, modulus,
      decorateExprWith, exprInh, presentAppExpr,
      terminalConstructor, noteAttachment,
      decHereExpr;
+propagate finalSubst on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoExpr, AnnoAppExprs;
 
 attribute contexts occurs on Expr;
 aspect default production
@@ -67,14 +68,16 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   -- contexts in the environment.
   production infContexts::Contexts = foldContexts(e.contexts);
   infContexts.env = top.env;
+  infContexts.flowEnv = top.flowEnv;
 
   thread downSubst, upSubst on top, e, es, anns, infContexts, forward;
+  propagate finalSubst;
 }
 
 aspect production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
-  propagate upSubst, downSubst;
+  propagate upSubst, downSubst, finalSubst;
 }
 
 aspect production undecoratedAccessHandler
@@ -98,7 +101,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 aspect production accessBouncer
 top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  propagate upSubst, downSubst;
+  propagate upSubst, downSubst, finalSubst;
 }
 
 aspect production forwardAccess
@@ -189,7 +192,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
        else [];
 }
 
-aspect production not
+aspect production notOp
 top::Expr ::= '!' e1::Expr
 {
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;

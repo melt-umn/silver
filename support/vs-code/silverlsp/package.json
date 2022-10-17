@@ -1,0 +1,104 @@
+{
+  "name": "silverlsp",
+  "displayName": "Silver LSP",
+  "description": "Plugin for Silver Language Server Protocol support",
+  "version": "0.0.2",
+  "engines": {
+    "vscode": "^1.67.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/melt-umn/silver.git"
+  },
+  "publisher": "MELT",
+  "icon": "silver.png",
+  "categories": [
+    "Programming Languages"
+  ],
+  "tags": [
+    "attribute grammar", "parsing", "compiler", "metaprogramming", "extensible language"
+  ],
+  "license": "LGPL-3.0-or-later",
+  "activationEvents": [
+    "onLanguage:silver"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "silver",
+        "aliases": [
+          "Silver",
+          "ag",
+          "sv"
+        ],
+        "extensions": [
+          ".ag",
+          ".sv"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "silver.clean",
+        "title": "Silver: Clean Silver language server workspace"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "Silver",
+        "properties": {
+          "silver.enableMWDA": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable the modular well-definedness analysis"
+          },
+          "silver.jvmArgs": {
+            "type": "string",
+            "default": "-Xmx6G -Xss20M",
+            "description": "Language server JVM flags"
+          },
+          "silver.compilerJar": {
+            "type": "string",
+            "description": "Path to the jar containing an alternate version of the Silver compiler"
+          },
+          "silver.parserName": {
+            "type": "string",
+            "default": "silver:compiler:composed:Default:svParse",
+            "description": "Full name of the Silver parser to use, must be set if compiler jar is specified"
+          }
+        }
+      }
+    ]
+  },
+  "configurationDefaults": {
+    "silver": {
+      "editor.semanticHighlighting.enabled": true
+    }
+  },
+  "dependencies": {
+    "vscode-languageclient": "8.0.1"
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.2.0",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "14.x",
+    "@types/vscode": "^1.67.0",
+    "@typescript-eslint/eslint-plugin": "^5.21.0",
+    "@typescript-eslint/parser": "^5.21.0",
+    "@vscode/test-electron": "^2.1.3",
+    "eslint": "^8.14.0",
+    "glob": "^8.0.1",
+    "mocha": "^9.2.2",
+    "typescript": "^4.6.4"
+  }
+}

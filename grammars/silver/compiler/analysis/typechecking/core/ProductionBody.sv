@@ -4,6 +4,7 @@ grammar silver:compiler:analysis:typechecking:core;
 attribute upSubst, downSubst, finalSubst occurs on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr;
 propagate upSubst, downSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr
   excluding productionStmtAppend, attachNoteStmt, forwardsTo, forwardInh, undecoratesTo, returnDef, synthesizedAttributeDef, inheritedAttributeDef, localValueDef;
+propagate finalSubst on ProductionStmt, ForwardInhs, ForwardInh, ForwardLHSExpr excluding productionStmtAppend;
 
 {--
  - These need an initial state only due to aspects (I think? maybe not. Investigate someday.)
@@ -146,7 +147,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 aspect production errorAttributeDef
 top::ProductionStmt ::= msg::[Message] dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
-  propagate downSubst, upSubst;
+  propagate downSubst, upSubst, finalSubst;
 }
 
 aspect production childDefLHS

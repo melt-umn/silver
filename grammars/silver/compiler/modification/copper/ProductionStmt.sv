@@ -4,6 +4,12 @@ terminal Pluck_kwd 'pluck' lexer classes {KEYWORD,RESERVED};
 terminal Print_kwd 'print' lexer classes {KEYWORD,RESERVED};
 terminal PushToken_kwd 'pushToken' lexer classes {KEYWORD,RESERVED};
 
+terminal Insert_kwd 'insert' lexer classes {KEYWORD};
+terminal Semantic_kwd 'semantic' lexer classes {KEYWORD};
+terminal Token_kwd 'token' lexer classes {KEYWORD};
+terminal At_kwd 'at' lexer classes {KEYWORD};
+disambiguate Insert_kwd, IdLower_t { pluck Insert_kwd; }
+
 concrete production namePrint
 top::Name ::= 'print'
 { forwards to name("print", top.location); }
@@ -17,13 +23,13 @@ concrete production pluckDef
 top::ProductionStmt ::= 'pluck' e::Expr ';'
 {
   top.unparse = "pluck " ++ e.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
 
   -- Cast to integer is required, because that's secretly the real type of the
   -- result, but our type system only calls it an Object at the moment.
   -- Perhaps this problem can be resolved by using a proper type in this situation.
   top.translation = "return (Integer)(" ++ e.translation ++ ");\n";
 
-  propagate errors;
   top.errors <-
     if !top.frame.permitPluck
     then [err(top.location, "'pluck' allowed only in disambiguation-group parser actions.")]
@@ -51,10 +57,10 @@ concrete production printStmt
 top::ProductionStmt ::= 'print' e::Expr ';'
 {
   top.unparse = "print " ++ e.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
 
   top.translation = "System.err.println(" ++ e.translation ++ ");\n";
 
-  propagate errors;
   top.errors <-
     if !top.frame.permitActions
     then [err(top.location, "'print' statement allowed only in parser action blocks. You may be looking for print(String,IO) :: IO.")]
@@ -85,8 +91,8 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
   undecorates to valueEq(val, '=', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
 
-  propagate errors;
   top.errors <-
     if !top.frame.permitActions
     then [err(top.location, "Assignment to parser attributes only permitted in parser action blocks")]
@@ -112,8 +118,8 @@ concrete production pushTokenStmt
 top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
 {
   top.unparse = "\t" ++ "pushToken(" ++ val.unparse ++ ", " ++ lexeme.unparse ++ ");";
+  propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
 
-  propagate errors;
   top.errors <-
     if !top.frame.permitActions
     then [err(top.location, "Tokens may only be pushed in action blocks")]
@@ -135,12 +141,41 @@ top::ProductionStmt ::= 'pushToken' '(' val::QName ',' lexeme::Expr ')' ';'
        else [];
 }
 
+concrete production insertSemanticTokenStmt
+top::ProductionStmt ::= 'insert' 'semantic' 'token' n::QNameType 'at' loc::Expr ';'
+{
+  top.unparse = "\t" ++ "insert semantic token " ++ n.unparse ++ " at " ++ loc.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
+
+  top.errors <-
+    if !top.frame.permitActions
+    then [err(top.location, "Semantic tokens may only be inserted in action blocks")]
+    else [];
+
+  top.translation = s"""insertToken(new ${makeTerminalName(n.lookupType.fullName)}(new common.StringCatter(""), ${loc.translation}));""";
+
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+
+  loc.originRules = [];
+  loc.isRoot = false;
+
+  thread downSubst, upSubst on top, loc, errCheck1, top;
+
+  errCheck1 = check(loc.typerep, nonterminalType("silver:core:Location", [], false));
+  top.errors <-
+    if errCheck1.typeerror
+    then [err(loc.location, s"Semantic token position expected a ${errCheck1.rightpp}, but got ${errCheck1.leftpp}")]
+    else [];
+} action {
+  insert semantic token IdType_t at n.location;
+}
+
 concrete production blockStmt
 top::ProductionStmt ::= '{' stmts::ProductionStmts '}'
 {
   top.unparse = "\t{\n" ++ stmts.unparse ++ "\n\t}";
+  propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
   
-  propagate errors;
   top.errors <-
     if !top.frame.permitActions
     then [err(top.location, "Block statement is only permitted in action blocks")]
@@ -149,6 +184,7 @@ top::ProductionStmt ::= '{' stmts::ProductionStmts '}'
   top.translation = stmts.translation;
   
   stmts.downSubst = top.downSubst;
+  stmts.originRules = [];
   top.upSubst = error("Shouldn't ever be needed anywhere. (Should only ever be fed back here as top.finalSubst)");
   -- Of course, this means do not use top.finalSubst here!
 }
@@ -157,8 +193,8 @@ concrete production ifElseStmt
 top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' el::ProductionStmt
 {
   top.unparse = "\t" ++ "if (" ++ condition.unparse ++ ") " ++ th.unparse ++ "\nelse " ++ el.unparse;
+  propagate config, grammarName, compiledGrammars, env, frame, errors;
 
-  propagate errors;
   top.errors <-
     if !top.frame.permitActions
     then [err(top.location, "If statement is only permitted in action blocks")]
@@ -168,10 +204,14 @@ top::ProductionStmt ::= 'if' '(' condition::Expr ')' th::ProductionStmt 'else' e
 
   condition.originRules = [];
   condition.isRoot = false;
+  th.originRules = [];
+  el.originRules = [];
 
   local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
 
   thread downSubst, upSubst on top, condition, errCheck1, top;
+
+  condition.finalSubst = condition.upSubst;
   
   th.downSubst = top.downSubst;
   th.finalSubst = th.upSubst;
@@ -219,10 +259,10 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
   undecorates to valueEq(val, '=', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " = " ++ e.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, env, frame, errors, finalSubst;
 
   -- these values should only ever be in scope when it's valid to use them
-  propagate errors;
-  
+
   top.errors <-
     if val.name != "lexeme" then [] else
     [err(val.location, "lexeme is not reassignable.")];

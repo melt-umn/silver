@@ -50,7 +50,7 @@ flowtype typerepInhSet {decorate, onNt} on TypeExpr;
 flowtype TypeExpr =
   decorate {grammarName, env, flowEnv}, forward {decorate},
   freeVariables {decorate}, lexicalTypeVariables {decorate}, lexicalTyVarKinds {decorate},
-  errorsTyVars {decorate}, errorsKindStar {decorate};
+  errors {decorate}, errorsTyVars {decorate}, errorsKindStar {decorate};
 
 -- typerep requires flowEnv to look up default ref sets
 flowtype typerep {grammarName, env, flowEnv} on TypeExpr, Signature;
@@ -58,7 +58,8 @@ flowtype maybeType {grammarName, env, flowEnv} on SignatureLHS;
 flowtype types {grammarName, env, flowEnv} on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
 propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs excluding refTypeExpr, partialRefTypeExpr;
-propagate lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
+propagate config, grammarName, env, flowEnv, lexicalTypeVariables, lexicalTyVarKinds
+  on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate appLexicalTyVarKinds on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsKindStar on TypeExprs;
@@ -171,7 +172,7 @@ top::TypeExpr ::= q::QNameType
   top.unparse = q.unparse;
 
   top.mentionedAliases <-
-    if q.lookupType.dcl.isTypeAlias
+    if q.lookupType.found && q.lookupType.dcl.isTypeAlias
     then q.lookupType.fullName :: q.lookupType.dcl.mentionedAliases
     else [];
 
@@ -183,6 +184,8 @@ top::TypeExpr ::= q::QNameType
     else [err(top.location, q.name ++ " is not a type.")];
 
   top.typerep = q.lookupType.typeScheme.typerep; -- NOT .monoType since this can be a polyType when an error is raised
+} action {
+  insert semantic token IdType_t at q.baseNameLoc;
 }
 
 concrete production typeVariableTypeExpr
@@ -198,6 +201,8 @@ top::TypeExpr ::= tv::IdLower_t
   top.errorsTyVars := [];
 
   top.lexicalTypeVariables <- [tv.lexeme];
+} action {
+  insert semantic token IdTypeVar_t at tv.location;
 }
 
 concrete production kindSigTypeVariableTypeExpr
@@ -214,6 +219,8 @@ top::TypeExpr ::= '(' tv::IdLower_t '::' k::KindExpr ')'
 
   top.lexicalTypeVariables <- [tv.lexeme];
   top.lexicalTyVarKinds <- [pair(tv.lexeme, k.kindrep)];
+} action {
+  insert semantic token IdTypeVar_t at tv.location;
 }
 
 concrete production appTypeExpr
@@ -221,6 +228,7 @@ top::TypeExpr ::= ty::TypeExpr tl::BracketedTypeExprs
 {
   top.unparse = ty.unparse ++ tl.unparse;
   
+  propagate grammarName, env, flowEnv;
   propagate lexicalTypeVariables; -- Needed to avoid circularity
 
   forwards to

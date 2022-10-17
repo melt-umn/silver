@@ -5,7 +5,7 @@ import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, co
 concrete production typeClassDcl
 top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 {
-  top.unparse = s"class ${cl.unparse} => ${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}"; 
+  top.unparse = s"class ${cl.unparse} => ${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}";
 
   production fName :: String = top.grammarName ++ ":" ++ id.name;
   production tv :: TyVar =
@@ -52,33 +52,40 @@ top::AGDcl ::= 'class' cl::ConstraintList '=>' id::QNameType var::TypeExpr '{' b
   cl.constraintPos = classPos(fName, var.freeVariables);
   cl.env = newScopeEnv(headPreDefs, top.env);
   
+  id.env = cl.env;
   var.env = cl.env;
   
   body.env = occursEnv(cl.occursDefs, newScopeEnv(headDefs, cl.env));
   body.constraintEnv = cl.env;
   body.classHead = instContext(fName, var.typerep);
   body.frameContexts = supers;
+} action {
+  insert semantic token IdTypeClassDcl_t at id.baseNameLoc;
 }
 
 concrete production typeClassDclNoCL
 top::AGDcl ::= 'class' id::QNameType var::TypeExpr '{' body::ClassBody '}'
 {
-  top.unparse = s"${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}";
+  top.unparse = s"class ${id.unparse} ${var.unparse}\n{\n${body.unparse}\n}";
 
   forwards to typeClassDcl($1, nilConstraint(location=top.location), '=>', id, var, $4, body, $6, location=top.location);
+} action {
+  insert semantic token IdTypeClassDcl_t at id.baseNameLoc;
 }
 
-autocopy attribute classHead::Context;
-autocopy attribute constraintEnv::Decorated Env;
-autocopy attribute frameContexts::[Context];  -- Only used for computing frame in members
+inherited attribute classHead::Context;
+inherited attribute constraintEnv::Decorated Env;
+inherited attribute frameContexts::[Context];  -- Only used for computing frame in members
 
 nonterminal ClassBody with
-  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
+  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
 nonterminal ClassBodyItem with
-  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
+  config, grammarName, env, defs, location, unparse, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars, classMembers;
 
-propagate flowDefs, errors, lexicalTypeVariables, lexicalTyVarKinds on ClassBody, ClassBodyItem;
-propagate defs on ClassBody;
+propagate
+  config, grammarName, errors, lexicalTypeVariables, lexicalTyVarKinds, classHead, constraintEnv, frameContexts, compiledGrammars
+  on ClassBody, ClassBodyItem;
+propagate env, defs on ClassBody;
 
 concrete production consClassBody
 top::ClassBody ::= h::ClassBodyItem t::ClassBody
@@ -97,6 +104,8 @@ concrete production classBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr ';'
 {
   forwards to constraintClassBodyItem(id, $2, nilConstraint(location=top.location), '=>', ty, $4, location=top.location);
+} action {
+  insert semantic token IdTypeClassMemberDcl_t at id.location;
 }
 
 concrete production constraintClassBodyItem
@@ -115,6 +124,8 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
     | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
+
+  ty.env = top.env;
   
   top.defs := [classMemberDef(top.grammarName, top.location, fName, boundVars, top.classHead, cl.contexts, ty.typerep)];
 
@@ -122,12 +133,16 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr ';'
     if length(getValueDclAll(fName, top.env)) > 1
     then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
     else [];
+} action {
+  insert semantic token IdTypeClassMemberDcl_t at id.location;
 }
 
 concrete production defaultClassBodyItem
 top::ClassBodyItem ::= id::Name '::' ty::TypeExpr '=' e::Expr ';'
 {
   forwards to defaultConstraintClassBodyItem(id, $2, nilConstraint(location=top.location), '=>', ty, $4, e, $6, location=top.location);
+} action {
+  insert semantic token IdTypeClassMemberDcl_t at id.location;
 }
 
 concrete production defaultConstraintClassBodyItem
@@ -146,6 +161,8 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
     | _ -> error("Class head is not an instContext")
     end;
   cl.env = top.constraintEnv;
+
+  ty.env = top.env;
   
   e.isRoot = true;
   e.originRules = [];
@@ -165,6 +182,8 @@ top::ClassBodyItem ::= id::Name '::' cl::ConstraintList '=>' ty::TypeExpr '=' e:
     if length(getValueDclAll(fName, top.env)) > 1
     then [err(id.location, "Value '" ++ fName ++ "' is already bound.")]
     else [];
+} action {
+  insert semantic token IdTypeClassMemberDcl_t at id.location;
 }
 
 -- TODO: Defaults

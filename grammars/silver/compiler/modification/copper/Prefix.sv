@@ -4,7 +4,7 @@ grammar silver:compiler:modification:copper;
 import silver:regex;
 import silver:compiler:extension:easyterminal; -- only Terminal_t, EasyTerminalRef;
 
-terminal Prefix_t 'prefix' lexer classes {KEYWORD, RESERVED};
+terminal Prefix_t 'prefix' lexer classes {MODIFIER, RESERVED};
 
 concrete production prefixParserComponentModifier
 top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::TerminalPrefix
@@ -17,12 +17,12 @@ top::ParserComponentModifier ::= 'prefix' ts::TerminalPrefixItems 'with' s::Term
   s.prefixedGrammars = if ts.isAllMarking then [top.componentGrammarName] else [];
 }
 
-autocopy attribute prefixedTerminals::[String];
-autocopy attribute prefixedGrammars::[String];
+inherited attribute prefixedTerminals::[String];
+inherited attribute prefixedGrammars::[String];
 synthesized attribute terminalPrefix::String;
 nonterminal TerminalPrefix with config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, prefixedTerminals, prefixedGrammars, location, unparse, errors, syntaxAst, genFiles, terminalPrefix;
 
-propagate errors, syntaxAst, genFiles on TerminalPrefix;
+propagate config, env, flowEnv, grammarName, componentGrammarName, compiledGrammars, errors, syntaxAst, genFiles on TerminalPrefix;
 
 concrete production nameTerminalPrefix
 top::TerminalPrefix ::= s::QName
@@ -30,6 +30,8 @@ top::TerminalPrefix ::= s::QName
   top.unparse = s.unparse;
   top.errors <- s.lookupType.errors;
   top.terminalPrefix = makeCopperName(s.lookupType.fullName);
+} action {
+  insert semantic token IdType_t at s.baseNameLoc;
 }
 
 concrete production newTermModifiersTerminalPrefix
@@ -90,8 +92,7 @@ top::TerminalModifier ::= terms::[String]  grams::[String]
 synthesized attribute prefixItemNames::[String];
 synthesized attribute isAllMarking::Boolean;
 nonterminal TerminalPrefixItems with config, env, grammarName, componentGrammarName, compiledGrammars, grammarDependencies, location, unparse, errors, prefixItemNames, isAllMarking;
-
-propagate errors on TerminalPrefixItems;
+propagate config, env, grammarName, componentGrammarName, compiledGrammars, errors on TerminalPrefixItems;
 
 concrete production consTerminalPrefixItem
 top::TerminalPrefixItems ::= t::TerminalPrefixItem ',' ts::TerminalPrefixItems
@@ -127,6 +128,7 @@ top::TerminalPrefixItems ::=
 }
 
 nonterminal TerminalPrefixItem with config, env, grammarName, componentGrammarName, compiledGrammars, location, unparse, errors, prefixItemNames;
+propagate config, env, grammarName, componentGrammarName, compiledGrammars on TerminalPrefixItem;
 
 concrete production qNameTerminalPrefixItem
 top::TerminalPrefixItem ::= t::QName
@@ -134,11 +136,14 @@ top::TerminalPrefixItem ::= t::QName
   top.unparse = t.unparse;
   top.errors := t.lookupType.errors;
   top.prefixItemNames = [t.lookupType.fullName];
+} action {
+  insert semantic token IdType_t at t.baseNameLoc;
 }
 
 concrete production easyTerminalRefTerminalPrefixItem
 top::TerminalPrefixItem ::= t::EasyTerminalRef
 {
+  propagate env;
   forwards to
     qNameTerminalPrefixItem(
       qName(top.location, head(t.dcls).fullName),
@@ -181,6 +186,8 @@ top::ParserComponent ::= 'prefer' t::QName 'over' ts::TermList ';'
           tName :: tsNames, false, pluckTAction.translation,
           location=top.location, sourceGrammar=top.grammarName),
       tail(powerSet(ts.termList)));
+} action {
+  insert semantic token IdType_t at t.baseNameLoc;
 }
 
 -- Prefix separator
