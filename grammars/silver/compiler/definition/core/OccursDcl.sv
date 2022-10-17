@@ -31,6 +31,7 @@ top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QNam
   
   nttl.initialEnv = top.env;
   attl.env = nttl.envBindingTyVars;
+  nt.env = top.env;
   nttl.env = nttl.envBindingTyVars;
   
   local ntTypeScheme::PolyType = nt.lookupType.typeScheme;
@@ -133,6 +134,7 @@ top::AGDcl ::= msg::[Message] at::PartiallyDecorated QName attl::BracketedOptTyp
   
   nttl.initialEnv = top.env;
   attl.env = nttl.envBindingTyVars;
+  nt.env = top.env;
   nttl.env = nttl.envBindingTyVars;
   
   -- Decorate everything else to still check for errors
@@ -161,6 +163,7 @@ concrete production attributionDcl
 top::AGDcl ::= 'attribute' at::QName attl::BracketedOptTypeExprs 'occurs' 'on' nt::QName nttl::BracketedOptTypeExprs ';'
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
+  propagate env;
   
   -- Workaround for circular dependency due to dispatching on env:
   -- Nothing used to build the env namespaces on which we dispatch can depend on

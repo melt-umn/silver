@@ -6,6 +6,8 @@ top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' i
   top.unparse = s"unification attribute ${synPartial.unparse}, ${syn.unparse} with ${inh.unparse};";
   top.moduleNames := [];
 
+  propagate grammarName, env, flowEnv;
+
   production attribute inhFName :: String;
   inhFName = inh.lookupAttribute.fullName;
   production attribute synPartialFName :: String;
@@ -34,6 +36,8 @@ top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QNam
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
+
+  propagate grammarName, env, flowEnv;
   
   forwards to
     defaultAttributionDcl(

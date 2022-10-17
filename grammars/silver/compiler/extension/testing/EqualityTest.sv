@@ -23,6 +23,7 @@ ag::AGDcl ::= kwd::'equalityTest'
 {
   ag.unparse = "equalityTest (" ++ value.unparse ++ "," ++ expected.unparse ++ ",\n" ++ 
           "              " ++ valueType.unparse ++ ", " ++ testSuite.unparse ++ ");\n";
+  propagate grammarName, compiledGrammars, config, env, flowEnv;
 
   local attribute errCheck1 :: TypeCheck; 
   local attribute errCheck2 :: TypeCheck; 

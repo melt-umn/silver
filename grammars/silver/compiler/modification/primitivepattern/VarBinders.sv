@@ -31,7 +31,8 @@ flowtype errors {decorate, receivedDeps} on VarBinders, VarBinder;
 flowtype defs {decorate} on VarBinders, VarBinder;
 flowtype boundNames {} on VarBinders, VarBinder;
 
-propagate errors, defs, boundNames on VarBinders, VarBinder;
+propagate config, grammarName, env, compiledGrammars, frame, errors, defs, boundNames, finalSubst, flowEnv, matchingAgainst
+  on VarBinders, VarBinder;
 
 --- Types of each child
 inherited attribute bindingTypes :: [Type];
@@ -45,7 +46,7 @@ inherited attribute bindingName :: String;
 synthesized attribute flowProjections :: [PatternVarProjection];
 
 -- The DclInfo of the production we're matching against
-autocopy attribute matchingAgainst :: Maybe<ValueDclInfo>;
+inherited attribute matchingAgainst :: Maybe<ValueDclInfo>;
 
 synthesized attribute varBinderCount :: Integer;
 

@@ -26,8 +26,11 @@ top::InterfaceItem ::=
 abstract production flowDefsInterfaceItem
 top::InterfaceItem ::= val::[FlowDef]
 {
-  -- TODO: Ignoring flow defs for now. This isn't consistent between builds due to anon vertexes?
-  -- This shouldn't affect translation, but may cause some flow errors to only show up with --clean.
+  -- This always changes between builds due to anon vertices named using genInt().
+  -- Even if we could assign deterministic anon vertex names, changes to the flow
+  -- defs don't affect dependent grammars unless the flow analysis is run.
+  -- So we just ignore changes in flow defs here, and always rebuild dependent
+  -- grammars when running the flow analysis.
   top.isEqual = true;
 
   top.flowDefs <- val;

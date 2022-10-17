@@ -28,12 +28,12 @@ terminal Matches_kwd 'matches' lexer classes {KEYWORD};
 
 -- MR | ...
 nonterminal MRuleList with location, config, unparse, env, frame, errors, freeVars, matchRuleList, matchRulePatternSize;
-propagate errors, freeVars on MRuleList;
+propagate config, frame, env, errors, freeVars, matchRulePatternSize on MRuleList;
 
 -- Turns MRuleList (of MatchRules) into [AbstractMatchRule]
 synthesized attribute matchRuleList :: [AbstractMatchRule];
 -- Notification of the number of expressions being matched upon
-autocopy attribute matchRulePatternSize :: Integer;
+inherited attribute matchRulePatternSize :: Integer;
 
 -- P -> E
 nonterminal MatchRule with location, config, unparse, env, frame, errors, freeVars, matchRuleList, matchRulePatternSize;
@@ -50,7 +50,7 @@ synthesized attribute hasCondition::Boolean;
 
 -- P , ...
 nonterminal PatternList with location, config, unparse, patternList, env, frame, errors, patternVars, patternVarEnv;
-propagate errors on PatternList;
+propagate config, frame, env, errors on PatternList;
 
 -- Turns PatternList into [Pattern]
 synthesized attribute patternList :: [Decorated Pattern];
@@ -73,7 +73,7 @@ concrete production caseExpr_c
 top::Expr ::= 'case' es::Exprs 'of' Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "case " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
-  propagate freeVars;
+  propagate config, frame, env, freeVars;
 
   ml.matchRulePatternSize = length(es.rawExprs);
   top.errors <- ml.errors;
@@ -98,6 +98,7 @@ top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Exp
     "(case " ++ implode(", ", map((.unparse), es)) ++ " of " ++ 
     implode(" | ", map((.unparse), ml)) ++ " | _ -> " ++ failExpr.unparse ++
     " end :: " ++ prettyType(retType) ++ ")";
+  propagate frame;
   top.freeVars := concat(map(getFreeVars(top.frame, _), es) ++ map(getFreeVars(top.frame, _), ml) ++ [failExpr.freeVars]);
 
   {-Checking Pattern Completeness
@@ -1058,6 +1059,8 @@ concrete production matchRule_c
 top::MatchRule ::= pt::PatternList '->' e::Expr
 {
   top.unparse = pt.unparse ++ " -> " ++ e.unparse;
+  propagate frame, config, env;
+
   top.errors := pt.errors; -- e.errors is examined later, after transformation.
   top.freeVars := ts:removeAll(pt.patternVars, e.freeVars);
   
@@ -1074,6 +1077,8 @@ concrete production matchRuleWhen_c
 top::MatchRule ::= pt::PatternList 'when' cond::Expr '->' e::Expr
 {
   top.unparse = pt.unparse ++ " when " ++ cond.unparse ++ " -> " ++ e.unparse;
+  propagate frame, config, env;
+
   top.errors := pt.errors; -- e.errors is examined later, after transformation, as is cond.errors
   top.freeVars := ts:removeAll(pt.patternVars, cond.freeVars ++ e.freeVars);
   
@@ -1090,6 +1095,8 @@ concrete production matchRuleWhenMatches_c
 top::MatchRule ::= pt::PatternList 'when' cond::Expr 'matches' p::Pattern '->' e::Expr
 {
   top.unparse = pt.unparse ++ " when " ++ cond.unparse ++ " matches " ++ p.unparse ++ " -> " ++ e.unparse;
+  propagate frame, config, env;
+
   top.errors := pt.errors; -- e.errors is examined later, after transformation, as is cond.errors
   top.freeVars := ts:removeAll(pt.patternVars, cond.freeVars ++ ts:removeAll(p.patternVars, e.freeVars));
   
@@ -1117,6 +1124,8 @@ top::AbstractMatchRule ::= pl::[Decorated Pattern]
     | nothing() -> ""
     end ++
     " -> " ++ e.unparse;
+  propagate frame;
+
   top.freeVars := ts:removeAll(concat(map((.patternVars), pl)),
     case cond of
     | just((e1, just(p))) -> getFreeVars(top.frame, e1) ++ ts:removeAll(p.patternVars, e.freeVars)
@@ -1167,6 +1176,7 @@ top::PatternList ::= p::Pattern ',' ps1::PatternList
   top.unparse = p.unparse ++ (if ps1.unparse == "" then "" else ", " ++ ps1.unparse);
 
   top.patternVars = p.patternVars ++ ps1.patternVars;
+  p.patternVarEnv = top.patternVarEnv;
   ps1.patternVarEnv = p.patternVarEnv ++ p.patternVars;
   
   top.patternList = p :: ps1.patternList;

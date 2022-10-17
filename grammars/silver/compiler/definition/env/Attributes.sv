@@ -66,7 +66,7 @@ monoid attribute defs :: [Def];
 {--
  - The environment. Dun dun dunnn.
  -}
-autocopy attribute env :: Decorated Env;
+inherited attribute env :: Decorated Env;
 
 --
 -- Top-level, compiler-wide information passed down by the build process
@@ -75,16 +75,16 @@ autocopy attribute env :: Decorated Env;
 {--
 - All grammars Silver looked at. Despite the name, including interface files.
 -}
-autocopy attribute compiledGrammars :: EnvTree<Decorated RootSpec>;
+inherited attribute compiledGrammars :: EnvTree<Decorated RootSpec>;
 {--
 - Compiler configuration information, made available everywhere.
 -}
-autocopy attribute config :: Decorated CmdArgs;
+inherited attribute config :: Decorated CmdArgs;
 {--
 - Flow information computed for this grammar
 -}
-autocopy attribute productionFlowGraphs :: EnvTree<ProductionGraph>;
-autocopy attribute grammarFlowTypes :: EnvTree<FlowType>;
+inherited attribute productionFlowGraphs :: EnvTree<ProductionGraph>;
+inherited attribute grammarFlowTypes :: EnvTree<FlowType>;
 
 {--
  - The path to the origin of this root spec

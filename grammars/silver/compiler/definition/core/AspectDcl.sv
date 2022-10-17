@@ -15,14 +15,16 @@ flowtype forward {deterministicCount, realSignature, grammarName, env, flowEnv} 
 {--
  - The signature elements from the fun/produciton being aspected.
  -}
-autocopy attribute realSignature :: [NamedSignatureElement];
+inherited attribute realSignature :: [NamedSignatureElement];
 
-propagate errors on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS, AspectRHSElem;
+propagate config, grammarName, env, grammarDependencies, errors
+  on AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS, AspectRHS, AspectRHSElem;
 
 concrete production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody
 {
   top.unparse = "aspect production " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
+  id.env = top.env;
 
   top.defs := 
     if null(body.productionAttributes) then []
@@ -79,6 +81,7 @@ concrete production aspectFunctionDcl
 top::AGDcl ::= 'aspect' 'function' id::QName ns::AspectFunctionSignature body::ProductionBody
 {
   top.unparse = "aspect function " ++ id.unparse ++ "\n" ++ ns.unparse ++ "\n" ++ body.unparse;
+  id.env = top.env;
 
   top.defs := 
     if null(body.productionAttributes) then []
@@ -175,6 +178,7 @@ concrete production aspectProductionLHSTyped
 top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
 {
   top.unparse = id.unparse;
+  propagate env, grammarName, config;
 
   top.errors <- t.errors;
   
@@ -258,6 +262,7 @@ concrete production aspectRHSElemTyped
 top::AspectRHSElem ::= id::Name '::' t::TypeExpr
 {
   top.unparse = id.unparse ++ "::" ++ t.unparse;
+  propagate env, grammarName, config;
   
   top.errors <- t.errors;
 

@@ -185,7 +185,6 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
   nes.finalSubst = top.finalSubst;
   nes.downSubst = top.downSubst;
   nes.originRules = top.originRules;
-  nes.isRoot = false;
   nes.appExprTypereps = reverse(performSubstitution(ne.mtyperep, ne.mUpSubst).inputTypes);
   nes.appExprApplied = ne.unparse;
   nes.monadArgumentsAllowed = acceptableMonadFunction(e);
@@ -1204,6 +1203,8 @@ concrete production ifThen
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything else to do
 {
   top.unparse = "if " ++ e1.unparse  ++ " then " ++ e2.unparse ++ " end";
+  propagate config, grammarName, compiledGrammars, frame, env, flowEnv, finalSubst, originRules;
+
   top.merrors <-
       if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
       then if monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
@@ -1244,6 +1245,9 @@ top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'end' --this is easier than anything
   e2.expectedMonad = if isMonad(e1.mtyperep, top.env) && monadsMatch(top.expectedMonad, e1.mtyperep, top.mDownSubst).fst
                      then e1.mtyperep
                      else top.expectedMonad;
+  
+  e1.isRoot = false;
+  e2.isRoot = false;
 
   forwards to ifThenElse('if', e1, 'then', e2, 'else', monadFail(top.location), location=top.location);
 }
@@ -1921,7 +1925,7 @@ synthesized attribute realTypes::[Type] occurs on AppExpr, AppExprs;
 attribute expectedMonad occurs on AppExpr, AppExprs;
 propagate expectedMonad on AppExpr, AppExprs;
 --Whether we're in a special case where monad arguments are allowed, despite the normal prohibition
-autocopy attribute monadArgumentsAllowed::Boolean occurs on AppExpr, AppExprs;
+inherited attribute monadArgumentsAllowed::Boolean occurs on AppExpr, AppExprs;
 
 attribute monadRewritten<AppExpr>, merrors, mDownSubst, mUpSubst occurs on AppExpr;
 attribute monadRewritten<AppExprs>, merrors, mDownSubst, mUpSubst occurs on AppExprs;
@@ -1993,7 +1997,7 @@ top::AppExpr ::= e::Expr
   top.monadRewritten = presentAppExpr(e.monadRewritten, location=top.location);
 }
 
-propagate mDownSubst, mUpSubst on AppExprs;
+propagate monadArgumentsAllowed, mDownSubst, mUpSubst on AppExprs;
 
 aspect production snocAppExprs
 top::AppExprs ::= es::AppExprs ',' e::AppExpr

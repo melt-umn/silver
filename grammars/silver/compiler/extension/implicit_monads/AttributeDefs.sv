@@ -5,6 +5,7 @@ concrete production attributeDclInh_Restricted
 top::AGDcl ::= 'restricted' 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.unparse = "restricted inherited attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
+  propagate grammarName, flowEnv;
 
   top.moduleNames := [];
 
@@ -34,6 +35,7 @@ concrete production attributeDclSyn_Restricted
 top::AGDcl ::= 'restricted' 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.unparse = "restricted synthesized attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
+  propagate grammarName, flowEnv;
 
   top.moduleNames := [];
 
@@ -65,6 +67,7 @@ concrete production attributeDclInh_Implicit
 top::AGDcl ::= 'implicit' 'inherited' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.unparse = "implicit inherited attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
+  propagate grammarName, flowEnv;
 
   top.moduleNames := [];
 
@@ -96,6 +99,7 @@ concrete production attributeDclSyn_Implicit
 top::AGDcl ::= 'implicit' 'synthesized' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.unparse = "implicit synthesized attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
+  propagate grammarName, flowEnv;
 
   top.moduleNames := [];
 

@@ -7,12 +7,12 @@ import silver:compiler:driver:util;
 
 annotation genName::String; -- Used to generate the names of lifted strategy attributes
 
-autocopy attribute recVarNameEnv::[Pair<String String>]; -- name, (isTotal, genName)
-autocopy attribute recVarTotalEnv::[Pair<String Boolean>]; -- name, (isTotal, genName)
-autocopy attribute recVarTotalNoEnvEnv::[Pair<String Boolean>]; -- same as above but doesn't depend on env
+inherited attribute recVarNameEnv::[Pair<String String>]; -- name, (isTotal, genName)
+inherited attribute recVarTotalEnv::[Pair<String Boolean>]; -- name, (isTotal, genName)
+inherited attribute recVarTotalNoEnvEnv::[Pair<String Boolean>]; -- same as above but doesn't depend on env
 inherited attribute isOutermost::Boolean;
-autocopy attribute outerAttr::String;
-autocopy attribute inlinedStrategies::[String];
+inherited attribute outerAttr::String;
+inherited attribute inlinedStrategies::[String];
 type LiftedInhs = {recVarNameEnv, recVarTotalNoEnvEnv, outerAttr, isOutermost};
 monoid attribute liftedStrategies::[(String, Decorated StrategyExpr with LiftedInhs)];
 synthesized attribute attrRefName::Maybe<String>;
@@ -77,14 +77,14 @@ partial strategy attribute prodStep =
   | prodTraversal(p, s) when p.lookupValue.fullName != top.frame.fullName -> fail(location=top.location, genName=top.genName)
   | rewriteRule(_, _, ml) when !ml.matchesFrame -> fail(location=top.location, genName=top.genName)
   end <+
-  rewriteRule(
-    id, id,
-    onceBottomUp(
-      rule on top::MRuleList of
-      | mRuleList_cons(h, _, t) when !h.matchesFrame -> t
-      | mRuleList_cons(h, _, mRuleList_one(t)) when !t.matchesFrame -> mRuleList_one(h, location=top.location)
-      end));
-attribute prodStep occurs on MRuleList;
+  rewriteRule(id, id, elimInfeasibleMRules);
+partial strategy attribute elimInfeasibleMRules =
+  onceBottomUp(
+    rule on top::MRuleList of
+    | mRuleList_cons(h, _, t) when !h.matchesFrame -> t
+    | mRuleList_cons(h, _, mRuleList_one(t)) when !t.matchesFrame -> mRuleList_one(h, location=top.location)
+    end);
+attribute elimInfeasibleMRules occurs on MRuleList;
 
 strategy attribute genericSimplify = innermost(genericStep);
 strategy attribute ntSimplify =
@@ -145,13 +145,15 @@ flowtype StrategyExprs =
   attrRefNames {env, recVarNameEnv, givenInputElements},
   containsFail {}, allId {}, freeRecVars {decorate}, partialRefs {decorate}, totalRefs {decorate};
 
+propagate grammarName, config, compiledGrammars, env, flowEnv, outerAttr, partialRefs, totalRefs, containsTraversal on StrategyExpr, StrategyExprs;
+propagate frame on StrategyExpr excluding allTraversal, someTraversal, oneTraversal, prodTraversal;
 propagate errors on StrategyExpr, StrategyExprs excluding partialRef, totalRef, rewriteRule;
 propagate containsFail, allId on StrategyExprs;
-propagate freeRecVars on StrategyExpr, StrategyExprs excluding recComb;
-propagate partialRefs, totalRefs, containsTraversal on StrategyExpr, StrategyExprs;
+propagate recVarNameEnv, recVarTotalEnv, recVarTotalNoEnvEnv, freeRecVars on StrategyExpr, StrategyExprs excluding recComb;
+propagate inlinedStrategies on StrategyExpr, StrategyExprs excluding inlined;
 propagate genericSimplify on StrategyExprs;
-propagate prodStep on MRuleList;
 propagate genericStep, ntStep, prodStep, genericSimplify, ntSimplify, optimize on StrategyExpr;
+propagate elimInfeasibleMRules on MRuleList;
 
 -- Convert an expression of type a to Maybe<a>
 function asPartial
@@ -320,7 +322,6 @@ top::StrategyExpr ::= s::StrategyExpr
   top.containsTraversal <- true;
 
   s.isOutermost = false;
-  s.frame = error("No frame for traversal strategies");  -- TODO: This equation shouldn't exist, but frame is an autocopy
   
   local sBaseName::String = last(explode(":", sName));
   -- pair(child name, attr occurs on child)
@@ -410,7 +411,6 @@ top::StrategyExpr ::= s::StrategyExpr
   top.containsTraversal <- true;
 
   s.isOutermost = false;
-  s.frame = error("No frame for traversal strategies");  -- TODO: This equation shouldn't exist, but frame is an autocopy
   
   -- pair(child name, attr occurs on child)
   local childAccesses::[Pair<String Boolean>] =
@@ -491,7 +491,6 @@ top::StrategyExpr ::= s::StrategyExpr
   top.containsTraversal <- true;
   
   s.isOutermost = false;
-  s.frame = error("No frame for traversal strategies");  -- TODO: This equation shouldn't exist, but frame is an autocopy
   
   local sBaseName::String = last(explode(":", sName));
   -- pair(child name, attr occurs on child)
@@ -613,7 +612,7 @@ top::StrategyExpr ::= prod::QName s::StrategyExprs
            | just(a_s1), just(c_s3) -> just(prod(a_s1, b, c_s3, d.s4))
            | _, _ -> nothing()
            end
-         Could also be implemented as chained monadic binds.  Maybe more efficient this way? -}
+         Could also be implemented using the Applicative instance for Maybe.  Maybe more efficient this way? -}
       caseExpr(
         flatMap(
           \ a::Pair<String Maybe<String>> ->
@@ -890,6 +889,7 @@ abstract production nameRef
 top::StrategyExpr ::= id::QName
 {
   top.unparse = id.unparse;
+  propagate env;
   
   -- Forwarding depends on env here, these must be computed without env
   propagate liftedStrategies;

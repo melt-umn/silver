@@ -8,7 +8,7 @@ imports silver:compiler:definition:core only nonterminalName;
 
 nonterminal SyntaxNonterminalModifiers with compareTo, isEqual, cstEnv, cstErrors, customLayout, nonterminalName;
 
-propagate compareTo, isEqual, cstErrors, customLayout on SyntaxNonterminalModifiers;
+propagate compareTo, isEqual, cstEnv, cstErrors, customLayout, nonterminalName on SyntaxNonterminalModifiers;
 
 abstract production consNonterminalMod
 top::SyntaxNonterminalModifiers ::= h::SyntaxNonterminalModifier  t::SyntaxNonterminalModifiers

@@ -1,6 +1,6 @@
 grammar silver:compiler:definition:type:syntax;
 
-autocopy attribute constraintPos::ConstraintPosition;
+inherited attribute constraintPos::ConstraintPosition;
 
 nonterminal ConstraintList
   -- This grammar doesn't export silver:compiler:definition:core, so the type concrete
@@ -12,7 +12,8 @@ nonterminal Constraint with config, grammarName, env, flowEnv, location, unparse
 
 flowtype Constraint = decorate {grammarName, env, flowEnv, constraintPos};
 
-propagate errors, defs, occursDefs, lexicalTypeVariables, lexicalTyVarKinds on ConstraintList, Constraint;
+propagate config, grammarName, env, flowEnv, errors, defs, occursDefs, lexicalTypeVariables, lexicalTyVarKinds, constraintPos
+  on ConstraintList, Constraint;
 
 concrete production consConstraint
 top::ConstraintList ::= h::Constraint ',' t::ConstraintList

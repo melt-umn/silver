@@ -10,9 +10,11 @@ monoid attribute productionOperator :: Maybe<Decorated SyntaxDcl> with nothing()
 {--
  - Modifiers for productions.
  -}
-nonterminal SyntaxProductionModifiers with compareTo, isEqual, cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, productionSig;
+nonterminal SyntaxProductionModifiers with
+  compareTo, isEqual, cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, productionSig;
 
-propagate compareTo, isEqual, cstErrors, acode, productionPrecedence, customLayout, productionOperator
+propagate
+  compareTo, isEqual, cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, productionSig
   on SyntaxProductionModifiers;
 
 abstract production consProductionMod
@@ -27,9 +29,10 @@ top::SyntaxProductionModifiers ::=
 {--
  - Modifiers for productions.
  -}
-nonterminal SyntaxProductionModifier with compareTo, isEqual, cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, productionSig;
+nonterminal SyntaxProductionModifier with
+  compareTo, isEqual, cstEnv, cstErrors, acode, productionPrecedence, customLayout, productionOperator, productionSig;
 
-propagate compareTo, isEqual on SyntaxProductionModifier;
+propagate compareTo, isEqual, cstEnv, productionSig on SyntaxProductionModifier;
 
 aspect default production
 top::SyntaxProductionModifier ::=

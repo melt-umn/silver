@@ -4,6 +4,7 @@ concrete production do_c
 top::Expr ::= 'do' '{' body::DoBody '}'
 {
   top.unparse = s"do {${body.unparse}}";
+  propagate frame;
 
   forwards to body.transform;
 }
@@ -40,6 +41,7 @@ concrete production mdo_c
 top::Expr ::= 'mdo' '{' body::DoBody '}'
 {
   top.unparse = s"mdo {${body.unparse}}";
+  propagate frame;
 
   body.boundVarEnv = mempty;
   body.allBoundVars = body.boundVars;
@@ -96,7 +98,7 @@ nonterminal DoBinding with
   transform, transformIn,
   recBindings;
 
-propagate boundVars on DoBody, DoBinding;
+propagate frame, boundVars on DoBody, DoBinding;
 propagate freeVars on DoBinding;
 
 concrete production consDoBody

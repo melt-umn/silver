@@ -6,39 +6,42 @@ import silver:util:treeset as ts;
 nonterminal Expr with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, typerep, isRoot, originRules;
 nonterminal Exprs with
-  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs, originRules;
 
 nonterminal ExprInhs with
-  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, originRules;
 nonterminal ExprInh with
-  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, decoratingnt, suppliedInhs, allSuppliedInhs, originRules;
 nonterminal ExprLHSExpr with
-  config, grammarName, env, location, unparse, errors, freeVars, frame, name, typerep, decoratingnt, suppliedInhs, allSuppliedInhs, isRoot, originRules;
+  config, grammarName, env, location, unparse, errors, freeVars, frame, name, typerep, decoratingnt, suppliedInhs, allSuppliedInhs, originRules;
 
 flowtype unparse {} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype freeVars {frame} on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 flowtype Expr = decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config}, forward {decorate};
 
-flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config} on Exprs;
-flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, isRoot, originRules, compiledGrammars, config, decoratingnt, allSuppliedInhs} on ExprInhs, ExprInh;
-flowtype decorate {grammarName, env, frame, isRoot, originRules, config, decoratingnt, allSuppliedInhs} on ExprLHSExpr;
+flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config} on Exprs;
+flowtype decorate {grammarName, env, flowEnv, downSubst, finalSubst, frame, originRules, compiledGrammars, config, decoratingnt, allSuppliedInhs} on ExprInhs, ExprInh;
+flowtype decorate {grammarName, env, frame, originRules, config, decoratingnt, allSuppliedInhs} on ExprLHSExpr;
 flowtype forward {} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
 flowtype errors {decorate} on Exprs, ExprInhs, ExprInh, ExprLHSExpr;
 
 propagate errors on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr
   excluding terminalAccessHandler;
-propagate freeVars on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+propagate config, grammarName, env, freeVars, frame, compiledGrammars
+  on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr;
+propagate originRules on Expr, Exprs, ExprInhs, ExprInh, ExprLHSExpr excluding noteAttachment;
+propagate decoratingnt, allSuppliedInhs on ExprInhs, ExprInh, ExprLHSExpr;
 
 {--
  - The nonterminal being decorated. (Used for 'decorate with {}')
  -}
-autocopy attribute decoratingnt :: Type;
+inherited attribute decoratingnt :: Type;
 {--
  - The inherited attributes being supplied in a decorate expression
  -}
 synthesized attribute suppliedInhs :: [String];
-autocopy attribute allSuppliedInhs :: [String];
+inherited attribute allSuppliedInhs :: [String];
 {--
  - A list of decorated expressions from an Exprs.
  -}
@@ -54,11 +57,12 @@ monoid attribute freeVars :: ts:Set<String>;
 
 -- Is this Expr the logical "root" of the expression? That is, will it's value be the value computed
 --  for the attribute/return value/etc that it is part of?
-autocopy attribute isRoot :: Boolean;
+inherited attribute isRoot :: Boolean;
 
-autocopy attribute originRules :: [Decorated Expr];
+inherited attribute originRules :: [Decorated Expr];
 
 attribute grammarName, frame occurs on Contexts, Context;
+propagate grammarName, frame on Contexts, Context;
 
 abstract production errorExpr
 top::Expr ::= e::[Message]
@@ -81,6 +85,7 @@ top::Expr ::= q::QName
 {
   top.unparse = q.unparse;
   top.freeVars := ts:fromList([q.name]);
+  propagate env;
   
   forwards to (if null(q.lookupValue.dcls)
                then errorReference(q.lookupValue.errors, _, location=_)
@@ -250,7 +255,8 @@ top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
 {
   -- TODO: fix comma when one or the other is empty
   top.unparse = e.unparse ++ "(" ++ es.unparse ++ "," ++ anns.unparse ++ ")";
-  propagate freeVars;
+  propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
+  e.isRoot = false;
   
   local correctNumTypes :: [Type] =
     if length(t.inputTypes) > es.appExprSize
@@ -364,6 +370,7 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 
   note.isRoot = false;
   e.isRoot = false;
+  note.originRules = top.originRules;
   e.originRules = top.originRules ++ [note];
 }
 
@@ -374,13 +381,16 @@ top::Expr ::= e::Expr '.' 'forward'
 {
   top.unparse = e.unparse ++ ".forward";
   top.typerep = e.typerep;
+
+  e.isRoot = false;
 }
 
 concrete production access
 top::Expr ::= e::Expr '.' q::QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  propagate freeVars;
+  propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
+  e.isRoot = false;
   
   local eTy::Type = performSubstitution(e.typerep, e.upSubst);
   q.attrFor = if eTy.isDecorated then eTy.decoratedType else eTy;
@@ -464,7 +474,8 @@ abstract production accessBouncer
 top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::Expr  q::PartiallyDecorated QNameAttrOccur
 {
   top.unparse = e.unparse ++ "." ++ q.unparse;
-  propagate freeVars;
+  propagate config, grammarName, env, freeVars, frame, originRules, compiledGrammars;
+  e.isRoot = false;
 
   -- Basically the only purpose here is to decorate 'e'.
   forwards to target(e, q, top.location);
@@ -574,6 +585,8 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
   top.unparse = lhs.unparse ++ " = " ++ e.unparse ++ ";";
   
   top.suppliedInhs = lhs.suppliedInhs;
+
+  e.isRoot = false;
 }
 
 concrete production exprLhsExpr
@@ -739,6 +752,10 @@ precedence = 0
   top.unparse = "if " ++ e1.unparse ++ " then " ++ e2.unparse ++ " else " ++ e3.unparse;
 
   top.typerep = e2.typerep;
+
+  e1.isRoot=false;
+  e2.isRoot=false;
+  e3.isRoot=false;
 }
 
 concrete production intConst
@@ -890,6 +907,8 @@ top::Exprs ::= e::Expr
 
   top.exprs := [e];
   top.rawExprs := [e];
+
+  e.isRoot = false;
 }
 concrete production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
@@ -898,6 +917,8 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 
   top.exprs := [e1] ++ e2.exprs;
   top.rawExprs := [e1] ++ e2.rawExprs;
+
+  e1.isRoot = false;
 }
 
 
@@ -907,14 +928,14 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
  -}
 nonterminal AppExprs with 
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied, isRoot, originRules;
+  isPartial, missingTypereps, appExprIndicies, appExprSize, appExprTypereps, appExprApplied, originRules;
 
 nonterminal AppExpr with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars, exprs, rawExprs,
-  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied, isRoot, originRules;
+  isPartial, missingTypereps, appExprIndicies, appExprIndex, appExprTyperep, appExprApplied, originRules;
 
-propagate errors, freeVars on AppExprs, AppExpr;
-propagate exprs, rawExprs on AppExprs;
+propagate config, grammarName, env, freeVars, frame, compiledGrammars, errors, originRules on AppExprs, AppExpr;
+propagate appExprApplied, exprs, rawExprs on AppExprs;
 
 synthesized attribute isPartial :: Boolean;
 synthesized attribute missingTypereps :: [Type];
@@ -923,7 +944,7 @@ synthesized attribute appExprSize :: Integer;
 inherited attribute appExprIndex :: Integer;
 inherited attribute appExprTypereps :: [Type];
 inherited attribute appExprTyperep :: Type;
-autocopy attribute appExprApplied :: String;
+inherited attribute appExprApplied :: String;
 
 -- These are the "new" Exprs syntax. This allows missing (_) arguments, to indicate partial application.
 concrete production missingAppExpr
@@ -949,6 +970,8 @@ top::AppExpr ::= e::Expr
   top.rawExprs := [e];
   top.exprs := [e];
   top.appExprIndicies = [top.appExprIndex];
+
+  e.isRoot = false;
 }
 
 concrete production snocAppExprs
@@ -1007,27 +1030,28 @@ nonterminal AnnoAppExprs with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
-  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot, originRules;
+  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, originRules;
 nonterminal AnnoExpr with
   config, grammarName, env, location, unparse, errors, freeVars, frame, compiledGrammars,
   isPartial, appExprApplied, exprs,
   remainingFuncAnnotations, funcAnnotations,
-  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, isRoot, originRules;
-  
-propagate errors, freeVars, exprs on AnnoAppExprs, AnnoExpr;
+  missingAnnotations, partialAnnoTypereps, annoIndexConverted, annoIndexSupplied, originRules;
+
+propagate config, grammarName, env, errors, freeVars, frame, compiledGrammars, exprs, funcAnnotations, appExprApplied, originRules
+  on AnnoAppExprs, AnnoExpr;
 
 {--
  - Annotations that have not yet been supplied
  -}
-inherited attribute remainingFuncAnnotations :: [Pair<String Type>];
+inherited attribute remainingFuncAnnotations :: [(String, Type)];
 {--
  - All annotations of this function
  -}
-autocopy attribute funcAnnotations :: [Pair<String Type>];
+inherited attribute funcAnnotations :: [(String, Type)];
 {--
  - Annotations that have not been supplied (by subtracting from remainingFuncAnnotations)
  -}
-synthesized attribute missingAnnotations :: [Pair<String Type>];
+synthesized attribute missingAnnotations :: [(String, Type)];
 {--
  - Typereps of those annotations that are partial (_)
  -}
@@ -1041,7 +1065,7 @@ top::AnnoExpr ::= qn::QName '=' e::AppExpr
 {
   top.unparse = qn.unparse ++ "=" ++ e.unparse;
   
-  local fq :: Pair<Maybe<Pair<String Type>> [Pair<String Type>]> =
+  local fq :: (Maybe<(String, Type)>, [(String, Type)]) =
     extractNamedArg(qn.name, top.remainingFuncAnnotations);
     
   e.appExprIndex =
@@ -1122,21 +1146,21 @@ function reorderedAnnoAppExprs
   return map(snd, sortBy(reorderedLte, zipWith(pair, d.annoIndexSupplied, d.exprs)));
 }
 function reorderedLte
-Boolean ::= l::Pair<Integer Decorated Expr>  r::Pair<Integer Decorated Expr> { return l.fst <= r.fst; }
+Boolean ::= l::(Integer, Decorated Expr)  r::(Integer, Decorated Expr) { return l.fst <= r.fst; }
 
 function extractNamedArg
-Pair<Maybe<Pair<String Type>> [Pair<String Type>]> ::= n::String  l::[Pair<String Type>]
+(Maybe<(String, Type)>, [(String, Type)]) ::= n::String  l::[(String, Type)]
 {
-  local recurse :: Pair<Maybe<Pair<String Type>> [Pair<String Type>]> =
+  local recurse :: (Maybe<(String, Type)>, [(String, Type)]) =
     extractNamedArg(n, tail(l));
 
-  return if null(l) then pair(nothing(), [])
-  else if head(l).fst == n then pair(just(head(l)), tail(l))
-  else pair(recurse.fst, head(l) :: recurse.snd);
+  return if null(l) then (nothing(), [])
+  else if head(l).fst == n then (just(head(l)), tail(l))
+  else (recurse.fst, head(l) :: recurse.snd);
 }
 
 function findNamedArgType
-Integer ::= s::String l::[Pair<String Type>] z::Integer
+Integer ::= s::String l::[(String, Type)] z::Integer
 {
   return if null(l) then -1
   else if s == head(l).fst then z

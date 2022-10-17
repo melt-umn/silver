@@ -10,7 +10,7 @@ monoid attribute opAssociation :: Maybe<String> with nothing(), orElse; -- TODO 
 monoid attribute prefixSeperator :: Maybe<String> with nothing(), orElse;
 monoid attribute prefixSeperatorToApply :: Maybe<String> with nothing(), orElse;
 monoid attribute prettyName :: Maybe<String> with nothing(), orElse;
-autocopy attribute terminalName :: String;
+inherited attribute terminalName :: String;
 
 monoid attribute dominates_ :: [Decorated SyntaxDcl];
 monoid attribute submits_ :: [Decorated SyntaxDcl];
@@ -25,8 +25,10 @@ nonterminal SyntaxTerminalModifiers with compareTo, isEqual, cstEnv, cstErrors,
   componentGrammarMarkingTerminals, marking, terminalName, prettyName,
   dominates_, submits_, lexerClasses;
 
-propagate compareTo, isEqual, cstErrors, classTerminalContribs, ignored, acode, opPrecedence,
-  opAssociation, prefixSeperator, prefixSeperatorToApply, marking, prettyName,
+propagate compareTo, isEqual, cstEnv, cstErrors,
+  classTerminalContribs, superClasses, subClasses, ignored, acode,
+  opPrecedence, opAssociation, prefixSeperator, prefixSeperatorToApply,
+  componentGrammarMarkingTerminals, marking, terminalName, prettyName,
   dominates_, submits_, lexerClasses
   on SyntaxTerminalModifiers;
 

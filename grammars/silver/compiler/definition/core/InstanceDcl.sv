@@ -61,6 +61,7 @@ top::AGDcl ::= 'instance' cl::ConstraintList '=>' id::QNameType ty::TypeExpr '{'
   headDefs <- [currentInstDef(top.grammarName, id.location, fName, ty.typerep)];
   
   cl.env = newScopeEnv(headPreDefs, top.env);
+  id.env = cl.env;
   ty.env = cl.env;
   
   body.env = occursEnv(cl.occursDefs, newScopeEnv(headDefs, cl.env));
@@ -82,22 +83,26 @@ top::AGDcl ::= 'instance' id::QNameType ty::TypeExpr '{' body::InstanceBody '}'
   insert semantic token IdTypeClass_t at id.baseNameLoc;
 }
 
-autocopy attribute className::String;
-autocopy attribute instanceType::Type;
+inherited attribute className::String;
+inherited attribute instanceType::Type;
 inherited attribute expectedClassMembers::[Pair<String Boolean>];
 
 nonterminal InstanceBody with
-  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, definedMembers;
+  config, grammarName, env, defs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, definedMembers;
 nonterminal InstanceBodyItem with
-  config, grammarName, env, defs, flowEnv, flowDefs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, fullName;
+  config, grammarName, env, defs, location, unparse, errors, compiledGrammars, className, instanceType, frameContexts, expectedClassMembers, fullName;
 
-propagate defs, flowDefs, errors on InstanceBody, InstanceBodyItem;
+propagate 
+  config, grammarName, compiledGrammars, className, instanceType,
+  defs, errors, frameContexts
+  on InstanceBody, InstanceBodyItem;
 
 concrete production consInstanceBody
 top::InstanceBody ::= h::InstanceBodyItem t::InstanceBody
 {
   top.unparse = h.unparse ++ "\n" ++ t.unparse;
   top.definedMembers = h.fullName :: t.definedMembers;
+  propagate env;
 
   h.expectedClassMembers = top.expectedClassMembers;
   t.expectedClassMembers =
@@ -146,6 +151,8 @@ top::InstanceBodyItem ::= id::QName '=' e::Expr ';'
     else [err(id.location, s"Unexpected instance member ${id.name} for class ${top.className}")]; 
 
   top.fullName = id.lookupValue.fullName;
+
+  id.env = top.env;
 
   local cmDefs::[Def] =
     flatMap(

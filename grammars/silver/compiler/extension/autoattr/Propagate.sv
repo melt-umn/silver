@@ -4,6 +4,7 @@ concrete production propagateOnNTListExcludingDcl_c
 top::AGDcl ::= 'propagate' attrs::NameList 'on' nts::NameList 'excluding' ps::ProdNameList ';'
 {
   top.unparse = s"propagate ${attrs.unparse} on ${nts.unparse} excluding ${ps.unparse};";
+  propagate env;
   
   top.errors <- ps.errors;
   forwards to propagateOnNTListDcl(attrs, nts, ps, location=top.location);
@@ -42,6 +43,7 @@ abstract production propagateOnOneNTDcl
 top::AGDcl ::= attrs::NameList nt::QName ps::ProdNameList
 {
   top.unparse = s"propagate ${attrs.unparse} on ${nt.unparse} excluding ${ps.unparse};";
+  propagate env;
   
   -- Ugh, workaround for circular dependency
   top.defs := [];
@@ -125,6 +127,7 @@ abstract production propagateOneAttr
 top::ProductionStmt ::= attr::QName
 {
   top.unparse = s"propagate ${attr.unparse};";
+  propagate env;
 
   -- We make an exception to permit propagated equations in places that would otherwise be orphaned.
   -- Since this is the only possible equation permitted in these contexts, having duplicates will
@@ -155,7 +158,7 @@ top::ProductionStmt ::= attr::PartiallyDecorated QName
 
 -- Need a seperate nonterminal since this can be empty and needs env to check errors
 nonterminal ProdNameList with config, grammarName, env, location, unparse, names, errors;
-propagate errors on ProdNameList;
+propagate config, grammarName, env, errors on ProdNameList;
 
 abstract production prodNameListNil
 top::ProdNameList ::=
