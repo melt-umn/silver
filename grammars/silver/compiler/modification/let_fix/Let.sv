@@ -124,7 +124,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 abstract production lexicalLocalReference
 top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
-  undecorates to baseExpr(q, location=top.location);
+  -- undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   top.errors := [];
   top.freeVars := ts:fromList([q.name]);

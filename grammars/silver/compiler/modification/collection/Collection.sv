@@ -225,7 +225,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
 abstract production errorCollectionValueDef
 top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
-  undecorates to valContainsBase(val, ':=', e, ';', location=top.location);
+  -- undecorates to valContainsBase(val, ':=', e, ';', location=top.location);
   top.errors <- [err(top.location, "The ':=' and '<-' operators can only be used for collections. " ++ val.name ++ " is not a collection.")];
   
   -- TODO: this production also produces an error message, so we'll produce two errors for one flaw.
@@ -236,7 +236,7 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 abstract production errorColNormalValueDef
 top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
-  undecorates to valueEq(val, '=', e, ';', location=top.location);
+  -- undecorates to valueEq(val, '=', e, ';', location=top.location);
   top.errors <- [err(top.location, val.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")];
   
   -- TODO: same problem
@@ -248,7 +248,7 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 abstract production baseCollectionValueDef
 top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
-  undecorates to valContainsBase(val, ':=', e, ';', location=top.location);
+  -- undecorates to valContainsBase(val, ':=', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " := " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules, flowEnv;
 
@@ -264,7 +264,7 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 abstract production appendCollectionValueDef
 top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
-  undecorates to valContainsAppend(val, '<-', e, ';', location=top.location);
+  -- undecorates to valContainsAppend(val, '<-', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " <- " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules, flowEnv;
 
@@ -283,7 +283,7 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 abstract production synBaseColAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
-  undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';', location=top.location);
+  -- undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 
@@ -304,7 +304,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 abstract production synAppendColAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
-  undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';', location=top.location);
+  -- undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 
@@ -328,7 +328,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 abstract production inhBaseColAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
-  undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';', location=top.location);
+  -- undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 
@@ -349,7 +349,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 abstract production inhAppendColAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
 {
-  undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';', location=top.location);
+  -- undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
   propagate config, grammarName, compiledGrammars, frame, env, finalSubst, originRules;
 

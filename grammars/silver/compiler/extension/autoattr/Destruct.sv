@@ -23,7 +23,7 @@ top::AGDcl ::= 'destruct' 'attribute' inh::Name ';'
 abstract production destructAttributionDcl
 top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
+  -- undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
 
@@ -82,7 +82,7 @@ top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QNam
 abstract production propagateDestruct
 top::ProductionStmt ::= attr::PartiallyDecorated QName
 {
-  undecorates to propagateOneAttr(attr, location=top.location);
+  -- undecorates to propagateOneAttr(attr, location=top.location);
   top.unparse = s"propagate ${attr.unparse};";
   
   local numChildren::Integer = length(top.frame.signature.inputElements);

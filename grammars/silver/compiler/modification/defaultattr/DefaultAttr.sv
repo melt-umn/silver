@@ -102,7 +102,7 @@ top::ValueDclInfo ::= fn::String ty::Type
 abstract production defaultLhsDefLHS
 top::DefLHS ::= q::PartiallyDecorated QName
 {
-  undecorates to concreteDefLHS(q, location=top.location);
+  -- undecorates to concreteDefLHS(q, location=top.location);
   top.name = q.name;
   top.unparse = q.unparse;
   top.found = !existingProblems && top.defLHSattr.attrDcl.isSynthesized;

@@ -195,7 +195,7 @@ function buildExplicitAttrErrors
 abstract production restrictedSynAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
+  -- undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
 
@@ -221,7 +221,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
 abstract production restrictedInhAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
+  -- undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, finalSubst, originRules;
 
@@ -250,7 +250,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
 abstract production implicitSynAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
+  -- undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, originRules;
 
@@ -281,7 +281,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated Q
 abstract production implicitInhAttributeDef
 top::ProductionStmt ::= dl::PartiallyDecorated DefLHS attr::PartiallyDecorated QNameAttrOccur e::Expr
 {
-  undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
+  -- undecorates to attributeDef(dl, '.', attr, '=', e, ';', location=top.location);
   top.unparse = dl.unparse ++ "." ++ attr.unparse ++ " = " ++ e.unparse ++ ";";
   propagate grammarName, compiledGrammars, config, frame, env, flowEnv, originRules;
 

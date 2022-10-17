@@ -38,7 +38,7 @@ top::AGDcl ::= 'ordering' 'attribute' keySyn::Name ',' syn::Name 'with' inh::QNa
 abstract production propagateOrderingKey
 top::ProductionStmt ::= syn::PartiallyDecorated QName
 {
-  undecorates to propagateOneAttr(syn, location=top.location);
+  -- undecorates to propagateOneAttr(syn, location=top.location);
   top.unparse = s"propagate ${syn.unparse};";
 
   forwards to
@@ -54,7 +54,7 @@ top::ProductionStmt ::= syn::PartiallyDecorated QName
 abstract production propagateOrdering
 top::ProductionStmt ::= inh::String keySyn::String syn::PartiallyDecorated QName
 {
-  undecorates to propagateOneAttr(syn, location=top.location);
+  -- undecorates to propagateOneAttr(syn, location=top.location);
   top.unparse = s"propagate ${syn.unparse};";
   
   local topName::String = top.frame.signature.outputElement.elementName;

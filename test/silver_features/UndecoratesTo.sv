@@ -7,7 +7,7 @@ propagate compareTo, isEqual on UndecNT;
 production fork1UNT
 top::UndecNT ::= a::PartiallyDecorated UndecNT b::UndecNT
 {
-  undecorates to fork2UNT(a, b);
+  -- undecorates to fork2UNT(a, b);
 }
 
 production fork2UNT
@@ -22,7 +22,7 @@ top::UndecNT ::=
 production wrapUNT
 top::UndecNT ::= a::PartiallyDecorated UndecNT
 {
-  undecorates to a;
+  -- undecorates to a;
 }
 
 equalityTest(fork2UNT(leafUNT(), leafUNT()), fork2UNT(leafUNT(), leafUNT()), UndecNT, silver_tests);

@@ -60,7 +60,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
 abstract production strategyAttributionDcl
 top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
-  undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
+  -- undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
 
   propagate grammarName, env, flowEnv;
 
@@ -121,7 +121,7 @@ top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QNam
 abstract production propagateStrategy
 top::ProductionStmt ::= attr::PartiallyDecorated QName
 {
-  undecorates to propagateOneAttr(attr, location=top.location);
+  -- undecorates to propagateOneAttr(attr, location=top.location);
   top.unparse = s"propagate ${attr.unparse}";
   
   production isTotal::Boolean = attr.lookupAttribute.dcl.isTotal;

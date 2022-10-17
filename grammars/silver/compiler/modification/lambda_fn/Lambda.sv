@@ -82,7 +82,7 @@ top::ProductionRHSElem ::= id::Name '::' t::TypeExpr
 abstract production lambdaParamReference
 top::Expr ::= q::PartiallyDecorated QName
 {
-  undecorates to baseExpr(q, location=top.location);
+  -- undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
   propagate errors;
   top.freeVars := ts:fromList([q.name]);
