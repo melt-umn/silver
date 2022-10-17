@@ -161,7 +161,7 @@ top::Expr ::= e1::Expr '||' e2::Expr
   top.isUnique = false;
 }
 
-aspect production not
+aspect production notOp
 top::Expr ::= '!' e::Expr
 {
   top.isUnique = false;
