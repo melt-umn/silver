@@ -8,6 +8,8 @@ top::AGDcl ::= 'threaded' 'attribute' inh::Name ',' syn::Name tl::BracketedOptTy
   top.unparse = s"threaded attribute ${inh.unparse}, ${syn.unparse} ${tl.unparse} :: ${te.unparse};";
   top.moduleNames := [];
 
+  propagate grammarName, flowEnv;
+
   production attribute inhFName :: String;
   inhFName = top.grammarName ++ ":" ++ inh.name;
   production attribute synFName :: String;

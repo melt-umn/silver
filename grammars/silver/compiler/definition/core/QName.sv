@@ -156,7 +156,7 @@ top::QNameType ::= id::Name ':' qn::QNameType
  -}
 nonterminal QNameAttrOccur with config, name, location, grammarName, env, unparse, attrFor, errors, typerep, dcl<OccursDclInfo>, attrDcl, found, attrFound;
 
-flowtype QNameAttrOccur = decorate {grammarName, env, attrFor}, dcl {decorate}, attrDcl {decorate};
+flowtype QNameAttrOccur = decorate {grammarName, config, env, attrFor}, dcl {grammarName, env, attrFor}, attrDcl {grammarName, env, attrFor};
 
 {--
  - For QNameAttrOccur, the name of the LHS to look up this attribute on.
@@ -185,6 +185,7 @@ top::QNameAttrOccur ::= at::QName
 {
   top.name = at.name;
   top.unparse = at.unparse;
+  propagate env;
   
   -- We start with all attributes we find with the name `at`:
   local attrs :: [AttributeDclInfo] = at.lookupAttribute.dcls;

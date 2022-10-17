@@ -3,8 +3,10 @@ grammar silver:compiler:definition:flow:env;
 import silver:compiler:definition:type only typerep;
 import silver:compiler:definition:flow:driver only ProductionGraph, FlowType, constructFunctionGraph;
 import silver:compiler:driver:util only RootSpec; -- actually we just want the occurrences
+import silver:compiler:definition:type:syntax; -- actually we just want the occurrences
 
 attribute flowEnv occurs on FunctionSignature, FunctionLHS;
+propagate flowEnv on FunctionSignature, FunctionLHS;
 
 aspect production functionDcl
 top::AGDcl ::= 'function' id::Name ns::FunctionSignature body::ProductionBody 

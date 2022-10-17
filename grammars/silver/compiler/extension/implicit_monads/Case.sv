@@ -78,7 +78,6 @@ top::Expr ::= 'case' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
   redeces.config = top.config;
   redeces.flowEnv = top.flowEnv;
   redeces.expectedMonad = top.expectedMonad;
-  redeces.isRoot = top.isRoot;
   redeces.originRules = top.originRules;
 
   {-
@@ -379,6 +378,7 @@ concrete production mcaseExpr_c
 top::Expr ::= 'case_any' es::Exprs 'of' vbar::Opt_Vbar_t ml::MRuleList 'end'
 {
   top.unparse = "case_any " ++ es.unparse ++ " of " ++ ml.unparse ++ " end";
+  propagate config, frame, env;
 
   top.merrors := [];
   top.merrors <- if isMonadPlus_instance then [] else [err(top.location, notMonadPlus)];

@@ -18,6 +18,7 @@ concrete production wrongDecl
 top::AGDcl ::= 'wrongCode' s::String_t '{' ags::AGDcls '}'
 {
   top.unparse = "wrongCode" ++ s.lexeme ++ "{" ++ ags.unparse ++ "}";
+  propagate grammarName, grammarDependencies, compiledGrammars, config, flowEnv;
   
   top.errors := 
     if !containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 2, ags.errors)
@@ -34,6 +35,7 @@ concrete production warnDecl
 top::AGDcl ::= 'warnCode' s::String_t '{' ags::AGDcls '}'
 {
   top.unparse = "warnCode" ++ s.lexeme ++ "{" ++ ags.unparse ++ "}";
+  propagate grammarName, grammarDependencies, compiledGrammars, config, env, flowEnv;
   
   top.errors := 
     if !containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 1, ags.errors)
@@ -56,6 +58,7 @@ concrete production noWarnDecl
 top::AGDcl ::= 'noWarnCode' s::String_t '{' ags::AGDcls '}'
 {
   top.unparse = "noWarnCode " ++ s.lexeme ++ " {" ++ ags.unparse ++ "}";
+  propagate grammarName, grammarDependencies, compiledGrammars, config, env, flowEnv;
 
   {-
     I think we want the errors from ags in any case.  This production
@@ -77,6 +80,7 @@ concrete production wrongFlowDecl
 top::AGDcl ::= 'wrongFlowCode' s::String_t '{' ags::AGDcls '}'
 {
   top.unparse = "wrongFlowCode" ++ s.lexeme ++ "{" ++ ags.unparse ++ "}";
+  propagate grammarName, grammarDependencies, compiledGrammars, config, flowEnv;
   
   top.errors := 
     if !containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 2, ags.errors)

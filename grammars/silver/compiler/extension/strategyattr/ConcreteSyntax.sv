@@ -209,7 +209,7 @@ concrete productions top::StrategyExpr_c
   s.givenGenName = top.givenGenName ++ "_outermost_arg";
 }
 
-autocopy attribute index::Integer;
+inherited attribute index::Integer;
 
 nonterminal StrategyExprs_c with location, index, givenGenName, unparse, ast<StrategyExprs>;
 concrete productions top::StrategyExprs_c

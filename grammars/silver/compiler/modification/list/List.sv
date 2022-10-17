@@ -10,6 +10,7 @@ concrete production listTypeExpr
 top::TypeExpr ::= '[' te::TypeExpr ']'
 {
   top.unparse = "[" ++ te.unparse ++ "]";
+  propagate grammarName, env, flowEnv;
 
   top.typerep = listType(te.typerep);
   

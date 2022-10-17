@@ -28,7 +28,7 @@ nonterminal RootSpec with
 
 flowtype RootSpec = decorate {config, compiledGrammars, productionFlowGraphs, grammarFlowTypes, dependentGrammars};
 
-propagate exportedGrammars, optionalGrammars, condBuild, defs, occursDefs on RootSpec;
+propagate productionFlowGraphs, grammarFlowTypes, exportedGrammars, optionalGrammars, condBuild, defs, occursDefs on RootSpec;
 
 {--
  - Grammars (a, b) where b depends on a

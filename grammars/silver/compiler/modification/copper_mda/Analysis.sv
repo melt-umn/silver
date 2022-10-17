@@ -16,7 +16,7 @@ top::AGDcl ::= 'copper_mda' testname::Name '(' orig::QName ')' '{' m::ParserComp
 {
   top.unparse = "";
   
-  propagate errors, moduleNames;
+  propagate config, grammarName, compiledGrammars, grammarDependencies, env, flowEnv, errors, moduleNames;
   
   top.errors <- orig.lookupValue.errors;
   

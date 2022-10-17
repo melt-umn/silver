@@ -6,6 +6,7 @@ concrete production attributeDclAuto
 top::AGDcl ::= 'autocopy' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr ';'
 {
   top.unparse = "autocopy attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ ";";
+  propagate grammarName, flowEnv;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;

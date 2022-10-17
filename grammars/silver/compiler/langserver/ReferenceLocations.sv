@@ -82,6 +82,18 @@ aspect attributeRefLocs on AGDcl using := of
 | strategyAttributeDcl(_, _, _, _, e) -> e.attributeRefLocs
 end;
 
+aspect production propagateOnNTListDcl
+top::AGDcl ::= attrs::NameList nts::NameList ps::ProdNameList
+{
+  propagate grammarName, env, flowEnv;
+}
+
+aspect production tcMonoidAttributeDcl
+top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs _ te::TypeExpr ';'
+{
+  propagate grammarName, env, flowEnv;
+}
+
 aspect attributeRefLocs on Constraint using <- of
 | inhOccursConstraint(_, at, _, _, _, _) -> if at.lookupAttribute.found then [(at.location, at.lookupAttribute.dcl)] else []
 | synOccursConstraint(_, at, _, _, _, _, _) -> if at.lookupAttribute.found then [(at.location, at.lookupAttribute.dcl)] else []

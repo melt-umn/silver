@@ -9,7 +9,7 @@ nonterminal TermList with config, grammarName, unparse, location, termList, defs
 
 monoid attribute termList :: [String];
 
-propagate errors, termList on TermList;
+propagate config, grammarName, env, errors, termList on TermList;
 
 concrete production termListOne
 terms::TermList ::= t::QName

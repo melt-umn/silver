@@ -26,7 +26,7 @@ concrete production matches
 top::Expr ::= e::Expr '=~' r::Expr
 {
   top.unparse = s"(${e.unparse}) =~ (${r.unparse})";
-  propagate freeVars;
+  propagate frame, freeVars;
   forwards to
     if null(getValueDcl("silver:regex:matches", top.env))
     then errorExpr([err(top.location, "Use of regexes requires import of silver:regex")], location=top.location)

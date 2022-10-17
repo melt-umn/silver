@@ -1,11 +1,18 @@
 grammar silver:compiler:definition:flow:env;
 
 import silver:compiler:definition:type;
+import silver:compiler:definition:type:syntax;
+import silver:compiler:definition:concrete_syntax;
 import silver:compiler:modification:defaultattr;
+import silver:compiler:modification:copper;
 import silver:compiler:definition:flow:driver;
 import silver:compiler:driver:util; -- only for productionFlowGraphs occurrence?
 
 attribute flowEnv occurs on
+  ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
+  AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS,
+  AspectRHS, AspectRHSElem;
+propagate flowEnv on
   ProductionSignature, ProductionLHS, ProductionRHS, ProductionRHSElem,
   AspectProductionSignature, AspectProductionLHS, AspectFunctionSignature, AspectFunctionLHS,
   AspectRHS, AspectRHSElem;
@@ -30,6 +37,12 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
     namedSig.inputElements);
 }
 
+aspect production concreteProductionDcl
+top::AGDcl ::= 'concrete' 'production' id::Name ns::ProductionSignature pm::ProductionModifiers body::ProductionBody
+{
+  propagate flowEnv;
+}
+
 aspect production aspectProductionDcl
 top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature body::ProductionBody 
 {
@@ -45,4 +58,16 @@ top::AGDcl ::= 'aspect' 'production' id::QName ns::AspectProductionSignature bod
     -- build an anonymous flow graph to use instead as a "best effort".
     | [] -> constructAnonymousGraph(body.flowDefs, top.env, myGraphs, myFlow)
     end;
+}
+
+aspect production aspectProductionLHSTyped
+top::AspectProductionLHS ::= id::Name '::' t::TypeExpr
+{
+  propagate flowEnv;
+}
+
+aspect production aspectRHSElemTyped
+top::AspectRHSElem ::= id::Name '::' t::TypeExpr
+{
+  propagate flowEnv;
 }

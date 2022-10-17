@@ -4,6 +4,8 @@ abstract production strategyAttributeDcl
 top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] recVarTotalEnv::[Pair<String Boolean>] e::StrategyExpr
 {
   top.unparse = (if isTotal then "" else "partial ") ++ "strategy attribute " ++ a.unparse ++ "=" ++ e.unparse ++ ";";
+  propagate grammarName, config, env, flowEnv;
+
   top.occursDefs := [];
   top.specDefs := [];
   top.refDefs := [];
@@ -13,7 +15,7 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
   
   -- Define these directly to avoid circular dependencies,
   -- since the forward contributes to the env.
-  propagate errors, moduleNames;
+  propagate compiledGrammars, errors, moduleNames;
   
   top.errors <-
     if length(getAttrDclAll(fName, top.env)) > 1
@@ -58,6 +60,8 @@ top::AGDcl ::= isTotal::Boolean a::Name recVarNameEnv::[Pair<String String>] rec
 abstract production strategyAttributionDcl
 top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
+  propagate grammarName, env, flowEnv;
+
   production attribute localErrors::[Message] with ++;
   localErrors :=
     attl.errors ++ attl.errorsTyVars ++ nt.lookupType.errors ++ nttl.errors ++ nttl.errorsTyVars;

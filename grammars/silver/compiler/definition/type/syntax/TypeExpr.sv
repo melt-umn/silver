@@ -50,7 +50,7 @@ flowtype typerepInhSet {decorate, onNt} on TypeExpr;
 flowtype TypeExpr =
   decorate {grammarName, env, flowEnv}, forward {decorate},
   freeVariables {decorate}, lexicalTypeVariables {decorate}, lexicalTyVarKinds {decorate},
-  errorsTyVars {decorate}, errorsKindStar {decorate};
+  errors {decorate}, errorsTyVars {decorate}, errorsKindStar {decorate};
 
 -- typerep requires flowEnv to look up default ref sets
 flowtype typerep {grammarName, env, flowEnv} on TypeExpr, Signature;
@@ -58,7 +58,8 @@ flowtype maybeType {grammarName, env, flowEnv} on SignatureLHS;
 flowtype types {grammarName, env, flowEnv} on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
 propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs excluding refTypeExpr, partialRefTypeExpr;
-propagate lexicalTypeVariables, lexicalTyVarKinds on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
+propagate config, grammarName, env, flowEnv, lexicalTypeVariables, lexicalTyVarKinds
+  on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate appLexicalTyVarKinds on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsTyVars on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate errorsKindStar on TypeExprs;
@@ -227,6 +228,7 @@ top::TypeExpr ::= ty::TypeExpr tl::BracketedTypeExprs
 {
   top.unparse = ty.unparse ++ tl.unparse;
   
+  propagate grammarName, env, flowEnv;
   propagate lexicalTypeVariables; -- Needed to avoid circularity
 
   forwards to

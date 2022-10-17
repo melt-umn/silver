@@ -24,7 +24,7 @@ top::Expr ::= params::ProductionRHS e::Expr
   top.unparse = "\\ " ++ params.unparse ++ " -> " ++ e.unparse;
   top.freeVars := ts:removeAll(params.lambdaBoundVars, e.freeVars);
   
-  propagate errors;
+  propagate config, grammarName, compiledGrammars, errors, originRules;
   
   top.typerep = appTypes(functionType(length(params.inputElements), []), map((.typerep), params.inputElements) ++ [e.typerep]);
 
@@ -35,14 +35,15 @@ top::Expr ::= params::ProductionRHS e::Expr
       top.grammarName, top.location, params.lexicalTyVarKinds,
       filter(\ tv::String -> null(getTypeDcl(tv, top.env)), nub(params.lexicalTypeVariables)));
 
-  propagate downSubst, upSubst;
-  propagate flowDeps, flowDefs;
+  propagate downSubst, upSubst, finalSubst;
+  propagate flowDeps, flowDefs, flowEnv;
   
   params.env = newScopeEnv(sigDefs, top.env);
   params.givenLambdaParamIndex = 0;
   params.givenLambdaId = genInt();
   e.env = params.env;
   e.frame = inLambdaContext(top.frame, sourceGrammar=top.frame.sourceGrammar); --TODO: Is this sourceGrammar correct?
+  e.isRoot = false;
 }
 
 monoid attribute lambdaDefs::[Def];

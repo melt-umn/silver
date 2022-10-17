@@ -36,7 +36,7 @@ production stringAppendCall
 top::Expr ::= a::Expr b::Expr
 {
   top.unparse = s"${a.unparse} ++ ${b.unparse}";
-  propagate freeVars;
+  propagate grammarName, config, compiledGrammars, frame, env, flowEnv, finalSubst, originRules, freeVars;
 
   -- TODO: We really need eagerness analysis in Silver.
   -- Otherwise the translation for a large string template block contains
@@ -46,6 +46,9 @@ top::Expr ::= a::Expr b::Expr
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
   
   thread downSubst, upSubst on top, a, b, forward;
+
+  a.isRoot = false;
+  b.isRoot = false;
   
   forwards to
     mkStrFunctionInvocation(
