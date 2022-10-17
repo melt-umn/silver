@@ -53,5 +53,5 @@ function getTermThatWasDecorated
 a ::= x::Decorated a with i
 { return error("foreign function"); }
 foreign {
-  "java": return "%x%.getNode()";
+  "java": return "%x%.undecorate()"; -- "java": return "%x%.getNode()";
 }
