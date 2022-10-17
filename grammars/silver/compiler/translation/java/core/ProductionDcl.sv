@@ -30,9 +30,9 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
   local undecChild :: (String ::= NamedSignatureElement) =
     \ x::NamedSignatureElement ->
       if x.typerep.isDecorated
-      then if isDecorable(x.typerep, body.env)
+      then {-if isDecorable(x.typerep, body.env)
         then error("Production " ++ fName ++ " has a decorable decorated child but no 'undecorates to'.")  -- TODO: Remove this when this becomes a uniqueness analysis warning 
-        else s"context.childDecoratedLazy(i_${x.elementName})"
+        else-} s"context.childDecoratedLazy(i_${x.elementName})"
       else if isDecorable(x.typerep, body.env)
       then s"context.childUndecoratedLazy(i_${x.elementName})"
       else s"child_${x.elementName}";
