@@ -354,7 +354,7 @@ public final class CopperUtil {
       case "right":
         terminal.setOperatorAssociativity(OperatorAssociativity.RIGHT);
         break;
-      default:
+      case "none":
         terminal.setOperatorAssociativity(OperatorAssociativity.NONASSOC);
         break;
       }
