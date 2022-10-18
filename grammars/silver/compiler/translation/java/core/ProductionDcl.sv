@@ -290,6 +290,7 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
 """)];
 
   local otImpl :: String = if wantsTracking then s"""
+    @Override
     public ${fnnt} duplicate(common.Node redex, common.ConsCell notes) {
         if (redex == null || ${if top.config.noRedex then "true" else "false"}) {
             return new ${className}(${implode(", ",
@@ -304,6 +305,7 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
         }
     }
 
+    @Override
     public ${fnnt} copy(common.Node redex, common.ConsCell redexNotes) {
         Object origin;
         common.ConsCell originNotes;
@@ -329,6 +331,7 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
           map(copyAnno, namedSig.namedInputElements))});
     }
 
+    @Override
     public ${fnnt} duplicateForForwarding(common.Node redex, String note) {
         return new ${className}(${implode(", ",
           "new PoriginOriginInfo(common.OriginsUtil.SET_AT_FORWARDING_OIT, this, new common.ConsCell(new silver.core.PoriginDbgNote(new common.StringCatter(note)), common.ConsCell.nil), true)" ::
