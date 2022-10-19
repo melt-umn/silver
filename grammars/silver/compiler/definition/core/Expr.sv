@@ -556,7 +556,7 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' '}'
 {
   top.unparse = "decorate " ++ e.unparse ++ " with {}";
 
-  forwards to decorateExprWith($1, decHereExpr(e, location=top.location), $3, $4, exprInhsEmpty(location=top.location), $5, location=top.location);
+  forwards to decorateExprWith($1, @e, $3, $4, exprInhsEmpty(location=top.location), $5, location=top.location);
 }
 
 concrete production decorateExprWith
@@ -1280,24 +1280,4 @@ top::Expr ::= e::PartiallyDecorated Expr
   -- forwarding. e.g. e might be a 'childReference' and pattern matching would
   -- need to separately account for this!
   -- To accomplish this, we might want some notion of a decorated forward.
-}
-
--- TODO: Eventually this sort of production should be a built-in construct in Silver,
--- e.g. @x to turn x :: PartiallyDecorated a with {} into an a
-abstract production decHereExpr
-top::Expr ::= e::PartiallyDecorated Expr with {}
-{
-  undecorates to e;
-  top.unparse = e.unparse;
-  top.freeVars <- e.freeVars;
-  top.errors <- e.errors;
-  top.typerep = e.typerep;
-  
-  e.frame = top.frame;
-  e.grammarName = top.grammarName;
-  e.isRoot = top.isRoot;
-  e.originRules = top.originRules;
-  e.compiledGrammars = top.compiledGrammars;
-  e.config = top.config;
-  e.env = top.env;
 }

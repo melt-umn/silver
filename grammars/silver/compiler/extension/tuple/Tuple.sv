@@ -74,9 +74,9 @@ top::Expr ::= exp::Expr i::Integer a::Integer len::Integer
       if a == len then
         -- only if the access index is the length of the
         -- tuple do we simply return the expression itself
-        decHereExpr(exp, location=exp.location)
-      else Silver_Expr { $Expr{decHereExpr(exp, location=exp.location)}.fst }
-    else select(Silver_Expr{ $Expr{decHereExpr(exp, location=exp.location)}.snd }, i + 1, a, len, location=top.location);
+        @exp
+      else Silver_Expr { $Expr{@exp}.fst }
+    else select(Silver_Expr{ $Expr{@exp}.snd }, i + 1, a, len, location=top.location);
 }
 
 -- TupleList cases:

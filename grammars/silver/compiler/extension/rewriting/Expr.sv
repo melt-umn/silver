@@ -774,10 +774,3 @@ top::Expr ::= e::PartiallyDecorated Expr
   top.transform = e.transform;
   e.boundVars = top.boundVars;
 }
-
-aspect production decHereExpr
-top::Expr ::= e::PartiallyDecorated Expr with {}
-{
-  top.transform = e.transform;
-  e.boundVars = top.boundVars;
-}
