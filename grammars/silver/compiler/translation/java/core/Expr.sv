@@ -425,6 +425,15 @@ top::ExprLHSExpr ::= q::QNameAttrOccur
 }
 
 
+
+aspect production decorationSiteExpr
+top::Expr ::= '@' e::Expr
+{
+  top.translation =
+    s"new ${finalType(top).transType}.DecorationSiteWrapper(${if finalType(top).tracked then makeOriginContextRef(top) ++ ", " else ""}${e.translation})";
+  top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
+}
+
 aspect production trueConst
 top::Expr ::='true'
 {

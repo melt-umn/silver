@@ -19,7 +19,9 @@ top::AGDcl ::= quals::NTDeclQualifiers 'nonterminal' id::Name tl::BracketedOptTy
 	public static int ${inhVar} = 0;
 	public static int ${synVar} = 0;""";
 
-  local interfaces::[String] = map(makeAnnoName, map((.elementName), myAnnos)) ++ if wantsTracking then ["common.Tracked"] else [];
+  local interfaces::[String] =
+    map(makeAnnoName, map((.elementName), myAnnos)) ++
+	if wantsTracking then ["common.Tracked"] else [];
   
   top.genFiles := [pair(className ++ ".java", s"""
 package ${makeName(top.grammarName)};
@@ -88,6 +90,127 @@ ${implode("", map((.annoDeclElem), myAnnos))}
 		}
 	}
 
+	public static final class DecorationSiteWrapper extends ${className} {
+		private common.DecoratedNode ref;
+
+		public DecorationSiteWrapper(${implode(", ",
+			(if wantsTracking then ["final NOriginInfo origin"] else []) ++
+			["final common.DecoratedNode ref"])}) {
+			super(${implode(", ",
+			  (if wantsTracking then ["origin"] else []) ++
+			  "true" ::
+			  map(\ anno::NamedSignatureElement -> s"((${className})ref.getNode()).${anno.annoAccessorElem}", myAnnos)
+			)});
+			this.ref = ref;
+		}
+
+		@Override
+		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.Lazy[] inhs) {
+			return ref.decorate(parent, inhs);
+		}
+
+		@Override
+		public common.DecoratedNode decorate(final common.DecoratedNode parent, final common.DecoratedNode fwdParent) {
+			return ref.decorate(parent, fwdParent);
+		}
+
+		// Accessors used in reflection and debugging.
+		// These need to dispatch to the ref Node.
+		@Override
+		public common.TypeRep getType() {
+			return ref.getNode().getType();
+		}
+
+		@Override
+		public String getName() {
+			return ref.getNode().getName();
+		}
+
+		@Override
+		public int getNumberOfChildren() {
+			return ref.getNode().getNumberOfChildren();
+		}
+
+		@Override
+		public Object getChild(final int child) {
+			return ref.getNode().getChild(child);
+		}
+
+		@Override
+		public Object getChildLazy(final int child) {
+			return ref.getNode().getChildLazy(child);
+		}
+
+		@Override
+		public common.RTTIManager.Prodleton<? extends common.Node> getProdleton() {
+			return ref.getNode().getProdleton();
+		}
+
+		// Accessors only by DecoratedNode.
+		// This should never happen.
+		@Override
+		public common.Lazy[] getChildInheritedAttributes(final int index) {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+		}
+
+		@Override
+		public int getNumberOfLocalAttrs() {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+		}
+
+		@Override
+		public String getNameOfLocalAttr(final int index) {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+		}
+
+		@Override
+		public common.Lazy getLocal(final int index) {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+		}
+
+		@Override
+		public common.Lazy[] getLocalInheritedAttributes(final int index) {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+		}
+
+		@Override
+		public boolean hasForward() {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+		}
+
+		@Override
+		public common.Node evalForward(final common.DecoratedNode context) {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+		}
+
+		@Override
+		public common.Node evalUndecorate(final common.DecoratedNode context) {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+		}
+
+		@Override
+		public common.Lazy getForwardInheritedAttributes(final int index) {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+		}
+
+		@Override
+		public common.Lazy getSynthesized(final int index) {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should never be driectly decorated!");
+		}
+
+		${if wantsTracking then s"""
+		@Override
+		public ${className} duplicate(common.Node redex, common.ConsCell notes) {
+			throw new common.exceptions.SilverInternalError("Decoration site wrapper node should not exist in undecorated tree!");
+		}
+
+		@Override
+		public ${className} updateOriginInfo(silver.core.NOriginInfo oi) {
+			return new DecorationSiteWrapper(oi, ref);
+		}
+""" else ""}
+	}
+
 	public static final common.RTTIManager.Nonterminalton<${className}> nonterminalton = new Nonterminalton();
 
   public static final class Nonterminalton extends common.RTTIManager.Nonterminalton<${className}> {
@@ -102,6 +225,7 @@ ${implode("", map((.annoDeclElem), myAnnos))}
   local otImpl::String = if wantsTracking then s"""
   	protected final silver.core.NOriginInfo origin;
 
+	@Override
 	public final silver.core.NOriginInfo getOrigin() {
 		return this.origin;
 	}

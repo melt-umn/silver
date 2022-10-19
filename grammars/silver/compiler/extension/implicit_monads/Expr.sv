@@ -972,7 +972,25 @@ top::ExprInh ::= lhs::ExprLHSExpr '=' e::Expr ';'
 }
 
 
+aspect production decorationSiteExpr
+top::Expr ::= '@' e::Expr
+{
+  top.mtyperep = e.mtyperep.decoratedType;
+  top.merrors := e.merrors;
+  top.monadicNames = e.monadicNames;
+  top.monadRewritten = decorationSiteExpr('@', e.monadRewritten, location=top.location);
+  e.monadicallyUsed = false;
 
+  local attribute errCheck1 :: TypeCheck; errCheck1.finalSubst = top.finalSubst;
+  e.mDownSubst = top.mDownSubst;
+  errCheck1.downSubst = e.mUpSubst;
+  top.mUpSubst = errCheck1.upSubst;
+  errCheck1 = check(e.typerep, partiallyDecoratedType(freshType(), inhSetType([])));
+  top.merrors <-
+       if errCheck1.typeerror
+       then [err(top.location, "Operand to @ must be partially decorated with no attributes.  Instead it is of type " ++ errCheck1.leftpp)]
+       else [];
+}
 
 aspect production trueConst
 top::Expr ::= 'true'

@@ -63,6 +63,7 @@ terminal With_kwd        'with'         lexer classes {KEYWORD,RESERVED}, preced
 
 terminal AttachNote_kwd 'attachNote' lexer classes {BUILTIN,RESERVED};
 
+terminal DecSite_t     '@'  lexer classes {OP}, precedence = 2;
 terminal Comma_t       ','  precedence = 4;
 terminal Or_t          '||' lexer classes {OP}, precedence = 5, association = left;
 terminal And_t         '&&' lexer classes {OP}, precedence = 6, association = left;
@@ -93,7 +94,7 @@ terminal CCEQ_t        '::=' lexer classes {SPECOP};
 terminal Equal_t       '='   lexer classes {SPECOP};
 terminal CtxArrow_t    '=>'  lexer classes {SPECOP};
 
--- Unused infix operators: ~ ` @ # % ^ & | \
+-- Unused infix operators: ~ ` # % ^ & | \
 -- $ is used by convenience.
 
  -- this is a very careful regex. beware:

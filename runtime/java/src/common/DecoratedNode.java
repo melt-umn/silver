@@ -39,10 +39,11 @@ public class DecoratedNode implements Decorable, Typed {
 	protected final Node self;
 	/**
 	 * The node that forwards to this one. (May be null)
+	 * Not final, because we may set this when forwarding to a partially-decorated reference.
 	 * 
 	 * @see #inheritedForwarded(String)
 	 */
-	protected final DecoratedNode forwardParent;
+	protected DecoratedNode forwardParent;
 	/**
 	 * The DecoratedNode to use as a context for evaluating inherited attributes. (Never null except for TopNode)
 	 * 
@@ -185,6 +186,9 @@ public class DecoratedNode implements Decorable, Typed {
 	@Override
 	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
 		// System.err.println("TRACE: " + parent.getDebugID() + " extra-decorating " + getDebugID());
+		if (forwardParent != null) {
+			throw new SilverException(parent.getDebugID() + " cannot decorate " + getDebugID() + " with inhs since it is the forward of " + forwardParent.getDebugID() + ".");
+		}
 		if (inhs != null) {
 			inheritedAttributes = inheritedAttributes.clone();  // Avoid modifying the static inh array from the original parent Node
 			for(int i = 0; i < inhs.length; i++) {
@@ -198,6 +202,26 @@ public class DecoratedNode implements Decorable, Typed {
 				}
 			}
 		}
+		return this;
+	}
+
+	/**
+	 * Decorate this node with a forward parent.
+	 * This node should not have been supplied with any inherited attributes!
+	 * 
+	 * @param parent The DecoratedNode creating this one. (Whether this is a child or a local (or other) of that node.)
+	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
+	 * @return A DecoratedNode with the attributes supplied.
+	 */
+	public DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
+		if (inheritedAttributes != null) {
+			for(int attribute = 0; attribute < inheritedAttributes.length; attribute++) {
+				if(inheritedAttributes[attribute] != null) {
+					throw new SilverException(parent.getDebugID() + " cannot decorate " + getDebugID() + " via forwarding as it has already been provided with inh '" + self.getNameOfInhAttr(attribute) + "' by " + this.parent.getDebugID() + ".");
+				}
+			}
+		}
+		forwardParent = fwdParent;
 		return this;
 	}
 

@@ -41,8 +41,10 @@ synthesized attribute childStatic :: String occurs on NamedSignature, NamedSigna
 synthesized attribute childDeclElem :: String occurs on NamedSignatureElement;
 synthesized attribute annoDeclElem :: String occurs on NamedSignatureElement;
 synthesized attribute childDecls :: String occurs on NamedSignature, NamedSignatureElements;
--- "signame"
+-- \"sig:name\"
 synthesized attribute annoNameElem :: String occurs on NamedSignatureElement;
+-- getAnno_signame()
+synthesized attribute annoAccessorElem :: String occurs on NamedSignatureElement;
 -- "if (name.equals("signame")) { return getAnno_signame(); }"
 synthesized attribute annoLookupElem :: String occurs on NamedSignatureElement;
 
@@ -282,6 +284,7 @@ s"""	protected Object anno_${fn};
 	}
 
 """;
+  top.annoAccessorElem = s"getAnno_${fn}()";
 
   top.annoNameElem = s"\"${n}\"";
   top.annoLookupElem =

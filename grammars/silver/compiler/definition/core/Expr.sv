@@ -575,6 +575,15 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   inh.allSuppliedInhs = inh.suppliedInhs;
 }
 
+concrete production decorationSiteExpr
+top::Expr ::= '@' e::Expr
+{
+  top.unparse = s"@${e.unparse}";
+
+  top.typerep = e.typerep.decoratedType;
+  e.isRoot = false;
+}
+
 abstract production exprInhsEmpty
 top::ExprInhs ::= 
 {

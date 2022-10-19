@@ -30,7 +30,7 @@ public abstract class Node implements Decorable, Typed {
 	 * @return A "decorated" form of this Node
 	 */
 	@Override
-	public final DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
+	public DecoratedNode decorate(final DecoratedNode parent, final Lazy[] inhs) {
 		return new DecoratedNode(getNumberOfChildren(),
 				                 getNumberOfInhAttrs(),
 				                 getNumberOfSynAttrs(),
@@ -46,7 +46,7 @@ public abstract class Node implements Decorable, Typed {
 	 * @param fwdParent The DecoratedNode that forwards to the one we are about to create. We will pass inherited attribute access requests to this node.
 	 * @return A "decorated" form of this Node 
 	 */
-	public final DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
+	public DecoratedNode decorate(final DecoratedNode parent, final DecoratedNode fwdParent) {
 		return new DecoratedNode(getNumberOfChildren(),
                                  getNumberOfInhAttrs(),
                                  getNumberOfSynAttrs(),

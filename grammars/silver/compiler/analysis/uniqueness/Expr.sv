@@ -137,6 +137,12 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.isUnique = false;
 }
 
+aspect production decorationSiteExpr
+top::Expr ::= '@' e::Expr
+{
+  top.isUnique = true;
+}
+
 aspect production trueConst
 top::Expr ::='true'
 {
