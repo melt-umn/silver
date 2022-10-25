@@ -504,7 +504,7 @@ abstract production accessBounceUndecorate
 top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
   undecorates to access(e, '.', q, location=top.location);
-  forwards to accessBouncer(target, mkStrFunctionInvocationDecorated(top.location, "silver:core:getTermThatWasDecorated", [e]), q, location=top.location);
+  forwards to accessBouncer(target, mkStrFunctionInvocation(top.location, "silver:core:getTermThatWasDecorated", [exprRef(e, location=top.location)]), q, location=top.location);
 }
 
 abstract production decoratedAccessHandler
@@ -1227,29 +1227,6 @@ function mkAnnoExpr
 AnnoExpr ::= p::Pair<String Expr>
 {
   return annoExpr(qName(p.snd.location, p.fst), '=', presentAppExpr(p.snd, location=p.snd.location), location=p.snd.location);
-}
-
-{--
- - Utility for other modules to create function invocations.
- -
- - Major assumption: The expressions are already decorated, and the 
- - typing substitution threaded through them will then be fed through
- - the expr created by this function.
- -
- - The purpose of this vs just mkFunctionInvocationDecorated
- - is to avoid exponential growth from forwarding. Type checking
- - an expr, then forwarding to a function call that again type
- - checks that expr well... just nest those and boom.
- -}
-function mkFunctionInvocationDecorated
-Expr ::= l::Location  e::Expr  es::[PartiallyDecorated Expr]
-{
-  return mkFunctionInvocation(l, e, map(exprRef(_, location=l), es));
-}
-function mkStrFunctionInvocationDecorated
-Expr ::= l::Location  e::String  es::[PartiallyDecorated Expr]
-{
-  return mkFunctionInvocation(l, baseExpr(qName(l, e), location=l), map(exprRef(_, location=l), es));
 }
 
 {--
