@@ -223,7 +223,7 @@ top::ProductionStmt ::= 'production' 'attribute' a::Name '::' te::TypeExpr 'with
 
 -- ERROR ON VALUE DEFS:
 abstract production errorCollectionValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   undecorates to valContainsBase(val, ':=', e, ';', location=top.location);
   top.errors <- [err(top.location, "The ':=' and '<-' operators can only be used for collections. " ++ val.name ++ " is not a collection.")];
@@ -234,7 +234,7 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
   forwards to errorValueDef(val, e, location=top.location);
 }
 abstract production errorColNormalValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   undecorates to valueEq(val, '=', e, ';', location=top.location);
   top.errors <- [err(top.location, val.name ++ " is a collection attribute, and you must use ':=' or '<-', not '='.")];
@@ -246,7 +246,7 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 -- NON-ERRORS for PRODUCTIONS
 
 abstract production baseCollectionValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   undecorates to valContainsBase(val, ':=', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " := " ++ e.unparse ++ ";";
@@ -262,7 +262,7 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
   forwards to localValueDef(val, e, location=top.location);
 }
 abstract production appendCollectionValueDef
-top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
+top::ProductionStmt ::= val::Decorated! QName  e::Expr
 {
   undecorates to valContainsAppend(val, '<-', e, ';', location=top.location);
   top.unparse = "\t" ++ val.unparse ++ " <- " ++ e.unparse ++ ";";
@@ -281,7 +281,7 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 -- NON-ERRORS for SYN ATTRS
 
 abstract production synBaseColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
@@ -302,7 +302,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
     else [];
 }
 abstract production synAppendColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";
@@ -326,7 +326,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
 -- NON-ERRORS for INHERITED ATTRS
 
 abstract production inhBaseColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   undecorates to attrContainsBase(dl, '.', attr, ':=', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " := " ++ e.unparse ++ ";";
@@ -347,7 +347,7 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
     else [];
 }
 abstract production inhAppendColAttributeDef
-top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated QNameAttrOccur  e::Expr
+top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  e::Expr
 {
   undecorates to attrContainsAppend(dl, '.', attr, '<-', e, ';', location=top.location);
   top.unparse = "\t" ++ dl.unparse ++ "." ++ attr.unparse ++ " <- " ++ e.unparse ++ ";";

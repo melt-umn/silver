@@ -57,14 +57,14 @@ top::Expr ::= msg::[Message]
 }
 
 aspect production errorReference
-top::Expr ::= msg::[Message]  q::PartiallyDecorated QName
+top::Expr ::= msg::[Message]  q::Decorated! QName
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production childReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   local childIDref :: String =
     top.frame.className ++ ".i_" ++ q.lookupValue.fullName;
@@ -88,7 +88,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production localReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.translation =
     if isDecorable(q.lookupValue.typeScheme.typerep, top.env)
@@ -108,7 +108,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production lhsReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.translation =
     if finalType(top).isDecorated
@@ -119,7 +119,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production forwardReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.translation =
     if finalType(top).isDecorated
@@ -131,7 +131,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production productionReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.translation =
     if null(typeScheme.contexts)
@@ -148,7 +148,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production functionReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   -- functions, unlike productions, can return a type variable.
   -- as such, we have to cast it to the real inferred final type.
@@ -174,7 +174,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production classMemberReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   local transContextMember::String =
     s"${instHead.transContext}.${makeInstanceMemberAccessorName(q.lookupValue.fullName)}(${implode(", ", contexts.transContexts)})";
@@ -190,7 +190,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production globalValueReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   local directThunk :: String =
     s"${makeName(q.lookupValue.dcl.sourceGrammar)}.Init.global_${fullNameToShort(q.lookupValue.fullName)}" ++
@@ -204,14 +204,14 @@ top::Expr ::= q::PartiallyDecorated QName
     else s"${directThunk}.eval()";
 }
 aspect production errorApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production functionInvocation
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
 {
   top.translation = e.invokeTranslation;
   top.lazyTranslation = wrapThunk(top.translation, top.frame.lazyApplication);
@@ -250,7 +250,7 @@ String ::= e::Decorated AnnoAppExprs
 function int2str String ::= i::Integer { return toString(i); }
 
 aspect production partialApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs annos::Decorated! AnnoAppExprs
 {
   local step1 :: String = e.translation;
   -- Note: we check for nullity of the index lists instead of use
@@ -279,14 +279,14 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs annos::
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
 }
 
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.translation = error("Internal compiler error: translation not defined in the presence of errors");
   top.lazyTranslation = top.translation;
@@ -300,7 +300,7 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.translation = wrapAccessWithOT(top, s"${e.translation}.<${finalType(top).transType}>synthesized(${q.attrOccursIndex})");
 
@@ -319,7 +319,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.translation = wrapAccessWithOT(top, s"${e.translation}.<${finalType(top).transType}>inherited(${q.attrOccursIndex})");
 
@@ -331,7 +331,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 aspect production terminalAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   local accessor :: String =
     if q.name == "lexeme" || q.name == "location"
@@ -350,7 +350,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 aspect production annoAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   -- Note that the transType is specific to the nonterminal we're accessing from.
   top.translation = s"((${finalType(top).transType})((${makeAnnoName(q.attrDcl.fullName)})${e.translation}).getAnno_${makeIdName(q.attrDcl.fullName)}())";
@@ -572,7 +572,7 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 }
 
 aspect production exprRef
-top::Expr ::= e::PartiallyDecorated Expr
+top::Expr ::= e::Decorated! Expr
 {
   top.translation = e.translation;
   top.lazyTranslation = e.lazyTranslation;

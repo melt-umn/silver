@@ -262,7 +262,7 @@ Boolean ::= a::Type b::Type
       (isMoreSpecific(c1, c2) || isMoreSpecific(a1, a2)) && !(isMoreSpecific(c2, c1) || isMoreSpecific(a2, a1))
     | decoratedType(t1, i1), decoratedType(t2, i2) ->
       (isMoreSpecific(t1, t2) || isMoreSpecific(i1, i2)) && !(isMoreSpecific(t2, t1) || isMoreSpecific(i2, i1))
-    | partiallyDecoratedType(t1, i1), partiallyDecoratedType(t2, i2) ->
+    | uniqueDecoratedType(t1, i1), uniqueDecoratedType(t2, i2) ->
       (isMoreSpecific(t1, t2) || isMoreSpecific(i1, i2)) && !(isMoreSpecific(t2, t1) || isMoreSpecific(i2, i1))
     | _, _ -> false
     end;

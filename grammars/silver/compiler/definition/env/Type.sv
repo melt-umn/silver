@@ -57,7 +57,7 @@ top::Type ::= te::Type _
   top.typeName = te.typeName;
 }
 
-aspect production partiallyDecoratedType
+aspect production uniqueDecoratedType
 top::Type ::= te::Type _
 {
   top.typeName = te.typeName;

@@ -26,7 +26,7 @@ top::Expr ::=
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::PartiallyDecorated QName _ _
+top::Expr ::= q::Decorated! QName _ _
 {
   -- In regular pattern matching nonterminal values are always effectively decorated, but we are
   -- using the same typing behavior while matching on *undecorated* trees.  So when a variable is
@@ -74,7 +74,7 @@ top::Expr ::= q::PartiallyDecorated QName _ _
 }
 
 aspect production childReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
@@ -84,7 +84,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production lhsReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
@@ -94,7 +94,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production localReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
@@ -104,7 +104,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production forwardReference
-top::Expr ::= q::PartiallyDecorated QName
+top::Expr ::= q::Decorated! QName
 {
   top.transform =
     -- Explicitly undecorate the variable, if appropriate for the final expected type
@@ -114,7 +114,7 @@ top::Expr ::= q::PartiallyDecorated QName
 }
 
 aspect production errorApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
   top.transform = applyASTExpr(e.transform, es.transform, anns.transform);
   e.boundVars = top.boundVars;
@@ -123,7 +123,7 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
 }
 
 aspect production functionInvocation
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
   top.transform =
     case e, es of
@@ -167,7 +167,7 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
 }
 
 aspect production partialApplication
-top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
+top::Expr ::= e::Decorated! Expr es::Decorated! AppExprs anns::Decorated! AnnoAppExprs
 {
   top.transform = applyASTExpr(e.transform, es.transform, anns.transform);
   e.boundVars = top.boundVars;
@@ -198,7 +198,7 @@ top::Expr ::= e::Expr '.' 'forward'
 }
 
 aspect production errorAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.transform =
     applyASTExpr(
@@ -213,7 +213,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 aspect production annoAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.transform =
     applyASTExpr(
@@ -228,7 +228,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 aspect production terminalAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   top.transform =
     applyASTExpr(
@@ -244,7 +244,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 
 
 aspect production synDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
@@ -309,7 +309,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 aspect production inhDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
@@ -332,7 +332,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 }
 
 aspect production errorDecoratedAccessHandler
-top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
+top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   -- Flow analysis has no way to track what e is decorated with across reflect/reify,
   -- so if the inh set is unspecialized, assume that it has the reference set.
@@ -555,7 +555,7 @@ aspect production fullList
 top::Expr ::= '[' es::Exprs ']'
 {
   -- TODO: Consider refactoring listtrans on Exprs to decorate the expressions here
-  -- before forwarding via partially decorated references.
+  -- before forwarding via unique references.
   local decEs::Exprs = es;
   decEs.downSubst = top.downSubst;
   decEs.finalSubst = top.finalSubst;
@@ -769,7 +769,7 @@ top::AnnoAppExprs ::=
 }
 
 aspect production exprRef
-top::Expr ::= e::PartiallyDecorated Expr
+top::Expr ::= e::Decorated! Expr
 {
   top.transform = e.transform;
   e.boundVars = top.boundVars;

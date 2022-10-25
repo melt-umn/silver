@@ -346,12 +346,6 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
     end;
 }
 
-concrete production uniqueRefTypeExprOld
-top::TypeExpr ::= 'PartiallyDecorated' t::TypeExpr 'with' i::TypeExpr
-{
-  forwards to uniqueRefTypeExpr('Decorated!', t, 'with', i, location=top.location);
-}
-
 concrete production uniqueRefTypeExpr
 top::TypeExpr ::= 'Decorated!' t::TypeExpr 'with' i::TypeExpr
 {
@@ -359,7 +353,7 @@ top::TypeExpr ::= 'Decorated!' t::TypeExpr 'with' i::TypeExpr
   
   i.onNt = t.typerep;
 
-  top.typerep = partiallyDecoratedType(t.typerep, i.typerepInhSet);
+  top.typerep = uniqueDecoratedType(t.typerep, i.typerepInhSet);
   
   top.errors := i.errorsInhSet ++ t.errors;
   top.errors <-
@@ -381,19 +375,13 @@ top::TypeExpr ::= 'Decorated!' t::TypeExpr 'with' i::TypeExpr
     end;
 }
 
-concrete production uniqueRefDefaultTypeExprOld
-top::TypeExpr ::= 'PartiallyDecorated' t::TypeExpr
-{
-  forwards to uniqueRefDefaultTypeExpr('Decorated!', t, location=top.location);
-}
-
 concrete production uniqueRefDefaultTypeExpr
 top::TypeExpr ::= 'Decorated!' t::TypeExpr
 {
   top.unparse = "Decorated! " ++ t.unparse;
 
   top.typerep =
-    partiallyDecoratedType(t.typerep,
+    uniqueDecoratedType(t.typerep,
       inhSetType(sort(concat(getInhsForNtRef(t.typerep.typeName, top.flowEnv)))));
   
   top.errors <-

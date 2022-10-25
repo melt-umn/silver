@@ -52,7 +52,7 @@ concrete productions top::Direction
   { top.reversed = true; }
 
 abstract production propagateThreadedInh
-top::ProductionStmt ::= rev::Boolean inh::PartiallyDecorated QName syn::String
+top::ProductionStmt ::= rev::Boolean inh::Decorated! QName syn::String
 {
   undecorates to propagateOneAttr(inh, location=top.location);
   top.unparse = s"propagate ${inh.unparse};";
@@ -64,7 +64,7 @@ top::ProductionStmt ::= rev::Boolean inh::PartiallyDecorated QName syn::String
       filter(
         \ ie::NamedSignatureElement ->
           isDecorable(ie.typerep, top.env) &&
-          !ie.typerep.isPartiallyDecorated &&  -- Don't thread on partially decorated children
+          !ie.typerep.isUniqueDecorated &&  -- Don't thread on unique decorated children
           !null(getOccursDcl(inh.lookupAttribute.fullName, ie.typerep.typeName, top.env)) &&
           !null(getOccursDcl(syn, ie.typerep.typeName, top.env)),
         if null(getOccursDcl(syn, top.frame.lhsNtName, top.env)) && !null(top.frame.signature.inputElements)
@@ -86,7 +86,7 @@ top::ProductionStmt ::= rev::Boolean inh::PartiallyDecorated QName syn::String
 }
 
 abstract production propagateThreadedSyn
-top::ProductionStmt ::= rev::Boolean inh::String syn::PartiallyDecorated QName
+top::ProductionStmt ::= rev::Boolean inh::String syn::Decorated! QName
 {
   undecorates to propagateOneAttr(syn, location=top.location);
   top.unparse = s"propagate ${syn.unparse};";
@@ -98,7 +98,7 @@ top::ProductionStmt ::= rev::Boolean inh::String syn::PartiallyDecorated QName
       filter(
         \ ie::NamedSignatureElement ->
           isDecorable(ie.typerep, top.env) &&
-          !ie.typerep.isPartiallyDecorated &&  -- Don't thread on partially decorated children
+          !ie.typerep.isUniqueDecorated &&  -- Don't thread on unique decorated children
           !null(getOccursDcl(inh, ie.typerep.typeName, top.env)) &&
           !null(getOccursDcl(syn.lookupAttribute.fullName, ie.typerep.typeName, top.env)),
         top.frame.signature.inputElements));

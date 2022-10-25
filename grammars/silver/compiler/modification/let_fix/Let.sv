@@ -122,7 +122,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 }
 
 abstract production lexicalLocalReference
-top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
+top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
@@ -148,7 +148,7 @@ top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
     case q.lookupValue.typeScheme.monoType of
     | ntOrDecType(t, i, _) -> ntOrDecType(t, i, freshType())
     | decoratedType(t, i) -> ntOrDecType(t, i, freshType())
-    | partiallyDecoratedType(t, i) -> ntOrDecType(t, i, freshType())
+    | uniqueDecoratedType(t, i) -> ntOrDecType(t, i, freshType())
     | t -> t
     end;
 

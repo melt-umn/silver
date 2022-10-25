@@ -121,7 +121,7 @@ top::VarBinder ::= n::Name
   -- (We *DO NOT* want to substitute first... because that will turn the type
   -- variables into concrete types! and type variables in a production are
   -- NOT automatically decorated!)
-  -- Also, don't attempt to decorate already-partially-decorated types.
+  -- Also, don't attempt to decorate already-decorated types.
   local ty :: Type =
     if isDecorable(top.bindingType, top.env) && !top.bindingType.isDecorated
     then decoratedType(top.bindingType, freshInhSet())

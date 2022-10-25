@@ -178,7 +178,7 @@ top::Type ::= te::Type i::Type
   top.transTypeName = "Decorated_" ++ te.transTypeName;
 }
 
-aspect production partiallyDecoratedType
+aspect production uniqueDecoratedType
 top::Type ::= te::Type i::Type
 {
   -- TODO: this should probably be a generic.  e.g. "DecoratedNode<something>"

@@ -14,13 +14,13 @@ foreign {
 }
 
 @{-
-  - Undecorate a partially-decorated reference.
+  - Undecorate a unique reference.
   -
   - @param x  The reference to undecorate.
   - @return A new, undecorated term coresponding to x.
   -}
-function newPartial
-a ::= x::PartiallyDecorated a with i
+function newUnique
+a ::= x::Decorated! a with i
 { return error("foreign function"); }
 foreign {
   "java": return "common.OriginsUtil.duplicatePoly(%x%.undecorate(), originCtx)";

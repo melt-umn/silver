@@ -32,7 +32,7 @@ top::AGDcl ::= 'unification' 'attribute' synPartial::Name ',' syn::Name 'with' i
 }
 
 abstract production unificationInhAttributionDcl
-top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
+top::AGDcl ::= at::Decorated! QName attl::BracketedOptTypeExprs nt::QName nttl::BracketedOptTypeExprs
 {
   undecorates to attributionDcl('attribute', at, attl, 'occurs', 'on', nt, nttl, ';', location=top.location);
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
@@ -65,7 +65,7 @@ top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QNam
 }
 
 abstract production propagateUnificationSynPartial
-top::ProductionStmt ::= inh::String synPartial::PartiallyDecorated QName syn::String
+top::ProductionStmt ::= inh::String synPartial::Decorated! QName syn::String
 {
   undecorates to propagateOneAttr(synPartial, location=top.location);
   top.unparse = s"propagate ${synPartial.unparse};";
@@ -102,7 +102,7 @@ top::ProductionStmt ::= inh::String synPartial::PartiallyDecorated QName syn::St
 }
 
 abstract production propagateUnificationSyn
-top::ProductionStmt ::= inh::String synPartial::String syn::PartiallyDecorated QName
+top::ProductionStmt ::= inh::String synPartial::String syn::Decorated! QName
 {
   undecorates to propagateOneAttr(syn, location=top.location);
   top.unparse = s"propagate ${syn.unparse};";
