@@ -57,7 +57,7 @@ flowtype typerep {grammarName, env, flowEnv} on TypeExpr, Signature;
 flowtype maybeType {grammarName, env, flowEnv} on SignatureLHS;
 flowtype types {grammarName, env, flowEnv} on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 
-propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs excluding refTypeExpr, partialRefTypeExpr;
+propagate errors on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs excluding refTypeExpr, uniqueRefTypeExpr;
 propagate config, grammarName, env, flowEnv, lexicalTypeVariables, lexicalTyVarKinds
   on TypeExpr, Signature, SignatureLHS, TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
 propagate appLexicalTyVarKinds on TypeExprs, BracketedTypeExprs, BracketedOptTypeExprs;
@@ -346,10 +346,16 @@ top::TypeExpr ::= 'Decorated' t::TypeExpr
     end;
 }
 
-concrete production partialRefTypeExpr
+concrete production uniqueRefTypeExprOld
 top::TypeExpr ::= 'PartiallyDecorated' t::TypeExpr 'with' i::TypeExpr
 {
-  top.unparse = "PartiallyDecorated " ++ t.unparse ++ " with " ++ i.unparse;
+  forwards to uniqueRefTypeExpr('Decorated!', t, 'with', i, location=top.location);
+}
+
+concrete production uniqueRefTypeExpr
+top::TypeExpr ::= 'Decorated!' t::TypeExpr 'with' i::TypeExpr
+{
+  top.unparse = "Decorated! " ++ t.unparse ++ " with " ++ i.unparse;
   
   i.onNt = t.typerep;
 
@@ -360,7 +366,7 @@ top::TypeExpr ::= 'PartiallyDecorated' t::TypeExpr 'with' i::TypeExpr
     case t.typerep.baseType of
     | nonterminalType(_,_,_) -> []
     | skolemType(_) -> []
-    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be PartiallyDecorated.")]
+    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated!.")]
     end;
   top.errors <-
     if i.typerep.kindrep != inhSetKind()
@@ -375,10 +381,16 @@ top::TypeExpr ::= 'PartiallyDecorated' t::TypeExpr 'with' i::TypeExpr
     end;
 }
 
-concrete production partialRefDefaultTypeExpr
+concrete production uniqueRefDefaultTypeExprOld
 top::TypeExpr ::= 'PartiallyDecorated' t::TypeExpr
 {
-  top.unparse = "PartiallyDecorated " ++ t.unparse;
+  forwards to uniqueRefDefaultTypeExpr('Decorated!', t, location=top.location);
+}
+
+concrete production uniqueRefDefaultTypeExpr
+top::TypeExpr ::= 'Decorated!' t::TypeExpr
+{
+  top.unparse = "Decorated! " ++ t.unparse;
 
   top.typerep =
     partiallyDecoratedType(t.typerep,
@@ -387,8 +399,8 @@ top::TypeExpr ::= 'PartiallyDecorated' t::TypeExpr
   top.errors <-
     case t.typerep.baseType of
     | nonterminalType(_,_,_) -> []
-    | skolemType(_) -> [err(t.location, "polymorphic PartiallyDecorated types must specify an explicit reference set")]
-    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be PartiallyDecorated.")]
+    | skolemType(_) -> [err(t.location, "polymorphic Decorated! types must specify an explicit reference set")]
+    | _ -> [err(t.location, t.unparse ++ " is not a nonterminal, and cannot be Decorated!.")]
     end;
 }
 
