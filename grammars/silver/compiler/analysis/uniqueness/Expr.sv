@@ -5,10 +5,7 @@ imports silver:compiler:definition:env;
 imports silver:compiler:definition:type:syntax;
 imports silver:compiler:translation:java:core only finalType;
 
--- TODO: Eventually we need 2 seperate notions of uniqueness:
--- uniqueness w.r.t. decoration (is this a unique value that gets created
--- whenever this context is deocrated?) and global uniqueness.
--- Currently this attribute checks only former.
+-- TODO: Eventually this should be replaced by a monoid attribute collecting all unique reference sites
 synthesized attribute isUnique::Boolean occurs on Expr, Exprs, AppExprs, AppExpr;
 
 aspect production errorExpr
@@ -176,7 +173,7 @@ top::Expr ::= '!' e::Expr
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
-  top.isUnique = e2.isUnique || e3.isUnique;
+  top.isUnique = e1.isUnique || e2.isUnique || e3.isUnique;
 }
 
 aspect production intConst
