@@ -28,7 +28,7 @@ function getEnv2FromPartialRef
   local e2::PartiallyDecorated Expr with {env2} = e;
   return e2.env2;
 }
-
+{-
 warnCode "Multiple partially decorated references taken to e in production flow:overloadThing2 (reference has type PartiallyDecorated flow:PDExpr with {flow:env1})." {
 production overloadThing2
 top::PDExpr ::= e::PDExpr
@@ -38,7 +38,7 @@ top::PDExpr ::= e::PDExpr
   forwards to dispatchThing(e);
 }
 }
-
+-}
 warnCode "Attribute env2 with an equation on e is not in the partially decorated reference taken" {
 aspect production overloadThing
 top::PDExpr ::= e::PDExpr
@@ -46,7 +46,7 @@ top::PDExpr ::= e::PDExpr
   e.env2 = [];
 }
 }
-
+{-
 warnCode "Multiple partially decorated references taken to e2 in production flow:overloadThing (reference has type PartiallyDecorated flow:PDExpr with {flow:env1})." {
 aspect production overloadThing
 top::PDExpr ::= e::PDExpr
@@ -58,7 +58,7 @@ top::PDExpr ::= e::PDExpr
   local ref2::PartiallyDecorated PDExpr with {env1, env2} = e2;
 }
 }
-
+-}
 warnCode "Partially decorated reference of type PartiallyDecorated flow:PDExpr with {} does not contain all attributes in the reference set of e's type PartiallyDecorated flow:PDExpr with {flow:env1}" {
 aspect production dispatchThing
 top::PDExpr ::= e::PartiallyDecorated PDExpr with {env1}
