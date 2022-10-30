@@ -166,6 +166,10 @@ public final class Util {
 		return result;
 	}
 
+	public static StringCatter toUpperCase(final StringCatter sb) {
+		return new StringCatter((sb.toString()).toUpperCase());
+	}
+
 	/**
 	 * This exists only because some things like {@link Util#writeFile} don't take an IO object, so
 	 * we use this to demand the io object, then call writeFile.
