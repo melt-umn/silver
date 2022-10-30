@@ -254,6 +254,20 @@ Boolean ::= str::String
   "java" : return "common.Util.isUpper(%str%.toString())";
 }
 
+
+@{--
+ - Converts a string given into it to uppercase, using java's toUpperCase function.
+ - @param str The string given to turn into uppercase
+ - @return An outputted string with all letters turned uppercase.
+-}
+function toUpperCase
+String ::= str::String
+{
+  return error("Not Yet Implemented: toUpperCase");
+} foreign {
+  "java" : return "common.Util.toUpperCase(%str%)";
+}
+
 @{--
  - Safely converts a string to an integer.
  -
