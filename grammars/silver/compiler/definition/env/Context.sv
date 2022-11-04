@@ -4,11 +4,14 @@ import silver:compiler:definition:core only frame, grammarName, compiledGrammars
 
 -- Context lookup/resolution stuff lives here
 
-attribute env occurs on Context;
+attribute env, config, compiledGrammars, grammarFlowTypes occurs on Context;
+propagate env, config, compiledGrammars, grammarFlowTypes on Context, Contexts;
 
 -- This mostly exists as a convenient way to perform multiple env-dependant operations
 -- on a list of contexts without re-decorating them and repeating context resolution.
 nonterminal Contexts with env, config, compiledGrammars, grammarFlowTypes, contexts, freeVariables, boundVariables;
+propagate boundVariables on Contexts;
+
 abstract production consContext
 top::Contexts ::= h::Context t::Contexts
 {
@@ -37,8 +40,6 @@ synthesized attribute resolvedOccurs::[OccursDclInfo] occurs on Context;
 
 monoid attribute isTypeError::Boolean with false, || occurs on Contexts, Context;
 propagate isTypeError on Contexts, Context;
-
-attribute config, compiledGrammars, grammarFlowTypes occurs on Context;
 
 aspect default production
 top::Context ::=

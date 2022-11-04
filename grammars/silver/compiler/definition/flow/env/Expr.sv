@@ -27,7 +27,8 @@ propagate flowDeps on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoApp
   excluding
     childReference, lhsReference, localReference, forwardReference, forwardAccess, synDecoratedAccessHandler, inhDecoratedAccessHandler,
     decorateExprWith, letp, lexicalLocalReference, matchPrimitiveReal;
-propagate flowDefs on Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
+propagate flowDefs, flowEnv on
+  Expr, ExprInhs, ExprInh, Exprs, AppExprs, AppExpr, AnnoAppExprs, AnnoExpr;
 
 aspect default production
 top::Expr ::=
@@ -120,6 +121,24 @@ top::Expr ::= q::PartiallyDecorated QName
     else noVertex();
 }
 
+aspect production application
+top::Expr ::= e::Expr '(' es::AppExprs ',' anns::AnnoAppExprs ')'
+{
+  propagate flowEnv;
+}
+
+aspect production access
+top::Expr ::= e::Expr '.' q::QNameAttrOccur
+{
+  propagate flowEnv;
+}
+
+aspect production accessBouncer
+top::Expr ::= target::(Expr ::= PartiallyDecorated Expr  PartiallyDecorated QNameAttrOccur  Location) e::Expr  q::PartiallyDecorated QNameAttrOccur
+{
+  propagate flowEnv;
+}
+
 aspect production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
 {
@@ -189,7 +208,8 @@ top::Expr ::= 'decorate' e::Expr 'with' '{' inh::ExprInhs '}'
   top.flowDefs <- occursContextDeps(top.frame.signature, top.env, finalTy, anonVertexType(inh.decorationVertex));
 }
 
-autocopy attribute decorationVertex :: String occurs on ExprInhs, ExprInh;
+inherited attribute decorationVertex :: String occurs on ExprInhs, ExprInh;
+propagate decorationVertex on ExprInhs, ExprInh;
 
 aspect production exprInh
 top::ExprInh ::= lhs::ExprLHSExpr '=' e1::Expr ';'
@@ -210,7 +230,7 @@ top::Expr ::= e::PartiallyDecorated Expr
 
 -- FROM LET TODO
 attribute flowDefs, flowEnv occurs on AssignExpr;
-propagate flowDefs on AssignExpr;
+propagate flowDefs, flowEnv on AssignExpr;
 
 aspect production letp
 top::Expr ::= la::AssignExpr  e::Expr
@@ -245,9 +265,9 @@ top::Expr ::= q::PartiallyDecorated QName  fi::ExprVertexInfo  fd::[FlowVertex]
 
 -- FROM PATTERN TODO
 attribute flowDeps, flowDefs, flowEnv, scrutineeVertexType occurs on PrimPatterns, PrimPattern;
-propagate flowDeps, flowDefs on PrimPatterns, PrimPattern;
+propagate flowDeps, flowDefs, flowEnv, scrutineeVertexType on PrimPatterns, PrimPattern;
 
-autocopy attribute scrutineeVertexType :: VertexType;
+inherited attribute scrutineeVertexType :: VertexType;
 
 aspect production matchPrimitiveReal
 top::Expr ::= e::Expr t::TypeExpr pr::PrimPatterns f::Expr

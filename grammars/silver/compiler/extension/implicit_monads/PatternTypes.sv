@@ -3,6 +3,8 @@ grammar silver:compiler:extension:implicit_monads;
 aspect production prodAppPattern
 top::Pattern ::= prod::QName '(' ps::PatternList ')'
 {
+  propagate env;
+
   -- TODO: is this right?  Seems like we should unify with ps pattern types?
   top.patternType = prod.lookupValue.typeScheme.typerep.outputType;
 } 

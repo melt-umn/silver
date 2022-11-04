@@ -18,6 +18,7 @@ concrete production lexerClassDecl
 top::AGDcl ::= 'lexer' 'class' id::Name modifiers::LexerClassModifiers ';'
 {
   top.unparse = "lexer class " ++ id.name ++ modifiers.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, env;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ id.name;
@@ -43,8 +44,9 @@ closed nonterminal LexerClassModifier with config, location, unparse, lexerClass
 
 monoid attribute lexerClassModifiers :: [SyntaxLexerClassModifier];
 
-propagate errors on LexerClassModifiers, LexerClassModifier;
-propagate lexerClassModifiers, superClasses on LexerClassModifiers;
+propagate config, grammarName, compiledGrammars, flowEnv, errors on LexerClassModifiers, LexerClassModifier;
+propagate env, lexerClassModifiers, superClasses on LexerClassModifiers;
+propagate env on LexerClassModifier excluding lexerClassModifierDisambiguate;
 
 abstract production lexerClassModifiersNone
 top::LexerClassModifiers ::= 

@@ -10,7 +10,7 @@ synthesized attribute contextSigElems :: [String] occurs on Contexts;
 synthesized attribute contextSigElem :: String occurs on Context;
 -- Track what children with inh occurs-on contexts need to have indices generated
 monoid attribute contextInhOccurs :: [(Type, String)] occurs on NamedSignature, Contexts, Context;
-autocopy attribute sigInhOccurs :: [(Type, String)] occurs on NamedSignatureElements, NamedSignatureElement;
+inherited attribute sigInhOccurs :: [(Type, String)] occurs on NamedSignatureElements, NamedSignatureElement;
 synthesized attribute inhOccursContextTypes :: [Type] occurs on NamedSignature;
 monoid attribute inhOccursIndexDecls :: String occurs on NamedSignature, Contexts, Context;
 -- Track what children can be used to resolve contexts at runtime
@@ -45,6 +45,8 @@ synthesized attribute childDecls :: String occurs on NamedSignature, NamedSignat
 synthesized attribute annoNameElem :: String occurs on NamedSignatureElement;
 -- "if (name.equals("signame")) { return getAnno_signame(); }"
 synthesized attribute annoLookupElem :: String occurs on NamedSignatureElement;
+
+propagate sigInhOccurs on NamedSignatureElements, NamedSignatureElement;
 
 aspect production namedSignature
 top::NamedSignature ::= fn::String ctxs::Contexts ie::NamedSignatureElements oe::NamedSignatureElement np::NamedSignatureElements

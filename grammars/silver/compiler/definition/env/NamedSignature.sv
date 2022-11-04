@@ -84,6 +84,7 @@ top::NamedSignature ::=
  - Represents a collection of NamedSignatureElements
  -}
 nonterminal NamedSignatureElements with elements, elementNames, elementShortNames, elementTypes, freeVariables, boundVariables;
+propagate boundVariables on NamedSignatureElements;
 
 synthesized attribute elements::[NamedSignatureElement];
 synthesized attribute elementNames::[String];
@@ -117,6 +118,7 @@ global foldNamedSignatureElements::(NamedSignatureElements ::= [NamedSignatureEl
  - Represents an elements of a signature, whether input, output, or annotation.
  -}
 nonterminal NamedSignatureElement with elementName, elementShortName, typerep, freeVariables, boundVariables;
+propagate boundVariables on NamedSignatureElement;
 
 synthesized attribute elementName :: String;
 synthesized attribute elementShortName :: String;
@@ -173,7 +175,7 @@ Type ::= n::String l::[NamedSignatureElement]
 --------------
 
 attribute substitution, flatRenamed occurs on NamedSignature, Contexts, NamedSignatureElements, NamedSignatureElement;
-propagate flatRenamed on NamedSignature, Contexts, NamedSignatureElements, NamedSignatureElement;
+propagate substitution, flatRenamed on NamedSignature, Contexts, NamedSignatureElements, NamedSignatureElement;
 
 -- "Freshens" all the signature's type variables with new skolem constants,
 -- to avoid type vars from interface files clashing with new ones from genInt()

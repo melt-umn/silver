@@ -80,11 +80,12 @@ Maybe<Type> ::= tv::TyVar s::Substitution
 --------------------------------------------------------------------------------
 
 -- These are for ordinary tyvar substitutions.
-autocopy attribute substitution :: Substitution occurs on Context, Type;
+inherited attribute substitution :: Substitution occurs on Context, Type;
 functor attribute substituted occurs on Context, Type;
 -- These are for flat, non-recursive replacement of tyvars with something else directly
 functor attribute flatRenamed occurs on Context, Type;
 
+propagate substitution on Context, Type;
 propagate substituted, flatRenamed on Context, Type
   excluding inhOccursContext, synOccursContext, annoOccursContext, varType, skolemType, ntOrDecType;
 
@@ -178,7 +179,7 @@ top::Type ::= nt::Type inhs::Type hidden::Type
     | _          -> hidden.substituted
     end;
   -- For a renaming, we don't need to specialize.
-  propagate flatRenamed;
+  propagate substitution, flatRenamed;
 }
 
 --------------------------------------------------------------------------------

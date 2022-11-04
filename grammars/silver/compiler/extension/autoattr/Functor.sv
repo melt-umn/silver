@@ -25,6 +25,8 @@ top::AGDcl ::= at::PartiallyDecorated QName attl::BracketedOptTypeExprs nt::QNam
 {
   top.unparse = "attribute " ++ at.unparse ++ attl.unparse ++ " occurs on " ++ nt.unparse ++ nttl.unparse ++ ";";
   top.moduleNames := [];
+
+  propagate grammarName, env, flowEnv;
   
   forwards to
     defaultAttributionDcl(

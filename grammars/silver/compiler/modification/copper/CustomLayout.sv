@@ -7,6 +7,7 @@ concrete production productionModifierLayout
 top::ProductionModifier ::= 'layout' '{' terms::TermList '}'
 {
   top.unparse = "layout {" ++ terms.unparse ++ "}";
+  propagate env;
 
   top.productionModifiers := [prodLayout(terms.termList)];
   top.errors := terms.errors;
@@ -25,6 +26,7 @@ concrete production nonterminalModifierLayout
 top::NonterminalModifier ::= 'layout' '{' terms::TermList '}'
 {
   top.unparse = "layout {" ++ terms.unparse ++ "}";
+  propagate env;
   
   top.nonterminalModifiers := [ntLayout(terms.termList)];
   top.errors := terms.errors;

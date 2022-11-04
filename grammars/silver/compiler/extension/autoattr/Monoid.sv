@@ -7,6 +7,7 @@ concrete production monoidAttributeDcl
 top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::TypeExpr 'with' e::Expr ',' q::NameOrBOperator ';'
 {
   top.unparse = "monoid attribute " ++ a.unparse ++ tl.unparse ++ " :: " ++ te.unparse ++ " with " ++ e.unparse ++ ", " ++ q.unparse ++ ";";
+  propagate config, grammarName, compiledGrammars, flowEnv;
 
   production attribute fName :: String;
   fName = top.grammarName ++ ":" ++ a.name;
@@ -14,6 +15,8 @@ top::AGDcl ::= 'monoid' 'attribute' a::Name tl::BracketedOptTypeExprs '::' te::T
   tl.initialEnv = top.env;
   tl.env = tl.envBindingTyVars;
   te.env = tl.envBindingTyVars;
+  e.env = tl.envBindingTyVars;
+  q.env = tl.envBindingTyVars;
   
   q.operatorForType = te.typerep;
   

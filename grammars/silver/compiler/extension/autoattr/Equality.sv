@@ -6,6 +6,8 @@ top::AGDcl ::= 'equality' 'attribute' syn::Name 'with' inh::QName ';'
   top.unparse = s"equality attribute ${syn.unparse} with ${inh.unparse};";
   top.moduleNames := [];
 
+  propagate env;
+
   production attribute inhFName :: String;
   inhFName = inh.lookupAttribute.fullName;
   production attribute synFName :: String;
