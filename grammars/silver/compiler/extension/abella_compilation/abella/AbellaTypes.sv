@@ -61,6 +61,8 @@ top::AbellaType ::= name::String
       | "$pair" -> "is_pair"
       | "integer" -> "is_integer"
       | "bool" -> "is_bool"
+      | _ when isNonterminalName(name) ->
+        "(" ++ splitRelationName ++ " " ++ wpdTypeName(top) ++ ")"
       | _ -> error("Cannot generate is relation for type " ++ name)
       end;
 

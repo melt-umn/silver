@@ -181,7 +181,6 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
   newes.env = top.env;
   newes.flowEnv = top.flowEnv;
   newes.frame = top.frame;
-  newes.isRoot = top.isRoot;
   newes.originRules = top.originRules;
   newes.compiledGrammars = top.compiledGrammars;
   newes.appExprTypereps = es.appExprTypereps;

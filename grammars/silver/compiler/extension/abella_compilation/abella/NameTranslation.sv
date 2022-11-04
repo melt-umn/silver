@@ -35,6 +35,8 @@ global appendName::String = "$fun" ++ name_sep ++ "silver$*$core$*$append";
 global pairTypeName::String = "$pair";
 global pairType::AbellaType = nameAbellaType(pairTypeName);
 global pairConstructorName::String = "$pair_c";
+--relation for splitting pairs to apply a single is-type relation (WPD) to them
+global splitRelationName::String = "$split";
 
 global orName::String = "$or_bool";
 global andName::String = "$and_bool";

@@ -14,8 +14,17 @@ occurs on ProductionSignature;
 aspect production productionSignatureNoCL
 top::ProductionSignature ::= lhs::ProductionLHS '::=' rhs::ProductionRHS
 {
-  rhs.outType = lhs.abellaType;
-  top.abellaType = rhs.abellaType;
+  local newlhs::ProductionLHS = lhs;
+  local newrhs::ProductionRHS = rhs;
+  newlhs.env = top.env;
+  newrhs.env = top.env;
+  newlhs.grammarName = top.grammarName;
+  newrhs.grammarName = top.grammarName;
+  newlhs.flowEnv = top.flowEnv;
+  newrhs.flowEnv = top.flowEnv;
+
+  newrhs.outType = newlhs.abellaType;
+  top.abellaType = newrhs.abellaType;
 }
 
 aspect production productionSignature

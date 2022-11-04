@@ -6,7 +6,7 @@ import silver:compiler:extension:patternmatching;
 aspect production caseExpr
 top::Expr ::= es::[Expr] ml::[AbstractMatchRule] complete::Boolean failExpr::Expr retType::Type
 {
-  
+  top.encodedExpr = error("Cannot encode case expressions");
 }
 
 
@@ -69,6 +69,12 @@ attribute
 occurs on Pattern;
 
 synthesized attribute encodedPatt::Term;
+
+aspect default production
+top::Pattern ::=
+{
+  top.encodedPatt = error("Not encoding patterns");
+}
 
 
 aspect production prodAppPattern_named
