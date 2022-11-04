@@ -143,7 +143,7 @@ String ::= ty::AbellaType usedNames::[String]
                else substring(0, 1, str)
              end;
   return
-     if contains(base, usedNames)
+     if contains(base, usedNames) || contains(base, abellaReservedWords)
      then makeUniqueName(base, 1, usedNames)
      else base;
 }
@@ -153,7 +153,7 @@ function makeUniqueNameFromBase
 String ::= base::String usedNames::[String]
 {
   return
-     if contains(base, usedNames)
+     if contains(base, usedNames) || contains(base, abellaReservedWords)
      then makeUniqueName(base, 1, usedNames)
      else base;
 }
@@ -167,6 +167,12 @@ String ::= base::String index::Integer usedNames::[String]
      then makeUniqueName(base, index + 1, usedNames)
      else base ++ toString(index);
 }
+
+--These words have a special meaning in Abella, so we can't generate
+--them as variable names
+global abellaReservedWords::[String] =
+    ["Type", "Kind", "Theorem", "Define", "CoDefine", "Specification",
+     "Import", "Query", "Split", "Set", "Show", "Quit", "Close"];
 
 
 --Generate n different names from the given base

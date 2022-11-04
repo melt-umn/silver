@@ -69,6 +69,11 @@ String ::= ty::AbellaType
      | _ -> "Something_else(" ++ ty.unparse ++ ")" --error("Must call this on a nonterminal type (" ++ ty.unparse ++ ")")
      end;
 }
+function isNonterminalName
+Boolean ::= nt::String
+{
+  return startsWith("$nt_", nt);
+}
 
 function nameToNodeType
 String ::= name::String
