@@ -16,6 +16,7 @@ terminal AntiquotePattern_t           '$Pattern'           lexer classes {Antiqu
 terminal AntiquoteAspectRHS_t         '$AspectRHS'         lexer classes {Antiquote};
 terminal AntiquoteProductionStmt_t    '$ProductionStmt'    lexer classes {Antiquote};
 terminal AntiquoteQName_t             '$QName'             lexer classes {Antiquote};
+terminal AntiquoteQNames_t            '$QNames'             lexer classes {Antiquote};
 terminal AntiquoteQNameAttrOccur_t    '$QNameAttrOccur'    lexer classes {Antiquote};
 terminal AntiquoteName_t              '$Name'              lexer classes {Antiquote};
 terminal Antiquote_qName_t            '$qName'             lexer classes {Antiquote};

@@ -51,6 +51,14 @@ top::QNames ::= id1::QNameWithTL ',' id2::QNames
   top.qnames = [id1] ++ id2.qnames;
 }
 
+abstract production qNamesError
+top::QNames ::= msg::[Message]
+{
+  top.unparse = "<err>";
+  top.qnames = [];
+
+}
+
 --------------------------------------------------------------------------------
 
 function makeOccursDcls

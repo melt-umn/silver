@@ -14,6 +14,7 @@ top::AST ::= prodName::String children::ASTs annotations::NamedASTs
      "silver:compiler:extension:silverconstruction:antiquoteAspectRHS",
      "silver:compiler:extension:silverconstruction:antiquoteProductionStmt",
      "silver:compiler:extension:silverconstruction:antiquoteQName",
+     "silver:compiler:extension:silverconstruction:antiquoteQNames",
      "silver:compiler:extension:silverconstruction:antiquoteQNameAttrOccur",
      "silver:compiler:extension:silverconstruction:antiquoteName"];
   
