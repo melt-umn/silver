@@ -6,6 +6,7 @@ imports silver:compiler:extension:tuple;
 attribute
    encodedExpr, encodedFailure, encodingEnv, top
 occurs on Expr;
+propagate encodingEnv, top on Expr;
 
 
 
@@ -41,7 +42,8 @@ top::Expr ::= q::PartiallyDecorated QName
 {
   top.encodedExpr = [([],
       case findAssociated(q.name, top.encodingEnv) of
-      | just((tree, node)) when isNonterminal(top.typerep) ->
+      | just((tree, node)) when
+        performSubstitution(top.typerep, top.finalSubst).isDecorated ->
         buildApplication(
            nameTerm(pairConstructorName),
            [tree, node])
@@ -56,10 +58,12 @@ top::Expr ::= q::PartiallyDecorated QName
 {
   top.encodedExpr = [([],
       case findAssociated(q.name, top.encodingEnv) of
-      | just((treename, nodename)) ->
+      | just((treename, nodename)) when
+        performSubstitution(top.typerep, top.finalSubst).isDecorated ->
         buildApplication(
            nameTerm(pairConstructorName),
            [treename, nodename])
+      | just((tree, node)) -> tree
       | nothing() -> error("LHS must exist")
       end)];
   top.encodedFailure = [];
@@ -81,7 +85,7 @@ top::Expr ::= q::PartiallyDecorated QName
                     [localnode, localchildlist])])
         else localname;
   local resultLocalTerm::Term =
-        if isNonterminal(top.typerep)
+        if performSubstitution(top.typerep, top.finalSubst).isDecorated
         then buildApplication(nameTerm(pairConstructorName),
                 [localname, localnode])
         else localname;
@@ -162,32 +166,10 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
 aspect production functionInvocation
 top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::PartiallyDecorated AnnoAppExprs
 {
-  local attribute newe::Expr = new(e);
-  newe.grammarName = top.grammarName;
-  newe.config = top.config;
-  newe.env = top.env;
-  newe.flowEnv = top.flowEnv;
-  newe.frame = top.frame;
-  newe.isRoot = top.isRoot;
-  newe.originRules = top.originRules;
-  newe.compiledGrammars = top.compiledGrammars;
-  newe.downSubst = top.downSubst;
-  newe.finalSubst = top.finalSubst;
-  newe.encodingEnv = top.encodingEnv;
-  newe.top = top.top;
-  local attribute newes::AppExprs = new(es);
-  newes.grammarName = top.grammarName;
-  newes.config = top.config;
-  newes.env = top.env;
-  newes.flowEnv = top.flowEnv;
-  newes.frame = top.frame;
-  newes.originRules = top.originRules;
-  newes.compiledGrammars = top.compiledGrammars;
-  newes.appExprTypereps = es.appExprTypereps;
-  newes.downSubst = newe.upSubst;
-  newes.finalSubst = top.finalSubst;
-  newes.encodingEnv = top.encodingEnv;
-  newes.top = top.top;
+  e.top = top.top;
+  e.encodingEnv = top.encodingEnv;
+  es.top = top.top;
+  es.encodingEnv = top.encodingEnv;
   --
   local resultName::String = "FunResult";
   local resultTerm::Term = varTerm(resultName, genInt());
@@ -205,7 +187,7 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
               | _ -> error("Should not access encoding in " ++
                            "presence of errors")
               end,
-            newes.encodedArgs)
+            es.encodedArgs)
       --Anything else encode into an application
       | _ ->
         foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
@@ -220,8 +202,8 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
                                      buildApplication(ep.2,
                                         argp.2 ++ [resultTerm]))],
                                  new(resultTerm) ) )::rest,
-                      rest, newes.encodedArgs),
-              [], newe.encodedExpr)
+                      rest, es.encodedArgs),
+              [], e.encodedExpr)
       end;
   top.encodedFailure =
       case e of
@@ -231,7 +213,7 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
         [] --nothing can fail
       | functionReference(q)
         when q.lookupValue.fullName == "silver:core:cons" ->
-        newes.encodedFailure --only args can fail
+        es.encodedFailure --only args can fail
       --for each encoding of function and args, might not return
       | _ ->
         foldr(\ ep::([Metaterm], Term) rest::[[Metaterm]] ->
@@ -249,9 +231,9 @@ top::Expr ::= e::PartiallyDecorated Expr es::PartiallyDecorated AppExprs anns::P
                                          buildApplication(ep.2,
                                             argp.2 ++ [nameTerm("Res")]))),
                                    falseMetaterm())] )::rest,
-                      rest, newes.encodedArgs),
-              [], newe.encodedExpr) ++
-        newe.encodedFailure ++ newes.encodedFailure
+                      rest, es.encodedArgs),
+              [], e.encodedExpr) ++
+        e.encodedFailure ++ es.encodedFailure
       end;
 }
 
@@ -272,8 +254,6 @@ top::Expr ::= 'attachNote' note::Expr 'on' e::Expr 'end'
 aspect production forwardAccess
 top::Expr ::= e::Expr '.' 'forward'
 {
-  e.encodingEnv = top.encodingEnv;
-  e.top = top.top;
   local treeTy::AbellaType = e.typerep.abellaType;
   local fwdName::String = "Fwd";
   local fwdNode::String = "Node";
@@ -340,19 +320,8 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 aspect production synDecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  local attribute newe::Expr = new(e);
-  newe.grammarName = top.grammarName;
-  newe.config = top.config;
-  newe.env = top.env;
-  newe.flowEnv = top.flowEnv;
-  newe.frame = top.frame;
-  newe.isRoot = top.isRoot;
-  newe.originRules = top.originRules;
-  newe.compiledGrammars = top.compiledGrammars;
-  newe.downSubst = top.downSubst;
-  newe.finalSubst = top.finalSubst;
-  newe.encodingEnv = top.encodingEnv;
-  newe.top = top.top;
+  e.top = top.top;
+  e.encodingEnv = top.encodingEnv;
   --
   local attrName::String =
         case q of
@@ -362,7 +331,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
   local synname::String = capitalize(shortestName(q.name));
   local synnode::String = "Node";
   local synTerm::Term =
-        if isNonterminal(top.typerep)
+        if performSubstitution(top.typerep, top.finalSubst).isDecorated
         then buildApplication(nameTerm(pairConstructorName),
                 [varTerm(synname, genInt()),
                  varTerm(synnode, genInt())])
@@ -387,7 +356,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
                           ( replaceVar_list((n, i), pr, ep.1), p1 )
                         | _ -> error("Impossible for pair-typed term")
                         end,
-                      newe.encodedExpr)
+                      e.encodedExpr)
              else if q.attrDcl.fullName == "silver:core:snd"
              then map(\ ep::([Metaterm], Term) ->
                         case ep.2 of
@@ -398,7 +367,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
                           ( replaceVar_list((n, i), pr, ep.1), p2 )
                         | _ -> error("Impossible for pair-typed term")
                         end,
-                      newe.encodedExpr)
+                      e.encodedExpr)
              else error("Cannot handle accesses of attributes on " ++
                         "pairs other than fst and snd (tried to " ++
                         "access " ++ q.name ++ ")")
@@ -426,10 +395,10 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
                    -}
                    error("Must have a pair for an access in a well-typed grammar")
                  end,
-               newe.encodedExpr);
+               e.encodedExpr);
   top.encodedFailure =
       if isPair(e.typerep)
-      then newe.encodedFailure --no other failure points for pairs
+      then e.encodedFailure --no other failure points for pairs
       else map(\ ep::([Metaterm], Term) ->
                  case ep.2 of
                  | applicationTerm(nameTerm("$pair_c"),
@@ -444,26 +413,15 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
                  | _ ->
                    error("Must have a pair for an access in a well-typed grammar")
                  end,
-               newe.encodedExpr) ++
-           newe.encodedFailure;
+               e.encodedExpr) ++
+           e.encodedFailure;
 }
 
 aspect production inhDecoratedAccessHandler
 top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
 {
-  local attribute newe::Expr = new(e);
-  newe.grammarName = top.grammarName;
-  newe.config = top.config;
-  newe.env = top.env;
-  newe.flowEnv = top.flowEnv;
-  newe.frame = top.frame;
-  newe.isRoot = top.isRoot;
-  newe.originRules = top.originRules;
-  newe.compiledGrammars = top.compiledGrammars;
-  newe.downSubst = top.downSubst;
-  newe.finalSubst = top.finalSubst;
-  newe.encodingEnv = top.encodingEnv;
-  newe.top = top.top;
+  e.top = top.top;
+  e.encodingEnv = top.encodingEnv;
   --
   local attrName::String =
         case q of
@@ -473,12 +431,11 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
   local inhname::String = capitalize(shortestName(q.name));
   local inhnode::String = "Node";
   local inhTerm::Term =
-        case top.typerep of
-        | nonterminalType(_, _, _) ->
-          buildApplication(nameTerm(pairConstructorName),
-             [varTerm(inhname, genInt()), varTerm(inhnode, genInt())])
-        | _ -> varTerm(inhname, genInt())
-        end;
+        if performSubstitution(top.typerep, top.finalSubst).isDecorated
+        then buildApplication(nameTerm(pairConstructorName),
+                [varTerm(inhname, genInt()),
+                 varTerm(inhnode, genInt())])
+        else varTerm(inhname, genInt());
   local treeTy::AbellaType = e.typerep.abellaType;
   top.encodedExpr =
       map(\ ep::([Metaterm], Term) ->
@@ -497,7 +454,7 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
             | _ ->
               error("I don't think we can access on a non-pair")
             end,
-          newe.encodedExpr);
+          e.encodedExpr);
   top.encodedFailure =
       map(\ ep::([Metaterm], Term) ->
             case ep.2 of
@@ -513,8 +470,8 @@ top::Expr ::= e::PartiallyDecorated Expr  q::PartiallyDecorated QNameAttrOccur
             | _ ->
               error("I don't think we can access on a non-pair")
             end,
-          newe.encodedExpr) ++
-      newe.encodedFailure;
+          e.encodedExpr) ++
+      e.encodedFailure;
 }
 
 aspect production errorDecoratedAccessHandler
@@ -576,10 +533,6 @@ top::Expr ::= 'false'
 aspect production and
 top::Expr ::= e1::Expr '&&' e2::Expr
 {
-  e1.encodingEnv = top.encodingEnv;
-  e2.encodingEnv = top.encodingEnv;
-  e1.top = top.top;
-  e2.top = top.top;
   top.encodedExpr =
       foldr(\ el1::([Metaterm], Term) rest::[([Metaterm], Term)] ->
               case el1.2 of
@@ -627,10 +580,6 @@ top::Expr ::= e1::Expr '&&' e2::Expr
 aspect production or
 top::Expr ::= e1::Expr '||' e2::Expr
 {
-  e1.encodingEnv = top.encodingEnv;
-  e2.encodingEnv = top.encodingEnv;
-  e1.top = top.top;
-  e2.top = top.top;
   top.encodedExpr =
       foldr(\ el1::([Metaterm], Term) rest::[([Metaterm], Term)] ->
               case el1.2 of
@@ -678,8 +627,6 @@ top::Expr ::= e1::Expr '||' e2::Expr
 aspect production notOp
 top::Expr ::= '!' e::Expr
 {
-  e.encodingEnv = top.encodingEnv;
-  e.top = top.top;
   top.encodedExpr =
       foldr(\ ep::([Metaterm], Term) rest::[([Metaterm], Term)] ->
               case ep.2 of
@@ -1007,13 +954,6 @@ top::Expr ::= e1::Expr '!=' e2::Expr
 aspect production ifThenElse
 top::Expr ::= 'if' e1::Expr 'then' e2::Expr 'else' e3::Expr
 {
-  e1.encodingEnv = top.encodingEnv;
-  e2.encodingEnv = top.encodingEnv;
-  e3.encodingEnv = top.encodingEnv;
-  e1.top = top.top;
-  e2.top = top.top;
-  e3.top = top.top;
-  --
   top.encodedExpr =
       foldr(\ ep1::([Metaterm], Term) rest::[([Metaterm], Term)] ->
               foldr(\ ep2::([Metaterm], Term)
@@ -1091,10 +1031,6 @@ top::Expr ::= f::Float_t
 aspect production plus
 top::Expr ::= e1::Expr '+' e2::Expr
 {
-  e1.encodingEnv = top.encodingEnv;
-  e2.encodingEnv = top.encodingEnv;
-  e1.top = top.top;
-  e2.top = top.top;
   local resultName::String = "PlusResult";
   --When we do this for more than integer, we need to change this
   local op::Term = nameTerm(integerAdditionName);
@@ -1121,10 +1057,6 @@ top::Expr ::= e1::Expr '+' e2::Expr
 aspect production minus
 top::Expr ::= e1::Expr '-' e2::Expr
 {
-  e1.encodingEnv = top.encodingEnv;
-  e2.encodingEnv = top.encodingEnv;
-  e1.top = top.top;
-  e2.top = top.top;
   local resultName::String = "MinusResult";
   --When we do this for more than integer, we need to change this
   local op::Term = nameTerm(integerSubtractionName);
@@ -1151,10 +1083,6 @@ top::Expr ::= e1::Expr '-' e2::Expr
 aspect production multiply
 top::Expr ::= e1::Expr '*' e2::Expr
 {
-  e1.encodingEnv = top.encodingEnv;
-  e2.encodingEnv = top.encodingEnv;
-  e1.top = top.top;
-  e2.top = top.top;
   local resultName::String = "TimesResult";
   --When we do this for more than integer, we need to change this
   local op::Term = nameTerm(integerMultiplicationName);
@@ -1181,10 +1109,6 @@ top::Expr ::= e1::Expr '*' e2::Expr
 aspect production divide
 top::Expr ::= e1::Expr _ e2::Expr
 {
-  e1.encodingEnv = top.encodingEnv;
-  e2.encodingEnv = top.encodingEnv;
-  e1.top = top.top;
-  e2.top = top.top;
   local resultName::String = "DivideResult";
   --When we do this for more than integer, we need to change this
   local op::Term = nameTerm(integerDivisionName);
@@ -1219,10 +1143,6 @@ top::Expr ::= e1::Expr _ e2::Expr
 aspect production modulus
 top::Expr ::= e1::Expr '%' e2::Expr
 {
-  e1.encodingEnv = top.encodingEnv;
-  e2.encodingEnv = top.encodingEnv;
-  e1.top = top.top;
-  e2.top = top.top;
   local resultName::String = "ModResult";
   --When we do this for more than integer, we need to change this
   local op::Term = nameTerm(integerModulusName);
@@ -1257,8 +1177,6 @@ top::Expr ::= e1::Expr '%' e2::Expr
 aspect production neg
 top::Expr ::= '-' e::Expr
 {
-  e.encodingEnv = top.encodingEnv;
-  e.top = top.top;
   local resultName::String = "NegResult";
   --When we do this for more than integer, we need to change this
   local op::Term = nameTerm(integerNegateName);
@@ -1350,6 +1268,9 @@ top::Expr ::= '[' ']'
 aspect production selector
 top::Expr ::= tuple::Expr '.' a::IntConst
 {
+  tuple.encodingEnv = top.encodingEnv;
+  tuple.top = top.top;
+  --
   local acc::Integer = toInteger(a.lexeme);
   -- Copied from original
   local typ::Type = performSubstitution(tuple.typerep, tuple.upSubst);
@@ -1412,6 +1333,7 @@ top::Expr ::= tuple::Expr '.' a::IntConst
 attribute
    encodedArgs, encodedFailure, encodingEnv, top
 occurs on Exprs;
+propagate encodingEnv, top on Exprs;
 
 aspect production exprsEmpty
 top::Exprs ::=
@@ -1423,8 +1345,6 @@ top::Exprs ::=
 aspect production exprsSingle
 top::Exprs ::= e::Expr
 {
-  e.encodingEnv = top.encodingEnv;
-  e.top = top.top;
   top.encodedArgs =
       map(\ ep::([Metaterm], Term) -> (ep.1, [ep.2]), e.encodedExpr);
   top.encodedFailure = e.encodedFailure;
@@ -1433,10 +1353,6 @@ top::Exprs ::= e::Expr
 aspect production exprsCons
 top::Exprs ::= e1::Expr ',' e2::Exprs
 {
-  e1.encodingEnv = top.encodingEnv;
-  e2.encodingEnv = top.encodingEnv;
-  e1.top = top.top;
-  e2.top = top.top;
   top.encodedArgs =
       foldr(\ e1p::([Metaterm], Term) rest1::[([Metaterm], [Term])] ->
               foldr(\ e2p::([Metaterm], [Term])
@@ -1458,10 +1374,12 @@ top::Exprs ::= e1::Expr ',' e2::Exprs
 attribute
    encodedArgs, encodedFailure, encodingEnv, top
 occurs on AppExprs;
+propagate encodingEnv, top on AppExprs;
 
 attribute
    encodedExpr, encodedFailure, encodingEnv, top
 occurs on AppExpr;
+propagate encodingEnv, top on AppExpr;
 
 aspect production missingAppExpr
 top::AppExpr ::= '_'
@@ -1473,33 +1391,15 @@ top::AppExpr ::= '_'
 aspect production presentAppExpr
 top::AppExpr ::= e::Expr
 {
-  e.encodingEnv = top.encodingEnv;
-  e.top = top.top;
-  top.encodedExpr =
-      if isNonterminal(top.appExprTyperep)
-      then --give only the term if not looking for decorated
-           if isDecorated(top.appExprTyperep)
-           then e.encodedExpr
-           else map(\ p::([Metaterm], Term) ->
-                      ( p.1,
-                        case p.2 of
-                        | applicationTerm(nameTerm("$pair_c"),
-                             consTermList(tree, _)) ->
-                          tree
-                        | _ -> p.2
-                        end ),
-                    e.encodedExpr)
-      else e.encodedExpr;
+  local finalType::Type =
+      performSubstitution(top.appExprTyperep, top.finalSubst);
+  top.encodedExpr = e.encodedExpr;
   top.encodedFailure = e.encodedFailure;
 }
 
 aspect production snocAppExprs
 top::AppExprs ::= es::AppExprs ',' e::AppExpr
 {
-  es.encodingEnv = top.encodingEnv;
-  e.encodingEnv = top.encodingEnv;
-  es.top = top.top;
-  e.top = top.top;
   top.encodedArgs =
       foldr(\ ep::([Metaterm], Term) rest1::[([Metaterm], [Term])] ->
               foldr(\ esp::([Metaterm], [Term])
@@ -1518,8 +1418,6 @@ top::AppExprs ::= es::AppExprs ',' e::AppExpr
 aspect production oneAppExprs
 top::AppExprs ::= e::AppExpr
 {
-  e.encodingEnv = top.encodingEnv;
-  e.top = top.top;
   top.encodedArgs =
       map(\ ep::([Metaterm], Term) -> (ep.1, [ep.2]), e.encodedExpr);
   top.encodedFailure = e.encodedFailure;

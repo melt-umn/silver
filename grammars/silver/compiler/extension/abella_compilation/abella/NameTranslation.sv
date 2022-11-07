@@ -38,6 +38,9 @@ global pairConstructorName::String = "$pair_c";
 --relation for splitting pairs to apply a single is-type relation (WPD) to them
 global splitRelationName::String = "$split";
 
+--a generic relation for filling in when we need is but don't have it
+global isAnythingName::String = "$is_anything";
+
 global orName::String = "$or_bool";
 global andName::String = "$and_bool";
 global notName::String = "$not_bool";

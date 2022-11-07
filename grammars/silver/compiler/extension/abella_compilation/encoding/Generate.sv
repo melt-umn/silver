@@ -348,36 +348,40 @@ String ::= group::[(String, String, AbellaType, String, String)]
 function generateWpdNodeRelationsComponentGroupBody
 (String, [String]) ::= group::[(String, String, AbellaType, String, String)]
 {
+  local tag::String = head(group).1;
+  local attr::String = head(group).2;
+  local attrTy::AbellaType = head(group).3;
+  local nt::String = head(group).4;
+  local prod::String = head(group).5;
+  local aName::String = "A" ++ attr ++ toString(genInt());
+  local ntTy::AbellaType = nameToNonterminalType(nt);
+  local equation::String =
+      case tag of
+      | "attr" -> equationName(attr, ntTy)
+      | "local" -> localEquationName(attr, prod)
+      | _ -> error("Tag must be one of these")
+      end;
+  local access::String =
+      case tag of
+      | "attr" -> accessRelationName(ntTy, attr)
+      | "local" -> localAccessRelationName(ntTy, attr, prod)
+      | _ -> error("Tag must be one of these")
+      end;
+  local isRel::String = attrTy.isRelation;
   local subcall::(String, [String]) =
         generateWpdNodeRelationsComponentGroupBody(tail(group));
   return
      case group of
      | [] -> ("", [])
      | (tag, attr, attrTy, nt, prod)::_ ->
-       let aName::String = "A" ++ attr in
-       let ntTy::AbellaType = nameToNonterminalType(nt) in
-       let equation::String =
-           case tag of
-           | "attr" -> equationName(attr, ntTy)
-           | "local" -> localEquationName(attr, prod)
-           | _ -> error("Tag must be one of these")
-           end in
-       let access::String =
-           case tag of
-           | "attr" -> accessRelationName(ntTy, attr)
-           | "local" -> localAccessRelationName(ntTy, attr, prod)
-           | _ -> error("Tag must be one of these")
-           end in
-       let isRel::String = attrTy.isRelation in
-         ( "         " ++ equation ++ " Tree Tree (" ++
-                nodeTreeConstructorName(ntTy) ++ " Node CL) /\\\n" ++
-           "            " ++ access ++ " Tree Node " ++ aName ++ " /\\\n" ++
-           "            $is_attrVal (" ++ isRel ++ ") " ++ aName ++
-           if subcall.1 == ""
-           then ""
-           else " /\\\n" ++ subcall.1,
-           aName::subcall.2 )
-       end end end end end
+       ( "         " ++ equation ++ " Tree Tree (" ++
+              nodeTreeConstructorName(ntTy) ++ " Node CL) /\\\n" ++
+         "            " ++ access ++ " Tree Node " ++ aName ++ " /\\\n" ++
+         "            $is_attrVal (" ++ isRel ++ ") " ++ aName ++
+         if subcall.1 == ""
+         then ""
+         else " /\\\n" ++ subcall.1,
+         aName::subcall.2 )
      end;
 }
 
@@ -1596,7 +1600,7 @@ String ::= --[(attr, index (e.g. "child3", "forward"), top NT,
   local sorted::[(String, String, AbellaType, String)] =
         sortBy(\ p1::(String, String, AbellaType, String)
                  p2::(String, String, AbellaType, String) ->
-                 p1.3.unparse < p2.3.unparse || p1.1 < p2.1,
+                 p1.3.unparse < p2.3.unparse || (p1.3.unparse == p2.3.unparse && p1.1 < p2.1),
                reduced);
   --Put all with same attr/NT together (same component rel)
   local groupedByRel::[[(String, String, AbellaType, String)]] =
@@ -2078,6 +2082,7 @@ String ::= new_nonterminals::[String] new_attrs::[String]
      generateAccessRelations(new_attrOccurrences) ++ "\n" ++
      generateLocalAccessRelations(new_localAttrs, env) ++ "\n" ++
      generateForwardAccessRelations(new_nonterminals, env) ++ "\n\n" ++
+     "%Let the interface know which attributes are inherited\n" ++
      generateInheritedInformation(new_inheritedAttrs) ++ "\n\n" ++
      "%New structural equality\n" ++
      generateStructureEqFull(new_nonterminals) ++ "\n" ++

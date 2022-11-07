@@ -150,17 +150,18 @@ attribute
    localAttrs, top, encodingEnv, treeTerm, nodetreeTerm,
    synAttrEqInfo, inhAttrEqInfo, localAttrDefs
 occurs on ProductionBody;
+propagate encodingEnv, top on ProductionBody;
 
 attribute
    localAttrs, top, encodingEnv, treeTerm, nodetreeTerm,
    synAttrEqInfo, inhAttrEqInfo, localAttrDefs
 occurs on ProductionStmts;
+propagate encodingEnv, top on ProductionStmts;
 
 
 aspect production productionBody
 top::ProductionBody ::= '{' stmts::ProductionStmts '}'
 {
-  stmts.top = top.top;
   stmts.treeTerm = top.treeTerm;
   stmts.nodetreeTerm = top.nodetreeTerm;
 }
@@ -173,10 +174,8 @@ top::ProductionStmts ::=
 aspect production productionStmtsSnoc
 top::ProductionStmts ::= h::ProductionStmts t::ProductionStmt
 {
-  h.top = top.top;
   h.treeTerm = top.treeTerm;
   h.nodetreeTerm = top.nodetreeTerm;
-  t.top = top.top;
   t.treeTerm = top.treeTerm;
   t.nodetreeTerm = top.nodetreeTerm;
 }
@@ -187,6 +186,7 @@ attribute
    localAttrs, top, encodingEnv, treeTerm, nodetreeTerm,
    synAttrEqInfo, inhAttrEqInfo, localAttrDefs
 occurs on ProductionStmt;
+propagate encodingEnv, top on ProductionStmt;
 
 
 aspect default production
@@ -232,8 +232,6 @@ top::ProductionStmt ::= 'local' 'attribute' a::Name '::' te::TypeExpr ';'
 aspect production forwardsTo
 top::ProductionStmt ::= 'forwards' 'to' e::Expr ';'
 {
-  e.encodingEnv = top.encodingEnv;
-  e.top = top.top;
   local clauseHead::Term =
         buildApplication(
            nameTerm(equationName("forward", top.top.3) ++ name_sep ++
@@ -307,8 +305,6 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
         | qNameAttrOccur(at) ->
           encodeName(at.lookupAttribute.fullName)
         end;
-  e.encodingEnv = top.encodingEnv;
-  e.top = top.top;
   local clauseHead::Term =
         buildApplication(
            nameTerm(equationName(attrName, top.top.3) ++
@@ -346,8 +342,6 @@ top::ProductionStmt ::= dl::PartiallyDecorated DefLHS  attr::PartiallyDecorated 
         | qNameAttrOccur(at) ->
           encodeName(at.lookupAttribute.fullName)
         end;
-  e.encodingEnv = top.encodingEnv;
-  e.top = top.top;
   local tree::(Term, Term) =
         findAssociated(dl.name, top.encodingEnv).fromJust;
   local treeTy::AbellaType = dl.typerep.abellaType;
@@ -516,8 +510,6 @@ top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 aspect production localValueDef
 top::ProductionStmt ::= val::PartiallyDecorated QName  e::Expr
 {
-  e.encodingEnv = top.encodingEnv;
-  e.top = top.top;
   local treeTy::AbellaType = e.typerep.abellaType;
   local localStructureVar::Term =
         varTerm(capitalize(val.name), genInt());

@@ -122,12 +122,12 @@ synthesized attribute encodedFailure::[[Metaterm]];
 --[(Silver name, (tree structure, tree node))]
 --If it isn't a tree, we won't ever need the node, but it is easier to
 --   include it for all than separate it out
-autocopy attribute encodingEnv::[(String, (Term, Term))];
+inherited attribute encodingEnv::[(String, (Term, Term))];
 --
 synthesized attribute encodingEnv_up::[(String, (Term, Term))];
 
 --(tree, node, tree type, current production name, child names in order) for the root
-autocopy attribute top::(Term, Term, AbellaType, String, [String]);
+inherited attribute top::(Term, Term, AbellaType, String, [String]);
 --
 synthesized attribute top_up::(Term, Term, AbellaType);
 --names of the children of a production *IN ORDER*, left to right
