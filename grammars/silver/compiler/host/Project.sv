@@ -48,7 +48,6 @@ exports silver:compiler:extension:constructparser;
 exports silver:compiler:extension:tuple;
 exports silver:compiler:extension:regex;
 exports silver:compiler:extension:convenienceaspects;
-exports silver:compiler:extension:datalog;
 exports silver:compiler:extension:attrsection;
 exports silver:compiler:extension:implicit_monads;
 
