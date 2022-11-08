@@ -207,6 +207,7 @@ top::Term ::= prodName::String args::ParenthesizedArgs
 nonterminal ParenthesizedArgs with
    unparse,
    replaceTermVar, replaceTerm, replaced, replaceName, replacedName;
+propagate replaceTermVar, replaceTerm, replaceName on ParenthesizedArgs;
 
 abstract production emptyParenthesizedArgs
 top::ParenthesizedArgs ::=
@@ -226,6 +227,7 @@ top::ParenthesizedArgs ::= t::Term rest::ParenthesizedArgs
 nonterminal ListContents with
    unparse,
    replaceTermVar, replaceTerm, replaced, replaceName, replacedName;
+propagate replaceTermVar, replaceTerm, replaceName on ListContents;
 
 abstract production emptyListContents
 top::ListContents ::=
@@ -245,6 +247,7 @@ top::ListContents ::= t::Term rest::ListContents
 nonterminal PairContents with
    unparse,
    replaceTermVar, replaceTerm, replaced, replaceName, replacedName;
+propagate replaceTermVar, replaceTerm, replaceName on PairContents;
 
 abstract production singlePairContents
 top::PairContents ::= t::Term

@@ -6,15 +6,15 @@ propagate freeVars on Metaterm, Term, TermList
    excluding varTerm;
 
 --Replace variables
-autocopy attribute replaceTermVar::(String, Integer);
-autocopy attribute replaceTerm::Term;
+inherited attribute replaceTermVar::(String, Integer);
+inherited attribute replaceTerm::Term;
 functor attribute replaced;
 propagate replaced on Metaterm, Term, TermList,
              ParenthesizedArgs, ListContents, PairContents
    excluding varTerm;
 
 --Expand names to their fully-qualified version
-autocopy attribute replaceName::String;
+inherited attribute replaceName::String;
 functor attribute replacedName;
 propagate replacedName on Metaterm, Term, TermList,
              ParenthesizedArgs, ListContents, PairContents
@@ -25,6 +25,7 @@ nonterminal Metaterm with
    unparse, isAtomic, isAnd,
    freeVars,
    replaceTermVar, replaceTerm, replaced, replaceName, replacedName;
+propagate replaceTermVar, replaceTerm, replaceName on Metaterm;
 
 aspect default production
 top::Metaterm ::=
@@ -148,6 +149,7 @@ top::Binder::=
 nonterminal Term with
    unparse, isAtomic, freeVars,
    replaceTermVar, replaceTerm, replaced, replaceName, replacedName;
+propagate replaceTermVar, replaceTerm, replaceName on Term;
 
 {-
   A varTerm is used to represent a name generated in encoding.  We
@@ -221,6 +223,7 @@ synthesized attribute argList::[Term];
 nonterminal TermList with
    unparse, freeVars, argList,
    replaceTermVar, replaceTerm, replaced, replaceName, replacedName;
+propagate replaceTermVar, replaceTerm, replaceName on TermList;
 
 abstract production nilTermList
 top::TermList ::=
