@@ -5,7 +5,7 @@ import silver:util:random;
 function datalogFactsFromList
 DatalogRepresentable a => [Fact] ::= name::String top::String lst::[a]
 {
-   return map(\target::a -> factTwo(name,top,datalogID(target)),lst);
+   return map(\target::a -> factTwo(name,top,toDatalogID(target)),lst);
 }
 
 

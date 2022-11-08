@@ -7,27 +7,32 @@ synthesized attribute params :: [String];
 synthesized attribute factHead :: String;
 nonterminal Fact with factHead, params, pp;
 
-synthesized attribute datalogID :: String;
-
 class DatalogRepresentable a {
   @{-
     Represents value with it's datalog representation.
   -}
-  datalogID :: (String ::= a);
+  toDatalogID :: (String ::= a);
+
+  @{-
+   Either construct the value (string, or something like a name),
+   or get it out from a lookup (Decorated Type)
+  -}
+  fromDatalogID :: (a ::= String);
 
 }
 
 -- Default instances.
--- instance attribute datalogID {} occurs on a => DatalogRepresentable a {
---   datalogID = (.datalogID);
+-- instance attribute toDatalogID {} occurs on a => DatalogRepresentable a {
+--   toDatalogID = (.toDatalogID);
 -- }
 
--- instance attribute datalogID {} occurs on a => DatalogRepresentable Decorated a with i {
---   datalogID = (.datalogID);
+-- instance attribute toDatalogID {} occurs on a => DatalogRepresentable Decorated a with i {
+--   toDatalogID = (.toDatalogID);
 -- }
 
 instance DatalogRepresentable String {
-  datalogID = id;
+  toDatalogID = id;
+  fromDatalogID = id;
 }
 
 function getFromDecoratedRefs
@@ -47,7 +52,8 @@ String ::= inp::Decorated a with i
 }
 
 instance DatalogRepresentable Decorated a with i {
-  datalogID = convertToDatalogIDDecoratedRef;
+  toDatalogID = convertToDatalogIDDecoratedRef;
+  fromDatalogID = getFromDecoratedRefs;
 }
 
 
@@ -118,7 +124,7 @@ top::Fact ::= name::String params::[String]
 function filterFactsOnFirst
 DatalogRepresentable a => [Fact] ::= mapLive::[Fact] lookupElem::a
 {
-  return filter(\elem::Fact -> head(elem.params) == datalogID(lookupElem), mapLive);
+  return filter(\elem::Fact -> head(elem.params) == toDatalogID(lookupElem), mapLive);
 }
 
 
@@ -130,7 +136,7 @@ DatalogRepresentable a => [a] ::= facts::[Fact] silverElems::[a]
       \elem::Fact ->
         find(
           \silverElem::a ->
-            datalogID(silverElem) == head(elem.params),
+            toDatalogID(silverElem) == head(elem.params),
           silverElems),
       facts));
 }
@@ -138,7 +144,7 @@ DatalogRepresentable a => [a] ::= facts::[Fact] silverElems::[a]
 function findSilverElem
 DatalogRepresentable a => Maybe<a> ::= factStr :: String silverElems::[a]
 {
-  return find(\silverElem::a -> datalogID(silverElem) == factStr, silverElems);
+  return find(\silverElem::a -> toDatalogID(silverElem) == factStr, silverElems);
 }
 
 
@@ -151,7 +157,7 @@ DatalogRepresentable a, DatalogRepresentable b => [(a,b)] ::= facts::[Fact] silv
       | first::second::[third] ->
         case (findSilverElem(second,silverElemsSecond), findSilverElem(third,silverElemsThird)) of
         | (just(f),just(s)) -> just((f,s))
-        | (_,_) -> unsafeTracePrint(nothing(), s"Didnt find both elems of ${datalogID(second)} in ${show(50,map(datalogID(_),silverElemsSecond))}\nand ${datalogID(third)} in ${show(50,map(datalogID(_),silverElemsThird))}\n")
+        | (_,_) -> unsafeTracePrint(nothing(), s"Didnt find both elems of ${toDatalogID(second)} in ${show(50,map(toDatalogID(_),silverElemsSecond))}\nand ${toDatalogID(third)} in ${show(50,map(toDatalogID(_),silverElemsThird))}\n")
         end
       | _ -> unsafeTracePrint(nothing(), "Did not list of right shape\n")
       end,
@@ -164,7 +170,7 @@ function lookupFactsThree
 DatalogRepresentable a, DatalogRepresentable b, DatalogRepresentable c => [(b,c)] ::= map::[(String,[Fact])] factName::String elem::a silverElemsSecond::[b] silverElemsThird::[c]
 {
   return factsThreeToSilverList(
-    filterFactsOnFirst(mapsLookup(factName,map),datalogID(elem)),
+    filterFactsOnFirst(mapsLookup(factName,map),toDatalogID(elem)),
     silverElemsSecond,
     silverElemsThird);
 }

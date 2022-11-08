@@ -6,7 +6,7 @@ import java.util.HashMap;
 public final class Datalog  {
     private static HashMap<String,DecoratedNode> decoratedRefs;
 
-	public static void init() {
+    public static void init() {
         decoratedRefs = new HashMap<String,DecoratedNode>();
     }
 
