@@ -9,7 +9,6 @@ import silver:util:treeset as s;
 monoid attribute cstDcls :: [Pair<String (Maybe<Type>,Decorated SyntaxDcl)>];
 inherited attribute cstEnv :: EnvTree<(Maybe<Type>, Decorated SyntaxDcl)>;
 monoid attribute cstErrors :: [String];
-monoid attribute
 
 -- Transformation that moves productions underneath their respective nonterminals.
 monoid attribute cstProds :: [Pair<String SyntaxDcl>];
