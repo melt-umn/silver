@@ -120,7 +120,7 @@ top::SyntaxTerminalModifier ::= cls::[String]
   -- Lexer classes not included in this parser are ignored, so library-defined
   -- lexer classes can be optionally used without requring the library to be
   -- included in the parser.  See https://github.com/melt-umn/silver/issues/694
-  production allClsRefs :: [Decorated SyntaxDcl] = concat(lookupStrings(allCls, top.cstEnv));
+  production allClsRefs :: [Decorated SyntaxDcl] = flatMap(getSyntaxDcl,lookupStrings(allCls, top.cstEnv));
 
   top.cstErrors := []; 
   top.classTerminalContribs := map(pair(_, top.terminalName), allCls);
@@ -143,7 +143,7 @@ abstract production termSubmits
 top::SyntaxTerminalModifier ::= sub::[String]
 {
   production allSubs :: [String] = unions(sub :: lookupStrings(sub, top.subClasses));
-  production subRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allSubs, top.cstEnv);
+  production subRefs :: [[Decorated SyntaxDcl]] = map(getSyntaxDcl, lookupStrings(allSubs, top.cstEnv));
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
@@ -159,7 +159,7 @@ abstract production termDominates
 top::SyntaxTerminalModifier ::= dom::[String]
 {
   production allDoms :: [String] = unions(dom :: lookupStrings(dom, top.subClasses));
-  production domRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allDoms, top.cstEnv);
+  production domRefs :: [[Decorated SyntaxDcl]] = map(getSyntaxDcl, lookupStrings(allDoms, top.cstEnv));
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
@@ -193,7 +193,7 @@ top::SyntaxTerminalModifier ::= terms::[String] grams::[String]
 {
   production allTerms :: [String] = terms ++ concat(concat(lookupStrings(grams, top.componentGrammarMarkingTerminals)));
 
-  production termRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allTerms, top.cstEnv);
+  production termRefs :: [[Decorated SyntaxDcl]] = map(getSyntaxDcl,lookupStrings(allTerms, top.cstEnv));
   top.prefixSeperatorToApply :=
     case termRefs of
     | [] -> nothing()

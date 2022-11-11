@@ -64,7 +64,7 @@ top::SyntaxLexerClassModifier ::= super::[String]
   -- Lexer classes not included in this parser are ignored, so library-defined
   -- lexer classes can be optionally used without requring the library to be
   -- included in the parser.  See https://github.com/melt-umn/silver/issues/694
-  production superRefs :: [Decorated SyntaxDcl] = concat(lookupStrings(super, top.cstEnv));
+  production superRefs :: [Decorated SyntaxDcl] = flatMap(getSyntaxDcl,lookupStrings(super, top.cstEnv));
 
   top.superClassContribs := map(pair(top.className, _), map((.fullName), superRefs));
 }
@@ -76,7 +76,7 @@ abstract production lexerClassSubmits
 top::SyntaxLexerClassModifier ::= sub::[String]
 {
   production allSubs :: [String] = unions(sub :: lookupStrings(sub, top.subClasses));
-  production subRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allSubs, top.cstEnv);
+  production subRefs :: [[Decorated SyntaxDcl]] = map(getSyntaxDcl,lookupStrings(allSubs, top.cstEnv));
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
@@ -93,7 +93,7 @@ abstract production lexerClassDominates
 top::SyntaxLexerClassModifier ::= dom::[String]
 {
   production allDoms :: [String] = unions(dom :: lookupStrings(dom, top.subClasses));
-  production domRefs :: [[Decorated SyntaxDcl]] = lookupStrings(allDoms, top.cstEnv);
+  production domRefs :: [[Decorated SyntaxDcl]] = map(getSyntaxDcl,lookupStrings(allDoms, top.cstEnv));
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []

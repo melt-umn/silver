@@ -6,9 +6,10 @@ import silver:util:treemap as tm;
 import silver:util:treeset as s;
 
 -- For looking syntax elements up by name.
-monoid attribute cstDcls :: [Pair<String Decorated SyntaxDcl>];
-inherited attribute cstEnv :: EnvTree<Decorated SyntaxDcl>;
+monoid attribute cstDcls :: [Pair<String (Maybe<Type>,Decorated SyntaxDcl)>];
+inherited attribute cstEnv :: EnvTree<(Maybe<Type>, Decorated SyntaxDcl)>;
 monoid attribute cstErrors :: [String];
+monoid attribute
 
 -- Transformation that moves productions underneath their respective nonterminals.
 monoid attribute cstProds :: [Pair<String SyntaxDcl>];
@@ -143,7 +144,7 @@ top::SyntaxDcl ::= t::Type subdcls::Syntax exportedProds::[String] exportedLayou
 {
   top.fullName = t.typeName;
   top.sortKey = "EEE" ++ t.typeName;
-  top.cstDcls := [pair(t.typeName, top)] ++ subdcls.cstDcls;
+  top.cstDcls := [pair(t.typeName, (just(t),top))] ++ subdcls.cstDcls;
   top.allNonterminals := [top];
   
   top.cstErrors <- if length(searchEnvTree(t.typeName, top.cstEnv)) == 1 then []
@@ -182,7 +183,7 @@ top::SyntaxDcl ::= n::String regex::Regex modifiers::SyntaxTerminalModifiers
 {
   top.fullName = n;
   top.sortKey = "CCC" ++ n;
-  top.cstDcls := [pair(n, top)];
+  top.cstDcls := [pair(n, (nothing(),top))];
   top.cstErrors <-
     if length(searchEnvTree(n, top.cstEnv)) == 1 then []
     else ["Name conflict with terminal " ++ n];
@@ -245,16 +246,16 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
 {
   top.fullName = ns.fullName;
   top.sortKey = "FFF" ++ ns.fullName;
-  top.cstDcls := [pair(ns.fullName, top)];
+  top.cstDcls := [pair(ns.fullName, (nothing(),top))];
   top.allProductions := [top];
   top.allProductionNames := [ns.fullName];
   
   modifiers.productionSig = ns;
 
   production lhsRef :: [Decorated SyntaxDcl] =
-    searchEnvTree(ns.outputElement.typerep.typeName, top.cstEnv);
+    getSyntaxDcl(searchEnvTree(ns.outputElement.typerep.typeName, top.cstEnv));
   production rhsRefs :: [[Decorated SyntaxDcl]] =
-    lookupStrings(map((.typeName), map((.typerep), ns.inputElements)), top.cstEnv);
+    map(getSyntaxDcl, lookupStrings(map((.typeName), map((.typerep), ns.inputElements)), top.cstEnv));
 
   top.cstErrors <- if length(searchEnvTree(ns.fullName, top.cstEnv)) == 1 then []
                    else ["Name conflict with production " ++ ns.fullName];
@@ -292,7 +293,7 @@ top::SyntaxDcl ::= ns::NamedSignature  modifiers::SyntaxProductionModifiers
   -- Copper doesn't support default layout on nonterminals, so we specify layout on every production.
   production prodLayout::[copper:ElementReference] =
     map(\dcl::[Decorated SyntaxDcl] -> head(dcl).copperElementReference,
-        lookupStrings(searchEnvTree(ns.fullName, top.layoutTerms), top.cstEnv));
+        map(getSyntaxDcl,lookupStrings(searchEnvTree(ns.fullName, top.layoutTerms), top.cstEnv)));
 
   local isTracked :: Boolean =
     case head(lhsRef) of
@@ -349,6 +350,12 @@ function lookupStrings
 {
   return map(searchEnvTree(_, e), t);
 }
+--TODO better name?
+function getSyntaxDcl
+[Decorated SyntaxDcl] ::= i::[(Maybe<Type>,Decorated SyntaxDcl)]
+{
+  return map(snd,i);
+}
 function checkRHS
 [String] ::= pn::String rhs::[Type] refs::[[Decorated SyntaxDcl]]
 {
@@ -373,7 +380,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
 {
   top.fullName = n;
   top.sortKey = "AAA" ++ n;
-  top.cstDcls := [pair(n, top)];
+  top.cstDcls := [pair(n, (nothing(),top))];
   top.cstErrors <-
     if length(searchEnvTree(n, top.cstEnv)) == 1 then []
     else ["Name conflict with lexer class " ++ n];
@@ -389,7 +396,7 @@ top::SyntaxDcl ::= n::String modifiers::SyntaxLexerClassModifiers
   top.disambiguationClasses := modifiers.disambiguationClasses;
 
   production terms :: [String] = searchEnvTree(n, top.classTerminals);
-  top.memberTerminals := flatMap(searchEnvTree(_, top.cstEnv), terms);
+  top.memberTerminals := flatMap(\x::String -> getSyntaxDcl(searchEnvTree(x, top.cstEnv)), terms);
 
   local termsInit::String =
     foldr(
@@ -414,7 +421,7 @@ top::SyntaxDcl ::= n::String ty::Type acode::String
 {
   top.fullName = n;
   top.sortKey = "BBB" ++ n;
-  top.cstDcls := [pair(n, top)];
+  top.cstDcls := [pair(n, (nothing(),top))];
   top.cstErrors <- if length(searchEnvTree(n, top.cstEnv)) == 1 then []
                    else ["Name conflict with parser attribute " ++ n];
 
@@ -465,7 +472,7 @@ top::SyntaxDcl ::= n::String terms::[String] applicableToSubsets::Boolean acode:
   top.sortKey = "DDD" ++ n;
   top.cstDcls := [];
 
-  local trefs::[[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
+  local trefs::[[Decorated SyntaxDcl]] = map(getSyntaxDcl,lookupStrings(terms, top.cstEnv));
 
   -- this 'n' here appears to actually hold the line number of the
   -- disambiguation, and the grammar. But we arent supposed to know this?

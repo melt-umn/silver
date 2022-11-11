@@ -60,7 +60,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   host.prettyNames = prettyNames;
   ext.prettyNames = prettyNames;
   
-  local startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, host.cstEnv);
+  local startFound :: [Decorated SyntaxDcl] = getSyntaxDcl(searchEnvTree(startnt, host.cstEnv));
 
   top.cstErrors := host.cstErrors ++ ext.cstErrors;
   top.cstErrors <- if !null(startFound) then []
@@ -72,7 +72,7 @@ top::SyntaxRoot ::= parsername::String  startnt::String  host::Syntax  ext::Synt
   -- The layout before and after the root nonterminal. By default, the layout of the root nonterminal.
   local startLayout::[copper:ElementReference] =
     map((.copperElementReference),
-      map(head,
+      map(compose(head,getSyntaxDcl),
         lookupStrings(
           fromMaybe(searchEnvTree(startnt, host.layoutTerms), customStartLayout),
           host.cstEnv)));

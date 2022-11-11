@@ -77,7 +77,7 @@ top::SyntaxRoot ::=
   -- In particular, it drops productions it can't find an NT for.
   top.cstErrors := s.cstErrors;
   
-  production startFound :: [Decorated SyntaxDcl] = searchEnvTree(startnt, s.cstEnv);
+  production startFound :: [Decorated SyntaxDcl] = getSyntaxDcl(searchEnvTree(startnt, s.cstEnv));
 
   top.cstErrors <- if !null(startFound) then []
                    else ["Nonterminal " ++ startnt ++ " was referenced but " ++
@@ -86,7 +86,7 @@ top::SyntaxRoot ::=
   -- The layout before and after the root nonterminal. By default, the layout of the root nonterminal.
   local startLayout::[copper:ElementReference] =
     map((.copperElementReference),
-      map(head,
+      map(compose(snd, head),
         lookupStrings(
           fromMaybe(searchEnvTree(startnt, s.layoutTerms), customStartLayout),
           s.cstEnv)));

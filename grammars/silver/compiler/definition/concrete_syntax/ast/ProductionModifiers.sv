@@ -56,7 +56,7 @@ top::SyntaxProductionModifier ::= lvl::Integer
 abstract production prodOperator
 top::SyntaxProductionModifier ::= term::String
 {
-  local termRef :: [Decorated SyntaxDcl] = searchEnvTree(term, top.cstEnv);
+  local termRef :: [Decorated SyntaxDcl] = getSyntaxDcl(searchEnvTree(term, top.cstEnv));
   
   top.cstErrors := if !null(termRef) then [] 
                    else ["Terminal " ++ term ++ " was referenced but " ++
@@ -77,7 +77,7 @@ top::SyntaxProductionModifier ::= acode::String
 abstract production prodLayout
 top::SyntaxProductionModifier ::= terms::[String]
 {
-  local termRefs :: [[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
+  local termRefs :: [[Decorated SyntaxDcl]] = map(getSyntaxDcl,lookupStrings(terms, top.cstEnv));
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []

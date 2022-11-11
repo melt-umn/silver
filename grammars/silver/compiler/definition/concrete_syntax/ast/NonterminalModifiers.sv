@@ -39,7 +39,7 @@ top::SyntaxNonterminalModifier ::=
 abstract production ntLayout
 top::SyntaxNonterminalModifier ::= terms::[String]
 {
-  local termRefs :: [[Decorated SyntaxDcl]] = lookupStrings(terms, top.cstEnv);
+  local termRefs :: [[Decorated SyntaxDcl]] = map(getSyntaxDcl, lookupStrings(terms, top.cstEnv));
 
   top.cstErrors := flatMap(\ a::Pair<String [Decorated SyntaxDcl]> ->
                      if !null(a.snd) then []
