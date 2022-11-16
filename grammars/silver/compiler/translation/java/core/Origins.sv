@@ -43,7 +43,7 @@ function makeOriginContextRef
 String ::= top::Decorated Expr --need .frame anno
 {
   local rulesTrans :: [String] = (if top.config.tracingOrigins then [locRule] else []) ++ map((.translation), top.originRules);
-  local locRule :: String = s"new silver.core.PtraceNote(new common.StringCatter(\"${substitute("\"", "\\\"", top.location.unparse)}\"))";
+  local locRule :: String = s"new silver.core.PtraceNote(new common.StringCatter(\"${escapeString(top.location.unparse)}\"))";
 
   return if top.config.noOrigins then "null" 
          else if length(rulesTrans)==0 
@@ -74,9 +74,7 @@ function getSpecialCaseNoOrigins
     -- These are forced to be untracked to prevent circularity
     "silver:core:OriginInfo",
     "silver:core:OriginInfoType",
-    "silver:core:OriginNote",
-    -- List is special(TM) because of it's special(TM) quasi-extension translation specialization
-    "silver:core:List"
+    "silver:core:OriginNote"
   ];
   return names;
 }

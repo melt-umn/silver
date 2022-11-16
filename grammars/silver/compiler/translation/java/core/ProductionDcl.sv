@@ -48,9 +48,6 @@ top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::Pr
                                   | _ -> "null"
                                   end);
 
-  local commaIfKids :: String = if length(namedSig.inputElements)!=0 then "," else "";
-  local commaIfAnnos :: String = if length(namedSig.namedInputElements)!=0 then "," else "";
-  local commaIfContexts :: String = if length(namedSig.contexts)!=0 then "," else "";
   local commaIfAny :: String = if length(namedSig.inputElements)!=0 || length(namedSig.namedInputElements)!=0 || length(namedSig.contexts)!=0 then "," else "";
 
   local contexts::Contexts = foldContexts(namedSig.contexts);
@@ -90,7 +87,7 @@ ${namedSig.childStatic}
     }
 
     public ${className}(final NOriginInfo origin ${commaIfAny} ${namedSig.javaSignature}) {
-        super(${if wantsTracking then "origin"++commaIfAnnos else ""}${implode(", ", map((.annoRefElem), namedSig.namedInputElements))});
+        super(${implode(", ", (if wantsTracking then ["origin"] else []) ++ map((.annoRefElem), namedSig.namedInputElements))});
 ${implode("", map(makeChildAssign, namedSig.inputElements))}
 ${contexts.contextInitTrans}
     }
@@ -151,7 +148,10 @@ ${flatMap(makeInhOccursContextAccess(namedSig.freeVariables, namedSig.contextInh
     public common.Node evalForward(final common.DecoratedNode context) {
         ${if null(body.uniqueSignificantExpression) 
           then s"throw new common.exceptions.SilverInternalError(\"Production ${fName} erroneously claimed to forward\")"
-          else s"return ((common.Node)${head(body.uniqueSignificantExpression).translation}${if wantsTracking && !top.config.noRedex  then s".duplicateForForwarding(context.undecorate(), \"${substitute("\"", "\\\"", hackUnparse(head(body.uniqueSignificantExpression).location))}\")" else ""})"};
+          else s"return ((common.Node)${head(body.uniqueSignificantExpression).translation}${
+            if wantsTracking && !top.config.noRedex
+            then s".duplicateForForwarding(context.undecorate(), \"${escapeString(hackUnparse(head(body.uniqueSignificantExpression).location))}\")"
+            else ""})"};
     }
 
     @Override
@@ -248,7 +248,7 @@ ${body.translation}
         public String getName(){ return "${fName}"; }
         public common.RTTIManager.Nonterminalton<${fnnt}> getNonterminalton(){ return ${fnnt}.nonterminalton; }
 
-        public String getTypeUnparse() { return "${substitute("\"", "\\\"", substitute("\\", "\\\\", ns.unparse))}"; }
+        public String getTypeUnparse() { return "${escapeString(ns.unparse)}"; }
         public int getChildCount() { return ${toString(length(namedSig.inputElements))}; }
         public int getAnnoCount() { return ${toString(length(namedSig.namedInputElements))}; }
 
@@ -290,22 +290,26 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
 """)];
 
   local otImpl :: String = if wantsTracking then s"""
-    public ${fnnt} duplicate(Object redex, Object notes) {
+    @Override
+    public ${fnnt} duplicate(common.Node redex, common.ConsCell notes) {
         if (redex == null || ${if top.config.noRedex then "true" else "false"}) {
-            return new ${className}(new PoriginOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, true) ${commaIfKids}
-                ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
+            return new ${className}(${implode(", ",
+              "new PoriginOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, true)" ::
+              map(dupChild, namedSig.inputElements) ++
+              map(dupAnno, namedSig.namedInputElements))});
         } else {
-            return new ${className}(new PoriginAndRedexOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, redex, notes, true) ${commaIfKids}
-                ${implode(", ", map(dupChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(dupAnno, namedSig.namedInputElements))});
+            return new ${className}(${implode(", ",
+              "new PoriginAndRedexOriginInfo(common.OriginsUtil.SET_AT_NEW_OIT, this, notes, redex, notes, true)" ::
+              map(dupChild, namedSig.inputElements) ++
+              map(dupAnno, namedSig.namedInputElements))});
         }
     }
 
-    public ${fnnt} duplicate(common.OriginContext oc) {
-        return this.duplicate(oc.lhs, oc.rulesAsSilverList());
-    }
-
-    public ${fnnt} copy(Object newRedex, Object newRule) {
-        Object origin, originNotes, newlyConstructed;
+    @Override
+    public ${fnnt} copy(common.Node redex, common.ConsCell redexNotes) {
+        Object origin;
+        common.ConsCell originNotes;
+        Boolean newlyConstructed;
         Object roi = this.origin;
         if (roi instanceof PoriginOriginInfo) {
             PoriginOriginInfo oi = (PoriginOriginInfo)roi;
@@ -321,17 +325,18 @@ ${makeTyVarDecls(3, namedSig.typerep.freeVariables)}
             return this;
         }
 
-        if (newRedex instanceof common.DecoratedNode) newRedex = ((common.DecoratedNode)newRedex).undecorate();
-
-        Object redex = ((common.Node)newRedex);
-        Object redexNotes = newRule;
-        return new ${className}(new PoriginAndRedexOriginInfo(common.OriginsUtil.SET_AT_ACCESS_OIT, origin, originNotes, redex, redexNotes, newlyConstructed) ${commaIfKids}
-            ${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(copyAnno, namedSig.namedInputElements))});
+        return new ${className}(${implode(", ",
+          "new PoriginAndRedexOriginInfo(common.OriginsUtil.SET_AT_ACCESS_OIT, origin, originNotes, redex, redexNotes, newlyConstructed)" ::
+          map(copyChild, namedSig.inputElements) ++
+          map(copyAnno, namedSig.namedInputElements))});
     }
 
-    public ${fnnt} duplicateForForwarding(Object redex, String note) {
-        return new ${className}(new PoriginOriginInfo(common.OriginsUtil.SET_AT_FORWARDING_OIT, this, new common.ConsCell(new silver.core.PoriginDbgNote(new common.StringCatter(note)), common.ConsCell.nil), true) ${commaIfKids}
-            ${implode(", ", map(copyChild, namedSig.inputElements))} ${commaIfAnnos} ${implode(", ", map(copyAnno, namedSig.namedInputElements))});
+    @Override
+    public ${fnnt} duplicateForForwarding(common.Node redex, String note) {
+        return new ${className}(${implode(", ",
+          "new PoriginOriginInfo(common.OriginsUtil.SET_AT_FORWARDING_OIT, this, new common.ConsCell(new silver.core.PoriginDbgNote(new common.StringCatter(note)), common.ConsCell.nil), true)" ::
+          map(copyChild, namedSig.inputElements) ++
+          map(copyAnno, namedSig.namedInputElements))});
     }
 
     """ else "";
