@@ -101,7 +101,7 @@ ${namedSig.childStatic}
         	"isUnique" ::
         	map((.annoRefElem), namedSig.namedInputElements))});
 		this.isUnique = ${
-		  if any(map(\ x::NamedSignatureElement -> x.typerep.isUnique, namedSig.inputElements))
+		  if any(map(\ x::NamedSignatureElement -> x.typerep.isUniqueDecorated, namedSig.inputElements))
 		  then "true"
 		  else "isUnique"};
 ${implode("", map(makeChildAssign, namedSig.inputElements))}

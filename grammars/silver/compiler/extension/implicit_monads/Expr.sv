@@ -49,7 +49,7 @@ top::Expr ::= msg::[Message]  q::Decorated! QName
   propagate mDownSubst, mUpSubst;
   top.mtyperep = errorType();
   top.monadicNames = [];
-  top.monadRewritten = errorReference(msg, q, location=top.location);
+  top.monadRewritten = baseExpr(q, location=top.location);
 }
 
 aspect production childReference

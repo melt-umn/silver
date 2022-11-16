@@ -36,8 +36,6 @@ top::Expr ::= params::ProductionRHS e::Expr
       filter(\ tv::String -> null(getTypeDcl(tv, top.env)), nub(params.lexicalTypeVariables)));
 
   propagate downSubst, upSubst, finalSubst;
-
-  top.isUnique = false;
   
   propagate flowDeps, flowDefs, flowEnv;
   
@@ -90,8 +88,6 @@ top::Expr ::= q::Decorated! QName
   top.typerep = q.lookupValue.typeScheme.monoType;
 
   propagate downSubst, upSubst;
-  
-  top.isUnique = finalType(top).isUnique;
   
   -- TODO?
   propagate flowDeps, flowDefs;

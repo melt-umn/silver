@@ -51,8 +51,6 @@ top::Expr ::= la::AssignExpr  e::Expr
 
   propagate downSubst, upSubst, finalSubst;
   
-  top.isUnique = e.isUnique;
-  
   -- Semantics for the moment is these are not mutually recursive,
   -- so la does NOT get new environment, only e. Thus, la.defs can depend on downSubst...
   la.env = top.env;
@@ -97,7 +95,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   -- auto-undecorate feature, so that's why we bother substituting.
   -- (er, except that we're starting with t, which is a Type... must be because we fake these
   -- in e.g. the pattern matching code, so type variables might appear there?)
-  top.defs <- [lexicalLocalDef(top.grammarName, id.location, fName, semiTy, e.flowVertexInfo, e.flowDeps)];
+  top.defs <- [lexicalLocalDef(top.grammarName, id.location, fName, semiTy, e.flowVertexInfo, e.flowDeps, e.uniqueRefs)];
   
   -- TODO: At present, this isn't working properly, because the local scope is
   -- whatever scope encloses the real local scope... hrmm!
@@ -122,7 +120,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
 }
 
 abstract production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]
+top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]  rs::[(String, UniqueRefSite)]
 {
   undecorates to baseExpr(q, location=top.location);
   top.unparse = q.unparse;
@@ -153,7 +151,5 @@ top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]
     end;
 
   propagate downSubst, upSubst;
-  
-  top.isUnique = false;  -- TODO: This is overly restrictive
 }
 

@@ -151,7 +151,7 @@ top::VarBinder ::= n::Name
     then map(anonVertexType(fName).inhVertex, fromMaybe([], refSet))
     else [];
 
-  top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps)];
+  top.defs <- [lexicalLocalDef(top.grammarName, n.location, fName, ty, vt, deps, [])];
   top.boundNames <- [n.name];
 
   -- finalSubst is not necessary, downSubst would work fine, but is not threaded through here.

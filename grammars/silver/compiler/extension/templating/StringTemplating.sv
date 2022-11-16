@@ -50,10 +50,20 @@ top::Expr ::= a::Expr b::Expr
   a.isRoot = false;
   b.isRoot = false;
   
-  forwards to
-    mkStrFunctionInvocation(
-      top.location, "silver:core:stringAppend",
-      [exprRef(a, location=a.location), exprRef(b, location=b.location)]);
+  forwards to application(
+    baseExpr(
+      qName(top.location, "silver:core:stringAppend"),
+      location=top.location), '(',
+    snocAppExprs(
+      snocAppExprs(
+        emptyAppExprs(location=top.location), ',',
+        presentAppExpr(exprRef(a, location=a.location), location=top.location),
+        location=top.location), ',',
+      presentAppExpr(exprRef(b, location=b.location), location=top.location),
+      location=top.location),
+    ',',
+    emptyAnnoAppExprs(location=top.location),
+    ')', location=top.location);
 }
 
 terminal PPTemplate_kwd   'pp"""' lexer classes {LITERAL, lsp:String_};

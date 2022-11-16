@@ -1,5 +1,6 @@
 grammar silver:compiler:analysis:warnings:flow;
 
+import silver:compiler:analysis:uniqueness;
 import silver:compiler:modification:let_fix only lexicalLocalReference;
 
 synthesized attribute warnEqdef :: Boolean occurs on CmdArgs;
@@ -72,19 +73,17 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     else [];
 
   -- Check that if there is a unique reference taken to this decoration site,
-  -- we aren't defining an equation that isn't in that reference type (Decorated Foo with only {...}).
+  -- we aren't defining an equation that isn't in that reference type (UniqueDecorated Foo with {...}).
   top.errors <-
     if dl.found && attr.found
     && top.config.warnEqdef
     then flatMap(
-      \ refSite::(String, Location, [String]) ->
-        if contains(attr.attrDcl.fullName, refSite.3) then []
-        else [mwdaWrn(top.config, top.location, "Attribute " ++ attr.name ++ " with an equation on " ++ dl.name ++ " is not in the unique reference taken at " ++ refSite.1 ++ ":" ++ refSite.2.unparse ++ " with only " ++ implode(", ", refSite.3))],
-      case dl of
-      | childDefLHS(q) -> getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)
-      | localDefLHS(q) -> getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)
-      | _ -> []
-      end)
+      \ refSite::UniqueRefSite ->
+        if contains(attr.attrDcl.fullName, refSite.refSet) then []
+        else [mwdaWrn(top.config, top.location,
+          s"Attribute ${attr.name} with an equation on ${dl.name} is not in the unique reference taken at " ++
+          s"${refSite.sourceGrammar}:${refSite.sourceLocation.unparse} with only ${implode(", ", refSite.refSet)}")],
+      getUniqueRefs(dl.refSiteName, top.flowEnv))
     else [];
 }
 
@@ -138,19 +137,17 @@ top::ProductionStmt ::= dl::Decorated! DefLHS  attr::Decorated! QNameAttrOccur  
     else [];
 
   -- Check that if there is a unique reference taken to this decoration site,
-  -- we aren't defining an equation that isn't in that reference type (Decorated Foo with only {...}).
+  -- we aren't defining an equation that isn't in that reference type (UniqueDecorated Foo with {...}).
   top.errors <-
     if dl.found && attr.found
     && top.config.warnEqdef
     then flatMap(
-      \ refSite::(String, Location, [String]) ->
-        if contains(attr.attrDcl.fullName, refSite.3) then []
-        else [mwdaWrn(top.config, top.location, "Attribute " ++ attr.name ++ " with an equation for " ++ dl.name ++ " is not in the unique reference taken at " ++ refSite.1 ++ ":" ++ refSite.2.unparse ++ " with only " ++ implode(", ", refSite.3))],
-      case dl of
-      | childDefLHS(q) -> getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)
-      | localDefLHS(q) -> getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv)
-      | _ -> []
-      end)
+      \ refSite::UniqueRefSite ->
+        if contains(attr.attrDcl.fullName, refSite.refSet) then []
+        else [mwdaWrn(top.config, top.location,
+          s"Attribute ${attr.name} with an equation on ${dl.name} is not in the unique reference taken at " ++
+          s"${refSite.sourceGrammar}:${refSite.sourceLocation.unparse} with only ${implode(", ", refSite.refSet)}")],
+      getUniqueRefs(dl.refSiteName, top.flowEnv))
     else [];
 }
 
@@ -163,99 +160,6 @@ top::ExprLHSExpr ::= attr::QNameAttrOccur
     then [mwdaWrn(top.config, top.location, "Duplicate equation for " ++ attr.name)]
     else [];
 }
-
--- These checks live here for now, since they are related to duplicate equations:
-aspect production childReference
-top::Expr ::= q::Decorated! QName
-{
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  local uniqueRefs::[(String, Location, [String])] = getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);
-  top.errors <-
-    case finalTy, refSet of
-    | uniqueDecoratedType(_, _), just(inhs) when top.config.warnEqdef && q.lookupValue.found ->
-      case getMaxRefSet(q.lookupValue.typeScheme.typerep, top.env) of
-      | just(origInhs) ->
-        if all(map(contains(_, inhs), origInhs)) then []
-        else [mwdaWrn(top.config, top.location, s"Unique reference of type ${prettyType(finalTy)} does not contain all attributes in the reference set of ${q.name}'s type ${prettyType(q.lookupValue.typeScheme.monoType)}")]
-      | nothing() -> [mwdaWrn(top.config, top.location, s"Cannot take a unique reference to ${q.name} of type ${prettyType(q.lookupValue.typeScheme.monoType)}, as the reference set is not bounded")]
-      end ++
-      -- Check that we are exported by the decoration site.
-      if q.lookupValue.found && top.config.warnEqdef
-      && !isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars)
-      then [mwdaWrn(top.config, top.location, s"Orphaned unique reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
-      -- Check that there is at most one partial reference taken to this decoration site.
-      -- TODO: This check isn't actually sufficent for well-definedness (e.g. wrapping this ref in
-      -- a term and decorating that more than once), need some sort of "linearity analysis".
-      -- TODO: This check is overly conservative, it flags unique references in mutually exclusive positions:
-      {-else if length(uniqueRefs) > 1
-      then [mwdaWrn(top.config, top.location, s"Multiple unique references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]-}
-      else []
-    | _, _ -> []
-    end;
-}
-aspect production localReference
-top::Expr ::= q::Decorated! QName
-{
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  local uniqueRefs::[(String, Location, [String])] = getPartialRefs(top.frame.fullName, q.lookupValue.fullName, top.flowEnv);
-  top.errors <-
-    case finalTy, refSet of
-    | uniqueDecoratedType(_, _), just(inhs) when top.config.warnEqdef && q.lookupValue.found ->
-      case getMaxRefSet(q.lookupValue.typeScheme.typerep, top.env) of
-      | just(origInhs) ->
-        if all(map(contains(_, inhs), origInhs)) then []
-        else [mwdaWrn(top.config, top.location, s"Unique reference of type ${prettyType(finalTy)} does not contain all attributes in the reference set of ${q.name}'s type ${prettyType(q.lookupValue.typeScheme.monoType)}")]
-      | nothing() -> [mwdaWrn(top.config, top.location, s"Cannot take a unique reference to ${q.name} of type ${prettyType(q.lookupValue.typeScheme.monoType)}, as the reference set is not bounded")]
-      end ++
-      -- Check that we are exported by the decoration site/
-      if q.lookupValue.found && top.config.warnEqdef
-      && !isExportedBy(top.grammarName, [q.lookupValue.dcl.sourceGrammar], top.compiledGrammars)
-      then [mwdaWrn(top.config, top.location, s"Orphaned unique reference to ${q.lookupValue.fullName} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]
-      -- Check that there is at most one partial reference taken to this decoration site.
-      -- TODO: This check isn't actually sufficent for well-definedness (e.g. wrapping this ref in
-      -- a term and decorating that more than once), need some sort of "linearity analysis".
-      -- TODO: This check is overly conservative, it flags unique references in mutually exclusive positions:
-      {-else if length(uniqueRefs) > 1
-      then [mwdaWrn(top.config, top.location, s"Multiple unique references taken to ${q.name} in production ${top.frame.fullName} (reference has type ${prettyType(finalTy)}).")]-}
-      else []
-    | _, _ -> []
-    end;
-}
-aspect production lhsReference
-top::Expr ::= q::Decorated! QName
-{
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.errors <-
-    case finalTy of
-    | uniqueDecoratedType(_, _) when top.config.warnEqdef ->
-      [mwdaWrn(top.config, top.location, s"Cannot take a unique reference of type ${prettyType(finalTy)} to ${q.name}.")]
-    | _ -> []
-    end;
-}
-aspect production forwardReference
-top::Expr ::= q::Decorated! QName
-{
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.errors <-
-    case finalTy of
-    | uniqueDecoratedType(_, _) when top.config.warnEqdef ->
-      [mwdaWrn(top.config, top.location, s"Cannot take a unique reference of type ${prettyType(finalTy)} to the forward tree.")]
-    | _ -> []
-    end;
-}
-aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName  fi::ExprVertexInfo  fd::[FlowVertex]
-{
-  local finalTy::Type = performSubstitution(top.typerep, top.finalSubst);
-  top.errors <-
-    case finalTy, q.lookupValue.typeScheme.monoType of
-    | uniqueDecoratedType(_, _), uniqueDecoratedType(_, _) -> []  -- TODO: Need linearity analysis...
-    | uniqueDecoratedType(_, _), _ when top.config.warnEqdef ->
-      [mwdaWrn(top.config, top.location, s"${q.name} was not bound as a unique reference, but here it is used with type ${prettyType(finalTy)}.")]
-    | _, _ -> []
-    end;
-}
-
 
 --- For our DefLHSs:
 

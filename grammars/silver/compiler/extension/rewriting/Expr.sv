@@ -26,7 +26,7 @@ top::Expr ::=
 }
 
 aspect production lexicalLocalReference
-top::Expr ::= q::Decorated! QName _ _
+top::Expr ::= q::Decorated! QName _ _ _
 {
   -- In regular pattern matching nonterminal values are always effectively decorated, but we are
   -- using the same typing behavior while matching on *undecorated* trees.  So when a variable is
@@ -282,7 +282,7 @@ top::Expr ::= e::Decorated! Expr  q::Decorated! QNameAttrOccur
           }),
         consASTExpr(eUndec.transform, inh.transform),
         nilNamedASTExpr())
-    | lexicalLocalReference(qn, _, _) when
+    | lexicalLocalReference(qn, _, _, _) when
         case lookup(qn.name, top.boundVars) of
         | just(bindingIsDecorated) -> !bindingIsDecorated
         | nothing() -> false
@@ -639,7 +639,7 @@ top::AssignExpr ::= id::Name '::' t::TypeExpr '=' e::Expr
   -- primitive pattern variable was implictly decorated.
   local isDecorated::Boolean =
     case e of
-    | lexicalLocalReference(qn, _, _) ->
+    | lexicalLocalReference(qn, _, _, _) ->
       fromMaybe(finalType(e).isDecorated, lookup(qn.name, top.boundVars))
     | _ -> finalType(e).isDecorated
     end;

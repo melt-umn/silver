@@ -99,7 +99,7 @@ top::Expr ::= q::QName
 abstract production errorReference
 top::Expr ::= msg::[Message]  q::Decorated! QName
 {
-  undecorates to errorExpr(msg, location=top.location);
+  undecorates to errorExpr(msg, location=top.location);  -- TODO: Should this be baseExpr?
   top.unparse = q.unparse;
   top.freeVars <- ts:fromList([q.name]);
   
@@ -504,7 +504,17 @@ abstract production accessBounceUndecorate
 top::Expr ::= target::(Expr ::= Decorated! Expr  Decorated! QNameAttrOccur  Location) e::Decorated! Expr  q::Decorated! QNameAttrOccur
 {
   undecorates to access(e, '.', q, location=top.location);
-  forwards to accessBouncer(target, mkStrFunctionInvocation(top.location, "silver:core:getTermThatWasDecorated", [exprRef(e, location=top.location)]), q, location=top.location);
+  forwards to accessBouncer(target,
+    application(
+      baseExpr(
+        qName(top.location, "silver:core:getTermThatWasDecorated"),
+        location=top.location), '(',
+      oneAppExprs(
+        presentAppExpr(exprRef(e, location=top.location), location=top.location),
+        location=top.location), ',',
+      emptyAnnoAppExprs(location=top.location), ')',
+      location=top.location),
+    q, location=top.location);
 }
 
 abstract production decoratedAccessHandler
