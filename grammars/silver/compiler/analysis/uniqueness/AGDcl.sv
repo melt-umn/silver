@@ -1,7 +1,7 @@
 grammar silver:compiler:analysis:uniqueness;
 
-attribute uniqueRefs occurs on AGDcl;
-propagate uniqueRefs on AGDcl;
+attribute uniqueRefs occurs on Grammar, Root, AGDcls, AGDcl;
+propagate uniqueRefs on Grammar, Root, AGDcls, AGDcl;
 
 aspect production globalValueDclConcrete
 top::AGDcl ::= 'global' id::Name '::' cl::ConstraintList '=>' t::TypeExpr '=' e::Expr ';'

@@ -1,5 +1,7 @@
 grammar silver:compiler:analysis:uniqueness;
 
+monoid attribute uniqueRefs::[(String, UniqueRefSite)];
+
 {--
  - Rerpesents taking of a unique reference to a child or local/production attribute.
  - Since taking a unique reference means that inherited equations

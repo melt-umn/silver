@@ -1,7 +1,7 @@
 grammar silver:compiler:analysis:uniqueness;
 
-monoid attribute uniqueRefs::[(String, UniqueRefSite)]
-  occurs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPattern;
+
+attribute uniqueRefs occurs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPattern;
 propagate uniqueRefs on Expr, Exprs, AppExprs, AppExpr, PrimPatterns, PrimPattern
   excluding
     errorAccessHandler, annoAccessHandler, terminalAccessHandler, synDecoratedAccessHandler, inhDecoratedAccessHandler, errorDecoratedAccessHandler,

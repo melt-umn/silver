@@ -3,12 +3,12 @@ grammar silver:compiler:analysis:uniqueness;
 attribute uniqueRefs occurs on ProductionBody, ProductionStmts, ProductionStmt;
 propagate uniqueRefs on ProductionBody, ProductionStmts, ProductionStmt;
 
-aspect production productionBody
-top::ProductionBody ::= '{' stmts::ProductionStmts '}'
+aspect production productionDcl
+top::AGDcl ::= 'abstract' 'production' id::Name ns::ProductionSignature body::ProductionBody
 {
   top.errors <-
-    if top.frame.permitForward && any(map((.isUniqueDecorated), top.frame.signature.inputTypes)) && null(stmts.undecorateExpr)
-    then [err(top.location, "Production has unique reference in its signature but no 'undecorates to'.")]
+    if any(map((.isUniqueDecorated), namedSig.inputTypes)) && null(body.undecorateExpr)
+    then [err(top.location, s"Production '${id.name}' has a unique reference in its signature but no 'undecorates to'.")]
     else [];
 }
 
