@@ -2,6 +2,7 @@ grammar silver:compiler:extension:testing;
 
 import silver:compiler:definition:core;
 import silver:compiler:definition:env;
+import silver:compiler:analysis:uniqueness;
 
 terminal WrongCode_kwd 'wrongCode' lexer classes {KEYWORD};
 terminal WarnCode_kwd 'warnCode' lexer classes {KEYWORD};
@@ -80,18 +81,15 @@ concrete production wrongFlowDecl
 top::AGDcl ::= 'wrongFlowCode' s::String_t '{' ags::AGDcls '}'
 {
   top.unparse = "wrongFlowCode" ++ s.lexeme ++ "{" ++ ags.unparse ++ "}";
-  propagate grammarName, grammarDependencies, compiledGrammars, config, flowEnv;
+  propagate grammarName, grammarDependencies, compiledGrammars, config, flowEnv, env;
   
   top.errors := 
     if !containsMessage(substring(1, length(s.lexeme) - 1, s.lexeme), 2, ags.errors)
     then [err(top.location, "Wrong code did not raise an error containing " ++ s.lexeme ++ ". Bubbling up errors from lines " ++ toString($3.line) ++ " to " ++ toString($5.line))] ++ ags.errors
     else [];
   
-  -- do extend its environment with its defs
-  ags.env = occursEnv(ags.occursDefs, newScopeEnv(ags.defs, top.env));
-  
-  -- let's ALSO propagate up flow info, so these kinds of errors are checked/caught
-  top.flowDefs := ags.flowDefs;
+  -- These need to be passed up for the flow analysis to work:
+  propagate defs, flowDefs, uniqueRefs;
   
   forwards to emptyAGDcl(location=top.location);
 }
